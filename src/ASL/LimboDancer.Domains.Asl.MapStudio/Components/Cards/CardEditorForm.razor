@@ -1,0 +1,158 @@
+@using LimboDancer.Domains.Asl.Units.Catalog
+@* K13 (plan section 16.16; rulings R28.1 and R28.2): the editor's form root. It lays out the card's fields as forms, and owns which area or exit
+   condition is being picked on the map; the page keeps the library, the checks, save, rename, and delete. The card is shown as read-only JSON. *@
+<div class="card-editor-form">
+    <CardIdentityFields Draft="@Draft" Changed="@Changed" />
+    <CardMapFields Draft="@Draft" Changed="@Changed" BoardNames="@BoardNames" SavedMaps="@SavedMaps" Map="@Map" MapProblems="@MapProblems"
+                   Target="@Target" Marked="@Marked" OnHex="@PickHex" Done="@(() => picking = null)" />
+    @if (pickNote is { } note)
+    {
+        <p id="edit-pick-note" class="diagnostic warning" role="status">@note</p>
+    }
+    <CardTurnRecordFields Draft="@Draft" Changed="@Changed" />
+    @for (var index = 0; index < Draft.Sides.Length; index++)
+    {
+        var at = index;
+        <CardSideFields Draft="@Draft" Index="@at" Sides="@Sides" Catalog="@Catalog" Definitions="@Definitions(Draft.Sides[at].Side)" Boards="@CardBoards"
+                        Picking="@picking" OnPick="@Pick" Changed="@Changed" RenameArea="@RenameArea" />
+    }
+    <CardRulesFields Draft="@Draft" Changed="@Changed" />
+    <CardVictoryFields Draft="@Draft" Picking="@picking" OnPick="@Pick" Changed="@Changed" />
+    @if (Json is { } json)
+    {
+        <JsonDisclosure Id="edit-json" Summary="The card as JSON (read only)" Json="@json" />
+    }
+</div>
+
+@code {
+    private object? picking;
+    private string? pickNote;
+    private CardDraft? shown;
+
+    [Parameter, EditorRequired]
+    public CardDraft Draft { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public UnitCatalog Catalog { get; set; } = default!;
+
+    [Parameter]
+    public IReadOnlyList<(string Name, string Label)> Sides { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<string> BoardNames { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<MapDefinition> SavedMaps { get; set; } = [];
+
+    [Parameter]
+    public StudioBoard? Map { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<string> MapProblems { get; set; } = [];
+
+    /// <summary>The card as the library would write it; null while it cannot be built.</summary>
+    [Parameter]
+    public string? Json { get; set; }
+
+    [Parameter]
+    public EventCallback Changed { get; set; }
+
+    // Section 15.3: a new card in the form ends any picking begun on the last one.
+    protected override void OnParametersSet()
+    {
+        if (!ReferenceEquals(shown, Draft))
+        {
+            shown = Draft;
+            (picking, pickNote) = (null, null);
+        }
+
+        // Table player and UI review, pass 28: picking ends when its area or condition is removed, hidden, or no longer takes hexes from the map.
+        if (picking is not null && !Draft.Shows(picking))
+        {
+            picking = null;
+        }
+    }
+
+    private IReadOnlyList<string> CardBoards => [.. Draft.Boards.Select(board => board.Board.Trim()).Where(board => board.Length > 0).Distinct(StringComparer.Ordinal)];
+
+    /// <summary>The counters a side may add, in the order the picker lists them.</summary>
+    private IReadOnlyList<UnitDefinition> Definitions(string side) =>
+        [.. Catalog.Definitions.Where(item => item.Nationality == side).OrderBy(item => item.Kind, StringComparer.Ordinal).ThenBy(item => item.Id, StringComparer.Ordinal)];
+
+    private string? Target => picking switch
+    {
+        AreaDraft area => area.Kind == "building" ? $"the building of area '{area.Id}' (one click picks the whole building)" : $"the entry hexes of area '{area.Id}'",
+        ConditionDraft condition => $"the exit hexes of {condition.Side}'s condition",
+        _ => null,
+    };
+
+    private IReadOnlyList<CardHex> Marked => picking switch
+    {
+        AreaDraft area => [.. CardDraft.Words(area.Hexes).Select(hex => new CardHex(area.Board.Length > 0 ? area.Board : CardBoards.FirstOrDefault() ?? string.Empty, hex))],
+        ConditionDraft condition => [.. CardDraft.Words(condition.Near).Select(CardMaps.Parse).OfType<CardHex>()],
+        _ => [],
+    };
+
+    private Task RenameArea((AreaDraft Area, string Id) change)
+    {
+        Draft.RenameArea(change.Area, change.Id);
+        return Changed.InvokeAsync();
+    }
+
+    private void Pick(object target)
+    {
+        picking = ReferenceEquals(picking, target) ? null : target;
+        pickNote = null;
+    }
+
+    // Ruling R28.2: a building is picked whole, its clicked hex its anchor; an entry's or an exit condition's hexes are added or removed one by one.
+    private async Task PickHex(CardHex hex)
+    {
+        pickNote = null;
+        var several = CardBoards.Count > 1;
+        switch (picking)
+        {
+            case AreaDraft { Kind: "building" } area when Map is not null:
+                var building = CardMaps.Building(Map, hex);
+                if (building.Count == 0)
+                {
+                    pickNote = $"{hex} is not a building hex.";
+                    return;
+                }
+
+                Draft.RenameArea(area, hex.Hex);
+                (area.Hexes, area.Board) = (string.Join(' ', building), several ? hex.Board : string.Empty);
+                picking = null;
+                break;
+            case AreaDraft area:
+                var board = area.Board.Length > 0 ? area.Board : several ? string.Empty : hex.Board;
+                if (CardDraft.Words(area.Hexes).Count > 0 && board.Length > 0 && board != hex.Board)
+                {
+                    pickNote = $"An entry's hexes are on one board; {hex} is on another.";
+                    return;
+                }
+
+                area.Hexes = Toggle(area.Hexes, hex.Hex);
+                area.Board = several ? hex.Board : string.Empty;
+                break;
+            case ConditionDraft condition:
+                condition.Near = Toggle(condition.Near, hex.ToString());
+                break;
+            default:
+                return;
+        }
+
+        await Changed.InvokeAsync();
+    }
+
+    private static string Toggle(string words, string word)
+    {
+        var list = CardDraft.Words(words);
+        if (!list.Remove(word))
+        {
+            list.Add(word);
+        }
+
+        return string.Join(' ', list);
+    }
+}

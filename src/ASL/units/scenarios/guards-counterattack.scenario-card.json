@@ -340,10 +340,10 @@
     {
       "number": 3,
       "text": "Units may set up in any hex of their designated building.",
-      "status": "not-enforced",
+      "status": "game-default",
       "tokens": [],
       "rules": [],
-      "note": "Placing the OB in its setup areas is pass 19 of the Scenario Card Games Plan."
+      "note": "Each counter sets up in any hex of its line's building (ruling R19.1)."
     }
   ],
   "victoryConditions": {

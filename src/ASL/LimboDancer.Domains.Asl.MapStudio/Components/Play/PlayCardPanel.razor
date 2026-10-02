@@ -31,12 +31,7 @@
             <VictoryStandingTable Report="@victory" KnownTo="@KnownTo"
                                   IfEndedNow="@(KnownTo is null && Ended is null ? victory.AtEnd.Winner is { } leader ? $"{leader} would win" : "it would be a draw" : null)" />
         }
-        <ol id="play-card-ssr">
-            @foreach (var rule in card.SpecialRules)
-            {
-                <li>@rule.Text</li>
-            }
-        </ol>
+        <CardSpecialRulesList Id="play-card-ssr" Rules="@card.SpecialRules" />
         <a id="play-card-link" href="units/scenarios?card=@Scenario.Id">The whole card</a>
         @if (Provenance is { } provenance)
         {

@@ -1,0 +1,163 @@
+@using LimboDancer.Domains.Asl.Play
+@using LimboDancer.Domains.Asl.Units.Catalog
+@using LimboDancer.Domains.Asl.Units.State
+@* K17 (plan section 16.16): one side of the card, keyed by its place: nationality and an Axis Minor's nation (ruling R27.1), SAN, a minimal card's
+   ELR, the Friendly Board Edge and its basis, the Battlefield Integrity total, the Balance and its counters (ruling R20.4), and its OB groups. *@
+<fieldset class="card-fields card-side-fields" id="@($"edit-side-fields-{Index}")">
+    <legend>Side @(Index + 1): @SideDraft.Side</legend>
+    <FieldGroup Label="Nationality" For="@($"edit-side-{Index}")">
+        <select id="@($"edit-side-{Index}")" value="@SideDraft.Side" @onchange="@(args => Set(() => Draft.ChangeSide(Index, Text(args))))">
+            @foreach (var side in Sides.Where(side => side.Name != Draft.Sides[1 - Index].Side))
+            {
+                <option value="@side.Name">@side.Label</option>
+            }
+        </select>
+        @if (SideDraft.Side == "axis-minor")
+        {
+            <select id="@($"edit-nation-{Index}")" value="@SideDraft.Nation" @onchange="@(args => Set(() => SideDraft.Nation = Text(args)))" aria-label="@($"Side {Index + 1}'s nation (A25.8)")">
+                <option value="">choose the nation</option>
+                @foreach (var nation in SideState.AxisMinorNations)
+                {
+                    <option value="@nation">@nation</option>
+                }
+            </select>
+        }
+    </FieldGroup>
+    <FieldGroup Label="SAN and ELR" For="@($"edit-san-{Index}")" Title="A14.1; A19.1">
+        <ChildContent>
+            SAN <input id="@($"edit-san-{Index}")" aria-describedby="@($"edit-san-{Index}-help")" value="@SideDraft.San" @onchange="@(args => Set(() => SideDraft.San = Text(args)))" size="2" />
+            ELR <input id="@($"edit-elr-{Index}")" aria-describedby="@($"edit-san-{Index}-help")" value="@SideDraft.Elr" @onchange="@(args => Set(() => SideDraft.Elr = Text(args)))" size="2" aria-label="@($"Side {Index + 1}'s ELR")" />
+        </ChildContent>
+        <Help>The side's own ELR is a minimal card's (ruling R22.3); a card with an OB gives each group its own, so leave it empty.</Help>
+    </FieldGroup>
+    <FieldGroup Label="Friendly Board Edge" For="@($"edit-edge-{Index}")" Title="A20.53; ruling R17.7">
+        <select id="@($"edit-edge-{Index}")" value="@SideDraft.Edge" @onchange="@(args => Set(() => ChangeEdge(Text(args))))">
+            <option value="">not named</option>
+            @foreach (var edge in SideState.Edges)
+            {
+                <option value="@edge">@edge</option>
+            }
+        </select>
+        from <select id="@($"edit-basis-{Index}")" value="@SideDraft.Basis" @onchange="@(args => Set(() => SideDraft.Basis = Text(args)))" aria-label="@($"Side {Index + 1}'s edge basis")">
+            @foreach (var basis in ScenarioCards.EdgeBases)
+            {
+                <option value="@basis">@basis</option>
+            }
+        </select>
+        <input id="@($"edit-edge-note-{Index}")" value="@SideDraft.EdgeNote" @onchange="@(args => Set(() => SideDraft.EdgeNote = Text(args)))" size="40" placeholder="a note" aria-label="@($"Side {Index + 1}'s edge note")" />
+    </FieldGroup>
+    <FieldGroup Label="Battlefield Integrity BPV" For="@($"edit-integrity-{Index}")" Title="A16.1">
+        <ChildContent><input id="@($"edit-integrity-{Index}")" aria-describedby="@($"edit-integrity-{Index}-help")" value="@SideDraft.Integrity" @onchange="@(args => Set(() => SideDraft.Integrity = Text(args)))" size="3" placeholder="none" /></ChildContent>
+        <Help>The card's printed total, checked against the starting MMC (ruling R17.4).</Help>
+    </FieldGroup>
+    <FieldGroup Label="Balance" For="@($"edit-balance-{Index}")" Title="A26.4">
+        <input id="@($"edit-balance-{Index}")" value="@SideDraft.Balance" @onchange="@(args => Set(() => SideDraft.Balance = Text(args)))" size="60" />
+    </FieldGroup>
+    <div class="card-balance-units" id="@($"edit-balance-units-{Index}")">
+        @if (SideDraft.BalanceUnits is { Count: > 0 } balanceUnits)
+        {
+            <ul>
+                @for (var index = 0; index < balanceUnits.Count; index++)
+                {
+                    var at = index;
+                    var unit = balanceUnits[at];
+                    <li @key="unit">
+                        @(Catalog.Definition(unit.Definition) is { } definition ? ScenarioCards.Describe(definition) : unit.Definition)
+                        count <input id="@($"edit-balance-unit-{Index}-{at}-count")" value="@unit.Count" @onchange="@(args => Set(() => unit.Count = Text(args)))" size="2" aria-label="@($"Count of Balance line {at + 1}")" />
+                        <button id="@($"edit-balance-unit-{Index}-{at}-remove")" type="button" @onclick="@(() => Set(() => RemoveBalance(unit)))">Remove</button>
+                    </li>
+                }
+            </ul>
+        }
+        <span class="card-area-line">Counters the Balance adds (ruling R20.4): <ObCounterPicker Id="@($"edit-balance-pick-{Index}")" Label="@($"side {Index + 1}'s Balance")" Side="@SideDraft.Side" Definitions="@Definitions" AddRequested="@AddBalance" /></span>
+    </div>
+    @for (var index = 0; index < SideDraft.Groups.Count; index++)
+    {
+        var at = index;
+        var group = SideDraft.Groups[at];
+        <CardGroupFields @key="group" SideLabel="@(Index + 1)" Id="@($"edit-group-{Index}-{at}")" Index="@at" Group="@group" Side="@SideDraft.Side" Catalog="@Catalog" Definitions="@Definitions"
+                         Boards="@Boards" Picking="@Picking" OnPick="@OnPick" RemoveGroup="@(() => Set(() => RemoveGroup(group)))" Changed="@Changed"
+                         RenameArea="@RenameArea" />
+    }
+    <button id="@($"edit-group-add-{Index}")" type="button" @onclick="AddGroup">Add an OB group</button>
+</fieldset>
+
+@code {
+    [Parameter, EditorRequired]
+    public CardDraft Draft { get; set; } = default!;
+
+    [Parameter]
+    public int Index { get; set; }
+
+    /// <summary>The nationalities the vocabulary names, by name and label.</summary>
+    [Parameter]
+    public IReadOnlyList<(string Name, string Label)> Sides { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public UnitCatalog Catalog { get; set; } = default!;
+
+    [Parameter]
+    public IReadOnlyList<UnitDefinition> Definitions { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<string> Boards { get; set; } = [];
+
+    [Parameter]
+    public object? Picking { get; set; }
+
+    [Parameter]
+    public EventCallback<object> OnPick { get; set; }
+
+    [Parameter]
+    public EventCallback Changed { get; set; }
+
+    /// <summary>An area's new id, which the card's references to it follow (CardDraft.RenameArea).</summary>
+    [Parameter]
+    public EventCallback<(AreaDraft Area, string Id)> RenameArea { get; set; }
+
+    private SideDraft SideDraft => Draft.Sides[Index];
+
+    private static string Text(ChangeEventArgs args) => args.Value as string ?? string.Empty;
+
+    private Task Set(Action change)
+    {
+        change();
+        return Changed.InvokeAsync();
+    }
+
+    // Ruling R22.3: a card with an OB gives each group its ELR, so the side's own ELR moves to its first group.
+    private Task AddGroup() => Set(() =>
+    {
+        var elr = SideDraft.Elr.Trim().Length > 0 ? SideDraft.Elr.Trim() : "3";
+        SideDraft.Groups.Add(new GroupDraft { Name = $"Group {SideDraft.Groups.Count + 1}", Elr = elr });
+        SideDraft.Elr = string.Empty;
+    });
+
+    // Table player, pass 28: a named edge needs a basis, so "none" becomes R0.3 where the author sees it; an unnamed edge has none.
+    private void ChangeEdge(string edge)
+    {
+        SideDraft.Edge = edge;
+        SideDraft.Basis = edge.Length == 0 ? "none" : SideDraft.Basis == "none" ? "manufactured" : SideDraft.Basis;
+    }
+
+    // Table player, pass 28: the last group removed gives its ELR back to the side, which is a minimal card's again.
+    private void RemoveGroup(GroupDraft group)
+    {
+        SideDraft.Groups.Remove(group);
+        if (SideDraft.Groups.Count == 0 && SideDraft.Elr.Trim().Length == 0)
+        {
+            SideDraft.Elr = group.Elr;
+        }
+    }
+
+    private Task AddBalance(LineDraft unit) => Set(() => (SideDraft.BalanceUnits ??= []).Add(new LineDraft { Definition = unit.Definition, Count = unit.Count }));
+
+    private void RemoveBalance(LineDraft unit)
+    {
+        SideDraft.BalanceUnits!.Remove(unit);
+        if (SideDraft.BalanceUnits.Count == 0)
+        {
+            SideDraft.BalanceUnits = null;
+        }
+    }
+}

@@ -24,7 +24,7 @@ public sealed partial class GamePlanner
     /// <summary>The Victory Conditions read with the game's Control fold cached up to <paramref name="stored"/> events, those already in its log (ruling R24.6).</summary>
     private VictoryReport? Victory(GameHistory history, bool? ended, string? knownTo, int stored)
     {
-        if (history.Current is not { Scenario: { } scenario } state || CardLibrary.Sha256(scenario.Id) != scenario.Sha256 || CardOf(state) is not { } card || !Valid(state, card))
+        if (history.Current is not { Scenario: { } scenario } state || !CardLibrary.Matches(scenario.Id, scenario.Sha256) || CardOf(state) is not { } card || !Valid(state, card))
         {
             return null;
         }

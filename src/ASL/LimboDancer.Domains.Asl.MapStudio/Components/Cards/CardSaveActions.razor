@@ -1,0 +1,128 @@
+@* K20 (plan section 16.16; ruling R28.4): Save, Rename, and Delete. Save stays enabled and says why a card is not saved, so a click that arrives with
+   a field's last change is not lost. Renaming and deleting one of your cards ask first, naming the games that started from it: those games then
+   show their card as missing (ruling R22.2). *@
+<div class="toolbar card-save-actions">
+    <button id="edit-save" class="primary" type="button" @onclick="@(() => OnSave.InvokeAsync())">
+        @(Source is { Length: > 0 } kept && RenameTo is { Length: > 0 } other && other != kept ? $"Save as a new card (keeps '{kept}')" : "Save the card")
+    </button>
+    @if (Source is { Length: > 0 } source)
+    {
+        @if (RenameTo is { Length: > 0 } target && target != source)
+        {
+            <button id="edit-rename" type="button" @onclick="@(() => Open(Confirming.Rename))">Rename '@source' to '@target'</button>
+        }
+        <button id="edit-delete" class="danger" type="button" @onclick="@(() => Open(Confirming.Delete))">Delete this card</button>
+    }
+</div>
+@if (Source is { Length: > 0 } && Games.Count > 0 && confirming is Confirming.None)
+{
+    <p id="edit-games-note" class="muted">@Games.Count game(s) started from this card (@string.Join(", ", Games)); saving a change to it leaves them refused, as a changed card (ruling R22.2).</p>
+}
+@if (confirming is not Confirming.None && Source is { Length: > 0 } named)
+{
+    <div id="edit-confirm" class="diagnostic warning" role="alertdialog" aria-labelledby="edit-confirm-text">
+        <p id="edit-confirm-text">
+            @(confirming == Confirming.Delete ? $"Delete '{named}'? It cannot be undone." : $"Rename '{named}' to '{RenameTo}'? The card is saved under the new id and '{named}' is deleted.")
+            @if (Games.Count > 0)
+            {
+                <span id="edit-confirm-games"> @Games.Count game(s) started from it and lose their card: its turns, Victory Conditions, and SSRs are no longer shown or played there (@string.Join(", ", Games)).</span>
+            }
+            else
+            {
+                <span id="edit-confirm-games"> No game started from it.</span>
+            }
+        </p>
+        @if (confirming == Confirming.Delete)
+        {
+            <button id="edit-delete-confirm" class="danger" type="button" @ref="confirmButton" @onclick="Delete">Delete</button>
+        }
+        else
+        {
+            <button id="edit-rename-confirm" class="primary" type="button" @ref="confirmButton" @onclick="Rename">Rename</button>
+        }
+        <button id="edit-confirm-cancel" type="button" @onclick="@(() => confirming = Confirming.None)">Cancel</button>
+    </div>
+}
+<OperationFeedback Id="edit-note" Message="@Note" Outcome="@Outcome" />
+
+@code {
+    private enum Confirming
+    {
+        None,
+        Delete,
+        Rename,
+    }
+
+    private Confirming confirming;
+    private ElementReference confirmButton;
+    private bool focusPending;
+    private string? shownSource;
+
+    /// <summary>The user card being edited; null for a new card or a copy of a built-in card.</summary>
+    [Parameter]
+    public string? Source { get; set; }
+
+    /// <summary>The id the card would be renamed to.</summary>
+    [Parameter]
+    public string? RenameTo { get; set; }
+
+    /// <summary>The games that started from the card being edited (the game-to-card index; ruling R28.4).</summary>
+    [Parameter]
+    public IReadOnlyList<string> Games { get; set; } = [];
+
+    [Parameter]
+    public string? Note { get; set; }
+
+    [Parameter]
+    public OperationFeedback.OperationOutcome Outcome { get; set; }
+
+    [Parameter]
+    public EventCallback OnSave { get; set; }
+
+    [Parameter]
+    public EventCallback OnRename { get; set; }
+
+    [Parameter]
+    public EventCallback OnDelete { get; set; }
+
+    // A confirmation belongs to the card it was asked about; choosing another card closes it (section 15.3).
+    protected override void OnParametersSet()
+    {
+        if (shownSource != Source)
+        {
+            shownSource = Source;
+            confirming = Confirming.None;
+        }
+    }
+
+    // UI review, pass 28: the question takes the focus when it opens.
+    private void Open(Confirming what) => (confirming, focusPending) = (what, true);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (focusPending && confirming is not Confirming.None)
+        {
+            focusPending = false;
+            try
+            {
+                await confirmButton.FocusAsync();
+            }
+            catch (InvalidOperationException)
+            {
+                // No browser (a component test); nothing to focus.
+            }
+        }
+    }
+
+    private Task Delete()
+    {
+        confirming = Confirming.None;
+        return OnDelete.InvokeAsync();
+    }
+
+    private Task Rename()
+    {
+        confirming = Confirming.None;
+        return OnRename.InvokeAsync();
+    }
+}

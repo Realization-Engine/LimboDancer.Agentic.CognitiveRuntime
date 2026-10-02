@@ -1,20 +1,18 @@
 @page "/units/cards/edit"
-@using System.Globalization
-@using System.Text.Json
-@using System.Text.Json.Serialization
 @using LimboDancer.Domains.Asl.Play
 @using LimboDancer.Domains.Asl.Units.Catalog
-@using LimboDancer.Domains.Asl.Units.State
 @inject LivePlay Live
 @inject UnitLibrary Library
+@inject GameMaps Maps
 
 <PageTitle>Card editor - ASL Map Studio</PageTitle>
 
 <PageHeader Title="Card editor">
     <p>
-        Every game starts from a scenario card (rulings R22.1 to R22.4). Start from a minimal card (boards and two sides, for a game with no scenario), a copy
-        of a built-in card, or one of your cards; the card is checked as you edit it, and only a valid card is saved, under the boards folder beside the saved
-        maps. The OB groups, SSRs, and Victory Conditions are edited as JSON in the card format; the counter picker adds a counter line to a group.
+        Every game starts from a scenario card (rulings R22.1 to R22.4, R28.1 to R28.4). Start from a minimal card (boards and two sides, for a game with no
+        scenario), a copy of a built-in card, or one of your cards. Every field is a form: compose the boards or take a saved map's, pick setup, entry, and
+        exit hexes on the map, and add counter lines from the catalog. The card is checked against the catalog and its boards as you edit it, and only a valid
+        card is saved, under the boards folder beside the saved maps.
     </p>
 </PageHeader>
 
@@ -27,232 +25,69 @@ else
     <div class="toolbar">
         <label>
             Start from
-            <CardPicker Id="edit-source" Cards="@Choices" Value="@source" ValueChanged="@ChooseSource" EmptyLabel="a minimal card" />
+            <CardPicker Id="edit-source" Cards="@choices" Value="@source" ValueChanged="@ChooseSource" EmptyLabel="a minimal card" />
         </label>
-        @if (source is { Length: > 0 } && Live.Cards.IsUser(source))
-        {
-            <button id="edit-delete" class="danger" @onclick="Delete">Delete this card</button>
-        }
     </div>
 
-    <div class="fields card-editor">
-        <label for="edit-id">Id</label>
-        <span><input id="edit-id" value="@id" @onchange="@(args => Set(() => id = Text(args)))" size="32" /> <span class="muted">lower-case letters, digits, and hyphens; a built-in card's name is refused</span></span>
-        <label for="edit-title">Title</label><input id="edit-title" value="@title" @onchange="@(args => Set(() => title = Text(args)))" size="48" />
-        <label for="edit-place">Place</label><input id="edit-place" value="@place" @onchange="@(args => Set(() => place = Text(args)))" size="48" />
-        <label for="edit-day">Date</label>
-        <span>
-            day <input id="edit-day" value="@day" @onchange="@(args => Set(() => day = Text(args)))" size="2" />
-            month <input id="edit-month" value="@month" @onchange="@(args => Set(() => month = Text(args)))" size="2" />
-            year <input id="edit-year" value="@year" @onchange="@(args => Set(() => year = Text(args)))" size="4" />
-            <span class="muted">a minimal card may leave the day, month, and year 0 (not recorded)</span>
-        </span>
-        <label for="edit-introduction">Introduction</label><textarea id="edit-introduction" rows="2" cols="80" @onchange="@(args => Set(() => introduction = Text(args)))">@introduction</textarea>
-        <label for="edit-boards">Boards</label>
-        <span><input id="edit-boards" value="@boardsText" @onchange="@(args => Set(() => boardsText = Text(args)))" size="40" /> <span class="muted">bd01, or placed boards such as bd04@@0,0 bd02@@0,1/r (column, row, /r when turned)</span></span>
-        <label for="edit-north">North</label>
-        <select id="edit-north" value="@north" @onchange="@(args => Set(() => north = Text(args)))">
-            @foreach (var edge in SideState.Edges)
-            {
-                <option value="@edge">@edge</option>
-            }
-        </select>
-        <label for="edit-playable">Playable area</label>
-        <span>
-            <input id="edit-playable" value="@playableText" @onchange="@(args => Set(() => playableText = Text(args)))" size="40" placeholder="none" />
-            hexrows <input id="edit-playable-from" value="@playableFrom" @onchange="@(args => Set(() => playableFrom = Text(args)))" size="3" /> to
-            <input id="edit-playable-to" value="@playableTo" @onchange="@(args => Set(() => playableTo = Text(args)))" size="3" />
-            on board <input id="edit-playable-board" value="@playableBoard" @onchange="@(args => Set(() => playableBoard = Text(args)))" size="6" placeholder="every" />
-            <span class="muted">enforced when hexrows are given (ruling R20.6)</span>
-        </span>
-        <label for="edit-turns">Game Turns</label>
-        <span>
-            <input id="edit-turns" value="@turns" @onchange="@(args => Set(() => turns = Text(args)))" size="2" />
-            <label><input id="edit-half" type="checkbox" checked="@halfTurn" @onchange="@(args => Set(() => halfTurn = args.Value is true))" /> the last with one Player Turn</label>;
-            sets up first <select id="edit-sets-up" value="@setsUpFirst" @onchange="@(args => Set(() => setsUpFirst = Text(args)))">@SideOptions()</select>;
-            moves first <select id="edit-moves" value="@movesFirst" @onchange="@(args => Set(() => movesFirst = Text(args)))"><option value="">a die roll</option>@SideOptions()</select>
-        </span>
-        <label for="edit-defender">Scenario Defender</label>
-        <select id="edit-defender" value="@defender" @onchange="@(args => Set(() => defender = Text(args)))"><option value="">none</option>@SideOptions()</select>
-        @for (var index = 0; index < 2; index++)
-        {
-            var at = index;
-            <label for="@($"edit-side-{at}")">Side @(at + 1)</label>
-            <span>
-                <select id="@($"edit-side-{at}")" value="@sides[at].Side" @onchange="@(args => Set(() => ChangeSide(at, Text(args))))">
-                    @foreach (var side in Library.Vocabulary.Sides)
-                    {
-                        <option value="@side.Name">@side.Label</option>
-                    }
-                </select>
-                SAN <input id="@($"edit-san-{at}")" value="@sides[at].San" @onchange="@(args => Set(() => sides[at].San = Text(args)))" size="2" />
-                ELR <input id="@($"edit-elr-{at}")" value="@sides[at].Elr" @onchange="@(args => Set(() => sides[at].Elr = Text(args)))" size="2" title="a minimal card's side ELR; a card with an OB gives each group its own" />
-                edge <select id="@($"edit-edge-{at}")" value="@sides[at].Edge" @onchange="@(args => Set(() => sides[at].Edge = Text(args)))">
-                    <option value="">not named</option>
-                    @foreach (var edge in SideState.Edges)
-                    {
-                        <option value="@edge">@edge</option>
-                    }
-                </select>
-                from <select id="@($"edit-basis-{at}")" value="@sides[at].Basis" @onchange="@(args => Set(() => sides[at].Basis = Text(args)))">
-                    @foreach (var basis in ScenarioCards.EdgeBases)
-                    {
-                        <option value="@basis">@basis</option>
-                    }
-                </select>
-                Integrity BPV <input id="@($"edit-integrity-{at}")" value="@sides[at].Integrity" @onchange="@(args => Set(() => sides[at].Integrity = Text(args)))" size="3" placeholder="none" title="the card's printed Battlefield Integrity total (A16.1), checked against the starting MMC" />
-                Balance <input id="@($"edit-balance-{at}")" value="@sides[at].Balance" @onchange="@(args => Set(() => sides[at].Balance = Text(args)))" size="40" />
-            </span>
-            <label for="@($"edit-groups-{at}")">OB groups, side @(at + 1)</label>
-            <textarea id="@($"edit-groups-{at}")" rows="6" cols="100" @onchange="@(args => Set(() => sides[at].Groups = Text(args)))">@sides[at].Groups</textarea>
-        }
-        <label for="edit-pick-definition">Add a counter</label>
-        <span>
-            side <select id="edit-pick-side" value="@pickSide" @onchange="@(args => { pickSide = Text(args); PickFirst(); })"><option value="0">1</option><option value="1">2</option></select>
-            group <input id="edit-pick-group" value="@pickGroup" @onchange="@(args => pickGroup = Text(args))" size="2" />
-            <select id="edit-pick-definition" value="@pickDefinition" @onchange="@(args => pickDefinition = Text(args))">
-                @foreach (var definition in Pickable(sides[PickSide].Side))
-                {
-                    <option value="@definition.Id">@ScenarioCards.Describe(definition) (@definition.Id)</option>
-                }
-            </select>
-            count <input id="edit-pick-count" value="@pickCount" @onchange="@(args => pickCount = Text(args))" size="2" />
-            area <input id="edit-pick-area" value="@pickArea" @onchange="@(args => pickArea = Text(args))" size="6" placeholder="any" />
-            <button id="edit-pick-add" @onclick="AddCounter">Add</button>
-        </span>
-        <label for="edit-ssr">SSRs</label>
-        <textarea id="edit-ssr" rows="6" cols="100" @onchange="@(args => Set(() => ssrText = Text(args)))">@ssrText</textarea>
-        <label for="edit-victory">Victory Conditions</label>
-        <textarea id="edit-victory" rows="6" cols="100" @onchange="@(args => Set(() => victoryText = Text(args)))">@victoryText</textarea>
-        <label for="edit-basis">Source</label>
-        <span>
-            <input id="edit-source-basis" value="@sourceBasis" @onchange="@(args => Set(() => sourceBasis = Text(args)))" size="30" />
-            legacy <input id="edit-source-legacy" value="@sourceLegacy" @onchange="@(args => Set(() => sourceLegacy = Text(args)))" size="30" />
-        </span>
-    </div>
+    <CardEditorForm Draft="@draft" Catalog="@catalog" Sides="@sides" BoardNames="@boardNames" SavedMaps="@savedMaps" Map="@map" MapProblems="@mapProblems"
+                    Json="@json" Changed="@Check" />
 
     <FindingList Id="edit-diagnostics" Items="@FindingList.Of(diagnostics)" EmptyId="edit-valid">
-        <Empty>The card is valid against catalog @catalog.Identity.Catalog@@@catalog.Identity.Version.</Empty>
+        <Empty>The card is valid against catalog @catalog.Identity.Catalog@@@catalog.Identity.Version@(map is null ? "." : " and its boards.")</Empty>
     </FindingList>
 
-    <button id="edit-save" class="primary" @onclick="Save">Save the card</button>
-    <OperationFeedback Id="edit-note" Message="@note" Outcome="@noteOutcome" />
+    <CardSaveActions Source="@editing" RenameTo="@draft.Id.Trim()" Games="@games" Note="@note" Outcome="@noteOutcome"
+                     OnSave="@Save" OnRename="@Rename" OnDelete="@Delete" />
 }
 
 @code {
-    private sealed class SideFields
-    {
-        public string Side { get; set; } = "german";
-
-        public string San { get; set; } = "0";
-
-        public string Elr { get; set; } = "3";
-
-        public string Edge { get; set; } = string.Empty;
-
-        public string Basis { get; set; } = "none";
-
-        public string Balance { get; set; } = string.Empty;
-
-        public string Integrity { get; set; } = string.Empty;
-
-        public string Groups { get; set; } = "[]";
-
-        public string? EdgeNote { get; set; }
-
-        public string? BalanceUnits { get; set; }
-    }
-
-    private static readonly JsonSerializerOptions Json = new()
-    {
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-        WriteIndented = true,
-        UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
-    };
-
     [SupplyParameterFromQuery]
     public string? Card { get; set; }
 
     private UnitCatalog? catalog;
     private string source = string.Empty;
-    private string id = "my-game";
-    private string title = "My game";
-    private string place = string.Empty;
-    private string day = "0";
-    private string month = "0";
-    private string year = "0";
-    private string introduction = string.Empty;
-    private string boardsText = "bd01";
-    private string north = "top";
-    private string playableText = string.Empty;
-    private string playableFrom = string.Empty;
-    private string playableTo = string.Empty;
-    private string playableBoard = string.Empty;
-    private string turns = "10";
-    private bool halfTurn;
-    private string setsUpFirst = "german";
-    private string movesFirst = "german";
-    private string defender = string.Empty;
-    private readonly SideFields[] sides = [new(), new() { Side = "russian" }];
-    private string ssrText = "[]";
-    private string victoryText = "{ \"kind\": \"other\", \"text\": \"The players judge the result.\", \"rules\": [] }";
-    private string sourceBasis = "A user card (ruling R22.2).";
-    private string sourceLegacy = "none";
-    private IReadOnlyList<string> sourceAdaptation = [];
-    private string? aftermath;
-    private string pickSide = "0";
-    private string pickGroup = "1";
-    private string pickDefinition = string.Empty;
-    private string pickCount = "1";
-    private string pickArea = string.Empty;
+    private CardDraft draft = CardDraft.Minimal();
+    private IReadOnlyList<(string Name, string Label)> sides = [];
+    private IReadOnlyList<string> boardNames = [];
+    private IReadOnlyList<MapDefinition> savedMaps = [];
+    private StudioBoard? map;
+    private IReadOnlyList<string> mapProblems = [];
+    private string? json;
+    private IReadOnlyList<string> games = [];
     private IReadOnlyList<string> diagnostics = [];
     private string? note;
+    private IReadOnlyList<CardPicker.Choice> choices = [];
 
-    private int PickSide => pickSide == "1" ? 1 : 0;
+    // The user card being edited; null for a new card or a copy of a built-in card. Read from the library when the card changes, not on every render.
+    private string? editing;
+
+    // Set with each note (UI review, pass 22b): a refusal reads as one; a completed save, rename, or delete reads as done.
+    private OperationFeedback.OperationOutcome noteOutcome = OperationFeedback.OperationOutcome.Done;
 
     protected override void OnInitialized()
     {
         catalog = UnitCatalogs.Read(UnitCatalogs.ScenarioA1, Library.Vocabulary)?.Catalog;
+        sides = [.. Library.Vocabulary.Sides.Select(side => (side.Name, side.Label))];
+        boardNames = Maps.BoardNames();
+        savedMaps = Maps.Saved();
         if (Card is { Length: > 0 } named && catalog is not null && Live.Cards.Read(named, catalog)?.Card is { } card)
         {
             source = named;
-            Load(card, Live.Cards.IsUser(named));
-        }
-        else
-        {
-            PickFirst();
+            draft = CardDraft.From(card, Live.Cards.IsUser(named));
         }
 
-        Check();
+        Refresh();
     }
 
-    private static string Text(ChangeEventArgs args) => args.Value as string ?? string.Empty;
-
-    private void Set(Action change)
+    // UI review, pass 28: the library is listed and its cards read when it changes, not on every keystroke.
+    private void ListCards()
     {
-        change();
-        note = null;
-        Check();
+        var users = Live.Cards.UserNames;
+        choices = [.. Live.Cards.Names.Select(name => new CardPicker.Choice(name, Title(name), users.Contains(name, StringComparer.Ordinal)))];
+        editing = source.Length > 0 && users.Contains(source, StringComparer.Ordinal) ? source : null;
     }
 
     private string Title(string name) => catalog is not null && Live.Cards.Read(name, catalog)?.Card is { } card ? card.Title : name;
-
-    private RenderFragment SideOptions() => builder =>
-    {
-        foreach (var side in sides.Select(item => item.Side).Distinct(StringComparer.Ordinal))
-        {
-            builder.OpenElement(0, "option");
-            builder.AddAttribute(1, "value", side);
-            builder.AddContent(2, side);
-            builder.CloseElement();
-        }
-    };
-
-    private IReadOnlyList<CardPicker.Choice> Choices => [.. Live.Cards.Names.Select(name => new CardPicker.Choice(name, Title(name), Live.Cards.IsUser(name)))];
-
-    // Set with each note (UI review, pass 22b): a refusal reads as one; a completed save, delete, or addition reads as done.
-    private OperationFeedback.OperationOutcome noteOutcome = OperationFeedback.OperationOutcome.Done;
 
     private void Refuse(string text) => (note, noteOutcome) = (text, OperationFeedback.OperationOutcome.Refused);
 
@@ -264,199 +99,65 @@ else
         note = null;
         if (source.Length > 0 && catalog is not null && Live.Cards.Read(source, catalog)?.Card is { } card)
         {
-            Load(card, Live.Cards.IsUser(source));
+            draft = CardDraft.From(card, Live.Cards.IsUser(source));
         }
         else
         {
             source = string.Empty;
-            Load(null, false);
+            draft = CardDraft.Minimal();
         }
 
+        Refresh();
+    }
+
+    /// <summary>The checks again, and the games that started from the card being edited (the game-to-card index; ruling R28.4).</summary>
+    private void Refresh()
+    {
+        ListCards();
+        games = editing is { } user ? Live.GamesFrom(user) : [];
         Check();
-    }
-
-    /// <summary>The fields from a card: a user card as it is, a built-in card as a copy under a new id (ruling R22.2), or a new minimal card.</summary>
-    private void Load(ScenarioCard? card, bool user)
-    {
-        if (card is null)
-        {
-            (id, title, place, day, month, year, introduction, boardsText, north) = ("my-game", "My game", string.Empty, "0", "0", "0", string.Empty, "bd01", "top");
-            (playableText, playableFrom, playableTo, playableBoard, turns, halfTurn, setsUpFirst, movesFirst, defender) = (string.Empty, string.Empty, string.Empty, string.Empty, "10", false, "german", "german", string.Empty);
-            movesFirstNote = null;
-            sides[0] = new SideFields();
-            sides[1] = new SideFields { Side = "russian" };
-            ssrText = "[]";
-            victoryText = "{ \"kind\": \"other\", \"text\": \"The players judge the result.\", \"rules\": [] }";
-            (sourceBasis, sourceLegacy, sourceAdaptation, aftermath) = ("A user card (ruling R22.2).", "none", [], null);
-            PickFirst();
-            return;
-        }
-
-        id = user ? card.Id : card.Id + "-copy";
-        title = user ? card.Title : card.Title + " (copy)";
-        place = card.Place;
-        (day, month, year) = (card.Date.Day.ToString(CultureInfo.InvariantCulture), card.Date.Month.ToString(CultureInfo.InvariantCulture), card.Date.Year.ToString(CultureInfo.InvariantCulture));
-        introduction = card.Introduction;
-        boardsText = string.Join(' ', card.Boards.Select(board => card.Boards.Count == 1 && !board.Reversed ? board.Board : $"{board.Board}@{board.Column},{board.Row}{(board.Reversed ? "/r" : string.Empty)}"));
-        north = card.North;
-        playableText = card.PlayableArea?.Text ?? string.Empty;
-        (playableFrom, playableTo, playableBoard) = (card.PlayableArea?.Hexrows?.From ?? string.Empty, card.PlayableArea?.Hexrows?.To ?? string.Empty, card.PlayableArea?.Hexrows?.Board ?? string.Empty);
-        turns = card.Turns.Count.ToString(CultureInfo.InvariantCulture);
-        halfTurn = card.Turns.HalfTurn;
-        setsUpFirst = card.Turns.SetsUpFirst;
-        movesFirst = card.Turns.MovesFirst ?? string.Empty;
-        defender = card.ScenarioDefender ?? string.Empty;
-        for (var index = 0; index < 2 && index < card.Sides.Count; index++)
-        {
-            var side = card.Sides[index];
-            sides[index] = new SideFields
-            {
-                Side = side.Side,
-                San = side.San.ToString(CultureInfo.InvariantCulture),
-                Elr = side.Elr?.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
-                Edge = side.FriendlyEdge.Edge,
-                Basis = side.FriendlyEdge.Basis,
-                EdgeNote = side.FriendlyEdge.Note,
-                Balance = side.Balance,
-                Integrity = side.IntegrityBpv?.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
-                Groups = JsonSerializer.Serialize(side.Groups, Json),
-                BalanceUnits = side.BalanceUnits is { } units ? JsonSerializer.Serialize(units, Json) : null,
-            };
-        }
-
-        ssrText = JsonSerializer.Serialize(card.SpecialRules, Json);
-        victoryText = JsonSerializer.Serialize(card.VictoryConditions, Json);
-        (sourceBasis, sourceLegacy, sourceAdaptation, aftermath) = (card.Source.Basis, card.Source.Legacy, card.Source.Adaptation, card.Aftermath);
-        movesFirstNote = card.Turns.MovesFirstNote;
-        PickFirst();
-    }
-
-    /// <summary>A side's new nationality, which the sides naming it on the Turn Record Chart and as Scenario Defender follow (table player, pass 22).</summary>
-    private void ChangeSide(int at, string side)
-    {
-        var old = sides[at].Side;
-        sides[at].Side = side;
-        string Follow(string value) => value == old ? side : value;
-        (setsUpFirst, movesFirst, defender) = (Follow(setsUpFirst), Follow(movesFirst), Follow(defender));
-        PickFirst();
-    }
-
-    /// <summary>The counters the picker offers a side, in the order it lists them.</summary>
-    private IEnumerable<UnitDefinition> Pickable(string side) => catalog is null ? []
-        : catalog.Definitions.Where(item => item.Nationality == side).OrderBy(item => item.Kind, StringComparer.Ordinal).ThenBy(item => item.Id, StringComparer.Ordinal);
-
-    /// <summary>The picker shows its first counter for the side; the picked counter is that one (referee, pass 22).</summary>
-    private void PickFirst() => pickDefinition = Pickable(sides[PickSide].Side).FirstOrDefault()?.Id ?? string.Empty;
-
-    private string? movesFirstNote;
-
-    /// <summary>The card the fields describe, or why it cannot be read.</summary>
-    private (ScenarioCard? Card, List<string> Problems) Build()
-    {
-        var problems = new List<string>();
-        int Number(string text, string what)
-        {
-            if (int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var value))
-            {
-                return value;
-            }
-
-            problems.Add($"card.{what}: '{text}' is not a number");
-            return 0;
-        }
-
-        T? Parse<T>(string text, string what)
-        {
-            try
-            {
-                return JsonSerializer.Deserialize<T>(text, Json);
-            }
-            catch (JsonException error)
-            {
-                problems.Add($"card.{what}: {error.Message}");
-                return default;
-            }
-        }
-
-        var boards = new List<ScenarioCardBoard>();
-        foreach (var token in boardsText.Split(' ', StringSplitOptions.RemoveEmptyEntries))
-        {
-            var at = token.IndexOf('@', StringComparison.Ordinal);
-            if (at < 0)
-            {
-                boards.Add(new ScenarioCardBoard(token, 0, 0, false));
-                continue;
-            }
-
-            var slot = token[(at + 1)..];
-            var reversed = slot.EndsWith("/r", StringComparison.Ordinal);
-            var parts = (reversed ? slot[..^2] : slot).Split(',');
-            if (parts.Length != 2 || !int.TryParse(parts[0], NumberStyles.Integer, CultureInfo.InvariantCulture, out var column)
-                || !int.TryParse(parts[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var row))
-            {
-                problems.Add($"card.boards: '{token}' is a board, or a board@column,row with /r when turned");
-                continue;
-            }
-
-            boards.Add(new ScenarioCardBoard(token[..at], column, row, reversed));
-        }
-
-        var cardSides = new List<ScenarioCardSide>();
-        foreach (var side in sides)
-        {
-            var groups = Parse<List<ScenarioCardGroup>>(side.Groups.Length == 0 ? "[]" : side.Groups, $"ob.{side.Side}") ?? [];
-            if (groups.Count > 0 && side.Elr.Length > 0)
-            {
-                problems.Add($"card.elr: {side.Side} has OB groups, which give their own ELR; leave the side's ELR empty (ruling R22.3)");
-            }
-
-            var units = side.BalanceUnits is { } balanceUnits ? Parse<List<ScenarioCardUnit>>(balanceUnits, $"balance.{side.Side}") : null;
-            cardSides.Add(new ScenarioCardSide(side.Side, Number(side.San, "san"), null,
-                new ScenarioCardEdge(side.Edge, side.Edge.Length == 0 ? "none" : side.Basis == "none" ? "manufactured" : side.Basis, side.EdgeNote),
-                side.Balance, groups, units, groups.Count == 0 && side.Elr.Length > 0 ? Number(side.Elr, "elr") : null)
-            {
-                IntegrityBpv = side.Integrity.Length > 0 ? Number(side.Integrity, "integrity") : null,
-            });
-        }
-
-        var rules = Parse<List<ScenarioCardRule>>(ssrText.Length == 0 ? "[]" : ssrText, "ssr") ?? [];
-        var victory = Parse<ScenarioCardVictory>(victoryText, "victory");
-        if (problems.Count > 0 || victory is null)
-        {
-            return (null, problems);
-        }
-
-        var playable = playableText.Length == 0 && playableFrom.Length == 0 ? null
-            : new ScenarioCardArea(playableText.Length > 0 ? playableText : $"Only hexrows {playableFrom} to {playableTo} are playable.", playableFrom.Length > 0,
-                playableFrom.Length > 0 ? new ScenarioCardHexrows(playableFrom, playableTo, playableBoard.Length > 0 ? playableBoard : null) : null);
-        var card = new ScenarioCard(ScenarioCards.Format, id.Trim(), title, $"{catalog!.Identity.Catalog}@{catalog.Identity.Version}",
-            new ScenarioCardSource(sourceBasis, sourceLegacy, sourceAdaptation), place,
-            new ScenarioCardDate(Number(day, "date"), Number(month, "date"), Number(year, "date")), introduction, boards, north, playable,
-            new ScenarioCardTurns(Number(turns, "turns"), halfTurn, setsUpFirst, movesFirst.Length > 0 ? movesFirst : null,
-                movesFirst.Length > 0 ? null : movesFirstNote ?? "A die roll before play decides which side moves first."),
-            defender.Length > 0 ? defender : null, cardSides, rules, victory, aftermath);
-        return (card, problems);
     }
 
     private void Check()
     {
+        note = null;
+        Validate();
+    }
+
+    /// <summary>
+    /// The card the fields describe, checked against the catalog (rulings R17.1 to R27.1), its id against the library (ruling R22.2), and its areas and
+    /// hexes against its boards when they can be drawn (ruling R28.3).
+    /// </summary>
+    private ScenarioCard? Validate()
+    {
         if (catalog is null)
         {
-            return;
+            return null;
         }
 
-        var (card, problems) = Build();
-        diagnostics = card is null ? problems : [.. problems, .. ScenarioCards.Validate(card, catalog),
+        var (card, problems) = draft.Build($"{catalog.Identity.Catalog}@{catalog.Identity.Version}");
+        if (card is null)
+        {
+            // UI review, pass 28: the map follows the board fields even while another field is unfinished, and goes when a board's slot is not a number.
+            (map, mapProblems) = draft.BoardsOrNull() is { } boards ? Maps.Cards.Load(boards) : (null, ["a board's column or row is not a whole number"]);
+            (diagnostics, json) = (problems, null);
+            return null;
+        }
+
+        (map, mapProblems) = Maps.Cards.Load(card.Boards);
+        json = ScenarioCardLibrary.Serialize(card);
+        diagnostics = [.. ScenarioCards.Validate(card, catalog),
             .. ScenarioCards.Names.Contains(card.Id, StringComparer.Ordinal) ? [$"card.id: '{card.Id}' is a built-in card's name; save a copy under another id (ruling R22.2)"]
                 : !ScenarioCardLibrary.ValidName(card.Id) ? [$"card.id: '{card.Id}' is not a card name: lower-case letters, digits, and hyphens, 64 at most (ruling R22.2)"]
-                : card.Id != source && Live.Cards.IsUser(card.Id) ? [$"card.id: you already have a card '{card.Id}'; choose another id, or edit that card (ruling R22.2)"] : Array.Empty<string>()];
+                : card.Id != source && Live.Cards.IsUser(card.Id) ? [$"card.id: you already have a card '{card.Id}'; choose another id, or edit that card (ruling R22.2)"] : Array.Empty<string>(),
+            .. map is null ? Array.Empty<string>() : CardMaps.Check(card, map)];
+        return card;
     }
 
     private void Save()
     {
         // Referee, demo 2026-09-30: the button stays enabled, so a click that arrives with a field's last change is not lost; the card is checked here.
-        Check();
-        if (catalog is null || diagnostics.Count > 0 || Build() is not { Card: { } card, Problems.Count: 0 })
+        if (catalog is null || Validate() is not { } card || diagnostics.Count > 0)
         {
             Refuse("Not saved: fix the problems listed above first.");
             return;
@@ -464,58 +165,52 @@ else
 
         var refused = Live.Cards.Save(card, catalog, replace: card.Id == source && Live.Cards.IsUser(source));
         diagnostics = refused;
-        Done(refused.Count == 0 ? $"Saved '{card.Id}'; start a game from it on the Play page." : null);
-        if (refused.Count == 0)
+        if (refused.Count > 0)
         {
-            source = card.Id;
+            Refuse("Not saved: fix the problems listed above first.");
+            return;
         }
+
+        Done($"Saved '{card.Id}'; start a game from it on the Play page.");
+        source = card.Id;
+        ListCards();
+        games = Live.GamesFrom(source);
+    }
+
+    // Ruling R28.4: a rename saves the card under its new id, then deletes the old file; nothing is deleted when the save is refused.
+    private void Rename()
+    {
+        var old = source;
+        if (catalog is null || Validate() is not { } card || diagnostics.Count > 0 || card.Id == old || Live.Cards.IsUser(card.Id))
+        {
+            Refuse("Not renamed: fix the problems listed above first.");
+            return;
+        }
+
+        var refused = Live.Cards.Save(card, catalog);
+        if (refused.Count > 0)
+        {
+            diagnostics = refused;
+            Refuse("Not renamed: fix the problems listed above first.");
+            return;
+        }
+
+        Live.Cards.Delete(old);
+        source = card.Id;
+        ListCards();
+        Done($"Renamed '{old}' to '{card.Id}'.");
+        games = Live.GamesFrom(source);
     }
 
     private void Delete()
     {
-        if (Live.Cards.Delete(source))
+        var old = source;
+        if (Live.Cards.Delete(old))
         {
-            Done($"Deleted '{source}'.");
             source = string.Empty;
-            Load(null, false);
-            Check();
+            draft = CardDraft.Minimal();
+            Refresh();
+            Done($"Deleted '{old}'.");
         }
-    }
-
-    /// <summary>Adds a counter line to a group of a side from the catalog (ruling R22.1).</summary>
-    private void AddCounter()
-    {
-        var side = sides[PickSide];
-        if (catalog?.Definition(pickDefinition) is not { } definition || definition.Nationality != side.Side
-            || !int.TryParse(pickGroup, NumberStyles.Integer, CultureInfo.InvariantCulture, out var group) || !int.TryParse(pickCount, NumberStyles.Integer, CultureInfo.InvariantCulture, out var count))
-        {
-            Refuse("Name a group by its place (1 onward), a counter, and a count.");
-            return;
-        }
-
-        List<ScenarioCardGroup> groups;
-        try
-        {
-            groups = JsonSerializer.Deserialize<List<ScenarioCardGroup>>(side.Groups.Length == 0 ? "[]" : side.Groups, Json) ?? [];
-        }
-        catch (JsonException)
-        {
-            Refuse("The side's OB groups are not valid JSON; fix them first.");
-            return;
-        }
-
-        if (group < 1 || group > groups.Count)
-        {
-            Refuse(groups.Count == 0
-                ? $"Side {PickSide + 1} has no OB group; add one in its OB groups JSON first (a card with an OB is not a minimal card)."
-                : $"Side {PickSide + 1} has {groups.Count} OB group(s).");
-            return;
-        }
-
-        var target = groups[group - 1];
-        groups[group - 1] = target with { Units = [.. target.Units, new ScenarioCardUnit(definition.Id, count, pickArea.Length > 0 ? pickArea : null)] };
-        side.Groups = JsonSerializer.Serialize(groups, Json);
-        Done($"Added {count} {ScenarioCards.Describe(definition)} to group {group} of side {PickSide + 1}.");
-        Check();
     }
 }

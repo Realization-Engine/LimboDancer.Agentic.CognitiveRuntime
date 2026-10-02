@@ -444,7 +444,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         // Pass 19 (rulings R19.1 to R19.6): a game from a card sets up its OB, in its areas and order.
         if (parsed.Events is { } carded && Replay([.. existing, .. carded]).Current is { } cardState && cardState.Scenario is { } playing)
         {
-            if (CardLibrary.Sha256(playing.Id) != playing.Sha256)
+            if (!CardLibrary.Matches(playing.Id, playing.Sha256))
             {
                 return Refused(scope, label, expected, $"play.scenario: the card '{playing.Id}' {Gone(playing.Id)}, so its OB cannot be checked (ruling R19.1)");
             }

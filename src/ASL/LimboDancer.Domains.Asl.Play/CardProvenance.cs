@@ -62,7 +62,7 @@ public sealed record CardProvenance(CardIdentityFacts Identity, GameStartFacts? 
         ArgumentNullException.ThrowIfNull(catalog);
         var identity = new CardIdentityFacts(card.Id, isUser, file, sha256, card.Format, card.Catalog);
         var started = game is null ? null : new GameStartFacts(game.CardId, game.Sha256, game.Catalog,
-            game.CurrentSha256 is null ? CardMatch.Gone : game.CurrentSha256 == game.Sha256 ? CardMatch.Same : CardMatch.Changed);
+            game.CurrentSha256 is null ? CardMatch.Gone : ScenarioCards.SameCard(game.CardId, game.Sha256, game.CurrentSha256) ? CardMatch.Same : CardMatch.Changed);
 
         // Table player, pass 22b: each side's counters apart, and its Balance counters apart from its OB.
         var counts = card.Sides.SelectMany(side => side.Groups.SelectMany(group => group.Units).Select(unit => (side.Side, Balance: false, unit))

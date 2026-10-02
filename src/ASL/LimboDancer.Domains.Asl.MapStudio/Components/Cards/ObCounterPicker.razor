@@ -1,0 +1,72 @@
+@using LimboDancer.Domains.Asl.Play
+@using LimboDancer.Domains.Asl.Units.Catalog
+@* K18 (plan section 16.16): a catalog counter of the side, a count, and an area of the group; Add asks the form to add that counter line. It adds the
+   counter it shows (referee, pass 22) and goes back to the side's first counter when the side changes. *@
+<span class="card-picker" id="@Id">
+    <select id="@($"{Id}-definition")" value="@definition" @onchange="@(args => definition = Text(args))" aria-label="@($"Counter to add, {Label}")">
+        @foreach (var item in Definitions)
+        {
+            <option value="@item.Id">@ScenarioCards.Describe(item) (@item.Id)</option>
+        }
+    </select>
+    count <input id="@($"{Id}-count")" value="@count" @onchange="@(args => count = Text(args))" size="2" aria-label="@($"Count to add, {Label}")" />
+    @if (Areas is { } areas)
+    {
+        <text>area </text>
+        <select id="@($"{Id}-area")" value="@area" @onchange="@(args => area = Text(args))" aria-label="@($"Area of the counters to add, {Label}")">
+            <option value="">any of the group's</option>
+            @foreach (var id in areas)
+            {
+                <option value="@id">@id</option>
+            }
+        </select>
+    }
+    <button id="@($"{Id}-add")" type="button" @onclick="Add">Add</button>
+</span>
+
+@code {
+    private string definition = string.Empty;
+    private string count = "1";
+    private string area = string.Empty;
+    private string? side;
+
+    [Parameter, EditorRequired]
+    public string Id { get; set; } = string.Empty;
+
+    /// <summary>What the counters are added to, for the controls' names.</summary>
+    [Parameter]
+    public string Label { get; set; } = string.Empty;
+
+    /// <summary>The side whose counters are offered.</summary>
+    [Parameter, EditorRequired]
+    public string Side { get; set; } = string.Empty;
+
+    [Parameter]
+    public IReadOnlyList<UnitDefinition> Definitions { get; set; } = [];
+
+    /// <summary>The group's area ids; null when the line names no area (a Balance counter, ruling R20.4).</summary>
+    [Parameter]
+    public IReadOnlyList<string>? Areas { get; set; }
+
+    [Parameter]
+    public EventCallback<LineDraft> AddRequested { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (side != Side || Definitions.All(item => item.Id != definition))
+        {
+            side = Side;
+            definition = Definitions.FirstOrDefault()?.Id ?? string.Empty;
+        }
+
+        if (Areas is null || !Areas.Contains(area, StringComparer.Ordinal))
+        {
+            area = string.Empty;
+        }
+    }
+
+    private static string Text(ChangeEventArgs args) => args.Value as string ?? string.Empty;
+
+    private Task Add() => definition.Length == 0 ? Task.CompletedTask
+        : AddRequested.InvokeAsync(new LineDraft { Definition = definition, Count = count, Area = area });
+}

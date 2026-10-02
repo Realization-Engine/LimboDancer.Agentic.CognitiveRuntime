@@ -1,0 +1,142 @@
+@using LimboDancer.Domains.Asl.Units.State
+@* K15 (plan section 16.16; ruling R28.2): the card's boards, composed slot by slot or copied from a saved map, North, and the playable area; and the
+   map they make, where areas and exit hexes are picked. *@
+<fieldset class="card-fields" id="edit-map-fields">
+    <legend>Boards (A2.1)</legend>
+    <datalist id="edit-board-names">
+        @foreach (var name in BoardNames)
+        {
+            <option value="@name"></option>
+        }
+    </datalist>
+    <table id="edit-boards" class="card-rows">
+        <thead><tr><th scope="col">Board</th><th scope="col">Column</th><th scope="col">Row</th><th scope="col">Turned 180 degrees</th><th scope="col"><span class="visually-hidden">Remove</span></th></tr></thead>
+        <tbody>
+            @for (var index = 0; index < Draft.Boards.Count; index++)
+            {
+                var at = index;
+                var board = Draft.Boards[at];
+                <tr @key="board">
+                    <td><input id="@($"edit-board-{at}")" list="edit-board-names" value="@board.Board" @onchange="@(args => Set(() => board.Board = Text(args)))" size="8" aria-label="@($"Board {at + 1}")" /></td>
+                    <td><input id="@($"edit-board-{at}-column")" value="@board.Column" @onchange="@(args => Set(() => board.Column = Text(args)))" size="2" aria-label="@($"Board {at + 1} column, from the west")" /></td>
+                    <td><input id="@($"edit-board-{at}-row")" value="@board.Row" @onchange="@(args => Set(() => board.Row = Text(args)))" size="2" aria-label="@($"Board {at + 1} row, from the north")" /></td>
+                    <td><input id="@($"edit-board-{at}-reversed")" type="checkbox" checked="@board.Reversed" @onchange="@(args => Set(() => board.Reversed = args.Value is true))" aria-label="@($"Board {at + 1} turned 180 degrees")" /></td>
+                    <td><button id="@($"edit-board-{at}-remove")" type="button" disabled="@(Draft.Boards.Count == 1)" @onclick="@(() => Set(() => Draft.Boards.Remove(board)))">Remove</button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <p class="toolbar">
+        <button id="edit-board-add" type="button" @onclick="@(() => Set(() => Draft.AddBoard(NextBoard())))">Add a board</button>
+        @if (SavedMaps.Count > 0)
+        {
+            <label>
+                or the boards of a saved map
+                <select id="edit-saved-map" value="@savedMap" @onchange="@(args => savedMap = Text(args))">
+                    <option value="">choose a map</option>
+                    @foreach (var map in SavedMaps)
+                    {
+                        <option value="@map.Ref.Value">@map.Name (@map.PlacementText)</option>
+                    }
+                </select>
+            </label>
+            <button id="edit-saved-map-use" type="button" disabled="@(savedMap.Length == 0)" @onclick="UseSavedMap">Use its boards</button>
+        }
+    </p>
+    @if (savedNote is { } note)
+    {
+        <p id="edit-saved-map-note" class="muted">@note</p>
+    }
+    <FieldGroup Label="North" For="edit-north">
+        <select id="edit-north" value="@Draft.North" @onchange="@(args => Set(() => Draft.North = Text(args)))">
+            @foreach (var edge in SideState.Edges)
+            {
+                <option value="@edge">the map's @edge</option>
+            }
+        </select>
+    </FieldGroup>
+    <FieldGroup Label="Playable area" For="edit-playable">
+        <ChildContent>
+            <input id="edit-playable" aria-describedby="edit-playable-help" value="@Draft.PlayableText" @onchange="@(args => Set(() => Draft.PlayableText = Text(args)))" size="40" placeholder="none" />
+            hexrows <input id="edit-playable-from" value="@Draft.PlayableFrom" @onchange="@(args => Set(() => Draft.PlayableFrom = Text(args)))" size="3" aria-label="Playable hexrows from" /> to
+            <input id="edit-playable-to" value="@Draft.PlayableTo" @onchange="@(args => Set(() => Draft.PlayableTo = Text(args)))" size="3" aria-label="Playable hexrows to" />
+            <label><input id="edit-playable-enforced" type="checkbox" checked="@Draft.PlayableEnforced" @onchange="@(args => Set(() => Draft.PlayableEnforced = args.Value is true))" /> enforced</label>
+            on board <input id="edit-playable-board" value="@Draft.PlayableBoard" @onchange="@(args => Set(() => Draft.PlayableBoard = Text(args)))" size="6" placeholder="every" aria-label="Playable hexrows board" />
+        </ChildContent>
+        <Help>Enforced when hexrows are given (ruling R20.6).</Help>
+    </FieldGroup>
+    <CardMapPicker Map="@Map" Problems="@MapProblems" Target="@Target" Marked="@Marked" OnHex="@OnHex" Done="@Done" />
+</fieldset>
+
+@code {
+    private string savedMap = string.Empty;
+    private string? savedNote;
+
+    [Parameter, EditorRequired]
+    public CardDraft Draft { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback Changed { get; set; }
+
+    /// <summary>The boards the library knows, offered as the board inputs' suggestions.</summary>
+    [Parameter]
+    public IReadOnlyList<string> BoardNames { get; set; } = [];
+
+    /// <summary>The maps saved on the Maps page, whose placements a card may copy.</summary>
+    [Parameter]
+    public IReadOnlyList<MapDefinition> SavedMaps { get; set; } = [];
+
+    [Parameter]
+    public StudioBoard? Map { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<string> MapProblems { get; set; } = [];
+
+    [Parameter]
+    public string? Target { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<CardHex> Marked { get; set; } = [];
+
+    [Parameter]
+    public EventCallback<CardHex> OnHex { get; set; }
+
+    [Parameter]
+    public EventCallback Done { get; set; }
+
+    private static string Text(ChangeEventArgs args) => args.Value as string ?? string.Empty;
+
+    private Task Set(Action change)
+    {
+        savedNote = null;
+        change();
+        return Changed.InvokeAsync();
+    }
+
+    /// <summary>The slot below the lowest board, so an added board does not share one.</summary>
+    private BoardDraft NextBoard()
+    {
+        var rows = Draft.Boards.Select(board => int.TryParse(board.Row, out var row) ? row : 0).DefaultIfEmpty(-1).Max();
+        return new BoardDraft { Row = (rows + 1).ToString(System.Globalization.CultureInfo.InvariantCulture) };
+    }
+
+    // Ruling R28.2: a saved map gives its boards and slots; its own LOS rules stay on the Maps page, since a card names none.
+    private async Task UseSavedMap()
+    {
+        if (SavedMaps.FirstOrDefault(map => map.Ref.Value == savedMap) is not { } map)
+        {
+            return;
+        }
+
+        await Set(() => Draft.Boards = [.. map.Placements.Select(placement => new BoardDraft
+        {
+            Board = placement.Board.Value,
+            Column = placement.Column.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            Row = placement.Row.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            Reversed = placement.Reversed,
+        })]);
+        savedNote = map.Placements.Any(placement => placement.Rules.Count > 0)
+            ? $"The boards of '{map.Name}'; its scenario LOS rules are not part of a card and were left out."
+            : $"The boards of '{map.Name}'.";
+    }
+}

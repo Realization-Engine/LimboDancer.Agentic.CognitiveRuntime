@@ -738,3 +738,23 @@ Estimate: 5:15 (build 4:00), the ASL Card Play and Map Studio Redesign Plan. Kic
 | Full local suite in the clone: Dice 24, Authoring 167 (the architecture test passes in a clone), MapStudio 225, Maps 244, Maps.Rendering 34, Maps.Vasl 121, Play 613, ScenarioA1 484, Units.CounterSheets 19, Units.Rendering 352; Units found the synthetic catalog test's list missing the Axis Minor counters: fixed (0548516), Units 407 | 17:50 | 18:42 | 0:52 | Two runs were stopped at the background time limit and the rest rerun; the chart supplement regenerated identically meanwhile |
 | Merge gate: the Docker Linux check (Docker Desktop started; a first run stopped for the Units fix; the rerun every step exit 0: Authoring 167, Play 613, MapStudio 225, ScenarioA1 484), merge into main, push | 18:21 | 18:50 | 0:29 | |
 | **Pass 27 total** | 15:30 | 18:50 | **3:20** | Estimate 5:15 (build 4:00); 0:29 waiting for the answers and 0:16 lost to the app quitting; the build to the documents took 1:45, the full suite 0:52, the merge gate 0:29 |
+
+
+## Pass 28: The card editor's forms and map picking
+
+Estimate: 5:00 (build 3:45), the ASL Card Play and Map Studio Redesign Plan. Kickoff on the user's go-ahead. Branch `feature/asl-backlog-pass-28`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Reading: plan pass 28, backlog sections 29, 32, and 41, rulings R17.1 to R17.13, R19.3, R20.5, R21.5, R22.2, plan section 16.16 (K10 to K20); A19.1 and A26 in the PDF; survey of the card editor, `ScenarioCards`, `ScenarioCardLibrary`, the map service, B06, and the live games' card records | 19:42 | 20:05 | 0:23 | Found the editor dropping an Axis Minor side's nation |
+| Rulings R28.1 to R28.5 proposed with four questions; the user took every recommendation (every field a form with the JSON read only; compose or take a saved map; warn, and keep a built-in card's earlier hashes; side id to the backlog) | 20:05 | 21:15 | 1:10 | Mostly waiting for the answers |
+| 28.1 to 28.5 built: `CardDraft`, `CardMaps`, the earlier-hash check, the Guards SSR 3 revision, the game-to-card index, 17 card components, the editor and Scenarios pages | 21:15 | 21:33 | 0:18 | |
+| The user's Studio under Visual Studio's debugger held the main MapStudio output: work committed and moved to a local clone; the clone's CRLF checkout broke the digest-pinned packages and a `checkout -- .` reverted uncommitted edits, redone by script | 21:33 | 21:42 | 0:09 | Lost time |
+| Tests: `CardEditorDriver`, the editor tests through the forms, `CardEditorPass28Tests`; 38 pass | 21:42 | 21:50 | 0:08 | |
+| Visual check in the clone's Studio (port 5179): Guards copy on board 01, Gambit on two boards, a saved map, picking a building and exit hexes, the Scenarios page; one finding (counter lines kept an area's old id) fixed | 21:50 | 21:59 | 0:09 | |
+| Three reviews in parallel (referee, 10 findings; card author, 16; UI and Blazor, 12); Play 613 meanwhile; rulings and design drafted | 21:59 | 22:08 | 0:09 | |
+| Review fixes (edge rule as the game's, Rowhouse and Factory walls, seam hexes, paired earlier hashes, values kept as read, picking ending with its target, textareas, keys, focus, names, marks layer, cached choices) and tests (MapStudio 104 targeted, Play 6) | 22:08 | 22:24 | 0:16 | |
+| Visual check again: marks layer, picking ended by switching the Victory Conditions off, side lists, all four built-in cards valid against their boards; clean | 22:24 | 22:27 | 0:03 | |
+| Full local suite in the clone: Dice 24, Authoring 167, Maps 244, Maps.Rendering 34, Maps.Vasl 121, Units 407, Units.CounterSheets 19, Units.Rendering 352, MapStudio 241, ScenarioA1 484, Play 615; documents written meanwhile (design, review, rulings, backlog section 42 and the rows built, the plan's status) | 22:27 | 22:53 | 0:26 | ScenarioA1 is not in the solution: it was built and run on its own |
+| Merge gate: commit 99720b7, the Docker Linux check (every step exit 0; Authoring 167, Play 615, MapStudio 241, ScenarioA1 484), the chart supplement regeneration (identical), the time log, merge into main, push | 22:43 | 23:10 | 0:27 | Ran beside the end of the local suite |
+| **Pass 28 total** | 19:42 | 23:10 | **3:28** | Estimate 5:00 (build 3:45); 1:10 waiting for the answers and 0:09 lost to the clone's line endings; the build to the documents took 1:12, the full suite 0:26, the merge gate 0:27 (overlapping) |

@@ -160,6 +160,7 @@ export function create(host, dotnet) {
         setVisible: visible => setVisible(state, visible),
         setUnits: markup => setUnits(state, markup),
         setLos: markup => setLos(state, markup),
+        setMarks: markup => setMarks(state, markup),
         highlight: points => highlight(state, points),
         setTool: tool => setTool(state, tool),
         applyPatch: patch => applyPatch(state, patch),
@@ -419,6 +420,22 @@ function setLos(state, markup) {
     const group = fragment.documentElement.firstElementChild;
     if (fragment.querySelector("parsererror") || group?.id !== "layer-los") {
         throw new Error("Invalid LOS layer");
+    }
+    state.svg.appendChild(document.importNode(group, true));
+}
+
+// Picked hexes (pass 28, the card editor's map): outlines drawn on top, kept apart from the LOS layer.
+function setMarks(state, markup) {
+    state.svg.querySelector("#layer-marks")?.remove();
+    if (!markup) {
+        return;
+    }
+
+    const fragment = new DOMParser().parseFromString(
+        `<svg xmlns="${svgNamespace}">${markup}</svg>`, "image/svg+xml");
+    const group = fragment.documentElement.firstElementChild;
+    if (fragment.querySelector("parsererror") || group?.id !== "layer-marks") {
+        throw new Error("Invalid marks layer");
     }
     state.svg.appendChild(document.importNode(group, true));
 }

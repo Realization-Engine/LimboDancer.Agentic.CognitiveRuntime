@@ -189,4 +189,31 @@ public sealed class BacklogPass22Tests : IDisposable
         var refused = await Setup("guards-mine", Squad("r1", "bd01:N4:0", "russian"));
         Assert.Contains(refused.Reasons, reason => reason.StartsWith("play.setup-", StringComparison.Ordinal));
     }
+
+    // Backlog section 29 (pass 28): a user card deleted after the game started refuses more setup and says the card is gone (rulings R19.1, R22.2).
+    [Fact]
+    public async Task ADeletedUserCardIsRefused()
+    {
+        Assert.Empty(cards.Save(Minimal("village"), Catalog));
+        Committed(await Setup("village", Squad("g1", "bd01:A1:0")));
+        Assert.True(cards.Delete("village"));
+        var refused = await Setup("village", Squad("g2", "bd01:A2:0"));
+        Assert.Contains(refused.Reasons, reason => reason.Contains("'village' is no longer among the scenario cards", StringComparison.Ordinal));
+    }
+
+    // Ruling R28.4: a game that recorded a built-in card's earlier text, revised only in a note, reads the current text; any other text gives it no card.
+    [Fact]
+    public async Task AGameFromABuiltInCardsEarlierTextPlaysOn()
+    {
+        Committed(await Setup("guards-counterattack"));
+        var file = Path.Combine(root, "games", Tenant.ToString("N"), Scope.Game + ".game.json");
+        var current = cards.Sha256("guards-counterattack")!;
+        SetupReport? Report() => Planner().CardSetup(Current, new HashSet<string>());
+
+        File.WriteAllText(file, File.ReadAllText(file).Replace(current, ScenarioCards.EarlierRevisions["guards-counterattack"][0].Earlier, StringComparison.Ordinal));
+        Assert.NotNull(Report());
+
+        File.WriteAllText(file, File.ReadAllText(file).Replace(ScenarioCards.EarlierRevisions["guards-counterattack"][0].Earlier, new string('0', 64), StringComparison.Ordinal));
+        Assert.Null(Report());
+    }
 }

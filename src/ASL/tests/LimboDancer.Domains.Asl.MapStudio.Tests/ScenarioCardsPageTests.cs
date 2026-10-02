@@ -77,7 +77,8 @@ public sealed class ScenarioCardsPageTests : IDisposable
         Assert.Contains("ELR 4", page.Find("#card-side-german caption").TextContent, StringComparison.Ordinal);
         Assert.Contains("EC are Moderate", page.Find("#card-ssr").TextContent, StringComparison.Ordinal);
         Assert.Contains("does not have (backlog). (A7.7)", page.Find("#card-ssr").TextContent, StringComparison.Ordinal);
-        Assert.Equal(3, page.FindAll("#card-ssr .card-ssr-not-enforced").Count);
+        // Pass 28 (ruling R28.4): SSR 3 is played by the setup now (ruling R19.1).
+        Assert.Equal(2, page.FindAll("#card-ssr .card-ssr-not-enforced").Count);
     }
 
     [Fact]

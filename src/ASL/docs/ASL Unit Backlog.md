@@ -416,7 +416,6 @@ Pass 19 (2026-09-29) built the setup of a game from a card: its OB group by grou
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
 | Terrain the movement rules give no entry cost for (gully, stream, shellholes, graveyard, and others) refused at setup; a marsh setup through the planner is not tested | Referee, pass 19 | A2.9, B16.4 | Those terrains in the movement rules; a board with marsh | Refused at setup. |
-| A test of a card changed or gone since the game started | Referee, pass 19 | R19.1 | A way to change an embedded card in a test | Refused in code. |
 
 ## 30. Added by the scenario card games pass 20
 
@@ -442,16 +441,9 @@ Pass 22 (2026-09-30) built the card editor, the user's cards under `src/ASL/boar
 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
-| Setup areas picked on the map, and a map composer or saved-map picker for a card's boards | R22.1 | | Map work in the editor | Areas and boards are typed. |
-| OB groups, SSRs, and Victory Conditions edited as forms (a group's ELR, its areas, an outcome's conditions) | R22.1; table player, pass 22 | A19.1, A26 | Form work | Edited as JSON in the card format; the picker adds counter lines. |
-| Board and area checks at edit time (a copy moved to another board keeps areas that are not on it) | Table player, pass 22 | R19.3 | The board catalog in validation | Refused at setup, with a message. |
 | An SSR citing a rule that is not a compared fragment or a ruling (E1.1, E3.6) | Table player, pass 22 | R17.11 | More registered fragments | Refused; leave `rules` empty. |
-| Plain messages for bad JSON and bad board text ("bd01 bd02" read as side by side) | Table player, pass 22 | | Message work | The raw parser message, and a shared-slot refusal. |
-| Renaming a user card (the old one is kept) | Table player, pass 22 | R22.2 | Editor work | A new id saves a second card. |
-| A confirmation before deleting a card, a warning when a live game uses it, and playing on after its card is deleted or changed | Referee and table player, pass 22 | R18.1, R19.1 | A game-to-card index | Deleted at once; the game is refused and says the card is gone or changed. |
 | A card with a future built-in card's name shadowed by it | R22.2 | | Built-in card additions | A user card is never named as a built-in card now; a later built-in card of the same name would hide it. |
-| The Guards card's SSR 3 note still says placing the OB "is pass 19" | Table player, pass 22 | | A card revision (it changes the card's hash) | The note is out of date; setup is built. |
-| The editor validates the whole card on every change | Referee, pass 22 | | Incremental checks | Fast enough for the three cards. |
+| The editor validates the whole card on every change | Referee, pass 22 | | Incremental checks | Fast enough for the four cards; since pass 28 it also checks the card against its drawn boards on every change (the map is built once per board placement). |
 
 ## 33. Added by the Card Play and Map Studio Redesign Plan
 
@@ -616,3 +608,20 @@ Pass 27 (2026-10-01) built the Axis Minor counters of catalog 1.13.0 with their 
 | Draft records for `CloseCombatPanel` (37 parameters) and `SmallArmsFirePanel` (35) | UI review, pass 27 | | | Flat parameters, as the house style has them. |
 | The vehicle CC selects' accessible names naming their Location; component tests of the ambusher's round, Hand-to-Hand, the vehicle CC leaders, and Opportunity Fire's button | UI review, pass 27 | | | Not built. |
 | The OVR gate's replay of the event log on every action | Referee, pass 27 | | A cached state per revision | Correct, but costs a replay. |
+
+## 42. Added by the game pass 28
+
+Pass 28 (2026-10-01) built the card editor's forms for every card field with the card shown as read-only JSON; boards composed slot by slot or taken from a saved map; areas and exit hexes picked on the card's map, a building whole; the checks of areas and hexes against the boards as the card is edited, and plain messages for numbers; Rename, and confirmations before rename and delete naming the games from the card (a game-to-card index read on request); The Guards Counterattack's SSR 3 revised, with its earlier hash accepted; and the card pages' components (rulings R28.1 to R28.5). It removed from section 29 the test of a card changed or gone, and from section 32 the map picking, the forms, the edit-time checks, the plain messages, renaming, the confirmation and warning, and the Guards note. Section 41's side id apart from its nationality stays there (the user, 2026-10-01). Items it leaves out:
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Playing on after a game's card is deleted or changed (a game keeping a copy of its card) | R28.4 (the user, 2026-10-01) | R18.1, R19.1, R22.2 | A change to game persistence | The editor names the games first; they then show their card as missing or changed and are refused. |
+| A building whose half hex lies on a board seam picked whole, and a building spanning two boards named by one area | Referee, pass 28 | B23, A2.1 | Board-specific names for a seam hex in the composed map | Picking leaves the seam half hex out; the check accepts it when typed under the area's board. |
+| Replacing a card's boards by a saved map, or removing a board, asks first and moves areas that named no board; messages that say "choose its board" | Table player, pass 28 | R17.8 | | Areas without a board take the first board; a second board added gives them the old one; the message is the generic one. |
+| Exit hexes checked on or adjacent to their edge, and a reminder to revise the Victory Conditions text when the hexes change | Table player, pass 28 | A26.23 | | Exit hexes are checked only for being on the map. |
+| Victory Condition messages naming the missing field, and a setup-order message naming the group that lacks its number | Table player, pass 28 | R17.12, R21.3 | Messages in validation | One message per condition or per card. |
+| SSR tokens with an unknown prefix refused, and the built tokens offered as suggestions | Table player, pass 28 | R16.1, R16.9, R23.5 | The token list in one place | Weather, night, and HIP tokens are checked; others are accepted and ignored. |
+| Focus returned to Rename or Delete when a confirmation is cancelled; Escape to cancel | UI review, pass 28 | | | The confirm button takes the focus when the question opens. |
+| The game-to-card index reading only each game's first event, or caching by file time | UI review, pass 28 | | | Every game's record is read when a user card is chosen or saved. |
+| A unit test of the whole-building join on real board data (Rowhouses, a Factory, a seam) | UI review, pass 28 | B23.71, B23.74 | Board data in the MapStudio tests | Checked in the Studio on board 01 and by the built-in cards' validity there. |
+| Moving SSRs down, and reordering groups, areas, and outcomes | Table player, pass 28 | | | SSRs move up; the rest are removed and added again. |

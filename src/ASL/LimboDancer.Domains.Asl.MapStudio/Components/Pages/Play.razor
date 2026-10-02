@@ -37,7 +37,7 @@
 @if (state?.Scenario is { } scenario)
 {
     var playCard = CardRead(scenario.Id)?.Card;
-    <PlayCardPanel Scenario="@scenario" Card="@playCard" Changed="@(CardSha(scenario.Id) != scenario.Sha256)" FirstSide="@state.FirstSide" Ended="@state.Ended"
+    <PlayCardPanel Scenario="@scenario" Card="@playCard" Changed="@(!Live.Cards.Matches(scenario.Id, scenario.Sha256))" FirstSide="@state.FirstSide" Ended="@state.Ended"
                    Groups="@([.. state.Sides.SelectMany(side => side.Groups.Select(group => $"{side.Id}: {group.Name} ({group.Id}), ELR {group.Elr?.ToString(CultureInfo.InvariantCulture) ?? "not given"}"))])"
                    Victory="@(playCard is not null ? VictoryNow : null)"
                    KnownTo="@VictoryKnownTo" Catalog="@($"{state.Catalog.Catalog}@{state.Catalog.Version}")"

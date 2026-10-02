@@ -54,7 +54,7 @@ public sealed class TablePlayer22Tests : IDisposable
         var editor = context.Render<EditorPage>();
         editor.Find("#edit-id").Change(id);
         editor.Find("#edit-title").Change("Quick fight " + id);
-        editor.Find("#edit-boards").Change(Board);
+        CardEditorDriver.Boards(editor, Board);
         return editor;
     }
 
@@ -132,15 +132,12 @@ public sealed class TablePlayer22Tests : IDisposable
         var editor = context.Render<EditorPage>();
         editor.Find("#edit-source").Change("guards-counterattack");
         editor.Find("#edit-turns").Change("4");
-        var groups = editor.Find("#edit-groups-0").TextContent;
-        Assert.Contains("\"elr\": 4", groups, StringComparison.Ordinal);
-        editor.Find("#edit-groups-0").Change(groups.Replace("\"elr\": 4", "\"elr\": 5", StringComparison.Ordinal));
-        editor.Find("#edit-pick-group").Change("1");
-        editor.Find("#edit-pick-definition").Change("attacker-squad");
-        editor.Find("#edit-pick-count").Change("2");
-        editor.Find("#edit-pick-area").Change("K5");
-        editor.Find("#edit-pick-add").Click();
-        output.WriteLine("picker: " + editor.Find("#edit-note").TextContent);
+        Assert.Equal("4", editor.Find("#edit-group-0-0-elr").GetAttribute("value"));
+        editor.Find("#edit-group-0-0-elr").Change("5");
+        editor.Find("#edit-group-0-0-pick-definition").Change("attacker-squad");
+        editor.Find("#edit-group-0-0-pick-count").Change("2");
+        editor.Find("#edit-group-0-0-pick-area").Change("K5");
+        editor.Find("#edit-group-0-0-pick-add").Click();
 
         // Referee, pass 22: the copy keeps the printed Battlefield Integrity total, which the added squads no longer match (A16.1).
         Assert.Contains("card.integrity: german prints [130]", Diagnostics(editor), StringComparison.Ordinal);
@@ -168,15 +165,21 @@ public sealed class TablePlayer22Tests : IDisposable
         var editor = context.Render<EditorPage>();
         editor.Find("#edit-source").Change("guards-counterattack");
         editor.Find("#edit-id").Change("small-guards");
-        editor.Find("#edit-boards").Change(Board);
+        CardEditorDriver.Boards(editor, Board);
         output.WriteLine("after the board change: " + Diagnostics(editor));
         editor.Find("#edit-playable").Change(string.Empty);
         editor.Find("#edit-playable-from").Change(string.Empty);
         editor.Find("#edit-playable-to").Change(string.Empty);
-        editor.Find("#edit-groups-0").Change("[{ \"name\": \"Germans\", \"elr\": 4, \"areas\": [{ \"id\": \"B1\", \"kind\": \"building\", \"hexes\": [\"B1\"] }], \"units\": [{ \"definition\": \"attacker-squad\", \"count\": 1, \"area\": \"B1\" }] }]");
-        editor.Find("#edit-groups-1").Change("[{ \"name\": \"Russians\", \"elr\": 3, \"areas\": [{ \"id\": \"C1\", \"kind\": \"building\", \"hexes\": [\"C1\"] }], \"units\": [{ \"definition\": \"defender-squad\", \"count\": 1, \"area\": \"C1\" }] }]");
+        editor.Find("#edit-group-0-0-remove").Click();
+        editor.Find("#edit-group-1-1-remove").Click();
+        editor.Find("#edit-group-1-0-remove").Click();
+        CardEditorDriver.AddGroup(editor, 0, "Germans", "4", "B1", "attacker-squad");
+        CardEditorDriver.AddGroup(editor, 1, "Russians", "3", "C1", "defender-squad");
         output.WriteLine("after the new groups: " + Diagnostics(editor));
-        editor.Find("#edit-victory").Change("{ \"kind\": \"other\", \"text\": \"The players judge the result.\", \"rules\": [\"A26.1\"] }");
+        editor.Find("#edit-victory-evaluated").Change(false);
+        editor.Find("#edit-victory-kind").Change("other");
+        editor.Find("#edit-victory-text").Change("The players judge the result.");
+        editor.Find("#edit-victory-rules").Change("A26.1");
         output.WriteLine("after the new victory: " + Diagnostics(editor));
         Assert.Contains("card.integrity", Diagnostics(editor), StringComparison.Ordinal);
         editor.Find("#edit-integrity-0").Change(string.Empty);
@@ -201,9 +204,10 @@ public sealed class TablePlayer22Tests : IDisposable
     public void ACardOnTwoBoards()
     {
         var editor = MinimalOnBoard("two-boards");
-        editor.Find("#edit-boards").Change("bd01 bd02");
+        CardEditorDriver.Boards(editor, "bd01", "bd02");
         output.WriteLine("bd01 bd02: " + Diagnostics(editor));
-        editor.Find("#edit-boards").Change("bd01@0,0 bd02@1,0");
+        Assert.Contains("two boards share a slot", Diagnostics(editor), StringComparison.Ordinal);
+        CardEditorDriver.Boards(editor, "bd01@0,0", "bd02@1,0");
         Assert.Equal("(valid)", Diagnostics(editor));
         Save(editor);
 
@@ -213,8 +217,9 @@ public sealed class TablePlayer22Tests : IDisposable
         Assert.Contains("bd01@0,0 bd02@1,0", page.Find("#new-summary-boards").TextContent, StringComparison.Ordinal);
 
         // The synthetic board beside itself cannot be named twice; the player sees why.
-        editor.Find("#edit-boards").Change($"{Board}@0,0 {Board}@1,0");
+        CardEditorDriver.Boards(editor, $"{Board}@0,0", $"{Board}@1,0");
         output.WriteLine("the same board twice: " + Diagnostics(editor));
+        Assert.Contains("a board is named twice", Diagnostics(editor), StringComparison.Ordinal);
     }
 
     // 5. SSR tokens on a card reach the game.
@@ -222,8 +227,8 @@ public sealed class TablePlayer22Tests : IDisposable
     public void NightAndMudReachTheGame()
     {
         var editor = MinimalOnBoard("night-mud");
-        editor.Find("#edit-ssr").Change("[{ \"number\": 1, \"text\": \"Night, Base NVR 1.\", \"status\": \"token\", \"tokens\": [\"night:1\"], \"rules\": [] },"
-            + " { \"number\": 2, \"text\": \"Mud.\", \"status\": \"token\", \"tokens\": [\"weather:mud\"], \"rules\": [] }]");
+        CardEditorDriver.AddRule(editor, "Night, Base NVR 1.", "token", "night:1");
+        CardEditorDriver.AddRule(editor, "Mud.", "token", "weather:mud");
         output.WriteLine("ssr: " + Diagnostics(editor));
         Assert.Equal("(valid)", Diagnostics(editor));
         Save(editor);
@@ -245,7 +250,7 @@ public sealed class TablePlayer22Tests : IDisposable
     public void ExtremeWinterWithoutADate()
     {
         var editor = MinimalOnBoard("cold");
-        editor.Find("#edit-ssr").Change("[{ \"number\": 1, \"text\": \"Extreme Winter, Ground Snow.\", \"status\": \"token\", \"tokens\": [\"weather:extreme-winter\", \"weather:ground-snow\"], \"rules\": [] }]");
+        CardEditorDriver.AddRule(editor, "Extreme Winter, Ground Snow.", "token", "weather:extreme-winter weather:ground-snow");
         Assert.Contains("Extreme Winter needs the scenario's month and year", Diagnostics(editor), StringComparison.Ordinal);
         editor.Find("#edit-month").Change("1");
         editor.Find("#edit-year").Change("1942");
@@ -271,11 +276,12 @@ public sealed class TablePlayer22Tests : IDisposable
             return text;
         }
 
-        Assert.Contains("card.ob", Try("#edit-groups-0", "[{ nope"), StringComparison.Ordinal);
-        Try("#edit-groups-0", "[]");
-        Assert.Contains("card.boards", Try("#edit-boards", "board one"), StringComparison.Ordinal);
-        Try("#edit-boards", "bd01@0;0");
-        Try("#edit-boards", Board);
+        Assert.Contains("card.san: german's SAN is 'x', which is not a whole number", Try("#edit-san-0", "x"), StringComparison.Ordinal);
+        Try("#edit-san-0", "0");
+        Assert.Contains("card.boards", Try("#edit-board-0", "board one"), StringComparison.Ordinal);
+        Assert.Contains("card.boards: board 1's column is '0;0', which is not a whole number", Try("#edit-board-0-column", "0;0"), StringComparison.Ordinal);
+        Try("#edit-board-0-column", "0");
+        Try("#edit-board-0", Board);
         Assert.Contains("card.date", Try("#edit-month", "13"), StringComparison.Ordinal);
         Try("#edit-month", "0");
         Try("#edit-day", "6");
@@ -317,6 +323,11 @@ public sealed class TablePlayer22Tests : IDisposable
         var editor = context.Render<EditorPage>();
         editor.Find("#edit-source").Change("doomed");
         editor.Find("#edit-delete").Click();
+
+        // Ruling R28.4: the delete asks first and names the game that started from the card.
+        Assert.Contains("doomed", live.Cards.UserNames);
+        Assert.Contains("doomed-1", editor.Find("#edit-confirm-games").TextContent, StringComparison.Ordinal);
+        editor.Find("#edit-delete-confirm").Click();
         output.WriteLine("delete: " + editor.Find("#edit-note").TextContent);
         Assert.DoesNotContain("doomed", live.Cards.UserNames);
 
@@ -403,14 +414,16 @@ public sealed class TablePlayer22Tests : IDisposable
         Assert.Equal("american", editor.Find("#edit-sets-up").GetAttribute("value"));
     }
 
-    // 13. The picker on a minimal card, which has no groups to add to.
+    // 13. A group added to a minimal card takes the side's ELR, which a card with an OB no longer carries (ruling R22.3).
     [Fact]
-    public void ThePickerOnAMinimalCard()
+    public void AGroupOnAMinimalCardTakesTheSidesElr()
     {
         var editor = MinimalOnBoard("picker");
-        editor.Find("#edit-pick-add").Click();
-        output.WriteLine("picker: " + editor.Find("#edit-note").TextContent);
-        Assert.Contains("no OB group; add one in its OB groups JSON first", editor.Find("#edit-note").TextContent, StringComparison.Ordinal);
+        editor.Find("#edit-elr-0").Change("4");
+        editor.Find("#edit-group-add-0").Click();
+        Assert.Equal("4", editor.Find("#edit-group-0-0-elr").GetAttribute("value"));
+        Assert.Equal(string.Empty, editor.Find("#edit-elr-0").GetAttribute("value"));
+        Assert.DoesNotContain("card.elr: german", Diagnostics(editor), StringComparison.Ordinal);
     }
 
     // 14. The Scenarios page shows a minimal card.
@@ -431,7 +444,7 @@ public sealed class TablePlayer22Tests : IDisposable
         Assert.Equal(["3", "3"], scenarios.FindAll(".card-elr").Select(item => item.TextContent[..1]));
     }
 
-    // 15. Renaming a user card: the editor saves a second card and keeps the first.
+    // 15. A user card under a new id: Save keeps both; Rename asks first and keeps only the new one (ruling R28.4).
     [Fact]
     public void RenamingAUserCard()
     {
@@ -441,6 +454,13 @@ public sealed class TablePlayer22Tests : IDisposable
         editor.Find("#edit-id").Change("second-name");
         Save(editor);
         Assert.Equal(["first-name", "second-name"], live.Cards.UserNames);
+
+        editor.Find("#edit-id").Change("third-name");
+        editor.Find("#edit-rename").Click();
+        Assert.Contains("No game started from it", editor.Find("#edit-confirm-games").TextContent, StringComparison.Ordinal);
+        editor.Find("#edit-rename-confirm").Click();
+        Assert.Contains("Renamed 'second-name' to 'third-name'", editor.Find("#edit-note").TextContent, StringComparison.Ordinal);
+        Assert.Equal(["first-name", "third-name"], live.Cards.UserNames);
     }
 
     // 16. The editor opened from a Scenarios link (?card=).

@@ -57,6 +57,9 @@ public sealed class MapService(StudioOptions options, IVaslMapSource source)
 
     private readonly ConcurrentDictionary<string, Lazy<BoardLoadResult>> cache = new(StringComparer.Ordinal);
 
+    // Pass 28: a map built from placements keeps its derived reference, so the render endpoint can draw it for the card editor.
+    private readonly ConcurrentDictionary<BoardRef, BoardLoadResult> placed = new();
+
     public string MapsRoot => Path.Combine(options.ResolveBoardsRoot(), "maps");
 
     public IReadOnlyList<MapDefinition> List()
@@ -134,7 +137,7 @@ public sealed class MapService(StudioOptions options, IVaslMapSource source)
         ArgumentNullException.ThrowIfNull(map);
         if (Find(map) is not { } definition)
         {
-            return new BoardLoadResult(null, [Error("STUDIO-MAP-002", $"{map} is not a saved map.")]);
+            return placed.TryGetValue(map, out var built) ? built : new BoardLoadResult(null, [Error("STUDIO-MAP-002", $"{map} is not a saved map.")]);
         }
 
         var key = map.Value + "\n" + definition.PlacementText;
@@ -151,8 +154,20 @@ public sealed class MapService(StudioOptions options, IVaslMapSource source)
         var text = string.Join(' ', placements);
         var hash = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text)))[..12];
         var reference = BoardRef.Parse("map-placed-" + hash);
-        return cache.GetOrAdd(reference.Value + "|" + text,
+        var result = cache.GetOrAdd(reference.Value + "|" + text,
             _ => new Lazy<BoardLoadResult>(() => LoadUncached(new MapDefinition(reference, "Game map", placements)))).Value;
+        if (result.Board is not null)
+        {
+            // UI review, pass 28: the card editor builds a map per board change; keep only the recent ones.
+            if (placed.Count >= 32)
+            {
+                placed.Clear();
+            }
+
+            placed[reference] = result;
+        }
+
+        return result;
     }
 
     private BoardLoadResult LoadUncached(MapDefinition definition)
