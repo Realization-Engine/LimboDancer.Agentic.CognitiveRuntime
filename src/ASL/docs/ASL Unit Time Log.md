@@ -758,3 +758,20 @@ Estimate: 5:00 (build 3:45), the ASL Card Play and Map Studio Redesign Plan. Kic
 | Full local suite in the clone: Dice 24, Authoring 167, Maps 244, Maps.Rendering 34, Maps.Vasl 121, Units 407, Units.CounterSheets 19, Units.Rendering 352, MapStudio 241, ScenarioA1 484, Play 615; documents written meanwhile (design, review, rulings, backlog section 42 and the rows built, the plan's status) | 22:27 | 22:53 | 0:26 | ScenarioA1 is not in the solution: it was built and run on its own |
 | Merge gate: commit 99720b7, the Docker Linux check (every step exit 0; Authoring 167, Play 615, MapStudio 241, ScenarioA1 484), the chart supplement regeneration (identical), the time log, merge into main, push | 22:43 | 23:10 | 0:27 | Ran beside the end of the local suite |
 | **Pass 28 total** | 19:42 | 23:10 | **3:28** | Estimate 5:00 (build 3:45); 1:10 waiting for the answers and 0:09 lost to the clone's line endings; the build to the documents took 1:12, the full suite 0:26, the merge gate 0:27 (overlapping) |
+
+
+## Pass 28b: The rest of Play
+
+Estimate: 4:25 (build 3:10), the ASL Card Play and Map Studio Redesign Plan. Kickoff on the user's go-ahead, after the user committed the uncommitted catalog work on the main checkout to main (2aefeed). Branch `feature/asl-backlog-pass-28b`.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Reading: plan pass 28b, sections 13, 15.1 to 15.8, 16.10 to 16.13, 16.15, 16.17 (A02 to A10, C16, C17, N13, R04 to R10, S08), backlog section 23; survey of Play.razor and the Play components | 23:43 | 23:46 | 0:03 | |
+| Four questions (section 23 additions, P2 candidates, RuleHelp's reach and shape); the user took every recommendation | 23:46 | 23:47 | 0:01 | |
+| 28b.1 to 28b.4 built: 19 components, `PlayChoice`, `FireText`, the page edits, the Deploy split, the three records, the resets, the stylesheet; the Studio on 5178 stopped (user's rule); built | 23:47 | 00:00 | 0:13 | Writes into the repository got no verdict: files written in the scratchpad and copied in |
+| Visual check in the Studio (port 6670 after 6666 proved browser-blocked; `p28b-visual` on a minimal user card): Deploy, transfer, DM, small arms fire, the mortar fields, the Rout panel; clean | 00:00 | 00:10 | 0:10 | Two restarts: the Guards card's hash, then its OB |
+| Tests: `PlayPagePass28bTests` (4), `RallyAndRecordComponentTests` (6); the transfer record fixed for the DM the gate adds; commit d33c5d5; MapStudio 252 | 00:10 | 00:17 | 0:07 | |
+| Three reviews in parallel (table player, 14 findings; UI and Blazor, 13; referee, 13); design and review drafted meanwhile | 00:17 | 00:30 | 0:13 | |
+| Review fixes (kept DM, five summaries, record order, the Deploy record and legend, the SW note, Starshell limits, hidden ordnance values, one reset method, `SeenOnly`, readiness, RuleHelp's label) and tests; commit d9ff080; MapStudio 252 | 00:30 | 00:37 | 0:07 | |
+| Visual check again (`p28b-visual2`): legend, note, Recover, DM fieldset, kept DM, record order and the Deploy record; clean | 00:37 | 00:38 | 0:01 | Through the DOM; screenshots timed out |
+| Documents (design, review, the plan's status and section 15.9, backlog section 43 and the rows built, this log) | 00:38 | 00:45 | 0:07 | Ran beside the full local suite |

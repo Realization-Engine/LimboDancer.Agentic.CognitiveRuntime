@@ -303,9 +303,7 @@ The backlog pass 13 (2026-09-28) built, and removed from sections 2, 3, 5, 8, 11
 | The German dm MMG firing as a LMG, dismantled mortars, and weapons that start dismantled | R13.6 | A9.8, C9.2 | Their catalog values | Only the German MMG is dismantled and assembled. |
 | Captured ordnance, mortars, LATW, Guns, and vehicles | R13.7 | A21.13, A21.2 | Captured Gun and vehicle rules | Only captured MG and ATR take the penalties. |
 | The Rout panel's preview of the Failure to Rout eliminations and surrenders, and of the ATTACKER's undecided "may rout" units | Table player, pass 13 | A10.5 | A phase-end preview | Shown only as the phase ends. |
-| Records of DM gained, Failure to Rout eliminations, and SW transfers in the records list | Table player, pass 13 | A10.62, A10.5, A4.431 | Event labels for these | They show in the units table only. |
 | Short readable ids for HS and squads made by Deployment, Recombining, and Casualty Reduction | Table player, pass 13 | A1.31, A1.32 | An id scheme for produced units | Ids join the attempt and the parent id. |
-| The Deploy control splitting several SW between the two HS | Table player, pass 13 | A1.31 | A multi-select on the page | The page names one SW for the second HS; the action takes a list. |
 | A route builder with levels on the Play page | Table player, pass 13 | A10.5 | Map clicks on the Play page | Hexes are typed at level 0, or a full Location is typed. |
 
 ## 24. Added by the backlog pass 14
@@ -625,3 +623,24 @@ Pass 28 (2026-10-01) built the card editor's forms for every card field with the
 | The game-to-card index reading only each game's first event, or caching by file time | UI review, pass 28 | | | Every game's record is read when a user card is chosen or saved. |
 | A unit test of the whole-building join on real board data (Rowhouses, a Factory, a seam) | UI review, pass 28 | B23.71, B23.74 | Board data in the MapStudio tests | Checked in the Studio on board 01 and by the built-in cards' validity there. |
 | Moving SSRs down, and reordering groups, areas, and outcomes | Table player, pass 28 | | | SSRs move up; the rest are removed and added again. |
+
+## 43. Added by the redesign pass 28b
+
+Pass 28b (2026-10-02) made the rest of Play components: the Rout, SW, Rally, Repair, Deploy, Recombine, DM retention, and Shock panels, ordnance fire and its target fields, Starshells, the dice, the action records, the fire history with its arithmetic and effects tables, and S08 RuleHelp. It removed from section 23 the Deploy control splitting several SW between the two HS and the records of DM gained, Failure to Rout eliminations, and SW transfers. Items it leaves out:
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| RuleHelp for the help paragraphs of the Play components passes 23 to 28 extracted (Mopping Up and others) | The user, pass 28b | | Pass 28c | Their full paragraphs show as before. |
+| A ready note beside each disabled Propose button of this pass's panels, as passes 24 to 28 give theirs | UI review, pass 28b | | Pass 28c's hardening | The button is disabled until its choice is one the panel offers; the SW panel has a note. |
+| Deploy and Recombine leaders defaulting to "choose", with a leader required unless the squad is Guards | Table player, pass 28b | A1.31, A1.32 | | The leader defaults to "none (Guards)"; the gate refuses a non-Guards squad without one. |
+| Records grouped by turn and phase | Table player, pass 28b | | Pass 28c's activity strip | Records are listed latest attempt first, with no turn or phase. |
+| Records of DM removed, and DM's cause in its record | Table player, pass 28b | A10.62 | | DM gained and DM kept as the RPh ends are recorded. |
+| The reason for a Failure to Rout in its record (ADJACENT, or left in the open) | Table player, pass 28b | A10.5 | | The record names the unit and A10.5; the proposal's reasons give the cause. |
+| The RPh heading over Rally to Shock split by task, and "Weapon" for the ordnance select | Table player, pass 28b | | Pass 28c's layout | One "Rally and Repair" heading; the select is labelled "Gun". |
+| `oninput` for the rout route and the Starshell target | Table player, pass 28b | | | Both update on change, as before. |
+| Drafts kept until a new view is confirmed, not cleared when another view is picked | Table player, pass 28b | | Ruling R23.2 | Picking another view clears the last view's drafts at once. |
+| A record's disclosure decided by the view at the revisions around its event, not by `Open`'s check of concealment and HIP | Referee, pass 28b | A12.14 | | A record names a unit to its own side, or when the unit was neither concealed nor hidden just before; it never names more than the view. |
+| A Gun the squad mans reassigned when it Deploys | Referee, pass 28b | A1.31 | Manned Guns in Deployment | Only SW the squad possesses are split. |
+| Page tests that a hidden ordnance vehicle and Intensive Fire are not sent after a weapon change | UI review, pass 28b | C5.6 | | The page clears both on a weapon change and checks before sending. |
+| The page's other DRM text built through `FireText.ModifierText` | UI review, pass 28b | | | Three records build the same text inline. |
+| The ordnance panel's target fields as a parameter record rather than a slot | UI review, pass 28b | | | The page passes `OrdnanceTargetFields` in a required slot. |
