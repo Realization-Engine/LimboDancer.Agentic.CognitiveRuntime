@@ -1,0 +1,52 @@
+@* K14 (plan section 16.16): the card's id, title, place, date, introduction, source, adaptation notes, and aftermath. The Source label names the
+   basis input (task 28.5). *@
+<fieldset class="card-fields" id="edit-identity">
+    <legend>The card</legend>
+    <FieldGroup Label="Id" For="edit-id">
+        <ChildContent><input id="edit-id" value="@Draft.Id" @onchange="@(args => Set(() => Draft.Id = Text(args)))" size="32" aria-describedby="edit-id-help" /></ChildContent>
+        <Help>Lower-case letters, digits, and hyphens; a built-in card's name is refused.</Help>
+    </FieldGroup>
+    <FieldGroup Label="Title" For="edit-title"><input id="edit-title" value="@Draft.Title" @onchange="@(args => Set(() => Draft.Title = Text(args)))" size="48" /></FieldGroup>
+    <FieldGroup Label="Place" For="edit-place"><input id="edit-place" value="@Draft.Place" @onchange="@(args => Set(() => Draft.Place = Text(args)))" size="48" /></FieldGroup>
+    <FieldGroup Label="Date" For="edit-day">
+        <ChildContent>
+            day <input id="edit-day" value="@Draft.Day" @onchange="@(args => Set(() => Draft.Day = Text(args)))" size="2" aria-label="Day" />
+            month <input id="edit-month" value="@Draft.Month" @onchange="@(args => Set(() => Draft.Month = Text(args)))" size="2" aria-label="Month" />
+            year <input id="edit-year" value="@Draft.Year" @onchange="@(args => Set(() => Draft.Year = Text(args)))" size="4" aria-label="Year" />
+        </ChildContent>
+        <Help>A minimal card may leave the day, month, and year 0 (not recorded).</Help>
+    </FieldGroup>
+    <FieldGroup Label="Introduction" For="edit-introduction">
+        <textarea id="edit-introduction" rows="2" cols="80" @onchange="@(args => Set(() => Draft.Introduction = Text(args)))">@Draft.Introduction</textarea>
+    </FieldGroup>
+    <FieldGroup Label="Source" For="edit-source-basis">
+        <ChildContent>
+            <input id="edit-source-basis" value="@Draft.SourceBasis" @onchange="@(args => Set(() => Draft.SourceBasis = Text(args)))" size="40" />
+            legacy card <input id="edit-source-legacy" value="@Draft.SourceLegacy" @onchange="@(args => Set(() => Draft.SourceLegacy = Text(args)))" size="30" aria-label="Legacy card" />
+        </ChildContent>
+        <Help>What the card rests on, and the legacy card it adapts, or "none" (ruling R17.2).</Help>
+    </FieldGroup>
+    <FieldGroup Label="Adaptation notes" For="edit-adaptation">
+        <ChildContent><textarea id="edit-adaptation" rows="2" cols="80" @onchange="@(args => Set(() => Draft.Adaptation = Text(args)))">@Draft.Adaptation</textarea></ChildContent>
+        <Help>One note per line.</Help>
+    </FieldGroup>
+    <FieldGroup Label="Aftermath" For="edit-aftermath">
+        <textarea id="edit-aftermath" rows="2" cols="80" @onchange="@(args => Set(() => Draft.Aftermath = Text(args)))">@Draft.Aftermath</textarea>
+    </FieldGroup>
+</fieldset>
+
+@code {
+    [Parameter, EditorRequired]
+    public CardDraft Draft { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback Changed { get; set; }
+
+    private static string Text(ChangeEventArgs args) => args.Value as string ?? string.Empty;
+
+    private Task Set(Action change)
+    {
+        change();
+        return Changed.InvokeAsync();
+    }
+}

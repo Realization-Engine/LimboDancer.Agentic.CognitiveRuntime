@@ -1,0 +1,93 @@
+@using LimboDancer.Domains.Asl.Maps.Rendering
+@* Pass 28 (ruling R28.2): the card's boards drawn as one map on B06 BoardViewport. A click names the hex under it to the form, which adds it to the
+   area or exit condition being picked; the picked hexes are outlined. The map is drawn only when the boards compose; otherwise it says why. *@
+<section id="edit-map" class="card-map" aria-label="The card's map">
+    @if (Map is null)
+    {
+        <p id="edit-map-missing" class="muted">The map cannot be drawn: @string.Join("; ", Problems). Areas are typed, and checked when the game sets up.</p>
+    }
+    else
+    {
+        <p id="edit-map-target" class="muted">
+            @(Target is { Length: > 0 } target ? $"Click hexes to pick {target}; click Done when finished." : "Choose \"Pick on the map\" beside an area or an exit condition, then click its hexes here.")
+            @if (Target is { Length: > 0 })
+            {
+                <button id="edit-map-done" type="button" @onclick="@(() => Done.InvokeAsync())">Done</button>
+            }
+        </p>
+        <p id="edit-map-hex" class="muted" aria-live="polite">@(last is null ? string.Empty : $"Last hex: {last}")</p>
+        <BoardViewport @ref="viewport" OnReady="@(() => pending = true)" OnClick="@Click" />
+    }
+</section>
+
+@code {
+    private BoardViewport? viewport;
+    private bool pending;
+    private string? shown;
+    private string? marked;
+    private CardHex? last;
+
+    /// <summary>The card's boards as a map; null when they cannot be drawn.</summary>
+    [Parameter]
+    public StudioBoard? Map { get; set; }
+
+    /// <summary>Why the map cannot be drawn.</summary>
+    [Parameter]
+    public IReadOnlyList<string> Problems { get; set; } = [];
+
+    /// <summary>What a click picks now, in words; null when nothing is being picked.</summary>
+    [Parameter]
+    public string? Target { get; set; }
+
+    /// <summary>The hexes picked so far, outlined on the map.</summary>
+    [Parameter]
+    public IReadOnlyList<CardHex> Marked { get; set; } = [];
+
+    [Parameter]
+    public EventCallback<CardHex> OnHex { get; set; }
+
+    [Parameter]
+    public EventCallback Done { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (Map is not null && $"{Map.Ref.Value}/{Map.Version}" != shown)
+        {
+            pending = true;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (viewport is not { IsReady: true } || Map is null)
+        {
+            return;
+        }
+
+        var key = $"{Map.Ref.Value}/{Map.Version}";
+        if (pending || key != shown)
+        {
+            pending = false;
+            shown = key;
+            marked = null;
+            await viewport.Load($"render/{Map.Ref.Value}/{Map.Version}/{BoardRenderer.ViewName(BoardView.Exact)}", string.Empty,
+                BoardRenderer.ViewBox(Map.Render, BoardView.Exact), BoardRenderer.Layers(BoardView.Exact), [.. BoardRenderer.Layers(BoardView.Exact).Where(layer => layer != "defs")]);
+        }
+
+        var marks = CardMaps.Marks(Map, Marked);
+        if (marks != marked)
+        {
+            marked = marks;
+            await viewport.SetLos(marks);
+        }
+    }
+
+    private async Task Click(double x, double y)
+    {
+        if (Map is not null && CardMaps.HexAt(Map, x, y) is { } hex)
+        {
+            last = hex;
+            await OnHex.InvokeAsync(hex);
+        }
+    }
+}

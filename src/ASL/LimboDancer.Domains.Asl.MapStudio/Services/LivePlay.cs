@@ -74,6 +74,17 @@ public sealed class LivePlay
 
     public IReadOnlyList<GameScope> Games() => Store.List(Tenant);
 
+    /// <summary>
+    /// The game-to-card index (pass 28, ruling R28.4): the live games whose <c>game-started</c> names the card, read from each game's record on request,
+    /// with nothing stored beside them.
+    /// </summary>
+    public IReadOnlyList<string> GamesFrom(string card)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        return [.. Games().Where(scope => Store.Read(scope)?.Events.Select(item => item.Payload).OfType<GameStarted>().FirstOrDefault()?.Scenario?.Id == card)
+            .Select(scope => scope.Game).Order(StringComparer.Ordinal)];
+    }
+
     /// <summary>A live game's history, replayed against the exact boards in play; null when the game does not exist.</summary>
     public GameHistory? History(string game)
     {

@@ -1,0 +1,67 @@
+@using LimboDancer.Domains.Asl.Play
+@using LimboDancer.Domains.Asl.Units.Catalog
+@* K10 (plan section 16.16): a read card, whole and read-only: its source, boards, Turn Record Chart, Scenario Defender, sides (K11), SSRs (K12),
+   Victory Conditions, aftermath, and adaptation notes. It reads no library; the page gives it the card and the catalog. *@
+<article id="card" class="scenario-card">
+    <h3 id="card-title">@Card.Title</h3>
+    <p id="card-place">@ScenarioCards.PlaceAndDate(Card)</p>
+    <p id="card-introduction">@Card.Introduction</p>
+
+    <dl class="report">
+        <dt>Source</dt>
+        <dd id="card-source">@Card.Source.Basis Legacy card: @Card.Source.Legacy.</dd>
+        <dt>Boards (A2.1)</dt>
+        <dd id="card-boards">
+            @CardText.Boards(Card).
+            North is the map's @Card.North.
+            @if (Card.PlayableArea is { } playable)
+            {
+                <span id="card-playable"> @playable.Text @(playable.Enforced ? "(enforced: setup, movement, entry, rout, advance, and withdrawal stay within it; ruling R20.6)" : "(shown, not enforced)")</span>
+            }
+        </dd>
+        <dt>Turn Record Chart (A3.9)</dt>
+        <dd id="card-turns">
+            @Card.Turns.Count Game Turns@(Card.Turns.HalfTurn ? ", the last with one Player Turn" : string.Empty).
+            @CardText.Side(Card.Turns.SetsUpFirst) sets up first@(Card.Turns.MovesFirst is { } first ? $"; {CardText.Side(first)} moves first." : $". {Card.Turns.MovesFirstNote}")
+        </dd>
+        <dt>Scenario Defender</dt>
+        <dd id="card-defender">
+            @(Card.ScenarioDefender is { } defender
+                ? CardText.Side(defender)
+                : "None: neither side enters wholly from offboard (Index, Scenario Attacker/Defender; ruling R17.6).")
+        </dd>
+    </dl>
+
+    @foreach (var side in Card.Sides)
+    {
+        <CardSideSection Card="@Card" Side="@side" Catalog="@Catalog" />
+    }
+
+    <h4>Special rules</h4>
+    <CardSpecialRulesList Id="card-ssr" Rules="@Card.SpecialRules" Detailed="true" />
+
+    <h4>Victory Conditions</h4>
+    <p id="card-victory">@Card.VictoryConditions.Text <span class="card-rules">(@(Card.VictoryConditions.Rules.Count > 0 ? CardText.Cites(Card.VictoryConditions.Rules) + "; " : string.Empty)@(Card.VictoryConditions.Outcomes is null ? "not evaluated by the game" : "evaluated by the game; ruling R21.1"))</span></p>
+
+    @if (Card.Aftermath is { } aftermath)
+    {
+        <h4>Aftermath</h4>
+        <p id="card-aftermath">@aftermath</p>
+    }
+
+    <h4>Adapted to the registered rulebook</h4>
+    <ul id="card-adaptation">
+        @foreach (var note in Card.Source.Adaptation)
+        {
+            <li>@note</li>
+        }
+    </ul>
+</article>
+
+@code {
+    [Parameter, EditorRequired]
+    public ScenarioCard Card { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public UnitCatalog Catalog { get; set; } = default!;
+}

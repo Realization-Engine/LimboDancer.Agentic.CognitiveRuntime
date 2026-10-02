@@ -1,0 +1,114 @@
+@using LimboDancer.Domains.Asl.Play
+@using LimboDancer.Domains.Asl.Units.Catalog
+@* Pass 28 (ruling R28.1): one OB group (A19.1; rulings R17.5, R17.8, R17.12): its name, ELR, place in a sequential setup, "?", areas, and counter
+   lines, with K18 ObCounterPicker adding a line. *@
+<fieldset class="card-group-fields" id="@Id">
+    <legend>Group @(Index + 1): @Group.Name</legend>
+    <span class="card-area-line">
+        <label>name <input id="@($"{Id}-name")" value="@Group.Name" @onchange="@(args => Set(() => Group.Name = Text(args)))" size="40" /></label>
+        <label title="A19.1">ELR <input id="@($"{Id}-elr")" value="@Group.Elr" @onchange="@(args => Set(() => Group.Elr = Text(args)))" size="2" /></label>
+        <label title="A12.12; ruling R17.12">setup order <input id="@($"{Id}-order")" value="@Group.SetupOrder" @onchange="@(args => Set(() => Group.SetupOrder = Text(args)))" size="2" placeholder="none" /></label>
+        <label title="A12.11; ruling R17.12">"?" <input id="@($"{Id}-dummies")" value="@Group.Dummies" @onchange="@(args => Set(() => Group.Dummies = Text(args)))" size="2" placeholder="0" /></label>
+        <button id="@($"{Id}-remove")" type="button" @onclick="@(() => RemoveGroup.InvokeAsync())">Remove the group</button>
+    </span>
+    <p class="card-subhead">Setup or entry areas</p>
+    <ul class="card-areas">
+        @for (var index = 0; index < Group.Areas.Count; index++)
+        {
+            var at = index;
+            var area = Group.Areas[at];
+            <CardAreaFields Id="@($"{Id}-area-{at}")" Area="@area" Boards="@Boards" Picking="@ReferenceEquals(Picking, area)"
+                            Pick="@(() => OnPick.InvokeAsync(area))" Remove="@(() => Set(() => Group.Areas.RemoveAt(at)))" Changed="@Changed" />
+        }
+    </ul>
+    <button id="@($"{Id}-area-add")" type="button" @onclick="@(() => Set(() => Group.Areas.Add(new AreaDraft { Id = NewAreaId() })))">Add an area</button>
+    <table class="card-rows" id="@($"{Id}-units")">
+        <caption>Counter lines</caption>
+        <thead><tr><th scope="col">Counter</th><th scope="col">Count</th><th scope="col">Area</th><th scope="col"><span class="visually-hidden">Remove</span></th></tr></thead>
+        <tbody>
+            @for (var index = 0; index < Group.Units.Count; index++)
+            {
+                var at = index;
+                var unit = Group.Units[at];
+                <tr>
+                    <td title="@unit.Definition">@(Catalog.Definition(unit.Definition) is { } definition ? ScenarioCards.Describe(definition) : unit.Definition)</td>
+                    <td><input id="@($"{Id}-unit-{at}-count")" value="@unit.Count" @onchange="@(args => Set(() => unit.Count = Text(args)))" size="2" aria-label="@($"Count of line {at + 1}")" /></td>
+                    <td>
+                        <select id="@($"{Id}-unit-{at}-area")" value="@unit.Area" @onchange="@(args => Set(() => unit.Area = Text(args)))" aria-label="@($"Area of line {at + 1}")">
+                            <option value="">any of the group's</option>
+                            @foreach (var id in AreaIds)
+                            {
+                                <option value="@id">@id</option>
+                            }
+                            @if (unit.Area.Length > 0 && !AreaIds.Contains(unit.Area))
+                            {
+                                <option value="@unit.Area">@unit.Area (no such area)</option>
+                            }
+                        </select>
+                    </td>
+                    <td><button id="@($"{Id}-unit-{at}-remove")" type="button" @onclick="@(() => Set(() => Group.Units.RemoveAt(at)))">Remove</button></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    <span class="card-area-line">Add a counter line: <ObCounterPicker Id="@($"{Id}-pick")" Label="@($"group {Index + 1}")" Side="@Side" Definitions="@Definitions" Areas="@AreaIds" AddRequested="@AddUnit" /></span>
+</fieldset>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Id { get; set; } = string.Empty;
+
+    [Parameter]
+    public int Index { get; set; }
+
+    [Parameter, EditorRequired]
+    public GroupDraft Group { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public string Side { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public UnitCatalog Catalog { get; set; } = default!;
+
+    [Parameter]
+    public IReadOnlyList<UnitDefinition> Definitions { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<string> Boards { get; set; } = [];
+
+    /// <summary>The area or condition whose hexes are being picked on the map, if any.</summary>
+    [Parameter]
+    public object? Picking { get; set; }
+
+    [Parameter]
+    public EventCallback<object> OnPick { get; set; }
+
+    [Parameter]
+    public EventCallback RemoveGroup { get; set; }
+
+    [Parameter]
+    public EventCallback Changed { get; set; }
+
+    private IReadOnlyList<string> AreaIds => [.. Group.Areas.Select(area => area.Id).Where(id => id.Length > 0).Distinct(StringComparer.Ordinal)];
+
+    private static string Text(ChangeEventArgs args) => args.Value as string ?? string.Empty;
+
+    private Task Set(Action change)
+    {
+        change();
+        return Changed.InvokeAsync();
+    }
+
+    private string NewAreaId()
+    {
+        var number = Group.Areas.Count + 1;
+        while (Group.Areas.Any(area => area.Id == $"area-{number}"))
+        {
+            number++;
+        }
+
+        return $"area-{number}";
+    }
+
+    private Task AddUnit(UnitDraft unit) => Set(() => Group.Units.Add(unit));
+}

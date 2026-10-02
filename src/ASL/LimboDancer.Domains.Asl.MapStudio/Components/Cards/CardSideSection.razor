@@ -1,0 +1,64 @@
+@using LimboDancer.Domains.Asl.Play
+@using LimboDancer.Domains.Asl.Units.Catalog
+@* K11 (plan section 16.16): one side of a read card, keyed by its side: its nation, ELR, SAN, Integrity, edge, Balance, and OB groups. *@
+<section id="card-side-@Side.Side" class="card-side">
+    <h4>@CardText.Side(Side.Side)@(Side.Nation is { } nation ? $" ({nation})" : string.Empty)</h4>
+    <dl class="report">
+        @if (Side.Elr is { } elr)
+        {
+            <dt>ELR (A19.1)</dt>
+            <dd class="card-elr">@elr (the side's own, a minimal card; ruling R22.3)</dd>
+        }
+        <dt>SAN (A14.1)</dt>
+        <dd class="card-san">@Side.San</dd>
+        <dt>Battlefield Integrity (A16.1)</dt>
+        <dd class="card-integrity">@(Side.IntegrityBpv is { } bpv ? $"[{bpv}] (A16 is optional and not built yet)" : "none printed")</dd>
+        <dt>Friendly Board Edge (A20.53)</dt>
+        <dd class="card-edge">
+            @(Side.FriendlyEdge.Edge.Length == 0 ? "Not named (ruling R22.3)." : $"The {Side.FriendlyEdge.Edge} edge ({ScenarioCards.Compass(Card, Side.FriendlyEdge.Edge)}), {CardText.Basis(Side.FriendlyEdge.Basis)}.")
+            @Side.FriendlyEdge.Note
+        </dd>
+        <dt>Balance (A26.4)</dt>
+        <dd class="card-balance">@Side.Balance</dd>
+    </dl>
+    @foreach (var group in Side.Groups)
+    {
+        <table class="card-group">
+            <caption>@group.Name, ELR @group.Elr@(group.SetupOrder is { } order ? $", sets up {CardText.Order(order, Card)}" : string.Empty)</caption>
+            <thead><tr><th>Count</th><th>Counter</th><th>Setup or entry</th><th>Source</th></tr></thead>
+            <tbody>
+                @foreach (var unit in group.Units)
+                {
+                    var definition = Catalog.Definition(unit.Definition);
+                    <tr>
+                        <td>@unit.Count</td>
+                        <td title="@unit.Definition">@(definition is null ? unit.Definition : ScenarioCards.Describe(definition))</td>
+                        <td>@CardText.Area(Card, group, unit)</td>
+                        <td class="@(definition is not null && ScenarioCards.Manufactured(definition) ? "card-manufactured" : "card-sourced")">
+                            @(definition is null ? "not in the catalog" : ScenarioCards.Manufactured(definition) ? "manufactured (R0.3, sheet MFG)" : $"sheet {definition.Counter.Sheet}")
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        @if (group.Dummies is > 0)
+        {
+            <p class="card-dummies">@group.Dummies "?" counters to set up with the group (A12.11).</p>
+        }
+        @foreach (var area in group.Areas.Where(area => area.Limit is not null))
+        {
+            <p class="card-limit">@CardText.AreaText(Card, area): @area.Limit</p>
+        }
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired]
+    public ScenarioCard Card { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public ScenarioCardSide Side { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public UnitCatalog Catalog { get; set; } = default!;
+}

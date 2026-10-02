@@ -1,0 +1,61 @@
+@using LimboDancer.Domains.Asl.Play
+@* Pass 28 (ruling R28.1): the SSRs (ruling R17.10), numbered by their place: each one's text, status, the tokens the game reads, the rules it cites,
+   and a note. *@
+<fieldset class="card-fields" id="edit-ssr">
+    <legend>Special rules (SSR)</legend>
+    <ol class="card-rules-list">
+        @for (var index = 0; index < Draft.Rules.Count; index++)
+        {
+            var at = index;
+            var rule = Draft.Rules[at];
+            <li id="@($"edit-ssr-{at}")">
+                <span class="card-area-line">
+                    <label class="card-wide">text <textarea id="@($"edit-ssr-{at}-text")" rows="2" cols="70" @onchange="@(args => Set(() => rule.Text = Text(args)))">@rule.Text</textarea></label>
+                </span>
+                <span class="card-area-line">
+                    <label>
+                        status
+                        <select id="@($"edit-ssr-{at}-status")" value="@rule.Status" @onchange="@(args => Set(() => rule.Status = Text(args)))">
+                            @foreach (var status in ScenarioCards.RuleStatuses)
+                            {
+                                <option value="@status">@(status switch { "token" => "read by the game (token)", "game-default" => "played by default", _ => "shown, not enforced" })</option>
+                            }
+                        </select>
+                    </label>
+                    @if (rule.Status == "token")
+                    {
+                        <label title="R16.1, R16.9, R23.5">tokens <input id="@($"edit-ssr-{at}-tokens")" value="@rule.Tokens" @onchange="@(args => Set(() => rule.Tokens = Text(args)))" size="30" placeholder="night:1 weather:rain" /></label>
+                    }
+                    <label title="registered rule fragments or rulings (ruling R17.2)">rules <input id="@($"edit-ssr-{at}-rules")" value="@rule.Rules" @onchange="@(args => Set(() => rule.Rules = Text(args)))" size="16" /></label>
+                    <label>note <input id="@($"edit-ssr-{at}-note")" value="@rule.Note" @onchange="@(args => Set(() => rule.Note = Text(args)))" size="40" placeholder="@(rule.Status == "not-enforced" ? "why it is not enforced" : string.Empty)" /></label>
+                    <button id="@($"edit-ssr-{at}-up")" type="button" disabled="@(at == 0)" @onclick="@(() => Set(() => Move(at, at - 1)))" aria-label="@($"Move SSR {at + 1} up")">Up</button>
+                    <button id="@($"edit-ssr-{at}-remove")" type="button" @onclick="@(() => Set(() => Draft.Rules.RemoveAt(at)))">Remove</button>
+                </span>
+            </li>
+        }
+    </ol>
+    <button id="edit-ssr-add" type="button" @onclick="@(() => Set(() => Draft.Rules.Add(new RuleDraft())))">Add an SSR</button>
+</fieldset>
+
+@code {
+    [Parameter, EditorRequired]
+    public CardDraft Draft { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback Changed { get; set; }
+
+    private static string Text(ChangeEventArgs args) => args.Value as string ?? string.Empty;
+
+    private Task Set(Action change)
+    {
+        change();
+        return Changed.InvokeAsync();
+    }
+
+    private void Move(int from, int to)
+    {
+        var rule = Draft.Rules[from];
+        Draft.Rules.RemoveAt(from);
+        Draft.Rules.Insert(to, rule);
+    }
+}

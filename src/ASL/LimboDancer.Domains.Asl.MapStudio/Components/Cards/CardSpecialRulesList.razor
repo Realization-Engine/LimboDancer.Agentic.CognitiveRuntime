@@ -1,0 +1,43 @@
+@using LimboDancer.Domains.Asl.Play
+@* K12 (plan section 16.16): a card's SSRs; detailed, each with its status and the rules it cites (the Scenarios page); plain, the text only (Play's
+   card panel). One list, so the two do not drift. *@
+<ol id="@Id">
+    @foreach (var rule in Rules)
+    {
+        @if (Detailed)
+        {
+            <li class="card-ssr-@rule.Status">
+                @rule.Text
+                <span class="card-ssr-status">
+                    @(rule.Status switch
+                    {
+                        "token" => $"Read by the game: {string.Join(" ", rule.Tokens)}.",
+                        "game-default" => "The game plays this by default.",
+                        _ => $"Shown, not enforced. {rule.Note}",
+                    })
+                </span>
+                @if (rule.Rules.Count > 0)
+                {
+                    @* The space sits inside the span: Razor drops the whitespace-only text before it. *@
+                    <span class="card-rules"> (@CardText.Cites(rule.Rules))</span>
+                }
+            </li>
+        }
+        else
+        {
+            <li>@rule.Text</li>
+        }
+    }
+</ol>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Id { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public IReadOnlyList<ScenarioCardRule> Rules { get; set; } = [];
+
+    /// <summary>Whether each SSR shows its status and citations.</summary>
+    [Parameter]
+    public bool Detailed { get; set; }
+}

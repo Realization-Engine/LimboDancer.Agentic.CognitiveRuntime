@@ -23,7 +23,7 @@ public sealed partial class GamePlanner
     {
         ArgumentNullException.ThrowIfNull(state);
         return state.Scenario is { } scenario && catalogs.FirstOrDefault(catalog => catalog.Identity == state.Catalog) is { } catalog
-            && CachedCard(scenario.Id, catalog) is { } card && card.Sha256 == scenario.Sha256
+            && CachedCard(scenario.Id, catalog) is { } card && ScenarioCards.SameCard(scenario.Id, scenario.Sha256, card.Sha256)
             ? card.Card
             : null;
     }
@@ -334,7 +334,7 @@ public sealed partial class GamePlanner
         }
 
         // Referee, pass 19: a card changed or gone since the game started cannot say whether the setup is done.
-        if (state.Scenario is { } scenario && (CardLibrary.Sha256(scenario.Id) != scenario.Sha256 || CardOf(state) is null))
+        if (state.Scenario is { } scenario && (!CardLibrary.Matches(scenario.Id, scenario.Sha256) || CardOf(state) is null))
         {
             return $"play.scenario: the card '{scenario.Id}' {Gone(scenario.Id)}, so its setup cannot be checked (ruling R19.1)";
         }

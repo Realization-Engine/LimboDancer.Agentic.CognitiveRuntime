@@ -1,0 +1,110 @@
+@using LimboDancer.Domains.Asl.Play
+@using LimboDancer.Domains.Asl.Units.State
+@* Pass 28 (ruling R28.1): one setup or entry area of an OB group (rulings R17.8, R19.4, R25.2), its fields by kind. A building or an entry's hexes
+   may be picked on the map (ruling R28.2): a click on a building picks the whole building, a click on an entry hex adds or removes it. *@
+<li class="card-area" id="@Id">
+    <span class="card-area-line">
+        <label>id <input id="@($"{Id}-id")" value="@Area.Id" @onchange="@(args => Set(() => Area.Id = Text(args)))" size="6" /></label>
+        <label>
+            kind
+            <select id="@($"{Id}-kind")" value="@Area.Kind" @onchange="@(args => Set(() => Area.Kind = Text(args)))">
+                @foreach (var kind in ScenarioCards.AreaKinds)
+                {
+                    <option value="@kind">@kind</option>
+                }
+            </select>
+        </label>
+        @if (Boards.Count > 1 || Area.Board.Length > 0)
+        {
+            <label>
+                board
+                <select id="@($"{Id}-board")" value="@Area.Board" @onchange="@(args => Set(() => Area.Board = Text(args)))">
+                    <option value="">@(Boards.Count == 1 ? "the card's" : "choose")</option>
+                    @foreach (var board in Boards)
+                    {
+                        <option value="@board">@board</option>
+                    }
+                </select>
+            </label>
+        }
+        @switch (Area.Kind)
+        {
+            case "building":
+                <label>hexes, the anchor first <input id="@($"{Id}-hexes")" value="@Area.Hexes" @onchange="@(args => Set(() => Area.Hexes = Text(args)))" size="24" /></label>
+                break;
+            case "hex-numbers":
+                <label>hex numbers <input id="@($"{Id}-from")" value="@Area.From" @onchange="@(args => Set(() => Area.From = Text(args)))" size="2" /></label>
+                <label>to <input id="@($"{Id}-to")" value="@Area.To" @onchange="@(args => Set(() => Area.To = Text(args)))" size="2" /></label>
+                break;
+            default:
+                <label>Game Turn <input id="@($"{Id}-turn")" value="@Area.Turn" @onchange="@(args => Set(() => Area.Turn = Text(args)))" size="2" /></label>
+                <label>
+                    edge
+                    <select id="@($"{Id}-edge")" value="@Area.Edge" @onchange="@(args => Set(() => Area.Edge = Text(args)))">
+                        <option value="">choose</option>
+                        @foreach (var edge in SideState.Edges)
+                        {
+                            <option value="@edge">@edge</option>
+                        }
+                    </select>
+                </label>
+                <label>entry hexes <input id="@($"{Id}-hexes")" value="@Area.Hexes" @onchange="@(args => Set(() => Area.Hexes = Text(args)))" size="20" placeholder="any of the edge" /></label>
+                break;
+        }
+        @if (Area.Kind != "hex-numbers")
+        {
+            <button id="@($"{Id}-pick")" type="button" aria-pressed="@Picking.ToString().ToLowerInvariant()" @onclick="@(() => Pick.InvokeAsync())">@(Picking ? "Picking on the map" : "Pick on the map")</button>
+        }
+        <button id="@($"{Id}-remove")" type="button" @onclick="@(() => Remove.InvokeAsync())">Remove the area</button>
+    </span>
+    <span class="card-area-line">
+        <label>limit, as the SSR says <input id="@($"{Id}-limit")" value="@Area.Limit" @onchange="@(args => Set(() => Area.Limit = Text(args)))" size="40" /></label>
+        @if (Area.Kind != "entry")
+        {
+            <label title="ruling R19.4">counters <input id="@($"{Id}-counters")" value="@Area.Counters" @onchange="@(args => Set(() => Area.Counters = Text(args)))" size="2" placeholder="any" /></label>
+            <label title="ruling R19.4">MMC at least <input id="@($"{Id}-minmmc")" value="@Area.MinMmc" @onchange="@(args => Set(() => Area.MinMmc = Text(args)))" size="2" /></label>
+            <label title="ruling R19.4">
+                under "?"
+                <select id="@($"{Id}-concealed")" value="@(Area.Concealed switch { true => "yes", false => "no", _ => "" })"
+                        @onchange="@(args => Set(() => Area.Concealed = Text(args) switch { "yes" => true, "no" => false, _ => null }))">
+                    <option value="">as the rules allow</option>
+                    <option value="yes">yes</option>
+                    <option value="no">no</option>
+                </select>
+            </label>
+        }
+    </span>
+</li>
+
+@code {
+    [Parameter, EditorRequired]
+    public string Id { get; set; } = string.Empty;
+
+    [Parameter, EditorRequired]
+    public AreaDraft Area { get; set; } = default!;
+
+    /// <summary>The card's boards by name.</summary>
+    [Parameter]
+    public IReadOnlyList<string> Boards { get; set; } = [];
+
+    /// <summary>Whether this area's hexes are being picked on the map.</summary>
+    [Parameter]
+    public bool Picking { get; set; }
+
+    [Parameter]
+    public EventCallback Pick { get; set; }
+
+    [Parameter]
+    public EventCallback Remove { get; set; }
+
+    [Parameter]
+    public EventCallback Changed { get; set; }
+
+    private static string Text(ChangeEventArgs args) => args.Value as string ?? string.Empty;
+
+    private Task Set(Action change)
+    {
+        change();
+        return Changed.InvokeAsync();
+    }
+}

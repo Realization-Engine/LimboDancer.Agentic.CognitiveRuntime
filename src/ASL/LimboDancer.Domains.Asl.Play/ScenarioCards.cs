@@ -163,6 +163,22 @@ public static partial class ScenarioCards
     /// <summary>The Victory Condition types the game evaluates (ruling R21.3).</summary>
     public static IReadOnlyList<string> ConditionTypes { get; } = ["control-margin", "control-count", "squad-ratio", "sole-unbroken", "exit-vp", "cvp"];
 
+    /// <summary>
+    /// The SHA-256 of a built-in card's earlier texts that differ from its current text only in a note (ruling R28.4): a game started from one plays on
+    /// as from the current text. The Guards Counterattack's SSR 3 note was revised in pass 28.
+    /// </summary>
+    public static IReadOnlyDictionary<string, IReadOnlyList<string>> EarlierRevisions
+    {
+        get;
+    } = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
+    {
+        ["guards-counterattack"] = ["132c2241db7d192460b1c7146f58b9b63027c8d5af17e698111772f871dddcab"],
+    };
+
+    /// <summary>Whether a game that recorded <paramref name="recorded"/> still plays the card whose text now hashes to <paramref name="current"/> (rulings R22.2, R28.4).</summary>
+    public static bool SameCard(string id, string recorded, string? current) =>
+        current is not null && (current == recorded || (EarlierRevisions.TryGetValue(id, out var earlier) && earlier.Contains(recorded, StringComparer.Ordinal)));
+
     /// <summary>A building setup area of the card by its id (ruling R21.3): its hexes, on the card's board or its own; null when none has that id.</summary>
     public static IReadOnlyList<BoardLocation>? BuildingHexes(ScenarioCard card, string id)
     {

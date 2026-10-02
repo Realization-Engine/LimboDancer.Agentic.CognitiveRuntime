@@ -20,6 +20,12 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache
     /// <summary>The maps saved in Map Studio, whose placements a new game may copy.</summary>
     public IReadOnlyList<MapDefinition> Saved() => maps.List();
 
+    /// <summary>The boards the library knows, by name, for a card's board inputs (ruling R28.2).</summary>
+    public IReadOnlyList<string> BoardNames() => [.. boards.List().Select(board => board.Ref.Value)];
+
+    /// <summary>A card's boards drawn as one map for the card editor (rulings R28.2, R28.3).</summary>
+    public CardMaps Cards { get; } = new(maps);
+
     /// <summary>The board or map a game is played on, or the reasons it cannot be loaded.</summary>
     public BoardLoadResult Board(MapInPlay map)
     {

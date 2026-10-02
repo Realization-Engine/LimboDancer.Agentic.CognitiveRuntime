@@ -93,6 +93,9 @@ public sealed partial class ScenarioCardLibrary(string? directory)
         return (text, sha256);
     }
 
+    /// <summary>Whether a game that recorded this SHA-256 still plays the card of that name (rulings R22.2, R28.4).</summary>
+    public bool Matches(string name, string sha256) => ScenarioCards.SameCard(name, sha256, Sha256(name));
+
     /// <summary>Reads and validates a card; null when none has that name.</summary>
     public ScenarioCardRead? Read(string name, UnitCatalog catalog)
     {

@@ -1,0 +1,49 @@
+@* K16 (plan section 16.16): the Turn Record Chart (A3.9; rulings R17.4, R17.12) and the Scenario Defender (ruling R17.6). Its side choices are the
+   card's two sides, which follow a side's change of nationality (CardDraft.ChangeSide). *@
+<fieldset class="card-fields" id="edit-turn-record">
+    <legend>Turn Record Chart (A3.9)</legend>
+    <FieldGroup Label="Game Turns" For="edit-turns">
+        <input id="edit-turns" value="@Draft.Turns" @onchange="@(args => Set(() => Draft.Turns = Text(args)))" size="2" />
+        <label><input id="edit-half" type="checkbox" checked="@Draft.HalfTurn" @onchange="@(args => Set(() => Draft.HalfTurn = args.Value is true))" /> the last with one Player Turn</label>
+    </FieldGroup>
+    <FieldGroup Label="Sets up first" For="edit-sets-up">
+        <select id="edit-sets-up" value="@Draft.SetsUpFirst" @onchange="@(args => Set(() => Draft.SetsUpFirst = Text(args)))">@SideOptions</select>
+    </FieldGroup>
+    <FieldGroup Label="Moves first" For="edit-moves">
+        <select id="edit-moves" value="@Draft.MovesFirst" @onchange="@(args => Set(() => Draft.MovesFirst = Text(args)))"><option value="">a die roll</option>@SideOptions</select>
+        @if (Draft.MovesFirst.Length == 0)
+        {
+            <input id="edit-moves-note" value="@Draft.MovesFirstNote" @onchange="@(args => Set(() => Draft.MovesFirstNote = Text(args)))" size="50" aria-label="How the first move is decided" />
+        }
+    </FieldGroup>
+    <FieldGroup Label="Scenario Defender" For="edit-defender">
+        <select id="edit-defender" value="@Draft.Defender" @onchange="@(args => Set(() => Draft.Defender = Text(args)))"><option value="">none</option>@SideOptions</select>
+    </FieldGroup>
+</fieldset>
+
+@code {
+    [Parameter, EditorRequired]
+    public CardDraft Draft { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback Changed { get; set; }
+
+    private static string Text(ChangeEventArgs args) => args.Value as string ?? string.Empty;
+
+    private Task Set(Action change)
+    {
+        change();
+        return Changed.InvokeAsync();
+    }
+
+    private RenderFragment SideOptions => builder =>
+    {
+        foreach (var side in Draft.Sides.Select(item => item.Side).Distinct(StringComparer.Ordinal))
+        {
+            builder.OpenElement(0, "option");
+            builder.AddAttribute(1, "value", side);
+            builder.AddContent(2, side);
+            builder.CloseElement();
+        }
+    };
+}
