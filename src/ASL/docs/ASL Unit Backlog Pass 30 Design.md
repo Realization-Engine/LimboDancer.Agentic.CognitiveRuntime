@@ -230,7 +230,7 @@ Facts every plan rests on:
 
 ### 7.3 The Tractor Works: the Russians (the 308th Rifle Division)
 
-Made 2026-10-03 from the Studio's terrain and LOS on board 01, read with the scratchpad script, with fourteen of the cited lines checked again in my Studio's LOS tab: all agreed. Each plan was chosen in a new game in my Studio (`p30-tw-1`, `p30-tw-2`, `p30-tw-3`), and the gate accepted each (28, 30, and 31 events). Waiting for the user's word.
+Made 2026-10-03 from the Studio's terrain and LOS on board 01, read with the scratchpad script, with fourteen of the cited lines checked again in my Studio's LOS tab: all agreed. Each plan was chosen in a new game in my Studio (`p30-tw-1`, `p30-tw-2`, `p30-tw-3`), and the gate accepted each (28, 30, and 31 events). The user approved all three on 2026-10-03, with every counter at ground level as the card's SSR 5 says.
 
 What the plans answer. The 308th (12 squads, the 9-2, the HMG, two MMG, three LMG, and 18 "?") sets up first, alone in building X3. The Germans then set up around it: the assault engineers with two flamethrowers and four demolition charges in AA4, CC3, or Y8, Kampfgruppe Tienham in Y8, CC7, or AA4, and Kampfgruppe Stahler in U3, T4, R7, or T7. The Russian remnants set up last, to the west. The side that Controls six of X3's nine hexes at game end wins, and the Russians Control all nine at the start, so the 308th must still hold six after eight turns.
 
@@ -343,7 +343,7 @@ Asked 2026-10-03. The user took the recommended answer to each.
 
 ## 10. The workflow under review
 
-**2026-10-03.** After the plans of three cards, the user asked how a plan is viewed, selected, seen on the map, and exchanged for another. A walk-through in my Studio (game `p30-demo`, The Guards Counterattack, 1366x768) showed that the flow works but the page buries it. The user paused the pass to think the workflow through with Claude Design. Tasks 30.1 to 30.4 stay as built until that review; The Tractor Works' plans (section 7.3) wait for the user's word and their file is not committed; Armor Test's plans are not started.
+**2026-10-03.** After the plans of three cards, the user asked how a plan is viewed, selected, seen on the map, and exchanged for another. A walk-through in my Studio (game `p30-demo`, The Guards Counterattack, 1366x768) showed that the flow works but the page buries it. The user paused the pass to think the workflow through with Claude Design. Tasks 30.1 to 30.4 stay as built until that review; The Tractor Works' plans (section 7.3) were approved and committed later the same day; Armor Test's plans are not started.
 
 **The flow as built:**
 
