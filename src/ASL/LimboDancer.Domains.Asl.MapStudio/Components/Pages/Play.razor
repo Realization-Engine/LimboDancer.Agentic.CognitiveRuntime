@@ -4010,7 +4010,7 @@ else if (state is not null)
         {
             // Pass 29: the busy state is drawn before the gate is asked, so the pickers show as disabled even when the answer is quick.
             StateHasChanged();
-            await Task.Yield();
+            await DrawBusy();
             var revision = (long)(history?.Events.Count ?? 0);
             proposed = new Proposal(action, arguments, await Run(() => Live.Play.ProposeAsync(action, arguments, Live.Principal)), revision);
         }
@@ -4031,6 +4031,14 @@ else if (state is not null)
         ShowProposal();
         Refresh();
     }
+
+    /// <summary>
+    /// Lets the busy state be drawn before the gate is asked (pass 29). A component test that registers <see cref="ImmediateProposals"/> skips the
+    /// wait, so the proposal stays on the test's own thread; the Studio never registers it.
+    /// </summary>
+    private Task DrawBusy() => Services.GetService<ImmediateProposals>() is null ? Yield() : Task.CompletedTask;
+
+    private static async Task Yield() => await Task.Yield();
 
     /// <summary>Runs a gate call; a failure inside it, such as a reviewed package that no longer verifies, is reported, not thrown.</summary>
     private static async Task<PlayResult> Run(Func<Task<PlayResult>> call)
@@ -4076,7 +4084,7 @@ else if (state is not null)
         try
         {
             StateHasChanged();
-            await Task.Yield();
+            await DrawBusy();
             result = await Run(() => Live.Play.ConfirmAsync(proposal.Action, proposal.Arguments, Live.Principal, proposal.Result.Correlation));
         }
         finally

@@ -1,5 +1,7 @@
 using System.Runtime.CompilerServices;
 using Bunit;
+using LimboDancer.Domains.Asl.MapStudio.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Tests;
 
@@ -14,8 +16,9 @@ internal static class PlayMaps
     /// <summary>Sets up the viewport's script, and lets the page's other scripts (the workspace's focus) run as no-ops.</summary>
     public static void UseViewport(this BunitContext context)
     {
-        // Pass 29: a proposal draws its busy state before the gate is asked, so its result arrives a render later; under a full run that can take
-        // longer than the default second.
+        // Pass 29: the page draws its busy state before the gate is asked, which in a component test moves the rest of a proposal to another
+        // thread; the marker keeps it on the test's own. The longer wait covers a full run on a slow machine.
+        context.Services.AddSingleton(new ImmediateProposals());
         BunitContext.DefaultWaitTimeout = TimeSpan.FromSeconds(15);
         context.JSInterop.Mode = JSRuntimeMode.Loose;
         var module = context.JSInterop.SetupModule("./js/boardViewport.js");
