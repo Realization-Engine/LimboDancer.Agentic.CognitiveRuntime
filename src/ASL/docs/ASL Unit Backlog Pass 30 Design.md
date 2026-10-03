@@ -182,6 +182,50 @@ Facts every plan rests on:
 | M7 | L6, level 1: 4-6-7 squad with the MMG, 8-1 leader; L7, ground level: 4-6-7 squad; M7, level 1: 4-6-7 squad with the LMG |
 | M9 | M9, ground level: 4-6-7 squad with the HMG, 8-1 leader |
 
+### 7.2 Gambit: the British
+
+Made 2026-10-03 from the Studio's terrain and LOS on the card's map (board 4 over board 2 reversed; LOS definitive), read with the scratchpad script, with eleven of the cited lines checked again in my Studio's LOS tab: all agreed. Each plan was chosen in a new game in my Studio (`p30-gb-1`, `p30-gb-2`, `p30-gb-3`), and the gate accepted each (20 events: five counters on board, fifteen off board to enter). The user approved all three on 2026-10-03, with the wall added to the facts of plans 1 and 3.
+
+What the plans answer. SSR 2 lets the British set up only five counters, none under "?" and at least two of them MMC, in the hexes numbered 5 to 7 on board 4. The Germans (eight 5-4-8 squads and three leaders) then set up in the hexes numbered 8 to 10, seeing the five, and move first. The other fifteen British counters enter along the north edge in the British half of Turn 1. The British win by exiting 20 Exit VP off the south edge near 2I1, 2Q1, or 2Y1 within eight turns, so the five counters are there to see the Germans, to hold a foothold on a route south, and to live through one German turn alone.
+
+Facts every plan rests on:
+
+- Board 4 is level ground: woods, grain, a few wooden buildings, and dirt roads.
+- The exit hexes lie ten hexes south of board 4's last hexrow. Board 2 is reversed, so 2Y1 is below 4I10 (the west), 2Q1 below 4Q10 (the centre), and 2I1 below 4Y10 (the east).
+- The farmhouse O6-P6 is the only building with an upper level in the British area. A wall runs along the west and south sides of the yard hexes O7 and P7, directly south of it: the Studio's hex facts give wall hexsides O7-N6, O7-N7, O7-O8, P7-O8, and P7-P8, and none on O6 or P6 themselves. The LOS tab blocks P6's ground level from A9 at O7 ("Intervening hexside terrain"), and clears it from level 1. Added to the terrain facts of plans 1 and 3 at the user's word.
+- The Studio's LOS counts grain as a hindrance. The card's date is May, when grain is not in season, so the hindered lines are at least as open as stated.
+- A SW counts among the five counters, as the gate counts them: two squads, their two SW, and a leader make five.
+
+**Plan 1: The farmhouse** (`farmhouse`)
+
+| | |
+|---|---|
+| The idea | Two squads with both LMG and the 9-1 hold the upper floor of the farmhouse O6-P6 in the centre, on the road to the middle exit: a fire base that sees most of the German setup area and draws the Germans toward it while the battalion enters behind. |
+| What it gives up | All five counters and the best leader stand in one wooden building two hexes from the German setup area, and the Germans move first with eight squads; the flanks are not watched from the ground. |
+| Terrain facts | O6 and P6 are wooden building hexes with a level 1 and a stairwell each.<br>From level 1, P6 sees 47 of the 83 hexes numbered 8 to 10 on board 4, from A9 to GG10, and O6 sees 33; from the ground P6 sees 12.<br>O8, P8, and Q8 are at range 2 of P6, and Q9, O9, and N8 at range 3.<br>A wall runs along the west and south sides of the yard hexes O7 and P7, directly south of the farmhouse (hexsides O7-N6, O7-N7, O7-O8, P7-O8, and P7-P8). From P6's ground level it blocks the LOS to the south-west, to A9 for one; from level 1 the LOS passes over it, which is why the plan stands upstairs. |
+| On board (5 counters) | P6, level 1: 4-5-8 squad with the LMG, 9-1 leader; O6, level 1: 4-5-8 squad with the LMG |
+| Off board, to enter on Turn 1 | 2 x 4-5-8 squad with the 2-in. mortar, 4-5-8 squad with the ATR, 7 x 4-5-8 squad, 2 x 8-0 leader |
+
+**Plan 2: West woods** (`west-woods`)
+
+| | |
+|---|---|
+| The idea | A squad with an LMG at the south edge of the woods H5-H6-I5-I6 and a squad with a 2-in. mortar and an 8-0 deeper in them cover the western route, by the dirt road I1-I2-I3-H3 toward the exit below 4I10; the mortar may fire Smoke for the crossing (SSR 3). |
+| What it gives up | Nothing east of hexrow Q is seen, so the Germans may shift there unseen; the 9-1 and both LMG but one stay with the main body, and the woods give less cover than a building. |
+| Terrain facts | H5, H6, I5, and I6 are woods; I1, I2, I3, and H3 are dirt road hexes leading to them from the north edge.<br>H6 sees 32 of the 83 hexes numbered 8 to 10 on board 4, all from A9 to Q10: G8, H8, and I8 at range 2, E8 and G9 at 3.<br>I5 sees only 9 of them, K8 at range 4 the nearest, each through a hindrance of 2 to 4.<br>The Studio's LOS counts grain as a hindrance; the card's date is May, when grain is not in season, so the hindered lines here are at least this open. |
+| On board (5 counters) | H6, ground level: 4-5-8 squad with the LMG; I5, ground level: 4-5-8 squad with the 2-in. mortar, 8-0 leader |
+| Off board, to enter on Turn 1 | 4-5-8 squad with the LMG, 4-5-8 squad with the 2-in. mortar, 4-5-8 squad with the ATR, 7 x 4-5-8 squad, 9-1 leader, 8-0 leader |
+
+**Plan 3: Two posts** (`two-posts`)
+
+| | |
+|---|---|
+| The idea | One squad with an LMG watches from the upper floor of the farmhouse and one with an LMG and an 8-0 from the woods at H6, eight hexes apart: between them they see the German setup area from A9 to GG10, and the Germans cannot tell which route the battalion will take. |
+| What it gives up | Each post is one squad that cannot help the other, and the farmhouse squad has no leader to rally it. |
+| Terrain facts | From level 1, P6 sees 47 of the 83 hexes numbered 8 to 10 on board 4, from A9 to GG10; O8, P8, and Q8 are at range 2.<br>H6 is woods and sees 32 of them, all from A9 to Q10: G8, H8, and I8 at range 2.<br>H6 and P6 are eight hexes apart.<br>A wall runs along the west and south sides of the yard hexes O7 and P7, directly south of the farmhouse (hexsides O7-N6, O7-N7, O7-O8, P7-O8, and P7-P8). From P6's ground level it blocks the LOS to the south-west, to A9 for one; from level 1 the LOS passes over it, which is why the plan stands upstairs.<br>The Studio's LOS counts grain as a hindrance; the card's date is May, when grain is not in season, so the hindered lines here are at least this open. |
+| On board (5 counters) | P6, level 1: 4-5-8 squad with the LMG; H6, ground level: 4-5-8 squad with the LMG, 8-0 leader |
+| Off board, to enter on Turn 1 | 2 x 4-5-8 squad with the 2-in. mortar, 4-5-8 squad with the ATR, 7 x 4-5-8 squad, 9-1 leader, 8-0 leader |
+
 ## 8. Studio checks
 
 Each task is checked in my Studio on port 6670 before it is committed; step 5 checks the whole pass.

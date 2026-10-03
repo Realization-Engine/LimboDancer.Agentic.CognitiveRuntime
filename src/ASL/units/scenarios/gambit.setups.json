@@ -1,0 +1,457 @@
+{
+  "format": "asl-setup-plans/1",
+  "card": "gambit",
+  "plans": [
+    {
+      "id": "farmhouse",
+      "cardSha256": "b68c06850a76c7f7a8ee84404b0ed9b16e7f6a5107ddbad71047fbcf0be4134b",
+      "side": "british",
+      "name": "The farmhouse",
+      "idea": "Two squads with both LMG and the 9-1 hold the upper floor of the farmhouse O6-P6 in the centre, on the road to the middle exit: a fire base that sees most of the German setup area and draws the Germans toward it while the battalion enters behind.",
+      "givesUp": "All five counters and the best leader stand in one wooden building two hexes from the German setup area, and the Germans move first with eight squads; the flanks are not watched from the ground.",
+      "terrain": [
+        "O6 and P6 are wooden building hexes with a level 1 and a stairwell each.",
+        "From level 1, P6 sees 47 of the 83 hexes numbered 8 to 10 on board 4, from A9 to GG10, and O6 sees 33; from the ground P6 sees 12.",
+        "O8, P8, and Q8 are at range 2 of P6, and Q9, O9, and N8 at range 3.",
+        "A wall runs along the west and south sides of the yard hexes O7 and P7, directly south of the farmhouse (hexsides O7-N6, O7-N7, O7-O8, P7-O8, and P7-P8). From P6's ground level it blocks the LOS to the south-west, to A9 for one; from level 1 the LOS passes over it, which is why the plan stands upstairs.",
+        "Board 4 is level ground. The Germans set up in its hexes numbered 8 to 10 after seeing the five counters, and move first, before the other fifteen British counters enter along the north edge.",
+        "The exit hexes lie ten hexes south of board 4's last hexrow: 2Y1 below 4I10, 2Q1 below 4Q10, and 2I1 below 4Y10 (board 2 is reversed)."
+      ],
+      "placements": [
+        {
+          "id": "b-elite-squad-1",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "at": "bd04:P6:1"
+        },
+        {
+          "id": "b-elite-squad-2",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "at": "bd04:O6:1"
+        },
+        {
+          "id": "b-elite-squad-3",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-4",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-5",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-6",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-7",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-8",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-9",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-10",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-11",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-12",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-leader-9-1-1",
+          "definition": "british-leader-9-1",
+          "group": "british-1",
+          "at": "bd04:P6:1"
+        },
+        {
+          "id": "b-leader-8-0-1",
+          "definition": "british-leader-8-0",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-leader-8-0-2",
+          "definition": "british-leader-8-0",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-lmg-1",
+          "definition": "british-lmg",
+          "group": "british-1",
+          "holder": "b-elite-squad-1"
+        },
+        {
+          "id": "b-lmg-2",
+          "definition": "british-lmg",
+          "group": "british-1",
+          "holder": "b-elite-squad-2"
+        },
+        {
+          "id": "b-light-mortar-1",
+          "definition": "british-light-mortar",
+          "group": "british-1",
+          "holder": "b-elite-squad-3"
+        },
+        {
+          "id": "b-light-mortar-2",
+          "definition": "british-light-mortar",
+          "group": "british-1",
+          "holder": "b-elite-squad-4"
+        },
+        {
+          "id": "b-atr-1",
+          "definition": "british-atr",
+          "group": "british-1",
+          "holder": "b-elite-squad-5"
+        }
+      ]
+    },
+    {
+      "id": "west-woods",
+      "cardSha256": "b68c06850a76c7f7a8ee84404b0ed9b16e7f6a5107ddbad71047fbcf0be4134b",
+      "side": "british",
+      "name": "West woods",
+      "idea": "A squad with an LMG at the south edge of the woods H5-H6-I5-I6 and a squad with a 2-in. mortar and an 8-0 deeper in them cover the western route, by the dirt road I1-I2-I3-H3 toward the exit below 4I10; the mortar may fire Smoke for the crossing (SSR 3).",
+      "givesUp": "Nothing east of hexrow Q is seen, so the Germans may shift there unseen; the 9-1 and both LMG but one stay with the main body, and the woods give less cover than a building.",
+      "terrain": [
+        "H5, H6, I5, and I6 are woods; I1, I2, I3, and H3 are dirt road hexes leading to them from the north edge.",
+        "H6 sees 32 of the 83 hexes numbered 8 to 10 on board 4, all from A9 to Q10: G8, H8, and I8 at range 2, E8 and G9 at 3.",
+        "I5 sees only 9 of them, K8 at range 4 the nearest, each through a hindrance of 2 to 4.",
+        "The Studio's LOS counts grain as a hindrance; the card's date is May, when grain is not in season, so the hindered lines here are at least this open.",
+        "Board 4 is level ground. The Germans set up in its hexes numbered 8 to 10 after seeing the five counters, and move first, before the other fifteen British counters enter along the north edge.",
+        "The exit hexes lie ten hexes south of board 4's last hexrow: 2Y1 below 4I10, 2Q1 below 4Q10, and 2I1 below 4Y10 (board 2 is reversed)."
+      ],
+      "placements": [
+        {
+          "id": "b-elite-squad-1",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "at": "bd04:H6:0"
+        },
+        {
+          "id": "b-elite-squad-2",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "at": "bd04:I5:0"
+        },
+        {
+          "id": "b-elite-squad-3",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-4",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-5",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-6",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-7",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-8",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-9",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-10",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-11",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-12",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-leader-9-1-1",
+          "definition": "british-leader-9-1",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-leader-8-0-1",
+          "definition": "british-leader-8-0",
+          "group": "british-1",
+          "at": "bd04:I5:0"
+        },
+        {
+          "id": "b-leader-8-0-2",
+          "definition": "british-leader-8-0",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-lmg-1",
+          "definition": "british-lmg",
+          "group": "british-1",
+          "holder": "b-elite-squad-1"
+        },
+        {
+          "id": "b-lmg-2",
+          "definition": "british-lmg",
+          "group": "british-1",
+          "holder": "b-elite-squad-3"
+        },
+        {
+          "id": "b-light-mortar-1",
+          "definition": "british-light-mortar",
+          "group": "british-1",
+          "holder": "b-elite-squad-2"
+        },
+        {
+          "id": "b-light-mortar-2",
+          "definition": "british-light-mortar",
+          "group": "british-1",
+          "holder": "b-elite-squad-4"
+        },
+        {
+          "id": "b-atr-1",
+          "definition": "british-atr",
+          "group": "british-1",
+          "holder": "b-elite-squad-5"
+        }
+      ]
+    },
+    {
+      "id": "two-posts",
+      "cardSha256": "b68c06850a76c7f7a8ee84404b0ed9b16e7f6a5107ddbad71047fbcf0be4134b",
+      "side": "british",
+      "name": "Two posts",
+      "idea": "One squad with an LMG watches from the upper floor of the farmhouse and one with an LMG and an 8-0 from the woods at H6, eight hexes apart: between them they see the German setup area from A9 to GG10, and the Germans cannot tell which route the battalion will take.",
+      "givesUp": "Each post is one squad that cannot help the other, and the farmhouse squad has no leader to rally it.",
+      "terrain": [
+        "From level 1, P6 sees 47 of the 83 hexes numbered 8 to 10 on board 4, from A9 to GG10; O8, P8, and Q8 are at range 2.",
+        "H6 is woods and sees 32 of them, all from A9 to Q10: G8, H8, and I8 at range 2.",
+        "H6 and P6 are eight hexes apart.",
+        "A wall runs along the west and south sides of the yard hexes O7 and P7, directly south of the farmhouse (hexsides O7-N6, O7-N7, O7-O8, P7-O8, and P7-P8). From P6's ground level it blocks the LOS to the south-west, to A9 for one; from level 1 the LOS passes over it, which is why the plan stands upstairs.",
+        "The Studio's LOS counts grain as a hindrance; the card's date is May, when grain is not in season, so the hindered lines here are at least this open.",
+        "Board 4 is level ground. The Germans set up in its hexes numbered 8 to 10 after seeing the five counters, and move first, before the other fifteen British counters enter along the north edge.",
+        "The exit hexes lie ten hexes south of board 4's last hexrow: 2Y1 below 4I10, 2Q1 below 4Q10, and 2I1 below 4Y10 (board 2 is reversed)."
+      ],
+      "placements": [
+        {
+          "id": "b-elite-squad-1",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "at": "bd04:P6:1"
+        },
+        {
+          "id": "b-elite-squad-2",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "at": "bd04:H6:0"
+        },
+        {
+          "id": "b-elite-squad-3",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-4",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-5",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-6",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-7",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-8",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-9",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-10",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-11",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-elite-squad-12",
+          "definition": "british-elite-squad",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-leader-9-1-1",
+          "definition": "british-leader-9-1",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-leader-8-0-1",
+          "definition": "british-leader-8-0",
+          "group": "british-1",
+          "at": "bd04:H6:0"
+        },
+        {
+          "id": "b-leader-8-0-2",
+          "definition": "british-leader-8-0",
+          "group": "british-1",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "b-lmg-1",
+          "definition": "british-lmg",
+          "group": "british-1",
+          "holder": "b-elite-squad-1"
+        },
+        {
+          "id": "b-lmg-2",
+          "definition": "british-lmg",
+          "group": "british-1",
+          "holder": "b-elite-squad-2"
+        },
+        {
+          "id": "b-light-mortar-1",
+          "definition": "british-light-mortar",
+          "group": "british-1",
+          "holder": "b-elite-squad-3"
+        },
+        {
+          "id": "b-light-mortar-2",
+          "definition": "british-light-mortar",
+          "group": "british-1",
+          "holder": "b-elite-squad-4"
+        },
+        {
+          "id": "b-atr-1",
+          "definition": "british-atr",
+          "group": "british-1",
+          "holder": "b-elite-squad-5"
+        }
+      ]
+    }
+  ]
+}
