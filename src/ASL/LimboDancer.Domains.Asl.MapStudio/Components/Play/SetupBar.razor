@@ -1,0 +1,100 @@
+@* Pass 30 (the workflow rebuilt): the one bar of the setup mode. It says who is setting up and what, how much of it is in the list, and which
+   setup plan the list came from; it holds the only "Propose setup" and "Clear" of the setup; and it asks before a list with changes is replaced or
+   cleared. In a view that may not set up now it only says who is setting up. The page keeps the state. *@
+<div id="setup-bar" class="@(Problems > 0 ? "setup-bar problems" : "setup-bar")" role="group" aria-label="Setup">
+    <p class="setup-bar-text">
+        <strong id="setup-bar-title">@Title</strong>
+        @if (Progress is { Length: > 0 })
+        {
+            <span id="setup-bar-progress">@Progress</span>
+        }
+        @if (Detail is { Length: > 0 })
+        {
+            <span id="setup-bar-detail" class="muted">@Detail</span>
+        }
+    </p>
+    @if (Source is { Length: > 0 })
+    {
+        <p id="setup-bar-source" class="setup-bar-text">@Source</p>
+    }
+    @if (Question is { Length: > 0 })
+    {
+        <div id="setup-bar-ask" class="toolbar" role="group" aria-label="@Question">
+            <span id="setup-ask-text">@Question</span>
+            <button type="button" id="setup-ask-yes" @onclick="@(() => OnAnswer.InvokeAsync(true))">@Yes</button>
+            <button type="button" id="setup-ask-no" class="link" @onclick="@(() => OnAnswer.InvokeAsync(false))">Keep my list</button>
+        </div>
+    }
+    else if (CanAct)
+    {
+        <div class="toolbar" id="setup-bar-actions">
+            <button type="button" id="propose-setup" disabled="@(Count == 0 || Busy)" aria-describedby="propose-setup-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose setup</button>
+            @if (Problems > 0)
+            {
+                <span id="setup-bar-problems" class="status-badge fail">@(Problems == 1 ? "1 problem" : $"{Problems} problems")</span>
+            }
+            @if (Count == 0)
+            {
+                <span id="propose-setup-ready" class="toolbar-note">@Empty</span>
+            }
+            else
+            {
+                <button type="button" id="place-clear" class="link" @onclick="@(() => OnClear.InvokeAsync())">Clear</button>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>Who sets up, such as "German setup", or who is setting up when the viewer may not.</summary>
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    /// <summary>How much is in the list, such as "26 of 26 counters in the list".</summary>
+    [Parameter]
+    public string? Progress { get; set; }
+
+    /// <summary>The OB groups setting up, or what the viewer waits for.</summary>
+    [Parameter]
+    public string? Detail { get; set; }
+
+    /// <summary>Where the list came from, such as "From Forward line, 1 change".</summary>
+    [Parameter]
+    public string? Source { get; set; }
+
+    /// <summary>How many counters the list holds.</summary>
+    [Parameter]
+    public int Count { get; set; }
+
+    /// <summary>How many rows the gate's last refusal named.</summary>
+    [Parameter]
+    public int Problems { get; set; }
+
+    /// <summary>Whether the viewer may propose a setup now.</summary>
+    [Parameter]
+    public bool CanAct { get; set; }
+
+    [Parameter]
+    public bool Busy { get; set; }
+
+    /// <summary>What the bar says in place of Clear while the list is empty.</summary>
+    [Parameter]
+    public string Empty { get; set; } = "The list is empty.";
+
+    /// <summary>A question waiting for its answer, such as "Replace your list?"; null when none waits.</summary>
+    [Parameter]
+    public string? Question { get; set; }
+
+    /// <summary>The word of the answer that goes ahead.</summary>
+    [Parameter]
+    public string Yes { get; set; } = "Replace my list";
+
+    [Parameter]
+    public EventCallback OnPropose { get; set; }
+
+    [Parameter]
+    public EventCallback OnClear { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> OnAnswer { get; set; }
+}

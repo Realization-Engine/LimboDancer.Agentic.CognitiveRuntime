@@ -1,50 +1,67 @@
 @using LimboDancer.Domains.Asl.Play
-@* Pass 30: the card's setup plans for the side that sets up first. The page shows this only in that side's view, while it sets up (ruling
-   R23.3). Each plan says what it is for, what it gives up, and the terrain facts it rests on; "Use this plan" fills the setup list, which is then
+@* Pass 30: the card's setup plans for the side that sets up first, as the Plans tab of the setup mode. The page shows this only in that side's view,
+   while it sets up (ruling R23.3). A card is compact: the plan's name, the first sentence of its idea, and what it gives up; "More" holds the whole
+   idea and the terrain facts. "Show on map" draws the plan on the map and leaves the list alone; "Use this plan" fills the list, which is then
    adjusted and proposed like any setup, so the gate checks it. *@
-<fieldset id="setup-plans" class="setup-plans">
-    <legend>Setup plans for @Side</legend>
+<div id="setup-plans" class="setup-plans" role="group" aria-label="@($"Setup plans for {Side}")">
     @if (Problems.Count > 0)
     {
-        <p id="setup-plans-problem" class="diagnostic warning">The card's setup plans file cannot be read, so it offers no setup plan: @string.Join("; ", Problems) Set up by hand as before.</p>
+        <p id="setup-plans-problem" class="diagnostic warning">The card's setup plans file cannot be read, so it offers no setup plan: @string.Join("; ", Problems) Set up by hand in the Counters tab.</p>
     }
     else
     {
-        <p class="muted" id="setup-plans-help">A setup plan fills the list below with the whole setup. Adjust it in the list or on the map, then propose it: the game checks it like any setup.</p>
+        <p class="muted" id="setup-plans-help">"Show on map" draws a setup plan without touching your list. "Use this plan" fills your list with it; then adjust it and propose it. The game checks it like any setup.</p>
         @foreach (var plan in Plans)
         {
             var chosen = plan.Id == Chosen;
-            <article class="@(chosen ? "setup-plan chosen" : "setup-plan")" data-plan="@plan.Id" aria-labelledby="@($"setup-plan-{plan.Id}-name")">
+            var shown = plan.Id == Shown;
+            <article class="@(chosen ? "setup-plan chosen" : shown ? "setup-plan shown" : "setup-plan")" data-plan="@plan.Id" aria-labelledby="@($"setup-plan-{plan.Id}-name")">
                 <h4 id="@($"setup-plan-{plan.Id}-name")">
                     @plan.Name
                     @if (chosen)
                     {
-                        <span class="status-badge pass">In the list</span>
+                        <span class="status-badge pass">@(Changes > 0 ? (Changes == 1 ? "In your list, 1 change" : $"In your list, {Changes} changes") : "In your list")</span>
+                    }
+                    @if (shown)
+                    {
+                        <span class="status-badge info">Shown on the map</span>
                     }
                     @if (Earlier.Contains(plan.Id))
                     {
                         <span class="status-badge warning" title="The card's text has changed since this plan was made; the game still checks the plan when it is proposed.">Made for an earlier text of this card</span>
                     }
                 </h4>
-                <p>@plan.Idea</p>
-                <p><strong>Gives up:</strong> @plan.GivesUp</p>
-                @if (plan.Terrain.Count > 0)
-                {
-                    <details>
-                        <summary>Terrain facts (@plan.Terrain.Count)</summary>
+                <p class="setup-plan-idea">@FirstSentence(plan.Idea)</p>
+                <p class="setup-plan-gives-up"><strong>Gives up:</strong> @plan.GivesUp</p>
+                <div class="toolbar">
+                    <button type="button" id="@($"show-plan-{plan.Id}")" aria-pressed="@(shown ? "true" : "false")" aria-label="@($"Show on map: {plan.Name}")"
+                            @onclick="@(() => OnShow.InvokeAsync(plan.Id))">@(shown ? "Shown on the map" : "Show on map")</button>
+                    @if (chosen && Changes > 0)
+                    {
+                        <button type="button" id="@($"use-plan-{plan.Id}")" aria-label="@($"Reset your list to {plan.Name}")" @onclick="@(() => OnUse.InvokeAsync(plan.Id))">Reset to @plan.Name</button>
+                    }
+                    else if (!chosen)
+                    {
+                        <button type="button" id="@($"use-plan-{plan.Id}")" aria-label="@($"Use this plan: {plan.Name}")" @onclick="@(() => OnUse.InvokeAsync(plan.Id))">Use this plan</button>
+                    }
+                </div>
+                <details>
+                    <summary>More</summary>
+                    <p>@plan.Idea</p>
+                    @if (plan.Terrain.Count > 0)
+                    {
                         <ul>
                             @foreach (var fact in plan.Terrain)
                             {
                                 <li>@fact</li>
                             }
                         </ul>
-                    </details>
-                }
-                <button type="button" id="@($"use-plan-{plan.Id}")" aria-label="@($"Use this plan: {plan.Name}")" @onclick="@(() => OnUse.InvokeAsync(plan.Id))">@(chosen ? "Fill the list again" : "Use this plan")</button>
+                    }
+                </details>
             </article>
         }
     }
-</fieldset>
+</div>
 
 @code {
     /// <summary>The side the plans are for, in words.</summary>
@@ -62,10 +79,29 @@
     [Parameter]
     public string? Chosen { get; set; }
 
+    /// <summary>How many changes the list has from the plan it was filled from.</summary>
+    [Parameter]
+    public int Changes { get; set; }
+
+    /// <summary>The plan drawn on the map in place of the list; null when the map shows the list.</summary>
+    [Parameter]
+    public string? Shown { get; set; }
+
     /// <summary>The plans made for another text of the card than the game's.</summary>
     [Parameter]
     public IReadOnlySet<string> Earlier { get; set; } = new HashSet<string>();
 
     [Parameter]
     public EventCallback<string> OnUse { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnShow { get; set; }
+
+    /// <summary>The idea's first sentence, as the card's one line; the whole idea is under "More".</summary>
+    public static string FirstSentence(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        var end = text.IndexOfAny(['.', ':', ';']);
+        return end < 0 ? text : text[..end] + ".";
+    }
 }

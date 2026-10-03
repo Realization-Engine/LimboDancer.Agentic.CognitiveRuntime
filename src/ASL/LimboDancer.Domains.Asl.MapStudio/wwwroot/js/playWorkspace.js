@@ -19,6 +19,17 @@ export async function reveal(element, scroll = true) {
     element.focus({ preventScroll: true });
 }
 
+// Brings an element into view by its id, inside its own scrolling pane (pass 30: the stack or the counter of the setup list chosen on the map).
+export function revealId(id) {
+    const element = document.getElementById(id);
+    if (!element) {
+        return;
+    }
+
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    element.scrollIntoView({ block: "nearest", behavior: reduce ? "auto" : "smooth" });
+}
+
 // Opens a disclosure by id and brings it into view (pass 29: the scenario card starts closed, and the context's link opens it).
 export function openDetails(id) {
     const details = document.getElementById(id);

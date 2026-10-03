@@ -443,3 +443,29 @@ Two things read better than expected: at 800 pixels the three plans fit one scre
 6. Under 1024 pixels [20].
 
 **Estimate.** About 4:00 for the rebuild, so pass 30 grows from 5:45 to 9:45 (build 8:30).
+
+**Built 2026-10-03**, the six groups in one stretch, checked in my Studio on port 6670 and committed together, since the bar, the tabs, and the list share the page's markup.
+
+What was built as designed: the setup bar (`SetupBar`), the tabs with compact plan cards (`SetupPlanPicker`) and the list by stack (`SetupCounters`), the map's switcher with `[` and `]`, draft counters and a side's own Dummies, the zoom to the setup areas, the review, the refusal links, the notice after Confirm, and the two reload fixes. The old `SetupPlacementList` stays for counters typed before a game starts and for a game with no OB.
+
+What differs from the design, or was added:
+
+- **A draft is marked by three things:** its counters are drawn slightly paler (their ids start with `draft:`), their hexes are outlined in gold, and a line in the map's toolbar says that nothing is in the game yet. The counters keep their own art; no dashed edge was added to the renderer.
+- **A change to the list drops a refusal shown for the list as it was,** with its marks, so the bar never counts problems the list no longer has.
+- **"Set up <group>" asks first** when the list already holds counters of that group, which it replaces.
+- **The one-counter form starts with an empty Location;** `bd01:D4:0` was a default of the code, not a choice of the card.
+- **Under 1024 pixels** the map's toolbar carries a second, small setup bar (the progress, "Propose setup", "Edit the list", and "Use <plan>" for the plan shown), so a plan is shown, used, and proposed on the Map tab. The bar in the Actions tab stays in view at the top while the list scrolls.
+- **The zoom keeps the map's fit** when the setup area is as wide as the board (Gambit's hexes numbered 5 to 7), where zooming to the area would show the board smaller.
+- **Sizes in the setup mode:** from 1440 pixels the actions column is wider (up to 34rem); from 1024 to 1439 the inspector above the actions keeps at most 26% of the window's height.
+
+**Studio checks, 2026-10-03**, by script:
+
+- 1366x768, The Guards Counterattack, new game `r1-guards`. The new-game form said "This card has 3 setup plans for the German side"; the review of the start said what it does; after Confirm the address read `?game=r1-guards` and the hand-over named the German side. The view opened on the Plans tab with three compact cards, the bar "German setup, 0 of 26 counters in the list", the switcher on the map, and no Play actions.
+- "Show on map" on Out of sight drew that plan and left the list empty; the bar said the map shows a plan, not the list. "Use this plan" on Forward line filled the list (26 counters in 10 hexes), opened Counters, and returned the map to "My list".
+- A click on G6 selected its stack in the list and left the inspector's tab alone. "Move" on a squad, then a click on F6, moved it and kept level 1 (1 change); a click on the street hex F4 put it at ground level and said so. A stack's level menu offered ground, 1, and 2, and moved the whole stack.
+- "Use this plan" on another plan asked "Replace your list? Your 3 changes to Forward line will be lost."; "Keep my list" kept it.
+- Proposed with the squad in the street: refused, the bar red with "1 problem", the review listing the three changes and one link; the link opened Counters with the row marked "refused", its stack selected, and the row in view. "Reset to Forward line" restored the plan.
+- Proposed again: "Set up the German side from Forward line, unchanged: 26 counters in 10 hexes." and "Confirm is final: the setup cannot be changed afterwards.", with no "Picked" line. After Confirm: "The German setup is in the game, from Forward line. Next: the Russian side sets up." and "Hand the screen to the Russian side", which opened the Russian hand-over; the Russian view had two "Set up" buttons and no Plans tab.
+- 1366x768, The Tractor Works, `r2-tractor`: the map opened zoomed on building X3. "Show on map" on Hidden core drew 25 draft counters, the 12 Dummies among them, each named "Russian Dummy, a \"?\" with no unit beneath it". `]` and `[` on the map stepped the switcher. After Confirm the 12 Dummies were still drawn, as the game's own.
+- 800x900, Gambit, `r3-gambit`: "Show on map" opened the Map tab with the plan drawn and the small bar; "Use Two posts" there filled the list. The Counters tab read "On the map: 5 counters in 2 hexes", the area's note counted 5 of 5 with 2 MMC and said no "?" is offered, no row offered "?", and the fifteen others were one closed line, "Off board, to enter: 15 counters, on Turn 1 along the north edge". Nothing scrolled sideways.
+- A reload of `r3-gambit` in the middle of setup opened the same game behind "I am the British side", although the Germans move first, and then the British setup with its plans.
