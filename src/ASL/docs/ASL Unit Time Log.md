@@ -839,4 +839,14 @@ Added by the user on 2026-10-02 as the first task of the UI and playability work
 | 29.2 to 29.4: `BoardWorkspace`, the board viewer as its host, `GameMaps.Layers` with the overlay and view, Play on the workspace with a Proposal tab; `PlayMapPanel` and `PlaySelectedHex` retired; checked in my Studio (6670) at 1920x1080, 1366x768, 1024x768, 683x384, and 320x640 | 18:41 | 19:01 | 0:20 | One fix found in the Studio: a counter click lost the unit's details |
 | The review's fixes and the turned map: "Rotate map" (CSS transform, pointer and drag kept right, remembered), the inspector under the map below 1024px, the Proposal tab held and counted only while Confirm waits, pickers disabled while the gate works, results for another view dropped, the workspace keyed by game and view, hover drawing the inspector alone, ids in the unit list, LOS From, and the small fixes; checked in my Studio (6670) at 1920x1080, 683x384, and 320x640, and on the board viewer | 19:47 | 19:56 | 0:09 | The review read the branch on GitHub; the backlog's rotation row leaves section 44 |
 | The second review's fixes: Fit on a turned map fills the pane's width, the turn remembered per pane shape (a hidden pane has none), the pickers drawn disabled before the gate is asked, Cancel clearing the status, the reveal waiting for the context's height, `?game=` in the address, Good Order's unknown explained, sides spelled as on the counters; checked in my Studio (6670) at 320x640 and 1480x900, and on the board viewer | 20:17 | 20:23 | 0:06 | One fix found in the Studio: a hidden Map tab counted as a wide pane |
-| The third check's fixes: a fitted view fitted again when its pane resizes, a turned map in a wide pane shown whole, the old storage key removed; the resize across 1024px checked in my Studio | 21:35 | 21:41 | 0:06 | |
+| The third check's fixes: a fitted view fitted again when its pane resizes, a turned map in a wide pane shown whole, the old storage key removed; the resize across 1024px checked in my Studio | 21:35 | 21:39 | 0:04 | |
+
+
+## UI improvements from the UX analysis
+
+Claude Design's analysis of the Studio (2026-10-02, the user's PDF). Small tasks on branch `ui-improvements`, each checked in the Studio only, in the order the user approved: the display formatter, the scenario card collapsed on Play, the board viewer's game banner with task 29.5, and the verification counts.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Reading the analysis (8 pages) and sorting its findings | 22:00 | 22:10 | 0:10 | Approximate start |
+| 1. `DisplayText`: sides as on the counters, Yes and No, kinds without `asl:`, board statuses in words, Locations as "F6 on bd01"; applied to Play's context, notes, hand-over, view picker, and non-OB labels, the Game states page, the board headers, and the inspector; checked in my Studio (6670) | 22:12 | 22:18 | 0:06 | |

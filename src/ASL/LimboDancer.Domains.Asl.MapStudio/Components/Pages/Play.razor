@@ -76,7 +76,7 @@
             {
                 var choices = Live.Planner.NonObConcealment(state, side.Id);
                 <fieldset class="setup-non-ob" data-side="@side.Id">
-                    <legend>Non-OB "?" for @side.Id (A12.12; ruling R23.6)</legend>
+                    <legend>Non-OB "?" for @DisplayText.Side(side.Id) (A12.12; ruling R23.6)</legend>
                     <RuleHelp Id="@($"non-ob-help-{side.Id}")" Summary='Once both sides have set up, a stack with no "?" out of the LOS of every unbroken enemy ground unit within 16 hexes may take one (A12.12).'>
                         Once both sides have set up, a stack with no "?" may take one if it is out of the LOS of every unbroken enemy ground unit within 16 hexes, or
                         17 hexes or more from all of them. Hidden units are not on the board and do not count. The game checks this against every enemy unit, those
@@ -84,7 +84,7 @@
                     </RuleHelp>
                     @if (choices.Count == 0)
                     {
-                        <p class="muted non-ob-none">No stack of @side.Id may take a non-OB "?" now.</p>
+                        <p class="muted non-ob-none">No stack of @DisplayText.Side(side.Id) may take a non-OB "?" now.</p>
                     }
                     else
                     {
@@ -92,7 +92,7 @@
                         {
                             var key = $"{side.Id}|{at}";
                             <label><input type="checkbox" class="non-ob-location" value="@at" checked="@nonObChosen.Contains(key)"
-                                          @onchange="@(args => Toggle(nonObChosen, key, args.Value is true))" /> @at</label>
+                                          @onchange="@(args => Toggle(nonObChosen, key, args.Value is true))" /> @DisplayText.Location(at) <span class="muted">@at</span></label>
                         }
                         <button class="propose-non-ob" disabled="@(!choices.Any(at => nonObChosen.Contains($"{side.Id}|{at}")))"
                                 @onclick="@(() => ProposeNonOb(side.Id, choices))">Propose: place @side.Id's non-OB "?"</button>
@@ -241,7 +241,7 @@ else if (state is not null)
                 {
                     <h4>Movement</h4>
                     <RuleHelp Id="move-help" Summary="@($"The {state.PhasingSide} side moves one stack at a time, one Location per step; after each step the DEFENDER may fire or pass (A4.1, A8.1).")">
-                        The @state.PhasingSide side moves one stack at a time, one Location per step (A4.1). After each step the DEFENDER may fire at the stack
+                        The @DisplayText.Side(state.PhasingSide) side moves one stack at a time, one Location per step (A4.1). After each step the DEFENDER may fire at the stack
                         or pass (A8.1, A8.11); the stack then moves on, whole or split, or ends its move. No other unit moves until every member of the stack has
                         ended (A4.2); a member that breaks or is pinned ends its move. A Location holding Residual FP attacks a stack as it enters (A8.22).
                     </RuleHelp>
@@ -313,7 +313,7 @@ else if (state is not null)
                     }
                     else
                     {
-                        <p class="muted" id="move-elsewhere">The @state.PhasingSide side moves now; its movers and their route are its own (choose its view to move; ruling R23.1).</p>
+                        <p class="muted" id="move-elsewhere">The @DisplayText.Side(state.PhasingSide) side moves now; its movers and their route are its own (choose its view to move; ruling R23.1).</p>
                     }
                     @if (state.Movement is { Vehicle: true, WindowOpen: true, Members: [{ } reacting] } && state.Location(reacting)?.Location is { } reactionAt
                         && (Viewer.IsAdjudicator || viewAs != state.PhasingSide) && SeenOnly(ReactionUnits(reactionAt, reacting)).ToArray() is { Length: > 0 } reactors)
@@ -361,7 +361,7 @@ else if (state is not null)
                 @if (state.Phase == "aph" && !Viewer.IsAdjudicator && viewAs != state.PhasingSide)
                 {
                     <h4>Advance</h4>
-                    <p class="muted" id="advance-elsewhere">The @state.PhasingSide side advances now; its units and their Locations are its own (choose its view to advance; ruling R23.1).</p>
+                    <p class="muted" id="advance-elsewhere">The @DisplayText.Side(state.PhasingSide) side advances now; its units and their Locations are its own (choose its view to advance; ruling R23.1).</p>
                 }
                 else if (state.Phase == "aph")
                 {
@@ -426,7 +426,7 @@ else if (state is not null)
                 @if (FiringSide is { } waiting && !Viewer.IsAdjudicator && viewAs != waiting)
                 {
                     <h4>Fire</h4>
-                    <p class="muted" id="fire-elsewhere">The @waiting side may fire now; its fire groups are its own (choose its view to fire; ruling R23.1).</p>
+                    <p class="muted" id="fire-elsewhere">The @DisplayText.Side(waiting) side may fire now; its fire groups are its own (choose its view to fire; ruling R23.1).</p>
                 }
                 else if (FiringSide is { } firing)
                 {
@@ -1952,9 +1952,9 @@ else if (state is not null)
     private string? handOver;
 
     private IReadOnlyList<PerspectivePicker.Choice> ViewChoices => state is null ? []
-        : [.. state.Perspectives.Select(perspective => new PerspectivePicker.Choice(perspective.Name, perspective.IsAdjudicator ? "the adjudicator" : perspective.Name))];
+        : [.. state.Perspectives.Select(perspective => new PerspectivePicker.Choice(perspective.Name, perspective.IsAdjudicator ? "the adjudicator" : DisplayText.Side(perspective.Name)))];
 
-    private static string ViewLabel(string? name) => name is null ? string.Empty : name == Perspective.AdjudicatorName ? "the adjudicator" : $"the {name} side";
+    private static string ViewLabel(string? name) => DisplayText.ViewName(name);
 
     /// <summary>
     /// A new view waits behind the hand-over screen (ruling R23.2); what the last one prepared is dropped, since it may rest on what the next may not
@@ -4213,7 +4213,7 @@ else if (state is not null)
 
     /// <summary>The context line: the revision, turn, phase, and phasing side, and whether setup is open; null with no game shown.</summary>
     private string? ContextSummary => state is null || history is null ? null
-        : (history.Current is not null ? string.Empty : "The game does not replay: ") + $"Turn {state.Turn}, {state.PhasingSide} {Games.PhaseLabel(state.Phase)}."
+        : (history.Current is not null ? string.Empty : "The game does not replay: ") + $"Turn {state.Turn}, {DisplayText.Side(state.PhasingSide)} {Games.PhaseLabel(state.Phase)}."
             + (SetupOpen ? " Setup is open." : state.Ended is not null ? " The game has ended; nothing more is played." : string.Empty);
 
     /// <summary>
@@ -4248,13 +4248,13 @@ else if (state is not null)
         var defender = shown.Sides.FirstOrDefault(side => side.Id != shown.PhasingSide)?.Id;
         if (shown.Choice is { } choice)
         {
-            return (choice.Side, $"The {choice.Side} side has a choice to make before play goes on.");
+            return (choice.Side, $"The {DisplayText.Side(choice.Side)} side has a choice to make before play goes on.");
         }
 
         if (shown.PendingSurrenders.FirstOrDefault() is { } surrender
             && surrender.Captors.Select(shown.Unit).OfType<UnitInstance>().Select(unit => unit.Side).FirstOrDefault() is { } captors)
         {
-            return (captors, $"The {captors} side answers a surrender (A20.21).");
+            return (captors, $"The {DisplayText.Side(captors)} side answers a surrender (A20.21).");
         }
 
         if (shown.Phase == "mph" && shown.Movement is { WindowOpen: true })
@@ -4264,16 +4264,16 @@ else if (state is not null)
 
         if (shown.Phase == "dfph")
         {
-            return (defender, $"The {defender} side may fire, then ends the {Games.PhaseLabel(shown.Phase)}.");
+            return (defender, $"The {DisplayText.Side(defender)} side may fire, then ends the {Games.PhaseLabel(shown.Phase)}.");
         }
 
         if (shown.Phase is "rph" or "rtph" or "ccph")
         {
             var other = viewAs == shown.PhasingSide ? defender : shown.PhasingSide;
-            return (other, $"Both sides act in the {Games.PhaseLabel(shown.Phase)}, the {shown.PhasingSide} side first.");
+            return (other, $"Both sides act in the {Games.PhaseLabel(shown.Phase)}, the {DisplayText.Side(shown.PhasingSide)} side first.");
         }
 
-        return (shown.PhasingSide, $"The {shown.PhasingSide} side acts in the {Games.PhaseLabel(shown.Phase)}.");
+        return (shown.PhasingSide, $"The {DisplayText.Side(shown.PhasingSide)} side acts in the {Games.PhaseLabel(shown.Phase)}.");
     }
 
     private void HandOverToAwaiting()

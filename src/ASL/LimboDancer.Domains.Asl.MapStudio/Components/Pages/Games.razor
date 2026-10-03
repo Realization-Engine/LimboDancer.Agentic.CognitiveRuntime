@@ -58,11 +58,11 @@ else
                 <tbody>
                     @foreach (var equipment in view.Equipment)
                     {
-                        <tr><td>@equipment.Id</td><td>@equipment.Kind</td><td>@equipment.Side</td><td>@(equipment.Holding is { } holding ? $"{holding.Role.ToString().ToLowerInvariant()} by {holding.Holder}" : LocationText(equipment.Id, equipment.Position))</td></tr>
+                        <tr><td>@equipment.Id</td><td>@DisplayText.Kind(equipment.Kind)</td><td>@DisplayText.Side(equipment.Side)</td><td>@(equipment.Holding is { } holding ? $"{holding.Role.ToString().ToLowerInvariant()} by {holding.Holder}" : LocationText(equipment.Id, equipment.Position))</td></tr>
                     }
                     @foreach (var entity in view.Entities)
                     {
-                        <tr><td>@entity.Id</td><td>@entity.Kind</td><td>@entity.Side</td><td>@LocationText(entity.Id, entity.Position)</td></tr>
+                        <tr><td>@entity.Id</td><td>@DisplayText.Kind(entity.Kind)</td><td>@DisplayText.Side(entity.Side)</td><td>@LocationText(entity.Id, entity.Position)</td></tr>
                     }
                 </tbody>
             </table>
@@ -148,9 +148,9 @@ else
         documents = view is null ? new(StringComparer.Ordinal)
             : GameDocuments.For(view, Library.Vocabulary, GamesLibrary.Catalogs).ToDictionary(document => document.Id, StringComparer.Ordinal);
         unitRows = view is null ? [] : [.. view.Units.Select(unit => new ProjectedGameUnitTable.Row(unit.Id, Preview(unit.Id), Label(unit.Id, unit.Kind),
-                LocationText(unit.Id, unit.Position), ConditionsText(unit), Conditions.Name(GameState.GoodOrder(unit, Library.Vocabulary)), LineageText(unit))),
+                LocationText(unit.Id, unit.Position), ConditionsText(unit), DisplayText.YesNo(GameState.GoodOrder(unit, Library.Vocabulary)), LineageText(unit))),
             .. view.Sealed.Select(presence => new ProjectedGameUnitTable.Row(presence.PlacementId, Preview(presence.PlacementId),
-                $"concealed {presence.Side} presence", presence.Location.ToString(), "withheld", "withheld", string.Empty))];
+                $"concealed {DisplayText.Side(presence.Side)} presence", presence.Location.ToString(), "withheld", "withheld", string.Empty))];
         caseResult = null;
         var attackers = Attackers.Select(attacker => attacker.Id).ToArray();
         caseDraft = caseDraft with
