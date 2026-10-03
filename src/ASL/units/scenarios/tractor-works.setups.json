@@ -207,7 +207,7 @@
       "side": "russian",
       "name": "East front",
       "idea": "The weight faces the assault engineers and Kampfgruppe Tienham: two squads in each hex of the east face with the HMG, both MMG, and the 9-2, two more at X5, and two in the centre. The west face is one squad with an LMG at W4 and at X2, with Dummies at W5 and X3.",
-      "givesUp": "The west face is thin and half of it is Dummies; it leans on the remnants, who set up after the Germans, to keep Kampfgruppe Stahler busy.",
+      "givesUp": "The west face is thin and half of it is Dummies; it leans on the remnants, who set up after the Germans, to keep Kampfgruppe Stahler busy. The 9-2 stands at Y4, the centre of the east face, so the HMG at Y5 fires without a leader.",
       "terrain": [
         "The east face looks at the assault engineers' buildings: Y3, Y4, and Y5 see AA4 at range 2, Y4 and Y5 see AA5 at range 2, and Y5 and X5 see Y7 and Z6 at range 2.",
         "The west face looks at Kampfgruppe Stahler's building U3: W4, X2, and X3 see V2 at range 2, W4 sees U3 at range 2, and X2, X3, and W5 see U3 at range 3.",
@@ -418,7 +418,7 @@
       "side": "russian",
       "name": "Hidden core",
       "idea": "The east face, two hexes from the flamethrowers and demolition charges, holds only Dummies, three to a hex. The real force stands one hex back: three squads and the 9-2 in the centre, where nothing sees them, and the machine guns at X5, X3, W4, W5, and X2.",
-      "givesUp": "Y3, Y4, and Y5 are not defended: a German squad that enters them takes their Control, and the Russians must take back at least one to keep six hexes.",
+      "givesUp": "Y3, Y4, and Y5 are not defended: a German squad that enters them takes their Control, and the Russians must take back at least one to keep six hexes. The 9-2 stands with the centre stack and directs no machine gun at the start.",
       "terrain": [
         "The east face looks at the assault engineers' buildings: Y3, Y4, and Y5 see AA4 at range 2, Y4 and Y5 see AA5 at range 2, and Y5 and X5 see Y7 and Z6 at range 2.",
         "X4, the centre hex, has no LOS to or from any German setup Location, nor to any hex next to the building.",

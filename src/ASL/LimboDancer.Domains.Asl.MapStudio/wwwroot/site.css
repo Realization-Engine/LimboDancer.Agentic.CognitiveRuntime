@@ -1875,6 +1875,18 @@ details.advanced > summary {
     padding: 0.15rem 0;
 }
 
+/* A long holder's name is cut by its select at a narrow width, so the pane never scrolls sideways. */
+.setup-row label,
+.setup-stack-head label {
+    max-width: 100%;
+    min-width: 0;
+}
+
+.setup-row select,
+.setup-stack-head select {
+    max-width: 100%;
+}
+
 .setup-row.held {
     padding-left: 1.25rem;
 }
@@ -1940,11 +1952,39 @@ details.advanced > summary {
     display: none;
 }
 
-/* A group's button names the group, which may be long: it wraps inside its border. */
-.setup-group {
+/* The setup's buttons name groups, plans, and sides, which may be long: they wrap inside their borders. */
+.setup-group,
+.setup-switcher button,
+.setup-bar button:not(.link),
+.setup-plan button,
+.setup-done button {
     height: auto;
+    min-height: 2.1rem;
     text-align: left;
     white-space: normal;
+}
+
+/* A plan's idea shows its first lines on the card; "More" holds it whole. */
+.setup-plan-idea {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
+}
+
+/* A row or a stack brought into view stops below the bar that stays at the top of the pane, not under it. */
+.setup-row,
+.setup-stack,
+.setup-plan {
+    scroll-margin-top: 8rem;
+}
+
+/* In a short window the bar scrolls with the page, so it never fills the window. */
+@media (max-height: 32rem) {
+    .setup-bar {
+        position: static;
+    }
 }
 
 /* In the setup mode the actions pane does the work, so it takes the room: wide, a broader first column; from 1024px to 1439px the inspector keeps

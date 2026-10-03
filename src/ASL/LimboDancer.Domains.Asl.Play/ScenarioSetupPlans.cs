@@ -89,6 +89,11 @@ public static partial class ScenarioSetupPlans
             return new SetupPlansRead([], ["setups.json: the file is empty"]);
         }
 
+        if (file.Plans is null || file.Plans.Any(plan => plan is null || plan.Placements is null || plan.Placements.Any(item => item is null)))
+        {
+            return new SetupPlansRead([], ["setups.plans: the file lists its plans, and each plan its placements"]);
+        }
+
         var found = Validate(card, file, catalog);
         return found.Count > 0 ? new SetupPlansRead([], found) : new SetupPlansRead(file.Plans, []);
     }

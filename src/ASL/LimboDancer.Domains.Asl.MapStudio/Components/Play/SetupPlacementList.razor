@@ -15,7 +15,7 @@
                     @if (CanPick)
                     {
                         <button type="button" class="link place-row-pick" id="@($"place-row-{index}-pick")" aria-pressed="@(item.Picking ? "true" : "false")"
-                                title="The next click on the map fills this Location, at ground level." @onclick="@(() => OnPick.InvokeAsync(item.Key))">@(item.Picking ? "Click a hex on the map" : "Pick on the map")</button>
+                                title="The next click on the map fills this Location." @onclick="@(() => OnPick.InvokeAsync(item.Key))">@(item.Picking ? "Click a hex on the map" : "Pick on the map")</button>
                     }
                 }
                 @if (item.Holders is { } holders)

@@ -1,6 +1,6 @@
 @using LimboDancer.Domains.Asl.Play
 @* Pass 30: the card's setup plans for the side that sets up first, as the Plans tab of the setup mode. The page shows this only in that side's view,
-   while it sets up (ruling R23.3). A card is compact: the plan's name, the first sentence of its idea, and what it gives up; "More" holds the whole
+   while it sets up (ruling R23.3). A card is compact: the plan's name, the first lines of its idea, and what it gives up; "More" holds the whole
    idea and the terrain facts. "Show on map" draws the plan on the map and leaves the list alone; "Use this plan" fills the list, which is then
    adjusted and proposed like any setup, so the gate checks it. *@
 <div id="setup-plans" class="setup-plans" role="group" aria-label="@($"Setup plans for {Side}")">
@@ -28,10 +28,10 @@
                     }
                     @if (Earlier.Contains(plan.Id))
                     {
-                        <span class="status-badge warning" title="The card's text has changed since this plan was made; the game still checks the plan when it is proposed.">Made for an earlier text of this card</span>
+                        <span class="status-badge warning">Made for an earlier version of this card</span>
                     }
                 </h4>
-                <p class="setup-plan-idea">@FirstSentence(plan.Idea)</p>
+                <p class="setup-plan-idea">@plan.Idea</p>
                 <p class="setup-plan-gives-up"><strong>Gives up:</strong> @plan.GivesUp</p>
                 <div class="toolbar">
                     <button type="button" id="@($"show-plan-{plan.Id}")" aria-pressed="@(shown ? "true" : "false")" aria-label="@($"Show on map: {plan.Name}")"
@@ -48,6 +48,10 @@
                 <details>
                     <summary>More</summary>
                     <p>@plan.Idea</p>
+                    @if (Earlier.Contains(plan.Id))
+                    {
+                        <p class="setup-plan-earlier">The card has changed since this plan was made. It is still offered, and the game checks it when it is proposed.</p>
+                    }
                     @if (plan.Terrain.Count > 0)
                     {
                         <ul>
@@ -97,11 +101,4 @@
     [Parameter]
     public EventCallback<string> OnShow { get; set; }
 
-    /// <summary>The idea's first sentence, as the card's one line; the whole idea is under "More".</summary>
-    public static string FirstSentence(string text)
-    {
-        ArgumentNullException.ThrowIfNull(text);
-        var end = text.IndexOfAny(['.', ':', ';']);
-        return end < 0 ? text : text[..end] + ".";
-    }
 }

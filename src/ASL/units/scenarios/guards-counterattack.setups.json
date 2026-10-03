@@ -354,8 +354,8 @@
       "cardSha256": "ad43d29ddd9a989bd30953abbf620a93e866ec9bbc566906e696b115fd348dae",
       "side": "german",
       "name": "Tripwire and reserve",
-      "idea": "In each large building one squad with a machine gun watches the street from level 1, and the rest of the platoon waits by the stairwell, out of sight or nearly so, to fire at the Russians who get in.",
-      "givesUp": "Only one squad of each platoon fires as the Russians cross; the forward squads fight alone until the reserve comes up.",
+      "idea": "Each platoon keeps part of its strength back by its stairwell, out of sight or nearly so, to fire at the Russians who get in: two squads and the 9-1 in F6, a squad and the 8-0 in J5, a squad in L7. The other squads watch the streets from level 1 with the machine guns.",
+      "givesUp": "Four of the nine squads in the three large buildings do not fire as the Russians cross; the forward squads fight alone until the reserve comes up, and the squad at L7 has no leader.",
       "terrain": [
         "H5 sees G5, H4, I5, and I6 at range 1 and F4 and I4 at 2; of the Russian setup Locations only E4 (range 3), G4 (range 2), and J2 (range 4) see it.",
         "F6, the F5 building's stairwell hex, has no LOS to or from any Russian setup Location.",

@@ -156,7 +156,7 @@ export function create(host, dotnet) {
             state.points = [];
             clearOverlay(state);
             state.dotnet.invokeMethodAsync("OnBoardKey", "Escape");
-        } else if (event.key === "[" || event.key === "]") {
+        } else if ((event.key === "[" || event.key === "]") && !event.ctrlKey && !event.metaKey && !event.altKey) {
             state.dotnet.invokeMethodAsync("OnBoardKey", event.key);
         } else if (event.key === "Enter" && state.points.length > 0) {
             finishGesture(state);

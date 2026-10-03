@@ -105,9 +105,20 @@ public sealed partial class ScenarioCardLibrary(string? directory)
             return ScenarioSetupPlans.EmbeddedText(name);
         }
 
-        return IsUser(name) && Directory is { } root && new FileInfo(Path.Combine(root, name + ScenarioSetupPlans.Suffix)) is { Exists: true } file
-            ? File.ReadAllText(file.FullName).ReplaceLineEndings("\n")
-            : null;
+        if (!IsUser(name) || Directory is not { } root || new FileInfo(Path.Combine(root, name + ScenarioSetupPlans.Suffix)) is not { Exists: true } file)
+        {
+            return null;
+        }
+
+        try
+        {
+            return File.ReadAllText(file.FullName).ReplaceLineEndings("\n");
+        }
+        catch (IOException)
+        {
+            // The file is being written or is locked: the card offers no plan this time, and setup by hand goes on.
+            return null;
+        }
     }
 
     /// <summary>A card's setup plans (pass 30), read and checked for form; null when the card has no setups file or cannot itself be read.</summary>

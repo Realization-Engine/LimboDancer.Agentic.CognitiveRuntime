@@ -158,7 +158,7 @@
       "side": "british",
       "name": "West woods",
       "idea": "A squad with an LMG at the south edge of the woods H5-H6-I5-I6 and a squad with a 2-in. mortar and an 8-0 deeper in them cover the western route, by the dirt road I1-I2-I3-H3 toward the exit below 4I10; the mortar may fire Smoke for the crossing (SSR 3).",
-      "givesUp": "Nothing east of hexrow Q is seen, so the Germans may shift there unseen; the 9-1 and both LMG but one stay with the main body, and the woods give less cover than a building.",
+      "givesUp": "Nothing east of hexrow Q is seen, so the Germans may shift there unseen; the 9-1 and one LMG stay with the main body, the woods give less cover than a building, and from I5 the mortar sees little, so it must move up to H6 before it can lay Smoke on the German area.",
       "terrain": [
         "H5, H6, I5, and I6 are woods; I1, I2, I3, and H3 are dirt road hexes leading to them from the north edge.",
         "H6 sees 32 of the 83 hexes numbered 8 to 10 on board 4, all from A9 to Q10: G8, H8, and I8 at range 2, E8 and G9 at 3.",

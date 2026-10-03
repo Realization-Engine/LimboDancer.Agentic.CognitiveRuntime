@@ -96,33 +96,35 @@
         @if (SetupMode && SetupView is { } modeReport)
         {
             @* Pass 30, the workflow rebuilt: setup is a mode of the actions pane: one bar, and the Plans, Counters, and Card OB tabs. *@
-            @if (setupDone is { } done)
-            {
-                <div id="setup-done" class="setup-done" role="status">
-                    <p>@done.Text</p>
-                    @if (done.Next is { } nextSide && nextSide != viewAs && !Viewer.IsAdjudicator)
-                    {
-                        <button type="button" id="setup-handover" @onclick="@(() => ChangeView(nextSide))">Hand the screen to the @DisplayText.Side(nextSide) side</button>
-                    }
-                </div>
-            }
+            <div id="setup-done-live" aria-live="polite">
+                @if (setupDone is { } done)
+                {
+                    <div id="setup-done" class="setup-done">
+                        <p>@done.Text</p>
+                        @if (done.Next is { } nextSide && nextSide != viewAs && !Viewer.IsAdjudicator)
+                        {
+                            <button type="button" id="setup-handover" @onclick="@(() => ChangeView(nextSide))">Hand the screen to the @DisplayText.Side(nextSide) side</button>
+                        }
+                    </div>
+                }
+            </div>
             <SetupBar Title="@SetupBarTitle" Progress="@SetupBarProgress" Detail="@SetupBarDetail" Source="@SetupBarSource" Count="@placements.Count"
-                      Problems="@ProblemKeys.Count" CanAct="@(MaySetUp.Count > 0 || placements.Count > 0)" Busy="@busy"
+                      Problems="@(SetupProblems?.Count ?? 0)" CanAct="@(MaySetUp.Count > 0 || placements.Count > 0)" Busy="@busy"
                       Empty="@(MaySetUp.Count == 0 ? "The list is empty." : PlansOffered is { Plans.Count: > 0 } ? "The list is empty: use a setup plan, or \"Set up\" a group under Counters."
                           : "The list is empty: \"Set up\" a group under Counters, or add counters by hand.")"
                       Question="@setupAsk?.Text" Yes="@(setupAsk?.Yes ?? string.Empty)" OnPropose="@ProposeSetup" OnClear="@AskClear" OnAnswer="@AnswerAsk" />
             @if (modeReport.Groups.Where(group => Unseen.Contains(group.Id)).Select(group => group.Side).Distinct().ToArray() is { Length: > 0 } unseenNow)
             {
                 <p id="setup-out-of-sight" class="diagnostic">
-                    @string.Join(" and ", unseenNow.Select(DisplayText.Side)) @(unseenNow.Length == 1 ? "sets" : "set") up now, out of your sight: its placements are not shown to
-                    @DisplayText.ViewName(Viewer.Name) until it has finished, and only it places units now. Hand the screen over by choosing its view (A12.12; ruling R23.3).
+                    The @string.Join(" and the ", unseenNow.Select(DisplayText.Side)) side @(unseenNow.Length == 1 ? "sets" : "set") up now, out of your sight: its placements are not
+                    shown to @DisplayText.ViewName(Viewer.Name) until it has finished, and only it places units now. Hand the screen over by choosing its view (A12.12).
                 </p>
             }
             @if (placeNote is not null)
             {
                 <p id="place-note" class="diagnostic warning">@placeNote</p>
             }
-            @if (PlansOffered is null && MaySetUp.Count > 0 && modeReport.CurrentOrder == 1)
+            @if (PlansOffered is null && MaySetUp.Count > 0 && modeReport.CurrentOrder == 1 && !Viewer.IsAdjudicator)
             {
                 <p id="setup-no-plans" class="muted">This card has no setup plans: set up by hand under Counters.</p>
             }
@@ -139,15 +141,15 @@
                 }
                 else
                 {
-                    @if (MaySetUp.Count > 0)
+                    @if (MaySetUp.Any(id => GroupLacks(id) > 0))
                     {
                         <div class="toolbar" id="setup-groups">
-                            @foreach (var group in modeReport.Groups.Where(group => MaySetUp.Contains(group.Id)))
+                            @foreach (var group in modeReport.Groups.Where(group => MaySetUp.Contains(group.Id) && GroupLacks(group.Id) > 0))
                             {
-                                <button type="button" class="setup-group" id="@($"setup-group-{group.Id}")" aria-label="@($"Set up this group: {group.Name}")"
-                                        title="Fills the list with one row for each counter the group still has to set up." @onclick="@(() => AskSetUpGroup(group.Id))">Set up @group.Name</button>
+                                var topUp = placements.Any(row => row.Group == group.Id);
+                                <button type="button" class="setup-group" id="@($"setup-group-{group.Id}")" @onclick="@(() => SetUpGroupNow(group.Id))">@(topUp ? $"Add what {group.Name} still owes" : $"Set up {group.Name}")</button>
                             }
-                            <span class="toolbar-note">Fills the list with what the group still has to set up.</span>
+                            <span class="toolbar-note">Adds one line for each counter the group still has to set up and the list does not hold yet.</span>
                         </div>
                     }
                     <SetupCounters Model="@CounterModel" OnChange="@ChangePlacement" OnMove="@(key => pickingKey = pickingKey == key ? null : key)" OnLevel="@SetStackLevel"
@@ -185,7 +187,7 @@
                         ? "The list below holds counters: propose them, or clear the list to start with none."
                         : $"Starts the game with no counter placed. {DisplayText.Side(startCard.Turns.SetsUpFirst)} then sets up first, on the map, in its own view.")</span>
                 </div>
-                <details id="setup-before-start" open="@(placements.Count > 0)">
+                <details id="setup-before-start">
                     <summary>Or type the first counters here</summary>
                     <SetupPlacementEditor Draft="@PlaceDraft" Definitions="@DefinitionChoices" Groups="@GroupChoiceList" Entries="@EntryChoices"
                         Kind="@(Definitions.FirstOrDefault(definition => definition.Id == placeDefinition)?.Kind)" Note="@placeNote" OnDraft="@ApplyPlaceDraft" OnAdd="@AddPlacement" />
@@ -209,7 +211,7 @@
                                  Outcome="@OutcomeText(proposal.Result.Outcome, Withheld(proposal))" Reasons="@([.. ReviewReasons(proposal)])"
                                  CanConfirm="@(proposal.Result.Outcome == PlayOutcome.NeedsConfirmation)" Busy="@busy" Confirm="Confirm" Cancel="@CancelProposal">
                 <Lead>
-                    @if (proposal.Action == GameActions.Setup && setupReview is { } summary)
+                    @if (PlacesCounters(proposal) && setupReview is { } summary)
                     {
                         <div id="setup-review">
                             <p id="setup-review-text">@summary.Text</p>
@@ -691,7 +693,7 @@ else if (state is not null)
                             {
                                 <div class="toolbar">
                                     <button type="button" id="map-propose-setup" disabled="@(placements.Count == 0 || busy)" @onclick="@ProposeSetup">Propose setup</button>
-                                    <button type="button" id="map-edit-list" class="link" @onclick="@(() => { paneTab = "actions"; setupTab = "counters"; })">Edit the list (@placements.Count)</button>
+                                    <button type="button" id="map-edit-list" class="link" @onclick="@(() => { setupTab = "counters"; ShowActions(); })">Edit the list (@placements.Count)</button>
                                     @if (shownPlan is { } shownId && PlansOffered?.Plans.FirstOrDefault(plan => plan.Id == shownId) is { } shownOne && shownId != chosenPlan)
                                     {
                                         <button type="button" id="map-use-shown" @onclick="@(() => AskUsePlan(shownId))">Use @shownOne.Name</button>
@@ -708,9 +710,18 @@ else if (state is not null)
                                 : placements.Count > 0 ? "The counters of your list are a draft, drawn paler, with their hexes outlined: nothing is in the game until you propose and confirm." : string.Empty)</span>
                         </div>
                     }
-                    @if (MoveBanner is { } moving)
+                    @if (SetupMode)
                     {
-                        <p id="setup-move-banner" class="diagnostic" role="status">@moving <button type="button" class="link" id="setup-move-cancel" @onclick="@(() => pickingKey = null)">Cancel</button></p>
+                        <div id="setup-move-live" aria-live="polite">
+                            @if (MoveBanner is { } moving)
+                            {
+                                <p id="setup-move-banner" class="diagnostic">
+                                    @moving
+                                    <label>or type its Location <input id="setup-move-location" size="11" placeholder="bd01:F5:1" @onchange="@(args => MoveTyped(args.Value as string ?? string.Empty))" /></label>
+                                    <button type="button" class="link" id="setup-move-cancel" @onclick="@(() => pickingKey = null)">Cancel</button>
+                                </p>
+                            }
+                        </div>
                     }
                 </Toolbar>
             </BoardWorkspace>
@@ -1035,6 +1046,21 @@ else if (state is not null)
     {
         get
         {
+            var key = (history, state?.Revision ?? -1, viewAs, handOver, SetupOpen);
+            if (!offeredCache.Read || offeredCache.Key != key)
+            {
+                offeredCache = (key, true, ComputePlansOffered());
+            }
+
+            return offeredCache.Plans;
+        }
+    }
+
+    private ((GameHistory? History, long Revision, string View, string? HandOver, bool Open) Key, bool Read, (IReadOnlyList<SetupPlan> Plans, IReadOnlyList<string> Problems)? Plans) offeredCache;
+
+    private (IReadOnlyList<SetupPlan> Plans, IReadOnlyList<string> Problems)? ComputePlansOffered()
+    {
+        {
             if (state is not { Scenario: { } playing } || !SetupOpen || history?.Current is null || handOver is not null || Viewer.IsAdjudicator
                 || SetupCard is not { Minimal: false } card || card.Turns.SetsUpFirst != viewAs || SetupView is not { } report || PublishedCatalog is not { } catalog)
             {
@@ -1114,10 +1140,14 @@ else if (state is not null)
         (chosenPlan, shownPlan, setupTab, placeNote, setupDone) = (plan.Id, null, "counters", null, null);
         ListChanged();
 
-        // Under 1024px the plan just chosen is looked at on the map, where the setup's bar is too.
+        // Under 1024px the plan just chosen is looked at on the map, where the setup's bar is too; wider, the list takes the focus.
         if (narrow)
         {
-            paneTab = "map";
+            (paneTab, focusMap) = ("map", true);
+        }
+        else
+        {
+            ShowActions(scroll: false);
         }
     }
 
@@ -1149,12 +1179,26 @@ else if (state is not null)
     private bool SetupIncomplete => SetupView is { } report && (report.CurrentOrder is not null || report.Groups.Any(group => group.OffBoard.Count > 0));
 
     /// <summary>The side whose group is in the order setting up now; null once every group has set up, or for a game with no OB.</summary>
-    private string? SettingUpSide => state is not null && SetupOpen && Live.Planner.CardSetup(state, new HashSet<string>()) is { CurrentOrder: { } now } report
+    private string? SettingUpSide => state is not null && SetupOpen && SetupView is { CurrentOrder: { } now } report
         ? report.Groups.FirstOrDefault(group => group.SetsUp && !group.Complete && group.Order == now)?.Side
         : null;
 
+    /// <summary>Whether a proposal is a setup that places counters; the non-OB "?" is a setup too, and has its own short review (referee, pass 30).</summary>
+    private static bool PlacesCounters(Proposal proposal) => proposal.Action == GameActions.Setup && !proposal.Arguments.TryGetProperty("conceal", out _);
+
     private void RemovePlacement(string key)
     {
+        if (placements.FirstOrDefault(item => item.Key == key) is { } removed)
+        {
+            for (var index = 0; index < placements.Count; index++)
+            {
+                if (placements[index].Holder == removed.Id)
+                {
+                    placements[index] = placements[index] with { Holder = null, Role = null, Location = placements[index].Kind == "asl:gun" ? string.Empty : placements[index].Location };
+                }
+            }
+        }
+
         placements.RemoveAll(item => item.Key == key);
         pickingKey = pickingKey == key ? null : pickingKey;
         chosenPlan = placements.Count == 0 ? null : chosenPlan;
@@ -1165,6 +1209,23 @@ else if (state is not null)
     {
         placements.Clear();
         (pickingKey, chosenPlan, selectedStack, setupAsk) = (null, null, null, null);
+        listVersion++;
+    }
+
+    // Bumped at every change of the list: what is computed from the list is kept until it changes.
+    private int listVersion;
+
+    /// <summary>A Gun manned by a crew of the list stands where its crew stands (C10.1), so it follows the crew when the crew is placed or moved.</summary>
+    private void FollowCrews()
+    {
+        for (var index = 0; index < placements.Count; index++)
+        {
+            if (placements[index] is { Role: "manned", Holder: { } crew } gun && placements.FirstOrDefault(row => row.Id == crew) is { OffBoard: false } manning
+                && manning.Location != gun.Location)
+            {
+                placements[index] = gun with { Location = manning.Location };
+            }
+        }
     }
 
     private SetupPlan? ChosenPlan => chosenPlan is { } id ? PlansOffered?.Plans.FirstOrDefault(plan => plan.Id == id) : null;
@@ -1186,7 +1247,7 @@ else if (state is not null)
         shownPlan = shownPlan == id ? null : id;
         if (narrow)
         {
-            paneTab = "map";
+            (paneTab, focusMap) = ("map", true);
         }
     }
 
@@ -1212,7 +1273,7 @@ else if (state is not null)
             return committed;
         }
 
-        var key = $"{gameId}/{state.Revision}/{Viewer.Name}/" + string.Join('|', rows.Select(row => $"{row.Id}@{row.Location}@{row.Holder}@{row.Role}@{row.Concealed}@{row.Facing}@{row.OffBoard}"));
+        var key = $"{gameId}/{state.Revision}/{Viewer.Name}/" + string.Join('|', rows.Select(row => $"{row.Id}@{row.Definition}@{row.Kind}@{row.Location}@{row.Holder}@{row.Role}@{row.Concealed}@{row.Facing}@{row.OffBoard}"));
         if (draftCache.Key != key)
         {
             var packs = catalog.Vocabulary;
@@ -1253,6 +1314,27 @@ else if (state is not null)
 
     private const string DraftPrefix = "draft:";
 
+    // The hexes of the setup areas the viewer may set up in, read once per game, revision, and view.
+    private (string? Key, IReadOnlyList<BoardLocation> Hexes) areaCache;
+
+    private IReadOnlyList<BoardLocation> SetupAreaHexes(StudioBoard board)
+    {
+        if (SetupCard is not { } card || SetupView is not { } report || state is null)
+        {
+            return [];
+        }
+
+        var key = $"{gameId}/{state.Revision}/{Viewer.Name}/{board.Ref.Value}";
+        if (areaCache.Key != key)
+        {
+            var areas = report.Groups.Where(group => MaySetUp.Contains(group.Id)).SelectMany(group => group.Areas).Where(area => area.Kind != "entry").ToArray();
+            areaCache = (key, [.. board.Facts.Hexes.Select(facts => GameMaps.LocationOf(board, facts.Index)).OfType<BoardLocation>()
+                .Where(at => areas.Any(area => ScenarioSetup.Within(card, area, at)))]);
+        }
+
+        return areaCache.Hexes;
+    }
+
     /// <summary>The setup areas of the groups the viewer may set up, as a box of the map with a hex of margin; null when there is none to show.</summary>
     private (double X, double Y, double Width, double Height)? SetupAreaBox(StudioBoard board)
     {
@@ -1261,10 +1343,9 @@ else if (state is not null)
             return null;
         }
 
-        var areas = report.Groups.Where(group => MaySetUp.Contains(group.Id)).SelectMany(group => group.Areas).Where(area => area.Kind != "entry").ToArray();
         var geometry = board.Render.Grid.Geometry;
-        var corners = board.Facts.Hexes.Where(facts => GameMaps.LocationOf(board, facts.Index) is { } at && areas.Any(area => ScenarioSetup.Within(card, area, at)))
-            .SelectMany(facts => geometry.Vertices(facts.Index)).ToArray();
+        var target = UnitLibrary.TargetFor(board);
+        var corners = SetupAreaHexes(board).Select(at => target.Locate(at)).OfType<HexIndex>().SelectMany(hex => geometry.Vertices(hex)).ToArray();
         if (corners.Length == 0)
         {
             return null;
@@ -1278,6 +1359,12 @@ else if (state is not null)
     /// <summary>The map zoomed to the setup areas of the side setting up (pass 30): when the map has loaded in a view that may set up, and on request.</summary>
     private async Task ZoomToSetup()
     {
+        if (SetupMode && MaySetUp.Count > 0 && workspace is { Rotated: true })
+        {
+            placeNote = "The map is turned, and a turned map keeps its own fit: turn it back with \"Rotate map\" to zoom to the setup area.";
+            return;
+        }
+
         if (SetupMode && MaySetUp.Count > 0 && workspace is not null && MapLayers?.Board is { } board && SetupAreaBox(board) is { } box)
         {
             try
@@ -1294,32 +1381,31 @@ else if (state is not null)
     /// <summary>The list has changed: a refusal shown for the list as it was no longer describes it, so it is dropped with its marks.</summary>
     private void ListChanged()
     {
-        if (pending is { } proposal && proposal.Action == GameActions.Setup && proposal.Result.Outcome is PlayOutcome.Denied or PlayOutcome.Failed or PlayOutcome.Stale)
+        if (pending is { } proposal && PlacesCounters(proposal)
+            && proposal.Result.Outcome is PlayOutcome.NeedsConfirmation or PlayOutcome.Denied or PlayOutcome.Failed or PlayOutcome.Stale)
         {
-            (pending, status) = (null, string.Empty);
+            (pending, status) = (null, proposal.Result.Outcome == PlayOutcome.NeedsConfirmation ? "The list changed, so the setup proposed before is dropped: propose it again." : string.Empty);
         }
 
         (setupAsk, setupDone) = (null, null);
+        if (unplacedNote is not null && ReferenceEquals(placeNote, unplacedNote))
+        {
+            placeNote = null;
+        }
+
+        unplacedNote = null;
+        listVersion++;
+        FollowCrews();
     }
 
-    /// <summary>"Set up" a group: asked first when the list already holds counters of that group, which the button replaces.</summary>
-    private void AskSetUpGroup(string groupId)
-    {
-        var held = placements.Count(row => row.Group == groupId);
-        if (held == 0)
-        {
-            SetUpGroup(groupId);
-            setupTab = "counters";
-        }
-        else
-        {
-            setupAsk = ("group:" + groupId, $"Replace the group's {Count(held, "counter", "counters")} in your list with what it still has to set up?", "Replace them");
-        }
-    }
+    // What "Propose setup" said of counters with no hex yet; it is taken away when the list next changes.
+    private string? unplacedNote;
 
     /// <summary>A counter as its counter prints it, such as "4-6-7 1st-line squad"; a Dummy and the Sniper counter in words.</summary>
     private string PrintedLabel(Placement row) => row.Kind == UnitKinds.Dummy ? "Dummy" : row.Kind == "asl:sniper" ? "Sniper counter"
-        : row.Definition is { } definition ? DefinitionLabel(definition) : row.Id;
+        : row.Definition is not { } definition ? row.Id
+        // A Gun or a vehicle has no short printed name in the catalog: its kind in words, then its definition.
+        : DefinitionLabel(definition) is var label && label != definition ? label : $"{DisplayText.Kind(row.Kind)} {definition}";
 
     private static string WhereText(Placement row) => row.Holder is { } holder ? row.Role switch
         {
@@ -1337,6 +1423,20 @@ else if (state is not null)
     private IReadOnlyList<string> PlanChanges
     {
         get
+        {
+            if (changesCache.Changes is null || changesCache.Version != listVersion || changesCache.Plan != chosenPlan)
+            {
+                changesCache = (listVersion, chosenPlan, ComputePlanChanges());
+            }
+
+            return changesCache.Changes!;
+        }
+    }
+
+    private (int Version, string? Plan, IReadOnlyList<string>? Changes) changesCache;
+
+    private IReadOnlyList<string> ComputePlanChanges()
+    {
         {
             if (ChosenPlan is not { } plan)
             {
@@ -1398,6 +1498,7 @@ else if (state is not null)
         if (ChosenPlan is not null && PlanChanges.Count == 0)
         {
             ClearPlacements();
+            ListChanged();
         }
         else
         {
@@ -1412,19 +1513,14 @@ else if (state is not null)
         setupAsk = null;
         if (!yes || asked is not { } question)
         {
+            ShowActions(scroll: false);
             return;
         }
 
         if (question.Kind == "clear")
         {
             ClearPlacements();
-        }
-        else if (question.Kind.StartsWith("group:", StringComparison.Ordinal))
-        {
-            var groupId = question.Kind["group:".Length..];
-            placements.RemoveAll(row => row.Group == groupId);
-            (chosenPlan, shownPlan, setupTab) = (null, null, "counters");
-            SetUpGroup(groupId);
+            ShowActions(scroll: false);
         }
         else
         {
@@ -1436,7 +1532,7 @@ else if (state is not null)
 
     private string SetupBarTitle => MaySetUp.Count > 0 ? $"{(Viewer.IsAdjudicator ? "Adjudicator's" : DisplayText.Side(viewAs))} setup"
         : SettingUpSide is { } side ? $"The {DisplayText.Side(side)} side is setting up"
-        : SetupIncomplete ? "Counters still wait to be set up off board" : "Every group has set up";
+        : SetupIncomplete ? "Counters that enter later are not yet set up off board" : "Every group has set up";
 
     private string? SetupBarProgress
     {
@@ -1457,7 +1553,7 @@ else if (state is not null)
     private string? SetupBarDetail => MaySetUp.Count > 0 && SetupView is { } report
         ? string.Join("; ", report.Groups.Where(group => MaySetUp.Contains(group.Id)).Select(group => group.Name))
         : SettingUpSide is not null ? null
-        : SetupIncomplete ? null : "A non-OB \"?\" may still be placed under Counters; the first action of play closes the setup.";
+        : SetupIncomplete ? null : "Stacks out of the enemy's LOS may still take a \"?\" (A12.12), under Counters; the first action of play closes the setup.";
 
     private string? SetupBarSource => ChosenPlan is { } plan
         ? $"From {plan.Name}" + (PlanChanges.Count > 0 ? $", {Count(PlanChanges.Count, "change", "changes")}" : string.Empty)
@@ -1466,8 +1562,8 @@ else if (state is not null)
 
     /// <summary>What is being placed or moved by the next click on the map; null when nothing is.</summary>
     private string? MoveBanner => pickingKey is not { } key ? null
-        : key.StartsWith("stack:", StringComparison.Ordinal) ? $"Click a hex for the stack at {DisplayText.Location(key["stack:".Length..])}. Esc cancels."
-        : placements.FirstOrDefault(row => row.Key == key) is { } moving ? $"Click a hex for {PrintedLabel(moving)} {moving.Id}. Esc cancels." : null;
+        : key.StartsWith("stack:", StringComparison.Ordinal) ? $"Click a hex for the stack at {DisplayText.Location(key["stack:".Length..])}. Esc on the map cancels."
+        : placements.FirstOrDefault(row => row.Key == key) is { } moving ? $"Click a hex for {PrintedLabel(moving)} {moving.Id}. Esc on the map cancels." : null;
 
     /// <summary>The map's keys during setup: Esc ends a move; [ and ] step the map through the setup plans and the list.</summary>
     private void MapKey(string key)
@@ -1487,8 +1583,6 @@ else if (state is not null)
             var index = Array.IndexOf(sources, shownPlan);
             shownPlan = sources[(index + (key == "]" ? 1 : sources.Length - 1)) % sources.Length];
         }
-
-        StateHasChanged();
     }
 
     /// <summary>The levels of a hex that a counter may set up on: the ground, and each level of its building.</summary>
@@ -1523,6 +1617,7 @@ else if (state is not null)
         }
 
         selectedStack = moved;
+        pickingKey = pickingKey == SetupCounters.StackKey(change.Location) ? SetupCounters.StackKey(moved) : pickingKey;
         ListChanged();
     }
 
@@ -1541,10 +1636,7 @@ else if (state is not null)
             (selectedStack, highlight) = (standing.Location, at with { Level = 0 });
         }
 
-        if (narrow)
-        {
-            paneTab = "actions";
-        }
+        ShowActions(scroll: false);
     }
 
     /// <summary>The rows the gate's last refusal of a setup named, by the ids the page owns; empty otherwise.</summary>
@@ -1559,7 +1651,7 @@ else if (state is not null)
     {
         get
         {
-            if (pending is not { } proposal || proposal.Action != GameActions.Setup || proposal.Result.Outcome is not (PlayOutcome.Denied or PlayOutcome.Failed))
+            if (pending is not { } proposal || !PlacesCounters(proposal) || proposal.Result.Outcome is not (PlayOutcome.Denied or PlayOutcome.Failed))
             {
                 return null;
             }
@@ -1575,7 +1667,9 @@ else if (state is not null)
                     continue;
                 }
 
+                // The rule code goes, and a Location reads as a player says it.
                 var text = reason.IndexOf(": ", StringComparison.Ordinal) is var cut and > 0 && reason.StartsWith("play.", StringComparison.Ordinal) ? reason[(cut + 2)..] : reason;
+                text = System.Text.RegularExpressions.Regex.Replace(text, @"\bbd\w+:[A-Z]{1,2}\d{1,2}:-?\d\b", found => DisplayText.Location(found.Value));
                 var carried = rows.SelectMany(row => placements.Where(other => other.Holder == row.Id && other.Role != "manned" && refused.Contains(other.Id))).ToArray();
                 problems.Add((rows.Length > 0
                     ? $"{PrintedLabel(rows[0])}: {text}" + (carried.Length > 0 ? $" The same holds for what it carries: {string.Join(", ", carried.Select(row => $"{PrintedLabel(row)} {row.Id}"))}." : string.Empty)
@@ -1601,7 +1695,7 @@ else if (state is not null)
     }
 
     /// <summary>The reasons the review lists: for a setup, the gate's count of events is left out and a refusal's reasons are shown as links instead.</summary>
-    private IReadOnlyList<string> ReviewReasons(Proposal proposal) => proposal.Action != GameActions.Setup || setupReview is null ? Reasons(proposal)
+    private IReadOnlyList<string> ReviewReasons(Proposal proposal) => !PlacesCounters(proposal) || setupReview is null ? Reasons(proposal)
         : SetupProblems is not null ? [] : [.. Reasons(proposal).Where(reason => !reason.StartsWith("play.setup:", StringComparison.Ordinal))];
 
     // The plans of the card chosen for a new game, counted once per card text.
@@ -1637,14 +1731,24 @@ else if (state is not null)
             var board = MapLayers?.Board;
             var problems = ProblemKeys;
             var original = ChosenPlan is { } plan ? PlanRows(plan).ToDictionary(row => row.Id, StringComparer.Ordinal) : null;
+            SetupPlacementEditor.Choice Named(string id) => placements.FirstOrDefault(other => other.Id == id) is { } other
+                ? new(id, $"{PrintedLabel(other)}, {WhereText(other)} ({id})") : new(id, $"{id}, already set up");
             SetupCounters.Row Line(Placement row, bool held)
             {
                 var equipment = Library.Vocabulary.IsA(row.Kind, "asl:equipment");
                 var onMap = OnMap(row);
                 var holders = HolderChoices(row);
+                var at = onMap && BoardLocation.TryParse(row.Location, out var located) ? located : null;
+                var follows = row is { Role: "manned", Holder: { } mannedBy } && placements.Any(other => other.Id == mannedBy);
+                var areas = CardGroup(row.Group) is { } own ? own.Group.Areas : [];
+                var levels = at is not null && board is not null && !follows ? LevelsAt(board, at) : [];
                 string?[] notes =
                 [
-                    row.OffBoard && row.Entry is { } entry && CardGroup(row.Group) is { } entering && entering.Group.Areas.Count(area => area.Kind == "entry") > 1 ? $"enters by {entry}" : null,
+                    row.OffBoard && row.Entry is { } entry && areas.Count(area => area.Kind == "entry") > 1 && areas.FirstOrDefault(area => area.Id == entry) is { Turn: { } enterTurn, Edge: { } enterEdge }
+                        ? $"enters on Turn {enterTurn} along the {(SetupCard is { } enterCard ? ScenarioCards.Compass(enterCard, enterEdge) : enterEdge)} edge" : null,
+                    at is not null && SetupCard is { } ownCard && row.Group is not null && !areas.Any(area => area.Kind != "entry" && ScenarioSetup.Within(ownCard, area, at))
+                        ? "outside its group's setup areas" : null,
+                    follows ? "stands with its crew" : null,
                     row.Hidden ? "hidden" : null,
                     row.Broken ? "broken" : null,
                     row.BoreSighted is { } sighted ? $"Bore Sighted on {DisplayText.Location(sighted)}" : null,
@@ -1653,14 +1757,16 @@ else if (state is not null)
                 return new SetupCounters.Row(row.Key, PrintedLabel(row), row.Id)
                 {
                     Held = held,
-                    Holders = equipment || holders.Count > 0 || row.Holder is not null ? holders : null,
+                    Holders = equipment || holders.Count > 0 || row.Holder is not null ? [.. holders.Select(Named)] : null,
                     Holder = row.Holder,
                     HolderLabel = row.Kind == "asl:gun" ? "manned or towed by" : equipment ? "held by" : "aboard",
                     NoHolder = equipment ? "choose" : "on foot",
+                    Levels = levels.Count > 1 && at is not null ? (levels.Contains(at.Level) ? levels : [.. levels.Append(at.Level).Order()]) : null,
+                    Level = at?.Level ?? 0,
                     Facing = onMap && row.Kind is "asl:gun" or "asl:vehicle" ? row.Facing ?? "east" : null,
                     Concealed = onMap && !equipment && row.Kind is not (UnitKinds.Dummy or "asl:sniper") && MayConceal(row) ? row.Concealed : null,
                     OffBoard = row.Holder is null && !equipment && row.Kind != "asl:sniper" && row.Kind != UnitKinds.Dummy && GroupEnters(row.Group) ? row.OffBoard : null,
-                    CanMove = onMap,
+                    CanMove = onMap && !follows,
                     Moving = row.Key == pickingKey,
                     Problem = problems.Contains(row.Key),
                     Changed = original is not null && (!original.TryGetValue(row.Id, out var was) || Differs(was, row)),
@@ -1671,7 +1777,8 @@ else if (state is not null)
             // What stands on its own, and under each what it holds, tows, or carries.
             bool Carried(Placement row) => row.Holder is not null && row.Role != "manned";
             var carriedBy = placements.Where(Carried).ToLookup(row => row.Holder!, StringComparer.Ordinal);
-            IEnumerable<SetupCounters.Row> WithCarried(Placement row) => [Line(row, false), .. carriedBy[row.Id].Select(carried => Line(carried, true))];
+            IEnumerable<SetupCounters.Row> Under(Placement row) => carriedBy[row.Id].SelectMany(carried => Under(carried).Prepend(Line(carried, true)));
+            IEnumerable<SetupCounters.Row> WithCarried(Placement row) => [Line(row, false), .. Under(row)];
             var standing = placements.Where(row => !Carried(row)).ToArray();
             var placed = standing.Where(row => !row.OffBoard && BoardLocation.TryParse(row.Location, out _)).ToArray();
             var stacks = placed.GroupBy(row => row.Location, StringComparer.Ordinal)
@@ -1696,6 +1803,7 @@ else if (state is not null)
 
             // What the card says of a limited area, as the gate counts it (ruling R19.4): its counters, its MMC, and "?" where an SSR forbids it.
             var notes = new List<string>();
+            var short_ = false;
             if (SetupCard is { } card && SetupView is { } report)
             {
                 foreach (var group in report.Groups.Where(group => MaySetUp.Contains(group.Id)))
@@ -1704,11 +1812,25 @@ else if (state is not null)
                     {
                         var inArea = stacks.Where(stack => ScenarioSetup.Within(card, area, BoardLocation.Parse(stack.Location))).SelectMany(stack => stack.Rows).ToArray();
                         var mmc = placements.Count(row => row.Kind is "asl:squad" or "asl:half-squad" or "asl:crew" && inArea.Any(line => line.Key == row.Key));
+                        short_ |= area.Counters is { } owed && inArea.Length < owed && offBoardRows.Length > 0;
                         notes.Add(SetupPoolsTable.AreaText(area) + ": "
-                            + (area.Counters is { } limit ? $"{inArea.Length} of {limit} counters in the list, a SW counted with its holder"
-                                + (area.MinMmc is { } least ? $"; {mmc} MMC, at least {least} needed" : string.Empty) + "." : string.Empty)
+                            + (area.Counters is { } limit ? $"{inArea.Length} of {limit} counters on the map (each SW counts as one)"
+                                + (area.MinMmc is { } least ? $"; {mmc} MMC, at least {least} needed" : string.Empty) + "."
+                                + (inArea.Length < limit && offBoardRows.Length > 0 ? " To set a counter up on the map, untick \"off board\" on it below, then place it." : string.Empty) : string.Empty)
                             + (area.Concealed == false ? " The card allows no \"?\" here, so none is offered." : string.Empty));
                     }
+                }
+
+                // The group's "?" (A12.11, A12.12; ruling R19.5): one for each stack under "?", one for each Dummy.
+                var allotment = report.Groups.Where(group => MaySetUp.Contains(group.Id)).Sum(group => CardGroup(group.Id)?.Group.Dummies ?? 0);
+                var left = report.Groups.Where(group => MaySetUp.Contains(group.Id)).Sum(group => group.DummiesLeft);
+                var underConcealment = placements.Where(row => row.Concealed && row.Kind != UnitKinds.Dummy && OnMap(row) && !Library.Vocabulary.IsA(row.Kind, "asl:equipment"))
+                    .Select(row => row.Location).Distinct(StringComparer.Ordinal).Count();
+                var dummies = placements.Count(row => row.Kind == UnitKinds.Dummy);
+                if (allotment > 0 || underConcealment + dummies > 0)
+                {
+                    notes.Add($"\"?\" used: {allotment - left + underConcealment + dummies} of {allotment} ({Count(underConcealment, "stack", "stacks")} under \"?\", {Count(dummies, "Dummy", "Dummies")}"
+                        + (allotment - left > 0 ? $", {allotment - left} already set up" : string.Empty) + ").");
                 }
             }
 
@@ -1718,7 +1840,7 @@ else if (state is not null)
                 OnMapSummary = $"{Count(onMapCount, "counter", "counters")} in {Count(stacks.Select(stack => BoardLocation.Parse(stack.Location) with { Level = 0 }).Distinct().Count(), "hex", "hexes")}",
                 OffBoardSummary = Count(offBoardRows.Length, "counter", "counters")
                     + (entries is [{ Turn: { } turn, Edge: { } edge }] && SetupCard is { } entered ? $", on Turn {turn} along the {ScenarioCards.Compass(entered, edge)} edge" : string.Empty),
-                OffBoardOpen = offBoardRows.Any(row => row.Problem),
+                OffBoardOpen = short_ || offBoardRows.Any(row => row.Problem) || (offBoardRows.Length > 0 && stacks.Length == 0),
                 Notes = notes,
                 CanPick = board is not null,
             };
@@ -1737,29 +1859,8 @@ else if (state is not null)
             return;
         }
 
-        if (pickingKey is { } key)
+        if (pickingKey is not null && MovePicked(board, at, typed: false))
         {
-            // A stack or a counter is moved to the hex, on its own level when the hex has that level, else on the ground, which the page says.
-            var whole = key.StartsWith("stack:", StringComparison.Ordinal);
-            var moving = placements.Where(item => whole ? OnMap(item) && item.Location == key["stack:".Length..] : item.Key == key).ToArray();
-            var levels = LevelsAt(board, at);
-            var (lowered, unplaced, last) = (false, false, -1);
-            foreach (var row in moving)
-            {
-                var was = BoardLocation.TryParse(row.Location, out var before) ? before : null;
-                var level = was is not null && levels.Contains(was.Level) ? was.Level : 0;
-                (lowered, unplaced, last) = (lowered || (was is not null && was.Level != level), unplaced || was is null, placements.IndexOf(row));
-                placements[last] = row with { Location = (at with { Level = level }).ToString() };
-                selectedStack = placements[last].Location;
-            }
-
-            placeNote = lowered ? $"{DisplayText.Location(at)} has no such level: placed at ground level. Change the stack's level in the list if you mean another." : null;
-
-            // A counter placed for the first time hands the picking to the next one not placed yet, so a group is placed click by click.
-            pickingKey = !whole && unplaced && last >= 0
-                ? placements.Skip(last + 1).Concat(placements.Take(last)).FirstOrDefault(item => OnMap(item) && item.Location.Length == 0)?.Key : null;
-            (shownPlan, revealId) = (null, selectedStack is { } shownStack ? SetupCounters.StackId(shownStack) : null);
-            ListChanged();
             return;
         }
 
@@ -1773,6 +1874,61 @@ else if (state is not null)
         {
             var chosen = $"{side}|{at}";
             Toggle(nonObChosen, chosen, !nonObChosen.Contains(chosen));
+        }
+    }
+
+    /// <summary>
+    /// The stack or the counter being moved goes to a hex (pass 30). From a click it keeps its own level when the hex has that level, else it goes to
+    /// the ground, which the page says; a typed Location is taken as typed. A counter placed for the first time hands the picking to the next one not
+    /// placed yet, so a group is placed click by click. False when nothing was being moved.
+    /// </summary>
+    private bool MovePicked(StudioBoard board, BoardLocation at, bool typed)
+    {
+        if (pickingKey is not { } key)
+        {
+            return false;
+        }
+
+        var whole = key.StartsWith("stack:", StringComparison.Ordinal);
+        var moving = placements.Where(item => whole ? OnMap(item) && item.Location == key["stack:".Length..] : item.Key == key && OnMap(item)).ToArray();
+        if (moving.Length == 0)
+        {
+            pickingKey = null;
+            return false;
+        }
+
+        var levels = LevelsAt(board, at);
+        var (lowered, unplaced, last) = (false, false, -1);
+        foreach (var row in moving)
+        {
+            var was = BoardLocation.TryParse(row.Location, out var before) ? before : null;
+            var level = typed ? at.Level : was is not null && levels.Contains(was.Level) ? was.Level : 0;
+            (lowered, unplaced, last) = (lowered || (!typed && was is not null && was.Level != level), unplaced || was is null, placements.IndexOf(row));
+            placements[last] = row with { Location = (at with { Level = level }).ToString() };
+            selectedStack = placements[last].Location;
+        }
+
+        placeNote = lowered ? $"{DisplayText.Location(at with { Level = 0 })} has no such level: placed at ground level. Change the level in the list if you mean another." : null;
+        pickingKey = !whole && unplaced && last >= 0
+            ? placements.Skip(last + 1).Concat(placements.Take(last)).FirstOrDefault(item => OnMap(item) && item.Location.Length == 0 && item.Role != "manned")?.Key : null;
+        (shownPlan, revealId) = (null, selectedStack is { } shownStack ? SetupCounters.StackId(shownStack) : null);
+        ListChanged();
+        return true;
+    }
+
+    /// <summary>A Location typed for the stack or the counter being moved: the way to place a counter without the mouse.</summary>
+    private void MoveTyped(string text)
+    {
+        if (MapLayers?.Board is not { } board || !BoardLocation.TryParse(text.Trim(), out var at) || GameMaps.FactsAt(board, at) is null)
+        {
+            placeNote = $"\"{text.Trim()}\" is not a Location of this map: type it as board, hex, and level, such as bd01:F5:1.";
+            return;
+        }
+
+        if (MovePicked(board, at, typed: true))
+        {
+            highlight = at with { Level = 0 };
+            ShowActions(scroll: false);
         }
     }
 
@@ -1816,6 +1972,14 @@ else if (state is not null)
         }
 
         var extra = new System.Text.StringBuilder();
+        if (SetupMode && MaySetUp.Count > 0 && SetupAreaHexes(board) is { Count: > 0 and <= 80 } areaHexes)
+        {
+            foreach (var at in areaHexes)
+            {
+                extra.Append(GameMaps.HexMark(board, at, "setup-area", "none", "#3f5a22", 2, true, null));
+            }
+        }
+
         foreach (var hex in DraftRows.Where(item => OnMap(item) && BoardLocation.TryParse(item.Location, out _))
             .GroupBy(item => BoardLocation.Parse(item.Location) with { Level = 0 }))
         {
@@ -1868,15 +2032,32 @@ else if (state is not null)
     /// The groups the viewer may set up now (pass 30): its own (any side's for the adjudicator), not out of its sight, in the order setting up now or with
     /// counters still to set up off board.
     /// </summary>
-    private IReadOnlySet<string> MaySetUp => state is null || !SetupOpen || history?.Current is null || handOver is not null || SetupView is not { } report
+    private IReadOnlySet<string> MaySetUp
+    {
+        get
+        {
+            var key = (history, state?.Revision ?? -1, viewAs, handOver, SetupOpen);
+            if (maySetUpCache.Set is null || maySetUpCache.Key != key)
+            {
+                maySetUpCache = (key, ComputeMaySetUp());
+            }
+
+            return maySetUpCache.Set!;
+        }
+    }
+
+    private ((GameHistory? History, long Revision, string View, string? HandOver, bool Open) Key, IReadOnlySet<string>? Set) maySetUpCache;
+
+    private IReadOnlySet<string> ComputeMaySetUp() => state is null || !SetupOpen || history?.Current is null || handOver is not null || SetupView is not { } report
         ? new HashSet<string>()
         : report.Groups.Where(group => (Viewer.IsAdjudicator || group.Side == viewAs) && !Unseen.Contains(group.Id)
             && ((group.SetsUp && !group.Complete && group.Order == report.CurrentOrder) || group.OffBoard.Count > 0)).Select(group => group.Id).ToHashSet(StringComparer.Ordinal);
 
     /// <summary>
-    /// "Set up this group" (pass 30): one row for each counter the group still owes, with its id, its group, and its Location when its area is one hex;
-    /// what enters is set off board. A SW goes to a squad of its own line's area, a Gun to the group's crew or, off board, in tow of its first vehicle;
-    /// each is changed in its row. The rows the button made before for the group are replaced. The gate checks the setup as it checks any.
+    /// "Set up <group>" (pass 30): one row for each counter the group still owes and the list does not hold yet, with its id, its group, and its
+    /// Location when its area is one hex; what enters is set off board. A SW goes to a squad of its own line's area, a Gun to the group's crew or,
+    /// off board, in tow of its first vehicle; each is changed in its row. A list filled from a plan is topped up, not replaced: the Balance counter,
+    /// for one. The gate checks the setup as it checks any.
     /// </summary>
     private void SetUpGroup(string groupId)
     {
@@ -1886,7 +2067,8 @@ else if (state is not null)
             return;
         }
 
-        placements.RemoveAll(item => item.Auto && item.Group == groupId);
+        var held = placements.Where(item => item.Group == groupId && item.Definition is not null).GroupBy(item => item.Definition!, StringComparer.Ordinal)
+            .ToDictionary(item => item.Key, item => item.Count(), StringComparer.Ordinal);
         var now = group.SetsUp && !group.Complete && group.Order == report.CurrentOrder;
         var added = new List<(Placement Row, string? Area)>();
         foreach (var (need, offBoard) in (now ? group.Remaining : []).Select(need => (need, false)).Concat(group.OffBoard.Select(need => (need, true))))
@@ -1902,6 +2084,13 @@ else if (state is not null)
             var facing = definition.Kind is "asl:gun" or "asl:vehicle" ? "east" : null;
             for (var count = 0; count < need.Count; count++)
             {
+                // A counter of this definition the list already holds is not added again.
+                if (held.GetValueOrDefault(definition.Id) > 0)
+                {
+                    held[definition.Id]--;
+                    continue;
+                }
+
                 var id = NewPlacementId(group.Side, definition.Id, added.Select(item => item.Row.Id));
                 var at = !offBoard && area is { Kind: "building", Hexes: [var only] } ? $"{board}:{only}:0" : string.Empty;
                 var equipment = Library.Vocabulary.IsA(definition.Kind, "asl:equipment");
@@ -1930,7 +2119,9 @@ else if (state is not null)
                 continue;
             }
 
-            var squads = added.Where(item => item.Area == area && item.Row.Kind is "asl:squad" or "asl:half-squad" or "asl:crew").Select(item => item.Row.Id).ToArray();
+            // Squads and half-squads first; a crew takes a SW only when the line's area has no other MMC.
+            var squads = added.Where(item => item.Area == area && item.Row.Kind is "asl:squad" or "asl:half-squad").Select(item => item.Row.Id).ToArray();
+            squads = squads.Length > 0 ? squads : [.. added.Where(item => item.Area == area && item.Row.Kind == "asl:crew" && !manned.Contains(item.Row.Id)).Select(item => item.Row.Id)];
             if (squads.Length > 0)
             {
                 var turn = given.GetValueOrDefault(area ?? string.Empty);
@@ -1940,7 +2131,29 @@ else if (state is not null)
         }
 
         placements.AddRange(added.Select(item => item.Row));
-        placeNote = added.Count == 0 ? $"{group.Name} has no counter left to set up." : null;
+        placeNote = added.Count == 0 ? $"The list already holds every counter {group.Name} still has to set up." : null;
+    }
+
+    /// <summary>"Set up" a group from its button: the list gains what the group owes and lacks, and the Counters tab shows it.</summary>
+    /// <summary>How many counters a group still has to set up that the list does not hold yet; its button is offered only while this is more than none.</summary>
+    private int GroupLacks(string groupId)
+    {
+        if (SetupView is not { } report || report.Groups.FirstOrDefault(item => item.Id == groupId) is not { } group || PublishedCatalog is not { } catalog)
+        {
+            return 0;
+        }
+
+        var now = group.SetsUp && !group.Complete && group.Order == report.CurrentOrder;
+        return (now ? group.Remaining : []).Concat(group.OffBoard).Where(need => catalog.Definition(need.Definition) is not null)
+            .GroupBy(need => need.Definition, StringComparer.Ordinal)
+            .Sum(needs => Math.Max(0, needs.Sum(need => need.Count) - placements.Count(row => row.Group == groupId && row.Definition == needs.Key)));
+    }
+
+    private void SetUpGroupNow(string groupId)
+    {
+        SetUpGroup(groupId);
+        (setupTab, shownPlan) = ("counters", null);
+        ListChanged();
     }
 
     /// <summary>An id for a row the card fills: the side's letter, the definition without its first word, and the first number no counter has yet.</summary>
@@ -1951,7 +2164,7 @@ else if (state is not null)
         for (var number = 1; ; number++)
         {
             var id = $"{side[0]}-{name}-{number}";
-            if (!used.Contains(id) && state?.Find(id) is null)
+            if (!used.Contains(id) && VisibleUnits.All(unit => unit.Id != id) && VisibleEquipment.All(item => item.Id != id))
             {
                 return id;
             }
@@ -1972,12 +2185,17 @@ else if (state is not null)
         placements[index] = change.Field switch
         {
             "location" => row with { Location = change.Value.Trim() },
+            "level" => BoardLocation.TryParse(row.Location, out var here) && int.TryParse(change.Value, NumberStyles.AllowLeadingSign, CultureInfo.InvariantCulture, out var level)
+                ? row with { Location = (here with { Level = level }).ToString() } : row,
             "facing" => row with { Facing = change.Value },
             "concealed" => row with { Concealed = change.Value == "true" },
             "offBoard" => row with { OffBoard = change.Value == "true", Entry = change.Value == "true" ? row.Entry : null },
             "holder" => WithHolder(row, change.Value),
             _ => row,
         };
+        pickingKey = placements.Any(item => item.Key == pickingKey && OnMap(item)) || pickingKey?.StartsWith("stack:", StringComparison.Ordinal) == true ? pickingKey : null;
+        listVersion++;
+        FollowCrews();
     }
 
     /// <summary>A row with another holder: a Gun is towed by a vehicle and manned by anyone else, a SW is possessed, and a unit rides as a Passenger; none, it stands on its own.</summary>
@@ -3186,6 +3404,8 @@ else if (state is not null)
         inspectorTab = "selection";
         ClearPlacements();
         (shownPlan, setupTab, setupDone, setupReview, revealId) = (null, null, null, null, null);
+        placeNote = null;
+        placeLocation = placeId = placeBore = placeGroup = string.Empty;
         placeHidden = false;
         placeConcealed = false;
         placeHolder = string.Empty;
@@ -4522,6 +4742,9 @@ else if (state is not null)
         shownPhase = null;
         ClearPlacements();
         (shownPlan, setupTab, setupDone, setupReview, revealId) = (null, null, null, null, null);
+        placeNote = null;
+        placeLocation = placeId = placeBore = placeGroup = string.Empty;
+        placeHidden = placeConcealed = placeBroken = placeOffBoard = false;
         ClearFire();
         moveUnits.Clear();
         moveTo = string.Empty;
@@ -4653,7 +4876,7 @@ else if (state is not null)
 
     private void Refresh()
     {
-        planCache = default;
+        (planCache, offeredCache, maySetUpCache) = (default, default, default);
         history = gameId.Length > 0 ? Live.History(gameId) : null;
         state = history?.Current ?? (history is { States.Count: > 0 } ? history.States[^1] : null);
         var phase = state is null ? null : $"{state.Turn}/{state.Phase}/{state.PhasingSide}";
@@ -4764,6 +4987,7 @@ else if (state is not null)
         placeId = string.Empty;
         placeHolder = string.Empty;
         placeBore = string.Empty;
+        ListChanged();
     }
 
     /// <summary>A Dummy (A12.1): a "?" with no unit beneath it, so it has no definition and is always concealed.</summary>
@@ -4773,20 +4997,30 @@ else if (state is not null)
         placements.Add(new Placement(id, null, UnitKinds.Dummy, side, placeLocation.Trim(), true, placeHidden, null,
             Group: placeGroup.Length > 0 && GroupChoices.Any(choice => choice.Side == side && choice.Group.Id == placeGroup) ? placeGroup : null));
         placeId = string.Empty;
+        ListChanged();
     }
 
     private async Task ProposeSetup()
     {
+        // A counter with no hex yet is said here, in the player's words, before the gate would refuse it by its place in the list.
+        if (SetupMode && CounterModel.Unplaced.Count(row => !row.Held) is > 0 and var waitingForHex)
+        {
+            placeNote = unplacedNote = $"{Count(waitingForHex, "counter has", "counters have")} no hex yet: place {(waitingForHex == 1 ? "it" : "them")} on the map, tick \"off board\", or remove {(waitingForHex == 1 ? "it" : "them")}, then propose.";
+            (setupTab, shownPlan) = ("counters", null);
+            return;
+        }
+
         var game = history is null ? newId.Trim() : gameId;
         object[] units = [.. placements.Select(PlacementArguments)];
         var hexes = placements.Where(row => OnMap(row) && BoardLocation.TryParse(row.Location, out _)).Select(row => BoardLocation.Parse(row.Location) with { Level = 0 }).Distinct().Count();
         var sides = string.Join(" and ", placements.Select(row => DisplayText.Side(row.Side)).Distinct(StringComparer.Ordinal));
-        var waiting = placements.Count(row => row.OffBoard);
+        bool Waits(Placement row) => row.OffBoard || (row.Holder is { } holder && row.Role != "manned" && placements.FirstOrDefault(other => other.Id == holder) is { } carrier && Waits(carrier));
+        var waiting = placements.Count(Waits);
         setupReview = placements.Count == 0
             ? ($"Start the game from its card with no counter placed. The side that sets up first then sets up on the map, in its own view.", [], 0)
             : ($"Set up the {sides} side" + (ChosenPlan is { } from ? $" from {from.Name}" + (PlanChanges.Count > 0 ? $", with {Count(PlanChanges.Count, "change", "changes")}" : ", unchanged") : " from your list")
                 + $": {Count(placements.Count, "counter", "counters")}" + (hexes > 0 ? $" in {Count(hexes, "hex", "hexes")}" : string.Empty)
-                + (waiting > 0 ? $", {waiting} of them off board to enter" : string.Empty) + ".", PlanChanges, placements.Count);
+                + (waiting == placements.Count ? ", all off board to enter" : waiting > 0 ? $", {waiting} of them off board to enter" : string.Empty) + ".", PlanChanges, placements.Count);
         (setupAsk, shownPlan) = (null, null);
         var catalog = PublishedCatalog is { } published ? $"{published.Identity.Catalog}@{published.Identity.Version}" : string.Empty;
         var arguments = history is null
@@ -5266,7 +5500,7 @@ else if (state is not null)
         }
 
         var created = history is null;
-        var placed = proposal.Action == GameActions.Setup && placements.Count > 0
+        var placed = PlacesCounters(proposal) && placements.Count > 0
             ? (Sides: string.Join(" and ", placements.Select(row => DisplayText.Side(row.Side)).Distinct(StringComparer.Ordinal)),
                 From: ChosenPlan is { } from ? $", from {from.Name}" + (PlanChanges.Count > 0 ? $" with {Count(PlanChanges.Count, "change", "changes")}" : string.Empty) : string.Empty)
             : ((string Sides, string From)?)null;
@@ -5317,7 +5551,11 @@ else if (state is not null)
             // A committed action's choices are spent: the next one starts from nothing.
             if (proposal.Action == GameActions.Setup)
             {
-                ClearPlacements();
+                if (PlacesCounters(proposal))
+                {
+                    ClearPlacements();
+                    shownPlan = null;
+                }
             }
             else if (proposal.Action == GameActions.Fire)
             {
@@ -5408,10 +5646,12 @@ else if (state is not null)
             // Pass 30: what was set up, and who sets up next, said where the setup bar is.
             if (placed is { } done)
             {
-                var next = SettingUpSide;
+                var onMap = SettingUpSide;
+                var next = onMap ?? SetupView?.Groups.FirstOrDefault(group => group.OffBoard.Count > 0)?.Side;
                 setupDone = ($"The {done.Sides} setup is in the game{done.From}. "
-                    + (next is null ? (SetupIncomplete ? "Counters still wait to be set up off board." : "Every group has set up: play may start.")
-                        : $"Next: the {DisplayText.Side(next)} side sets up."), next);
+                    + (next is null ? "Every group has set up: play may start."
+                        : onMap is not null ? $"Next: the {DisplayText.Side(next)} side sets up."
+                        : $"Next: the {DisplayText.Side(next)} side sets up the counters that enter, off board."), next);
             }
 
             // Pass 30: a new game's id goes into the address, so a reload opens it again; and it opens behind the hand-over of the side setting up now

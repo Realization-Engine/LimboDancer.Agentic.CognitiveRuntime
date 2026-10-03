@@ -17,15 +17,18 @@
     {
         <p id="setup-bar-source" class="setup-bar-text">@Source</p>
     }
-    @if (Question is { Length: > 0 })
-    {
-        <div id="setup-bar-ask" class="toolbar" role="group" aria-label="@Question">
-            <span id="setup-ask-text">@Question</span>
-            <button type="button" id="setup-ask-yes" @onclick="@(() => OnAnswer.InvokeAsync(true))">@Yes</button>
-            <button type="button" id="setup-ask-no" class="link" @onclick="@(() => OnAnswer.InvokeAsync(false))">Keep my list</button>
-        </div>
-    }
-    else if (CanAct)
+    @* The question is put in a region that is always there, so it is announced when it appears. *@
+    <div id="setup-bar-live" aria-live="polite">
+        @if (Question is { Length: > 0 })
+        {
+            <div id="setup-bar-ask" class="toolbar" role="group" aria-labelledby="setup-ask-text">
+                <span id="setup-ask-text">@Question</span>
+                <button type="button" id="setup-ask-yes" @onclick="@(() => OnAnswer.InvokeAsync(true))">@Yes</button>
+                <button type="button" id="setup-ask-no" class="link" @onclick="@(() => OnAnswer.InvokeAsync(false))">Keep my list</button>
+            </div>
+        }
+    </div>
+    @if (Question is not { Length: > 0 } && CanAct)
     {
         <div class="toolbar" id="setup-bar-actions">
             <button type="button" id="propose-setup" disabled="@(Count == 0 || Busy)" aria-describedby="propose-setup-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose setup</button>
