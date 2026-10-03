@@ -83,7 +83,7 @@ New rules adjudication, changes to game persistence, VASL artwork, a new compone
 | 28b | The rest of Play | Studio | 4 | 3:10 | 4:25 | 3:06 to 5:44 |
 | 28c | The Play workspace and hardening | Studio | 3 | 4:00 | 5:15 | 3:40 to 6:50 |
 | 29 | The shared board workspace | Studio | 5 | 3:15 | 4:30 | 3:09 to 5:51 |
-| 30 | Prepared setups | Game | 5 | 4:30 | 5:45 | 4:02 to 7:29 |
+| 30 | Prepared setups | Game | 6 | 8:30 | 9:45 | 6:50 to 12:41 |
 | 31 | DYO purchase I: Infantry, leaders, and SW | Game | 5 | 3:15 | 4:30 | 3:09 to 5:51 |
 | 32 | DYO purchase II: ordnance, vehicles, and conditions | Game | 4 | 2:30 | 3:45 | 2:38 to 4:52 |
 | | **All passes** | | **73** | **56:50** | **75:35** | **52:55 to 98:16** |
@@ -307,7 +307,8 @@ Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (backlog sect
 | 30.4 Choosing a plan at setup | In the first side's view only (ruling R23.3), the setup offers that side's plans; one chosen fills the setup list, to adjust on the map and propose. The gate checks it like any setup, so a stale or illegal plan is refused with reasons. | 0:45 |
 | 30.5 Plans for the built-in cards | Up to three plans for the first side of each built-in card, made offline, each grounded in the Studio's LOS and the card's Victory Conditions, and reviewed by the user before it is kept. | 1:00 |
 | | Overhead | 1:15 |
-| | **Pass 30 total** (build 4:30) | **5:45** |
+| 30.6 The workflow rebuilt | Added 2026-10-03 after Claude Design's review of the first build (the pass 30 design, sections 10 and 11): setup as a mode of the actions pane (a bar, and Plans, Counters, and Card OB tabs), a plan shown on the map as draft counters without filling the list, the list grouped by stack, refusals linked to their rows, a side's own Dummies drawn, and the reload and hand-over bugs fixed. | 4:00 |
+| | **Pass 30 total** (build 8:30, revised 2026-10-03) | **9:45** |
 
 ### Pass 31: DYO purchase I: Infantry, leaders, and SW
 

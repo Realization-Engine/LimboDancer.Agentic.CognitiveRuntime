@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 30 Design
 
-**Status:** Paused 2026-10-03 for a review of the setup workflow with Claude Design (section 10). In progress on branch `feature/asl-backlog-pass-30`. The user answered the four questions of section 9 on 2026-10-03, each as recommended. Section 8 records what is built and checked in the Studio. Pass 30 (Prepared setups) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, a Studio pass.
+**Status:** In progress 2026-10-03 on branch `feature/asl-backlog-pass-30`: the setup workflow is being rebuilt after Claude Design's review (sections 10 and 11). The user answered the four questions of section 9 on 2026-10-03, each as recommended. Section 8 records what is built and checked in the Studio. Pass 30 (Prepared setups) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, a Studio pass.
 
 **Date:** 2026-10-03
 
@@ -392,3 +392,54 @@ Two things read better than expected: at 800 pixels the three plans fit one scre
 - D. "Propose setup" and "Clear the list" repeated above the list, beside the chosen plan's name.
 
 **Limits any redesign keeps:** a plan is offered only in the view of the side that sets up first (ruling R23.3); the hand-over clears the chosen plan, the list, and what the map drew of them; a plan places the card's fixed OB and never changes it; a plan reaches the game only as placements proposed through the gate, so adding plans never changes a card's hash or its saved games.
+
+## 11. The workflow rebuilt
+
+**2026-10-03.** Claude Design reviewed the workflow from the 29 screenshots, section 10, and the code (its report, "Choosing a setup plan", is the user's PDF, not in the repository). The user accepted its model and took, on Claude Code's recommendations: its steps 1 to 20 in this pass; refusals matched by the page, with no change to the gate; and Armor Test's plans after the rebuild. Its steps 21 to 23 go to the backlog (section 46): the comparison table, hex names in terrain facts as links, and a draft kept across a reload.
+
+**The model.** Two changes; the rest is layout.
+
+- **Setup is a mode of the actions pane.** While a card's setup is not complete, the pane shows only setup: a bar at the top and three tabs, Plans, Counters, and Card OB. The Play actions are not shown, since the gate refuses every one of them until setup is complete (`play.setup-incomplete`, ruling R19.2). They return once every group has set up, when the first of them starts play.
+- **Showing a plan is not choosing it.** "Show on map" draws a plan as draft counters and leaves the list alone. "Use this plan" fills the list, and asks first when the list has changes. The map shows one source at a time: a plan, or "My list".
+
+**The setup bar.** The side setting up, the group, how many counters are in the list, the plan the list came from and how many changes it has, "Propose setup", and "Clear". Propose and Clear live only there. In a view that may not set up now, the bar says who is setting up.
+
+**The tabs.**
+
+| Tab | What it holds |
+|---|---|
+| Plans | Compact cards: the name, the first sentence of the idea, "Gives up", "Show on map", "Use this plan", and "More" (the whole idea and the terrain facts). The plan in the list is marked, with "Reset to <plan>" when it has changes. Offered only in the first side's view (ruling R23.3). With no plans the tab is absent and a line says so. |
+| Counters | "Set up this group" for each group the viewer may set up. The list grouped by stack: a header with the Location in words, its level (from the hex's own levels), and "Move"; under it one line per counter in printed values, its id after it in small type; a SW under its holder. Sections "On the map" and "Off board, to enter" (collapsed). A limited area's header counts as the gate does ("5 of 5 allowed, at least 2 MMC"), and "?" is left out where the card's area forbids it. The non-OB "?" once both sides have set up. "Add a counter by hand" at the foot, closed. |
+| Card OB | The OB table, without its "Set up" column. |
+
+**The map.**
+
+- The list's rows, or the plan shown, are drawn as draft counters with the counters' own art: stacks, level tabs, SW under their holders, "?" on concealed stacks, and Dummies. A draft is marked as one, and its hex keeps the gold outline. The draft is the page's own and goes with the view (ruling R23.3).
+- A switcher in the map's toolbar: each plan and "My list"; `[` and `]` step through it when the map has the focus.
+- A side's own Dummies are drawn in its own view, in the draft and in the game. The other side sees a sealed "?" as before.
+- A click on a hex the list uses selects that stack in the list and does not change the inspector's tab. "Move" on a stack or a counter, then a hex click, moves it and keeps its level when the new hex has that level; a banner on the map says what is being moved.
+- The map zooms to the setup areas when setup opens and when a plan is shown.
+
+**Propose, refusal, and the end.**
+
+- The review names the plan and its changes, counts counters and hexes, and says "Confirm is final: the setup cannot be changed afterwards." The stray "Picked" line is gone from it.
+- A refusal: each reason that names a row's id links to that row and its hex; those rows and the bar are marked ("2 problems"). A SW refused only with its holder is folded under the holder's reason. The page matches the ids it owns; the gate's reasons stay plain text.
+- After Confirm, a notice replaces the bar: what was set up and from which plan, who sets up next, and "Hand the screen to the <side> side".
+
+**The bugs fixed first.**
+
+- A game started from the new-game form puts its id in the address, so a reload opens it.
+- A game opened during setup waits behind the hand-over of the side setting up now, not the side that moves first. A new game opens the same way, so the pass's `openAs` field goes.
+
+**Under 1024 pixels.** "Show on map" and "Use this plan" open the Map tab; the switcher sits on the map, and the setup bar stays in view on both the Map and the Actions tabs.
+
+**Build order** (Claude Design's numbers in brackets), each group checked in the Studio and committed:
+
+1. The fixes [1 to 7]: the address, the hand-over's side, the level kept on a pick, asking before a list is replaced or cleared, printed values, the review, the notice after Confirm.
+2. The setup mode [8, 9, 10, 13]: the bar, the tabs, compact plan cards, no Play actions during setup.
+3. The Counters tab [14, 15, 11]: stacks, sections, the limited area's count, the list and the map tied together.
+4. Refusals [12].
+5. Draft counters, own Dummies, "Show on map" and the switcher, the zoom [16 to 19].
+6. Under 1024 pixels [20].
+
+**Estimate.** About 4:00 for the rebuild, so pass 30 grows from 5:45 to 9:45 (build 8:30).
