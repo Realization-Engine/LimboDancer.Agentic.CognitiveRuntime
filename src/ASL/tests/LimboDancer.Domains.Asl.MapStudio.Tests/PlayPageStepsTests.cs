@@ -115,7 +115,8 @@ public sealed class PlayPageStepsTests : IDisposable
         Place(page, "mg1", "defender-lmg", hexes.From, holder: "r2");
         Place(page, "gd", "dummy:german", hexes.Open);
         Assert.Contains("a Dummy", page.Find("#place-list").TextContent, StringComparison.Ordinal);
-        Assert.Contains("held by r2", page.Find("#place-list").TextContent, StringComparison.Ordinal);
+        // Pass 30: a row's holder is changed in the row, so it is a select holding the choice.
+        Assert.Equal("r2", page.Find("#place-row-3-holder").GetAttribute("value"));
         Commit(page, "#propose-setup");
         Assert.Contains("broken", Row(page, "r1"), StringComparison.Ordinal);
 

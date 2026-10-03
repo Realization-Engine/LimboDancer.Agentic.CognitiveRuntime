@@ -5654,13 +5654,16 @@ else if (state is not null)
                         : $"Next: the {DisplayText.Side(next)} side sets up the counters that enter, off board."), next);
             }
 
-            // Pass 30: a new game's id goes into the address, so a reload opens it again; and it opens behind the hand-over of the side setting up now
-            // (ruling R23.2), as a game opened later does.
+            // Pass 30: a new game's id goes into the address, so a reload opens it again; and when a side sets up next, the game opens behind that
+            // side's hand-over (ruling R23.2), as a game opened later does. A card with no OB group has no side setting up, and stays in the view.
             if (created)
             {
                 Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string, object?> { ["game"] = gameId, ["hex"] = null }), replace: true);
-                viewAs = SettingUpSide ?? viewAs;
-                (handOver, unconfirmed) = (viewAs, true);
+                if (SettingUpSide is { } settingUp)
+                {
+                    viewAs = settingUp;
+                    (handOver, unconfirmed) = (viewAs, true);
+                }
             }
         }
     }

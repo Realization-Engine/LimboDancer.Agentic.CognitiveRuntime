@@ -86,7 +86,7 @@ New rules adjudication, changes to game persistence, VASL artwork, a new compone
 | 30 | Prepared setups | Game | 6 | 8:30 | 9:45 | 6:50 to 12:41 |
 | 31 | DYO purchase I: Infantry, leaders, and SW | Game | 5 | 3:15 | 4:30 | 3:09 to 5:51 |
 | 32 | DYO purchase II: ordnance, vehicles, and conditions | Game | 4 | 2:30 | 3:45 | 2:38 to 4:52 |
-| | **All passes** | | **73** | **56:50** | **75:35** | **52:55 to 98:16** |
+| | **All passes** | | **74** | **60:50** | **79:35** | **55:43 to 103:28** |
 
 **Order.** The passes run in the order listed, one at a time on the user's go-ahead.
 
@@ -298,6 +298,8 @@ Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (backlog sect
 **Added 2026-10-03** at the user's word, as the next pass before DYO. A scenario card gains up to three prepared setups, called setup plans, for the side that sets up first, made offline with AI from the card, its boards' terrain and LOS, its Victory Conditions, and its SSRs, then reviewed by the user. When a game starts from the card, that side may choose a setup, adjust it on the map, or set up by hand as before. A setup places the card's fixed OB; it never changes the OB.
 
 **Purpose:** setting up from a card without retyping every counter. **After:** pass 29. **From:** the user's request of 2026-10-02.
+
+**Built 2026-10-03** on branch `feature/asl-backlog-pass-30`: tasks 30.1 to 30.6, ten setup plans on the four built-in cards, three reviews, and the Studio check of the whole pass; see the [pass 30 design](<ASL Unit Backlog Pass 30 Design.md>) and the [review document](<Scenario A1 Backlog Pass 30 Review 2026-10-03.md>). What it leaves out is in backlog section 46.
 
 | Task | What it changes | Estimate |
 |---|---|---|
@@ -1435,7 +1437,7 @@ The migration follows pass 32, in this order, one pass at a time on the user's g
 | 42 | Fire | Rules | 3:50 | 5:05 | 3:34 to 6:36 |
 | | **All migration passes** | | **105:44** | **141:59** | **99:23 to 184:35** |
 
-The display batches total 70:59 and the rule passes 71:00. With passes 22b to 32 (75:35), the whole plan is 217:34, about 29 working days of 7.5 hours; at the recent pace (about 65 % of estimates) nearer 141:25.
+The display batches total 70:59 and the rule passes 71:00. With passes 22b to 32 (79:35, after pass 30's task 30.6 was added on 2026-10-03), the whole plan is 221:34, about 30 working days of 7.5 hours; at the recent pace (about 65 % of estimates) nearer 144:01.
 
 **Order.** The display batches come first, so the whole portable corpus is readable early and the catalog work is done in one sweep. Armored combat is the first rule package because 49 of the playable cards need it; night and winter follows it, since several armor cards are night or winter cards; offboard artillery and terrain make the most cards playable once fortifications are in.
 

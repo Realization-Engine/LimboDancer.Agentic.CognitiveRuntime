@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 30 Design
 
-**Status:** In progress 2026-10-03 on branch `feature/asl-backlog-pass-30`: the setup workflow is being rebuilt after Claude Design's review (sections 10 and 11). The user answered the four questions of section 9 on 2026-10-03, each as recommended. Section 8 records what is built and checked in the Studio. Pass 30 (Prepared setups) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, a Studio pass.
+**Status:** Built, reviewed, and checked 2026-10-03 on branch `feature/asl-backlog-pass-30`; waiting for the user's word to merge. The setup workflow was rebuilt after Claude Design's review (sections 10 and 11); three reviews and the Studio check of the whole pass are in section 12 and in the [review document](<Scenario A1 Backlog Pass 30 Review 2026-10-03.md>); what the pass leaves out is in backlog section 46. The user answered the four questions of section 9 on 2026-10-03, each as recommended. Section 8 records what is built and checked in the Studio. Pass 30 (Prepared setups, named setup plans) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, a Studio pass.
 
 **Date:** 2026-10-03
 
@@ -481,7 +481,7 @@ Two things read better than expected: at 800 pixels the three plans fit one scre
 - A switcher in the map's toolbar: each plan and "My list"; `[` and `]` step through it when the map has the focus.
 - A side's own Dummies are drawn in its own view, in the draft and in the game. The other side sees a sealed "?" as before.
 - A click on a hex the list uses selects that stack in the list and does not change the inspector's tab. "Move" on a stack or a counter, then a hex click, moves it and keeps its level when the new hex has that level; a banner on the map says what is being moved.
-- The map zooms to the setup areas when setup opens and when a plan is shown.
+- The map zooms to the setup areas when setup opens and by its button. (As built: showing a plan keeps the current zoom; zooming then is backlog section 46.)
 
 **Propose, refusal, and the end.**
 
@@ -532,3 +532,27 @@ What differs from the design, or was added:
 - 1366x768, The Tractor Works, `r2-tractor`: the map opened zoomed on building X3. "Show on map" on Hidden core drew 25 draft counters, the 12 Dummies among them, each named "Russian Dummy, a \"?\" with no unit beneath it". `]` and `[` on the map stepped the switcher. After Confirm the 12 Dummies were still drawn, as the game's own.
 - 800x900, Gambit, `r3-gambit`: "Show on map" opened the Map tab with the plan drawn and the small bar; "Use Two posts" there filled the list. The Counters tab read "On the map: 5 counters in 2 hexes", the area's note counted 5 of 5 with 2 MMC and said no "?" is offered, no row offered "?", and the fifteen others were one closed line, "Off board, to enter: 15 counters, on Turn 1 along the north edge". Nothing scrolled sideways.
 - A reload of `r3-gambit` in the middle of setup opened the same game behind "I am the British side", although the Germans move first, and then the British setup with its plans.
+
+## 12. The reviews and the Studio check of the whole pass
+
+**The reviews (step 4).** Three read-only reviews read the branch at commit fd69ddc: a referee (disclosure and the gate), a table player (each card set up by plan and by hand), and a UI and Blazor review. None found a blocker; they made 45 findings. The [review document](<Scenario A1 Backlog Pass 30 Review 2026-10-03.md>) lists each with its fix. In short:
+
+- Disclosure: the hand-over clears the place note and the one-counter form; new ids are checked against the view; the adjudicator is not told a card has no plans.
+- The gate: a list change drops a pending setup proposal, so Confirm never commits a list other than the one reviewed; a non-OB "?" proposal has its own review.
+- The data: a malformed or locked setups file gives a diagnostic or no plan, and never throws.
+- The list: a SW whose holder left stays listed; a level per counter; a group topped up without doubling; holders named by their printed values; the "?" used; limited areas counted.
+- The page: focus after "Use this plan", a refusal link, and Confirm; live regions for the bar's question and the move banner; a typed move; wrapping buttons; the off-board section opened once and never closed by the page.
+- The plans' words: "Tripwire and reserve" (idea and "Gives up"), West woods, East front, and Hidden core ("Gives up") were reworded to match their placements. No placement changed, so the gate's acceptance stands.
+
+**The Studio check (step 5),** in my Studio on port 6670:
+
+- 1920x1080, The Guards Counterattack: three panes (actions 510 wide, map 1035, review 300), no sideways scroll, the map zoomed to the setup area, 18 draft counters drawn, four rows in view.
+- 1366x768: every card by plan or by hand, each side's view and the adjudicator's, the German column of Armor Test entering off board (holders, Passengers, the Gun in tow), a non-OB "?" proposal, a user's card with its own setups file (a plan for an earlier text marked; a stale plan refused with two reasons), a card with no plans, and the older game `p28c-walk2`, which opened in play unchanged.
+- 1024x768: no sideways scroll; the map left, the inspector under it, the actions pane 390 by 465. The bar, the tabs, and the group's button filled the pane, so the group's button is now shown only while the list lacks its counters; the first stack and its rows are then in view.
+- 683x384 and 320x640: Map and Actions tabs; the small bar on the Map tab with "Propose setup" and "Edit the list"; no sideways scroll. At 320 a long holder name pushed the Counters tab sideways; its select is now cut to the pane.
+- The keyboard: the tab order runs bar, tabs, then the list; the arrow keys change tabs; Enter on "Show on map"; `[` and `]` on the focused map step through the plans and back to the list; "Move" then a typed Location (`bd01:G6:0`) moves the counter, counts "1 change", and returns the focus to the actions; a Location typed in another form says the form to use.
+- A counter with no hex was refused in the gate's words; "Propose setup" now says "1 counter has no hex yet: place it on the map, tick off board, or remove it, then propose." and the note goes when the list changes.
+
+**Found at the merge gate.** The older Studio tests showed that a new game from a card with no OB group (a minimal card) also opened behind a hand-over, although no side sets up there. The hand-over after a new game is now taken only when a side sets up next; a minimal card's game stays in the view, as before the pass. Three older tests read the pre-game list's text for a holder or a VCA; they now read the row's select, since a row is changed in place.
+
+**The merge gate (step 7).** The tests are `BacklogPass30Tests` (Play) and `SetupPlansPageTests` (Studio); the review document says what each checks. The gate's acceptance of the plans on board 4 (Gambit, Armor Test) rests on the Studio check, since the tests have no board 4 terrain (backlog section 46).

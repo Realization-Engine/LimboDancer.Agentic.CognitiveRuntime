@@ -93,7 +93,8 @@ public sealed class PlayPageVehicleTests : IDisposable
         Assert.Contains("VCA", page.Find("#place-facing").ParentElement!.TextContent, StringComparison.Ordinal);
         Place(page, "de-t", "attacker-truck", one, "east");
         Place(page, "de-ht", "attacker-halftrack", two, "west");
-        Assert.Contains("VCA west", page.Find("#place-list").TextContent, StringComparison.Ordinal);
+        // Pass 30: a row's VCA is changed in the row.
+        Assert.Equal("west", page.Find("#place-row-1-facing").GetAttribute("value"));
         Commit(page, "#propose-setup");
 
         // The units table shows each vehicle's VCA, and the OT halftrack's crew as CE (D5.3).
