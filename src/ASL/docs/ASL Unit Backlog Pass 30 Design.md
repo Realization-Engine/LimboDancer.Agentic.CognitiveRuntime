@@ -120,7 +120,67 @@ The plans rest on what the Studio reads, not on the printed boards from memory.
 
 ## 7. The plans
 
-Filled in task 30.5, one card at a time, each card's plans reviewed by the user before the next card is started.
+Filled in task 30.5, one card at a time, each card's plans reviewed by the user before the next card is started. A plan's screenshot goes to the user in the chat, not into the repository.
+
+### 7.1 The Guards Counterattack: the Germans
+
+Made 2026-10-03 from the Studio's terrain and LOS on board 01 (Verified, LOS definitive), read with the scratchpad script, with fifteen of the cited lines checked again in my Studio's LOS tab: all agreed. Each plan was chosen in a new game in my Studio (`p30-gc-1`, `p30-gc-2`, `p30-gc-3`), and the gate accepted each (26 events). The user approved all three on 2026-10-03, with no remarks.
+
+What the plans answer. The Russians move first. The 12 Guards squads (6-2-8) and the 10-2 start in building F3, two hexes from building F5; the 308th starts in N4, J2, M2, and N2. The Russians win by Controlling two more of the German buildings than the Germans Control of theirs, or by a three to one ratio of unbroken squads, so the Germans must keep their buildings and their squads through five turns.
+
+Facts every plan rests on:
+
+- I7 and M9 are one-hex stone buildings with a ground level only, so their groups have no choice of hex: every plan puts them there.
+- F5, K5, and M7 are two-storey stone buildings (levels 0, 1, and 2). Their stairwells are in F6, J5 and K4, and L6.
+- On this board the Studio's LOS from level 1 or 2 of a building hex is, with few exceptions, the LOS from its ground level.
+
+**Plan 1: Forward line** (`forward-line`)
+
+| | |
+|---|---|
+| The idea | Every platoon stands in the hexes that face the Russians, one squad to a hex on level 1, so each street the Russians must cross is under fire from two buildings from the first turn. |
+| What it gives up | The F5 platoon starts in the LOS of the Guards at range 2 to 3 and takes their Prep Fire; squads alone in their hexes are attacked one at a time, and no squad is held back. |
+| Terrain facts | F5 sees the street hexes E5, F4, and G5 at range 1, and is seen from E4, F3, and G4 at range 2, from J2 at 5, and from M2 at 7.<br>G6 sees G5 at range 1 and F4 and H4 at 2; H5 sees G5, H4, I5, and I6 at range 1.<br>J4 flanks the Guards' street: it sees H4 at range 2, G5 at 3, and F4 at 4, and J3, I4, and I5 at 1.<br>K4 sees J3, K3, L3, and L4 at range 1, and is seen from J2 and M5 at range 2 and M2 at 3.<br>L6 sees L5, K6, and M6 at range 1 and L4 and N6 at 2; M7 sees M6, N6, and N7 at range 1. Both are seen from M5 and N5 at range 2. |
+
+| Building | Placements |
+|---|---|
+| F5 | F5, level 1: 4-6-7 squad with the LMG, 9-1 leader; G6, level 1: 4-6-7 squad; H5, level 1: 4-6-7 squad |
+| K5 | J4, level 1: 4-6-7 squad with the LMG; K4, level 1: 4-6-7 squad with the LMG, 8-0 leader; K5, level 1: 4-6-7 squad |
+| I7 | I7, ground level: 2 x 4-6-7 squad with the LMG, 4-6-7 squad, 9-2 leader |
+| M7 | L6, level 1: 4-6-7 squad with the MMG, 8-1 leader; M7, level 1: 4-6-7 squad with the LMG; M7, ground level: 4-6-7 squad |
+| M9 | M9, ground level: 4-6-7 squad with the HMG, 8-1 leader |
+
+**Plan 2: Out of sight** (`out-of-sight`)
+
+| | |
+|---|---|
+| The idea | The two wing platoons start where no Russian setup Location has a LOS to them, F6 and L7, so they are whole after the first Russian Prep Fire and meet the Russians inside their own buildings; the K5 platoon fires across the Guards' street from J4 and J5. |
+| What it gives up | The Russians cross to F5, G6, H5, L6, and M7 without fire from the platoons that own them; three squads in one hex are one target once they are seen. |
+| Terrain facts | F6 has no LOS to or from any Russian setup Location, at any level; it sees E6, F7, and G7 at range 1 and D5, D6, E5, and H6 at 2.<br>L7 at ground level has no LOS to or from any Russian setup Location; it sees L8 and M8 at range 1 and K6 and N7 at 2.<br>J4 sees H4 at range 2, G5 at 3, and F4 at 4. J5 sees H4 at range 2 and F4 at 4, and is seen from G4 at range 3, from the upper levels of G3 and from N5 at 4, and from E4 at 5.<br>K5 sees L4, L5, and K6 at range 1 and M6 at 2; it is seen from M5 at range 2, the upper levels of N3 at 3, and M2 at 4. |
+
+| Building | Placements |
+|---|---|
+| F5 | F6, level 1: 4-6-7 squad with the LMG, 4-6-7 squad, 9-1 leader; F6, ground level: 4-6-7 squad |
+| K5 | J4, level 1: 4-6-7 squad with the LMG; J5, level 1: 4-6-7 squad with the LMG, 8-0 leader; K5, level 1: 4-6-7 squad |
+| I7 | I7, ground level: 2 x 4-6-7 squad with the LMG, 4-6-7 squad, 9-2 leader |
+| M7 | L7, ground level: 4-6-7 squad with the MMG, 4-6-7 squad with the LMG, 4-6-7 squad, 8-1 leader |
+| M9 | M9, ground level: 4-6-7 squad with the HMG, 8-1 leader |
+
+**Plan 3: Tripwire and reserve** (`tripwire-and-reserve`)
+
+| | |
+|---|---|
+| The idea | In each large building one squad with a machine gun watches the street from level 1, and the rest of the platoon waits by the stairwell, out of sight or nearly so, to fire at the Russians who get in. |
+| What it gives up | Only one squad of each platoon fires as the Russians cross; the forward squads fight alone until the reserve comes up. |
+| Terrain facts | H5 sees G5, H4, I5, and I6 at range 1 and F4 and I4 at 2; of the Russian setup Locations only E4 (range 3), G4 (range 2), and J2 (range 4) see it.<br>F6, the F5 building's stairwell hex, has no LOS to or from any Russian setup Location.<br>K4 sees J3, K3, L3, and L4 at range 1; J4 sees H4 at range 2, G5 at 3, and F4 at 4; J5, the K5 building's other stairwell hex, is seen from G4 at range 3, from level 2 of G3 and from N5 at 4, and from E4 at 5.<br>L6 sees L5, K6, and M6 at range 1 and L4 and N6 at 2; L7 at ground level has no LOS to or from any Russian setup Location. |
+
+| Building | Placements |
+|---|---|
+| F5 | F6, level 1: 4-6-7 squad, 9-1 leader; F6, ground level: 4-6-7 squad; H5, level 1: 4-6-7 squad with the LMG |
+| K5 | J4, level 1: 4-6-7 squad with the LMG; J5, ground level: 4-6-7 squad, 8-0 leader; K4, level 1: 4-6-7 squad with the LMG |
+| I7 | I7, ground level: 2 x 4-6-7 squad with the LMG, 4-6-7 squad, 9-2 leader |
+| M7 | L6, level 1: 4-6-7 squad with the MMG, 8-1 leader; L7, ground level: 4-6-7 squad; M7, level 1: 4-6-7 squad with the LMG |
+| M9 | M9, ground level: 4-6-7 squad with the HMG, 8-1 leader |
 
 ## 8. Studio checks
 

@@ -1,0 +1,526 @@
+{
+  "format": "asl-setup-plans/1",
+  "card": "guards-counterattack",
+  "plans": [
+    {
+      "id": "forward-line",
+      "cardSha256": "ad43d29ddd9a989bd30953abbf620a93e866ec9bbc566906e696b115fd348dae",
+      "side": "german",
+      "name": "Forward line",
+      "idea": "Every platoon stands in the hexes that face the Russians, one squad to a hex on level 1, so each street the Russians must cross is under fire from two buildings from the first turn.",
+      "givesUp": "The F5 platoon starts in the LOS of the Guards at range 2 to 3 and takes their Prep Fire; squads alone in their hexes are attacked one at a time, and no squad is held back.",
+      "terrain": [
+        "F5 sees the street hexes E5, F4, and G5 at range 1, and is seen from E4, F3, and G4 at range 2, from J2 at 5, and from M2 at 7.",
+        "G6 sees G5 at range 1 and F4 and H4 at 2; H5 sees G5, H4, I5, and I6 at range 1.",
+        "J4 flanks the Guards' street: it sees H4 at range 2, G5 at 3, and F4 at 4, and J3, I4, and I5 at 1.",
+        "K4 sees J3, K3, L3, and L4 at range 1, and is seen from J2 and M5 at range 2 and M2 at 3.",
+        "L6 sees L5, K6, and M6 at range 1 and L4 and N6 at 2; M7 sees M6, N6, and N7 at range 1. Both are seen from M5 and N5 at range 2.",
+        "I7 and M9 are one-hex stone buildings with a ground level only; F5, K5, and M7 have levels 1 and 2, reached by the stairwells in F6, J5, K4, and L6."
+      ],
+      "placements": [
+        {
+          "id": "g-squad-1",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:F5:1"
+        },
+        {
+          "id": "g-squad-2",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:G6:1"
+        },
+        {
+          "id": "g-squad-3",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:H5:1"
+        },
+        {
+          "id": "g-leader-9-1-1",
+          "definition": "attacker-leader-9-1",
+          "group": "german-1",
+          "at": "bd01:F5:1"
+        },
+        {
+          "id": "g-lmg-1",
+          "definition": "attacker-lmg",
+          "group": "german-1",
+          "holder": "g-squad-1"
+        },
+        {
+          "id": "g-squad-4",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:J4:1"
+        },
+        {
+          "id": "g-squad-5",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:K4:1"
+        },
+        {
+          "id": "g-squad-6",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:K5:1"
+        },
+        {
+          "id": "g-leader-8-0-1",
+          "definition": "attacker-leader-8-0",
+          "group": "german-1",
+          "at": "bd01:K4:1"
+        },
+        {
+          "id": "g-lmg-2",
+          "definition": "attacker-lmg",
+          "group": "german-1",
+          "holder": "g-squad-4"
+        },
+        {
+          "id": "g-lmg-3",
+          "definition": "attacker-lmg",
+          "group": "german-1",
+          "holder": "g-squad-5"
+        },
+        {
+          "id": "g-squad-7",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:I7:0"
+        },
+        {
+          "id": "g-squad-8",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:I7:0"
+        },
+        {
+          "id": "g-squad-9",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:I7:0"
+        },
+        {
+          "id": "g-leader-9-2-1",
+          "definition": "attacker-leader-9-2",
+          "group": "german-1",
+          "at": "bd01:I7:0"
+        },
+        {
+          "id": "g-lmg-4",
+          "definition": "attacker-lmg",
+          "group": "german-1",
+          "holder": "g-squad-7"
+        },
+        {
+          "id": "g-lmg-5",
+          "definition": "attacker-lmg",
+          "group": "german-1",
+          "holder": "g-squad-8"
+        },
+        {
+          "id": "g-squad-10",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:L6:1"
+        },
+        {
+          "id": "g-squad-11",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:M7:1"
+        },
+        {
+          "id": "g-squad-12",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:M7:0"
+        },
+        {
+          "id": "g-leader-8-1-1",
+          "definition": "attacker-leader-8-1",
+          "group": "german-1",
+          "at": "bd01:L6:1"
+        },
+        {
+          "id": "g-mmg-1",
+          "definition": "attacker-mmg",
+          "group": "german-1",
+          "holder": "g-squad-10"
+        },
+        {
+          "id": "g-lmg-6",
+          "definition": "attacker-lmg",
+          "group": "german-1",
+          "holder": "g-squad-11"
+        },
+        {
+          "id": "g-squad-13",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:M9:0"
+        },
+        {
+          "id": "g-leader-8-1-2",
+          "definition": "attacker-leader-8-1",
+          "group": "german-1",
+          "at": "bd01:M9:0"
+        },
+        {
+          "id": "g-hmg-1",
+          "definition": "attacker-hmg",
+          "group": "german-1",
+          "holder": "g-squad-13"
+        }
+      ]
+    },
+    {
+      "id": "out-of-sight",
+      "cardSha256": "ad43d29ddd9a989bd30953abbf620a93e866ec9bbc566906e696b115fd348dae",
+      "side": "german",
+      "name": "Out of sight",
+      "idea": "The two wing platoons start where no Russian setup Location has a LOS to them, F6 and L7, so they are whole after the first Russian Prep Fire and meet the Russians inside their own buildings; the K5 platoon fires across the Guards' street from J4 and J5.",
+      "givesUp": "The Russians cross to F5, G6, H5, L6, and M7 without fire from the platoons that own them; three squads in one hex are one target once they are seen.",
+      "terrain": [
+        "F6 has no LOS to or from any Russian setup Location, at any level; it sees E6, F7, and G7 at range 1 and D5, D6, E5, and H6 at 2.",
+        "L7 at ground level has no LOS to or from any Russian setup Location; it sees L8 and M8 at range 1 and K6 and N7 at 2.",
+        "J4 sees H4 at range 2, G5 at 3, and F4 at 4. J5 sees H4 at range 2 and F4 at 4, and is seen from G4 at range 3, from the upper levels of G3 and from N5 at 4, and from E4 at 5.",
+        "K5 sees L4, L5, and K6 at range 1 and M6 at 2; it is seen from M5 at range 2, the upper levels of N3 at 3, and M2 at 4.",
+        "I7 and M9 are one-hex stone buildings with a ground level only; F5, K5, and M7 have levels 1 and 2, reached by the stairwells in F6, J5, K4, and L6."
+      ],
+      "placements": [
+        {
+          "id": "g-squad-1",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:F6:1"
+        },
+        {
+          "id": "g-squad-2",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:F6:1"
+        },
+        {
+          "id": "g-squad-3",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:F6:0"
+        },
+        {
+          "id": "g-leader-9-1-1",
+          "definition": "attacker-leader-9-1",
+          "group": "german-1",
+          "at": "bd01:F6:1"
+        },
+        {
+          "id": "g-lmg-1",
+          "definition": "attacker-lmg",
+          "group": "german-1",
+          "holder": "g-squad-1"
+        },
+        {
+          "id": "g-squad-4",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:J4:1"
+        },
+        {
+          "id": "g-squad-5",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:J5:1"
+        },
+        {
+          "id": "g-squad-6",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:K5:1"
+        },
+        {
+          "id": "g-leader-8-0-1",
+          "definition": "attacker-leader-8-0",
+          "group": "german-1",
+          "at": "bd01:J5:1"
+        },
+        {
+          "id": "g-lmg-2",
+          "definition": "attacker-lmg",
+          "group": "german-1",
+          "holder": "g-squad-4"
+        },
+        {
+          "id": "g-lmg-3",
+          "definition": "attacker-lmg",
+          "group": "german-1",
+          "holder": "g-squad-5"
+        },
+        {
+          "id": "g-squad-7",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:I7:0"
+        },
+        {
+          "id": "g-squad-8",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:I7:0"
+        },
+        {
+          "id": "g-squad-9",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:I7:0"
+        },
+        {
+          "id": "g-leader-9-2-1",
+          "definition": "attacker-leader-9-2",
+          "group": "german-1",
+          "at": "bd01:I7:0"
+        },
+        {
+          "id": "g-lmg-4",
+          "definition": "attacker-lmg",
+          "group": "german-1",
+          "holder": "g-squad-7"
+        },
+        {
+          "id": "g-lmg-5",
+          "definition": "attacker-lmg",
+          "group": "german-1",
+          "holder": "g-squad-8"
+        },
+        {
+          "id": "g-squad-10",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:L7:0"
+        },
+        {
+          "id": "g-squad-11",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:L7:0"
+        },
+        {
+          "id": "g-squad-12",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:L7:0"
+        },
+        {
+          "id": "g-leader-8-1-1",
+          "definition": "attacker-leader-8-1",
+          "group": "german-1",
+          "at": "bd01:L7:0"
+        },
+        {
+          "id": "g-mmg-1",
+          "definition": "attacker-mmg",
+          "group": "german-1",
+          "holder": "g-squad-10"
+        },
+        {
+          "id": "g-lmg-6",
+          "definition": "attacker-lmg",
+          "group": "german-1",
+          "holder": "g-squad-11"
+        },
+        {
+          "id": "g-squad-13",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:M9:0"
+        },
+        {
+          "id": "g-leader-8-1-2",
+          "definition": "attacker-leader-8-1",
+          "group": "german-1",
+          "at": "bd01:M9:0"
+        },
+        {
+          "id": "g-hmg-1",
+          "definition": "attacker-hmg",
+          "group": "german-1",
+          "holder": "g-squad-13"
+        }
+      ]
+    },
+    {
+      "id": "tripwire-and-reserve",
+      "cardSha256": "ad43d29ddd9a989bd30953abbf620a93e866ec9bbc566906e696b115fd348dae",
+      "side": "german",
+      "name": "Tripwire and reserve",
+      "idea": "In each large building one squad with a machine gun watches the street from level 1, and the rest of the platoon waits by the stairwell, out of sight or nearly so, to fire at the Russians who get in.",
+      "givesUp": "Only one squad of each platoon fires as the Russians cross; the forward squads fight alone until the reserve comes up.",
+      "terrain": [
+        "H5 sees G5, H4, I5, and I6 at range 1 and F4 and I4 at 2; of the Russian setup Locations only E4 (range 3), G4 (range 2), and J2 (range 4) see it.",
+        "F6, the F5 building's stairwell hex, has no LOS to or from any Russian setup Location.",
+        "K4 sees J3, K3, L3, and L4 at range 1; J4 sees H4 at range 2, G5 at 3, and F4 at 4; J5, the K5 building's other stairwell hex, is seen from G4 at range 3, from level 2 of G3 and from N5 at 4, and from E4 at 5.",
+        "L6 sees L5, K6, and M6 at range 1 and L4 and N6 at 2; L7 at ground level has no LOS to or from any Russian setup Location.",
+        "I7 and M9 are one-hex stone buildings with a ground level only; F5, K5, and M7 have levels 1 and 2, reached by the stairwells in F6, J5, K4, and L6."
+      ],
+      "placements": [
+        {
+          "id": "g-squad-1",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:H5:1"
+        },
+        {
+          "id": "g-squad-2",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:F6:1"
+        },
+        {
+          "id": "g-squad-3",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:F6:0"
+        },
+        {
+          "id": "g-leader-9-1-1",
+          "definition": "attacker-leader-9-1",
+          "group": "german-1",
+          "at": "bd01:F6:1"
+        },
+        {
+          "id": "g-lmg-1",
+          "definition": "attacker-lmg",
+          "group": "german-1",
+          "holder": "g-squad-1"
+        },
+        {
+          "id": "g-squad-4",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:K4:1"
+        },
+        {
+          "id": "g-squad-5",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:J4:1"
+        },
+        {
+          "id": "g-squad-6",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:J5:0"
+        },
+        {
+          "id": "g-leader-8-0-1",
+          "definition": "attacker-leader-8-0",
+          "group": "german-1",
+          "at": "bd01:J5:0"
+        },
+        {
+          "id": "g-lmg-2",
+          "definition": "attacker-lmg",
+          "group": "german-1",
+          "holder": "g-squad-4"
+        },
+        {
+          "id": "g-lmg-3",
+          "definition": "attacker-lmg",
+          "group": "german-1",
+          "holder": "g-squad-5"
+        },
+        {
+          "id": "g-squad-7",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:I7:0"
+        },
+        {
+          "id": "g-squad-8",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:I7:0"
+        },
+        {
+          "id": "g-squad-9",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:I7:0"
+        },
+        {
+          "id": "g-leader-9-2-1",
+          "definition": "attacker-leader-9-2",
+          "group": "german-1",
+          "at": "bd01:I7:0"
+        },
+        {
+          "id": "g-lmg-4",
+          "definition": "attacker-lmg",
+          "group": "german-1",
+          "holder": "g-squad-7"
+        },
+        {
+          "id": "g-lmg-5",
+          "definition": "attacker-lmg",
+          "group": "german-1",
+          "holder": "g-squad-8"
+        },
+        {
+          "id": "g-squad-10",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:L6:1"
+        },
+        {
+          "id": "g-squad-11",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:M7:1"
+        },
+        {
+          "id": "g-squad-12",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:L7:0"
+        },
+        {
+          "id": "g-leader-8-1-1",
+          "definition": "attacker-leader-8-1",
+          "group": "german-1",
+          "at": "bd01:L6:1"
+        },
+        {
+          "id": "g-mmg-1",
+          "definition": "attacker-mmg",
+          "group": "german-1",
+          "holder": "g-squad-10"
+        },
+        {
+          "id": "g-lmg-6",
+          "definition": "attacker-lmg",
+          "group": "german-1",
+          "holder": "g-squad-11"
+        },
+        {
+          "id": "g-squad-13",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "at": "bd01:M9:0"
+        },
+        {
+          "id": "g-leader-8-1-2",
+          "definition": "attacker-leader-8-1",
+          "group": "german-1",
+          "at": "bd01:M9:0"
+        },
+        {
+          "id": "g-hmg-1",
+          "definition": "attacker-hmg",
+          "group": "german-1",
+          "holder": "g-squad-13"
+        }
+      ]
+    }
+  ]
+}
