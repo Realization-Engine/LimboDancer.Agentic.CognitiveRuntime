@@ -9,7 +9,15 @@
         }
     </ul>
 }
-<button id="propose-setup" disabled="@(Items.Count == 0 || !Ready)" @onclick="@(() => OnPropose.InvokeAsync())">Propose setup</button>
+<button id="propose-setup" disabled="@(Items.Count == 0 || !Ready)" aria-describedby="propose-setup-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose setup</button>
+@if (!Ready)
+{
+    <span id="propose-setup-ready" class="toolbar-note">Choose a scenario card first.</span>
+}
+else if (Items.Count == 0)
+{
+    <span id="propose-setup-ready" class="toolbar-note">Add at least one counter above.</span>
+}
 
 @code {
     /// <summary>A placement waiting: its key, the counter's id, and how it reads.</summary>

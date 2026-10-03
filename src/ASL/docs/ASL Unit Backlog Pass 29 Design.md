@@ -188,3 +188,18 @@ Claude Design reviewed sections 11 and 12 against its analysis (2026-10-02). The
 8. **The five boards with an underscore** are counted out of scope in the library (61, as on the Fidelity page) and named beneath the totals (`IBoardProvider.Unlisted`).
 
 **Deferred by the user:** whether the board viewer, opened from a side's view of a live game, should lock to that view or allow other views only behind a hand-over (backlog section 45).
+
+## 14. The rest of Claude Design's list
+
+Built 2026-10-02 at the user's word, each checked in the Studio on port 6670.
+
+- **Disabled Propose buttons say why** on Play's Setup: "Choose a scenario card first.", "Add at least one counter above.", and beside a side's non-OB "?", "Tick at least one Location."
+- **The board viewer's Layers tab.** The rendered layers and the trace moved from a row above the map into a Layers tab after Selection, LOS, and Evidence (`BoardInspector.ExtraTab` takes `Last`); "Rotate map" joined the view picker in the toolbar. The rows above the map are now the game banner, the board's toolbar, and the units strip.
+- **The card editor's labels** sit at the top of a tall field, not at its last line.
+- **The Unit Lab's preview** stays in view while the fields beside it scroll (from 1024px up).
+- **The library's authored boards.** An untitled board reads "Untitled (its reference)"; "Kept in" shows only when the boards are kept in different places, and a line says where otherwise.
+- **Game states in compact rows** (51 pixels, from about 85), with "23 / 23" beside the revision slider.
+- **Two-layer introductions** on Play and Game states: one plain sentence, with how it works in a "How this works" disclosure (`RuleHelp.DetailLabel`).
+- **From the review's smaller points:** the Play card closes from its foot ("Close the card"), returning the focus to the context's link; "Back to Play" carries the picked hex, and Play picks it once the hand-over on load is confirmed; the library's out-of-date note is plain, with a link to the Fidelity page; a comment says why the compiler and vectorizer do not decide a report's freshness.
+
+**Not built here**, each larger than an hour or waiting on a decision: the board viewer's view on a live game (deferred, backlog section 45); one context bar for the viewer and Play; picking setup hexes on the map; a map-slot preview on Maps; a shared table component; per-row reasons when a board's source changed since the report; bringing a picked hex into view on a zoomed or composed map; unit names for "Produced from" and "Prisoner of".

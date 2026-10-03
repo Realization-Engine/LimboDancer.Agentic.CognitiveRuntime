@@ -260,7 +260,8 @@ public sealed class FidelityJobRunner(IFidelityBatch batch, FidelityReportStore 
         }
     }
 
-    // The tools whose versions decide whether a report's results still describe the boards the Studio reads.
+    // The tools whose versions decide whether a report's results still describe the boards the Studio reads. The compiler and the vectorizer are
+    // left out on purpose: they serve F3, which is informational and never changes a board's outcome.
     private static readonly (string Name, string Version)[] Tools =
     [
         ("importer", VaslBoardImporter.ImporterVersion),

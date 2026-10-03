@@ -19,10 +19,11 @@
 <PageTitle>Play - ASL Map Studio</PageTitle>
 
 <PageHeader Title="Play">
-    <p>
+    @* Claude Design's review: one plain sentence, with how it works a click away. *@
+    <RuleHelp Id="play-intro" DetailLabel="How this works" Summary="Play a game from a scenario card: choose an action, review what it will do, then confirm it.">
         Live games are the Studio's chosen game source (D2). Every change is a registered action through the Execution Gate: the Studio proposes it,
         the gate checks it against the current game, boards, and catalog, and it commits only after you confirm. Nothing here edits a game directly.
-    </p>
+    </RuleHelp>
 </PageHeader>
 
 @if (Scripted is { } scripted)
@@ -48,7 +49,8 @@
                    Groups="@([.. state.Sides.SelectMany(side => side.Groups.Select(group => $"{side.Id}: {group.Name} ({group.Id}), ELR {group.Elr?.ToString(CultureInfo.InvariantCulture) ?? "not given"}"))])"
                    Victory="@(playCard is not null ? VictoryNow : null)"
                    KnownTo="@VictoryKnownTo" Catalog="@($"{state.Catalog.Catalog}@{state.Catalog.Version}")"
-                   Provenance="@(playCard is not null && PublishedCatalog is { } provenanceCatalog ? GameProvenance(playCard, scenario.Id, scenario.Sha256, provenanceCatalog) : null)" />
+                   Provenance="@(playCard is not null && PublishedCatalog is { } provenanceCatalog ? GameProvenance(playCard, scenario.Id, scenario.Sha256, provenanceCatalog) : null)"
+                   OnClose="@CloseCard" />
 }
 
 @{
@@ -94,8 +96,12 @@
                             <label><input type="checkbox" class="non-ob-location" value="@at" checked="@nonObChosen.Contains(key)"
                                           @onchange="@(args => Toggle(nonObChosen, key, args.Value is true))" /> @DisplayText.Location(at) <span class="muted">@at</span></label>
                         }
-                        <button class="propose-non-ob" disabled="@(!choices.Any(at => nonObChosen.Contains($"{side.Id}|{at}")))"
-                                @onclick="@(() => ProposeNonOb(side.Id, choices))">Propose: place @side.Id's non-OB "?"</button>
+                        <button class="propose-non-ob" disabled="@(!choices.Any(at => nonObChosen.Contains($"{side.Id}|{at}")))" aria-describedby="@($"non-ob-ready-{side.Id}")"
+                                @onclick="@(() => ProposeNonOb(side.Id, choices))">Propose: place @DisplayText.Side(side.Id)'s non-OB "?"</button>
+                        @if (!choices.Any(at => nonObChosen.Contains($"{side.Id}|{at}")))
+                        {
+                            <span id="@($"non-ob-ready-{side.Id}")" class="toolbar-note">Tick at least one Location.</span>
+                        }
                     }
                 </fieldset>
             }
@@ -1997,6 +2003,7 @@ else if (state is not null)
             viewAs = next;
             handOver = null;
             ResetForView();
+            (highlight, openingHex) = (openingHex, null);
             enterUnit = VisibleUnits.FirstOrDefault()?.Id ?? string.Empty;
             focusActions = true;
             paneTab = "actions";
@@ -3255,6 +3262,10 @@ else if (state is not null)
     [SupplyParameterFromQuery(Name = "game")]
     public string? GameQuery { get; set; }
 
+    /// <summary>A hex to pick when the page opens, such as the one picked on the board viewer before "Back to Play".</summary>
+    [SupplyParameterFromQuery(Name = "hex")]
+    public string? HexQuery { get; set; }
+
     private IReadOnlyList<UnitDefinition> Definitions =>
         PublishedCatalog?.Definitions ?? [];
 
@@ -3270,6 +3281,11 @@ else if (state is not null)
         placeDefinition = Definitions.FirstOrDefault()?.Id ?? string.Empty;
         gameId = GameQuery ?? string.Empty;
         Refresh();
+        if (HexQuery is { Length: > 0 } hex && LimboDancer.Domains.Asl.Maps.Coordinates.BoardLocation.TryParse(hex, out var picked))
+        {
+            // Picked once the hand-over on load is confirmed, which clears what the last view picked.
+            (highlight, openingHex) = (picked, picked);
+        }
 
         // Backlog section 37, built in pass 28c: a page opened or reloaded on a game waits behind the hand-over screen, since whoever is at the screen
         // has not said which side they are.
@@ -3291,7 +3307,7 @@ else if (state is not null)
 
         gameId = args.Value as string ?? string.Empty;
         handOver = null;
-        highlight = null;
+        (highlight, openingHex) = (null, null);
         inspectorTab = "selection";
 
         // Pass 29: the address names the game, so a reload opens it again (behind the hand-over).
@@ -4179,6 +4195,9 @@ else if (state is not null)
     // The inspector's open tab: "proposal" while a proposal waits, otherwise what the player chose (pass 29).
     private string inspectorTab = "selection";
 
+    // The hex the address asks for (from the board viewer's "Back to Play"), kept until the hand-over on load is confirmed.
+    private LimboDancer.Domains.Asl.Maps.Coordinates.BoardLocation? openingHex;
+
     /// <summary>The review pane's attributes, as the inspector of the workspace (pass 29).</summary>
     private Dictionary<string, object> ReviewAttributes => new()
     {
@@ -4285,6 +4304,20 @@ else if (state is not null)
     }
 
     private void FocusReview() => ShowProposal();
+
+    /// <summary>Closes the scenario card and returns the focus to the context's link that opened it (Claude Design's review).</summary>
+    private async Task CloseCard()
+    {
+        try
+        {
+            workspaceScript ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/playWorkspace.js");
+            await workspaceScript.InvokeVoidAsync("closeDetails", "play-card", "play-card-link");
+        }
+        catch (Exception exception) when (exception is JSDisconnectedException or JSException or TaskCanceledException)
+        {
+            // The circuit is gone; the card stays as it was.
+        }
+    }
 
     /// <summary>Opens the scenario card, which starts closed, and brings it into view (pass 29).</summary>
     private async Task OpenCard()

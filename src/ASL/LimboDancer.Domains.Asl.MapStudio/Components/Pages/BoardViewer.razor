@@ -24,7 +24,7 @@ else if (board is null)
         @* Pass 29: the map and its inspector are BoardWorkspace; the page keeps its route, the board's load, and its study controls. *@
         <BoardWorkspace @ref="workspace" Board="@board" View="@view" Trace="@trace" Visible="@visible" ComparisonMode="@comparisonMode" ComparisonValue="@comparisonValue"
                         Units="@(showUnits ? unitOverlay : null)" UnitView="@gameProjection?.View" UnitNote="@UnitNote" Vocabulary="@UnitLibrary.Vocabulary"
-                        StyledModel="@StyledModel" @bind-Selected="selected" @bind-Panel="panel">
+                        StyledModel="@StyledModel" @bind-Selected="selected" @bind-Panel="panel" Extras="@LayerTabs">
             <Toolbar>
                 @if (GameBanner is { } banner)
                 {
@@ -43,15 +43,12 @@ else if (board is null)
                 }
                 <BoardViewerToolbar Board="@board" OnFit="@(() => workspace!.Fit())" Preparing="@preparing">
                     <BoardViewPicker Views="@Views" Value="@view" ValueChanged="@ChangeView" />
+                    <button type="button" id="map-rotate" aria-pressed="@(workspace?.Rotated == true ? "true" : "false")" @onclick="@(() => workspace!.ToggleRotation())">Rotate map</button>
                     @if (view == BoardView.Comparison)
                     {
                         <BoardComparisonControls Mode="@comparisonMode" ModeChanged="@(mode => comparisonMode = mode)" Value="@comparisonValue" ValueChanged="@(value => comparisonValue = value)" />
                     }
                 </BoardViewerToolbar>
-                <div class="toolbar layers-row">
-                    <button type="button" id="map-rotate" aria-pressed="@(workspace?.Rotated == true ? "true" : "false")" @onclick="@(() => workspace!.ToggleRotation())">Rotate map</button>
-                    <BoardLayerToggles Layers="@ToggleLayers" Visible="@visible" LayerChanged="@ToggleLayer" TraceAvailable="@(view == BoardView.HexFacts)" Trace="@trace" TraceChanged="@(on => trace = on)" />
-                </div>
                 @if (unitSets.Count > 0 || unitGames.Count > 0)
                 {
                     <UnitOverlayControls Show="@showUnits" ShowChanged="@(show => showUnits = show)"
@@ -116,6 +113,12 @@ else if (board is null)
 
     private sealed record Banner(string Text, bool Historical, string? PlayLink);
 
+    /// <summary>Claude Design's review: the rendered layers and the trace sit in a Layers tab after the inspector's own, not in a row above the map.</summary>
+    private IReadOnlyList<BoardInspector.ExtraTab> LayerTabs =>
+    [
+        new(new("layers", "Layers"), @<BoardLayerToggles Layers="@ToggleLayers" Visible="@visible" LayerChanged="@ToggleLayer" TraceAvailable="@(view == BoardView.HexFacts)" Trace="@trace" TraceChanged="@(on => trace = on)" />, Last: true),
+    ];
+
     /// <summary>The game shown, whose view, and which revision; a live game links back to Play; null when no game is shown.</summary>
     private Banner? GameBanner => gameProjection is { } shown && shown.Game.History is { } history
         ? new Banner(
@@ -124,6 +127,7 @@ else if (board is null)
             gameRevision < history.States.Count,
             shown.Game.Name.StartsWith(GameLibrary.LivePrefix, StringComparison.Ordinal)
                 ? $"games/play?game={Uri.EscapeDataString(shown.Game.Name[GameLibrary.LivePrefix.Length..])}"
+                    + (selected is { } picked && board is not null && board.LocationOf(picked) is { Length: > 0 } at ? $"&hex={Uri.EscapeDataString(at)}" : string.Empty)
                 : null)
         : null;
 

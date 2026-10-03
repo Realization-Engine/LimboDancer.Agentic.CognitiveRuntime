@@ -3,12 +3,16 @@
 <div class="rule-help" data-help="@Id">
     <p class="muted rule-help-summary" id="@($"{Id}-summary")">@Summary</p>
     <details class="rule-help-detail">
-        <summary aria-describedby="@($"{Id}-summary")">The rule in full</summary>
+        <summary aria-describedby="@($"{Id}-summary")">@DetailLabel</summary>
         <p class="muted" id="@Id">@ChildContent</p>
     </details>
 </div>
 
 @code {
+    /// <summary>The disclosure's label: "The rule in full", or "How this works" for a page's introduction (Claude Design's review).</summary>
+    [Parameter]
+    public string DetailLabel { get; set; } = "The rule in full";
+
     /// <summary>The id of the full paragraph, such as "rout-help"; the summary takes the same id with "-summary".</summary>
     [Parameter, EditorRequired]
     public string Id { get; set; } = string.Empty;

@@ -66,8 +66,8 @@
 </InspectorTabs>
 
 @code {
-    /// <summary>A tab the host adds, with the markup it shows when chosen.</summary>
-    public sealed record ExtraTab(InspectorTabs.Tab Tab, RenderFragment Content);
+    /// <summary>A tab the host adds, with the markup it shows when chosen; placed before the built-in tabs, or after them when <paramref name="Last"/>.</summary>
+    public sealed record ExtraTab(InspectorTabs.Tab Tab, RenderFragment Content, bool Last = false);
 
     private static readonly IReadOnlyList<InspectorTabs.Tab> BuiltIn = [new("selection", "Selection"), new("los", "LOS"), new("evidence", "Evidence")];
 
@@ -153,5 +153,6 @@
         }
     }
 
-    private IReadOnlyList<InspectorTabs.Tab> TabList => [.. Extras.Select(extra => extra.Tab), .. BuiltIn];
+    private IReadOnlyList<InspectorTabs.Tab> TabList =>
+        [.. Extras.Where(extra => !extra.Last).Select(extra => extra.Tab), .. BuiltIn, .. Extras.Where(extra => extra.Last).Select(extra => extra.Tab)];
 }

@@ -7,20 +7,30 @@ else
 {
     <table class="library" id="library-authored">
         <thead>
-            <tr><th>Board</th><th>Reference</th><th>Kept in</th><th></th></tr>
+            <tr><th>Board</th><th>Reference</th>@if (MixedPlaces)
+                {
+                    <th>Kept in</th>
+                }<th></th></tr>
         </thead>
         <tbody>
             @foreach (var entry in Boards)
             {
                 <tr @key="(entry.Ref.Value, entry.IsDraft)" data-board="@entry.Ref.Value">
-                    <td><a href="@($"boards/{entry.Ref.Value}")">@entry.Name</a></td>
+                    <td><a href="@($"boards/{entry.Ref.Value}")">@(entry.Name is "Untitled board" or "" ? $"Untitled ({entry.Ref.Value})" : entry.Name)</a></td>
                     <td><code>@entry.Ref.Value</code></td>
-                    <td class="muted">@(entry.IsDraft ? "drafts (derived from VASL data)" : "boards folder")</td>
+                    @if (MixedPlaces)
+                    {
+                        <td class="muted">@(entry.IsDraft ? "drafts (derived from VASL data)" : "boards folder")</td>
+                    }
                     <td><a href="@($"author/{entry.Ref.Value}")">Edit</a></td>
                 </tr>
             }
         </tbody>
     </table>
+    @if (!MixedPlaces)
+    {
+        <p class="muted">All are kept in the @(Boards[0].IsDraft ? "drafts folder (derived from VASL data)" : "boards folder").</p>
+    }
     <p><a href="author/new">New board</a></p>
 }
 
@@ -31,4 +41,7 @@ else
     /// <summary>Whether a search or filter hides some boards, so an empty list says none matches rather than none exists.</summary>
     [Parameter]
     public bool Filtered { get; set; }
+
+    // Claude Design's review: "Kept in" is shown only when the boards are kept in different places.
+    private bool MixedPlaces => Boards.Select(entry => entry.IsDraft).Distinct().Count() > 1;
 }

@@ -93,7 +93,7 @@ else
                     var made = latest.Report.StartedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture);
                     @if (FidelityJobRunner.StaleReason(latest.Report, Boards.CatalogBlob) is { } stale)
                     {
-                        <span class="muted" id="library-report-stale">The fidelity report of @made is not used: @stale, so unopened boards show "Not checked".</span>
+                        <span class="muted" id="library-report-stale" title="@stale">The fidelity report of @made was made with older tools, so unopened boards show "Not checked". <a href="fidelity">Details on the Fidelity page</a>.</span>
                     }
                     else
                     {

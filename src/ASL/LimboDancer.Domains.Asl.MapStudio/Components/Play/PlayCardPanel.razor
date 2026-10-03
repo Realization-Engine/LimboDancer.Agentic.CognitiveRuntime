@@ -34,6 +34,7 @@
         }
         <CardSpecialRulesList Id="play-card-ssr" Rules="@card.SpecialRules" />
         <a id="play-card-whole" href="units/scenarios?card=@Scenario.Id">The whole card</a>
+        <button type="button" id="play-card-close" class="link" @onclick="@(() => OnClose.InvokeAsync())">Close the card</button>
         @if (Provenance is { } provenance)
         {
             <CardProvenancePanel Id="play-card-provenance" Model="@provenance" />
@@ -89,4 +90,8 @@
     /// <summary>The catalog the game started with, shown when the card is gone.</summary>
     [Parameter]
     public string Catalog { get; set; } = string.Empty;
+
+    /// <summary>Closes the card and returns the focus to the context's link (Claude Design's review).</summary>
+    [Parameter]
+    public EventCallback OnClose { get; set; }
 }

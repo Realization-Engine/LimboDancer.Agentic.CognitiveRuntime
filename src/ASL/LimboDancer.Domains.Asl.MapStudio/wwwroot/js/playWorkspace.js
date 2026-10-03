@@ -28,6 +28,16 @@ export function openDetails(id) {
     details.querySelector("summary")?.focus({ preventScroll: true });
 }
 
+// Closes a disclosure and gives the focus back to the control that opened it (Claude Design's review: the card closes from its foot).
+export function closeDetails(id, focusId) {
+    const details = document.getElementById(id);
+    if (details) {
+        details.open = false;
+    }
+
+    document.getElementById(focusId)?.focus();
+}
+
 // The workspace fills the window below the sticky context, whose height changes with its content and the window's width (UI review, pass 28c):
 // the context's height is kept in a custom property the stylesheet reads. Only a measurement is written here.
 let contextWatcher = null;

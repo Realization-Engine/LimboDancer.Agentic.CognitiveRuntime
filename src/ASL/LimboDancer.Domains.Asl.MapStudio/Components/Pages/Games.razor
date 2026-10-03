@@ -10,10 +10,11 @@
 <PageTitle>Game states - ASL Map Studio</PageTitle>
 
 <PageHeader Title="Game states">
-    <p>
+    @* Claude Design's review: one plain sentence, with how it works a click away. *@
+    <RuleHelp Id="games-intro" DetailLabel="How this works" Summary="Replay a game event by event, from either side or as the adjudicator.">
         Replay a synthetic game fixture event by event and read it from each side or as the adjudicator. A side's view leaves out what that side
         cannot know: hidden units are absent and concealed enemies are only a presence. Fixtures are display input, never game state.
-    </p>
+    </RuleHelp>
 </PageHeader>
 
 @if (GamesLibrary.Names.Count == 0)
@@ -190,7 +191,7 @@ else
 
     private MarkupString Preview(string id) =>
         renderer is not null && documents.TryGetValue(id, out var document)
-            ? (MarkupString)UnitPreview.Document(renderer, document, [DetailTier.Mid], null, 0.8, [])
+            ? (MarkupString)UnitPreview.Document(renderer, document, [DetailTier.Mid], null, 0.5, [])
             : default;
 
     private string Label(string id, string kind) =>

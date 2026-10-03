@@ -1072,6 +1072,14 @@ textarea.placements-text {
     min-width: 0;
 }
 
+/* Claude Design's review: the preview stays in view while the fields beside it scroll. */
+.lab > .lab-preview {
+    position: sticky;
+    top: 1rem;
+    max-height: calc(100vh - 2rem);
+    overflow: auto;
+}
+
 .lab .toolbar label,
 .lab-more .toolbar label {
     display: flex;
@@ -1463,6 +1471,15 @@ p.diagnostic:not(.info):not(.warning):not(.error) {
     font-weight: 600;
 }
 
+/* Claude Design's review: beside a textarea the label sits at the top of the field, not at its last line. */
+.field-group:has(textarea) {
+    align-items: start;
+}
+
+.field-group:has(textarea) .field-label {
+    padding-top: 0.35rem;
+}
+
 .field-group .field-control > select,
 .field-group .field-control > input {
     max-width: 100%;
@@ -1487,6 +1504,18 @@ p.diagnostic:not(.info):not(.warning):not(.error) {
 }
 
 /* S10: stepping through revisions */
+/* Claude Design's review: the game's units in compact rows, so more fit on a screen. */
+#game-units td {
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
+    vertical-align: middle;
+}
+
+.revision-count {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
 .revision-navigator {
     display: inline-flex;
     align-items: center;
@@ -2063,6 +2092,11 @@ main :is(.toolbar, .fields, .field-group, .form-grid) > * {
 @media (max-width: 1023.98px) {
     .lab {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .lab > .lab-preview {
+        position: static;
+        max-height: none;
     }
 
     .lab .lab-preview {
