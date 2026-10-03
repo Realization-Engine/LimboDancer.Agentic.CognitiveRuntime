@@ -84,10 +84,10 @@ New rules adjudication, changes to game persistence, VASL artwork, a new compone
 | 28c | The Play workspace and hardening | Studio | 3 | 4:00 | 5:15 | 3:40 to 6:50 |
 | 29 | The shared board workspace | Studio | 5 | 3:15 | 4:30 | 3:09 to 5:51 |
 | 30 | Prepared setups | Game | 6 | 8:30 | 9:45 | 6:50 to 12:41 |
-| 30b | Setup plans for the side that sets up second | Game | 7 | 6:30 | 8:00 | 5:36 to 10:24 |
+| 30b | Setup plans for the side that sets up second | Game | 8 | 7:30 | 9:00 | 6:18 to 11:42 |
 | 31 | DYO purchase I: Infantry, leaders, and SW | Game | 5 | 3:15 | 4:30 | 3:09 to 5:51 |
 | 32 | DYO purchase II: ordnance, vehicles, and conditions | Game | 4 | 2:30 | 3:45 | 2:38 to 4:52 |
-| | **All passes** | | **81** | **67:20** | **87:35** | **61:19 to 113:52** |
+| | **All passes** | | **82** | **68:20** | **88:35** | **62:01 to 115:10** |
 
 **Order.** The passes run in the order listed, one at a time on the user's go-ahead.
 
@@ -330,8 +330,9 @@ Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (backlog sect
 | 30b.5 The answered plan on the map | The answered plan's footprint drawn under the enemy's stacks, with a toggle; the zoom takes in the enemy stacks. | 1:00 |
 | 30b.6 The words | The bar, the review, and the first side's note that setup plans are public. | 0:30 |
 | 30b.7 Plans for the built-in cards | Up to thirteen plans for the second side of the four built-in cards, one card at a time, each accepted by the gate in the Studio and reviewed by the user. | 2:00 |
+| 30b.8 Hidden and concealed setup | Added 2026-10-03 at the user's condition (the design's section 13): the non-OB "?" for every stack that may take one in one step, what an unchanged plan gives away told to the side that uses it, "Swap" for two stacks of the list, and each plan using every "?" and hidden setup its card allows. | 1:00 |
 | | Overhead | 1:30 |
-| | **Pass 30b total** (build 6:30) | **8:00** |
+| | **Pass 30b total** (build 7:30, revised 2026-10-03) | **9:00** |
 
 ### Pass 31: DYO purchase I: Infantry, leaders, and SW
 

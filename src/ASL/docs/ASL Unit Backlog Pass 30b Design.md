@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 30b Design
 
-**Status:** Draft, 2026-10-03, on branch `feature/asl-backlog-pass-30b`. Nothing is built. It waits for the user's approval and the answers to section 11. Pass 30b (Setup plans for the side that sets up second) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, a Studio pass.
+**Status:** Draft, 2026-10-03, on branch `feature/asl-backlog-pass-30b`. Nothing is built. The user took the recommended answers to section 11's nine questions on one condition, which section 13 answers; the design waits for the user's word on section 13. Pass 30b (Setup plans for the side that sets up second) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, a Studio pass.
 
 **Date:** 2026-10-03
 
@@ -222,7 +222,58 @@ Each with a recommendation.
 | 30b.5 The answered plan on the map | Its footprint under the enemy's stacks, the toggle, the legend line, the zoom taking in the enemy stacks. | 1:00 |
 | 30b.6 The words | The bar, the review, "N stacks seen", and the first side's note that plans are public. | 0:30 |
 | 30b.7 The plans | Up to thirteen plans on four cards, one card at a time, each accepted by the gate in my Studio and approved by the user. | 2:00 |
+| 30b.8 Hidden and concealed setup (section 13) | "Conceal every stack that may be" for the non-OB "?", the notice naming that step, what an unchanged plan gives away on its card and in the review, "Swap" for two stacks, and the ten plans of pass 30 checked against D11. | 1:00 |
 | | Overhead: the three reviews and their fixes, the Studio check of the whole pass, the documents, the tests, the merge gate | 1:30 |
-| | **Pass 30b total** (build 6:30) | **8:00** |
+| | **Pass 30b total** (build 7:30, revised 2026-10-03 for section 13) | **9:00** |
 
 Pass 30 took about 3:26 against 9:45, so the estimate is likely high.
+
+## 13. Keeping hidden what the rules let a side hide
+
+**Added 2026-10-03.** The user took the recommended answers to section 11 on one condition: that the design looks for ways to give each player as much hidden and concealed setup as the rules or the card allow, with liberal use of Dummies. This section is that work. It waits for the user's word like the rest.
+
+**What each card allows.**
+
+| Card | Side | OB "?" | Hidden at setup | Non-OB "?" once both sides have set up (A12.12; ruling R23.6) |
+|---|---|---|---|---|
+| The Guards Counterattack | German (first) | None | None | Every stack out of the LOS of the Russian units: F6 and L7 in Out of sight, the stairwell stacks of Tripwire and reserve |
+| | Russian (second) | None | None | Every stack out of the LOS of the German units |
+| Gambit | British (first) | Forbidden on the five counters (SSR 2) | None | The five counters, where the Germans end up not seeing them; the card's SSR bars a "?" at their setup, and whether it bars this one too is checked against the card before a plan leans on it |
+| | German (second) | None | None | Every stack out of the LOS of the five British counters, which are few and seen: most of the German setup |
+| The Tractor Works | Russian 308th (first) | 18 | None | None left: every stack is under "?" already |
+| | German (second) | 12, Kampfgruppe Stahler's | None | The Engineers' and Tienham's stacks out of the LOS of X3 |
+| Armor Test | Russian (first) | 2 | The Gun and its crew, Emplaced in woods (A12.34) | The stack left without a "?" (P8), if the column's entry gives no LOS; the column is off board, so nothing sees it |
+| | German (second) | None | None | None: the column is off board |
+
+So the OB's "?" matter on one card and a half. On the other cards concealment comes from the non-OB "?", which the page offers today as a list of checkboxes after both sides have set up, with no word of it in any plan.
+
+**D11. A plan uses everything its side may hide.** A rule for making plans, checked for each plan before the user sees it and stated in its table:
+
+- Every OB "?" is used: a stack of real units under "?", or a Dummy.
+- Every counter that may set up hidden does (an Emplaced Gun with its crew).
+- Dummies stand where they change what the other side reads: a Dummy stack as tall as a real one, in a hex the real force might hold, and never a lone Dummy where every real stack has three counters.
+- In a stack that cannot be under "?", the top counter is a plain squad, not the leader or the squad with the MG, since before play the other side sees only the top counter (A2.9; ruling R23.3). Which counter the game takes as the top is confirmed at the build.
+- Where a card's first-side plans can share one footprint (the same hexes with the same counts) without losing their ideas, they do, so the comparison cannot tell them apart.
+
+The ten plans of pass 30 are checked against this rule in task 30b.8. They are approved and merged, so a change to any of them is put to the user, plan by plan. The Tractor Works' three use all 18 "?"; Forward screen uses both of its "?" and hides the Gun.
+
+**D12. The non-OB "?" in one step.** Once both sides have set up, each side's block gains "Conceal every stack that may be": it ticks every Location the gate allows that side (`GamePlanner.NonObConcealment`, which the page already reads). The player unticks what should stay open and proposes as now. A "?" costs a unit nothing until it acts, so all of them is the right start. The notice after the last setup's Confirm names the step: "Next: each side may place a non-OB \"?\"." The gate and ruling R23.6 are unchanged.
+
+**D13. A plan is made for its non-OB "?".** A plan's terrain facts say which of its stacks stand out of every LOS from the other side's setup areas, so that they take a non-OB "?" whatever the other side does, and a response's facts say which stand out of the LOS of the answered plan's footprint. On The Guards Counterattack and Gambit this is the only concealment there is, and a plan that keeps two platoons out of sight is then two platoons under "?" at the start of play.
+
+**D14. The first side is told what an unchanged plan gives away, and how to hide it.** In place of section 6's one general line, the plan's card and the review list it from the plan's own placements: the hidden counters and their hex, the hexes that hold only Dummies, and the stacks whose SW a reader of the plan would know. With it, one sentence: "Setup plans are public. Move or swap these before you propose, and the other side reads the plan wrong." The list is computed from the plan in the first side's own view; nothing of it reaches the other view.
+
+**D15. "Swap" beside "Move".** Two stacks of the list exchange their hexes in one step: "Swap" on a stack, then a click on another stack of the list. Swapping a Dummy stack with a real stack of the same height leaves the footprint as it was and changes what is under it, which is the cheapest way to make an unchanged-looking plan lie. It is the player's act, never the Studio's: the Studio shuffles nothing by itself, since which stack stands where is the plan's idea.
+
+**D16. The comparison stays honest about Dummies.** Dummies count as presences (D4), so a liberal use of them moves the score, as it should. The help line under the second side's Plans tab already says so.
+
+**What is not proposed.**
+
+- No "?" beyond the card's allotment and A12.12. A plan places the card's fixed OB.
+- No hidden setup by plan where no rule or SSR gives it. On these four cards that is the Armor Test Gun alone.
+- No automatic shuffle of a plan's contents at "Use this plan" (D15).
+- Whether a stack set up under "?" in Concealment Terrain out of enemy LOS should be charged to the OB's "?" is still backlog section 46's row, waiting for a ruling. If the ruling frees those "?", the Tractor Works' plans gain Dummies.
+
+**One more question for the user.**
+
+10. **Shared footprints (D11, last point).** On The Tractor Works the three 308th plans could be remade to show the same count in every hex of X3, so that a German player reads nothing from the stacks. It costs Hidden core its idea (three hexes of Dummies only, 12 Dummies against 9), and the three plans are approved. Recommended: leave the three as they are, tell the first side what each gives away (D14), and give it "Swap" (D15).
