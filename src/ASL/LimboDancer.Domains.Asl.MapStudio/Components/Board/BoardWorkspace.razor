@@ -1,5 +1,6 @@
 @using System.Globalization
 @using LimboDancer.Domains.Asl.Units.State
+@using LimboDancer.Domains.Asl.Maps.Geometry
 @inject StudioLos Los
 @* Pass 29 (plan section 5): a board's map and its inspector, shared by the board viewer and Play. It owns B06 BoardViewport and BoardInspector,
    loads the board when the board or its view changes, sends a layer only when it changes, and keeps what the inspector shows: the hex hovered,
@@ -36,6 +37,11 @@
     private HexFacts? hovered;
     private PlacedUnit? selectedUnit;
     private GameView? shownView;
+
+    // A hex the host picked (a unit located in a table, a link's hex) is brought into view; one picked on the map already is.
+    private HexIndex? pickedHere;
+    private HexIndex? shownSelected;
+    private bool revealPending;
     private string? shownPanel;
     private bool rotated;
     private string? sample;
@@ -169,6 +175,12 @@
         }
 
         shownView = UnitView;
+
+        if (Selected?.Index != shownSelected)
+        {
+            revealPending = Selected is not null && Selected.Index != pickedHere;
+            shownSelected = Selected?.Index;
+        }
 
         // Another board starts with nothing hovered, sampled, or checked.
         if (shown is not null && !shown.StartsWith($"{Board.Ref.Value}/{Board.Version}/", StringComparison.Ordinal))
@@ -314,6 +326,13 @@
             sent.Highlight = highlight;
             await viewport.Highlight(highlight);
         }
+
+        if (revealPending && Selected is not null)
+        {
+            revealPending = false;
+            var vertices = Board.Render.Grid.Geometry.Vertices(Selected.Index).ToArray();
+            await viewport.Reveal(vertices.Average(vertex => vertex.X), vertices.Average(vertex => vertex.Y));
+        }
     }
 
     private void Retry() => (shown, loadProblem) = (null, null);
@@ -414,6 +433,7 @@
 
     private async Task Select(HexFacts? facts)
     {
+        pickedHere = facts?.Index;
         Selected = facts;
         await SelectedChanged.InvokeAsync(facts);
         StateHasChanged();

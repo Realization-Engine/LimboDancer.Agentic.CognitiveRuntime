@@ -190,6 +190,7 @@ export function create(host, dotnet) {
         copyText: text => navigator.clipboard?.writeText(text),
         reset: () => reset(state),
         zoom: factor => zoomCenter(state, factor),
+        reveal: (x, y) => revealPoint(state, x, y),
         setRotation: on => setRotation(state, on, true),
         isRotated: () => state.rotated,
         dispose: () => {
@@ -419,6 +420,23 @@ function zoomAt(state, point, factor) {
         width,
         height: state.box.height * scale,
     });
+}
+
+// Brings a point into view at the same zoom, only when it lies outside the view or close to its edge (Claude Design's review: a hex picked
+// outside the map, such as from the units table, may be off screen on a zoomed or composed map).
+function revealPoint(state, x, y) {
+    if (!state.box) {
+        return;
+    }
+
+    const box = state.box;
+    const marginX = box.width * 0.1;
+    const marginY = box.height * 0.1;
+    if (x >= box.x + marginX && x <= box.x + box.width - marginX && y >= box.y + marginY && y <= box.y + box.height - marginY) {
+        return;
+    }
+
+    setBox(state, { ...box, x: x - box.width / 2, y: y - box.height / 2 });
 }
 
 function zoomCenter(state, factor) {

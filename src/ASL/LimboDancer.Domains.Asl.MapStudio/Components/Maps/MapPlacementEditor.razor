@@ -25,6 +25,7 @@
     </tbody>
 </table>
 <p><button id="map-add-board" @onclick="OnAdd">Add a board</button></p>
+<MapSlotPreview Rows="@Rows" />
 
 @code {
     /// <summary>One placement being edited: a stable id, the VASL board name ("01"), its slot, and whether it is reversed.</summary>

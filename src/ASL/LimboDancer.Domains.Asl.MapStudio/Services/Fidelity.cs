@@ -250,6 +250,26 @@ public sealed class FidelityJobRunner(IFidelityBatch batch, FidelityReportStore 
         return result is not null && result.LosDataBlob == entry.LosDataBlob && result.MetadataBlob == entry.MetadataBlob ? result : null;
     }
 
+    /// <summary>
+    /// Why an up-to-date report has no result for a library entry, in words: the board is not in it, or its own source changed since it ran;
+    /// null when the report has a fresh result, or when there is no report or the whole report is out of date (the library says so once).
+    /// </summary>
+    public string? MissingReason(BoardListing entry, string? catalogBlob)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        if (Latest is not { Report: var report } || catalogBlob is null || StaleReason(report, catalogBlob) is not null)
+        {
+            return null;
+        }
+
+        return report.Boards.FirstOrDefault(board => board.Board == entry.Ref.Value) switch
+        {
+            null => "not in the report",
+            var result when result.LosDataBlob != entry.LosDataBlob || result.MetadataBlob != entry.MetadataBlob => "its source changed since the report",
+            _ => null,
+        };
+    }
+
     public void Dispose()
     {
         lock (gate)

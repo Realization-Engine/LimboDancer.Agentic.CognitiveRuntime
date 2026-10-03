@@ -16,15 +16,15 @@
             <dt>MF spent this phase</dt><dd>@instance.MfSpent</dd>
             @if (instance.From.Count > 0)
             {
-                <dt>Produced from</dt><dd>@string.Join(", ", instance.From)</dd>
+                <dt>Produced from</dt><dd>@string.Join(", ", instance.From.Select(Named))</dd>
             }
             @if (instance.Custodian is { } custodian)
             {
-                <dt>Prisoner of</dt><dd>@custodian</dd>
+                <dt>Prisoner of</dt><dd>@Named(custodian)</dd>
             }
             @if (instance.Position is ContainedPosition contained)
             {
-                <dt>Inside</dt><dd>@contained.Container (@contained.Role)</dd>
+                <dt>Inside</dt><dd>@Named(contained.Container) (@contained.Role.ToString().ToLowerInvariant())</dd>
             }
         </dl>
     }
@@ -56,6 +56,15 @@
     /// <summary>The game as the perspective sees it, when the unit comes from a game; null for a placement set.</summary>
     [Parameter]
     public GameView? View { get; set; }
+
+    /// <summary>
+    /// The name of a unit or entity the view sees, by id, such as "German 1st Line squad, 4-6-7"; null for one it does not see or that no longer
+    /// exists (Claude Design's review: "Prisoner of" and "Produced from" read names, with the id beside them).
+    /// </summary>
+    [Parameter]
+    public Func<string, string?> NameOf { get; set; } = _ => null;
+
+    private string Named(string id) => NameOf(id) is { Length: > 0 } name ? $"{name} ({id})" : id;
 
     /// <summary>Where the unit comes from, in words.</summary>
     [Parameter]

@@ -128,6 +128,9 @@
     /// <summary>Zooms about the centre: a factor under 1 zooms in, over 1 out (pass 28c: the Play map's zoom buttons).</summary>
     public ValueTask Zoom(double factor) => Send("zoom", factor);
 
+    /// <summary>Brings a point of the board into view at the same zoom, when it is outside the view (Claude Design's review).</summary>
+    public ValueTask Reveal(double x, double y) => Send("reveal", x, y);
+
     /// <summary>The map turned or turned back by the script, when its pane changes shape (pass 29).</summary>
     [Parameter]
     public Func<bool, Task>? OnRotation { get; set; }

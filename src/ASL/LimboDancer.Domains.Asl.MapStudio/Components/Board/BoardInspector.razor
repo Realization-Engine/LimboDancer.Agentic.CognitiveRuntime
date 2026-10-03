@@ -33,7 +33,8 @@
             default:
                 @if (SelectedUnit is { } unit)
                 {
-                    <SelectedUnitInspector Unit="@unit" Vocabulary="@Vocabulary" View="@View" Note="@UnitNote" />
+                    <SelectedUnitInspector Unit="@unit" Vocabulary="@Vocabulary" View="@View" Note="@UnitNote"
+                                           NameOf="@(id => Units?.Units.FirstOrDefault(placed => placed.Document.Id == id)?.Name)" />
                 }
                 @if (Units is { } units)
                 {

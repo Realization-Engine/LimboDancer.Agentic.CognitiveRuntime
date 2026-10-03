@@ -480,6 +480,16 @@ table.library tbody tr:hover td {
     background: #f8f6f0;
 }
 
+/* Claude Design's review: one table style in two densities. Compact tables (a card's OB, the card editor's rows) take only the width they need. */
+table.library.compact {
+    min-width: 0;
+}
+
+table.library.compact th,
+table.library.compact td {
+    padding: 0.3rem 0.6rem;
+}
+
 td.number {
     text-align: right;
     font-variant-numeric: tabular-nums;
@@ -623,6 +633,11 @@ dl.report dd {
     border-bottom: 1px solid var(--line);
     background: var(--surface-2);
     font-size: 0.875rem;
+}
+
+/* Claude Design's review: the units strip flows inside the board's toolbar, as one row. */
+#viewer-toolbar > .unit-strip {
+    display: contents;
 }
 
 .viewer .toolbar label {
@@ -1028,6 +1043,51 @@ ul.plain li.selected {
 
 /* ---- Maps ------------------------------------------------------------------ */
 
+/* The Maps page's slot diagram (Claude Design's UX analysis): the boards at their columns and rows. */
+.map-slots {
+    max-width: 40rem;
+    margin: 0.5rem 0 1rem;
+}
+
+.map-slots svg {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.map-slot rect {
+    fill: var(--pass-bg);
+    stroke: var(--pass);
+    stroke-width: 1.5;
+}
+
+.map-slot text {
+    fill: var(--ink);
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.map-slot .map-slot-note {
+    font-size: 11px;
+    font-weight: 400;
+    fill: var(--muted);
+}
+
+.map-slot.clash rect {
+    fill: var(--fail-bg);
+    stroke: var(--fail);
+}
+
+.map-slot.clash .map-slot-note {
+    fill: var(--fail);
+}
+
+.map-slot-empty {
+    fill: none;
+    stroke: var(--line);
+    stroke-dasharray: 5 4;
+}
+
 table.placements input[type="number"] {
     width: 4.5rem;
 }
@@ -1279,20 +1339,13 @@ textarea.placements-text {
 }
 
 .scenario-card table.card-group {
-    border-collapse: collapse;
     margin: 0.4rem 0 0.8rem;
 }
 
 .scenario-card table.card-group caption {
     text-align: left;
     font-weight: 600;
-}
-
-.scenario-card table.card-group th,
-.scenario-card table.card-group td {
-    border: 1px solid var(--line);
-    padding: 0.15rem 0.5rem;
-    font-size: 0.85rem;
+    padding: 0.3rem 0.6rem;
 }
 
 .scenario-card .card-manufactured {
@@ -1518,8 +1571,15 @@ p.diagnostic:not(.info):not(.warning):not(.error) {
 
 .revision-navigator {
     display: inline-flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 0.35rem;
+    max-width: 100%;
+}
+
+.revision-navigator input[type="range"] {
+    min-width: 0;
+    flex: 1 1 6rem;
 }
 
 .revision-navigator input[type="number"] {
@@ -1777,7 +1837,8 @@ details.advanced > summary {
     border-radius: var(--radius);
 }
 
-.play-context-line {
+.play-context-line,
+.game-line {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -1785,8 +1846,13 @@ details.advanced > summary {
     margin-top: 0.35rem;
 }
 
-.play-context-line #play-summary {
+.play-context-line #play-summary,
+.game-line > p {
     margin: 0;
+}
+
+.game-line-game {
+    font-weight: 600;
 }
 
 .play-context #play-conditions {
@@ -2022,7 +2088,7 @@ details.advanced > summary {
     font-weight: 600;
 }
 
-.play-context-line #play-revision {
+.game-line [id$="-revision"] {
     font-size: 0.85rem;
 }
 

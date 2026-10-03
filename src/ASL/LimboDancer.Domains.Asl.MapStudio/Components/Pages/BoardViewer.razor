@@ -3,6 +3,7 @@
 @using LimboDancer.Domains.Asl.Units.State
 @using LimboDancer.Domains.Asl.Maps.Coordinates
 @using LimboDancer.Domains.Asl.MapStudio.Components.Layout
+@using LimboDancer.Domains.Asl.MapStudio.Components.Games
 @inject IBoardProvider Boards
 @inject UnitLibrary UnitLibrary
 @inject GameLibrary Games
@@ -26,19 +27,21 @@ else if (board is null)
                         Units="@(showUnits ? unitOverlay : null)" UnitView="@gameProjection?.View" UnitNote="@UnitNote" Vocabulary="@UnitLibrary.Vocabulary"
                         StyledModel="@StyledModel" @bind-Selected="selected" @bind-Panel="panel" Extras="@LayerTabs">
             <Toolbar>
-                @if (GameBanner is { } banner)
+                @if (GameBanner is { } banner && gameProjection is { } shownGame)
                 {
-                    @* The UX analysis (pass 29): a game shown here says which game, whose view, and which revision, and a live one links back to Play. *@
+                    @* The UX analysis (pass 29): a game shown here says which game, whose view, where it stands, and which revision, on the game line Play
+                       shares; a live one links back to Play. *@
                     <div class="toolbar viewer-game-banner" id="viewer-game-banner">
-                        <span>@banner.Text</span>
-                        @if (banner.Historical)
-                        {
-                            <StatusBadge Tone="StatusBadge.BadgeTone.Warning" Label="Historical" Explanation="An earlier revision: not the game's current state." />
-                        }
-                        @if (banner.PlayLink is { } back)
-                        {
-                            <a id="viewer-back-to-play" href="@back">Back to Play</a>
-                        }
+                        <GameLine IdPrefix="viewer-game" Game="@banner.Game" View="@shownGame.View.Perspective.Name" Revision="@gameRevision" Max="@banner.Max"
+                                  Text="@($"Turn {shownGame.View.Turn}, {DisplayText.Side(shownGame.View.PhasingSide)} {GameText.PhaseLabel(shownGame.View.Phase)}.")"
+                                  Badge="@(banner.Historical ? "Historical" : banner.PlayLink is not null ? "Live" : "Synthetic")"
+                                  Tone="@(banner.Historical ? StatusBadge.BadgeTone.Warning : banner.PlayLink is not null ? StatusBadge.BadgeTone.Pass : StatusBadge.BadgeTone.Neutral)"
+                                  Explanation="@(banner.Historical ? "An earlier revision: not the game's current state." : banner.PlayLink is not null ? "The live game's latest revision when the page opened." : "A synthetic game, not a live one.")">
+                            @if (banner.PlayLink is { } back)
+                            {
+                                <a id="viewer-back-to-play" href="@back">Back to Play</a>
+                            }
+                        </GameLine>
                     </div>
                 }
                 <BoardViewerToolbar Board="@board" OnFit="@(() => workspace!.Fit())" Preparing="@preparing">
@@ -48,16 +51,17 @@ else if (board is null)
                     {
                         <BoardComparisonControls Mode="@comparisonMode" ModeChanged="@(mode => comparisonMode = mode)" Value="@comparisonValue" ValueChanged="@(value => comparisonValue = value)" />
                     }
+                    @* Claude Design's review: the game source, view, and revision join the board's toolbar in one row. *@
+                    @if (unitSets.Count > 0 || unitGames.Count > 0)
+                    {
+                        <UnitOverlayControls Show="@showUnits" ShowChanged="@(show => showUnits = show)"
+                                             Games="@(unitGames.Select(game => new UnitOverlayControls.SourceChoice(GamePrefix + game.Name, game.Label + (game.Record?.Synthetic == true ? " (synthetic)" : ""))).ToArray())"
+                                             Sets="@(unitSets.Select(entry => new UnitOverlayControls.SourceChoice(SetPrefix + entry.Set.SetId, entry.Set.Label + (entry.Set.Synthetic ? " (synthetic)" : ""))).ToArray())"
+                                             Source="@unitSourceKey" SourceChanged="@ChangeUnitSource" Replay="@Replay"
+                                             PerspectiveChanged="@ChangePerspective" RevisionChanged="@ChangeRevision"
+                                             Sheets="@UnitLibrary.SheetNames()" Sheet="@unitSheet" SheetChanged="@ChangeUnitSheet" ShowSheet="false" />
+                    }
                 </BoardViewerToolbar>
-                @if (unitSets.Count > 0 || unitGames.Count > 0)
-                {
-                    <UnitOverlayControls Show="@showUnits" ShowChanged="@(show => showUnits = show)"
-                                         Games="@(unitGames.Select(game => new UnitOverlayControls.SourceChoice(GamePrefix + game.Name, game.Label + (game.Record?.Synthetic == true ? " (synthetic)" : ""))).ToArray())"
-                                         Sets="@(unitSets.Select(entry => new UnitOverlayControls.SourceChoice(SetPrefix + entry.Set.SetId, entry.Set.Label + (entry.Set.Synthetic ? " (synthetic)" : ""))).ToArray())"
-                                         Source="@unitSourceKey" SourceChanged="@ChangeUnitSource" Replay="@Replay"
-                                         PerspectiveChanged="@ChangePerspective" RevisionChanged="@ChangeRevision"
-                                         Sheets="@UnitLibrary.SheetNames()" Sheet="@unitSheet" SheetChanged="@ChangeUnitSheet" />
-                }
             </Toolbar>
             <Footer>
                 <p class="muted hint">Drag to pan, wheel or + and - to zoom, 0 to fit. Hover a hex to inspect it; click to keep it, and Escape to release it.</p>
@@ -111,19 +115,33 @@ else if (board is null)
     [SupplyParameterFromQuery(Name = "hex")]
     public string? HexQuery { get; set; }
 
-    private sealed record Banner(string Text, bool Historical, string? PlayLink);
+    private sealed record Banner(string Game, long Max, bool Historical, string? PlayLink);
 
     /// <summary>Claude Design's review: the rendered layers and the trace sit in a Layers tab after the inspector's own, not in a row above the map.</summary>
     private IReadOnlyList<BoardInspector.ExtraTab> LayerTabs =>
     [
-        new(new("layers", "Layers"), @<BoardLayerToggles Layers="@ToggleLayers" Visible="@visible" LayerChanged="@ToggleLayer" TraceAvailable="@(view == BoardView.HexFacts)" Trace="@trace" TraceChanged="@(on => trace = on)" />, Last: true),
+        new(new("layers", "Layers"), @<div>
+            <BoardLayerToggles Layers="@ToggleLayers" Visible="@visible" LayerChanged="@ToggleLayer" TraceAvailable="@(view == BoardView.HexFacts)" Trace="@trace" TraceChanged="@(on => trace = on)" />
+            @if (unitSets.Count > 0 || unitGames.Count > 0)
+            {
+                <label>
+                    Counter style
+                    <select id="units-sheet" value="@unitSheet" @onchange="@(args => ChangeUnitSheet(args.Value as string ?? unitSheet))" aria-label="Unit style sheet">
+                        @foreach (var name in UnitLibrary.SheetNames())
+                        {
+                            <option value="@name">@name</option>
+                        }
+                    </select>
+                </label>
+            }
+        </div>, Last: true),
     ];
 
     /// <summary>The game shown, whose view, and which revision; a live game links back to Play; null when no game is shown.</summary>
     private Banner? GameBanner => gameProjection is { } shown && shown.Game.History is { } history
         ? new Banner(
-            (shown.Game.Name.StartsWith(GameLibrary.LivePrefix, StringComparison.Ordinal) ? $"Viewing live game {shown.Game.Name[GameLibrary.LivePrefix.Length..]} as " : $"Viewing {shown.Game.Label} as ")
-                + $"{DisplayText.ViewName(shown.View.Perspective.Name)}, revision {gameRevision} of {history.States.Count}.",
+            shown.Game.Name.StartsWith(GameLibrary.LivePrefix, StringComparison.Ordinal) ? shown.Game.Name[GameLibrary.LivePrefix.Length..] : shown.Game.Label,
+            history.States.Count,
             gameRevision < history.States.Count,
             shown.Game.Name.StartsWith(GameLibrary.LivePrefix, StringComparison.Ordinal)
                 ? $"games/play?game={Uri.EscapeDataString(shown.Game.Name[GameLibrary.LivePrefix.Length..])}"
