@@ -1,13 +1,53 @@
 @* Plan P09 (pass 26): the placements waiting to be proposed, each with what it is and where (a Passenger's vehicle, a towed Gun's), removable one by
-   one, and the setup proposal. The page keeps the list. *@
+   one, and the setup proposal. The page keeps the list. Pass 30: a row's Location, holder, facing, "?", and off-board state are changed in the row, so a
+   list filled from the card or from a setup plan is adjusted without typing each counter again. *@
 @if (Items.Count > 0)
 {
     <ul id="place-list">
-        @foreach (var item in Items)
+        @foreach (var (item, index) in Items.Select((item, index) => (item, index)))
         {
-            <li @key="item.Key" data-key="@item.Key">@item.Text <button class="link" aria-label="Remove @item.Key" @onclick="@(() => OnRemove.InvokeAsync(item.Key))">remove</button></li>
+            <li @key="item.Key" data-key="@item.Key" class="@(item.Picking ? "place-row picking" : "place-row")">
+                <span class="place-row-text">@item.Text</span>
+                @if (item.Location is { } at)
+                {
+                    <label>Location <input id="@($"place-row-{index}-location")" value="@at" size="11" placeholder="pick a hex"
+                                           @onchange="@(args => Changed(item, "location", args.Value as string ?? string.Empty))" /></label>
+                    @if (CanPick)
+                    {
+                        <button type="button" class="link place-row-pick" id="@($"place-row-{index}-pick")" aria-pressed="@(item.Picking ? "true" : "false")"
+                                title="The next click on the map fills this Location." @onclick="@(() => OnPick.InvokeAsync(item.Key))">@(item.Picking ? "Click a hex on the map" : "Pick on the map")</button>
+                    }
+                }
+                @if (item.Holders is { } holders)
+                {
+                    <label>
+                        @item.HolderLabel
+                        <select id="@($"place-row-{index}-holder")" value="@(item.Holder ?? string.Empty)" @onchange="@(args => Changed(item, "holder", args.Value as string ?? string.Empty))">
+                            <option value="">@item.NoHolder</option>
+                            @foreach (var holder in holders)
+                            {
+                                <option value="@holder">@holder</option>
+                            }
+                        </select>
+                    </label>
+                }
+                @if (item.Facing is { } facing)
+                {
+                    <FacingPicker Id="@($"place-row-{index}-facing")" Label="facing" Value="@facing" OnChange="@(spine => Changed(item, "facing", spine))" />
+                }
+                @if (item.Concealed is { } concealed)
+                {
+                    <label><input type="checkbox" id="@($"place-row-{index}-concealed")" checked="@concealed" @onchange="@(args => Changed(item, "concealed", args.Value is true ? "true" : "false"))" /> "?"</label>
+                }
+                @if (item.OffBoard is { } offBoard)
+                {
+                    <label><input type="checkbox" id="@($"place-row-{index}-offboard")" checked="@offBoard" @onchange="@(args => Changed(item, "offBoard", args.Value is true ? "true" : "false"))" /> off board (enters)</label>
+                }
+                <button class="link" aria-label="Remove @item.Label" @onclick="@(() => OnRemove.InvokeAsync(item.Key))">remove</button>
+            </li>
         }
     </ul>
+    <button type="button" class="link" id="place-clear" @onclick="@(() => OnClear.InvokeAsync())">Clear the list</button>
 }
 <button id="propose-setup" disabled="@(Items.Count == 0 || !Ready)" aria-describedby="propose-setup-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose setup</button>
 @if (!Ready)
@@ -20,8 +60,59 @@ else if (Items.Count == 0)
 }
 
 @code {
-    /// <summary>A placement waiting: its key, the counter's id, and how it reads.</summary>
-    public sealed record Item(string Key, string Text);
+    /// <summary>
+    /// A placement waiting: its key and how it reads. Pass 30: what the row lets the player change is given, and what it does not is left null: its
+    /// Location (empty until picked), its holder among <see cref="Holders"/>, its facing, its "?", and whether it waits off board.
+    /// </summary>
+    public sealed record Item(string Key, string Text)
+    {
+        /// <summary>The counter's id, for the remove button's name.</summary>
+        public string Label { get; init; } = Key;
+
+        public string? Location
+        {
+            get; init;
+        }
+
+        public IReadOnlyList<string>? Holders
+        {
+            get; init;
+        }
+
+        public string? Holder
+        {
+            get; init;
+        }
+
+        public string HolderLabel { get; init; } = "held by";
+
+        /// <summary>What the holder list's empty choice reads: "choose", or "on foot" for a unit that need not ride.</summary>
+        public string NoHolder { get; init; } = "choose";
+
+        public string? Facing
+        {
+            get; init;
+        }
+
+        public bool? Concealed
+        {
+            get; init;
+        }
+
+        public bool? OffBoard
+        {
+            get; init;
+        }
+
+        /// <summary>Whether the next click on the map fills this row's Location.</summary>
+        public bool Picking
+        {
+            get; init;
+        }
+    }
+
+    /// <summary>A change to a row: its key, the field (location, holder, facing, concealed, offBoard), and the new value.</summary>
+    public sealed record Change(string Key, string Field, string Value);
 
     [Parameter]
     public IReadOnlyList<Item> Items { get; set; } = [];
@@ -30,9 +121,24 @@ else if (Items.Count == 0)
     [Parameter]
     public bool Ready { get; set; } = true;
 
+    /// <summary>Whether a map is shown to pick a row's Location on.</summary>
+    [Parameter]
+    public bool CanPick { get; set; }
+
     [Parameter]
     public EventCallback<string> OnRemove { get; set; }
 
     [Parameter]
+    public EventCallback<Change> OnChange { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnPick { get; set; }
+
+    [Parameter]
+    public EventCallback OnClear { get; set; }
+
+    [Parameter]
     public EventCallback OnPropose { get; set; }
+
+    private Task Changed(Item item, string field, string value) => OnChange.InvokeAsync(new Change(item.Key, field, value));
 }

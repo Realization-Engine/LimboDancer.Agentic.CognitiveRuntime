@@ -1772,6 +1772,267 @@ details.advanced > summary {
     color: var(--muted);
 }
 
+/* Pass 30: the setup mode of the actions pane. One bar says who sets up and holds the only Propose and Clear; it stays in view while the tabs
+   under it scroll. */
+.setup-bar {
+    background: var(--accent-tint);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    margin: 0.25rem 0 0.5rem;
+    padding: 0.4rem 0.6rem;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.setup-bar.problems {
+    background: var(--fail-bg);
+    border-color: var(--fail);
+}
+
+.setup-bar-text {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.15rem 0.6rem;
+    margin: 0 0 0.25rem;
+}
+
+#setup-done {
+    margin: 0.25rem 0 0.5rem;
+}
+
+#setup-done p {
+    margin: 0 0 0.35rem;
+}
+
+/* Pass 30: the card's setup plans as compact cards, offered to the side that sets up first. */
+.setup-plans {
+    margin: 0.5rem 0;
+}
+
+.setup-plan {
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--line);
+    border-radius: var(--radius);
+    margin: 0.5rem 0;
+    padding: 0.4rem 0.6rem;
+}
+
+.setup-plan.shown {
+    border-left-color: var(--info);
+}
+
+.setup-plan.chosen {
+    border-left-color: var(--pass);
+}
+
+.setup-plan h4 {
+    margin: 0 0 0.2rem;
+}
+
+.setup-plan p {
+    margin: 0.2rem 0;
+}
+
+/* Pass 30: the list grouped by stack. A stack's head names its Location; each counter is one line in its printed values, its id after it in
+   small type, and what it holds or carries indented under it. The stack chosen on the map and a refused line are marked by a bar and a word,
+   never by color alone. */
+.setup-rows {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.setup-stack {
+    border-left: 4px solid var(--line);
+    margin: 0.4rem 0;
+    padding: 0.1rem 0 0.1rem 0.5rem;
+}
+
+.setup-stack.selected {
+    background: var(--warn-bg);
+    border-left-color: var(--warn);
+}
+
+.setup-stack.problem {
+    border-left-color: var(--fail);
+}
+
+.setup-stack-head {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    font-weight: 600;
+    gap: 0.15rem 0.6rem;
+}
+
+.setup-row {
+    align-items: center;
+    border-top: 1px solid var(--line-soft);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.1rem 0.5rem;
+    padding: 0.15rem 0;
+}
+
+/* A long holder's name is cut by its select at a narrow width, so the pane never scrolls sideways. */
+.setup-row label,
+.setup-stack-head label {
+    max-width: 100%;
+    min-width: 0;
+}
+
+.setup-row select,
+.setup-stack-head select {
+    max-width: 100%;
+}
+
+.setup-row.held {
+    padding-left: 1.25rem;
+}
+
+.setup-row.moving {
+    background: var(--warn-bg);
+}
+
+.setup-row.problem .setup-row-label {
+    color: var(--fail);
+    font-weight: 600;
+}
+
+.setup-row-id {
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+}
+
+.setup-row-note,
+.setup-area-note {
+    color: var(--muted);
+    font-size: 0.85rem;
+}
+
+#setup-off-board,
+#setup-by-hand,
+#setup-before-start {
+    margin: 0.5rem 0;
+}
+
+.setup-switcher button[aria-pressed="true"] {
+    background: var(--accent);
+    color: #ffffff;
+}
+
+/* The plan the list came from, or the one the map shows, is said in words on its button as well as by its fill. */
+.setup-switcher button[aria-pressed="true"]::before {
+    content: "\2713  ";
+}
+
+/* Pass 30: a draft counter, of the list or of a plan shown, is drawn paler than the game's own, on a hex outlined in gold. */
+#layer-units [data-unit-id^="draft:"] {
+    opacity: 0.85;
+}
+
+.setup-done {
+    background: var(--pass-bg);
+    border: 1px solid var(--pass);
+    border-radius: var(--radius);
+    overflow-wrap: anywhere;
+    padding: 0.4rem 0.6rem;
+    white-space: normal;
+}
+
+/* Under 1024px the map's toolbar carries the setup's bar, so a plan is chosen, looked at, and proposed on the Map tab. It is part of the toolbar
+   there, not a bar that sticks. */
+#setup-bar-map {
+    position: static;
+}
+
+.play-workspace.narrow .setup-switcher .muted {
+    display: none;
+}
+
+/* The setup's buttons name groups, plans, and sides, which may be long: they wrap inside their borders. */
+.setup-group,
+.setup-switcher button,
+.setup-bar button:not(.link),
+.setup-plan button,
+.setup-done button {
+    height: auto;
+    min-height: 2.1rem;
+    text-align: left;
+    white-space: normal;
+}
+
+/* A plan's idea shows its first lines on the card; "More" holds it whole. */
+.setup-plan-idea {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
+}
+
+/* A row or a stack brought into view stops below the bar that stays at the top of the pane, not under it. */
+.setup-row,
+.setup-stack,
+.setup-plan {
+    scroll-margin-top: 8rem;
+}
+
+/* In a short window the bar scrolls with the page, so it never fills the window. */
+@media (max-height: 32rem) {
+    .setup-bar {
+        position: static;
+    }
+}
+
+/* In the setup mode the actions pane does the work, so it takes the room: wide, a broader first column; from 1024px to 1439px the inspector keeps
+   only what it needs above it. */
+@media (min-width: 1440px) {
+    .play-workspace.setup {
+        grid-template-columns: minmax(26rem, 34rem) minmax(0, 1fr) minmax(16rem, 20rem);
+    }
+}
+
+@media (min-width: 1024px) and (max-width: 1439.98px) {
+    .play-workspace.setup .play-review {
+        max-height: 26vh;
+    }
+}
+
+#setup-problems {
+    margin: 0.25rem 0;
+    padding-left: 1.1rem;
+}
+
+/* Pass 30: the setup list's rows, each with what may be changed in it; the row whose Location the next map click fills is marked. */
+#place-list {
+    list-style: none;
+    margin: 0.5rem 0;
+    padding: 0;
+}
+
+.place-row {
+    align-items: center;
+    border-bottom: 1px solid var(--line-soft);
+    border-left: 4px solid transparent;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.6rem;
+    padding: 0.2rem 0.3rem;
+}
+
+.place-row.picking {
+    background: var(--warn-bg);
+    border-left-color: var(--warn);
+}
+
+.place-row-text {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+}
+
 /* Ruling R23.6: the non-OB "?" a side may place once both sides have set up. */
 .setup-non-ob {
     margin: 0.75rem 0;

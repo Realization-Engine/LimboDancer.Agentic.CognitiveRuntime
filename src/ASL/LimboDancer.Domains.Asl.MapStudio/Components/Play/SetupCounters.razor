@@ -1,0 +1,335 @@
+@* Pass 30 (the workflow rebuilt): the setup list as the Counters tab of the setup mode, grouped as a player reads a setup. "On the map" holds one
+   block per stack: its Location in words, its level, and "Move stack", then one line per counter in its printed values with its id after it; a SW, a
+   towed Gun, or a Passenger sits under what holds it. Counters with no hex yet come first, and those that wait off board to enter last. The page
+   keeps the list and builds this model from it; the gate checks the setup when it is proposed. *@
+<div id="setup-counters">
+    @foreach (var note in Model.Notes)
+    {
+        <p class="setup-area-note">@note</p>
+    }
+    @if (Model.Unplaced.Count > 0)
+    {
+        <section id="setup-unplaced" aria-labelledby="setup-unplaced-title">
+            <h4 id="setup-unplaced-title">Not placed yet (@Model.Unplaced.Count)</h4>
+            @if (Model.CanPick)
+            {
+                <p class="muted">Choose "Place", then click its hex on the map; the next counter is then placed in turn. A SW or a Gun with no holder needs one chosen.</p>
+            }
+            <ul class="setup-rows">
+                @foreach (var row in Model.Unplaced)
+                {
+                    @RowLine(row, "Place")
+                }
+            </ul>
+        </section>
+    }
+    @if (Model.OnMap.Count > 0)
+    {
+        <section id="setup-on-map" aria-labelledby="setup-on-map-title">
+            <h4 id="setup-on-map-title">On the map: @Model.OnMapSummary</h4>
+            @foreach (var stack in Model.OnMap)
+            {
+                <div class="@StackClass(stack)" id="@StackId(stack.Location)" data-location="@stack.Location">
+                    <div class="setup-stack-head">
+                        <button type="button" class="link setup-stack-name" aria-pressed="@(stack.Selected ? "true" : "false")" aria-label="@($"Show the stack at {stack.Title} on the map")"
+                                @onclick="@(() => OnSelect.InvokeAsync(stack.Location))">@stack.Title</button>
+                        @if (stack.Selected)
+                        {
+                            <span class="status-badge info setup-stack-shown">shown on the map</span>
+                        }
+                        @if (stack.Levels.Count > 1)
+                        {
+                            <label>
+                                stack to
+                                <select class="setup-stack-level" aria-label="@($"Level of the whole stack at {stack.Title}")" value="@stack.Level"
+                                        @onchange="@(args => OnLevel.InvokeAsync(new LevelChange(stack.Location, int.TryParse(args.Value as string, out var level) ? level : stack.Level)))">
+                                    @foreach (var level in stack.Levels)
+                                    {
+                                        <option value="@level">@LevelText(level)</option>
+                                    }
+                                </select>
+                            </label>
+                        }
+                        @if (Model.CanPick)
+                        {
+                            <button type="button" class="link setup-stack-move" aria-pressed="@(stack.Moving ? "true" : "false")" aria-label="@($"Move the stack at {stack.Title}")"
+                                    @onclick="@(() => OnMove.InvokeAsync(StackKey(stack.Location)))">Move stack</button>
+                        }
+                    </div>
+                    <ul class="setup-rows">
+                        @foreach (var row in stack.Rows)
+                        {
+                            @RowLine(row, "Move")
+                        }
+                    </ul>
+                </div>
+            }
+        </section>
+    }
+    @if (Model.Elsewhere.Count > 0)
+    {
+        <section id="setup-elsewhere" aria-labelledby="setup-elsewhere-title">
+            <h4 id="setup-elsewhere-title">Held by units already set up (@Model.Elsewhere.Count)</h4>
+            <ul class="setup-rows">
+                @foreach (var row in Model.Elsewhere)
+                {
+                    @RowLine(row, "Move")
+                }
+            </ul>
+        </section>
+    }
+    @if (Model.OffBoard.Count > 0)
+    {
+        <details id="setup-off-board" open="@offBoardOpen">
+            <summary>Off board, to enter: @Model.OffBoardSummary</summary>
+            <ul class="setup-rows">
+                @foreach (var row in Model.OffBoard)
+                {
+                    @RowLine(row, "Move")
+                }
+            </ul>
+        </details>
+    }
+</div>
+
+@code {
+    // The off-board section is opened when a counter in it needs attention and stays so: once true, the attribute never changes again, so a later
+    // render does not close the section under the player, who may still close it by hand.
+    private bool offBoardOpen;
+
+    /// <summary>
+    /// One counter of the list: its printed values and its id, whether it sits under what holds it, and what may be changed in its line; what may
+    /// not is left null.
+    /// </summary>
+    public sealed record Row(string Key, string Label, string Id)
+    {
+        /// <summary>Whether the counter is held, towed, or carried by a counter above it.</summary>
+        public bool Held
+        {
+            get; init;
+        }
+
+        /// <summary>Who may hold the counter, each with how it reads; null when it has no holder to choose.</summary>
+        public IReadOnlyList<SetupPlacementEditor.Choice>? Holders
+        {
+            get; init;
+        }
+
+        public string? Holder
+        {
+            get; init;
+        }
+
+        public string HolderLabel { get; init; } = "held by";
+
+        public string NoHolder { get; init; } = "choose";
+
+        /// <summary>The levels of the counter's hex, when it has more than one; null otherwise.</summary>
+        public IReadOnlyList<int>? Levels
+        {
+            get; init;
+        }
+
+        public int Level
+        {
+            get; init;
+        }
+
+        public string? Facing
+        {
+            get; init;
+        }
+
+        public bool? Concealed
+        {
+            get; init;
+        }
+
+        public bool? OffBoard
+        {
+            get; init;
+        }
+
+        /// <summary>Whether the counter has a hex of its own to move.</summary>
+        public bool CanMove
+        {
+            get; init;
+        }
+
+        /// <summary>Whether the next click on the map places this counter.</summary>
+        public bool Moving
+        {
+            get; init;
+        }
+
+        /// <summary>Whether the gate's last refusal named this counter.</summary>
+        public bool Problem
+        {
+            get; init;
+        }
+
+        /// <summary>Whether the counter differs from the setup plan the list was filled from.</summary>
+        public bool Changed
+        {
+            get; init;
+        }
+
+        /// <summary>What else the line says: hidden, broken, Bore Sighted, its entry, a hex outside its group's areas.</summary>
+        public string? Note
+        {
+            get; init;
+        }
+    }
+
+    /// <summary>A stack on the map: its Location, how it reads, the levels its hex has, and its counters.</summary>
+    public sealed record Stack(string Location, string Title, IReadOnlyList<int> Levels, int Level, IReadOnlyList<Row> Rows)
+    {
+        public bool Selected
+        {
+            get; init;
+        }
+
+        public bool Moving
+        {
+            get; init;
+        }
+
+        public bool Problem => Rows.Any(row => row.Problem);
+    }
+
+    /// <summary>The list as the tab shows it.</summary>
+    public sealed record Counters(IReadOnlyList<Row> Unplaced, IReadOnlyList<Stack> OnMap, IReadOnlyList<Row> Elsewhere, IReadOnlyList<Row> OffBoard)
+    {
+        /// <summary>How the "On the map" heading counts, such as "26 counters in 10 hexes".</summary>
+        public string OnMapSummary { get; init; } = string.Empty;
+
+        public string OffBoardSummary { get; init; } = string.Empty;
+
+        /// <summary>Whether the off-board section should open: a counter in it was refused, or a limited area still owes counters that wait there.</summary>
+        public bool OffBoardOpen
+        {
+            get; init;
+        }
+
+        /// <summary>What the card says of the areas being set up, said once: a limited area's count, "?" forbidden by an SSR, the "?" used.</summary>
+        public IReadOnlyList<string> Notes { get; init; } = [];
+
+        /// <summary>Whether a map is shown to place and move counters on.</summary>
+        public bool CanPick
+        {
+            get; init;
+        }
+    }
+
+    /// <summary>A stack moved to another level of its hex.</summary>
+    public sealed record LevelChange(string Location, int Level);
+
+    [Parameter, EditorRequired]
+    public Counters Model { get; set; } = default!;
+
+    [Parameter]
+    public EventCallback<SetupPlacementList.Change> OnChange { get; set; }
+
+    /// <summary>"Move" or "Place": a counter's key, or a stack's (<see cref="StackKey"/>).</summary>
+    [Parameter]
+    public EventCallback<string> OnMove { get; set; }
+
+    [Parameter]
+    public EventCallback<LevelChange> OnLevel { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnSelect { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnRemove { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (Model.OffBoardOpen)
+        {
+            offBoardOpen = true;
+        }
+    }
+
+    /// <summary>The key that names a whole stack to move.</summary>
+    public static string StackKey(string location) => "stack:" + location;
+
+    /// <summary>The id of a stack's block, which the page brings into view.</summary>
+    public static string StackId(string location) => "setup-stack-" + location.Replace(':', '-');
+
+    private static string LevelText(int level) => level == 0 ? "ground level" : "level " + level.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+    private static string StackClass(Stack stack) => "setup-stack" + (stack.Selected ? " selected" : string.Empty) + (stack.Problem ? " problem" : string.Empty)
+        + (stack.Moving ? " moving" : string.Empty);
+
+    private Task Changed(Row row, string field, string value) => OnChange.InvokeAsync(new SetupPlacementList.Change(row.Key, field, value));
+
+    private RenderFragment RowLine(Row row, string moveWord) => @<li @key="row.Key" id="@($"setup-row-{row.Id}")" data-key="@row.Key"
+        class="@("setup-row" + (row.Held ? " held" : string.Empty) + (row.Problem ? " problem" : string.Empty) + (row.Moving ? " moving" : string.Empty))">
+        <span class="setup-row-label">@row.Label</span>
+        <span class="setup-row-id">@row.Id</span>
+        @if (row.Note is { Length: > 0 })
+        {
+            <span class="setup-row-note">@row.Note</span>
+        }
+        @if (row.Changed)
+        {
+            <span class="status-badge info setup-row-changed">changed</span>
+        }
+        @if (row.Problem)
+        {
+            <span class="status-badge fail setup-row-problem">refused</span>
+        }
+        @if (row.Moving)
+        {
+            <span class="status-badge warning setup-row-moving">click its hex on the map</span>
+        }
+        @if (row.Holders is { } holders)
+        {
+            <label>
+                @row.HolderLabel
+                <select class="setup-row-holder" aria-label="@($"{row.HolderLabel}, for {row.Label} {row.Id}")" value="@(row.Holder ?? string.Empty)"
+                        @onchange="@(args => Changed(row, "holder", args.Value as string ?? string.Empty))">
+                    <option value="">@row.NoHolder</option>
+                    @foreach (var holder in holders)
+                    {
+                        <option value="@holder.Value">@holder.Label</option>
+                    }
+                </select>
+            </label>
+        }
+        @if (row.Levels is { } levels)
+        {
+            <label>
+                on
+                <select class="setup-row-level" aria-label="@($"Level of {row.Label} {row.Id}")" value="@row.Level"
+                        @onchange="@(args => Changed(row, "level", args.Value as string ?? "0"))">
+                    @foreach (var level in levels)
+                    {
+                        <option value="@level">@LevelText(level)</option>
+                    }
+                </select>
+            </label>
+        }
+        @if (row.Facing is { } facing)
+        {
+            <FacingPicker Id="@($"setup-row-{row.Id}-facing")" Label="facing" Value="@facing" OnChange="@(spine => Changed(row, "facing", spine))" />
+        }
+        @if (row.Concealed is { } concealed)
+        {
+            <label><input type="checkbox" class="setup-row-concealed" aria-label="@($"Under \"?\": {row.Label} {row.Id}")" checked="@concealed"
+                          @onchange="@(args => Changed(row, "concealed", args.Value is true ? "true" : "false"))" /> under "?"</label>
+        }
+        @if (row.OffBoard is { } offBoard)
+        {
+            <label><input type="checkbox" class="setup-row-offboard" aria-label="@($"Off board, to enter: {row.Label} {row.Id}")" checked="@offBoard"
+                          @onchange="@(args => Changed(row, "offBoard", args.Value is true ? "true" : "false"))" /> off board</label>
+        }
+        @if (row.CanMove && Model.CanPick)
+        {
+            <button type="button" class="link setup-row-move" aria-pressed="@(row.Moving ? "true" : "false")" aria-label="@($"{moveWord} {row.Label} {row.Id}")"
+                    @onclick="@(() => OnMove.InvokeAsync(row.Key))">@moveWord</button>
+        }
+        <button type="button" class="link setup-row-remove" aria-label="@($"Remove {row.Label} {row.Id}")" @onclick="@(() => OnRemove.InvokeAsync(row.Key))">remove</button>
+    </li>;
+}

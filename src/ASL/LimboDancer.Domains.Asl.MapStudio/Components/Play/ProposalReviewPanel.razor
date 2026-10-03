@@ -13,6 +13,7 @@
             <button id="play-cancel" class="link" disabled="@Busy" @onclick="Cancel">Cancel</button>
         </div>
     }
+    @Lead
     <ul id="play-reasons">
         @foreach (var reason in Reasons)
         {
@@ -36,6 +37,10 @@
     /// <summary>The reasons the view may read.</summary>
     [Parameter]
     public IReadOnlyList<string> Reasons { get; set; } = [];
+
+    /// <summary>What the proposal does, in the page's words, said before the gate's reasons (pass 30: a setup's review).</summary>
+    [Parameter]
+    public RenderFragment? Lead { get; set; }
 
     /// <summary>The disclosed evidence: the entry's or the attack's facts.</summary>
     [Parameter]

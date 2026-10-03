@@ -98,7 +98,9 @@ public sealed class PlayPagePass26Tests : IDisposable
         Place(page, "gs", "attacker-squad", hexes.One, "ght");
         Place(page, "r1", "defender-squad", hexes.Two);
         Place(page, "r1", "defender-squad", hexes.Two);
-        Assert.Contains("gs: attacker-squad aboard ght as a Passenger", page.Find("#place-list").TextContent, StringComparison.Ordinal);
+        // Pass 30: a Passenger's vehicle is changed in its row.
+        Assert.Contains("gs: attacker-squad", page.Find("#place-list li:nth-child(2)").TextContent, StringComparison.Ordinal);
+        Assert.Equal("ght", page.Find("#place-row-1-holder").GetAttribute("value"));
 
         // Two placements with the same id are removed one at a time (UI review, pass 26).
         Assert.Equal(2, page.FindAll("#place-list li").Count(item => item.TextContent.StartsWith("r1:", StringComparison.Ordinal)));

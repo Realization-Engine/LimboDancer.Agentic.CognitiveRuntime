@@ -92,7 +92,9 @@ public sealed class TablePlayer22Tests : IDisposable
         {
             page.Find("#play-confirm").Click();
             page.WaitForState(() => !Working(page));
-            outcome = page.Find("#play-outcome").TextContent;
+
+            // Pass 30: a new game whose card has a side setting up next opens behind that side's hand-over, which shows no outcome.
+            outcome = page.FindAll("#play-handover-confirm").Count > 0 ? "Committed, behind the hand-over." : page.Find("#play-outcome").TextContent;
         }
 
         output.WriteLine($"{button}: {outcome} {reasons}");

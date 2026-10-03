@@ -36,6 +36,7 @@
     private bool loading;
     private string? shown;
     private string? loadProblem;
+    private string? loadedKey;
     private (string? Units, string? Los, string? Marks, string? Highlight, string? Visible, string? Comparison) sent;
     private BoardInspector? inspectorPane;
     private HexFacts? hovered;
@@ -117,6 +118,14 @@
     /// </summary>
     [Parameter]
     public bool HoldPanel { get; set; }
+
+    /// <summary>Raised once a board has loaded and its layers are drawn, so a host may set its own view of it (pass 30).</summary>
+    [Parameter]
+    public EventCallback OnLoaded { get; set; }
+
+    /// <summary>A key pressed with the map focused, after the workspace has answered it (pass 30: Play's setup reads Esc, [ and ]).</summary>
+    [Parameter]
+    public EventCallback<string> OnKey { get; set; }
 
     [Parameter]
     public string InspectorLabel { get; set; } = "Board inspector";
@@ -277,6 +286,11 @@
         try
         {
             await SendLayers();
+            if (loadedKey != LoadKey)
+            {
+                loadedKey = LoadKey;
+                await OnLoaded.InvokeAsync();
+            }
         }
         catch (JSException exception)
         {
@@ -352,6 +366,15 @@
         }
     }
 
+    /// <summary>Shows an area of the board whole, in board units (pass 30: the setup areas).</summary>
+    public async Task FitArea(double x, double y, double width, double height)
+    {
+        if (viewport is not null)
+        {
+            await viewport.FitRect(x, y, width, height);
+        }
+    }
+
     public async Task Fit()
     {
         if (viewport is not null)
@@ -421,7 +444,15 @@
         return Task.CompletedTask;
     }
 
-    private Task Key(string key) => key == "Escape" && Selected is not null ? InvokeAsync(() => Select(null)) : Task.CompletedTask;
+    private Task Key(string key) => InvokeAsync(async () =>
+    {
+        if (key == "Escape" && Selected is not null)
+        {
+            await Select(null);
+        }
+
+        await OnKey.InvokeAsync(key);
+    });
 
     private Task UnitClick(string unitId)
     {

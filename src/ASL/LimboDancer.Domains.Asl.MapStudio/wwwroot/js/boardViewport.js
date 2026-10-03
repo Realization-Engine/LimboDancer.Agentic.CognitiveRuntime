@@ -156,6 +156,8 @@ export function create(host, dotnet) {
             state.points = [];
             clearOverlay(state);
             state.dotnet.invokeMethodAsync("OnBoardKey", "Escape");
+        } else if ((event.key === "[" || event.key === "]") && !event.ctrlKey && !event.metaKey && !event.altKey) {
+            state.dotnet.invokeMethodAsync("OnBoardKey", event.key);
         } else if (event.key === "Enter" && state.points.length > 0) {
             finishGesture(state);
         } else if (event.key === "Backspace" && state.points.length > 0) {
@@ -191,6 +193,7 @@ export function create(host, dotnet) {
         reset: () => reset(state),
         zoom: factor => zoomCenter(state, factor),
         reveal: (x, y) => revealPoint(state, x, y),
+        fitRect: (x, y, width, height) => fitRect(state, x, y, width, height),
         setRotation: on => setRotation(state, on, true),
         isRotated: () => state.rotated,
         dispose: () => {
@@ -437,6 +440,27 @@ function revealPoint(state, x, y) {
     }
 
     setBox(state, { ...box, x: x - box.width / 2, y: y - box.height / 2 });
+}
+
+// Shows an area of the board whole, at the pane's own shape (pass 30: the setup areas of the side setting up). A turned map keeps its fit.
+function fitRect(state, x, y, width, height) {
+    if (!state.home || state.rotated) {
+        return;
+    }
+
+    const paneWidth = state.svg.clientWidth;
+    const paneHeight = state.svg.clientHeight;
+    const aspect = paneWidth > 0 && paneHeight > 0 ? paneWidth / paneHeight : state.home.width / state.home.height;
+    const boxWidth = Math.max(width, height * aspect);
+    const boxHeight = boxWidth / aspect;
+
+    // An area as wide as the board, in a pane of another shape, would show the board smaller than its fit: the fit is kept then.
+    if (boxWidth >= state.home.width || boxHeight >= state.home.height) {
+        reset(state);
+        return;
+    }
+
+    setBox(state, { x: x + width / 2 - boxWidth / 2, y: y + height / 2 - boxHeight / 2, width: boxWidth, height: boxHeight });
 }
 
 function zoomCenter(state, factor) {

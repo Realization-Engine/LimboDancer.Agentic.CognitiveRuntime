@@ -131,6 +131,9 @@
     /// <summary>Brings a point of the board into view at the same zoom, when it is outside the view (Claude Design's review).</summary>
     public ValueTask Reveal(double x, double y) => Send("reveal", x, y);
 
+    /// <summary>Shows an area of the board whole, in board units (pass 30).</summary>
+    public ValueTask FitRect(double x, double y, double width, double height) => Send("fitRect", x, y, width, height);
+
     /// <summary>The map turned or turned back by the script, when its pane changes shape (pass 29).</summary>
     [Parameter]
     public Func<bool, Task>? OnRotation { get; set; }

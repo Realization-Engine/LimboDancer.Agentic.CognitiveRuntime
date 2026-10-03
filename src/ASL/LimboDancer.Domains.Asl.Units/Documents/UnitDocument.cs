@@ -72,6 +72,15 @@ public sealed record UnitDocument(
         get; init;
     }
 
+    /// <summary>
+    /// A Dummy (A12.11): a "?" with no unit beneath it, shown to its own side only (pass 30). It is drawn as a concealed placeholder and named for
+    /// what it is; the other side is given a sealed presence instead, which says nothing of what is beneath.
+    /// </summary>
+    public bool Dummy
+    {
+        get; init;
+    }
+
     public UnitFace? Face(string name) => Faces.FirstOrDefault(face => face.Name == name);
 
     public bool HasState(string state) => States.Contains(state, StringComparer.Ordinal);

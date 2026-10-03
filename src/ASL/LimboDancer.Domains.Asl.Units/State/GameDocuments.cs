@@ -26,6 +26,17 @@ public static class GameDocuments
         var documents = new List<UnitDocument>();
         foreach (var unit in view.Units)
         {
+            // A12.11 (pass 30): a Dummy has no definition, so it is drawn from its kind alone, as a "?", for the side that owns it; the other side's
+            // view holds no Dummy, only a sealed presence.
+            if (unit.Kind == UnitKinds.Dummy && view.Locations.TryGetValue(unit.Id, out var dummyAt))
+            {
+                documents.Add(new UnitDocument(packs, unit.Id, VocabularyNames.RootKind, unit.Side, dummyAt.Location.ToString(), [], [], [], [], Concealed: true)
+                {
+                    Dummy = true,
+                });
+                continue;
+            }
+
             if (!view.Locations.TryGetValue(unit.Id, out var position) || unit.Definition is null
                 || catalogs.FirstOrDefault(catalog => catalog.Identity == unit.Definition.Catalog) is not { } catalog
                 || catalog.Definition(unit.Definition.Definition) is not { } definition

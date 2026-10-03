@@ -671,3 +671,23 @@ Pass 29 (2026-10-02) shared the board viewer's map and inspector with Play (`Boa
 | A check in Firefox that a click on a turned map picks the right hex (`getScreenCTM` with a CSS transform on the root SVG) | The UI review, pass 29 (suspected, not reproduced) | None | A Firefox run of the Studio | The Studio checks ran in Chrome, where the turned map picks the right hex. |
 | The units table's Locations in words ("E5 on board 01"), with the identifier kept for the tests and the Locate button's name | The Studio check, pass 29 | None | Nothing | The table shows `bd01:E5:0`. |
 | The focus seen once on "Rotate map" after a commit that opened a Movement Phase (1366x768, the German view); not seen again and no cause found | The Studio check, pass 29 | None | A way to reproduce it | After a commit the actions pane takes the focus. |
+
+## 46. Added by the redesign pass 30
+
+Pass 30 (2026-10-03) built setup from the card on the map, setup plans as data beside a card, ten plans on the four built-in cards, and the setup mode that Claude Design's review led to. Items it leaves out:
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| A table comparing a card's setup plans side by side (what each holds, what each gives up) | Claude Design's review (its step 21); deferred by the user, pass 30 | None | Nothing | Each plan is a card in the Plans tab; "Show on map" and the map's switcher step through them. |
+| A plan's terrain facts as links that show their hexes and LOS on the map | Claude Design's review (its step 22); deferred by the user, pass 30 | None | Nothing | The facts are text under "More"; the LOS tab checks a line by hand. |
+| A setup list kept across a reload of the page before it is proposed | Claude Design's review (its step 23); deferred by the user, pass 30 | None | A place to keep a draft per game and view that the other view cannot read (ruling R23.3) | A reload keeps the game and the view (the game's id is in the address) and empties the list. |
+| An editor for a user's card's setup plans, and a setups file that follows its card on Rename and Delete | The design, pass 30 | None | The Card editor | A user's `<card id>.setups.json` is written by hand beside the card; Rename and Delete leave it behind. |
+| Hidden, Bore Sighted, and Deployed set on a row of the Counters tab | The table player's review, pass 30 | A12.3, C6.4, A1.31 | Nothing | A plan may place hidden and Bore Sighted counters, and the row says so; by hand they are set in "Place one counter by typing". |
+| A towed Gun's default vehicle preferring one with towing capacity, and a facing default taken from the group's entry edge or its enemy | The table player's review, pass 30 | C10.1, D2.11 | Nothing | The first vehicle is offered and facing starts east; both are changed in the row. |
+| The "?" ticked for a whole stack from its header | The table player's review, pass 30 | A12.1 | Nothing | Each counter has its own "under ?" box. |
+| A refusal kept in view after its first row is fixed, until the setup is proposed again | The table player's review, pass 30 | None | Nothing | A list change drops the refused proposal with its reasons; the next Propose lists what is left. |
+| Plain labels in "Place one counter by typing" | The table player's review, pass 30 | None | Nothing | The form keeps its older field names. |
+| Whether concealing a stack at setup charges the group's OB "?" when the stack is in Concealment Terrain out of enemy LOS | The table player's review, pass 30 | A12.12 | A ruling | Each stack under "?" counts one of the group's "?" (ruling R19.5). |
+| The Tractor Works' Factory X3 offering its upper levels to setup | The table player's review, pass 30 | B23.74, the card's SSR | A check of the Factory's levels in the board's data | A row's level select offers the levels the board's data gives for its hex; the three plans stand at ground level. |
+| Tests of the gate accepting the plans of Gambit and Armor Test on board 4's real terrain | The merge gate, pass 30 | None | A board 4 fixture in the tests, as board 01 has | The gate accepted the four plans in the Studio on the real board; the tests check their form. |
+| The zoom to the setup area applied when a plan is shown on the map | The Studio check, pass 30 | None | Nothing | The map zooms to the setup area when the setup opens and by its button; showing a plan keeps the current zoom. |

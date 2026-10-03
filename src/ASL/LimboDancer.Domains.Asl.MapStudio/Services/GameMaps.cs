@@ -141,6 +141,29 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache
         return new BoardLocation(board.Ref, board.Facts[index].Hex, 0);
     }
 
+    /// <summary>
+    /// A hex outlined in the marks layer (pass 30: the setup's draft rows and the hexes that may take a non-OB "?"), with an optional short label at its
+    /// centre; empty when the map has no such hex. The mark takes no pointer events, so a click reaches the hex and its counters.
+    /// </summary>
+    public static string HexMark(StudioBoard board, BoardLocation at, string css, string fill, string stroke, int width, bool dashed, string? label)
+    {
+        ArgumentNullException.ThrowIfNull(board);
+        ArgumentNullException.ThrowIfNull(at);
+        if (UnitLibrary.TargetFor(board).Locate(at with { Level = 0 }) is not { } hex)
+        {
+            return string.Empty;
+        }
+
+        var vertices = board.Render.Grid.Geometry.Vertices(hex).ToArray();
+        var points = string.Join(' ', vertices.Select(vertex => string.Create(CultureInfo.InvariantCulture, $"{vertex.X:0.##},{vertex.Y:0.##}")));
+        var x = vertices.Average(point => point.X);
+        var y = vertices.Average(point => point.Y);
+        var text = label is null ? string.Empty : string.Create(CultureInfo.InvariantCulture,
+            $"<circle cx=\"{x:0.##}\" cy=\"{y:0.##}\" r=\"11\" fill=\"#ffffff\" stroke=\"{stroke}\" stroke-width=\"2\"/><text x=\"{x:0.##}\" y=\"{y + 5:0.##}\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"{stroke}\">{label}</text>");
+        return $"<g class=\"{css}\" data-location=\"{at with { Level = 0 }}\" pointer-events=\"none\"><polygon points=\"{points}\" fill=\"{fill}\" fill-opacity=\"0.3\" stroke=\"{stroke}\" stroke-width=\"{width}\""
+            + (dashed ? " stroke-dasharray=\"8 5\"" : string.Empty) + $"/>{text}</g>";
+    }
+
     /// <summary>The map's facts of the hex holding a Location; null when the map has no such hex (pass 29).</summary>
     public static HexFacts? FactsAt(StudioBoard board, BoardLocation location)
     {

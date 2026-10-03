@@ -93,6 +93,41 @@ public sealed partial class ScenarioCardLibrary(string? directory)
         return (text, sha256);
     }
 
+    /// <summary>
+    /// The text of a card's setups file (pass 30), with LF line endings: embedded for a built-in card, <c>&lt;name&gt;.setups.json</c> beside a user's card;
+    /// null when the card has none. It is no part of the card's own text, so it never changes the card's SHA-256.
+    /// </summary>
+    public string? PlansText(string name)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        if (ScenarioCards.Names.Contains(name, StringComparer.Ordinal))
+        {
+            return ScenarioSetupPlans.EmbeddedText(name);
+        }
+
+        if (!IsUser(name) || Directory is not { } root || new FileInfo(Path.Combine(root, name + ScenarioSetupPlans.Suffix)) is not { Exists: true } file)
+        {
+            return null;
+        }
+
+        try
+        {
+            return File.ReadAllText(file.FullName).ReplaceLineEndings("\n");
+        }
+        catch (IOException)
+        {
+            // The file is being written or is locked: the card offers no plan this time, and setup by hand goes on.
+            return null;
+        }
+    }
+
+    /// <summary>A card's setup plans (pass 30), read and checked for form; null when the card has no setups file or cannot itself be read.</summary>
+    public SetupPlansRead? Plans(string name, UnitCatalog catalog)
+    {
+        ArgumentNullException.ThrowIfNull(catalog);
+        return PlansText(name) is { } text && Read(name, catalog)?.Card is { } card ? ScenarioSetupPlans.Parse(card, text, catalog) : null;
+    }
+
     /// <summary>Whether a game that recorded this SHA-256 still plays the card of that name (rulings R22.2, R28.4).</summary>
     public bool Matches(string name, string sha256) => ScenarioCards.SameCard(name, sha256, Sha256(name));
 
