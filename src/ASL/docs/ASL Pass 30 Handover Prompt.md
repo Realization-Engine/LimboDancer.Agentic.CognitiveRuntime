@@ -1,15 +1,17 @@
 # ASL Pass 30 Handover Prompt
 
-**Status:** Draft, written 2026-10-03 at the end of the pass 29 session. The user and Claude revise it at the start of the next session, before pass 30 begins. Nothing in it is authorized until the user says so.
+**Status:** Revised 2026-10-03 at the start of the pass 30 session, from the draft written at the end of the pass 29 session. Nothing in it is authorized until the user says to start.
 
 **Related documents:** the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>) (section 5, "Pass 30: Prepared setups"), the [pass 29 design](<ASL Unit Backlog Pass 29 Design.md>), and the [ASL Unit Backlog](<ASL Unit Backlog.md>), sections 37 and 45.
 
-## Open points to settle first
+## Points settled
 
-- Whether the session stops for the user after the design (step 1) and before the merge (step 7), or runs through on one authorization.
-- Whether task 30.5's plans are reviewed one card at a time or all together.
-- The branch name (`feature/asl-backlog-pass-30` is the draft).
-- Whether any row of backlog section 45 joins pass 30's scope.
+Settled 2026-10-03 on Claude's recommendations, at the user's word.
+
+- **Stops.** The session stops for the user three times: after the design (step 1), for the plans of each card in task 30.5 (step 3), and before the merge (step 7).
+- **The plans' review.** Task 30.5's plans are reviewed one card at a time, so the remarks on one card shape the next card's plans.
+- **The branch** is `feature/asl-backlog-pass-30`.
+- **Backlog section 45.** No row joins pass 30. None of them touches setup.
 
 ## The prompt
 
@@ -19,19 +21,19 @@ State: pass 29 and the UI batch are merged (904037e, 2026-10-03, CI green). Its 
 
 Do, in order:
 
-1. Preparation, read-only: the plan's pass 30 and section 15.11, the pass 29 design, backlog sections 37 and 45, the scenario card code (ScenarioCards, CardDraft, the built-in cards and their hashes), Play's setup (SetupPlacementEditor, SetupPlacementList, the setup pools, ProposeSetup), and the card editor's CardMapPicker. Write the pass 30 design (src/ASL/docs/ASL Unit Backlog Pass 30 Design.md) with draft decisions and your questions for me. Stop and ask me those questions before building.
-2. Build tasks 30.1 to 30.4 on branch feature/asl-backlog-pass-30, each checked in your Studio as you go.
-3. Task 30.5: make up to three setup plans for the first side of each built-in card, each grounded in the Studio's LOS and the card's Victory Conditions. Show me each plan (its idea, what it gives up, its placements) and keep only those I approve.
-4. Run the referee (disclosure, rulings R23.1 to R23.4; a plan is offered only in the first side's view, R23.3) and the table player and UI reviews as read-only sub-agents in parallel against `git diff main...feature/asl-backlog-pass-30`. Fix their findings and check each in your Studio.
-5. Run the Studio check of the pass: setup from a card with each kind of group (one-hex area, an area of several hexes, an entering group, a non-OB "?"), a chosen plan adjusted on the map and proposed, a stale plan refused, both sides' views and the adjudicator's, at 1920x1080, 1366x768, 1024x768, 683x384, and 320px, with the keyboard as well as the mouse.
-6. Write the review document, the design's status, the plan's status for pass 30, and the backlog rows (what is left out goes to a new section 46). Update the time log.
-7. Merge gate: the full local suite, commit, the Docker check, the chart supplement regeneration, then ask me before the merge into main. After my word: merge --no-ff, push, check CI, and report the times.
+1. Preparation, read-only: the plan's pass 30 and section 15.11, the pass 29 design, backlog sections 37 and 45, the scenario card code (ScenarioCards, CardDraft, the built-in cards and their hashes), Play's setup (SetupPlacementEditor, SetupPlacementList, SetupPoolsTable, LocationField, the setup pools, ProposeSetup), and the card editor's CardMapPicker. Write the pass 30 design (src/ASL/docs/ASL Unit Backlog Pass 30 Design.md) with draft decisions and your questions for me. The design states, for each of the four built-in cards (Guards Counterattack, Gambit, Tractor Works, Armor Test), which side sets up first, and how you will read LOS and terrain offline for task 30.5. Stop and ask me those questions before building.
+2. Build tasks 30.1 to 30.4 on branch feature/asl-backlog-pass-30. Write each task's tests with the task, but do not run them yet. Check each task in your Studio, then commit it on the branch, so the reviews in step 4 have a diff to read.
+3. Task 30.5: make up to three setup plans for the first side of each built-in card (up to twelve plans), each grounded in the Studio's LOS and the card's Victory Conditions. Work one card at a time. For each card, write its plans into the design document as tables (the idea, what it gives up, the terrain facts, the placements), load each plan in your Studio, send me a screenshot of it on the map, and stop for my word. Keep only the plans I approve, and carry my remarks into the next card's plans. Add a test that the gate accepts every kept plan against its card's current hash, and a test that a card's hash is the same with and without its setups file. Commit the kept plans on the branch.
+4. Run the referee (disclosure, rulings R23.1 to R23.4; a plan is offered only in the first side's view, R23.3) and the table player and UI reviews as read-only sub-agents in parallel against `git diff main...feature/asl-backlog-pass-30`. Fix their findings, check each in your Studio, and commit.
+5. Run the Studio check of the pass: setup from a card with each kind of group (one-hex area, an area of several hexes, an entering group, a non-OB "?"), a chosen plan adjusted on the map and proposed, a stale plan refused with reasons, a plan for an earlier revision of the card offered marked as such, a user card with its own setups file, a card with no plans (setup by hand as before), a chosen plan cleared by the hand-over, a game saved before the plans were added opening unchanged, both sides' views and the adjudicator's, at 1920x1080, 1366x768, 1024x768, 683x384, and 320px, with the keyboard as well as the mouse.
+6. Write the review document (src/ASL/docs/Scenario A1 Backlog Pass 30 Review <date>.md), the design's status, the plan's status for pass 30, and the backlog rows (what is left out goes to a new section 46). Update the time log and your memory notes.
+7. Merge gate: the full local suite (the first run of the pass's tests; fix what fails), commit, the Docker check, the chart supplement regeneration, then ask me before the merge into main. After my word: merge --no-ff, push, check CI, and report the times.
 8. Stop after the merge. Ask before starting anything else.
 
 Standing rules:
 
 - Run `git branch --show-current` before every commit and merge. On 2026-10-03 the checkout was moved to another branch from outside the session. The branch asl-narrative-extensions is checked out in another worktree; leave it alone.
-- Stage explicit paths only. Use `git -c core.quotepath=false diff --name-only` into a file, add any new file's path to it by hand, then `git add --pathspec-from-file`. Never `git add -A` or `git add src/ASL`, never add src/ASL/boards/ or .claude/, and never commit images.
+- Stage explicit paths only. Use `git -c core.quotepath=false diff --name-only` into a file, add any new file's path to it by hand, then `git add --pathspec-from-file`. Never `git add -A` or `git add src/ASL`, never add src/ASL/boards/ or .claude/, and never commit images (a plan's screenshot goes to me in the chat, not into the repository).
 - Build with DOTNET_CLI_USE_MSBUILD_SERVER=0 MSBUILDDISABLENODEREUSE=1, --disable-build-servers, and -m:1.
 - Run your own Studio on port 6670 (launch config map-studio-6670), never on 5178. If a running Studio blocks a build, stop it without asking (never Visual Studio itself). Never start the Studio while a build runs.
 - Time every sub-task in src/ASL/docs/ASL Unit Time Log.md, as H:MM.
@@ -41,8 +43,8 @@ Standing rules:
 - Do not over-engineer.
 - Respect a side's view (rulings R23.1 to R23.4): every panel, list, record, map layer, and table reads the view, never the full state; the hand-over clears everything of the last view.
 - A setup plan places the card's fixed OB and never changes it. Adding plans never changes a card's hash or its saved games.
-- Test only in your Studio while you write and fix code; run no unit tests, suite, or Docker until all the code is done and passes the Studio check in step 5. Only then apply the merge gate.
-- If a tool call is refused with "no verdict" by auto mode, do not route the same change through another tool. Tell me and wait. Edit and Write are allowed in .claude/settings.local.json; if they are still refused, say so at once.
+- Test only in your Studio while you write and fix code; run no unit tests, suite, or Docker until all the code is done and passes the Studio check in step 5. Only then apply the merge gate. Tests are written with their task and run first at the gate.
+- If a tool call is refused with "no verdict" by auto mode, do not route the same change through another tool. Tell me and wait. Run the pass outside auto mode: on 2026-10-03 auto mode gave "no verdict" on every Edit, although Edit and Write are allowed in .claude/settings.local.json, and the edits passed once I left auto mode. Before step 2, make one small edit to confirm that writes pass; if it is refused, say so at once.
 
 Pass numbering: 30 is prepared setups; 31 and 32 are DYO (deferred); the rule packages are 33 to 42, with 34b.
 
