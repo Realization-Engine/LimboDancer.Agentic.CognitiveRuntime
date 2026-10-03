@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 30 Design
 
-**Status:** In progress 2026-10-03 on branch `feature/asl-backlog-pass-30`. The user answered the four questions of section 9 on 2026-10-03, each as recommended. Section 8 records what is built and checked in the Studio. Pass 30 (Prepared setups) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, a Studio pass.
+**Status:** Paused 2026-10-03 for a review of the setup workflow with Claude Design (section 10). In progress on branch `feature/asl-backlog-pass-30`. The user answered the four questions of section 9 on 2026-10-03, each as recommended. Section 8 records what is built and checked in the Studio. Pass 30 (Prepared setups) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, a Studio pass.
 
 **Date:** 2026-10-03
 
@@ -226,6 +226,86 @@ Facts every plan rests on:
 | On board (5 counters) | P6, level 1: 4-5-8 squad with the LMG; H6, ground level: 4-5-8 squad with the LMG, 8-0 leader |
 | Off board, to enter on Turn 1 | 2 x 4-5-8 squad with the 2-in. mortar, 4-5-8 squad with the ATR, 7 x 4-5-8 squad, 9-1 leader, 8-0 leader |
 
+### 7.3 The Tractor Works: the Russians (the 308th Rifle Division)
+
+Made 2026-10-03 from the Studio's terrain and LOS on board 01, read with the scratchpad script, with fourteen of the cited lines checked again in my Studio's LOS tab: all agreed. Each plan was chosen in a new game in my Studio (`p30-tw-1`, `p30-tw-2`, `p30-tw-3`), and the gate accepted each (28, 30, and 31 events). Waiting for the user's word.
+
+What the plans answer. The 308th (12 squads, the 9-2, the HMG, two MMG, three LMG, and 18 "?") sets up first, alone in building X3. The Germans then set up around it: the assault engineers with two flamethrowers and four demolition charges in AA4, CC3, or Y8, Kampfgruppe Tienham in Y8, CC7, or AA4, and Kampfgruppe Stahler in U3, T4, R7, or T7. The Russian remnants set up last, to the west. The side that Controls six of X3's nine hexes at game end wins, and the Russians Control all nine at the start, so the 308th must still hold six after eight turns.
+
+Facts every plan rests on:
+
+- The card makes X3 a Factory (SSR 5), which has no upper levels. The game does not enforce that SSR and the board's data gives the building levels 1 and 2, so the gate would accept an upper level; the plans keep every counter at ground level, as the card says.
+- The east face (Y3, Y4, Y5) is two hexes from AA4 and AA5; Y5 and X5 are two hexes from Y7 and Z6. The west face (W4, X2, X3) is two hexes from V2, and W4 two from U3.
+- X4, the centre hex, has no LOS to or from any German setup Location, nor to any of the 24 hexes around the building that were checked.
+- Every stack of real units is set up under "?", which the stone building allows (Concealment Terrain). Each concealed stack uses one of the 18 "?", and each Dummy uses one.
+- The Studio's map does not draw a side's own Dummies: they are in the game and in the units table, but the screenshots show only the real counters. This was so before pass 30; it goes to the backlog (section 46).
+
+**Plan 1: All round** (`all-round`)
+
+| | |
+|---|---|
+| The idea | Every hex of the Works is held and looks the same from outside: a concealed stack and one Dummy in each. The HMG and the 9-2 stand at Y5, which sees more German setup Locations than any other hex, and two squads wait in the centre. |
+| What it gives up | Most hexes hold a single squad, so the Germans may mass against any one face; the reserve is two squads. |
+| Terrain facts | The east face looks at the assault engineers' buildings: Y3, Y4, and Y5 see AA4 at range 2, Y4 and Y5 see AA5 at range 2, and Y5 and X5 see Y7 and Z6 at range 2.<br>The west face looks at Kampfgruppe Stahler's building U3: W4, X2, and X3 see V2 at range 2, W4 sees U3 at range 2, and X2, X3, and W5 see U3 at range 3.<br>X4, the centre hex, has no LOS to or from any German setup Location, nor to any hex next to the building.<br>Y5 sees thirteen German setup Locations (AA4, AA5, Y7, and Z6 at every level, and CC7), more than any other hex of the building. |
+
+| Hex | Units, each stack under "?" | Dummies |
+|---|---|---|
+| W4 | 4-4-7 squad with the LMG | 1 |
+| W5 | 4-4-7 squad with the LMG | 1 |
+| X2 | 4-4-7 squad | 1 |
+| X3 | 4-4-7 squad | 1 |
+| X4 | 2 x 4-4-7 squad | 1 |
+| X5 | 4-4-7 squad with the MMG, 4-4-7 squad | 1 |
+| Y3 | 4-4-7 squad with the LMG | 1 |
+| Y4 | 4-4-7 squad with the MMG | 1 |
+| Y5 | 4-4-7 squad with the HMG, 4-4-7 squad, 9-2 leader | 1 |
+
+The plan uses all 18 "?": 9 for its concealed stacks and 9 Dummies.
+
+**Plan 2: East front** (`east-front`)
+
+| | |
+|---|---|
+| The idea | The weight faces the assault engineers and Kampfgruppe Tienham: two squads in each hex of the east face with the HMG, both MMG, and the 9-2, two more at X5, and two in the centre. The west face is one squad with an LMG at W4 and at X2, with Dummies at W5 and X3. |
+| What it gives up | The west face is thin and half of it is Dummies; it leans on the remnants, who set up after the Germans, to keep Kampfgruppe Stahler busy. |
+| Terrain facts | The east face looks at the assault engineers' buildings: Y3, Y4, and Y5 see AA4 at range 2, Y4 and Y5 see AA5 at range 2, and Y5 and X5 see Y7 and Z6 at range 2.<br>The west face looks at Kampfgruppe Stahler's building U3: W4, X2, and X3 see V2 at range 2, W4 sees U3 at range 2, and X2, X3, and W5 see U3 at range 3.<br>X4, the centre hex, has no LOS to or from any German setup Location, nor to any hex next to the building.<br>Of the two hexes held only by Dummies, W5 is seen from U3 at range 3 and from S5 and U8 at 4, and X3 from V2 at range 2 and U3 at 3. |
+
+| Hex | Units, each stack under "?" | Dummies |
+|---|---|---|
+| W4 | 4-4-7 squad with the LMG | 1 |
+| W5 | no unit | 3 |
+| X2 | 4-4-7 squad with the LMG | - |
+| X3 | no unit | 3 |
+| X4 | 2 x 4-4-7 squad | - |
+| X5 | 4-4-7 squad with the LMG, 4-4-7 squad | 1 |
+| Y3 | 4-4-7 squad with the MMG, 4-4-7 squad | 1 |
+| Y4 | 4-4-7 squad with the MMG, 4-4-7 squad, 9-2 leader | 1 |
+| Y5 | 4-4-7 squad with the HMG, 4-4-7 squad | 1 |
+
+The plan uses all 18 "?": 7 for its concealed stacks and 11 Dummies.
+
+**Plan 3: Hidden core** (`hidden-core`)
+
+| | |
+|---|---|
+| The idea | The east face, two hexes from the flamethrowers and demolition charges, holds only Dummies, three to a hex. The real force stands one hex back: three squads and the 9-2 in the centre, where nothing sees them, and the machine guns at X5, X3, W4, W5, and X2. |
+| What it gives up | Y3, Y4, and Y5 are not defended: a German squad that enters them takes their Control, and the Russians must take back at least one to keep six hexes. |
+| Terrain facts | The east face looks at the assault engineers' buildings: Y3, Y4, and Y5 see AA4 at range 2, Y4 and Y5 see AA5 at range 2, and Y5 and X5 see Y7 and Z6 at range 2.<br>X4, the centre hex, has no LOS to or from any German setup Location, nor to any hex next to the building.<br>X5 sees Y6, X6, and W6 at range 1 and Z5, W7, and X7 at 2, the ground south of the building, and Y7 and Z6 at range 2.<br>X3 and W4 are seen only from U3 and V2, and X2 from U3, V2, and T4; none of them is seen from the engineers' buildings. |
+
+| Hex | Units, each stack under "?" | Dummies |
+|---|---|---|
+| W4 | 4-4-7 squad with the MMG, 4-4-7 squad | 1 |
+| W5 | 2 x 4-4-7 squad with the LMG | 1 |
+| X2 | 4-4-7 squad with the LMG | 1 |
+| X3 | 4-4-7 squad with the MMG, 4-4-7 squad | - |
+| X4 | 3 x 4-4-7 squad, 9-2 leader | - |
+| X5 | 4-4-7 squad with the HMG, 4-4-7 squad | - |
+| Y3 | no unit | 3 |
+| Y4 | no unit | 3 |
+| Y5 | no unit | 3 |
+
+The plan uses all 18 "?": 6 for its concealed stacks and 12 Dummies.
+
 ## 8. Studio checks
 
 Each task is checked in my Studio on port 6670 before it is committed; step 5 checks the whole pass.
@@ -258,3 +338,36 @@ Asked 2026-10-03. The user took the recommended answer to each.
 2. **The Tractor Works.** Recommended: plans for the 308th Rifle Division in X3 only (order 1, with its 18 "?"); the remnants, order 3, set up by hand after the Germans.
 3. **LOS offline (section 6).** Recommended: the scratchpad console script on the Studio's own assemblies, with every cited line checked again in the Studio's LOS tab. The other way is the LOS tab alone.
 4. **Upper levels.** Recommended: a plan may place units on a building's upper levels where the board has them and the gate accepts them, since the Guards Counterattack and The Tractor Works are fought for buildings. The other way is ground level only.
+
+## 10. The workflow under review
+
+**2026-10-03.** After the plans of three cards, the user asked how a plan is viewed, selected, seen on the map, and exchanged for another. A walk-through in my Studio (game `p30-demo`, The Guards Counterattack, 1366x768) showed that the flow works but the page buries it. The user paused the pass to think the workflow through with Claude Design. Tasks 30.1 to 30.4 stay as built until that review; The Tractor Works' plans (section 7.3) wait for the user's word and their file is not committed; Armor Test's plans are not started.
+
+**The flow as built:**
+
+1. A new game: the card, an id, "Start the game, then set up on the map", Confirm, then the hand-over to the side that sets up first.
+2. In that side's view, the Setup block of the actions pane shows "Prepared setups": one card per plan, with its name, idea, what it gives up, its terrain facts (collapsed), and "Use this plan".
+3. "Use this plan" fills the setup list with the plan's rows and marks the plan "In the list". Nothing is in the game yet.
+4. The map outlines each hex the list names, with the number of counters the list puts there.
+5. "Use this plan" on another card replaces the list, and the outlines move.
+6. A row is adjusted in the list or by "Pick on the map"; "Propose setup" at the foot of the list asks the gate; the Proposal tab shows its answer.
+7. Confirm commits the setup. Only then are the counters drawn; the plans are no longer offered, and the choice cannot be undone.
+
+**What the walk-through found:**
+
+| Problem | Measure at 1366x768 |
+|---|---|
+| The plans are hard to find | The picker sits about 1,400 pixels down the actions pane (390 by 465 pixels), under the card's OB table, which wraps into a column 1,396 pixels tall |
+| The plan, the list, and the button are far apart | The list starts about 1,450 pixels below the picker; "Propose setup" is below all 26 rows |
+| The map preview is weak | Before Confirm the map shows outlines and counts, not counters; which squad, which level, and who holds a SW are only in the list |
+| Plans cannot be compared as counters | Seeing a plan as counters means confirming it, which is final; each plan's screenshot for the user needed its own game |
+| A side's own Dummies are not drawn on the map | In the game and the units table, but not on the map (so before pass 30); a plan that leans on Dummies looks empty where they stand |
+
+**Claude's proposals, not built, for the review to weigh:**
+
+- A. The picker first in the Setup block, above the OB table, with the OB table collapsed while plans are offered.
+- B. Compact plan cards: the name, one line of the idea, and "Use this plan"; the rest behind a disclosure.
+- C. The list's rows drawn on the map as counters marked as a draft, in place of the outlines, so each plan is seen as it will look before anything is proposed. Only the viewer's own draft is drawn.
+- D. "Propose setup" and "Clear the list" repeated above the list, beside the chosen plan's name.
+
+**Limits any redesign keeps:** a plan is offered only in the view of the side that sets up first (ruling R23.3); the hand-over clears the chosen plan, the list, and what the map drew of them; a plan places the card's fixed OB and never changes it; a plan reaches the game only as placements proposed through the gate, so adding plans never changes a card's hash or its saved games.
