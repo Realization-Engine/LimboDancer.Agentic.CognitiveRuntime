@@ -84,9 +84,10 @@ New rules adjudication, changes to game persistence, VASL artwork, a new compone
 | 28c | The Play workspace and hardening | Studio | 3 | 4:00 | 5:15 | 3:40 to 6:50 |
 | 29 | The shared board workspace | Studio | 5 | 3:15 | 4:30 | 3:09 to 5:51 |
 | 30 | Prepared setups | Game | 6 | 8:30 | 9:45 | 6:50 to 12:41 |
+| 30b | Setup plans for the side that sets up second | Game | 7 | 6:30 | 8:00 | 5:36 to 10:24 |
 | 31 | DYO purchase I: Infantry, leaders, and SW | Game | 5 | 3:15 | 4:30 | 3:09 to 5:51 |
 | 32 | DYO purchase II: ordnance, vehicles, and conditions | Game | 4 | 2:30 | 3:45 | 2:38 to 4:52 |
-| | **All passes** | | **74** | **60:50** | **79:35** | **55:43 to 103:28** |
+| | **All passes** | | **81** | **67:20** | **87:35** | **61:19 to 113:52** |
 
 **Order.** The passes run in the order listed, one at a time on the user's go-ahead.
 
@@ -311,6 +312,26 @@ Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (backlog sect
 | | Overhead | 1:15 |
 | 30.6 The workflow rebuilt | Added 2026-10-03 after Claude Design's review of the first build (the pass 30 design, sections 10 and 11): setup as a mode of the actions pane (a bar, and Plans, Counters, and Card OB tabs), a plan shown on the map as draft counters without filling the list, the list grouped by stack, refusals linked to their rows, a side's own Dummies drawn, and the reload and hand-over bugs fixed. | 4:00 |
 | | **Pass 30 total** (build 8:30, revised 2026-10-03) | **9:45** |
+
+### Pass 30b: Setup plans for the side that sets up second
+
+**Added 2026-10-03** at the user's word, after pass 30 was merged. A card gains setup plans for the side that sets up second: one response for each plan of the first side, and one for any setup. The second side is never told which plan the first side used; the game does not store it. Its plans are ordered by how closely each first-side plan matches the stacks it can see, computed from its own view. The workflow follows Claude Design's report as checked in the [pass 30b design](<ASL Unit Backlog Pass 30b Design.md>), section 4.
+
+**Purpose:** the second side sets up from a card without placing every stack by hand. **After:** pass 30. **From:** the user's request of 2026-10-03.
+
+**Status:** the design is written and waits for the user's approval; nothing is built.
+
+| Task | What it changes | Estimate |
+|---|---|---|
+| 30b.1 Plans for any side that is setting up | Plans are offered to the side whose groups are setting up now; the file's cap is per side; the "no setup plans" line and the new-game form's count speak of the right side. | 0:30 |
+| 30b.2 The format `asl-setup-plans/2` | A plan's setup order, `answers` (the plan answered and a hash of its placements), the caps, `/1` files still read, and "Made for an earlier version of" a plan. The card's text and hash are untouched. | 0:45 |
+| 30b.3 The Plans tab in groups | The second side's plans grouped under the first-side plan each answers, with that plan's public text, and "For any setup" last. | 0:45 |
+| 30b.4 The comparison | Each first-side plan's footprint, as the other side would see it, compared with the stacks in the second side's view; the score, the sort, and the help line. It reads the view only. | 1:00 |
+| 30b.5 The answered plan on the map | The answered plan's footprint drawn under the enemy's stacks, with a toggle; the zoom takes in the enemy stacks. | 1:00 |
+| 30b.6 The words | The bar, the review, and the first side's note that setup plans are public. | 0:30 |
+| 30b.7 Plans for the built-in cards | Up to thirteen plans for the second side of the four built-in cards, one card at a time, each accepted by the gate in the Studio and reviewed by the user. | 2:00 |
+| | Overhead | 1:30 |
+| | **Pass 30b total** (build 6:30) | **8:00** |
 
 ### Pass 31: DYO purchase I: Infantry, leaders, and SW
 

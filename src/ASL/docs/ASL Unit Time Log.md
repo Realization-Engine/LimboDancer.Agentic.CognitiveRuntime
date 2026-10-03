@@ -887,3 +887,11 @@ Added by the user on 2026-10-03. Estimate 5:45 (build 4:30). Branch `feature/asl
 | Steps 6 and 7: the review document, backlog section 46, the design's section 12, the plan's totals; the pass's tests (`BacklogPass30Tests`, 14 in Play; `SetupPlansPageTests`, 8 in the Studio); four older Studio tests brought in line with the rebuilt setup; the solution build with warnings as errors; the full local suite (2,754 passed, 30 skipped, none failed); the chart supplement regenerated the same | 16:29 | 17:06 | 0:37 | The first Studio run failed 65 older tests: a new game from a card with no OB group opened behind a hand-over. The hand-over is now taken only when a side sets up next |
 | The Docker Linux check of the branch at 494a68c: all eleven test projects passed (2,754 passed, 30 skipped), with the two CI regeneration checks | 17:06 | 17:22 | 0:16 | The pass waits for the user's word to merge |
 | The merge into main at the user's word (2c4900a, `--no-ff`), the push, and the CI run on main (ASL Authoring CI, passed in 11m37s) | 18:06 | 18:19 | 0:13 | Pass 30 is merged; about 3:26 logged against the revised estimate of 9:45 |
+
+## Pass 30b: Setup plans for the side that sets up second
+
+Added by the user on 2026-10-03. Estimate 8:00 (build 6:30). Branch `feature/asl-backlog-pass-30b`. The Studio is the only test until the code is complete; the unit tests and the merge gate come once the Studio check of the pass has passed.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Step 1, the design, read-only: the pass 30 design, review, backlog section 46, and handover prompt; `ScenarioSetupPlans`, `ScenarioCardLibrary`, `GameView`, `GamePlanner.OutOfSight`, Play's setup mode, the four cards' second sides; Claude Design's report (8 pages) read and its claims checked against the code (13 points where it is wrong or cannot be built as written); the pass 30b design with nine questions; the pass added to the plan | 18:28 | 18:40 | 0:12 | The start is approximate. Writes confirmed with the first edit. Stopped for the user's approval |
