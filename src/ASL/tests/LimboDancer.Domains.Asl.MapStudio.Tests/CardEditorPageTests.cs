@@ -137,8 +137,8 @@ public sealed class CardEditorPageTests : IDisposable
         page.Find("#place-location").Change($"{FakeBoardProvider.Board.Ref.Value}:A1:0");
         page.Find("#place-add").Click();
         page.Find("#propose-setup").Click();
-        page.Find("#play-confirm").Click();
-        Assert.Contains("Setup is open", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
+        page.WaitForElement("#play-confirm").Click();
+        page.WaitForAssertion(() => Assert.Contains("Setup is open", page.Find("#play-summary").TextContent, StringComparison.Ordinal));
         Assert.Contains("My game", page.Find("#play-card").TextContent, StringComparison.Ordinal);
         Assert.Contains("matches", page.Find("#play-card-provenance .provenance-match").TextContent, StringComparison.Ordinal);
         Assert.Contains("Your card", page.Find("#play-card-provenance .provenance-kept").TextContent, StringComparison.Ordinal);

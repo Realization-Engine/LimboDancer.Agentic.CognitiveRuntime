@@ -162,7 +162,7 @@ public sealed class PlayPageTests : IDisposable
         Assert.NotEmpty(page.FindAll(".move-unit"));
         page.ViewAs("russian");
         Assert.Empty(page.FindAll(".move-unit"));
-        Assert.Contains("german side moves now", page.Find("#move-elsewhere").TextContent, StringComparison.Ordinal);
+        Assert.Contains("German side moves now", page.Find("#move-elsewhere").TextContent, StringComparison.Ordinal);
     }
 
     private static void Commit(IRenderedComponent<PlayPage> page, string propose)
@@ -338,7 +338,8 @@ public sealed class PlayPageTests : IDisposable
         Assert.Empty(context.MapLayer("highlight"));
         page.Find("#play-units tr[data-unit='g1'] .play-locate").Click();
         page.WaitForAssertion(() => Assert.NotEmpty(context.MapLayer("highlight")));
-        Assert.Single(page.FindAll("#play-selected-units li[data-unit='g1']"));
+        Assert.Contains("g1", page.Find("#hex-units").TextContent, StringComparison.Ordinal);
+        Assert.DoesNotContain("r1", page.Find("#play-panel-review").TextContent, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -346,31 +347,28 @@ public sealed class PlayPageTests : IDisposable
     {
         // The synthetic board's terrain includes a depression, which the read now answers.
         var page = GameWithDefenders(("r1", "defender-squad"));
-        page.Find("#play-los-source").Change($"{Board}:A1:0");
-        page.Find("#play-los-target").Change($"{Board}:C1:0");
-        page.Find("#play-los-check").Click();
-        Assert.Equal("Clear", page.Find("#play-los-result").GetAttribute("data-status"));
-        Assert.StartsWith("Clear, range 2", page.Find("#play-los-result").TextContent, StringComparison.Ordinal);
+        page.Find("#play-inspector-tab-los").Click();
+        page.Find("#los-source").Change("A1");
+        page.Find("#los-target").Change("C1");
+        page.Find("#los-check").Click();
+        Assert.Equal("Clear", page.Find("#los-result").GetAttribute("data-status"));
+        Assert.Contains("Clear, range 2", page.Find("#los-result").TextContent, StringComparison.Ordinal);
         page.WaitForAssertion(() => Assert.Contains("id=\"layer-los\"", context.MapLayer("setLos"), StringComparison.Ordinal));
 
-        page.Find("#play-los-clear").Click();
+        page.Find("#los-clear").Click();
         page.WaitForAssertion(() => Assert.DoesNotContain("layer-los", context.MapLayer("setLos"), StringComparison.Ordinal));
     }
 
+    // Pass 29: the LOS tab has no list of units; opened with an empty From, it starts from the hex the view picked.
     [Fact]
-    public void LosFromAUnitOffersOnlyUnitsTheViewerCanSee()
+    public void TheLosTabStartsFromThePickedHex()
     {
         var page = GameWithDefenders(("r1", "defender-squad"));
         page.ViewAs("german");
-        var offered = page.FindAll("#play-los-unit option").Select(option => option.GetAttribute("value")).ToArray();
-        Assert.Contains("g1", offered);
-        Assert.DoesNotContain("r1", offered);
-
-        page.Find("#play-los-unit").Change("g1");
-        Assert.Equal($"{Board}:A1:0", page.Find("#play-los-source").GetAttribute("value"));
-
-        page.ViewAs(Perspective.AdjudicatorName);
-        Assert.Contains("r1", page.FindAll("#play-los-unit option").Select(option => option.GetAttribute("value")));
+        page.Find("#play-units tr[data-unit='g1'] .play-locate").Click();
+        page.Find("#play-inspector-tab-los").Click();
+        Assert.Contains("A1", page.Find("#los-source").GetAttribute("value"), StringComparison.Ordinal);
+        Assert.Empty(page.FindAll("#los-panel select"));
     }
 
     [Fact]

@@ -114,7 +114,7 @@ public sealed class PlayComponentTests : IDisposable
 
         // Table player, pass 24: several Locations of one building and side are one row.
         Assert.Equal("2 Locations of building K5", table.Find("tr[data-locations='K5'] summary").TextContent);
-        Assert.Equal("german", table.Find("tr[data-locations='K5'] td:last-child").TextContent);
+        Assert.Equal("German", table.Find("tr[data-locations='K5'] td:last-child").TextContent);
     }
 
     // Ruling R24.2: the Mopping Up panel offers a building's units with their places, none checked (each becomes TI), and proposes the ones checked

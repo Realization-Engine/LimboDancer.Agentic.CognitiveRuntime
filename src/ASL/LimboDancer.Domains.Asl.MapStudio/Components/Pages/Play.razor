@@ -46,7 +46,7 @@
 {
     var playCard = CardRead(scenario.Id)?.Card;
     <PlayCardPanel Scenario="@scenario" Card="@playCard" Changed="@(!Live.Cards.Matches(scenario.Id, scenario.Sha256))" FirstSide="@state.FirstSide" Ended="@state.Ended"
-                   Groups="@([.. state.Sides.SelectMany(side => side.Groups.Select(group => $"{side.Id}: {group.Name} ({group.Id}), ELR {group.Elr?.ToString(CultureInfo.InvariantCulture) ?? "not given"}"))])"
+                   Groups="@([.. state.Sides.SelectMany(side => side.Groups.Select(group => $"{DisplayText.Side(side.Id)}: {group.Name} ({group.Id}), ELR {group.Elr?.ToString(CultureInfo.InvariantCulture) ?? "not given"}"))])"
                    Victory="@(playCard is not null ? VictoryNow : null)"
                    KnownTo="@VictoryKnownTo" Catalog="@($"{state.Catalog.Catalog}@{state.Catalog.Version}")"
                    Provenance="@(playCard is not null && PublishedCatalog is { } provenanceCatalog ? GameProvenance(playCard, scenario.Id, scenario.Sha256, provenanceCatalog) : null)"
@@ -116,7 +116,7 @@
         {
             <ProposalReviewPanel Title="@proposal.Action.Name" Accepted="@(proposal.Result.Outcome is PlayOutcome.NeedsConfirmation or PlayOutcome.Committed or PlayOutcome.Replay)"
                                  Outcome="@OutcomeText(proposal.Result.Outcome, Withheld(proposal))" Reasons="@([.. Reasons(proposal)])"
-                                 CanConfirm="@(proposal.Result.Outcome == PlayOutcome.NeedsConfirmation)" Busy="@busy" Confirm="Confirm" Cancel="@(() => { if (!busy) { (pending, status) = (null, string.Empty); } })">
+                                 CanConfirm="@(proposal.Result.Outcome == PlayOutcome.NeedsConfirmation)" Busy="@busy" Confirm="Confirm" Cancel="@CancelProposal">
                 <Evidence>
                     @if (proposal.Result.Plan?.Entry is { } review && !Withheld(proposal))
                     {
@@ -159,6 +159,10 @@ else if (state is not null)
                     <p class="muted" id="play-review-none">Nothing to review: a proposal shows here, with Confirm and Cancel.</p>
                 }
                 @reviewBlock
+                @if (PickedNote is { } pickedNote)
+                {
+                    <p class="muted" id="play-picked-note">@pickedNote</p>
+                }
             </div>;
             RenderFragment between = @<text>
         @if (narrow)
@@ -166,6 +170,8 @@ else if (state is not null)
             <InspectorTabs Tabs="@PaneTabs" Selected="@paneTab" SelectedChanged="@(tab => paneTab = tab)" Label="Workspace" IdPrefix="play" SeparatePanels="true" />
         }
         <section id="play-panel-actions" class="play-pane play-actions" tabindex="-1" @ref="actionsPane" @attributes="@Pane("actions", "Actions")">
+            @* Table player, pass 29: the hex picked on the map is offered to every typed Location of the actions. *@
+            <CascadingValue Name="PickedLocation" Value="@highlight?.ToString()">
             @if (SetupOpen)
             {
                 @setupBlock
@@ -246,7 +252,7 @@ else if (state is not null)
                 @if (state.Phase == "mph")
                 {
                     <h4>Movement</h4>
-                    <RuleHelp Id="move-help" Summary="@($"The {state.PhasingSide} side moves one stack at a time, one Location per step; after each step the DEFENDER may fire or pass (A4.1, A8.1).")">
+                    <RuleHelp Id="move-help" Summary="@($"The {DisplayText.Side(state.PhasingSide)} side moves one stack at a time, one Location per step; after each step the DEFENDER may fire or pass (A4.1, A8.1).")">
                         The @DisplayText.Side(state.PhasingSide) side moves one stack at a time, one Location per step (A4.1). After each step the DEFENDER may fire at the stack
                         or pass (A8.1, A8.11); the stack then moves on, whole or split, or ends its move. No other unit moves until every member of the stack has
                         ended (A4.2); a member that breaks or is pinned ends its move. A Location holding Residual FP attacks a stack as it enters (A8.22).
@@ -416,11 +422,11 @@ else if (state is not null)
                     <ul class="muted" id="fire-markers">
                         @foreach (var lane in state.FireLanes)
                         {
-                            <li class="fire-lane">Fire Lane of @lane.Weapon (@lane.Operator): @string.Join(", ", lane.Entries.Select(entry => $"{entry.Location} {entry.Fp} FP")) (A9.22)</li>
+                            <li class="fire-lane">Fire Lane of @lane.Weapon (@lane.Operator): @string.Join(", ", lane.Entries.Select(entry => $"{DisplayText.Location(entry.Location)} {entry.Fp} FP")) (A9.22)</li>
                         }
                         @foreach (var encircled in state.Encirclements)
                         {
-                            <li class="encirclement">@encircled.Location: the @encircled.Side units there are Encircled (A7.7)</li>
+                            <li class="encirclement">@DisplayText.Location(encircled.Location): the @DisplayText.Side(encircled.Side) units there are Encircled (A7.7)</li>
                         }
                     </ul>
                 }
@@ -441,8 +447,8 @@ else if (state is not null)
                     {
                         <h4>Defensive First Fire</h4>
                         <div class="toolbar" id="dff-window">
-                            <span class="toolbar-note" id="dff-note">The moving stack is at @movingAt: fire at it below, or pass (A8.1).</span>
-                            <button type="button" id="dff-show" @onclick="@(() => highlight = movingAt)">Show it on the map</button>
+                            <span class="toolbar-note" id="dff-note">The moving stack is at @DisplayText.Location(movingAt): fire at it below, or pass (A8.1).</span>
+                            <button type="button" id="dff-show" @onclick="@(() => LocateHex(movingAt))">Show it on the map</button>
                             <button id="propose-pass" @onclick='@(() => ProposeSimple(GameActions.PassFire, "pass"))'>Propose: the DEFENDER passes</button>
                         </div>
                     }
@@ -497,6 +503,7 @@ else if (state is not null)
                     }
                 }
             }
+            </CascadingValue>
         </section>
             </text>;
         }
@@ -514,7 +521,7 @@ else if (state is not null)
                     {
                         <p id="play-residual">
                             Residual FP this MPh (A8.2):
-                            @string.Join("; ", state.ResidualFire.Select(item => $"{item.Fp} in {item.Location}"))
+                            @string.Join("; ", state.ResidualFire.Select(item => $"{item.Fp} in {DisplayText.Location(item.Location)}"))
                         </p>
                     }
                     <div class="toolbar play-map-tools">
@@ -560,7 +567,7 @@ else if (state is not null)
 
     <h3>Units</h3>
     <PlayUnitTable ViewNote="@($"As {(Viewer.IsAdjudicator ? "the adjudicator sees them: every unit" : $"{Viewer.Name} sees them")}, at revision {state.Revision}.")"
-                   Rows="@UnitRows" Sealed="@([.. SealedPresences])" Locate="@(at => highlight = at)" />
+                   Rows="@UnitRows" Sealed="@([.. SealedPresences])" Locate="@LocateHex" />
     <AdjudicatorAuditPanel Lines="@(Viewer.IsAdjudicator ? Live.Audit.Tail(12).ToArray() : null)" />
 }
 
@@ -610,7 +617,7 @@ else if (state is not null)
 
     /// <summary>The units the view may see, as R12 shows them: their movement and conditions in words (ruling R23.1).</summary>
     private IReadOnlyList<PlayUnitTable.Row> UnitRows => state is null ? [] : [.. VisibleUnits.Select(unit => new PlayUnitTable.Row(unit.Id, unit.Side,
-        unit.Kind.Replace("asl:", string.Empty, StringComparison.Ordinal),
+        DisplayText.Kind(unit.Kind),
         unit.Status is InstanceStatus.Active or InstanceStatus.Wrecked ? state.Location(unit.Id)?.Location : null, unit.Status.ToString().ToLowerInvariant(),
         (unit.Status == InstanceStatus.Wrecked ? "wreck" : LiveFire.IsVehicle(unit) ? $"{HalfMpText(GamePlanner.VehicleHalfMp(unit).Spent)} of {HalfMpText(GamePlanner.VehicleHalfMp(unit).Allotment)} MP"
             : unit.MfSpent.ToString(CultureInfo.InvariantCulture)) + (unit.MovementEnded ? ", movement ended" : ""),
@@ -762,7 +769,7 @@ else if (state is not null)
     private IReadOnlyList<SetupPlacementEditor.Choice> DefinitionChoices =>
     [
         .. Definitions.Select(definition => new SetupPlacementEditor.Choice(definition.Id,
-            $"{definition.Id} ({definition.Nationality} {definition.Kind.Replace("asl:", string.Empty, StringComparison.Ordinal)})")),
+            $"{definition.Id} ({definition.Nationality} {DisplayText.Kind(definition.Kind)})")),
         .. new[] { firstSide, secondSide }.Distinct(StringComparer.Ordinal).SelectMany(side => new[]
         {
             new SetupPlacementEditor.Choice(DummyPrefix + side, $"a Dummy ({side})"),
@@ -1974,7 +1981,9 @@ else if (state is not null)
             return;
         }
 
-        handOver = next == viewAs ? null : next;
+        // Referee, pass 29: the view shown again drops the hand-over only once it has been confirmed; on load and on a game change it has not.
+        handOver = next == viewAs && !unconfirmed ? null : next;
+        openingHex = null;
         ResetForView();
     }
 
@@ -2002,11 +2011,11 @@ else if (state is not null)
         {
             viewAs = next;
             handOver = null;
+            unconfirmed = false;
             ResetForView();
             (highlight, openingHex) = (openingHex, null);
             enterUnit = VisibleUnits.FirstOrDefault()?.Id ?? string.Empty;
-            focusActions = true;
-            paneTab = "actions";
+            ShowActions();
         }
     }
 
@@ -2020,10 +2029,12 @@ else if (state is not null)
     {
         if (unit.Custodian is { } guard)
         {
-            yield return $"guarded by {guard}";
+            // Referee, pass 29: a side never reads the id of a unit its view does not hold (rulings R23.1, R23.3).
+            yield return $"guarded by {(Viewer.IsAdjudicator || VisibleUnits.Any(seen => seen.Id == guard) ? guard : "a unit not in view")}";
         }
 
-        if (state?.Units.Where(item => item.Status == InstanceStatus.Active && item.Custodian == unit.Id).Select(item => item.Id).Order(StringComparer.Ordinal).ToArray() is { Length: > 0 } prisoners)
+        if (state?.Units.Where(item => item.Status == InstanceStatus.Active && item.Custodian == unit.Id
+            && (Viewer.IsAdjudicator || VisibleUnits.Any(seen => seen.Id == item.Id))).Select(item => item.Id).Order(StringComparer.Ordinal).ToArray() is { Length: > 0 } prisoners)
         {
             yield return $"guards {string.Join(", ", prisoners)}";
         }
@@ -2171,7 +2182,7 @@ else if (state is not null)
         var acquired = state?.Acquisitions.FirstOrDefault(item => item.Gun == gun.Id);
         var crew = gun.Holding is { } holding ? state?.Unit(holding.Holder) : null;
         var crewState = crew is null ? "" : string.Concat(new[] { Conditions.Pinned, Conditions.Concealed, Conditions.Melee, Conditions.Broken }
-            .Where(name => Marked(crew, name)).Select(name => ", crew " + name.Replace("asl:", "", StringComparison.Ordinal)));
+            .Where(name => Marked(crew, name)).Select(name => ", crew " + DisplayText.Kind(name)));
         var spotter = state?.MortarSpotters.FirstOrDefault(item => item.Gun == gun.Id)?.Spotter;
         return $"{gun.Id} ({gun.Definition?.Definition}" + (gun.Kind is "asl:light-mortar" or "asl:latw" ? $", with {crew?.Id}" + (spotter is null ? "" : $", Spotter {spotter}") : $", facing {facing}")
             + (Marked(gun, Conditions.Malfunctioned) ? gun.Kind == "asl:latw" ? ", malfunctioned: repair it in the RPh (A9.72)" : ", malfunctioned: Gun repair is not built" : "")
@@ -3285,13 +3296,14 @@ else if (state is not null)
         {
             // Picked once the hand-over on load is confirmed, which clears what the last view picked.
             (highlight, openingHex) = (picked, picked);
+            dropHexQuery = true;
         }
 
         // Backlog section 37, built in pass 28c: a page opened or reloaded on a game waits behind the hand-over screen, since whoever is at the screen
         // has not said which side they are.
         if (state is not null && history?.Current is not null && viewAs.Length > 0)
         {
-            handOver = viewAs;
+            (handOver, unconfirmed) = (viewAs, true);
         }
     }
 
@@ -3311,7 +3323,7 @@ else if (state is not null)
         inspectorTab = "selection";
 
         // Pass 29: the address names the game, so a reload opens it again (behind the hand-over).
-        Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("game", gameId.Length > 0 ? gameId : null), replace: true);
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string, object?> { ["game"] = gameId.Length > 0 ? gameId : null, ["hex"] = null }), replace: true);
         placeEntry = string.Empty;
         nonObChosen.Clear();
         pending = null;
@@ -3335,9 +3347,10 @@ else if (state is not null)
         Refresh();
 
         // Referee, pass 28c: another game is opened as the page is, behind the hand-over (backlog section 37).
+        unconfirmed = false;
         if (state is not null && history?.Current is not null && viewAs.Length > 0)
         {
-            handOver = viewAs;
+            (handOver, unconfirmed) = (viewAs, true);
         }
     }
 
@@ -3997,7 +4010,7 @@ else if (state is not null)
         {
             // Pass 29: the busy state is drawn before the gate is asked, so the pickers show as disabled even when the answer is quick.
             StateHasChanged();
-            await Task.Yield();
+            await DrawBusy();
             var revision = (long)(history?.Events.Count ?? 0);
             proposed = new Proposal(action, arguments, await Run(() => Live.Play.ProposeAsync(action, arguments, Live.Principal)), revision);
         }
@@ -4018,6 +4031,14 @@ else if (state is not null)
         ShowProposal();
         Refresh();
     }
+
+    /// <summary>
+    /// Lets the busy state be drawn before the gate is asked (pass 29). A component test that registers <see cref="ImmediateProposals"/> skips the
+    /// wait, so the proposal stays on the test's own thread; the Studio never registers it.
+    /// </summary>
+    private Task DrawBusy() => Services.GetService<ImmediateProposals>() is null ? Yield() : Task.CompletedTask;
+
+    private static async Task Yield() => await Task.Yield();
 
     /// <summary>Runs a gate call; a failure inside it, such as a reviewed package that no longer verifies, is reported, not thrown.</summary>
     private static async Task<PlayResult> Run(Func<Task<PlayResult>> call)
@@ -4063,7 +4084,7 @@ else if (state is not null)
         try
         {
             StateHasChanged();
-            await Task.Yield();
+            await DrawBusy();
             result = await Run(() => Live.Play.ConfirmAsync(proposal.Action, proposal.Arguments, Live.Principal, proposal.Result.Correlation));
         }
         finally
@@ -4163,6 +4184,10 @@ else if (state is not null)
             {
                 ClearCloseCombat();
             }
+
+            // Table player and UI review, pass 29: Confirm is gone with the commit, so the focus goes to the actions; under 1024px their tab opens.
+            // Wider, the panes are side by side and nothing scrolls, so the outcome stays in view.
+            ShowActions(scroll: narrow);
         }
 
         Refresh();
@@ -4202,6 +4227,7 @@ else if (state is not null)
     private Dictionary<string, object> ReviewAttributes => new()
     {
         ["id"] = "play-panel-review",
+        ["aria-label"] = "Review",
         ["aria-busy"] = busy ? "true" : "false",
         ["tabindex"] = "-1",
         ["hidden"] = narrow && paneTab != "map",
@@ -4212,6 +4238,7 @@ else if (state is not null)
     {
         var attributes = Pane("map", "Map");
         attributes["id"] = "play-panel-map";
+        attributes["tabindex"] = "-1";
         attributes["data-source"] = source ?? string.Empty;
         return attributes;
     }
@@ -4219,6 +4246,16 @@ else if (state is not null)
     private bool focusReview;
     private IJSObjectReference? workspaceScript;
     private bool focusActions;
+    private bool focusMap;
+
+    // Whether the pane takes the focus without being scrolled to.
+    private bool focusInPlace;
+
+    // Whether the hand-over waiting is the one of a load or a game change, which only a confirmation ends (referee, pass 29).
+    private bool unconfirmed;
+
+    // Whether the address still carries the hex of "Back to Play"; it is taken out once read, so a reload or another view does not pick it again.
+    private bool dropHexQuery;
     private bool busy;
     private string status = string.Empty;
 
@@ -4305,6 +4342,48 @@ else if (state is not null)
 
     private void FocusReview() => ShowProposal();
 
+    /// <summary>The actions brought into view with the focus; under 1024px their tab opens (pass 29).</summary>
+    private void ShowActions(bool scroll = true)
+    {
+        (focusActions, focusInPlace) = (true, !scroll);
+        if (narrow)
+        {
+            paneTab = "actions";
+        }
+    }
+
+    private void CancelProposal()
+    {
+        if (!busy)
+        {
+            (pending, status) = (null, string.Empty);
+            ShowActions(scroll: narrow);
+        }
+    }
+
+    /// <summary>
+    /// A hex named off the map (the units table, "Show it on the map") is picked and shown: the map comes into view, under 1024px in its tab, and
+    /// the Selection tab opens unless a proposal waits for Confirm (table player, pass 29).
+    /// </summary>
+    private void LocateHex(BoardLocation at)
+    {
+        (highlight, focusMap) = (at, true);
+        if (narrow)
+        {
+            paneTab = "map";
+        }
+
+        if (!AwaitingConfirm)
+        {
+            inspectorTab = "selection";
+        }
+    }
+
+    /// <summary>What a map click picked while Confirm waits and the Proposal tab stays open; the counters are those the view draws.</summary>
+    private string? PickedNote => AwaitingConfirm && highlight is { } at && MapLayers is { Board: { } board, Overlay: { } overlay } && GameMaps.FactsAt(board, at) is { } facts
+        ? $"Picked: {DisplayText.Location(at)}, {overlay.At(facts.Index).Count() switch { 0 => "no counters", 1 => "1 counter", var count => $"{count} counters" }}; the Selection tab has its details."
+        : null;
+
     /// <summary>Closes the scenario card and returns the focus to the context's link that opened it (Claude Design's review).</summary>
     private async Task CloseCard()
     {
@@ -4362,12 +4441,19 @@ else if (state is not null)
                 await workspaceScript.InvokeVoidAsync("watchContext");
             }
 
-            if (focusReview || focusActions)
+            if (dropHexQuery)
             {
-                var pane = focusReview ? workspace?.Inspector ?? reviewFallback : actionsPane;
-                (focusReview, focusActions) = (false, false);
+                dropHexQuery = false;
+                Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("hex", (string?)null), replace: true);
+            }
+
+            if (focusReview || focusActions || focusMap)
+            {
+                var pane = focusReview ? workspace?.Inspector ?? reviewFallback : focusMap ? workspace?.Stage ?? default : actionsPane;
+                var scroll = focusReview || focusMap || !focusInPlace;
+                (focusReview, focusActions, focusMap, focusInPlace) = (false, false, false, false);
                 workspaceScript ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/playWorkspace.js");
-                await workspaceScript.InvokeVoidAsync("reveal", pane);
+                await workspaceScript.InvokeVoidAsync("reveal", pane, scroll);
             }
         }
         catch (Exception exception) when (exception is JSDisconnectedException or JSException or TaskCanceledException)

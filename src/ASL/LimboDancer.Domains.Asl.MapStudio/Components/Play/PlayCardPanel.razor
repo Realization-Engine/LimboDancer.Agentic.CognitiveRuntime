@@ -30,7 +30,7 @@
         @if (Victory is { } victory)
         {
             <VictoryStandingTable Report="@victory" KnownTo="@KnownTo"
-                                  IfEndedNow="@(KnownTo is null && Ended is null ? victory.AtEnd.Winner is { } leader ? $"{leader} would win" : "it would be a draw" : null)" />
+                                  IfEndedNow="@(KnownTo is null && Ended is null ? victory.AtEnd.Winner is { } leader ? $"{DisplayText.Side(leader)} would win" : "it would be a draw" : null)" />
         }
         <CardSpecialRulesList Id="play-card-ssr" Rules="@card.SpecialRules" />
         <a id="play-card-whole" href="units/scenarios?card=@Scenario.Id">The whole card</a>

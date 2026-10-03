@@ -77,7 +77,7 @@ public sealed class GameStatesTests : IDisposable
         Assert.Contains("Revision 23 of 23", page.Find("#game-summary").TextContent, StringComparison.Ordinal);
         Assert.Empty(page.FindAll("#game-units tr[data-unit='g3']"));
         Assert.Empty(page.FindAll("#game-units tr[data-unit='gh2']"));
-        Assert.Contains("concealed german presence", page.Find("#game-units tr[data-unit='sealed-1']").TextContent, StringComparison.Ordinal);
+        Assert.Contains("German concealed unit", page.Find("#game-units tr[data-unit='sealed-1']").TextContent, StringComparison.Ordinal);
         Assert.DoesNotContain("gh2", page.Markup, StringComparison.Ordinal);
 
         var projection = games.Projection(games.Load("a1-village.synthetic"), Perspective.Side("russian"), 23);

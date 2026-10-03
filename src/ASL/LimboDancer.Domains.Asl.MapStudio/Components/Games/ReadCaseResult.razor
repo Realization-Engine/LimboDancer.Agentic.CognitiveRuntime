@@ -9,7 +9,7 @@
         <table class="library">
             <tbody>
                 <tr><th>Stamp</th><td>revision @snapshot.Stamp.Revision, @snapshot.Source, @snapshot.Time.ToString("u", CultureInfo.InvariantCulture); turn @snapshot.Turn, @GameText.PhaseLabel(snapshot.Phase)</td></tr>
-                <tr><th>Attacker</th><td>@snapshot.Attacker.Unit.Id (@snapshot.Attacker.Definition.Id), Good Order @Conditions.Name(snapshot.Attacker.GoodOrder), @snapshot.Attacker.MfSpent MF spent this phase</td></tr>
+                <tr><th>Attacker</th><td>@snapshot.Attacker.Unit.Id (@snapshot.Attacker.Definition.Id), Good Order @DisplayText.YesNo(snapshot.Attacker.GoodOrder), @snapshot.Attacker.MfSpent MF spent this phase</td></tr>
                 <tr><th>Previous location</th><td>@GameText.LocationReadText(snapshot.Previous)</td></tr>
                 <tr><th>Location</th><td>@GameText.LocationReadText(snapshot.Target)@(snapshot.Distance is { } distance ? $"; {distance} hex(es) from the previous location" : string.Empty)</td></tr>
                 <tr>

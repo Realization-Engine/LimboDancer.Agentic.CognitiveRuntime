@@ -1,5 +1,7 @@
 using System.Runtime.CompilerServices;
 using Bunit;
+using LimboDancer.Domains.Asl.MapStudio.Services;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Tests;
 
@@ -14,6 +16,10 @@ internal static class PlayMaps
     /// <summary>Sets up the viewport's script, and lets the page's other scripts (the workspace's focus) run as no-ops.</summary>
     public static void UseViewport(this BunitContext context)
     {
+        // Pass 29: the page draws its busy state before the gate is asked, which in a component test moves the rest of a proposal to another
+        // thread; the marker keeps it on the test's own. The longer wait covers a full run on a slow machine.
+        context.Services.AddSingleton(new ImmediateProposals());
+        BunitContext.DefaultWaitTimeout = TimeSpan.FromSeconds(15);
         context.JSInterop.Mode = JSRuntimeMode.Loose;
         var module = context.JSInterop.SetupModule("./js/boardViewport.js");
         var viewport = module.SetupModule(invocation => invocation.Identifier == "create");
@@ -37,5 +43,5 @@ internal static class PlayMaps
 
     /// <summary>The map's source board, as the panel names it.</summary>
     public static string? MapSource<T>(this IRenderedComponent<T> page)
-        where T : Microsoft.AspNetCore.Components.IComponent => page.Find("#play-map").GetAttribute("data-source");
+        where T : Microsoft.AspNetCore.Components.IComponent => page.Find("#play-panel-map").GetAttribute("data-source");
 }

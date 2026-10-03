@@ -659,6 +659,26 @@ dl.report dd {
     background: var(--panel);
 }
 
+/* Under 1024px the board viewer stacks: the map keeps a usable height and the inspector follows it, and the page scrolls (UI review, pass 29). */
+@media (max-width: 1023.98px) {
+    .viewer {
+        grid-template-columns: minmax(0, 1fr);
+        height: auto;
+        overflow: visible;
+    }
+
+    .viewer .board-host {
+        flex: none;
+        height: 60vh;
+        min-height: 14rem;
+    }
+
+    .viewer .inspector {
+        border-left: 0;
+        border-top: 1px solid var(--line);
+    }
+}
+
 /* Pass 29: the map turned a quarter clockwise as one. The drawing takes the host's height as its width and its width as its height, then turns
    about its top-left corner and moves back into the host; the host's size comes from the layout, never from the drawing. */
 .board-host.rotated {
@@ -1044,14 +1064,14 @@ ul.plain li.selected {
 /* ---- Maps ------------------------------------------------------------------ */
 
 /* The Maps page's slot diagram (Claude Design's UX analysis): the boards at their columns and rows. */
+/* The sketch keeps its own size, so its labels stay readable; a wide layout scrolls sideways inside the figure (UI review, pass 29). */
 .map-slots {
-    max-width: 40rem;
+    max-width: 100%;
     margin: 0.5rem 0 1rem;
+    overflow-x: auto;
 }
 
 .map-slots svg {
-    width: 100%;
-    height: auto;
     display: block;
 }
 
@@ -1130,14 +1150,6 @@ textarea.placements-text {
 
 .lab > section {
     min-width: 0;
-}
-
-/* Claude Design's review: the preview stays in view while the fields beside it scroll. */
-.lab > .lab-preview {
-    position: sticky;
-    top: 1rem;
-    max-height: calc(100vh - 2rem);
-    overflow: auto;
 }
 
 .lab .toolbar label,
@@ -1837,7 +1849,6 @@ details.advanced > summary {
     border-radius: var(--radius);
 }
 
-.play-context-line,
 .game-line {
     display: flex;
     flex-wrap: wrap;
@@ -1846,7 +1857,6 @@ details.advanced > summary {
     margin-top: 0.35rem;
 }
 
-.play-context-line #play-summary,
 .game-line > p {
     margin: 0;
 }
@@ -2046,13 +2056,14 @@ details.advanced > summary {
         overflow: visible;
     }
 
+    /* Table player, pass 29: the map leaves room for the inspector under it, so what a click picks shows without scrolling. */
     .play-workspace .play-map-pane {
-        height: 70vh;
+        height: 55vh;
     }
 
     @supports (height: 100dvh) {
         .play-workspace .play-map-pane {
-            height: 70dvh;
+            height: 55dvh;
         }
     }
 
@@ -2158,11 +2169,6 @@ main :is(.toolbar, .fields, .field-group, .form-grid) > * {
 @media (max-width: 1023.98px) {
     .lab {
         grid-template-columns: minmax(0, 1fr);
-    }
-
-    .lab > .lab-preview {
-        position: static;
-        max-height: none;
     }
 
     .lab .lab-preview {

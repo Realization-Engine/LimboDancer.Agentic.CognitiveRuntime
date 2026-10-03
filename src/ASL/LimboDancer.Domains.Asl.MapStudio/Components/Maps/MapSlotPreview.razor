@@ -4,7 +4,11 @@
    "Save and view". Each board is a rectangle at its column and row, a reversed board says so, two boards in one slot are marked, and an empty slot
    inside the layout is dashed. A sketch of the slots only; the map itself is drawn when it is saved. The SVG is built here, since Razor reads an SVG
    text element as its own text tag. *@
-@if (Rows.Count > 0)
+@if (Rows.Count > 0 && (Columns > Most || RowsUsed > Most))
+{
+    <p class="muted" id="map-slots-large">The layout is not sketched: a column or row number is above @Most.</p>
+}
+else if (Rows.Count > 0)
 {
     <figure class="map-slots" id="map-slots">
         @((MarkupString)Svg())
@@ -16,6 +20,9 @@
     private const int Width = 150;
     private const int Height = 50;
     private const int Gap = 8;
+
+    // The sketch stops at this many columns or rows, so a mistyped number does not draw thousands of slots (UI review, pass 29).
+    private const int Most = 12;
 
     [Parameter, EditorRequired]
     public IReadOnlyList<MapPlacementEditor.PlacementDraft> Rows { get; set; } = [];
@@ -32,7 +39,7 @@
         var bySlot = BySlot;
         var svg = new System.Text.StringBuilder();
         svg.Append(CultureInfo.InvariantCulture,
-            $"<svg viewBox=\"0 0 {Columns * (Width + Gap) + Gap} {RowsUsed * (Height + Gap) + Gap}\" role=\"img\" aria-labelledby=\"map-slots-caption\">");
+            $"<svg width=\"{Columns * (Width + Gap) + Gap}\" height=\"{RowsUsed * (Height + Gap) + Gap}\" viewBox=\"0 0 {Columns * (Width + Gap) + Gap} {RowsUsed * (Height + Gap) + Gap}\" role=\"img\" aria-labelledby=\"map-slots-caption\">");
         for (var row = 0; row < RowsUsed; row++)
         {
             for (var column = 0; column < Columns; column++)
@@ -46,7 +53,7 @@
                 }
 
                 var clash = here.Count > 1;
-                var note = clash ? "two boards in one slot" : here[0].Reversed ? "reversed" : null;
+                var note = clash ? $"{here.Count} boards in one slot" : here[0].Reversed ? "reversed" : null;
                 var label = WebUtility.HtmlEncode(string.Join(" + ", here.Select(item => "bd" + item.Board)));
                 svg.Append(CultureInfo.InvariantCulture, $"<g class=\"{(clash ? "map-slot clash" : "map-slot")}\" data-slot=\"{column},{row}\">")
                     .Append(CultureInfo.InvariantCulture, $"<rect x=\"{x}\" y=\"{y}\" width=\"{Width}\" height=\"{Height}\" rx=\"4\"/>")
@@ -72,7 +79,7 @@
         var empty = columns * rows - bySlot.Count;
         var clashes = bySlot.Count(pair => pair.Value.Count > 1);
         return $"The layout: {columns} {(columns == 1 ? "column" : "columns")} by {rows} {(rows == 1 ? "row" : "rows")}"
-            + (clashes > 0 ? $"; {clashes} {(clashes == 1 ? "slot holds" : "slots hold")} two boards" : string.Empty)
+            + (clashes > 0 ? $"; {clashes} {(clashes == 1 ? "slot holds" : "slots hold")} more than one board" : string.Empty)
             + (empty > 0 ? $"; {empty} empty {(empty == 1 ? "slot" : "slots")} (dashed)" : string.Empty) + ".";
     }
 }

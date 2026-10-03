@@ -1,13 +1,12 @@
 using Bunit;
 using LimboDancer.Domains.Asl.MapStudio.Components.Layout;
 using LimboDancer.Domains.Asl.MapStudio.Components.Play;
-using LimboDancer.Domains.Asl.Maps.Coordinates;
-using LimboDancer.Domains.Asl.Units.State;
+using Microsoft.AspNetCore.Components;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Tests;
 
 /// <summary>
-/// The components of pass 28c: the context header, the picked hex, the records grouped by turn and phase, the tabs whose panels the caller renders,
+/// The components of pass 28c: the context header, the picked hex a typed Location takes (pass 29), the records grouped by turn and phase, the tabs whose panels the caller renders,
 /// the ready notes beside pass 28b's Propose buttons, and RuleHelp on the older panels' help. The page's use of them is in
 /// <see cref="PlayPagePass28cTests"/>.
 /// </summary>
@@ -39,20 +38,21 @@ public sealed class PlayWorkspaceComponentTests : IDisposable
         Assert.Empty(header.FindAll(".play-context-actions"));
     }
 
+    // Table player, pass 29: a typed Location offers the hex picked on the map, and takes it.
     [Fact]
-    public void ThePickedHexListsWhatTheViewSees()
+    public void ATypedLocationOffersTheHexPickedOnTheMap()
     {
-        var at = BoardLocation.Parse("bd01:D4:0");
-        var hex = context.Render<PlaySelectedHex>(parameters => parameters.Add(item => item.Hex, "bd01:D4")
-            .Add(item => item.Units, [new PlayUnitTable.Row("g1", "german", "squad", at, "active", "0", "broken")])
-            .Add(item => item.Sealed, [new SealedPresence("q1", "russian", at)]).Add(item => item.ViewName, "The german side"));
-        Assert.Contains("broken", hex.Find("#play-selected-units li[data-unit='g1']").TextContent, StringComparison.Ordinal);
-        Assert.Single(hex.FindAll("#play-selected-units li[data-sealed='q1']"));
+        var taken = string.Empty;
+        var field = context.Render<CascadingValue<string?>>(parameters => parameters.Add(item => item.Name, "PickedLocation").Add(item => item.Value, "bd01:D4:0")
+            .AddChildContent<LocationField>(inner => inner.Add(item => item.Id, "move-to").Add(item => item.Label, "To").Add(item => item.Value, "bd01:C3:0")
+                .Add(item => item.OnChange, at => taken = at)));
+        Assert.Equal("Use D4 on board 01", field.Find("#move-to-use").TextContent);
+        field.Find("#move-to-use").Click();
+        Assert.Equal("bd01:D4:0", taken);
 
-        hex.Render(parameters => parameters.Add(item => item.Units, []).Add(item => item.Sealed, []));
-        Assert.Equal("The german side sees no unit here.", hex.Find("#play-selected-empty").TextContent);
-        hex.Render(parameters => parameters.Add(item => item.Hex, (string?)null));
-        Assert.Empty(hex.FindAll("#play-selected"));
+        // Nothing is offered when no hex is picked, or when the field already holds it.
+        var plain = context.Render<LocationField>(parameters => parameters.Add(item => item.Id, "advance-to").Add(item => item.Label, "To"));
+        Assert.Empty(plain.FindAll(".use-picked"));
     }
 
     // Backlog section 43: records keep the list's order in runs of one turn and phase.

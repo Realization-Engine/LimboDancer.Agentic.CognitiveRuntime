@@ -1,7 +1,15 @@
 @* Plan S11 (pass 25): a typed Location, such as bd01:D5:0, with its label and the help the caller gives; the caller keeps the text and reads it. *@
 <label title="@Title">@Label <input id="@Id" value="@Value" @onchange="@(args => OnChange.InvokeAsync(args.Value as string ?? string.Empty))" size="@Size" placeholder="@Placeholder" aria-describedby="@DescribedBy" /></label>
+@if (Picked is { Length: > 0 } picked && picked != Value)
+{
+    <button type="button" class="link use-picked" id="@($"{Id}-use")" title="Fills this Location with the hex picked on the map, at ground level." @onclick="@(() => OnChange.InvokeAsync(picked))">Use @DisplayText.Location(picked)</button>
+}
 
 @code {
+    /// <summary>The hex picked on the map, as a ground-level Location, when the page cascades one (table player, pass 29); the field offers to take it.</summary>
+    [CascadingParameter(Name = "PickedLocation")]
+    public string? Picked { get; set; }
+
     [Parameter, EditorRequired]
     public string Id { get; set; } = string.Empty;
 
