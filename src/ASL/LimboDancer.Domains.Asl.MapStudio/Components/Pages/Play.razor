@@ -36,7 +36,7 @@
                    AwaitingNote="@AwaitingNote" HandOver="@HandOverToAwaiting" Status="@status" OpenCard="@OpenCard">
     <LiveGameToolbar Games="@([.. Live.Games().Select(scope => scope.Game)])" GameId="@gameId" GameChanged="ChangeGame" Disabled="@busy" Views="@ViewChoices"
                      ViewAs="@(handOver ?? viewAs)" ViewChanged="ChangeView" BoardLabel="@ViewTarget"
-                     BoardLink="@(state is not null && handOver is null ? Games.BoardLink(ViewTarget, GameLibrary.LivePrefix + gameId, Viewer, state.Revision) : null)" />
+                     BoardLink="@(state is not null && handOver is null ? Games.BoardLink(ViewTarget, GameLibrary.LivePrefix + gameId, Viewer, state.Revision, highlight?.ToString()) : null)" />
 </PlayContextHeader>
 
 <HandOverScreen Next="@handOver" Label="@ViewLabel(handOver)" Confirmed="ConfirmView">

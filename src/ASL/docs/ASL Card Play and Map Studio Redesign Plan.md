@@ -279,7 +279,7 @@ Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (backlog sect
 
 **Purpose:** one map workspace for every page that shows a board. **After:** pass 28c. **From:** the user's review of the board viewer against Play.
 
-**In progress 2026-10-02:** tasks 29.1 to 29.4 are built in one go at the user's word and checked in the Studio, then a review's fixes and the turned map from backlog section 44; 29.5 is not started. The user chose the Proposal tab over a pinned review. Section 15.11 holds the decisions; the [pass 29 design](<ASL Unit Backlog Pass 29 Design.md>) the detail.
+**In progress 2026-10-02:** tasks 29.1 to 29.4 are built in one go at the user's word and checked in the Studio, then a review's fixes and the turned map from backlog section 44; 29.5 is built with the board viewer's game banner. The user chose the Proposal tab over a pinned review. Section 15.11 holds the decisions; the [pass 29 design](<ASL Unit Backlog Pass 29 Design.md>) the detail.
 
 | Task | What it changes | Estimate |
 |---|---|---|

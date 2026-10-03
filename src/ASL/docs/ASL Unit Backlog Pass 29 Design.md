@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 29 Design
 
-**Status:** In progress. Tasks 29.1 to 29.4 are built and checked in the Studio, with a review's fixes and the map's rotation (section 9); 29.5 is not started. The unit tests, the reviews, and the merge gate wait until the batch of UI work on branch `ui-improvements` is done (the user's direction, 2026-10-02). Pass 29 (The shared board workspace) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, a Studio pass.
+**Status:** In progress. Tasks 29.1 to 29.4 are built and checked in the Studio, with a review's fixes and the map's rotation (sections 9 and 10); 29.5 is built with the board viewer's game banner (section 11). The unit tests, the reviews, and the merge gate wait until the batch of UI work on branch `ui-improvements` is done (the user's direction, 2026-10-02). Pass 29 (The shared board workspace) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, a Studio pass.
 
 **Date:** 2026-10-02
 
@@ -83,7 +83,6 @@ One issue was found and fixed: a counter click kept the hex but lost the unit's 
 
 ## 8. Open
 
-- **29.5, the selection in the board link** (`Games.BoardLink` with `hex=`), is not started.
 - **Tests, at the end of the batch.** The component tests of `PlayMapPanel` and `PlaySelectedHex` go, and the Play page tests that read the old map panel, `play-selected`, or `play-los-*` move to the workspace. New component tests for `BoardInspector` and `BoardWorkspace`.
 
 ## 9. The review's fixes and the turned map
@@ -152,3 +151,13 @@ The user had Claude in Chrome check section 9 in the running Studio (commit 69eb
 - at 1480x900, Play's map pane (434 by 556) is tall, so it stayed turned; the board viewer's pane (901 by 586) is wide, so it was not;
 - at 1480x900, with the workspace just below the context, a proposal grew the context to 205 pixels and the panes started at 209.
 - after the third check (commit b8806a5): at 1480x900 a proposal shrank the turned map's pane from 556 to 495 pixels, and the view box followed it (919 to 818 units long, 717 across), then back after Cancel; the board viewer's wide pane (901 by 586) turned shows the whole board; a resize from 1480 to 700 pixels switched Play to the narrow tabs with no sideways scroll (the reviewer's background tab did not).
+
+## 11. Task 29.5 and the board viewer's game banner
+
+Built 2026-10-02 from Claude Design's UX analysis (the user's PDF), with task 29.5.
+
+- **The selection in the board link (29.5).** `Games.BoardLink` takes the picked hex; Play's "View on" link carries it as `hex=`, and the board viewer opens with that hex picked and highlighted.
+- **The game banner.** When the board viewer shows a game, a line above its toolbar says which game, whose view, and which revision: "Viewing live game p28c-walk2 as the German side, revision 36 of 36." A live game links "Back to Play" (`games/play?game=...`).
+- **Historical.** Below the game's latest revision the banner adds a "Historical" badge: an earlier revision is not the game's current state.
+
+Checked in the Studio on port 6670: a hex located on Play put `hex=bd01:E5:0` in the link; the viewer opened with E5 picked; Previous showed "revision 35 of 36" with Historical, Next took it away.

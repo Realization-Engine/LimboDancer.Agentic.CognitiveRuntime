@@ -1,6 +1,7 @@
 @page "/boards/{BoardName}"
 @using System.Globalization
 @using LimboDancer.Domains.Asl.Units.State
+@using LimboDancer.Domains.Asl.Maps.Coordinates
 @using LimboDancer.Domains.Asl.MapStudio.Components.Layout
 @inject IBoardProvider Boards
 @inject UnitLibrary UnitLibrary
@@ -25,6 +26,21 @@ else if (board is null)
                         Units="@(showUnits ? unitOverlay : null)" UnitView="@gameProjection?.View" UnitNote="@UnitNote" Vocabulary="@UnitLibrary.Vocabulary"
                         StyledModel="@StyledModel" @bind-Selected="selected" @bind-Panel="panel">
             <Toolbar>
+                @if (GameBanner is { } banner)
+                {
+                    @* The UX analysis (pass 29): a game shown here says which game, whose view, and which revision, and a live one links back to Play. *@
+                    <div class="toolbar viewer-game-banner" id="viewer-game-banner">
+                        <span>@banner.Text</span>
+                        @if (banner.Historical)
+                        {
+                            <StatusBadge Tone="StatusBadge.BadgeTone.Warning" Label="Historical" Explanation="An earlier revision: not the game's current state." />
+                        }
+                        @if (banner.PlayLink is { } back)
+                        {
+                            <a id="viewer-back-to-play" href="@back">Back to Play</a>
+                        }
+                    </div>
+                }
                 <BoardViewerToolbar Board="@board" OnFit="@(() => workspace!.Fit())" Preparing="@preparing">
                     <BoardViewPicker Views="@Views" Value="@view" ValueChanged="@ChangeView" />
                     @if (view == BoardView.Comparison)
@@ -93,6 +109,23 @@ else if (board is null)
 
     [SupplyParameterFromQuery(Name = "revision")]
     public long? RevisionQuery { get; set; }
+
+    /// <summary>The hex to select when the page opens, such as the one picked on Play (pass 29, task 29.5).</summary>
+    [SupplyParameterFromQuery(Name = "hex")]
+    public string? HexQuery { get; set; }
+
+    private sealed record Banner(string Text, bool Historical, string? PlayLink);
+
+    /// <summary>The game shown, whose view, and which revision; a live game links back to Play; null when no game is shown.</summary>
+    private Banner? GameBanner => gameProjection is { } shown && shown.Game.History is { } history
+        ? new Banner(
+            (shown.Game.Name.StartsWith(GameLibrary.LivePrefix, StringComparison.Ordinal) ? $"Viewing live game {shown.Game.Name[GameLibrary.LivePrefix.Length..]} as " : $"Viewing {shown.Game.Label} as ")
+                + $"{DisplayText.ViewName(shown.View.Perspective.Name)}, revision {gameRevision} of {history.States.Count}.",
+            gameRevision < history.States.Count,
+            shown.Game.Name.StartsWith(GameLibrary.LivePrefix, StringComparison.Ordinal)
+                ? $"games/play?game={Uri.EscapeDataString(shown.Game.Name[GameLibrary.LivePrefix.Length..])}"
+                : null)
+        : null;
 
     private IReadOnlyList<BoardView> Views => board is { HasStyled: true }
         ? [BoardView.Exact, BoardView.Styled, BoardView.HexFacts, BoardView.Comparison]
@@ -168,6 +201,11 @@ else if (board is null)
             : null;
         showUnits = unitSourceKey is not null;
         BuildUnits();
+        if (HexQuery is { Length: > 0 } hex && BoardLocation.TryParse(hex, out var picked))
+        {
+            selected = GameMaps.FactsAt(board, picked);
+        }
+
         visible = [.. BoardRenderer.Layers(view).Where(layer => layer != "defs")];
     }
 
