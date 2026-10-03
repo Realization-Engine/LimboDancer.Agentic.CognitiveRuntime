@@ -19,8 +19,20 @@ export function create(host, dotnet) {
 
     // Pass 29: the turn is remembered for each shape of the map's pane, so turning a tall pane never turns a wide one. A pane resized into the
     // other shape takes that shape's choice.
-    const shapeWatcher = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => applyShape(state));
+    // A view still at its fit is fitted again when the pane changes size, such as when the context above it grows.
+    const shapeWatcher = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => {
+        applyShape(state);
+        if (state.fitted) {
+            reset(state);
+        }
+    });
     shapeWatcher?.observe(host);
+    try {
+        localStorage.removeItem(rotationKey);
+    } catch {
+        // Storage is blocked: nothing to remove.
+    }
+
     applyShape(state);
 
     svg.addEventListener("wheel", event => {
@@ -216,7 +228,7 @@ async function load(state, baseUrl, query, viewBox, layers, visible) {
     state.highlight = null;
     state.overlay = null;
     setVisible(state, visible);
-    setBox(state, keepBox ? state.box : fitBox(state));
+    setBox(state, keepBox ? state.box : fitBox(state), keepBox ? state.fitted : true);
 }
 
 // Replaces the named layers in place, keeping the view: after an edit, for layers the patch does not cover.
@@ -417,17 +429,17 @@ function zoomCenter(state, factor) {
 
 function reset(state) {
     if (state.home) {
-        setBox(state, fitBox(state));
+        setBox(state, fitBox(state), true);
     }
 }
 
-// The whole board, or, turned (pass 29), the board's turned width across the pane's width from its turned top, to pan along its length; a turned
-// board that fits whole is shown whole.
+// The whole board, or, turned in a tall pane (pass 29), the board's turned width across the pane's width from its turned top, to pan along its
+// length; a turned board that fits whole, or one in a wide pane, is shown whole.
 function fitBox(state) {
     const home = { ...state.home };
     const width = state.svg.clientWidth;
     const height = state.svg.clientHeight;
-    if (!state.rotated || width === 0 || height === 0) {
+    if (!state.rotated || width === 0 || height === 0 || paneShape(state) !== "portrait") {
         return home;
     }
 
@@ -524,8 +536,9 @@ function highlight(state, points) {
     state.svg.appendChild(state.highlight);
 }
 
-function setBox(state, box) {
+function setBox(state, box, fitted = false) {
     state.box = box;
+    state.fitted = fitted;
     const value = `${box.x} ${box.y} ${box.width} ${box.height}`;
     state.svg.setAttribute("viewBox", value);
     state.side?.setAttribute("viewBox", value);

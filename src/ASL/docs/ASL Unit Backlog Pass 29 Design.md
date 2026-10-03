@@ -133,7 +133,7 @@ The user had Claude Design review the first build (commit 747ad2c). It found no 
 
 The user had Claude in Chrome check section 9 in the running Studio (commit 69eb89e). Six of seven checks passed; the disabled pickers could not be seen, and five problems were found. The user accepted every fix below on 2026-10-02, chose to remember the turn by the pane's shape, and added that a turned map should fit the pane's width.
 
-- **Fit on a turned map** fits the board's turned width to the pane's width, from its turned top; the length is panned. A turned board that fits whole is shown whole. Turning the map fits it at once.
+- **Fit on a turned map** in a tall pane fits the board's turned width to the pane's width, from its turned top; the length is panned. In a wide pane, or when the turned board fits whole, the whole board shows. Turning the map fits it at once, and a view still at its fit is fitted again when its pane changes size (a third check found the map shrinking when the context grew).
 - **One turn per pane shape.** The choice is remembered for a pane taller than wide (`studio.map.rotated.portrait`) and for one that is not (`studio.map.rotated.landscape`). A pane resized into the other shape takes that shape's choice, and the toolbar's button follows it. A pane that is hidden (a narrow tab not shown) has no size and so no shape; its choice waits until it shows. Turning the map on a phone, or in Play's tall map pane, never turns the board viewer's wide pane.
 - **The pickers draw as disabled.** The page draws its busy state before it asks the gate, so the Game and View pickers show as disabled while a proposal or a confirmation is checked.
 - **Cancel clears the status line**, with the proposal.
@@ -141,6 +141,7 @@ The user had Claude in Chrome check section 9 in the running Studio (commit 69eb
 - **A reload keeps the game.** Choosing a game writes `?game=` to the address, so a reload opens it again, behind the hand-over.
 - **Good Order unknown says why.** The rule (ASL-UNIT-023) leaves Good Order unknown while broken, berserk, captured, or Melee is not recorded, and the games made in the Studio leave some of them unrecorded. The inspector reads, for example, "unknown: not recorded whether berserk, captured, melee". Recording all four at a unit's creation changes saved games, so it is a backlog row (section 45).
 - **The units table** writes a side as the counters and the inspector do ("Russian").
+- **The old storage key** (`studio.map.rotated`) is removed when the map opens.
 - **Left as they are, at the user's word:** the legend turns with the map, and hexside names stay board directions.
 
 **Studio checks**, on port 6670 with `p28c-walk2`:
@@ -150,3 +151,4 @@ The user had Claude in Chrome check section 9 in the running Studio (commit 69eb
 - at 320x640, "Rotate map" in the Map tab turned the map and fitted its width (view box 963 by 717 board units across a 258 by 346 pane), and stored the portrait choice only;
 - at 1480x900, Play's map pane (434 by 556) is tall, so it stayed turned; the board viewer's pane (901 by 586) is wide, so it was not;
 - at 1480x900, with the workspace just below the context, a proposal grew the context to 205 pixels and the panes started at 209.
+- after the third check (commit b8806a5): at 1480x900 a proposal shrank the turned map's pane from 556 to 495 pixels, and the view box followed it (919 to 818 units long, 717 across), then back after Cancel; the board viewer's wide pane (901 by 586) turned shows the whole board; a resize from 1480 to 700 pixels switched Play to the narrow tabs with no sideways scroll (the reviewer's background tab did not).
