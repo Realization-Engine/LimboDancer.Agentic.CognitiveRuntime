@@ -1,0 +1,1065 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "ethiopian-amharic",
+  "label": "Ethiopian, Amharic context",
+  "language": "am-Latn",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names",
+      "uk-naming-guidance"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-father",
+    "componentOrder": [
+      "given",
+      "father-given"
+    ],
+    "separator": " ",
+    "secondComponentRole": "father-given"
+  },
+  "scopeNote": "Personal name plus father personal name, not a hereditary surname. Amharic-context draft only; Ethiopia is multilingual. Spelling variants do not imply distinct origins. Additional grandfather components may be authored.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 0,
+    "secondComponent": 100
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 0,
+    "secondComponent": 100
+  },
+  "completeness": "target-met",
+  "givenNames": [
+    {
+      "id": "given-23bd4d0b8a63",
+      "text": "Abebe",
+      "weight": 1
+    },
+    {
+      "id": "given-74b4fb6e5aa7",
+      "text": "Abate",
+      "weight": 1
+    },
+    {
+      "id": "given-91de837a5553",
+      "text": "Abay",
+      "weight": 1
+    },
+    {
+      "id": "given-65622c6a0f3c",
+      "text": "Abiy",
+      "weight": 1
+    },
+    {
+      "id": "given-473f0d7334c8",
+      "text": "Addis",
+      "weight": 1
+    },
+    {
+      "id": "given-821de2520ce2",
+      "text": "Admassu",
+      "weight": 1
+    },
+    {
+      "id": "given-5685311cb5ea",
+      "text": "Alemayehu",
+      "weight": 1
+    },
+    {
+      "id": "given-ab80d5627610",
+      "text": "Alemu",
+      "weight": 1
+    },
+    {
+      "id": "given-d7e145a5d3a0",
+      "text": "Alula",
+      "weight": 1
+    },
+    {
+      "id": "given-754ac91d6660",
+      "text": "Amare",
+      "weight": 1
+    },
+    {
+      "id": "given-3c11857b5ecb",
+      "text": "Amanuel",
+      "weight": 1
+    },
+    {
+      "id": "given-ff14b9f8742e",
+      "text": "Andargachew",
+      "weight": 1
+    },
+    {
+      "id": "given-5c4f63ad1ec0",
+      "text": "Asfaw",
+      "weight": 1
+    },
+    {
+      "id": "given-1f00f7d50bfb",
+      "text": "Asnake",
+      "weight": 1
+    },
+    {
+      "id": "given-8436b3c232d2",
+      "text": "Asrat",
+      "weight": 1
+    },
+    {
+      "id": "given-58e1f915ccb9",
+      "text": "Assefa",
+      "weight": 1
+    },
+    {
+      "id": "given-bb5961564f4e",
+      "text": "Ayalew",
+      "weight": 1
+    },
+    {
+      "id": "given-84a57b733cb8",
+      "text": "Ayana",
+      "weight": 1
+    },
+    {
+      "id": "given-9d2ac4ce5ff0",
+      "text": "Baye",
+      "weight": 1
+    },
+    {
+      "id": "given-d5dac8a29b3b",
+      "text": "Bekele",
+      "weight": 1
+    },
+    {
+      "id": "given-aa9442d684ff",
+      "text": "Berhanu",
+      "weight": 1
+    },
+    {
+      "id": "given-36443af0fb43",
+      "text": "Wossen",
+      "weight": 1
+    },
+    {
+      "id": "given-574e7a01022d",
+      "text": "Bogale",
+      "weight": 1
+    },
+    {
+      "id": "given-4873a33f4365",
+      "text": "Dagnachew",
+      "weight": 1
+    },
+    {
+      "id": "given-0f1b1709398b",
+      "text": "Dawit",
+      "weight": 1
+    },
+    {
+      "id": "given-2ed96e99e510",
+      "text": "Debebe",
+      "weight": 1
+    },
+    {
+      "id": "given-05f4bbc36656",
+      "text": "Demeke",
+      "weight": 1
+    },
+    {
+      "id": "given-e5ced7d08a6a",
+      "text": "Demissie",
+      "weight": 1
+    },
+    {
+      "id": "given-527fc97b3ebb",
+      "text": "Dereje",
+      "weight": 1
+    },
+    {
+      "id": "given-f5ae65f19980",
+      "text": "Desta",
+      "weight": 1
+    },
+    {
+      "id": "given-c8f90a70687d",
+      "text": "Dinku",
+      "weight": 1
+    },
+    {
+      "id": "given-b68562ca7547",
+      "text": "Endale",
+      "weight": 1
+    },
+    {
+      "id": "given-e3ec66787131",
+      "text": "Eshetu",
+      "weight": 1
+    },
+    {
+      "id": "given-febab7edf89c",
+      "text": "Fekadu",
+      "weight": 1
+    },
+    {
+      "id": "given-49e8ca0e35f0",
+      "text": "Fikre",
+      "weight": 1
+    },
+    {
+      "id": "given-c4d360f51581",
+      "text": "Fikru",
+      "weight": 1
+    },
+    {
+      "id": "given-4ff7d682bb6f",
+      "text": "Fisseha",
+      "weight": 1
+    },
+    {
+      "id": "given-d78525813325",
+      "text": "Gebre",
+      "weight": 1
+    },
+    {
+      "id": "given-e0d1c31c005c",
+      "text": "Gebreyesus",
+      "weight": 1
+    },
+    {
+      "id": "given-957a7ff6820d",
+      "text": "Gebremariam",
+      "weight": 1
+    },
+    {
+      "id": "given-f84c1a7ba7a7",
+      "text": "Getachew",
+      "weight": 1
+    },
+    {
+      "id": "given-29ac865e1e7c",
+      "text": "Getahun",
+      "weight": 1
+    },
+    {
+      "id": "given-dc566de0577e",
+      "text": "Getnet",
+      "weight": 1
+    },
+    {
+      "id": "given-bd15416a84e4",
+      "text": "Girma",
+      "weight": 1
+    },
+    {
+      "id": "given-ac1faaa50bdc",
+      "text": "Gizaw",
+      "weight": 1
+    },
+    {
+      "id": "given-be6ca0a8ba26",
+      "text": "Haile",
+      "weight": 1
+    },
+    {
+      "id": "given-eaf4d801428f",
+      "text": "Hailemariam",
+      "weight": 1
+    },
+    {
+      "id": "given-88dfb48d89b6",
+      "text": "Haileyesus",
+      "weight": 1
+    },
+    {
+      "id": "given-66f66cbdef17",
+      "text": "Hailu",
+      "weight": 1
+    },
+    {
+      "id": "given-6b720d973c45",
+      "text": "Kassa",
+      "weight": 1
+    },
+    {
+      "id": "given-af9c0318f6ca",
+      "text": "Kebede",
+      "weight": 1
+    },
+    {
+      "id": "given-26cfcd16ed49",
+      "text": "Kefale",
+      "weight": 1
+    },
+    {
+      "id": "given-abffce106797",
+      "text": "Kifle",
+      "weight": 1
+    },
+    {
+      "id": "given-32f484766203",
+      "text": "Kiros",
+      "weight": 1
+    },
+    {
+      "id": "given-f2a949af5ee4",
+      "text": "Lemma",
+      "weight": 1
+    },
+    {
+      "id": "given-312ba4952135",
+      "text": "Mekonnen",
+      "weight": 1
+    },
+    {
+      "id": "given-af87ccf60338",
+      "text": "Melaku",
+      "weight": 1
+    },
+    {
+      "id": "given-d55f9967d800",
+      "text": "Mengesha",
+      "weight": 1
+    },
+    {
+      "id": "given-74d2d816f3ee",
+      "text": "Mengistu",
+      "weight": 1
+    },
+    {
+      "id": "given-aa910228b255",
+      "text": "Merid",
+      "weight": 1
+    },
+    {
+      "id": "given-94049b64465e",
+      "text": "Mesfin",
+      "weight": 1
+    },
+    {
+      "id": "given-fe368c72682e",
+      "text": "Million",
+      "weight": 1
+    },
+    {
+      "id": "given-b225a2890871",
+      "text": "Molla",
+      "weight": 1
+    },
+    {
+      "id": "given-5ed54ec17341",
+      "text": "Mulatu",
+      "weight": 1
+    },
+    {
+      "id": "given-9fc53e6db9bb",
+      "text": "Negash",
+      "weight": 1
+    },
+    {
+      "id": "given-b6d8edf9c846",
+      "text": "Nigussie",
+      "weight": 1
+    },
+    {
+      "id": "given-06d56b339519",
+      "text": "Seifu",
+      "weight": 1
+    },
+    {
+      "id": "given-ab52f4badc36",
+      "text": "Selassie",
+      "weight": 1
+    },
+    {
+      "id": "given-1ddde259681d",
+      "text": "Seyoum",
+      "weight": 1
+    },
+    {
+      "id": "given-4a342cd1c35d",
+      "text": "Shiferaw",
+      "weight": 1
+    },
+    {
+      "id": "given-1752604b17d0",
+      "text": "Solomon",
+      "weight": 1
+    },
+    {
+      "id": "given-d76e0e09530b",
+      "text": "Tadesse",
+      "weight": 1
+    },
+    {
+      "id": "given-2585e6583a86",
+      "text": "Ashenafi",
+      "weight": 1
+    },
+    {
+      "id": "given-e5551e166dec",
+      "text": "Tamirat",
+      "weight": 1
+    },
+    {
+      "id": "given-ffc9eb91fa01",
+      "text": "Tekle",
+      "weight": 1
+    },
+    {
+      "id": "given-dc92a258c54b",
+      "text": "Teklemariam",
+      "weight": 1
+    },
+    {
+      "id": "given-55d999c1b3b8",
+      "text": "Teklehaimanot",
+      "weight": 1
+    },
+    {
+      "id": "given-334bc4d6045b",
+      "text": "Tesfaye",
+      "weight": 1
+    },
+    {
+      "id": "given-a9afa7fc4afa",
+      "text": "Teshome",
+      "weight": 1
+    },
+    {
+      "id": "given-fe95d2b07605",
+      "text": "Tilahun",
+      "weight": 1
+    },
+    {
+      "id": "given-ec6f61dcd4ef",
+      "text": "Tsegaye",
+      "weight": 1
+    },
+    {
+      "id": "given-dff279abb3e2",
+      "text": "Wolde",
+      "weight": 1
+    },
+    {
+      "id": "given-f16b3ef11c43",
+      "text": "Woldeab",
+      "weight": 1
+    },
+    {
+      "id": "given-718decff3f3d",
+      "text": "Woldemariam",
+      "weight": 1
+    },
+    {
+      "id": "given-6f8286daaf1b",
+      "text": "Wondimu",
+      "weight": 1
+    },
+    {
+      "id": "given-d22d62e8edf4",
+      "text": "Worku",
+      "weight": 1
+    },
+    {
+      "id": "given-105258a19797",
+      "text": "Yared",
+      "weight": 1
+    },
+    {
+      "id": "given-ccd328cfea51",
+      "text": "Yehuala",
+      "weight": 1
+    },
+    {
+      "id": "given-3ee6639badab",
+      "text": "Yilma",
+      "weight": 1
+    },
+    {
+      "id": "given-67f15b964960",
+      "text": "Yohannes",
+      "weight": 1
+    },
+    {
+      "id": "given-4d01b1cede8c",
+      "text": "Zeleke",
+      "weight": 1
+    },
+    {
+      "id": "given-7e915b995fc7",
+      "text": "Zelalem",
+      "weight": 1
+    },
+    {
+      "id": "given-e32f6e45bce8",
+      "text": "Zenebe",
+      "weight": 1
+    },
+    {
+      "id": "given-c8eeba607e55",
+      "text": "Zerihun",
+      "weight": 1
+    },
+    {
+      "id": "given-e95ee4b7085f",
+      "text": "Zewde",
+      "weight": 1
+    },
+    {
+      "id": "given-804584c96c8b",
+      "text": "Aklilu",
+      "weight": 1
+    },
+    {
+      "id": "given-6fccbd36929a",
+      "text": "Abera",
+      "weight": 1
+    },
+    {
+      "id": "given-beb7df466a6d",
+      "text": "Afework",
+      "weight": 1
+    },
+    {
+      "id": "given-a2b51093a0d1",
+      "text": "Sisay",
+      "weight": 1
+    },
+    {
+      "id": "given-635ec5f13e81",
+      "text": "Mulugeta",
+      "weight": 1
+    }
+  ],
+  "familyNames": [],
+  "patronymics": [
+    {
+      "id": "father-given-23bd4d0b8a63",
+      "text": "Abebe",
+      "weight": 1
+    },
+    {
+      "id": "father-given-74b4fb6e5aa7",
+      "text": "Abate",
+      "weight": 1
+    },
+    {
+      "id": "father-given-91de837a5553",
+      "text": "Abay",
+      "weight": 1
+    },
+    {
+      "id": "father-given-65622c6a0f3c",
+      "text": "Abiy",
+      "weight": 1
+    },
+    {
+      "id": "father-given-473f0d7334c8",
+      "text": "Addis",
+      "weight": 1
+    },
+    {
+      "id": "father-given-821de2520ce2",
+      "text": "Admassu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-5685311cb5ea",
+      "text": "Alemayehu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-ab80d5627610",
+      "text": "Alemu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-d7e145a5d3a0",
+      "text": "Alula",
+      "weight": 1
+    },
+    {
+      "id": "father-given-754ac91d6660",
+      "text": "Amare",
+      "weight": 1
+    },
+    {
+      "id": "father-given-3c11857b5ecb",
+      "text": "Amanuel",
+      "weight": 1
+    },
+    {
+      "id": "father-given-ff14b9f8742e",
+      "text": "Andargachew",
+      "weight": 1
+    },
+    {
+      "id": "father-given-5c4f63ad1ec0",
+      "text": "Asfaw",
+      "weight": 1
+    },
+    {
+      "id": "father-given-1f00f7d50bfb",
+      "text": "Asnake",
+      "weight": 1
+    },
+    {
+      "id": "father-given-8436b3c232d2",
+      "text": "Asrat",
+      "weight": 1
+    },
+    {
+      "id": "father-given-58e1f915ccb9",
+      "text": "Assefa",
+      "weight": 1
+    },
+    {
+      "id": "father-given-bb5961564f4e",
+      "text": "Ayalew",
+      "weight": 1
+    },
+    {
+      "id": "father-given-84a57b733cb8",
+      "text": "Ayana",
+      "weight": 1
+    },
+    {
+      "id": "father-given-9d2ac4ce5ff0",
+      "text": "Baye",
+      "weight": 1
+    },
+    {
+      "id": "father-given-d5dac8a29b3b",
+      "text": "Bekele",
+      "weight": 1
+    },
+    {
+      "id": "father-given-aa9442d684ff",
+      "text": "Berhanu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-36443af0fb43",
+      "text": "Wossen",
+      "weight": 1
+    },
+    {
+      "id": "father-given-574e7a01022d",
+      "text": "Bogale",
+      "weight": 1
+    },
+    {
+      "id": "father-given-4873a33f4365",
+      "text": "Dagnachew",
+      "weight": 1
+    },
+    {
+      "id": "father-given-0f1b1709398b",
+      "text": "Dawit",
+      "weight": 1
+    },
+    {
+      "id": "father-given-2ed96e99e510",
+      "text": "Debebe",
+      "weight": 1
+    },
+    {
+      "id": "father-given-05f4bbc36656",
+      "text": "Demeke",
+      "weight": 1
+    },
+    {
+      "id": "father-given-e5ced7d08a6a",
+      "text": "Demissie",
+      "weight": 1
+    },
+    {
+      "id": "father-given-527fc97b3ebb",
+      "text": "Dereje",
+      "weight": 1
+    },
+    {
+      "id": "father-given-f5ae65f19980",
+      "text": "Desta",
+      "weight": 1
+    },
+    {
+      "id": "father-given-c8f90a70687d",
+      "text": "Dinku",
+      "weight": 1
+    },
+    {
+      "id": "father-given-b68562ca7547",
+      "text": "Endale",
+      "weight": 1
+    },
+    {
+      "id": "father-given-e3ec66787131",
+      "text": "Eshetu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-febab7edf89c",
+      "text": "Fekadu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-49e8ca0e35f0",
+      "text": "Fikre",
+      "weight": 1
+    },
+    {
+      "id": "father-given-c4d360f51581",
+      "text": "Fikru",
+      "weight": 1
+    },
+    {
+      "id": "father-given-4ff7d682bb6f",
+      "text": "Fisseha",
+      "weight": 1
+    },
+    {
+      "id": "father-given-d78525813325",
+      "text": "Gebre",
+      "weight": 1
+    },
+    {
+      "id": "father-given-e0d1c31c005c",
+      "text": "Gebreyesus",
+      "weight": 1
+    },
+    {
+      "id": "father-given-957a7ff6820d",
+      "text": "Gebremariam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-f84c1a7ba7a7",
+      "text": "Getachew",
+      "weight": 1
+    },
+    {
+      "id": "father-given-29ac865e1e7c",
+      "text": "Getahun",
+      "weight": 1
+    },
+    {
+      "id": "father-given-dc566de0577e",
+      "text": "Getnet",
+      "weight": 1
+    },
+    {
+      "id": "father-given-bd15416a84e4",
+      "text": "Girma",
+      "weight": 1
+    },
+    {
+      "id": "father-given-ac1faaa50bdc",
+      "text": "Gizaw",
+      "weight": 1
+    },
+    {
+      "id": "father-given-be6ca0a8ba26",
+      "text": "Haile",
+      "weight": 1
+    },
+    {
+      "id": "father-given-eaf4d801428f",
+      "text": "Hailemariam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-88dfb48d89b6",
+      "text": "Haileyesus",
+      "weight": 1
+    },
+    {
+      "id": "father-given-66f66cbdef17",
+      "text": "Hailu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-6b720d973c45",
+      "text": "Kassa",
+      "weight": 1
+    },
+    {
+      "id": "father-given-af9c0318f6ca",
+      "text": "Kebede",
+      "weight": 1
+    },
+    {
+      "id": "father-given-26cfcd16ed49",
+      "text": "Kefale",
+      "weight": 1
+    },
+    {
+      "id": "father-given-abffce106797",
+      "text": "Kifle",
+      "weight": 1
+    },
+    {
+      "id": "father-given-32f484766203",
+      "text": "Kiros",
+      "weight": 1
+    },
+    {
+      "id": "father-given-f2a949af5ee4",
+      "text": "Lemma",
+      "weight": 1
+    },
+    {
+      "id": "father-given-312ba4952135",
+      "text": "Mekonnen",
+      "weight": 1
+    },
+    {
+      "id": "father-given-af87ccf60338",
+      "text": "Melaku",
+      "weight": 1
+    },
+    {
+      "id": "father-given-d55f9967d800",
+      "text": "Mengesha",
+      "weight": 1
+    },
+    {
+      "id": "father-given-74d2d816f3ee",
+      "text": "Mengistu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-aa910228b255",
+      "text": "Merid",
+      "weight": 1
+    },
+    {
+      "id": "father-given-94049b64465e",
+      "text": "Mesfin",
+      "weight": 1
+    },
+    {
+      "id": "father-given-fe368c72682e",
+      "text": "Million",
+      "weight": 1
+    },
+    {
+      "id": "father-given-b225a2890871",
+      "text": "Molla",
+      "weight": 1
+    },
+    {
+      "id": "father-given-5ed54ec17341",
+      "text": "Mulatu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-9fc53e6db9bb",
+      "text": "Negash",
+      "weight": 1
+    },
+    {
+      "id": "father-given-b6d8edf9c846",
+      "text": "Nigussie",
+      "weight": 1
+    },
+    {
+      "id": "father-given-06d56b339519",
+      "text": "Seifu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-ab52f4badc36",
+      "text": "Selassie",
+      "weight": 1
+    },
+    {
+      "id": "father-given-1ddde259681d",
+      "text": "Seyoum",
+      "weight": 1
+    },
+    {
+      "id": "father-given-4a342cd1c35d",
+      "text": "Shiferaw",
+      "weight": 1
+    },
+    {
+      "id": "father-given-1752604b17d0",
+      "text": "Solomon",
+      "weight": 1
+    },
+    {
+      "id": "father-given-d76e0e09530b",
+      "text": "Tadesse",
+      "weight": 1
+    },
+    {
+      "id": "father-given-2585e6583a86",
+      "text": "Ashenafi",
+      "weight": 1
+    },
+    {
+      "id": "father-given-e5551e166dec",
+      "text": "Tamirat",
+      "weight": 1
+    },
+    {
+      "id": "father-given-ffc9eb91fa01",
+      "text": "Tekle",
+      "weight": 1
+    },
+    {
+      "id": "father-given-dc92a258c54b",
+      "text": "Teklemariam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-55d999c1b3b8",
+      "text": "Teklehaimanot",
+      "weight": 1
+    },
+    {
+      "id": "father-given-334bc4d6045b",
+      "text": "Tesfaye",
+      "weight": 1
+    },
+    {
+      "id": "father-given-a9afa7fc4afa",
+      "text": "Teshome",
+      "weight": 1
+    },
+    {
+      "id": "father-given-fe95d2b07605",
+      "text": "Tilahun",
+      "weight": 1
+    },
+    {
+      "id": "father-given-ec6f61dcd4ef",
+      "text": "Tsegaye",
+      "weight": 1
+    },
+    {
+      "id": "father-given-dff279abb3e2",
+      "text": "Wolde",
+      "weight": 1
+    },
+    {
+      "id": "father-given-f16b3ef11c43",
+      "text": "Woldeab",
+      "weight": 1
+    },
+    {
+      "id": "father-given-718decff3f3d",
+      "text": "Woldemariam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-6f8286daaf1b",
+      "text": "Wondimu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-d22d62e8edf4",
+      "text": "Worku",
+      "weight": 1
+    },
+    {
+      "id": "father-given-105258a19797",
+      "text": "Yared",
+      "weight": 1
+    },
+    {
+      "id": "father-given-ccd328cfea51",
+      "text": "Yehuala",
+      "weight": 1
+    },
+    {
+      "id": "father-given-3ee6639badab",
+      "text": "Yilma",
+      "weight": 1
+    },
+    {
+      "id": "father-given-67f15b964960",
+      "text": "Yohannes",
+      "weight": 1
+    },
+    {
+      "id": "father-given-4d01b1cede8c",
+      "text": "Zeleke",
+      "weight": 1
+    },
+    {
+      "id": "father-given-7e915b995fc7",
+      "text": "Zelalem",
+      "weight": 1
+    },
+    {
+      "id": "father-given-e32f6e45bce8",
+      "text": "Zenebe",
+      "weight": 1
+    },
+    {
+      "id": "father-given-c8eeba607e55",
+      "text": "Zerihun",
+      "weight": 1
+    },
+    {
+      "id": "father-given-e95ee4b7085f",
+      "text": "Zewde",
+      "weight": 1
+    },
+    {
+      "id": "father-given-804584c96c8b",
+      "text": "Aklilu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-6fccbd36929a",
+      "text": "Abera",
+      "weight": 1
+    },
+    {
+      "id": "father-given-beb7df466a6d",
+      "text": "Afework",
+      "weight": 1
+    },
+    {
+      "id": "father-given-a2b51093a0d1",
+      "text": "Sisay",
+      "weight": 1
+    },
+    {
+      "id": "father-given-635ec5f13e81",
+      "text": "Mulugeta",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 9900
+  }
+}

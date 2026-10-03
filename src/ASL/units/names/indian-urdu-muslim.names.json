@@ -1,0 +1,1062 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "indian-urdu-muslim",
+  "label": "Indian Muslim, Urdu-language context",
+  "language": "ur-Latn",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-family",
+    "componentOrder": [
+      "given",
+      "family"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "Draft Urdu-language Muslim naming context for British Indian formations. Surname-like labels include family, lineage, regional and community names; they are not interchangeable legal categories. Regimental and subgroup choices must be supplied by the author. A surname never determines ethnicity or religion programmatically.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 100
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 100,
+    "secondComponent": 100
+  },
+  "completeness": "target-met",
+  "givenNames": [
+    {
+      "id": "given-c34d39bd4366",
+      "text": "Muhammad",
+      "weight": 1
+    },
+    {
+      "id": "given-4b4440482b36",
+      "text": "Ahmad",
+      "weight": 1
+    },
+    {
+      "id": "given-862ef3927a7c",
+      "text": "Ali",
+      "weight": 1
+    },
+    {
+      "id": "given-3477d3c6481d",
+      "text": "Hassan",
+      "weight": 1
+    },
+    {
+      "id": "given-02ab1a994b26",
+      "text": "Hussain",
+      "weight": 1
+    },
+    {
+      "id": "given-2b3ced30db67",
+      "text": "Abbas",
+      "weight": 1
+    },
+    {
+      "id": "given-5eb60936c374",
+      "text": "Abdullah",
+      "weight": 1
+    },
+    {
+      "id": "given-bd84bf3760fa",
+      "text": "Abdul Aziz",
+      "weight": 1
+    },
+    {
+      "id": "given-d146add7b714",
+      "text": "Abdul Ghani",
+      "weight": 1
+    },
+    {
+      "id": "given-933a6075fe6c",
+      "text": "Abdul Hamid",
+      "weight": 1
+    },
+    {
+      "id": "given-78219dd7197a",
+      "text": "Abdul Wahab",
+      "weight": 1
+    },
+    {
+      "id": "given-26bd875c37e6",
+      "text": "Abdul Haq",
+      "weight": 1
+    },
+    {
+      "id": "given-d693d3a203e5",
+      "text": "Abdul Jabbar",
+      "weight": 1
+    },
+    {
+      "id": "given-514bbe8f53fe",
+      "text": "Abdul Jalil",
+      "weight": 1
+    },
+    {
+      "id": "given-633fa7ea9a96",
+      "text": "Abdul Karim",
+      "weight": 1
+    },
+    {
+      "id": "given-4dbb5c016648",
+      "text": "Abdul Latif",
+      "weight": 1
+    },
+    {
+      "id": "given-e349927e89be",
+      "text": "Abdul Majid",
+      "weight": 1
+    },
+    {
+      "id": "given-805846568798",
+      "text": "Abdul Malik",
+      "weight": 1
+    },
+    {
+      "id": "given-f0f46ccf8e3d",
+      "text": "Abdul Qadir",
+      "weight": 1
+    },
+    {
+      "id": "given-6041a2511568",
+      "text": "Abdul Rahim",
+      "weight": 1
+    },
+    {
+      "id": "given-9efc3d5ea20b",
+      "text": "Abdul Rahman",
+      "weight": 1
+    },
+    {
+      "id": "given-7033a6388536",
+      "text": "Abdul Rashid",
+      "weight": 1
+    },
+    {
+      "id": "given-d3be975d7729",
+      "text": "Abdul Rauf",
+      "weight": 1
+    },
+    {
+      "id": "given-7142a3d61f3f",
+      "text": "Abdul Razzaq",
+      "weight": 1
+    },
+    {
+      "id": "given-b7aaed194a34",
+      "text": "Abdul Samad",
+      "weight": 1
+    },
+    {
+      "id": "given-c8bf857fa16c",
+      "text": "Abdul Wahid",
+      "weight": 1
+    },
+    {
+      "id": "given-8f255c2a72f5",
+      "text": "Abid",
+      "weight": 1
+    },
+    {
+      "id": "given-45270fe42cd4",
+      "text": "Afzal",
+      "weight": 1
+    },
+    {
+      "id": "given-1958ac74c0ca",
+      "text": "Akbar",
+      "weight": 1
+    },
+    {
+      "id": "given-894ce0f2de40",
+      "text": "Akhtar",
+      "weight": 1
+    },
+    {
+      "id": "given-2319006a666b",
+      "text": "Altaf",
+      "weight": 1
+    },
+    {
+      "id": "given-cac88c1c86ef",
+      "text": "Amanullah",
+      "weight": 1
+    },
+    {
+      "id": "given-6eb52d8fea7b",
+      "text": "Amin",
+      "weight": 1
+    },
+    {
+      "id": "given-bcf2d0d0a8ec",
+      "text": "Anwar",
+      "weight": 1
+    },
+    {
+      "id": "given-501a779d9f5c",
+      "text": "Arif",
+      "weight": 1
+    },
+    {
+      "id": "given-442a4f6bc05d",
+      "text": "Asad",
+      "weight": 1
+    },
+    {
+      "id": "given-12340df06764",
+      "text": "Ashfaq",
+      "weight": 1
+    },
+    {
+      "id": "given-71bd35f74473",
+      "text": "Ashraf",
+      "weight": 1
+    },
+    {
+      "id": "given-9b620b1322d9",
+      "text": "Aslam",
+      "weight": 1
+    },
+    {
+      "id": "given-9457dd527dff",
+      "text": "Asrar",
+      "weight": 1
+    },
+    {
+      "id": "given-35bb41c0bb0d",
+      "text": "Ataullah",
+      "weight": 1
+    },
+    {
+      "id": "given-eaded06d1b85",
+      "text": "Azhar",
+      "weight": 1
+    },
+    {
+      "id": "given-40bcaeefdc80",
+      "text": "Aziz",
+      "weight": 1
+    },
+    {
+      "id": "given-eceff10451b4",
+      "text": "Badar",
+      "weight": 1
+    },
+    {
+      "id": "given-2313789c33c2",
+      "text": "Bashir",
+      "weight": 1
+    },
+    {
+      "id": "given-9d4f195cb32b",
+      "text": "Burhan",
+      "weight": 1
+    },
+    {
+      "id": "given-0279334298e4",
+      "text": "Fazal",
+      "weight": 1
+    },
+    {
+      "id": "given-307f985894be",
+      "text": "Fida",
+      "weight": 1
+    },
+    {
+      "id": "given-1812e6728d0c",
+      "text": "Ghulam Ali",
+      "weight": 1
+    },
+    {
+      "id": "given-4f3467fee4d9",
+      "text": "Ghulam Hassan",
+      "weight": 1
+    },
+    {
+      "id": "given-0ecde219a94f",
+      "text": "Ghulam Hussain",
+      "weight": 1
+    },
+    {
+      "id": "given-0162ab1ba249",
+      "text": "Ghulam Muhammad",
+      "weight": 1
+    },
+    {
+      "id": "given-3cd33929e9fa",
+      "text": "Ghulam Mustafa",
+      "weight": 1
+    },
+    {
+      "id": "given-4d510d6a28a2",
+      "text": "Ghulam Nabi",
+      "weight": 1
+    },
+    {
+      "id": "given-1df9f98127e7",
+      "text": "Habib",
+      "weight": 1
+    },
+    {
+      "id": "given-0ce0a2f4523b",
+      "text": "Hafiz",
+      "weight": 1
+    },
+    {
+      "id": "given-bb596544db18",
+      "text": "Haidar",
+      "weight": 1
+    },
+    {
+      "id": "given-e8dc7c05827f",
+      "text": "Hamid",
+      "weight": 1
+    },
+    {
+      "id": "given-26ac05af275d",
+      "text": "Hamza",
+      "weight": 1
+    },
+    {
+      "id": "given-d1d42402d4a4",
+      "text": "Hanif",
+      "weight": 1
+    },
+    {
+      "id": "given-46ba147f2561",
+      "text": "Saifullah",
+      "weight": 1
+    },
+    {
+      "id": "given-d86634de73a7",
+      "text": "Hashim",
+      "weight": 1
+    },
+    {
+      "id": "given-902e6c1f2e88",
+      "text": "Hayat",
+      "weight": 1
+    },
+    {
+      "id": "given-8ac3374e8beb",
+      "text": "Hidayat",
+      "weight": 1
+    },
+    {
+      "id": "given-8113a6dee6b3",
+      "text": "Ibrahim",
+      "weight": 1
+    },
+    {
+      "id": "given-311aaae36858",
+      "text": "Idris",
+      "weight": 1
+    },
+    {
+      "id": "given-219f558e0971",
+      "text": "Ikram",
+      "weight": 1
+    },
+    {
+      "id": "given-0459832ee6c8",
+      "text": "Ilahi",
+      "weight": 1
+    },
+    {
+      "id": "given-5efd04aed0a5",
+      "text": "Imam",
+      "weight": 1
+    },
+    {
+      "id": "given-858d2e8d8cc2",
+      "text": "Inayat",
+      "weight": 1
+    },
+    {
+      "id": "given-d490f9017fef",
+      "text": "Iqbal",
+      "weight": 1
+    },
+    {
+      "id": "given-068e5a2b9bb7",
+      "text": "Irfan",
+      "weight": 1
+    },
+    {
+      "id": "given-129fafb19842",
+      "text": "Ismail",
+      "weight": 1
+    },
+    {
+      "id": "given-29e5d09d5ac1",
+      "text": "Jafar",
+      "weight": 1
+    },
+    {
+      "id": "given-dd0fc8e4c494",
+      "text": "Jalal",
+      "weight": 1
+    },
+    {
+      "id": "given-4e1a25b1aab1",
+      "text": "Jamal",
+      "weight": 1
+    },
+    {
+      "id": "given-14f6c3ccee47",
+      "text": "Jamil",
+      "weight": 1
+    },
+    {
+      "id": "given-d9ca75cb451d",
+      "text": "Kabir",
+      "weight": 1
+    },
+    {
+      "id": "given-f6c9942480df",
+      "text": "Karim",
+      "weight": 1
+    },
+    {
+      "id": "given-2e48004a833c",
+      "text": "Khalid",
+      "weight": 1
+    },
+    {
+      "id": "given-463ea31ff323",
+      "text": "Khalil",
+      "weight": 1
+    },
+    {
+      "id": "given-d452757111dd",
+      "text": "Mahmud",
+      "weight": 1
+    },
+    {
+      "id": "given-a5ec03d3e184",
+      "text": "Mansur",
+      "weight": 1
+    },
+    {
+      "id": "given-7d1b81402700",
+      "text": "Masud",
+      "weight": 1
+    },
+    {
+      "id": "given-d37ecf7de5a4",
+      "text": "Mirza",
+      "weight": 1
+    },
+    {
+      "id": "given-1203ea126650",
+      "text": "Mubarak",
+      "weight": 1
+    },
+    {
+      "id": "given-50ef668941c7",
+      "text": "Munir",
+      "weight": 1
+    },
+    {
+      "id": "given-379dbffb8707",
+      "text": "Mushtaq",
+      "weight": 1
+    },
+    {
+      "id": "given-e20ce6653386",
+      "text": "Mustafa",
+      "weight": 1
+    },
+    {
+      "id": "given-49d22462b40a",
+      "text": "Nazir",
+      "weight": 1
+    },
+    {
+      "id": "given-e87bb80fb88e",
+      "text": "Noor",
+      "weight": 1
+    },
+    {
+      "id": "given-79fc782c1da3",
+      "text": "Rahim",
+      "weight": 1
+    },
+    {
+      "id": "given-9005f31e4d12",
+      "text": "Rashid",
+      "weight": 1
+    },
+    {
+      "id": "given-9a64dec45417",
+      "text": "Raza",
+      "weight": 1
+    },
+    {
+      "id": "given-65474f67624f",
+      "text": "Sadiq",
+      "weight": 1
+    },
+    {
+      "id": "given-0fa43d5d598f",
+      "text": "Saleem",
+      "weight": 1
+    },
+    {
+      "id": "given-423d884c8164",
+      "text": "Shafi",
+      "weight": 1
+    },
+    {
+      "id": "given-524b30f818bf",
+      "text": "Sharif",
+      "weight": 1
+    },
+    {
+      "id": "given-d671c785b2e3",
+      "text": "Sultan",
+      "weight": 1
+    },
+    {
+      "id": "given-dd2ed1d85060",
+      "text": "Yusuf",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-772a3c28fa48",
+      "text": "Khan",
+      "weight": 1
+    },
+    {
+      "id": "family-012c781f44a0",
+      "text": "Malik",
+      "weight": 1
+    },
+    {
+      "id": "family-ad24ccdc996e",
+      "text": "Sheikh",
+      "weight": 1
+    },
+    {
+      "id": "family-c8b6a4b042cc",
+      "text": "Syed",
+      "weight": 1
+    },
+    {
+      "id": "family-4b48c39df4ae",
+      "text": "Shah",
+      "weight": 1
+    },
+    {
+      "id": "family-cd8c8fadf2e3",
+      "text": "Qureshi",
+      "weight": 1
+    },
+    {
+      "id": "family-3e3a2739aa23",
+      "text": "Ansari",
+      "weight": 1
+    },
+    {
+      "id": "family-93c809fe2d7c",
+      "text": "Siddiqui",
+      "weight": 1
+    },
+    {
+      "id": "family-6742e00303cf",
+      "text": "Farooqi",
+      "weight": 1
+    },
+    {
+      "id": "family-eb32c0bf575b",
+      "text": "Usmani",
+      "weight": 1
+    },
+    {
+      "id": "family-bab8f09e4a93",
+      "text": "Abbasi",
+      "weight": 1
+    },
+    {
+      "id": "family-e1ca9e529200",
+      "text": "Alvi",
+      "weight": 1
+    },
+    {
+      "id": "family-eda115c58d1d",
+      "text": "Jafri",
+      "weight": 1
+    },
+    {
+      "id": "family-0e2b5aa81740",
+      "text": "Rizvi",
+      "weight": 1
+    },
+    {
+      "id": "family-3c5322365c01",
+      "text": "Zaidi",
+      "weight": 1
+    },
+    {
+      "id": "family-c72b30f20a58",
+      "text": "Kazmi",
+      "weight": 1
+    },
+    {
+      "id": "family-19342d80b31b",
+      "text": "Naqvi",
+      "weight": 1
+    },
+    {
+      "id": "family-472bb96ea439",
+      "text": "Bukhari",
+      "weight": 1
+    },
+    {
+      "id": "family-856a22ef64b7",
+      "text": "Gilani",
+      "weight": 1
+    },
+    {
+      "id": "family-fa0d153a6fbd",
+      "text": "Hashmi",
+      "weight": 1
+    },
+    {
+      "id": "family-1ee0c77e4640",
+      "text": "Nizami",
+      "weight": 1
+    },
+    {
+      "id": "family-e5190babdd1c",
+      "text": "Chishti",
+      "weight": 1
+    },
+    {
+      "id": "family-03133a219586",
+      "text": "Qadri",
+      "weight": 1
+    },
+    {
+      "id": "family-b0836a79c592",
+      "text": "Suhrawardi",
+      "weight": 1
+    },
+    {
+      "id": "family-291df9c03031",
+      "text": "Madani",
+      "weight": 1
+    },
+    {
+      "id": "family-6a77cec83684",
+      "text": "Baig",
+      "weight": 1
+    },
+    {
+      "id": "family-1188ffa27771",
+      "text": "Beg",
+      "weight": 1
+    },
+    {
+      "id": "family-2fb35d418a48",
+      "text": "Butt",
+      "weight": 1
+    },
+    {
+      "id": "family-6fae3b65e2fd",
+      "text": "Dar",
+      "weight": 1
+    },
+    {
+      "id": "family-65a316ce9e17",
+      "text": "Lone",
+      "weight": 1
+    },
+    {
+      "id": "family-5b3ef11c04f9",
+      "text": "Mir",
+      "weight": 1
+    },
+    {
+      "id": "family-6a1b01ef6ec0",
+      "text": "Wani",
+      "weight": 1
+    },
+    {
+      "id": "family-ee3ad384cc5a",
+      "text": "Bhat",
+      "weight": 1
+    },
+    {
+      "id": "family-3f5362ab9b36",
+      "text": "Rather",
+      "weight": 1
+    },
+    {
+      "id": "family-b45bd86cb149",
+      "text": "Raina",
+      "weight": 1
+    },
+    {
+      "id": "family-d333302590cb",
+      "text": "Sufi",
+      "weight": 1
+    },
+    {
+      "id": "family-a04c9b1a73a1",
+      "text": "Saifi",
+      "weight": 1
+    },
+    {
+      "id": "family-05a9d0266bbc",
+      "text": "Mansuri",
+      "weight": 1
+    },
+    {
+      "id": "family-f3f279f18170",
+      "text": "Idrisi",
+      "weight": 1
+    },
+    {
+      "id": "family-3279d87008d5",
+      "text": "Rangrez",
+      "weight": 1
+    },
+    {
+      "id": "family-ee659617d20c",
+      "text": "Lodi",
+      "weight": 1
+    },
+    {
+      "id": "family-dc525c44419b",
+      "text": "Ansar",
+      "weight": 1
+    },
+    {
+      "id": "family-6f73c88a56bf",
+      "text": "Pathan",
+      "weight": 1
+    },
+    {
+      "id": "family-8c476f79ece6",
+      "text": "Afridi",
+      "weight": 1
+    },
+    {
+      "id": "family-9d144f526512",
+      "text": "Khattak",
+      "weight": 1
+    },
+    {
+      "id": "family-a8cffbaa7085",
+      "text": "Yusufzai",
+      "weight": 1
+    },
+    {
+      "id": "family-be904bac3e72",
+      "text": "Mohmand",
+      "weight": 1
+    },
+    {
+      "id": "family-e6e2178fa02e",
+      "text": "Shinwari",
+      "weight": 1
+    },
+    {
+      "id": "family-a2ae4df3cfc9",
+      "text": "Bangash",
+      "weight": 1
+    },
+    {
+      "id": "family-8aca03dca66d",
+      "text": "Orakzai",
+      "weight": 1
+    },
+    {
+      "id": "family-4aa46265a0cb",
+      "text": "Tanoli",
+      "weight": 1
+    },
+    {
+      "id": "family-1dc383591c65",
+      "text": "Tareen",
+      "weight": 1
+    },
+    {
+      "id": "family-3ce0443738c3",
+      "text": "Durrani",
+      "weight": 1
+    },
+    {
+      "id": "family-2b4386a1527a",
+      "text": "Barakzai",
+      "weight": 1
+    },
+    {
+      "id": "family-501eb4e75e83",
+      "text": "Ghilzai",
+      "weight": 1
+    },
+    {
+      "id": "family-ba285c35a8b2",
+      "text": "Kakar",
+      "weight": 1
+    },
+    {
+      "id": "family-2856d46b1352",
+      "text": "Achakzai",
+      "weight": 1
+    },
+    {
+      "id": "family-79a4d3d9d13f",
+      "text": "Niazi",
+      "weight": 1
+    },
+    {
+      "id": "family-803ec2f9b939",
+      "text": "Burki",
+      "weight": 1
+    },
+    {
+      "id": "family-b1d794fbe620",
+      "text": "Dawar",
+      "weight": 1
+    },
+    {
+      "id": "family-e3b8fa8a2f77",
+      "text": "Mehsud",
+      "weight": 1
+    },
+    {
+      "id": "family-9f16622792b7",
+      "text": "Wazir",
+      "weight": 1
+    },
+    {
+      "id": "family-8139127827f2",
+      "text": "Marwat",
+      "weight": 1
+    },
+    {
+      "id": "family-7fe21fcc6005",
+      "text": "Bajwa",
+      "weight": 1
+    },
+    {
+      "id": "family-ebeb2510647b",
+      "text": "Cheema",
+      "weight": 1
+    },
+    {
+      "id": "family-e1d6e6b16371",
+      "text": "Chatha",
+      "weight": 1
+    },
+    {
+      "id": "family-4396edc67d4d",
+      "text": "Dhillon",
+      "weight": 1
+    },
+    {
+      "id": "family-a4b895b6dc2b",
+      "text": "Ghuman",
+      "weight": 1
+    },
+    {
+      "id": "family-38347ce76f13",
+      "text": "Gondal",
+      "weight": 1
+    },
+    {
+      "id": "family-94da7ffce737",
+      "text": "Hanjra",
+      "weight": 1
+    },
+    {
+      "id": "family-b877140b5529",
+      "text": "Harral",
+      "weight": 1
+    },
+    {
+      "id": "family-ce6bce991b4a",
+      "text": "Kharal",
+      "weight": 1
+    },
+    {
+      "id": "family-315d7ad7a87f",
+      "text": "Langrial",
+      "weight": 1
+    },
+    {
+      "id": "family-bff9525b283b",
+      "text": "Lilla",
+      "weight": 1
+    },
+    {
+      "id": "family-857efdc529e7",
+      "text": "Manj",
+      "weight": 1
+    },
+    {
+      "id": "family-72688a12407c",
+      "text": "Randhawa",
+      "weight": 1
+    },
+    {
+      "id": "family-04a4c61fe097",
+      "text": "Sahi",
+      "weight": 1
+    },
+    {
+      "id": "family-58e65cdee816",
+      "text": "Sipra",
+      "weight": 1
+    },
+    {
+      "id": "family-43773b28d422",
+      "text": "Tarar",
+      "weight": 1
+    },
+    {
+      "id": "family-6140d9f34c99",
+      "text": "Tiwana",
+      "weight": 1
+    },
+    {
+      "id": "family-bfb11e15ec8b",
+      "text": "Warraich",
+      "weight": 1
+    },
+    {
+      "id": "family-633624ddcf41",
+      "text": "Awan",
+      "weight": 1
+    },
+    {
+      "id": "family-1ef35eb3bd7c",
+      "text": "Arain",
+      "weight": 1
+    },
+    {
+      "id": "family-c81a39fbf2e7",
+      "text": "Lakhani",
+      "weight": 1
+    },
+    {
+      "id": "family-7d806f34b076",
+      "text": "Memon",
+      "weight": 1
+    },
+    {
+      "id": "family-fc25d3c21e99",
+      "text": "Khoja",
+      "weight": 1
+    },
+    {
+      "id": "family-d1e351e99333",
+      "text": "Bohra",
+      "weight": 1
+    },
+    {
+      "id": "family-9081e9cfe59a",
+      "text": "Vohra",
+      "weight": 1
+    },
+    {
+      "id": "family-d7271fcaa7fb",
+      "text": "Mughal",
+      "weight": 1
+    },
+    {
+      "id": "family-972c49d19ed2",
+      "text": "Suri",
+      "weight": 1
+    },
+    {
+      "id": "family-39d062369888",
+      "text": "Sherwani",
+      "weight": 1
+    },
+    {
+      "id": "family-70d2bcf79b2e",
+      "text": "Dehlavi",
+      "weight": 1
+    },
+    {
+      "id": "family-1edb98afe7ea",
+      "text": "Lahori",
+      "weight": 1
+    },
+    {
+      "id": "family-5ee81aafa843",
+      "text": "Lucknowi",
+      "weight": 1
+    },
+    {
+      "id": "family-4d43d43455b0",
+      "text": "Rampuri",
+      "weight": 1
+    },
+    {
+      "id": "family-f391e2af5921",
+      "text": "Hyderabadi",
+      "weight": 1
+    },
+    {
+      "id": "family-d0901e99b859",
+      "text": "Amrohi",
+      "weight": 1
+    },
+    {
+      "id": "family-c80b57b38a93",
+      "text": "Moradabadi",
+      "weight": 1
+    },
+    {
+      "id": "family-3ab8ab4c3c4f",
+      "text": "Fatehpuri",
+      "weight": 1
+    },
+    {
+      "id": "family-081715251192",
+      "text": "Sambhali",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 10000
+  }
+}

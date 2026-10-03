@@ -1,0 +1,1062 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "greek",
+  "label": "Greek, masculine forms",
+  "language": "el-Latn",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-family",
+    "componentOrder": [
+      "given",
+      "family"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "Romanized Greek masculine forms. Transliterations are project display spellings, not claims of a single historically used spelling.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 100
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 100,
+    "secondComponent": 100
+  },
+  "completeness": "target-met",
+  "givenNames": [
+    {
+      "id": "given-6953f67d051f",
+      "text": "Georgios",
+      "weight": 3
+    },
+    {
+      "id": "given-a4411268a3e9",
+      "text": "Ioannis",
+      "weight": 3
+    },
+    {
+      "id": "given-315b1a71aa6a",
+      "text": "Konstantinos",
+      "weight": 3
+    },
+    {
+      "id": "given-849babdbeeb8",
+      "text": "Dimitrios",
+      "weight": 3
+    },
+    {
+      "id": "given-a5465a596e0e",
+      "text": "Nikolaos",
+      "weight": 3
+    },
+    {
+      "id": "given-0c37935b00b3",
+      "text": "Panagiotis",
+      "weight": 1
+    },
+    {
+      "id": "given-6775ad878ad5",
+      "text": "Vasileios",
+      "weight": 1
+    },
+    {
+      "id": "given-a3b0450196d0",
+      "text": "Christos",
+      "weight": 1
+    },
+    {
+      "id": "given-ae26b18140f8",
+      "text": "Athanasios",
+      "weight": 1
+    },
+    {
+      "id": "given-b2150bff9666",
+      "text": "Evangelos",
+      "weight": 1
+    },
+    {
+      "id": "given-82833ad77ce6",
+      "text": "Alexandros",
+      "weight": 1
+    },
+    {
+      "id": "given-9eea6242471f",
+      "text": "Andreas",
+      "weight": 1
+    },
+    {
+      "id": "given-f7d990401de1",
+      "text": "Antonios",
+      "weight": 1
+    },
+    {
+      "id": "given-724cd4da8904",
+      "text": "Apostolos",
+      "weight": 1
+    },
+    {
+      "id": "given-547cdc520963",
+      "text": "Aristidis",
+      "weight": 1
+    },
+    {
+      "id": "given-d6bee0df77d1",
+      "text": "Aristotelis",
+      "weight": 1
+    },
+    {
+      "id": "given-1692d5ec6121",
+      "text": "Charalambos",
+      "weight": 1
+    },
+    {
+      "id": "given-c31f204a4d95",
+      "text": "Christoforos",
+      "weight": 1
+    },
+    {
+      "id": "given-5d8eb4c266ac",
+      "text": "Dionysios",
+      "weight": 1
+    },
+    {
+      "id": "given-8a46e49eee30",
+      "text": "Eleftherios",
+      "weight": 1
+    },
+    {
+      "id": "given-fc3f4e1a4f19",
+      "text": "Emmanouil",
+      "weight": 1
+    },
+    {
+      "id": "given-8ed29ffaf8f7",
+      "text": "Epameinondas",
+      "weight": 1
+    },
+    {
+      "id": "given-47e394f67225",
+      "text": "Efstathios",
+      "weight": 1
+    },
+    {
+      "id": "given-744b59c85d3f",
+      "text": "Efstratios",
+      "weight": 1
+    },
+    {
+      "id": "given-f1da74df66a1",
+      "text": "Filippos",
+      "weight": 1
+    },
+    {
+      "id": "given-5cc9cba8acb0",
+      "text": "Fotios",
+      "weight": 1
+    },
+    {
+      "id": "given-6e65e6a61bb8",
+      "text": "Grigorios",
+      "weight": 1
+    },
+    {
+      "id": "given-d679bdfe9fa1",
+      "text": "Ilias",
+      "weight": 1
+    },
+    {
+      "id": "given-5db5a111d30a",
+      "text": "Isidoros",
+      "weight": 1
+    },
+    {
+      "id": "given-e7899a92dbcf",
+      "text": "Lazaros",
+      "weight": 1
+    },
+    {
+      "id": "given-6f3323ff0dec",
+      "text": "Leonidas",
+      "weight": 1
+    },
+    {
+      "id": "given-d365f9500ac7",
+      "text": "Michail",
+      "weight": 1
+    },
+    {
+      "id": "given-b7cc44e1d1c4",
+      "text": "Miltiadis",
+      "weight": 1
+    },
+    {
+      "id": "given-373477269c4a",
+      "text": "Odysseas",
+      "weight": 1
+    },
+    {
+      "id": "given-ef2f82bd799e",
+      "text": "Orestis",
+      "weight": 1
+    },
+    {
+      "id": "given-a2e58c822f71",
+      "text": "Pavlos",
+      "weight": 1
+    },
+    {
+      "id": "given-dd4573728c32",
+      "text": "Periklis",
+      "weight": 1
+    },
+    {
+      "id": "given-5280e5e9fe6b",
+      "text": "Petros",
+      "weight": 1
+    },
+    {
+      "id": "given-6db8c48e0c09",
+      "text": "Sokratis",
+      "weight": 1
+    },
+    {
+      "id": "given-4e48b8a91da1",
+      "text": "Sotirios",
+      "weight": 1
+    },
+    {
+      "id": "given-75198d6f5bf8",
+      "text": "Spyridon",
+      "weight": 1
+    },
+    {
+      "id": "given-df2ce255dafb",
+      "text": "Stavros",
+      "weight": 1
+    },
+    {
+      "id": "given-5637181cf0e9",
+      "text": "Stefanos",
+      "weight": 1
+    },
+    {
+      "id": "given-9c1a3e45bff9",
+      "text": "Stylianos",
+      "weight": 1
+    },
+    {
+      "id": "given-e99b5d87a3fb",
+      "text": "Theodoros",
+      "weight": 1
+    },
+    {
+      "id": "given-31ea85f59e4f",
+      "text": "Theofilos",
+      "weight": 1
+    },
+    {
+      "id": "given-5dfcf9ef1fb1",
+      "text": "Thomas",
+      "weight": 1
+    },
+    {
+      "id": "given-f82578ee7624",
+      "text": "Viktor",
+      "weight": 1
+    },
+    {
+      "id": "given-0bef312ec841",
+      "text": "Vissarion",
+      "weight": 1
+    },
+    {
+      "id": "given-1a0f7a5eb8a8",
+      "text": "Zacharias",
+      "weight": 1
+    },
+    {
+      "id": "given-4de0558480b9",
+      "text": "Achilleas",
+      "weight": 1
+    },
+    {
+      "id": "given-81d698469eb7",
+      "text": "Adamantios",
+      "weight": 1
+    },
+    {
+      "id": "given-904930b65226",
+      "text": "Agamemnon",
+      "weight": 1
+    },
+    {
+      "id": "given-7c53eb525314",
+      "text": "Agathangelos",
+      "weight": 1
+    },
+    {
+      "id": "given-1a3c0223c598",
+      "text": "Alexios",
+      "weight": 1
+    },
+    {
+      "id": "given-c791563bc011",
+      "text": "Alkiviadis",
+      "weight": 1
+    },
+    {
+      "id": "given-87c382cece8c",
+      "text": "Anastasios",
+      "weight": 1
+    },
+    {
+      "id": "given-e8969ae7feed",
+      "text": "Anatolios",
+      "weight": 1
+    },
+    {
+      "id": "given-b0b5b17cea04",
+      "text": "Anestis",
+      "weight": 1
+    },
+    {
+      "id": "given-ea4bc209e316",
+      "text": "Angelos",
+      "weight": 1
+    },
+    {
+      "id": "given-77d559a8c780",
+      "text": "Argyrios",
+      "weight": 1
+    },
+    {
+      "id": "given-c076a6d6fb34",
+      "text": "Aristeidis",
+      "weight": 1
+    },
+    {
+      "id": "given-d2ee8b45439e",
+      "text": "Arsenios",
+      "weight": 1
+    },
+    {
+      "id": "given-d59989a6e8c4",
+      "text": "Chrysostomos",
+      "weight": 1
+    },
+    {
+      "id": "given-01d137a5a134",
+      "text": "Damianos",
+      "weight": 1
+    },
+    {
+      "id": "given-ac5e43c1ec9c",
+      "text": "Dimos",
+      "weight": 1
+    },
+    {
+      "id": "given-14723efa8977",
+      "text": "Doros",
+      "weight": 1
+    },
+    {
+      "id": "given-c284efe97c23",
+      "text": "Efthymios",
+      "weight": 1
+    },
+    {
+      "id": "given-e93213bba71b",
+      "text": "Ektoras",
+      "weight": 1
+    },
+    {
+      "id": "given-e50a987f6b7f",
+      "text": "Ermolaos",
+      "weight": 1
+    },
+    {
+      "id": "given-f8e13d5c86e3",
+      "text": "Eteoklis",
+      "weight": 1
+    },
+    {
+      "id": "given-248c40b38293",
+      "text": "Evmenios",
+      "weight": 1
+    },
+    {
+      "id": "given-93c723b0f37d",
+      "text": "Fanourios",
+      "weight": 1
+    },
+    {
+      "id": "given-7cfcedd0d274",
+      "text": "Gavriil",
+      "weight": 1
+    },
+    {
+      "id": "given-1c6ca9865c95",
+      "text": "Gerardos",
+      "weight": 1
+    },
+    {
+      "id": "given-e62c2d03b214",
+      "text": "Gerasimos",
+      "weight": 1
+    },
+    {
+      "id": "given-854a124039f2",
+      "text": "Giorgos",
+      "weight": 1
+    },
+    {
+      "id": "given-005a01db26e2",
+      "text": "Iakovos",
+      "weight": 1
+    },
+    {
+      "id": "given-72d4fc0812a6",
+      "text": "Ignatios",
+      "weight": 1
+    },
+    {
+      "id": "given-3e2e1a8d149b",
+      "text": "Ilarion",
+      "weight": 1
+    },
+    {
+      "id": "given-3d13610ab1c2",
+      "text": "Iordanis",
+      "weight": 1
+    },
+    {
+      "id": "given-ca11d519b3bc",
+      "text": "Iosif",
+      "weight": 1
+    },
+    {
+      "id": "given-d88edd98b7d9",
+      "text": "Ippokratis",
+      "weight": 1
+    },
+    {
+      "id": "given-a4ae03a091fd",
+      "text": "Klearchos",
+      "weight": 1
+    },
+    {
+      "id": "given-c0da9be1eab1",
+      "text": "Kleomenis",
+      "weight": 1
+    },
+    {
+      "id": "given-f67307daf91f",
+      "text": "Kosmas",
+      "weight": 1
+    },
+    {
+      "id": "given-c4babcce633c",
+      "text": "Kyriakos",
+      "weight": 1
+    },
+    {
+      "id": "given-274eec19365e",
+      "text": "Lampros",
+      "weight": 1
+    },
+    {
+      "id": "given-e64fa60b7729",
+      "text": "Lykourgos",
+      "weight": 1
+    },
+    {
+      "id": "given-f541f8badbb8",
+      "text": "Menelaos",
+      "weight": 1
+    },
+    {
+      "id": "given-258c2f122a91",
+      "text": "Minas",
+      "weight": 1
+    },
+    {
+      "id": "given-2b8f4e39cb4c",
+      "text": "Nektarios",
+      "weight": 1
+    },
+    {
+      "id": "given-881114ef6802",
+      "text": "Nestoras",
+      "weight": 1
+    },
+    {
+      "id": "given-20c23900240f",
+      "text": "Nikiforos",
+      "weight": 1
+    },
+    {
+      "id": "given-e9f2b6586f12",
+      "text": "Panteleimon",
+      "weight": 1
+    },
+    {
+      "id": "given-026661f2e0cb",
+      "text": "Polykarpos",
+      "weight": 1
+    },
+    {
+      "id": "given-56e153325488",
+      "text": "Prokopios",
+      "weight": 1
+    },
+    {
+      "id": "given-a49f6bc2af8f",
+      "text": "Savvas",
+      "weight": 1
+    },
+    {
+      "id": "given-9031a1d003a3",
+      "text": "Telemachos",
+      "weight": 1
+    },
+    {
+      "id": "given-2f4e45fdc5ac",
+      "text": "Xenofon",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-ad2d566b4bf0",
+      "text": "Papadopoulos",
+      "weight": 3
+    },
+    {
+      "id": "family-64499340dd52",
+      "text": "Papadakis",
+      "weight": 3
+    },
+    {
+      "id": "family-b2da3881442d",
+      "text": "Papageorgiou",
+      "weight": 1
+    },
+    {
+      "id": "family-23258aa2d526",
+      "text": "Oikonomou",
+      "weight": 3
+    },
+    {
+      "id": "family-e9c8e8ace1cb",
+      "text": "Georgiou",
+      "weight": 3
+    },
+    {
+      "id": "family-b478793ef09c",
+      "text": "Pappas",
+      "weight": 3
+    },
+    {
+      "id": "family-801291318e79",
+      "text": "Dimitriou",
+      "weight": 1
+    },
+    {
+      "id": "family-012527099583",
+      "text": "Nikolaou",
+      "weight": 1
+    },
+    {
+      "id": "family-f1313b28cf75",
+      "text": "Vasileiou",
+      "weight": 1
+    },
+    {
+      "id": "family-083b517f0eaa",
+      "text": "Konstantinou",
+      "weight": 1
+    },
+    {
+      "id": "family-e6fc115a2e1c",
+      "text": "Ioannou",
+      "weight": 1
+    },
+    {
+      "id": "family-da1da1deaba7",
+      "text": "Christou",
+      "weight": 1
+    },
+    {
+      "id": "family-9baa45db2510",
+      "text": "Antoniou",
+      "weight": 1
+    },
+    {
+      "id": "family-def0bdbf01f3",
+      "text": "Panagiotopoulos",
+      "weight": 1
+    },
+    {
+      "id": "family-33520c5241fe",
+      "text": "Athanasiou",
+      "weight": 1
+    },
+    {
+      "id": "family-3525cd17697e",
+      "text": "Anagnostou",
+      "weight": 1
+    },
+    {
+      "id": "family-dd2a2907c035",
+      "text": "Angelopoulos",
+      "weight": 1
+    },
+    {
+      "id": "family-a2fe3da9cd39",
+      "text": "Argyropoulos",
+      "weight": 1
+    },
+    {
+      "id": "family-a4b4eaf37207",
+      "text": "Avramidis",
+      "weight": 1
+    },
+    {
+      "id": "family-8497f816cb17",
+      "text": "Bakalopoulos",
+      "weight": 1
+    },
+    {
+      "id": "family-820b37545ec2",
+      "text": "Christodoulou",
+      "weight": 1
+    },
+    {
+      "id": "family-1837a0e25dc8",
+      "text": "Daskalakis",
+      "weight": 1
+    },
+    {
+      "id": "family-214176bed242",
+      "text": "Dimitriadis",
+      "weight": 1
+    },
+    {
+      "id": "family-51f875be9b7f",
+      "text": "Economidis",
+      "weight": 1
+    },
+    {
+      "id": "family-4e6623c269aa",
+      "text": "Eleftheriou",
+      "weight": 1
+    },
+    {
+      "id": "family-6153af70b1f5",
+      "text": "Evangelou",
+      "weight": 1
+    },
+    {
+      "id": "family-bea45ef642bd",
+      "text": "Fotiadis",
+      "weight": 1
+    },
+    {
+      "id": "family-c2ab72ee45d4",
+      "text": "Galanis",
+      "weight": 1
+    },
+    {
+      "id": "family-dc8dbbbec302",
+      "text": "Georgiadis",
+      "weight": 1
+    },
+    {
+      "id": "family-c5b1ff405a1d",
+      "text": "Giannakopoulos",
+      "weight": 1
+    },
+    {
+      "id": "family-5c18dbe21480",
+      "text": "Giannopoulos",
+      "weight": 1
+    },
+    {
+      "id": "family-930701a21d45",
+      "text": "Grigoriou",
+      "weight": 1
+    },
+    {
+      "id": "family-1e97eb874b28",
+      "text": "Hatzidakis",
+      "weight": 1
+    },
+    {
+      "id": "family-b2a37c47d947",
+      "text": "Iliadis",
+      "weight": 1
+    },
+    {
+      "id": "family-d8806d56b952",
+      "text": "Kalogeropoulos",
+      "weight": 1
+    },
+    {
+      "id": "family-63bd79066f59",
+      "text": "Kampouris",
+      "weight": 1
+    },
+    {
+      "id": "family-0e74e93cecee",
+      "text": "Kanellopoulos",
+      "weight": 1
+    },
+    {
+      "id": "family-c491f03af259",
+      "text": "Karagiannis",
+      "weight": 1
+    },
+    {
+      "id": "family-3ce59187edde",
+      "text": "Karalis",
+      "weight": 1
+    },
+    {
+      "id": "family-2005bb124fb1",
+      "text": "Karamanlis",
+      "weight": 1
+    },
+    {
+      "id": "family-0f69f92e165d",
+      "text": "Karapetros",
+      "weight": 1
+    },
+    {
+      "id": "family-edd5efb8038a",
+      "text": "Katsaros",
+      "weight": 1
+    },
+    {
+      "id": "family-ed29d87e22d0",
+      "text": "Katsoulis",
+      "weight": 1
+    },
+    {
+      "id": "family-65a8605c0a5b",
+      "text": "Kavvadias",
+      "weight": 1
+    },
+    {
+      "id": "family-34b5ce77e97a",
+      "text": "Kollias",
+      "weight": 1
+    },
+    {
+      "id": "family-f314fa12dcf7",
+      "text": "Kondopoulos",
+      "weight": 1
+    },
+    {
+      "id": "family-ff2d3544127d",
+      "text": "Kontos",
+      "weight": 1
+    },
+    {
+      "id": "family-bbca71d84563",
+      "text": "Kostopoulos",
+      "weight": 1
+    },
+    {
+      "id": "family-bca4dce34cba",
+      "text": "Koukos",
+      "weight": 1
+    },
+    {
+      "id": "family-fb2482f5d984",
+      "text": "Kouris",
+      "weight": 1
+    },
+    {
+      "id": "family-e5fa13fbdfe7",
+      "text": "Koutsoukos",
+      "weight": 1
+    },
+    {
+      "id": "family-44e7e9633db0",
+      "text": "Kyriakidis",
+      "weight": 1
+    },
+    {
+      "id": "family-f5e9966581e9",
+      "text": "Lambropoulos",
+      "weight": 1
+    },
+    {
+      "id": "family-ae4aa2899be5",
+      "text": "Laskaris",
+      "weight": 1
+    },
+    {
+      "id": "family-8e56f50a222e",
+      "text": "Lazaridis",
+      "weight": 1
+    },
+    {
+      "id": "family-9150ac9a5929",
+      "text": "Leventis",
+      "weight": 1
+    },
+    {
+      "id": "family-b7eadf50a835",
+      "text": "Loukas",
+      "weight": 1
+    },
+    {
+      "id": "family-7aad79cdf2f5",
+      "text": "Makris",
+      "weight": 1
+    },
+    {
+      "id": "family-e76d29129da8",
+      "text": "Mantzios",
+      "weight": 1
+    },
+    {
+      "id": "family-1716765f0f4d",
+      "text": "Markopoulos",
+      "weight": 1
+    },
+    {
+      "id": "family-70c09046610d",
+      "text": "Mavridis",
+      "weight": 1
+    },
+    {
+      "id": "family-26009a6c31d3",
+      "text": "Mavropoulos",
+      "weight": 1
+    },
+    {
+      "id": "family-c53468a8898c",
+      "text": "Michailidis",
+      "weight": 1
+    },
+    {
+      "id": "family-0a95e6b2c306",
+      "text": "Mitropoulos",
+      "weight": 1
+    },
+    {
+      "id": "family-74d213489ab1",
+      "text": "Moraitis",
+      "weight": 1
+    },
+    {
+      "id": "family-32717e1a842a",
+      "text": "Nikolopoulos",
+      "weight": 1
+    },
+    {
+      "id": "family-48be1b360e16",
+      "text": "Orfanidis",
+      "weight": 1
+    },
+    {
+      "id": "family-77a84fcd989f",
+      "text": "Pagonis",
+      "weight": 1
+    },
+    {
+      "id": "family-efda0d463966",
+      "text": "Palaiologos",
+      "weight": 1
+    },
+    {
+      "id": "family-fcc76d637247",
+      "text": "Panagopoulos",
+      "weight": 1
+    },
+    {
+      "id": "family-4fa7eb4d6afd",
+      "text": "Papakonstantinou",
+      "weight": 1
+    },
+    {
+      "id": "family-b19f6b653886",
+      "text": "Papamichail",
+      "weight": 1
+    },
+    {
+      "id": "family-d97e58d2b993",
+      "text": "Papanikolaou",
+      "weight": 1
+    },
+    {
+      "id": "family-bcf449d5dcbd",
+      "text": "Papathanasiou",
+      "weight": 1
+    },
+    {
+      "id": "family-9f6310d1db4d",
+      "text": "Pavlidis",
+      "weight": 1
+    },
+    {
+      "id": "family-7ff849f7e862",
+      "text": "Petrakis",
+      "weight": 1
+    },
+    {
+      "id": "family-d413cb35bbd1",
+      "text": "Petropoulos",
+      "weight": 1
+    },
+    {
+      "id": "family-88e39118feec",
+      "text": "Polychronopoulos",
+      "weight": 1
+    },
+    {
+      "id": "family-2f1cc9f0c110",
+      "text": "Rallis",
+      "weight": 1
+    },
+    {
+      "id": "family-1d52787496e5",
+      "text": "Sakellariou",
+      "weight": 1
+    },
+    {
+      "id": "family-3cd277b807b5",
+      "text": "Samaras",
+      "weight": 1
+    },
+    {
+      "id": "family-b3f52690c6d2",
+      "text": "Savvidis",
+      "weight": 1
+    },
+    {
+      "id": "family-b653c01e12b0",
+      "text": "Sideris",
+      "weight": 1
+    },
+    {
+      "id": "family-95cc227c23f1",
+      "text": "Sotiropoulos",
+      "weight": 1
+    },
+    {
+      "id": "family-26a6c0fb3ed7",
+      "text": "Spanos",
+      "weight": 1
+    },
+    {
+      "id": "family-9974e18f738a",
+      "text": "Spyropoulos",
+      "weight": 1
+    },
+    {
+      "id": "family-108713eb4a00",
+      "text": "Stamatopoulos",
+      "weight": 1
+    },
+    {
+      "id": "family-8a9c46787b2a",
+      "text": "Stavridis",
+      "weight": 1
+    },
+    {
+      "id": "family-32215f9f3af5",
+      "text": "Stefanidis",
+      "weight": 1
+    },
+    {
+      "id": "family-87e03a1efc06",
+      "text": "Stavropoulos",
+      "weight": 1
+    },
+    {
+      "id": "family-ecb906bd8806",
+      "text": "Theodoridis",
+      "weight": 1
+    },
+    {
+      "id": "family-251added271d",
+      "text": "Theodoropoulos",
+      "weight": 1
+    },
+    {
+      "id": "family-6ad948444e3e",
+      "text": "Tsiolis",
+      "weight": 1
+    },
+    {
+      "id": "family-155025e4febb",
+      "text": "Tsironis",
+      "weight": 1
+    },
+    {
+      "id": "family-806ff80a6374",
+      "text": "Vlachos",
+      "weight": 1
+    },
+    {
+      "id": "family-f65aa8ad29a8",
+      "text": "Vougiouklakis",
+      "weight": 1
+    },
+    {
+      "id": "family-645369ab1dd5",
+      "text": "Xanthopoulos",
+      "weight": 1
+    },
+    {
+      "id": "family-73e4b3681008",
+      "text": "Zachariadis",
+      "weight": 1
+    },
+    {
+      "id": "family-d329163a900e",
+      "text": "Zervas",
+      "weight": 1
+    },
+    {
+      "id": "family-35da7c60b881",
+      "text": "Zografos",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 10000
+  }
+}

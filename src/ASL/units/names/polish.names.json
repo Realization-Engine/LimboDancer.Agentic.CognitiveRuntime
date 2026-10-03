@@ -1,0 +1,1062 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "polish",
+  "label": "Polish, masculine forms",
+  "language": "pl",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-family",
+    "componentOrder": [
+      "given",
+      "family"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "A conventional male naming pool for fictional personnel. It is not a census or exhaustive account of this population.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 100
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 100,
+    "secondComponent": 100
+  },
+  "completeness": "target-met",
+  "givenNames": [
+    {
+      "id": "given-5c5db120cb11",
+      "text": "Jan",
+      "weight": 3
+    },
+    {
+      "id": "given-281e163da31b",
+      "text": "Stanisław",
+      "weight": 3
+    },
+    {
+      "id": "given-c96b7352c587",
+      "text": "Józef",
+      "weight": 3
+    },
+    {
+      "id": "given-d4dfc797d65c",
+      "text": "Władysław",
+      "weight": 3
+    },
+    {
+      "id": "given-64f33674e6ac",
+      "text": "Franciszek",
+      "weight": 3
+    },
+    {
+      "id": "given-7f44ad3db117",
+      "text": "Antoni",
+      "weight": 1
+    },
+    {
+      "id": "given-852b77072a1b",
+      "text": "Kazimierz",
+      "weight": 1
+    },
+    {
+      "id": "given-d235cf6d6863",
+      "text": "Michał",
+      "weight": 1
+    },
+    {
+      "id": "given-923818e5629f",
+      "text": "Piotr",
+      "weight": 1
+    },
+    {
+      "id": "given-61967ffd89c1",
+      "text": "Józefat",
+      "weight": 1
+    },
+    {
+      "id": "given-3f0c9b03e8e3",
+      "text": "Adam",
+      "weight": 1
+    },
+    {
+      "id": "given-a226cefa8b61",
+      "text": "Aleksander",
+      "weight": 1
+    },
+    {
+      "id": "given-263215f8a35a",
+      "text": "Andrzej",
+      "weight": 1
+    },
+    {
+      "id": "given-0fb2c9573ddc",
+      "text": "Bolesław",
+      "weight": 1
+    },
+    {
+      "id": "given-9600d519e4e2",
+      "text": "Bronisław",
+      "weight": 1
+    },
+    {
+      "id": "given-8c6508615152",
+      "text": "Czesław",
+      "weight": 1
+    },
+    {
+      "id": "given-34405d46cb25",
+      "text": "Edward",
+      "weight": 1
+    },
+    {
+      "id": "given-650d53a540dc",
+      "text": "Eugeniusz",
+      "weight": 1
+    },
+    {
+      "id": "given-439a6807924b",
+      "text": "Feliks",
+      "weight": 1
+    },
+    {
+      "id": "given-12c17dd70cb0",
+      "text": "Henryk",
+      "weight": 1
+    },
+    {
+      "id": "given-cb697d423c46",
+      "text": "Ignacy",
+      "weight": 1
+    },
+    {
+      "id": "given-1810c59e1dd0",
+      "text": "Jacek",
+      "weight": 1
+    },
+    {
+      "id": "given-df9d8cca3edd",
+      "text": "Jakub",
+      "weight": 1
+    },
+    {
+      "id": "given-d38574bc8de7",
+      "text": "Jerzy",
+      "weight": 1
+    },
+    {
+      "id": "given-90a5d5a8573d",
+      "text": "Julian",
+      "weight": 1
+    },
+    {
+      "id": "given-d0fc86bc5e1a",
+      "text": "Karol",
+      "weight": 1
+    },
+    {
+      "id": "given-e705338b3552",
+      "text": "Konstanty",
+      "weight": 1
+    },
+    {
+      "id": "given-ab70e8a91550",
+      "text": "Leon",
+      "weight": 1
+    },
+    {
+      "id": "given-36be1115e19b",
+      "text": "Ludwik",
+      "weight": 1
+    },
+    {
+      "id": "given-502c010d40f8",
+      "text": "Marian",
+      "weight": 1
+    },
+    {
+      "id": "given-b2b59ea376e8",
+      "text": "Mieczysław",
+      "weight": 1
+    },
+    {
+      "id": "given-a1d5723b5925",
+      "text": "Mikołaj",
+      "weight": 1
+    },
+    {
+      "id": "given-0d9b61149a96",
+      "text": "Paweł",
+      "weight": 1
+    },
+    {
+      "id": "given-d52a38e07759",
+      "text": "Roman",
+      "weight": 1
+    },
+    {
+      "id": "given-519087ed6ea3",
+      "text": "Ryszard",
+      "weight": 1
+    },
+    {
+      "id": "given-0d80da802094",
+      "text": "Stefan",
+      "weight": 1
+    },
+    {
+      "id": "given-64d40132148a",
+      "text": "Tadeusz",
+      "weight": 1
+    },
+    {
+      "id": "given-33caa4bb83dd",
+      "text": "Wacław",
+      "weight": 1
+    },
+    {
+      "id": "given-d41e186aa8c3",
+      "text": "Wiktor",
+      "weight": 1
+    },
+    {
+      "id": "given-df3851676833",
+      "text": "Wincenty",
+      "weight": 1
+    },
+    {
+      "id": "given-46a0ddf2449a",
+      "text": "Witold",
+      "weight": 1
+    },
+    {
+      "id": "given-690785d293e7",
+      "text": "Wojciech",
+      "weight": 1
+    },
+    {
+      "id": "given-be0b6c996b90",
+      "text": "Zbigniew",
+      "weight": 1
+    },
+    {
+      "id": "given-bdf3eda239d4",
+      "text": "Zdzisław",
+      "weight": 1
+    },
+    {
+      "id": "given-74df425e8f13",
+      "text": "Zygmunt",
+      "weight": 1
+    },
+    {
+      "id": "given-60143689908b",
+      "text": "Albin",
+      "weight": 1
+    },
+    {
+      "id": "given-f02e34eaf10b",
+      "text": "Alfons",
+      "weight": 1
+    },
+    {
+      "id": "given-d68230e74ea9",
+      "text": "Alojzy",
+      "weight": 1
+    },
+    {
+      "id": "given-e117b6ab7c31",
+      "text": "Anastazy",
+      "weight": 1
+    },
+    {
+      "id": "given-8b1d77feea91",
+      "text": "Anatol",
+      "weight": 1
+    },
+    {
+      "id": "given-7db6dd6f2e5d",
+      "text": "Arkadiusz",
+      "weight": 1
+    },
+    {
+      "id": "given-51670e405487",
+      "text": "Artur",
+      "weight": 1
+    },
+    {
+      "id": "given-a66d8970e569",
+      "text": "August",
+      "weight": 1
+    },
+    {
+      "id": "given-c71f0046bd34",
+      "text": "Bartłomiej",
+      "weight": 1
+    },
+    {
+      "id": "given-c4268114f71f",
+      "text": "Benedykt",
+      "weight": 1
+    },
+    {
+      "id": "given-3a4d5b86cfa2",
+      "text": "Bernard",
+      "weight": 1
+    },
+    {
+      "id": "given-5ae707ee139c",
+      "text": "Błażej",
+      "weight": 1
+    },
+    {
+      "id": "given-8e41be2891fe",
+      "text": "Bogdan",
+      "weight": 1
+    },
+    {
+      "id": "given-f15e41d9e848",
+      "text": "Bogumił",
+      "weight": 1
+    },
+    {
+      "id": "given-70ea152bcb25",
+      "text": "Bogusław",
+      "weight": 1
+    },
+    {
+      "id": "given-9ac3dda7ed91",
+      "text": "Bożydar",
+      "weight": 1
+    },
+    {
+      "id": "given-85cfe0405d84",
+      "text": "Bonifacy",
+      "weight": 1
+    },
+    {
+      "id": "given-c91668587232",
+      "text": "Brunon",
+      "weight": 1
+    },
+    {
+      "id": "given-d4a875abffe7",
+      "text": "Cyprian",
+      "weight": 1
+    },
+    {
+      "id": "given-68e55ad4c67f",
+      "text": "Cyryl",
+      "weight": 1
+    },
+    {
+      "id": "given-5c86843db5e5",
+      "text": "Damazy",
+      "weight": 1
+    },
+    {
+      "id": "given-7297db81c2f7",
+      "text": "Daniel",
+      "weight": 1
+    },
+    {
+      "id": "given-1d6102ec3630",
+      "text": "Dionizy",
+      "weight": 1
+    },
+    {
+      "id": "given-a92bfd6faa08",
+      "text": "Dominik",
+      "weight": 1
+    },
+    {
+      "id": "given-638178e751e6",
+      "text": "Edmund",
+      "weight": 1
+    },
+    {
+      "id": "given-6d5128cc0b27",
+      "text": "Emil",
+      "weight": 1
+    },
+    {
+      "id": "given-cfa2c965b7f9",
+      "text": "Erazm",
+      "weight": 1
+    },
+    {
+      "id": "given-6aa5c501d58c",
+      "text": "Ernest",
+      "weight": 1
+    },
+    {
+      "id": "given-a36593abb837",
+      "text": "Eryk",
+      "weight": 1
+    },
+    {
+      "id": "given-e0bec7f0aa53",
+      "text": "Ferdynand",
+      "weight": 1
+    },
+    {
+      "id": "given-c8f0e7d6a7a9",
+      "text": "Florian",
+      "weight": 1
+    },
+    {
+      "id": "given-0c030df5a4e7",
+      "text": "Gabriel",
+      "weight": 1
+    },
+    {
+      "id": "given-5d461da41009",
+      "text": "Grzegorz",
+      "weight": 1
+    },
+    {
+      "id": "given-18aea7ec54cf",
+      "text": "Gustaw",
+      "weight": 1
+    },
+    {
+      "id": "given-109c88754a90",
+      "text": "Hieronim",
+      "weight": 1
+    },
+    {
+      "id": "given-9f85c6e38978",
+      "text": "Hipolit",
+      "weight": 1
+    },
+    {
+      "id": "given-652f213d443c",
+      "text": "Hubert",
+      "weight": 1
+    },
+    {
+      "id": "given-7f9433edcba2",
+      "text": "Izydor",
+      "weight": 1
+    },
+    {
+      "id": "given-6c547ac63bf5",
+      "text": "Joachim",
+      "weight": 1
+    },
+    {
+      "id": "given-57138196c459",
+      "text": "Klemens",
+      "weight": 1
+    },
+    {
+      "id": "given-f850c389d6ef",
+      "text": "Kornel",
+      "weight": 1
+    },
+    {
+      "id": "given-29ead8cd9f86",
+      "text": "Ksawery",
+      "weight": 1
+    },
+    {
+      "id": "given-596db9d5b62e",
+      "text": "Leopold",
+      "weight": 1
+    },
+    {
+      "id": "given-7c0db50e77a3",
+      "text": "Leszek",
+      "weight": 1
+    },
+    {
+      "id": "given-a2afe900f463",
+      "text": "Lucjan",
+      "weight": 1
+    },
+    {
+      "id": "given-cc3a94c42919",
+      "text": "Maciej",
+      "weight": 1
+    },
+    {
+      "id": "given-6fafcf62694f",
+      "text": "Marceli",
+      "weight": 1
+    },
+    {
+      "id": "given-eed688bfa9f4",
+      "text": "Marcin",
+      "weight": 1
+    },
+    {
+      "id": "given-853cc41b94c4",
+      "text": "Mateusz",
+      "weight": 1
+    },
+    {
+      "id": "given-2fcf1bd29194",
+      "text": "Nikodem",
+      "weight": 1
+    },
+    {
+      "id": "given-554aa135e9b5",
+      "text": "Norbert",
+      "weight": 1
+    },
+    {
+      "id": "given-702370082a6a",
+      "text": "Oskar",
+      "weight": 1
+    },
+    {
+      "id": "given-9359338e834c",
+      "text": "Rajmund",
+      "weight": 1
+    },
+    {
+      "id": "given-fbc8bdf6e882",
+      "text": "Roch",
+      "weight": 1
+    },
+    {
+      "id": "given-b9763f2086ba",
+      "text": "Seweryn",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-2add3f54e400",
+      "text": "Nowak",
+      "weight": 3
+    },
+    {
+      "id": "family-187199ee39f8",
+      "text": "Kowalski",
+      "weight": 3
+    },
+    {
+      "id": "family-b4ef58a777a2",
+      "text": "Wiśniewski",
+      "weight": 3
+    },
+    {
+      "id": "family-ed077dffb83d",
+      "text": "Wójcik",
+      "weight": 3
+    },
+    {
+      "id": "family-2ccb5ad51106",
+      "text": "Kowalczyk",
+      "weight": 3
+    },
+    {
+      "id": "family-40758b88fbf6",
+      "text": "Kamiński",
+      "weight": 1
+    },
+    {
+      "id": "family-4984f6c1cee3",
+      "text": "Lewandowski",
+      "weight": 1
+    },
+    {
+      "id": "family-2366a5b1a436",
+      "text": "Zieliński",
+      "weight": 1
+    },
+    {
+      "id": "family-e715273d4f91",
+      "text": "Szymański",
+      "weight": 1
+    },
+    {
+      "id": "family-0e16cebfb9c9",
+      "text": "Woźniak",
+      "weight": 1
+    },
+    {
+      "id": "family-d0ce89b9690a",
+      "text": "Dąbrowski",
+      "weight": 1
+    },
+    {
+      "id": "family-29e9b2f8ce41",
+      "text": "Kozłowski",
+      "weight": 1
+    },
+    {
+      "id": "family-993c9d6407fb",
+      "text": "Jankowski",
+      "weight": 1
+    },
+    {
+      "id": "family-66ea3baabe9a",
+      "text": "Mazur",
+      "weight": 1
+    },
+    {
+      "id": "family-25b21d505b84",
+      "text": "Wojciechowski",
+      "weight": 1
+    },
+    {
+      "id": "family-7700dac1750f",
+      "text": "Kwiatkowski",
+      "weight": 1
+    },
+    {
+      "id": "family-a38cecd46dcd",
+      "text": "Krawczyk",
+      "weight": 1
+    },
+    {
+      "id": "family-05119ef218e8",
+      "text": "Kaczmarek",
+      "weight": 1
+    },
+    {
+      "id": "family-5466bb9a30fa",
+      "text": "Piotrowski",
+      "weight": 1
+    },
+    {
+      "id": "family-b2b85194b426",
+      "text": "Grabowski",
+      "weight": 1
+    },
+    {
+      "id": "family-34cf2e991b77",
+      "text": "Zając",
+      "weight": 1
+    },
+    {
+      "id": "family-0b463cc85f1a",
+      "text": "Pawłowski",
+      "weight": 1
+    },
+    {
+      "id": "family-1357b5d21396",
+      "text": "Michalski",
+      "weight": 1
+    },
+    {
+      "id": "family-44fca637e923",
+      "text": "Król",
+      "weight": 1
+    },
+    {
+      "id": "family-5e2731cbd2ef",
+      "text": "Wieczorek",
+      "weight": 1
+    },
+    {
+      "id": "family-3416ab41a676",
+      "text": "Jabłoński",
+      "weight": 1
+    },
+    {
+      "id": "family-5afb0c22dadc",
+      "text": "Wróbel",
+      "weight": 1
+    },
+    {
+      "id": "family-db42ba799db5",
+      "text": "Nowakowski",
+      "weight": 1
+    },
+    {
+      "id": "family-0493813abb69",
+      "text": "Majewski",
+      "weight": 1
+    },
+    {
+      "id": "family-99e360670575",
+      "text": "Olszewski",
+      "weight": 1
+    },
+    {
+      "id": "family-50e397c291c8",
+      "text": "Stępień",
+      "weight": 1
+    },
+    {
+      "id": "family-c5bf13d62363",
+      "text": "Malinowski",
+      "weight": 1
+    },
+    {
+      "id": "family-9e6838f87e5a",
+      "text": "Jaworski",
+      "weight": 1
+    },
+    {
+      "id": "family-2262175ff293",
+      "text": "Adamczyk",
+      "weight": 1
+    },
+    {
+      "id": "family-5111b1626039",
+      "text": "Dudek",
+      "weight": 1
+    },
+    {
+      "id": "family-0214d2b630f7",
+      "text": "Nowicki",
+      "weight": 1
+    },
+    {
+      "id": "family-7b9531d25832",
+      "text": "Pawlak",
+      "weight": 1
+    },
+    {
+      "id": "family-5b5829150374",
+      "text": "Górski",
+      "weight": 1
+    },
+    {
+      "id": "family-c0eb052186e6",
+      "text": "Witkowski",
+      "weight": 1
+    },
+    {
+      "id": "family-db6019807f4e",
+      "text": "Walczak",
+      "weight": 1
+    },
+    {
+      "id": "family-e1caf18db091",
+      "text": "Sikora",
+      "weight": 1
+    },
+    {
+      "id": "family-04cd8bf321cd",
+      "text": "Baran",
+      "weight": 1
+    },
+    {
+      "id": "family-4a97b83547c6",
+      "text": "Rutkowski",
+      "weight": 1
+    },
+    {
+      "id": "family-a74d02da3b3a",
+      "text": "Michalak",
+      "weight": 1
+    },
+    {
+      "id": "family-82f5caa9703d",
+      "text": "Szewczyk",
+      "weight": 1
+    },
+    {
+      "id": "family-58a2c5afa9b5",
+      "text": "Ostrowski",
+      "weight": 1
+    },
+    {
+      "id": "family-ac43909f0c81",
+      "text": "Tomaszewski",
+      "weight": 1
+    },
+    {
+      "id": "family-604702b6db20",
+      "text": "Pietrzak",
+      "weight": 1
+    },
+    {
+      "id": "family-82d6302512b6",
+      "text": "Wróblewski",
+      "weight": 1
+    },
+    {
+      "id": "family-50be7a3338ad",
+      "text": "Zalewski",
+      "weight": 1
+    },
+    {
+      "id": "family-439b4b46d08c",
+      "text": "Wróblewicz",
+      "weight": 1
+    },
+    {
+      "id": "family-363ab8594fa2",
+      "text": "Marciniak",
+      "weight": 1
+    },
+    {
+      "id": "family-c20253663e11",
+      "text": "Jasiński",
+      "weight": 1
+    },
+    {
+      "id": "family-62d716137078",
+      "text": "Zawadzki",
+      "weight": 1
+    },
+    {
+      "id": "family-e68f3aa7b7ea",
+      "text": "Sadowski",
+      "weight": 1
+    },
+    {
+      "id": "family-75c4bca17d43",
+      "text": "Bąk",
+      "weight": 1
+    },
+    {
+      "id": "family-8a775040af95",
+      "text": "Jakubowski",
+      "weight": 1
+    },
+    {
+      "id": "family-1d35ab568326",
+      "text": "Wilk",
+      "weight": 1
+    },
+    {
+      "id": "family-a8b78112116e",
+      "text": "Chmielewski",
+      "weight": 1
+    },
+    {
+      "id": "family-050bfc5f6eb9",
+      "text": "Włodarczyk",
+      "weight": 1
+    },
+    {
+      "id": "family-1fbd924b9c2e",
+      "text": "Sokołowski",
+      "weight": 1
+    },
+    {
+      "id": "family-151319944bae",
+      "text": "Sawicki",
+      "weight": 1
+    },
+    {
+      "id": "family-7f34325161df",
+      "text": "Lis",
+      "weight": 1
+    },
+    {
+      "id": "family-eaf63f6b893f",
+      "text": "Kubiak",
+      "weight": 1
+    },
+    {
+      "id": "family-bd9d73934a2d",
+      "text": "Maciejewski",
+      "weight": 1
+    },
+    {
+      "id": "family-acb397bd5fdf",
+      "text": "Urbański",
+      "weight": 1
+    },
+    {
+      "id": "family-53eea3950ce3",
+      "text": "Kucharski",
+      "weight": 1
+    },
+    {
+      "id": "family-96a7250e9870",
+      "text": "Kalinowski",
+      "weight": 1
+    },
+    {
+      "id": "family-7456040c0d1f",
+      "text": "Mazurek",
+      "weight": 1
+    },
+    {
+      "id": "family-0e32f7c3aa95",
+      "text": "Wysocki",
+      "weight": 1
+    },
+    {
+      "id": "family-c91007997c01",
+      "text": "Adamski",
+      "weight": 1
+    },
+    {
+      "id": "family-7fecfd577c73",
+      "text": "Kaźmierczak",
+      "weight": 1
+    },
+    {
+      "id": "family-679c08fa8f0f",
+      "text": "Wasilewski",
+      "weight": 1
+    },
+    {
+      "id": "family-863c32c2aa4d",
+      "text": "Sobczak",
+      "weight": 1
+    },
+    {
+      "id": "family-6e1e0c4df124",
+      "text": "Czerwiński",
+      "weight": 1
+    },
+    {
+      "id": "family-19776b712610",
+      "text": "Andrzejewski",
+      "weight": 1
+    },
+    {
+      "id": "family-b0232a2ace20",
+      "text": "Cieślak",
+      "weight": 1
+    },
+    {
+      "id": "family-b5f4b18b8da7",
+      "text": "Głowacki",
+      "weight": 1
+    },
+    {
+      "id": "family-b4a1aa81a580",
+      "text": "Zakrzewski",
+      "weight": 1
+    },
+    {
+      "id": "family-927a22c37eee",
+      "text": "Kołodziej",
+      "weight": 1
+    },
+    {
+      "id": "family-d5a8b2f3c1d7",
+      "text": "Sikorski",
+      "weight": 1
+    },
+    {
+      "id": "family-f6ecf1de2477",
+      "text": "Krajewski",
+      "weight": 1
+    },
+    {
+      "id": "family-ee22ea48144c",
+      "text": "Szulc",
+      "weight": 1
+    },
+    {
+      "id": "family-76a3308bc1fb",
+      "text": "Szymczak",
+      "weight": 1
+    },
+    {
+      "id": "family-de596a59e078",
+      "text": "Wesołowski",
+      "weight": 1
+    },
+    {
+      "id": "family-d1042878e2c9",
+      "text": "Baranowski",
+      "weight": 1
+    },
+    {
+      "id": "family-0074c92165d1",
+      "text": "Kozak",
+      "weight": 1
+    },
+    {
+      "id": "family-1cb6b9e494d4",
+      "text": "Markowski",
+      "weight": 1
+    },
+    {
+      "id": "family-fde7f0285411",
+      "text": "Przybylski",
+      "weight": 1
+    },
+    {
+      "id": "family-5c7ea7c7411e",
+      "text": "Brzeziński",
+      "weight": 1
+    },
+    {
+      "id": "family-46570d94c61c",
+      "text": "Duda",
+      "weight": 1
+    },
+    {
+      "id": "family-5ba0a65ddda2",
+      "text": "Czajkowski",
+      "weight": 1
+    },
+    {
+      "id": "family-aaa7831660da",
+      "text": "Borkowski",
+      "weight": 1
+    },
+    {
+      "id": "family-86032438e99f",
+      "text": "Janik",
+      "weight": 1
+    },
+    {
+      "id": "family-e8a2b823da2d",
+      "text": "Jóźwiak",
+      "weight": 1
+    },
+    {
+      "id": "family-97a104cbfaa2",
+      "text": "Wolski",
+      "weight": 1
+    },
+    {
+      "id": "family-5fc41a8bb07c",
+      "text": "Twardowski",
+      "weight": 1
+    },
+    {
+      "id": "family-f46131e34191",
+      "text": "Włodarski",
+      "weight": 1
+    },
+    {
+      "id": "family-166d36179116",
+      "text": "Pietrzyk",
+      "weight": 1
+    },
+    {
+      "id": "family-0ec60959af2c",
+      "text": "Kopczyński",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 10000
+  }
+}

@@ -1,0 +1,355 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "const": "./name-manifest.schema.json"
+    },
+    "format": {
+      "const": "asl-name-manifest"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "reviewStatus": {
+      "enum": [
+        "editorial-draft",
+        "reviewed"
+      ]
+    },
+    "createdOn": {
+      "type": "string",
+      "format": "date"
+    },
+    "scope": {
+      "type": "string",
+      "minLength": 1
+    },
+    "poolSelectionPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "unknownContext": {
+          "const": "require-authored-names-or-explicit-supported-pool"
+        },
+        "ambiguousContext": {
+          "const": "require-explicit-choice"
+        },
+        "allowSilentFallback": {
+          "const": false
+        },
+        "partisans": {
+          "const": "require-nationality-context"
+        },
+        "supportWeapons": {
+          "const": "no-personnel-assignment"
+        },
+        "authoredNames": {
+          "const": "preserve"
+        }
+      },
+      "required": [
+        "unknownContext",
+        "ambiguousContext",
+        "allowSilentFallback",
+        "partisans",
+        "supportWeapons",
+        "authoredNames"
+      ]
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "kind": {
+            "enum": [
+              "nationality-scope",
+              "naming-conventions",
+              "historical-context"
+            ]
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "fileName": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "physicalPages": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "minItems": 1
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "note"
+        ],
+        "oneOf": [
+          {
+            "required": [
+              "url"
+            ],
+            "not": {
+              "required": [
+                "fileName"
+              ]
+            }
+          },
+          {
+            "required": [
+              "fileName",
+              "sha256",
+              "physicalPages"
+            ],
+            "not": {
+              "required": [
+                "url"
+              ]
+            }
+          }
+        ]
+      },
+      "minItems": 1
+    },
+    "pools": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "file": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*\\.names\\.json$"
+          },
+          "version": {
+            "type": "string",
+            "pattern": "^\\d+\\.\\d+\\.\\d+$"
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "actualCounts": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "givenNames": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "familyNames": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "secondComponent": {
+                "type": "integer",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "givenNames",
+              "familyNames",
+              "secondComponent"
+            ]
+          },
+          "reviewStatus": {
+            "enum": [
+              "editorial-draft",
+              "reviewed"
+            ]
+          },
+          "completeness": {
+            "enum": [
+              "target-met",
+              "smaller-curated-pool"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "file",
+          "version",
+          "sha256",
+          "actualCounts",
+          "reviewStatus",
+          "completeness"
+        ]
+      },
+      "minItems": 1
+    },
+    "nationalityContexts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "poolIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "rulesNationalityContexts": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          },
+          "defaultPoolId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-z][a-z0-9-]*$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "selection": {
+            "enum": [
+              "explicit-pool",
+              "default-pool"
+            ]
+          },
+          "note": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "label",
+          "poolIds",
+          "rulesNationalityContexts",
+          "defaultPoolId",
+          "selection",
+          "note"
+        ]
+      },
+      "minItems": 1
+    },
+    "forceAffiliations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "nationalityContextId": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "rulesNationalityContext": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          }
+        },
+        "required": [
+          "id",
+          "nationalityContextId",
+          "rulesNationalityContext"
+        ]
+      },
+      "minItems": 1
+    },
+    "rulesGroups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "requiresNationalityContext": {
+            "const": true
+          },
+          "nationalityContextIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "id",
+          "requiresNationalityContext",
+          "nationalityContextIds"
+        ]
+      },
+      "minItems": 1
+    },
+    "reviewNotes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      },
+      "minItems": 1
+    }
+  },
+  "required": [
+    "$schema",
+    "format",
+    "version",
+    "reviewStatus",
+    "createdOn",
+    "scope",
+    "poolSelectionPolicy",
+    "sources",
+    "pools",
+    "nationalityContexts",
+    "forceAffiliations",
+    "rulesGroups",
+    "reviewNotes"
+  ],
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ASL name manifest 1.0.0"
+}

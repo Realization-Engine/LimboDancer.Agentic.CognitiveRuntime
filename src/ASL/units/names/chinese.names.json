@@ -1,0 +1,1062 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "chinese",
+  "label": "Chinese, Mandarin romanization",
+  "language": "zh-Latn-pinyin",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "family-given",
+    "componentOrder": [
+      "family",
+      "given"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "Mandarin romanized, male-style compound given-name candidates for fictional personnel, not a transcribed historical roster. Uses modern Pinyin consistently for readability even for earlier scenarios; no characters or dialect pronunciation are inferred. Per-entry period suitability remains unverified. Nationalist, Communist, and CPVA are force affiliations, not different name languages.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 100
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 100,
+    "secondComponent": 100
+  },
+  "completeness": "target-met",
+  "givenNames": [
+    {
+      "id": "given-5d166a9fe9d7",
+      "text": "Dehua",
+      "weight": 1
+    },
+    {
+      "id": "given-e0c5291f7a12",
+      "text": "Decheng",
+      "weight": 1
+    },
+    {
+      "id": "given-734f511acefe",
+      "text": "Deyuan",
+      "weight": 1
+    },
+    {
+      "id": "given-66cdb52c994a",
+      "text": "Desheng",
+      "weight": 1
+    },
+    {
+      "id": "given-3ce0d36a59a4",
+      "text": "Deqing",
+      "weight": 1
+    },
+    {
+      "id": "given-2a9577abf4c7",
+      "text": "Dezhi",
+      "weight": 1
+    },
+    {
+      "id": "given-6a1528404577",
+      "text": "Guohua",
+      "weight": 1
+    },
+    {
+      "id": "given-8da4b8ebba83",
+      "text": "Guoliang",
+      "weight": 1
+    },
+    {
+      "id": "given-e147e186a46c",
+      "text": "Guoqiang",
+      "weight": 1
+    },
+    {
+      "id": "given-1ce33cbc901d",
+      "text": "Guozhen",
+      "weight": 1
+    },
+    {
+      "id": "given-e5154348eb6d",
+      "text": "Guozhong",
+      "weight": 1
+    },
+    {
+      "id": "given-3a525fc28148",
+      "text": "Guorong",
+      "weight": 1
+    },
+    {
+      "id": "given-a0128aec7837",
+      "text": "Guoxiang",
+      "weight": 1
+    },
+    {
+      "id": "given-351d3697e34b",
+      "text": "Guowei",
+      "weight": 1
+    },
+    {
+      "id": "given-75e0a2560715",
+      "text": "Guotai",
+      "weight": 1
+    },
+    {
+      "id": "given-ed1fe7c118c1",
+      "text": "Guomin",
+      "weight": 1
+    },
+    {
+      "id": "given-48d1b2cba0e0",
+      "text": "Guanghua",
+      "weight": 1
+    },
+    {
+      "id": "given-ccb7dc214396",
+      "text": "Guangming",
+      "weight": 1
+    },
+    {
+      "id": "given-a37e75cbfb94",
+      "text": "Guangyuan",
+      "weight": 1
+    },
+    {
+      "id": "given-d33a7816902f",
+      "text": "Guanglin",
+      "weight": 1
+    },
+    {
+      "id": "given-73be698a28e4",
+      "text": "Guangsheng",
+      "weight": 1
+    },
+    {
+      "id": "given-190d1f97a115",
+      "text": "Guangde",
+      "weight": 1
+    },
+    {
+      "id": "given-41cfa898a362",
+      "text": "Guangfu",
+      "weight": 1
+    },
+    {
+      "id": "given-2c529361ff2d",
+      "text": "Guangzu",
+      "weight": 1
+    },
+    {
+      "id": "given-59eded28d82a",
+      "text": "Wenhua",
+      "weight": 1
+    },
+    {
+      "id": "given-1aed7f746955",
+      "text": "Wenming",
+      "weight": 1
+    },
+    {
+      "id": "given-2c4d05764ad0",
+      "text": "Wenbin",
+      "weight": 1
+    },
+    {
+      "id": "given-ad72321cb587",
+      "text": "Wenbo",
+      "weight": 1
+    },
+    {
+      "id": "given-f52716037c81",
+      "text": "Wencheng",
+      "weight": 1
+    },
+    {
+      "id": "given-3718498183a2",
+      "text": "Wende",
+      "weight": 1
+    },
+    {
+      "id": "given-3d46a6bf6808",
+      "text": "Wenqing",
+      "weight": 1
+    },
+    {
+      "id": "given-ff788a713bf3",
+      "text": "Wenxiu",
+      "weight": 1
+    },
+    {
+      "id": "given-67ec70b18e9d",
+      "text": "Wenlong",
+      "weight": 1
+    },
+    {
+      "id": "given-f9af4b248bf8",
+      "text": "Wenzhong",
+      "weight": 1
+    },
+    {
+      "id": "given-6819c7277c2a",
+      "text": "Wenliang",
+      "weight": 1
+    },
+    {
+      "id": "given-efb36dc15571",
+      "text": "Wenxian",
+      "weight": 1
+    },
+    {
+      "id": "given-e92dff0c89fa",
+      "text": "Zhenhua",
+      "weight": 1
+    },
+    {
+      "id": "given-9048d9cf2fde",
+      "text": "Zhenming",
+      "weight": 1
+    },
+    {
+      "id": "given-036386b08071",
+      "text": "Zhenbang",
+      "weight": 1
+    },
+    {
+      "id": "given-3402e774449a",
+      "text": "Zhenyu",
+      "weight": 1
+    },
+    {
+      "id": "given-3b2bc32eede8",
+      "text": "Zhenlin",
+      "weight": 1
+    },
+    {
+      "id": "given-81fb7330697a",
+      "text": "Zhensheng",
+      "weight": 1
+    },
+    {
+      "id": "given-179c0d2c8de6",
+      "text": "Zhenxiang",
+      "weight": 1
+    },
+    {
+      "id": "given-7a28716ef13b",
+      "text": "Zhenrong",
+      "weight": 1
+    },
+    {
+      "id": "given-25b46badbc99",
+      "text": "Zhihua",
+      "weight": 1
+    },
+    {
+      "id": "given-dd16dbb6fe23",
+      "text": "Zhiming",
+      "weight": 1
+    },
+    {
+      "id": "given-afa962d8c4a7",
+      "text": "Zhiqiang",
+      "weight": 1
+    },
+    {
+      "id": "given-ff02a451e372",
+      "text": "Zhiyuan",
+      "weight": 1
+    },
+    {
+      "id": "given-aafcb051abab",
+      "text": "Zhiwen",
+      "weight": 1
+    },
+    {
+      "id": "given-517967df2f44",
+      "text": "Zhizhong",
+      "weight": 1
+    },
+    {
+      "id": "given-4d80815ffd5a",
+      "text": "Zhicheng",
+      "weight": 1
+    },
+    {
+      "id": "given-4156746974f2",
+      "text": "Zhigang",
+      "weight": 1
+    },
+    {
+      "id": "given-f25d89984a44",
+      "text": "Yongsheng",
+      "weight": 1
+    },
+    {
+      "id": "given-80ccdec32a21",
+      "text": "Yongfu",
+      "weight": 1
+    },
+    {
+      "id": "given-c37cc2825907",
+      "text": "Yongxiang",
+      "weight": 1
+    },
+    {
+      "id": "given-3dea0048be66",
+      "text": "Yongliang",
+      "weight": 1
+    },
+    {
+      "id": "given-c0b926b64606",
+      "text": "Yongqing",
+      "weight": 1
+    },
+    {
+      "id": "given-df49138b02ab",
+      "text": "Yongchang",
+      "weight": 1
+    },
+    {
+      "id": "given-ad9adf5090bd",
+      "text": "Yonghe",
+      "weight": 1
+    },
+    {
+      "id": "given-3b439a43ee13",
+      "text": "Yongzhong",
+      "weight": 1
+    },
+    {
+      "id": "given-2f1e198a139e",
+      "text": "Yunlong",
+      "weight": 1
+    },
+    {
+      "id": "given-59b01b1c0ede",
+      "text": "Yunshan",
+      "weight": 1
+    },
+    {
+      "id": "given-5b2b1e06055d",
+      "text": "Yunsheng",
+      "weight": 1
+    },
+    {
+      "id": "given-3b1dd4fb1fcf",
+      "text": "Yunqing",
+      "weight": 1
+    },
+    {
+      "id": "given-9338d8097fab",
+      "text": "Yunxiang",
+      "weight": 1
+    },
+    {
+      "id": "given-bc9e2ae627ff",
+      "text": "Yunfei",
+      "weight": 1
+    },
+    {
+      "id": "given-f5c2dc48adae",
+      "text": "Yunlin",
+      "weight": 1
+    },
+    {
+      "id": "given-c8b36cc8f9ad",
+      "text": "Yuntian",
+      "weight": 1
+    },
+    {
+      "id": "given-8db5bff5e8ee",
+      "text": "Jinlong",
+      "weight": 1
+    },
+    {
+      "id": "given-ab6353975260",
+      "text": "Jinsheng",
+      "weight": 1
+    },
+    {
+      "id": "given-520cee3f4728",
+      "text": "Jinfu",
+      "weight": 1
+    },
+    {
+      "id": "given-0b752f61581b",
+      "text": "Jinxiang",
+      "weight": 1
+    },
+    {
+      "id": "given-33d144f25ae8",
+      "text": "Jinquan",
+      "weight": 1
+    },
+    {
+      "id": "given-f446ba90b235",
+      "text": "Jinshan",
+      "weight": 1
+    },
+    {
+      "id": "given-ba3333c8df1e",
+      "text": "Jinrong",
+      "weight": 1
+    },
+    {
+      "id": "given-becc6aa5cfa0",
+      "text": "Jinliang",
+      "weight": 1
+    },
+    {
+      "id": "given-0e96a561dada",
+      "text": "Shijie",
+      "weight": 1
+    },
+    {
+      "id": "given-b77d807f4abe",
+      "text": "Shizhong",
+      "weight": 1
+    },
+    {
+      "id": "given-e07141e8b6f3",
+      "text": "Shiliang",
+      "weight": 1
+    },
+    {
+      "id": "given-3bfaee094968",
+      "text": "Shiqing",
+      "weight": 1
+    },
+    {
+      "id": "given-ee2450323d00",
+      "text": "Shicheng",
+      "weight": 1
+    },
+    {
+      "id": "given-c199054427ae",
+      "text": "Shide",
+      "weight": 1
+    },
+    {
+      "id": "given-598b42bf2bdc",
+      "text": "Shimin",
+      "weight": 1
+    },
+    {
+      "id": "given-fd7ec272a10b",
+      "text": "Shixian",
+      "weight": 1
+    },
+    {
+      "id": "given-1a5e29198c81",
+      "text": "Qinghua",
+      "weight": 1
+    },
+    {
+      "id": "given-239ba15aee5c",
+      "text": "Qingyuan",
+      "weight": 1
+    },
+    {
+      "id": "given-6539cc391c3f",
+      "text": "Qinglin",
+      "weight": 1
+    },
+    {
+      "id": "given-9d868752c224",
+      "text": "Qingshan",
+      "weight": 1
+    },
+    {
+      "id": "given-9049f6bf41ba",
+      "text": "Qinghe",
+      "weight": 1
+    },
+    {
+      "id": "given-cbb110ac8942",
+      "text": "Qingyun",
+      "weight": 1
+    },
+    {
+      "id": "given-4979299a2621",
+      "text": "Changsheng",
+      "weight": 1
+    },
+    {
+      "id": "given-9cd119b6c625",
+      "text": "Changfu",
+      "weight": 1
+    },
+    {
+      "id": "given-183452fae2cf",
+      "text": "Changqing",
+      "weight": 1
+    },
+    {
+      "id": "given-8baa9aa0a2c7",
+      "text": "Changlin",
+      "weight": 1
+    },
+    {
+      "id": "given-b88dee040c59",
+      "text": "Changrong",
+      "weight": 1
+    },
+    {
+      "id": "given-4ac3c9a772f5",
+      "text": "Changde",
+      "weight": 1
+    },
+    {
+      "id": "given-c61e15963f8d",
+      "text": "Renjie",
+      "weight": 1
+    },
+    {
+      "id": "given-edee43ea5dc2",
+      "text": "Renfu",
+      "weight": 1
+    },
+    {
+      "id": "given-a65b1f576d2d",
+      "text": "Renliang",
+      "weight": 1
+    },
+    {
+      "id": "given-baaabf5427ec",
+      "text": "Renyi",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-1c8e2c2ba963",
+      "text": "Wang",
+      "weight": 3
+    },
+    {
+      "id": "family-3d368a0b9735",
+      "text": "Li",
+      "weight": 3
+    },
+    {
+      "id": "family-8ba0076deef9",
+      "text": "Zhang",
+      "weight": 3
+    },
+    {
+      "id": "family-0bfc8598ed08",
+      "text": "Liu",
+      "weight": 3
+    },
+    {
+      "id": "family-4b248d1d7982",
+      "text": "Chen",
+      "weight": 3
+    },
+    {
+      "id": "family-fef1114f2d1a",
+      "text": "Yang",
+      "weight": 1
+    },
+    {
+      "id": "family-6089fbba026d",
+      "text": "Huang",
+      "weight": 1
+    },
+    {
+      "id": "family-f55373a1eef9",
+      "text": "Zhao",
+      "weight": 1
+    },
+    {
+      "id": "family-00c1e468e4e4",
+      "text": "Wu",
+      "weight": 1
+    },
+    {
+      "id": "family-02c6d4dceb3b",
+      "text": "Zhou",
+      "weight": 1
+    },
+    {
+      "id": "family-4e297fe26bd1",
+      "text": "Xu",
+      "weight": 1
+    },
+    {
+      "id": "family-db18f17fe532",
+      "text": "Sun",
+      "weight": 1
+    },
+    {
+      "id": "family-1bb657fb6ef2",
+      "text": "Ma",
+      "weight": 1
+    },
+    {
+      "id": "family-7993fb3a21ea",
+      "text": "Zhu",
+      "weight": 1
+    },
+    {
+      "id": "family-02f9033b0e22",
+      "text": "Hu",
+      "weight": 1
+    },
+    {
+      "id": "family-c9b1b084b1ca",
+      "text": "Guo",
+      "weight": 1
+    },
+    {
+      "id": "family-30efdfb52ff6",
+      "text": "He",
+      "weight": 1
+    },
+    {
+      "id": "family-b4672cb87ff3",
+      "text": "Gao",
+      "weight": 1
+    },
+    {
+      "id": "family-021f5e218675",
+      "text": "Lin",
+      "weight": 1
+    },
+    {
+      "id": "family-12f4c983654d",
+      "text": "Luo",
+      "weight": 1
+    },
+    {
+      "id": "family-0a6ad76c31b5",
+      "text": "Zheng",
+      "weight": 1
+    },
+    {
+      "id": "family-f00cb2fee07c",
+      "text": "Liang",
+      "weight": 1
+    },
+    {
+      "id": "family-04be0e7ef7d3",
+      "text": "Xie",
+      "weight": 1
+    },
+    {
+      "id": "family-fea4b5ceffa8",
+      "text": "Song",
+      "weight": 1
+    },
+    {
+      "id": "family-6cc87e80655e",
+      "text": "Tang",
+      "weight": 1
+    },
+    {
+      "id": "family-861af54f72de",
+      "text": "Han",
+      "weight": 1
+    },
+    {
+      "id": "family-5952e84e4073",
+      "text": "Feng",
+      "weight": 1
+    },
+    {
+      "id": "family-b35711f3f896",
+      "text": "Yu",
+      "weight": 1
+    },
+    {
+      "id": "family-dc96b9b9e9ba",
+      "text": "Dong",
+      "weight": 1
+    },
+    {
+      "id": "family-fc262ad0ffd4",
+      "text": "Xiao",
+      "weight": 1
+    },
+    {
+      "id": "family-e17e9875a2a7",
+      "text": "Cheng",
+      "weight": 1
+    },
+    {
+      "id": "family-e1595bd07c12",
+      "text": "Cao",
+      "weight": 1
+    },
+    {
+      "id": "family-3be835c58e9b",
+      "text": "Yuan",
+      "weight": 1
+    },
+    {
+      "id": "family-8a72e4734cde",
+      "text": "Deng",
+      "weight": 1
+    },
+    {
+      "id": "family-bdf22f2607ca",
+      "text": "Fu",
+      "weight": 1
+    },
+    {
+      "id": "family-fd96a8e09b6e",
+      "text": "Shen",
+      "weight": 1
+    },
+    {
+      "id": "family-b65f3df3676b",
+      "text": "Zeng",
+      "weight": 1
+    },
+    {
+      "id": "family-5cc8ce42824c",
+      "text": "Peng",
+      "weight": 1
+    },
+    {
+      "id": "family-1ce3fb2cb03a",
+      "text": "Lu",
+      "weight": 1
+    },
+    {
+      "id": "family-2d88a3a2842e",
+      "text": "Su",
+      "weight": 1
+    },
+    {
+      "id": "family-68ac9a53ffa2",
+      "text": "Jiang",
+      "weight": 1
+    },
+    {
+      "id": "family-ecf45966c690",
+      "text": "Cai",
+      "weight": 1
+    },
+    {
+      "id": "family-13f537f21fff",
+      "text": "Jia",
+      "weight": 1
+    },
+    {
+      "id": "family-df786320d86f",
+      "text": "Ding",
+      "weight": 1
+    },
+    {
+      "id": "family-2dcb4a7bc26f",
+      "text": "Wei",
+      "weight": 1
+    },
+    {
+      "id": "family-37a836b07e12",
+      "text": "Xue",
+      "weight": 1
+    },
+    {
+      "id": "family-c58b23419274",
+      "text": "Ye",
+      "weight": 1
+    },
+    {
+      "id": "family-e5ba7f704b3b",
+      "text": "Yan",
+      "weight": 1
+    },
+    {
+      "id": "family-fd92d952db92",
+      "text": "Pan",
+      "weight": 1
+    },
+    {
+      "id": "family-0b6722a8adfb",
+      "text": "Du",
+      "weight": 1
+    },
+    {
+      "id": "family-91e4461dd1fb",
+      "text": "Dai",
+      "weight": 1
+    },
+    {
+      "id": "family-b9db5ecaed71",
+      "text": "Xia",
+      "weight": 1
+    },
+    {
+      "id": "family-e417048559b3",
+      "text": "Zhong",
+      "weight": 1
+    },
+    {
+      "id": "family-baf520dbc395",
+      "text": "Tian",
+      "weight": 1
+    },
+    {
+      "id": "family-2c826edf4924",
+      "text": "Ren",
+      "weight": 1
+    },
+    {
+      "id": "family-e27be6419b09",
+      "text": "Fan",
+      "weight": 1
+    },
+    {
+      "id": "family-f1e508c4582c",
+      "text": "Fang",
+      "weight": 1
+    },
+    {
+      "id": "family-3d91a03ed870",
+      "text": "Shi",
+      "weight": 1
+    },
+    {
+      "id": "family-33bdb8d5fb4c",
+      "text": "Yao",
+      "weight": 1
+    },
+    {
+      "id": "family-1eaa40752329",
+      "text": "Tan",
+      "weight": 1
+    },
+    {
+      "id": "family-c5db0627568f",
+      "text": "Liao",
+      "weight": 1
+    },
+    {
+      "id": "family-b0a38995838b",
+      "text": "Zou",
+      "weight": 1
+    },
+    {
+      "id": "family-522eda9ae045",
+      "text": "Xiong",
+      "weight": 1
+    },
+    {
+      "id": "family-7f3cee14f1af",
+      "text": "Jin",
+      "weight": 1
+    },
+    {
+      "id": "family-11c37e60e912",
+      "text": "Hao",
+      "weight": 1
+    },
+    {
+      "id": "family-aee58c5bfb49",
+      "text": "Kong",
+      "weight": 1
+    },
+    {
+      "id": "family-29d86a41578a",
+      "text": "Bai",
+      "weight": 1
+    },
+    {
+      "id": "family-671a6e9b74dc",
+      "text": "Cui",
+      "weight": 1
+    },
+    {
+      "id": "family-72cac2352e1d",
+      "text": "Kang",
+      "weight": 1
+    },
+    {
+      "id": "family-7610c7695faa",
+      "text": "Mao",
+      "weight": 1
+    },
+    {
+      "id": "family-f507dd354dca",
+      "text": "Qiu",
+      "weight": 1
+    },
+    {
+      "id": "family-ba66e35f09ef",
+      "text": "Qin",
+      "weight": 1
+    },
+    {
+      "id": "family-e4b6e66c3e33",
+      "text": "Gu",
+      "weight": 1
+    },
+    {
+      "id": "family-2ccbb2c4d968",
+      "text": "Hou",
+      "weight": 1
+    },
+    {
+      "id": "family-8db00cdb2e42",
+      "text": "Shao",
+      "weight": 1
+    },
+    {
+      "id": "family-71271e3c3cf4",
+      "text": "Meng",
+      "weight": 1
+    },
+    {
+      "id": "family-d1d87c4717d5",
+      "text": "Long",
+      "weight": 1
+    },
+    {
+      "id": "family-97315d176eee",
+      "text": "Wan",
+      "weight": 1
+    },
+    {
+      "id": "family-7199e9bd06fd",
+      "text": "Duan",
+      "weight": 1
+    },
+    {
+      "id": "family-94f99e0dea73",
+      "text": "Lei",
+      "weight": 1
+    },
+    {
+      "id": "family-755f31e31637",
+      "text": "Qian",
+      "weight": 1
+    },
+    {
+      "id": "family-2511229ed62c",
+      "text": "Chang",
+      "weight": 1
+    },
+    {
+      "id": "family-5d33424039b4",
+      "text": "Qiao",
+      "weight": 1
+    },
+    {
+      "id": "family-9f98b7c7f071",
+      "text": "An",
+      "weight": 1
+    },
+    {
+      "id": "family-a0c4f3f697ca",
+      "text": "Yin",
+      "weight": 1
+    },
+    {
+      "id": "family-8231764c94d0",
+      "text": "Niu",
+      "weight": 1
+    },
+    {
+      "id": "family-530ef54ff28c",
+      "text": "Hong",
+      "weight": 1
+    },
+    {
+      "id": "family-447c8e23d49f",
+      "text": "Gong",
+      "weight": 1
+    },
+    {
+      "id": "family-d23e867e38e8",
+      "text": "Mo",
+      "weight": 1
+    },
+    {
+      "id": "family-96a769e867a9",
+      "text": "Zhuang",
+      "weight": 1
+    },
+    {
+      "id": "family-1897ba465985",
+      "text": "Qu",
+      "weight": 1
+    },
+    {
+      "id": "family-2288a0ad25a8",
+      "text": "Ning",
+      "weight": 1
+    },
+    {
+      "id": "family-4d642608d942",
+      "text": "Shang",
+      "weight": 1
+    },
+    {
+      "id": "family-e6e4e7e1cbd9",
+      "text": "Ai",
+      "weight": 1
+    },
+    {
+      "id": "family-654063961723",
+      "text": "Wen",
+      "weight": 1
+    },
+    {
+      "id": "family-1ac65711312e",
+      "text": "Lan",
+      "weight": 1
+    },
+    {
+      "id": "family-df89dde8cfcb",
+      "text": "Lai",
+      "weight": 1
+    },
+    {
+      "id": "family-555379a2f5b9",
+      "text": "Pei",
+      "weight": 1
+    },
+    {
+      "id": "family-08b041935798",
+      "text": "You",
+      "weight": 1
+    },
+    {
+      "id": "family-5a0abe0710e3",
+      "text": "Sima",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 10000
+  }
+}

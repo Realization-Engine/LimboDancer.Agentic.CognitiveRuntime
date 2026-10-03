@@ -1,0 +1,690 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "nepali-gurkha",
+  "label": "Nepali Gurkha, military short forms",
+  "language": "ne-Latn",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names",
+      "gurkha-museum-vc",
+      "nam-gurkhas"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-family",
+    "componentOrder": [
+      "given",
+      "family"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "Gurkha military-name candidates. Compound given names such as Ram Bahadur are indivisible. The short family/community labels are intentionally limited; do not fabricate 100 distinct labels. Recruiting community and regiment must be selected explicitly. Not every pool combination is appropriate for every Gurkha regiment. Every family entry has subgroupIds; filter by the selected subgroup before choosing.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 100
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 12,
+    "secondComponent": 12
+  },
+  "completeness": "smaller-curated-pool",
+  "givenNames": [
+    {
+      "id": "given-f4b058cf8590",
+      "text": "Amar Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-07516c8eaa90",
+      "text": "Amar Singh",
+      "weight": 1
+    },
+    {
+      "id": "given-2d8c07e98710",
+      "text": "Bal Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-feb57a1a2e12",
+      "text": "Balbir",
+      "weight": 1
+    },
+    {
+      "id": "given-d921aa93de9b",
+      "text": "Bir Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-33928ee48dbb",
+      "text": "Bir Singh",
+      "weight": 1
+    },
+    {
+      "id": "given-c114441f5f63",
+      "text": "Bishnu",
+      "weight": 1
+    },
+    {
+      "id": "given-c4762a69e12b",
+      "text": "Bhim Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-416b0c555a7f",
+      "text": "Chandra Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-41352b1a6bd3",
+      "text": "Chandra Singh",
+      "weight": 1
+    },
+    {
+      "id": "given-7e16bc9afd85",
+      "text": "Dal Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-901c4ec14f08",
+      "text": "Dalbir",
+      "weight": 1
+    },
+    {
+      "id": "given-09f3387d3cac",
+      "text": "Dhan Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-ff49f58db560",
+      "text": "Dhan Singh",
+      "weight": 1
+    },
+    {
+      "id": "given-f35f41209b47",
+      "text": "Dhansing",
+      "weight": 1
+    },
+    {
+      "id": "given-e089934d1910",
+      "text": "Durga Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-d032d30f5fd9",
+      "text": "Gaje",
+      "weight": 1
+    },
+    {
+      "id": "given-17e7c1b39aeb",
+      "text": "Gajendra",
+      "weight": 1
+    },
+    {
+      "id": "given-cb392292cf17",
+      "text": "Ganesh",
+      "weight": 1
+    },
+    {
+      "id": "given-9cf7baddaebf",
+      "text": "Ganju",
+      "weight": 1
+    },
+    {
+      "id": "given-1a1099a5a054",
+      "text": "Gopal",
+      "weight": 1
+    },
+    {
+      "id": "given-fabfb8c2c568",
+      "text": "Gum Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-557dfe4cc4ce",
+      "text": "Harka Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-aca7689103e4",
+      "text": "Hira Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-02128122397a",
+      "text": "Indra Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-4f15e35bb235",
+      "text": "Jai Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-4288f72f6d07",
+      "text": "Jang Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-b6b433baa3bf",
+      "text": "Jas Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-412dcb88721b",
+      "text": "Jit Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-aac7584dd831",
+      "text": "Jit Singh",
+      "weight": 1
+    },
+    {
+      "id": "given-cf913fe87a7f",
+      "text": "Jung Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-7795569fa9af",
+      "text": "Kaji",
+      "weight": 1
+    },
+    {
+      "id": "given-5a7908897066",
+      "text": "Karna Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-b11e22c9d9bc",
+      "text": "Kharak Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-1c6da37bcfe7",
+      "text": "Kharga Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-d1ae785de27e",
+      "text": "Kishan Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-d428238f53df",
+      "text": "Krishna Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-2f7ad40ea77c",
+      "text": "Kul Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-1a542b586393",
+      "text": "Kulbir",
+      "weight": 1
+    },
+    {
+      "id": "given-1200fcd98e64",
+      "text": "Lachhiman",
+      "weight": 1
+    },
+    {
+      "id": "given-4a938f7388ea",
+      "text": "Lal Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-020ea3f0632d",
+      "text": "Lal Singh",
+      "weight": 1
+    },
+    {
+      "id": "given-01971da6c351",
+      "text": "Laxman",
+      "weight": 1
+    },
+    {
+      "id": "given-ed94a3ea3231",
+      "text": "Lok Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-5d8fa2d67e0e",
+      "text": "Man Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-87fc20ea5e57",
+      "text": "Manbir",
+      "weight": 1
+    },
+    {
+      "id": "given-8ecaf4d0570d",
+      "text": "Mangal",
+      "weight": 1
+    },
+    {
+      "id": "given-9799d4ff1acf",
+      "text": "Moti Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-3d04f3eb1eec",
+      "text": "Nar Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-8b4914bdb0f8",
+      "text": "Narbir",
+      "weight": 1
+    },
+    {
+      "id": "given-c559bb6189f7",
+      "text": "Nara Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-492cf399b295",
+      "text": "Padam Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-37f2311ca415",
+      "text": "Pahalman",
+      "weight": 1
+    },
+    {
+      "id": "given-16c348475bf7",
+      "text": "Partap",
+      "weight": 1
+    },
+    {
+      "id": "given-8da7188707d0",
+      "text": "Prem Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-a5d492663369",
+      "text": "Purna Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-0eedbee5bdee",
+      "text": "Ram Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-50692cae48db",
+      "text": "Ram Singh",
+      "weight": 1
+    },
+    {
+      "id": "given-f1bec104f969",
+      "text": "Rana Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-4b5668720b46",
+      "text": "Ranbir",
+      "weight": 1
+    },
+    {
+      "id": "given-cdbe457dcf51",
+      "text": "Ranjit",
+      "weight": 1
+    },
+    {
+      "id": "given-a4315db59ee6",
+      "text": "Ratna Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-7a5ce23c0034",
+      "text": "Rudra Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-7d1468d542ea",
+      "text": "Sher Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-447f6265abcc",
+      "text": "Sher Singh",
+      "weight": 1
+    },
+    {
+      "id": "given-851e17b9314d",
+      "text": "Shyam Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-19a7efd88fad",
+      "text": "Suk Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-7defeb9bb4bc",
+      "text": "Sur Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-9ff2c8014b69",
+      "text": "Surbir",
+      "weight": 1
+    },
+    {
+      "id": "given-24a4964de82f",
+      "text": "Tek Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-b93d674ebec8",
+      "text": "Tej Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-ae3d1d00e114",
+      "text": "Thaman",
+      "weight": 1
+    },
+    {
+      "id": "given-a505070fc413",
+      "text": "Til Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-3c1f0709317e",
+      "text": "Tul Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-23c989eab80a",
+      "text": "Agansing",
+      "weight": 1
+    },
+    {
+      "id": "given-64296bb18b50",
+      "text": "Bhanbhagta",
+      "weight": 1
+    },
+    {
+      "id": "given-517f213c75a3",
+      "text": "Bhim Singh",
+      "weight": 1
+    },
+    {
+      "id": "given-4da012460b05",
+      "text": "Buddhi",
+      "weight": 1
+    },
+    {
+      "id": "given-dbfe87b7301f",
+      "text": "Deb Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-0359b10969eb",
+      "text": "Dharam",
+      "weight": 1
+    },
+    {
+      "id": "given-bcf1e41d3b69",
+      "text": "Dil Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-b52fa24479ba",
+      "text": "Ganga Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-d9fd748b1ead",
+      "text": "Hari Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-c0299a0ff81e",
+      "text": "Hasta Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-3ec8dd99ba19",
+      "text": "Hukum",
+      "weight": 1
+    },
+    {
+      "id": "given-08f1b59b953a",
+      "text": "Jagat Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-afbe87f500ac",
+      "text": "Jasbir",
+      "weight": 1
+    },
+    {
+      "id": "given-defdf8f9a9a3",
+      "text": "Jeetman",
+      "weight": 1
+    },
+    {
+      "id": "given-4b9cd2922edf",
+      "text": "Kalu",
+      "weight": 1
+    },
+    {
+      "id": "given-276ffede7b72",
+      "text": "Kesarman",
+      "weight": 1
+    },
+    {
+      "id": "given-f13a6eb66135",
+      "text": "Khem Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-7e96fe2dcf5f",
+      "text": "Kuber",
+      "weight": 1
+    },
+    {
+      "id": "given-58cf566b1104",
+      "text": "Lakhan",
+      "weight": 1
+    },
+    {
+      "id": "given-5db861438d5d",
+      "text": "Nain Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-a022f9049076",
+      "text": "Nand Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-33f2d660ec44",
+      "text": "Nirmal",
+      "weight": 1
+    },
+    {
+      "id": "given-473400251b45",
+      "text": "Panchman",
+      "weight": 1
+    },
+    {
+      "id": "given-9214b8ad58a3",
+      "text": "Pirthiman",
+      "weight": 1
+    },
+    {
+      "id": "given-9cc5115e3269",
+      "text": "Sant Bahadur",
+      "weight": 1
+    },
+    {
+      "id": "given-5f558b0540ab",
+      "text": "Tika Bahadur",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-a3e41cea5bb0",
+      "text": "Gurung",
+      "weight": 1,
+      "subgroupIds": [
+        "gurung"
+      ]
+    },
+    {
+      "id": "family-cc64c7fb326e",
+      "text": "Ghale",
+      "weight": 1,
+      "subgroupIds": [
+        "gurung"
+      ]
+    },
+    {
+      "id": "family-f1a07f5d091f",
+      "text": "Thapa",
+      "weight": 1,
+      "subgroupIds": [
+        "magar"
+      ]
+    },
+    {
+      "id": "family-03aa4890d313",
+      "text": "Rana",
+      "weight": 1,
+      "subgroupIds": [
+        "magar"
+      ]
+    },
+    {
+      "id": "family-f78cfe3ab6c2",
+      "text": "Pun",
+      "weight": 1,
+      "subgroupIds": [
+        "magar"
+      ]
+    },
+    {
+      "id": "family-43eb10fc70a1",
+      "text": "Ale",
+      "weight": 1,
+      "subgroupIds": [
+        "magar"
+      ]
+    },
+    {
+      "id": "family-8b8a8645942e",
+      "text": "Budha",
+      "weight": 1,
+      "subgroupIds": [
+        "magar"
+      ]
+    },
+    {
+      "id": "family-0cbc88c4b173",
+      "text": "Magar",
+      "weight": 1,
+      "subgroupIds": [
+        "magar"
+      ]
+    },
+    {
+      "id": "family-f0ed91f80406",
+      "text": "Rai",
+      "weight": 1,
+      "subgroupIds": [
+        "rai"
+      ]
+    },
+    {
+      "id": "family-543b10a96d54",
+      "text": "Limbu",
+      "weight": 1,
+      "subgroupIds": [
+        "limbu"
+      ]
+    },
+    {
+      "id": "family-5996780176c6",
+      "text": "Tamang",
+      "weight": 1,
+      "subgroupIds": [
+        "tamang"
+      ]
+    },
+    {
+      "id": "family-84dba3035eb7",
+      "text": "Sunuwar",
+      "weight": 1,
+      "subgroupIds": [
+        "sunuwar"
+      ]
+    }
+  ],
+  "subgroups": [
+    {
+      "id": "gurung",
+      "label": "Gurung"
+    },
+    {
+      "id": "magar",
+      "label": "Magar"
+    },
+    {
+      "id": "rai",
+      "label": "Rai"
+    },
+    {
+      "id": "limbu",
+      "label": "Limbu"
+    },
+    {
+      "id": "tamang",
+      "label": "Tamang"
+    },
+    {
+      "id": "sunuwar",
+      "label": "Sunuwar"
+    }
+  ],
+  "requiresSubgroup": true,
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "gurung": 200,
+    "magar": 600,
+    "rai": 100,
+    "limbu": 100,
+    "tamang": 100,
+    "sunuwar": 100
+  }
+}

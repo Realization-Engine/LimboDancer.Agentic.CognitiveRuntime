@@ -1,0 +1,1062 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "indian-hindi",
+  "label": "North Indian, Hindi Hindu context",
+  "language": "hi-Latn",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-family",
+    "componentOrder": [
+      "given",
+      "family"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "Explicitly selected North Indian Hindu naming context, not a generic Indian pool. Several second components are titles or community names used as surname-like labels. Regimental recruiting constraints remain authoring choices; surname alone must never infer caste, religion, rank, or military capability.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 100
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 100,
+    "secondComponent": 100
+  },
+  "completeness": "target-met",
+  "givenNames": [
+    {
+      "id": "given-76e11af94d35",
+      "text": "Ram",
+      "weight": 1
+    },
+    {
+      "id": "given-88fd240e7ad0",
+      "text": "Shyam",
+      "weight": 1
+    },
+    {
+      "id": "given-6d040ef7ff7b",
+      "text": "Mohan",
+      "weight": 1
+    },
+    {
+      "id": "given-68975b538de6",
+      "text": "Sohan",
+      "weight": 1
+    },
+    {
+      "id": "given-1a1099a5a054",
+      "text": "Gopal",
+      "weight": 1
+    },
+    {
+      "id": "given-5fc4809c41ec",
+      "text": "Hari",
+      "weight": 1
+    },
+    {
+      "id": "given-4d9b474d4634",
+      "text": "Krishna",
+      "weight": 1
+    },
+    {
+      "id": "given-370a31f289cd",
+      "text": "Shiva",
+      "weight": 1
+    },
+    {
+      "id": "given-c7a844656875",
+      "text": "Vishnu",
+      "weight": 1
+    },
+    {
+      "id": "given-cb392292cf17",
+      "text": "Ganesh",
+      "weight": 1
+    },
+    {
+      "id": "given-5d1993c87524",
+      "text": "Mahesh",
+      "weight": 1
+    },
+    {
+      "id": "given-ded62532e56b",
+      "text": "Ramesh",
+      "weight": 1
+    },
+    {
+      "id": "given-f73ad7062919",
+      "text": "Suresh",
+      "weight": 1
+    },
+    {
+      "id": "given-f2919c883882",
+      "text": "Dinesh",
+      "weight": 1
+    },
+    {
+      "id": "given-028e4de3ec62",
+      "text": "Naresh",
+      "weight": 1
+    },
+    {
+      "id": "given-872552b4375d",
+      "text": "Rajesh",
+      "weight": 1
+    },
+    {
+      "id": "given-955d9d453fb0",
+      "text": "Rajendra",
+      "weight": 1
+    },
+    {
+      "id": "given-854fef66c736",
+      "text": "Devendra",
+      "weight": 1
+    },
+    {
+      "id": "given-fb24052550a9",
+      "text": "Mahendra",
+      "weight": 1
+    },
+    {
+      "id": "given-9eeba249e18d",
+      "text": "Narendra",
+      "weight": 1
+    },
+    {
+      "id": "given-ba942733dda3",
+      "text": "Surendra",
+      "weight": 1
+    },
+    {
+      "id": "given-4c78e878b792",
+      "text": "Virendra",
+      "weight": 1
+    },
+    {
+      "id": "given-be403dd713f8",
+      "text": "Harendra",
+      "weight": 1
+    },
+    {
+      "id": "given-a894ce2c8eaa",
+      "text": "Jitendra",
+      "weight": 1
+    },
+    {
+      "id": "given-85d10f94be28",
+      "text": "Ramchandra",
+      "weight": 1
+    },
+    {
+      "id": "given-8e7cb9603075",
+      "text": "Harishchandra",
+      "weight": 1
+    },
+    {
+      "id": "given-6f581ef662f0",
+      "text": "Chandrashekhar",
+      "weight": 1
+    },
+    {
+      "id": "given-164d017de77d",
+      "text": "Shankar",
+      "weight": 1
+    },
+    {
+      "id": "given-656e44d057f6",
+      "text": "Shambhu",
+      "weight": 1
+    },
+    {
+      "id": "given-472a93eb63a8",
+      "text": "Bishan",
+      "weight": 1
+    },
+    {
+      "id": "given-f11a4eef632d",
+      "text": "Kishan",
+      "weight": 1
+    },
+    {
+      "id": "given-ac95395681a2",
+      "text": "Kishore",
+      "weight": 1
+    },
+    {
+      "id": "given-9c2eea668a0a",
+      "text": "Nand",
+      "weight": 1
+    },
+    {
+      "id": "given-8f154445bc01",
+      "text": "Nandlal",
+      "weight": 1
+    },
+    {
+      "id": "given-54b71550faad",
+      "text": "Motilal",
+      "weight": 1
+    },
+    {
+      "id": "given-f7e2f1203924",
+      "text": "Jawaharlal",
+      "weight": 1
+    },
+    {
+      "id": "given-c18d2f467266",
+      "text": "Shyamlal",
+      "weight": 1
+    },
+    {
+      "id": "given-8f88b47eff75",
+      "text": "Babulal",
+      "weight": 1
+    },
+    {
+      "id": "given-8714e069362a",
+      "text": "Chunnilal",
+      "weight": 1
+    },
+    {
+      "id": "given-3eb9df4637f0",
+      "text": "Pannalal",
+      "weight": 1
+    },
+    {
+      "id": "given-98c07ca069cc",
+      "text": "Lal",
+      "weight": 1
+    },
+    {
+      "id": "given-da6188f872c7",
+      "text": "Lalchand",
+      "weight": 1
+    },
+    {
+      "id": "given-565c64a87b91",
+      "text": "Hiralal",
+      "weight": 1
+    },
+    {
+      "id": "given-27679dd52282",
+      "text": "Hira",
+      "weight": 1
+    },
+    {
+      "id": "given-d89a7cca4b15",
+      "text": "Moti",
+      "weight": 1
+    },
+    {
+      "id": "given-679bd5d3b576",
+      "text": "Sukhdev",
+      "weight": 1
+    },
+    {
+      "id": "given-88309b7f28b4",
+      "text": "Baldev",
+      "weight": 1
+    },
+    {
+      "id": "given-6f570002ecf9",
+      "text": "Vasudev",
+      "weight": 1
+    },
+    {
+      "id": "given-8dabfe519baf",
+      "text": "Jaidev",
+      "weight": 1
+    },
+    {
+      "id": "given-d6a5f52991ec",
+      "text": "Bhagwan",
+      "weight": 1
+    },
+    {
+      "id": "given-2c73584f20d7",
+      "text": "Bhagwati",
+      "weight": 1
+    },
+    {
+      "id": "given-a0df43b5302c",
+      "text": "Bhagirath",
+      "weight": 1
+    },
+    {
+      "id": "given-d9192cb60ad4",
+      "text": "Bharat",
+      "weight": 1
+    },
+    {
+      "id": "given-ae372cb367c6",
+      "text": "Bhim",
+      "weight": 1
+    },
+    {
+      "id": "given-2bb0c46073ba",
+      "text": "Arjun",
+      "weight": 1
+    },
+    {
+      "id": "given-4cf8f6538b36",
+      "text": "Balram",
+      "weight": 1
+    },
+    {
+      "id": "given-3d66fb28d25c",
+      "text": "Brij",
+      "weight": 1
+    },
+    {
+      "id": "given-eaf0b4d27d33",
+      "text": "Brijlal",
+      "weight": 1
+    },
+    {
+      "id": "given-076692606b4a",
+      "text": "Brijmohan",
+      "weight": 1
+    },
+    {
+      "id": "given-0c12dff1543a",
+      "text": "Brijesh",
+      "weight": 1
+    },
+    {
+      "id": "given-27b44da2d321",
+      "text": "Raghunath",
+      "weight": 1
+    },
+    {
+      "id": "given-ffd577e7e86d",
+      "text": "Raghuvir",
+      "weight": 1
+    },
+    {
+      "id": "given-a44bcb4d388e",
+      "text": "Raghubar",
+      "weight": 1
+    },
+    {
+      "id": "given-bcd3eda8eba7",
+      "text": "Ramakant",
+      "weight": 1
+    },
+    {
+      "id": "given-6a686e31d3db",
+      "text": "Ramdas",
+      "weight": 1
+    },
+    {
+      "id": "given-1fb304ae2497",
+      "text": "Ramdev",
+      "weight": 1
+    },
+    {
+      "id": "given-2714fa13de80",
+      "text": "Ramlal",
+      "weight": 1
+    },
+    {
+      "id": "given-81c63ff31469",
+      "text": "Ramprasad",
+      "weight": 1
+    },
+    {
+      "id": "given-374762b08541",
+      "text": "Rampal",
+      "weight": 1
+    },
+    {
+      "id": "given-259e558495c6",
+      "text": "Ramnarayan",
+      "weight": 1
+    },
+    {
+      "id": "given-d7b6fc937af2",
+      "text": "Ramgopal",
+      "weight": 1
+    },
+    {
+      "id": "given-7a3e41ad8137",
+      "text": "Ramcharan",
+      "weight": 1
+    },
+    {
+      "id": "given-fd15b6126aa7",
+      "text": "Rambir",
+      "weight": 1
+    },
+    {
+      "id": "given-6d7bc90b8e49",
+      "text": "Ramkumar",
+      "weight": 1
+    },
+    {
+      "id": "given-21f55fdccbf1",
+      "text": "Ramphal",
+      "weight": 1
+    },
+    {
+      "id": "given-91147aa35b9b",
+      "text": "Shivlal",
+      "weight": 1
+    },
+    {
+      "id": "given-6c5380940213",
+      "text": "Shivprasad",
+      "weight": 1
+    },
+    {
+      "id": "given-7d51768d6a88",
+      "text": "Shivram",
+      "weight": 1
+    },
+    {
+      "id": "given-f8453fdb0ba8",
+      "text": "Shivnath",
+      "weight": 1
+    },
+    {
+      "id": "given-929fe9690002",
+      "text": "Shivcharan",
+      "weight": 1
+    },
+    {
+      "id": "given-9c96e0a3954d",
+      "text": "Badriprasad",
+      "weight": 1
+    },
+    {
+      "id": "given-6321398cc530",
+      "text": "Badrinath",
+      "weight": 1
+    },
+    {
+      "id": "given-6e7d2755d44d",
+      "text": "Badri",
+      "weight": 1
+    },
+    {
+      "id": "given-f10c5c501200",
+      "text": "Kedarnath",
+      "weight": 1
+    },
+    {
+      "id": "given-ddd65de926a1",
+      "text": "Kedar",
+      "weight": 1
+    },
+    {
+      "id": "given-f1e43b24b72a",
+      "text": "Bansidhar",
+      "weight": 1
+    },
+    {
+      "id": "given-90cd367bef95",
+      "text": "Banwari",
+      "weight": 1
+    },
+    {
+      "id": "given-d5a983e42162",
+      "text": "Bansilal",
+      "weight": 1
+    },
+    {
+      "id": "given-0359b10969eb",
+      "text": "Dharam",
+      "weight": 1
+    },
+    {
+      "id": "given-914722465185",
+      "text": "Dharampal",
+      "weight": 1
+    },
+    {
+      "id": "given-03615e6b9a04",
+      "text": "Dharmendra",
+      "weight": 1
+    },
+    {
+      "id": "given-83623be754ba",
+      "text": "Chaman",
+      "weight": 1
+    },
+    {
+      "id": "given-07c1aff1483d",
+      "text": "Dayaram",
+      "weight": 1
+    },
+    {
+      "id": "given-355a9a644c92",
+      "text": "Dayanand",
+      "weight": 1
+    },
+    {
+      "id": "given-b85acef6c320",
+      "text": "Girdhari",
+      "weight": 1
+    },
+    {
+      "id": "given-a4390860a1a7",
+      "text": "Hanuman",
+      "weight": 1
+    },
+    {
+      "id": "given-48815e2412a0",
+      "text": "Ishwar",
+      "weight": 1
+    },
+    {
+      "id": "given-31658cc9a57b",
+      "text": "Jagannath",
+      "weight": 1
+    },
+    {
+      "id": "given-ceccd4957689",
+      "text": "Jagat",
+      "weight": 1
+    },
+    {
+      "id": "given-2229d120eabd",
+      "text": "Jagan",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-53354418dee0",
+      "text": "Sharma",
+      "weight": 1
+    },
+    {
+      "id": "family-29189879861b",
+      "text": "Verma",
+      "weight": 1
+    },
+    {
+      "id": "family-755d18cb6912",
+      "text": "Gupta",
+      "weight": 1
+    },
+    {
+      "id": "family-6c5ad499275b",
+      "text": "Mishra",
+      "weight": 1
+    },
+    {
+      "id": "family-3a0a4c52fecf",
+      "text": "Shukla",
+      "weight": 1
+    },
+    {
+      "id": "family-7cb1aac126ff",
+      "text": "Tiwari",
+      "weight": 1
+    },
+    {
+      "id": "family-6e3bb0baebb6",
+      "text": "Pandey",
+      "weight": 1
+    },
+    {
+      "id": "family-62b33c8f67d9",
+      "text": "Dubey",
+      "weight": 1
+    },
+    {
+      "id": "family-8e2b3503666a",
+      "text": "Dwivedi",
+      "weight": 1
+    },
+    {
+      "id": "family-558f7b08e6e6",
+      "text": "Tripathi",
+      "weight": 1
+    },
+    {
+      "id": "family-9976964c85cb",
+      "text": "Trivedi",
+      "weight": 1
+    },
+    {
+      "id": "family-011a5c418894",
+      "text": "Chaturvedi",
+      "weight": 1
+    },
+    {
+      "id": "family-59a388003cb1",
+      "text": "Pathak",
+      "weight": 1
+    },
+    {
+      "id": "family-779d29260ad0",
+      "text": "Upadhyay",
+      "weight": 1
+    },
+    {
+      "id": "family-9f04ea214d40",
+      "text": "Dixit",
+      "weight": 1
+    },
+    {
+      "id": "family-2d0e1155285e",
+      "text": "Joshi",
+      "weight": 1
+    },
+    {
+      "id": "family-71a9b815064c",
+      "text": "Bhatt",
+      "weight": 1
+    },
+    {
+      "id": "family-bcc9ceb707df",
+      "text": "Pant",
+      "weight": 1
+    },
+    {
+      "id": "family-c85f5d80a2f1",
+      "text": "Pande",
+      "weight": 1
+    },
+    {
+      "id": "family-1549b4b4f1fa",
+      "text": "Kumar",
+      "weight": 1
+    },
+    {
+      "id": "family-f067c16c95e9",
+      "text": "Singh",
+      "weight": 1
+    },
+    {
+      "id": "family-f3bfb03a210b",
+      "text": "Chauhan",
+      "weight": 1
+    },
+    {
+      "id": "family-0b56daf412c7",
+      "text": "Rathore",
+      "weight": 1
+    },
+    {
+      "id": "family-7a36ac98f019",
+      "text": "Sisodia",
+      "weight": 1
+    },
+    {
+      "id": "family-cf4ae98e1776",
+      "text": "Tomar",
+      "weight": 1
+    },
+    {
+      "id": "family-d60c4c339129",
+      "text": "Parmar",
+      "weight": 1
+    },
+    {
+      "id": "family-593f5bb61a95",
+      "text": "Pawar",
+      "weight": 1
+    },
+    {
+      "id": "family-ac52cda36bfc",
+      "text": "Rajput",
+      "weight": 1
+    },
+    {
+      "id": "family-6c82c535ead4",
+      "text": "Yadav",
+      "weight": 1
+    },
+    {
+      "id": "family-63231b915ec6",
+      "text": "Ahir",
+      "weight": 1
+    },
+    {
+      "id": "family-22bdafc805cf",
+      "text": "Kushwaha",
+      "weight": 1
+    },
+    {
+      "id": "family-8038304baf46",
+      "text": "Maurya",
+      "weight": 1
+    },
+    {
+      "id": "family-c8592d3558fe",
+      "text": "Saini",
+      "weight": 1
+    },
+    {
+      "id": "family-0f23165433d9",
+      "text": "Pal",
+      "weight": 1
+    },
+    {
+      "id": "family-79248d921278",
+      "text": "Yadava",
+      "weight": 1
+    },
+    {
+      "id": "family-5e0c689c0c30",
+      "text": "Lodhi",
+      "weight": 1
+    },
+    {
+      "id": "family-9f4c92721a10",
+      "text": "Kurmi",
+      "weight": 1
+    },
+    {
+      "id": "family-159604c14202",
+      "text": "Kachhi",
+      "weight": 1
+    },
+    {
+      "id": "family-92b193473323",
+      "text": "Jat",
+      "weight": 1
+    },
+    {
+      "id": "family-b51b680fa80d",
+      "text": "Gurjar",
+      "weight": 1
+    },
+    {
+      "id": "family-7ab379c2d8b5",
+      "text": "Tyagi",
+      "weight": 1
+    },
+    {
+      "id": "family-471848859d6a",
+      "text": "Dahiya",
+      "weight": 1
+    },
+    {
+      "id": "family-012c781f44a0",
+      "text": "Malik",
+      "weight": 1
+    },
+    {
+      "id": "family-9494f9a1a3fb",
+      "text": "Dagar",
+      "weight": 1
+    },
+    {
+      "id": "family-03aa4890d313",
+      "text": "Rana",
+      "weight": 1
+    },
+    {
+      "id": "family-bf429eb58133",
+      "text": "Solanki",
+      "weight": 1
+    },
+    {
+      "id": "family-ea10459a1aff",
+      "text": "Tanwar",
+      "weight": 1
+    },
+    {
+      "id": "family-03217aaf5d05",
+      "text": "Shekhawat",
+      "weight": 1
+    },
+    {
+      "id": "family-bf3bf78b33d3",
+      "text": "Kachhwaha",
+      "weight": 1
+    },
+    {
+      "id": "family-abd43b4f4d4a",
+      "text": "Bais",
+      "weight": 1
+    },
+    {
+      "id": "family-bf18d18fdd88",
+      "text": "Chandel",
+      "weight": 1
+    },
+    {
+      "id": "family-6f51cb592e26",
+      "text": "Bhadauria",
+      "weight": 1
+    },
+    {
+      "id": "family-ce7f41de344d",
+      "text": "Bundela",
+      "weight": 1
+    },
+    {
+      "id": "family-b5de083a7f85",
+      "text": "Gaur",
+      "weight": 1
+    },
+    {
+      "id": "family-9c81d847b293",
+      "text": "Bisht",
+      "weight": 1
+    },
+    {
+      "id": "family-cee06a66c485",
+      "text": "Rawat",
+      "weight": 1
+    },
+    {
+      "id": "family-61092d7ab9e1",
+      "text": "Negi",
+      "weight": 1
+    },
+    {
+      "id": "family-1fdb63016400",
+      "text": "Nautiyal",
+      "weight": 1
+    },
+    {
+      "id": "family-6a7e7220cd72",
+      "text": "Semwal",
+      "weight": 1
+    },
+    {
+      "id": "family-c469cb10ab2c",
+      "text": "Gairola",
+      "weight": 1
+    },
+    {
+      "id": "family-4c8c56d7d01d",
+      "text": "Bahuguna",
+      "weight": 1
+    },
+    {
+      "id": "family-5dfa8388b86e",
+      "text": "Dhasmana",
+      "weight": 1
+    },
+    {
+      "id": "family-ff233e64bf6b",
+      "text": "Pokhriyal",
+      "weight": 1
+    },
+    {
+      "id": "family-11d519da2878",
+      "text": "Saklani",
+      "weight": 1
+    },
+    {
+      "id": "family-b12fa94e00fb",
+      "text": "Kukreti",
+      "weight": 1
+    },
+    {
+      "id": "family-551873feeb0e",
+      "text": "Dobhal",
+      "weight": 1
+    },
+    {
+      "id": "family-7fd873c8239c",
+      "text": "Dimri",
+      "weight": 1
+    },
+    {
+      "id": "family-f16bcdc9e809",
+      "text": "Raturi",
+      "weight": 1
+    },
+    {
+      "id": "family-94bc3ee261ad",
+      "text": "Maithani",
+      "weight": 1
+    },
+    {
+      "id": "family-f0a646b417b8",
+      "text": "Uniyal",
+      "weight": 1
+    },
+    {
+      "id": "family-3dca14d6762d",
+      "text": "Agrawal",
+      "weight": 1
+    },
+    {
+      "id": "family-8575611f773b",
+      "text": "Goyal",
+      "weight": 1
+    },
+    {
+      "id": "family-ce6cc644b1a6",
+      "text": "Bansal",
+      "weight": 1
+    },
+    {
+      "id": "family-be18a4508a6c",
+      "text": "Mittal",
+      "weight": 1
+    },
+    {
+      "id": "family-b3566d836b51",
+      "text": "Jindal",
+      "weight": 1
+    },
+    {
+      "id": "family-0d3913901fab",
+      "text": "Singhal",
+      "weight": 1
+    },
+    {
+      "id": "family-e3d7b9ad24b3",
+      "text": "Garg",
+      "weight": 1
+    },
+    {
+      "id": "family-9aa5d23e7a9f",
+      "text": "Goel",
+      "weight": 1
+    },
+    {
+      "id": "family-dfae58d5d2f5",
+      "text": "Maheshwari",
+      "weight": 1
+    },
+    {
+      "id": "family-27a184a55561",
+      "text": "Khandelwal",
+      "weight": 1
+    },
+    {
+      "id": "family-0cf0aefca26a",
+      "text": "Rastogi",
+      "weight": 1
+    },
+    {
+      "id": "family-097076c700f1",
+      "text": "Saxena",
+      "weight": 1
+    },
+    {
+      "id": "family-2b7d3a76ef1c",
+      "text": "Mathur",
+      "weight": 1
+    },
+    {
+      "id": "family-e0bb630290c7",
+      "text": "Srivastava",
+      "weight": 1
+    },
+    {
+      "id": "family-8432e0051a88",
+      "text": "Asthana",
+      "weight": 1
+    },
+    {
+      "id": "family-ee746b5aa2b5",
+      "text": "Nigam",
+      "weight": 1
+    },
+    {
+      "id": "family-dc0d05d0f463",
+      "text": "Kulshreshtha",
+      "weight": 1
+    },
+    {
+      "id": "family-d1b1d079f840",
+      "text": "Khare",
+      "weight": 1
+    },
+    {
+      "id": "family-9831cdbb5e74",
+      "text": "Sinha",
+      "weight": 1
+    },
+    {
+      "id": "family-4c48fc7836df",
+      "text": "Prasad",
+      "weight": 1
+    },
+    {
+      "id": "family-98c07ca069cc",
+      "text": "Lal",
+      "weight": 1
+    },
+    {
+      "id": "family-a9d354a78348",
+      "text": "Das",
+      "weight": 1
+    },
+    {
+      "id": "family-76e11af94d35",
+      "text": "Ram",
+      "weight": 1
+    },
+    {
+      "id": "family-d0ee46a64931",
+      "text": "Chaudhary",
+      "weight": 1
+    },
+    {
+      "id": "family-87ee01b89e29",
+      "text": "Mehta",
+      "weight": 1
+    },
+    {
+      "id": "family-5a37bc6c93d7",
+      "text": "Sethi",
+      "weight": 1
+    },
+    {
+      "id": "family-60d3ba4b745b",
+      "text": "Kapoor",
+      "weight": 1
+    },
+    {
+      "id": "family-00d0a12be988",
+      "text": "Khanna",
+      "weight": 1
+    },
+    {
+      "id": "family-1f71956ac400",
+      "text": "Arora",
+      "weight": 1
+    },
+    {
+      "id": "family-0d3389b2855b",
+      "text": "Bhatia",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 9998
+  }
+}

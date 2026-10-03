@@ -1,0 +1,966 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "eritrean-muslim",
+  "label": "Eritrean, Arabic-derived Muslim names",
+  "language": "ar-Latn",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names",
+      "uk-naming-guidance",
+      "uk-eritrea"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-father",
+    "componentOrder": [
+      "given",
+      "father-given"
+    ],
+    "separator": " ",
+    "secondComponentRole": "father-given"
+  },
+  "scopeNote": "Arabic-derived personal and father-name candidates for explicitly selected Muslim Eritrean personnel. Transliteration is a project convention. This does not claim to exhaust Tigre, Saho, Afar, Bilen, or other community naming traditions.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 0,
+    "secondComponent": 100
+  },
+  "actualCounts": {
+    "givenNames": 90,
+    "familyNames": 0,
+    "secondComponent": 90
+  },
+  "completeness": "smaller-curated-pool",
+  "givenNames": [
+    {
+      "id": "given-2b3ced30db67",
+      "text": "Abbas",
+      "weight": 1
+    },
+    {
+      "id": "given-c4496272db2a",
+      "text": "Abdallah",
+      "weight": 1
+    },
+    {
+      "id": "given-36c65c37b931",
+      "text": "Abdelaziz",
+      "weight": 1
+    },
+    {
+      "id": "given-2013f30550a1",
+      "text": "Abdelkarim",
+      "weight": 1
+    },
+    {
+      "id": "given-df354d5d897f",
+      "text": "Abdellatif",
+      "weight": 1
+    },
+    {
+      "id": "given-066eb2e1363e",
+      "text": "Abdelmajid",
+      "weight": 1
+    },
+    {
+      "id": "given-2bdbb5004c68",
+      "text": "Abdelmalik",
+      "weight": 1
+    },
+    {
+      "id": "given-5c2314201c3d",
+      "text": "Abdelqader",
+      "weight": 1
+    },
+    {
+      "id": "given-37fb6cb70ec5",
+      "text": "Abdelrahim",
+      "weight": 1
+    },
+    {
+      "id": "given-789ae9acc38f",
+      "text": "Abdelrahman",
+      "weight": 1
+    },
+    {
+      "id": "given-99f69efc15d4",
+      "text": "Abdelrazzaq",
+      "weight": 1
+    },
+    {
+      "id": "given-d5e4e3b4442d",
+      "text": "Abdessalam",
+      "weight": 1
+    },
+    {
+      "id": "given-06e2579d8637",
+      "text": "Abdessamad",
+      "weight": 1
+    },
+    {
+      "id": "given-3dac17b717ae",
+      "text": "Abdulwahid",
+      "weight": 1
+    },
+    {
+      "id": "given-cfa22487d713",
+      "text": "Adem",
+      "weight": 1
+    },
+    {
+      "id": "given-41f0dae57fff",
+      "text": "Ahmed",
+      "weight": 1
+    },
+    {
+      "id": "given-862ef3927a7c",
+      "text": "Ali",
+      "weight": 1
+    },
+    {
+      "id": "given-6eb52d8fea7b",
+      "text": "Amin",
+      "weight": 1
+    },
+    {
+      "id": "given-827756b07edf",
+      "text": "Amir",
+      "weight": 1
+    },
+    {
+      "id": "given-bcf2d0d0a8ec",
+      "text": "Anwar",
+      "weight": 1
+    },
+    {
+      "id": "given-a450dc694030",
+      "text": "Aref",
+      "weight": 1
+    },
+    {
+      "id": "given-f38579181f23",
+      "text": "Awad",
+      "weight": 1
+    },
+    {
+      "id": "given-2313789c33c2",
+      "text": "Bashir",
+      "weight": 1
+    },
+    {
+      "id": "given-dd5f1c084288",
+      "text": "Bilal",
+      "weight": 1
+    },
+    {
+      "id": "given-96e170cdaf95",
+      "text": "Dawud",
+      "weight": 1
+    },
+    {
+      "id": "given-924cfa5f9435",
+      "text": "Faraj",
+      "weight": 1
+    },
+    {
+      "id": "given-a4a0536731cf",
+      "text": "Farid",
+      "weight": 1
+    },
+    {
+      "id": "given-52ce1fbfb4d4",
+      "text": "Fathi",
+      "weight": 1
+    },
+    {
+      "id": "given-7fff2f15c142",
+      "text": "Fawzi",
+      "weight": 1
+    },
+    {
+      "id": "given-1df9f98127e7",
+      "text": "Habib",
+      "weight": 1
+    },
+    {
+      "id": "given-ed2ae9943abc",
+      "text": "Hafez",
+      "weight": 1
+    },
+    {
+      "id": "given-bb596544db18",
+      "text": "Haidar",
+      "weight": 1
+    },
+    {
+      "id": "given-98dcffc17413",
+      "text": "Hamed",
+      "weight": 1
+    },
+    {
+      "id": "given-e8dc7c05827f",
+      "text": "Hamid",
+      "weight": 1
+    },
+    {
+      "id": "given-26ac05af275d",
+      "text": "Hamza",
+      "weight": 1
+    },
+    {
+      "id": "given-195b4342e81c",
+      "text": "Harun",
+      "weight": 1
+    },
+    {
+      "id": "given-003925188bc7",
+      "text": "Hasan",
+      "weight": 1
+    },
+    {
+      "id": "given-d86634de73a7",
+      "text": "Hashim",
+      "weight": 1
+    },
+    {
+      "id": "given-0e8d84088926",
+      "text": "Majid",
+      "weight": 1
+    },
+    {
+      "id": "given-333cd67a01f9",
+      "text": "Hussein",
+      "weight": 1
+    },
+    {
+      "id": "given-8113a6dee6b3",
+      "text": "Ibrahim",
+      "weight": 1
+    },
+    {
+      "id": "given-311aaae36858",
+      "text": "Idris",
+      "weight": 1
+    },
+    {
+      "id": "given-129fafb19842",
+      "text": "Ismail",
+      "weight": 1
+    },
+    {
+      "id": "given-29e5d09d5ac1",
+      "text": "Jafar",
+      "weight": 1
+    },
+    {
+      "id": "given-dd0fc8e4c494",
+      "text": "Jalal",
+      "weight": 1
+    },
+    {
+      "id": "given-4e1a25b1aab1",
+      "text": "Jamal",
+      "weight": 1
+    },
+    {
+      "id": "given-14f6c3ccee47",
+      "text": "Jamil",
+      "weight": 1
+    },
+    {
+      "id": "given-d091eea64f65",
+      "text": "Kamal",
+      "weight": 1
+    },
+    {
+      "id": "given-f6c9942480df",
+      "text": "Karim",
+      "weight": 1
+    },
+    {
+      "id": "given-600d18310176",
+      "text": "Khaled",
+      "weight": 1
+    },
+    {
+      "id": "given-463ea31ff323",
+      "text": "Khalil",
+      "weight": 1
+    },
+    {
+      "id": "given-775053be0984",
+      "text": "Khidr",
+      "weight": 1
+    },
+    {
+      "id": "given-8613186aeca1",
+      "text": "Lutfi",
+      "weight": 1
+    },
+    {
+      "id": "given-39bb4d76bdc7",
+      "text": "Mahdi",
+      "weight": 1
+    },
+    {
+      "id": "given-d452757111dd",
+      "text": "Mahmud",
+      "weight": 1
+    },
+    {
+      "id": "given-a5ec03d3e184",
+      "text": "Mansur",
+      "weight": 1
+    },
+    {
+      "id": "given-6ce563a5975c",
+      "text": "Marwan",
+      "weight": 1
+    },
+    {
+      "id": "given-7d1b81402700",
+      "text": "Masud",
+      "weight": 1
+    },
+    {
+      "id": "given-71fd1eba032b",
+      "text": "Mohamed",
+      "weight": 1
+    },
+    {
+      "id": "given-1203ea126650",
+      "text": "Mubarak",
+      "weight": 1
+    },
+    {
+      "id": "given-8feeb37f9402",
+      "text": "Musa",
+      "weight": 1
+    },
+    {
+      "id": "given-e20ce6653386",
+      "text": "Mustafa",
+      "weight": 1
+    },
+    {
+      "id": "given-cc9e4baf5686",
+      "text": "Nabil",
+      "weight": 1
+    },
+    {
+      "id": "given-9a415f365215",
+      "text": "Nadir",
+      "weight": 1
+    },
+    {
+      "id": "given-f3389f667dfc",
+      "text": "Naim",
+      "weight": 1
+    },
+    {
+      "id": "given-4a21f2d7c2f7",
+      "text": "Nasir",
+      "weight": 1
+    },
+    {
+      "id": "given-8614ee33d6fd",
+      "text": "Nuri",
+      "weight": 1
+    },
+    {
+      "id": "given-2dd1283eb26c",
+      "text": "Omar",
+      "weight": 1
+    },
+    {
+      "id": "given-d6d9f785b11b",
+      "text": "Osman",
+      "weight": 1
+    },
+    {
+      "id": "given-3601dd5ea0ce",
+      "text": "Qasim",
+      "weight": 1
+    },
+    {
+      "id": "given-9005f31e4d12",
+      "text": "Rashid",
+      "weight": 1
+    },
+    {
+      "id": "given-4c91d3dd4e78",
+      "text": "Rauf",
+      "weight": 1
+    },
+    {
+      "id": "given-ace123820c6a",
+      "text": "Ridwan",
+      "weight": 1
+    },
+    {
+      "id": "given-14ae40b75aba",
+      "text": "Said",
+      "weight": 1
+    },
+    {
+      "id": "given-fdc3109d53c4",
+      "text": "Salih",
+      "weight": 1
+    },
+    {
+      "id": "given-4c18b08eb114",
+      "text": "Salim",
+      "weight": 1
+    },
+    {
+      "id": "given-043d721fb51c",
+      "text": "Salman",
+      "weight": 1
+    },
+    {
+      "id": "given-7c0ee1be290b",
+      "text": "Samir",
+      "weight": 1
+    },
+    {
+      "id": "given-524b30f818bf",
+      "text": "Sharif",
+      "weight": 1
+    },
+    {
+      "id": "given-f591c9192db0",
+      "text": "Suleiman",
+      "weight": 1
+    },
+    {
+      "id": "given-bbd9c4144431",
+      "text": "Taha",
+      "weight": 1
+    },
+    {
+      "id": "given-77c471a98cd5",
+      "text": "Tahir",
+      "weight": 1
+    },
+    {
+      "id": "given-b6201cf73aa9",
+      "text": "Talib",
+      "weight": 1
+    },
+    {
+      "id": "given-7ee18d7f51ad",
+      "text": "Tariq",
+      "weight": 1
+    },
+    {
+      "id": "given-089e792f3d09",
+      "text": "Tawfiq",
+      "weight": 1
+    },
+    {
+      "id": "given-f1f2fd287807",
+      "text": "Saad",
+      "weight": 1
+    },
+    {
+      "id": "given-a7bb67c3f191",
+      "text": "Yahya",
+      "weight": 1
+    },
+    {
+      "id": "given-8d823688d5d7",
+      "text": "Yasin",
+      "weight": 1
+    },
+    {
+      "id": "given-dd2ed1d85060",
+      "text": "Yusuf",
+      "weight": 1
+    },
+    {
+      "id": "given-861659c6da17",
+      "text": "Zakaria",
+      "weight": 1
+    }
+  ],
+  "familyNames": [],
+  "patronymics": [
+    {
+      "id": "father-given-2b3ced30db67",
+      "text": "Abbas",
+      "weight": 1
+    },
+    {
+      "id": "father-given-c4496272db2a",
+      "text": "Abdallah",
+      "weight": 1
+    },
+    {
+      "id": "father-given-36c65c37b931",
+      "text": "Abdelaziz",
+      "weight": 1
+    },
+    {
+      "id": "father-given-2013f30550a1",
+      "text": "Abdelkarim",
+      "weight": 1
+    },
+    {
+      "id": "father-given-df354d5d897f",
+      "text": "Abdellatif",
+      "weight": 1
+    },
+    {
+      "id": "father-given-066eb2e1363e",
+      "text": "Abdelmajid",
+      "weight": 1
+    },
+    {
+      "id": "father-given-2bdbb5004c68",
+      "text": "Abdelmalik",
+      "weight": 1
+    },
+    {
+      "id": "father-given-5c2314201c3d",
+      "text": "Abdelqader",
+      "weight": 1
+    },
+    {
+      "id": "father-given-37fb6cb70ec5",
+      "text": "Abdelrahim",
+      "weight": 1
+    },
+    {
+      "id": "father-given-789ae9acc38f",
+      "text": "Abdelrahman",
+      "weight": 1
+    },
+    {
+      "id": "father-given-99f69efc15d4",
+      "text": "Abdelrazzaq",
+      "weight": 1
+    },
+    {
+      "id": "father-given-d5e4e3b4442d",
+      "text": "Abdessalam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-06e2579d8637",
+      "text": "Abdessamad",
+      "weight": 1
+    },
+    {
+      "id": "father-given-3dac17b717ae",
+      "text": "Abdulwahid",
+      "weight": 1
+    },
+    {
+      "id": "father-given-cfa22487d713",
+      "text": "Adem",
+      "weight": 1
+    },
+    {
+      "id": "father-given-41f0dae57fff",
+      "text": "Ahmed",
+      "weight": 1
+    },
+    {
+      "id": "father-given-862ef3927a7c",
+      "text": "Ali",
+      "weight": 1
+    },
+    {
+      "id": "father-given-6eb52d8fea7b",
+      "text": "Amin",
+      "weight": 1
+    },
+    {
+      "id": "father-given-827756b07edf",
+      "text": "Amir",
+      "weight": 1
+    },
+    {
+      "id": "father-given-bcf2d0d0a8ec",
+      "text": "Anwar",
+      "weight": 1
+    },
+    {
+      "id": "father-given-a450dc694030",
+      "text": "Aref",
+      "weight": 1
+    },
+    {
+      "id": "father-given-f38579181f23",
+      "text": "Awad",
+      "weight": 1
+    },
+    {
+      "id": "father-given-2313789c33c2",
+      "text": "Bashir",
+      "weight": 1
+    },
+    {
+      "id": "father-given-dd5f1c084288",
+      "text": "Bilal",
+      "weight": 1
+    },
+    {
+      "id": "father-given-96e170cdaf95",
+      "text": "Dawud",
+      "weight": 1
+    },
+    {
+      "id": "father-given-924cfa5f9435",
+      "text": "Faraj",
+      "weight": 1
+    },
+    {
+      "id": "father-given-a4a0536731cf",
+      "text": "Farid",
+      "weight": 1
+    },
+    {
+      "id": "father-given-52ce1fbfb4d4",
+      "text": "Fathi",
+      "weight": 1
+    },
+    {
+      "id": "father-given-7fff2f15c142",
+      "text": "Fawzi",
+      "weight": 1
+    },
+    {
+      "id": "father-given-1df9f98127e7",
+      "text": "Habib",
+      "weight": 1
+    },
+    {
+      "id": "father-given-ed2ae9943abc",
+      "text": "Hafez",
+      "weight": 1
+    },
+    {
+      "id": "father-given-bb596544db18",
+      "text": "Haidar",
+      "weight": 1
+    },
+    {
+      "id": "father-given-98dcffc17413",
+      "text": "Hamed",
+      "weight": 1
+    },
+    {
+      "id": "father-given-e8dc7c05827f",
+      "text": "Hamid",
+      "weight": 1
+    },
+    {
+      "id": "father-given-26ac05af275d",
+      "text": "Hamza",
+      "weight": 1
+    },
+    {
+      "id": "father-given-195b4342e81c",
+      "text": "Harun",
+      "weight": 1
+    },
+    {
+      "id": "father-given-003925188bc7",
+      "text": "Hasan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-d86634de73a7",
+      "text": "Hashim",
+      "weight": 1
+    },
+    {
+      "id": "father-given-0e8d84088926",
+      "text": "Majid",
+      "weight": 1
+    },
+    {
+      "id": "father-given-333cd67a01f9",
+      "text": "Hussein",
+      "weight": 1
+    },
+    {
+      "id": "father-given-8113a6dee6b3",
+      "text": "Ibrahim",
+      "weight": 1
+    },
+    {
+      "id": "father-given-311aaae36858",
+      "text": "Idris",
+      "weight": 1
+    },
+    {
+      "id": "father-given-129fafb19842",
+      "text": "Ismail",
+      "weight": 1
+    },
+    {
+      "id": "father-given-29e5d09d5ac1",
+      "text": "Jafar",
+      "weight": 1
+    },
+    {
+      "id": "father-given-dd0fc8e4c494",
+      "text": "Jalal",
+      "weight": 1
+    },
+    {
+      "id": "father-given-4e1a25b1aab1",
+      "text": "Jamal",
+      "weight": 1
+    },
+    {
+      "id": "father-given-14f6c3ccee47",
+      "text": "Jamil",
+      "weight": 1
+    },
+    {
+      "id": "father-given-d091eea64f65",
+      "text": "Kamal",
+      "weight": 1
+    },
+    {
+      "id": "father-given-f6c9942480df",
+      "text": "Karim",
+      "weight": 1
+    },
+    {
+      "id": "father-given-600d18310176",
+      "text": "Khaled",
+      "weight": 1
+    },
+    {
+      "id": "father-given-463ea31ff323",
+      "text": "Khalil",
+      "weight": 1
+    },
+    {
+      "id": "father-given-775053be0984",
+      "text": "Khidr",
+      "weight": 1
+    },
+    {
+      "id": "father-given-8613186aeca1",
+      "text": "Lutfi",
+      "weight": 1
+    },
+    {
+      "id": "father-given-39bb4d76bdc7",
+      "text": "Mahdi",
+      "weight": 1
+    },
+    {
+      "id": "father-given-d452757111dd",
+      "text": "Mahmud",
+      "weight": 1
+    },
+    {
+      "id": "father-given-a5ec03d3e184",
+      "text": "Mansur",
+      "weight": 1
+    },
+    {
+      "id": "father-given-6ce563a5975c",
+      "text": "Marwan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-7d1b81402700",
+      "text": "Masud",
+      "weight": 1
+    },
+    {
+      "id": "father-given-71fd1eba032b",
+      "text": "Mohamed",
+      "weight": 1
+    },
+    {
+      "id": "father-given-1203ea126650",
+      "text": "Mubarak",
+      "weight": 1
+    },
+    {
+      "id": "father-given-8feeb37f9402",
+      "text": "Musa",
+      "weight": 1
+    },
+    {
+      "id": "father-given-e20ce6653386",
+      "text": "Mustafa",
+      "weight": 1
+    },
+    {
+      "id": "father-given-cc9e4baf5686",
+      "text": "Nabil",
+      "weight": 1
+    },
+    {
+      "id": "father-given-9a415f365215",
+      "text": "Nadir",
+      "weight": 1
+    },
+    {
+      "id": "father-given-f3389f667dfc",
+      "text": "Naim",
+      "weight": 1
+    },
+    {
+      "id": "father-given-4a21f2d7c2f7",
+      "text": "Nasir",
+      "weight": 1
+    },
+    {
+      "id": "father-given-8614ee33d6fd",
+      "text": "Nuri",
+      "weight": 1
+    },
+    {
+      "id": "father-given-2dd1283eb26c",
+      "text": "Omar",
+      "weight": 1
+    },
+    {
+      "id": "father-given-d6d9f785b11b",
+      "text": "Osman",
+      "weight": 1
+    },
+    {
+      "id": "father-given-3601dd5ea0ce",
+      "text": "Qasim",
+      "weight": 1
+    },
+    {
+      "id": "father-given-9005f31e4d12",
+      "text": "Rashid",
+      "weight": 1
+    },
+    {
+      "id": "father-given-4c91d3dd4e78",
+      "text": "Rauf",
+      "weight": 1
+    },
+    {
+      "id": "father-given-ace123820c6a",
+      "text": "Ridwan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-14ae40b75aba",
+      "text": "Said",
+      "weight": 1
+    },
+    {
+      "id": "father-given-fdc3109d53c4",
+      "text": "Salih",
+      "weight": 1
+    },
+    {
+      "id": "father-given-4c18b08eb114",
+      "text": "Salim",
+      "weight": 1
+    },
+    {
+      "id": "father-given-043d721fb51c",
+      "text": "Salman",
+      "weight": 1
+    },
+    {
+      "id": "father-given-7c0ee1be290b",
+      "text": "Samir",
+      "weight": 1
+    },
+    {
+      "id": "father-given-524b30f818bf",
+      "text": "Sharif",
+      "weight": 1
+    },
+    {
+      "id": "father-given-f591c9192db0",
+      "text": "Suleiman",
+      "weight": 1
+    },
+    {
+      "id": "father-given-bbd9c4144431",
+      "text": "Taha",
+      "weight": 1
+    },
+    {
+      "id": "father-given-77c471a98cd5",
+      "text": "Tahir",
+      "weight": 1
+    },
+    {
+      "id": "father-given-b6201cf73aa9",
+      "text": "Talib",
+      "weight": 1
+    },
+    {
+      "id": "father-given-7ee18d7f51ad",
+      "text": "Tariq",
+      "weight": 1
+    },
+    {
+      "id": "father-given-089e792f3d09",
+      "text": "Tawfiq",
+      "weight": 1
+    },
+    {
+      "id": "father-given-f1f2fd287807",
+      "text": "Saad",
+      "weight": 1
+    },
+    {
+      "id": "father-given-a7bb67c3f191",
+      "text": "Yahya",
+      "weight": 1
+    },
+    {
+      "id": "father-given-8d823688d5d7",
+      "text": "Yasin",
+      "weight": 1
+    },
+    {
+      "id": "father-given-dd2ed1d85060",
+      "text": "Yusuf",
+      "weight": 1
+    },
+    {
+      "id": "father-given-861659c6da17",
+      "text": "Zakaria",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 8010
+  }
+}

@@ -1,0 +1,1062 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "french",
+  "label": "French-language personnel",
+  "language": "fr",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-family",
+    "componentOrder": [
+      "given",
+      "family"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "French-language metropolitan and Francophone European naming context, also selectable for French Canadian personnel. Colonial formations must choose an appropriate cultural pool explicitly.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 100
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 100,
+    "secondComponent": 100
+  },
+  "completeness": "target-met",
+  "givenNames": [
+    {
+      "id": "given-56ec4fee9f20",
+      "text": "Jean",
+      "weight": 3
+    },
+    {
+      "id": "given-fd9c6c387deb",
+      "text": "Pierre",
+      "weight": 3
+    },
+    {
+      "id": "given-9293e16b8e01",
+      "text": "Louis",
+      "weight": 3
+    },
+    {
+      "id": "given-97dd6cc01603",
+      "text": "Henri",
+      "weight": 3
+    },
+    {
+      "id": "given-7d918307f081",
+      "text": "André",
+      "weight": 3
+    },
+    {
+      "id": "given-818b5cc5f21d",
+      "text": "Paul",
+      "weight": 3
+    },
+    {
+      "id": "given-cf9f59045898",
+      "text": "Marcel",
+      "weight": 1
+    },
+    {
+      "id": "given-1d5cc3f69b89",
+      "text": "René",
+      "weight": 1
+    },
+    {
+      "id": "given-893b1f8fc0fc",
+      "text": "Roger",
+      "weight": 1
+    },
+    {
+      "id": "given-b1f98647d15c",
+      "text": "Georges",
+      "weight": 1
+    },
+    {
+      "id": "given-fb2a4bf234b8",
+      "text": "Lucien",
+      "weight": 1
+    },
+    {
+      "id": "given-679946faad78",
+      "text": "Maurice",
+      "weight": 1
+    },
+    {
+      "id": "given-c43139196d57",
+      "text": "Charles",
+      "weight": 1
+    },
+    {
+      "id": "given-2238dd61a1bf",
+      "text": "Robert",
+      "weight": 1
+    },
+    {
+      "id": "given-78a1a1dae4e5",
+      "text": "Joseph",
+      "weight": 1
+    },
+    {
+      "id": "given-afb4b674db82",
+      "text": "Émile",
+      "weight": 1
+    },
+    {
+      "id": "given-a6b712b5ebb8",
+      "text": "Léon",
+      "weight": 1
+    },
+    {
+      "id": "given-97d3ff664286",
+      "text": "Eugène",
+      "weight": 1
+    },
+    {
+      "id": "given-7f74d7ceb627",
+      "text": "Albert",
+      "weight": 1
+    },
+    {
+      "id": "given-e05f92ab4554",
+      "text": "Auguste",
+      "weight": 1
+    },
+    {
+      "id": "given-9e9619793cc0",
+      "text": "Jules",
+      "weight": 1
+    },
+    {
+      "id": "given-9ca1e827604b",
+      "text": "Gaston",
+      "weight": 1
+    },
+    {
+      "id": "given-ffb595919dd6",
+      "text": "Raymond",
+      "weight": 1
+    },
+    {
+      "id": "given-338eb50cb7f2",
+      "text": "François",
+      "weight": 1
+    },
+    {
+      "id": "given-d60a5068ed40",
+      "text": "Fernand",
+      "weight": 1
+    },
+    {
+      "id": "given-6aa5c501d58c",
+      "text": "Ernest",
+      "weight": 1
+    },
+    {
+      "id": "given-aa75c6a3ca4b",
+      "text": "Alphonse",
+      "weight": 1
+    },
+    {
+      "id": "given-165e4b848ee1",
+      "text": "Edmond",
+      "weight": 1
+    },
+    {
+      "id": "given-c793518eb0aa",
+      "text": "Édouard",
+      "weight": 1
+    },
+    {
+      "id": "given-d64757106605",
+      "text": "Camille",
+      "weight": 1
+    },
+    {
+      "id": "given-587ff9b736ed",
+      "text": "Armand",
+      "weight": 1
+    },
+    {
+      "id": "given-61d317b4dace",
+      "text": "Adrien",
+      "weight": 1
+    },
+    {
+      "id": "given-6c00e6ff6ea6",
+      "text": "Victor",
+      "weight": 1
+    },
+    {
+      "id": "given-48e556d153eb",
+      "text": "Félix",
+      "weight": 1
+    },
+    {
+      "id": "given-260f7f68928c",
+      "text": "Antoine",
+      "weight": 1
+    },
+    {
+      "id": "given-13e15721c9d4",
+      "text": "Alexandre",
+      "weight": 1
+    },
+    {
+      "id": "given-e88cfa8fbf9a",
+      "text": "Alfred",
+      "weight": 1
+    },
+    {
+      "id": "given-52b67b60260d",
+      "text": "Arthur",
+      "weight": 1
+    },
+    {
+      "id": "given-e5bc616cf270",
+      "text": "Étienne",
+      "weight": 1
+    },
+    {
+      "id": "given-9759b22e3ea6",
+      "text": "Julien",
+      "weight": 1
+    },
+    {
+      "id": "given-a19c6a2318f6",
+      "text": "Gustave",
+      "weight": 1
+    },
+    {
+      "id": "given-097a028b05ca",
+      "text": "Raoul",
+      "weight": 1
+    },
+    {
+      "id": "given-9679932e35e1",
+      "text": "Léonce",
+      "weight": 1
+    },
+    {
+      "id": "given-d70023ae4cbb",
+      "text": "Léopold",
+      "weight": 1
+    },
+    {
+      "id": "given-eb32aea5b038",
+      "text": "Octave",
+      "weight": 1
+    },
+    {
+      "id": "given-ca66a852a9e9",
+      "text": "Oscar",
+      "weight": 1
+    },
+    {
+      "id": "given-42434654afcd",
+      "text": "Philippe",
+      "weight": 1
+    },
+    {
+      "id": "given-a19676b333e3",
+      "text": "Prosper",
+      "weight": 1
+    },
+    {
+      "id": "given-8f551f590254",
+      "text": "Théodore",
+      "weight": 1
+    },
+    {
+      "id": "given-a9d2141d00ec",
+      "text": "Théophile",
+      "weight": 1
+    },
+    {
+      "id": "given-733a10652b91",
+      "text": "Urbain",
+      "weight": 1
+    },
+    {
+      "id": "given-f44c4b0766fc",
+      "text": "Vincent",
+      "weight": 1
+    },
+    {
+      "id": "given-aff5531dc228",
+      "text": "Yves",
+      "weight": 1
+    },
+    {
+      "id": "given-79675d2e12b5",
+      "text": "Jacques",
+      "weight": 1
+    },
+    {
+      "id": "given-b7ba366af35c",
+      "text": "Michel",
+      "weight": 1
+    },
+    {
+      "id": "given-0615570f9ea1",
+      "text": "Claude",
+      "weight": 1
+    },
+    {
+      "id": "given-3a4d5b86cfa2",
+      "text": "Bernard",
+      "weight": 1
+    },
+    {
+      "id": "given-58dcf618906a",
+      "text": "Denis",
+      "weight": 1
+    },
+    {
+      "id": "given-8ea5e27693aa",
+      "text": "Élie",
+      "weight": 1
+    },
+    {
+      "id": "given-b5980fcf9c5a",
+      "text": "Éloi",
+      "weight": 1
+    },
+    {
+      "id": "given-765e2b708240",
+      "text": "Émeric",
+      "weight": 1
+    },
+    {
+      "id": "given-eee64045e523",
+      "text": "Évariste",
+      "weight": 1
+    },
+    {
+      "id": "given-40291f07f5f0",
+      "text": "Achille",
+      "weight": 1
+    },
+    {
+      "id": "given-0a729e233280",
+      "text": "Adolphe",
+      "weight": 1
+    },
+    {
+      "id": "given-d3f8ff5e41d3",
+      "text": "Aimé",
+      "weight": 1
+    },
+    {
+      "id": "given-d3afd3625a63",
+      "text": "Alain",
+      "weight": 1
+    },
+    {
+      "id": "given-d6a7304069f9",
+      "text": "Alexis",
+      "weight": 1
+    },
+    {
+      "id": "given-58aae67fc851",
+      "text": "Ambroise",
+      "weight": 1
+    },
+    {
+      "id": "given-06aca679906a",
+      "text": "Anatole",
+      "weight": 1
+    },
+    {
+      "id": "given-4025ca84e234",
+      "text": "Anselme",
+      "weight": 1
+    },
+    {
+      "id": "given-d6cb9a6f0f8e",
+      "text": "Aristide",
+      "weight": 1
+    },
+    {
+      "id": "given-2a58b0cd1d8f",
+      "text": "Arsène",
+      "weight": 1
+    },
+    {
+      "id": "given-15cc3b299442",
+      "text": "Baptiste",
+      "weight": 1
+    },
+    {
+      "id": "given-df853a7dee4e",
+      "text": "Benoît",
+      "weight": 1
+    },
+    {
+      "id": "given-f5672ac0a246",
+      "text": "Célestin",
+      "weight": 1
+    },
+    {
+      "id": "given-975293335ad0",
+      "text": "Clément",
+      "weight": 1
+    },
+    {
+      "id": "given-8ab253e4aab6",
+      "text": "Constant",
+      "weight": 1
+    },
+    {
+      "id": "given-c2637094a539",
+      "text": "Damien",
+      "weight": 1
+    },
+    {
+      "id": "given-db65b527f9f0",
+      "text": "Désiré",
+      "weight": 1
+    },
+    {
+      "id": "given-104732f44fb5",
+      "text": "Eustache",
+      "weight": 1
+    },
+    {
+      "id": "given-812208b0f3ed",
+      "text": "Firmin",
+      "weight": 1
+    },
+    {
+      "id": "given-d547d499b04e",
+      "text": "Florent",
+      "weight": 1
+    },
+    {
+      "id": "given-0c030df5a4e7",
+      "text": "Gabriel",
+      "weight": 1
+    },
+    {
+      "id": "given-7b1fc2a1d52e",
+      "text": "Germain",
+      "weight": 1
+    },
+    {
+      "id": "given-00893dc99c34",
+      "text": "Gilbert",
+      "weight": 1
+    },
+    {
+      "id": "given-d53afea4f412",
+      "text": "Guillaume",
+      "weight": 1
+    },
+    {
+      "id": "given-f741ee60bdd5",
+      "text": "Hippolyte",
+      "weight": 1
+    },
+    {
+      "id": "given-652f213d443c",
+      "text": "Hubert",
+      "weight": 1
+    },
+    {
+      "id": "given-b763b99dcc04",
+      "text": "Ignace",
+      "weight": 1
+    },
+    {
+      "id": "given-1379074e9d88",
+      "text": "Isidore",
+      "weight": 1
+    },
+    {
+      "id": "given-6c547ac63bf5",
+      "text": "Joachim",
+      "weight": 1
+    },
+    {
+      "id": "given-50e220f0176c",
+      "text": "Lazare",
+      "weight": 1
+    },
+    {
+      "id": "given-84a1755d7408",
+      "text": "Léandre",
+      "weight": 1
+    },
+    {
+      "id": "given-c347565137a6",
+      "text": "Maxime",
+      "weight": 1
+    },
+    {
+      "id": "given-5dbdb3cffc3b",
+      "text": "Nestor",
+      "weight": 1
+    },
+    {
+      "id": "given-554aa135e9b5",
+      "text": "Norbert",
+      "weight": 1
+    },
+    {
+      "id": "given-44c550b0e0f3",
+      "text": "Pascal",
+      "weight": 1
+    },
+    {
+      "id": "given-558ed1aa33dc",
+      "text": "Rémy",
+      "weight": 1
+    },
+    {
+      "id": "given-e04ea52834cc",
+      "text": "Sylvain",
+      "weight": 1
+    },
+    {
+      "id": "given-21b1267526ba",
+      "text": "Valentin",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-39d3a2e969b3",
+      "text": "Martin",
+      "weight": 3
+    },
+    {
+      "id": "family-3a4d5b86cfa2",
+      "text": "Bernard",
+      "weight": 3
+    },
+    {
+      "id": "family-5dfcf9ef1fb1",
+      "text": "Thomas",
+      "weight": 1
+    },
+    {
+      "id": "family-c03a43a858c1",
+      "text": "Petit",
+      "weight": 3
+    },
+    {
+      "id": "family-2238dd61a1bf",
+      "text": "Robert",
+      "weight": 1
+    },
+    {
+      "id": "family-1deb0a3b8675",
+      "text": "Richard",
+      "weight": 1
+    },
+    {
+      "id": "family-15664d36cc71",
+      "text": "Durand",
+      "weight": 3
+    },
+    {
+      "id": "family-53739d49d32b",
+      "text": "Dubois",
+      "weight": 3
+    },
+    {
+      "id": "family-593ee8628ec7",
+      "text": "Moreau",
+      "weight": 1
+    },
+    {
+      "id": "family-009069811c40",
+      "text": "Laurent",
+      "weight": 1
+    },
+    {
+      "id": "family-7c6e1bf16286",
+      "text": "Simon",
+      "weight": 1
+    },
+    {
+      "id": "family-b7ba366af35c",
+      "text": "Michel",
+      "weight": 1
+    },
+    {
+      "id": "family-ff7106b33841",
+      "text": "Lefebvre",
+      "weight": 1
+    },
+    {
+      "id": "family-e054bd687e31",
+      "text": "Leroy",
+      "weight": 1
+    },
+    {
+      "id": "family-c918eb6accf7",
+      "text": "Roux",
+      "weight": 1
+    },
+    {
+      "id": "family-a6b54c20a7b9",
+      "text": "David",
+      "weight": 1
+    },
+    {
+      "id": "family-eeb270160778",
+      "text": "Bertrand",
+      "weight": 1
+    },
+    {
+      "id": "family-b20e0d9c11ce",
+      "text": "Morel",
+      "weight": 1
+    },
+    {
+      "id": "family-71a1f722960c",
+      "text": "Fournier",
+      "weight": 1
+    },
+    {
+      "id": "family-f7268b0c0520",
+      "text": "Girard",
+      "weight": 1
+    },
+    {
+      "id": "family-6ae176002ebb",
+      "text": "Bonnet",
+      "weight": 1
+    },
+    {
+      "id": "family-3bde3a599960",
+      "text": "Dupont",
+      "weight": 1
+    },
+    {
+      "id": "family-12a34df63a40",
+      "text": "Lambert",
+      "weight": 1
+    },
+    {
+      "id": "family-e41319acc03f",
+      "text": "Fontaine",
+      "weight": 1
+    },
+    {
+      "id": "family-f191f2547397",
+      "text": "Rousseau",
+      "weight": 1
+    },
+    {
+      "id": "family-f44c4b0766fc",
+      "text": "Vincent",
+      "weight": 1
+    },
+    {
+      "id": "family-5cc7a0b43c82",
+      "text": "Muller",
+      "weight": 1
+    },
+    {
+      "id": "family-867720be1327",
+      "text": "Lefèvre",
+      "weight": 1
+    },
+    {
+      "id": "family-b41b5959337d",
+      "text": "Faure",
+      "weight": 1
+    },
+    {
+      "id": "family-7d918307f081",
+      "text": "André",
+      "weight": 1
+    },
+    {
+      "id": "family-310a8ffaf128",
+      "text": "Mercier",
+      "weight": 1
+    },
+    {
+      "id": "family-a3bdd3c553e0",
+      "text": "Blanc",
+      "weight": 1
+    },
+    {
+      "id": "family-0bf714daf799",
+      "text": "Guérin",
+      "weight": 1
+    },
+    {
+      "id": "family-beee5b80ee60",
+      "text": "Boyer",
+      "weight": 1
+    },
+    {
+      "id": "family-c981bf16fa48",
+      "text": "Garnier",
+      "weight": 1
+    },
+    {
+      "id": "family-e8808b265c37",
+      "text": "Chevalier",
+      "weight": 1
+    },
+    {
+      "id": "family-338eb50cb7f2",
+      "text": "François",
+      "weight": 1
+    },
+    {
+      "id": "family-50156cce4a9b",
+      "text": "Legrand",
+      "weight": 1
+    },
+    {
+      "id": "family-9ecaa33823fd",
+      "text": "Gauthier",
+      "weight": 1
+    },
+    {
+      "id": "family-2c3aaefea826",
+      "text": "Garcia",
+      "weight": 1
+    },
+    {
+      "id": "family-9dd2d2bb96b8",
+      "text": "Perrin",
+      "weight": 1
+    },
+    {
+      "id": "family-b4eb71306c22",
+      "text": "Robin",
+      "weight": 1
+    },
+    {
+      "id": "family-975293335ad0",
+      "text": "Clément",
+      "weight": 1
+    },
+    {
+      "id": "family-70161fa53c1e",
+      "text": "Morin",
+      "weight": 1
+    },
+    {
+      "id": "family-35298781dc6e",
+      "text": "Nicolas",
+      "weight": 1
+    },
+    {
+      "id": "family-a950f30a7250",
+      "text": "Henry",
+      "weight": 1
+    },
+    {
+      "id": "family-d9aac135b51d",
+      "text": "Roussel",
+      "weight": 1
+    },
+    {
+      "id": "family-f5e088d29801",
+      "text": "Mathieu",
+      "weight": 1
+    },
+    {
+      "id": "family-10ac364a17fb",
+      "text": "Gautier",
+      "weight": 1
+    },
+    {
+      "id": "family-7693f520c854",
+      "text": "Masson",
+      "weight": 1
+    },
+    {
+      "id": "family-deb2dec6ead6",
+      "text": "Marchand",
+      "weight": 1
+    },
+    {
+      "id": "family-f1cd1f25dde2",
+      "text": "Duval",
+      "weight": 1
+    },
+    {
+      "id": "family-58dcf618906a",
+      "text": "Denis",
+      "weight": 1
+    },
+    {
+      "id": "family-11413c0bab7c",
+      "text": "Dumont",
+      "weight": 1
+    },
+    {
+      "id": "family-ba64eb8b058b",
+      "text": "Marie",
+      "weight": 1
+    },
+    {
+      "id": "family-3c9d1f3dd4b3",
+      "text": "Lemaire",
+      "weight": 1
+    },
+    {
+      "id": "family-0b6e6252a41e",
+      "text": "Noël",
+      "weight": 1
+    },
+    {
+      "id": "family-876fdfa1d115",
+      "text": "Meyer",
+      "weight": 1
+    },
+    {
+      "id": "family-c6c337489fb5",
+      "text": "Dufour",
+      "weight": 1
+    },
+    {
+      "id": "family-fd85a3c39ab5",
+      "text": "Meunier",
+      "weight": 1
+    },
+    {
+      "id": "family-a1ae222c0459",
+      "text": "Brun",
+      "weight": 1
+    },
+    {
+      "id": "family-6d7e7452ea45",
+      "text": "Blanchard",
+      "weight": 1
+    },
+    {
+      "id": "family-ff271523b21f",
+      "text": "Giraud",
+      "weight": 1
+    },
+    {
+      "id": "family-64c80258814c",
+      "text": "Joly",
+      "weight": 1
+    },
+    {
+      "id": "family-5d9369e28554",
+      "text": "Rivière",
+      "weight": 1
+    },
+    {
+      "id": "family-52d7d8604bf7",
+      "text": "Lucas",
+      "weight": 1
+    },
+    {
+      "id": "family-904a6c147d6b",
+      "text": "Brunet",
+      "weight": 1
+    },
+    {
+      "id": "family-16fe7ce8541a",
+      "text": "Gaillard",
+      "weight": 1
+    },
+    {
+      "id": "family-d7a24a1bdde8",
+      "text": "Barbier",
+      "weight": 1
+    },
+    {
+      "id": "family-6b0a29453585",
+      "text": "Arnaud",
+      "weight": 1
+    },
+    {
+      "id": "family-1cd8e5f4826e",
+      "text": "Martinez",
+      "weight": 1
+    },
+    {
+      "id": "family-f33e2bf3956a",
+      "text": "Gérard",
+      "weight": 1
+    },
+    {
+      "id": "family-8ec195e100fe",
+      "text": "Roche",
+      "weight": 1
+    },
+    {
+      "id": "family-b8701337cfb5",
+      "text": "Renard",
+      "weight": 1
+    },
+    {
+      "id": "family-1c1951e92294",
+      "text": "Schmitt",
+      "weight": 1
+    },
+    {
+      "id": "family-e3058ee8c04e",
+      "text": "Roy",
+      "weight": 1
+    },
+    {
+      "id": "family-5ad3789d17f7",
+      "text": "Leroux",
+      "weight": 1
+    },
+    {
+      "id": "family-74a66e2d94b8",
+      "text": "Colin",
+      "weight": 1
+    },
+    {
+      "id": "family-09b1139dc319",
+      "text": "Vidal",
+      "weight": 1
+    },
+    {
+      "id": "family-e791f44e1fab",
+      "text": "Caron",
+      "weight": 1
+    },
+    {
+      "id": "family-6a4e50b2d65d",
+      "text": "Picard",
+      "weight": 1
+    },
+    {
+      "id": "family-893b1f8fc0fc",
+      "text": "Roger",
+      "weight": 1
+    },
+    {
+      "id": "family-3589b92001bb",
+      "text": "Fabre",
+      "weight": 1
+    },
+    {
+      "id": "family-e1de7343dd90",
+      "text": "Aubert",
+      "weight": 1
+    },
+    {
+      "id": "family-c93ca7046388",
+      "text": "Lemoine",
+      "weight": 1
+    },
+    {
+      "id": "family-8523e8c62e11",
+      "text": "Renaud",
+      "weight": 1
+    },
+    {
+      "id": "family-6536006b868f",
+      "text": "Dumas",
+      "weight": 1
+    },
+    {
+      "id": "family-8b1f1f1bbf9d",
+      "text": "Lacroix",
+      "weight": 1
+    },
+    {
+      "id": "family-02850efdf10f",
+      "text": "Olivier",
+      "weight": 1
+    },
+    {
+      "id": "family-42434654afcd",
+      "text": "Philippe",
+      "weight": 1
+    },
+    {
+      "id": "family-47b8a4733e97",
+      "text": "Bourgeois",
+      "weight": 1
+    },
+    {
+      "id": "family-fd9c6c387deb",
+      "text": "Pierre",
+      "weight": 1
+    },
+    {
+      "id": "family-df853a7dee4e",
+      "text": "Benoît",
+      "weight": 1
+    },
+    {
+      "id": "family-3ae8144bc946",
+      "text": "Rey",
+      "weight": 1
+    },
+    {
+      "id": "family-a4a691b7cac1",
+      "text": "Leclerc",
+      "weight": 1
+    },
+    {
+      "id": "family-44baeeafd629",
+      "text": "Payet",
+      "weight": 1
+    },
+    {
+      "id": "family-d599842d3a16",
+      "text": "Rolland",
+      "weight": 1
+    },
+    {
+      "id": "family-e6928b1b3a14",
+      "text": "Leclercq",
+      "weight": 1
+    },
+    {
+      "id": "family-d53afea4f412",
+      "text": "Guillaume",
+      "weight": 1
+    },
+    {
+      "id": "family-2ac9a470216c",
+      "text": "Lecomte",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 9987
+  }
+}

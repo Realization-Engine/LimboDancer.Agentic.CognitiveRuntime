@@ -1,0 +1,1062 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "japanese",
+  "label": "Japanese, romanized",
+  "language": "ja-Latn",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "family-given",
+    "componentOrder": [
+      "family",
+      "given"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "Romanized Japanese military-age male name candidates, using macrons and family-first order. Kanji are intentionally not invented: a romanized name can have several written forms. Do not treat spelling as a historical attestation.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 100
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 100,
+    "secondComponent": 100
+  },
+  "completeness": "target-met",
+  "givenNames": [
+    {
+      "id": "given-bf9e3219c7c6",
+      "text": "Ichirō",
+      "weight": 3
+    },
+    {
+      "id": "given-32baa67eb2cb",
+      "text": "Jirō",
+      "weight": 1
+    },
+    {
+      "id": "given-eb2121a676b9",
+      "text": "Saburō",
+      "weight": 3
+    },
+    {
+      "id": "given-3f0301096caa",
+      "text": "Shirō",
+      "weight": 1
+    },
+    {
+      "id": "given-6364ad9ad79e",
+      "text": "Gorō",
+      "weight": 1
+    },
+    {
+      "id": "given-ba3fed522728",
+      "text": "Rokurō",
+      "weight": 1
+    },
+    {
+      "id": "given-1ba089ba8007",
+      "text": "Shichirō",
+      "weight": 1
+    },
+    {
+      "id": "given-da723aa7b330",
+      "text": "Hachirō",
+      "weight": 1
+    },
+    {
+      "id": "given-491b4ee2e17a",
+      "text": "Kurō",
+      "weight": 1
+    },
+    {
+      "id": "given-99c1eaf28ab7",
+      "text": "Jūrō",
+      "weight": 1
+    },
+    {
+      "id": "given-059cea0ffea0",
+      "text": "Tarō",
+      "weight": 3
+    },
+    {
+      "id": "given-dce580956e88",
+      "text": "Kōtarō",
+      "weight": 1
+    },
+    {
+      "id": "given-f84b5d324496",
+      "text": "Kentarō",
+      "weight": 1
+    },
+    {
+      "id": "given-030c93a52a0d",
+      "text": "Shintarō",
+      "weight": 1
+    },
+    {
+      "id": "given-be663a4ea0c4",
+      "text": "Yōtarō",
+      "weight": 1
+    },
+    {
+      "id": "given-80d2f747c36e",
+      "text": "Ryūtarō",
+      "weight": 1
+    },
+    {
+      "id": "given-c6e0dab01dc1",
+      "text": "Heitarō",
+      "weight": 1
+    },
+    {
+      "id": "given-b1694e60fa06",
+      "text": "Keitarō",
+      "weight": 1
+    },
+    {
+      "id": "given-0269bc80fe65",
+      "text": "Seitarō",
+      "weight": 1
+    },
+    {
+      "id": "given-1eccdcf42830",
+      "text": "Eitarō",
+      "weight": 1
+    },
+    {
+      "id": "given-24ff64af8c82",
+      "text": "Shōtarō",
+      "weight": 1
+    },
+    {
+      "id": "given-66f9b9a9b7fd",
+      "text": "Kichitarō",
+      "weight": 1
+    },
+    {
+      "id": "given-c0d9494d1d5c",
+      "text": "Kanjirō",
+      "weight": 1
+    },
+    {
+      "id": "given-c11dc30a7c08",
+      "text": "Kenzō",
+      "weight": 1
+    },
+    {
+      "id": "given-d67defa7f9df",
+      "text": "Shinzō",
+      "weight": 1
+    },
+    {
+      "id": "given-3ad2024b858c",
+      "text": "Shōzō",
+      "weight": 1
+    },
+    {
+      "id": "given-499925814fe4",
+      "text": "Yūzō",
+      "weight": 1
+    },
+    {
+      "id": "given-10c00dc31fc7",
+      "text": "Kōzō",
+      "weight": 1
+    },
+    {
+      "id": "given-21079131767c",
+      "text": "Shūzō",
+      "weight": 1
+    },
+    {
+      "id": "given-47e1d99fccf8",
+      "text": "Eizō",
+      "weight": 1
+    },
+    {
+      "id": "given-8cc23d8956c6",
+      "text": "Yoshizō",
+      "weight": 1
+    },
+    {
+      "id": "given-0b4dc9b97b13",
+      "text": "Heizō",
+      "weight": 1
+    },
+    {
+      "id": "given-97c0edb7c295",
+      "text": "Kinzō",
+      "weight": 1
+    },
+    {
+      "id": "given-b2e519b97727",
+      "text": "Genzō",
+      "weight": 1
+    },
+    {
+      "id": "given-a4456d0e16f8",
+      "text": "Takeshi",
+      "weight": 1
+    },
+    {
+      "id": "given-e3b3b5c372e5",
+      "text": "Takashi",
+      "weight": 1
+    },
+    {
+      "id": "given-1e59f6ef18de",
+      "text": "Hiroshi",
+      "weight": 1
+    },
+    {
+      "id": "given-f55d6bf79555",
+      "text": "Kiyoshi",
+      "weight": 1
+    },
+    {
+      "id": "given-e5e419d645df",
+      "text": "Masao",
+      "weight": 3
+    },
+    {
+      "id": "given-bd09a76d28f7",
+      "text": "Yoshio",
+      "weight": 3
+    },
+    {
+      "id": "given-8ae19f507dcf",
+      "text": "Toshio",
+      "weight": 1
+    },
+    {
+      "id": "given-f647a310f114",
+      "text": "Kazuo",
+      "weight": 1
+    },
+    {
+      "id": "given-6ad50acb27ed",
+      "text": "Akio",
+      "weight": 1
+    },
+    {
+      "id": "given-6f50b6b072b1",
+      "text": "Haruo",
+      "weight": 1
+    },
+    {
+      "id": "given-1da6f3a1598c",
+      "text": "Shigeo",
+      "weight": 1
+    },
+    {
+      "id": "given-c5b9707e600b",
+      "text": "Nobuo",
+      "weight": 1
+    },
+    {
+      "id": "given-0e6da9a1f4f7",
+      "text": "Teruo",
+      "weight": 1
+    },
+    {
+      "id": "given-c28299bb6410",
+      "text": "Fumio",
+      "weight": 1
+    },
+    {
+      "id": "given-19e25eff3bea",
+      "text": "Takeo",
+      "weight": 1
+    },
+    {
+      "id": "given-b0aabf1e07e0",
+      "text": "Sadao",
+      "weight": 1
+    },
+    {
+      "id": "given-8f3cf93478e0",
+      "text": "Mitsuo",
+      "weight": 1
+    },
+    {
+      "id": "given-980c10505deb",
+      "text": "Tadao",
+      "weight": 1
+    },
+    {
+      "id": "given-ef30dadf59a4",
+      "text": "Hideo",
+      "weight": 1
+    },
+    {
+      "id": "given-933a784e773a",
+      "text": "Yukio",
+      "weight": 1
+    },
+    {
+      "id": "given-912cf2ac7502",
+      "text": "Isao",
+      "weight": 1
+    },
+    {
+      "id": "given-61f642f2aac3",
+      "text": "Tatsuo",
+      "weight": 1
+    },
+    {
+      "id": "given-4f613992c5df",
+      "text": "Tetsuo",
+      "weight": 1
+    },
+    {
+      "id": "given-af45dd274782",
+      "text": "Kunio",
+      "weight": 1
+    },
+    {
+      "id": "given-71b955684dc1",
+      "text": "Masaru",
+      "weight": 1
+    },
+    {
+      "id": "given-722124d93476",
+      "text": "Minoru",
+      "weight": 1
+    },
+    {
+      "id": "given-de67bc63851b",
+      "text": "Mamoru",
+      "weight": 1
+    },
+    {
+      "id": "given-293b18322984",
+      "text": "Susumu",
+      "weight": 1
+    },
+    {
+      "id": "given-e7dda2412ed7",
+      "text": "Isamu",
+      "weight": 1
+    },
+    {
+      "id": "given-16553e9d6015",
+      "text": "Osamu",
+      "weight": 1
+    },
+    {
+      "id": "given-65cfe6cfc19f",
+      "text": "Satoru",
+      "weight": 1
+    },
+    {
+      "id": "given-d80bb2858880",
+      "text": "Shigeru",
+      "weight": 1
+    },
+    {
+      "id": "given-3423799d06d4",
+      "text": "Shinobu",
+      "weight": 1
+    },
+    {
+      "id": "given-23c042ad5719",
+      "text": "Kaoru",
+      "weight": 1
+    },
+    {
+      "id": "given-e574a136d823",
+      "text": "Makoto",
+      "weight": 1
+    },
+    {
+      "id": "given-5ee72ed384ab",
+      "text": "Tadashi",
+      "weight": 1
+    },
+    {
+      "id": "given-d30d89714202",
+      "text": "Noboru",
+      "weight": 1
+    },
+    {
+      "id": "given-588a0e1f5af4",
+      "text": "Yutaka",
+      "weight": 1
+    },
+    {
+      "id": "given-19339ad39129",
+      "text": "Tsutomu",
+      "weight": 1
+    },
+    {
+      "id": "given-62514214beea",
+      "text": "Tōru",
+      "weight": 1
+    },
+    {
+      "id": "given-139f17d9d516",
+      "text": "Hajime",
+      "weight": 1
+    },
+    {
+      "id": "given-b3b8a20ea647",
+      "text": "Iwao",
+      "weight": 1
+    },
+    {
+      "id": "given-f95cfcc26a6d",
+      "text": "Hisashi",
+      "weight": 1
+    },
+    {
+      "id": "given-db67e8e780e5",
+      "text": "Masashi",
+      "weight": 1
+    },
+    {
+      "id": "given-e15114846f5e",
+      "text": "Nobuyuki",
+      "weight": 1
+    },
+    {
+      "id": "given-b4905a9a140e",
+      "text": "Masayuki",
+      "weight": 1
+    },
+    {
+      "id": "given-334d269575a6",
+      "text": "Yoshiyuki",
+      "weight": 1
+    },
+    {
+      "id": "given-0b01869aa469",
+      "text": "Hideyoshi",
+      "weight": 1
+    },
+    {
+      "id": "given-544a0dece58a",
+      "text": "Yoshiharu",
+      "weight": 1
+    },
+    {
+      "id": "given-2f5d6629df38",
+      "text": "Yoshihiko",
+      "weight": 1
+    },
+    {
+      "id": "given-3b2b7bc17263",
+      "text": "Masaharu",
+      "weight": 1
+    },
+    {
+      "id": "given-2876d30ab3ab",
+      "text": "Masahiko",
+      "weight": 1
+    },
+    {
+      "id": "given-17e4634a6553",
+      "text": "Masahiro",
+      "weight": 1
+    },
+    {
+      "id": "given-01919172fa15",
+      "text": "Toshiharu",
+      "weight": 1
+    },
+    {
+      "id": "given-9f4f617ae72c",
+      "text": "Toshihiko",
+      "weight": 1
+    },
+    {
+      "id": "given-fb4ee6cc7aa5",
+      "text": "Toshikazu",
+      "weight": 1
+    },
+    {
+      "id": "given-f431a446996f",
+      "text": "Nobutaka",
+      "weight": 1
+    },
+    {
+      "id": "given-be5626779076",
+      "text": "Nobuhiko",
+      "weight": 1
+    },
+    {
+      "id": "given-4f078dc9f2fe",
+      "text": "Nobumasa",
+      "weight": 1
+    },
+    {
+      "id": "given-16b4bbc8a282",
+      "text": "Yoshimasa",
+      "weight": 1
+    },
+    {
+      "id": "given-ea19b68f48bd",
+      "text": "Katsumi",
+      "weight": 1
+    },
+    {
+      "id": "given-748293ca6104",
+      "text": "Katsuo",
+      "weight": 1
+    },
+    {
+      "id": "given-b2e0712f27e5",
+      "text": "Katsuji",
+      "weight": 1
+    },
+    {
+      "id": "given-e77295682a34",
+      "text": "Kenji",
+      "weight": 1
+    },
+    {
+      "id": "given-693eabefc459",
+      "text": "Shinji",
+      "weight": 1
+    },
+    {
+      "id": "given-65a1c3a075df",
+      "text": "Seiji",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-49160d895f0f",
+      "text": "Satō",
+      "weight": 3
+    },
+    {
+      "id": "family-2d03cf78586a",
+      "text": "Suzuki",
+      "weight": 3
+    },
+    {
+      "id": "family-f58fd7bce283",
+      "text": "Takahashi",
+      "weight": 3
+    },
+    {
+      "id": "family-3c198b1d3dd3",
+      "text": "Tanaka",
+      "weight": 3
+    },
+    {
+      "id": "family-1a9d792ba390",
+      "text": "Watanabe",
+      "weight": 3
+    },
+    {
+      "id": "family-82db9ebe0d6f",
+      "text": "Itō",
+      "weight": 1
+    },
+    {
+      "id": "family-30923b58b69e",
+      "text": "Yamamoto",
+      "weight": 1
+    },
+    {
+      "id": "family-166bb51bb53c",
+      "text": "Nakamura",
+      "weight": 1
+    },
+    {
+      "id": "family-990c63a5eff8",
+      "text": "Kobayashi",
+      "weight": 1
+    },
+    {
+      "id": "family-e31762520a0e",
+      "text": "Katō",
+      "weight": 1
+    },
+    {
+      "id": "family-1ea7a99c906f",
+      "text": "Yoshida",
+      "weight": 1
+    },
+    {
+      "id": "family-41a830a50e8d",
+      "text": "Yamada",
+      "weight": 1
+    },
+    {
+      "id": "family-135338a50561",
+      "text": "Sasaki",
+      "weight": 1
+    },
+    {
+      "id": "family-8bc0e409fbd4",
+      "text": "Yamaguchi",
+      "weight": 1
+    },
+    {
+      "id": "family-bf84853025ec",
+      "text": "Matsumoto",
+      "weight": 1
+    },
+    {
+      "id": "family-e7bbe55f5790",
+      "text": "Inoue",
+      "weight": 1
+    },
+    {
+      "id": "family-827617e6b357",
+      "text": "Kimura",
+      "weight": 1
+    },
+    {
+      "id": "family-5a3a5eb2e601",
+      "text": "Hayashi",
+      "weight": 1
+    },
+    {
+      "id": "family-25465a7b7851",
+      "text": "Shimizu",
+      "weight": 1
+    },
+    {
+      "id": "family-35a43fbbc386",
+      "text": "Yamazaki",
+      "weight": 1
+    },
+    {
+      "id": "family-f556a1490353",
+      "text": "Mori",
+      "weight": 1
+    },
+    {
+      "id": "family-6a734b478922",
+      "text": "Abe",
+      "weight": 1
+    },
+    {
+      "id": "family-3627dacd3c94",
+      "text": "Ikeda",
+      "weight": 1
+    },
+    {
+      "id": "family-8d18130b57f3",
+      "text": "Hashimoto",
+      "weight": 1
+    },
+    {
+      "id": "family-6a1fd15d9116",
+      "text": "Yamashita",
+      "weight": 1
+    },
+    {
+      "id": "family-5c0f3152edca",
+      "text": "Ishikawa",
+      "weight": 1
+    },
+    {
+      "id": "family-b6aab6b06560",
+      "text": "Nakajima",
+      "weight": 1
+    },
+    {
+      "id": "family-d64e60f6432e",
+      "text": "Maeda",
+      "weight": 1
+    },
+    {
+      "id": "family-fbc526a4ddd8",
+      "text": "Fujita",
+      "weight": 1
+    },
+    {
+      "id": "family-034d243417a6",
+      "text": "Ogawa",
+      "weight": 1
+    },
+    {
+      "id": "family-c253de5b0689",
+      "text": "Gotō",
+      "weight": 1
+    },
+    {
+      "id": "family-070f3fc65d5a",
+      "text": "Okada",
+      "weight": 1
+    },
+    {
+      "id": "family-719157282bf7",
+      "text": "Hasegawa",
+      "weight": 1
+    },
+    {
+      "id": "family-013dc163b48a",
+      "text": "Murakami",
+      "weight": 1
+    },
+    {
+      "id": "family-23c59f9f4649",
+      "text": "Kondō",
+      "weight": 1
+    },
+    {
+      "id": "family-c5188a82c61c",
+      "text": "Ishii",
+      "weight": 1
+    },
+    {
+      "id": "family-303a8d2da8b2",
+      "text": "Saitō",
+      "weight": 1
+    },
+    {
+      "id": "family-65eb5bf4b5ff",
+      "text": "Sakamoto",
+      "weight": 1
+    },
+    {
+      "id": "family-b274051625bc",
+      "text": "Endō",
+      "weight": 1
+    },
+    {
+      "id": "family-89525712e5f2",
+      "text": "Aoki",
+      "weight": 1
+    },
+    {
+      "id": "family-b293810019ce",
+      "text": "Fujii",
+      "weight": 1
+    },
+    {
+      "id": "family-f40bbed31661",
+      "text": "Nishimura",
+      "weight": 1
+    },
+    {
+      "id": "family-eac90eb1f45c",
+      "text": "Fukuda",
+      "weight": 1
+    },
+    {
+      "id": "family-f9de098206b4",
+      "text": "Ōta",
+      "weight": 1
+    },
+    {
+      "id": "family-3bfe2543f758",
+      "text": "Miura",
+      "weight": 1
+    },
+    {
+      "id": "family-a140352c9418",
+      "text": "Fujiwara",
+      "weight": 1
+    },
+    {
+      "id": "family-87900088d8eb",
+      "text": "Okamoto",
+      "weight": 1
+    },
+    {
+      "id": "family-412893622f21",
+      "text": "Matsuda",
+      "weight": 1
+    },
+    {
+      "id": "family-0326bd9ddac7",
+      "text": "Nakagawa",
+      "weight": 1
+    },
+    {
+      "id": "family-dc5ef8b1c4bf",
+      "text": "Nakano",
+      "weight": 1
+    },
+    {
+      "id": "family-149066ee2766",
+      "text": "Harada",
+      "weight": 1
+    },
+    {
+      "id": "family-fba6a9aeb3c7",
+      "text": "Ono",
+      "weight": 1
+    },
+    {
+      "id": "family-9f8e22a2642b",
+      "text": "Tamura",
+      "weight": 1
+    },
+    {
+      "id": "family-270cf8bd7374",
+      "text": "Takeuchi",
+      "weight": 1
+    },
+    {
+      "id": "family-184feee469ff",
+      "text": "Kaneko",
+      "weight": 1
+    },
+    {
+      "id": "family-301360630a37",
+      "text": "Wada",
+      "weight": 1
+    },
+    {
+      "id": "family-d9d8ce299b79",
+      "text": "Nakayama",
+      "weight": 1
+    },
+    {
+      "id": "family-ff20cbbb7550",
+      "text": "Ishida",
+      "weight": 1
+    },
+    {
+      "id": "family-fa4ea4366822",
+      "text": "Ueda",
+      "weight": 1
+    },
+    {
+      "id": "family-a15a3579c7d4",
+      "text": "Morita",
+      "weight": 1
+    },
+    {
+      "id": "family-4f9f543f32e3",
+      "text": "Hara",
+      "weight": 1
+    },
+    {
+      "id": "family-880212d04024",
+      "text": "Shibata",
+      "weight": 1
+    },
+    {
+      "id": "family-480cb8618edd",
+      "text": "Sakai",
+      "weight": 1
+    },
+    {
+      "id": "family-cc90490b47ff",
+      "text": "Kudō",
+      "weight": 1
+    },
+    {
+      "id": "family-bc7bec02b31a",
+      "text": "Yokoyama",
+      "weight": 1
+    },
+    {
+      "id": "family-f1c0f86d020e",
+      "text": "Miyazaki",
+      "weight": 1
+    },
+    {
+      "id": "family-41448cf83e61",
+      "text": "Miyamoto",
+      "weight": 1
+    },
+    {
+      "id": "family-a610d4510002",
+      "text": "Uchida",
+      "weight": 1
+    },
+    {
+      "id": "family-efaae0a63031",
+      "text": "Takagi",
+      "weight": 1
+    },
+    {
+      "id": "family-7e80fd650aab",
+      "text": "Andō",
+      "weight": 1
+    },
+    {
+      "id": "family-7f9b6facdab5",
+      "text": "Taniguchi",
+      "weight": 1
+    },
+    {
+      "id": "family-6d69a36b3d8c",
+      "text": "Ōno",
+      "weight": 1
+    },
+    {
+      "id": "family-be6d02d4141c",
+      "text": "Maruyama",
+      "weight": 1
+    },
+    {
+      "id": "family-f969fafcdd94",
+      "text": "Imai",
+      "weight": 1
+    },
+    {
+      "id": "family-728eec9f3c2d",
+      "text": "Takada",
+      "weight": 1
+    },
+    {
+      "id": "family-3f13852a5420",
+      "text": "Fujimoto",
+      "weight": 1
+    },
+    {
+      "id": "family-8a98c24f4a82",
+      "text": "Takeda",
+      "weight": 1
+    },
+    {
+      "id": "family-1e8acf10a313",
+      "text": "Murata",
+      "weight": 1
+    },
+    {
+      "id": "family-aabc6b52fb86",
+      "text": "Ueno",
+      "weight": 1
+    },
+    {
+      "id": "family-84828c1bd44e",
+      "text": "Sugiyama",
+      "weight": 1
+    },
+    {
+      "id": "family-7eebc2354d8b",
+      "text": "Masuda",
+      "weight": 1
+    },
+    {
+      "id": "family-2ae6963bcce5",
+      "text": "Sugawara",
+      "weight": 1
+    },
+    {
+      "id": "family-9a485bdb1486",
+      "text": "Hirano",
+      "weight": 1
+    },
+    {
+      "id": "family-a435fb4d68c0",
+      "text": "Kojima",
+      "weight": 1
+    },
+    {
+      "id": "family-c7780f357ee7",
+      "text": "Ōtsuka",
+      "weight": 1
+    },
+    {
+      "id": "family-458ccae8847b",
+      "text": "Chiba",
+      "weight": 1
+    },
+    {
+      "id": "family-790c1bfb6e4c",
+      "text": "Kubo",
+      "weight": 1
+    },
+    {
+      "id": "family-72e9eea2d36f",
+      "text": "Matsui",
+      "weight": 1
+    },
+    {
+      "id": "family-1ab234fede53",
+      "text": "Iwasaki",
+      "weight": 1
+    },
+    {
+      "id": "family-9192e3c6ef6f",
+      "text": "Sakurai",
+      "weight": 1
+    },
+    {
+      "id": "family-8d7623022593",
+      "text": "Kinoshita",
+      "weight": 1
+    },
+    {
+      "id": "family-73d53f61da40",
+      "text": "Noguchi",
+      "weight": 1
+    },
+    {
+      "id": "family-e3a400b51c22",
+      "text": "Matsuo",
+      "weight": 1
+    },
+    {
+      "id": "family-f7326499f3ff",
+      "text": "Nomura",
+      "weight": 1
+    },
+    {
+      "id": "family-1c16e27c44d7",
+      "text": "Kikuchi",
+      "weight": 1
+    },
+    {
+      "id": "family-791fec7ae546",
+      "text": "Sano",
+      "weight": 1
+    },
+    {
+      "id": "family-0fb065be2f9c",
+      "text": "Ōnishi",
+      "weight": 1
+    },
+    {
+      "id": "family-850e758aadd7",
+      "text": "Sugimoto",
+      "weight": 1
+    },
+    {
+      "id": "family-1d432c424b05",
+      "text": "Arai",
+      "weight": 1
+    },
+    {
+      "id": "family-f0224e336c9f",
+      "text": "Hamada",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 10000
+  }
+}

@@ -1,0 +1,962 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "bosnian-muslim",
+  "label": "Bosnian Muslim, Yugoslav context",
+  "language": "bs",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-family",
+    "componentOrder": [
+      "given",
+      "family"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "Explicit Bosnian Muslim cultural context for Yugoslav forces or partisans. Affiliation and rules nationality remain separate from cultural naming.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 100
+  },
+  "actualCounts": {
+    "givenNames": 80,
+    "familyNames": 100,
+    "secondComponent": 100
+  },
+  "completeness": "smaller-curated-pool",
+  "givenNames": [
+    {
+      "id": "given-c45d47575091",
+      "text": "Mehmed",
+      "weight": 1
+    },
+    {
+      "id": "given-e20ce6653386",
+      "text": "Mustafa",
+      "weight": 1
+    },
+    {
+      "id": "given-41f0dae57fff",
+      "text": "Ahmed",
+      "weight": 1
+    },
+    {
+      "id": "given-862ef3927a7c",
+      "text": "Ali",
+      "weight": 1
+    },
+    {
+      "id": "given-6cdca769c6de",
+      "text": "Husein",
+      "weight": 1
+    },
+    {
+      "id": "given-003925188bc7",
+      "text": "Hasan",
+      "weight": 1
+    },
+    {
+      "id": "given-8113a6dee6b3",
+      "text": "Ibrahim",
+      "weight": 1
+    },
+    {
+      "id": "given-129fafb19842",
+      "text": "Ismail",
+      "weight": 1
+    },
+    {
+      "id": "given-d6d9f785b11b",
+      "text": "Osman",
+      "weight": 1
+    },
+    {
+      "id": "given-b5479e73b047",
+      "text": "Sulejman",
+      "weight": 1
+    },
+    {
+      "id": "given-ef9fa2d7e866",
+      "text": "Abdulah",
+      "weight": 1
+    },
+    {
+      "id": "given-109f963f6f43",
+      "text": "Abdurahman",
+      "weight": 1
+    },
+    {
+      "id": "given-cfa22487d713",
+      "text": "Adem",
+      "weight": 1
+    },
+    {
+      "id": "given-9b0f9ababae6",
+      "text": "Ahmet",
+      "weight": 1
+    },
+    {
+      "id": "given-c0191f1a264b",
+      "text": "Alija",
+      "weight": 1
+    },
+    {
+      "id": "given-b398ecc09379",
+      "text": "Alim",
+      "weight": 1
+    },
+    {
+      "id": "given-501a779d9f5c",
+      "text": "Arif",
+      "weight": 1
+    },
+    {
+      "id": "given-4a02143aaf9b",
+      "text": "Asim",
+      "weight": 1
+    },
+    {
+      "id": "given-40bcaeefdc80",
+      "text": "Aziz",
+      "weight": 1
+    },
+    {
+      "id": "given-91ed67c2eb5b",
+      "text": "Bajram",
+      "weight": 1
+    },
+    {
+      "id": "given-7ee68482dc64",
+      "text": "Bećir",
+      "weight": 1
+    },
+    {
+      "id": "given-974729f21532",
+      "text": "Behcet",
+      "weight": 1
+    },
+    {
+      "id": "given-c900b2ade15e",
+      "text": "Derviš",
+      "weight": 1
+    },
+    {
+      "id": "given-1a8b00fb5120",
+      "text": "Džemal",
+      "weight": 1
+    },
+    {
+      "id": "given-da60e87060d0",
+      "text": "Džemil",
+      "weight": 1
+    },
+    {
+      "id": "given-a8702211942a",
+      "text": "Emin",
+      "weight": 1
+    },
+    {
+      "id": "given-552b6e69ae4c",
+      "text": "Enver",
+      "weight": 1
+    },
+    {
+      "id": "given-38fcd22b8660",
+      "text": "Esad",
+      "weight": 1
+    },
+    {
+      "id": "given-caec6dfd18d8",
+      "text": "Fadil",
+      "weight": 1
+    },
+    {
+      "id": "given-e1520858857a",
+      "text": "Fahrija",
+      "weight": 1
+    },
+    {
+      "id": "given-6d3b6bc41f33",
+      "text": "Ferid",
+      "weight": 1
+    },
+    {
+      "id": "given-6a70af73c461",
+      "text": "Fehim",
+      "weight": 1
+    },
+    {
+      "id": "given-b6d7f1e99d48",
+      "text": "Fuad",
+      "weight": 1
+    },
+    {
+      "id": "given-0ce0a2f4523b",
+      "text": "Hafiz",
+      "weight": 1
+    },
+    {
+      "id": "given-6d86cdad8bb9",
+      "text": "Hajrudin",
+      "weight": 1
+    },
+    {
+      "id": "given-9e30ab47d4a7",
+      "text": "Halil",
+      "weight": 1
+    },
+    {
+      "id": "given-f7b02a30a28b",
+      "text": "Hamdi",
+      "weight": 1
+    },
+    {
+      "id": "given-26ac05af275d",
+      "text": "Hamza",
+      "weight": 1
+    },
+    {
+      "id": "given-21f5422c9316",
+      "text": "Hifzi",
+      "weight": 1
+    },
+    {
+      "id": "given-69832453725f",
+      "text": "Hilmi",
+      "weight": 1
+    },
+    {
+      "id": "given-9032c66c1cd0",
+      "text": "Himzo",
+      "weight": 1
+    },
+    {
+      "id": "given-6e57dc9a3486",
+      "text": "Husnija",
+      "weight": 1
+    },
+    {
+      "id": "given-337ec1f176d3",
+      "text": "Ismet",
+      "weight": 1
+    },
+    {
+      "id": "given-283cc766c0ec",
+      "text": "Izet",
+      "weight": 1
+    },
+    {
+      "id": "given-dceda28afa87",
+      "text": "Jusuf",
+      "weight": 1
+    },
+    {
+      "id": "given-8b40d11864fb",
+      "text": "Kasim",
+      "weight": 1
+    },
+    {
+      "id": "given-ba0ca1da858a",
+      "text": "Kemal",
+      "weight": 1
+    },
+    {
+      "id": "given-6584ac717118",
+      "text": "Latif",
+      "weight": 1
+    },
+    {
+      "id": "given-463ac8058ab9",
+      "text": "Mahmut",
+      "weight": 1
+    },
+    {
+      "id": "given-7313b97198d1",
+      "text": "Meho",
+      "weight": 1
+    },
+    {
+      "id": "given-77b16dd9888b",
+      "text": "Mesud",
+      "weight": 1
+    },
+    {
+      "id": "given-e15c32fc3425",
+      "text": "Muharem",
+      "weight": 1
+    },
+    {
+      "id": "given-4a1921bafc6e",
+      "text": "Mujaga",
+      "weight": 1
+    },
+    {
+      "id": "given-8feeb37f9402",
+      "text": "Musa",
+      "weight": 1
+    },
+    {
+      "id": "given-2ffe35f13f4c",
+      "text": "Nafiz",
+      "weight": 1
+    },
+    {
+      "id": "given-100d21108951",
+      "text": "Nedžib",
+      "weight": 1
+    },
+    {
+      "id": "given-aa6dce203a80",
+      "text": "Nijaz",
+      "weight": 1
+    },
+    {
+      "id": "given-8614ee33d6fd",
+      "text": "Nuri",
+      "weight": 1
+    },
+    {
+      "id": "given-03f3c63984bd",
+      "text": "Omer",
+      "weight": 1
+    },
+    {
+      "id": "given-9ec6f75f9766",
+      "text": "Osmo",
+      "weight": 1
+    },
+    {
+      "id": "given-6f04656bf9e9",
+      "text": "Ragib",
+      "weight": 1
+    },
+    {
+      "id": "given-3e42328dd1ae",
+      "text": "Rasim",
+      "weight": 1
+    },
+    {
+      "id": "given-a8c6639b0077",
+      "text": "Rašid",
+      "weight": 1
+    },
+    {
+      "id": "given-b5b50dd4ca26",
+      "text": "Refik",
+      "weight": 1
+    },
+    {
+      "id": "given-d9e3d2a76c92",
+      "text": "Rešad",
+      "weight": 1
+    },
+    {
+      "id": "given-fd21bf34d811",
+      "text": "Rifat",
+      "weight": 1
+    },
+    {
+      "id": "given-28777036235a",
+      "text": "Riza",
+      "weight": 1
+    },
+    {
+      "id": "given-f6e7bcd1c493",
+      "text": "Sabri",
+      "weight": 1
+    },
+    {
+      "id": "given-6631e3ee3664",
+      "text": "Sadik",
+      "weight": 1
+    },
+    {
+      "id": "given-fdc3109d53c4",
+      "text": "Salih",
+      "weight": 1
+    },
+    {
+      "id": "given-4c18b08eb114",
+      "text": "Salim",
+      "weight": 1
+    },
+    {
+      "id": "given-79a129532018",
+      "text": "Salko",
+      "weight": 1
+    },
+    {
+      "id": "given-6a182c0ef5b8",
+      "text": "Sejfo",
+      "weight": 1
+    },
+    {
+      "id": "given-11bbe9637266",
+      "text": "Selim",
+      "weight": 1
+    },
+    {
+      "id": "given-8a6c9015b3b2",
+      "text": "Šaban",
+      "weight": 1
+    },
+    {
+      "id": "given-24db20296e55",
+      "text": "Šaćir",
+      "weight": 1
+    },
+    {
+      "id": "given-4a1559d75c5b",
+      "text": "Šefik",
+      "weight": 1
+    },
+    {
+      "id": "given-6f5d95479cf3",
+      "text": "Šemso",
+      "weight": 1
+    },
+    {
+      "id": "given-e9d5575833b0",
+      "text": "Šerif",
+      "weight": 1
+    },
+    {
+      "id": "given-77c471a98cd5",
+      "text": "Tahir",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-f9a94a10d8c9",
+      "text": "Hadžić",
+      "weight": 1
+    },
+    {
+      "id": "family-3d7e8b4d8ae9",
+      "text": "Hodžić",
+      "weight": 1
+    },
+    {
+      "id": "family-3ab3db3ee749",
+      "text": "Hasić",
+      "weight": 1
+    },
+    {
+      "id": "family-a4a2b9bddad9",
+      "text": "Hasanović",
+      "weight": 1
+    },
+    {
+      "id": "family-290e3602881a",
+      "text": "Huseinović",
+      "weight": 1
+    },
+    {
+      "id": "family-94f0407532f3",
+      "text": "Ibrahimović",
+      "weight": 1
+    },
+    {
+      "id": "family-05be8be1b3f2",
+      "text": "Osmanović",
+      "weight": 1
+    },
+    {
+      "id": "family-eb02c257faf3",
+      "text": "Mehmedović",
+      "weight": 1
+    },
+    {
+      "id": "family-b5cd25b219c3",
+      "text": "Mustafić",
+      "weight": 1
+    },
+    {
+      "id": "family-9c9d9acd54aa",
+      "text": "Omerović",
+      "weight": 1
+    },
+    {
+      "id": "family-554d8601cef8",
+      "text": "Jusufović",
+      "weight": 1
+    },
+    {
+      "id": "family-6dafb6c7dfc5",
+      "text": "Salihović",
+      "weight": 1
+    },
+    {
+      "id": "family-6d6e3f8a20f1",
+      "text": "Smajlović",
+      "weight": 1
+    },
+    {
+      "id": "family-c8fd99d5b237",
+      "text": "Ahmetović",
+      "weight": 1
+    },
+    {
+      "id": "family-999be17ddad1",
+      "text": "Alić",
+      "weight": 1
+    },
+    {
+      "id": "family-735e114ddc63",
+      "text": "Alibegović",
+      "weight": 1
+    },
+    {
+      "id": "family-67bc8b02cc7c",
+      "text": "Avdić",
+      "weight": 1
+    },
+    {
+      "id": "family-f0b56d1618b8",
+      "text": "Babić",
+      "weight": 1
+    },
+    {
+      "id": "family-2a1e6089f4bc",
+      "text": "Bajramović",
+      "weight": 1
+    },
+    {
+      "id": "family-ecbe06f190eb",
+      "text": "Bašić",
+      "weight": 1
+    },
+    {
+      "id": "family-d2e174f37713",
+      "text": "Bećirović",
+      "weight": 1
+    },
+    {
+      "id": "family-f6c6e955bea4",
+      "text": "Begović",
+      "weight": 1
+    },
+    {
+      "id": "family-f6975741eed5",
+      "text": "Berberović",
+      "weight": 1
+    },
+    {
+      "id": "family-7be5c0c9e731",
+      "text": "Brkić",
+      "weight": 1
+    },
+    {
+      "id": "family-8dbc142ad43e",
+      "text": "Čaušević",
+      "weight": 1
+    },
+    {
+      "id": "family-20a1dd0898ae",
+      "text": "Čengić",
+      "weight": 1
+    },
+    {
+      "id": "family-7df4497ca1f6",
+      "text": "Ćosić",
+      "weight": 1
+    },
+    {
+      "id": "family-338363c88e72",
+      "text": "Dautović",
+      "weight": 1
+    },
+    {
+      "id": "family-be3c899446da",
+      "text": "Delić",
+      "weight": 1
+    },
+    {
+      "id": "family-166ca42bfc9f",
+      "text": "Dizdarević",
+      "weight": 1
+    },
+    {
+      "id": "family-ab8dbd535d2d",
+      "text": "Đulabić",
+      "weight": 1
+    },
+    {
+      "id": "family-e5ccfbb1d668",
+      "text": "Efendić",
+      "weight": 1
+    },
+    {
+      "id": "family-4a14e4095b27",
+      "text": "Fazlić",
+      "weight": 1
+    },
+    {
+      "id": "family-bbfccf895065",
+      "text": "Fejzić",
+      "weight": 1
+    },
+    {
+      "id": "family-743f28bb29cf",
+      "text": "Ferhatović",
+      "weight": 1
+    },
+    {
+      "id": "family-08a744fd9139",
+      "text": "Gadžo",
+      "weight": 1
+    },
+    {
+      "id": "family-54c7dfeef3df",
+      "text": "Ganić",
+      "weight": 1
+    },
+    {
+      "id": "family-667e78f9a5f6",
+      "text": "Gegić",
+      "weight": 1
+    },
+    {
+      "id": "family-2aa4cde8c633",
+      "text": "Halilović",
+      "weight": 1
+    },
+    {
+      "id": "family-0b3be711d853",
+      "text": "Hamzić",
+      "weight": 1
+    },
+    {
+      "id": "family-43637c4e760d",
+      "text": "Handžić",
+      "weight": 1
+    },
+    {
+      "id": "family-f1dbc1a8e18f",
+      "text": "Haračić",
+      "weight": 1
+    },
+    {
+      "id": "family-7937f15c6caf",
+      "text": "Hodža",
+      "weight": 1
+    },
+    {
+      "id": "family-4fd9bfa09017",
+      "text": "Imamović",
+      "weight": 1
+    },
+    {
+      "id": "family-abb46d1aeeff",
+      "text": "Isaković",
+      "weight": 1
+    },
+    {
+      "id": "family-7b0a6b317f1b",
+      "text": "Isanović",
+      "weight": 1
+    },
+    {
+      "id": "family-a109102accfc",
+      "text": "Jašarević",
+      "weight": 1
+    },
+    {
+      "id": "family-40107e5bfd38",
+      "text": "Jusić",
+      "weight": 1
+    },
+    {
+      "id": "family-1b4d4b8b39f2",
+      "text": "Kadić",
+      "weight": 1
+    },
+    {
+      "id": "family-ebb3a42340db",
+      "text": "Kahvedžić",
+      "weight": 1
+    },
+    {
+      "id": "family-26e8d26b09fd",
+      "text": "Kapo",
+      "weight": 1
+    },
+    {
+      "id": "family-4c745bc629cc",
+      "text": "Karabegović",
+      "weight": 1
+    },
+    {
+      "id": "family-935bab95ff10",
+      "text": "Karić",
+      "weight": 1
+    },
+    {
+      "id": "family-4d0cd002ef77",
+      "text": "Kasumović",
+      "weight": 1
+    },
+    {
+      "id": "family-9c8aa7edfe49",
+      "text": "Kovačević",
+      "weight": 1
+    },
+    {
+      "id": "family-1f2ac5517bb5",
+      "text": "Kozlić",
+      "weight": 1
+    },
+    {
+      "id": "family-d7ff10c303dc",
+      "text": "Kurtović",
+      "weight": 1
+    },
+    {
+      "id": "family-27af83d06f69",
+      "text": "Latić",
+      "weight": 1
+    },
+    {
+      "id": "family-3510994c1145",
+      "text": "Ljubović",
+      "weight": 1
+    },
+    {
+      "id": "family-9a534a72e608",
+      "text": "Mahmutović",
+      "weight": 1
+    },
+    {
+      "id": "family-03c8b75ca5d3",
+      "text": "Makarević",
+      "weight": 1
+    },
+    {
+      "id": "family-694c289fb861",
+      "text": "Memić",
+      "weight": 1
+    },
+    {
+      "id": "family-a29fff187183",
+      "text": "Merdan",
+      "weight": 1
+    },
+    {
+      "id": "family-3780254812e2",
+      "text": "Mujagić",
+      "weight": 1
+    },
+    {
+      "id": "family-c1b706b851ba",
+      "text": "Mujanović",
+      "weight": 1
+    },
+    {
+      "id": "family-779ce44f5c55",
+      "text": "Muratović",
+      "weight": 1
+    },
+    {
+      "id": "family-ea62bd714a22",
+      "text": "Muslić",
+      "weight": 1
+    },
+    {
+      "id": "family-d6e7e2ac39c8",
+      "text": "Muslimović",
+      "weight": 1
+    },
+    {
+      "id": "family-79a51f1c5aa3",
+      "text": "Numanović",
+      "weight": 1
+    },
+    {
+      "id": "family-53ede7b4cbb4",
+      "text": "Nurković",
+      "weight": 1
+    },
+    {
+      "id": "family-77022526c376",
+      "text": "Pašić",
+      "weight": 1
+    },
+    {
+      "id": "family-fdf965f58a0c",
+      "text": "Pećanin",
+      "weight": 1
+    },
+    {
+      "id": "family-e5edba2fbc1e",
+      "text": "Pilić",
+      "weight": 1
+    },
+    {
+      "id": "family-58770fb023f8",
+      "text": "Ramić",
+      "weight": 1
+    },
+    {
+      "id": "family-238d08a2bf96",
+      "text": "Rizvanović",
+      "weight": 1
+    },
+    {
+      "id": "family-f98e95b93fcc",
+      "text": "Sabitović",
+      "weight": 1
+    },
+    {
+      "id": "family-4a43794834f8",
+      "text": "Salkić",
+      "weight": 1
+    },
+    {
+      "id": "family-950e7fe0ad08",
+      "text": "Selimović",
+      "weight": 1
+    },
+    {
+      "id": "family-cbd6eadd074e",
+      "text": "Sinanović",
+      "weight": 1
+    },
+    {
+      "id": "family-0d9234b05c71",
+      "text": "Softić",
+      "weight": 1
+    },
+    {
+      "id": "family-7808eaa2457b",
+      "text": "Spahić",
+      "weight": 1
+    },
+    {
+      "id": "family-39f39bc9c7c6",
+      "text": "Suljagić",
+      "weight": 1
+    },
+    {
+      "id": "family-29c09bc2787b",
+      "text": "Suljić",
+      "weight": 1
+    },
+    {
+      "id": "family-6fee700ea55c",
+      "text": "Suljović",
+      "weight": 1
+    },
+    {
+      "id": "family-bf5a2717dddc",
+      "text": "Šabanović",
+      "weight": 1
+    },
+    {
+      "id": "family-9319f3fc2c1d",
+      "text": "Šabić",
+      "weight": 1
+    },
+    {
+      "id": "family-080975dbe363",
+      "text": "Šahinović",
+      "weight": 1
+    },
+    {
+      "id": "family-c8eaf154f08a",
+      "text": "Šarić",
+      "weight": 1
+    },
+    {
+      "id": "family-f0c97e3b5b63",
+      "text": "Šehić",
+      "weight": 1
+    },
+    {
+      "id": "family-b170fc9d1ba4",
+      "text": "Šerifović",
+      "weight": 1
+    },
+    {
+      "id": "family-f62a652f2e2f",
+      "text": "Šišić",
+      "weight": 1
+    },
+    {
+      "id": "family-771e815314de",
+      "text": "Šunjić",
+      "weight": 1
+    },
+    {
+      "id": "family-36b9f18507ec",
+      "text": "Tahirbegović",
+      "weight": 1
+    },
+    {
+      "id": "family-fdd191ed5dbe",
+      "text": "Talović",
+      "weight": 1
+    },
+    {
+      "id": "family-665de5f957e9",
+      "text": "Terzić",
+      "weight": 1
+    },
+    {
+      "id": "family-8725b112345d",
+      "text": "Uglješa",
+      "weight": 1
+    },
+    {
+      "id": "family-1a907de666ea",
+      "text": "Velagić",
+      "weight": 1
+    },
+    {
+      "id": "family-eae6c9d50cbf",
+      "text": "Zaimović",
+      "weight": 1
+    },
+    {
+      "id": "family-6e0e4b5731e3",
+      "text": "Zukić",
+      "weight": 1
+    },
+    {
+      "id": "family-d98c6d4b13c7",
+      "text": "Zulfikarpašić",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 8000
+  }
+}

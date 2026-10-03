@@ -1,0 +1,522 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": {
+      "const": "./name-pool.schema.json"
+    },
+    "format": {
+      "const": "asl-name-pool"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9-]*$"
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1
+    },
+    "language": {
+      "type": "string",
+      "minLength": 1
+    },
+    "script": {
+      "const": "Latn"
+    },
+    "sex": {
+      "const": "male"
+    },
+    "intendedScenarioYears": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "from": {
+          "type": "integer"
+        },
+        "to": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "from",
+        "to"
+      ]
+    },
+    "reviewStatus": {
+      "enum": [
+        "editorial-draft",
+        "reviewed"
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "method": {
+          "type": "string",
+          "minLength": 1
+        },
+        "historicalAttestation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sourceIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "minItems": 1,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "method",
+        "historicalAttestation",
+        "sourceIds"
+      ]
+    },
+    "weighting": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "basis": {
+          "const": "editorial-relative-preference"
+        },
+        "defaultWeight": {
+          "const": 1
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "basis",
+        "defaultWeight",
+        "note"
+      ]
+    },
+    "convention": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "enum": [
+            "given-family",
+            "family-given",
+            "given-father",
+            "given-community"
+          ]
+        },
+        "componentOrder": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "given",
+              "family",
+              "father-given",
+              "community"
+            ]
+          },
+          "minItems": 2
+        },
+        "separator": {
+          "const": " "
+        },
+        "secondComponentRole": {
+          "enum": [
+            "family",
+            "father-given",
+            "community"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "componentOrder",
+        "separator",
+        "secondComponentRole"
+      ]
+    },
+    "scopeNote": {
+      "type": "string",
+      "minLength": 1
+    },
+    "targetCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "givenNames": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "familyNames": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "secondComponent": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "givenNames",
+        "familyNames"
+      ]
+    },
+    "actualCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "givenNames": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "familyNames": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "secondComponent": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "givenNames",
+        "familyNames",
+        "secondComponent"
+      ]
+    },
+    "completeness": {
+      "enum": [
+        "target-met",
+        "smaller-curated-pool"
+      ]
+    },
+    "givenNames": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          },
+          "weight": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "subgroupIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "weight"
+        ]
+      },
+      "minItems": 1
+    },
+    "familyNames": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          },
+          "weight": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "subgroupIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "weight"
+        ]
+      },
+      "minItems": 0
+    },
+    "patronymics": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          },
+          "weight": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "subgroupIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "weight"
+        ]
+      },
+      "minItems": 1
+    },
+    "communityNames": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          },
+          "weight": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "subgroupIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9-]*$"
+            },
+            "minItems": 1,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "id",
+          "text",
+          "weight"
+        ]
+      },
+      "minItems": 1
+    },
+    "subgroups": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z][a-z0-9-]*$"
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "label"
+        ]
+      },
+      "minItems": 0
+    },
+    "requiresSubgroup": {
+      "type": "boolean"
+    },
+    "combinationRules": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "allowIdenticalComponents": {
+          "const": false
+        },
+        "applySubgroupFilterBeforeSampling": {
+          "const": true
+        },
+        "avoidDuplicateFullNamesWithinCard": {
+          "const": true
+        },
+        "onExhaustion": {
+          "const": "report-shortfall"
+        }
+      },
+      "required": [
+        "allowIdenticalComponents",
+        "applySubgroupFilterBeforeSampling",
+        "avoidDuplicateFullNamesWithinCard",
+        "onExhaustion"
+      ]
+    },
+    "availableCombinations": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "integer",
+        "minimum": 1
+      }
+    }
+  },
+  "required": [
+    "$schema",
+    "format",
+    "version",
+    "id",
+    "label",
+    "language",
+    "script",
+    "sex",
+    "intendedScenarioYears",
+    "reviewStatus",
+    "provenance",
+    "weighting",
+    "convention",
+    "scopeNote",
+    "targetCounts",
+    "actualCounts",
+    "completeness",
+    "givenNames",
+    "familyNames",
+    "subgroups",
+    "requiresSubgroup",
+    "combinationRules",
+    "availableCombinations"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "convention": {
+            "properties": {
+              "secondComponentRole": {
+                "const": "family"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "familyNames": {
+            "minItems": 1
+          }
+        },
+        "not": {
+          "anyOf": [
+            {
+              "required": [
+                "patronymics"
+              ]
+            },
+            {
+              "required": [
+                "communityNames"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "convention": {
+            "properties": {
+              "secondComponentRole": {
+                "const": "father-given"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "patronymics"
+        ],
+        "properties": {
+          "familyNames": {
+            "maxItems": 0
+          }
+        },
+        "not": {
+          "required": [
+            "communityNames"
+          ]
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "convention": {
+            "properties": {
+              "secondComponentRole": {
+                "const": "community"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "required": [
+          "communityNames"
+        ],
+        "properties": {
+          "familyNames": {
+            "maxItems": 0
+          }
+        },
+        "not": {
+          "required": [
+            "patronymics"
+          ]
+        }
+      }
+    }
+  ],
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ASL name pool 1.0.0"
+}

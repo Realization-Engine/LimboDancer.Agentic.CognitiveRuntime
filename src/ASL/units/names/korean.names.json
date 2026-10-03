@@ -1,0 +1,1062 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "korean",
+  "label": "Korean, romanized",
+  "language": "ko-Latn",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1946,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "family-given",
+    "componentOrder": [
+      "family",
+      "given"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "Fictional male compound given-name candidates in a consistent readable romanization, retaining familiar Kim/Lee/Park spellings. Hanja and clan origins are not inferred. Shared by North and South Korean contexts. Candidate combinations require period review; they are not a list of attested servicemen.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 100
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 100,
+    "secondComponent": 100
+  },
+  "completeness": "target-met",
+  "givenNames": [
+    {
+      "id": "given-e68ca297099d",
+      "text": "Yeong-su",
+      "weight": 1
+    },
+    {
+      "id": "given-595a9b97cd32",
+      "text": "Yeong-ho",
+      "weight": 1
+    },
+    {
+      "id": "given-f073d9742e38",
+      "text": "Yeong-sik",
+      "weight": 1
+    },
+    {
+      "id": "given-934bd0759e0c",
+      "text": "Yeong-cheol",
+      "weight": 1
+    },
+    {
+      "id": "given-ff3978474fbb",
+      "text": "Yeong-jin",
+      "weight": 1
+    },
+    {
+      "id": "given-c1aee47dec00",
+      "text": "Yeong-seok",
+      "weight": 1
+    },
+    {
+      "id": "given-27d1c2e72ed0",
+      "text": "Yeong-hwan",
+      "weight": 1
+    },
+    {
+      "id": "given-4fa23dea6fa2",
+      "text": "Yeong-bok",
+      "weight": 1
+    },
+    {
+      "id": "given-bda85fedabba",
+      "text": "Yeong-man",
+      "weight": 1
+    },
+    {
+      "id": "given-5a94187d1110",
+      "text": "Yeong-jun",
+      "weight": 1
+    },
+    {
+      "id": "given-7d499e4390a0",
+      "text": "Jong-su",
+      "weight": 1
+    },
+    {
+      "id": "given-1255d7e29279",
+      "text": "Jong-ho",
+      "weight": 1
+    },
+    {
+      "id": "given-5a4d23b71798",
+      "text": "Jong-sik",
+      "weight": 1
+    },
+    {
+      "id": "given-376bcfd24882",
+      "text": "Jong-cheol",
+      "weight": 1
+    },
+    {
+      "id": "given-e7a6a40be3d5",
+      "text": "Jong-jin",
+      "weight": 1
+    },
+    {
+      "id": "given-2d2550b1b46e",
+      "text": "Jong-seok",
+      "weight": 1
+    },
+    {
+      "id": "given-34c04328f037",
+      "text": "Jong-hwan",
+      "weight": 1
+    },
+    {
+      "id": "given-01eca2dac840",
+      "text": "Jong-bok",
+      "weight": 1
+    },
+    {
+      "id": "given-30eede3cae70",
+      "text": "Jong-man",
+      "weight": 1
+    },
+    {
+      "id": "given-4e44df7ce77c",
+      "text": "Jong-jun",
+      "weight": 1
+    },
+    {
+      "id": "given-65d82bea946b",
+      "text": "Seong-su",
+      "weight": 1
+    },
+    {
+      "id": "given-c86f8338f4ae",
+      "text": "Seong-ho",
+      "weight": 1
+    },
+    {
+      "id": "given-921debced1e0",
+      "text": "Seong-sik",
+      "weight": 1
+    },
+    {
+      "id": "given-76f8dcc1f711",
+      "text": "Seong-cheol",
+      "weight": 1
+    },
+    {
+      "id": "given-8e921336dac2",
+      "text": "Seong-jin",
+      "weight": 1
+    },
+    {
+      "id": "given-33ba2ebee58d",
+      "text": "Seong-seok",
+      "weight": 1
+    },
+    {
+      "id": "given-b23cb2576cac",
+      "text": "Seong-hwan",
+      "weight": 1
+    },
+    {
+      "id": "given-e1ed9d867937",
+      "text": "Seong-bok",
+      "weight": 1
+    },
+    {
+      "id": "given-3c655cd72242",
+      "text": "Seong-man",
+      "weight": 1
+    },
+    {
+      "id": "given-8b2693bfc25a",
+      "text": "Seong-jun",
+      "weight": 1
+    },
+    {
+      "id": "given-33c00294babc",
+      "text": "Jae-su",
+      "weight": 1
+    },
+    {
+      "id": "given-08124e3037e3",
+      "text": "Jae-ho",
+      "weight": 1
+    },
+    {
+      "id": "given-b5db2c6f3a6a",
+      "text": "Jae-sik",
+      "weight": 1
+    },
+    {
+      "id": "given-a246c73d1b97",
+      "text": "Jae-cheol",
+      "weight": 1
+    },
+    {
+      "id": "given-cb0398b3d3af",
+      "text": "Jae-jin",
+      "weight": 1
+    },
+    {
+      "id": "given-08915d05dd50",
+      "text": "Jae-seok",
+      "weight": 1
+    },
+    {
+      "id": "given-ea7b9ee1ac07",
+      "text": "Jae-hwan",
+      "weight": 1
+    },
+    {
+      "id": "given-c82f53252fda",
+      "text": "Jae-bok",
+      "weight": 1
+    },
+    {
+      "id": "given-fd9078546457",
+      "text": "Jae-man",
+      "weight": 1
+    },
+    {
+      "id": "given-751ee33427a6",
+      "text": "Jae-jun",
+      "weight": 1
+    },
+    {
+      "id": "given-4d103533fb02",
+      "text": "Gwang-su",
+      "weight": 1
+    },
+    {
+      "id": "given-9894a47b5908",
+      "text": "Gwang-ho",
+      "weight": 1
+    },
+    {
+      "id": "given-f6c872a870a6",
+      "text": "Gwang-sik",
+      "weight": 1
+    },
+    {
+      "id": "given-83328e484d63",
+      "text": "Gwang-cheol",
+      "weight": 1
+    },
+    {
+      "id": "given-f71f82816537",
+      "text": "Gwang-jin",
+      "weight": 1
+    },
+    {
+      "id": "given-6a27b35a8b4d",
+      "text": "Gwang-seok",
+      "weight": 1
+    },
+    {
+      "id": "given-60aeeb6416f4",
+      "text": "Gwang-hwan",
+      "weight": 1
+    },
+    {
+      "id": "given-a8807a8107d0",
+      "text": "Gwang-bok",
+      "weight": 1
+    },
+    {
+      "id": "given-3157c18a0db5",
+      "text": "Gwang-man",
+      "weight": 1
+    },
+    {
+      "id": "given-da346d7c4018",
+      "text": "Gwang-jun",
+      "weight": 1
+    },
+    {
+      "id": "given-55a8ab6c7809",
+      "text": "Chang-su",
+      "weight": 1
+    },
+    {
+      "id": "given-8aae693537af",
+      "text": "Chang-ho",
+      "weight": 1
+    },
+    {
+      "id": "given-fd8cbca9ff83",
+      "text": "Chang-sik",
+      "weight": 1
+    },
+    {
+      "id": "given-cb2b78a85ab7",
+      "text": "Chang-cheol",
+      "weight": 1
+    },
+    {
+      "id": "given-896c3928cb58",
+      "text": "Chang-jin",
+      "weight": 1
+    },
+    {
+      "id": "given-15199de08929",
+      "text": "Chang-seok",
+      "weight": 1
+    },
+    {
+      "id": "given-32f9972c2230",
+      "text": "Chang-hwan",
+      "weight": 1
+    },
+    {
+      "id": "given-b723ff426e33",
+      "text": "Chang-bok",
+      "weight": 1
+    },
+    {
+      "id": "given-d0f593263d67",
+      "text": "Chang-man",
+      "weight": 1
+    },
+    {
+      "id": "given-164a0610db17",
+      "text": "Chang-jun",
+      "weight": 1
+    },
+    {
+      "id": "given-1e357e9a0d96",
+      "text": "Byeong-su",
+      "weight": 1
+    },
+    {
+      "id": "given-82b4bb8c6854",
+      "text": "Byeong-ho",
+      "weight": 1
+    },
+    {
+      "id": "given-ffdb6303b53e",
+      "text": "Byeong-sik",
+      "weight": 1
+    },
+    {
+      "id": "given-316e310c2e83",
+      "text": "Byeong-cheol",
+      "weight": 1
+    },
+    {
+      "id": "given-f1d7d1c097e6",
+      "text": "Byeong-jin",
+      "weight": 1
+    },
+    {
+      "id": "given-29989f365bcc",
+      "text": "Byeong-seok",
+      "weight": 1
+    },
+    {
+      "id": "given-427f9420b317",
+      "text": "Byeong-hwan",
+      "weight": 1
+    },
+    {
+      "id": "given-db943b9f182a",
+      "text": "Byeong-bok",
+      "weight": 1
+    },
+    {
+      "id": "given-3d86e0ab76a4",
+      "text": "Byeong-man",
+      "weight": 1
+    },
+    {
+      "id": "given-500665b50fa3",
+      "text": "Byeong-jun",
+      "weight": 1
+    },
+    {
+      "id": "given-ca79a8e13e6a",
+      "text": "Tae-su",
+      "weight": 1
+    },
+    {
+      "id": "given-cc051afff62d",
+      "text": "Tae-ho",
+      "weight": 1
+    },
+    {
+      "id": "given-fc34638849c0",
+      "text": "Tae-sik",
+      "weight": 1
+    },
+    {
+      "id": "given-d5b32264ef64",
+      "text": "Tae-cheol",
+      "weight": 1
+    },
+    {
+      "id": "given-58b4e12f7236",
+      "text": "Tae-jin",
+      "weight": 1
+    },
+    {
+      "id": "given-6f35b5d6afc2",
+      "text": "Tae-seok",
+      "weight": 1
+    },
+    {
+      "id": "given-1370dc762030",
+      "text": "Tae-hwan",
+      "weight": 1
+    },
+    {
+      "id": "given-d672201b4522",
+      "text": "Tae-bok",
+      "weight": 1
+    },
+    {
+      "id": "given-8d93a7c6417e",
+      "text": "Tae-man",
+      "weight": 1
+    },
+    {
+      "id": "given-6a301bedb2d1",
+      "text": "Tae-jun",
+      "weight": 1
+    },
+    {
+      "id": "given-704f871263bc",
+      "text": "Deok-su",
+      "weight": 1
+    },
+    {
+      "id": "given-233c4d449f25",
+      "text": "Deok-ho",
+      "weight": 1
+    },
+    {
+      "id": "given-fe6dc0c846b2",
+      "text": "Deok-sik",
+      "weight": 1
+    },
+    {
+      "id": "given-fe07ac545a4f",
+      "text": "Deok-cheol",
+      "weight": 1
+    },
+    {
+      "id": "given-556f27847474",
+      "text": "Deok-jin",
+      "weight": 1
+    },
+    {
+      "id": "given-09e325ff0e17",
+      "text": "Deok-seok",
+      "weight": 1
+    },
+    {
+      "id": "given-784b3a1abae4",
+      "text": "Deok-hwan",
+      "weight": 1
+    },
+    {
+      "id": "given-e6b9ca337cdf",
+      "text": "Deok-bok",
+      "weight": 1
+    },
+    {
+      "id": "given-af43fdb0591c",
+      "text": "Deok-man",
+      "weight": 1
+    },
+    {
+      "id": "given-a99775547f4b",
+      "text": "Deok-jun",
+      "weight": 1
+    },
+    {
+      "id": "given-a74b0754abd7",
+      "text": "Sang-su",
+      "weight": 1
+    },
+    {
+      "id": "given-4a737dd7b36e",
+      "text": "Sang-ho",
+      "weight": 1
+    },
+    {
+      "id": "given-6db43ba01078",
+      "text": "Sang-sik",
+      "weight": 1
+    },
+    {
+      "id": "given-a19335c5212d",
+      "text": "Sang-cheol",
+      "weight": 1
+    },
+    {
+      "id": "given-8ae6b5028820",
+      "text": "Sang-jin",
+      "weight": 1
+    },
+    {
+      "id": "given-9277c37fb070",
+      "text": "Sang-seok",
+      "weight": 1
+    },
+    {
+      "id": "given-970cbf38c5f2",
+      "text": "Sang-hwan",
+      "weight": 1
+    },
+    {
+      "id": "given-c5e86f569892",
+      "text": "Sang-bok",
+      "weight": 1
+    },
+    {
+      "id": "given-9473b89853cf",
+      "text": "Sang-man",
+      "weight": 1
+    },
+    {
+      "id": "given-a3ca56399678",
+      "text": "Sang-jun",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-d25949ef9e76",
+      "text": "Kim",
+      "weight": 3
+    },
+    {
+      "id": "family-e7da824a74f6",
+      "text": "Lee",
+      "weight": 3
+    },
+    {
+      "id": "family-6565cb0e22d5",
+      "text": "Park",
+      "weight": 3
+    },
+    {
+      "id": "family-d99078404699",
+      "text": "Choi",
+      "weight": 3
+    },
+    {
+      "id": "family-50d120d17554",
+      "text": "Jeong",
+      "weight": 3
+    },
+    {
+      "id": "family-72cac2352e1d",
+      "text": "Kang",
+      "weight": 1
+    },
+    {
+      "id": "family-78ae3ce3f04f",
+      "text": "Jo",
+      "weight": 1
+    },
+    {
+      "id": "family-3ab1aae96f66",
+      "text": "Yun",
+      "weight": 1
+    },
+    {
+      "id": "family-da5e0c4cd292",
+      "text": "Jang",
+      "weight": 1
+    },
+    {
+      "id": "family-4dea7e1fede7",
+      "text": "Im",
+      "weight": 1
+    },
+    {
+      "id": "family-861af54f72de",
+      "text": "Han",
+      "weight": 1
+    },
+    {
+      "id": "family-c4694f2e93d5",
+      "text": "O",
+      "weight": 1
+    },
+    {
+      "id": "family-a225ab3818f4",
+      "text": "Seo",
+      "weight": 1
+    },
+    {
+      "id": "family-0250af7e4079",
+      "text": "Sin",
+      "weight": 1
+    },
+    {
+      "id": "family-f6bef2d03301",
+      "text": "Kwon",
+      "weight": 1
+    },
+    {
+      "id": "family-6a6626e52618",
+      "text": "Hwang",
+      "weight": 1
+    },
+    {
+      "id": "family-9f98b7c7f071",
+      "text": "An",
+      "weight": 1
+    },
+    {
+      "id": "family-fea4b5ceffa8",
+      "text": "Song",
+      "weight": 1
+    },
+    {
+      "id": "family-745036f18edd",
+      "text": "Jeon",
+      "weight": 1
+    },
+    {
+      "id": "family-530ef54ff28c",
+      "text": "Hong",
+      "weight": 1
+    },
+    {
+      "id": "family-b35711f3f896",
+      "text": "Yu",
+      "weight": 1
+    },
+    {
+      "id": "family-6cc8519b9158",
+      "text": "Go",
+      "weight": 1
+    },
+    {
+      "id": "family-341c8b8bef25",
+      "text": "Mun",
+      "weight": 1
+    },
+    {
+      "id": "family-fef1114f2d1a",
+      "text": "Yang",
+      "weight": 1
+    },
+    {
+      "id": "family-4e850716074e",
+      "text": "Son",
+      "weight": 1
+    },
+    {
+      "id": "family-43ec02f28eac",
+      "text": "Bae",
+      "weight": 1
+    },
+    {
+      "id": "family-ae5d08b6a329",
+      "text": "Baek",
+      "weight": 1
+    },
+    {
+      "id": "family-a26350a30920",
+      "text": "Heo",
+      "weight": 1
+    },
+    {
+      "id": "family-22dd59c8a41b",
+      "text": "Nam",
+      "weight": 1
+    },
+    {
+      "id": "family-9313455e45aa",
+      "text": "Sim",
+      "weight": 1
+    },
+    {
+      "id": "family-69ea698e76cd",
+      "text": "Noh",
+      "weight": 1
+    },
+    {
+      "id": "family-72aa80bf1ac4",
+      "text": "Ha",
+      "weight": 1
+    },
+    {
+      "id": "family-a13272c373da",
+      "text": "Gwak",
+      "weight": 1
+    },
+    {
+      "id": "family-966f615d05c3",
+      "text": "Seong",
+      "weight": 1
+    },
+    {
+      "id": "family-ad14e65ffc62",
+      "text": "Cha",
+      "weight": 1
+    },
+    {
+      "id": "family-8bc597b569e3",
+      "text": "Ju",
+      "weight": 1
+    },
+    {
+      "id": "family-a9c1416ca31c",
+      "text": "Woo",
+      "weight": 1
+    },
+    {
+      "id": "family-e4b6e66c3e33",
+      "text": "Gu",
+      "weight": 1
+    },
+    {
+      "id": "family-dea79332147f",
+      "text": "Min",
+      "weight": 1
+    },
+    {
+      "id": "family-b50988561c5b",
+      "text": "Ryu",
+      "weight": 1
+    },
+    {
+      "id": "family-7f3cee14f1af",
+      "text": "Jin",
+      "weight": 1
+    },
+    {
+      "id": "family-d6e635844a97",
+      "text": "Ji",
+      "weight": 1
+    },
+    {
+      "id": "family-a0efd9b753c3",
+      "text": "Eom",
+      "weight": 1
+    },
+    {
+      "id": "family-fefdf37c2c06",
+      "text": "Chae",
+      "weight": 1
+    },
+    {
+      "id": "family-acdf2907db3d",
+      "text": "Won",
+      "weight": 1
+    },
+    {
+      "id": "family-41cf5f2a1930",
+      "text": "Cheon",
+      "weight": 1
+    },
+    {
+      "id": "family-91f48f1e8d72",
+      "text": "Bang",
+      "weight": 1
+    },
+    {
+      "id": "family-447c8e23d49f",
+      "text": "Gong",
+      "weight": 1
+    },
+    {
+      "id": "family-8e31a71215c8",
+      "text": "Hyeon",
+      "weight": 1
+    },
+    {
+      "id": "family-887faf457ae1",
+      "text": "Ham",
+      "weight": 1
+    },
+    {
+      "id": "family-27a333981785",
+      "text": "Byeon",
+      "weight": 1
+    },
+    {
+      "id": "family-f3e3efb783dc",
+      "text": "Yeom",
+      "weight": 1
+    },
+    {
+      "id": "family-fae9e07f1ed7",
+      "text": "Yeo",
+      "weight": 1
+    },
+    {
+      "id": "family-60a5d1bf57ab",
+      "text": "Chu",
+      "weight": 1
+    },
+    {
+      "id": "family-30094e0bec00",
+      "text": "Do",
+      "weight": 1
+    },
+    {
+      "id": "family-fb1df1a24e3f",
+      "text": "So",
+      "weight": 1
+    },
+    {
+      "id": "family-cf884a3d042b",
+      "text": "Seok",
+      "weight": 1
+    },
+    {
+      "id": "family-906dd7659a30",
+      "text": "Seol",
+      "weight": 1
+    },
+    {
+      "id": "family-1bb657fb6ef2",
+      "text": "Ma",
+      "weight": 1
+    },
+    {
+      "id": "family-1c41c2a178aa",
+      "text": "Gil",
+      "weight": 1
+    },
+    {
+      "id": "family-4c2bcaa81430",
+      "text": "Yeon",
+      "weight": 1
+    },
+    {
+      "id": "family-61cd2930fd89",
+      "text": "Wi",
+      "weight": 1
+    },
+    {
+      "id": "family-ef47e17b178a",
+      "text": "Pyo",
+      "weight": 1
+    },
+    {
+      "id": "family-0f3a8eec2afb",
+      "text": "Myeong",
+      "weight": 1
+    },
+    {
+      "id": "family-5c9291a897df",
+      "text": "Gi",
+      "weight": 1
+    },
+    {
+      "id": "family-520ed297c96f",
+      "text": "Ban",
+      "weight": 1
+    },
+    {
+      "id": "family-22107489a4fb",
+      "text": "Ra",
+      "weight": 1
+    },
+    {
+      "id": "family-1c8e2c2ba963",
+      "text": "Wang",
+      "weight": 1
+    },
+    {
+      "id": "family-e0e5dd72e94e",
+      "text": "Geum",
+      "weight": 1
+    },
+    {
+      "id": "family-843ac01149cc",
+      "text": "Ok",
+      "weight": 1
+    },
+    {
+      "id": "family-8bc1d53cc57c",
+      "text": "In",
+      "weight": 1
+    },
+    {
+      "id": "family-0952e30a4ab4",
+      "text": "Maeng",
+      "weight": 1
+    },
+    {
+      "id": "family-078084ec2ec7",
+      "text": "Jegal",
+      "weight": 1
+    },
+    {
+      "id": "family-d23e867e38e8",
+      "text": "Mo",
+      "weight": 1
+    },
+    {
+      "id": "family-dae91306c776",
+      "text": "Tak",
+      "weight": 1
+    },
+    {
+      "id": "family-306ffe5603b4",
+      "text": "Guk",
+      "weight": 1
+    },
+    {
+      "id": "family-37ace320e479",
+      "text": "Eo",
+      "weight": 1
+    },
+    {
+      "id": "family-5066d9d63ecc",
+      "text": "Eun",
+      "weight": 1
+    },
+    {
+      "id": "family-613f4cdf99c5",
+      "text": "Pyeon",
+      "weight": 1
+    },
+    {
+      "id": "family-42939c269188",
+      "text": "Yong",
+      "weight": 1
+    },
+    {
+      "id": "family-c58b23419274",
+      "text": "Ye",
+      "weight": 1
+    },
+    {
+      "id": "family-e655a6a9cc2b",
+      "text": "Bong",
+      "weight": 1
+    },
+    {
+      "id": "family-a951efc79deb",
+      "text": "Sa",
+      "weight": 1
+    },
+    {
+      "id": "family-519248ffd903",
+      "text": "Bu",
+      "weight": 1
+    },
+    {
+      "id": "family-7844876112e0",
+      "text": "Hyeong",
+      "weight": 1
+    },
+    {
+      "id": "family-dca759c6920d",
+      "text": "Namgung",
+      "weight": 1
+    },
+    {
+      "id": "family-675f0a27d76b",
+      "text": "Hwangbo",
+      "weight": 1
+    },
+    {
+      "id": "family-4081909e7625",
+      "text": "Seon",
+      "weight": 1
+    },
+    {
+      "id": "family-58eaa16160ed",
+      "text": "Seonwoo",
+      "weight": 1
+    },
+    {
+      "id": "family-30489a4b9acf",
+      "text": "Sagong",
+      "weight": 1
+    },
+    {
+      "id": "family-8ba8477b625d",
+      "text": "Dokgo",
+      "weight": 1
+    },
+    {
+      "id": "family-08796b1dcc7a",
+      "text": "Dongbang",
+      "weight": 1
+    },
+    {
+      "id": "family-d91f5a3479af",
+      "text": "Mok",
+      "weight": 1
+    },
+    {
+      "id": "family-4d87941d681c",
+      "text": "Pi",
+      "weight": 1
+    },
+    {
+      "id": "family-7bd52326e676",
+      "text": "Bing",
+      "weight": 1
+    },
+    {
+      "id": "family-130011756125",
+      "text": "On",
+      "weight": 1
+    },
+    {
+      "id": "family-e36da67ae341",
+      "text": "Gye",
+      "weight": 1
+    },
+    {
+      "id": "family-8c9119f00f9b",
+      "text": "Dae",
+      "weight": 1
+    },
+    {
+      "id": "family-303ad5d955b1",
+      "text": "Seung",
+      "weight": 1
+    },
+    {
+      "id": "family-a938fdebdd16",
+      "text": "Gal",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 10000
+  }
+}

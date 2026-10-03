@@ -1,0 +1,664 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "east-african-kikuyu",
+  "label": "East African, Kikuyu short-name context",
+  "language": "ki-Latn",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-father",
+    "componentOrder": [
+      "given",
+      "father-given"
+    ],
+    "separator": " ",
+    "secondComponentRole": "father-given"
+  },
+  "scopeNote": "Narrow draft of personal and father names for explicitly selected Kikuyu personnel. It is not an all-purpose King's African Rifles pool: battalions recruited across different populations. Author selection is required; local orthography and historical suitability need review.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 0,
+    "secondComponent": 100
+  },
+  "actualCounts": {
+    "givenNames": 60,
+    "familyNames": 0,
+    "secondComponent": 60
+  },
+  "completeness": "smaller-curated-pool",
+  "givenNames": [
+    {
+      "id": "given-bbbc8de4cc0b",
+      "text": "Kamau",
+      "weight": 1
+    },
+    {
+      "id": "given-44d787e04713",
+      "text": "Karanja",
+      "weight": 1
+    },
+    {
+      "id": "given-ff7835d4da08",
+      "text": "Mwangi",
+      "weight": 1
+    },
+    {
+      "id": "given-0518e7bdd805",
+      "text": "Maina",
+      "weight": 1
+    },
+    {
+      "id": "given-f09253fc8a89",
+      "text": "Kariuki",
+      "weight": 1
+    },
+    {
+      "id": "given-6c40ef167799",
+      "text": "Njoroge",
+      "weight": 1
+    },
+    {
+      "id": "given-99c851596041",
+      "text": "Njenga",
+      "weight": 1
+    },
+    {
+      "id": "given-edef4ea0de24",
+      "text": "Mbugua",
+      "weight": 1
+    },
+    {
+      "id": "given-7cedba0be22c",
+      "text": "Waweru",
+      "weight": 1
+    },
+    {
+      "id": "given-6a8b9eeecb72",
+      "text": "Gichuki",
+      "weight": 1
+    },
+    {
+      "id": "given-89122ea9fcf7",
+      "text": "Gachanja",
+      "weight": 1
+    },
+    {
+      "id": "given-b13ec889a3b3",
+      "text": "Githinji",
+      "weight": 1
+    },
+    {
+      "id": "given-2dd57ecefad5",
+      "text": "Kinyua",
+      "weight": 1
+    },
+    {
+      "id": "given-471005df329e",
+      "text": "Kimani",
+      "weight": 1
+    },
+    {
+      "id": "given-f99b979b238a",
+      "text": "Gatimu",
+      "weight": 1
+    },
+    {
+      "id": "given-6c6377119637",
+      "text": "Gathogo",
+      "weight": 1
+    },
+    {
+      "id": "given-d8e226d228c1",
+      "text": "Gatuku",
+      "weight": 1
+    },
+    {
+      "id": "given-64c824b75ce7",
+      "text": "Gikonyo",
+      "weight": 1
+    },
+    {
+      "id": "given-a996875afe9a",
+      "text": "Gitu",
+      "weight": 1
+    },
+    {
+      "id": "given-761189ef6700",
+      "text": "Gitau",
+      "weight": 1
+    },
+    {
+      "id": "given-56346d00f6e0",
+      "text": "Gitonga",
+      "weight": 1
+    },
+    {
+      "id": "given-c727ec65c6d0",
+      "text": "Irungu",
+      "weight": 1
+    },
+    {
+      "id": "given-76734c95adb6",
+      "text": "Kabiru",
+      "weight": 1
+    },
+    {
+      "id": "given-34995d55853f",
+      "text": "Kahiga",
+      "weight": 1
+    },
+    {
+      "id": "given-a66904389a87",
+      "text": "Kamande",
+      "weight": 1
+    },
+    {
+      "id": "given-d4a32006ca50",
+      "text": "Kamanja",
+      "weight": 1
+    },
+    {
+      "id": "given-afc66810a975",
+      "text": "Kamotho",
+      "weight": 1
+    },
+    {
+      "id": "given-7d6f6cd3bf52",
+      "text": "Kamunya",
+      "weight": 1
+    },
+    {
+      "id": "given-c5d6c2ce6d6f",
+      "text": "Kanyua",
+      "weight": 1
+    },
+    {
+      "id": "given-fc681c66aecb",
+      "text": "Karani",
+      "weight": 1
+    },
+    {
+      "id": "given-93ecd1d4145c",
+      "text": "Nderitu",
+      "weight": 1
+    },
+    {
+      "id": "given-d8961bd5d6a3",
+      "text": "Kiarie",
+      "weight": 1
+    },
+    {
+      "id": "given-ead06831a15f",
+      "text": "Kibera",
+      "weight": 1
+    },
+    {
+      "id": "given-ec4d1caeb1a5",
+      "text": "Kiboi",
+      "weight": 1
+    },
+    {
+      "id": "given-608e8e1a99aa",
+      "text": "Kibugi",
+      "weight": 1
+    },
+    {
+      "id": "given-abd8a1edfaa3",
+      "text": "Kihara",
+      "weight": 1
+    },
+    {
+      "id": "given-eddf6171c9b5",
+      "text": "Kihu",
+      "weight": 1
+    },
+    {
+      "id": "given-73703cd52e06",
+      "text": "Kihumba",
+      "weight": 1
+    },
+    {
+      "id": "given-1ccdd951e7bc",
+      "text": "Kihuria",
+      "weight": 1
+    },
+    {
+      "id": "given-399db80a1aa2",
+      "text": "Kinuthia",
+      "weight": 1
+    },
+    {
+      "id": "given-c23e1bed3371",
+      "text": "Kiragu",
+      "weight": 1
+    },
+    {
+      "id": "given-2f796f2bf329",
+      "text": "Kirika",
+      "weight": 1
+    },
+    {
+      "id": "given-f051c65e6556",
+      "text": "Kuria",
+      "weight": 1
+    },
+    {
+      "id": "given-f451a0268c87",
+      "text": "Macharia",
+      "weight": 1
+    },
+    {
+      "id": "given-342d33ec32cd",
+      "text": "Mburu",
+      "weight": 1
+    },
+    {
+      "id": "given-862d4a4e6f23",
+      "text": "Muchiri",
+      "weight": 1
+    },
+    {
+      "id": "given-46475f011983",
+      "text": "Mugambi",
+      "weight": 1
+    },
+    {
+      "id": "given-c5687d23c50b",
+      "text": "Mugo",
+      "weight": 1
+    },
+    {
+      "id": "given-cd569425ac3a",
+      "text": "Muiruri",
+      "weight": 1
+    },
+    {
+      "id": "given-84685df171fb",
+      "text": "Munene",
+      "weight": 1
+    },
+    {
+      "id": "given-8adf851d66a7",
+      "text": "Mungai",
+      "weight": 1
+    },
+    {
+      "id": "given-e385524129d1",
+      "text": "Muriithi",
+      "weight": 1
+    },
+    {
+      "id": "given-f17559dbc0b4",
+      "text": "Murigi",
+      "weight": 1
+    },
+    {
+      "id": "given-b67048fbd923",
+      "text": "Muriuki",
+      "weight": 1
+    },
+    {
+      "id": "given-cd736fe74e4a",
+      "text": "Muthama",
+      "weight": 1
+    },
+    {
+      "id": "given-3c8f9b8c325d",
+      "text": "Muthomi",
+      "weight": 1
+    },
+    {
+      "id": "given-8e4b067d3d61",
+      "text": "Ndegwa",
+      "weight": 1
+    },
+    {
+      "id": "given-e611e4e7bc55",
+      "text": "Ndungu",
+      "weight": 1
+    },
+    {
+      "id": "given-8eb6f1dc6074",
+      "text": "Nganga",
+      "weight": 1
+    },
+    {
+      "id": "given-613fbfa3b73a",
+      "text": "Njuguna",
+      "weight": 1
+    }
+  ],
+  "familyNames": [],
+  "patronymics": [
+    {
+      "id": "father-given-bbbc8de4cc0b",
+      "text": "Kamau",
+      "weight": 1
+    },
+    {
+      "id": "father-given-44d787e04713",
+      "text": "Karanja",
+      "weight": 1
+    },
+    {
+      "id": "father-given-ff7835d4da08",
+      "text": "Mwangi",
+      "weight": 1
+    },
+    {
+      "id": "father-given-0518e7bdd805",
+      "text": "Maina",
+      "weight": 1
+    },
+    {
+      "id": "father-given-f09253fc8a89",
+      "text": "Kariuki",
+      "weight": 1
+    },
+    {
+      "id": "father-given-6c40ef167799",
+      "text": "Njoroge",
+      "weight": 1
+    },
+    {
+      "id": "father-given-99c851596041",
+      "text": "Njenga",
+      "weight": 1
+    },
+    {
+      "id": "father-given-edef4ea0de24",
+      "text": "Mbugua",
+      "weight": 1
+    },
+    {
+      "id": "father-given-7cedba0be22c",
+      "text": "Waweru",
+      "weight": 1
+    },
+    {
+      "id": "father-given-6a8b9eeecb72",
+      "text": "Gichuki",
+      "weight": 1
+    },
+    {
+      "id": "father-given-89122ea9fcf7",
+      "text": "Gachanja",
+      "weight": 1
+    },
+    {
+      "id": "father-given-b13ec889a3b3",
+      "text": "Githinji",
+      "weight": 1
+    },
+    {
+      "id": "father-given-2dd57ecefad5",
+      "text": "Kinyua",
+      "weight": 1
+    },
+    {
+      "id": "father-given-471005df329e",
+      "text": "Kimani",
+      "weight": 1
+    },
+    {
+      "id": "father-given-f99b979b238a",
+      "text": "Gatimu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-6c6377119637",
+      "text": "Gathogo",
+      "weight": 1
+    },
+    {
+      "id": "father-given-d8e226d228c1",
+      "text": "Gatuku",
+      "weight": 1
+    },
+    {
+      "id": "father-given-64c824b75ce7",
+      "text": "Gikonyo",
+      "weight": 1
+    },
+    {
+      "id": "father-given-a996875afe9a",
+      "text": "Gitu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-761189ef6700",
+      "text": "Gitau",
+      "weight": 1
+    },
+    {
+      "id": "father-given-56346d00f6e0",
+      "text": "Gitonga",
+      "weight": 1
+    },
+    {
+      "id": "father-given-c727ec65c6d0",
+      "text": "Irungu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-76734c95adb6",
+      "text": "Kabiru",
+      "weight": 1
+    },
+    {
+      "id": "father-given-34995d55853f",
+      "text": "Kahiga",
+      "weight": 1
+    },
+    {
+      "id": "father-given-a66904389a87",
+      "text": "Kamande",
+      "weight": 1
+    },
+    {
+      "id": "father-given-d4a32006ca50",
+      "text": "Kamanja",
+      "weight": 1
+    },
+    {
+      "id": "father-given-afc66810a975",
+      "text": "Kamotho",
+      "weight": 1
+    },
+    {
+      "id": "father-given-7d6f6cd3bf52",
+      "text": "Kamunya",
+      "weight": 1
+    },
+    {
+      "id": "father-given-c5d6c2ce6d6f",
+      "text": "Kanyua",
+      "weight": 1
+    },
+    {
+      "id": "father-given-fc681c66aecb",
+      "text": "Karani",
+      "weight": 1
+    },
+    {
+      "id": "father-given-93ecd1d4145c",
+      "text": "Nderitu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-d8961bd5d6a3",
+      "text": "Kiarie",
+      "weight": 1
+    },
+    {
+      "id": "father-given-ead06831a15f",
+      "text": "Kibera",
+      "weight": 1
+    },
+    {
+      "id": "father-given-ec4d1caeb1a5",
+      "text": "Kiboi",
+      "weight": 1
+    },
+    {
+      "id": "father-given-608e8e1a99aa",
+      "text": "Kibugi",
+      "weight": 1
+    },
+    {
+      "id": "father-given-abd8a1edfaa3",
+      "text": "Kihara",
+      "weight": 1
+    },
+    {
+      "id": "father-given-eddf6171c9b5",
+      "text": "Kihu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-73703cd52e06",
+      "text": "Kihumba",
+      "weight": 1
+    },
+    {
+      "id": "father-given-1ccdd951e7bc",
+      "text": "Kihuria",
+      "weight": 1
+    },
+    {
+      "id": "father-given-399db80a1aa2",
+      "text": "Kinuthia",
+      "weight": 1
+    },
+    {
+      "id": "father-given-c23e1bed3371",
+      "text": "Kiragu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-2f796f2bf329",
+      "text": "Kirika",
+      "weight": 1
+    },
+    {
+      "id": "father-given-f051c65e6556",
+      "text": "Kuria",
+      "weight": 1
+    },
+    {
+      "id": "father-given-f451a0268c87",
+      "text": "Macharia",
+      "weight": 1
+    },
+    {
+      "id": "father-given-342d33ec32cd",
+      "text": "Mburu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-862d4a4e6f23",
+      "text": "Muchiri",
+      "weight": 1
+    },
+    {
+      "id": "father-given-46475f011983",
+      "text": "Mugambi",
+      "weight": 1
+    },
+    {
+      "id": "father-given-c5687d23c50b",
+      "text": "Mugo",
+      "weight": 1
+    },
+    {
+      "id": "father-given-cd569425ac3a",
+      "text": "Muiruri",
+      "weight": 1
+    },
+    {
+      "id": "father-given-84685df171fb",
+      "text": "Munene",
+      "weight": 1
+    },
+    {
+      "id": "father-given-8adf851d66a7",
+      "text": "Mungai",
+      "weight": 1
+    },
+    {
+      "id": "father-given-e385524129d1",
+      "text": "Muriithi",
+      "weight": 1
+    },
+    {
+      "id": "father-given-f17559dbc0b4",
+      "text": "Murigi",
+      "weight": 1
+    },
+    {
+      "id": "father-given-b67048fbd923",
+      "text": "Muriuki",
+      "weight": 1
+    },
+    {
+      "id": "father-given-cd736fe74e4a",
+      "text": "Muthama",
+      "weight": 1
+    },
+    {
+      "id": "father-given-3c8f9b8c325d",
+      "text": "Muthomi",
+      "weight": 1
+    },
+    {
+      "id": "father-given-8e4b067d3d61",
+      "text": "Ndegwa",
+      "weight": 1
+    },
+    {
+      "id": "father-given-e611e4e7bc55",
+      "text": "Ndungu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-8eb6f1dc6074",
+      "text": "Nganga",
+      "weight": 1
+    },
+    {
+      "id": "father-given-613fbfa3b73a",
+      "text": "Njuguna",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 3540
+  }
+}

@@ -1,0 +1,1062 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "slovak",
+  "label": "Slovak, masculine forms",
+  "language": "sk",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-family",
+    "componentOrder": [
+      "given",
+      "family"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "A conventional male naming pool for fictional personnel. It is not a census or exhaustive account of this population.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 100
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 100,
+    "secondComponent": 100
+  },
+  "completeness": "target-met",
+  "givenNames": [
+    {
+      "id": "given-0b317f55fe88",
+      "text": "Ján",
+      "weight": 3
+    },
+    {
+      "id": "given-11df097d9cba",
+      "text": "Jozef",
+      "weight": 3
+    },
+    {
+      "id": "given-ad8e87e5ee55",
+      "text": "Štefan",
+      "weight": 3
+    },
+    {
+      "id": "given-7d38648d955e",
+      "text": "Michal",
+      "weight": 3
+    },
+    {
+      "id": "given-b806067b7a5b",
+      "text": "Andrej",
+      "weight": 3
+    },
+    {
+      "id": "given-937b72794bcc",
+      "text": "Pavol",
+      "weight": 1
+    },
+    {
+      "id": "given-ea72c7959429",
+      "text": "Peter",
+      "weight": 1
+    },
+    {
+      "id": "given-39d3a2e969b3",
+      "text": "Martin",
+      "weight": 1
+    },
+    {
+      "id": "given-b4da1c4b686d",
+      "text": "Juraj",
+      "weight": 1
+    },
+    {
+      "id": "given-4b1864636ce6",
+      "text": "František",
+      "weight": 1
+    },
+    {
+      "id": "given-42972c1b3e85",
+      "text": "Anton",
+      "weight": 1
+    },
+    {
+      "id": "given-2bef9ca896df",
+      "text": "Ladislav",
+      "weight": 1
+    },
+    {
+      "id": "given-d0fc86bc5e1a",
+      "text": "Karol",
+      "weight": 1
+    },
+    {
+      "id": "given-93c9c728b7f9",
+      "text": "Vojtech",
+      "weight": 1
+    },
+    {
+      "id": "given-3efc35554a7a",
+      "text": "Mikuláš",
+      "weight": 1
+    },
+    {
+      "id": "given-e3686003055d",
+      "text": "Matej",
+      "weight": 1
+    },
+    {
+      "id": "given-63e9923e26cd",
+      "text": "Ondrej",
+      "weight": 1
+    },
+    {
+      "id": "given-e041cfdcb258",
+      "text": "Tomáš",
+      "weight": 1
+    },
+    {
+      "id": "given-3f0c9b03e8e3",
+      "text": "Adam",
+      "weight": 1
+    },
+    {
+      "id": "given-dbadfc88144b",
+      "text": "Alexander",
+      "weight": 1
+    },
+    {
+      "id": "given-1757af5509db",
+      "text": "Alojz",
+      "weight": 1
+    },
+    {
+      "id": "given-271ecba09501",
+      "text": "Ambróz",
+      "weight": 1
+    },
+    {
+      "id": "given-039dd9da7d2c",
+      "text": "Augustín",
+      "weight": 1
+    },
+    {
+      "id": "given-2ff4a97b234a",
+      "text": "Benedikt",
+      "weight": 1
+    },
+    {
+      "id": "given-3a4d5b86cfa2",
+      "text": "Bernard",
+      "weight": 1
+    },
+    {
+      "id": "given-4ca525524502",
+      "text": "Bohdan",
+      "weight": 1
+    },
+    {
+      "id": "given-0decb0b7b8f3",
+      "text": "Bohumil",
+      "weight": 1
+    },
+    {
+      "id": "given-4598b47eecff",
+      "text": "Bohuslav",
+      "weight": 1
+    },
+    {
+      "id": "given-928dba2af549",
+      "text": "Boleslav",
+      "weight": 1
+    },
+    {
+      "id": "given-ea50f83da880",
+      "text": "Branislav",
+      "weight": 1
+    },
+    {
+      "id": "given-486c311df24e",
+      "text": "Ctibor",
+      "weight": 1
+    },
+    {
+      "id": "given-55e97f07b1e0",
+      "text": "Cyril",
+      "weight": 1
+    },
+    {
+      "id": "given-7297db81c2f7",
+      "text": "Daniel",
+      "weight": 1
+    },
+    {
+      "id": "given-c7847d507a30",
+      "text": "Dezider",
+      "weight": 1
+    },
+    {
+      "id": "given-6b260addc39b",
+      "text": "Dionýz",
+      "weight": 1
+    },
+    {
+      "id": "given-a92bfd6faa08",
+      "text": "Dominik",
+      "weight": 1
+    },
+    {
+      "id": "given-8590c783e7a7",
+      "text": "Dušan",
+      "weight": 1
+    },
+    {
+      "id": "given-638178e751e6",
+      "text": "Edmund",
+      "weight": 1
+    },
+    {
+      "id": "given-feaa3bc385da",
+      "text": "Eduard",
+      "weight": 1
+    },
+    {
+      "id": "given-a26e622917d9",
+      "text": "Emanuel",
+      "weight": 1
+    },
+    {
+      "id": "given-6d5128cc0b27",
+      "text": "Emil",
+      "weight": 1
+    },
+    {
+      "id": "given-6aa5c501d58c",
+      "text": "Ernest",
+      "weight": 1
+    },
+    {
+      "id": "given-f7e1f570f18a",
+      "text": "Eugen",
+      "weight": 1
+    },
+    {
+      "id": "given-f8640c61bdb8",
+      "text": "Fedor",
+      "weight": 1
+    },
+    {
+      "id": "given-48e556d153eb",
+      "text": "Félix",
+      "weight": 1
+    },
+    {
+      "id": "given-efe2dadcf2eb",
+      "text": "Ferdinand",
+      "weight": 1
+    },
+    {
+      "id": "given-ba72125deedd",
+      "text": "Filip",
+      "weight": 1
+    },
+    {
+      "id": "given-86e42c3da3aa",
+      "text": "Florián",
+      "weight": 1
+    },
+    {
+      "id": "given-0c030df5a4e7",
+      "text": "Gabriel",
+      "weight": 1
+    },
+    {
+      "id": "given-203badbe14de",
+      "text": "Gregor",
+      "weight": 1
+    },
+    {
+      "id": "given-37e3f85435ea",
+      "text": "Gustáv",
+      "weight": 1
+    },
+    {
+      "id": "given-d22ec12a96e2",
+      "text": "Henrich",
+      "weight": 1
+    },
+    {
+      "id": "given-d70b489bb97e",
+      "text": "Hugo",
+      "weight": 1
+    },
+    {
+      "id": "given-b83474352a93",
+      "text": "Ignác",
+      "weight": 1
+    },
+    {
+      "id": "given-06ba403b6e51",
+      "text": "Imrich",
+      "weight": 1
+    },
+    {
+      "id": "given-ebec404b6897",
+      "text": "Ivan",
+      "weight": 1
+    },
+    {
+      "id": "given-5bb1b38bd752",
+      "text": "Izidor",
+      "weight": 1
+    },
+    {
+      "id": "given-df9d8cca3edd",
+      "text": "Jakub",
+      "weight": 1
+    },
+    {
+      "id": "given-e028df707a41",
+      "text": "Jaromír",
+      "weight": 1
+    },
+    {
+      "id": "given-4493be5c6a90",
+      "text": "Jaroslav",
+      "weight": 1
+    },
+    {
+      "id": "given-678e91b96429",
+      "text": "Július",
+      "weight": 1
+    },
+    {
+      "id": "given-97c4b203659d",
+      "text": "Kamil",
+      "weight": 1
+    },
+    {
+      "id": "given-8cae777980ae",
+      "text": "Kazimír",
+      "weight": 1
+    },
+    {
+      "id": "given-7303430e2d56",
+      "text": "Klement",
+      "weight": 1
+    },
+    {
+      "id": "given-3e2cd3b225f9",
+      "text": "Koloman",
+      "weight": 1
+    },
+    {
+      "id": "given-766ce24448d8",
+      "text": "Konštantín",
+      "weight": 1
+    },
+    {
+      "id": "given-f850c389d6ef",
+      "text": "Kornel",
+      "weight": 1
+    },
+    {
+      "id": "given-ee0984ef8830",
+      "text": "Kristián",
+      "weight": 1
+    },
+    {
+      "id": "given-596db9d5b62e",
+      "text": "Leopold",
+      "weight": 1
+    },
+    {
+      "id": "given-38840dc4158c",
+      "text": "Ľubomír",
+      "weight": 1
+    },
+    {
+      "id": "given-c9de00622140",
+      "text": "Ľudovít",
+      "weight": 1
+    },
+    {
+      "id": "given-9e92ce112b3d",
+      "text": "Lukáš",
+      "weight": 1
+    },
+    {
+      "id": "given-cf9f59045898",
+      "text": "Marcel",
+      "weight": 1
+    },
+    {
+      "id": "given-138db79325a9",
+      "text": "Marián",
+      "weight": 1
+    },
+    {
+      "id": "given-48cf6c91c1d1",
+      "text": "Marko",
+      "weight": 1
+    },
+    {
+      "id": "given-1f4544c004d9",
+      "text": "Matúš",
+      "weight": 1
+    },
+    {
+      "id": "given-a79e28d90fca",
+      "text": "Maximilián",
+      "weight": 1
+    },
+    {
+      "id": "given-f41b9241e98a",
+      "text": "Metod",
+      "weight": 1
+    },
+    {
+      "id": "given-ec3ae6550b94",
+      "text": "Milan",
+      "weight": 1
+    },
+    {
+      "id": "given-90d7aa3cb17f",
+      "text": "Miloš",
+      "weight": 1
+    },
+    {
+      "id": "given-c2b12c7e66b8",
+      "text": "Miroslav",
+      "weight": 1
+    },
+    {
+      "id": "given-554aa135e9b5",
+      "text": "Norbert",
+      "weight": 1
+    },
+    {
+      "id": "given-e9be6378d7e3",
+      "text": "Oldrich",
+      "weight": 1
+    },
+    {
+      "id": "given-56b11311eecf",
+      "text": "Oskár",
+      "weight": 1
+    },
+    {
+      "id": "given-ee04d417bf33",
+      "text": "Oto",
+      "weight": 1
+    },
+    {
+      "id": "given-4307388561d4",
+      "text": "Patrik",
+      "weight": 1
+    },
+    {
+      "id": "given-68355789e80a",
+      "text": "Rastislav",
+      "weight": 1
+    },
+    {
+      "id": "given-1d5cc3f69b89",
+      "text": "René",
+      "weight": 1
+    },
+    {
+      "id": "given-1deb0a3b8675",
+      "text": "Richard",
+      "weight": 1
+    },
+    {
+      "id": "given-7bb983951b3f",
+      "text": "Róbert",
+      "weight": 1
+    },
+    {
+      "id": "given-d1b6eda54b27",
+      "text": "Rudolf",
+      "weight": 1
+    },
+    {
+      "id": "given-b1f6d1241c57",
+      "text": "Samuel",
+      "weight": 1
+    },
+    {
+      "id": "given-d3af005143af",
+      "text": "Severín",
+      "weight": 1
+    },
+    {
+      "id": "given-668966562660",
+      "text": "Silvester",
+      "weight": 1
+    },
+    {
+      "id": "given-48b7703e9c91",
+      "text": "Stanislav",
+      "weight": 1
+    },
+    {
+      "id": "given-43f73309eba4",
+      "text": "Svätopluk",
+      "weight": 1
+    },
+    {
+      "id": "given-ab09e4cfbf17",
+      "text": "Tibor",
+      "weight": 1
+    },
+    {
+      "id": "given-c1cb2896ffe2",
+      "text": "Valentín",
+      "weight": 1
+    },
+    {
+      "id": "given-a2da039c9256",
+      "text": "Vavrinec",
+      "weight": 1
+    },
+    {
+      "id": "given-31843e2452b1",
+      "text": "Vladimír",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-d58acfdb062f",
+      "text": "Horváth",
+      "weight": 3
+    },
+    {
+      "id": "family-76fa6318d931",
+      "text": "Kováč",
+      "weight": 3
+    },
+    {
+      "id": "family-21cca87efbe3",
+      "text": "Varga",
+      "weight": 3
+    },
+    {
+      "id": "family-f5dc8efab9bf",
+      "text": "Tóth",
+      "weight": 3
+    },
+    {
+      "id": "family-f675a1a67474",
+      "text": "Nagy",
+      "weight": 1
+    },
+    {
+      "id": "family-77dd20262a8b",
+      "text": "Baláž",
+      "weight": 1
+    },
+    {
+      "id": "family-910b6dda4045",
+      "text": "Molnár",
+      "weight": 1
+    },
+    {
+      "id": "family-a03c8cfb43a9",
+      "text": "Szabó",
+      "weight": 1
+    },
+    {
+      "id": "family-65da854c1858",
+      "text": "Kováčik",
+      "weight": 1
+    },
+    {
+      "id": "family-94ef1ebd488d",
+      "text": "Novák",
+      "weight": 3
+    },
+    {
+      "id": "family-c03d1e55ebef",
+      "text": "Kovács",
+      "weight": 1
+    },
+    {
+      "id": "family-46d9bcc9defe",
+      "text": "Šimko",
+      "weight": 1
+    },
+    {
+      "id": "family-f2ed3c5c2c04",
+      "text": "Polák",
+      "weight": 1
+    },
+    {
+      "id": "family-9d918e6405c8",
+      "text": "Kollár",
+      "weight": 1
+    },
+    {
+      "id": "family-fae3362ad0ea",
+      "text": "Hudák",
+      "weight": 1
+    },
+    {
+      "id": "family-17298d6b08ce",
+      "text": "Krajčír",
+      "weight": 1
+    },
+    {
+      "id": "family-7184755bf7d9",
+      "text": "Krajčovič",
+      "weight": 1
+    },
+    {
+      "id": "family-51cca93e887b",
+      "text": "Lukáč",
+      "weight": 1
+    },
+    {
+      "id": "family-f2dd6d39a94c",
+      "text": "Bartoš",
+      "weight": 1
+    },
+    {
+      "id": "family-c8b88f8b872b",
+      "text": "Farkaš",
+      "weight": 1
+    },
+    {
+      "id": "family-79d4dd13c51d",
+      "text": "Kiss",
+      "weight": 1
+    },
+    {
+      "id": "family-2e267f22d291",
+      "text": "Švec",
+      "weight": 1
+    },
+    {
+      "id": "family-db81c1173eca",
+      "text": "Balog",
+      "weight": 1
+    },
+    {
+      "id": "family-d68c83d9cceb",
+      "text": "Blaško",
+      "weight": 1
+    },
+    {
+      "id": "family-839dd3b2cfff",
+      "text": "Boháč",
+      "weight": 1
+    },
+    {
+      "id": "family-521c9eab6e8c",
+      "text": "Brezina",
+      "weight": 1
+    },
+    {
+      "id": "family-f4641d79cf87",
+      "text": "Bugan",
+      "weight": 1
+    },
+    {
+      "id": "family-d5bbc39d071b",
+      "text": "Černák",
+      "weight": 1
+    },
+    {
+      "id": "family-97e9cce7c426",
+      "text": "Červený",
+      "weight": 1
+    },
+    {
+      "id": "family-b7534e155ef0",
+      "text": "Čierny",
+      "weight": 1
+    },
+    {
+      "id": "family-c60dc552ba4e",
+      "text": "Danko",
+      "weight": 1
+    },
+    {
+      "id": "family-59c17e96a238",
+      "text": "Dobiáš",
+      "weight": 1
+    },
+    {
+      "id": "family-190b4b5158a4",
+      "text": "Dobrota",
+      "weight": 1
+    },
+    {
+      "id": "family-f3c84196467b",
+      "text": "Doležal",
+      "weight": 1
+    },
+    {
+      "id": "family-becdb79106bd",
+      "text": "Dubovský",
+      "weight": 1
+    },
+    {
+      "id": "family-0226e9e15f0b",
+      "text": "Dudáš",
+      "weight": 1
+    },
+    {
+      "id": "family-dfc5a1974a8d",
+      "text": "Ďurica",
+      "weight": 1
+    },
+    {
+      "id": "family-09eae68b2b4b",
+      "text": "Ďuriš",
+      "weight": 1
+    },
+    {
+      "id": "family-290052a16be9",
+      "text": "Fábry",
+      "weight": 1
+    },
+    {
+      "id": "family-f8640c61bdb8",
+      "text": "Fedor",
+      "weight": 1
+    },
+    {
+      "id": "family-dcfec9140fab",
+      "text": "Fiala",
+      "weight": 1
+    },
+    {
+      "id": "family-53b3c637c7e2",
+      "text": "Fillo",
+      "weight": 1
+    },
+    {
+      "id": "family-690d02295146",
+      "text": "Foltín",
+      "weight": 1
+    },
+    {
+      "id": "family-34eaacb9bea1",
+      "text": "Gašpar",
+      "weight": 1
+    },
+    {
+      "id": "family-52cad9474e36",
+      "text": "Gajdoš",
+      "weight": 1
+    },
+    {
+      "id": "family-203badbe14de",
+      "text": "Gregor",
+      "weight": 1
+    },
+    {
+      "id": "family-45a97fa639fa",
+      "text": "Hajduk",
+      "weight": 1
+    },
+    {
+      "id": "family-1f11f7d674d0",
+      "text": "Haluška",
+      "weight": 1
+    },
+    {
+      "id": "family-56c08dd29559",
+      "text": "Havran",
+      "weight": 1
+    },
+    {
+      "id": "family-edeebd582d1e",
+      "text": "Hlinka",
+      "weight": 1
+    },
+    {
+      "id": "family-d21abad107b0",
+      "text": "Holub",
+      "weight": 1
+    },
+    {
+      "id": "family-4cdb0d39d7e6",
+      "text": "Hrivnák",
+      "weight": 1
+    },
+    {
+      "id": "family-6de8c3a3b95a",
+      "text": "Hruška",
+      "weight": 1
+    },
+    {
+      "id": "family-0d4fecc63707",
+      "text": "Chovan",
+      "weight": 1
+    },
+    {
+      "id": "family-39dfde4bb132",
+      "text": "Chudý",
+      "weight": 1
+    },
+    {
+      "id": "family-365608f20ee3",
+      "text": "Janík",
+      "weight": 1
+    },
+    {
+      "id": "family-86811abd3f1d",
+      "text": "Jankovič",
+      "weight": 1
+    },
+    {
+      "id": "family-fabb4778dd24",
+      "text": "Javorský",
+      "weight": 1
+    },
+    {
+      "id": "family-d9ffad9d189e",
+      "text": "Jedlička",
+      "weight": 1
+    },
+    {
+      "id": "family-ff101f12a9c4",
+      "text": "Kalinák",
+      "weight": 1
+    },
+    {
+      "id": "family-5d7d7ce18576",
+      "text": "Kmeť",
+      "weight": 1
+    },
+    {
+      "id": "family-69caa679dba3",
+      "text": "Kocúr",
+      "weight": 1
+    },
+    {
+      "id": "family-a606a7f75234",
+      "text": "Kolár",
+      "weight": 1
+    },
+    {
+      "id": "family-d45a95301d1f",
+      "text": "Benko",
+      "weight": 1
+    },
+    {
+      "id": "family-0a3aa17107d0",
+      "text": "Kozák",
+      "weight": 1
+    },
+    {
+      "id": "family-797d488f4b0a",
+      "text": "Králik",
+      "weight": 1
+    },
+    {
+      "id": "family-914f2a91d98b",
+      "text": "Kučera",
+      "weight": 1
+    },
+    {
+      "id": "family-bc35f6ea5e03",
+      "text": "Kukučka",
+      "weight": 1
+    },
+    {
+      "id": "family-4b5c63b92690",
+      "text": "Lacko",
+      "weight": 1
+    },
+    {
+      "id": "family-d3b1f4737c03",
+      "text": "Lipták",
+      "weight": 1
+    },
+    {
+      "id": "family-54fd3adc8ae6",
+      "text": "Macko",
+      "weight": 1
+    },
+    {
+      "id": "family-bb8a24ffaf8a",
+      "text": "Majer",
+      "weight": 1
+    },
+    {
+      "id": "family-48cf6c91c1d1",
+      "text": "Marko",
+      "weight": 1
+    },
+    {
+      "id": "family-0af364797675",
+      "text": "Mihál",
+      "weight": 1
+    },
+    {
+      "id": "family-26a132940f74",
+      "text": "Mikuš",
+      "weight": 1
+    },
+    {
+      "id": "family-3f85e8d74a44",
+      "text": "Moravčík",
+      "weight": 1
+    },
+    {
+      "id": "family-deb1f50f0d53",
+      "text": "Mrva",
+      "weight": 1
+    },
+    {
+      "id": "family-7fd34e32910e",
+      "text": "Németh",
+      "weight": 1
+    },
+    {
+      "id": "family-40d79c854a1e",
+      "text": "Ondrejka",
+      "weight": 1
+    },
+    {
+      "id": "family-4ffddc864af0",
+      "text": "Oravec",
+      "weight": 1
+    },
+    {
+      "id": "family-1c2d6d4db476",
+      "text": "Pavlík",
+      "weight": 1
+    },
+    {
+      "id": "family-faac35a52f2d",
+      "text": "Petrík",
+      "weight": 1
+    },
+    {
+      "id": "family-5c21f6ea91f7",
+      "text": "Pivovar",
+      "weight": 1
+    },
+    {
+      "id": "family-76dfaa9d9fc1",
+      "text": "Popovič",
+      "weight": 1
+    },
+    {
+      "id": "family-5ac73e00c611",
+      "text": "Rácz",
+      "weight": 1
+    },
+    {
+      "id": "family-0f3ed379db58",
+      "text": "Rusnák",
+      "weight": 1
+    },
+    {
+      "id": "family-1d0a29cd86a4",
+      "text": "Sedlák",
+      "weight": 1
+    },
+    {
+      "id": "family-12d76de20e4a",
+      "text": "Slávik",
+      "weight": 1
+    },
+    {
+      "id": "family-32c3132c7f13",
+      "text": "Sokol",
+      "weight": 1
+    },
+    {
+      "id": "family-f655eafc5938",
+      "text": "Sýkora",
+      "weight": 1
+    },
+    {
+      "id": "family-6ba415182734",
+      "text": "Šimek",
+      "weight": 1
+    },
+    {
+      "id": "family-0fe6f8f05799",
+      "text": "Šimunek",
+      "weight": 1
+    },
+    {
+      "id": "family-dc1bac5b15af",
+      "text": "Šoltés",
+      "weight": 1
+    },
+    {
+      "id": "family-5e3ed2d7cbc9",
+      "text": "Štefánik",
+      "weight": 1
+    },
+    {
+      "id": "family-daeff776c34e",
+      "text": "Takáč",
+      "weight": 1
+    },
+    {
+      "id": "family-760a05bf3224",
+      "text": "Tkáč",
+      "weight": 1
+    },
+    {
+      "id": "family-363eaf43b484",
+      "text": "Urban",
+      "weight": 1
+    },
+    {
+      "id": "family-eeabc9aa6d0f",
+      "text": "Vargaš",
+      "weight": 1
+    },
+    {
+      "id": "family-7d792a2a8c7f",
+      "text": "Veselý",
+      "weight": 1
+    },
+    {
+      "id": "family-fbd5f53af447",
+      "text": "Vlček",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 9997
+  }
+}

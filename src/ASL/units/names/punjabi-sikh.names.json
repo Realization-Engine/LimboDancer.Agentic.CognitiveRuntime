@@ -1,0 +1,569 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "punjabi-sikh",
+  "label": "Punjabi Sikh, military short form",
+  "language": "pa-Latn",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-community",
+    "componentOrder": [
+      "given",
+      "community"
+    ],
+    "separator": " ",
+    "secondComponentRole": "community"
+  },
+  "scopeNote": "Given name plus Singh is the supported short military form. Singh is a shared adopted name, not a claim of shared ancestry. Clan/family surnames may be retained as authored extra components. A hundred different surnames would misrepresent this convention; duplicate capacity is 100 short forms before author-supplied extra components.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 0,
+    "secondComponent": 1
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 0,
+    "secondComponent": 1
+  },
+  "completeness": "target-met",
+  "givenNames": [
+    {
+      "id": "given-f65edcec8a24",
+      "text": "Amar",
+      "weight": 1
+    },
+    {
+      "id": "given-224f99ac9f2f",
+      "text": "Amrik",
+      "weight": 1
+    },
+    {
+      "id": "given-def27b2752e6",
+      "text": "Arjan",
+      "weight": 1
+    },
+    {
+      "id": "given-cff706513207",
+      "text": "Attar",
+      "weight": 1
+    },
+    {
+      "id": "given-35847bdcfd23",
+      "text": "Avtar",
+      "weight": 1
+    },
+    {
+      "id": "given-72be50c1324a",
+      "text": "Bachan",
+      "weight": 1
+    },
+    {
+      "id": "given-f21e58d06941",
+      "text": "Baghel",
+      "weight": 1
+    },
+    {
+      "id": "given-feb57a1a2e12",
+      "text": "Balbir",
+      "weight": 1
+    },
+    {
+      "id": "given-88309b7f28b4",
+      "text": "Baldev",
+      "weight": 1
+    },
+    {
+      "id": "given-9ed9666f3731",
+      "text": "Baljit",
+      "weight": 1
+    },
+    {
+      "id": "given-3bbefc7782e4",
+      "text": "Balwant",
+      "weight": 1
+    },
+    {
+      "id": "given-39a1723d5f42",
+      "text": "Banta",
+      "weight": 1
+    },
+    {
+      "id": "given-ae8a6ad30276",
+      "text": "Basant",
+      "weight": 1
+    },
+    {
+      "id": "given-c6d5bd2a9c70",
+      "text": "Bawa",
+      "weight": 1
+    },
+    {
+      "id": "given-f3b9cc6d82ed",
+      "text": "Bhag",
+      "weight": 1
+    },
+    {
+      "id": "given-6b65ba22fef8",
+      "text": "Bhagat",
+      "weight": 1
+    },
+    {
+      "id": "given-d6a5f52991ec",
+      "text": "Bhagwan",
+      "weight": 1
+    },
+    {
+      "id": "given-be1698e94e9e",
+      "text": "Bhupinder",
+      "weight": 1
+    },
+    {
+      "id": "given-8599f268b211",
+      "text": "Bikram",
+      "weight": 1
+    },
+    {
+      "id": "given-472a93eb63a8",
+      "text": "Bishan",
+      "weight": 1
+    },
+    {
+      "id": "given-98d26fe8ba75",
+      "text": "Buta",
+      "weight": 1
+    },
+    {
+      "id": "given-2d24cbdd0838",
+      "text": "Chanan",
+      "weight": 1
+    },
+    {
+      "id": "given-55df01052b4e",
+      "text": "Charan",
+      "weight": 1
+    },
+    {
+      "id": "given-b327b7ea9f69",
+      "text": "Chuhar",
+      "weight": 1
+    },
+    {
+      "id": "given-6ecdee66c71a",
+      "text": "Dalip",
+      "weight": 1
+    },
+    {
+      "id": "given-d04f034dceac",
+      "text": "Daljit",
+      "weight": 1
+    },
+    {
+      "id": "given-a5c4062e7b79",
+      "text": "Darshan",
+      "weight": 1
+    },
+    {
+      "id": "given-a083d819f8a3",
+      "text": "Daya",
+      "weight": 1
+    },
+    {
+      "id": "given-5a1b6910025a",
+      "text": "Desa",
+      "weight": 1
+    },
+    {
+      "id": "given-0359b10969eb",
+      "text": "Dharam",
+      "weight": 1
+    },
+    {
+      "id": "given-df5c9f9f926a",
+      "text": "Didar",
+      "weight": 1
+    },
+    {
+      "id": "given-8dc4d9dd9c86",
+      "text": "Diwan",
+      "weight": 1
+    },
+    {
+      "id": "given-600eb4d176bb",
+      "text": "Fateh",
+      "weight": 1
+    },
+    {
+      "id": "given-ef1b28932902",
+      "text": "Ganda",
+      "weight": 1
+    },
+    {
+      "id": "given-7ea3fb6f020a",
+      "text": "Gian",
+      "weight": 1
+    },
+    {
+      "id": "given-de6f80604a07",
+      "text": "Gobind",
+      "weight": 1
+    },
+    {
+      "id": "given-1a1099a5a054",
+      "text": "Gopal",
+      "weight": 1
+    },
+    {
+      "id": "given-e951ab462b3a",
+      "text": "Gulab",
+      "weight": 1
+    },
+    {
+      "id": "given-8cba49a7e0c1",
+      "text": "Gurbachan",
+      "weight": 1
+    },
+    {
+      "id": "given-c2eaf5fc1912",
+      "text": "Gurbaksh",
+      "weight": 1
+    },
+    {
+      "id": "given-60927118b03b",
+      "text": "Uttam",
+      "weight": 1
+    },
+    {
+      "id": "given-8f27d294cad9",
+      "text": "Gurcharan",
+      "weight": 1
+    },
+    {
+      "id": "given-2b51868c4d0a",
+      "text": "Gurdial",
+      "weight": 1
+    },
+    {
+      "id": "given-d0885978dfe1",
+      "text": "Gurdit",
+      "weight": 1
+    },
+    {
+      "id": "given-1aa206d0afff",
+      "text": "Gurmail",
+      "weight": 1
+    },
+    {
+      "id": "given-f40b6b70a851",
+      "text": "Gurmukh",
+      "weight": 1
+    },
+    {
+      "id": "given-f3538daa58da",
+      "text": "Gurnam",
+      "weight": 1
+    },
+    {
+      "id": "given-8f5fec738d8b",
+      "text": "Gursharan",
+      "weight": 1
+    },
+    {
+      "id": "given-973a93ab2e2d",
+      "text": "Gurtej",
+      "weight": 1
+    },
+    {
+      "id": "given-b282ce9e60ad",
+      "text": "Hakam",
+      "weight": 1
+    },
+    {
+      "id": "given-353c5a4b31f4",
+      "text": "Harbans",
+      "weight": 1
+    },
+    {
+      "id": "given-514a68b78356",
+      "text": "Harbhajan",
+      "weight": 1
+    },
+    {
+      "id": "given-1436760cdaef",
+      "text": "Harchand",
+      "weight": 1
+    },
+    {
+      "id": "given-d06c1489aad3",
+      "text": "Harcharan",
+      "weight": 1
+    },
+    {
+      "id": "given-10c6888f8369",
+      "text": "Hardev",
+      "weight": 1
+    },
+    {
+      "id": "given-5fc4809c41ec",
+      "text": "Hari",
+      "weight": 1
+    },
+    {
+      "id": "given-02a6bc3017e6",
+      "text": "Harnam",
+      "weight": 1
+    },
+    {
+      "id": "given-b783d147a6f3",
+      "text": "Harpal",
+      "weight": 1
+    },
+    {
+      "id": "given-2c97c1bc442b",
+      "text": "Harpartap",
+      "weight": 1
+    },
+    {
+      "id": "given-8c133c044a9f",
+      "text": "Inder",
+      "weight": 1
+    },
+    {
+      "id": "given-e3f608ca0991",
+      "text": "Isher",
+      "weight": 1
+    },
+    {
+      "id": "given-ceccd4957689",
+      "text": "Jagat",
+      "weight": 1
+    },
+    {
+      "id": "given-52a0e275af99",
+      "text": "Jagdish",
+      "weight": 1
+    },
+    {
+      "id": "given-d2013151d0b1",
+      "text": "Jagir",
+      "weight": 1
+    },
+    {
+      "id": "given-cf895172583b",
+      "text": "Jagjit",
+      "weight": 1
+    },
+    {
+      "id": "given-b769d75224ca",
+      "text": "Jai",
+      "weight": 1
+    },
+    {
+      "id": "given-f81dd08316ea",
+      "text": "Jaswant",
+      "weight": 1
+    },
+    {
+      "id": "given-ae1c5a70d893",
+      "text": "Jawahar",
+      "weight": 1
+    },
+    {
+      "id": "given-225cdfaac1a2",
+      "text": "Jhanda",
+      "weight": 1
+    },
+    {
+      "id": "given-058b82cd32ce",
+      "text": "Jit",
+      "weight": 1
+    },
+    {
+      "id": "given-348329d9320b",
+      "text": "Jodh",
+      "weight": 1
+    },
+    {
+      "id": "given-bd6f9505d9d6",
+      "text": "Joginder",
+      "weight": 1
+    },
+    {
+      "id": "given-ec933866a696",
+      "text": "Jorawar",
+      "weight": 1
+    },
+    {
+      "id": "given-47a59be529d9",
+      "text": "Kartar",
+      "weight": 1
+    },
+    {
+      "id": "given-749a4f89e2e4",
+      "text": "Kehar",
+      "weight": 1
+    },
+    {
+      "id": "given-c37e5de1fb20",
+      "text": "Kesar",
+      "weight": 1
+    },
+    {
+      "id": "given-2054e96971b5",
+      "text": "Kharak",
+      "weight": 1
+    },
+    {
+      "id": "given-847220052ec3",
+      "text": "Kirpal",
+      "weight": 1
+    },
+    {
+      "id": "given-f11a4eef632d",
+      "text": "Kishan",
+      "weight": 1
+    },
+    {
+      "id": "given-28114a95619f",
+      "text": "Labh",
+      "weight": 1
+    },
+    {
+      "id": "given-4f00b622c026",
+      "text": "Lachhman",
+      "weight": 1
+    },
+    {
+      "id": "given-a45d9d731062",
+      "text": "Lakha",
+      "weight": 1
+    },
+    {
+      "id": "given-6fa4a0a5273b",
+      "text": "Lehna",
+      "weight": 1
+    },
+    {
+      "id": "given-3faf6233ce5e",
+      "text": "Maan",
+      "weight": 1
+    },
+    {
+      "id": "given-8ecaf4d0570d",
+      "text": "Mangal",
+      "weight": 1
+    },
+    {
+      "id": "given-c446cb1a0311",
+      "text": "Mehar",
+      "weight": 1
+    },
+    {
+      "id": "given-6d040ef7ff7b",
+      "text": "Mohan",
+      "weight": 1
+    },
+    {
+      "id": "given-d385521a6a57",
+      "text": "Mukhtiar",
+      "weight": 1
+    },
+    {
+      "id": "given-70f0ce02c6cd",
+      "text": "Nahar",
+      "weight": 1
+    },
+    {
+      "id": "given-9c2eea668a0a",
+      "text": "Nand",
+      "weight": 1
+    },
+    {
+      "id": "given-3a810d0282f4",
+      "text": "Naranjan",
+      "weight": 1
+    },
+    {
+      "id": "given-a2c61d4779d4",
+      "text": "Narinder",
+      "weight": 1
+    },
+    {
+      "id": "given-6313f5ad415d",
+      "text": "Natha",
+      "weight": 1
+    },
+    {
+      "id": "given-d6dd238d8ab7",
+      "text": "Nihal",
+      "weight": 1
+    },
+    {
+      "id": "given-16c348475bf7",
+      "text": "Partap",
+      "weight": 1
+    },
+    {
+      "id": "given-d5ae40ab2098",
+      "text": "Pritam",
+      "weight": 1
+    },
+    {
+      "id": "given-cdbe457dcf51",
+      "text": "Ranjit",
+      "weight": 1
+    },
+    {
+      "id": "given-ea5f3cff7f56",
+      "text": "Santa",
+      "weight": 1
+    },
+    {
+      "id": "given-78e16d25efa2",
+      "text": "Sher",
+      "weight": 1
+    },
+    {
+      "id": "given-848ae1c9ed49",
+      "text": "Surjan",
+      "weight": 1
+    }
+  ],
+  "familyNames": [],
+  "communityNames": [
+    {
+      "id": "community-f067c16c95e9",
+      "text": "Singh",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 100
+  }
+}

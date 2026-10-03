@@ -1,0 +1,1062 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "croatian",
+  "label": "Croatian",
+  "language": "hr",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-family",
+    "componentOrder": [
+      "given",
+      "family"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "A conventional male naming pool for fictional personnel. It is not a census or exhaustive account of this population.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 100
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 100,
+    "secondComponent": 100
+  },
+  "completeness": "target-met",
+  "givenNames": [
+    {
+      "id": "given-ebec404b6897",
+      "text": "Ivan",
+      "weight": 3
+    },
+    {
+      "id": "given-f568b550d09f",
+      "text": "Josip",
+      "weight": 3
+    },
+    {
+      "id": "given-2f43add06f39",
+      "text": "Stjepan",
+      "weight": 3
+    },
+    {
+      "id": "given-40714aab81a6",
+      "text": "Franjo",
+      "weight": 3
+    },
+    {
+      "id": "given-6818558d76a3",
+      "text": "Ante",
+      "weight": 3
+    },
+    {
+      "id": "given-f37a96694fed",
+      "text": "Antun",
+      "weight": 1
+    },
+    {
+      "id": "given-48cf6c91c1d1",
+      "text": "Marko",
+      "weight": 1
+    },
+    {
+      "id": "given-42dfb4ef6c59",
+      "text": "Nikola",
+      "weight": 1
+    },
+    {
+      "id": "given-48553a6182b0",
+      "text": "Petar",
+      "weight": 1
+    },
+    {
+      "id": "given-be102472b7fd",
+      "text": "Mato",
+      "weight": 1
+    },
+    {
+      "id": "given-d5ec4b244cd5",
+      "text": "Jure",
+      "weight": 1
+    },
+    {
+      "id": "given-36bc10edc55b",
+      "text": "Luka",
+      "weight": 1
+    },
+    {
+      "id": "given-0dc609372f54",
+      "text": "Mate",
+      "weight": 1
+    },
+    {
+      "id": "given-ec3ae6550b94",
+      "text": "Milan",
+      "weight": 1
+    },
+    {
+      "id": "given-1f11ba81c992",
+      "text": "Vladimir",
+      "weight": 1
+    },
+    {
+      "id": "given-7a332bb8c031",
+      "text": "Ivo",
+      "weight": 1
+    },
+    {
+      "id": "given-c89421bee4be",
+      "text": "Jakov",
+      "weight": 1
+    },
+    {
+      "id": "given-f2a77c1224c2",
+      "text": "Tomislav",
+      "weight": 1
+    },
+    {
+      "id": "given-4e30a58740e9",
+      "text": "Branko",
+      "weight": 1
+    },
+    {
+      "id": "given-704f4318f555",
+      "text": "Đuro",
+      "weight": 1
+    },
+    {
+      "id": "given-090afedc256d",
+      "text": "Mirko",
+      "weight": 1
+    },
+    {
+      "id": "given-825cac67ff26",
+      "text": "Marijan",
+      "weight": 1
+    },
+    {
+      "id": "given-39d3a2e969b3",
+      "text": "Martin",
+      "weight": 1
+    },
+    {
+      "id": "given-3de242aded69",
+      "text": "Dragutin",
+      "weight": 1
+    },
+    {
+      "id": "given-e73ee67debf0",
+      "text": "Vinko",
+      "weight": 1
+    },
+    {
+      "id": "given-1757af5509db",
+      "text": "Alojz",
+      "weight": 1
+    },
+    {
+      "id": "given-c642548f1083",
+      "text": "Andrija",
+      "weight": 1
+    },
+    {
+      "id": "given-a66d8970e569",
+      "text": "August",
+      "weight": 1
+    },
+    {
+      "id": "given-13f995de79f9",
+      "text": "Bartol",
+      "weight": 1
+    },
+    {
+      "id": "given-0efae945ea78",
+      "text": "Blaž",
+      "weight": 1
+    },
+    {
+      "id": "given-8e41be2891fe",
+      "text": "Bogdan",
+      "weight": 1
+    },
+    {
+      "id": "given-4d6f2a834e74",
+      "text": "Božidar",
+      "weight": 1
+    },
+    {
+      "id": "given-80848f1f7142",
+      "text": "Branimir",
+      "weight": 1
+    },
+    {
+      "id": "given-2f2781e5ab48",
+      "text": "Bruno",
+      "weight": 1
+    },
+    {
+      "id": "given-b00f0454d115",
+      "text": "Damjan",
+      "weight": 1
+    },
+    {
+      "id": "given-80400a381ad9",
+      "text": "Danijel",
+      "weight": 1
+    },
+    {
+      "id": "given-c60dc552ba4e",
+      "text": "Danko",
+      "weight": 1
+    },
+    {
+      "id": "given-6442a7b0d1b2",
+      "text": "Davor",
+      "weight": 1
+    },
+    {
+      "id": "given-ce88404993b4",
+      "text": "Drago",
+      "weight": 1
+    },
+    {
+      "id": "given-a6e5acd06679",
+      "text": "Dragomir",
+      "weight": 1
+    },
+    {
+      "id": "given-6d5128cc0b27",
+      "text": "Emil",
+      "weight": 1
+    },
+    {
+      "id": "given-f7e1f570f18a",
+      "text": "Eugen",
+      "weight": 1
+    },
+    {
+      "id": "given-efe2dadcf2eb",
+      "text": "Ferdinand",
+      "weight": 1
+    },
+    {
+      "id": "given-ba72125deedd",
+      "text": "Filip",
+      "weight": 1
+    },
+    {
+      "id": "given-5e6c5df407b5",
+      "text": "Florijan",
+      "weight": 1
+    },
+    {
+      "id": "given-f466a32a10ac",
+      "text": "Gabrijel",
+      "weight": 1
+    },
+    {
+      "id": "given-72f8889230f0",
+      "text": "Grga",
+      "weight": 1
+    },
+    {
+      "id": "given-864436523945",
+      "text": "Grgur",
+      "weight": 1
+    },
+    {
+      "id": "given-b594e40e3256",
+      "text": "Hinko",
+      "weight": 1
+    },
+    {
+      "id": "given-2bad3ac001c7",
+      "text": "Ignac",
+      "weight": 1
+    },
+    {
+      "id": "given-bd754bb1b002",
+      "text": "Ilija",
+      "weight": 1
+    },
+    {
+      "id": "given-41dfe0b6a051",
+      "text": "Ivica",
+      "weight": 1
+    },
+    {
+      "id": "given-13ad9de19191",
+      "text": "Janko",
+      "weight": 1
+    },
+    {
+      "id": "given-58262808a068",
+      "text": "Jerko",
+      "weight": 1
+    },
+    {
+      "id": "given-5a4a80c5a064",
+      "text": "Joško",
+      "weight": 1
+    },
+    {
+      "id": "given-b4da1c4b686d",
+      "text": "Juraj",
+      "weight": 1
+    },
+    {
+      "id": "given-9111dd807b71",
+      "text": "Karlo",
+      "weight": 1
+    },
+    {
+      "id": "given-dd9f3a415167",
+      "text": "Kazimir",
+      "weight": 1
+    },
+    {
+      "id": "given-32624ab8e78a",
+      "text": "Krešimir",
+      "weight": 1
+    },
+    {
+      "id": "given-ebeb933c259e",
+      "text": "Krsto",
+      "weight": 1
+    },
+    {
+      "id": "given-596db9d5b62e",
+      "text": "Leopold",
+      "weight": 1
+    },
+    {
+      "id": "given-00ed114b7259",
+      "text": "Ljudevit",
+      "weight": 1
+    },
+    {
+      "id": "given-dc9481602369",
+      "text": "Lovro",
+      "weight": 1
+    },
+    {
+      "id": "given-d0abdb5faf12",
+      "text": "Ludovik",
+      "weight": 1
+    },
+    {
+      "id": "given-8053f9c1e94c",
+      "text": "Marin",
+      "weight": 1
+    },
+    {
+      "id": "given-4afd072d3461",
+      "text": "Matija",
+      "weight": 1
+    },
+    {
+      "id": "given-8bda2562c81d",
+      "text": "Milivoj",
+      "weight": 1
+    },
+    {
+      "id": "given-c2b12c7e66b8",
+      "text": "Miroslav",
+      "weight": 1
+    },
+    {
+      "id": "given-1d76788313ef",
+      "text": "Mladen",
+      "weight": 1
+    },
+    {
+      "id": "given-580c6b254c40",
+      "text": "Nedjeljko",
+      "weight": 1
+    },
+    {
+      "id": "given-41605999a208",
+      "text": "Nenad",
+      "weight": 1
+    },
+    {
+      "id": "given-e9d8ab39e23e",
+      "text": "Pavao",
+      "weight": 1
+    },
+    {
+      "id": "given-a044fc019218",
+      "text": "Pero",
+      "weight": 1
+    },
+    {
+      "id": "given-d66487963b01",
+      "text": "Radovan",
+      "weight": 1
+    },
+    {
+      "id": "given-af464f5ccd96",
+      "text": "Rikard",
+      "weight": 1
+    },
+    {
+      "id": "given-2238dd61a1bf",
+      "text": "Robert",
+      "weight": 1
+    },
+    {
+      "id": "given-38a0441ded2b",
+      "text": "Roko",
+      "weight": 1
+    },
+    {
+      "id": "given-d1b6eda54b27",
+      "text": "Rudolf",
+      "weight": 1
+    },
+    {
+      "id": "given-34b5eff89014",
+      "text": "Sava",
+      "weight": 1
+    },
+    {
+      "id": "given-700e6ff2d934",
+      "text": "Slavko",
+      "weight": 1
+    },
+    {
+      "id": "given-6ceda1ec74e6",
+      "text": "Slavoljub",
+      "weight": 1
+    },
+    {
+      "id": "given-48b7703e9c91",
+      "text": "Stanislav",
+      "weight": 1
+    },
+    {
+      "id": "given-0efa713ca99e",
+      "text": "Stanko",
+      "weight": 1
+    },
+    {
+      "id": "given-db854f5b883f",
+      "text": "Stevo",
+      "weight": 1
+    },
+    {
+      "id": "given-d5fc546a0531",
+      "text": "Stipe",
+      "weight": 1
+    },
+    {
+      "id": "given-3dab2997d9d2",
+      "text": "Šime",
+      "weight": 1
+    },
+    {
+      "id": "given-e15be477187f",
+      "text": "Šimun",
+      "weight": 1
+    },
+    {
+      "id": "given-7abad0cbd0ef",
+      "text": "Tihomir",
+      "weight": 1
+    },
+    {
+      "id": "given-1abf5aef2a85",
+      "text": "Tomo",
+      "weight": 1
+    },
+    {
+      "id": "given-21b1267526ba",
+      "text": "Valentin",
+      "weight": 1
+    },
+    {
+      "id": "given-d77e496e8bdd",
+      "text": "Veselko",
+      "weight": 1
+    },
+    {
+      "id": "given-f82578ee7624",
+      "text": "Viktor",
+      "weight": 1
+    },
+    {
+      "id": "given-83e8d07b768c",
+      "text": "Vilko",
+      "weight": 1
+    },
+    {
+      "id": "given-4d796ce39110",
+      "text": "Vlado",
+      "weight": 1
+    },
+    {
+      "id": "given-6f213d205b03",
+      "text": "Vojislav",
+      "weight": 1
+    },
+    {
+      "id": "given-0edc7482dd56",
+      "text": "Zdenko",
+      "weight": 1
+    },
+    {
+      "id": "given-6a1ea8908a09",
+      "text": "Zdravko",
+      "weight": 1
+    },
+    {
+      "id": "given-646acafab27b",
+      "text": "Zlatko",
+      "weight": 1
+    },
+    {
+      "id": "given-709a4b98ee26",
+      "text": "Zvonimir",
+      "weight": 1
+    },
+    {
+      "id": "given-b153682d71e0",
+      "text": "Željko",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-955cbf1a2416",
+      "text": "Horvat",
+      "weight": 3
+    },
+    {
+      "id": "family-9c8aa7edfe49",
+      "text": "Kovačević",
+      "weight": 3
+    },
+    {
+      "id": "family-f0b56d1618b8",
+      "text": "Babić",
+      "weight": 3
+    },
+    {
+      "id": "family-f110c533a620",
+      "text": "Marić",
+      "weight": 3
+    },
+    {
+      "id": "family-b183b88b3675",
+      "text": "Jurić",
+      "weight": 3
+    },
+    {
+      "id": "family-e3f395cb87ee",
+      "text": "Novak",
+      "weight": 1
+    },
+    {
+      "id": "family-d496111ca982",
+      "text": "Kovačić",
+      "weight": 1
+    },
+    {
+      "id": "family-6a0112ecb4da",
+      "text": "Knežević",
+      "weight": 1
+    },
+    {
+      "id": "family-0beb09c06b6b",
+      "text": "Vuković",
+      "weight": 1
+    },
+    {
+      "id": "family-945b6fd4dac1",
+      "text": "Marković",
+      "weight": 1
+    },
+    {
+      "id": "family-0d8f5a192060",
+      "text": "Petrović",
+      "weight": 1
+    },
+    {
+      "id": "family-a146a8b565e5",
+      "text": "Matić",
+      "weight": 1
+    },
+    {
+      "id": "family-0990bfa127b5",
+      "text": "Tomić",
+      "weight": 1
+    },
+    {
+      "id": "family-f69527b793ce",
+      "text": "Kovač",
+      "weight": 1
+    },
+    {
+      "id": "family-58be95e38c6c",
+      "text": "Pavlović",
+      "weight": 1
+    },
+    {
+      "id": "family-cb5c51f96ee9",
+      "text": "Božić",
+      "weight": 1
+    },
+    {
+      "id": "family-d1f2c86a1178",
+      "text": "Blažević",
+      "weight": 1
+    },
+    {
+      "id": "family-ae98964b717a",
+      "text": "Grgić",
+      "weight": 1
+    },
+    {
+      "id": "family-79f03d792771",
+      "text": "Jurković",
+      "weight": 1
+    },
+    {
+      "id": "family-cc228b6c6e16",
+      "text": "Radić",
+      "weight": 1
+    },
+    {
+      "id": "family-5e1beb19ab9b",
+      "text": "Perić",
+      "weight": 1
+    },
+    {
+      "id": "family-c234bb4ad802",
+      "text": "Filipović",
+      "weight": 1
+    },
+    {
+      "id": "family-9684442176fa",
+      "text": "Barišić",
+      "weight": 1
+    },
+    {
+      "id": "family-c8eaf154f08a",
+      "text": "Šarić",
+      "weight": 1
+    },
+    {
+      "id": "family-84393a7bcb6f",
+      "text": "Brajković",
+      "weight": 1
+    },
+    {
+      "id": "family-7be5c0c9e731",
+      "text": "Brkić",
+      "weight": 1
+    },
+    {
+      "id": "family-26734863a6f4",
+      "text": "Budimir",
+      "weight": 1
+    },
+    {
+      "id": "family-4823de7a0ada",
+      "text": "Ćorić",
+      "weight": 1
+    },
+    {
+      "id": "family-5580a6d4ea69",
+      "text": "Čuljak",
+      "weight": 1
+    },
+    {
+      "id": "family-be3c899446da",
+      "text": "Delić",
+      "weight": 1
+    },
+    {
+      "id": "family-d572edf31241",
+      "text": "Dragičević",
+      "weight": 1
+    },
+    {
+      "id": "family-ea35489c952d",
+      "text": "Dukić",
+      "weight": 1
+    },
+    {
+      "id": "family-fbef0e56b55a",
+      "text": "Erceg",
+      "weight": 1
+    },
+    {
+      "id": "family-1f23bf663f40",
+      "text": "Filić",
+      "weight": 1
+    },
+    {
+      "id": "family-6ef2eab863aa",
+      "text": "Grubišić",
+      "weight": 1
+    },
+    {
+      "id": "family-9e92cad367be",
+      "text": "Herceg",
+      "weight": 1
+    },
+    {
+      "id": "family-f3f4d7dec4bb",
+      "text": "Ilić",
+      "weight": 1
+    },
+    {
+      "id": "family-dd87726c560e",
+      "text": "Ivanković",
+      "weight": 1
+    },
+    {
+      "id": "family-50bda0abd29c",
+      "text": "Janković",
+      "weight": 1
+    },
+    {
+      "id": "family-841a60420139",
+      "text": "Jelić",
+      "weight": 1
+    },
+    {
+      "id": "family-e4891aa210b3",
+      "text": "Jerković",
+      "weight": 1
+    },
+    {
+      "id": "family-5b8dc65e5b00",
+      "text": "Jozić",
+      "weight": 1
+    },
+    {
+      "id": "family-38342273e7d3",
+      "text": "Jukić",
+      "weight": 1
+    },
+    {
+      "id": "family-86e9a353ed72",
+      "text": "Jurčević",
+      "weight": 1
+    },
+    {
+      "id": "family-c0045fb8cd2f",
+      "text": "Klarić",
+      "weight": 1
+    },
+    {
+      "id": "family-29f127795060",
+      "text": "Knez",
+      "weight": 1
+    },
+    {
+      "id": "family-db1adb984e62",
+      "text": "Knezić",
+      "weight": 1
+    },
+    {
+      "id": "family-93af23434be3",
+      "text": "Kolarić",
+      "weight": 1
+    },
+    {
+      "id": "family-2c4f976406c3",
+      "text": "Kralj",
+      "weight": 1
+    },
+    {
+      "id": "family-7864c39fb9cf",
+      "text": "Križan",
+      "weight": 1
+    },
+    {
+      "id": "family-333092450afd",
+      "text": "Krpan",
+      "weight": 1
+    },
+    {
+      "id": "family-7e75c4a33f9d",
+      "text": "Kujundžić",
+      "weight": 1
+    },
+    {
+      "id": "family-d7ff10c303dc",
+      "text": "Kurtović",
+      "weight": 1
+    },
+    {
+      "id": "family-92c2a045629b",
+      "text": "Lalić",
+      "weight": 1
+    },
+    {
+      "id": "family-1da16cc8958c",
+      "text": "Lovrić",
+      "weight": 1
+    },
+    {
+      "id": "family-a79bbdd2ddfd",
+      "text": "Lukić",
+      "weight": 1
+    },
+    {
+      "id": "family-dbcffcf2c95e",
+      "text": "Mandić",
+      "weight": 1
+    },
+    {
+      "id": "family-523dcb35cc8a",
+      "text": "Maras",
+      "weight": 1
+    },
+    {
+      "id": "family-73e3a23720ae",
+      "text": "Marinović",
+      "weight": 1
+    },
+    {
+      "id": "family-adfce4d8a16e",
+      "text": "Marušić",
+      "weight": 1
+    },
+    {
+      "id": "family-6e2852025062",
+      "text": "Matijević",
+      "weight": 1
+    },
+    {
+      "id": "family-1a1bf95df644",
+      "text": "Mihaljević",
+      "weight": 1
+    },
+    {
+      "id": "family-a0b744b0f49d",
+      "text": "Mikulić",
+      "weight": 1
+    },
+    {
+      "id": "family-90d7aa3cb17f",
+      "text": "Miloš",
+      "weight": 1
+    },
+    {
+      "id": "family-3232251d1ad8",
+      "text": "Mlinarić",
+      "weight": 1
+    },
+    {
+      "id": "family-400e79a10988",
+      "text": "Nakić",
+      "weight": 1
+    },
+    {
+      "id": "family-5349eccf9667",
+      "text": "Orlović",
+      "weight": 1
+    },
+    {
+      "id": "family-032ab27e4f24",
+      "text": "Pavić",
+      "weight": 1
+    },
+    {
+      "id": "family-5e059d79620b",
+      "text": "Pavlić",
+      "weight": 1
+    },
+    {
+      "id": "family-42452ae38de3",
+      "text": "Pejić",
+      "weight": 1
+    },
+    {
+      "id": "family-6efa98819302",
+      "text": "Perković",
+      "weight": 1
+    },
+    {
+      "id": "family-a6bd4a4f2f2d",
+      "text": "Petrinović",
+      "weight": 1
+    },
+    {
+      "id": "family-320e6acd3ebe",
+      "text": "Popović",
+      "weight": 1
+    },
+    {
+      "id": "family-db346942b5d1",
+      "text": "Posavec",
+      "weight": 1
+    },
+    {
+      "id": "family-3a16aed689cc",
+      "text": "Pranjić",
+      "weight": 1
+    },
+    {
+      "id": "family-a8c106abe273",
+      "text": "Prpić",
+      "weight": 1
+    },
+    {
+      "id": "family-53c405555194",
+      "text": "Radoš",
+      "weight": 1
+    },
+    {
+      "id": "family-b89611c5f34a",
+      "text": "Rukavina",
+      "weight": 1
+    },
+    {
+      "id": "family-6510737ba26e",
+      "text": "Sertić",
+      "weight": 1
+    },
+    {
+      "id": "family-27bc1888ca10",
+      "text": "Skender",
+      "weight": 1
+    },
+    {
+      "id": "family-cf57d33174e1",
+      "text": "Slavica",
+      "weight": 1
+    },
+    {
+      "id": "family-55610b75834a",
+      "text": "Smiljanić",
+      "weight": 1
+    },
+    {
+      "id": "family-08aec6c17683",
+      "text": "Stanić",
+      "weight": 1
+    },
+    {
+      "id": "family-5472b41606cd",
+      "text": "Stanković",
+      "weight": 1
+    },
+    {
+      "id": "family-26ba625f5394",
+      "text": "Stipić",
+      "weight": 1
+    },
+    {
+      "id": "family-6fdf95cfb51f",
+      "text": "Šimić",
+      "weight": 1
+    },
+    {
+      "id": "family-8cc27670707c",
+      "text": "Šimunić",
+      "weight": 1
+    },
+    {
+      "id": "family-55bf8d225a4f",
+      "text": "Škorić",
+      "weight": 1
+    },
+    {
+      "id": "family-3b57779958bc",
+      "text": "Špoljarić",
+      "weight": 1
+    },
+    {
+      "id": "family-b63a35ffe421",
+      "text": "Tadić",
+      "weight": 1
+    },
+    {
+      "id": "family-d9ce92fe5daa",
+      "text": "Topić",
+      "weight": 1
+    },
+    {
+      "id": "family-e80fa46c01fb",
+      "text": "Turk",
+      "weight": 1
+    },
+    {
+      "id": "family-64be4e685d9c",
+      "text": "Vidović",
+      "weight": 1
+    },
+    {
+      "id": "family-b821132c96a7",
+      "text": "Vlašić",
+      "weight": 1
+    },
+    {
+      "id": "family-d6eb2ba75291",
+      "text": "Vrdoljak",
+      "weight": 1
+    },
+    {
+      "id": "family-c10a014a5e98",
+      "text": "Vučetić",
+      "weight": 1
+    },
+    {
+      "id": "family-e3a9c27aab1c",
+      "text": "Vuk",
+      "weight": 1
+    },
+    {
+      "id": "family-72d849b0dc0a",
+      "text": "Zorić",
+      "weight": 1
+    },
+    {
+      "id": "family-ac977cfb6601",
+      "text": "Zubčić",
+      "weight": 1
+    },
+    {
+      "id": "family-35a819aaef36",
+      "text": "Živković",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 10000
+  }
+}

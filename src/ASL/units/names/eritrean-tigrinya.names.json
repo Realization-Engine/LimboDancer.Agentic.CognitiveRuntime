@@ -1,0 +1,966 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "eritrean-tigrinya",
+  "label": "Eritrean, Tigrinya context",
+  "language": "ti-Latn",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names",
+      "uk-naming-guidance",
+      "uk-eritrea"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-father",
+    "componentOrder": [
+      "given",
+      "father-given"
+    ],
+    "separator": " ",
+    "secondComponentRole": "father-given"
+  },
+  "scopeNote": "Tigrinya-context personal name plus father personal name. There is no generated hereditary surname. This predominantly Christian naming context does not stand for all Eritrean communities.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 0,
+    "secondComponent": 100
+  },
+  "actualCounts": {
+    "givenNames": 90,
+    "familyNames": 0,
+    "secondComponent": 90
+  },
+  "completeness": "smaller-curated-pool",
+  "givenNames": [
+    {
+      "id": "given-78a8ebdcc101",
+      "text": "Abraham",
+      "weight": 1
+    },
+    {
+      "id": "given-9908daac64d7",
+      "text": "Abrha",
+      "weight": 1
+    },
+    {
+      "id": "given-af4cce9184ea",
+      "text": "Afewerki",
+      "weight": 1
+    },
+    {
+      "id": "given-3c11857b5ecb",
+      "text": "Amanuel",
+      "weight": 1
+    },
+    {
+      "id": "given-8a901c2772c9",
+      "text": "Amdemichael",
+      "weight": 1
+    },
+    {
+      "id": "given-f27ebaad0963",
+      "text": "Andemariam",
+      "weight": 1
+    },
+    {
+      "id": "given-c655a0bdac99",
+      "text": "Andom",
+      "weight": 1
+    },
+    {
+      "id": "given-0b4f42ad3f6e",
+      "text": "Araya",
+      "weight": 1
+    },
+    {
+      "id": "given-a47ff23c31f5",
+      "text": "Asfaha",
+      "weight": 1
+    },
+    {
+      "id": "given-573feb38efe3",
+      "text": "Asmellash",
+      "weight": 1
+    },
+    {
+      "id": "given-a114da4807ad",
+      "text": "Bahta",
+      "weight": 1
+    },
+    {
+      "id": "given-d02f2e6e646a",
+      "text": "Beraki",
+      "weight": 1
+    },
+    {
+      "id": "given-f076775765b1",
+      "text": "Berhane",
+      "weight": 1
+    },
+    {
+      "id": "given-1e67042ff273",
+      "text": "Berhe",
+      "weight": 1
+    },
+    {
+      "id": "given-8a3ae2e3584c",
+      "text": "Beyene",
+      "weight": 1
+    },
+    {
+      "id": "given-0f1b1709398b",
+      "text": "Dawit",
+      "weight": 1
+    },
+    {
+      "id": "given-8885075ed4c5",
+      "text": "Debessay",
+      "weight": 1
+    },
+    {
+      "id": "given-f5ae65f19980",
+      "text": "Desta",
+      "weight": 1
+    },
+    {
+      "id": "given-8662048a1a76",
+      "text": "Embaye",
+      "weight": 1
+    },
+    {
+      "id": "given-f056f1fab171",
+      "text": "Estifanos",
+      "weight": 1
+    },
+    {
+      "id": "given-87164baeef81",
+      "text": "Fessahaye",
+      "weight": 1
+    },
+    {
+      "id": "given-5407ccdd2c48",
+      "text": "Fitsum",
+      "weight": 1
+    },
+    {
+      "id": "given-141692208256",
+      "text": "Gebreab",
+      "weight": 1
+    },
+    {
+      "id": "given-ecd4c5e3c418",
+      "text": "Gebrehiwet",
+      "weight": 1
+    },
+    {
+      "id": "given-4d282b7a24f8",
+      "text": "Gebrekidan",
+      "weight": 1
+    },
+    {
+      "id": "given-957a7ff6820d",
+      "text": "Gebremariam",
+      "weight": 1
+    },
+    {
+      "id": "given-845acea7c045",
+      "text": "Gebremedhin",
+      "weight": 1
+    },
+    {
+      "id": "given-b8baf6b5b04b",
+      "text": "Gebremeskel",
+      "weight": 1
+    },
+    {
+      "id": "given-7d74568666e0",
+      "text": "Gebremichael",
+      "weight": 1
+    },
+    {
+      "id": "given-e461a0ba1986",
+      "text": "Gebreselassie",
+      "weight": 1
+    },
+    {
+      "id": "given-de2b91d2d55f",
+      "text": "Gebresus",
+      "weight": 1
+    },
+    {
+      "id": "given-525fc6ee6717",
+      "text": "Gerezgiher",
+      "weight": 1
+    },
+    {
+      "id": "given-d2a10707e32d",
+      "text": "Ghebreyesus",
+      "weight": 1
+    },
+    {
+      "id": "given-b085290cc33e",
+      "text": "Girmay",
+      "weight": 1
+    },
+    {
+      "id": "given-a823d04955a4",
+      "text": "Goitom",
+      "weight": 1
+    },
+    {
+      "id": "given-cde6b96f6444",
+      "text": "Habte",
+      "weight": 1
+    },
+    {
+      "id": "given-ab8191afaf67",
+      "text": "Habteab",
+      "weight": 1
+    },
+    {
+      "id": "given-3417c353d4e8",
+      "text": "Habtemariam",
+      "weight": 1
+    },
+    {
+      "id": "given-b68871d5cf0e",
+      "text": "Hagos",
+      "weight": 1
+    },
+    {
+      "id": "given-be6ca0a8ba26",
+      "text": "Haile",
+      "weight": 1
+    },
+    {
+      "id": "given-eaf4d801428f",
+      "text": "Hailemariam",
+      "weight": 1
+    },
+    {
+      "id": "given-66f66cbdef17",
+      "text": "Hailu",
+      "weight": 1
+    },
+    {
+      "id": "given-32226180db9d",
+      "text": "Haregot",
+      "weight": 1
+    },
+    {
+      "id": "given-63b063f5b637",
+      "text": "Isaac",
+      "weight": 1
+    },
+    {
+      "id": "given-be97904224ea",
+      "text": "Isaias",
+      "weight": 1
+    },
+    {
+      "id": "given-8f7e80c856f0",
+      "text": "Kahsay",
+      "weight": 1
+    },
+    {
+      "id": "given-680d89fe6eda",
+      "text": "Kassahun",
+      "weight": 1
+    },
+    {
+      "id": "given-a2e7c0607e15",
+      "text": "Kibreab",
+      "weight": 1
+    },
+    {
+      "id": "given-6f159b7b3b8d",
+      "text": "Kidanemariam",
+      "weight": 1
+    },
+    {
+      "id": "given-c6dff69baa92",
+      "text": "Kidane",
+      "weight": 1
+    },
+    {
+      "id": "given-4b4c1f4ef3cc",
+      "text": "Kiflemariam",
+      "weight": 1
+    },
+    {
+      "id": "given-32f484766203",
+      "text": "Kiros",
+      "weight": 1
+    },
+    {
+      "id": "given-42fc9502fe10",
+      "text": "Mebrahtu",
+      "weight": 1
+    },
+    {
+      "id": "given-2bad68467959",
+      "text": "Mehari",
+      "weight": 1
+    },
+    {
+      "id": "given-312ba4952135",
+      "text": "Mekonnen",
+      "weight": 1
+    },
+    {
+      "id": "given-3124d64a921f",
+      "text": "Meles",
+      "weight": 1
+    },
+    {
+      "id": "given-a981276961fb",
+      "text": "Menghistu",
+      "weight": 1
+    },
+    {
+      "id": "given-403c910010f1",
+      "text": "Mikael",
+      "weight": 1
+    },
+    {
+      "id": "given-69874d8051b8",
+      "text": "Mussie",
+      "weight": 1
+    },
+    {
+      "id": "given-9fc53e6db9bb",
+      "text": "Negash",
+      "weight": 1
+    },
+    {
+      "id": "given-5280e5e9fe6b",
+      "text": "Petros",
+      "weight": 1
+    },
+    {
+      "id": "given-42b610163879",
+      "text": "Russom",
+      "weight": 1
+    },
+    {
+      "id": "given-b1f6d1241c57",
+      "text": "Samuel",
+      "weight": 1
+    },
+    {
+      "id": "given-11fd54f27f0e",
+      "text": "Sebhatu",
+      "weight": 1
+    },
+    {
+      "id": "given-1ddde259681d",
+      "text": "Seyoum",
+      "weight": 1
+    },
+    {
+      "id": "given-1752604b17d0",
+      "text": "Solomon",
+      "weight": 1
+    },
+    {
+      "id": "given-e1fcc4ee1190",
+      "text": "Taddese",
+      "weight": 1
+    },
+    {
+      "id": "given-c0ae8020b24a",
+      "text": "Tekeste",
+      "weight": 1
+    },
+    {
+      "id": "given-ffc9eb91fa01",
+      "text": "Tekle",
+      "weight": 1
+    },
+    {
+      "id": "given-2b93a527787a",
+      "text": "Tekleab",
+      "weight": 1
+    },
+    {
+      "id": "given-dc92a258c54b",
+      "text": "Teklemariam",
+      "weight": 1
+    },
+    {
+      "id": "given-551142784787",
+      "text": "Tesfai",
+      "weight": 1
+    },
+    {
+      "id": "given-d4722c0eeca8",
+      "text": "Tesfamariam",
+      "weight": 1
+    },
+    {
+      "id": "given-48843230a006",
+      "text": "Futsum",
+      "weight": 1
+    },
+    {
+      "id": "given-2d952d99ea58",
+      "text": "Tesfayohannes",
+      "weight": 1
+    },
+    {
+      "id": "given-14e8c639a2ba",
+      "text": "Tewelde",
+      "weight": 1
+    },
+    {
+      "id": "given-f789c691f9ab",
+      "text": "Teweldemedhin",
+      "weight": 1
+    },
+    {
+      "id": "given-a30a6d88e431",
+      "text": "Tewodros",
+      "weight": 1
+    },
+    {
+      "id": "given-d8b1c001764f",
+      "text": "Weldemariam",
+      "weight": 1
+    },
+    {
+      "id": "given-c0877b1c2746",
+      "text": "Weldemichael",
+      "weight": 1
+    },
+    {
+      "id": "given-2a6852eb6c0d",
+      "text": "Weldeselassie",
+      "weight": 1
+    },
+    {
+      "id": "given-f16b3ef11c43",
+      "text": "Woldeab",
+      "weight": 1
+    },
+    {
+      "id": "given-c9d1cc792fc6",
+      "text": "Yemane",
+      "weight": 1
+    },
+    {
+      "id": "given-67f15b964960",
+      "text": "Yohannes",
+      "weight": 1
+    },
+    {
+      "id": "given-c79044f787be",
+      "text": "Zecarias",
+      "weight": 1
+    },
+    {
+      "id": "given-8c84a4f2d28e",
+      "text": "Zerai",
+      "weight": 1
+    },
+    {
+      "id": "given-4649226d7b38",
+      "text": "Zeratsion",
+      "weight": 1
+    },
+    {
+      "id": "given-fdedff645b1a",
+      "text": "Zeremariam",
+      "weight": 1
+    },
+    {
+      "id": "given-4859bd826dc0",
+      "text": "Zerom",
+      "weight": 1
+    },
+    {
+      "id": "given-e95ee4b7085f",
+      "text": "Zewde",
+      "weight": 1
+    }
+  ],
+  "familyNames": [],
+  "patronymics": [
+    {
+      "id": "father-given-78a8ebdcc101",
+      "text": "Abraham",
+      "weight": 1
+    },
+    {
+      "id": "father-given-9908daac64d7",
+      "text": "Abrha",
+      "weight": 1
+    },
+    {
+      "id": "father-given-af4cce9184ea",
+      "text": "Afewerki",
+      "weight": 1
+    },
+    {
+      "id": "father-given-3c11857b5ecb",
+      "text": "Amanuel",
+      "weight": 1
+    },
+    {
+      "id": "father-given-8a901c2772c9",
+      "text": "Amdemichael",
+      "weight": 1
+    },
+    {
+      "id": "father-given-f27ebaad0963",
+      "text": "Andemariam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-c655a0bdac99",
+      "text": "Andom",
+      "weight": 1
+    },
+    {
+      "id": "father-given-0b4f42ad3f6e",
+      "text": "Araya",
+      "weight": 1
+    },
+    {
+      "id": "father-given-a47ff23c31f5",
+      "text": "Asfaha",
+      "weight": 1
+    },
+    {
+      "id": "father-given-573feb38efe3",
+      "text": "Asmellash",
+      "weight": 1
+    },
+    {
+      "id": "father-given-a114da4807ad",
+      "text": "Bahta",
+      "weight": 1
+    },
+    {
+      "id": "father-given-d02f2e6e646a",
+      "text": "Beraki",
+      "weight": 1
+    },
+    {
+      "id": "father-given-f076775765b1",
+      "text": "Berhane",
+      "weight": 1
+    },
+    {
+      "id": "father-given-1e67042ff273",
+      "text": "Berhe",
+      "weight": 1
+    },
+    {
+      "id": "father-given-8a3ae2e3584c",
+      "text": "Beyene",
+      "weight": 1
+    },
+    {
+      "id": "father-given-0f1b1709398b",
+      "text": "Dawit",
+      "weight": 1
+    },
+    {
+      "id": "father-given-8885075ed4c5",
+      "text": "Debessay",
+      "weight": 1
+    },
+    {
+      "id": "father-given-f5ae65f19980",
+      "text": "Desta",
+      "weight": 1
+    },
+    {
+      "id": "father-given-8662048a1a76",
+      "text": "Embaye",
+      "weight": 1
+    },
+    {
+      "id": "father-given-f056f1fab171",
+      "text": "Estifanos",
+      "weight": 1
+    },
+    {
+      "id": "father-given-87164baeef81",
+      "text": "Fessahaye",
+      "weight": 1
+    },
+    {
+      "id": "father-given-5407ccdd2c48",
+      "text": "Fitsum",
+      "weight": 1
+    },
+    {
+      "id": "father-given-141692208256",
+      "text": "Gebreab",
+      "weight": 1
+    },
+    {
+      "id": "father-given-ecd4c5e3c418",
+      "text": "Gebrehiwet",
+      "weight": 1
+    },
+    {
+      "id": "father-given-4d282b7a24f8",
+      "text": "Gebrekidan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-957a7ff6820d",
+      "text": "Gebremariam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-845acea7c045",
+      "text": "Gebremedhin",
+      "weight": 1
+    },
+    {
+      "id": "father-given-b8baf6b5b04b",
+      "text": "Gebremeskel",
+      "weight": 1
+    },
+    {
+      "id": "father-given-7d74568666e0",
+      "text": "Gebremichael",
+      "weight": 1
+    },
+    {
+      "id": "father-given-e461a0ba1986",
+      "text": "Gebreselassie",
+      "weight": 1
+    },
+    {
+      "id": "father-given-de2b91d2d55f",
+      "text": "Gebresus",
+      "weight": 1
+    },
+    {
+      "id": "father-given-525fc6ee6717",
+      "text": "Gerezgiher",
+      "weight": 1
+    },
+    {
+      "id": "father-given-d2a10707e32d",
+      "text": "Ghebreyesus",
+      "weight": 1
+    },
+    {
+      "id": "father-given-b085290cc33e",
+      "text": "Girmay",
+      "weight": 1
+    },
+    {
+      "id": "father-given-a823d04955a4",
+      "text": "Goitom",
+      "weight": 1
+    },
+    {
+      "id": "father-given-cde6b96f6444",
+      "text": "Habte",
+      "weight": 1
+    },
+    {
+      "id": "father-given-ab8191afaf67",
+      "text": "Habteab",
+      "weight": 1
+    },
+    {
+      "id": "father-given-3417c353d4e8",
+      "text": "Habtemariam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-b68871d5cf0e",
+      "text": "Hagos",
+      "weight": 1
+    },
+    {
+      "id": "father-given-be6ca0a8ba26",
+      "text": "Haile",
+      "weight": 1
+    },
+    {
+      "id": "father-given-eaf4d801428f",
+      "text": "Hailemariam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-66f66cbdef17",
+      "text": "Hailu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-32226180db9d",
+      "text": "Haregot",
+      "weight": 1
+    },
+    {
+      "id": "father-given-63b063f5b637",
+      "text": "Isaac",
+      "weight": 1
+    },
+    {
+      "id": "father-given-be97904224ea",
+      "text": "Isaias",
+      "weight": 1
+    },
+    {
+      "id": "father-given-8f7e80c856f0",
+      "text": "Kahsay",
+      "weight": 1
+    },
+    {
+      "id": "father-given-680d89fe6eda",
+      "text": "Kassahun",
+      "weight": 1
+    },
+    {
+      "id": "father-given-a2e7c0607e15",
+      "text": "Kibreab",
+      "weight": 1
+    },
+    {
+      "id": "father-given-6f159b7b3b8d",
+      "text": "Kidanemariam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-c6dff69baa92",
+      "text": "Kidane",
+      "weight": 1
+    },
+    {
+      "id": "father-given-4b4c1f4ef3cc",
+      "text": "Kiflemariam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-32f484766203",
+      "text": "Kiros",
+      "weight": 1
+    },
+    {
+      "id": "father-given-42fc9502fe10",
+      "text": "Mebrahtu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-2bad68467959",
+      "text": "Mehari",
+      "weight": 1
+    },
+    {
+      "id": "father-given-312ba4952135",
+      "text": "Mekonnen",
+      "weight": 1
+    },
+    {
+      "id": "father-given-3124d64a921f",
+      "text": "Meles",
+      "weight": 1
+    },
+    {
+      "id": "father-given-a981276961fb",
+      "text": "Menghistu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-403c910010f1",
+      "text": "Mikael",
+      "weight": 1
+    },
+    {
+      "id": "father-given-69874d8051b8",
+      "text": "Mussie",
+      "weight": 1
+    },
+    {
+      "id": "father-given-9fc53e6db9bb",
+      "text": "Negash",
+      "weight": 1
+    },
+    {
+      "id": "father-given-5280e5e9fe6b",
+      "text": "Petros",
+      "weight": 1
+    },
+    {
+      "id": "father-given-42b610163879",
+      "text": "Russom",
+      "weight": 1
+    },
+    {
+      "id": "father-given-b1f6d1241c57",
+      "text": "Samuel",
+      "weight": 1
+    },
+    {
+      "id": "father-given-11fd54f27f0e",
+      "text": "Sebhatu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-1ddde259681d",
+      "text": "Seyoum",
+      "weight": 1
+    },
+    {
+      "id": "father-given-1752604b17d0",
+      "text": "Solomon",
+      "weight": 1
+    },
+    {
+      "id": "father-given-e1fcc4ee1190",
+      "text": "Taddese",
+      "weight": 1
+    },
+    {
+      "id": "father-given-c0ae8020b24a",
+      "text": "Tekeste",
+      "weight": 1
+    },
+    {
+      "id": "father-given-ffc9eb91fa01",
+      "text": "Tekle",
+      "weight": 1
+    },
+    {
+      "id": "father-given-2b93a527787a",
+      "text": "Tekleab",
+      "weight": 1
+    },
+    {
+      "id": "father-given-dc92a258c54b",
+      "text": "Teklemariam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-551142784787",
+      "text": "Tesfai",
+      "weight": 1
+    },
+    {
+      "id": "father-given-d4722c0eeca8",
+      "text": "Tesfamariam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-48843230a006",
+      "text": "Futsum",
+      "weight": 1
+    },
+    {
+      "id": "father-given-2d952d99ea58",
+      "text": "Tesfayohannes",
+      "weight": 1
+    },
+    {
+      "id": "father-given-14e8c639a2ba",
+      "text": "Tewelde",
+      "weight": 1
+    },
+    {
+      "id": "father-given-f789c691f9ab",
+      "text": "Teweldemedhin",
+      "weight": 1
+    },
+    {
+      "id": "father-given-a30a6d88e431",
+      "text": "Tewodros",
+      "weight": 1
+    },
+    {
+      "id": "father-given-d8b1c001764f",
+      "text": "Weldemariam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-c0877b1c2746",
+      "text": "Weldemichael",
+      "weight": 1
+    },
+    {
+      "id": "father-given-2a6852eb6c0d",
+      "text": "Weldeselassie",
+      "weight": 1
+    },
+    {
+      "id": "father-given-f16b3ef11c43",
+      "text": "Woldeab",
+      "weight": 1
+    },
+    {
+      "id": "father-given-c9d1cc792fc6",
+      "text": "Yemane",
+      "weight": 1
+    },
+    {
+      "id": "father-given-67f15b964960",
+      "text": "Yohannes",
+      "weight": 1
+    },
+    {
+      "id": "father-given-c79044f787be",
+      "text": "Zecarias",
+      "weight": 1
+    },
+    {
+      "id": "father-given-8c84a4f2d28e",
+      "text": "Zerai",
+      "weight": 1
+    },
+    {
+      "id": "father-given-4649226d7b38",
+      "text": "Zeratsion",
+      "weight": 1
+    },
+    {
+      "id": "father-given-fdedff645b1a",
+      "text": "Zeremariam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-4859bd826dc0",
+      "text": "Zerom",
+      "weight": 1
+    },
+    {
+      "id": "father-given-e95ee4b7085f",
+      "text": "Zewde",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 8010
+  }
+}

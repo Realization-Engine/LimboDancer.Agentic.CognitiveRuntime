@@ -1,0 +1,1392 @@
+{
+  "$schema": "./name-manifest.schema.json",
+  "format": "asl-name-manifest",
+  "version": "1.0.0",
+  "reviewStatus": "editorial-draft",
+  "createdOn": "2026-10-03",
+  "scope": "Male fictional leader and NCO name candidates for the nationalities covered in ASL Named Counters Design, including Chapter W. Coverage of every ethnicity or colonial recruiting population is not claimed.",
+  "poolSelectionPolicy": {
+    "unknownContext": "require-authored-names-or-explicit-supported-pool",
+    "ambiguousContext": "require-explicit-choice",
+    "allowSilentFallback": false,
+    "partisans": "require-nationality-context",
+    "supportWeapons": "no-personnel-assignment",
+    "authoredNames": "preserve"
+  },
+  "sources": [
+    {
+      "id": "asl-rulebook",
+      "kind": "nationality-scope",
+      "fileName": "eASLRB_v3_01.pdf",
+      "sha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
+      "physicalPages": [
+        93,
+        94,
+        95,
+        96,
+        97,
+        98,
+        513,
+        660,
+        661,
+        662,
+        663,
+        664,
+        665,
+        674,
+        695
+      ],
+      "note": "Establishes forces and rules contexts, not personal-name inventories."
+    },
+    {
+      "id": "w3c-personal-names",
+      "kind": "naming-conventions",
+      "url": "https://www.w3.org/International/questions/qa-personal-names",
+      "note": "General international name-component and ordering guidance, not per-entry name evidence."
+    },
+    {
+      "id": "uk-naming-guidance",
+      "kind": "naming-conventions",
+      "url": "https://assets.publishing.service.gov.uk/media/5a7f18a240f0b62305b850ba/snap-s3-interviewing-site.pdf",
+      "note": "Guidance on patronymic conventions; does not attest the generated inventories."
+    },
+    {
+      "id": "uk-eritrea",
+      "kind": "naming-conventions",
+      "url": "https://www.gov.uk/government/publications/eritrea-knowledge-base-profile/eritrea-knowledge-base-profile",
+      "note": "Father-name handling in Eritrean records; not a wartime name inventory."
+    },
+    {
+      "id": "gurkha-museum-vc",
+      "kind": "historical-context",
+      "url": "https://thegurkhamuseum.co.uk/victoria-cross-recipients/",
+      "note": "Historical name-form examples. No generated full identity is presented as a named recipient."
+    },
+    {
+      "id": "nam-gurkhas",
+      "kind": "historical-context",
+      "url": "https://www.nam.ac.uk/explore/gurkhas",
+      "note": "Gurkha service context; does not validate all pool entries."
+    },
+    {
+      "id": "ssa-names-1900s",
+      "kind": "historical-context",
+      "url": "https://www.ssa.gov/oact/babynames/decades/names1900s.html",
+      "note": "American given names reproduce the top 100 male names for births in 1900-1909. Birth-registration data support period usage, not wartime rank, ethnicity, service, surname selection, or military frequency weights."
+    }
+  ],
+  "pools": [
+    {
+      "id": "american",
+      "file": "american.names.json",
+      "version": "1.0.0",
+      "sha256": "8a4f48edc64b70db450c04e50ee4e642068ebbcf306619469073a46e64951896",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 282,
+        "secondComponent": 282
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "bengali",
+      "file": "bengali.names.json",
+      "version": "1.0.0",
+      "sha256": "9dd5c6a782bd81f21aa4bb6e438c2b57cb070455e22a27b5c65dd8c951f2fcb4",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "bosnian-muslim",
+      "file": "bosnian-muslim.names.json",
+      "version": "1.0.0",
+      "sha256": "e5f50347abbc9477d4d0f18719fddb90b6505acac153d88912e126d8da35f2a1",
+      "actualCounts": {
+        "givenNames": 80,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "smaller-curated-pool"
+    },
+    {
+      "id": "bulgarian",
+      "file": "bulgarian.names.json",
+      "version": "1.0.0",
+      "sha256": "e6fb74f9c89bf891eaa592ac1bb4448b8167099ada3933072122b9ab25983d04",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "chinese",
+      "file": "chinese.names.json",
+      "version": "1.0.0",
+      "sha256": "c2a80c59c74211654ad9c47939a5eca95b0c3f6ad003e69aa82e399c11c206b0",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "colombian-spanish",
+      "file": "colombian-spanish.names.json",
+      "version": "1.0.0",
+      "sha256": "679f61e2c535a1c1233a6d45725e944d300256e983ecfdd55ada722282343677",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "croatian",
+      "file": "croatian.names.json",
+      "version": "1.0.0",
+      "sha256": "188a3bc17a51d0c53ac02643e7979a33ef53f3762e533c2103e614f8b3fb9066",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "danish",
+      "file": "danish.names.json",
+      "version": "1.0.0",
+      "sha256": "9352b18de7beeb936df6b120596cdedc6ca4f360e0bdaa4e605c61f30969162b",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "dutch",
+      "file": "dutch.names.json",
+      "version": "1.0.0",
+      "sha256": "daadb3205c092bc9e254ba813c363108a183558783944ac7145701fb0a803393",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "east-african-kikuyu",
+      "file": "east-african-kikuyu.names.json",
+      "version": "1.0.0",
+      "sha256": "29e8ecb475253489f6f0e9e475a9ee2747c634760fca1ec0c2d4c370c0d1a729",
+      "actualCounts": {
+        "givenNames": 60,
+        "familyNames": 0,
+        "secondComponent": 60
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "smaller-curated-pool"
+    },
+    {
+      "id": "english",
+      "file": "english.names.json",
+      "version": "1.0.0",
+      "sha256": "699aa7ff182f67a37cc80acd1e0f74febceed5b666e8e58b031e6c0c609a396a",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "eritrean-muslim",
+      "file": "eritrean-muslim.names.json",
+      "version": "1.0.0",
+      "sha256": "bfdd8643fc48d2f8aa79373b192c4c4f82acbeaf49d97279b0ec2efac636b255",
+      "actualCounts": {
+        "givenNames": 90,
+        "familyNames": 0,
+        "secondComponent": 90
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "smaller-curated-pool"
+    },
+    {
+      "id": "eritrean-tigrinya",
+      "file": "eritrean-tigrinya.names.json",
+      "version": "1.0.0",
+      "sha256": "e937d7f964ac0195d1901def2cdf265e92b3f77cc1ba11136a26cf56642eb0fc",
+      "actualCounts": {
+        "givenNames": 90,
+        "familyNames": 0,
+        "secondComponent": 90
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "smaller-curated-pool"
+    },
+    {
+      "id": "ethiopian-amharic",
+      "file": "ethiopian-amharic.names.json",
+      "version": "1.0.0",
+      "sha256": "3b2e2b827d6db71704de400d5e74f76588a2f52b66ff3d756365bfc36fc91ca8",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 0,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "filipino",
+      "file": "filipino.names.json",
+      "version": "1.0.0",
+      "sha256": "2c544e4925d08f0ff5b0e38e5d244ff339e2337632331c048f2eb897f416fd59",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "finnish",
+      "file": "finnish.names.json",
+      "version": "1.0.0",
+      "sha256": "792fc2d4d9ff3713b2008ce3df7976e41d2f210a9529205841045143e5965a69",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "french",
+      "file": "french.names.json",
+      "version": "1.0.0",
+      "sha256": "a7d7f75cc77b1f0b706d53ffad825447d202623bf2aa7bd29c526eabf9b7f6e8",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "german",
+      "file": "german.names.json",
+      "version": "1.0.0",
+      "sha256": "f63f87ff53fb606be06ee3893f9f829c186d492e3a9bd24b509ff4947ce3d85d",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "greek",
+      "file": "greek.names.json",
+      "version": "1.0.0",
+      "sha256": "a085686ff61e803a27f5f23a685738f87739646cc2752ed1175a45cd503e5c38",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "hungarian",
+      "file": "hungarian.names.json",
+      "version": "1.0.0",
+      "sha256": "45fde9336fc3d3f5532a4fc5860260cfa1a628c3114338ab6b97fc4b585e61f1",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "indian-hindi",
+      "file": "indian-hindi.names.json",
+      "version": "1.0.0",
+      "sha256": "feb9ee7ba277ee64aaffa06d9932e8ecf9cb35470c3317d92780ca374b79e48a",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "indian-urdu-muslim",
+      "file": "indian-urdu-muslim.names.json",
+      "version": "1.0.0",
+      "sha256": "b82a2c93ad75ec909cffc64a7b296da7492123a0bdcf0a79b60f796616be78e0",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "italian",
+      "file": "italian.names.json",
+      "version": "1.0.0",
+      "sha256": "41218eced08ad4104d730863469bd6d67c0d05c900c9ee1f5e743dbd89aad5b5",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "japanese",
+      "file": "japanese.names.json",
+      "version": "1.0.0",
+      "sha256": "99ff09acc74f54fdb8695e437643f48dead8b08c435ae5e78dc26b78e8456a33",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "korean",
+      "file": "korean.names.json",
+      "version": "1.0.0",
+      "sha256": "fc96cb9bf6a1f09c4375585ba435b37437a01a173f43bf0992ee3fa807a4183c",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "luxembourgish",
+      "file": "luxembourgish.names.json",
+      "version": "1.0.0",
+      "sha256": "c3579e024a4303d90264f87f8dffcf489be2c92786f53c32e07064363d7c6fd7",
+      "actualCounts": {
+        "givenNames": 70,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "smaller-curated-pool"
+    },
+    {
+      "id": "nepali-gurkha",
+      "file": "nepali-gurkha.names.json",
+      "version": "1.0.0",
+      "sha256": "bec0772639581976deeab5c5035ca39dd0788b7dc9ae2abb2a3b4f5e9c31e6bb",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 12,
+        "secondComponent": 12
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "smaller-curated-pool"
+    },
+    {
+      "id": "north-african-arabic",
+      "file": "north-african-arabic.names.json",
+      "version": "1.0.0",
+      "sha256": "399374287fa0b368db7538c23b5977651d9bd07dc926fb56e3d60e39a1dfc186",
+      "actualCounts": {
+        "givenNames": 90,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "smaller-curated-pool"
+    },
+    {
+      "id": "norwegian",
+      "file": "norwegian.names.json",
+      "version": "1.0.0",
+      "sha256": "4edea3b09d89ab39d2e24fc63ee2047cb825704412784fdccaa31bdcbf3f97e5",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "polish",
+      "file": "polish.names.json",
+      "version": "1.0.0",
+      "sha256": "689fadd61eba7f7bf3aa22cdd886dcad44502a1c674a5db42c08e9c30c6c8950",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "punjabi-sikh",
+      "file": "punjabi-sikh.names.json",
+      "version": "1.0.0",
+      "sha256": "d6cf1fea603b17f5c022bc8bdcd8babf1e175339fc48ffc089ee79b45686fbb7",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 0,
+        "secondComponent": 1
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "romanian",
+      "file": "romanian.names.json",
+      "version": "1.0.0",
+      "sha256": "3d2f3d1869bb435c956439465fc4a5f27b7bb6f0bda048472f74214233428898",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "russian",
+      "file": "russian.names.json",
+      "version": "1.0.0",
+      "sha256": "a88a1249dcb1a95af92d96626146b2de9acbbf994fc138bac847b656b0d20a71",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "serbian",
+      "file": "serbian.names.json",
+      "version": "1.0.0",
+      "sha256": "c25ff652ce62fd9860d0b9900c9ca64d23cca8d77479d3cc90297d83e5464916",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "slovak",
+      "file": "slovak.names.json",
+      "version": "1.0.0",
+      "sha256": "af65a7ee253f877ae661d0c7c97327046639d3eab5a00f3bc53b0ed3f367c0e4",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "slovenian",
+      "file": "slovenian.names.json",
+      "version": "1.0.0",
+      "sha256": "db2708e7fc41a9299eaf3ad31f53080d5a8d570eee7e0e8fbc0f4b310a52749f",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "swedish",
+      "file": "swedish.names.json",
+      "version": "1.0.0",
+      "sha256": "5f4ed1afa8f14c157a6b88dbd79264c386c833402d7ee87b74da06382b8aac5b",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "tamil-patronymic",
+      "file": "tamil-patronymic.names.json",
+      "version": "1.0.0",
+      "sha256": "70d294150850068da262c5298f951d29dbec55ef8ef2ba5ea16ec7ee62450ac3",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 0,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "thai",
+      "file": "thai.names.json",
+      "version": "1.0.0",
+      "sha256": "8ce439784a113cae940c6668357151717d8051c76b014b43c7bc934443fc958b",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    },
+    {
+      "id": "turkish",
+      "file": "turkish.names.json",
+      "version": "1.0.0",
+      "sha256": "f537abd0483c0cd809cc0e7efec680c47af20db2826fc1889cdd8f098534cbf1",
+      "actualCounts": {
+        "givenNames": 100,
+        "familyNames": 100,
+        "secondComponent": 100
+      },
+      "reviewStatus": "editorial-draft",
+      "completeness": "target-met"
+    }
+  ],
+  "nationalityContexts": [
+    {
+      "id": "german",
+      "label": "German",
+      "poolIds": [
+        "german"
+      ],
+      "rulesNationalityContexts": [
+        "german"
+      ],
+      "defaultPoolId": "german",
+      "selection": "default-pool",
+      "note": "Rules nationality and force affiliation remain independent of this naming context."
+    },
+    {
+      "id": "soviet",
+      "label": "Soviet",
+      "poolIds": [
+        "russian"
+      ],
+      "rulesNationalityContexts": [
+        "russian"
+      ],
+      "defaultPoolId": null,
+      "selection": "explicit-pool",
+      "note": "Russian is an explicit initial cultural choice, not a default for every Soviet ethnicity. Other cultures need an appropriate pool or authored names."
+    },
+    {
+      "id": "american",
+      "label": "American",
+      "poolIds": [
+        "american"
+      ],
+      "rulesNationalityContexts": [
+        "american"
+      ],
+      "defaultPoolId": "american",
+      "selection": "default-pool",
+      "note": "Dedicated mixed American pool for general U.S. Army and Marine personnel. Does not infer ethnicity or represent every formation. Use authored names for unsupported unit-specific profiles; existing saved names are preserved."
+    },
+    {
+      "id": "british",
+      "label": "British",
+      "poolIds": [
+        "english"
+      ],
+      "rulesNationalityContexts": [
+        "british",
+        "commonwealth-korea"
+      ],
+      "defaultPoolId": "english",
+      "selection": "default-pool",
+      "note": "Rules nationality and force affiliation remain independent of this naming context."
+    },
+    {
+      "id": "australian",
+      "label": "Australian",
+      "poolIds": [
+        "english"
+      ],
+      "rulesNationalityContexts": [
+        "british",
+        "commonwealth-korea"
+      ],
+      "defaultPoolId": "english",
+      "selection": "default-pool",
+      "note": "Anglophone initial pool; indigenous and other cultural contexts require authored names or additional reviewed pools."
+    },
+    {
+      "id": "new-zealand",
+      "label": "New Zealand",
+      "poolIds": [
+        "english"
+      ],
+      "rulesNationalityContexts": [
+        "british",
+        "commonwealth-korea"
+      ],
+      "defaultPoolId": "english",
+      "selection": "default-pool",
+      "note": "Anglophone initial pool; Māori personnel require authored names or a dedicated pool."
+    },
+    {
+      "id": "canadian",
+      "label": "Canadian",
+      "poolIds": [
+        "english",
+        "french"
+      ],
+      "rulesNationalityContexts": [
+        "british",
+        "commonwealth-korea"
+      ],
+      "defaultPoolId": null,
+      "selection": "explicit-pool",
+      "note": "Rules nationality and force affiliation remain independent of this naming context."
+    },
+    {
+      "id": "indian",
+      "label": "British Indian",
+      "poolIds": [
+        "indian-hindi",
+        "punjabi-sikh",
+        "indian-urdu-muslim",
+        "bengali",
+        "tamil-patronymic"
+      ],
+      "rulesNationalityContexts": [
+        "british"
+      ],
+      "defaultPoolId": null,
+      "selection": "explicit-pool",
+      "note": "Choose a cultural/regimental context; these five options are not exhaustive of British India."
+    },
+    {
+      "id": "gurkha",
+      "label": "Gurkha",
+      "poolIds": [
+        "nepali-gurkha"
+      ],
+      "rulesNationalityContexts": [
+        "british"
+      ],
+      "defaultPoolId": null,
+      "selection": "explicit-pool",
+      "note": "Select both pool and recruiting subgroup. Some regiments or communities need authored names until reviewed coverage is added."
+    },
+    {
+      "id": "french",
+      "label": "French",
+      "poolIds": [
+        "french",
+        "north-african-arabic"
+      ],
+      "rulesNationalityContexts": [
+        "french",
+        "british",
+        "other-un-command"
+      ],
+      "defaultPoolId": null,
+      "selection": "explicit-pool",
+      "note": "Select metropolitan/Francophone or a specific colonial naming context. Other colonial populations require authored names or dedicated pools."
+    },
+    {
+      "id": "italian",
+      "label": "Italian",
+      "poolIds": [
+        "italian"
+      ],
+      "rulesNationalityContexts": [
+        "italian"
+      ],
+      "defaultPoolId": "italian",
+      "selection": "default-pool",
+      "note": "Rules nationality and force affiliation remain independent of this naming context."
+    },
+    {
+      "id": "eritrean",
+      "label": "Eritrean",
+      "poolIds": [
+        "eritrean-tigrinya",
+        "eritrean-muslim"
+      ],
+      "rulesNationalityContexts": [
+        "italian"
+      ],
+      "defaultPoolId": null,
+      "selection": "explicit-pool",
+      "note": "Rules nationality and force affiliation remain independent of this naming context."
+    },
+    {
+      "id": "finnish",
+      "label": "Finnish",
+      "poolIds": [
+        "finnish",
+        "swedish"
+      ],
+      "rulesNationalityContexts": [
+        "finnish"
+      ],
+      "defaultPoolId": null,
+      "selection": "explicit-pool",
+      "note": "Rules nationality and force affiliation remain independent of this naming context."
+    },
+    {
+      "id": "japanese",
+      "label": "Japanese",
+      "poolIds": [
+        "japanese"
+      ],
+      "rulesNationalityContexts": [
+        "japanese"
+      ],
+      "defaultPoolId": "japanese",
+      "selection": "default-pool",
+      "note": "Rules nationality and force affiliation remain independent of this naming context."
+    },
+    {
+      "id": "chinese",
+      "label": "Chinese",
+      "poolIds": [
+        "chinese"
+      ],
+      "rulesNationalityContexts": [
+        "chinese",
+        "communist-chinese"
+      ],
+      "defaultPoolId": "chinese",
+      "selection": "default-pool",
+      "note": "Mandarin romanization is a display convention; Nationalist, Communist, and CPVA affiliations remain separate."
+    },
+    {
+      "id": "romanian",
+      "label": "Romanian",
+      "poolIds": [
+        "romanian"
+      ],
+      "rulesNationalityContexts": [
+        "axis-minor"
+      ],
+      "defaultPoolId": "romanian",
+      "selection": "default-pool",
+      "note": "Rules nationality and force affiliation remain independent of this naming context."
+    },
+    {
+      "id": "hungarian",
+      "label": "Hungarian",
+      "poolIds": [
+        "hungarian"
+      ],
+      "rulesNationalityContexts": [
+        "axis-minor"
+      ],
+      "defaultPoolId": "hungarian",
+      "selection": "default-pool",
+      "note": "Rules nationality and force affiliation remain independent of this naming context."
+    },
+    {
+      "id": "slovak",
+      "label": "Slovak",
+      "poolIds": [
+        "slovak"
+      ],
+      "rulesNationalityContexts": [
+        "axis-minor"
+      ],
+      "defaultPoolId": "slovak",
+      "selection": "default-pool",
+      "note": "Rules nationality and force affiliation remain independent of this naming context."
+    },
+    {
+      "id": "croatian",
+      "label": "Croatian",
+      "poolIds": [
+        "croatian"
+      ],
+      "rulesNationalityContexts": [
+        "axis-minor",
+        "german",
+        "italian",
+        "partisan"
+      ],
+      "defaultPoolId": "croatian",
+      "selection": "default-pool",
+      "note": "Rules nationality and force affiliation remain independent of this naming context."
+    },
+    {
+      "id": "bulgarian",
+      "label": "Bulgarian",
+      "poolIds": [
+        "bulgarian"
+      ],
+      "rulesNationalityContexts": [
+        "axis-minor"
+      ],
+      "defaultPoolId": "bulgarian",
+      "selection": "default-pool",
+      "note": "Rules nationality and force affiliation remain independent of this naming context."
+    },
+    {
+      "id": "polish",
+      "label": "Polish",
+      "poolIds": [
+        "polish"
+      ],
+      "rulesNationalityContexts": [
+        "allied-minor",
+        "british",
+        "russian"
+      ],
+      "defaultPoolId": "polish",
+      "selection": "default-pool",
+      "note": "Rules nationality and force affiliation remain independent of this naming context."
+    },
+    {
+      "id": "norwegian",
+      "label": "Norwegian",
+      "poolIds": [
+        "norwegian"
+      ],
+      "rulesNationalityContexts": [
+        "allied-minor",
+        "british"
+      ],
+      "defaultPoolId": "norwegian",
+      "selection": "default-pool",
+      "note": "Rules nationality and force affiliation remain independent of this naming context."
+    },
+    {
+      "id": "danish",
+      "label": "Danish",
+      "poolIds": [
+        "danish"
+      ],
+      "rulesNationalityContexts": [
+        "allied-minor"
+      ],
+      "defaultPoolId": "danish",
+      "selection": "default-pool",
+      "note": "Rules nationality and force affiliation remain independent of this naming context."
+    },
+    {
+      "id": "dutch",
+      "label": "Dutch",
+      "poolIds": [
+        "dutch"
+      ],
+      "rulesNationalityContexts": [
+        "allied-minor",
+        "other-un-command"
+      ],
+      "defaultPoolId": "dutch",
+      "selection": "default-pool",
+      "note": "European Dutch initial context. Indigenous Dutch East Indies personnel require a dedicated pool or authored names."
+    },
+    {
+      "id": "belgian",
+      "label": "Belgian",
+      "poolIds": [
+        "dutch",
+        "french"
+      ],
+      "rulesNationalityContexts": [
+        "allied-minor",
+        "other-un-command"
+      ],
+      "defaultPoolId": null,
+      "selection": "explicit-pool",
+      "note": "Rules nationality and force affiliation remain independent of this naming context."
+    },
+    {
+      "id": "yugoslav",
+      "label": "Yugoslav",
+      "poolIds": [
+        "serbian",
+        "croatian",
+        "slovenian",
+        "bosnian-muslim"
+      ],
+      "rulesNationalityContexts": [
+        "allied-minor",
+        "partisan"
+      ],
+      "defaultPoolId": null,
+      "selection": "explicit-pool",
+      "note": "Select the person's cultural context; additional Yugoslav communities require authored names or later pools."
+    },
+    {
+      "id": "greek",
+      "label": "Greek",
+      "poolIds": [
+        "greek"
+      ],
+      "rulesNationalityContexts": [
+        "allied-minor",
+        "other-un-command"
+      ],
+      "defaultPoolId": "greek",
+      "selection": "default-pool",
+      "note": "Rules nationality and force affiliation remain independent of this naming context."
+    },
+    {
+      "id": "ethiopian",
+      "label": "Ethiopian",
+      "poolIds": [
+        "ethiopian-amharic"
+      ],
+      "rulesNationalityContexts": [
+        "allied-minor",
+        "other-un-command"
+      ],
+      "defaultPoolId": null,
+      "selection": "explicit-pool",
+      "note": "Amharic is one cultural context. Do not apply it automatically to every Ethiopian formation."
+    },
+    {
+      "id": "filipino",
+      "label": "Filipino",
+      "poolIds": [
+        "filipino"
+      ],
+      "rulesNationalityContexts": [
+        "american",
+        "other-un-command"
+      ],
+      "defaultPoolId": "filipino",
+      "selection": "default-pool",
+      "note": "Rules nationality and force affiliation remain independent of this naming context."
+    },
+    {
+      "id": "south-korean",
+      "label": "South Korean",
+      "poolIds": [
+        "korean"
+      ],
+      "rulesNationalityContexts": [
+        "south-korean",
+        "american"
+      ],
+      "defaultPoolId": "korean",
+      "selection": "default-pool",
+      "note": "Includes ROKA, KMC, and KATUSA; KATUSA keep Korean names while using American rules."
+    },
+    {
+      "id": "north-korean",
+      "label": "North Korean",
+      "poolIds": [
+        "korean"
+      ],
+      "rulesNationalityContexts": [
+        "north-korean",
+        "partisan"
+      ],
+      "defaultPoolId": "korean",
+      "selection": "default-pool",
+      "note": "Rules nationality and force affiliation remain independent of this naming context."
+    },
+    {
+      "id": "colombian",
+      "label": "Colombian",
+      "poolIds": [
+        "colombian-spanish"
+      ],
+      "rulesNationalityContexts": [
+        "other-un-command"
+      ],
+      "defaultPoolId": "colombian-spanish",
+      "selection": "default-pool",
+      "note": "Rules nationality and force affiliation remain independent of this naming context."
+    },
+    {
+      "id": "luxembourgish",
+      "label": "Luxembourgish",
+      "poolIds": [
+        "luxembourgish"
+      ],
+      "rulesNationalityContexts": [
+        "other-un-command"
+      ],
+      "defaultPoolId": "luxembourgish",
+      "selection": "default-pool",
+      "note": "Rules nationality and force affiliation remain independent of this naming context."
+    },
+    {
+      "id": "thai",
+      "label": "Thai",
+      "poolIds": [
+        "thai"
+      ],
+      "rulesNationalityContexts": [
+        "other-un-command"
+      ],
+      "defaultPoolId": null,
+      "selection": "explicit-pool",
+      "note": "Choose Thai or Sino-Thai surname subgroup; draft requires local review."
+    },
+    {
+      "id": "turkish",
+      "label": "Turkish",
+      "poolIds": [
+        "turkish"
+      ],
+      "rulesNationalityContexts": [
+        "other-un-command"
+      ],
+      "defaultPoolId": "turkish",
+      "selection": "default-pool",
+      "note": "Rules nationality and force affiliation remain independent of this naming context."
+    },
+    {
+      "id": "kings-african-rifles",
+      "label": "King's African Rifles",
+      "poolIds": [
+        "east-african-kikuyu"
+      ],
+      "rulesNationalityContexts": [
+        "british"
+      ],
+      "defaultPoolId": null,
+      "selection": "explicit-pool",
+      "note": "A narrow Kikuyu candidate pool only. Do not use it for all KAR battalions or for other East African populations; use authored names pending dedicated coverage."
+    }
+  ],
+  "forceAffiliations": [
+    {
+      "id": "german-regular",
+      "nationalityContextId": "german",
+      "rulesNationalityContext": "german"
+    },
+    {
+      "id": "german-ss",
+      "nationalityContextId": "german",
+      "rulesNationalityContext": "german"
+    },
+    {
+      "id": "soviet-regular",
+      "nationalityContextId": "soviet",
+      "rulesNationalityContext": "russian"
+    },
+    {
+      "id": "soviet-guards",
+      "nationalityContextId": "soviet",
+      "rulesNationalityContext": "russian"
+    },
+    {
+      "id": "soviet-nkvd",
+      "nationalityContextId": "soviet",
+      "rulesNationalityContext": "russian"
+    },
+    {
+      "id": "us-army",
+      "nationalityContextId": "american",
+      "rulesNationalityContext": "american"
+    },
+    {
+      "id": "us-marines",
+      "nationalityContextId": "american",
+      "rulesNationalityContext": "american"
+    },
+    {
+      "id": "philippine-army",
+      "nationalityContextId": "filipino",
+      "rulesNationalityContext": "american"
+    },
+    {
+      "id": "free-french",
+      "nationalityContextId": "french",
+      "rulesNationalityContext": "british"
+    },
+    {
+      "id": "vichy-french",
+      "nationalityContextId": "french",
+      "rulesNationalityContext": "french"
+    },
+    {
+      "id": "french-1940",
+      "nationalityContextId": "french",
+      "rulesNationalityContext": "french"
+    },
+    {
+      "id": "free-polish",
+      "nationalityContextId": "polish",
+      "rulesNationalityContext": "british"
+    },
+    {
+      "id": "chinese-nationalist",
+      "nationalityContextId": "chinese",
+      "rulesNationalityContext": "chinese"
+    },
+    {
+      "id": "chinese-communist-ww2",
+      "nationalityContextId": "chinese",
+      "rulesNationalityContext": "chinese"
+    },
+    {
+      "id": "cpva",
+      "nationalityContextId": "chinese",
+      "rulesNationalityContext": "communist-chinese"
+    },
+    {
+      "id": "roka",
+      "nationalityContextId": "south-korean",
+      "rulesNationalityContext": "south-korean"
+    },
+    {
+      "id": "kmc",
+      "nationalityContextId": "south-korean",
+      "rulesNationalityContext": "south-korean"
+    },
+    {
+      "id": "katusa",
+      "nationalityContextId": "south-korean",
+      "rulesNationalityContext": "american"
+    },
+    {
+      "id": "kpa",
+      "nationalityContextId": "north-korean",
+      "rulesNationalityContext": "north-korean"
+    },
+    {
+      "id": "korean-communist-guerrillas",
+      "nationalityContextId": "north-korean",
+      "rulesNationalityContext": "partisan"
+    },
+    {
+      "id": "un-french",
+      "nationalityContextId": "french",
+      "rulesNationalityContext": "other-un-command"
+    },
+    {
+      "id": "un-dutch",
+      "nationalityContextId": "dutch",
+      "rulesNationalityContext": "other-un-command"
+    },
+    {
+      "id": "un-belgian",
+      "nationalityContextId": "belgian",
+      "rulesNationalityContext": "other-un-command"
+    },
+    {
+      "id": "un-greek",
+      "nationalityContextId": "greek",
+      "rulesNationalityContext": "other-un-command"
+    },
+    {
+      "id": "un-ethiopian",
+      "nationalityContextId": "ethiopian",
+      "rulesNationalityContext": "other-un-command"
+    },
+    {
+      "id": "un-filipino",
+      "nationalityContextId": "filipino",
+      "rulesNationalityContext": "other-un-command"
+    },
+    {
+      "id": "un-colombian",
+      "nationalityContextId": "colombian",
+      "rulesNationalityContext": "other-un-command"
+    },
+    {
+      "id": "un-luxembourgish",
+      "nationalityContextId": "luxembourgish",
+      "rulesNationalityContext": "other-un-command"
+    },
+    {
+      "id": "un-thai",
+      "nationalityContextId": "thai",
+      "rulesNationalityContext": "other-un-command"
+    },
+    {
+      "id": "un-turkish",
+      "nationalityContextId": "turkish",
+      "rulesNationalityContext": "other-un-command"
+    },
+    {
+      "id": "bcfk-british",
+      "nationalityContextId": "british",
+      "rulesNationalityContext": "commonwealth-korea"
+    },
+    {
+      "id": "bcfk-australian",
+      "nationalityContextId": "australian",
+      "rulesNationalityContext": "commonwealth-korea"
+    },
+    {
+      "id": "bcfk-new-zealand",
+      "nationalityContextId": "new-zealand",
+      "rulesNationalityContext": "commonwealth-korea"
+    },
+    {
+      "id": "bcfk-canadian",
+      "nationalityContextId": "canadian",
+      "rulesNationalityContext": "commonwealth-korea"
+    }
+  ],
+  "rulesGroups": [
+    {
+      "id": "axis-minor",
+      "requiresNationalityContext": true,
+      "nationalityContextIds": [
+        "romanian",
+        "hungarian",
+        "slovak",
+        "croatian",
+        "bulgarian"
+      ]
+    },
+    {
+      "id": "allied-minor",
+      "requiresNationalityContext": true,
+      "nationalityContextIds": [
+        "polish",
+        "norwegian",
+        "danish",
+        "dutch",
+        "belgian",
+        "yugoslav",
+        "greek",
+        "ethiopian"
+      ]
+    },
+    {
+      "id": "british",
+      "requiresNationalityContext": true,
+      "nationalityContextIds": [
+        "british",
+        "australian",
+        "new-zealand",
+        "canadian",
+        "indian",
+        "gurkha",
+        "french",
+        "polish",
+        "kings-african-rifles"
+      ]
+    },
+    {
+      "id": "other-un-command",
+      "requiresNationalityContext": true,
+      "nationalityContextIds": [
+        "french",
+        "dutch",
+        "belgian",
+        "greek",
+        "ethiopian",
+        "filipino",
+        "colombian",
+        "luxembourgish",
+        "thai",
+        "turkish"
+      ]
+    },
+    {
+      "id": "commonwealth-korea",
+      "requiresNationalityContext": true,
+      "nationalityContextIds": [
+        "british",
+        "australian",
+        "new-zealand",
+        "canadian"
+      ]
+    },
+    {
+      "id": "partisan",
+      "requiresNationalityContext": true,
+      "nationalityContextIds": [
+        "german",
+        "soviet",
+        "american",
+        "british",
+        "australian",
+        "new-zealand",
+        "canadian",
+        "indian",
+        "gurkha",
+        "french",
+        "italian",
+        "eritrean",
+        "finnish",
+        "japanese",
+        "chinese",
+        "romanian",
+        "hungarian",
+        "slovak",
+        "croatian",
+        "bulgarian",
+        "polish",
+        "norwegian",
+        "danish",
+        "dutch",
+        "belgian",
+        "yugoslav",
+        "greek",
+        "ethiopian",
+        "filipino",
+        "south-korean",
+        "north-korean",
+        "colombian",
+        "luxembourgish",
+        "thai",
+        "turkish"
+      ]
+    }
+  ],
+  "reviewNotes": [
+    "All entries are AI-assisted editorial candidates, not individually verified historical records.",
+    "Positive weights are editorial preferences, not claimed population frequencies.",
+    "Female personnel require authored identities or additional reviewed pools.",
+    "Identity generation must respect subgroup filters and name component roles.",
+    "100 is a target; small inventories and non-surname conventions are reported explicitly.",
+    "Rules context strings outside the current runtime vocabulary are coverage metadata, not implemented game rules."
+  ]
+}

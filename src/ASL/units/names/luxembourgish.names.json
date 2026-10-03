@@ -1,0 +1,912 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "luxembourgish",
+  "label": "Luxembourgish",
+  "language": "lb",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1950,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-family",
+    "componentOrder": [
+      "given",
+      "family"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "Luxembourgish context using French/German civil given-name spellings common in older records. The given-name target is deliberately not padded to 100.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 100
+  },
+  "actualCounts": {
+    "givenNames": 70,
+    "familyNames": 100,
+    "secondComponent": 100
+  },
+  "completeness": "smaller-curated-pool",
+  "givenNames": [
+    {
+      "id": "given-56ec4fee9f20",
+      "text": "Jean",
+      "weight": 3
+    },
+    {
+      "id": "given-78a1a1dae4e5",
+      "text": "Joseph",
+      "weight": 3
+    },
+    {
+      "id": "given-fd9c6c387deb",
+      "text": "Pierre",
+      "weight": 3
+    },
+    {
+      "id": "given-35298781dc6e",
+      "text": "Nicolas",
+      "weight": 3
+    },
+    {
+      "id": "given-b7ba366af35c",
+      "text": "Michel",
+      "weight": 3
+    },
+    {
+      "id": "given-338eb50cb7f2",
+      "text": "François",
+      "weight": 1
+    },
+    {
+      "id": "given-97dd6cc01603",
+      "text": "Henri",
+      "weight": 1
+    },
+    {
+      "id": "given-d53afea4f412",
+      "text": "Guillaume",
+      "weight": 1
+    },
+    {
+      "id": "given-c43139196d57",
+      "text": "Charles",
+      "weight": 1
+    },
+    {
+      "id": "given-818b5cc5f21d",
+      "text": "Paul",
+      "weight": 1
+    },
+    {
+      "id": "given-260f7f68928c",
+      "text": "Antoine",
+      "weight": 1
+    },
+    {
+      "id": "given-7d918307f081",
+      "text": "André",
+      "weight": 1
+    },
+    {
+      "id": "given-7f74d7ceb627",
+      "text": "Albert",
+      "weight": 1
+    },
+    {
+      "id": "given-aa75c6a3ca4b",
+      "text": "Alphonse",
+      "weight": 1
+    },
+    {
+      "id": "given-52b67b60260d",
+      "text": "Arthur",
+      "weight": 1
+    },
+    {
+      "id": "given-e05f92ab4554",
+      "text": "Auguste",
+      "weight": 1
+    },
+    {
+      "id": "given-3a4d5b86cfa2",
+      "text": "Bernard",
+      "weight": 1
+    },
+    {
+      "id": "given-d64757106605",
+      "text": "Camille",
+      "weight": 1
+    },
+    {
+      "id": "given-c793518eb0aa",
+      "text": "Édouard",
+      "weight": 1
+    },
+    {
+      "id": "given-afb4b674db82",
+      "text": "Émile",
+      "weight": 1
+    },
+    {
+      "id": "given-6aa5c501d58c",
+      "text": "Ernest",
+      "weight": 1
+    },
+    {
+      "id": "given-97d3ff664286",
+      "text": "Eugène",
+      "weight": 1
+    },
+    {
+      "id": "given-48e556d153eb",
+      "text": "Félix",
+      "weight": 1
+    },
+    {
+      "id": "given-d60a5068ed40",
+      "text": "Fernand",
+      "weight": 1
+    },
+    {
+      "id": "given-9e77efec0676",
+      "text": "Frédéric",
+      "weight": 1
+    },
+    {
+      "id": "given-b1f98647d15c",
+      "text": "Georges",
+      "weight": 1
+    },
+    {
+      "id": "given-a19c6a2318f6",
+      "text": "Gustave",
+      "weight": 1
+    },
+    {
+      "id": "given-79675d2e12b5",
+      "text": "Jacques",
+      "weight": 1
+    },
+    {
+      "id": "given-9e9619793cc0",
+      "text": "Jules",
+      "weight": 1
+    },
+    {
+      "id": "given-9759b22e3ea6",
+      "text": "Julien",
+      "weight": 1
+    },
+    {
+      "id": "given-a6b712b5ebb8",
+      "text": "Léon",
+      "weight": 1
+    },
+    {
+      "id": "given-d70023ae4cbb",
+      "text": "Léopold",
+      "weight": 1
+    },
+    {
+      "id": "given-9293e16b8e01",
+      "text": "Louis",
+      "weight": 1
+    },
+    {
+      "id": "given-fb2a4bf234b8",
+      "text": "Lucien",
+      "weight": 1
+    },
+    {
+      "id": "given-cf9f59045898",
+      "text": "Marcel",
+      "weight": 1
+    },
+    {
+      "id": "given-e67317ff6d56",
+      "text": "Mathias",
+      "weight": 1
+    },
+    {
+      "id": "given-679946faad78",
+      "text": "Maurice",
+      "weight": 1
+    },
+    {
+      "id": "given-a1a5936d3b0f",
+      "text": "Max",
+      "weight": 1
+    },
+    {
+      "id": "given-ca66a852a9e9",
+      "text": "Oscar",
+      "weight": 1
+    },
+    {
+      "id": "given-ffb595919dd6",
+      "text": "Raymond",
+      "weight": 1
+    },
+    {
+      "id": "given-1d5cc3f69b89",
+      "text": "René",
+      "weight": 1
+    },
+    {
+      "id": "given-2238dd61a1bf",
+      "text": "Robert",
+      "weight": 1
+    },
+    {
+      "id": "given-6c00e6ff6ea6",
+      "text": "Victor",
+      "weight": 1
+    },
+    {
+      "id": "given-f44c4b0766fc",
+      "text": "Vincent",
+      "weight": 1
+    },
+    {
+      "id": "given-0a729e233280",
+      "text": "Adolphe",
+      "weight": 1
+    },
+    {
+      "id": "given-13e15721c9d4",
+      "text": "Alexandre",
+      "weight": 1
+    },
+    {
+      "id": "given-15cc3b299442",
+      "text": "Baptiste",
+      "weight": 1
+    },
+    {
+      "id": "given-67e0082893e8",
+      "text": "Christian",
+      "weight": 1
+    },
+    {
+      "id": "given-0615570f9ea1",
+      "text": "Claude",
+      "weight": 1
+    },
+    {
+      "id": "given-165e4b848ee1",
+      "text": "Edmond",
+      "weight": 1
+    },
+    {
+      "id": "given-8561f8d451e9",
+      "text": "Ewald",
+      "weight": 1
+    },
+    {
+      "id": "given-d547d499b04e",
+      "text": "Florent",
+      "weight": 1
+    },
+    {
+      "id": "given-235ef92dd4f1",
+      "text": "Frantz",
+      "weight": 1
+    },
+    {
+      "id": "given-0c030df5a4e7",
+      "text": "Gabriel",
+      "weight": 1
+    },
+    {
+      "id": "given-f33e2bf3956a",
+      "text": "Gérard",
+      "weight": 1
+    },
+    {
+      "id": "given-652f213d443c",
+      "text": "Hubert",
+      "weight": 1
+    },
+    {
+      "id": "given-05d27d804fa2",
+      "text": "Johann",
+      "weight": 1
+    },
+    {
+      "id": "given-626170d4e713",
+      "text": "Karl",
+      "weight": 1
+    },
+    {
+      "id": "given-009069811c40",
+      "text": "Laurent",
+      "weight": 1
+    },
+    {
+      "id": "given-502c010d40f8",
+      "text": "Marian",
+      "weight": 1
+    },
+    {
+      "id": "given-39d3a2e969b3",
+      "text": "Martin",
+      "weight": 1
+    },
+    {
+      "id": "given-554aa135e9b5",
+      "text": "Norbert",
+      "weight": 1
+    },
+    {
+      "id": "given-42434654afcd",
+      "text": "Philippe",
+      "weight": 1
+    },
+    {
+      "id": "given-1deb0a3b8675",
+      "text": "Richard",
+      "weight": 1
+    },
+    {
+      "id": "given-d353224a1367",
+      "text": "Rodolphe",
+      "weight": 1
+    },
+    {
+      "id": "given-893b1f8fc0fc",
+      "text": "Roger",
+      "weight": 1
+    },
+    {
+      "id": "given-8f551f590254",
+      "text": "Théodore",
+      "weight": 1
+    },
+    {
+      "id": "given-21b1267526ba",
+      "text": "Valentin",
+      "weight": 1
+    },
+    {
+      "id": "given-8e65ef76dc76",
+      "text": "Wilhelm",
+      "weight": 1
+    },
+    {
+      "id": "given-e5f37c96f55b",
+      "text": "Willy",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-4f3f581ca098",
+      "text": "Schmit",
+      "weight": 3
+    },
+    {
+      "id": "family-5cc7a0b43c82",
+      "text": "Muller",
+      "weight": 3
+    },
+    {
+      "id": "family-6ecb547c1b10",
+      "text": "Weber",
+      "weight": 3
+    },
+    {
+      "id": "family-90e509cba300",
+      "text": "Hoffmann",
+      "weight": 3
+    },
+    {
+      "id": "family-cdf091a5806f",
+      "text": "Wagner",
+      "weight": 1
+    },
+    {
+      "id": "family-61533c7de361",
+      "text": "Thill",
+      "weight": 3
+    },
+    {
+      "id": "family-d5dffdbecbe3",
+      "text": "Schmitz",
+      "weight": 1
+    },
+    {
+      "id": "family-99ca0687e355",
+      "text": "Schneider",
+      "weight": 1
+    },
+    {
+      "id": "family-d3e963a0a44e",
+      "text": "Klein",
+      "weight": 1
+    },
+    {
+      "id": "family-876fdfa1d115",
+      "text": "Meyer",
+      "weight": 1
+    },
+    {
+      "id": "family-d4f7ba2a4bff",
+      "text": "Lentz",
+      "weight": 1
+    },
+    {
+      "id": "family-f299f553f362",
+      "text": "Hansen",
+      "weight": 1
+    },
+    {
+      "id": "family-4fc7feee5419",
+      "text": "Reuter",
+      "weight": 1
+    },
+    {
+      "id": "family-73647c174ad6",
+      "text": "Kayser",
+      "weight": 1
+    },
+    {
+      "id": "family-9059f3ac50b2",
+      "text": "Schroeder",
+      "weight": 1
+    },
+    {
+      "id": "family-b33d12f2e43e",
+      "text": "Schumacher",
+      "weight": 1
+    },
+    {
+      "id": "family-5ce7c5eeebed",
+      "text": "Mersch",
+      "weight": 1
+    },
+    {
+      "id": "family-a78429899bb8",
+      "text": "Müller",
+      "weight": 1
+    },
+    {
+      "id": "family-d9fad4bf2ccb",
+      "text": "Kremer",
+      "weight": 1
+    },
+    {
+      "id": "family-e1e36acfb62c",
+      "text": "Krier",
+      "weight": 1
+    },
+    {
+      "id": "family-d081faa42676",
+      "text": "Faber",
+      "weight": 1
+    },
+    {
+      "id": "family-45c301dceb9a",
+      "text": "Wolff",
+      "weight": 1
+    },
+    {
+      "id": "family-541af1c56f37",
+      "text": "Becker",
+      "weight": 1
+    },
+    {
+      "id": "family-46682171441f",
+      "text": "Fischer",
+      "weight": 1
+    },
+    {
+      "id": "family-8a446a936d39",
+      "text": "Braun",
+      "weight": 1
+    },
+    {
+      "id": "family-f15b1dd8f3f2",
+      "text": "Jacoby",
+      "weight": 1
+    },
+    {
+      "id": "family-a434acba37ed",
+      "text": "Koch",
+      "weight": 1
+    },
+    {
+      "id": "family-433c4a131c11",
+      "text": "Ries",
+      "weight": 1
+    },
+    {
+      "id": "family-75a27f24c6fc",
+      "text": "Schaack",
+      "weight": 1
+    },
+    {
+      "id": "family-f8a47db69706",
+      "text": "Schintgen",
+      "weight": 1
+    },
+    {
+      "id": "family-f68bfdd882db",
+      "text": "Schiltz",
+      "weight": 1
+    },
+    {
+      "id": "family-faf75030322c",
+      "text": "Bock",
+      "weight": 1
+    },
+    {
+      "id": "family-b40aaf301759",
+      "text": "Conrardy",
+      "weight": 1
+    },
+    {
+      "id": "family-7ac55bb489c1",
+      "text": "Diederich",
+      "weight": 1
+    },
+    {
+      "id": "family-ccb26f97d856",
+      "text": "Eicher",
+      "weight": 1
+    },
+    {
+      "id": "family-dc27a288cdff",
+      "text": "Engel",
+      "weight": 1
+    },
+    {
+      "id": "family-930369db69ff",
+      "text": "Erpelding",
+      "weight": 1
+    },
+    {
+      "id": "family-cb49c79d715a",
+      "text": "Federspiel",
+      "weight": 1
+    },
+    {
+      "id": "family-5aac55382781",
+      "text": "Feltgen",
+      "weight": 1
+    },
+    {
+      "id": "family-e35a984a3871",
+      "text": "Frieden",
+      "weight": 1
+    },
+    {
+      "id": "family-273c87e1d030",
+      "text": "Gillen",
+      "weight": 1
+    },
+    {
+      "id": "family-925bf3dd092b",
+      "text": "Gloden",
+      "weight": 1
+    },
+    {
+      "id": "family-4d74a90260a4",
+      "text": "Goergen",
+      "weight": 1
+    },
+    {
+      "id": "family-7339eaba7d2b",
+      "text": "Greisch",
+      "weight": 1
+    },
+    {
+      "id": "family-8b0cfaa72413",
+      "text": "Grethen",
+      "weight": 1
+    },
+    {
+      "id": "family-427f51185764",
+      "text": "Groff",
+      "weight": 1
+    },
+    {
+      "id": "family-f744df5668ac",
+      "text": "Grotz",
+      "weight": 1
+    },
+    {
+      "id": "family-8465b33a9bf5",
+      "text": "Heinen",
+      "weight": 1
+    },
+    {
+      "id": "family-e3b7aea90639",
+      "text": "Heintz",
+      "weight": 1
+    },
+    {
+      "id": "family-f2424a93404c",
+      "text": "Hentges",
+      "weight": 1
+    },
+    {
+      "id": "family-aab47da15e02",
+      "text": "Hilger",
+      "weight": 1
+    },
+    {
+      "id": "family-062255142c3e",
+      "text": "Hirtz",
+      "weight": 1
+    },
+    {
+      "id": "family-e079e06f2a56",
+      "text": "Huberty",
+      "weight": 1
+    },
+    {
+      "id": "family-dcaa444d77e2",
+      "text": "Jung",
+      "weight": 1
+    },
+    {
+      "id": "family-4bd76ef1a6bf",
+      "text": "Kessler",
+      "weight": 1
+    },
+    {
+      "id": "family-a59abbd20c07",
+      "text": "Kirsch",
+      "weight": 1
+    },
+    {
+      "id": "family-ddb28fdf5980",
+      "text": "Knepper",
+      "weight": 1
+    },
+    {
+      "id": "family-ab64cd2bb3dc",
+      "text": "Koenig",
+      "weight": 1
+    },
+    {
+      "id": "family-ee70ec94b8c6",
+      "text": "Kohnen",
+      "weight": 1
+    },
+    {
+      "id": "family-49645e3500de",
+      "text": "Koster",
+      "weight": 1
+    },
+    {
+      "id": "family-9e74e40262cc",
+      "text": "Kox",
+      "weight": 1
+    },
+    {
+      "id": "family-3ff5bc21ee5d",
+      "text": "Krack",
+      "weight": 1
+    },
+    {
+      "id": "family-ec313b01edfe",
+      "text": "Lamesch",
+      "weight": 1
+    },
+    {
+      "id": "family-ec8fa88f1d2f",
+      "text": "Lannoy",
+      "weight": 1
+    },
+    {
+      "id": "family-90e8d8aade03",
+      "text": "Lemmer",
+      "weight": 1
+    },
+    {
+      "id": "family-36606914ab3e",
+      "text": "Limpach",
+      "weight": 1
+    },
+    {
+      "id": "family-7fcc15249ea3",
+      "text": "Linden",
+      "weight": 1
+    },
+    {
+      "id": "family-54ae50f62593",
+      "text": "Losch",
+      "weight": 1
+    },
+    {
+      "id": "family-cc39fabf4147",
+      "text": "Majerus",
+      "weight": 1
+    },
+    {
+      "id": "family-f54232e49aca",
+      "text": "Mangen",
+      "weight": 1
+    },
+    {
+      "id": "family-3d0ac364ae2b",
+      "text": "Mann",
+      "weight": 1
+    },
+    {
+      "id": "family-36b255b8700a",
+      "text": "Marx",
+      "weight": 1
+    },
+    {
+      "id": "family-aef7d66b4bb6",
+      "text": "Medinger",
+      "weight": 1
+    },
+    {
+      "id": "family-f217f84dfc2b",
+      "text": "Meisch",
+      "weight": 1
+    },
+    {
+      "id": "family-9af6f11a7e09",
+      "text": "Meyers",
+      "weight": 1
+    },
+    {
+      "id": "family-f3135966758b",
+      "text": "Michels",
+      "weight": 1
+    },
+    {
+      "id": "family-6f28dbfbfda3",
+      "text": "Molitor",
+      "weight": 1
+    },
+    {
+      "id": "family-e9fafd15385d",
+      "text": "Nilles",
+      "weight": 1
+    },
+    {
+      "id": "family-d01b7f4ccf55",
+      "text": "Noesen",
+      "weight": 1
+    },
+    {
+      "id": "family-9c5a92fd7053",
+      "text": "Petry",
+      "weight": 1
+    },
+    {
+      "id": "family-c857ba1ae977",
+      "text": "Pletschette",
+      "weight": 1
+    },
+    {
+      "id": "family-b72c5c41d66d",
+      "text": "Reding",
+      "weight": 1
+    },
+    {
+      "id": "family-63665fffa1bb",
+      "text": "Reiff",
+      "weight": 1
+    },
+    {
+      "id": "family-fcd82ad982f7",
+      "text": "Reinert",
+      "weight": 1
+    },
+    {
+      "id": "family-99c2fce16636",
+      "text": "Risch",
+      "weight": 1
+    },
+    {
+      "id": "family-4a2ac9c079f8",
+      "text": "Roth",
+      "weight": 1
+    },
+    {
+      "id": "family-4827dafe9e02",
+      "text": "Schaus",
+      "weight": 1
+    },
+    {
+      "id": "family-c5290a795744",
+      "text": "Schlesser",
+      "weight": 1
+    },
+    {
+      "id": "family-5a2f4b883dff",
+      "text": "Scholer",
+      "weight": 1
+    },
+    {
+      "id": "family-9c41196443c5",
+      "text": "Schommer",
+      "weight": 1
+    },
+    {
+      "id": "family-1713d7453531",
+      "text": "Schram",
+      "weight": 1
+    },
+    {
+      "id": "family-824733ddac7d",
+      "text": "Schreiner",
+      "weight": 1
+    },
+    {
+      "id": "family-a1dd014bbf45",
+      "text": "Schuster",
+      "weight": 1
+    },
+    {
+      "id": "family-848b037c01d5",
+      "text": "Sinner",
+      "weight": 1
+    },
+    {
+      "id": "family-94e02749922a",
+      "text": "Spautz",
+      "weight": 1
+    },
+    {
+      "id": "family-e1fcb6342567",
+      "text": "Theis",
+      "weight": 1
+    },
+    {
+      "id": "family-dd80e4f764de",
+      "text": "Trausch",
+      "weight": 1
+    },
+    {
+      "id": "family-0f308b0267ee",
+      "text": "Trierweiler",
+      "weight": 1
+    },
+    {
+      "id": "family-ba34cb17cb85",
+      "text": "Wampach",
+      "weight": 1
+    },
+    {
+      "id": "family-1dca58f1b860",
+      "text": "Wirtz",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 7000
+  }
+}

@@ -1,0 +1,1062 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "colombian-spanish",
+  "label": "Colombian, Spanish-language",
+  "language": "es-CO",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1950,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-family",
+    "componentOrder": [
+      "given",
+      "family"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "Spanish-language Colombian pool. Short military display uses the first family surname. A full civil name may carry a second family surname, retained as an authored additional component; this pool does not pretend the shortened form is the entire legal name.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 100
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 100,
+    "secondComponent": 100
+  },
+  "completeness": "target-met",
+  "givenNames": [
+    {
+      "id": "given-24c2ab65b7ad",
+      "text": "José",
+      "weight": 3
+    },
+    {
+      "id": "given-cb80be76d732",
+      "text": "Juan",
+      "weight": 3
+    },
+    {
+      "id": "given-1be075b9041a",
+      "text": "Luis",
+      "weight": 3
+    },
+    {
+      "id": "given-6369568f26e2",
+      "text": "Carlos",
+      "weight": 3
+    },
+    {
+      "id": "given-1f0ca711df81",
+      "text": "Antonio",
+      "weight": 3
+    },
+    {
+      "id": "given-594323b42fab",
+      "text": "Francisco",
+      "weight": 1
+    },
+    {
+      "id": "given-33ed3c57cf40",
+      "text": "Manuel",
+      "weight": 1
+    },
+    {
+      "id": "given-a432d817e884",
+      "text": "Pedro",
+      "weight": 1
+    },
+    {
+      "id": "given-b40c2888160f",
+      "text": "Rafael",
+      "weight": 1
+    },
+    {
+      "id": "given-977af1277234",
+      "text": "Miguel",
+      "weight": 1
+    },
+    {
+      "id": "given-b14b8ad1e6c4",
+      "text": "Ramón",
+      "weight": 1
+    },
+    {
+      "id": "given-6411c2711069",
+      "text": "Jorge",
+      "weight": 1
+    },
+    {
+      "id": "given-827f6e29bf4d",
+      "text": "Alberto",
+      "weight": 1
+    },
+    {
+      "id": "given-39981b0880b1",
+      "text": "Eduardo",
+      "weight": 1
+    },
+    {
+      "id": "given-75b51718f6c2",
+      "text": "Fernando",
+      "weight": 1
+    },
+    {
+      "id": "given-6568e1158933",
+      "text": "Ricardo",
+      "weight": 1
+    },
+    {
+      "id": "given-e7d280175ba2",
+      "text": "Enrique",
+      "weight": 1
+    },
+    {
+      "id": "given-da53a96cecab",
+      "text": "Julio",
+      "weight": 1
+    },
+    {
+      "id": "given-41d9fef43d69",
+      "text": "Arturo",
+      "weight": 1
+    },
+    {
+      "id": "given-fd828ef07e03",
+      "text": "Alfonso",
+      "weight": 1
+    },
+    {
+      "id": "given-119ebac257ef",
+      "text": "Álvaro",
+      "weight": 1
+    },
+    {
+      "id": "given-00787708c0e7",
+      "text": "Andrés",
+      "weight": 1
+    },
+    {
+      "id": "given-962e22ab9372",
+      "text": "Ángel",
+      "weight": 1
+    },
+    {
+      "id": "given-1fff0eb0bec8",
+      "text": "Aníbal",
+      "weight": 1
+    },
+    {
+      "id": "given-65fec084d03b",
+      "text": "Anselmo",
+      "weight": 1
+    },
+    {
+      "id": "given-235313b7925b",
+      "text": "Armando",
+      "weight": 1
+    },
+    {
+      "id": "given-c256f404a5f8",
+      "text": "Aurelio",
+      "weight": 1
+    },
+    {
+      "id": "given-dcb839f71474",
+      "text": "Baltasar",
+      "weight": 1
+    },
+    {
+      "id": "given-3982d173712f",
+      "text": "Benigno",
+      "weight": 1
+    },
+    {
+      "id": "given-5a8e94a519d7",
+      "text": "Benito",
+      "weight": 1
+    },
+    {
+      "id": "given-bed1f8891424",
+      "text": "Bernardo",
+      "weight": 1
+    },
+    {
+      "id": "given-46481bb6f14b",
+      "text": "Camilo",
+      "weight": 1
+    },
+    {
+      "id": "given-7fdf93937916",
+      "text": "Carmelo",
+      "weight": 1
+    },
+    {
+      "id": "given-fb913ee3557f",
+      "text": "César",
+      "weight": 1
+    },
+    {
+      "id": "given-afdb6cc8fd43",
+      "text": "Cipriano",
+      "weight": 1
+    },
+    {
+      "id": "given-a0a23131baba",
+      "text": "Claudio",
+      "weight": 1
+    },
+    {
+      "id": "given-ed43f9c4152e",
+      "text": "Cristóbal",
+      "weight": 1
+    },
+    {
+      "id": "given-7297db81c2f7",
+      "text": "Daniel",
+      "weight": 1
+    },
+    {
+      "id": "given-b4a38e8a481a",
+      "text": "Darío",
+      "weight": 1
+    },
+    {
+      "id": "given-f536fb10ec50",
+      "text": "Diego",
+      "weight": 1
+    },
+    {
+      "id": "given-424e93aa5134",
+      "text": "Domingo",
+      "weight": 1
+    },
+    {
+      "id": "given-4b07d8de31a3",
+      "text": "Emilio",
+      "weight": 1
+    },
+    {
+      "id": "given-b2d45c1ee39a",
+      "text": "Ernesto",
+      "weight": 1
+    },
+    {
+      "id": "given-bf0ae09eb270",
+      "text": "Esteban",
+      "weight": 1
+    },
+    {
+      "id": "given-92ebaa7ab6de",
+      "text": "Eugenio",
+      "weight": 1
+    },
+    {
+      "id": "given-0c270ce51ebf",
+      "text": "Eusebio",
+      "weight": 1
+    },
+    {
+      "id": "given-b87af0b698ff",
+      "text": "Evaristo",
+      "weight": 1
+    },
+    {
+      "id": "given-60ffd0fb64c5",
+      "text": "Federico",
+      "weight": 1
+    },
+    {
+      "id": "given-ea14b35aa297",
+      "text": "Felipe",
+      "weight": 1
+    },
+    {
+      "id": "given-48e556d153eb",
+      "text": "Félix",
+      "weight": 1
+    },
+    {
+      "id": "given-d35618ffea00",
+      "text": "Fermín",
+      "weight": 1
+    },
+    {
+      "id": "given-65ce7052cf40",
+      "text": "Fidel",
+      "weight": 1
+    },
+    {
+      "id": "given-6da20cefac81",
+      "text": "Florencio",
+      "weight": 1
+    },
+    {
+      "id": "given-0c030df5a4e7",
+      "text": "Gabriel",
+      "weight": 1
+    },
+    {
+      "id": "given-a53030573766",
+      "text": "Germán",
+      "weight": 1
+    },
+    {
+      "id": "given-a5a23899aae9",
+      "text": "Gilberto",
+      "weight": 1
+    },
+    {
+      "id": "given-b52739680491",
+      "text": "Gonzalo",
+      "weight": 1
+    },
+    {
+      "id": "given-34076c2240fb",
+      "text": "Gregorio",
+      "weight": 1
+    },
+    {
+      "id": "given-418e0211da76",
+      "text": "Guillermo",
+      "weight": 1
+    },
+    {
+      "id": "given-ec29b76d468e",
+      "text": "Gustavo",
+      "weight": 1
+    },
+    {
+      "id": "given-0a9cc1152c5b",
+      "text": "Hernando",
+      "weight": 1
+    },
+    {
+      "id": "given-41a20cef9347",
+      "text": "Horacio",
+      "weight": 1
+    },
+    {
+      "id": "given-d70b489bb97e",
+      "text": "Hugo",
+      "weight": 1
+    },
+    {
+      "id": "given-64e975e8d711",
+      "text": "Ignacio",
+      "weight": 1
+    },
+    {
+      "id": "given-63b063f5b637",
+      "text": "Isaac",
+      "weight": 1
+    },
+    {
+      "id": "given-557f3109ec45",
+      "text": "Ismael",
+      "weight": 1
+    },
+    {
+      "id": "given-339c7a6b7929",
+      "text": "Jacinto",
+      "weight": 1
+    },
+    {
+      "id": "given-916b1f01b7d7",
+      "text": "Jaime",
+      "weight": 1
+    },
+    {
+      "id": "given-0e1e847b6d1d",
+      "text": "Javier",
+      "weight": 1
+    },
+    {
+      "id": "given-7150f1b6a5b2",
+      "text": "Joaquín",
+      "weight": 1
+    },
+    {
+      "id": "given-0f5bfb8acfe4",
+      "text": "Julián",
+      "weight": 1
+    },
+    {
+      "id": "given-794a4b5a29f7",
+      "text": "Justo",
+      "weight": 1
+    },
+    {
+      "id": "given-6b4ed1f45f3f",
+      "text": "Leandro",
+      "weight": 1
+    },
+    {
+      "id": "given-b5c772cf5b14",
+      "text": "León",
+      "weight": 1
+    },
+    {
+      "id": "given-c04bc8058a89",
+      "text": "Leonardo",
+      "weight": 1
+    },
+    {
+      "id": "given-114b25448d0a",
+      "text": "Lorenzo",
+      "weight": 1
+    },
+    {
+      "id": "given-833e3ccb1fea",
+      "text": "Luciano",
+      "weight": 1
+    },
+    {
+      "id": "given-b1c960c2e3c1",
+      "text": "Marcelino",
+      "weight": 1
+    },
+    {
+      "id": "given-d93bf87c8557",
+      "text": "Marcos",
+      "weight": 1
+    },
+    {
+      "id": "given-3fb6181ca88d",
+      "text": "Mariano",
+      "weight": 1
+    },
+    {
+      "id": "given-61c8e16ad90d",
+      "text": "Mario",
+      "weight": 1
+    },
+    {
+      "id": "given-6311e2faf08c",
+      "text": "Martín",
+      "weight": 1
+    },
+    {
+      "id": "given-8272dcce0d71",
+      "text": "Mateo",
+      "weight": 1
+    },
+    {
+      "id": "given-543942a86f40",
+      "text": "Narciso",
+      "weight": 1
+    },
+    {
+      "id": "given-596a8ee0942a",
+      "text": "Nicolás",
+      "weight": 1
+    },
+    {
+      "id": "given-49b2a0b1d516",
+      "text": "Octavio",
+      "weight": 1
+    },
+    {
+      "id": "given-a0ec9e260cd4",
+      "text": "Óscar",
+      "weight": 1
+    },
+    {
+      "id": "given-c6fcb8c1b253",
+      "text": "Pablo",
+      "weight": 1
+    },
+    {
+      "id": "given-f7dab3fe298a",
+      "text": "Pascual",
+      "weight": 1
+    },
+    {
+      "id": "given-279afd3f2dc7",
+      "text": "Paulino",
+      "weight": 1
+    },
+    {
+      "id": "given-a93f105aa10f",
+      "text": "Roberto",
+      "weight": 1
+    },
+    {
+      "id": "given-b851fcbd2a56",
+      "text": "Rodolfo",
+      "weight": 1
+    },
+    {
+      "id": "given-5ad4a23bc13e",
+      "text": "Salvador",
+      "weight": 1
+    },
+    {
+      "id": "given-b1f6d1241c57",
+      "text": "Samuel",
+      "weight": 1
+    },
+    {
+      "id": "given-30362306091e",
+      "text": "Santiago",
+      "weight": 1
+    },
+    {
+      "id": "given-8334189876be",
+      "text": "Sebastián",
+      "weight": 1
+    },
+    {
+      "id": "given-9bcbdfa04fb5",
+      "text": "Sergio",
+      "weight": 1
+    },
+    {
+      "id": "given-1a3f374c7c8c",
+      "text": "Teodoro",
+      "weight": 1
+    },
+    {
+      "id": "given-237627569626",
+      "text": "Tomás",
+      "weight": 1
+    },
+    {
+      "id": "given-67c981d65f42",
+      "text": "Vicente",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-ad708010558e",
+      "text": "Rodríguez",
+      "weight": 3
+    },
+    {
+      "id": "family-d81498fc63c0",
+      "text": "Martínez",
+      "weight": 3
+    },
+    {
+      "id": "family-ec67bd8ff54d",
+      "text": "García",
+      "weight": 3
+    },
+    {
+      "id": "family-ce8e2bd68dbc",
+      "text": "Gómez",
+      "weight": 3
+    },
+    {
+      "id": "family-30070e109464",
+      "text": "López",
+      "weight": 3
+    },
+    {
+      "id": "family-1b93ce19f04b",
+      "text": "González",
+      "weight": 1
+    },
+    {
+      "id": "family-7eb216dc1387",
+      "text": "Hernández",
+      "weight": 1
+    },
+    {
+      "id": "family-2bd1d3d69584",
+      "text": "Sánchez",
+      "weight": 1
+    },
+    {
+      "id": "family-07559358e496",
+      "text": "Pérez",
+      "weight": 1
+    },
+    {
+      "id": "family-daa1ca90a18b",
+      "text": "Ramírez",
+      "weight": 1
+    },
+    {
+      "id": "family-80d10f5c4a65",
+      "text": "Díaz",
+      "weight": 1
+    },
+    {
+      "id": "family-3028fe69be06",
+      "text": "Torres",
+      "weight": 1
+    },
+    {
+      "id": "family-02529cce20e2",
+      "text": "Muñoz",
+      "weight": 1
+    },
+    {
+      "id": "family-69eabae5f70d",
+      "text": "Rojas",
+      "weight": 1
+    },
+    {
+      "id": "family-e6c3e8830036",
+      "text": "Moreno",
+      "weight": 1
+    },
+    {
+      "id": "family-7c9e08459659",
+      "text": "Vargas",
+      "weight": 1
+    },
+    {
+      "id": "family-fe9b82bf7aca",
+      "text": "Ortiz",
+      "weight": 1
+    },
+    {
+      "id": "family-b7dd890931c2",
+      "text": "Jiménez",
+      "weight": 1
+    },
+    {
+      "id": "family-1c201bebb838",
+      "text": "Castro",
+      "weight": 1
+    },
+    {
+      "id": "family-d1ac5820a5fa",
+      "text": "Gutiérrez",
+      "weight": 1
+    },
+    {
+      "id": "family-e1e08885df6a",
+      "text": "Álvarez",
+      "weight": 1
+    },
+    {
+      "id": "family-a66b6c078db2",
+      "text": "Valencia",
+      "weight": 1
+    },
+    {
+      "id": "family-7c8c32faff7c",
+      "text": "Ruiz",
+      "weight": 1
+    },
+    {
+      "id": "family-76c79ad9467d",
+      "text": "Suárez",
+      "weight": 1
+    },
+    {
+      "id": "family-5c82e808cab3",
+      "text": "Mejía",
+      "weight": 1
+    },
+    {
+      "id": "family-33c1bc62882c",
+      "text": "Romero",
+      "weight": 1
+    },
+    {
+      "id": "family-b8ddf79f4b1d",
+      "text": "Quintero",
+      "weight": 1
+    },
+    {
+      "id": "family-72e295cd24a4",
+      "text": "Cárdenas",
+      "weight": 1
+    },
+    {
+      "id": "family-65d69989fe32",
+      "text": "Duarte",
+      "weight": 1
+    },
+    {
+      "id": "family-81f10944388d",
+      "text": "Flórez",
+      "weight": 1
+    },
+    {
+      "id": "family-d29e4688269a",
+      "text": "Castillo",
+      "weight": 1
+    },
+    {
+      "id": "family-56def497628f",
+      "text": "Ospina",
+      "weight": 1
+    },
+    {
+      "id": "family-bd9ddb87cb82",
+      "text": "Restrepo",
+      "weight": 1
+    },
+    {
+      "id": "family-d3f39b44a789",
+      "text": "Montoya",
+      "weight": 1
+    },
+    {
+      "id": "family-1431cb8e0ae1",
+      "text": "Marín",
+      "weight": 1
+    },
+    {
+      "id": "family-0aaf1123652e",
+      "text": "Salazar",
+      "weight": 1
+    },
+    {
+      "id": "family-7db0246e6eb8",
+      "text": "Vásquez",
+      "weight": 1
+    },
+    {
+      "id": "family-eb99646f9164",
+      "text": "Guzmán",
+      "weight": 1
+    },
+    {
+      "id": "family-aa35b404a79d",
+      "text": "Correa",
+      "weight": 1
+    },
+    {
+      "id": "family-d25657eb456e",
+      "text": "Zapata",
+      "weight": 1
+    },
+    {
+      "id": "family-9a1f22d9f44f",
+      "text": "Vélez",
+      "weight": 1
+    },
+    {
+      "id": "family-552182e7845f",
+      "text": "Rincón",
+      "weight": 1
+    },
+    {
+      "id": "family-810183f59b40",
+      "text": "Acosta",
+      "weight": 1
+    },
+    {
+      "id": "family-531b34617e2d",
+      "text": "Arias",
+      "weight": 1
+    },
+    {
+      "id": "family-f8a637cd3890",
+      "text": "Barrera",
+      "weight": 1
+    },
+    {
+      "id": "family-77fd64940df3",
+      "text": "Beltrán",
+      "weight": 1
+    },
+    {
+      "id": "family-cb1ffceb0292",
+      "text": "Bernal",
+      "weight": 1
+    },
+    {
+      "id": "family-7913a179fb28",
+      "text": "Blanco",
+      "weight": 1
+    },
+    {
+      "id": "family-85afc8c163a7",
+      "text": "Bohórquez",
+      "weight": 1
+    },
+    {
+      "id": "family-5fdec9b8d161",
+      "text": "Bonilla",
+      "weight": 1
+    },
+    {
+      "id": "family-fe48cc60bcbe",
+      "text": "Botero",
+      "weight": 1
+    },
+    {
+      "id": "family-8123f58e7248",
+      "text": "Bravo",
+      "weight": 1
+    },
+    {
+      "id": "family-c2ade343fd1f",
+      "text": "Buitrago",
+      "weight": 1
+    },
+    {
+      "id": "family-1123e4820a72",
+      "text": "Cabrera",
+      "weight": 1
+    },
+    {
+      "id": "family-4a8b097d396c",
+      "text": "Calderón",
+      "weight": 1
+    },
+    {
+      "id": "family-3a976d0d5adf",
+      "text": "Camacho",
+      "weight": 1
+    },
+    {
+      "id": "family-45789cc13c6b",
+      "text": "Campo",
+      "weight": 1
+    },
+    {
+      "id": "family-5eb223843130",
+      "text": "Cano",
+      "weight": 1
+    },
+    {
+      "id": "family-c0facbdb74f7",
+      "text": "Carvajal",
+      "weight": 1
+    },
+    {
+      "id": "family-e24c8acfc273",
+      "text": "Castaño",
+      "weight": 1
+    },
+    {
+      "id": "family-af4952074784",
+      "text": "Cifuentes",
+      "weight": 1
+    },
+    {
+      "id": "family-263bcb39796e",
+      "text": "Córdoba",
+      "weight": 1
+    },
+    {
+      "id": "family-7f24f851eb3b",
+      "text": "Cuéllar",
+      "weight": 1
+    },
+    {
+      "id": "family-3d4aa16c7868",
+      "text": "Delgado",
+      "weight": 1
+    },
+    {
+      "id": "family-0e78e4432e03",
+      "text": "Escobar",
+      "weight": 1
+    },
+    {
+      "id": "family-23f88d52777e",
+      "text": "Espinosa",
+      "weight": 1
+    },
+    {
+      "id": "family-06bbd7af91f8",
+      "text": "Estrada",
+      "weight": 1
+    },
+    {
+      "id": "family-6694f282e811",
+      "text": "Fajardo",
+      "weight": 1
+    },
+    {
+      "id": "family-df40a8e4a866",
+      "text": "Fernández",
+      "weight": 1
+    },
+    {
+      "id": "family-9dab61b7a0b1",
+      "text": "Figueroa",
+      "weight": 1
+    },
+    {
+      "id": "family-e7c91d313b21",
+      "text": "Forero",
+      "weight": 1
+    },
+    {
+      "id": "family-adc4d83d5880",
+      "text": "Franco",
+      "weight": 1
+    },
+    {
+      "id": "family-577d60d2f621",
+      "text": "Galindo",
+      "weight": 1
+    },
+    {
+      "id": "family-80890a909643",
+      "text": "Galvis",
+      "weight": 1
+    },
+    {
+      "id": "family-4ab9ff48c260",
+      "text": "Giraldo",
+      "weight": 1
+    },
+    {
+      "id": "family-5d6d8babf923",
+      "text": "Guerrero",
+      "weight": 1
+    },
+    {
+      "id": "family-190759a32713",
+      "text": "Henao",
+      "weight": 1
+    },
+    {
+      "id": "family-10eb1eee8075",
+      "text": "Herrera",
+      "weight": 1
+    },
+    {
+      "id": "family-1ef50a4d83cf",
+      "text": "Hoyos",
+      "weight": 1
+    },
+    {
+      "id": "family-0169f3dadc52",
+      "text": "Hurtado",
+      "weight": 1
+    },
+    {
+      "id": "family-998eae2d1fab",
+      "text": "Jaramillo",
+      "weight": 1
+    },
+    {
+      "id": "family-a99bb8d58618",
+      "text": "Leal",
+      "weight": 1
+    },
+    {
+      "id": "family-78759f975d1f",
+      "text": "Londoño",
+      "weight": 1
+    },
+    {
+      "id": "family-b90a99583419",
+      "text": "Lozano",
+      "weight": 1
+    },
+    {
+      "id": "family-9d77a24d0f4c",
+      "text": "Luna",
+      "weight": 1
+    },
+    {
+      "id": "family-8d5c884a19b2",
+      "text": "Maldonado",
+      "weight": 1
+    },
+    {
+      "id": "family-5b97d7180881",
+      "text": "Medina",
+      "weight": 1
+    },
+    {
+      "id": "family-053c8714516d",
+      "text": "Mendoza",
+      "weight": 1
+    },
+    {
+      "id": "family-9b265f05b226",
+      "text": "Molina",
+      "weight": 1
+    },
+    {
+      "id": "family-fea8a6de7520",
+      "text": "Moncada",
+      "weight": 1
+    },
+    {
+      "id": "family-7ab597e1b5cc",
+      "text": "Montenegro",
+      "weight": 1
+    },
+    {
+      "id": "family-edca4c8901ba",
+      "text": "Mora",
+      "weight": 1
+    },
+    {
+      "id": "family-6f005a186898",
+      "text": "Morales",
+      "weight": 1
+    },
+    {
+      "id": "family-f8f37732bb55",
+      "text": "Mosquera",
+      "weight": 1
+    },
+    {
+      "id": "family-100951476e3c",
+      "text": "Murillo",
+      "weight": 1
+    },
+    {
+      "id": "family-671072ff440b",
+      "text": "Naranjo",
+      "weight": 1
+    },
+    {
+      "id": "family-cc753d5a2ce5",
+      "text": "Navarro",
+      "weight": 1
+    },
+    {
+      "id": "family-d6bd6c90e3af",
+      "text": "Nieto",
+      "weight": 1
+    },
+    {
+      "id": "family-74816a15ddc6",
+      "text": "Ortega",
+      "weight": 1
+    },
+    {
+      "id": "family-f69880e37097",
+      "text": "Palacios",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 10000
+  }
+}

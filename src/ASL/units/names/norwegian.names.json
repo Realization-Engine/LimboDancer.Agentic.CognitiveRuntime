@@ -1,0 +1,1062 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "norwegian",
+  "label": "Norwegian",
+  "language": "nb",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-family",
+    "componentOrder": [
+      "given",
+      "family"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "A conventional male naming pool for fictional personnel. It is not a census or exhaustive account of this population.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 100
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 100,
+    "secondComponent": 100
+  },
+  "completeness": "target-met",
+  "givenNames": [
+    {
+      "id": "given-36120f038521",
+      "text": "Ole",
+      "weight": 3
+    },
+    {
+      "id": "given-e0144cdd52ec",
+      "text": "Olav",
+      "weight": 3
+    },
+    {
+      "id": "given-9826f8c4f694",
+      "text": "Olaf",
+      "weight": 1
+    },
+    {
+      "id": "given-f0365f540d6c",
+      "text": "Johan",
+      "weight": 3
+    },
+    {
+      "id": "given-693617022ffb",
+      "text": "Johannes",
+      "weight": 1
+    },
+    {
+      "id": "given-fe7a26f92564",
+      "text": "Hans",
+      "weight": 3
+    },
+    {
+      "id": "given-626170d4e713",
+      "text": "Karl",
+      "weight": 1
+    },
+    {
+      "id": "given-5ebb5d03d184",
+      "text": "Kristian",
+      "weight": 1
+    },
+    {
+      "id": "given-02463754d3be",
+      "text": "Lars",
+      "weight": 1
+    },
+    {
+      "id": "given-49a4e298a7f3",
+      "text": "Nils",
+      "weight": 1
+    },
+    {
+      "id": "given-63e4a58c063b",
+      "text": "Peder",
+      "weight": 1
+    },
+    {
+      "id": "given-ea72c7959429",
+      "text": "Peter",
+      "weight": 1
+    },
+    {
+      "id": "given-5ef4681a55a4",
+      "text": "Anders",
+      "weight": 1
+    },
+    {
+      "id": "given-9eea6242471f",
+      "text": "Andreas",
+      "weight": 1
+    },
+    {
+      "id": "given-6710f07a77ee",
+      "text": "Arne",
+      "weight": 3
+    },
+    {
+      "id": "given-beca3dbbcfdc",
+      "text": "Erling",
+      "weight": 1
+    },
+    {
+      "id": "given-7d05b5d2cd3a",
+      "text": "Einar",
+      "weight": 1
+    },
+    {
+      "id": "given-fdbf4c13e701",
+      "text": "Harald",
+      "weight": 1
+    },
+    {
+      "id": "given-613241f806cb",
+      "text": "Sverre",
+      "weight": 1
+    },
+    {
+      "id": "given-cea24f75f7b4",
+      "text": "Leif",
+      "weight": 1
+    },
+    {
+      "id": "given-ab1892087511",
+      "text": "Knut",
+      "weight": 1
+    },
+    {
+      "id": "given-859bc154ada2",
+      "text": "Odd",
+      "weight": 1
+    },
+    {
+      "id": "given-89ac4dc9eddf",
+      "text": "Per",
+      "weight": 1
+    },
+    {
+      "id": "given-b7813498dbd4",
+      "text": "Rolf",
+      "weight": 1
+    },
+    {
+      "id": "given-9b82429a5e7e",
+      "text": "Sigurd",
+      "weight": 1
+    },
+    {
+      "id": "given-e7121e9ff0bc",
+      "text": "Tor",
+      "weight": 1
+    },
+    {
+      "id": "given-4c80661167f9",
+      "text": "Trygve",
+      "weight": 1
+    },
+    {
+      "id": "given-b0bdac90aa7f",
+      "text": "Gunnar",
+      "weight": 1
+    },
+    {
+      "id": "given-e88cfa8fbf9a",
+      "text": "Alfred",
+      "weight": 1
+    },
+    {
+      "id": "given-42972c1b3e85",
+      "text": "Anton",
+      "weight": 1
+    },
+    {
+      "id": "given-52b67b60260d",
+      "text": "Arthur",
+      "weight": 1
+    },
+    {
+      "id": "given-13cbf9d5f622",
+      "text": "Asbjørn",
+      "weight": 1
+    },
+    {
+      "id": "given-8948ffd8e1f4",
+      "text": "Aslak",
+      "weight": 1
+    },
+    {
+      "id": "given-4399e4586847",
+      "text": "Bjarne",
+      "weight": 1
+    },
+    {
+      "id": "given-542d3883dc9b",
+      "text": "Bjørn",
+      "weight": 1
+    },
+    {
+      "id": "given-dc953bc5e6b4",
+      "text": "Carl",
+      "weight": 1
+    },
+    {
+      "id": "given-491de24cc8f3",
+      "text": "Edvard",
+      "weight": 1
+    },
+    {
+      "id": "given-29112609a6aa",
+      "text": "Eilif",
+      "weight": 1
+    },
+    {
+      "id": "given-c9f11086c5f7",
+      "text": "Eivind",
+      "weight": 1
+    },
+    {
+      "id": "given-6d5128cc0b27",
+      "text": "Emil",
+      "weight": 1
+    },
+    {
+      "id": "given-f166226706d2",
+      "text": "Erik",
+      "weight": 1
+    },
+    {
+      "id": "given-16963cb0549a",
+      "text": "Finn",
+      "weight": 1
+    },
+    {
+      "id": "given-4a435ef7c9e8",
+      "text": "Fridtjof",
+      "weight": 1
+    },
+    {
+      "id": "given-9fbc08d140e9",
+      "text": "Georg",
+      "weight": 1
+    },
+    {
+      "id": "given-127a9ed38acc",
+      "text": "Gustav",
+      "weight": 1
+    },
+    {
+      "id": "given-825d284f7d98",
+      "text": "Haakon",
+      "weight": 1
+    },
+    {
+      "id": "given-80e62b21c6b3",
+      "text": "Håkon",
+      "weight": 1
+    },
+    {
+      "id": "given-104009874d8a",
+      "text": "Halvor",
+      "weight": 1
+    },
+    {
+      "id": "given-48bb4b331e60",
+      "text": "Herman",
+      "weight": 1
+    },
+    {
+      "id": "given-07fb5cedcce9",
+      "text": "Hjalmar",
+      "weight": 1
+    },
+    {
+      "id": "given-0a50f88028ab",
+      "text": "Ivar",
+      "weight": 1
+    },
+    {
+      "id": "given-8141d2b17b73",
+      "text": "Jacob",
+      "weight": 1
+    },
+    {
+      "id": "given-0e58ffb05070",
+      "text": "Jakob",
+      "weight": 1
+    },
+    {
+      "id": "given-5c5db120cb11",
+      "text": "Jan",
+      "weight": 1
+    },
+    {
+      "id": "given-da2b230fbb5a",
+      "text": "Jens",
+      "weight": 1
+    },
+    {
+      "id": "given-5f39b51ae9a4",
+      "text": "Jon",
+      "weight": 1
+    },
+    {
+      "id": "given-57582c6cff04",
+      "text": "Jørgen",
+      "weight": 1
+    },
+    {
+      "id": "given-f79982d9968e",
+      "text": "Julius",
+      "weight": 1
+    },
+    {
+      "id": "given-1f440c976ede",
+      "text": "Kjell",
+      "weight": 1
+    },
+    {
+      "id": "given-bb4fb8754158",
+      "text": "Kolbjørn",
+      "weight": 1
+    },
+    {
+      "id": "given-34da8cb146dd",
+      "text": "Kristen",
+      "weight": 1
+    },
+    {
+      "id": "given-c65d1968c895",
+      "text": "Kristoffer",
+      "weight": 1
+    },
+    {
+      "id": "given-eeb360e2a1fd",
+      "text": "Lauritz",
+      "weight": 1
+    },
+    {
+      "id": "given-81afec4bc59e",
+      "text": "Ludvig",
+      "weight": 1
+    },
+    {
+      "id": "given-8da8e8ef1326",
+      "text": "Magnus",
+      "weight": 1
+    },
+    {
+      "id": "given-39d3a2e969b3",
+      "text": "Martin",
+      "weight": 1
+    },
+    {
+      "id": "given-b39e52780e2f",
+      "text": "Mikkel",
+      "weight": 1
+    },
+    {
+      "id": "given-087dc7896b97",
+      "text": "Nikolai",
+      "weight": 1
+    },
+    {
+      "id": "given-199fe87f05e7",
+      "text": "Normann",
+      "weight": 1
+    },
+    {
+      "id": "given-702370082a6a",
+      "text": "Oskar",
+      "weight": 1
+    },
+    {
+      "id": "given-d7c7abb4946b",
+      "text": "Otto",
+      "weight": 1
+    },
+    {
+      "id": "given-818b5cc5f21d",
+      "text": "Paul",
+      "weight": 1
+    },
+    {
+      "id": "given-37d20806f556",
+      "text": "Petter",
+      "weight": 1
+    },
+    {
+      "id": "given-5aebb80d297f",
+      "text": "Reidar",
+      "weight": 1
+    },
+    {
+      "id": "given-b55e9da60c46",
+      "text": "Roald",
+      "weight": 1
+    },
+    {
+      "id": "given-d1b6eda54b27",
+      "text": "Rudolf",
+      "weight": 1
+    },
+    {
+      "id": "given-b1f6d1241c57",
+      "text": "Samuel",
+      "weight": 1
+    },
+    {
+      "id": "given-b7c86493ad51",
+      "text": "Sigfred",
+      "weight": 1
+    },
+    {
+      "id": "given-cdfbf9114a46",
+      "text": "Sigmund",
+      "weight": 1
+    },
+    {
+      "id": "given-a66b56f6ad54",
+      "text": "Sivert",
+      "weight": 1
+    },
+    {
+      "id": "given-9525b3d687bf",
+      "text": "Steinar",
+      "weight": 1
+    },
+    {
+      "id": "given-fe369a063922",
+      "text": "Sten",
+      "weight": 1
+    },
+    {
+      "id": "given-101203fc05fa",
+      "text": "Svein",
+      "weight": 1
+    },
+    {
+      "id": "given-1e830c2eda90",
+      "text": "Sven",
+      "weight": 1
+    },
+    {
+      "id": "given-9c30aae2d7d7",
+      "text": "Terje",
+      "weight": 1
+    },
+    {
+      "id": "given-5dfcf9ef1fb1",
+      "text": "Thomas",
+      "weight": 1
+    },
+    {
+      "id": "given-2d7e4757dca1",
+      "text": "Thor",
+      "weight": 1
+    },
+    {
+      "id": "given-7705c1c6cec1",
+      "text": "Thoralf",
+      "weight": 1
+    },
+    {
+      "id": "given-d519e28a67bc",
+      "text": "Thorbjørn",
+      "weight": 1
+    },
+    {
+      "id": "given-176d40aadd9c",
+      "text": "Thorleif",
+      "weight": 1
+    },
+    {
+      "id": "given-1e3ada15ecad",
+      "text": "Thorvald",
+      "weight": 1
+    },
+    {
+      "id": "given-3f803c6a980d",
+      "text": "Torbjørn",
+      "weight": 1
+    },
+    {
+      "id": "given-967d37485cbe",
+      "text": "Tore",
+      "weight": 1
+    },
+    {
+      "id": "given-6ed65025e9da",
+      "text": "Torleif",
+      "weight": 1
+    },
+    {
+      "id": "given-a6932b06075d",
+      "text": "Tormod",
+      "weight": 1
+    },
+    {
+      "id": "given-fa352f292e52",
+      "text": "Trond",
+      "weight": 1
+    },
+    {
+      "id": "given-ec35a3d62e99",
+      "text": "Valdemar",
+      "weight": 1
+    },
+    {
+      "id": "given-0af090c33a33",
+      "text": "Vidar",
+      "weight": 1
+    },
+    {
+      "id": "given-afb93df57467",
+      "text": "Viggo",
+      "weight": 1
+    },
+    {
+      "id": "given-9730a27f5f62",
+      "text": "Øyvind",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-f299f553f362",
+      "text": "Hansen",
+      "weight": 3
+    },
+    {
+      "id": "family-d73a72f1e242",
+      "text": "Johansen",
+      "weight": 3
+    },
+    {
+      "id": "family-c9abb46838ee",
+      "text": "Olsen",
+      "weight": 3
+    },
+    {
+      "id": "family-d73a4d9b780d",
+      "text": "Larsen",
+      "weight": 3
+    },
+    {
+      "id": "family-db6bd9102ad6",
+      "text": "Andersen",
+      "weight": 3
+    },
+    {
+      "id": "family-ec9d9693b548",
+      "text": "Pedersen",
+      "weight": 1
+    },
+    {
+      "id": "family-84e74bed7fff",
+      "text": "Nilsen",
+      "weight": 1
+    },
+    {
+      "id": "family-f1f9049ad5e6",
+      "text": "Kristiansen",
+      "weight": 1
+    },
+    {
+      "id": "family-f273c1b56f63",
+      "text": "Jensen",
+      "weight": 1
+    },
+    {
+      "id": "family-24c7ab8a167a",
+      "text": "Karlsen",
+      "weight": 1
+    },
+    {
+      "id": "family-41c498f9208d",
+      "text": "Johnsen",
+      "weight": 1
+    },
+    {
+      "id": "family-839ebc7abba2",
+      "text": "Pettersen",
+      "weight": 1
+    },
+    {
+      "id": "family-f3291efcfc64",
+      "text": "Eriksen",
+      "weight": 1
+    },
+    {
+      "id": "family-863634f9c343",
+      "text": "Berg",
+      "weight": 1
+    },
+    {
+      "id": "family-8b6078f3cb43",
+      "text": "Haugen",
+      "weight": 1
+    },
+    {
+      "id": "family-0a654b303281",
+      "text": "Hagen",
+      "weight": 1
+    },
+    {
+      "id": "family-a075fd01081f",
+      "text": "Johannessen",
+      "weight": 1
+    },
+    {
+      "id": "family-0e4cc8e4fc3d",
+      "text": "Andreassen",
+      "weight": 1
+    },
+    {
+      "id": "family-3d781c02d992",
+      "text": "Jacobsen",
+      "weight": 1
+    },
+    {
+      "id": "family-3c2c4eda8ac7",
+      "text": "Dahl",
+      "weight": 1
+    },
+    {
+      "id": "family-1cb5a4265bff",
+      "text": "Jørgensen",
+      "weight": 1
+    },
+    {
+      "id": "family-6fb93d2335fa",
+      "text": "Halvorsen",
+      "weight": 1
+    },
+    {
+      "id": "family-2ce0b6371dda",
+      "text": "Henriksen",
+      "weight": 1
+    },
+    {
+      "id": "family-a580899b5507",
+      "text": "Lund",
+      "weight": 1
+    },
+    {
+      "id": "family-ba4f3e06ca81",
+      "text": "Sørensen",
+      "weight": 1
+    },
+    {
+      "id": "family-4c4a850b5b34",
+      "text": "Jakobsen",
+      "weight": 1
+    },
+    {
+      "id": "family-cd22717ca65b",
+      "text": "Moen",
+      "weight": 1
+    },
+    {
+      "id": "family-5ee3b247a64d",
+      "text": "Gundersen",
+      "weight": 1
+    },
+    {
+      "id": "family-f3e1955aa9ad",
+      "text": "Iversen",
+      "weight": 1
+    },
+    {
+      "id": "family-770baae20e7b",
+      "text": "Strand",
+      "weight": 1
+    },
+    {
+      "id": "family-4aeb9844ff43",
+      "text": "Solberg",
+      "weight": 1
+    },
+    {
+      "id": "family-b9602f7441fd",
+      "text": "Svendsen",
+      "weight": 1
+    },
+    {
+      "id": "family-ad6b5b2be0c1",
+      "text": "Martinsen",
+      "weight": 1
+    },
+    {
+      "id": "family-88760f22267b",
+      "text": "Paulsen",
+      "weight": 1
+    },
+    {
+      "id": "family-53138cab5ad1",
+      "text": "Knudsen",
+      "weight": 1
+    },
+    {
+      "id": "family-f986e3aa4cc4",
+      "text": "Eide",
+      "weight": 1
+    },
+    {
+      "id": "family-515f4808c5e8",
+      "text": "Bakken",
+      "weight": 1
+    },
+    {
+      "id": "family-3fd5b4b12db2",
+      "text": "Kristoffersen",
+      "weight": 1
+    },
+    {
+      "id": "family-59c34a4fd1ee",
+      "text": "Mathisen",
+      "weight": 1
+    },
+    {
+      "id": "family-e982256a8757",
+      "text": "Lie",
+      "weight": 1
+    },
+    {
+      "id": "family-b68fb595c5d8",
+      "text": "Amundsen",
+      "weight": 1
+    },
+    {
+      "id": "family-8bbd21f67025",
+      "text": "Borgersen",
+      "weight": 1
+    },
+    {
+      "id": "family-6022d5c7cc42",
+      "text": "Rasmussen",
+      "weight": 1
+    },
+    {
+      "id": "family-fcd07463aa21",
+      "text": "Lunde",
+      "weight": 1
+    },
+    {
+      "id": "family-0152bf97deec",
+      "text": "Solheim",
+      "weight": 1
+    },
+    {
+      "id": "family-5c198ac652ad",
+      "text": "Aune",
+      "weight": 1
+    },
+    {
+      "id": "family-64cd0c05f531",
+      "text": "Berge",
+      "weight": 1
+    },
+    {
+      "id": "family-f496956c792a",
+      "text": "Bjerke",
+      "weight": 1
+    },
+    {
+      "id": "family-49436c8046d9",
+      "text": "Bjørnstad",
+      "weight": 1
+    },
+    {
+      "id": "family-fd5e3de44048",
+      "text": "Brekke",
+      "weight": 1
+    },
+    {
+      "id": "family-959a4f2449db",
+      "text": "Bråten",
+      "weight": 1
+    },
+    {
+      "id": "family-cbeea0a2c16c",
+      "text": "Bø",
+      "weight": 1
+    },
+    {
+      "id": "family-7ce05c416852",
+      "text": "Christensen",
+      "weight": 1
+    },
+    {
+      "id": "family-2f2bc2757d3d",
+      "text": "Dalen",
+      "weight": 1
+    },
+    {
+      "id": "family-ea5f55917459",
+      "text": "Egeland",
+      "weight": 1
+    },
+    {
+      "id": "family-84ec87f1d3b6",
+      "text": "Engen",
+      "weight": 1
+    },
+    {
+      "id": "family-bbedf0f7850a",
+      "text": "Foss",
+      "weight": 1
+    },
+    {
+      "id": "family-41163ef7ff1f",
+      "text": "Fosse",
+      "weight": 1
+    },
+    {
+      "id": "family-6b1ac83223c8",
+      "text": "Fredriksen",
+      "weight": 1
+    },
+    {
+      "id": "family-4fdd885f9e34",
+      "text": "Gran",
+      "weight": 1
+    },
+    {
+      "id": "family-2e0e73420ac9",
+      "text": "Gulbrandsen",
+      "weight": 1
+    },
+    {
+      "id": "family-1586fcc560ae",
+      "text": "Haug",
+      "weight": 1
+    },
+    {
+      "id": "family-28c176ee13d3",
+      "text": "Hauger",
+      "weight": 1
+    },
+    {
+      "id": "family-70a213f40ae1",
+      "text": "Haugland",
+      "weight": 1
+    },
+    {
+      "id": "family-2f4cb57fc8fa",
+      "text": "Holm",
+      "weight": 1
+    },
+    {
+      "id": "family-31eaacb6df51",
+      "text": "Holmen",
+      "weight": 1
+    },
+    {
+      "id": "family-9acf456ddf6f",
+      "text": "Holt",
+      "weight": 1
+    },
+    {
+      "id": "family-aed697ebf723",
+      "text": "Hovland",
+      "weight": 1
+    },
+    {
+      "id": "family-40bf59e5c238",
+      "text": "Isaksen",
+      "weight": 1
+    },
+    {
+      "id": "family-825ed148f5bf",
+      "text": "Kvam",
+      "weight": 1
+    },
+    {
+      "id": "family-a3894d11876c",
+      "text": "Langeland",
+      "weight": 1
+    },
+    {
+      "id": "family-58ac5bd8e15c",
+      "text": "Lien",
+      "weight": 1
+    },
+    {
+      "id": "family-fb68dd9d1dbf",
+      "text": "Moe",
+      "weight": 1
+    },
+    {
+      "id": "family-e01b025cc21d",
+      "text": "Myhre",
+      "weight": 1
+    },
+    {
+      "id": "family-b29d7101a8a0",
+      "text": "Myklebust",
+      "weight": 1
+    },
+    {
+      "id": "family-d5870d0d2626",
+      "text": "Ness",
+      "weight": 1
+    },
+    {
+      "id": "family-af69c65e8ddb",
+      "text": "Nygård",
+      "weight": 1
+    },
+    {
+      "id": "family-213846f531de",
+      "text": "Ottesen",
+      "weight": 1
+    },
+    {
+      "id": "family-ab1fd22563be",
+      "text": "Reitan",
+      "weight": 1
+    },
+    {
+      "id": "family-87650a6d98e8",
+      "text": "Rønning",
+      "weight": 1
+    },
+    {
+      "id": "family-82855c11ae69",
+      "text": "Sand",
+      "weight": 1
+    },
+    {
+      "id": "family-4ecf29a11b03",
+      "text": "Sandberg",
+      "weight": 1
+    },
+    {
+      "id": "family-d833581af0dd",
+      "text": "Sande",
+      "weight": 1
+    },
+    {
+      "id": "family-8855212d294b",
+      "text": "Sandvik",
+      "weight": 1
+    },
+    {
+      "id": "family-f44f46e361aa",
+      "text": "Simonsen",
+      "weight": 1
+    },
+    {
+      "id": "family-968d306a931b",
+      "text": "Skau",
+      "weight": 1
+    },
+    {
+      "id": "family-c775f33cdc3c",
+      "text": "Skoglund",
+      "weight": 1
+    },
+    {
+      "id": "family-7a0ab2dbf402",
+      "text": "Skogstad",
+      "weight": 1
+    },
+    {
+      "id": "family-8c00ea2a4fda",
+      "text": "Solbakken",
+      "weight": 1
+    },
+    {
+      "id": "family-200b65c1445e",
+      "text": "Steen",
+      "weight": 1
+    },
+    {
+      "id": "family-e07e89e5e2a3",
+      "text": "Stene",
+      "weight": 1
+    },
+    {
+      "id": "family-840fbc329aed",
+      "text": "Stokke",
+      "weight": 1
+    },
+    {
+      "id": "family-30dd5ff35bfd",
+      "text": "Sæther",
+      "weight": 1
+    },
+    {
+      "id": "family-35096f0777bf",
+      "text": "Thorsen",
+      "weight": 1
+    },
+    {
+      "id": "family-598bb7144cc2",
+      "text": "Tveit",
+      "weight": 1
+    },
+    {
+      "id": "family-2a2044e3f0df",
+      "text": "Vik",
+      "weight": 1
+    },
+    {
+      "id": "family-be111ee48e27",
+      "text": "Viken",
+      "weight": 1
+    },
+    {
+      "id": "family-fcc41b1a79e6",
+      "text": "Vold",
+      "weight": 1
+    },
+    {
+      "id": "family-84b143447478",
+      "text": "Ødegård",
+      "weight": 1
+    },
+    {
+      "id": "family-e265c1d68425",
+      "text": "Østby",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 10000
+  }
+}

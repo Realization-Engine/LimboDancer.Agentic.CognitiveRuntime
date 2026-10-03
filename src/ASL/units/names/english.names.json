@@ -1,0 +1,1062 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "english",
+  "label": "English-language personnel",
+  "language": "en",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-family",
+    "componentOrder": [
+      "given",
+      "family"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "English-language given names and British/Irish-origin surnames for an explicitly selected Anglophone context. Shared by British, American, Australian, New Zealand, and Canadian profiles. Does not represent every ethnicity in those forces.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 100
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 100,
+    "secondComponent": 100
+  },
+  "completeness": "target-met",
+  "givenNames": [
+    {
+      "id": "given-a8cfcd748320",
+      "text": "John",
+      "weight": 3
+    },
+    {
+      "id": "given-190eb3ebae2b",
+      "text": "William",
+      "weight": 3
+    },
+    {
+      "id": "given-3d28271ec52e",
+      "text": "George",
+      "weight": 3
+    },
+    {
+      "id": "given-9345a35a6fdf",
+      "text": "James",
+      "weight": 3
+    },
+    {
+      "id": "given-5dfcf9ef1fb1",
+      "text": "Thomas",
+      "weight": 3
+    },
+    {
+      "id": "given-2238dd61a1bf",
+      "text": "Robert",
+      "weight": 3
+    },
+    {
+      "id": "given-c43139196d57",
+      "text": "Charles",
+      "weight": 1
+    },
+    {
+      "id": "given-a950f30a7250",
+      "text": "Henry",
+      "weight": 1
+    },
+    {
+      "id": "given-78a1a1dae4e5",
+      "text": "Joseph",
+      "weight": 1
+    },
+    {
+      "id": "given-34405d46cb25",
+      "text": "Edward",
+      "weight": 1
+    },
+    {
+      "id": "given-52b67b60260d",
+      "text": "Arthur",
+      "weight": 1
+    },
+    {
+      "id": "given-7f74d7ceb627",
+      "text": "Albert",
+      "weight": 1
+    },
+    {
+      "id": "given-d1289e5a730e",
+      "text": "Walter",
+      "weight": 1
+    },
+    {
+      "id": "given-a00d36bb2ee0",
+      "text": "Frederick",
+      "weight": 1
+    },
+    {
+      "id": "given-db605e8f7191",
+      "text": "Frank",
+      "weight": 1
+    },
+    {
+      "id": "given-6aa5c501d58c",
+      "text": "Ernest",
+      "weight": 1
+    },
+    {
+      "id": "given-a0fef9d66eaf",
+      "text": "Harry",
+      "weight": 1
+    },
+    {
+      "id": "given-e88cfa8fbf9a",
+      "text": "Alfred",
+      "weight": 1
+    },
+    {
+      "id": "given-b1f6d1241c57",
+      "text": "Samuel",
+      "weight": 1
+    },
+    {
+      "id": "given-00b45a020870",
+      "text": "Harold",
+      "weight": 1
+    },
+    {
+      "id": "given-422ff7009040",
+      "text": "Herbert",
+      "weight": 1
+    },
+    {
+      "id": "given-e2aae930fa0a",
+      "text": "Francis",
+      "weight": 1
+    },
+    {
+      "id": "given-1deb0a3b8675",
+      "text": "Richard",
+      "weight": 1
+    },
+    {
+      "id": "given-a6b54c20a7b9",
+      "text": "David",
+      "weight": 1
+    },
+    {
+      "id": "given-bc11bb97614b",
+      "text": "Reginald",
+      "weight": 1
+    },
+    {
+      "id": "given-f4537f49d815",
+      "text": "Stanley",
+      "weight": 1
+    },
+    {
+      "id": "given-1f43ca92e76a",
+      "text": "Leonard",
+      "weight": 1
+    },
+    {
+      "id": "given-408d8c912052",
+      "text": "Cecil",
+      "weight": 1
+    },
+    {
+      "id": "given-0099a09fb38d",
+      "text": "Sidney",
+      "weight": 1
+    },
+    {
+      "id": "given-6c00e6ff6ea6",
+      "text": "Victor",
+      "weight": 1
+    },
+    {
+      "id": "given-38d190b9c128",
+      "text": "Percy",
+      "weight": 1
+    },
+    {
+      "id": "given-39a5fd65a664",
+      "text": "Edwin",
+      "weight": 1
+    },
+    {
+      "id": "given-2e3023678e59",
+      "text": "Bert",
+      "weight": 1
+    },
+    {
+      "id": "given-80ce3f5a8522",
+      "text": "Horace",
+      "weight": 1
+    },
+    {
+      "id": "given-b987b5d25fe3",
+      "text": "Norman",
+      "weight": 1
+    },
+    {
+      "id": "given-fdc888d547f3",
+      "text": "Leslie",
+      "weight": 1
+    },
+    {
+      "id": "given-55e97f07b1e0",
+      "text": "Cyril",
+      "weight": 1
+    },
+    {
+      "id": "given-3a4d5b86cfa2",
+      "text": "Bernard",
+      "weight": 1
+    },
+    {
+      "id": "given-43a00c801988",
+      "text": "Wilfred",
+      "weight": 1
+    },
+    {
+      "id": "given-5991ce426259",
+      "text": "Donald",
+      "weight": 1
+    },
+    {
+      "id": "given-88e27fb4b170",
+      "text": "Ronald",
+      "weight": 1
+    },
+    {
+      "id": "given-ca70c45c591e",
+      "text": "Kenneth",
+      "weight": 1
+    },
+    {
+      "id": "given-6132853eb8e7",
+      "text": "Douglas",
+      "weight": 1
+    },
+    {
+      "id": "given-456a845d1b0b",
+      "text": "Gordon",
+      "weight": 1
+    },
+    {
+      "id": "given-0059bfc57922",
+      "text": "Alan",
+      "weight": 1
+    },
+    {
+      "id": "given-4cb39c1bdf5d",
+      "text": "Eric",
+      "weight": 1
+    },
+    {
+      "id": "given-ffb595919dd6",
+      "text": "Raymond",
+      "weight": 1
+    },
+    {
+      "id": "given-361ff09bf79b",
+      "text": "Clifford",
+      "weight": 1
+    },
+    {
+      "id": "given-b6ac341f3f9b",
+      "text": "Clarence",
+      "weight": 1
+    },
+    {
+      "id": "given-76364d81ab4c",
+      "text": "Lawrence",
+      "weight": 1
+    },
+    {
+      "id": "given-9293e16b8e01",
+      "text": "Louis",
+      "weight": 1
+    },
+    {
+      "id": "given-818b5cc5f21d",
+      "text": "Paul",
+      "weight": 1
+    },
+    {
+      "id": "given-ea72c7959429",
+      "text": "Peter",
+      "weight": 1
+    },
+    {
+      "id": "given-3cdfbb71d545",
+      "text": "Philip",
+      "weight": 1
+    },
+    {
+      "id": "given-2aba5dd8596b",
+      "text": "Patrick",
+      "weight": 1
+    },
+    {
+      "id": "given-7297db81c2f7",
+      "text": "Daniel",
+      "weight": 1
+    },
+    {
+      "id": "given-f089eaef57ab",
+      "text": "Michael",
+      "weight": 1
+    },
+    {
+      "id": "given-16fed142e9aa",
+      "text": "Dennis",
+      "weight": 1
+    },
+    {
+      "id": "given-c10873196eb1",
+      "text": "Andrew",
+      "weight": 1
+    },
+    {
+      "id": "given-3090ad7f5b83",
+      "text": "Anthony",
+      "weight": 1
+    },
+    {
+      "id": "given-841d74b8eb69",
+      "text": "Stephen",
+      "weight": 1
+    },
+    {
+      "id": "given-f44c4b0766fc",
+      "text": "Vincent",
+      "weight": 1
+    },
+    {
+      "id": "given-39d3a2e969b3",
+      "text": "Martin",
+      "weight": 1
+    },
+    {
+      "id": "given-69048f338080",
+      "text": "Gerald",
+      "weight": 1
+    },
+    {
+      "id": "given-679946faad78",
+      "text": "Maurice",
+      "weight": 1
+    },
+    {
+      "id": "given-7063a398942b",
+      "text": "Hugh",
+      "weight": 1
+    },
+    {
+      "id": "given-2f7456a98b84",
+      "text": "Hector",
+      "weight": 1
+    },
+    {
+      "id": "given-e16864cebaf7",
+      "text": "Archibald",
+      "weight": 1
+    },
+    {
+      "id": "given-dbadfc88144b",
+      "text": "Alexander",
+      "weight": 1
+    },
+    {
+      "id": "given-2823576859b5",
+      "text": "Allan",
+      "weight": 1
+    },
+    {
+      "id": "given-0a5e7f1bd69f",
+      "text": "Malcolm",
+      "weight": 1
+    },
+    {
+      "id": "given-e2f6118f0274",
+      "text": "Duncan",
+      "weight": 1
+    },
+    {
+      "id": "given-9aa386e102ad",
+      "text": "Angus",
+      "weight": 1
+    },
+    {
+      "id": "given-74a66e2d94b8",
+      "text": "Colin",
+      "weight": 1
+    },
+    {
+      "id": "given-5dfaaebff3e8",
+      "text": "Ian",
+      "weight": 1
+    },
+    {
+      "id": "given-850abeb80893",
+      "text": "Bruce",
+      "weight": 1
+    },
+    {
+      "id": "given-61fe0e2a1eda",
+      "text": "Keith",
+      "weight": 1
+    },
+    {
+      "id": "given-e3058ee8c04e",
+      "text": "Roy",
+      "weight": 1
+    },
+    {
+      "id": "given-b808b3be2949",
+      "text": "Ralph",
+      "weight": 1
+    },
+    {
+      "id": "given-893b1f8fc0fc",
+      "text": "Roger",
+      "weight": 1
+    },
+    {
+      "id": "given-f03247d1c40e",
+      "text": "Russell",
+      "weight": 1
+    },
+    {
+      "id": "given-618738f7143c",
+      "text": "Chester",
+      "weight": 1
+    },
+    {
+      "id": "given-99ce5e0b2a2d",
+      "text": "Lloyd",
+      "weight": 1
+    },
+    {
+      "id": "given-f186449d7e0e",
+      "text": "Howard",
+      "weight": 1
+    },
+    {
+      "id": "given-218caca20841",
+      "text": "Earl",
+      "weight": 1
+    },
+    {
+      "id": "given-9b1e8a94fcdb",
+      "text": "Eugene",
+      "weight": 1
+    },
+    {
+      "id": "given-eaf04d6e9310",
+      "text": "Floyd",
+      "weight": 1
+    },
+    {
+      "id": "given-39aeca5b3b19",
+      "text": "Clyde",
+      "weight": 1
+    },
+    {
+      "id": "given-0615570f9ea1",
+      "text": "Claude",
+      "weight": 1
+    },
+    {
+      "id": "given-f3c7769dd45d",
+      "text": "Benjamin",
+      "weight": 1
+    },
+    {
+      "id": "given-9770c8d8bf2f",
+      "text": "Nathan",
+      "weight": 1
+    },
+    {
+      "id": "given-8141d2b17b73",
+      "text": "Jacob",
+      "weight": 1
+    },
+    {
+      "id": "given-63b063f5b637",
+      "text": "Isaac",
+      "weight": 1
+    },
+    {
+      "id": "given-78a8ebdcc101",
+      "text": "Abraham",
+      "weight": 1
+    },
+    {
+      "id": "given-1752604b17d0",
+      "text": "Solomon",
+      "weight": 1
+    },
+    {
+      "id": "given-877f4b9feda2",
+      "text": "Edgar",
+      "weight": 1
+    },
+    {
+      "id": "given-00893dc99c34",
+      "text": "Gilbert",
+      "weight": 1
+    },
+    {
+      "id": "given-a1ef7bf9b909",
+      "text": "Roland",
+      "weight": 1
+    },
+    {
+      "id": "given-63606e9bd83e",
+      "text": "Wilbur",
+      "weight": 1
+    },
+    {
+      "id": "given-b9e2cc6db374",
+      "text": "Wallace",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-9f5425901004",
+      "text": "Smith",
+      "weight": 3
+    },
+    {
+      "id": "family-fe16a94194b3",
+      "text": "Jones",
+      "weight": 3
+    },
+    {
+      "id": "family-6e8d8801f51a",
+      "text": "Williams",
+      "weight": 3
+    },
+    {
+      "id": "family-18f285592896",
+      "text": "Brown",
+      "weight": 3
+    },
+    {
+      "id": "family-c2793b826cc9",
+      "text": "Taylor",
+      "weight": 1
+    },
+    {
+      "id": "family-8117874187b3",
+      "text": "Davies",
+      "weight": 1
+    },
+    {
+      "id": "family-fb7961d139e4",
+      "text": "Wilson",
+      "weight": 3
+    },
+    {
+      "id": "family-8658ebf1edf5",
+      "text": "Evans",
+      "weight": 1
+    },
+    {
+      "id": "family-5dfcf9ef1fb1",
+      "text": "Thomas",
+      "weight": 1
+    },
+    {
+      "id": "family-3013b18f4387",
+      "text": "Johnson",
+      "weight": 1
+    },
+    {
+      "id": "family-ce5f866533e3",
+      "text": "Roberts",
+      "weight": 1
+    },
+    {
+      "id": "family-7f36df0b525d",
+      "text": "Robinson",
+      "weight": 1
+    },
+    {
+      "id": "family-91b2d84f6ce5",
+      "text": "Thompson",
+      "weight": 1
+    },
+    {
+      "id": "family-b16370a17fc3",
+      "text": "Wright",
+      "weight": 1
+    },
+    {
+      "id": "family-f4034e7eb42b",
+      "text": "Walker",
+      "weight": 1
+    },
+    {
+      "id": "family-3495e757855a",
+      "text": "White",
+      "weight": 1
+    },
+    {
+      "id": "family-645e1b29b64c",
+      "text": "Edwards",
+      "weight": 1
+    },
+    {
+      "id": "family-ee01fa3ba978",
+      "text": "Hughes",
+      "weight": 1
+    },
+    {
+      "id": "family-d486dfbd5fb5",
+      "text": "Green",
+      "weight": 1
+    },
+    {
+      "id": "family-25c7e17d3e99",
+      "text": "Hall",
+      "weight": 1
+    },
+    {
+      "id": "family-c625ca574188",
+      "text": "Lewis",
+      "weight": 1
+    },
+    {
+      "id": "family-56d3e80582af",
+      "text": "Harris",
+      "weight": 1
+    },
+    {
+      "id": "family-26242490d12d",
+      "text": "Clarke",
+      "weight": 1
+    },
+    {
+      "id": "family-f58e4a64909c",
+      "text": "Reed",
+      "weight": 1
+    },
+    {
+      "id": "family-502ae197407d",
+      "text": "Jackson",
+      "weight": 1
+    },
+    {
+      "id": "family-731140284eac",
+      "text": "Wood",
+      "weight": 1
+    },
+    {
+      "id": "family-5df0e3c42830",
+      "text": "Turner",
+      "weight": 1
+    },
+    {
+      "id": "family-39d3a2e969b3",
+      "text": "Martin",
+      "weight": 1
+    },
+    {
+      "id": "family-61a1d3bdf665",
+      "text": "Cooper",
+      "weight": 1
+    },
+    {
+      "id": "family-21f5358c1fd3",
+      "text": "Hill",
+      "weight": 1
+    },
+    {
+      "id": "family-b311172dd9a4",
+      "text": "Ward",
+      "weight": 1
+    },
+    {
+      "id": "family-7f2cc2d8db90",
+      "text": "Morris",
+      "weight": 1
+    },
+    {
+      "id": "family-07724304d1fc",
+      "text": "Moore",
+      "weight": 1
+    },
+    {
+      "id": "family-baa4941d5771",
+      "text": "Clark",
+      "weight": 1
+    },
+    {
+      "id": "family-e7da824a74f6",
+      "text": "Lee",
+      "weight": 1
+    },
+    {
+      "id": "family-13166b63aaa7",
+      "text": "King",
+      "weight": 1
+    },
+    {
+      "id": "family-b7b9be5f87ca",
+      "text": "Baker",
+      "weight": 1
+    },
+    {
+      "id": "family-0a1a08c0fb4d",
+      "text": "Harrison",
+      "weight": 1
+    },
+    {
+      "id": "family-02281b3b5dd5",
+      "text": "Morgan",
+      "weight": 1
+    },
+    {
+      "id": "family-1670f0147906",
+      "text": "Allen",
+      "weight": 1
+    },
+    {
+      "id": "family-9345a35a6fdf",
+      "text": "James",
+      "weight": 1
+    },
+    {
+      "id": "family-626928c4f868",
+      "text": "Scott",
+      "weight": 1
+    },
+    {
+      "id": "family-039a7887111f",
+      "text": "Phillips",
+      "weight": 1
+    },
+    {
+      "id": "family-4d7b2cc54157",
+      "text": "Watson",
+      "weight": 1
+    },
+    {
+      "id": "family-683313d69084",
+      "text": "Davis",
+      "weight": 1
+    },
+    {
+      "id": "family-92039f1a7ad8",
+      "text": "Parker",
+      "weight": 1
+    },
+    {
+      "id": "family-93c91c851e7a",
+      "text": "Price",
+      "weight": 1
+    },
+    {
+      "id": "family-8fc49a37693b",
+      "text": "Bennett",
+      "weight": 1
+    },
+    {
+      "id": "family-548674f78c8d",
+      "text": "Young",
+      "weight": 1
+    },
+    {
+      "id": "family-fa66cfd48acc",
+      "text": "Griffiths",
+      "weight": 1
+    },
+    {
+      "id": "family-483d4bce16af",
+      "text": "Mitchell",
+      "weight": 1
+    },
+    {
+      "id": "family-a226a2084c6d",
+      "text": "Kelly",
+      "weight": 1
+    },
+    {
+      "id": "family-7f4a1e5bff2d",
+      "text": "Cook",
+      "weight": 1
+    },
+    {
+      "id": "family-25eb92ae54cc",
+      "text": "Carter",
+      "weight": 1
+    },
+    {
+      "id": "family-3c237edf7669",
+      "text": "Richardson",
+      "weight": 1
+    },
+    {
+      "id": "family-ceb32b93931c",
+      "text": "Bailey",
+      "weight": 1
+    },
+    {
+      "id": "family-e2120ffdc0d2",
+      "text": "Collins",
+      "weight": 1
+    },
+    {
+      "id": "family-8e80b2b4b22a",
+      "text": "Bell",
+      "weight": 1
+    },
+    {
+      "id": "family-78f8298fe06c",
+      "text": "Shaw",
+      "weight": 1
+    },
+    {
+      "id": "family-7eda99495667",
+      "text": "Murphy",
+      "weight": 1
+    },
+    {
+      "id": "family-716545ea5827",
+      "text": "Miller",
+      "weight": 1
+    },
+    {
+      "id": "family-bbacffd9bc26",
+      "text": "Cox",
+      "weight": 1
+    },
+    {
+      "id": "family-6bb48cc5c786",
+      "text": "Richards",
+      "weight": 1
+    },
+    {
+      "id": "family-813f46eed45d",
+      "text": "Brooks",
+      "weight": 1
+    },
+    {
+      "id": "family-00a1fb196513",
+      "text": "Marshall",
+      "weight": 1
+    },
+    {
+      "id": "family-9eac806b76ba",
+      "text": "Anderson",
+      "weight": 1
+    },
+    {
+      "id": "family-bd74846f1a86",
+      "text": "Simpson",
+      "weight": 1
+    },
+    {
+      "id": "family-e4a141627f7c",
+      "text": "Ellis",
+      "weight": 1
+    },
+    {
+      "id": "family-f84f9ac83eb5",
+      "text": "Adams",
+      "weight": 1
+    },
+    {
+      "id": "family-235fe39352f4",
+      "text": "Stewart",
+      "weight": 1
+    },
+    {
+      "id": "family-78b7d0379d5e",
+      "text": "Grant",
+      "weight": 1
+    },
+    {
+      "id": "family-c3bd34c6f097",
+      "text": "Wilkinson",
+      "weight": 1
+    },
+    {
+      "id": "family-7229de2d88d2",
+      "text": "Foster",
+      "weight": 1
+    },
+    {
+      "id": "family-c26de706132a",
+      "text": "Chapman",
+      "weight": 1
+    },
+    {
+      "id": "family-379dbafbfb91",
+      "text": "Powell",
+      "weight": 1
+    },
+    {
+      "id": "family-6456d256d43c",
+      "text": "Webb",
+      "weight": 1
+    },
+    {
+      "id": "family-6a97f77a12c3",
+      "text": "Rogers",
+      "weight": 1
+    },
+    {
+      "id": "family-0d5adda3cdcc",
+      "text": "Gray",
+      "weight": 1
+    },
+    {
+      "id": "family-9e00106e1ab0",
+      "text": "Mason",
+      "weight": 1
+    },
+    {
+      "id": "family-5d422d0acb34",
+      "text": "Graham",
+      "weight": 1
+    },
+    {
+      "id": "family-81f16575878f",
+      "text": "Hunt",
+      "weight": 1
+    },
+    {
+      "id": "family-70852077f763",
+      "text": "Henderson",
+      "weight": 1
+    },
+    {
+      "id": "family-7e6046c9a277",
+      "text": "Campbell",
+      "weight": 1
+    },
+    {
+      "id": "family-823fadd0fb3a",
+      "text": "Matthews",
+      "weight": 1
+    },
+    {
+      "id": "family-baa31bcd2580",
+      "text": "Owen",
+      "weight": 1
+    },
+    {
+      "id": "family-67ff5de6ad9f",
+      "text": "Palmer",
+      "weight": 1
+    },
+    {
+      "id": "family-0fbbc4a47c14",
+      "text": "Holmes",
+      "weight": 1
+    },
+    {
+      "id": "family-2a41acacaddf",
+      "text": "Mills",
+      "weight": 1
+    },
+    {
+      "id": "family-0b222f2ae62d",
+      "text": "Barnes",
+      "weight": 1
+    },
+    {
+      "id": "family-f24b52468bfa",
+      "text": "Knight",
+      "weight": 1
+    },
+    {
+      "id": "family-99ce5e0b2a2d",
+      "text": "Lloyd",
+      "weight": 1
+    },
+    {
+      "id": "family-676e2d10c4e5",
+      "text": "Butler",
+      "weight": 1
+    },
+    {
+      "id": "family-f03247d1c40e",
+      "text": "Russell",
+      "weight": 1
+    },
+    {
+      "id": "family-a59978f16583",
+      "text": "Barker",
+      "weight": 1
+    },
+    {
+      "id": "family-ea49f5ee2740",
+      "text": "Fisher",
+      "weight": 1
+    },
+    {
+      "id": "family-9f01fd213294",
+      "text": "Stevens",
+      "weight": 1
+    },
+    {
+      "id": "family-9a4d10e69361",
+      "text": "Jenkins",
+      "weight": 1
+    },
+    {
+      "id": "family-dec7a16fae6a",
+      "text": "Murray",
+      "weight": 1
+    },
+    {
+      "id": "family-7e0b7a468d5c",
+      "text": "Dixon",
+      "weight": 1
+    },
+    {
+      "id": "family-2db7a0c30b87",
+      "text": "Harvey",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 9995
+  }
+}

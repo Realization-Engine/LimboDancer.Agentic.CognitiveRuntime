@@ -1,0 +1,1062 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "romanian",
+  "label": "Romanian",
+  "language": "ro",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-family",
+    "componentOrder": [
+      "given",
+      "family"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "A conventional male naming pool for fictional personnel. It is not a census or exhaustive account of this population.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 100
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 100,
+    "secondComponent": 100
+  },
+  "completeness": "target-met",
+  "givenNames": [
+    {
+      "id": "given-8ddad873b13d",
+      "text": "Ion",
+      "weight": 3
+    },
+    {
+      "id": "given-74cca8f5c3fd",
+      "text": "Gheorghe",
+      "weight": 3
+    },
+    {
+      "id": "given-79cfcbd92f71",
+      "text": "Nicolae",
+      "weight": 3
+    },
+    {
+      "id": "given-611e2cc96110",
+      "text": "Vasile",
+      "weight": 3
+    },
+    {
+      "id": "given-241f66d4ea74",
+      "text": "Constantin",
+      "weight": 3
+    },
+    {
+      "id": "given-f9a24851bd68",
+      "text": "Dumitru",
+      "weight": 1
+    },
+    {
+      "id": "given-b1af3f3e431b",
+      "text": "Petre",
+      "weight": 1
+    },
+    {
+      "id": "given-22a058fb690a",
+      "text": "Ioan",
+      "weight": 1
+    },
+    {
+      "id": "given-3f7d3565a521",
+      "text": "Alexandru",
+      "weight": 1
+    },
+    {
+      "id": "given-01494b8bdbbe",
+      "text": "Mihai",
+      "weight": 1
+    },
+    {
+      "id": "given-3fa814b227df",
+      "text": "Andrei",
+      "weight": 1
+    },
+    {
+      "id": "given-42972c1b3e85",
+      "text": "Anton",
+      "weight": 1
+    },
+    {
+      "id": "given-712783a2dec2",
+      "text": "Aurel",
+      "weight": 1
+    },
+    {
+      "id": "given-9e7722215563",
+      "text": "Aureliu",
+      "weight": 1
+    },
+    {
+      "id": "given-6ed69c4296f1",
+      "text": "Avram",
+      "weight": 1
+    },
+    {
+      "id": "given-8e41be2891fe",
+      "text": "Bogdan",
+      "weight": 1
+    },
+    {
+      "id": "given-7d2545cec508",
+      "text": "Călin",
+      "weight": 1
+    },
+    {
+      "id": "given-b2dd7d8a7056",
+      "text": "Carol",
+      "weight": 1
+    },
+    {
+      "id": "given-65820ace5e3e",
+      "text": "Cezar",
+      "weight": 1
+    },
+    {
+      "id": "given-89f5704fe99f",
+      "text": "Cornel",
+      "weight": 1
+    },
+    {
+      "id": "given-18bbccd1e12e",
+      "text": "Corneliu",
+      "weight": 1
+    },
+    {
+      "id": "given-827db1dd9c5c",
+      "text": "Costache",
+      "weight": 1
+    },
+    {
+      "id": "given-30b01a61a413",
+      "text": "Cristian",
+      "weight": 1
+    },
+    {
+      "id": "given-b1259567b8a2",
+      "text": "Dan",
+      "weight": 1
+    },
+    {
+      "id": "given-b9ac12c83c26",
+      "text": "Dinu",
+      "weight": 1
+    },
+    {
+      "id": "given-4beb09ba3024",
+      "text": "Dionisie",
+      "weight": 1
+    },
+    {
+      "id": "given-ce2f281cb4c5",
+      "text": "Dumitrică",
+      "weight": 1
+    },
+    {
+      "id": "given-6d5128cc0b27",
+      "text": "Emil",
+      "weight": 1
+    },
+    {
+      "id": "given-cfc2ad054414",
+      "text": "Emanoil",
+      "weight": 1
+    },
+    {
+      "id": "given-f7e1f570f18a",
+      "text": "Eugen",
+      "weight": 1
+    },
+    {
+      "id": "given-4c3998b04901",
+      "text": "Eusebiu",
+      "weight": 1
+    },
+    {
+      "id": "given-cd3bb6bc0d97",
+      "text": "Eustatiu",
+      "weight": 1
+    },
+    {
+      "id": "given-6b96529b3cd0",
+      "text": "Florea",
+      "weight": 1
+    },
+    {
+      "id": "given-c8f0e7d6a7a9",
+      "text": "Florian",
+      "weight": 1
+    },
+    {
+      "id": "given-0c030df5a4e7",
+      "text": "Gabriel",
+      "weight": 1
+    },
+    {
+      "id": "given-f4c9ca0c3c1b",
+      "text": "Gavril",
+      "weight": 1
+    },
+    {
+      "id": "given-3d28271ec52e",
+      "text": "George",
+      "weight": 1
+    },
+    {
+      "id": "given-8ee8a5806b41",
+      "text": "Grigore",
+      "weight": 1
+    },
+    {
+      "id": "given-a9b22ba312c9",
+      "text": "Haralambie",
+      "weight": 1
+    },
+    {
+      "id": "given-8e5b0d7e000b",
+      "text": "Horia",
+      "weight": 1
+    },
+    {
+      "id": "given-e34940cd7b4d",
+      "text": "Iacob",
+      "weight": 1
+    },
+    {
+      "id": "given-822633c0c31a",
+      "text": "Ilie",
+      "weight": 1
+    },
+    {
+      "id": "given-8243fccd1437",
+      "text": "Ionel",
+      "weight": 1
+    },
+    {
+      "id": "given-2a332f44f02b",
+      "text": "Iordache",
+      "weight": 1
+    },
+    {
+      "id": "given-ca11d519b3bc",
+      "text": "Iosif",
+      "weight": 1
+    },
+    {
+      "id": "given-bc2527c59717",
+      "text": "Iulian",
+      "weight": 1
+    },
+    {
+      "id": "given-e45174e4f707",
+      "text": "Iuliu",
+      "weight": 1
+    },
+    {
+      "id": "given-5d13fbabd5c8",
+      "text": "Iustin",
+      "weight": 1
+    },
+    {
+      "id": "given-457e6edc1dfa",
+      "text": "Lazăr",
+      "weight": 1
+    },
+    {
+      "id": "given-ab70e8a91550",
+      "text": "Leon",
+      "weight": 1
+    },
+    {
+      "id": "given-1f43ca92e76a",
+      "text": "Leonard",
+      "weight": 1
+    },
+    {
+      "id": "given-fa24553331eb",
+      "text": "Liviu",
+      "weight": 1
+    },
+    {
+      "id": "given-91ce7d8f81a8",
+      "text": "Luca",
+      "weight": 1
+    },
+    {
+      "id": "given-d5b96fc39e74",
+      "text": "Lucian",
+      "weight": 1
+    },
+    {
+      "id": "given-cf9f59045898",
+      "text": "Marcel",
+      "weight": 1
+    },
+    {
+      "id": "given-8053f9c1e94c",
+      "text": "Marin",
+      "weight": 1
+    },
+    {
+      "id": "given-f115f284ba8f",
+      "text": "Marius",
+      "weight": 1
+    },
+    {
+      "id": "given-4d3d5f7bb907",
+      "text": "Matei",
+      "weight": 1
+    },
+    {
+      "id": "given-a5a243f9ba74",
+      "text": "Mihail",
+      "weight": 1
+    },
+    {
+      "id": "given-1d44010542c5",
+      "text": "Mircea",
+      "weight": 1
+    },
+    {
+      "id": "given-67d542b731c1",
+      "text": "Mitică",
+      "weight": 1
+    },
+    {
+      "id": "given-5372f563514c",
+      "text": "Nae",
+      "weight": 1
+    },
+    {
+      "id": "given-96a11a68f655",
+      "text": "Narcis",
+      "weight": 1
+    },
+    {
+      "id": "given-3be186808f63",
+      "text": "Nelu",
+      "weight": 1
+    },
+    {
+      "id": "given-5684e3a5e6a3",
+      "text": "Nicanor",
+      "weight": 1
+    },
+    {
+      "id": "given-e30d84b4d98a",
+      "text": "Nicu",
+      "weight": 1
+    },
+    {
+      "id": "given-1c992231419d",
+      "text": "Octav",
+      "weight": 1
+    },
+    {
+      "id": "given-39d20ad8acf0",
+      "text": "Octavian",
+      "weight": 1
+    },
+    {
+      "id": "given-f8dad3c6a6ef",
+      "text": "Oprea",
+      "weight": 1
+    },
+    {
+      "id": "given-fd14606273a9",
+      "text": "Ovidiu",
+      "weight": 1
+    },
+    {
+      "id": "given-fbd4a07bd089",
+      "text": "Panait",
+      "weight": 1
+    },
+    {
+      "id": "given-34274198663b",
+      "text": "Pantelimon",
+      "weight": 1
+    },
+    {
+      "id": "given-818b5cc5f21d",
+      "text": "Paul",
+      "weight": 1
+    },
+    {
+      "id": "given-493c93bece75",
+      "text": "Pavel",
+      "weight": 1
+    },
+    {
+      "id": "given-e017e4682bd7",
+      "text": "Petru",
+      "weight": 1
+    },
+    {
+      "id": "given-f77c893e024e",
+      "text": "Radu",
+      "weight": 1
+    },
+    {
+      "id": "given-839144704429",
+      "text": "Remus",
+      "weight": 1
+    },
+    {
+      "id": "given-d4dd380a77a6",
+      "text": "Romulus",
+      "weight": 1
+    },
+    {
+      "id": "given-1929f00eb156",
+      "text": "Sabin",
+      "weight": 1
+    },
+    {
+      "id": "given-abadf8a1ac49",
+      "text": "Sandu",
+      "weight": 1
+    },
+    {
+      "id": "given-34b5eff89014",
+      "text": "Sava",
+      "weight": 1
+    },
+    {
+      "id": "given-db0284fc80b4",
+      "text": "Sebastian",
+      "weight": 1
+    },
+    {
+      "id": "given-aa6dd439b3a9",
+      "text": "Serafim",
+      "weight": 1
+    },
+    {
+      "id": "given-48ff210b7f21",
+      "text": "Sergiu",
+      "weight": 1
+    },
+    {
+      "id": "given-538889070df8",
+      "text": "Sever",
+      "weight": 1
+    },
+    {
+      "id": "given-bd2e8feee867",
+      "text": "Silviu",
+      "weight": 1
+    },
+    {
+      "id": "given-5311938d839f",
+      "text": "Simion",
+      "weight": 1
+    },
+    {
+      "id": "given-79280d04edb0",
+      "text": "Sorin",
+      "weight": 1
+    },
+    {
+      "id": "given-50a9099c808b",
+      "text": "Spiridon",
+      "weight": 1
+    },
+    {
+      "id": "given-317ecd32308a",
+      "text": "Stan",
+      "weight": 1
+    },
+    {
+      "id": "given-2138db58ce70",
+      "text": "Stelian",
+      "weight": 1
+    },
+    {
+      "id": "given-5088cc51ea50",
+      "text": "Șerban",
+      "weight": 1
+    },
+    {
+      "id": "given-7ededa8a1076",
+      "text": "Ștefan",
+      "weight": 1
+    },
+    {
+      "id": "given-41d52bee906b",
+      "text": "Teodor",
+      "weight": 1
+    },
+    {
+      "id": "given-fbe9756d213d",
+      "text": "Tiberiu",
+      "weight": 1
+    },
+    {
+      "id": "given-c5231cee1d80",
+      "text": "Toma",
+      "weight": 1
+    },
+    {
+      "id": "given-04c7fcad87e8",
+      "text": "Traian",
+      "weight": 1
+    },
+    {
+      "id": "given-765dafa59755",
+      "text": "Tudor",
+      "weight": 1
+    },
+    {
+      "id": "given-fbe4ecefed4c",
+      "text": "Valeriu",
+      "weight": 1
+    },
+    {
+      "id": "given-6c00e6ff6ea6",
+      "text": "Victor",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-403ae18d715b",
+      "text": "Popescu",
+      "weight": 3
+    },
+    {
+      "id": "family-6822306e4c1c",
+      "text": "Popa",
+      "weight": 3
+    },
+    {
+      "id": "family-3e5343a86a82",
+      "text": "Ionescu",
+      "weight": 3
+    },
+    {
+      "id": "family-dbd0b2f21462",
+      "text": "Dumitrescu",
+      "weight": 3
+    },
+    {
+      "id": "family-317ecd32308a",
+      "text": "Stan",
+      "weight": 3
+    },
+    {
+      "id": "family-1b3d6f4c1703",
+      "text": "Stoica",
+      "weight": 1
+    },
+    {
+      "id": "family-74cca8f5c3fd",
+      "text": "Gheorghe",
+      "weight": 1
+    },
+    {
+      "id": "family-c56a79675b2e",
+      "text": "Rusu",
+      "weight": 1
+    },
+    {
+      "id": "family-523fd544d4cc",
+      "text": "Munteanu",
+      "weight": 1
+    },
+    {
+      "id": "family-4d3d5f7bb907",
+      "text": "Matei",
+      "weight": 1
+    },
+    {
+      "id": "family-241f66d4ea74",
+      "text": "Constantin",
+      "weight": 1
+    },
+    {
+      "id": "family-5088cc51ea50",
+      "text": "Șerban",
+      "weight": 1
+    },
+    {
+      "id": "family-8053f9c1e94c",
+      "text": "Marin",
+      "weight": 1
+    },
+    {
+      "id": "family-9fc83b42fc96",
+      "text": "Preda",
+      "weight": 1
+    },
+    {
+      "id": "family-822633c0c31a",
+      "text": "Ilie",
+      "weight": 1
+    },
+    {
+      "id": "family-f8dad3c6a6ef",
+      "text": "Oprea",
+      "weight": 1
+    },
+    {
+      "id": "family-9d7a454d71eb",
+      "text": "Petrescu",
+      "weight": 1
+    },
+    {
+      "id": "family-e52cc5f8decd",
+      "text": "Dobre",
+      "weight": 1
+    },
+    {
+      "id": "family-6b96529b3cd0",
+      "text": "Florea",
+      "weight": 1
+    },
+    {
+      "id": "family-6c7cb49ceb24",
+      "text": "Niculescu",
+      "weight": 1
+    },
+    {
+      "id": "family-98f59b9a15f5",
+      "text": "Diaconu",
+      "weight": 1
+    },
+    {
+      "id": "family-b9ac12c83c26",
+      "text": "Dinu",
+      "weight": 1
+    },
+    {
+      "id": "family-01494b8bdbbe",
+      "text": "Mihai",
+      "weight": 1
+    },
+    {
+      "id": "family-765dafa59755",
+      "text": "Tudor",
+      "weight": 1
+    },
+    {
+      "id": "family-a2ac69c21914",
+      "text": "Barbu",
+      "weight": 1
+    },
+    {
+      "id": "family-509c3e4cfb70",
+      "text": "Nistor",
+      "weight": 1
+    },
+    {
+      "id": "family-b8bca0be99b2",
+      "text": "Ene",
+      "weight": 1
+    },
+    {
+      "id": "family-3fa814b227df",
+      "text": "Andrei",
+      "weight": 1
+    },
+    {
+      "id": "family-afe5f74c2c07",
+      "text": "Lungu",
+      "weight": 1
+    },
+    {
+      "id": "family-a6e5acd06679",
+      "text": "Dragomir",
+      "weight": 1
+    },
+    {
+      "id": "family-530e8feeb0e1",
+      "text": "Neagu",
+      "weight": 1
+    },
+    {
+      "id": "family-a63537bc2347",
+      "text": "Badea",
+      "weight": 1
+    },
+    {
+      "id": "family-8cb749909946",
+      "text": "Mihăilescu",
+      "weight": 1
+    },
+    {
+      "id": "family-0904255f5a23",
+      "text": "Stanciu",
+      "weight": 1
+    },
+    {
+      "id": "family-c5231cee1d80",
+      "text": "Toma",
+      "weight": 1
+    },
+    {
+      "id": "family-8a08b38d9aa2",
+      "text": "Vasilescu",
+      "weight": 1
+    },
+    {
+      "id": "family-2c0db74c8956",
+      "text": "Iancu",
+      "weight": 1
+    },
+    {
+      "id": "family-22464204759f",
+      "text": "Tudose",
+      "weight": 1
+    },
+    {
+      "id": "family-f9a24851bd68",
+      "text": "Dumitru",
+      "weight": 1
+    },
+    {
+      "id": "family-ba72125deedd",
+      "text": "Filip",
+      "weight": 1
+    },
+    {
+      "id": "family-493c93bece75",
+      "text": "Pavel",
+      "weight": 1
+    },
+    {
+      "id": "family-6351133e6bba",
+      "text": "Nedelcu",
+      "weight": 1
+    },
+    {
+      "id": "family-f77c893e024e",
+      "text": "Radu",
+      "weight": 1
+    },
+    {
+      "id": "family-ab4add5b7397",
+      "text": "Manea",
+      "weight": 1
+    },
+    {
+      "id": "family-6ed69c4296f1",
+      "text": "Avram",
+      "weight": 1
+    },
+    {
+      "id": "family-6d3fdd256725",
+      "text": "Cojocaru",
+      "weight": 1
+    },
+    {
+      "id": "family-21906c368d1c",
+      "text": "Olteanu",
+      "weight": 1
+    },
+    {
+      "id": "family-c19695e9470c",
+      "text": "Dumitriu",
+      "weight": 1
+    },
+    {
+      "id": "family-003116088c83",
+      "text": "Moldovan",
+      "weight": 1
+    },
+    {
+      "id": "family-00f495f7fb05",
+      "text": "Voinea",
+      "weight": 1
+    },
+    {
+      "id": "family-fa5fdef23fb2",
+      "text": "Grigorescu",
+      "weight": 1
+    },
+    {
+      "id": "family-271dcb7be305",
+      "text": "Albu",
+      "weight": 1
+    },
+    {
+      "id": "family-7705165183a9",
+      "text": "Anghel",
+      "weight": 1
+    },
+    {
+      "id": "family-b85f63a2a910",
+      "text": "Antonescu",
+      "weight": 1
+    },
+    {
+      "id": "family-d76a61f51368",
+      "text": "Ardeleanu",
+      "weight": 1
+    },
+    {
+      "id": "family-79c8871b05db",
+      "text": "Baciu",
+      "weight": 1
+    },
+    {
+      "id": "family-2c0626182749",
+      "text": "Voicu",
+      "weight": 1
+    },
+    {
+      "id": "family-1b5661dfe792",
+      "text": "Bălan",
+      "weight": 1
+    },
+    {
+      "id": "family-c980247be173",
+      "text": "Banu",
+      "weight": 1
+    },
+    {
+      "id": "family-3f392d948d30",
+      "text": "Blaga",
+      "weight": 1
+    },
+    {
+      "id": "family-80fdcb8a6502",
+      "text": "Bobeică",
+      "weight": 1
+    },
+    {
+      "id": "family-8e41be2891fe",
+      "text": "Bogdan",
+      "weight": 1
+    },
+    {
+      "id": "family-d44634986c26",
+      "text": "Botez",
+      "weight": 1
+    },
+    {
+      "id": "family-d9d97e50c83e",
+      "text": "Botezatu",
+      "weight": 1
+    },
+    {
+      "id": "family-1306f6400ffb",
+      "text": "Bratu",
+      "weight": 1
+    },
+    {
+      "id": "family-68362eb9013e",
+      "text": "Bucur",
+      "weight": 1
+    },
+    {
+      "id": "family-adec9921fcba",
+      "text": "Călinescu",
+      "weight": 1
+    },
+    {
+      "id": "family-d6fdc684bb2e",
+      "text": "Cernat",
+      "weight": 1
+    },
+    {
+      "id": "family-67961e5e3618",
+      "text": "Chiriac",
+      "weight": 1
+    },
+    {
+      "id": "family-474a95483497",
+      "text": "Ciobanu",
+      "weight": 1
+    },
+    {
+      "id": "family-f8959d391178",
+      "text": "Ciocan",
+      "weight": 1
+    },
+    {
+      "id": "family-84fe39b5e34b",
+      "text": "Cîrstea",
+      "weight": 1
+    },
+    {
+      "id": "family-647b92b9dbe9",
+      "text": "Coman",
+      "weight": 1
+    },
+    {
+      "id": "family-62b0c23889ed",
+      "text": "Costea",
+      "weight": 1
+    },
+    {
+      "id": "family-e3907b283971",
+      "text": "Cristea",
+      "weight": 1
+    },
+    {
+      "id": "family-f8863659af76",
+      "text": "Danciu",
+      "weight": 1
+    },
+    {
+      "id": "family-9565780c1747",
+      "text": "Dascălu",
+      "weight": 1
+    },
+    {
+      "id": "family-3ee1fda637fa",
+      "text": "Drăgan",
+      "weight": 1
+    },
+    {
+      "id": "family-3074a5e6b85e",
+      "text": "Duca",
+      "weight": 1
+    },
+    {
+      "id": "family-ab3911760b70",
+      "text": "Enache",
+      "weight": 1
+    },
+    {
+      "id": "family-72536fbe73ac",
+      "text": "Florescu",
+      "weight": 1
+    },
+    {
+      "id": "family-498d0f8f1c65",
+      "text": "Georgescu",
+      "weight": 1
+    },
+    {
+      "id": "family-c599781f69bb",
+      "text": "Gheorghiu",
+      "weight": 1
+    },
+    {
+      "id": "family-f697f137e937",
+      "text": "Groza",
+      "weight": 1
+    },
+    {
+      "id": "family-2a332f44f02b",
+      "text": "Iordache",
+      "weight": 1
+    },
+    {
+      "id": "family-201bcf0e80e8",
+      "text": "Isac",
+      "weight": 1
+    },
+    {
+      "id": "family-457e6edc1dfa",
+      "text": "Lazăr",
+      "weight": 1
+    },
+    {
+      "id": "family-e5300ffefe1d",
+      "text": "Lupescu",
+      "weight": 1
+    },
+    {
+      "id": "family-84ad04aa0fd0",
+      "text": "Macovei",
+      "weight": 1
+    },
+    {
+      "id": "family-9d79f16d8092",
+      "text": "Manolescu",
+      "weight": 1
+    },
+    {
+      "id": "family-05a5046f8f68",
+      "text": "Mazilu",
+      "weight": 1
+    },
+    {
+      "id": "family-61a4813c6956",
+      "text": "Miron",
+      "weight": 1
+    },
+    {
+      "id": "family-d5ea89f69018",
+      "text": "Mitrea",
+      "weight": 1
+    },
+    {
+      "id": "family-6c13669d2082",
+      "text": "Moraru",
+      "weight": 1
+    },
+    {
+      "id": "family-23b6f9fa2ae2",
+      "text": "Mureșan",
+      "weight": 1
+    },
+    {
+      "id": "family-ffecdaf08a8a",
+      "text": "Negrescu",
+      "weight": 1
+    },
+    {
+      "id": "family-328aa438ea96",
+      "text": "Neacșu",
+      "weight": 1
+    },
+    {
+      "id": "family-d27a80c90de8",
+      "text": "Niță",
+      "weight": 1
+    },
+    {
+      "id": "family-f28d6f4dc872",
+      "text": "Păun",
+      "weight": 1
+    },
+    {
+      "id": "family-1e4008f903be",
+      "text": "Popovici",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 9979
+  }
+}

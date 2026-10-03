@@ -1,0 +1,1372 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "thai",
+  "label": "Thai, romanized short names",
+  "language": "th-Latn",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1950,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-family",
+    "componentOrder": [
+      "given",
+      "family"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "Romanized draft Thai candidates, requiring Thai-language and period review before production use. Romanization variants are not additional people. Sino-Thai Sae- family names must be selected in the Sino-Thai subgroup, never used as arbitrary alternatives for every formation.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 100
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 100,
+    "secondComponent": 100
+  },
+  "completeness": "target-met",
+  "givenNames": [
+    {
+      "id": "given-833d306249ea",
+      "text": "Boon",
+      "weight": 1
+    },
+    {
+      "id": "given-de8bfb4ed5b1",
+      "text": "Boonma",
+      "weight": 1
+    },
+    {
+      "id": "given-dbc2acbca3bb",
+      "text": "Boonmee",
+      "weight": 1
+    },
+    {
+      "id": "given-bd7935ed34c9",
+      "text": "Boonchu",
+      "weight": 1
+    },
+    {
+      "id": "given-49db25b4ed86",
+      "text": "Prayut",
+      "weight": 1
+    },
+    {
+      "id": "given-669986700dd0",
+      "text": "Boonchom",
+      "weight": 1
+    },
+    {
+      "id": "given-176c83b9bdd3",
+      "text": "Boonsong",
+      "weight": 1
+    },
+    {
+      "id": "given-d44c6af5e039",
+      "text": "Boonlert",
+      "weight": 1
+    },
+    {
+      "id": "given-3be9c220cc54",
+      "text": "Boonterm",
+      "weight": 1
+    },
+    {
+      "id": "given-9b0b236a79be",
+      "text": "Boonthong",
+      "weight": 1
+    },
+    {
+      "id": "given-bdc79a7aee60",
+      "text": "Boontham",
+      "weight": 1
+    },
+    {
+      "id": "given-3be041ca389f",
+      "text": "Boonruang",
+      "weight": 1
+    },
+    {
+      "id": "given-d543426c6680",
+      "text": "Boonrod",
+      "weight": 1
+    },
+    {
+      "id": "given-50532ba6f8a5",
+      "text": "Boonrung",
+      "weight": 1
+    },
+    {
+      "id": "given-b8b2e7300c24",
+      "text": "Boonchai",
+      "weight": 1
+    },
+    {
+      "id": "given-aeda3a654e4a",
+      "text": "Boonchuen",
+      "weight": 1
+    },
+    {
+      "id": "given-75324b6744f6",
+      "text": "Boonliang",
+      "weight": 1
+    },
+    {
+      "id": "given-c9cc7c8f52b1",
+      "text": "Boonmark",
+      "weight": 1
+    },
+    {
+      "id": "given-84a90131cc92",
+      "text": "Boonpeng",
+      "weight": 1
+    },
+    {
+      "id": "given-86427bc7ecd5",
+      "text": "Boonsert",
+      "weight": 1
+    },
+    {
+      "id": "given-b1e160b3fbfb",
+      "text": "Chai",
+      "weight": 1
+    },
+    {
+      "id": "given-3f9a2c6fc3ba",
+      "text": "Chaiyaporn",
+      "weight": 1
+    },
+    {
+      "id": "given-a1101ec2592d",
+      "text": "Chalerm",
+      "weight": 1
+    },
+    {
+      "id": "given-7d2a05ad92db",
+      "text": "Pramote",
+      "weight": 1
+    },
+    {
+      "id": "given-f00888810570",
+      "text": "Charoen",
+      "weight": 1
+    },
+    {
+      "id": "given-460b3a7da007",
+      "text": "Chat",
+      "weight": 1
+    },
+    {
+      "id": "given-8e4dd50b9627",
+      "text": "Chit",
+      "weight": 1
+    },
+    {
+      "id": "given-2b3858e2382a",
+      "text": "Chom",
+      "weight": 1
+    },
+    {
+      "id": "given-854e7e87639d",
+      "text": "Chuan",
+      "weight": 1
+    },
+    {
+      "id": "given-4b5c11262d7c",
+      "text": "Chuen",
+      "weight": 1
+    },
+    {
+      "id": "given-cd8661c09a4e",
+      "text": "Dam",
+      "weight": 1
+    },
+    {
+      "id": "given-0d58fd033da3",
+      "text": "Dang",
+      "weight": 1
+    },
+    {
+      "id": "given-debb9c72d17f",
+      "text": "Det",
+      "weight": 1
+    },
+    {
+      "id": "given-59c0c9b94148",
+      "text": "Sanong",
+      "weight": 1
+    },
+    {
+      "id": "given-8bc1d53cc57c",
+      "text": "In",
+      "weight": 1
+    },
+    {
+      "id": "given-5c5db120cb11",
+      "text": "Jan",
+      "weight": 1
+    },
+    {
+      "id": "given-7cdcbd87852f",
+      "text": "Siri",
+      "weight": 1
+    },
+    {
+      "id": "given-3d822d266cf1",
+      "text": "Kaew",
+      "weight": 1
+    },
+    {
+      "id": "given-b448a624d35e",
+      "text": "Kham",
+      "weight": 1
+    },
+    {
+      "id": "given-f36688343a97",
+      "text": "Khem",
+      "weight": 1
+    },
+    {
+      "id": "given-40da3ffdaf70",
+      "text": "Khiam",
+      "weight": 1
+    },
+    {
+      "id": "given-5c57f679591a",
+      "text": "Klai",
+      "weight": 1
+    },
+    {
+      "id": "given-0df0f6d984b3",
+      "text": "Korn",
+      "weight": 1
+    },
+    {
+      "id": "given-7725895d087b",
+      "text": "Krit",
+      "weight": 1
+    },
+    {
+      "id": "given-727299ec77be",
+      "text": "Lek",
+      "weight": 1
+    },
+    {
+      "id": "given-d1d87c4717d5",
+      "text": "Long",
+      "weight": 1
+    },
+    {
+      "id": "given-3faf6233ce5e",
+      "text": "Maan",
+      "weight": 1
+    },
+    {
+      "id": "given-321219116108",
+      "text": "Manit",
+      "weight": 1
+    },
+    {
+      "id": "given-74436a4df7c2",
+      "text": "Mongkol",
+      "weight": 1
+    },
+    {
+      "id": "given-e1e5dba484ce",
+      "text": "Nai",
+      "weight": 1
+    },
+    {
+      "id": "given-e96c6b0710db",
+      "text": "Noi",
+      "weight": 1
+    },
+    {
+      "id": "given-130011756125",
+      "text": "On",
+      "weight": 1
+    },
+    {
+      "id": "given-bfe14f647aad",
+      "text": "Phaibun",
+      "weight": 1
+    },
+    {
+      "id": "given-5d3535424eff",
+      "text": "Phan",
+      "weight": 1
+    },
+    {
+      "id": "given-be7af3af1f76",
+      "text": "Phichit",
+      "weight": 1
+    },
+    {
+      "id": "given-4ef48c424e4c",
+      "text": "Phin",
+      "weight": 1
+    },
+    {
+      "id": "given-1abd6c0a4e25",
+      "text": "Phoem",
+      "weight": 1
+    },
+    {
+      "id": "given-93ae8be88607",
+      "text": "Phon",
+      "weight": 1
+    },
+    {
+      "id": "given-124da0d8ac34",
+      "text": "Prasert",
+      "weight": 1
+    },
+    {
+      "id": "given-52b4a48cb0f8",
+      "text": "Prasit",
+      "weight": 1
+    },
+    {
+      "id": "given-3c0314ff46e2",
+      "text": "Prayoon",
+      "weight": 1
+    },
+    {
+      "id": "given-4c1ecbf9a2ba",
+      "text": "Preeda",
+      "weight": 1
+    },
+    {
+      "id": "given-7186e02bc731",
+      "text": "Rang",
+      "weight": 1
+    },
+    {
+      "id": "given-8db921c3d02e",
+      "text": "Pradit",
+      "weight": 1
+    },
+    {
+      "id": "given-3576df1b3ea7",
+      "text": "Thongin",
+      "weight": 1
+    },
+    {
+      "id": "given-b9630dd92a93",
+      "text": "Ruang",
+      "weight": 1
+    },
+    {
+      "id": "given-af4962ea3cd3",
+      "text": "Saeng",
+      "weight": 1
+    },
+    {
+      "id": "given-a951efc79deb",
+      "text": "Sa",
+      "weight": 1
+    },
+    {
+      "id": "given-a2e6bdd3f1e6",
+      "text": "San",
+      "weight": 1
+    },
+    {
+      "id": "given-846f8b96d041",
+      "text": "Sang",
+      "weight": 1
+    },
+    {
+      "id": "given-9825ebe07cfc",
+      "text": "Sathit",
+      "weight": 1
+    },
+    {
+      "id": "given-1372ab601c77",
+      "text": "Sawad",
+      "weight": 1
+    },
+    {
+      "id": "given-a11f1b879793",
+      "text": "Som",
+      "weight": 1
+    },
+    {
+      "id": "given-90a3973fe0c9",
+      "text": "Somboon",
+      "weight": 1
+    },
+    {
+      "id": "given-a2e2af044716",
+      "text": "Somchai",
+      "weight": 1
+    },
+    {
+      "id": "given-9a2e638bb8be",
+      "text": "Somchit",
+      "weight": 1
+    },
+    {
+      "id": "given-855fc95fde15",
+      "text": "Somkid",
+      "weight": 1
+    },
+    {
+      "id": "given-b94da4e453b7",
+      "text": "Sompong",
+      "weight": 1
+    },
+    {
+      "id": "given-388e8a4349b7",
+      "text": "Sompon",
+      "weight": 1
+    },
+    {
+      "id": "given-1fa9ae191757",
+      "text": "Somwang",
+      "weight": 1
+    },
+    {
+      "id": "given-df1917d73922",
+      "text": "Somwong",
+      "weight": 1
+    },
+    {
+      "id": "given-c411cd11651f",
+      "text": "Sorn",
+      "weight": 1
+    },
+    {
+      "id": "given-1274a676136f",
+      "text": "Suk",
+      "weight": 1
+    },
+    {
+      "id": "given-8612de5cbd1c",
+      "text": "Suman",
+      "weight": 1
+    },
+    {
+      "id": "given-db18f17fe532",
+      "text": "Sun",
+      "weight": 1
+    },
+    {
+      "id": "given-2448f341625d",
+      "text": "Suwan",
+      "weight": 1
+    },
+    {
+      "id": "given-bf242d691043",
+      "text": "Thong",
+      "weight": 1
+    },
+    {
+      "id": "given-9fa9f2320754",
+      "text": "Thongchai",
+      "weight": 1
+    },
+    {
+      "id": "given-5e909df3d2f4",
+      "text": "Thongdee",
+      "weight": 1
+    },
+    {
+      "id": "given-221594902502",
+      "text": "Thongkham",
+      "weight": 1
+    },
+    {
+      "id": "given-d1e9f01dd136",
+      "text": "Thongma",
+      "weight": 1
+    },
+    {
+      "id": "given-65b2b0a1eab2",
+      "text": "Thongmee",
+      "weight": 1
+    },
+    {
+      "id": "given-3e1a9b2db3d8",
+      "text": "Thongpoon",
+      "weight": 1
+    },
+    {
+      "id": "given-99aea00630e3",
+      "text": "Thongyu",
+      "weight": 1
+    },
+    {
+      "id": "given-5be42e729ca7",
+      "text": "Thon",
+      "weight": 1
+    },
+    {
+      "id": "given-757d4e2a296a",
+      "text": "Thuan",
+      "weight": 1
+    },
+    {
+      "id": "given-186506b6fb3a",
+      "text": "Udom",
+      "weight": 1
+    },
+    {
+      "id": "given-84f8a35fa939",
+      "text": "Wai",
+      "weight": 1
+    },
+    {
+      "id": "given-97315d176eee",
+      "text": "Wan",
+      "weight": 1
+    },
+    {
+      "id": "given-264705511825",
+      "text": "Yen",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-2c2ce44868e4",
+      "text": "Saengsuwan",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-bbfb0aa3ca73",
+      "text": "Saengkaew",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-c0484972aedc",
+      "text": "Saengthong",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-abcdb20c1268",
+      "text": "Saengchan",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-b2686b9af3ed",
+      "text": "Saengsri",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-eea0a8a04e59",
+      "text": "Saengmanee",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-762eeb2d1b92",
+      "text": "Srisuwan",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-a193838c9459",
+      "text": "Srikaew",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-4346ac21350f",
+      "text": "Srithong",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-95005c8148da",
+      "text": "Srisuk",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-e95b1a740bcc",
+      "text": "Srisawat",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-fa829625a5bd",
+      "text": "Srichai",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-2647b393be63",
+      "text": "Srichan",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-8b7f7f9628a1",
+      "text": "Srirat",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-311c6193f0df",
+      "text": "Sriprasert",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-e2ca8fd614b4",
+      "text": "Phetcharat",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-5e909df3d2f4",
+      "text": "Thongdee",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-221594902502",
+      "text": "Thongkham",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-b50226c954f6",
+      "text": "Thongkaew",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-9235bb2c878f",
+      "text": "Thongmanee",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-988ce5058582",
+      "text": "Thongbai",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-615a14cc329c",
+      "text": "Thongyot",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-99aea00630e3",
+      "text": "Thongyu",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-a301c3c362c8",
+      "text": "Boonsri",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-dbc2acbca3bb",
+      "text": "Boonmee",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-de8bfb4ed5b1",
+      "text": "Boonma",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-bd7935ed34c9",
+      "text": "Boonchu",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-3be041ca389f",
+      "text": "Boonruang",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-d543426c6680",
+      "text": "Boonrod",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-84a90131cc92",
+      "text": "Boonpeng",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-ff44848a13eb",
+      "text": "Boonprasert",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-d44c6af5e039",
+      "text": "Boonlert",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-b8b2e7300c24",
+      "text": "Boonchai",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-9b0b236a79be",
+      "text": "Boonthong",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-1c0193308aea",
+      "text": "Boonnak",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-6d112564a520",
+      "text": "Kaewmanee",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-18f67683cfb1",
+      "text": "Kaewsri",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-cfc8204e9ccc",
+      "text": "Kaewsuwan",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-b122b2e26270",
+      "text": "Kaewka",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-6d0d9594e407",
+      "text": "Kaewthong",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-cc71ef47976e",
+      "text": "Kaewprasert",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-e7b789f9e0ed",
+      "text": "Kaewpradit",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-abdf9c16b5bc",
+      "text": "Kaewpanya",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-5c14a4a65b18",
+      "text": "Kaewkong",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-534879a8492f",
+      "text": "Kaewwong",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-0cbbd72d6bc3",
+      "text": "Suksawat",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-0c5b6840ad59",
+      "text": "Suksamran",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-067bb518c692",
+      "text": "Sukcharoen",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-84310a3a3d3a",
+      "text": "Sukprasert",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-a03a2d19a5cb",
+      "text": "Sukjai",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-73e22eed8634",
+      "text": "Sukdee",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-60c1369fdc45",
+      "text": "Sukchit",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-42539ae6b441",
+      "text": "Sukon",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-96d06805c535",
+      "text": "Sukhum",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-14004f570ef3",
+      "text": "Sukwong",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-0d36b9e31ed2",
+      "text": "Wongsa",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-00ed110c49ca",
+      "text": "Wongwan",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-ebeacabb81bc",
+      "text": "Wongchai",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-b96dc5a889c1",
+      "text": "Wongkaew",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-f804d1f7e460",
+      "text": "Wongsuwan",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-6d5561742d96",
+      "text": "Wongsri",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-0f0a9f26a3b5",
+      "text": "Wongcharoen",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-bcdddd6dda2d",
+      "text": "Wongprasert",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-82fb936a9efc",
+      "text": "Wongpanya",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-acdfe4d15685",
+      "text": "Wongprom",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-8f7f865b6de1",
+      "text": "Pansri",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-64e2e3db0738",
+      "text": "Panthong",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-3e9b6b30ea4e",
+      "text": "Pankaew",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-ab61dcf201f9",
+      "text": "Panich",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-fe8dee19bbd0",
+      "text": "Intaraprasert",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-1554563f5990",
+      "text": "Pongpan",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-ef8f3cc2eadb",
+      "text": "Promma",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-6355c45115c0",
+      "text": "Promsri",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-01e0ece8ec02",
+      "text": "Promdee",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-5253190ac5a0",
+      "text": "Prommanee",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-3b4baa4c1660",
+      "text": "Pumsuwan",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-a156619d1632",
+      "text": "Klinsuwan",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-1ca452a6d340",
+      "text": "Raksri",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-07753fb48ea4",
+      "text": "Raksuk",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-82dda705f67d",
+      "text": "Rodthong",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-7f14b2595342",
+      "text": "Rodkaew",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-8efdb587e26d",
+      "text": "Ruangsri",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-2e0aea11971a",
+      "text": "Ruangrat",
+      "weight": 1,
+      "subgroupIds": [
+        "thai"
+      ]
+    },
+    {
+      "id": "family-e184b62de2c0",
+      "text": "Sae-Tang",
+      "weight": 1,
+      "subgroupIds": [
+        "sino-thai"
+      ]
+    },
+    {
+      "id": "family-372495648036",
+      "text": "Sae-Lim",
+      "weight": 1,
+      "subgroupIds": [
+        "sino-thai"
+      ]
+    },
+    {
+      "id": "family-86cd8bb59fe7",
+      "text": "Sae-Lee",
+      "weight": 1,
+      "subgroupIds": [
+        "sino-thai"
+      ]
+    },
+    {
+      "id": "family-9b55e0491c5c",
+      "text": "Sae-Chan",
+      "weight": 1,
+      "subgroupIds": [
+        "sino-thai"
+      ]
+    },
+    {
+      "id": "family-e4e32687dde8",
+      "text": "Sae-Wong",
+      "weight": 1,
+      "subgroupIds": [
+        "sino-thai"
+      ]
+    },
+    {
+      "id": "family-56f4c3f53be4",
+      "text": "Sae-Ngow",
+      "weight": 1,
+      "subgroupIds": [
+        "sino-thai"
+      ]
+    },
+    {
+      "id": "family-998d9e7c838a",
+      "text": "Sae-Lao",
+      "weight": 1,
+      "subgroupIds": [
+        "sino-thai"
+      ]
+    },
+    {
+      "id": "family-80311d60035a",
+      "text": "Sae-Tan",
+      "weight": 1,
+      "subgroupIds": [
+        "sino-thai"
+      ]
+    },
+    {
+      "id": "family-f501b4953ff5",
+      "text": "Sae-Heng",
+      "weight": 1,
+      "subgroupIds": [
+        "sino-thai"
+      ]
+    },
+    {
+      "id": "family-3c4a514bf087",
+      "text": "Sae-Ko",
+      "weight": 1,
+      "subgroupIds": [
+        "sino-thai"
+      ]
+    },
+    {
+      "id": "family-9bf9893e87bb",
+      "text": "Sae-Sim",
+      "weight": 1,
+      "subgroupIds": [
+        "sino-thai"
+      ]
+    },
+    {
+      "id": "family-644f31ef7f28",
+      "text": "Sae-Chua",
+      "weight": 1,
+      "subgroupIds": [
+        "sino-thai"
+      ]
+    },
+    {
+      "id": "family-097fa0d235f5",
+      "text": "Sae-Tia",
+      "weight": 1,
+      "subgroupIds": [
+        "sino-thai"
+      ]
+    },
+    {
+      "id": "family-b37c0f9a4ada",
+      "text": "Sae-To",
+      "weight": 1,
+      "subgroupIds": [
+        "sino-thai"
+      ]
+    },
+    {
+      "id": "family-4cd66a8ac126",
+      "text": "Sae-Eu",
+      "weight": 1,
+      "subgroupIds": [
+        "sino-thai"
+      ]
+    },
+    {
+      "id": "family-eab9fc612596",
+      "text": "Sae-Teo",
+      "weight": 1,
+      "subgroupIds": [
+        "sino-thai"
+      ]
+    },
+    {
+      "id": "family-72098a564e14",
+      "text": "Sae-Pua",
+      "weight": 1,
+      "subgroupIds": [
+        "sino-thai"
+      ]
+    }
+  ],
+  "subgroups": [
+    {
+      "id": "thai",
+      "label": "Thai surname context"
+    },
+    {
+      "id": "sino-thai",
+      "label": "Sino-Thai surname context"
+    }
+  ],
+  "requiresSubgroup": true,
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "thai": 8288,
+    "sino-thai": 1700
+  }
+}

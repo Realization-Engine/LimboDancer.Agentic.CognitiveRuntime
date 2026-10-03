@@ -1,0 +1,1062 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "russian",
+  "label": "Russian, masculine forms",
+  "language": "ru-Latn",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-family",
+    "componentOrder": [
+      "given",
+      "family"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "Romanized Russian male forms; short military display uses given and family names. Patronymics are omitted, not synthesized. One consistent project spelling per entry, with authored narrative spellings preserved separately. Not a generic pool for every Soviet ethnicity.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 100
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 100,
+    "secondComponent": 100
+  },
+  "completeness": "target-met",
+  "givenNames": [
+    {
+      "id": "given-ebec404b6897",
+      "text": "Ivan",
+      "weight": 3
+    },
+    {
+      "id": "given-087dc7896b97",
+      "text": "Nikolai",
+      "weight": 3
+    },
+    {
+      "id": "given-e4afb01461d8",
+      "text": "Aleksandr",
+      "weight": 3
+    },
+    {
+      "id": "given-74b5b8531994",
+      "text": "Aleksei",
+      "weight": 3
+    },
+    {
+      "id": "given-3f2db9a5d690",
+      "text": "Mikhail",
+      "weight": 3
+    },
+    {
+      "id": "given-a8d3a8a0feb6",
+      "text": "Vasilii",
+      "weight": 3
+    },
+    {
+      "id": "given-2d6fc8326da6",
+      "text": "Sergei",
+      "weight": 1
+    },
+    {
+      "id": "given-3fa814b227df",
+      "text": "Andrei",
+      "weight": 1
+    },
+    {
+      "id": "given-95ec31a11f83",
+      "text": "Dmitrii",
+      "weight": 1
+    },
+    {
+      "id": "given-1f11ba81c992",
+      "text": "Vladimir",
+      "weight": 1
+    },
+    {
+      "id": "given-493c93bece75",
+      "text": "Pavel",
+      "weight": 1
+    },
+    {
+      "id": "given-923818e5629f",
+      "text": "Piotr",
+      "weight": 1
+    },
+    {
+      "id": "given-a8d775b8d569",
+      "text": "Grigorii",
+      "weight": 1
+    },
+    {
+      "id": "given-703d07655954",
+      "text": "Fiodor",
+      "weight": 1
+    },
+    {
+      "id": "given-40251d7258c4",
+      "text": "Stepan",
+      "weight": 1
+    },
+    {
+      "id": "given-1eda6e8b9430",
+      "text": "Boris",
+      "weight": 1
+    },
+    {
+      "id": "given-f82578ee7624",
+      "text": "Viktor",
+      "weight": 1
+    },
+    {
+      "id": "given-83b69ffa8b3b",
+      "text": "Konstantin",
+      "weight": 1
+    },
+    {
+      "id": "given-004ab72bf41c",
+      "text": "Leonid",
+      "weight": 1
+    },
+    {
+      "id": "given-c57fb7de954b",
+      "text": "Anatolii",
+      "weight": 1
+    },
+    {
+      "id": "given-11b7876b1acd",
+      "text": "Evgenii",
+      "weight": 1
+    },
+    {
+      "id": "given-21b1267526ba",
+      "text": "Valentin",
+      "weight": 1
+    },
+    {
+      "id": "given-7913ef0b8fa6",
+      "text": "Valerii",
+      "weight": 1
+    },
+    {
+      "id": "given-a03303ed8f20",
+      "text": "Vitali",
+      "weight": 1
+    },
+    {
+      "id": "given-eeb67e85dc99",
+      "text": "Yurii",
+      "weight": 1
+    },
+    {
+      "id": "given-bde4b67a68b2",
+      "text": "Georgii",
+      "weight": 1
+    },
+    {
+      "id": "given-a498d8c912ae",
+      "text": "Semyon",
+      "weight": 1
+    },
+    {
+      "id": "given-c2bdaa5626ad",
+      "text": "Iakov",
+      "weight": 1
+    },
+    {
+      "id": "given-5f5473571927",
+      "text": "Ilia",
+      "weight": 1
+    },
+    {
+      "id": "given-f4123714e269",
+      "text": "Nikita",
+      "weight": 1
+    },
+    {
+      "id": "given-b1215adbcfbb",
+      "text": "Timofei",
+      "weight": 1
+    },
+    {
+      "id": "given-2d0228f562c6",
+      "text": "Maksim",
+      "weight": 1
+    },
+    {
+      "id": "given-7cfcedd0d274",
+      "text": "Gavriil",
+      "weight": 1
+    },
+    {
+      "id": "given-ad952a7b08a2",
+      "text": "Daniil",
+      "weight": 1
+    },
+    {
+      "id": "given-2e8beb1d6dd7",
+      "text": "Kirill",
+      "weight": 1
+    },
+    {
+      "id": "given-3bdb5ba420eb",
+      "text": "Artemii",
+      "weight": 1
+    },
+    {
+      "id": "given-4e3de91d618c",
+      "text": "Arsenii",
+      "weight": 1
+    },
+    {
+      "id": "given-b52eeac78c1d",
+      "text": "Arkadii",
+      "weight": 1
+    },
+    {
+      "id": "given-70507a0f8548",
+      "text": "Afanasii",
+      "weight": 1
+    },
+    {
+      "id": "given-0b57a9ed6297",
+      "text": "Prokofii",
+      "weight": 1
+    },
+    {
+      "id": "given-8ee49ce974e0",
+      "text": "Ignatii",
+      "weight": 1
+    },
+    {
+      "id": "given-8ab1111f1933",
+      "text": "Ignat",
+      "weight": 1
+    },
+    {
+      "id": "given-29f48e5c043e",
+      "text": "Trofim",
+      "weight": 1
+    },
+    {
+      "id": "given-0687979cf3f7",
+      "text": "Taras",
+      "weight": 1
+    },
+    {
+      "id": "given-a82ed015ee5e",
+      "text": "Savelii",
+      "weight": 1
+    },
+    {
+      "id": "given-92e361cc831d",
+      "text": "Savva",
+      "weight": 1
+    },
+    {
+      "id": "given-8c80a0643b79",
+      "text": "Matvei",
+      "weight": 1
+    },
+    {
+      "id": "given-d52a38e07759",
+      "text": "Roman",
+      "weight": 1
+    },
+    {
+      "id": "given-df5ec051864e",
+      "text": "Ruslan",
+      "weight": 1
+    },
+    {
+      "id": "given-dbb60fde65b2",
+      "text": "Rostislav",
+      "weight": 1
+    },
+    {
+      "id": "given-5d9518009f43",
+      "text": "Sviatoslav",
+      "weight": 1
+    },
+    {
+      "id": "given-005bd79a45db",
+      "text": "Viacheslav",
+      "weight": 1
+    },
+    {
+      "id": "given-6cdfeceae4a8",
+      "text": "Vsevolod",
+      "weight": 1
+    },
+    {
+      "id": "given-547475af5bab",
+      "text": "Vladislav",
+      "weight": 1
+    },
+    {
+      "id": "given-48b7703e9c91",
+      "text": "Stanislav",
+      "weight": 1
+    },
+    {
+      "id": "given-e3d838d15566",
+      "text": "Yaroslav",
+      "weight": 1
+    },
+    {
+      "id": "given-bd2e86ce81ae",
+      "text": "Oleg",
+      "weight": 1
+    },
+    {
+      "id": "given-773079ad807a",
+      "text": "Igor",
+      "weight": 1
+    },
+    {
+      "id": "given-4d01c734b76c",
+      "text": "Gleb",
+      "weight": 1
+    },
+    {
+      "id": "given-55b57c9d6eba",
+      "text": "Lev",
+      "weight": 1
+    },
+    {
+      "id": "given-58dcf618906a",
+      "text": "Denis",
+      "weight": 1
+    },
+    {
+      "id": "given-be6dddfe632e",
+      "text": "Gennadii",
+      "weight": 1
+    },
+    {
+      "id": "given-a659b60d246d",
+      "text": "German",
+      "weight": 1
+    },
+    {
+      "id": "given-61473b7c9146",
+      "text": "Gerasim",
+      "weight": 1
+    },
+    {
+      "id": "given-d72db996409a",
+      "text": "Gordey",
+      "weight": 1
+    },
+    {
+      "id": "given-bb6e23210be4",
+      "text": "Efim",
+      "weight": 1
+    },
+    {
+      "id": "given-524542921b9a",
+      "text": "Egor",
+      "weight": 1
+    },
+    {
+      "id": "given-731135cc3dbd",
+      "text": "Emelian",
+      "weight": 1
+    },
+    {
+      "id": "given-c13ae1171368",
+      "text": "Ermolai",
+      "weight": 1
+    },
+    {
+      "id": "given-518308ec03d5",
+      "text": "Zakhar",
+      "weight": 1
+    },
+    {
+      "id": "given-22d25c4e2e26",
+      "text": "Zinovii",
+      "weight": 1
+    },
+    {
+      "id": "given-ca11d519b3bc",
+      "text": "Iosif",
+      "weight": 1
+    },
+    {
+      "id": "given-2c93bf5aa19d",
+      "text": "Isaak",
+      "weight": 1
+    },
+    {
+      "id": "given-362a7f81381e",
+      "text": "Klim",
+      "weight": 1
+    },
+    {
+      "id": "given-13b5819a7932",
+      "text": "Lavrentii",
+      "weight": 1
+    },
+    {
+      "id": "given-36bc10edc55b",
+      "text": "Luka",
+      "weight": 1
+    },
+    {
+      "id": "given-bf8841a906ea",
+      "text": "Leontii",
+      "weight": 1
+    },
+    {
+      "id": "given-51e937433b9d",
+      "text": "Makar",
+      "weight": 1
+    },
+    {
+      "id": "given-d7cda0ca2c85",
+      "text": "Mark",
+      "weight": 1
+    },
+    {
+      "id": "given-61a4813c6956",
+      "text": "Miron",
+      "weight": 1
+    },
+    {
+      "id": "given-e1ffb1d273c1",
+      "text": "Nazar",
+      "weight": 1
+    },
+    {
+      "id": "given-a2c7f7173d12",
+      "text": "Naum",
+      "weight": 1
+    },
+    {
+      "id": "given-fa023d96c267",
+      "text": "Nikanor",
+      "weight": 1
+    },
+    {
+      "id": "given-c834ccc70aa4",
+      "text": "Nikifor",
+      "weight": 1
+    },
+    {
+      "id": "given-1a56e0258772",
+      "text": "Onufrii",
+      "weight": 1
+    },
+    {
+      "id": "given-d4ff9f030c7b",
+      "text": "Osip",
+      "weight": 1
+    },
+    {
+      "id": "given-2fc9709a41cd",
+      "text": "Pakhom",
+      "weight": 1
+    },
+    {
+      "id": "given-4747c745454b",
+      "text": "Platon",
+      "weight": 1
+    },
+    {
+      "id": "given-cb01230e789c",
+      "text": "Potap",
+      "weight": 1
+    },
+    {
+      "id": "given-cdc363d53e27",
+      "text": "Rodion",
+      "weight": 1
+    },
+    {
+      "id": "given-3b474ad186f3",
+      "text": "Samuil",
+      "weight": 1
+    },
+    {
+      "id": "given-50a9099c808b",
+      "text": "Spiridon",
+      "weight": 1
+    },
+    {
+      "id": "given-85932abb29f3",
+      "text": "Tikhon",
+      "weight": 1
+    },
+    {
+      "id": "given-cefbd4e7852f",
+      "text": "Trifon",
+      "weight": 1
+    },
+    {
+      "id": "given-440dd404f434",
+      "text": "Faddei",
+      "weight": 1
+    },
+    {
+      "id": "given-713eb81b483a",
+      "text": "Filipp",
+      "weight": 1
+    },
+    {
+      "id": "given-81558a9759cd",
+      "text": "Foma",
+      "weight": 1
+    },
+    {
+      "id": "given-97736b93b706",
+      "text": "Khariton",
+      "weight": 1
+    },
+    {
+      "id": "given-feaa3bc385da",
+      "text": "Eduard",
+      "weight": 1
+    },
+    {
+      "id": "given-c83196303107",
+      "text": "Erast",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-1038c350d3ee",
+      "text": "Ivanov",
+      "weight": 3
+    },
+    {
+      "id": "family-478a34bd4f8d",
+      "text": "Smirnov",
+      "weight": 3
+    },
+    {
+      "id": "family-6acfd7da057a",
+      "text": "Kuznetsov",
+      "weight": 3
+    },
+    {
+      "id": "family-8963d97e2671",
+      "text": "Popov",
+      "weight": 3
+    },
+    {
+      "id": "family-4a9c14bd3d28",
+      "text": "Vasiliev",
+      "weight": 1
+    },
+    {
+      "id": "family-8ae39ef902ff",
+      "text": "Petrov",
+      "weight": 3
+    },
+    {
+      "id": "family-0f8963b08d00",
+      "text": "Sokolov",
+      "weight": 1
+    },
+    {
+      "id": "family-16cb50249aa4",
+      "text": "Mikhailov",
+      "weight": 1
+    },
+    {
+      "id": "family-7516a892058b",
+      "text": "Novikov",
+      "weight": 1
+    },
+    {
+      "id": "family-2ae70106cd43",
+      "text": "Fiodorov",
+      "weight": 1
+    },
+    {
+      "id": "family-a9b35110ce9a",
+      "text": "Morozov",
+      "weight": 1
+    },
+    {
+      "id": "family-e9dda051933d",
+      "text": "Volkov",
+      "weight": 1
+    },
+    {
+      "id": "family-4a9f6edbb405",
+      "text": "Alekseev",
+      "weight": 1
+    },
+    {
+      "id": "family-0bd7ffe5bb92",
+      "text": "Lebedev",
+      "weight": 1
+    },
+    {
+      "id": "family-a43bda0890da",
+      "text": "Semyonov",
+      "weight": 1
+    },
+    {
+      "id": "family-db92adaf0e8c",
+      "text": "Egorov",
+      "weight": 1
+    },
+    {
+      "id": "family-2e436916fbdf",
+      "text": "Pavlov",
+      "weight": 1
+    },
+    {
+      "id": "family-9d7a0d128926",
+      "text": "Kozlov",
+      "weight": 1
+    },
+    {
+      "id": "family-968da1220eaf",
+      "text": "Stepanov",
+      "weight": 1
+    },
+    {
+      "id": "family-7fa0cd40526f",
+      "text": "Nikolaev",
+      "weight": 1
+    },
+    {
+      "id": "family-4d6434a0528c",
+      "text": "Orlov",
+      "weight": 1
+    },
+    {
+      "id": "family-ccdca5d20c73",
+      "text": "Andreev",
+      "weight": 1
+    },
+    {
+      "id": "family-f4c663ee7572",
+      "text": "Makarov",
+      "weight": 1
+    },
+    {
+      "id": "family-1d01e9e89497",
+      "text": "Nikitin",
+      "weight": 1
+    },
+    {
+      "id": "family-10c15a0a9dfe",
+      "text": "Zakharov",
+      "weight": 1
+    },
+    {
+      "id": "family-7e634b15c3f1",
+      "text": "Zaitsev",
+      "weight": 1
+    },
+    {
+      "id": "family-00bf87255afc",
+      "text": "Soloviov",
+      "weight": 1
+    },
+    {
+      "id": "family-575c32e16a65",
+      "text": "Borisov",
+      "weight": 1
+    },
+    {
+      "id": "family-0c652fb4d096",
+      "text": "Iakovlev",
+      "weight": 1
+    },
+    {
+      "id": "family-ad3b79f14564",
+      "text": "Grigoriev",
+      "weight": 1
+    },
+    {
+      "id": "family-dae057f6b7b9",
+      "text": "Romanov",
+      "weight": 1
+    },
+    {
+      "id": "family-ff9edf624803",
+      "text": "Vorobiov",
+      "weight": 1
+    },
+    {
+      "id": "family-d011d5195a4c",
+      "text": "Sergeev",
+      "weight": 1
+    },
+    {
+      "id": "family-46053f165769",
+      "text": "Kuzmin",
+      "weight": 1
+    },
+    {
+      "id": "family-a8bdd91f6298",
+      "text": "Frolov",
+      "weight": 1
+    },
+    {
+      "id": "family-2d017f905a10",
+      "text": "Aleksandrov",
+      "weight": 1
+    },
+    {
+      "id": "family-073c03164740",
+      "text": "Dmitriev",
+      "weight": 1
+    },
+    {
+      "id": "family-923dd45d955a",
+      "text": "Koroliov",
+      "weight": 1
+    },
+    {
+      "id": "family-4c2875d3499e",
+      "text": "Gusev",
+      "weight": 1
+    },
+    {
+      "id": "family-4f834a13088f",
+      "text": "Kiselev",
+      "weight": 1
+    },
+    {
+      "id": "family-1767b29d4878",
+      "text": "Ilin",
+      "weight": 1
+    },
+    {
+      "id": "family-c602f510934c",
+      "text": "Maksimov",
+      "weight": 1
+    },
+    {
+      "id": "family-5e27316dc822",
+      "text": "Poliakov",
+      "weight": 1
+    },
+    {
+      "id": "family-a2fccc6adc88",
+      "text": "Sorokin",
+      "weight": 1
+    },
+    {
+      "id": "family-c211a16977d6",
+      "text": "Vinogradov",
+      "weight": 1
+    },
+    {
+      "id": "family-a23396659066",
+      "text": "Kovaliov",
+      "weight": 1
+    },
+    {
+      "id": "family-e3f22e66c672",
+      "text": "Belov",
+      "weight": 1
+    },
+    {
+      "id": "family-4bcc67659c7e",
+      "text": "Medvedev",
+      "weight": 1
+    },
+    {
+      "id": "family-119b2e74d470",
+      "text": "Antonov",
+      "weight": 1
+    },
+    {
+      "id": "family-c65de587dc83",
+      "text": "Tarasov",
+      "weight": 1
+    },
+    {
+      "id": "family-9742de39ccdd",
+      "text": "Zhukov",
+      "weight": 1
+    },
+    {
+      "id": "family-c59739462eea",
+      "text": "Baranov",
+      "weight": 1
+    },
+    {
+      "id": "family-8f859eabe1a3",
+      "text": "Filippov",
+      "weight": 1
+    },
+    {
+      "id": "family-1337b6f65263",
+      "text": "Komarov",
+      "weight": 1
+    },
+    {
+      "id": "family-96d9b34af1f5",
+      "text": "Davydov",
+      "weight": 1
+    },
+    {
+      "id": "family-7c10331b031b",
+      "text": "Beliaev",
+      "weight": 1
+    },
+    {
+      "id": "family-c1c83787ab3c",
+      "text": "Gerasimov",
+      "weight": 1
+    },
+    {
+      "id": "family-f595b634edbb",
+      "text": "Bogdanov",
+      "weight": 1
+    },
+    {
+      "id": "family-f8ef7a4ee376",
+      "text": "Osipov",
+      "weight": 1
+    },
+    {
+      "id": "family-84cbe0866bed",
+      "text": "Sidorov",
+      "weight": 1
+    },
+    {
+      "id": "family-da5638513ab6",
+      "text": "Matveev",
+      "weight": 1
+    },
+    {
+      "id": "family-6f61f3e8e57f",
+      "text": "Titov",
+      "weight": 1
+    },
+    {
+      "id": "family-a58af4eee947",
+      "text": "Markov",
+      "weight": 1
+    },
+    {
+      "id": "family-b00652c770a1",
+      "text": "Mironov",
+      "weight": 1
+    },
+    {
+      "id": "family-2bb03e26f48b",
+      "text": "Krylov",
+      "weight": 1
+    },
+    {
+      "id": "family-03030d390f9c",
+      "text": "Kulikov",
+      "weight": 1
+    },
+    {
+      "id": "family-906d0a5afe62",
+      "text": "Karpov",
+      "weight": 1
+    },
+    {
+      "id": "family-defb235f4c16",
+      "text": "Vlasov",
+      "weight": 1
+    },
+    {
+      "id": "family-f7677ab4d8ce",
+      "text": "Melnikov",
+      "weight": 1
+    },
+    {
+      "id": "family-d4069c540fa2",
+      "text": "Denisov",
+      "weight": 1
+    },
+    {
+      "id": "family-9cb5bfb2fe2d",
+      "text": "Gavrilov",
+      "weight": 1
+    },
+    {
+      "id": "family-ba9a0df8ede3",
+      "text": "Tikhonov",
+      "weight": 1
+    },
+    {
+      "id": "family-1a06aa44dc63",
+      "text": "Kazakov",
+      "weight": 1
+    },
+    {
+      "id": "family-6d4af264772e",
+      "text": "Afanasiev",
+      "weight": 1
+    },
+    {
+      "id": "family-58f96e84f9d0",
+      "text": "Danilov",
+      "weight": 1
+    },
+    {
+      "id": "family-87c5161fb1a6",
+      "text": "Savelyev",
+      "weight": 1
+    },
+    {
+      "id": "family-e705d8e447c7",
+      "text": "Timofeev",
+      "weight": 1
+    },
+    {
+      "id": "family-a5b0271fb52d",
+      "text": "Fomin",
+      "weight": 1
+    },
+    {
+      "id": "family-f33716e73c17",
+      "text": "Chernov",
+      "weight": 1
+    },
+    {
+      "id": "family-f92cd60f6569",
+      "text": "Abramov",
+      "weight": 1
+    },
+    {
+      "id": "family-47652aa7ce26",
+      "text": "Martynov",
+      "weight": 1
+    },
+    {
+      "id": "family-a90ccc67d9fd",
+      "text": "Efimov",
+      "weight": 1
+    },
+    {
+      "id": "family-e6a2ec6629ff",
+      "text": "Fedotov",
+      "weight": 1
+    },
+    {
+      "id": "family-00e75c7623df",
+      "text": "Shcherbakov",
+      "weight": 1
+    },
+    {
+      "id": "family-9417bdd5f036",
+      "text": "Nazarov",
+      "weight": 1
+    },
+    {
+      "id": "family-17d3b4e79cf0",
+      "text": "Kalinin",
+      "weight": 1
+    },
+    {
+      "id": "family-7022f816c68d",
+      "text": "Isaev",
+      "weight": 1
+    },
+    {
+      "id": "family-79a99f96665f",
+      "text": "Chernyshev",
+      "weight": 1
+    },
+    {
+      "id": "family-268f6e4f67e2",
+      "text": "Bykov",
+      "weight": 1
+    },
+    {
+      "id": "family-ab340360c961",
+      "text": "Maslov",
+      "weight": 1
+    },
+    {
+      "id": "family-e5ae284a5e56",
+      "text": "Rodionov",
+      "weight": 1
+    },
+    {
+      "id": "family-81b25b96674d",
+      "text": "Konovalov",
+      "weight": 1
+    },
+    {
+      "id": "family-6941ac076e12",
+      "text": "Lazarev",
+      "weight": 1
+    },
+    {
+      "id": "family-5d6a7cb6e150",
+      "text": "Voronin",
+      "weight": 1
+    },
+    {
+      "id": "family-613e85dc2aca",
+      "text": "Klimov",
+      "weight": 1
+    },
+    {
+      "id": "family-8f691cfcbc07",
+      "text": "Zubov",
+      "weight": 1
+    },
+    {
+      "id": "family-5e12cbb3dcd9",
+      "text": "Samsonov",
+      "weight": 1
+    },
+    {
+      "id": "family-1053f4dab942",
+      "text": "Savin",
+      "weight": 1
+    },
+    {
+      "id": "family-580708d0d4f5",
+      "text": "Gromov",
+      "weight": 1
+    },
+    {
+      "id": "family-bddafd90549f",
+      "text": "Fadeyev",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 10000
+  }
+}

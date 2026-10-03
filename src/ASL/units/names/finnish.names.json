@@ -1,0 +1,1062 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "finnish",
+  "label": "Finnish-language personnel",
+  "language": "fi",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-family",
+    "componentOrder": [
+      "given",
+      "family"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "Finnish-language naming context. Swedish-speaking Finns can select the Swedish pool; these are cultural choices, not different ASL nationalities.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 100
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 100,
+    "secondComponent": 100
+  },
+  "completeness": "target-met",
+  "givenNames": [
+    {
+      "id": "given-632ce46beee4",
+      "text": "Matti",
+      "weight": 3
+    },
+    {
+      "id": "given-325def9bad66",
+      "text": "Juho",
+      "weight": 3
+    },
+    {
+      "id": "given-693617022ffb",
+      "text": "Johannes",
+      "weight": 1
+    },
+    {
+      "id": "given-6571a454ef1f",
+      "text": "Antti",
+      "weight": 3
+    },
+    {
+      "id": "given-3977273c7566",
+      "text": "Heikki",
+      "weight": 3
+    },
+    {
+      "id": "given-8d64ba2621f6",
+      "text": "Eino",
+      "weight": 3
+    },
+    {
+      "id": "given-5ba7b7019572",
+      "text": "Väinö",
+      "weight": 1
+    },
+    {
+      "id": "given-c3e655045d4d",
+      "text": "Toivo",
+      "weight": 1
+    },
+    {
+      "id": "given-d7bad3287beb",
+      "text": "Yrjö",
+      "weight": 1
+    },
+    {
+      "id": "given-be61b5ab5b86",
+      "text": "Kalle",
+      "weight": 1
+    },
+    {
+      "id": "given-1ad87bf5bf96",
+      "text": "Kaarlo",
+      "weight": 1
+    },
+    {
+      "id": "given-f82578ee7624",
+      "text": "Viktor",
+      "weight": 1
+    },
+    {
+      "id": "given-77554240f119",
+      "text": "Vilho",
+      "weight": 1
+    },
+    {
+      "id": "given-3deb5c756245",
+      "text": "Viljo",
+      "weight": 1
+    },
+    {
+      "id": "given-e6b7f073975d",
+      "text": "Arvo",
+      "weight": 1
+    },
+    {
+      "id": "given-2564807b55af",
+      "text": "Aarne",
+      "weight": 1
+    },
+    {
+      "id": "given-5fd8d4f72a55",
+      "text": "Ilmari",
+      "weight": 1
+    },
+    {
+      "id": "given-bee760546f40",
+      "text": "Eemil",
+      "weight": 1
+    },
+    {
+      "id": "given-d82a348c7f79",
+      "text": "Jalmari",
+      "weight": 1
+    },
+    {
+      "id": "given-5fd2e0e3202b",
+      "text": "Onni",
+      "weight": 1
+    },
+    {
+      "id": "given-4c927b24b933",
+      "text": "Tauno",
+      "weight": 1
+    },
+    {
+      "id": "given-2b5a6c290a32",
+      "text": "Paavo",
+      "weight": 1
+    },
+    {
+      "id": "given-576e7cfcc89c",
+      "text": "Veikko",
+      "weight": 1
+    },
+    {
+      "id": "given-d78221d7fa13",
+      "text": "Lauri",
+      "weight": 1
+    },
+    {
+      "id": "given-6b97f90e4947",
+      "text": "Erkki",
+      "weight": 1
+    },
+    {
+      "id": "given-efa7583d2e7d",
+      "text": "Vilhelm",
+      "weight": 1
+    },
+    {
+      "id": "given-d70b489bb97e",
+      "text": "Hugo",
+      "weight": 1
+    },
+    {
+      "id": "given-702370082a6a",
+      "text": "Oskar",
+      "weight": 1
+    },
+    {
+      "id": "given-d7c7abb4946b",
+      "text": "Otto",
+      "weight": 1
+    },
+    {
+      "id": "given-a66d8970e569",
+      "text": "August",
+      "weight": 1
+    },
+    {
+      "id": "given-0ef71ec9cca1",
+      "text": "Adolf",
+      "weight": 1
+    },
+    {
+      "id": "given-c4d33acb6d7a",
+      "text": "Aleksanteri",
+      "weight": 1
+    },
+    {
+      "id": "given-426219163b76",
+      "text": "Aleksi",
+      "weight": 1
+    },
+    {
+      "id": "given-04bab716da0e",
+      "text": "Antero",
+      "weight": 1
+    },
+    {
+      "id": "given-af09dcb5b299",
+      "text": "Armas",
+      "weight": 1
+    },
+    {
+      "id": "given-0f228aab4c4d",
+      "text": "Artturi",
+      "weight": 1
+    },
+    {
+      "id": "given-7037329af3ee",
+      "text": "Aukusti",
+      "weight": 1
+    },
+    {
+      "id": "given-491de24cc8f3",
+      "text": "Edvard",
+      "weight": 1
+    },
+    {
+      "id": "given-865498457818",
+      "text": "Eemeli",
+      "weight": 1
+    },
+    {
+      "id": "given-28ba52f304f9",
+      "text": "Eero",
+      "weight": 1
+    },
+    {
+      "id": "given-828610ace607",
+      "text": "Einari",
+      "weight": 1
+    },
+    {
+      "id": "given-6bb85057cd00",
+      "text": "Eliel",
+      "weight": 1
+    },
+    {
+      "id": "given-47320e17b4d9",
+      "text": "Eljas",
+      "weight": 1
+    },
+    {
+      "id": "given-1b15fdc750c4",
+      "text": "Ensio",
+      "weight": 1
+    },
+    {
+      "id": "given-a875d0d32bb4",
+      "text": "Esa",
+      "weight": 1
+    },
+    {
+      "id": "given-8a4e9b79d92d",
+      "text": "Esko",
+      "weight": 1
+    },
+    {
+      "id": "given-d751df432427",
+      "text": "Frans",
+      "weight": 1
+    },
+    {
+      "id": "given-adc470e83ebd",
+      "text": "Gustaf",
+      "weight": 1
+    },
+    {
+      "id": "given-388e3cc1559e",
+      "text": "Hannes",
+      "weight": 1
+    },
+    {
+      "id": "given-6e52f33da35e",
+      "text": "Hannu",
+      "weight": 1
+    },
+    {
+      "id": "given-e4a7f5fdf35f",
+      "text": "Harri",
+      "weight": 1
+    },
+    {
+      "id": "given-0b4aeb7299d5",
+      "text": "Henrik",
+      "weight": 1
+    },
+    {
+      "id": "given-48bb4b331e60",
+      "text": "Herman",
+      "weight": 1
+    },
+    {
+      "id": "given-aca2e7daa3a1",
+      "text": "Iisakki",
+      "weight": 1
+    },
+    {
+      "id": "given-5de9c748c526",
+      "text": "Iivari",
+      "weight": 1
+    },
+    {
+      "id": "given-20328a79c187",
+      "text": "Ilkka",
+      "weight": 1
+    },
+    {
+      "id": "given-ae8252daa297",
+      "text": "Into",
+      "weight": 1
+    },
+    {
+      "id": "given-48d11fe7f19e",
+      "text": "Jaakko",
+      "weight": 1
+    },
+    {
+      "id": "given-735e40b88ef3",
+      "text": "Jalo",
+      "weight": 1
+    },
+    {
+      "id": "given-62d75fceb603",
+      "text": "Jorma",
+      "weight": 1
+    },
+    {
+      "id": "given-e05cb44c27ac",
+      "text": "Jouko",
+      "weight": 1
+    },
+    {
+      "id": "given-c2cf38114690",
+      "text": "Juhani",
+      "weight": 1
+    },
+    {
+      "id": "given-3de61d2a6665",
+      "text": "Juuso",
+      "weight": 1
+    },
+    {
+      "id": "given-0fa3b39fc477",
+      "text": "Kalervo",
+      "weight": 1
+    },
+    {
+      "id": "given-9a3471eb68ba",
+      "text": "Kauko",
+      "weight": 1
+    },
+    {
+      "id": "given-b7b7ea8cb3cc",
+      "text": "Kustaa",
+      "weight": 1
+    },
+    {
+      "id": "given-cf776e527e10",
+      "text": "Kyösti",
+      "weight": 1
+    },
+    {
+      "id": "given-9be6a7450047",
+      "text": "Lasse",
+      "weight": 1
+    },
+    {
+      "id": "given-a1dc033d04b5",
+      "text": "Leevi",
+      "weight": 1
+    },
+    {
+      "id": "given-def397877d74",
+      "text": "Lennart",
+      "weight": 1
+    },
+    {
+      "id": "given-81afec4bc59e",
+      "text": "Ludvig",
+      "weight": 1
+    },
+    {
+      "id": "given-b3dd7bc89ad9",
+      "text": "Mauno",
+      "weight": 1
+    },
+    {
+      "id": "given-c3083d4b3dc8",
+      "text": "Niilo",
+      "weight": 1
+    },
+    {
+      "id": "given-044937bdc87b",
+      "text": "Olavi",
+      "weight": 1
+    },
+    {
+      "id": "given-26640db311f5",
+      "text": "Olli",
+      "weight": 1
+    },
+    {
+      "id": "given-9ec6f75f9766",
+      "text": "Osmo",
+      "weight": 1
+    },
+    {
+      "id": "given-875f3cf3221a",
+      "text": "Ossi",
+      "weight": 1
+    },
+    {
+      "id": "given-6dfc3fbfd6cf",
+      "text": "Pekka",
+      "weight": 1
+    },
+    {
+      "id": "given-6b28143fc42f",
+      "text": "Pentti",
+      "weight": 1
+    },
+    {
+      "id": "given-f80ea120fb46",
+      "text": "Raimo",
+      "weight": 1
+    },
+    {
+      "id": "given-bc82cbb65afc",
+      "text": "Rauno",
+      "weight": 1
+    },
+    {
+      "id": "given-ea60d694677f",
+      "text": "Reijo",
+      "weight": 1
+    },
+    {
+      "id": "given-6e64479909b1",
+      "text": "Reino",
+      "weight": 1
+    },
+    {
+      "id": "given-5efe14467d95",
+      "text": "Risto",
+      "weight": 1
+    },
+    {
+      "id": "given-d1b6eda54b27",
+      "text": "Rudolf",
+      "weight": 1
+    },
+    {
+      "id": "given-2991e467ea91",
+      "text": "Sakari",
+      "weight": 1
+    },
+    {
+      "id": "given-5eaf524758db",
+      "text": "Samu",
+      "weight": 1
+    },
+    {
+      "id": "given-c30ae9762be2",
+      "text": "Santeri",
+      "weight": 1
+    },
+    {
+      "id": "given-079ea8865247",
+      "text": "Seppo",
+      "weight": 1
+    },
+    {
+      "id": "given-5b1d678a1b49",
+      "text": "Simo",
+      "weight": 1
+    },
+    {
+      "id": "given-4fc34e7ffa62",
+      "text": "Sulo",
+      "weight": 1
+    },
+    {
+      "id": "given-4636c1315e0f",
+      "text": "Taito",
+      "weight": 1
+    },
+    {
+      "id": "given-21c5b8f2d4ef",
+      "text": "Tapani",
+      "weight": 1
+    },
+    {
+      "id": "given-f9f4f1dcc9c9",
+      "text": "Tapio",
+      "weight": 1
+    },
+    {
+      "id": "given-a7f4ab356e72",
+      "text": "Teuvo",
+      "weight": 1
+    },
+    {
+      "id": "given-b5d0fef13e58",
+      "text": "Timo",
+      "weight": 1
+    },
+    {
+      "id": "given-c3a36c2ecfea",
+      "text": "Tuomas",
+      "weight": 1
+    },
+    {
+      "id": "given-046fa34d883a",
+      "text": "Urho",
+      "weight": 1
+    },
+    {
+      "id": "given-f0a98e6c70e3",
+      "text": "Valter",
+      "weight": 1
+    },
+    {
+      "id": "given-af9fdfbdb31a",
+      "text": "Voitto",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-f9606f91a060",
+      "text": "Korhonen",
+      "weight": 3
+    },
+    {
+      "id": "family-c7d5be616373",
+      "text": "Virtanen",
+      "weight": 3
+    },
+    {
+      "id": "family-6c5d055c16ee",
+      "text": "Mäkinen",
+      "weight": 3
+    },
+    {
+      "id": "family-a007fe167c1f",
+      "text": "Nieminen",
+      "weight": 3
+    },
+    {
+      "id": "family-4f2c406c72d3",
+      "text": "Mäkelä",
+      "weight": 3
+    },
+    {
+      "id": "family-73621ac589ca",
+      "text": "Hämäläinen",
+      "weight": 1
+    },
+    {
+      "id": "family-d5fb1b6509b0",
+      "text": "Laine",
+      "weight": 1
+    },
+    {
+      "id": "family-fedbacdc62dc",
+      "text": "Heikkinen",
+      "weight": 1
+    },
+    {
+      "id": "family-69b442aa0cb2",
+      "text": "Koskinen",
+      "weight": 1
+    },
+    {
+      "id": "family-725a336543da",
+      "text": "Järvinen",
+      "weight": 1
+    },
+    {
+      "id": "family-658ccdb50365",
+      "text": "Lehtonen",
+      "weight": 1
+    },
+    {
+      "id": "family-2a5aae32c471",
+      "text": "Lehtinen",
+      "weight": 1
+    },
+    {
+      "id": "family-9ff517dd13c6",
+      "text": "Saarinen",
+      "weight": 1
+    },
+    {
+      "id": "family-2fd20afaa354",
+      "text": "Salminen",
+      "weight": 1
+    },
+    {
+      "id": "family-6711fa10ea2f",
+      "text": "Heinonen",
+      "weight": 1
+    },
+    {
+      "id": "family-6c532c6eba07",
+      "text": "Niemi",
+      "weight": 1
+    },
+    {
+      "id": "family-d62aa7334c05",
+      "text": "Heikkilä",
+      "weight": 1
+    },
+    {
+      "id": "family-05826e1db08c",
+      "text": "Kinnunen",
+      "weight": 1
+    },
+    {
+      "id": "family-d2bafd3bfb46",
+      "text": "Salonen",
+      "weight": 1
+    },
+    {
+      "id": "family-ed38b0116cb8",
+      "text": "Turunen",
+      "weight": 1
+    },
+    {
+      "id": "family-e86a6f287bde",
+      "text": "Salo",
+      "weight": 1
+    },
+    {
+      "id": "family-af332c5bb992",
+      "text": "Laitinen",
+      "weight": 1
+    },
+    {
+      "id": "family-f1305ec5e7a3",
+      "text": "Tuominen",
+      "weight": 1
+    },
+    {
+      "id": "family-6ac37ece0ee8",
+      "text": "Rantanen",
+      "weight": 1
+    },
+    {
+      "id": "family-4401acd218c1",
+      "text": "Karjalainen",
+      "weight": 1
+    },
+    {
+      "id": "family-ca0ea54cab3d",
+      "text": "Jokinen",
+      "weight": 1
+    },
+    {
+      "id": "family-7b72211f5b17",
+      "text": "Mattila",
+      "weight": 1
+    },
+    {
+      "id": "family-031d6bb106cf",
+      "text": "Savolainen",
+      "weight": 1
+    },
+    {
+      "id": "family-ec2d119a1777",
+      "text": "Lahtinen",
+      "weight": 1
+    },
+    {
+      "id": "family-3a4da1fc6564",
+      "text": "Ahonen",
+      "weight": 1
+    },
+    {
+      "id": "family-2669ba21275e",
+      "text": "Ojala",
+      "weight": 1
+    },
+    {
+      "id": "family-1ca78a991069",
+      "text": "Leppänen",
+      "weight": 1
+    },
+    {
+      "id": "family-a0221b61d71b",
+      "text": "Hiltunen",
+      "weight": 1
+    },
+    {
+      "id": "family-d71509d167dc",
+      "text": "Väisänen",
+      "weight": 1
+    },
+    {
+      "id": "family-8a9fdb1fb834",
+      "text": "Leinonen",
+      "weight": 1
+    },
+    {
+      "id": "family-5fb98ea10ac2",
+      "text": "Miettinen",
+      "weight": 1
+    },
+    {
+      "id": "family-318f645cac74",
+      "text": "Kallio",
+      "weight": 1
+    },
+    {
+      "id": "family-24f0483f5609",
+      "text": "Aaltonen",
+      "weight": 1
+    },
+    {
+      "id": "family-c54c8ae3caf4",
+      "text": "Pitkänen",
+      "weight": 1
+    },
+    {
+      "id": "family-1826f6013707",
+      "text": "Manninen",
+      "weight": 1
+    },
+    {
+      "id": "family-615e02e1f24e",
+      "text": "Hakonen",
+      "weight": 1
+    },
+    {
+      "id": "family-ffb22a204158",
+      "text": "Hakala",
+      "weight": 1
+    },
+    {
+      "id": "family-c105cd19662e",
+      "text": "Anttila",
+      "weight": 1
+    },
+    {
+      "id": "family-145aaaf016cc",
+      "text": "Koivisto",
+      "weight": 1
+    },
+    {
+      "id": "family-05316ca40daa",
+      "text": "Laaksonen",
+      "weight": 1
+    },
+    {
+      "id": "family-4788b34ba095",
+      "text": "Aalto",
+      "weight": 1
+    },
+    {
+      "id": "family-0b44a367cbcc",
+      "text": "Isotalo",
+      "weight": 1
+    },
+    {
+      "id": "family-3708a6a3a4bd",
+      "text": "Kangas",
+      "weight": 1
+    },
+    {
+      "id": "family-8d00ff42673b",
+      "text": "Koskela",
+      "weight": 1
+    },
+    {
+      "id": "family-f202572c1265",
+      "text": "Kuusisto",
+      "weight": 1
+    },
+    {
+      "id": "family-c3034b20f013",
+      "text": "Lappalainen",
+      "weight": 1
+    },
+    {
+      "id": "family-b0cb8782a0dd",
+      "text": "Lindholm",
+      "weight": 1
+    },
+    {
+      "id": "family-dc8e76df2220",
+      "text": "Mustonen",
+      "weight": 1
+    },
+    {
+      "id": "family-e502362ed193",
+      "text": "Peltola",
+      "weight": 1
+    },
+    {
+      "id": "family-47ea5efb4c00",
+      "text": "Räsänen",
+      "weight": 1
+    },
+    {
+      "id": "family-fa99520829a0",
+      "text": "Sallinen",
+      "weight": 1
+    },
+    {
+      "id": "family-608b489d5cf0",
+      "text": "Seppälä",
+      "weight": 1
+    },
+    {
+      "id": "family-f6a8ade12d4e",
+      "text": "Seppänen",
+      "weight": 1
+    },
+    {
+      "id": "family-4fa8d56ca3e8",
+      "text": "Siivonen",
+      "weight": 1
+    },
+    {
+      "id": "family-8463cbf31190",
+      "text": "Siltanen",
+      "weight": 1
+    },
+    {
+      "id": "family-630cd42c7d78",
+      "text": "Suominen",
+      "weight": 1
+    },
+    {
+      "id": "family-9b80c30c0f3f",
+      "text": "Tervo",
+      "weight": 1
+    },
+    {
+      "id": "family-9fd80125114d",
+      "text": "Tikkanen",
+      "weight": 1
+    },
+    {
+      "id": "family-86b0c6037cb2",
+      "text": "Tolonen",
+      "weight": 1
+    },
+    {
+      "id": "family-67ac5ba92cd9",
+      "text": "Tuomela",
+      "weight": 1
+    },
+    {
+      "id": "family-525b5a5b017c",
+      "text": "Uusitalo",
+      "weight": 1
+    },
+    {
+      "id": "family-3ccdab470652",
+      "text": "Vainio",
+      "weight": 1
+    },
+    {
+      "id": "family-bdeec2295710",
+      "text": "Valtonen",
+      "weight": 1
+    },
+    {
+      "id": "family-e4a99d62c7f9",
+      "text": "Vartiainen",
+      "weight": 1
+    },
+    {
+      "id": "family-c8a643f52ec9",
+      "text": "Viitanen",
+      "weight": 1
+    },
+    {
+      "id": "family-5fe2fa1873c2",
+      "text": "Vuorinen",
+      "weight": 1
+    },
+    {
+      "id": "family-581ec3055c4d",
+      "text": "Ylitalo",
+      "weight": 1
+    },
+    {
+      "id": "family-4b72c9e7490b",
+      "text": "Ylönen",
+      "weight": 1
+    },
+    {
+      "id": "family-6374e41e4678",
+      "text": "Kärkkäinen",
+      "weight": 1
+    },
+    {
+      "id": "family-f16c0a6dfd6c",
+      "text": "Partanen",
+      "weight": 1
+    },
+    {
+      "id": "family-db21b6f3c207",
+      "text": "Eskola",
+      "weight": 1
+    },
+    {
+      "id": "family-332560bc780a",
+      "text": "Hakkarainen",
+      "weight": 1
+    },
+    {
+      "id": "family-e687125e14e4",
+      "text": "Halonen",
+      "weight": 1
+    },
+    {
+      "id": "family-177ec8167a97",
+      "text": "Hartikainen",
+      "weight": 1
+    },
+    {
+      "id": "family-9a535e84ec3d",
+      "text": "Hietala",
+      "weight": 1
+    },
+    {
+      "id": "family-cc974d1ae263",
+      "text": "Hirvonen",
+      "weight": 1
+    },
+    {
+      "id": "family-23900a627af3",
+      "text": "Honkanen",
+      "weight": 1
+    },
+    {
+      "id": "family-459834df10c2",
+      "text": "Huhtala",
+      "weight": 1
+    },
+    {
+      "id": "family-39aa1c948167",
+      "text": "Huotari",
+      "weight": 1
+    },
+    {
+      "id": "family-57ed4ae37e3c",
+      "text": "Hyvärinen",
+      "weight": 1
+    },
+    {
+      "id": "family-5b15f8c9d444",
+      "text": "Juntunen",
+      "weight": 1
+    },
+    {
+      "id": "family-79c557a15a54",
+      "text": "Kauppinen",
+      "weight": 1
+    },
+    {
+      "id": "family-fefcb559ed58",
+      "text": "Kemppainen",
+      "weight": 1
+    },
+    {
+      "id": "family-fbc12d33d37b",
+      "text": "Ketola",
+      "weight": 1
+    },
+    {
+      "id": "family-c462434a80c0",
+      "text": "Koivula",
+      "weight": 1
+    },
+    {
+      "id": "family-a17276a0a155",
+      "text": "Korpela",
+      "weight": 1
+    },
+    {
+      "id": "family-a8d181380791",
+      "text": "Kortelainen",
+      "weight": 1
+    },
+    {
+      "id": "family-84e6def8865a",
+      "text": "Kuusela",
+      "weight": 1
+    },
+    {
+      "id": "family-5f155229caa1",
+      "text": "Lampinen",
+      "weight": 1
+    },
+    {
+      "id": "family-ba82ba191e0b",
+      "text": "Laukkanen",
+      "weight": 1
+    },
+    {
+      "id": "family-e0ffea382763",
+      "text": "Lehto",
+      "weight": 1
+    },
+    {
+      "id": "family-aa6acb3d51b0",
+      "text": "Luoma",
+      "weight": 1
+    },
+    {
+      "id": "family-334231587475",
+      "text": "Martikainen",
+      "weight": 1
+    },
+    {
+      "id": "family-24364af32f94",
+      "text": "Moilanen",
+      "weight": 1
+    },
+    {
+      "id": "family-24ccf4e8bb30",
+      "text": "Nurmi",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 10000
+  }
+}

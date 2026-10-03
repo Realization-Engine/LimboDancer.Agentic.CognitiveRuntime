@@ -1,0 +1,1062 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "swedish",
+  "label": "Swedish-language personnel",
+  "language": "sv",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-family",
+    "componentOrder": [
+      "given",
+      "family"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "For explicitly selected Swedish-speaking Finns and Swedish volunteers; not an added standalone ASL rules nationality.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 100
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 100,
+    "secondComponent": 100
+  },
+  "completeness": "target-met",
+  "givenNames": [
+    {
+      "id": "given-626170d4e713",
+      "text": "Karl",
+      "weight": 3
+    },
+    {
+      "id": "given-f0365f540d6c",
+      "text": "Johan",
+      "weight": 3
+    },
+    {
+      "id": "given-f166226706d2",
+      "text": "Erik",
+      "weight": 3
+    },
+    {
+      "id": "given-02463754d3be",
+      "text": "Lars",
+      "weight": 3
+    },
+    {
+      "id": "given-5ef4681a55a4",
+      "text": "Anders",
+      "weight": 3
+    },
+    {
+      "id": "given-89ac4dc9eddf",
+      "text": "Per",
+      "weight": 1
+    },
+    {
+      "id": "given-efcd8000006c",
+      "text": "Olof",
+      "weight": 1
+    },
+    {
+      "id": "given-49a4e298a7f3",
+      "text": "Nils",
+      "weight": 1
+    },
+    {
+      "id": "given-127a9ed38acc",
+      "text": "Gustav",
+      "weight": 1
+    },
+    {
+      "id": "given-1e830c2eda90",
+      "text": "Sven",
+      "weight": 1
+    },
+    {
+      "id": "given-67edeb0e8369",
+      "text": "Axel",
+      "weight": 1
+    },
+    {
+      "id": "given-6710f07a77ee",
+      "text": "Arne",
+      "weight": 1
+    },
+    {
+      "id": "given-a358d9508aeb",
+      "text": "Bengt",
+      "weight": 1
+    },
+    {
+      "id": "given-db1fad703a9e",
+      "text": "Birger",
+      "weight": 1
+    },
+    {
+      "id": "given-671fdac00d97",
+      "text": "Bertil",
+      "weight": 1
+    },
+    {
+      "id": "given-e52e1ceda3c7",
+      "text": "Bo",
+      "weight": 1
+    },
+    {
+      "id": "given-ae645398e4b0",
+      "text": "Börje",
+      "weight": 1
+    },
+    {
+      "id": "given-7d05b5d2cd3a",
+      "text": "Einar",
+      "weight": 1
+    },
+    {
+      "id": "given-e2c0c0e0efdf",
+      "text": "Evert",
+      "weight": 1
+    },
+    {
+      "id": "given-5a7cb0a9cd26",
+      "text": "Folke",
+      "weight": 1
+    },
+    {
+      "id": "given-b0bdac90aa7f",
+      "text": "Gunnar",
+      "weight": 1
+    },
+    {
+      "id": "given-0222839b435e",
+      "text": "Gösta",
+      "weight": 1
+    },
+    {
+      "id": "given-6f85b45694c5",
+      "text": "Håkan",
+      "weight": 1
+    },
+    {
+      "id": "given-fdbf4c13e701",
+      "text": "Harald",
+      "weight": 1
+    },
+    {
+      "id": "given-a0fef9d66eaf",
+      "text": "Harry",
+      "weight": 1
+    },
+    {
+      "id": "given-652976b442fb",
+      "text": "Helge",
+      "weight": 1
+    },
+    {
+      "id": "given-a950f30a7250",
+      "text": "Henry",
+      "weight": 1
+    },
+    {
+      "id": "given-07fb5cedcce9",
+      "text": "Hjalmar",
+      "weight": 1
+    },
+    {
+      "id": "given-75d326aac6bb",
+      "text": "Holger",
+      "weight": 1
+    },
+    {
+      "id": "given-dc0fb7106116",
+      "text": "Ingvar",
+      "weight": 1
+    },
+    {
+      "id": "given-0a50f88028ab",
+      "text": "Ivar",
+      "weight": 1
+    },
+    {
+      "id": "given-ab1892087511",
+      "text": "Knut",
+      "weight": 1
+    },
+    {
+      "id": "given-def397877d74",
+      "text": "Lennart",
+      "weight": 1
+    },
+    {
+      "id": "given-8da8e8ef1326",
+      "text": "Magnus",
+      "weight": 1
+    },
+    {
+      "id": "given-702370082a6a",
+      "text": "Oskar",
+      "weight": 1
+    },
+    {
+      "id": "given-6c44dd5b4a02",
+      "text": "Ragnar",
+      "weight": 1
+    },
+    {
+      "id": "given-f55862c603b6",
+      "text": "Rune",
+      "weight": 1
+    },
+    {
+      "id": "given-a35e7f1ab657",
+      "text": "Sigfrid",
+      "weight": 1
+    },
+    {
+      "id": "given-9b82429a5e7e",
+      "text": "Sigurd",
+      "weight": 1
+    },
+    {
+      "id": "given-c895648b2033",
+      "text": "Stig",
+      "weight": 1
+    },
+    {
+      "id": "given-a323965f3714",
+      "text": "Sture",
+      "weight": 1
+    },
+    {
+      "id": "given-66fddfa72d26",
+      "text": "Sune",
+      "weight": 1
+    },
+    {
+      "id": "given-6b58ef3c1c62",
+      "text": "Torsten",
+      "weight": 1
+    },
+    {
+      "id": "given-2f16b0e600c2",
+      "text": "Ulf",
+      "weight": 1
+    },
+    {
+      "id": "given-17bcc6fa36e1",
+      "text": "Uno",
+      "weight": 1
+    },
+    {
+      "id": "given-f0a98e6c70e3",
+      "text": "Valter",
+      "weight": 1
+    },
+    {
+      "id": "given-f82578ee7624",
+      "text": "Viktor",
+      "weight": 1
+    },
+    {
+      "id": "given-efa7583d2e7d",
+      "text": "Vilhelm",
+      "weight": 1
+    },
+    {
+      "id": "given-3698fb3e3a4f",
+      "text": "Åke",
+      "weight": 1
+    },
+    {
+      "id": "given-20397396af93",
+      "text": "Östen",
+      "weight": 1
+    },
+    {
+      "id": "given-60143689908b",
+      "text": "Albin",
+      "weight": 1
+    },
+    {
+      "id": "given-e88cfa8fbf9a",
+      "text": "Alfred",
+      "weight": 1
+    },
+    {
+      "id": "given-2823576859b5",
+      "text": "Allan",
+      "weight": 1
+    },
+    {
+      "id": "given-92672202ad69",
+      "text": "Algot",
+      "weight": 1
+    },
+    {
+      "id": "given-42972c1b3e85",
+      "text": "Anton",
+      "weight": 1
+    },
+    {
+      "id": "given-51670e405487",
+      "text": "Artur",
+      "weight": 1
+    },
+    {
+      "id": "given-a66d8970e569",
+      "text": "August",
+      "weight": 1
+    },
+    {
+      "id": "given-43fee717eab1",
+      "text": "Bernhard",
+      "weight": 1
+    },
+    {
+      "id": "given-80e3a931d16e",
+      "text": "Bror",
+      "weight": 1
+    },
+    {
+      "id": "given-dc953bc5e6b4",
+      "text": "Carl",
+      "weight": 1
+    },
+    {
+      "id": "given-491de24cc8f3",
+      "text": "Edvard",
+      "weight": 1
+    },
+    {
+      "id": "given-24248021aa50",
+      "text": "Elof",
+      "weight": 1
+    },
+    {
+      "id": "given-6d5128cc0b27",
+      "text": "Emil",
+      "weight": 1
+    },
+    {
+      "id": "given-38a72cb0ad9c",
+      "text": "Enok",
+      "weight": 1
+    },
+    {
+      "id": "given-19515b82e309",
+      "text": "Erland",
+      "weight": 1
+    },
+    {
+      "id": "given-b54c99756525",
+      "text": "Ernst",
+      "weight": 1
+    },
+    {
+      "id": "given-f7e1f570f18a",
+      "text": "Eugen",
+      "weight": 1
+    },
+    {
+      "id": "given-efe2dadcf2eb",
+      "text": "Ferdinand",
+      "weight": 1
+    },
+    {
+      "id": "given-d751df432427",
+      "text": "Frans",
+      "weight": 1
+    },
+    {
+      "id": "given-1083b76f28e5",
+      "text": "Fredrik",
+      "weight": 1
+    },
+    {
+      "id": "given-9fbc08d140e9",
+      "text": "Georg",
+      "weight": 1
+    },
+    {
+      "id": "given-b210497d2aa0",
+      "text": "Gotthard",
+      "weight": 1
+    },
+    {
+      "id": "given-0b4aeb7299d5",
+      "text": "Henrik",
+      "weight": 1
+    },
+    {
+      "id": "given-48bb4b331e60",
+      "text": "Herman",
+      "weight": 1
+    },
+    {
+      "id": "given-16043abb4333",
+      "text": "Hilmer",
+      "weight": 1
+    },
+    {
+      "id": "given-d70b489bb97e",
+      "text": "Hugo",
+      "weight": 1
+    },
+    {
+      "id": "given-94164dd68d6c",
+      "text": "Ingemar",
+      "weight": 1
+    },
+    {
+      "id": "given-693617022ffb",
+      "text": "Johannes",
+      "weight": 1
+    },
+    {
+      "id": "given-a8cfcd748320",
+      "text": "John",
+      "weight": 1
+    },
+    {
+      "id": "given-3b5679059b91",
+      "text": "Josef",
+      "weight": 1
+    },
+    {
+      "id": "given-f79982d9968e",
+      "text": "Julius",
+      "weight": 1
+    },
+    {
+      "id": "given-1f440c976ede",
+      "text": "Kjell",
+      "weight": 1
+    },
+    {
+      "id": "given-7b75b9527be4",
+      "text": "Konrad",
+      "weight": 1
+    },
+    {
+      "id": "given-026442b0dce6",
+      "text": "Kurt",
+      "weight": 1
+    },
+    {
+      "id": "given-cea24f75f7b4",
+      "text": "Leif",
+      "weight": 1
+    },
+    {
+      "id": "given-1f43ca92e76a",
+      "text": "Leonard",
+      "weight": 1
+    },
+    {
+      "id": "given-81afec4bc59e",
+      "text": "Ludvig",
+      "weight": 1
+    },
+    {
+      "id": "given-39d3a2e969b3",
+      "text": "Martin",
+      "weight": 1
+    },
+    {
+      "id": "given-ad15718873cf",
+      "text": "Mauritz",
+      "weight": 1
+    },
+    {
+      "id": "given-15273e41ed8c",
+      "text": "Olle",
+      "weight": 1
+    },
+    {
+      "id": "given-d7c7abb4946b",
+      "text": "Otto",
+      "weight": 1
+    },
+    {
+      "id": "given-818b5cc5f21d",
+      "text": "Paul",
+      "weight": 1
+    },
+    {
+      "id": "given-9a0c03f217bd",
+      "text": "Pelle",
+      "weight": 1
+    },
+    {
+      "id": "given-b7813498dbd4",
+      "text": "Rolf",
+      "weight": 1
+    },
+    {
+      "id": "given-d1b6eda54b27",
+      "text": "Rudolf",
+      "weight": 1
+    },
+    {
+      "id": "given-ec48e09d504f",
+      "text": "Sixten",
+      "weight": 1
+    },
+    {
+      "id": "given-52a324eca6b3",
+      "text": "Staffan",
+      "weight": 1
+    },
+    {
+      "id": "given-6770c319ff7b",
+      "text": "Tage",
+      "weight": 1
+    },
+    {
+      "id": "given-967d37485cbe",
+      "text": "Tore",
+      "weight": 1
+    },
+    {
+      "id": "given-fbe0a621a3a8",
+      "text": "Yngve",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-6797e434ac4b",
+      "text": "Andersson",
+      "weight": 3
+    },
+    {
+      "id": "family-8a39e9f27dd9",
+      "text": "Johansson",
+      "weight": 3
+    },
+    {
+      "id": "family-33650f074c6d",
+      "text": "Karlsson",
+      "weight": 3
+    },
+    {
+      "id": "family-55585b0f6a54",
+      "text": "Nilsson",
+      "weight": 3
+    },
+    {
+      "id": "family-8485585fff20",
+      "text": "Eriksson",
+      "weight": 3
+    },
+    {
+      "id": "family-03e4176493e0",
+      "text": "Larsson",
+      "weight": 1
+    },
+    {
+      "id": "family-9b39a44d5684",
+      "text": "Olsson",
+      "weight": 1
+    },
+    {
+      "id": "family-70fe456ca686",
+      "text": "Persson",
+      "weight": 1
+    },
+    {
+      "id": "family-f1699482baa6",
+      "text": "Svensson",
+      "weight": 1
+    },
+    {
+      "id": "family-a5aac4c0b8d5",
+      "text": "Gustafsson",
+      "weight": 1
+    },
+    {
+      "id": "family-ef9d292a48e4",
+      "text": "Pettersson",
+      "weight": 1
+    },
+    {
+      "id": "family-7208990c32f7",
+      "text": "Jonsson",
+      "weight": 1
+    },
+    {
+      "id": "family-0bf249f1cb51",
+      "text": "Jansson",
+      "weight": 1
+    },
+    {
+      "id": "family-4467ffed5a53",
+      "text": "Hansson",
+      "weight": 1
+    },
+    {
+      "id": "family-1bb7157818ed",
+      "text": "Bengtsson",
+      "weight": 1
+    },
+    {
+      "id": "family-84bff002a453",
+      "text": "Jönsson",
+      "weight": 1
+    },
+    {
+      "id": "family-d3a1c99dd3f9",
+      "text": "Lindberg",
+      "weight": 1
+    },
+    {
+      "id": "family-6b5009e62d96",
+      "text": "Jakobsson",
+      "weight": 1
+    },
+    {
+      "id": "family-8bbb22dd58f6",
+      "text": "Magnusson",
+      "weight": 1
+    },
+    {
+      "id": "family-ac030f915408",
+      "text": "Olofsson",
+      "weight": 1
+    },
+    {
+      "id": "family-9a5db215c7ec",
+      "text": "Lindström",
+      "weight": 1
+    },
+    {
+      "id": "family-81cf5b82e957",
+      "text": "Lindqvist",
+      "weight": 1
+    },
+    {
+      "id": "family-de31a8d0775c",
+      "text": "Lindgren",
+      "weight": 1
+    },
+    {
+      "id": "family-863634f9c343",
+      "text": "Berg",
+      "weight": 1
+    },
+    {
+      "id": "family-a908f17cadc4",
+      "text": "Axelsson",
+      "weight": 1
+    },
+    {
+      "id": "family-ffc3b6a5e17b",
+      "text": "Bergström",
+      "weight": 1
+    },
+    {
+      "id": "family-68ad25459bc6",
+      "text": "Lundberg",
+      "weight": 1
+    },
+    {
+      "id": "family-c63dc3237f36",
+      "text": "Lundgren",
+      "weight": 1
+    },
+    {
+      "id": "family-2d221e829c84",
+      "text": "Lundqvist",
+      "weight": 1
+    },
+    {
+      "id": "family-8ae833b75323",
+      "text": "Mattsson",
+      "weight": 1
+    },
+    {
+      "id": "family-0cc5c0778a5a",
+      "text": "Berglund",
+      "weight": 1
+    },
+    {
+      "id": "family-63719ccbb1bd",
+      "text": "Fredriksson",
+      "weight": 1
+    },
+    {
+      "id": "family-4ecf29a11b03",
+      "text": "Sandberg",
+      "weight": 1
+    },
+    {
+      "id": "family-9588562b16fe",
+      "text": "Henriksson",
+      "weight": 1
+    },
+    {
+      "id": "family-3deffb89c84b",
+      "text": "Forsberg",
+      "weight": 1
+    },
+    {
+      "id": "family-38d28f8e7ea4",
+      "text": "Sjöberg",
+      "weight": 1
+    },
+    {
+      "id": "family-8b910efe435e",
+      "text": "Wallin",
+      "weight": 1
+    },
+    {
+      "id": "family-86601ae0d3de",
+      "text": "Engström",
+      "weight": 1
+    },
+    {
+      "id": "family-849f7a95875f",
+      "text": "Eklund",
+      "weight": 1
+    },
+    {
+      "id": "family-3eedf4640b0b",
+      "text": "Danielsson",
+      "weight": 1
+    },
+    {
+      "id": "family-1e585a1569e5",
+      "text": "Håkansson",
+      "weight": 1
+    },
+    {
+      "id": "family-69a5e956c2f0",
+      "text": "Lundin",
+      "weight": 1
+    },
+    {
+      "id": "family-bca757a930e0",
+      "text": "Björk",
+      "weight": 1
+    },
+    {
+      "id": "family-88c735a187a5",
+      "text": "Bergman",
+      "weight": 1
+    },
+    {
+      "id": "family-1d12284ed77b",
+      "text": "Gunnarsson",
+      "weight": 1
+    },
+    {
+      "id": "family-2f4cb57fc8fa",
+      "text": "Holm",
+      "weight": 1
+    },
+    {
+      "id": "family-2d0ad6dd72af",
+      "text": "Samuelsson",
+      "weight": 1
+    },
+    {
+      "id": "family-4fd608f200f8",
+      "text": "Fransson",
+      "weight": 1
+    },
+    {
+      "id": "family-af30b6e7412b",
+      "text": "Bergqvist",
+      "weight": 1
+    },
+    {
+      "id": "family-e80559de81b7",
+      "text": "Nyström",
+      "weight": 1
+    },
+    {
+      "id": "family-a2210718c660",
+      "text": "Holmberg",
+      "weight": 1
+    },
+    {
+      "id": "family-ae531480c86d",
+      "text": "Arvidsson",
+      "weight": 1
+    },
+    {
+      "id": "family-5487c73681cd",
+      "text": "Löfgren",
+      "weight": 1
+    },
+    {
+      "id": "family-2963a630289d",
+      "text": "Söderberg",
+      "weight": 1
+    },
+    {
+      "id": "family-7b03da2e0720",
+      "text": "Nyberg",
+      "weight": 1
+    },
+    {
+      "id": "family-ddf33bbbee04",
+      "text": "Blomqvist",
+      "weight": 1
+    },
+    {
+      "id": "family-62e53b67248c",
+      "text": "Claesson",
+      "weight": 1
+    },
+    {
+      "id": "family-2c4d71cfb155",
+      "text": "Nordström",
+      "weight": 1
+    },
+    {
+      "id": "family-bd1a1aac97a7",
+      "text": "Lundström",
+      "weight": 1
+    },
+    {
+      "id": "family-876c0b76386a",
+      "text": "Eliasson",
+      "weight": 1
+    },
+    {
+      "id": "family-e006fc896527",
+      "text": "Pålsson",
+      "weight": 1
+    },
+    {
+      "id": "family-9ce367bdb98a",
+      "text": "Viklund",
+      "weight": 1
+    },
+    {
+      "id": "family-c9674a2698f1",
+      "text": "Björklund",
+      "weight": 1
+    },
+    {
+      "id": "family-b2397f49ade6",
+      "text": "Berggren",
+      "weight": 1
+    },
+    {
+      "id": "family-bfd34c014080",
+      "text": "Sandström",
+      "weight": 1
+    },
+    {
+      "id": "family-2440e8480f2f",
+      "text": "Nordin",
+      "weight": 1
+    },
+    {
+      "id": "family-a580899b5507",
+      "text": "Lund",
+      "weight": 1
+    },
+    {
+      "id": "family-4cd0db3cb4f7",
+      "text": "Ström",
+      "weight": 1
+    },
+    {
+      "id": "family-85cb649bffe3",
+      "text": "Åberg",
+      "weight": 1
+    },
+    {
+      "id": "family-8e67e7fcd2e7",
+      "text": "Hermansson",
+      "weight": 1
+    },
+    {
+      "id": "family-4b41fc1cea0a",
+      "text": "Ekström",
+      "weight": 1
+    },
+    {
+      "id": "family-673f5ec2dcb0",
+      "text": "Holmgren",
+      "weight": 1
+    },
+    {
+      "id": "family-25a45541bab2",
+      "text": "Sundberg",
+      "weight": 1
+    },
+    {
+      "id": "family-d05ba51ace09",
+      "text": "Hedlund",
+      "weight": 1
+    },
+    {
+      "id": "family-e84313dccafa",
+      "text": "Sjögren",
+      "weight": 1
+    },
+    {
+      "id": "family-d2f0ca0c6a75",
+      "text": "Mårtensson",
+      "weight": 1
+    },
+    {
+      "id": "family-d2eb6c6869bb",
+      "text": "Dahlberg",
+      "weight": 1
+    },
+    {
+      "id": "family-841b95aa3b2d",
+      "text": "Norberg",
+      "weight": 1
+    },
+    {
+      "id": "family-c0e8adaffc53",
+      "text": "Söderström",
+      "weight": 1
+    },
+    {
+      "id": "family-96193f6fc930",
+      "text": "Hedström",
+      "weight": 1
+    },
+    {
+      "id": "family-0c6efaa3c591",
+      "text": "Hedberg",
+      "weight": 1
+    },
+    {
+      "id": "family-f5b985ca0707",
+      "text": "Blom",
+      "weight": 1
+    },
+    {
+      "id": "family-1f471548fed6",
+      "text": "Ek",
+      "weight": 1
+    },
+    {
+      "id": "family-b0cb8782a0dd",
+      "text": "Lindholm",
+      "weight": 1
+    },
+    {
+      "id": "family-2904f6570c3d",
+      "text": "Lind",
+      "weight": 1
+    },
+    {
+      "id": "family-552655cde5e7",
+      "text": "Marklund",
+      "weight": 1
+    },
+    {
+      "id": "family-9119212f0e7f",
+      "text": "Westman",
+      "weight": 1
+    },
+    {
+      "id": "family-4c84caa85338",
+      "text": "Wiklund",
+      "weight": 1
+    },
+    {
+      "id": "family-ac5ff76ab9b3",
+      "text": "Åström",
+      "weight": 1
+    },
+    {
+      "id": "family-720299e6ea09",
+      "text": "Andreasson",
+      "weight": 1
+    },
+    {
+      "id": "family-c5faea3db60e",
+      "text": "Strömberg",
+      "weight": 1
+    },
+    {
+      "id": "family-74389a71ff08",
+      "text": "Holmqvist",
+      "weight": 1
+    },
+    {
+      "id": "family-60740cf177b8",
+      "text": "Sundström",
+      "weight": 1
+    },
+    {
+      "id": "family-0d951a281b94",
+      "text": "Lindblom",
+      "weight": 1
+    },
+    {
+      "id": "family-0a29105c1358",
+      "text": "Åkesson",
+      "weight": 1
+    },
+    {
+      "id": "family-635c244e218d",
+      "text": "Öberg",
+      "weight": 1
+    },
+    {
+      "id": "family-4a471017326b",
+      "text": "Lundell",
+      "weight": 1
+    },
+    {
+      "id": "family-85e56651f102",
+      "text": "Söderlund",
+      "weight": 1
+    },
+    {
+      "id": "family-a4411cf69e35",
+      "text": "Sahlberg",
+      "weight": 1
+    },
+    {
+      "id": "family-7db368b87799",
+      "text": "Westerberg",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 10000
+  }
+}

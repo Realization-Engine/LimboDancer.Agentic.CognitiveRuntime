@@ -1,0 +1,1012 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "north-african-arabic",
+  "label": "North African, Arabic naming context",
+  "language": "ar-Latn",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-family",
+    "componentOrder": [
+      "given",
+      "family"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "Draft Arabic-derived given names and North African surname candidates for explicitly selected colonial formations. Not a generic French name pool and not comprehensive of Amazigh or other naming traditions. Transliteration choices need local and historical review.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 100
+  },
+  "actualCounts": {
+    "givenNames": 90,
+    "familyNames": 100,
+    "secondComponent": 100
+  },
+  "completeness": "smaller-curated-pool",
+  "givenNames": [
+    {
+      "id": "given-2b3ced30db67",
+      "text": "Abbas",
+      "weight": 1
+    },
+    {
+      "id": "given-c4496272db2a",
+      "text": "Abdallah",
+      "weight": 1
+    },
+    {
+      "id": "given-36c65c37b931",
+      "text": "Abdelaziz",
+      "weight": 1
+    },
+    {
+      "id": "given-2013f30550a1",
+      "text": "Abdelkarim",
+      "weight": 1
+    },
+    {
+      "id": "given-df354d5d897f",
+      "text": "Abdellatif",
+      "weight": 1
+    },
+    {
+      "id": "given-066eb2e1363e",
+      "text": "Abdelmajid",
+      "weight": 1
+    },
+    {
+      "id": "given-2bdbb5004c68",
+      "text": "Abdelmalik",
+      "weight": 1
+    },
+    {
+      "id": "given-5c2314201c3d",
+      "text": "Abdelqader",
+      "weight": 1
+    },
+    {
+      "id": "given-37fb6cb70ec5",
+      "text": "Abdelrahim",
+      "weight": 1
+    },
+    {
+      "id": "given-789ae9acc38f",
+      "text": "Abdelrahman",
+      "weight": 1
+    },
+    {
+      "id": "given-99f69efc15d4",
+      "text": "Abdelrazzaq",
+      "weight": 1
+    },
+    {
+      "id": "given-d5e4e3b4442d",
+      "text": "Abdessalam",
+      "weight": 1
+    },
+    {
+      "id": "given-06e2579d8637",
+      "text": "Abdessamad",
+      "weight": 1
+    },
+    {
+      "id": "given-3dac17b717ae",
+      "text": "Abdulwahid",
+      "weight": 1
+    },
+    {
+      "id": "given-cfa22487d713",
+      "text": "Adem",
+      "weight": 1
+    },
+    {
+      "id": "given-41f0dae57fff",
+      "text": "Ahmed",
+      "weight": 1
+    },
+    {
+      "id": "given-862ef3927a7c",
+      "text": "Ali",
+      "weight": 1
+    },
+    {
+      "id": "given-6eb52d8fea7b",
+      "text": "Amin",
+      "weight": 1
+    },
+    {
+      "id": "given-827756b07edf",
+      "text": "Amir",
+      "weight": 1
+    },
+    {
+      "id": "given-bcf2d0d0a8ec",
+      "text": "Anwar",
+      "weight": 1
+    },
+    {
+      "id": "given-a450dc694030",
+      "text": "Aref",
+      "weight": 1
+    },
+    {
+      "id": "given-f38579181f23",
+      "text": "Awad",
+      "weight": 1
+    },
+    {
+      "id": "given-2313789c33c2",
+      "text": "Bashir",
+      "weight": 1
+    },
+    {
+      "id": "given-dd5f1c084288",
+      "text": "Bilal",
+      "weight": 1
+    },
+    {
+      "id": "given-96e170cdaf95",
+      "text": "Dawud",
+      "weight": 1
+    },
+    {
+      "id": "given-924cfa5f9435",
+      "text": "Faraj",
+      "weight": 1
+    },
+    {
+      "id": "given-a4a0536731cf",
+      "text": "Farid",
+      "weight": 1
+    },
+    {
+      "id": "given-52ce1fbfb4d4",
+      "text": "Fathi",
+      "weight": 1
+    },
+    {
+      "id": "given-7fff2f15c142",
+      "text": "Fawzi",
+      "weight": 1
+    },
+    {
+      "id": "given-1df9f98127e7",
+      "text": "Habib",
+      "weight": 1
+    },
+    {
+      "id": "given-ed2ae9943abc",
+      "text": "Hafez",
+      "weight": 1
+    },
+    {
+      "id": "given-bb596544db18",
+      "text": "Haidar",
+      "weight": 1
+    },
+    {
+      "id": "given-98dcffc17413",
+      "text": "Hamed",
+      "weight": 1
+    },
+    {
+      "id": "given-e8dc7c05827f",
+      "text": "Hamid",
+      "weight": 1
+    },
+    {
+      "id": "given-26ac05af275d",
+      "text": "Hamza",
+      "weight": 1
+    },
+    {
+      "id": "given-195b4342e81c",
+      "text": "Harun",
+      "weight": 1
+    },
+    {
+      "id": "given-003925188bc7",
+      "text": "Hasan",
+      "weight": 1
+    },
+    {
+      "id": "given-d86634de73a7",
+      "text": "Hashim",
+      "weight": 1
+    },
+    {
+      "id": "given-3477d3c6481d",
+      "text": "Hassan",
+      "weight": 1
+    },
+    {
+      "id": "given-333cd67a01f9",
+      "text": "Hussein",
+      "weight": 1
+    },
+    {
+      "id": "given-8113a6dee6b3",
+      "text": "Ibrahim",
+      "weight": 1
+    },
+    {
+      "id": "given-311aaae36858",
+      "text": "Idris",
+      "weight": 1
+    },
+    {
+      "id": "given-129fafb19842",
+      "text": "Ismail",
+      "weight": 1
+    },
+    {
+      "id": "given-29e5d09d5ac1",
+      "text": "Jafar",
+      "weight": 1
+    },
+    {
+      "id": "given-dd0fc8e4c494",
+      "text": "Jalal",
+      "weight": 1
+    },
+    {
+      "id": "given-4e1a25b1aab1",
+      "text": "Jamal",
+      "weight": 1
+    },
+    {
+      "id": "given-14f6c3ccee47",
+      "text": "Jamil",
+      "weight": 1
+    },
+    {
+      "id": "given-d091eea64f65",
+      "text": "Kamal",
+      "weight": 1
+    },
+    {
+      "id": "given-f6c9942480df",
+      "text": "Karim",
+      "weight": 1
+    },
+    {
+      "id": "given-600d18310176",
+      "text": "Khaled",
+      "weight": 1
+    },
+    {
+      "id": "given-463ea31ff323",
+      "text": "Khalil",
+      "weight": 1
+    },
+    {
+      "id": "given-775053be0984",
+      "text": "Khidr",
+      "weight": 1
+    },
+    {
+      "id": "given-8613186aeca1",
+      "text": "Lutfi",
+      "weight": 1
+    },
+    {
+      "id": "given-39bb4d76bdc7",
+      "text": "Mahdi",
+      "weight": 1
+    },
+    {
+      "id": "given-d452757111dd",
+      "text": "Mahmud",
+      "weight": 1
+    },
+    {
+      "id": "given-a5ec03d3e184",
+      "text": "Mansur",
+      "weight": 1
+    },
+    {
+      "id": "given-6ce563a5975c",
+      "text": "Marwan",
+      "weight": 1
+    },
+    {
+      "id": "given-7d1b81402700",
+      "text": "Masud",
+      "weight": 1
+    },
+    {
+      "id": "given-71fd1eba032b",
+      "text": "Mohamed",
+      "weight": 1
+    },
+    {
+      "id": "given-1203ea126650",
+      "text": "Mubarak",
+      "weight": 1
+    },
+    {
+      "id": "given-8feeb37f9402",
+      "text": "Musa",
+      "weight": 1
+    },
+    {
+      "id": "given-e20ce6653386",
+      "text": "Mustafa",
+      "weight": 1
+    },
+    {
+      "id": "given-cc9e4baf5686",
+      "text": "Nabil",
+      "weight": 1
+    },
+    {
+      "id": "given-9a415f365215",
+      "text": "Nadir",
+      "weight": 1
+    },
+    {
+      "id": "given-f3389f667dfc",
+      "text": "Naim",
+      "weight": 1
+    },
+    {
+      "id": "given-4a21f2d7c2f7",
+      "text": "Nasir",
+      "weight": 1
+    },
+    {
+      "id": "given-8614ee33d6fd",
+      "text": "Nuri",
+      "weight": 1
+    },
+    {
+      "id": "given-2dd1283eb26c",
+      "text": "Omar",
+      "weight": 1
+    },
+    {
+      "id": "given-d6d9f785b11b",
+      "text": "Osman",
+      "weight": 1
+    },
+    {
+      "id": "given-3601dd5ea0ce",
+      "text": "Qasim",
+      "weight": 1
+    },
+    {
+      "id": "given-9005f31e4d12",
+      "text": "Rashid",
+      "weight": 1
+    },
+    {
+      "id": "given-4c91d3dd4e78",
+      "text": "Rauf",
+      "weight": 1
+    },
+    {
+      "id": "given-ace123820c6a",
+      "text": "Ridwan",
+      "weight": 1
+    },
+    {
+      "id": "given-14ae40b75aba",
+      "text": "Said",
+      "weight": 1
+    },
+    {
+      "id": "given-fdc3109d53c4",
+      "text": "Salih",
+      "weight": 1
+    },
+    {
+      "id": "given-4c18b08eb114",
+      "text": "Salim",
+      "weight": 1
+    },
+    {
+      "id": "given-043d721fb51c",
+      "text": "Salman",
+      "weight": 1
+    },
+    {
+      "id": "given-7c0ee1be290b",
+      "text": "Samir",
+      "weight": 1
+    },
+    {
+      "id": "given-524b30f818bf",
+      "text": "Sharif",
+      "weight": 1
+    },
+    {
+      "id": "given-f591c9192db0",
+      "text": "Suleiman",
+      "weight": 1
+    },
+    {
+      "id": "given-bbd9c4144431",
+      "text": "Taha",
+      "weight": 1
+    },
+    {
+      "id": "given-77c471a98cd5",
+      "text": "Tahir",
+      "weight": 1
+    },
+    {
+      "id": "given-b6201cf73aa9",
+      "text": "Talib",
+      "weight": 1
+    },
+    {
+      "id": "given-7ee18d7f51ad",
+      "text": "Tariq",
+      "weight": 1
+    },
+    {
+      "id": "given-089e792f3d09",
+      "text": "Tawfiq",
+      "weight": 1
+    },
+    {
+      "id": "given-4ac2abd3f31c",
+      "text": "Wad",
+      "weight": 1
+    },
+    {
+      "id": "given-a7bb67c3f191",
+      "text": "Yahya",
+      "weight": 1
+    },
+    {
+      "id": "given-8d823688d5d7",
+      "text": "Yasin",
+      "weight": 1
+    },
+    {
+      "id": "given-dd2ed1d85060",
+      "text": "Yusuf",
+      "weight": 1
+    },
+    {
+      "id": "given-861659c6da17",
+      "text": "Zakaria",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-a3b31199f388",
+      "text": "Benali",
+      "weight": 1
+    },
+    {
+      "id": "family-bb9ff183ac38",
+      "text": "Benaissa",
+      "weight": 1
+    },
+    {
+      "id": "family-91d7b5dd4b23",
+      "text": "Benamar",
+      "weight": 1
+    },
+    {
+      "id": "family-56e46bbebf16",
+      "text": "Benarbia",
+      "weight": 1
+    },
+    {
+      "id": "family-5d7b8343f895",
+      "text": "Benattia",
+      "weight": 1
+    },
+    {
+      "id": "family-24161231d9a0",
+      "text": "Benayad",
+      "weight": 1
+    },
+    {
+      "id": "family-43dc1ed79314",
+      "text": "Benbrahim",
+      "weight": 1
+    },
+    {
+      "id": "family-deae613cc2da",
+      "text": "Bencheikh",
+      "weight": 1
+    },
+    {
+      "id": "family-3d1cffd394fa",
+      "text": "Bendahmane",
+      "weight": 1
+    },
+    {
+      "id": "family-e18c640ade53",
+      "text": "Bendjedid",
+      "weight": 1
+    },
+    {
+      "id": "family-43e6edda50d4",
+      "text": "Bendjelloul",
+      "weight": 1
+    },
+    {
+      "id": "family-5913e4ffd65d",
+      "text": "Bendjellali",
+      "weight": 1
+    },
+    {
+      "id": "family-3aa58c628511",
+      "text": "Benelhadj",
+      "weight": 1
+    },
+    {
+      "id": "family-541cb50c980a",
+      "text": "Benfodil",
+      "weight": 1
+    },
+    {
+      "id": "family-f5e2da2c65a8",
+      "text": "Benguerna",
+      "weight": 1
+    },
+    {
+      "id": "family-51a8311cb271",
+      "text": "Benhaddou",
+      "weight": 1
+    },
+    {
+      "id": "family-b605c689cfbf",
+      "text": "Benhamou",
+      "weight": 1
+    },
+    {
+      "id": "family-e0d0b94daf3b",
+      "text": "Benhamza",
+      "weight": 1
+    },
+    {
+      "id": "family-c428c1c16363",
+      "text": "Benharrat",
+      "weight": 1
+    },
+    {
+      "id": "family-271d03b6c224",
+      "text": "Benhassine",
+      "weight": 1
+    },
+    {
+      "id": "family-731c08538de9",
+      "text": "Benkacem",
+      "weight": 1
+    },
+    {
+      "id": "family-560c337101d4",
+      "text": "Benkaddour",
+      "weight": 1
+    },
+    {
+      "id": "family-8e724f097c4e",
+      "text": "Benkheira",
+      "weight": 1
+    },
+    {
+      "id": "family-96261b06abad",
+      "text": "Benkhelifa",
+      "weight": 1
+    },
+    {
+      "id": "family-6f5a85f59739",
+      "text": "Benkirane",
+      "weight": 1
+    },
+    {
+      "id": "family-85eb7cb1baa3",
+      "text": "Benmaamar",
+      "weight": 1
+    },
+    {
+      "id": "family-0d54dd26c25f",
+      "text": "Benmansour",
+      "weight": 1
+    },
+    {
+      "id": "family-a01f2c903a4c",
+      "text": "Bennaceur",
+      "weight": 1
+    },
+    {
+      "id": "family-d2a4e6f37fd1",
+      "text": "Bennani",
+      "weight": 1
+    },
+    {
+      "id": "family-43f08facaa8e",
+      "text": "Benomar",
+      "weight": 1
+    },
+    {
+      "id": "family-520891ced0e5",
+      "text": "Benosman",
+      "weight": 1
+    },
+    {
+      "id": "family-929198960572",
+      "text": "Benouali",
+      "weight": 1
+    },
+    {
+      "id": "family-f869eeabfbdb",
+      "text": "Bensalem",
+      "weight": 1
+    },
+    {
+      "id": "family-437f05725b1e",
+      "text": "Benseddik",
+      "weight": 1
+    },
+    {
+      "id": "family-cf444c2c8c6a",
+      "text": "Benslimane",
+      "weight": 1
+    },
+    {
+      "id": "family-b644698af49b",
+      "text": "Bentahar",
+      "weight": 1
+    },
+    {
+      "id": "family-5129ca2936c0",
+      "text": "Benyahia",
+      "weight": 1
+    },
+    {
+      "id": "family-385cf8f30ae8",
+      "text": "Benyoucef",
+      "weight": 1
+    },
+    {
+      "id": "family-af0919946130",
+      "text": "Benziane",
+      "weight": 1
+    },
+    {
+      "id": "family-1709b3237b43",
+      "text": "Benzina",
+      "weight": 1
+    },
+    {
+      "id": "family-f2468e13622c",
+      "text": "Berrada",
+      "weight": 1
+    },
+    {
+      "id": "family-7049d7378d6c",
+      "text": "Berrichi",
+      "weight": 1
+    },
+    {
+      "id": "family-133f66eb7d27",
+      "text": "Berramdane",
+      "weight": 1
+    },
+    {
+      "id": "family-7cc73d64e849",
+      "text": "Bouabdallah",
+      "weight": 1
+    },
+    {
+      "id": "family-8b6658a77cf7",
+      "text": "Boualem",
+      "weight": 1
+    },
+    {
+      "id": "family-e34dbd4b5f92",
+      "text": "Bouamama",
+      "weight": 1
+    },
+    {
+      "id": "family-e1b73a0a5e20",
+      "text": "Bouaziz",
+      "weight": 1
+    },
+    {
+      "id": "family-5737b6f55a43",
+      "text": "Bouchareb",
+      "weight": 1
+    },
+    {
+      "id": "family-00ee606ec04a",
+      "text": "Boudiaf",
+      "weight": 1
+    },
+    {
+      "id": "family-619425261240",
+      "text": "Boudjemaa",
+      "weight": 1
+    },
+    {
+      "id": "family-8e15c05ec3f2",
+      "text": "Boudjema",
+      "weight": 1
+    },
+    {
+      "id": "family-8317581dbecd",
+      "text": "Bouhaddou",
+      "weight": 1
+    },
+    {
+      "id": "family-7b1c5ac64839",
+      "text": "Bouhired",
+      "weight": 1
+    },
+    {
+      "id": "family-d296833b89a0",
+      "text": "Boukacem",
+      "weight": 1
+    },
+    {
+      "id": "family-208b66f222f5",
+      "text": "Boukhelifa",
+      "weight": 1
+    },
+    {
+      "id": "family-d69970a629d1",
+      "text": "Boumediene",
+      "weight": 1
+    },
+    {
+      "id": "family-33a6c88b193f",
+      "text": "Bouras",
+      "weight": 1
+    },
+    {
+      "id": "family-8316d5a67363",
+      "text": "Bouzid",
+      "weight": 1
+    },
+    {
+      "id": "family-b18e905b5e4a",
+      "text": "Chaabane",
+      "weight": 1
+    },
+    {
+      "id": "family-5e23aec0b935",
+      "text": "Cherif",
+      "weight": 1
+    },
+    {
+      "id": "family-fc46bfb09a66",
+      "text": "Dahmani",
+      "weight": 1
+    },
+    {
+      "id": "family-9a319a0b2265",
+      "text": "Djebbar",
+      "weight": 1
+    },
+    {
+      "id": "family-8b9a508d0f41",
+      "text": "Djemai",
+      "weight": 1
+    },
+    {
+      "id": "family-8b4a2abda802",
+      "text": "Driss",
+      "weight": 1
+    },
+    {
+      "id": "family-fcf9f8c44715",
+      "text": "El Amrani",
+      "weight": 1
+    },
+    {
+      "id": "family-3c55f3437044",
+      "text": "El Fassi",
+      "weight": 1
+    },
+    {
+      "id": "family-1f66c7787a8c",
+      "text": "El Idrissi",
+      "weight": 1
+    },
+    {
+      "id": "family-27126ef4fb12",
+      "text": "El Mansouri",
+      "weight": 1
+    },
+    {
+      "id": "family-1f8e69a11732",
+      "text": "El Mehdi",
+      "weight": 1
+    },
+    {
+      "id": "family-e84b16a39332",
+      "text": "El Messaoudi",
+      "weight": 1
+    },
+    {
+      "id": "family-687d3675b666",
+      "text": "El Ouardi",
+      "weight": 1
+    },
+    {
+      "id": "family-ed220d62b172",
+      "text": "El Yacoubi",
+      "weight": 1
+    },
+    {
+      "id": "family-9ea4548382fd",
+      "text": "Fares",
+      "weight": 1
+    },
+    {
+      "id": "family-89b09c9738d1",
+      "text": "Fekir",
+      "weight": 1
+    },
+    {
+      "id": "family-9442e95ed6ca",
+      "text": "Gacem",
+      "weight": 1
+    },
+    {
+      "id": "family-539aa228f612",
+      "text": "Guenoun",
+      "weight": 1
+    },
+    {
+      "id": "family-64e616703437",
+      "text": "Haddad",
+      "weight": 1
+    },
+    {
+      "id": "family-21134f10e72e",
+      "text": "Hadji",
+      "weight": 1
+    },
+    {
+      "id": "family-f7b02a30a28b",
+      "text": "Hamdi",
+      "weight": 1
+    },
+    {
+      "id": "family-a5d24c1aab26",
+      "text": "Hamdani",
+      "weight": 1
+    },
+    {
+      "id": "family-55caaf05a10f",
+      "text": "Hamidi",
+      "weight": 1
+    },
+    {
+      "id": "family-b1cd0a429524",
+      "text": "Hamzaoui",
+      "weight": 1
+    },
+    {
+      "id": "family-ff3f5867745c",
+      "text": "Kabbaj",
+      "weight": 1
+    },
+    {
+      "id": "family-566e8ff23037",
+      "text": "Kaci",
+      "weight": 1
+    },
+    {
+      "id": "family-b8054350474a",
+      "text": "Kaddour",
+      "weight": 1
+    },
+    {
+      "id": "family-b9aa65a1b84d",
+      "text": "Khelifi",
+      "weight": 1
+    },
+    {
+      "id": "family-de23edf3180a",
+      "text": "Khodja",
+      "weight": 1
+    },
+    {
+      "id": "family-3e49f8b5ee4e",
+      "text": "Laarbi",
+      "weight": 1
+    },
+    {
+      "id": "family-d1261e513fd8",
+      "text": "Larbi",
+      "weight": 1
+    },
+    {
+      "id": "family-105b966b0ffa",
+      "text": "Lounis",
+      "weight": 1
+    },
+    {
+      "id": "family-3c031a0db6a5",
+      "text": "Mansouri",
+      "weight": 1
+    },
+    {
+      "id": "family-b9f9957fff84",
+      "text": "Mebarki",
+      "weight": 1
+    },
+    {
+      "id": "family-8d7a3e7f1486",
+      "text": "Meddeb",
+      "weight": 1
+    },
+    {
+      "id": "family-482d9e1b2354",
+      "text": "Messaoudi",
+      "weight": 1
+    },
+    {
+      "id": "family-759a97e17ef3",
+      "text": "Nacer",
+      "weight": 1
+    },
+    {
+      "id": "family-717b7bd5fa95",
+      "text": "Rahal",
+      "weight": 1
+    },
+    {
+      "id": "family-385fd5e945bd",
+      "text": "Saadi",
+      "weight": 1
+    },
+    {
+      "id": "family-ba3f4c4ff644",
+      "text": "Sahli",
+      "weight": 1
+    },
+    {
+      "id": "family-6b969f14be60",
+      "text": "Taleb",
+      "weight": 1
+    },
+    {
+      "id": "family-00eb646db36d",
+      "text": "Zeroual",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 9000
+  }
+}

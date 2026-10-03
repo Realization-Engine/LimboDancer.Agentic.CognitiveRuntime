@@ -1,0 +1,1062 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "italian",
+  "label": "Italian",
+  "language": "it",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-family",
+    "componentOrder": [
+      "given",
+      "family"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "A conventional male naming pool for fictional personnel. It is not a census or exhaustive account of this population.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 100
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 100,
+    "secondComponent": 100
+  },
+  "completeness": "target-met",
+  "givenNames": [
+    {
+      "id": "given-0af3ee1bbb45",
+      "text": "Giuseppe",
+      "weight": 3
+    },
+    {
+      "id": "given-244696cb15dd",
+      "text": "Giovanni",
+      "weight": 3
+    },
+    {
+      "id": "given-1f0ca711df81",
+      "text": "Antonio",
+      "weight": 3
+    },
+    {
+      "id": "given-f00ecd222507",
+      "text": "Francesco",
+      "weight": 3
+    },
+    {
+      "id": "given-3ea09ea5151d",
+      "text": "Luigi",
+      "weight": 3
+    },
+    {
+      "id": "given-61c8e16ad90d",
+      "text": "Mario",
+      "weight": 1
+    },
+    {
+      "id": "given-8df0f8135403",
+      "text": "Angelo",
+      "weight": 1
+    },
+    {
+      "id": "given-5c2fade36fcd",
+      "text": "Vincenzo",
+      "weight": 1
+    },
+    {
+      "id": "given-c8725a193adb",
+      "text": "Pietro",
+      "weight": 1
+    },
+    {
+      "id": "given-fe5f2eadd296",
+      "text": "Carlo",
+      "weight": 1
+    },
+    {
+      "id": "given-415eb3920eb4",
+      "text": "Salvatore",
+      "weight": 1
+    },
+    {
+      "id": "given-2a43da7cc034",
+      "text": "Domenico",
+      "weight": 1
+    },
+    {
+      "id": "given-f7f929a40e2c",
+      "text": "Paolo",
+      "weight": 1
+    },
+    {
+      "id": "given-faa0ca8cd086",
+      "text": "Michele",
+      "weight": 1
+    },
+    {
+      "id": "given-320f263036bc",
+      "text": "Pasquale",
+      "weight": 1
+    },
+    {
+      "id": "given-481f2e11e545",
+      "text": "Nicola",
+      "weight": 1
+    },
+    {
+      "id": "given-d2356fff332b",
+      "text": "Alessandro",
+      "weight": 1
+    },
+    {
+      "id": "given-754abc188a67",
+      "text": "Alfredo",
+      "weight": 1
+    },
+    {
+      "id": "given-827f6e29bf4d",
+      "text": "Alberto",
+      "weight": 1
+    },
+    {
+      "id": "given-0e858ac8241c",
+      "text": "Aldo",
+      "weight": 1
+    },
+    {
+      "id": "given-acf1f8d69c26",
+      "text": "Amedeo",
+      "weight": 1
+    },
+    {
+      "id": "given-253387e8620e",
+      "text": "Andrea",
+      "weight": 1
+    },
+    {
+      "id": "given-235313b7925b",
+      "text": "Armando",
+      "weight": 1
+    },
+    {
+      "id": "given-41d9fef43d69",
+      "text": "Arturo",
+      "weight": 1
+    },
+    {
+      "id": "given-66e5d548c602",
+      "text": "Attilio",
+      "weight": 1
+    },
+    {
+      "id": "given-db6a7be3bbab",
+      "text": "Augusto",
+      "weight": 1
+    },
+    {
+      "id": "given-2f2781e5ab48",
+      "text": "Bruno",
+      "weight": 1
+    },
+    {
+      "id": "given-4c7585aa5da1",
+      "text": "Camillo",
+      "weight": 1
+    },
+    {
+      "id": "given-9d059cdb7233",
+      "text": "Cesare",
+      "weight": 1
+    },
+    {
+      "id": "given-a0a23131baba",
+      "text": "Claudio",
+      "weight": 1
+    },
+    {
+      "id": "given-2a42551dd075",
+      "text": "Corrado",
+      "weight": 1
+    },
+    {
+      "id": "given-1a274c1a952b",
+      "text": "Dario",
+      "weight": 1
+    },
+    {
+      "id": "given-f536fb10ec50",
+      "text": "Diego",
+      "weight": 1
+    },
+    {
+      "id": "given-6fb86a981cf3",
+      "text": "Dino",
+      "weight": 1
+    },
+    {
+      "id": "given-1ea3b016c9ff",
+      "text": "Edoardo",
+      "weight": 1
+    },
+    {
+      "id": "given-6b627ebc49ac",
+      "text": "Elio",
+      "weight": 1
+    },
+    {
+      "id": "given-4b07d8de31a3",
+      "text": "Emilio",
+      "weight": 1
+    },
+    {
+      "id": "given-7a4a21866a2a",
+      "text": "Enrico",
+      "weight": 1
+    },
+    {
+      "id": "given-59e7d31e6d57",
+      "text": "Enzo",
+      "weight": 1
+    },
+    {
+      "id": "given-b2d45c1ee39a",
+      "text": "Ernesto",
+      "weight": 1
+    },
+    {
+      "id": "given-a26367d6b869",
+      "text": "Ettore",
+      "weight": 1
+    },
+    {
+      "id": "given-92ebaa7ab6de",
+      "text": "Eugenio",
+      "weight": 1
+    },
+    {
+      "id": "given-de105c59d434",
+      "text": "Ezio",
+      "weight": 1
+    },
+    {
+      "id": "given-bef599fdc773",
+      "text": "Fabio",
+      "weight": 1
+    },
+    {
+      "id": "given-394b7a544b4f",
+      "text": "Fausto",
+      "weight": 1
+    },
+    {
+      "id": "given-60ffd0fb64c5",
+      "text": "Federico",
+      "weight": 1
+    },
+    {
+      "id": "given-2e279f06e354",
+      "text": "Felice",
+      "weight": 1
+    },
+    {
+      "id": "given-1fc3b34a127a",
+      "text": "Ferdinando",
+      "weight": 1
+    },
+    {
+      "id": "given-a176d3453bed",
+      "text": "Ferruccio",
+      "weight": 1
+    },
+    {
+      "id": "given-89556d616238",
+      "text": "Filippo",
+      "weight": 1
+    },
+    {
+      "id": "given-496ac6917566",
+      "text": "Flavio",
+      "weight": 1
+    },
+    {
+      "id": "given-adc4d83d5880",
+      "text": "Franco",
+      "weight": 1
+    },
+    {
+      "id": "given-947d668dd769",
+      "text": "Gabriele",
+      "weight": 1
+    },
+    {
+      "id": "given-13457ef444cb",
+      "text": "Gaetano",
+      "weight": 1
+    },
+    {
+      "id": "given-5b77b0b0984e",
+      "text": "Gennaro",
+      "weight": 1
+    },
+    {
+      "id": "given-cedf0f04d7b3",
+      "text": "Giacomo",
+      "weight": 1
+    },
+    {
+      "id": "given-c79a2e0ae5a9",
+      "text": "Gino",
+      "weight": 1
+    },
+    {
+      "id": "given-19619bd76cb5",
+      "text": "Giorgio",
+      "weight": 1
+    },
+    {
+      "id": "given-1c7200c7554a",
+      "text": "Giulio",
+      "weight": 1
+    },
+    {
+      "id": "given-aade0f94467d",
+      "text": "Guido",
+      "weight": 1
+    },
+    {
+      "id": "given-e9234f3da98a",
+      "text": "Guglielmo",
+      "weight": 1
+    },
+    {
+      "id": "given-da1934c5866d",
+      "text": "Igino",
+      "weight": 1
+    },
+    {
+      "id": "given-bd237ef3cc81",
+      "text": "Ignazio",
+      "weight": 1
+    },
+    {
+      "id": "given-cf238ab5c8eb",
+      "text": "Ilario",
+      "weight": 1
+    },
+    {
+      "id": "given-56fa8e92acf0",
+      "text": "Italo",
+      "weight": 1
+    },
+    {
+      "id": "given-8c0757029e6b",
+      "text": "Lamberto",
+      "weight": 1
+    },
+    {
+      "id": "given-6b4ed1f45f3f",
+      "text": "Leandro",
+      "weight": 1
+    },
+    {
+      "id": "given-c04bc8058a89",
+      "text": "Leonardo",
+      "weight": 1
+    },
+    {
+      "id": "given-fb02c8c17122",
+      "text": "Leone",
+      "weight": 1
+    },
+    {
+      "id": "given-7ce7988bf0c7",
+      "text": "Leopoldo",
+      "weight": 1
+    },
+    {
+      "id": "given-6c99df203aa4",
+      "text": "Livio",
+      "weight": 1
+    },
+    {
+      "id": "given-114b25448d0a",
+      "text": "Lorenzo",
+      "weight": 1
+    },
+    {
+      "id": "given-833e3ccb1fea",
+      "text": "Luciano",
+      "weight": 1
+    },
+    {
+      "id": "given-1ed1b2860ac2",
+      "text": "Lucio",
+      "weight": 1
+    },
+    {
+      "id": "given-37f1e17d14a4",
+      "text": "Manlio",
+      "weight": 1
+    },
+    {
+      "id": "given-0cbb77c839fe",
+      "text": "Marcello",
+      "weight": 1
+    },
+    {
+      "id": "given-669017e14615",
+      "text": "Marco",
+      "weight": 1
+    },
+    {
+      "id": "given-3fb6181ca88d",
+      "text": "Mariano",
+      "weight": 1
+    },
+    {
+      "id": "given-edb1270b1e40",
+      "text": "Massimo",
+      "weight": 1
+    },
+    {
+      "id": "given-ca287dab6ff2",
+      "text": "Matteo",
+      "weight": 1
+    },
+    {
+      "id": "given-f6cd475f6cf7",
+      "text": "Nello",
+      "weight": 1
+    },
+    {
+      "id": "given-3ff88c58daac",
+      "text": "Nino",
+      "weight": 1
+    },
+    {
+      "id": "given-af6723d1fbb8",
+      "text": "Oreste",
+      "weight": 1
+    },
+    {
+      "id": "given-0e36a50d629e",
+      "text": "Orlando",
+      "weight": 1
+    },
+    {
+      "id": "given-199ee63e3782",
+      "text": "Ottavio",
+      "weight": 1
+    },
+    {
+      "id": "given-9d65d6527e89",
+      "text": "Ottorino",
+      "weight": 1
+    },
+    {
+      "id": "given-90121ea05488",
+      "text": "Pio",
+      "weight": 1
+    },
+    {
+      "id": "given-9b832f898c33",
+      "text": "Raffaele",
+      "weight": 1
+    },
+    {
+      "id": "given-22e184d9b9e7",
+      "text": "Raimondo",
+      "weight": 1
+    },
+    {
+      "id": "given-a124f2a2c766",
+      "text": "Renato",
+      "weight": 1
+    },
+    {
+      "id": "given-f8ac3ee6886f",
+      "text": "Riccardo",
+      "weight": 1
+    },
+    {
+      "id": "given-a93f105aa10f",
+      "text": "Roberto",
+      "weight": 1
+    },
+    {
+      "id": "given-b851fcbd2a56",
+      "text": "Rodolfo",
+      "weight": 1
+    },
+    {
+      "id": "given-7a431f35efa3",
+      "text": "Romano",
+      "weight": 1
+    },
+    {
+      "id": "given-8b66ab55ee2e",
+      "text": "Romeo",
+      "weight": 1
+    },
+    {
+      "id": "given-9bcbdfa04fb5",
+      "text": "Sergio",
+      "weight": 1
+    },
+    {
+      "id": "given-58184f9ff146",
+      "text": "Silvio",
+      "weight": 1
+    },
+    {
+      "id": "given-65dee7708ba4",
+      "text": "Stefano",
+      "weight": 1
+    },
+    {
+      "id": "given-c739534ed121",
+      "text": "Umberto",
+      "weight": 1
+    },
+    {
+      "id": "given-138b84e874d8",
+      "text": "Vittorio",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-948341d56b6e",
+      "text": "Rossi",
+      "weight": 3
+    },
+    {
+      "id": "family-b75b15cfd678",
+      "text": "Russo",
+      "weight": 3
+    },
+    {
+      "id": "family-ff5aa449aa6e",
+      "text": "Ferrari",
+      "weight": 3
+    },
+    {
+      "id": "family-af5debb0ab4b",
+      "text": "Esposito",
+      "weight": 1
+    },
+    {
+      "id": "family-a35027cd1f68",
+      "text": "Bianchi",
+      "weight": 3
+    },
+    {
+      "id": "family-7a431f35efa3",
+      "text": "Romano",
+      "weight": 3
+    },
+    {
+      "id": "family-467f29d64870",
+      "text": "Colombo",
+      "weight": 1
+    },
+    {
+      "id": "family-425955eee627",
+      "text": "Ricci",
+      "weight": 1
+    },
+    {
+      "id": "family-11892535c762",
+      "text": "Marino",
+      "weight": 1
+    },
+    {
+      "id": "family-b1b071dc02ff",
+      "text": "Greco",
+      "weight": 1
+    },
+    {
+      "id": "family-2f2781e5ab48",
+      "text": "Bruno",
+      "weight": 1
+    },
+    {
+      "id": "family-29a437b8799d",
+      "text": "Gallo",
+      "weight": 1
+    },
+    {
+      "id": "family-6671ee1dada0",
+      "text": "Conti",
+      "weight": 1
+    },
+    {
+      "id": "family-309458328782",
+      "text": "De Luca",
+      "weight": 1
+    },
+    {
+      "id": "family-c7d3d072a302",
+      "text": "Mancini",
+      "weight": 1
+    },
+    {
+      "id": "family-2ef781d8c2af",
+      "text": "Costa",
+      "weight": 1
+    },
+    {
+      "id": "family-1fcddbaecd07",
+      "text": "Giordano",
+      "weight": 1
+    },
+    {
+      "id": "family-8ccce9ca5178",
+      "text": "Rizzo",
+      "weight": 1
+    },
+    {
+      "id": "family-9f13e2b013a7",
+      "text": "Lombardi",
+      "weight": 1
+    },
+    {
+      "id": "family-23ee42c54f9e",
+      "text": "Moretti",
+      "weight": 1
+    },
+    {
+      "id": "family-bf31112f8039",
+      "text": "Barbieri",
+      "weight": 1
+    },
+    {
+      "id": "family-00043885f033",
+      "text": "Fontana",
+      "weight": 1
+    },
+    {
+      "id": "family-d382e212cd13",
+      "text": "Santoro",
+      "weight": 1
+    },
+    {
+      "id": "family-4491af3f048b",
+      "text": "Mariani",
+      "weight": 1
+    },
+    {
+      "id": "family-2afaee468312",
+      "text": "Rinaldi",
+      "weight": 1
+    },
+    {
+      "id": "family-70cb555b65fe",
+      "text": "Caruso",
+      "weight": 1
+    },
+    {
+      "id": "family-3b4e60cf5e0c",
+      "text": "Ferrara",
+      "weight": 1
+    },
+    {
+      "id": "family-e253020bc876",
+      "text": "Galli",
+      "weight": 1
+    },
+    {
+      "id": "family-e55c07a5484f",
+      "text": "Martini",
+      "weight": 1
+    },
+    {
+      "id": "family-fb02c8c17122",
+      "text": "Leone",
+      "weight": 1
+    },
+    {
+      "id": "family-0bac810977df",
+      "text": "Longo",
+      "weight": 1
+    },
+    {
+      "id": "family-7b866c700354",
+      "text": "Gentile",
+      "weight": 1
+    },
+    {
+      "id": "family-c22b5614fffb",
+      "text": "Martinelli",
+      "weight": 1
+    },
+    {
+      "id": "family-a54c7d01e5d7",
+      "text": "Vitale",
+      "weight": 1
+    },
+    {
+      "id": "family-7806dec1192a",
+      "text": "Lombardo",
+      "weight": 1
+    },
+    {
+      "id": "family-4079526d316c",
+      "text": "Serra",
+      "weight": 1
+    },
+    {
+      "id": "family-8924324ca9f1",
+      "text": "Coppola",
+      "weight": 1
+    },
+    {
+      "id": "family-adfab8ca4930",
+      "text": "De Santis",
+      "weight": 1
+    },
+    {
+      "id": "family-dde21246a3ef",
+      "text": "D'Angelo",
+      "weight": 1
+    },
+    {
+      "id": "family-7d395ac042a3",
+      "text": "Marchetti",
+      "weight": 1
+    },
+    {
+      "id": "family-9268733ebe5f",
+      "text": "Parisi",
+      "weight": 1
+    },
+    {
+      "id": "family-afad4c579e50",
+      "text": "Villa",
+      "weight": 1
+    },
+    {
+      "id": "family-a251c68c7ca8",
+      "text": "Conte",
+      "weight": 1
+    },
+    {
+      "id": "family-6d5be64f12d6",
+      "text": "Ferraro",
+      "weight": 1
+    },
+    {
+      "id": "family-31e2e30bdb0b",
+      "text": "Ferri",
+      "weight": 1
+    },
+    {
+      "id": "family-de3024aff0d7",
+      "text": "Fabbri",
+      "weight": 1
+    },
+    {
+      "id": "family-ff4e6aec3585",
+      "text": "Bianco",
+      "weight": 1
+    },
+    {
+      "id": "family-e2887140f669",
+      "text": "Marini",
+      "weight": 1
+    },
+    {
+      "id": "family-62f2b9631f18",
+      "text": "Grassi",
+      "weight": 1
+    },
+    {
+      "id": "family-85d423562fe4",
+      "text": "Valentini",
+      "weight": 1
+    },
+    {
+      "id": "family-9d1dfdbed957",
+      "text": "Messina",
+      "weight": 1
+    },
+    {
+      "id": "family-46a6407e52eb",
+      "text": "Sala",
+      "weight": 1
+    },
+    {
+      "id": "family-0201b8a1b2cd",
+      "text": "De Angelis",
+      "weight": 1
+    },
+    {
+      "id": "family-b106f482e9e9",
+      "text": "Gatti",
+      "weight": 1
+    },
+    {
+      "id": "family-6941ab3b36d0",
+      "text": "Pellegrini",
+      "weight": 1
+    },
+    {
+      "id": "family-5ee2fd5003d9",
+      "text": "Palumbo",
+      "weight": 1
+    },
+    {
+      "id": "family-fe7aae7d7eac",
+      "text": "Sanna",
+      "weight": 1
+    },
+    {
+      "id": "family-f20cd25c69ee",
+      "text": "Farina",
+      "weight": 1
+    },
+    {
+      "id": "family-0dc699680f41",
+      "text": "Rizzi",
+      "weight": 1
+    },
+    {
+      "id": "family-9cde9f3bdea7",
+      "text": "Monti",
+      "weight": 1
+    },
+    {
+      "id": "family-e999602f8c5c",
+      "text": "Cattaneo",
+      "weight": 1
+    },
+    {
+      "id": "family-618c50be7afc",
+      "text": "Morelli",
+      "weight": 1
+    },
+    {
+      "id": "family-72ef54af6c13",
+      "text": "Amato",
+      "weight": 1
+    },
+    {
+      "id": "family-4374c7200d5b",
+      "text": "Silvestri",
+      "weight": 1
+    },
+    {
+      "id": "family-0f82d39ec136",
+      "text": "Mazza",
+      "weight": 1
+    },
+    {
+      "id": "family-c5a7f22c5e8b",
+      "text": "Testa",
+      "weight": 1
+    },
+    {
+      "id": "family-0aac52d13bd1",
+      "text": "Grasso",
+      "weight": 1
+    },
+    {
+      "id": "family-01cffdfa8593",
+      "text": "Pellegrino",
+      "weight": 1
+    },
+    {
+      "id": "family-0ba426bcd6e7",
+      "text": "Carbone",
+      "weight": 1
+    },
+    {
+      "id": "family-24604e0fe521",
+      "text": "Giuliani",
+      "weight": 1
+    },
+    {
+      "id": "family-19a82b0c3332",
+      "text": "Benedetti",
+      "weight": 1
+    },
+    {
+      "id": "family-d5d34cba0f1c",
+      "text": "Barone",
+      "weight": 1
+    },
+    {
+      "id": "family-933afab235bb",
+      "text": "Rossetti",
+      "weight": 1
+    },
+    {
+      "id": "family-ccb068c1952b",
+      "text": "Caputo",
+      "weight": 1
+    },
+    {
+      "id": "family-824feff490b6",
+      "text": "Montanari",
+      "weight": 1
+    },
+    {
+      "id": "family-d702dd6377fc",
+      "text": "Guerra",
+      "weight": 1
+    },
+    {
+      "id": "family-549c8632421c",
+      "text": "Palmieri",
+      "weight": 1
+    },
+    {
+      "id": "family-8c4c4e0c3cc9",
+      "text": "Bernardi",
+      "weight": 1
+    },
+    {
+      "id": "family-5f7d74c19a22",
+      "text": "Martino",
+      "weight": 1
+    },
+    {
+      "id": "family-d74421ae9206",
+      "text": "Fiore",
+      "weight": 1
+    },
+    {
+      "id": "family-fd722163239b",
+      "text": "De Rosa",
+      "weight": 1
+    },
+    {
+      "id": "family-bbafea78fc08",
+      "text": "Ferretti",
+      "weight": 1
+    },
+    {
+      "id": "family-899ba9a4c90c",
+      "text": "Bellini",
+      "weight": 1
+    },
+    {
+      "id": "family-74fbcad0c1cd",
+      "text": "Basile",
+      "weight": 1
+    },
+    {
+      "id": "family-745b1b9e02cb",
+      "text": "Riva",
+      "weight": 1
+    },
+    {
+      "id": "family-ec5bd142b4a5",
+      "text": "Donati",
+      "weight": 1
+    },
+    {
+      "id": "family-a7cf2ba6dbef",
+      "text": "Piras",
+      "weight": 1
+    },
+    {
+      "id": "family-a03303ed8f20",
+      "text": "Vitali",
+      "weight": 1
+    },
+    {
+      "id": "family-46192acb94a7",
+      "text": "Battaglia",
+      "weight": 1
+    },
+    {
+      "id": "family-3b770b262113",
+      "text": "Sartori",
+      "weight": 1
+    },
+    {
+      "id": "family-c5355d0949a1",
+      "text": "Neri",
+      "weight": 1
+    },
+    {
+      "id": "family-dfb53968671f",
+      "text": "Costantini",
+      "weight": 1
+    },
+    {
+      "id": "family-b400dfc0e93b",
+      "text": "Milani",
+      "weight": 1
+    },
+    {
+      "id": "family-08deb7162484",
+      "text": "Pagano",
+      "weight": 1
+    },
+    {
+      "id": "family-278735b928ee",
+      "text": "Ruggiero",
+      "weight": 1
+    },
+    {
+      "id": "family-7c51c172e705",
+      "text": "Sorrentino",
+      "weight": 1
+    },
+    {
+      "id": "family-8d51309d4d7e",
+      "text": "D'Amico",
+      "weight": 1
+    },
+    {
+      "id": "family-0e36a50d629e",
+      "text": "Orlando",
+      "weight": 1
+    },
+    {
+      "id": "family-b6acb8706fb0",
+      "text": "Damiani",
+      "weight": 1
+    },
+    {
+      "id": "family-e12bcfd62592",
+      "text": "Pini",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 9996
+  }
+}

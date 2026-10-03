@@ -1,0 +1,1062 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "dutch",
+  "label": "Dutch-language personnel",
+  "language": "nl",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-family",
+    "componentOrder": [
+      "given",
+      "family"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "Dutch-language pool for Dutch and explicitly selected Flemish personnel. Dutch East Indies indigenous personnel require a specific cultural context rather than this European pool.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 100
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 100,
+    "secondComponent": 100
+  },
+  "completeness": "target-met",
+  "givenNames": [
+    {
+      "id": "given-5c5db120cb11",
+      "text": "Jan",
+      "weight": 3
+    },
+    {
+      "id": "given-693617022ffb",
+      "text": "Johannes",
+      "weight": 3
+    },
+    {
+      "id": "given-c7da90de5ae5",
+      "text": "Pieter",
+      "weight": 3
+    },
+    {
+      "id": "given-0b27bd1ec8e1",
+      "text": "Cornelis",
+      "weight": 3
+    },
+    {
+      "id": "given-b57107eb2b93",
+      "text": "Willem",
+      "weight": 3
+    },
+    {
+      "id": "given-f5aa5054a574",
+      "text": "Hendrik",
+      "weight": 1
+    },
+    {
+      "id": "given-51d02c9c50e0",
+      "text": "Gerrit",
+      "weight": 1
+    },
+    {
+      "id": "given-872f57b19886",
+      "text": "Jacobus",
+      "weight": 1
+    },
+    {
+      "id": "given-6f4878a5c20d",
+      "text": "Adrianus",
+      "weight": 1
+    },
+    {
+      "id": "given-764e8ab23aba",
+      "text": "Dirk",
+      "weight": 1
+    },
+    {
+      "id": "given-e0c6277f17c9",
+      "text": "Antonius",
+      "weight": 1
+    },
+    {
+      "id": "given-78a1a1dae4e5",
+      "text": "Joseph",
+      "weight": 1
+    },
+    {
+      "id": "given-b7a15df4a8f6",
+      "text": "Nicolaas",
+      "weight": 1
+    },
+    {
+      "id": "given-fe8bd03fc477",
+      "text": "Martinus",
+      "weight": 1
+    },
+    {
+      "id": "given-7f74d7ceb627",
+      "text": "Albert",
+      "weight": 1
+    },
+    {
+      "id": "given-a4665bc4592c",
+      "text": "Arend",
+      "weight": 1
+    },
+    {
+      "id": "given-e101a26024b0",
+      "text": "Arnoldus",
+      "weight": 1
+    },
+    {
+      "id": "given-cf7721d1dc41",
+      "text": "Bernardus",
+      "weight": 1
+    },
+    {
+      "id": "given-593e6518ca83",
+      "text": "Christiaan",
+      "weight": 1
+    },
+    {
+      "id": "given-3b018e62458e",
+      "text": "Daniël",
+      "weight": 1
+    },
+    {
+      "id": "given-feaa3bc385da",
+      "text": "Eduard",
+      "weight": 1
+    },
+    {
+      "id": "given-38a0f1b2dfad",
+      "text": "Everardus",
+      "weight": 1
+    },
+    {
+      "id": "given-d722f8bab044",
+      "text": "Franciscus",
+      "weight": 1
+    },
+    {
+      "id": "given-416244166bcc",
+      "text": "Frederik",
+      "weight": 1
+    },
+    {
+      "id": "given-c537c4e1f90e",
+      "text": "Gerard",
+      "weight": 1
+    },
+    {
+      "id": "given-48bb4b331e60",
+      "text": "Herman",
+      "weight": 1
+    },
+    {
+      "id": "given-946cec4ecf11",
+      "text": "Hubertus",
+      "weight": 1
+    },
+    {
+      "id": "given-f0365f540d6c",
+      "text": "Johan",
+      "weight": 1
+    },
+    {
+      "id": "given-155638fc30b5",
+      "text": "Karel",
+      "weight": 1
+    },
+    {
+      "id": "given-2f1ab9515a5b",
+      "text": "Leonardus",
+      "weight": 1
+    },
+    {
+      "id": "given-0713f67d6e08",
+      "text": "Lodewijk",
+      "weight": 1
+    },
+    {
+      "id": "given-9293e16b8e01",
+      "text": "Louis",
+      "weight": 1
+    },
+    {
+      "id": "given-52d7d8604bf7",
+      "text": "Lucas",
+      "weight": 1
+    },
+    {
+      "id": "given-245536acb08b",
+      "text": "Marcus",
+      "weight": 1
+    },
+    {
+      "id": "given-2cd0cf44a733",
+      "text": "Marinus",
+      "weight": 1
+    },
+    {
+      "id": "given-2d973910e366",
+      "text": "Matthias",
+      "weight": 1
+    },
+    {
+      "id": "given-c9c2aab17053",
+      "text": "Petrus",
+      "weight": 1
+    },
+    {
+      "id": "given-5538964483be",
+      "text": "Philippus",
+      "weight": 1
+    },
+    {
+      "id": "given-c2867f086e48",
+      "text": "Reinier",
+      "weight": 1
+    },
+    {
+      "id": "given-1deb0a3b8675",
+      "text": "Richard",
+      "weight": 1
+    },
+    {
+      "id": "given-2238dd61a1bf",
+      "text": "Robert",
+      "weight": 1
+    },
+    {
+      "id": "given-d1b6eda54b27",
+      "text": "Rudolf",
+      "weight": 1
+    },
+    {
+      "id": "given-7c6e1bf16286",
+      "text": "Simon",
+      "weight": 1
+    },
+    {
+      "id": "given-32d8522d8e3c",
+      "text": "Theodorus",
+      "weight": 1
+    },
+    {
+      "id": "given-5dfcf9ef1fb1",
+      "text": "Thomas",
+      "weight": 1
+    },
+    {
+      "id": "given-6c00e6ff6ea6",
+      "text": "Victor",
+      "weight": 1
+    },
+    {
+      "id": "given-f44c4b0766fc",
+      "text": "Vincent",
+      "weight": 1
+    },
+    {
+      "id": "given-9a2983c2a46b",
+      "text": "Wilhelmus",
+      "weight": 1
+    },
+    {
+      "id": "given-78a8ebdcc101",
+      "text": "Abraham",
+      "weight": 1
+    },
+    {
+      "id": "given-3f0c9b03e8e3",
+      "text": "Adam",
+      "weight": 1
+    },
+    {
+      "id": "given-2a19a1296603",
+      "text": "Adriaan",
+      "weight": 1
+    },
+    {
+      "id": "given-59247d043065",
+      "text": "Anthonie",
+      "weight": 1
+    },
+    {
+      "id": "given-42972c1b3e85",
+      "text": "Anton",
+      "weight": 1
+    },
+    {
+      "id": "given-995f7373de51",
+      "text": "Arie",
+      "weight": 1
+    },
+    {
+      "id": "given-3ccea6fa629f",
+      "text": "Arnold",
+      "weight": 1
+    },
+    {
+      "id": "given-d0e7146a1d16",
+      "text": "Barend",
+      "weight": 1
+    },
+    {
+      "id": "given-c330af17e129",
+      "text": "Bastiaan",
+      "weight": 1
+    },
+    {
+      "id": "given-fdf7038fc6de",
+      "text": "Bram",
+      "weight": 1
+    },
+    {
+      "id": "given-e24ca067787f",
+      "text": "Caspar",
+      "weight": 1
+    },
+    {
+      "id": "given-354ff3cb8fda",
+      "text": "Cees",
+      "weight": 1
+    },
+    {
+      "id": "given-3b6341cabd9f",
+      "text": "Coenraad",
+      "weight": 1
+    },
+    {
+      "id": "given-2237b88f398f",
+      "text": "Cor",
+      "weight": 1
+    },
+    {
+      "id": "given-55b6d822632f",
+      "text": "Dick",
+      "weight": 1
+    },
+    {
+      "id": "given-1381c965082a",
+      "text": "Douwe",
+      "weight": 1
+    },
+    {
+      "id": "given-e2c0c0e0efdf",
+      "text": "Evert",
+      "weight": 1
+    },
+    {
+      "id": "given-66a6443ef6a8",
+      "text": "Frits",
+      "weight": 1
+    },
+    {
+      "id": "given-f8d1de9a2cf7",
+      "text": "Geert",
+      "weight": 1
+    },
+    {
+      "id": "given-9af39afbc269",
+      "text": "Gerardus",
+      "weight": 1
+    },
+    {
+      "id": "given-1d5971a79001",
+      "text": "Gijsbert",
+      "weight": 1
+    },
+    {
+      "id": "given-23a3d32657f9",
+      "text": "Gustaaf",
+      "weight": 1
+    },
+    {
+      "id": "given-fe7a26f92564",
+      "text": "Hans",
+      "weight": 1
+    },
+    {
+      "id": "given-84efb3405723",
+      "text": "Harm",
+      "weight": 1
+    },
+    {
+      "id": "given-a0fef9d66eaf",
+      "text": "Harry",
+      "weight": 1
+    },
+    {
+      "id": "given-3da975e12a54",
+      "text": "Hein",
+      "weight": 1
+    },
+    {
+      "id": "given-2dd356026300",
+      "text": "Henk",
+      "weight": 1
+    },
+    {
+      "id": "given-d70b489bb97e",
+      "text": "Hugo",
+      "weight": 1
+    },
+    {
+      "id": "given-8141d2b17b73",
+      "text": "Jacob",
+      "weight": 1
+    },
+    {
+      "id": "given-6ce8761f43b2",
+      "text": "Joost",
+      "weight": 1
+    },
+    {
+      "id": "given-11df097d9cba",
+      "text": "Jozef",
+      "weight": 1
+    },
+    {
+      "id": "given-e7c0a30540f0",
+      "text": "Klaas",
+      "weight": 1
+    },
+    {
+      "id": "given-8350b1c75e2f",
+      "text": "Koenraad",
+      "weight": 1
+    },
+    {
+      "id": "given-5671f56a69ac",
+      "text": "Leendert",
+      "weight": 1
+    },
+    {
+      "id": "given-a826cb68cbfd",
+      "text": "Maarten",
+      "weight": 1
+    },
+    {
+      "id": "given-fb9b22f443c8",
+      "text": "Michiel",
+      "weight": 1
+    },
+    {
+      "id": "given-6e5f3712838f",
+      "text": "Nico",
+      "weight": 1
+    },
+    {
+      "id": "given-d7c7abb4946b",
+      "text": "Otto",
+      "weight": 1
+    },
+    {
+      "id": "given-818b5cc5f21d",
+      "text": "Paul",
+      "weight": 1
+    },
+    {
+      "id": "given-ea72c7959429",
+      "text": "Peter",
+      "weight": 1
+    },
+    {
+      "id": "given-af581bef0bef",
+      "text": "Piet",
+      "weight": 1
+    },
+    {
+      "id": "given-2b314ab53ad2",
+      "text": "Rein",
+      "weight": 1
+    },
+    {
+      "id": "given-132e26a743ee",
+      "text": "Roelof",
+      "weight": 1
+    },
+    {
+      "id": "given-5c06df4d142b",
+      "text": "Sijbrand",
+      "weight": 1
+    },
+    {
+      "id": "given-e9d4c4626863",
+      "text": "Teunis",
+      "weight": 1
+    },
+    {
+      "id": "given-8130fe9d5aa0",
+      "text": "Theo",
+      "weight": 1
+    },
+    {
+      "id": "given-fa23c68356af",
+      "text": "Tinus",
+      "weight": 1
+    },
+    {
+      "id": "given-bbda717a969c",
+      "text": "Wim",
+      "weight": 1
+    },
+    {
+      "id": "given-22229825111a",
+      "text": "Wouter",
+      "weight": 1
+    },
+    {
+      "id": "given-e61ddc774208",
+      "text": "Aart",
+      "weight": 1
+    },
+    {
+      "id": "given-1b96190ccee1",
+      "text": "Folker",
+      "weight": 1
+    },
+    {
+      "id": "given-26abfe5c7483",
+      "text": "Sjoerd",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-df744a546ad6",
+      "text": "De Jong",
+      "weight": 3
+    },
+    {
+      "id": "family-65d567303c47",
+      "text": "Jansen",
+      "weight": 3
+    },
+    {
+      "id": "family-8cd0fb6be4a9",
+      "text": "De Vries",
+      "weight": 3
+    },
+    {
+      "id": "family-b861de1d2b84",
+      "text": "Van den Berg",
+      "weight": 1
+    },
+    {
+      "id": "family-51721c90eae5",
+      "text": "Van Dijk",
+      "weight": 3
+    },
+    {
+      "id": "family-5643baa64d8c",
+      "text": "Bakker",
+      "weight": 3
+    },
+    {
+      "id": "family-09f4b24260fa",
+      "text": "Janssen",
+      "weight": 1
+    },
+    {
+      "id": "family-b0bf5154fea4",
+      "text": "Visser",
+      "weight": 1
+    },
+    {
+      "id": "family-02448bcc9324",
+      "text": "Smit",
+      "weight": 1
+    },
+    {
+      "id": "family-b3f92f2cb8c7",
+      "text": "Meijer",
+      "weight": 1
+    },
+    {
+      "id": "family-00a71690f142",
+      "text": "De Boer",
+      "weight": 1
+    },
+    {
+      "id": "family-a55c96d311f1",
+      "text": "Mulder",
+      "weight": 1
+    },
+    {
+      "id": "family-40b03a9de3f1",
+      "text": "De Groot",
+      "weight": 1
+    },
+    {
+      "id": "family-c13956a5f6ab",
+      "text": "Bos",
+      "weight": 1
+    },
+    {
+      "id": "family-689de036cfda",
+      "text": "Vos",
+      "weight": 1
+    },
+    {
+      "id": "family-bef1b7fd499c",
+      "text": "Peters",
+      "weight": 1
+    },
+    {
+      "id": "family-abedeaac31c0",
+      "text": "Hendriks",
+      "weight": 1
+    },
+    {
+      "id": "family-e30f4ae596c9",
+      "text": "Van Leeuwen",
+      "weight": 1
+    },
+    {
+      "id": "family-f685ee46385f",
+      "text": "Dekker",
+      "weight": 1
+    },
+    {
+      "id": "family-a20290b1c652",
+      "text": "Brouwer",
+      "weight": 1
+    },
+    {
+      "id": "family-1e4f7b2287ac",
+      "text": "De Wit",
+      "weight": 1
+    },
+    {
+      "id": "family-f6cb1c5643a9",
+      "text": "Dijkstra",
+      "weight": 1
+    },
+    {
+      "id": "family-5d270192b340",
+      "text": "Smits",
+      "weight": 1
+    },
+    {
+      "id": "family-094532dc3029",
+      "text": "De Graaf",
+      "weight": 1
+    },
+    {
+      "id": "family-e22c9db26472",
+      "text": "Van der Meer",
+      "weight": 1
+    },
+    {
+      "id": "family-a88930f3be2e",
+      "text": "Van der Linden",
+      "weight": 1
+    },
+    {
+      "id": "family-1d21dcd3c1c8",
+      "text": "Kok",
+      "weight": 1
+    },
+    {
+      "id": "family-e20cc86f4bd1",
+      "text": "Jacobs",
+      "weight": 1
+    },
+    {
+      "id": "family-8ca5bbb4c945",
+      "text": "De Haan",
+      "weight": 1
+    },
+    {
+      "id": "family-b3c6c9391b8f",
+      "text": "Vermeer",
+      "weight": 1
+    },
+    {
+      "id": "family-412001a5599d",
+      "text": "Van den Heuvel",
+      "weight": 1
+    },
+    {
+      "id": "family-a32115501172",
+      "text": "Verhoeven",
+      "weight": 1
+    },
+    {
+      "id": "family-32a022a38ef9",
+      "text": "Van der Veen",
+      "weight": 1
+    },
+    {
+      "id": "family-51fe4e62d310",
+      "text": "Van den Broek",
+      "weight": 1
+    },
+    {
+      "id": "family-f7db009e459a",
+      "text": "De Bruijn",
+      "weight": 1
+    },
+    {
+      "id": "family-83267beb3f85",
+      "text": "De Bruin",
+      "weight": 1
+    },
+    {
+      "id": "family-76e968be0f0d",
+      "text": "Van der Heijden",
+      "weight": 1
+    },
+    {
+      "id": "family-6680f200bba1",
+      "text": "Schouten",
+      "weight": 1
+    },
+    {
+      "id": "family-f3319f4f9034",
+      "text": "Van Beek",
+      "weight": 1
+    },
+    {
+      "id": "family-3b1b1cfd376d",
+      "text": "Willems",
+      "weight": 1
+    },
+    {
+      "id": "family-88dd8a7e4b88",
+      "text": "Van Vliet",
+      "weight": 1
+    },
+    {
+      "id": "family-6d2001949217",
+      "text": "Van de Ven",
+      "weight": 1
+    },
+    {
+      "id": "family-ad99ab62ad87",
+      "text": "Hoekstra",
+      "weight": 1
+    },
+    {
+      "id": "family-c85428c6a277",
+      "text": "Maas",
+      "weight": 1
+    },
+    {
+      "id": "family-3e0f6217b83a",
+      "text": "Vermeulen",
+      "weight": 1
+    },
+    {
+      "id": "family-49645e3500de",
+      "text": "Koster",
+      "weight": 1
+    },
+    {
+      "id": "family-ab3ee37127e8",
+      "text": "Van Dam",
+      "weight": 1
+    },
+    {
+      "id": "family-6f7e73e6d71e",
+      "text": "Van der Wal",
+      "weight": 1
+    },
+    {
+      "id": "family-b0ebc69aa500",
+      "text": "Prins",
+      "weight": 1
+    },
+    {
+      "id": "family-f5b985ca0707",
+      "text": "Blom",
+      "weight": 1
+    },
+    {
+      "id": "family-c154c055b9d0",
+      "text": "Huisman",
+      "weight": 1
+    },
+    {
+      "id": "family-38e7661f92e6",
+      "text": "Peeters",
+      "weight": 1
+    },
+    {
+      "id": "family-b1c6fe078c59",
+      "text": "De Jonge",
+      "weight": 1
+    },
+    {
+      "id": "family-69b222e4d436",
+      "text": "Kuipers",
+      "weight": 1
+    },
+    {
+      "id": "family-b1e5b3914df7",
+      "text": "Van Veen",
+      "weight": 1
+    },
+    {
+      "id": "family-a5554622c655",
+      "text": "Post",
+      "weight": 1
+    },
+    {
+      "id": "family-ff6899ef2852",
+      "text": "Kuiper",
+      "weight": 1
+    },
+    {
+      "id": "family-1793816cade5",
+      "text": "Veenstra",
+      "weight": 1
+    },
+    {
+      "id": "family-8d9e297189b3",
+      "text": "Kramer",
+      "weight": 1
+    },
+    {
+      "id": "family-542ad99f538d",
+      "text": "Van den Brink",
+      "weight": 1
+    },
+    {
+      "id": "family-9c7b7b5b1493",
+      "text": "Schipper",
+      "weight": 1
+    },
+    {
+      "id": "family-c49698ee92a7",
+      "text": "Martens",
+      "weight": 1
+    },
+    {
+      "id": "family-9884bd307e96",
+      "text": "Vink",
+      "weight": 1
+    },
+    {
+      "id": "family-62cc3f034e40",
+      "text": "De Ruiter",
+      "weight": 1
+    },
+    {
+      "id": "family-db19a6133d10",
+      "text": "Timmermans",
+      "weight": 1
+    },
+    {
+      "id": "family-f65563753a67",
+      "text": "Groen",
+      "weight": 1
+    },
+    {
+      "id": "family-f27ba8606788",
+      "text": "Van der Horst",
+      "weight": 1
+    },
+    {
+      "id": "family-ce8762719d8f",
+      "text": "Mol",
+      "weight": 1
+    },
+    {
+      "id": "family-83372364e382",
+      "text": "Rutten",
+      "weight": 1
+    },
+    {
+      "id": "family-54da2930938e",
+      "text": "Van Loon",
+      "weight": 1
+    },
+    {
+      "id": "family-865ce0cf621e",
+      "text": "Bosch",
+      "weight": 1
+    },
+    {
+      "id": "family-79f840c8edfc",
+      "text": "Smeets",
+      "weight": 1
+    },
+    {
+      "id": "family-b6535f4b9e81",
+      "text": "Van Doorn",
+      "weight": 1
+    },
+    {
+      "id": "family-7ce90794134b",
+      "text": "Hoek",
+      "weight": 1
+    },
+    {
+      "id": "family-8c2eb14bcaff",
+      "text": "Hermans",
+      "weight": 1
+    },
+    {
+      "id": "family-fabdb0389628",
+      "text": "Evers",
+      "weight": 1
+    },
+    {
+      "id": "family-cc416b2c672f",
+      "text": "De Leeuw",
+      "weight": 1
+    },
+    {
+      "id": "family-30585a4f4506",
+      "text": "Van der Velden",
+      "weight": 1
+    },
+    {
+      "id": "family-45ccbf95ccd8",
+      "text": "Van den Bosch",
+      "weight": 1
+    },
+    {
+      "id": "family-c048a877f52d",
+      "text": "Van der Meulen",
+      "weight": 1
+    },
+    {
+      "id": "family-833d306249ea",
+      "text": "Boon",
+      "weight": 1
+    },
+    {
+      "id": "family-b2e3df33d5e4",
+      "text": "Burgers",
+      "weight": 1
+    },
+    {
+      "id": "family-b013e769e134",
+      "text": "De Lange",
+      "weight": 1
+    },
+    {
+      "id": "family-84555f0b0d34",
+      "text": "De Vos",
+      "weight": 1
+    },
+    {
+      "id": "family-18b09c795072",
+      "text": "Van Gent",
+      "weight": 1
+    },
+    {
+      "id": "family-c897f016be6d",
+      "text": "Van Houten",
+      "weight": 1
+    },
+    {
+      "id": "family-4e91b353cd10",
+      "text": "Van Wijk",
+      "weight": 1
+    },
+    {
+      "id": "family-b3a098decdd5",
+      "text": "Van Zanten",
+      "weight": 1
+    },
+    {
+      "id": "family-c1d30ada609e",
+      "text": "Van Zutphen",
+      "weight": 1
+    },
+    {
+      "id": "family-f94f16e2571d",
+      "text": "Veldman",
+      "weight": 1
+    },
+    {
+      "id": "family-e527fea61987",
+      "text": "Wouters",
+      "weight": 1
+    },
+    {
+      "id": "family-915227094532",
+      "text": "Zijlstra",
+      "weight": 1
+    },
+    {
+      "id": "family-2b3ad6443351",
+      "text": "Brinkman",
+      "weight": 1
+    },
+    {
+      "id": "family-08a35d8941a3",
+      "text": "Drost",
+      "weight": 1
+    },
+    {
+      "id": "family-164fac03eba0",
+      "text": "Kerkhof",
+      "weight": 1
+    },
+    {
+      "id": "family-35a0a769c3fe",
+      "text": "Lammers",
+      "weight": 1
+    },
+    {
+      "id": "family-067f39078f7f",
+      "text": "Molenaar",
+      "weight": 1
+    },
+    {
+      "id": "family-5f3a702606f2",
+      "text": "Scholten",
+      "weight": 1
+    },
+    {
+      "id": "family-ce0eae2791c1",
+      "text": "Snoek",
+      "weight": 1
+    },
+    {
+      "id": "family-8211df30e85a",
+      "text": "Wolters",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 10000
+  }
+}

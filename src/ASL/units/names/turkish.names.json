@@ -1,0 +1,1062 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "turkish",
+  "label": "Turkish",
+  "language": "tr",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1950,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-family",
+    "componentOrder": [
+      "given",
+      "family"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "For Turkish personnel in Korean War scenarios. Family names follow the post-1934 surname convention; these lists must not be applied unchanged to earlier Ottoman settings.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 100
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 100,
+    "secondComponent": 100
+  },
+  "completeness": "target-met",
+  "givenNames": [
+    {
+      "id": "given-6d6ba074e03c",
+      "text": "Mehmet",
+      "weight": 3
+    },
+    {
+      "id": "given-e20ce6653386",
+      "text": "Mustafa",
+      "weight": 3
+    },
+    {
+      "id": "given-9b0f9ababae6",
+      "text": "Ahmet",
+      "weight": 3
+    },
+    {
+      "id": "given-862ef3927a7c",
+      "text": "Ali",
+      "weight": 3
+    },
+    {
+      "id": "given-bd6eb391e341",
+      "text": "Hüseyin",
+      "weight": 3
+    },
+    {
+      "id": "given-003925188bc7",
+      "text": "Hasan",
+      "weight": 1
+    },
+    {
+      "id": "given-bd0c78d065de",
+      "text": "İbrahim",
+      "weight": 1
+    },
+    {
+      "id": "given-ae3a9f56a9ee",
+      "text": "İsmail",
+      "weight": 1
+    },
+    {
+      "id": "given-d6d9f785b11b",
+      "text": "Osman",
+      "weight": 1
+    },
+    {
+      "id": "given-e72cb59def9f",
+      "text": "Süleyman",
+      "weight": 1
+    },
+    {
+      "id": "given-5eb60936c374",
+      "text": "Abdullah",
+      "weight": 1
+    },
+    {
+      "id": "given-7284f48612ba",
+      "text": "Abdurrahman",
+      "weight": 1
+    },
+    {
+      "id": "given-a219d1a552cb",
+      "text": "Abidin",
+      "weight": 1
+    },
+    {
+      "id": "given-ad49945b7555",
+      "text": "Adil",
+      "weight": 1
+    },
+    {
+      "id": "given-8658ecb6ea2d",
+      "text": "Akif",
+      "weight": 1
+    },
+    {
+      "id": "given-501a779d9f5c",
+      "text": "Arif",
+      "weight": 1
+    },
+    {
+      "id": "given-da26693e8e52",
+      "text": "Asım",
+      "weight": 1
+    },
+    {
+      "id": "given-40bcaeefdc80",
+      "text": "Aziz",
+      "weight": 1
+    },
+    {
+      "id": "given-c9d5a657b861",
+      "text": "Bahri",
+      "weight": 1
+    },
+    {
+      "id": "given-8e9de49bf9c1",
+      "text": "Bekir",
+      "weight": 1
+    },
+    {
+      "id": "given-3164d7c2433c",
+      "text": "Besim",
+      "weight": 1
+    },
+    {
+      "id": "given-96d0a834d541",
+      "text": "Beşir",
+      "weight": 1
+    },
+    {
+      "id": "given-9d4f195cb32b",
+      "text": "Burhan",
+      "weight": 1
+    },
+    {
+      "id": "given-2446d342ef4c",
+      "text": "Cahit",
+      "weight": 1
+    },
+    {
+      "id": "given-195088a1cec5",
+      "text": "Cemal",
+      "weight": 1
+    },
+    {
+      "id": "given-a019327e596b",
+      "text": "Cemil",
+      "weight": 1
+    },
+    {
+      "id": "given-692d3b27e16a",
+      "text": "Cevat",
+      "weight": 1
+    },
+    {
+      "id": "given-8768faaabc4a",
+      "text": "Cevdet",
+      "weight": 1
+    },
+    {
+      "id": "given-a8702211942a",
+      "text": "Emin",
+      "weight": 1
+    },
+    {
+      "id": "given-552b6e69ae4c",
+      "text": "Enver",
+      "weight": 1
+    },
+    {
+      "id": "given-f922d932fc8d",
+      "text": "Eşref",
+      "weight": 1
+    },
+    {
+      "id": "given-652890a0f710",
+      "text": "Fahri",
+      "weight": 1
+    },
+    {
+      "id": "given-3a65e3b1545a",
+      "text": "Faik",
+      "weight": 1
+    },
+    {
+      "id": "given-81f2df0d1b78",
+      "text": "Faruk",
+      "weight": 1
+    },
+    {
+      "id": "given-e65e7914a6d6",
+      "text": "Fazıl",
+      "weight": 1
+    },
+    {
+      "id": "given-3c28c1abde04",
+      "text": "Fehmi",
+      "weight": 1
+    },
+    {
+      "id": "given-fc6e88a8f98d",
+      "text": "Fethi",
+      "weight": 1
+    },
+    {
+      "id": "given-2dcbd6f5df0f",
+      "text": "Fikret",
+      "weight": 1
+    },
+    {
+      "id": "given-f0a56943da37",
+      "text": "Fuat",
+      "weight": 1
+    },
+    {
+      "id": "given-ed753a589288",
+      "text": "Galip",
+      "weight": 1
+    },
+    {
+      "id": "given-aa190b6b3f31",
+      "text": "Hafız",
+      "weight": 1
+    },
+    {
+      "id": "given-fa4470586da3",
+      "text": "Hakkı",
+      "weight": 1
+    },
+    {
+      "id": "given-9e30ab47d4a7",
+      "text": "Halil",
+      "weight": 1
+    },
+    {
+      "id": "given-fa2480586f93",
+      "text": "Halim",
+      "weight": 1
+    },
+    {
+      "id": "given-9916347dc515",
+      "text": "Hamit",
+      "weight": 1
+    },
+    {
+      "id": "given-26ac05af275d",
+      "text": "Hamza",
+      "weight": 1
+    },
+    {
+      "id": "given-195b4342e81c",
+      "text": "Harun",
+      "weight": 1
+    },
+    {
+      "id": "given-7420f7df542a",
+      "text": "Haydar",
+      "weight": 1
+    },
+    {
+      "id": "given-14bbffef24b5",
+      "text": "Hayri",
+      "weight": 1
+    },
+    {
+      "id": "given-bb03a49823e8",
+      "text": "Hidayet",
+      "weight": 1
+    },
+    {
+      "id": "given-69832453725f",
+      "text": "Hilmi",
+      "weight": 1
+    },
+    {
+      "id": "given-3d16b285e572",
+      "text": "Hikmet",
+      "weight": 1
+    },
+    {
+      "id": "given-671d316c5812",
+      "text": "İhsan",
+      "weight": 1
+    },
+    {
+      "id": "given-fd5941fb223a",
+      "text": "İlhami",
+      "weight": 1
+    },
+    {
+      "id": "given-e0d8ba7e278c",
+      "text": "İlyas",
+      "weight": 1
+    },
+    {
+      "id": "given-ed2e21ecf721",
+      "text": "İsmet",
+      "weight": 1
+    },
+    {
+      "id": "given-12899fa47f98",
+      "text": "İzzet",
+      "weight": 1
+    },
+    {
+      "id": "given-fd5ef3713324",
+      "text": "Kadri",
+      "weight": 1
+    },
+    {
+      "id": "given-97c4b203659d",
+      "text": "Kamil",
+      "weight": 1
+    },
+    {
+      "id": "given-ad8a86f1cc40",
+      "text": "Kasım",
+      "weight": 1
+    },
+    {
+      "id": "given-0e91e0cb7506",
+      "text": "Kazım",
+      "weight": 1
+    },
+    {
+      "id": "given-ba0ca1da858a",
+      "text": "Kemal",
+      "weight": 1
+    },
+    {
+      "id": "given-92e364dcacc6",
+      "text": "Kenan",
+      "weight": 1
+    },
+    {
+      "id": "given-6584ac717118",
+      "text": "Latif",
+      "weight": 1
+    },
+    {
+      "id": "given-472833b6af95",
+      "text": "Lütfi",
+      "weight": 1
+    },
+    {
+      "id": "given-463ac8058ab9",
+      "text": "Mahmut",
+      "weight": 1
+    },
+    {
+      "id": "given-e72b0ae589fa",
+      "text": "Mazhar",
+      "weight": 1
+    },
+    {
+      "id": "given-a3b2789907e4",
+      "text": "Memduh",
+      "weight": 1
+    },
+    {
+      "id": "given-02c7154e1934",
+      "text": "Mesut",
+      "weight": 1
+    },
+    {
+      "id": "given-8fe74fd5c33a",
+      "text": "Muammer",
+      "weight": 1
+    },
+    {
+      "id": "given-8bf7fa9196c2",
+      "text": "Muharrem",
+      "weight": 1
+    },
+    {
+      "id": "given-213a0fe4a49c",
+      "text": "Muhittin",
+      "weight": 1
+    },
+    {
+      "id": "given-8feeb37f9402",
+      "text": "Musa",
+      "weight": 1
+    },
+    {
+      "id": "given-e39836665218",
+      "text": "Naci",
+      "weight": 1
+    },
+    {
+      "id": "given-2ffe35f13f4c",
+      "text": "Nafiz",
+      "weight": 1
+    },
+    {
+      "id": "given-f3389f667dfc",
+      "text": "Naim",
+      "weight": 1
+    },
+    {
+      "id": "given-47f6bc6aa088",
+      "text": "Nazif",
+      "weight": 1
+    },
+    {
+      "id": "given-222b9ece8f7e",
+      "text": "Nazım",
+      "weight": 1
+    },
+    {
+      "id": "given-29812de120cb",
+      "text": "Necati",
+      "weight": 1
+    },
+    {
+      "id": "given-db288ea892a9",
+      "text": "Necip",
+      "weight": 1
+    },
+    {
+      "id": "given-08f7204ec53a",
+      "text": "Nedim",
+      "weight": 1
+    },
+    {
+      "id": "given-ffb71c336b4e",
+      "text": "Neşet",
+      "weight": 1
+    },
+    {
+      "id": "given-a928a883b998",
+      "text": "Nihat",
+      "weight": 1
+    },
+    {
+      "id": "given-77031e3f8d41",
+      "text": "Niyazi",
+      "weight": 1
+    },
+    {
+      "id": "given-8614ee33d6fd",
+      "text": "Nuri",
+      "weight": 1
+    },
+    {
+      "id": "given-21c56591a814",
+      "text": "Orhan",
+      "weight": 1
+    },
+    {
+      "id": "given-f5cfdd2797bc",
+      "text": "Ömer",
+      "weight": 1
+    },
+    {
+      "id": "given-5dd218d78b91",
+      "text": "Ragıp",
+      "weight": 1
+    },
+    {
+      "id": "given-9fe2be568304",
+      "text": "Rahmi",
+      "weight": 1
+    },
+    {
+      "id": "given-4c91d3dd4e78",
+      "text": "Rauf",
+      "weight": 1
+    },
+    {
+      "id": "given-2de3a6ed2a47",
+      "text": "Recep",
+      "weight": 1
+    },
+    {
+      "id": "given-b5b50dd4ca26",
+      "text": "Refik",
+      "weight": 1
+    },
+    {
+      "id": "given-b924d2fab5d6",
+      "text": "Remzi",
+      "weight": 1
+    },
+    {
+      "id": "given-0b8ebc86522c",
+      "text": "Reşat",
+      "weight": 1
+    },
+    {
+      "id": "given-3bfe2648e7a5",
+      "text": "Rıza",
+      "weight": 1
+    },
+    {
+      "id": "given-23c6ff0a480a",
+      "text": "Rıfat",
+      "weight": 1
+    },
+    {
+      "id": "given-f6e7bcd1c493",
+      "text": "Sabri",
+      "weight": 1
+    },
+    {
+      "id": "given-abb5469fb4ea",
+      "text": "Sadık",
+      "weight": 1
+    },
+    {
+      "id": "given-fdc3109d53c4",
+      "text": "Salih",
+      "weight": 1
+    },
+    {
+      "id": "given-a9585a1f90b9",
+      "text": "Şükrü",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-d5c465cf9cf3",
+      "text": "Yılmaz",
+      "weight": 3
+    },
+    {
+      "id": "family-7ef88ac5d5a3",
+      "text": "Kaya",
+      "weight": 3
+    },
+    {
+      "id": "family-18aea8e2eb03",
+      "text": "Demir",
+      "weight": 3
+    },
+    {
+      "id": "family-7809d118e73d",
+      "text": "Şahin",
+      "weight": 3
+    },
+    {
+      "id": "family-941815fdd0ba",
+      "text": "Çelik",
+      "weight": 3
+    },
+    {
+      "id": "family-af025978ec98",
+      "text": "Yıldız",
+      "weight": 1
+    },
+    {
+      "id": "family-d5e058fc1472",
+      "text": "Yıldırım",
+      "weight": 1
+    },
+    {
+      "id": "family-2a3de1d6a097",
+      "text": "Öztürk",
+      "weight": 1
+    },
+    {
+      "id": "family-4d018ee7b141",
+      "text": "Aydın",
+      "weight": 1
+    },
+    {
+      "id": "family-8c4f087414fd",
+      "text": "Özdemir",
+      "weight": 1
+    },
+    {
+      "id": "family-dfd70fac4ce4",
+      "text": "Arslan",
+      "weight": 1
+    },
+    {
+      "id": "family-0de504725996",
+      "text": "Doğan",
+      "weight": 1
+    },
+    {
+      "id": "family-1996d1f0502d",
+      "text": "Kılıç",
+      "weight": 1
+    },
+    {
+      "id": "family-5458e8153698",
+      "text": "Aslan",
+      "weight": 1
+    },
+    {
+      "id": "family-ebf658756bd3",
+      "text": "Çetin",
+      "weight": 1
+    },
+    {
+      "id": "family-41f5946ca353",
+      "text": "Kara",
+      "weight": 1
+    },
+    {
+      "id": "family-da6d8c9ef014",
+      "text": "Koç",
+      "weight": 1
+    },
+    {
+      "id": "family-026442b0dce6",
+      "text": "Kurt",
+      "weight": 1
+    },
+    {
+      "id": "family-d5a135e32bbf",
+      "text": "Özkan",
+      "weight": 1
+    },
+    {
+      "id": "family-457756afec2a",
+      "text": "Şimşek",
+      "weight": 1
+    },
+    {
+      "id": "family-b7880e832377",
+      "text": "Polat",
+      "weight": 1
+    },
+    {
+      "id": "family-7f0ac6511894",
+      "text": "Özcan",
+      "weight": 1
+    },
+    {
+      "id": "family-80739b493fc5",
+      "text": "Korkmaz",
+      "weight": 1
+    },
+    {
+      "id": "family-6df615e7ec01",
+      "text": "Çakır",
+      "weight": 1
+    },
+    {
+      "id": "family-25a974652fb4",
+      "text": "Erdoğan",
+      "weight": 1
+    },
+    {
+      "id": "family-c3f66fa3a763",
+      "text": "Yavuz",
+      "weight": 1
+    },
+    {
+      "id": "family-2dba9a8763b1",
+      "text": "Can",
+      "weight": 1
+    },
+    {
+      "id": "family-91d2e3b6e0d6",
+      "text": "Acar",
+      "weight": 1
+    },
+    {
+      "id": "family-568aaea42425",
+      "text": "Aktaş",
+      "weight": 1
+    },
+    {
+      "id": "family-72f42091c845",
+      "text": "Şen",
+      "weight": 1
+    },
+    {
+      "id": "family-aa8d2c3a6bc7",
+      "text": "Güler",
+      "weight": 1
+    },
+    {
+      "id": "family-71fcf37e8659",
+      "text": "Gül",
+      "weight": 1
+    },
+    {
+      "id": "family-3c892a2b498c",
+      "text": "Yalçın",
+      "weight": 1
+    },
+    {
+      "id": "family-8f6b0822422f",
+      "text": "Bozkurt",
+      "weight": 1
+    },
+    {
+      "id": "family-3fd8a7db4c13",
+      "text": "Taş",
+      "weight": 1
+    },
+    {
+      "id": "family-bdf5c78f9455",
+      "text": "Keskin",
+      "weight": 1
+    },
+    {
+      "id": "family-f9dac1f0be11",
+      "text": "Avcı",
+      "weight": 1
+    },
+    {
+      "id": "family-bf52aaa3f1a5",
+      "text": "Işık",
+      "weight": 1
+    },
+    {
+      "id": "family-59c4e9ac04fc",
+      "text": "Kaplan",
+      "weight": 1
+    },
+    {
+      "id": "family-d48b25c686a1",
+      "text": "Ünal",
+      "weight": 1
+    },
+    {
+      "id": "family-6cb280a9594b",
+      "text": "Çiftçi",
+      "weight": 1
+    },
+    {
+      "id": "family-398a28a097bd",
+      "text": "Bulut",
+      "weight": 1
+    },
+    {
+      "id": "family-9ace33e72e2d",
+      "text": "Tekin",
+      "weight": 1
+    },
+    {
+      "id": "family-23dd103e8de7",
+      "text": "Ateş",
+      "weight": 1
+    },
+    {
+      "id": "family-96a4bb80ae0b",
+      "text": "Aksoy",
+      "weight": 1
+    },
+    {
+      "id": "family-fd6a19dba163",
+      "text": "Uçar",
+      "weight": 1
+    },
+    {
+      "id": "family-30511d57c069",
+      "text": "Güneş",
+      "weight": 1
+    },
+    {
+      "id": "family-916988b7b7ab",
+      "text": "Güzel",
+      "weight": 1
+    },
+    {
+      "id": "family-c644afa67f67",
+      "text": "Türkmen",
+      "weight": 1
+    },
+    {
+      "id": "family-f8f27e2be786",
+      "text": "Turan",
+      "weight": 1
+    },
+    {
+      "id": "family-bf9fe77012bf",
+      "text": "Karataş",
+      "weight": 1
+    },
+    {
+      "id": "family-b4c932e05745",
+      "text": "Eren",
+      "weight": 1
+    },
+    {
+      "id": "family-13aab05697cf",
+      "text": "Karaca",
+      "weight": 1
+    },
+    {
+      "id": "family-c573abfcf314",
+      "text": "Yüksel",
+      "weight": 1
+    },
+    {
+      "id": "family-c74c8dd6736f",
+      "text": "Çalışkan",
+      "weight": 1
+    },
+    {
+      "id": "family-2851f7be0bea",
+      "text": "Köse",
+      "weight": 1
+    },
+    {
+      "id": "family-0a12a69e328e",
+      "text": "Özer",
+      "weight": 1
+    },
+    {
+      "id": "family-d399e65a71a7",
+      "text": "Öz",
+      "weight": 1
+    },
+    {
+      "id": "family-d79fa841d0fc",
+      "text": "Taşçı",
+      "weight": 1
+    },
+    {
+      "id": "family-cde13eacdab9",
+      "text": "Sarıkaya",
+      "weight": 1
+    },
+    {
+      "id": "family-971ac731a520",
+      "text": "Yalın",
+      "weight": 1
+    },
+    {
+      "id": "family-fb0fbd8d7771",
+      "text": "Akın",
+      "weight": 1
+    },
+    {
+      "id": "family-f4c6c859424f",
+      "text": "Akbaş",
+      "weight": 1
+    },
+    {
+      "id": "family-728827f732fd",
+      "text": "Alkan",
+      "weight": 1
+    },
+    {
+      "id": "family-6ee0381c2464",
+      "text": "Altın",
+      "weight": 1
+    },
+    {
+      "id": "family-5c80c46c5cca",
+      "text": "Apaydın",
+      "weight": 1
+    },
+    {
+      "id": "family-6180df74b8fd",
+      "text": "Arı",
+      "weight": 1
+    },
+    {
+      "id": "family-7f13ecd1c08b",
+      "text": "Arıkan",
+      "weight": 1
+    },
+    {
+      "id": "family-df6da1e6b645",
+      "text": "Atalay",
+      "weight": 1
+    },
+    {
+      "id": "family-6fd4522a82c3",
+      "text": "Ataman",
+      "weight": 1
+    },
+    {
+      "id": "family-4376280a8774",
+      "text": "Ayhan",
+      "weight": 1
+    },
+    {
+      "id": "family-4f8bf3f6ee41",
+      "text": "Bayrak",
+      "weight": 1
+    },
+    {
+      "id": "family-21635715900e",
+      "text": "Bayram",
+      "weight": 1
+    },
+    {
+      "id": "family-6bd306c16ce8",
+      "text": "Berk",
+      "weight": 1
+    },
+    {
+      "id": "family-ad869645e9ef",
+      "text": "Bilgin",
+      "weight": 1
+    },
+    {
+      "id": "family-6d4b1e94961b",
+      "text": "Bingöl",
+      "weight": 1
+    },
+    {
+      "id": "family-1ea1fffab21f",
+      "text": "Bostancı",
+      "weight": 1
+    },
+    {
+      "id": "family-56b71e8c5325",
+      "text": "Ceylan",
+      "weight": 1
+    },
+    {
+      "id": "family-1245eebd439f",
+      "text": "Dal",
+      "weight": 1
+    },
+    {
+      "id": "family-c85fdde119d6",
+      "text": "Demirci",
+      "weight": 1
+    },
+    {
+      "id": "family-349cfac46b80",
+      "text": "Duman",
+      "weight": 1
+    },
+    {
+      "id": "family-85424415e2c4",
+      "text": "Durak",
+      "weight": 1
+    },
+    {
+      "id": "family-66e6570c4163",
+      "text": "Ekinci",
+      "weight": 1
+    },
+    {
+      "id": "family-d87ec9e1858c",
+      "text": "Erdem",
+      "weight": 1
+    },
+    {
+      "id": "family-c290377b1baa",
+      "text": "Ergin",
+      "weight": 1
+    },
+    {
+      "id": "family-fb54f1bf3a4b",
+      "text": "Ersoy",
+      "weight": 1
+    },
+    {
+      "id": "family-787dc4061028",
+      "text": "Ertürk",
+      "weight": 1
+    },
+    {
+      "id": "family-0d8fd73f2913",
+      "text": "Gök",
+      "weight": 1
+    },
+    {
+      "id": "family-a4208b2884ce",
+      "text": "Gökçe",
+      "weight": 1
+    },
+    {
+      "id": "family-1921f039724f",
+      "text": "Güngör",
+      "weight": 1
+    },
+    {
+      "id": "family-0fd711707ac9",
+      "text": "İnce",
+      "weight": 1
+    },
+    {
+      "id": "family-2d18e420b9d4",
+      "text": "Karaman",
+      "weight": 1
+    },
+    {
+      "id": "family-66665d0541cc",
+      "text": "Kavak",
+      "weight": 1
+    },
+    {
+      "id": "family-d901cd5c4d3e",
+      "text": "Kocaman",
+      "weight": 1
+    },
+    {
+      "id": "family-543c3a11149e",
+      "text": "Ocak",
+      "weight": 1
+    },
+    {
+      "id": "family-a77a21ff0cdc",
+      "text": "Oral",
+      "weight": 1
+    },
+    {
+      "id": "family-54ada74a87ca",
+      "text": "Özçelik",
+      "weight": 1
+    },
+    {
+      "id": "family-de2472e4fcf2",
+      "text": "Özdoğan",
+      "weight": 1
+    },
+    {
+      "id": "family-5a58875b5399",
+      "text": "Sağlam",
+      "weight": 1
+    },
+    {
+      "id": "family-041ce81c6040",
+      "text": "Yılmazer",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 10000
+  }
+}

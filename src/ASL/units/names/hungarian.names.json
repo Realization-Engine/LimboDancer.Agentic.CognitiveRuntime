@@ -1,0 +1,1062 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "hungarian",
+  "label": "Hungarian",
+  "language": "hu",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "family-given",
+    "componentOrder": [
+      "family",
+      "given"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "Hungarian domestic order is family name followed by given name. Preserve accents. Cross-national narrative display may explicitly choose a different order without changing components.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 100
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 100,
+    "secondComponent": 100
+  },
+  "completeness": "target-met",
+  "givenNames": [
+    {
+      "id": "given-45ce96762519",
+      "text": "István",
+      "weight": 3
+    },
+    {
+      "id": "given-a040af8f01a4",
+      "text": "János",
+      "weight": 3
+    },
+    {
+      "id": "given-98b9c5cbd436",
+      "text": "László",
+      "weight": 3
+    },
+    {
+      "id": "given-d0ebebe31be5",
+      "text": "József",
+      "weight": 3
+    },
+    {
+      "id": "given-3bf8c1be27c5",
+      "text": "Ferenc",
+      "weight": 3
+    },
+    {
+      "id": "given-caf7777fbd6c",
+      "text": "Sándor",
+      "weight": 1
+    },
+    {
+      "id": "given-c78e12276353",
+      "text": "Mihály",
+      "weight": 1
+    },
+    {
+      "id": "given-f020eaa456df",
+      "text": "György",
+      "weight": 1
+    },
+    {
+      "id": "given-b212e95999cf",
+      "text": "Pál",
+      "weight": 1
+    },
+    {
+      "id": "given-88afddda7a6f",
+      "text": "Péter",
+      "weight": 1
+    },
+    {
+      "id": "given-4455ac7d53b1",
+      "text": "András",
+      "weight": 1
+    },
+    {
+      "id": "given-62001b41452f",
+      "text": "Antal",
+      "weight": 1
+    },
+    {
+      "id": "given-3b7ae2ec1f7d",
+      "text": "Béla",
+      "weight": 1
+    },
+    {
+      "id": "given-c44d05a01eac",
+      "text": "Károly",
+      "weight": 1
+    },
+    {
+      "id": "given-2fb26c5d6e74",
+      "text": "Lajos",
+      "weight": 1
+    },
+    {
+      "id": "given-1027dfe394ea",
+      "text": "Imre",
+      "weight": 1
+    },
+    {
+      "id": "given-a2b02467010b",
+      "text": "Zoltán",
+      "weight": 1
+    },
+    {
+      "id": "given-eb891274d0ec",
+      "text": "Jenő",
+      "weight": 1
+    },
+    {
+      "id": "given-dbe2a5275f08",
+      "text": "Dezső",
+      "weight": 1
+    },
+    {
+      "id": "given-38a4c8521ba1",
+      "text": "Géza",
+      "weight": 1
+    },
+    {
+      "id": "given-16b318f24e59",
+      "text": "Endre",
+      "weight": 1
+    },
+    {
+      "id": "given-d7a283fab1f1",
+      "text": "Árpád",
+      "weight": 1
+    },
+    {
+      "id": "given-920a450ce801",
+      "text": "Vilmos",
+      "weight": 1
+    },
+    {
+      "id": "given-d4fb97514068",
+      "text": "Gyula",
+      "weight": 1
+    },
+    {
+      "id": "given-74b969ca3555",
+      "text": "Miklós",
+      "weight": 1
+    },
+    {
+      "id": "given-ab09e4cfbf17",
+      "text": "Tibor",
+      "weight": 1
+    },
+    {
+      "id": "given-8452b0da5a5b",
+      "text": "Zsolt",
+      "weight": 1
+    },
+    {
+      "id": "given-0ec6f7051323",
+      "text": "Ernő",
+      "weight": 1
+    },
+    {
+      "id": "given-b619edbe662b",
+      "text": "Elemér",
+      "weight": 1
+    },
+    {
+      "id": "given-6d5128cc0b27",
+      "text": "Emil",
+      "weight": 1
+    },
+    {
+      "id": "given-d061f53c971d",
+      "text": "Aladár",
+      "weight": 1
+    },
+    {
+      "id": "given-7f74d7ceb627",
+      "text": "Albert",
+      "weight": 1
+    },
+    {
+      "id": "given-7ea6c0474a31",
+      "text": "Alfréd",
+      "weight": 1
+    },
+    {
+      "id": "given-dd8a41b6acc1",
+      "text": "Ambrus",
+      "weight": 1
+    },
+    {
+      "id": "given-225d25ab2d72",
+      "text": "Anzelm",
+      "weight": 1
+    },
+    {
+      "id": "given-3ccea6fa629f",
+      "text": "Arnold",
+      "weight": 1
+    },
+    {
+      "id": "given-a84bfed26052",
+      "text": "Artúr",
+      "weight": 1
+    },
+    {
+      "id": "given-f003810c9505",
+      "text": "Ágoston",
+      "weight": 1
+    },
+    {
+      "id": "given-f16f64932f86",
+      "text": "Ákos",
+      "weight": 1
+    },
+    {
+      "id": "given-e21c44698c35",
+      "text": "Bálint",
+      "weight": 1
+    },
+    {
+      "id": "given-4975f33ae91d",
+      "text": "Barnabás",
+      "weight": 1
+    },
+    {
+      "id": "given-2069e25dd510",
+      "text": "Benedek",
+      "weight": 1
+    },
+    {
+      "id": "given-54d3a445c4ef",
+      "text": "Bernát",
+      "weight": 1
+    },
+    {
+      "id": "given-f7ff7568b130",
+      "text": "Bertalan",
+      "weight": 1
+    },
+    {
+      "id": "given-70a9af252084",
+      "text": "Boldizsár",
+      "weight": 1
+    },
+    {
+      "id": "given-e750d89cf851",
+      "text": "Dénes",
+      "weight": 1
+    },
+    {
+      "id": "given-4b0aa1d8c196",
+      "text": "Domokos",
+      "weight": 1
+    },
+    {
+      "id": "given-f4a806024b9f",
+      "text": "Ede",
+      "weight": 1
+    },
+    {
+      "id": "given-165e4b848ee1",
+      "text": "Edmond",
+      "weight": 1
+    },
+    {
+      "id": "given-b74941faa3b2",
+      "text": "Elek",
+      "weight": 1
+    },
+    {
+      "id": "given-327522218d67",
+      "text": "Farkas",
+      "weight": 1
+    },
+    {
+      "id": "given-48e556d153eb",
+      "text": "Félix",
+      "weight": 1
+    },
+    {
+      "id": "given-531dd5fcdd99",
+      "text": "Frigyes",
+      "weight": 1
+    },
+    {
+      "id": "given-aef27233c70f",
+      "text": "Gábor",
+      "weight": 1
+    },
+    {
+      "id": "given-231b7c7be262",
+      "text": "Gáspár",
+      "weight": 1
+    },
+    {
+      "id": "given-3da9d613d457",
+      "text": "Gedeon",
+      "weight": 1
+    },
+    {
+      "id": "given-1ed1386c294f",
+      "text": "Gergely",
+      "weight": 1
+    },
+    {
+      "id": "given-2ec913eb92ab",
+      "text": "Gusztáv",
+      "weight": 1
+    },
+    {
+      "id": "given-0b4aeb7299d5",
+      "text": "Henrik",
+      "weight": 1
+    },
+    {
+      "id": "given-b83474352a93",
+      "text": "Ignác",
+      "weight": 1
+    },
+    {
+      "id": "given-4150f4b5f84c",
+      "text": "Illés",
+      "weight": 1
+    },
+    {
+      "id": "given-5bb1b38bd752",
+      "text": "Izidor",
+      "weight": 1
+    },
+    {
+      "id": "given-6d9c8c7c6d4b",
+      "text": "Jakab",
+      "weight": 1
+    },
+    {
+      "id": "given-6c535584f1d8",
+      "text": "Józsa",
+      "weight": 1
+    },
+    {
+      "id": "given-b441794355c1",
+      "text": "Kálmán",
+      "weight": 1
+    },
+    {
+      "id": "given-ce6e6c210d06",
+      "text": "Kelemen",
+      "weight": 1
+    },
+    {
+      "id": "given-50eec49a0c75",
+      "text": "Kolos",
+      "weight": 1
+    },
+    {
+      "id": "given-ca078a16241e",
+      "text": "Konrád",
+      "weight": 1
+    },
+    {
+      "id": "given-b6337f84377f",
+      "text": "Kornél",
+      "weight": 1
+    },
+    {
+      "id": "given-b5532f92e313",
+      "text": "Kristóf",
+      "weight": 1
+    },
+    {
+      "id": "given-6cce88af47b7",
+      "text": "Lázár",
+      "weight": 1
+    },
+    {
+      "id": "given-f3f5ac5c874e",
+      "text": "Lehel",
+      "weight": 1
+    },
+    {
+      "id": "given-5af1b7c7a668",
+      "text": "Leó",
+      "weight": 1
+    },
+    {
+      "id": "given-4034f93ee702",
+      "text": "Lipót",
+      "weight": 1
+    },
+    {
+      "id": "given-d5cb0c16a8e7",
+      "text": "Lóránt",
+      "weight": 1
+    },
+    {
+      "id": "given-0e0edcb0db1e",
+      "text": "Lőrinc",
+      "weight": 1
+    },
+    {
+      "id": "given-c41e49d19a3b",
+      "text": "Lukács",
+      "weight": 1
+    },
+    {
+      "id": "given-1dc179364cfc",
+      "text": "Márton",
+      "weight": 1
+    },
+    {
+      "id": "given-5e9b4d396667",
+      "text": "Mátyás",
+      "weight": 1
+    },
+    {
+      "id": "given-aa31cb287735",
+      "text": "Menyhért",
+      "weight": 1
+    },
+    {
+      "id": "given-835d21cf4b7a",
+      "text": "Móric",
+      "weight": 1
+    },
+    {
+      "id": "given-1a55d4117fe9",
+      "text": "Nándor",
+      "weight": 1
+    },
+    {
+      "id": "given-f87a0002cd3d",
+      "text": "Oszkár",
+      "weight": 1
+    },
+    {
+      "id": "given-53a7c68f25bf",
+      "text": "Ottó",
+      "weight": 1
+    },
+    {
+      "id": "given-6e9e439a26e2",
+      "text": "Ödön",
+      "weight": 1
+    },
+    {
+      "id": "given-233d8f393448",
+      "text": "Rezső",
+      "weight": 1
+    },
+    {
+      "id": "given-7accef026885",
+      "text": "Richárd",
+      "weight": 1
+    },
+    {
+      "id": "given-7bb983951b3f",
+      "text": "Róbert",
+      "weight": 1
+    },
+    {
+      "id": "given-d1b6eda54b27",
+      "text": "Rudolf",
+      "weight": 1
+    },
+    {
+      "id": "given-5eaf524758db",
+      "text": "Samu",
+      "weight": 1
+    },
+    {
+      "id": "given-461746c31fad",
+      "text": "Sámuel",
+      "weight": 1
+    },
+    {
+      "id": "given-82d02236638e",
+      "text": "Sebestyén",
+      "weight": 1
+    },
+    {
+      "id": "given-7c6e1bf16286",
+      "text": "Simon",
+      "weight": 1
+    },
+    {
+      "id": "given-b5be3cd5de93",
+      "text": "Szilárd",
+      "weight": 1
+    },
+    {
+      "id": "given-f00832340054",
+      "text": "Tamás",
+      "weight": 1
+    },
+    {
+      "id": "given-1b6091be51ac",
+      "text": "Tihamér",
+      "weight": 1
+    },
+    {
+      "id": "given-3bdb4b048417",
+      "text": "Vencel",
+      "weight": 1
+    },
+    {
+      "id": "given-f82578ee7624",
+      "text": "Viktor",
+      "weight": 1
+    },
+    {
+      "id": "given-15b9ef7d2648",
+      "text": "Vince",
+      "weight": 1
+    },
+    {
+      "id": "given-5aa2d30d9ca5",
+      "text": "Zsigmond",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-f675a1a67474",
+      "text": "Nagy",
+      "weight": 3
+    },
+    {
+      "id": "family-c03d1e55ebef",
+      "text": "Kovács",
+      "weight": 3
+    },
+    {
+      "id": "family-f5dc8efab9bf",
+      "text": "Tóth",
+      "weight": 3
+    },
+    {
+      "id": "family-a03c8cfb43a9",
+      "text": "Szabó",
+      "weight": 3
+    },
+    {
+      "id": "family-d58acfdb062f",
+      "text": "Horváth",
+      "weight": 3
+    },
+    {
+      "id": "family-21cca87efbe3",
+      "text": "Varga",
+      "weight": 1
+    },
+    {
+      "id": "family-79d4dd13c51d",
+      "text": "Kiss",
+      "weight": 1
+    },
+    {
+      "id": "family-910b6dda4045",
+      "text": "Molnár",
+      "weight": 1
+    },
+    {
+      "id": "family-7fd34e32910e",
+      "text": "Németh",
+      "weight": 1
+    },
+    {
+      "id": "family-327522218d67",
+      "text": "Farkas",
+      "weight": 1
+    },
+    {
+      "id": "family-bd4cad070e1d",
+      "text": "Balogh",
+      "weight": 1
+    },
+    {
+      "id": "family-ad9f217d63f8",
+      "text": "Papp",
+      "weight": 1
+    },
+    {
+      "id": "family-f3ba7e120907",
+      "text": "Takács",
+      "weight": 1
+    },
+    {
+      "id": "family-de12dda7733e",
+      "text": "Juhász",
+      "weight": 1
+    },
+    {
+      "id": "family-851f62a6edf8",
+      "text": "Lakatos",
+      "weight": 1
+    },
+    {
+      "id": "family-2cd1c8ebd0be",
+      "text": "Mészáros",
+      "weight": 1
+    },
+    {
+      "id": "family-b088899b2e97",
+      "text": "Oláh",
+      "weight": 1
+    },
+    {
+      "id": "family-7c6e1bf16286",
+      "text": "Simon",
+      "weight": 1
+    },
+    {
+      "id": "family-5ac73e00c611",
+      "text": "Rácz",
+      "weight": 1
+    },
+    {
+      "id": "family-f7632919e117",
+      "text": "Fekete",
+      "weight": 1
+    },
+    {
+      "id": "family-dc7b02f945f0",
+      "text": "Szilágyi",
+      "weight": 1
+    },
+    {
+      "id": "family-0525a87dcb58",
+      "text": "Török",
+      "weight": 1
+    },
+    {
+      "id": "family-7e315ff139c0",
+      "text": "Fehér",
+      "weight": 1
+    },
+    {
+      "id": "family-f40ffeedd660",
+      "text": "Balázs",
+      "weight": 1
+    },
+    {
+      "id": "family-d5b8dac0d12a",
+      "text": "Gál",
+      "weight": 1
+    },
+    {
+      "id": "family-4e8709f2fbe6",
+      "text": "Kis",
+      "weight": 1
+    },
+    {
+      "id": "family-4d81f2c3b670",
+      "text": "Szűcs",
+      "weight": 1
+    },
+    {
+      "id": "family-2027b9bf9338",
+      "text": "Kocsis",
+      "weight": 1
+    },
+    {
+      "id": "family-665900b4abc5",
+      "text": "Orsós",
+      "weight": 1
+    },
+    {
+      "id": "family-84884049fe41",
+      "text": "Fodor",
+      "weight": 1
+    },
+    {
+      "id": "family-66cbfddd2dbc",
+      "text": "Pintér",
+      "weight": 1
+    },
+    {
+      "id": "family-296f28403c2b",
+      "text": "Szalai",
+      "weight": 1
+    },
+    {
+      "id": "family-58f7c4cc05af",
+      "text": "Sipos",
+      "weight": 1
+    },
+    {
+      "id": "family-aece6c7370fe",
+      "text": "Magyar",
+      "weight": 1
+    },
+    {
+      "id": "family-24e06d8825fe",
+      "text": "Vass",
+      "weight": 1
+    },
+    {
+      "id": "family-c41e49d19a3b",
+      "text": "Lukács",
+      "weight": 1
+    },
+    {
+      "id": "family-cc850d7f25fe",
+      "text": "Gulyás",
+      "weight": 1
+    },
+    {
+      "id": "family-84908d64b44d",
+      "text": "Király",
+      "weight": 1
+    },
+    {
+      "id": "family-88ec0a9d482f",
+      "text": "Bognár",
+      "weight": 1
+    },
+    {
+      "id": "family-0358b0606ac9",
+      "text": "Boros",
+      "weight": 1
+    },
+    {
+      "id": "family-caf7777fbd6c",
+      "text": "Sándor",
+      "weight": 1
+    },
+    {
+      "id": "family-1932bb7c2440",
+      "text": "Vincze",
+      "weight": 1
+    },
+    {
+      "id": "family-179bf1171b3f",
+      "text": "Veres",
+      "weight": 1
+    },
+    {
+      "id": "family-33dbbd423376",
+      "text": "Hegedűs",
+      "weight": 1
+    },
+    {
+      "id": "family-ef86386ea5e6",
+      "text": "Deák",
+      "weight": 1
+    },
+    {
+      "id": "family-9700da24cc26",
+      "text": "Pap",
+      "weight": 1
+    },
+    {
+      "id": "family-495f87bf02d1",
+      "text": "Fazekas",
+      "weight": 1
+    },
+    {
+      "id": "family-e21c44698c35",
+      "text": "Bálint",
+      "weight": 1
+    },
+    {
+      "id": "family-4150f4b5f84c",
+      "text": "Illés",
+      "weight": 1
+    },
+    {
+      "id": "family-b212e95999cf",
+      "text": "Pál",
+      "weight": 1
+    },
+    {
+      "id": "family-63c01ed72644",
+      "text": "Szőke",
+      "weight": 1
+    },
+    {
+      "id": "family-ce6e6c210d06",
+      "text": "Kelemen",
+      "weight": 1
+    },
+    {
+      "id": "family-6d9c8c7c6d4b",
+      "text": "Jakab",
+      "weight": 1
+    },
+    {
+      "id": "family-6fb64c705eb4",
+      "text": "Bodnár",
+      "weight": 1
+    },
+    {
+      "id": "family-62001b41452f",
+      "text": "Antal",
+      "weight": 1
+    },
+    {
+      "id": "family-231b7c7be262",
+      "text": "Gáspár",
+      "weight": 1
+    },
+    {
+      "id": "family-38c9a5d42255",
+      "text": "Sánta",
+      "weight": 1
+    },
+    {
+      "id": "family-611ae04e4cbe",
+      "text": "Fülöp",
+      "weight": 1
+    },
+    {
+      "id": "family-da1f2f1032bb",
+      "text": "Kozma",
+      "weight": 1
+    },
+    {
+      "id": "family-86ac1d05592d",
+      "text": "Váradi",
+      "weight": 1
+    },
+    {
+      "id": "family-bab322a4c311",
+      "text": "Orosz",
+      "weight": 1
+    },
+    {
+      "id": "family-55cde1a956af",
+      "text": "Lengyel",
+      "weight": 1
+    },
+    {
+      "id": "family-030ffa9b9ea5",
+      "text": "Hajdu",
+      "weight": 1
+    },
+    {
+      "id": "family-800435f2898b",
+      "text": "Katona",
+      "weight": 1
+    },
+    {
+      "id": "family-c4aeb76a5440",
+      "text": "Szekeres",
+      "weight": 1
+    },
+    {
+      "id": "family-2d0211bbddc6",
+      "text": "Barta",
+      "weight": 1
+    },
+    {
+      "id": "family-57ca16622863",
+      "text": "Bene",
+      "weight": 1
+    },
+    {
+      "id": "family-7f5ec0f63700",
+      "text": "Bíró",
+      "weight": 1
+    },
+    {
+      "id": "family-51b5311de518",
+      "text": "Bodó",
+      "weight": 1
+    },
+    {
+      "id": "family-ab37435b379f",
+      "text": "Bódi",
+      "weight": 1
+    },
+    {
+      "id": "family-16d219ad704e",
+      "text": "Bognárfi",
+      "weight": 1
+    },
+    {
+      "id": "family-27b23f6214a2",
+      "text": "Budai",
+      "weight": 1
+    },
+    {
+      "id": "family-0f4c0b256718",
+      "text": "Császár",
+      "weight": 1
+    },
+    {
+      "id": "family-7b656c678c2d",
+      "text": "Cseh",
+      "weight": 1
+    },
+    {
+      "id": "family-6bd89b7a57d6",
+      "text": "Csizmadia",
+      "weight": 1
+    },
+    {
+      "id": "family-8cda9f5a18f2",
+      "text": "Dobos",
+      "weight": 1
+    },
+    {
+      "id": "family-fb7aa9818623",
+      "text": "Dudás",
+      "weight": 1
+    },
+    {
+      "id": "family-ce7c2409b525",
+      "text": "Erdős",
+      "weight": 1
+    },
+    {
+      "id": "family-23cda1201753",
+      "text": "Fábián",
+      "weight": 1
+    },
+    {
+      "id": "family-9f5bd8d08ea9",
+      "text": "Farkasdi",
+      "weight": 1
+    },
+    {
+      "id": "family-1ed1386c294f",
+      "text": "Gergely",
+      "weight": 1
+    },
+    {
+      "id": "family-77a0fa09179b",
+      "text": "Halász",
+      "weight": 1
+    },
+    {
+      "id": "family-37790b6fe052",
+      "text": "Harsányi",
+      "weight": 1
+    },
+    {
+      "id": "family-e1697c7a94e3",
+      "text": "Holló",
+      "weight": 1
+    },
+    {
+      "id": "family-c70f9d65a06e",
+      "text": "Huszár",
+      "weight": 1
+    },
+    {
+      "id": "family-aca7f0522b85",
+      "text": "Kádár",
+      "weight": 1
+    },
+    {
+      "id": "family-20a6701143d6",
+      "text": "Kalmár",
+      "weight": 1
+    },
+    {
+      "id": "family-96226818d817",
+      "text": "Kerekes",
+      "weight": 1
+    },
+    {
+      "id": "family-693685ca4bfc",
+      "text": "Kertész",
+      "weight": 1
+    },
+    {
+      "id": "family-e9ea75e723bf",
+      "text": "Kónya",
+      "weight": 1
+    },
+    {
+      "id": "family-57e52776d94f",
+      "text": "Lantos",
+      "weight": 1
+    },
+    {
+      "id": "family-6cce88af47b7",
+      "text": "Lázár",
+      "weight": 1
+    },
+    {
+      "id": "family-c0b11482c49b",
+      "text": "Lőrincz",
+      "weight": 1
+    },
+    {
+      "id": "family-2bc58fcc412b",
+      "text": "Major",
+      "weight": 1
+    },
+    {
+      "id": "family-1dc179364cfc",
+      "text": "Márton",
+      "weight": 1
+    },
+    {
+      "id": "family-d10b2d00b668",
+      "text": "Máté",
+      "weight": 1
+    },
+    {
+      "id": "family-5207fd5f0fd5",
+      "text": "Mezei",
+      "weight": 1
+    },
+    {
+      "id": "family-94ef1ebd488d",
+      "text": "Novák",
+      "weight": 1
+    },
+    {
+      "id": "family-3c2fc9732c25",
+      "text": "Pásztor",
+      "weight": 1
+    },
+    {
+      "id": "family-bf61b9eb2d49",
+      "text": "Vadász",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 9986
+  }
+}

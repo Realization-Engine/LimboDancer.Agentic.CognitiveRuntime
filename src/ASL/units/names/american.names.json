@@ -1,0 +1,1973 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "american",
+  "label": "American personnel",
+  "language": "en-US",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names",
+      "ssa-names-1900s"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Uniform authoring weights. Neither name frequencies nor the surname mix estimate wartime population or unit demographics."
+  },
+  "convention": {
+    "id": "given-family",
+    "componentOrder": [
+      "given",
+      "family"
+    ],
+    "separator": " ",
+    "secondComponentRole": "family"
+  },
+  "scopeNote": "General U.S. Army and Marine fictional male personnel candidates for 1935-1953. Given names are the SSA top 100 male names for U.S. births in 1900-1909, used as one relevant birth cohort, not a complete age distribution. Surnames are an editorial mixture of British, Irish, German, Jewish, Polish, Italian, French, Scandinavian, and Spanish-language forms found in American naming traditions; individual wartime usage remains unverified. Names do not assign ethnicity, race, religion, or immigration status. This general pool does not model the composition of any particular formation. Historically specific formations, including Japanese American units, require authored identities or a future dedicated profile. Date-sensitive segregation and integration are scenario-authoring context, not inferred from surnames.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 200
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 282,
+    "secondComponent": 282
+  },
+  "completeness": "target-met",
+  "givenNames": [
+    {
+      "id": "given-a8cfcd748320",
+      "text": "John",
+      "weight": 1
+    },
+    {
+      "id": "given-190eb3ebae2b",
+      "text": "William",
+      "weight": 1
+    },
+    {
+      "id": "given-9345a35a6fdf",
+      "text": "James",
+      "weight": 1
+    },
+    {
+      "id": "given-3d28271ec52e",
+      "text": "George",
+      "weight": 1
+    },
+    {
+      "id": "given-c43139196d57",
+      "text": "Charles",
+      "weight": 1
+    },
+    {
+      "id": "given-2238dd61a1bf",
+      "text": "Robert",
+      "weight": 1
+    },
+    {
+      "id": "given-78a1a1dae4e5",
+      "text": "Joseph",
+      "weight": 1
+    },
+    {
+      "id": "given-db605e8f7191",
+      "text": "Frank",
+      "weight": 1
+    },
+    {
+      "id": "given-34405d46cb25",
+      "text": "Edward",
+      "weight": 1
+    },
+    {
+      "id": "given-5dfcf9ef1fb1",
+      "text": "Thomas",
+      "weight": 1
+    },
+    {
+      "id": "given-a950f30a7250",
+      "text": "Henry",
+      "weight": 1
+    },
+    {
+      "id": "given-d1289e5a730e",
+      "text": "Walter",
+      "weight": 1
+    },
+    {
+      "id": "given-a0fef9d66eaf",
+      "text": "Harry",
+      "weight": 1
+    },
+    {
+      "id": "given-31be03023c37",
+      "text": "Willie",
+      "weight": 1
+    },
+    {
+      "id": "given-52b67b60260d",
+      "text": "Arthur",
+      "weight": 1
+    },
+    {
+      "id": "given-7f74d7ceb627",
+      "text": "Albert",
+      "weight": 1
+    },
+    {
+      "id": "given-b6ac341f3f9b",
+      "text": "Clarence",
+      "weight": 1
+    },
+    {
+      "id": "given-401f1721a42a",
+      "text": "Fred",
+      "weight": 1
+    },
+    {
+      "id": "given-00b45a020870",
+      "text": "Harold",
+      "weight": 1
+    },
+    {
+      "id": "given-818b5cc5f21d",
+      "text": "Paul",
+      "weight": 1
+    },
+    {
+      "id": "given-ffb595919dd6",
+      "text": "Raymond",
+      "weight": 1
+    },
+    {
+      "id": "given-1deb0a3b8675",
+      "text": "Richard",
+      "weight": 1
+    },
+    {
+      "id": "given-e3058ee8c04e",
+      "text": "Roy",
+      "weight": 1
+    },
+    {
+      "id": "given-6dd8b7d7d3c5",
+      "text": "Joe",
+      "weight": 1
+    },
+    {
+      "id": "given-9293e16b8e01",
+      "text": "Louis",
+      "weight": 1
+    },
+    {
+      "id": "given-dc953bc5e6b4",
+      "text": "Carl",
+      "weight": 1
+    },
+    {
+      "id": "given-b808b3be2949",
+      "text": "Ralph",
+      "weight": 1
+    },
+    {
+      "id": "given-218caca20841",
+      "text": "Earl",
+      "weight": 1
+    },
+    {
+      "id": "given-b5fd03dd91df",
+      "text": "Jack",
+      "weight": 1
+    },
+    {
+      "id": "given-6aa5c501d58c",
+      "text": "Ernest",
+      "weight": 1
+    },
+    {
+      "id": "given-a6b54c20a7b9",
+      "text": "David",
+      "weight": 1
+    },
+    {
+      "id": "given-b1f6d1241c57",
+      "text": "Samuel",
+      "weight": 1
+    },
+    {
+      "id": "given-f186449d7e0e",
+      "text": "Howard",
+      "weight": 1
+    },
+    {
+      "id": "given-6e81b1255ad5",
+      "text": "Charlie",
+      "weight": 1
+    },
+    {
+      "id": "given-e2aae930fa0a",
+      "text": "Francis",
+      "weight": 1
+    },
+    {
+      "id": "given-422ff7009040",
+      "text": "Herbert",
+      "weight": 1
+    },
+    {
+      "id": "given-76364d81ab4c",
+      "text": "Lawrence",
+      "weight": 1
+    },
+    {
+      "id": "given-71cdd1b9b53b",
+      "text": "Theodore",
+      "weight": 1
+    },
+    {
+      "id": "given-e88cfa8fbf9a",
+      "text": "Alfred",
+      "weight": 1
+    },
+    {
+      "id": "given-c10873196eb1",
+      "text": "Andrew",
+      "weight": 1
+    },
+    {
+      "id": "given-ee4a862d9ece",
+      "text": "Elmer",
+      "weight": 1
+    },
+    {
+      "id": "given-4ecde249d747",
+      "text": "Sam",
+      "weight": 1
+    },
+    {
+      "id": "given-9b1e8a94fcdb",
+      "text": "Eugene",
+      "weight": 1
+    },
+    {
+      "id": "given-5bc426e8d81e",
+      "text": "Leo",
+      "weight": 1
+    },
+    {
+      "id": "given-f089eaef57ab",
+      "text": "Michael",
+      "weight": 1
+    },
+    {
+      "id": "given-e7da824a74f6",
+      "text": "Lee",
+      "weight": 1
+    },
+    {
+      "id": "given-48bb4b331e60",
+      "text": "Herman",
+      "weight": 1
+    },
+    {
+      "id": "given-3090ad7f5b83",
+      "text": "Anthony",
+      "weight": 1
+    },
+    {
+      "id": "given-7297db81c2f7",
+      "text": "Daniel",
+      "weight": 1
+    },
+    {
+      "id": "given-1f43ca92e76a",
+      "text": "Leonard",
+      "weight": 1
+    },
+    {
+      "id": "given-eaf04d6e9310",
+      "text": "Floyd",
+      "weight": 1
+    },
+    {
+      "id": "given-5991ce426259",
+      "text": "Donald",
+      "weight": 1
+    },
+    {
+      "id": "given-ca70c45c591e",
+      "text": "Kenneth",
+      "weight": 1
+    },
+    {
+      "id": "given-1ecb9e6bdf6c",
+      "text": "Jesse",
+      "weight": 1
+    },
+    {
+      "id": "given-f03247d1c40e",
+      "text": "Russell",
+      "weight": 1
+    },
+    {
+      "id": "given-39aeca5b3b19",
+      "text": "Clyde",
+      "weight": 1
+    },
+    {
+      "id": "given-ca66a852a9e9",
+      "text": "Oscar",
+      "weight": 1
+    },
+    {
+      "id": "given-ea72c7959429",
+      "text": "Peter",
+      "weight": 1
+    },
+    {
+      "id": "given-70a92ab066d0",
+      "text": "Lester",
+      "weight": 1
+    },
+    {
+      "id": "given-e054bd687e31",
+      "text": "Leroy",
+      "weight": 1
+    },
+    {
+      "id": "given-cc172a7c8269",
+      "text": "Ray",
+      "weight": 1
+    },
+    {
+      "id": "given-f4537f49d815",
+      "text": "Stanley",
+      "weight": 1
+    },
+    {
+      "id": "given-361ff09bf79b",
+      "text": "Clifford",
+      "weight": 1
+    },
+    {
+      "id": "given-c625ca574188",
+      "text": "Lewis",
+      "weight": 1
+    },
+    {
+      "id": "given-f3c7769dd45d",
+      "text": "Benjamin",
+      "weight": 1
+    },
+    {
+      "id": "given-39a5fd65a664",
+      "text": "Edwin",
+      "weight": 1
+    },
+    {
+      "id": "given-a00d36bb2ee0",
+      "text": "Frederick",
+      "weight": 1
+    },
+    {
+      "id": "given-618738f7143c",
+      "text": "Chester",
+      "weight": 1
+    },
+    {
+      "id": "given-0615570f9ea1",
+      "text": "Claude",
+      "weight": 1
+    },
+    {
+      "id": "given-72f1935f4515",
+      "text": "Eddie",
+      "weight": 1
+    },
+    {
+      "id": "given-408d8c912052",
+      "text": "Cecil",
+      "weight": 1
+    },
+    {
+      "id": "given-99ce5e0b2a2d",
+      "text": "Lloyd",
+      "weight": 1
+    },
+    {
+      "id": "given-4d4bfa821388",
+      "text": "Jessie",
+      "weight": 1
+    },
+    {
+      "id": "given-39d3a2e969b3",
+      "text": "Martin",
+      "weight": 1
+    },
+    {
+      "id": "given-3a4d5b86cfa2",
+      "text": "Bernard",
+      "weight": 1
+    },
+    {
+      "id": "given-81f3bf42a93c",
+      "text": "Tom",
+      "weight": 1
+    },
+    {
+      "id": "given-6cef4ccc1019",
+      "text": "Will",
+      "weight": 1
+    },
+    {
+      "id": "given-b987b5d25fe3",
+      "text": "Norman",
+      "weight": 1
+    },
+    {
+      "id": "given-877f4b9feda2",
+      "text": "Edgar",
+      "weight": 1
+    },
+    {
+      "id": "given-2db7a0c30b87",
+      "text": "Harvey",
+      "weight": 1
+    },
+    {
+      "id": "given-030d756286e5",
+      "text": "Ben",
+      "weight": 1
+    },
+    {
+      "id": "given-ff69e6555c40",
+      "text": "Homer",
+      "weight": 1
+    },
+    {
+      "id": "given-696e93e74794",
+      "text": "Luther",
+      "weight": 1
+    },
+    {
+      "id": "given-ab70e8a91550",
+      "text": "Leon",
+      "weight": 1
+    },
+    {
+      "id": "given-69abb85fc081",
+      "text": "Melvin",
+      "weight": 1
+    },
+    {
+      "id": "given-3cdfbb71d545",
+      "text": "Philip",
+      "weight": 1
+    },
+    {
+      "id": "given-bb670b6e061a",
+      "text": "Johnnie",
+      "weight": 1
+    },
+    {
+      "id": "given-96bd923157c7",
+      "text": "Jim",
+      "weight": 1
+    },
+    {
+      "id": "given-8856d1749786",
+      "text": "Milton",
+      "weight": 1
+    },
+    {
+      "id": "given-a9cca5a75f06",
+      "text": "Everett",
+      "weight": 1
+    },
+    {
+      "id": "given-1670f0147906",
+      "text": "Allen",
+      "weight": 1
+    },
+    {
+      "id": "given-fdc888d547f3",
+      "text": "Leslie",
+      "weight": 1
+    },
+    {
+      "id": "given-6f7d828836e0",
+      "text": "Alvin",
+      "weight": 1
+    },
+    {
+      "id": "given-6c00e6ff6ea6",
+      "text": "Victor",
+      "weight": 1
+    },
+    {
+      "id": "given-6b36f3357f1b",
+      "text": "Marvin",
+      "weight": 1
+    },
+    {
+      "id": "given-841d74b8eb69",
+      "text": "Stephen",
+      "weight": 1
+    },
+    {
+      "id": "given-dbadfc88144b",
+      "text": "Alexander",
+      "weight": 1
+    },
+    {
+      "id": "given-8141d2b17b73",
+      "text": "Jacob",
+      "weight": 1
+    },
+    {
+      "id": "given-7063a398942b",
+      "text": "Hugh",
+      "weight": 1
+    },
+    {
+      "id": "given-2aba5dd8596b",
+      "text": "Patrick",
+      "weight": 1
+    }
+  ],
+  "familyNames": [
+    {
+      "id": "family-9f5425901004",
+      "text": "Smith",
+      "weight": 1
+    },
+    {
+      "id": "family-fe16a94194b3",
+      "text": "Jones",
+      "weight": 1
+    },
+    {
+      "id": "family-6e8d8801f51a",
+      "text": "Williams",
+      "weight": 1
+    },
+    {
+      "id": "family-18f285592896",
+      "text": "Brown",
+      "weight": 1
+    },
+    {
+      "id": "family-c2793b826cc9",
+      "text": "Taylor",
+      "weight": 1
+    },
+    {
+      "id": "family-8117874187b3",
+      "text": "Davies",
+      "weight": 1
+    },
+    {
+      "id": "family-fb7961d139e4",
+      "text": "Wilson",
+      "weight": 1
+    },
+    {
+      "id": "family-8658ebf1edf5",
+      "text": "Evans",
+      "weight": 1
+    },
+    {
+      "id": "family-5dfcf9ef1fb1",
+      "text": "Thomas",
+      "weight": 1
+    },
+    {
+      "id": "family-3013b18f4387",
+      "text": "Johnson",
+      "weight": 1
+    },
+    {
+      "id": "family-ce5f866533e3",
+      "text": "Roberts",
+      "weight": 1
+    },
+    {
+      "id": "family-7f36df0b525d",
+      "text": "Robinson",
+      "weight": 1
+    },
+    {
+      "id": "family-91b2d84f6ce5",
+      "text": "Thompson",
+      "weight": 1
+    },
+    {
+      "id": "family-b16370a17fc3",
+      "text": "Wright",
+      "weight": 1
+    },
+    {
+      "id": "family-f4034e7eb42b",
+      "text": "Walker",
+      "weight": 1
+    },
+    {
+      "id": "family-3495e757855a",
+      "text": "White",
+      "weight": 1
+    },
+    {
+      "id": "family-645e1b29b64c",
+      "text": "Edwards",
+      "weight": 1
+    },
+    {
+      "id": "family-ee01fa3ba978",
+      "text": "Hughes",
+      "weight": 1
+    },
+    {
+      "id": "family-d486dfbd5fb5",
+      "text": "Green",
+      "weight": 1
+    },
+    {
+      "id": "family-25c7e17d3e99",
+      "text": "Hall",
+      "weight": 1
+    },
+    {
+      "id": "family-c625ca574188",
+      "text": "Lewis",
+      "weight": 1
+    },
+    {
+      "id": "family-56d3e80582af",
+      "text": "Harris",
+      "weight": 1
+    },
+    {
+      "id": "family-26242490d12d",
+      "text": "Clarke",
+      "weight": 1
+    },
+    {
+      "id": "family-f58e4a64909c",
+      "text": "Reed",
+      "weight": 1
+    },
+    {
+      "id": "family-502ae197407d",
+      "text": "Jackson",
+      "weight": 1
+    },
+    {
+      "id": "family-731140284eac",
+      "text": "Wood",
+      "weight": 1
+    },
+    {
+      "id": "family-5df0e3c42830",
+      "text": "Turner",
+      "weight": 1
+    },
+    {
+      "id": "family-39d3a2e969b3",
+      "text": "Martin",
+      "weight": 1
+    },
+    {
+      "id": "family-61a1d3bdf665",
+      "text": "Cooper",
+      "weight": 1
+    },
+    {
+      "id": "family-21f5358c1fd3",
+      "text": "Hill",
+      "weight": 1
+    },
+    {
+      "id": "family-b311172dd9a4",
+      "text": "Ward",
+      "weight": 1
+    },
+    {
+      "id": "family-7f2cc2d8db90",
+      "text": "Morris",
+      "weight": 1
+    },
+    {
+      "id": "family-07724304d1fc",
+      "text": "Moore",
+      "weight": 1
+    },
+    {
+      "id": "family-baa4941d5771",
+      "text": "Clark",
+      "weight": 1
+    },
+    {
+      "id": "family-e7da824a74f6",
+      "text": "Lee",
+      "weight": 1
+    },
+    {
+      "id": "family-13166b63aaa7",
+      "text": "King",
+      "weight": 1
+    },
+    {
+      "id": "family-b7b9be5f87ca",
+      "text": "Baker",
+      "weight": 1
+    },
+    {
+      "id": "family-0a1a08c0fb4d",
+      "text": "Harrison",
+      "weight": 1
+    },
+    {
+      "id": "family-02281b3b5dd5",
+      "text": "Morgan",
+      "weight": 1
+    },
+    {
+      "id": "family-1670f0147906",
+      "text": "Allen",
+      "weight": 1
+    },
+    {
+      "id": "family-9345a35a6fdf",
+      "text": "James",
+      "weight": 1
+    },
+    {
+      "id": "family-626928c4f868",
+      "text": "Scott",
+      "weight": 1
+    },
+    {
+      "id": "family-039a7887111f",
+      "text": "Phillips",
+      "weight": 1
+    },
+    {
+      "id": "family-4d7b2cc54157",
+      "text": "Watson",
+      "weight": 1
+    },
+    {
+      "id": "family-683313d69084",
+      "text": "Davis",
+      "weight": 1
+    },
+    {
+      "id": "family-92039f1a7ad8",
+      "text": "Parker",
+      "weight": 1
+    },
+    {
+      "id": "family-93c91c851e7a",
+      "text": "Price",
+      "weight": 1
+    },
+    {
+      "id": "family-8fc49a37693b",
+      "text": "Bennett",
+      "weight": 1
+    },
+    {
+      "id": "family-548674f78c8d",
+      "text": "Young",
+      "weight": 1
+    },
+    {
+      "id": "family-fa66cfd48acc",
+      "text": "Griffiths",
+      "weight": 1
+    },
+    {
+      "id": "family-483d4bce16af",
+      "text": "Mitchell",
+      "weight": 1
+    },
+    {
+      "id": "family-a226a2084c6d",
+      "text": "Kelly",
+      "weight": 1
+    },
+    {
+      "id": "family-7f4a1e5bff2d",
+      "text": "Cook",
+      "weight": 1
+    },
+    {
+      "id": "family-25eb92ae54cc",
+      "text": "Carter",
+      "weight": 1
+    },
+    {
+      "id": "family-3c237edf7669",
+      "text": "Richardson",
+      "weight": 1
+    },
+    {
+      "id": "family-ceb32b93931c",
+      "text": "Bailey",
+      "weight": 1
+    },
+    {
+      "id": "family-e2120ffdc0d2",
+      "text": "Collins",
+      "weight": 1
+    },
+    {
+      "id": "family-8e80b2b4b22a",
+      "text": "Bell",
+      "weight": 1
+    },
+    {
+      "id": "family-78f8298fe06c",
+      "text": "Shaw",
+      "weight": 1
+    },
+    {
+      "id": "family-7eda99495667",
+      "text": "Murphy",
+      "weight": 1
+    },
+    {
+      "id": "family-716545ea5827",
+      "text": "Miller",
+      "weight": 1
+    },
+    {
+      "id": "family-bbacffd9bc26",
+      "text": "Cox",
+      "weight": 1
+    },
+    {
+      "id": "family-6bb48cc5c786",
+      "text": "Richards",
+      "weight": 1
+    },
+    {
+      "id": "family-813f46eed45d",
+      "text": "Brooks",
+      "weight": 1
+    },
+    {
+      "id": "family-00a1fb196513",
+      "text": "Marshall",
+      "weight": 1
+    },
+    {
+      "id": "family-9eac806b76ba",
+      "text": "Anderson",
+      "weight": 1
+    },
+    {
+      "id": "family-bd74846f1a86",
+      "text": "Simpson",
+      "weight": 1
+    },
+    {
+      "id": "family-e4a141627f7c",
+      "text": "Ellis",
+      "weight": 1
+    },
+    {
+      "id": "family-f84f9ac83eb5",
+      "text": "Adams",
+      "weight": 1
+    },
+    {
+      "id": "family-235fe39352f4",
+      "text": "Stewart",
+      "weight": 1
+    },
+    {
+      "id": "family-78b7d0379d5e",
+      "text": "Grant",
+      "weight": 1
+    },
+    {
+      "id": "family-c3bd34c6f097",
+      "text": "Wilkinson",
+      "weight": 1
+    },
+    {
+      "id": "family-7229de2d88d2",
+      "text": "Foster",
+      "weight": 1
+    },
+    {
+      "id": "family-c26de706132a",
+      "text": "Chapman",
+      "weight": 1
+    },
+    {
+      "id": "family-379dbafbfb91",
+      "text": "Powell",
+      "weight": 1
+    },
+    {
+      "id": "family-6456d256d43c",
+      "text": "Webb",
+      "weight": 1
+    },
+    {
+      "id": "family-6a97f77a12c3",
+      "text": "Rogers",
+      "weight": 1
+    },
+    {
+      "id": "family-0d5adda3cdcc",
+      "text": "Gray",
+      "weight": 1
+    },
+    {
+      "id": "family-9e00106e1ab0",
+      "text": "Mason",
+      "weight": 1
+    },
+    {
+      "id": "family-5d422d0acb34",
+      "text": "Graham",
+      "weight": 1
+    },
+    {
+      "id": "family-81f16575878f",
+      "text": "Hunt",
+      "weight": 1
+    },
+    {
+      "id": "family-70852077f763",
+      "text": "Henderson",
+      "weight": 1
+    },
+    {
+      "id": "family-7e6046c9a277",
+      "text": "Campbell",
+      "weight": 1
+    },
+    {
+      "id": "family-823fadd0fb3a",
+      "text": "Matthews",
+      "weight": 1
+    },
+    {
+      "id": "family-baa31bcd2580",
+      "text": "Owen",
+      "weight": 1
+    },
+    {
+      "id": "family-67ff5de6ad9f",
+      "text": "Palmer",
+      "weight": 1
+    },
+    {
+      "id": "family-0fbbc4a47c14",
+      "text": "Holmes",
+      "weight": 1
+    },
+    {
+      "id": "family-2a41acacaddf",
+      "text": "Mills",
+      "weight": 1
+    },
+    {
+      "id": "family-0b222f2ae62d",
+      "text": "Barnes",
+      "weight": 1
+    },
+    {
+      "id": "family-f24b52468bfa",
+      "text": "Knight",
+      "weight": 1
+    },
+    {
+      "id": "family-99ce5e0b2a2d",
+      "text": "Lloyd",
+      "weight": 1
+    },
+    {
+      "id": "family-676e2d10c4e5",
+      "text": "Butler",
+      "weight": 1
+    },
+    {
+      "id": "family-f03247d1c40e",
+      "text": "Russell",
+      "weight": 1
+    },
+    {
+      "id": "family-a59978f16583",
+      "text": "Barker",
+      "weight": 1
+    },
+    {
+      "id": "family-ea49f5ee2740",
+      "text": "Fisher",
+      "weight": 1
+    },
+    {
+      "id": "family-9f01fd213294",
+      "text": "Stevens",
+      "weight": 1
+    },
+    {
+      "id": "family-9a4d10e69361",
+      "text": "Jenkins",
+      "weight": 1
+    },
+    {
+      "id": "family-dec7a16fae6a",
+      "text": "Murray",
+      "weight": 1
+    },
+    {
+      "id": "family-7e0b7a468d5c",
+      "text": "Dixon",
+      "weight": 1
+    },
+    {
+      "id": "family-2db7a0c30b87",
+      "text": "Harvey",
+      "weight": 1
+    },
+    {
+      "id": "family-7fe5df9caca6",
+      "text": "Sullivan",
+      "weight": 1
+    },
+    {
+      "id": "family-e6e624964c83",
+      "text": "O'Brien",
+      "weight": 1
+    },
+    {
+      "id": "family-680d87479f03",
+      "text": "O'Connor",
+      "weight": 1
+    },
+    {
+      "id": "family-009ccbf8e729",
+      "text": "O'Neill",
+      "weight": 1
+    },
+    {
+      "id": "family-a76dc443f64a",
+      "text": "McCarthy",
+      "weight": 1
+    },
+    {
+      "id": "family-597d0dd6aa15",
+      "text": "McDonald",
+      "weight": 1
+    },
+    {
+      "id": "family-323e7ecf5e26",
+      "text": "McLaughlin",
+      "weight": 1
+    },
+    {
+      "id": "family-36cc575803a4",
+      "text": "McGuire",
+      "weight": 1
+    },
+    {
+      "id": "family-52838f61968f",
+      "text": "McMahon",
+      "weight": 1
+    },
+    {
+      "id": "family-2d1e830624b2",
+      "text": "Ryan",
+      "weight": 1
+    },
+    {
+      "id": "family-efce64136324",
+      "text": "Kennedy",
+      "weight": 1
+    },
+    {
+      "id": "family-fc2042d803a7",
+      "text": "Walsh",
+      "weight": 1
+    },
+    {
+      "id": "family-47d68ef4cc6e",
+      "text": "Doyle",
+      "weight": 1
+    },
+    {
+      "id": "family-64b2ad239fd8",
+      "text": "Flynn",
+      "weight": 1
+    },
+    {
+      "id": "family-2cbe3208678c",
+      "text": "Gallagher",
+      "weight": 1
+    },
+    {
+      "id": "family-48d14f2c95d1",
+      "text": "Donnelly",
+      "weight": 1
+    },
+    {
+      "id": "family-02e539d80cab",
+      "text": "Duffy",
+      "weight": 1
+    },
+    {
+      "id": "family-df5ac68b2b28",
+      "text": "Quinn",
+      "weight": 1
+    },
+    {
+      "id": "family-6be4877e1ede",
+      "text": "Brennan",
+      "weight": 1
+    },
+    {
+      "id": "family-8c73debe1496",
+      "text": "Burke",
+      "weight": 1
+    },
+    {
+      "id": "family-e26b83d4babd",
+      "text": "Casey",
+      "weight": 1
+    },
+    {
+      "id": "family-6ea5b8e02aa3",
+      "text": "Fitzgerald",
+      "weight": 1
+    },
+    {
+      "id": "family-794d25212d43",
+      "text": "Foley",
+      "weight": 1
+    },
+    {
+      "id": "family-dcd0e2aa45b5",
+      "text": "Higgins",
+      "weight": 1
+    },
+    {
+      "id": "family-4d309590b691",
+      "text": "Hogan",
+      "weight": 1
+    },
+    {
+      "id": "family-b4345de0386e",
+      "text": "Keegan",
+      "weight": 1
+    },
+    {
+      "id": "family-3ac8cab7ed5c",
+      "text": "Lynch",
+      "weight": 1
+    },
+    {
+      "id": "family-5230ae0f7fac",
+      "text": "Malone",
+      "weight": 1
+    },
+    {
+      "id": "family-71f90b7c03aa",
+      "text": "Nolan",
+      "weight": 1
+    },
+    {
+      "id": "family-cdb42f48f48f",
+      "text": "Reilly",
+      "weight": 1
+    },
+    {
+      "id": "family-c773f5fb4bf4",
+      "text": "Riley",
+      "weight": 1
+    },
+    {
+      "id": "family-c1e25009e077",
+      "text": "Shea",
+      "weight": 1
+    },
+    {
+      "id": "family-16cce1c17e5d",
+      "text": "Sweeney",
+      "weight": 1
+    },
+    {
+      "id": "family-ecdc07467013",
+      "text": "Schmidt",
+      "weight": 1
+    },
+    {
+      "id": "family-99ca0687e355",
+      "text": "Schneider",
+      "weight": 1
+    },
+    {
+      "id": "family-59503a597ad1",
+      "text": "Schultz",
+      "weight": 1
+    },
+    {
+      "id": "family-1c1951e92294",
+      "text": "Schmitt",
+      "weight": 1
+    },
+    {
+      "id": "family-bfb3c68f9e9d",
+      "text": "Mueller",
+      "weight": 1
+    },
+    {
+      "id": "family-5cc7a0b43c82",
+      "text": "Muller",
+      "weight": 1
+    },
+    {
+      "id": "family-cdf091a5806f",
+      "text": "Wagner",
+      "weight": 1
+    },
+    {
+      "id": "family-6ecb547c1b10",
+      "text": "Weber",
+      "weight": 1
+    },
+    {
+      "id": "family-541af1c56f37",
+      "text": "Becker",
+      "weight": 1
+    },
+    {
+      "id": "family-90e509cba300",
+      "text": "Hoffmann",
+      "weight": 1
+    },
+    {
+      "id": "family-80942c291f40",
+      "text": "Hoffman",
+      "weight": 1
+    },
+    {
+      "id": "family-46682171441f",
+      "text": "Fischer",
+      "weight": 1
+    },
+    {
+      "id": "family-a434acba37ed",
+      "text": "Koch",
+      "weight": 1
+    },
+    {
+      "id": "family-ac710aff83a8",
+      "text": "Bauer",
+      "weight": 1
+    },
+    {
+      "id": "family-d3e963a0a44e",
+      "text": "Klein",
+      "weight": 1
+    },
+    {
+      "id": "family-ea858afbf837",
+      "text": "Wolf",
+      "weight": 1
+    },
+    {
+      "id": "family-8a446a936d39",
+      "text": "Braun",
+      "weight": 1
+    },
+    {
+      "id": "family-eb896579b695",
+      "text": "Zimmerman",
+      "weight": 1
+    },
+    {
+      "id": "family-04e64c33837f",
+      "text": "Zimmermann",
+      "weight": 1
+    },
+    {
+      "id": "family-22e5ed88017f",
+      "text": "Krueger",
+      "weight": 1
+    },
+    {
+      "id": "family-2642e78e1c5f",
+      "text": "Krause",
+      "weight": 1
+    },
+    {
+      "id": "family-1a21b887d08c",
+      "text": "Hartmann",
+      "weight": 1
+    },
+    {
+      "id": "family-29f42d4da191",
+      "text": "Hartman",
+      "weight": 1
+    },
+    {
+      "id": "family-ab549655fc22",
+      "text": "Neumann",
+      "weight": 1
+    },
+    {
+      "id": "family-6ca9429ccc8e",
+      "text": "Schwartz",
+      "weight": 1
+    },
+    {
+      "id": "family-25e5d3fea1eb",
+      "text": "Schwarz",
+      "weight": 1
+    },
+    {
+      "id": "family-795b5603753a",
+      "text": "Stein",
+      "weight": 1
+    },
+    {
+      "id": "family-c0f9fee974d5",
+      "text": "Weiss",
+      "weight": 1
+    },
+    {
+      "id": "family-4a2ac9c079f8",
+      "text": "Roth",
+      "weight": 1
+    },
+    {
+      "id": "family-32dfe2cbdfb7",
+      "text": "Keller",
+      "weight": 1
+    },
+    {
+      "id": "family-847f4e46a2e0",
+      "text": "Schaefer",
+      "weight": 1
+    },
+    {
+      "id": "family-a1dd014bbf45",
+      "text": "Schuster",
+      "weight": 1
+    },
+    {
+      "id": "family-876fdfa1d115",
+      "text": "Meyer",
+      "weight": 1
+    },
+    {
+      "id": "family-bca6904747c7",
+      "text": "Mayer",
+      "weight": 1
+    },
+    {
+      "id": "family-05c2d2b4cad1",
+      "text": "Meier",
+      "weight": 1
+    },
+    {
+      "id": "family-b410c0524b36",
+      "text": "Berger",
+      "weight": 1
+    },
+    {
+      "id": "family-0589b626717c",
+      "text": "Gross",
+      "weight": 1
+    },
+    {
+      "id": "family-7d9b210c4436",
+      "text": "Fuchs",
+      "weight": 1
+    },
+    {
+      "id": "family-1e627a0a28b6",
+      "text": "Kaufman",
+      "weight": 1
+    },
+    {
+      "id": "family-ec2687243e45",
+      "text": "Kaufmann",
+      "weight": 1
+    },
+    {
+      "id": "family-ca56e098741b",
+      "text": "Cohen",
+      "weight": 1
+    },
+    {
+      "id": "family-b317cb1966f1",
+      "text": "Levy",
+      "weight": 1
+    },
+    {
+      "id": "family-3a0eb3ea56e7",
+      "text": "Levine",
+      "weight": 1
+    },
+    {
+      "id": "family-59c4e9ac04fc",
+      "text": "Kaplan",
+      "weight": 1
+    },
+    {
+      "id": "family-b0b4c77b9eb6",
+      "text": "Rosenberg",
+      "weight": 1
+    },
+    {
+      "id": "family-bd48194b5e0e",
+      "text": "Friedman",
+      "weight": 1
+    },
+    {
+      "id": "family-c575a0aca298",
+      "text": "Goldberg",
+      "weight": 1
+    },
+    {
+      "id": "family-e45facb778ff",
+      "text": "Goldstein",
+      "weight": 1
+    },
+    {
+      "id": "family-78de18fd36c5",
+      "text": "Bernstein",
+      "weight": 1
+    },
+    {
+      "id": "family-17239e5dc9fd",
+      "text": "Shapiro",
+      "weight": 1
+    },
+    {
+      "id": "family-6c5a14b15df7",
+      "text": "Katz",
+      "weight": 1
+    },
+    {
+      "id": "family-28f2191a18bf",
+      "text": "Rosen",
+      "weight": 1
+    },
+    {
+      "id": "family-09be5e34d0c4",
+      "text": "Silverman",
+      "weight": 1
+    },
+    {
+      "id": "family-8688ae0b7a9f",
+      "text": "Rubin",
+      "weight": 1
+    },
+    {
+      "id": "family-f8613cf8da1d",
+      "text": "Greenberg",
+      "weight": 1
+    },
+    {
+      "id": "family-6d73984ff8ee",
+      "text": "Weissman",
+      "weight": 1
+    },
+    {
+      "id": "family-187199ee39f8",
+      "text": "Kowalski",
+      "weight": 1
+    },
+    {
+      "id": "family-2add3f54e400",
+      "text": "Nowak",
+      "weight": 1
+    },
+    {
+      "id": "family-e3f395cb87ee",
+      "text": "Novak",
+      "weight": 1
+    },
+    {
+      "id": "family-f94a86156a04",
+      "text": "Wisniewski",
+      "weight": 1
+    },
+    {
+      "id": "family-a414ddcc880a",
+      "text": "Wozniak",
+      "weight": 1
+    },
+    {
+      "id": "family-c2b6c00353a2",
+      "text": "Kaminski",
+      "weight": 1
+    },
+    {
+      "id": "family-07a6b81f1511",
+      "text": "Zielinski",
+      "weight": 1
+    },
+    {
+      "id": "family-993c9d6407fb",
+      "text": "Jankowski",
+      "weight": 1
+    },
+    {
+      "id": "family-7b5edc447e45",
+      "text": "Wojcik",
+      "weight": 1
+    },
+    {
+      "id": "family-4984f6c1cee3",
+      "text": "Lewandowski",
+      "weight": 1
+    },
+    {
+      "id": "family-2d78eb969021",
+      "text": "Szymanski",
+      "weight": 1
+    },
+    {
+      "id": "family-ea9b13bb2f0e",
+      "text": "Pawlowski",
+      "weight": 1
+    },
+    {
+      "id": "family-66ea3baabe9a",
+      "text": "Mazur",
+      "weight": 1
+    },
+    {
+      "id": "family-05119ef218e8",
+      "text": "Kaczmarek",
+      "weight": 1
+    },
+    {
+      "id": "family-e1caf18db091",
+      "text": "Sikora",
+      "weight": 1
+    },
+    {
+      "id": "family-948341d56b6e",
+      "text": "Rossi",
+      "weight": 1
+    },
+    {
+      "id": "family-b75b15cfd678",
+      "text": "Russo",
+      "weight": 1
+    },
+    {
+      "id": "family-7a431f35efa3",
+      "text": "Romano",
+      "weight": 1
+    },
+    {
+      "id": "family-425955eee627",
+      "text": "Ricci",
+      "weight": 1
+    },
+    {
+      "id": "family-11892535c762",
+      "text": "Marino",
+      "weight": 1
+    },
+    {
+      "id": "family-b1b071dc02ff",
+      "text": "Greco",
+      "weight": 1
+    },
+    {
+      "id": "family-2f2781e5ab48",
+      "text": "Bruno",
+      "weight": 1
+    },
+    {
+      "id": "family-29a437b8799d",
+      "text": "Gallo",
+      "weight": 1
+    },
+    {
+      "id": "family-6671ee1dada0",
+      "text": "Conti",
+      "weight": 1
+    },
+    {
+      "id": "family-2ef781d8c2af",
+      "text": "Costa",
+      "weight": 1
+    },
+    {
+      "id": "family-1fcddbaecd07",
+      "text": "Giordano",
+      "weight": 1
+    },
+    {
+      "id": "family-8ccce9ca5178",
+      "text": "Rizzo",
+      "weight": 1
+    },
+    {
+      "id": "family-9f13e2b013a7",
+      "text": "Lombardi",
+      "weight": 1
+    },
+    {
+      "id": "family-23ee42c54f9e",
+      "text": "Moretti",
+      "weight": 1
+    },
+    {
+      "id": "family-af5debb0ab4b",
+      "text": "Esposito",
+      "weight": 1
+    },
+    {
+      "id": "family-2e90b919da9c",
+      "text": "DeLuca",
+      "weight": 1
+    },
+    {
+      "id": "family-4e592d9ac3bf",
+      "text": "DeMarco",
+      "weight": 1
+    },
+    {
+      "id": "family-c7d3d072a302",
+      "text": "Mancini",
+      "weight": 1
+    },
+    {
+      "id": "family-d382e212cd13",
+      "text": "Santoro",
+      "weight": 1
+    },
+    {
+      "id": "family-70cb555b65fe",
+      "text": "Caruso",
+      "weight": 1
+    },
+    {
+      "id": "family-a54c7d01e5d7",
+      "text": "Vitale",
+      "weight": 1
+    },
+    {
+      "id": "family-2afaee468312",
+      "text": "Rinaldi",
+      "weight": 1
+    },
+    {
+      "id": "family-6d5be64f12d6",
+      "text": "Ferraro",
+      "weight": 1
+    },
+    {
+      "id": "family-8924324ca9f1",
+      "text": "Coppola",
+      "weight": 1
+    },
+    {
+      "id": "family-a35027cd1f68",
+      "text": "Bianchi",
+      "weight": 1
+    },
+    {
+      "id": "family-467f29d64870",
+      "text": "Colombo",
+      "weight": 1
+    },
+    {
+      "id": "family-3b4e60cf5e0c",
+      "text": "Ferrara",
+      "weight": 1
+    },
+    {
+      "id": "family-7d395ac042a3",
+      "text": "Marchetti",
+      "weight": 1
+    },
+    {
+      "id": "family-f8f8632029c4",
+      "text": "LeBlanc",
+      "weight": 1
+    },
+    {
+      "id": "family-eccd8cb82671",
+      "text": "Boudreau",
+      "weight": 1
+    },
+    {
+      "id": "family-a4e15950d767",
+      "text": "Gagnon",
+      "weight": 1
+    },
+    {
+      "id": "family-53c5bf311202",
+      "text": "Beaulieu",
+      "weight": 1
+    },
+    {
+      "id": "family-ae36dba764c9",
+      "text": "Desjardins",
+      "weight": 1
+    },
+    {
+      "id": "family-f1cd1f25dde2",
+      "text": "Duval",
+      "weight": 1
+    },
+    {
+      "id": "family-bc3164353d07",
+      "text": "Pelletier",
+      "weight": 1
+    },
+    {
+      "id": "family-8da8ce2c3dbc",
+      "text": "LaRoche",
+      "weight": 1
+    },
+    {
+      "id": "family-05c39da5da99",
+      "text": "Levesque",
+      "weight": 1
+    },
+    {
+      "id": "family-71a1f722960c",
+      "text": "Fournier",
+      "weight": 1
+    },
+    {
+      "id": "family-6b6a4e109c42",
+      "text": "Olson",
+      "weight": 1
+    },
+    {
+      "id": "family-c9abb46838ee",
+      "text": "Olsen",
+      "weight": 1
+    },
+    {
+      "id": "family-818d0e5ffae3",
+      "text": "Nelson",
+      "weight": 1
+    },
+    {
+      "id": "family-ed5db9ba1ac4",
+      "text": "Peterson",
+      "weight": 1
+    },
+    {
+      "id": "family-2f2fd4fa0fdf",
+      "text": "Petersen",
+      "weight": 1
+    },
+    {
+      "id": "family-f299f553f362",
+      "text": "Hansen",
+      "weight": 1
+    },
+    {
+      "id": "family-2d08caaf2829",
+      "text": "Hanson",
+      "weight": 1
+    },
+    {
+      "id": "family-d73a4d9b780d",
+      "text": "Larsen",
+      "weight": 1
+    },
+    {
+      "id": "family-cf8572026d09",
+      "text": "Larson",
+      "weight": 1
+    },
+    {
+      "id": "family-f273c1b56f63",
+      "text": "Jensen",
+      "weight": 1
+    },
+    {
+      "id": "family-5767a06f5409",
+      "text": "Jorgensen",
+      "weight": 1
+    },
+    {
+      "id": "family-5b3c9fa98992",
+      "text": "Erickson",
+      "weight": 1
+    },
+    {
+      "id": "family-04aa564c3b50",
+      "text": "Erikson",
+      "weight": 1
+    },
+    {
+      "id": "family-863634f9c343",
+      "text": "Berg",
+      "weight": 1
+    },
+    {
+      "id": "family-a580899b5507",
+      "text": "Lund",
+      "weight": 1
+    },
+    {
+      "id": "family-2666407ab2f2",
+      "text": "Swanson",
+      "weight": 1
+    },
+    {
+      "id": "family-f1699482baa6",
+      "text": "Svensson",
+      "weight": 1
+    },
+    {
+      "id": "family-1b7a02560d64",
+      "text": "Gustafson",
+      "weight": 1
+    },
+    {
+      "id": "family-d3a1c99dd3f9",
+      "text": "Lindberg",
+      "weight": 1
+    },
+    {
+      "id": "family-3c2c4eda8ac7",
+      "text": "Dahl",
+      "weight": 1
+    },
+    {
+      "id": "family-2c3aaefea826",
+      "text": "Garcia",
+      "weight": 1
+    },
+    {
+      "id": "family-1cd8e5f4826e",
+      "text": "Martinez",
+      "weight": 1
+    },
+    {
+      "id": "family-503046646e0c",
+      "text": "Rodriguez",
+      "weight": 1
+    },
+    {
+      "id": "family-95c5dd81e14a",
+      "text": "Lopez",
+      "weight": 1
+    },
+    {
+      "id": "family-bf3a101fff20",
+      "text": "Hernandez",
+      "weight": 1
+    },
+    {
+      "id": "family-11a4f480c4c0",
+      "text": "Gonzalez",
+      "weight": 1
+    },
+    {
+      "id": "family-fdce2768528c",
+      "text": "Perez",
+      "weight": 1
+    },
+    {
+      "id": "family-1cdcfc3885f5",
+      "text": "Sanchez",
+      "weight": 1
+    },
+    {
+      "id": "family-266a7b5eddfc",
+      "text": "Ramirez",
+      "weight": 1
+    },
+    {
+      "id": "family-3028fe69be06",
+      "text": "Torres",
+      "weight": 1
+    },
+    {
+      "id": "family-c57a18347626",
+      "text": "Flores",
+      "weight": 1
+    },
+    {
+      "id": "family-1506384d1ef0",
+      "text": "Rivera",
+      "weight": 1
+    },
+    {
+      "id": "family-d9e1b51ac980",
+      "text": "Gomez",
+      "weight": 1
+    },
+    {
+      "id": "family-adae8d8d41af",
+      "text": "Diaz",
+      "weight": 1
+    },
+    {
+      "id": "family-52f957fe645a",
+      "text": "Cruz",
+      "weight": 1
+    },
+    {
+      "id": "family-6f005a186898",
+      "text": "Morales",
+      "weight": 1
+    },
+    {
+      "id": "family-fe9b82bf7aca",
+      "text": "Ortiz",
+      "weight": 1
+    },
+    {
+      "id": "family-e40ce8715d0d",
+      "text": "Gutierrez",
+      "weight": 1
+    },
+    {
+      "id": "family-d5f8a8117809",
+      "text": "Chavez",
+      "weight": 1
+    },
+    {
+      "id": "family-03ccf2f9fdfa",
+      "text": "Ramos",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 28191
+  }
+}

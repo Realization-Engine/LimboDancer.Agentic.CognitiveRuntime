@@ -1,0 +1,1064 @@
+{
+  "$schema": "./name-pool.schema.json",
+  "format": "asl-name-pool",
+  "version": "1.0.0",
+  "id": "tamil-patronymic",
+  "label": "Tamil, patronymic convention",
+  "language": "ta-Latn",
+  "script": "Latn",
+  "sex": "male",
+  "intendedScenarioYears": {
+    "from": 1935,
+    "to": 1953
+  },
+  "reviewStatus": "editorial-draft",
+  "provenance": {
+    "method": "ai-assisted-editorial-compilation",
+    "historicalAttestation": "not-verified-per-entry",
+    "sourceIds": [
+      "w3c-personal-names"
+    ]
+  },
+  "weighting": {
+    "basis": "editorial-relative-preference",
+    "defaultWeight": 1,
+    "note": "Weights are authoring preferences, not measured historical frequencies."
+  },
+  "convention": {
+    "id": "given-father",
+    "componentOrder": [
+      "given",
+      "father-given"
+    ],
+    "separator": " ",
+    "secondComponentRole": "father-given"
+  },
+  "scopeNote": "Given name followed by an explicitly labeled father name, a normalized project display convention. Real records may put the father name or its initial first. No caste title or hereditary surname is invented. This is one Tamil naming convention, not all Tamil naming traditions.",
+  "targetCounts": {
+    "givenNames": 100,
+    "familyNames": 0,
+    "secondComponent": 100
+  },
+  "actualCounts": {
+    "givenNames": 100,
+    "familyNames": 0,
+    "secondComponent": 100
+  },
+  "completeness": "target-met",
+  "givenNames": [
+    {
+      "id": "given-52f2e21855ef",
+      "text": "Subramaniam",
+      "weight": 1
+    },
+    {
+      "id": "given-cc175e111665",
+      "text": "Ramasamy",
+      "weight": 1
+    },
+    {
+      "id": "given-16a765ee0cb7",
+      "text": "Raman",
+      "weight": 1
+    },
+    {
+      "id": "given-48b455b13412",
+      "text": "Krishnan",
+      "weight": 1
+    },
+    {
+      "id": "given-6e0d5ce4cdeb",
+      "text": "Ranganathan",
+      "weight": 1
+    },
+    {
+      "id": "given-17407120d838",
+      "text": "Srinivasan",
+      "weight": 1
+    },
+    {
+      "id": "given-c8d4c1640ffb",
+      "text": "Venkataraman",
+      "weight": 1
+    },
+    {
+      "id": "given-2805d25d2f49",
+      "text": "Venkatasamy",
+      "weight": 1
+    },
+    {
+      "id": "given-f05b68ee06ba",
+      "text": "Kuppusamy",
+      "weight": 1
+    },
+    {
+      "id": "given-4cfd454489e3",
+      "text": "Munusamy",
+      "weight": 1
+    },
+    {
+      "id": "given-33ec09c32f89",
+      "text": "Muthusamy",
+      "weight": 1
+    },
+    {
+      "id": "given-7b6d575c346d",
+      "text": "Velusamy",
+      "weight": 1
+    },
+    {
+      "id": "given-1e5ba67143d0",
+      "text": "Karuppan",
+      "weight": 1
+    },
+    {
+      "id": "given-32fefe124562",
+      "text": "Murugan",
+      "weight": 1
+    },
+    {
+      "id": "given-154a58cd22d3",
+      "text": "Palani",
+      "weight": 1
+    },
+    {
+      "id": "given-346f05c930fd",
+      "text": "Palanisamy",
+      "weight": 1
+    },
+    {
+      "id": "given-d0f9c7ac20ba",
+      "text": "Arumugam",
+      "weight": 1
+    },
+    {
+      "id": "given-291c0f074987",
+      "text": "Shanmugam",
+      "weight": 1
+    },
+    {
+      "id": "given-fc83a0bfe2da",
+      "text": "Chinnasamy",
+      "weight": 1
+    },
+    {
+      "id": "given-8a792cc1336e",
+      "text": "Periyasamy",
+      "weight": 1
+    },
+    {
+      "id": "given-d17f7d51953b",
+      "text": "Sundaram",
+      "weight": 1
+    },
+    {
+      "id": "given-a1a922c83e83",
+      "text": "Sundararajan",
+      "weight": 1
+    },
+    {
+      "id": "given-be450a15ba46",
+      "text": "Somasundaram",
+      "weight": 1
+    },
+    {
+      "id": "given-b37d8cbf5bc2",
+      "text": "Sivakumar",
+      "weight": 1
+    },
+    {
+      "id": "given-b1d1f2069dfb",
+      "text": "Sivaram",
+      "weight": 1
+    },
+    {
+      "id": "given-f2bdf136cab3",
+      "text": "Natarajan",
+      "weight": 1
+    },
+    {
+      "id": "given-ff54d5e8fb50",
+      "text": "Natesan",
+      "weight": 1
+    },
+    {
+      "id": "given-6e65e1742e64",
+      "text": "Govindasamy",
+      "weight": 1
+    },
+    {
+      "id": "given-4eb3706ce701",
+      "text": "Govindan",
+      "weight": 1
+    },
+    {
+      "id": "given-1a1099a5a054",
+      "text": "Gopal",
+      "weight": 1
+    },
+    {
+      "id": "given-ac97551bc94c",
+      "text": "Gopalakrishnan",
+      "weight": 1
+    },
+    {
+      "id": "given-9eb7a628558c",
+      "text": "Balakrishnan",
+      "weight": 1
+    },
+    {
+      "id": "given-b7a579a0f6ac",
+      "text": "Balasubramaniam",
+      "weight": 1
+    },
+    {
+      "id": "given-bab249f5a7fa",
+      "text": "Doraisamy",
+      "weight": 1
+    },
+    {
+      "id": "given-6def4d94905f",
+      "text": "Durairaj",
+      "weight": 1
+    },
+    {
+      "id": "given-cf4fbf51d1d4",
+      "text": "Rangasamy",
+      "weight": 1
+    },
+    {
+      "id": "given-8ac5681368f1",
+      "text": "Rajagopal",
+      "weight": 1
+    },
+    {
+      "id": "given-6c6c1cc77ebb",
+      "text": "Rajamanickam",
+      "weight": 1
+    },
+    {
+      "id": "given-c45af6bd34de",
+      "text": "Rajaraman",
+      "weight": 1
+    },
+    {
+      "id": "given-800a92808f2d",
+      "text": "Ramachandran",
+      "weight": 1
+    },
+    {
+      "id": "given-6036c71ed7e6",
+      "text": "Ramalingam",
+      "weight": 1
+    },
+    {
+      "id": "given-6a0f7cf70093",
+      "text": "Rangan",
+      "weight": 1
+    },
+    {
+      "id": "given-c6c2069e518e",
+      "text": "Manickam",
+      "weight": 1
+    },
+    {
+      "id": "given-7d75691aa87d",
+      "text": "Muthu",
+      "weight": 1
+    },
+    {
+      "id": "given-4a18490a15e7",
+      "text": "Thangavel",
+      "weight": 1
+    },
+    {
+      "id": "given-a8f925ad39b7",
+      "text": "Thangavelu",
+      "weight": 1
+    },
+    {
+      "id": "given-2151875cf8fd",
+      "text": "Ponnusamy",
+      "weight": 1
+    },
+    {
+      "id": "given-6287b68845ec",
+      "text": "Ponniah",
+      "weight": 1
+    },
+    {
+      "id": "given-64b0709f40ee",
+      "text": "Suppiah",
+      "weight": 1
+    },
+    {
+      "id": "given-d3212a247660",
+      "text": "Subbiah",
+      "weight": 1
+    },
+    {
+      "id": "given-59a7d8f2c1f2",
+      "text": "Kandasamy",
+      "weight": 1
+    },
+    {
+      "id": "given-9f960301d3b8",
+      "text": "Kandiah",
+      "weight": 1
+    },
+    {
+      "id": "given-c31fe633fa21",
+      "text": "Kaliappan",
+      "weight": 1
+    },
+    {
+      "id": "given-0982b6d10e6c",
+      "text": "Veerappan",
+      "weight": 1
+    },
+    {
+      "id": "given-ee205c48c17e",
+      "text": "Chidambaram",
+      "weight": 1
+    },
+    {
+      "id": "given-528df0bcdc83",
+      "text": "Chidambaranathan",
+      "weight": 1
+    },
+    {
+      "id": "given-d4a5ff60689e",
+      "text": "Annamalai",
+      "weight": 1
+    },
+    {
+      "id": "given-ce8c4d17b0cf",
+      "text": "Alagappan",
+      "weight": 1
+    },
+    {
+      "id": "given-99cd4c6df001",
+      "text": "Alagarsamy",
+      "weight": 1
+    },
+    {
+      "id": "given-2f6c8f0eeb1a",
+      "text": "Alagiri",
+      "weight": 1
+    },
+    {
+      "id": "given-9470928a50aa",
+      "text": "Appasamy",
+      "weight": 1
+    },
+    {
+      "id": "given-3665d085ab0b",
+      "text": "Ayyasamy",
+      "weight": 1
+    },
+    {
+      "id": "given-1c22d61359c0",
+      "text": "Chokkalingam",
+      "weight": 1
+    },
+    {
+      "id": "given-60e238e6604e",
+      "text": "Chockanathan",
+      "weight": 1
+    },
+    {
+      "id": "given-5af8b31740d0",
+      "text": "Dhanapal",
+      "weight": 1
+    },
+    {
+      "id": "given-78b2cbad3d2e",
+      "text": "Easwaran",
+      "weight": 1
+    },
+    {
+      "id": "given-63aa5cbf9e72",
+      "text": "Ganapathy",
+      "weight": 1
+    },
+    {
+      "id": "given-be81b7917e3f",
+      "text": "Ganesan",
+      "weight": 1
+    },
+    {
+      "id": "given-5dd85bce237a",
+      "text": "Jayaraman",
+      "weight": 1
+    },
+    {
+      "id": "given-581fb1a64397",
+      "text": "Kannan",
+      "weight": 1
+    },
+    {
+      "id": "given-deeb90357e09",
+      "text": "Kannappan",
+      "weight": 1
+    },
+    {
+      "id": "given-c9af493ef9d4",
+      "text": "Lakshmanan",
+      "weight": 1
+    },
+    {
+      "id": "given-b218016653ab",
+      "text": "Mahalingam",
+      "weight": 1
+    },
+    {
+      "id": "given-22e93de1aa39",
+      "text": "Marimuthu",
+      "weight": 1
+    },
+    {
+      "id": "given-8cd234d1e683",
+      "text": "Mayilsamy",
+      "weight": 1
+    },
+    {
+      "id": "given-3cbfb58b9a13",
+      "text": "Muthukrishnan",
+      "weight": 1
+    },
+    {
+      "id": "given-82933e65d186",
+      "text": "Muthuraman",
+      "weight": 1
+    },
+    {
+      "id": "given-702ca96630eb",
+      "text": "Nallathambi",
+      "weight": 1
+    },
+    {
+      "id": "given-cc766f03acc9",
+      "text": "Namasivayam",
+      "weight": 1
+    },
+    {
+      "id": "given-7bb5e4dcd04c",
+      "text": "Narayanan",
+      "weight": 1
+    },
+    {
+      "id": "given-ea3ae3fe4d19",
+      "text": "Panchanathan",
+      "weight": 1
+    },
+    {
+      "id": "given-850ec2d64bbe",
+      "text": "Paramasivam",
+      "weight": 1
+    },
+    {
+      "id": "given-1d7267ee4d6e",
+      "text": "Parthasarathy",
+      "weight": 1
+    },
+    {
+      "id": "given-8c7ae183c522",
+      "text": "Perumal",
+      "weight": 1
+    },
+    {
+      "id": "given-fa15c4692b3e",
+      "text": "Ramakrishnan",
+      "weight": 1
+    },
+    {
+      "id": "given-b2446318a0ef",
+      "text": "Ramanujam",
+      "weight": 1
+    },
+    {
+      "id": "given-026dbe052b86",
+      "text": "Ratnam",
+      "weight": 1
+    },
+    {
+      "id": "given-428116694ce1",
+      "text": "Sambasivam",
+      "weight": 1
+    },
+    {
+      "id": "given-725a91918eac",
+      "text": "Santhanam",
+      "weight": 1
+    },
+    {
+      "id": "given-6858451c78aa",
+      "text": "Sarangapani",
+      "weight": 1
+    },
+    {
+      "id": "given-b418fad95283",
+      "text": "Sathasivam",
+      "weight": 1
+    },
+    {
+      "id": "given-15f1155f40fb",
+      "text": "Selvaraj",
+      "weight": 1
+    },
+    {
+      "id": "given-9390644420dd",
+      "text": "Senthil",
+      "weight": 1
+    },
+    {
+      "id": "given-a0d49181d410",
+      "text": "Singaram",
+      "weight": 1
+    },
+    {
+      "id": "given-20b13fe95d38",
+      "text": "Sivagnanam",
+      "weight": 1
+    },
+    {
+      "id": "given-9c07f716ddd1",
+      "text": "Sivanesan",
+      "weight": 1
+    },
+    {
+      "id": "given-f1d31cdb2b30",
+      "text": "Sundaresan",
+      "weight": 1
+    },
+    {
+      "id": "given-7ec8b3da80bc",
+      "text": "Thirunavukkarasu",
+      "weight": 1
+    },
+    {
+      "id": "given-12e17c4e10b7",
+      "text": "Vadivel",
+      "weight": 1
+    },
+    {
+      "id": "given-c101a6561918",
+      "text": "Viswanathan",
+      "weight": 1
+    }
+  ],
+  "familyNames": [],
+  "patronymics": [
+    {
+      "id": "father-given-52f2e21855ef",
+      "text": "Subramaniam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-cc175e111665",
+      "text": "Ramasamy",
+      "weight": 1
+    },
+    {
+      "id": "father-given-16a765ee0cb7",
+      "text": "Raman",
+      "weight": 1
+    },
+    {
+      "id": "father-given-48b455b13412",
+      "text": "Krishnan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-6e0d5ce4cdeb",
+      "text": "Ranganathan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-17407120d838",
+      "text": "Srinivasan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-c8d4c1640ffb",
+      "text": "Venkataraman",
+      "weight": 1
+    },
+    {
+      "id": "father-given-2805d25d2f49",
+      "text": "Venkatasamy",
+      "weight": 1
+    },
+    {
+      "id": "father-given-f05b68ee06ba",
+      "text": "Kuppusamy",
+      "weight": 1
+    },
+    {
+      "id": "father-given-4cfd454489e3",
+      "text": "Munusamy",
+      "weight": 1
+    },
+    {
+      "id": "father-given-33ec09c32f89",
+      "text": "Muthusamy",
+      "weight": 1
+    },
+    {
+      "id": "father-given-7b6d575c346d",
+      "text": "Velusamy",
+      "weight": 1
+    },
+    {
+      "id": "father-given-1e5ba67143d0",
+      "text": "Karuppan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-32fefe124562",
+      "text": "Murugan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-154a58cd22d3",
+      "text": "Palani",
+      "weight": 1
+    },
+    {
+      "id": "father-given-346f05c930fd",
+      "text": "Palanisamy",
+      "weight": 1
+    },
+    {
+      "id": "father-given-d0f9c7ac20ba",
+      "text": "Arumugam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-291c0f074987",
+      "text": "Shanmugam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-fc83a0bfe2da",
+      "text": "Chinnasamy",
+      "weight": 1
+    },
+    {
+      "id": "father-given-8a792cc1336e",
+      "text": "Periyasamy",
+      "weight": 1
+    },
+    {
+      "id": "father-given-d17f7d51953b",
+      "text": "Sundaram",
+      "weight": 1
+    },
+    {
+      "id": "father-given-a1a922c83e83",
+      "text": "Sundararajan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-be450a15ba46",
+      "text": "Somasundaram",
+      "weight": 1
+    },
+    {
+      "id": "father-given-b37d8cbf5bc2",
+      "text": "Sivakumar",
+      "weight": 1
+    },
+    {
+      "id": "father-given-b1d1f2069dfb",
+      "text": "Sivaram",
+      "weight": 1
+    },
+    {
+      "id": "father-given-f2bdf136cab3",
+      "text": "Natarajan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-ff54d5e8fb50",
+      "text": "Natesan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-6e65e1742e64",
+      "text": "Govindasamy",
+      "weight": 1
+    },
+    {
+      "id": "father-given-4eb3706ce701",
+      "text": "Govindan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-1a1099a5a054",
+      "text": "Gopal",
+      "weight": 1
+    },
+    {
+      "id": "father-given-ac97551bc94c",
+      "text": "Gopalakrishnan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-9eb7a628558c",
+      "text": "Balakrishnan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-b7a579a0f6ac",
+      "text": "Balasubramaniam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-bab249f5a7fa",
+      "text": "Doraisamy",
+      "weight": 1
+    },
+    {
+      "id": "father-given-6def4d94905f",
+      "text": "Durairaj",
+      "weight": 1
+    },
+    {
+      "id": "father-given-cf4fbf51d1d4",
+      "text": "Rangasamy",
+      "weight": 1
+    },
+    {
+      "id": "father-given-8ac5681368f1",
+      "text": "Rajagopal",
+      "weight": 1
+    },
+    {
+      "id": "father-given-6c6c1cc77ebb",
+      "text": "Rajamanickam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-c45af6bd34de",
+      "text": "Rajaraman",
+      "weight": 1
+    },
+    {
+      "id": "father-given-800a92808f2d",
+      "text": "Ramachandran",
+      "weight": 1
+    },
+    {
+      "id": "father-given-6036c71ed7e6",
+      "text": "Ramalingam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-6a0f7cf70093",
+      "text": "Rangan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-c6c2069e518e",
+      "text": "Manickam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-7d75691aa87d",
+      "text": "Muthu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-4a18490a15e7",
+      "text": "Thangavel",
+      "weight": 1
+    },
+    {
+      "id": "father-given-a8f925ad39b7",
+      "text": "Thangavelu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-2151875cf8fd",
+      "text": "Ponnusamy",
+      "weight": 1
+    },
+    {
+      "id": "father-given-6287b68845ec",
+      "text": "Ponniah",
+      "weight": 1
+    },
+    {
+      "id": "father-given-64b0709f40ee",
+      "text": "Suppiah",
+      "weight": 1
+    },
+    {
+      "id": "father-given-d3212a247660",
+      "text": "Subbiah",
+      "weight": 1
+    },
+    {
+      "id": "father-given-59a7d8f2c1f2",
+      "text": "Kandasamy",
+      "weight": 1
+    },
+    {
+      "id": "father-given-9f960301d3b8",
+      "text": "Kandiah",
+      "weight": 1
+    },
+    {
+      "id": "father-given-c31fe633fa21",
+      "text": "Kaliappan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-0982b6d10e6c",
+      "text": "Veerappan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-ee205c48c17e",
+      "text": "Chidambaram",
+      "weight": 1
+    },
+    {
+      "id": "father-given-528df0bcdc83",
+      "text": "Chidambaranathan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-d4a5ff60689e",
+      "text": "Annamalai",
+      "weight": 1
+    },
+    {
+      "id": "father-given-ce8c4d17b0cf",
+      "text": "Alagappan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-99cd4c6df001",
+      "text": "Alagarsamy",
+      "weight": 1
+    },
+    {
+      "id": "father-given-2f6c8f0eeb1a",
+      "text": "Alagiri",
+      "weight": 1
+    },
+    {
+      "id": "father-given-9470928a50aa",
+      "text": "Appasamy",
+      "weight": 1
+    },
+    {
+      "id": "father-given-3665d085ab0b",
+      "text": "Ayyasamy",
+      "weight": 1
+    },
+    {
+      "id": "father-given-1c22d61359c0",
+      "text": "Chokkalingam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-60e238e6604e",
+      "text": "Chockanathan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-5af8b31740d0",
+      "text": "Dhanapal",
+      "weight": 1
+    },
+    {
+      "id": "father-given-78b2cbad3d2e",
+      "text": "Easwaran",
+      "weight": 1
+    },
+    {
+      "id": "father-given-63aa5cbf9e72",
+      "text": "Ganapathy",
+      "weight": 1
+    },
+    {
+      "id": "father-given-be81b7917e3f",
+      "text": "Ganesan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-5dd85bce237a",
+      "text": "Jayaraman",
+      "weight": 1
+    },
+    {
+      "id": "father-given-581fb1a64397",
+      "text": "Kannan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-deeb90357e09",
+      "text": "Kannappan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-c9af493ef9d4",
+      "text": "Lakshmanan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-b218016653ab",
+      "text": "Mahalingam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-22e93de1aa39",
+      "text": "Marimuthu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-8cd234d1e683",
+      "text": "Mayilsamy",
+      "weight": 1
+    },
+    {
+      "id": "father-given-3cbfb58b9a13",
+      "text": "Muthukrishnan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-82933e65d186",
+      "text": "Muthuraman",
+      "weight": 1
+    },
+    {
+      "id": "father-given-702ca96630eb",
+      "text": "Nallathambi",
+      "weight": 1
+    },
+    {
+      "id": "father-given-cc766f03acc9",
+      "text": "Namasivayam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-7bb5e4dcd04c",
+      "text": "Narayanan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-ea3ae3fe4d19",
+      "text": "Panchanathan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-850ec2d64bbe",
+      "text": "Paramasivam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-1d7267ee4d6e",
+      "text": "Parthasarathy",
+      "weight": 1
+    },
+    {
+      "id": "father-given-8c7ae183c522",
+      "text": "Perumal",
+      "weight": 1
+    },
+    {
+      "id": "father-given-fa15c4692b3e",
+      "text": "Ramakrishnan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-b2446318a0ef",
+      "text": "Ramanujam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-026dbe052b86",
+      "text": "Ratnam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-428116694ce1",
+      "text": "Sambasivam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-725a91918eac",
+      "text": "Santhanam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-6858451c78aa",
+      "text": "Sarangapani",
+      "weight": 1
+    },
+    {
+      "id": "father-given-b418fad95283",
+      "text": "Sathasivam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-15f1155f40fb",
+      "text": "Selvaraj",
+      "weight": 1
+    },
+    {
+      "id": "father-given-9390644420dd",
+      "text": "Senthil",
+      "weight": 1
+    },
+    {
+      "id": "father-given-a0d49181d410",
+      "text": "Singaram",
+      "weight": 1
+    },
+    {
+      "id": "father-given-20b13fe95d38",
+      "text": "Sivagnanam",
+      "weight": 1
+    },
+    {
+      "id": "father-given-9c07f716ddd1",
+      "text": "Sivanesan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-f1d31cdb2b30",
+      "text": "Sundaresan",
+      "weight": 1
+    },
+    {
+      "id": "father-given-7ec8b3da80bc",
+      "text": "Thirunavukkarasu",
+      "weight": 1
+    },
+    {
+      "id": "father-given-12e17c4e10b7",
+      "text": "Vadivel",
+      "weight": 1
+    },
+    {
+      "id": "father-given-c101a6561918",
+      "text": "Viswanathan",
+      "weight": 1
+    }
+  ],
+  "requiresSubgroup": false,
+  "subgroups": [],
+  "combinationRules": {
+    "allowIdenticalComponents": false,
+    "applySubgroupFilterBeforeSampling": true,
+    "avoidDuplicateFullNamesWithinCard": true,
+    "onExhaustion": "report-shortfall"
+  },
+  "availableCombinations": {
+    "all": 9900
+  }
+}

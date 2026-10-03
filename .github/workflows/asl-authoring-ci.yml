@@ -5,6 +5,7 @@ on:
     branches:
       - decision-plane
       - main
+      - asl-narrative-extensions
     paths:
       - "src/ASL/**"
       - "src/LimboDancer/LimboDancer.Host/**"
@@ -29,6 +30,22 @@ permissions:
   contents: read
 
 jobs:
+  name-pool-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate name-pool schemas and integrity
+        shell: pwsh
+        run: ./src/ASL/tools/name-pools/validate.ps1
+
   source-conformance:
     runs-on: ubuntu-latest
     timeout-minutes: 20
