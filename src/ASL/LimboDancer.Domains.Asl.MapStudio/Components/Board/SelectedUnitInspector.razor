@@ -11,7 +11,7 @@
         <h3>In the game</h3>
         <dl class="unit-details" id="unit-game-facts">
             <dt>Side</dt><dd>@DisplayText.Side(instance.Side)</dd>
-            <dt>Conditions</dt><dd>@ConditionsText(instance)</dd>
+            <dt>Conditions</dt><dd>@DisplayText.ConditionsOf(instance)</dd>
             <dt>Good Order</dt><dd>@GoodOrderText(instance)</dd>
             <dt>MF spent this phase</dt><dd>@instance.MfSpent</dd>
             @if (instance.From.Count > 0)
@@ -37,7 +37,7 @@
         <h3>In the game</h3>
         <dl class="unit-details" id="unit-game-facts">
             <dt>Side</dt><dd>@(other.Side is { } side ? DisplayText.Side(side) : "none")</dd>
-            <dt>Conditions</dt><dd>@ConditionsText(other)</dd>
+            <dt>Conditions</dt><dd>@DisplayText.ConditionsOf(other)</dd>
         </dl>
     }
 }
@@ -64,8 +64,6 @@
     [Parameter]
     public Func<string, string?> NameOf { get; set; } = _ => null;
 
-    private string Named(string id) => NameOf(id) is { Length: > 0 } name ? $"{name} ({id})" : id;
-
     /// <summary>Where the unit comes from, in words.</summary>
     [Parameter]
     public string? Note { get; set; }
@@ -73,19 +71,25 @@
     // Good Order is unknown while broken, berserk, captured, or Melee is not recorded (ASL-UNIT-023); the inspector says which (pass 29).
     private string GoodOrderText(UnitInstance instance) => GameState.GoodOrder(instance, Vocabulary) switch
     {
-        ConditionState.Unknown => "Unknown: not recorded whether "
-            + string.Join(", ", new[] { Conditions.Broken, Conditions.Berserk, Conditions.Captured, Conditions.Melee }
+        ConditionState.Unknown => string.Join(", ", new[] { Conditions.Broken, Conditions.Berserk, Conditions.Captured, Conditions.Melee }
                 .Where(name => GameState.Condition(instance, name) == ConditionState.Unknown)
-                .Select(name => name.Replace("asl:", string.Empty, StringComparison.Ordinal))),
+                .Select(DisplayText.Kind)) is { Length: > 0 } names ? $"Unknown: not recorded whether {names}" : "Unknown",
         var other => DisplayText.YesNo(other),
     };
 
-    private static string ConditionsText(IGameObject item)
+    /// <summary>
+    /// A unit named by another's record (its Guard, its parents, its carrier): its name and id when the view holds it. A side's view never reads the
+    /// id of one it does not see (referee, pass 29; rulings R23.1, R23.3); the adjudicator and a placement set read the id.
+    /// </summary>
+    private string Named(string id)
     {
-        var shown = item.Conditions.Where(pair => pair.Value is not ConditionState.False)
-            .Select(pair => pair.Value == ConditionState.True ? pair.Key.Replace("asl:", string.Empty, StringComparison.Ordinal)
-                : $"{pair.Key.Replace("asl:", string.Empty, StringComparison.Ordinal)} {Conditions.Name(pair.Value)}")
-            .ToArray();
-        return shown.Length == 0 ? "none" : string.Join(", ", shown);
+        if (NameOf(id) is { Length: > 0 } name)
+        {
+            return $"{name} ({id})";
+        }
+
+        var seen = View is not { Perspective.IsAdjudicator: false } view
+            || view.Units.Cast<IGameObject>().Concat(view.Equipment).Concat(view.Entities).Any(item => item.Id == id);
+        return seen ? id : "a unit not in view";
     }
 }

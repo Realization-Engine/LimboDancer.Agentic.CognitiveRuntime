@@ -12,7 +12,7 @@
     <aside @ref="inspector" class="@InspectorClass" @attributes="@InspectorAttributes">@InspectorPane</aside>
 }
 @Between
-<div class="@StageClass" @attributes="@StageAttributes">
+<div @ref="stage" class="@StageClass" @attributes="@StageAttributes">
     @Toolbar
     @if (loadProblem is { } problem)
     {
@@ -29,6 +29,10 @@
 @code {
     private BoardViewport? viewport;
     private ElementReference inspector;
+    private ElementReference stage;
+
+    // The load or layer that failed, kept so it is not tried again on every render; only "Try again" clears it (UI review, pass 29).
+    private string? failedKey;
     private bool loading;
     private string? shown;
     private string? loadProblem;
@@ -152,6 +156,9 @@
     /// <summary>The inspector's element, for a host that brings it into view.</summary>
     public ElementReference Inspector => inspector;
 
+    /// <summary>The stage's element, for a host that brings the map into view.</summary>
+    public ElementReference Stage => stage;
+
     /// <summary>Whether the map is turned a quarter clockwise (pass 29).</summary>
     public bool Rotated => rotated;
 
@@ -233,7 +240,7 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         // One load at a time, and the layers after it: a load replaces the board's groups, so every layer is sent again.
-        if (loading || viewport is not { IsReady: true })
+        if (loading || viewport is not { IsReady: true } || failedKey == LoadKey)
         {
             return;
         }
@@ -251,7 +258,7 @@
             catch (JSException exception)
             {
                 // UI review, pass 28c: a board that does not load says so and may be tried again, rather than ending the circuit.
-                (shown, loadProblem) = (null, exception.Message);
+                (shown, loadProblem, failedKey) = (null, exception.Message, LoadKey);
                 StateHasChanged();
                 return;
             }
@@ -274,7 +281,7 @@
         catch (JSException exception)
         {
             // A layer the browser refuses is reported like a failed load; Try again loads the board and sends every layer afresh.
-            (shown, loadProblem) = (null, exception.Message);
+            (shown, loadProblem, failedKey) = (null, exception.Message, LoadKey);
             StateHasChanged();
         }
     }
@@ -335,7 +342,7 @@
         }
     }
 
-    private void Retry() => (shown, loadProblem) = (null, null);
+    private void Retry() => (shown, loadProblem, failedKey) = (null, null, null);
 
     public async Task Zoom(double factor)
     {
@@ -436,6 +443,11 @@
         pickedHere = facts?.Index;
         Selected = facts;
         await SelectedChanged.InvokeAsync(facts);
-        StateHasChanged();
+
+        // A host that binds the hex draws this component again itself; a second draw here would repeat Play's whole actions pane (UI review, pass 29).
+        if (!SelectedChanged.HasDelegate)
+        {
+            StateHasChanged();
+        }
     }
 }

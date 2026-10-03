@@ -9,7 +9,7 @@
         {
             <tr data-group="@group.Id">
                 <td>@group.Order</td>
-                <td>@group.Side</td>
+                <td>@DisplayText.Side(group.Side)</td>
                 <td>@group.Name (@group.Id)</td>
                 <td>@(!group.SetsUp ? (group.OffBoard.Count > 0 ? "sets up off board to enter" : "waits off board to enter") : group.Complete ? (group.OffBoard.Count > 0 ? "set up; the rest sets up off board to enter" : "set up") : group.Order == Report.CurrentOrder ? "setting up now" : "waits")</td>
                 <td>@(OutOfSight.Contains(group.Id) ? "out of your sight" : group.Remaining.Count > 0 ? string.Join(", ", group.Remaining.Select(need => $"{need.Count} {DefinitionLabel(need.Definition)}{(need.Area is { } area ? $" in {area}" : string.Empty)}"))

@@ -25,7 +25,7 @@ else if (board is null)
         @* Pass 29: the map and its inspector are BoardWorkspace; the page keeps its route, the board's load, and its study controls. *@
         <BoardWorkspace @ref="workspace" Board="@board" View="@view" Trace="@trace" Visible="@visible" ComparisonMode="@comparisonMode" ComparisonValue="@comparisonValue"
                         Units="@(showUnits ? unitOverlay : null)" UnitView="@gameProjection?.View" UnitNote="@UnitNote" Vocabulary="@UnitLibrary.Vocabulary"
-                        StyledModel="@StyledModel" @bind-Selected="selected" @bind-Panel="panel" Extras="@LayerTabs">
+                        StyledModel="@StyledModel" @bind-Selected="selected" @bind-Panel="panel" Extras="@LayerTabs" MapLabel="The board's map">
             <Toolbar>
                 @if (GameBanner is { } banner && gameProjection is { } shownGame)
                 {
@@ -46,10 +46,11 @@ else if (board is null)
                 }
                 <BoardViewerToolbar Board="@board" OnFit="@(() => workspace!.Fit())" Preparing="@preparing">
                     <BoardViewPicker Views="@Views" Value="@view" ValueChanged="@ChangeView" />
-                    <button type="button" id="map-rotate" aria-pressed="@(workspace?.Rotated == true ? "true" : "false")" @onclick="@(() => workspace!.ToggleRotation())">Rotate map</button>
+                    @* UI review, pass 29: the side-by-side comparison draws two maps in one pane, which a turned pane cannot hold. *@
+                    <button type="button" id="map-rotate" aria-pressed="@(workspace?.Rotated == true ? "true" : "false")" disabled="@SideBySide" title="@(SideBySide ? "The side-by-side comparison is not turned." : null)" @onclick="@(() => workspace!.ToggleRotation())">Rotate map</button>
                     @if (view == BoardView.Comparison)
                     {
-                        <BoardComparisonControls Mode="@comparisonMode" ModeChanged="@(mode => comparisonMode = mode)" Value="@comparisonValue" ValueChanged="@(value => comparisonValue = value)" />
+                        <BoardComparisonControls Mode="@comparisonMode" ModeChanged="@ChangeComparisonMode" Value="@comparisonValue" ValueChanged="@(value => comparisonValue = value)" />
                     }
                     @* Claude Design's review: the game source, view, and revision join the board's toolbar in one row. *@
                     @if (unitSets.Count > 0 || unitGames.Count > 0)
@@ -126,7 +127,7 @@ else if (board is null)
             {
                 <label>
                     Counter style
-                    <select id="units-sheet" value="@unitSheet" @onchange="@(args => ChangeUnitSheet(args.Value as string ?? unitSheet))" aria-label="Unit style sheet">
+                    <select id="units-sheet" value="@unitSheet" @onchange="@(args => ChangeUnitSheet(args.Value as string ?? unitSheet))">
                         @foreach (var name in UnitLibrary.SheetNames())
                         {
                             <option value="@name">@name</option>
@@ -293,11 +294,38 @@ else if (board is null)
         BuildUnits();
     }
 
+    // The latest view asked for: a slower, earlier request does not replace it when its vectorization ends (UI review, pass 29).
+    private int viewRequest;
+
     private async Task ChangeView(BoardView next)
     {
+        var (request, asked) = (++viewRequest, board);
         await PrepareStyled(board, next);
+        if (request != viewRequest || !ReferenceEquals(asked, board))
+        {
+            return;
+        }
+
         view = next;
         visible = [.. BoardRenderer.Layers(view).Where(layer => layer != "defs")];
+        await Unturn();
+    }
+
+    private bool SideBySide => view == BoardView.Comparison && comparisonMode == "side";
+
+    private async Task ChangeComparisonMode(string mode)
+    {
+        comparisonMode = mode;
+        await Unturn();
+    }
+
+    /// <summary>A turned map is turned back when the side-by-side comparison opens.</summary>
+    private async Task Unturn()
+    {
+        if (SideBySide && workspace is { Rotated: true } turned)
+        {
+            await turned.ToggleRotation();
+        }
     }
 
     private void ToggleLayer((string Layer, bool Shown) change)

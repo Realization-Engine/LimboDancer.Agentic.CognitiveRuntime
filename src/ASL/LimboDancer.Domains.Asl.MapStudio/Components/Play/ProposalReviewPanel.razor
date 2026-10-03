@@ -5,6 +5,14 @@
     <p class="@(Accepted ? "pass" : "fail")">
         <strong id="play-outcome">@Outcome</strong>
     </p>
+    @* Table player, pass 29: Confirm and Cancel come right after the outcome, so a long list of reasons never pushes them out of a short pane. *@
+    @if (CanConfirm)
+    {
+        <div class="toolbar" id="play-proposal-actions">
+            <button id="play-confirm" disabled="@Busy" @onclick="Confirm">@(Busy ? "Confirming" : "Confirm")</button>
+            <button id="play-cancel" class="link" disabled="@Busy" @onclick="Cancel">Cancel</button>
+        </div>
+    }
     <ul id="play-reasons">
         @foreach (var reason in Reasons)
         {
@@ -12,11 +20,6 @@
         }
     </ul>
     @Evidence
-    @if (CanConfirm)
-    {
-        <button id="play-confirm" disabled="@Busy" @onclick="Confirm">@(Busy ? "Confirming" : "Confirm")</button>
-        <button id="play-cancel" class="link" disabled="@Busy" @onclick="Cancel">Cancel</button>
-    }
 </div>
 
 @code {

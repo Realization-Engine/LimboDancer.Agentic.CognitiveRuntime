@@ -14,7 +14,7 @@
 
 <p class="muted" id="fidelity-legend">
     Checks: <span class="diagnostic passed">passed</span> <span class="diagnostic error">failed, so the board is not verified</span>
-    <span class="diagnostic warning">differs, for information only</span>. Hover or focus a check for its detail.
+    <span class="diagnostic warning">differs, for information only</span>. Hover a check for its detail; one that failed or differs also takes the keyboard focus.
 </p>
 
 <table class="library" id="fidelity-results">
@@ -71,7 +71,7 @@
                 <td>
                     @foreach (var check in board.Checks)
                     {
-                        <span class="diagnostic @(check.Passed ? "passed" : check.Gating ? "error" : "warning")" title="@check.Detail">@DisplayText.Check(check.Name)@(check.Passed ? string.Empty : check.Gating ? ": failed" : ": differs")</span>
+                        <span class="diagnostic @(check.Passed ? "passed" : check.Gating ? "error" : "warning")" title="@check.Detail" tabindex="@(check.Passed || string.IsNullOrEmpty(check.Detail) ? null : "0")">@DisplayText.Check(check.Name)@(check.Passed ? string.Empty : check.Gating ? ": failed" : ": differs")</span>
                     }
                 </td>
                 <td>

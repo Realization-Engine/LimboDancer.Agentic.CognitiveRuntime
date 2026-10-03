@@ -310,12 +310,12 @@ public sealed class PlayPageFireTests : IDisposable
         // refuses it (FireTests).
         Commit(page, "#propose-advance");
         Assert.Contains("Movement", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
-        Assert.Contains("The german side may fire now", page.Find("#fire-elsewhere").TextContent, StringComparison.Ordinal);
+        Assert.Contains("The German side may fire now", page.Find("#fire-elsewhere").TextContent, StringComparison.Ordinal);
         Assert.NotNull(page.Find("#propose-move"));
 
         // Ruling R23.1: the DEFENDER's fire panel is its own.
         page.ViewAs("german");
-        Assert.Contains("The german side may fire", page.Find("#fire-side").TextContent, StringComparison.Ordinal);
+        Assert.Contains("The German side may fire", page.Find("#fire-side").TextContent, StringComparison.Ordinal);
     }
 
     [Fact]

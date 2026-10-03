@@ -78,15 +78,20 @@ public sealed class TablePlayer22Tests : IDisposable
         page.Find("#place-add").Click();
     }
 
+    /// <summary>Whether the gate is still working on a proposal: the status says so while it does (pass 29).</summary>
+    private static bool Working(IRenderedComponent<PlayPage> page) => page.FindAll("#play-status.busy").Count > 0;
+
     /// <summary>Proposes and, when every check passes, confirms; returns the outcome and its reasons.</summary>
     private string Propose(IRenderedComponent<PlayPage> page, string button)
     {
         page.Find(button).Click();
+        page.WaitForState(() => !Working(page));
         var outcome = page.FindAll("#play-outcome").Count > 0 ? page.Find("#play-outcome").TextContent : "(no outcome)";
         var reasons = page.FindAll("#play-reasons").Count > 0 ? page.Find("#play-reasons").TextContent.Trim() : string.Empty;
         if (outcome.Contains("Confirm to commit", StringComparison.Ordinal))
         {
             page.Find("#play-confirm").Click();
+            page.WaitForState(() => !Working(page));
             outcome = page.Find("#play-outcome").TextContent;
         }
 

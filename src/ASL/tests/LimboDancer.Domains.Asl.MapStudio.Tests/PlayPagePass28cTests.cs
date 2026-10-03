@@ -109,9 +109,9 @@ public sealed class PlayPagePass28cTests : IDisposable
         Started();
         context.Services.GetRequiredService<NavigationManager>().NavigateTo("games/play?game=village");
         var opened = context.Render<PlayPage>();
-        Assert.Contains("german side", opened.Find("#play-handover-title").TextContent, StringComparison.Ordinal);
+        Assert.Contains("German side", opened.Find("#play-handover-title").TextContent, StringComparison.Ordinal);
         Assert.Empty(opened.FindAll("#play-workspace"));
-        Assert.Empty(opened.FindAll("#play-map"));
+        Assert.Empty(opened.FindAll("#play-panel-map"));
 
         // The context is known to both sides, so it shows during the hand-over.
         Assert.Contains("Rally Phase", opened.Find("#play-summary").TextContent, StringComparison.Ordinal);
@@ -159,20 +159,20 @@ public sealed class PlayPagePass28cTests : IDisposable
         page.Find("#move-to").Change(hexes.Three);
         Commit(page, "#propose-move");
         Assert.Contains("DEFENDER may fire", page.Find("#play-awaiting").TextContent, StringComparison.Ordinal);
-        Assert.Contains("russian side", page.Find("#play-hand-over").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Russian side", page.Find("#play-hand-over").TextContent, StringComparison.Ordinal);
 
         // A8.1, A8.11 (referee, pass 28c): only the DEFENDER passes; the moving side's view has no pass.
         Assert.Empty(page.FindAll("#propose-pass"));
         Assert.NotEmpty(page.Find("#play-status").TextContent);
 
         page.Find("#play-hand-over").Click();
-        Assert.Contains("russian side", page.Find("#play-handover-title").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Russian side", page.Find("#play-handover-title").TextContent, StringComparison.Ordinal);
 
         // Ruling R23.2: the last view's announcement does not stay for the next viewer.
         Assert.Empty(page.Find("#play-status").TextContent);
         page.Find("#play-handover-confirm").Click();
         Assert.Empty(page.FindAll("#play-hand-over"));
-        Assert.Contains(hexes.Three, page.Find("#dff-note").TextContent, StringComparison.Ordinal);
+        Assert.Contains(DisplayText.Location(hexes.Three), page.Find("#dff-note").TextContent, StringComparison.Ordinal);
 
         // Ruling R23.1: the DEFENDER's review of its pass names no mover.
         page.Find("#propose-pass").Click();
@@ -204,8 +204,12 @@ public sealed class PlayPagePass28cTests : IDisposable
     public void UnderTheNarrowWidthThePanesAreLabelledTabs()
     {
         var page = Started(narrow: true);
-        Assert.Equal(["Map", "Actions", "Activity"], page.FindAll("#play-workspace [role=tab]").Select(tab => tab.TextContent.Trim()));
+        Assert.Equal(["Map", "Actions", "Activity"], page.FindAll("#play-workspace [aria-label=Workspace] [role=tab]").Select(tab => tab.TextContent.Trim()));
         Assert.Equal("play-panel-map", page.Find("#play-tab-map").GetAttribute("aria-controls"));
+
+        // Table player, pass 29: after a commit the Actions tab is open, so the next action needs no tab change.
+        Assert.False(page.Find("#play-panel-actions").HasAttribute("hidden"));
+        page.Find("#play-tab-map").Click();
         Assert.False(page.Find("#play-panel-map").HasAttribute("hidden"));
         Assert.True(page.Find("#play-panel-actions").HasAttribute("hidden"));
         Assert.Equal("tabpanel", page.Find("#play-panel-actions").GetAttribute("role"));
@@ -213,7 +217,7 @@ public sealed class PlayPagePass28cTests : IDisposable
         page.Find("#play-tab-actions").Click();
         Assert.False(page.Find("#play-panel-actions").HasAttribute("hidden"));
         Assert.True(page.Find("#play-panel-map").HasAttribute("hidden"));
-        Assert.Single(page.FindAll("#play-map"));
+        Assert.Single(page.FindAll("#play-panel-map"));
 
         // UI review, pass 28c: a hand-over opens the Actions tab, so the focus has a pane to go to.
         page.Find("#play-tab-map").Click();
@@ -226,7 +230,7 @@ public sealed class PlayPagePass28cTests : IDisposable
     public void WideThePanesAreNamedRegions()
     {
         var page = Started();
-        Assert.Empty(page.FindAll("#play-workspace [role=tablist]"));
+        Assert.Empty(page.FindAll("#play-workspace [role=tablist][aria-label=Workspace]"));
         Assert.Equal("Actions", page.Find("#play-panel-actions").GetAttribute("aria-label"));
         Assert.False(page.Find("#play-panel-actions").HasAttribute("hidden"));
         Assert.Contains("Live", page.Find("#play-live").TextContent, StringComparison.Ordinal);
