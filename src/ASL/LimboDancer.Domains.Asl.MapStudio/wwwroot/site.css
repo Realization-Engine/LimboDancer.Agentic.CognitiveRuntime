@@ -1772,6 +1772,31 @@ details.advanced > summary {
     color: var(--muted);
 }
 
+/* Pass 30: the card's prepared setups, offered to the side that sets up first. */
+.setup-plans {
+    margin: 0.75rem 0;
+}
+
+.setup-plan {
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    margin: 0.5rem 0;
+    padding: 0.5rem 0.75rem;
+}
+
+.setup-plan.chosen {
+    border-color: var(--pass);
+    border-width: 2px;
+}
+
+.setup-plan h4 {
+    margin: 0 0 0.25rem;
+}
+
+.setup-plan p {
+    margin: 0.25rem 0;
+}
+
 /* Pass 30: the setup list's rows, each with what may be changed in it; the row whose Location the next map click fills is marked. */
 #place-list {
     list-style: none;

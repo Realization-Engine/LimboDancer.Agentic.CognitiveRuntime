@@ -106,6 +106,11 @@
                 </fieldset>
             }
         }
+        @if (PlansOffered is { } offered)
+        {
+            <SetupPlanPicker Side="@DisplayText.Side(viewAs)" Plans="@offered.Plans" Problems="@offered.Problems" Chosen="@chosenPlan"
+                Earlier="@(offered.Plans.Where(plan => plan.CardSha256 != state!.Scenario!.Sha256).Select(plan => plan.Id).ToHashSet(StringComparer.Ordinal))" OnUse="@UsePlan" />
+        }
         <SetupPlacementEditor Draft="@PlaceDraft" Definitions="@DefinitionChoices" Groups="@GroupChoiceList" Entries="@EntryChoices"
             Kind="@(Definitions.FirstOrDefault(definition => definition.Id == placeDefinition)?.Kind)" Note="@placeNote" OnDraft="@ApplyPlaceDraft" OnAdd="@AddPlacement" />
         <SetupPlacementList Items="@PlacementItems" Ready="@(history is not null || CardChosen)" OnRemove="@RemovePlacement"
@@ -851,16 +856,98 @@ else if (state is not null)
     // Pass 30: the row whose Location the next click on the map fills; null when none is being picked.
     private string? pickingKey;
 
+    // Pass 30: the plan the list was filled from; null when none. It is the page's own, like the list, and goes with it.
+    private string? chosenPlan;
+
+    // The card's setup plans, read once per game and card text until the game is read again.
+    private (string? Game, string? Card, string? Sha256, SetupPlansRead? Read) planCache;
+
+    /// <summary>
+    /// The prepared setups offered now (pass 30; ruling R23.3): only in the view of the side that sets up first, never the other side's or the
+    /// adjudicator's, while the groups a plan places are setting up. Null when none is offered; a setups file that cannot be read gives its reasons.
+    /// </summary>
+    private (IReadOnlyList<SetupPlan> Plans, IReadOnlyList<string> Problems)? PlansOffered
+    {
+        get
+        {
+            if (state is not { Scenario: { } playing } || !SetupOpen || history?.Current is null || handOver is not null || Viewer.IsAdjudicator
+                || SetupCard is not { Minimal: false } card || card.Turns.SetsUpFirst != viewAs || SetupView is not { } report || PublishedCatalog is not { } catalog)
+            {
+                return null;
+            }
+
+            var settingUp = report.Groups.Where(group => group.Side == viewAs && group.SetsUp && !group.Complete && group.Order == report.CurrentOrder)
+                .Select(group => group.Id).ToHashSet(StringComparer.Ordinal);
+            if (settingUp.Count == 0)
+            {
+                return null;
+            }
+
+            if (planCache.Game != gameId || planCache.Card != playing.Id || planCache.Sha256 != CardSha(playing.Id))
+            {
+                planCache = (gameId, playing.Id, CardSha(playing.Id), Live.Cards.Plans(playing.Id, catalog));
+            }
+
+            if (planCache.Read is not { } read)
+            {
+                return null;
+            }
+
+            var plans = read.Plans.Where(plan => plan.Side == viewAs && plan.Placements.All(item => item.Group is { } group && settingUp.Contains(group))).ToArray();
+            return plans.Length == 0 && read.Diagnostics.Count == 0 ? null : (plans, read.Diagnostics);
+        }
+    }
+
+    /// <summary>
+    /// "Use this plan" (pass 30): the list becomes the plan's placements, each a row to adjust like any other. Nothing of the plan reaches the game
+    /// but the placements proposed, which the gate checks as it checks any setup.
+    /// </summary>
+    private void UsePlan(string id)
+    {
+        if (PlansOffered?.Plans.FirstOrDefault(plan => plan.Id == id) is not { } plan || PublishedCatalog is not { } catalog)
+        {
+            return;
+        }
+
+        ClearPlacements();
+        foreach (var item in plan.Placements)
+        {
+            if (item.Dummy)
+            {
+                placements.Add(new Placement(item.Id, null, UnitKinds.Dummy, plan.Side, item.At ?? string.Empty, true, false, null, Group: item.Group));
+                continue;
+            }
+
+            if (catalog.Definition(item.Definition ?? string.Empty) is not { } definition)
+            {
+                continue;
+            }
+
+            // The holder says how the counter is held: a Gun in tow of a vehicle or manned by its crew, a SW possessed, a unit riding as a Passenger.
+            var equipment = Library.Vocabulary.IsA(definition.Kind, "asl:equipment");
+            var byVehicle = item.Holder is { } named && plan.Placements.FirstOrDefault(other => other.Id == named) is { Definition: { } holding }
+                && catalog.Definition(holding)?.Kind == "asl:vehicle";
+            var role = item.Holder is null ? null : definition.Kind == "asl:gun" ? byVehicle ? "towed" : "manned" : equipment ? "possessed" : "passenger";
+            placements.Add(new Placement(item.Id, definition.Id, definition.Kind, plan.Side, item.At ?? string.Empty, item.Concealed, item.Hidden, item.Holder, false,
+                definition.Kind is "asl:gun" or "asl:vehicle" ? item.Facing ?? "east" : null, item.BoreSighted, item.Group, item.OffBoard && item.Holder is null, role,
+                item.OffBoard ? item.Entry : null));
+        }
+
+        chosenPlan = plan.Id;
+        placeNote = null;
+    }
+
     private void RemovePlacement(string key)
     {
         placements.RemoveAll(item => item.Key == key);
         pickingKey = pickingKey == key ? null : pickingKey;
+        chosenPlan = placements.Count == 0 ? null : chosenPlan;
     }
 
     private void ClearPlacements()
     {
         placements.Clear();
-        pickingKey = null;
+        (pickingKey, chosenPlan) = (null, null);
     }
 
     /// <summary>
@@ -2301,8 +2388,7 @@ else if (state is not null)
         status = string.Empty;
         highlight = null;
         inspectorTab = "selection";
-        placements.Clear();
-        pickingKey = null;
+        ClearPlacements();
         placeHidden = false;
         placeConcealed = false;
         placeHolder = string.Empty;
@@ -3636,8 +3722,7 @@ else if (state is not null)
         nonObChosen.Clear();
         pending = null;
         shownPhase = null;
-        placements.Clear();
-        pickingKey = null;
+        ClearPlacements();
         openAs = null;
         ClearFire();
         moveUnits.Clear();
@@ -3769,6 +3854,7 @@ else if (state is not null)
 
     private void Refresh()
     {
+        planCache = default;
         history = gameId.Length > 0 ? Live.History(gameId) : null;
         state = history?.Current ?? (history is { States.Count: > 0 } ? history.States[^1] : null);
         var phase = state is null ? null : $"{state.Turn}/{state.Phase}/{state.PhasingSide}";
@@ -3885,7 +3971,8 @@ else if (state is not null)
     private void AddDummy(string side)
     {
         var id = placeId.Trim().Length > 0 ? placeId.Trim() : $"dummy-{side}-{placements.Count + 1}";
-        placements.Add(new Placement(id, null, UnitKinds.Dummy, side, placeLocation.Trim(), true, placeHidden, null));
+        placements.Add(new Placement(id, null, UnitKinds.Dummy, side, placeLocation.Trim(), true, placeHidden, null,
+            Group: placeGroup.Length > 0 && GroupChoices.Any(choice => choice.Side == side && choice.Group.Id == placeGroup) ? placeGroup : null));
         placeId = string.Empty;
     }
 
@@ -4416,8 +4503,7 @@ else if (state is not null)
             // A committed action's choices are spent: the next one starts from nothing.
             if (proposal.Action == GameActions.Setup)
             {
-                placements.Clear();
-                pickingKey = null;
+                ClearPlacements();
             }
             else if (proposal.Action == GameActions.Fire)
             {

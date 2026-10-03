@@ -89,14 +89,14 @@ No plan takes the Balance. If the side has the Balance, its extra counter shows 
 }
 ```
 
-- A file holds at most three plans for a side; ids are unique in the file.
+- A file holds at most three plans, all for the side that sets up first; ids are unique in the file.
 - A placement is what the page's row is: an id, a definition or a Dummy, its group, a Location or off board with an entry area, a holder, a facing, "?" or hidden, a Bore Sighted Location.
-- Reading checks the form only: the format, the card's id, the side being the card's first side, each definition being in the catalog, each group being a group of that side. Whether the placements are legal is the gate's question, asked when the plan is proposed.
+- Reading checks the form only: the format, the card's id, the side being the card's first side, each definition being that side's in the catalog, each group being a group of that side, each counter having a Location on the card's boards, a holder among the plan's counters, or an off-board entry. A Dummy names its group, as a card's setup needs (ruling R19.5); the one-counter form now gives a Dummy the group chosen in it too. Whether the placements are legal is the gate's question, asked when the plan is proposed.
 - A file that cannot be read gives no plans and a reason, shown where the plans would be; setup by hand goes on as before.
 - `cardSha256` is the card text the plan was made for. A plan whose hash is not the hash the game recorded is offered marked "made for an earlier text of this card".
 - A user's setups file is written by hand in this pass. An editor for plans, and a setups file following its card on Rename and Delete, go to the backlog (section 46).
 
-**D6. Choosing a plan (30.4).** A new component, `SetupPlanPicker`, above the list. It shows when the game is in setup, the viewer is the side that sets up first (not the other side, not the adjudicator; ruling R23.3), a group of that side is in the order setting up now, and the card has plans. Each plan shows its name, idea, what it gives up, and its terrain facts, with "Use this plan". Choosing one replaces the list with the plan's rows; the rows are then adjusted like any others and proposed. The chosen plan's name stays above the list until the list is proposed or cleared.
+**D6. Choosing a plan (30.4).** A new component, `SetupPlanPicker`, above the list. It shows when the game is in setup, the viewer is the side that sets up first (not the other side, not the adjudicator; ruling R23.3), a group of that side is in the order setting up now, and the card has plans. Each plan shows its name, idea, what it gives up, and its terrain facts, with "Use this plan". Choosing one replaces the list with the plan's rows; the rows are then adjusted like any others and proposed. The chosen plan is marked "In the list" until the list is proposed or cleared. A plan is offered only while every group it places is setting up now, so The Tractor Works' plans for the 308th are not offered again when the remnants set up.
 
 **D7. The gate decides.** A plan is proposed through the same setup action. A stale plan (for another text of the card) or an illegal one is refused with the gate's reasons, as a typed setup is. Nothing of a plan is stored in the game: only its placements, as the events any setup makes. So a game saved before the plans were added opens unchanged, and a card's hash is the same with and without its setups file.
 
@@ -138,6 +138,13 @@ Each task is checked in my Studio on port 6670 before it is committed; step 5 ch
 - "Set up this group" for the 308th outlined J2, M2, and N2 with 2, 3, and 1 counters. "Pick on the map" on the first empty row marked it; a click on N4 filled it and moved the picking to the next empty row; clicks on N3 and N5 filled the next two.
 - With the second group added (12 Guards squads over E4, F3, G3, and G4, the 10-2 typed at `bd01:F3:1`), the map outlined eleven hexes with their counts, and the gate accepted the setup (25 events), the upper level included.
 - After Confirm both sides had set up: the Russian non-OB "?" fieldset listed G3, N2, N3, and N4, and the map outlined the same four with a dashed line. A click on G3 ticked its checkbox and filled its outline with a "?"; a second click unticked it.
+
+**30.3 and 30.4, 2026-10-03**, at 1920x1080, by script, on a user card `p30-guards-copy` (a copy of The Guards Counterattack in `src/ASL/boards/cards`, with its own `p30-guards-copy.setups.json` of two plans), new game `p30-copy`:
+
+- The German view offered both plans; the one whose `cardSha256` is not the game's read "Made for an earlier text of this card".
+- That plan, which puts one squad in a Russian building and places a fourteenth squad, filled 27 rows and was refused by the gate with two reasons (`play.setup-pool`, `play.setup-area`).
+- The Russian view and the adjudicator's view showed no plans. Each hand-over emptied the list; back in the German view no plan was marked as chosen.
+- The other plan filled 26 rows and was marked "In the list". One squad was moved from F6 to H5 by "Pick on the map" and a click. The gate accepted the setup (26 events); after Confirm the list was empty and the plans were no longer offered.
 
 ## 9. Questions for the user, and the answers
 

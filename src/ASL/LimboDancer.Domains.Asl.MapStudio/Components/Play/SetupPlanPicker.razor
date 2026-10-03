@@ -1,0 +1,71 @@
+@using LimboDancer.Domains.Asl.Play
+@* Pass 30: the card's prepared setups for the side that sets up first. The page shows this only in that side's view, while it sets up (ruling
+   R23.3). Each plan says what it is for, what it gives up, and the terrain facts it rests on; "Use this plan" fills the setup list, which is then
+   adjusted and proposed like any setup, so the gate checks it. *@
+<fieldset id="setup-plans" class="setup-plans">
+    <legend>Prepared setups for @Side</legend>
+    @if (Problems.Count > 0)
+    {
+        <p id="setup-plans-problem" class="diagnostic warning">The card's setups file cannot be read, so it offers no plan: @string.Join("; ", Problems) Set up by hand as before.</p>
+    }
+    else
+    {
+        <p class="muted" id="setup-plans-help">A plan fills the list below with the whole setup. Adjust it in the list or on the map, then propose it: the game checks it like any setup.</p>
+        @foreach (var plan in Plans)
+        {
+            var chosen = plan.Id == Chosen;
+            <article class="@(chosen ? "setup-plan chosen" : "setup-plan")" data-plan="@plan.Id" aria-labelledby="@($"setup-plan-{plan.Id}-name")">
+                <h4 id="@($"setup-plan-{plan.Id}-name")">
+                    @plan.Name
+                    @if (chosen)
+                    {
+                        <span class="status-badge pass">In the list</span>
+                    }
+                    @if (Earlier.Contains(plan.Id))
+                    {
+                        <span class="status-badge warning" title="The card's text has changed since this plan was made; the game still checks the plan when it is proposed.">Made for an earlier text of this card</span>
+                    }
+                </h4>
+                <p>@plan.Idea</p>
+                <p><strong>Gives up:</strong> @plan.GivesUp</p>
+                @if (plan.Terrain.Count > 0)
+                {
+                    <details>
+                        <summary>Terrain facts (@plan.Terrain.Count)</summary>
+                        <ul>
+                            @foreach (var fact in plan.Terrain)
+                            {
+                                <li>@fact</li>
+                            }
+                        </ul>
+                    </details>
+                }
+                <button type="button" id="@($"use-plan-{plan.Id}")" aria-label="@($"Use this plan: {plan.Name}")" @onclick="@(() => OnUse.InvokeAsync(plan.Id))">@(chosen ? "Fill the list again" : "Use this plan")</button>
+            </article>
+        }
+    }
+</fieldset>
+
+@code {
+    /// <summary>The side the plans are for, in words.</summary>
+    [Parameter, EditorRequired]
+    public string Side { get; set; } = string.Empty;
+
+    [Parameter]
+    public IReadOnlyList<SetupPlan> Plans { get; set; } = [];
+
+    /// <summary>Why the card's setups file is refused; empty when it was read.</summary>
+    [Parameter]
+    public IReadOnlyList<string> Problems { get; set; } = [];
+
+    /// <summary>The plan the list was filled from; null when none.</summary>
+    [Parameter]
+    public string? Chosen { get; set; }
+
+    /// <summary>The plans made for another text of the card than the game's.</summary>
+    [Parameter]
+    public IReadOnlySet<string> Earlier { get; set; } = new HashSet<string>();
+
+    [Parameter]
+    public EventCallback<string> OnUse { get; set; }
+}
