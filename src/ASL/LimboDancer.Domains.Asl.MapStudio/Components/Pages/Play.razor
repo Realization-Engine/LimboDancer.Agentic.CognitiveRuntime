@@ -76,10 +76,10 @@
         {
             @foreach (var side in state.Sides.Where(side => Viewer.IsAdjudicator || side.Id == viewAs))
             {
-                var choices = Live.Planner.NonObConcealment(state, side.Id);
+                var choices = NonObChoices(side.Id);
                 <fieldset class="setup-non-ob" data-side="@side.Id">
                     <legend>Non-OB "?" for @DisplayText.Side(side.Id) (A12.12; ruling R23.6)</legend>
-                    <RuleHelp Id="@($"non-ob-help-{side.Id}")" Summary='Once both sides have set up, a stack with no "?" out of the LOS of every unbroken enemy ground unit within 16 hexes may take one (A12.12).'>
+                    <RuleHelp Id="@($"non-ob-help-{side.Id}")" Summary='Once both sides have set up, a stack with no "?" out of the LOS of every unbroken enemy ground unit within 16 hexes may take one (A12.12). Its hexes are outlined on the map; a click on one ticks or unticks it.'>
                         Once both sides have set up, a stack with no "?" may take one if it is out of the LOS of every unbroken enemy ground unit within 16 hexes, or
                         17 hexes or more from all of them. Hidden units are not on the board and do not count. The game checks this against every enemy unit, those
                         under "?" too, as the opponent would at the table; a refusal names no enemy Location.
@@ -108,8 +108,9 @@
         }
         <SetupPlacementEditor Draft="@PlaceDraft" Definitions="@DefinitionChoices" Groups="@GroupChoiceList" Entries="@EntryChoices"
             Kind="@(Definitions.FirstOrDefault(definition => definition.Id == placeDefinition)?.Kind)" Note="@placeNote" OnDraft="@ApplyPlaceDraft" OnAdd="@AddPlacement" />
-        <SetupPlacementList Items="@PlacementItems" Ready="@(history is not null || CardChosen)" OnRemove="@(key => placements.RemoveAll(item => item.Key == key))"
-            OnChange="@ChangePlacement" OnClear="@(() => placements.Clear())" OnPropose="@ProposeSetup" />
+        <SetupPlacementList Items="@PlacementItems" Ready="@(history is not null || CardChosen)" OnRemove="@RemovePlacement"
+            OnChange="@ChangePlacement" OnClear="@ClearPlacements" OnPropose="@ProposeSetup" CanPick="@(history?.Current is not null && MapLayers?.Board is not null)"
+            OnPick="@(key => pickingKey = pickingKey == key ? null : key)" />
         @if (history is null && ChosenCard is { Minimal: false } startCard)
         {
             @* Pass 30: the game may start with no counter placed, so each side sets up on the game's map, in its own view. *@
@@ -519,9 +520,9 @@ else if (state is not null)
         }
         @if (MapLayers is { Board: { } mapBoard } layers)
         {
-            <BoardWorkspace @key="@($"{gameId}/{Viewer.Name}")" @ref="workspace" Board="@mapBoard" Units="@layers.Overlay" UnitView="@layers.View" Marks="@layers.Marks" Vocabulary="@Library.Vocabulary"
+            <BoardWorkspace @key="@($"{gameId}/{Viewer.Name}")" @ref="workspace" Board="@mapBoard" Units="@layers.Overlay" UnitView="@layers.View" Marks="@SetupMarks(mapBoard, layers.Marks)" Vocabulary="@Library.Vocabulary"
                             Selected="@(highlight is { } picked ? GameMaps.FactsAt(mapBoard, picked) : null)"
-                            SelectedChanged="@(facts => highlight = facts is null ? null : GameMaps.LocationOf(mapBoard, facts.Index))"
+                            SelectedChanged="@(facts => PickHex(mapBoard, facts))"
                             @bind-Panel="inspectorTab" Extras="@([new BoardInspector.ExtraTab(new("proposal", "Proposal", AwaitingConfirm ? 1 : null), proposalBlock)])"
                             HoldPanel="@AwaitingConfirm" InspectorLabel="Review and inspector" IdPrefix="play-inspector" MapLabel="The game's map" InspectorFirst="@(!narrow)"
                             InspectorClass="play-pane play-review inspector" InspectorAttributes="@ReviewAttributes"
@@ -822,7 +823,7 @@ else if (state is not null)
     private IReadOnlyList<SetupPlacementList.Item> PlacementItems => [.. placements.Select(placement =>
     {
         var equipment = Library.Vocabulary.IsA(placement.Kind, "asl:equipment");
-        var onMap = !placement.OffBoard && placement.Role is null or "manned" && !(equipment && placement.Kind != "asl:gun");
+        var onMap = OnMap(placement);
         var holders = HolderChoices(placement);
         return new SetupPlacementList.Item(placement.Key,
             $"{placement.Id}: {placement.Definition ?? "a Dummy"}{(placement.Group is { } inGroup ? $" ({inGroup})" : string.Empty)}"
@@ -839,8 +840,115 @@ else if (state is not null)
             Facing = onMap && placement.Kind is "asl:gun" or "asl:vehicle" ? placement.Facing ?? "east" : null,
             Concealed = onMap && !equipment && placement.Kind is not (UnitKinds.Dummy or "asl:sniper") ? placement.Concealed : null,
             OffBoard = placement.Holder is null && !equipment && placement.Kind != "asl:sniper" && placement.Kind != UnitKinds.Dummy && GroupEnters(placement.Group) ? placement.OffBoard : null,
+            Picking = placement.Key == pickingKey,
         };
     })];
+
+    /// <summary>Whether a row has a Location of its own on the map: not off board, not held, towed, or riding; a manned Gun stands at its own.</summary>
+    private bool OnMap(Placement placement) => !placement.OffBoard && placement.Role is null or "manned"
+        && !(Library.Vocabulary.IsA(placement.Kind, "asl:equipment") && placement.Kind != "asl:gun");
+
+    // Pass 30: the row whose Location the next click on the map fills; null when none is being picked.
+    private string? pickingKey;
+
+    private void RemovePlacement(string key)
+    {
+        placements.RemoveAll(item => item.Key == key);
+        pickingKey = pickingKey == key ? null : pickingKey;
+    }
+
+    private void ClearPlacements()
+    {
+        placements.Clear();
+        pickingKey = null;
+    }
+
+    /// <summary>
+    /// A click on the map (pass 30): the hex is kept as before. During setup it also fills the Location of the row being picked, at ground level, and
+    /// the next row still without a Location is picked next; with no row being picked, a hex that may take the viewer's non-OB "?" is ticked or unticked.
+    /// </summary>
+    private void PickHex(StudioBoard board, HexFacts? facts)
+    {
+        highlight = facts is null ? null : GameMaps.LocationOf(board, facts.Index);
+        if (highlight is not { } at || state is null || !SetupOpen || handOver is not null)
+        {
+            return;
+        }
+
+        if (pickingKey is { } key && placements.FindIndex(item => item.Key == key) is var index and >= 0)
+        {
+            placements[index] = placements[index] with { Location = at.ToString() };
+            pickingKey = placements.Skip(index + 1).Concat(placements.Take(index)).FirstOrDefault(item => OnMap(item) && item.Location.Length == 0)?.Key;
+            return;
+        }
+
+        foreach (var side in NonObSides.Where(side => NonObChoices(side).Contains(at)))
+        {
+            var chosen = $"{side}|{at}";
+            Toggle(nonObChosen, chosen, !nonObChosen.Contains(chosen));
+        }
+    }
+
+    /// <summary>The sides whose non-OB "?" the viewer may place now (A12.12; ruling R23.6): its own, or both for the adjudicator, once both sides have set up.</summary>
+    private IEnumerable<string> NonObSides => state is null || !SetupOpen || history is not { Events.Count: > 0 } || SetupView is { CurrentOrder: not null } ? []
+        : state.Sides.Where(side => Viewer.IsAdjudicator || side.Id == viewAs).Select(side => side.Id);
+
+    // The Locations that may take a side's non-OB "?", read once per revision: the fieldset, the map's outlines, and a click all read them.
+    private (GameHistory? History, long Revision, Dictionary<string, IReadOnlyList<BoardLocation>> Choices) nonObCache;
+
+    private IReadOnlyList<BoardLocation> NonObChoices(string side)
+    {
+        if (state is null)
+        {
+            return [];
+        }
+
+        if (nonObCache.Choices is null || !ReferenceEquals(nonObCache.History, history) || nonObCache.Revision != state.Revision)
+        {
+            nonObCache = (history, state.Revision, new Dictionary<string, IReadOnlyList<BoardLocation>>(StringComparer.Ordinal));
+        }
+
+        if (!nonObCache.Choices.TryGetValue(side, out var choices))
+        {
+            nonObCache.Choices[side] = choices = Live.Planner.NonObConcealment(state, side);
+        }
+
+        return choices;
+    }
+
+    /// <summary>
+    /// The map's marks with the setup's outlines (pass 30): each hex a row of the list names, with how many counters the list puts there, the hex of
+    /// the row being picked drawn stronger; and, once both sides have set up, the hexes that may take the viewer's non-OB "?", the ticked ones filled.
+    /// They are the viewer's own drafts, so they go with the list at a hand-over.
+    /// </summary>
+    private string? SetupMarks(StudioBoard board, string? marks)
+    {
+        if (state is null || !SetupOpen || handOver is not null)
+        {
+            return marks;
+        }
+
+        var extra = new System.Text.StringBuilder();
+        foreach (var hex in placements.Where(item => OnMap(item) && BoardLocation.TryParse(item.Location, out _))
+            .GroupBy(item => BoardLocation.Parse(item.Location) with { Level = 0 }))
+        {
+            var picking = hex.Any(item => item.Key == pickingKey);
+            extra.Append(GameMaps.HexMark(board, hex.Key, picking ? "setup-draft picking" : "setup-draft", "#d0a000", "#7a4f0b", picking ? 6 : 3, false,
+                hex.Count(item => !Library.Vocabulary.IsA(item.Kind, "asl:equipment")).ToString(CultureInfo.InvariantCulture)));
+        }
+
+        foreach (var side in NonObSides)
+        {
+            foreach (var at in NonObChoices(side))
+            {
+                var chosen = nonObChosen.Contains($"{side}|{at}");
+                extra.Append(GameMaps.HexMark(board, at, chosen ? "setup-non-ob chosen" : "setup-non-ob", chosen ? "#244f77" : "none", "#244f77", 3, true, chosen ? "?" : null));
+            }
+        }
+
+        return extra.Length == 0 ? marks
+            : marks is { Length: > 4 } && marks.EndsWith("</g>", StringComparison.Ordinal) ? $"{marks[..^4]}{extra}</g>" : $"<g id=\"layer-marks\">{extra}</g>";
+    }
 
     /// <summary>Who may hold a row's counter: for a SW the side's units that are not vehicles, for a Gun all of them, for any other unit its vehicles to ride.</summary>
     private IReadOnlyList<string> HolderChoices(Placement placement)
@@ -2194,6 +2302,7 @@ else if (state is not null)
         highlight = null;
         inspectorTab = "selection";
         placements.Clear();
+        pickingKey = null;
         placeHidden = false;
         placeConcealed = false;
         placeHolder = string.Empty;
@@ -3528,6 +3637,8 @@ else if (state is not null)
         pending = null;
         shownPhase = null;
         placements.Clear();
+        pickingKey = null;
+        openAs = null;
         ClearFire();
         moveUnits.Clear();
         moveTo = string.Empty;
@@ -4306,6 +4417,7 @@ else if (state is not null)
             if (proposal.Action == GameActions.Setup)
             {
                 placements.Clear();
+                pickingKey = null;
             }
             else if (proposal.Action == GameActions.Fire)
             {

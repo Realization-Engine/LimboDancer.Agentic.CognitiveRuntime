@@ -60,7 +60,7 @@ No plan takes the Balance. If the side has the Balance, its extra counter shows 
 - A limited area (Gambit's five counters) owes "counters", not definitions: the button sets the group's whole OB off board, and the player unticks "off board" on five rows and gives them a Location.
 - "Clear the list" empties the list.
 
-**D4. Picking on the map (30.2).** "Pick on the map" beside a row marks that row as the one being picked; the next click on the map fills its Location at ground level and ends the picking. A level above ground is typed (`bd01:F5:1`). Every row's hex is outlined on the map, the row being picked more strongly, so a plan is seen on the map before it is proposed. Once both sides have set up, the hexes that may take the viewer's non-OB "?" are outlined in another color, and a click on one ticks or unticks its checkbox. The outlines are appended to the workspace's marks layer; they are the page's own drafts, so they follow the view like the list does.
+**D4. Picking on the map (30.2).** "Pick on the map" beside a row marks that row as the one being picked; the next click on the map fills its Location at ground level, and the next row still without a Location is picked next, so a group is placed click by click. A level above ground is typed (`bd01:F5:1`). Every row's hex is outlined on the map with the number of counters the list puts there, the row being picked more strongly, so a plan is seen on the map before it is proposed. Once both sides have set up, the hexes that may take the viewer's non-OB "?" are outlined with a dashed line in another color, a ticked one filled and marked "?", and a click on one ticks or unticks its checkbox. The outlines are appended to the workspace's marks layer; they are the page's own drafts, so they follow the view like the list does.
 
 **D5. Setup plans as data (30.3).** One file beside the card, `<card id>.setups.json`: embedded from `src/ASL/units/scenarios` for a built-in card (logical name `Scenarios.<id>.setups.json`), in `src/ASL/boards/cards` for a user's card. The card's own text, and so its hash, is untouched. A new static class `ScenarioSetupPlans` in the Play library reads and validates it; `ScenarioCardLibrary.Plans(name)` returns a card's plans.
 
@@ -132,6 +132,12 @@ Each task is checked in my Studio on port 6670 before it is committed; step 5 ch
 - The button filled 26 rows: the I7 and M9 rows with their Location (one-hex areas), the F5, K5, and M7 rows empty, each SW held by a squad of its own building. With the twelve empty Locations typed and one LMG given to another squad, the gate accepted the setup (26 events); after Confirm the list was empty, the group read "set up", and the Russian groups read "out of your sight".
 - Armor Test, new game `p30-armor`, the Russian view: seven rows, the Gun manned by the crew with a facing, the tank with a facing. A tank placed in a building hex was refused with the gate's reason (`play.setup-vehicle`), and the rows stayed in the list.
 - The hand-over to the German view emptied the list. "Set up this group" set the whole column off board in one click, the Gun in tow of the first vehicle. With the Gun moved to the truck, the crew aboard the truck, and the squad and leader aboard the halftrack, the gate accepted the setup (7 events).
+
+**30.2, 2026-10-03**, at 1920x1080, on `p30-guards` in the Russian view, by script:
+
+- "Set up this group" for the 308th outlined J2, M2, and N2 with 2, 3, and 1 counters. "Pick on the map" on the first empty row marked it; a click on N4 filled it and moved the picking to the next empty row; clicks on N3 and N5 filled the next two.
+- With the second group added (12 Guards squads over E4, F3, G3, and G4, the 10-2 typed at `bd01:F3:1`), the map outlined eleven hexes with their counts, and the gate accepted the setup (25 events), the upper level included.
+- After Confirm both sides had set up: the Russian non-OB "?" fieldset listed G3, N2, N3, and N4, and the map outlined the same four with a dashed line. A click on G3 ticked its checkbox and filled its outline with a "?"; a second click unticked it.
 
 ## 9. Questions for the user, and the answers
 

@@ -1772,6 +1772,33 @@ details.advanced > summary {
     color: var(--muted);
 }
 
+/* Pass 30: the setup list's rows, each with what may be changed in it; the row whose Location the next map click fills is marked. */
+#place-list {
+    list-style: none;
+    margin: 0.5rem 0;
+    padding: 0;
+}
+
+.place-row {
+    align-items: center;
+    border-bottom: 1px solid var(--line-soft);
+    border-left: 4px solid transparent;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.2rem 0.6rem;
+    padding: 0.2rem 0.3rem;
+}
+
+.place-row.picking {
+    background: var(--warn-bg);
+    border-left-color: var(--warn);
+}
+
+.place-row-text {
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+}
+
 /* Ruling R23.6: the non-OB "?" a side may place once both sides have set up. */
 .setup-non-ob {
     margin: 0.75rem 0;
