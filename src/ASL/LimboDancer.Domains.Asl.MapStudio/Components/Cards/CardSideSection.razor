@@ -23,7 +23,7 @@
     </dl>
     @foreach (var group in Side.Groups)
     {
-        <table class="card-group">
+        <table class="card-group library compact">
             <caption>@group.Name, ELR @group.Elr@(group.SetupOrder is { } order ? $", sets up {CardText.Order(order, Card)}" : string.Empty)</caption>
             <thead><tr><th>Count</th><th>Counter</th><th>Setup or entry</th><th>Source</th></tr></thead>
             <tbody>

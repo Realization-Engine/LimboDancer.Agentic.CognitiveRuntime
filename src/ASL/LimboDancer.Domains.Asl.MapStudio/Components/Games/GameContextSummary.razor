@@ -4,7 +4,7 @@
     {
         <strong>Revision @revision@(Max is { } max ? $" of {max}" : string.Empty)</strong><text>:</text>
     }
-    turn @Turn, @GameText.PhaseLabel(Phase), @PhasingSide phasing@(Perspective is { } perspective ? $"; {perspective}'s view" : string.Empty).
+    turn @Turn, @GameText.PhaseLabel(Phase), @DisplayText.Side(PhasingSide) phasing@(Perspective is { } perspective ? $"; seen by {DisplayText.ViewName(perspective)}" : string.Empty).
     @if (Note is { Length: > 0 } note)
     {
         <span class="muted">@note</span>

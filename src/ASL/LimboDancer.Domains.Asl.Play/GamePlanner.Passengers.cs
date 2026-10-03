@@ -337,7 +337,7 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// Why an action names a unit riding a vehicle (ruling R26.2): Passengers only ride, and unload (D6.5); their fire, rout, and Close Combat are plan
-    /// pass 32. Null when no unit named is aboard.
+    /// pass 34. Null when no unit named is aboard.
     /// </summary>
     private static string? AboardBar(GameState state, JsonElement arguments)
     {

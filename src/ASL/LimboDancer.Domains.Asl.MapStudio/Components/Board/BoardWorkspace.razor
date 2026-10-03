@@ -1,0 +1,453 @@
+@using System.Globalization
+@using LimboDancer.Domains.Asl.Units.State
+@using LimboDancer.Domains.Asl.Maps.Geometry
+@inject StudioLos Los
+@* Pass 29 (plan section 5): a board's map and its inspector, shared by the board viewer and Play. It owns B06 BoardViewport and BoardInspector,
+   loads the board when the board or its view changes, sends a layer only when it changes, and keeps what the inspector shows: the hex hovered,
+   the unit picked, the pixel clicked, and the LOS check. The host gives the units already read for the view and any marks, binds the hex kept and
+   the open tab, and lays the two parts out: the stage (its toolbar, the map, and a footer) and the inspector are siblings, with any content the
+   host puts between them. *@
+@if (InspectorFirst)
+{
+    <aside @ref="inspector" class="@InspectorClass" @attributes="@InspectorAttributes">@InspectorPane</aside>
+}
+@Between
+<div @ref="stage" class="@StageClass" @attributes="@StageAttributes">
+    @Toolbar
+    @if (loadProblem is { } problem)
+    {
+        <p class="fail" id="workspace-load">The map did not load: @problem <button type="button" id="workspace-retry" @onclick="Retry">Try again</button></p>
+    }
+    <BoardViewport @ref="viewport" Label="@MapLabel" OnReady="@Ready" OnClick="@Click" OnHover="@Hover" OnKey="@Key" OnUnitSelected="@UnitClick" OnRotation="@Turned" />
+    @Footer
+</div>
+@if (!InspectorFirst)
+{
+    <aside @ref="inspector" class="@InspectorClass" @attributes="@InspectorAttributes">@InspectorPane</aside>
+}
+
+@code {
+    private BoardViewport? viewport;
+    private ElementReference inspector;
+    private ElementReference stage;
+
+    // The load or layer that failed, kept so it is not tried again on every render; only "Try again" clears it (UI review, pass 29).
+    private string? failedKey;
+    private bool loading;
+    private string? shown;
+    private string? loadProblem;
+    private (string? Units, string? Los, string? Marks, string? Highlight, string? Visible, string? Comparison) sent;
+    private BoardInspector? inspectorPane;
+    private HexFacts? hovered;
+    private PlacedUnit? selectedUnit;
+    private GameView? shownView;
+
+    // A hex the host picked (a unit located in a table, a link's hex) is brought into view; one picked on the map already is.
+    private HexIndex? pickedHere;
+    private HexIndex? shownSelected;
+    private bool revealPending;
+    private string? shownPanel;
+    private bool rotated;
+    private string? sample;
+    private LosPanel.LosDraft losDraft = new(string.Empty, string.Empty, false);
+    private LosCheck? losCheck;
+
+    [Parameter, EditorRequired]
+    public StudioBoard Board { get; set; } = null!;
+
+    [Parameter]
+    public BoardView View { get; set; } = BoardView.Exact;
+
+    /// <summary>Whether the board is drawn with its trace (the Hex Facts view).</summary>
+    [Parameter]
+    public bool Trace { get; set; }
+
+    /// <summary>The board layers shown; null shows them all.</summary>
+    [Parameter]
+    public IReadOnlyCollection<string>? Visible { get; set; }
+
+    /// <summary>The Comparison view's mode; it applies only in that view.</summary>
+    [Parameter]
+    public string ComparisonMode { get; set; } = "overlay";
+
+    /// <summary>The Comparison view's value, 0 to 100.</summary>
+    [Parameter]
+    public int ComparisonValue { get; set; } = 50;
+
+    /// <summary>The units on the map, already read for the view; null shows none.</summary>
+    [Parameter]
+    public UnitOverlay? Units { get; set; }
+
+    /// <summary>The game's view the units were read for; null for a placement set.</summary>
+    [Parameter]
+    public GameView? UnitView { get; set; }
+
+    [Parameter]
+    public string? UnitNote { get; set; }
+
+    /// <summary>The <c>layer-marks</c> group (Play's Covered Arc and Residual FP); null draws none.</summary>
+    [Parameter]
+    public string? Marks { get; set; }
+
+    [Parameter, EditorRequired]
+    public LimboDancer.Domains.Asl.Units.Vocabulary.UnitVocabulary Vocabulary { get; set; } = null!;
+
+    [Parameter]
+    public FeatureModel? StyledModel { get; set; }
+
+    /// <summary>The hex clicked and kept; the host may set it (a unit located in a table) or bind it.</summary>
+    [Parameter]
+    public HexFacts? Selected { get; set; }
+
+    [Parameter]
+    public EventCallback<HexFacts?> SelectedChanged { get; set; }
+
+    [Parameter]
+    public string Panel { get; set; } = "selection";
+
+    [Parameter]
+    public EventCallback<string> PanelChanged { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<BoardInspector.ExtraTab> Extras { get; set; } = [];
+
+    /// <summary>
+    /// Whether the open tab stays open when a hex or a counter is clicked, such as Play's Proposal tab while a proposal waits for Confirm (pass 29).
+    /// Otherwise a click on the map shows the Selection tab, unless LOS is open.
+    /// </summary>
+    [Parameter]
+    public bool HoldPanel { get; set; }
+
+    [Parameter]
+    public string InspectorLabel { get; set; } = "Board inspector";
+
+    [Parameter]
+    public string IdPrefix { get; set; } = "viewer";
+
+    /// <summary>The map's name for assistive technology; none when null.</summary>
+    [Parameter]
+    public string? MapLabel { get; set; }
+
+    [Parameter]
+    public RenderFragment? Toolbar { get; set; }
+
+    [Parameter]
+    public RenderFragment? Footer { get; set; }
+
+    /// <summary>Markup the host puts between the inspector and the stage when the inspector comes first.</summary>
+    [Parameter]
+    public RenderFragment? Between { get; set; }
+
+    [Parameter]
+    public bool InspectorFirst { get; set; }
+
+    [Parameter]
+    public string StageClass { get; set; } = "stage";
+
+    [Parameter]
+    public string InspectorClass { get; set; } = "inspector";
+
+    [Parameter]
+    public IReadOnlyDictionary<string, object>? StageAttributes { get; set; }
+
+    [Parameter]
+    public IReadOnlyDictionary<string, object>? InspectorAttributes { get; set; }
+
+    /// <summary>The inspector's element, for a host that brings it into view.</summary>
+    public ElementReference Inspector => inspector;
+
+    /// <summary>The stage's element, for a host that brings the map into view.</summary>
+    public ElementReference Stage => stage;
+
+    /// <summary>Whether the map is turned a quarter clockwise (pass 29).</summary>
+    public bool Rotated => rotated;
+
+    private RenderFragment InspectorPane => @<BoardInspector @ref="inspectorPane" Board="@Board" Panel="@Panel" PanelChanged="@PanelChanged" Label="@InspectorLabel" IdPrefix="@IdPrefix"
+        Extras="@Extras" Selected="@Selected" Units="@Units" SelectedUnit="@selectedUnit" SelectedUnitChanged="@PickUnit"
+        Vocabulary="@Vocabulary" View="@UnitView" UnitNote="@UnitNote" Sample="@sample" StyledModel="@StyledModel" LosDraft="@losDraft"
+        LosDraftChanged="@(draft => losDraft = draft)" LosResult="@losCheck" OnCheckLos="@CheckLos" OnClearLos="@ClearLos" OnCopy="@Copy" />;
+
+    private string LoadKey => $"{Board.Ref.Value}/{Board.Version}/{View}/{Trace}";
+
+    private IReadOnlyList<string> AllLayers => [.. BoardRenderer.Layers(View).Where(layer => layer != "defs")];
+
+    protected override void OnParametersSet()
+    {
+        // A unit the overlay no longer draws, or one outside the hex kept, is dropped. A "?" is let go when the view is read again: its placement
+        // id is numbered afresh at each revision, so the same id may be another presence (pass 29).
+        if (selectedUnit is { } unit)
+        {
+            var sealedBefore = shownView is not null && !ReferenceEquals(shownView, UnitView) && shownView.Sealed.Any(presence => presence.PlacementId == unit.Document.Id);
+            selectedUnit = !sealedBefore && Units?.Units.FirstOrDefault(item => item.Document.Id == unit.Document.Id) is { } kept && kept.Hex == Selected?.Index ? kept : null;
+        }
+
+        shownView = UnitView;
+
+        if (Selected?.Index != shownSelected)
+        {
+            revealPending = Selected is not null && Selected.Index != pickedHere;
+            shownSelected = Selected?.Index;
+        }
+
+        // Another board starts with nothing hovered, sampled, or checked.
+        if (shown is not null && !shown.StartsWith($"{Board.Ref.Value}/{Board.Version}/", StringComparison.Ordinal))
+        {
+            (hovered, sample, losCheck) = (null, null, null);
+            inspectorPane?.SetHovered(null);
+        }
+
+        // The LOS tab opened with an empty From takes the hex kept (pass 29).
+        if (Panel == "los" && shownPanel != "los" && losDraft.Source.Length == 0 && Selected is not null)
+        {
+            losDraft = losDraft with { Source = Board.LocationOf(Selected) };
+        }
+
+        shownPanel = Panel;
+    }
+
+    private async Task Ready()
+    {
+        shown = null;
+        try
+        {
+            rotated = viewport is not null && await viewport.IsRotated();
+        }
+        catch (JSException)
+        {
+            rotated = false;
+        }
+
+        StateHasChanged();
+    }
+
+    private Task Turned(bool on) => InvokeAsync(() =>
+    {
+        rotated = on;
+        StateHasChanged();
+    });
+
+    /// <summary>Turns the whole map a quarter clockwise, or back; the browser remembers the choice for the pane's shape (pass 29).</summary>
+    public async Task ToggleRotation()
+    {
+        if (viewport is not null)
+        {
+            rotated = !rotated;
+            await viewport.SetRotation(rotated);
+            StateHasChanged();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // One load at a time, and the layers after it: a load replaces the board's groups, so every layer is sent again.
+        if (loading || viewport is not { IsReady: true } || failedKey == LoadKey)
+        {
+            return;
+        }
+
+        if (LoadKey != shown)
+        {
+            (shown, loading, sent, loadProblem) = (LoadKey, true, default, null);
+            try
+            {
+                var input = Board.InputFor(View) ?? Board.Render;
+                await viewport.Load($"render/{Board.Ref.Value}/{Board.Version}/{BoardRenderer.ViewName(View)}", Trace ? "?trace=true" : string.Empty,
+                    BoardRenderer.ViewBox(input, View), BoardRenderer.Layers(View), [.. Visible ?? AllLayers]);
+                sent.Visible = string.Join('|', Visible ?? AllLayers);
+            }
+            catch (JSException exception)
+            {
+                // UI review, pass 28c: a board that does not load says so and may be tried again, rather than ending the circuit.
+                (shown, loadProblem, failedKey) = (null, exception.Message, LoadKey);
+                StateHasChanged();
+                return;
+            }
+            finally
+            {
+                loading = false;
+            }
+
+            if (LoadKey != shown)
+            {
+                StateHasChanged();
+                return;
+            }
+        }
+
+        try
+        {
+            await SendLayers();
+        }
+        catch (JSException exception)
+        {
+            // A layer the browser refuses is reported like a failed load; Try again loads the board and sends every layer afresh.
+            (shown, loadProblem, failedKey) = (null, exception.Message, LoadKey);
+            StateHasChanged();
+        }
+    }
+
+    private async Task SendLayers()
+    {
+        if (viewport is null)
+        {
+            return;
+        }
+
+        var visible = string.Join('|', Visible ?? AllLayers);
+        if (visible != sent.Visible)
+        {
+            sent.Visible = visible;
+            await viewport.SetVisible([.. Visible ?? AllLayers]);
+        }
+
+        var comparison = View == BoardView.Comparison ? $"{ComparisonMode}/{ComparisonValue}" : "none";
+        if (comparison != sent.Comparison)
+        {
+            sent.Comparison = comparison;
+            await viewport.SetComparison(View == BoardView.Comparison ? ComparisonMode : "none", ComparisonValue / 100.0);
+        }
+
+        if (Units?.Svg != sent.Units)
+        {
+            sent.Units = Units?.Svg;
+            await viewport.SetUnits(Units?.Svg);
+        }
+
+        var los = losCheck is null ? null : Los.Layer(Board, losCheck);
+        if (los != sent.Los)
+        {
+            sent.Los = los;
+            await viewport.SetLos(los);
+        }
+
+        if (Marks != sent.Marks)
+        {
+            sent.Marks = Marks;
+            await viewport.SetMarks(Marks);
+        }
+
+        var highlight = Selected is null ? null : string.Join(' ', Board.Render.Grid.Geometry.Vertices(Selected.Index)
+            .Select(vertex => string.Create(CultureInfo.InvariantCulture, $"{vertex.X:0.##},{vertex.Y:0.##}")));
+        if (highlight != sent.Highlight)
+        {
+            sent.Highlight = highlight;
+            await viewport.Highlight(highlight);
+        }
+
+        if (revealPending && Selected is not null)
+        {
+            revealPending = false;
+            var vertices = Board.Render.Grid.Geometry.Vertices(Selected.Index).ToArray();
+            await viewport.Reveal(vertices.Average(vertex => vertex.X), vertices.Average(vertex => vertex.Y));
+        }
+    }
+
+    private void Retry() => (shown, loadProblem, failedKey) = (null, null, null);
+
+    public async Task Zoom(double factor)
+    {
+        if (viewport is not null)
+        {
+            await viewport.Zoom(factor);
+        }
+    }
+
+    public async Task Fit()
+    {
+        if (viewport is not null)
+        {
+            await viewport.Reset();
+        }
+    }
+
+    private void CheckLos() => losCheck = Los.Check(Board, losDraft.Source, losDraft.Target,
+        losDraft.Auxiliary ? LimboDancer.Domains.Asl.Maps.Los.LosAim.AuxiliaryPoint : LimboDancer.Domains.Asl.Maps.Los.LosAim.LosPoint);
+
+    private void ClearLos() => losCheck = null;
+
+    private async Task Copy(string location)
+    {
+        if (viewport is not null)
+        {
+            await viewport.CopyText(location);
+        }
+    }
+
+    private void PickUnit(PlacedUnit unit) => selectedUnit = unit;
+
+    private Task Click(double x, double y)
+    {
+        var grid = Board.Render.Grid;
+        var (cellX, cellY) = ((int)Math.Floor(x), (int)Math.Floor(y));
+        sample = grid.TryGetCode(cellX, cellY, out var code)
+            ? $"Pixel ({cellX}, {cellY}): code {code} {(Board.Catalog.TryGet(code, out var type) ? type.Name : "-")}, elevation {grid.ElevationAt(cellX, cellY)}"
+            : $"Pixel ({cellX}, {cellY}) is off the grid.";
+        selectedUnit = null;
+        return InvokeAsync(async () =>
+        {
+            await ShowSelection(fromExtraTab: true);
+            await Select(grid.Geometry.HexAt(x, y) is { } hex ? Board.Facts[hex] : null);
+        });
+    }
+
+    /// <summary>
+    /// A click on the map shows what it picked: a counter opens Selection from Evidence or a host's tab, and a hex from a host's tab, unless the
+    /// host holds its tab open or LOS is open, so its hex can be taken as an end (table player, pass 22d; pass 29).
+    /// </summary>
+    private async Task ShowSelection(bool fromExtraTab)
+    {
+        var extra = Extras.Any(item => item.Tab.Id == Panel);
+        if (!HoldPanel && Panel != "los" && Panel != "selection" && (!fromExtraTab || extra))
+        {
+            await PanelChanged.InvokeAsync("selection");
+        }
+    }
+
+    /// <summary>Hover updates the inspector only when the pointer crosses into another hex, and only while no hex is kept.</summary>
+    private Task Hover(double x, double y)
+    {
+        if (Selected is not null)
+        {
+            return Task.CompletedTask;
+        }
+
+        var next = Board.Render.Grid.Geometry.HexAt(x, y) is { } hex ? Board.Facts[hex] : null;
+        if (next?.Index != hovered?.Index)
+        {
+            hovered = next;
+            return InvokeAsync(() => inspectorPane?.SetHovered(next));
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task Key(string key) => key == "Escape" && Selected is not null ? InvokeAsync(() => Select(null)) : Task.CompletedTask;
+
+    private Task UnitClick(string unitId)
+    {
+        if (Units?.Units.FirstOrDefault(item => item.Document.Id == unitId) is not { } unit)
+        {
+            return Task.CompletedTask;
+        }
+
+        return InvokeAsync(async () =>
+        {
+            await ShowSelection(fromExtraTab: false);
+            selectedUnit = unit;
+            await Select(Board.Facts[unit.Hex]);
+        });
+    }
+
+    private async Task Select(HexFacts? facts)
+    {
+        pickedHere = facts?.Index;
+        Selected = facts;
+        await SelectedChanged.InvokeAsync(facts);
+
+        // A host that binds the hex draws this component again itself; a second draw here would repeat Play's whole actions pane (UI review, pass 29).
+        if (!SelectedChanged.HasDelegate)
+        {
+            StateHasChanged();
+        }
+    }
+}

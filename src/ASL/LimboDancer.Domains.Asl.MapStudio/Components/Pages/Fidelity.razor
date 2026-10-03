@@ -6,6 +6,7 @@
 @inject FidelityJobRunner Runner
 @inject FidelityReportStore Store
 @inject StudioLos Los
+@inject IBoardProvider Boards
 
 <PageTitle>Fidelity - ASL Map Studio</PageTitle>
 
@@ -18,7 +19,12 @@ else
 {
     <FidelityRunControls State="@Runner.State" Progress="@Runner.Progress" Error="@Runner.Error" @bind-IncludeF3="includeF3"
                          OnStart="@(() => Runner.Start(includeF3))" OnCancel="@Runner.Cancel" />
-    <p class="muted">A run ingests every VASL board and checks F1, F2 against the oracle fixtures, lossless outlines, and both SVG views. F3 checks are informational: they describe the vectorized model and never change a board's outcome. Reports are saved under <code>@Store.Directory</code>.</p>
+    <p class="muted">
+        A run reads every VASL board and checks it: its terrain data is read exactly (F1), its hex facts match VASL's own answers (F2), its terrain
+        outlines are lossless, and its Exact and Hex facts drawings are drawn as vectors. The Styled drawing check (F3) traces the board into the
+        shapes the Styled view draws and compares them back; it is informational and never changes a board's outcome. Reports are saved under
+        <code>@Store.Directory</code>.
+    </p>
 }
 
 <LosFidelityPanel Fixtures="@losFixtures.Count" Available="@Runner.IsAvailable" Running="@losRunning" Progress="@losProgress" Results="@losResults" OnRun="@CheckLos" />
@@ -29,6 +35,11 @@ else
 @if (report is not null)
 {
     var summary = report.Summary;
+    @if (FidelityJobRunner.StaleReason(report, Boards.CatalogBlob) is { } stale)
+    {
+        @* The UX analysis (2026-10-02): a report made with older tools says so, since the library no longer uses its results. *@
+        <p id="fidelity-stale" class="diagnostic warning">This report is out of date: @stale. The board library does not use its results; run the batch again.</p>
+    }
     <BoardScopeSummary Id="fidelity-totals" InScope="@(summary.Boards - summary.OutOfScope)" Verified="@summary.Verified" Ingested="@summary.Ingested"
                        Failed="@summary.Failed" OutOfScope="@summary.OutOfScope" />
     <FidelityReportMetadata Report="@report" />
@@ -62,6 +73,8 @@ else
             selectedId = reports.FirstOrDefault()?.Id;
             report = selectedId is null ? null : Store.TryLoad(selectedId);
         }
+
+        filter = DefaultFilter(report);
     }
 
     private readonly List<LosFidelityResult> losResults = [];
@@ -86,10 +99,15 @@ else
         losRunning = false;
     }
 
+    // The UX analysis: a report with boards not verified opens on them, so a failure is found at once.
+    private static string DefaultFilter(FidelityReport? shown) =>
+        shown?.Boards.Any(board => board.Outcome is BatchOutcome.Ingested or BatchOutcome.Failed) == true ? "problems" : "in-scope";
+
     private void Select(string? id)
     {
         selectedId = id;
         report = selectedId is null ? null : Store.TryLoad(selectedId);
+        filter = DefaultFilter(report);
     }
 
     private void OnRunnerChanged() => _ = InvokeAsync(() =>

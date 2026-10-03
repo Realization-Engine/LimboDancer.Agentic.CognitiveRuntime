@@ -241,13 +241,33 @@ public sealed class FidelityJobRunner(IFidelityBatch batch, FidelityReportStore 
     public BatchBoardResult? FreshResult(BoardListing entry, string? catalogBlob)
     {
         ArgumentNullException.ThrowIfNull(entry);
-        if (Latest is not { Report: var report } || catalogBlob is null || report.SharedBoardMetadataBlob != catalogBlob || !CurrentVersions(report))
+        if (Latest is not { Report: var report } || catalogBlob is null || StaleReason(report, catalogBlob) is not null)
         {
             return null;
         }
 
         var result = report.Boards.FirstOrDefault(board => board.Board == entry.Ref.Value);
         return result is not null && result.LosDataBlob == entry.LosDataBlob && result.MetadataBlob == entry.MetadataBlob ? result : null;
+    }
+
+    /// <summary>
+    /// Why an up-to-date report has no result for a library entry, in words: the board is not in it, or its own source changed since it ran;
+    /// null when the report has a fresh result, or when there is no report or the whole report is out of date (the library says so once).
+    /// </summary>
+    public string? MissingReason(BoardListing entry, string? catalogBlob)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        if (Latest is not { Report: var report } || catalogBlob is null || StaleReason(report, catalogBlob) is not null)
+        {
+            return null;
+        }
+
+        return report.Boards.FirstOrDefault(board => board.Board == entry.Ref.Value) switch
+        {
+            null => "not in the report",
+            var result when result.LosDataBlob != entry.LosDataBlob || result.MetadataBlob != entry.MetadataBlob => "its source changed since the report",
+            _ => null,
+        };
     }
 
     public void Dispose()
@@ -260,10 +280,32 @@ public sealed class FidelityJobRunner(IFidelityBatch batch, FidelityReportStore 
         }
     }
 
-    private static bool CurrentVersions(FidelityReport report) =>
-        report.Versions.GetValueOrDefault("importer") == VaslBoardImporter.ImporterVersion
-        && report.Versions.GetValueOrDefault("derivation") == LimboDancer.Domains.Asl.Maps.Derivation.VaslCompatibleHexFactDerivation.Version
-        && report.Versions.GetValueOrDefault("renderer") == BoardRenderer.RendererVersion;
+    // The tools whose versions decide whether a report's results still describe the boards the Studio reads. The compiler and the vectorizer are
+    // left out on purpose: they serve F3, which is informational and never changes a board's outcome.
+    private static readonly (string Name, string Version)[] Tools =
+    [
+        ("importer", VaslBoardImporter.ImporterVersion),
+        ("derivation", LimboDancer.Domains.Asl.Maps.Derivation.VaslCompatibleHexFactDerivation.Version),
+        ("renderer", BoardRenderer.RendererVersion),
+    ];
+
+    /// <summary>
+    /// Why a report's results no longer describe the boards the Studio reads, in words: a tool's version or the shared board metadata changed
+    /// since it ran; null when they still do (the UX analysis, 2026-10-02: the library and the Fidelity page read the same rule).
+    /// </summary>
+    public static string? StaleReason(FidelityReport report, string? catalogBlob)
+    {
+        ArgumentNullException.ThrowIfNull(report);
+        var changed = Tools.Where(tool => report.Versions.GetValueOrDefault(tool.Name) != tool.Version)
+            .Select(tool => $"the {tool.Name} was {report.Versions.GetValueOrDefault(tool.Name) ?? "not recorded"} and is now {tool.Version}")
+            .ToList();
+        if (catalogBlob is not null && report.SharedBoardMetadataBlob != catalogBlob)
+        {
+            changed.Add("the shared board metadata has changed");
+        }
+
+        return changed.Count == 0 ? null : string.Join("; ", changed);
+    }
 
     private void Execute(bool includeF3, CancellationToken token)
     {

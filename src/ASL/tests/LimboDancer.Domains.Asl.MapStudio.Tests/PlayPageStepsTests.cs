@@ -184,7 +184,7 @@ public sealed class PlayPageStepsTests : IDisposable
         Roll(6, 5);
         Commit(page, "#propose-fire");
         Assert.Empty(dice);
-        Assert.Contains($"in {hexes.Building}", page.Find("#play-residual").TextContent, StringComparison.Ordinal);
+        Assert.Contains($"in {DisplayText.Location(hexes.Building)}", page.Find("#play-residual").TextContent, StringComparison.Ordinal);
         foreach (var perspective in new[] { "german", "russian", Perspective.AdjudicatorName })
         {
             page.ViewAs(perspective);

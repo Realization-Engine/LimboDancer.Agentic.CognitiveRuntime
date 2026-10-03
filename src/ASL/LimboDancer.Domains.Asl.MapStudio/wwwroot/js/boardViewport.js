@@ -4,6 +4,7 @@
 
 const svgNamespace = "http://www.w3.org/2000/svg";
 const hoverInterval = 100;
+const rotationKey = "studio.map.rotated";
 
 export function create(host, dotnet) {
     const svg = document.createElementNS(svgNamespace, "svg");
@@ -13,8 +14,26 @@ export function create(host, dotnet) {
 
     const state = {
         host, svg, dotnet, side: null, box: null, home: null, drag: null, generation: 0, highlight: null,
-        tool: "select", points: [], overlay: null, lastHover: 0, comparison: { mode: "none", value: 0.5 },
+        tool: "select", points: [], overlay: null, lastHover: 0, comparison: { mode: "none", value: 0.5 }, rotated: false, shape: null,
     };
+
+    // Pass 29: the turn is remembered for each shape of the map's pane, so turning a tall pane never turns a wide one. A pane resized into the
+    // other shape takes that shape's choice.
+    // A view still at its fit is fitted again when the pane changes size, such as when the context above it grows.
+    const shapeWatcher = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => {
+        applyShape(state);
+        if (state.fitted) {
+            reset(state);
+        }
+    });
+    shapeWatcher?.observe(host);
+    try {
+        localStorage.removeItem(rotationKey);
+    } catch {
+        // Storage is blocked: nothing to remove.
+    }
+
+    applyShape(state);
 
     svg.addEventListener("wheel", event => {
         if (!state.box) {
@@ -67,8 +86,10 @@ export function create(host, dotnet) {
             return;
         }
 
+        // Turned a quarter clockwise (pass 29), the map's x runs down the screen and its y runs to the left.
         const unitsPerPixel = drag.box.width / svg.clientWidth;
-        setBox(state, { ...drag.box, x: drag.box.x - dx * unitsPerPixel, y: drag.box.y - dy * unitsPerPixel });
+        const [mx, my] = state.rotated ? [dy, -dx] : [dx, dy];
+        setBox(state, { ...drag.box, x: drag.box.x - mx * unitsPerPixel, y: drag.box.y - my * unitsPerPixel });
     });
 
     svg.addEventListener("pointerup", event => {
@@ -169,7 +190,11 @@ export function create(host, dotnet) {
         copyText: text => navigator.clipboard?.writeText(text),
         reset: () => reset(state),
         zoom: factor => zoomCenter(state, factor),
+        reveal: (x, y) => revealPoint(state, x, y),
+        setRotation: on => setRotation(state, on, true),
+        isRotated: () => state.rotated,
         dispose: () => {
+            shapeWatcher?.disconnect();
             host.removeEventListener("keydown", onKey);
             host.replaceChildren();
         },
@@ -204,7 +229,7 @@ async function load(state, baseUrl, query, viewBox, layers, visible) {
     state.highlight = null;
     state.overlay = null;
     setVisible(state, visible);
-    setBox(state, keepBox ? state.box : { ...home });
+    setBox(state, keepBox ? state.box : fitBox(state), keepBox ? state.fitted : true);
 }
 
 // Replaces the named layers in place, keeping the view: after an edit, for layers the patch does not cover.
@@ -397,6 +422,23 @@ function zoomAt(state, point, factor) {
     });
 }
 
+// Brings a point into view at the same zoom, only when it lies outside the view or close to its edge (Claude Design's review: a hex picked
+// outside the map, such as from the units table, may be off screen on a zoomed or composed map).
+function revealPoint(state, x, y) {
+    if (!state.box) {
+        return;
+    }
+
+    const box = state.box;
+    const marginX = box.width * 0.1;
+    const marginY = box.height * 0.1;
+    if (x >= box.x + marginX && x <= box.x + box.width - marginX && y >= box.y + marginY && y <= box.y + box.height - marginY) {
+        return;
+    }
+
+    setBox(state, { ...box, x: x - box.width / 2, y: y - box.height / 2 });
+}
+
 function zoomCenter(state, factor) {
     if (state.box) {
         zoomAt(state, { x: state.box.x + state.box.width / 2, y: state.box.y + state.box.height / 2 }, factor);
@@ -405,8 +447,22 @@ function zoomCenter(state, factor) {
 
 function reset(state) {
     if (state.home) {
-        setBox(state, { ...state.home });
+        setBox(state, fitBox(state), true);
     }
+}
+
+// The whole board, or, turned in a tall pane (pass 29), the board's turned width across the pane's width from its turned top, to pan along its
+// length; a turned board that fits whole, or one in a wide pane, is shown whole.
+function fitBox(state) {
+    const home = { ...state.home };
+    const width = state.svg.clientWidth;
+    const height = state.svg.clientHeight;
+    if (!state.rotated || width === 0 || height === 0 || paneShape(state) !== "portrait") {
+        return home;
+    }
+
+    const span = home.height * width / height;
+    return span >= home.width ? home : { x: home.x, y: home.y, width: span, height: home.height };
 }
 
 // The LOS layer (LOS Design, section 6): a line and the blocking hex, drawn above the units.
@@ -498,8 +554,9 @@ function highlight(state, points) {
     state.svg.appendChild(state.highlight);
 }
 
-function setBox(state, box) {
+function setBox(state, box, fitted = false) {
     state.box = box;
+    state.fitted = fitted;
     const value = `${box.x} ${box.y} ${box.width} ${box.height}`;
     state.svg.setAttribute("viewBox", value);
     state.side?.setAttribute("viewBox", value);
@@ -512,6 +569,57 @@ function toBoard(state, clientX, clientY) {
     point.y = clientY;
     const board = point.matrixTransform(state.svg.getScreenCTM().inverse());
     return { x: board.x, y: board.y };
+}
+
+// Pass 29: the whole map turned a quarter clockwise as one, as if walking to the side of the table. The turn is a CSS transform on the drawing
+// (site.css, .board-host.rotated); the board's coordinates do not change, and the pointer is read through the screen matrix, which includes it.
+// The browser remembers the choice for each shape of pane: taller than wide, or not.
+function paneShape(state) {
+    return state.host.clientHeight > state.host.clientWidth ? "portrait" : "landscape";
+}
+
+function readRotation(shape) {
+    try {
+        return localStorage.getItem(`${rotationKey}.${shape}`) === "true";
+    } catch {
+        return false;
+    }
+}
+
+function applyShape(state) {
+    // A hidden pane (a narrow tab not shown) has no size, so no shape: its choice waits until it shows.
+    if (state.host.clientWidth === 0 || state.host.clientHeight === 0) {
+        return;
+    }
+
+    const shape = paneShape(state);
+    if (shape === state.shape) {
+        return;
+    }
+
+    state.shape = shape;
+    const on = readRotation(shape);
+    if (on !== state.rotated) {
+        setRotation(state, on, false);
+        state.dotnet.invokeMethodAsync("OnRotationChanged", state.rotated);
+    }
+}
+
+function setRotation(state, on, remember) {
+    state.rotated = Boolean(on);
+    state.host.classList.toggle("rotated", state.rotated);
+    if (remember) {
+        state.shape = paneShape(state);
+        try {
+            localStorage.setItem(`${rotationKey}.${state.shape}`, String(state.rotated));
+        } catch {
+            // Storage is blocked: the turn holds for this page only.
+        }
+    }
+
+    reset(state);
+    updateUnitTier(state);
+    return state.rotated;
 }
 
 function clamp(value, min, max) {

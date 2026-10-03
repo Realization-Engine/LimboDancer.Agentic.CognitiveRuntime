@@ -10,8 +10,8 @@
         <dd><code>@string.Join(" ", composition.Placements)</code></dd>
         <dt>Size</dt>
         <dd>@composition.Map.Geometry.WidthInHexes by @composition.Map.Geometry.HeightInHexes hexes</dd>
-        <dt>F2</dt>
-        <dd class="@F2Class">@(Board.F2 is null ? "no oracle scenario" : Board.F2.Passed ? "Pass" : $"{Board.F2.Differences.Count} differences")</dd>
+        <dt>Hex facts match VASL (F2)</dt>
+        <dd class="@F2Class">@(Board.F2 is null ? "No VASL answers to compare" : Board.F2.Passed ? "Pass" : $"{Board.F2.Differences.Count} differences")</dd>
     }
     @if (Board.Provenance is { } provenance)
     {
@@ -22,10 +22,10 @@
     }
     @if (Board.F1 is { } f1)
     {
-        <dt>F1</dt>
-        <dd class="@(f1.Passed ? "pass" : "fail")">@f1.Status</dd>
-        <dt>F2</dt>
-        <dd class="@F2Class">@(Board.F2 is null ? "no oracle fixture" : Board.F2.Passed ? "Pass" : $"{Board.F2.Differences.Count} differences")</dd>
+        <dt>Terrain data read exactly (F1)</dt>
+        <dd class="@(f1.Passed ? "pass" : "fail")">@DisplayText.TerrainData(f1.Status)</dd>
+        <dt>Hex facts match VASL (F2)</dt>
+        <dd class="@F2Class">@(Board.F2 is null ? "No VASL answers to compare" : Board.F2.Passed ? "Pass" : $"{Board.F2.Differences.Count} differences")</dd>
     }
     @if (Board.Validation is { } validation)
     {

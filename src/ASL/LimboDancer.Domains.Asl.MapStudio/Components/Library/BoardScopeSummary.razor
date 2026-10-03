@@ -2,7 +2,7 @@
 <p class="totals" id="@Id">
     <strong>@InScope @(InScope == 1 ? "board" : "boards") in scope:</strong>
     <span class="pass">@Verified verified</span>,
-    @Ingested ingested,
+    @Ingested not verified,
     <span class="@(Failed > 0 ? "fail" : string.Empty)">@Failed failed</span>@if (NotChecked is { } notChecked)
     {
         <text>, <span class="muted">@notChecked not checked</span></text>

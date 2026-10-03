@@ -98,6 +98,12 @@
 
     public ValueTask SetUnits(string? svg) => Send("setUnits", svg);
 
+    /// <summary>Turns the whole map a quarter clockwise, or back (pass 29); the browser remembers the choice.</summary>
+    public ValueTask SetRotation(bool on) => Send("setRotation", on);
+
+    /// <summary>Whether the map is turned; false before the viewport exists.</summary>
+    public async ValueTask<bool> IsRotated() => viewport is not null && await viewport.InvokeAsync<bool>("isRotated");
+
     public ValueTask SetLos(string? svg) => Send("setLos", svg);
 
     /// <summary>Outlines picked hexes: an SVG group with the id <c>layer-marks</c>, drawn on top; null clears it (pass 28, the card editor's map).</summary>
@@ -121,6 +127,16 @@
 
     /// <summary>Zooms about the centre: a factor under 1 zooms in, over 1 out (pass 28c: the Play map's zoom buttons).</summary>
     public ValueTask Zoom(double factor) => Send("zoom", factor);
+
+    /// <summary>Brings a point of the board into view at the same zoom, when it is outside the view (Claude Design's review).</summary>
+    public ValueTask Reveal(double x, double y) => Send("reveal", x, y);
+
+    /// <summary>The map turned or turned back by the script, when its pane changes shape (pass 29).</summary>
+    [Parameter]
+    public Func<bool, Task>? OnRotation { get; set; }
+
+    [JSInvokable]
+    public Task OnRotationChanged(bool rotated) => OnRotation?.Invoke(rotated) ?? Task.CompletedTask;
 
     [JSInvokable]
     public Task OnBoardClick(double x, double y) => OnClick?.Invoke(x, y) ?? Task.CompletedTask;

@@ -1,6 +1,8 @@
 @* P02 (plan section 16.10): the live game's context: the game, the view it is played from, and the board link, which follows the view (section 15.4;
    ruling R23.3) and is left out while a hand-over waits. *@
 <div class="toolbar">
+    @* Pass 29: while the gate works, neither the game nor the view may change, so its result lands where it was asked. *@
+    <fieldset class="plain" disabled="@Disabled">
     <label>
         Game
         <select id="play-game" value="@GameId" @onchange="GameChanged">
@@ -19,6 +21,7 @@
             <a id="play-view" href="@link" title="The board viewer, read as @ViewLabel">View on @BoardLabel</a>
         }
     }
+    </fieldset>
 </div>
 
 @code {
@@ -28,6 +31,10 @@
 
     [Parameter]
     public string GameId { get; set; } = string.Empty;
+
+    /// <summary>Whether the game and view pickers are disabled, while the gate works (pass 29).</summary>
+    [Parameter]
+    public bool Disabled { get; set; }
 
     [Parameter]
     public EventCallback<ChangeEventArgs> GameChanged { get; set; }

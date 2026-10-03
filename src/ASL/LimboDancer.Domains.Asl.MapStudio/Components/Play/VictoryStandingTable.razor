@@ -29,13 +29,13 @@
                             @string.Join("; ", group.Select(item => ScenarioVictory.LocationName(item) + ByVehicle(item)))
                         </details>
                     </td>
-                    <td>@(group.Key.Side ?? "neither")</td>
+                    <td>@(group.Key.Side is { } controller ? DisplayText.Side(controller) : "neither")</td>
                 </tr>
             }
         }
         @foreach (var side in Report.Sides)
         {
-            <tr data-side="@side.Side"><td>@side.Side</td><td>@side.Cvp CVP@(side.GunAndVehicleCvp > 0 ? $" ({side.GunAndVehicleCvp} for Guns and vehicles)" : string.Empty), @side.ExitVp Exit VP, @side.UnbrokenSquads.ToString("0.#", CultureInfo.InvariantCulture) unbroken squad-equivalents@(KnownTo is { } known && side.Side != known ? " among its Known units" : string.Empty)</td></tr>
+            <tr data-side="@side.Side"><td>@DisplayText.Side(side.Side)</td><td>@side.Cvp CVP@(side.GunAndVehicleCvp > 0 ? $" ({side.GunAndVehicleCvp} for Guns and vehicles)" : string.Empty), @side.ExitVp Exit VP, @side.UnbrokenSquads.ToString("0.#", CultureInfo.InvariantCulture) unbroken squad-equivalents@(KnownTo is { } known && side.Side != known ? " among its Known units" : string.Empty)</td></tr>
         }
     </tbody>
 </table>

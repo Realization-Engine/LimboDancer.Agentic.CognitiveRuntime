@@ -825,3 +825,40 @@ On the user's go-ahead after the rename, with every new `--warnaserror` error fi
 | The merge gate's documents updated (the rules tests run with the solution; test file paths), commit 45d6712 | 09:15 | 09:20 | 0:05 | At the user's request, beside the suite |
 | Merge gate: commit 3b6744f, the Docker Linux check (the solution's test step ran the rules tests: Rules 484, Authoring 167, Play 615, MapStudio 264; every step exit 0), the time log, merge into main, push | 09:09 | 09:34 | 0:25 | |
 | **Total** | 08:57 | 09:34 | **0:37** | |
+
+
+## Pass 29: The shared board workspace
+
+Added by the user on 2026-10-02 as the first task of the UI and playability work. Estimate 4:30 (build 3:15). Branch `ui-improvements`. Each task is checked in the Studio only; the unit tests, reviews, and merge gate run once the batch of UI work is done.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Preparation: the plan's sections 13, 14, and 15.10, the pass 28c design and review, backlog sections 37, 43, and 44, a survey of Play and its components; four candidate groups | 18:05 | 18:20 | 0:15 | Approximate start |
+| The planned passes from the old 29 renumbered up by one, pass 29 added to the plan's section 5 and schedule, the totals recomputed | 18:27 | 18:29 | 0:02 | Plus the backlog, three rulings, and a code comment |
+| 29.1 `BoardInspector` moved out of the board viewer; checked in the user's Studio (5178): hex and counter clicks, tabs by keyboard, LOS, Evidence, Escape, hover | 18:29 | 18:38 | 0:09 | |
+| 29.2 to 29.4: `BoardWorkspace`, the board viewer as its host, `GameMaps.Layers` with the overlay and view, Play on the workspace with a Proposal tab; `PlayMapPanel` and `PlaySelectedHex` retired; checked in my Studio (6670) at 1920x1080, 1366x768, 1024x768, 683x384, and 320x640 | 18:41 | 19:01 | 0:20 | One fix found in the Studio: a counter click lost the unit's details |
+| The review's fixes and the turned map: "Rotate map" (CSS transform, pointer and drag kept right, remembered), the inspector under the map below 1024px, the Proposal tab held and counted only while Confirm waits, pickers disabled while the gate works, results for another view dropped, the workspace keyed by game and view, hover drawing the inspector alone, ids in the unit list, LOS From, and the small fixes; checked in my Studio (6670) at 1920x1080, 683x384, and 320x640, and on the board viewer | 19:47 | 19:56 | 0:09 | The review read the branch on GitHub; the backlog's rotation row leaves section 44 |
+| The second review's fixes: Fit on a turned map fills the pane's width, the turn remembered per pane shape (a hidden pane has none), the pickers drawn disabled before the gate is asked, Cancel clearing the status, the reveal waiting for the context's height, `?game=` in the address, Good Order's unknown explained, sides spelled as on the counters; checked in my Studio (6670) at 320x640 and 1480x900, and on the board viewer | 20:17 | 20:23 | 0:06 | One fix found in the Studio: a hidden Map tab counted as a wide pane |
+| The third check's fixes: a fitted view fitted again when its pane resizes, a turned map in a wide pane shown whole, the old storage key removed; the resize across 1024px checked in my Studio | 21:35 | 21:39 | 0:04 | |
+
+
+## UI improvements from the UX analysis
+
+Claude Design's analysis of the Studio (2026-10-02, the user's PDF). Small tasks on branch `ui-improvements`, each checked in the Studio only, in the order the user approved: the display formatter, the scenario card collapsed on Play, the board viewer's game banner with task 29.5, and the verification counts.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Reading the analysis (8 pages) and sorting its findings | 22:00 | 22:10 | 0:10 | Approximate start |
+| 1. `DisplayText`: sides as on the counters, Yes and No, kinds without `asl:`, board statuses in words, Locations as "F6 on bd01"; applied to Play's context, notes, hand-over, view picker, and non-OB labels, the Game states page, the board headers, and the inspector; checked in my Studio (6670) | 22:12 | 22:18 | 0:06 | |
+| 2. The scenario card on Play starts closed; the context's "Card and Victory Conditions" link opens it below the context and focuses its title; the duplicate `play-card-link` id renamed in the card (`play-card-whole`); checked in my Studio: the workspace starts at 168px instead of about 830 | 22:18 | 22:22 | 0:04 | |
+| 3. Task 29.5 (`hex=` in the board link, the viewer opening on that hex) and the board viewer's game banner (game, view, revision, Historical below the latest, Back to Play); checked in my Studio | 22:22 | 22:28 | 0:06 | |
+| 4. Verification counts: the cause traced (the 24 Sep report predates importer 1.1.0), `StaleReason` shared by the library and the Fidelity page with a notice on each, the batch run again (235 verified, 1 failed, both pages agree in scope); the 5 boards with an underscore traced | 22:28 | 22:37 | 0:09 | The batch took 1.9 minutes |
+| 5. Claude Design's review, items 1 to 8: sides and views everywhere, the "Card changed" badge, one game statement in the viewer, one status vocabulary with shared conditions text, plain names for F1, F2, F3 and the checks, Locations as "E4 on board 01", Fidelity opening on its failures with coloured chips and a legend, the 5 unlisted boards counted; checked in my Studio | 23:09 | 23:20 | 0:11 | |
+| 6. The rest of the list: hints beside disabled Setup buttons, the viewer's Layers tab, card editor labels, the Unit Lab's sticky preview, the authored boards' names and "Kept in", compact Game states rows with "23 / 23", two-layer intros on Play and Game states, the card's Close button, the hex on "Back to Play", the library's plain out-of-date note; checked in my Studio | 23:21 | 23:31 | 0:10 | One fix found in the Studio: the hand-over on load cleared the hex from "Back to Play" |
+| 7. Step 1 of the batch: pass 30 added to the plan (DYO to 31-32, rules to 33-42 with 34b), library rows' reasons, a picked hex brought into view, names for "Prisoner of" and "Produced from", the shared table style (compact), the Maps slot diagram, the game line shared by Play and the viewer, one merged viewer row; checked in my Studio; the table player's review run, the referee and UI reviews stopped when the session moved | 00:40 | 00:59 | 0:19 | The revision control's wrap at 320px (site.css) is committed but not yet checked in the Studio |
+| 8. The referee and the UI and Blazor reviews, as two read-only sub-agents in parallel against `git diff main...ui-improvements` | 01:02 | 01:10 | 0:08 | 5 and 19 findings; the session then waited on a tool permission problem |
+| 9. The three reviews' fixes (the table player's 8, the referee's 3, the UI review's 15), each checked in my Studio, then the Studio check of the whole batch: a turn of `p28c-walk` in each side's view and the adjudicator's, every page at 1920x1080, 1366x768, 1024x768, 683x384, and 320x640, the keyboard | 08:50 | 09:14 | 0:24 | Approximate start. Two fixes found in the Studio: the focus without a scroll in the wide layouts, and focus only on Fidelity chips that failed or differ |
+| 10. The merge gate's test fixes: 34 failing Studio tests (33 from the batch itself), the retired `PlaySelectedHex` test replaced, a longer wait for a proposal's result | 09:14 | 09:27 | 0:13 | The checkout was found on another branch at 09:25 and switched back; nothing was lost |
+| 11. The full local suite (Play 615, Rules 484, the Studio 264, and the other eight projects, all passing) and the review, design, plan, and backlog documents | 09:27 | 09:47 | 0:20 | |
+| 12. The commit, the chart supplement regeneration (identical), and the first Docker Linux check: 9 Studio tests failed in the container | 09:47 | 10:03 | 0:16 | The tests raced once a proposal's result arrived on another thread |
+| 13. `ImmediateProposals` for the Play page tests, the Studio's tests again (264), the second Docker check (every step exit 0), the last documents, the merge, the push, and CI | 10:03 | 10:30 | 0:27 | Pass 29 and the UI batch: 1:48 in this session, 4:08 in all |

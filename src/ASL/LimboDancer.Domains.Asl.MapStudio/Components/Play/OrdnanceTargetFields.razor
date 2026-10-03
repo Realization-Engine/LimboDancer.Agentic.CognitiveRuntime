@@ -8,7 +8,7 @@
         <option value="">choose</option>
         @foreach (var at in Targets)
         {
-            <option value="@at">@at</option>
+            <option value="@at">@DisplayText.Location(at)</option>
         }
     </select>
 </label>

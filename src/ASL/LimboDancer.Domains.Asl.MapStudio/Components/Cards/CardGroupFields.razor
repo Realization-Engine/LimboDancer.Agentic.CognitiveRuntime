@@ -23,7 +23,7 @@
         }
     </ul>
     <button id="@($"{Id}-area-add")" type="button" @onclick="@(() => Set(() => Group.Areas.Add(new AreaDraft { Id = NewAreaId() })))">Add an area</button>
-    <table class="card-rows" id="@($"{Id}-units")">
+    <table class="card-rows library compact" id="@($"{Id}-units")">
         <caption>Counter lines</caption>
         <thead><tr><th scope="col">Counter</th><th scope="col">Count</th><th scope="col">Area</th><th scope="col"><span class="visually-hidden">Remove</span></th></tr></thead>
         <tbody>

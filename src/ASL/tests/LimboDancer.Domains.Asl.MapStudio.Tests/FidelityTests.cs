@@ -191,9 +191,12 @@ public sealed class FidelityPageTests(StudioFactory factory) : IClassFixture<Stu
         using var client = factory.CreateClient();
         var html = await client.GetStringAsync(new Uri("/fidelity", UriKind.Relative));
         Assert.Contains("Run batch", html, StringComparison.Ordinal);
-        Assert.Contains("Include F3", html, StringComparison.Ordinal);
+        Assert.Contains("Also check the Styled drawing (F3, slower)", html, StringComparison.Ordinal);
         Assert.Contains("2 boards in scope", html, StringComparison.Ordinal);
-        Assert.Contains("href=\"boards/bd02\"", html, StringComparison.Ordinal);
+
+        // Pass 29: the page opens on the boards that are not verified, so the failed bd79 is listed and the verified bd02 is not.
+        Assert.Contains("bd79", html, StringComparison.Ordinal);
+        Assert.DoesNotContain("href=\"boards/bd02\"", html, StringComparison.Ordinal);
         Assert.Contains("VASL-META-000 (error)", html, StringComparison.Ordinal);
         Assert.Contains($"fidelity/reports/{factory.SeededReportId}.json", html, StringComparison.Ordinal);
     }

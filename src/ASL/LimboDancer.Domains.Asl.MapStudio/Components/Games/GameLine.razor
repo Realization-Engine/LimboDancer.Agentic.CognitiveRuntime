@@ -1,0 +1,67 @@
+@* Claude Design's UX analysis (2026-10-02): one line, shared by Play and the board viewer, saying which game, from whose view, where it stands, at
+   which revision, and whether that is the game as it is now: "p28c-walk2 · the German side · Turn 1, German Rally Phase. · revision 36 of 36", with
+   its badge first. The host adds its own links after it. The ids take the host's prefix (play-live, play-summary, play-revision on Play). *@
+<div class="game-line" id="@($"{IdPrefix}-line")">
+    @if (Badge is { Length: > 0 } badge)
+    {
+        <span id="@($"{IdPrefix}-live")"><StatusBadge Tone="@Tone" Label="@badge" Explanation="@Explanation" /></span>
+    }
+    @Badges
+    @if (Game is { Length: > 0 } game)
+    {
+        <span class="game-line-game" id="@($"{IdPrefix}-game")">@game</span>
+    }
+    @if (View is { Length: > 0 } view)
+    {
+        <span class="game-line-view" id="@($"{IdPrefix}-view")">@DisplayText.ViewName(view)</span>
+    }
+    <p id="@($"{IdPrefix}-summary")">@Text</p>
+    @if (Revision is { } revision)
+    {
+        <span class="muted" id="@($"{IdPrefix}-revision")">revision @revision@(Max is { } max ? $" of {max}" : string.Empty)</span>
+    }
+    @ChildContent
+</div>
+
+@code {
+    /// <summary>The prefix of the line's ids, such as "play" or "viewer-game".</summary>
+    [Parameter, EditorRequired]
+    public string IdPrefix { get; set; } = string.Empty;
+
+    /// <summary>The game's id; left out where the page names the game elsewhere (Play's picker).</summary>
+    [Parameter]
+    public string? Game { get; set; }
+
+    /// <summary>The view's name ("german", or the adjudicator's); left out where the page names it elsewhere.</summary>
+    [Parameter]
+    public string? View { get; set; }
+
+    /// <summary>Where the game stands, such as "Turn 1, German Rally Phase."</summary>
+    [Parameter]
+    public string Text { get; set; } = string.Empty;
+
+    [Parameter]
+    public long? Revision { get; set; }
+
+    /// <summary>The game's latest revision, when the line shows one that may be earlier.</summary>
+    [Parameter]
+    public long? Max { get; set; }
+
+    /// <summary>The state badge, such as "Live", "Historical", or "Ended"; none when null.</summary>
+    [Parameter]
+    public string? Badge { get; set; }
+
+    [Parameter]
+    public StatusBadge.BadgeTone Tone { get; set; } = StatusBadge.BadgeTone.Pass;
+
+    [Parameter]
+    public string? Explanation { get; set; }
+
+    /// <summary>More badges after the state badge, such as Play's "Card changed".</summary>
+    [Parameter]
+    public RenderFragment? Badges { get; set; }
+
+    /// <summary>The host's links after the line.</summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

@@ -30,8 +30,9 @@
             <PerspectivePicker Id="units-perspective" Label="Perspective" Choices="@replay.Perspectives" Value="@replay.Perspective" ValueChanged="@PerspectiveChanged" />
             <RevisionNavigator Id="units-revision" PreviousId="units-previous" NextId="units-next" Min="1" Max="@replay.Max" Current="@replay.Revision"
                                RevisionChanged="@RevisionChanged" />
-            <span id="units-summary" class="muted">@replay.Perspective's view @(replay.Perspective == LimboDancer.Domains.Asl.Units.State.Perspective.AdjudicatorName ? "(sees every unit)" : "(what this side may see)"), revision @replay.Revision of @replay.Max</span>
         }
+        @if (ShowSheet)
+        {
         <label>
             Counters
             <select id="units-sheet" value="@Sheet" @onchange="@(args => SheetChanged.InvokeAsync(args.Value as string ?? Sheet))" aria-label="Unit style sheet">
@@ -41,6 +42,7 @@
                 }
             </select>
         </label>
+        }
     }
 </div>
 
@@ -81,6 +83,10 @@
 
     [Parameter]
     public IReadOnlyList<string> Sheets { get; set; } = [];
+
+    /// <summary>Whether the counter style select shows here; the board viewer shows it in its Layers tab instead (Claude Design's review).</summary>
+    [Parameter]
+    public bool ShowSheet { get; set; } = true;
 
     [Parameter]
     public string Sheet { get; set; } = string.Empty;

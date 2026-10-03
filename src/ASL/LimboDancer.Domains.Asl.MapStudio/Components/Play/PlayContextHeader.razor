@@ -1,3 +1,4 @@
+@using LimboDancer.Domains.Asl.MapStudio.Components.Games
 @* Pass 28c (plan section 13.1): the context that stays in sight above the workspace: the game and the view (the toolbar given as child content), the
    revision, turn, and phase, whether the page shows the live game, the night and weather, a way back to a pending proposal, and the hand-over a
    waiting answer needs. Everything here is known to both sides; the page shows it while a hand-over waits, too. *@
@@ -5,23 +6,25 @@
     @ChildContent
     @if (Summary is { Length: > 0 })
     {
-        <div class="play-context-line">
-            @if (Live is { } live)
-            {
-                <span id="play-live"><StatusBadge Tone="@(Ended ? StatusBadge.BadgeTone.Warning : live ? StatusBadge.BadgeTone.Pass : StatusBadge.BadgeTone.Fail)"
-                    Label="@(Ended ? "Ended" : live ? "Live" : "Does not replay")"
-                    Explanation="@(Ended ? "The game has ended." : live ? "The game's latest revision, as play goes on." : "The game's events do not replay; nothing can be played.")" /></span>
-            }
-            <p id="play-summary">@Summary</p>
-            @if (Revision is { } revision)
-            {
-                <span class="muted" id="play-revision">revision @revision</span>
-            }
-            @if (HasCard)
-            {
-                <a id="play-card-link" href="@CardHref">Card and Victory Conditions</a>
-            }
-        </div>
+        @* Claude Design's UX analysis: the game line Play shares with the board viewer; the game and the view are in the pickers above it. *@
+        <GameLine IdPrefix="play" Text="@Summary" Revision="@Revision"
+                  Badge="@(Live is { } live ? Ended ? "Ended" : live ? "Live" : "Does not replay" : null)"
+                  Tone="@(Ended ? StatusBadge.BadgeTone.Warning : Live == true ? StatusBadge.BadgeTone.Pass : StatusBadge.BadgeTone.Fail)"
+                  Explanation="@(Ended ? "The game has ended." : Live == true ? "The game's latest revision, as play goes on." : "The game's events do not replay; nothing can be played.")">
+            <Badges>
+                @if (CardChanged)
+                {
+                    <span id="play-card-changed-badge"><StatusBadge Tone="StatusBadge.BadgeTone.Warning" Label="Card changed"
+                        Explanation="The card has changed since this game started; the card panel shows its current text." /></span>
+                }
+            </Badges>
+            <ChildContent>
+                @if (HasCard)
+                {
+                    <a id="play-card-link" href="@CardHref" @onclick="@(() => OpenCard.InvokeAsync())" @onclick:preventDefault>Card and Victory Conditions</a>
+                }
+            </ChildContent>
+        </GameLine>
         <NightWeatherSummary Text="@Conditions" />
         @if (Acting is { Length: > 0 } acting)
         {
@@ -76,6 +79,10 @@
     [Parameter]
     public string? Conditions { get; set; }
 
+    /// <summary>Whether the game's card has changed since the game started (the UX analysis: the card panel starts closed).</summary>
+    [Parameter]
+    public bool CardChanged { get; set; }
+
     /// <summary>Whether the game has a card panel to go to.</summary>
     [Parameter]
     public bool HasCard { get; set; }
@@ -83,6 +90,10 @@
     /// <summary>The page's own address with the card panel's fragment, so the link stays on the page.</summary>
     [Parameter]
     public string CardHref { get; set; } = "#play-card";
+
+    /// <summary>Opens the card panel and brings it into view; the panel starts closed (pass 29).</summary>
+    [Parameter]
+    public EventCallback OpenCard { get; set; }
 
     /// <summary>The pending proposal's title; null when none is pending.</summary>
     [Parameter]

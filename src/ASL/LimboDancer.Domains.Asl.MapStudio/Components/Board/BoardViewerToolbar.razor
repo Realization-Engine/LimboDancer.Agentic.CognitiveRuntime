@@ -1,7 +1,7 @@
 @* B01 (plan sections 12.3 and 16.6): the board's title and status, its links, the view controls the caller supplies, and Fit. *@
 <div class="toolbar" id="viewer-toolbar">
     <strong>@Board.Title</strong>
-    <span class="@(Board.Status is BoardStatus.Verified or BoardStatus.AuthoredValid ? "pass" : Board.Status == BoardStatus.Authored ? "fail" : "")">@Board.Status</span>
+    <span class="@(Board.Status is BoardStatus.Verified or BoardStatus.AuthoredValid ? "pass" : Board.Status == BoardStatus.Authored ? "fail" : "")">@DisplayText.BoardStatus(Board.Status)</span>
     @if (Board.IsAuthored)
     {
         <a href="@($"author/{Board.Ref.Value}")">Edit</a>

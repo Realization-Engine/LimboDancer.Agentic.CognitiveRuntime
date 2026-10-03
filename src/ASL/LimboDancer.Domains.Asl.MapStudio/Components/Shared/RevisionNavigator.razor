@@ -4,6 +4,7 @@
     @if (Slider)
     {
         <input @key="resets" id="@Id" type="range" min="@Min" max="@Max" value="@Current" disabled="@Busy" aria-label="Revision" @onchange="Typed" />
+        <output for="@Id" class="revision-count">@Current / @Max</output>
     }
     else
     {

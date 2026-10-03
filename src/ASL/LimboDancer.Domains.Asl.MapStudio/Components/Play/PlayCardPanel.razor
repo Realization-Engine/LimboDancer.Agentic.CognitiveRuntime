@@ -3,7 +3,8 @@
 @* K06 (plan sections 13.6, 16.16): the card a game started from, as the game reads it now: its turns, the Balance, the game's end (K07), the OB groups,
    the Victory Conditions and their standing for the view (K08; ruling R23.4), the SSRs, and its provenance; or what the game recorded when the card is
    gone. Everything here is printed on the card or known to both sides but the standing, which arrives already read for the view. *@
-<details id="play-card" open>
+@* The UX analysis (pass 29): the card starts closed, so the workspace and its map come first; the context's link opens it. *@
+<details id="play-card">
     <summary>Scenario card: @Scenario.Title</summary>
     @if (Card is { } card)
     {
@@ -12,9 +13,9 @@
             <p id="play-card-changed" class="diagnostic warning">The card has changed since this game started; what follows is its current text.</p>
         }
         <p id="play-card-turns">@card.Turns.Count Game Turns@(card.Turns.HalfTurn ? ", the last with one Player Turn" : string.Empty); @ScenarioCards.PlaceAndDate(card).
-            @card.Turns.SetsUpFirst sets up first; @(card.Turns.MovesFirst is { } cardFirst ? $"{cardFirst} moves first." : $"{FirstSide} won the dr to move first (ruling R20.2).")</p>
-        <p id="play-card-balance">@(Scenario.Balance is { } balanceSide ? $"{balanceSide} plays with its Balance: {card.Sides.FirstOrDefault(side => side.Side == balanceSide)?.Balance}" : "No side takes its Balance.")
-            @(Scenario.Players.Count > 0 ? $" Players: {string.Join(", ", Scenario.Players.Select(player => $"{player.Name} plays {player.Side}"))}." : string.Empty) (A26.4; ruling R20.3)</p>
+            @DisplayText.Side(card.Turns.SetsUpFirst) sets up first; @(card.Turns.MovesFirst is { } cardFirst ? $"{DisplayText.Side(cardFirst)} moves first." : $"{DisplayText.Side(FirstSide)} won the dr to move first (ruling R20.2).")</p>
+        <p id="play-card-balance">@(Scenario.Balance is { } balanceSide ? $"{DisplayText.Side(balanceSide)} plays with its Balance: {card.Sides.FirstOrDefault(side => side.Side == balanceSide)?.Balance}" : "No side takes its Balance.")
+            @(Scenario.Players.Count > 0 ? $" Players: {string.Join(", ", Scenario.Players.Select(player => $"{player.Name} plays {DisplayText.Side(player.Side)}"))}." : string.Empty) (A26.4; ruling R20.3)</p>
         @if (Ended is { } ended)
         {
             <GameEndNotice Ended="@ended" />
@@ -29,10 +30,11 @@
         @if (Victory is { } victory)
         {
             <VictoryStandingTable Report="@victory" KnownTo="@KnownTo"
-                                  IfEndedNow="@(KnownTo is null && Ended is null ? victory.AtEnd.Winner is { } leader ? $"{leader} would win" : "it would be a draw" : null)" />
+                                  IfEndedNow="@(KnownTo is null && Ended is null ? victory.AtEnd.Winner is { } leader ? $"{DisplayText.Side(leader)} would win" : "it would be a draw" : null)" />
         }
         <CardSpecialRulesList Id="play-card-ssr" Rules="@card.SpecialRules" />
-        <a id="play-card-link" href="units/scenarios?card=@Scenario.Id">The whole card</a>
+        <a id="play-card-whole" href="units/scenarios?card=@Scenario.Id">The whole card</a>
+        <button type="button" id="play-card-close" class="link" @onclick="@(() => OnClose.InvokeAsync())">Close the card</button>
         @if (Provenance is { } provenance)
         {
             <CardProvenancePanel Id="play-card-provenance" Model="@provenance" />
@@ -88,4 +90,8 @@
     /// <summary>The catalog the game started with, shown when the card is gone.</summary>
     [Parameter]
     public string Catalog { get; set; } = string.Empty;
+
+    /// <summary>Closes the card and returns the focus to the context's link (Claude Design's review).</summary>
+    [Parameter]
+    public EventCallback OnClose { get; set; }
 }

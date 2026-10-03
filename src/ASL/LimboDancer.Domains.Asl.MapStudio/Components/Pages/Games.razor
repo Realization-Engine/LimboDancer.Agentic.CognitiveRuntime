@@ -10,10 +10,11 @@
 <PageTitle>Game states - ASL Map Studio</PageTitle>
 
 <PageHeader Title="Game states">
-    <p>
+    @* Claude Design's review: one plain sentence, with how it works a click away. *@
+    <RuleHelp Id="games-intro" DetailLabel="How this works" Summary="Replay a game event by event, from either side or as the adjudicator.">
         Replay a synthetic game fixture event by event and read it from each side or as the adjudicator. A side's view leaves out what that side
         cannot know: hidden units are absent and concealed enemies are only a presence. Fixtures are display input, never game state.
-    </p>
+    </RuleHelp>
 </PageHeader>
 
 @if (GamesLibrary.Names.Count == 0)
@@ -58,11 +59,11 @@ else
                 <tbody>
                     @foreach (var equipment in view.Equipment)
                     {
-                        <tr><td>@equipment.Id</td><td>@equipment.Kind</td><td>@equipment.Side</td><td>@(equipment.Holding is { } holding ? $"{holding.Role.ToString().ToLowerInvariant()} by {holding.Holder}" : LocationText(equipment.Id, equipment.Position))</td></tr>
+                        <tr><td>@equipment.Id</td><td>@DisplayText.Kind(equipment.Kind)</td><td>@DisplayText.Side(equipment.Side)</td><td>@(equipment.Holding is { } holding ? $"{holding.Role.ToString().ToLowerInvariant()} by {holding.Holder}" : LocationText(equipment.Id, equipment.Position))</td></tr>
                     }
                     @foreach (var entity in view.Entities)
                     {
-                        <tr><td>@entity.Id</td><td>@entity.Kind</td><td>@entity.Side</td><td>@LocationText(entity.Id, entity.Position)</td></tr>
+                        <tr><td>@entity.Id</td><td>@DisplayText.Kind(entity.Kind)</td><td>@DisplayText.Side(entity.Side)</td><td>@LocationText(entity.Id, entity.Position)</td></tr>
                     }
                 </tbody>
             </table>
@@ -71,7 +72,7 @@ else
         <h3>Read a case</h3>
         <p class="muted">
             ReadCase (ASL-UNIT-060) asks what a unit attempting something at a location reads: one snapshot of the game as it stood at revision @revision,
-            as @view.Perspective.Name may know it, or an explicit nondefinitive result.
+            as @DisplayText.ViewName(view.Perspective.Name) may know it, or an explicit nondefinitive result.
         </p>
         <ReadCaseForm @bind-Draft="caseDraft" Attackers="@Attackers" OnRead="@ReadCase" />
         @if (caseResult is { } result)
@@ -79,7 +80,7 @@ else
             <ReadCaseResult Result="@result" />
         }
 
-        <h3>Events @view.Perspective.Name is entitled to</h3>
+        <h3>Events @DisplayText.ViewName(view.Perspective.Name) is entitled to</h3>
         <ol id="game-events" class="muted">
             @foreach (var item in view.Events)
             {
@@ -104,7 +105,7 @@ else
 
     private string BoardName => state?.Map.Boards.FirstOrDefault()?.Board.Value ?? "the board";
 
-    private IReadOnlyList<PerspectivePicker.Choice> PerspectiveChoices => state is null ? [] : [.. state.Perspectives.Select(option => new PerspectivePicker.Choice(option.Name, option.Name))];
+    private IReadOnlyList<PerspectivePicker.Choice> PerspectiveChoices => state is null ? [] : [.. state.Perspectives.Select(option => new PerspectivePicker.Choice(option.Name, option.IsAdjudicator ? "the adjudicator" : DisplayText.Side(option.Name)))];
 
     // Only the perspective's own units may attempt a case, or every unit for the adjudicator.
     private IReadOnlyList<ReadCaseForm.Attacker> Attackers => view is null ? []
@@ -148,9 +149,9 @@ else
         documents = view is null ? new(StringComparer.Ordinal)
             : GameDocuments.For(view, Library.Vocabulary, GamesLibrary.Catalogs).ToDictionary(document => document.Id, StringComparer.Ordinal);
         unitRows = view is null ? [] : [.. view.Units.Select(unit => new ProjectedGameUnitTable.Row(unit.Id, Preview(unit.Id), Label(unit.Id, unit.Kind),
-                LocationText(unit.Id, unit.Position), ConditionsText(unit), Conditions.Name(GameState.GoodOrder(unit, Library.Vocabulary)), LineageText(unit))),
+                LocationText(unit.Id, unit.Position), DisplayText.ConditionsOf(unit), DisplayText.YesNo(GameState.GoodOrder(unit, Library.Vocabulary)), LineageText(unit))),
             .. view.Sealed.Select(presence => new ProjectedGameUnitTable.Row(presence.PlacementId, Preview(presence.PlacementId),
-                $"concealed {presence.Side} presence", presence.Location.ToString(), "withheld", "withheld", string.Empty))];
+                $"concealed {DisplayText.Side(presence.Side)} presence", DisplayText.Location(presence.Location), "withheld", "withheld", string.Empty))];
         caseResult = null;
         var attackers = Attackers.Select(attacker => attacker.Id).ToArray();
         caseDraft = caseDraft with
@@ -180,13 +181,17 @@ else
         }
     }
 
-    /// <summary>The board viewer showing a game's projection for a perspective at a revision.</summary>
-    public static string BoardLink(string board, string game, Perspective perspective, long revision) =>
-        $"boards/{board}?game={Uri.EscapeDataString(game)}&perspective={Uri.EscapeDataString(perspective.Name)}&revision={revision.ToString(CultureInfo.InvariantCulture)}";
+    /// <summary>
+    /// The board viewer showing a game's projection for a perspective at a revision, with the hex picked on Play kept as its selection (pass 29,
+    /// task 29.5).
+    /// </summary>
+    public static string BoardLink(string board, string game, Perspective perspective, long revision, string? hex = null) =>
+        $"boards/{board}?game={Uri.EscapeDataString(game)}&perspective={Uri.EscapeDataString(perspective.Name)}&revision={revision.ToString(CultureInfo.InvariantCulture)}"
+            + (hex is { Length: > 0 } ? $"&hex={Uri.EscapeDataString(hex)}" : string.Empty);
 
     private MarkupString Preview(string id) =>
         renderer is not null && documents.TryGetValue(id, out var document)
-            ? (MarkupString)UnitPreview.Document(renderer, document, [DetailTier.Mid], null, 0.8, [])
+            ? (MarkupString)UnitPreview.Document(renderer, document, [DetailTier.Mid], null, 0.5, [])
             : default;
 
     private string Label(string id, string kind) =>
@@ -194,22 +199,13 @@ else
 
     private string LocationText(string id, Position position) =>
         view!.Locations.TryGetValue(id, out var location)
-            ? location.Location + (position is ContainedPosition contained ? $" (in {contained.Container})" : string.Empty)
+            ? DisplayText.Location(location.Location) + (position is ContainedPosition contained ? $" (in {contained.Container})" : string.Empty)
             : position switch
             {
                 OffMapPosition => "off map",
                 NotEnteredPosition => "not entered",
                 _ => string.Empty,
             };
-
-    private static string ConditionsText(UnitInstance unit)
-    {
-        var shown = unit.Conditions.Where(pair => pair.Value is not ConditionState.False)
-            .Select(pair => pair.Value == ConditionState.True ? pair.Key.Replace("asl:", string.Empty, StringComparison.Ordinal)
-                : $"{pair.Key.Replace("asl:", string.Empty, StringComparison.Ordinal)} {Conditions.Name(pair.Value)}")
-            .ToArray();
-        return shown.Length == 0 ? "none" : string.Join(", ", shown);
-    }
 
     private static string LineageText(UnitInstance unit) =>
         string.Join("; ", new[]

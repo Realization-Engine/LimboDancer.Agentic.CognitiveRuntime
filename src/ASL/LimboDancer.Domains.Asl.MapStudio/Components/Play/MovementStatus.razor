@@ -2,7 +2,7 @@
 @* Plan A11 (pass 25): the moving stack's status: its movers, Location, and step, the DEFENDER's window, the members free to move on, and its Bypass,
    Minimum Move, and members whose move ends with the window. The page shows it to the moving side and the adjudicator (ruling R23.1). *@
 <p id="move-state" data-step="@Movement.Step" data-window="@(Movement.WindowOpen ? "open" : "closed")">
-    <strong>@string.Join(", ", Movement.Movers)</strong> in @Movement.Location, step @Movement.Step@(Movement.Assault ? ", by Assault Movement" : ""):
+    <strong>@string.Join(", ", Movement.Movers)</strong> in @DisplayText.Location(Movement.Location), step @Movement.Step@(Movement.Assault ? ", by Assault Movement" : ""):
     @(Movement.WindowOpen ? "the DEFENDER may fire, or pass." : "the DEFENDER has passed; move on or end the move.")
     <span id="move-members">@(Movement.Members.Count > 0 ? $"May still move: {string.Join(", ", Movement.Members)}." : "No member may move farther; end the move.")</span>
     @if (Movement.Bypass is { Count: > 0 } lane)

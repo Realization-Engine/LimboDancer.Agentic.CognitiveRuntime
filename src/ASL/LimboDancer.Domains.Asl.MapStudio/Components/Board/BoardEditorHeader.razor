@@ -3,7 +3,7 @@
 <div class="toolbar editor-header" id="editor-header">
     <input class="board-name" value="@Name" aria-label="Board name" @onchange="@(args => args.Value is string name && !string.IsNullOrWhiteSpace(name) ? OnRename.InvokeAsync(name.Trim()) : Task.CompletedTask)" />
     <span class="muted">@Board</span>
-    <span class="@(Status == BoardStatus.AuthoredValid ? "pass" : "fail")">@Status</span>
+    <span class="@(Status == BoardStatus.AuthoredValid ? "pass" : "fail")">@DisplayText.BoardStatus(Status)</span>
     <span class="muted">version <code>@Version[..12]</code></span>
     @if (Dirty)
     {

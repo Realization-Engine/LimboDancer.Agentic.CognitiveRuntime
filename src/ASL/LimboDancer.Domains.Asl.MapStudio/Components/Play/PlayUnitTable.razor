@@ -8,7 +8,7 @@
         @foreach (var row in Rows)
         {
             <tr data-unit="@row.Id">
-                <td>@row.Id</td><td>@row.Side</td><td>@row.Kind</td>
+                <td>@row.Id</td><td>@DisplayText.Side(row.Side)</td><td>@row.Kind</td>
                 <td>
                     @if (row.At is { } at)
                     {
@@ -26,7 +26,7 @@
         @foreach (var presence in Sealed)
         {
             <tr data-sealed="@presence.PlacementId">
-                <td>?</td><td>@presence.Side</td><td>@(presence.Uninspected ? "not inspectable before play (A2.9)" : "concealed")</td><td>@presence.Location</td><td></td><td></td>
+                <td>?</td><td>@DisplayText.Side(presence.Side)</td><td>@(presence.Uninspected ? "not inspectable before play (A2.9)" : "concealed")</td><td>@presence.Location</td><td></td><td></td>
             </tr>
         }
     </tbody>

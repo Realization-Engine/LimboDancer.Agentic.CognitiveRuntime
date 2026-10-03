@@ -480,6 +480,16 @@ table.library tbody tr:hover td {
     background: #f8f6f0;
 }
 
+/* Claude Design's review: one table style in two densities. Compact tables (a card's OB, the card editor's rows) take only the width they need. */
+table.library.compact {
+    min-width: 0;
+}
+
+table.library.compact th,
+table.library.compact td {
+    padding: 0.3rem 0.6rem;
+}
+
 td.number {
     text-align: right;
     font-variant-numeric: tabular-nums;
@@ -520,6 +530,11 @@ td.number {
 .diagnostic.info {
     color: #4f565e;
     background: #e9e6dd;
+}
+
+.diagnostic.passed {
+    color: var(--pass);
+    background: var(--pass-bg);
 }
 
 .diagnostic.warning {
@@ -620,6 +635,11 @@ dl.report dd {
     font-size: 0.875rem;
 }
 
+/* Claude Design's review: the units strip flows inside the board's toolbar, as one row. */
+#viewer-toolbar > .unit-strip {
+    display: contents;
+}
+
 .viewer .toolbar label {
     display: inline-flex;
     align-items: center;
@@ -637,6 +657,44 @@ dl.report dd {
     min-height: 0;
     border: 0;
     background: var(--panel);
+}
+
+/* Under 1024px the board viewer stacks: the map keeps a usable height and the inspector follows it, and the page scrolls (UI review, pass 29). */
+@media (max-width: 1023.98px) {
+    .viewer {
+        grid-template-columns: minmax(0, 1fr);
+        height: auto;
+        overflow: visible;
+    }
+
+    .viewer .board-host {
+        flex: none;
+        height: 60vh;
+        min-height: 14rem;
+    }
+
+    .viewer .inspector {
+        border-left: 0;
+        border-top: 1px solid var(--line);
+    }
+}
+
+/* Pass 29: the map turned a quarter clockwise as one. The drawing takes the host's height as its width and its width as its height, then turns
+   about its top-left corner and moves back into the host; the host's size comes from the layout, never from the drawing. */
+.board-host.rotated {
+    position: relative;
+    container-type: size;
+    overflow: hidden;
+}
+
+.board-host.rotated > .board-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100cqh;
+    height: 100cqw;
+    transform-origin: 0 0;
+    transform: translateX(100cqw) rotate(90deg);
 }
 
 .board-svg {
@@ -684,6 +742,15 @@ dl.report dd {
     border-left: 1px solid var(--line);
     padding: 1rem 1.1rem;
     background: var(--surface);
+}
+
+/* A fieldset that only groups controls to disable them together, with no box of its own (pass 29). */
+fieldset.plain {
+    display: contents;
+}
+
+.unit-list li.current > button {
+    font-weight: 600;
 }
 
 .inspector h2 {
@@ -996,6 +1063,51 @@ ul.plain li.selected {
 
 /* ---- Maps ------------------------------------------------------------------ */
 
+/* The Maps page's slot diagram (Claude Design's UX analysis): the boards at their columns and rows. */
+/* The sketch keeps its own size, so its labels stay readable; a wide layout scrolls sideways inside the figure (UI review, pass 29). */
+.map-slots {
+    max-width: 100%;
+    margin: 0.5rem 0 1rem;
+    overflow-x: auto;
+}
+
+.map-slots svg {
+    display: block;
+}
+
+.map-slot rect {
+    fill: var(--pass-bg);
+    stroke: var(--pass);
+    stroke-width: 1.5;
+}
+
+.map-slot text {
+    fill: var(--ink);
+    font-size: 15px;
+    font-weight: 600;
+}
+
+.map-slot .map-slot-note {
+    font-size: 11px;
+    font-weight: 400;
+    fill: var(--muted);
+}
+
+.map-slot.clash rect {
+    fill: var(--fail-bg);
+    stroke: var(--fail);
+}
+
+.map-slot.clash .map-slot-note {
+    fill: var(--fail);
+}
+
+.map-slot-empty {
+    fill: none;
+    stroke: var(--line);
+    stroke-dasharray: 5 4;
+}
+
 table.placements input[type="number"] {
     width: 4.5rem;
 }
@@ -1239,20 +1351,13 @@ textarea.placements-text {
 }
 
 .scenario-card table.card-group {
-    border-collapse: collapse;
     margin: 0.4rem 0 0.8rem;
 }
 
 .scenario-card table.card-group caption {
     text-align: left;
     font-weight: 600;
-}
-
-.scenario-card table.card-group th,
-.scenario-card table.card-group td {
-    border: 1px solid var(--line);
-    padding: 0.15rem 0.5rem;
-    font-size: 0.85rem;
+    padding: 0.3rem 0.6rem;
 }
 
 .scenario-card .card-manufactured {
@@ -1431,6 +1536,15 @@ p.diagnostic:not(.info):not(.warning):not(.error) {
     font-weight: 600;
 }
 
+/* Claude Design's review: beside a textarea the label sits at the top of the field, not at its last line. */
+.field-group:has(textarea) {
+    align-items: start;
+}
+
+.field-group:has(textarea) .field-label {
+    padding-top: 0.35rem;
+}
+
 .field-group .field-control > select,
 .field-group .field-control > input {
     max-width: 100%;
@@ -1455,10 +1569,29 @@ p.diagnostic:not(.info):not(.warning):not(.error) {
 }
 
 /* S10: stepping through revisions */
+/* Claude Design's review: the game's units in compact rows, so more fit on a screen. */
+#game-units td {
+    padding-top: 0.2rem;
+    padding-bottom: 0.2rem;
+    vertical-align: middle;
+}
+
+.revision-count {
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
 .revision-navigator {
     display: inline-flex;
+    flex-wrap: wrap;
     align-items: center;
     gap: 0.35rem;
+    max-width: 100%;
+}
+
+.revision-navigator input[type="range"] {
+    min-width: 0;
+    flex: 1 1 6rem;
 }
 
 .revision-navigator input[type="number"] {
@@ -1716,7 +1849,7 @@ details.advanced > summary {
     border-radius: var(--radius);
 }
 
-.play-context-line {
+.game-line {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
@@ -1724,8 +1857,12 @@ details.advanced > summary {
     margin-top: 0.35rem;
 }
 
-.play-context-line #play-summary {
+.game-line > p {
     margin: 0;
+}
+
+.game-line-game {
+    font-weight: 600;
 }
 
 .play-context #play-conditions {
@@ -1769,13 +1906,15 @@ details.advanced > summary {
     border-radius: var(--radius);
 }
 
-/* A pane brought into view stops below the sticky context, not under it. */
-.play-pane {
+/* A pane or the scenario card brought into view stops below the sticky context, not under it. */
+.play-pane,
+#play-card {
     scroll-margin-top: calc(var(--play-context-height, 6rem) + 0.75rem);
 }
 
 @media (max-width: 1023.98px) {
-    .play-pane {
+    .play-pane,
+    #play-card {
         scroll-margin-top: 0.75rem;
     }
 }
@@ -1810,7 +1949,7 @@ details.advanced > summary {
     margin-top: 0;
 }
 
-/* The map fills its pane; the LOS tools sit under it. */
+/* The map fills its pane, under its tools. */
 .play-map {
     display: flex;
     flex-direction: column;
@@ -1837,11 +1976,6 @@ details.advanced > summary {
     min-height: 2rem;
 }
 
-.play-map-pane #play-los {
-    flex: none;
-    margin-top: 0.5rem;
-}
-
 .play-map-pane #play-residual {
     margin: 0 0 0.4rem;
 }
@@ -1855,21 +1989,6 @@ details.advanced > summary {
     margin: 0.6rem 0 0.2rem;
     font-size: 0.85rem;
     color: var(--muted);
-}
-
-.play-selected {
-    margin-top: 0.75rem;
-    padding-top: 0.5rem;
-    border-top: 1px solid var(--line-soft);
-}
-
-.play-selected h4 {
-    margin: 0 0 0.25rem;
-}
-
-.play-selected ul {
-    margin: 0 0 0.4rem;
-    padding-left: 1.1rem;
 }
 
 /* 1024px to 1439px: the map and one side pane, the review over the actions. */
@@ -1937,18 +2056,20 @@ details.advanced > summary {
         overflow: visible;
     }
 
+    /* Table player, pass 29: the map leaves room for the inspector under it, so what a click picks shows without scrolling. */
     .play-workspace .play-map-pane {
-        height: 70vh;
+        height: 55vh;
     }
 
     @supports (height: 100dvh) {
         .play-workspace .play-map-pane {
-            height: 70dvh;
+            height: 55dvh;
         }
     }
 
-    .play-workspace .play-review:has(#play-review-none):not(:has(#play-selected)) {
-        display: none;
+    /* Pass 29: under 1024px the inspector sits below the map, in the Map tab, so what a click picks shows right under it. */
+    .play-workspace .play-pane.play-review {
+        max-height: none;
     }
 }
 
@@ -1978,7 +2099,7 @@ details.advanced > summary {
     font-weight: 600;
 }
 
-.play-context-line #play-revision {
+.game-line [id$="-revision"] {
     font-size: 0.85rem;
 }
 

@@ -9,10 +9,9 @@
 @using LimboDancer.Domains.Asl.Units.State
 @using static LimboDancer.Domains.Asl.MapStudio.Components.Play.FireText
 @inject LivePlay Live
-@inject UnitLibrary Library
 @inject NavigationManager Navigation
+@inject UnitLibrary Library
 @inject GameMaps GameMaps
-@inject StudioLos Los
 @inject IServiceProvider Services
 @inject IJSRuntime JS
 @implements IAsyncDisposable
@@ -20,10 +19,11 @@
 <PageTitle>Play - ASL Map Studio</PageTitle>
 
 <PageHeader Title="Play">
-    <p>
+    @* Claude Design's review: one plain sentence, with how it works a click away. *@
+    <RuleHelp Id="play-intro" DetailLabel="How this works" Summary="Play a game from a scenario card: choose an action, review what it will do, then confirm it.">
         Live games are the Studio's chosen game source (D2). Every change is a registered action through the Execution Gate: the Studio proposes it,
         the gate checks it against the current game, boards, and catalog, and it commits only after you confirm. Nothing here edits a game directly.
-    </p>
+    </RuleHelp>
 </PageHeader>
 
 @if (Scripted is { } scripted)
@@ -32,12 +32,12 @@
 }
 
 <PlayContextHeader Summary="@ContextSummary" Revision="@(state is not null && history?.Current is not null ? state.Revision : null)" Acting="@ActingNote" Busy="@busy" Live="@(state is null || history is null ? null : history.Current is not null)" Ended="@(state?.Ended is not null)"
-                   Conditions="@(state is null ? null : NightAndWeather(state))" HasCard="@(state?.Scenario is not null && handOver is null)"
+                   Conditions="@(state is null ? null : NightAndWeather(state))" HasCard="@(state?.Scenario is not null && handOver is null)" CardChanged="@(state?.Scenario is { } changedCard && !Live.Cards.Matches(changedCard.Id, changedCard.Sha256))"
                    PendingTitle="@(handOver is null ? pending?.Action.Name : null)" Review="@FocusReview" Awaiting="@(AwaitingView is { } awaited ? ViewLabel(awaited) : null)"
-                   AwaitingNote="@AwaitingNote" HandOver="@HandOverToAwaiting" Status="@status">
-    <LiveGameToolbar Games="@([.. Live.Games().Select(scope => scope.Game)])" GameId="@gameId" GameChanged="ChangeGame" Views="@ViewChoices"
+                   AwaitingNote="@AwaitingNote" HandOver="@HandOverToAwaiting" Status="@status" OpenCard="@OpenCard">
+    <LiveGameToolbar Games="@([.. Live.Games().Select(scope => scope.Game)])" GameId="@gameId" GameChanged="ChangeGame" Disabled="@busy" Views="@ViewChoices"
                      ViewAs="@(handOver ?? viewAs)" ViewChanged="ChangeView" BoardLabel="@ViewTarget"
-                     BoardLink="@(state is not null && handOver is null ? Games.BoardLink(ViewTarget, GameLibrary.LivePrefix + gameId, Viewer, state.Revision) : null)" />
+                     BoardLink="@(state is not null && handOver is null ? Games.BoardLink(ViewTarget, GameLibrary.LivePrefix + gameId, Viewer, state.Revision, highlight?.ToString()) : null)" />
 </PlayContextHeader>
 
 <HandOverScreen Next="@handOver" Label="@ViewLabel(handOver)" Confirmed="ConfirmView">
@@ -46,10 +46,11 @@
 {
     var playCard = CardRead(scenario.Id)?.Card;
     <PlayCardPanel Scenario="@scenario" Card="@playCard" Changed="@(!Live.Cards.Matches(scenario.Id, scenario.Sha256))" FirstSide="@state.FirstSide" Ended="@state.Ended"
-                   Groups="@([.. state.Sides.SelectMany(side => side.Groups.Select(group => $"{side.Id}: {group.Name} ({group.Id}), ELR {group.Elr?.ToString(CultureInfo.InvariantCulture) ?? "not given"}"))])"
+                   Groups="@([.. state.Sides.SelectMany(side => side.Groups.Select(group => $"{DisplayText.Side(side.Id)}: {group.Name} ({group.Id}), ELR {group.Elr?.ToString(CultureInfo.InvariantCulture) ?? "not given"}"))])"
                    Victory="@(playCard is not null ? VictoryNow : null)"
                    KnownTo="@VictoryKnownTo" Catalog="@($"{state.Catalog.Catalog}@{state.Catalog.Version}")"
-                   Provenance="@(playCard is not null && PublishedCatalog is { } provenanceCatalog ? GameProvenance(playCard, scenario.Id, scenario.Sha256, provenanceCatalog) : null)" />
+                   Provenance="@(playCard is not null && PublishedCatalog is { } provenanceCatalog ? GameProvenance(playCard, scenario.Id, scenario.Sha256, provenanceCatalog) : null)"
+                   OnClose="@CloseCard" />
 }
 
 @{
@@ -77,7 +78,7 @@
             {
                 var choices = Live.Planner.NonObConcealment(state, side.Id);
                 <fieldset class="setup-non-ob" data-side="@side.Id">
-                    <legend>Non-OB "?" for @side.Id (A12.12; ruling R23.6)</legend>
+                    <legend>Non-OB "?" for @DisplayText.Side(side.Id) (A12.12; ruling R23.6)</legend>
                     <RuleHelp Id="@($"non-ob-help-{side.Id}")" Summary='Once both sides have set up, a stack with no "?" out of the LOS of every unbroken enemy ground unit within 16 hexes may take one (A12.12).'>
                         Once both sides have set up, a stack with no "?" may take one if it is out of the LOS of every unbroken enemy ground unit within 16 hexes, or
                         17 hexes or more from all of them. Hidden units are not on the board and do not count. The game checks this against every enemy unit, those
@@ -85,7 +86,7 @@
                     </RuleHelp>
                     @if (choices.Count == 0)
                     {
-                        <p class="muted non-ob-none">No stack of @side.Id may take a non-OB "?" now.</p>
+                        <p class="muted non-ob-none">No stack of @DisplayText.Side(side.Id) may take a non-OB "?" now.</p>
                     }
                     else
                     {
@@ -93,10 +94,14 @@
                         {
                             var key = $"{side.Id}|{at}";
                             <label><input type="checkbox" class="non-ob-location" value="@at" checked="@nonObChosen.Contains(key)"
-                                          @onchange="@(args => Toggle(nonObChosen, key, args.Value is true))" /> @at</label>
+                                          @onchange="@(args => Toggle(nonObChosen, key, args.Value is true))" /> @DisplayText.Location(at) <span class="muted">@at</span></label>
                         }
-                        <button class="propose-non-ob" disabled="@(!choices.Any(at => nonObChosen.Contains($"{side.Id}|{at}")))"
-                                @onclick="@(() => ProposeNonOb(side.Id, choices))">Propose: place @side.Id's non-OB "?"</button>
+                        <button class="propose-non-ob" disabled="@(!choices.Any(at => nonObChosen.Contains($"{side.Id}|{at}")))" aria-describedby="@($"non-ob-ready-{side.Id}")"
+                                @onclick="@(() => ProposeNonOb(side.Id, choices))">Propose: place @DisplayText.Side(side.Id)'s non-OB "?"</button>
+                        @if (!choices.Any(at => nonObChosen.Contains($"{side.Id}|{at}")))
+                        {
+                            <span id="@($"non-ob-ready-{side.Id}")" class="toolbar-note">Tick at least one Location.</span>
+                        }
                     }
                 </fieldset>
             }
@@ -111,7 +116,7 @@
         {
             <ProposalReviewPanel Title="@proposal.Action.Name" Accepted="@(proposal.Result.Outcome is PlayOutcome.NeedsConfirmation or PlayOutcome.Committed or PlayOutcome.Replay)"
                                  Outcome="@OutcomeText(proposal.Result.Outcome, Withheld(proposal))" Reasons="@([.. Reasons(proposal)])"
-                                 CanConfirm="@(proposal.Result.Outcome == PlayOutcome.NeedsConfirmation)" Busy="@busy" Confirm="Confirm" Cancel="@(() => { if (!busy) { pending = null; } })">
+                                 CanConfirm="@(proposal.Result.Outcome == PlayOutcome.NeedsConfirmation)" Busy="@busy" Confirm="Confirm" Cancel="@CancelProposal">
                 <Evidence>
                     @if (proposal.Result.Plan?.Entry is { } review && !Withheld(proposal))
                     {
@@ -144,21 +149,29 @@ else if (history.Current is null && state is null)
 else if (state is not null)
 {
     @* Pass 28c (plan sections 11.1 and 13.1): the workspace. Wide, the actions, the map, and the review sit side by side over the activity strip;
-       narrower, the map and one side pane; under 1024px, labelled Map, Actions, and Activity tabs, with the review above them. *@
+       narrower, the map and one side pane; under 1024px, labelled Map, Actions, and Activity tabs, with the review above them. Pass 29: the map and
+       the review pane are BoardWorkspace, the review pane its inspector, with the proposal as its first tab. *@
     <div id="play-workspace" class="@(narrow ? "play-workspace narrow" : "play-workspace")">
-        <section id="play-panel-review" class="play-pane play-review" aria-label="Review" aria-busy="@(busy ? "true" : "false")" tabindex="-1" @ref="reviewPane">
-            @if (pending is null)
-            {
-                <p class="muted" id="play-review-none">Nothing to review: a proposal shows here, with Confirm and Cancel.</p>
-            }
-            @reviewBlock
-            <PlaySelectedHex Hex="@SelectedHex" Units="@SelectedUnits" Sealed="@SelectedSealed" ViewName="@ViewName" Clear="@(() => highlight = null)" />
-        </section>
+        @{
+            RenderFragment proposalBlock = @<div id="play-proposal-tab">
+                @if (pending is null)
+                {
+                    <p class="muted" id="play-review-none">Nothing to review: a proposal shows here, with Confirm and Cancel.</p>
+                }
+                @reviewBlock
+                @if (PickedNote is { } pickedNote)
+                {
+                    <p class="muted" id="play-picked-note">@pickedNote</p>
+                }
+            </div>;
+            RenderFragment between = @<text>
         @if (narrow)
         {
             <InspectorTabs Tabs="@PaneTabs" Selected="@paneTab" SelectedChanged="@(tab => paneTab = tab)" Label="Workspace" IdPrefix="play" SeparatePanels="true" />
         }
         <section id="play-panel-actions" class="play-pane play-actions" tabindex="-1" @ref="actionsPane" @attributes="@Pane("actions", "Actions")">
+            @* Table player, pass 29: the hex picked on the map is offered to every typed Location of the actions. *@
+            <CascadingValue Name="PickedLocation" Value="@highlight?.ToString()">
             @if (SetupOpen)
             {
                 @setupBlock
@@ -239,8 +252,8 @@ else if (state is not null)
                 @if (state.Phase == "mph")
                 {
                     <h4>Movement</h4>
-                    <RuleHelp Id="move-help" Summary="@($"The {state.PhasingSide} side moves one stack at a time, one Location per step; after each step the DEFENDER may fire or pass (A4.1, A8.1).")">
-                        The @state.PhasingSide side moves one stack at a time, one Location per step (A4.1). After each step the DEFENDER may fire at the stack
+                    <RuleHelp Id="move-help" Summary="@($"The {DisplayText.Side(state.PhasingSide)} side moves one stack at a time, one Location per step; after each step the DEFENDER may fire or pass (A4.1, A8.1).")">
+                        The @DisplayText.Side(state.PhasingSide) side moves one stack at a time, one Location per step (A4.1). After each step the DEFENDER may fire at the stack
                         or pass (A8.1, A8.11); the stack then moves on, whole or split, or ends its move. No other unit moves until every member of the stack has
                         ended (A4.2); a member that breaks or is pinned ends its move. A Location holding Residual FP attacks a stack as it enters (A8.22).
                     </RuleHelp>
@@ -312,7 +325,7 @@ else if (state is not null)
                     }
                     else
                     {
-                        <p class="muted" id="move-elsewhere">The @state.PhasingSide side moves now; its movers and their route are its own (choose its view to move; ruling R23.1).</p>
+                        <p class="muted" id="move-elsewhere">The @DisplayText.Side(state.PhasingSide) side moves now; its movers and their route are its own (choose its view to move; ruling R23.1).</p>
                     }
                     @if (state.Movement is { Vehicle: true, WindowOpen: true, Members: [{ } reacting] } && state.Location(reacting)?.Location is { } reactionAt
                         && (Viewer.IsAdjudicator || viewAs != state.PhasingSide) && SeenOnly(ReactionUnits(reactionAt, reacting)).ToArray() is { Length: > 0 } reactors)
@@ -360,7 +373,7 @@ else if (state is not null)
                 @if (state.Phase == "aph" && !Viewer.IsAdjudicator && viewAs != state.PhasingSide)
                 {
                     <h4>Advance</h4>
-                    <p class="muted" id="advance-elsewhere">The @state.PhasingSide side advances now; its units and their Locations are its own (choose its view to advance; ruling R23.1).</p>
+                    <p class="muted" id="advance-elsewhere">The @DisplayText.Side(state.PhasingSide) side advances now; its units and their Locations are its own (choose its view to advance; ruling R23.1).</p>
                 }
                 else if (state.Phase == "aph")
                 {
@@ -409,11 +422,11 @@ else if (state is not null)
                     <ul class="muted" id="fire-markers">
                         @foreach (var lane in state.FireLanes)
                         {
-                            <li class="fire-lane">Fire Lane of @lane.Weapon (@lane.Operator): @string.Join(", ", lane.Entries.Select(entry => $"{entry.Location} {entry.Fp} FP")) (A9.22)</li>
+                            <li class="fire-lane">Fire Lane of @lane.Weapon (@lane.Operator): @string.Join(", ", lane.Entries.Select(entry => $"{DisplayText.Location(entry.Location)} {entry.Fp} FP")) (A9.22)</li>
                         }
                         @foreach (var encircled in state.Encirclements)
                         {
-                            <li class="encirclement">@encircled.Location: the @encircled.Side units there are Encircled (A7.7)</li>
+                            <li class="encirclement">@DisplayText.Location(encircled.Location): the @DisplayText.Side(encircled.Side) units there are Encircled (A7.7)</li>
                         }
                     </ul>
                 }
@@ -425,7 +438,7 @@ else if (state is not null)
                 @if (FiringSide is { } waiting && !Viewer.IsAdjudicator && viewAs != waiting)
                 {
                     <h4>Fire</h4>
-                    <p class="muted" id="fire-elsewhere">The @waiting side may fire now; its fire groups are its own (choose its view to fire; ruling R23.1).</p>
+                    <p class="muted" id="fire-elsewhere">The @DisplayText.Side(waiting) side may fire now; its fire groups are its own (choose its view to fire; ruling R23.1).</p>
                 }
                 else if (FiringSide is { } firing)
                 {
@@ -434,8 +447,8 @@ else if (state is not null)
                     {
                         <h4>Defensive First Fire</h4>
                         <div class="toolbar" id="dff-window">
-                            <span class="toolbar-note" id="dff-note">The moving stack is at @movingAt: fire at it below, or pass (A8.1).</span>
-                            <button type="button" id="dff-show" @onclick="@(() => highlight = movingAt)">Show it on the map</button>
+                            <span class="toolbar-note" id="dff-note">The moving stack is at @DisplayText.Location(movingAt): fire at it below, or pass (A8.1).</span>
+                            <button type="button" id="dff-show" @onclick="@(() => LocateHex(movingAt))">Show it on the map</button>
                             <button id="propose-pass" @onclick='@(() => ProposeSimple(GameActions.PassFire, "pass"))'>Propose: the DEFENDER passes</button>
                         </div>
                     }
@@ -490,39 +503,52 @@ else if (state is not null)
                     }
                 }
             }
+            </CascadingValue>
         </section>
-        <section id="play-panel-map" class="play-pane play-map-pane" @attributes="@Pane("map", "Map")">
-            @if (state!.ResidualFire.Count > 0)
-            {
-                <p id="play-residual">
-                    Residual FP this MPh (A8.2):
-                    @string.Join("; ", state.ResidualFire.Select(item => $"{item.Fp} in {item.Location}"))
-                </p>
-            }
-            <PlayMapPanel Layers="@MapLayers" OnLocation="@(at => highlight = at)" OnUnit="@SelectCounter" />
-            <details id="play-los" open="@(playLos is not null)">
-                <summary>LOS</summary>
-                <p class="muted">VASL's LOS over the game's map (LOS Designs): terrain only, so every viewer may check it, from a location or from a unit the viewer can see.</p>
-                <div class="fields">
-                    <label for="play-los-unit">From unit</label>
-                    <select id="play-los-unit" @onchange="ChooseLosUnit">
-                        <option value="">none</option>
-                        @foreach (var unit in VisibleUnits.Where(unit => state?.Location(unit.Id) is not null))
-                        {
-                            <option value="@unit.Id">@unit.Id (@state!.Location(unit.Id)!.Location)</option>
-                        }
-                    </select>
-                    <label for="play-los-source">From</label><input id="play-los-source" value="@losSource" @onchange="@(args => losSource = args.Value as string ?? string.Empty)" />
-                    <label for="play-los-target">To</label><input id="play-los-target" value="@losTarget" @onchange="@(args => losTarget = args.Value as string ?? string.Empty)" />
-                </div>
-                <button id="play-los-check" @onclick="CheckLos">Check LOS</button>
-                <button id="play-los-clear" disabled="@(playLos is null)" @onclick="() => playLos = null">Clear</button>
-                @if (playLos is { } check)
-                {
-                    <p id="play-los-result" data-status="@(check.Result?.Status.ToString() ?? "Refused")">@check.Summary</p>
-                }
-            </details>
-        </section>
+            </text>;
+        }
+        @if (MapLayers is { Board: { } mapBoard } layers)
+        {
+            <BoardWorkspace @key="@($"{gameId}/{Viewer.Name}")" @ref="workspace" Board="@mapBoard" Units="@layers.Overlay" UnitView="@layers.View" Marks="@layers.Marks" Vocabulary="@Library.Vocabulary"
+                            Selected="@(highlight is { } picked ? GameMaps.FactsAt(mapBoard, picked) : null)"
+                            SelectedChanged="@(facts => highlight = facts is null ? null : GameMaps.LocationOf(mapBoard, facts.Index))"
+                            @bind-Panel="inspectorTab" Extras="@([new BoardInspector.ExtraTab(new("proposal", "Proposal", AwaitingConfirm ? 1 : null), proposalBlock)])"
+                            HoldPanel="@AwaitingConfirm" InspectorLabel="Review and inspector" IdPrefix="play-inspector" MapLabel="The game's map" InspectorFirst="@(!narrow)"
+                            InspectorClass="play-pane play-review inspector" InspectorAttributes="@ReviewAttributes"
+                            StageClass="play-pane play-map-pane play-map" StageAttributes="@MapAttributes(layers.Source)" Between="@between">
+                <Toolbar>
+                    @if (state!.ResidualFire.Count > 0)
+                    {
+                        <p id="play-residual">
+                            Residual FP this MPh (A8.2):
+                            @string.Join("; ", state.ResidualFire.Select(item => $"{item.Fp} in {DisplayText.Location(item.Location)}"))
+                        </p>
+                    }
+                    <div class="toolbar play-map-tools">
+                        <button type="button" id="play-map-zoom-in" aria-label="Zoom in" @onclick="@(() => workspace!.Zoom(0.8))">+</button>
+                        <button type="button" id="play-map-zoom-out" aria-label="Zoom out" @onclick="@(() => workspace!.Zoom(1.25))">-</button>
+                        <button type="button" id="play-map-fit" @onclick="@(() => workspace!.Fit())">Fit</button>
+                        <button type="button" id="map-rotate" aria-pressed="@(workspace?.Rotated == true ? "true" : "false")" @onclick="@(() => workspace!.ToggleRotation())">Rotate map</button>
+                        <span class="muted" id="play-map-keys">Drag to pan. With the map focused, + and - zoom and 0 fits. Click a hex or a counter to inspect it.</span>
+                    </div>
+                </Toolbar>
+            </BoardWorkspace>
+        }
+        else
+        {
+            <section id="play-panel-review" class="play-pane play-review" aria-label="Review" aria-busy="@(busy ? "true" : "false")" tabindex="-1" @ref="reviewFallback">
+                @proposalBlock
+            </section>
+            @between
+            <section id="play-panel-map" class="play-pane play-map-pane" @attributes="@Pane("map", "Map")">
+                <ul id="play-map-problems">
+                    @foreach (var problem in MapLayers?.Problems ?? [])
+                    {
+                        <li>@problem</li>
+                    }
+                </ul>
+            </section>
+        }
         <section id="play-panel-activity" class="play-pane play-activity" @attributes="@Pane("activity", "Activity")">
             <p id="play-latest">@(LatestRecord ?? "No record yet.")</p>
             <details id="play-history">
@@ -541,7 +567,7 @@ else if (state is not null)
 
     <h3>Units</h3>
     <PlayUnitTable ViewNote="@($"As {(Viewer.IsAdjudicator ? "the adjudicator sees them: every unit" : $"{Viewer.Name} sees them")}, at revision {state.Revision}.")"
-                   Rows="@UnitRows" Sealed="@([.. SealedPresences])" Locate="@(at => highlight = at)" />
+                   Rows="@UnitRows" Sealed="@([.. SealedPresences])" Locate="@LocateHex" />
     <AdjudicatorAuditPanel Lines="@(Viewer.IsAdjudicator ? Live.Audit.Tail(12).ToArray() : null)" />
 }
 
@@ -591,7 +617,7 @@ else if (state is not null)
 
     /// <summary>The units the view may see, as R12 shows them: their movement and conditions in words (ruling R23.1).</summary>
     private IReadOnlyList<PlayUnitTable.Row> UnitRows => state is null ? [] : [.. VisibleUnits.Select(unit => new PlayUnitTable.Row(unit.Id, unit.Side,
-        unit.Kind.Replace("asl:", string.Empty, StringComparison.Ordinal),
+        DisplayText.Kind(unit.Kind),
         unit.Status is InstanceStatus.Active or InstanceStatus.Wrecked ? state.Location(unit.Id)?.Location : null, unit.Status.ToString().ToLowerInvariant(),
         (unit.Status == InstanceStatus.Wrecked ? "wreck" : LiveFire.IsVehicle(unit) ? $"{HalfMpText(GamePlanner.VehicleHalfMp(unit).Spent)} of {HalfMpText(GamePlanner.VehicleHalfMp(unit).Allotment)} MP"
             : unit.MfSpent.ToString(CultureInfo.InvariantCulture)) + (unit.MovementEnded ? ", movement ended" : ""),
@@ -743,7 +769,7 @@ else if (state is not null)
     private IReadOnlyList<SetupPlacementEditor.Choice> DefinitionChoices =>
     [
         .. Definitions.Select(definition => new SetupPlacementEditor.Choice(definition.Id,
-            $"{definition.Id} ({definition.Nationality} {definition.Kind.Replace("asl:", string.Empty, StringComparison.Ordinal)})")),
+            $"{definition.Id} ({definition.Nationality} {DisplayText.Kind(definition.Kind)})")),
         .. new[] { firstSide, secondSide }.Distinct(StringComparer.Ordinal).SelectMany(side => new[]
         {
             new SetupPlacementEditor.Choice(DummyPrefix + side, $"a Dummy ({side})"),
@@ -1939,9 +1965,9 @@ else if (state is not null)
     private string? handOver;
 
     private IReadOnlyList<PerspectivePicker.Choice> ViewChoices => state is null ? []
-        : [.. state.Perspectives.Select(perspective => new PerspectivePicker.Choice(perspective.Name, perspective.IsAdjudicator ? "the adjudicator" : perspective.Name))];
+        : [.. state.Perspectives.Select(perspective => new PerspectivePicker.Choice(perspective.Name, perspective.IsAdjudicator ? "the adjudicator" : DisplayText.Side(perspective.Name)))];
 
-    private static string ViewLabel(string? name) => name is null ? string.Empty : name == Perspective.AdjudicatorName ? "the adjudicator" : $"the {name} side";
+    private static string ViewLabel(string? name) => DisplayText.ViewName(name);
 
     /// <summary>
     /// A new view waits behind the hand-over screen (ruling R23.2); what the last one prepared is dropped, since it may rest on what the next may not
@@ -1949,12 +1975,15 @@ else if (state is not null)
     /// </summary>
     private void ChangeView(string next)
     {
-        if (next == (handOver ?? viewAs))
+        // Pass 29: the view does not change while the gate works, so a result lands with the view that asked for it.
+        if (busy || next == (handOver ?? viewAs))
         {
             return;
         }
 
-        handOver = next == viewAs ? null : next;
+        // Referee, pass 29: the view shown again drops the hand-over only once it has been confirmed; on load and on a game change it has not.
+        handOver = next == viewAs && !unconfirmed ? null : next;
+        openingHex = null;
         ResetForView();
     }
 
@@ -1963,10 +1992,8 @@ else if (state is not null)
     {
         pending = null;
         status = string.Empty;
-        playLos = null;
-        losSource = string.Empty;
-        losTarget = string.Empty;
         highlight = null;
+        inspectorTab = "selection";
         placements.Clear();
         placeHidden = false;
         placeConcealed = false;
@@ -1984,10 +2011,11 @@ else if (state is not null)
         {
             viewAs = next;
             handOver = null;
+            unconfirmed = false;
             ResetForView();
+            (highlight, openingHex) = (openingHex, null);
             enterUnit = VisibleUnits.FirstOrDefault()?.Id ?? string.Empty;
-            focusActions = true;
-            paneTab = "actions";
+            ShowActions();
         }
     }
 
@@ -1996,40 +2024,17 @@ else if (state is not null)
     private string ViewTarget => state is null ? string.Empty
         : state.Map.IsPlaced && state.Map.Reference.StartsWith("map-", StringComparison.Ordinal) ? state.Map.Reference : state.Map.Boards[0].Board.Value;
 
-    private string losSource = string.Empty;
-    private string losTarget = string.Empty;
-    private LosCheck? playLos;
-
-    /// <summary>
-    /// LOS from a unit (LOS Result Design, section 5): only units the viewer can see are offered, and choosing one fills the
-    /// source with its location.
-    /// </summary>
-    private void ChooseLosUnit(ChangeEventArgs args)
-    {
-        if (state is not null && args.Value as string is { Length: > 0 } id && VisibleUnits.Any(unit => unit.Id == id) && state.Location(id) is { } at)
-        {
-            losSource = at.Location.ToString();
-        }
-    }
-
-    /// <summary>Checks LOS between two locations of the game's map (LOS Design, section 6).</summary>
-    private void CheckLos()
-    {
-        if (state is not null && GameMaps.Board(state.Map).Board is { } board)
-        {
-            playLos = Los.Check(board, losSource, losTarget);
-        }
-    }
-
     /// <summary>A prisoner's Guard, and a Guard's prisoners (A20.5), as the units table shows them.</summary>
     private IEnumerable<string> Custody(UnitInstance unit)
     {
         if (unit.Custodian is { } guard)
         {
-            yield return $"guarded by {guard}";
+            // Referee, pass 29: a side never reads the id of a unit its view does not hold (rulings R23.1, R23.3).
+            yield return $"guarded by {(Viewer.IsAdjudicator || VisibleUnits.Any(seen => seen.Id == guard) ? guard : "a unit not in view")}";
         }
 
-        if (state?.Units.Where(item => item.Status == InstanceStatus.Active && item.Custodian == unit.Id).Select(item => item.Id).Order(StringComparer.Ordinal).ToArray() is { Length: > 0 } prisoners)
+        if (state?.Units.Where(item => item.Status == InstanceStatus.Active && item.Custodian == unit.Id
+            && (Viewer.IsAdjudicator || VisibleUnits.Any(seen => seen.Id == item.Id))).Select(item => item.Id).Order(StringComparer.Ordinal).ToArray() is { Length: > 0 } prisoners)
         {
             yield return $"guards {string.Join(", ", prisoners)}";
         }
@@ -2177,7 +2182,7 @@ else if (state is not null)
         var acquired = state?.Acquisitions.FirstOrDefault(item => item.Gun == gun.Id);
         var crew = gun.Holding is { } holding ? state?.Unit(holding.Holder) : null;
         var crewState = crew is null ? "" : string.Concat(new[] { Conditions.Pinned, Conditions.Concealed, Conditions.Melee, Conditions.Broken }
-            .Where(name => Marked(crew, name)).Select(name => ", crew " + name.Replace("asl:", "", StringComparison.Ordinal)));
+            .Where(name => Marked(crew, name)).Select(name => ", crew " + DisplayText.Kind(name)));
         var spotter = state?.MortarSpotters.FirstOrDefault(item => item.Gun == gun.Id)?.Spotter;
         return $"{gun.Id} ({gun.Definition?.Definition}" + (gun.Kind is "asl:light-mortar" or "asl:latw" ? $", with {crew?.Id}" + (spotter is null ? "" : $", Spotter {spotter}") : $", facing {facing}")
             + (Marked(gun, Conditions.Malfunctioned) ? gun.Kind == "asl:latw" ? ", malfunctioned: repair it in the RPh (A9.72)" : ", malfunctioned: Gun repair is not built" : "")
@@ -3268,6 +3273,10 @@ else if (state is not null)
     [SupplyParameterFromQuery(Name = "game")]
     public string? GameQuery { get; set; }
 
+    /// <summary>A hex to pick when the page opens, such as the one picked on the board viewer before "Back to Play".</summary>
+    [SupplyParameterFromQuery(Name = "hex")]
+    public string? HexQuery { get; set; }
+
     private IReadOnlyList<UnitDefinition> Definitions =>
         PublishedCatalog?.Definitions ?? [];
 
@@ -3283,12 +3292,18 @@ else if (state is not null)
         placeDefinition = Definitions.FirstOrDefault()?.Id ?? string.Empty;
         gameId = GameQuery ?? string.Empty;
         Refresh();
+        if (HexQuery is { Length: > 0 } hex && LimboDancer.Domains.Asl.Maps.Coordinates.BoardLocation.TryParse(hex, out var picked))
+        {
+            // Picked once the hand-over on load is confirmed, which clears what the last view picked.
+            (highlight, openingHex) = (picked, picked);
+            dropHexQuery = true;
+        }
 
         // Backlog section 37, built in pass 28c: a page opened or reloaded on a game waits behind the hand-over screen, since whoever is at the screen
         // has not said which side they are.
         if (state is not null && history?.Current is not null && viewAs.Length > 0)
         {
-            handOver = viewAs;
+            (handOver, unconfirmed) = (viewAs, true);
         }
     }
 
@@ -3297,8 +3312,18 @@ else if (state is not null)
     /// </summary>
     private void ChangeGame(ChangeEventArgs args)
     {
+        if (busy)
+        {
+            return;
+        }
+
         gameId = args.Value as string ?? string.Empty;
         handOver = null;
+        (highlight, openingHex) = (null, null);
+        inspectorTab = "selection";
+
+        // Pass 29: the address names the game, so a reload opens it again (behind the hand-over).
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameters(new Dictionary<string, object?> { ["game"] = gameId.Length > 0 ? gameId : null, ["hex"] = null }), replace: true);
         placeEntry = string.Empty;
         nonObChosen.Clear();
         pending = null;
@@ -3322,9 +3347,10 @@ else if (state is not null)
         Refresh();
 
         // Referee, pass 28c: another game is opened as the page is, behind the hand-over (backlog section 37).
+        unconfirmed = false;
         if (state is not null && history?.Current is not null && viewAs.Length > 0)
         {
-            handOver = viewAs;
+            (handOver, unconfirmed) = (viewAs, true);
         }
     }
 
@@ -3978,9 +4004,13 @@ else if (state is not null)
         }
 
         (busy, status) = (true, "Checking the proposal.");
+        var asked = AskedBy;
         Proposal proposed;
         try
         {
+            // Pass 29: the busy state is drawn before the gate is asked, so the pickers show as disabled even when the answer is quick.
+            StateHasChanged();
+            await DrawBusy();
             var revision = (long)(history?.Events.Count ?? 0);
             proposed = new Proposal(action, arguments, await Run(() => Live.Play.ProposeAsync(action, arguments, Live.Principal)), revision);
         }
@@ -3989,11 +4019,26 @@ else if (state is not null)
             busy = false;
         }
 
+        // Pass 29: a result that returns for another game or view is dropped, never shown to the view that did not ask.
+        if (AskedBy != asked)
+        {
+            status = string.Empty;
+            return;
+        }
+
         pending = proposed;
         status = $"{action.Name}: {OutcomeText(proposed.Result.Outcome, Withheld(proposed))}";
-        focusReview = true;
+        ShowProposal();
         Refresh();
     }
+
+    /// <summary>
+    /// Lets the busy state be drawn before the gate is asked (pass 29). A component test that registers <see cref="ImmediateProposals"/> skips the
+    /// wait, so the proposal stays on the test's own thread; the Studio never registers it.
+    /// </summary>
+    private Task DrawBusy() => Services.GetService<ImmediateProposals>() is null ? Yield() : Task.CompletedTask;
+
+    private static async Task Yield() => await Task.Yield();
 
     /// <summary>Runs a gate call; a failure inside it, such as a reviewed package that no longer verifies, is reported, not thrown.</summary>
     private static async Task<PlayResult> Run(Func<Task<PlayResult>> call)
@@ -4034,14 +4079,24 @@ else if (state is not null)
         }
 
         (busy, status) = (true, "Confirming.");
+        var asked = AskedBy;
         PlayResult result;
         try
         {
+            StateHasChanged();
+            await DrawBusy();
             result = await Run(() => Live.Play.ConfirmAsync(proposal.Action, proposal.Arguments, Live.Principal, proposal.Result.Correlation));
         }
         finally
         {
             busy = false;
+        }
+
+        if (AskedBy != asked)
+        {
+            status = string.Empty;
+            Refresh();
+            return;
         }
 
         status = $"{proposal.Action.Name}: {OutcomeText(result.Outcome, false)}";
@@ -4129,6 +4184,10 @@ else if (state is not null)
             {
                 ClearCloseCombat();
             }
+
+            // Table player and UI review, pass 29: Confirm is gone with the commit, so the focus goes to the actions; under 1024px their tab opens.
+            // Wider, the panes are side by side and nothing scrolls, so the outcome stays in view.
+            ShowActions(scroll: narrow);
         }
 
         Refresh();
@@ -4156,11 +4215,47 @@ else if (state is not null)
 
     private string paneTab = "map";
 
-    private ElementReference reviewPane;
+    private BoardWorkspace? workspace;
+
+    // The inspector's open tab: "proposal" while a proposal waits, otherwise what the player chose (pass 29).
+    private string inspectorTab = "selection";
+
+    // The hex the address asks for (from the board viewer's "Back to Play"), kept until the hand-over on load is confirmed.
+    private LimboDancer.Domains.Asl.Maps.Coordinates.BoardLocation? openingHex;
+
+    /// <summary>The review pane's attributes, as the inspector of the workspace (pass 29).</summary>
+    private Dictionary<string, object> ReviewAttributes => new()
+    {
+        ["id"] = "play-panel-review",
+        ["aria-label"] = "Review",
+        ["aria-busy"] = busy ? "true" : "false",
+        ["tabindex"] = "-1",
+        ["hidden"] = narrow && paneTab != "map",
+    };
+
+    /// <summary>The map pane's attributes: its tab panel or region, and the map's source.</summary>
+    private Dictionary<string, object> MapAttributes(string? source)
+    {
+        var attributes = Pane("map", "Map");
+        attributes["id"] = "play-panel-map";
+        attributes["tabindex"] = "-1";
+        attributes["data-source"] = source ?? string.Empty;
+        return attributes;
+    }
     private ElementReference actionsPane;
     private bool focusReview;
     private IJSObjectReference? workspaceScript;
     private bool focusActions;
+    private bool focusMap;
+
+    // Whether the pane takes the focus without being scrolled to.
+    private bool focusInPlace;
+
+    // Whether the hand-over waiting is the one of a load or a game change, which only a confirmation ends (referee, pass 29).
+    private bool unconfirmed;
+
+    // Whether the address still carries the hex of "Back to Play"; it is taken out once read, so a reload or another view does not pick it again.
+    private bool dropHexQuery;
     private bool busy;
     private string status = string.Empty;
 
@@ -4174,7 +4269,7 @@ else if (state is not null)
 
     /// <summary>The context line: the revision, turn, phase, and phasing side, and whether setup is open; null with no game shown.</summary>
     private string? ContextSummary => state is null || history is null ? null
-        : (history.Current is not null ? string.Empty : "The game does not replay: ") + $"Turn {state.Turn}, {state.PhasingSide} {Games.PhaseLabel(state.Phase)}."
+        : (history.Current is not null ? string.Empty : "The game does not replay: ") + $"Turn {state.Turn}, {DisplayText.Side(state.PhasingSide)} {Games.PhaseLabel(state.Phase)}."
             + (SetupOpen ? " Setup is open." : state.Ended is not null ? " The game has ended; nothing more is played." : string.Empty);
 
     /// <summary>
@@ -4209,13 +4304,13 @@ else if (state is not null)
         var defender = shown.Sides.FirstOrDefault(side => side.Id != shown.PhasingSide)?.Id;
         if (shown.Choice is { } choice)
         {
-            return (choice.Side, $"The {choice.Side} side has a choice to make before play goes on.");
+            return (choice.Side, $"The {DisplayText.Side(choice.Side)} side has a choice to make before play goes on.");
         }
 
         if (shown.PendingSurrenders.FirstOrDefault() is { } surrender
             && surrender.Captors.Select(shown.Unit).OfType<UnitInstance>().Select(unit => unit.Side).FirstOrDefault() is { } captors)
         {
-            return (captors, $"The {captors} side answers a surrender (A20.21).");
+            return (captors, $"The {DisplayText.Side(captors)} side answers a surrender (A20.21).");
         }
 
         if (shown.Phase == "mph" && shown.Movement is { WindowOpen: true })
@@ -4225,16 +4320,16 @@ else if (state is not null)
 
         if (shown.Phase == "dfph")
         {
-            return (defender, $"The {defender} side may fire, then ends the {Games.PhaseLabel(shown.Phase)}.");
+            return (defender, $"The {DisplayText.Side(defender)} side may fire, then ends the {Games.PhaseLabel(shown.Phase)}.");
         }
 
         if (shown.Phase is "rph" or "rtph" or "ccph")
         {
             var other = viewAs == shown.PhasingSide ? defender : shown.PhasingSide;
-            return (other, $"Both sides act in the {Games.PhaseLabel(shown.Phase)}, the {shown.PhasingSide} side first.");
+            return (other, $"Both sides act in the {Games.PhaseLabel(shown.Phase)}, the {DisplayText.Side(shown.PhasingSide)} side first.");
         }
 
-        return (shown.PhasingSide, $"The {shown.PhasingSide} side acts in the {Games.PhaseLabel(shown.Phase)}.");
+        return (shown.PhasingSide, $"The {DisplayText.Side(shown.PhasingSide)} side acts in the {Games.PhaseLabel(shown.Phase)}.");
     }
 
     private void HandOverToAwaiting()
@@ -4245,7 +4340,95 @@ else if (state is not null)
         }
     }
 
-    private void FocusReview() => focusReview = true;
+    private void FocusReview() => ShowProposal();
+
+    /// <summary>The actions brought into view with the focus; under 1024px their tab opens (pass 29).</summary>
+    private void ShowActions(bool scroll = true)
+    {
+        (focusActions, focusInPlace) = (true, !scroll);
+        if (narrow)
+        {
+            paneTab = "actions";
+        }
+    }
+
+    private void CancelProposal()
+    {
+        if (!busy)
+        {
+            (pending, status) = (null, string.Empty);
+            ShowActions(scroll: narrow);
+        }
+    }
+
+    /// <summary>
+    /// A hex named off the map (the units table, "Show it on the map") is picked and shown: the map comes into view, under 1024px in its tab, and
+    /// the Selection tab opens unless a proposal waits for Confirm (table player, pass 29).
+    /// </summary>
+    private void LocateHex(BoardLocation at)
+    {
+        (highlight, focusMap) = (at, true);
+        if (narrow)
+        {
+            paneTab = "map";
+        }
+
+        if (!AwaitingConfirm)
+        {
+            inspectorTab = "selection";
+        }
+    }
+
+    /// <summary>What a map click picked while Confirm waits and the Proposal tab stays open; the counters are those the view draws.</summary>
+    private string? PickedNote => AwaitingConfirm && highlight is { } at && MapLayers is { Board: { } board, Overlay: { } overlay } && GameMaps.FactsAt(board, at) is { } facts
+        ? $"Picked: {DisplayText.Location(at)}, {overlay.At(facts.Index).Count() switch { 0 => "no counters", 1 => "1 counter", var count => $"{count} counters" }}; the Selection tab has its details."
+        : null;
+
+    /// <summary>Closes the scenario card and returns the focus to the context's link that opened it (Claude Design's review).</summary>
+    private async Task CloseCard()
+    {
+        try
+        {
+            workspaceScript ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/playWorkspace.js");
+            await workspaceScript.InvokeVoidAsync("closeDetails", "play-card", "play-card-link");
+        }
+        catch (Exception exception) when (exception is JSDisconnectedException or JSException or TaskCanceledException)
+        {
+            // The circuit is gone; the card stays as it was.
+        }
+    }
+
+    /// <summary>Opens the scenario card, which starts closed, and brings it into view (pass 29).</summary>
+    private async Task OpenCard()
+    {
+        try
+        {
+            workspaceScript ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/playWorkspace.js");
+            await workspaceScript.InvokeVoidAsync("openDetails", "play-card");
+        }
+        catch (Exception exception) when (exception is JSDisconnectedException or JSException or TaskCanceledException)
+        {
+            // The circuit is gone; the card stays as it was.
+        }
+    }
+
+    /// <summary>The Proposal tab chosen and brought into view with the focus; under 1024px it is in the Map tab (pass 29).</summary>
+    private void ShowProposal()
+    {
+        (focusReview, inspectorTab) = (true, "proposal");
+        if (narrow)
+        {
+            paneTab = "map";
+        }
+    }
+
+    /// <summary>The game and the view a gate call is made for; a result returning for others is dropped (pass 29).</summary>
+    private string AskedBy => $"{gameId}/{handOver ?? viewAs}";
+
+    /// <summary>Whether a proposal waits for Confirm, so its tab is marked and stays open when the map is clicked (pass 29).</summary>
+    private bool AwaitingConfirm => pending?.Result.Outcome == PlayOutcome.NeedsConfirmation;
+
+    private ElementReference reviewFallback;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -4258,12 +4441,19 @@ else if (state is not null)
                 await workspaceScript.InvokeVoidAsync("watchContext");
             }
 
-            if (focusReview || focusActions)
+            if (dropHexQuery)
             {
-                var pane = focusReview ? reviewPane : actionsPane;
-                (focusReview, focusActions) = (false, false);
+                dropHexQuery = false;
+                Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("hex", (string?)null), replace: true);
+            }
+
+            if (focusReview || focusActions || focusMap)
+            {
+                var pane = focusReview ? workspace?.Inspector ?? reviewFallback : focusMap ? workspace?.Stage ?? default : actionsPane;
+                var scroll = focusReview || focusMap || !focusInPlace;
+                (focusReview, focusActions, focusMap, focusInPlace) = (false, false, false, false);
                 workspaceScript ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/playWorkspace.js");
-                await workspaceScript.InvokeVoidAsync("reveal", pane);
+                await workspaceScript.InvokeVoidAsync("reveal", pane, scroll);
             }
         }
         catch (Exception exception) when (exception is JSDisconnectedException or JSException or TaskCanceledException)
@@ -4288,35 +4478,9 @@ else if (state is not null)
         }
     }
 
-    private string ViewName => Viewer.IsAdjudicator ? "The adjudicator" : $"The {Viewer.Name} side";
-
-    /// <summary>The picked hex, as "board:hex"; null when none is picked.</summary>
-    private string? SelectedHex => highlight is { } at ? $"{at.Board.Value}:{at.Hex}" : null;
-
-    private IReadOnlyList<PlayUnitTable.Row> SelectedUnits => highlight is { } at
-        ? [.. UnitRows.Where(row => row.At is { } where && where.Board == at.Board && where.Hex == at.Hex)]
-        : [];
-
-    private IReadOnlyList<SealedPresence> SelectedSealed => highlight is { } at
-        ? [.. SealedPresences.Where(presence => presence.Location.Board == at.Board && presence.Location.Hex == at.Hex)]
-        : [];
-
-    /// <summary>A counter clicked on the map: a unit the view sees, or a "?" it knows of; its hex is picked.</summary>
-    private void SelectCounter(string id)
-    {
-        if (UnitRows.FirstOrDefault(row => row.Id == id)?.At is { } at)
-        {
-            highlight = at;
-        }
-        else if (SealedPresences.FirstOrDefault(presence => presence.PlacementId == id) is { } presence)
-        {
-            highlight = presence.Location;
-        }
-    }
-
-    // The map's layers, read once per game, revision, view, picked hex, LOS line, and the Gun whose Covered Arc is drawn (backlog section 37: the map
-    // was drawn on every render).
-    private (string Game, long Revision, string Viewer, string? Highlight, object? Los, string Gun, GameMapLayers? Layers) mapCache;
+    // The map's layers, read once per game, revision, view, and the Gun whose Covered Arc is drawn (backlog section 37: the map was drawn on every
+    // render). Pass 29: the workspace draws the picked hex and the LOS line itself.
+    private (string Game, long Revision, string Viewer, string Gun, GameMapLayers? Layers) mapCache;
 
     private GameMapLayers? MapLayers
     {
@@ -4327,13 +4491,11 @@ else if (state is not null)
                 return null;
             }
 
-            var picked = highlight?.ToString();
             if (mapCache.Layers is null || mapCache.Game != gameId || mapCache.Revision != state.Revision || mapCache.Viewer != Viewer.Name
-                || mapCache.Highlight != picked || !ReferenceEquals(mapCache.Los, playLos) || mapCache.Gun != ordnanceGun)
+                || mapCache.Gun != ordnanceGun)
             {
-                var check = playLos;
-                mapCache = (gameId, state.Revision, Viewer.Name, picked, check, ordnanceGun, GameMaps.Layers(gameId, state.Map, Viewer, state.Revision, highlight,
-                    check is not null ? board => Los.Layer(board, check) : null, CoveredArcLayer, state.ResidualFire));
+                mapCache = (gameId, state.Revision, Viewer.Name, ordnanceGun, GameMaps.Layers(gameId, state.Map, Viewer, state.Revision, CoveredArcLayer,
+                    state.ResidualFire));
             }
 
             return mapCache.Layers;

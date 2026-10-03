@@ -3,41 +3,41 @@
 @* B07 with B08 inline (plan section 16.6): the selected unit's identity, and its facts in the game as the projected view gives them;
    a concealed presence's identity and conditions are withheld. It never receives the game's full state. *@
 <h2 class="unit-name">@Unit.Name</h2>
-<UnitAccessibleDetails Document="@Unit.Document" Vocabulary="@Vocabulary" ShowId="true" Location="@Unit.Location.ToString()" />
+<UnitAccessibleDetails Document="@Unit.Document" Vocabulary="@Vocabulary" ShowId="true" Location="@DisplayText.Location(Unit.Location)" />
 @if (View is { } view)
 {
     @if (view.Units.FirstOrDefault(item => item.Id == Unit.Document.Id) is { } instance)
     {
         <h3>In the game</h3>
         <dl class="unit-details" id="unit-game-facts">
-            <dt>Side</dt><dd>@instance.Side</dd>
-            <dt>Conditions</dt><dd>@ConditionsText(instance)</dd>
-            <dt>Good Order</dt><dd>@Conditions.Name(GameState.GoodOrder(instance, Vocabulary))</dd>
+            <dt>Side</dt><dd>@DisplayText.Side(instance.Side)</dd>
+            <dt>Conditions</dt><dd>@DisplayText.ConditionsOf(instance)</dd>
+            <dt>Good Order</dt><dd>@GoodOrderText(instance)</dd>
             <dt>MF spent this phase</dt><dd>@instance.MfSpent</dd>
             @if (instance.From.Count > 0)
             {
-                <dt>Produced from</dt><dd>@string.Join(", ", instance.From)</dd>
+                <dt>Produced from</dt><dd>@string.Join(", ", instance.From.Select(Named))</dd>
             }
             @if (instance.Custodian is { } custodian)
             {
-                <dt>Prisoner of</dt><dd>@custodian</dd>
+                <dt>Prisoner of</dt><dd>@Named(custodian)</dd>
             }
             @if (instance.Position is ContainedPosition contained)
             {
-                <dt>Inside</dt><dd>@contained.Container (@contained.Role)</dd>
+                <dt>Inside</dt><dd>@Named(contained.Container) (@contained.Role.ToString().ToLowerInvariant())</dd>
             }
         </dl>
     }
     else if (view.Sealed.Any(presence => presence.PlacementId == Unit.Document.Id))
     {
-        <p id="unit-game-facts">A concealed presence: its identity and conditions are withheld from @view.Perspective.Name.</p>
+        <p id="unit-game-facts">A concealed presence: its identity and conditions are withheld from @DisplayText.ViewName(view.Perspective.Name).</p>
     }
     else if (view.Equipment.Cast<IGameObject>().Concat(view.Entities).FirstOrDefault(item => item.Id == Unit.Document.Id) is { } other)
     {
         <h3>In the game</h3>
         <dl class="unit-details" id="unit-game-facts">
-            <dt>Side</dt><dd>@(other.Side ?? "none")</dd>
-            <dt>Conditions</dt><dd>@ConditionsText(other)</dd>
+            <dt>Side</dt><dd>@(other.Side is { } side ? DisplayText.Side(side) : "none")</dd>
+            <dt>Conditions</dt><dd>@DisplayText.ConditionsOf(other)</dd>
         </dl>
     }
 }
@@ -57,16 +57,39 @@
     [Parameter]
     public GameView? View { get; set; }
 
+    /// <summary>
+    /// The name of a unit or entity the view sees, by id, such as "German 1st Line squad, 4-6-7"; null for one it does not see or that no longer
+    /// exists (Claude Design's review: "Prisoner of" and "Produced from" read names, with the id beside them).
+    /// </summary>
+    [Parameter]
+    public Func<string, string?> NameOf { get; set; } = _ => null;
+
     /// <summary>Where the unit comes from, in words.</summary>
     [Parameter]
     public string? Note { get; set; }
 
-    private static string ConditionsText(IGameObject item)
+    // Good Order is unknown while broken, berserk, captured, or Melee is not recorded (ASL-UNIT-023); the inspector says which (pass 29).
+    private string GoodOrderText(UnitInstance instance) => GameState.GoodOrder(instance, Vocabulary) switch
     {
-        var shown = item.Conditions.Where(pair => pair.Value is not ConditionState.False)
-            .Select(pair => pair.Value == ConditionState.True ? pair.Key.Replace("asl:", string.Empty, StringComparison.Ordinal)
-                : $"{pair.Key.Replace("asl:", string.Empty, StringComparison.Ordinal)} {Conditions.Name(pair.Value)}")
-            .ToArray();
-        return shown.Length == 0 ? "none" : string.Join(", ", shown);
+        ConditionState.Unknown => string.Join(", ", new[] { Conditions.Broken, Conditions.Berserk, Conditions.Captured, Conditions.Melee }
+                .Where(name => GameState.Condition(instance, name) == ConditionState.Unknown)
+                .Select(DisplayText.Kind)) is { Length: > 0 } names ? $"Unknown: not recorded whether {names}" : "Unknown",
+        var other => DisplayText.YesNo(other),
+    };
+
+    /// <summary>
+    /// A unit named by another's record (its Guard, its parents, its carrier): its name and id when the view holds it. A side's view never reads the
+    /// id of one it does not see (referee, pass 29; rulings R23.1, R23.3); the adjudicator and a placement set read the id.
+    /// </summary>
+    private string Named(string id)
+    {
+        if (NameOf(id) is { Length: > 0 } name)
+        {
+            return $"{name} ({id})";
+        }
+
+        var seen = View is not { Perspective.IsAdjudicator: false } view
+            || view.Units.Cast<IGameObject>().Concat(view.Equipment).Concat(view.Entities).Any(item => item.Id == id);
+        return seen ? id : "a unit not in view";
     }
 }
