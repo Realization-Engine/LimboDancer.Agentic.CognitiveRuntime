@@ -3,7 +3,7 @@
    sides read it, but a group setting up out of the viewer's sight shows only its status (ruling R23.3); where a unit set up is not here. *@
 <table id="setup-pools" class="library">
     <caption>The card's OB, group by group (A2.9; rulings R19.1 to R19.6)@(Report.CurrentOrder is { } now ? $": order {now} is setting up now" : ": every group has set up")</caption>
-    <thead><tr><th>Order</th><th>Side</th><th>OB group</th><th>Status</th><th>Still to set up</th><th>"?" left</th><th>Where</th></tr></thead>
+    <thead><tr><th>Order</th><th>Side</th><th>OB group</th><th>Status</th><th>Still to set up</th><th>"?" left</th><th>Where</th>@if (MaySetUp.Count > 0) { <th>Set up</th> }</tr></thead>
     <tbody>
         @foreach (var group in Report.Groups.OrderBy(group => group.Order))
         {
@@ -16,6 +16,16 @@
                     : group.SetsUp && !group.Complete ? "the counters its SSR names (see Where); both HS of a Deployed squad in one proposal" : "-")@(group.OffBoard.Count > 0 ? $"; off board to enter: {string.Join(", ", group.OffBoard.Select(need => $"{need.Count} {DefinitionLabel(need.Definition)}"))}" : string.Empty)</td>
                 <td>@(OutOfSight.Contains(group.Id) ? "-" : group.DummiesLeft)</td>
                 <td>@string.Join("; ", group.Areas.Select(AreaText))</td>
+                @if (MaySetUp.Count > 0)
+                {
+                    <td>
+                        @if (MaySetUp.Contains(group.Id))
+                        {
+                            <button type="button" class="setup-group" id="@($"setup-group-{group.Id}")" aria-label="@($"Set up this group: {group.Name}")"
+                                    title="Fills the list below with one row for each counter the group still has to set up." @onclick="@(() => OnSetUp.InvokeAsync(group.Id))">Set up this group</button>
+                        }
+                    </td>
+                }
             </tr>
         }
     </tbody>
@@ -28,6 +38,13 @@
     /// <summary>The OB groups setting up out of the viewer's sight (ruling R23.3): they show only their status.</summary>
     [Parameter]
     public IReadOnlySet<string> OutOfSight { get; set; } = new HashSet<string>();
+
+    /// <summary>The groups the viewer may set up now (pass 30): each gets a "Set up this group" button, which fills the setup list from what it still owes.</summary>
+    [Parameter]
+    public IReadOnlySet<string> MaySetUp { get; set; } = new HashSet<string>();
+
+    [Parameter]
+    public EventCallback<string> OnSetUp { get; set; }
 
     /// <summary>A catalog definition in words, such as "4-6-7 squad".</summary>
     [Parameter]

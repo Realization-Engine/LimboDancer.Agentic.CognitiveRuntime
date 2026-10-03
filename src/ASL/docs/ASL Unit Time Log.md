@@ -862,3 +862,13 @@ Claude Design's analysis of the Studio (2026-10-02, the user's PDF). Small tasks
 | 11. The full local suite (Play 615, Rules 484, the Studio 264, and the other eight projects, all passing) and the review, design, plan, and backlog documents | 09:27 | 09:47 | 0:20 | |
 | 12. The commit, the chart supplement regeneration (identical), and the first Docker Linux check: 9 Studio tests failed in the container | 09:47 | 10:03 | 0:16 | The tests raced once a proposal's result arrived on another thread |
 | 13. `ImmediateProposals` for the Play page tests, the Studio's tests again (264), the second Docker check (every step exit 0), the last documents, the merge, the push, and CI | 10:03 | 10:30 | 0:27 | Pass 29 and the UI batch: 1:48 in this session, 4:08 in all |
+
+
+## Pass 30: Prepared setups
+
+Added by the user on 2026-10-03. Estimate 5:45 (build 4:30). Branch `feature/asl-backlog-pass-30`. The Studio is the only test through tasks 30.1 to 30.5 and the reviews; the unit tests and the merge gate come once the Studio check of the pass has passed.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Preparation, read-only: the plan's pass 30 and section 15.11, the pass 29 design, backlog sections 37 and 45, the card code, Play's setup, the four built-in cards; the pass 30 design with draft decisions and four questions | 11:55 | 11:59 | 0:04 | Stopped for the user's answers; all four as recommended |
+| 30.1 The setup list from the card: "Start the game, then set up on the map" (a start with no counter, the view opening as the side that sets up first, behind the hand-over), "Set up this group" in the OB table, rows whose Location, holder, facing, "?", and off-board state are changed in the list; checked in my Studio (6670) on The Guards Counterattack and Armor Test | 12:04 | 12:13 | 0:09 | Writes confirmed with the first edit |
