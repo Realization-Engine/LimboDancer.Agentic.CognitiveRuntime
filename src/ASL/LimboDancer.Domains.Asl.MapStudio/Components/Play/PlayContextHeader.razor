@@ -19,7 +19,7 @@
             }
             @if (HasCard)
             {
-                <a id="play-card-link" href="@CardHref">Card and Victory Conditions</a>
+                <a id="play-card-link" href="@CardHref" @onclick="@(() => OpenCard.InvokeAsync())" @onclick:preventDefault>Card and Victory Conditions</a>
             }
         </div>
         <NightWeatherSummary Text="@Conditions" />
@@ -83,6 +83,10 @@
     /// <summary>The page's own address with the card panel's fragment, so the link stays on the page.</summary>
     [Parameter]
     public string CardHref { get; set; } = "#play-card";
+
+    /// <summary>Opens the card panel and brings it into view; the panel starts closed (pass 29).</summary>
+    [Parameter]
+    public EventCallback OpenCard { get; set; }
 
     /// <summary>The pending proposal's title; null when none is pending.</summary>
     [Parameter]

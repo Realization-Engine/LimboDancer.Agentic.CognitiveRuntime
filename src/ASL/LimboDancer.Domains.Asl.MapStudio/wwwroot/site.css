@@ -1796,13 +1796,15 @@ details.advanced > summary {
     border-radius: var(--radius);
 }
 
-/* A pane brought into view stops below the sticky context, not under it. */
-.play-pane {
+/* A pane or the scenario card brought into view stops below the sticky context, not under it. */
+.play-pane,
+#play-card {
     scroll-margin-top: calc(var(--play-context-height, 6rem) + 0.75rem);
 }
 
 @media (max-width: 1023.98px) {
-    .play-pane {
+    .play-pane,
+    #play-card {
         scroll-margin-top: 0.75rem;
     }
 }

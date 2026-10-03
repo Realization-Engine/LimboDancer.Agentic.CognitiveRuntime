@@ -850,3 +850,4 @@ Claude Design's analysis of the Studio (2026-10-02, the user's PDF). Small tasks
 |---|---|---|---|---|
 | Reading the analysis (8 pages) and sorting its findings | 22:00 | 22:10 | 0:10 | Approximate start |
 | 1. `DisplayText`: sides as on the counters, Yes and No, kinds without `asl:`, board statuses in words, Locations as "F6 on bd01"; applied to Play's context, notes, hand-over, view picker, and non-OB labels, the Game states page, the board headers, and the inspector; checked in my Studio (6670) | 22:12 | 22:18 | 0:06 | |
+| 2. The scenario card on Play starts closed; the context's "Card and Victory Conditions" link opens it below the context and focuses its title; the duplicate `play-card-link` id renamed in the card (`play-card-whole`); checked in my Studio: the workspace starts at 168px instead of about 830 | 22:18 | 22:22 | 0:04 | |

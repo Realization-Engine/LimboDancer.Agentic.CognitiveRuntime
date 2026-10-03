@@ -3,7 +3,8 @@
 @* K06 (plan sections 13.6, 16.16): the card a game started from, as the game reads it now: its turns, the Balance, the game's end (K07), the OB groups,
    the Victory Conditions and their standing for the view (K08; ruling R23.4), the SSRs, and its provenance; or what the game recorded when the card is
    gone. Everything here is printed on the card or known to both sides but the standing, which arrives already read for the view. *@
-<details id="play-card" open>
+@* The UX analysis (pass 29): the card starts closed, so the workspace and its map come first; the context's link opens it. *@
+<details id="play-card">
     <summary>Scenario card: @Scenario.Title</summary>
     @if (Card is { } card)
     {
@@ -32,7 +33,7 @@
                                   IfEndedNow="@(KnownTo is null && Ended is null ? victory.AtEnd.Winner is { } leader ? $"{leader} would win" : "it would be a draw" : null)" />
         }
         <CardSpecialRulesList Id="play-card-ssr" Rules="@card.SpecialRules" />
-        <a id="play-card-link" href="units/scenarios?card=@Scenario.Id">The whole card</a>
+        <a id="play-card-whole" href="units/scenarios?card=@Scenario.Id">The whole card</a>
         @if (Provenance is { } provenance)
         {
             <CardProvenancePanel Id="play-card-provenance" Model="@provenance" />

@@ -15,6 +15,19 @@ export async function reveal(element) {
     element.focus({ preventScroll: true });
 }
 
+// Opens a disclosure by id and brings it into view (pass 29: the scenario card starts closed, and the context's link opens it).
+export function openDetails(id) {
+    const details = document.getElementById(id);
+    if (!details) {
+        return;
+    }
+
+    details.open = true;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    details.scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smooth" });
+    details.querySelector("summary")?.focus({ preventScroll: true });
+}
+
 // The workspace fills the window below the sticky context, whose height changes with its content and the window's width (UI review, pass 28c):
 // the context's height is kept in a custom property the stylesheet reads. Only a measurement is written here.
 let contextWatcher = null;
