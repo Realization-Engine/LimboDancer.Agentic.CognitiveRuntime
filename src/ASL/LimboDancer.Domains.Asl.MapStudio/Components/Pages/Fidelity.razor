@@ -6,6 +6,7 @@
 @inject FidelityJobRunner Runner
 @inject FidelityReportStore Store
 @inject StudioLos Los
+@inject IBoardProvider Boards
 
 <PageTitle>Fidelity - ASL Map Studio</PageTitle>
 
@@ -29,6 +30,11 @@ else
 @if (report is not null)
 {
     var summary = report.Summary;
+    @if (FidelityJobRunner.StaleReason(report, Boards.CatalogBlob) is { } stale)
+    {
+        @* The UX analysis (2026-10-02): a report made with older tools says so, since the library no longer uses its results. *@
+        <p id="fidelity-stale" class="diagnostic warning">This report is out of date: @stale. The board library does not use its results; run the batch again.</p>
+    }
     <BoardScopeSummary Id="fidelity-totals" InScope="@(summary.Boards - summary.OutOfScope)" Verified="@summary.Verified" Ingested="@summary.Ingested"
                        Failed="@summary.Failed" OutOfScope="@summary.OutOfScope" />
     <FidelityReportMetadata Report="@report" />

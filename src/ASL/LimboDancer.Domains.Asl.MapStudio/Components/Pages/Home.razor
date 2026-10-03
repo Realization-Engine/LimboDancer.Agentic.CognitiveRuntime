@@ -83,7 +83,15 @@ else
             <p class="toolbar">
                 @if (Runner.Latest is { } latest)
                 {
-                    <span class="muted">Unopened boards show results from the fidelity report of @latest.Report.StartedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture) when their sources and tools are unchanged.</span>
+                    var made = latest.Report.StartedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture);
+                    @if (FidelityJobRunner.StaleReason(latest.Report, Boards.CatalogBlob) is { } stale)
+                    {
+                        <span class="muted" id="library-report-stale">The fidelity report of @made is not used: @stale, so unopened boards show "Not checked".</span>
+                    }
+                    else
+                    {
+                        <span class="muted">Unopened boards show results from the fidelity report of @made when their sources and tools are unchanged.</span>
+                    }
                 }
                 <a href="fidelity">Run the fidelity batch</a>
             </p>

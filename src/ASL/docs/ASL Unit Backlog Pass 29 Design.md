@@ -161,3 +161,15 @@ Built 2026-10-02 from Claude Design's UX analysis (the user's PDF), with task 29
 - **Historical.** Below the game's latest revision the banner adds a "Historical" badge: an earlier revision is not the game's current state.
 
 Checked in the Studio on port 6670: a hex located on Play put `hex=bd01:E5:0` in the link; the viewer opened with E5 picked; Previous showed "revision 35 of 36" with Historical, Next took it away.
+
+## 12. From the UX analysis: words, the card, and verification counts
+
+Built 2026-10-02 from Claude Design's UX analysis (the user's PDF), in the order the user approved, each checked in the Studio on port 6670.
+
+- **Words for identifiers** (`DisplayText`, Services). A side reads as its counters name it ("German"); Good Order as Yes, No, or unknown; a kind without `asl:`; a board's status in words ("Authored, valid"); a Location as "F6 on bd01", with its id beside it in the non-OB lists. Play's context, notes, hand-over, and view picker, the Game states page, the board headers, and the inspector use it. The identifiers themselves are unchanged.
+- **The scenario card on Play starts closed.** The context's "Card and Victory Conditions" opens it below the sticky context and focuses its title, so the workspace starts near the top of the page (168 pixels at 1920x1080, from about 830). The card's own link to the whole card has its own id now (`play-card-whole`).
+- **Verification counts.** The library and the Fidelity page disagreed (236 against 158 boards in scope, 4 against 156 verified) because the latest report, of 24 Sep, was made with importer 1.0.0 and the importer has been 1.1.0 since commit e6bc0fb the same evening; the library rightly refused its results, and the Fidelity page showed them without saying so. Now:
+  - `FidelityJobRunner.StaleReason` words why a report is out of date (a tool's version or the shared board metadata changed); the library's freshness check uses it.
+  - The Fidelity page says a report is out of date and that the library does not use it; the library says why it shows "Not checked".
+  - The batch was run again (1.9 minutes): 297 boards, 235 verified, 1 failed (bd79: its `BoardMetadata.xml` is not well-formed), 61 out of scope. Both pages now show 236 in scope, 235 verified, and 1 failed.
+  - The library still counts 5 fewer boards out of scope (56 against 61): it lists only boards whose names make a board reference, and the five with an underscore (bdAF_BiazzaRidge and bdFB_NE, NW, SE, SW) do not; all five are out of scope.
