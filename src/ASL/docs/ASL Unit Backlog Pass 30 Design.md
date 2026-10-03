@@ -308,6 +308,69 @@ The plan uses all 18 "?": 7 for its concealed stacks and 11 Dummies.
 
 The plan uses all 18 "?": 6 for its concealed stacks and 12 Dummies.
 
+### 7.4 Armor Test: the Russians (the rearguard)
+
+Made 2026-10-03 from the Studio's terrain and LOS on board 04 (LOS definitive), read with the scratchpad script, with sixteen of the cited lines checked again in my Studio's LOS tab: all agreed. Each plan was chosen in the rebuilt page ("Use this plan", "Propose setup", Confirm) in a new game in my Studio (`r4-armor-1`, `r4-armor-2`, `r4-armor-3`), and the gate accepted each (7, 9, and 7 counters). The user kept one, Forward screen, on 2026-10-03: the card's file holds that plan alone. Centre block and Guard the exits are recorded below as considered and not kept.
+
+What the plans answer. The Russian rearguard (three 4-4-7 squads, an 8-1, a crew with a 45mm Gun, a T-34, and two "?") sets up first in the hexes numbered 5 to 10 of board 4. The German column (a halftrack, a PzKpfw IIIH, a truck towing an infantry gun, a crew, a squad, and an 8-1) enters along the north edge and wins by exiting 8 Exit VP off the south edge near G10, Q10, or Y10 within five turns. So the rearguard must cover three exits, twelve hexes apart, with seven counters.
+
+Facts every plan rests on:
+
+- The exits: G10 in the west, Q10 in the centre at the foot of the dirt road Q8-Q9-Q10, and Y10 in the east. The same road runs north through Q1 to Q4.
+- The Gun and its crew set up hidden, Emplaced in woods, in every plan: A12.34 allows it without an SSR (the card's SSR 3), and it uses none of the two "?".
+- The T-34 sets up on a road hex or in open ground, the terrain the game's vehicle rules cover.
+- No plan uses the Balance or Bore Sighting; both can be added by hand after a plan is chosen.
+
+**Plan 1: Centre block** (`centre-block`), not kept
+
+| | |
+|---|---|
+| The idea | Everything stands on the centre road, the shortest way to an exit: the Gun hidden in the woods at R7 beside the road, a squad and the 8-1 upstairs in the farmhouse, a squad in the house at P8, a squad in the woods at R8, and the T-34 on the road at Q9. |
+| What it gives up | The west exit is seen by no unit and the east exit only by the Gun at range 7; a column that goes round the centre is followed only by the T-34. |
+| Terrain facts | R7 is woods and sees the road hexes Q7 and Q8 at range 1, Q6 and Q9 at 2, Q5 at 3, and Q4 at 4; it sees Y10 at range 7 and not G10.<br>From level 1 of the farmhouse, P6 sees the whole road from Q1 (range 6) to Q10 (range 4).<br>P8, a wooden building, sees Q8 and Q9 at range 1 and Q10 at 2; R8, woods, sees Q8, Q9, and R9 at range 1 and Q10 at 2.<br>Q9 is a dirt road hex one hex from Q10. |
+
+| Hex | Counters |
+|---|---|
+| P6, level 1 | 4-4-7 squad, under "?"; 8-1 leader, under "?" |
+| P8 | 4-4-7 squad, under "?" |
+| Q9 | T-34 M41, facing north-west |
+| R7 | 2-2-8 crew, hidden; 45mm Gun, facing north-west, hidden |
+| R8 | 4-4-7 squad |
+
+**Plan 2: Guard the exits** (`guard-the-exits`), not kept
+
+| | |
+|---|---|
+| The idea | One unit waits at each exit, and the Gun covers two of them: the Gun hidden in the woods at U8, which sees both Q10 and Y10 at range 4, a squad and the 8-1 in P8 by the centre exit, a squad in X8 by the east exit, a squad in I10 and the T-34 at H8 by the west exit. The two Dummies stand in the woods at K9 and T9. |
+| What it gives up | Nothing is forward, so the column crosses the first hexrows without being fired on; each exit is held by one squad that the others cannot help, and the Gun faces one exit at a time. |
+| Terrain facts | U8 is woods and sees Q10, Y10, and X10 at range 4, R9 at 3, and the centre road at Q4 (range 6) and Q6 (range 4).<br>P8 sees Q10 at range 2; X8, a wooden building, sees Y10 and X10 at range 2; I10, a wooden building, sees G10 at range 2 and H9 at 1.<br>H8 is open ground and sees G10 at range 2 and H9 at 1.<br>K9 and T9 are woods, so a Dummy may stand there: K9 sees G10 at range 4, and T9 sees Q10 at range 3 and Y10 at 5. |
+
+| Hex | Counters |
+|---|---|
+| H8 | T-34 M41, facing north-east |
+| I10 | 4-4-7 squad |
+| K9 | Dummy |
+| P8 | 4-4-7 squad; 8-1 leader |
+| T9 | Dummy |
+| U8 | 2-2-8 crew, hidden; 45mm Gun, facing south-west, hidden |
+| X8 | 4-4-7 squad |
+
+**Plan 3: Forward screen** (`forward-screen`), kept
+
+| | |
+|---|---|
+| The idea | The column is met as it comes down the centre road: the Gun hidden in the woods at R5, a squad and the 8-1 in the woods at O5, a squad upstairs in the farmhouse, a squad back in the house at P8, and the T-34 on the road at Q8 to go where the column turns. |
+| What it gives up | The Gun and two squads stand ahead of the exits and cannot fall back fast; a column that gets by them has one squad and the T-34 between it and the edge, and the west and east exits are seen by no unit. |
+| Terrain facts | R5 is woods and sees R4 at range 1, Q4, R3, S4, and T4 at 2, Q3, R2, and S3 at 3, and Q2 at 4: the centre road as the column enters.<br>O5 is woods and sees P4, O4, and N4 at range 1, Q4, M4, N3, and P3 at 2, and Q3 at 3.<br>From level 1 of the farmhouse, P6 sees the whole road from Q1 (range 6) to Q10 (range 4).<br>Q8 is a dirt road hex; it sees Q7 at range 1 and Q6 and Q10 at 2. |
+
+| Hex | Counters |
+|---|---|
+| O5 | 4-4-7 squad, under "?"; 8-1 leader, under "?" |
+| P6, level 1 | 4-4-7 squad, under "?" |
+| P8 | 4-4-7 squad |
+| Q8 | T-34 M41, facing north-west |
+| R5 | 2-2-8 crew, hidden; 45mm Gun, facing north-west, hidden |
+
 ## 8. Studio checks
 
 Each task is checked in my Studio on port 6670 before it is committed; step 5 checks the whole pass.

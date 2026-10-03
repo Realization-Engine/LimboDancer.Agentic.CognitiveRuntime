@@ -1,0 +1,75 @@
+{
+  "format": "asl-setup-plans/1",
+  "card": "armor-test",
+  "plans": [
+    {
+      "id": "forward-screen",
+      "cardSha256": "8c51c9f87f7c84088c4e06d33fa3dc8fa33ee4d0659af4d1bf698e13217edc3b",
+      "side": "russian",
+      "name": "Forward screen",
+      "idea": "The column is met as it comes down the centre road: the Gun hidden in the woods at R5, a squad and the 8-1 in the woods at O5, a squad upstairs in the farmhouse, a squad back in the house at P8, and the T-34 on the road at Q8 to go where the column turns.",
+      "givesUp": "The Gun and two squads stand ahead of the exits and cannot fall back fast; a column that gets by them has one squad and the T-34 between it and the edge, and the west and east exits are seen by no unit.",
+      "terrain": [
+        "R5 is woods and sees R4 at range 1, Q4, R3, S4, and T4 at 2, Q3, R2, and S3 at 3, and Q2 at 4: the centre road as the column enters.",
+        "O5 is woods and sees P4, O4, and N4 at range 1, Q4, M4, N3, and P3 at 2, and Q3 at 3.",
+        "From level 1 of the farmhouse, P6 sees the whole road from Q1 (range 6) to Q10 (range 4).",
+        "Q8 is a dirt road hex; it sees Q7 at range 1 and Q6 and Q10 at 2.",
+        "The Gun and its crew set up hidden, Emplaced in woods, which A12.34 allows without an SSR (the card's SSR 3); the group has two \"?\" besides.",
+        "The Germans win by exiting 8 Exit VP off the south edge near G10 (the west), Q10 (the centre, at the foot of the dirt road Q8-Q9-Q10), or Y10 (the east); they enter along the north edge and have five turns."
+      ],
+      "placements": [
+        {
+          "id": "r-squad-1",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd04:O5:0",
+          "concealed": true
+        },
+        {
+          "id": "r-squad-2",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd04:P6:1",
+          "concealed": true
+        },
+        {
+          "id": "r-squad-3",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd04:P8:0",
+          "concealed": false
+        },
+        {
+          "id": "r-leader-8-1-1",
+          "definition": "defender-leader-8-1",
+          "group": "russian-1",
+          "at": "bd04:O5:0",
+          "concealed": true
+        },
+        {
+          "id": "r-crew-1",
+          "definition": "defender-crew",
+          "group": "russian-1",
+          "at": "bd04:R5:0",
+          "hidden": true
+        },
+        {
+          "id": "r-at-gun-1",
+          "definition": "defender-at-gun",
+          "group": "russian-1",
+          "at": "bd04:R5:0",
+          "holder": "r-crew-1",
+          "facing": "north-west",
+          "hidden": true
+        },
+        {
+          "id": "r-tank-1",
+          "definition": "defender-tank",
+          "group": "russian-1",
+          "at": "bd04:Q8:0",
+          "facing": "north-west"
+        }
+      ]
+    }
+  ]
+}
