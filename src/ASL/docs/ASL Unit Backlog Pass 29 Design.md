@@ -232,3 +232,18 @@ Run on 2026-10-03 against `git diff main...ui-improvements` at 5978e4e: a table 
 - Only Fidelity chips that failed or differ take the keyboard focus: with every board listed, focus on all chips made 940 tab stops.
 - Arrow-key panning and the Firefox check of a turned map are backlog rows: the first is a new feature, the second was not reproduced.
 - The board viewer's view on a live game stays as it is until the user decides (section 14, backlog section 45).
+
+## 16. Verification
+
+**The tests.** No unit test had run on the branch since main. On the committed batch 33 of the Studio's 264 tests failed; all were answered in the tests, none in the product's behavior:
+
+- The retired `PlaySelectedHex` test became `ATypedLocationOffersTheHexPickedOnTheMap`; the "LOS from a unit" test became `TheLosTabStartsFromThePickedHex`; the LOS and picked-hex tests read the inspector's ids (`play-inspector-tab-los`, `los-*`, `hex-units`); `#play-map` became `#play-panel-map`.
+- The narrow-width test expects the Actions tab after a commit.
+- Wording: sides as on the counters, Locations in words, "Verified (report)", the Fidelity page opening on the boards not verified, "Also check the Styled drawing (F3, slower)".
+- A proposal draws its busy state before the gate is asked (section 10). In a component test that wait moved the rest of the proposal to another thread, so a test's next click could be queued behind it and return before it was handled. On Windows the tests then passed once they waited for the outcome; in the Linux container 9 still failed. The Play page tests now register `ImmediateProposals` (in `PlayMaps.UseViewport`), a marker in Services that the Studio never registers: with it the page asks the gate without the wait (`DrawBusy` in Play). The wait itself is therefore checked in the Studio, not by a unit test.
+
+**The local suite**, after one solution build with warnings as errors (0 warnings): Play 615, Rules 484, the Studio 264, Units 408, Units.Rendering 352, Maps 244, Authoring 167, Maps.Vasl 121 (28 skipped), Maps.Rendering 34 (2 skipped), Dice 24, Units.CounterSheets 19; no failure.
+
+**The Docker Linux check** (`docker_check.sh ui-improvements`): on commit 3c79885 the restore, the build, and both regenerations passed and 9 Studio tests failed, as above; on commit 46a15a6 every step reports exit 0, with the same counts as the local suite.
+
+**The chart supplement** regenerates identical to the committed `asl-scenario-a1.supplementary-source-registry.json` (compared as sorted JSON). Authoring did not change in this pass.

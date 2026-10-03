@@ -77,4 +77,4 @@ Backlog section 45 holds what the pass leaves: the fire panels' Locations from t
 
 ## Verification
 
-The design's section 16 has the suite's numbers, the Docker check, and the chart supplement.
+The design's section 16 has the suite's numbers, the Docker check, and the chart supplement. The Docker check found one thing the local suite did not: 9 Studio tests raced in the Linux container, which `ImmediateProposals` answers for the Play page tests.
