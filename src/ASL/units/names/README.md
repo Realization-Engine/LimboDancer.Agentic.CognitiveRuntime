@@ -80,7 +80,7 @@ No regression test suite is added in this change. A future suite should cover:
 
 ### Running the checks
 
-From the worktree root, using PowerShell 7 and Python 3:
+From the worktree root, using PowerShell 7 and the .NET 10 SDK:
 
 ```powershell
 ./src/ASL/tools/name-pools/validate.ps1
@@ -89,10 +89,10 @@ From the worktree root, using PowerShell 7 and Python 3:
 For cross-file integrity checks alone:
 
 ```text
-python src/ASL/tools/name-pools/validate.py
+dotnet run --project src/ASL/tools/name-pools/NamePoolValidation.csproj -- src/ASL/units/names
 ```
 
-Checks include schema conformance, duplicate JSON keys, ID and normalized text uniqueness, positive weights, component roles, ordering, subgroup membership, valid combination capacities, pool and force references, actual counts, target-completion claims, and manifest SHA-256 values.
+Checks include schema conformance, duplicate JSON keys, ID and normalized text uniqueness, positive weights, component roles, ordering, subgroup membership, valid combination capacities, pool and force references, actual counts, target-completion claims, and manifest SHA-256 values. The C# integrity validator compares names after NFC normalization and invariant uppercase conversion, using ordinal comparison.
 
 The validator does not verify historical popularity, linguistic correctness, or a person's ethnicity. `reviewStatus` stays `editorial-draft` until a recorded content review supports changing it. The convention sources support structural choices, not every name in these inventories. The American given-name list uses the public SSA 1900-1909 male top-100 table; its surname list and the other pools remain editorial compilations.
 

@@ -1,9 +1,8 @@
 param(
-    [string]$Directory = (Join-Path $PSScriptRoot '../../units/names'),
-    [string]$Python = 'python'
+    [string]$Directory = (Join-Path $PSScriptRoot '../../units/names')
 )
 
-# PowerShell 7 supplies Test-Json; the Python integrity check uses only its standard library.
+# PowerShell 7 supplies Test-Json; the C# integrity check uses the .NET 10 SDK.
 $ErrorActionPreference = 'Stop'
 $nameRoot = (Resolve-Path -LiteralPath $Directory).Path
 $manifestPath = Join-Path $nameRoot 'manifest.json'
@@ -17,7 +16,7 @@ foreach ($nameFile in Get-ChildItem -LiteralPath $nameRoot -Filter '*.names.json
         throw "Pool does not conform to its schema: $($nameFile.Name)"
     }
 }
-& $Python (Join-Path $PSScriptRoot 'validate.py') --directory $nameRoot
+& dotnet run --project (Join-Path $PSScriptRoot 'NamePoolValidation.csproj') --configuration Release --disable-build-servers -- $nameRoot
 if ($LASTEXITCODE -ne 0) {
     throw 'Name-pool integrity checks failed.'
 }
