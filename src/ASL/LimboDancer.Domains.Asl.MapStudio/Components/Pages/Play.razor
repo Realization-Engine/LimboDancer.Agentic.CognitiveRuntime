@@ -863,7 +863,7 @@ else if (state is not null)
     private (string? Game, string? Card, string? Sha256, SetupPlansRead? Read) planCache;
 
     /// <summary>
-    /// The prepared setups offered now (pass 30; ruling R23.3): only in the view of the side that sets up first, never the other side's or the
+    /// The setup plans offered now (pass 30; ruling R23.3): only in the view of the side that sets up first, never the other side's or the
     /// adjudicator's, while the groups a plan places are setting up. Null when none is offered; a setups file that cannot be read gives its reasons.
     /// </summary>
     private (IReadOnlyList<SetupPlan> Plans, IReadOnlyList<string> Problems)? PlansOffered

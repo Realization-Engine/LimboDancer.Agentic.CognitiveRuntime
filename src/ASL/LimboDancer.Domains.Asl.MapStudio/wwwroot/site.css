@@ -1772,7 +1772,7 @@ details.advanced > summary {
     color: var(--muted);
 }
 
-/* Pass 30: the card's prepared setups, offered to the side that sets up first. */
+/* Pass 30: the card's setup plans, offered to the side that sets up first. */
 .setup-plans {
     margin: 0.75rem 0;
 }

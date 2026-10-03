@@ -295,7 +295,7 @@ Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (backlog sect
 
 ### Pass 30: Prepared setups
 
-**Added 2026-10-03** at the user's word, as the next pass before DYO. A scenario card gains up to three prepared setups for the side that sets up first, made offline with AI from the card, its boards' terrain and LOS, its Victory Conditions, and its SSRs, then reviewed by the user. When a game starts from the card, that side may choose a setup, adjust it on the map, or set up by hand as before. A setup places the card's fixed OB; it never changes the OB.
+**Added 2026-10-03** at the user's word, as the next pass before DYO. A scenario card gains up to three prepared setups, called setup plans, for the side that sets up first, made offline with AI from the card, its boards' terrain and LOS, its Victory Conditions, and its SSRs, then reviewed by the user. When a game starts from the card, that side may choose a setup, adjust it on the map, or set up by hand as before. A setup places the card's fixed OB; it never changes the OB.
 
 **Purpose:** setting up from a card without retyping every counter. **After:** pass 29. **From:** the user's request of 2026-10-02.
 

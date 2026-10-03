@@ -15,7 +15,7 @@ public sealed record SetupPlanPlacement(string Id, string? Definition = null, st
     bool Dummy = false, bool Concealed = false, bool Hidden = false, bool OffBoard = false, string? Entry = null, string? BoreSighted = null);
 
 /// <summary>
-/// A prepared setup for the side that sets up first (pass 30 of the Card Play and Map Studio Redesign Plan): its name, its idea, what it gives up, the
+/// A setup plan for the side that sets up first (pass 30 of the Card Play and Map Studio Redesign Plan): its name, its idea, what it gives up, the
 /// terrain facts it rests on, and its placements; and the SHA-256 of the card text it was made for. It places the card's fixed OB and never changes it.
 /// </summary>
 public sealed record SetupPlan(string Id, string CardSha256, string Side, string Name, string Idea, string GivesUp, IReadOnlyList<string> Terrain,

@@ -1,16 +1,16 @@
 @using LimboDancer.Domains.Asl.Play
-@* Pass 30: the card's prepared setups for the side that sets up first. The page shows this only in that side's view, while it sets up (ruling
+@* Pass 30: the card's setup plans for the side that sets up first. The page shows this only in that side's view, while it sets up (ruling
    R23.3). Each plan says what it is for, what it gives up, and the terrain facts it rests on; "Use this plan" fills the setup list, which is then
    adjusted and proposed like any setup, so the gate checks it. *@
 <fieldset id="setup-plans" class="setup-plans">
-    <legend>Prepared setups for @Side</legend>
+    <legend>Setup plans for @Side</legend>
     @if (Problems.Count > 0)
     {
-        <p id="setup-plans-problem" class="diagnostic warning">The card's setups file cannot be read, so it offers no plan: @string.Join("; ", Problems) Set up by hand as before.</p>
+        <p id="setup-plans-problem" class="diagnostic warning">The card's setup plans file cannot be read, so it offers no setup plan: @string.Join("; ", Problems) Set up by hand as before.</p>
     }
     else
     {
-        <p class="muted" id="setup-plans-help">A plan fills the list below with the whole setup. Adjust it in the list or on the map, then propose it: the game checks it like any setup.</p>
+        <p class="muted" id="setup-plans-help">A setup plan fills the list below with the whole setup. Adjust it in the list or on the map, then propose it: the game checks it like any setup.</p>
         @foreach (var plan in Plans)
         {
             var chosen = plan.Id == Chosen;

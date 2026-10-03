@@ -6,6 +6,8 @@
 
 **Related documents:** the plan's section 15.11; the [pass 29 design](<ASL Unit Backlog Pass 29 Design.md>); the [ASL Unit Backlog](<ASL Unit Backlog.md>), sections 37 and 45; the [pass 30 handover prompt](<ASL Pass 30 Handover Prompt.md>).
 
+**The name.** The thing is a "setup plan" everywhere: in the page, the code (`SetupPlan`), the file (`<card id>.setups.json`), and the documents; "plan" alone is its short form. The user settled this on 2026-10-03. "Deployment plan" is not used: to Deploy is the rules' word for splitting a squad into two half-squads (A1.31), and A2.9 Deployment is itself checked at setup. The pass keeps its title, "Prepared setups", as the plan and the handover prompt name it.
+
 A Studio pass adds no rulings. The gate's setup checks (rulings R19.1 to R19.6, R20.4 to R20.7, R23.3, R23.5, R23.6, R25.4, R26.1 to R26.5) are unchanged; the pass only fills the setup list faster and offers prepared lists.
 
 ## 1. Outcome
@@ -16,7 +18,7 @@ After the pass:
 
 - "Set up this group" fills the setup list with one row per counter the group still owes.
 - A row's Location is picked on the map.
-- A card may carry up to three prepared setups (plans) for the side that sets up first. That side chooses one, adjusts it on the map, and proposes it. The gate checks it like any setup.
+- A card may carry up to three setup plans for the side that sets up first. That side chooses one, adjusts it on the map, and proposes it. The gate checks it like any setup.
 - Each of the four built-in cards has up to three plans, reviewed by the user one card at a time.
 
 A plan places the card's fixed OB and never changes it. Adding plans never changes a card's hash or its saved games.
@@ -346,7 +348,7 @@ Asked 2026-10-03. The user took the recommended answer to each.
 **The flow as built:**
 
 1. A new game: the card, an id, "Start the game, then set up on the map", Confirm, then the hand-over to the side that sets up first.
-2. In that side's view, the Setup block of the actions pane shows "Prepared setups": one card per plan, with its name, idea, what it gives up, its terrain facts (collapsed), and "Use this plan".
+2. In that side's view, the Setup block of the actions pane shows "Setup plans": one card per plan, with its name, idea, what it gives up, its terrain facts (collapsed), and "Use this plan".
 3. "Use this plan" fills the setup list with the plan's rows and marks the plan "In the list". Nothing is in the game yet.
 4. The map outlines each hex the list names, with the number of counters the list puts there.
 5. "Use this plan" on another card replaces the list, and the outlines move.
