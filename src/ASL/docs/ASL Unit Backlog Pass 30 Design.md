@@ -365,6 +365,25 @@ Asked 2026-10-03. The user took the recommended answer to each.
 | Plans cannot be compared as counters | Seeing a plan as counters means confirming it, which is final; each plan's screenshot for the user needed its own game |
 | A side's own Dummies are not drawn on the map | In the game and the units table, but not on the map (so before pass 30); a plan that leans on Dummies looks empty where they stand |
 
+**The second walk-through, 2026-10-03.** Claude Design cannot reach the Studio, so Claude Code walked the flow again and took 29 screenshots for it (S1 to S28 and S20b), each sent to the user with what it shows: The Guards Counterattack at 1366x768 from the new game to the committed setup and the other views (S1 to S16), a reload in the middle of setup (S17, S18), Gambit (S19, S20, S20b), The Tractor Works' Dummies (S21), the same flow at 1920x1080, 800x900, and 320x640 (S22 to S27), and the keyboard (S28). The images are not in the repository. It found, beyond the table above:
+
+| Problem | What was seen |
+|---|---|
+| A reload forgets the game | A game started with "Start the game, then set up on the map" does not put its id in the address, so a reload opens the empty new-game form (S17) |
+| A game reopened in setup opens on the wrong side | Chosen again in "Game", it waits behind the hand-over of the side that moves first, not the side setting up; that view has no plans (S18) |
+| A map pick drops the level | "Pick on the map" fills ground level, so a row at `bd01:G6:1` became `bd01:F6:0` without saying so (S9) |
+| Another plan discards the adjustments | "Use this plan" replaces the list without a question (S10) |
+| A refusal does not lead to its row | The reasons name a counter id and a Location; the row is not marked or linked, and is up to 2,000 pixels away (S13) |
+| The review says little | "play.setup: 26 event(s)"; it does not name the plan (S12) |
+| Nothing says the setup is final | After Confirm the plans and the list are simply gone (S14) |
+| The setup's button sits among the next actions | "Propose setup" is followed at once by "Propose: end the Rally Phase" while setup is open (S8) |
+| Narrow windows split the task over tabs | Choosing a plan leaves the page on the Actions tab; the outlines are on the Map tab (S24, S25) |
+| The outline's number leaves out SW | Gambit's five counters on the map show as 1 and 2 (S19) |
+| A row offers "?" where the card forbids it | Gambit's five on-board counters (S20) |
+| Rows read as ids | "g-squad-1: attacker-squad (german-1)", not the counter's printed values (S7) |
+
+Two things read better than expected: at 800 pixels the three plans fit one screen, because the actions take the page's width (S24); and by keyboard the first "Use this plan" is 13 Tab presses from the top of the page, since Tab skips the OB table (S28).
+
 **Claude's proposals, not built, for the review to weigh:**
 
 - A. The picker first in the Setup block, above the OB table, with the OB table collapsed while plans are offered.
