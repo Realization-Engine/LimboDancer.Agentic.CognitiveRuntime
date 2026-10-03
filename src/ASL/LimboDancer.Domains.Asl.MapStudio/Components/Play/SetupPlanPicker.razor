@@ -1,8 +1,9 @@
 @using LimboDancer.Domains.Asl.Play
-@* Pass 30: the card's setup plans for the side that sets up first, as the Plans tab of the setup mode. The page shows this only in that side's view,
+@* Passes 30 and 30b: the card's setup plans for the side setting up, as the Plans tab of the setup mode. The page shows this only in that side's view,
    while it sets up (ruling R23.3). A card is compact: the plan's name, the first lines of its idea, and what it gives up; "More" holds the whole
    idea and the terrain facts. "Show on map" draws the plan on the map and leaves the list alone; "Use this plan" fills the list, which is then
-   adjusted and proposed like any setup, so the gate checks it. *@
+   adjusted and proposed like any setup, so the gate checks it. For a side that sets up after the other (pass 30b) the plans stand in groups, one
+   for each plan of the other side, in the order of how closely that plan matches the stacks the viewer sees; every plan is always offered. *@
 <div id="setup-plans" class="setup-plans" role="group" aria-label="@($"Setup plans for {Side}")">
     @if (Problems.Count > 0)
     {
@@ -10,70 +11,65 @@
     }
     else
     {
-        <p class="muted" id="setup-plans-help">"Show on map" draws a setup plan without touching your list. "Use this plan" fills your list with it; then adjust it and propose it. The game checks it like any setup.</p>
-        @foreach (var plan in Plans)
+        <p class="muted" id="setup-plans-help">"Show on map" draws a setup plan without touching your list. "Use this plan" fills your list with it; then adjust it and propose it. The game checks it like any setup. Setup plans are public, like the card.</p>
+        @if (Groups.Count == 0)
         {
-            var chosen = plan.Id == Chosen;
-            var shown = plan.Id == Shown;
-            <article class="@(chosen ? "setup-plan chosen" : shown ? "setup-plan shown" : "setup-plan")" data-plan="@plan.Id" aria-labelledby="@($"setup-plan-{plan.Id}-name")">
-                <h4 id="@($"setup-plan-{plan.Id}-name")">
-                    @plan.Name
-                    @if (chosen)
+            @foreach (var plan in Plans)
+            {
+                @PlanCard(plan)
+            }
+        }
+        else
+        {
+            <p class="muted" id="setup-plans-match">Based on the stacks you can see. Dummies and hidden units can mislead it.</p>
+            @foreach (var group in Groups)
+            {
+                <details class="@(group.Closest ? "setup-plan-group closest" : "setup-plan-group")" id="@($"setup-plan-group-{group.Key}")" data-group="@group.Key" open="@(group.Open)">
+                    <summary>
+                        <span class="setup-plan-group-title">@group.Title</span>@if (group.Score is { Length: > 0 })
+                        {
+                            <span class="setup-plan-group-score">: @group.Score</span>
+                        }
+                        @if (group.Closest)
+                        {
+                            <span class="status-badge pass">Closest to what you see</span>
+                        }
+                    </summary>
+                    @if (group.Their is { } their)
                     {
-                        <span class="status-badge pass">@(Changes > 0 ? (Changes == 1 ? "In your list, 1 change" : $"In your list, {Changes} changes") : "In your list")</span>
+                        <p class="setup-plan-their"><strong>Their plan, @their.Name:</strong> @their.Idea <strong>Gives up:</strong> @their.GivesUp</p>
                     }
-                    @if (shown)
+                    @if (group.Plans.Count == 0)
                     {
-                        <span class="status-badge info">Shown on the map</span>
+                        <p class="muted setup-plan-none">No response written. Use the plan for any setup, or set up by hand.</p>
                     }
-                    @if (Earlier.Contains(plan.Id))
+                    @foreach (var plan in group.Plans)
                     {
-                        <span class="status-badge warning">Made for an earlier version of this card</span>
-                    }
-                </h4>
-                <p class="setup-plan-idea">@plan.Idea</p>
-                <p class="setup-plan-gives-up"><strong>Gives up:</strong> @plan.GivesUp</p>
-                <div class="toolbar">
-                    <button type="button" id="@($"show-plan-{plan.Id}")" aria-pressed="@(shown ? "true" : "false")" aria-label="@($"Show on map: {plan.Name}")"
-                            @onclick="@(() => OnShow.InvokeAsync(plan.Id))">@(shown ? "Shown on the map" : "Show on map")</button>
-                    @if (chosen && Changes > 0)
-                    {
-                        <button type="button" id="@($"use-plan-{plan.Id}")" aria-label="@($"Reset your list to {plan.Name}")" @onclick="@(() => OnUse.InvokeAsync(plan.Id))">Reset to @plan.Name</button>
-                    }
-                    else if (!chosen)
-                    {
-                        <button type="button" id="@($"use-plan-{plan.Id}")" aria-label="@($"Use this plan: {plan.Name}")" @onclick="@(() => OnUse.InvokeAsync(plan.Id))">Use this plan</button>
-                    }
-                </div>
-                <details>
-                    <summary>More</summary>
-                    <p>@plan.Idea</p>
-                    @if (Earlier.Contains(plan.Id))
-                    {
-                        <p class="setup-plan-earlier">The card has changed since this plan was made. It is still offered, and the game checks it when it is proposed.</p>
-                    }
-                    @if (plan.Terrain.Count > 0)
-                    {
-                        <ul>
-                            @foreach (var fact in plan.Terrain)
-                            {
-                                <li>@fact</li>
-                            }
-                        </ul>
+                        @PlanCard(plan)
                     }
                 </details>
-            </article>
+            }
         }
     }
 </div>
 
 @code {
+    /// <summary>
+    /// The plans that answer one plan of the other side (pass 30b), or those for any setup: how the group reads, how closely the answered plan matches
+    /// the stacks the viewer sees, the answered plan's own public text, and the group's plans.
+    /// </summary>
+    public sealed record Group(string Key, string Title, string? Score, bool Closest, bool Open, SetupPlan? Their, IReadOnlyList<SetupPlan> Plans);
+
     /// <summary>The side the plans are for, in words.</summary>
     [Parameter, EditorRequired]
     public string Side { get; set; } = string.Empty;
 
     [Parameter]
     public IReadOnlyList<SetupPlan> Plans { get; set; } = [];
+
+    /// <summary>The plans in groups, for a side that sets up after the other; empty for the side that sets up first, whose plans are listed as they are.</summary>
+    [Parameter]
+    public IReadOnlyList<Group> Groups { get; set; } = [];
 
     /// <summary>Why the card's setups file is refused; empty when it was read.</summary>
     [Parameter]
@@ -95,10 +91,83 @@
     [Parameter]
     public IReadOnlySet<string> Earlier { get; set; } = new HashSet<string>();
 
+    /// <summary>The plans made for other placements of the plan they answer than it has now, each with that plan's name.</summary>
+    [Parameter]
+    public IReadOnlyDictionary<string, string> EarlierAnswers { get; set; } = new Dictionary<string, string>();
+
+    /// <summary>What each plan tells the other side when it is set up unchanged, since the plans are public; a plan with nothing to tell has no entry.</summary>
+    [Parameter]
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> GivesAway { get; set; } = new Dictionary<string, IReadOnlyList<string>>();
+
     [Parameter]
     public EventCallback<string> OnUse { get; set; }
 
     [Parameter]
     public EventCallback<string> OnShow { get; set; }
 
+    private RenderFragment PlanCard(SetupPlan plan) => __builder =>
+    {
+        var chosen = plan.Id == Chosen;
+        var shown = plan.Id == Shown;
+        <article class="@(chosen ? "setup-plan chosen" : shown ? "setup-plan shown" : "setup-plan")" data-plan="@plan.Id" aria-labelledby="@($"setup-plan-{plan.Id}-name")">
+            <h4 id="@($"setup-plan-{plan.Id}-name")">
+                @plan.Name
+                @if (chosen)
+                {
+                    <span class="status-badge pass">@(Changes > 0 ? (Changes == 1 ? "In your list, 1 change" : $"In your list, {Changes} changes") : "In your list")</span>
+                }
+                @if (shown)
+                {
+                    <span class="status-badge info">Shown on the map</span>
+                }
+                @if (Earlier.Contains(plan.Id))
+                {
+                    <span class="status-badge warning">Made for an earlier version of this card</span>
+                }
+                @if (EarlierAnswers.TryGetValue(plan.Id, out var answered))
+                {
+                    <span class="status-badge warning">Made for an earlier version of @answered</span>
+                }
+            </h4>
+            <p class="setup-plan-idea">@plan.Idea</p>
+            <p class="setup-plan-gives-up"><strong>Gives up:</strong> @plan.GivesUp</p>
+            <div class="toolbar">
+                <button type="button" id="@($"show-plan-{plan.Id}")" aria-pressed="@(shown ? "true" : "false")" aria-label="@($"Show on map: {plan.Name}")"
+                        @onclick="@(() => OnShow.InvokeAsync(plan.Id))">@(shown ? "Shown on the map" : "Show on map")</button>
+                @if (chosen && Changes > 0)
+                {
+                    <button type="button" id="@($"use-plan-{plan.Id}")" aria-label="@($"Reset your list to {plan.Name}")" @onclick="@(() => OnUse.InvokeAsync(plan.Id))">Reset to @plan.Name</button>
+                }
+                else if (!chosen)
+                {
+                    <button type="button" id="@($"use-plan-{plan.Id}")" aria-label="@($"Use this plan: {plan.Name}")" @onclick="@(() => OnUse.InvokeAsync(plan.Id))">Use this plan</button>
+                }
+            </div>
+            <details>
+                <summary>More</summary>
+                <p>@plan.Idea</p>
+                @if (Earlier.Contains(plan.Id))
+                {
+                    <p class="setup-plan-earlier">The card has changed since this plan was made. It is still offered, and the game checks it when it is proposed.</p>
+                }
+                @if (EarlierAnswers.TryGetValue(plan.Id, out var changed))
+                {
+                    <p class="setup-plan-earlier">@changed has changed since this plan was made to answer it. It is still offered, and the game checks it when it is proposed.</p>
+                }
+                @if (plan.Terrain.Count > 0)
+                {
+                    <ul>
+                        @foreach (var fact in plan.Terrain)
+                        {
+                            <li>@fact</li>
+                        }
+                    </ul>
+                }
+                @if (GivesAway.TryGetValue(plan.Id, out var told) && told.Count > 0)
+                {
+                    <p class="setup-plan-public" id="@($"setup-plan-{plan.Id}-public")">Set up unchanged, this plan can be recognised by the other side, which then knows @string.Join("; ", told). To keep that secret, move or swap those stacks before you propose.</p>
+                }
+            </details>
+        </article>
+    };
 }

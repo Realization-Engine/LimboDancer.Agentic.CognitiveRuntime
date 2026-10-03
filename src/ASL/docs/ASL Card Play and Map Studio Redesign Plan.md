@@ -319,7 +319,7 @@ Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (backlog sect
 
 **Purpose:** the second side sets up from a card without placing every stack by hand. **After:** pass 30. **From:** the user's request of 2026-10-03.
 
-**Status:** the design is written and waits for the user's approval; nothing is built.
+**Status:** the design is approved (its section 14). The page and data tasks are built and checked in the Studio; the plans, one card at a time, come next.
 
 | Task | What it changes | Estimate |
 |---|---|---|

@@ -15,11 +15,18 @@ public sealed record SetupPlanPlacement(string Id, string? Definition = null, st
     bool Dummy = false, bool Concealed = false, bool Hidden = false, bool OffBoard = false, string? Entry = null, string? BoreSighted = null);
 
 /// <summary>
-/// A setup plan for the side that sets up first (pass 30 of the Card Play and Map Studio Redesign Plan): its name, its idea, what it gives up, the
-/// terrain facts it rests on, and its placements; and the SHA-256 of the card text it was made for. It places the card's fixed OB and never changes it.
+/// The plan a setup plan answers (pass 30b): a plan of the other side that sets up in an earlier order, and the SHA-256 of that plan's placements
+/// as they were when the answer was made.
+/// </summary>
+public sealed record SetupPlanAnswer(string Plan, string PlacementsSha256);
+
+/// <summary>
+/// A setup plan (passes 30 and 30b of the Card Play and Map Studio Redesign Plan): its name, its idea, what it gives up, the terrain facts it rests
+/// on, and its placements; and the SHA-256 of the card text it was made for. It places OB groups of one side and one setup order. A plan of a later
+/// order may name the plan it answers; one that names none is for any setup. It places the card's fixed OB and never changes it.
 /// </summary>
 public sealed record SetupPlan(string Id, string CardSha256, string Side, string Name, string Idea, string GivesUp, IReadOnlyList<string> Terrain,
-    IReadOnlyList<SetupPlanPlacement> Placements);
+    IReadOnlyList<SetupPlanPlacement> Placements, SetupPlanAnswer? Answers = null);
 
 /// <summary>A card's setup plans as their file holds them: the format, the card's id, and the plans.</summary>
 public sealed record SetupPlanFile(string Format, string Card, IReadOnlyList<SetupPlan> Plans);
@@ -34,11 +41,14 @@ public sealed record SetupPlansRead(IReadOnlyList<SetupPlan> Plans, IReadOnlyLis
 /// </summary>
 public static partial class ScenarioSetupPlans
 {
-    public const string Format = "asl-setup-plans/1";
+    public const string Format = "asl-setup-plans/2";
+
+    /// <summary>The format of pass 30, still read: plans for the side that sets up first only, none of them an answer.</summary>
+    public const string EarlierFormat = "asl-setup-plans/1";
 
     public const string Suffix = ".setups.json";
 
-    /// <summary>The most plans a card offers.</summary>
+    /// <summary>The most plans a card offers the side that sets up first; a later order has one answer for each of them and one plan for any setup.</summary>
     public const int MostPlans = 3;
 
     private const string Prefix = "Scenarios.";
@@ -98,6 +108,34 @@ public static partial class ScenarioSetupPlans
         return found.Count > 0 ? new SetupPlansRead([], found) : new SetupPlansRead(file.Plans, []);
     }
 
+    /// <summary>The setup order of the OB groups a plan places (pass 30b); null when it places groups of several orders, or none of the card's.</summary>
+    public static int? OrderOf(ScenarioCard card, SetupPlan plan)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        ArgumentNullException.ThrowIfNull(plan);
+        var groups = Groups(card);
+        var orders = (plan.Placements ?? []).Select(item => item?.Group is { } id && groups.TryGetValue(id, out var group) ? group.Order : (int?)null).Distinct().ToArray();
+        return orders.Length == 1 ? orders[0] : null;
+    }
+
+    /// <summary>
+    /// The SHA-256 of a plan's placements (pass 30b), in a fixed form: one line for each, in the order of their ids. An answer records it, so an
+    /// answer made for other placements of the plan it answers is told apart.
+    /// </summary>
+    public static string PlacementsSha256(SetupPlan plan)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        var lines = plan.Placements.OrderBy(item => item.Id, StringComparer.Ordinal).Select(item => string.Join('|', item.Id, item.Definition, item.Dummy ? "dummy" : string.Empty,
+            item.Group, item.At, item.Holder, item.Facing, item.Concealed ? "concealed" : string.Empty, item.Hidden ? "hidden" : string.Empty,
+            item.OffBoard ? "off-board" : string.Empty, item.Entry, item.BoreSighted));
+        return Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(string.Join('\n', lines))));
+    }
+
+    /// <summary>The card's OB groups by the id a game gives them, each with its side and its setup order.</summary>
+    private static Dictionary<string, (string Side, int Order)> Groups(ScenarioCard card) =>
+        card.Sides.SelectMany(side => side.Groups.Select((group, index) => (Id: ScenarioCards.GroupId(side.Side, index), side.Side, Order: ScenarioSetup.OrderOf(card, side, group))))
+            .ToDictionary(group => group.Id, group => (group.Side, group.Order), StringComparer.Ordinal);
+
     /// <summary>Why a setups file is refused; empty when its form is valid.</summary>
     public static IReadOnlyList<string> Validate(ScenarioCard card, SetupPlanFile file, UnitCatalog catalog)
     {
@@ -113,18 +151,50 @@ public static partial class ScenarioSetupPlans
             }
         }
 
-        Check(file.Format == Format, $"setups.format: a setups file is '{Format}', not '{file.Format}'");
+        var earlier = file.Format == EarlierFormat;
+        Check(file.Format == Format || earlier, $"setups.format: a setups file is '{Format}', not '{file.Format}'");
         Check(file.Card == card.Id, $"setups.card: the file is for the card '{file.Card}', not '{card.Id}'");
         var plans = file.Plans ?? [];
-        Check(plans.Count <= MostPlans, $"setups.plans: a card offers at most {MostPlans} plans, and the file has {plans.Count}");
         Check(plans.Select(plan => plan.Id).Distinct(StringComparer.Ordinal).Count() == plans.Count, "setups.plans: two plans share an id");
-        var side = card.Sides.FirstOrDefault(item => item.Side == card.Turns.SetsUpFirst);
-        var groups = side is null ? [] : side.Groups.Select((_, index) => ScenarioCards.GroupId(side.Side, index)).ToArray();
+        var groups = Groups(card);
+        var first = groups.Count == 0 ? 1 : groups.Values.Min(group => group.Order);
+        var orders = new Dictionary<SetupPlan, int?>(ReferenceEqualityComparer.Instance);
+        foreach (var plan in plans)
+        {
+            orders[plan] = OrderOf(card, plan);
+        }
+
+        // Pass 30b: the side that sets up first has up to three plans; a later order has one answer for each plan it answers and one plan for any setup.
+        foreach (var set in plans.Where(plan => orders[plan] is not null).GroupBy(plan => (plan.Side, Order: orders[plan]!.Value)))
+        {
+            var open = set.Count(plan => plan.Answers is null);
+            var most = set.Key.Order == first ? MostPlans : 1;
+            Check(open <= most, set.Key.Order == first
+                ? $"setups.plans: a card offers at most {MostPlans} plans to the side that sets up first, and the file has {open} for {set.Key.Side}"
+                : $"setups.plans: a card offers one plan for any setup to {set.Key.Side} in setup order {set.Key.Order}, and the file has {open}");
+            foreach (var answered in set.Where(plan => plan.Answers is not null).GroupBy(plan => plan.Answers!.Plan, StringComparer.Ordinal).Where(answers => answers.Count() > 1))
+            {
+                Check(false, $"setups.plans: {answered.Count()} plans of {set.Key.Side} answer '{answered.Key}', and a card offers one");
+            }
+        }
+
         foreach (var plan in plans)
         {
             var name = string.IsNullOrWhiteSpace(plan.Id) ? "a plan" : $"'{plan.Id}'";
             Check(plan.Id is not null && IdPattern().IsMatch(plan.Id), $"setups.plan: {name} has an id of lower-case letters, digits, and hyphens");
-            Check(plan.Side == card.Turns.SetsUpFirst, $"setups.plan: {name} is for {plan.Side}, and {card.Turns.SetsUpFirst} sets up first");
+            Check(card.Sides.Any(item => item.Side == plan.Side), $"setups.plan: {name} is for {plan.Side}, not a side of the card");
+            Check(orders[plan] is not null, $"setups.plan: {name} places OB groups of one setup order");
+            Check(!earlier || (plan.Side == card.Turns.SetsUpFirst && plan.Answers is null),
+                $"setups.plan: {name} is for {plan.Side}, and {card.Turns.SetsUpFirst} sets up first; a plan for another side, or one that answers a plan, needs the format '{Format}'");
+            if (plan.Answers is { } answers)
+            {
+                var answeredPlan = plans.FirstOrDefault(other => other.Id == answers.Plan);
+                Check(answeredPlan is not null && !ReferenceEquals(answeredPlan, plan) && answeredPlan.Side != plan.Side && orders[answeredPlan] is { } before && orders[plan] is { } now && before < now,
+                    $"setups.plan: {name} answers '{answers.Plan}', which is not a plan of the other side that sets up in an earlier order");
+                Check(answers.PlacementsSha256 is not null && ShaPattern().IsMatch(answers.PlacementsSha256),
+                    $"setups.plan: {name} names the SHA-256 of the placements of the plan it answers");
+            }
+
             Check(!string.IsNullOrWhiteSpace(plan.Name) && !string.IsNullOrWhiteSpace(plan.Idea) && !string.IsNullOrWhiteSpace(plan.GivesUp),
                 $"setups.plan: {name} has a name, its idea, and what it gives up");
             Check(plan.CardSha256 is not null && ShaPattern().IsMatch(plan.CardSha256), $"setups.plan: {name} names the SHA-256 of the card text it was made for");
@@ -138,7 +208,7 @@ public static partial class ScenarioSetupPlans
                 Check(!string.IsNullOrWhiteSpace(item.Id), $"setups.placement: {name} has a counter with no id");
                 Check(item.Dummy ? item.Definition is null : item.Definition is { } definition && catalog.Definition(definition)?.Nationality == plan.Side,
                     $"setups.placement: {counter} is a Dummy, or a {plan.Side} definition of the catalog");
-                Check(item.Group is { } group && groups.Contains(group, StringComparer.Ordinal), $"setups.placement: {counter} names an OB group of {plan.Side}");
+                Check(item.Group is { } group && groups.TryGetValue(group, out var named) && named.Side == plan.Side, $"setups.placement: {counter} names an OB group of {plan.Side}");
                 Check(new[] { item.At is not null && item.Holder is null, item.Holder is not null && item.At is null, item.OffBoard }.Count(way => way) == 1
                     || (item is { At: not null, Holder: not null, OffBoard: false } && catalog.Definition(item.Definition ?? string.Empty)?.Kind == "asl:gun"),
                     $"setups.placement: {counter} has a Location, a holder, or waits off board, one of the three; only a manned Gun has a Location and a holder");

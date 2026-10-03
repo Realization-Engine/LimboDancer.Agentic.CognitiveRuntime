@@ -54,6 +54,12 @@
                         {
                             <button type="button" class="link setup-stack-move" aria-pressed="@(stack.Moving ? "true" : "false")" aria-label="@($"Move the stack at {stack.Title}")"
                                     @onclick="@(() => OnMove.InvokeAsync(StackKey(stack.Location)))">Move stack</button>
+                            @if (Model.OnMap.Select(other => HexOf(other.Location)).Distinct(StringComparer.Ordinal).Count() > 1)
+                            {
+                                <button type="button" class="link setup-stack-swap" aria-pressed="@(stack.Swapping ? "true" : "false")" aria-label="@($"Swap the stack at {stack.Title} with another stack")"
+                                        title="Swaps this stack's hex with another stack's. Swapping a Dummy stack with a real one keeps what the other side sees."
+                                        @onclick="@(() => OnSwap.InvokeAsync(stack.Location))">Swap</button>
+                            }
                         }
                     </div>
                     <ul class="setup-rows">
@@ -194,6 +200,12 @@
             get; init;
         }
 
+        /// <summary>Whether the next stack chosen changes hexes with this one (pass 30b).</summary>
+        public bool Swapping
+        {
+            get; init;
+        }
+
         public bool Problem => Rows.Any(row => row.Problem);
     }
 
@@ -234,6 +246,10 @@
     [Parameter]
     public EventCallback<string> OnMove { get; set; }
 
+    /// <summary>"Swap" (pass 30b): the stack's Location; the next stack chosen changes hexes with it.</summary>
+    [Parameter]
+    public EventCallback<string> OnSwap { get; set; }
+
     [Parameter]
     public EventCallback<LevelChange> OnLevel { get; set; }
 
@@ -257,10 +273,13 @@
     /// <summary>The id of a stack's block, which the page brings into view.</summary>
     public static string StackId(string location) => "setup-stack-" + location.Replace(':', '-');
 
+    // A Location's board and hex, without its level: two stacks of one hex do not swap.
+    private static string HexOf(string location) => location.LastIndexOf(':') is > 0 and var cut ? location[..cut] : location;
+
     private static string LevelText(int level) => level == 0 ? "ground level" : "level " + level.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
     private static string StackClass(Stack stack) => "setup-stack" + (stack.Selected ? " selected" : string.Empty) + (stack.Problem ? " problem" : string.Empty)
-        + (stack.Moving ? " moving" : string.Empty);
+        + (stack.Moving || stack.Swapping ? " moving" : string.Empty);
 
     private Task Changed(Row row, string field, string value) => OnChange.InvokeAsync(new SetupPlacementList.Change(row.Key, field, value));
 

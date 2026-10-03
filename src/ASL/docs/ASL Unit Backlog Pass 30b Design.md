@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 30b Design
 
-**Status:** Draft, 2026-10-03, on branch `feature/asl-backlog-pass-30b`. Nothing is built. The user took the recommended answers to section 11's nine questions on one condition, which section 13 answers; the design waits for the user's word on section 13. Pass 30b (Setup plans for the side that sets up second) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, a Studio pass.
+**Status:** Approved 2026-10-03, with the answers of section 14. The page and data tasks (30b.1 to 30b.6 and the page's part of 30b.8) are built and checked in the Studio on branch `feature/asl-backlog-pass-30b`; the plans (30b.7) come next, one card at a time, each stopped for the user's approval. Pass 30b (Setup plans for the side that sets up second) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, a Studio pass.
 
 **Date:** 2026-10-03
 
@@ -277,3 +277,42 @@ The ten plans of pass 30 are checked against this rule in task 30b.8. They are a
 **One more question for the user.**
 
 10. **Shared footprints (D11, last point).** On The Tractor Works the three 308th plans could be remade to show the same count in every hex of X3, so that a German player reads nothing from the stacks. It costs Hidden core its idea (three hexes of Dummies only, 12 Dummies against 9), and the three plans are approved. Recommended: leave the three as they are, tell the first side what each gives away (D14), and give it "Swap" (D15).
+
+## 14. The user's answers, and what is built
+
+**The answers, 2026-10-03.** The user took the recommended answer to each of questions 1 to 9, and approved section 13. On question 10 the user took the revised recommendation, made once the counts were worked through:
+
+- A shared footprint needs the three 308th plans to have the same number of real stacks, since the 18 "?" pay for stacks and Dummies alike. With nine real stacks Hidden core loses its idea; with six it stays exactly as it is.
+- So East front is remade and All round is replaced on Hidden core's counts (W4 3, W5 3, X2 2, X3 2, X4 4, X5 2, Y3 3, Y4 3, Y5 3): every plan holds six hexes with real units and three with Dummies only, and the plans differ in which three.
+- The German side then reads nothing from an unchanged setup, the comparison gives equal scores on that card, and the Germans get one plan for any setup there in place of four.
+- The remade plans come to the user for approval at the Tractor Works stop of task 30b.7.
+
+**Built 2026-10-03**, tasks 30b.1 to 30b.6 and the page's part of 30b.8, in one stretch, since the reader, the offer, the tab, and the map share the page's code. Checked in my Studio on port 6670 at 1366x768 and committed. No built-in card has a second side's plan yet; the check used a scratch user card, `p30b-guards` (a copy of The Guards Counterattack in `src/ASL/boards/cards`, with a `/2` setups file: the three German plans, two Russian test answers, one of them with a stale placements hash, and a test plan for any setup).
+
+As designed:
+
+- `ScenarioSetupPlans`: the format `asl-setup-plans/2`, with `/1` still read under pass 30's rules; `SetupPlan.Answers`; a plan's order from its groups (`OrderOf`); `PlacementsSha256`; the caps by side and order.
+- `SetupPlanMatch` (Play library): `Footprint`, `Seen`, and `Score`, from a `GameView` only.
+- `ComputePlansOffered`: plans for the side whose groups are setting up now; a group that only enters counts while it owes counters off board (Armor Test's column).
+- `SetupPlanPicker`: groups as disclosure elements, each with its score, "Their plan", its plans or "No response written", and "For any setup"; the first side's tab is unchanged.
+- The map: the answered plan's footprint, the "Their plan's outline" toggle and its legend, and the zoom taking in the enemy stacks seen.
+- The words: "N stacks seen" under the bar, "From <plan> (answers <plan>)" in the bar, the review, and the notice.
+- Section 13: "Conceal every stack that may be" (D12), what an unchanged plan gives away under "More" and in the review of an unchanged plan (D14), and "Swap" on a stack of the list (D15).
+
+What differs from the design:
+
+- **The footprint is a dashed purple outline with the count in a disc,** not a hatch: the marks layer draws outlines and labels (`GameMaps.HexMark`), and the dashed line and the number tell it apart from the gold draft outline without color.
+- **"Swap" works by hex,** all levels of the two hexes together, each counter keeping its level when the other hex has it.
+- **The groups appear only once the other side's setup is in sight.** Until then the plans are listed as they are.
+- **"Closest to what you see" needs a single best score of six tenths or more.** When two plans tie, neither is marked.
+
+**Studio check, 2026-10-03**, 1366x768, by script, games `p30b-g20918` and `p30b-v90075`:
+
+- The new-game form: "This card has 3 setup plans for the German side, and 3 for the side that sets up after it".
+- The German view: three plans, no groups. Forward line used unchanged: the review ends "Setup plans are public: if the other side recognises Forward line, it knows which unit holds each of its 8 SW."
+- The Russian view while the Germans set up: no Plans tab. The adjudicator's view: no Plans tab.
+- After the German Confirm and the hand-over: "The German side has set up: 10 stacks seen."; four groups, Forward line first at 10 of 10 and marked closest, Tripwire and reserve at 5 of 13 with "No response written", Out of sight at 4 of 13 with its answer marked "Made for an earlier version of Out of sight", then "For any setup".
+- "Show on map" on an answer drew the answered plan's footprint (7 hexes for Out of sight) with its legend, and left the list empty.
+- "Use this plan" filled 25 counters; the bar read "From Test answer to Forward line (answers Forward line)". "Swap" on the E4 stack, then the N5 stack's name, exchanged the two hexes (4 changes); the gate refused the swapped setup with four reasons, each a link; "Reset to" asked first and restored the plan.
+- Proposed unchanged and confirmed: "The Russian setup is in the game, from Test answer to Forward line (answers Forward line). Every group has set up. Each side may now place a \"?\" on its stacks out of the enemy's LOS (A12.12), under Counters".
+- "Conceal every stack that may be (4)" ticked all four Locations and then stood disabled.
