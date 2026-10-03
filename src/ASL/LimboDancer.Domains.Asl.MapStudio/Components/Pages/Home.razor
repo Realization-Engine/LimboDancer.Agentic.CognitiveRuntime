@@ -79,7 +79,14 @@ else
                                Ingested="@inScope.Count(row => row.Status == VaslBoardTable.LibraryStatus.Ingested)"
                                Failed="@inScope.Count(row => row.Status == VaslBoardTable.LibraryStatus.Failed)"
                                NotChecked="@inScope.Count(row => row.Status == VaslBoardTable.LibraryStatus.NotChecked)"
-                               OutOfScope="@(rows.Count - inScope.Length)" />
+                               OutOfScope="@(rows.Count - inScope.Length + unlisted.Count)" />
+            @if (unlisted.Count > 0)
+            {
+                <p class="muted" id="library-unlisted">
+                    @unlisted.Count of the boards out of scope are not listed: their names (@string.Join(", ", unlisted)) are not board references the
+                    Studio can read, so it cannot open them.
+                </p>
+            }
             <p class="toolbar">
                 @if (Runner.Latest is { } latest)
                 {
@@ -115,6 +122,7 @@ else
     private IReadOnlyList<AuthoredListing> authored = [];
     private IReadOnlyList<MapDefinition> maps = [];
     private IReadOnlyList<VaslBoardTable.Row> rows = [];
+    private IReadOnlyList<string> unlisted = [];
     private bool loading = true;
     private string? failure;
     private IJSObjectReference? scroll;
@@ -132,6 +140,7 @@ else
         {
             // Read once here, not on each render: the listing, and each board's result from the cache or the latest fresh batch report.
             var listing = await Task.Run(Boards.List);
+            unlisted = await Task.Run(Boards.Unlisted);
             authored = await Task.Run(Authored.List);
             maps = await Task.Run(MapStore.List);
             rows = await Task.Run(() => listing.Select(entry => VaslBoardTable.Row.Of(entry, Boards, Runner)).ToArray());

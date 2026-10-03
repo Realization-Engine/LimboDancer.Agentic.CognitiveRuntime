@@ -71,7 +71,7 @@ else
         <h3>Read a case</h3>
         <p class="muted">
             ReadCase (ASL-UNIT-060) asks what a unit attempting something at a location reads: one snapshot of the game as it stood at revision @revision,
-            as @view.Perspective.Name may know it, or an explicit nondefinitive result.
+            as @DisplayText.ViewName(view.Perspective.Name) may know it, or an explicit nondefinitive result.
         </p>
         <ReadCaseForm @bind-Draft="caseDraft" Attackers="@Attackers" OnRead="@ReadCase" />
         @if (caseResult is { } result)
@@ -79,7 +79,7 @@ else
             <ReadCaseResult Result="@result" />
         }
 
-        <h3>Events @view.Perspective.Name is entitled to</h3>
+        <h3>Events @DisplayText.ViewName(view.Perspective.Name) is entitled to</h3>
         <ol id="game-events" class="muted">
             @foreach (var item in view.Events)
             {
@@ -104,7 +104,7 @@ else
 
     private string BoardName => state?.Map.Boards.FirstOrDefault()?.Board.Value ?? "the board";
 
-    private IReadOnlyList<PerspectivePicker.Choice> PerspectiveChoices => state is null ? [] : [.. state.Perspectives.Select(option => new PerspectivePicker.Choice(option.Name, option.Name))];
+    private IReadOnlyList<PerspectivePicker.Choice> PerspectiveChoices => state is null ? [] : [.. state.Perspectives.Select(option => new PerspectivePicker.Choice(option.Name, option.IsAdjudicator ? "the adjudicator" : DisplayText.Side(option.Name)))];
 
     // Only the perspective's own units may attempt a case, or every unit for the adjudicator.
     private IReadOnlyList<ReadCaseForm.Attacker> Attackers => view is null ? []
@@ -148,9 +148,9 @@ else
         documents = view is null ? new(StringComparer.Ordinal)
             : GameDocuments.For(view, Library.Vocabulary, GamesLibrary.Catalogs).ToDictionary(document => document.Id, StringComparer.Ordinal);
         unitRows = view is null ? [] : [.. view.Units.Select(unit => new ProjectedGameUnitTable.Row(unit.Id, Preview(unit.Id), Label(unit.Id, unit.Kind),
-                LocationText(unit.Id, unit.Position), ConditionsText(unit), DisplayText.YesNo(GameState.GoodOrder(unit, Library.Vocabulary)), LineageText(unit))),
+                LocationText(unit.Id, unit.Position), DisplayText.ConditionsOf(unit), DisplayText.YesNo(GameState.GoodOrder(unit, Library.Vocabulary)), LineageText(unit))),
             .. view.Sealed.Select(presence => new ProjectedGameUnitTable.Row(presence.PlacementId, Preview(presence.PlacementId),
-                $"concealed {DisplayText.Side(presence.Side)} presence", presence.Location.ToString(), "withheld", "withheld", string.Empty))];
+                $"concealed {DisplayText.Side(presence.Side)} presence", DisplayText.Location(presence.Location), "withheld", "withheld", string.Empty))];
         caseResult = null;
         var attackers = Attackers.Select(attacker => attacker.Id).ToArray();
         caseDraft = caseDraft with
@@ -198,22 +198,13 @@ else
 
     private string LocationText(string id, Position position) =>
         view!.Locations.TryGetValue(id, out var location)
-            ? location.Location + (position is ContainedPosition contained ? $" (in {contained.Container})" : string.Empty)
+            ? DisplayText.Location(location.Location) + (position is ContainedPosition contained ? $" (in {contained.Container})" : string.Empty)
             : position switch
             {
                 OffMapPosition => "off map",
                 NotEnteredPosition => "not entered",
                 _ => string.Empty,
             };
-
-    private static string ConditionsText(UnitInstance unit)
-    {
-        var shown = unit.Conditions.Where(pair => pair.Value is not ConditionState.False)
-            .Select(pair => pair.Value == ConditionState.True ? pair.Key.Replace("asl:", string.Empty, StringComparison.Ordinal)
-                : $"{pair.Key.Replace("asl:", string.Empty, StringComparison.Ordinal)} {Conditions.Name(pair.Value)}")
-            .ToArray();
-        return shown.Length == 0 ? "none" : string.Join(", ", shown);
-    }
 
     private static string LineageText(UnitInstance unit) =>
         string.Join("; ", new[]

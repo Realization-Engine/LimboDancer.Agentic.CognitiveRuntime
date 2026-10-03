@@ -122,6 +122,12 @@ public interface IBoardProvider
 
     public IReadOnlyList<BoardListing> List();
 
+    /// <summary>
+    /// The VASL boards whose names make no board reference, so the Studio cannot list or open them, such as "bdFB_NE" (the UX analysis,
+    /// 2026-10-02: the library counts them out of scope, as the fidelity batch does).
+    /// </summary>
+    public IReadOnlyList<string> Unlisted() => [];
+
     public BoardLoadResult Load(BoardRef board);
 
     /// <summary>The result of an earlier load, without loading.</summary>
@@ -163,6 +169,9 @@ public sealed class VaslBoardProvider : IBoardProvider, ICatalogSource, IVaslMap
     public string? CatalogBlob => catalog.Value?.Catalog is null ? null : vasl!.SharedBoardMetadataProvenance().ContentBlob;
 
     public IReadOnlyList<BoardListing> List() => listing.Value;
+
+    public IReadOnlyList<string> Unlisted() =>
+        vasl is null ? [] : [.. vasl.BoardNames().Where(name => !BoardRef.TryParse("bd" + name, out _)).Select(name => "bd" + name)];
 
     public BoardLoadResult? Cached(BoardRef board)
     {
@@ -287,6 +296,8 @@ public sealed class StudioBoardProvider(VaslBoardProvider vasl, AuthoredBoardSer
     public string? CatalogBlob => vasl.CatalogBlob;
 
     public IReadOnlyList<BoardListing> List() => vasl.List();
+
+    public IReadOnlyList<string> Unlisted() => vasl.Unlisted();
 
     public BoardLoadResult Load(BoardRef board)
     {

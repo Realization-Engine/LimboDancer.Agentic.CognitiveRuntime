@@ -522,6 +522,11 @@ td.number {
     background: #e9e6dd;
 }
 
+.diagnostic.passed {
+    color: var(--pass);
+    background: var(--pass-bg);
+}
+
 .diagnostic.warning {
     color: var(--warn);
     background: var(--warn-bg);

@@ -173,3 +173,18 @@ Built 2026-10-02 from Claude Design's UX analysis (the user's PDF), in the order
   - The Fidelity page says a report is out of date and that the library does not use it; the library says why it shows "Not checked".
   - The batch was run again (1.9 minutes): 297 boards, 235 verified, 1 failed (bd79: its `BoardMetadata.xml` is not well-formed), 61 out of scope. Both pages now show 236 in scope, 235 verified, and 1 failed.
   - The library still counts 5 fewer boards out of scope (56 against 61): it lists only boards whose names make a board reference, and the five with an underscore (bdAF_BiazzaRidge and bdFB_NE, NW, SE, SW) do not; all five are out of scope.
+
+## 13. Claude Design's review of sections 11 and 12
+
+Claude Design reviewed sections 11 and 12 against its analysis (2026-10-02). The user took its eight recommended items, added plain names for the fidelity checks, and deferred one decision. Built 2026-10-02 and checked in the Studio on port 6670:
+
+1. **Sides and views everywhere.** The Play card ("German sets up first; Russian moves first", the Balance, the players), the board viewer's and Game states' view pickers ("German", "Russian", "the adjudicator"), Game states' context line ("German phasing; seen by the adjudicator"), its headings, and "withheld from the German side".
+2. **"Card changed"** shows as a badge in Play's context while the card is closed.
+3. **One statement of the game in the board viewer.** The banner keeps it; the strip's own sentence is gone, and the note says only whether the game is live or synthetic.
+4. **One status vocabulary.** Ingested reads "Not verified" everywhere (the library's totals and filter, the batch outcome); Pass is spelled one way; Yes, No, Unknown, and "Does not apply" share one case; `DisplayText.Condition` and `ConditionsOf` replace the copied conditions text.
+5. **Plain names for the fidelity checks.** F1 is "Terrain data read exactly", F2 "Hex facts match VASL", and F3 "the Styled drawing" check, with the codes kept in brackets; the named checks read "Terrain outlines", "Exact drawing", "Styled drawing: pixels", and so on; the run option reads "Also check the Styled drawing (F3, slower)".
+6. **Locations as players say them**: "E4 on board 01", "on board 01, cellar", "level 1".
+7. **Fidelity finds failures.** A report with boards not verified opens on them; failed boards sort first, with their reason beside the outcome; check chips are green when passed, red when failed, amber when only informational, with a legend.
+8. **The five boards with an underscore** are counted out of scope in the library (61, as on the Fidelity page) and named beneath the totals (`IBoardProvider.Unlisted`).
+
+**Deferred by the user:** whether the board viewer, opened from a side's view of a live game, should lock to that view or allow other views only behind a hand-over (backlog section 45).

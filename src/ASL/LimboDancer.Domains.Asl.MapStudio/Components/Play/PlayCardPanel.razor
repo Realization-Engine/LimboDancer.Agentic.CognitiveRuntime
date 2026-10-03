@@ -13,9 +13,9 @@
             <p id="play-card-changed" class="diagnostic warning">The card has changed since this game started; what follows is its current text.</p>
         }
         <p id="play-card-turns">@card.Turns.Count Game Turns@(card.Turns.HalfTurn ? ", the last with one Player Turn" : string.Empty); @ScenarioCards.PlaceAndDate(card).
-            @card.Turns.SetsUpFirst sets up first; @(card.Turns.MovesFirst is { } cardFirst ? $"{cardFirst} moves first." : $"{FirstSide} won the dr to move first (ruling R20.2).")</p>
-        <p id="play-card-balance">@(Scenario.Balance is { } balanceSide ? $"{balanceSide} plays with its Balance: {card.Sides.FirstOrDefault(side => side.Side == balanceSide)?.Balance}" : "No side takes its Balance.")
-            @(Scenario.Players.Count > 0 ? $" Players: {string.Join(", ", Scenario.Players.Select(player => $"{player.Name} plays {player.Side}"))}." : string.Empty) (A26.4; ruling R20.3)</p>
+            @DisplayText.Side(card.Turns.SetsUpFirst) sets up first; @(card.Turns.MovesFirst is { } cardFirst ? $"{DisplayText.Side(cardFirst)} moves first." : $"{DisplayText.Side(FirstSide)} won the dr to move first (ruling R20.2).")</p>
+        <p id="play-card-balance">@(Scenario.Balance is { } balanceSide ? $"{DisplayText.Side(balanceSide)} plays with its Balance: {card.Sides.FirstOrDefault(side => side.Side == balanceSide)?.Balance}" : "No side takes its Balance.")
+            @(Scenario.Players.Count > 0 ? $" Players: {string.Join(", ", Scenario.Players.Select(player => $"{player.Name} plays {DisplayText.Side(player.Side)}"))}." : string.Empty) (A26.4; ruling R20.3)</p>
         @if (Ended is { } ended)
         {
             <GameEndNotice Ended="@ended" />

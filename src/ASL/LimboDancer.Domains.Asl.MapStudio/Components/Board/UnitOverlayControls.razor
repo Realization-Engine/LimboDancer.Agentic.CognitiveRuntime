@@ -30,7 +30,6 @@
             <PerspectivePicker Id="units-perspective" Label="Perspective" Choices="@replay.Perspectives" Value="@replay.Perspective" ValueChanged="@PerspectiveChanged" />
             <RevisionNavigator Id="units-revision" PreviousId="units-previous" NextId="units-next" Min="1" Max="@replay.Max" Current="@replay.Revision"
                                RevisionChanged="@RevisionChanged" />
-            <span id="units-summary" class="muted">@replay.Perspective's view @(replay.Perspective == LimboDancer.Domains.Asl.Units.State.Perspective.AdjudicatorName ? "(sees every unit)" : "(what this side may see)"), revision @replay.Revision of @replay.Max</span>
         }
         <label>
             Counters

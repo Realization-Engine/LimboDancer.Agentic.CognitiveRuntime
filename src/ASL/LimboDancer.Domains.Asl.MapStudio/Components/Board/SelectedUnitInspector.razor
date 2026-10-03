@@ -3,7 +3,7 @@
 @* B07 with B08 inline (plan section 16.6): the selected unit's identity, and its facts in the game as the projected view gives them;
    a concealed presence's identity and conditions are withheld. It never receives the game's full state. *@
 <h2 class="unit-name">@Unit.Name</h2>
-<UnitAccessibleDetails Document="@Unit.Document" Vocabulary="@Vocabulary" ShowId="true" Location="@Unit.Location.ToString()" />
+<UnitAccessibleDetails Document="@Unit.Document" Vocabulary="@Vocabulary" ShowId="true" Location="@DisplayText.Location(Unit.Location)" />
 @if (View is { } view)
 {
     @if (view.Units.FirstOrDefault(item => item.Id == Unit.Document.Id) is { } instance)
@@ -30,7 +30,7 @@
     }
     else if (view.Sealed.Any(presence => presence.PlacementId == Unit.Document.Id))
     {
-        <p id="unit-game-facts">A concealed presence: its identity and conditions are withheld from @view.Perspective.Name.</p>
+        <p id="unit-game-facts">A concealed presence: its identity and conditions are withheld from @DisplayText.ViewName(view.Perspective.Name).</p>
     }
     else if (view.Equipment.Cast<IGameObject>().Concat(view.Entities).FirstOrDefault(item => item.Id == Unit.Document.Id) is { } other)
     {
@@ -64,7 +64,7 @@
     // Good Order is unknown while broken, berserk, captured, or Melee is not recorded (ASL-UNIT-023); the inspector says which (pass 29).
     private string GoodOrderText(UnitInstance instance) => GameState.GoodOrder(instance, Vocabulary) switch
     {
-        ConditionState.Unknown => "unknown: not recorded whether "
+        ConditionState.Unknown => "Unknown: not recorded whether "
             + string.Join(", ", new[] { Conditions.Broken, Conditions.Berserk, Conditions.Captured, Conditions.Melee }
                 .Where(name => GameState.Condition(instance, name) == ConditionState.Unknown)
                 .Select(name => name.Replace("asl:", string.Empty, StringComparison.Ordinal))),

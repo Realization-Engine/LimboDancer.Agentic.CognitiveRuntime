@@ -5,8 +5,8 @@
         <tr>
             <th>Board</th>
             <th>Status</th>
-            <th>F1 (grid)</th>
-            <th>F2 (hex facts)</th>
+            <th>Terrain data (F1)</th>
+            <th>Hex facts match VASL (F2)</th>
             <th>Diagnostics</th>
         </tr>
     </thead>
@@ -88,10 +88,10 @@
                     BatchOutcome.Ingested => LibraryStatus.Ingested,
                     _ => LibraryStatus.Failed,
                 };
-                return new(reference, entry.Title, status, $"{batch.Outcome} (batch)",
+                return new(reference, entry.Title, status, $"{DisplayText.Outcome(batch.Outcome)} (report)",
                     batch.Outcome == BatchOutcome.Verified ? "pass" : batch.Outcome == BatchOutcome.Failed ? "fail" : string.Empty, batch.Reason,
-                    batch.F1.ToString(), batch.F1 == F1Status.Pass ? "pass" : "fail",
-                    batch.F2?.Status.ToString(), batch.F2?.Status == BatchF2.Pass ? "pass" : "muted", batch.Diagnostics);
+                    DisplayText.TerrainData(batch.F1), batch.F1 == F1Status.Pass ? "pass" : "fail",
+                    batch.F2 is { } batchF2 ? DisplayText.HexFacts(batchF2.Status) : null, batch.F2?.Status == BatchF2.Pass ? "pass" : "muted", batch.Diagnostics);
             }
 
             if (result is null)
@@ -106,11 +106,11 @@
             }
 
             var verified = board.Status == BoardStatus.Verified;
-            return new(reference, entry.Title, verified ? LibraryStatus.Verified : LibraryStatus.Ingested, board.Status.ToString(), verified ? "pass" : string.Empty, null,
-                board.F1?.Status.ToString(), board.F1 is { Passed: true } ? "pass" : "fail",
+            return new(reference, entry.Title, verified ? LibraryStatus.Verified : LibraryStatus.Ingested, DisplayText.BoardStatus(board.Status), verified ? "pass" : string.Empty, null,
+                board.F1 is { } f1 ? DisplayText.TerrainData(f1.Status) : null, board.F1 is { Passed: true } ? "pass" : "fail",
                 board.F2 switch
                 {
-                    null => "No oracle fixture",
+                    null => "No VASL answers to compare",
                     { Passed: true } => "Pass",
                     var f2 => $"Fail ({f2.Differences.Count} differences, {f2.Diagnostics.Count} diagnostics)",
                 },

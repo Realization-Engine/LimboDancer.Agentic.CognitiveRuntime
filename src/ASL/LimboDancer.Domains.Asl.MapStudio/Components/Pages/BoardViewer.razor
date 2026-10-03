@@ -136,13 +136,12 @@ else if (board is null)
         : null;
 
     private UnitOverlayControls.ReplayState? Replay => gameProjection is { } projection
-        ? new([.. projection.Game.History!.States[^1].Perspectives.Select(option => new PerspectivePicker.Choice(option.Name, option.Name))],
+        ? new([.. projection.Game.History!.States[^1].Perspectives.Select(option => new PerspectivePicker.Choice(option.Name, option.IsAdjudicator ? "the adjudicator" : DisplayText.Side(option.Name)))],
             projection.View.Perspective.Name, (int)gameRevision, projection.Game.History!.States.Count)
         : null;
 
     private string? UnitNote => gameProjection is { } shownGame
-        ? $"Projection of {shownGame.Game.Label} for {shownGame.View.Perspective.Name} at revision {shownGame.View.Stamp.Revision}; "
-            + (shownGame.Game.Record?.Synthetic == false ? "a live game, changed only through the governed path." : "a synthetic game, not a live one.")
+        ? shownGame.Game.Record?.Synthetic == false ? "A live game, changed only through the governed path." : "A synthetic game, not a live one."
         : unitOverlay is { } overlay && UnitSet is { } shown
             ? $"{(shown.Set.Synthetic ? "Synthetic placement" : "Placement")} from {shown.Set.Label} ({overlay.SetId}); display only, not game state."
             : null;

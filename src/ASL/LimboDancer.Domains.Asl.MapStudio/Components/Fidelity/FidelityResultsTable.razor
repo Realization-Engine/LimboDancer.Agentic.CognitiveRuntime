@@ -12,13 +12,18 @@
     </label>
 </p>
 
+<p class="muted" id="fidelity-legend">
+    Checks: <span class="diagnostic passed">passed</span> <span class="diagnostic error">failed, so the board is not verified</span>
+    <span class="diagnostic warning">differs, for information only</span>. Hover or focus a check for its detail.
+</p>
+
 <table class="library" id="fidelity-results">
     <thead>
         <tr>
             <th>Board</th>
             <th>Outcome</th>
-            <th>F1</th>
-            <th>F2</th>
+            <th>Terrain data (F1)</th>
+            <th>Hex facts match VASL (F2)</th>
             <th>Checks</th>
             <th>Diagnostics</th>
             <th>ms</th>
@@ -38,12 +43,12 @@
                         @board.Board
                     }
                 </td>
-                <td class="@OutcomeClass(board.Outcome)" title="@board.Reason">@board.Outcome</td>
-                <td class="@(board.F1 == F1Status.Pass ? "pass" : "fail")">@board.F1</td>
+                <td class="@OutcomeClass(board.Outcome)" title="@board.Reason">@DisplayText.Outcome(board.Outcome)@(board.Outcome == BatchOutcome.Failed && board.Reason is { Length: > 0 } reason ? $": {reason}" : string.Empty)</td>
+                <td class="@(board.F1 == F1Status.Pass ? "pass" : "fail")">@DisplayText.TerrainData(board.F1)</td>
                 <td>
                     @if (board.F2 is { } f2)
                     {
-                        <span class="@(f2.Status == BatchF2.Pass ? "pass" : f2.Status == BatchF2.Fail ? "fail" : "muted")">@f2.Status</span>
+                        <span class="@(f2.Status == BatchF2.Pass ? "pass" : f2.Status == BatchF2.Fail ? "fail" : "muted")">@DisplayText.HexFacts(f2.Status)</span>
                         @if (f2.Differences.Count > 0 || f2.Diagnostics.Count > 0)
                         {
                             <details>
@@ -66,7 +71,7 @@
                 <td>
                     @foreach (var check in board.Checks)
                     {
-                        <span class="diagnostic @(check.Passed ? "info" : check.Gating ? "error" : "warning")" title="@check.Detail">@check.Name</span>
+                        <span class="diagnostic @(check.Passed ? "passed" : check.Gating ? "error" : "warning")" title="@check.Detail">@DisplayText.Check(check.Name)@(check.Passed ? string.Empty : check.Gating ? ": failed" : ": differs")</span>
                     }
                 </td>
                 <td>
@@ -98,12 +103,18 @@
     [Parameter]
     public EventCallback<string> FilterChanged { get; set; }
 
-    private IEnumerable<BatchBoardResult> Visible => Filter switch
+    // The UX analysis: failed boards first, then those not verified, then the rest, each by name.
+    private IEnumerable<BatchBoardResult> Visible => (Filter switch
     {
         "all" => Boards,
         "problems" => Boards.Where(board => board.Outcome is BatchOutcome.Ingested or BatchOutcome.Failed),
         _ => Boards.Where(board => board.Outcome != BatchOutcome.OutOfScope),
-    };
+    }).OrderBy(board => board.Outcome switch
+    {
+        BatchOutcome.Failed => 0,
+        BatchOutcome.Ingested => 1,
+        _ => 2,
+    });
 
     private static string OutcomeClass(BatchOutcome outcome) => outcome switch
     {

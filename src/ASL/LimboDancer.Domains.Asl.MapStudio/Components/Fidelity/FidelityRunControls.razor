@@ -4,7 +4,7 @@
     <button id="fidelity-start" class="primary" @onclick="OnStart" disabled="@Running">Run batch</button>
     <label class="toggle">
         <input id="fidelity-f3" type="checkbox" checked="@IncludeF3" disabled="@Running" @onchange="@(args => IncludeF3Changed.InvokeAsync(args.Value is true))" />
-        Include F3 (vectorize and recompile every board)
+        Also check the Styled drawing (F3, slower)
     </label>
     @if (Running)
     {

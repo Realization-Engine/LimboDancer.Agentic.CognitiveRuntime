@@ -12,6 +12,11 @@
                     Label="@(Ended ? "Ended" : live ? "Live" : "Does not replay")"
                     Explanation="@(Ended ? "The game has ended." : live ? "The game's latest revision, as play goes on." : "The game's events do not replay; nothing can be played.")" /></span>
             }
+            @if (CardChanged)
+            {
+                <span id="play-card-changed-badge"><StatusBadge Tone="StatusBadge.BadgeTone.Warning" Label="Card changed"
+                    Explanation="The card has changed since this game started; the card panel shows its current text." /></span>
+            }
             <p id="play-summary">@Summary</p>
             @if (Revision is { } revision)
             {
@@ -75,6 +80,10 @@
     /// <summary>The NVR, weather, precipitation, and illumination now.</summary>
     [Parameter]
     public string? Conditions { get; set; }
+
+    /// <summary>Whether the game's card has changed since the game started (the UX analysis: the card panel starts closed).</summary>
+    [Parameter]
+    public bool CardChanged { get; set; }
 
     /// <summary>Whether the game has a card panel to go to.</summary>
     [Parameter]

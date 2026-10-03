@@ -18,7 +18,7 @@
         <select id="library-status" value="@Value.Status" disabled="@(!Value.Shows("vasl"))" @onchange="@(args => Change(Value with { Status = args.Value as string ?? Filter.AnyStatus }))">
             <option value="@Filter.AnyStatus">any</option>
             <option value="verified">verified</option>
-            <option value="ingested">ingested</option>
+            <option value="ingested">not verified</option>
             <option value="failed">failed</option>
             <option value="notchecked">not checked</option>
         </select>

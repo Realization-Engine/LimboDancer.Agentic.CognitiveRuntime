@@ -665,3 +665,4 @@ Pass 29 (2026-10-02) shared the board viewer's map and inspector with Play (`Boa
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
 | Broken, berserk, captured, and Melee recorded as false when a unit is created, so a new unit's Good Order is known | Claude in Chrome's review, pass 29 | ASL-UNIT-023 (Index, Good Order, p. 23) | A change to saved games | Good Order reads "unknown" and names the conditions not recorded. |
+| The board viewer, opened on a live game from a side's view, letting anyone switch to the adjudicator's or the other side's view with no hand-over: lock it to the view it was opened with, or allow other views only behind Play's hand-over | Claude Design's review; deferred by the user, pass 29 | Ruling R23.2 | A decision | The viewer's view picker offers every view of the game, as before. |
