@@ -8,7 +8,7 @@
         @foreach (var row in Rows)
         {
             <tr data-unit="@row.Id">
-                <td>@row.Id</td><td>@row.Side</td><td>@row.Kind</td>
+                <td>@row.Id</td><td>@SideName(row.Side)</td><td>@row.Kind</td>
                 <td>
                     @if (row.At is { } at)
                     {
@@ -26,7 +26,7 @@
         @foreach (var presence in Sealed)
         {
             <tr data-sealed="@presence.PlacementId">
-                <td>?</td><td>@presence.Side</td><td>@(presence.Uninspected ? "not inspectable before play (A2.9)" : "concealed")</td><td>@presence.Location</td><td></td><td></td>
+                <td>?</td><td>@SideName(presence.Side)</td><td>@(presence.Uninspected ? "not inspectable before play (A2.9)" : "concealed")</td><td>@presence.Location</td><td></td><td></td>
             </tr>
         }
     </tbody>
@@ -49,4 +49,7 @@
 
     [Parameter]
     public EventCallback<BoardLocation> Locate { get; set; }
+
+    // Pass 29: a side reads as the counters and the inspector name it ("Russian").
+    private static string SideName(string side) => side.Length == 0 ? side : char.ToUpperInvariant(side[0]) + side[1..];
 }

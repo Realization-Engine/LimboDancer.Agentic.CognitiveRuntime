@@ -14,9 +14,14 @@ export function create(host, dotnet) {
 
     const state = {
         host, svg, dotnet, side: null, box: null, home: null, drag: null, generation: 0, highlight: null,
-        tool: "select", points: [], overlay: null, lastHover: 0, comparison: { mode: "none", value: 0.5 }, rotated: false,
+        tool: "select", points: [], overlay: null, lastHover: 0, comparison: { mode: "none", value: 0.5 }, rotated: false, shape: null,
     };
-    setRotation(state, readRotation());
+
+    // Pass 29: the turn is remembered for each shape of the map's pane, so turning a tall pane never turns a wide one. A pane resized into the
+    // other shape takes that shape's choice.
+    const shapeWatcher = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(() => applyShape(state));
+    shapeWatcher?.observe(host);
+    applyShape(state);
 
     svg.addEventListener("wheel", event => {
         if (!state.box) {
@@ -173,9 +178,10 @@ export function create(host, dotnet) {
         copyText: text => navigator.clipboard?.writeText(text),
         reset: () => reset(state),
         zoom: factor => zoomCenter(state, factor),
-        setRotation: on => setRotation(state, on),
+        setRotation: on => setRotation(state, on, true),
         isRotated: () => state.rotated,
         dispose: () => {
+            shapeWatcher?.disconnect();
             host.removeEventListener("keydown", onKey);
             host.replaceChildren();
         },
@@ -210,7 +216,7 @@ async function load(state, baseUrl, query, viewBox, layers, visible) {
     state.highlight = null;
     state.overlay = null;
     setVisible(state, visible);
-    setBox(state, keepBox ? state.box : { ...home });
+    setBox(state, keepBox ? state.box : fitBox(state));
 }
 
 // Replaces the named layers in place, keeping the view: after an edit, for layers the patch does not cover.
@@ -411,8 +417,22 @@ function zoomCenter(state, factor) {
 
 function reset(state) {
     if (state.home) {
-        setBox(state, { ...state.home });
+        setBox(state, fitBox(state));
     }
+}
+
+// The whole board, or, turned (pass 29), the board's turned width across the pane's width from its turned top, to pan along its length; a turned
+// board that fits whole is shown whole.
+function fitBox(state) {
+    const home = { ...state.home };
+    const width = state.svg.clientWidth;
+    const height = state.svg.clientHeight;
+    if (!state.rotated || width === 0 || height === 0) {
+        return home;
+    }
+
+    const span = home.height * width / height;
+    return span >= home.width ? home : { x: home.x, y: home.y, width: span, height: home.height };
 }
 
 // The LOS layer (LOS Design, section 6): a line and the blocking hex, drawn above the units.
@@ -522,24 +542,51 @@ function toBoard(state, clientX, clientY) {
 
 // Pass 29: the whole map turned a quarter clockwise as one, as if walking to the side of the table. The turn is a CSS transform on the drawing
 // (site.css, .board-host.rotated); the board's coordinates do not change, and the pointer is read through the screen matrix, which includes it.
-// The choice is remembered by the browser.
-function readRotation() {
+// The browser remembers the choice for each shape of pane: taller than wide, or not.
+function paneShape(state) {
+    return state.host.clientHeight > state.host.clientWidth ? "portrait" : "landscape";
+}
+
+function readRotation(shape) {
     try {
-        return localStorage.getItem(rotationKey) === "true";
+        return localStorage.getItem(`${rotationKey}.${shape}`) === "true";
     } catch {
         return false;
     }
 }
 
-function setRotation(state, on) {
-    state.rotated = Boolean(on);
-    state.host.classList.toggle("rotated", state.rotated);
-    try {
-        localStorage.setItem(rotationKey, String(state.rotated));
-    } catch {
-        // Storage is blocked: the turn holds for this page only.
+function applyShape(state) {
+    // A hidden pane (a narrow tab not shown) has no size, so no shape: its choice waits until it shows.
+    if (state.host.clientWidth === 0 || state.host.clientHeight === 0) {
+        return;
     }
 
+    const shape = paneShape(state);
+    if (shape === state.shape) {
+        return;
+    }
+
+    state.shape = shape;
+    const on = readRotation(shape);
+    if (on !== state.rotated) {
+        setRotation(state, on, false);
+        state.dotnet.invokeMethodAsync("OnRotationChanged", state.rotated);
+    }
+}
+
+function setRotation(state, on, remember) {
+    state.rotated = Boolean(on);
+    state.host.classList.toggle("rotated", state.rotated);
+    if (remember) {
+        state.shape = paneShape(state);
+        try {
+            localStorage.setItem(`${rotationKey}.${state.shape}`, String(state.rotated));
+        } catch {
+            // Storage is blocked: the turn holds for this page only.
+        }
+    }
+
+    reset(state);
     updateUnitTier(state);
     return state.rotated;
 }

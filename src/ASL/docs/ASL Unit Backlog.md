@@ -657,3 +657,11 @@ Pass 28c (2026-10-02) made Play the map-centered workspace: R11 `PlayMapPanel` o
 | Strict JSInterop in the Play page tests, layers read per viewport instance, and the reveal call's target asserted | UI review, pass 28c | | | The tests run the scripts loosely and read the last layer sent. |
 | The other pages' wide tables in labelled scroll regions, as the Play units table is | UI review, pass 28c | | | Under 40rem a wide table scrolls inside itself as a block. |
 | Hover-only explanations (such as Intensive Fire's title) reachable by focus | UI review, pass 28c | | | The text is in the rule help or the reasons too. |
+
+## 45. Added by the redesign pass 29
+
+Pass 29 (2026-10-02) shared the board viewer's map and inspector with Play (`BoardWorkspace`, `BoardInspector`), made the proposal review the inspector's first tab, turned the map on request (section 44's row), and fixed the findings of two reviews. Items it leaves out:
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| Broken, berserk, captured, and Melee recorded as false when a unit is created, so a new unit's Good Order is known | Claude in Chrome's review, pass 29 | ASL-UNIT-023 (Index, Good Order, p. 23) | A change to saved games | Good Order reads "unknown" and names the conditions not recorded. |

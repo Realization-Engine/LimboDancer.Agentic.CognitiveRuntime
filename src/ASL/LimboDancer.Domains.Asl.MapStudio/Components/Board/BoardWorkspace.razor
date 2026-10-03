@@ -17,7 +17,7 @@
     {
         <p class="fail" id="workspace-load">The map did not load: @problem <button type="button" id="workspace-retry" @onclick="Retry">Try again</button></p>
     }
-    <BoardViewport @ref="viewport" Label="@MapLabel" OnReady="@Ready" OnClick="@Click" OnHover="@Hover" OnKey="@Key" OnUnitSelected="@UnitClick" />
+    <BoardViewport @ref="viewport" Label="@MapLabel" OnReady="@Ready" OnClick="@Click" OnHover="@Hover" OnKey="@Key" OnUnitSelected="@UnitClick" OnRotation="@Turned" />
     @Footer
 </div>
 @if (!InspectorFirst)
@@ -201,7 +201,13 @@
         StateHasChanged();
     }
 
-    /// <summary>Turns the whole map a quarter clockwise, or back; the browser remembers the choice (pass 29).</summary>
+    private Task Turned(bool on) => InvokeAsync(() =>
+    {
+        rotated = on;
+        StateHasChanged();
+    });
+
+    /// <summary>Turns the whole map a quarter clockwise, or back; the browser remembers the choice for the pane's shape (pass 29).</summary>
     public async Task ToggleRotation()
     {
         if (viewport is not null)

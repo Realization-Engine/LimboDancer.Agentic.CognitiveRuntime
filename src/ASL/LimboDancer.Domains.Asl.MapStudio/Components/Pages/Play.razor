@@ -9,6 +9,7 @@
 @using LimboDancer.Domains.Asl.Units.State
 @using static LimboDancer.Domains.Asl.MapStudio.Components.Play.FireText
 @inject LivePlay Live
+@inject NavigationManager Navigation
 @inject UnitLibrary Library
 @inject GameMaps GameMaps
 @inject IServiceProvider Services
@@ -109,7 +110,7 @@
         {
             <ProposalReviewPanel Title="@proposal.Action.Name" Accepted="@(proposal.Result.Outcome is PlayOutcome.NeedsConfirmation or PlayOutcome.Committed or PlayOutcome.Replay)"
                                  Outcome="@OutcomeText(proposal.Result.Outcome, Withheld(proposal))" Reasons="@([.. Reasons(proposal)])"
-                                 CanConfirm="@(proposal.Result.Outcome == PlayOutcome.NeedsConfirmation)" Busy="@busy" Confirm="Confirm" Cancel="@(() => { if (!busy) { pending = null; } })">
+                                 CanConfirm="@(proposal.Result.Outcome == PlayOutcome.NeedsConfirmation)" Busy="@busy" Confirm="Confirm" Cancel="@(() => { if (!busy) { (pending, status) = (null, string.Empty); } })">
                 <Evidence>
                     @if (proposal.Result.Plan?.Entry is { } review && !Withheld(proposal))
                     {
@@ -3292,6 +3293,9 @@ else if (state is not null)
         handOver = null;
         highlight = null;
         inspectorTab = "selection";
+
+        // Pass 29: the address names the game, so a reload opens it again (behind the hand-over).
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("game", gameId.Length > 0 ? gameId : null), replace: true);
         placeEntry = string.Empty;
         nonObChosen.Clear();
         pending = null;
@@ -3975,6 +3979,9 @@ else if (state is not null)
         Proposal proposed;
         try
         {
+            // Pass 29: the busy state is drawn before the gate is asked, so the pickers show as disabled even when the answer is quick.
+            StateHasChanged();
+            await Task.Yield();
             var revision = (long)(history?.Events.Count ?? 0);
             proposed = new Proposal(action, arguments, await Run(() => Live.Play.ProposeAsync(action, arguments, Live.Principal)), revision);
         }
@@ -4039,6 +4046,8 @@ else if (state is not null)
         PlayResult result;
         try
         {
+            StateHasChanged();
+            await Task.Yield();
             result = await Run(() => Live.Play.ConfirmAsync(proposal.Action, proposal.Arguments, Live.Principal, proposal.Result.Correlation));
         }
         finally

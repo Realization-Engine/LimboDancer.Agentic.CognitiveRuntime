@@ -128,6 +128,13 @@
     /// <summary>Zooms about the centre: a factor under 1 zooms in, over 1 out (pass 28c: the Play map's zoom buttons).</summary>
     public ValueTask Zoom(double factor) => Send("zoom", factor);
 
+    /// <summary>The map turned or turned back by the script, when its pane changes shape (pass 29).</summary>
+    [Parameter]
+    public Func<bool, Task>? OnRotation { get; set; }
+
+    [JSInvokable]
+    public Task OnRotationChanged(bool rotated) => OnRotation?.Invoke(rotated) ?? Task.CompletedTask;
+
     [JSInvokable]
     public Task OnBoardClick(double x, double y) => OnClick?.Invoke(x, y) ?? Task.CompletedTask;
 

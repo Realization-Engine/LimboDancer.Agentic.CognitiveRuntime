@@ -94,7 +94,7 @@ The user had Claude Design review the first build (commit 747ad2c). It found no 
 
 - "Rotate map" in the map's toolbar, on Play and the board viewer, turns the whole map a quarter clockwise as one: terrain, counters, labels, LOS, marks, and the highlight. The user ruled that counters turn with the board; nothing is redrawn upright.
 - The turn is a CSS transform on the drawing (`.board-host.rotated`, sized with container units), so the board's coordinates do not change. The viewport reads the pointer through the screen matrix, which includes the transform, so clicks, hover, and wheel zoom stay right; dragging to pan maps the screen's movement onto the turned axes.
-- The browser remembers the choice (local storage, `studio.map.rotated`); it is off until first chosen.
+- The browser remembers the choice (local storage); it is off until first chosen. Section 10 makes it one choice per shape of pane.
 
 **Narrow windows.** Under 1024px the inspector sits below the map, inside the Map tab, so what a click picks shows right under the map. A new proposal and the Review button open the Map tab with the Proposal tab chosen. Wider, the inspector stays the right-hand pane.
 
@@ -125,6 +125,28 @@ The user had Claude Design review the first build (commit 747ad2c). It found no 
 
 - the turned map at 1920x1080: Fit, a counter click (the screen point maps to the counter's own board coordinates, and the hit is the counter), a drag that keeps the point under the pointer, hover across hexes;
 - the Proposal tab: a counter and a hex click kept it open while Confirm waited; after Cancel the count went and a hex click opened Selection;
-- 683x384: a proposal opened the Map tab, with the inspector below the map and the focus on it; 320x640: the turned map fills the column, and nothing scrolls sideways;
+- 683x384: a proposal opened the Map tab, with the inspector below the map and the focus on it; 320x640: the turned map fits the column (section 10 makes Fit fill its width), and nothing scrolls sideways;
 - the LOS tab filled From with the picked hex; the hand-over started the Russian view on Selection with the map still turned;
 - the board viewer: the turn remembered across pages, the Styled view drawn after its vectorization, and the turn switched off.
+
+## 10. The second review
+
+The user had Claude in Chrome check section 9 in the running Studio (commit 69eb89e). Six of seven checks passed; the disabled pickers could not be seen, and five problems were found. The user accepted every fix below on 2026-10-02, chose to remember the turn by the pane's shape, and added that a turned map should fit the pane's width.
+
+- **Fit on a turned map** fits the board's turned width to the pane's width, from its turned top; the length is panned. A turned board that fits whole is shown whole. Turning the map fits it at once.
+- **One turn per pane shape.** The choice is remembered for a pane taller than wide (`studio.map.rotated.portrait`) and for one that is not (`studio.map.rotated.landscape`). A pane resized into the other shape takes that shape's choice, and the toolbar's button follows it. A pane that is hidden (a narrow tab not shown) has no size and so no shape; its choice waits until it shows. Turning the map on a phone, or in Play's tall map pane, never turns the board viewer's wide pane.
+- **The pickers draw as disabled.** The page draws its busy state before it asks the gate, so the Game and View pickers show as disabled while a proposal or a confirmation is checked.
+- **Cancel clears the status line**, with the proposal.
+- **The context no longer covers the panes after a proposal.** The reveal waits two frames, so the context's new height is measured first and the pane stops below it.
+- **A reload keeps the game.** Choosing a game writes `?game=` to the address, so a reload opens it again, behind the hand-over.
+- **Good Order unknown says why.** The rule (ASL-UNIT-023) leaves Good Order unknown while broken, berserk, captured, or Melee is not recorded, and the games made in the Studio leave some of them unrecorded. The inspector reads, for example, "unknown: not recorded whether berserk, captured, melee". Recording all four at a unit's creation changes saved games, so it is a backlog row (section 45).
+- **The units table** writes a side as the counters and the inspector do ("Russian").
+- **Left as they are, at the user's word:** the legend turns with the map, and hexside names stay board directions.
+
+**Studio checks**, on port 6670 with `p28c-walk2`:
+
+- the pickers' fieldset went disabled and back during a proposal; Cancel cleared the status; choosing the game wrote `?game=p28c-walk2`, and a reload opened it behind the hand-over;
+- the units table read "German" and "Russian"; g1's Good Order read "unknown: not recorded whether berserk, captured, melee";
+- at 320x640, "Rotate map" in the Map tab turned the map and fitted its width (view box 963 by 717 board units across a 258 by 346 pane), and stored the portrait choice only;
+- at 1480x900, Play's map pane (434 by 556) is tall, so it stayed turned; the board viewer's pane (901 by 586) is wide, so it was not;
+- at 1480x900, with the workspace just below the context, a proposal grew the context to 205 pixels and the panes started at 209.

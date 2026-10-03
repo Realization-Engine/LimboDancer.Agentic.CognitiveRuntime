@@ -763,7 +763,7 @@ These folders express ownership, not a requirement to create every directory imm
 - **The view's overlay.** `GameMaps.Layers` returns the unit overlay and the view beside the SVG, so the Selection tab reads what the view may see and nothing more (section 15.4). Terrain facts, Evidence, and LOS are terrain only and serve every view.
 - **The workspace draws the picked hex and the LOS line.** The page's map cache keys only on the game, revision, view, and Gun.
 - **Retired.** `PlayMapPanel`, `PlaySelectedHex`, and Play's LOS form under the map.
-- **The turned map** (backlog section 44, the user's row). "Rotate map" turns the whole map a quarter clockwise as one, counters included, by a CSS transform; the board's coordinates and the pointer mapping are unchanged, and the browser remembers the choice.
+- **The turned map** (backlog section 44, the user's row). "Rotate map" turns the whole map a quarter clockwise as one, counters included, by a CSS transform; the board's coordinates and the pointer mapping are unchanged. The browser remembers the choice for each shape of pane, tall or wide, and Fit on a turned map fills the pane's width.
 - **Narrow windows.** Under 1024px the inspector sits below the map in the Map tab; a proposal opens the Map tab on its Proposal tab.
 - **The Proposal tab holds** while a proposal waits for Confirm, and is counted only then. The game and view pickers are disabled while the gate works, and the workspace is keyed by the game and the view.
 

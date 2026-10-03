@@ -12,7 +12,7 @@
         <dl class="unit-details" id="unit-game-facts">
             <dt>Side</dt><dd>@SideName(instance.Side)</dd>
             <dt>Conditions</dt><dd>@ConditionsText(instance)</dd>
-            <dt>Good Order</dt><dd>@YesNo(GameState.GoodOrder(instance, Vocabulary))</dd>
+            <dt>Good Order</dt><dd>@GoodOrderText(instance)</dd>
             <dt>MF spent this phase</dt><dd>@instance.MfSpent</dd>
             @if (instance.From.Count > 0)
             {
@@ -64,11 +64,16 @@
     // Pass 29: a side reads as the counter names it ("Russian"), and Good Order as Yes or No.
     private static string SideName(string side) => side.Length == 0 ? side : char.ToUpperInvariant(side[0]) + side[1..];
 
-    private static string YesNo(ConditionState state) => state switch
+    // Good Order is unknown while broken, berserk, captured, or Melee is not recorded (ASL-UNIT-023); the inspector says which (pass 29).
+    private string GoodOrderText(UnitInstance instance) => GameState.GoodOrder(instance, Vocabulary) switch
     {
         ConditionState.True => "Yes",
         ConditionState.False => "No",
-        _ => Conditions.Name(state),
+        ConditionState.Unknown => "unknown: not recorded whether "
+            + string.Join(", ", new[] { Conditions.Broken, Conditions.Berserk, Conditions.Captured, Conditions.Melee }
+                .Where(name => GameState.Condition(instance, name) == ConditionState.Unknown)
+                .Select(name => name.Replace("asl:", string.Empty, StringComparison.Ordinal))),
+        var other => Conditions.Name(other),
     };
 
     private static string ConditionsText(IGameObject item)
