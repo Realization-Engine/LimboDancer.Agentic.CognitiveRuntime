@@ -1203,7 +1203,10 @@ else if (state is not null)
         var hidden = plan.Placements.Where(item => item.Hidden && !item.OffBoard && item.Definition is not null && Where(item) is not null).ToArray();
         if (hidden.Length > 0)
         {
-            told.Add("where its hidden counters are (" + string.Join(", ", hidden.Select(item => $"{DefinitionLabel(item.Definition!)} in {Hex(Where(item)!)}")) + ")");
+            // A definition with no printed label, such as a Gun, is named by its kind.
+            string Named(string definition) => DefinitionLabel(definition) is var label && label != definition ? label
+                : PublishedCatalog?.Definition(definition) is { } found ? DisplayText.Kind(found.Kind) : definition;
+            told.Add("where its hidden counters are (" + string.Join(", ", hidden.Select(item => $"{Named(item.Definition!)} in {Hex(Where(item)!)}")) + ")");
         }
 
         var standing = plan.Placements.Where(item => item.At is not null && item.Holder is null && !item.OffBoard).ToArray();

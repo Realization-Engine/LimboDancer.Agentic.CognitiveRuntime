@@ -434,7 +434,7 @@ Facts every plan rests on, from the LOS table:
 
 ### 15.3 The Tractor Works: the 308th remade, and the Germans
 
-Made 2026-10-03 from pass 30's LOS table of building X3 against the German setup Locations on board 01. Each of the three 308th plans was used in a new game in my Studio and accepted by the gate (31 counters each), and Three sides was then used in the German view of each game and accepted (48 counters; games `p30b-tw-1` to `p30b-tw-3`). They wait for the user's approval.
+Made 2026-10-03 from pass 30's LOS table of building X3 against the German setup Locations on board 01. Each of the three 308th plans was used in a new game in my Studio and accepted by the gate (31 counters each), and Three sides was then used in the German view of each game and accepted (48 counters; games `p30b-tw-1` to `p30b-tw-3`). The user kept all three on 2026-10-03, with no remarks.
 
 **The shared footprint (section 14, question 10).** The three 308th plans now show the same number of counters in every hex, all of them "?":
 
@@ -485,3 +485,18 @@ The German side has this one plan, since no first-side plan can be told from ano
 | Kampfgruppe Tienham | Z6, level 1: 2 x 4-6-7 squad (one with the HMG), 10-2 leader; Y7, level 1: 2 x 4-6-7 squad (one with the MMG), 9-1 leader; Y8, ground level: 2 x 4-6-7 squad, 8-0 leader |
 
 The plan uses all 12 of Kampfgruppe Stahler's "?": 3 for its concealed stacks and 9 Dummies. BB4 and Y8 are out of every LOS from the Works, so their stacks should be offered the non-OB "?"; that step comes after the Russian remnants set up (order 3), which the check did not do, so it is not confirmed in the Studio.
+
+### 15.4 Armor Test: the German column
+
+Made 2026-10-03. The column never sets up on the map, so the plan is its loading, off board (section 5, D9). It was used in a new game in my Studio after the Russian plan Forward screen was committed (`p30b-at-1`), and the gate accepted it (7 counters, all off board to enter). It waits for the user's approval.
+
+**Loaded column** (`loaded-column`), for any setup
+
+| | |
+|---|---|
+| The idea | The column never sets up on the map: it waits off board and enters along the north edge on Turn 1. This plan loads it so that nothing walks: the infantry gun in tow of the truck with its crew aboard, and the squad and the 8-1 aboard the halftrack, with the PzKpfw IIIH to lead. Where it enters is chosen when it enters, once the Russian setup has been read. |
+| What it gives up | Everything rides, so a hit on the truck costs the Gun and its crew together, and one on the halftrack costs the only squad and the leader; nothing is on foot to find a hidden Gun before the vehicles meet it. |
+| Terrain facts | The whole group enters along the north edge on Turn 1, the vehicles in Motion and loaded as they choose (A2.52); no hex is chosen at setup.<br>Three dirt roads leave the north edge of board 4, at I1, Q1, and V1; the centre road runs from Q1 to the exit at Q10.<br>The column wins by exiting 8 Exit VP off the south edge near G10, Q10, or Y10 within five turns. |
+| Off board, to enter | PzKpfw IIIH; halftrack with the 4-6-7 squad and the 8-1 leader aboard; truck with the 2-2-8 crew aboard and the infantry gun in tow |
+
+**What the check showed of the Russian plan.** In the German view the comparison read "If they set up like Forward screen: 4 of 4 hexes match", marked closest, and that group shows the Russian plan's public text, whose idea names the Gun's hex. This card has one Russian plan, so a Russian player who uses it unchanged gives the hidden Gun away. The Russian side is told so on the plan's card ("where its hidden counters are (2-2-8 crew in R5, Gun in R5); what is under each \"?\"") and in the review of an unchanged setup, as section 13 (D14) designed. A second Russian plan with the same visible stacks and the Gun elsewhere would end it, as the shared footprint did on The Tractor Works; that is a backlog row unless the user wants it in this pass.
