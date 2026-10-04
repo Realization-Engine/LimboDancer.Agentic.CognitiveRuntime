@@ -7,7 +7,7 @@
         @foreach (var unit in Units)
         {
             <label @key="unit"><input class="retain-dm" type="checkbox" data-unit="@unit" checked="@Selected.Contains(unit)"
-                                      @onchange="@(args => OnToggle.InvokeAsync(new Toggle(unit, args.Value is true)))" /> @Say(unit)</label>
+                                      @onchange="@(args => OnToggle.InvokeAsync(new Toggle(unit, args.Value is true)))" /> @At(unit)</label>
         }
     </fieldset>
 }
@@ -18,6 +18,12 @@
     public Func<string, string>? Words { get; set; }
 
     private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
+    /// <summary>A unit's name with its hex, "4-6-7 squad G4 in [G4]" (the user, 2026-10-04), where no Location stands beside the name.</summary>
+    [CascadingParameter(Name = "SayAt")]
+    public Func<string, string>? WordsAt { get; set; }
+
+    private string At(string? text) => text is null ? string.Empty : WordsAt?.Invoke(text) ?? Say(text);
 
     /// <summary>A unit checked or cleared.</summary>
     public sealed record Toggle(string Id, bool On);

@@ -9,7 +9,7 @@
 <div class="toolbar">
     @foreach (var unit in Units)
     {
-        <label><input class="opportunity-unit" type="checkbox" data-unit="@unit" checked="@Selected.Contains(unit)" @onchange="@(args => OnToggle.InvokeAsync(new UnitSelectionList.Toggle(unit, args.Value is true)))" /> @Say(unit)</label>
+        <label><input class="opportunity-unit" type="checkbox" data-unit="@unit" checked="@Selected.Contains(unit)" @onchange="@(args => OnToggle.InvokeAsync(new UnitSelectionList.Toggle(unit, args.Value is true)))" /> @At(unit)</label>
     }
     <button id="propose-opportunity" disabled="@(Selected.Count == 0)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: Opportunity Fire</button>
 </div>
@@ -21,6 +21,12 @@
     public Func<string, string>? Words { get; set; }
 
     private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
+    /// <summary>A unit's name with its hex, "4-6-7 squad G4 in [G4]" (the user, 2026-10-04), where no Location stands beside the name.</summary>
+    [CascadingParameter(Name = "SayAt")]
+    public Func<string, string>? WordsAt { get; set; }
+
+    private string At(string? text) => text is null ? string.Empty : WordsAt?.Invoke(text) ?? Say(text);
 
     /// <summary>The units that may hold their fire.</summary>
     [Parameter, EditorRequired]

@@ -3,12 +3,12 @@
    captor's side's view and the adjudicator. *@
 @* Pass 31c (the user, 2026-10-04): the units are said by name, and each answer is a button on its own line. *@
 <div class="pending-surrender" data-surrender="@Unit">
-    <p class="fail">@Say(Unit) has surrendered (A15.5); the captor's side chooses the Guard, or rejects the surrender (A20.3), before anything else happens.</p>
+    <p class="fail">@At(Unit) has surrendered (A15.5); the captor's side chooses the Guard, or rejects the surrender (A20.3), before anything else happens.</p>
     @if (MayAnswer)
     {
         @foreach (var captor in Captors)
         {
-            <button class="take-prisoner" data-captor="@captor" @onclick="@(() => OnTake.InvokeAsync(captor))">Propose: @Say(captor) takes it prisoner</button>
+            <button class="take-prisoner" data-captor="@captor" @onclick="@(() => OnTake.InvokeAsync(captor))">Propose: @At(captor) takes it prisoner</button>
         }
         <button class="reject-surrender" data-unit="@Unit" @onclick="@(() => OnReject.InvokeAsync())">Propose: reject the surrender (No Quarter)</button>
         <button class="free-surrender" data-unit="@Unit" @onclick="@(() => OnFree.InvokeAsync())">Propose: free it as Unarmed (no captor can guard it; A20.21)</button>
@@ -21,6 +21,12 @@
     public Func<string, string>? Words { get; set; }
 
     private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
+    /// <summary>A unit's name with its hex, "4-6-7 squad G4 in [G4]" (the user, 2026-10-04), where no Location stands beside the name.</summary>
+    [CascadingParameter(Name = "SayAt")]
+    public Func<string, string>? WordsAt { get; set; }
+
+    private string At(string? text) => text is null ? string.Empty : WordsAt?.Invoke(text) ?? Say(text);
 
     /// <summary>The unit that surrendered.</summary>
     [Parameter, EditorRequired]

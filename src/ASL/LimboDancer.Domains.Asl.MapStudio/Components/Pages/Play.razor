@@ -66,6 +66,7 @@ else
 <ChildContent>
 @* Pass 31c (design D11): every panel reads a unit's name and a Location's words from the view's names, through one cascaded function. *@
 <CascadingValue Name="Say" Value="@Words">
+<CascadingValue Name="SayAt" Value="@WordsAt">
 
 @if (state?.Scenario is { } scenario)
 {
@@ -647,7 +648,7 @@ else if (state is not null)
                         <span class="muted">Massacre (A20.4): a Russian or berserk unit eliminates a prisoner in its Location, as if using a SW; the prisoner's side is faced with No Quarter.</span>
                         @foreach (var (unit, prisoner) in massacres)
                         {
-                            <button class="massacre" data-unit="@unit.Id" data-prisoner="@prisoner.Id" @onclick="@(() => ProposeMassacre(unit.Id, prisoner.Id))">Propose: @Words(unit.Id) massacres @Words(prisoner.Id)</button>
+                            <button class="massacre" data-unit="@unit.Id" data-prisoner="@prisoner.Id" @onclick="@(() => ProposeMassacre(unit.Id, prisoner.Id))">Propose: @WordsAt(unit.Id) massacres @Words(prisoner.Id)</button>
                         }
                     </div>
                 }
@@ -940,6 +941,7 @@ else if (state is not null)
     </div>
 }
 
+</CascadingValue>
 </CascadingValue>
 </ChildContent>
 </HandOverScreen>
@@ -6661,6 +6663,37 @@ else if (state is not null)
             }
 
             return wordsCache.Say;
+        }
+    }
+
+    // Pass 31c (the user, 2026-10-04): a unit named with no Location beside it carries its hex, "4-6-7 squad G4 in [G4]". The text is a
+    // unit's id, alone or with words after it; a unit the view does not place is said as Words says it.
+    private (Func<string, string>? Say, Func<string, string> At) atCache = (null, static text => text);
+
+    private Func<string, string> WordsAt
+    {
+        get
+        {
+            var say = Words;
+            if (!ReferenceEquals(atCache.Say, say))
+            {
+                atCache = (say, text =>
+                {
+                    var said = say(text);
+                    var end = text.IndexOf(' ', StringComparison.Ordinal);
+                    var id = end < 0 ? text : text[..end];
+                    if (state?.Unit(id) is not { } unit
+                        || (Viewer.IsAdjudicator ? state.Location(id)?.Location : View?.Locations.TryGetValue(id, out var seen) == true ? seen.Location : null) is not { } at)
+                    {
+                        return said;
+                    }
+
+                    var name = say(unit.Id);
+                    return said.StartsWith(name, StringComparison.Ordinal) ? $"{name} in {PlaceOf(at)}{said[name.Length..]}" : said;
+                });
+            }
+
+            return atCache.At;
         }
     }
 

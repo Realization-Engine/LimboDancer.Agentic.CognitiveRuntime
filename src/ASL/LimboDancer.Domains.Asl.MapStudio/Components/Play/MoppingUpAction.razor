@@ -14,7 +14,7 @@
             <option value="">choose</option>
             @foreach (var item in Buildings)
             {
-                <option value="@item.Id">@Say(item.Id)</option>
+                <option value="@item.Id">@At(item.Id)</option>
             }
         </select>
     </label>
@@ -52,6 +52,12 @@
     public Func<string, string>? Words { get; set; }
 
     private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
+    /// <summary>A unit's name with its hex, "4-6-7 squad G4 in [G4]" (the user, 2026-10-04), where no Location stands beside the name.</summary>
+    [CascadingParameter(Name = "SayAt")]
+    public Func<string, string>? WordsAt { get; set; }
+
+    private string At(string? text) => text is null ? string.Empty : WordsAt?.Invoke(text) ?? Say(text);
 
     /// <summary>
     /// A building the side may Mop Up: its id, the MMC in it that may, the units in it that may guard a surrender, and where each unit is, such as "bd01:E4"

@@ -25,7 +25,7 @@
             <option value="">choose</option>
             @foreach (var unit in Units)
             {
-                <option value="@unit.Id">@Say(unit.Label)</option>
+                <option value="@unit.Id">@At(unit.Label)</option>
             }
         </select>
     </label>
@@ -43,6 +43,12 @@
     public Func<string, string>? Words { get; set; }
 
     private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
+    /// <summary>A unit's name with its hex, "4-6-7 squad G4 in [G4]" (the user, 2026-10-04), where no Location stands beside the name.</summary>
+    [CascadingParameter(Name = "SayAt")]
+    public Func<string, string>? WordsAt { get; set; }
+
+    private string At(string? text) => text is null ? string.Empty : WordsAt?.Invoke(text) ?? Say(text);
 
     /// <summary>The actions the panel asks for; the page maps each to its registered action.</summary>
     public const string Transfer = "transfer";
