@@ -40,6 +40,7 @@
         @if (history?.Current is { } current)
         {
             <PerspectivePicker Id="replay-perspective" Choices="@ViewChoices(current)" Value="@(handOver ?? viewAs)" ValueChanged="@ChangeView" />
+            <a id="replay-play-link" href="@($"games/play?game={Uri.EscapeDataString(gameId)}")" title="This game on the Play page, as it stands now">Open on Play</a>
             @if (Shown && StepNow is { } linked && StateNow is { } linkedState)
             {
                 <a id="replay-view" href="@Games.BoardLink(ViewTarget(linkedState), GameLibrary.LivePrefix + gameId, Viewer, linked.Last, highlight?.ToString())"
@@ -217,6 +218,10 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
     [SupplyParameterFromQuery(Name = "view")]
     public string? ViewQuery { get; set; }
 
+    /// <summary>An event whose step is to be shown, as Play's "Replay from here" names it; the step's number is the view's own, so the page finds it.</summary>
+    [SupplyParameterFromQuery(Name = "at")]
+    public string? AtQuery { get; set; }
+
     /// <summary>The step to show, counted in the view's own steps; the last step when absent.</summary>
     [SupplyParameterFromQuery(Name = "step")]
     public int? StepQuery { get; set; }
@@ -290,7 +295,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
     private void Load(string game)
     {
         StopPlay();
-        (gameId, highlight, handOver, records, revealed) = (game, null, null, null, 0);
+        (gameId, highlight, handOver, records, revealed, atPending) = (game, null, null, null, 0, AtQuery);
         (viewCache, mapCache, standingCache, unitCache, changeCache) = (default, default, default, default, default);
         entry = game.Length == 0 ? null : GamesLibrary.Load(GameLibrary.LivePrefix + game);
         history = entry?.History;
@@ -374,7 +379,19 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
             : ReplayTimeline.Empty;
         records = history?.Current is { } now ? new PlayRecords(history, Viewer, now.Revision) : null;
         stepNumber = Math.Clamp(step ?? timeline.Steps.Count, 1, Math.Max(1, timeline.Steps.Count));
+
+        // The event the address names is shown once, at the step of the view that holds its attempt; a view that has no such step keeps its last.
+        if (atPending is { } at)
+        {
+            atPending = null;
+            if (step is null && timeline.Steps.FirstOrDefault(item => item.Attempt == ReplaySteps.AttemptOf(at)) is { } found)
+            {
+                stepNumber = found.Number;
+            }
+        }
     }
+
+    private string? atPending;
 
     /// <summary>The turn and phase a step was taken in, in words.</summary>
     private static string StepWhen(ReplayStep step) => step.IsSetup ? "Setup, before play."

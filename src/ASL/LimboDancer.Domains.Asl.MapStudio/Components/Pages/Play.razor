@@ -334,6 +334,8 @@ else if (state is not null)
                 <p id="play-over" class="muted">The game is over, and no more actions are proposed (A3.9; ruling R20.1).</p>
                 @* Pass 31 (play test P-08): the result stands here too, with the account of every condition. *@
                 <p id="play-over-result"><strong>@ResultTitle</strong> @ResultReason</p>
+                @* Pass 31b: the ended game is played back on the Replay page. *@
+                <p><a id="play-replay" href="@ReplayFrom(null)">Replay this game</a></p>
                 @if (ResultWhy.Count > 0)
                 {
                     <ul id="play-over-why">
@@ -825,12 +827,13 @@ else if (state is not null)
             <details id="play-history">
                 <summary>Records, latest first</summary>
                 <DiceRollHistory Rolls="@RollRows" Scripted="@(Scripted is not null)" />
-                <ActionRecordList Heading="Ordnance" ListId="play-ordnance" When="@WhenOf" Records='@Entries(OrdnanceRecords, "ordnance")' />
-                <FireHistory Records="@FireRecords" When="@WhenOf" />
-                <ActionRecordList Heading="Close Combat" ListId="play-close-combats" When="@WhenOf" Records='@Entries(CloseCombatRecords, "cc")' />
-                <ActionRecordList Heading="Night and weather" ListId="play-night" When="@WhenOf" Records='@Entries(NightRecords, "night")' />
-                <ActionRecordList Heading="Snipers" ListId="play-snipers" When="@WhenOf" Records='@Entries(SniperRecords, "sniper")' />
-                <ActionRecordList Heading="Rally, Rout, and other actions" ListId="play-rallies" When="@WhenOf"
+                @* Pass 31b: each record leads to its step on the Replay page, read in the view shown here. *@
+                <ActionRecordList Heading="Ordnance" ListId="play-ordnance" When="@WhenOf" Replay="@ReplayFrom" Records='@Entries(OrdnanceRecords, "ordnance")' />
+                <FireHistory Records="@FireRecords" When="@WhenOf" Replay="@ReplayFrom" />
+                <ActionRecordList Heading="Close Combat" ListId="play-close-combats" When="@WhenOf" Replay="@ReplayFrom" Records='@Entries(CloseCombatRecords, "cc")' />
+                <ActionRecordList Heading="Night and weather" ListId="play-night" When="@WhenOf" Replay="@ReplayFrom" Records='@Entries(NightRecords, "night")' />
+                <ActionRecordList Heading="Snipers" ListId="play-snipers" When="@WhenOf" Replay="@ReplayFrom" Records='@Entries(SniperRecords, "sniper")' />
+                <ActionRecordList Heading="Rally, Rout, and other actions" ListId="play-rallies" When="@WhenOf" Replay="@ReplayFrom"
                                   Records="@([.. RallyAndRepairRecords.Select(item => new ActionRecordList.Entry(item.EventId, item.Kind, item.Text))])" />
             </details>
         </section>
@@ -6184,6 +6187,13 @@ else if (state is not null)
 
     /// <summary>The latest record the view may read, with its turn and phase, for the activity strip.</summary>
     private string? LatestRecord => Records?.Latest;
+
+    /// <summary>
+    /// The Replay page's address for this game in the view shown (pass 31b): at the step that holds an event, or where the Replay page opens. In a
+    /// game still played the Replay page asks for the hand-over itself.
+    /// </summary>
+    private string? ReplayFrom(string? eventId) => gameId.Length == 0 ? null
+        : $"games/replay?game={Uri.EscapeDataString(gameId)}&view={Uri.EscapeDataString(Viewer.Name)}" + (eventId is null ? string.Empty : $"&at={Uri.EscapeDataString(eventId)}");
 
     /// <summary>A proposed attack's fire group in words, as the records say it.</summary>
     private string FireGroupText(FireAttack attack) => PlayRecords.FireGroupText(history?.Events ?? [], attack);

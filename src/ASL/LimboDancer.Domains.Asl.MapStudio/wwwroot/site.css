@@ -2515,6 +2515,21 @@ details.advanced > summary {
     margin-top: 0.4rem;
 }
 
+/* A record's link to its step on the Replay page, small beside the record. */
+.record-replay {
+    margin-left: 0.4rem;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.record-replay-line .record-replay {
+    margin-left: 0;
+}
+
+.record-replay-line {
+    margin: -0.25rem 0 0.75rem;
+}
+
 .replay-play-on > p {
     margin: 0.3rem 0;
 }

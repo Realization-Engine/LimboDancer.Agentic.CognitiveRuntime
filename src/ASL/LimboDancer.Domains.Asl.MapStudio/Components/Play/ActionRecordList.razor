@@ -9,7 +9,13 @@
         <ul id="@ListId">
             @foreach (var record in Records)
             {
-                <li @key="record.EventId" class="@($"{record.Kind}-record")" data-event="@record.EventId">@record.Text</li>
+                <li @key="record.EventId" class="@($"{record.Kind}-record")" data-event="@record.EventId">
+                    @record.Text
+                    @if (Replay?.Invoke(record.EventId) is { } replay)
+                    {
+                        <text> </text><a class="record-replay" href="@replay">Replay from here</a>
+                    }
+                </li>
             }
         </ul>
     }
@@ -23,7 +29,13 @@
                 <ul>
                     @foreach (var record in group.Records)
                     {
-                        <li @key="record.EventId" class="@($"{record.Kind}-record")" data-event="@record.EventId">@record.Text</li>
+                        <li @key="record.EventId" class="@($"{record.Kind}-record")" data-event="@record.EventId">
+                        @record.Text
+                        @if (Replay?.Invoke(record.EventId) is { } replay)
+                        {
+                            <text> </text><a class="record-replay" href="@replay">Replay from here</a>
+                        }
+                    </li>
                     }
                 </ul>
             }
@@ -47,6 +59,10 @@
     /// <summary>The turn and phase of a record's event, such as "Turn 2, Rally Phase"; the records are grouped under it when given.</summary>
     [Parameter]
     public Func<string, string?>? When { get; set; }
+
+    /// <summary>The Replay page's address at a record's step (pass 31b); a record shows its link when one is given.</summary>
+    [Parameter]
+    public Func<string, string?>? Replay { get; set; }
 
     /// <summary>The records in runs of one turn and phase, in the list's order.</summary>
     public static IReadOnlyList<(string? When, IReadOnlyList<T> Records)> Group<T>(IEnumerable<T> records, Func<T, string?> when)
