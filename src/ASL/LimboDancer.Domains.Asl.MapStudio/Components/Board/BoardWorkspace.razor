@@ -375,6 +375,15 @@
         }
     }
 
+    /// <summary>Brings a point of the board into view when it is out of sight or near the edge, and otherwise holds the map still (pass 31b).</summary>
+    public async Task Reveal(double x, double y)
+    {
+        if (viewport is { IsReady: true })
+        {
+            await viewport.Reveal(x, y);
+        }
+    }
+
     public async Task Fit()
     {
         if (viewport is not null)

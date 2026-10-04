@@ -13,6 +13,10 @@
             @foreach (var record in group.Records)
             {
                 <FireResolutionCard @key="record.EventId" Record="@record" />
+                @if (Replay?.Invoke(record.EventId) is { } replay)
+                {
+                    <p class="record-replay-line"><a class="record-replay" href="@replay" aria-label="@($"Replay from here: {record.Group} fire at {record.Target}")">Replay from here</a></p>
+                }
             }
         }
     </div>
@@ -25,4 +29,8 @@
     /// <summary>The turn and phase of a record's event; the records are grouped under it when given (backlog section 43, pass 28c).</summary>
     [Parameter]
     public Func<string, string?>? When { get; set; }
+
+    /// <summary>The Replay page's address at a record's step (pass 31b); a record shows its link when one is given.</summary>
+    [Parameter]
+    public Func<string, string?>? Replay { get; set; }
 }

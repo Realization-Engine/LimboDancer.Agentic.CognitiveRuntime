@@ -1,0 +1,56 @@
+@using LimboDancer.Domains.Asl.MapStudio.Components.Games
+@* Pass 31b (design D3): the game as its Game Turns, phases, and steps, for one view; the step shown is marked, and a click goes to a step. The
+   steps, their count, and their titles are already the view's own (ReplaySteps), so nothing here is hidden: what the view may not read is absent. *@
+<ol id="replay-timeline" class="replay-timeline">
+    @foreach (var phase in Timeline.Phases)
+    {
+        <li @key="phase.FirstStep" class="replay-phase" data-turn="@phase.Turn" data-phase="@phase.Phase">
+            <span class="replay-phase-title">@(phase.Phase == ReplayStep.SetupPhase ? phase.Label : $"Turn {phase.Turn}, {phase.Label}")</span>
+            <ol>
+                @foreach (var step in Timeline.Steps.Skip(phase.FirstStep - 1).Take(phase.Count))
+                {
+                    var current = step.Number == Current;
+                    <li @key="step.Number">
+                        <button type="button" id="@($"replay-step-{step.Number}")" class="@(current ? "replay-step current" : "replay-step")" aria-current="@(current ? "step" : null)"
+                                tabindex="@(current ? 0 : -1)" data-step="@step.Number" data-kind="@step.Kind" data-read="@step.Read" @onclick="@clicks[step.Number - 1]">
+                            <span class="replay-step-number">@step.Number</span>
+                            <span class="replay-step-title">@step.Title@(step.Read == ReplayRead.Part ? " (read in part)" : string.Empty)</span>
+                        </button>
+                    </li>
+                }
+            </ol>
+        </li>
+    }
+</ol>
+
+@code {
+    [Parameter, EditorRequired]
+    public ReplayTimeline Timeline { get; set; } = ReplayTimeline.Empty;
+
+    /// <summary>The number of the step shown.</summary>
+    [Parameter]
+    public int Current { get; set; }
+
+    [Parameter]
+    public EventCallback<int> Go { get; set; }
+
+    // The UI review, pass 31b: the step shown alone is a tab stop (Left, Right, Home, and End move from it), each step's click is made once for a
+    // timeline rather than on every render, and the list is drawn again only when the steps or the step shown change.
+    private EventCallback[] clicks = [];
+    private ReplayTimeline? drawn;
+    private int drawnCurrent;
+    private bool changed;
+
+    protected override void OnParametersSet()
+    {
+        changed = !ReferenceEquals(drawn, Timeline) || drawnCurrent != Current;
+        if (!ReferenceEquals(drawn, Timeline))
+        {
+            clicks = [.. Timeline.Steps.Select(step => EventCallback.Factory.Create(this, () => Go.InvokeAsync(step.Number)))];
+        }
+
+        (drawn, drawnCurrent) = (Timeline, Current);
+    }
+
+    protected override bool ShouldRender() => changed;
+}

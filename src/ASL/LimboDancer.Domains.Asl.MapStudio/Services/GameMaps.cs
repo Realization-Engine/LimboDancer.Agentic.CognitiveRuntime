@@ -78,6 +78,17 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache
     public GameMapLayers Layers(string gameId, MapInPlay map, Perspective viewer, long revision, Func<StudioBoard, string>? marks = null,
         IReadOnlyList<ResidualFire>? residualFire = null)
     {
+        ArgumentNullException.ThrowIfNull(gameId);
+        return Layers(games.Load(GameLibrary.LivePrefix + gameId), map, viewer, revision, marks, residualFire);
+    }
+
+    /// <summary>
+    /// The same layers for a game already loaded (pass 31b): the Replay page draws one game at many revisions, and loads and replays it once.
+    /// </summary>
+    public GameMapLayers Layers(GameEntry entry, MapInPlay map, Perspective viewer, long revision, Func<StudioBoard, string>? marks = null,
+        IReadOnlyList<ResidualFire>? residualFire = null)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
         ArgumentNullException.ThrowIfNull(map);
         ArgumentNullException.ThrowIfNull(viewer);
         var loaded = Board(map);
@@ -91,7 +102,6 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache
             return new GameMapLayers(null, board.Ref.Value, null, null, [$"{board.Ref} has nothing to draw in the Exact view."]);
         }
 
-        var entry = games.Load(GameLibrary.LivePrefix + gameId);
         var projection = entry.History is { HasErrors: false } ? games.Projection(entry, viewer, revision) : null;
         var overlay = projection is not null && units.Renderer(UnitLibrary.DefaultSheet) is { } renderer ? units.Overlay(board, projection.Set, renderer) : null;
 

@@ -4,6 +4,7 @@ using LimboDancer.Abstractions.Audit;
 using LimboDancer.Abstractions.Execution;
 using LimboDancer.Dice;
 using LimboDancer.Domains.Asl.Play;
+using LimboDancer.Domains.Asl.Units;
 using LimboDancer.Domains.Asl.Units.Catalog;
 using LimboDancer.Domains.Asl.Units.State;
 
@@ -83,6 +84,32 @@ public sealed class LivePlay
         ArgumentNullException.ThrowIfNull(card);
         return [.. Games().Where(scope => Store.Read(scope)?.Events.Select(item => item.Payload).OfType<GameStarted>().FirstOrDefault()?.Scenario?.Id == card)
             .Select(scope => scope.Game).Order(StringComparer.Ordinal)];
+    }
+
+    /// <summary>
+    /// A new game that plays on from a moment of another (pass 31b, design D8): the other game's events through a revision, under a new name, with a
+    /// label that says where it came from. The first game is only read. The new game's file is written whole by the store, which replays the events
+    /// first and refuses a name that is taken or is not a lowercase slug; nothing is drawn, and the dice from there on are the new game's own.
+    /// </summary>
+    public AppendResult PlayOn(string source, long revision, string name, string origin)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(name);
+        ArgumentNullException.ThrowIfNull(origin);
+        if (Store.Read(new GameScope(Tenant, source)) is not { } record || revision < 1 || revision > record.Events.Count)
+        {
+            return new AppendResult(AppendStatus.Invalid, 0, [UnitDiagnostic.Error("PLAY-ON-001", $"There is no game '{source}' with a revision {revision}.")]);
+        }
+
+        var scope = new GameScope(Tenant, name);
+        if (Store.Read(scope) is not null)
+        {
+            return new AppendResult(AppendStatus.Invalid, 0, [UnitDiagnostic.Error("PLAY-ON-002", $"A game named '{name}' exists already: give another name.")]);
+        }
+
+        GameEvent[] events = [.. record.Events.Take((int)revision).Select(item => new GameEvent(scope, item.EventId, item.Revision, item.Time, item.Source, item.Type,
+            item.Payload, item.RulePackage, item.Causes, item.Visibility))];
+        return Store.Append(scope, $"{record.Label} ({origin})", 0, events, Planner.Replay);
     }
 
     /// <summary>A live game's history, replayed against the exact boards in play; null when the game does not exist.</summary>

@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 31b Design
 
-**Status:** Draft, 2026-10-04, waiting for the user's approval and answers (section 11). Nothing is built. Pass 31b (the Replay page) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, added by the user on 2026-10-04. It takes the number 31b; the pass that held it (the page's words, layout, map, and records, from the play test) becomes pass 31c and keeps its design, section 5 of the [pass 31 design](<ASL Unit Backlog Pass 31 Design.md>).
+**Status:** Built 2026-10-04 on branch `feature/asl-backlog-pass-31b`, with the user's answers (section 11), every one as recommended: tasks 31b.1 to 31b.8, three reviews and their fixes, and the Studio check. Section 12 says what was built and where it differs from this design; the [review document](<Scenario A1 Backlog Pass 31b Review 2026-10-04.md>) has the reviews and the check. Pass 31b (the Replay page) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, added by the user on 2026-10-04. It takes the number 31b; the pass that held it (the page's words, layout, map, and records, from the play test) becomes pass 31c and keeps its design, section 5 of the [pass 31 design](<ASL Unit Backlog Pass 31 Design.md>).
 
 **Date:** 2026-10-04
 
@@ -142,14 +142,53 @@ On the played game and on one game with hidden units (The Tractor Works or Armor
 
 Recent passes ran at about a third of their estimates. The largest risk is task 31b.2: `Play.razor` is about 6,700 lines, and its record builders read the page's own view and caches.
 
-## 11. Questions for the user
+## 11. The user's answers
 
-Each with a recommendation.
+Given 2026-10-04, each as recommended. None changes a decision, a task, or the estimate.
 
-1. **The pass that held the number 31b.** Recommended: it becomes pass 31c, unchanged, and follows this one. It holds the rest of the play test's problems (unit names, picking on the map, the fire proposal, the layout, the map, records, rout speed, and the full second play test). The other reading of "supersedes" is that it is dropped; say so if that is what you meant.
-2. **Whose view (D6).** Recommended: an ended game opens in the adjudicator's view and lets any view be chosen freely; a game not ended keeps Play's views and hand-over.
-3. **What a step is (D2).** Recommended: one confirmed proposal, with jumps by phase and by Game Turn. The other way is larger steps (a stack's whole move with the fire it drew as one), which reads more like a narrative and hides who decided what when.
-4. **Play on from here (D8).** Recommended: build it, for ended games and the adjudicator's view. It makes a past moment a test game in one click.
-5. **Running at a pace (task 31b.6).** Recommended: build it; it is small once the steps exist.
-6. **The Game states page.** Recommended: leave it as it is in this pass, and decide its place in the navigation in pass 31c, with the layout.
-7. **The order.** This pass comes before pass 31c, so until 31c the Replay page shows unit ids and Locations as Play does today ("fire-a672887feaab-g-squad-1", "bd01:G4:1"). Recommended: accept that; pass 31c's names then reach both pages through the shared records service.
+| # | Question | Answer |
+|---|---|---|
+| 1 | The pass that held the number 31b | It is pass 31c, unchanged, and follows this one. It holds the rest of the play test's problems: unit names, picking on the map, the fire proposal, the layout, the map, records, rout speed, and the full second play test. |
+| 2 | Whose view (D6) | An ended game opens in the adjudicator's view and any view may be chosen freely; a game not ended keeps Play's views and hand-over. Ruling R31b.1. |
+| 3 | What a step is (D2) | One confirmed proposal, with jumps by phase and by Game Turn. A stack's whole move as one step stays in the backlog. |
+| 4 | Play on from here (D8) | Built, for ended games and the adjudicator's view. |
+| 5 | Running at a pace (task 31b.6) | Built. |
+| 6 | The Game states page | Left as it is in this pass; its place in the navigation is decided in pass 31c, with the layout. |
+| 7 | The order | Accepted: until pass 31c the Replay page shows unit ids and Locations as Play does today; pass 31c's names then reach both pages through the shared records service. |
+
+## 12. Pass 31b as built
+
+**Built 2026-10-04,** tasks 31b.1 to 31b.8, one commit a task, each checked in my Studio on port 6670 before its commit; then the three reviews' fixes and the Studio check of the whole pass. The [review document](<Scenario A1 Backlog Pass 31b Review 2026-10-04.md>) lists what a player meets, the reviews' findings and their fixes, and the check. Rulings R31b.1 and R31b.2. No rule changed, and no recorded game replays differently.
+
+**As designed:** D1 (a page of its own, in the Play group, linked from Play), D2 (a step is one confirmed proposal), D3 (the Play workspace, read-only), D4 (what changed, drawn and said), D5 (the transport, the keys, running at a pace, the address), D6 (whose view), D7 (the records read from one place), D8 (play on from here), D9 (a replay does not judge).
+
+**The code.**
+
+| Part | Where | What it holds |
+|---|---|---|
+| `ReplaySteps` | Services | A view's steps of a game and their phases; a step's kind, acting side, title, fires, and Locations; the jumps by phase and by Game Turn (`ReplayTimeline`) |
+| `ReplayDiff` | Services | The difference of two views with the step's entitled events: its lines and its marks |
+| `PlayRecords` | Services | The Play page's records, read for a history, a view, and a last revision; `RollsIn` for a step's rolls |
+| `LivePlay.PlayOn` | Services | A new game from another's events through a revision |
+| `GameMaps.Layers` | Services | A second form for a game already loaded, so a replay loads its game once |
+| `Replay.razor` | Components/Pages | The page: the address, the game, the view and its hand-over, the step, the run, the caches by step and view |
+| `ReplayTransport`, `ReplayTimelineList`, `ReplayStepPanel` | Components/Replay | The transport, the timeline, and the step's panel |
+| `replay.js` | wwwroot/js | The keys, the stop of a run, and the step shown brought into view |
+| `BoardWorkspace.Reveal` | Components/Board | Brings a point of the map into view when it is out of sight |
+| `ActionRecordList`, `FireHistory` | Components/Play | An optional link beside a record, which Play gives |
+
+**What differs from the design:**
+
+- **A side's steps (ruling R31b.2).** D6 left out every step a view may not read. Two cases were settled in the build and the referee's review. A step the view reads nothing of is still a step when the view sees the map change over it, as the other side would at the table: a "?" placed where a hidden unit stood, the non-OB "?", the other side's setup once it comes into sight; it says only what the map showed. And a step whose public events say only that something minor was done (a weapon changing hands, a marker changing) is a side's step only when that view sees a change, so the timing of what is done under "?" stays its owner's.
+- **"Read in part"** is said only of fire, whose public report is table knowledge; on any other step it would point to what the view may not read.
+- **The step's number in the address is the view's own,** and Play's "Replay from here" names the record's event instead (`at`), which the page turns into the step of the view shown.
+- **The board viewer's link,** which carries the revision, is given only for an ended game or in the adjudicator's view; a side's view of a game still played shows no revision anywhere.
+- **An ended game opens at its first step** in the adjudicator's view; a game still played opens at its last, behind the hand-over. D6 did not say which step.
+- **The Victory standing at a step** is read only while its tab is open, and for the result at the last step: read at an earlier step it folds the game again, about 4.5 seconds late in the played game. Each standing read is kept. The card panel on this page has no standing.
+- **A run** stops at any key and at any click, as designed, but for the pace, which may be changed while it runs. The map has no glide to drop under reduced motion: it jumps to a step's Location for everyone; the timeline's scroll glides and does not under reduced motion.
+- **The header** reads the step's own turn and phase, the ones it was taken in, not the state after it; a phase's last step is its ending.
+- **Play on from here** is not offered from a step at which the game had ended. The new game's name defaults to the game's with the revision; its label reads "from guards-dl-01 at step 60, revision 188".
+- **The timeline** has Game Turns and phases in one heading ("Turn 1, Russian Player Turn: Defensive Fire Phase"), not a level for each Player Turn.
+- **Unit ids and raw Locations** stand in the records until pass 31c, as the user accepted (answer 7); the titles and the lines of what changed already say Locations in words.
+
+**Tests** (section 8) are written at the merge gate.

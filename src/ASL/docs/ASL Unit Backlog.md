@@ -733,3 +733,30 @@ Pass 31 (2026-10-04) worked from a game of The Guards Counterattack played to it
 | The Deploy list leaving out Russian squads | The table player's review, pass 31 | A25.2 | The nationality on the page's list | They are listed, and the gate refuses them with A25.2. |
 | The Advance list's Locations kept between renders | The UI review, pass 31 | None | Nothing | They are read on each render of the Advance panel, a few steps each. |
 | Two Game Turns played from a new game | The design (section 10), pass 31 | None | Pass 31c's full play test | One Russian Player Turn was played from the end of setup; each problem was checked on a copy of the played game at its own revision. |
+
+## 49. Added by the redesign pass 31b
+
+Pass 31b (2026-10-04) built the Replay page: a recorded game played back on the map one step at a time, in a side's view or the adjudicator's, with the step's record, what changed, a transport, a run at a pace, and "Play on from here". The Play page's records moved into a service both pages read. Items it leaves out:
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| A mark on a step that today's rules would refuse | The design (D9), pass 31b | None | Each step proposed again against the planner | A replay shows what was recorded and does not judge it. |
+| Notes on a step, kept with the game | The design, pass 31b | None | A place to keep them that is not the game's record | None. |
+| A replay exported as a file or a film | The design, pass 31b | None | Nothing | A step's address is the link. |
+| Two views side by side at one step | The design, pass 31b | None | Nothing | One view at a time. |
+| A stack's whole move as one step, and a level for each Player Turn in the timeline | The design (D2); the table player's review, pass 31b | None | Nothing | A move is several steps; "Phase ›" passes over it. The timeline's headings name the Game Turn, the Player Turn, and the phase. |
+| The Game states page's place in the navigation | The user's answer 6, pass 31b | None | Pass 31c's layout | It stays in the Play group, after Replay. |
+| Unit names and Locations in words in a step's records | The user's answer 7, pass 31b | None | Pass 31c's names, through `PlayRecords` | The records show ids and raw Locations, as on Play; titles and changes say Locations in words. |
+| The Victory standing at an earlier step without folding the game again | The Studio check, pass 31b | Ruling R24.6 | A fold kept for each revision, or one that steps back | It is read only while the Standing tab is open, takes about 4.5 seconds late in a long game, and is kept once read. The first visit to an ended game's last step waits about 3 seconds for the result's account. |
+| Opportunity Fire's attacks named as such, and a title for the firing side's own attack at concealed targets that says its kind | The table player's review, pass 31b | A7.25, A12.14 | The kind recorded with the attack, and in the public report | Such fire reads "Advancing Fire" or by its phase. |
+| A Close Combat step's outcome and a choice's kind in the step's title | The table player's review, pass 31b | A11, A20 | Words for each choice | The title names the Location and the round; the record has the rest. |
+| CX, TI, Motion, and a vehicle's Immobilization, Stun, Shock, and Abandonment among the changes | The table player's review, pass 31b | None | Nothing | The changes follow broken, DM, pinned, berserk, Fanatic, Disrupted, captured, Melee, "?", wounded, wrecked, and weapons. |
+| A longer pause on a step with dice than on a phase's end; Space to start and stop a run; keys for the Game Turn jumps | The table player's review, pass 31b | None | Nothing | One pace for every step; the Play button starts and stops; Left, Right, Page Up, Page Down, Home, and End. |
+| A replay of a game still played following the play as it goes on | The table player's review, pass 31b | None | A push from the live library (section 44 has the same row for Play) | The page shows the game as it stood when it was opened; opening it again reads it anew. |
+| A record's link on Play asking for the hand-over of the view the player just left | The table player's review, pass 31b | Ruling R23.2 | A hand-over the page may skip for the view already confirmed in this window | The Replay page asks for the hand-over itself. |
+| Play's records that name a unit without the view check: Deploy, Recovery, a SW left in a Location, dismantle, a public Rally | The referee's review, pass 31b (older) | Rulings R23.1, R19.8 | `PlayRecords.Open` applied to them | Replay shows them exactly as Play does. |
+| The revision shown to a side on Play, and in Play's board link | The referee's review, pass 31b (older; section 44 has the row) | A12.3 | A decision for Play | Replay shows a side no revision in a game still played; Play shows it. |
+| `DiceRollHistory.Row`, `FireView`, and `FireText` moved from Components/Play to Services, and Play's kept records dropped at a view change | The UI review, pass 31b | None | Nothing | `PlayRecords` is a service that uses three types of the Play components; Play keeps the last view's records in memory until the next read. |
+| A cue that the transport bar scrolls sideways at phone widths, and Page Up, Page Down, Home, and End left to the page when a toolbar button has the focus | The UI review, pass 31b | None | Nothing | At 320 pixels the bar shows the step controls; the rest is reached by scrolling it. The six keys step the replay anywhere in the map's and the timeline's panes. |
+| A saved game with a SW passed between units under "?", for the Studio check of ruling R31b.2 | The Studio check, pass 31b | Ruling R31b.2 | A game played that way | The rule is in the tests. |
+| "Rehearse" (section 47) served by "Play on from here" | The pass, 31b | None | Nothing | A game cut at the end of the first side's setup is one click from that step; a started game with a plan already committed is still section 47's row. |

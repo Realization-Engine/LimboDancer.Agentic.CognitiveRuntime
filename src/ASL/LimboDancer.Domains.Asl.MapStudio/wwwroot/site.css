@@ -2425,6 +2425,182 @@ details.advanced > summary {
     display: none;
 }
 
+/* Pass 31b: the Replay page is the Play workspace read-only: the timeline where the actions are, the map, and the step with the inspector; it has
+   no activity strip. */
+.play-workspace.replay {
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: "actions map review";
+}
+
+@media (max-width: 1439.98px) {
+    .play-workspace.replay {
+        grid-template-rows: auto minmax(0, 1fr);
+        grid-template-areas:
+            "map review"
+            "map actions";
+    }
+}
+
+/* The inspector holds six tabs here, which wrap in a narrow pane rather than run out of it. */
+.play-workspace.replay .tabs {
+    flex-wrap: wrap;
+    gap: 0 0.9rem;
+}
+
+.replay-timeline,
+.replay-timeline ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.replay-phase-title {
+    display: block;
+    margin: 0.6rem 0 0.2rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+.replay-phase:first-child .replay-phase-title {
+    margin-top: 0;
+}
+
+/* A step of the timeline is a button that reads as a line of a list: its number, then its title. */
+.replay-timeline .replay-step {
+    display: grid;
+    grid-template-columns: 2.25rem minmax(0, 1fr);
+    gap: 0.4rem;
+    width: 100%;
+    min-height: 1.75rem;
+    padding: 0.2rem 0.35rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-size: 0.9rem;
+    text-align: left;
+    cursor: pointer;
+}
+
+.replay-timeline .replay-step:hover {
+    background: var(--surface-2);
+}
+
+.replay-timeline .replay-step.current {
+    border-color: var(--accent);
+    background: var(--surface-2);
+    font-weight: 600;
+}
+
+.replay-step-number {
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.replay-position {
+    margin: 0.35rem 0 0;
+}
+
+.replay-transport {
+    margin-top: 0.4rem;
+}
+
+.replay-transport button {
+    min-height: 2rem;
+}
+
+.replay-play-on {
+    margin-top: 0.4rem;
+}
+
+/* A record's link to its step on the Replay page, small beside the record. */
+.record-replay {
+    margin-left: 0.4rem;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.record-replay-line .record-replay {
+    margin-left: 0;
+}
+
+.record-replay-line {
+    margin: -0.25rem 0 0.75rem;
+}
+
+.replay-play-on > p {
+    margin: 0.3rem 0;
+}
+
+.replay-step-field input {
+    width: 4.5rem;
+}
+
+.replay-step-panel > h3 {
+    margin-top: 0;
+}
+
+/* Under 1024px the context scrolls away with the page, so the transport stays within reach in a bar fixed to the window's foot, as Play's Review
+   and hand-over buttons do. */
+@media (max-width: 1023.98px) {
+    .replay-transport {
+        position: fixed;
+        right: 0.75rem;
+        bottom: 0.75rem;
+        left: 0.75rem;
+        z-index: 15;
+        margin: 0;
+        padding: 0.4rem 0.6rem;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.15);
+    }
+
+    /* One row that scrolls sideways when it must, the step controls first, so the bar stays one line high in a narrow window. */
+    .replay-transport {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+    }
+
+    .replay-transport > * {
+        flex: none;
+    }
+
+    main:has(.replay-transport) {
+        padding-bottom: 5rem;
+    }
+
+    /* A focused element brought into view stops above the fixed bar, not under it. */
+    html:has(.replay-transport) {
+        scroll-padding-bottom: 5rem;
+    }
+}
+
+/* At phone widths the bar's first three controls (back a step, the step field, forward a step) fit without scrolling it. */
+@media (max-width: 40rem) {
+    .replay-transport {
+        gap: 0.3rem;
+        padding: 0.3rem 0.4rem;
+    }
+
+    .replay-transport .replay-step-field input {
+        width: 3.5rem;
+    }
+}
+
+.replay-transport button[aria-disabled="true"],
+.replay-transport #replay-play[aria-disabled="true"] {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.play-map-pane #replay-residual {
+    margin: 0 0 0.4rem;
+}
+
 /* A wide table scrolls inside its own labelled region rather than widening the page (plan section 11.1, 320px reflow). */
 .table-scroll {
     max-width: 100%;
