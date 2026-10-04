@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 30b Design
 
-**Status:** Approved 2026-10-03, with the answers of section 14. The page and data tasks (30b.1 to 30b.6 and the page's part of 30b.8) are built and checked in the Studio on branch `feature/asl-backlog-pass-30b`; the plans (30b.7) come next, one card at a time, each stopped for the user's approval. Pass 30b (Setup plans for the side that sets up second) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, a Studio pass.
+**Status:** Approved 2026-10-03, with the answers of section 14. The page and data tasks (30b.1 to 30b.6 and the page's part of 30b.8) are built and checked in the Studio on branch `feature/asl-backlog-pass-30b`; the plans (30b.7) are made one card at a time, each stopped for the user's approval: section 15. Pass 30b (Setup plans for the side that sets up second) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, a Studio pass.
 
 **Date:** 2026-10-03
 
@@ -316,3 +316,62 @@ What differs from the design:
 - "Use this plan" filled 25 counters; the bar read "From Test answer to Forward line (answers Forward line)". "Swap" on the E4 stack, then the N5 stack's name, exchanged the two hexes (4 changes); the gate refused the swapped setup with four reasons, each a link; "Reset to" asked first and restored the plan.
 - Proposed unchanged and confirmed: "The Russian setup is in the game, from Test answer to Forward line (answers Forward line). Every group has set up. Each side may now place a \"?\" on its stacks out of the enemy's LOS (A12.12), under Counters".
 - "Conceal every stack that may be (4)" ticked all four Locations and then stood disabled.
+
+## 15. The plans
+
+Task 30b.7, one card at a time. A plan's screenshot goes to the user in the chat, not into the repository.
+
+### 15.1 Gambit: the Germans
+
+Made 2026-10-03 from the Studio's terrain and LOS on the card's map (board 4 over board 2 reversed; LOS definitive), read with the scratchpad script of pass 30: the LOS from the four British post Locations of the card's plans (P6 and O6 at level 1, H6, I5) to all 83 hexes numbered 8 to 10, and from the ten German hexes used back to the posts, the centre road, and the exits. Each plan was used in a new game in my Studio with the British plan it answers committed first (`p30b-gb-1` to `p30b-gb-3`), and Three roads after each of the three British plans (`p30b-gb-4` to `p30b-gb-6`): the gate accepted all six setups (11 counters each). They wait for the user's approval.
+
+What the plans answer. The five British counters are on the map, none under "?" (SSR 2), when the Germans set up in the hexes numbered 8 to 10: eight 5-4-8 squads, the 9-2, the 9-1, and the 8-1, with no SW and no OB "?". The Germans move first. The other fifteen British counters enter along the north edge in the British half of Turn 1 and must exit 20 Exit VP off the south edge near 2Y1 (below 4I10, the west), 2Q1 (below 4Q10, the centre), or 2I1 (below 4Y10, the east). So the Germans have one turn against five counters, and then eight squads against twelve on three roads.
+
+Facts every plan rests on:
+
+- The British post tells the road: each British plan stands on one, and the comparison tells the three apart by their two hexes (2 of 2 against 0 of 3 or 4).
+- The Germans have no OB "?". Their concealment is the non-OB "?" of A12.12, for stacks no British unit sees once both sides have set up. Each plan keeps stacks out of sight for it (section 13, D13), and the Studio offered exactly those stacks after each Confirm.
+- In each stack a squad is the first counter, so a leader is never the counter the British see on top (D11).
+- No plan takes the Balance (one LMG).
+
+**Storm the farmhouse** (`storm-the-farmhouse`), answers The farmhouse
+
+| | |
+|---|---|
+| The idea | The Germans move first, and the farmhouse holds two squads and the best British leader, alone until the battalion enters. Three squads and the 9-2 wait behind the house at P8, three squads and the 8-1 behind the woods at M8, and two squads with the 9-1 fire from the woods at R8: the house is attacked from the south and the west in the first German turn, before help can reach it. |
+| What it gives up | Nothing stands east of hexrow R or west of hexrow L, so both flank roads are open; if the farmhouse holds through the first turn, the battalion enters behind eight squads that are all in the centre. |
+| Terrain facts | P9 has no LOS to or from the upper floor of the farmhouse, O6 or P6: the house at P8 blocks it. It is three hexes from P6 and one from the road hexes Q9 and Q10.<br>L8 has no LOS to or from the upper floor of O6 or P6: the woods at M8 block it. It is four hexes from O6.<br>R8 is woods and sees the upper floor of P6 at range 3; O6 does not see it. |
+| Placements | P9: 3 x 5-4-8 squad, 9-2 leader; L8: 3 x 5-4-8 squad, 8-1 leader; R8: 2 x 5-4-8 squad, 9-1 leader |
+| Non-OB "?" offered after setup | L8 and P9 |
+
+**Seal the west road** (`seal-the-west-road`), answers West woods
+
+| | |
+|---|---|
+| The idea | The British post in the woods at H6 and I5 marks the west road as the battalion's way. Three squads and the 9-2 in the woods at K9 fire on H6 and block the road south of it, a squad holds the house at I10 beside the west exit, two squads and the 9-1 start unseen at N8 to come at the woods from the east, and two squads with the 8-1 behind the house at P8 keep the centre road. |
+| What it gives up | The east third of the board is empty, and the centre is two squads; the K9 stack is in the LOS of the squad at H6 from the start. |
+| Terrain facts | K9 is woods and sees H6 at range 4 through a hindrance of 3, and the road hex I9 at range 2; I5 does not see it.<br>I10 is a wooden building; it sees H6 at range 4 and I9 at range 1.<br>N8 has no LOS to or from H6 or I5: the woods at M8 block both. It is six hexes from H6.<br>P9 has no LOS to or from H6 or I5, and sees the centre road at Q9 and Q10 at range 1. |
+| Placements | K9: 3 x 5-4-8 squad, 9-2 leader; I10: 5-4-8 squad; N8: 2 x 5-4-8 squad, 9-1 leader; P9: 2 x 5-4-8 squad, 8-1 leader |
+| Non-OB "?" offered after setup | N8 and P9 |
+
+**Both posts** (`both-posts`), answers Two posts
+
+| | |
+|---|---|
+| The idea | Each British post is one squad, and the two cannot help each other. Three squads and the 9-2 behind the house at P8 go for the farmhouse, three squads and the 9-1 in the woods at K9 go for the woods at H6, and two squads with the 8-1 wait unseen in the woods at T9 to turn east or centre once the battalion shows its route. |
+| What it gives up | The force is in three parts from the start, and only the reserve of two squads covers the east exit; the K9 stack is in the LOS of the squad at H6. |
+| Terrain facts | P9 has no LOS to or from the upper floor of P6, nor H6: the house at P8 and the woods at M8 block them. It is three hexes from P6.<br>K9 is woods and sees H6 at range 4 through a hindrance of 3; the farmhouse does not see it.<br>T9 is woods; neither post sees it. It sees the centre road at Q9 and Q10 at range 3 and the east exit at Y10 at range 5. |
+| Placements | P9: 3 x 5-4-8 squad, 9-2 leader; K9: 3 x 5-4-8 squad, 9-1 leader; T9: 2 x 5-4-8 squad, 8-1 leader |
+| Non-OB "?" offered after setup | P9 and T9 |
+
+**Three roads** (`three-roads`), for any setup
+
+| | |
+|---|---|
+| The idea | One group stands in a building on each way south, whatever the five British counters show: three squads and the 9-2 in the house at P8 on the centre road, two squads and the 8-1 in the house at I10 by the west exit, two squads and the 9-1 in the house at X8 and a squad in the house at Y9 by the east exit. |
+| What it gives up | No group is strong enough to attack the British posts in the first turn, and the three cannot help each other quickly: the Germans wait for the battalion to choose its road. |
+| Terrain facts | P8 is a wooden building; it sees the centre road at Q9 at range 1 and Q10 at range 2, and the upper floor of the farmhouse sees it at range 2 to 3.<br>I10 is a wooden building beside the west exit; it sees I9 at range 1. Only a post at H6 sees it, at range 4.<br>X8 and Y9 are wooden buildings; they see the east exit at Y10 at range 2 and 1. The farmhouse, H6, and I5 do not see them. |
+| Placements | P8: 3 x 5-4-8 squad, 9-2 leader; I10: 2 x 5-4-8 squad, 8-1 leader; X8: 2 x 5-4-8 squad, 9-1 leader; Y9: 5-4-8 squad |
+| Non-OB "?" offered after setup | X8 and Y9 against every British plan; I10 too against The farmhouse, where no post is at H6 |
+
+Each plan's terrain facts in the file end with the line on the non-OB "?", and the two that lean on a grain hindrance carry the note on grain in May, as pass 30's plans do.
