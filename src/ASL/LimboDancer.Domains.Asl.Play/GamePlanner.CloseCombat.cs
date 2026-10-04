@@ -910,6 +910,12 @@ public sealed partial class GamePlanner
                 [Conditions.Wounded] = ConditionState.False,
                 [Conditions.Concealed] = ConditionState.False,
                 [Conditions.Hidden] = ConditionState.False,
+
+                // Pass 31 (play test P-26): a created leader is neither berserk nor a prisoner, so his Good Order is known and he may direct fire; the
+                // Melee of his Location is recorded for him with its other units.
+                [Conditions.Berserk] = ConditionState.False,
+                [Conditions.Captured] = ConditionState.False,
+                [Conditions.Melee] = ConditionState.False,
             };
             if (state.Unit(leader.StackedWith) is { } mmc && GameState.Condition(mmc, Conditions.Fanatic) == ConditionState.True)
             {

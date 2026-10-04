@@ -268,6 +268,9 @@ public sealed partial class GamePlanner
         facts = facts with
         {
             BreakdownReduction = ExtremeWinterReduction(state, side),
+
+            // Pass 31 (ruling R31.3; A7.81): every attack planned from the pass on fires a pinned unit's MG as Area Fire.
+            PinnedMgAreaFire = true,
             CushionedOpenGround = facts.OrdnanceHit is not null && (state.Weather("mud") || state.Weather("deep-snow")) ? true : null,
         };
         if (residual)

@@ -8,7 +8,7 @@
         {
             <tr data-unit="@effect.UnitId">
                 <td>@effect.UnitId (@effect.DefinitionId@(effect.FinalDefinitionId != effect.DefinitionId ? $", now {effect.FinalDefinitionId}" : ""))</td>
-                <td class="fire-effect">@FireText.EffectText(effect)</td>
+                <td class="fire-effect">@FireText.EffectText(effect, BrokenBefore.Contains(effect.UnitId), PinnedBefore.Contains(effect.UnitId))</td>
                 <td>@string.Join("; ", effect.Checks.Select(FireText.CheckText))</td>
             </tr>
         }
@@ -18,4 +18,12 @@
 @code {
     [Parameter, EditorRequired]
     public IReadOnlyList<FireUnitEffect> Effects { get; set; } = [];
+
+    /// <summary>The targets broken before the attack (pass 31, play test P-16).</summary>
+    [Parameter]
+    public IReadOnlySet<string> BrokenBefore { get; set; } = new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>The targets pinned before the attack.</summary>
+    [Parameter]
+    public IReadOnlySet<string> PinnedBefore { get; set; } = new HashSet<string>(StringComparer.Ordinal);
 }

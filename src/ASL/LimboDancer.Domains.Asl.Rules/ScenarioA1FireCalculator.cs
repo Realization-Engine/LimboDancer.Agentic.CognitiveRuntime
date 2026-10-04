@@ -1037,11 +1037,9 @@ public static class ScenarioA1FireCalculator
             }
         }
 
+        // Pass 31 (play test P-02; ruling R31.5): several leaders among the targets are decided: leaders check first by Morale Level (A10.2), each
+        // unit takes the best modifier of a leader who may give it (A10.21, A10.22), and each lost leader causes its own LLMC or LLTC.
         var units = targets.Where(item => item.Dummy != true).ToArray();
-        if (units.Count(item => reference.Definitions[item.DefinitionId!].IsLeader) > 1)
-        {
-            undecided.Add("asl.a1.fire.leaders-interact");
-        }
 
         // A19.13 (ruling R15.9): an underscored Morale Factor is decided; a MMC whose underline is not recorded is not.
         var checkedFirers = attack.FireKind == FinalProtectiveFire ? attack.Firers ?? [] : [];
@@ -2253,6 +2251,12 @@ public static class ScenarioA1FireCalculator
                         }
                     }
 
+                    // Pass 31 (play test R-05; ruling R31.3; A7.81): pinned Infantry fires its MG as Area Fire, as it fires its own FP.
+                    if (attack.PinnedMgAreaFire == true && firer.Pinned == true && !mg.IsFt)
+                    {
+                        multipliers.Add(new FireModifier("pinned-firer", 0.5m, "A7.81"));
+                    }
+
                     // A9.12 (ruling R12.4): a leader fires a MG alone as Area Fire; two SMC together fire it at full FP.
                     if (definition.IsLeader && firer.Partner is null)
                     {
@@ -2394,7 +2398,8 @@ public static class ScenarioA1FireCalculator
                 var sustained = IsSustained(attack, weapon, reference);
                 // A7.25 (ruling R12.1): only an Opportunity Firer's MG keeps Multiple ROF in the AFPh; A8.31 (ruling R12.3): an FPF firer's MG never does.
                 var operatorUnit = (attack.Firers ?? []).FirstOrDefault(firer => firer.Weapons?.Contains(weapon) == true);
-                var retained = !malfunctioned.Contains(id) && !sustained
+                // A7.81 (ruling R31.3): pinned Infantry uses no Multiple ROF.
+                var retained = !malfunctioned.Contains(id) && !sustained && !(attack.PinnedMgAreaFire == true && operatorUnit?.Pinned == true)
                     && !(attack.FireKind == FinalProtectiveFire && operatorUnit?.FinalFireMarked == true)
                     && (attack.Phase != "AFPh" || operatorUnit?.OpportunityFire == true)
                     && reference.Definitions[weapon.DefinitionId!].RateOfFire is { } rof && colored <= rof - (weapon.Captured == true ? 1 : 0);
@@ -2939,16 +2944,18 @@ public static class ScenarioA1FireCalculator
             }
         }
 
-        private (IReadOnlyList<int> Dice, List<FireModifier> Drm)? Check(TargetState unit, string kind, string rolls, int modifier, bool useLeadership)
+        private (IReadOnlyList<int> Dice, List<FireModifier> Drm)? Check(TargetState unit, string kind, string rolls, int modifier, bool useLeadership, string? key = null)
         {
+            // Pass 31 (ruling R31.5): a unit's second and later Leader Loss checks in one attack have their own rolls, keyed apart from its first.
+            key ??= unit.Id;
             var source = rolls == "checks" ? attack.Rolls!.Checks : attack.Rolls!.LeaderLoss;
-            if (source?.TryGetValue(unit.Id, out var dice) != true)
+            if (source?.TryGetValue(key, out var dice) != true)
             {
-                undecided.Add($"asl.a1.fire.roll-missing:{rolls}:{unit.Id}");
+                undecided.Add($"asl.a1.fire.roll-missing:{rolls}:{key}");
                 return null;
             }
 
-            usedRolls.Add(rolls + ":" + unit.Id);
+            usedRolls.Add(rolls + ":" + key);
             var drm = new List<FireModifier>();
             if (modifier != 0)
             {
@@ -2963,11 +2970,13 @@ public static class ScenarioA1FireCalculator
                 // be declined.
                 // Rulings R12.8, R12.9: only a leader of the unit's own side, and not a prisoner.
                 // A25.221 (ruling R15.6): an active Commissar's leadership alone applies in his Location.
+                // Pass 31 (ruling R31.5): with several such leaders the owner chooses (A10.21), so the most favorable modifier is taken.
                 var leader = state.Values.FirstOrDefault(other => ActiveCommissar(other, unit))
-                    ?? state.Values.FirstOrDefault(other => other.Definition.IsLeader && other != unit && !other.Eliminated
+                    ?? state.Values.Where(other => other.Definition.IsLeader && other != unit && !other.Eliminated
                     && !other.Broken && !other.Pinned && !other.IsDummy && other.Target.Berserk != true
                     && (other.Target.Friendly == true) == (unit.Target.Friendly == true) && other.Target.GuardId is null
-                    && (!unit.Definition.IsLeader || other.MoraleLevel > unit.MoraleLevel));
+                    && (!unit.Definition.IsLeader || other.MoraleLevel > unit.MoraleLevel))
+                    .OrderBy(other => (other.Leadership ?? 0) + AlliedPenalty(other.Definition, unit.Definition)).FirstOrDefault();
 
                 // A10.7 (ruling R15.8): one worse for Allied Troops of another nationality.
                 if (leader?.Leadership is { } leadership && leadership + AlliedPenalty(leader.Definition, unit.Definition) is var allied and not 0)
@@ -2986,8 +2995,14 @@ public static class ScenarioA1FireCalculator
                 return;
             }
 
-            foreach (var leader in state.Values.Where(unit => unit.Definition.IsLeader && (unit.Eliminated || unit.BrokeInThisAttack)).ToArray())
+            // Pass 31 (ruling R31.5; A10.2): every lost leader is taken in turn, one lost to another's LLMC included, the higher Morale Level first; a
+            // leader that broke and is then eliminated is taken again for his LLMC.
+            var taken = new HashSet<string>(StringComparer.Ordinal);
+            var checksOf = new Dictionary<string, int>(StringComparer.Ordinal);
+            while (state.Values.Where(unit => unit.Definition.IsLeader && (unit.Eliminated || unit.BrokeInThisAttack) && !taken.Contains(unit.Id + (unit.Eliminated ? ":e" : ":b")))
+                .OrderByDescending(unit => unit.InitialMorale ?? 0).FirstOrDefault() is { } leader)
             {
+                taken.Add(leader.Id + (leader.Eliminated ? ":e" : ":b"));
                 var leaderMorale = leader.Eliminated ? leader.MoraleAtLoss : leader.InitialMorale;
                 if (leaderMorale is null)
                 {
@@ -3006,11 +3021,14 @@ public static class ScenarioA1FireCalculator
                     && !ScenarioA1FireReference.IsCommissar(unit.Definition.Id)
                     && (eliminated || (!unit.Broken && !unit.IsHeroType)) && (commissar || unit.MoraleLevel < leaderMorale)).ToArray())
                 {
-                    var check = Check(unit, eliminated ? "LLMC" : "LLTC", "leaderLoss", 0, useLeadership: false);
+                    var nth = checksOf.GetValueOrDefault(unit.Id);
+                    var check = Check(unit, eliminated ? "LLMC" : "LLTC", "leaderLoss", 0, useLeadership: false, key: nth == 0 ? unit.Id : $"{unit.Id}#{nth + 1}");
                     if (check is null)
                     {
                         return;
                     }
+
+                    checksOf[unit.Id] = nth + 1;
 
                     // A10.7 (ruling R15.8): Allied Troops take it on the leader's reduced modifier.
                     var (dice, drm) = check.Value;

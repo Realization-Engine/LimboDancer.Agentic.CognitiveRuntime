@@ -37,7 +37,7 @@ public static class RefusalReasons
         ["fire.los-blocked"] = "a firer has no LOS to the target (A6)",
         ["fire.levels-differ"] = "firer and target at different levels are not reviewed",
         ["fire.hindrance-unattributed"] = "the LOS Hindrance is not attributed to brush or in-season grain, which the package reviews",
-        ["fire.leaders-interact"] = "several leaders among the targets, or a broken leader's Morale Level, are not reviewed",
+        ["fire.leaders-interact"] = "a broken leader among the targets has no Morale Level recorded in the catalog, so his loss cannot be decided",
         ["fire.elr-undecided"] = "a side's ELR is not declared, or a MMC's underscored Morale Factor is not recorded (A19.1, A19.13)",
         ["fire.movement-drm-differs"] = "a moving stack of pinned and unpinned units would need two DRM (A7.83)",
         ["fire.concealment-unreviewed"] = "fire by concealed units beyond 16 hexes, or at no Good Order target, is not reviewed",

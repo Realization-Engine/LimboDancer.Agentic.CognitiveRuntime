@@ -4853,7 +4853,14 @@ else if (state is not null)
             {
                 if (item.Payload is FireResolved fire && fire.Resolution.Deserialize<FireResolution>(LiveFire.Json) is { Arithmetic: { } arithmetic } resolution)
                 {
-                    views.Add(new FireView(item.EventId, GroupOf(fire), fire.TargetLocation, null, arithmetic, resolution.Effects) { Vehicles = resolution.VehicleEffects });
+                    // Pass 31 (play test P-16): what the targets already were, read from the record's own facts.
+                    var before = fire.Facts.Deserialize<FireAttack>(LiveFire.Json)?.Targets ?? [];
+                    views.Add(new FireView(item.EventId, GroupOf(fire), fire.TargetLocation, null, arithmetic, resolution.Effects)
+                    {
+                        Vehicles = resolution.VehicleEffects,
+                        BrokenBefore = before.Where(target => target.Broken == true && target.UnitId is not null).Select(target => target.UnitId!).ToHashSet(StringComparer.Ordinal),
+                        PinnedBefore = before.Where(target => target.Pinned == true && target.UnitId is not null).Select(target => target.UnitId!).ToHashSet(StringComparer.Ordinal),
+                    });
                 }
                 else if (item.Payload is FireReported report && history.Events.FirstOrDefault(other => other.EventId == report.Fire) is { } withheld
                     && !withheld.IsVisibleTo(Viewer) && report.Arithmetic.Deserialize<FireArithmetic>(LiveFire.Json) is { } reported)

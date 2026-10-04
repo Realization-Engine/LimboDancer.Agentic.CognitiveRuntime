@@ -7,7 +7,7 @@
     <FireArithmeticBreakdown Arithmetic="@Record.Arithmetic" />
     @if (Record.Effects is { } effects && (effects.Count > 0 || Record.Vehicles is not { Count: > 0 }))
     {
-        <InfantryFireEffectsTable Effects="@effects" />
+        <InfantryFireEffectsTable Effects="@effects" BrokenBefore="@Record.BrokenBefore" PinnedBefore="@Record.PinnedBefore" />
     }
     @if (Record.Vehicles is { Count: > 0 } vehicles)
     {

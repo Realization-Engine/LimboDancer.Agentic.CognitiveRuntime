@@ -236,6 +236,16 @@ public sealed record FireAttack(
         get; init;
     }
 
+    /// <summary>
+    /// Pass 31 (ruling R31.3; A7.81): pinned Infantry fires its MG as Area Fire and keeps no Multiple ROF. The planner records it with every attack
+    /// from the pass on; an attack recorded before it has none, and replays as it was resolved.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? PinnedMgAreaFire
+    {
+        get; init;
+    }
+
     /// <summary>How much lower Extreme Winter makes the B# and X# of the firing side's weapons but a DC (E3.741; ruling R16.14): 1 or 2. Null is 0.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? BreakdownReduction

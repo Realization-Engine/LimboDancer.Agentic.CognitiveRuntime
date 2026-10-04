@@ -97,6 +97,10 @@ public sealed partial class GamePlanner
             : null;
     }
 
+    /// <summary>What fires in a firer's attack, each counted on its own (A8.3, A9.2): the unit when it uses its own FP, and each weapon it fires.</summary>
+    private static IEnumerable<string> FiringParts(FireFirer firer) =>
+        (firer.UsesInherentFp == false || firer.UnitId is null ? [] : new[] { firer.UnitId }).Concat(firer.Weapons?.Select(weapon => weapon.EquipmentId).OfType<string>() ?? []);
+
     private GamePlan PlanFire(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label,
         string actor)
     {
@@ -286,11 +290,17 @@ public sealed partial class GamePlanner
         if (state.Movement is { } moving)
         {
             var limit = Math.Max(1, moving.HalfMfInLocation / 2);
-            var here = existing.Select(item => item.Payload).OfType<FireResolved>().Where(record => record.MovementStep == moving.Step).ToArray();
-            if (attack.Firers!.Any(firer => here.Count(record => record.Firers.Contains(firer.UnitId!)) >= limit))
+
+            // Pass 31 (play test P-05; ruling R31.1): the count is of this stack's move alone. Step numbers start again at 1 for each stack, so only the
+            // attacks made since this move's first step are read; a unit and each weapon it fires are counted apart ("the same unit/weapon", A8.3).
+            var moveStart = existing.Select((item, index) => (item, index)).LastOrDefault(pair => pair.item.Payload is MovementStepped { Step: 1 }).index;
+            var fired = existing.Skip(moveStart).Select(item => item.Payload).OfType<FireResolved>().Where(record => record.MovementStep == moving.Step)
+                .SelectMany(record => record.Facts.Deserialize<FireAttack>(LiveFire.Json)?.Firers ?? []).SelectMany(FiringParts)
+                .GroupBy(id => id, StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
+            if (attack.Firers!.SelectMany(FiringParts).FirstOrDefault(id => fired.GetValueOrDefault(id) >= limit) is { } spent)
             {
                 return Refused(scope, label, expected,
-                    $"play.fire-mf-limit: a firer attacks a moving stack in a Location no more often than the MF it spent there, {limit} here (A8.3, A9.2)")
+                    $"play.fire-mf-limit: {spent} has attacked this moving stack in {moving.Location} {(limit == 1 ? "once" : $"{limit} times")} already, as often as the MF the stack spent there (A8.3, A9.2)")
                     with
                 {
                     Fire = Proposal(attack)
