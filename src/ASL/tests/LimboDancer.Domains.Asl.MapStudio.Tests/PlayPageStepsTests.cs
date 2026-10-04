@@ -128,7 +128,7 @@ public sealed class PlayPageStepsTests : IDisposable
         Assert.Empty(dice);
         Assert.DoesNotContain("broken", Row(page, "r1"), StringComparison.Ordinal);
         Assert.Contains(page.FindAll("#play-rolls li"), item => item.TextContent.StartsWith("rally: 1, 2", StringComparison.Ordinal));
-        var rallied = page.Find("#play-rallies .rally-record").TextContent;
+        var rallied = page.Find("#play-rallies .rally-record").RecordText();
         Assert.StartsWith("rl rallies r1: DR 1, 2 = 3", rallied, StringComparison.Ordinal);
         Assert.Contains("against", rallied, StringComparison.Ordinal);
         Assert.EndsWith(": rallied", rallied, StringComparison.Ordinal);

@@ -17,6 +17,10 @@ internal static class PlayViews
         }
     }
 
+    /// <summary>A record's own text, without the link to its step on the Replay page that follows it (pass 31b).</summary>
+    public static string RecordText(this AngleSharp.Dom.IElement record) =>
+        string.Concat(record.ChildNodes.Where(node => node is not AngleSharp.Dom.IElement { ClassName: "record-replay" }).Select(node => node.TextContent)).Trim();
+
     /// <summary>Opens a game from the picker; a game opened waits behind the hand-over (pass 28c), which its first viewer confirms here.</summary>
     public static void OpenGame(this IRenderedComponent<PlayPage> page, string game)
     {
