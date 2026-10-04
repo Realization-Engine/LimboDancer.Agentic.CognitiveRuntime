@@ -6,7 +6,7 @@
         <option value="">choose</option>
         @foreach (var placer in Placers)
         {
-            <option value="@placer.Id">@placer.Label</option>
+            <option value="@placer.Id">@Say(placer.Label)</option>
         }
     </select>
 </label>
@@ -16,7 +16,7 @@
         <option value="">choose</option>
         @foreach (var place in Places)
         {
-            <option value="@place.Location">@place.Label</option>
+            <option value="@place.Location">@Say(place.Label)</option>
         }
     </select>
 </label>
@@ -27,6 +27,12 @@
 }
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>A squad that may try, such as "bs9 (exponent 2)".</summary>
     public sealed record Placer(string Id, string Label);
 

@@ -16,21 +16,21 @@
             <option value="">choose</option>
             @foreach (var at in Locations)
             {
-                <option value="@at">@DisplayText.Location(at)</option>
+                <option value="@at">@Say($"{at}")</option>
             }
         </select>
     </label>
     @foreach (var unit in Firers)
     {
-        <label><input class="fire-firer" type="checkbox" data-unit="@unit" checked="@SelectedFirers.Contains(unit)" @onchange="@(args => OnFirer.InvokeAsync(new UnitSelectionList.Toggle(unit, args.Value is true)))" /> @unit</label>
+        <label><input class="fire-firer" type="checkbox" data-unit="@unit" checked="@SelectedFirers.Contains(unit)" @onchange="@(args => OnFirer.InvokeAsync(new UnitSelectionList.Toggle(unit, args.Value is true)))" /> @Say(unit)</label>
     }
     @foreach (var weapon in Weapons)
     {
-        <label><input class="fire-weapon" type="checkbox" data-weapon="@weapon.Id" checked="@SelectedWeapons.Contains(weapon.Id)" @onchange="@(args => OnWeapon.InvokeAsync(new UnitSelectionList.Toggle(weapon.Id, args.Value is true)))" /> @weapon.Id (@weapon.Holder)</label>
+        <label><input class="fire-weapon" type="checkbox" data-weapon="@weapon.Id" checked="@SelectedWeapons.Contains(weapon.Id)" @onchange="@(args => OnWeapon.InvokeAsync(new UnitSelectionList.Toggle(weapon.Id, args.Value is true)))" /> @Say(weapon.Id) of @Say(weapon.Holder)</label>
     }
     @foreach (var id in SelectedFirers.Where(id => Weapons.Any(weapon => weapon.Holder == id && SelectedWeapons.Contains(weapon.Id))).Order(StringComparer.Ordinal))
     {
-        <label><input class="fire-alone" type="checkbox" data-unit="@id" checked="@Alone.Contains(id)" @onchange="@(args => OnAlone.InvokeAsync(new UnitSelectionList.Toggle(id, args.Value is true)))" /> @id's MGs alone</label>
+        <label><input class="fire-alone" type="checkbox" data-unit="@id" checked="@Alone.Contains(id)" @onchange="@(args => OnAlone.InvokeAsync(new UnitSelectionList.Toggle(id, args.Value is true)))" /> @Say(id)'s MGs alone</label>
     }
     <label>
         Director
@@ -38,7 +38,7 @@
             <option value="">none</option>
             @foreach (var leader in Leaders)
             {
-                <option value="@leader">@leader</option>
+                <option value="@leader">@Say(leader)</option>
             }
         </select>
     </label>
@@ -49,7 +49,7 @@
                 <option value="">none</option>
                 @foreach (var id in SelectedFirers.Order(StringComparer.Ordinal))
                 {
-                    <option value="@id">@id</option>
+                    <option value="@id">@Say(id)</option>
                 }
             </select>
         </label>
@@ -60,7 +60,7 @@
             <option value="">choose</option>
             @foreach (var at in Targets)
             {
-                <option value="@at">@DisplayText.Location(at)</option>
+                <option value="@at">@Say($"{at}")</option>
             }
         </select>
     </label>
@@ -80,7 +80,7 @@
                 <option value="">none</option>
                 @foreach (var weapon in Weapons.Where(item => SelectedWeapons.Contains(item.Id)))
                 {
-                    <option value="@weapon.Id">@weapon.Id</option>
+                    <option value="@weapon.Id">@Say(weapon.Id)</option>
                 }
             </select>
             to <input id="fire-lane-to" value="@LaneTo" @onchange="@(args => OnLaneTo.InvokeAsync(args.Value as string ?? string.Empty))" size="12" />
@@ -93,7 +93,7 @@
                 <option value="">none</option>
                 @foreach (var smc in partners)
                 {
-                    <option value="@smc">@smc</option>
+                    <option value="@smc">@Say(smc)</option>
                 }
             </select>
         </label>
@@ -103,6 +103,12 @@
 </div>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>A MG, FT, or ATR a chosen firer possesses, and its holder.</summary>
     public sealed record Weapon(string Id, string Holder);
 

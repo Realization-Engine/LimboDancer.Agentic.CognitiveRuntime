@@ -13,7 +13,7 @@
             <option value="">choose</option>
             @foreach (var squad in Squads)
             {
-                <option value="@squad.Id">@squad.Label</option>
+                <option value="@squad.Id">@Say(squad.Label)</option>
             }
         </select>
     </label>
@@ -23,7 +23,7 @@
             <option value="">choose</option>
             @foreach (var leader in Leaders)
             {
-                <option value="@leader">@leader</option>
+                <option value="@leader">@Say(leader)</option>
             }
         </select>
     </label>
@@ -34,7 +34,7 @@
             @foreach (var weapon in Weapons)
             {
                 <label @key="weapon"><input type="checkbox" class="deploy-weapon" data-weapon="@weapon" checked="@Second.Contains(weapon)"
-                                            @onchange="@(args => OnWeapon.InvokeAsync(new Toggle(weapon, args.Value is true)))" /> @weapon</label>
+                                            @onchange="@(args => OnWeapon.InvokeAsync(new Toggle(weapon, args.Value is true)))" /> @Say(weapon)</label>
             }
         </fieldset>
     }
@@ -46,6 +46,12 @@
 </div>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>A SW checked or cleared for the second HS.</summary>
     public sealed record Toggle(string Id, bool On);
 

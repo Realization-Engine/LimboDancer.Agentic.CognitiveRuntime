@@ -14,7 +14,7 @@
             <option value="">choose</option>
             @foreach (var item in Buildings)
             {
-                <option value="@item.Id">@item.Id</option>
+                <option value="@item.Id">@Say(item.Id)</option>
             }
         </select>
     </label>
@@ -24,7 +24,7 @@
             <legend>Units Mopping Up</legend>
             @foreach (var unit in chosen.Units)
             {
-                <label><input type="checkbox" class="mop-up-unit" data-unit="@unit" checked="@units.Contains(unit)" @onchange="@(args => Toggle(unit, args.Value is true))" /> @Named(chosen, unit)</label>
+                <label><input type="checkbox" class="mop-up-unit" data-unit="@unit" checked="@units.Contains(unit)" @onchange="@(args => Toggle(unit, args.Value is true))" /> @Say(Named(chosen, unit))</label>
             }
         </fieldset>
         <label>
@@ -33,7 +33,7 @@
                 <option value="">the first unit Mopping Up</option>
                 @foreach (var item in chosen.Guards)
                 {
-                    <option value="@item">@Named(chosen, item)</option>
+                    <option value="@item">@Say(Named(chosen, item))</option>
                 }
             </select>
         </label>
@@ -46,6 +46,12 @@
 </div>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>
     /// A building the side may Mop Up: its id, the MMC in it that may, the units in it that may guard a surrender, and where each unit is, such as "bd01:E4"
     /// or "bd01:E4 level 1".

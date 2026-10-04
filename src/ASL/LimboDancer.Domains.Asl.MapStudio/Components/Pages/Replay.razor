@@ -121,7 +121,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
             RenderFragment unitsBlock = @<div id="replay-units-tab">
                 <p class="muted" id="replay-units-note">@(Viewer.IsAdjudicator ? "Every unit, as the adjudicator sees them" : $"The units {DisplayText.ViewName(viewAs)} could see"), after step @step.Number.</p>
                 <div class="table-scroll" role="region" aria-label="Units at this step" tabindex="0">
-                    <ProjectedGameUnitTable Rows="@UnitRows" />
+                    <ProjectedGameUnitTable Rows="@UnitRows" IdHeading="Name" />
                 </div>
             </div>;
             RenderFragment standingBlock = @<div id="replay-standing-tab">
@@ -162,7 +162,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
                 <Toolbar>
                     @if (state.ResidualFire.Count > 0)
                     {
-                        <p id="replay-residual">Residual FP this MPh (A8.2): @string.Join("; ", state.ResidualFire.Select(item => $"{item.Fp} in {DisplayText.Location(item.Location)}"))</p>
+                        <p id="replay-residual">Residual FP this MPh (A8.2): @string.Join("; ", state.ResidualFire.Select(item => $"{item.Fp} in {DisplayText.Place(history?.Current?.Map.Boards.Count ?? 2, item.Location)}"))</p>
                     }
                     <div class="toolbar play-map-tools">
                         <button type="button" id="replay-map-zoom-in" aria-label="Zoom in" @onclick="@(() => workspace!.Zoom(0.8))">+</button>
@@ -417,7 +417,8 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
         var views = new Dictionary<long, GameView>();
         GameView At(long revision) => views.TryGetValue(revision, out var kept) ? kept : views[revision] = GamesLibrary.ViewOf(game!, revision, viewer);
         timeline = game?.Current is { } current ? ReplaySteps.Read(game, At(current.Revision), At) : ReplayTimeline.Empty;
-        records = history?.Current is { } now ? new PlayRecords(history, Viewer, now.Revision) : null;
+        names = history is null ? null : Live.NamesOf(history, Viewer);
+        records = history?.Current is { } now ? new PlayRecords(history, Viewer, now.Revision, names) : null;
         panelCache = default;
         stepNumber = Math.Clamp(step ?? timeline.Steps.Count, 1, Math.Max(1, timeline.Steps.Count));
 
@@ -745,7 +746,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
             if (changeCache.Changes is null || changeCache.Revision != step.Last || changeCache.Viewer != viewAs)
             {
                 changeCache = (step.Last, viewAs, ReplayDiff.Of(step.First > 1 ? GamesLibrary.ViewOf(history, step.First - 1, Viewer) : null, after,
-                    [.. after.Events.Where(item => item.Revision >= step.First)]));
+                    [.. after.Events.Where(item => item.Revision >= step.First)], names));
             }
 
             return changeCache.Changes!;
@@ -774,9 +775,9 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
             // Residual FP is public (A8.2): every view reads where it was left and where it was taken up.
             var (had, has) = (before?.ResidualFire ?? [], after.ResidualFire);
             lines.AddRange(has.Where(item => !had.Any(other => other.Location == item.Location && other.Fp == item.Fp))
-                .Select(item => $"{item.Fp} Residual FP left in {DisplayText.Location(item.Location)} (A8.2)"));
+                .Select(item => $"{item.Fp} Residual FP left in {DisplayText.Place(history?.Current?.Map.Boards.Count ?? 2, item.Location)} (A8.2)"));
             lines.AddRange(had.Where(item => !has.Any(other => other.Location == item.Location && other.Fp == item.Fp))
-                .Select(item => $"{item.Fp} Residual FP removed from {DisplayText.Location(item.Location)}"));
+                .Select(item => $"{item.Fp} Residual FP removed from {DisplayText.Place(history?.Current?.Map.Boards.Count ?? 2, item.Location)}"));
             return lines;
         }
     }
@@ -830,6 +831,9 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
 
     private (long Revision, string Viewer, IReadOnlyList<ProjectedGameUnitTable.Row>? Rows) unitCache;
 
+    // Pass 31c (design D11): the view's names for the game's units, read with the steps.
+    private UnitNames? names;
+
     /// <summary>The units the view shows at the step, and the concealed presences it only knows of, as the Game states page lists them.</summary>
     private IReadOnlyList<ProjectedGameUnitTable.Row> UnitRows
     {
@@ -849,9 +853,10 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
                     : default;
                 // The referee's review: a side never reads the id of a unit its view does not hold (rulings R23.1, R23.3).
                 var held = view.Units.Select(unit => unit.Id).Concat(view.Equipment.Select(item => item.Id)).Concat(view.Entities.Select(item => item.Id)).ToHashSet(StringComparer.Ordinal);
-                string Known(string id) => held.Contains(id) ? id : "a unit not in view";
+                string Said(string text) => names?.Held(text, step.Last) ?? text;
+                string Known(string id) => held.Contains(id) ? Said(id) : "a unit not in view";
                 string Where(string id, Position position) => view.Locations.TryGetValue(id, out var location)
-                    ? DisplayText.Location(location.Location) + (position is ContainedPosition contained ? $" (in {Known(contained.Container)})" : string.Empty)
+                    ? DisplayText.Place(view.Map.Boards.Count, location.Location) + (position is ContainedPosition contained ? $" (in {Known(contained.Container)})" : string.Empty)
                     : position switch
                     {
                         OffMapPosition => "off map",
@@ -861,9 +866,15 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
                 unitCache = (step.Last, viewAs, [.. view.Units.Select(unit => new ProjectedGameUnitTable.Row(unit.Id, Preview(unit.Id),
                         documents.TryGetValue(unit.Id, out var document) ? UnitLabels.AccessibleName(document, Library.Vocabulary) : DisplayText.Kind(unit.Kind),
                         Where(unit.Id, unit.Position), DisplayText.ConditionsOf(unit), DisplayText.YesNo(GameState.GoodOrder(unit, Library.Vocabulary)),
-                        string.Join("; ", new[] { unit.From.Count > 0 ? $"from {string.Join(", ", unit.From)}" : null, unit.Custodian is { } custodian ? $"prisoner of {Known(custodian)}" : null }.OfType<string>()))),
+                        string.Join("; ", new[] { unit.From.Count > 0 ? Said($"from {string.Join(", ", unit.From)}") : null, unit.Custodian is { } custodian ? $"prisoner of {Known(custodian)}" : null }.OfType<string>()))
+                    {
+                        Name = Said(unit.Id),
+                    }),
                     .. view.Sealed.Select(presence => new ProjectedGameUnitTable.Row(presence.PlacementId, Preview(presence.PlacementId),
-                        $"concealed {DisplayText.Side(presence.Side)} presence", DisplayText.Location(presence.Location), "withheld", "withheld", string.Empty))]);
+                        $"concealed {DisplayText.Side(presence.Side)} presence", DisplayText.Place(view.Map.Boards.Count, presence.Location), "withheld", "withheld", string.Empty)
+                    {
+                        Name = "?",
+                    })]);
             }
 
             return unitCache.Rows!;

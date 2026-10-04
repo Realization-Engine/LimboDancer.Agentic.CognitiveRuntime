@@ -1,4 +1,5 @@
 using System.Globalization;
+using LimboDancer.Domains.Asl.MapStudio.Services;
 using LimboDancer.Domains.Asl.Rules;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Components.Play;
@@ -24,6 +25,12 @@ public sealed record FireView(string EventId, string Group, string Target, strin
     {
         get; init;
     }
+
+    /// <summary>
+    /// A text of this record in the view's words (pass 31c, design D11): the units and counters its arithmetic and effects name by id, as the view
+    /// could name them just before the attack. The records give it; without one a text keeps its identifiers.
+    /// </summary>
+    public Func<string, string> Say { get; init; } = text => text;
 }
 
 /// <summary>
@@ -35,7 +42,7 @@ internal static class FireText
     public static string Number(decimal value) => value.ToString("0.##", CultureInfo.InvariantCulture);
 
     public static string ModifierText(IEnumerable<FireModifier> drm) =>
-        string.Concat(drm.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({item.Name}, {item.Rule})"));
+        string.Concat(drm.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({DisplayText.Modifier(item.Name)}, {item.Rule})"));
 
     /// <summary>
     /// A Heat of Battle DR in words, for example "Heat of Battle DR 2, 3 = 5 + 2 (nationality:russian, A15.1) = Final DR 7: Battle Hardened into
@@ -125,7 +132,7 @@ internal static class FireText
     public static string CheckText(FireCheck check)
     {
         ArgumentNullException.ThrowIfNull(check);
-        return $"{check.Kind} {string.Join(", ", check.Dice)}{string.Concat(check.Drm.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({item.Name})"))}"
+        return $"{check.Kind} {string.Join(", ", check.Dice)}{string.Concat(check.Drm.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({DisplayText.Modifier(item.Name)})"))}"
             + $" = {check.FinalDr} against {check.MoraleLevel}: {(check.Passed ? "passed" : "failed")}";
     }
 
@@ -135,7 +142,7 @@ internal static class FireText
         ArgumentNullException.ThrowIfNull(hit);
         return hit.KillNumber is not { } kill
             ? "unharmed by small arms (A7.307)"
-            : $"Kill Number {kill}, Final DR {hit.FinalDr}{string.Concat(hit.Drm.Select(item => $" ({item.Name} {(item.Value < 0 ? "-" : "+")}{Number(Math.Abs(item.Value))})"))}"
+            : $"Kill Number {kill}, Final DR {hit.FinalDr}{string.Concat(hit.Drm.Select(item => $" ({DisplayText.Modifier(item.Name)} {(item.Value < 0 ? "-" : "+")}{Number(Math.Abs(item.Value))})"))}"
                 + (hit.UnlikelyKillDr is { } dr ? $", Unlikely Kill dr {dr}" : "") + $": {hit.Result.Replace('-', ' ')}";
     }
 
@@ -147,7 +154,7 @@ internal static class FireText
         {
             FireVehicleEffect.NotVulnerable => "not Vulnerable (BU or Stunned, D5.3, D5.34)",
             _ when hit.KillNumber is not null => "no crew attack (an Inherent Driver, D5.1)",
-            _ => $"Collateral Final DR {hit.FinalDr}{string.Concat(hit.Drm.Select(item => $" ({item.Name} {(item.Value < 0 ? "-" : "+")}{Number(Math.Abs(item.Value))}, {item.Rule})"))}"
+            _ => $"Collateral Final DR {hit.FinalDr}{string.Concat(hit.Drm.Select(item => $" ({DisplayText.Modifier(item.Name)} {(item.Value < 0 ? "-" : "+")}{Number(Math.Abs(item.Value))}, {item.Rule})"))}"
                 + $"{(hit.CrewCheck is { } check ? "; " + CheckText(check) : "")}: {hit.CrewResult}",
         };
     }

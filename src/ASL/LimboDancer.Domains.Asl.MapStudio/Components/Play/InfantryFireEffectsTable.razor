@@ -7,9 +7,9 @@
         @foreach (var effect in Effects)
         {
             <tr data-unit="@effect.UnitId">
-                <td>@effect.UnitId (@effect.DefinitionId@(effect.FinalDefinitionId != effect.DefinitionId ? $", now {effect.FinalDefinitionId}" : ""))</td>
-                <td class="fire-effect">@FireText.EffectText(effect, BrokenBefore.Contains(effect.UnitId), PinnedBefore.Contains(effect.UnitId))</td>
-                <td>@string.Join("; ", effect.Checks.Select(FireText.CheckText))</td>
+                <td title="@effect.UnitId">@Say(effect.UnitId)@(effect.FinalDefinitionId != effect.DefinitionId ? Say($", now {effect.FinalDefinitionId}") : "")</td>
+                <td class="fire-effect">@Say(FireText.EffectText(effect, BrokenBefore.Contains(effect.UnitId), PinnedBefore.Contains(effect.UnitId)))</td>
+                <td>@Say(string.Join("; ", effect.Checks.Select(FireText.CheckText)))</td>
             </tr>
         }
     </tbody>
@@ -26,4 +26,8 @@
     /// <summary>The targets pinned before the attack.</summary>
     [Parameter]
     public IReadOnlySet<string> PinnedBefore { get; set; } = new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>A text in the view's words (pass 31c, design D11); the record gives it.</summary>
+    [Parameter]
+    public Func<string, string> Say { get; set; } = text => text;
 }

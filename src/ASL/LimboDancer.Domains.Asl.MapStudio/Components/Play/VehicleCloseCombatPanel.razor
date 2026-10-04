@@ -16,7 +16,7 @@
                 <option value="">choose</option>
                 @foreach (var unit in location.Attackers)
                 {
-                    <option value="@unit">@unit</option>
+                    <option value="@unit">@Say(unit)</option>
                 }
             </select>
         </label>
@@ -26,7 +26,7 @@
                 <option value="">none</option>
                 @foreach (var unit in location.Leaders)
                 {
-                    <option value="@unit">@unit</option>
+                    <option value="@unit">@Say(unit)</option>
                 }
             </select>
         </label>
@@ -42,7 +42,7 @@
         </label>
         @foreach (var unit in location.Defenders)
         {
-            <label><input type="checkbox" class="vehicle-cc-defender" checked="@Defenders.Contains(unit)" @onchange="@(args => OnDefender.InvokeAsync(new UnitSelectionList.Toggle(unit, args.Value is true)))" /> @unit</label>
+            <label><input type="checkbox" class="vehicle-cc-defender" checked="@Defenders.Contains(unit)" @onchange="@(args => OnDefender.InvokeAsync(new UnitSelectionList.Toggle(unit, args.Value is true)))" /> @Say(unit)</label>
         }
         <button class="propose-vehicle-cc-attack" disabled="@(Attacker.Length == 0 || Vehicle.Length == 0)" @onclick="@(() => OnProposeAttack.InvokeAsync(location.Location))">Propose: Infantry attack the vehicle</button>
         <button class="propose-vehicle-cc-vehicle" disabled="@(Vehicle.Length == 0 || Defenders.Count == 0)" @onclick="@(() => OnProposeVehicle.InvokeAsync(location.Location))">Propose: the vehicle attacks the checked Infantry</button>
@@ -51,6 +51,12 @@
 }
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>A vehicle in the Location and its side.</summary>
     public sealed record VehicleChoice(string Id, string Side);
 

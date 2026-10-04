@@ -7,7 +7,7 @@
         <select id="enter-unit" value="@Unit" @onchange="@(args => OnUnit.InvokeAsync(args.Value as string ?? string.Empty))">
             @foreach (var unit in Units)
             {
-                <option value="@unit.Id">@unit.Label</option>
+                <option value="@unit.Id">@Say(unit.Label)</option>
             }
         </select>
     </label>
@@ -20,6 +20,12 @@
 </p>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>A unit that may enter, such as "g1 (german)".</summary>
     public sealed record Choice(string Id, string Label);
 

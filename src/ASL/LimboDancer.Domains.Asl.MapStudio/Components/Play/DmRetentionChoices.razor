@@ -7,12 +7,18 @@
         @foreach (var unit in Units)
         {
             <label @key="unit"><input class="retain-dm" type="checkbox" data-unit="@unit" checked="@Selected.Contains(unit)"
-                                      @onchange="@(args => OnToggle.InvokeAsync(new Toggle(unit, args.Value is true)))" /> @unit</label>
+                                      @onchange="@(args => OnToggle.InvokeAsync(new Toggle(unit, args.Value is true)))" /> @Say(unit)</label>
         }
     </fieldset>
 }
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>A unit checked or cleared.</summary>
     public sealed record Toggle(string Id, bool On);
 

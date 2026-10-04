@@ -12,7 +12,7 @@
 <ul id="rout-obligations">
     @foreach (var item in Obligations)
     {
-        <li @key="item.Unit" class="rout-obligation" data-unit="@item.Unit">@item.Text</li>
+        <li @key="item.Unit" class="rout-obligation" data-unit="@item.Unit">@DisplayText.Sentence(Say(item.Text))</li>
     }
 </ul>
 <div class="toolbar">
@@ -22,7 +22,7 @@
             <option value="">choose</option>
             @foreach (var unit in Units)
             {
-                <option value="@unit.Id">@unit.Label</option>
+                <option value="@unit.Id">@Say(unit.Label)</option>
             }
         </select>
     </label>
@@ -39,6 +39,12 @@
 </div>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>A broken unit that may rout and what it owes, such as "r1 (russian): must rout: ...; has routed".</summary>
     public sealed record Obligation(string Unit, string Text);
 

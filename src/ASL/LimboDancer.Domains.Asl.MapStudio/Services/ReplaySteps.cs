@@ -207,17 +207,7 @@ public static class ReplaySteps
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(at);
-        if (state.Map.Boards.Count != 1)
-        {
-            return DisplayText.Location(at);
-        }
-
-        return at.Level switch
-        {
-            0 => at.Hex.ToString(),
-            -1 => $"{at.Hex}, cellar",
-            var level => string.Create(CultureInfo.InvariantCulture, $"{at.Hex}, level {level}"),
-        };
+        return DisplayText.Place(state, at);
     }
 
     private static string Place(GameState state, string location) => BoardLocation.TryParse(location, out var at) ? Place(state, at) : location;

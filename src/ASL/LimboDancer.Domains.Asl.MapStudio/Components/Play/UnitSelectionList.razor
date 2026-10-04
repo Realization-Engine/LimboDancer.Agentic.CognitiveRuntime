@@ -13,6 +13,12 @@ else
 }
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>A unit offered: its id and how it reads, such as "bs9 (bd04:E1:0)".</summary>
     public sealed record Row(string Id, string Label);
 
@@ -38,7 +44,7 @@ else
     private RenderFragment Boxes => @<text>
         @foreach (var row in Rows)
         {
-            <label><input class="@CssClass" type="checkbox" data-unit="@row.Id" checked="@Selected.Contains(row.Id)" @onchange="@(args => OnToggle.InvokeAsync(new Toggle(row.Id, args.Value is true)))" /> @row.Label</label>
+            <label><input class="@CssClass" type="checkbox" data-unit="@row.Id" checked="@Selected.Contains(row.Id)" @onchange="@(args => OnToggle.InvokeAsync(new Toggle(row.Id, args.Value is true)))" /> @Say(row.Label)</label>
         }
     </text>;
 }

@@ -15,7 +15,7 @@
             <option value="">choose</option>
             @foreach (var weapon in Weapons)
             {
-                <option value="@weapon.Id">@weapon.Label</option>
+                <option value="@weapon.Id">@Say(weapon.Label)</option>
             }
         </select>
     </label>
@@ -25,7 +25,7 @@
             <option value="">choose</option>
             @foreach (var unit in Units)
             {
-                <option value="@unit.Id">@unit.Label</option>
+                <option value="@unit.Id">@Say(unit.Label)</option>
             }
         </select>
     </label>
@@ -37,6 +37,12 @@
 </div>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>The actions the panel asks for; the page maps each to its registered action.</summary>
     public const string Transfer = "transfer";
     public const string Drop = "drop";

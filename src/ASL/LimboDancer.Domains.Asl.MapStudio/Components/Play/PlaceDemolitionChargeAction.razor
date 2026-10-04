@@ -6,7 +6,7 @@
         <option value="">choose</option>
         @foreach (var charge in Charges)
         {
-            <option value="@charge.Id">@charge.Label</option>
+            <option value="@charge.Id">@Say(charge.Label)</option>
         }
     </select>
 </label>
@@ -18,6 +18,12 @@
 }
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>A DC a mover holds, such as "dc1 (bs9)".</summary>
     public sealed record ChargeChoice(string Id, string Label);
 

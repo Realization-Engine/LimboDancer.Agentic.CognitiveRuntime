@@ -13,7 +13,7 @@
             <option value="">choose</option>
             @foreach (var id in Firers)
             {
-                <option value="@id">@id</option>
+                <option value="@id">@Say(id)</option>
             }
         </select>
     </label>
@@ -33,6 +33,12 @@
 </div>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>The method that fires in the firer's own hex and needs no target.</summary>
     public const string OwnHex = "own-hex";
 

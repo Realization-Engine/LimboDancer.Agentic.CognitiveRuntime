@@ -7,7 +7,7 @@
             <option value="">choose</option>
             @foreach (var unit in HalfSquads)
             {
-                <option value="@unit.Id">@unit.Label</option>
+                <option value="@unit.Id">@Say(unit.Label)</option>
             }
         </select>
     </label>
@@ -17,7 +17,7 @@
             <option value="">choose</option>
             @foreach (var unit in Partners)
             {
-                <option value="@unit">@unit</option>
+                <option value="@unit">@Say(unit)</option>
             }
         </select>
     </label>
@@ -27,7 +27,7 @@
             <option value="">choose</option>
             @foreach (var leader in Leaders)
             {
-                <option value="@leader">@leader</option>
+                <option value="@leader">@Say(leader)</option>
             }
         </select>
     </label>
@@ -39,6 +39,12 @@
 </div>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     [Parameter, EditorRequired]
     public IReadOnlyList<PlayChoice> HalfSquads { get; set; } = [];
 

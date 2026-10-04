@@ -8,7 +8,7 @@
         <option value="">choose</option>
         @foreach (var at in Targets)
         {
-            <option value="@at">@DisplayText.Location(at)</option>
+            <option value="@at">@Say($"{at}")</option>
         }
     </select>
 </label>
@@ -20,7 +20,7 @@
             <option value="">choose</option>
             @foreach (var vehicle in Vehicles)
             {
-                <option value="@vehicle.Id">@vehicle.Label</option>
+                <option value="@vehicle.Id">@Say(vehicle.Label)</option>
             }
         </select>
     </label>
@@ -43,6 +43,12 @@
 }
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>How a shot at a vehicle takes its ammunition.</summary>
     public enum AmmunitionKind
     {

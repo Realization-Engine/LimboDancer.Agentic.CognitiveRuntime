@@ -23,6 +23,9 @@ public sealed class PlayRecords
     private readonly Perspective viewer;
     private readonly IReadOnlyList<GameEvent> events;
     private readonly GameState? state;
+    private readonly UnitNames? names;
+    private Dictionary<string, long>? revisions;
+    private Dictionary<string, long>? rollRevisions;
     private IReadOnlyList<DiceRollHistory.Row>? rollRows;
     private IReadOnlyList<(string EventId, string Text)>? ordnance;
     private IReadOnlyList<FireView>? fire;
@@ -33,12 +36,16 @@ public sealed class PlayRecords
     private Dictionary<string, string>? when;
     private (bool Read, string? Text) latest;
 
-    /// <summary>The records of <paramref name="history"/> through the revision <paramref name="last"/>, as <paramref name="viewer"/> may read them.</summary>
-    public PlayRecords(GameHistory history, Perspective viewer, long last)
+    /// <summary>
+    /// The records of <paramref name="history"/> through the revision <paramref name="last"/>, as <paramref name="viewer"/> may read them. With
+    /// <paramref name="names"/> (pass 31c, design D11) every unit, weapon, counter, and Location in a record is said in the view's words, and a
+    /// unit the view could not name just before the event reads "a concealed unit"; without them a record keeps its identifiers.
+    /// </summary>
+    public PlayRecords(GameHistory history, Perspective viewer, long last, UnitNames? names = null)
     {
         ArgumentNullException.ThrowIfNull(history);
         ArgumentNullException.ThrowIfNull(viewer);
-        (this.history, this.viewer, Last) = (history, viewer, last);
+        (this.history, this.viewer, Last, this.names) = (history, viewer, last, names);
         events = last >= history.Events.Count ? history.Events : [.. history.Events.Where(item => item.Revision <= last)];
         state = history.At(Math.Min(last, history.States.Count));
     }
@@ -56,6 +63,36 @@ public sealed class PlayRecords
     /// <summary>The latest six rolls the view may see, latest first.</summary>
     public IReadOnlyList<DiceRollHistory.Row> RollRows => rollRows ??= RowsOf(Rolls, RollText);
 
+    /// <summary>The view's names, when the records were read with them.</summary>
+    public UnitNames? Names => names;
+
+    /// <summary>
+    /// A record's text in the view's words (design D11): the one place a record's identifiers become names, so no record is worded twice and none
+    /// misses the view check (plan section 15.9).
+    /// </summary>
+    private string Say(string eventId, string text)
+    {
+        if (names is null)
+        {
+            return text;
+        }
+
+        revisions ??= events.ToDictionary(item => item.EventId, item => item.Revision, StringComparer.Ordinal);
+        return names.InText(text, revisions.TryGetValue(eventId, out var revision) ? revision - 1 : Last);
+    }
+
+    private string SayRoll(string roll, string text)
+    {
+        if (names is null)
+        {
+            return text;
+        }
+
+        rollRevisions ??= events.Where(item => item.Payload is DiceRolled).GroupBy(item => ((DiceRolled)item.Payload).Roll, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.First().Revision, StringComparer.Ordinal);
+        return names.InText(text, rollRevisions.TryGetValue(roll, out var revision) ? revision - 1 : Last);
+    }
+
     /// <summary>Every roll the view may see among the events of the revisions <paramref name="first"/> to <paramref name="last"/>, in order.</summary>
     public IReadOnlyList<DiceRollHistory.Row> RollsIn(long first, long last)
     {
@@ -64,17 +101,21 @@ public sealed class PlayRecords
             .Select(roll => (roll, seen.Select(item => item.Payload).OfType<RandomSelection>().FirstOrDefault(selection => selection.Roll == roll.Roll)?.Subjects)), RollText);
     }
 
-    public IReadOnlyList<(string EventId, string Text)> Ordnance => ordnance ??= OrdnanceRecords;
+    public IReadOnlyList<(string EventId, string Text)> Ordnance => ordnance ??= Said(OrdnanceRecords);
 
     public IReadOnlyList<FireView> Fire => fire ??= FireRecords;
 
-    public IReadOnlyList<(string EventId, string Text)> CloseCombat => closeCombat ??= CloseCombatRecords;
+    public IReadOnlyList<(string EventId, string Text)> CloseCombat => closeCombat ??= Said(CloseCombatRecords);
 
-    public IReadOnlyList<(string EventId, string Text)> Night => night ??= NightRecords;
+    public IReadOnlyList<(string EventId, string Text)> Night => night ??= Said(NightRecords);
 
-    public IReadOnlyList<(string EventId, string Text)> Snipers => snipers ??= SniperRecords;
+    public IReadOnlyList<(string EventId, string Text)> Snipers => snipers ??= Said(SniperRecords);
 
-    public IReadOnlyList<(string EventId, string Kind, string Text)> RallyAndRepair => rallyAndRepair ??= RallyAndRepairRecords;
+    public IReadOnlyList<(string EventId, string Kind, string Text)> RallyAndRepair =>
+        rallyAndRepair ??= names is null ? RallyAndRepairRecords : [.. RallyAndRepairRecords.Select(record => (record.EventId, record.Kind, Say(record.EventId, record.Text)))];
+
+    private IReadOnlyList<(string EventId, string Text)> Said(IReadOnlyList<(string EventId, string Text)> records) =>
+        names is null ? records : [.. records.Select(record => (record.EventId, Say(record.EventId, record.Text)))];
 
     /// <summary>The turn and phase an event happened in, such as "Turn 2, Rally Phase"; null for an event the records do not hold.</summary>
     public string? WhenOf(string eventId)
@@ -132,16 +173,16 @@ public sealed class PlayRecords
         var check = events.Select(item => item.Payload).OfType<TaskCheck>().FirstOrDefault(item => item.Roll == roll.Roll);
         if (check is null)
         {
-            return $"{roll.Purpose}: {string.Join(", ", roll.Values)}";
+            return $"{DisplayText.RollPurpose(roll.Purpose)}: {string.Join(", ", roll.Values)}";
         }
 
         var modifiers = string.Concat(check.Modifiers.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Math.Abs(item.Value)} ({(item.Source == "B23.3" ? "TEM" : item.Source)})"));
-        return $"{(check.Purpose == TaskCheck.OvrNtc ? "OVR NTC" : check.Purpose)}: {string.Join(", ", roll.Values)}{modifiers} = {check.FinalDr} "
+        return $"{(check.Purpose == TaskCheck.OvrNtc ? "OVR NTC" : DisplayText.RollPurpose(check.Purpose))}: {string.Join(", ", roll.Values)}{modifiers} = {check.FinalDr} "
             + $"against morale {check.MoraleLevel}: {(check.Passed ? "passed" : "failed")}";
     }
 
-    private static IReadOnlyList<DiceRollHistory.Row> RowsOf(IEnumerable<(DiceRolled Roll, IReadOnlyList<string>? Subjects)> rolls, Func<DiceRolled, string> RollText) => [.. rolls.Select(item => new DiceRollHistory.Row(item.Roll.Roll,
-        RollText(item.Roll) + (item.Subjects is null ? "" : $" for {string.Join(", ", item.Subjects)}"),
+    private IReadOnlyList<DiceRollHistory.Row> RowsOf(IEnumerable<(DiceRolled Roll, IReadOnlyList<string>? Subjects)> rolls, Func<DiceRolled, string> RollText) => [.. rolls.Select(item => new DiceRollHistory.Row(item.Roll.Roll,
+        SayRoll(item.Roll.Roll, RollText(item.Roll) + (item.Subjects is null ? "" : $" for {string.Join(", ", item.Subjects)}")),
         $"{item.Roll.Count} d{item.Roll.Sides}, drawn by the {item.Roll.Source} for {item.Roll.Actor}"))];
 
     /// <summary>
@@ -169,7 +210,7 @@ public sealed class PlayRecords
                 }
 
                 var dice = string.Join(", ", hit.Dice.Select((die, index) => index == 0 ? $"{die} (colored)" : $"{die}"));
-                var modifications = string.Concat(hit.Modifications.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({item.Name}, {item.Rule})"));
+                var modifications = string.Concat(hit.Modifications.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({DisplayText.Modifier(item.Name)}, {item.Rule})"));
                 var outcome = hit.CriticalHit ? "Critical Hit" : hit.Hit ? "hit" : "miss";
                 var shot = fired.Facts.Deserialize<OrdnanceShot>(LiveFire.Json);
                 var aim = shot?.VehicleTarget is { } aimed ? $"{(shot.Ammunition ?? "ap").ToUpperInvariant()} at {aimed.VehicleId} in {fired.Target} (hull {aimed.HullFacing}"
@@ -215,7 +256,7 @@ public sealed class PlayRecords
                 if (resolution.Kill is { } kill)
                 {
                     var tk = kill.BasicTk is { } basic
-                        ? $"Basic TK# {basic}{string.Concat(kill.Modifications.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({item.Name}, {item.Rule})"))} - AF {kill.ArmorFactor} = Final TK# {kill.FinalTk}"
+                        ? $"Basic TK# {basic}{string.Concat(kill.Modifications.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({DisplayText.Modifier(item.Name)}, {item.Rule})"))} - AF {kill.ArmorFactor} = Final TK# {kill.FinalTk}"
                         : $"unarmored Final TK# {kill.FinalTk}";
                     var fate = kill.Result switch
                     {
@@ -258,8 +299,9 @@ public sealed class PlayRecords
                 {
                     // Pass 31 (play test P-16): what the targets already were, read from the record's own facts.
                     var before = fire.Facts.Deserialize<FireAttack>(LiveFire.Json)?.Targets ?? [];
-                    views.Add(new FireView(item.EventId, GroupOf(fire), fire.TargetLocation, null, arithmetic, resolution.Effects)
+                    views.Add(new FireView(item.EventId, Say(item.EventId, GroupOf(fire)), Say(item.EventId, fire.TargetLocation), null, arithmetic, resolution.Effects)
                     {
+                        Say = text => Say(item.EventId, text),
                         Vehicles = resolution.VehicleEffects,
                         BrokenBefore = before.Where(target => target.Broken == true && target.UnitId is not null).Select(target => target.UnitId!).ToHashSet(StringComparer.Ordinal),
                         PinnedBefore = before.Where(target => target.Pinned == true && target.UnitId is not null).Select(target => target.UnitId!).ToHashSet(StringComparer.Ordinal),
@@ -268,8 +310,11 @@ public sealed class PlayRecords
                 else if (item.Payload is FireReported report && events.FirstOrDefault(other => other.EventId == report.Fire) is { } withheld
                     && !withheld.IsVisibleTo(viewer) && report.Arithmetic.Deserialize<FireArithmetic>(LiveFire.Json) is { } reported)
                 {
-                    views.Add(new FireView(report.Fire, withheld.Payload is FireResolved hidden ? GroupOf(hidden) : $"The fire group in {report.FirerLocation}",
-                        report.TargetLocation, withheld.Visibility is [{ } only] ? only : null, reported, null));
+                    views.Add(new FireView(report.Fire, Say(item.EventId, withheld.Payload is FireResolved hidden ? GroupOf(hidden) : $"The fire group in {report.FirerLocation}"),
+                        Say(item.EventId, report.TargetLocation), withheld.Visibility is [{ } only] ? only : null, reported, null)
+                    {
+                        Say = text => Say(item.EventId, text),
+                    });
                 }
             }
 
@@ -288,8 +333,9 @@ public sealed class PlayRecords
 
     /// <summary>
     /// The fire group of an attack: each Location's firers with the MGs they use (an MG firing without its holder's inherent FP
-    /// is named alone), then every directing leader (A7.5, A7.531, A9.2), for example "r1 with mg1, r2 in bd01:D4:0, directed
-    /// by rl". Residual FP has no firers (A8.22).
+    /// is named alone), then every directing leader (A7.5, A7.531, A9.2), for example "r1 with its mg1, r2 in bd01:D4:0, directed
+    /// by rl", which a view then reads as "4-4-7 squad R1 with its MMG, 4-4-7 squad R2 in D4, directed by 9-1 leader R1". Residual FP has no
+    /// firers (A8.22).
     /// </summary>
     public static string FireGroupText(IReadOnlyList<GameEvent> events, FireAttack attack)
     {
@@ -332,8 +378,9 @@ public sealed class PlayRecords
         static string Firer(FireFirer firer)
         {
             var weapons = (firer.Weapons ?? []).Select(item => item.EquipmentId).OfType<string>().ToArray();
-            return firer.UsesInherentFp == false ? $"{string.Join(", ", weapons)} of {firer.UnitId} alone"
-                : weapons.Length > 0 ? $"{firer.UnitId} with {string.Join(", ", weapons)}" : firer.UnitId ?? "?";
+            // Pass 31c (play test P-17): the headline names the weapons, and says when a MG fires without its holder's own FP.
+            return firer.UsesInherentFp == false ? $"{string.Join(", ", weapons)} of {firer.UnitId}, alone"
+                : weapons.Length > 0 ? $"{firer.UnitId} with its {string.Join(" and its ", weapons)}" : firer.UnitId ?? "?";
         }
 
         var groups = firers.GroupBy(item => item.LocationId ?? attack.FirerLocationId).Select(group => $"{string.Join(", ", group.Select(Firer))} in {group.Key}");
@@ -480,7 +527,7 @@ public sealed class PlayRecords
     private static string RallyText(RallyAttempted rally, RallyArithmetic arithmetic, RallyEffect? effect)
     {
         var who = rally.Leader is { } leader ? $"{leader} rallies {rally.Unit}" : $"{rally.Unit} Self-Rallies";
-        var drm = string.Concat(arithmetic.Drm.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({item.Name}, {item.Rule})"));
+        var drm = string.Concat(arithmetic.Drm.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({DisplayText.Modifier(item.Name)}, {item.Rule})"));
         List<string> results = [arithmetic.Rallied ? "rallied" : "not rallied"];
         if (arithmetic.Fate)
         {
@@ -574,7 +621,7 @@ public sealed class PlayRecords
                         // Each defender's own DRM follow the attack's modified DR, then its Final DR (A11.11).
                         var defenders = string.Join(", ", attack.Defending.Select(defender =>
                             $"{defender.UnitId}: {Number(defender.FinalDr - defender.Drm.Sum(item => item.Value))}{ModifierText(defender.Drm)} = Final DR {defender.FinalDr}: {DefenderText(defender)}"));
-                        var firepower = attack.FirepowerModifiers.Count == 0 ? "" : $" [{string.Join(", ", attack.FirepowerModifiers.Select(item => $"{item.Name} x{Number(item.Value)}, {item.Rule}"))}]";
+                        var firepower = attack.FirepowerModifiers.Count == 0 ? "" : $" [{string.Join(", ", attack.FirepowerModifiers.Select(item => $"{DisplayText.Modifier(item.Name)} x{Number(item.Value)}, {item.Rule}"))}]";
                         var creation = attack.LeaderCreation is { } created
                             ? $"; Leader Creation dr {created.Dr}{ModifierText(created.Drm)} = {created.FinalDr}: {(created.LeaderDefinitionId is { } leader ? $"creates {leader}" : "no leader")} (A18.12)"
                             : "";

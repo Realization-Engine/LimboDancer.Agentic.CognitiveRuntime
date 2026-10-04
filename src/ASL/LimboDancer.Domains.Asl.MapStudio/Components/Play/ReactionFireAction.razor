@@ -14,7 +14,7 @@
             <option value="">choose</option>
             @foreach (var unit in Attackers)
             {
-                <option value="@unit">@unit</option>
+                <option value="@unit">@Say(unit)</option>
             }
         </select>
     </label>
@@ -24,7 +24,7 @@
             <option value="">none</option>
             @foreach (var unit in Leaders)
             {
-                <option value="@unit">@unit</option>
+                <option value="@unit">@Say(unit)</option>
             }
         </select>
     </label>
@@ -32,6 +32,12 @@
 </div>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>The moving vehicle.</summary>
     [Parameter, EditorRequired]
     public string Vehicle { get; set; } = string.Empty;

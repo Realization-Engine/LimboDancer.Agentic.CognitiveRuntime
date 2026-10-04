@@ -9,7 +9,7 @@
 @if (Waiting.Count > 0)
 {
     <p class="muted" id="advance-entry">
-        @string.Join(", ", Waiting) @(Waiting.Count == 1 ? "waits" : "wait") off board: units whose entry turn has come enter by advance into a hex of their entry
+        @Say(string.Join(", ", Waiting)) @(Waiting.Count == 1 ? "waits" : "wait") off board: units whose entry turn has come enter by advance into a hex of their entry
         edge, and the APh does not end while one still may (A2.5; ruling R25.1).
     </p>
 }
@@ -21,7 +21,7 @@
             <option value="">choose</option>
             @foreach (var to in Destinations)
             {
-                <option value="@to">@to</option>
+                <option value="@to">@Say(to)</option>
             }
         </select>
     </label>
@@ -34,6 +34,12 @@
 </div>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>The phasing side.</summary>
     [Parameter, EditorRequired]
     public string Side { get; set; } = string.Empty;

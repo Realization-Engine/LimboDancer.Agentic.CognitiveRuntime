@@ -1,17 +1,18 @@
 @using System.Globalization
 @using LimboDancer.Domains.Asl.Rules
+@using LimboDancer.Domains.Asl.MapStudio.Components.Games
 @* R03 (plan section 16.13): the facts of an attack as the planner read them from the game and the map, with the terrain facts of pass 10. It shows
    them; it does not recalculate them. *@
 <table class="library" id="fire-facts">
     <thead><tr><th>Fact of the attack</th><th>From the game and the map</th></tr></thead>
     <tbody>
-        <tr data-fact="phase"><td>Phase and side</td><td>@Attack.Phase@(Attack.FireKind is { } kind ? $" ({kind})" : ""), the @(Attack.FiringSide) side</td></tr>
-        <tr data-fact="firers"><td>Fire group</td><td>@FireGroup</td></tr>
-        <tr data-fact="target"><td>Target Location</td><td>@Attack.TargetLocationId</td></tr>
-        <tr data-fact="range"><td>Range</td><td>@Range</td></tr>
+        <tr data-fact="phase"><td>Phase and side</td><td>@GameText.PhaseLabel(Attack.Phase?.ToLowerInvariant() ?? string.Empty)@(Attack.FireKind is { } kind ? $" ({kind.Replace('-', ' ')})" : ""), the @(Attack.FiringSide) side</td></tr>
+        <tr data-fact="firers"><td>Fire group</td><td>@Say(FireGroup)</td></tr>
+        <tr data-fact="target"><td>Target Location</td><td title="@Attack.TargetLocationId">@Say(Attack.TargetLocationId)</td></tr>
+        <tr data-fact="range"><td>Range</td><td>@Say(Range)</td></tr>
         <tr data-fact="level"><td>Same level</td><td>@(Attack.SameLevel is { } same ? same ? "yes" : Attack.TargetLevelAbove is { } above ? $"no: the target is {Math.Abs(above)} level{(Math.Abs(above) == 1 ? "" : "s")} {(above > 0 ? "above" : "below")} the firer" : "no" : "not read")</td></tr>
         <tr data-fact="los"><td>LOS</td><td>@(Attack.Los is { } los ? $"{(los.Blocked == true ? "blocked" : "clear")}, Hindrance DRM {los.HindranceDrm}{(los.HindranceAttributed == true ? "" : " (not attributed)")}" : "not read")</td></tr>
-        <tr data-fact="terrain"><td>Target terrain</td><td>@(Attack.TargetTerrain ?? "not read")</td></tr>
+        <tr data-fact="terrain"><td>Target terrain</td><td>@(Attack.TargetTerrain?.Replace('-', ' ') ?? "not read")</td></tr>
         @* Backlog pass 10 (rulings R10.4 to R10.8, R10.13): the terrain facts the attack also reads. *@
         @if (Attack.HexsideTem is { Terrain: { } wall, Tem: { } wallTem })
         {
@@ -34,6 +35,12 @@
 </table>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     [Parameter, EditorRequired]
     public FireAttack Attack { get; set; } = default!;
 

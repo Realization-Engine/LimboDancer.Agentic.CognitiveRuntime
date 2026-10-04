@@ -9,12 +9,18 @@
 <div class="toolbar">
     @foreach (var unit in Units)
     {
-        <label><input class="opportunity-unit" type="checkbox" data-unit="@unit" checked="@Selected.Contains(unit)" @onchange="@(args => OnToggle.InvokeAsync(new UnitSelectionList.Toggle(unit, args.Value is true)))" /> @unit</label>
+        <label><input class="opportunity-unit" type="checkbox" data-unit="@unit" checked="@Selected.Contains(unit)" @onchange="@(args => OnToggle.InvokeAsync(new UnitSelectionList.Toggle(unit, args.Value is true)))" /> @Say(unit)</label>
     }
     <button id="propose-opportunity" disabled="@(Selected.Count == 0)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: Opportunity Fire</button>
 </div>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>The units that may hold their fire.</summary>
     [Parameter, EditorRequired]
     public IReadOnlyList<string> Units { get; set; } = [];
