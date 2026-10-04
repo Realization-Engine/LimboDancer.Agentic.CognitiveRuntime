@@ -521,9 +521,9 @@ else if (state is not null)
                             {
                                 var lanes = Live.Planner.ChargeLanes(state, charging);
                                 <p class="fail" data-charge="@charging.Id">
-                                    @charging.Id is berserk and charges @(target?.ToString() ?? "the nearest Known enemy unit") before any other unit moves (A15.43),
+                                    @WordsAt(charging.Id) is berserk and charges @(target is null ? "the nearest Known enemy unit" : PlaceOf(target.ToString())) before any other unit moves (A15.43),
                                     by a shortest route: next @(next.Count == 1 ? "step" : "steps") @string.Join(" or ", next.Select(step => lanes.TryGetValue(step, out var bypass)
-                                        ? $"{step} in Bypass along {string.Join(" or ", bypass)}" : step.ToString())) (A15.431). It may not stop short while it has the MF.
+                                        ? $"{PlaceOf(step.ToString())} in Bypass along {string.Join(" or ", bypass)}" : PlaceOf(step.ToString()))) (A15.431). It may not stop short while it has the MF.
                                 </p>
                             }
                             else
@@ -2848,7 +2848,7 @@ else if (state is not null)
         {
             if (state.Passengers(unit.Id) is { Count: > 0 } riding)
             {
-                yield return $"Passengers {string.Join(", ", riding.Select(item => item.Id))}";
+                yield return $"Passengers {string.Join(", ", riding.Select(item => Words(item.Id)))}";
             }
 
             foreach (var gun in state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == unit.Id))

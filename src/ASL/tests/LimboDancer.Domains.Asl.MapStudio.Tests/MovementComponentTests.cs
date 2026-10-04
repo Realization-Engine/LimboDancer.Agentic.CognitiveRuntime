@@ -27,11 +27,21 @@ public sealed class MovementComponentTests : IDisposable
         Assert.False(list.Find(".move-unit[data-unit='bs9']").HasAttribute("checked"));
         Assert.True(list.Find(".move-unit[data-unit='b1']").HasAttribute("checked"));
         Assert.Contains("off board: enters along the top edge", list.Markup, StringComparison.Ordinal);
-        Assert.Empty(list.FindAll("fieldset"));
+        Assert.Empty(list.FindAll("details"));
+
+        // Pass 31c: a named group is a dropdown of checkboxes; its closed line names the group and the units ticked.
         list.Render(parameters => parameters.Add(item => item.Legend, "Units moving"));
-        Assert.Equal("Units moving", list.Find("fieldset.move-units legend").TextContent);
+        Assert.Equal("Units moving", list.Find("details.move-units.unit-dropdown summary .unit-dropdown-name").TextContent);
+        Assert.Equal("b1 (bd04:E5:0)", list.Find("details.move-units summary .unit-dropdown-chosen").TextContent);
+        Assert.Equal("Units moving", list.Find("details.move-units .unit-dropdown-list[role='group']").GetAttribute("aria-label"));
+        Assert.Equal(2, list.FindAll("details.move-units .unit-dropdown-list .move-unit").Count);
         list.Find(".move-unit[data-unit='bs9']").Change(true);
         Assert.Equal(new UnitSelectionList.Toggle("bs9", true), toggled);
+
+        // With no unit to offer, the group says so in place of an empty box.
+        list.Render(parameters => parameters.Add(item => item.Rows, []));
+        Assert.Empty(list.FindAll("details"));
+        Assert.Contains("none may be chosen now.", list.Find("p.move-units.unit-dropdown-empty").TextContent, StringComparison.Ordinal);
     }
 
     // K09 (ruling R25.5): the exit waits for checked units and an edge, under the ids the caller names.
@@ -128,7 +138,7 @@ public sealed class MovementComponentTests : IDisposable
             .Add(item => item.Location, "bd01:E4:0").Add(item => item.OnUnit, value => unit = value));
         entry.Find("#enter-unit").Change("g1");
         Assert.Equal("g1", unit);
-        Assert.Equal("bd01:E4:0", entry.Find("#enter-location").GetAttribute("value"));
+        Assert.Equal("[E4] on board 01", entry.Find("#enter-location").GetAttribute("value"));
 
         var reaction = context.Render<ReactionFireAction>(parameters => parameters.Add(item => item.Vehicle, "t34").Add(item => item.Attackers, ["g1", "gl1"])
             .Add(item => item.Leaders, ["gl1"]));

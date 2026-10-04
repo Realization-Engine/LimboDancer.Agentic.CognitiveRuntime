@@ -161,8 +161,9 @@ public static class DisplayText
     public static string Hexes(string text, int boards)
     {
         ArgumentNullException.ThrowIfNull(text);
-        var said = System.Text.RegularExpressions.Regex.Replace(text, @"\bbd(\w+?):([A-Z]{1,2}\d{1,2})\b(?!:-?\d)",
-            match => boards == 1 ? $"[{match.Groups[2].Value}]" : $"[{match.Groups[2].Value}] on board {match.Groups[1].Value}");
+        var said = System.Text.RegularExpressions.Regex.Replace(text, @"\b(bd\w+?|ab-[a-z0-9-]+):([A-Z]{1,2}\d{1,2})\b(?!:-?\d)",
+            match => boards == 1 ? $"[{match.Groups[2].Value}]"
+                : $"[{match.Groups[2].Value}] on {(match.Groups[1].Value.StartsWith("bd", StringComparison.Ordinal) ? "board " + match.Groups[1].Value[2..] : match.Groups[1].Value)}");
         return System.Text.RegularExpressions.Regex.Replace(said, @"\b([Bb]uilding) ([A-Z]{1,2}\d{1,2})\b", "$1 [$2]");
     }
 

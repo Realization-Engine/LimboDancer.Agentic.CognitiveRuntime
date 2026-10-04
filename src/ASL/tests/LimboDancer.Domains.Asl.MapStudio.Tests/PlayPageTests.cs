@@ -179,7 +179,10 @@ public sealed class PlayPageTests : IDisposable
         var page = StartGame($"{Board}:A1:0");
         var game = Assert.Single(live.Games());
         Assert.Equal("village", game.Game);
-        Assert.Equal("revision 2", page.Find("#play-revision").TextContent);
+
+        // Pass 31c (design D15): a side is shown no revision number in a game still played; the adjudicator reads it.
+        Assert.Equal(2, live.History("village")!.Events.Count);
+        Assert.Empty(page.FindAll("#play-revision"));
         Assert.Contains("Setup is open", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
         Assert.NotEmpty(page.FindAll("#play-units tr[data-unit='g1']"));
 
@@ -187,6 +190,7 @@ public sealed class PlayPageTests : IDisposable
         Assert.DoesNotContain("ExecutorCompleted", page.Markup, StringComparison.Ordinal);
         page.ViewAs(Perspective.AdjudicatorName);
         Assert.Contains("ExecutorCompleted", page.Markup, StringComparison.Ordinal);
+        Assert.Equal("revision 2", page.Find("#play-revision").TextContent.Trim());
     }
 
     [Fact]
@@ -207,7 +211,7 @@ public sealed class PlayPageTests : IDisposable
         page.Find("#play-confirm").Click();
         page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
         var row = page.Find("#play-units tr[data-unit='g1']").TextContent;
-        Assert.Contains(building, row, StringComparison.Ordinal);
+        Assert.Contains(DisplayText.Place(1, building), row, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -222,11 +226,15 @@ public sealed class PlayPageTests : IDisposable
         page.Find("#propose-enter").Click();
         page.WaitForAssertion(() => Assert.Contains("The entry is declared", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
         Assert.Empty(page.FindAll("#play-facts"));
-        Assert.Equal([EntryDisclosure.ResolvedOnConfirmation], page.FindAll("#play-reasons li").Select(item => item.TextContent));
+
+        // Pass 31c (design D11): a reason reads without its code, which stays in data-code.
+        var reason = Assert.Single(page.FindAll("#play-reasons li"));
+        Assert.Equal("The entry is declared, and its outcome is resolved when it is confirmed", reason.TextContent);
+        Assert.StartsWith(reason.GetAttribute("data-code") + ": ", EntryDisclosure.ResolvedOnConfirmation, StringComparison.Ordinal);
 
         page.Find("#play-confirm").Click();
         page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
-        Assert.Contains(building, page.Find("#play-units tr[data-unit='g1']").TextContent, StringComparison.Ordinal);
+        Assert.Contains(DisplayText.Place(1, building), page.Find("#play-units tr[data-unit='g1']").TextContent, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -239,12 +247,14 @@ public sealed class PlayPageTests : IDisposable
         page.Find("#propose-enter").Click();
         page.WaitForAssertion(() => Assert.Contains("Refused", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
         Assert.Empty(page.FindAll("#play-confirm"));
-        var reasons = page.FindAll("#play-reasons li").Select(item => item.TextContent).ToList();
-        Assert.Equal(reasons.Count, reasons.Distinct(StringComparer.Ordinal).Count());
+        var reasons = page.FindAll("#play-reasons li").Select(item => (Code: item.GetAttribute("data-code") ?? string.Empty, Text: item.TextContent)).ToList();
+        Assert.Equal(reasons.Count, reasons.Distinct().Count());
 
-        // The refusal depends only on the mover and the terrain, so the side is told why at once.
-        Assert.Contains("play.fact-false: isAdjacentGroundLevelOrdinaryBuilding", reasons);
-        Assert.Equal("revision 4", page.Find("#play-revision").TextContent);
+        // The refusal depends only on the mover and the terrain, so the side is told why at once. Pass 31c: the reason reads without its code,
+        // which stays in data-code, and the side is shown no revision; the game is where it was.
+        Assert.Contains(("play.fact-false", "IsAdjacentGroundLevelOrdinaryBuilding"), reasons);
+        Assert.Empty(page.FindAll("#play-revision"));
+        Assert.Equal(4, live.History("village")!.Events.Count);
     }
 
     /// <summary>A game in the German MPh with g1 in A1 and the Russian units given, each concealed, in B1.</summary>
@@ -296,14 +306,15 @@ public sealed class PlayPageTests : IDisposable
         page.OpenGame("village");
 
         var german = page.Find("#play-rolls li").TextContent;
-        Assert.Contains("random-selection: 6, 2", german, StringComparison.Ordinal);
+        Assert.Contains("Random Selection dr: 6, 2", german, StringComparison.Ordinal);
         Assert.DoesNotContain("r2", german, StringComparison.Ordinal);
+        Assert.DoesNotContain("squad R", german, StringComparison.Ordinal);
         Assert.Contains("movement ended", page.Find("#play-units tr[data-unit='g1']").TextContent, StringComparison.Ordinal);
 
         page.ViewAs("russian");
-        Assert.Contains("for r1, r2", page.Find("#play-rolls li").TextContent, StringComparison.Ordinal);
+        Assert.Contains("for 4-4-7 squad R1, 4-4-7 squad R2", page.Find("#play-rolls li").TextContent, StringComparison.Ordinal);
         page.ViewAs(Perspective.AdjudicatorName);
-        Assert.Contains("for r1, r2", page.Find("#play-rolls li").TextContent, StringComparison.Ordinal);
+        Assert.Contains("for 4-4-7 squad R1, 4-4-7 squad R2", page.Find("#play-rolls li").TextContent, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -400,16 +411,16 @@ public sealed class PlayPageTests : IDisposable
 
         page.Find("#propose-advance").Click();
         page.WaitForAssertion(() => Assert.Contains("Refused", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
-        Assert.Contains(page.FindAll("#play-reasons li"), item => item.TextContent.StartsWith("play.declaration-pending", StringComparison.Ordinal));
+        Assert.Contains(page.FindAll("#play-reasons li"), item => item.GetAttribute("data-code") == "play.declaration-pending" && item.TextContent.Contains("awaits the attacker's OVR declaration", StringComparison.Ordinal));
 
         // The synthetic board is not the pinned board 01, so an election and a decline are both refused here, with that
         // reason, and nothing changes.
         var revision = live.Store.Read(new GameScope(LivePlay.Tenant, "village"))!.Events.Count;
         page.Find(".declare-elect").Click();
         page.WaitForAssertion(() => Assert.Contains("Refused", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
-        Assert.Contains(page.FindAll("#play-reasons li"), item => item.TextContent.StartsWith("play.outside-reviewed-board", StringComparison.Ordinal));
+        Assert.Contains(page.FindAll("#play-reasons li"), item => item.GetAttribute("data-code")?.StartsWith("play.outside-reviewed-board", StringComparison.Ordinal) == true);
         page.Find(".declare-decline").Click();
-        page.WaitForAssertion(() => Assert.Contains(page.FindAll("#play-reasons li"), item => item.TextContent.StartsWith("play.outside-reviewed-board", StringComparison.Ordinal)));
+        page.WaitForAssertion(() => Assert.Contains(page.FindAll("#play-reasons li"), item => item.GetAttribute("data-code")?.StartsWith("play.outside-reviewed-board", StringComparison.Ordinal) == true));
         Assert.Equal(revision, live.Store.Read(new GameScope(LivePlay.Tenant, "village"))!.Events.Count);
     }
 

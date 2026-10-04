@@ -106,7 +106,8 @@ public sealed class PlayPageOrdnanceTests : IDisposable
         Commit(page, "#propose-ordnance");
         Assert.Empty(dice);
         var record = page.Find("#play-ordnance .ordnance-record").TextContent;
-        Assert.Contains("de-gun fires HE at", record, StringComparison.Ordinal);
+        Assert.StartsWith($"Gun G1 in {DisplayText.Place(1, hexes.One)} fires HE at {DisplayText.Place(1, hexes.Two)}: ", record, StringComparison.Ordinal);
+        Assert.DoesNotContain("de-gun", record, StringComparison.Ordinal);
         Assert.Contains("Basic TH# 8 (black) = 8; DR 6 (colored), 5 = 11", record, StringComparison.Ordinal);
         Assert.Contains("miss", record, StringComparison.Ordinal);
         Assert.False(live.History("village")!.HasErrors);

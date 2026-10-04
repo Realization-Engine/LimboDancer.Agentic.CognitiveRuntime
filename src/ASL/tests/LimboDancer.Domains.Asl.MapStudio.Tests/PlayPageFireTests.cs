@@ -172,8 +172,8 @@ public sealed class PlayPageFireTests : IDisposable
         ChooseFire(page, hexes.From, ["r1", "r2"], "rl", hexes.Building);
         page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
         string Fact(string name) => page.Find($"#fire-facts tr[data-fact='{name}'] td:last-child").TextContent;
-        Assert.Equal(("1", "yes", "clear, Hindrance DRM 0", "stone-building", "7"), (Fact("range"), Fact("level"), Fact("los"), Fact("terrain"), Fact("month")));
-        Assert.Equal($"r1, r2 in {hexes.From}, directed by rl", Fact("firers"));
+        Assert.Equal(("1", "yes", "clear, Hindrance DRM 0", "stone building", "7"), (Fact("range"), Fact("level"), Fact("los"), Fact("terrain"), Fact("month")));
+        Assert.Equal($"4-4-7 squad R1, 4-4-7 squad R2 in {DisplayText.Place(1, hexes.From)}, directed by 8-0 leader R1", Fact("firers"));
         Assert.Equal(before, Revision);
 
         // IFT 3+4 = 7, +3 stone building, +0 leadership: Final DR 10 on the 16 column, a NMC. g1 rolls 3+4 = 7, its
@@ -186,9 +186,9 @@ public sealed class PlayPageFireTests : IDisposable
             page.ViewAs(perspective);
             var record = page.Find("#play-fires .fire-record");
             Assert.Equal(("10", "NMC"), (record.QuerySelector(".fire-final-dr")!.TextContent, record.QuerySelector(".fire-result")!.TextContent));
-            Assert.Contains("r1: 4 FP × 2 (point-blank-fire, A7.21) = 8", record.QuerySelector(".fire-fp[data-unit='r1']")!.TextContent, StringComparison.Ordinal);
+            Assert.Contains("4-4-7 squad R1: 4 FP × 2 (Point Blank Fire, A7.21) = 8", record.QuerySelector(".fire-fp[data-unit='r1']")!.TextContent, StringComparison.Ordinal);
             Assert.Contains("Total 16 FP: the 16 column", record.QuerySelector(".fire-column")!.TextContent, StringComparison.Ordinal);
-            Assert.Contains("+ 3 (tem:stone-building, A7.6)", record.QuerySelector(".fire-dr")!.TextContent, StringComparison.Ordinal);
+            Assert.Contains("+ 3 (stone building TEM, A7.6)", record.QuerySelector(".fire-dr")!.TextContent, StringComparison.Ordinal);
             Assert.Equal("pinned", record.QuerySelector(".fire-effects tr[data-unit='g1'] .fire-effect")!.TextContent);
             Assert.Equal("broken", record.QuerySelector(".fire-effects tr[data-unit='gh'] .fire-effect")!.TextContent);
             Assert.Contains("MC 4, 4 = 8 against 7: failed", record.QuerySelector(".fire-effects tr[data-unit='gh']")!.TextContent, StringComparison.Ordinal);
@@ -326,7 +326,7 @@ public sealed class PlayPageFireTests : IDisposable
         var revision = Revision;
         ChooseFire(page, hexes.From, ["r1", "r2"], "rl", hexes.Building);
         page.WaitForAssertion(() => Assert.Contains("Refused", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
-        Assert.Contains(page.FindAll("#play-reasons li"), item => item.TextContent.Contains("elr-undeclared", StringComparison.Ordinal));
+        Assert.Contains(page.FindAll("#play-reasons li"), item => item.GetAttribute("data-code")?.EndsWith(":elr-undeclared", StringComparison.Ordinal) == true && item.TextContent.StartsWith("A side's ELR is not declared", StringComparison.Ordinal));
         Assert.Equal(revision, Revision);
     }
 
@@ -344,12 +344,12 @@ public sealed class PlayPageFireTests : IDisposable
 
         page.ViewAs("russian");
         var fires = page.Find("#play-fires");
-        Assert.Equal("none", fires.QuerySelector(".fire-result")!.TextContent);
+        Assert.Equal("no effect", fires.QuerySelector(".fire-result")!.TextContent);
         Assert.NotNull(fires.QuerySelector(".fire-withheld"));
         Assert.Null(fires.QuerySelector(".fire-effects"));
         Assert.DoesNotContain("attacker-", fires.TextContent, StringComparison.Ordinal);
         Assert.Empty(page.FindAll("#play-units tr[data-unit='g1'], #play-units tr[data-unit='gh']"));
-        Assert.Equal(2, page.FindAll("#play-units tr[data-sealed]").Count(row => row.TextContent.Contains(hexes.Building, StringComparison.Ordinal)));
+        Assert.Equal(2, page.FindAll("#play-units tr[data-sealed]").Count(row => row.TextContent.Contains(DisplayText.Place(1, hexes.Building), StringComparison.Ordinal)));
 
         page.ViewAs("german");
         Assert.Equal("unaffected", page.Find("#play-fires .fire-effects tr[data-unit='g1'] .fire-effect").TextContent);

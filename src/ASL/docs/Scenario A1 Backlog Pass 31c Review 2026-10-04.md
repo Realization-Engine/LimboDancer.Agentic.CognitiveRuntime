@@ -211,7 +211,14 @@ Fire was chosen from the Target list read by range (task 31c.9). No target was t
 
 ## Tests
 
-Written at the merge gate. The design's section 9 has the list; the time log has the counts.
+Written at the merge gate, 2026-10-04. The full local suite: 2,901 passed, 30 skipped, none failed (Dice 24, Authoring 167, Maps Rendering 34, Maps 244, Maps Vasl 121, Counter Sheets 19, Units Rendering 352, Units 408, Rules 498, Play 664, Map Studio 370), after a solution build with `--warnaserror`.
+
+- **Updated:** 45 existing Studio tests that asserted ids, reason codes, unbracketed Locations, the units list as a fieldset, a revision shown to a side, the old rout and record wording, and `units/games` in the Play group.
+- **New, Rules:** `FireRangeTests` (14 cases): each band against the Fire package's own multipliers and its refusal for range, at every range to twice the Normal Range and one beyond; TPBF and the other level of the firer's hex; an ATR and a FT; the words.
+- **New, Play:** the phase's end after an Ambush that leaves no defender (ruling R31c.5), in `BacklogPass14Tests`.
+- **New, Map Studio:** `Pass31cRangeTests` (the Range tab, the fire panel's targets by range, the dropdown of units, the surrender block, hexes in brackets, the game's own refusal without its code); two tests of the range read and its marks in `StudioLosTests`; `UnitNamesTests` (tags by entry and kind, a tag kept through Replacement and Reduction, the other side's tags in the view's order, "a concealed unit", the adjudicator's tags, and a sweep of the played game in each view for an id or an identifier Location); `LocationWordsTests` (38 cases: one way to write a Location, every typed form read, a field armed and filled, a route by clicks); `PlayRecordsWordsTests` (the heading's side, a fire's result in "Latest", "Since you last looked" from the view alone); `PlayPagePass31cTests` (11 page tests: the arithmetic before the dice against the record, "not known to you", a group across two ADJACENT Locations, targets by range, the Range tab, an armed field dropped at a hand-over, the workspace's places, the Residual FP note, the hand-over screen's map, the Game inspector's list).
+- **Not written, and why:** a refusal for range and a target disabled for range on the page (the page tests' board is 3 by 2 hexes; both are covered below the page, in the planner's reasons seen in the Studio and in the component test); a tag through Deployment and Recombination on the played game (it has none; the page test of Deploy reads "G1a" and "G1b"); the Melee mark by view, a kept rate of fire, and the rout results with and without what is kept (each needs a long set-up that no harness has). They are a backlog row.
+- **Found while the tests were written,** and fixed: a Location on an authored board stayed an identifier in every text (the three patterns that put a Location in words knew only VASL boards); the berserk charge notice and the vehicle's status wrote ids.
 
 ## Left out
 

@@ -109,8 +109,8 @@ public sealed partial class ReplayStepsTests : IDisposable
         Assert.Equal("The game starts: The Guards Counterattack", timeline.Steps[0].Title);
         Assert.Equal("The German side sets up: 26 counters", timeline.Steps[1].Title);
         Assert.Equal("The Russian side places non-OB \"?\" on 4 units", timeline.Steps[3].Title);
-        Assert.Equal("Russian Prep Fire: F3, level 1 at F5, level 1: 2MC", timeline.Steps[6].Title);
-        Assert.Equal("German Defensive First Fire: J4, level 1 at H3: 1MC", timeline.Steps[10].Title);
+        Assert.Equal("Russian Prep Fire: [F3], level 1 at [F5], level 1: 2MC", timeline.Steps[6].Title);
+        Assert.Equal("German Defensive First Fire: [J4], level 1 at [H3]: 1MC", timeline.Steps[10].Title);
         Assert.Equal("The German side, the DEFENDER, declines First Fire", timeline.Steps[11].Title);
         Assert.Equal("The Russian Close Combat Phase ends; the German Player Turn begins", timeline.Steps[31].Title);
         Assert.Equal("The German Close Combat Phase ends; Game Turn 2 begins", timeline.Steps[48].Title);
@@ -141,7 +141,7 @@ public sealed partial class ReplayStepsTests : IDisposable
         var seen = german.Steps.Single(step => step.Attempt == nonOb.Attempt);
         Assert.Equal((ReplayRead.None, "unread", "The other side acts out of this view's sight, and the map shows a change"), (seen.Read, seen.Kind, seen.Title));
         Assert.Empty(seen.Fires);
-        Assert.Equal(["r-squad-19 went under \"?\" in G3 on board 01", "r-squad-9 went under \"?\" in N2 on board 01"], Lines("german", seen));
+        Assert.Equal(["r-squad-19 went under \"?\" in [G3]", "r-squad-9 went under \"?\" in [N2]"], Lines("german", seen));
 
         // The other side's setup is said without its count of counters, and is not marked as read in part: the mark is fire's alone.
         Assert.Equal("The Russian side sets up", german.Steps[2].Title);
@@ -210,23 +210,23 @@ public sealed partial class ReplayStepsTests : IDisposable
 
         // A move that loses "?": the adjudicator and the unit's own side read the unit moving; the other side reads a "?" gone and a unit come.
         var move = adjudicator.Steps[9];
-        Assert.Equal(["r-squad-19 moved from G3 on board 01 to H3 on board 01", "r-squad-19 lost its \"?\" in H3 on board 01"], Lines(Perspective.AdjudicatorName, move));
+        Assert.Equal(["r-squad-19 moved from [G3] to [H3]", "r-squad-19 lost its \"?\" in [H3]"], Lines(Perspective.AdjudicatorName, move));
         var moved = Changes(Perspective.AdjudicatorName, move)[0];
         Assert.Equal((ReplayChange.Moved, "bd01:G3:0", "bd01:H3:0"), (moved.Kind, moved.From!.ToString(), moved.At!.ToString()));
         var german = Timeline("german");
-        Assert.Equal(["r-squad-19 came into this view in H3 on board 01", "A Russian \"?\" is gone from G3 on board 01"], Lines("german", german.Steps.Single(step => step.Attempt == move.Attempt)));
+        Assert.Equal(["r-squad-19 came into this view in [H3]", "A Russian \"?\" is gone from [G3]"], Lines("german", german.Steps.Single(step => step.Attempt == move.Attempt)));
 
         // A fire that breaks a squad and pins a leader: the Replacement says why, with what the new unit holds, and the SW follows it.
         Assert.Equal(
             [
-                "g-squad-1 was Replaced by fire-a672887feaab-g-squad-1 (broken, dm) in F5 on board 01, level 1",
-                "g-leader-9-1-1 was pinned in F5 on board 01, level 1",
-                "g-lmg-1 passed from g-squad-1 to fire-a672887feaab-g-squad-1 in F5 on board 01, level 1",
+                "g-squad-1 was Replaced by fire-a672887feaab-g-squad-1 (broken, dm) in [F5], level 1",
+                "g-leader-9-1-1 was pinned in [F5], level 1",
+                "g-lmg-1 passed from g-squad-1 to fire-a672887feaab-g-squad-1 in [F5], level 1",
             ],
             Lines(Perspective.AdjudicatorName, adjudicator.Steps[6]));
 
         // A capture, and an elimination.
-        Assert.Contains("g-leader-9-2-1 was captured in H4 on board 01", Lines(Perspective.AdjudicatorName, StepOf(adjudicator, payload => payload is InstanceCaptured)));
+        Assert.Contains("g-leader-9-2-1 was captured in [H4]", Lines(Perspective.AdjudicatorName, StepOf(adjudicator, payload => payload is InstanceCaptured)));
         Assert.Contains(Lines(Perspective.AdjudicatorName, StepOf(adjudicator, payload => payload is InstanceEliminated)), line => line.Contains(" was eliminated", StringComparison.Ordinal));
 
         // A setup's many counters are counted, not listed; the start of the game changes nothing.
@@ -302,8 +302,12 @@ public sealed partial class ReplayStepsTests : IDisposable
             part.RallyAndRepair.Select(item => item.Text).Order(StringComparer.Ordinal));
         Assert.Equal(whole.CloseCombat.Where(item => revisions[item.EventId] <= 200), part.CloseCombat);
         Assert.Equal(whole.WhenOf(whole.Fire[^1].EventId), part.WhenOf(whole.Fire[^1].EventId));
-        Assert.Equal("Turn 1, Prep Fire Phase", whole.WhenOf(whole.Fire[^1].EventId));
-        Assert.StartsWith("Latest: Turn 5, Close Combat Phase: CC in bd01:H4:0", whole.Latest, StringComparison.Ordinal);
+        Assert.Equal("Turn 1, Russian Prep Fire Phase", whole.WhenOf(whole.Fire[^1].EventId));
+
+        // Pass 31c (design D17): the latest line is the last attempt that did something, under a heading that names the side; the game's end
+        // is one. Read with no names, a record keeps its identifiers, which the page puts in words.
+        Assert.Equal("Latest: Turn 5, German Close Combat Phase: The game ends.", whole.Latest);
+        Assert.StartsWith("Latest: Turn 5, German Close Combat Phase: CC in bd01:H4:0", new PlayRecords(History, Perspective.Adjudicator, 612).Latest, StringComparison.Ordinal);
 
         // Every fire record belongs to one fire step, and a step's rolls are those of its own revisions.
         var timeline = Timeline(Perspective.AdjudicatorName);

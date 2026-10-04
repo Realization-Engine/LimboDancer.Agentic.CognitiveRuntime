@@ -236,7 +236,7 @@ public sealed partial class UnitNames
         };
     }
 
-    [GeneratedRegex(@"\bbd\w+:[A-Z]{1,2}\d{1,2}:-?\d\b")]
+    [GeneratedRegex(@"\b(?:bd\w+|ab-[a-z0-9-]+):[A-Z]{1,2}\d{1,2}:-?\d\b")]
     private static partial Regex LocationPattern();
 
     [GeneratedRegex(@"\bcreated-leader:\d+")]

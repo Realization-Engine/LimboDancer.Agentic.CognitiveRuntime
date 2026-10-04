@@ -288,7 +288,7 @@ public sealed class ReplayPageTests : IDisposable
         var link = linked.Find("#records li a.record-replay");
         Assert.Equal("games/replay?game=village&view=german&at=rally-0123456789ab-2", link.GetAttribute("href"));
         Assert.Equal("Replay from here: rl rallies r1", link.GetAttribute("aria-label"));
-        Assert.Equal("rl rallies r1", linked.Find("#records li").RecordText());
+        Assert.Equal("Rl rallies r1", linked.Find("#records li").RecordText());
         Assert.Empty(context.Render<ActionRecordList>(parameters => parameters.Add(list => list.Heading, "Rally").Add(list => list.ListId, "plain").Add(list => list.Records, records))
             .FindAll("a.record-replay"));
 

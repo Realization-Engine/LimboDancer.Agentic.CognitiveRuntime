@@ -341,7 +341,7 @@ public static partial class ReplayDiff
 
     private static string In(BoardLocation? at) => at is null ? string.Empty : $" in {at}";
 
-    [System.Text.RegularExpressions.GeneratedRegex(@"\bbd\w+:[A-Z]{1,2}\d{1,2}:-?\d\b")]
+    [System.Text.RegularExpressions.GeneratedRegex(@"\b(?:bd\w+|ab-[a-z0-9-]+):[A-Z]{1,2}\d{1,2}:-?\d\b")]
     private static partial System.Text.RegularExpressions.Regex LocationId();
 
     private static string Presences(int count, string side) => count == 1 ? $"A {DisplayText.Side(side)} \"?\"" : $"{count} {DisplayText.Side(side)} \"?\"";

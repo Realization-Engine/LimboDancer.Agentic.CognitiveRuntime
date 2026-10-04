@@ -180,7 +180,7 @@ public sealed class PlayPagePass31Tests : IDisposable
         page.ViewAs("russian");
         page.Find("#propose-advance").Click();
         page.WaitForAssertion(() => Assert.Contains("with consequences", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
-        Assert.Contains("r1 is eliminated for Failure to Rout", page.Find("#play-consequences").TextContent, StringComparison.Ordinal);
+        Assert.Contains("4-4-7 squad R1 is eliminated for Failure to Rout", page.Find("#play-consequences").TextContent, StringComparison.Ordinal);
         Assert.Equal("Confirm: 1 unit is lost", page.Find("#play-confirm").TextContent.Trim());
         Assert.DoesNotContain("Failure to Rout", page.Find("#play-reasons").TextContent, StringComparison.Ordinal);
         Assert.Equal(InstanceStatus.Active, Current.Unit("r1")!.Status);

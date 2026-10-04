@@ -122,7 +122,7 @@ public sealed class PlayPagePass28cTests : IDisposable
         opened.WaitForAssertion(() => Assert.Contains(context.JSInterop.Invocations, invocation => invocation.Identifier == "reveal"));
     }
 
-    // Plan section 13.4: a proposal made before another commit is stale; it is refused with both revisions and never confirmed.
+    // Plan section 13.4: a proposal made before another commit is stale; it is refused and never confirmed.
     [Fact]
     public void AConfirmAfterAnotherCommitIsStale()
     {
@@ -140,9 +140,13 @@ public sealed class PlayPagePass28cTests : IDisposable
 
         page.Find("#play-confirm").Click();
         page.WaitForAssertion(() => Assert.StartsWith("Stale", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
-        Assert.Contains($"this proposal was made at revision {revision}", page.Find("#play-reasons").TextContent, StringComparison.Ordinal);
+
+        // Pass 31c (design D15): a side is shown no revision number in a game still played, so it reads only that the game moved on.
+        Assert.Equal("The game has moved on since this proposal was made. Propose again.", page.Find("#play-reasons").TextContent.Trim());
+        Assert.Empty(page.FindAll("#play-revision"));
         Assert.Empty(page.FindAll("#play-confirm"));
         Assert.Equal("pfph", Current.Phase);
+        Assert.True(live.History("village")!.Events.Count > revision);
     }
 
     // Backlog section 37: after a step the DEFENDER may fire or pass; the context hands the screen over, and the DEFENDER passes from its own view.
@@ -172,12 +176,13 @@ public sealed class PlayPagePass28cTests : IDisposable
         Assert.Empty(page.Find("#play-status").TextContent);
         page.Find("#play-handover-confirm").Click();
         Assert.Empty(page.FindAll("#play-hand-over"));
-        Assert.Contains(DisplayText.Location(hexes.Three), page.Find("#dff-note").TextContent, StringComparison.Ordinal);
+        Assert.Contains($"The moving stack is at {DisplayText.Place(1, hexes.Three)}:", page.Find("#dff-note").TextContent, StringComparison.Ordinal);
 
-        // Ruling R23.1: the DEFENDER's review of its pass names no mover.
+        // Ruling R23.1: the DEFENDER's review of its pass names no mover, by its id or by its name.
         page.Find("#propose-pass").Click();
         page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
         Assert.DoesNotContain("g1", page.Find("#play-reasons").TextContent, StringComparison.Ordinal);
+        Assert.DoesNotContain("squad G1", page.Find("#play-reasons").TextContent, StringComparison.Ordinal);
         page.Find("#play-confirm").Click();
         page.WaitForAssertion(() => Assert.True(Current.Movement is { WindowOpen: false }));
     }
@@ -195,8 +200,10 @@ public sealed class PlayPagePass28cTests : IDisposable
         dice.Enqueue([6, 5]);
         Commit(page, "#propose-fire");
 
-        Assert.Equal("Turn 1, Prep Fire Phase", page.Find("#play-fires .record-when").TextContent);
-        Assert.StartsWith("Latest: Turn 1, Prep Fire Phase: ", page.Find("#play-latest").TextContent, StringComparison.Ordinal);
+        // Pass 31c (design D17): the heading names the side whose phase it is, and the latest line says the firer by name, with its hex.
+        Assert.Equal("Turn 1, German Prep Fire Phase", page.Find("#play-fires .record-when").TextContent);
+        var latest = page.Find("#play-latest").TextContent;
+        Assert.Equal($"Latest: Turn 1, German Prep Fire Phase: 4-6-7 squad G1 in {DisplayText.Place(1, hexes.One)} fires at {DisplayText.Place(1, hexes.Two)}: no effect.", latest);
     }
 
     // Plan section 11.1: under 1024px the map, the actions, and the activity are tabs; a pane not chosen is hidden, so it keeps its state.

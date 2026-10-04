@@ -24,7 +24,7 @@ public sealed class SharedComponentTests : IDisposable
     [InlineData("units/scenarios", "scenarios")]
     [InlineData("games/play?game=village", "play")]
     [InlineData("games/replay?game=village&step=3", "play")]
-    [InlineData("units/games", "play")]
+    [InlineData("units/games", "verify")]
     [InlineData("fidelity", "verify")]
     public void EveryRouteBelongsToItsGroup(string route, string group) => Assert.Equal(group, StudioNavigation.GroupOf(route)?.Id);
 

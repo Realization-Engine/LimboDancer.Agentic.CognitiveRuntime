@@ -414,6 +414,39 @@ public sealed class BacklogPass14Tests : IDisposable
     }
 
     [Fact]
+    public async Task WhenTheAmbushLeavesNoDefenderThePhaseEnds()
+    {
+        // Pass 31c, the third play test (A11.3, A11.32; ruling R31c.5): the ambushers' attack eliminates the only Russian unit, so no unit of the
+        // ambushed side is left to take its round and the Location does not hold the phase's end.
+        await Setup("german", Unit("g1", "asl:squad", "attacker-squad", "bd01:B2:0", "german"), Unit("g2", "asl:squad", "attacker-squad", "bd01:B2:0", "german"),
+            Unit("r1", "asl:squad", "defender-squad", "bd01:C2:0", "russian"));
+        await Advance(6);
+        Committed(await Do(GameActions.Advance, NoRoll(), new
+        {
+            unitIds = G1G2,
+            to = "bd01:C2:0"
+        }));
+        await Advance();
+        Committed(await Do(GameActions.Ambush, Once(1, 6), new
+        {
+            location = "bd01:C2:0"
+        }));
+        Committed(await Do(GameActions.CloseCombat, Once(1, 1, 1, 1, 1, 1), new
+        {
+            location = "bd01:C2:0",
+            round = "ambusher",
+            attacks = new[] { Attack(G1G2, R1) },
+        }));
+        Assert.Equal(InstanceStatus.Eliminated, Current.Unit("r1")!.Status);
+        Assert.False(Current.CloseCombats.Single().Closed);
+        Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
+        {
+        }));
+        Assert.Equal("rph", Current.Phase);
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
     public async Task MandatoryCcLapsesWhenThePackageRefusesEveryAttack()
     {
         // A15.43 (ruling R14.14): a berserk crew's attack is refused (a crew in CC is not reviewed), so the CCPh may end. (Backlog pass 15 decides the NKVD
