@@ -488,7 +488,7 @@ The plan uses all 12 of Kampfgruppe Stahler's "?": 3 for its concealed stacks an
 
 ### 15.4 Armor Test: the German column
 
-Made 2026-10-03. The column never sets up on the map, so the plan is its loading, off board (section 5, D9). It was used in a new game in my Studio after the Russian plan Forward screen was committed (`p30b-at-1`), and the gate accepted it (7 counters, all off board to enter). It waits for the user's approval.
+Made 2026-10-03. The column never sets up on the map, so the plan is its loading, off board (section 5, D9). It was used in a new game in my Studio after the Russian plan Forward screen was committed (`p30b-at-1`), and the gate accepted it (7 counters, all off board to enter). The user kept it on 2026-10-03.
 
 **Loaded column** (`loaded-column`), for any setup
 
@@ -499,4 +499,45 @@ Made 2026-10-03. The column never sets up on the map, so the plan is its loading
 | Terrain facts | The whole group enters along the north edge on Turn 1, the vehicles in Motion and loaded as they choose (A2.52); no hex is chosen at setup.<br>Three dirt roads leave the north edge of board 4, at I1, Q1, and V1; the centre road runs from Q1 to the exit at Q10.<br>The column wins by exiting 8 Exit VP off the south edge near G10, Q10, or Y10 within five turns. |
 | Off board, to enter | PzKpfw IIIH; halftrack with the 4-6-7 squad and the 8-1 leader aboard; truck with the 2-2-8 crew aboard and the infantry gun in tow |
 
-**What the check showed of the Russian plan.** In the German view the comparison read "If they set up like Forward screen: 4 of 4 hexes match", marked closest, and that group shows the Russian plan's public text, whose idea names the Gun's hex. This card has one Russian plan, so a Russian player who uses it unchanged gives the hidden Gun away. The Russian side is told so on the plan's card ("where its hidden counters are (2-2-8 crew in R5, Gun in R5); what is under each \"?\"") and in the review of an unchanged setup, as section 13 (D14) designed. A second Russian plan with the same visible stacks and the Gun elsewhere would end it, as the shared footprint did on The Tractor Works; that is a backlog row unless the user wants it in this pass.
+**What the check showed of the Russian plan.** In the German view the comparison read "If they set up like Forward screen: 4 of 4 hexes match", marked closest, and that group shows the Russian plan's public text, whose idea names the Gun's hex. This card has one Russian plan, so a Russian player who uses it unchanged gives the hidden Gun away. The Russian side is told so on the plan's card ("where its hidden counters are (2-2-8 crew in R5, Gun in R5); what is under each \"?\"") and in the review of an unchanged setup, as section 13 (D14) designed. The user asked for more Russian plans with the same visible stacks and the Gun elsewhere, to end it as the shared footprint did on The Tractor Works: section 15.5.
+
+### 15.5 Armor Test: two more Russian plans with the same visible stacks
+
+Made 2026-10-03 at the user's word, to end the readable Gun of section 15.4: the card had one Russian plan, so an unchanged setup named the hidden Gun's hex. The user asked for as much variation as the constraint allows. Each plan was used in a new game in my Studio and accepted by the gate (7 counters; games `p30b-at-2`, `p30b-at-3`), with Loaded column accepted after each. In the German view the comparison read "4 of 4 hexes match" for all three Russian plans, none marked closest. They wait for the user's approval.
+
+**What can vary without being seen.** Before play the Germans see, of this rearguard: two "?" in the woods at O5, one "?" on the upper floor of P6, a squad in the house at P8 (its top and only counter), and the T-34 on the road at Q8 with its facing. Five visible counters are the three squads, the 8-1, and the tank, so nothing is left over for a Dummy: the two "?" are both spent on concealed stacks. What the Germans cannot see, and so what a plan may change:
+
+- the hex of the hidden Gun and its crew, among the woods of the hexes numbered 5 to 10;
+- the Gun's facing;
+- the Gun's Bore Sighted Location (C6.4);
+- which of the two "?" stacks holds the 8-1: with a squad at O5, or alone at P6 with two squads at O5.
+
+The three plans use all four, so they are three defences behind one face, not one defence with the Gun moved:
+
+| Plan | The Gun | Facing | Bore Sighted | The 8-1 | What the Gun covers |
+|---|---|---|---|---|---|
+| Forward screen, placements untouched | R5 | north-west | none | O5, with a squad | The centre road as the column enters: R4 at range 1, Q4 at 2, Q3 at 3, Q2 at 4 |
+| West trap, new | K9 | south-west | H9 | P6, alone, upstairs | The west exit: G10 at range 4, H9 at 3, and the ground south of the west woods |
+| Back stop, new | U8 | south-west | Q10 | O5, with a squad | The centre and east exits, Q10 and Y10, at range 4, and the east road at U6 and T6 |
+
+So a column that reads the visible screen cannot tell whether the Gun is ahead of it on the centre road, waiting on the west road it would take to go round, or behind the screen at the exits.
+
+**West trap** (`west-trap`)
+
+| | |
+|---|---|
+| The idea | What the Germans see is a screen across the centre road, which invites the column to go round it by the west road. The Gun waits there, hidden in the woods at K9, facing the west exit, with the ground south of the west woods Bore Sighted. Two squads hold the woods at O5, and the 8-1 stands alone upstairs in the farmhouse, where squads falling back from O5 and P8 can reach him. |
+| What it gives up | The Gun sees nothing of the centre road north of Q8, so a column that drives straight down it meets only the squads and the T-34; the forward squads at O5 have no leader with them. |
+| Terrain facts | K9 is woods; it sees the west exit at G10 at range 4, F10 at 5, and H9 at 3, and the ground south of the west woods at H7 and I7 at range 3 and G7 at 4, each through a grain hindrance of 2.<br>K9 does not see the centre road north of Q8; it sees Q8 and Q9 at range 6 through a hindrance of 2 to 3. |
+
+**Back stop** (`back-stop`)
+
+| | |
+|---|---|
+| The idea | The visible screen takes the first blows, and the Gun is the last line: hidden in the woods at U8, it sees both the centre exit at Q10 and the east exit at Y10 at range 4, with Q10 Bore Sighted. A squad and the 8-1 hold the woods at O5 and a squad the upper floor of the farmhouse, as in Forward screen. |
+| What it gives up | The Gun does not fire until the column is nearly off the board, and it sees nothing of the west exit; a column that goes west is stopped only by the T-34. |
+| Terrain facts | U8 is woods and sees Q10, Y10, and X10 at range 4, R9 at range 3, and the centre road at Q6 (range 4) and Q4 (range 6).<br>U8 also sees the east road at U6 and T6 at range 2 and U5 at range 3. |
+
+Forward screen's placements are untouched; the line on the shared look was added to its terrain facts, as to the other two. The gate accepted both Bore Sighted Locations. In the Studio the hidden Gun is now named "gun" in what a plan gives away ("2-2-8 crew in K9, gun in K9").
+
+**What was considered and cannot be done.** A Dummy in place of a real "?" would need a unit to stand somewhere unseen, and only the Gun and its crew may set up hidden here. A different visible screen for each plan would give more variety and bring back the readable Gun.
