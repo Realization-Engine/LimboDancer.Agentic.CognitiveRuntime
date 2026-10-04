@@ -71,7 +71,7 @@ else
 @if (state?.Scenario is { } scenario)
 {
     var playCard = CardRead(scenario.Id)?.Card;
-    <PlayCardPanel Scenario="@scenario" Card="@playCard" Changed="@(!Live.Cards.Matches(scenario.Id, scenario.Sha256))" FirstSide="@state.FirstSide" Ended="@state.Ended"
+    <PlayCardPanel Scenario="@scenario" Card="@playCard" Boards="@state.Map.Boards.Count" Changed="@(!Live.Cards.Matches(scenario.Id, scenario.Sha256))" FirstSide="@state.FirstSide" Ended="@state.Ended"
                    Groups="@([.. state.Sides.SelectMany(side => side.Groups.Select(group => $"{DisplayText.Side(side.Id)}: {group.Name} ({group.Id}), ELR {group.Elr?.ToString(CultureInfo.InvariantCulture) ?? "not given"}"))])"
                    Victory="@(playCard is not null ? VictoryNow : null)"
                    KnownTo="@VictoryKnownTo" Catalog="@($"{state.Catalog.Catalog}@{state.Catalog.Version}")"
@@ -4920,7 +4920,8 @@ else if (state is not null)
         }
 
         var view = GameView.Of(history, state.Revision, perspective, Live.Planner.OutOfSight(state, perspective));
-        return view.Units.Where(unit => unit.Side != side).Select(unit => view.Locations.TryGetValue(unit.Id, out var at) ? at.Location.ToString() : null)
+        // The third play test: a prisoner is no target, so its Guard's own Location is not offered for holding it (A20.54).
+        return view.Units.Where(unit => unit.Side != side && GameState.Condition(unit, Conditions.Captured) != ConditionState.True).Select(unit => view.Locations.TryGetValue(unit.Id, out var at) ? at.Location.ToString() : null)
             .Concat(view.Sealed.Where(item => item.Side != side).Select(item => item.Location.ToString()))
             .OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
     }
@@ -6152,11 +6153,11 @@ else if (state is not null)
         : result.Winner is { } winner ? $"{DisplayText.Side(winner)} win." : "A draw.";
 
     private string? ResultReason => state?.Ended is not { } ended ? null
-        : ended.Result is { } result ? Sentence(result.Reason)
+        : ended.Result is { } result ? Sentence(DisplayText.Hexes(result.Reason, state.Map.Boards.Count))
         : "This card's Victory Conditions are text only, so the game does not decide the result; read them on the card (A26).";
 
     /// <summary>Every Victory condition with whether it was met, then the facts the result rests on.</summary>
-    private IReadOnlyList<string> ResultWhy => [.. ResultWhyRaw.Select(Words)];
+    private IReadOnlyList<string> ResultWhy => [.. ResultWhyRaw.Select(line => DisplayText.Hexes(Words(line), state?.Map.Boards.Count ?? 2))];
 
     private IReadOnlyList<string> ResultWhyRaw => state?.Ended is not { Result: { } result } ? []
         : [.. (VictoryNow?.Conditions ?? []).Select(line => $"{(line.Winner == "draw" ? "A condition for a draw" : $"A condition for a {DisplayText.Side(line.Winner)} win")}, {(line.Holds ? "met" : "not met")}: {line.Text}."),

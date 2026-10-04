@@ -128,7 +128,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
                 @if (StandingNow is { } standing)
                 {
                     <p class="muted" id="replay-standing-note">How the Victory Conditions stood after step @step.Number@(VictoryKnownTo is { } known ? $", as the {DisplayText.Side(known)} side could know them (ruling R23.4)" : string.Empty).</p>
-                    <VictoryStandingTable Report="@standing" KnownTo="@VictoryKnownTo" />
+                    <VictoryStandingTable Report="@standing" KnownTo="@VictoryKnownTo" Boards="@(history?.Current?.Map.Boards.Count ?? 2)" />
                 }
                 else
                 {
@@ -915,13 +915,13 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
         : result.Winner is { } winner ? $"{DisplayText.Side(winner)} win." : "A draw.";
 
     private string? ResultReason => history?.Current?.Ended is not { } ended ? null
-        : ended.Result is { } result ? Sentence(result.Reason)
+        : ended.Result is { } result ? Sentence(DisplayText.Hexes(result.Reason, history?.Current?.Map.Boards.Count ?? 2))
         : "This card's Victory Conditions are text only, so the game does not decide the result; read them on the card (A26).";
 
     /// <summary>Every Victory condition with whether it was met, then the facts the result rests on, as Play states them.</summary>
     private IReadOnlyList<string> ResultWhy => history?.Current?.Ended is not { Result: { } result } ? []
         : [.. (StandingNow?.Conditions ?? []).Select(line => $"{(line.Winner == "draw" ? "A condition for a draw" : $"A condition for a {DisplayText.Side(line.Winner)} win")}, {(line.Holds ? "met" : "not met")}: {line.Text}."),
-            .. result.Facts.Select(Sentence)];
+            .. result.Facts.Select(fact => Sentence(DisplayText.Hexes(fact, history?.Current?.Map.Boards.Count ?? 2)))];
 
     private static string Sentence(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..] + (text.EndsWith('.') ? string.Empty : ".");
 

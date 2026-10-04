@@ -49,7 +49,7 @@
         {
             <li data-holds="@line.Holds.ToString()" data-winner="@line.Winner">
                 <strong>@(line.Winner == "draw" ? "A condition for a draw" : $"A condition for a {DisplayText.Side(line.Winner)} win")@(line.Immediate ? ", at once" : string.Empty), @(line.Holds ? "met" : "not met"):</strong>
-                @line.Text.
+                @DisplayText.Hexes(line.Text, Boards).
             </li>
         }
         <li data-otherwise="true">With no condition met, @(Report.Otherwise is { } otherwise ? $"{DisplayText.Side(otherwise)} wins" : "the game is a draw") (A26.3).</li>
@@ -78,6 +78,10 @@
     /// <summary>What the result would be if the game ended now, such as "german would win"; given only for the adjudicator before the game ends.</summary>
     [Parameter]
     public string? IfEndedNow { get; set; }
+
+    /// <summary>How many boards the map has, which decides how a hex is written (pass 31c); two keeps the board with the hex.</summary>
+    [Parameter]
+    public int Boards { get; set; } = 2;
 
     /// <summary>The side the standing is read for; null for the adjudicator, and once the game has ended.</summary>
     [Parameter]

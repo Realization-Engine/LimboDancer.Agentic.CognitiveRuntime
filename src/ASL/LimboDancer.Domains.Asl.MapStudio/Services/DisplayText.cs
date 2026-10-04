@@ -123,6 +123,14 @@ public static class DisplayText
     public static (string? Code, string Text) Reason(string reason)
     {
         ArgumentNullException.ThrowIfNull(reason);
+        // The third play test: the game's own refusal reads "UNIT-STATE-030 revision 525 (advance-7d5a-1): The CC ..."; a player reads the
+        // sentence, and a side is shown no revision in a game still played (design D15).
+        var stated = System.Text.RegularExpressions.Regex.Match(reason, @"^([A-Z]+(?:-[A-Z]+)*-\d+) revision \d+ \([^)]*\):\s+(.*)$", System.Text.RegularExpressions.RegexOptions.Singleline);
+        if (stated.Success)
+        {
+            return (stated.Groups[1].Value, stated.Groups[2].Value);
+        }
+
         // The second play test: a phase's advance says "Turn 1, pfph, russian phasing"; a player reads the phase that begins.
         var phase = System.Text.RegularExpressions.Regex.Match(reason, @"^(?:[a-z.]+:\s+)?[Tt]urn (\d+), ([a-z]+), (\w+) phasing$");
         if (phase.Success)
@@ -143,6 +151,19 @@ public static class DisplayText
         }
 
         return (code, code[(code.LastIndexOf('.') + 1)..].Replace('-', ' ').Replace(":", ", ", StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// A text's hexes in brackets where it names them outside a Location's identifier (the user, 2026-10-04): a board's hex such as
+    /// "bd01:W4" reads "[W4]" on a map of one board and "[W4] on board 01" otherwise, and "building X3" reads "building [X3]". The Victory
+    /// account and the game's result are written this way.
+    /// </summary>
+    public static string Hexes(string text, int boards)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        var said = System.Text.RegularExpressions.Regex.Replace(text, @"\bbd(\w+?):([A-Z]{1,2}\d{1,2})\b(?!:-?\d)",
+            match => boards == 1 ? $"[{match.Groups[2].Value}]" : $"[{match.Groups[2].Value}] on board {match.Groups[1].Value}");
+        return System.Text.RegularExpressions.Regex.Replace(said, @"\b([Bb]uilding) ([A-Z]{1,2}\d{1,2})\b", "$1 [$2]");
     }
 
     /// <summary>A text with its first letter a capital, once its identifiers have been put in words.</summary>

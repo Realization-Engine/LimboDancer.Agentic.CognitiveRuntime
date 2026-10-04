@@ -3,11 +3,15 @@
 <p id="play-ended" class="diagnostic">@(Ended.Reason == "victory" ? $"The game ended at once in Game Turn {Ended.Turn}" : $"The game ended after Game Turn {Ended.Turn}{(Ended.Reason == "half-turn" ? ", a half turn" : string.Empty)}") (A3.9, A26; rulings R20.1, R21.4).
     @if (Ended.Result is { } result)
     {
-        <strong id="play-result">@(result.Winner is { } winner ? $"{winner} wins" : "A draw"): @result.Reason.</strong>
+        <strong id="play-result">@(result.Winner is { } winner ? $"{DisplayText.Side(winner)} wins" : "A draw"): @DisplayText.Hexes(result.Reason, Boards).</strong>
     }
 </p>
 
 @code {
+    /// <summary>How many boards the map has, which decides how a hex is written (pass 31c); two keeps the board with the hex.</summary>
+    [Parameter]
+    public int Boards { get; set; } = 2;
+
     [Parameter, EditorRequired]
     public GameEnded Ended { get; set; } = default!;
 }

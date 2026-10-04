@@ -10,7 +10,7 @@
                 <option value="">stays</option>
                 @foreach (var to in unit.Destinations)
                 {
-                    <option value="@to">to @to</option>
+                    <option value="@to">to @Say(to)</option>
                 }
             </select>
         </label>

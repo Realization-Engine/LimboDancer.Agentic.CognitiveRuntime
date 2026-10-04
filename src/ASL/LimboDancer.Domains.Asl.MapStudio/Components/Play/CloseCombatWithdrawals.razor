@@ -9,7 +9,7 @@
                 <option value="">stays</option>
                 @foreach (var to in unit.Destinations)
                 {
-                    <option value="@to">withdraws to @to</option>
+                    <option value="@to">withdraws to @Say(to)</option>
                 }
             </select>
         </label>

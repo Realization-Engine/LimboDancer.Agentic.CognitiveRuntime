@@ -5,7 +5,7 @@
 @foreach (var side in Sides)
 {
     <div class="toolbar cc-side" data-side="@side.Side">
-        <span>@side.Side@(side.Attacker ? " (ATTACKER)" : "")</span>
+        <span>@DisplayText.Side(side.Side)@(side.Attacker ? " (ATTACKER)" : "")</span>
         <span>attack with</span>
         @foreach (var unit in side.Attackers)
         {

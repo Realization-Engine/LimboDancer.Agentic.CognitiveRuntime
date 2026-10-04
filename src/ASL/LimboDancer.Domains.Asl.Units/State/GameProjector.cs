@@ -387,7 +387,12 @@ public static class GameProjector
             }
 
             // A11.12, A11.32: a Location's CC is completely resolved before the phase ends: after the ambusher's round, the other side's.
-            if (state.CloseCombats.FirstOrDefault(item => !item.Closed) is { } open)
+            // A11.3 (ruling R31c.5; the third play test): a unit eliminated before it attacks forfeits its attack, so a Location whose
+            // ambusher's attacks left no unit of the ambushed side there has nothing more to resolve and does not hold the phase.
+            bool NothingLeft(CloseCombatLocation item) => item.Ambusher is { } ambusher && item.Rounds.Count > 0
+                && !state.Units.Any(unit => unit.Status == InstanceStatus.Active && unit.Side != ambusher
+                    && GameState.Condition(unit, Conditions.Captured) != ConditionState.True && state.Location(unit.Id)?.Location == item.Location);
+            if (state.CloseCombats.FirstOrDefault(item => !item.Closed && !NothingLeft(item)) is { } open)
             {
                 return Fail<GameState>("UNIT-STATE-030", open.Ambusher is null
                     ? $"The CC in {open.Location} awaits its round after the Ambush drs, even one with no attacks (A11.12)."

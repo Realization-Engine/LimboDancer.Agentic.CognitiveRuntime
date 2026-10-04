@@ -20,7 +20,7 @@
     <ul id="cc-due">
         @foreach (var item in Due)
         {
-            <li>@item</li>
+            <li>@DisplayText.Sentence(Say(item))</li>
         }
     </ul>
 }
