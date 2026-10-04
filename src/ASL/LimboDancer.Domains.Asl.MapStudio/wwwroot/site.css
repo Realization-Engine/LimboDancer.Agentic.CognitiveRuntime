@@ -2511,6 +2511,14 @@ details.advanced > summary {
     min-height: 2rem;
 }
 
+.replay-play-on {
+    margin-top: 0.4rem;
+}
+
+.replay-play-on > p {
+    margin: 0.3rem 0;
+}
+
 .replay-step-field input {
     width: 4.5rem;
 }

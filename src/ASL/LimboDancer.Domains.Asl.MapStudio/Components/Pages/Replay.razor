@@ -64,6 +64,26 @@
                 </select>
             </label>
         </ReplayTransport>
+        @if (MayPlayOn)
+        {
+            @* Design D8 (ruling R31b.1): offered only where the whole game may be known, an ended game or the adjudicator's view, and never from a
+               step at which the game had ended. It writes a new game; this one is only read. *@
+            <details id="replay-play-on" class="replay-play-on">
+                <summary>Play on from here</summary>
+                <p class="muted" id="replay-play-on-note">Makes a new game that holds this game's events through step @counted.Number and opens it on the Play page, to be played on from this moment. The dice from there on are new. This game is not changed.</p>
+                <div class="toolbar">
+                    <label>
+                        The new game's name
+                        <input id="replay-play-on-name" size="24" value="@PlayOnName(counted)" @onchange="@(args => (playOnName, playOnProblem) = ((args.Value as string ?? string.Empty).Trim(), null))" />
+                    </label>
+                    <button type="button" id="replay-play-on-make" @onclick="@(() => PlayOn(counted))">Make the game and open it on Play</button>
+                </div>
+                @if (playOnProblem is not null)
+                {
+                    <p class="fail" id="replay-play-on-problem" role="alert">@playOnProblem</p>
+                }
+            </details>
+        }
     }
 </PlayContextHeader>
 
@@ -390,6 +410,40 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
         StateHasChanged();
     });
 
+    // Play on from here (design D8): the name typed for the new game, kept for the step it was typed at, and why the last try was refused.
+    private string? playOnName;
+    private string? playOnProblem;
+
+    /// <summary>
+    /// Whether "Play on from here" is offered (ruling R31b.1): only where the whole game may be known, which is an ended game or the adjudicator's
+    /// view, and only from a step at which the game was still being played.
+    /// </summary>
+    private bool MayPlayOn => Shown && (GameEnded || Viewer.IsAdjudicator) && StateNow is { Ended: null };
+
+    /// <summary>The name offered for the new game: this game's, with the revision the step ends at.</summary>
+    private string PlayOnName(ReplayStep step) => playOnName is { Length: > 0 } typed ? typed : $"{gameId}-r{step.Last.ToString(CultureInfo.InvariantCulture)}";
+
+    private void PlayOn(ReplayStep step)
+    {
+        if (!MayPlayOn)
+        {
+            return;
+        }
+
+        StopPlay();
+        var name = PlayOnName(step);
+        var made = Live.PlayOn(gameId, step.Last, name, $"from {gameId} at step {step.Number}, revision {step.Last}");
+        if (made.Status == LimboDancer.Domains.Asl.Play.AppendStatus.Committed)
+        {
+            // The Play page opens the new game behind its own hand-over.
+            Navigation.NavigateTo($"games/play?game={Uri.EscapeDataString(name)}");
+            return;
+        }
+
+        playOnProblem = made.Diagnostics.Count > 0 ? string.Join(" ", made.Diagnostics.Select(item => item.Message))
+            : made.Status == LimboDancer.Domains.Asl.Play.AppendStatus.Stale ? $"A game named '{name}' exists already: give another name." : "The new game was not made.";
+    }
+
     // Running at a pace (design D5): whether it runs, the seconds a step is shown, and what stops the run in hand.
     private bool playing;
     private int pace = 2;
@@ -481,6 +535,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
         }
 
         stepNumber = Math.Clamp(number, 1, timeline.Steps.Count);
+        (playOnName, playOnProblem) = (null, null);
         SyncAddress();
     }
 
