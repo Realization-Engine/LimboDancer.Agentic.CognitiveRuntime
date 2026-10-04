@@ -2395,7 +2395,7 @@ details.advanced > summary {
         font-size: 0.85rem;
     }
 
-    main:has(.play-context-actions) {
+    main:has(.play-context-actions:not(.idle)) {
         padding-bottom: 5rem;
     }
 }
@@ -2726,16 +2726,23 @@ main :is(.toolbar, .fields, .field-group, .form-grid) > * {
 
 /* The context's row of actions and its status line keep their places whether or not they hold anything, and a long status is cut on one
    line with its full text in its title, so the header has one height. */
-.play-context-actions {
+.play-context.reserve .play-context-actions {
     min-height: 2.25rem;
 }
 
-.play-status {
+.play-context.reserve .play-status {
     min-height: 1.5em;
     margin: 0.25rem 0 0;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
+}
+
+/* The whole of a long status can be read: it opens to its full text while the pointer or the keyboard is on it. */
+.play-context.reserve .play-status:hover,
+.play-context.reserve .play-status:focus {
+    overflow: visible;
+    white-space: normal;
 }
 
 .play-context .rule-help {
@@ -2777,7 +2784,7 @@ main :is(.toolbar, .fields, .field-group, .form-grid) > * {
     }
 
     /* An empty status keeps its line. */
-    .play-status:empty {
+    .play-context.reserve .play-status:empty {
         display: block;
     }
 
@@ -2818,7 +2825,8 @@ main :is(.toolbar, .fields, .field-group, .form-grid) > * {
         background: var(--surface);
         border: 1px solid var(--line);
         border-radius: var(--radius);
-        box-shadow: 0 0.5rem 2.5rem rgba(0, 0, 0, 0.35);
+        /* The page behind is dimmed, so the card reads as a dialog over it. */
+        box-shadow: 0 0.5rem 2.5rem rgba(0, 0, 0, 0.35), 0 0 0 100vmax rgba(0, 0, 0, 0.35);
     }
 }
 
@@ -2831,7 +2839,7 @@ main :is(.toolbar, .fields, .field-group, .form-grid) > * {
         display: none;
     }
 
-    .play-status {
+    .play-context.reserve .play-status {
         white-space: normal;
     }
 }

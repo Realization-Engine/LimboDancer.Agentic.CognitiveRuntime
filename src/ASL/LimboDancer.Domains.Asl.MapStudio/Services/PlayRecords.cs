@@ -148,37 +148,41 @@ public sealed class PlayRecords
         {
             if (!latest.Read)
             {
-                var last = Lines.Count == 0 ? null : AttemptOf(Lines[^1].EventId);
+                // The last attempt that did something; a phase's start and an answered choice alone are passed over (the table player, pass 31c), so
+                // a fire's result is not hidden by the phase that began after it.
+                var told = Lines.Where(line => !line.Minor).ToArray();
+                var from = told.Length > 0 ? told : [.. Lines];
+                var last = from.Length == 0 ? null : AttemptOf(from[^1].EventId);
                 string[] said = last is null ? [] : [.. Lines.Where(line => AttemptOf(line.EventId) == last).Select(line => Sentence(line.Text))];
                 // The result of the attempt first, then what followed from it; a long attempt is cut, and the records have the rest.
-                latest = (true, said.Length == 0 ? null : $"Latest: {WhenOf(Lines[^1].EventId)}: {string.Join(" ", said.Take(4))}{(said.Length > 4 ? " More is in the records." : string.Empty)}");
+                latest = (true, said.Length == 0 ? null : $"Latest: {WhenOf(from[^1].EventId)}: {string.Join(" ", said.Take(4))}{(said.Length > 4 ? " More is in the records." : string.Empty)}");
             }
 
             return latest.Text;
         }
     }
 
-    private IReadOnlyList<(long Revision, string EventId, string Text)>? lines;
+    private IReadOnlyList<(long Revision, string EventId, string Text, bool Minor)>? lines;
 
     /// <summary>
     /// Everything the view may read of the game, in the order it happened, one line for each thing (design D17): the records, a fire with its
     /// result and what it changed, and the events the records leave out: a move, an advance, the DEFENDER's pass, a move's end, a choice, a
     /// surrender, a capture, a declaration, a phase's start. Each line is said in the view's words, with the view check of a name.
     /// </summary>
-    public IReadOnlyList<(long Revision, string EventId, string Text)> Lines => lines ??= ReadLines();
+    public IReadOnlyList<(long Revision, string EventId, string Text, bool Minor)> Lines => lines ??= ReadLines();
 
     /// <summary>The lines of what happened after a revision: what the view missed while another had the screen ("Since you last looked").</summary>
-    public IReadOnlyList<(long Revision, string EventId, string Text)> Since(long revision) => [.. Lines.Where(line => line.Revision > revision)];
+    public IReadOnlyList<(long Revision, string EventId, string Text, bool Minor)> Since(long revision) => [.. Lines.Where(line => line.Revision > revision)];
 
-    private List<(long Revision, string EventId, string Text)> ReadLines()
+    private List<(long Revision, string EventId, string Text, bool Minor)> ReadLines()
     {
         var revisionOf = events.ToDictionary(item => item.EventId, item => item.Revision, StringComparer.Ordinal);
-        var read = new List<(long Revision, string EventId, string Text)>();
-        void Add(string eventId, string text)
+        var read = new List<(long Revision, string EventId, string Text, bool Minor)>();
+        void Add(string eventId, string text, bool minor = false)
         {
             if (revisionOf.TryGetValue(eventId, out var revision))
             {
-                read.Add((revision, eventId, text));
+                read.Add((revision, eventId, text, minor));
             }
         }
 
@@ -216,7 +220,7 @@ public sealed class PlayRecords
             };
             if (text is not null)
             {
-                Add(item.EventId, Say(item.EventId, text));
+                Add(item.EventId, Say(item.EventId, text), item.Payload is PhaseChanged or ChoiceMade);
             }
         }
 
@@ -230,7 +234,7 @@ public sealed class PlayRecords
         var changed = fire.Effects is null ? []
             : fire.Effects.Select(effect => (effect.UnitId, Text: EffectText(effect, fire.BrokenBefore.Contains(effect.UnitId), fire.PinnedBefore.Contains(effect.UnitId))))
                 .Where(effect => effect.Text is not ("unaffected" or "already broken" or "already pinned")).Select(effect => fire.Say($"{effect.UnitId}: {effect.Text}")).ToArray();
-        return $"{fire.Group} fires at {fire.Target}: {fire.Arithmetic.Result}" + (changed.Length > 0 ? "; " + string.Join("; ", changed) : string.Empty);
+        return $"{fire.Group} {(fire.Several ? "fire" : "fires")} at {fire.Target}: {fire.Arithmetic.Result}" + (changed.Length > 0 ? "; " + string.Join("; ", changed) : string.Empty);
     }
 
     private static string Sentence(string text) => DisplayText.Sentence(text.TrimEnd()) + (text.TrimEnd().EndsWith('.') ? string.Empty : ".");
@@ -381,6 +385,7 @@ public sealed class PlayRecords
                     views.Add(new FireView(item.EventId, Say(item.EventId, GroupOf(fire)), Say(item.EventId, fire.TargetLocation), null, arithmetic, resolution.Effects)
                     {
                         Say = text => Say(item.EventId, text),
+                        Several = fire.Firers.Count > 1,
                         Weapons = resolution.WeaponEffects,
                         Vehicles = resolution.VehicleEffects,
                         BrokenBefore = before.Where(target => target.Broken == true && target.UnitId is not null).Select(target => target.UnitId!).ToHashSet(StringComparer.Ordinal),
@@ -394,6 +399,7 @@ public sealed class PlayRecords
                         Say(item.EventId, report.TargetLocation), withheld.Visibility is [{ } only] ? only : null, reported, null)
                     {
                         Say = text => Say(item.EventId, text),
+                        Several = withheld.Payload is FireResolved { Firers.Count: > 1 },
                     });
                 }
             }
@@ -435,9 +441,9 @@ public sealed class PlayRecords
         {
             return charge.Mode switch
             {
-                FireDemolitionCharge.Placed => $"The DC {charge.EquipmentId} (Placed by {charge.UserId})",
-                FireDemolitionCharge.Thrown => $"The DC {charge.EquipmentId} (Thrown by {charge.UserId})",
-                _ => $"The DC {charge.EquipmentId} (Thrown by {charge.UserId}, at its own Location)",
+                FireDemolitionCharge.Placed => $"The DC Placed by {charge.UserId}",
+                FireDemolitionCharge.Thrown => $"The DC Thrown by {charge.UserId}",
+                _ => $"The DC Thrown by {charge.UserId} at its own Location",
             };
         }
 
@@ -509,13 +515,14 @@ public sealed class PlayRecords
                     records.Add((item.EventId, "interdiction",
                         $"Interdiction of {interdicted.Unit} entering {interdicted.At}{(interdicted.Interdictor is { } by ? $" by {by}" : "")}: NMC DR {dr} against broken morale {interdicted.Morale}: {interdicted.Result} (A10.53)"));
                 }
-                else if (item.Payload is LineageRecorded { Action: LineageAction.Deployed or LineageAction.Recombined } lineage)
+                else if (item.Payload is LineageRecorded { Action: LineageAction.Deployed or LineageAction.Recombined } lineage && lineage.Consumed.All(id => Open(before, id)))
                 {
                     records.Add((item.EventId, "lineage", lineage.Action == LineageAction.Deployed
                         ? $"{lineage.Consumed[0]} becomes the HS {string.Join(" and ", lineage.Produced.Select(unit => unit.Id))} (A1.31){DeploySplit(attempts[attempt], lineage)}"
                         : $"{string.Join(" and ", lineage.Consumed)} Recombine into {lineage.Produced[0].Id} (A1.32)"));
                 }
-                else if (item.Payload is ConditionsChanged dismantled && dismantled.Conditions.TryGetValue(Conditions.Dismantled, out var taken))
+                else if (item.Payload is ConditionsChanged dismantled && dismantled.Conditions.TryGetValue(Conditions.Dismantled, out var taken)
+                    && (before?.Find(dismantled.Id) is not EquipmentInstance { Holding: { } heldBy } || Open(before, heldBy.Holder)))
                 {
                     records.Add((item.EventId, "dismantle", $"{dismantled.Id} is {(taken == ConditionState.True ? "dismantled" : "assembled")} (A9.8)"));
                 }
@@ -549,13 +556,13 @@ public sealed class PlayRecords
                 {
                     records.Add((item.EventId, "transfer", $"{held.Holder} passes {passed.Id} to {receiver.Holder} (A4.431)"));
                 }
-                else if (item.Payload is DeploymentAttempted deployment)
+                else if (item.Payload is DeploymentAttempted deployment && Open(before, deployment.Squad))
                 {
                     var dr = rolls.TryGetValue(deployment.Roll, out var roll) ? roll.Values.Sum().ToString(CultureInfo.InvariantCulture) : "?";
                     records.Add((item.EventId, "deployment", $"{deployment.Squad} tries to Deploy{(deployment.Leader is { } leader ? $" with {leader}" : "")}: NTC DR {dr} "
                         + $"{deployment.Drm:+0;-0;+0} against morale {deployment.Morale}: {(deployment.Passed ? "two HS" : "stays a squad")} (A1.31)"));
                 }
-                else if (item.Payload is RecoveryAttempted recovery)
+                else if (item.Payload is RecoveryAttempted recovery && Open(before, recovery.Unit))
                 {
                     var dr = rolls.TryGetValue(recovery.Roll, out var roll) ? roll.Values[0].ToString(CultureInfo.InvariantCulture) : "?";
                     records.Add((item.EventId, "recovery", $"{recovery.Unit} tries to Recover {recovery.Weapon}: dr {dr} {recovery.Drm:+0;-0;+0}, needing below 6: "

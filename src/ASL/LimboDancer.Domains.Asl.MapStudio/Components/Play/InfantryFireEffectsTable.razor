@@ -7,7 +7,7 @@
         @foreach (var effect in Effects)
         {
             <tr data-unit="@effect.UnitId">
-                <td title="@effect.UnitId">@Say(effect.UnitId)@(effect.FinalDefinitionId != effect.DefinitionId ? Say($", now {effect.FinalDefinitionId}") : "")</td>
+                <td title="@(Say(effect.UnitId) == UnitNames.Unnamed ? null : effect.UnitId)">@Say(effect.UnitId)@(effect.FinalDefinitionId != effect.DefinitionId ? Say($", now {effect.FinalDefinitionId}") : "")</td>
                 <td class="fire-effect">@Say(FireText.EffectText(effect, BrokenBefore.Contains(effect.UnitId), PinnedBefore.Contains(effect.UnitId)))</td>
                 <td>@Say(string.Join("; ", effect.Checks.Select(FireText.CheckText)))</td>
             </tr>

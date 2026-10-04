@@ -26,10 +26,7 @@
             }
         </select>
     </label>
-    <label>
-        Route (hexes in order)
-        <LocationField Id="rout-route" Label="" Many="true" Placeholder="E6, E7" Size="24" Value="@Route" OnChange="@OnRoute" />
-    </label>
+    <LocationField Id="rout-route" Label="Route (hexes in order)" Name="the rout route" Many="true" Placeholder="E6, E7" Size="24" Value="@Route" OnChange="@OnRoute" />
     <label><input id="rout-low-crawl" type="checkbox" checked="@LowCrawl" @onchange="@(args => OnLowCrawl.InvokeAsync(args.Value is true))" /> Low Crawl</label>
     <button id="propose-rout" disabled="@(!Units.Any(unit => unit.Id == Unit) || Route.Trim().Length == 0)" aria-describedby="propose-rout-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: rout</button>
     @if (!Units.Any(unit => unit.Id == Unit) || Route.Trim().Length == 0)

@@ -14,10 +14,13 @@
     <LocationField Id="enter-location" Label="Building" Value="@Location" OnChange="@OnLocation" />
     <button id="propose-enter" @onclick="@(() => OnPropose.InvokeAsync())">Propose: enter a building</button>
 </div>
-<p class="muted">
-    The adjudicator decides an entry from the whole game. An entry into a building the moving side cannot see into is only declared when proposed;
-    what it finds there is disclosed when it is confirmed.
-</p>
+<details class="rule-help-detail" id="enter-help">
+    <summary>How an entry is decided</summary>
+    <p class="muted">
+        The adjudicator decides an entry from the whole game. An entry into a building the moving side cannot see into is only declared when proposed;
+        what it finds there is disclosed when it is confirmed.
+    </p>
+</details>
 
 @code {
     /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>

@@ -268,15 +268,20 @@ else if (board is null)
 
             gameRevision = Math.Clamp(gameRevision, 1, history.States.Count);
             var perspectives = history.At(gameRevision)!.Perspectives;
-            var perspective = perspectives.FirstOrDefault(item => item.Name == gamePerspective) ?? Perspective.Adjudicator;
+            var named = perspectives.FirstOrDefault(item => item.Name == gamePerspective);
+            var perspective = named ?? Perspective.Adjudicator;
             gamePerspective = perspective.Name;
             if (lockedGame && !perspective.IsAdjudicator)
             {
                 gameRevision = history.States.Count;
             }
 
-            gameProjection = Games.Projection(game, perspective, gameRevision);
-            set = gameProjection.Set;
+            // The referee, pass 31c: a game still played is never shown whole because its link named a view that does not exist.
+            if (!lockedGame || named is not null)
+            {
+                gameProjection = Games.Projection(game, perspective, gameRevision);
+                set = gameProjection.Set;
+            }
         }
 
         unitOverlay = board is not null && set is not null && UnitLibrary.Renderer(unitSheet) is { } renderer

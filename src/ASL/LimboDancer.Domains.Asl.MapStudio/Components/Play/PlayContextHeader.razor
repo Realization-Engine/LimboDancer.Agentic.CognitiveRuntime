@@ -2,7 +2,7 @@
 @* Pass 28c (plan section 13.1): the context that stays in sight above the workspace: the game and the view (the toolbar given as child content), the
    revision, turn, and phase, whether the page shows the live game, the night and weather, a way back to a pending proposal, and the hand-over a
    waiting answer needs. Everything here is known to both sides; the page shows it while a hand-over waits, too. *@
-<div id="play-context" class="play-context">
+<div id="play-context" class="@(Reserve ? "play-context reserve" : "play-context")">
     @ChildContent
     @Help
     @if (Summary is { Length: > 0 })
@@ -53,7 +53,7 @@
     }
     @* Pass 31c (design D15; play test P-28, P-31): the row and the status line keep their places whether or not they have anything to say, so
        the header has one height and the workspace under it does not move. *@
-    @if (Summary is { Length: > 0 } || PendingTitle is { Length: > 0 } || Awaiting is { Length: > 0 })
+    @if ((Reserve && Summary is { Length: > 0 }) || PendingTitle is { Length: > 0 } || Awaiting is { Length: > 0 })
     {
         <div class="@(PendingTitle is { Length: > 0 } || Awaiting is { Length: > 0 } ? "toolbar play-context-actions" : "toolbar play-context-actions idle")">
             @if (PendingTitle is { Length: > 0 } title)
@@ -67,12 +67,19 @@
             }
         </div>
     }
-    <p id="play-status" class="@(Busy ? "play-status busy" : "play-status")" role="status" aria-live="polite" title="@Status">@(Busy ? "Working: " : string.Empty)@Status</p>
+    <p id="play-status" class="@(Busy ? "play-status busy" : "play-status")" role="status" aria-live="polite" title="@Status" tabindex="@(Status is { Length: > 0 } ? "0" : null)">@(Busy ? "Working: " : string.Empty)@Status</p>
 </div>
 
 @code {
     [Parameter]
     public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>
+    /// Whether the row of actions and the status line keep their places when they are empty (pass 31c, design D15), so the header has one
+    /// height: Play, whose proposals come and go; Replay has neither and reserves nothing.
+    /// </summary>
+    [Parameter]
+    public bool Reserve { get; set; }
 
     /// <summary>The page's "How this works", which a page with a game open shows here instead of above the context (pass 31c).</summary>
     [Parameter]

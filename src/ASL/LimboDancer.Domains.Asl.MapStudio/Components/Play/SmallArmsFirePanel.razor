@@ -52,7 +52,7 @@
     @foreach (var id in AloneCandidates.Union(SelectedFirers.Where(id => Weapons.Any(weapon => weapon.Holder == id))).Order(StringComparer.Ordinal))
     {
         var ready = SelectedFirers.Contains(id) && Weapons.Any(weapon => weapon.Holder == id && SelectedWeapons.Contains(weapon.Id));
-        <label title="@(ready ? "The MG fires without its holder's own FP (A9.1)." : "Tick the unit and its MG first; then its MG may fire without the unit's own FP (A9.1).")"><input class="fire-alone" type="checkbox" data-unit="@id" disabled="@(!ready)" checked="@(ready && Alone.Contains(id))" @onchange="@(args => OnAlone.InvokeAsync(new UnitSelectionList.Toggle(id, args.Value is true)))" /> @Say(id)'s MGs alone@(ready ? "" : " (tick the unit and its MG first)")</label>
+        <label title="@(ready ? "The MG fires without its holder's own FP (A9.1)." : "Tick the unit and its MG first; then its MG may fire without the unit's own FP (A9.1).")"><input class="fire-alone" type="checkbox" data-unit="@id" disabled="@(!ready)" checked="@(ready && Alone.Contains(id))" @onchange="@(args => OnAlone.InvokeAsync(new UnitSelectionList.Toggle(id, args.Value is true)))" /> @Say(id): only its MG fires, without its own FP@(ready ? "" : " (tick the unit and its MG first)")</label>
     }
     <label>
         Director
@@ -87,14 +87,14 @@
         </select>
     </label>
     <PickedOption For="fire-target" Options="@Targets" Value="@Target" OnChange="@OnTarget" />
-    <LocationField Id="fire-free-target" Label="Or any Location" Value="@FreeTarget" OnChange="@OnFreeTarget" />
+    <LocationField Id="fire-free-target" Label="Or any Location" Name="the target" Value="@FreeTarget" OnChange="@OnFreeTarget" />
     @if (Phase == "mph")
     {
         <label title="A8.15: at the hexside the moving stack crossed, with LOS to both its ends; Area Fire with no TEM, FFMO, or FFNAM, and no Residual FP."><input id="fire-snap-shot" type="checkbox" checked="@SnapShot" @onchange="@(args => OnSnapShot.InvokeAsync(args.Value is true))" /> Snap Shot</label>
     }
     @if (Phase is "pfph" or "afph" or "dfph")
     {
-        <label title="A9.5: a group whose every firer fires a MG attacks a second Location sharing a hexside with the target, as Area Fire on the same DR.">Spray also</label> <LocationField Id="fire-spray" Label="" Value="@Spray" OnChange="@OnSpray" />
+        <label title="A9.5: a group whose every firer fires a MG attacks a second Location sharing a hexside with the target, as Area Fire on the same DR."></label> <LocationField Id="fire-spray" Label="Spray also" Name="the Location sprayed" Value="@Spray" OnChange="@OnSpray" />
     }
     @if (Phase == "mph")
     {
@@ -106,7 +106,7 @@
                     <option value="@weapon.Id">@Say(weapon.Id)</option>
                 }
             </select>
-            <LocationField Id="fire-lane-to" Label="to" Value="@LaneTo" OnChange="@OnLaneTo" />
+            <LocationField Id="fire-lane-to" Label="to" Name="the Fire Lane's end" Value="@LaneTo" OnChange="@OnLaneTo" />
         </label>
     }
     @if (Partners is { } partners)

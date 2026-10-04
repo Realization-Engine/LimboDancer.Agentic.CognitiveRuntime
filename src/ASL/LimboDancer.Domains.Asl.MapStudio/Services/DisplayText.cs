@@ -145,18 +145,48 @@ public static class DisplayText
         return text.Length > 0 && char.IsLower(text[0]) ? char.ToUpperInvariant(text[0]) + text[1..] : text;
     }
 
-    /// <summary>An action's registered name in words: "asl.game.end-phase" reads "End phase".</summary>
+    /// <summary>An action's registered name in words: "asl.game.end-phase" reads "End phase", "asl.game.throw-dc" "Throw DC".</summary>
     public static string Action(string name)
     {
         ArgumentNullException.ThrowIfNull(name);
-        var last = name[(name.LastIndexOf('.') + 1)..].Replace('-', ' ');
-        return last.Length == 0 ? name : char.ToUpperInvariant(last[0]) + last[1..];
+        var last = name[(name.LastIndexOf('.') + 1)..];
+        return last switch
+        {
+            "" => name,
+            "pass-fire" => "Decline First Fire",
+            _ => Sentence(Plain(last)),
+        };
     }
+
+    private static readonly Dictionary<string, string> Abbreviations = new(StringComparer.Ordinal)
+    {
+        ["dc"] = "DC",
+        ["afv"] = "AFV",
+        ["mg"] = "MG",
+        ["ce"] = "CE",
+        ["ovr"] = "OVR",
+        ["afph"] = "AFPh",
+        ["pf"] = "PF",
+        ["vs"] = "against",
+        ["ti"] = "TI",
+        ["cx"] = "CX",
+        ["sw"] = "SW",
+        ["ft"] = "FT",
+        ["los"] = "LOS",
+        ["tem"] = "TEM",
+        ["cc"] = "CC",
+        ["hs"] = "HS",
+        ["smc"] = "SMC",
+        ["mmc"] = "MMC",
+    };
+
+    /// <summary>A recorded name with no words of its own: its hyphens as spaces, and the game's abbreviations in capitals ("thrown dc afph" reads "thrown DC AFPh").</summary>
+    private static string Plain(string name) => string.Join(' ', name.Split('-').Select(word => Abbreviations.TryGetValue(word, out var known) ? known : word));
 
     private static readonly Dictionary<string, string> ModifierWords = new(StringComparer.Ordinal)
     {
-        ["ffnam"] = "First Fire, no Assault Movement",
-        ["ffmo"] = "First Fire, moving in the open",
+        ["ffnam"] = "FFNAM",
+        ["ffmo"] = "FFMO",
         ["area-fire"] = "Area Fire",
         ["area-fire-concealed-target"] = "Area Fire, concealed target",
         ["area-fire-gunflash"] = "Area Fire at a Gunflash",
@@ -169,7 +199,7 @@ public static class DisplayText
         ["assault-fire"] = "Assault Fire",
         ["spraying-fire"] = "Spraying Fire",
         ["bounding-fire"] = "Bounding Fire",
-        ["motion-fire"] = "Motion fire",
+        ["motion-fire"] = "Motion Fire",
         ["snap-shot"] = "Snap Shot",
         ["los-hindrance"] = "LOS Hindrance",
         ["lv-hindrance"] = "LV Hindrance",
@@ -181,7 +211,7 @@ public static class DisplayText
         ["vs-concealed"] = "against a concealed unit",
         ["vs-broken"] = "against a broken unit",
         ["vs-ti"] = "against a TI unit",
-        ["vs-ambush"] = "against an Ambush",
+        ["vs-ambush"] = "Ambushed",
         ["vs-withdrawing"] = "against a withdrawing unit",
         ["pinned-firer"] = "pinned firer",
         ["hs-or-crew"] = "HS or crew",
@@ -267,7 +297,7 @@ public static class DisplayText
         }
 
         var spoken = head.StartsWith("case-", StringComparison.Ordinal) ? "Case " + head["case-".Length..].ToUpperInvariant()
-            : ModifierWords.TryGetValue(head, out var known) ? known : head.Replace('-', ' ');
+            : ModifierWords.TryGetValue(head, out var known) ? known : Plain(head);
         return rest.Length == 0 ? spoken : $"{spoken}, {(rest.Contains(':', StringComparison.Ordinal) ? Modifier(rest) : rest)}";
     }
 
@@ -310,8 +340,16 @@ public static class DisplayText
             return typed;
         }
 
+        // The identifier typed in lower case ("bd01:g4:1").
+        var whole = System.Text.RegularExpressions.Regex.Match(typed, @"^(bd\w+):([A-Za-z]{1,2}\d{1,2}):(-?\d)$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        if (whole.Success && $"{whole.Groups[1].Value.ToLowerInvariant()}:{whole.Groups[2].Value.ToUpperInvariant()}:{whole.Groups[3].Value}" is var canonical && BoardLocation.TryParse(canonical, out _))
+        {
+            return canonical;
+        }
+
+        // "G4", "G4:1", "G4 1", "G4 level 1", "G4, level 1", "G4 cellar", each with "on board 01" after the hex.
         var match = System.Text.RegularExpressions.Regex.Match(typed,
-            @"^([A-Za-z]{1,2}\d{1,2})(?:\s+on\s+board\s+(\w+))?(?:\s*(?::|,\s*level)\s*(-?\d)|\s*,\s*(cellar))?$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            @"^([A-Za-z]{1,2}\d{1,2})(?:\s+on\s+board\s+(\w+))?(?:\s*(?::|,?\s*level\s|\s)\s*(-?\d)|\s*,?\s*(cellar))?$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         if (!match.Success)
         {
             return typed;

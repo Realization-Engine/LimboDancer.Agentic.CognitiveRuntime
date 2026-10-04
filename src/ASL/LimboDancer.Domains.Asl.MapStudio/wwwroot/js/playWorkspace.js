@@ -38,6 +38,18 @@ export function openDetails(id) {
     }
 
     details.open = true;
+
+    // Pass 31c (design D15): wide, the card is a dialog over the page; Escape closes it, as its foot's button does.
+    if (!details.dataset.escape) {
+        details.dataset.escape = "true";
+        details.addEventListener("keydown", event => {
+            if (event.key === "Escape") {
+                details.open = false;
+                document.getElementById("play-card-link")?.focus();
+            }
+        });
+    }
+
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     details.scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smooth" });
     details.querySelector("summary")?.focus({ preventScroll: true });
@@ -66,16 +78,23 @@ export function watchContext() {
 
     // Pass 31c (design D15): where the context ends on the page is kept too, so the workspace fills what is left of the window below it,
     // whatever sits above the context (the Studio's bar), and the window does not scroll.
-    contextWatcher = new ResizeObserver(() => {
+    // The workspace's own top is measured (the UI review, pass 31c): the context is sticky, so its bottom moves with the page's scroll.
+    const measure = () => {
         const box = context.getBoundingClientRect();
         document.documentElement.style.setProperty("--play-context-height", `${box.height}px`);
-        document.documentElement.style.setProperty("--play-workspace-top", `${box.bottom + window.scrollY}px`);
-    });
+        const workspace = document.querySelector(".play-workspace");
+        const top = workspace ? workspace.getBoundingClientRect().top + window.scrollY : box.bottom + window.scrollY + 12;
+        document.documentElement.style.setProperty("--play-workspace-top", `${top}px`);
+    };
+    contextWatcher = new ResizeObserver(measure);
     contextWatcher.observe(context);
+    contextWatcher.onResize = measure;
+    window.addEventListener("resize", measure);
 }
 
 export function unwatchContext() {
     if (contextWatcher) {
+        window.removeEventListener("resize", contextWatcher.onResize);
         contextWatcher.disconnect();
         contextWatcher = null;
         document.documentElement.style.removeProperty("--play-context-height");
@@ -101,6 +120,7 @@ export function watchWorking() {
         state.timer = null;
         state.marked?.removeAttribute("data-working");
         state.marked = null;
+        state.button = null;
     };
     const onClick = event => {
         const button = event.target instanceof Element ? event.target.closest("button") : null;

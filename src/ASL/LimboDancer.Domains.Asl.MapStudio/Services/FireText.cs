@@ -25,6 +25,12 @@ public sealed record FireView(string EventId, string Group, string Target, strin
         get; init;
     }
 
+    /// <summary>Whether several units fire, so the record's verb agrees: "fire", not "fires".</summary>
+    public bool Several
+    {
+        get; init;
+    }
+
     /// <summary>What the attack did to each MG used in it (pass 31c, play test P-17): a kept rate of fire, a malfunction. Null when none was used or the record is withheld.</summary>
     public IReadOnlyList<FireWeaponEffect>? Weapons
     {

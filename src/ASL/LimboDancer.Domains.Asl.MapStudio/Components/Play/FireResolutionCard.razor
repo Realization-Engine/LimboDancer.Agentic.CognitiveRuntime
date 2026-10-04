@@ -2,7 +2,7 @@
    concealed), and that is said rather than shown as an empty table. *@
 <div class="fire-record" data-fire="@Record.EventId">
     <p>
-        <strong class="fire-group">@Record.Group fire at @Record.Target</strong>.
+        <strong class="fire-group">@Record.Group @(Record.Several ? "fire" : "fires") at @Record.Target</strong>.
     </p>
     <FireArithmeticBreakdown Arithmetic="@Record.Arithmetic" Say="@Record.Say" />
     @if (Record.Weapons?.Select(FireText.WeaponText).OfType<string>().ToArray() is { Length: > 0 } weapons)

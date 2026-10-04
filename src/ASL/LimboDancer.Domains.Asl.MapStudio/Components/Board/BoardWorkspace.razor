@@ -19,7 +19,7 @@
         <p class="fail" id="workspace-load">The map did not load: @problem <button type="button" id="workspace-retry" @onclick="Retry">Try again</button></p>
     }
     @* Pass 31c (design D16; play test P-30): the map says it is loading, over its own pane, so nothing moves when it is drawn. *@
-    @if (loadedKey != LoadKey && loadProblem is null)
+    @if (viewport is { IsReady: true } && loadedKey != LoadKey && loadProblem is null)
     {
         <p class="map-loading muted" id="workspace-loading" role="status">Loading the map.</p>
     }

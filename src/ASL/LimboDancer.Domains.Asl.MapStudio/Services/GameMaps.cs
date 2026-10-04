@@ -93,13 +93,34 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache
             return (board, null);
         }
 
+        // The referee, pass 31c: what a view contributes is chosen by who owns the unit in the game, never by the nationality on its counter: from a
+        // side's view come the other sides' units it holds by name, their "?", and the unpossessed equipment it sees. A side's own units are never
+        // taken from its own view.
         UnitPlacementSet? first = null;
         var seen = new List<UnitDocument>();
+        var drawn = new HashSet<string>(StringComparer.Ordinal);
         foreach (var side in state.Sides)
         {
             var projection = games.Projection(entry, Perspective.Side(side.Id), revision);
             first ??= projection.Set;
-            seen.AddRange(projection.Set.Units.Where(unit => unit.Side != side.Id));
+            var others = projection.View.Units.Where(unit => unit.Side != side.Id).Select(unit => unit.Id)
+                .Concat(projection.View.Equipment.Where(item => item.Holding is null && item.Side != side.Id).Select(item => item.Id)).ToHashSet(StringComparer.Ordinal);
+            var presences = projection.View.Sealed.Where(presence => presence.Side != side.Id).Select(presence => presence.PlacementId).ToHashSet(StringComparer.Ordinal);
+            foreach (var document in projection.Set.Units)
+            {
+                if (others.Contains(document.Id) && drawn.Add(document.Id))
+                {
+                    seen.Add(document);
+                }
+                else if (presences.Contains(document.Id))
+                {
+                    // A "?" has a placement id of its view's own; two views' ids may be the same, so each is kept apart.
+                    seen.Add(document with
+                    {
+                        Id = $"{side.Id}-{document.Id}",
+                    });
+                }
+            }
         }
 
         return first is null ? (board, null) : (board, units.Overlay(board, first with

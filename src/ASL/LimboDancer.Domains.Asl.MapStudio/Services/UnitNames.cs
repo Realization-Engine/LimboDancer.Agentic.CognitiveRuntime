@@ -61,21 +61,42 @@ public sealed partial class UnitNames
         ArgumentNullException.ThrowIfNull(viewer);
         ArgumentNullException.ThrowIfNull(catalogs);
         var first = history.Events.Count > 0 ? $"{history.Events[0].Scope.Game}/{history.Events[0].EventId}" : string.Empty;
-        var names = Kept.GetOrAdd((first, viewer.Name), _ => new UnitNames(history, viewer, DefinitionsOf(catalogs), outOfSight));
-        lock (names.gate)
+        var key = (first, viewer.Name);
+        if (Kept.TryGetValue(key, out var kept))
         {
-            // Another game under the same first event (a copy cut back and played on differently) starts again.
-            var count = Math.Min(history.Events.Count, history.States.Count);
-            if (names.through > count || (names.through > 0 && history.Events[(int)names.through - 1].EventId != names.lastEvent))
+            lock (kept.gate)
             {
-                names = new UnitNames(history, viewer, DefinitionsOf(catalogs), outOfSight);
-                Kept[(first, viewer.Name)] = names;
-            }
+                var count = Math.Min(history.Events.Count, history.States.Count);
+                var same = kept.through == 0 || (kept.through <= count && history.Events[(int)kept.through - 1].EventId == kept.lastEvent);
+                if (same)
+                {
+                    kept.Advance(history);
+                    return kept;
+                }
 
-            names.Advance(history);
+                // A shorter reading of the same game (another tab that has not read the latest commit) is served by the names already made.
+                if (kept.through > count && count > 0 && kept.history.Events.Count >= count && kept.history.Events[count - 1].EventId == history.Events[count - 1].EventId)
+                {
+                    return kept;
+                }
+            }
         }
 
-        return names;
+        // A new game, or another game under the same first event (a copy cut back and played on differently): made whole before any reader has it
+        // (the UI review, pass 31c). The cache is small: the games a Studio has open, not every game it ever opened.
+        var fresh = new UnitNames(history, viewer, DefinitionsOf(catalogs), outOfSight);
+        lock (fresh.gate)
+        {
+            fresh.Advance(history);
+        }
+
+        if (Kept.Count >= 24)
+        {
+            Kept.Clear();
+        }
+
+        Kept[key] = fresh;
+        return fresh;
     }
 
     private static Dictionary<string, UnitDefinition> DefinitionsOf(IReadOnlyList<UnitCatalog> catalogs)
@@ -167,8 +188,11 @@ public sealed partial class UnitNames
                 var word = known.ContainsKey(match.Value) ? Named(match.Value, before, check) : Counter(definitions[match.Value]);
                 // "its g-mmg-1" reads "its MMG", not "its the MMG".
                 var lead = text[Math.Max(0, match.Index - 4)..match.Index];
-                return word.StartsWith("the ", StringComparison.Ordinal) && (lead is "its " or "the " || lead.EndsWith(" a ", StringComparison.Ordinal)) ? word[4..] : word;
+                return word.StartsWith("the ", StringComparison.Ordinal) && (lead is "its " or "the " or "The " || lead.EndsWith(" a ", StringComparison.Ordinal)) ? word[4..] : word;
             });
+            // A concealed firer's weapons are not said: "with its a weapon not in view" is no sentence, and it would count them.
+            named = named.Replace($" and its {UnseenWeapon}", string.Empty, StringComparison.Ordinal).Replace($" with its {UnseenWeapon}", string.Empty, StringComparison.Ordinal);
+
             // A leader a Close Combat attack creates joins it before it has an id of its own (A18.12).
             named = CreatedLeader().Replace(named, "the leader created");
             var boards = history.States.Count > 0 ? history.States[0].Map.Boards.Count : 1;
@@ -242,7 +266,7 @@ public sealed partial class UnitNames
                 foreach (var unit in view.Units.Where(unit => unit.Side != viewer.Name))
                 {
                     now.Add(unit.Id);
-                    See(unit.Id);
+                    See(unit.Id, revision);
                 }
 
                 foreach (var weapon in view.Equipment)
@@ -250,7 +274,7 @@ public sealed partial class UnitNames
                     now.Add(weapon.Id);
                     if (known.TryGetValue(weapon.Id, out var what) && what.Side != viewer.Name)
                     {
-                        See(weapon.Id);
+                        See(weapon.Id, revision);
                     }
                 }
             }
@@ -271,31 +295,39 @@ public sealed partial class UnitNames
         born[id] = revision;
         if (GroupOf(kind, unit) is { } group)
         {
-            entered[id] = Inherited(id, entered) ?? Next(enteredCount, side, group);
+            entered[id] = Inherited(id, entered, _ => true) ?? Next(enteredCount, side, group);
         }
     }
 
-    private void See(string id)
+    private void See(string id, long revision)
     {
         if (!seen.ContainsKey(id) && known.TryGetValue(id, out var what) && GroupOf(what.Kind, what.Unit) is { } group)
         {
-            seen[id] = Inherited(id, seen) ?? Next(seenCount, what.Side, group);
+            // The referee, pass 31c: the other side's unit takes its parent's tag only when this view held the parent by name just before the
+            // unit was made, so a tag never tells of a Deployment, a Recombination, or a Replacement that happened under "?".
+            var before = born.TryGetValue(id, out var made) ? made - 1 : revision - 1;
+            bool Held(string parent) => before >= 1 && before <= held.Count && held[(int)before - 1].Contains(parent);
+            seen[id] = Inherited(id, seen, Held) ?? Next(seenCount, what.Side, group);
         }
     }
 
-    /// <summary>The tag a unit takes from the unit it came from, when that unit has one among <paramref name="tags"/>.</summary>
-    private string? Inherited(string id, Dictionary<string, string> tags)
+    /// <summary>
+    /// The tag a unit takes from the unit it came from, when that unit has one among <paramref name="tags"/> and <paramref name="mayInherit"/>
+    /// allows it. A tag is never given twice: two HS of one squad give its tag back; two of different squads make a squad with a new number.
+    /// </summary>
+    private string? Inherited(string id, Dictionary<string, string> tags, Func<string, bool> mayInherit)
     {
-        if (!lineage.TryGetValue(id, out var from) || from.From.Count == 0 || !tags.TryGetValue(from.From[0], out var parent))
+        if (!lineage.TryGetValue(id, out var from) || from.From.Count == 0 || !tags.TryGetValue(from.From[0], out var parent) || !mayInherit(from.From[0]))
         {
             return null;
         }
 
+        static string Stem(string tag) => tag.Length > 2 && tag[^1] is 'a' or 'b' && char.IsDigit(tag[^2]) ? tag[..^1] : tag;
         return from.Action switch
         {
             LineageAction.Deployed => parent + (from.Index == 0 ? "a" : "b"),
-            // Two HS of one squad give its tag back; two of different squads take the first one's.
-            LineageAction.Recombined => parent.Length > 2 && parent[^1] is 'a' or 'b' && char.IsDigit(parent[^2]) ? parent[..^1] : parent,
+            LineageAction.Recombined => from.From.Count > 1 && tags.TryGetValue(from.From[1], out var other) && mayInherit(from.From[1])
+                && Stem(parent) == Stem(other) && Stem(parent) != parent ? Stem(parent) : null,
             _ => parent,
         };
     }

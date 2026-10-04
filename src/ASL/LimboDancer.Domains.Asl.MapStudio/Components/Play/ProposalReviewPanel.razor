@@ -4,12 +4,15 @@
     <h3 title="@Title">@DisplayText.Action(Title)</h3>
     @* Pass 31c (design D15; play test P-28): Confirm and Cancel sit at the head of the review, where no outcome or list of consequences moves
        them. Their label still says what a proposal with consequences does. *@
-    @if (CanConfirm)
-    {
-        <div class="toolbar" id="play-proposal-actions">
+    @{
+        RenderFragment actions = @<div class="toolbar" id="play-proposal-actions">
             <button id="play-confirm" disabled="@Busy" @onclick="Confirm">@(Busy ? "Confirming" : ConfirmLabel)</button>
             <button id="play-cancel" class="link" disabled="@Busy" @onclick="Cancel">Cancel</button>
-        </div>
+        </div>;
+    }
+    @if (CanConfirm && Consequences.Count == 0)
+    {
+        @actions
     }
     <p class="@(Accepted && Consequences.Count == 0 ? "pass" : "fail")">
         <strong id="play-outcome">@Outcome</strong>
@@ -26,6 +29,10 @@
                 }
             </ul>
         </div>
+        @if (CanConfirm)
+        {
+            @actions
+        }
     }
     @Lead
     <ul id="play-reasons">

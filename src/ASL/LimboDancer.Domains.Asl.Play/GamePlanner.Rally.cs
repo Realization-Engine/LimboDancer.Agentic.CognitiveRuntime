@@ -74,7 +74,7 @@ public sealed partial class GamePlanner
                     ? $"play.rally-self: {unit.Id} has no Self-Rally capability, and only its own side's RPh gives one MMC a Self-Rally without it (A10.63, A18.11); it needs an unbroken leader in its Location"
                     : state.FirstMmcRallyTaken.Contains(unit.Side)
                         // Pass 31c (backlog section 48): the refusal names the unit that used the attempt.
-                        ? $"play.rally-self: {unit.Id} has no Self-Rally capability, and {FirstMmcRallier(existing, state, unit.Side) ?? "its side"} has already made its side's first MMC Rally attempt of this RPh, the only one that may be a Self-Rally without it (A18.11); it needs an unbroken leader in its Location"
+                        ? $"play.rally-self: {unit.Id} cannot Self-Rally: its side's one MMC Self-Rally of this RPh was used{(FirstMmcRallier(existing, state, unit.Side) is { } first ? $" by {first}" : string.Empty)} (A18.11). It needs an unbroken leader in its Location"
                         : $"play.rally-self: {unit.Id} has no Self-Rally capability, and a broken leader is in its Location, so its side's first MMC Rally attempt is not open to it (A10.71, A18.11); rally the leader first"]
                 : [];
             return Refused(scope, label, expected, [.. RefusalReasons.Refusal("play.rally-refused", "Rally", "attempt", precheck), .. why]);

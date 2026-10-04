@@ -46,7 +46,7 @@ else
                    Result="@ResultTitle" ResultReason="@ResultReason" ResultWhy="@ResultWhy"
                    Conditions="@(state is null ? null : NightAndWeather(state))" HasCard="@(state?.Scenario is not null && handOver is null)" CardChanged="@(state?.Scenario is { } changedCard && !Live.Cards.Matches(changedCard.Id, changedCard.Sha256))"
                    PendingTitle="@(handOver is null && pending is { Result.Outcome: PlayOutcome.NeedsConfirmation } waitingProposal ? DisplayText.Action(waitingProposal.Action.Name) : null)" Review="@FocusReview" Awaiting="@(AwaitingView is { } awaited ? ViewLabel(awaited) : null)"
-                   AwaitingNote="@AwaitingNote" HandOver="@HandOverToAwaiting" Status="@Said(status)" OpenCard="@OpenCard" Help="@(history is null ? null : intro)">
+                   AwaitingNote="@AwaitingNote" HandOver="@HandOverToAwaiting" Status="@Said(status)" OpenCard="@OpenCard" Help="@(history is null ? null : intro)" Reserve="true">
     <LiveGameToolbar Games="@([.. Live.Games().Select(scope => scope.Game)])" GameId="@gameId" GameChanged="ChangeGame" Disabled="@busy" Views="@ViewChoices"
                      ViewAs="@(handOver ?? viewAs)" ViewChanged="ChangeView" BoardLabel="@ViewTarget"
                      BoardLink="@(state is not null && handOver is null ? Games.BoardLink(ViewTarget, GameLibrary.LivePrefix + gameId, Viewer, Viewer.IsAdjudicator || state.Ended is not null ? state.Revision : null, highlight?.ToString()) : null)" />
@@ -254,9 +254,9 @@ else
                 <Lead>
                     @* Pass 31c (design D14; play test P-14): a fire's arithmetic before the dice, for the firing side and the adjudicator. *@
                     @if (proposal.Result is { Outcome: PlayOutcome.NeedsConfirmation, Plan.Fire: { } previewed } && (Viewer.IsAdjudicator || Viewer.Name == previewed.FiringSide)
-                        && ScenarioA1FireCalculator.Preview(previewed.Attack, FirePreviewReference.Value) is { } preview)
+                        && FirePreview(previewed.Attack) is { Arithmetic: { } preview } shownPreview)
                     {
-                        <FireArithmeticPreview Arithmetic="@preview" Incomplete="@(!Viewer.IsAdjudicator && previewed.FiringSideReasons.Count > 0)" />
+                        <FireArithmeticPreview Arithmetic="@preview" Incomplete="@shownPreview.Incomplete" />
                     }
                     @if (PlacesCounters(proposal) && setupReview is { } summary)
                     {
@@ -357,7 +357,7 @@ else if (state is not null)
             @if (!SetupOpen && Picking.Armed is not null)
             {
                 <p id="play-picking" class="toolbar-note" role="status">
-                    The next hex clicked on the map fills "@(Picking.ArmedLabel is { Length: > 0 } armedLabel ? armedLabel : "the Location")".
+                    The next hex clicked on the map @(Picking.ArmedLabel is { Length: > 0 } armedLabel ? armedLabel : "fills the Location"), at ground level.
                     <button type="button" class="link" id="play-picking-stop" @onclick="@(() => Picking.Arm(null, null))">Stop picking</button>
                 </p>
             }
@@ -433,8 +433,13 @@ else if (state is not null)
                         }
                     </div>
                 }
-                <BuildingEntryAction Units="@EnterRows" Unit="@enterUnit" Location="@enterLocation" OnUnit="@(id => enterUnit = id)"
-                    OnLocation="@(at => enterLocation = at)" OnPropose="@ProposeEntry" />
+                @* The user, 2026-10-04 (pass 31c): an entry into a building is the moving side's, in its Movement Phase; it is offered only then,
+                   and its explanation is a closed line, not a paragraph on every screen. *@
+                @if (state.Phase == "mph" && (Viewer.IsAdjudicator || viewAs == state.PhasingSide))
+                {
+                    <BuildingEntryAction Units="@EnterRows" Unit="@enterUnit" Location="@enterLocation" OnUnit="@(id => enterUnit = id)"
+                        OnLocation="@(at => enterLocation = at)" OnPropose="@ProposeEntry" />
+                }
                 @if (state.Phase == "rtph")
                 {
                     <RoutActionPanel Obligations="@RoutObligations" Units="@RoutChoices" Unit="@routUnit" Route="@routRoute" LowCrawl="@routLowCrawl"
@@ -645,7 +650,7 @@ else if (state is not null)
                     <ul class="muted" id="fire-markers">
                         @foreach (var lane in state.FireLanes)
                         {
-                            <li class="fire-lane">Fire Lane of @lane.Weapon (@lane.Operator): @string.Join(", ", lane.Entries.Select(entry => $"{PlaceOf(entry.Location)} {entry.Fp} FP")) (A9.22)</li>
+                            <li class="fire-lane">Fire Lane of @Words(lane.Weapon) (@Words(lane.Operator)): @string.Join(", ", lane.Entries.Select(entry => $"{PlaceOf(entry.Location)} {entry.Fp} FP")) (A9.22)</li>
                         }
                         @foreach (var encircled in state.Encirclements)
                         {
@@ -866,7 +871,7 @@ else if (state is not null)
             <p id="play-latest">@(LatestRecord ?? "No record yet.")</p>
             @* Pass 31c (designs D15 and D17): the records, the units, the scripted dice, and the audit open over the strip, each with its own
                scroll, and take no height from the map. Every panel stays in the page; only the one chosen shows. *@
-            <div class="toolbar play-activity-tabs" role="group" aria-label="More of the game">
+            <div class="toolbar play-activity-tabs" role="group" aria-label="More of the game" @onkeydown="@(args => { if (args.Key == "Escape") { activityTab = null; } })">
                 @foreach (var (key, label, panel) in ActivityTabs)
                 {
                     <button type="button" class="link" id="@($"play-activity-{key}")" aria-expanded="@(activityTab == key ? "true" : "false")" aria-controls="@panel"
@@ -3062,6 +3067,28 @@ else if (state is not null)
     private static readonly Lazy<ScenarioA1FireReference> FirePreviewReference = new(() => new ScenarioA1FirePackage().Reference);
 
     /// <summary>
+    /// A fire's arithmetic before the dice, as the firing view may know it (the referee, pass 31c; A12.3, A12.11, A12.14). A hidden unit in the
+    /// target Location is left out of the preview's facts, so nothing in it differs from what the firer would work out at the table; the
+    /// adjudicator's preview has every target. Where the view sees a "?" in the target Location, the preview is said as incomplete, and what rests
+    /// on the units beneath it is not shown.
+    /// </summary>
+    private (FireArithmetic? Arithmetic, bool Incomplete) FirePreview(FireAttack attack)
+    {
+        if (Viewer.IsAdjudicator)
+        {
+            return (ScenarioA1FireCalculator.Preview(attack, FirePreviewReference.Value), false);
+        }
+
+        var held = VisibleUnits.Select(unit => unit.Id).ToHashSet(StringComparer.Ordinal);
+        var sealedThere = SealedPresences.Any(presence => presence.Location.ToString() == attack.TargetLocationId);
+        var known = attack with
+        {
+            Targets = attack.Targets is null ? null : [.. attack.Targets.Where(target => target.Hidden != true && (target.UnitId is null || held.Contains(target.UnitId) || target.Concealed == true))],
+        };
+        return (ScenarioA1FireCalculator.Preview(known, FirePreviewReference.Value), sealedThere);
+    }
+
+    /// <summary>
     /// The Locations that may join the fire group (A7.5: "each participating unit occupies a Location ADJACENT to another participating unit of
     /// the same FG"): those holding a unit that may fire, ADJACENT to a Location already in the group. None at night (E1.75; ruling R16.3).
     /// </summary>
@@ -3092,6 +3119,20 @@ else if (state is not null)
         else if (!on)
         {
             fireAlso.Remove(at);
+
+            // A7.5: every Location of the group is ADJACENT to another of it, in one chain from the first; what the removal cut off goes too.
+            if (state is not null && BoardLocation.TryParse(fireFrom, out var first))
+            {
+                var joined = new List<BoardLocation> { first };
+                var left = fireAlso.Select(BoardLocation.Parse).ToList();
+                while (left.FirstOrDefault(other => joined.Any(one => Live.Planner.Adjacent(state, one, other))) is { } next)
+                {
+                    joined.Add(next);
+                    left.Remove(next);
+                }
+
+                fireAlso.RemoveAll(other => left.Any(cut => cut.ToString() == other));
+            }
         }
 
         PruneFire();
@@ -3927,6 +3968,7 @@ else if (state is not null)
             handOver = null;
             unconfirmed = false;
             ResetForView();
+            activityTab = SinceLooked.Count > 0 ? "since" : null;
             (highlight, openingHex) = (openingHex, null);
             enterUnit = VisibleUnits.FirstOrDefault()?.Id ?? string.Empty;
             ShowActions();
@@ -5638,7 +5680,9 @@ else if (state is not null)
                 Result = proposal.Result with
                 {
                     Outcome = PlayOutcome.Stale,
-                    Reasons = [$"The game is at revision {now?.Events.Count ?? 0}; this proposal was made at revision {proposedAt}."],
+                    Reasons = [Viewer.IsAdjudicator || state?.Ended is not null
+                        ? $"The game is at revision {now?.Events.Count ?? 0}; this proposal was made at revision {proposedAt}."
+                        : "The game has moved on since this proposal was made. Propose again."],
                 },
             };
             status = OutcomeText(PlayOutcome.Stale, false);
@@ -5759,6 +5803,7 @@ else if (state is not null)
 
             // Table player and UI review, pass 29: Confirm is gone with the commit, so the focus goes to the actions; under 1024px their tab opens.
             // Wider, the panes are side by side and nothing scrolls, so the outcome stays in view.
+            activityTab = null;
             ShowActions(scroll: narrow);
         }
 
@@ -6231,12 +6276,12 @@ else if (state is not null)
     private long? sinceLooked;
 
     /// <summary>What the view shown missed while another had the screen, from its own records (design D17).</summary>
-    private IReadOnlyList<(long Revision, string EventId, string Text)> SinceLooked => sinceLooked is { } revision && Records is { } records ? records.Since(revision) : [];
+    private IReadOnlyList<(long Revision, string EventId, string Text, bool Minor)> SinceLooked => sinceLooked is { } revision && Records is { } records ? records.Since(revision) : [];
 
     private IEnumerable<(string Key, string Label, string Panel)> ActivityTabs =>
     [
         .. SinceLooked.Count > 0 ? [("since", $"Since you last looked ({SinceLooked.Count})", "play-since-panel")] : Array.Empty<(string, string, string)>(),
-        ("records", "Records, latest first", "play-history"),
+        ("records", "Records", "play-history"),
         ("units", "Units", "play-units-panel"),
         .. Scripted is null ? Array.Empty<(string, string, string)>() : [("dice", "Scripted dice", "play-dice-panel")],
         .. Viewer.IsAdjudicator ? [("audit", "Audit", "play-audit-panel")] : Array.Empty<(string, string, string)>(),
@@ -6423,7 +6468,8 @@ else if (state is not null)
             {
                 var names = Live.NamesOf(history, Viewer);
                 var before = (long)history.Events.Count;
-                wordsCache = (history, Viewer.Name, text => names.InText(text, before));
+                var said = new Dictionary<string, string>(StringComparer.Ordinal);
+                wordsCache = (history, Viewer.Name, text => said.TryGetValue(text, out var kept) ? kept : said[text] = names.InText(text, before));
             }
 
             return wordsCache.Say;

@@ -24,7 +24,7 @@
             <option value="three-hexes">a hex exactly three hexes away</option>
         </select>
     </label>
-    <LocationField Id="starshell-at" Label="at" Value="@At" Disabled="@(Method == OwnHex)" OnChange="@OnAt" />
+    <LocationField Id="starshell-at" Label="at" Name="the Starshell's hex" Value="@At" Disabled="@(Method == OwnHex)" OnChange="@OnAt" />
     <button id="propose-starshell" disabled="@(!Firers.Contains(Unit) || (Method != OwnHex && At.Trim().Length == 0))" aria-describedby="propose-starshell-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: fire a Starshell</button>
     @if (!Firers.Contains(Unit) || (Method != OwnHex && At.Trim().Length == 0))
     {
