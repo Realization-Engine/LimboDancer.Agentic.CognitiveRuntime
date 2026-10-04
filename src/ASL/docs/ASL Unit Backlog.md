@@ -713,11 +713,11 @@ Pass 30b (2026-10-03) gave the side that sets up second its setup plans: answers
 
 ## 48. Added by the redesign pass 31
 
-Pass 31 (2026-10-04) worked from a game of The Guards Counterattack played to its end through the Play page, and removed what blocked or lost play: who may act, a move that fire stops, the last turn and the result, consequences in a proposal, fire at several leaders and the Defensive First Fire limit, Advance and the Close Combat form, the Rally Phase and Russian Deployment, and a hand-over screen that says what is going on. Pass 31b takes the play test's other problems (the page's words, picking on the map, the fire proposal, the layout, the map, records, and rout speed). Items pass 31 leaves out:
+Pass 31 (2026-10-04) worked from a game of The Guards Counterattack played to its end through the Play page, and removed what blocked or lost play: who may act, a move that fire stops, the last turn and the result, consequences in a proposal, fire at several leaders and the Defensive First Fire limit, Advance and the Close Combat form, the Rally Phase and Russian Deployment, and a hand-over screen that says what is going on. Pass 31c takes the play test's other problems (the page's words, picking on the map, the fire proposal, the layout, the map, records, and rout speed); pass 31b is the Replay page. Items pass 31 leaves out:
 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
-| A map of the terrain alone on the hand-over screen, with the Locations its lines name outlined | The design (D10), pass 31 | None | Pass 31b's map task | The screen is text; the arriving view opens on the Location the game waits on. |
+| A map of the terrain alone on the hand-over screen, with the Locations its lines name outlined | The design (D10), pass 31 | None | Pass 31c's map task | The screen is text; the arriving view opens on the Location the game waits on. |
 | A move ended by the fire that eliminates every mover, with no pass | The design (D2), pass 31 | A8.1, A4.2 | Nothing | The DEFENDER's pass ends it; the pass is offered. |
 | A Guard of prisoners Deploying at will, and a temporary crew | Ruling R31.4 | A20.5, A21.22 | Nothing | No squad Deploys without a leader. |
 | Russian squads set up Deployed | The referee's review, pass 31 | A2.9, A25.2 | A nationality test in the setup's checks | Setup still accepts a Russian squad as two HS; no setup plan does it. |
@@ -727,9 +727,9 @@ Pass 31 (2026-10-04) worked from a game of The Guards Counterattack played to it
 | A leader who broke and is then eliminated by another leader's LLMC causing his LLTC as well | The referee's review, pass 31 | A10.2 | Nothing | He causes the LLMC. |
 | Leaders checking before every other unit across the known, pinned, and concealed groups of one attack | The referee's review, pass 31 (older) | A10.2 | The order of the calculator's groups | Leaders check first within each group. |
 | A record line for a resolution that waits on a choice | The design (D3), pass 31 | None | Nothing | The record appears once the choice is answered; the page says a choice waits. |
-| The Self-Rally refusal naming the unit that used the side's first MMC Rally attempt; the rout status text; a text for each of the four stacking checks | The table player's review, pass 31 | A18.11, A10.5, A11.14 | Pass 31b's words | The texts say which rule bars the unit and what to do, without those names. |
+| The Self-Rally refusal naming the unit that used the side's first MMC Rally attempt; the rout status text; a text for each of the four stacking checks | The table player's review, pass 31 | A18.11, A10.5, A11.14 | Pass 31c's words | The texts say which rule bars the unit and what to do, without those names. |
 | The proposing side checked for setup and for a placed DC's detonation | The referee's review, pass 31 | Ruling R31.6 | Nothing | Setup is guarded by its groups' sides on the page; a detonation names no unit. |
 | A warning when a phase is ended with units that could still fire or move | The table player's review, pass 31 | None | A reading of what each phase leaves undone | The consequences are losses, the game's end, a shot with no LOS, and own units hit. |
 | The Deploy list leaving out Russian squads | The table player's review, pass 31 | A25.2 | The nationality on the page's list | They are listed, and the gate refuses them with A25.2. |
 | The Advance list's Locations kept between renders | The UI review, pass 31 | None | Nothing | They are read on each render of the Advance panel, a few steps each. |
-| Two Game Turns played from a new game | The design (section 10), pass 31 | None | Pass 31b's full play test | One Russian Player Turn was played from the end of setup; each problem was checked on a copy of the played game at its own revision. |
+| Two Game Turns played from a new game | The design (section 10), pass 31 | None | Pass 31c's full play test | One Russian Player Turn was played from the end of setup; each problem was checked on a copy of the played game at its own revision. |

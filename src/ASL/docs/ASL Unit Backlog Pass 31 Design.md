@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 31 Design
 
-**Status:** Pass 31 is built, reviewed, and checked in the Studio (2026-10-04, branch `feature/asl-backlog-pass-31`); section 14 says what was built and where it differs, and the [review document](<Scenario A1 Backlog Pass 31 Review 2026-10-04.md>) has the reviews. Pass 31b is designed here (section 5) and not started. Approved by the user on 2026-10-04 with the answers of section 12. Pass 31 (Play-test UI) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, added by the user on 2026-10-04.
+**Status:** Pass 31 is built, reviewed, and checked in the Studio (2026-10-04, branch `feature/asl-backlog-pass-31`); section 14 says what was built and where it differs, and the [review document](<Scenario A1 Backlog Pass 31 Review 2026-10-04.md>) has the reviews. What was pass 31b is designed here (section 5) and not started; on 2026-10-04 the user gave the number 31b to the Replay page ([its design](<ASL Unit Backlog Pass 31b Design.md>)), so section 5 is now pass 31c, and where this document says "pass 31b" or "31b.N" of that work, read 31c. Approved by the user on 2026-10-04 with the answers of section 12. Pass 31 (Play-test UI) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, added by the user on 2026-10-04.
 
 **Date:** 2026-10-04
 
