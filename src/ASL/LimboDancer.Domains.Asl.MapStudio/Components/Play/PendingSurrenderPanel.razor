@@ -1,20 +1,27 @@
 @* Plan C09 (pass 27): a unit that has surrendered (A15.5) waits on the captor's side: a Guard takes it, the side rejects the surrender with No
    Quarter (A20.3), or frees it as Unarmed when no captor can guard it (A20.21), which is not a rejection. The page passes the captors only to the
    captor's side's view and the adjudicator. *@
-<p class="fail" data-surrender="@Unit">
-    @Unit has surrendered (A15.5); the captor's side chooses the Guard, or rejects the surrender (A20.3), before anything else happens.
+@* Pass 31c (the user, 2026-10-04): the units are said by name, and each answer is a button on its own line. *@
+<div class="pending-surrender" data-surrender="@Unit">
+    <p class="fail">@Say(Unit) has surrendered (A15.5); the captor's side chooses the Guard, or rejects the surrender (A20.3), before anything else happens.</p>
     @if (MayAnswer)
     {
         @foreach (var captor in Captors)
         {
-            <button class="take-prisoner" data-captor="@captor" @onclick="@(() => OnTake.InvokeAsync(captor))">Propose: @captor takes @Unit</button>
+            <button class="take-prisoner" data-captor="@captor" @onclick="@(() => OnTake.InvokeAsync(captor))">Propose: @Say(captor) takes it prisoner</button>
         }
         <button class="reject-surrender" data-unit="@Unit" @onclick="@(() => OnReject.InvokeAsync())">Propose: reject the surrender (No Quarter)</button>
         <button class="free-surrender" data-unit="@Unit" @onclick="@(() => OnFree.InvokeAsync())">Propose: free it as Unarmed (no captor can guard it; A20.21)</button>
     }
-</p>
+</div>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>The unit that surrendered.</summary>
     [Parameter, EditorRequired]
     public string Unit { get; set; } = string.Empty;

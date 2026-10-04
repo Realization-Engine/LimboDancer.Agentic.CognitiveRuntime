@@ -2770,6 +2770,27 @@ main :is(.toolbar, .fields, .field-group, .form-grid) > * {
     text-align: left;
 }
 
+/* Pass 31c (the user, 2026-10-04): a button whose label wraps grows with it, so the text stays inside its border. */
+.play-pane button:not(.link):not(.tab) {
+    height: auto;
+    min-height: 2.1rem;
+    padding-block: 0.3rem;
+    line-height: 1.3;
+}
+
+/* A surrender's answers, one to a line under its sentence. */
+.pending-surrender {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+    margin-bottom: 0.75rem;
+}
+
+.pending-surrender > p {
+    margin: 0;
+}
+
 /* ---- Pass 31c: a workspace that holds still (design D15; play test P-28, P-29, P-31) -------------------------------------------------- */
 
 /* The context's row of actions and its status line keep their places whether or not they hold anything, and a long status is cut on one

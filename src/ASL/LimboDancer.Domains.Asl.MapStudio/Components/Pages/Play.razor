@@ -430,7 +430,7 @@ else if (state is not null)
                         <span class="toolbar-note">Hidden units (HIP): each is placed beneath a "?" before it moves or advances, or whenever its side chooses (A12.32; ruling R23.5).</span>
                         @foreach (var unit in hiddenUnits)
                         {
-                            <button class="place-hidden" data-unit="@unit.Id" @onclick="@(() => ProposePlaceHidden(unit.Id))">Propose: place @unit.Id at @state.Location(unit.Id)!.Location beneath "?"</button>
+                            <button class="place-hidden" data-unit="@unit.Id" @onclick="@(() => ProposePlaceHidden(unit.Id))">Propose: place @Words(unit.Id) in @PlaceOf(state.Location(unit.Id)!.Location) beneath "?"</button>
                         }
                     </div>
                 }
@@ -647,7 +647,7 @@ else if (state is not null)
                         <span class="muted">Massacre (A20.4): a Russian or berserk unit eliminates a prisoner in its Location, as if using a SW; the prisoner's side is faced with No Quarter.</span>
                         @foreach (var (unit, prisoner) in massacres)
                         {
-                            <button class="massacre" data-unit="@unit.Id" data-prisoner="@prisoner.Id" @onclick="@(() => ProposeMassacre(unit.Id, prisoner.Id))">Propose: @unit.Id massacres @prisoner.Id</button>
+                            <button class="massacre" data-unit="@unit.Id" data-prisoner="@prisoner.Id" @onclick="@(() => ProposeMassacre(unit.Id, prisoner.Id))">Propose: @Words(unit.Id) massacres @Words(prisoner.Id)</button>
                         }
                     </div>
                 }
@@ -4324,14 +4324,19 @@ else if (state is not null)
     {
         var outs = rows.Where(row => row.Out).ToArray();
         var longs = rows.Where(row => row.Band == FireRangeBand.LongRange).ToArray();
+        var pointBlank = rows.Where(row => row.Band == FireRangeBand.PointBlank).ToArray();
+
+        // A unit kept from a target by its own kind of fire (A8.3, A8.31, A8.4) is not out of range; the words say so.
+        var barred = outs.Any(row => row.Band is not (FireRangeBand.Out or FireRangeBand.SameHexOtherLevel)) ? "no fire there" : "out of range";
         var band = rows.Count == 0 ? null
-            : outs.Length == rows.Count ? "out of range"
-            : outs.Length == 1 ? $"out of range for {outs[0].Name}"
-            : outs.Length > 1 ? $"out of range for {outs.Length} of {rows.Count}"
+            : outs.Length == rows.Count ? barred
+            : outs.Length == 1 ? $"{barred} for {outs[0].Name}"
+            : outs.Length > 1 ? $"{barred} for {outs.Length} of {rows.Count}"
             : longs.Length == rows.Count ? "Long Range"
             : longs.Length > 0 ? $"Long Range for {longs.Length} of {rows.Count}"
             : rows.All(row => row.Band == FireRangeBand.TriplePointBlank) ? "TPBF"
-            : rows.All(row => row.Band == FireRangeBand.PointBlank) ? "PBF"
+            : pointBlank.Length == rows.Count ? "PBF"
+            : pointBlank.Length > 0 ? $"PBF for {pointBlank.Length} of {rows.Count}"
             : "Normal Range";
         return hexes == 0 ? band ?? "the same hex" : band is null ? Hexes(hexes) : $"{Hexes(hexes)}, {band}";
     }
@@ -4891,7 +4896,9 @@ else if (state is not null)
     /// in Melee, a prisoner, or a Guard (A15.432, A11.15, A20.5, A20.52); and not spent for this phase (A7.1, A8.4), as the planner and
     /// the Fire package read it.
     /// </summary>
-    private bool MayFire(UnitInstance unit) => state is not null && unit.Kind != "asl:crew" && GamePlanner.FireBar(state, unit) is null && !LiveFire.FireSpent(state, unit)
+    // Pass 31c (the third play test): a broken unit is not offered as a firer; the Fire package refuses a group that holds one.
+    private bool MayFire(UnitInstance unit) => state is not null && unit.Kind != "asl:crew" && GameState.Condition(unit, Conditions.Broken) != ConditionState.True
+        && GamePlanner.FireBar(state, unit) is null && !LiveFire.FireSpent(state, unit)
         && (!LiveFire.IsVehicle(unit) || (GamePlanner.HasVehicleMg(unit) && LiveFire.CrewExposed(unit)));
 
     private IEnumerable<UnitInstance> FireGroupAt(string side) => state is null || fireFrom.Length == 0 ? []
