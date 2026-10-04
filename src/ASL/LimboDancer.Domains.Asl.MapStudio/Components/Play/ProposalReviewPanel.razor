@@ -2,14 +2,27 @@
    and the evidence; the parent keeps the attempt, the revision, the withholding, and the execution. *@
 <div id="play-proposal">
     <h3>@Title</h3>
-    <p class="@(Accepted ? "pass" : "fail")">
+    <p class="@(Accepted && Consequences.Count == 0 ? "pass" : "fail")">
         <strong id="play-outcome">@Outcome</strong>
     </p>
+    @* Pass 31 (play test P-06, P-12, P-13): what the proposal does beyond its checks comes before Confirm, apart from the routine reasons. *@
+    @if (Consequences.Count > 0)
+    {
+        <div id="play-consequences" class="diagnostic warning" role="alert">
+            <strong>Read this before you confirm.</strong>
+            <ul>
+                @foreach (var line in Consequences)
+                {
+                    <li>@line</li>
+                }
+            </ul>
+        </div>
+    }
     @* Table player, pass 29: Confirm and Cancel come right after the outcome, so a long list of reasons never pushes them out of a short pane. *@
     @if (CanConfirm)
     {
         <div class="toolbar" id="play-proposal-actions">
-            <button id="play-confirm" disabled="@Busy" @onclick="Confirm">@(Busy ? "Confirming" : "Confirm")</button>
+            <button id="play-confirm" disabled="@Busy" @onclick="Confirm">@(Busy ? "Confirming" : ConfirmLabel)</button>
             <button id="play-cancel" class="link" disabled="@Busy" @onclick="Cancel">Cancel</button>
         </div>
     }
@@ -37,6 +50,14 @@
     /// <summary>The reasons the view may read.</summary>
     [Parameter]
     public IReadOnlyList<string> Reasons { get; set; } = [];
+
+    /// <summary>What the proposal does beyond its checks: units lost, the game ended, own units hit, a shot wasted (pass 31).</summary>
+    [Parameter]
+    public IReadOnlyList<string> Consequences { get; set; } = [];
+
+    /// <summary>The Confirm button's words; they say what a proposal with consequences does.</summary>
+    [Parameter]
+    public string ConfirmLabel { get; set; } = "Confirm";
 
     /// <summary>What the proposal does, in the page's words, said before the gate's reasons (pass 30: a setup's review).</summary>
     [Parameter]

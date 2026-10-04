@@ -526,7 +526,10 @@ public sealed partial class GamePlanner
                 + (lane is { } declared ? $"; a Fire Lane of {declared.Weapon} to {declared.Entries[^1].Location} (A9.22)" : string.Empty)
                 + (blockedFirst is not null ? "; the firers whose LOS is blocked fire first and drop out (A6.11, A7.52)" : string.Empty)
                 + (encircles is not null ? $"; this attack Encircles the {encircles} units at {facts.TargetLocationId} (A7.7)" : string.Empty)
-                + (mol is not null ? $"; {mol} makes a MOL Check first: a dr of 3 or less after its drm adds four FP (A22.611)" : string.Empty)])
+                + (mol is not null ? $"; {mol} makes a MOL Check first: a dr of 3 or less after its drm adds four FP (A22.611)" : string.Empty),
+
+                // Pass 31 (play test P-12, P-13): a shot with no LOS, or one that also hits the firing side's own units, is said before it is confirmed.
+                .. FireWarnings(state, facts)])
         {
             Roll = new PlannedRoll("fire", Build),
             FirstEventId = EventId(attemptId, 1),

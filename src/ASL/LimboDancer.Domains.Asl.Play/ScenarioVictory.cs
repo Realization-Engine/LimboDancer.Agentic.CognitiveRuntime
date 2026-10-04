@@ -53,7 +53,23 @@ public sealed record VictorySide(string Side, int Cvp, int ExitVp, double Unbrok
 /// The Victory Conditions read against a game (rulings R21.1 to R21.4): the Control of what they name, each side's standing, the result an immediate
 /// condition gives now (null when none holds), and the result the game has at its end.
 /// </summary>
-public sealed record VictoryReport(IReadOnlyList<VictoryControl> Control, IReadOnlyList<VictorySide> Sides, GameResult? Immediate, GameResult AtEnd);
+public sealed record VictoryReport(IReadOnlyList<VictoryControl> Control, IReadOnlyList<VictorySide> Sides, GameResult? Immediate, GameResult AtEnd)
+{
+    /// <summary>
+    /// Pass 31 (play test P-08): every condition of the card with whether it holds and why, in the card's order, so a result can be read from its
+    /// conditions and not only from the one that decided it.
+    /// </summary>
+    public IReadOnlyList<VictoryConditionLine> Conditions { get; init; } = [];
+
+    /// <summary>The winner when no condition holds: a side, or null for a draw.</summary>
+    public string? Otherwise
+    {
+        get; init;
+    }
+}
+
+/// <summary>One Victory condition read against a game: the side it wins for ("draw" for a draw), whether it ends the game at once, whether it holds, and why.</summary>
+public sealed record VictoryConditionLine(string Winner, bool Immediate, bool Holds, string Text);
 
 /// <summary>
 /// What the planner adds to a reading of the Victory Conditions (pass 24, rulings R24.1, R24.6): the levels of a hex's Locations, and the Control fold
@@ -183,7 +199,16 @@ public static class ScenarioVictory
 
         var atEnd = Decide(false) ?? new GameResult(otherwise == "draw" ? null : otherwise,
             otherwise == "draw" ? "no Victory Condition holds" : "no Victory Condition of the other side holds (A26.3)", Facts(control, standing));
-        return new VictoryReport([.. control.Values], standing, Decide(true), atEnd);
+        VictoryConditionLine[] lines = [.. outcomes.SelectMany(outcome => outcome.Any.Select(condition =>
+        {
+            var reason = Holds(card, condition, control, standing, present);
+            return new VictoryConditionLine(outcome.Winner, outcome.Immediate, reason is not null, reason ?? NotMet(card, condition, control, standing, present));
+        }))];
+        return new VictoryReport([.. control.Values], standing, Decide(true), atEnd)
+        {
+            Conditions = lines,
+            Otherwise = otherwise == "draw" ? null : otherwise,
+        };
     }
 
     /// <summary>
@@ -533,6 +558,37 @@ public static class ScenarioVictory
                 return mine.Cvp >= condition.AtLeast ? $"{condition.Side} has {mine.Cvp} CVP, at least {condition.AtLeast} (A26.22)" : null;
             default:
                 return null;
+        }
+    }
+
+    /// <summary>Pass 31 (play test P-08): why a condition does not hold, with the same numbers its reason would give.</summary>
+    private static string NotMet(ScenarioCard card, ScenarioCardCondition condition, Dictionary<string, VictoryControl> control, IReadOnlyList<VictorySide> standing,
+        GameState present)
+    {
+        var other = card.Sides.First(side => side.Side != condition.Side).Side;
+        var mine = standing.Single(item => item.Side == condition.Side);
+        var theirs = standing.Single(item => item.Side == other);
+        switch (condition.Type)
+        {
+            case "control-margin":
+                var held = condition.Buildings!.Count(id => control[id].Side == condition.Side);
+                var lost = condition.Versus!.Count(id => control[id].Side == other);
+                return $"{condition.Side} Controls {held} of {string.Join(", ", condition.Buildings!)} and {other} {lost} of {string.Join(", ", condition.Versus!)}, a margin of {held - lost}, short of {condition.Margin} (A26.14)";
+            case "control-count":
+                var hexes = ScenarioCards.BuildingHexes(card, condition.Building!)!;
+                var melee = condition.MeleeUncontrolled == true ? hexes.Where(hex => InMelee(present, hex)).ToHashSet() : [];
+                var count = hexes.Count(hex => !melee.Contains(hex) && control[HexId(hex)].Side == condition.Side);
+                return $"{condition.Side} Controls {count} hexes of building {condition.Building}, short of {condition.AtLeast} (A26.13)";
+            case "squad-ratio":
+                return $"{condition.Side} has {Number(mine.UnbrokenSquads)} unbroken squad-equivalents against {Number(theirs.UnbrokenSquads)}, short of {Number(condition.Ratio!.Value)} times as many";
+            case "sole-unbroken":
+                return $"{condition.Side} is not the only side with an unbroken unit in building {condition.Building}";
+            case "exit-vp":
+                return $"{condition.Side} has exited {mine.ExitVp} Exit VP off the {condition.Edge} edge near {string.Join(", ", condition.Near!)}, short of {condition.AtLeast} (A26.23)";
+            case "cvp":
+                return $"{condition.Side} has {mine.Cvp} CVP, short of {condition.AtLeast} (A26.22)";
+            default:
+                return $"a condition of a kind the game does not read ({condition.Type})";
         }
     }
 

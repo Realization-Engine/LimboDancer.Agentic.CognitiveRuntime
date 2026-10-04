@@ -32,6 +32,7 @@
 }
 
 <PlayContextHeader Summary="@ContextSummary" Revision="@(state is not null && history?.Current is not null ? state.Revision : null)" Acting="@ActingNote" Busy="@busy" Live="@(state is null || history is null ? null : history.Current is not null)" Ended="@(state?.Ended is not null)"
+                   Result="@ResultTitle" ResultReason="@ResultReason" ResultWhy="@ResultWhy"
                    Conditions="@(state is null ? null : NightAndWeather(state))" HasCard="@(state?.Scenario is not null && handOver is null)" CardChanged="@(state?.Scenario is { } changedCard && !Live.Cards.Matches(changedCard.Id, changedCard.Sha256))"
                    PendingTitle="@(handOver is null ? pending?.Action.Name : null)" Review="@FocusReview" Awaiting="@(AwaitingView is { } awaited ? ViewLabel(awaited) : null)"
                    AwaitingNote="@AwaitingNote" HandOver="@HandOverToAwaiting" Status="@status" OpenCard="@OpenCard">
@@ -222,7 +223,9 @@
         @if (pending is { } proposal)
         {
             <ProposalReviewPanel Title="@proposal.Action.Name" Accepted="@(proposal.Result.Outcome is PlayOutcome.NeedsConfirmation or PlayOutcome.Committed or PlayOutcome.Replay)"
-                                 Outcome="@OutcomeText(proposal.Result.Outcome, Withheld(proposal))" Reasons="@([.. ReviewReasons(proposal)])"
+                                 Outcome="@(ConsequencesOf(proposal).Count > 0 ? "Every check passed, but this proposal has consequences." : OutcomeText(proposal.Result.Outcome, Withheld(proposal)))"
+                                 Reasons="@([.. ReviewReasons(proposal).Where(reason => GamePlanner.ConsequenceOf(reason) is null || proposal.Result.Outcome != PlayOutcome.NeedsConfirmation)])"
+                                 Consequences="@([.. ConsequencesOf(proposal).Select(item => Sentence(item.Text))])" ConfirmLabel="@ConfirmLabel(ConsequencesOf(proposal))"
                                  CanConfirm="@(proposal.Result.Outcome == PlayOutcome.NeedsConfirmation)" Busy="@busy" Confirm="Confirm" Cancel="@CancelProposal">
                 <Lead>
                     @if (PlacesCounters(proposal) && setupReview is { } summary)
@@ -327,7 +330,18 @@ else if (state is not null)
             {
                 @* Ruling R20.1: nothing happens in a game that has ended, so the page offers no action; its records, units, and map stay. *@
                 <h3>Play</h3>
-                <p id="play-over" class="muted">The game is over: its result is above, and no more actions are proposed (A3.9; ruling R20.1).</p>
+                <p id="play-over" class="muted">The game is over, and no more actions are proposed (A3.9; ruling R20.1).</p>
+                @* Pass 31 (play test P-08): the result stands here too, with the account of every condition. *@
+                <p id="play-over-result"><strong>@ResultTitle</strong> @ResultReason</p>
+                @if (ResultWhy.Count > 0)
+                {
+                    <ul id="play-over-why">
+                        @foreach (var line in ResultWhy)
+                        {
+                            <li>@line</li>
+                        }
+                    </ul>
+                }
             }
             else if (state is not null && history?.Current is not null && !(SetupOpen && SetupView is not null && SetupIncomplete))
             {
@@ -442,6 +456,13 @@ else if (state is not null)
                         @if (state.Movement is { } movement)
                         {
                             <MovementStatus Movement="@movement" />
+                        }
+                        @if (MoveStopped)
+                        {
+                            <p class="fail" id="move-stopped">
+                                The move stopped: Defensive First Fire broke, pinned, or eliminated every unit of the moving stack. The DEFENDER may fire at it again or
+                                pass; the pass ends this move, and then another stack may move (A4.2, A8.1).
+                            </p>
                         }
                         @foreach (var (charging, target, next, undecided) in Charges)
                         {
@@ -608,7 +629,14 @@ else if (state is not null)
                     {
                         <h4>Defensive First Fire</h4>
                         <div class="toolbar" id="dff-window">
-                            <span class="toolbar-note" id="dff-note">The moving stack is at @DisplayText.Location(movingAt): fire at it below, or pass (A8.1).</span>
+                            @if (MoveStopped)
+                            {
+                                <span class="toolbar-note" id="dff-note">No member of the moving stack at @DisplayText.Location(movingAt) can move on: each is broken, pinned, or eliminated. Fire at it again below, or pass, which ends its move (A8.1, A4.2).</span>
+                            }
+                            else
+                            {
+                                <span class="toolbar-note" id="dff-note">The moving stack is at @DisplayText.Location(movingAt): fire at it below, or pass (A8.1).</span>
+                            }
                             <button type="button" id="dff-show" @onclick="@(() => LocateHex(movingAt))">Show it on the map</button>
                             <button id="propose-pass" @onclick='@(() => ProposeSimple(GameActions.PassFire, "pass"))'>Propose: the DEFENDER passes</button>
                         </div>
@@ -6104,6 +6132,24 @@ else if (state is not null)
 
     private static string Attempt(string kind) => $"{kind}-{Guid.NewGuid():N}"[..(kind.Length + 13)];
 
+    /// <summary>
+    /// Pass 31 (play test P-06, P-12, P-13): the consequences among the reasons the view may read, while the proposal waits for Confirm. They are
+    /// taken from the reasons already disclosed to the view, so nothing more is shown than the reasons themselves would show.
+    /// </summary>
+    private IReadOnlyList<PlanConsequence> ConsequencesOf(Proposal proposal) => proposal.Result.Outcome != PlayOutcome.NeedsConfirmation ? []
+        : [.. ReviewReasons(proposal).Select(GamePlanner.ConsequenceOf).OfType<PlanConsequence>()];
+
+    /// <summary>The Confirm button's words for a proposal with consequences: the gravest kind is named.</summary>
+    private static string ConfirmLabel(IReadOnlyList<PlanConsequence> consequences)
+    {
+        var losses = consequences.Count(item => item.Kind == ConsequenceKind.Loss);
+        return losses > 0 ? $"Confirm and lose {losses} {(losses == 1 ? "unit" : "units")}"
+            : consequences.Any(item => item.Kind == ConsequenceKind.End) ? "Confirm and end the game"
+            : consequences.Any(item => item.Kind == ConsequenceKind.OwnUnits) ? "Confirm and fire on your own units"
+            : consequences.Any(item => item.Kind == ConsequenceKind.Waste) ? "Confirm the shot with no LOS"
+            : "Confirm";
+    }
+
     private static string OutcomeText(PlayOutcome outcome, bool withheld) => outcome switch
     {
         PlayOutcome.NeedsConfirmation when withheld => "The entry is declared. Confirm to commit it and resolve what it finds.",
@@ -6178,8 +6224,29 @@ else if (state is not null)
 
     /// <summary>The context line: the revision, turn, phase, and phasing side, and whether setup is open; null with no game shown.</summary>
     private string? ContextSummary => state is null || history is null ? null
-        : (history.Current is not null ? string.Empty : "The game does not replay: ") + $"Turn {state.Turn}, {DisplayText.Side(state.PhasingSide)} {Games.PhaseLabel(state.Phase)}."
+        : (history.Current is not null ? string.Empty : "The game does not replay: ") + $"Turn {state.Turn}{TurnsText}, {DisplayText.Side(state.PhasingSide)} {Games.PhaseLabel(state.Phase)}."
             + (SetupOpen ? " Setup is open." : state.Ended is not null ? " The game has ended; nothing more is played." : string.Empty);
+
+    /// <summary>Pass 31 (play test P-08): the card's count of Game Turns beside the turn, and a word when the turn is the last (A3.9; ruling R20.1).</summary>
+    private string TurnsText => state?.Scenario is { } scenario && CardRead(scenario.Id)?.Card?.Turns is { } turns
+        ? $" of {turns.Count}" + (state.Ended is null && state.Turn >= turns.Count ? turns.HalfTurn ? " (the last turn, one Player Turn)" : " (the last turn)" : string.Empty)
+        : string.Empty;
+
+    /// <summary>Pass 31 (play test P-08; the user, 2026-10-04): the ended game's result in a few words; null while the game is played.</summary>
+    private string? ResultTitle => state?.Ended is not { } ended ? null
+        : ended.Result is not { } result ? "The game has ended with no result decided."
+        : result.Winner is { } winner ? $"{DisplayText.Side(winner)} win." : "A draw.";
+
+    private string? ResultReason => state?.Ended is not { } ended ? null
+        : ended.Result is { } result ? Sentence(result.Reason)
+        : "This card's Victory Conditions are text only, so the game does not decide the result; read them on the card (A26).";
+
+    /// <summary>Every Victory condition with whether it was met, then the facts the result rests on.</summary>
+    private IReadOnlyList<string> ResultWhy => state?.Ended is not { Result: { } result } ? []
+        : [.. (VictoryNow?.Conditions ?? []).Select(line => $"{(line.Holds ? "Met" : "Not met")}: {(line.Winner == "draw" ? "a draw" : $"{DisplayText.Side(line.Winner)} wins")} when {line.Text}."),
+            .. result.Facts.Select(Sentence)];
+
+    private static string Sentence(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..] + (text.EndsWith('.') ? string.Empty : ".");
 
     /// <summary>
     /// The side whose answer or turn the game waits for, when it is not the shown view (backlog section 37): a choice's side, a surrender's captors,
@@ -6206,7 +6273,18 @@ else if (state is not null)
         || AwaitingView is not null ? null : $"You act: {Awaiting(state).Note}";
 
     /// <summary>Where the moving stack is, which the DEFENDER sees as units or a "?" (A8.1); null when no stack moves.</summary>
-    private BoardLocation? MovingAt => state?.Movement is { Members: [var first, ..] } ? state.Location(first)?.Location : null;
+    private BoardLocation? MovingAt => state?.Movement switch
+    {
+        { Members: [var first, ..] } => state.Location(first)?.Location,
+
+        // Pass 31 (play test P-01; ruling R25.7): fire that broke, pinned, or eliminated every mover leaves the window open at the stack's Location, so
+        // the DEFENDER still fires at it or passes, and the pass ends the move.
+        { WindowOpen: true } stopped => stopped.Location,
+        _ => null,
+    };
+
+    /// <summary>Pass 31 (play test P-01): the moving stack has no member left able to move, and the DEFENDER's window on it is still open.</summary>
+    private bool MoveStopped => state?.Movement is { WindowOpen: true, Members.Count: 0 };
 
     private (string? Side, string Note) Awaiting(GameState shown)
     {

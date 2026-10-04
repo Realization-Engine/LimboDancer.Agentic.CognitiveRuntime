@@ -318,7 +318,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
                 {
                     Events = WithImmediateVictory(scope, attemptId, expected, existing, plan.Events)
                 };
-            if (plan.Roll is null && plan.Events.Count > 0 && plan.Events[^1].Payload is GameEnded { Result: { } won } && won.Reason.Length > 0)
+            if (plan.Roll is null && plan.Events.Count > 0 && plan.Events[^1].Payload is GameEnded { Reason: "victory", Result: { } won } && won.Reason.Length > 0)
             {
                 plan = plan with
                 {

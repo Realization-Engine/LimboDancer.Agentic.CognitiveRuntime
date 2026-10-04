@@ -39,6 +39,20 @@
         }
     </tbody>
 </table>
+@* Pass 31 (play test P-08): every condition of the card, held or not, with its numbers, so the result is read from the conditions themselves. *@
+@if (Report.Conditions.Count > 0)
+{
+    <ul id="play-victory-account" class="victory-account">
+        @foreach (var line in Report.Conditions)
+        {
+            <li data-holds="@line.Holds.ToString()" data-winner="@line.Winner">
+                <strong>@(line.Holds ? "Met" : "Not met")@(line.Immediate ? ", ends the game at once" : string.Empty):</strong>
+                @(line.Winner == "draw" ? "a draw" : $"{DisplayText.Side(line.Winner)} wins") when @line.Text.
+            </li>
+        }
+        <li data-otherwise="true">With no condition met, @(Report.Otherwise is { } otherwise ? $"{DisplayText.Side(otherwise)} wins" : "the game is a draw") (A26.3).</li>
+    </ul>
+}
 @* Pass 25 (the user, after the pass 24 demo): the note shows only when a Location row is listed. *@
 @if (ScenarioVictory.DifferingLocations(Report.Control).Any())
 {
