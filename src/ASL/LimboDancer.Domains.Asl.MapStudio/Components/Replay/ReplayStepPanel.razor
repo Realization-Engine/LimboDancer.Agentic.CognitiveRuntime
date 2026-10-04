@@ -7,6 +7,10 @@
     {
         <p id="replay-step-part" class="diagnostic">This view reads only part of this step: the rest is the other side's to know.</p>
     }
+    else if (Step.Read == ReplayRead.None)
+    {
+        <p id="replay-step-part" class="diagnostic">This view reads nothing of this step but what it sees change on the map, as it would at the table.</p>
+    }
     @if (Changes.Count > 0)
     {
         <h4>What changed</h4>

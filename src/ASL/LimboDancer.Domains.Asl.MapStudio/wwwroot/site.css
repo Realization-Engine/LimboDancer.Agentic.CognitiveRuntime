@@ -2441,6 +2441,12 @@ details.advanced > summary {
     }
 }
 
+/* The inspector holds six tabs here, which wrap in a narrow pane rather than run out of it. */
+.play-workspace.replay .tabs {
+    flex-wrap: wrap;
+    gap: 0 0.9rem;
+}
+
 .replay-timeline,
 .replay-timeline ol {
     margin: 0;

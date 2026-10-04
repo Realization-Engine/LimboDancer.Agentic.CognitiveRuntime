@@ -44,13 +44,16 @@ export function revealStep(id) {
         const box = element.getBoundingClientRect();
         const frame = pane.getBoundingClientRect();
         if (box.top < frame.top || box.bottom > frame.bottom) {
-            pane.scrollTo({ top: pane.scrollTop + box.top - frame.top - frame.height / 3, behavior: reduce ? "auto" : "smooth" });
+            // A step far away is shown at once: a glide over many screens takes seconds.
+            const far = Math.abs(box.top - frame.top) > 2 * frame.height;
+            pane.scrollTo({ top: pane.scrollTop + box.top - frame.top - frame.height / 3, behavior: reduce || far ? "auto" : "smooth" });
         }
     } else {
         // Under 1024px the pane is as tall as its steps and the page scrolls.
         const box = element.getBoundingClientRect();
         if (box.top < 0 || box.bottom > window.innerHeight) {
-            element.scrollIntoView({ block: "center", behavior: reduce ? "auto" : "smooth" });
+            const far = Math.abs(box.top) > 2 * window.innerHeight;
+            element.scrollIntoView({ block: "center", behavior: reduce || far ? "auto" : "smooth" });
         }
     }
 

@@ -97,7 +97,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
                     <p class="muted" id="replay-standing-none">This game has no Victory standing to read: its card has no structured Victory Conditions, has changed since the game started, or play had not started at this step.</p>
                 }
             </div>;
-            RenderFragment stepBlock = @<ReplayStepPanel Step="@step" Count="@timeline.Steps.Count" When="@StepWhen(step)" Rolls="@(records?.RollsIn(step.First, step.Last) ?? [])"
+            RenderFragment stepBlock = @<ReplayStepPanel Step="@step" Count="@timeline.Steps.Count" When="@StepWhen(step)" Changes="@ChangeLines" Rolls="@(records?.RollsIn(step.First, step.Last) ?? [])"
                 Fire="@InStep(records?.Fire, step, fire => fire.EventId)" Ordnance="@Entries(records?.Ordnance, step, "ordnance")" CloseCombat="@Entries(records?.CloseCombat, step, "cc")"
                 Night="@Entries(records?.Night, step, "night")" Snipers="@Entries(records?.Snipers, step, "sniper")"
                 Actions="@([.. InStep(records?.RallyAndRepair, step, item => item.EventId).Select(item => new ActionRecordList.Entry(item.EventId, item.Kind, item.Text))])" />;
@@ -115,7 +115,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
         }
         @if (layers.Board is { } mapBoard)
         {
-            <BoardWorkspace @key="@($"{gameId}/{viewAs}")" @ref="workspace" Board="@mapBoard" Units="@layers.Overlay" UnitView="@layers.View" Marks="@layers.Marks" Vocabulary="@Library.Vocabulary"
+            <BoardWorkspace @key="@($"{gameId}/{viewAs}")" @ref="workspace" Board="@mapBoard" Units="@layers.Overlay" UnitView="@layers.View" Marks="@layers.Marks" Vocabulary="@Library.Vocabulary" OnLoaded="@RevealOnMap"
                             Selected="@(highlight is { } picked ? GameMaps.FactsAt(mapBoard, picked) : null)"
                             SelectedChanged="@(facts => highlight = facts is null ? null : GameMaps.LocationOf(mapBoard, facts.Index))"
                             @bind-Panel="inspectorTab" Extras="@([new BoardInspector.ExtraTab(new("step", "Step"), stepBlock), new BoardInspector.ExtraTab(new("units", "Units"), unitsBlock, Last: true), new BoardInspector.ExtraTab(new("standing", "Standing"), standingBlock, Last: true)])"
@@ -132,7 +132,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
                         <button type="button" id="replay-map-zoom-out" aria-label="Zoom out" @onclick="@(() => workspace!.Zoom(1.25))">-</button>
                         <button type="button" id="replay-map-fit" @onclick="@(() => workspace!.Fit())">Fit</button>
                         <button type="button" id="replay-map-rotate" aria-pressed="@(workspace?.Rotated == true ? "true" : "false")" @onclick="@(() => workspace!.ToggleRotation())">Rotate map</button>
-                        <span class="muted" id="replay-map-keys">Drag to pan. With the map focused, + and - zoom and 0 fits. Click a hex or a counter to inspect it.</span>
+                        <span class="muted" id="replay-map-legend">This step: a blue arrow is a move, a red dashed arrow is fire, an amber outline is another change.</span>
                     </div>
                 </Toolbar>
             </BoardWorkspace>
@@ -215,6 +215,12 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
     {
         // The page follows the address only when the address itself has changed (Back, or a typed address): a render that still carries the values
         // of the address before the page's own move must not pull the step back.
+        // Another layout draws the panes anew, so the step shown is brought into view again.
+        if (narrow != wasNarrow)
+        {
+            (wasNarrow, revealed) = (narrow, 0);
+        }
+
         var (stepChanged, viewChanged) = (StepQuery != seenStep, ViewQuery != seenView);
         (seenStep, seenView) = (StepQuery, ViewQuery);
         if ((GameQuery ?? string.Empty) != gameId)
@@ -236,6 +242,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
     }
 
     // The step and the view of the address as last read.
+    private bool wasNarrow;
     private int? seenStep;
     private string? seenView;
 
@@ -251,7 +258,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
     private void Load(string game)
     {
         (gameId, highlight, handOver, records, revealed) = (game, null, null, null, 0);
-        (viewCache, mapCache, standingCache, unitCache) = (default, default, default, default);
+        (viewCache, mapCache, standingCache, unitCache, changeCache) = (default, default, default, default, default);
         entry = game.Length == 0 ? null : GamesLibrary.Load(GameLibrary.LivePrefix + game);
         history = entry?.History;
         if (history?.Current is not { } current)
@@ -310,7 +317,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
     {
         var moment = viewAs.Length > 0 ? StepNow?.Last : null;
         (viewAs, highlight) = (next, null);
-        (viewCache, mapCache, standingCache, unitCache) = (default, default, default, default);
+        (viewCache, mapCache, standingCache, unitCache, changeCache) = (default, default, default, default, default);
 
         // The inspector opens on the step again, so nothing the last view picked stays in sight.
         inspectorTab = "step";
@@ -327,7 +334,9 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
     // The steps are the view's own: read from the events it is entitled to at the game's last revision (design D6).
     private void Read(int? step)
     {
-        timeline = history?.Current is { } current ? ReplaySteps.Read(history, GamesLibrary.ViewOf(history, current.Revision, Viewer)) : ReplayTimeline.Empty;
+        var (game, viewer) = (history, Viewer);
+        timeline = game?.Current is { } current ? ReplaySteps.Read(game, GamesLibrary.ViewOf(game, current.Revision, viewer), revision => GamesLibrary.ViewOf(game, revision, viewer))
+            : ReplayTimeline.Empty;
         records = history?.Current is { } now ? new PlayRecords(history, Viewer, now.Revision) : null;
         stepNumber = Math.Clamp(step ?? timeline.Steps.Count, 1, Math.Max(1, timeline.Steps.Count));
     }
@@ -426,10 +435,57 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
 
             if (mapCache.Layers is null || mapCache.Revision != step.Last || mapCache.Viewer != viewAs)
             {
-                mapCache = (step.Last, viewAs, GameMaps.Layers(entry, state.Map, Viewer, step.Last, null, state.ResidualFire));
+                var (changes, fires) = (ChangesNow, step.Fires);
+                mapCache = (step.Last, viewAs, GameMaps.Layers(entry, state.Map, Viewer, step.Last, board => ReplayDiff.Marks(board, changes, fires), state.ResidualFire));
             }
 
             return mapCache.Layers;
+        }
+    }
+
+    private (long Revision, string Viewer, IReadOnlyList<ReplayChange>? Changes) changeCache;
+
+    /// <summary>
+    /// What the view saw change over the step shown (design D4): the difference between the view just before the step and the view after it, with
+    /// the step's events the view is entitled to. It reads two views and never the full state.
+    /// </summary>
+    private IReadOnlyList<ReplayChange> ChangesNow
+    {
+        get
+        {
+            if (ViewNow is not { } after || StepNow is not { } step || history is null)
+            {
+                return [];
+            }
+
+            if (changeCache.Changes is null || changeCache.Revision != step.Last || changeCache.Viewer != viewAs)
+            {
+                changeCache = (step.Last, viewAs, ReplayDiff.Of(step.First > 1 ? GamesLibrary.ViewOf(history, step.First - 1, Viewer) : null, after,
+                    [.. after.Events.Where(item => item.Revision >= step.First)]));
+            }
+
+            return changeCache.Changes!;
+        }
+    }
+
+    /// <summary>The lines of what changed, with a word when the step starts play and so opens the stacks to inspection (A2.9; ruling R23.3).</summary>
+    private IReadOnlyList<string> ChangeLines => StepNow is { } step && history is not null && !Viewer.IsAdjudicator
+        && history.At(step.First - 1) is { SetupClosed: false } && history.At(step.Last) is { SetupClosed: true }
+            ? ["Play starts with this step: a stack not under \"?\" may now be inspected, so its counters come into this view (A2.9).", .. ReplayDiff.Lines(ChangesNow)]
+            : ReplayDiff.Lines(ChangesNow);
+
+    /// <summary>The step's first Location is brought into view on the map when it is out of sight; otherwise the map holds still (design D4).</summary>
+    private async Task RevealOnMap()
+    {
+        if (workspace is null || StepNow is not { } step || MapLayers?.Board is not { } board)
+        {
+            return;
+        }
+
+        var at = ChangesNow.Select(change => change.At).OfType<BoardLocation>().Concat(step.Locations).FirstOrDefault();
+        if (at is not null && ReplayDiff.Centre(board, at) is { } centre)
+        {
+            await workspace.Reveal(centre.X, centre.Y);
         }
     }
 
@@ -638,6 +694,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
             {
                 revealed = step.Number;
                 await replayScript.InvokeVoidAsync("revealStep", $"replay-step-{step.Number}");
+                await RevealOnMap();
             }
         }
         catch (Exception exception) when (exception is JSDisconnectedException or JSException or TaskCanceledException)

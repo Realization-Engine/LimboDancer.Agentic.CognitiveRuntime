@@ -13,6 +13,9 @@ public enum ReplayRead
 {
     Full,
     Part,
+
+    /// <summary>The view reads none of the step's events, and sees something change on the map: a "?" placed where a hidden unit stood (A12.32).</summary>
+    None,
 }
 
 /// <summary>A fire a step made, as the two Locations both sides know (A6.1): where it came from and where it went.</summary>
@@ -111,7 +114,12 @@ public static class ReplaySteps
     /// The steps <paramref name="view"/> may read of the game through its own revision. The view is the perspective's at the last revision shown, so
     /// its events are what the perspective is entitled to now (A12.12: a setup still out of its sight has no step).
     /// </summary>
-    public static ReplayTimeline Read(GameHistory history, GameView view)
+    /// <remarks>
+    /// With <paramref name="viewAt"/>, the perspective's view at a revision, an attempt the view reads nothing of is still a step when the view sees
+    /// the map change over it: at the table the other side would see the "?" placed, though not what it is. An attempt that changes nothing the view
+    /// sees stays out, so the count says nothing of it.
+    /// </remarks>
+    public static ReplayTimeline Read(GameHistory history, GameView view, Func<long, GameView>? viewAt = null)
     {
         ArgumentNullException.ThrowIfNull(history);
         ArgumentNullException.ThrowIfNull(view);
@@ -130,15 +138,25 @@ public static class ReplaySteps
 
             GameEvent[] all = [.. events.Skip(start).Take(index - start)];
             GameEvent[] readable = [.. all.Where(item => entitled.Contains(item.EventId))];
-            if (readable.Length == 0)
-            {
-                continue;
-            }
-
             // The phase the step was proposed in: the state before it, or the start's own state.
             var before = history.At(all[0].Revision - 1);
             if ((before ?? history.At(all[0].Revision)) is not { } at)
             {
+                continue;
+            }
+
+            if (readable.Length == 0)
+            {
+                if (viewAt is not null && all[0].Revision > 1 && ReplayDiff.Of(viewAt(all[0].Revision - 1), viewAt(all[^1].Revision), []) is { Count: > 0 } seen)
+                {
+                    steps.Add(new ReplayStep(steps.Count + 1, all[0].Revision, all[^1].Revision, attempt, "unread", at.Turn,
+                        all.All(item => GameState.IsSetupEvent(item.Payload)) ? ReplayStep.SetupPhase : at.Phase, at.PhasingSide, null,
+                        "The other side acts where this view sees only the map change", ReplayRead.None)
+                    {
+                        Locations = [.. seen.Select(change => change.At).OfType<BoardLocation>().Distinct()],
+                    });
+                }
+
                 continue;
             }
 
