@@ -409,7 +409,7 @@ Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (backlog sect
 
 **Purpose:** a page that speaks in the player's words, takes its Locations from the map, shows a fire's arithmetic before the dice, and does not move under the pointer. **After:** pass 31b. **From:** the play test's report of 2026-10-04.
 
-**Status:** started at the user's word on 2026-10-04, after pass 31b's merge (686ef6b). Its own design is the [pass 31c design](<ASL Unit Backlog Pass 31c Design.md>): decisions D11 to D18 brought up to date with what passes 31 and 31b built, and a first task, 31c.0, from the user's answers on the Game states page (it stays as a developer's "Game inspector" in a Verify group; neither it nor the board viewer opens a game still played in a view chosen at will). The design waits for the user's answers to its eight questions; nothing is built. Its unit names and Locations in words reach the Replay page through `PlayRecords`.
+**Status:** built 2026-10-04 on branch `feature/asl-backlog-pass-31c`, with the user's answers (option (b) for the Game states page, and the eight recommendations of the design): tasks 31c.0 to 31c.8, three reviews and their fixes, the Studio check, and the second play test, a German win in The Guards Counterattack. See the [pass 31c design](<ASL Unit Backlog Pass 31c Design.md>), section 13, and the [review document](<Scenario A1 Backlog Pass 31c Review 2026-10-04.md>). Rulings R31c.1 to R31c.4. Section 15.13 holds its decisions; what it leaves out is in backlog section 50. The merge gate waits for the user's answers on the report.
 
 | Task | What it changes | Estimate |
 |---|---|---|
@@ -913,6 +913,21 @@ These folders express ownership, not a requirement to create every directory imm
 - **The address** carries the game, the view, and the view's own step number. The page follows it only when the address itself changes, and not while its own move is on its way.
 - **Whose view (ruling R31b.1).** An ended game shows any view at once; a game still played hands a view over as Play does, shows a side no revision, and offers "Play on from here" only to the adjudicator.
 - **The page writes one thing:** a new game's file, through `LivePlay.PlayOn`. It proposes nothing and changes no game.
+
+### 15.13 Decisions of pass 31c
+
+**Added 2026-10-04.**
+
+- **One place for a name.** `UnitNames` (Services) is made for a history and a view and kept for a game and a view; it grows with the game and never changes a tag it has given. `PlayRecords`, `ReplayDiff`, Play's panels, and both pages' unit tables read it. A unit's id stays in `data-unit`, in titles, and in addresses (ruling R31c.1).
+- **A text is put in words once, at its edge.** A record's text is built with identifiers and said by `PlayRecords.Say` for the event's own revision, which is where the view check of plan section 15.9 lives. A planner's text and a page's label go through one cascaded function, `Say`, made for a history and a view; a component declares the cascade and wraps what it prints. A change to a record's words is made in `PlayRecords`, never in a page.
+- **One way to write a Location:** `DisplayText.Place`, with `ReadPlace` for what a player types.
+- **Picking is the page's, shared.** `LocationPicking` holds the armed field and the last pick; a `LocationField` arms itself, reads the next pick, and disarms when it leaves the page. The armed field goes with the view's other drafts.
+- **A preview is not a record.** A fire's arithmetic before the dice is the Fire package's own `Preview`, made by the page from what the view may know (ruling R31c.4), and recorded nowhere. No calculator's result changed in the pass.
+- **The window does not scroll.** With a game open nothing sits outside the workspace: the card is a dialog, and the records, the units, the dice, and the audit are panels that open over the activity strip. The workspace fills the window from its own measured top. The context reserves its action row and status line only where the page asks (`Reserve`, on Play).
+- **The map's view is the view's own.** The viewport's script keeps the view for a key the host gives (a game and a view) while the page is open.
+- **What both sides know is drawn from both views.** `GameMaps.Public` takes from each side's view the other sides' units, chosen by who owns them (ruling R31c.3).
+- **A game still played has two doors:** Play and Replay. The Game inspector and the board viewer open it in no view chosen at will (ruling R31c.2).
+- **A board has one handle while it is loaded** (`StudioBoardCatalog`), so what the planner keeps by the handle, a board's LOS map and its LOS reads, is kept.
 
 # Part IV. The component inventory
 

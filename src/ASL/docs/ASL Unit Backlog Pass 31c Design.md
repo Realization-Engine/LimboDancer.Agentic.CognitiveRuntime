@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 31c Design
 
-**Status:** Designed 2026-10-04 and approved the same day: the user took every recommendation of section 12. Being built on branch `feature/asl-backlog-pass-31c`. Pass 31c (Play-test UI II: the page reads and holds still) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5. It brings decisions D11 to D18 of the [pass 31 design](<ASL Unit Backlog Pass 31 Design.md>), section 5, up to date with what passes 31 and 31b built, and adds the Game states decision as its first task. Tasks "31b.1" to "31b.8" of that design are tasks 31c.1 to 31c.8 here.
+**Status:** Built 2026-10-04 on branch `feature/asl-backlog-pass-31c`, with the user's answers (section 12), every one as recommended: tasks 31c.0 to 31c.8, three reviews and their fixes, the Studio check, and the second play test. Section 13 says what was built and where it differs from this design; the [review document](<Scenario A1 Backlog Pass 31c Review 2026-10-04.md>) has the reviews, the check, and the play test's report. Pass 31c (Play-test UI II: the page reads and holds still) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5. It brings decisions D11 to D18 of the [pass 31 design](<ASL Unit Backlog Pass 31 Design.md>), section 5, up to date with what passes 31 and 31b built, and adds the Game states decision as its first task. Tasks "31b.1" to "31b.8" of that design are tasks 31c.1 to 31c.8 here.
 
 **Date:** 2026-10-04
 
@@ -274,3 +274,38 @@ Answered 2026-10-04: all eight as recommended. The other side's units are number
 | 6 | If the planner lacks a check of A7.5, A7.54, or A7.55 (a leader alone as a link, a berserk unit in a multi-Location group, the mandatory group), add it as the planner's refusal of a new proposal, with a ruling, or leave a backlog row? | Add it where the page would otherwise offer an illegal group (A7.5's leader, A7.54); a backlog row for A7.55, which bars separate attacks and would need each side's earlier fire in the phase read against the new one. I will say what I find before I change anything. |
 | 7 | A side is shown no revision on Play in a game still played. | Yes; Replay already does this (R31b.1). |
 | 8 | The estimate rises from 14:00 to 15:45 with the Game inspector and the map additions. | Accept. |
+
+## 13. Pass 31c as built
+
+**Built 2026-10-04,** tasks 31c.0 to 31c.8, one commit a task, each checked in my Studio on port 6670 before its commit; then the three reviews' fixes, the second play test, and its fixes. The [review document](<Scenario A1 Backlog Pass 31c Review 2026-10-04.md>) lists what a player meets, the reviews' findings, the check, and the play test. Rulings R31c.1 to R31c.4. No rule's result changed, and `guards-dl-01` opens as before with 613 revisions and 221 steps.
+
+**The code.**
+
+| Part | Where | What it holds |
+|---|---|---|
+| `UnitNames` | Services | A view's names and tags for a game; `Of` with the view check; `InText` and `Held` for a text made elsewhere; `Counter` for a definition |
+| `DisplayText` | Services | `Place` and `ReadPlace`; `Modifier`, `Reason`, `Action`, `RollPurpose`, `Sentence` |
+| `PlayRecords` | Services | Every record said through `Say`; `Lines`, `Latest`, `Since`; the fire record's weapons |
+| `FireText`, `FireView`, `RollRow` | Services | Moved from Components/Play |
+| `LocationPicking` | Services | The armed field, the last pick, the map's boards and levels |
+| `LocationField`, `PickedOption` | Components/Play | A typed Location that picks on the map; "Use G3" beside a select |
+| `FireArithmeticPreview` | Components/Play | A fire's arithmetic before the dice |
+| `HandOverMap` | Components/Play | The hand-over screen's map |
+| `GameMaps.Public`, the Residual FP and Melee marks | Services | What both sides know; the markers |
+| `GameLibrary.StillPlayed`, `OpenNames` | Services | A game still played, read from its record |
+| `StudioBoardCatalog` | Services | One handle for a loaded board |
+| `boardViewport.js`, `playWorkspace.js`, `studioShell.js` | wwwroot/js | The kept view; the workspace's top, the card's Escape, "Working"; a short window as narrow |
+| `GamePlanner.Adjacent`, the Self-Rally refusal | Play | A public reading of ADJACENT; a refusal's words |
+
+**What differs from the design:**
+
+- **D0.** The inspector's address names no game, so there is no line for an address that names one; the page says in one line where a game still played is opened.
+- **D11.** A text made elsewhere is said at its edge (`Say`), not by a call at each of 170 places. Squads, half-squads, and crews share one count, and leaders and heroes another, so a unit that becomes another kind never takes a tag in use. Two HS of different squads Recombine into a squad with a new number. A public record whose facts are a concealed unit's own is not given, rather than given with the name hidden (the referee). A text for each of the four stacking checks is left out: it needs four codes in the Close Combat package, which recorded games name.
+- **D13.** The vehicle's next hex and setup's two inputs keep their own picking. Escape does not disarm a field. Each of a field's actions is on its own line (the user).
+- **D14.** The planner already asked for ADJACENT Locations and the mandatory group, takes no leader without a MG as a firer, and lets no berserk unit fire small arms, so no check was added. The preview is made by the page from what the view may know, and what it leaves out is decided by a "?" in the target Location (ruling R31c.4), not by the planner's reasons.
+- **D15.** Propose stays in its panel: with the layout still it no longer moves. Confirm follows the consequences when there are any (the table player). The building entry block is offered only in the moving side's Movement Phase (the user). The narrow layout under 600 pixels of height is the whole Studio's.
+- **D16.** The view is kept for a game and a view (the user's answer 4). The hand-over screen's map shows what both sides know, not the terrain alone, and is not drawn during setup (the user; ruling R31c.3). The Residual FP marker is not drawn under the counters; it stands clear of them at the hex's corner and takes no click.
+- **D17.** "Latest" is the last attempt's lines, passing over a phase's start. "Since you last looked" opens on arrival.
+- **D18.** One board handle and the Rout panel read once met the aim (a rout under 2 seconds); the search's result, the composed map, and the Low Crawl search were not touched.
+
+**The second play test** differed from section 10: it was played at the pane's full size at the user's word, by a script's clicks, and each of P-01 to P-31 was marked from what the game met rather than tried by the first report's steps one by one.
