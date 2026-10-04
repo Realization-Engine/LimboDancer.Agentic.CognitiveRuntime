@@ -230,6 +230,8 @@ Facts every plan rests on:
 
 ### 7.3 The Tractor Works: the Russians (the 308th Rifle Division)
 
+**Changed by pass 30b (2026-10-03):** East front was remade and All round replaced by Dummy west, so that the three plans show the same counts in every hex; see the [pass 30b design](<ASL Unit Backlog Pass 30b Design.md>), section 15.3. The text below is the plans as pass 30 made them.
+
 Made 2026-10-03 from the Studio's terrain and LOS on board 01, read with the scratchpad script, with fourteen of the cited lines checked again in my Studio's LOS tab: all agreed. Each plan was chosen in a new game in my Studio (`p30-tw-1`, `p30-tw-2`, `p30-tw-3`), and the gate accepted each (28, 30, and 31 events). The user approved all three on 2026-10-03, with every counter at ground level as the card's SSR 5 says.
 
 What the plans answer. The 308th (12 squads, the 9-2, the HMG, two MMG, three LMG, and 18 "?") sets up first, alone in building X3. The Germans then set up around it: the assault engineers with two flamethrowers and four demolition charges in AA4, CC3, or Y8, Kampfgruppe Tienham in Y8, CC7, or AA4, and Kampfgruppe Stahler in U3, T4, R7, or T7. The Russian remnants set up last, to the west. The side that Controls six of X3's nine hexes at game end wins, and the Russians Control all nine at the start, so the 308th must still hold six after eight turns.

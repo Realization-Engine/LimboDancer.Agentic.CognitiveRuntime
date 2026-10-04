@@ -378,7 +378,7 @@ Each plan's terrain facts in the file end with the line on the non-OB "?", and t
 
 ### 15.2 The Guards Counterattack: the Russians
 
-Made 2026-10-03 from the Studio's LOS table of pass 30 on board 01 (Verified, LOS definitive): every German setup Location, at each level, against the 27 Russian setup Locations. Each plan was used in a new game in my Studio with the German plan it answers committed first (`p30b-gc-1` to `p30b-gc-3`), and Two up, two back after each of the three German plans (`p30b-gc-4` to `p30b-gc-6`): the gate accepted all six setups (25 counters each). They wait for the user's approval.
+Made 2026-10-03 from the Studio's LOS table of pass 30 on board 01 (Verified, LOS definitive): every German setup Location, at each level, against the 27 Russian setup Locations. Each plan was used in a new game in my Studio with the German plan it answers committed first (`p30b-gc-1` to `p30b-gc-3`), and Two up, two back after each of the three German plans (`p30b-gc-4` to `p30b-gc-6`): the gate accepted all six setups (25 counters each). The user kept all four on 2026-10-03, with no remarks.
 
 What the plans answer. The Russians set up second and move first. Every OB line names its building, so the choice is small: the hex and level of the 12 Guards squads and the 10-2 inside building F3 (E4, F3, G3, G4, each with levels 0 to 2), and of the 308th's four squads and commissar inside building N4 (M5, N3, N4, N5). J2 (a squad, the 9-1, the MMG), M2 (three squads), and N2 (one squad) are one-hex buildings with a ground level only. The Russians win by Control of the German buildings or by a three to one ratio of unbroken squads, in five turns, so the first turn's fire and the first crossing of the street decide much.
 
@@ -431,3 +431,57 @@ Facts every plan rests on, from the LOS table:
 | Guards | E4, level 1: 3 x 6-2-8 squad; G4, level 1: 3 x 6-2-8 squad; F3, ground level: 3 x 6-2-8 squad, 10-2 leader; G3, ground level: 3 x 6-2-8 squad |
 | 308th | N5, level 1: 2 x 4-4-7 squad; N4, ground level: 2 x 4-4-7 squad, 9-0 commissar; J2, M2, and N2 as above |
 | Non-OB "?" offered after setup | G3, N4, and N2 against Forward line; F3 too against Out of sight and Tripwire and reserve, where no German stands in F5 or G6 |
+
+### 15.3 The Tractor Works: the 308th remade, and the Germans
+
+Made 2026-10-03 from pass 30's LOS table of building X3 against the German setup Locations on board 01. Each of the three 308th plans was used in a new game in my Studio and accepted by the gate (31 counters each), and Three sides was then used in the German view of each game and accepted (48 counters; games `p30b-tw-1` to `p30b-tw-3`). They wait for the user's approval.
+
+**The shared footprint (section 14, question 10).** The three 308th plans now show the same number of counters in every hex, all of them "?":
+
+| Hex | W4 | W5 | X2 | X3 | X4 | X5 | Y3 | Y4 | Y5 |
+|---|---|---|---|---|---|---|---|---|---|
+| Counters seen | 3 | 3 | 2 | 2 | 4 | 2 | 3 | 3 | 3 |
+
+Each plan has 13 units in six hexes, 12 Dummies, and three hexes of Dummies only; all 18 "?" are used (6 concealed stacks and 12 Dummies). In the German view the comparison read "9 of 9 hexes match" for all three plans in every game, with none marked closest, so an unchanged setup tells the Germans nothing of which plan it is.
+
+| Plan | Hexes of Dummies only | Real units |
+|---|---|---|
+| Hidden core, unchanged | Y3, Y4, Y5 (the east face) | X4: 3 squads, 9-2. W4: 2 squads, MMG. W5: 2 squads, 2 LMG. X2: squad, LMG. X3: 2 squads, MMG. X5: 2 squads, HMG |
+| East front, remade | W5, X2, X4 (the centre looks like a reserve of four) | Y3: 2 squads, MMG. Y4: 2 squads, MMG, 9-2. Y5: 2 squads, HMG. X5: 2 squads, LMG. W4: 2 squads, LMG. X3: 2 squads, LMG |
+| Dummy west, new, in place of All round | W4, W5, Y3 (the west face and the north-east tip) | X4: 3 squads, LMG. Y5: 2 squads, HMG, 9-2. Y4: 2 squads, MMG. X5: 2 squads, MMG. X3: 2 squads, LMG. X2: squad, LMG |
+
+Hidden core's placements are untouched; one terrain fact was added to each of the three, the line on the shared footprint. All round is gone from the file: no plan can hold all nine hexes with real units on six stacks.
+
+**East front** (`east-front`), remade
+
+| | |
+|---|---|
+| The idea | The weight faces the assault engineers and Kampfgruppe Tienham: two squads in each hex of the east face with the HMG, both MMG, and the 9-2, and two more at X5. The west is two squads with an LMG at W4 and two at X3. W5, X2, and the centre hold only Dummies, the centre four of them, so it looks like the reserve. |
+| What it gives up | W5, X2, and X4 are not defended: a German squad that enters them takes their Control, and there is no reserve behind the two faces. The 9-2 stands at Y4, so the HMG at Y5 fires without a leader. |
+
+**Dummy west** (`dummy-west`), new
+
+| | |
+|---|---|
+| The idea | The west face, W4 and W5, and the north-east tip Y3 hold only Dummies, three to a hex. The real force is the centre and the south-east: three squads in the centre, where nothing sees them, the HMG and the 9-2 at Y5, an MMG at Y4, the other MMG at X5, and an LMG at X3 and at X2 behind the Dummy face. |
+| What it gives up | W4, W5, and Y3 are not defended: Kampfgruppe Stahler may walk into the west face, and the Russians then hold exactly six hexes and can lose no other. |
+
+What each plan gives away if recognised is listed on its card under "More", as built in step 2: for Dummy west, "which hexes hold only Dummies (W4, W5, Y3); what is under each \"?\"; which unit holds each of its 6 SW". With the shared footprint the Germans cannot recognise it from the stacks.
+
+**Three sides** (`three-sides`), the Germans, for any setup
+
+The German side has this one plan, since no first-side plan can be told from another (section 14).
+
+| | |
+|---|---|
+| The idea | Every hex of the Works shows the same "?" whichever plan the Russians used, so the Germans press three faces at once and learn by fire which stacks are real. The engineers attack the east face: three squads with the LMG at AA4, and behind them, unseen at BB4, the 10-3 with both flamethrowers and three demolition charges. Kampfgruppe Tienham fires from the upper floor of Z6 and Y7 on X5 and Y5 at range 2, with the HMG under the 10-2. Kampfgruppe Stahler stands under "?" at V2 and U3, two hexes from the west face, with two squads behind at U2, and its nine Dummies fill T4, S5, and T7 so that it looks twice its size. |
+| What it gives up | The force is spread over three faces, so no face has the weight to break in alone; the flamethrowers start three hexes from the Works; and the Dummies fool nobody once they are fired on. |
+| Terrain facts | AA4 is seen from Y3, Y4, and Y5 at range 2. BB4, one hex behind it, is seen from no hex of the Works, and has a stairwell.<br>Z6 and Y7 see X5 and Y5 at range 2; Y8, behind them, is seen from no hex of the Works.<br>V2 sees W4, X2, and X3 at range 2; U3 sees W4 at range 2 and W5, X2, and X3 at range 3; U2 is seen from no hex of the Works.<br>Of the Dummy hexes, T4 is seen from X2 at range 4, S5 from W5 at range 4, and T7 from X5 at range 4: each is in a Russian LOS, so the Russians see a "?" stack there. |
+
+| Group | Placements |
+|---|---|
+| Assault Engineer Company A | BB4, ground level: 3 x 8-3-8 squad (two with a flamethrower and a demolition charge each, one with a demolition charge), 10-3 leader; AA4, ground level: 3 x 8-3-8 squad (two with an LMG, one with a demolition charge) |
+| Kampfgruppe Stahler, all under "?" | V2, level 1: 2 x 4-6-7 squad with an MMG each, 9-2 leader; U3, ground level: 3 x 4-6-7 squad (two with an LMG), 8-1 leader; U2, ground level: 2 x 4-6-7 squad. Dummies: 3 at T4, 3 at S5, 3 at T7, each on level 1 |
+| Kampfgruppe Tienham | Z6, level 1: 2 x 4-6-7 squad (one with the HMG), 10-2 leader; Y7, level 1: 2 x 4-6-7 squad (one with the MMG), 9-1 leader; Y8, ground level: 2 x 4-6-7 squad, 8-0 leader |
+
+The plan uses all 12 of Kampfgruppe Stahler's "?": 3 for its concealed stacks and 9 Dummies. BB4 and Y8 are out of every LOS from the Works, so their stacks should be offered the non-OB "?"; that step comes after the Russian remnants set up (order 3), which the check did not do, so it is not confirmed in the Studio.
