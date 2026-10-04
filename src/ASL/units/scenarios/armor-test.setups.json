@@ -1,5 +1,5 @@
 {
-  "format": "asl-setup-plans/1",
+  "format": "asl-setup-plans/2",
   "card": "armor-test",
   "plans": [
     {
@@ -68,6 +68,70 @@
           "group": "russian-1",
           "at": "bd04:Q8:0",
           "facing": "north-west"
+        }
+      ]
+    },
+    {
+      "id": "loaded-column",
+      "cardSha256": "8c51c9f87f7c84088c4e06d33fa3dc8fa33ee4d0659af4d1bf698e13217edc3b",
+      "side": "german",
+      "name": "Loaded column",
+      "idea": "The column never sets up on the map: it waits off board and enters along the north edge on Turn 1. This plan loads it so that nothing walks: the infantry gun in tow of the truck with its crew aboard, and the squad and the 8-1 aboard the halftrack, with the PzKpfw IIIH to lead. Where it enters is chosen when it enters, once the Russian setup has been read.",
+      "givesUp": "Everything rides, so a hit on the truck costs the Gun and its crew together, and one on the halftrack costs the only squad and the leader; nothing is on foot to find a hidden Gun before the vehicles meet it.",
+      "terrain": [
+        "The whole group enters along the north edge on Turn 1, the vehicles in Motion and loaded as they choose (A2.52); no hex is chosen at setup.",
+        "Three dirt roads leave the north edge of board 4, at I1, Q1, and V1; the centre road runs from Q1 to the exit at Q10.",
+        "The column wins by exiting 8 Exit VP off the south edge near G10, Q10, or Y10 within five turns."
+      ],
+      "placements": [
+        {
+          "id": "g-tank-1",
+          "definition": "attacker-tank",
+          "group": "german-1",
+          "facing": "south-east",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "g-halftrack-1",
+          "definition": "attacker-halftrack",
+          "group": "german-1",
+          "facing": "south-east",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "g-truck-1",
+          "definition": "attacker-truck",
+          "group": "german-1",
+          "facing": "south-east",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "g-squad-1",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "holder": "g-halftrack-1"
+        },
+        {
+          "id": "g-leader-8-1-1",
+          "definition": "attacker-leader-8-1",
+          "group": "german-1",
+          "holder": "g-halftrack-1"
+        },
+        {
+          "id": "g-crew-1",
+          "definition": "attacker-crew",
+          "group": "german-1",
+          "holder": "g-truck-1"
+        },
+        {
+          "id": "g-inf-gun-1",
+          "definition": "attacker-inf-gun",
+          "group": "german-1",
+          "holder": "g-truck-1",
+          "facing": "south-east"
         }
       ]
     }
