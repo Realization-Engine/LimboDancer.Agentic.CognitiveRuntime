@@ -541,3 +541,16 @@ So a column that reads the visible screen cannot tell whether the Gun is ahead o
 Forward screen's placements are untouched; the line on the shared look was added to its terrain facts, as to the other two. The gate accepted both Bore Sighted Locations. In the Studio the hidden Gun is now named "gun" in what a plan gives away ("2-2-8 crew in K9, gun in K9").
 
 **What was considered and cannot be done.** A Dummy in place of a real "?" would need a unit to stand somewhere unseen, and only the Gun and its crew may set up hidden here. A different visible screen for each plan would give more variety and bring back the readable Gun.
+
+### 15.6 The note on a public plan, when the card's plans look alike
+
+**Fixed 2026-10-03** at the user's word. With three Russian plans that look alike on Armor Test, the note of section 13 (D14) was wrong there: it still said the other side may recognise an unchanged plan and learn where the Gun is.
+
+- `SetupPlanMatch.Look` (Play library) gives how a plan looks to the other side before play, counter for counter: for each Location, how many "?" stand there, and for the counters not under "?" the top one with its facing and how many lie beneath it (A2.9, A12.11; ruling R23.3). It is stricter than the comparison's footprint, which counts by hex: two plans with the same look cannot be told apart by anything the other side sees.
+- The page compares a plan's look with those of the card's other plans for the same side and setup order. When all of them look the same, the plan's card (under "More") and the review of an unchanged setup say so. When only some do, the old warning stays and names the plans it looks like.
+
+Checked in my Studio at 1366x768:
+
+- Armor Test, the Russian view: each of the three plans reads "Setup plans are public, but West trap shows the other side the same stacks as Forward screen and Back stop, so an unchanged setup does not say which plan was used: it does not give away where its hidden counters are (2-2-8 crew in K9, gun in K9); what is under each \"?\"." The review of West trap proposed unchanged says the same.
+- The Tractor Works: Dummy west reads the same way, naming East front and Hidden core.
+- The Guards Counterattack, whose German plans differ to the eye: Forward line keeps the warning, "Set up unchanged, this plan can be recognised by the other side, which then knows which unit holds each of its 8 SW."

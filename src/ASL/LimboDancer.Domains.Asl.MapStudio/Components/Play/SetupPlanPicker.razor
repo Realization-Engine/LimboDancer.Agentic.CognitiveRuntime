@@ -95,9 +95,12 @@
     [Parameter]
     public IReadOnlyDictionary<string, string> EarlierAnswers { get; set; } = new Dictionary<string, string>();
 
-    /// <summary>What each plan tells the other side when it is set up unchanged, since the plans are public; a plan with nothing to tell has no entry.</summary>
+    /// <summary>
+    /// What each plan's user is told of its being public: what an unchanged setup gives away, or that the card's other plans look the same to the
+    /// other side. A plan with nothing to give away has no entry.
+    /// </summary>
     [Parameter]
-    public IReadOnlyDictionary<string, IReadOnlyList<string>> GivesAway { get; set; } = new Dictionary<string, IReadOnlyList<string>>();
+    public IReadOnlyDictionary<string, string> PublicNotes { get; set; } = new Dictionary<string, string>();
 
     [Parameter]
     public EventCallback<string> OnUse { get; set; }
@@ -163,9 +166,9 @@
                         }
                     </ul>
                 }
-                @if (GivesAway.TryGetValue(plan.Id, out var told) && told.Count > 0)
+                @if (PublicNotes.TryGetValue(plan.Id, out var publicNote))
                 {
-                    <p class="setup-plan-public" id="@($"setup-plan-{plan.Id}-public")">Set up unchanged, this plan can be recognised by the other side, which then knows @string.Join("; ", told). To keep that secret, move or swap those stacks before you propose.</p>
+                    <p class="setup-plan-public" id="@($"setup-plan-{plan.Id}-public")">@publicNote</p>
                 }
             </details>
         </article>

@@ -30,12 +30,32 @@ public static class SetupPlanMatch
     {
         ArgumentNullException.ThrowIfNull(plan);
         ArgumentNullException.ThrowIfNull(catalog);
-        return plan.Placements
-            .Where(item => !item.Hidden && !item.OffBoard && item.Holder is null
-                && (item.Dummy || (item.Definition is { } definition && catalog.Definition(definition) is { } found && UnitKinds.Contains(found.Kind, StringComparer.Ordinal))))
-            .Select(item => BoardLocation.TryParse(item.At, out var at) ? Hex(at) : null).OfType<BoardLocation>()
-            .GroupBy(at => at).ToDictionary(hex => hex.Key, hex => hex.Count());
+        return Standing(plan, catalog).Select(item => Hex(item.At)).GroupBy(at => at).ToDictionary(hex => hex.Key, hex => hex.Count());
     }
+
+    /// <summary>
+    /// How a plan looks to the other side before play, counter for counter (A2.9, A12.11; ruling R23.3): for each Location, how many "?" stand there,
+    /// and for the counters not under "?" the top one, with its facing, and how many lie beneath it. Two plans of one side with the same look cannot
+    /// be told apart by the stacks: they differ only in what the other side does not see.
+    /// </summary>
+    public static string Look(SetupPlan plan, UnitCatalog catalog)
+    {
+        ArgumentNullException.ThrowIfNull(plan);
+        ArgumentNullException.ThrowIfNull(catalog);
+        return string.Join(';', Standing(plan, catalog).GroupBy(item => item.At.ToString(), StringComparer.Ordinal).OrderBy(stack => stack.Key, StringComparer.Ordinal).Select(stack =>
+        {
+            var open = stack.Where(item => !item.Placement.Concealed && !item.Placement.Dummy).Select(item => item.Placement).ToArray();
+            var top = open.Length > 0 ? $"{open[0].Definition}/{open[0].Facing}+{open.Length - 1}" : string.Empty;
+            return $"{stack.Key}={stack.Count() - open.Length}?{top}";
+        }));
+    }
+
+    /// <summary>The counters of a plan that a view would hold on the map, in the plan's order, each with its Location.</summary>
+    private static IEnumerable<(SetupPlanPlacement Placement, BoardLocation At)> Standing(SetupPlan plan, UnitCatalog catalog) => plan.Placements
+        .Where(item => !item.Hidden && !item.OffBoard && item.Holder is null
+            && (item.Dummy || (item.Definition is { } definition && catalog.Definition(definition) is { } found && UnitKinds.Contains(found.Kind, StringComparer.Ordinal))))
+        .Select(item => (Placement: item, At: BoardLocation.TryParse(item.At, out var at) ? at : null)).Where(item => item.At is not null)
+        .Select(item => (item.Placement, item.At!));
 
     /// <summary>The counters of a side that a view holds on the map, by hex: its units seen and its sealed presences, all levels of a hex together.</summary>
     public static IReadOnlyDictionary<BoardLocation, int> Seen(GameView view, string side)

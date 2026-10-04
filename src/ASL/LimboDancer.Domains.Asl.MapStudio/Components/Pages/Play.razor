@@ -140,7 +140,7 @@
                 {
                     <SetupPlanPicker Side="@DisplayText.Side(viewAs)" Plans="@offered.Plans" Groups="@PlanGroups" Problems="@offered.Problems" Chosen="@chosenPlan" Changes="@PlanChanges.Count" Shown="@shownPlan"
                         Earlier="@(offered.Plans.Where(plan => plan.CardSha256 != state!.Scenario!.Sha256).Select(plan => plan.Id).ToHashSet(StringComparer.Ordinal))"
-                        EarlierAnswers="@EarlierAnswers(offered.Plans)" GivesAway="@(offered.Plans.ToDictionary(plan => plan.Id, PlanGivesAway, StringComparer.Ordinal))"
+                        EarlierAnswers="@EarlierAnswers(offered.Plans)" PublicNotes="@(offered.Plans.Select(plan => (plan.Id, Note: PlanPublicNote(plan, review: false))).Where(item => item.Note is not null).ToDictionary(item => item.Id, item => item.Note!, StringComparer.Ordinal))"
                         OnUse="@AskUsePlan" OnShow="@ShowPlan" />
                 }
                 else if (SetupTab == "ob")
@@ -1230,6 +1230,48 @@ else if (state is not null)
         }
 
         return told;
+    }
+
+    /// <summary>
+    /// The card's other plans for the same side and setup order that look to the other side exactly as this one does (pass 30b): the same "?" and the
+    /// same top counters in the same Locations. Such plans cannot be told apart by the stacks.
+    /// </summary>
+    private (IReadOnlyList<string> Twins, int Others) PlanTwins(SetupPlan plan)
+    {
+        if (SetupCard is not { } card || planCache.Read is not { } read || PublishedCatalog is not { } catalog)
+        {
+            return ([], 0);
+        }
+
+        var order = ScenarioSetupPlans.OrderOf(card, plan);
+        var others = read.Plans.Where(other => other.Id != plan.Id && other.Side == plan.Side && ScenarioSetupPlans.OrderOf(card, other) == order).ToArray();
+        var look = SetupPlanMatch.Look(plan, catalog);
+        return ([.. others.Where(other => SetupPlanMatch.Look(other, catalog) == look).Select(other => other.Name)], others.Length);
+    }
+
+    /// <summary>
+    /// What the side that may use a plan is told of its being public (pass 30b): what an unchanged setup gives away to a side that recognises it, or,
+    /// when every other plan of the card looks the same to the other side, that the stacks do not say which plan was used. Null when the plan has
+    /// nothing to give away.
+    /// </summary>
+    private string? PlanPublicNote(SetupPlan plan, bool review)
+    {
+        if (PlanGivesAway(plan) is not { Count: > 0 } told)
+        {
+            return null;
+        }
+
+        var (twins, others) = PlanTwins(plan);
+        var secrets = string.Join("; ", told);
+        if (twins.Count > 0 && twins.Count == others)
+        {
+            return $"Setup plans are public, but {plan.Name} shows the other side the same stacks as {string.Join(" and ", twins)}, so an unchanged setup does not say which plan was used: it does not give away {secrets}.";
+        }
+
+        var partly = twins.Count > 0 ? $" It looks the same as {string.Join(" and ", twins)}, and can be told from the card's other plans." : string.Empty;
+        return review
+            ? $"Setup plans are public: if the other side recognises {plan.Name}, it knows {secrets}.{partly} Move or swap those stacks first to keep that secret."
+            : $"Set up unchanged, this plan can be recognised by the other side, which then knows {secrets}.{partly} To keep that secret, move or swap those stacks before you propose.";
     }
 
     /// <summary>
@@ -5239,8 +5281,7 @@ else if (state is not null)
             : ($"Set up the {sides} side" + (ChosenPlan is { } from ? $" from {PlanTitle(from)}" + (PlanChanges.Count > 0 ? $", with {Count(PlanChanges.Count, "change", "changes")}" : ", unchanged") : " from your list")
                 + $": {Count(placements.Count, "counter", "counters")}" + (hexes > 0 ? $" in {Count(hexes, "hex", "hexes")}" : string.Empty)
                 + (waiting == placements.Count ? ", all off board to enter" : waiting > 0 ? $", {waiting} of them off board to enter" : string.Empty) + "."
-                + (ChosenPlan is { } open && PlanChanges.Count == 0 && PlanGivesAway(open) is { Count: > 0 } told
-                    ? $" Setup plans are public: if the other side recognises {open.Name}, it knows {string.Join("; ", told)}. Move or swap those stacks first to keep that secret." : string.Empty),
+                + (ChosenPlan is { } open && PlanChanges.Count == 0 && PlanPublicNote(open, review: true) is { } publicNote ? " " + publicNote : string.Empty),
                 PlanChanges, placements.Count);
         (setupAsk, shownPlan) = (null, null);
         var catalog = PublishedCatalog is { } published ? $"{published.Identity.Catalog}@{published.Identity.Version}" : string.Empty;
