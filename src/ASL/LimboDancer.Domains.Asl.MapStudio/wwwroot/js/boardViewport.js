@@ -6,6 +6,11 @@ const svgNamespace = "http://www.w3.org/2000/svg";
 const hoverInterval = 100;
 const rotationKey = "studio.map.rotated";
 
+// Pass 31c (design D16; play test P-30): the view of a map is kept for its host's key (a game and a view) while the page is open, so a map that
+// is taken away and drawn again, as at a hand-over, comes back where its viewer left it and not at its fit. Each view has its own, so no side
+// sees where the other was looking. A view still at its fit keeps nothing.
+const keptViews = new Map();
+
 export function create(host, dotnet) {
     const svg = document.createElementNS(svgNamespace, "svg");
     svg.setAttribute("class", "board-svg");
@@ -197,6 +202,15 @@ export function create(host, dotnet) {
         setRotation: on => setRotation(state, on, true),
         isRotated: () => state.rotated,
         dispose: () => {
+            const key = host.dataset.viewKey;
+            if (key && state.box && state.home) {
+                if (state.fitted) {
+                    keptViews.delete(key);
+                } else {
+                    keptViews.set(key, { box: { ...state.box }, width: state.home.width, height: state.home.height });
+                }
+            }
+
             shapeWatcher?.disconnect();
             host.removeEventListener("keydown", onKey);
             host.replaceChildren();
@@ -232,6 +246,12 @@ async function load(state, baseUrl, query, viewBox, layers, visible) {
     state.highlight = null;
     state.overlay = null;
     setVisible(state, visible);
+    const kept = keepBox ? null : keptViews.get(state.host.dataset.viewKey);
+    if (kept && kept.width === width && kept.height === height) {
+        setBox(state, kept.box, false);
+        return;
+    }
+
     setBox(state, keepBox ? state.box : fitBox(state), keepBox ? state.fitted : true);
 }
 

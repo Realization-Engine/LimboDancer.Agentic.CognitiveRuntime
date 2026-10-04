@@ -105,7 +105,8 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache
         var projection = entry.History is { HasErrors: false } ? games.Projection(entry, viewer, revision) : null;
         var overlay = projection is not null && units.Renderer(UnitLibrary.DefaultSheet) is { } renderer ? units.Overlay(board, projection.Set, renderer) : null;
 
-        // Residual FP is public (A8.2): every viewer sees each counter's value at the centre of its hex.
+        // Residual FP is public (A8.2): every viewer sees each counter's value. Pass 31c (design D16; play test P-30): at the hex's upper
+        // corner, small, and taking no click, so it never covers the counter in the hex or stands between a click and it.
         var marked = new List<string>();
         if (marks is not null)
         {
@@ -116,12 +117,26 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache
         {
             if (UnitLibrary.TargetFor(board).Locate(residual.Location) is { } at)
             {
-                var vertices = board.Render.Grid.Geometry.Vertices(at).ToArray();
-                var x = vertices.Average(point => point.X);
-                var y = vertices.Average(point => point.Y);
+                var (x, y) = Corner(board, at, upper: true);
                 marked.Add(string.Create(CultureInfo.InvariantCulture,
-                    $"<g class=\"play-residual\" data-location=\"{residual.Location}\" data-fp=\"{residual.Fp}\"><circle cx=\"{x:0.##}\" cy=\"{y:0.##}\" r=\"14\" fill=\"#fff3c4\" stroke=\"#a40\" stroke-width=\"2\"/>"
-                    + $"<text x=\"{x:0.##}\" y=\"{y + 5:0.##}\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"#a40\">{residual.Fp}</text></g>"));
+                    $"<g class=\"play-residual\" data-location=\"{residual.Location}\" data-fp=\"{residual.Fp}\" pointer-events=\"none\"><circle cx=\"{x:0.##}\" cy=\"{y:0.##}\" r=\"9\" fill=\"#fff3c4\" stroke=\"#a40\" stroke-width=\"2\"/>"
+                    + $"<text x=\"{x:0.##}\" y=\"{y + 4:0.##}\" text-anchor=\"middle\" font-size=\"11\" font-weight=\"bold\" fill=\"#a40\">{residual.Fp}</text></g>"));
+            }
+        }
+
+        // Pass 31c (design D16; play test P-27): a Location in Melee is marked on its hex, for a view that holds a unit of that Melee by name.
+        if (projection is not null)
+        {
+            foreach (var melee in projection.View.Units.Where(unit => GameState.Condition(unit, Conditions.Melee) == ConditionState.True)
+                .Select(unit => projection.View.Locations.TryGetValue(unit.Id, out var where) ? where.Location with { Level = 0 } : null).OfType<BoardLocation>().Distinct())
+            {
+                if (UnitLibrary.TargetFor(board).Locate(melee) is { } at)
+                {
+                    var (x, y) = Corner(board, at, upper: false);
+                    marked.Add(string.Create(CultureInfo.InvariantCulture,
+                        $"<g class=\"play-melee\" data-location=\"{melee}\" pointer-events=\"none\"><rect x=\"{x - 17:0.##}\" y=\"{y - 8:0.##}\" width=\"34\" height=\"13\" rx=\"3\" fill=\"#7f1d1d\" stroke=\"#ffffff\" stroke-width=\"1\"/>"
+                        + $"<text x=\"{x:0.##}\" y=\"{y + 2:0.##}\" text-anchor=\"middle\" font-size=\"10\" font-weight=\"bold\" fill=\"#ffffff\">Melee</text></g>"));
+                }
             }
         }
 
@@ -130,6 +145,15 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache
             Overlay = overlay,
             View = projection?.View,
         };
+    }
+
+    /// <summary>A point inside a hex near its top or its foot, where a small mark stands clear of the counters at its centre.</summary>
+    private static (double X, double Y) Corner(StudioBoard board, HexIndex hex, bool upper)
+    {
+        var vertices = board.Render.Grid.Geometry.Vertices(hex).ToArray();
+        var (x, y) = (vertices.Average(point => point.X), vertices.Average(point => point.Y));
+        var edge = upper ? vertices.Min(point => point.Y) : vertices.Max(point => point.Y);
+        return (x, y + ((edge - y) * 0.72));
     }
 
     /// <summary>The ground-level Location of the hex under a point of the map, in board units; null off the map (pass 28c).</summary>

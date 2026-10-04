@@ -47,6 +47,15 @@
                         <HexUnitStackList Hex="@selectedHex.Hex.ToString()" Members="@members" Selected="@SelectedUnit?.Document.Id" OnSelect="@SelectedUnitChanged" />
                     }
                 }
+                @if (Selected is { } notedHex && HexNotes?.Invoke(notedHex) is { Count: > 0 } notes)
+                {
+                    <ul id="hex-notes">
+                        @foreach (var note in notes)
+                        {
+                            <li>@note</li>
+                        }
+                    </ul>
+                }
                 @if ((Selected ?? hovered) is { } facts)
                 {
                     @if (Selected is null)
@@ -118,6 +127,10 @@
 
     [Parameter]
     public string? UnitNote { get; set; }
+
+    /// <summary>What else the host knows of the hex kept: Residual FP, a Melee (pass 31c).</summary>
+    [Parameter]
+    public Func<HexFacts, IReadOnlyList<string>>? HexNotes { get; set; }
 
     /// <summary>The pixel last clicked, described for the Evidence tab.</summary>
     [Parameter]

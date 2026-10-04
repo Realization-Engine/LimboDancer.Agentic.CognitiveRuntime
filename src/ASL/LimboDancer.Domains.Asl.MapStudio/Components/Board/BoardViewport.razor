@@ -3,7 +3,7 @@
 
 @* B06 (plan sections 15.5 and 16.6): the board's drawing surface. It owns the host element, the JavaScript module and viewport, the .NET
    reference the script calls back, and their disposal, so no page installs listeners of its own; pages draw through its commands. *@
-<div class="board-host" @ref="host" role="@(Label is null ? null : "group")" aria-roledescription="@(Label is null ? null : "map")" aria-label="@Label"></div>
+<div class="board-host" @ref="host" role="@(Label is null ? null : "group")" aria-roledescription="@(Label is null ? null : "map")" aria-label="@Label" data-view-key="@ViewKey"></div>
 
 @code {
     private ElementReference host;
@@ -15,6 +15,10 @@
     /// <summary>The surface's name for assistive technology, such as "The game's map"; none when null (pass 28c).</summary>
     [Parameter]
     public string? Label { get; set; }
+
+    /// <summary>What the map's view is kept for while the page is open, such as a game and a view (pass 31c, design D16); null to keep none.</summary>
+    [Parameter]
+    public string? ViewKey { get; set; }
 
     /// <summary>Raised once the script's viewport exists, so the page can load the board into it.</summary>
     [Parameter]

@@ -53,10 +53,16 @@ else
             Only what both sides know is shown here. The map and the panels stay blank until @Label is at the screen, so no side sees what only another
             may: the other side's setup while it sets up, its hidden units, and what lies under its "?" (A12.12, A12.3, A2.9; ruling R23.2).
         </p>
+        @* Pass 31c: the terrain alone comes last, so the button to take the screen keeps its place above it. *@
+        @Map
     </section>
 }
 
 @code {
+    /// <summary>The terrain alone, with the Locations the lines name outlined (pass 31c, design D16); none when the page gives none.</summary>
+    [Parameter]
+    public RenderFragment? Map { get; set; }
+
     /// <summary>The view waiting for its viewer, or null when none is: then the page's content is shown.</summary>
     [Parameter]
     public string? Next { get; set; }

@@ -1,0 +1,47 @@
+@* Pass 31c (design D16; backlog section 48; ruling R31.7): the hand-over screen's map. It draws the board's terrain alone, with no counter and no
+   mark of the game, and outlines the Locations the screen's own lines name, which both views read alike. It takes no click and tells nothing the
+   lines do not. *@
+<div id="play-handover-map" class="handover-map" aria-hidden="true">
+    <BoardViewport @ref="viewport" OnReady="@Ready" />
+</div>
+
+@code {
+    private BoardViewport? viewport;
+    private string? shown;
+
+    [Parameter, EditorRequired]
+    public StudioBoard Board { get; set; } = null!;
+
+    /// <summary>The Locations to outline: those the screen's lines name.</summary>
+    [Parameter]
+    public IReadOnlyList<BoardLocation> Outlined { get; set; } = [];
+
+    private string Key => $"{Board.Ref.Value}/{Board.Version}/{string.Join('|', Outlined)}";
+
+    private Task Ready() => Draw();
+
+    protected override Task OnAfterRenderAsync(bool firstRender) => Draw();
+
+    private async Task Draw()
+    {
+        if (viewport is not { IsReady: true } || shown == Key)
+        {
+            return;
+        }
+
+        shown = Key;
+        try
+        {
+            IReadOnlyList<string> layers = [.. BoardRenderer.Layers(BoardView.Exact).Where(layer => layer != "defs")];
+            await viewport.Load($"render/{Board.Ref.Value}/{Board.Version}/{BoardRenderer.ViewName(BoardView.Exact)}", string.Empty,
+                BoardRenderer.ViewBox(Board.Render, BoardView.Exact), BoardRenderer.Layers(BoardView.Exact), layers);
+            await viewport.SetMarks("<g id=\"layer-marks\">" + string.Concat(Outlined.Select(at =>
+                GameMaps.HexMark(Board, at, "handover-outline", "#fde68a", "#b45309", 4, dashed: false, label: null))) + "</g>");
+        }
+        catch (JSException)
+        {
+            // The screen's words stand without its map.
+            shown = null;
+        }
+    }
+}

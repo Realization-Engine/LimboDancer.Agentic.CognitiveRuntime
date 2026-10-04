@@ -54,6 +54,14 @@ else
 
 <HandOverScreen Next="@handOver" Label="@ViewLabel(handOver)" Confirmed="ConfirmView" When="@HandOverWhen" Why="@HandOverWhy" Tasks="@HandOverTasks"
                 HappenedTitle="@HandOverHappenedTitle" Happened="@HandOverHappened" Score="@HandOverScore">
+<Map>
+    @* Pass 31c (design D16; ruling R31.7): the terrain alone, with the Locations the screen's lines name outlined. *@
+    @if (handOver is not null && HandOverHappened.Count > 0 && happenedAt.Count > 0 && HandOverBoard is { } handOverBoard)
+    {
+        <HandOverMap Board="@handOverBoard" Outlined="@happenedAt" />
+    }
+</Map>
+<ChildContent>
 @* Pass 31c (design D11): every panel reads a unit's name and a Location's words from the view's names, through one cascaded function. *@
 <CascadingValue Name="Say" Value="@Words">
 
@@ -732,7 +740,7 @@ else if (state is not null)
         }
         @if (MapLayers is { Board: { } mapBoard } layers)
         {
-            <BoardWorkspace @key="@($"{gameId}/{Viewer.Name}")" @ref="workspace" Board="@mapBoard" Units="@MapUnits(layers)" UnitView="@layers.View" Marks="@SetupMarks(mapBoard, layers.Marks)" Vocabulary="@Library.Vocabulary" OnLoaded="@ZoomToSetup"
+            <BoardWorkspace @key="@($"{gameId}/{Viewer.Name}")" ViewKey="@($"{gameId}/{Viewer.Name}")" HexNotes="@HexNotes" @ref="workspace" Board="@mapBoard" Units="@MapUnits(layers)" UnitView="@layers.View" Marks="@SetupMarks(mapBoard, layers.Marks)" Vocabulary="@Library.Vocabulary" OnLoaded="@ZoomToSetup"
                             Selected="@(highlight is { } picked ? GameMaps.FactsAt(mapBoard, picked) : null)"
                             SelectedChanged="@(facts => PickHex(mapBoard, facts))"
                             @bind-Panel="inspectorTab" Extras="@([new BoardInspector.ExtraTab(new("proposal", "Proposal", AwaitingConfirm ? 1 : null), proposalBlock)])"
@@ -897,6 +905,7 @@ else if (state is not null)
 }
 
 </CascadingValue>
+</ChildContent>
 </HandOverScreen>
 
 @code {
@@ -6045,11 +6054,33 @@ else if (state is not null)
     private (GameHistory? History, string? Next, long Since) happenedFor;
     private IReadOnlyList<string> happened = [];
 
+    // Pass 31c (design D16): the Locations the lines of what happened name, for the outlines of the hand-over screen's map.
+    private IReadOnlyList<BoardLocation> happenedAt = [];
+
+    /// <summary>The board of the game's map, for the hand-over screen's terrain; read without any view's counters.</summary>
+    private StudioBoard? HandOverBoard => state is null ? null : MapLayers?.Board;
+
+    /// <summary>What the page knows of a hex beyond its counters, for the Selection tab: Residual FP (A8.2), which is public, and a Melee the view holds a unit of.</summary>
+    private IReadOnlyList<string> HexNotes(HexFacts facts)
+    {
+        if (state is null || MapLayers?.Board is not { } board || !BoardLocation.TryParse(board.LocationOf(facts), out var hex))
+        {
+            return [];
+        }
+
+        bool Here(BoardLocation at) => at.Board == hex.Board && at.Hex == hex.Hex;
+        return [.. state.ResidualFire.Where(item => Here(item.Location)).Select(item => $"{item.Fp} Residual FP in {PlaceOf(item.Location)} (A8.2)"),
+            .. VisibleUnits.Where(unit => GameState.Condition(unit, Conditions.Melee) == ConditionState.True && state.Location(unit.Id)?.Location is { } at && Here(at))
+                .Select(unit => state.Location(unit.Id)!.Location).Distinct().Select(at => $"Melee in {PlaceOf(at)} (A11.15)")];
+    }
+
     private IReadOnlyList<string> ReadHappened(long since)
     {
         {
             var state = this.state!;
-            var lines = new List<(string Text, int Count)>();
+            var lines = new List<(string Text, int Count, BoardLocation[] At)>();
+            var named = Array.Empty<BoardLocation>();
+            void At(params string?[] locations) => named = [.. locations.Select(text => BoardLocation.TryParse(text, out var at) ? at with { Level = 0 } : null).OfType<BoardLocation>()];
             foreach (var item in history!.Events.Where(item => item.Visibility is null && (since < 0 || item.Revision > since)))
             {
                 var line = item.Payload switch
@@ -6073,16 +6104,30 @@ else if (state is not null)
                     continue;
                 }
 
+                named = [];
+                switch (item.Payload)
+                {
+                    case MovementStepped moved: At(moved.To.ToString()); break;
+                    case AdvanceMoved advanced: At(advanced.To.ToString()); break;
+                    case RoutStepped routed: At(routed.To.ToString()); break;
+                    case FireResolved fired: At(fired.FirerLocation, fired.TargetLocation); break;
+                    case FireReported reportedFire: At(reportedFire.FirerLocation, reportedFire.TargetLocation); break;
+                    case CloseCombatResolved fought: At(fought.Location.ToString()); break;
+                }
+
                 // Table player, pass 31: the same thing several times in a row is counted, not dropped.
                 if (lines.Count > 0 && lines[^1].Text == line)
                 {
-                    lines[^1] = (line, lines[^1].Count + 1);
+                    lines[^1] = (line, lines[^1].Count + 1, lines[^1].At);
                 }
                 else
                 {
-                    lines.Add((line, 1));
+                    lines.Add((line, 1, named));
                 }
             }
+
+            // The map outlines the Locations of the lines shown, and no others.
+            happenedAt = [.. lines.TakeLast(since < 0 ? 6 : 30).SelectMany(item => item.At).Distinct()];
 
             // With nothing to count from, the latest few; otherwise everything since, capped so the screen stays a screen.
             return [.. lines.TakeLast(since < 0 ? 6 : 30).Select(item => item.Count == 1 ? item.Text : $"{item.Text} ({item.Count} times)")];
