@@ -908,3 +908,12 @@ Added by the user on 2026-10-03. Estimate 8:00 (build 6:30). Branch `feature/asl
 | Step 7, the merge gate: the pass's tests (`BacklogPass30bTests`, 22 in Play; `SetupAnswersPageTests`, 6 in the Studio), pass 30's tests brought in line with the new plans and format; the Studio test project (278 passed); the solution build with warnings as errors; the full local suite (2,782 passed, 30 skipped, none failed); the chart supplement regenerated the same | 21:54 | 22:17 | 0:24 | Three of my new assertions were wrong and were corrected: a change count, and two on what a view holds of SW |
 | The Docker Linux check of the branch at 45a5610: all eleven test projects passed (2,782 passed, 30 skipped), with the two CI regeneration checks | 22:17 | 22:32 | 0:15 | The user's word to merge when Docker passes was given while it ran |
 | The merge into main at the user's word (c4e93d8, `--no-ff`), the push, and the CI run on main (ASL Authoring CI, passed) | 22:33 | 22:45 | 0:12 | Pass 30b is merged; about 3:18 logged against the estimate of 9:00 |
+
+## Pass 31: Play-test UI
+
+Added by the user on 2026-10-04. Estimate 24:45 (build 22:45), before the user's answer on splitting it into 31 and 31b. Branch `feature/asl-backlog-pass-31`. The Studio is the only test until the code is complete.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Step 0, the renumbering: DYO to 32 and 33, the rule packages to 34 to 43 with 35b, in the plan, the backlog, ruling R26.2, the pass 30 handover prompt, and one code comment; the old-to-new table in the plan's section 4; the memory notes | 06:38 | 06:40 | 0:02 | Commit 076ce53. The plan's total corrected to 230:34 (pass 30b's 9:00 had not been added) |
+| Step 1, the design, read-only: the play test's report (31 problems, 8 possible rules errors), the game's record on the Play page, the event log (613 events) and the audit log (21 refusals), two of the 92 screenshots; the plan's sections 5 and 15, the handover prompt, the pass 28c and 30b designs, backlog sections 44 to 47; three read-only surveys of the code in parallel (movement and sides; fire, Close Combat, and rally; layout, text, and records); the design written with 19 decisions, 17 tasks, and 9 questions; the pass added to the plan | 07:05 | 07:15 | 0:10 | Stopped for the user's approval. R-02 closed as a misreading; P-01 confirmed in the event log |
