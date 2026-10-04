@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 31c Design
 
-**Status:** Designed 2026-10-04; waits for the user's answers (section 12). Nothing is built. Pass 31c (Play-test UI II: the page reads and holds still) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5. It brings decisions D11 to D18 of the [pass 31 design](<ASL Unit Backlog Pass 31 Design.md>), section 5, up to date with what passes 31 and 31b built, and adds the Game states decision as its first task. Tasks "31b.1" to "31b.8" of that design are tasks 31c.1 to 31c.8 here.
+**Status:** Designed 2026-10-04 and approved the same day: the user took every recommendation of section 12. Being built on branch `feature/asl-backlog-pass-31c`. Pass 31c (Play-test UI II: the page reads and holds still) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5. It brings decisions D11 to D18 of the [pass 31 design](<ASL Unit Backlog Pass 31 Design.md>), section 5, up to date with what passes 31 and 31b built, and adds the Game states decision as its first task. Tasks "31b.1" to "31b.8" of that design are tasks 31c.1 to 31c.8 here.
 
 **Date:** 2026-10-04
 
@@ -57,7 +57,7 @@ The Game states page becomes a developer's inspector outside the Play group, and
 The user took option (b) and the five points with it.
 
 - **The page stays, renamed "Game inspector",** at `/units/games`, so links and documents hold. It moves out of the Play group into a new Verify group with Fidelity.
-- **A game still being played is not listed** on it. The embedded fixture, saved synthetic games, and ended live games are. An address that names a game still played gets a line that says so and links to Play and to Replay.
+- **A game still being played is not listed** on it. The embedded fixture, saved synthetic games, and ended live games are. The page says so in a line that links to Play and to Replay; its address names no game.
 - **The board viewer closes the same gap.** A game still played is not in its source picker. It opens there only through Play's or Replay's link, in that page's view, with no view picker and no revision stepping. A side's view of such a game is shown no revision, and the link carries none: the viewer shows the game's latest state.
 - **An ended game** may be read from any view on both pages, as ruling R31b.1 has it. The inspector's event list keeps its revision numbers.
 - The inspector keeps the case read, the fixtures, stepping by revision, the raw event types, the findings, and "Show on board".
@@ -260,9 +260,11 @@ The order is 31c.0, then 31c.1, then the rest as numbered. 31c.1 is checked on P
 
 The steps are those of passes 30 to 31b: build one task at a time with the Studio on port 6670 as the only test, commit each task once it passes its Studio check; three read-only reviews in parallel; the Studio check of the whole pass at 1920x1080, 1366x768, 1568x677, 1024x768, 683x384, and 320 pixels, by keyboard and mouse, on Play and on Replay; the second play test; the documents; the merge gate; a stop before the merge.
 
-## 12. Questions for the user
+## 12. The user's answers
 
-| # | Question | Recommendation |
+Answered 2026-10-04: all eight as recommended. The other side's units are numbered in the view's own order; a unit Known again keeps its tag; a SW has no tag; the map's view is kept for a game and a view; the hand-over screen's map and the dice and audit tabs are in this pass; a missing check of A7.5 or A7.54 is added as the planner's refusal after I say what I find, and A7.55 gets a backlog row; a side is shown no revision on Play in a game still played; the estimate is 15:45.
+
+| # | Question | Recommendation, taken |
 |---|---|---|
 | 1 | How are the other side's units numbered? (a) In the view's own order of first naming, so "R2" in the German view may be "R5" to the Russian side. (b) One number for a unit in every view, by entry, as the ids are now: a Known "R7" then says at least seven Russian squads entered. (c) One tag in every view that is not a count, such as two letters ("4-4-7 squad R-KD"). | (a). It is the only one that tells a side nothing it has not seen and still reads as "G4". Its cost: two players at one screen name the same enemy unit differently; the Location is always beside the name. |
 | 2 | An enemy unit that was Known, went under "?", and is Known again: the same tag, or a new one? The same tag says it is the unit seen before, which like counters at a table do not say; a new one makes one unit read as two. | The same tag. A player follows a "?" by its Location anyway, and a record that renames a unit is harder to read than the little it gives away. |
