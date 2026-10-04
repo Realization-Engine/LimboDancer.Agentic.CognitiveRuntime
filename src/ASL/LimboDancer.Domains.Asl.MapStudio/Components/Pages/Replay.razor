@@ -1,0 +1,99 @@
+@page "/games/replay"
+@using LimboDancer.Domains.Asl.Units.State
+@inject GameLibrary GamesLibrary
+@inject LivePlay Live
+@inject NavigationManager Navigation
+
+<PageTitle>Replay - ASL Map Studio</PageTitle>
+
+<PageHeader Title="Replay">
+    <RuleHelp Id="replay-intro" DetailLabel="How this works" Summary="Play a recorded game back, one action at a time, from a side's view or the adjudicator's.">
+        A step is one confirmed proposal with everything it caused. The page reads the game's record and changes nothing. A side's view shows only what
+        that side could know at each step: its steps, their count, and their titles leave out what the other side did out of its sight.
+    </RuleHelp>
+</PageHeader>
+
+<div class="toolbar" id="replay-toolbar">
+    <label>
+        Game
+        <select id="replay-game" value="@gameId" @onchange="@(args => Open(args.Value as string ?? string.Empty))">
+            <option value="">choose a game</option>
+            @foreach (var game in Live.Games().Select(scope => scope.Game))
+            {
+                <option value="@game">@game</option>
+            }
+        </select>
+    </label>
+    @if (history?.Current is { } current)
+    {
+        <PerspectivePicker Id="replay-perspective" Choices="@ViewChoices(current)" Value="@viewAs" ValueChanged="@ChangeView" />
+    }
+</div>
+
+@if (gameId.Length > 0 && history?.Current is null)
+{
+    <p class="fail" id="replay-problem">This game did not replay, so it has no steps to show.</p>
+}
+else if (timeline.Steps.Count > 0)
+{
+    <p id="replay-count">@timeline.Steps.Count steps in @timeline.Phases.Count phases, as @DisplayText.ViewName(viewAs) may read them.</p>
+    <ol id="replay-timeline" class="replay-timeline">
+        @foreach (var phase in timeline.Phases)
+        {
+            <li class="replay-phase" data-turn="@phase.Turn" data-phase="@phase.Phase">
+                <span class="replay-phase-title">@(phase.Phase == ReplayStep.SetupPhase ? phase.Label : $"Turn {phase.Turn}, {phase.Label}")</span>
+                <ol start="@phase.FirstStep">
+                    @foreach (var step in timeline.Steps.Skip(phase.FirstStep - 1).Take(phase.Count))
+                    {
+                        <li class="replay-step" data-step="@step.Number" data-kind="@step.Kind" data-read="@step.Read" data-first="@step.First" data-last="@step.Last">@step.Title</li>
+                    }
+                </ol>
+            </li>
+        }
+    </ol>
+}
+
+@code {
+    private string gameId = string.Empty;
+    private GameHistory? history;
+    private string viewAs = Perspective.AdjudicatorName;
+    private ReplayTimeline timeline = ReplayTimeline.Empty;
+
+    [SupplyParameterFromQuery(Name = "game")]
+    public string? GameQuery { get; set; }
+
+    [SupplyParameterFromQuery(Name = "view")]
+    public string? ViewQuery { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if ((GameQuery ?? string.Empty) != gameId)
+        {
+            Load(GameQuery ?? string.Empty, ViewQuery);
+        }
+    }
+
+    private static IReadOnlyList<PerspectivePicker.Choice> ViewChoices(GameState state) =>
+        [.. state.Perspectives.Select(perspective => new PerspectivePicker.Choice(perspective.Name, perspective.IsAdjudicator ? "the adjudicator" : DisplayText.Side(perspective.Name)))];
+
+    private void Open(string game) => Navigation.NavigateTo(game.Length == 0 ? "games/replay" : $"games/replay?game={Uri.EscapeDataString(game)}");
+
+    private void Load(string game, string? view)
+    {
+        gameId = game;
+        history = game.Length == 0 ? null : GamesLibrary.Load(GameLibrary.LivePrefix + game).History;
+        viewAs = history?.Current?.Perspectives.FirstOrDefault(perspective => perspective.Name == view)?.Name ?? Perspective.AdjudicatorName;
+        Read();
+    }
+
+    private void ChangeView(string next)
+    {
+        viewAs = next.Length > 0 ? next : Perspective.AdjudicatorName;
+        Read();
+    }
+
+    // The steps are the view's own: read from the events it is entitled to at the game's last revision (design D6).
+    private void Read() => timeline = history?.Current is { } current
+        ? ReplaySteps.Read(history, GamesLibrary.ViewOf(history, current.Revision, new Perspective(viewAs)))
+        : ReplayTimeline.Empty;
+}
