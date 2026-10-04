@@ -325,6 +325,15 @@ else if (state is not null)
         <section id="play-panel-actions" class="play-pane play-actions" tabindex="-1" @ref="actionsPane" @attributes="@Pane("actions", "Actions")">
             @* Table player, pass 29: the hex picked on the map is offered to every typed Location of the actions. *@
             <CascadingValue Name="PickedLocation" Value="@highlight?.ToString()">
+            @* Pass 31c (design D13): a typed Location can be armed, and the next hex clicked on the map fills it. Setup has its own picking. *@
+            <CascadingValue Name="Picking" Value="@(SetupOpen ? null : Picking)">
+            @if (!SetupOpen && Picking.Armed is not null)
+            {
+                <p id="play-picking" class="toolbar-note" role="status">
+                    The next hex clicked on the map fills "@(Picking.ArmedLabel is { Length: > 0 } armedLabel ? armedLabel : "the Location")".
+                    <button type="button" class="link" id="play-picking-stop" @onclick="@(() => Picking.Arm(null, null))">Stop picking</button>
+                </p>
+            }
             @if (SetupOpen)
             {
                 @setupBlock
@@ -698,6 +707,7 @@ else if (state is not null)
                 }
                 </fieldset>
             }
+            </CascadingValue>
             </CascadingValue>
         </section>
             </text>;
@@ -2273,6 +2283,7 @@ else if (state is not null)
     private void PickHex(StudioBoard board, HexFacts? facts)
     {
         highlight = facts is null ? null : GameMaps.LocationOf(board, facts.Index);
+        (Picking.Picked, Picking.Serial) = (highlight?.ToString(), Picking.Serial + 1);
         if (highlight is not { } at || state is null || !SetupOpen || handOver is not null)
         {
             return;
@@ -3775,6 +3786,7 @@ else if (state is not null)
     /// <summary>Everything the last view prepared: the proposal, the drafts of setup and of every action, and the LOS line.</summary>
     private void ResetForView()
     {
+        (Picking.Armed, Picking.ArmedLabel) = (null, null);
         pending = null;
         status = string.Empty;
         highlight = null;
@@ -4764,6 +4776,7 @@ else if (state is not null)
     /// </summary>
     private void ResetDrafts(bool keepCloseCombat)
     {
+        (Picking.Armed, Picking.ArmedLabel) = (null, null);
         ClearFire();
         opportunityUnits.Clear();
         advanceUnits.Clear();
@@ -6179,6 +6192,20 @@ else if (state is not null)
             return wordsCache.Say;
         }
     }
+
+    // Pass 31c (design D13): the field armed to take the next hex clicked on the map, shared with every typed Location of the actions.
+    private LocationPicking? picking;
+
+    private LocationPicking Picking => picking ??= new LocationPicking
+    {
+        Boards = () => state is null ? [] : [.. state.Map.Boards.Select(placed => placed.Board.Value)],
+        Levels = location => MapLayers?.Board is { } board && BoardLocation.TryParse(location, out var at) ? LevelsAt(board, at) : [0],
+        Arm = (id, label) =>
+        {
+            (picking!.Armed, picking.ArmedLabel) = (id, label);
+            StateHasChanged();
+        },
+    };
 
     /// <summary>A Location as the game writes it (pass 31c, design D12): "G4, level 1" on a map of one board.</summary>
     private string PlaceOf(BoardLocation at) => DisplayText.Place(state?.Map.Boards.Count ?? 2, at);

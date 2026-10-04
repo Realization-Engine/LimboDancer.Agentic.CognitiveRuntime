@@ -20,6 +20,7 @@
         }
     </select>
 </label>
+<PickedOption For="smoke-at" Options="@(Places.Select(place => place.Location))" Value="@At" OnChange="@OnAt" />
 <button id="propose-smoke" disabled="@(!Ready || By.Length == 0 || At.Trim().Length == 0)" aria-describedby="propose-smoke-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: SMOKE grenades</button>
 @if (Ready && (By.Length == 0 || At.Trim().Length == 0))
 {

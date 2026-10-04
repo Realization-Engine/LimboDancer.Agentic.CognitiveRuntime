@@ -295,6 +295,35 @@ public static class DisplayText
     public static string Place(int boards, string location) =>
         BoardLocation.TryParse(location, out var at) ? Place(boards, at) : location;
 
+    /// <summary>
+    /// A Location as a player types it, read into its identifier (pass 31c, design D12): the identifier itself ("bd01:G4:1"), the short "G4" and
+    /// "G4:1", and the words ("G4, level 1", "G4 on board 01, cellar"). A form without its board is read on the map's one board; on a map of
+    /// several, or when the text is none of these, it is returned as typed, for the gate to refuse in its own words.
+    /// </summary>
+    public static string ReadPlace(string text, IReadOnlyList<string> boards)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        ArgumentNullException.ThrowIfNull(boards);
+        var typed = text.Trim();
+        if (typed.Length == 0 || BoardLocation.TryParse(typed, out _))
+        {
+            return typed;
+        }
+
+        var match = System.Text.RegularExpressions.Regex.Match(typed,
+            @"^([A-Za-z]{1,2}\d{1,2})(?:\s+on\s+board\s+(\w+))?(?:\s*(?::|,\s*level)\s*(-?\d)|\s*,\s*(cellar))?$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        if (!match.Success)
+        {
+            return typed;
+        }
+
+        var board = match.Groups[2].Success ? boards.FirstOrDefault(id => id == "bd" + match.Groups[2].Value || id == match.Groups[2].Value) ?? "bd" + match.Groups[2].Value
+            : boards.Count == 1 ? boards[0] : null;
+        var level = match.Groups[4].Success ? "-1" : match.Groups[3].Success ? match.Groups[3].Value : "0";
+        var read = $"{board}:{match.Groups[1].Value.ToUpperInvariant()}:{level}";
+        return board is not null && BoardLocation.TryParse(read, out _) ? read : typed;
+    }
+
     /// <summary>A Location of the game a state belongs to.</summary>
     public static string Place(GameState state, BoardLocation location)
     {

@@ -1,0 +1,37 @@
+@* Pass 31c (design D13; backlog sections 44 and 45): beside a select of Locations, the choices that lie in the hex picked on the map, each as a
+   "Use" button, so a fire's From and Target, an advance, and a Close Combat take their Location from the map. It shows nothing when the hex
+   picked is none of the select's choices, or is the one already chosen. *@
+@foreach (var option in Matches)
+{
+    <button type="button" class="link use-picked" data-for="@For" data-location="@option" title="Chooses the hex picked on the map." @onclick="@(() => OnChange.InvokeAsync(option))">Use @Say(option)</button>
+}
+
+@code {
+    /// <summary>The hex picked on the map, as a ground-level Location.</summary>
+    [CascadingParameter(Name = "PickedLocation")]
+    public string? Picked { get; set; }
+
+    /// <summary>The page's words for the view (design D11): a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    /// <summary>The id of the select the buttons choose for.</summary>
+    [Parameter, EditorRequired]
+    public string For { get; set; } = string.Empty;
+
+    /// <summary>The select's choices, as Location identifiers.</summary>
+    [Parameter, EditorRequired]
+    public IEnumerable<string> Options { get; set; } = [];
+
+    [Parameter]
+    public string Value { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnChange { get; set; }
+
+    private string Say(string text) => Words?.Invoke(text) ?? DisplayText.Location(text);
+
+    private IEnumerable<string> Matches => BoardLocation.TryParse(Picked, out var picked)
+        ? Options.Where(option => option != Value && BoardLocation.TryParse(option, out var at) && at.Board == picked.Board && at.Hex == picked.Hex)
+        : [];
+}

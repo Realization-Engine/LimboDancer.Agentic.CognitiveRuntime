@@ -35,6 +35,7 @@
             }
         </select>
     </label>
+    <PickedOption For="cc-location" Options="@Locations" Value="@Location" OnChange="@OnLocation" />
     @if (Entry is { } entry)
     {
         <span id="cc-status">

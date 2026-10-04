@@ -25,6 +25,7 @@
             }
         </select>
     </label>
+    <PickedOption For="advance-to" Options="@Destinations" Value="@To" OnChange="@OnTo" />
     <button id="propose-advance-units" disabled="@(Selected.Count == 0 || To.Trim().Length == 0)" aria-describedby="propose-advance-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: advance</button>
     @if (Selected.Count == 0 || To.Trim().Length == 0)
     {

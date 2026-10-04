@@ -15,7 +15,7 @@
             }
         </select>
     </label>
-    <label>into <input id="throw-dc-at" value="@At" @onchange="@(args => OnAt.InvokeAsync(args.Value as string ?? string.Empty))" size="12" /></label>
+    <LocationField Id="throw-dc-at" Label="into" Value="@At" OnChange="@OnAt" />
     <button id="propose-throw-dc" disabled="@(Charge.Length == 0 || At.Trim().Length == 0)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: Throw the DC</button>
 </div>
 
