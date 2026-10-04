@@ -2425,6 +2425,45 @@ details.advanced > summary {
     display: none;
 }
 
+/* Pass 31b: the Replay page is the Play workspace read-only: the timeline where the actions are, the map, and the step with the inspector; it has
+   no activity strip. */
+.play-workspace.replay {
+    grid-template-rows: minmax(0, 1fr);
+    grid-template-areas: "actions map review";
+}
+
+@media (max-width: 1439.98px) {
+    .play-workspace.replay {
+        grid-template-rows: auto minmax(0, 1fr);
+        grid-template-areas:
+            "map review"
+            "map actions";
+    }
+}
+
+.replay-timeline,
+.replay-timeline ol {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.replay-phase-title {
+    display: block;
+    margin: 0.6rem 0 0.2rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+}
+
+.replay-phase:first-child .replay-phase-title {
+    margin-top: 0;
+}
+
+.replay-step {
+    padding: 0.15rem 0;
+    font-size: 0.9rem;
+}
+
 /* A wide table scrolls inside its own labelled region rather than widening the page (plan section 11.1, 320px reflow). */
 .table-scroll {
     max-width: 100%;
