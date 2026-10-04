@@ -15,7 +15,7 @@
                 <FireResolutionCard @key="record.EventId" Record="@record" />
                 @if (Replay?.Invoke(record.EventId) is { } replay)
                 {
-                    <p class="record-replay-line"><a class="record-replay" href="@replay">Replay from here</a></p>
+                    <p class="record-replay-line"><a class="record-replay" href="@replay" aria-label="@($"Replay from here: {record.Group} fire at {record.Target}")">Replay from here</a></p>
                 }
             }
         }

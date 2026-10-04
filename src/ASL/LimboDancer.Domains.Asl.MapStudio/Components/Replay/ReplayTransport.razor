@@ -1,23 +1,25 @@
 @* Pass 31b (design D5): the transport of a replay. It moves through the steps the page gives it, which are the view's own: first, back, forward,
    last, by phase, by Game Turn, and to a typed step. The page goes to the step it is told and owns the game; nothing here reads one. *@
 <div class="toolbar replay-transport" id="replay-transport" role="group" aria-label="Replay">
-    <button type="button" id="replay-first" title="The first step (Home)" disabled="@(Number <= 1)" @onclick="@(() => Go.InvokeAsync(1))">First</button>
-    <button type="button" id="replay-turn-back" aria-label="Back a Game Turn" title="Back to the start of this Game Turn, or of the one before" disabled="@(Number <= 1)"
-            @onclick="@(() => Go.InvokeAsync(Timeline.PreviousTurn(Number)))">&lsaquo; Turn</button>
-    <button type="button" id="replay-phase-back" aria-label="Back a phase" title="Back to the start of this phase, or of the one before (Page Up)" disabled="@(Number <= 1)"
-            @onclick="@(() => Go.InvokeAsync(Timeline.PreviousPhase(Number)))">&lsaquo; Phase</button>
-    <button type="button" id="replay-back" aria-label="Back a step" title="Back a step (Left)" disabled="@(Number <= 1)" @onclick="@(() => Go.InvokeAsync(Number - 1))">&lsaquo; Step</button>
+    @* The step controls come first, in the page's order and the tab order alike, so a narrow window shows them without scrolling the bar. A button
+       with nothing to do is marked aria-disabled and keeps the focus, where disabled would drop it to the page (the UI review, pass 31b). *@
+    <button type="button" id="replay-back" aria-label="Back a step" title="Back a step (Left)" aria-disabled="@AtStart" @onclick="@(() => To(Number - 1, back: true))">&lsaquo; Step</button>
     <label class="replay-step-field">
         Step
         <input @key="resets" id="replay-step" type="number" min="1" max="@Count" value="@Number" @onchange="Typed" />
         of @Count
     </label>
-    <button type="button" id="replay-forward" aria-label="Forward a step" title="Forward a step (Right)" disabled="@(Number >= Count)" @onclick="@(() => Go.InvokeAsync(Number + 1))">Step &rsaquo;</button>
-    <button type="button" id="replay-phase-forward" aria-label="Forward a phase" title="To the start of the next phase (Page Down)" disabled="@(Number >= Count)"
-            @onclick="@(() => Go.InvokeAsync(Timeline.NextPhase(Number)))">Phase &rsaquo;</button>
-    <button type="button" id="replay-turn-forward" aria-label="Forward a Game Turn" title="To the start of the next Game Turn" disabled="@(Number >= Count)"
-            @onclick="@(() => Go.InvokeAsync(Timeline.NextTurn(Number)))">Turn &rsaquo;</button>
-    <button type="button" id="replay-last" title="The last step (End)" disabled="@(Number >= Count)" @onclick="@(() => Go.InvokeAsync(Count))">Last</button>
+    <button type="button" id="replay-forward" aria-label="Forward a step" title="Forward a step (Right)" aria-disabled="@AtEnd" @onclick="@(() => To(Number + 1, back: false))">Step &rsaquo;</button>
+    <button type="button" id="replay-phase-back" aria-label="Back a phase" title="Back to the start of this phase, or of the one before (Page Up)" aria-disabled="@AtStart"
+            @onclick="@(() => To(Timeline.PreviousPhase(Number), back: true))">&lsaquo; Phase</button>
+    <button type="button" id="replay-phase-forward" aria-label="Forward a phase" title="To the start of the next phase, or to the last step (Page Down)" aria-disabled="@AtEnd"
+            @onclick="@(() => To(Timeline.NextPhase(Number), back: false))">Phase &rsaquo;</button>
+    <button type="button" id="replay-turn-back" aria-label="Back a Game Turn" title="Back to the start of this Game Turn, or of the one before" aria-disabled="@AtStart"
+            @onclick="@(() => To(Timeline.PreviousTurn(Number), back: true))">&lsaquo; Turn</button>
+    <button type="button" id="replay-turn-forward" aria-label="Forward a Game Turn" title="To the start of the next Game Turn, or to the last step" aria-disabled="@AtEnd"
+            @onclick="@(() => To(Timeline.NextTurn(Number), back: false))">Turn &rsaquo;</button>
+    <button type="button" id="replay-first" title="The first step (Home)" aria-disabled="@AtStart" @onclick="@(() => To(1, back: true))">First</button>
+    <button type="button" id="replay-last" title="The last step (End)" aria-disabled="@AtEnd" @onclick="@(() => To(Count, back: false))">Last</button>
     @ChildContent
 </div>
 
@@ -41,6 +43,13 @@
     private int resets;
 
     private int Count => Timeline.Steps.Count;
+
+    private string? AtStart => Number <= 1 ? "true" : null;
+
+    private string? AtEnd => Number >= Count ? "true" : null;
+
+    /// <summary>Goes to a step, unless the button has nothing to do: back from the first step, or forward from the last.</summary>
+    private Task To(int number, bool back) => (back ? Number <= 1 : Number >= Count) ? Task.CompletedTask : Go.InvokeAsync(number);
 
     private Task Typed(ChangeEventArgs args)
     {

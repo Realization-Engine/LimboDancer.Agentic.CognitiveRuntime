@@ -50,7 +50,8 @@ public sealed record ReplayStep(int Number, long First, long Last, string Attemp
 /// <summary>A run of steps taken in one phase of one Player Turn, or before play: its first step's number and how many steps it holds.</summary>
 public sealed record ReplayPhase(int Turn, string PhasingSide, string Phase, int FirstStep, int Count)
 {
-    public string Label => Phase == ReplayStep.SetupPhase ? "Setup" : $"{DisplayText.Side(PhasingSide)} {GameText.PhaseLabel(Phase)}";
+    /// <summary>The phase as a heading of the timeline: whose Player Turn it is, then the phase, so the DEFENDER's fire phase is not read as the phasing side's own.</summary>
+    public string Label => Phase == ReplayStep.SetupPhase ? "Setup" : $"{DisplayText.Side(PhasingSide)} Player Turn: {GameText.PhaseLabel(Phase)}";
 }
 
 /// <summary>A view's steps of a game, in order, with their phases; the jumps of the transport are read from it (pass 31b, D5).</summary>
@@ -115,15 +116,17 @@ public static class ReplaySteps
     /// its events are what the perspective is entitled to now (A12.12: a setup still out of its sight has no step).
     /// </summary>
     /// <remarks>
-    /// With <paramref name="viewAt"/>, the perspective's view at a revision, an attempt the view reads nothing of is still a step when the view sees
-    /// the map change over it: at the table the other side would see the "?" placed, though not what it is. An attempt that changes nothing the view
-    /// sees stays out, so the count says nothing of it.
+    /// <paramref name="viewAt"/> gives the perspective's view at a revision, and decides two cases for a side (the referee's review, pass 31b). An
+    /// attempt the view reads nothing of is still a step when the view sees the map change over it: at the table the other side would see the "?"
+    /// placed, though not what it is. And an attempt whose public events say only that something minor was done (a SW passed, a marker changed)
+    /// is a step only when the view sees a change: a SW passed between units under "?" is not the other side's to know, nor when it was done.
     /// </remarks>
     public static ReplayTimeline Read(GameHistory history, GameView view, Func<long, GameView>? viewAt = null)
     {
         ArgumentNullException.ThrowIfNull(history);
         ArgumentNullException.ThrowIfNull(view);
         var entitled = view.Events.Select(item => item.EventId).ToHashSet(StringComparer.Ordinal);
+        var side = !view.Perspective.IsAdjudicator;
         var steps = new List<ReplayStep>();
         var index = 0;
         var events = history.Events;
@@ -138,6 +141,7 @@ public static class ReplaySteps
 
             GameEvent[] all = [.. events.Skip(start).Take(index - start)];
             GameEvent[] readable = [.. all.Where(item => entitled.Contains(item.EventId))];
+
             // The phase the step was proposed in: the state before it, or the start's own state.
             var before = history.At(all[0].Revision - 1);
             if ((before ?? history.At(all[0].Revision)) is not { } at)
@@ -145,25 +149,36 @@ public static class ReplaySteps
                 continue;
             }
 
+            // Setup is what happens before play starts; a unit created later (a hero, a leader, a reinforcement) is a step of its phase.
+            var setup = before is not { SetupClosed: true } && all.All(item => GameState.IsSetupEvent(item.Payload));
+            var phase = setup ? ReplayStep.SetupPhase : at.Phase;
+            bool Seen() => viewAt is not null && all[0].Revision > 1 && ReplayDiff.Of(viewAt(all[0].Revision - 1), viewAt(all[^1].Revision), []).Count > 0;
             if (readable.Length == 0)
             {
-                if (viewAt is not null && all[0].Revision > 1 && ReplayDiff.Of(viewAt(all[0].Revision - 1), viewAt(all[^1].Revision), []) is { Count: > 0 } seen)
+                if (side && Seen())
                 {
-                    steps.Add(new ReplayStep(steps.Count + 1, all[0].Revision, all[^1].Revision, attempt, "unread", at.Turn,
-                        all.All(item => GameState.IsSetupEvent(item.Payload)) ? ReplayStep.SetupPhase : at.Phase, at.PhasingSide, null,
-                        "The other side acts where this view sees only the map change", ReplayRead.None)
+                    var other = setup ? all.Select(item => item.Payload).OfType<InstanceCreated>().Select(item => item.Instance.Side).FirstOrDefault(name => name is not null) : null;
+                    steps.Add(new ReplayStep(steps.Count + 1, all[0].Revision, all[^1].Revision, attempt, "unread", at.Turn, phase, at.PhasingSide, other,
+                        other is null ? "The other side acts out of this view's sight, and the map shows a change" : $"The {DisplayText.Side(other)} side sets up",
+                        ReplayRead.None)
                     {
-                        Locations = [.. seen.Select(change => change.At).OfType<BoardLocation>().Distinct()],
+                        Locations = [.. ReplayDiff.Of(viewAt!(all[0].Revision - 1), viewAt(all[^1].Revision), []).Select(change => change.At).OfType<BoardLocation>().Distinct()],
                     });
                 }
 
                 continue;
             }
 
-            var setup = all.All(item => GameState.IsSetupEvent(item.Payload));
-            var (kind, acting, title) = Describe(readable, at, view.Perspective);
-            steps.Add(new ReplayStep(steps.Count + 1, all[0].Revision, all[^1].Revision, attempt, kind, at.Turn, setup ? ReplayStep.SetupPhase : at.Phase, at.PhasingSide,
-                acting, title, readable.Length == all.Length ? ReplayRead.Full : ReplayRead.Part)
+            var (kind, acting, title, minor) = Describe(readable, at, view.Perspective);
+            if (minor && side && !Seen())
+            {
+                continue;
+            }
+
+            // Only a fire is said to be read in part: its public report is table knowledge (A12.14). Any other step with a withheld event reads as
+            // whole, so the mark cannot point to a hidden unit or a Bore Sighted Location in a setup.
+            steps.Add(new ReplayStep(steps.Count + 1, all[0].Revision, all[^1].Revision, attempt, kind, at.Turn, phase, at.PhasingSide, acting, title,
+                kind == "fire" && readable.Length != all.Length ? ReplayRead.Part : ReplayRead.Full)
             {
                 Fires = [.. FiresOf(readable)],
                 Locations = [.. LocationsOf(readable, at).Distinct()],
@@ -207,77 +222,90 @@ public static class ReplaySteps
 
     private static string Place(GameState state, string location) => BoardLocation.TryParse(location, out var at) ? Place(state, at) : location;
 
-    /// <summary>A step's kind, the side that took it when the events say, and its title, from the events the view may read.</summary>
-    private static (string Kind, string? Acting, string Title) Describe(GameEvent[] readable, GameState before, Perspective viewer)
+    /// <summary>
+    /// A step's kind, the side that took it when the events say, its title, and whether it is minor, from the events the view may read. A minor step
+    /// says only that something small was done, and a side's view keeps it only when that view sees a change.
+    /// </summary>
+    private static (string Kind, string? Acting, string Title, bool Minor) Describe(GameEvent[] readable, GameState before, Perspective viewer)
     {
         string? SideOf(string? id) => id is null ? null : before.Find(id)?.Side;
-        string Named(string? side) => side is null ? "A" : $"A {DisplayText.Side(side)}";
+        static string A(string? side, string noun) => side is null ? $"A {noun}" : $"A {DisplayText.Side(side)} {noun}";
+        static string The(string? side, string noun) => side is null ? $"The {noun}" : $"The {DisplayText.Side(side)} {noun}";
+        static string? Head(IReadOnlyList<string> ids) => ids.Count > 0 ? ids[0] : null;
         var defender = before.Sides.FirstOrDefault(side => side.Id != before.PhasingSide)?.Id;
         var payloads = readable.Select(item => item.Payload).ToArray();
         var ended = payloads.OfType<GameEnded>().FirstOrDefault();
         var end = ended is null ? string.Empty : $"; the game ends{(ended.Result is { } won ? $": {ResultText(won)}" : string.Empty)}";
-        static string? Head(IReadOnlyList<string> ids) => ids.Count > 0 ? ids[0] : null;
 
         if (First<GameStarted>(payloads) is { } started)
         {
-            return ("start", null, started.Scenario is { } card ? $"The game starts: {card.Title}" : "The game starts");
+            return ("start", null, started.Scenario is { } card ? $"The game starts: {card.Title}" : "The game starts", false);
         }
 
         if (First<FireResolved>(payloads) is { } fire)
         {
+            var attack = fire.Facts.Deserialize<FireAttack>(LiveFire.Json);
             var acting = SideOf(Head(fire.Firers)) ?? (fire.MovementStep is not null || before.Phase is "mph" or "dfph" ? defender : before.PhasingSide);
             var result = ResultWords(fire.Resolution.Deserialize<FireResolution>(LiveFire.Json)?.Arithmetic?.Result);
-            return ("fire", acting, $"{FireName(fire, before, acting, DisplayText.Side(acting))}: {Place(before, fire.FirerLocation)} at {Place(before, fire.TargetLocation)}"
-                + (result is null ? string.Empty : $": {result}") + end);
+            return ("fire", acting, $"{FireName(fire, attack, before, acting)}: {Place(before, fire.FirerLocation)} at {Place(before, fire.TargetLocation)}"
+                + (result is null ? string.Empty : $": {result}") + end, false);
         }
 
         if (First<FireReported>(payloads) is { } report)
         {
-            // The record is the target side's (A12.14); the firing side reads the public report of its own attack.
+            // The record is the target side's (A12.14); the firing side reads the public report of its own attack, which does not say its kind.
             var acting = viewer.IsAdjudicator ? null : viewer.Name;
             var result = ResultWords(report.Arithmetic.Deserialize<FireArithmetic>(LiveFire.Json)?.Result);
-            return ("fire", acting, $"Fire from {Place(before, report.FirerLocation)} at {Place(before, report.TargetLocation)}" + (result is null ? string.Empty : $": {result}") + end);
+            var name = acting is null ? "Fire" : $"{DisplayText.Side(acting)} {PhaseFire(before, acting)}";
+            return ("fire", acting, $"{name}: {Place(before, report.FirerLocation)} at {Place(before, report.TargetLocation)}" + (result is null ? string.Empty : $": {result}") + end, false);
         }
 
         if (First<OrdnanceFired>(payloads) is { } ordnance)
         {
             var hit = ordnance.Resolution.Deserialize<OrdnanceResolution>(LiveFire.Json)?.ToHit;
             var outcome = hit is null ? string.Empty : hit.CriticalHit ? ": Critical Hit" : hit.Hit ? ": hit" : ": miss";
-            return ("fire", SideOf(ordnance.Crew), $"{DisplayText.Side(SideOf(ordnance.Crew))} ordnance fires at {Place(before, ordnance.Target)}{outcome}{end}");
+            var owner = SideOf(ordnance.Crew);
+            return ("fire", owner, $"{(owner is null ? "Ordnance" : $"{DisplayText.Side(owner)} ordnance")} fires at {Place(before, ordnance.Target)}{outcome}{end}", false);
         }
 
         if (First<CloseCombatResolved>(payloads) is { } combat)
         {
-            return ("cc", null, $"Close Combat in {Place(before, combat.Location)}{end}");
+            var round = combat.Round switch
+            {
+                CloseCombatResolved.AmbusherRound => ", the ambusher's round",
+                CloseCombatResolved.AmbushedRound => ", the ambushed side's round",
+                _ => string.Empty,
+            };
+            return ("cc", null, $"Close Combat in {Place(before, combat.Location)}{round}{end}", false);
         }
 
         if (First<AmbushRolled>(payloads) is { } ambush)
         {
-            return ("cc", null, $"Ambush dr in {Place(before, ambush.Location)}: {(ambush.Ambusher is { } side ? $"the {DisplayText.Side(side)} side ambushes" : "no Ambush")}");
+            return ("cc", null, $"Ambush dr in {Place(before, ambush.Location)}: {(ambush.Ambusher is { } side ? $"the {DisplayText.Side(side)} side ambushes" : "no Ambush")}", false);
         }
 
         if (First<MovementStepped>(payloads) is { } moved)
         {
             var side = SideOf(Head(moved.Movers));
-            return ("move", side, $"{Named(side)} stack moves to {Place(before, moved.To)}{end}");
+            return ("move", side, $"{A(side, moved.Movers.Count == 1 ? "unit" : "stack")} moves to {Place(before, moved.To)}{(moved.Assault ? " by Assault Movement" : string.Empty)}{end}", false);
         }
 
         if (First<VehicleStepped>(payloads) is { } drove)
         {
             var side = SideOf(drove.Vehicle);
-            return ("move", side, $"{Named(side)} vehicle moves in {Place(before, drove.At)}{end}");
+            return ("move", side, $"{A(side, "vehicle")} moves in {Place(before, drove.At)}{end}", false);
         }
 
         if (First<AdvanceMoved>(payloads) is { } advanced)
         {
             var side = SideOf(Head(advanced.Units));
-            return ("advance", side, $"{DisplayText.Side(side)} units advance into {Place(before, advanced.To)}{end}");
+            return ("advance", side, $"{A(side, advanced.Units.Count == 1 ? "unit advances" : "stack advances")} into {Place(before, advanced.To)}{end}", false);
         }
 
         if (First<RoutStepped>(payloads) is { } routed)
         {
             var side = SideOf(routed.Unit);
-            return ("rout", side, $"{Named(side)} broken unit routs to {Place(before, routed.To)}{end}");
+            return ("rout", side, $"{A(side, "broken unit")} routs to {Place(before, routed.To)}{(routed.LowCrawl ? " by Low Crawl" : string.Empty)}{end}", false);
         }
 
         if (First<RallyAttempted>(payloads) is { } rally)
@@ -285,91 +313,116 @@ public static class ReplaySteps
             var side = SideOf(rally.Unit);
             var rallied = rally.Resolution.Deserialize<RallyResolution>(LiveFire.Json)?.Arithmetic?.Rallied;
             var where = before.Location(rally.Unit)?.Location is { } at ? $" in {Place(before, at)}" : string.Empty;
-            return ("rally", side, $"{DisplayText.Side(side)} Rally attempt{where}" + (rallied is null ? string.Empty : rallied == true ? ": rallied" : ": not rallied"));
+            return ("rally", side, $"{A(side, rally.Leader is null ? "Self-Rally attempt" : "Rally attempt")}{where}" + (rallied is null ? string.Empty : rallied == true ? ": rallied" : ": not rallied"), false);
         }
 
         if (First<DeploymentAttempted>(payloads) is { } deployment)
         {
             var side = SideOf(deployment.Squad);
-            return ("rally", side, $"{Named(side)} squad tries to Deploy: {(deployment.Passed ? "two HS" : "it stays a squad")}");
+            return ("rally", side, $"{A(side, "squad")} tries to Deploy: {(deployment.Passed ? "two HS" : "it stays a squad")}", false);
         }
 
         if (First<LineageRecorded>(payloads) is { Action: LineageAction.Deployed or LineageAction.Recombined } lineage)
         {
             var side = SideOf(Head(lineage.Consumed));
-            return ("rally", side, lineage.Action == LineageAction.Deployed ? $"{Named(side)} squad Deploys" : $"Two {DisplayText.Side(side)} HS Recombine");
+            return ("rally", side, lineage.Action == LineageAction.Deployed ? $"{A(side, "squad")} Deploys" : $"Two {DisplayText.Side(side)} HS Recombine".Replace("  ", " ", StringComparison.Ordinal), false);
         }
 
         if (First<RepairAttempted>(payloads) is { } repair)
         {
-            return ("rally", SideOf(repair.Unit), $"{Named(SideOf(repair.Unit))} unit tries to repair a weapon");
+            var result = repair.Result switch
+            {
+                RepairAttempted.Repaired => "repaired",
+                RepairAttempted.Eliminated => "the weapon is eliminated",
+                _ => "still malfunctioned",
+            };
+            return ("rally", SideOf(repair.Unit), $"{A(SideOf(repair.Unit), "unit")} tries to repair a weapon: {result}", false);
         }
 
         if (First<RecoveryAttempted>(payloads) is { } recovery)
         {
-            return ("rally", SideOf(recovery.Unit), $"{Named(SideOf(recovery.Unit))} unit tries to Recover a weapon: {(recovery.Recovered ? "recovered" : "not recovered")}");
+            return ("rally", SideOf(recovery.Unit), $"{A(SideOf(recovery.Unit), "unit")} tries to Recover a weapon: {(recovery.Recovered ? "recovered" : "not recovered")}", false);
         }
 
         if (First<MovementWindowClosed>(payloads) is not null)
         {
-            return ("pass", defender, $"The DEFENDER passes{end}");
+            return ("pass", defender, $"{The(defender, "side")}, the DEFENDER, declines First Fire{end}", false);
         }
 
         if (First<MovementEnded>(payloads) is { } stopped)
         {
             var side = SideOf(Head(stopped.Movers)) ?? before.PhasingSide;
-            return ("move-end", side, $"The {DisplayText.Side(side)} stack ends its move{end}");
+            return ("move-end", side, $"{The(side, stopped.Movers.Count == 1 ? "unit" : "stack")} ends its move{end}", false);
         }
 
         if (First<OpportunityFireDeclared>(payloads) is { } held)
         {
             var side = SideOf(Head(held.Units)) ?? before.PhasingSide;
-            return ("fire", side, $"{DisplayText.Side(side)} units are held for Opportunity Fire");
+            return ("fire", side, $"{DisplayText.Side(side)} units are held for Opportunity Fire", false);
         }
 
         if (First<BuildingMoppedUp>(payloads) is { } mopped)
         {
-            return ("other", mopped.Side, $"The {DisplayText.Side(mopped.Side)} side Mops Up a building{end}");
+            return ("other", mopped.Side, $"{The(mopped.Side, "side")} Mops Up building {mopped.Building}{end}", false);
+        }
+
+        if (First<PrisonersMassacred>(payloads) is not null)
+        {
+            return ("other", null, $"Prisoners are massacred{end}", false);
         }
 
         if (First<InstanceCaptured>(payloads) is { } captured)
         {
-            var side = SideOf(captured.Id);
-            return ("other", SideOf(captured.Custodian), $"{Named(side)} unit is taken prisoner{end}");
+            return ("other", SideOf(captured.Custodian), $"{A(SideOf(captured.Id), "unit")} is taken prisoner{end}", false);
+        }
+
+        if (First<PrisonerFreed>(payloads) is { } freed)
+        {
+            return ("other", null, $"{A(SideOf(freed.Unit), "prisoner")} is freed{end}", false);
         }
 
         if (First<SurrenderRejected>(payloads) is { } rejected)
         {
-            return ("other", null, $"{Named(SideOf(rejected.Unit))} unit's surrender is refused{end}");
+            return ("other", null, $"{A(SideOf(rejected.Unit), "unit")}'s surrender is refused{end}", false);
         }
 
         if (First<SurrenderPending>(payloads) is { } surrender)
         {
-            return ("other", null, $"{Named(SideOf(surrender.Unit))} unit offers to surrender{end}");
+            return ("other", null, $"{A(SideOf(surrender.Unit), "unit")} offers to surrender{end}", false);
         }
 
         if (First<ChoicePending>(payloads) is { } waiting)
         {
-            return ("other", null, $"A choice waits for the {DisplayText.Side(waiting.Side)} side");
+            return ("other", null, $"A choice waits for the {DisplayText.Side(waiting.Side)} side", false);
         }
 
         if (First<ChoiceMade>(payloads) is not null)
         {
-            return ("other", null, $"A choice is answered{end}");
+            return ("other", null, $"A choice is answered{end}", false);
+        }
+
+        if (First<SniperAttacked>(payloads) is { } sniper)
+        {
+            return ("other", SideOf(sniper.Sniper), "A Sniper attacks" + (sniper.Target is { } target ? $" in {Place(before, target)}" : string.Empty) + end, false);
+        }
+
+        if (First<WindChanged>(payloads) is not null)
+        {
+            return ("other", null, "A Wind Change DR", false);
         }
 
         if (readable.FirstOrDefault(item => item.Type == "hidden-placed") is { Payload: ConditionsChanged placed })
         {
             // A12.32 (ruling R23.5): the event is its own side's; the other side sees only that a "?" is there.
             var side = SideOf(placed.Id);
-            return ("other", side, $"The {DisplayText.Side(side)} side places hidden units beneath \"?\"");
+            return ("other", side, $"{The(side, "side")} places hidden units beneath \"?\"", false);
         }
 
         if (First<SetupConcealed>(payloads) is { } concealed)
         {
             var side = SideOf(concealed.Id);
             var count = payloads.OfType<SetupConcealed>().Count();
-            return ("setup", side, $"The {DisplayText.Side(side)} side places non-OB \"?\" on {count} {(count == 1 ? "unit" : "units")}");
+            return ("setup", side, $"{The(side, "side")} places non-OB \"?\" on {count} {(count == 1 ? "unit" : "units")}", false);
         }
 
         if (First<InstanceCreated>(payloads) is { } created && payloads.All(GameState.IsSetupEvent))
@@ -378,25 +431,54 @@ public static class ReplaySteps
             var side = created.Instance.Side;
             var own = viewer.IsAdjudicator || viewer.Name == side;
             var count = payloads.OfType<InstanceCreated>().Count();
-            return ("setup", side, $"The {DisplayText.Side(side)} side sets up" + (own ? $": {count} {(count == 1 ? "counter" : "counters")}" : string.Empty));
+            return ("setup", side, $"{The(side, "side")} sets up" + (own ? $": {count} {(count == 1 ? "counter" : "counters")}" : string.Empty), false);
         }
 
         if (First<PhaseChanged>(payloads) is { } phase)
         {
-            var next = phase.Turn != before.Turn ? $"Turn {phase.Turn} begins"
+            var next = phase.Turn != before.Turn ? $"Game Turn {phase.Turn} begins"
                 : phase.PhasingSide != before.PhasingSide ? $"the {DisplayText.Side(phase.PhasingSide)} Player Turn begins" : null;
-            return (ended is null ? "phase" : "end", null, $"The {DisplayText.Side(before.PhasingSide)} {GameText.PhaseLabel(before.Phase)} ends" + (next is null ? string.Empty : $"; {next}") + end);
+            var lost = payloads.OfType<InstanceEliminated>().Count();
+            return (ended is null ? "phase" : "end", null, $"The {DisplayText.Side(before.PhasingSide)} {GameText.PhaseLabel(before.Phase)} ends"
+                + (lost == 0 ? string.Empty : lost == 1 ? "; a unit is eliminated" : $"; {lost} units are eliminated") + (next is null ? string.Empty : $"; {next}") + end, false);
         }
 
         if (ended is not null)
         {
-            return ("end", null, "The game ends" + (ended.Result is { } final ? $": {ResultText(final)}" : string.Empty));
+            return ("end", null, "The game ends" + (ended.Result is { } final ? $": {ResultText(final)}" : string.Empty), false);
+        }
+
+        if (First<InstanceEliminated>(payloads) is { } gone)
+        {
+            return ("other", null, $"{A(SideOf(gone.Id), "unit")} is eliminated", false);
+        }
+
+        if (First<GunTurned>(payloads) is { } turned)
+        {
+            return ("other", SideOf(turned.Gun), $"{A(SideOf(turned.Gun), "Gun")} turns without firing", false);
+        }
+
+        // What follows says only that something small was done; a side's view keeps such a step only when it sees a change (the referee's review).
+        if (First<EquipmentTransferred>(payloads) is { } passed)
+        {
+            var side = SideOf(passed.Holding?.Holder) ?? SideOf(passed.Id);
+            return ("other", side, passed.Holding is null ? $"{A(side, "weapon")} is left in its Location" : $"{A(side, "weapon")} changes hands", true);
+        }
+
+        if (First<RallyPhaseActionTaken>(payloads) is { } acted)
+        {
+            return ("rally", SideOf(Head(acted.Units)), $"{A(SideOf(Head(acted.Units)), "unit")} acts in the Rally Phase", true);
+        }
+
+        if (First<ConditionsChanged>(payloads) is { } marked)
+        {
+            return ("other", SideOf(marked.Id), $"{A(SideOf(marked.Id), "unit")}'s markers change", true);
         }
 
         // Anything else is named by its first event's type, in words: "smoke-placed" reads "Smoke placed".
         var type = readable.Select(item => item.Type).FirstOrDefault(name => name != "dice-rolled" && name != "conditions-changed") ?? readable[0].Type;
         var words = type.Replace('-', ' ');
-        return ("other", null, char.ToUpperInvariant(words[0]) + words[1..]);
+        return ("other", null, char.ToUpperInvariant(words[0]) + words[1..], true);
     }
 
     private static T? First<T>(EventPayload[] payloads)
@@ -407,24 +489,39 @@ public static class ReplaySteps
 
     private static string ResultText(GameResult result) => result.Winner is { } winner ? $"{DisplayText.Side(winner)} win" : "no winner";
 
-    /// <summary>What a fire is called in its phase (A7.2, A8.1, A8.4, A7.24): Residual FP has no firers (A8.22).</summary>
-    private static string FireName(FireResolved fire, GameState before, string? acting, string side)
+    /// <summary>
+    /// What a fire is called (A7.2, A8.1, A8.3, A8.31, A8.4, A7.24, D7.1): the attack's own kind where its facts record one (First Fire, Subsequent
+    /// First Fire, Final Protective Fire, Bounding First Fire, an Overrun, Residual FP, which has no firers, A8.22), otherwise its phase's fire.
+    /// </summary>
+    private static string FireName(FireResolved fire, FireAttack? attack, GameState before, string? acting)
     {
-        if (fire.Firers.Count == 0)
+        var kind = attack?.FireKind;
+        if (fire.Firers.Count == 0 || kind == ScenarioA1FireCalculator.ResidualFire)
         {
-            return "Residual FP attacks";
+            return attack?.FireLane == true ? "A Fire Lane's Residual FP attacks" : "Residual FP attacks";
         }
 
-        var name = fire.MovementStep is not null || (before.Phase == "mph" && acting != before.PhasingSide) ? "Defensive First Fire"
-            : before.Phase switch
-            {
-                "pfph" => "Prep Fire",
-                "dfph" => "Final Fire",
-                "afph" => "Advancing Fire",
-                _ => "fire",
-            };
-        return $"{side} {name}";
+        var name = kind switch
+        {
+            ScenarioA1FireCalculator.FirstFire => "Defensive First Fire",
+            ScenarioA1FireCalculator.SubsequentFirstFire => "Subsequent First Fire",
+            ScenarioA1FireCalculator.FinalProtectiveFire => "Final Protective Fire",
+            ScenarioA1FireCalculator.BoundingFirstFire => "Bounding First Fire",
+            ScenarioA1FireCalculator.OverrunFire => "Overrun",
+            _ => attack?.DemolitionCharge is not null ? "Demolition Charge" : fire.MovementStep is not null ? "Defensive First Fire" : PhaseFire(before, acting),
+        };
+        return acting is null ? name : $"{DisplayText.Side(acting)} {name}";
     }
+
+    /// <summary>The fire of a phase when the attack's facts are not read: Prep Fire, the DEFENDER's fire in the MPh, Final Fire, Advancing Fire.</summary>
+    private static string PhaseFire(GameState before, string? acting) => before.Phase switch
+    {
+        "pfph" => "Prep Fire",
+        "mph" => acting == before.PhasingSide ? "fire in the Movement Phase" : "Defensive First Fire",
+        "dfph" => "Final Fire",
+        "afph" => "Advancing Fire",
+        _ => "fire",
+    };
 
     private static IEnumerable<ReplayFire> FiresOf(GameEvent[] readable)
     {

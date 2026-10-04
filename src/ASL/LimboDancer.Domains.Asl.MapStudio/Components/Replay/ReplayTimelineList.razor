@@ -12,7 +12,7 @@
                     var current = step.Number == Current;
                     <li @key="step.Number">
                         <button type="button" id="@($"replay-step-{step.Number}")" class="@(current ? "replay-step current" : "replay-step")" aria-current="@(current ? "step" : null)"
-                                data-step="@step.Number" data-kind="@step.Kind" data-read="@step.Read" @onclick="@(() => Go.InvokeAsync(step.Number))">
+                                tabindex="@(current ? 0 : -1)" data-step="@step.Number" data-kind="@step.Kind" data-read="@step.Read" @onclick="@clicks[step.Number - 1]">
                             <span class="replay-step-number">@step.Number</span>
                             <span class="replay-step-title">@step.Title@(step.Read == ReplayRead.Part ? " (read in part)" : string.Empty)</span>
                         </button>
@@ -33,4 +33,24 @@
 
     [Parameter]
     public EventCallback<int> Go { get; set; }
+
+    // The UI review, pass 31b: the step shown alone is a tab stop (Left, Right, Home, and End move from it), each step's click is made once for a
+    // timeline rather than on every render, and the list is drawn again only when the steps or the step shown change.
+    private EventCallback[] clicks = [];
+    private ReplayTimeline? drawn;
+    private int drawnCurrent;
+    private bool changed;
+
+    protected override void OnParametersSet()
+    {
+        changed = !ReferenceEquals(drawn, Timeline) || drawnCurrent != Current;
+        if (!ReferenceEquals(drawn, Timeline))
+        {
+            clicks = [.. Timeline.Steps.Select(step => EventCallback.Factory.Create(this, () => Go.InvokeAsync(step.Number)))];
+        }
+
+        (drawn, drawnCurrent) = (Timeline, Current);
+    }
+
+    protected override bool ShouldRender() => changed;
 }

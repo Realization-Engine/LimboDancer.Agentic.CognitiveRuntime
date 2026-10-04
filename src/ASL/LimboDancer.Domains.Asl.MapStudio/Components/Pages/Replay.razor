@@ -31,7 +31,7 @@
             Game
             <select id="replay-game" value="@gameId" @onchange="@(args => Open(args.Value as string ?? string.Empty))">
                 <option value="">choose a game</option>
-                @foreach (var game in Live.Games().Select(scope => scope.Game))
+                @foreach (var game in games)
                 {
                     <option value="@game">@game</option>
                 }
@@ -41,7 +41,8 @@
         {
             <PerspectivePicker Id="replay-perspective" Choices="@ViewChoices(current)" Value="@(handOver ?? viewAs)" ValueChanged="@ChangeView" />
             <a id="replay-play-link" href="@($"games/play?game={Uri.EscapeDataString(gameId)}")" title="This game on the Play page, as it stands now">Open on Play</a>
-            @if (Shown && StepNow is { } linked && StateNow is { } linkedState)
+            @* The referee's review: the link carries the revision, so it is given only where the whole game may be known (ruling R31b.1). *@
+            @if (Shown && (GameEnded || Viewer.IsAdjudicator) && StepNow is { } linked && StateNow is { } linkedState)
             {
                 <a id="replay-view" href="@Games.BoardLink(ViewTarget(linkedState), GameLibrary.LivePrefix + gameId, Viewer, linked.Last, highlight?.ToString())"
                    title="The board viewer, at this step, read as @DisplayText.ViewName(viewAs)">View on @ViewTarget(linkedState)</a>
@@ -51,10 +52,14 @@
     @if (Shown && StepNow is { } counted)
     {
         @* The step shown is announced as it changes; the context's own status line stays empty, since the page proposes nothing. *@
-        <p id="replay-position" class="replay-position" role="status" aria-live="polite"><strong>Step @counted.Number of @timeline.Steps.Count</strong> @counted.Title</p>
+        <p id="replay-position" class="replay-position" role="status" aria-live="@(playing ? "off" : "polite")"><strong>Step @counted.Number of @timeline.Steps.Count</strong> @counted.Title</p>
+        @if (atMissing)
+        {
+            <p id="replay-at-missing" class="diagnostic">The record asked for is not a step of this view, so the page shows this step instead.</p>
+        }
         <ReplayTransport Timeline="@timeline" Number="@counted.Number" Go="@GoByHand">
             @* Design D5: running forward at a pace; it stops at the last step, at any key, and at a click. *@
-            <button type="button" id="replay-play" class="@(playing ? "primary" : null)" aria-pressed="@(playing ? "true" : "false")" disabled="@(!playing && counted.Number >= timeline.Steps.Count)"
+            <button type="button" id="replay-play" class="@(playing ? "primary" : null)" aria-disabled="@(!playing && counted.Number >= timeline.Steps.Count ? "true" : null)"
                     title="@(playing ? "Stop. Any key or a click stops it too." : "Run forward from this step, a step at a time")" @onclick="TogglePlay">@(playing ? "Stop" : "Play")</button>
             <label class="replay-pace">
                 Pace
@@ -71,7 +76,7 @@
                step at which the game had ended. It writes a new game; this one is only read. *@
             <details id="replay-play-on" class="replay-play-on">
                 <summary>Play on from here</summary>
-                <p class="muted" id="replay-play-on-note">Makes a new game that holds this game's events through step @counted.Number and opens it on the Play page, to be played on from this moment. The dice from there on are new. This game is not changed.</p>
+                <p class="muted" id="replay-play-on-note">Makes a new game that holds this game's events through step @counted.Number (revision @counted.Last) and opens it on the Play page, to be played on from this moment: @PlayOnResumes The dice from there on are new. This game is not changed.</p>
                 <div class="toolbar">
                     <label>
                         The new game's name
@@ -130,10 +135,9 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
                     <p class="muted" id="replay-standing-none">This game has no Victory standing to read: its card has no structured Victory Conditions, has changed since the game started, or play had not started at this step.</p>
                 }
             </div>;
-            RenderFragment stepBlock = @<ReplayStepPanel Step="@step" Count="@timeline.Steps.Count" When="@StepWhen(step)" Changes="@ChangeLines" Rolls="@(records?.RollsIn(step.First, step.Last) ?? [])"
-                Fire="@InStep(records?.Fire, step, fire => fire.EventId)" Ordnance="@Entries(records?.Ordnance, step, "ordnance")" CloseCombat="@Entries(records?.CloseCombat, step, "cc")"
-                Night="@Entries(records?.Night, step, "night")" Snipers="@Entries(records?.Snipers, step, "sniper")"
-                Actions="@([.. InStep(records?.RallyAndRepair, step, item => item.EventId).Select(item => new ActionRecordList.Entry(item.EventId, item.Kind, item.Text))])" />;
+            var panel = PanelNow(step);
+            RenderFragment stepBlock = @<ReplayStepPanel Step="@step" Count="@timeline.Steps.Count" When="@StepWhen(step)" Changes="@panel.Changes" Rolls="@panel.Rolls"
+                Fire="@panel.Fire" Ordnance="@panel.Ordnance" CloseCombat="@panel.CloseCombat" Night="@panel.Night" Snipers="@panel.Snipers" Actions="@panel.Actions" />;
             RenderFragment between = @<text>
         @if (narrow)
         {
@@ -250,38 +254,67 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
 
     protected override void OnParametersSet()
     {
-        // The page follows the address only when the address itself has changed (Back, or a typed address): a render that still carries the values
-        // of the address before the page's own move must not pull the step back.
         // Another layout draws the panes anew, so the step shown is brought into view again.
         if (narrow != wasNarrow)
         {
             (wasNarrow, revealed) = (narrow, 0);
         }
 
-        var (stepChanged, viewChanged) = (StepQuery != seenStep, ViewQuery != seenView);
-        (seenStep, seenView) = (StepQuery, ViewQuery);
+        // The page follows the address only when the address itself has changed (Back, or a typed address). Its own moves reach the address a
+        // round trip later, so while one is on its way the query still holds an earlier step: it is not followed until the address shows the move
+        // the page last made (the UI review, pass 31b).
+        var (stepChanged, viewChanged, atChanged) = (StepQuery != seenStep, ViewQuery != seenView, AtQuery != seenAt);
+        (seenStep, seenView, seenAt) = (StepQuery, ViewQuery, AtQuery);
         if ((GameQuery ?? string.Empty) != gameId)
         {
+            pushed = null;
             Load(GameQuery ?? string.Empty);
+            return;
         }
-        else if (history?.Current is not null && handOver is null)
+
+        if (pushed is { } sent)
         {
-            if (viewChanged && ViewQuery is { Length: > 0 } asked && asked != viewAs && history.Current.Perspectives.Any(perspective => perspective.Name == asked))
+            if (ViewQuery == sent.View && StepQuery == sent.Step)
             {
-                ChangeView(asked);
+                pushed = null;
             }
 
-            if (handOver is null && stepChanged && StepQuery is { } number && number != stepNumber)
-            {
-                GoTo(number);
-            }
+            return;
+        }
+
+        if (history?.Current is null || handOver is not null)
+        {
+            return;
+        }
+
+        if (viewChanged && ViewQuery is { Length: > 0 } asked && asked != viewAs && history.Current.Perspectives.Any(perspective => perspective.Name == asked))
+        {
+            ChangeView(asked);
+        }
+
+        if (handOver is null && atChanged && AtQuery is { Length: > 0 } at)
+        {
+            StopPlay();
+            GoToEvent(at);
+        }
+        else if (handOver is null && stepChanged && StepQuery is { } number && number != stepNumber)
+        {
+            StopPlay();
+            GoTo(number);
         }
     }
 
-    // The step and the view of the address as last read.
+    // The layout, and the step, view, and event of the address as last read; the view and step the page last sent to the address, until it shows them.
     private bool wasNarrow;
     private int? seenStep;
     private string? seenView;
+    private string? seenAt;
+    private (string View, int Step)? pushed;
+
+    // The live games, read when a game is opened rather than on every render.
+    private IReadOnlyList<string> games = [];
+
+    protected override void OnInitialized() => games = [.. Live.Games().Select(scope => scope.Game)];
 
     private static IReadOnlyList<PerspectivePicker.Choice> ViewChoices(GameState state) =>
         [.. state.Perspectives.Select(perspective => new PerspectivePicker.Choice(perspective.Name, perspective.IsAdjudicator ? "the adjudicator" : DisplayText.Side(perspective.Name)))];
@@ -295,8 +328,11 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
     private void Load(string game)
     {
         StopPlay();
-        (gameId, highlight, handOver, records, revealed, atPending) = (game, null, null, null, 0, AtQuery);
-        (viewCache, mapCache, standingCache, unitCache, changeCache) = (default, default, default, default, default);
+        (gameId, highlight, handOver, records, revealed, atPending, atMissing) = (game, null, null, null, 0, AtQuery, false);
+        (viewCache, mapCache, standingCache, unitCache, changeCache, panelCache) = (default, default, default, default, default, default);
+        (playOnName, playOnProblem) = (null, null);
+        cards.Clear();
+        games = [.. Live.Games().Select(scope => scope.Game)];
         entry = game.Length == 0 ? null : GamesLibrary.Load(GameLibrary.LivePrefix + game);
         history = entry?.History;
         if (history?.Current is not { } current)
@@ -308,8 +344,9 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
         var asked = current.Perspectives.FirstOrDefault(perspective => perspective.Name == ViewQuery)?.Name;
         if (current.Ended is not null)
         {
+            // A game that is over is replayed from its start, unless the address names a step or a record (the table player's review).
             viewAs = asked ?? Perspective.AdjudicatorName;
-            Read(StepQuery);
+            Read(StepQuery ?? (AtQuery is { Length: > 0 } ? null : 1));
         }
         else
         {
@@ -328,15 +365,14 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
         }
 
         StopPlay();
-
         if (GameEnded)
         {
             Show(next);
         }
         else
         {
-            // Choosing the shown view again drops the hand-over.
-            handOver = next == viewAs ? null : next;
+            // Choosing the shown view again drops the hand-over, and its panes are drawn anew.
+            (handOver, revealed) = (next == viewAs ? null : next, 0);
         }
     }
 
@@ -355,13 +391,16 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
     /// </summary>
     private void Show(string next)
     {
-        var moment = viewAs.Length > 0 ? StepNow?.Last : null;
+        // The first view of a game still played opens on the step the address names; a later view opens on its own step at the same moment.
+        var first = viewAs.Length == 0;
+        var moment = first ? null : StepNow?.Last;
         (viewAs, highlight) = (next, null);
-        (viewCache, mapCache, standingCache, unitCache, changeCache) = (default, default, default, default, default);
+        (viewCache, mapCache, standingCache, unitCache, changeCache, panelCache) = (default, default, default, default, default, default);
+        (playOnName, playOnProblem) = (null, null);
 
         // The inspector opens on the step again, so nothing the last view picked stays in sight.
         inspectorTab = "step";
-        Read(null);
+        Read(first ? StepQuery : null);
         if (moment is { } revision)
         {
             stepNumber = timeline.StepAt(revision);
@@ -375,27 +414,73 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
     private void Read(int? step)
     {
         var (game, viewer) = (history, Viewer);
-        timeline = game?.Current is { } current ? ReplaySteps.Read(game, GamesLibrary.ViewOf(game, current.Revision, viewer), revision => GamesLibrary.ViewOf(game, revision, viewer))
-            : ReplayTimeline.Empty;
+        var views = new Dictionary<long, GameView>();
+        GameView At(long revision) => views.TryGetValue(revision, out var kept) ? kept : views[revision] = GamesLibrary.ViewOf(game!, revision, viewer);
+        timeline = game?.Current is { } current ? ReplaySteps.Read(game, At(current.Revision), At) : ReplayTimeline.Empty;
         records = history?.Current is { } now ? new PlayRecords(history, Viewer, now.Revision) : null;
+        panelCache = default;
         stepNumber = Math.Clamp(step ?? timeline.Steps.Count, 1, Math.Max(1, timeline.Steps.Count));
 
-        // The event the address names is shown once, at the step of the view that holds its attempt; a view that has no such step keeps its last.
+        // The event the address names is shown once, at the step of the view that holds its attempt.
         if (atPending is { } at)
         {
             atPending = null;
-            if (step is null && timeline.Steps.FirstOrDefault(item => item.Attempt == ReplaySteps.AttemptOf(at)) is { } found)
+            if (step is null)
             {
-                stepNumber = found.Number;
+                FindEvent(at);
             }
         }
     }
 
     private string? atPending;
 
+    // Whether the record the address named is no step of this view, which the page then says.
+    private bool atMissing;
+
+    /// <summary>Shows the step of this view that holds an event's attempt; a view with no such step keeps the step it shows, and the page says so.</summary>
+    private void FindEvent(string eventId)
+    {
+        if (timeline.Steps.FirstOrDefault(item => item.Attempt == ReplaySteps.AttemptOf(eventId)) is { } found)
+        {
+            (stepNumber, atMissing) = (found.Number, false);
+        }
+        else
+        {
+            atMissing = true;
+        }
+    }
+
+    private void GoToEvent(string eventId)
+    {
+        FindEvent(eventId);
+        (playOnName, playOnProblem) = (null, null);
+        SyncAddress();
+    }
+
     /// <summary>The turn and phase a step was taken in, in words.</summary>
     private static string StepWhen(ReplayStep step) => step.IsSetup ? "Setup, before play."
         : $"Turn {step.Turn}, {DisplayText.Side(step.PhasingSide)} {GameText.PhaseLabel(step.Phase)}.";
+
+    /// <summary>What the step panel shows of a step: its rolls, its records, and what changed.</summary>
+    private sealed record StepPanel(IReadOnlyList<DiceRollHistory.Row> Rolls, IReadOnlyList<FireView> Fire, IReadOnlyList<ActionRecordList.Entry> Ordnance,
+        IReadOnlyList<ActionRecordList.Entry> CloseCombat, IReadOnlyList<ActionRecordList.Entry> Night, IReadOnlyList<ActionRecordList.Entry> Snipers,
+        IReadOnlyList<ActionRecordList.Entry> Actions, IReadOnlyList<string> Changes);
+
+    // The step panel's content, read once per step and view rather than on every render (the UI review, pass 31b).
+    private (long Revision, string Viewer, StepPanel? Panel) panelCache;
+
+    private StepPanel PanelNow(ReplayStep step)
+    {
+        if (panelCache.Panel is null || panelCache.Revision != step.Last || panelCache.Viewer != viewAs)
+        {
+            panelCache = (step.Last, viewAs, new StepPanel(records?.RollsIn(step.First, step.Last) ?? [], InStep(records?.Fire, step, fire => fire.EventId),
+                Entries(records?.Ordnance, step, "ordnance"), Entries(records?.CloseCombat, step, "cc"), Entries(records?.Night, step, "night"),
+                Entries(records?.Snipers, step, "sniper"),
+                [.. InStep(records?.RallyAndRepair, step, item => item.EventId).Select(item => new ActionRecordList.Entry(item.EventId, item.Kind, item.Text))], ChangeLines));
+        }
+
+        return panelCache.Panel!;
+    }
 
     /// <summary>The records of a list that belong to a step: those of the events of its attempt.</summary>
     private static IReadOnlyList<T> InStep<T>(IReadOnlyList<T>? all, ReplayStep step, Func<T, string> eventId) =>
@@ -436,6 +521,11 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
     /// view, and only from a step at which the game was still being played.
     /// </summary>
     private bool MayPlayOn => Shown && (GameEnded || Viewer.IsAdjudicator) && StateNow is { Ended: null };
+
+    /// <summary>Where the new game would resume: the turn and phase the game stood in after the step, and whether a move or a choice was open.</summary>
+    private string PlayOnResumes => StateNow is not { } state ? string.Empty
+        : $"it resumes in Turn {state.Turn}, {DisplayText.Side(state.PhasingSide)} {GameText.PhaseLabel(state.Phase)}"
+            + (state.Choice is not null ? ", with a choice waiting to be answered." : state.PendingSurrenders.Count > 0 ? ", with a surrender waiting to be answered." : ".");
 
     /// <summary>The name offered for the new game: this game's, with the revision the step ends at.</summary>
     private string PlayOnName(ReplayStep step) => playOnName is { Length: > 0 } typed ? typed : $"{gameId}-r{step.Last.ToString(CultureInfo.InvariantCulture)}";
@@ -500,6 +590,13 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
             {
                 GoTo(stepNumber + 1);
                 StateHasChanged();
+
+                // The last step ends the run at once, without a pace's wait.
+                if (stepNumber >= timeline.Steps.Count)
+                {
+                    break;
+                }
+
                 await Task.Delay(TimeSpan.FromSeconds(pace), mine.Token);
             }
         }
@@ -540,7 +637,22 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
         if (playing)
         {
             playing = false;
-            _ = replayScript?.InvokeVoidAsync("unwatchStop");
+            _ = Unwatch();
+        }
+    }
+
+    private async Task Unwatch()
+    {
+        try
+        {
+            if (replayScript is not null && !disposed)
+            {
+                await replayScript.InvokeVoidAsync("unwatchStop");
+            }
+        }
+        catch (Exception exception) when (exception is JSDisconnectedException or JSException or TaskCanceledException or ObjectDisposedException)
+        {
+            // The circuit is gone, and the watch with it.
         }
     }
 
@@ -552,7 +664,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
         }
 
         stepNumber = Math.Clamp(number, 1, timeline.Steps.Count);
-        (playOnName, playOnProblem) = (null, null);
+        (playOnName, playOnProblem, atMissing) = (null, null, false);
         SyncAddress();
     }
 
@@ -565,8 +677,9 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
         }
 
         var address = $"games/replay?game={Uri.EscapeDataString(gameId)}&view={Uri.EscapeDataString(viewAs)}&step={step.Number.ToString(CultureInfo.InvariantCulture)}";
-        if (Navigation.ToBaseRelativePath(Navigation.Uri) != address)
+        if (Navigation.ToBaseRelativePath(Navigation.Uri) != address || pushed is not null)
         {
+            pushed = (viewAs, step.Number);
             Navigation.NavigateTo(address, replace: true);
         }
     }
@@ -640,10 +753,33 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
     }
 
     /// <summary>The lines of what changed, with a word when the step starts play and so opens the stacks to inspection (A2.9; ruling R23.3).</summary>
-    private IReadOnlyList<string> ChangeLines => StepNow is { } step && history is not null && !Viewer.IsAdjudicator
-        && history.At(step.First - 1) is { SetupClosed: false } && history.At(step.Last) is { SetupClosed: true }
-            ? ["Play starts with this step: a stack not under \"?\" may now be inspected, so its counters come into this view (A2.9).", .. ReplayDiff.Lines(ChangesNow)]
-            : ReplayDiff.Lines(ChangesNow);
+    private IReadOnlyList<string> ChangeLines
+    {
+        get
+        {
+            if (StepNow is not { } step || history is null || history.At(step.Last) is not { } after)
+            {
+                return [];
+            }
+
+            var before = history.At(step.First - 1);
+            var lines = new List<string>();
+            if (!Viewer.IsAdjudicator && before is { SetupClosed: false } && after.SetupClosed)
+            {
+                lines.Add("Play starts with this step: a stack not under \"?\" may now be inspected, so its counters come into this view (A2.9).");
+            }
+
+            lines.AddRange(ReplayDiff.Lines(ChangesNow));
+
+            // Residual FP is public (A8.2): every view reads where it was left and where it was taken up.
+            var (had, has) = (before?.ResidualFire ?? [], after.ResidualFire);
+            lines.AddRange(has.Where(item => !had.Any(other => other.Location == item.Location && other.Fp == item.Fp))
+                .Select(item => $"{item.Fp} Residual FP left in {DisplayText.Location(item.Location)} (A8.2)"));
+            lines.AddRange(had.Where(item => !has.Any(other => other.Location == item.Location && other.Fp == item.Fp))
+                .Select(item => $"{item.Fp} Residual FP removed from {DisplayText.Location(item.Location)}"));
+            return lines;
+        }
+    }
 
     /// <summary>The step's first Location is brought into view on the map when it is out of sight; otherwise the map holds still (design D4).</summary>
     private async Task RevealOnMap()
@@ -711,8 +847,11 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
                 MarkupString Preview(string id) => renderer is not null && documents.TryGetValue(id, out var document)
                     ? (MarkupString)UnitPreview.Document(renderer, document, [DetailTier.Mid], null, 0.5, [])
                     : default;
+                // The referee's review: a side never reads the id of a unit its view does not hold (rulings R23.1, R23.3).
+                var held = view.Units.Select(unit => unit.Id).Concat(view.Equipment.Select(item => item.Id)).Concat(view.Entities.Select(item => item.Id)).ToHashSet(StringComparer.Ordinal);
+                string Known(string id) => held.Contains(id) ? id : "a unit not in view";
                 string Where(string id, Position position) => view.Locations.TryGetValue(id, out var location)
-                    ? DisplayText.Location(location.Location) + (position is ContainedPosition contained ? $" (in {contained.Container})" : string.Empty)
+                    ? DisplayText.Location(location.Location) + (position is ContainedPosition contained ? $" (in {Known(contained.Container)})" : string.Empty)
                     : position switch
                     {
                         OffMapPosition => "off map",
@@ -722,7 +861,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
                 unitCache = (step.Last, viewAs, [.. view.Units.Select(unit => new ProjectedGameUnitTable.Row(unit.Id, Preview(unit.Id),
                         documents.TryGetValue(unit.Id, out var document) ? UnitLabels.AccessibleName(document, Library.Vocabulary) : DisplayText.Kind(unit.Kind),
                         Where(unit.Id, unit.Position), DisplayText.ConditionsOf(unit), DisplayText.YesNo(GameState.GoodOrder(unit, Library.Vocabulary)),
-                        string.Join("; ", new[] { unit.From.Count > 0 ? $"from {string.Join(", ", unit.From)}" : null, unit.Custodian is { } custodian ? $"prisoner of {custodian}" : null }.OfType<string>()))),
+                        string.Join("; ", new[] { unit.From.Count > 0 ? $"from {string.Join(", ", unit.From)}" : null, unit.Custodian is { } custodian ? $"prisoner of {Known(custodian)}" : null }.OfType<string>()))),
                     .. view.Sealed.Select(presence => new ProjectedGameUnitTable.Row(presence.PlacementId, Preview(presence.PlacementId),
                         $"concealed {DisplayText.Side(presence.Side)} presence", DisplayText.Location(presence.Location), "withheld", "withheld", string.Empty))]);
             }
@@ -748,12 +887,13 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
 
             if (!Shown || StepNow is not { } step || StateNow is not { } state)
             {
-                return "A view waits for its viewer.";
+                return "The view is being handed over.";
             }
 
+            // The turn and phase are the step's own, the ones it was taken in, as the timeline and the step panel say them (the table player's review).
             var turns = state.Scenario is { } scenario && CardOf(scenario.Id)?.Turns is { } count ? $" of {count.Count}" : string.Empty;
             return step.IsSetup ? "Setup, before play."
-                : $"Turn {state.Turn}{turns}, {DisplayText.Side(state.PhasingSide)} {GameText.PhaseLabel(state.Phase)}." + (state.Ended is not null ? " The game has ended." : string.Empty);
+                : $"Turn {step.Turn}{turns}, {DisplayText.Side(step.PhasingSide)} {GameText.PhaseLabel(step.Phase)}." + (state.Ended is not null ? " The game has ended." : string.Empty);
         }
     }
 
@@ -846,6 +986,9 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
         }
     }
 
+    // Set first when the page is left, so nothing started before then goes on to watch the document or call a disposed reference.
+    private bool disposed;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         try
@@ -854,23 +997,35 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
             {
                 // The workspace fills the window below the context, whose height the script measures, as on Play.
                 workspaceScript ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/playWorkspace.js");
+                if (disposed)
+                {
+                    return;
+                }
+
                 await workspaceScript.InvokeVoidAsync("watchContext");
-                replayScript = await JS.InvokeAsync<IJSObjectReference>("import", "./js/replay.js");
+                var script = await JS.InvokeAsync<IJSObjectReference>("import", "./js/replay.js");
+                if (disposed)
+                {
+                    await script.DisposeAsync();
+                    return;
+                }
+
+                replayScript = script;
                 self = DotNetObjectReference.Create(this);
                 await replayScript.InvokeVoidAsync("watchKeys", self);
             }
 
             // The step shown is brought into view in the timeline, once for each step.
-            if (replayScript is not null && Shown && StepNow is { } step && revealed != step.Number)
+            if (replayScript is not null && !disposed && Shown && StepNow is { } step && revealed != step.Number)
             {
                 revealed = step.Number;
                 await replayScript.InvokeVoidAsync("revealStep", $"replay-step-{step.Number}");
                 await RevealOnMap();
             }
         }
-        catch (Exception exception) when (exception is JSDisconnectedException or JSException or TaskCanceledException)
+        catch (Exception exception) when (exception is JSDisconnectedException or JSException or TaskCanceledException or ObjectDisposedException)
         {
-            // The circuit is gone.
+            // The circuit is gone, or the page was left while a call was on its way.
         }
     }
 
@@ -878,6 +1033,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
     {
         try
         {
+            disposed = true;
             StopPlay();
             if (replayScript is not null)
             {
@@ -891,7 +1047,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
                 await workspaceScript.DisposeAsync();
             }
         }
-        catch (Exception exception) when (exception is JSDisconnectedException or JSException or TaskCanceledException)
+        catch (Exception exception) when (exception is JSDisconnectedException or JSException or TaskCanceledException or ObjectDisposedException)
         {
             // The circuit is gone; the browser already dropped the module.
         }

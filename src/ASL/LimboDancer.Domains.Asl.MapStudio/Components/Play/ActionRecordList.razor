@@ -13,7 +13,7 @@
                     @record.Text
                     @if (Replay?.Invoke(record.EventId) is { } replay)
                     {
-                        <text> </text><a class="record-replay" href="@replay">Replay from here</a>
+                        <text> </text><a class="record-replay" href="@replay" aria-label="@($"Replay from here: {Short(record.Text)}")">Replay from here</a>
                     }
                 </li>
             }
@@ -33,7 +33,7 @@
                         @record.Text
                         @if (Replay?.Invoke(record.EventId) is { } replay)
                         {
-                            <text> </text><a class="record-replay" href="@replay">Replay from here</a>
+                            <text> </text><a class="record-replay" href="@replay" aria-label="@($"Replay from here: {Short(record.Text)}")">Replay from here</a>
                         }
                     </li>
                     }
@@ -63,6 +63,9 @@
     /// <summary>The Replay page's address at a record's step (pass 31b); a record shows its link when one is given.</summary>
     [Parameter]
     public Func<string, string?>? Replay { get; set; }
+
+    /// <summary>The start of a record's text, to tell one "Replay from here" link from the next for assistive technology.</summary>
+    private static string Short(string text) => text.Length <= 60 ? text : text[..60];
 
     /// <summary>The records in runs of one turn and phase, in the list's order.</summary>
     public static IReadOnlyList<(string? When, IReadOnlyList<T> Records)> Group<T>(IEnumerable<T> records, Func<T, string?> when)

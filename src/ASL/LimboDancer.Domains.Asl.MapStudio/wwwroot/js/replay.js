@@ -19,7 +19,7 @@ export function watchKeys(dotnet) {
         }
 
         event.preventDefault();
-        dotnet.invokeMethodAsync("OnReplayKey", event.key);
+        dotnet.invokeMethodAsync("OnReplayKey", event.key).catch(() => { });
     };
     document.addEventListener("keydown", keyWatcher);
 }
@@ -39,12 +39,13 @@ let stopWatcher = null;
 export function watchStop(dotnet) {
     unwatchStop();
     stopWatcher = event => {
-        if (event.target instanceof Element && event.target.closest("#replay-play")) {
+        // The Play button answers its own click, and the pace may be changed while the replay runs.
+        if (event.target instanceof Element && event.target.closest("#replay-play, .replay-pace")) {
             return;
         }
 
         unwatchStop();
-        dotnet.invokeMethodAsync("OnReplayStop");
+        dotnet.invokeMethodAsync("OnReplayStop").catch(() => { });
     };
     document.addEventListener("keydown", stopWatcher, true);
     document.addEventListener("pointerdown", stopWatcher, true);
