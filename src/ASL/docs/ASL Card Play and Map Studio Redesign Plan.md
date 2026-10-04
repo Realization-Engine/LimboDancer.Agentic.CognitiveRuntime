@@ -364,7 +364,7 @@ Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (backlog sect
 
 **Purpose:** a game played to its end through the page without a blocked or lost action, and with its result stated. **After:** pass 30b. **From:** the play test's report of 2026-10-04; backlog sections 44 and 45.
 
-**Status:** designed 2026-10-04 and revised the same day with the user's answers; waits for the user's word to build.
+**Built 2026-10-04** on branch `feature/asl-backlog-pass-31`: tasks 31.1 to 31.10, three reviews and their fixes, and the Studio check; see the [pass 31 design](<ASL Unit Backlog Pass 31 Design.md>), section 14, and the [review document](<Scenario A1 Backlog Pass 31 Review 2026-10-04.md>). Rulings R31.1 to R31.8. What it leaves out is in backlog section 48.
 
 | Task | What it changes | Estimate |
 |---|---|---|

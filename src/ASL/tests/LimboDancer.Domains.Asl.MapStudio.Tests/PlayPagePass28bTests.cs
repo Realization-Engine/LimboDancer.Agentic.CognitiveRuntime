@@ -161,12 +161,15 @@ public sealed class PlayPagePass28bTests : IDisposable
         // A10.62: the transfer leaves the broken r1 ADJACENT to g1 and g2, so it comes under DM; its owner keeps it as the RPh ends (the EXC), which is
         // recorded as kept, not gained (referee, pass 28b).
         Assert.Equal("r1 comes under DM (A10.62)", page.Find("#play-rallies .dm-record").TextContent);
+        // Pass 31 (ruling R31.6): r1's owner keeps its DM, from its own view, and either side ends the RPh.
+        page.ViewAs("russian");
         page.Find(".retain-dm[data-unit='r1']").Change(true);
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
+        page.ViewAs("german");
         Assert.Equal("r1 keeps DM as the RPh ends (A10.62)", page.Find("#play-rallies li").TextContent);
         for (var phase = 0; phase < 4; phase++)
         {
-            Commit(page, "#propose-advance");
+            page.EndPhase(Commit);
         }
 
         Assert.Equal("rtph", Current.Phase);
@@ -193,13 +196,17 @@ public sealed class PlayPagePass28bTests : IDisposable
         Commit(page, "#propose-setup");
         for (var phase = 0; phase < 5; phase++)
         {
-            Commit(page, "#propose-advance");
+            page.EndPhase(Commit);
         }
 
         Assert.Equal("rtph", Current.Phase);
+
+        // Pass 31 (ruling R31.6): the rout panel lists the viewing side's units, and a side ends the RtPh on its own units only, so the Russian
+        // view reads r1's obligation and ends the phase without routing it.
+        page.ViewAs("russian");
         Assert.Contains("must rout", page.Find(".rout-obligation[data-unit='r1']").TextContent, StringComparison.Ordinal);
         Assert.Empty(page.FindAll("#play-rallies .failure-to-rout-record"));
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
         Assert.Equal(InstanceStatus.Eliminated, Current.Unit("r1")!.Status);
         Assert.Equal("r1 is eliminated for Failure to Rout as the RtPh ends (A10.5)", page.Find("#play-rallies .failure-to-rout-record").TextContent);
         page.ViewAs("russian");
@@ -222,8 +229,9 @@ public sealed class PlayPagePass28bTests : IDisposable
         page.Find("#sw-unit").Change("g2");
         page.Find("#deploy-squad").Change("g1");
         page.ViewAs("russian");
-        Assert.Equal(string.Empty, page.Find("#sw-weapon").GetAttribute("value"));
-        Assert.Equal(string.Empty, page.Find("#sw-unit").GetAttribute("value"));
+        // Pass 31 (ruling R31.6): the Russian view lists the Russian side's SW only, and it has none here, so the panel may be gone.
+        Assert.All(page.FindAll("#sw-weapon"), select => Assert.Equal(string.Empty, select.GetAttribute("value")));
+        Assert.All(page.FindAll("#sw-unit"), select => Assert.Equal(string.Empty, select.GetAttribute("value")));
         Assert.Equal(string.Empty, page.Find("#deploy-squad").GetAttribute("value"));
     }
 }

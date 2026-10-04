@@ -226,7 +226,7 @@
             <ProposalReviewPanel Title="@proposal.Action.Name" Accepted="@(proposal.Result.Outcome is PlayOutcome.NeedsConfirmation or PlayOutcome.Committed or PlayOutcome.Replay)"
                                  Outcome="@(ConsequencesOf(proposal).Count > 0 ? ConsequencesOutcome : OutcomeText(proposal.Result.Outcome, Withheld(proposal)))"
                                  Reasons="@([.. ReviewReasons(proposal).Where(reason => GamePlanner.ConsequenceOf(reason) is null || proposal.Result.Outcome != PlayOutcome.NeedsConfirmation)])"
-                                 Consequences="@([.. ConsequencesOf(proposal).Select(item => Sentence(item.Text))])" ConfirmLabel="@ConfirmLabel(ConsequencesOf(proposal))"
+                                 Consequences="@([.. ConsequencesOf(proposal).Select(item => item.Text.EndsWith('.') ? item.Text : item.Text + ".")])" ConfirmLabel="@ConfirmLabel(ConsequencesOf(proposal))"
                                  CanConfirm="@(proposal.Result.Outcome == PlayOutcome.NeedsConfirmation)" Busy="@busy" Confirm="Confirm" Cancel="@CancelProposal">
                 <Lead>
                     @if (PlacesCounters(proposal) && setupReview is { } summary)
@@ -6232,7 +6232,7 @@ else if (state is not null)
     private PlayResult? consequencesFor;
     private IReadOnlyList<PlanConsequence> consequences = [];
 
-    private const string ConsequencesOutcome = "Every check passed, but read what this proposal does before you confirm.";
+    private const string ConsequencesOutcome = "Every check passed, with consequences: read them first. Confirm to commit.";
 
     /// <summary>The Confirm button's words for a proposal with consequences: the gravest kind is named.</summary>
     private static string ConfirmLabel(IReadOnlyList<PlanConsequence> consequences)

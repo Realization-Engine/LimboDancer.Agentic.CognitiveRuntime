@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 31 Design
 
-**Status:** Revised 2026-10-04 with the user's answers (section 12), and waiting for the user's word to build. Nothing is built. It covers two passes, 31 (section 4) and 31b (section 5). Pass 31 (Play-test UI) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, added by the user on 2026-10-04.
+**Status:** Pass 31 is built, reviewed, and checked in the Studio (2026-10-04, branch `feature/asl-backlog-pass-31`); section 14 says what was built and where it differs, and the [review document](<Scenario A1 Backlog Pass 31 Review 2026-10-04.md>) has the reviews. Pass 31b is designed here (section 5) and not started. Approved by the user on 2026-10-04 with the answers of section 12. Pass 31 (Play-test UI) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, added by the user on 2026-10-04.
 
 **Date:** 2026-10-04
 
@@ -121,7 +121,7 @@ So the gap is in the page and in the wording of the reason, and the pass closes 
 **D6. Fire: five corrections** (P-05, P-02, P-16, P-26, R-05).
 
 - **The MF limit** counts the firer's attacks on this moving stack in this Location in this Movement Phase, a weapon apart from the unit that fires it. The MF spent there are rounded down, with a least of one attack a hex, as A8.3 and A9.2 say ("FRD, but a minimum of once per hex"), so the present rounding stays. Ruling R31.1.
-- **Two leaders in a target Location.** The Fire package's order of checks for several leaders, the modifier each takes, and Leader Loss with more than one leader are reviewed against A10.2 and A10.21, tested, and the refusal removed. A leader whose broken Morale Level the catalog lacks keeps its own refusal. Ruling R31.2.
+- **Two leaders in a target Location.** The Fire package's order of checks for several leaders, the modifier each takes, and Leader Loss with more than one leader are reviewed against A10.2 and A10.21, tested, and the refusal removed. A leader whose broken Morale Level the catalog lacks keeps its own refusal. Ruling R31.5.
 - **The Effect column** shows what the attack changed. A target that was already broken or pinned reads "already broken".
 - **A created unit's conditions.** A unit created in play (a created leader, a replacement, a Deployed HS) has broken, berserk, captured, and Melee recorded, so its Good Order is known. Older games read as before (backlog section 45's row, for new events only).
 - **A pinned firer's SW** is halved as its own FP is, if the referee's check confirms it (A7.8). Ruling R31.3.
@@ -248,15 +248,16 @@ Written at the merge gate, by the handover prompt's rule. The Studio on port 667
 
 | Ruling | Question | Decided by |
 |---|---|---|
-| R31.1 | What does the Defensive First Fire MF limit count? | A8.3, A9.2; D6 |
-| R31.2 | How do several leaders in a target Location check, and who modifies whom? | A10.2, A10.21; the referee's review |
-| R31.3 | How does a pinned unit fire its MG? | A7.81; section 13 |
-| R31.4 | Who may Deploy and Recombine without a leader, and may Russian squads Deploy? | A1.31, A1.32, A20.5, A25.2; section 13; corrects R13.4 |
-| R31.5 | Which leader's modifier does a MC or TC take when several leaders are present? | A10.21, A10.22, A10.72; section 13 |
-| R31.6 | Who may propose what? | D1; the user's answer 2 |
-| R31.7 | What may the hand-over screen show? | D10; rulings R23.1 to R23.6 |
+| R31.1 | What does the Defensive First Fire limit count? | A8.3, A9.2 |
+| R31.2 | Do units in Melee take or cause a Leader Loss check under fire from outside? | A10.2, A11.141; the referee's review |
+| R31.3 | How does a pinned unit fire its MG? | A7.81 |
+| R31.4 | Who Deploys and Recombines without a leader, and may Russian squads Deploy? | A1.31, A1.32, A20.5, A25.2; corrects R13.4 |
+| R31.5 | How is fire at a Location with several leaders decided? | A10.2, A10.21, A10.22, A10.72 |
+| R31.6 | Who may propose what? | The user's answer 2 |
+| R31.7 | What may the hand-over screen show? | Rulings R23.1 to R23.6 |
+| R31.8 | Is a freed SMC Armed? | A20.551; the user's ruling of 2026-10-04 |
 
-More are added if the check of R-01, R-06, R-07, and R-08 finds errors.
+The rulings are written in section 5 of the Backlog Passes Plan.
 
 ## 10. The two play tests
 
@@ -339,7 +340,7 @@ Answered 2026-10-04.
 | R-06 | B10.31 (p. 136): the +1 for Height Advantage holds only when the unit is "not eligible to receive any other positive TEM". | **No error in the result:** the code adds it only with no other positive TEM. The fact row shows it whenever the firer is lower, which misleads. | Task 31.6: the row is shown only when the +1 applies. |
 | R-07 | A11.22 (p. 71): a unit attacked by an Original 12 "may likewise withdraw from CC immediately thereafter". | **No error against ruling R14.8,** which has the withdrawal declared with the round, since the round is resolved in one action. The record says nothing when a 12 comes and no withdrawal was declared. | Task 31.7: the record says so, citing A11.22. Asking after the DR, as a choice, goes to the backlog. |
 | R-08 | A11.14 (p. 70): "Any SMC in CC has an inherent FP attack and defense strength of one", added to its MMC's. Ruling R14.5 gives an Unarmed unit a CC FP of one. | **No error** in the strength of 4 + 1 + 1. | Nothing. See the next row. |
-| new | A20.551 (p. 88): "Escaped SMC are always Armed." Ruling R14.6 arms a SMC again when its own escape succeeds; ruling R14.5 frees a prisoner as Unarmed when its Guard is eliminated. | **A question, not built.** In Turn 4 the 9-2 was freed when `g-squad-7` eliminated his Guard, and stayed Unarmed for the rest of the game. Whether a SMC freed by his own side is "escaped" is a reading. | Put to the user at the next stop, with the recommendation that a SMC freed in any way is Armed. |
+| new | A20.551 (p. 88): "Escaped SMC are always Armed." Ruling R14.6 arms a SMC again when its own escape succeeds; ruling R14.5 frees a prisoner as Unarmed when its Guard is eliminated. | **A question, not built.** In Turn 4 the 9-2 was freed when `g-squad-7` eliminated his Guard, and stayed Unarmed for the rest of the game. Whether a SMC freed by his own side is "escaped" is a reading. | The user ruled on 2026-10-04 that a SMC freed in any way is Armed: ruling R31.8, built in this pass. |
 
 **The passages behind the pass's other rule changes.**
 
@@ -350,3 +351,24 @@ Answered 2026-10-04.
 | D6, several leaders (P-02) | A10.2 (p. 65): leaders check first, "higher Morale Level leaders checking before lower". A10.21 (p. 66): one unbroken leader's modifier applies, not cumulative, and "the owner must choose which". A10.22: a leader takes the modifier of "an unbroken leader of higher morale", never his own. A10.72 (p. 68): a non-zero modifier cannot be declined unless another leader's is substituted. | Ruling R31.5: the game takes the most favorable modifier among the unbroken leaders who may give it, since the owner would choose it; a leader takes one only from a leader of higher Morale Level. Each lost leader causes its own LLMC or LLTC in units of lower Morale Level (A10.2). |
 | D8 (P-04) | A11.14 (p. 70): "the smallest increment which can be the subject of a single CC attack is a single MMC (plus any SMC stacked directly above it)", and stacks are rearranged "prior to both sides' declaration of CC attacks". | The check is right; the form must tick the SMC with its MMC and keep the stacking. |
 | D8 (P-10) | A20.22 (p. 87): at the Kill Number "one defending unit of the defender's choice is captured". | The order of choice belongs to the defender's side. |
+
+## 14. Pass 31 as built
+
+**Built 2026-10-04,** tasks 31.1 to 31.10, one commit a task or pair of tasks, each checked in my Studio on port 6670 before its commit. The [review document](<Scenario A1 Backlog Pass 31 Review 2026-10-04.md>) lists what a player now meets for each problem, the three reviews' findings and their fixes, and the Studio check.
+
+**As designed:** D0 (the rulebook first), D1 (who may act), D3's first half (a waiting choice first), D4 (the last turn and the result, with the account of every condition), D5 (consequences), D6 (the five fire corrections), D7 (Advance), D8 (the Close Combat form), D9 (the Rally Phase and Deploy), and D10's text (the hand-over screen).
+
+**What differs from the design:**
+
+- **Old games replay unchanged.** Replay recomputes every recorded attack, so a rule changed outright would have stopped older games, the played game among them, from opening. The pinned MG (R31.3) and the Melee exemption from Leader Loss (R31.2) are facts recorded with each new attack, and a freed SMC is armed by an event (R31.8). A record without them resolves as it did.
+- **The phase end.** Either side ends the RPh, RtPh, and CCPh, where D1 gave it to the phasing side: the page hands the screen to the side that has not yet acted, so the side that acts last ends the phase with no extra hand-over. A side may not end the RtPh while the other side must still rout.
+- **The account of the Victory conditions** is the adjudicator's during play and everyone's after the end, where D4 gave it to each side's view: a condition such as "the only unbroken units in the building" would tell a side what lies under the enemy's "?" (ruling R23.4; the referee's review).
+- **A move whose movers are all eliminated** is ended by the DEFENDER's pass, not by the fire itself (D2). The pass is offered.
+- **The hand-over screen has no map** of the terrain; the arriving view opens on the Location the game waits on. The map is in backlog section 48, for pass 31b.
+- **D3's record line** for a resolution that waits on a choice is not built (backlog).
+- **D8:** one text serves the four stacking checks, now saying what to do; the capture's order is typed by the capturing side, with a default; whether the other side has declared is not said in the proposal (backlog).
+- **D9:** the Self-Rally text says which rule bars the unit, without naming the unit that used the side's first attempt.
+- **The MF rounding** stays as it was: A8.3 says "FRD, but a minimum of once per hex".
+- **Added:** units in Melee take and cause no Leader Loss check (R31.2); a freed SMC is Armed (R31.8); a win at once is a consequence; a stacked SMC is ticked with its attacking MMC.
+
+**The short play test** (task 31.10) was one whole Russian Player Turn from the end of setup, not two Game Turns; each problem was checked on a copy of the played game at the revision where it happened. Pass 31b ends with the full play test.

@@ -76,7 +76,7 @@ public sealed class PlayPageDemoFixesTests : IDisposable
     {
         for (var phase = 0; phase < phases; phase++)
         {
-            Commit(page, "#propose-advance");
+            page.EndPhase(Commit);
         }
     }
 
@@ -255,6 +255,9 @@ public sealed class PlayPageDemoFixesTests : IDisposable
         // A10.5 (ruling R13.3): in the RtPh the broken r1, ADJACENT to g1 and g2, must rout.
         Advance(page, 5);
         Assert.Equal("rtph", live.History("village")!.Current!.Phase);
+
+        // Pass 31 (ruling R31.6): the rout panel lists the viewing side's units, so r1's obligation is read in the Russian view.
+        page.ViewAs("russian");
         Assert.Contains("must rout", page.Find(".rout-obligation[data-unit='r1']").TextContent, StringComparison.Ordinal);
     }
 

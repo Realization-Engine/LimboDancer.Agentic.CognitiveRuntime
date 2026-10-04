@@ -348,7 +348,7 @@ public sealed class BacklogPass13Tests : IDisposable
     }
 
     [Fact]
-    public async Task ASquadDeploysWithItsLeaderAndGuardsDeployAlone()
+    public async Task ASquadDeploysWithItsLeaderAndARussianSquadDoesNot()
     {
         await SetupAt(0, "german", Unit("g1", "attacker-squad", "C3", "german"), Unit("gl", "attacker-leader-8-1", "C3", "german"), Mg("gm", "attacker-lmg", "g1", "german"),
             Unit("g2", "attacker-squad", "C3", "german"), Unit("gl2", "attacker-leader-8-1", "C3", "german"),
@@ -384,13 +384,14 @@ public sealed class BacklogPass13Tests : IDisposable
             leader = "gl2"
         }), "play.rph-action");
 
-        // In the Russian RPh, Guards need no leader, and take the NTC unmodified: 4+4 = 8 against their morale 8 (A1.31).
+        // Pass 31 (ruling R31.4, correcting R13.4): Russian squads may not Deploy (A25.2), a Guards squad included; the "Guards" of A1.31 are the
+        // Guards of prisoners (A20.5).
         await Advance(8);
-        Committed(await Do(GameActions.Deploy, Once(4, 4), new
+        Refused(await Do(GameActions.Deploy, NoRoll(), new
         {
             squadId = "r1"
-        }));
-        Assert.Equal(2, Current.Units.Count(unit => unit.Status == InstanceStatus.Active && unit.Side == "russian" && unit.Kind == "asl:half-squad"));
+        }), "play.deploy-russian");
+        Assert.Equal(InstanceStatus.Active, Current.Unit("r1")!.Status);
     }
 
     [Fact]

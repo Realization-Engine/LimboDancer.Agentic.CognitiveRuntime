@@ -124,7 +124,7 @@ public sealed class PlayPagePass5Tests : IDisposable
         Place(page, "r6", "defender-squad", hexes.From);
         Place(page, id, "attacker-squad", hexes.Open);
         Commit(page, "#propose-setup");
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
         page.Find("#fire-from").Change(hexes.From);
         page.Find(".fire-firer[data-unit='r4']").Change(true);
         page.Find(".fire-firer[data-unit='r5']").Change(true);
@@ -149,8 +149,8 @@ public sealed class PlayPagePass5Tests : IDisposable
         Assert.Matches(@"""friendlyEdge"":\s*""right""", file);
 
         // A4.5: g1 Double Times into the Open Ground beside it and is CX.
-        Commit(page, "#propose-advance");
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
+        page.EndPhase(Commit);
         page.Find(".move-unit[data-unit='g1']").Change(true);
         page.Find("#move-to").Change(hexes.From);
         page.Find("#move-double-time").Change(true);
@@ -169,7 +169,7 @@ public sealed class PlayPagePass5Tests : IDisposable
         Place(page, "r5", "defender-squad", hexes.From);
         Place(page, "g2", "attacker-squad", hexes.Open);
         Commit(page, "#propose-setup");
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
         page.Find("#fire-from").Change(hexes.From);
         page.Find(".fire-firer[data-unit='r4']").Change(true);
         page.Find(".fire-firer[data-unit='r5']").Change(true);

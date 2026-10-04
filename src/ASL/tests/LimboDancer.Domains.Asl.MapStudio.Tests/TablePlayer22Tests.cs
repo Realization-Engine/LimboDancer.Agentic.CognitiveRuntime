@@ -125,6 +125,13 @@ public sealed class TablePlayer22Tests : IDisposable
         output.WriteLine("summary: " + page.Find("#play-summary").TextContent);
         for (var step = 0; step < 4; step++)
         {
+            // Pass 31 (ruling R31.6): the phase is ended from the view of the side that ends it; the DEFENDER ends the DFPh.
+            if (page.FindAll("#propose-advance").Count == 0)
+            {
+                var shown = page.Find("#play-perspective").GetAttribute("value");
+                page.ViewAs(page.FindAll("#play-perspective option").Select(option => option.GetAttribute("value")!).First(view => view != shown && view != "adjudicator"));
+            }
+
             Assert.Contains("Committed", Propose(page, "#propose-advance"), StringComparison.Ordinal);
             output.WriteLine("summary: " + page.Find("#play-summary").TextContent.Trim());
         }

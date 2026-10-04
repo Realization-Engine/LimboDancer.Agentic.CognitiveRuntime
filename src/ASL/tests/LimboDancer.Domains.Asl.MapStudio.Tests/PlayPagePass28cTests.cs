@@ -135,7 +135,7 @@ public sealed class PlayPagePass28cTests : IDisposable
         // Another page commits first.
         var other = context.Render<PlayPage>();
         other.OpenGame("village");
-        Commit(other, "#propose-advance");
+        other.EndPhase(Commit);
         Assert.Equal("pfph", Current.Phase);
 
         page.Find("#play-confirm").Click();
@@ -151,8 +151,8 @@ public sealed class PlayPagePass28cTests : IDisposable
     {
         var hexes = Hexes();
         var page = Started();
-        Commit(page, "#propose-advance");
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
+        page.EndPhase(Commit);
         Assert.Equal("mph", Current.Phase);
 
         page.Find(".move-unit[data-unit='g1']").Change(true);
@@ -188,7 +188,7 @@ public sealed class PlayPagePass28cTests : IDisposable
     {
         var hexes = Hexes();
         var page = Started();
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
         page.Find("#fire-from").Change(hexes.One);
         page.Find(".fire-firer[data-unit='g1']").Change(true);
         page.Find("#fire-target").Change(hexes.Two);

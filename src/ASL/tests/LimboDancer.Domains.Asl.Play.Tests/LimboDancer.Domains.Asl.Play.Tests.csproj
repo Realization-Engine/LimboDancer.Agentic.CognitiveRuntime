@@ -15,5 +15,6 @@
     <None Include="../LimboDancer.Domains.Asl.Maps.Vasl.Tests/Oracle/bd01.hexfacts.json.gz" Link="Oracle/bd01.hexfacts.json.gz" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../LimboDancer.Domains.Asl.Maps.Vasl.Tests/Oracle/bd02.hexfacts.json.gz" Link="Oracle/bd02.hexfacts.json.gz" CopyToOutputDirectory="PreserveNewest" />
     <None Include="../LimboDancer.Domains.Asl.Maps.Vasl.Tests/Oracle/bd04.hexfacts.json.gz" Link="Oracle/bd04.hexfacts.json.gz" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fixtures/guards-dl-01.game.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

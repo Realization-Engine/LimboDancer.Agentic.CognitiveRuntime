@@ -28,7 +28,7 @@ public sealed partial class GamePlanner
     private const string LeaderNeeded = "A1.31, A1.32";
 
     /// <summary>A25.2 (ruling R31.4): Russian squads may not Deploy [EXC: a Guard of prisoners, A20.5, and a temporary crew, A21.22, neither built].</summary>
-    private static bool MayNotDeploy(UnitInstance squad) => DefinitionOf(squad)?.Nationality == "russian";
+    private static bool MayNotDeploy(UnitInstance squad) => !ScenarioSetup.MayDeploy(DefinitionOf(squad)?.Nationality);
 
     /// <summary>Whether the game dismantles a weapon now for its possessor (A9.8; ruling R13.6): the German MMG, in its side's PFPh or DFPh.</summary>
     public static bool MayDismantle(GameState state, string weaponId)

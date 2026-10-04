@@ -280,6 +280,26 @@ public sealed class BacklogPass19Tests : IDisposable
         Assert.True(Planner().CardSetup(Current, new HashSet<string>())!.Groups.Single(group => group.Side == "german").Complete);
     }
 
+    // A2.9, A25.2 (pass 31, ruling R31.4; referee, pass 31): squads set up Deployed only "if the nationality is capable of Deployment", and Russian
+    // squads may not Deploy, so a Russian squad set up as its two HS is refused.
+    [Fact]
+    public async Task NoRussianSquadSetsUpDeployed()
+    {
+        var card = Card("guards-counterattack");
+        Committed(await Place("guards-counterattack", null, [.. Ob(card, "german", 0)]));
+
+        var first = Ob(card, "russian", 0);
+        var squad = FreeSquads(first)[0];
+        var at = JsonSerializer.SerializeToElement(squad["position"]).GetProperty("at").GetString()!;
+        var half = ScenarioA1FireReference.HalfSquadOf((string)squad["definition"])!;
+        var deployed = first.Except([squad]).ToList();
+        deployed.AddRange([Unit("rh1", half, at, "russian", "russian-1"), Unit("rh2", half, at, "russian", "russian-1")]);
+        Refused(await Place("guards-counterattack", null, [.. deployed, .. Ob(card, "russian", 1)]), "play.setup-deployment");
+
+        Assert.True(ScenarioSetup.MayDeploy("german"));
+        Assert.False(ScenarioSetup.MayDeploy("russian"));
+    }
+
     // R19.5 (A12.11, A12.12): a group's OB "?" in Concealment Terrain, within its allotment; none for a group the card gives none; no HIP.
     [Fact]
     public async Task OnlyOrderOfBattleConcealmentInConcealmentTerrain()
