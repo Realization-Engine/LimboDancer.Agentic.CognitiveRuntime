@@ -323,7 +323,7 @@ Task 30b.7, one card at a time. A plan's screenshot goes to the user in the chat
 
 ### 15.1 Gambit: the Germans
 
-Made 2026-10-03 from the Studio's terrain and LOS on the card's map (board 4 over board 2 reversed; LOS definitive), read with the scratchpad script of pass 30: the LOS from the four British post Locations of the card's plans (P6 and O6 at level 1, H6, I5) to all 83 hexes numbered 8 to 10, and from the ten German hexes used back to the posts, the centre road, and the exits. Each plan was used in a new game in my Studio with the British plan it answers committed first (`p30b-gb-1` to `p30b-gb-3`), and Three roads after each of the three British plans (`p30b-gb-4` to `p30b-gb-6`): the gate accepted all six setups (11 counters each). They wait for the user's approval.
+Made 2026-10-03 from the Studio's terrain and LOS on the card's map (board 4 over board 2 reversed; LOS definitive), read with the scratchpad script of pass 30: the LOS from the four British post Locations of the card's plans (P6 and O6 at level 1, H6, I5) to all 83 hexes numbered 8 to 10, and from the ten German hexes used back to the posts, the centre road, and the exits. Each plan was used in a new game in my Studio with the British plan it answers committed first (`p30b-gb-1` to `p30b-gb-3`), and Three roads after each of the three British plans (`p30b-gb-4` to `p30b-gb-6`): the gate accepted all six setups (11 counters each). The user kept all four on 2026-10-03, with no remarks.
 
 What the plans answer. The five British counters are on the map, none under "?" (SSR 2), when the Germans set up in the hexes numbered 8 to 10: eight 5-4-8 squads, the 9-2, the 9-1, and the 8-1, with no SW and no OB "?". The Germans move first. The other fifteen British counters enter along the north edge in the British half of Turn 1 and must exit 20 Exit VP off the south edge near 2Y1 (below 4I10, the west), 2Q1 (below 4Q10, the centre), or 2I1 (below 4Y10, the east). So the Germans have one turn against five counters, and then eight squads against twelve on three roads.
 
@@ -375,3 +375,59 @@ Facts every plan rests on:
 | Non-OB "?" offered after setup | X8 and Y9 against every British plan; I10 too against The farmhouse, where no post is at H6 |
 
 Each plan's terrain facts in the file end with the line on the non-OB "?", and the two that lean on a grain hindrance carry the note on grain in May, as pass 30's plans do.
+
+### 15.2 The Guards Counterattack: the Russians
+
+Made 2026-10-03 from the Studio's LOS table of pass 30 on board 01 (Verified, LOS definitive): every German setup Location, at each level, against the 27 Russian setup Locations. Each plan was used in a new game in my Studio with the German plan it answers committed first (`p30b-gc-1` to `p30b-gc-3`), and Two up, two back after each of the three German plans (`p30b-gc-4` to `p30b-gc-6`): the gate accepted all six setups (25 counters each). They wait for the user's approval.
+
+What the plans answer. The Russians set up second and move first. Every OB line names its building, so the choice is small: the hex and level of the 12 Guards squads and the 10-2 inside building F3 (E4, F3, G3, G4, each with levels 0 to 2), and of the 308th's four squads and commissar inside building N4 (M5, N3, N4, N5). J2 (a squad, the 9-1, the MMG), M2 (three squads), and N2 (one squad) are one-hex buildings with a ground level only. The Russians win by Control of the German buildings or by a three to one ratio of unbroken squads, in five turns, so the first turn's fire and the first crossing of the street decide much.
+
+Facts every plan rests on, from the LOS table:
+
+- G3 at ground level, N3 and N4 at ground level, and N2 are seen from no German setup Location.
+- F3, at every level, is seen only from F5 and G6.
+- E4 is seen from F5, G6, and H5 at range 2 to 3 and from J5 at range 5. G4 is seen from F5, G6, H5, J4, J5, and K4.
+- M5 is seen from K4, K5, L6, and M7 at range 2; N5 from L6 and M7 at range 2.
+- A 6-2-8 fires at full strength to range 2.
+- The comparison told the three German plans apart each time: 10 of 10 or 7 of 7 for the plan used, and 4 or 5 of 11 to 13 for the others.
+- The Russians have no OB "?". The stacks each plan keeps out of every German LOS were offered the non-OB "?" after Confirm, exactly as listed below. A squad is the first counter of every stack; the Russian view of the German setup showed squads on top of every German stack, which confirms that the first counter listed is the one seen (D11).
+
+**Fire first** (`fire-first`), answers Forward line
+
+| | |
+|---|---|
+| The idea | The German forward line stands in the Guards' LOS at range 2, and the Russians move first. Nine Guards squads on the upper floor of E4, F3, and G4, with the 10-2 at F3, fire on the F5 platoon in the first Prep Fire Phase; three squads wait unseen at G3 to cross once it breaks. The 308th fires from the upper floor of M5 and N5 on K4, K5, L6, and M7 at range 2. |
+| What it gives up | The nine squads that fire do not move in the first turn, and they stand in the LOS of the German squads they fire on; only three squads are fresh for the first crossing. |
+| Guards | E4, level 1: 3 x 6-2-8 squad; F3, level 1: 3 x 6-2-8 squad, 10-2 leader; G4, level 1: 3 x 6-2-8 squad; G3, ground level: 3 x 6-2-8 squad |
+| 308th | M5, level 1: 2 x 4-4-7 squad; N5, level 1: 2 x 4-4-7 squad, 9-0 commissar; J2: 4-4-7 squad with the MMG, 9-1 leader; M2: 3 x 4-4-7 squad; N2: 4-4-7 squad |
+| Non-OB "?" offered after setup | G3 and N2 |
+
+**Cross unseen** (`cross-unseen`), answers Out of sight
+
+| | |
+|---|---|
+| The idea | The German wing platoons have left the fronts of their buildings empty, so there is nothing to fire on and the first turn is for moving. The Guards start where the German squads that look out cannot see them: six squads and the 10-2 on two levels of F3, three at ground level in G3, and three at ground level in E4. They cross to F5, G6, and H5 in the first Movement Phase. The 308th waits at ground level in N3 and N4. |
+| What it gives up | No Russian fires in the first turn, and the squads on the upper floor of F3 spend movement coming down; if the Germans did not set up as Out of sight, nine Guards squads stand packed in two hexes. |
+| Guards | F3, ground level: 3 x 6-2-8 squad, 10-2 leader; F3, level 1: 3 x 6-2-8 squad; G3, ground level: 3 x 6-2-8 squad; E4, ground level: 3 x 6-2-8 squad |
+| 308th | N3, ground level: 2 x 4-4-7 squad; N4, ground level: 2 x 4-4-7 squad, 9-0 commissar; J2, M2, and N2 as above |
+| Non-OB "?" offered after setup | F3 at both levels, G3, N3, N4, and N2: 9 of the 12 Guards squads and all of building N4 start under "?" |
+
+**Break the tripwires** (`break-the-tripwires`), answers Tripwire and reserve
+
+| | |
+|---|---|
+| The idea | Each large German building shows one squad forward and holds the rest back. Six Guards squads and the 10-2 on two levels of G4 fire on the squad at H5 at range 2, and when it breaks the six squads waiting unseen at F3 and G3 cross to F5 and G6. The 308th does the same to the squad with the MMG at L6, from the upper floor of N5 and M5 at range 2. |
+| What it gives up | G4 is in the LOS of H5, J4, and K4, and holds half the Guards and their leader; if the squad at H5 holds, the crossing waits. |
+| Guards | G4, level 1: 3 x 6-2-8 squad, 10-2 leader; G4, ground level: 3 x 6-2-8 squad; F3, ground level: 3 x 6-2-8 squad; G3, ground level: 3 x 6-2-8 squad |
+| 308th | N5, level 1: 2 x 4-4-7 squad, 9-0 commissar; M5, level 1: 2 x 4-4-7 squad; J2, M2, and N2 as above |
+| Non-OB "?" offered after setup | F3, G3, and N2 |
+
+**Two up, two back** (`two-up-two-back`), for any setup
+
+| | |
+|---|---|
+| The idea | Half the Guards fire and half move, whatever the Germans show: three squads on the upper floor of E4 and three on the upper floor of G4 cover the street, and six squads with the 10-2 wait at ground level in F3 and G3 to cross where the fire tells. The 308th keeps two squads on the upper floor of N5 and two with the commissar out of sight at N4. |
+| What it gives up | Neither the fire nor the crossing has the weight of a plan made for the German setup. |
+| Guards | E4, level 1: 3 x 6-2-8 squad; G4, level 1: 3 x 6-2-8 squad; F3, ground level: 3 x 6-2-8 squad, 10-2 leader; G3, ground level: 3 x 6-2-8 squad |
+| 308th | N5, level 1: 2 x 4-4-7 squad; N4, ground level: 2 x 4-4-7 squad, 9-0 commissar; J2, M2, and N2 as above |
+| Non-OB "?" offered after setup | G3, N4, and N2 against Forward line; F3 too against Out of sight and Tripwire and reserve, where no German stands in F5 or G6 |
