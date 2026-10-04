@@ -103,4 +103,18 @@ Backlog section 47 holds what the pass leaves out: "Rehearse", plans for later s
 
 ## Tests
 
-`BacklogPass30bTests` (Play) and the second side's page tests in `SetupPlansPageTests` (Studio) are written at the merge gate; this section is completed there.
+`BacklogPass30bTests` (Play, 22 tests):
+
+- Each card's second side has its answers and its plans for any setup; each is of setup order 2 and names its card's current SHA-256; each answer names a plan of the side that sets up first and that plan's current placements hash.
+- The placements hash changes with a placement and not with a plan's words or the order of its placements.
+- A file of the earlier format reads as before (the first side only, no answers, three plans in all); the new format is refused with its reasons for an answer to no plan, to a plan of its own side, to a later plan, or to itself, for two answers to one plan, for four plans for any setup, for a malformed hash, for a side that is not the card's, and for a plan of two setup orders.
+- On board 01 the gate accepts each of the second side's plans with a first-side plan committed before it: the three answers and the plan for any setup on The Guards Counterattack, and Three sides and Feint west on The Tractor Works.
+- The comparison: on The Guards Counterattack the plan used matches the Russian view in full and the other two fall under six tenths; SW are not counted.
+- Games that look the same give the same scores: with each of the three 308th plans committed in its own game, the German view holds no Russian unit, the same 25 sealed presences by hex, and 9 of 9 for every plan.
+- The look-alike plans of The Tractor Works (both sides) and Armor Test show the same look and footprint and differ in their placements; The Guards Counterattack's German plans differ to the eye; a footprint leaves out SW, hidden counters, and counters off board.
+
+`BacklogPass30Tests` (Play) was brought in line: the plan ids of each card, seven plans on The Guards Counterattack, a plan for any side of the card, `/3` as the refused format, and Dummy west in place of All round.
+
+`SetupAnswersPageTests` (Studio, 6 tests): the new-game form counting each side's plans; the second side's Plans tab in groups with the closest first, its answer, "Their plan", the outline toggle, and the bar, review, and notice naming the plan answered; a setup that follows a plan with no answer opening the plans for any setup; the other side and the adjudicator shown nothing of the second side's plans, and the hand-over clearing its list; "Swap" changing two stacks' hexes, refusing the same hex, and ending when its stack leaves the list; and the picker's groups, scores, and notes.
+
+Gambit and Armor Test are on board 4, which the tests have no terrain for; their second sides' plans are checked for form in the tests and were accepted by the gate in the Studio on the real boards (backlog section 47).
