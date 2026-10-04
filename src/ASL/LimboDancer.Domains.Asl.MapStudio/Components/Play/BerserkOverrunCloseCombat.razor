@@ -3,7 +3,7 @@
    anything. Every view sees the notice; only a view that may act for the phasing side proposes the CC. *@
 <div class="toolbar" id="overrun-cc" data-location="@Location" role="status" aria-live="polite">
     <span class="fail">
-        @string.Join(", ", Attackers) overran the lone @Smc in @Location: their CC comes now, before anything else this MPh@(SmcAttacks ? $", and {Smc} attacks back" : $"; {Smc} cannot attack back"). If both survive they are
+        @Say(string.Join(", ", Attackers)) overran the lone @Say(Smc) in @Say(Location): their CC comes now, before anything else this MPh@(SmcAttacks ? Say($", and {Smc} attacks back") : Say($"; {Smc} cannot attack back")). If both survive they are
         held in Melee for the CCPh (A4.152, A15.432).
     </span>
     @if (Ready)
@@ -13,6 +13,12 @@
 </div>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>The Location of the OVR.</summary>
     [Parameter, EditorRequired]
     public string Location { get; set; } = string.Empty;

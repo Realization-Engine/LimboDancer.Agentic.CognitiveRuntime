@@ -7,9 +7,9 @@
         @foreach (var hit in Vehicles)
         {
             <tr data-vehicle="@hit.VehicleId">
-                <td>@hit.VehicleId (@hit.DefinitionId)</td>
-                <td class="fire-vehicle-result">@FireText.VehicleLineText(hit)</td>
-                <td class="fire-vehicle-crew">@FireText.CrewText(hit)</td>
+                <td title="@hit.VehicleId">@Say(hit.VehicleId)</td>
+                <td class="fire-vehicle-result">@Say(FireText.VehicleLineText(hit))</td>
+                <td class="fire-vehicle-crew">@Say(FireText.CrewText(hit))</td>
             </tr>
         }
     </tbody>
@@ -18,4 +18,8 @@
 @code {
     [Parameter, EditorRequired]
     public IReadOnlyList<FireVehicleEffect> Vehicles { get; set; } = [];
+
+    /// <summary>A text in the view's words (pass 31c, design D11); the record gives it.</summary>
+    [Parameter]
+    public Func<string, string> Say { get; set; } = text => text;
 }

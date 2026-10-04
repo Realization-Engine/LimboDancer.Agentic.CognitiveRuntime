@@ -3,7 +3,7 @@
    ambusher's withdrawal (N06), the SMC stacking (C04), the Melee withdrawals (C05), the attacks being declared (C06), the infiltrations (N08), and
    the attacks declared (C07, kept here). The page reads every fact for the view (ruling R23.1), keeps the draft and its resets (a new Location or
    round starts the declarations over), and proposes; this panel calls no planner. *@
-<h4>Close Combat</h4>
+<ActionSection Title="Close Combat" Key="close-combat">
 <RuleHelp Id="cc-help" Summary="Units of both sides in a Location attack each other, one Location at a time, none attacking or attacked more than once; roll for Ambush first where it applies, and declare SMC stacking before the attacks (A11.11, A11.12, A11.4, A11.14).">
     Units of both sides in one Location attack each other (A11.11): one Location at a time, each unit attacking and attacked at most once
     (A11.12). Where Infantry advanced into woods or a building, or with or against a concealed unit, roll for Ambush first (A11.4); the ambusher's round comes before the other
@@ -20,7 +20,7 @@
     <ul id="cc-due">
         @foreach (var item in Due)
         {
-            <li>@item</li>
+            <li>@DisplayText.Sentence(Say(item))</li>
         }
     </ul>
 }
@@ -31,14 +31,15 @@
             <option value="">choose</option>
             @foreach (var at in Locations)
             {
-                <option value="@at">@DisplayText.Location(at)</option>
+                <option value="@at">@Say($"{at}")</option>
             }
         </select>
     </label>
+    <PickedOption For="cc-location" Options="@Locations" Value="@Location" OnChange="@OnLocation" />
     @if (Entry is { } entry)
     {
         <span id="cc-status">
-            @(entry.AmbushRolled ? entry.Ambusher is { } ambusher ? $"The {ambusher} side ambushes." : "No Ambush." : "")
+            @(entry.AmbushRolled ? entry.Ambusher is { } ambusher ? $"The {DisplayText.Side(ambusher)} side ambushes." : "No Ambush." : "")
             @(entry.Closed ? "Resolved this CCPh." : entry.Rounds.Count > 0 ? "The ambusher may attack again, or the ambushed side's round follows." : "")
         </span>
         @if (!entry.Closed && entry.Ambusher is not null && entry.Rounds.Count > 0)
@@ -90,14 +91,21 @@
         <ul id="cc-attacks">
             @foreach (var attack in Attacks)
             {
-                <li>@string.Join(", ", attack.Attackers) @(attack.Capture ? "attempt to capture" : "attack") @string.Join(", ", attack.Defenders)@(attack.Director is { } director ? $", directed by {director}" : "")@(attack.Yield.Length > 0 ? $" (the defender gives up {string.Join(", then ", attack.Yield)})" : "") <button class="link" aria-label="@($"Remove: {string.Join(", ", attack.Attackers)} against {string.Join(", ", attack.Defenders)}")" @onclick="@(() => OnRemoveAttack.InvokeAsync(attack))" hidden="@(!MayRemove(attack))">remove</button></li>
+                <li>@Say(string.Join(", ", attack.Attackers)) @(attack.Capture ? "attempt to capture" : "attack") @Say(string.Join(", ", attack.Defenders))@(attack.Director is { } director ? Say($", directed by {director}") : "")@(attack.Yield.Length > 0 ? Say($" (the defender gives up {string.Join(", then ", attack.Yield)})") : "") <button class="link" aria-label="@Say($"Remove: {string.Join(", ", attack.Attackers)} against {string.Join(", ", attack.Defenders)}")" @onclick="@(() => OnRemoveAttack.InvokeAsync(attack))" hidden="@(!MayRemove(attack))">remove</button></li>
             }
         </ul>
         <button id="propose-cc" @onclick="@(() => OnPropose.InvokeAsync())">Propose: resolve CC@(Attacks.Count == 0 ? " with no attacks" : "")</button>
     }
 }
+</ActionSection>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>A CC attack declared on the page, not yet proposed, with its capture attempt, the defender's order of choice, and the Guard (A20.22).</summary>
     public sealed record DeclaredAttack(string[] Attackers, string[] Defenders, string? Director, bool Capture = false, string[]? YieldOrder = null, string? Guard = null)
     {

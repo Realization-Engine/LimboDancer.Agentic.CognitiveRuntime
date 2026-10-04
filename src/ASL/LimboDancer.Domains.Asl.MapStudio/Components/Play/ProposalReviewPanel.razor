@@ -1,7 +1,19 @@
 @* R01 (plan sections 13.4, 16.13): the review of a proposal. It shows only what the parent has already disclosed for the view: the outcome, the reasons,
    and the evidence; the parent keeps the attempt, the revision, the withholding, and the execution. *@
 <div id="play-proposal">
-    <h3>@Title</h3>
+    <h3 title="@Title">@DisplayText.Action(Title)</h3>
+    @* Pass 31c (design D15; play test P-28): Confirm and Cancel sit at the head of the review, where no outcome or list of consequences moves
+       them. Their label still says what a proposal with consequences does. *@
+    @{
+        RenderFragment actions = @<div class="toolbar" id="play-proposal-actions">
+            <button id="play-confirm" disabled="@Busy" @onclick="Confirm">@(Busy ? "Confirming" : ConfirmLabel)</button>
+            <button id="play-cancel" class="link" disabled="@Busy" @onclick="Cancel">Cancel</button>
+        </div>;
+    }
+    @if (CanConfirm && Consequences.Count == 0)
+    {
+        @actions
+    }
     <p class="@(Accepted && Consequences.Count == 0 ? "pass" : "fail")">
         <strong id="play-outcome">@Outcome</strong>
     </p>
@@ -13,30 +25,34 @@
             <ul>
                 @foreach (var line in Consequences)
                 {
-                    <li>@line</li>
+                    <li>@DisplayText.Sentence(Say(line))</li>
                 }
             </ul>
         </div>
-    }
-    @* Table player, pass 29: Confirm and Cancel come right after the outcome, so a long list of reasons never pushes them out of a short pane. *@
-    @if (CanConfirm)
-    {
-        <div class="toolbar" id="play-proposal-actions">
-            <button id="play-confirm" disabled="@Busy" @onclick="Confirm">@(Busy ? "Confirming" : ConfirmLabel)</button>
-            <button id="play-cancel" class="link" disabled="@Busy" @onclick="Cancel">Cancel</button>
-        </div>
+        @if (CanConfirm)
+        {
+            @actions
+        }
     }
     @Lead
     <ul id="play-reasons">
         @foreach (var reason in Reasons)
         {
-            <li>@reason</li>
+            @* Pass 31c (play test P-18): a reason reads without its code, which stays in data-code and the title. *@
+            var spoken = DisplayText.Reason(reason);
+            <li data-code="@spoken.Code" title="@spoken.Code">@DisplayText.Sentence(Say(spoken.Text))</li>
         }
     </ul>
     @Evidence
 </div>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     [Parameter]
     public string Title { get; set; } = string.Empty;
 

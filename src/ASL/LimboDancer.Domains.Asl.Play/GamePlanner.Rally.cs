@@ -14,6 +14,11 @@ namespace LimboDancer.Domains.Asl.Play;
 /// </summary>
 public sealed partial class GamePlanner
 {
+    /// <summary>The MMC that made a side's first MMC Rally attempt of the RPh in progress (A18.11), for a refusal's words; null when none is recorded.</summary>
+    private static string? FirstMmcRallier(IReadOnlyList<GameEvent> events, GameState state, string side) =>
+        Enumerable.Reverse(events).TakeWhile(item => item.Payload is not PhaseChanged).Select(item => item.Payload).OfType<RallyAttempted>()
+            .LastOrDefault(item => state.Unit(item.Unit) is { } rallied && rallied.Side == side && rallied.Kind is "asl:squad" or "asl:half-squad" or "asl:crew")?.Unit;
+
     private static readonly Lazy<ScenarioA1RallyReference> RallyReference = new(() => new ScenarioA1RallyPackage().Reference);
 
     private GamePlan PlanRally(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label,
@@ -68,7 +73,8 @@ public sealed partial class GamePlanner
                 ? [unit.Side != state.PhasingSide
                     ? $"play.rally-self: {unit.Id} has no Self-Rally capability, and only its own side's RPh gives one MMC a Self-Rally without it (A10.63, A18.11); it needs an unbroken leader in its Location"
                     : state.FirstMmcRallyTaken.Contains(unit.Side)
-                        ? $"play.rally-self: {unit.Id} has no Self-Rally capability, and its side has already made the first MMC Rally attempt of this RPh, the only one that may be a Self-Rally without it (A18.11); it needs an unbroken leader in its Location"
+                        // Pass 31c (backlog section 48): the refusal names the unit that used the attempt.
+                        ? $"play.rally-self: {unit.Id} cannot Self-Rally: its side's one MMC Self-Rally of this RPh was used{(FirstMmcRallier(existing, state, unit.Side) is { } first ? $" by {first}" : string.Empty)} (A18.11). It needs an unbroken leader in its Location"
                         : $"play.rally-self: {unit.Id} has no Self-Rally capability, and a broken leader is in its Location, so its side's first MMC Rally attempt is not open to it (A10.71, A18.11); rally the leader first"]
                 : [];
             return Refused(scope, label, expected, [.. RefusalReasons.Refusal("play.rally-refused", "Rally", "attempt", precheck), .. why]);

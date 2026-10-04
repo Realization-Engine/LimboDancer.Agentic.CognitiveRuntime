@@ -32,7 +32,7 @@ else if (board is null)
                     @* The UX analysis (pass 29): a game shown here says which game, whose view, where it stands, and which revision, on the game line Play
                        shares; a live one links back to Play. *@
                     <div class="toolbar viewer-game-banner" id="viewer-game-banner">
-                        <GameLine IdPrefix="viewer-game" Game="@banner.Game" View="@shownGame.View.Perspective.Name" Revision="@gameRevision" Max="@banner.Max"
+                        <GameLine IdPrefix="viewer-game" Game="@banner.Game" View="@shownGame.View.Perspective.Name" Revision="@(lockedGame && !shownGame.View.Perspective.IsAdjudicator ? null : gameRevision)" Max="@banner.Max"
                                   Text="@($"Turn {shownGame.View.Turn}, {DisplayText.Side(shownGame.View.PhasingSide)} {GameText.PhaseLabel(shownGame.View.Phase)}.")"
                                   Badge="@(banner.Historical ? "Historical" : banner.PlayLink is not null ? "Live" : "Synthetic")"
                                   Tone="@(banner.Historical ? StatusBadge.BadgeTone.Warning : banner.PlayLink is not null ? StatusBadge.BadgeTone.Pass : StatusBadge.BadgeTone.Neutral)"
@@ -89,6 +89,7 @@ else if (board is null)
     private GameProjection? gameProjection;
     private string gamePerspective = Perspective.AdjudicatorName;
     private long gameRevision;
+    private bool lockedGame;
     private string unitSheet = UnitLibrary.DefaultSheet;
     private bool showUnits;
     private string comparisonMode = "overlay";
@@ -158,7 +159,8 @@ else if (board is null)
         ? unitSets.FirstOrDefault(entry => entry.Set.SetId == key[SetPrefix.Length..])
         : null;
 
-    private UnitOverlayControls.ReplayState? Replay => gameProjection is { } projection
+    // Pass 31c (design D0): a game still played is shown in the view its link named, with no view picker and no revision stepping.
+    private UnitOverlayControls.ReplayState? Replay => gameProjection is { } projection && !lockedGame
         ? new([.. projection.Game.History!.States[^1].Perspectives.Select(option => new PerspectivePicker.Choice(option.Name, option.IsAdjudicator ? "the adjudicator" : DisplayText.Side(option.Name)))],
             projection.View.Perspective.Name, (int)gameRevision, projection.Game.History!.States.Count)
         : null;
@@ -211,7 +213,8 @@ else if (board is null)
         }
 
         unitSets = UnitLibrary.SetsFor(board);
-        unitGames = Games.GamesFor(board);
+        // Pass 31c (design D0; rulings R23.2, R31b.1): a game still played is not listed; it is shown only when a link names it with its view.
+        unitGames = Games.GamesFor(board, GameQuery is { Length: > 0 } asked && PerspectiveQuery is { Length: > 0 } ? asked : null);
 
         // Games are projected by perspective and come first; a placement set shows when one is asked for.
         gamePerspective = PerspectiveQuery ?? Perspective.AdjudicatorName;
@@ -250,16 +253,35 @@ else if (board is null)
     private void BuildUnits()
     {
         gameProjection = null;
+        lockedGame = false;
         UnitPlacementSet? set = UnitSet?.Set;
         if (unitSourceKey is { } key && key.StartsWith(GamePrefix, StringComparison.Ordinal)
             && unitGames.FirstOrDefault(game => game.Name == key[GamePrefix.Length..]) is { History: { } history } game)
         {
+            // A game still played keeps the view its link named, and a side's view of it is the game as it stands: no earlier revision, which
+            // would let a side count what happened out of its sight.
+            lockedGame = Games.StillPlayed(game.Name);
+            if (lockedGame)
+            {
+                gamePerspective = PerspectiveQuery ?? gamePerspective;
+            }
+
             gameRevision = Math.Clamp(gameRevision, 1, history.States.Count);
             var perspectives = history.At(gameRevision)!.Perspectives;
-            var perspective = perspectives.FirstOrDefault(item => item.Name == gamePerspective) ?? Perspective.Adjudicator;
+            var named = perspectives.FirstOrDefault(item => item.Name == gamePerspective);
+            var perspective = named ?? Perspective.Adjudicator;
             gamePerspective = perspective.Name;
-            gameProjection = Games.Projection(game, perspective, gameRevision);
-            set = gameProjection.Set;
+            if (lockedGame && !perspective.IsAdjudicator)
+            {
+                gameRevision = history.States.Count;
+            }
+
+            // The referee, pass 31c: a game still played is never shown whole because its link named a view that does not exist.
+            if (!lockedGame || named is not null)
+            {
+                gameProjection = Games.Projection(game, perspective, gameRevision);
+                set = gameProjection.Set;
+            }
         }
 
         unitOverlay = board is not null && set is not null && UnitLibrary.Renderer(unitSheet) is { } renderer

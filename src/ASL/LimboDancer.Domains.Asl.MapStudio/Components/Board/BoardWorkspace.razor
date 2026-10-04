@@ -12,13 +12,18 @@
     <aside @ref="inspector" class="@InspectorClass" @attributes="@InspectorAttributes">@InspectorPane</aside>
 }
 @Between
-<div @ref="stage" class="@StageClass" @attributes="@StageAttributes">
+<div @ref="stage" class="@($"{StageClass} map-stage")" @attributes="@StageAttributes">
     @Toolbar
     @if (loadProblem is { } problem)
     {
         <p class="fail" id="workspace-load">The map did not load: @problem <button type="button" id="workspace-retry" @onclick="Retry">Try again</button></p>
     }
-    <BoardViewport @ref="viewport" Label="@MapLabel" OnReady="@Ready" OnClick="@Click" OnHover="@Hover" OnKey="@Key" OnUnitSelected="@UnitClick" OnRotation="@Turned" />
+    @* Pass 31c (design D16; play test P-30): the map says it is loading, over its own pane, so nothing moves when it is drawn. *@
+    @if (viewport is { IsReady: true } && loadedKey != LoadKey && loadProblem is null)
+    {
+        <p class="map-loading muted" id="workspace-loading" role="status">Loading the map.</p>
+    }
+    <BoardViewport @ref="viewport" Label="@MapLabel" ViewKey="@ViewKey" OnReady="@Ready" OnClick="@Click" OnHover="@Hover" OnKey="@Key" OnUnitSelected="@UnitClick" OnRotation="@Turned" />
     @Footer
 </div>
 @if (!InspectorFirst)
@@ -53,8 +58,28 @@
     private LosPanel.LosDraft losDraft = new(string.Empty, string.Empty, false);
     private LosCheck? losCheck;
 
+    // Pass 31c (design section 14): the range read between the LOS tab's two Locations, and the unit or weapon whose range is drawn.
+    private RangeCheck? rangeCheck;
+    private IReadOnlyList<RangeRow> rangeRows = [];
+    private string? rangeChosen;
+
+    /// <summary>
+    /// The units and weapons a range from one Location to another is read for, already read for the view (pass 31c, design section 14); null on a
+    /// board with no game, where Range gives the hexes alone.
+    /// </summary>
+    [Parameter]
+    public Func<BoardLocation, BoardLocation, IReadOnlyList<RangeRow>>? RangeSubjects { get; set; }
+
     [Parameter, EditorRequired]
     public StudioBoard Board { get; set; } = null!;
+
+    /// <summary>What the map's view is kept for while the page is open (pass 31c, design D16): a game and a view on Play.</summary>
+    [Parameter]
+    public string? ViewKey { get; set; }
+
+    /// <summary>What else the host knows of a hex, listed in the Selection tab: Residual FP, a Melee (pass 31c).</summary>
+    [Parameter]
+    public Func<HexFacts, IReadOnlyList<string>>? HexNotes { get; set; }
 
     [Parameter]
     public BoardView View { get; set; } = BoardView.Exact;
@@ -173,8 +198,9 @@
 
     private RenderFragment InspectorPane => @<BoardInspector @ref="inspectorPane" Board="@Board" Panel="@Panel" PanelChanged="@PanelChanged" Label="@InspectorLabel" IdPrefix="@IdPrefix"
         Extras="@Extras" Selected="@Selected" Units="@Units" SelectedUnit="@selectedUnit" SelectedUnitChanged="@PickUnit"
-        Vocabulary="@Vocabulary" View="@UnitView" UnitNote="@UnitNote" Sample="@sample" StyledModel="@StyledModel" LosDraft="@losDraft"
-        LosDraftChanged="@(draft => losDraft = draft)" LosResult="@losCheck" OnCheckLos="@CheckLos" OnClearLos="@ClearLos" OnCopy="@Copy" />;
+        Vocabulary="@Vocabulary" View="@UnitView" UnitNote="@UnitNote" HexNotes="@HexNotes" Sample="@sample" StyledModel="@StyledModel" LosDraft="@losDraft"
+        LosDraftChanged="@(draft => losDraft = draft)" LosResult="@losCheck" OnCheckLos="@CheckLos" OnClearLos="@ClearLos" OnCopy="@Copy"
+        RangeResult="@rangeCheck" RangeRows="@rangeRows" RangeChosen="@rangeChosen" OnChooseRange="@(key => rangeChosen = key)" OnCheckRange="@CheckRange" OnClearRange="@ClearRange" />;
 
     private string LoadKey => $"{Board.Ref.Value}/{Board.Version}/{View}/{Trace}";
 
@@ -201,12 +227,12 @@
         // Another board starts with nothing hovered, sampled, or checked.
         if (shown is not null && !shown.StartsWith($"{Board.Ref.Value}/{Board.Version}/", StringComparison.Ordinal))
         {
-            (hovered, sample, losCheck) = (null, null, null);
+            (hovered, sample, losCheck, rangeCheck, rangeRows, rangeChosen) = (null, null, null, null, [], null);
             inspectorPane?.SetHovered(null);
         }
 
-        // The LOS tab opened with an empty From takes the hex kept (pass 29).
-        if (Panel == "los" && shownPanel != "los" && losDraft.Source.Length == 0 && Selected is not null)
+        // The LOS or Range tab opened with an empty From takes the hex kept (pass 29).
+        if (Panel is "los" or "range" && shownPanel != Panel && losDraft.Source.Length == 0 && Selected is not null)
         {
             losDraft = losDraft with { Source = Board.LocationOf(Selected) };
         }
@@ -290,6 +316,7 @@
             {
                 loadedKey = LoadKey;
                 await OnLoaded.InvokeAsync();
+                StateHasChanged();
             }
         }
         catch (JSException exception)
@@ -327,7 +354,8 @@
             await viewport.SetUnits(Units?.Svg);
         }
 
-        var los = losCheck is null ? null : Los.Layer(Board, losCheck);
+        var los = losCheck is null && rangeCheck is null ? null
+            : Los.Layer(Board, losCheck, rangeCheck, rangeRows.FirstOrDefault(row => row.Key == rangeChosen));
         if (los != sent.Los)
         {
             sent.Los = los;
@@ -397,6 +425,25 @@
 
     private void ClearLos() => losCheck = null;
 
+    private void CheckRange()
+    {
+        rangeCheck = StudioLos.Range(Board, losDraft.Source, losDraft.Target);
+        rangeRows = rangeCheck is { From: { } from, To: { } to } ? RangeSubjects?.Invoke(from, to) ?? [] : [];
+
+        // The first drawn is the one that falls out of range first: the shortest Normal Range.
+        rangeChosen = rangeRows.OrderBy(row => row.NormalRange).Select(row => row.Key).FirstOrDefault();
+    }
+
+    private void ClearRange() => (rangeCheck, rangeRows, rangeChosen) = (null, [], null);
+
+    /// <summary>Reads the range between two Locations for the host, which then opens the Range tab (pass 31c: the fire panel's "Show on the map").</summary>
+    public void ReadRange(string from, string to)
+    {
+        losDraft = losDraft with { Source = from, Target = to };
+        CheckRange();
+        StateHasChanged();
+    }
+
     private async Task Copy(string location)
     {
         if (viewport is not null)
@@ -429,7 +476,7 @@
     private async Task ShowSelection(bool fromExtraTab)
     {
         var extra = Extras.Any(item => item.Tab.Id == Panel);
-        if (!HoldPanel && Panel != "los" && Panel != "selection" && (!fromExtraTab || extra))
+        if (!HoldPanel && Panel != "los" && Panel != "range" && Panel != "selection" && (!fromExtraTab || extra))
         {
             await PanelChanged.InvokeAsync("selection");
         }

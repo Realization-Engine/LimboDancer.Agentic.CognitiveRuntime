@@ -10,7 +10,7 @@
             @foreach (var record in Records)
             {
                 <li @key="record.EventId" class="@($"{record.Kind}-record")" data-event="@record.EventId">
-                    @record.Text
+                    @DisplayText.Sentence(record.Text)
                     @if (Replay?.Invoke(record.EventId) is { } replay)
                     {
                         <text> </text><a class="record-replay" href="@replay" aria-label="@($"Replay from here: {Short(record.Text)}")">Replay from here</a>
@@ -30,7 +30,7 @@
                     @foreach (var record in group.Records)
                     {
                         <li @key="record.EventId" class="@($"{record.Kind}-record")" data-event="@record.EventId">
-                        @record.Text
+                        @DisplayText.Sentence(record.Text)
                         @if (Replay?.Invoke(record.EventId) is { } replay)
                         {
                             <text> </text><a class="record-replay" href="@replay" aria-label="@($"Replay from here: {Short(record.Text)}")">Replay from here</a>

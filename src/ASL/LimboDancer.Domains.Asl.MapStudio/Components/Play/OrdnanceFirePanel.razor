@@ -2,7 +2,7 @@
    firing side's weapons with their state in the label, the units the view sees for the Spotter and the leader (ruling R23.1), and the target
    fields' choices; choosing another weapon resets the ammunition, the Spotter, and the leader, and another target clears the vehicle, both in
    the page's handlers (section 15.3). The planner decides every shot. *@
-<h4>Ordnance</h4>
+<ActionSection Title="Ordnance" Key="ordnance">
 <RuleHelp Id="ordnance-help" Summary="A manned Gun or a tank's MA fires HE at a Location's units, or the ammunition it carries at one vehicle there; a light mortar fires on the Area Target Type; a Panzerfaust or Panzerschreck fires HEAT, and an ATR AP, at a vehicle (C3.3, C3.31, C9.3, C13).">
     A Gun manned by its crew, or a tank's MA, fires HE at the enemy units of a Location on the Infantry Target Type (C3.3, C3.32), or at
     one enemy vehicle there on the Vehicle Target Type with AP, APCR, HEAT, or HE (C3.31, C8.1). It turns its barrel or turret to bring the
@@ -22,7 +22,7 @@
             <option value="">choose</option>
             @foreach (var gun in Guns)
             {
-                <option value="@gun.Id">@gun.Label</option>
+                <option value="@gun.Id">@Say(gun.Label)</option>
             }
         </select>
     </label>
@@ -34,7 +34,7 @@
                 <option value="">none</option>
                 @foreach (var unit in Spotters)
                 {
-                    <option value="@unit.Id">@unit.Label</option>
+                    <option value="@unit.Id">@At(unit.Label)</option>
                 }
             </select>
         </label>
@@ -47,7 +47,7 @@
                 <option value="">none</option>
                 @foreach (var leader in Directors)
                 {
-                    <option value="@leader.Id">@leader.Label</option>
+                    <option value="@leader.Id">@Say(leader.Label)</option>
                 }
             </select>
         </label>
@@ -67,8 +67,21 @@
         <span id="propose-ordnance-ready" class="toolbar-note">Choose the weapon and its target.</span>
     }
 </div>
+</ActionSection>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
+    /// <summary>A unit's name with its hex, "4-6-7 squad G4 in [G4]" (the user, 2026-10-04), where no Location stands beside the name.</summary>
+    [CascadingParameter(Name = "SayAt")]
+    public Func<string, string>? WordsAt { get; set; }
+
+    private string At(string? text) => text is null ? string.Empty : WordsAt?.Invoke(text) ?? Say(text);
+
     /// <summary>The firing side's Guns, tanks, light mortars, LATW, and Panzerfaust firers (whose value ends in ":pf").</summary>
     [Parameter, EditorRequired]
     public IReadOnlyList<PlayChoice> Guns { get; set; } = [];

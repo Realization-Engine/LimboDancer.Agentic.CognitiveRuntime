@@ -6,13 +6,19 @@
         <option value="">choose</option>
         @foreach (var at in Targets)
         {
-            <option value="@at">@DisplayText.Location(at)</option>
+            <option value="@at">@Say($"{at}")</option>
         }
     </select>
 </label>
 <button id="vehicle-bff" disabled="@(Target.Length == 0)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: Bounding First Fire</button>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     [Parameter]
     public IReadOnlyList<string> Targets { get; set; } = [];
 

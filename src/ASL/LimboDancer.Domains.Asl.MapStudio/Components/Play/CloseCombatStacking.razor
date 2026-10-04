@@ -4,12 +4,12 @@
     @foreach (var smc in Smcs)
     {
         <label>
-            @smc.Id stacked with
+            @Say(smc.Id) stacked with
             <select class="cc-stack" data-unit="@smc.Id" value="@(Stacking.GetValueOrDefault(smc.Id) ?? string.Empty)" @onchange="@(args => OnStacking.InvokeAsync(new Choice(smc.Id, args.Value as string)))">
                 <option value="">alone</option>
                 @foreach (var mmc in smc.Mmcs)
                 {
-                    <option value="@mmc">@mmc</option>
+                    <option value="@mmc">@Say(mmc)</option>
                 }
             </select>
         </label>
@@ -17,6 +17,12 @@
 </div>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>A SMC and the MMC of its side in the Location it may be stacked with.</summary>
     public sealed record Smc(string Id, IReadOnlyList<string> Mmcs);
 

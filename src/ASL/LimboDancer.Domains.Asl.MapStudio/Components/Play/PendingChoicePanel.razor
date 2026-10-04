@@ -1,7 +1,7 @@
 @* Plan C08 (pass 27): a choice the game waits on before play goes on (ruling R5.8). The page passes the options only to the answering side's view
    and the adjudicator; any other view gets none and reads that it waits. *@
 <div id="play-choice" class="fail" data-key="@Key">
-    <p>The @Side side answers before play goes on: @Description (ruling R5.8).</p>
+    <p>The @DisplayText.Side(Side) side answers before play goes on: @Say(Description) (ruling R5.8).</p>
     @if (MayAnswer)
     {
         @foreach (var option in Options)
@@ -11,11 +11,17 @@
     }
     else
     {
-        <p class="muted">Waiting for the @Side side to answer.</p>
+        <p class="muted">Waiting for the @DisplayText.Side(Side) side to answer.</p>
     }
 </div>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>An option and how it reads, such as "take it".</summary>
     public sealed record Option(string Value, string Text);
 

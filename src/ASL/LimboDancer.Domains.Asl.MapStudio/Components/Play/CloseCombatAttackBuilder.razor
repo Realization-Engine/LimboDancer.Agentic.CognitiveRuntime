@@ -5,16 +5,16 @@
 @foreach (var side in Sides)
 {
     <div class="toolbar cc-side" data-side="@side.Side">
-        <span>@side.Side@(side.Attacker ? " (ATTACKER)" : "")</span>
+        <span>@DisplayText.Side(side.Side)@(side.Attacker ? " (ATTACKER)" : "")</span>
         <span>attack with</span>
         @foreach (var unit in side.Attackers)
         {
-            <label><input class="cc-attacker" type="checkbox" data-unit="@unit.Id" disabled="@unit.Broken" checked="@Attackers.Contains(unit.Id)" @onchange="@(args => OnAttacker.InvokeAsync(new UnitSelectionList.Toggle(unit.Id, args.Value is true)))" /> @unit.Label</label>
+            <label><input class="cc-attacker" type="checkbox" data-unit="@unit.Id" disabled="@unit.Broken" checked="@Attackers.Contains(unit.Id)" @onchange="@(args => OnAttacker.InvokeAsync(new UnitSelectionList.Toggle(unit.Id, args.Value is true)))" /> @Say(unit.Label)</label>
         }
         <span>attack</span>
         @foreach (var unit in side.Defenders)
         {
-            <label><input class="cc-defender" type="checkbox" data-unit="@unit.Id" data-by="@side.Side" checked="@Defenders.Contains(unit.Id)" @onchange="@(args => OnDefender.InvokeAsync(new UnitSelectionList.Toggle(unit.Id, args.Value is true)))" /> @unit.Label</label>
+            <label><input class="cc-defender" type="checkbox" data-unit="@unit.Id" data-by="@side.Side" checked="@Defenders.Contains(unit.Id)" @onchange="@(args => OnDefender.InvokeAsync(new UnitSelectionList.Toggle(unit.Id, args.Value is true)))" /> @Say(unit.Label)</label>
         }
     </div>
 }
@@ -27,7 +27,7 @@
                 <option value="">none</option>
                 @foreach (var leader in Directors)
                 {
-                    <option value="@leader">@leader</option>
+                    <option value="@leader">@Say(leader)</option>
                 }
             </select>
         </label>
@@ -40,7 +40,7 @@
                     <option value="">the first attacker</option>
                     @foreach (var id in Attackers.Order(StringComparer.Ordinal))
                     {
-                        <option value="@id">@id</option>
+                        <option value="@id">@Say(id)</option>
                     }
                 </select>
             </label>
@@ -52,6 +52,12 @@
 }
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>A unit in the CC Location as a player reads it, and whether it is broken (and so may not attack).</summary>
     public sealed record Participant(string Id, string Label, bool Broken);
 

@@ -1,7 +1,7 @@
 using System.Globalization;
 using LimboDancer.Domains.Asl.Rules;
 
-namespace LimboDancer.Domains.Asl.MapStudio.Components.Play;
+namespace LimboDancer.Domains.Asl.MapStudio.Services;
 
 /// <summary>
 /// A fire attack as the viewer may see it (pass 28b, moved from the Play page): the record, or the public report of one withheld from the viewer,
@@ -24,18 +24,36 @@ public sealed record FireView(string EventId, string Group, string Target, strin
     {
         get; init;
     }
+
+    /// <summary>Whether several units fire, so the record's verb agrees: "fire", not "fires".</summary>
+    public bool Several
+    {
+        get; init;
+    }
+
+    /// <summary>What the attack did to each MG used in it (pass 31c, play test P-17): a kept rate of fire, a malfunction. Null when none was used or the record is withheld.</summary>
+    public IReadOnlyList<FireWeaponEffect>? Weapons
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// A text of this record in the view's words (pass 31c, design D11): the units and counters its arithmetic and effects name by id, as the view
+    /// could name them just before the attack. The records give it; without one a text keeps its identifiers.
+    /// </summary>
+    public Func<string, string> Say { get; init; } = text => text;
 }
 
 /// <summary>
 /// The wording of fire results (pass 28b, moved from the Play page so the fire history's components and the page's other records share it). It
 /// formats what a record already holds and never recalculates an adjudication.
 /// </summary>
-internal static class FireText
+public static class FireText
 {
     public static string Number(decimal value) => value.ToString("0.##", CultureInfo.InvariantCulture);
 
     public static string ModifierText(IEnumerable<FireModifier> drm) =>
-        string.Concat(drm.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({item.Name}, {item.Rule})"));
+        string.Concat(drm.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({DisplayText.Modifier(item.Name)}, {item.Rule})"));
 
     /// <summary>
     /// A Heat of Battle DR in words, for example "Heat of Battle DR 2, 3 = 5 + 2 (nationality:russian, A15.1) = Final DR 7: Battle Hardened into
@@ -87,6 +105,21 @@ internal static class FireText
         return $"Heat of Battle DR {string.Join(", ", heat.Dice)} = {heat.OriginalDr}{ModifierText(heat.Drm)} = Final DR {heat.FinalDr}: {string.Join(", ", parts)} (A15.1)";
     }
 
+    /// <summary>
+    /// What an attack did to a MG, in words (A9.2, A9.7); null when there is nothing a player needs to be told. A MG that kept its rate of fire may
+    /// fire again in the phase, which the page said nowhere before (play test P-17).
+    /// </summary>
+    public static string? WeaponText(FireWeaponEffect weapon)
+    {
+        ArgumentNullException.ThrowIfNull(weapon);
+        return weapon.Malfunctioned ? $"{weapon.EquipmentId} malfunctioned (A9.7)"
+            : weapon.RateOfFireRetained ? $"{weapon.EquipmentId} kept its rate of fire and may fire again this phase (A9.2)"
+            : null;
+    }
+
+    /// <summary>An IFT result as a player says it: the record's "none" reads "no effect".</summary>
+    public static string ResultText(string result) => result == "none" ? "no effect" : result;
+
     /// <summary>What an attack did to a target unit, in words.</summary>
     public static string EffectText(FireUnitEffect effect) => EffectText(effect, false, false);
 
@@ -125,7 +158,7 @@ internal static class FireText
     public static string CheckText(FireCheck check)
     {
         ArgumentNullException.ThrowIfNull(check);
-        return $"{check.Kind} {string.Join(", ", check.Dice)}{string.Concat(check.Drm.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({item.Name})"))}"
+        return $"{check.Kind} {string.Join(", ", check.Dice)}{string.Concat(check.Drm.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({DisplayText.Modifier(item.Name)})"))}"
             + $" = {check.FinalDr} against {check.MoraleLevel}: {(check.Passed ? "passed" : "failed")}";
     }
 
@@ -135,7 +168,7 @@ internal static class FireText
         ArgumentNullException.ThrowIfNull(hit);
         return hit.KillNumber is not { } kill
             ? "unharmed by small arms (A7.307)"
-            : $"Kill Number {kill}, Final DR {hit.FinalDr}{string.Concat(hit.Drm.Select(item => $" ({item.Name} {(item.Value < 0 ? "-" : "+")}{Number(Math.Abs(item.Value))})"))}"
+            : $"Kill Number {kill}, Final DR {hit.FinalDr}{string.Concat(hit.Drm.Select(item => $" ({DisplayText.Modifier(item.Name)} {(item.Value < 0 ? "-" : "+")}{Number(Math.Abs(item.Value))})"))}"
                 + (hit.UnlikelyKillDr is { } dr ? $", Unlikely Kill dr {dr}" : "") + $": {hit.Result.Replace('-', ' ')}";
     }
 
@@ -147,7 +180,7 @@ internal static class FireText
         {
             FireVehicleEffect.NotVulnerable => "not Vulnerable (BU or Stunned, D5.3, D5.34)",
             _ when hit.KillNumber is not null => "no crew attack (an Inherent Driver, D5.1)",
-            _ => $"Collateral Final DR {hit.FinalDr}{string.Concat(hit.Drm.Select(item => $" ({item.Name} {(item.Value < 0 ? "-" : "+")}{Number(Math.Abs(item.Value))}, {item.Rule})"))}"
+            _ => $"Collateral Final DR {hit.FinalDr}{string.Concat(hit.Drm.Select(item => $" ({DisplayText.Modifier(item.Name)} {(item.Value < 0 ? "-" : "+")}{Number(Math.Abs(item.Value))}, {item.Rule})"))}"
                 + $"{(hit.CrewCheck is { } check ? "; " + CheckText(check) : "")}: {hit.CrewResult}",
         };
     }

@@ -38,6 +38,18 @@ export function openDetails(id) {
     }
 
     details.open = true;
+
+    // Pass 31c (design D15): wide, the card is a dialog over the page; Escape closes it, as its foot's button does.
+    if (!details.dataset.escape) {
+        details.dataset.escape = "true";
+        details.addEventListener("keydown", event => {
+            if (event.key === "Escape") {
+                details.open = false;
+                document.getElementById("play-card-link")?.focus();
+            }
+        });
+    }
+
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     details.scrollIntoView({ block: "start", behavior: reduce ? "auto" : "smooth" });
     details.querySelector("summary")?.focus({ preventScroll: true });
@@ -64,16 +76,81 @@ export function watchContext() {
         return;
     }
 
-    contextWatcher = new ResizeObserver(() => {
-        document.documentElement.style.setProperty("--play-context-height", `${context.getBoundingClientRect().height}px`);
-    });
+    // Pass 31c (design D15): where the context ends on the page is kept too, so the workspace fills what is left of the window below it,
+    // whatever sits above the context (the Studio's bar), and the window does not scroll.
+    // The workspace's own top is measured (the UI review, pass 31c): the context is sticky, so its bottom moves with the page's scroll.
+    const measure = () => {
+        const box = context.getBoundingClientRect();
+        document.documentElement.style.setProperty("--play-context-height", `${box.height}px`);
+        const workspace = document.querySelector(".play-workspace");
+        const top = workspace ? workspace.getBoundingClientRect().top + window.scrollY : box.bottom + window.scrollY + 12;
+        document.documentElement.style.setProperty("--play-workspace-top", `${top}px`);
+    };
+    contextWatcher = new ResizeObserver(measure);
     contextWatcher.observe(context);
+    contextWatcher.onResize = measure;
+    window.addEventListener("resize", measure);
 }
 
 export function unwatchContext() {
     if (contextWatcher) {
+        window.removeEventListener("resize", contextWatcher.onResize);
         contextWatcher.disconnect();
         contextWatcher = null;
         document.documentElement.style.removeProperty("--play-context-height");
+        document.documentElement.style.removeProperty("--play-workspace-top");
+    }
+}
+
+// Pass 31c (design D18; play test P-24): a gate request that runs past half a second says "Working" beside the button that started it. The page
+// marks its status busy while the gate works; the button last clicked in the workspace is marked while that lasts, and the stylesheet says the
+// word. Only an attribute is written here.
+let workingWatcher = null;
+
+export function watchWorking() {
+    unwatchWorking();
+    const status = document.getElementById("play-status");
+    if (!status || typeof MutationObserver === "undefined") {
+        return;
+    }
+
+    const state = { button: null, timer: null, marked: null };
+    const clear = () => {
+        clearTimeout(state.timer);
+        state.timer = null;
+        state.marked?.removeAttribute("data-working");
+        state.marked = null;
+        state.button = null;
+    };
+    const onClick = event => {
+        const button = event.target instanceof Element ? event.target.closest("button") : null;
+        if (button && button.closest("#play-workspace, #play-context")) {
+            state.button = button;
+        }
+    };
+    const observer = new MutationObserver(() => {
+        if (!status.classList.contains("busy")) {
+            clear();
+        } else if (!state.timer && !state.marked && state.button?.isConnected) {
+            state.timer = setTimeout(() => {
+                state.timer = null;
+                if (status.classList.contains("busy") && state.button?.isConnected) {
+                    state.marked = state.button;
+                    state.marked.setAttribute("data-working", "true");
+                }
+            }, 500);
+        }
+    });
+    observer.observe(status, { attributes: true, attributeFilter: ["class"] });
+    document.addEventListener("click", onClick, true);
+    workingWatcher = { observer, onClick, clear };
+}
+
+export function unwatchWorking() {
+    if (workingWatcher) {
+        workingWatcher.observer.disconnect();
+        document.removeEventListener("click", workingWatcher.onClick, true);
+        workingWatcher.clear();
+        workingWatcher = null;
     }
 }

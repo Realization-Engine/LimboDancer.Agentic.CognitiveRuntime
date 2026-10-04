@@ -47,6 +47,28 @@ public sealed class GameLibrary(UnitLibrary units, IBoardProvider boards, LivePl
     public IReadOnlyList<string> Names =>
         [.. UnitGames.Names, .. Saved().Where(name => !UnitGames.Names.Contains(name)), .. (live?.Games() ?? []).Select(scope => LivePrefix + scope.Game)];
 
+    /// <summary>
+    /// The games a page may open in a view chosen at will (pass 31c, design D0; rulings R23.2 and R31b.1): the fixtures, the saved games, and the
+    /// live games that have ended. A game still being played changes its view only through the hand-over, on Play and on Replay.
+    /// </summary>
+    public IReadOnlyList<string> OpenNames => [.. Names.Where(name => !StillPlayed(name))];
+
+    /// <summary>Whether a name is a live game that has not ended, read from its record alone, without a replay.</summary>
+    public bool StillPlayed(string name)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        return name.StartsWith(LivePrefix, StringComparison.Ordinal) && live?.Store.Read(new GameScope(LivePlay.Tenant, name[LivePrefix.Length..])) is { } record
+            && !record.Events.Any(item => item.Payload is GameEnded);
+    }
+
+    /// <summary>The names a view reads for a game's units (pass 31c, design D11), with the planner's reading of who sets up out of sight.</summary>
+    public UnitNames NamesOf(GameHistory history, Perspective viewer)
+    {
+        ArgumentNullException.ThrowIfNull(viewer);
+        var planner = live?.Planner;
+        return UnitNames.For(history, viewer, Catalogs, planner is null ? null : state => planner.OutOfSight(state, viewer));
+    }
+
     private string GamesRoot => Path.Combine(units.UnitsRoot, "games");
 
     public GameEntry Load(string name)
@@ -75,12 +97,15 @@ public sealed class GameLibrary(UnitLibrary units, IBoardProvider boards, LivePl
             : Replay(name, null);
     }
 
-    /// <summary>The games with anything to draw on a board or map: through its geometry, or its placed boards on a composed map.</summary>
-    public IReadOnlyList<GameEntry> GamesFor(StudioBoard board)
+    /// <summary>
+    /// The games with anything to draw on a board or map: through its geometry, or its placed boards on a composed map. A game still being played
+    /// is left out (design D0 of pass 31c), but for <paramref name="admitted"/>, the one a link from Play or Replay asks for.
+    /// </summary>
+    public IReadOnlyList<GameEntry> GamesFor(StudioBoard board, string? admitted = null)
     {
         ArgumentNullException.ThrowIfNull(board);
         var target = UnitLibrary.TargetFor(board);
-        return [.. Names.Select(Load).Where(entry => entry.History is { HasErrors: false, States.Count: > 0 } history
+        return [.. Names.Where(name => name == admitted || !StillPlayed(name)).Select(Load).Where(entry => entry.History is { HasErrors: false, States.Count: > 0 } history
             && Projection(entry, Perspective.Adjudicator, history.States.Count).Set.Units
                 .Any(unit => BoardLocation.TryParse(unit.Location, out var location) && target.Locate(location) is not null))];
     }

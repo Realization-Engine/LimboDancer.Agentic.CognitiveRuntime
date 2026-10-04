@@ -7,7 +7,7 @@
 @using LimboDancer.Domains.Asl.Rules
 @using LimboDancer.Domains.Asl.Units.Catalog
 @using LimboDancer.Domains.Asl.Units.State
-@using static LimboDancer.Domains.Asl.MapStudio.Components.Play.FireText
+@using static LimboDancer.Domains.Asl.MapStudio.Services.FireText
 @inject LivePlay Live
 @inject NavigationManager Navigation
 @inject UnitLibrary Library
@@ -18,36 +18,60 @@
 
 <PageTitle>Play - ASL Map Studio</PageTitle>
 
-<PageHeader Title="Play">
-    @* Claude Design's review: one plain sentence, with how it works a click away. *@
-    <RuleHelp Id="play-intro" DetailLabel="How this works" Summary="Play a game from a scenario card: choose an action, review what it will do, then confirm it.">
+@* Pass 31c (design D15; play test P-28, P-29): with a game open nothing sits outside the workspace, so the window does not scroll: the page's
+   title is kept for assistive technology, its introduction is the context's "How this works", and the scripted dice are a tab of the activity
+   strip. *@
+@{
+    RenderFragment intro = @<RuleHelp Id="play-intro" DetailLabel="How this works" Summary="Play a game from a scenario card: choose an action, review what it will do, then confirm it.">
         Live games are the Studio's chosen game source (D2). Every change is a registered action through the Execution Gate: the Studio proposes it,
         the gate checks it against the current game, boards, and catalog, and it commits only after you confirm. Nothing here edits a game directly.
-    </RuleHelp>
-</PageHeader>
-
-@if (Scripted is { } scripted)
+    </RuleHelp>;
+}
+@if (history is null)
 {
-    <ScriptedDicePanel Queued="@([.. scripted.Queued])" @bind-Input="scriptedInput" Add="QueueDice" Clear="@(() => scripted.Clear())" Problem="@scriptedProblem" />
+    <PageHeader Title="Play">
+        @intro
+    </PageHeader>
+    @if (Scripted is { } scripted)
+    {
+        <ScriptedDicePanel Queued="@([.. scripted.Queued])" @bind-Input="scriptedInput" Add="QueueDice" Clear="@(() => scripted.Clear())" Problem="@scriptedProblem" />
+    }
+}
+else
+{
+    <h2 class="page visually-hidden">Play</h2>
 }
 
-<PlayContextHeader Summary="@ContextSummary" Revision="@(state is not null && history?.Current is not null ? state.Revision : null)" Acting="@ActingNote" Busy="@busy" Live="@(state is null || history is null ? null : history.Current is not null)" Ended="@(state?.Ended is not null)"
+<PlayContextHeader Summary="@ContextSummary" Revision="@(state is not null && history?.Current is not null && (Viewer.IsAdjudicator || state.Ended is not null) ? state.Revision : null)" Acting="@ActingNote" Busy="@busy" Live="@(state is null || history is null ? null : history.Current is not null)" Ended="@(state?.Ended is not null)"
                    Result="@ResultTitle" ResultReason="@ResultReason" ResultWhy="@ResultWhy"
                    Conditions="@(state is null ? null : NightAndWeather(state))" HasCard="@(state?.Scenario is not null && handOver is null)" CardChanged="@(state?.Scenario is { } changedCard && !Live.Cards.Matches(changedCard.Id, changedCard.Sha256))"
-                   PendingTitle="@(handOver is null && pending is { Result.Outcome: PlayOutcome.NeedsConfirmation } waitingProposal ? waitingProposal.Action.Name : null)" Review="@FocusReview" Awaiting="@(AwaitingView is { } awaited ? ViewLabel(awaited) : null)"
-                   AwaitingNote="@AwaitingNote" HandOver="@HandOverToAwaiting" Status="@status" OpenCard="@OpenCard">
+                   PendingTitle="@(handOver is null && pending is { Result.Outcome: PlayOutcome.NeedsConfirmation } waitingProposal ? DisplayText.Action(waitingProposal.Action.Name) : null)" Review="@FocusReview" Awaiting="@(AwaitingView is { } awaited ? ViewLabel(awaited) : null)"
+                   AwaitingNote="@AwaitingNote" HandOver="@HandOverToAwaiting" Status="@Said(status)" OpenCard="@OpenCard" Help="@(history is null ? null : intro)" Reserve="true">
     <LiveGameToolbar Games="@([.. Live.Games().Select(scope => scope.Game)])" GameId="@gameId" GameChanged="ChangeGame" Disabled="@busy" Views="@ViewChoices"
                      ViewAs="@(handOver ?? viewAs)" ViewChanged="ChangeView" BoardLabel="@ViewTarget"
-                     BoardLink="@(state is not null && handOver is null ? Games.BoardLink(ViewTarget, GameLibrary.LivePrefix + gameId, Viewer, state.Revision, highlight?.ToString()) : null)" />
+                     BoardLink="@(state is not null && handOver is null ? Games.BoardLink(ViewTarget, GameLibrary.LivePrefix + gameId, Viewer, Viewer.IsAdjudicator || state.Ended is not null ? state.Revision : null, highlight?.ToString()) : null)" />
 </PlayContextHeader>
 
 <HandOverScreen Next="@handOver" Label="@ViewLabel(handOver)" Confirmed="ConfirmView" When="@HandOverWhen" Why="@HandOverWhy" Tasks="@HandOverTasks"
-                HappenedTitle="@HandOverHappenedTitle" Happened="@HandOverHappened" Score="@HandOverScore">
+                HappenedTitle="@HandOverHappenedTitle" Happened="@HandOverHappened" Score="@HandOverScore" Setup="@SetupOpen">
+<Map>
+    @* Pass 31c (design D16; the user, 2026-10-04; ruling R31c.3): the map as both sides know it, with the Locations the screen's lines name
+       outlined. None during setup, when a side sets up out of the other's sight. *@
+    @if (handOver is not null && state is not null && history?.Current is not null && !SetupOpen && HandOverPublic is { Board: { } handOverBoard } known)
+    {
+        _ = HandOverHappened;
+        <HandOverMap Board="@handOverBoard" Units="@known.Units" Outlined="@happenedAt" />
+    }
+</Map>
+<ChildContent>
+@* Pass 31c (design D11): every panel reads a unit's name and a Location's words from the view's names, through one cascaded function. *@
+<CascadingValue Name="Say" Value="@Words">
+<CascadingValue Name="SayAt" Value="@WordsAt">
 
 @if (state?.Scenario is { } scenario)
 {
     var playCard = CardRead(scenario.Id)?.Card;
-    <PlayCardPanel Scenario="@scenario" Card="@playCard" Changed="@(!Live.Cards.Matches(scenario.Id, scenario.Sha256))" FirstSide="@state.FirstSide" Ended="@state.Ended"
+    <PlayCardPanel Scenario="@scenario" Card="@playCard" Boards="@state.Map.Boards.Count" Changed="@(!Live.Cards.Matches(scenario.Id, scenario.Sha256))" FirstSide="@state.FirstSide" Ended="@state.Ended"
                    Groups="@([.. state.Sides.SelectMany(side => side.Groups.Select(group => $"{DisplayText.Side(side.Id)}: {group.Name} ({group.Id}), ELR {group.Elr?.ToString(CultureInfo.InvariantCulture) ?? "not given"}"))])"
                    Victory="@(playCard is not null ? VictoryNow : null)"
                    KnownTo="@VictoryKnownTo" Catalog="@($"{state.Catalog.Catalog}@{state.Catalog.Version}")"
@@ -83,7 +107,7 @@
                         {
                             var key = $"{side.Id}|{at}";
                             <label><input type="checkbox" class="non-ob-location" value="@at" checked="@nonObChosen.Contains(key)"
-                                          @onchange="@(args => Toggle(nonObChosen, key, args.Value is true))" /> @DisplayText.Location(at) <span class="muted">@at</span></label>
+                                          @onchange="@(args => Toggle(nonObChosen, key, args.Value is true))" /> @PlaceOf(at) <span class="muted">@at</span></label>
                         }
                         <button class="propose-non-ob" disabled="@(!choices.Any(at => nonObChosen.Contains($"{side.Id}|{at}")))" aria-describedby="@($"non-ob-ready-{side.Id}")"
                                 @onclick="@(() => ProposeNonOb(side.Id, choices))">Propose: place @DisplayText.Side(side.Id)'s non-OB "?"</button>
@@ -229,6 +253,12 @@
                                  Consequences="@([.. ConsequencesOf(proposal).Select(item => item.Text.EndsWith('.') ? item.Text : item.Text + ".")])" ConfirmLabel="@ConfirmLabel(ConsequencesOf(proposal))"
                                  CanConfirm="@(proposal.Result.Outcome == PlayOutcome.NeedsConfirmation)" Busy="@busy" Confirm="Confirm" Cancel="@CancelProposal">
                 <Lead>
+                    @* Pass 31c (design D14; play test P-14): a fire's arithmetic before the dice, for the firing side and the adjudicator. *@
+                    @if (proposal.Result is { Outcome: PlayOutcome.NeedsConfirmation, Plan.Fire: { } previewed } && (Viewer.IsAdjudicator || Viewer.Name == previewed.FiringSide)
+                        && FirePreview(previewed.Attack) is { Arithmetic: { } preview } shownPreview)
+                    {
+                        <FireArithmeticPreview Arithmetic="@preview" Incomplete="@shownPreview.Incomplete" />
+                    }
                     @if (PlacesCounters(proposal) && setupReview is { } summary)
                     {
                         <div id="setup-review">
@@ -323,6 +353,16 @@ else if (state is not null)
         <section id="play-panel-actions" class="play-pane play-actions" tabindex="-1" @ref="actionsPane" @attributes="@Pane("actions", "Actions")">
             @* Table player, pass 29: the hex picked on the map is offered to every typed Location of the actions. *@
             <CascadingValue Name="PickedLocation" Value="@highlight?.ToString()">
+            @* Pass 31c (design D13): a typed Location can be armed, and the next hex clicked on the map fills it. Setup has its own picking. *@
+            <CascadingValue Name="Picking" Value="@(SetupOpen ? null : Picking)">
+            <CascadingValue Name="PrimarySections" Value="@PrimarySections">
+            @if (!SetupOpen && Picking.Armed is not null)
+            {
+                <p id="play-picking" class="toolbar-note" role="status">
+                    The next hex clicked on the map @(Picking.ArmedLabel is { Length: > 0 } armedLabel ? armedLabel : "fills the Location"), at ground level.
+                    <button type="button" class="link" id="play-picking-stop" @onclick="@(() => Picking.Arm(null, null))">Stop picking</button>
+                </p>
+            }
             @if (SetupOpen)
             {
                 @setupBlock
@@ -391,12 +431,17 @@ else if (state is not null)
                         <span class="toolbar-note">Hidden units (HIP): each is placed beneath a "?" before it moves or advances, or whenever its side chooses (A12.32; ruling R23.5).</span>
                         @foreach (var unit in hiddenUnits)
                         {
-                            <button class="place-hidden" data-unit="@unit.Id" @onclick="@(() => ProposePlaceHidden(unit.Id))">Propose: place @unit.Id at @state.Location(unit.Id)!.Location beneath "?"</button>
+                            <button class="place-hidden" data-unit="@unit.Id" @onclick="@(() => ProposePlaceHidden(unit.Id))">Propose: place @Words(unit.Id) in @PlaceOf(state.Location(unit.Id)!.Location) beneath "?"</button>
                         }
                     </div>
                 }
-                <BuildingEntryAction Units="@EnterRows" Unit="@enterUnit" Location="@enterLocation" OnUnit="@(id => enterUnit = id)"
-                    OnLocation="@(at => enterLocation = at)" OnPropose="@ProposeEntry" />
+                @* The user, 2026-10-04 (pass 31c): an entry into a building is the moving side's, in its Movement Phase; it is offered only then,
+                   and its explanation is a closed line, not a paragraph on every screen. *@
+                @if (state.Phase == "mph" && (Viewer.IsAdjudicator || viewAs == state.PhasingSide))
+                {
+                    <BuildingEntryAction Units="@EnterRows" Unit="@enterUnit" Location="@enterLocation" OnUnit="@(id => enterUnit = id)"
+                        OnLocation="@(at => enterLocation = at)" OnPropose="@ProposeEntry" />
+                }
                 @if (state.Phase == "rtph")
                 {
                     <RoutActionPanel Obligations="@RoutObligations" Units="@RoutChoices" Unit="@routUnit" Route="@routRoute" LowCrawl="@routLowCrawl"
@@ -410,12 +455,14 @@ else if (state is not null)
                 }
                 @if (state.Phase == "rph")
                 {
-                    <h4>Rally</h4>
+                    <ActionSection Title="Rally" Key="rally">
                     <RallyActionPanel Units="@RallyChoices" Leaders="@([.. RallyLeaders.Select(leader => leader.Id)])" Unit="@rallyUnit" Leader="@rallyLeader"
                         OnUnit="@(id => { rallyUnit = id; rallyLeader = string.Empty; })" OnLeader="@(id => rallyLeader = id)" OnPropose="@ProposeRally" />
-                    <h4>Repair</h4>
+                    </ActionSection>
+                    <ActionSection Title="Repair" Key="repair">
                 <RepairActionPanel Weapons="@RepairChoices" Weapon="@repairWeapon" OnWeapon="@(id => repairWeapon = id)" OnPropose="@ProposeRepair" />
-                    <h4>Deploy and Recombine</h4>
+                    </ActionSection>
+                    <ActionSection Title="Deploy and Recombine" Key="deploy-and-recombine">
                 <DeployActionPanel Squads="@DeployChoices" Leaders="@([.. LeadersWith(deploySquad).Select(leader => leader.Id)])" Weapons="@DeployWeapons"
                         Squad="@deploySquad" Leader="@deployLeader" Second="@deployWeapons"
                         OnSquad="@(id => { deploySquad = id; deployLeader = string.Empty; deployWeapons.Clear(); })" OnLeader="@(id => deployLeader = id)"
@@ -424,12 +471,13 @@ else if (state is not null)
                         Leaders="@([.. LeadersWith(recombineOne).Select(leader => leader.Id)])" One="@recombineOne" Two="@recombineTwo" Leader="@recombineLeader"
                         OnOne="@(id => { recombineOne = id; recombineTwo = string.Empty; recombineLeader = string.Empty; })" OnTwo="@(id => recombineTwo = id)"
                         OnLeader="@(id => recombineLeader = id)" OnPropose="@ProposeRecombine" />
+                    </ActionSection>
                     <DmRetentionChoices Units="@DmRetainers" Selected="@retainDm" OnToggle="@(pick => Toggle(retainDm, pick.Id, pick.On))" />
                     <ShockRecoveryAction Vehicles="@ShockChoices" Vehicle="@shockVehicle" OnVehicle="@(id => shockVehicle = id)" OnPropose="@ProposeShockRecovery" />
                 }
                 @if (state.Phase == "mph")
                 {
-                    <h4>Movement</h4>
+                    <ActionSection Title="Movement" Key="movement">
                     <RuleHelp Id="move-help" Summary="@($"The {DisplayText.Side(state.PhasingSide)} side moves one stack at a time, one Location per step; after each step the DEFENDER may fire or pass (A4.1, A8.1).")">
                         The @DisplayText.Side(state.PhasingSide) side moves one stack at a time, one Location per step (A4.1). After each step the DEFENDER may fire at the stack
                         or pass (A8.1, A8.11); the stack then moves on, whole or split, or ends its move. No other unit moves until every member of the stack has
@@ -473,9 +521,9 @@ else if (state is not null)
                             {
                                 var lanes = Live.Planner.ChargeLanes(state, charging);
                                 <p class="fail" data-charge="@charging.Id">
-                                    @charging.Id is berserk and charges @(target?.ToString() ?? "the nearest Known enemy unit") before any other unit moves (A15.43),
+                                    @WordsAt(charging.Id) is berserk and charges @(target is null ? "the nearest Known enemy unit" : PlaceOf(target.ToString())) before any other unit moves (A15.43),
                                     by a shortest route: next @(next.Count == 1 ? "step" : "steps") @string.Join(" or ", next.Select(step => lanes.TryGetValue(step, out var bypass)
-                                        ? $"{step} in Bypass along {string.Join(" or ", bypass)}" : step.ToString())) (A15.431). It may not stop short while it has the MF.
+                                        ? $"{PlaceOf(step.ToString())} in Bypass along {string.Join(" or ", bypass)}" : PlaceOf(step.ToString()))) (A15.431). It may not stop short while it has the MF.
                                 </p>
                             }
                             else
@@ -512,6 +560,7 @@ else if (state is not null)
                     {
                         <p class="muted" id="move-elsewhere">The @DisplayText.Side(state.PhasingSide) side moves now; its movers and their route are its own (choose its view to move; ruling R23.1).</p>
                     }
+                    </ActionSection>
                     @if (state.Movement is { Vehicle: true, WindowOpen: true, Members: [{ } reacting] } && state.Location(reacting)?.Location is { } reactionAt
                         && (Viewer.IsAdjudicator || viewAs != state.PhasingSide) && SeenOnly(ReactionUnits(reactionAt, reacting)).ToArray() is { Length: > 0 } reactors)
                     {
@@ -557,8 +606,9 @@ else if (state is not null)
                 }
                 @if (state.Phase == "aph" && !Viewer.IsAdjudicator && viewAs != state.PhasingSide)
                 {
-                    <h4>Advance</h4>
+                    <ActionSection Title="Advance" Key="advance">
                     <p class="muted" id="advance-elsewhere">The @DisplayText.Side(state.PhasingSide) side advances now; its units and their Locations are its own (choose its view to advance; ruling R23.1).</p>
+                    </ActionSection>
                 }
                 else if (state.Phase == "aph")
                 {
@@ -598,7 +648,7 @@ else if (state is not null)
                         <span class="muted">Massacre (A20.4): a Russian or berserk unit eliminates a prisoner in its Location, as if using a SW; the prisoner's side is faced with No Quarter.</span>
                         @foreach (var (unit, prisoner) in massacres)
                         {
-                            <button class="massacre" data-unit="@unit.Id" data-prisoner="@prisoner.Id" @onclick="@(() => ProposeMassacre(unit.Id, prisoner.Id))">Propose: @unit.Id massacres @prisoner.Id</button>
+                            <button class="massacre" data-unit="@unit.Id" data-prisoner="@prisoner.Id" @onclick="@(() => ProposeMassacre(unit.Id, prisoner.Id))">Propose: @WordsAt(unit.Id) massacres @Words(prisoner.Id)</button>
                         }
                     </div>
                 }
@@ -607,11 +657,11 @@ else if (state is not null)
                     <ul class="muted" id="fire-markers">
                         @foreach (var lane in state.FireLanes)
                         {
-                            <li class="fire-lane">Fire Lane of @lane.Weapon (@lane.Operator): @string.Join(", ", lane.Entries.Select(entry => $"{DisplayText.Location(entry.Location)} {entry.Fp} FP")) (A9.22)</li>
+                            <li class="fire-lane">Fire Lane of @Words(lane.Weapon) (@Words(lane.Operator)): @string.Join(", ", lane.Entries.Select(entry => $"{PlaceOf(entry.Location)} {entry.Fp} FP")) (A9.22)</li>
                         }
                         @foreach (var encircled in state.Encirclements)
                         {
-                            <li class="encirclement">@DisplayText.Location(encircled.Location): the @DisplayText.Side(encircled.Side) units there are Encircled (A7.7)</li>
+                            <li class="encirclement">@PlaceOf(encircled.Location): the @DisplayText.Side(encircled.Side) units there are Encircled (A7.7)</li>
                         }
                     </ul>
                 }
@@ -622,34 +672,40 @@ else if (state is not null)
                 }
                 @if (FiringSide is { } waiting && !Viewer.IsAdjudicator && viewAs != waiting)
                 {
-                    <h4>Fire</h4>
+                    <ActionSection Title="Fire" Key="fire">
                     <p class="muted" id="fire-elsewhere">The @DisplayText.Side(waiting) side may fire now; its fire groups are its own (choose its view to fire; ruling R23.1).</p>
+                    </ActionSection>
                 }
                 else if (FiringSide is { } firing)
                 {
                     @* Pass 28c (A8.1, A8.11): after each step the DEFENDER, from its own view, sees where the stack is and fires at it or passes. *@
                     @if (state.Phase == "mph" && !Viewer.IsAdjudicator && viewAs != state.PhasingSide && MovingAt is { } movingAt)
                     {
-                        <h4>Defensive First Fire</h4>
+                        <ActionSection Title="Defensive First Fire" Key="defensive-first-fire">
                         <div class="toolbar" id="dff-window">
                             @if (MoveStopped)
                             {
-                                <span class="toolbar-note" id="dff-note">No member of the moving stack at @DisplayText.Location(movingAt) can move on: each is broken, pinned, or eliminated. Fire at it again below, or pass, which ends its move (A8.1, A4.2).</span>
+                                <span class="toolbar-note" id="dff-note">No member of the moving stack at @PlaceOf(movingAt) can move on: each is broken, pinned, or eliminated. Fire at it again below, or pass, which ends its move (A8.1, A4.2).</span>
                             }
                             else
                             {
-                                <span class="toolbar-note" id="dff-note">The moving stack is at @DisplayText.Location(movingAt): fire at it below, or pass (A8.1).</span>
+                                <span class="toolbar-note" id="dff-note">The moving stack is at @PlaceOf(movingAt): fire at it below, or pass (A8.1).</span>
                             }
                             <button type="button" id="dff-show" @onclick="@(() => LocateHex(movingAt))">Show it on the map</button>
                             <button id="propose-pass" @onclick='@(() => ProposeSimple(GameActions.PassFire, "pass"))'>Propose: the DEFENDER passes</button>
                         </div>
+                        </ActionSection>
                     }
+                    var byRange = FireTargetsByRange(firing);
+                    var ofTarget = FireRangeOfTarget();
                     <SmallArmsFirePanel Side="@firing" Phase="@state.Phase" PhaseLabel="@Games.PhaseLabel(state.Phase)" Locations="@([.. FireLocations(firing)])" From="@fireFrom"
+                        TargetNotes="@byRange.Notes" TargetsOut="@byRange.Out" RangeSummary="@ofTarget.Summary" RangeRows="@ofTarget.Rows" OnShowRange="@ShowFireRange"
+                        Also="@fireAlso" AlsoChoices="@FireAlsoChoices(firing)" OnAlso="@(pick => ToggleFireAlso(pick.Id, pick.On))" Places="@FirerPlaces(firing)" AloneCandidates="@FireAloneCandidates(firing)"
                         Firers="@FirerChoices(firing)" SelectedFirers="@fireFirers" Weapons="@([.. FireWeapons.Select(weapon => new SmallArmsFirePanel.Weapon(weapon.Id, weapon.Holding!.Holder))])"
                         SelectedWeapons="@fireWeapons" Alone="@fireAlone" Leaders="@([.. FireLeaders(firing).Select(leader => leader.Id)])" Director="@fireDirector"
-                        MolAllowed='@state.SpecialRules.Contains("mol:" + firing, StringComparer.Ordinal)' Mol="@fireMol" Targets="@([.. FireTargets(firing)])" Target="@fireTarget"
+                        MolAllowed='@state.SpecialRules.Contains("mol:" + firing, StringComparer.Ordinal)' Mol="@fireMol" Targets="@byRange.Targets" Target="@fireTarget"
                         FreeTarget="@fireFreeTarget" SnapShot="@fireSnapShot" Spray="@fireSpray" LaneWeapon="@fireLaneWeapon" LaneTo="@fireLaneTo" Partners="@FirePartners(firing)"
-                        Partner="@firePartner" OnFrom="@(at => { fireFrom = at; PruneFire(); })" OnFirer="@(pick => Toggle(fireFirers, pick.Id, pick.On))"
+                        Partner="@firePartner" OnFrom="@(at => { fireFrom = at; fireAlso.Clear(); PruneFire(); })" OnFirer="@(pick => Toggle(fireFirers, pick.Id, pick.On))"
                         OnWeapon="@(pick => Toggle(fireWeapons, pick.Id, pick.On))" OnAlone="@(pick => Toggle(fireAlone, pick.Id, pick.On))" OnDirector="@(id => fireDirector = id)"
                         OnMol="@(id => fireMol = id)" OnTarget="@(at => fireTarget = at)" OnFreeTarget="@(at => fireFreeTarget = at)" OnSnapShot="@(on => fireSnapShot = on)"
                         OnSpray="@(at => fireSpray = at)" OnLaneWeapon="@(id => fireLaneWeapon = id)" OnLaneTo="@(at => fireLaneTo = at)" OnPartner="@(id => firePartner = id)"
@@ -697,12 +753,14 @@ else if (state is not null)
                 </fieldset>
             }
             </CascadingValue>
+            </CascadingValue>
+            </CascadingValue>
         </section>
             </text>;
         }
         @if (MapLayers is { Board: { } mapBoard } layers)
         {
-            <BoardWorkspace @key="@($"{gameId}/{Viewer.Name}")" @ref="workspace" Board="@mapBoard" Units="@MapUnits(layers)" UnitView="@layers.View" Marks="@SetupMarks(mapBoard, layers.Marks)" Vocabulary="@Library.Vocabulary" OnLoaded="@ZoomToSetup"
+            <BoardWorkspace @key="@($"{gameId}/{Viewer.Name}")" ViewKey="@($"{gameId}/{Viewer.Name}")" HexNotes="@HexNotes" RangeSubjects="@RangeSubjects" @ref="workspace" Board="@mapBoard" Units="@MapUnits(layers)" UnitView="@layers.View" Marks="@SetupMarks(mapBoard, layers.Marks)" Vocabulary="@Library.Vocabulary" OnLoaded="@ZoomToSetup"
                             Selected="@(highlight is { } picked ? GameMaps.FactsAt(mapBoard, picked) : null)"
                             SelectedChanged="@(facts => PickHex(mapBoard, facts))"
                             @bind-Panel="inspectorTab" Extras="@([new BoardInspector.ExtraTab(new("proposal", "Proposal", AwaitingConfirm ? 1 : null), proposalBlock)])"
@@ -714,7 +772,7 @@ else if (state is not null)
                     {
                         <p id="play-residual">
                             Residual FP this MPh (A8.2):
-                            @string.Join("; ", state.ResidualFire.Select(item => $"{item.Fp} in {DisplayText.Location(item.Location)}"))
+                            @string.Join("; ", state.ResidualFire.Select(item => $"{item.Fp} in {PlaceOf(item.Location)}"))
                         </p>
                     }
                     <div class="toolbar play-map-tools">
@@ -793,7 +851,7 @@ else if (state is not null)
                             @if (swapFrom is { } swapping && BoardLocation.TryParse(swapping, out var swapAt))
                             {
                                 <p id="setup-swap-banner" class="diagnostic">
-                                    Click another hex of your list, on the map or by a stack's name in the list, to swap its counters with those in @DisplayText.Location(swapAt): all levels of both hexes change places.
+                                    Click another hex of your list, on the map or by a stack's name in the list, to swap its counters with those in @PlaceOf(swapAt): all levels of both hexes change places.
                                     A stack of Dummies swapped with a stack under "?" of the same height looks the same to the other side. Esc on the map cancels.
                                     <button type="button" class="link" id="setup-swap-cancel" @onclick="@(() => swapFrom = null)">Cancel</button>
                                 </p>
@@ -824,8 +882,33 @@ else if (state is not null)
         }
         <section id="play-panel-activity" class="play-pane play-activity" @attributes="@Pane("activity", "Activity")">
             <p id="play-latest">@(LatestRecord ?? "No record yet.")</p>
-            <details id="play-history">
-                <summary>Records, latest first</summary>
+            @* Pass 31c (designs D15 and D17): the records, the units, the scripted dice, and the audit open over the strip, each with its own
+               scroll, and take no height from the map. Every panel stays in the page; only the one chosen shows. *@
+            <div class="toolbar play-activity-tabs" role="group" aria-label="More of the game" @onkeydown="@(args => { if (args.Key == "Escape") { activityTab = null; } })">
+                @foreach (var (key, label, panel) in ActivityTabs)
+                {
+                    <button type="button" class="link" id="@($"play-activity-{key}")" aria-expanded="@(activityTab == key ? "true" : "false")" aria-controls="@panel"
+                            @onclick="@(() => activityTab = activityTab == key ? null : key)">@label</button>
+                }
+            </div>
+            @if (SinceLooked.Count > 0)
+            {
+                <div id="play-since-panel" class="play-activity-panel" role="region" aria-label="Since you last looked" hidden="@(activityTab != "since")">
+                    <h3>Since you last looked</h3>
+                    <ol id="play-since">
+                        @{
+                            string? under = null;
+                        }
+                        @foreach (var line in SinceLooked)
+                        {
+                            var when = WhenOf(line.EventId);
+                            <li data-event="@line.EventId">@(when != under ? $"{when}: " : string.Empty)@DisplayText.Sentence(line.Text)</li>
+                            under = when;
+                        }
+                    </ol>
+                </div>
+            }
+            <div id="play-history" class="play-activity-panel" role="region" aria-label="Records, latest first" hidden="@(activityTab != "records")">
                 <DiceRollHistory Rolls="@RollRows" Scripted="@(Scripted is not null)" />
                 @* Pass 31b: each record leads to its step on the Replay page, read in the view shown here. *@
                 <ActionRecordList Heading="Ordnance" ListId="play-ordnance" When="@WhenOf" Replay="@ReplayFrom" Records='@Entries(OrdnanceRecords, "ordnance")' />
@@ -835,16 +918,32 @@ else if (state is not null)
                 <ActionRecordList Heading="Snipers" ListId="play-snipers" When="@WhenOf" Replay="@ReplayFrom" Records='@Entries(SniperRecords, "sniper")' />
                 <ActionRecordList Heading="Rally, Rout, and other actions" ListId="play-rallies" When="@WhenOf" Replay="@ReplayFrom"
                                   Records="@([.. RallyAndRepairRecords.Select(item => new ActionRecordList.Entry(item.EventId, item.Kind, item.Text))])" />
-            </details>
+            </div>
+            <div id="play-units-panel" class="play-activity-panel" role="region" aria-label="Units" hidden="@(activityTab != "units")">
+                <h3>Units</h3>
+                @* A side is shown no revision in a game still played (backlog section 49; ruling R31b.1). *@
+                <PlayUnitTable ViewNote="@(Viewer.IsAdjudicator ? $"As the adjudicator sees them: every unit, at revision {state.Revision}." : $"As {DisplayText.ViewName(Viewer.Name)} sees them{(state.Ended is not null ? $", at revision {state.Revision}" : string.Empty)}.")"
+                               Rows="@UnitRows" Sealed="@([.. SealedPresences])" Locate="@LocateHex" />
+            </div>
+            @if (Scripted is { } scriptedDice)
+            {
+                <div id="play-dice-panel" class="play-activity-panel" role="region" aria-label="Scripted dice" hidden="@(activityTab != "dice")">
+                    <ScriptedDicePanel Queued="@([.. scriptedDice.Queued])" @bind-Input="scriptedInput" Add="QueueDice" Clear="@(() => scriptedDice.Clear())" Problem="@scriptedProblem" />
+                </div>
+            }
+            @if (Viewer.IsAdjudicator)
+            {
+                <div id="play-audit-panel" class="play-activity-panel" role="region" aria-label="Audit" hidden="@(activityTab != "audit")">
+                    <AdjudicatorAuditPanel Lines="@Live.Audit.Tail(12).ToArray()" />
+                </div>
+            }
         </section>
     </div>
-
-    <h3>Units</h3>
-    <PlayUnitTable ViewNote="@($"As {(Viewer.IsAdjudicator ? "the adjudicator sees them: every unit" : $"{Viewer.Name} sees them")}, at revision {state.Revision}.")"
-                   Rows="@UnitRows" Sealed="@([.. SealedPresences])" Locate="@LocateHex" />
-    <AdjudicatorAuditPanel Lines="@(Viewer.IsAdjudicator ? Live.Audit.Tail(12).ToArray() : null)" />
 }
 
+</CascadingValue>
+</CascadingValue>
+</ChildContent>
 </HandOverScreen>
 
 @code {
@@ -1340,7 +1439,7 @@ else if (state is not null)
         // A hex is named with its board on a map of several boards, where two boards have a hex of the same name.
         var boards = SetupCard?.Boards.Count ?? 1;
         BoardLocation? HexOf(string? at) => BoardLocation.TryParse(at, out var parsed) ? parsed with { Level = 0 } : null;
-        string Name(BoardLocation hex) => boards > 1 ? DisplayText.Location(hex) : hex.Hex.ToString();
+        string Name(BoardLocation hex) => boards > 1 ? PlaceOf(hex) : hex.Hex.ToString();
         BoardLocation? Where(SetupPlanPlacement item) => HexOf(item.At ?? plan.Placements.FirstOrDefault(other => other.Id == item.Holder)?.At);
         var hidden = plan.Placements.Where(item => item.Hidden && !item.OffBoard && item.Definition is not null && Where(item) is not null).ToArray();
         if (hidden.Length > 0)
@@ -1447,7 +1546,7 @@ else if (state is not null)
         var (hexA, hexB) = (first with { Level = 0 }, second with { Level = 0 });
         if (hexA == hexB)
         {
-            swapNote = $"That is the same hex, {DisplayText.Location(hexA)}, so nothing was swapped.";
+            swapNote = $"That is the same hex, {PlaceOf(hexA)}, so nothing was swapped.";
             return;
         }
 
@@ -1476,7 +1575,7 @@ else if (state is not null)
 
         (selectedStack, highlight, shownPlan) = (null, hexB, null);
         ListChanged();
-        swapNote = $"Swapped the counters in {DisplayText.Location(hexA)} and {DisplayText.Location(hexB)}."
+        swapNote = $"Swapped the counters in {PlaceOf(hexA)} and {PlaceOf(hexB)}."
             + (lowered ? " A counter whose level the other hex lacks went to ground level; change its level in the list if you mean another." : string.Empty);
     }
 
@@ -1968,7 +2067,7 @@ else if (state is not null)
 
     /// <summary>What is being placed or moved by the next click on the map; null when nothing is.</summary>
     private string? MoveBanner => pickingKey is not { } key ? null
-        : key.StartsWith("stack:", StringComparison.Ordinal) ? $"Click a hex for the stack at {DisplayText.Location(key["stack:".Length..])}. Esc on the map cancels."
+        : key.StartsWith("stack:", StringComparison.Ordinal) ? $"Click a hex for the stack at {PlaceOf(key["stack:".Length..])}. Esc on the map cancels."
         : placements.FirstOrDefault(row => row.Key == key) is { } moving ? $"Click a hex for {PrintedLabel(moving)} {moving.Id}. Esc on the map cancels." : null;
 
     /// <summary>The map's keys during setup: Esc ends a move or a swap; [ and ] step the map through the setup plans and the list.</summary>
@@ -2082,7 +2181,7 @@ else if (state is not null)
 
                 // The rule code goes, and a Location reads as a player says it.
                 var text = reason.IndexOf(": ", StringComparison.Ordinal) is var cut and > 0 && reason.StartsWith("play.", StringComparison.Ordinal) ? reason[(cut + 2)..] : reason;
-                text = System.Text.RegularExpressions.Regex.Replace(text, @"\bbd\w+:[A-Z]{1,2}\d{1,2}:-?\d\b", found => DisplayText.Location(found.Value));
+                text = System.Text.RegularExpressions.Regex.Replace(text, @"\bbd\w+:[A-Z]{1,2}\d{1,2}:-?\d\b", found => PlaceOf(found.Value));
                 var carried = rows.SelectMany(row => placements.Where(other => other.Holder == row.Id && other.Role != "manned" && refused.Contains(other.Id))).ToArray();
                 problems.Add((rows.Length > 0
                     ? $"{PrintedLabel(rows[0])}: {text}" + (carried.Length > 0 ? $" The same holds for what it carries: {string.Join(", ", carried.Select(row => $"{PrintedLabel(row)} {row.Id}"))}." : string.Empty)
@@ -2166,7 +2265,7 @@ else if (state is not null)
                     follows ? "stands with its crew" : null,
                     row.Hidden ? "hidden" : null,
                     row.Broken ? "broken" : null,
-                    row.BoreSighted is { } sighted ? $"Bore Sighted on {DisplayText.Location(sighted)}" : null,
+                    row.BoreSighted is { } sighted ? $"Bore Sighted on {PlaceOf(sighted)}" : null,
                     row.Role == "towed" ? "in tow" : row.Role == "passenger" ? "a Passenger" : null,
                 ];
                 return new SetupCounters.Row(row.Key, PrintedLabel(row), row.Id)
@@ -2203,7 +2302,7 @@ else if (state is not null)
                 {
                     var at = BoardLocation.Parse(stack.Key);
                     var levels = board is null ? [at.Level] : LevelsAt(board, at);
-                    return new SetupCounters.Stack(stack.Key, DisplayText.Location(at), levels.Contains(at.Level) ? levels : [.. levels.Append(at.Level).Order()], at.Level,
+                    return new SetupCounters.Stack(stack.Key, PlaceOf(at), levels.Contains(at.Level) ? levels : [.. levels.Append(at.Level).Order()], at.Level,
                         [.. stack.SelectMany(WithCarried)])
                     {
                         Selected = selectedStack == stack.Key,
@@ -2270,6 +2369,7 @@ else if (state is not null)
     private void PickHex(StudioBoard board, HexFacts? facts)
     {
         highlight = facts is null ? null : GameMaps.LocationOf(board, facts.Index);
+        (Picking.Picked, Picking.Serial) = (highlight?.ToString(), Picking.Serial + 1);
         if (highlight is not { } at || state is null || !SetupOpen || handOver is not null)
         {
             return;
@@ -2338,7 +2438,7 @@ else if (state is not null)
             selectedStack = placements[last].Location;
         }
 
-        placeNote = lowered ? $"{DisplayText.Location(at with { Level = 0 })} has no such level: placed at ground level. Change the level in the list if you mean another." : null;
+        placeNote = lowered ? $"{PlaceOf(at with { Level = 0 })} has no such level: placed at ground level. Change the level in the list if you mean another." : null;
         pickingKey = !whole && unplaced && last >= 0
             ? placements.Skip(last + 1).Concat(placements.Take(last)).FirstOrDefault(item => OnMap(item) && item.Location.Length == 0 && item.Role != "manned")?.Key : null;
         (shownPlan, revealId) = (null, selectedStack is { } shownStack ? SetupCounters.StackId(shownStack) : null);
@@ -2748,7 +2848,7 @@ else if (state is not null)
         {
             if (state.Passengers(unit.Id) is { Count: > 0 } riding)
             {
-                yield return $"Passengers {string.Join(", ", riding.Select(item => item.Id))}";
+                yield return $"Passengers {string.Join(", ", riding.Select(item => Words(item.Id)))}";
             }
 
             foreach (var gun in state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == unit.Id))
@@ -2974,6 +3074,83 @@ else if (state is not null)
     private bool movePush = true;
     private string unhookFacing = "east";
     private string fireFrom = string.Empty;
+
+    // Pass 31c (design D14; A7.5): the other Locations of the fire group, each ADJACENT to another of them.
+    private readonly List<string> fireAlso = [];
+    private (long Revision, string Group, IReadOnlyList<string> Choices) fireAlsoCache;
+    private static readonly Lazy<ScenarioA1FireReference> FirePreviewReference = new(() => new ScenarioA1FirePackage().Reference);
+
+    /// <summary>
+    /// A fire's arithmetic before the dice, as the firing view may know it (the referee, pass 31c; A12.3, A12.11, A12.14). A hidden unit in the
+    /// target Location is left out of the preview's facts, so nothing in it differs from what the firer would work out at the table; the
+    /// adjudicator's preview has every target. Where the view sees a "?" in the target Location, the preview is said as incomplete, and what rests
+    /// on the units beneath it is not shown.
+    /// </summary>
+    private (FireArithmetic? Arithmetic, bool Incomplete) FirePreview(FireAttack attack)
+    {
+        if (Viewer.IsAdjudicator)
+        {
+            return (ScenarioA1FireCalculator.Preview(attack, FirePreviewReference.Value), false);
+        }
+
+        var held = VisibleUnits.Select(unit => unit.Id).ToHashSet(StringComparer.Ordinal);
+        var sealedThere = SealedPresences.Any(presence => presence.Location.ToString() == attack.TargetLocationId);
+        var known = attack with
+        {
+            Targets = attack.Targets is null ? null : [.. attack.Targets.Where(target => target.Hidden != true && (target.UnitId is null || held.Contains(target.UnitId) || target.Concealed == true))],
+        };
+        return (ScenarioA1FireCalculator.Preview(known, FirePreviewReference.Value), sealedThere);
+    }
+
+    /// <summary>
+    /// The Locations that may join the fire group (A7.5: "each participating unit occupies a Location ADJACENT to another participating unit of
+    /// the same FG"): those holding a unit that may fire, ADJACENT to a Location already in the group. None at night (E1.75; ruling R16.3).
+    /// </summary>
+    private IReadOnlyList<string> FireAlsoChoices(string side)
+    {
+        if (state is null || fireFrom.Length == 0 || state.Night)
+        {
+            return [];
+        }
+
+        var group = string.Join('|', fireAlso.Prepend(fireFrom));
+        if (fireAlsoCache.Choices is null || fireAlsoCache.Revision != state.Revision || fireAlsoCache.Group != group)
+        {
+            var inGroup = fireAlso.Prepend(fireFrom).Select(BoardLocation.Parse).ToArray();
+            fireAlsoCache = (state.Revision, group, [.. FireLocations(side).Where(at => at != fireFrom && !fireAlso.Contains(at)
+                && BoardLocation.TryParse(at, out var other) && inGroup.Any(one => Live.Planner.Adjacent(state, one, other)))]);
+        }
+
+        return fireAlsoCache.Choices;
+    }
+
+    private void ToggleFireAlso(string at, bool on)
+    {
+        if (on && at.Length > 0 && !fireAlso.Contains(at))
+        {
+            fireAlso.Add(at);
+        }
+        else if (!on)
+        {
+            fireAlso.Remove(at);
+
+            // A7.5: every Location of the group is ADJACENT to another of it, in one chain from the first; what the removal cut off goes too.
+            if (state is not null && BoardLocation.TryParse(fireFrom, out var first))
+            {
+                var joined = new List<BoardLocation> { first };
+                var left = fireAlso.Select(BoardLocation.Parse).ToList();
+                while (left.FirstOrDefault(other => joined.Any(one => Live.Planner.Adjacent(state, one, other))) is { } next)
+                {
+                    joined.Add(next);
+                    left.Remove(next);
+                }
+
+                fireAlso.RemoveAll(other => left.Any(cut => cut.ToString() == other));
+            }
+        }
+
+        PruneFire();
+    }
     private readonly HashSet<string> fireFirers = new(StringComparer.Ordinal);
     private string fireDirector = string.Empty;
     private string fireTarget = string.Empty;
@@ -3258,9 +3435,10 @@ else if (state is not null)
     private static bool IsBroken(UnitInstance unit) => GameState.Condition(unit, Conditions.Broken) == ConditionState.True;
 
     /// <summary>A unit as a player reads it: its id, its definition, and its state in CC.</summary>
-    private string UnitLabel(UnitInstance unit) => $"{unit.Id} ({PrintedValues(unit) ?? unit.Definition?.Definition}"
-        + string.Concat(new[] { Conditions.Broken, Conditions.Pinned, Conditions.Berserk, Conditions.Melee, Conditions.Concealed, Conditions.Captured, Conditions.Unarmed, "asl:ti" }
-            .Where(name => GameState.Condition(unit, name) == ConditionState.True).Select(name => ", " + name.Replace("asl:", "", StringComparison.Ordinal))) + ")";
+    // Pass 31c (the second play test): the unit's name already says its printed values, so the label adds only its conditions.
+    private static string UnitLabel(UnitInstance unit) => unit.Id + (new[] { Conditions.Broken, Conditions.Pinned, Conditions.Berserk, Conditions.Melee, Conditions.Concealed, Conditions.Captured, Conditions.Unarmed, "asl:ti" }
+        .Where(name => GameState.Condition(unit, name) == ConditionState.True).Select(name => name.Replace("asl:", "", StringComparison.Ordinal)).ToArray() is { Length: > 0 } held
+            ? $" ({string.Join(", ", held)})" : string.Empty);
 
     /// <summary>A condition as the Units table names it: the flipped STUN counter is "Stun +1" (D5.34).</summary>
     private static string ConditionText(string condition) => condition == Conditions.StunRecovery ? "Stun +1" : condition.Replace("asl:", string.Empty, StringComparison.Ordinal);
@@ -3772,6 +3950,9 @@ else if (state is not null)
     /// <summary>Everything the last view prepared: the proposal, the drafts of setup and of every action, and the LOS line.</summary>
     private void ResetForView()
     {
+        // The last view's records are not kept in memory for the next (the UI review, pass 31b).
+        (recordsCache, activityTab) = (null, null);
+        (Picking.Armed, Picking.ArmedLabel) = (null, null);
         pending = null;
         status = string.Empty;
         highlight = null;
@@ -3796,10 +3977,13 @@ else if (state is not null)
     {
         if (handOver is { } next)
         {
+            // Pass 31c (design D17): what the arriving view missed is counted from the revision it last saw.
+            sinceLooked = lastShown.TryGetValue(next, out var looked) ? looked : null;
             viewAs = next;
             handOver = null;
             unconfirmed = false;
             ResetForView();
+            activityTab = SinceLooked.Count > 0 ? "since" : null;
             (highlight, openingHex) = (openingHex, null);
             enterUnit = VisibleUnits.FirstOrDefault()?.Id ?? string.Empty;
             ShowActions();
@@ -4056,8 +4240,189 @@ else if (state is not null)
         ? [.. FireGroupAt(side).Where(unit => unit.Kind is "asl:leader" or "asl:hero" && !fireFirers.Contains(unit.Id)).Select(unit => unit.Id)]
         : null;
 
+    /// <summary>Where each unit of the group is, said beside it once the group has more than one Location.</summary>
+    private IReadOnlyDictionary<string, string> FirerPlaces(string side) => fireAlso.Count == 0 || state is null ? new Dictionary<string, string>()
+        : FireGroupAt(side).ToDictionary(unit => unit.Id, unit => state.Location(unit.Id)!.Location.ToString(), StringComparer.Ordinal);
+
+    /// <summary>The firers that possess a MG, FT, or ATR, each of which may fire it without its own FP (play test P-17: shown before it is ticked).</summary>
+    private IReadOnlyList<string> FireAloneCandidates(string side) => state is null ? []
+        : [.. FirerChoices(side).Where(id => state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == id
+            && (Library.Vocabulary.IsA(item.Kind, "asl:mg") || item.Kind == "asl:ft")))];
+
+    // Pass 31c (design section 14): Range. The fire panel reads its targets by range before any proposal, and the inspector's Range tab reads a
+    // range for the units a view holds by name. No LOS is read here (A6.11: no LOS check before an attack is declared).
+    private static string Hexes(int range) => range == 1 ? "1 hex" : string.Create(CultureInfo.InvariantCulture, $"{range} hexes");
+
+    private int LevelAbove(BoardLocation from, BoardLocation to) => MapLayers?.Board is { } board && GameMaps.FactsAt(board, from) is { } one && GameMaps.FactsAt(board, to) is { } two
+        ? two.BaseLevel + to.Level - (one.BaseLevel + from.Level) : 0;
+
+    /// <summary>
+    /// A row for each unit's own FP and each weapon it fires, read from its own Location to a target (A7.21, A7.22). <paramref name="fireKinds"/>
+    /// adds what the unit's fire counter allows: Subsequent First Fire within Normal Range (A8.3), FPF and a First Fire unit's Final Fire only at
+    /// an ADJACENT or same-hex target (A8.31, A8.4).
+    /// </summary>
+    private IReadOnlyList<RangeRow> RangeRowsOf(IEnumerable<(UnitInstance Unit, BoardLocation At)> units, IReadOnlyCollection<EquipmentInstance> weapons, BoardLocation to,
+        Func<UnitInstance, bool> ownFp, bool fireKinds)
+    {
+        var rows = new List<RangeRow>();
+        if (state is null)
+        {
+            return rows;
+        }
+
+        var definitions = FirePreviewReference.Value.Definitions;
+        foreach (var (unit, at) in units)
+        {
+            var same = at == to;
+            if ((same ? 0 : Live.Planner.Range(state, at, to)) is not { } range)
+            {
+                continue;
+            }
+
+            var level = LevelAbove(at, to);
+            var definition = unit.Definition is { } named ? definitions.GetValueOrDefault(named.Definition) : null;
+            if (definition is not null && ownFp(unit) && !definition.IsLeader && definition.Firepower is not null
+                && FireRange.Band(definition, range, same, level, GameState.Condition(unit, Conditions.Wounded) == ConditionState.True) is { } own)
+            {
+                var kind = !fireKinds ? null
+                    : state.Phase == "dfph" && GameState.Condition(unit, Conditions.FirstFire) == ConditionState.True && range > 1
+                        ? "a First Fire unit fires again only at an ADJACENT or same-hex target (A8.4)"
+                    : state.Phase == "mph" && GameState.Condition(unit, Conditions.FinalFire) == ConditionState.True && range > 1
+                        ? "Final Protective Fire is only at an ADJACENT or same-hex target (A8.31)"
+                    : state.Phase == "mph" && GameState.Condition(unit, Conditions.FirstFire) == ConditionState.True && range > own.NormalRange
+                        ? "Subsequent First Fire is within Normal Range (A8.3)"
+                    : null;
+                rows.Add(new RangeRow(unit.Id, Words(unit.Id), at.ToString(), own.NormalRange, own.Limit, kind ?? FireRange.Words(own), own.Band, kind is not null || own.Band is FireRangeBand.Out or FireRangeBand.SameHexOtherLevel));
+            }
+            else if (definition is { IsVehicle: true, AntiAircraftMg: not null })
+            {
+                // D1.83: a MA AAMG's Normal Range is eight hexes.
+                var mg = FireRange.Band(range, same, 8, level);
+                rows.Add(new RangeRow(unit.Id, $"the AAMG of {Words(unit.Id)}", at.ToString(), mg.NormalRange, mg.Limit, FireRange.Words(mg), mg.Band, mg.Band is FireRangeBand.Out or FireRangeBand.SameHexOtherLevel));
+            }
+
+            foreach (var weapon in weapons.Where(item => item.Holding?.Holder == unit.Id))
+            {
+                if (weapon.Definition is { } weaponNamed && definitions.GetValueOrDefault(weaponNamed.Definition) is { } weaponDefinition
+                    && (weaponDefinition.IsMg || weaponDefinition.IsFt || weaponDefinition.IsAtr) && FireRange.Band(weaponDefinition, range, same, level) is { } reading)
+                {
+                    rows.Add(new RangeRow(weapon.Id, $"{Words(weapon.Id)} of {Words(unit.Id)}", at.ToString(), reading.NormalRange, reading.Limit, FireRange.Words(reading), reading.Band,
+                        reading.Band is FireRangeBand.Out or FireRangeBand.SameHexOtherLevel));
+                }
+            }
+        }
+
+        return rows;
+    }
+
+    /// <summary>The chosen fire group read against a target: each ticked firer's own FP unless only its MG fires, and each ticked weapon.</summary>
+    private IReadOnlyList<RangeRow> FireRangeRows(BoardLocation to) => state is null ? []
+        : RangeRowsOf(fireFirers.Order(StringComparer.Ordinal).Select(id => (Unit: state.Unit(id), At: state.Location(id)?.Location)).Where(item => item.Unit is not null && item.At is not null)
+                .Select(item => (item.Unit!, item.At!)),
+            [.. FireWeapons.Where(weapon => fireWeapons.Contains(weapon.Id))], to, unit => !fireAlone.Contains(unit.Id), fireKinds: true);
+
+    /// <summary>What a range is for a group, in a few words: its worst band, and for whom.</summary>
+    private static string RangeNote(int hexes, IReadOnlyList<RangeRow> rows)
+    {
+        var outs = rows.Where(row => row.Out).ToArray();
+        var longs = rows.Where(row => row.Band == FireRangeBand.LongRange).ToArray();
+        var pointBlank = rows.Where(row => row.Band == FireRangeBand.PointBlank).ToArray();
+
+        // A unit kept from a target by its own kind of fire (A8.3, A8.31, A8.4) is not out of range; the words say so.
+        var barred = outs.Any(row => row.Band is not (FireRangeBand.Out or FireRangeBand.SameHexOtherLevel)) ? "no fire there" : "out of range";
+        var band = rows.Count == 0 ? null
+            : outs.Length == rows.Count ? barred
+            : outs.Length == 1 ? $"{barred} for {outs[0].Name}"
+            : outs.Length > 1 ? $"{barred} for {outs.Length} of {rows.Count}"
+            : longs.Length == rows.Count ? "Long Range"
+            : longs.Length > 0 ? $"Long Range for {longs.Length} of {rows.Count}"
+            : rows.All(row => row.Band == FireRangeBand.TriplePointBlank) ? "TPBF"
+            : pointBlank.Length == rows.Count ? "PBF"
+            : pointBlank.Length > 0 ? $"PBF for {pointBlank.Length} of {rows.Count}"
+            : "Normal Range";
+        return hexes == 0 ? band ?? "the same hex" : band is null ? Hexes(hexes) : $"{Hexes(hexes)}, {band}";
+    }
+
+    /// <summary>
+    /// The fire panel's targets read by range once a firer is ticked (design section 14, R5): nearest first, each with its range and the group's
+    /// worst band, and those no ticked firer or weapon reaches.
+    /// </summary>
+    private (IReadOnlyList<string> Targets, IReadOnlyDictionary<string, string> Notes, IReadOnlySet<string> Out) FireTargetsByRange(string side)
+    {
+        var targets = FireTargets(side).ToArray();
+        var notes = new Dictionary<string, string>(StringComparer.Ordinal);
+        var beyond = new HashSet<string>(StringComparer.Ordinal);
+        if (state is null || fireFirers.Count == 0 || !BoardLocation.TryParse(fireFrom, out var from))
+        {
+            return (targets, notes, beyond);
+        }
+
+        var ranges = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var target in targets)
+        {
+            if (BoardLocation.TryParse(target, out var to) && (from == to ? 0 : Live.Planner.Range(state, from, to)) is { } hexes)
+            {
+                var rows = FireRangeRows(to);
+                ranges[target] = hexes;
+                notes[target] = RangeNote(hexes, rows);
+                if (rows.Count > 0 && rows.All(row => row.Out))
+                {
+                    beyond.Add(target);
+                }
+            }
+        }
+
+        return ([.. targets.OrderBy(target => ranges.GetValueOrDefault(target, int.MaxValue)).ThenBy(target => target, StringComparer.Ordinal)], notes, beyond);
+    }
+
+    /// <summary>The range of the target chosen or typed, for the fire panel's closed line: its summary and a row for each firer and weapon.</summary>
+    private (string? Summary, IReadOnlyList<RangeRow> Rows) FireRangeOfTarget()
+    {
+        if (state is null || fireFirers.Count == 0 || !BoardLocation.TryParse(fireFrom, out var from) || !BoardLocation.TryParse(FireTarget.Trim(), out var to)
+            || (from == to ? 0 : Live.Planner.Range(state, from, to)) is not { } hexes)
+        {
+            return (null, []);
+        }
+
+        var rows = FireRangeRows(to);
+        return (RangeNote(hexes, rows), rows);
+    }
+
+    private void ShowFireRange()
+    {
+        if (BoardLocation.TryParse(fireFrom, out _) && BoardLocation.TryParse(FireTarget.Trim(), out _))
+        {
+            workspace?.ReadRange(fireFrom, FireTarget.Trim());
+            inspectorTab = "range";
+        }
+    }
+
+    /// <summary>
+    /// Whose Normal Range the inspector's Range tab reads (design section 14, R3): the fire group chosen, when the reading is from one of its
+    /// Locations to its target; otherwise the units in the From Location that the view holds by name, with the weapons they possess. A unit
+    /// under "?" or hidden is not in the view's units, so it gives no row and the rows never count more than the view knows.
+    /// </summary>
+    private IReadOnlyList<RangeRow> RangeSubjects(BoardLocation from, BoardLocation to)
+    {
+        if (state is null)
+        {
+            return [];
+        }
+
+        if (fireFirers.Count > 0 && FireTarget.Trim() == to.ToString() && (fireFrom == from.ToString() || fireAlso.Contains(from.ToString())))
+        {
+            return FireRangeRows(to);
+        }
+
+        var held = VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && unit.Kind != UnitKinds.Dummy
+                && (Viewer.IsAdjudicator ? state.Location(unit.Id)?.Location : View?.Locations.TryGetValue(unit.Id, out var seen) == true ? seen.Location : null) == from)
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal).Select(unit => (unit, from)).ToArray();
+        return RangeRowsOf(held, [.. VisibleEquipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed })], to, _ => true, fireKinds: false);
+    }
+
     private void ClearFire()
     {
+        fireAlso.Clear();
         fireFrom = string.Empty;
         fireFirers.Clear();
         fireWeapons.Clear();
@@ -4415,7 +4780,7 @@ else if (state is not null)
     private IReadOnlyList<string> EntryWaiting => [.. MoveCandidates.Where(unit => state!.Location(unit.Id) is null).Select(unit => unit.Id)];
 
     /// <summary>The units the building entry offers (plan A01): those the view sees.</summary>
-    private IReadOnlyList<BuildingEntryAction.Choice> EnterRows => [.. VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit)).Select(unit => new BuildingEntryAction.Choice(unit.Id, $"{unit.Id} ({unit.Side})"))];
+    private IReadOnlyList<BuildingEntryAction.Choice> EnterRows => [.. VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit)).Select(unit => new BuildingEntryAction.Choice(unit.Id, unit.Id))];
 
     /// <summary>
     /// Pass 25 (UI review; plan section 15.3): a SMOKE squad or place, a DC, or an advance destination the panels no longer offer is dropped, so no select
@@ -4533,13 +4898,15 @@ else if (state is not null)
     /// in Melee, a prisoner, or a Guard (A15.432, A11.15, A20.5, A20.52); and not spent for this phase (A7.1, A8.4), as the planner and
     /// the Fire package read it.
     /// </summary>
-    private bool MayFire(UnitInstance unit) => state is not null && unit.Kind != "asl:crew" && GamePlanner.FireBar(state, unit) is null && !LiveFire.FireSpent(state, unit)
+    // Pass 31c (the third play test): a broken unit is not offered as a firer; the Fire package refuses a group that holds one.
+    private bool MayFire(UnitInstance unit) => state is not null && unit.Kind != "asl:crew" && GameState.Condition(unit, Conditions.Broken) != ConditionState.True
+        && GamePlanner.FireBar(state, unit) is null && !LiveFire.FireSpent(state, unit)
         && (!LiveFire.IsVehicle(unit) || (GamePlanner.HasVehicleMg(unit) && LiveFire.CrewExposed(unit)));
 
     private IEnumerable<UnitInstance> FireGroupAt(string side) => state is null || fireFrom.Length == 0 ? []
-        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && state.Location(unit.Id)?.Location.ToString() == fireFrom
-            && state.Aboard(unit.Id) is null)
-            .OrderBy(unit => unit.Id, StringComparer.Ordinal);
+        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && state.Location(unit.Id)?.Location.ToString() is { } at
+            && (at == fireFrom || fireAlso.Contains(at)) && state.Aboard(unit.Id) is null)
+            .OrderBy(unit => state.Location(unit.Id)!.Location.ToString() == fireFrom ? 0 : 1 + fireAlso.IndexOf(state.Location(unit.Id)!.Location.ToString())).ThenBy(unit => unit.Id, StringComparer.Ordinal);
 
     /// <summary>
     /// The Locations the firing side may target: those holding an enemy unit it can see or a concealed one it knows is there
@@ -4553,7 +4920,8 @@ else if (state is not null)
         }
 
         var view = GameView.Of(history, state.Revision, perspective, Live.Planner.OutOfSight(state, perspective));
-        return view.Units.Where(unit => unit.Side != side).Select(unit => view.Locations.TryGetValue(unit.Id, out var at) ? at.Location.ToString() : null)
+        // The third play test: a prisoner is no target, so its Guard's own Location is not offered for holding it (A20.54).
+        return view.Units.Where(unit => unit.Side != side && GameState.Condition(unit, Conditions.Captured) != ConditionState.True).Select(unit => view.Locations.TryGetValue(unit.Id, out var at) ? at.Location.ToString() : null)
             .Concat(view.Sealed.Where(item => item.Side != side).Select(item => item.Location.ToString()))
             .OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
     }
@@ -4731,6 +5099,15 @@ else if (state is not null)
             fireFrom = string.Empty;
         }
 
+        if (fireFrom.Length == 0)
+        {
+            fireAlso.Clear();
+        }
+        else
+        {
+            fireAlso.RemoveAll(at => !FireLocations(side).Contains(at, StringComparer.Ordinal));
+        }
+
         if (fireTarget.Length > 0 && !FireTargets(side).Contains(fireTarget, StringComparer.Ordinal))
         {
             fireTarget = string.Empty;
@@ -4761,6 +5138,7 @@ else if (state is not null)
     /// </summary>
     private void ResetDrafts(bool keepCloseCombat)
     {
+        (Picking.Armed, Picking.ArmedLabel) = (null, null);
         ClearFire();
         opportunityUnits.Clear();
         advanceUnits.Clear();
@@ -5122,12 +5500,14 @@ else if (state is not null)
     /// The destination a broken unit must reach, or that it has no legal step and so fails to rout or surrenders as the RtPh ends (A10.5, A10.51,
     /// A20.21; table player, pass 13).
     /// </summary>
-    private string RoutAdviceText(UnitInstance unit)
+    private string RoutAdviceText(UnitInstance unit, bool must)
     {
+        // Pass 31c (backlog section 48; play test P-19): one sentence that says what the unit may or must do.
         var (targets, canRout) = Live.Planner.RoutAdvice(state!, unit);
-        return !canRout ? "; no legal rout step: it is eliminated for Failure to Rout, or surrenders, as the RtPh ends if it must rout"
-            : targets.Count > 0 ? $"; must reach {string.Join(" or ", targets)}"
-            : "; no woods or building within reach: any legal route";
+        return !canRout
+            ? must ? ". It has no legal rout step, so it is eliminated for Failure to Rout, or surrenders, when the RtPh ends (A10.5)." : ". It has no legal rout step, so it stays where it is."
+            : targets.Count > 0 ? $". Its route must end in {string.Join(" or ", targets)}."
+            : ". No woods or building is within its reach, so any legal route will do.";
     }
 
     /// <summary>A route typed as hexes, each on the routing unit's board (A10.5).</summary>
@@ -5150,7 +5530,8 @@ else if (state is not null)
         $"{weapon.Id} ({(weapon.Holding is { } holding ? $"held by {holding.Holder}" : $"left in {state!.Location(weapon.Id)!.Location}")}"
         + $"{(GameState.Condition(weapon, Conditions.Dismantled) == ConditionState.True ? ", dismantled" : "")})";
 
-    private static PlayChoice Labelled(UnitInstance unit) => new(unit.Id, $"{unit.Id} ({unit.Side})");
+    // Pass 31c (design D11): the label is the unit's id, which every panel reads as its name; the name's tag says the side.
+    private static PlayChoice Labelled(UnitInstance unit) => new(unit.Id, unit.Id);
 
     /// <summary>The units the view sees that may act: no Passenger (ruling R26.2).</summary>
     private IEnumerable<UnitInstance> ActingUnits => SeenOnly(VisibleUnits);
@@ -5173,14 +5554,44 @@ else if (state is not null)
     }) is { } action ? ProposeSupportWeapon(action) : Task.CompletedTask;
 
     /// <summary>Pass 28b: the broken units the view sees that may rout, and what each owes (A10.5; ruling R23.1).</summary>
-    private IReadOnlyList<RoutActionPanel.Obligation> RoutObligations => state is null ? []
+    // Pass 31c (design D18; play test P-24): what each broken unit owes is read once for a state and a view, not on every render of the Rout
+    // panel; each reading runs the rout search for every broken unit.
+    private (GameState? State, string Viewer, IReadOnlyList<RoutActionPanel.Obligation>? Obligations, IReadOnlyList<PlayChoice>? Choices) routCache;
+
+    private IReadOnlyList<RoutActionPanel.Obligation> RoutObligations
+    {
+        get
+        {
+            if (!ReferenceEquals(routCache.State, state) || routCache.Viewer != Viewer.Name)
+            {
+                routCache = (state, Viewer.Name, null, null);
+            }
+
+            return routCache.Obligations ??= ReadRoutObligations;
+        }
+    }
+
+    private IReadOnlyList<PlayChoice> RoutChoices
+    {
+        get
+        {
+            if (!ReferenceEquals(routCache.State, state) || routCache.Viewer != Viewer.Name)
+            {
+                routCache = (state, Viewer.Name, null, null);
+            }
+
+            return routCache.Choices ??= ReadRoutChoices;
+        }
+    }
+
+    private IReadOnlyList<RoutActionPanel.Obligation> ReadRoutObligations => state is null ? []
         : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && GameState.Condition(unit, Conditions.Broken) == ConditionState.True && Live.Planner.MayRout(state, unit))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal)
-            .Select(unit => new RoutActionPanel.Obligation(unit.Id, $"{unit.Id} ({unit.Side}): "
-                + (Live.Planner.MustRout(state, unit) is { } why ? $"must rout: {why}" : "may rout: it is under DM")
-                + (state.RoutedThisPhase.Contains(unit.Id) ? "; has routed" : RoutAdviceText(unit))))];
+            .Select(unit => new RoutActionPanel.Obligation(unit.Id, unit.Id
+                + (Live.Planner.MustRout(state, unit) is { } why ? $" must rout: {why}" : " may rout, since it is under DM")
+                + (state.RoutedThisPhase.Contains(unit.Id) ? ". It has routed." : RoutAdviceText(unit, Live.Planner.MustRout(state, unit) is not null))))];
 
-    private IReadOnlyList<PlayChoice> RoutChoices => state is null ? []
+    private IReadOnlyList<PlayChoice> ReadRoutChoices => state is null ? []
         : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && GameState.Condition(unit, Conditions.Broken) == ConditionState.True
             && !state.RoutedThisPhase.Contains(unit.Id) && Live.Planner.MayRout(state, unit)).Select(Labelled)];
 
@@ -5458,7 +5869,9 @@ else if (state is not null)
                 Result = proposal.Result with
                 {
                     Outcome = PlayOutcome.Stale,
-                    Reasons = [$"The game is at revision {now?.Events.Count ?? 0}; this proposal was made at revision {proposedAt}."],
+                    Reasons = [Viewer.IsAdjudicator || state?.Ended is not null
+                        ? $"The game is at revision {now?.Events.Count ?? 0}; this proposal was made at revision {proposedAt}."
+                        : "The game has moved on since this proposal was made. Propose again."],
                 },
             };
             status = OutcomeText(PlayOutcome.Stale, false);
@@ -5579,6 +5992,7 @@ else if (state is not null)
 
             // Table player and UI review, pass 29: Confirm is gone with the commit, so the focus goes to the actions; under 1024px their tab opens.
             // Wider, the panes are side by side and nothing scrolls, so the outcome stays in view.
+            activityTab = null;
             ShowActions(scroll: narrow);
         }
 
@@ -5739,11 +6153,13 @@ else if (state is not null)
         : result.Winner is { } winner ? $"{DisplayText.Side(winner)} win." : "A draw.";
 
     private string? ResultReason => state?.Ended is not { } ended ? null
-        : ended.Result is { } result ? Sentence(result.Reason)
+        : ended.Result is { } result ? Sentence(DisplayText.Hexes(result.Reason, state.Map.Boards.Count))
         : "This card's Victory Conditions are text only, so the game does not decide the result; read them on the card (A26).";
 
     /// <summary>Every Victory condition with whether it was met, then the facts the result rests on.</summary>
-    private IReadOnlyList<string> ResultWhy => state?.Ended is not { Result: { } result } ? []
+    private IReadOnlyList<string> ResultWhy => [.. ResultWhyRaw.Select(line => DisplayText.Hexes(Words(line), state?.Map.Boards.Count ?? 2))];
+
+    private IReadOnlyList<string> ResultWhyRaw => state?.Ended is not { Result: { } result } ? []
         : [.. (VictoryNow?.Conditions ?? []).Select(line => $"{(line.Winner == "draw" ? "A condition for a draw" : $"A condition for a {DisplayText.Side(line.Winner)} win")}, {(line.Holds ? "met" : "not met")}: {line.Text}."),
             .. result.Facts.Select(Sentence)];
 
@@ -5857,7 +6273,7 @@ else if (state is not null)
         : SetupOpen ? "A side sets up out of the other's sight."
         : !HandOverAwaited ? "The game does not wait on this side now; its view is opened to look."
         : state.Phase == "mph" && state.Movement is { WindowOpen: true } moving
-            ? $"A {DisplayText.Side(state.PhasingSide)} stack {(moving.Members.Count == 0 ? "was stopped by fire" : "spent MF")} in {DisplayText.Location(moving.Location)}. The {DisplayText.Side(handOver)} side, as the DEFENDER, may fire at it or pass (A8.1)."
+            ? $"A {DisplayText.Side(state.PhasingSide)} stack {(moving.Members.Count == 0 ? "was stopped by fire" : "spent MF")} in {PlaceOf(moving.Location)}. The {DisplayText.Side(handOver)} side, as the DEFENDER, may fire at it or pass (A8.1)."
         : Awaiting(state).Note;
 
     private IReadOnlyList<string> HandOverTasks
@@ -5880,7 +6296,7 @@ else if (state is not null)
             return state.Choice is not null ? ["Answer the choice the game waits on; nothing else is proposed until it is answered."]
                 : state.PendingSurrenders.Count > 0 ? ["Take the surrendering unit prisoner, refuse it, or free it (A20.21)."]
                 : state.Phase == "mph" && state.Movement is { WindowOpen: true } moving
-                    ? [$"Fire at the moving stack in {DisplayText.Location(moving.Location)} with your units that see it, or pass.", "Hand the screen back once you have passed."]
+                    ? [$"Fire at the moving stack in {PlaceOf(moving.Location)} with your units that see it, or pass.", "Hand the screen back once you have passed."]
                 : state.Phase switch
                 {
                     "rph" => ["Rally your broken units, repair weapons, and transfer or recover SW.", "End the Rally Phase when both sides are done, or hand the screen back."],
@@ -5927,24 +6343,65 @@ else if (state is not null)
     private (GameHistory? History, string? Next, long Since) happenedFor;
     private IReadOnlyList<string> happened = [];
 
+    // Pass 31c (design D16): the Locations the lines of what happened name, for the outlines of the hand-over screen's map.
+    private IReadOnlyList<BoardLocation> happenedAt = [];
+
+    private (string Game, long Revision, StudioBoard? Board, string? Units) handOverPublic;
+
+    /// <summary>The game's map and the units both sides know, for the hand-over screen; read once for a game and a revision.</summary>
+    private (StudioBoard? Board, string? Units) HandOverPublic
+    {
+        get
+        {
+            if (state is null)
+            {
+                return (null, null);
+            }
+
+            if (handOverPublic.Game != gameId || handOverPublic.Revision != state.Revision)
+            {
+                var (board, known) = GameMaps.Public(gameId, state.Map, state.Revision);
+                handOverPublic = (gameId, state.Revision, board, known);
+            }
+
+            return (handOverPublic.Board, handOverPublic.Units);
+        }
+    }
+
+    /// <summary>What the page knows of a hex beyond its counters, for the Selection tab: Residual FP (A8.2), which is public, and a Melee the view holds a unit of.</summary>
+    private IReadOnlyList<string> HexNotes(HexFacts facts)
+    {
+        if (state is null || MapLayers?.Board is not { } board || !BoardLocation.TryParse(board.LocationOf(facts), out var hex))
+        {
+            return [];
+        }
+
+        bool Here(BoardLocation at) => at.Board == hex.Board && at.Hex == hex.Hex;
+        return [.. state.ResidualFire.Where(item => Here(item.Location)).Select(item => $"{item.Fp} Residual FP in {PlaceOf(item.Location)} (A8.2)"),
+            .. VisibleUnits.Where(unit => GameState.Condition(unit, Conditions.Melee) == ConditionState.True && state.Location(unit.Id)?.Location is { } at && Here(at))
+                .Select(unit => state.Location(unit.Id)!.Location).Distinct().Select(at => $"Melee in {PlaceOf(at)} (A11.15)")];
+    }
+
     private IReadOnlyList<string> ReadHappened(long since)
     {
         {
             var state = this.state!;
-            var lines = new List<(string Text, int Count)>();
+            var lines = new List<(string Text, int Count, BoardLocation[] At)>();
+            var named = Array.Empty<BoardLocation>();
+            void At(params string?[] locations) => named = [.. locations.Select(text => BoardLocation.TryParse(text, out var at) ? at with { Level = 0 } : null).OfType<BoardLocation>()];
             foreach (var item in history!.Events.Where(item => item.Visibility is null && (since < 0 || item.Revision > since)))
             {
                 var line = item.Payload switch
                 {
                     PhaseChanged phase => $"{DisplayText.Side(phase.PhasingSide)} {Games.PhaseLabel(phase.Phase)}, Turn {phase.Turn}.",
-                    MovementStepped step => $"A stack moved into {DisplayText.Location(step.To)}.",
-                    AdvanceMoved advance => $"Units advanced into {DisplayText.Location(advance.To)}.",
-                    RoutStepped rout => $"A broken unit routed to {DisplayText.Location(rout.To)}.",
+                    MovementStepped step => $"A stack moved into {PlaceOf(step.To)}.",
+                    AdvanceMoved advance => $"Units advanced into {PlaceOf(advance.To)}.",
+                    RoutStepped rout => $"A broken unit routed to {PlaceOf(rout.To)}.",
                     FireResolved fire when fire.Resolution.Deserialize<FireResolution>(LiveFire.Json) is { Arithmetic: { } arithmetic }
                         => $"Fire from {PublicLocation(fire.FirerLocation)} at {PublicLocation(fire.TargetLocation)}: {arithmetic.Result}.",
                     FireReported report when report.Arithmetic.Deserialize<FireArithmetic>(LiveFire.Json) is { } reported
                         => $"Fire from {PublicLocation(report.FirerLocation)} at {PublicLocation(report.TargetLocation)}: {reported.Result}.",
-                    CloseCombatResolved combat => $"A round of Close Combat in {DisplayText.Location(combat.Location)}.",
+                    CloseCombatResolved combat => $"A round of Close Combat in {PlaceOf(combat.Location)}.",
                     InstanceEliminated gone when state.Unit(gone.Id) is { } unit && unit.Kind != UnitKinds.Dummy => $"A {DisplayText.Side(unit.Side)} unit was eliminated.",
                     InstanceCaptured taken when state.Unit(taken.Id) is { } prisoner => $"A {DisplayText.Side(prisoner.Side)} unit was captured.",
                     GameEnded => "The game ended.",
@@ -5955,23 +6412,37 @@ else if (state is not null)
                     continue;
                 }
 
+                named = [];
+                switch (item.Payload)
+                {
+                    case MovementStepped moved: At(moved.To.ToString()); break;
+                    case AdvanceMoved advanced: At(advanced.To.ToString()); break;
+                    case RoutStepped routed: At(routed.To.ToString()); break;
+                    case FireResolved fired: At(fired.FirerLocation, fired.TargetLocation); break;
+                    case FireReported reportedFire: At(reportedFire.FirerLocation, reportedFire.TargetLocation); break;
+                    case CloseCombatResolved fought: At(fought.Location.ToString()); break;
+                }
+
                 // Table player, pass 31: the same thing several times in a row is counted, not dropped.
                 if (lines.Count > 0 && lines[^1].Text == line)
                 {
-                    lines[^1] = (line, lines[^1].Count + 1);
+                    lines[^1] = (line, lines[^1].Count + 1, lines[^1].At);
                 }
                 else
                 {
-                    lines.Add((line, 1));
+                    lines.Add((line, 1, named));
                 }
             }
+
+            // The map outlines the Locations of the lines shown, and no others.
+            happenedAt = [.. lines.TakeLast(since < 0 ? 6 : 30).SelectMany(item => item.At).Distinct()];
 
             // With nothing to count from, the latest few; otherwise everything since, capped so the screen stays a screen.
             return [.. lines.TakeLast(since < 0 ? 6 : 30).Select(item => item.Count == 1 ? item.Text : $"{item.Text} ({item.Count} times)")];
         }
     }
 
-    private static string PublicLocation(string location) => BoardLocation.TryParse(location, out var at) ? DisplayText.Location(at) : location;
+    private string PublicLocation(string location) => BoardLocation.TryParse(location, out var at) ? PlaceOf(at) : location;
 
     /// <summary>Each side's CVP and Exit VP, which both sides know (A26.2); Control and the unbroken squad counts may be read differently by each side, so they are left out.</summary>
     private string? HandOverScore => handOver is null || state is null || history?.Current is null || SetupOpen || VictoryNow is not { } standing ? null
@@ -5988,6 +6459,24 @@ else if (state is not null)
             paneTab = "actions";
         }
     }
+
+    // Pass 31c (design D15): the panel open over the activity strip: "since", "records", "units", "dice", "audit", or none.
+    private string? activityTab;
+
+    // Pass 31c (design D17): the revision the view shown last saw before the screen went to another view; null when it has not had the screen.
+    private long? sinceLooked;
+
+    /// <summary>What the view shown missed while another had the screen, from its own records (design D17).</summary>
+    private IReadOnlyList<(long Revision, string EventId, string Text, bool Minor)> SinceLooked => sinceLooked is { } revision && Records is { } records ? records.Since(revision) : [];
+
+    private IEnumerable<(string Key, string Label, string Panel)> ActivityTabs =>
+    [
+        .. SinceLooked.Count > 0 ? [("since", $"Since you last looked ({SinceLooked.Count})", "play-since-panel")] : Array.Empty<(string, string, string)>(),
+        ("records", "Records", "play-history"),
+        ("units", "Units", "play-units-panel"),
+        .. Scripted is null ? Array.Empty<(string, string, string)>() : [("dice", "Scripted dice", "play-dice-panel")],
+        .. Viewer.IsAdjudicator ? [("audit", "Audit", "play-audit-panel")] : Array.Empty<(string, string, string)>(),
+    ];
 
     private void CancelProposal()
     {
@@ -6018,7 +6507,7 @@ else if (state is not null)
 
     /// <summary>What a map click picked while Confirm waits and the Proposal tab stays open; the counters are those the view draws.</summary>
     private string? PickedNote => AwaitingConfirm && highlight is { } at && MapLayers is { Board: { } board, Overlay: { } overlay } && GameMaps.FactsAt(board, at) is { } facts
-        ? $"Picked: {DisplayText.Location(at)}, {overlay.At(facts.Index).Count() switch { 0 => "no counters", 1 => "1 counter", var count => $"{count} counters" }}; the Selection tab has its details."
+        ? $"Picked: {PlaceOf(at)}, {overlay.At(facts.Index).Count() switch { 0 => "no counters", 1 => "1 counter", var count => $"{count} counters" }}; the Selection tab has its details."
         : null;
 
     /// <summary>Closes the scenario card and returns the focus to the context's link that opened it (Claude Design's review).</summary>
@@ -6076,6 +6565,7 @@ else if (state is not null)
             {
                 workspaceScript ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/playWorkspace.js");
                 await workspaceScript.InvokeVoidAsync("watchContext");
+                await workspaceScript.InvokeVoidAsync("watchWorking");
             }
 
             if (dropHexQuery)
@@ -6094,7 +6584,8 @@ else if (state is not null)
             if (focusReview || focusActions || focusMap)
             {
                 var pane = focusReview ? workspace?.Inspector ?? reviewFallback : focusMap ? workspace?.Stage ?? default : actionsPane;
-                var scroll = focusReview || focusMap || !focusInPlace;
+                // Pass 31c (design D15): from 1024px every pane is in view, so the focus moves and nothing scrolls; the narrow layout still scrolls.
+                var scroll = narrow && (focusReview || focusMap || !focusInPlace);
                 (focusReview, focusActions, focusMap, focusInPlace) = (false, false, false, false);
                 workspaceScript ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/playWorkspace.js");
                 await workspaceScript.InvokeVoidAsync("reveal", pane, scroll);
@@ -6113,6 +6604,7 @@ else if (state is not null)
             if (workspaceScript is not null)
             {
                 await workspaceScript.InvokeVoidAsync("unwatchContext");
+                await workspaceScript.InvokeVoidAsync("unwatchWorking");
                 await workspaceScript.DisposeAsync();
             }
         }
@@ -6150,6 +6642,100 @@ else if (state is not null)
     // Replay page reads the same records for a step.
     private PlayRecords? recordsCache;
 
+    // Pass 31c (design D11): the view's words for a text of the game as it stands: a unit's name for its id (a unit the view does not hold
+    // reads "a concealed unit"), a counter for its definition, a Location in words. Made once for a history and a view.
+    private (GameHistory? History, string Viewer, Func<string, string> Say) wordsCache = (null, string.Empty, static text => text);
+
+    private Func<string, string> Words
+    {
+        get
+        {
+            if (history is null)
+            {
+                return static text => text;
+            }
+
+            if (!ReferenceEquals(wordsCache.History, history) || wordsCache.Viewer != Viewer.Name)
+            {
+                var names = Live.NamesOf(history, Viewer);
+                var before = (long)history.Events.Count;
+                var said = new Dictionary<string, string>(StringComparer.Ordinal);
+                wordsCache = (history, Viewer.Name, text => said.TryGetValue(text, out var kept) ? kept : said[text] = names.InText(text, before));
+            }
+
+            return wordsCache.Say;
+        }
+    }
+
+    // Pass 31c (the user, 2026-10-04): a unit named with no Location beside it carries its hex, "4-6-7 squad G4 in [G4]". The text is a
+    // unit's id, alone or with words after it; a unit the view does not place is said as Words says it.
+    private (Func<string, string>? Say, Func<string, string> At) atCache = (null, static text => text);
+
+    private Func<string, string> WordsAt
+    {
+        get
+        {
+            var say = Words;
+            if (!ReferenceEquals(atCache.Say, say))
+            {
+                atCache = (say, text =>
+                {
+                    var said = say(text);
+                    var end = text.IndexOf(' ', StringComparison.Ordinal);
+                    var id = end < 0 ? text : text[..end];
+                    if (state?.Unit(id) is not { } unit
+                        || (Viewer.IsAdjudicator ? state.Location(id)?.Location : View?.Locations.TryGetValue(id, out var seen) == true ? seen.Location : null) is not { } at)
+                    {
+                        return said;
+                    }
+
+                    var name = say(unit.Id);
+                    return said.StartsWith(name, StringComparison.Ordinal) ? $"{name} in {PlaceOf(at)}{said[name.Length..]}" : said;
+                });
+            }
+
+            return atCache.At;
+        }
+    }
+
+    // Pass 31c (design D13): the field armed to take the next hex clicked on the map, shared with every typed Location of the actions.
+    private LocationPicking? picking;
+
+    private LocationPicking Picking => picking ??= new LocationPicking
+    {
+        Boards = () => state is null ? [] : [.. state.Map.Boards.Select(placed => placed.Board.Value)],
+        Levels = location => MapLayers?.Board is { } board && BoardLocation.TryParse(location, out var at) ? LevelsAt(board, at) : [0],
+        Arm = (id, label) =>
+        {
+            (picking!.Armed, picking.ArmedLabel) = (id, label);
+            StateHasChanged();
+        },
+    };
+
+    private static readonly IReadOnlySet<string> NoSections = new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The sections of the actions the phase is about, which start open (the user, 2026-10-04); the others start closed and open at their heading.
+    /// </summary>
+    private IReadOnlySet<string> PrimarySections => state?.Phase switch
+    {
+        "rph" => new HashSet<string>(StringComparer.Ordinal) { "rally" },
+        "pfph" or "dfph" or "afph" => new HashSet<string>(StringComparer.Ordinal) { "fire", "ordnance" },
+        "mph" => new HashSet<string>(StringComparer.Ordinal) { "movement", "defensive-first-fire", "fire", "vehicle-movement", "cc-reaction-fire" },
+        "rtph" => new HashSet<string>(StringComparer.Ordinal) { "rout" },
+        "aph" => new HashSet<string>(StringComparer.Ordinal) { "advance" },
+        "ccph" => new HashSet<string>(StringComparer.Ordinal) { "close-combat", "close-combat-with-vehicles" },
+        _ => NoSections,
+    };
+
+    /// <summary>A Location as the game writes it (pass 31c, design D12): "G4, level 1" on a map of one board.</summary>
+    private string PlaceOf(BoardLocation at) => DisplayText.Place(state?.Map.Boards.Count ?? 2, at);
+
+    private string PlaceOf(string at) => DisplayText.Place(state?.Map.Boards.Count ?? 2, at);
+
+    /// <summary>A status or note in the view's words, without the code at its head.</summary>
+    private string? Said(string? text) => text is null ? null : DisplayText.Sentence(Words(DisplayText.Reason(text).Text));
+
     private PlayRecords? Records
     {
         get
@@ -6161,14 +6747,14 @@ else if (state is not null)
 
             if (recordsCache is null || !ReferenceEquals(recordsCache.History, history) || recordsCache.Viewer.Name != Viewer.Name || recordsCache.Last != history.Events.Count)
             {
-                recordsCache = new PlayRecords(history, Viewer, history.Events.Count);
+                recordsCache = new PlayRecords(history, Viewer, history.Events.Count, Live.NamesOf(history, Viewer));
             }
 
             return recordsCache;
         }
     }
 
-    private IReadOnlyList<DiceRollHistory.Row> RollRows => Records?.RollRows ?? [];
+    private IReadOnlyList<RollRow> RollRows => Records?.RollRows ?? [];
 
     private IReadOnlyList<(string EventId, string Text)> OrdnanceRecords => Records?.Ordnance ?? [];
 

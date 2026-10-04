@@ -18,7 +18,7 @@
             @(Scenario.Players.Count > 0 ? $" Players: {string.Join(", ", Scenario.Players.Select(player => $"{player.Name} plays {DisplayText.Side(player.Side)}"))}." : string.Empty) (A26.4; ruling R20.3)</p>
         @if (Ended is { } ended)
         {
-            <GameEndNotice Ended="@ended" />
+            <GameEndNotice Ended="@ended" Boards="@Boards" />
         }
         <ul id="play-card-groups">
             @foreach (var group in Groups)
@@ -29,7 +29,7 @@
         <p id="play-card-victory"><strong>Victory Conditions:</strong> @card.VictoryConditions.Text</p>
         @if (Victory is { } victory)
         {
-            <VictoryStandingTable Report="@victory" KnownTo="@KnownTo"
+            <VictoryStandingTable Report="@victory" KnownTo="@KnownTo" Boards="@Boards"
                                   IfEndedNow="@(KnownTo is null && Ended is null ? victory.AtEnd.Winner is { } leader ? $"{DisplayText.Side(leader)} would win" : "it would be a draw" : null)" />
         }
         <CardSpecialRulesList Id="play-card-ssr" Rules="@card.SpecialRules" />
@@ -53,6 +53,10 @@
 </details>
 
 @code {
+    /// <summary>How many boards the map has, which decides how a hex is written (pass 31c); two keeps the board with the hex.</summary>
+    [Parameter]
+    public int Boards { get; set; } = 2;
+
     /// <summary>What the game recorded of its card at its start (ruling R18.2).</summary>
     [Parameter, EditorRequired]
     public ScenarioCardReference Scenario { get; set; } = default!;

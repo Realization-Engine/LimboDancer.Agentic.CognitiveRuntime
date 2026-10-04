@@ -1,6 +1,6 @@
 @* Plan A04 (pass 28b): a SW transferred, dropped, Recovered, dismantled, or assembled. The page gives the weapons and units the view sees (ruling R23.1);
    choosing another weapon clears the unit, which the page does in its OnWeapon handler (section 15.3). The planner decides each action. *@
-<h4>Support weapons</h4>
+<ActionSection Title="Support weapons" Key="support-weapons">
 <RuleHelp Id="sw-help" Summary="A SW passes between Good Order unpinned units in one Location in the RPh or at the start of the ATTACKER's APh; it may be dropped before its unit moves or advances; it is Recovered on a Final dr below 6 (A4.43, A4.431, A4.44).">
     A SW passes between Good Order unpinned units in one Location in the RPh, or in the ATTACKER's APh before either advances (A4.431). A unit
     drops one in its MPh before it moves, its APh before it advances, or at the start of the CCPh; a broken unit, before it routs, drops what it
@@ -15,7 +15,7 @@
             <option value="">choose</option>
             @foreach (var weapon in Weapons)
             {
-                <option value="@weapon.Id">@weapon.Label</option>
+                <option value="@weapon.Id">@Say(weapon.Label)</option>
             }
         </select>
     </label>
@@ -25,7 +25,7 @@
             <option value="">choose</option>
             @foreach (var unit in Units)
             {
-                <option value="@unit.Id">@unit.Label</option>
+                <option value="@unit.Id">@At(unit.Label)</option>
             }
         </select>
     </label>
@@ -35,8 +35,21 @@
     <button id="propose-dismantle" disabled="@(!Held || !Dismantles)" @onclick="@(() => OnPropose.InvokeAsync(Dismantle))">Propose: dismantle or assemble</button>
     <span id="sw-ready" class="toolbar-note">Transfer and drop take a SW a unit holds; recover takes a SW lying in the Location and the unit that recovers it; the game dismantles and assembles only the German MMG, in its side's Prep Fire or Defensive Fire Phase (A9.8).</span>
 </div>
+</ActionSection>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
+    /// <summary>A unit's name with its hex, "4-6-7 squad G4 in [G4]" (the user, 2026-10-04), where no Location stands beside the name.</summary>
+    [CascadingParameter(Name = "SayAt")]
+    public Func<string, string>? WordsAt { get; set; }
+
+    private string At(string? text) => text is null ? string.Empty : WordsAt?.Invoke(text) ?? Say(text);
+
     /// <summary>The actions the panel asks for; the page maps each to its registered action.</summary>
     public const string Transfer = "transfer";
     public const string Drop = "drop";

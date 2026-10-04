@@ -12,6 +12,11 @@ namespace LimboDancer.Domains.Asl.MapStudio.Services;
 /// </summary>
 public sealed class StudioBoardCatalog(IBoardProvider boards) : IBoardCatalog
 {
+    // Pass 31c (design D18; play test P-24): one handle for a loaded board, for as long as the board is loaded. The planner keeps a board's LOS
+    // map and every LOS it has read by the board's handle, so a handle made anew on each call threw that work away: a rout's search then built
+    // the LOS map again for every LOS it read. The handle holds what the board holds and nothing else, so its reads are the same.
+    private static readonly System.Runtime.CompilerServices.ConditionalWeakTable<StudioBoard, BoardHandle> Handles = new();
+
     public BoardReadResult TryGetBoard(BoardRef board, string? version = null)
     {
         ArgumentNullException.ThrowIfNull(board);
@@ -20,16 +25,17 @@ public sealed class StudioBoardCatalog(IBoardProvider boards) : IBoardCatalog
             return new BoardReadResult(null, [new MapDiagnostic("MAP-READ-001", MapDiagnosticSeverity.Error, $"The Studio cannot load {board}.")]);
         }
 
-        // LOS data (LOS Design, section 5): the board's grid and catalog, and a VASL board's hexside annotations.
-        var handle = new BoardHandle(loaded.Ref, loaded.Version, Status(loaded.Status), Provenance(loaded), loaded.Facts, VaslSource(loaded))
-        {
-            Los = loaded.Composition is not null ? null
-                : loaded.Ingested is { } ingested
-                    ? new LosData(loaded.Render.Grid, loaded.Catalog, Maps.Vasl.HexFactFidelity.Annotations(ingested.Metadata), new([]))
-                    : new LosData(loaded.Render.Grid, loaded.Catalog),
-        };
-        return new InMemoryBoardCatalog([handle]).TryGetBoard(board, version);
+        return new InMemoryBoardCatalog([Handles.GetValue(loaded, Handle)]).TryGetBoard(board, version);
     }
+
+    // LOS data (LOS Design, section 5): the board's grid and catalog, and a VASL board's hexside annotations.
+    private static BoardHandle Handle(StudioBoard loaded) => new(loaded.Ref, loaded.Version, Status(loaded.Status), Provenance(loaded), loaded.Facts, VaslSource(loaded))
+    {
+        Los = loaded.Composition is not null ? null
+            : loaded.Ingested is { } ingested
+                ? new LosData(loaded.Render.Grid, loaded.Catalog, Maps.Vasl.HexFactFidelity.Annotations(ingested.Metadata), new([]))
+                : new LosData(loaded.Render.Grid, loaded.Catalog),
+    };
 
     /// <summary>The typed VASL source of an ingested board: its metadata version and blob, LOSData blob, and commit.</summary>
     private static VaslBoardSource? VaslSource(StudioBoard board) => board is { Provenance: { } provenance, Ingested: { } ingested }

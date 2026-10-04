@@ -112,6 +112,16 @@ public sealed class LivePlay
         return Store.Append(scope, $"{record.Label} ({origin})", 0, events, Planner.Replay);
     }
 
+    /// <summary>
+    /// The names a view reads for a game's units (pass 31c, design D11), with the planner's reading of who sets up out of sight (ruling R23.3).
+    /// </summary>
+    public UnitNames NamesOf(GameHistory history, Perspective viewer)
+    {
+        ArgumentNullException.ThrowIfNull(viewer);
+        var planner = Planner;
+        return UnitNames.For(history, viewer, Catalogs, state => planner.OutOfSight(state, viewer));
+    }
+
     /// <summary>A live game's history, replayed against the exact boards in play; null when the game does not exist.</summary>
     public GameHistory? History(string game)
     {

@@ -51,6 +51,57 @@ public sealed class StudioLosTests : IDisposable
         Assert.Contains("class=\"los-line-blocked\"", layer, StringComparison.Ordinal);
     }
 
+    // Pass 31c (design section 14): Range, a sibling of LOS. The hexes between two Locations are read without the LOS (A6.7).
+    [Fact]
+    public void ARangeIsTheHexesBetweenTwoLocationsWhateverTheLos()
+    {
+        var board = Board(BoardStatus.Verified);
+
+        // The woods in E4 block E2 from E6, and the range is 4 all the same.
+        var range = StudioLos.Range(board, "E2", "ab-los:E6:0");
+        Assert.Equal(4, range.Hexes);
+        Assert.Equal("[E2] to [E6]: 4 hexes.", range.Summary(1));
+        Assert.Equal("[E2] to [E3]: 1 hex.", StudioLos.Range(board, "E2", "E3").Summary(1));
+        Assert.Equal("[E2] to [E2]: the same Location.", StudioLos.Range(board, "E2", "E2").Summary(1));
+        Assert.Equal("[E2] to [E2], level 1: the same hex.", StudioLos.Range(board, "E2", "E2:1").Summary(1));
+
+        var unread = StudioLos.Range(board, "nowhere", "E6");
+        Assert.Null(unread.Hexes);
+        Assert.Contains("board:hex:level", unread.Summary(1), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheRangeIsDrawnInTheLosLayerUnderTheLosLine()
+    {
+        var board = Board(BoardStatus.Verified);
+        var range = StudioLos.Range(board, "E2", "E6");
+        var squad = new RangeRow("u1", "4-4-7 squad R5", "ab-los:E2:0", 2, 4, "Long Range, FP x1/2 (A7.22)", LimboDancer.Domains.Asl.Rules.FireRangeBand.LongRange, false);
+
+        // The range line with its hex count, and the outlines of Normal Range (solid) and of the farthest range (dashed), each with its label.
+        var layer = los.Layer(board, null, range, squad);
+        Assert.StartsWith("<g id=\"layer-los\"><g id=\"range-marks\" data-hexes=\"4\"", layer, StringComparison.Ordinal);
+        Assert.Contains("class=\"range-line\"", layer, StringComparison.Ordinal);
+        Assert.Contains("class=\"range-reach\" data-reach=\"2\"", layer, StringComparison.Ordinal);
+        Assert.Contains("class=\"range-reach\" data-reach=\"4\"", layer, StringComparison.Ordinal);
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(layer, "stroke-dasharray=\"10 7\""));
+        Assert.Equal(["2", "4", "4"], [.. System.Text.RegularExpressions.Regex.Matches(layer, ">(\\d+)</text>").Select(match => match.Groups[1].Value).Order(StringComparer.Ordinal)]);
+
+        // An LOS check for the same ends is drawn over the range marks, in the one group the viewport takes.
+        var both = los.Layer(board, los.Check(board, "E2", "E6"), range, squad);
+        Assert.StartsWith("<g id=\"layer-los\" data-status=\"Blocked\"><g id=\"range-marks\"", both, StringComparison.Ordinal);
+        Assert.True(both.IndexOf("range-marks", StringComparison.Ordinal) < both.IndexOf("class=\"los-line\"", StringComparison.Ordinal));
+
+        // With no unit chosen the line alone is drawn; a weapon with no Long Range has one outline; and nothing read draws nothing.
+        Assert.DoesNotContain("range-reach", los.Layer(board, null, range, null), StringComparison.Ordinal);
+        var rifle = squad with
+        {
+            NormalRange = 3,
+            Limit = 3
+        };
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(los.Layer(board, null, range, rifle), "class=\"range-reach\""));
+        Assert.Equal("<g id=\"layer-los\"></g>", los.Layer(board, null, null, null));
+    }
+
     [Fact]
     public void AnUnverifiedBoardIsNotDefinitiveAndABadLocationIsExplained()
     {

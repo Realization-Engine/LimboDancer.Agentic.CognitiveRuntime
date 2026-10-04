@@ -5,18 +5,22 @@
 <ul>
     @foreach (var firer in Arithmetic.Firers)
     {
-        <li class="fire-fp" data-unit="@firer.UnitId">@firer.UnitId: @firer.Printed FP@(string.Concat(firer.Multipliers.Select(item => $" × {FireText.Number(item.Value)} ({item.Name}, {item.Rule})"))) = @FireText.Number(firer.Firepower)</li>
+        <li class="fire-fp" data-unit="@firer.UnitId" title="@(Say(firer.UnitId) == UnitNames.Unnamed ? null : firer.UnitId)">@Say(firer.UnitId): @firer.Printed FP@(string.Concat(firer.Multipliers.Select(item => $" × {FireText.Number(item.Value)} ({DisplayText.Modifier(item.Name)}, {item.Rule})"))) = @FireText.Number(firer.Firepower)</li>
     }
     <li class="fire-column">
         Total @FireText.Number(Arithmetic.TotalFirepower) FP: the @(Arithmetic.UnshiftedColumnFp?.ToString(CultureInfo.InvariantCulture) ?? "no") column@(Arithmetic.ColumnShift != 0 || Arithmetic.Cowered ? $", shifted {Arithmetic.ColumnShift}{(Arithmetic.Cowered ? " by Cowering (A7.9)" : "")} to the {Arithmetic.ColumnFp?.ToString(CultureInfo.InvariantCulture) ?? "no"} column" : "")
     </li>
     <li class="fire-dr">
-        IFT DR @string.Join(", ", Arithmetic.Dice) = @Arithmetic.OriginalDr@FireText.ModifierText(Arithmetic.Drm):
-        Final DR <span class="fire-final-dr">@Arithmetic.FinalDr</span>, result <strong class="fire-result">@Arithmetic.Result</strong>
+        IFT DR @string.Join(", ", Arithmetic.Dice) = @Arithmetic.OriginalDr@Say(FireText.ModifierText(Arithmetic.Drm)):
+        Final DR <span class="fire-final-dr">@Arithmetic.FinalDr</span>, result <strong class="fire-result">@FireText.ResultText(Arithmetic.Result)</strong>
     </li>
 </ul>
 
 @code {
     [Parameter, EditorRequired]
     public FireArithmetic Arithmetic { get; set; } = default!;
+
+    /// <summary>A text in the view's words (pass 31c, design D11); the record gives it.</summary>
+    [Parameter]
+    public Func<string, string> Say { get; set; } = text => text;
 }

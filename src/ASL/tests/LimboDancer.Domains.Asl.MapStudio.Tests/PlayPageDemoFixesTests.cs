@@ -191,9 +191,9 @@ public sealed class PlayPageDemoFixesTests : IDisposable
         Advance(page, 7);
         Assert.Equal("mph", live.History("village")!.Current!.Phase);
         var charge = page.Find("[data-charge='g2']").TextContent;
-        Assert.Contains($"g2 is berserk and charges {hexes.One}", charge, StringComparison.Ordinal);
+        Assert.Contains($"4-6-7 squad G1 in {DisplayText.Place(1, hexes.Two)} is berserk and charges {DisplayText.Place(1, hexes.One)} before any other unit moves (A15.43)", charge, StringComparison.Ordinal);
         Assert.Equal(["g2"], page.FindAll(".move-unit").Where(item => item.HasAttribute("checked")).Select(item => item.GetAttribute("data-unit")));
-        Assert.Equal(hexes.One, page.Find("#move-to").GetAttribute("value"));
+        Assert.Equal(DisplayText.Place(1, hexes.One), page.Find("#move-to").GetAttribute("value"));
     }
 
     [Fact]
@@ -213,8 +213,8 @@ public sealed class PlayPageDemoFixesTests : IDisposable
         Commit(page, "#propose-fire");
         Commit(page, ".take-prisoner[data-captor='r4']");
 
-        Assert.Contains("guarded by r4", page.Find("#play-units tr[data-unit='g2']").TextContent, StringComparison.Ordinal);
-        Assert.Contains("guards g2", page.Find("#play-units tr[data-unit='r4']").TextContent, StringComparison.Ordinal);
+        Assert.Contains("guarded by 4-4-7 squad R1", page.Find("#play-units tr[data-unit='g2']").TextContent, StringComparison.Ordinal);
+        Assert.Contains("guards 4-6-7 squad G1", page.Find("#play-units tr[data-unit='r4']").TextContent, StringComparison.Ordinal);
     }
 
     [Fact]

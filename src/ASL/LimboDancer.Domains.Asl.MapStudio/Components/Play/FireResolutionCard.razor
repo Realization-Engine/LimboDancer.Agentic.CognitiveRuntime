@@ -2,20 +2,29 @@
    concealed), and that is said rather than shown as an empty table. *@
 <div class="fire-record" data-fire="@Record.EventId">
     <p>
-        <strong class="fire-group">@Record.Group fire at @Record.Target</strong>.
+        <strong class="fire-group">@Record.Group @(Record.Several ? "fire" : "fires") at @Record.Target</strong>.
     </p>
-    <FireArithmeticBreakdown Arithmetic="@Record.Arithmetic" />
+    <FireArithmeticBreakdown Arithmetic="@Record.Arithmetic" Say="@Record.Say" />
+    @if (Record.Weapons?.Select(FireText.WeaponText).OfType<string>().ToArray() is { Length: > 0 } weapons)
+    {
+        <ul class="fire-weapons">
+            @foreach (var line in weapons)
+            {
+                <li>@DisplayText.Sentence(Record.Say(line)).</li>
+            }
+        </ul>
+    }
     @if (Record.Effects is { } effects && (effects.Count > 0 || Record.Vehicles is not { Count: > 0 }))
     {
-        <InfantryFireEffectsTable Effects="@effects" BrokenBefore="@Record.BrokenBefore" PinnedBefore="@Record.PinnedBefore" />
+        <InfantryFireEffectsTable Effects="@effects" BrokenBefore="@Record.BrokenBefore" PinnedBefore="@Record.PinnedBefore" Say="@Record.Say" />
     }
     @if (Record.Vehicles is { Count: > 0 } vehicles)
     {
-        <VehicleFireEffectsTable Vehicles="@vehicles" />
+        <VehicleFireEffectsTable Vehicles="@vehicles" Say="@Record.Say" />
     }
     else if (Record.Effects is null)
     {
-        <p class="muted fire-withheld">The target Location's units are not disclosed: the result leaves them concealed (A12.14, p. 77), so only the @(Record.TargetSide ?? "target") side sees them.</p>
+        <p class="muted fire-withheld">The target Location's units are not disclosed: the result leaves them concealed (A12.14, p. 77), so only the @(Record.TargetSide is { } side ? DisplayText.Side(side) : "target") side sees them.</p>
     }
 </div>
 

@@ -127,9 +127,9 @@ public sealed class PlayPageStepsTests : IDisposable
         Commit(page, "#propose-rally");
         Assert.Empty(dice);
         Assert.DoesNotContain("broken", Row(page, "r1"), StringComparison.Ordinal);
-        Assert.Contains(page.FindAll("#play-rolls li"), item => item.TextContent.StartsWith("rally: 1, 2", StringComparison.Ordinal));
+        Assert.Contains(page.FindAll("#play-rolls li"), item => item.TextContent.StartsWith("Rally DR: 1, 2", StringComparison.Ordinal));
         var rallied = page.Find("#play-rallies .rally-record").RecordText();
-        Assert.StartsWith("rl rallies r1: DR 1, 2 = 3", rallied, StringComparison.Ordinal);
+        Assert.StartsWith($"8-0 leader R1 rallies 4-4-7 squad R1 in {DisplayText.Place(1, hexes.From)}: DR 1, 2 = 3", rallied, StringComparison.Ordinal);
         Assert.Contains("against", rallied, StringComparison.Ordinal);
         Assert.EndsWith(": rallied", rallied, StringComparison.Ordinal);
 
@@ -142,12 +142,13 @@ public sealed class PlayPageStepsTests : IDisposable
         page.Find("#fire-target").Change(hexes.Open);
         page.Find("#propose-fire").Click();
         page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
-        Assert.Equal($"r2 with mg1 in {hexes.From}", page.Find("#fire-facts tr[data-fact='firers'] td:last-child").TextContent);
+        Assert.Equal($"4-4-7 squad R2 with its LMG in {DisplayText.Place(1, hexes.From)}", page.Find("#fire-facts tr[data-fact='firers'] td:last-child").TextContent);
         Roll(1, 2);
         page.Find("#play-confirm").Click();
         page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
         Assert.Empty(dice);
-        Assert.Equal($"r2 with mg1 in {hexes.From} fire at {hexes.Open}", page.Find("#play-fires .fire-group").TextContent);
+        var group = page.Find("#play-fires .fire-group").TextContent.Trim();
+        Assert.Equal($"4-4-7 squad R2 with its LMG in {DisplayText.Place(1, hexes.From)} fires at {DisplayText.Place(1, hexes.Open)}", group);
         page.ViewAs(Perspective.AdjudicatorName);
         Assert.Contains("eliminated", Row(page, "gd"), StringComparison.Ordinal);
         Assert.Contains("prep-fire", Row(page, "r2"), StringComparison.Ordinal);
@@ -185,7 +186,7 @@ public sealed class PlayPageStepsTests : IDisposable
         Roll(6, 5);
         Commit(page, "#propose-fire");
         Assert.Empty(dice);
-        Assert.Contains($"in {DisplayText.Location(hexes.Building)}", page.Find("#play-residual").TextContent, StringComparison.Ordinal);
+        Assert.Contains($"in {DisplayText.Place(1, hexes.Building)}", page.Find("#play-residual").TextContent, StringComparison.Ordinal);
         foreach (var perspective in new[] { "german", "russian", Perspective.AdjudicatorName })
         {
             page.ViewAs(perspective);
@@ -207,7 +208,7 @@ public sealed class PlayPageStepsTests : IDisposable
         Roll(6, 5);
         Commit(page, "#propose-move");
         Assert.Empty(dice);
-        Assert.Matches(@"^\d+ Residual FP fire at ", page.Find("#play-fires .fire-group").TextContent);
+        Assert.Equal($"8 Residual FP fires at {DisplayText.Place(1, hexes.Building)}", page.Find("#play-fires .fire-group").TextContent.Trim());
         Commit(page, "#propose-pass");
         Commit(page, "#propose-end-move");
 

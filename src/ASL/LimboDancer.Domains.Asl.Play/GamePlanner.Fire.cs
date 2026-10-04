@@ -480,9 +480,20 @@ public sealed partial class GamePlanner
             var partCheck = ScenarioA1FireCalculator.Precheck(part, FireReference.Value);
             if (partCheck.Count != 0)
             {
-                return Refused(scope, label, expected, RefusalReasons.Refusal("play.fire-refused", "Fire", "attack", partCheck)) with
+                // Pass 31c (design section 14): a refusal for range names the firer or weapon, its range, and how far it fires. Those lines rest on
+                // the proposer's own units and the map alone, so the firing side reads them even where the target's units are not its to see; it
+                // is then told nothing else, whatever else the package found.
+                var refusal = RefusalReasons.Refusal("play.fire-refused", "Fire", "attack", partCheck);
+                var ranged = RangeNamed(part, refusal);
+                var proposal = Proposal(part, undecided: true);
+                return Refused(scope, label, expected, ranged.Reasons) with
                 {
-                    Fire = Proposal(part, undecided: true)
+                    Fire = ranged.Named.Count > 0 && proposal.FiringSideReasons.Count > 0
+                        ? proposal with
+                        {
+                            FiringSideReasons = ["play.fire-refused: the Fire package refuses this attack as proposed", .. ranged.Named]
+                        }
+                        : proposal
                 };
             }
         }
@@ -1299,6 +1310,63 @@ public sealed partial class GamePlanner
         }
 
         return conditions.Count == 0 ? null : ("conditions-changed", new ConditionsChanged(unit.Id, conditions));
+    }
+
+    /// <summary>
+    /// A refusal for range says what was out of range (pass 31c, design section 14; A7.21, A7.22): the package's one sentence for
+    /// <c>out-of-range</c> gives way to a line for each firer and weapon, with its range, its Normal Range, and how far it fires. The code stays.
+    /// A refusal records nothing, so no recorded game reads this.
+    /// </summary>
+    private static (string[] Reasons, IReadOnlyList<string> Named) RangeNamed(FireAttack part, string[] reasons)
+    {
+        const string code = "asl.a1.fire.out-of-range";
+        if (!reasons.Any(reason => reason.StartsWith(code, StringComparison.Ordinal)) || part.TargetLocationId is not { } target)
+        {
+            return (reasons, []);
+        }
+
+        var named = new List<string>();
+        foreach (var firer in part.Firers ?? [])
+        {
+            if ((firer.Range ?? part.Range) is not { } range || firer.LocationId is not { } at)
+            {
+                continue;
+            }
+
+            var own = at == target;
+            var levelAbove = firer.TargetLevelAbove ?? part.TargetLevelAbove ?? 0;
+            void Say(string who, FireDefinition? definition, bool wounded)
+            {
+                if (definition is null || FireRange.Band(definition, range, own, levelAbove, wounded) is not { } reading)
+                {
+                    return;
+                }
+
+                if (reading.Band == FireRangeBand.Out)
+                {
+                    named.Add($"{code}: {who} in {at} is {range} {(range == 1 ? "hex" : "hexes")} from {target}; its Normal Range is {reading.NormalRange}, so it fires to {reading.Limit} "
+                        + (reading.Limit == reading.NormalRange ? "(C13.24: an ATR has no Long Range)" : "(A7.22)"));
+                }
+                else if (reading.Band == FireRangeBand.SameHexOtherLevel)
+                {
+                    named.Add($"{code}: {who} in {at} fires at {target}, another level of its own hex, which is not built (A7.21)");
+                }
+            }
+
+            if (firer.UsesInherentFp != false)
+            {
+                Say(firer.UnitId!, FireReference.Value.Definitions.GetValueOrDefault(firer.DefinitionId ?? string.Empty), firer.Wounded == true);
+            }
+
+            foreach (var weapon in firer.Weapons ?? [])
+            {
+                Say($"{weapon.EquipmentId} of {firer.UnitId}", FireReference.Value.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty), false);
+            }
+        }
+
+        named = [.. named.Distinct(StringComparer.Ordinal)];
+        return named.Count == 0 ? (reasons, [])
+            : ([.. reasons.SelectMany(reason => reason.StartsWith(code, StringComparison.Ordinal) ? named : [reason]).Distinct(StringComparer.Ordinal)], named);
     }
 
     /// <summary>

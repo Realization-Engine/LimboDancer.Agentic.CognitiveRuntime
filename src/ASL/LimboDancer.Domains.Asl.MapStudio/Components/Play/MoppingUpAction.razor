@@ -1,6 +1,6 @@
 @* Ruling R24.2 (A12.153, A12.154): the phasing side's Mopping Up in its PFPh. The page gives the buildings of the card its MMC may Mop Up, each with
    those units and the units that may guard a surrender, already read for the view (ruling R23.1); the planner decides every other condition. *@
-<h4>Mopping Up</h4>
+<ActionSection Title="Mopping Up" Key="mopping-up">
 <RuleHelp Id="mop-up-help" Summary="Armed, unpinned, Good Order MMC Mop Up a building once per Player Turn when each ground-level Location their side does not Control is within two hexes of one of them and no unconcealed unbroken enemy unit is inside; with no concealed enemy unit left, their side Controls it (A12.153, A12.154; ruling R24.2).">
     Armed, unpinned, Good Order MMC in a building of the card become TI to secure it, once per building per Player Turn: each ground-level Location their
     side does not Control must be within two hexes of one of them, and no unconcealed unbroken enemy unit may be inside. Hidden enemy units there are
@@ -14,7 +14,7 @@
             <option value="">choose</option>
             @foreach (var item in Buildings)
             {
-                <option value="@item.Id">@item.Id</option>
+                <option value="@item.Id">@At(item.Id)</option>
             }
         </select>
     </label>
@@ -24,7 +24,7 @@
             <legend>Units Mopping Up</legend>
             @foreach (var unit in chosen.Units)
             {
-                <label><input type="checkbox" class="mop-up-unit" data-unit="@unit" checked="@units.Contains(unit)" @onchange="@(args => Toggle(unit, args.Value is true))" /> @Named(chosen, unit)</label>
+                <label><input type="checkbox" class="mop-up-unit" data-unit="@unit" checked="@units.Contains(unit)" @onchange="@(args => Toggle(unit, args.Value is true))" /> @Say(Named(chosen, unit))</label>
             }
         </fieldset>
         <label>
@@ -33,7 +33,7 @@
                 <option value="">the first unit Mopping Up</option>
                 @foreach (var item in chosen.Guards)
                 {
-                    <option value="@item">@Named(chosen, item)</option>
+                    <option value="@item">@Say(Named(chosen, item))</option>
                 }
             </select>
         </label>
@@ -44,8 +44,21 @@
         <span id="mop-up-ready" class="toolbar-note">Choose a building and at least one unit.</span>
     }
 </div>
+</ActionSection>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
+    /// <summary>A unit's name with its hex, "4-6-7 squad G4 in [G4]" (the user, 2026-10-04), where no Location stands beside the name.</summary>
+    [CascadingParameter(Name = "SayAt")]
+    public Func<string, string>? WordsAt { get; set; }
+
+    private string At(string? text) => text is null ? string.Empty : WordsAt?.Invoke(text) ?? Say(text);
+
     /// <summary>
     /// A building the side may Mop Up: its id, the MMC in it that may, the units in it that may guard a surrender, and where each unit is, such as "bd01:E4"
     /// or "bd01:E4 level 1".

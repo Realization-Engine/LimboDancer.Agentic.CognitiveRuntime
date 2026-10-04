@@ -6,6 +6,7 @@ using LimboDancer.Domains.Asl.Maps.Derivation;
 using LimboDancer.Domains.Asl.Maps.Geometry;
 using LimboDancer.Domains.Asl.Maps.Rendering;
 using LimboDancer.Domains.Asl.Units.Rendering;
+using LimboDancer.Domains.Asl.Units.Documents;
 using LimboDancer.Domains.Asl.Units.State;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Services;
@@ -72,6 +73,65 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache
     }
 
     /// <summary>
+    /// The map as both sides know it (pass 31c; the user, 2026-10-04; ruling R31c.3), for the hand-over screen, which both the side leaving and the
+    /// side arriving read: each side's units as the other side's view holds them. A Known unit is drawn as its counter, a concealed one as its
+    /// "?", and a hidden one not at all (A12.11, A12.3); before play starts a stack shows its top counter alone, and a side setting up now is not
+    /// drawn (A2.9, A12.12; ruling R23.3). So the map shows nothing that either player could not already see on the board.
+    /// </summary>
+    public (StudioBoard? Board, string? Units) Public(string gameId, MapInPlay map, long revision)
+    {
+        ArgumentNullException.ThrowIfNull(gameId);
+        ArgumentNullException.ThrowIfNull(map);
+        var entry = games.Load(GameLibrary.LivePrefix + gameId);
+        if (Board(map).Board is not { } board)
+        {
+            return (null, null);
+        }
+
+        if (entry.History is not { HasErrors: false } history || history.At(revision) is not { } state || units.Renderer(UnitLibrary.DefaultSheet) is not { } renderer)
+        {
+            return (board, null);
+        }
+
+        // The referee, pass 31c: what a view contributes is chosen by who owns the unit in the game, never by the nationality on its counter: from a
+        // side's view come the other sides' units it holds by name, their "?", and the unpossessed equipment it sees. A side's own units are never
+        // taken from its own view.
+        UnitPlacementSet? first = null;
+        var seen = new List<UnitDocument>();
+        var drawn = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var side in state.Sides)
+        {
+            var projection = games.Projection(entry, Perspective.Side(side.Id), revision);
+            first ??= projection.Set;
+            var others = projection.View.Units.Where(unit => unit.Side != side.Id).Select(unit => unit.Id)
+                .Concat(projection.View.Equipment.Where(item => item.Holding is null && item.Side != side.Id).Select(item => item.Id)).ToHashSet(StringComparer.Ordinal);
+            var presences = projection.View.Sealed.Where(presence => presence.Side != side.Id).Select(presence => presence.PlacementId).ToHashSet(StringComparer.Ordinal);
+            foreach (var document in projection.Set.Units)
+            {
+                if (others.Contains(document.Id) && drawn.Add(document.Id))
+                {
+                    seen.Add(document);
+                }
+                else if (presences.Contains(document.Id))
+                {
+                    // A "?" has a placement id of its view's own; two views' ids may be the same, so each is kept apart.
+                    seen.Add(document with
+                    {
+                        Id = $"{side.Id}-{document.Id}",
+                    });
+                }
+            }
+        }
+
+        return first is null ? (board, null) : (board, units.Overlay(board, first with
+        {
+            SetId = $"{first.SetId}-public",
+            Units = seen,
+            Hash = $"{first.Hash}-public-{revision}",
+        }, renderer).Svg);
+    }
+
+    /// <summary>
     /// A live game's map at a revision for a viewer, as the layers the Play page's viewport draws (pass 28c, R11): the board to load, the units the
     /// viewer may see and the marks (the Covered Arc and the Residual FP counters in play, unit step 22).
     /// </summary>
@@ -104,8 +164,13 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache
 
         var projection = entry.History is { HasErrors: false } ? games.Projection(entry, viewer, revision) : null;
         var overlay = projection is not null && units.Renderer(UnitLibrary.DefaultSheet) is { } renderer ? units.Overlay(board, projection.Set, renderer) : null;
+        if (overlay is not null && entry.History is { HasErrors: false } named)
+        {
+            overlay = Named(overlay, games.NamesOf(named, viewer), revision, map.Boards.Count);
+        }
 
-        // Residual FP is public (A8.2): every viewer sees each counter's value at the centre of its hex.
+        // Residual FP is public (A8.2): every viewer sees each counter's value. Pass 31c (design D16; play test P-30): at the hex's upper
+        // corner, small, and taking no click, so it never covers the counter in the hex or stands between a click and it.
         var marked = new List<string>();
         if (marks is not null)
         {
@@ -116,12 +181,26 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache
         {
             if (UnitLibrary.TargetFor(board).Locate(residual.Location) is { } at)
             {
-                var vertices = board.Render.Grid.Geometry.Vertices(at).ToArray();
-                var x = vertices.Average(point => point.X);
-                var y = vertices.Average(point => point.Y);
+                var (x, y) = Corner(board, at, upper: true);
                 marked.Add(string.Create(CultureInfo.InvariantCulture,
-                    $"<g class=\"play-residual\" data-location=\"{residual.Location}\" data-fp=\"{residual.Fp}\"><circle cx=\"{x:0.##}\" cy=\"{y:0.##}\" r=\"14\" fill=\"#fff3c4\" stroke=\"#a40\" stroke-width=\"2\"/>"
-                    + $"<text x=\"{x:0.##}\" y=\"{y + 5:0.##}\" text-anchor=\"middle\" font-size=\"14\" font-weight=\"bold\" fill=\"#a40\">{residual.Fp}</text></g>"));
+                    $"<g class=\"play-residual\" data-location=\"{residual.Location}\" data-fp=\"{residual.Fp}\" pointer-events=\"none\"><circle cx=\"{x:0.##}\" cy=\"{y:0.##}\" r=\"9\" fill=\"#fff3c4\" stroke=\"#a40\" stroke-width=\"2\"/>"
+                    + $"<text x=\"{x:0.##}\" y=\"{y + 4:0.##}\" text-anchor=\"middle\" font-size=\"11\" font-weight=\"bold\" fill=\"#a40\">{residual.Fp}</text></g>"));
+            }
+        }
+
+        // Pass 31c (design D16; play test P-27): a Location in Melee is marked on its hex, for a view that holds a unit of that Melee by name.
+        if (projection is not null)
+        {
+            foreach (var melee in projection.View.Units.Where(unit => GameState.Condition(unit, Conditions.Melee) == ConditionState.True)
+                .Select(unit => projection.View.Locations.TryGetValue(unit.Id, out var where) ? where.Location with { Level = 0 } : null).OfType<BoardLocation>().Distinct())
+            {
+                if (UnitLibrary.TargetFor(board).Locate(melee) is { } at)
+                {
+                    var (x, y) = Corner(board, at, upper: false);
+                    marked.Add(string.Create(CultureInfo.InvariantCulture,
+                        $"<g class=\"play-melee\" data-location=\"{melee}\" pointer-events=\"none\"><rect x=\"{x - 17:0.##}\" y=\"{y - 8:0.##}\" width=\"34\" height=\"13\" rx=\"3\" fill=\"#7f1d1d\" stroke=\"#ffffff\" stroke-width=\"1\"/>"
+                        + $"<text x=\"{x:0.##}\" y=\"{y + 2:0.##}\" text-anchor=\"middle\" font-size=\"10\" font-weight=\"bold\" fill=\"#ffffff\">Melee</text></g>"));
+                }
             }
         }
 
@@ -130,6 +209,44 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache
             Overlay = overlay,
             View = projection?.View,
         };
+    }
+
+    /// <summary>
+    /// The overlay with each counter's tooltip and name beginning with its hex and the unit's own name, such as "[H5], level 1: 4-6-7 squad G3.
+    /// German 1st Line squad, 4-6-7" (the user, 2026-10-04): the hex in brackets, as every hex is written, and the name the records use, so a
+    /// counter on the map is the unit a record names. A "?" has its hex alone.
+    /// </summary>
+    private static UnitOverlay Named(UnitOverlay overlay, UnitNames names, long revision, int boards)
+    {
+        var lead = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var unit in overlay.Units)
+        {
+            var name = names.Held(unit.Document.Id, revision);
+            lead[unit.Document.Id] = DisplayText.Place(boards, unit.Location) + (name == unit.Document.Id || name == UnitNames.Unnamed ? ": " : $": {name}. ");
+        }
+
+        // One pass over the layer: each counter's group carries its id, its accessible name, and then its title.
+        var svg = System.Text.RegularExpressions.Regex.Replace(overlay.Svg, "(<g data-unit-id=\"([^\"]+)\"[^>]*aria-label=\")([^\"]*\"[^>]*>\\s*<title>)",
+            match => lead.TryGetValue(match.Groups[2].Value, out var said)
+                ? match.Groups[1].Value + System.Net.WebUtility.HtmlEncode(said) + match.Groups[3].Value + System.Net.WebUtility.HtmlEncode(said)
+                : match.Value);
+        return overlay with
+        {
+            Svg = svg,
+            Units = [.. overlay.Units.Select(unit => unit with
+            {
+                Name = lead[unit.Document.Id] + unit.Name,
+            })],
+        };
+    }
+
+    /// <summary>A point inside a hex near its top or its foot, where a small mark stands clear of the counters at its centre.</summary>
+    private static (double X, double Y) Corner(StudioBoard board, HexIndex hex, bool upper)
+    {
+        var vertices = board.Render.Grid.Geometry.Vertices(hex).ToArray();
+        var (x, y) = (vertices.Average(point => point.X), vertices.Average(point => point.Y));
+        var edge = upper ? vertices.Min(point => point.Y) : vertices.Max(point => point.Y);
+        return (x, y + ((edge - y) * 0.72));
     }
 
     /// <summary>The ground-level Location of the hex under a point of the map, in board units; null off the map (pass 28c).</summary>

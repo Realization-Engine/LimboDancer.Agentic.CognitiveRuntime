@@ -1,0 +1,29 @@
+@* Pass 31c (the user, 2026-10-04): a section of the Play page's actions that opens and closes at its heading, so the action a phase is about is
+   not pushed out of sight by sections that phase seldom uses. The section the phase is about starts open, and the others closed; a click on the
+   heading changes that, and the choice holds while the section stays on the page. Everything in a closed section stays in the page. *@
+<details class="play-section" data-section="@Key" open="@Open">
+    <summary @onclick="Toggle" @onclick:preventDefault="true"><h4>@Title</h4></summary>
+    @ChildContent
+</details>
+
+@code {
+    private bool? chosen;
+
+    /// <summary>The sections the phase is about, by key, which start open; the page cascades them. Without them every section starts open.</summary>
+    [CascadingParameter(Name = "PrimarySections")]
+    public IReadOnlySet<string>? Primary { get; set; }
+
+    [Parameter, EditorRequired]
+    public string Title { get; set; } = string.Empty;
+
+    /// <summary>The section's key, such as "fire" or "support-weapons".</summary>
+    [Parameter, EditorRequired]
+    public string Key { get; set; } = string.Empty;
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private bool Open => chosen ?? Primary?.Contains(Key) ?? true;
+
+    private void Toggle() => chosen = !Open;
+}

@@ -1,7 +1,7 @@
 @* Plan A16 (pass 25): CC Reaction Fire in the DEFENDER's window on a moving vehicle's MP expenditure in their Location (D7.2, D7.21, A11.6). The page
    shows it to the DEFENDER's view and the adjudicator only, offers the DEFENDER units there that the view sees (ruling R23.1), keeps the choice, and
    proposes the attack. *@
-<h4>CC Reaction Fire</h4>
+<ActionSection Title="CC Reaction Fire" Key="cc-reaction-fire">
 <RuleHelp Id="reaction-help" Summary="One unbroken, unpinned, armed DEFENDER unit not in Melee, alone or with a SMC, may attack the moving vehicle in CC in its Location, after a PAATC against an AFV unless exempt (D7.21, A11.6).">
     In the DEFENDER's window on the moving vehicle's MP expenditure in their Location, one unbroken, unpinned DEFENDER unit, alone or with a
     SMC, may attack it in CC as its Defensive First Fire, after a PAATC against an AFV unless exempt or already passed this phase; after an
@@ -14,7 +14,7 @@
             <option value="">choose</option>
             @foreach (var unit in Attackers)
             {
-                <option value="@unit">@unit</option>
+                <option value="@unit">@At(unit)</option>
             }
         </select>
     </label>
@@ -24,14 +24,27 @@
             <option value="">none</option>
             @foreach (var unit in Leaders)
             {
-                <option value="@unit">@unit</option>
+                <option value="@unit">@At(unit)</option>
             }
         </select>
     </label>
     <button id="propose-reaction" disabled="@(Attacker.Length == 0)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: CC Reaction Fire at @Vehicle</button>
 </div>
+</ActionSection>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
+    /// <summary>A unit's name with its hex, "4-6-7 squad G4 in [G4]" (the user, 2026-10-04), where no Location stands beside the name.</summary>
+    [CascadingParameter(Name = "SayAt")]
+    public Func<string, string>? WordsAt { get; set; }
+
+    private string At(string? text) => text is null ? string.Empty : WordsAt?.Invoke(text) ?? Say(text);
+
     /// <summary>The moving vehicle.</summary>
     [Parameter, EditorRequired]
     public string Vehicle { get; set; } = string.Empty;

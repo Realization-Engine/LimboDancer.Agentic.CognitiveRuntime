@@ -14,7 +14,7 @@
                 <option value="">choose</option>
                 @foreach (var vehicle in Vehicles)
                 {
-                    <option value="@vehicle.Id">@vehicle.Label</option>
+                    <option value="@vehicle.Id">@Say(vehicle.Label)</option>
                 }
             </select>
         </label>
@@ -27,6 +27,12 @@
 }
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>The vehicles that owe their dr, such as "ge-tank (Unconfirmed Kill)".</summary>
     [Parameter, EditorRequired]
     public IReadOnlyList<PlayChoice> Vehicles { get; set; } = [];

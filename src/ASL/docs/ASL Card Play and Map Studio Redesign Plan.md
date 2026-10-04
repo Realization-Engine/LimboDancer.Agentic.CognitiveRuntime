@@ -87,10 +87,10 @@ New rules adjudication, changes to game persistence, VASL artwork, a new compone
 | 30b | Setup plans for the side that sets up second | Game | 8 | 7:30 | 9:00 | 6:18 to 11:42 |
 | 31 | Play-test UI I: nothing blocks play | Studio and game | 10 | 11:30 | 13:00 | 9:06 to 16:54 |
 | 31b | The Replay page | Studio | 8 | 9:45 | 11:15 | 7:53 to 14:38 |
-| 31c | Play-test UI II: the page reads and holds still | Studio | 8 | 12:30 | 14:00 | 9:48 to 18:12 |
+| 31c | Play-test UI II: the page reads and holds still | Studio | 9 | 14:15 | 15:45 | 11:02 to 20:29 |
 | 32 | DYO purchase I: Infantry, leaders, and SW | Game | 5 | 3:15 | 4:30 | 3:09 to 5:51 |
 | 33 | DYO purchase II: ordnance, vehicles, and conditions | Game | 4 | 2:30 | 3:45 | 2:38 to 4:52 |
-| | **All passes** | | **108** | **102:05** | **126:50** | **88:47 to 164:53** |
+| | **All passes** | | **109** | **103:50** | **128:35** | **90:01 to 167:10** |
 
 **Order.** The passes run in the order listed, one at a time on the user's go-ahead.
 
@@ -409,20 +409,21 @@ Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (backlog sect
 
 **Purpose:** a page that speaks in the player's words, takes its Locations from the map, shows a fire's arithmetic before the dice, and does not move under the pointer. **After:** pass 31b. **From:** the play test's report of 2026-10-04.
 
-**Status:** designed 2026-10-04; starts only on the user's word after pass 31b is merged. Its unit names and Locations in words reach the Replay page through the records service of task 31b.2.
+**Status:** built 2026-10-04 on branch `feature/asl-backlog-pass-31c`, with the user's answers (option (b) for the Game states page, and the eight recommendations of the design): tasks 31c.0 to 31c.9, three reviews and their fixes, the Studio check, the second play test (a German win in The Guards Counterattack), Range (task 31c.9), and the third play test (a Russian win in The Tractor Works). See the [pass 31c design](<ASL Unit Backlog Pass 31c Design.md>), sections 13 and 14, and the [review document](<Scenario A1 Backlog Pass 31c Review 2026-10-04.md>). Rulings R31c.1 to R31c.7. Section 15.13 holds its decisions; what it leaves out is in backlog section 50.
 
 | Task | What it changes | Estimate |
 |---|---|---|
+| 31c.0 The Game inspector | The Game states page renamed and moved to a Verify group; a game still played off its list and off the board viewer's; the viewer locked to its opening view for such a game. | 1:15 |
 | 31c.1 Names and words | Every unit named by its printed values, kind, and a fixed tag ("4-6-7 squad G4"); modifier names in words; reasons without codes; Locations in words. | 2:30 |
 | 31c.2 Picking on the map | Every typed Location takes the hex picked on the map; routes and paths by clicks; the fire panel's From and Target. | 1:15 |
 | 31c.3 The fire proposal | FP, column, and DRM before the dice; the headline with its weapons; rate of fire kept; fire groups across ADJACENT Locations. | 2:15 |
 | 31c.4 A workspace that holds still | No window scroll at 1024 pixels and wider; a header of fixed height; short windows; fixed places for Propose and Confirm. | 2:00 |
-| 31c.5 The map | The view kept across a hand-over and a phase change; a loading line; the Residual FP marker off the counter; a Melee mark. | 0:45 |
+| 31c.5 The map | The view kept for a game and a view across a hand-over; a loading line; the Residual FP marker off the counter; a Melee mark; the hand-over screen's terrain map. | 1:15 |
 | 31c.6 Records and the latest line | The side in a record's heading; every event in "Latest", with a fire's result; "Since you last looked"; Records over the strip. | 1:00 |
 | 31c.7 Rout speed | The rout search kept for a unit at a revision; a "Working" sign. | 1:15 |
 | 31c.8 The second play test | The Guards Counterattack played again from setup to its end; each of the 31 problems tried again by the report's steps. | 1:30 |
 | | Overhead | 1:30 |
-| | **Pass 31c total** (build 12:30) | **14:00** |
+| | **Pass 31c total** (build 14:15) | **15:45** |
 
 ### Pass 32: DYO purchase I: Infantry, leaders, and SW
 
@@ -912,6 +913,23 @@ These folders express ownership, not a requirement to create every directory imm
 - **The address** carries the game, the view, and the view's own step number. The page follows it only when the address itself changes, and not while its own move is on its way.
 - **Whose view (ruling R31b.1).** An ended game shows any view at once; a game still played hands a view over as Play does, shows a side no revision, and offers "Play on from here" only to the adjudicator.
 - **The page writes one thing:** a new game's file, through `LivePlay.PlayOn`. It proposes nothing and changes no game.
+
+### 15.13 Decisions of pass 31c
+
+**Added 2026-10-04.**
+
+- **One place for a name.** `UnitNames` (Services) is made for a history and a view and kept for a game and a view; it grows with the game and never changes a tag it has given. `PlayRecords`, `ReplayDiff`, Play's panels, and both pages' unit tables read it. A unit's id stays in `data-unit`, in titles, and in addresses (ruling R31c.1).
+- **A text is put in words once, at its edge.** A record's text is built with identifiers and said by `PlayRecords.Say` for the event's own revision, which is where the view check of plan section 15.9 lives. A planner's text and a page's label go through one cascaded function, `Say`, made for a history and a view; a component declares the cascade and wraps what it prints. A change to a record's words is made in `PlayRecords`, never in a page.
+- **One way to write a Location:** `DisplayText.Place`, with `ReadPlace` for what a player types.
+- **Picking is the page's, shared.** `LocationPicking` holds the armed field and the last pick; a `LocationField` arms itself, reads the next pick, and disarms when it leaves the page. The armed field goes with the view's other drafts.
+- **A preview is not a record.** A fire's arithmetic before the dice is the Fire package's own `Preview`, made by the page from what the view may know (ruling R31c.4), and recorded nowhere. No calculator's result changed in the pass.
+- **The window does not scroll.** With a game open nothing sits outside the workspace: the card is a dialog, and the records, the units, the dice, and the audit are panels that open over the activity strip. The workspace fills the window from its own measured top. The context reserves its action row and status line only where the page asks (`Reserve`, on Play).
+- **The map's view is the view's own.** The viewport's script keeps the view for a key the host gives (a game and a view) while the page is open.
+- **What both sides know is drawn from both views.** `GameMaps.Public` takes from each side's view the other sides' units, chosen by who owns them (ruling R31c.3).
+- **Range is read, not resolved.** `FireRange` (Rules) says where a range falls for a Normal Range and is called by nothing that resolves an attack; the Fire package decides every attack, and a test holds the two together. The Range tab, the map's outlines, and the fire panel's Target list read it for the view (ruling R31c.7).
+- **A hex is in brackets, and a unit named alone carries its hex** (ruling R31c.6): `DisplayText.Place` and `Hexes`, and the cascaded `SayAt` beside `Say`.
+- **A game still played has two doors:** Play and Replay. The Game inspector and the board viewer open it in no view chosen at will (ruling R31c.2).
+- **A board has one handle while it is loaded** (`StudioBoardCatalog`), so what the planner keeps by the handle, a board's LOS map and its LOS reads, is kept.
 
 # Part IV. The component inventory
 
@@ -1562,7 +1580,7 @@ The migration follows pass 33, in this order, one pass at a time on the user's g
 | 43 | Fire | Rules | 3:50 | 5:05 | 3:34 to 6:36 |
 | | **All migration passes** | | **105:44** | **141:59** | **99:23 to 184:35** |
 
-The display batches total 70:59 and the rule passes 71:00. With passes 22b to 33 (126:50, after pass 30's task 30.6 and pass 30b were added on 2026-10-03 and passes 31, 31b, and 31c on 2026-10-04), the whole plan is 268:49, about 36 working days of 7.5 hours; at the recent pace (about 65 % of estimates) nearer 174:44.
+The display batches total 70:59 and the rule passes 71:00. With passes 22b to 33 (128:35, after pass 30's task 30.6 and pass 30b were added on 2026-10-03, passes 31, 31b, and 31c on 2026-10-04, and pass 31c's task 31c.0 with its design the same day), the whole plan is 270:34, about 36 working days of 7.5 hours; at the recent pace (about 65 % of estimates) nearer 175:52.
 
 **Order.** The display batches come first, so the whole portable corpus is readable early and the catalog work is done in one sweep. Armored combat is the first rule package because 49 of the playable cards need it; night and winter follows it, since several armor cards are night or winter cards; offboard artillery and terrain make the most cards playable once fortifications are in.
 

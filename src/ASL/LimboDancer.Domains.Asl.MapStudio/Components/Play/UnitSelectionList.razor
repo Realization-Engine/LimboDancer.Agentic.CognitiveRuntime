@@ -1,18 +1,32 @@
 @* Plan S12 (pass 25): one checkbox per unit the caller offers, already read for the view (ruling R23.1) and already eligible; the caller keeps the
    selection and its reset rules (plan section 15.3). The CSS class is the hook page tests use, such as move-unit or advance-unit. *@
+@* Pass 31c (the user, 2026-10-04): a named group is a dropdown of checkboxes. Its closed line reads like a select, with the units chosen, and
+   opens a list with one unit a line; with no unit to offer it says so, in place of an empty box. *@
 @if (Legend is null)
 {
     @Boxes
 }
+else if (Rows.Count == 0)
+{
+    <p class="@($"{CssClass}s unit-dropdown-empty muted")"><span class="unit-dropdown-name">@Legend</span> @Empty</p>
+}
 else
 {
-    <fieldset class="@($"{CssClass}s")">
-        <legend>@Legend</legend>
-        @Boxes
-    </fieldset>
+    <details class="@($"{CssClass}s unit-dropdown")">
+        <summary><span class="unit-dropdown-name">@Legend</span> <span class="unit-dropdown-chosen">@Chosen</span></summary>
+        <div class="unit-dropdown-list" role="group" aria-label="@Legend">
+            @Boxes
+        </div>
+    </details>
 }
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>A unit offered: its id and how it reads, such as "bs9 (bd04:E1:0)".</summary>
     public sealed record Row(string Id, string Label);
 
@@ -28,9 +42,21 @@ else
     [Parameter, EditorRequired]
     public string CssClass { get; set; } = string.Empty;
 
-    /// <summary>The group's name, such as "Units moving"; with one the boxes are a fieldset.</summary>
+    /// <summary>The group's name, such as "Units moving"; with one the boxes are a dropdown of checkboxes.</summary>
     [Parameter]
     public string? Legend { get; set; }
+
+    /// <summary>What a named group says when it has no unit to offer.</summary>
+    [Parameter]
+    public string Empty { get; set; } = "none may be chosen now.";
+
+    // The closed line: the units ticked, by name while they fit, or how many.
+    private string Chosen => Rows.Where(row => Selected.Contains(row.Id)).Select(row => Say(row.Label)).ToArray() switch
+    {
+        [] => $"choose ({Rows.Count} offered)",
+        { Length: <= 2 } few => string.Join("; ", few),
+        var many => $"{many.Length} of {Rows.Count} chosen",
+    };
 
     [Parameter]
     public EventCallback<Toggle> OnToggle { get; set; }
@@ -38,7 +64,7 @@ else
     private RenderFragment Boxes => @<text>
         @foreach (var row in Rows)
         {
-            <label><input class="@CssClass" type="checkbox" data-unit="@row.Id" checked="@Selected.Contains(row.Id)" @onchange="@(args => OnToggle.InvokeAsync(new Toggle(row.Id, args.Value is true)))" /> @row.Label</label>
+            <label><input class="@CssClass" type="checkbox" data-unit="@row.Id" checked="@Selected.Contains(row.Id)" @onchange="@(args => OnToggle.InvokeAsync(new Toggle(row.Id, args.Value is true)))" /> @Say(row.Label)</label>
         }
     </text>;
 }

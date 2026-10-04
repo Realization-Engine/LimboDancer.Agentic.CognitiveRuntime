@@ -179,7 +179,7 @@ public sealed class PlayPagePass5Tests : IDisposable
         Assert.Empty(dice);
         Assert.Equal("battleHardening:g2", page.Find("#play-choice").GetAttribute("data-key"));
         Assert.Empty(page.FindAll("#play-choice .choose"));
-        Assert.Contains("Waiting for the german side", page.Find("#play-choice").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Waiting for the German side", page.Find("#play-choice").TextContent, StringComparison.Ordinal);
 
         page.ViewAs("german");
         Commit(page, "#play-choice .choose[data-option='decline']");

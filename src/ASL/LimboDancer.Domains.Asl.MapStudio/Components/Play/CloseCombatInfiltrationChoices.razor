@@ -5,12 +5,12 @@
     @foreach (var unit in Units)
     {
         <label>
-            @unit.Id
+            @Say(unit.Id)
             <select class="cc-infiltrate" data-unit="@unit.Id" value="@(Infiltrations.GetValueOrDefault(unit.Id) ?? string.Empty)" @onchange="@(args => OnInfiltration.InvokeAsync(new Choice(unit.Id, args.Value as string)))">
                 <option value="">stays</option>
                 @foreach (var to in unit.Destinations)
                 {
-                    <option value="@to">to @to</option>
+                    <option value="@to">to @Say(to)</option>
                 }
             </select>
         </label>
@@ -18,6 +18,12 @@
 </div>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>A unit that may infiltrate, with the Locations it may go to (never empty).</summary>
     public sealed record Infiltrator(string Id, IReadOnlyList<string> Destinations);
 

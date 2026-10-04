@@ -7,23 +7,30 @@
 @inject UnitLibrary Library
 @inject NavigationManager Navigation
 
-<PageTitle>Game states - ASL Map Studio</PageTitle>
+<PageTitle>Game inspector - ASL Map Studio</PageTitle>
 
-<PageHeader Title="Game states">
-    @* Claude Design's review: one plain sentence, with how it works a click away. *@
-    <RuleHelp Id="games-intro" DetailLabel="How this works" Summary="Replay a game event by event, from either side or as the adjudicator.">
-        Replay a synthetic game fixture event by event and read it from each side or as the adjudicator. A side's view leaves out what that side
-        cannot know: hidden units are absent and concealed enemies are only a presence. Fixtures are display input, never game state.
+<PageHeader Title="Game inspector">
+    @* Claude Design's review: one plain sentence, with how it works a click away. Pass 31c (design D0): a developer's inspector, for the fixtures
+       and for games that have ended. *@
+    <RuleHelp Id="games-intro" DetailLabel="How this works" Summary="Inspect a game's record event by event, from either side or as the adjudicator.">
+        Step through a synthetic game fixture or an ended game one event at a time and read it from each side or as the adjudicator. A side's view
+        leaves out what that side cannot know: hidden units are absent and concealed enemies are only a presence. Fixtures are display input, never
+        game state.
     </RuleHelp>
 </PageHeader>
 
-@if (GamesLibrary.Names.Count == 0)
+<p class="muted" id="games-still-played">
+    A game still being played is not listed here, since any view of it could be chosen with no hand-over. Open it on
+    <a href="games/play">Play</a>, or watch it on <a href="games/replay">Replay</a>.
+</p>
+
+@if (names.Count == 0)
 {
     <p class="fail">No game fixtures are embedded.</p>
 }
 else
 {
-    <GameReplayToolbar Games="@GamesLibrary.Names" Game="@name" GameChanged="@Open"
+    <GameReplayToolbar Games="@names" Game="@name" GameChanged="@Open"
                        Perspectives="@PerspectiveChoices" Perspective="@perspective.Name" PerspectiveChanged="@ChangePerspective"
                        Revision="@((int)revision)" Max="@(state is null ? 0 : entry!.History!.States.Count)" RevisionChanged="@ChangeRevision"
                        BoardName="@BoardName" OnShow="@ShowOnBoard" />
@@ -92,6 +99,7 @@ else
 
 @code {
     private string name = string.Empty;
+    private IReadOnlyList<string> names = [];
     private GameEntry? entry;
     private GameState? state;
     private GameView? view;
@@ -114,7 +122,8 @@ else
     protected override void OnInitialized()
     {
         renderer = Library.Renderer(UnitLibrary.DefaultSheet);
-        if (GamesLibrary.Names.FirstOrDefault() is { } first)
+        names = GamesLibrary.OpenNames;
+        if (names.FirstOrDefault() is { } first)
         {
             Open(first);
         }
@@ -183,10 +192,11 @@ else
 
     /// <summary>
     /// The board viewer showing a game's projection for a perspective at a revision, with the hex picked on Play kept as its selection (pass 29,
-    /// task 29.5).
+    /// task 29.5). A side's view of a game still played carries no revision (pass 31c, design D0): the viewer shows the game as it stands.
     /// </summary>
-    public static string BoardLink(string board, string game, Perspective perspective, long revision, string? hex = null) =>
-        $"boards/{board}?game={Uri.EscapeDataString(game)}&perspective={Uri.EscapeDataString(perspective.Name)}&revision={revision.ToString(CultureInfo.InvariantCulture)}"
+    public static string BoardLink(string board, string game, Perspective perspective, long? revision, string? hex = null) =>
+        $"boards/{board}?game={Uri.EscapeDataString(game)}&perspective={Uri.EscapeDataString(perspective.Name)}"
+            + (revision is { } at ? $"&revision={at.ToString(CultureInfo.InvariantCulture)}" : string.Empty)
             + (hex is { Length: > 0 } ? $"&hex={Uri.EscapeDataString(hex)}" : string.Empty);
 
     private MarkupString Preview(string id) =>

@@ -7,7 +7,7 @@
             <option value="">choose</option>
             @foreach (var weapon in Weapons)
             {
-                <option value="@weapon.Id">@weapon.Label</option>
+                <option value="@weapon.Id">@Say(weapon.Label)</option>
             }
         </select>
     </label>
@@ -19,6 +19,12 @@
 </div>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>The malfunctioned SW possessed by a unit and the AAMG of CE vehicles, such as "r-lmg (held by r1)".</summary>
     [Parameter, EditorRequired]
     public IReadOnlyList<PlayChoice> Weapons { get; set; } = [];

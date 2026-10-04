@@ -22,7 +22,7 @@ public sealed record ReplayChange(string Kind, string Text, BoardLocation? At, B
 /// the entities placed or removed. It reads the two <see cref="GameView"/>s and the step's events the view is entitled to, never the full state, so
 /// it says nothing the view may not know: an enemy unit under "?" has no id here, only a "?" at a Location, and what it holds is absent.
 /// </summary>
-public static class ReplayDiff
+public static partial class ReplayDiff
 {
     // The conditions a player follows on the map; the marks of who has fired or moved change with every phase and are left out, and so is the DM
     // that every Rally Phase's end removes.
@@ -46,7 +46,13 @@ public static class ReplayDiff
     /// What <paramref name="after"/> shows that <paramref name="before"/> did not. <paramref name="readable"/> are the step's events the view is
     /// entitled to: they say why a unit went (eliminated, or become other units) where the views alone show only that it is gone.
     /// </summary>
-    public static IReadOnlyList<ReplayChange> Of(GameView? before, GameView after, IReadOnlyList<GameEvent> readable)
+    public static IReadOnlyList<ReplayChange> Of(GameView? before, GameView after, IReadOnlyList<GameEvent> readable) => Of(before, after, readable, null);
+
+    /// <summary>
+    /// The same, said with the view's names (pass 31c, design D11): every unit here is one the view holds before or after the step, so each reads
+    /// by its name and tag; a Location reads as the game writes it (design D12).
+    /// </summary>
+    public static IReadOnlyList<ReplayChange> Of(GameView? before, GameView after, IReadOnlyList<GameEvent> readable, UnitNames? names)
     {
         ArgumentNullException.ThrowIfNull(after);
         ArgumentNullException.ThrowIfNull(readable);
@@ -188,6 +194,20 @@ public static class ReplayDiff
             .Select(item => new ReplayChange(ReplayChange.Appeared, $"{DisplayText.Kind(item.Kind)} placed" + In(Where(after, item.Id)), Where(after, item.Id))));
         changes.AddRange(before.Entities.Where(item => !entitiesAfter.Contains(item.Id)).OrderBy(item => item.Id, StringComparer.Ordinal)
             .Select(item => new ReplayChange(ReplayChange.Gone, $"{DisplayText.Kind(item.Kind)} removed" + In(Where(before, item.Id)), Where(before, item.Id))));
+
+        // The lines are built with identifiers and said once here: a Location in the game's words, and a unit by the name the view gives it.
+        var boards = after.Map.Boards.Count;
+        var revision = after.Stamp.Revision;
+        string Said(string text) => text.Length == 0 ? text
+            : names is not null ? names.Held(text, revision) : LocationId().Replace(text, match => DisplayText.Place(boards, match.Value));
+        for (var index = 0; index < changes.Count; index++)
+        {
+            changes[index] = changes[index] with
+            {
+                Text = Said(changes[index].Text),
+            };
+        }
+
         return changes;
     }
 
@@ -317,9 +337,12 @@ public static class ReplayDiff
 
     private static BoardLocation? Where(GameView view, string id) => view.Locations.TryGetValue(id, out var position) ? position.Location : null;
 
-    private static string Place(BoardLocation? at) => at is null ? "off the map" : DisplayText.Location(at);
+    private static string Place(BoardLocation? at) => at is null ? "off the map" : at.ToString();
 
-    private static string In(BoardLocation? at) => at is null ? string.Empty : $" in {DisplayText.Location(at)}";
+    private static string In(BoardLocation? at) => at is null ? string.Empty : $" in {at}";
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"\b(?:bd\w+|ab-[a-z0-9-]+):[A-Z]{1,2}\d{1,2}:-?\d\b")]
+    private static partial System.Text.RegularExpressions.Regex LocationId();
 
     private static string Presences(int count, string side) => count == 1 ? $"A {DisplayText.Side(side)} \"?\"" : $"{count} {DisplayText.Side(side)} \"?\"";
 }

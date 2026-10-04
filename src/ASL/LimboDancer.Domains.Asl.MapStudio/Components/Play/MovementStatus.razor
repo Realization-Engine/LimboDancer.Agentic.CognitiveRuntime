@@ -2,12 +2,12 @@
 @* Plan A11 (pass 25): the moving stack's status: its movers, Location, and step, the DEFENDER's window, the members free to move on, and its Bypass,
    Minimum Move, and members whose move ends with the window. The page shows it to the moving side and the adjudicator (ruling R23.1). *@
 <p id="move-state" data-step="@Movement.Step" data-window="@(Movement.WindowOpen ? "open" : "closed")">
-    <strong>@string.Join(", ", Movement.Movers)</strong> in @DisplayText.Location(Movement.Location), step @Movement.Step@(Movement.Assault ? ", by Assault Movement" : ""):
+    <strong>@Say(string.Join(", ", Movement.Movers))</strong> in @Say(Movement.Location.ToString()), step @Movement.Step@(Movement.Assault ? ", by Assault Movement" : ""):
     @(Movement.WindowOpen ? "the DEFENDER may fire, or pass." : "the DEFENDER has passed; move on or end the move.")
-    <span id="move-members">@(Movement.Members.Count > 0 ? $"May still move: {string.Join(", ", Movement.Members)}." : "No member may move farther; end the move.")</span>
+    <span id="move-members">@(Movement.Members.Count > 0 ? Say($"May still move: {string.Join(", ", Movement.Members)}.") : "No member may move farther; end the move.")</span>
     @if (Movement.Bypass is { Count: > 0 } lane)
     {
-        <span id="move-bypass-state">@(" ")In Bypass along @string.Join(", ", lane.Select(side => side.ToString().ToLowerInvariant())): leave through the far vertex, or move To @Movement.Location to occupy the obstacle; the move may not end here (A4.32).</span>
+        <span id="move-bypass-state">@(" ")In Bypass along @string.Join(", ", lane.Select(side => side.ToString().ToLowerInvariant())): leave through the far vertex, or move To @Say(Movement.Location.ToString()) to occupy the obstacle; the move may not end here (A4.32).</span>
     }
     @if (Movement.MinimumMove)
     {
@@ -15,11 +15,17 @@
     }
     @if (Movement.EndingMembers.Count > 0 && !Movement.MinimumMove)
     {
-        <span id="move-ending-state">@(" ")@string.Join(", ", Movement.EndingMembers) end their move when the DEFENDER's window closes (a forced back, A12.15, or a SMOKE dr of 6, A24.1).</span>
+        <span id="move-ending-state">@(" ")@Say(string.Join(", ", Movement.EndingMembers)) end their move when the DEFENDER's window closes (a forced back, A12.15, or a SMOKE dr of 6, A24.1).</span>
     }
 </p>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     [Parameter, EditorRequired]
     public MovementState Movement { get; set; } = default!;
 }

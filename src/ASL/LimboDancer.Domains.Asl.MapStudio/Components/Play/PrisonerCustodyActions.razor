@@ -6,13 +6,25 @@
     {
         @foreach (var heir in guard.Heirs)
         {
-            <button class="transfer-prisoners" data-guard="@guard.Id" data-to="@heir" @onclick="@(() => OnTransfer.InvokeAsync(new Transfer(guard.Id, heir)))">Propose: @guard.Id hands its prisoners to @heir</button>
+            <button class="transfer-prisoners" data-guard="@guard.Id" data-to="@heir" @onclick="@(() => OnTransfer.InvokeAsync(new Transfer(guard.Id, heir)))">Propose: @At(guard.Id) hands its prisoners to @Say(heir)</button>
         }
-        <button class="abandon-prisoners" data-guard="@guard.Id" @onclick="@(() => OnAbandon.InvokeAsync(guard.Id))">Propose: @guard.Id abandons its prisoners</button>
+        <button class="abandon-prisoners" data-guard="@guard.Id" @onclick="@(() => OnAbandon.InvokeAsync(guard.Id))">Propose: @At(guard.Id) abandons its prisoners</button>
     }
 </div>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
+    /// <summary>A unit's name with its hex, "4-6-7 squad G4 in [G4]" (the user, 2026-10-04), where no Location stands beside the name.</summary>
+    [CascadingParameter(Name = "SayAt")]
+    public Func<string, string>? WordsAt { get; set; }
+
+    private string At(string? text) => text is null ? string.Empty : WordsAt?.Invoke(text) ?? Say(text);
+
     /// <summary>A Guard and the units that could take its prisoners.</summary>
     public sealed record Guard(string Id, IReadOnlyList<string> Heirs);
 

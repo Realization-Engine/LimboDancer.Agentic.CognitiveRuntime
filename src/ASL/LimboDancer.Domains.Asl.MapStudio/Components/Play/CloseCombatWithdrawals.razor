@@ -4,12 +4,12 @@
     @foreach (var unit in Units)
     {
         <label>
-            @unit.Label @(unit.MustTry ? "(broken: must try to withdraw)" : "")
+            @Say(unit.Label) @(unit.MustTry ? "(broken: must try to withdraw)" : "")
             <select class="cc-withdraw" data-unit="@unit.Id" value="@(Withdrawals.GetValueOrDefault(unit.Id) ?? string.Empty)" @onchange="@(args => OnWithdrawal.InvokeAsync(new Choice(unit.Id, args.Value as string)))">
                 <option value="">stays</option>
                 @foreach (var to in unit.Destinations)
                 {
-                    <option value="@to">withdraws to @to</option>
+                    <option value="@to">withdraws to @Say(to)</option>
                 }
             </select>
         </label>
@@ -17,6 +17,12 @@
 </div>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>A unit that may withdraw: its id, how it reads, whether it must try, and where it may go.</summary>
     public sealed record Withdrawer(string Id, string Label, bool MustTry, IReadOnlyList<string> Destinations);
 

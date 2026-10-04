@@ -46,7 +46,7 @@ public sealed class PlayWorkspaceComponentTests : IDisposable
         var field = context.Render<CascadingValue<string?>>(parameters => parameters.Add(item => item.Name, "PickedLocation").Add(item => item.Value, "bd01:D4:0")
             .AddChildContent<LocationField>(inner => inner.Add(item => item.Id, "move-to").Add(item => item.Label, "To").Add(item => item.Value, "bd01:C3:0")
                 .Add(item => item.OnChange, at => taken = at)));
-        Assert.Equal("Use D4 on board 01", field.Find("#move-to-use").TextContent);
+        Assert.Equal("Use [D4] on board 01", field.Find("#move-to-use").TextContent);
         field.Find("#move-to-use").Click();
         Assert.Equal("bd01:D4:0", taken);
 
@@ -64,7 +64,7 @@ public sealed class PlayWorkspaceComponentTests : IDisposable
             .Add(item => item.Records, [new("e3", "rally", "third"), new("e2", "rally", "second"), new("e1", "rally", "first")])
             .Add(item => item.When, id => when.GetValueOrDefault(id)));
         Assert.Equal(["Turn 2, Rally Phase", "Turn 1, Advance Phase"], list.FindAll("#play-rallies .record-when").Select(item => item.TextContent));
-        Assert.Equal(["third", "second", "first"], list.FindAll("#play-rallies .rally-record").Select(item => item.TextContent));
+        Assert.Equal(["Third", "Second", "First"], list.FindAll("#play-rallies .rally-record").Select(item => item.TextContent.Trim()));
 
         // Without a turn and phase, the list is one plain list, as before.
         list.Render(parameters => parameters.Add(item => item.When, (Func<string, string?>?)null));

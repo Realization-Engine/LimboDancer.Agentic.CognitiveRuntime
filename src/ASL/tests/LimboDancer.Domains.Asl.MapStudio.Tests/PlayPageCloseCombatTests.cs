@@ -137,7 +137,7 @@ public sealed class PlayPageCloseCombatTests : IDisposable
         Commit(page, "#propose-cc");
         Assert.Empty(dice);
         var record = page.Find("#play-close-combats .cc-record").TextContent;
-        Assert.Contains("at 1-1, Kill Number 5: DR 6 (colored), 6 = 12 - 1 (leadership:gl, A11.141); r1: 11 = Final DR 11: no effect", record, StringComparison.Ordinal);
+        Assert.Contains("at 1-1, Kill Number 5: DR 6 (colored), 6 = 12 - 1 (leadership, 8-1 leader G1, A11.141); 4-4-7 squad R1: 11 = Final DR 11: no effect", record, StringComparison.Ordinal);
         Assert.Contains("at 1-2, Kill Number 4", record, StringComparison.Ordinal);
 
         // A11.15: at the end of the CCPh the units are held in Melee.
@@ -177,7 +177,7 @@ public sealed class PlayPageCloseCombatTests : IDisposable
         Commit(page, "#propose-cc");
         var record = page.Find("#play-close-combats .cc-record").TextContent;
         Assert.Contains("capture, A20.22", record, StringComparison.Ordinal);
-        Assert.Contains("r1 is captured and guarded by g1 (A20.22)", record, StringComparison.Ordinal);
+        Assert.Contains("2-3-7 half-squad R1 is captured and guarded by 4-6-7 squad G1 (A20.22)", record, StringComparison.Ordinal);
         Assert.False(live.History("village")!.HasErrors);
     }
 
@@ -229,8 +229,8 @@ public sealed class PlayPageCloseCombatTests : IDisposable
         dice.Enqueue(6);
         dice.Enqueue(6);
         Commit(page, "#propose-cc");
-        Assert.Contains($"r1 withdraws to {hexes.One} (A11.2)", page.Find("#play-close-combats .cc-record").TextContent, StringComparison.Ordinal);
-        Assert.Contains("vs-withdrawing", page.Find("#play-close-combats .cc-record").TextContent, StringComparison.Ordinal);
+        Assert.Contains($"; 4-4-7 squad R1 withdraws to {DisplayText.Place(1, hexes.One)} (A11.2)", page.Find("#play-close-combats .cc-record").TextContent, StringComparison.Ordinal);
+        Assert.Contains("12 - 2 (against a withdrawing unit, A11.2)", page.Find("#play-close-combats .cc-record").TextContent, StringComparison.Ordinal);
         Assert.False(live.History("village")!.HasErrors);
     }
 }

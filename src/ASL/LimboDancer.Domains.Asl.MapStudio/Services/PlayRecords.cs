@@ -1,13 +1,12 @@
 using System.Globalization;
 using System.Text.Json;
 using LimboDancer.Domains.Asl.MapStudio.Components.Games;
-using LimboDancer.Domains.Asl.MapStudio.Components.Play;
 using LimboDancer.Domains.Asl.Play;
 using LimboDancer.Domains.Asl.Rules;
 using LimboDancer.Domains.Asl.Units.Catalog;
 using LimboDancer.Domains.Asl.Units.Documents;
 using LimboDancer.Domains.Asl.Units.State;
-using static LimboDancer.Domains.Asl.MapStudio.Components.Play.FireText;
+using static LimboDancer.Domains.Asl.MapStudio.Services.FireText;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Services;
 
@@ -23,7 +22,10 @@ public sealed class PlayRecords
     private readonly Perspective viewer;
     private readonly IReadOnlyList<GameEvent> events;
     private readonly GameState? state;
-    private IReadOnlyList<DiceRollHistory.Row>? rollRows;
+    private readonly UnitNames? names;
+    private Dictionary<string, long>? revisions;
+    private Dictionary<string, long>? rollRevisions;
+    private IReadOnlyList<RollRow>? rollRows;
     private IReadOnlyList<(string EventId, string Text)>? ordnance;
     private IReadOnlyList<FireView>? fire;
     private IReadOnlyList<(string EventId, string Text)>? closeCombat;
@@ -33,12 +35,16 @@ public sealed class PlayRecords
     private Dictionary<string, string>? when;
     private (bool Read, string? Text) latest;
 
-    /// <summary>The records of <paramref name="history"/> through the revision <paramref name="last"/>, as <paramref name="viewer"/> may read them.</summary>
-    public PlayRecords(GameHistory history, Perspective viewer, long last)
+    /// <summary>
+    /// The records of <paramref name="history"/> through the revision <paramref name="last"/>, as <paramref name="viewer"/> may read them. With
+    /// <paramref name="names"/> (pass 31c, design D11) every unit, weapon, counter, and Location in a record is said in the view's words, and a
+    /// unit the view could not name just before the event reads "a concealed unit"; without them a record keeps its identifiers.
+    /// </summary>
+    public PlayRecords(GameHistory history, Perspective viewer, long last, UnitNames? names = null)
     {
         ArgumentNullException.ThrowIfNull(history);
         ArgumentNullException.ThrowIfNull(viewer);
-        (this.history, this.viewer, Last) = (history, viewer, last);
+        (this.history, this.viewer, Last, this.names) = (history, viewer, last, names);
         events = last >= history.Events.Count ? history.Events : [.. history.Events.Where(item => item.Revision <= last)];
         state = history.At(Math.Min(last, history.States.Count));
     }
@@ -54,27 +60,69 @@ public sealed class PlayRecords
     }
 
     /// <summary>The latest six rolls the view may see, latest first.</summary>
-    public IReadOnlyList<DiceRollHistory.Row> RollRows => rollRows ??= RowsOf(Rolls, RollText);
+    public IReadOnlyList<RollRow> RollRows => rollRows ??= RowsOf(Rolls, RollText);
+
+    /// <summary>The view's names, when the records were read with them.</summary>
+    public UnitNames? Names => names;
+
+    /// <summary>
+    /// Where a unit or a weapon was just before an event, as " in bd01:G4:1" (the user, 2026-10-04: a record says the hex of the units that act
+    /// and of their targets); empty when it was not on the map. The view's words turn the identifier into "G4, level 1".
+    /// </summary>
+    private static string In(GameState? before, string? id) => id is not null && before?.Location(id)?.Location is { } at ? $" in {at}" : string.Empty;
+
+    private static string From(GameState? before, string? id) => id is not null && before?.Location(id)?.Location is { } at ? $" from {at}" : string.Empty;
+
+    /// <summary>
+    /// A record's text in the view's words (design D11): the one place a record's identifiers become names, so no record is worded twice and none
+    /// misses the view check (plan section 15.9).
+    /// </summary>
+    private string Say(string eventId, string text)
+    {
+        if (names is null)
+        {
+            return text;
+        }
+
+        revisions ??= events.ToDictionary(item => item.EventId, item => item.Revision, StringComparer.Ordinal);
+        return names.InText(text, revisions.TryGetValue(eventId, out var revision) ? revision - 1 : Last);
+    }
+
+    private string SayRoll(string roll, string text)
+    {
+        if (names is null)
+        {
+            return text;
+        }
+
+        rollRevisions ??= events.Where(item => item.Payload is DiceRolled).GroupBy(item => ((DiceRolled)item.Payload).Roll, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.First().Revision, StringComparer.Ordinal);
+        return names.InText(text, rollRevisions.TryGetValue(roll, out var revision) ? revision - 1 : Last);
+    }
 
     /// <summary>Every roll the view may see among the events of the revisions <paramref name="first"/> to <paramref name="last"/>, in order.</summary>
-    public IReadOnlyList<DiceRollHistory.Row> RollsIn(long first, long last)
+    public IReadOnlyList<RollRow> RollsIn(long first, long last)
     {
         GameEvent[] seen = [.. events.Where(item => item.IsVisibleTo(viewer))];
         return RowsOf(seen.Where(item => item.Revision >= first && item.Revision <= last).Select(item => item.Payload).OfType<DiceRolled>()
             .Select(roll => (roll, seen.Select(item => item.Payload).OfType<RandomSelection>().FirstOrDefault(selection => selection.Roll == roll.Roll)?.Subjects)), RollText);
     }
 
-    public IReadOnlyList<(string EventId, string Text)> Ordnance => ordnance ??= OrdnanceRecords;
+    public IReadOnlyList<(string EventId, string Text)> Ordnance => ordnance ??= Said(OrdnanceRecords);
 
     public IReadOnlyList<FireView> Fire => fire ??= FireRecords;
 
-    public IReadOnlyList<(string EventId, string Text)> CloseCombat => closeCombat ??= CloseCombatRecords;
+    public IReadOnlyList<(string EventId, string Text)> CloseCombat => closeCombat ??= Said(CloseCombatRecords);
 
-    public IReadOnlyList<(string EventId, string Text)> Night => night ??= NightRecords;
+    public IReadOnlyList<(string EventId, string Text)> Night => night ??= Said(NightRecords);
 
-    public IReadOnlyList<(string EventId, string Text)> Snipers => snipers ??= SniperRecords;
+    public IReadOnlyList<(string EventId, string Text)> Snipers => snipers ??= Said(SniperRecords);
 
-    public IReadOnlyList<(string EventId, string Kind, string Text)> RallyAndRepair => rallyAndRepair ??= RallyAndRepairRecords;
+    public IReadOnlyList<(string EventId, string Kind, string Text)> RallyAndRepair =>
+        rallyAndRepair ??= names is null ? RallyAndRepairRecords : [.. RallyAndRepairRecords.Select(record => (record.EventId, record.Kind, Say(record.EventId, record.Text)))];
+
+    private IReadOnlyList<(string EventId, string Text)> Said(IReadOnlyList<(string EventId, string Text)> records) =>
+        names is null ? records : [.. records.Select(record => (record.EventId, Say(record.EventId, record.Text)))];
 
     /// <summary>The turn and phase an event happened in, such as "Turn 2, Rally Phase"; null for an event the records do not hold.</summary>
     public string? WhenOf(string eventId)
@@ -88,7 +136,8 @@ public sealed class PlayRecords
                 // The phase the event was proposed in: the state before it, or the start's own state.
                 if ((history.At(item.Revision - 1) ?? history.At(item.Revision)) is { } before)
                 {
-                    when[item.EventId] = $"Turn {before.Turn}, {GameText.PhaseLabel(before.Phase)}";
+                    // Pass 31c (design D17): the heading names the side whose phase it is.
+                    when[item.EventId] = $"Turn {before.Turn}, {DisplayText.Side(before.PhasingSide)} {GameText.PhaseLabel(before.Phase)}";
                 }
             }
         }
@@ -96,24 +145,108 @@ public sealed class PlayRecords
         return when.GetValueOrDefault(eventId);
     }
 
-    /// <summary>The latest record the view may read, with its turn and phase, for the activity strip.</summary>
+    /// <summary>
+    /// The latest thing the view may read, with its turn and phase, for the activity strip (pass 31c, design D17; play test P-15): the lines of the
+    /// last attempt that has any, so a fire reads with its result and what it did, and a move, a pass, a choice, a surrender, a capture, and a
+    /// declaration are said too.
+    /// </summary>
     public string? Latest
     {
         get
         {
             if (!latest.Read)
             {
-                var revisions = events.ToDictionary(item => item.EventId, item => item.Revision, StringComparer.Ordinal);
-                var all = Ordnance.Concat(CloseCombat).Concat(Night).Concat(Snipers)
-                    .Concat(RallyAndRepair.Select(item => (item.EventId, item.Text)))
-                    .Concat(Fire.Select(fire => (fire.EventId, $"{fire.Group} fires at {fire.Target}.")));
-                var newest = all.Where(item => revisions.ContainsKey(item.EventId)).OrderByDescending(item => revisions[item.EventId]).FirstOrDefault();
-                latest = (true, newest.EventId is null ? null : $"Latest: {WhenOf(newest.EventId)}: {newest.Item2}");
+                // The last attempt that did something; a phase's start and an answered choice alone are passed over (the table player, pass 31c), so
+                // a fire's result is not hidden by the phase that began after it.
+                var told = Lines.Where(line => !line.Minor).ToArray();
+                var from = told.Length > 0 ? told : [.. Lines];
+                var last = from.Length == 0 ? null : AttemptOf(from[^1].EventId);
+                var ofLast = last is null ? [] : Lines.Where(line => AttemptOf(line.EventId) == last).ToArray();
+                string[] said = [.. (ofLast.Any(line => !line.Minor) ? ofLast.Where(line => !line.Minor) : ofLast).Select(line => Sentence(line.Text))];
+                // The result of the attempt first, then what followed from it; a long attempt is cut, and the records have the rest.
+                latest = (true, said.Length == 0 ? null : $"Latest: {WhenOf(from[^1].EventId)}: {string.Join(" ", said.Take(4))}{(said.Length > 4 ? " More is in the records." : string.Empty)}");
             }
 
             return latest.Text;
         }
     }
+
+    private IReadOnlyList<(long Revision, string EventId, string Text, bool Minor)>? lines;
+
+    /// <summary>
+    /// Everything the view may read of the game, in the order it happened, one line for each thing (design D17): the records, a fire with its
+    /// result and what it changed, and the events the records leave out: a move, an advance, the DEFENDER's pass, a move's end, a choice, a
+    /// surrender, a capture, a declaration, a phase's start. Each line is said in the view's words, with the view check of a name.
+    /// </summary>
+    public IReadOnlyList<(long Revision, string EventId, string Text, bool Minor)> Lines => lines ??= ReadLines();
+
+    /// <summary>The lines of what happened after a revision: what the view missed while another had the screen ("Since you last looked").</summary>
+    public IReadOnlyList<(long Revision, string EventId, string Text, bool Minor)> Since(long revision) => [.. Lines.Where(line => line.Revision > revision)];
+
+    private List<(long Revision, string EventId, string Text, bool Minor)> ReadLines()
+    {
+        var revisionOf = events.ToDictionary(item => item.EventId, item => item.Revision, StringComparer.Ordinal);
+        var read = new List<(long Revision, string EventId, string Text, bool Minor)>();
+        void Add(string eventId, string text, bool minor = false)
+        {
+            if (revisionOf.TryGetValue(eventId, out var revision))
+            {
+                read.Add((revision, eventId, text, minor));
+            }
+        }
+
+        foreach (var record in Ordnance.Concat(CloseCombat).Concat(Night).Concat(Snipers).Concat(RallyAndRepair.Select(item => (item.EventId, item.Text))))
+        {
+            Add(record.EventId, record.Text);
+        }
+
+        foreach (var fire in Fire)
+        {
+            Add(fire.EventId, FireLine(fire));
+        }
+
+        foreach (var item in events.Where(item => item.IsVisibleTo(viewer)))
+        {
+            var before = history.At(item.Revision - 1);
+            static string Many(IReadOnlyList<string> ids, string one, string several) => $"{string.Join(", ", ids)} {(ids.Count == 1 ? one : several)}";
+            var text = item.Payload switch
+            {
+                MovementStepped step => Many(step.Movers, "moves", "move") + $"{From(before, step.Movers.Count > 0 ? step.Movers[0] : null)} to {step.To}{(step.Assault ? " by Assault Movement" : string.Empty)}",
+                VehicleStepped { Kind: not VehicleStepped.Turn } drive => $"{drive.Vehicle} moves{From(before, drive.Vehicle)} to {drive.At}",
+                AdvanceMoved advance => Many(advance.Units, "advances", "advance") + (advance.Exit is { } edge ? $" off the {edge} edge from {advance.To}" : $"{From(before, advance.Units.Count > 0 ? advance.Units[0] : null)} to {advance.To}"),
+                MovementWindowClosed => $"The {DisplayText.Side(before?.Sides.FirstOrDefault(side => side.Id != before.PhasingSide)?.Id)} side, the DEFENDER, declines First Fire",
+                MovementEnded ended => Many(ended.Movers, "ends its move", "end their move") + In(before, ended.Movers.Count > 0 ? ended.Movers[0] : null),
+                OpportunityFireDeclared held => string.Join(", ", held.Units.Select(id => id + In(before, id))) + (held.Units.Count == 1 ? " is" : " are") + " held for Opportunity Fire (A7.25)",
+                ChoiceMade => "A choice the game waited for was answered",
+                SurrenderPending surrender => $"{surrender.Unit}{In(before, surrender.Unit)} surrenders, and its captor is to be chosen (A20.21)",
+                SurrenderRejected refused => $"The surrender of {refused.Unit} is refused (A20.3)",
+                InstanceCaptured taken => $"{taken.Id}{In(before, taken.Id)} is captured, guarded by {taken.Custodian} (A20.2)",
+                PrisonerFreed freed => $"{freed.Unit}{In(before, freed.Unit)} is no longer guarded (A20.5)",
+                BuildingMoppedUp mopped => $"The {DisplayText.Side(mopped.Side)} side Mops Up building {mopped.Building} (A12.153)",
+                PhaseChanged phase => $"The {DisplayText.Side(phase.PhasingSide)} {GameText.PhaseLabel(phase.Phase)} of Turn {phase.Turn} begins",
+                GameEnded => "The game ends",
+                _ => null,
+            };
+            if (text is not null)
+            {
+                Add(item.EventId, Say(item.EventId, text), item.Payload is PhaseChanged or ChoiceMade);
+            }
+        }
+
+        // The order it happened in; lines of one event keep the order they were read in.
+        return [.. read.Select((line, index) => (line, index)).OrderBy(pair => pair.line.Revision).ThenBy(pair => pair.index).Select(pair => pair.line)];
+    }
+
+    /// <summary>A fire in one line (play test P-15): who fired at what, the result, and what it did to each unit the view may read of.</summary>
+    private static string FireLine(FireView fire)
+    {
+        var changed = fire.Effects is null ? []
+            : fire.Effects.Select(effect => (effect.UnitId, Text: EffectText(effect, fire.BrokenBefore.Contains(effect.UnitId), fire.PinnedBefore.Contains(effect.UnitId))))
+                .Where(effect => effect.Text is not ("unaffected" or "already broken" or "already pinned")).Select(effect => fire.Say($"{effect.UnitId}: {effect.Text}")).ToArray();
+        return $"{fire.Group} {(fire.Several ? "fire" : "fires")} at {fire.Target}: {ResultText(fire.Arithmetic.Result)}" + (changed.Length > 0 ? "; " + string.Join("; ", changed) : string.Empty);
+    }
+
+    private static string Sentence(string text) => DisplayText.Sentence(text.TrimEnd()) + (text.TrimEnd().EndsWith('.') ? string.Empty : ".");
 
     /// <summary>
     /// The rolls the viewer may see, latest first, with the unit each die belongs to when the viewer may see that too:
@@ -132,16 +265,16 @@ public sealed class PlayRecords
         var check = events.Select(item => item.Payload).OfType<TaskCheck>().FirstOrDefault(item => item.Roll == roll.Roll);
         if (check is null)
         {
-            return $"{roll.Purpose}: {string.Join(", ", roll.Values)}";
+            return $"{DisplayText.RollPurpose(roll.Purpose)}: {string.Join(", ", roll.Values)}";
         }
 
         var modifiers = string.Concat(check.Modifiers.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Math.Abs(item.Value)} ({(item.Source == "B23.3" ? "TEM" : item.Source)})"));
-        return $"{(check.Purpose == TaskCheck.OvrNtc ? "OVR NTC" : check.Purpose)}: {string.Join(", ", roll.Values)}{modifiers} = {check.FinalDr} "
+        return $"{(check.Purpose == TaskCheck.OvrNtc ? "OVR NTC" : DisplayText.RollPurpose(check.Purpose))}: {string.Join(", ", roll.Values)}{modifiers} = {check.FinalDr} "
             + $"against morale {check.MoraleLevel}: {(check.Passed ? "passed" : "failed")}";
     }
 
-    private static IReadOnlyList<DiceRollHistory.Row> RowsOf(IEnumerable<(DiceRolled Roll, IReadOnlyList<string>? Subjects)> rolls, Func<DiceRolled, string> RollText) => [.. rolls.Select(item => new DiceRollHistory.Row(item.Roll.Roll,
-        RollText(item.Roll) + (item.Subjects is null ? "" : $" for {string.Join(", ", item.Subjects)}"),
+    private IReadOnlyList<RollRow> RowsOf(IEnumerable<(DiceRolled Roll, IReadOnlyList<string>? Subjects)> rolls, Func<DiceRolled, string> RollText) => [.. rolls.Select(item => new RollRow(item.Roll.Roll,
+        SayRoll(item.Roll.Roll, RollText(item.Roll) + (item.Subjects is null ? "" : $" for {string.Join(", ", item.Subjects)}")),
         $"{item.Roll.Count} d{item.Roll.Sides}, drawn by the {item.Roll.Source} for {item.Roll.Actor}"))];
 
     /// <summary>
@@ -158,7 +291,7 @@ public sealed class PlayRecords
                 if (item.Payload is OrdnanceFired { } checking && checking.Resolution.Deserialize<OrdnanceResolution>(LiveFire.Json) is { ToHit: null, PanzerfaustCheck: { } failed })
                 {
                     // C13.31 (ruling R9.7): a PF Check that gave no shot.
-                    records.Add((item.EventId, $"{checking.Crew} makes a PF Check: dr {failed.Dr}{ModifierText(failed.Drm)} = {failed.FinalDr}: "
+                    records.Add((item.EventId, $"{checking.Crew}{In(history.At(item.Revision - 1), checking.Crew)} makes a PF Check: dr {failed.Dr}{ModifierText(failed.Drm)} = {failed.FinalDr}: "
                         + (failed.Outcome == OrdnancePanzerfaustCheck.NoShot ? "no shot (C13.31)" : $"no PF in position, and {failed.Outcome} (C13.31)")));
                     continue;
                 }
@@ -169,7 +302,7 @@ public sealed class PlayRecords
                 }
 
                 var dice = string.Join(", ", hit.Dice.Select((die, index) => index == 0 ? $"{die} (colored)" : $"{die}"));
-                var modifications = string.Concat(hit.Modifications.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({item.Name}, {item.Rule})"));
+                var modifications = string.Concat(hit.Modifications.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({DisplayText.Modifier(item.Name)}, {item.Rule})"));
                 var outcome = hit.CriticalHit ? "Critical Hit" : hit.Hit ? "hit" : "miss";
                 var shot = fired.Facts.Deserialize<OrdnanceShot>(LiveFire.Json);
                 var aim = shot?.VehicleTarget is { } aimed ? $"{(shot.Ammunition ?? "ap").ToUpperInvariant()} at {aimed.VehicleId} in {fired.Target} (hull {aimed.HullFacing}"
@@ -179,7 +312,7 @@ public sealed class PlayRecords
                 var check = resolution.PanzerfaustCheck is { } pf ? $"PF Check dr {pf.Dr}{ModifierText(pf.Drm)} = {pf.FinalDr}: a shot; " : "";
                 var parts = new List<string>
                 {
-                    check + $"{fired.Gun} fires {aim}"
+                    check + $"{fired.Gun}{In(history.At(item.Revision - 1), fired.Gun)} fires {aim}"
                         + (fired.Facing is { } facing ? $", turning to {UnitFacings.Name(facing)}" : "")
                         + $": Basic TH# {hit.BasicToHit} ({hit.Color}){modifications} = {hit.ModifiedToHit}; DR {dice} = {hit.OriginalDr}{ModifierText(hit.Drm)} = Final DR {hit.FinalDr}"
                         + (hit.SubsequentDr is { } dr ? $", subsequent dr {dr}" : "") + (hit.Improbable ? " (Improbable Hit, C3.6)" : "") + $": {outcome}",
@@ -215,7 +348,7 @@ public sealed class PlayRecords
                 if (resolution.Kill is { } kill)
                 {
                     var tk = kill.BasicTk is { } basic
-                        ? $"Basic TK# {basic}{string.Concat(kill.Modifications.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({item.Name}, {item.Rule})"))} - AF {kill.ArmorFactor} = Final TK# {kill.FinalTk}"
+                        ? $"Basic TK# {basic}{string.Concat(kill.Modifications.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({DisplayText.Modifier(item.Name)}, {item.Rule})"))} - AF {kill.ArmorFactor} = Final TK# {kill.FinalTk}"
                         : $"unarmored Final TK# {kill.FinalTk}";
                     var fate = kill.Result switch
                     {
@@ -258,8 +391,11 @@ public sealed class PlayRecords
                 {
                     // Pass 31 (play test P-16): what the targets already were, read from the record's own facts.
                     var before = fire.Facts.Deserialize<FireAttack>(LiveFire.Json)?.Targets ?? [];
-                    views.Add(new FireView(item.EventId, GroupOf(fire), fire.TargetLocation, null, arithmetic, resolution.Effects)
+                    views.Add(new FireView(item.EventId, Say(item.EventId, GroupOf(fire)), Say(item.EventId, fire.TargetLocation), null, arithmetic, resolution.Effects)
                     {
+                        Say = text => Say(item.EventId, text),
+                        Several = fire.Firers.Count > 1,
+                        Weapons = resolution.WeaponEffects,
                         Vehicles = resolution.VehicleEffects,
                         BrokenBefore = before.Where(target => target.Broken == true && target.UnitId is not null).Select(target => target.UnitId!).ToHashSet(StringComparer.Ordinal),
                         PinnedBefore = before.Where(target => target.Pinned == true && target.UnitId is not null).Select(target => target.UnitId!).ToHashSet(StringComparer.Ordinal),
@@ -268,8 +404,12 @@ public sealed class PlayRecords
                 else if (item.Payload is FireReported report && events.FirstOrDefault(other => other.EventId == report.Fire) is { } withheld
                     && !withheld.IsVisibleTo(viewer) && report.Arithmetic.Deserialize<FireArithmetic>(LiveFire.Json) is { } reported)
                 {
-                    views.Add(new FireView(report.Fire, withheld.Payload is FireResolved hidden ? GroupOf(hidden) : $"The fire group in {report.FirerLocation}",
-                        report.TargetLocation, withheld.Visibility is [{ } only] ? only : null, reported, null));
+                    views.Add(new FireView(report.Fire, Say(item.EventId, withheld.Payload is FireResolved hidden ? GroupOf(hidden) : $"The fire group in {report.FirerLocation}"),
+                        Say(item.EventId, report.TargetLocation), withheld.Visibility is [{ } only] ? only : null, reported, null)
+                    {
+                        Say = text => Say(item.EventId, text),
+                        Several = withheld.Payload is FireResolved { Firers.Count: > 1 },
+                    });
                 }
             }
 
@@ -288,8 +428,9 @@ public sealed class PlayRecords
 
     /// <summary>
     /// The fire group of an attack: each Location's firers with the MGs they use (an MG firing without its holder's inherent FP
-    /// is named alone), then every directing leader (A7.5, A7.531, A9.2), for example "r1 with mg1, r2 in bd01:D4:0, directed
-    /// by rl". Residual FP has no firers (A8.22).
+    /// is named alone), then every directing leader (A7.5, A7.531, A9.2), for example "r1 with its mg1, r2 in bd01:D4:0, directed
+    /// by rl", which a view then reads as "4-4-7 squad R1 with its MMG, 4-4-7 squad R2 in D4, directed by 9-1 leader R1". Residual FP has no
+    /// firers (A8.22).
     /// </summary>
     public static string FireGroupText(IReadOnlyList<GameEvent> events, FireAttack attack)
     {
@@ -309,9 +450,9 @@ public sealed class PlayRecords
         {
             return charge.Mode switch
             {
-                FireDemolitionCharge.Placed => $"The DC {charge.EquipmentId} (Placed by {charge.UserId})",
-                FireDemolitionCharge.Thrown => $"The DC {charge.EquipmentId} (Thrown by {charge.UserId})",
-                _ => $"The DC {charge.EquipmentId} (Thrown by {charge.UserId}, at its own Location)",
+                FireDemolitionCharge.Placed => $"The DC Placed by {charge.UserId}",
+                FireDemolitionCharge.Thrown => $"The DC Thrown by {charge.UserId}",
+                _ => $"The DC Thrown by {charge.UserId} at its own Location",
             };
         }
 
@@ -332,8 +473,9 @@ public sealed class PlayRecords
         static string Firer(FireFirer firer)
         {
             var weapons = (firer.Weapons ?? []).Select(item => item.EquipmentId).OfType<string>().ToArray();
-            return firer.UsesInherentFp == false ? $"{string.Join(", ", weapons)} of {firer.UnitId} alone"
-                : weapons.Length > 0 ? $"{firer.UnitId} with {string.Join(", ", weapons)}" : firer.UnitId ?? "?";
+            // Pass 31c (play test P-17): the headline names the weapons, and says when a MG fires without its holder's own FP.
+            return firer.UsesInherentFp == false ? $"{string.Join(", ", weapons)} of {firer.UnitId}, alone"
+                : weapons.Length > 0 ? $"{firer.UnitId} with its {string.Join(" and its ", weapons)}" : firer.UnitId ?? "?";
         }
 
         var groups = firers.GroupBy(item => item.LocationId ?? attack.FirerLocationId).Select(group => $"{string.Join(", ", group.Select(Firer))} in {group.Key}");
@@ -369,12 +511,12 @@ public sealed class PlayRecords
                 var start = starts[attempt] > 0 ? history.States.ElementAtOrDefault(starts[attempt] - 1) : null;
                 if (item.Payload is RallyAttempted rally && rally.Resolution.Deserialize<RallyResolution>(LiveFire.Json) is { Arithmetic: { } arithmetic } resolution)
                 {
-                    records.Add((item.EventId, "rally", RallyText(rally, arithmetic, resolution.Effect)));
+                    records.Add((item.EventId, "rally", RallyText(rally, arithmetic, resolution.Effect, In(before, rally.Unit))));
                 }
                 else if (item.Payload is RoutStepped routed)
                 {
                     var mf = (routed.HalfMf / 2.0).ToString("0.#", CultureInfo.InvariantCulture);
-                    records.Add((item.EventId, "rout", $"{routed.Unit} routs to {routed.To} for {mf} MF{(routed.LowCrawl ? " by Low Crawl (A10.52)" : " (A10.5)")}"));
+                    records.Add((item.EventId, "rout", $"{routed.Unit} routs{From(before, routed.Unit)} to {routed.To} for {mf} MF{(routed.LowCrawl ? " by Low Crawl (A10.52)" : " (A10.5)")}"));
                 }
                 else if (item.Payload is RoutInterdicted interdicted)
                 {
@@ -382,15 +524,16 @@ public sealed class PlayRecords
                     records.Add((item.EventId, "interdiction",
                         $"Interdiction of {interdicted.Unit} entering {interdicted.At}{(interdicted.Interdictor is { } by ? $" by {by}" : "")}: NMC DR {dr} against broken morale {interdicted.Morale}: {interdicted.Result} (A10.53)"));
                 }
-                else if (item.Payload is LineageRecorded { Action: LineageAction.Deployed or LineageAction.Recombined } lineage)
+                else if (item.Payload is LineageRecorded { Action: LineageAction.Deployed or LineageAction.Recombined } lineage && lineage.Consumed.All(id => Open(before, id)))
                 {
                     records.Add((item.EventId, "lineage", lineage.Action == LineageAction.Deployed
-                        ? $"{lineage.Consumed[0]} becomes the HS {string.Join(" and ", lineage.Produced.Select(unit => unit.Id))} (A1.31){DeploySplit(attempts[attempt], lineage)}"
-                        : $"{string.Join(" and ", lineage.Consumed)} Recombine into {lineage.Produced[0].Id} (A1.32)"));
+                        ? $"{lineage.Consumed[0]}{In(before, lineage.Consumed[0])} becomes the HS {string.Join(" and ", lineage.Produced.Select(unit => unit.Id))} (A1.31){DeploySplit(attempts[attempt], lineage)}"
+                        : $"{string.Join(" and ", lineage.Consumed)}{In(before, lineage.Consumed[0])} Recombine into {lineage.Produced[0].Id} (A1.32)"));
                 }
-                else if (item.Payload is ConditionsChanged dismantled && dismantled.Conditions.TryGetValue(Conditions.Dismantled, out var taken))
+                else if (item.Payload is ConditionsChanged dismantled && dismantled.Conditions.TryGetValue(Conditions.Dismantled, out var taken)
+                    && (before?.Find(dismantled.Id) is not EquipmentInstance { Holding: { } heldBy } || Open(before, heldBy.Holder)))
                 {
-                    records.Add((item.EventId, "dismantle", $"{dismantled.Id} is {(taken == ConditionState.True ? "dismantled" : "assembled")} (A9.8)"));
+                    records.Add((item.EventId, "dismantle", $"{dismantled.Id}{In(before, dismantled.Id)} is {(taken == ConditionState.True ? "dismantled" : "assembled")} (A9.8)"));
                 }
                 else if (item.Payload is ConditionsChanged marked && marked.Conditions.TryGetValue(Conditions.DesperationMorale, out var gained)
                     && gained == ConditionState.True && Open(before, marked.Id))
@@ -399,17 +542,17 @@ public sealed class PlayRecords
                     // DM gained.
                     if (start?.Unit(marked.Id) is not { } earlier || GameState.Condition(earlier, Conditions.DesperationMorale) != ConditionState.True)
                     {
-                        records.Add((item.EventId, "dm", $"{marked.Id} comes under DM (A10.62)"));
+                        records.Add((item.EventId, "dm", $"{marked.Id}{In(before, marked.Id)} comes under DM (A10.62)"));
                     }
                     else if (start.Phase == "rph")
                     {
-                        records.Add((item.EventId, "dm", $"{marked.Id} keeps DM as the RPh ends ({(start.Night ? "E1.54" : "A10.62")})"));
+                        records.Add((item.EventId, "dm", $"{marked.Id}{In(before, marked.Id)} keeps DM as the RPh ends ({(start.Night ? "E1.54" : "A10.62")})"));
                     }
                 }
                 else if (item.Payload is InstanceEliminated eliminated && item.RulePackage is null && before?.Phase == "rtph"
                     && attempts[attempt].Any(other => other.Payload is PhaseChanged) && Open(before, eliminated.Id))
                 {
-                    records.Add((item.EventId, "failure-to-rout", $"{eliminated.Id} is eliminated for Failure to Rout as the RtPh ends (A10.5)"));
+                    records.Add((item.EventId, "failure-to-rout", $"{eliminated.Id}{In(before, eliminated.Id)} is eliminated for Failure to Rout as the RtPh ends (A10.5)"));
                 }
                 else if (item.Payload is EquipmentTransferred { Holding: null, Position: MapPosition left } dropped)
                 {
@@ -420,18 +563,18 @@ public sealed class PlayRecords
                     && before?.Find(passed.Id) is EquipmentInstance { Holding: { Role: HoldingRole.Possessed } held } && held.Holder != receiver.Holder
                     && Open(before, held.Holder) && Open(before, receiver.Holder))
                 {
-                    records.Add((item.EventId, "transfer", $"{held.Holder} passes {passed.Id} to {receiver.Holder} (A4.431)"));
+                    records.Add((item.EventId, "transfer", $"{held.Holder} passes {passed.Id} to {receiver.Holder}{In(before, receiver.Holder)} (A4.431)"));
                 }
-                else if (item.Payload is DeploymentAttempted deployment)
+                else if (item.Payload is DeploymentAttempted deployment && Open(before, deployment.Squad))
                 {
                     var dr = rolls.TryGetValue(deployment.Roll, out var roll) ? roll.Values.Sum().ToString(CultureInfo.InvariantCulture) : "?";
-                    records.Add((item.EventId, "deployment", $"{deployment.Squad} tries to Deploy{(deployment.Leader is { } leader ? $" with {leader}" : "")}: NTC DR {dr} "
+                    records.Add((item.EventId, "deployment", $"{deployment.Squad}{In(before, deployment.Squad)} tries to Deploy{(deployment.Leader is { } leader ? $" with {leader}" : "")}: NTC DR {dr} "
                         + $"{deployment.Drm:+0;-0;+0} against morale {deployment.Morale}: {(deployment.Passed ? "two HS" : "stays a squad")} (A1.31)"));
                 }
-                else if (item.Payload is RecoveryAttempted recovery)
+                else if (item.Payload is RecoveryAttempted recovery && Open(before, recovery.Unit))
                 {
                     var dr = rolls.TryGetValue(recovery.Roll, out var roll) ? roll.Values[0].ToString(CultureInfo.InvariantCulture) : "?";
-                    records.Add((item.EventId, "recovery", $"{recovery.Unit} tries to Recover {recovery.Weapon}: dr {dr} {recovery.Drm:+0;-0;+0}, needing below 6: "
+                    records.Add((item.EventId, "recovery", $"{recovery.Unit}{In(before, recovery.Unit)} tries to Recover {recovery.Weapon}: dr {dr} {recovery.Drm:+0;-0;+0}, needing below 6: "
                         + $"{(recovery.Recovered ? "recovered" : "not recovered")} (A4.44)"));
                 }
                 else if (item.Payload is RepairAttempted repair)
@@ -443,16 +586,16 @@ public sealed class PlayRecords
                         RepairAttempted.Eliminated => "eliminated (a 6)",
                         _ => "still malfunctioned",
                     };
-                    records.Add((item.EventId, "repair", $"{repair.Unit} repairs {repair.Equipment}: dr {dr} against R{repair.RepairNumber}: {result}"));
+                    records.Add((item.EventId, "repair", $"{repair.Unit}{In(before, repair.Unit)} repairs {repair.Equipment}: dr {dr} against R{repair.RepairNumber}: {result}"));
                 }
                 else if (item.Payload is ManhandlingRolled push)
                 {
                     var dr = rolls.TryGetValue(push.Roll, out var roll) ? roll.Values.Sum().ToString(CultureInfo.InvariantCulture) : "?";
-                    records.Add((item.EventId, "manhandling", $"Manhandling DR for {push.Gun}: {dr} {push.Drm:+0;-0;+0} against M{push.Manhandling}: {push.Result} (C10.3)"));
+                    records.Add((item.EventId, "manhandling", $"Manhandling DR for {push.Gun}{In(before, push.Gun)}: {dr} {push.Drm:+0;-0;+0} against M{push.Manhandling}: {push.Result} (C10.3)"));
                 }
                 else if (item.Payload is GunTurned turned)
                 {
-                    records.Add((item.EventId, "turn", $"{turned.Gun} turns to {UnitFacings.Name(turned.Facing)} without firing (C3.22)"));
+                    records.Add((item.EventId, "turn", $"{turned.Gun}{In(before, turned.Gun)} turns to {UnitFacings.Name(turned.Facing)} without firing (C3.22)"));
                 }
                 else if (item.Payload is GunHooked hooked)
                 {
@@ -477,10 +620,10 @@ public sealed class PlayRecords
     }
 
     /// <summary>A rally in words, for example "rl rallies r1: DR 5, 1 = 6 - 1 (terrain, A10.61) = Final DR 5 against 7: rallied".</summary>
-    private static string RallyText(RallyAttempted rally, RallyArithmetic arithmetic, RallyEffect? effect)
+    private static string RallyText(RallyAttempted rally, RallyArithmetic arithmetic, RallyEffect? effect, string where)
     {
-        var who = rally.Leader is { } leader ? $"{leader} rallies {rally.Unit}" : $"{rally.Unit} Self-Rallies";
-        var drm = string.Concat(arithmetic.Drm.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({item.Name}, {item.Rule})"));
+        var who = rally.Leader is { } leader ? $"{leader} rallies {rally.Unit}{where}" : $"{rally.Unit}{where} Self-Rallies";
+        var drm = string.Concat(arithmetic.Drm.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({DisplayText.Modifier(item.Name)}, {item.Rule})"));
         List<string> results = [arithmetic.Rallied ? "rallied" : "not rallied"];
         if (arithmetic.Fate)
         {
@@ -574,7 +717,7 @@ public sealed class PlayRecords
                         // Each defender's own DRM follow the attack's modified DR, then its Final DR (A11.11).
                         var defenders = string.Join(", ", attack.Defending.Select(defender =>
                             $"{defender.UnitId}: {Number(defender.FinalDr - defender.Drm.Sum(item => item.Value))}{ModifierText(defender.Drm)} = Final DR {defender.FinalDr}: {DefenderText(defender)}"));
-                        var firepower = attack.FirepowerModifiers.Count == 0 ? "" : $" [{string.Join(", ", attack.FirepowerModifiers.Select(item => $"{item.Name} x{Number(item.Value)}, {item.Rule}"))}]";
+                        var firepower = attack.FirepowerModifiers.Count == 0 ? "" : $" [{string.Join(", ", attack.FirepowerModifiers.Select(item => $"{DisplayText.Modifier(item.Name)} x{Number(item.Value)}, {item.Rule}"))}]";
                         var creation = attack.LeaderCreation is { } created
                             ? $"; Leader Creation dr {created.Dr}{ModifierText(created.Drm)} = {created.FinalDr}: {(created.LeaderDefinitionId is { } leader ? $"creates {leader}" : "no leader")} (A18.12)"
                             : "";
@@ -654,7 +797,7 @@ public sealed class PlayRecords
                 + (wind.Nvr is { } nvr ? $": the Base NVR is {nvr}" : string.Empty)
                 + (wind.Precipitation is { } falling ? $"; {falling.Replace('-', ' ')} falls" : string.Empty)
                 + (wind.Gust ? "; a Gust blows" : string.Empty) + " (B25.65, E1.12, E3.51)",
-            StarshellFired starshell => $"{starshell.Unit} fires a Starshell ({starshell.Method}): "
+            StarshellFired starshell => $"{starshell.Unit}{In(history.At(item.Revision - 1), starshell.Unit)} fires a Starshell ({starshell.Method}): "
                 + (!starshell.Passed ? "its Usage dr fails (E1.921)"
                     : starshell.At is { } at ? $"it lands in {at} and Illuminates three hexes around it (E1.922, E1.923)" : "it lands off the map"),
             _ => string.Empty,

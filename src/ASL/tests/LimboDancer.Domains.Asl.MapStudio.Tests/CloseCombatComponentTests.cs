@@ -81,7 +81,7 @@ public sealed class CloseCombatComponentTests : IDisposable
         var at = BoardLocation.Parse("bd04:E5:0");
         panel.Render(parameters => parameters.Add(item => item.AmbushDue, false).Add(item => item.HandToHandAllowed, true)
             .Add(item => item.Entry, new CloseCombatLocation(at, true, "russian", [CloseCombatResolved.AmbusherRound], false)));
-        Assert.Contains("The russian side ambushes.", panel.Find("#cc-status").TextContent, StringComparison.Ordinal);
+        Assert.Contains("The Russian side ambushes.", panel.Find("#cc-status").TextContent, StringComparison.Ordinal);
         Assert.NotNull(panel.Find("#cc-round"));
         Assert.Empty(panel.FindAll("#cc-prisoners-round"));
         Assert.Equal("Propose: resolve CC with no attacks", panel.Find("#propose-cc").TextContent);
@@ -132,7 +132,7 @@ public sealed class CloseCombatComponentTests : IDisposable
                 [new CloseCombatAttackBuilder.Participant("g1", "g1 (4-6-7)", false)])])
             .Add(item => item.Attackers, new HashSet<string>()).Add(item => item.Defenders, new HashSet<string>())
             .Add(item => item.OnAttacker, value => attacker = value).Add(item => item.OnCapture, value => capture = value).Add(item => item.OnAdd, () => added = true));
-        Assert.Contains("russian (ATTACKER)", builder.Find(".cc-side[data-side='russian']").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Russian (ATTACKER)", builder.Find(".cc-side[data-side='russian']").TextContent, StringComparison.Ordinal);
         Assert.True(builder.Find(".cc-attacker[data-unit='r1']").HasAttribute("disabled"));
         Assert.False(builder.Find(".cc-attacker[data-unit='r2']").HasAttribute("disabled"));
         Assert.Equal("russian", builder.Find(".cc-defender[data-unit='g1']").GetAttribute("data-by"));
@@ -193,7 +193,7 @@ public sealed class CloseCombatComponentTests : IDisposable
         Assert.Equal("take", chosen);
         panel.Render(parameters => parameters.Add(item => item.MayAnswer, false).Add(item => item.Options, []));
         Assert.Empty(panel.FindAll(".choose"));
-        Assert.Contains("Waiting for the german side to answer.", panel.Markup, StringComparison.Ordinal);
+        Assert.Contains("Waiting for the German side to answer.", panel.Markup, StringComparison.Ordinal);
     }
 
     // C09 (A20.3, A20.21): take, reject, or free, only for the captor's view; freeing is its own proposal.
@@ -297,7 +297,7 @@ public sealed class CloseCombatComponentTests : IDisposable
             .Add(item => item.SelectedWeapons, new HashSet<string> { "lmg1" }).Add(item => item.Targets, ["bd04:E7:0"]).Add(item => item.MolAllowed, true)
             .Add(item => item.OnFrom, value => from = value));
         Assert.Contains("The German side may fire in the Prep Fire Phase", panel.Find("#fire-side").TextContent, StringComparison.Ordinal);
-        Assert.Equal("lmg1 (g1)", panel.Find(".fire-weapon[data-weapon='lmg1']").Parent!.TextContent.Trim());
+        Assert.Equal("lmg1 of g1", panel.Find(".fire-weapon[data-weapon='lmg1']").Parent!.TextContent.Trim());
         Assert.Equal("g1", panel.Find(".fire-alone").GetAttribute("data-unit"));
         Assert.Single(panel.FindAll(".fire-alone"));
         Assert.Equal(["", "g1", "g2"], panel.FindAll("#fire-mol option").Select(option => option.GetAttribute("value")));

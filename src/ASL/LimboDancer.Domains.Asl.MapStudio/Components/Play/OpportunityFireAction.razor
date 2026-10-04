@@ -1,6 +1,6 @@
 @* Plan C12 (pass 27): the phasing side's Infantry hold their fire as Opportunity Fire in the PFPh (A7.25), a preparatory action of its own. The
    page offers the eligible units the view sees (ruling R23.1) and keeps the selection. *@
-<h4>Opportunity Fire</h4>
+<ActionSection Title="Opportunity Fire" Key="opportunity-fire">
 <RuleHelp Id="opportunity-help" Summary="Good Order Infantry that have not fired this Player Turn may hold their fire: they neither fire in the PFPh nor move, and fire in the AFPh unhalved (A7.25).">
     Good Order Infantry that have not fired this Player Turn may hold their fire under a Bounding Fire counter: they do not fire in the PFPh
     or move in the MPh, and fire in the AFPh without its halving, their MGs keeping Multiple ROF (A7.25). A concealed one in the LOS of a
@@ -9,12 +9,25 @@
 <div class="toolbar">
     @foreach (var unit in Units)
     {
-        <label><input class="opportunity-unit" type="checkbox" data-unit="@unit" checked="@Selected.Contains(unit)" @onchange="@(args => OnToggle.InvokeAsync(new UnitSelectionList.Toggle(unit, args.Value is true)))" /> @unit</label>
+        <label><input class="opportunity-unit" type="checkbox" data-unit="@unit" checked="@Selected.Contains(unit)" @onchange="@(args => OnToggle.InvokeAsync(new UnitSelectionList.Toggle(unit, args.Value is true)))" /> @At(unit)</label>
     }
     <button id="propose-opportunity" disabled="@(Selected.Count == 0)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: Opportunity Fire</button>
 </div>
+</ActionSection>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
+    /// <summary>A unit's name with its hex, "4-6-7 squad G4 in [G4]" (the user, 2026-10-04), where no Location stands beside the name.</summary>
+    [CascadingParameter(Name = "SayAt")]
+    public Func<string, string>? WordsAt { get; set; }
+
+    private string At(string? text) => text is null ? string.Empty : WordsAt?.Invoke(text) ?? Say(text);
+
     /// <summary>The units that may hold their fire.</summary>
     [Parameter, EditorRequired]
     public IReadOnlyList<string> Units { get; set; } = [];

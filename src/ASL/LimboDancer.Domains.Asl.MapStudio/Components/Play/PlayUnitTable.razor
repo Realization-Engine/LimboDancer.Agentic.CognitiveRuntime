@@ -3,16 +3,16 @@
 <p class="muted" id="play-units-view">@ViewNote</p>
 <div class="table-scroll" role="region" aria-label="Units" tabindex="0">
 <table class="library" id="play-units">
-    <thead><tr><th>Id</th><th>Side</th><th>Kind</th><th>Location</th><th>MF spent</th><th>Conditions</th></tr></thead>
+    <thead><tr><th>Unit</th><th>Side</th><th>Kind</th><th>Location</th><th>MF spent</th><th>Conditions</th></tr></thead>
     <tbody>
         @foreach (var row in Rows)
         {
             <tr data-unit="@row.Id">
-                <td>@row.Id</td><td>@DisplayText.Side(row.Side)</td><td>@row.Kind</td>
+                <td title="@row.Id">@Say(row.Id)</td><td>@DisplayText.Side(row.Side)</td><td>@row.Kind</td>
                 <td>
                     @if (row.At is { } at)
                     {
-                        <button class="play-locate" aria-label="Show @at on the map" @onclick="() => Locate.InvokeAsync(at)">@at</button>
+                        <button class="play-locate" title="@at" aria-label="Show @Say(at.ToString()) on the map" @onclick="() => Locate.InvokeAsync(at)">@Say(at.ToString())</button>
                     }
                     else
                     {
@@ -20,13 +20,13 @@
                     }
                 </td>
                 <td>@row.Movement</td>
-                <td>@row.Conditions</td>
+                <td>@Say(row.Conditions)</td>
             </tr>
         }
         @foreach (var presence in Sealed)
         {
             <tr data-sealed="@presence.PlacementId">
-                <td>?</td><td>@DisplayText.Side(presence.Side)</td><td>@(presence.Uninspected ? "not inspectable before play (A2.9)" : "concealed")</td><td>@presence.Location</td><td></td><td></td>
+                <td>?</td><td>@DisplayText.Side(presence.Side)</td><td>@(presence.Uninspected ? "not inspectable before play (A2.9)" : "concealed")</td><td title="@presence.Location">@Say(presence.Location.ToString())</td><td></td><td></td>
             </tr>
         }
     </tbody>
@@ -34,6 +34,12 @@
 </div>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>A unit as the view shows it: where it is (null when it is off the map), or its status, its movement, and its conditions in words.</summary>
     public sealed record Row(string Id, string Side, string Kind, BoardLocation? At, string Status, string Movement, string Conditions);
 

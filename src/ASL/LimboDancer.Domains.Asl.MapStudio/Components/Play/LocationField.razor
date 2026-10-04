@@ -1,14 +1,48 @@
-@* Plan S11 (pass 25): a typed Location, such as bd01:D5:0, with its label and the help the caller gives; the caller keeps the text and reads it. *@
-<label title="@Title">@Label <input id="@Id" value="@Value" @onchange="@(args => OnChange.InvokeAsync(args.Value as string ?? string.Empty))" size="@Size" placeholder="@Placeholder" aria-describedby="@DescribedBy" /></label>
-@if (Picked is { Length: > 0 } picked && picked != Value)
-{
-    <button type="button" class="link use-picked" id="@($"{Id}-use")" title="Fills this Location with the hex picked on the map, at ground level." @onclick="@(() => OnChange.InvokeAsync(picked))">Use @DisplayText.Location(picked)</button>
-}
+@* Plan S11 (pass 25): a typed Location with its label and the help the caller gives; the caller keeps the identifier and reads it. Pass 31c
+   (designs D12 and D13): the field shows the Location in words and reads the words, the short "G4" and "G4:1", and the identifier; it takes the
+   hex picked on the map ("Use G4"), can be armed so the next hex clicked fills it, offers the hex's levels, and, as a route, takes one hex a click. *@
+@implements IDisposable
+<span class="location-field" data-armed="@(Armed ? "true" : "false")">
+    <label title="@Title">@Label <input id="@Id" value="@Shown" disabled="@Disabled" @onchange="@(args => Typed(args.Value as string ?? string.Empty))" size="@Size" placeholder="@Placeholder" aria-describedby="@DescribedBy" /></label>
+    @if (!Many && Levels is { Count: > 1 } levels && BoardLocation.TryParse(Value, out var at))
+    {
+        <select id="@($"{Id}-level")" aria-label="@($"Level of {Label}")" disabled="@Disabled" value="@at.Level" @onchange="@(args => OnChange.InvokeAsync((at with { Level = int.TryParse(args.Value as string, out var level) ? level : 0 }).ToString()))">
+            @foreach (var level in levels)
+            {
+                <option value="@level">@(level == 0 ? "ground level" : level == -1 ? "cellar" : $"level {level}")</option>
+            }
+        </select>
+    }
+    @if (!Disabled && Picking is not null)
+    {
+        <button type="button" class="link pick-on-map" id="@($"{Id}-pick")" aria-pressed="@(Armed ? "true" : "false")"
+                title="@(Many ? "Each hex clicked on the map is added, in order, until you stop." : "The next hex clicked on the map fills this Location.")"
+                @onclick="@(() => Picking.Arm(Armed ? null : Id, Armed ? null : (Many ? "adds to " : "fills ") + Noun))">@(Armed ? "Stop picking" : "Pick on the map")</button>
+    }
+    @if (!Disabled && !Armed && Picked is { Length: > 0 } picked && !Tokens.Contains(picked))
+    {
+        <button type="button" class="link use-picked" id="@($"{Id}-use")" title="@(Many ? "Adds the hex picked on the map, at ground level." : "Fills this Location with the hex picked on the map, at ground level.")" @onclick="@(() => Take(picked))">@(Many ? "Add" : "Use") @Words(picked)</button>
+    }
+    @if (!Disabled && Many && Tokens.Length > 0)
+    {
+        <button type="button" class="link remove-last" id="@($"{Id}-undo")" @onclick="@(() => OnChange.InvokeAsync(string.Join(", ", Tokens[..^1])))">Remove @Short(Tokens[^1])</button>
+        @if (Tokens.Length > 1)
+        {
+            <button type="button" class="link clear-route" id="@($"{Id}-clear")" @onclick="@(() => OnChange.InvokeAsync(string.Empty))">Clear the route</button>
+        }
+    }
+</span>
 
 @code {
+    private long seen;
+
     /// <summary>The hex picked on the map, as a ground-level Location, when the page cascades one (table player, pass 29); the field offers to take it.</summary>
     [CascadingParameter(Name = "PickedLocation")]
     public string? Picked { get; set; }
+
+    /// <summary>The page's picking (pass 31c, design D13); without it the field is typed and takes "Use" alone.</summary>
+    [CascadingParameter(Name = "Picking")]
+    public LocationPicking? Picking { get; set; }
 
     [Parameter, EditorRequired]
     public string Id { get; set; } = string.Empty;
@@ -16,6 +50,7 @@
     [Parameter, EditorRequired]
     public string Label { get; set; } = string.Empty;
 
+    /// <summary>The Location's identifier, such as bd01:D5:0; for a route, its Locations' identifiers, separated by commas.</summary>
     [Parameter]
     public string Value { get; set; } = string.Empty;
 
@@ -32,6 +67,77 @@
     [Parameter]
     public string? DescribedBy { get; set; }
 
+    /// <summary>What the field is, for the page's line about an armed field, such as "the rout route"; the label when none is given.</summary>
+    [Parameter]
+    public string? Name { get; set; }
+
+    private string Noun => Name is { Length: > 0 } name ? name : Label is { Length: > 0 } label ? $"\"{label}\"" : "the Location";
+
+    /// <summary>Whether the field holds a route: several Locations in order, one added by each click (a rout route, a path).</summary>
+    [Parameter]
+    public bool Many { get; set; }
+
+    [Parameter]
+    public bool Disabled { get; set; }
+
     [Parameter]
     public EventCallback<string> OnChange { get; set; }
+
+    private bool Armed => Picking?.Armed == Id;
+
+    private IReadOnlyList<string> Boards => Picking?.Boards() ?? [];
+
+    private string[] Tokens => Many ? Value.Split([',', ' '], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) : Value.Length > 0 ? [Value] : [];
+
+    private IReadOnlyList<int>? Levels => Picking?.Levels(Value);
+
+    /// <summary>What the input shows: a Location in words, or a route as its hexes ("G4, H4:1").</summary>
+    private string Shown => Many ? string.Join(", ", Tokens.Select(Short)) : Words(Value);
+
+    private string Words(string location) => Boards.Count > 0 ? DisplayText.Place(Boards.Count, location) : DisplayText.Location(location);
+
+    private string Short(string location) => BoardLocation.TryParse(location, out var at)
+        ? (Boards.Count > 1 ? $"{at.Board.Value}:" : string.Empty) + $"[{at.Hex}]" + (at.Level == 0 ? string.Empty : $":{at.Level}")
+        : location;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // A pick made while this field is armed fills it; the pick that was already there when it was armed does not.
+        if (Picking is not { } picking)
+        {
+            return;
+        }
+
+        var fresh = picking.Serial != seen;
+        seen = picking.Serial;
+        if (fresh && Armed && !Disabled && picking.Picked is { Length: > 0 } picked)
+        {
+            if (!Many)
+            {
+                picking.Arm(null, null);
+            }
+
+            await Take(picked);
+        }
+    }
+
+    protected override void OnInitialized() => seen = Picking?.Serial ?? 0;
+
+    private Task Take(string picked) => OnChange.InvokeAsync(Many ? string.Join(", ", Tokens.Append(picked)) : picked);
+
+    // A route typed with a level in words ("H4, level 1") is read as "H4:1" before its steps are split (the reviews, pass 31c).
+    private Task Typed(string text) => OnChange.InvokeAsync(Many
+        ? string.Join(", ", System.Text.RegularExpressions.Regex.Replace(System.Text.RegularExpressions.Regex.Replace(text.Replace("[", string.Empty, StringComparison.Ordinal).Replace("]", string.Empty, StringComparison.Ordinal), @",?\s*level\s+(-?\d)", ":$1", System.Text.RegularExpressions.RegexOptions.IgnoreCase),
+                @",?\s*cellar", ":-1", System.Text.RegularExpressions.RegexOptions.IgnoreCase)
+            .Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(token => DisplayText.ReadPlace(token, Boards)))
+        : DisplayText.ReadPlace(text.Trim(), Boards));
+
+    /// <summary>A field taken off the page while armed disarms, so no pick goes nowhere (the UI review, pass 31c).</summary>
+    public void Dispose()
+    {
+        if (Picking is { } picking && picking.Armed == Id)
+        {
+            (picking.Armed, picking.ArmedLabel) = (null, null);
+        }
+    }
 }
