@@ -695,11 +695,14 @@ else if (state is not null)
                         </div>
                         </ActionSection>
                     }
+                    var byRange = FireTargetsByRange(firing);
+                    var ofTarget = FireRangeOfTarget();
                     <SmallArmsFirePanel Side="@firing" Phase="@state.Phase" PhaseLabel="@Games.PhaseLabel(state.Phase)" Locations="@([.. FireLocations(firing)])" From="@fireFrom"
+                        TargetNotes="@byRange.Notes" TargetsOut="@byRange.Out" RangeSummary="@ofTarget.Summary" RangeRows="@ofTarget.Rows" OnShowRange="@ShowFireRange"
                         Also="@fireAlso" AlsoChoices="@FireAlsoChoices(firing)" OnAlso="@(pick => ToggleFireAlso(pick.Id, pick.On))" Places="@FirerPlaces(firing)" AloneCandidates="@FireAloneCandidates(firing)"
                         Firers="@FirerChoices(firing)" SelectedFirers="@fireFirers" Weapons="@([.. FireWeapons.Select(weapon => new SmallArmsFirePanel.Weapon(weapon.Id, weapon.Holding!.Holder))])"
                         SelectedWeapons="@fireWeapons" Alone="@fireAlone" Leaders="@([.. FireLeaders(firing).Select(leader => leader.Id)])" Director="@fireDirector"
-                        MolAllowed='@state.SpecialRules.Contains("mol:" + firing, StringComparer.Ordinal)' Mol="@fireMol" Targets="@([.. FireTargets(firing)])" Target="@fireTarget"
+                        MolAllowed='@state.SpecialRules.Contains("mol:" + firing, StringComparer.Ordinal)' Mol="@fireMol" Targets="@byRange.Targets" Target="@fireTarget"
                         FreeTarget="@fireFreeTarget" SnapShot="@fireSnapShot" Spray="@fireSpray" LaneWeapon="@fireLaneWeapon" LaneTo="@fireLaneTo" Partners="@FirePartners(firing)"
                         Partner="@firePartner" OnFrom="@(at => { fireFrom = at; fireAlso.Clear(); PruneFire(); })" OnFirer="@(pick => Toggle(fireFirers, pick.Id, pick.On))"
                         OnWeapon="@(pick => Toggle(fireWeapons, pick.Id, pick.On))" OnAlone="@(pick => Toggle(fireAlone, pick.Id, pick.On))" OnDirector="@(id => fireDirector = id)"
@@ -756,7 +759,7 @@ else if (state is not null)
         }
         @if (MapLayers is { Board: { } mapBoard } layers)
         {
-            <BoardWorkspace @key="@($"{gameId}/{Viewer.Name}")" ViewKey="@($"{gameId}/{Viewer.Name}")" HexNotes="@HexNotes" @ref="workspace" Board="@mapBoard" Units="@MapUnits(layers)" UnitView="@layers.View" Marks="@SetupMarks(mapBoard, layers.Marks)" Vocabulary="@Library.Vocabulary" OnLoaded="@ZoomToSetup"
+            <BoardWorkspace @key="@($"{gameId}/{Viewer.Name}")" ViewKey="@($"{gameId}/{Viewer.Name}")" HexNotes="@HexNotes" RangeSubjects="@RangeSubjects" @ref="workspace" Board="@mapBoard" Units="@MapUnits(layers)" UnitView="@layers.View" Marks="@SetupMarks(mapBoard, layers.Marks)" Vocabulary="@Library.Vocabulary" OnLoaded="@ZoomToSetup"
                             Selected="@(highlight is { } picked ? GameMaps.FactsAt(mapBoard, picked) : null)"
                             SelectedChanged="@(facts => PickHex(mapBoard, facts))"
                             @bind-Panel="inspectorTab" Extras="@([new BoardInspector.ExtraTab(new("proposal", "Proposal", AwaitingConfirm ? 1 : null), proposalBlock)])"
@@ -4243,6 +4246,172 @@ else if (state is not null)
     private IReadOnlyList<string> FireAloneCandidates(string side) => state is null ? []
         : [.. FirerChoices(side).Where(id => state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == id
             && (Library.Vocabulary.IsA(item.Kind, "asl:mg") || item.Kind == "asl:ft")))];
+
+    // Pass 31c (design section 14): Range. The fire panel reads its targets by range before any proposal, and the inspector's Range tab reads a
+    // range for the units a view holds by name. No LOS is read here (A6.11: no LOS check before an attack is declared).
+    private static string Hexes(int range) => range == 1 ? "1 hex" : string.Create(CultureInfo.InvariantCulture, $"{range} hexes");
+
+    private int LevelAbove(BoardLocation from, BoardLocation to) => MapLayers?.Board is { } board && GameMaps.FactsAt(board, from) is { } one && GameMaps.FactsAt(board, to) is { } two
+        ? two.BaseLevel + to.Level - (one.BaseLevel + from.Level) : 0;
+
+    /// <summary>
+    /// A row for each unit's own FP and each weapon it fires, read from its own Location to a target (A7.21, A7.22). <paramref name="fireKinds"/>
+    /// adds what the unit's fire counter allows: Subsequent First Fire within Normal Range (A8.3), FPF and a First Fire unit's Final Fire only at
+    /// an ADJACENT or same-hex target (A8.31, A8.4).
+    /// </summary>
+    private IReadOnlyList<RangeRow> RangeRowsOf(IEnumerable<(UnitInstance Unit, BoardLocation At)> units, IReadOnlyCollection<EquipmentInstance> weapons, BoardLocation to,
+        Func<UnitInstance, bool> ownFp, bool fireKinds)
+    {
+        var rows = new List<RangeRow>();
+        if (state is null)
+        {
+            return rows;
+        }
+
+        var definitions = FirePreviewReference.Value.Definitions;
+        foreach (var (unit, at) in units)
+        {
+            var same = at == to;
+            if ((same ? 0 : Live.Planner.Range(state, at, to)) is not { } range)
+            {
+                continue;
+            }
+
+            var level = LevelAbove(at, to);
+            var definition = unit.Definition is { } named ? definitions.GetValueOrDefault(named.Definition) : null;
+            if (definition is not null && ownFp(unit) && !definition.IsLeader && definition.Firepower is not null
+                && FireRange.Band(definition, range, same, level, GameState.Condition(unit, Conditions.Wounded) == ConditionState.True) is { } own)
+            {
+                var kind = !fireKinds ? null
+                    : state.Phase == "dfph" && GameState.Condition(unit, Conditions.FirstFire) == ConditionState.True && range > 1
+                        ? "a First Fire unit fires again only at an ADJACENT or same-hex target (A8.4)"
+                    : state.Phase == "mph" && GameState.Condition(unit, Conditions.FinalFire) == ConditionState.True && range > 1
+                        ? "Final Protective Fire is only at an ADJACENT or same-hex target (A8.31)"
+                    : state.Phase == "mph" && GameState.Condition(unit, Conditions.FirstFire) == ConditionState.True && range > own.NormalRange
+                        ? "Subsequent First Fire is within Normal Range (A8.3)"
+                    : null;
+                rows.Add(new RangeRow(unit.Id, Words(unit.Id), at.ToString(), own.NormalRange, own.Limit, kind ?? FireRange.Words(own), own.Band, kind is not null || own.Band is FireRangeBand.Out or FireRangeBand.SameHexOtherLevel));
+            }
+            else if (definition is { IsVehicle: true, AntiAircraftMg: not null })
+            {
+                // D1.83: a MA AAMG's Normal Range is eight hexes.
+                var mg = FireRange.Band(range, same, 8, level);
+                rows.Add(new RangeRow(unit.Id, $"the AAMG of {Words(unit.Id)}", at.ToString(), mg.NormalRange, mg.Limit, FireRange.Words(mg), mg.Band, mg.Band is FireRangeBand.Out or FireRangeBand.SameHexOtherLevel));
+            }
+
+            foreach (var weapon in weapons.Where(item => item.Holding?.Holder == unit.Id))
+            {
+                if (weapon.Definition is { } weaponNamed && definitions.GetValueOrDefault(weaponNamed.Definition) is { } weaponDefinition
+                    && (weaponDefinition.IsMg || weaponDefinition.IsFt || weaponDefinition.IsAtr) && FireRange.Band(weaponDefinition, range, same, level) is { } reading)
+                {
+                    rows.Add(new RangeRow(weapon.Id, $"{Words(weapon.Id)} of {Words(unit.Id)}", at.ToString(), reading.NormalRange, reading.Limit, FireRange.Words(reading), reading.Band,
+                        reading.Band is FireRangeBand.Out or FireRangeBand.SameHexOtherLevel));
+                }
+            }
+        }
+
+        return rows;
+    }
+
+    /// <summary>The chosen fire group read against a target: each ticked firer's own FP unless only its MG fires, and each ticked weapon.</summary>
+    private IReadOnlyList<RangeRow> FireRangeRows(BoardLocation to) => state is null ? []
+        : RangeRowsOf(fireFirers.Order(StringComparer.Ordinal).Select(id => (Unit: state.Unit(id), At: state.Location(id)?.Location)).Where(item => item.Unit is not null && item.At is not null)
+                .Select(item => (item.Unit!, item.At!)),
+            [.. FireWeapons.Where(weapon => fireWeapons.Contains(weapon.Id))], to, unit => !fireAlone.Contains(unit.Id), fireKinds: true);
+
+    /// <summary>What a range is for a group, in a few words: its worst band, and for whom.</summary>
+    private static string RangeNote(int hexes, IReadOnlyList<RangeRow> rows)
+    {
+        var outs = rows.Where(row => row.Out).ToArray();
+        var longs = rows.Where(row => row.Band == FireRangeBand.LongRange).ToArray();
+        var band = rows.Count == 0 ? null
+            : outs.Length == rows.Count ? "out of range"
+            : outs.Length == 1 ? $"out of range for {outs[0].Name}"
+            : outs.Length > 1 ? $"out of range for {outs.Length} of {rows.Count}"
+            : longs.Length == rows.Count ? "Long Range"
+            : longs.Length > 0 ? $"Long Range for {longs.Length} of {rows.Count}"
+            : rows.All(row => row.Band == FireRangeBand.TriplePointBlank) ? "TPBF"
+            : rows.All(row => row.Band == FireRangeBand.PointBlank) ? "PBF"
+            : "Normal Range";
+        return hexes == 0 ? band ?? "the same hex" : band is null ? Hexes(hexes) : $"{Hexes(hexes)}, {band}";
+    }
+
+    /// <summary>
+    /// The fire panel's targets read by range once a firer is ticked (design section 14, R5): nearest first, each with its range and the group's
+    /// worst band, and those no ticked firer or weapon reaches.
+    /// </summary>
+    private (IReadOnlyList<string> Targets, IReadOnlyDictionary<string, string> Notes, IReadOnlySet<string> Out) FireTargetsByRange(string side)
+    {
+        var targets = FireTargets(side).ToArray();
+        var notes = new Dictionary<string, string>(StringComparer.Ordinal);
+        var beyond = new HashSet<string>(StringComparer.Ordinal);
+        if (state is null || fireFirers.Count == 0 || !BoardLocation.TryParse(fireFrom, out var from))
+        {
+            return (targets, notes, beyond);
+        }
+
+        var ranges = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var target in targets)
+        {
+            if (BoardLocation.TryParse(target, out var to) && (from == to ? 0 : Live.Planner.Range(state, from, to)) is { } hexes)
+            {
+                var rows = FireRangeRows(to);
+                ranges[target] = hexes;
+                notes[target] = RangeNote(hexes, rows);
+                if (rows.Count > 0 && rows.All(row => row.Out))
+                {
+                    beyond.Add(target);
+                }
+            }
+        }
+
+        return ([.. targets.OrderBy(target => ranges.GetValueOrDefault(target, int.MaxValue)).ThenBy(target => target, StringComparer.Ordinal)], notes, beyond);
+    }
+
+    /// <summary>The range of the target chosen or typed, for the fire panel's closed line: its summary and a row for each firer and weapon.</summary>
+    private (string? Summary, IReadOnlyList<RangeRow> Rows) FireRangeOfTarget()
+    {
+        if (state is null || fireFirers.Count == 0 || !BoardLocation.TryParse(fireFrom, out var from) || !BoardLocation.TryParse(FireTarget.Trim(), out var to)
+            || (from == to ? 0 : Live.Planner.Range(state, from, to)) is not { } hexes)
+        {
+            return (null, []);
+        }
+
+        var rows = FireRangeRows(to);
+        return (RangeNote(hexes, rows), rows);
+    }
+
+    private void ShowFireRange()
+    {
+        if (BoardLocation.TryParse(fireFrom, out _) && BoardLocation.TryParse(FireTarget.Trim(), out _))
+        {
+            workspace?.ReadRange(fireFrom, FireTarget.Trim());
+            inspectorTab = "range";
+        }
+    }
+
+    /// <summary>
+    /// Whose Normal Range the inspector's Range tab reads (design section 14, R3): the fire group chosen, when the reading is from one of its
+    /// Locations to its target; otherwise the units in the From Location that the view holds by name, with the weapons they possess. A unit
+    /// under "?" or hidden is not in the view's units, so it gives no row and the rows never count more than the view knows.
+    /// </summary>
+    private IReadOnlyList<RangeRow> RangeSubjects(BoardLocation from, BoardLocation to)
+    {
+        if (state is null)
+        {
+            return [];
+        }
+
+        if (fireFirers.Count > 0 && FireTarget.Trim() == to.ToString() && (fireFrom == from.ToString() || fireAlso.Contains(from.ToString())))
+        {
+            return FireRangeRows(to);
+        }
+
+        var held = VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && unit.Kind != UnitKinds.Dummy
+                && (Viewer.IsAdjudicator ? state.Location(unit.Id)?.Location : View?.Locations.TryGetValue(unit.Id, out var seen) == true ? seen.Location : null) == from)
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal).Select(unit => (unit, from)).ToArray();
+        return RangeRowsOf(held, [.. VisibleEquipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed })], to, _ => true, fireKinds: false);
+    }
 
     private void ClearFire()
     {

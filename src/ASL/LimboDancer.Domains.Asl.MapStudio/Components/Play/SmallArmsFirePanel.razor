@@ -82,12 +82,27 @@
             <option value="">choose</option>
             @foreach (var at in Targets)
             {
-                <option value="@at">@Say($"{at}")</option>
+                @* Pass 31c (design section 14, R5): a target is read by range before any proposal; one that no ticked firer or weapon reaches is
+                   listed and not offered. No LOS is read (A6.11). *@
+                <option value="@at" disabled="@TargetsOut.Contains(at)">@Say($"{at}")@(TargetNotes.TryGetValue(at, out var note) ? $": {note}" : "")</option>
             }
         </select>
     </label>
     <PickedOption For="fire-target" Options="@Targets" Value="@Target" OnChange="@OnTarget" />
     <LocationField Id="fire-free-target" Label="Or any Location" Name="the target" Value="@FreeTarget" OnChange="@OnFreeTarget" />
+    @if (RangeSummary is { } summary)
+    {
+        <details class="fire-range" id="fire-range">
+            <summary>Range: @summary</summary>
+            <ul>
+                @foreach (var row in RangeRows)
+                {
+                    <li data-subject="@row.Key" class="@(row.Out ? "range-out" : null)">@row.Name, Normal Range @row.NormalRange: @row.Words</li>
+                }
+            </ul>
+            <button type="button" class="link" id="fire-range-show" @onclick="@(() => OnShowRange.InvokeAsync())">Show the range on the map</button>
+        </details>
+    }
     @if (Phase == "mph")
     {
         <label title="A8.15: at the hexside the moving stack crossed, with LOS to both its ends; Area Fire with no TEM, FFMO, or FFNAM, and no Residual FP."><input id="fire-snap-shot" type="checkbox" checked="@SnapShot" @onchange="@(args => OnSnapShot.InvokeAsync(args.Value is true))" /> Snap Shot</label>
@@ -210,6 +225,26 @@
     /// <summary>The Locations the side knows to hold an enemy.</summary>
     [Parameter]
     public IReadOnlyList<string> Targets { get; set; } = [];
+
+    /// <summary>Each target's range and the group's worst band there, once a firer is ticked (pass 31c, design section 14).</summary>
+    [Parameter]
+    public IReadOnlyDictionary<string, string> TargetNotes { get; set; } = new Dictionary<string, string>();
+
+    /// <summary>The targets no ticked firer or weapon reaches.</summary>
+    [Parameter]
+    public IReadOnlySet<string> TargetsOut { get; set; } = new HashSet<string>();
+
+    /// <summary>The range of the target chosen or typed, in a few words; null before a firer and a target are chosen.</summary>
+    [Parameter]
+    public string? RangeSummary { get; set; }
+
+    /// <summary>Where that range falls for each ticked firer and weapon.</summary>
+    [Parameter]
+    public IReadOnlyList<RangeRow> RangeRows { get; set; } = [];
+
+    /// <summary>Opens the inspector's Range tab with the group and its target drawn on the map.</summary>
+    [Parameter]
+    public EventCallback OnShowRange { get; set; }
 
     [Parameter]
     public string Target { get; set; } = string.Empty;

@@ -309,3 +309,156 @@ Answered 2026-10-04: all eight as recommended. The other side's units are number
 - **D18.** One board handle and the Rout panel read once met the aim (a rout under 2 seconds); the search's result, the composed map, and the Low Crawl search were not touched.
 
 **The second play test** differed from section 10: it was played at the pane's full size at the user's word, by a script's clicks, and each of P-01 to P-31 was marked from what the game met rather than tried by the first report's steps one by one.
+
+## 14. Range (added after the report)
+
+**Status:** designed 2026-10-04 and answered the same day: all eight questions as recommended (section 14.9). Built as task 31c.9; section 14.10 says what was built and where it differs.
+
+The second play test proposed fire to learn a range and was refused. The user's idea: Range is a sibling of LOS. It is read in the inspector, drawn on the map with the LOS line, read in the fire panel before any proposal, and a refusal for range names what was out of range.
+
+### 14.1 The rules read
+
+Read in the PDF before this section (A7.2 to A7.22 are on its pages 54 and 55).
+
+| Rule | What it gives Range |
+|---|---|
+| A6.7 | Range is the least number of hexes from firer to target, whatever the LOS. So Range needs no LOS read. |
+| A6.11 | In play, no LOS check for an attack before the attack is declared. So the fire panel reads its targets by range and never by LOS. |
+| A7.2 | FP modifiers are cumulative and fractions are kept. Range gives a multiplier, not a final FP. |
+| A7.21 | PBF: Small Arms and MG FP doubled when ADJACENT to the target, or adjacent and within one level of it or higher than it. TPBF: tripled at units in the firer's own Location, where such fire is allowed. Ordnance does not double. |
+| A7.211, A7.212 | TPBF against PRC; a unit whose Location holds a Known enemy unit fires at nothing else. |
+| A7.22 | Long Range: beyond Normal Range up to twice it, at half FP; not for an ATR, MOL, a DC, ordnance, and some FT. |
+| A8.3, A8.31, A8.4 | A fire kind's own limit: Subsequent First Fire within Normal Range and no farther than the closest armed Known enemy unit; FPF and a First Fire unit's Final Fire only at an ADJACENT or same-hex target. |
+
+### 14.2 What the code does now
+
+- **The range of an attack** is read by the planner in `FireMapFacts` (GamePlanner.Fire.cs): for each firer's Location the LOS read's `Range`; 0 for the firer's own Location (TPBF); for a Snap Shot the nearer of two hex distances. `HexDistance` (GamePlanner.CloseCombat.cs) is private. `LiveFire` replays an attack with the range it recorded.
+- **The bands** are in the Fire package. `Multipliers`: range 0 is TPBF (x3), range 1 with the target at most one level above is PBF (x2), a range over the Normal Range is Long Range (x1/2). The pre-check refuses with `asl.a1.fire.out-of-range` when a firer's own FP is used beyond twice its Normal Range, a weapon fires beyond twice its own (an ATR beyond its own, C13.24), or the range is under 1 without TPBF. One sentence serves them all: "a firer or MG is beyond twice its Normal Range, or fires into its own hex". It names no unit, no range, and no limit.
+- **The fire panel's Target list** (`Play.razor`, `FireTargets`) is every Location where the view holds an enemy unit or a "?", in the order of their names. Nothing says how far each is.
+- **The LOS tab** is `LosPanel` inside `BoardInspector` (tabs Selection, LOS, Evidence). `BoardWorkspace` keeps its draft and result and sends `StudioLos.Layer` to the viewport as the group `layer-los`. The board viewer and Play share all of it. The tab reads terrain only.
+
+### 14.3 Decisions
+
+**R1. A Range tab beside LOS, with the same two ends.** `BoardInspector` gets a fourth built-in tab, "Range", after LOS. It shows the From and To of the LOS tab (one draft, typed or picked once), and "Read the range". A hex clicked while Range is open fills an end as it does for LOS. The result is one line and, in a game, a table:
+
+- The line: "[G4] to [N5], level 1: 7 hexes." With no game (the board viewer) that is all.
+- The table, one row for each unit and weapon read (R3): its name, its Normal Range, and where the range falls for it.
+
+**R2. Where a range falls.** For a Normal Range N, a range r, and the target's level against the firer's:
+
+| Case | Said as |
+|---|---|
+| The firer's own Location | TPBF, FP x3 (A7.21) |
+| Its own hex, another level | "the same hex, another level: not built" (the Fire package refuses it; section 14.6) |
+| r = 1, the target at most one level above | PBF, FP x2 (A7.21) |
+| r = 1, the target two or more levels above | Normal Range, no PBF (A7.21) |
+| 1 < r <= N | Normal Range |
+| N < r <= 2N | Long Range, FP x1/2 (A7.22) |
+| r > 2N | out of range: "13 hexes; it fires to 12" |
+| An ATR beyond N | out of range (C13.24: no Long Range) |
+| A FT beyond its Normal Range | Long Range to twice it, as the Fire package has it (ruling R15.1); A22 is read in the PDF at the task before its words are written |
+| A unit with no FP of its own (a leader) and no weapon | no row |
+
+The words come from one function in the Rules project, `FireRange.Band`, new and called by nothing that resolves an attack. The calculator's `Multipliers` and pre-check are not touched; a test at the gate holds the two together (section 14.7).
+
+**R3. Whose Normal Range is read.** The page gives the tab its subjects:
+
+- With a fire group chosen in the fire panel: each ticked firer and each ticked weapon, read from its own Location to the panel's target. The tab's From and To are filled from the panel ("Range of this group" beside the Target select opens the tab with them).
+- Otherwise: the units in the From Location that the view holds by name, with the weapons they hold.
+- A unit under "?" or hidden gives no row. A Known enemy unit gives one (question 2).
+
+**R4. On the map, with the LOS line.** Range draws inside the `layer-los` group, so the viewport's script does not change:
+
+- A line from From to To in blue, thinner than the LOS line and under it, with the hex count at its middle ("7"). When an LOS check stands for the same ends, the LOS line is drawn over it in its own color.
+- Two outlines around the From hex for one subject: the outer edge of the hexes within its Normal Range (solid) and within twice it (dashed), each with a small label ("6", "12"). An ATR gets one outline.
+- One subject at a time. The tab's rows are radio choices; the first shown is the member with the shortest Normal Range, since it is the first to fall out. A group of several Locations draws the chosen member's outlines from that member's hex.
+- "Clear" removes the range marks; the LOS tab's Clear removes only the LOS line.
+
+**R5. The fire panel reads its targets by range.** Once a From and at least one firer are ticked:
+
+- Each option of the Target select says its range and the group's worst band: "[N5], level 1: 7 hexes, Long Range for 1 of 3" or "[R4]: 14 hexes, out of range for 4-6-7 squad G1". The list is ordered nearest first.
+- A target out of range for some member stays in the list and is said so: unticking that member brings it in range. A target out of range for every ticked member is disabled.
+- Under the select, one closed line ("Range: 7 hexes") opens the same table as the tab (R1), so nothing sits open on every screen.
+- "Or any Location" reads the same way once filled.
+- Where a ticked firer's kind of fire has its own limit, the line says it: a First Fire unit in the DFPh, "only at an ADJACENT or same-hex target (A8.4)"; Subsequent First Fire, "within Normal Range (A8.3)". The closest-Known-enemy half of A8.3 stays with the planner's refusal.
+- No LOS is read (A6.11). The LOS tab stays what it is.
+
+**R6. A refusal for range names what was out of range.** When the Fire package's pre-check gives `asl.a1.fire.out-of-range`, the planner adds its own reason from the ranges `FireMapFacts` read, one for each firer or weapon out: "play.fire-range: g1 in bd01:G4:0 is 13 hexes from bd01:R4:0; its Normal Range is 6, so it fires to 12 (A7.22)", "play.fire-range: the MMG of g1 ...", and for the own-hex case "play.fire-range: g1 fires at another level of its own hex, which is not built (A7.21)". `UnitNames.InText` and `DisplayText.Place` say it for the view as they do every planner text. The package's code stays in the refusal, so the tests that ask for it still find it; the page shows the planner's sentence in place of the package's.
+
+**R7. Where range is read.** `GamePlanner.Range(state, from, to)` is made public beside `Adjacent`: the hex distance, 0 for one hex, null when the map cannot give it. The page and the tab read it; the board viewer with no game reads the board's own distance. A subject's Normal Range and kind come from the Fire package's reference (`FireReference`), the same definitions the calculator reads, with a wounded hero's own range (A15.2).
+
+**R8. Guns and vehicles.** A vehicle's MG reads as a weapon with its Normal Range (D1.83: eight hexes for a MA AAMG). A Gun's range goes by its To Hit table and C2.25, which is the Ordnance package's: the tab gives a Gun the hex count alone, and the ordnance refusal keeps its sentence (question 4).
+
+### 14.4 Disclosure
+
+- A hex count is the map's. Every view may read it between any two Locations, as every view may use the LOS tab.
+- A Normal Range is printed on a counter. A view is given it only for a unit it holds by name. A "?" and a hidden unit give no row, and the list of subjects never shows that a Location holds more than the view knows.
+- The Target list is the view's own (ruling R23.1), as now; reading it by range adds the map's hex count and the firing side's own printed ranges.
+- The outlines are drawn for the view that asked and are dropped at a hand-over with the LOS check and the view's drafts.
+- The refusal names the proposer's own firer and weapon and the Location it named.
+
+### 14.5 A recorded game replays as it did
+
+- `FireRange.Band` is new and resolves nothing. No line of `ScenarioA1FireCalculator`, `LiveFire`, or `FireMapFacts`' reading changes.
+- The planner's added reason is part of a refusal, and a refusal records no event; a replay runs only recorded attacks, which passed the pre-check.
+- `GamePlanner.Range` is a public reading of what `HexDistance` already gives.
+- The proof is section 7's: `guards-dl-01` with its 613 revisions and 221 steps, and `p31c-play` with its 134 steps, opened on Play and on Replay after the build.
+
+### 14.6 What stays out, for the backlog
+
+| Item | Why |
+|---|---|
+| PBF between Locations of one hex at different levels (A7.21: ADJACENT) | The Fire package refuses a range under 1 that is not TPBF; building it changes what the package resolves |
+| A Gun's range bands (C2.25, the To Hit table, a mortar's least range) in the Range tab | The Ordnance package's own; question 4 |
+| The night's NVR as a band (E1.101) | The night facts are read with the attack, not before it |
+| The closest armed Known enemy unit of A8.3 read before the proposal | It needs each firer's LOS to every Known enemy, which A6.11 keeps for the attack |
+| A band drawn for several subjects at once | One at a time keeps the map readable |
+
+### 14.7 Tests, at the merge gate
+
+- `FireRange.Band` against the calculator: for every definition with a Normal Range and every range from 0 to twice it plus one, at the target's levels -1 to 2, the band's multiplier is the one `Preview` gives and "out of range" is where the pre-check refuses.
+- `GamePlanner.Range` equal to the LOS read's range for the pairs of the played game's attacks.
+- The refusal: a squad at 13 hexes named with "13" and "12"; a MG out while its squad is in; the own-hex case; the package's code still present.
+- The Range tab (bUnit): hexes alone with no game; a row for each held unit and none for a "?"; the radio choice; Clear.
+- The layer: the range line, the two outlines, and their labels inside `layer-los`; an LOS check drawn over them; none after a hand-over.
+- The fire panel: options with range and band, nearest first; an option disabled when every member is out; the closed range line; no LOS read (the LOS service is not called).
+- The played games open as before (section 14.5).
+
+### 14.8 Task and estimate
+
+| Task | What it changes | Estimate |
+|---|---|---|
+| 31c.9 Range | `FireRange` (Rules); `GamePlanner.Range` and the planner's range reason; `RangePanel`, the tab in `BoardInspector`, the draft and subjects in `BoardWorkspace`; the range marks in `StudioLos.Layer`; the fire panel's Target options and range line; `Play.razor`'s subjects. Checked in my Studio on port 6670 on `p31c-play` and `p31-pf` in each side's view, and on the board viewer | 1:00 |
+
+### 14.9 Questions for the user
+
+| # | Question | Recommendation |
+|---|---|---|
+| 1 | A Range tab of its own beside LOS, sharing the LOS tab's From and To, or one tab "LOS and Range"? | Its own tab with the shared ends. One tab would read the LOS each time a player only wants a range, which A6.11 does not allow at a table; apart, Range can be used freely and LOS stays the deliberate check it is. |
+| 2 | May a side read the bands of a Known enemy unit (one its view holds by name)? | Yes. The counter is face up and its range printed; "can that MMG reach me" is what a player counts at a table. Never for a "?" or a hidden unit. |
+| 3 | A target out of range for every ticked firer: disabled in the list, or left out? | Disabled and said ("14 hexes, out of range"). Leaving it out would make a player wonder where the enemy went. |
+| 4 | Guns: the hex count alone in this pass, with a backlog row for their bands? | Yes. Their range is the Ordnance package's and differs by Gun and ammunition. |
+| 5 | The Target list ordered nearest first once a firer is ticked, in place of the order of names? | Yes. |
+| 6 | PBF between levels of one hex is refused today as "fires into its own hex". Name it in the refusal as not built and give it a backlog row, or build it in this pass? | A backlog row. Building it changes what the Fire package resolves, which this pass does not do. |
+| 7 | The fire panel says a fire kind's own limit (A8.3 Normal Range, A8.4 ADJACENT) beside the range. In this pass? | Yes; it is a line of words from facts the page already holds (the firer's fire counter and the phase). |
+| 8 | The estimate: 1:00 for task 31c.9, added to the pass. | Accept. |
+
+### 14.10 Range as built
+
+Built 2026-10-04 and checked in my Studio on port 6670 on `p31-pf` in the Russian view, on the board viewer, and on Replay.
+
+| Part | Where |
+|---|---|
+| `FireRange` (`Band`, `Words`), `FireRangeBand`, `FireRangeReading` | Rules; called by nothing that resolves an attack |
+| `GamePlanner.Range`; `RangeNamed` at the Fire pre-check's refusal | Play |
+| `RangeCheck`, `RangeRow`, `StudioLos.Range`, the range marks in `StudioLos.Layer` | Services |
+| `RangePanel`; the Range tab in `BoardInspector`; the reading, its rows, and `ReadRange` in `BoardWorkspace` | Components/Board |
+| The Target options, the closed range line, and "Show the range on the map" in `SmallArmsFirePanel`; `RangeRowsOf`, `FireTargetsByRange`, `RangeSubjects` in `Play.razor` | Components |
+
+What differs from the decisions:
+
+- **R4.** Each outline's label sits on its edge nearest the way to the target, where the range line leaves it. The map's own edge is not drawn as part of an outline.
+- **R5.** The range line under the Target select lists a line for each firer and weapon and has "Show the range on the map", which opens the Range tab with the group drawn.
+- **R6.** The planner's sentence takes the place of the package's under the package's own code, so the code is still in the refusal. Where the target Location holds nothing the firing side may see, that side was told only that the package does not decide the attack; it is now told the range lines and nothing else, since they rest on its own units and the map alone. Whatever else the package found stays untold.
+- **Checked:** the Target list by range and nearest first; "6 hexes, Long Range for 1 of 2"; the outlines at 4 and 8 with the line's "6"; a refusal naming the squad (10 hexes, fires to 8) and both the squad and its MMG (23 hexes, fires to 20); the tab's rows for own units and Known enemy units and none for a Location with a leader alone; the board viewer's hexes alone, with the LOS line drawn over the range marks and each Clear removing its own; `guards-dl-01` with 613 revisions and 221 steps and `p31c-play` with 134 steps.
+- **Not yet seen in the Studio:** a target disabled because every ticked firer is out, and the fire kind's own limit (A8.3, A8.31, A8.4) in a row. Both are watched for in The Tractor Works.

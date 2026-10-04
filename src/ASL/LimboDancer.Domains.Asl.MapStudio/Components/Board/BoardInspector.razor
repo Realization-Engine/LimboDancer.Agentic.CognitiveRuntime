@@ -17,6 +17,11 @@
                 <LosPanel Draft="@LosDraft" DraftChanged="@LosDraftChanged" Selected="@(Selected is null ? null : Board.LocationOf(Selected))" Result="@LosResult"
                           OnCheck="@OnCheckLos" OnClear="@OnClearLos" />
                 break;
+            case "range":
+                <RangePanel Draft="@LosDraft" DraftChanged="@LosDraftChanged" Selected="@(Selected is null ? null : Board.LocationOf(Selected))" Result="@RangeResult"
+                            Rows="@RangeRows" Chosen="@RangeChosen" OnChoose="@OnChooseRange" Boards="@(Board.Composition?.Placements.Count ?? 1)"
+                            OnCheck="@OnCheckRange" OnClear="@OnClearRange" />
+                break;
             case "evidence":
                 @if (Sample is not null)
                 {
@@ -79,7 +84,7 @@
     /// <summary>A tab the host adds, with the markup it shows when chosen; placed before the built-in tabs, or after them when <paramref name="Last"/>.</summary>
     public sealed record ExtraTab(InspectorTabs.Tab Tab, RenderFragment Content, bool Last = false);
 
-    private static readonly IReadOnlyList<InspectorTabs.Tab> BuiltIn = [new("selection", "Selection"), new("los", "LOS"), new("evidence", "Evidence")];
+    private static readonly IReadOnlyList<InspectorTabs.Tab> BuiltIn = [new("selection", "Selection"), new("los", "LOS"), new("range", "Range"), new("evidence", "Evidence")];
 
     // The hex under the pointer while none is kept. The workspace sets it here, so a hover redraws the inspector alone (pass 29).
     private HexFacts? hovered;
@@ -153,6 +158,26 @@
 
     [Parameter]
     public EventCallback OnClearLos { get; set; }
+
+    /// <summary>The last range reading (pass 31c, design section 14), for the same two Locations as the LOS check.</summary>
+    [Parameter]
+    public RangeCheck? RangeResult { get; set; }
+
+    /// <summary>The units and weapons the range is read for, already read for the view; none on a board with no game.</summary>
+    [Parameter]
+    public IReadOnlyList<RangeRow> RangeRows { get; set; } = [];
+
+    [Parameter]
+    public string? RangeChosen { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnChooseRange { get; set; }
+
+    [Parameter]
+    public EventCallback OnCheckRange { get; set; }
+
+    [Parameter]
+    public EventCallback OnClearRange { get; set; }
 
     [Parameter]
     public EventCallback<string> OnCopy { get; set; }

@@ -1,0 +1,83 @@
+@* Pass 31c (design section 14): Range, a sibling of LOS. The range in hexes between the LOS tab's two Locations (A6.7: the least number of hexes,
+   whatever the LOS), and, when the host gives the units and weapons to read it for, where it falls for each (A7.21, A7.22). The one chosen has
+   its Normal Range and the farthest range it fires to drawn on the map with the range line. It reads no LOS. *@
+<div class="los-panel range-panel" id="range-panel">
+    <div class="fields">
+        <label for="range-source">From</label>
+        <span>
+            <input id="range-source" value="@Draft.Source" @onchange="@(args => Change(Draft with { Source = args.Value as string ?? string.Empty }))" />
+            <button class="link" id="range-source-selected" disabled="@(Selected is null)" @onclick="() => Change(Draft with { Source = Selected ?? Draft.Source })">selected hex</button>
+        </span>
+        <label for="range-target">To</label>
+        <span>
+            <input id="range-target" value="@Draft.Target" @onchange="@(args => Change(Draft with { Target = args.Value as string ?? string.Empty }))" />
+            <button class="link" id="range-target-selected" disabled="@(Selected is null)" @onclick="() => Change(Draft with { Target = Selected ?? Draft.Target })">selected hex</button>
+        </span>
+    </div>
+    <p class="los-actions">
+        <button id="range-check" @onclick="OnCheck">Read the range</button>
+        <button id="range-clear" disabled="@(Result is null)" @onclick="OnClear">Clear</button>
+    </p>
+    @if (Result is { } check)
+    {
+        <p id="range-result" class="@(check.Hexes is null ? "fail" : null)" data-hexes="@check.Hexes">@check.Summary(Boards)</p>
+        @if (check.Hexes is not null && Rows.Count > 0)
+        {
+            <table class="library range-rows" id="range-rows">
+                <thead><tr><th scope="col">Drawn</th><th scope="col">Unit or weapon</th><th scope="col">Normal Range</th><th scope="col">At this range</th></tr></thead>
+                <tbody>
+                    @foreach (var row in Rows)
+                    {
+                        <tr data-subject="@row.Key" class="@(row.Out ? "range-out" : null)">
+                            <td><input type="radio" name="range-subject" aria-label="@($"Draw the range of {row.Name} on the map")" checked="@(row.Key == Chosen)" @onchange="@(() => OnChoose.InvokeAsync(row.Key))" /></td>
+                            <td>@row.Name</td>
+                            <td>@row.NormalRange</td>
+                            <td>@row.Words</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+            <p class="muted">Solid line: Normal Range. Dashed line: the farthest range it fires to.</p>
+        }
+    }
+</div>
+
+@code {
+    /// <summary>The two Locations, shared with the LOS tab.</summary>
+    [Parameter, EditorRequired]
+    public LosPanel.LosDraft Draft { get; set; } = new(string.Empty, string.Empty, false);
+
+    [Parameter]
+    public EventCallback<LosPanel.LosDraft> DraftChanged { get; set; }
+
+    /// <summary>The selected hex's Location, offered for either end; null when no hex is selected.</summary>
+    [Parameter]
+    public string? Selected { get; set; }
+
+    /// <summary>The last reading; null before one or after Clear.</summary>
+    [Parameter]
+    public RangeCheck? Result { get; set; }
+
+    /// <summary>The units and weapons the range is read for; none on a board with no game.</summary>
+    [Parameter]
+    public IReadOnlyList<RangeRow> Rows { get; set; } = [];
+
+    /// <summary>The row whose range is drawn on the map.</summary>
+    [Parameter]
+    public string? Chosen { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnChoose { get; set; }
+
+    /// <summary>How many boards the map has, which decides how a Location is written.</summary>
+    [Parameter]
+    public int Boards { get; set; } = 1;
+
+    [Parameter]
+    public EventCallback OnCheck { get; set; }
+
+    [Parameter]
+    public EventCallback OnClear { get; set; }
+
+    private Task Change(LosPanel.LosDraft draft) => DraftChanged.InvokeAsync(draft);
+}

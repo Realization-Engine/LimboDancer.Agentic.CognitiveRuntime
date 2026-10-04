@@ -127,6 +127,18 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
+    /// The range between two Locations: the least number of hexes, whatever the LOS (A6.7), 0 within one hex, or null when the map cannot give
+    /// it. The page reads its fire targets by it before a proposal (pass 31c, design section 14); an attack's own range is read with its LOS.
+    /// </summary>
+    public int? Range(GameState state, BoardLocation from, BoardLocation to)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(from);
+        ArgumentNullException.ThrowIfNull(to);
+        return HexDistance(state, from, to);
+    }
+
+    /// <summary>
     /// ADJACENT (A.8, p. 43): the Locations share a hexside at the same level, with a clear LOS and no hexside terrain or
     /// cliff between them, so Infantry could advance from one to the other. The review reads it this way for the
     /// terrain it admits.
