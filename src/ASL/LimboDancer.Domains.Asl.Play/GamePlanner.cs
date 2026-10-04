@@ -216,7 +216,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
         // Pass 31 (ruling R31.6): a side's view proposes only what its side may do; setup is guarded by its own checks of each group's side.
         if (action.Id.Value != "asl.game.setup" && ProposedBy(arguments) is { } proposer && existing.Count > 0 && Replay(existing).Current is { } proposerState
-            && ProposerBar(proposerState, action.Id.Value, arguments, proposer) is { } notYours)
+            && ProposerBar(proposerState, action.Id.Value, arguments, proposer, existing) is { } notYours)
         {
             return Refused(scope, label, expected, notYours);
         }
@@ -301,6 +301,12 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         if (action.Id.Value != "asl.game.setup")
         {
             plan = WithAdjacentDm(plan, scope, existing, attemptId, expected);
+        }
+
+        // A20.551 (ruling R31.8): a SMC the action leaves free and Unarmed is Armed again.
+        if (action.Id.Value != "asl.game.setup")
+        {
+            plan = WithArmedSmc(plan, scope, existing, attemptId, expected);
         }
 
         // Pass 21 (ruling R21.4): an immediate Victory Condition met by the action ends the game after it.

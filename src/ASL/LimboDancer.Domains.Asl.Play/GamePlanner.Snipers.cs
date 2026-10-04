@@ -41,6 +41,12 @@ public sealed partial class GamePlanner
                 var split = key.IndexOf(':', StringComparison.Ordinal);
                 var (kind, unitId) = split < 0 ? (key, string.Empty) : (key[..split], key[(split + 1)..]);
 
+                // Pass 31 (ruling R31.5): a unit's second Leader Loss check in an attack is keyed "<unit>#2"; it is the same unit's DR.
+                if (unitId.IndexOf('#', StringComparison.Ordinal) is var numbered and > 0)
+                {
+                    unitId = unitId[..numbered];
+                }
+
                 // A14.1: an IFT DR is its firing side's; a MC or TC DR (a check, a leader loss check, a berserk NTC, a crew's) its unit's, never a prisoner's.
                 var maker = kind switch
                 {

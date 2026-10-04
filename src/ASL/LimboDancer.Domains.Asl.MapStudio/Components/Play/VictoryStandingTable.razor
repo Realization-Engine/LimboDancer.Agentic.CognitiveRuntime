@@ -39,15 +39,17 @@
         }
     </tbody>
 </table>
-@* Pass 31 (play test P-08): every condition of the card, held or not, with its numbers, so the result is read from the conditions themselves. *@
-@if (Report.Conditions.Count > 0)
+@* Pass 31 (play test P-08): every condition of the card, held or not, with its numbers, so the result is read from the conditions themselves.
+   Referee, pass 31 (ruling R23.4): a condition may rest on what a side does not know, such as who is unbroken in a building, so the account is the
+   adjudicator's during play and everyone's once the game has ended, when Control is declared. *@
+@if (Report.Conditions.Count > 0 && KnownTo is null)
 {
     <ul id="play-victory-account" class="victory-account">
         @foreach (var line in Report.Conditions)
         {
             <li data-holds="@line.Holds.ToString()" data-winner="@line.Winner">
-                <strong>@(line.Holds ? "Met" : "Not met")@(line.Immediate ? ", ends the game at once" : string.Empty):</strong>
-                @(line.Winner == "draw" ? "a draw" : $"{DisplayText.Side(line.Winner)} wins") when @line.Text.
+                <strong>@(line.Winner == "draw" ? "A condition for a draw" : $"A condition for a {DisplayText.Side(line.Winner)} win")@(line.Immediate ? ", at once" : string.Empty), @(line.Holds ? "met" : "not met"):</strong>
+                @line.Text.
             </li>
         }
         <li data-otherwise="true">With no condition met, @(Report.Otherwise is { } otherwise ? $"{DisplayText.Side(otherwise)} wins" : "the game is a draw") (A26.3).</li>

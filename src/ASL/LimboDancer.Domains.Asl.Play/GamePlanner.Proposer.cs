@@ -68,7 +68,7 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>Why the <paramref name="proposer"/> side's view may not propose this action (ruling R31.6), or null when it may.</summary>
-    private static string? ProposerBar(GameState state, string action, JsonElement arguments, string proposer)
+    private string? ProposerBar(GameState state, string action, JsonElement arguments, string proposer, IReadOnlyList<GameEvent> existing)
     {
         // A view that is not one of the game's sides is not checked: the game has no side to hold it to.
         if (state.Sides.All(side => side.Id != proposer))
@@ -88,6 +88,14 @@ public sealed partial class GamePlanner
         if (owner is not null && owner != proposer)
         {
             return $"play.not-your-action: the {owner} side {what}, not the {proposer} side (ruling R31.6)";
+        }
+
+        // Table player, pass 31: either side ends the Rout Phase, but not while the other side still has a unit that must rout: the end would eliminate
+        // it, or make it surrender, on its opponent's word (A10.5, A20.21).
+        if (action == "asl.game.advance-phase" && state.Phase == "rtph"
+            && FailureToRout(state, existing).Select(item => item.Unit).FirstOrDefault(unit => unit.Side != proposer) is { } owed)
+        {
+            return $"play.not-your-action: the {owed.Side} side still has a unit that must rout, and ending the Rout Phase now would eliminate it or make it surrender; hand over to the {owed.Side} side first (A10.5; ruling R31.6)";
         }
 
         foreach (var name in ActorArguments.GetValueOrDefault(action) ?? [])

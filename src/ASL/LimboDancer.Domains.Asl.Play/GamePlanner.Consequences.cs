@@ -35,6 +35,7 @@ public sealed partial class GamePlanner
         ("play.failure-to-rout:", ConsequenceKind.Loss),
         ("play.melee-eliminated:", ConsequenceKind.Loss),
         ("play.game-ended:", ConsequenceKind.End),
+        ("play.result:", ConsequenceKind.End),
         ("play.fire-own-units:", ConsequenceKind.OwnUnits),
         ("play.fire-los-blocked:", ConsequenceKind.Waste),
     ];
@@ -58,21 +59,17 @@ public sealed partial class GamePlanner
     /// What an attack does beyond its target (play test P-12, P-13): every firer's LOS is blocked, so the shot is spent for nothing (A6.1), or the
     /// target Location holds units of the firing side, in a Melee or as Guards of prisoners, which the attack hits too (A11.15, A20.54).
     /// </summary>
-    private static IEnumerable<string> FireWarnings(GameState state, FireAttack facts)
+    private static IEnumerable<string> FireWarnings(FireAttack facts)
     {
         if (facts.Firers is { Count: > 0 } firers && firers.All(firer => (firer.Los ?? facts.Los)?.Blocked == true))
         {
-            yield return $"play.fire-los-blocked: no firer has a LOS to {facts.TargetLocationId}, so the attack has no effect and its firers are still marked as having fired (A6.1)";
+            yield return $"play.fire-los-blocked: no firer has a LOS to {facts.TargetLocationId}, so the attack has no effect and its firers are still marked as having fired (A6.11)";
         }
 
-        var side = facts.Firers?.Select(firer => firer.UnitId is { } id ? state.Unit(id)?.Side : null).OfType<string>().FirstOrDefault();
-        if (side is null || facts.TargetLocationId is null || !BoardLocation.TryParse(facts.TargetLocationId, out var target))
-        {
-            yield break;
-        }
-
-        string[] own = [.. state.At(target).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && unit.Kind != UnitKinds.Dummy)
-            .Select(unit => unit.Id).Order(StringComparer.Ordinal)];
+        // Referee, pass 31: the attack's own targets say who is hit; Defensive First Fire attacks only the moving stack (A8.1), so the firing side's
+        // other units in the Location are not among them.
+        string[] own = [.. (facts.Targets ?? []).Where(target => target.Friendly == true && target.Dummy != true && target.UnitId is not null)
+            .Select(target => target.UnitId!).Order(StringComparer.Ordinal)];
         if (own.Length > 0)
         {
             yield return $"play.fire-own-units: {string.Join(", ", own)} of the firing side {(own.Length == 1 ? "is" : "are")} in {facts.TargetLocationId} and {(own.Length == 1 ? "is" : "are")} attacked too (A11.15, A20.54)";

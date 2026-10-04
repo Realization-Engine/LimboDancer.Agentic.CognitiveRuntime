@@ -2990,7 +2990,8 @@ public static class ScenarioA1FireCalculator
 
         private void LeaderLoss()
         {
-            if (undecided.Count != 0)
+            // Referee, pass 31 (A10.2, A11.141): units in Melee neither take nor cause a LLMC or LLTC.
+            if (undecided.Count != 0 || attack.TargetsInMelee == true)
             {
                 return;
             }

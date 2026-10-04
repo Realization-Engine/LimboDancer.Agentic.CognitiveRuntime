@@ -246,6 +246,16 @@ public sealed record FireAttack(
         get; init;
     }
 
+    /// <summary>
+    /// Referee, pass 31 (A10.2, A11.141: "Units in CC never take LLMC/LLTC"): whether the target Location is in Melee, so the loss of a leader there
+    /// causes no Leader Loss check. Recorded with every attack from the pass on; an attack recorded before it has none and replays as it was resolved.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? TargetsInMelee
+    {
+        get; init;
+    }
+
     /// <summary>How much lower Extreme Winter makes the B# and X# of the firing side's weapons but a DC (E3.741; ruling R16.14): 1 or 2. Null is 0.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? BreakdownReduction

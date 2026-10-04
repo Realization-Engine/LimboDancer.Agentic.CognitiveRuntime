@@ -573,20 +573,20 @@ public static class ScenarioVictory
             case "control-margin":
                 var held = condition.Buildings!.Count(id => control[id].Side == condition.Side);
                 var lost = condition.Versus!.Count(id => control[id].Side == other);
-                return $"{condition.Side} Controls {held} of {string.Join(", ", condition.Buildings!)} and {other} {lost} of {string.Join(", ", condition.Versus!)}, a margin of {held - lost}, short of {condition.Margin} (A26.14)";
+                return $"{condition.Side} Controls {held} of {string.Join(", ", condition.Buildings!)}, and {other} Controls {lost} of {string.Join(", ", condition.Versus!)}: a margin of {held - lost}, where {condition.Margin} is needed (A26.14)";
             case "control-count":
                 var hexes = ScenarioCards.BuildingHexes(card, condition.Building!)!;
                 var melee = condition.MeleeUncontrolled == true ? hexes.Where(hex => InMelee(present, hex)).ToHashSet() : [];
                 var count = hexes.Count(hex => !melee.Contains(hex) && control[HexId(hex)].Side == condition.Side);
-                return $"{condition.Side} Controls {count} hexes of building {condition.Building}, short of {condition.AtLeast} (A26.13)";
+                return $"{condition.Side} Controls {count} hexes of building {condition.Building}, where {condition.AtLeast} are needed (A26.13)";
             case "squad-ratio":
-                return $"{condition.Side} has {Number(mine.UnbrokenSquads)} unbroken squad-equivalents against {Number(theirs.UnbrokenSquads)}, short of {Number(condition.Ratio!.Value)} times as many";
+                return $"{condition.Side} has {Number(mine.UnbrokenSquads)} unbroken squad-equivalents against {Number(theirs.UnbrokenSquads)}, where {Number(condition.Ratio!.Value)} times as many are needed";
             case "sole-unbroken":
                 return $"{condition.Side} is not the only side with an unbroken unit in building {condition.Building}";
             case "exit-vp":
-                return $"{condition.Side} has exited {mine.ExitVp} Exit VP off the {condition.Edge} edge near {string.Join(", ", condition.Near!)}, short of {condition.AtLeast} (A26.23)";
+                return $"{condition.Side} has exited {mine.ExitVp} Exit VP off the {condition.Edge} edge near {string.Join(", ", condition.Near!)}, where {condition.AtLeast} are needed (A26.23)";
             case "cvp":
-                return $"{condition.Side} has {mine.Cvp} CVP, short of {condition.AtLeast} (A26.22)";
+                return $"{condition.Side} has {mine.Cvp} CVP, where {condition.AtLeast} are needed (A26.22)";
             default:
                 return $"a condition of a kind the game does not read ({condition.Type})";
         }

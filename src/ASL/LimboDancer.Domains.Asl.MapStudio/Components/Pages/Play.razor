@@ -224,7 +224,7 @@
         @if (pending is { } proposal)
         {
             <ProposalReviewPanel Title="@proposal.Action.Name" Accepted="@(proposal.Result.Outcome is PlayOutcome.NeedsConfirmation or PlayOutcome.Committed or PlayOutcome.Replay)"
-                                 Outcome="@(ConsequencesOf(proposal).Count > 0 ? "Every check passed, but this proposal has consequences." : OutcomeText(proposal.Result.Outcome, Withheld(proposal)))"
+                                 Outcome="@(ConsequencesOf(proposal).Count > 0 ? ConsequencesOutcome : OutcomeText(proposal.Result.Outcome, Withheld(proposal)))"
                                  Reasons="@([.. ReviewReasons(proposal).Where(reason => GamePlanner.ConsequenceOf(reason) is null || proposal.Result.Outcome != PlayOutcome.NeedsConfirmation)])"
                                  Consequences="@([.. ConsequencesOf(proposal).Select(item => Sentence(item.Text))])" ConfirmLabel="@ConfirmLabel(ConsequencesOf(proposal))"
                                  CanConfirm="@(proposal.Result.Outcome == PlayOutcome.NeedsConfirmation)" Busy="@busy" Confirm="Confirm" Cancel="@CancelProposal">
@@ -368,7 +368,7 @@ else if (state is not null)
                 @* Pass 31 (ruling R5.8; play test P-09): while a choice or a surrender waits, nothing else is proposed. *@
                 @if (WaitsOnAnswer)
                 {
-                    <p id="play-answer-first" class="muted">Every other action waits until the choice above is answered (ruling R5.8).</p>
+                    <p id="play-answer-first" class="muted">Every other action waits until the answer above is given (ruling R5.8).</p>
                 }
                 <fieldset class="plain" id="play-actions" disabled="@WaitsOnAnswer">
                 <div class="toolbar">
@@ -3301,6 +3301,16 @@ else if (state is not null)
     private void ToggleAttacker(string id, bool on)
     {
         Toggle(ccAttackers, id, on);
+
+        // Table player, pass 31 (A11.14): a SMC stacked with an MMC attacks with it or not at all, so it is ticked and unticked with its MMC.
+        foreach (var smc in ccStacking.Where(pair => pair.Value == id).Select(pair => pair.Key).ToArray())
+        {
+            if (CloseCombatUnits.FirstOrDefault(unit => unit.Id == smc) is { } stacked && !Prisoner(stacked) && !Declared(stacked, attacking: true) && !IsBroken(stacked))
+            {
+                Toggle(ccAttackers, smc, on);
+            }
+        }
+
         if (!CloseCombatDirectors.Any(unit => unit.Id == ccDirector))
         {
             ccDirector = string.Empty;
@@ -3471,7 +3481,13 @@ else if (state is not null)
         Toggle(ccDefenders, id, on);
         foreach (var smc in ccStacking.Where(pair => pair.Value == id).Select(pair => pair.Key).ToArray())
         {
-            Toggle(ccDefenders, smc, on);
+            // UI review, pass 31: only a SMC still in the Location, and not yet a target of a declared attack.
+            // Referee, pass 31 (ruling R23.1): never a SMC of the other side that is under "?"; the stacking of concealed units is not this view's to read.
+            if (CloseCombatUnits.FirstOrDefault(unit => unit.Id == smc) is { } stacked && !Prisoner(stacked) && !Declared(stacked, attacking: false)
+                && (Mine(stacked) || GameState.Condition(stacked, Conditions.Concealed) != ConditionState.True))
+            {
+                Toggle(ccDefenders, smc, on);
+            }
         }
     }
 
@@ -3517,7 +3533,8 @@ else if (state is not null)
         // Pass 31 (play test P-10; A20.22): a capture attempt on several units needs the defender's order of choice; left empty, it is the targets' order.
         if (ccCapture && yielded.Length == 0 && ccDefenders.Count > 1)
         {
-            yielded = [.. ccDefenders.Order(StringComparer.Ordinal)];
+            // Table player, pass 31: an MMC before a SMC, so the default does not give up a leader first.
+            yielded = [.. ccDefenders.OrderBy(id => state?.Unit(id) is { } unit && Library.Vocabulary.IsA(unit.Kind, "asl:smc")).ThenBy(id => id, StringComparer.Ordinal)];
         }
 
         ccAttacks.Add(new CloseCombatPanel.DeclaredAttack([.. ccAttackers.Order(StringComparer.Ordinal)], [.. ccDefenders.Order(StringComparer.Ordinal)],
@@ -5766,7 +5783,7 @@ else if (state is not null)
         : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && unit.Kind == "asl:half-squad" && state.Location(unit.Id) is not null).Select(Labelled)];
 
     private IReadOnlyList<string> DmRetainers => state is null ? []
-        : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.DesperationMorale) == ConditionState.True
+        : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && GameState.Condition(unit, Conditions.DesperationMorale) == ConditionState.True
             && Live.Planner.MayRetainDm(state, unit.Id)).Select(unit => unit.Id)];
 
     private IReadOnlyList<PlayChoice> ShockChoices => [.. ShockedVehicles.Select(vehicle => new PlayChoice(vehicle.Id,
@@ -5943,10 +5960,10 @@ else if (state is not null)
 
         (busy, status) = (true, "Checking the proposal.");
         var asked = AskedBy;
-        arguments = FromView(arguments);
         Proposal proposed;
         try
         {
+            arguments = FromView(arguments);
             // Pass 29: the busy state is drawn before the gate is asked, so the pickers show as disabled even when the answer is quick.
             StateHasChanged();
             await DrawBusy();
@@ -5966,7 +5983,7 @@ else if (state is not null)
         }
 
         pending = proposed;
-        status = $"{action.Name}: {OutcomeText(proposed.Result.Outcome, Withheld(proposed))}";
+        status = $"{action.Name}: {(ConsequencesOf(proposed).Count > 0 ? ConsequencesOutcome : OutcomeText(proposed.Result.Outcome, Withheld(proposed)))}";
         ShowProposal();
         Refresh();
     }
@@ -6151,7 +6168,7 @@ else if (state is not null)
             }
             else if (proposal.Action == GameActions.CloseCombat)
             {
-                ClearCloseCombat();
+                ClearCloseCombatDraft();
             }
 
             // Table player and UI review, pass 29: Confirm is gone with the commit, so the focus goes to the actions; under 1024px their tab opens.
@@ -6160,6 +6177,12 @@ else if (state is not null)
         }
 
         Refresh();
+
+        // UI review, pass 31: the stacking of the Location is read again from the state the round left, not the one it began from.
+        if (result.Outcome is PlayOutcome.Committed or PlayOutcome.Replay && proposal.Action == GameActions.CloseCombat)
+        {
+            DefaultStacking();
+        }
 
         if (result.Outcome is PlayOutcome.Committed or PlayOutcome.Replay && proposal.Action == GameActions.Setup && state is not null)
         {
@@ -6194,14 +6217,28 @@ else if (state is not null)
     /// Pass 31 (play test P-06, P-12, P-13): the consequences among the reasons the view may read, while the proposal waits for Confirm. They are
     /// taken from the reasons already disclosed to the view, so nothing more is shown than the reasons themselves would show.
     /// </summary>
-    private IReadOnlyList<PlanConsequence> ConsequencesOf(Proposal proposal) => proposal.Result.Outcome != PlayOutcome.NeedsConfirmation ? []
-        : [.. ReviewReasons(proposal).Select(GamePlanner.ConsequenceOf).OfType<PlanConsequence>()];
+    private IReadOnlyList<PlanConsequence> ConsequencesOf(Proposal proposal)
+    {
+        // UI review, pass 31: read once for a proposal's result, not at each use in a render.
+        if (!ReferenceEquals(consequencesFor, proposal.Result))
+        {
+            (consequencesFor, consequences) = (proposal.Result, proposal.Result.Outcome != PlayOutcome.NeedsConfirmation ? []
+                : [.. ReviewReasons(proposal).Select(GamePlanner.ConsequenceOf).OfType<PlanConsequence>()]);
+        }
+
+        return consequences;
+    }
+
+    private PlayResult? consequencesFor;
+    private IReadOnlyList<PlanConsequence> consequences = [];
+
+    private const string ConsequencesOutcome = "Every check passed, but read what this proposal does before you confirm.";
 
     /// <summary>The Confirm button's words for a proposal with consequences: the gravest kind is named.</summary>
     private static string ConfirmLabel(IReadOnlyList<PlanConsequence> consequences)
     {
         var losses = consequences.Count(item => item.Kind == ConsequenceKind.Loss);
-        return losses > 0 ? $"Confirm and lose {losses} {(losses == 1 ? "unit" : "units")}"
+        return losses > 0 ? $"Confirm: {losses} {(losses == 1 ? "unit is" : "units are")} lost"
             : consequences.Any(item => item.Kind == ConsequenceKind.End) ? "Confirm and end the game"
             : consequences.Any(item => item.Kind == ConsequenceKind.OwnUnits) ? "Confirm and fire on your own units"
             : consequences.Any(item => item.Kind == ConsequenceKind.Waste) ? "Confirm the shot with no LOS"
@@ -6301,7 +6338,7 @@ else if (state is not null)
 
     /// <summary>Every Victory condition with whether it was met, then the facts the result rests on.</summary>
     private IReadOnlyList<string> ResultWhy => state?.Ended is not { Result: { } result } ? []
-        : [.. (VictoryNow?.Conditions ?? []).Select(line => $"{(line.Holds ? "Met" : "Not met")}: {(line.Winner == "draw" ? "a draw" : $"{DisplayText.Side(line.Winner)} wins")} when {line.Text}."),
+        : [.. (VictoryNow?.Conditions ?? []).Select(line => $"{(line.Winner == "draw" ? "A condition for a draw" : $"A condition for a {DisplayText.Side(line.Winner)} win")}, {(line.Holds ? "met" : "not met")}: {line.Text}."),
             .. result.Facts.Select(Sentence)];
 
     private static string Sentence(string text) => text.Length == 0 ? text : char.ToUpperInvariant(text[0]) + text[1..] + (text.EndsWith('.') ? string.Empty : ".");
@@ -6384,7 +6421,10 @@ else if (state is not null)
             // Pass 31: the arriving view opens on the Location the game waits on, which both sides know.
             var at = MovingAt;
             ChangeView(next);
-            openingHex = at;
+            if (handOver == next)
+            {
+                openingHex = at;
+            }
         }
     }
 
@@ -6400,7 +6440,11 @@ else if (state is not null)
         : $"Turn {state.Turn}{TurnsText}, {DisplayText.Side(state.PhasingSide)} {Games.PhaseLabel(state.Phase)}.";
 
     /// <summary>Whether the view waiting behind the hand-over is the one the game waits for.</summary>
-    private bool HandOverAwaited => handOver is { } next && state is { Ended: null } && !SetupOpen && Awaiting(state).Side == next;
+    private bool HandOverAwaited => handOver is { } next && state is { Ended: null } && !SetupOpen
+        && (Awaiting(state).Side == next
+
+            // Table player, pass 31: in the phases where both sides act, either side that arrives has something to do.
+            || (state.Phase is "rph" or "rtph" or "ccph" && state.Choice is null && state.PendingSurrenders.Count == 0 && state.Sides.Any(side => side.Id == next)));
 
     private string? HandOverWhy => handOver is null || state is null || history?.Current is null || state.Ended is not null ? null
         : state.Perspectives.FirstOrDefault(perspective => perspective.Name == handOver) is { IsAdjudicator: true } ? "The adjudicator's view shows the whole game."
@@ -6435,11 +6479,11 @@ else if (state is not null)
                 {
                     "rph" => ["Rally your broken units, repair weapons, and transfer or recover SW.", "End the Rally Phase when both sides are done, or hand the screen back."],
                     "rtph" => ["Rout each of your broken units that must rout; a unit that must and does not is eliminated or surrenders.", "End the Rout Phase when both sides are done, or hand the screen back."],
-                    "ccph" => ["Declare your Close Combat attacks in each Location, then resolve the round.", "End the Close Combat Phase when every Location is resolved."],
-                    "dfph" => ["Fire with your units that have not fired, as Final Fire.", $"End the {phase}."],
+                    "ccph" => ["Declare your Close Combat attacks in each Location, then hand over; a round is resolved once both sides have declared.", "End the Close Combat Phase when every Location is resolved."],
+                    "dfph" => ["Fire with your units as Final Fire; a unit marked First Fire may still fire at an ADJACENT enemy, as Area Fire (A8.4).", $"End the {phase}."],
                     "pfph" => ["Fire with the units you will not move this turn.", $"End the {phase}."],
                     "mph" => ["Move your stacks one at a time; after each Location entered the DEFENDER may fire.", $"End the {phase} when no more units move."],
-                    "afph" => ["Fire with the units that moved and have not fired, at half FP.", $"End the {phase}."],
+                    "afph" => ["Fire with the units that did not Prep Fire, at half FP; Opportunity Firers fire at full FP (A7.24, A7.25).", $"End the {phase}."],
                     "aph" => ["Advance your units one Location; an advance into an enemy Location brings Close Combat.", $"End the {phase}."],
                     _ => ends ? [$"Act in the {phase}, then end it."] : [$"Act in the {phase}."],
                 };
@@ -6462,8 +6506,27 @@ else if (state is not null)
             }
 
             var since = lastShown.TryGetValue(next, out var shown) ? shown : -1;
-            var lines = new List<string>();
-            foreach (var item in history.Events.Where(item => item.Visibility is null && (since < 0 || item.Revision > since)))
+
+            // UI review, pass 31: read once for a history, a waiting view, and a starting revision, not on every render of the screen.
+            if (ReferenceEquals(happenedFor.History, history) && happenedFor.Next == next && happenedFor.Since == since)
+            {
+                return happened;
+            }
+
+            happenedFor = (history, next, since);
+            return happened = ReadHappened(since);
+        }
+    }
+
+    private (GameHistory? History, string? Next, long Since) happenedFor;
+    private IReadOnlyList<string> happened = [];
+
+    private IReadOnlyList<string> ReadHappened(long since)
+    {
+        {
+            var state = this.state!;
+            var lines = new List<(string Text, int Count)>();
+            foreach (var item in history!.Events.Where(item => item.Visibility is null && (since < 0 || item.Revision > since)))
             {
                 var line = item.Payload switch
                 {
@@ -6481,14 +6544,24 @@ else if (state is not null)
                     GameEnded => "The game ended.",
                     _ => null,
                 };
-                if (line is not null && (lines.Count == 0 || lines[^1] != line))
+                if (line is null)
                 {
-                    lines.Add(line);
+                    continue;
+                }
+
+                // Table player, pass 31: the same thing several times in a row is counted, not dropped.
+                if (lines.Count > 0 && lines[^1].Text == line)
+                {
+                    lines[^1] = (line, lines[^1].Count + 1);
+                }
+                else
+                {
+                    lines.Add((line, 1));
                 }
             }
 
             // With nothing to count from, the latest few; otherwise everything since, capped so the screen stays a screen.
-            return [.. lines.TakeLast(since < 0 ? 6 : 30)];
+            return [.. lines.TakeLast(since < 0 ? 6 : 30).Select(item => item.Count == 1 ? item.Text : $"{item.Text} ({item.Count} times)")];
         }
     }
 
