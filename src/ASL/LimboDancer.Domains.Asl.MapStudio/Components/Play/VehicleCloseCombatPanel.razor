@@ -1,6 +1,6 @@
 @* Plan C01 (pass 27): sequential CC in each Location holding a vehicle (A11.31). The page reads each open Location's next side and its units
    (the planner's turn, read once per Location), keeps the one attack draft the Locations share, and proposes the attack or the pass. *@
-<h4>Close Combat with vehicles</h4>
+<ActionSection Title="Close Combat with vehicles" Key="close-combat-with-vehicles">
 <RuleHelp Id="vehicle-cc-help" Summary="With a vehicle in the Location, CC is sequential: the non-vehicular side attacks first, then the sides alternate until every unit has attacked or its side passes (A11.31).">
     In a Location holding a vehicle CC is sequential: the non-vehicular side attacks first, one attack at a time, then the sides alternate
     until every unit has attacked or its side passes (A11.31). Infantry attack a vehicle with their CCV as the Kill Number, one unit or one
@@ -49,6 +49,7 @@
         <button class="propose-vehicle-cc-pass" @onclick="@(() => OnPass.InvokeAsync(location.Location))">Propose: the @location.NextSide side passes</button>
     </div>
 }
+</ActionSection>
 
 @code {
     /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>

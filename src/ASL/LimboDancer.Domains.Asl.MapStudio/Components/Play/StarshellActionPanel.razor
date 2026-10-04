@@ -1,6 +1,6 @@
 @* Plan N13 (pass 28b): a Starshell attempt at night (E1.92). The page gives the firing side's units that may try, already read for the view (ruling
    R23.1); the planner decides the Usage dr, the LOS and NVR for a shot at a target, and the Random Direction. The own-hex method needs no target. *@
-<h4>Starshells</h4>
+<ActionSection Title="Starshells" Key="starshells">
 <RuleHelp Id="starshell-help" Summary="A Good Order leader, MMC, or CE AFV fires a Starshell after a successful Usage dr (4 or less for a leader, 2 or less otherwise), once per hex this phase; it Illuminates until the end of the CCPh, and firing it is not firing (E1.92, E1.923).">
     A Good Order leader, CE AFV, or MMC fires a Starshell after a Usage dr of 4 or less (a leader) or 2 or less, one attempt per hex this phase:
     in its own hex, then one hex in a Random Direction; at a Gunflash or Known enemy unit in its LOS within six hexes, then a Random Direction DR
@@ -31,6 +31,7 @@
         <span id="propose-starshell-ready" class="toolbar-note">Choose the firer, and the Location unless it fires into its own hex.</span>
     }
 </div>
+</ActionSection>
 
 @code {
     /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>

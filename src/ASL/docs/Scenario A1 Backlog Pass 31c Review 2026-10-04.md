@@ -131,6 +131,7 @@ Each problem was not tried by the report's own steps one by one: those the game 
 - The hand-over screen's note spoke of setup in Turn 5, and its map had no units, as if before setup. The note now says what holds at that moment, and the map shows what both sides know (ruling R31c.3). No map is drawn during setup.
 - The building entry block and its paragraph were on screen in every phase. The block is offered only in the moving side's Movement Phase, and its paragraph is a closed line.
 - The play test was run at the pane's full size so the user could follow it.
+- The action a phase is about was often scrolled out of sight under sections that phase seldom uses (in the Close Combat Phase, Support weapons stood above Close Combat). Every section of the Play page's actions now opens and closes at its heading (`ActionSection`): the sections the phase is about start open, the others closed, and a click on a heading changes that.
 - Range should be a sibling of LOS and be drawn on the map with it: backlog section 50, question 2.
 
 ## Tests

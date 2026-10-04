@@ -1,6 +1,6 @@
 @* Plan A17 (pass 26): the phasing side's vehicle movement: the vehicles that may spend MP now, read for the view (ruling R23.1), the chosen one, and its
    status, steps, towing, and Bounding Fire as the page renders them for it. The page keeps the choice and its reset rules. *@
-<h4>Vehicle movement</h4>
+<ActionSection Title="Vehicle movement" Key="vehicle-movement">
 <RuleHelp Id="vehicle-help" Summary="A vehicle spends its MP one expenditure at a time (Start, a VCA change, a hex, VBM, ESB, OVR, Stop), and the DEFENDER may fire or pass after each (D2.1, A8.1).">
     A vehicle spends its MP one expenditure at a time, and the DEFENDER may fire or pass after each (D2.1, A8.1): Start for 1 MP, forward
     or in Reverse, or none when it begins in Motion (D2.12, D2.23, D2.4); a VCA change of one hexspine for 1 MP, 2 in woods, buildings,
@@ -26,6 +26,7 @@
     </label>
     @ChildContent
 </div>
+</ActionSection>
 
 @code {
     /// <summary>A vehicle that may spend MP now, and how it reads: its id and Location, or off board.</summary>

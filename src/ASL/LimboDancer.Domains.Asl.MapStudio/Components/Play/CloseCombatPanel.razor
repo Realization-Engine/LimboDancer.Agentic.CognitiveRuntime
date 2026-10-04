@@ -3,7 +3,7 @@
    ambusher's withdrawal (N06), the SMC stacking (C04), the Melee withdrawals (C05), the attacks being declared (C06), the infiltrations (N08), and
    the attacks declared (C07, kept here). The page reads every fact for the view (ruling R23.1), keeps the draft and its resets (a new Location or
    round starts the declarations over), and proposes; this panel calls no planner. *@
-<h4>Close Combat</h4>
+<ActionSection Title="Close Combat" Key="close-combat">
 <RuleHelp Id="cc-help" Summary="Units of both sides in a Location attack each other, one Location at a time, none attacking or attacked more than once; roll for Ambush first where it applies, and declare SMC stacking before the attacks (A11.11, A11.12, A11.4, A11.14).">
     Units of both sides in one Location attack each other (A11.11): one Location at a time, each unit attacking and attacked at most once
     (A11.12). Where Infantry advanced into woods or a building, or with or against a concealed unit, roll for Ambush first (A11.4); the ambusher's round comes before the other
@@ -97,6 +97,7 @@
         <button id="propose-cc" @onclick="@(() => OnPropose.InvokeAsync())">Propose: resolve CC@(Attacks.Count == 0 ? " with no attacks" : "")</button>
     }
 }
+</ActionSection>
 
 @code {
     /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>

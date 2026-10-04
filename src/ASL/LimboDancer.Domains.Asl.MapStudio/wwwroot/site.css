@@ -2887,3 +2887,23 @@ button[data-working]::after {
     content: " \00B7\0020Working";
     font-weight: 600;
 }
+
+/* ---- Pass 31c: the actions' sections open and close at their headings (the user, 2026-10-04) ------------------------------------------ */
+.play-section {
+    margin: 0.35rem 0;
+    border-top: 1px solid var(--line-soft);
+}
+
+.play-section > summary {
+    padding: 0.35rem 0;
+    cursor: pointer;
+}
+
+.play-section > summary > h4 {
+    display: inline;
+    margin: 0;
+}
+
+.play-section[open] > summary {
+    margin-bottom: 0.25rem;
+}

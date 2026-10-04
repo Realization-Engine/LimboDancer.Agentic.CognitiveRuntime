@@ -2,7 +2,7 @@
    firing side's weapons with their state in the label, the units the view sees for the Spotter and the leader (ruling R23.1), and the target
    fields' choices; choosing another weapon resets the ammunition, the Spotter, and the leader, and another target clears the vehicle, both in
    the page's handlers (section 15.3). The planner decides every shot. *@
-<h4>Ordnance</h4>
+<ActionSection Title="Ordnance" Key="ordnance">
 <RuleHelp Id="ordnance-help" Summary="A manned Gun or a tank's MA fires HE at a Location's units, or the ammunition it carries at one vehicle there; a light mortar fires on the Area Target Type; a Panzerfaust or Panzerschreck fires HEAT, and an ATR AP, at a vehicle (C3.3, C3.31, C9.3, C13).">
     A Gun manned by its crew, or a tank's MA, fires HE at the enemy units of a Location on the Infantry Target Type (C3.3, C3.32), or at
     one enemy vehicle there on the Vehicle Target Type with AP, APCR, HEAT, or HE (C3.31, C8.1). It turns its barrel or turret to bring the
@@ -67,6 +67,7 @@
         <span id="propose-ordnance-ready" class="toolbar-note">Choose the weapon and its target.</span>
     }
 </div>
+</ActionSection>
 
 @code {
     /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>

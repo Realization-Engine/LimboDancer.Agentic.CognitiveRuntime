@@ -1,6 +1,6 @@
 @* Plan N11 (pass 27): a DC Thrown into an ADJACENT Location (A23.6 to A23.63). The page offers the DCs the firing side's units possess as
    holder and charge pairs, keeps the draft in the "holder|charge" form the select uses, and proposes the throw. *@
-<h4>Demolition Charges</h4>
+<ActionSection Title="Demolition Charges" Key="demolition-charges">
 <RuleHelp Id="dc-help" Summary="A DC is Thrown into an ADJACENT Location: 30 FP there with +2, then on the thrower's own Location with +3; a unit marked First Fire throws none (A23.6).">
     A DC is Thrown into an ADJACENT Location at its thrower's level: 30 FP with +2 there, then the thrower's own Location with +3, each on its own DR,
     +1 more in the AFPh unless an Opportunity Firer; a unit marked First Fire throws none, and the DC is removed (A23.6 to A23.63).
@@ -18,6 +18,7 @@
     <LocationField Id="throw-dc-at" Label="into" Name="the Location the DC is thrown into" Value="@At" OnChange="@OnAt" />
     <button id="propose-throw-dc" disabled="@(Charge.Length == 0 || At.Trim().Length == 0)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: Throw the DC</button>
 </div>
+</ActionSection>
 
 @code {
     /// <summary>A DC and the unit that possesses it.</summary>

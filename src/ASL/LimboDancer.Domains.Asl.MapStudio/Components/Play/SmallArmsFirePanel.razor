@@ -2,7 +2,7 @@
    possess, each MG alone, the director, the MOL user (A22.611; plan N10, kept here), the target, Snap Shot, Spraying Fire and a Fire Lane (plan C15,
    kept here), and a leader's partner SMC (A9.12; plan C14, kept here). The page reads the choices for the view (ruling R23.1), keeps the draft and
    prunes it when the Location changes, and proposes the fire. *@
-<h4>Fire</h4>
+<ActionSection Title="Fire" Key="fire">
 <RuleHelp Id="fire-side" Summary="@($"The {DisplayText.Side(Side)} side may fire in the {PhaseLabel}: Good Order squads and half-squads in one Location, or in Locations each ADJACENT to another, fire as one fire group with their MGs, optionally directed by a leader (A7.5).")">
     The @DisplayText.Side(Side) side may fire in the @PhaseLabel (A3.2, A3.3, A3.4, A3.5): Good Order squads and half-squads, in one Location
     or in Locations each ADJACENT to another (A7.5), as one fire group, with the MGs they possess, optionally directed by a leader, at a Location
@@ -124,6 +124,7 @@
     <button id="propose-fire" disabled="@(SelectedFirers.Count == 0 || (FreeTarget.Trim().Length == 0 && Target.Length == 0))" @onclick="@(() => OnPropose.InvokeAsync())">Propose: fire</button>
     <button id="fire-clear" class="link" @onclick="@(() => OnClear.InvokeAsync())">clear</button>
 </div>
+</ActionSection>
 
 @code {
     /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>

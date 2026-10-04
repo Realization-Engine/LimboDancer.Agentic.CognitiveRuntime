@@ -354,6 +354,7 @@ else if (state is not null)
             <CascadingValue Name="PickedLocation" Value="@highlight?.ToString()">
             @* Pass 31c (design D13): a typed Location can be armed, and the next hex clicked on the map fills it. Setup has its own picking. *@
             <CascadingValue Name="Picking" Value="@(SetupOpen ? null : Picking)">
+            <CascadingValue Name="PrimarySections" Value="@PrimarySections">
             @if (!SetupOpen && Picking.Armed is not null)
             {
                 <p id="play-picking" class="toolbar-note" role="status">
@@ -453,12 +454,14 @@ else if (state is not null)
                 }
                 @if (state.Phase == "rph")
                 {
-                    <h4>Rally</h4>
+                    <ActionSection Title="Rally" Key="rally">
                     <RallyActionPanel Units="@RallyChoices" Leaders="@([.. RallyLeaders.Select(leader => leader.Id)])" Unit="@rallyUnit" Leader="@rallyLeader"
                         OnUnit="@(id => { rallyUnit = id; rallyLeader = string.Empty; })" OnLeader="@(id => rallyLeader = id)" OnPropose="@ProposeRally" />
-                    <h4>Repair</h4>
+                    </ActionSection>
+                    <ActionSection Title="Repair" Key="repair">
                 <RepairActionPanel Weapons="@RepairChoices" Weapon="@repairWeapon" OnWeapon="@(id => repairWeapon = id)" OnPropose="@ProposeRepair" />
-                    <h4>Deploy and Recombine</h4>
+                    </ActionSection>
+                    <ActionSection Title="Deploy and Recombine" Key="deploy-and-recombine">
                 <DeployActionPanel Squads="@DeployChoices" Leaders="@([.. LeadersWith(deploySquad).Select(leader => leader.Id)])" Weapons="@DeployWeapons"
                         Squad="@deploySquad" Leader="@deployLeader" Second="@deployWeapons"
                         OnSquad="@(id => { deploySquad = id; deployLeader = string.Empty; deployWeapons.Clear(); })" OnLeader="@(id => deployLeader = id)"
@@ -467,12 +470,13 @@ else if (state is not null)
                         Leaders="@([.. LeadersWith(recombineOne).Select(leader => leader.Id)])" One="@recombineOne" Two="@recombineTwo" Leader="@recombineLeader"
                         OnOne="@(id => { recombineOne = id; recombineTwo = string.Empty; recombineLeader = string.Empty; })" OnTwo="@(id => recombineTwo = id)"
                         OnLeader="@(id => recombineLeader = id)" OnPropose="@ProposeRecombine" />
+                    </ActionSection>
                     <DmRetentionChoices Units="@DmRetainers" Selected="@retainDm" OnToggle="@(pick => Toggle(retainDm, pick.Id, pick.On))" />
                     <ShockRecoveryAction Vehicles="@ShockChoices" Vehicle="@shockVehicle" OnVehicle="@(id => shockVehicle = id)" OnPropose="@ProposeShockRecovery" />
                 }
                 @if (state.Phase == "mph")
                 {
-                    <h4>Movement</h4>
+                    <ActionSection Title="Movement" Key="movement">
                     <RuleHelp Id="move-help" Summary="@($"The {DisplayText.Side(state.PhasingSide)} side moves one stack at a time, one Location per step; after each step the DEFENDER may fire or pass (A4.1, A8.1).")">
                         The @DisplayText.Side(state.PhasingSide) side moves one stack at a time, one Location per step (A4.1). After each step the DEFENDER may fire at the stack
                         or pass (A8.1, A8.11); the stack then moves on, whole or split, or ends its move. No other unit moves until every member of the stack has
@@ -555,6 +559,7 @@ else if (state is not null)
                     {
                         <p class="muted" id="move-elsewhere">The @DisplayText.Side(state.PhasingSide) side moves now; its movers and their route are its own (choose its view to move; ruling R23.1).</p>
                     }
+                    </ActionSection>
                     @if (state.Movement is { Vehicle: true, WindowOpen: true, Members: [{ } reacting] } && state.Location(reacting)?.Location is { } reactionAt
                         && (Viewer.IsAdjudicator || viewAs != state.PhasingSide) && SeenOnly(ReactionUnits(reactionAt, reacting)).ToArray() is { Length: > 0 } reactors)
                     {
@@ -600,8 +605,9 @@ else if (state is not null)
                 }
                 @if (state.Phase == "aph" && !Viewer.IsAdjudicator && viewAs != state.PhasingSide)
                 {
-                    <h4>Advance</h4>
+                    <ActionSection Title="Advance" Key="advance">
                     <p class="muted" id="advance-elsewhere">The @DisplayText.Side(state.PhasingSide) side advances now; its units and their Locations are its own (choose its view to advance; ruling R23.1).</p>
+                    </ActionSection>
                 }
                 else if (state.Phase == "aph")
                 {
@@ -665,15 +671,16 @@ else if (state is not null)
                 }
                 @if (FiringSide is { } waiting && !Viewer.IsAdjudicator && viewAs != waiting)
                 {
-                    <h4>Fire</h4>
+                    <ActionSection Title="Fire" Key="fire">
                     <p class="muted" id="fire-elsewhere">The @DisplayText.Side(waiting) side may fire now; its fire groups are its own (choose its view to fire; ruling R23.1).</p>
+                    </ActionSection>
                 }
                 else if (FiringSide is { } firing)
                 {
                     @* Pass 28c (A8.1, A8.11): after each step the DEFENDER, from its own view, sees where the stack is and fires at it or passes. *@
                     @if (state.Phase == "mph" && !Viewer.IsAdjudicator && viewAs != state.PhasingSide && MovingAt is { } movingAt)
                     {
-                        <h4>Defensive First Fire</h4>
+                        <ActionSection Title="Defensive First Fire" Key="defensive-first-fire">
                         <div class="toolbar" id="dff-window">
                             @if (MoveStopped)
                             {
@@ -686,6 +693,7 @@ else if (state is not null)
                             <button type="button" id="dff-show" @onclick="@(() => LocateHex(movingAt))">Show it on the map</button>
                             <button id="propose-pass" @onclick='@(() => ProposeSimple(GameActions.PassFire, "pass"))'>Propose: the DEFENDER passes</button>
                         </div>
+                        </ActionSection>
                     }
                     <SmallArmsFirePanel Side="@firing" Phase="@state.Phase" PhaseLabel="@Games.PhaseLabel(state.Phase)" Locations="@([.. FireLocations(firing)])" From="@fireFrom"
                         Also="@fireAlso" AlsoChoices="@FireAlsoChoices(firing)" OnAlso="@(pick => ToggleFireAlso(pick.Id, pick.On))" Places="@FirerPlaces(firing)" AloneCandidates="@FireAloneCandidates(firing)"
@@ -740,6 +748,7 @@ else if (state is not null)
                 }
                 </fieldset>
             }
+            </CascadingValue>
             </CascadingValue>
             </CascadingValue>
         </section>
@@ -6491,6 +6500,22 @@ else if (state is not null)
             (picking!.Armed, picking.ArmedLabel) = (id, label);
             StateHasChanged();
         },
+    };
+
+    private static readonly IReadOnlySet<string> NoSections = new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The sections of the actions the phase is about, which start open (the user, 2026-10-04); the others start closed and open at their heading.
+    /// </summary>
+    private IReadOnlySet<string> PrimarySections => state?.Phase switch
+    {
+        "rph" => new HashSet<string>(StringComparer.Ordinal) { "rally" },
+        "pfph" or "dfph" or "afph" => new HashSet<string>(StringComparer.Ordinal) { "fire", "ordnance" },
+        "mph" => new HashSet<string>(StringComparer.Ordinal) { "movement", "defensive-first-fire", "fire", "vehicle-movement", "cc-reaction-fire" },
+        "rtph" => new HashSet<string>(StringComparer.Ordinal) { "rout" },
+        "aph" => new HashSet<string>(StringComparer.Ordinal) { "advance" },
+        "ccph" => new HashSet<string>(StringComparer.Ordinal) { "close-combat", "close-combat-with-vehicles" },
+        _ => NoSections,
     };
 
     /// <summary>A Location as the game writes it (pass 31c, design D12): "G4, level 1" on a map of one board.</summary>
