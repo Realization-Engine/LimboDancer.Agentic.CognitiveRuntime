@@ -1990,7 +1990,8 @@ details.advanced > summary {
     position: static;
 }
 
-.play-workspace.narrow .setup-switcher .muted {
+.play-workspace.narrow .setup-switcher .muted,
+.play-workspace.narrow #setup-their-legend {
     display: none;
 }
 
@@ -2018,7 +2019,8 @@ details.advanced > summary {
 /* A row or a stack brought into view stops below the bar that stays at the top of the pane, not under it. */
 .setup-row,
 .setup-stack,
-.setup-plan {
+.setup-plan,
+.setup-plan-group {
     scroll-margin-top: 8rem;
 }
 

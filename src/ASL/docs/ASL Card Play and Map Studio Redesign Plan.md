@@ -319,7 +319,7 @@ Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (backlog sect
 
 **Purpose:** the second side sets up from a card without placing every stack by hand. **After:** pass 30. **From:** the user's request of 2026-10-03.
 
-**Status:** the design is approved (its section 14). The page and data tasks are built and checked in the Studio; the plans, one card at a time, come next.
+**Built 2026-10-03** on branch `feature/asl-backlog-pass-30b`: tasks 30b.1 to 30b.8, sixteen setup plans made or remade on the four built-in cards, three reviews, and the Studio check of the whole pass; see the [pass 30b design](<ASL Unit Backlog Pass 30b Design.md>) and the [review document](<Scenario A1 Backlog Pass 30b Review 2026-10-03.md>). What it leaves out is in backlog section 47.
 
 | Task | What it changes | Estimate |
 |---|---|---|

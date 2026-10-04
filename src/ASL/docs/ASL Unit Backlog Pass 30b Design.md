@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 30b Design
 
-**Status:** Approved 2026-10-03, with the answers of section 14. The page and data tasks (30b.1 to 30b.6 and the page's part of 30b.8) are built and checked in the Studio on branch `feature/asl-backlog-pass-30b`; the plans (30b.7) are made one card at a time, each stopped for the user's approval: section 15. Pass 30b (Setup plans for the side that sets up second) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, a Studio pass.
+**Status:** Built, reviewed, and checked 2026-10-03 on branch `feature/asl-backlog-pass-30b`; the merge gate follows, and then the user's word to merge. Approved with the answers of section 14. Tasks 30b.1 to 30b.8 are built; sixteen plans were made or remade on the four cards, each approved by the user (section 15); three reviews and their fixes are in section 16 and in the [review document](<Scenario A1 Backlog Pass 30b Review 2026-10-03.md>); the Studio check of the whole pass is in section 17; what the pass leaves out is in backlog section 47. Pass 30b (Setup plans for the side that sets up second) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, a Studio pass.
 
 **Date:** 2026-10-03
 
@@ -503,7 +503,7 @@ Made 2026-10-03. The column never sets up on the map, so the plan is its loading
 
 ### 15.5 Armor Test: two more Russian plans with the same visible stacks
 
-Made 2026-10-03 at the user's word, to end the readable Gun of section 15.4: the card had one Russian plan, so an unchanged setup named the hidden Gun's hex. The user asked for as much variation as the constraint allows. Each plan was used in a new game in my Studio and accepted by the gate (7 counters; games `p30b-at-2`, `p30b-at-3`), with Loaded column accepted after each. In the German view the comparison read "4 of 4 hexes match" for all three Russian plans, none marked closest. They wait for the user's approval.
+Made 2026-10-03 at the user's word, to end the readable Gun of section 15.4: the card had one Russian plan, so an unchanged setup named the hidden Gun's hex. The user asked for as much variation as the constraint allows. Each plan was used in a new game in my Studio and accepted by the gate (7 counters; games `p30b-at-2`, `p30b-at-3`), with Loaded column accepted after each. In the German view the comparison read "4 of 4 hexes match" for all three Russian plans, none marked closest. The user kept both on 2026-10-03.
 
 **What can vary without being seen.** Before play the Germans see, of this rearguard: two "?" in the woods at O5, one "?" on the upper floor of P6, a squad in the house at P8 (its top and only counter), and the T-34 on the road at Q8 with its facing. Five visible counters are the three squads, the 8-1, and the tank, so nothing is left over for a Dummy: the two "?" are both spent on concealed stacks. What the Germans cannot see, and so what a plan may change:
 
@@ -594,3 +594,13 @@ Checked in my Studio at 1366x768:
 **For the merge gate.** Pass 30's tests fail in five known places (`BacklogPass30Tests`: the plan ids of each card, three Guards plans, every plan for the first side, `/2` as a refused format, and `all-round` twice).
 
 **To the backlog:** Passengers and a top counter's SW in the comparison and the look (no card needs them today); the `PlanCard` fragment written as a Razor template.
+
+## 17. The Studio check of the whole pass (step 5)
+
+**2026-10-03**, in my Studio on port 6670, at 1920x1080, 1366x768, 1024x768, 683x384, and 320x640, by keyboard and mouse, in each side's view and the adjudicator's. The [review document](<Scenario A1 Backlog Pass 30b Review 2026-10-03.md>) has the list. In short:
+
+- No sideways scroll at any width. At 1920 the page has three panes (actions 510 wide, map 840); at 1366 and 1024 the actions pane is 390 by 465; under 1024 the Map and Actions tabs, with the small setup bar on the Map tab.
+- The keyboard opens a group, shows a plan, steps the map with `[` and `]`, and swaps two hexes, with Escape to cancel.
+- The other side's view and the adjudicator's show nothing of the second side's plans, list, or outline; a hand-over clears them.
+- A `/1` user file, a card with no plans, an older game, a changed first-side plan, and a reload in the middle of the second side's setup behave as designed.
+- Two faults were found and fixed: a group brought into view stopped under the bar, and the outline's legend crowded the map's toolbar at 683 pixels.
