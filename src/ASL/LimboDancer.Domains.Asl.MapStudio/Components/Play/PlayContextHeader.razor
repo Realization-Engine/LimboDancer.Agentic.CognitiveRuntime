@@ -25,6 +25,25 @@
                 }
             </ChildContent>
         </GameLine>
+        @* Pass 31 (play test P-08; the user, 2026-10-04): the game's result is stated here, in every view, once the game has ended. *@
+        @if (Result is { Length: > 0 } result)
+        {
+            <div id="play-result-line" class="play-result">
+                <strong>@result</strong> @ResultReason
+                @if (ResultWhy.Count > 0)
+                {
+                    <details id="play-result-why">
+                        <summary>Why</summary>
+                        <ul>
+                            @foreach (var line in ResultWhy)
+                            {
+                                <li>@line</li>
+                            }
+                        </ul>
+                    </details>
+                }
+            </div>
+        }
         <NightWeatherSummary Text="@Conditions" />
         @if (Acting is { Length: > 0 } acting)
         {
@@ -74,6 +93,18 @@
 
     [Parameter]
     public bool Ended { get; set; }
+
+    /// <summary>The ended game's result in a few words, such as "German win" or "A draw"; null while the game is played.</summary>
+    [Parameter]
+    public string? Result { get; set; }
+
+    /// <summary>The reason beside the result.</summary>
+    [Parameter]
+    public string? ResultReason { get; set; }
+
+    /// <summary>Every Victory condition with whether it was met, and the facts behind the result.</summary>
+    [Parameter]
+    public IReadOnlyList<string> ResultWhy { get; set; } = [];
 
     /// <summary>The NVR, weather, precipitation, and illumination now.</summary>
     [Parameter]

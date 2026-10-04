@@ -20,8 +20,23 @@ public sealed partial class GamePlanner
     private static FireDefinition? DefinitionOf(UnitInstance unit) =>
         unit.Definition is { } reference ? FireReference.Value.Definitions.GetValueOrDefault(reference.Definition) : null;
 
-    /// <summary>A1.31, A1.32: Guards Deploy and Recombine without a leader.</summary>
-    private static bool Guards(UnitInstance unit) => unit.Definition?.Definition.Contains("guards", StringComparison.Ordinal) == true;
+    /// <summary>
+    /// Pass 31 (ruling R31.4, correcting R13.4; play test R-01): the "Guards" that A1.31 and A1.32 free from the leader are the Guards of prisoners
+    /// (A20.5), not the Russian Guards squads, so no squad Deploys or Recombines without a leader for being of a Guards formation. A Guard of
+    /// prisoners Deploying at will (A20.5) is not built.
+    /// </summary>
+    private const string LeaderNeeded = "A1.31, A1.32";
+
+    /// <summary>A25.2 (ruling R31.4): Russian squads may not Deploy [EXC: a Guard of prisoners, A20.5, and a temporary crew, A21.22, neither built].</summary>
+    private static bool MayNotDeploy(UnitInstance squad) => !ScenarioSetup.MayDeploy(DefinitionOf(squad)?.Nationality);
+
+    /// <summary>Whether the game dismantles a weapon now for its possessor (A9.8; ruling R13.6): the German MMG, in its side's PFPh or DFPh.</summary>
+    public static bool MayDismantle(GameState state, string weaponId)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return state.Find(weaponId) is EquipmentInstance { Holding: { } holding } weapon && Dismantlable(weapon) && state.Unit(holding.Holder) is { } unit
+            && ((state.Phase == "pfph" && unit.Side == state.PhasingSide) || (state.Phase == "dfph" && unit.Side != state.PhasingSide));
+    }
 
     /// <summary>Why a unit may take no more RPh actions this RPh (A3.1, A1.31; ruling R13.4), or null.</summary>
     private static string? RallyPhaseActionBar(GameState state, string id) =>
@@ -47,7 +62,7 @@ public sealed partial class GamePlanner
         var where = at is null ? $"waiting off board to enter along the {edge} edge (A2.52; ruling R25.4)" : "in its Location";
         if (leaderId is null)
         {
-            return Guards(unit) ? (null, null) : (null, $"play.deploy-leader: {unit.Id} needs a Good Order leader of its nationality {where} (A1.31, A1.32)");
+            return (null, $"play.deploy-leader: {unit.Id} needs a Good Order leader of its nationality {where} ({LeaderNeeded})");
         }
 
         // Ruling R25.4: off board, the leader waits to enter along the same edge.
@@ -89,7 +104,7 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// Deployment (A1.31; ruling R13.4): in its RPh a Good Order squad with a Good Order leader of its nationality in its Location takes a NTC modified
-    /// by his leadership (Guards need no leader and take it unmodified); passed, it becomes two HS, the first keeping its SW unless some are named for the second.
+    /// by his leadership; passed, it becomes two HS, the first keeping its SW unless some are named for the second.
     /// </summary>
     private GamePlan PlanDeploy(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, string actor)
     {
@@ -117,6 +132,12 @@ public sealed partial class GamePlanner
         if (squad.Side != state.PhasingSide)
         {
             return Refused(scope, label, expected, $"play.deploy-phase: {squad.Id} Deploys in its own side's RPh (A1.31)");
+        }
+
+        // A25.2 (ruling R31.4; play test R-01): Russian squads may not Deploy.
+        if (MayNotDeploy(squad))
+        {
+            return Refused(scope, label, expected, $"play.deploy-russian: {squad.Id} is a Russian squad, and Russian squads may not Deploy; they still take HS losses and Recombine (A25.2)");
         }
 
         // A2.51, A2.52 (ruling R25.4): a squad waiting off board may attempt to Deploy in its RPh from its entry turn on, with a leader waiting to enter

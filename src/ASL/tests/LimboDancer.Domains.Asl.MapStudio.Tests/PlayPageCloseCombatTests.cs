@@ -97,7 +97,7 @@ public sealed class PlayPageCloseCombatTests : IDisposable
         Commit(page, "#propose-setup");
         for (var phase = 0; phase < 6; phase++)
         {
-            Commit(page, "#propose-advance");
+            page.EndPhase(Commit);
         }
 
         Assert.Contains("Advance", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
@@ -107,7 +107,7 @@ public sealed class PlayPageCloseCombatTests : IDisposable
         page.Find(".advance-unit[data-unit='gl']").Change(true);
         page.Find("#advance-to").Change(hexes.Two);
         Commit(page, "#propose-advance-units");
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
         Assert.Contains("Close Combat", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
 
         // The CCPh panel: the leader is stacked with g1 (A11.14); the Germans attack at 1-1 (5-4) with the 8-1's -1 and the Russians
@@ -141,7 +141,7 @@ public sealed class PlayPageCloseCombatTests : IDisposable
         Assert.Contains("at 1-2, Kill Number 4", record, StringComparison.Ordinal);
 
         // A11.15: at the end of the CCPh the units are held in Melee.
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
         Assert.All(Held, id => Assert.Contains("melee", Row(page, id), StringComparison.Ordinal));
         Assert.False(live.History("village")!.HasErrors);
     }
@@ -159,13 +159,13 @@ public sealed class PlayPageCloseCombatTests : IDisposable
         Commit(page, "#propose-setup");
         for (var phase = 0; phase < 6; phase++)
         {
-            Commit(page, "#propose-advance");
+            page.EndPhase(Commit);
         }
 
         page.Find(".advance-unit[data-unit='g1']").Change(true);
         page.Find("#advance-to").Change(hexes.Two);
         Commit(page, "#propose-advance-units");
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
         page.Find("#cc-location").Change(hexes.Two);
         page.Find(".cc-attacker[data-unit='g1']").Change(true);
         page.Find(".cc-defender[data-unit='r1']").Change(true);
@@ -194,14 +194,14 @@ public sealed class PlayPageCloseCombatTests : IDisposable
         Commit(page, "#propose-setup");
         for (var phase = 0; phase < 6; phase++)
         {
-            Commit(page, "#propose-advance");
+            page.EndPhase(Commit);
         }
 
         page.Find(".advance-unit[data-unit='g1']").Change(true);
         Assert.Contains(page.FindAll("#advance-to option"), option => option.GetAttribute("value") == hexes.Two);
         page.Find("#advance-to").Change(hexes.Two);
         Commit(page, "#propose-advance-units");
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
 
         page.Find("#cc-location").Change(hexes.Two);
         Assert.True(page.Find("#propose-ambush").HasAttribute("disabled"));
@@ -216,7 +216,7 @@ public sealed class PlayPageCloseCombatTests : IDisposable
         // Through the Russian Player Turn to its CCPh: both are held in Melee, and each may withdraw.
         for (var phase = 0; phase < 8; phase++)
         {
-            Commit(page, "#propose-advance");
+            page.EndPhase(Commit);
         }
 
         Assert.Contains("Close Combat", page.Find("#play-summary").TextContent, StringComparison.Ordinal);

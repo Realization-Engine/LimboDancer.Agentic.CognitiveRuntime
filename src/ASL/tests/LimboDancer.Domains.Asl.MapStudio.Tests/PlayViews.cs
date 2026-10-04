@@ -35,4 +35,32 @@ internal static class PlayViews
         commit(page, "#propose-pass");
         page.ViewAs(shown);
     }
+
+    /// <summary>
+    /// Ends the phase (pass 31, ruling R31.6): the page offers the phase end to the side that ends it, so a test that plays from one view ends a
+    /// phase another side ends from that side's view, and the screen then returns to the view shown before.
+    /// </summary>
+    public static void EndPhase(this IRenderedComponent<PlayPage> page, Action<IRenderedComponent<PlayPage>, string> commit)
+    {
+        if (page.FindAll("#propose-advance").Count > 0)
+        {
+            commit(page, "#propose-advance");
+            return;
+        }
+
+        var shown = page.Find("#play-perspective").GetAttribute("value")!;
+        foreach (var view in page.FindAll("#play-perspective option").Select(option => option.GetAttribute("value")!).Where(value => value != shown).ToArray())
+        {
+            page.ViewAs(view);
+            if (page.FindAll("#propose-advance").Count > 0)
+            {
+                commit(page, "#propose-advance");
+                page.ViewAs(shown);
+                return;
+            }
+        }
+
+        page.ViewAs(shown);
+        throw new InvalidOperationException("No view may end the phase.");
+    }
 }

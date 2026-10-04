@@ -1,10 +1,10 @@
 # ASL Card Play and Map Studio Redesign Plan
 
-**Status:** Approved by the user on 2026-09-30. It merges and replaces two documents: the ASL Unit Card Play, Deferred Rules, and DYO Plan (approved 2026-09-30, passes 23 to 30) and the ASL Map Studio UI Redesign 01 Design (branch `UI-Redesign-01`, commit `800416a`); both were deleted after their content was carried over here, and git history keeps them. Passes 22b, 22c, and 22d are built (2026-09-30; see their designs, [22b](<ASL Unit Backlog Pass 22b Design.md>), [22c](<ASL Unit Backlog Pass 22c Design.md>), and [22d](<ASL Unit Backlog Pass 22d Design.md>), and reviews, [22b](<Scenario A1 Backlog Pass 22b Review 2026-09-30.md>), [22c](<Scenario A1 Backlog Pass 22c Review 2026-09-30.md>), and [22d](<Scenario A1 Backlog Pass 22d Review 2026-09-30.md>)); pass 23, the first game pass, is built too (2026-09-30; its [design](<ASL Unit Backlog Pass 23 Design.md>) and [review](<Scenario A1 Backlog Pass 23 Review 2026-09-30.md>)), pass 24 (2026-09-30; its [design](<ASL Unit Backlog Pass 24 Design.md>) and [review](<Scenario A1 Backlog Pass 24 Review 2026-09-30.md>)), pass 25 (2026-10-01; its [design](<ASL Unit Backlog Pass 25 Design.md>) and [review](<Scenario A1 Backlog Pass 25 Review 2026-10-01.md>)), pass 26 (2026-10-01; its [design](<ASL Unit Backlog Pass 26 Design.md>) and [review](<Scenario A1 Backlog Pass 26 Review 2026-10-01.md>)), pass 27 (2026-10-01; its [design](<ASL Unit Backlog Pass 27 Design.md>) and [review](<Scenario A1 Backlog Pass 27 Review 2026-10-01.md>)), pass 28 (2026-10-01; its [design](<ASL Unit Backlog Pass 28 Design.md>) and [review](<Scenario A1 Backlog Pass 28 Review 2026-10-01.md>)), pass 28b, a Studio pass (2026-10-02; its [design](<ASL Unit Backlog Pass 28b Design.md>) and [review](<Scenario A1 Backlog Pass 28b Review 2026-10-02.md>)), and pass 28c, the last Studio pass (2026-10-02; its [design](<ASL Unit Backlog Pass 28c Design.md>) and [review](<Scenario A1 Backlog Pass 28c Review 2026-10-02.md>)). The passes run one at a time on the user's go-ahead. Passes 31 and 32, the DYO purchase, are deferred (2026-10-02, the user's word) in favor of UI and playability; they were passes 29 and 30, and every planned pass after them moved up by one when the user added pass 29, the shared board workspace, on 2026-10-02, and again when the user added pass 30, prepared setups, on 2026-10-03. Pass 29 is built (2026-10-03; its [design](<ASL Unit Backlog Pass 29 Design.md>) and [review](<Scenario A1 Backlog Pass 29 Review 2026-10-03.md>)); pass 30 follows it.
+**Status:** Approved by the user on 2026-09-30. It merges and replaces two documents: the ASL Unit Card Play, Deferred Rules, and DYO Plan (approved 2026-09-30, passes 23 to 30) and the ASL Map Studio UI Redesign 01 Design (branch `UI-Redesign-01`, commit `800416a`); both were deleted after their content was carried over here, and git history keeps them. Passes 22b, 22c, and 22d are built (2026-09-30; see their designs, [22b](<ASL Unit Backlog Pass 22b Design.md>), [22c](<ASL Unit Backlog Pass 22c Design.md>), and [22d](<ASL Unit Backlog Pass 22d Design.md>), and reviews, [22b](<Scenario A1 Backlog Pass 22b Review 2026-09-30.md>), [22c](<Scenario A1 Backlog Pass 22c Review 2026-09-30.md>), and [22d](<Scenario A1 Backlog Pass 22d Review 2026-09-30.md>)); pass 23, the first game pass, is built too (2026-09-30; its [design](<ASL Unit Backlog Pass 23 Design.md>) and [review](<Scenario A1 Backlog Pass 23 Review 2026-09-30.md>)), pass 24 (2026-09-30; its [design](<ASL Unit Backlog Pass 24 Design.md>) and [review](<Scenario A1 Backlog Pass 24 Review 2026-09-30.md>)), pass 25 (2026-10-01; its [design](<ASL Unit Backlog Pass 25 Design.md>) and [review](<Scenario A1 Backlog Pass 25 Review 2026-10-01.md>)), pass 26 (2026-10-01; its [design](<ASL Unit Backlog Pass 26 Design.md>) and [review](<Scenario A1 Backlog Pass 26 Review 2026-10-01.md>)), pass 27 (2026-10-01; its [design](<ASL Unit Backlog Pass 27 Design.md>) and [review](<Scenario A1 Backlog Pass 27 Review 2026-10-01.md>)), pass 28 (2026-10-01; its [design](<ASL Unit Backlog Pass 28 Design.md>) and [review](<Scenario A1 Backlog Pass 28 Review 2026-10-01.md>)), pass 28b, a Studio pass (2026-10-02; its [design](<ASL Unit Backlog Pass 28b Design.md>) and [review](<Scenario A1 Backlog Pass 28b Review 2026-10-02.md>)), and pass 28c, the last Studio pass (2026-10-02; its [design](<ASL Unit Backlog Pass 28c Design.md>) and [review](<Scenario A1 Backlog Pass 28c Review 2026-10-02.md>)). The passes run one at a time on the user's go-ahead. Passes 32 and 33, the DYO purchase, are deferred (2026-10-02, the user's word) in favor of UI and playability; they were passes 29 and 30, and every planned pass after them moved up by one when the user added pass 29, the shared board workspace, on 2026-10-02, and again when the user added pass 30, prepared setups, on 2026-10-03, and a third time when the user added pass 31, the play-test UI, on 2026-10-04 (section 4 has the old and the new numbers). Pass 29 is built (2026-10-03; its [design](<ASL Unit Backlog Pass 29 Design.md>) and [review](<Scenario A1 Backlog Pass 29 Review 2026-10-03.md>)); pass 30 follows it.
 
 **Date:** 2026-09-30
 
-**Scope:** fifteen passes in one order, followed by the legacy scenario migration (Part VI: display batches D1 to D18 and rule passes 33 to 42, with 34b). Nine game passes, 23 to 28 and 30 to 32, close three groups of open backlog rows: card-driven play (backlog sections 27 to 32), rules deferred by earlier passes (entry and exit, the Heat of Battle, Leader Creation, and berserk gaps), and the Chapter H DYO purchase, which generates a scenario card. Six Studio passes, 22b to 22d, 28b, 28c, and 29, carry out the Map Studio redesign: the supplied theme, grouped navigation, shared components, every page's markup extracted into Blazor components, and the map-centered Play workspace. The game passes also extract the Play components they change.
+**Scope:** nineteen passes in one order, followed by the legacy scenario migration (Part VI: display batches D1 to D18 and rule passes 34 to 43, with 35b). Ten game passes, 23 to 28, 30, 30b, 32, and 33, close three groups of open backlog rows: card-driven play (backlog sections 27 to 32), rules deferred by earlier passes (entry and exit, the Heat of Battle, Leader Creation, and berserk gaps), and the Chapter H DYO purchase, which generates a scenario card. Passes 31 and 31c, the play-test UI, change the Play page and the game together, from the findings of a played game; pass 31b, between them, adds the Replay page. Six Studio passes, 22b to 22d, 28b, 28c, and 29, carry out the Map Studio redesign: the supplied theme, grouped navigation, shared components, every page's markup extracted into Blazor components, and the map-centered Play workspace. The game passes also extract the Play components they change.
 
 Section 1 of the [ASL Unit Backlog Passes Plan](<ASL Unit Backlog Passes Plan.md>) (how a pass is run, the standing rules, and the merge gate) applies unchanged to every pass here, including its visual check in the Studio before the costly tests (section 17.2).
 
@@ -48,9 +48,9 @@ New rules adjudication, changes to game persistence, VASL artwork, a new compone
 
 1. **Hidden setup in a hot-seat game (pass 23): a hand-over screen.** The Studio blanks the map and the side panels between sides until the next side confirms it is at the screen; there is no separate tab per side. A later answer the same day, when pass 23 was built: in a sequential setup the second side sees the first side's finished setup as on the board (the rulebook, A12.12 and A2.9), not nothing until both have set up.
 2. **Scope of group 2: the berserk gaps stay.** Tasks 27.2 and 27.3 remain in pass 27.
-3. **DYO nationalities (passes 31 and 32): German and Russian first.** The DYO page offers the two nationalities the cards use; the other nationalities the catalog carries, with manufactured counters where needed, go to the backlog when pass 31 is built.
-4. **Order: as numbered.** The game passes run 23 to 28, then 30 to 32, so each builds on the one before and the editor forms (pass 28) follow the rules they edit. This merged plan keeps that order and inserts the Studio passes around it (section 4); the insertion needs the user's approval.
-5. **Autonomy: one pass at a time.** It applies to every pass here, the Studio passes included. Each pass starts only on the user's go-ahead and stops after its merge, with its times reported; a rule question that changes a pass's scope, or a failure that needs a design change, still stops the pass. Passes 26, 31, and 32 reach into areas not built before (vehicles from off board, Chapter H), which is why they are not run unattended.
+3. **DYO nationalities (passes 32 and 33): German and Russian first.** The DYO page offers the two nationalities the cards use; the other nationalities the catalog carries, with manufactured counters where needed, go to the backlog when pass 32 is built.
+4. **Order: as numbered.** The game passes run 23 to 28, then 30, 30b, 32, and 33, so each builds on the one before and the editor forms (pass 28) follow the rules they edit. This merged plan keeps that order and inserts the Studio passes around it (section 4); the insertion needs the user's approval.
+5. **Autonomy: one pass at a time.** It applies to every pass here, the Studio passes included. Each pass starts only on the user's go-ahead and stops after its merge, with its times reported; a rule question that changes a pass's scope, or a failure that needs a design change, still stops the pass. Passes 26, 32, and 33 reach into areas not built before (vehicles from off board, Chapter H), which is why they are not run unattended.
 
 **Studio design decisions** (from the redesign; validated during the passes named):
 
@@ -85,21 +85,46 @@ New rules adjudication, changes to game persistence, VASL artwork, a new compone
 | 29 | The shared board workspace | Studio | 5 | 3:15 | 4:30 | 3:09 to 5:51 |
 | 30 | Prepared setups | Game | 6 | 8:30 | 9:45 | 6:50 to 12:41 |
 | 30b | Setup plans for the side that sets up second | Game | 8 | 7:30 | 9:00 | 6:18 to 11:42 |
-| 31 | DYO purchase I: Infantry, leaders, and SW | Game | 5 | 3:15 | 4:30 | 3:09 to 5:51 |
-| 32 | DYO purchase II: ordnance, vehicles, and conditions | Game | 4 | 2:30 | 3:45 | 2:38 to 4:52 |
-| | **All passes** | | **82** | **68:20** | **88:35** | **62:01 to 115:10** |
+| 31 | Play-test UI I: nothing blocks play | Studio and game | 10 | 11:30 | 13:00 | 9:06 to 16:54 |
+| 31b | The Replay page | Studio | 8 | 9:45 | 11:15 | 7:53 to 14:38 |
+| 31c | Play-test UI II: the page reads and holds still | Studio | 8 | 12:30 | 14:00 | 9:48 to 18:12 |
+| 32 | DYO purchase I: Infantry, leaders, and SW | Game | 5 | 3:15 | 4:30 | 3:09 to 5:51 |
+| 33 | DYO purchase II: ordnance, vehicles, and conditions | Game | 4 | 2:30 | 3:45 | 2:38 to 4:52 |
+| | **All passes** | | **108** | **102:05** | **126:50** | **88:47 to 164:53** |
 
 **Order.** The passes run in the order listed, one at a time on the user's go-ahead.
 
 - **22b first.** The theme ends the split between main's app.css and the branch's site.css, which each game pass would otherwise widen, and the shared components (navigation, page header, field groups, findings, feedback, the perspective and card pickers) are reused by pass 23's side views and pass 28's forms.
 - **22c and 22d next.** No game pass touches the collection pages or the workspaces, so they convert without conflicts. Both can move later if the game work is wanted sooner, but 22d must precede pass 28, whose map picking uses 22d's board viewport.
-- **23 to 28 in the game plan's order,** each also extracting the components it changes (tasks 23.5, 24.5, 25.6, 26.5, 27.5, and 28.5; 31.5 builds the DYO page from components): the side's view is an input to every Play component from pass 23 on.
+- **23 to 28 in the game plan's order,** each also extracting the components it changes (tasks 23.5, 24.5, 25.6, 26.5, 27.5, and 28.5; 32.5 builds the DYO page from components): the side's view is an input to every Play component from pass 23 on.
 - **28b and 28c after pass 28,** when Play's content has settled: the Play panels no game pass touched, then the map-centered layout, responsive behavior, and hardening.
 - **29 after 28c,** the board viewer's inspector shared with Play (added 2026-10-02).
 - **30 after 29,** prepared setups for a card's first side (added 2026-10-03).
-- **31 and 32 last,** the DYO page built from the shared components from the start.
+- **31 after 30b,** the play-test UI: the problems a played game of The Guards Counterattack found (added 2026-10-04), in two passes at the user's word: 31 for what blocks play, the result, the rules, and the hand-over screen, and 31c for the page's words, layout, map, and records. Between them comes 31b, the Replay page, which the user added the same day in the number first given to 31c.
+- **32 and 33 last,** the DYO page built from the shared components from the start.
 
-**Separable groups.** The game passes alone are 23 to 28 and 30 to 32, without their component tasks; within them, card play alone is passes 23, 24, 26, and 28 (pass 26 then takes pass 25's entry tasks it needs), the deferred rules alone are passes 25 and 27, and DYO needs pass 28 only for opening a DYO card in forms, so it could follow pass 22 directly with the JSON editor. The Studio passes alone are 22b, 22c, 22d, 28b, 28c, and 29; without the game passes, the card pages' components of task 28.5 move into 22c and the Play components of tasks 23.5 to 27.5 into 28b, which then follows 22d.
+**Separable groups.** The game passes alone are 23 to 28, 30, 30b, 32, and 33, without their component tasks; within them, card play alone is passes 23, 24, 26, and 28 (pass 26 then takes pass 25's entry tasks it needs), the deferred rules alone are passes 25 and 27, and DYO needs pass 28 only for opening a DYO card in forms, so it could follow pass 22 directly with the JSON editor. The Studio passes alone are 22b, 22c, 22d, 28b, 28c, and 29; without the game passes, the card pages' components of task 28.5 move into 22c and the Play components of tasks 23.5 to 27.5 into 28b, which then follows 22d.
+
+**Renumbering of 2026-10-04.** The user added pass 31, the play-test UI, and every pass not yet started moved up by one. Documents written before that date (time log rows, reviews, designs of finished passes, commit messages) keep the numbers they were written with; read them with this table.
+
+| Until 2026-10-03 | From 2026-10-04 | Pass |
+|---|---|---|
+| (none) | 31, 31b, and 31c | Play-test UI I, the Replay page, and Play-test UI II (31c was called 31b for part of 2026-10-04) |
+| 31 | 32 | DYO purchase I |
+| 32 | 33 | DYO purchase II |
+| 33 | 34 | Armored combat I |
+| 34 | 35 | Armored combat II |
+| 34b | 35b | Night and winter |
+| 35 | 36 | Fortifications I |
+| 36 | 37 | Fortifications II |
+| 37 | 38 | Offboard artillery |
+| 38 | 39 | Air support |
+| 39 | 40 | Terrain I |
+| 40 | 41 | Terrain II |
+| 41 | 42 | Special units |
+| 42 | 43 | Fire |
+
+Task numbers moved with their passes (31.1 became 32.1, and so on). Passes 22b to 30b and the display batches D1 to D18 keep their numbers. Two earlier renumberings moved the same passes: on 2026-10-02 (pass 29 added: DYO 29 and 30 became 30 and 31, the rule packages 31 to 40 with 32b became 32 to 41 with 33b) and on 2026-10-03 (pass 30 added: DYO became 31 and 32, the rule packages 33 to 42 with 34b).
 
 ## 5. The passes
 
@@ -212,12 +237,12 @@ Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (backlog sect
 | 26.3 Crews leaving with their Gun | A crew with its Gun leaves the map; the Exit VP count the Gun. | A2.6, C10.3, A26.23 | 0:20 |
 | 26.4 A test card with armor | A manufactured test card (R0.3) fielding a halftrack, a tank, and a Gun, played end to end by the table player. | R0.3 | 0:40 |
 | 26.5 Setup and vehicle components | P08 `SetupPlacementEditor` and P09 `SetupPlacementList` (Guns and crews, off-board placement, OB groups), A17 to A22 (vehicle movement, towing, Bounding Fire, CE/BU), C18 `GunArcAction`, and S13 `FacingPicker`; the vehicle panel's "wished to enter next" field for Motion (backlog section 21). | | 1:15 |
-| 26.6 Covered Arcs across boards | A Gun's Covered Arc across composed boards and on a reversed board, checked first against what happens today (backlog section 12); pass 35 reuses it for pillboxes. | C3.2, C3.21 | 0:45 |
+| 26.6 Covered Arcs across boards | A Gun's Covered Arc across composed boards and on a reversed board, checked first against what happens today (backlog section 12); pass 36 reuses it for pillboxes. | C3.2, C3.21 | 0:45 |
 | 26.7 Concealed and hidden Guns | Concealed crews and Guns, a firing crew's loss of concealment, and an Emplaced Gun in Concealment Terrain setting up HIP where A12.34 allows it, confirmed against the PDF (backlog sections 12 and 22). | A12.34, C11 | 0:30 |
 | | Overhead | | 1:15 |
 | | **Pass 26 total** (build 4:45) | | **6:00** |
 
-**Built 2026-10-01** (rulings R26.1 to R26.8). The user answered the five questions on the rulebook's side or the narrower build: Passengers load and unload; limbering and en portee wait, since both catalog Guns are QSU; A12.34's HIP is built for Concealment Terrain only; the MPh holds vehicles until they enter, since they cannot advance; the pass ran whole. The three known bugs are fixed: a vehicle's exit now records its `UnitExit` with its Passengers' and towed Gun's, a manned Gun's hidden flag is checked, and a crew manning a Gun stacks as a squad. Passengers are reached through their vehicle: they take no fire, gain no Control, and act only by unloading, until plan passes 33 and 34 build their fire and survival. The built-in card Armor Test is manufactured under R0.3. All ten candidates of task 26.5 are extracted. Items left out are in section 40 of the [ASL Unit Backlog](<ASL Unit Backlog.md>).
+**Built 2026-10-01** (rulings R26.1 to R26.8). The user answered the five questions on the rulebook's side or the narrower build: Passengers load and unload; limbering and en portee wait, since both catalog Guns are QSU; A12.34's HIP is built for Concealment Terrain only; the MPh holds vehicles until they enter, since they cannot advance; the pass ran whole. The three known bugs are fixed: a vehicle's exit now records its `UnitExit` with its Passengers' and towed Gun's, a manned Gun's hidden flag is checked, and a crew manning a Gun stacks as a squad. Passengers are reached through their vehicle: they take no fire, gain no Control, and act only by unloading, until plan passes 34 and 35 build their fire and survival. The built-in card Armor Test is manufactured under R0.3. All ten candidates of task 26.5 are extracted. Items left out are in section 40 of the [ASL Unit Backlog](<ASL Unit Backlog.md>).
 
 ### Pass 27: Heat of Battle, Leader Creation, and berserk gaps
 
@@ -334,7 +359,72 @@ Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (backlog sect
 | | Overhead | 1:30 |
 | | **Pass 30b total** (build 7:30, revised 2026-10-03) | **9:00** |
 
-### Pass 31: DYO purchase I: Infantry, leaders, and SW
+### Pass 31: Play-test UI I: nothing blocks play
+
+**Added 2026-10-04** at the user's word. On 2026-10-03 and 2026-10-04 Claude in Chrome played a whole game of The Guards Counterattack through the Play page (`guards-dl-01`, revisions 56 to 613) and reported 31 problems and 8 possible rules errors. Passes 31 and 31b make the page fit to play such a game. They work from four sources: the report, its screenshots, the game's event log, and the gate's audit log. See the [pass 31 design](<ASL Unit Backlog Pass 31 Design.md>), which covers both passes. This pass removes what blocks or loses play, states the game's last turn and its result, corrects the rules the play test put in doubt, and makes the hand-over screen say what is going on. The rulebook is checked first and at every task.
+
+**Purpose:** a game played to its end through the page without a blocked or lost action, and with its result stated. **After:** pass 30b. **From:** the play test's report of 2026-10-04; backlog sections 44 and 45.
+
+**Built 2026-10-04** on branch `feature/asl-backlog-pass-31`: tasks 31.1 to 31.10, three reviews and their fixes, and the Studio check; see the [pass 31 design](<ASL Unit Backlog Pass 31 Design.md>), section 14, and the [review document](<Scenario A1 Backlog Pass 31 Review 2026-10-04.md>). Rulings R31.1 to R31.8. What it leaves out is in backlog section 48.
+
+| Task | What it changes | Estimate |
+|---|---|---|
+| 31.1 The referee's check, first | The possible rules errors R-01 and R-03 to R-08, and the passages behind the pass's rule changes, checked against the rulebook PDF before any code changes; the rulings. | 1:15 |
+| 31.2 Who may act | A proposal carries the side that proposes it and the planner checks it; the pickers list the viewing side's units; the phase end is offered to the view that may end it; a waiting choice comes first. | 1:30 |
+| 31.3 A move that fire stops | The DEFENDER's pass for a moving stack with no member left, and a move ended by the fire that eliminates it, so the Movement Phase no longer locks. | 0:30 |
+| 31.4 The last turn and the result | "Turn N of M" and "last turn" in the header; the game's result in every view once it has ended, with an account of every Victory condition, held or not. The result is already computed from the card's Victory Conditions (`ScenarioVictory`). | 1:00 |
+| 31.5 Consequences | A proposal lists what it will eliminate, capture, waste, or end, apart from its checks, with a warning heading and a Confirm that says so. | 1:00 |
+| 31.6 Fire corrections | The Defensive First Fire MF limit counted for this stack, Location, and phase; fire at a Location with two leaders; the Effect column showing what changed; a created unit's conditions; a pinned firer's SW. | 1:45 |
+| 31.7 Advance and Close Combat | The Advance list by building level, with concealed units; prisoners out of the Close Combat form, a stacked SMC ticked with its MMC, a text for each refusal, an ordered capture list. | 1:30 |
+| 31.8 The Rally Phase | Ralliers and Dismantle offered only where they can act; a text for each Self-Rally refusal; the Self-Rally allowance. | 0:45 |
+| 31.9 The hand-over screen | The screen says who and when, why the game waits, what the arriving side will be asked to do, what both sides know happened since it last had the screen, and where, on a map of the terrain alone; it shows only what both sides' views read alike. | 1:30 |
+| 31.10 A short play test | Two Game Turns of The Guards Counterattack through the page, and the report's steps for this pass's problems. | 0:45 |
+| | Overhead | 1:30 |
+| | **Pass 31 total** (build 11:30) | **13:00** |
+
+### Pass 31b: The Replay page
+
+**Added 2026-10-04** at the user's word, taking the number 31b from the pass that is now 31c. A new page plays a recorded game back on the map one action at a time: what was done, its dice and arithmetic, and what changed, in a side's view or the adjudicator's, stepping forward and back, by phase and by Game Turn, or running at a pace. It is built from parts the Studio has: the Game states page's history and views, the Play page's map, records, header, and Victory standing, and the board viewer's address of a game at a revision. See the [pass 31b design](<ASL Unit Backlog Pass 31b Design.md>).
+
+**Purpose:** a played game can be watched and studied, and any moment of it reached without cutting its file by hand. **After:** pass 31. **From:** the user's request of 2026-10-04; backlog section 48's row on a played game's record as a page of its own.
+
+**Status:** designed 2026-10-04; waits for the user's approval and answers (the design's section 11).
+
+| Task | What it changes | Estimate |
+|---|---|---|
+| 31b.1 Steps | A game's events grouped into steps, one for each confirmed proposal, with their phases and turns, titles in words, and what each view may read of them. | 1:30 |
+| 31b.2 The records as a service | The Play page's record builders moved into a service read for a history, a view, and a last revision, so Play and Replay share them; Play shows what it shows now. | 2:00 |
+| 31b.3 The page | `/games/replay`: the game and view pickers, the header, the map on `BoardWorkspace` at a step, the units and Victory standing at the step, the narrow layout. | 1:30 |
+| 31b.4 The timeline and the transport | The game as turns, phases, and steps; the step's record; first, back, forward, last, by phase and by turn; the keyboard; a step's address. | 1:30 |
+| 31b.5 What changed | The difference between the views before and after a step, as marks on the map and lines in the step panel. | 1:30 |
+| 31b.6 Running it | "Play" at a pace, stopping, reduced motion. | 0:30 |
+| 31b.7 Play on from here | A new game from the events up to a step, opened on the Play page; for an ended game or the adjudicator's view. | 0:45 |
+| 31b.8 The links | "Replay this game" and "Replay from here" on Play; the navigation. | 0:30 |
+| | Overhead | 1:30 |
+| | **Pass 31b total** (build 9:45) | **11:15** |
+
+### Pass 31c: Play-test UI II: the page reads and holds still
+
+**Added 2026-10-04** with pass 31, split from it at the user's word, as pass 31b; it became pass 31c the same day, when the user gave the number 31b to the Replay page; the [pass 31 design](<ASL Unit Backlog Pass 31 Design.md>), section 5, holds its decisions. Fewer hand-overs in the Movement Phase are left out at the user's word and stay in the backlog.
+
+**Purpose:** a page that speaks in the player's words, takes its Locations from the map, shows a fire's arithmetic before the dice, and does not move under the pointer. **After:** pass 31b. **From:** the play test's report of 2026-10-04.
+
+**Status:** designed 2026-10-04; starts only on the user's word after pass 31b is merged. Its unit names and Locations in words reach the Replay page through the records service of task 31b.2.
+
+| Task | What it changes | Estimate |
+|---|---|---|
+| 31c.1 Names and words | Every unit named by its printed values, kind, and a fixed tag ("4-6-7 squad G4"); modifier names in words; reasons without codes; Locations in words. | 2:30 |
+| 31c.2 Picking on the map | Every typed Location takes the hex picked on the map; routes and paths by clicks; the fire panel's From and Target. | 1:15 |
+| 31c.3 The fire proposal | FP, column, and DRM before the dice; the headline with its weapons; rate of fire kept; fire groups across ADJACENT Locations. | 2:15 |
+| 31c.4 A workspace that holds still | No window scroll at 1024 pixels and wider; a header of fixed height; short windows; fixed places for Propose and Confirm. | 2:00 |
+| 31c.5 The map | The view kept across a hand-over and a phase change; a loading line; the Residual FP marker off the counter; a Melee mark. | 0:45 |
+| 31c.6 Records and the latest line | The side in a record's heading; every event in "Latest", with a fire's result; "Since you last looked"; Records over the strip. | 1:00 |
+| 31c.7 Rout speed | The rout search kept for a unit at a revision; a "Working" sign. | 1:15 |
+| 31c.8 The second play test | The Guards Counterattack played again from setup to its end; each of the 31 problems tried again by the report's steps. | 1:30 |
+| | Overhead | 1:30 |
+| | **Pass 31c total** (build 12:30) | **14:00** |
+
+### Pass 32: DYO purchase I: Infantry, leaders, and SW
 
 **Deferred 2026-10-02** at the user's word: the DYO purchase is a whole new feature of ASL that can wait; the work turns to the Studio's UI and playability. The pass stays planned as written, and its backlog rows stay where they are.
 
@@ -342,47 +432,47 @@ Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (backlog sect
 
 | Task | What it changes in play | Rules | Estimate |
 |---|---|---|---|
-| 31.1 The DYO setup and roster | A DYO page: German and Russian (user answer, 2026-09-30), the date, boards, and the points each side spends; the Roster, with the counter limits and purchase mechanics. | H1.1 to H1.14 | 0:45 |
-| 31.2 Infantry purchase | Squads and crews by BPV and MPV, with Assault Engineers, Sappers, Commandos, and MOL capabilities where the game plays them; the ELR Chart and SAN. | H1.2 to H1.29 | 0:50 |
-| 31.3 Bonus Infantry and leaders | The second Infantry purchase and bonus Infantry; leader quality and the Leader Exchange DR. | H1.7 to H1.74, H1.8 to H1.82 | 0:40 |
-| 31.4 SW allotment and the card | SW allotted by ratio; the purchase written as a user card (sides, ELR, SAN, OB groups) and opened in the editor. | H1.83, H1.84 | 0:45 |
-| 31.5 The DYO page from components | Built from S02, S04, S06, S07, and K02 from the start; no raw form markup to extract later. | | 0:15 |
+| 32.1 The DYO setup and roster | A DYO page: German and Russian (user answer, 2026-09-30), the date, boards, and the points each side spends; the Roster, with the counter limits and purchase mechanics. | H1.1 to H1.14 | 0:45 |
+| 32.2 Infantry purchase | Squads and crews by BPV and MPV, with Assault Engineers, Sappers, Commandos, and MOL capabilities where the game plays them; the ELR Chart and SAN. | H1.2 to H1.29 | 0:50 |
+| 32.3 Bonus Infantry and leaders | The second Infantry purchase and bonus Infantry; leader quality and the Leader Exchange DR. | H1.7 to H1.74, H1.8 to H1.82 | 0:40 |
+| 32.4 SW allotment and the card | SW allotted by ratio; the purchase written as a user card (sides, ELR, SAN, OB groups) and opened in the editor. | H1.83, H1.84 | 0:45 |
+| 32.5 The DYO page from components | Built from S02, S04, S06, S07, and K02 from the start; no raw form markup to extract later. | | 0:15 |
 | | Overhead | | 1:15 |
-| | **Pass 31 total** (build 3:15) | | **4:30** |
+| | **Pass 32 total** (build 3:15) | | **4:30** |
 
-### Pass 32: DYO purchase II: ordnance, vehicles, and conditions
+### Pass 33: DYO purchase II: ordnance, vehicles, and conditions
 
 **Deferred 2026-10-02** at the user's word: the DYO purchase is a whole new feature of ASL that can wait; the work turns to the Studio's UI and playability. The pass stays planned as written, and its backlog rows stay where they are.
 
-**Purpose:** the DYO purchase covers what the game plays beyond Infantry. **After:** pass 31. **From:** backlog section 27. Its purchase forms reuse pass 31's components.
+**Purpose:** the DYO purchase covers what the game plays beyond Infantry. **After:** pass 32. **From:** backlog section 27. Its purchase forms reuse pass 32's components.
 
 | Task | What it changes in play | Rules | Estimate |
 |---|---|---|---|
-| 32.1 Ordnance and vehicles | Guns and vehicles by BPV with the Availability DR and RF; optional armament and Armor Leaders where the game plays them. | H1.3, H1.4 to H1.43 | 1:00 |
-| 32.2 DYO conditions | The DYO Weather, EC, and NVR tables written to the card's SSR tokens. | E1.11, E3 | 0:40 |
-| 32.3 What is not played | OBA, Air Support, fortifications, boats, gliders, horses, and OP tanks refused with their backlog rows. | H1.44 to H1.6 | 0:20 |
-| 32.4 End to end | A DYO game bought, saved, started, and played to its end by the table player. | | 0:30 |
+| 33.1 Ordnance and vehicles | Guns and vehicles by BPV with the Availability DR and RF; optional armament and Armor Leaders where the game plays them. | H1.3, H1.4 to H1.43 | 1:00 |
+| 33.2 DYO conditions | The DYO Weather, EC, and NVR tables written to the card's SSR tokens. | E1.11, E3 | 0:40 |
+| 33.3 What is not played | OBA, Air Support, fortifications, boats, gliders, horses, and OP tanks refused with their backlog rows. | H1.44 to H1.6 | 0:20 |
+| 33.4 End to end | A DYO game bought, saved, started, and played to its end by the table player. | | 0:30 |
 | | Overhead | | 1:15 |
-| | **Pass 32 total** (build 2:30) | | **3:45** |
+| | **Pass 33 total** (build 2:30) | | **3:45** |
 
 ## 6. Duration report
 
-The game passes keep the Scenario Card Games Plan's basis: 1:15 of overhead per pass (reading and rulings, the two reviews and their fixes, the documents, the full local suite, and the merge gate). The Studio passes and the component tasks use the same overhead. Their builds assume about 8 to 10 minutes per extracted component, including its tests, resets, and disclosure checks, with Play panels taking the most: most extractions move markup behind a narrow contract without changing behavior, and recent passes have run at about 65 % of their estimates. P1 candidates are the default and a pass may leave one inline with a reason; P2 and P3 candidates are extracted only when needed (section 16.17). The largest single risks to the estimates are 22d.1 (the viewport) and 27.5 (Close Combat and its disclosure). The game passes were first estimated at 30:00 (33 tasks, build 20:00); their component tasks and the tests before them (6:40), and the backlog survey's additions (tasks 25.7, 26.6, and 26.7, and the wider 23.3 and 28.4, 2:45), bring them to 39:25 in 43 tasks. Studio passes total 30:25 with pass 29 (added 2026-10-02); all passes 75:35 with pass 30 (added 2026-10-03), about 10.1 working days of 7.5 hours. Actuals have run well under plan (pass 20 took 2:17 against 3:00, pass 21 2:22 against 3:45, pass 22 2:18 against 3:30); at about 65 % of the estimate the whole would be nearer 49:08. The estimates are not cut for that, because passes 22d, 26, 28c, 30, 31, and 32 reach into areas the recent passes did not.
+The game passes keep the Scenario Card Games Plan's basis: 1:15 of overhead per pass (reading and rulings, the two reviews and their fixes, the documents, the full local suite, and the merge gate). The Studio passes and the component tasks use the same overhead. Their builds assume about 8 to 10 minutes per extracted component, including its tests, resets, and disclosure checks, with Play panels taking the most: most extractions move markup behind a narrow contract without changing behavior, and recent passes have run at about 65 % of their estimates. P1 candidates are the default and a pass may leave one inline with a reason; P2 and P3 candidates are extracted only when needed (section 16.17). The largest single risks to the estimates are 22d.1 (the viewport) and 27.5 (Close Combat and its disclosure). The game passes were first estimated at 30:00 (33 tasks, build 20:00); their component tasks and the tests before them (6:40), and the backlog survey's additions (tasks 25.7, 26.6, and 26.7, and the wider 23.3 and 28.4, 2:45), bring them to 39:25 in 43 tasks. Studio passes total 30:25 with pass 29 (added 2026-10-02); all passes 75:35 with pass 30 (added 2026-10-03), about 10.1 working days of 7.5 hours. Actuals have run well under plan (pass 20 took 2:17 against 3:00, pass 21 2:22 against 3:45, pass 22 2:18 against 3:30); at about 65 % of the estimate the whole would be nearer 49:08. The estimates are not cut for that, because passes 22d, 26, 28c, 30, 32, and 33 reach into areas the recent passes did not.
 
 ## 7. Risks
 
 - **Pass 23** changes what every Play panel shows; the page tests read the adjudicator's view and may need a side's view throughout. Its component task (23.5) makes the side's view an explicit input from the start.
 - **Pass 22d's board viewport** is the riskiest extraction: the page and a component must never both install listeners on one element, and reconnection, route changes, repeated mounting, and disposal all need tests (section 15.5).
 - **Pass 26** depends on vehicle movement from off board, which the ordnance and vehicle passes did not build; if Motion and Passengers at entry need more of Chapter D, the pass grows.
-- **Pass 31** needs the catalog's BPV for every purchasable counter; counters the catalog lacks are manufactured (R0.3), which may add catalog versions and package re-pins as pass 17 did.
+- **Pass 32** needs the catalog's BPV for every purchasable counter; counters the catalog lacks are manufactured (R0.3), which may add catalog versions and package re-pins as pass 17 did.
 - **Test hooks.** The 156 MapStudio tests address the pages' element ids and data attributes; every extraction keeps them (section 17.1), adding focused component tests rather than rewriting page tests.
 - **Disclosure.** A component must never receive hidden data and hide it with CSS (section 15.4); the review of each Play extraction checks the DOM and accessible text in both a side's and the adjudicator's view.
 
 ## 8. Left out
 
-These stay in the backlog: Fire spread and Kindling (so Control forfeited to a Kindled Fire, and EC and wind as an SSR the game reads), Sewer Movement and foxholes, Battlefield Integrity, the Factory and Fanaticism SSRs, OBA and Air Support, fortifications, the national rules of A25 for nationalities without counters (those the display batches add are built by batch D4 and passes 36 to 41), and Chapters F and G (the desert and the Pacific; their legacy cards stay display only). Fire, Sewer Movement and foxholes, the Factory, OBA and Air Support, fortifications, and more built-in cards are planned in Part VI.
+These stay in the backlog: Fire spread and Kindling (so Control forfeited to a Kindled Fire, and EC and wind as an SSR the game reads), Sewer Movement and foxholes, Battlefield Integrity, the Factory and Fanaticism SSRs, OBA and Air Support, fortifications, the national rules of A25 for nationalities without counters (those the display batches add are built by batch D4 and passes 37 to 42), and Chapters F and G (the desert and the Pacific; their legacy cards stay display only). Fire, Sewer Movement and foxholes, the Factory, OBA and Air Support, fortifications, and more built-in cards are planned in Part VI.
 
-For the Studio, what section 2 places outside the redesign stays out; narrow-screen access and keyboard operation are in it (pass 28c). P2 and P3 candidates a pass leaves inline are recorded in its review, not in the backlog, unless a later pass needs them. A survey of the backlog on 2026-09-30 found 83 rows the passes already build and moved 34 more into passes 23 to 41 and batch D1; on approval they were listed with their planned passes in section 33 of the backlog. The Board library's SVG previews (section 12.1) are not in these passes; they are a row in section 33 of the backlog.
+For the Studio, what section 2 places outside the redesign stays out; narrow-screen access and keyboard operation are in it (pass 28c). P2 and P3 candidates a pass leaves inline are recorded in its review, not in the backlog, unless a later pass needs them. A survey of the backlog on 2026-09-30 found 83 rows the passes already build and moved 34 more into passes 23 to 42 and batch D1; on approval they were listed with their planned passes in section 33 of the backlog. The Board library's SVG previews (section 12.1) are not in these passes; they are a row in section 33 of the backlog.
 
 # Part III. The Studio design
 
@@ -1204,7 +1294,7 @@ Section 16.17 assigns every candidate to a pass. The shared components come firs
 
 ### 16.17 Candidates by pass
 
-Every active candidate belongs to exactly one pass; the five retired ones (P03 to P06 and N01) to none. A pass extracts its P1 candidates by default and may leave one inline with a reason; its P2 and P3 candidates are extracted only when the parent stays hard to understand, is rendered on its own, or is reused (section 16.2). The pass's review records every candidate left inline. Pass 24 extends K08 rather than adding one, and passes 31 and 32 build a new page from the shared components rather than extracting any.
+Every active candidate belongs to exactly one pass; the five retired ones (P03 to P06 and N01) to none. A pass extracts its P1 candidates by default and may leave one inline with a reason; its P2 and P3 candidates are extracted only when the parent stays hard to understand, is rendered on its own, or is reused (section 16.2). The pass's review records every candidate left inline. Pass 24 extends K08 rather than adding one, and passes 32 and 33 build a new page from the shared components rather than extracting any.
 
 | Pass | Candidates | P1 | P2 and P3 | Candidates |
 |---|---:|---:|---:|---|
@@ -1335,7 +1425,7 @@ Each game pass adds its rulings to the [ASL Unit Backlog Passes Plan](<ASL Unit 
 | H | Escape from Velikiye Luki | The boards are as the original printing lays them out (Vol. 24 No. 1: boards 4, 2, and 3, side by side, east to west); the 1988 reprint's order is not used. |
 
 2. **Display first.** Every portable card is ported first as display only: read, adapted, its counters in the catalog, its provenance complete, and shown on the Scenarios page, but not offered for play. It becomes playable when the rule packages it needs are built (section 22).
-3. **Order.** The migration follows pass 32.
+3. **Order.** The migration follows pass 33.
 4. **Chapters F and G are not built,** and the cards that need them stay display only, with the chapters in the backlog (section 33 of the ASL Unit Backlog). With one card whose map is not among the VASL boards, 12 portable cards stay display only:
 
 | Card | Title | Why it stays display only |
@@ -1359,13 +1449,13 @@ Each game pass adds its rulings to the [ASL Unit Backlog Passes Plan](<ASL Unit 
 2. Bring every entry to the registered rulebook: each term, rule, and reference is checked against the PDF and cited to it; what the rulebook cannot support is rewritten, manufactured under R0.3, or marked not enforced with a backlog row, never carried over as printed.
 3. Add the card's counters to the catalog from registered sources (the counter sheets, the National Capabilities Chart, the ordnance and vehicle listings), manufacturing under R0.3 on sheet MFG what no source prints; a catalog version per batch, pinned as batch D1's ruling decides (section 21).
 4. Register a PDF comparison for every rule fragment the card newly cites (the pass 17 registry).
-5. Write the card (asl-scenario-card/1) marked display only with the packages it waits for, its ruling (one R number per card for its adaptations), and its tests: the card validates and its provenance is complete (section 13.6). Recheck the card's packages against its image: its boards' terrain (a board holding terrain the movement rules refuse waits for pass 39), its nationalities' A25 rules, night and winter conditions, special units, and whether an SSR's "Kindling NA" still leaves a Fire need (DASL-A, T5, and G15 are flagged for this check). A changed need moves the card's playable pass, recorded in the batch's review.
+5. Write the card (asl-scenario-card/1) marked display only with the packages it waits for, its ruling (one R number per card for its adaptations), and its tests: the card validates and its provenance is complete (section 13.6). Recheck the card's packages against its image: its boards' terrain (a board holding terrain the movement rules refuse waits for pass 40), its nationalities' A25 rules, night and winter conditions, special units, and whether an SSR's "Kindling NA" still leaves a Fire need (DASL-A, T5, and G15 are flagged for this check). A changed need moves the card's playable pass, recorded in the batch's review.
 6. When the card's packages are built, the rule pass that completes them makes it playable: tests that it sets up from its OB and plays to its end, its not-enforced entries enforced where the new rules allow, and its display-only mark removed.
 7. A referee reviews each display batch's adaptations against the rulebook; each rule pass's table player plays one of the cards it makes playable.
 
 ## 20. What the cards need
 
-The catalog read each card's units, terrain, and rules, corrected by the reviews of 2026-09-30. Of the 83 portable cards, 12 stay display only (decision 4) and 71 become playable: 4 need nothing the game lacks once passes 23 to 32 are done, and the rest wait for rule packages the game has not built. Each display batch rechecks its cards (section 19, step 5).
+The catalog read each card's units, terrain, and rules, corrected by the reviews of 2026-09-30. Of the 83 portable cards, 12 stay display only (decision 4) and 71 become playable: 4 need nothing the game lacks once passes 23 to 33 are done, and the rest wait for rule packages the game has not built. Each display batch rechecks its cards (section 19, step 5).
 
 | Package | Cards needing it (of the 71) | What is missing today |
 |---|---:|---|
@@ -1404,27 +1494,27 @@ Each display batch ports cards by steps 1 to 5 of section 19. Batch D1 first ext
 | D17 | G37 Forth Bridge; V Auld Lang Syne; G38 Castello Fatato; G39 A Desperate Affair; G40 Will to Fight...Eradicated; G41 JABO! | 2:51 | 4:06 |
 | D18 | G42 The Youth's First Blood; G43 Kangaroo Hop; G44 Abandon Ship!; G45 Halha River Bridge; G46 Triumph atop Taraldsvikfjell | 2:45 | 4:00 |
 
-## 22. The rule packages: passes 33 to 42
+## 22. The rule packages: passes 34 to 43
 
 Each package is a game pass run as in section 1 of the Backlog Passes Plan: rulings, a referee and a table player, the Studio visual check before the costly tests, the merge gate. Its last task makes playable the cards it completes (step 6 of section 19: 10 minutes for a small card, 15 for a larger one). Its other tasks are planned in detail, in the format of section 5, when the pass before it merges; the package estimates are its scale.
 
 | Pass | Package | What it builds | Rules | Package build | Cards made playable | Build | Total |
 |---|---|---|---|---|---|---|---|
-| 33 | Armored combat I | Closed-topped AFVs and their main armament: AFVs as targets of ordnance and of Infantry AT weapons, the To Hit and To Kill process with AP and HEAT, Bounding First Fire with the MA and the Gun Duels it meets, the tank's BMG and CMG with one fire marker for all its weapons, and crews Bailing Out with their own inherent fire (backlog sections 1, 12, 14, 17, and 18). | C2.2401, C3, C7, C8.1 to C8.3, D1.8, D3, D5, A7.35 | 5:40 | none (0:00) | 5:40 | 6:55 |
-| 34 | Armored combat II | Special ammunition (APCR, APDS, Canister, Smoke) and ordnance SMOKE and WP; Motion and Non-Stopped targets and Motion attempts; Immobilization and Shock from To Kill; burning wrecks as terrain (not fire spread); Recall, to a Friendly Board Edge of more than one edge; Passengers and Riders, their fire and rout; ordnance and vehicle fire at another level; Armor Leaders (the catalog shows them on G, G2, T2, T4, M, and Q) (backlog sections 1, 6, 12, 14, 15, 18 to 21, and 23). | C8.4 to C8.9, C2.6, D2, D5.3, D6, D3.4 | 5:25 | G, T2, T3, T4, I, G6, M, N, Q, G14, S (2:05) | 7:30 | 8:45 |
-| 34b | Night and winter | The night rules the cards use beyond pass 16's: the Scenario Defender at night (HIP and "?" allotments, Freedom of Movement, the lower ELR, Recon), Cloaking and Straying, and Lax and Stealthy units at night; and the winter conditions the cards set: Fog, Ice, Drifts, and Winter Camouflage (backlog section 26). | E1.2, E1.4 to E1.6, E3.3, E3.7 | 2:45 | R, G33 (0:25) | 3:10 | 4:25 |
-| 35 | Fortifications I | Foxholes, trenches, and Entrenching, with Manhandling and Entrenching in Mud, snow, and Extreme Winter; the tasks that place TI; pillboxes with their Covered Arc (from task 26.6), Rally terrain, and DM; roadblocks (backlog sections 2, 23, 24, and 26). | B27, B29, B30, A4.8, A10.61, A10.62, E3.61, E3.722 | 3:35 | none (0:00) | 3:35 | 4:50 |
-| 36 | Fortifications II | Wire, A-P and A-T mines, known and hidden minefields, and their attacks on Infantry and vehicles; the French and Norwegian national rules. | B26, B28, A25 | 3:15 | G3, T6, T9, T10, T13, G31, G44, G46 (1:40) | 4:55 | 6:10 |
-| 37 | Offboard artillery | OBA: radio and field phone, battery access, Spotting Rounds and Fire for Effect, accuracy and extent of error, the blast area, and its attacks. | C1 | 3:30 | none (0:00) | 3:30 | 4:45 |
-| 38 | Air support | Aircraft arrival, sighting, bombs and strafing, and AA fire against them. | E7 | 3:00 | D, E, F, G4, J, K, L, P, T7, T11, G29, V, G42, G43 (3:20) | 6:20 | 7:35 |
-| 39 | Terrain I | Board overlays in the map composer and the Hex Facts; streams, rivers, fords, and canals; bridges; the board terrain the movement rules still refuse (gullies, crags, shellholes, graveyards, lumberyards, sunken and elevated roads, cliffs, and the like); marsh and brush as Open Ground in snow, frozen streams, and minefields in Deep Snow; paved road hexes named as such (backlog sections 20, 26, 29, and 30). | B6, B20, B21, B3, B19, E3.722, E3.73, overlays | 5:30 | none (0:00) | 5:30 | 6:45 |
-| 40 | Terrain II | Bocage and hedges; cellars; Factories; sewers and Sewer Movement; an AFV entering a building; the Italian, Finnish, Iraqi, and New Zealand national rules, ANZAC Stealth included (backlog sections 15, 20, 21, and 27). | B9, B23.41, B23.74, B8, A25 | 3:05 | C, G1, G5, G8, HASL-A, G18, G21, T, DASL-B, G25, G30, DASL-C, G32, G34, G35, G36, G37 (4:00) | 7:05 | 8:20 |
-| 41 | Special units | Cavalry and horses, skis, air drops and gliders, boats, and partisans as the cards field them; the Dutch and Polish national rules (backlog section 15). | A13, E4, E5, E8, E9, A25 | 3:40 | G7, O, G10, G11, G12, T12, T15, G17, G26, G39, G40 (2:30) | 6:10 | 7:25 |
-| 42 | Fire | Kindling, spread, Blazes, and the smoke of fire; Control forfeited to a Kindled Fire; EC and wind as an SSR the game reads. | B24, B25, A26.16 | 3:00 | G2, DASL-A, T5, G15 (0:50) | 3:50 | 5:05 |
+| 34 | Armored combat I | Closed-topped AFVs and their main armament: AFVs as targets of ordnance and of Infantry AT weapons, the To Hit and To Kill process with AP and HEAT, Bounding First Fire with the MA and the Gun Duels it meets, the tank's BMG and CMG with one fire marker for all its weapons, and crews Bailing Out with their own inherent fire (backlog sections 1, 12, 14, 17, and 18). | C2.2401, C3, C7, C8.1 to C8.3, D1.8, D3, D5, A7.35 | 5:40 | none (0:00) | 5:40 | 6:55 |
+| 35 | Armored combat II | Special ammunition (APCR, APDS, Canister, Smoke) and ordnance SMOKE and WP; Motion and Non-Stopped targets and Motion attempts; Immobilization and Shock from To Kill; burning wrecks as terrain (not fire spread); Recall, to a Friendly Board Edge of more than one edge; Passengers and Riders, their fire and rout; ordnance and vehicle fire at another level; Armor Leaders (the catalog shows them on G, G2, T2, T4, M, and Q) (backlog sections 1, 6, 12, 14, 15, 18 to 21, and 23). | C8.4 to C8.9, C2.6, D2, D5.3, D6, D3.4 | 5:25 | G, T2, T3, T4, I, G6, M, N, Q, G14, S (2:05) | 7:30 | 8:45 |
+| 35b | Night and winter | The night rules the cards use beyond pass 16's: the Scenario Defender at night (HIP and "?" allotments, Freedom of Movement, the lower ELR, Recon), Cloaking and Straying, and Lax and Stealthy units at night; and the winter conditions the cards set: Fog, Ice, Drifts, and Winter Camouflage (backlog section 26). | E1.2, E1.4 to E1.6, E3.3, E3.7 | 2:45 | R, G33 (0:25) | 3:10 | 4:25 |
+| 36 | Fortifications I | Foxholes, trenches, and Entrenching, with Manhandling and Entrenching in Mud, snow, and Extreme Winter; the tasks that place TI; pillboxes with their Covered Arc (from task 26.6), Rally terrain, and DM; roadblocks (backlog sections 2, 23, 24, and 26). | B27, B29, B30, A4.8, A10.61, A10.62, E3.61, E3.722 | 3:35 | none (0:00) | 3:35 | 4:50 |
+| 37 | Fortifications II | Wire, A-P and A-T mines, known and hidden minefields, and their attacks on Infantry and vehicles; the French and Norwegian national rules. | B26, B28, A25 | 3:15 | G3, T6, T9, T10, T13, G31, G44, G46 (1:40) | 4:55 | 6:10 |
+| 38 | Offboard artillery | OBA: radio and field phone, battery access, Spotting Rounds and Fire for Effect, accuracy and extent of error, the blast area, and its attacks. | C1 | 3:30 | none (0:00) | 3:30 | 4:45 |
+| 39 | Air support | Aircraft arrival, sighting, bombs and strafing, and AA fire against them. | E7 | 3:00 | D, E, F, G4, J, K, L, P, T7, T11, G29, V, G42, G43 (3:20) | 6:20 | 7:35 |
+| 40 | Terrain I | Board overlays in the map composer and the Hex Facts; streams, rivers, fords, and canals; bridges; the board terrain the movement rules still refuse (gullies, crags, shellholes, graveyards, lumberyards, sunken and elevated roads, cliffs, and the like); marsh and brush as Open Ground in snow, frozen streams, and minefields in Deep Snow; paved road hexes named as such (backlog sections 20, 26, 29, and 30). | B6, B20, B21, B3, B19, E3.722, E3.73, overlays | 5:30 | none (0:00) | 5:30 | 6:45 |
+| 41 | Terrain II | Bocage and hedges; cellars; Factories; sewers and Sewer Movement; an AFV entering a building; the Italian, Finnish, Iraqi, and New Zealand national rules, ANZAC Stealth included (backlog sections 15, 20, 21, and 27). | B9, B23.41, B23.74, B8, A25 | 3:05 | C, G1, G5, G8, HASL-A, G18, G21, T, DASL-B, G25, G30, DASL-C, G32, G34, G35, G36, G37 (4:00) | 7:05 | 8:20 |
+| 42 | Special units | Cavalry and horses, skis, air drops and gliders, boats, and partisans as the cards field them; the Dutch and Polish national rules (backlog section 15). | A13, E4, E5, E8, E9, A25 | 3:40 | G7, O, G10, G11, G12, T12, T15, G17, G26, G39, G40 (2:30) | 6:10 | 7:25 |
+| 43 | Fire | Kindling, spread, Blazes, and the smoke of fire; Control forfeited to a Kindled Fire; EC and wind as an SSR the game reads. | B24, B25, A26.16 | 3:00 | G2, DASL-A, T5, G15 (0:50) | 3:50 | 5:05 |
 
 ## 23. Schedule and duration
 
-The migration follows pass 32, in this order, one pass at a time on the user's go-ahead:
+The migration follows pass 33, in this order, one pass at a time on the user's go-ahead:
 
 | Pass | Title | Kind | Build | Total | Range (-30 % to +30 %) |
 |---|---|---|---|---|---|
@@ -1446,20 +1536,20 @@ The migration follows pass 32, in this order, one pass at a time on the user's g
 | D16 | Display: G33, G34, G35, G36 | Display | 2:45 | 4:00 | 2:48 to 5:12 |
 | D17 | Display: G37, V, G38, G39, G40, G41 | Display | 2:51 | 4:06 | 2:52 to 5:20 |
 | D18 | Display: G42, G43, G44, G45, G46 | Display | 2:45 | 4:00 | 2:48 to 5:12 |
-| 33 | Armored combat I | Rules | 5:40 | 6:55 | 4:50 to 9:00 |
-| 34 | Armored combat II | Rules | 7:30 | 8:45 | 6:08 to 11:22 |
-| 34b | Night and winter | Rules | 3:10 | 4:25 | 3:06 to 5:44 |
-| 35 | Fortifications I | Rules | 3:35 | 4:50 | 3:23 to 6:17 |
-| 36 | Fortifications II | Rules | 4:55 | 6:10 | 4:19 to 8:01 |
-| 37 | Offboard artillery | Rules | 3:30 | 4:45 | 3:20 to 6:10 |
-| 38 | Air support | Rules | 6:20 | 7:35 | 5:18 to 9:52 |
-| 39 | Terrain I | Rules | 5:30 | 6:45 | 4:44 to 8:46 |
-| 40 | Terrain II | Rules | 7:05 | 8:20 | 5:50 to 10:50 |
-| 41 | Special units | Rules | 6:10 | 7:25 | 5:12 to 9:38 |
-| 42 | Fire | Rules | 3:50 | 5:05 | 3:34 to 6:36 |
+| 34 | Armored combat I | Rules | 5:40 | 6:55 | 4:50 to 9:00 |
+| 35 | Armored combat II | Rules | 7:30 | 8:45 | 6:08 to 11:22 |
+| 35b | Night and winter | Rules | 3:10 | 4:25 | 3:06 to 5:44 |
+| 36 | Fortifications I | Rules | 3:35 | 4:50 | 3:23 to 6:17 |
+| 37 | Fortifications II | Rules | 4:55 | 6:10 | 4:19 to 8:01 |
+| 38 | Offboard artillery | Rules | 3:30 | 4:45 | 3:20 to 6:10 |
+| 39 | Air support | Rules | 6:20 | 7:35 | 5:18 to 9:52 |
+| 40 | Terrain I | Rules | 5:30 | 6:45 | 4:44 to 8:46 |
+| 41 | Terrain II | Rules | 7:05 | 8:20 | 5:50 to 10:50 |
+| 42 | Special units | Rules | 6:10 | 7:25 | 5:12 to 9:38 |
+| 43 | Fire | Rules | 3:50 | 5:05 | 3:34 to 6:36 |
 | | **All migration passes** | | **105:44** | **141:59** | **99:23 to 184:35** |
 
-The display batches total 70:59 and the rule passes 71:00. With passes 22b to 32 (79:35, after pass 30's task 30.6 was added on 2026-10-03), the whole plan is 221:34, about 30 working days of 7.5 hours; at the recent pace (about 65 % of estimates) nearer 144:01.
+The display batches total 70:59 and the rule passes 71:00. With passes 22b to 33 (126:50, after pass 30's task 30.6 and pass 30b were added on 2026-10-03 and passes 31, 31b, and 31c on 2026-10-04), the whole plan is 268:49, about 36 working days of 7.5 hours; at the recent pace (about 65 % of estimates) nearer 174:44.
 
 **Order.** The display batches come first, so the whole portable corpus is readable early and the catalog work is done in one sweep. Armored combat is the first rule package because 49 of the playable cards need it; night and winter follows it, since several armor cards are night or winter cards; offboard artillery and terrain make the most cards playable once fortifications are in.
 
@@ -1473,90 +1563,90 @@ The 89 distinct ASL scenario cards of *The General*, Vol. 22 to 32 (the Special 
 |---|---|---|---|---|---|---|---|---|---|
 | A | The Guards Counterattack | Vol22i6 | 6 Oct 1942 | one board, hexrows A-P only (board number not legible in scan; likely board 1) | German vs Russian (Guards) | 5 | small | none | Ported (pass 17), playable |
 | B | The Tractor Works | Vol22i6 | 6 Oct 1942 | one board, hexrows O-GG only (board number not legible in scan; likely board 1) | German (incl. assault engineers) vs Russian | 8 | medium | none | Ported (pass 17b), playable |
-| C | The Streets of Stalingrad | Vol22i6 | 6 Oct 1942 (card header misprints 1944) | Combined layout of scenarios A and B | German vs Russian | as A and B (7 turns shown) | large | Armor, OBA-Air, Terrain | Display D1; playable after pass 40 (settled by its ruling, section 19) |
-| D | The Hedgehog of Piepsk | Vol23i2 | 14 Nov 1941 | 4, 3, 2 (stacked N-S) | German vs Russian | 10 | medium | OBA-Air | Display D1; playable after pass 38 |
-| E | Hill 621 | Vol23i2 | 1 Jul 1944 | 2, 4, 3 (side by side E-W) | German vs Russian (Guards) | 10 | large | Armor, OBA-Air | Display D2; playable after pass 38 |
-| G1 | Timoshenko's Attack | Vol23i3 | 12 Jul 1941 | 22, 11, 10 (side by side, separate lanes) | German vs Russian | 9 | large | Armor, OBA-Air, Terrain | Display D2; playable after pass 40 |
-| F | The Paw of the Tiger | Vol23i5 | 12 Jan 1943 | 2, 4, 5 (side by side E-W) | German vs Russian | 10 | small-medium | Armor, OBA-Air, Fortifications | Display D2; playable after pass 38 |
-| G | Hube's Pocket | Vol23i5 | 6 Apr 1944 | 4, 2, 5 (stacked N-S) | German (SS) vs Russian | 10 (END mark at 4 with restart option to turn 11) | medium | Armor | Display D2; playable after pass 34 |
-| G2 | Last Act in Lorraine | Vol23i6 | 6 Dec 1944 | 12, 17 (stacked N-S) | German vs American | 10 | medium | Armor, OBA-Air, Fire | Display D3; playable after pass 42 |
-| G3 | The Forgotten Front | Vol23i6 | 9 Feb 1945 | 19, 12 (stacked N-S) | German vs American | 8 | medium | Armor, Fortifications | Display D3; playable after pass 36 |
-| DASL-A | To the Last Man | Vol24i1 | 13 Jan 1945 | Deluxe boards a, b, c, d | German (SS cavalry) vs Russian (Guards) | 8 | large | Armor, OBA-Air, Fortifications, Fire | Display D3; playable after pass 42 |
+| C | The Streets of Stalingrad | Vol22i6 | 6 Oct 1942 (card header misprints 1944) | Combined layout of scenarios A and B | German vs Russian | as A and B (7 turns shown) | large | Armor, OBA-Air, Terrain | Display D1; playable after pass 41 (settled by its ruling, section 19) |
+| D | The Hedgehog of Piepsk | Vol23i2 | 14 Nov 1941 | 4, 3, 2 (stacked N-S) | German vs Russian | 10 | medium | OBA-Air | Display D1; playable after pass 39 |
+| E | Hill 621 | Vol23i2 | 1 Jul 1944 | 2, 4, 3 (side by side E-W) | German vs Russian (Guards) | 10 | large | Armor, OBA-Air | Display D2; playable after pass 39 |
+| G1 | Timoshenko's Attack | Vol23i3 | 12 Jul 1941 | 22, 11, 10 (side by side, separate lanes) | German vs Russian | 9 | large | Armor, OBA-Air, Terrain | Display D2; playable after pass 41 |
+| F | The Paw of the Tiger | Vol23i5 | 12 Jan 1943 | 2, 4, 5 (side by side E-W) | German vs Russian | 10 | small-medium | Armor, OBA-Air, Fortifications | Display D2; playable after pass 39 |
+| G | Hube's Pocket | Vol23i5 | 6 Apr 1944 | 4, 2, 5 (stacked N-S) | German (SS) vs Russian | 10 (END mark at 4 with restart option to turn 11) | medium | Armor | Display D2; playable after pass 35 |
+| G2 | Last Act in Lorraine | Vol23i6 | 6 Dec 1944 | 12, 17 (stacked N-S) | German vs American | 10 | medium | Armor, OBA-Air, Fire | Display D3; playable after pass 43 |
+| G3 | The Forgotten Front | Vol23i6 | 9 Feb 1945 | 19, 12 (stacked N-S) | German vs American | 8 | medium | Armor, Fortifications | Display D3; playable after pass 37 |
+| DASL-A | To the Last Man | Vol24i1 | 13 Jan 1945 | Deluxe boards a, b, c, d | German (SS cavalry) vs Russian (Guards) | 8 | large | Armor, OBA-Air, Fortifications, Fire | Display D3; playable after pass 43 |
 | H | Escape from Velikiye Luki | Vol24i1 | 12 Jan 1943 | 4, 2, 3 (side by side E-W) | German vs Russian | 10 (last turn conditional) | small | none | Display D3; playable in D3 (settled by its ruling, section 19) |
 | T1 | Gavin Take | Vol24i2 | 6 Jun 1944 | 3 | German vs American (82nd Airborne) | 6 | small | none | Display D4; playable in D4 |
-| T2 | The Puma Prowls | Vol24i2 | 28 Jun 1944 | 22, 4 (stacked N-S) | German vs Russian | 6 | small | Armor | Display D4; playable after pass 34 |
-| T3 | Ranger Stronghold | Vol24i2 | 14 Sep 1943 | 2 | German vs American (Rangers) | 6 | small | Armor | Display D4; playable after pass 34 |
-| T4 | Shklov's Labors Lost | Vol24i2 | 11 Jul 1941 | 1 | German (Grossdeutschland) vs Russian (officer cadets) | 6 | small | Armor | Display D4; playable after pass 34 |
-| G4 | First Action | Vol24i3 | 8 Nov 1944 | 12, 18, 19 (side by side E-W) | German vs American (761st Tank Bn) | 11 (last turn conditional) | medium | Armor, OBA-Air, Fortifications | Display D4; playable after pass 38 |
-| G5 | Six Came Back | Vol24i3 | 30 Jan 1944 | 12, 17, 16 (stacked N-S) | German (Hermann Goering, 26th Pz) vs American (Rangers) | 9 | medium | Armor, Terrain, Night and winter | Display D5; playable after pass 40 |
-| I | Buchholz Station | Vol24i4 | 16 Dec 1944 | 4, 3 (stacked N-S) | German (Volksgrenadier) vs American | 10 | medium | Armor | Display D5; playable after pass 34 |
-| J | The Bitche Salient | Vol24i4 | 14 Jan 1945 | 4, 2 (side by side E-W) | German (Gebirgsjaeger) vs American | 10 | large | Armor, OBA-Air, Fortifications | Display D5; playable after pass 38 |
-| G6 | Rocket's Red Glare | Vol24i6 | 22 Dec 1944 | 3 | German (SS) vs American (504th Parachute) | 6 | small | Armor | Display D5; playable after pass 34 |
-| K | The Cannes Strongpoint | Vol25i2 | 23 Aug 1944 | 4, 2, 3 (side by side E-W) | German vs American (509th Parachute) | 5 | medium | Armor, OBA-Air, Fortifications | Display D5; playable after pass 38 |
-| L | Hitdorf on the Rhine | Vol25i2 | 6 Apr 1945 | 4, 3 (side by side E-W) | German (Volksgrenadier, 11th Pz) vs American (504th Parachute) | 9 | medium | Armor, OBA-Air, Fortifications | Display D6; playable after pass 38 |
-| G7 | Bring Up the Guns | Vol25i3 | 10 May 1940 | 4, 33 (stacked N-S) | German (cavalry) vs Dutch | 7 | small | Fortifications, Special units | Display D6; playable after pass 41 |
-| M | First Crisis at Army Group North | Vol25i3 | 25 Jun 1941 | 6, 4 (stacked N-S) | German vs Russian | 7 | small | Armor | Display D6; playable after pass 34 |
-| G8 | Recon in Force | Vol25i5 | 16 Jul 1943 | 22, 21 (stacked N-S) | Italian and German (Axis) vs American (Rangers) | 7 | medium | Terrain | Display D6; playable after pass 40 |
+| T2 | The Puma Prowls | Vol24i2 | 28 Jun 1944 | 22, 4 (stacked N-S) | German vs Russian | 6 | small | Armor | Display D4; playable after pass 35 |
+| T3 | Ranger Stronghold | Vol24i2 | 14 Sep 1943 | 2 | German vs American (Rangers) | 6 | small | Armor | Display D4; playable after pass 35 |
+| T4 | Shklov's Labors Lost | Vol24i2 | 11 Jul 1941 | 1 | German (Grossdeutschland) vs Russian (officer cadets) | 6 | small | Armor | Display D4; playable after pass 35 |
+| G4 | First Action | Vol24i3 | 8 Nov 1944 | 12, 18, 19 (side by side E-W) | German vs American (761st Tank Bn) | 11 (last turn conditional) | medium | Armor, OBA-Air, Fortifications | Display D4; playable after pass 39 |
+| G5 | Six Came Back | Vol24i3 | 30 Jan 1944 | 12, 17, 16 (stacked N-S) | German (Hermann Goering, 26th Pz) vs American (Rangers) | 9 | medium | Armor, Terrain, Night and winter | Display D5; playable after pass 41 |
+| I | Buchholz Station | Vol24i4 | 16 Dec 1944 | 4, 3 (stacked N-S) | German (Volksgrenadier) vs American | 10 | medium | Armor | Display D5; playable after pass 35 |
+| J | The Bitche Salient | Vol24i4 | 14 Jan 1945 | 4, 2 (side by side E-W) | German (Gebirgsjaeger) vs American | 10 | large | Armor, OBA-Air, Fortifications | Display D5; playable after pass 39 |
+| G6 | Rocket's Red Glare | Vol24i6 | 22 Dec 1944 | 3 | German (SS) vs American (504th Parachute) | 6 | small | Armor | Display D5; playable after pass 35 |
+| K | The Cannes Strongpoint | Vol25i2 | 23 Aug 1944 | 4, 2, 3 (side by side E-W) | German vs American (509th Parachute) | 5 | medium | Armor, OBA-Air, Fortifications | Display D5; playable after pass 39 |
+| L | Hitdorf on the Rhine | Vol25i2 | 6 Apr 1945 | 4, 3 (side by side E-W) | German (Volksgrenadier, 11th Pz) vs American (504th Parachute) | 9 | medium | Armor, OBA-Air, Fortifications | Display D6; playable after pass 39 |
+| G7 | Bring Up the Guns | Vol25i3 | 10 May 1940 | 4, 33 (stacked N-S) | German (cavalry) vs Dutch | 7 | small | Fortifications, Special units | Display D6; playable after pass 42 |
+| M | First Crisis at Army Group North | Vol25i3 | 25 Jun 1941 | 6, 4 (stacked N-S) | German vs Russian | 7 | small | Armor | Display D6; playable after pass 35 |
+| G8 | Recon in Force | Vol25i5 | 16 Jul 1943 | 22, 21 (stacked N-S) | Italian and German (Axis) vs American (Rangers) | 7 | medium | Terrain | Display D6; playable after pass 41 |
 | G9 | Sunday of the Dead | Vol25i6 | 23 Nov 1941 | 27, 28, 26, 29 (desert boards, side by side) | German vs British (South African) | 9 | large | Armor, OBA-Air, Chapter F or G | Display D6; display only: Chapters F and G |
-| N | Soldiers of Destruction | Vol25i6 | 10 Oct 1944 | 6, 4 (side by side E-W) | German (SS Totenkopf) vs Russian (Guards) | 7 | small | Armor | Display D6; playable after pass 34 |
-| O | The St. Goar Assault | Vol26i1 | 24 Mar 1945 | 2, 1, 4, 3 (side by side E-W) | German (Wehrkreis XIII) vs American (87th Inf Div) | 8 (last turn conditional) | large | Armor, Terrain, Special units, Night and winter | Display D7; playable after pass 41 |
-| P | The Road to Wiltz | Vol26i1 | 18 Dec 1944 | 3, 2 (side by side E-W) | German (Volksgrenadier, Panzer Lehr) vs American (engineers, 707th Tank Bn) | 5, with restart to 10 (restart on turn 11 option) | large | Armor, OBA-Air, Fortifications | Display D7; playable after pass 38 |
-| G10 | Grab at Gribovo | Vol26i2 | 3 Jan 1942 | 18, 12, 4 (stacked N-S) | German vs Russian (paratroops) | 8 | small | Special units, Night and winter | Display D7; playable after pass 41 |
-| Q | Land Leviathans | Vol26i2 | 3 Jul 1941 | 2, 3, 4 (stacked N-S) | German vs Russian | 7 | small | Armor | Display D7; playable after pass 34 |
-| G11 | Pegasus Bridge | Vol26i5 | 6 Jun 1944 | 23 | German vs British (6th Airborne, Ox and Bucks) | 5 | small | Fortifications, Terrain, Special units | Display D7; playable after pass 41 |
-| HASL-A | Ghosts in the Rubble | Vol27i1 | 31 October 1942 | RB map (only hexes numbered >= 38 on/east of hexrow U) | German (Pz Div 14) vs Russian (45th Rifle Div) | 7 | medium | OBA-Air, Fortifications, Terrain | Display D7; playable after pass 40 |
-| G12 | Avalanche! | Vol27i1 | 6 February 1943 | 9, 15 | German (Gebirgsjaeger Div 1) vs Russian (318th Mountain Rifle Div) | 10 | large | Fortifications, Special units, Night and winter | Display D8; playable after pass 41 |
-| T6 | The Dead of Winter | Vol27i2 | 29 December 1941 | 4 (hexrows R-GG only) | German (IR 18) vs Russian (Siberians, 31st Army) | 5 | small | Armor, Fortifications | Display D8; playable after pass 36 |
-| T5 | The Pouppeville Exit | Vol27i2 | 6 June 1944 | 3, 5 | German (IR 1058) vs American (501st Parachute Rgt) | 8 | small | Armor, Terrain, Fire | Display D8; playable after pass 42 |
-| T7 | Hill 253.5 | Vol27i3 | 9 July 1943 | 2 | German (Pz Div 18, Pzjg Abt 653) vs Russian (307th Rifle Div, mech brigade) | 8 | large | Armor, OBA-Air, Fortifications | Display D8; playable after pass 38 |
+| N | Soldiers of Destruction | Vol25i6 | 10 Oct 1944 | 6, 4 (side by side E-W) | German (SS Totenkopf) vs Russian (Guards) | 7 | small | Armor | Display D6; playable after pass 35 |
+| O | The St. Goar Assault | Vol26i1 | 24 Mar 1945 | 2, 1, 4, 3 (side by side E-W) | German (Wehrkreis XIII) vs American (87th Inf Div) | 8 (last turn conditional) | large | Armor, Terrain, Special units, Night and winter | Display D7; playable after pass 42 |
+| P | The Road to Wiltz | Vol26i1 | 18 Dec 1944 | 3, 2 (side by side E-W) | German (Volksgrenadier, Panzer Lehr) vs American (engineers, 707th Tank Bn) | 5, with restart to 10 (restart on turn 11 option) | large | Armor, OBA-Air, Fortifications | Display D7; playable after pass 39 |
+| G10 | Grab at Gribovo | Vol26i2 | 3 Jan 1942 | 18, 12, 4 (stacked N-S) | German vs Russian (paratroops) | 8 | small | Special units, Night and winter | Display D7; playable after pass 42 |
+| Q | Land Leviathans | Vol26i2 | 3 Jul 1941 | 2, 3, 4 (stacked N-S) | German vs Russian | 7 | small | Armor | Display D7; playable after pass 35 |
+| G11 | Pegasus Bridge | Vol26i5 | 6 Jun 1944 | 23 | German vs British (6th Airborne, Ox and Bucks) | 5 | small | Fortifications, Terrain, Special units | Display D7; playable after pass 42 |
+| HASL-A | Ghosts in the Rubble | Vol27i1 | 31 October 1942 | RB map (only hexes numbered >= 38 on/east of hexrow U) | German (Pz Div 14) vs Russian (45th Rifle Div) | 7 | medium | OBA-Air, Fortifications, Terrain | Display D7; playable after pass 41 |
+| G12 | Avalanche! | Vol27i1 | 6 February 1943 | 9, 15 | German (Gebirgsjaeger Div 1) vs Russian (318th Mountain Rifle Div) | 10 | large | Fortifications, Special units, Night and winter | Display D8; playable after pass 42 |
+| T6 | The Dead of Winter | Vol27i2 | 29 December 1941 | 4 (hexrows R-GG only) | German (IR 18) vs Russian (Siberians, 31st Army) | 5 | small | Armor, Fortifications | Display D8; playable after pass 37 |
+| T5 | The Pouppeville Exit | Vol27i2 | 6 June 1944 | 3, 5 | German (IR 1058) vs American (501st Parachute Rgt) | 8 | small | Armor, Terrain, Fire | Display D8; playable after pass 43 |
+| T7 | Hill 253.5 | Vol27i3 | 9 July 1943 | 2 | German (Pz Div 18, Pzjg Abt 653) vs Russian (307th Rifle Div, mech brigade) | 8 | large | Armor, OBA-Air, Fortifications | Display D8; playable after pass 39 |
 | T8 | Aachen's Pall | Vol27i3 | 15 October 1944 | 1 (hexrows A-P only) | German (Aachen HQ) vs American (26th Inf Rgt) | 4 | small | none | Display D8; playable in D8 |
 | G13 | A View from the Top | Vol27i5 | 23 February 1945 | 25, 15 (hexrows R-GG on 15) | German (ID 334) vs American (86th Mountain Inf Rgt) | 8 | medium | OBA-Air, Fortifications, Special units, Night and winter | Display D9; display only: desert boards (Chapter F) |
-| T9 | The Niscemi-Biscari Highway | Vol28i1 | 10 July 1943 | 4, 5 (hexrows Q-GG) | American (504th Parachute Rgt) vs German (Hermann Goering Div recon) | 8 | small | Armor, Fortifications | Display D9; playable after pass 36 |
-| T10 | Devil's Hill | Vol28i1 | 19 September 1944 | 2, 5 | German (Landesschuetzen Div 406) vs American (508th Parachute Rgt) | 7 | small | Armor, Fortifications | Display D9; playable after pass 36 |
-| T11 | The Attempt to Relieve Peiper | Vol28i2 | 21 December 1944 | 2, 5 | American (505th Parachute Rgt) vs German (1st SS Pz Div) | 10 | medium | Armor, OBA-Air, Fortifications | Display D9; playable after pass 38 |
-| T12 | Hunters from the Sky | Vol28i2 | 24 March 1945 | 5, 4, 2 | German (ID 84) vs American (513th Parachute Rgt) | 10 | medium | Armor, Special units | Display D9; playable after pass 41 |
-| G14 | Tiger, Tiger | Vol28i3 | 11 February 1943 | 11, 18, 33, 17 | Russian (46th Tank Bde) vs German (s.Pz.Abt 502) | 7 | medium | Armor | Display D9; playable after pass 34 |
-| R | Burzevo | Vol28i3 | 2 December 1941 | 3 | German (IR 478) vs Russian (20th Tank Bde) | 5 | small | Armor, Night and winter | Display D10; playable after pass 34b |
-| G15 | Bone of Contention | Vol28i4 | 31 August 1944 | 21, 20 | Free French partisans (Maquis) vs German (SS-Pz Abt 102 tank crews) | 7 | small | Armor, Fire, Special units | Display D10; playable after pass 42 |
-| S | The Whirlwind | Vol28i4 | 18 April 1945 | 5, 10 | American (26th Inf Div) vs German (Ersatz Div 471) | 7 | small | Armor | Display D10; playable after pass 34 |
+| T9 | The Niscemi-Biscari Highway | Vol28i1 | 10 July 1943 | 4, 5 (hexrows Q-GG) | American (504th Parachute Rgt) vs German (Hermann Goering Div recon) | 8 | small | Armor, Fortifications | Display D9; playable after pass 37 |
+| T10 | Devil's Hill | Vol28i1 | 19 September 1944 | 2, 5 | German (Landesschuetzen Div 406) vs American (508th Parachute Rgt) | 7 | small | Armor, Fortifications | Display D9; playable after pass 37 |
+| T11 | The Attempt to Relieve Peiper | Vol28i2 | 21 December 1944 | 2, 5 | American (505th Parachute Rgt) vs German (1st SS Pz Div) | 10 | medium | Armor, OBA-Air, Fortifications | Display D9; playable after pass 39 |
+| T12 | Hunters from the Sky | Vol28i2 | 24 March 1945 | 5, 4, 2 | German (ID 84) vs American (513th Parachute Rgt) | 10 | medium | Armor, Special units | Display D9; playable after pass 42 |
+| G14 | Tiger, Tiger | Vol28i3 | 11 February 1943 | 11, 18, 33, 17 | Russian (46th Tank Bde) vs German (s.Pz.Abt 502) | 7 | medium | Armor | Display D9; playable after pass 35 |
+| R | Burzevo | Vol28i3 | 2 December 1941 | 3 | German (IR 478) vs Russian (20th Tank Bde) | 5 | small | Armor, Night and winter | Display D10; playable after pass 35b |
+| G15 | Bone of Contention | Vol28i4 | 31 August 1944 | 21, 20 | Free French partisans (Maquis) vs German (SS-Pz Abt 102 tank crews) | 7 | small | Armor, Fire, Special units | Display D10; playable after pass 43 |
+| S | The Whirlwind | Vol28i4 | 18 April 1945 | 5, 10 | American (26th Inf Div) vs German (Ersatz Div 471) | 7 | small | Armor | Display D10; playable after pass 35 |
 | G16 | Alligator Creek | Vol28i5 | 21 August 1942 | 32, 34 (R-GG) plus overlays Be4, Be6, Ef1, Oc1, Oc2 | American (1st Marine Rgt) vs Japanese (28th Inf Rgt, Ichiki detachment) | 7 | large | OBA-Air, Fortifications, Terrain, Chapter F or G | Display D10; display only: Chapters F and G |
-| T13 | Commando Raid at Dieppe | Vol28i6 | 18 August 1942 | 4, 5 | German (302nd ID, Battery Hess) vs British (No. 4 Commando) with US Rangers | 10 | medium | Fortifications | Display D10; playable after pass 36 |
+| T13 | Commando Raid at Dieppe | Vol28i6 | 18 August 1942 | 4, 5 | German (302nd ID, Battery Hess) vs British (No. 4 Commando) with US Rangers | 10 | medium | Fortifications | Display D10; playable after pass 37 |
 | T14 | Gambit | Vol28i6 | 21 May 1941 | 4, 2 | New Zealand (22nd Bn) vs German (Sturm Rgt 1) | 8 | small | none | Ported (pass 17), playable |
-| T15 | The Akrotiri Peninsula | Vol29i1 | 20 May 1941 | 3, 6, 4 | British (102nd AT Rgt, 151st AA Bty) vs German (Sturm Rgt 1, glider) | 9 | medium | Special units | Display D10; playable after pass 41 |
+| T15 | The Akrotiri Peninsula | Vol29i1 | 20 May 1941 | 3, 6, 4 | British (102nd AT Rgt, 151st AA Bty) vs German (Sturm Rgt 1, glider) | 9 | medium | Special units | Display D10; playable after pass 42 |
 | T16 | Strayer's Strays | Vol29i1 | 6 June 1944 | 6 | German (IR 919) vs American (mixed 502/506/508 PIR) | 4 | small | none | Display D11; playable in D11 |
-| G17 | Hakkaa Paalle | Vol29i2 | 12 January 1940 | 16, 19, 32, 34 (R-GG on 32/34 not playable), overlay O5 | Russian (2nd Ski Bde) vs Finnish (9th Sissi Co) | 10 | medium | Terrain, Special units, Night and winter | Display D11; playable after pass 41 |
-| G18 | Goya | Vol29i2 | 7 January 1945 | 39, 16, 23 | German (VGR 183) vs American (551st PIB) | 11 | large | Terrain, Night and winter | Display D11; playable after pass 40 |
+| G17 | Hakkaa Paalle | Vol29i2 | 12 January 1940 | 16, 19, 32, 34 (R-GG on 32/34 not playable), overlay O5 | Russian (2nd Ski Bde) vs Finnish (9th Sissi Co) | 10 | medium | Terrain, Special units, Night and winter | Display D11; playable after pass 42 |
+| G18 | Goya | Vol29i2 | 7 January 1945 | 39, 16, 23 | German (VGR 183) vs American (551st PIB) | 11 | large | Terrain, Night and winter | Display D11; playable after pass 41 |
 | G19 | A Tough Nut to Crack | Vol29i3 | 1 January 1943 | 37, 35 plus overlays X13, X14 | Japanese (19th Army remnants) vs Australian (2/9th Bn, 2/6th Armoured Rgt) | 9 | medium-large | Armor, OBA-Air, Fortifications, Terrain, Chapter F or G | Display D11; display only: Chapters F and G |
 | G20 | Camp Nibeiwa | Vol29i3 | 9 December 1940 | 30, 31 (Q-GG not playable), 29, 28, overlays D1, D5, D6, H3, H6, S2, S6 | Italian (Gruppo Maletti) vs British (4th Indian Div, 7th RTR) | 10 | large | Armor, Fortifications, Terrain, Chapter F or G | Display D12; display only: Chapters F and G |
-| G21 | Cat's Kill | Vol29i4 | 8 June 1944 | 20, 10 plus overlays O1-O5 | Canadian (Regina Rifles) vs German (12. SS Pz Div Hitlerjugend) | 10 | large | Armor, Terrain, Night and winter | Display D12; playable after pass 40 |
+| G21 | Cat's Kill | Vol29i4 | 8 June 1944 | 20, 10 plus overlays O1-O5 | Canadian (Regina Rifles) vs German (12. SS Pz Div Hitlerjugend) | 10 | large | Armor, Terrain, Night and winter | Display D12; playable after pass 41 |
 | G22 | A Day by the Shore | Vol29i4 | 7 June 1944 | 8, 20, 4 | German (GR 736) vs British (45 Royal Marine Commando) | 10 | large | OBA-Air, Fortifications, Terrain | Display D12; display only: beaches (Chapter G, G13) |
 | G23 | Habbaniya Heights | Vol29i5 | 5 May 1941 | 29, 25 plus overlay E1 | Iraqi (2nd Iraqi Legion) vs British (King's Own Royal Rgt) | 7 | large | Armor, Fortifications, Terrain, Night and winter | Display D13; display only: desert boards (Chapter F) |
 | G24 | Mountain Comes to Mohammed | Vol29i5 | 25 August 1941 | 28, 26 plus overlays S3, S5, S8, X4, D6, H6 | Iranian (Pahlavi Guards) vs British (2/11th Sikh, 13th Lancers) | 8 | large | Armor, Fortifications, Terrain, Chapter F or G | Display D13; display only: Chapters F and G |
-| T | Pavlov's House | Vol29i6 | 20 October 1942 | 1 plus overlays OG1, OG4, OG5 | Russian (42nd Guards Rifle Rgt) vs German (6. Armee Sturmgruppe) | 7 | small | Armor, OBA-Air, Terrain | Display D13; playable after pass 40 |
-| DASL-B | The Kiwis Attack | Vol29i6 | 15 March 1944 | Deluxe boards q, p | German (FJR 3) vs New Zealand (25th Bn, 19th Armd Rgt) | 7 | large | Armor, Fortifications, Terrain | Display D13; playable after pass 40 |
-| G25 | The T-Patchers | Vol30i1 | 15 December 1943 | 41, 11 (R-GG) plus overlays X12, X13, X14 | German (PzGr Div 29) vs American (143rd Inf Rgt, 753rd Tank Bn) | 7 | medium | Armor, Fortifications, Terrain | Display D14; playable after pass 40 |
-| G26 | Parker's Crossroads | Vol30i1 | 23 December 1944 | 42, 19, 33, 43, 35, 16 (parts unplayable) | American (mixed: 589th FA Bn, 3rd Armd Div, 325th GIR) vs German (2nd SS Pz Div Das Reich) | 10 | large | Armor, OBA-Air, Fortifications, Special units | Display D14; playable after pass 41 |
+| T | Pavlov's House | Vol29i6 | 20 October 1942 | 1 plus overlays OG1, OG4, OG5 | Russian (42nd Guards Rifle Rgt) vs German (6. Armee Sturmgruppe) | 7 | small | Armor, OBA-Air, Terrain | Display D13; playable after pass 41 |
+| DASL-B | The Kiwis Attack | Vol29i6 | 15 March 1944 | Deluxe boards q, p | German (FJR 3) vs New Zealand (25th Bn, 19th Armd Rgt) | 7 | large | Armor, Fortifications, Terrain | Display D13; playable after pass 41 |
+| G25 | The T-Patchers | Vol30i1 | 15 December 1943 | 41, 11 (R-GG) plus overlays X12, X13, X14 | German (PzGr Div 29) vs American (143rd Inf Rgt, 753rd Tank Bn) | 7 | medium | Armor, Fortifications, Terrain | Display D14; playable after pass 41 |
+| G26 | Parker's Crossroads | Vol30i1 | 23 December 1944 | 42, 19, 33, 43, 35, 16 (parts unplayable) | American (mixed: 589th FA Bn, 3rd Armd Div, 325th GIR) vs German (2nd SS Pz Div Das Reich) | 10 | large | Armor, OBA-Air, Fortifications, Special units | Display D14; playable after pass 42 |
 | G27 | Vaagso Venture | Vol30i2 | 27 December 1941 | 41 (R-GG), 8 (A-P) | German (ID 181) vs British (2, 3 and 6 Commandos) | 9 | large | Armor, OBA-Air, Fortifications, Terrain, Fire | Display D14; display only: a seaborne assault with landing craft (Chapter G, G14) |
 | G28 | Ramsey's Charge | Vol30i3 | 16 January 1942 | 40, 35 plus overlays 1, X6, OG1, OG2, OG3, OG5 | Japanese (14th Army) vs American (26th Cavalry, Philippine Scouts) | 7 | small-medium | Terrain, Special units, Chapter F or G | Not portable: names board 25, which is not in its board layout |
-| G29 | Shoot-N-Scoot | Vol30i4 | 18 December 1944 | 12, 42 | American (38th Inf Rgt, 644th TD Bn, 741st Tank Bn) vs German (12th SS Pz Div) | 9 | large | Armor, OBA-Air, Fortifications | Display D15; playable after pass 38 |
-| G30 | Morgan's Stand | Vol30i4 | 11 September 1944 | 10, 7 (R-GG) | American (53rd Armd Inf Bn) vs German (Fusilier Rgt 312) | 7 | small-medium | Armor, Terrain | Display D15; playable after pass 40 |
-| DASL-C | Smoke the Kents! | Vol30i5 | 20 May 1940 | Deluxe boards g, d, h, e plus overlays dx2, dx4, dx6, dx7 | British (7th Royal West Kent) vs German (Pz Div 1) | 8 | medium | Armor, Terrain | Display D15; playable after pass 40 |
+| G29 | Shoot-N-Scoot | Vol30i4 | 18 December 1944 | 12, 42 | American (38th Inf Rgt, 644th TD Bn, 741st Tank Bn) vs German (12th SS Pz Div) | 9 | large | Armor, OBA-Air, Fortifications | Display D15; playable after pass 39 |
+| G30 | Morgan's Stand | Vol30i4 | 11 September 1944 | 10, 7 (R-GG) | American (53rd Armd Inf Bn) vs German (Fusilier Rgt 312) | 7 | small-medium | Armor, Terrain | Display D15; playable after pass 41 |
+| DASL-C | Smoke the Kents! | Vol30i5 | 20 May 1940 | Deluxe boards g, d, h, e plus overlays dx2, dx4, dx6, dx7 | British (7th Royal West Kent) vs German (Pz Div 1) | 8 | medium | Armor, Terrain | Display D15; playable after pass 41 |
 | U | Chance d'Une Affaire | Vol30i5 | 14 May 1940 | 9 (rotated label; possibly 6) | German (IR 1, Pz Div 1, Sturmpionier Bn 43) vs French (213e RI, 7e BCC) | 9 | medium | Armor | Not portable: its board number is printed rotated and cannot be read with certainty |
-| G31 | Point of the Sword | Vol30i6 | 6 June 1944 | 10 | German (Pz Div 21) vs British (4th Brigade Commandos) and Canadian (Regiment de la Chaudiere) | 8 | medium | Fortifications | Display D15; playable after pass 36 |
-| G32 | A Helping Hand | Vol30i6 | 13 June 1944 | 11, 2 (A-P) | German (VGR 914, FJR 8) vs American (38th Inf Rgt) | 10 | medium | OBA-Air, Fortifications, Terrain | Display D15; playable after pass 40 |
-| G33 | The Awakening of Spring | Vol31i1 | 14 March 1945 | 11, 16, 17, 4 | Russian (35th Guards Rifle Corps, 23rd Tank Corps) vs German (SS Pz Div 6) | 10 | large | Armor, Night and winter | Display D16; playable after pass 34b |
-| G34 | The Liberators | Vol31i1 | 2 April 1945 | 22, 3 plus overlays X13, X16, X17, St3 | German (SS-Pz Korps 1) vs Russian (IX Guards Mech Corps) | 9 | large | Armor, OBA-Air, Terrain | Display D16; playable after pass 40 |
-| G35 | Going to Church | Vol31i2 | 1 August 1944 | 23 (A-P) | German (SS Pz Div 9) vs Canadian (Les Fusiliers Mont-Royal) | 6 | small | Terrain | Display D16; playable after pass 40 |
-| G36 | Hill of Death | Vol31i2 | 11 July 1944 | 33, 9, 16 | German (SS Pz Divs 9 and 10, s.SS-Pz Abt 102) vs British (5th DCLI, 7th RTR) | 8 | large | Armor, OBA-Air, Fortifications, Terrain | Display D16; playable after pass 40 |
-| G37 | Forth Bridge | Vol31i3 | 11 April 1945 | 17, 18 plus overlays OG5, Wd4, B2, B3, St1, St3 | German (FJ Div 7) vs British (2nd Gordon Highlanders, 3rd Scots Guards) | 9 | medium-large | Armor, Fortifications, Terrain | Display D17; playable after pass 40 |
-| V | Auld Lang Syne | Vol31i3 | 1 January 1945 | 10 (R-GG), 1 (A-P) | American (345th Inf Rgt) vs German (PzGr Div 15) | 6 | small-medium | OBA-Air | Display D17; playable after pass 38 |
+| G31 | Point of the Sword | Vol30i6 | 6 June 1944 | 10 | German (Pz Div 21) vs British (4th Brigade Commandos) and Canadian (Regiment de la Chaudiere) | 8 | medium | Fortifications | Display D15; playable after pass 37 |
+| G32 | A Helping Hand | Vol30i6 | 13 June 1944 | 11, 2 (A-P) | German (VGR 914, FJR 8) vs American (38th Inf Rgt) | 10 | medium | OBA-Air, Fortifications, Terrain | Display D15; playable after pass 41 |
+| G33 | The Awakening of Spring | Vol31i1 | 14 March 1945 | 11, 16, 17, 4 | Russian (35th Guards Rifle Corps, 23rd Tank Corps) vs German (SS Pz Div 6) | 10 | large | Armor, Night and winter | Display D16; playable after pass 35b |
+| G34 | The Liberators | Vol31i1 | 2 April 1945 | 22, 3 plus overlays X13, X16, X17, St3 | German (SS-Pz Korps 1) vs Russian (IX Guards Mech Corps) | 9 | large | Armor, OBA-Air, Terrain | Display D16; playable after pass 41 |
+| G35 | Going to Church | Vol31i2 | 1 August 1944 | 23 (A-P) | German (SS Pz Div 9) vs Canadian (Les Fusiliers Mont-Royal) | 6 | small | Terrain | Display D16; playable after pass 41 |
+| G36 | Hill of Death | Vol31i2 | 11 July 1944 | 33, 9, 16 | German (SS Pz Divs 9 and 10, s.SS-Pz Abt 102) vs British (5th DCLI, 7th RTR) | 8 | large | Armor, OBA-Air, Fortifications, Terrain | Display D16; playable after pass 41 |
+| G37 | Forth Bridge | Vol31i3 | 11 April 1945 | 17, 18 plus overlays OG5, Wd4, B2, B3, St1, St3 | German (FJ Div 7) vs British (2nd Gordon Highlanders, 3rd Scots Guards) | 9 | medium-large | Armor, Fortifications, Terrain | Display D17; playable after pass 41 |
+| V | Auld Lang Syne | Vol31i3 | 1 January 1945 | 10 (R-GG), 1 (A-P) | American (345th Inf Rgt) vs German (PzGr Div 15) | 6 | small-medium | OBA-Air | Display D17; playable after pass 39 |
 | G38 | Castello Fatato | Vol31i4 | 20 December 1942 | 27, 28 (R-GG) plus overlays X7-X15, X18 | Russian (1st Guards Army) vs Italian (3rd Bersaglieri Rgt) | 7 | medium | Terrain, Fire, Night and winter | Display D17; display only: desert boards (Chapter F) |
-| G39 | A Desperate Affair | Vol31i4 | 20 May 1941 | 9, 33, 16, 18 | British (2nd Black Watch) vs German (FJR 1) | 8 | medium-large | Fortifications, Special units | Display D17; playable after pass 41 |
-| G40 | Will to Fight...Eradicated | Vol31i5 | 7 September 1939 | 12 (hexrows K-Y) plus overlays G1, G2, G4, Wd5, X7, X9 | German (LSSAH) vs Polish (2nd Kaniov Rifle Rgt, dismounted cavalry) | 7 | medium | Terrain, Special units | Display D17; playable after pass 41 |
+| G39 | A Desperate Affair | Vol31i4 | 20 May 1941 | 9, 33, 16, 18 | British (2nd Black Watch) vs German (FJR 1) | 8 | medium-large | Fortifications, Special units | Display D17; playable after pass 42 |
+| G40 | Will to Fight...Eradicated | Vol31i5 | 7 September 1939 | 12 (hexrows K-Y) plus overlays G1, G2, G4, Wd5, X7, X9 | German (LSSAH) vs Polish (2nd Kaniov Rifle Rgt, dismounted cavalry) | 7 | medium | Terrain, Special units | Display D17; playable after pass 42 |
 | G41 | JABO! | Vol31i5 | 18 December 1944 | KGP map (hexes <= 14 in rows AA-TT) | German (Kampfgruppe Peiper) vs American (IX Tactical Air Command aircraft) | 3 | small | Armor, OBA-Air | Display D17; display only: the KGP historical map, not among the VASL boards in scope |
-| G42 | The Youth's First Blood | Vol31i6 | 7 June 1944 | 16, 10, 33 | German (ID 716, 12. SS Pz Div) vs Canadian (North Nova Scotia Highlanders, Sherbrooke Fusiliers) | 9 | large | Armor, OBA-Air | Display D18; playable after pass 38 |
-| G43 | Kangaroo Hop | Vol31i6 | 17 September 1944 | 2 | German (Bodenstaendige Div 326) vs Canadian (North Nova Scotia Highlanders, Fort Garry Horse, RE) | 6 | medium | Armor, OBA-Air, Fortifications | Display D18; playable after pass 38 |
-| G44 | Abandon Ship! | Vol32i2 | 19 December 1944 | 24 | American (501st PIR) vs German (Pz Lehr, PGR 902) | 7 | small-medium | Armor, Fortifications | Display D18; playable after pass 36 |
+| G42 | The Youth's First Blood | Vol31i6 | 7 June 1944 | 16, 10, 33 | German (ID 716, 12. SS Pz Div) vs Canadian (North Nova Scotia Highlanders, Sherbrooke Fusiliers) | 9 | large | Armor, OBA-Air | Display D18; playable after pass 39 |
+| G43 | Kangaroo Hop | Vol31i6 | 17 September 1944 | 2 | German (Bodenstaendige Div 326) vs Canadian (North Nova Scotia Highlanders, Fort Garry Horse, RE) | 6 | medium | Armor, OBA-Air, Fortifications | Display D18; playable after pass 39 |
+| G44 | Abandon Ship! | Vol32i2 | 19 December 1944 | 24 | American (501st PIR) vs German (Pz Lehr, PGR 902) | 7 | small-medium | Armor, Fortifications | Display D18; playable after pass 37 |
 | G45 | Halha River Bridge | Vol32i2 | 8 July 1939 | 26, 27 (A-P) plus overlays St1, St3, SD2, SD6 | Russian (149th Motorized Rifle Rgt) vs Japanese (4th Tank Rgt, 72nd Inf Rgt) | 6 | small | Armor, Fortifications, Terrain, Chapter F or G | Display D18; display only: Chapters F and G |
-| G46 | Triumph atop Taraldsvikfjell | Vol32i3 | 28 May 1940 | 2 | German (Gebirgsjaeger Rgt 139 and naval personnel) vs Allied (French Foreign Legion, Norwegian 2/15th Bn) | 7 | medium | Fortifications | Display D18; playable after pass 36 |
+| G46 | Triumph atop Taraldsvikfjell | Vol32i3 | 28 May 1940 | 2 | German (Gebirgsjaeger Rgt 139 and naval personnel) vs Allied (French Foreign Legion, Norwegian 2/15th Bn) | 7 | medium | Fortifications | Display D18; playable after pass 37 |
 | W | The Defense of Luga | Vol32i3 | 19 July 1941 | 4, 3, 5, 1 | German (IR 469, ID 269) vs Russian (Operational Group Luga) | 10 (turn chart also marks END at 4 and a restart; unclear) | large | Armor | Not portable: its Turn Record Chart shows both END after Turn 4 and a restart box |

@@ -268,6 +268,12 @@ public sealed partial class GamePlanner
         facts = facts with
         {
             BreakdownReduction = ExtremeWinterReduction(state, side),
+
+            // Pass 31 (ruling R31.3; A7.81): every attack planned from the pass on fires a pinned unit's MG as Area Fire.
+            PinnedMgAreaFire = true,
+
+            // Referee, pass 31 (A11.141): units in Melee take and cause no Leader Loss check.
+            TargetsInMelee = state.At(target).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Melee)) ? true : null,
             CushionedOpenGround = facts.OrdnanceHit is not null && (state.Weather("mud") || state.Weather("deep-snow")) ? true : null,
         };
         if (residual)

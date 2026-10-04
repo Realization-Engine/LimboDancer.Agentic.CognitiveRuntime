@@ -109,7 +109,7 @@ public sealed class PlayPageFireTests : IDisposable
         Place(page, "gh", "attacker-half-squad", hexes.Building, concealed);
         Place(page, "g2", "attacker-squad", hexes.Open);
         Commit(page, "#propose-setup");
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
         Assert.Contains("Prep Fire", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
         return page;
     }
@@ -229,23 +229,23 @@ public sealed class PlayPageFireTests : IDisposable
         // Prep Fire is removed at the end of the AFPh (A3.5), and pins at the end of the CCPh (A3.8).
         for (var phase = 0; phase < 3; phase++)
         {
-            Commit(page, "#propose-advance");
+            page.EndPhase(Commit);
         }
 
         Assert.Contains("prep-fire", Row(page, "r1"), StringComparison.Ordinal);
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
         Assert.DoesNotContain("prep-fire", Row(page, "r1"), StringComparison.Ordinal);
         Assert.DoesNotContain("Prep Fire", Counter(page, "r1"), StringComparison.Ordinal);
 
         // Backlog pass 13 (ruling R13.3): the broken gh, ADJACENT to the Russians, did not rout, so it surrenders as the RtPh ends (A20.21); its
         // captor's side takes it before the phase advances.
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
         Assert.Equal("rtph", live.History("village")!.Current!.Phase);
         Commit(page, ".take-prisoner");
-        Commit(page, "#propose-advance");
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
+        page.EndPhase(Commit);
         Assert.Contains("pinned", Row(page, "g1"), StringComparison.Ordinal);
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
         Assert.DoesNotContain("pinned", Row(page, "g1"), StringComparison.Ordinal);
         Assert.DoesNotContain("pinned", Counter(page, "g1"), StringComparison.OrdinalIgnoreCase);
     }
@@ -263,7 +263,7 @@ public sealed class PlayPageFireTests : IDisposable
         page.Find("#place-broken").Change(false);
         Place(page, "g1", "attacker-squad", hexes.Building);
         Commit(page, "#propose-setup");
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
 
         // A broken leader cannot direct fire (A7.53), so the Director list offers only the Good Order one.
         page.Find("#fire-from").Change(hexes.From);
@@ -308,7 +308,7 @@ public sealed class PlayPageFireTests : IDisposable
 
         // In the MPh fire is the DEFENDER's (A8.1), offered from its side's Locations; with no stack moving, the planner
         // refuses it (FireTests).
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
         Assert.Contains("Movement", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
         Assert.Contains("The German side may fire now", page.Find("#fire-elsewhere").TextContent, StringComparison.Ordinal);
         Assert.NotNull(page.Find("#propose-move"));

@@ -61,7 +61,7 @@ public static class GameActions
         """);
 
     public static readonly ActionDescriptor Deploy = Descriptor("asl.game.deploy", "Deploy a squad",
-        "In the RPh, a Good Order squad with a Good Order leader of its nationality in its Location takes a NTC modified by his leadership (Guards need no leader and take it unmodified) to become two HS; the first keeps its SW unless some are named for the second (A1.31; ruling R13.4).",
+        "In the RPh, a Good Order squad with a Good Order leader of its nationality in its Location takes a NTC modified by his leadership to become two HS; the first keeps its SW unless some are named for the second (A1.31; ruling R13.4).",
         PlayPermission, "asl.game.sequence-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -682,8 +682,10 @@ public static class GameActions
     private static ActionDescriptor Descriptor(string id, string name, string description, string permission, string precondition, string schema,
         JsonElement? preconditionData = null)
     {
-        using var document = JsonDocument.Parse(schema);
-        return new ActionDescriptor(new ActionId(id), new ActionVersion("1.0.0"), name, description, document.RootElement.Clone(), null,
+        // Pass 31 (ruling R31.6): every action may name the view that proposes it.
+        var node = System.Text.Json.Nodes.JsonNode.Parse(schema)!;
+        node["properties"]![GamePlanner.ProposedByArgument] = new System.Text.Json.Nodes.JsonObject { ["type"] = "string" };
+        return new ActionDescriptor(new ActionId(id), new ActionVersion("1.0.0"), name, description, JsonSerializer.SerializeToElement(node), null,
             new ActionRiskProfile(ActionMutability.Write, ActionIdempotency.Idempotent, ActionReversibility.Irreversible, ActionBoundary.Internal,
                 ActionPrivilege.Normal),
             [permission],

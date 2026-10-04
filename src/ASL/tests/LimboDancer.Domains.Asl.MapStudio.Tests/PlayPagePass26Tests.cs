@@ -108,8 +108,8 @@ public sealed class PlayPagePass26Tests : IDisposable
         Assert.Single(page.FindAll("#place-list li"), item => item.TextContent.StartsWith("r1:", StringComparison.Ordinal));
 
         Commit(page, "#propose-setup");
-        Commit(page, "#propose-advance");
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
+        page.EndPhase(Commit);
         page.ViewAs("german");
 
         // Ruling R26.2: a Passenger is not offered as a mover; its vehicle's row names it, and only for its own side's view.

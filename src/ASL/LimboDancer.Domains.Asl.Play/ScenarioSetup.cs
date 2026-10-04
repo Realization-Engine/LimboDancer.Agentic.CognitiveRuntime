@@ -418,6 +418,12 @@ public static class ScenarioSetup
     /// Matches a group's placed counters to its OB lines (R19.1): each counter fills a line of its definition whose area holds it (or any area),
     /// a Deployed squad's two HS fill one squad line (A2.9). What is left, why a counter fits no line, and how many squads were Deployed.
     /// </summary>
+    /// <summary>
+    /// Whether a nationality's squads may Deploy (A25.2; ruling R31.4): every nationality the game has but the Russian. One list for play and for
+    /// setup. A Guard of prisoners (A20.5) and a temporary crew (A21.22) are the rule's exceptions and are not built.
+    /// </summary>
+    public static bool MayDeploy(string? nationality) => nationality != "russian";
+
     private static (List<SetupNeed> Remaining, List<string> Reasons, int Deployed, List<SetupNeed> OffBoard, Dictionary<int, (int Squads, int Deployed)> Entering) Fill(
         ScenarioCard card, ScenarioCardGroup group, string id, IReadOnlyList<SetupCounter> mine, Func<string, string?> halfSquadOf, Dictionary<string, int> pool)
     {
@@ -425,6 +431,7 @@ public static class ScenarioSetup
         var lines = group.Units.Select(unit => (Unit: unit, Left: unit.Count)).ToArray();
         var halves = new Dictionary<(string Definition, string? Area, bool OffBoard), int>();
         var enteringSquads = new Dictionary<int, int>();
+        var deploys = card.Sides.FirstOrDefault(side => side.Groups.Contains(group)) is not { } owner || MayDeploy(owner.Nation ?? owner.Side);
         foreach (var counter in mine.Where(counter => !counter.Dummy))
         {
             // Referee, pass 19: a counter with no Location fills no line, unless it waits off board to enter (ruling R20.5).
@@ -461,6 +468,14 @@ public static class ScenarioSetup
             if (line >= 0)
             {
                 lines[line].Left--;
+                continue;
+            }
+
+            // A2.9, A25.2 (ruling R31.4; referee, pass 31): squads set up Deployed only "if the nationality is capable of Deployment", and Russian
+            // squads may not Deploy. A HS the OB itself lists was placed by the line above; this is a squad's HS.
+            if (!deploys && Array.FindIndex(lines, item => halfSquadOf(item.Unit.Definition) == counter.Definition && Fits(item.Unit)) >= 0)
+            {
+                reasons.Add($"play.setup-deployment: {counter.Id} is a HS of a squad of {group.Name}, and Russian squads may not Deploy, so they do not set up Deployed (A2.9, A25.2; ruling R31.4)");
                 continue;
             }
 

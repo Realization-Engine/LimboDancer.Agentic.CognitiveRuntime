@@ -830,6 +830,10 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
             CushionedOpenGround = recorded.CushionedOpenGround,
             BreakdownReduction = recorded.BreakdownReduction,
 
+            // Pass 31 (ruling R31.3): how a pinned firer's MG fires is recorded with the attack, so an older record replays as it was resolved.
+            PinnedMgAreaFire = recorded.PinnedMgAreaFire,
+            TargetsInMelee = recorded.TargetsInMelee,
+
             // Backlog pass 12 (rulings R12.6, R12.7): Spraying Fire is the firer's declaration; a Fire Lane's Residual FP is the lane's in the state.
             SprayingFire = recorded.SprayingFire,
             SprayShare = recorded.SprayShare,

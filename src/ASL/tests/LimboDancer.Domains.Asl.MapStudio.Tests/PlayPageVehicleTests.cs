@@ -102,11 +102,11 @@ public sealed class PlayPageVehicleTests : IDisposable
         Assert.Contains("CE", page.Find("tr[data-unit='de-ht']").TextContent, StringComparison.Ordinal);
 
         // In the PFPh the halftrack's AAMG may fire; the unarmed truck may not (D5.1).
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
         var firing = page.FindAll("#fire-from option").Select(item => item.GetAttribute("value")).ToArray();
         Assert.Contains(two, firing);
         Assert.DoesNotContain(one, firing);
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
         Assert.Empty(page.FindAll(".move-unit"));
         Assert.Equal(["", "de-ht", "de-t"], page.FindAll("#vehicle-unit option").Select(item => item.GetAttribute("value")).Order(StringComparer.Ordinal));
         Assert.Single(page.FindAll(".bu-toggle[data-vehicle='de-ht']"));
@@ -137,8 +137,8 @@ public sealed class PlayPageVehicleTests : IDisposable
         page.Find("#place-location").Change(two);
         page.Find("#place-add").Click();
         Commit(page, "#propose-setup");
-        Commit(page, "#propose-advance");
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
+        page.EndPhase(Commit);
         page.Find("#vehicle-unit").Change("de-ht");
         Commit(page, "#vehicle-start");
         Assert.Empty(page.FindAll("#vehicle-bff"));
@@ -157,7 +157,7 @@ public sealed class PlayPageVehicleTests : IDisposable
         Place(page, "de-tank", "attacker-tank", one, "east");
         Place(page, "ru-tank", "defender-tank", two, "west");
         Commit(page, "#propose-setup");
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
         var gun = page.FindAll("#ordnance-gun option").Single(item => item.GetAttribute("value") == "de-tank");
         Assert.Contains("VCA east, TCA east, BU", gun.TextContent, StringComparison.Ordinal);
         Assert.Empty(page.FindAll("#ordnance-vehicle"));
@@ -183,8 +183,8 @@ public sealed class PlayPageVehicleTests : IDisposable
         page.Find("#place-location").Change(two);
         page.Find("#place-add").Click();
         Commit(page, "#propose-setup");
-        Commit(page, "#propose-advance");
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
+        page.EndPhase(Commit);
         page.Find("#vehicle-unit").Change("de-tank");
         Assert.Single(page.FindAll("#vehicle-start-reverse"));
         Commit(page, "#vehicle-start");
@@ -235,13 +235,13 @@ public sealed class PlayPageVehicleTests : IDisposable
         page.Find("#place-location").Change(two);
         page.Find("#place-add").Click();
         Commit(page, "#propose-setup");
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
         page.Find("#ordnance-gun").Change("de-gun");
         Assert.Contains("range 1", page.Find($"#ordnance-arc li[data-at='{two}']").TextContent, StringComparison.Ordinal);
         Assert.Single(page.FindAll("#ordnance-intensive"));
         Assert.Single(page.FindAll("#propose-turn-gun"));
         page.WaitForAssertion(() => Assert.Contains("layer-covered-arc", context.MapLayer("setMarks"), StringComparison.Ordinal));
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
         page.Find(".move-unit[data-unit='de-crew']").Change(true);
         Assert.Single(page.FindAll("#move-push"));
     }

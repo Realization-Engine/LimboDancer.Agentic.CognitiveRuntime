@@ -150,14 +150,14 @@ public sealed class PlayPageTests : IDisposable
         Assert.Empty(page.FindAll("#place-list"));
 
         page.ViewAs("german");
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
 
         // The Studio demo of pass 23: Opportunity Fire is the phasing side's choice, so the other side sees none of it.
         Assert.NotEmpty(page.FindAll("#propose-opportunity"));
         page.ViewAs("russian");
         Assert.Empty(page.FindAll("#propose-opportunity"));
         page.ViewAs("german");
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
         Assert.Contains("Movement Phase", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
         Assert.NotEmpty(page.FindAll(".move-unit"));
         page.ViewAs("russian");
@@ -194,8 +194,8 @@ public sealed class PlayPageTests : IDisposable
     {
         var (from, building) = EntryPair();
         var page = StartGame(from);
-        Commit(page, "#propose-advance");
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
+        page.EndPhase(Commit);
         Assert.Contains("Movement Phase", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
 
         page.ViewAs(Perspective.AdjudicatorName);
@@ -216,8 +216,8 @@ public sealed class PlayPageTests : IDisposable
         // Occupied and Concealed Entry Design, section 7: the side cannot tell from the proposal whether the building is empty.
         var (from, building) = EntryPair();
         var page = StartGame(from);
-        Commit(page, "#propose-advance");
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
+        page.EndPhase(Commit);
         page.Find("#enter-location").Change(building);
         page.Find("#propose-enter").Click();
         page.WaitForAssertion(() => Assert.Contains("The entry is declared", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
@@ -233,8 +233,8 @@ public sealed class PlayPageTests : IDisposable
     public void ARefusedEntryShowsWhyAndChangesNothing()
     {
         var page = StartGame($"{Board}:A1:0");
-        Commit(page, "#propose-advance");
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
+        page.EndPhase(Commit);
         page.Find("#enter-location").Change($"{Board}:A1:0");
         page.Find("#propose-enter").Click();
         page.WaitForAssertion(() => Assert.Contains("Refused", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
@@ -266,8 +266,8 @@ public sealed class PlayPageTests : IDisposable
         }
 
         Commit(page, "#propose-setup");
-        Commit(page, "#propose-advance");
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
+        page.EndPhase(Commit);
         return page;
     }
 

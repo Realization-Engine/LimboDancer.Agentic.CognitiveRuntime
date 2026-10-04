@@ -135,7 +135,7 @@ public sealed class PlayPageStepsTests : IDisposable
 
         // U24 and U27 on the page: r2 fires with its LMG at the Dummy; the colored 1 keeps the LMG's ROF (A9.2), and an
         // effect removes the Dummy (A12.14).
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
         page.Find("#fire-from").Change(hexes.From);
         page.Find(".fire-firer[data-unit='r2']").Change(true);
         page.Find(".fire-weapon[data-weapon='mg1']").Change(true);
@@ -164,8 +164,8 @@ public sealed class PlayPageStepsTests : IDisposable
         Place(page, "r1", "defender-squad", hexes.Open);
         Place(page, "r2", "defender-squad", hexes.Open);
         Commit(page, "#propose-setup");
-        Commit(page, "#propose-advance");
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
+        page.EndPhase(Commit);
         Assert.Contains("Movement", page.Find("#play-summary").TextContent, StringComparison.Ordinal);
 
         // U25 on the page: g1 enters the building; the DEFENDER's window opens and the ATTACKER waits.
@@ -212,7 +212,7 @@ public sealed class PlayPageStepsTests : IDisposable
         Commit(page, "#propose-end-move");
 
         // Residual FP is gone when the MPh ends (A8.2).
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
         Assert.Empty(page.FindAll("#play-residual"));
         page.WaitForAssertion(() => Assert.Null(context.MapQuery(".play-residual")));
     }
@@ -226,8 +226,8 @@ public sealed class PlayPageStepsTests : IDisposable
         Place(page, "gd", "dummy:german", hexes.Building);
         Place(page, "g1", "attacker-squad", hexes.Open);
         Commit(page, "#propose-setup");
-        Commit(page, "#propose-advance");
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
+        page.EndPhase(Commit);
 
         // In the Russian MPh the Germans are the DEFENDER: g1's Location is offered, the Dummy's is not (A12.1).
         page.ViewAs("german");

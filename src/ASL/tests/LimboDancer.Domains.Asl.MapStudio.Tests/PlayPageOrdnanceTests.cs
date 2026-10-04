@@ -95,7 +95,7 @@ public sealed class PlayPageOrdnanceTests : IDisposable
         Assert.Equal(string.Empty, page.Find("#place-holder").GetAttribute("value"));
         Place(page, "r1", "defender-squad", hexes.Two);
         Commit(page, "#propose-setup");
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
 
         // C3.3: black Basic TH# 8 at one hex with Case L -2 (and Case A if the Gun turns): 6 and 5 miss whatever the turn.
         Assert.Contains(page.FindAll("#ordnance-gun option"), option => option.GetAttribute("value") == "de-gun");

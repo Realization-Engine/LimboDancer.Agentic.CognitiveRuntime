@@ -93,8 +93,8 @@ public sealed class PlayPagePass25Tests : IDisposable
         Place(page, "g1", "attacker-squad", hexes.Edge);
         Place(page, "r1", "defender-squad", hexes.Inside);
         Commit(page, "#propose-setup");
-        Commit(page, "#propose-advance");
-        Commit(page, "#propose-advance");
+        page.EndPhase(Commit);
+        page.EndPhase(Commit);
 
         Assert.True(page.Find("#propose-exit").HasAttribute("disabled"));
         page.Find(".move-unit[data-unit='g1']").Change(true);

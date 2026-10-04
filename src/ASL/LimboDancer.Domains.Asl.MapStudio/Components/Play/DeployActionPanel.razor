@@ -1,9 +1,9 @@
 @* Plan A07 (pass 28b): a squad Deploying into two HS (A1.31). The page gives the squads and leaders the view sees (ruling R23.1) and the SW the chosen
    squad possesses; choosing another squad clears the leader and the SW, which the page does in its OnSquad handler (section 15.3). Each SW checked
    goes to the second HS, the rest stay with the first (backlog section 23, built in pass 28b). *@
-<RuleHelp Id="deploy-help" Summary="A Good Order squad Deploys into two HS on a NTC with a Good Order leader in its Location (Guards need no leader); two Good Order HS of one kind Recombine the same way. Either is the sole RPh action (A1.31, A1.32).">
-    A Good Order squad with a Good Order leader of its nationality in its Location Deploys into two HS on a NTC modified by his leadership (Guards
-    need no leader and take it unmodified); two Good Order HS of one kind Recombine with such a leader. Either is the units' and the leader's sole RPh action (A1.31, A1.32).
+<RuleHelp Id="deploy-help" Summary="A Good Order squad Deploys into two HS on a NTC with a Good Order leader in its Location (Russian squads may not Deploy, A25.2); two Good Order HS of one kind Recombine the same way. Either is the sole RPh action (A1.31, A1.32).">
+    A Good Order squad with a Good Order leader of its nationality in its Location Deploys into two HS on a NTC modified by his leadership; Russian
+    squads may not Deploy (A25.2); two Good Order HS of one kind Recombine with such a leader. Either is the units' and the leader's sole RPh action (A1.31, A1.32).
     A squad waiting off board may attempt to Deploy from its entry turn's RPh with a leader waiting to enter along the same edge (A2.52; ruling R25.4).
 </RuleHelp>
 <div class="toolbar">
@@ -20,7 +20,7 @@
     <label>
         Leader
         <select id="deploy-leader" value="@Leader" @onchange="@(args => OnLeader.InvokeAsync(args.Value as string ?? string.Empty))">
-            <option value="">none (Guards)</option>
+            <option value="">choose</option>
             @foreach (var leader in Leaders)
             {
                 <option value="@leader">@leader</option>

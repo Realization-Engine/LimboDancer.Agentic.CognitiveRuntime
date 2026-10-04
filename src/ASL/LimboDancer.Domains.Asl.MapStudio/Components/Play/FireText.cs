@@ -10,6 +10,15 @@ namespace LimboDancer.Domains.Asl.MapStudio.Components.Play;
 public sealed record FireView(string EventId, string Group, string Target, string? TargetSide, FireArithmetic Arithmetic,
     IReadOnlyList<FireUnitEffect>? Effects)
 {
+    /// <summary>
+    /// Pass 31 (play test P-16): the targets that were broken, and those pinned, before the attack, so the Effect column says what the attack
+    /// changed and not what was already so. Empty when the effects are withheld.
+    /// </summary>
+    public IReadOnlySet<string> BrokenBefore { get; init; } = new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>The targets pinned before the attack.</summary>
+    public IReadOnlySet<string> PinnedBefore { get; init; } = new HashSet<string>(StringComparer.Ordinal);
+
     /// <summary>The Vehicle line and Collateral Attack results of the target Location's vehicles (A7.308, D.8B).</summary>
     public IReadOnlyList<FireVehicleEffect>? Vehicles
     {
@@ -79,7 +88,10 @@ internal static class FireText
     }
 
     /// <summary>What an attack did to a target unit, in words.</summary>
-    public static string EffectText(FireUnitEffect effect)
+    public static string EffectText(FireUnitEffect effect) => EffectText(effect, false, false);
+
+    /// <summary>What an attack did to a target unit, in words; a state the unit was already in is said as such (pass 31, play test P-16).</summary>
+    public static string EffectText(FireUnitEffect effect, bool brokenBefore, bool pinnedBefore)
     {
         ArgumentNullException.ThrowIfNull(effect);
         List<string> parts = [];
@@ -92,7 +104,7 @@ internal static class FireText
             parts.Add($"now {effect.FinalDefinitionId}");
         }
 
-        foreach (var (applies, name) in new[] { (effect.Broken, "broken"), (effect.Pinned, "pinned"), (effect.Wounded, "wounded"), (effect.Disrupted, "Disrupted"),
+        foreach (var (applies, name) in new[] { (effect.Broken, brokenBefore ? "already broken" : "broken"), (effect.Pinned, pinnedBefore ? "already pinned" : "pinned"), (effect.Wounded, "wounded"), (effect.Disrupted, "Disrupted"),
             (effect.Berserk == true, "berserk"), (effect.ConcealmentLost, "concealment lost") })
         {
             if (applies)
