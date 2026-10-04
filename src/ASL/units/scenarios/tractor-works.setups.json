@@ -1,19 +1,21 @@
 {
-  "format": "asl-setup-plans/1",
+  "format": "asl-setup-plans/2",
   "card": "tractor-works",
   "plans": [
     {
-      "id": "all-round",
+      "id": "dummy-west",
       "cardSha256": "ed9c2df4350546dd3fc20214b3b7eaf036d4503c01a27751bfeb1cc3d5bdb19e",
       "side": "russian",
-      "name": "All round",
-      "idea": "Every hex of the Works is held and looks the same from outside: a concealed stack and one Dummy in each. The HMG and the 9-2 stand at Y5, which sees more German setup Locations than any other hex, and two squads wait in the centre.",
-      "givesUp": "Most hexes hold a single squad, so the Germans may mass against any one face; the reserve is two squads.",
+      "name": "Dummy west",
+      "idea": "The west face, W4 and W5, and the north-east tip Y3 hold only Dummies, three to a hex. The real force is the centre and the south-east: three squads in the centre, where nothing sees them, the HMG and the 9-2 at Y5, an MMG at Y4, the other MMG at X5, and an LMG at X3 and at X2 behind the Dummy face.",
+      "givesUp": "W4, W5, and Y3 are not defended: Kampfgruppe Stahler may walk into the west face, and the Russians then hold exactly six hexes and can lose no other.",
       "terrain": [
         "The east face looks at the assault engineers' buildings: Y3, Y4, and Y5 see AA4 at range 2, Y4 and Y5 see AA5 at range 2, and Y5 and X5 see Y7 and Z6 at range 2.",
-        "The west face looks at Kampfgruppe Stahler's building U3: W4, X2, and X3 see V2 at range 2, W4 sees U3 at range 2, and X2, X3, and W5 see U3 at range 3.",
         "X4, the centre hex, has no LOS to or from any German setup Location, nor to any hex next to the building.",
         "Y5 sees thirteen German setup Locations (AA4, AA5, Y7, and Z6 at every level, and CC7), more than any other hex of the building.",
+        "X3 is seen only from U3 and V2, and X2 from U3, V2, and T4; both stand one hex behind W4.",
+        "Of the hexes held only by Dummies, W4 is seen from U3 and V2 at range 2, W5 from U3 at range 3 and from S5 and U8 at 4, and Y3 from AA4 at range 2, AA5 at 3, and CC3 at 4.",
+        "The three plans of this card show the same number of counters in every hex of the Works (W4 3, W5 3, X2 2, X3 2, X4 4, X5 2, Y3 3, Y4 3, Y5 3), and every counter is a \"?\", so the Germans cannot tell from the stacks which plan was used. Each holds six hexes with real units and three with Dummies only; the plans differ in which three.",
         "The card makes X3 a Factory (SSR 5), which has no upper levels, so every counter stands at ground level, although the board's data gives the building levels 1 and 2.",
         "The side that Controls six of the building's nine hexes (W4, W5, X2, X3, X4, X5, Y3, Y4, Y5) at game end wins; the Russians Control all nine at the start."
       ],
@@ -22,14 +24,232 @@
           "id": "r-squad-1",
           "definition": "defender-squad",
           "group": "russian-1",
-          "at": "bd01:Y5:0",
+          "at": "bd01:X2:0",
           "concealed": true
         },
         {
           "id": "r-squad-2",
           "definition": "defender-squad",
           "group": "russian-1",
+          "at": "bd01:X3:0",
+          "concealed": true
+        },
+        {
+          "id": "r-squad-3",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:X3:0",
+          "concealed": true
+        },
+        {
+          "id": "r-squad-4",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:X4:0",
+          "concealed": true
+        },
+        {
+          "id": "r-squad-5",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:X4:0",
+          "concealed": true
+        },
+        {
+          "id": "r-squad-6",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:X4:0",
+          "concealed": true
+        },
+        {
+          "id": "r-squad-7",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:X5:0",
+          "concealed": true
+        },
+        {
+          "id": "r-squad-8",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:X5:0",
+          "concealed": true
+        },
+        {
+          "id": "r-squad-9",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:Y4:0",
+          "concealed": true
+        },
+        {
+          "id": "r-squad-10",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:Y4:0",
+          "concealed": true
+        },
+        {
+          "id": "r-squad-11",
+          "definition": "defender-squad",
+          "group": "russian-1",
           "at": "bd01:Y5:0",
+          "concealed": true
+        },
+        {
+          "id": "r-squad-12",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:Y5:0",
+          "concealed": true
+        },
+        {
+          "id": "r-leader-9-2-1",
+          "definition": "defender-leader-9-2",
+          "group": "russian-1",
+          "at": "bd01:Y5:0",
+          "concealed": true
+        },
+        {
+          "id": "r-dummy-1",
+          "dummy": true,
+          "group": "russian-1",
+          "at": "bd01:W4:0"
+        },
+        {
+          "id": "r-dummy-2",
+          "dummy": true,
+          "group": "russian-1",
+          "at": "bd01:W4:0"
+        },
+        {
+          "id": "r-dummy-3",
+          "dummy": true,
+          "group": "russian-1",
+          "at": "bd01:W4:0"
+        },
+        {
+          "id": "r-dummy-4",
+          "dummy": true,
+          "group": "russian-1",
+          "at": "bd01:W5:0"
+        },
+        {
+          "id": "r-dummy-5",
+          "dummy": true,
+          "group": "russian-1",
+          "at": "bd01:W5:0"
+        },
+        {
+          "id": "r-dummy-6",
+          "dummy": true,
+          "group": "russian-1",
+          "at": "bd01:W5:0"
+        },
+        {
+          "id": "r-dummy-7",
+          "dummy": true,
+          "group": "russian-1",
+          "at": "bd01:X2:0"
+        },
+        {
+          "id": "r-dummy-8",
+          "dummy": true,
+          "group": "russian-1",
+          "at": "bd01:X4:0"
+        },
+        {
+          "id": "r-dummy-9",
+          "dummy": true,
+          "group": "russian-1",
+          "at": "bd01:Y3:0"
+        },
+        {
+          "id": "r-dummy-10",
+          "dummy": true,
+          "group": "russian-1",
+          "at": "bd01:Y3:0"
+        },
+        {
+          "id": "r-dummy-11",
+          "dummy": true,
+          "group": "russian-1",
+          "at": "bd01:Y3:0"
+        },
+        {
+          "id": "r-dummy-12",
+          "dummy": true,
+          "group": "russian-1",
+          "at": "bd01:Y4:0"
+        },
+        {
+          "id": "r-hmg-1",
+          "definition": "defender-hmg",
+          "group": "russian-1",
+          "holder": "r-squad-11"
+        },
+        {
+          "id": "r-mmg-1",
+          "definition": "defender-mmg",
+          "group": "russian-1",
+          "holder": "r-squad-9"
+        },
+        {
+          "id": "r-mmg-2",
+          "definition": "defender-mmg",
+          "group": "russian-1",
+          "holder": "r-squad-7"
+        },
+        {
+          "id": "r-lmg-1",
+          "definition": "defender-lmg",
+          "group": "russian-1",
+          "holder": "r-squad-2"
+        },
+        {
+          "id": "r-lmg-2",
+          "definition": "defender-lmg",
+          "group": "russian-1",
+          "holder": "r-squad-1"
+        },
+        {
+          "id": "r-lmg-3",
+          "definition": "defender-lmg",
+          "group": "russian-1",
+          "holder": "r-squad-4"
+        }
+      ]
+    },
+    {
+      "id": "east-front",
+      "cardSha256": "ed9c2df4350546dd3fc20214b3b7eaf036d4503c01a27751bfeb1cc3d5bdb19e",
+      "side": "russian",
+      "name": "East front",
+      "idea": "The weight faces the assault engineers and Kampfgruppe Tienham: two squads in each hex of the east face with the HMG, both MMG, and the 9-2, and two more at X5. The west is two squads with an LMG at W4 and two at X3. W5, X2, and the centre hold only Dummies, the centre four of them, so it looks like the reserve.",
+      "givesUp": "W5, X2, and X4 are not defended: a German squad that enters them takes their Control, and there is no reserve behind the two faces. The 9-2 stands at Y4, so the HMG at Y5 fires without a leader.",
+      "terrain": [
+        "The east face looks at the assault engineers' buildings: Y3, Y4, and Y5 see AA4 at range 2, Y4 and Y5 see AA5 at range 2, and Y5 and X5 see Y7 and Z6 at range 2.",
+        "The west face looks at Kampfgruppe Stahler's building U3: W4, X2, and X3 see V2 at range 2, W4 sees U3 at range 2, and X2, X3, and W5 see U3 at range 3.",
+        "X4, the centre hex, has no LOS to or from any German setup Location, nor to any hex next to the building.",
+        "Of the hexes held only by Dummies, W5 is seen from U3 at range 3 and from S5 and U8 at 4, X2 from V2 at range 2, U3 at 3, and T4 at 4, and X4 from nowhere.",
+        "The three plans of this card show the same number of counters in every hex of the Works (W4 3, W5 3, X2 2, X3 2, X4 4, X5 2, Y3 3, Y4 3, Y5 3), and every counter is a \"?\", so the Germans cannot tell from the stacks which plan was used. Each holds six hexes with real units and three with Dummies only; the plans differ in which three.",
+        "The card makes X3 a Factory (SSR 5), which has no upper levels, so every counter stands at ground level, although the board's data gives the building levels 1 and 2.",
+        "The side that Controls six of the building's nine hexes (W4, W5, X2, X3, X4, X5, Y3, Y4, Y5) at game end wins; the Russians Control all nine at the start."
+      ],
+      "placements": [
+        {
+          "id": "r-squad-1",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:Y3:0",
+          "concealed": true
+        },
+        {
+          "id": "r-squad-2",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:Y3:0",
           "concealed": true
         },
         {
@@ -43,107 +263,71 @@
           "id": "r-squad-4",
           "definition": "defender-squad",
           "group": "russian-1",
-          "at": "bd01:Y3:0",
+          "at": "bd01:Y4:0",
           "concealed": true
         },
         {
           "id": "r-squad-5",
           "definition": "defender-squad",
           "group": "russian-1",
-          "at": "bd01:X5:0",
+          "at": "bd01:Y5:0",
           "concealed": true
         },
         {
           "id": "r-squad-6",
           "definition": "defender-squad",
           "group": "russian-1",
-          "at": "bd01:X5:0",
+          "at": "bd01:Y5:0",
           "concealed": true
         },
         {
           "id": "r-squad-7",
           "definition": "defender-squad",
           "group": "russian-1",
-          "at": "bd01:W5:0",
+          "at": "bd01:X5:0",
           "concealed": true
         },
         {
           "id": "r-squad-8",
           "definition": "defender-squad",
           "group": "russian-1",
-          "at": "bd01:W4:0",
+          "at": "bd01:X5:0",
           "concealed": true
         },
         {
           "id": "r-squad-9",
           "definition": "defender-squad",
           "group": "russian-1",
-          "at": "bd01:X2:0",
+          "at": "bd01:W4:0",
           "concealed": true
         },
         {
           "id": "r-squad-10",
           "definition": "defender-squad",
           "group": "russian-1",
-          "at": "bd01:X3:0",
+          "at": "bd01:W4:0",
           "concealed": true
         },
         {
           "id": "r-squad-11",
           "definition": "defender-squad",
           "group": "russian-1",
-          "at": "bd01:X4:0",
+          "at": "bd01:X3:0",
           "concealed": true
         },
         {
           "id": "r-squad-12",
           "definition": "defender-squad",
           "group": "russian-1",
-          "at": "bd01:X4:0",
+          "at": "bd01:X3:0",
           "concealed": true
         },
         {
           "id": "r-leader-9-2-1",
           "definition": "defender-leader-9-2",
           "group": "russian-1",
-          "at": "bd01:Y5:0",
+          "at": "bd01:Y4:0",
           "concealed": true
-        },
-        {
-          "id": "r-hmg-1",
-          "definition": "defender-hmg",
-          "group": "russian-1",
-          "holder": "r-squad-1"
-        },
-        {
-          "id": "r-mmg-1",
-          "definition": "defender-mmg",
-          "group": "russian-1",
-          "holder": "r-squad-3"
-        },
-        {
-          "id": "r-lmg-1",
-          "definition": "defender-lmg",
-          "group": "russian-1",
-          "holder": "r-squad-4"
-        },
-        {
-          "id": "r-mmg-2",
-          "definition": "defender-mmg",
-          "group": "russian-1",
-          "holder": "r-squad-5"
-        },
-        {
-          "id": "r-lmg-2",
-          "definition": "defender-lmg",
-          "group": "russian-1",
-          "holder": "r-squad-7"
-        },
-        {
-          "id": "r-lmg-3",
-          "definition": "defender-lmg",
-          "group": "russian-1",
-          "holder": "r-squad-8"
         },
         {
           "id": "r-dummy-1",
@@ -161,158 +345,67 @@
           "id": "r-dummy-3",
           "dummy": true,
           "group": "russian-1",
-          "at": "bd01:X2:0"
+          "at": "bd01:W5:0"
         },
         {
           "id": "r-dummy-4",
           "dummy": true,
           "group": "russian-1",
-          "at": "bd01:X3:0"
+          "at": "bd01:W5:0"
         },
         {
           "id": "r-dummy-5",
           "dummy": true,
           "group": "russian-1",
-          "at": "bd01:X4:0"
+          "at": "bd01:X2:0"
         },
         {
           "id": "r-dummy-6",
           "dummy": true,
           "group": "russian-1",
-          "at": "bd01:X5:0"
+          "at": "bd01:X2:0"
         },
         {
           "id": "r-dummy-7",
           "dummy": true,
           "group": "russian-1",
-          "at": "bd01:Y3:0"
+          "at": "bd01:X4:0"
         },
         {
           "id": "r-dummy-8",
           "dummy": true,
           "group": "russian-1",
-          "at": "bd01:Y4:0"
+          "at": "bd01:X4:0"
         },
         {
           "id": "r-dummy-9",
           "dummy": true,
           "group": "russian-1",
+          "at": "bd01:X4:0"
+        },
+        {
+          "id": "r-dummy-10",
+          "dummy": true,
+          "group": "russian-1",
+          "at": "bd01:X4:0"
+        },
+        {
+          "id": "r-dummy-11",
+          "dummy": true,
+          "group": "russian-1",
+          "at": "bd01:Y3:0"
+        },
+        {
+          "id": "r-dummy-12",
+          "dummy": true,
+          "group": "russian-1",
           "at": "bd01:Y5:0"
-        }
-      ]
-    },
-    {
-      "id": "east-front",
-      "cardSha256": "ed9c2df4350546dd3fc20214b3b7eaf036d4503c01a27751bfeb1cc3d5bdb19e",
-      "side": "russian",
-      "name": "East front",
-      "idea": "The weight faces the assault engineers and Kampfgruppe Tienham: two squads in each hex of the east face with the HMG, both MMG, and the 9-2, two more at X5, and two in the centre. The west face is one squad with an LMG at W4 and at X2, with Dummies at W5 and X3.",
-      "givesUp": "The west face is thin and half of it is Dummies; it leans on the remnants, who set up after the Germans, to keep Kampfgruppe Stahler busy. The 9-2 stands at Y4, the centre of the east face, so the HMG at Y5 fires without a leader.",
-      "terrain": [
-        "The east face looks at the assault engineers' buildings: Y3, Y4, and Y5 see AA4 at range 2, Y4 and Y5 see AA5 at range 2, and Y5 and X5 see Y7 and Z6 at range 2.",
-        "The west face looks at Kampfgruppe Stahler's building U3: W4, X2, and X3 see V2 at range 2, W4 sees U3 at range 2, and X2, X3, and W5 see U3 at range 3.",
-        "X4, the centre hex, has no LOS to or from any German setup Location, nor to any hex next to the building.",
-        "Of the two hexes held only by Dummies, W5 is seen from U3 at range 3 and from S5 and U8 at 4, and X3 from V2 at range 2 and U3 at 3.",
-        "The card makes X3 a Factory (SSR 5), which has no upper levels, so every counter stands at ground level, although the board's data gives the building levels 1 and 2.",
-        "The side that Controls six of the building's nine hexes (W4, W5, X2, X3, X4, X5, Y3, Y4, Y5) at game end wins; the Russians Control all nine at the start."
-      ],
-      "placements": [
-        {
-          "id": "r-squad-1",
-          "definition": "defender-squad",
-          "group": "russian-1",
-          "at": "bd01:Y5:0",
-          "concealed": true
-        },
-        {
-          "id": "r-squad-2",
-          "definition": "defender-squad",
-          "group": "russian-1",
-          "at": "bd01:Y5:0",
-          "concealed": true
-        },
-        {
-          "id": "r-squad-3",
-          "definition": "defender-squad",
-          "group": "russian-1",
-          "at": "bd01:Y4:0",
-          "concealed": true
-        },
-        {
-          "id": "r-squad-4",
-          "definition": "defender-squad",
-          "group": "russian-1",
-          "at": "bd01:Y4:0",
-          "concealed": true
-        },
-        {
-          "id": "r-squad-5",
-          "definition": "defender-squad",
-          "group": "russian-1",
-          "at": "bd01:Y3:0",
-          "concealed": true
-        },
-        {
-          "id": "r-squad-6",
-          "definition": "defender-squad",
-          "group": "russian-1",
-          "at": "bd01:Y3:0",
-          "concealed": true
-        },
-        {
-          "id": "r-squad-7",
-          "definition": "defender-squad",
-          "group": "russian-1",
-          "at": "bd01:X5:0",
-          "concealed": true
-        },
-        {
-          "id": "r-squad-8",
-          "definition": "defender-squad",
-          "group": "russian-1",
-          "at": "bd01:X5:0",
-          "concealed": true
-        },
-        {
-          "id": "r-squad-9",
-          "definition": "defender-squad",
-          "group": "russian-1",
-          "at": "bd01:W4:0",
-          "concealed": true
-        },
-        {
-          "id": "r-squad-10",
-          "definition": "defender-squad",
-          "group": "russian-1",
-          "at": "bd01:X2:0",
-          "concealed": true
-        },
-        {
-          "id": "r-squad-11",
-          "definition": "defender-squad",
-          "group": "russian-1",
-          "at": "bd01:X4:0",
-          "concealed": true
-        },
-        {
-          "id": "r-squad-12",
-          "definition": "defender-squad",
-          "group": "russian-1",
-          "at": "bd01:X4:0",
-          "concealed": true
-        },
-        {
-          "id": "r-leader-9-2-1",
-          "definition": "defender-leader-9-2",
-          "group": "russian-1",
-          "at": "bd01:Y4:0",
-          "concealed": true
         },
         {
           "id": "r-hmg-1",
           "definition": "defender-hmg",
           "group": "russian-1",
-          "holder": "r-squad-1"
+          "holder": "r-squad-5"
         },
         {
           "id": "r-mmg-1",
@@ -324,7 +417,7 @@
           "id": "r-mmg-2",
           "definition": "defender-mmg",
           "group": "russian-1",
-          "holder": "r-squad-5"
+          "holder": "r-squad-1"
         },
         {
           "id": "r-lmg-1",
@@ -342,73 +435,7 @@
           "id": "r-lmg-3",
           "definition": "defender-lmg",
           "group": "russian-1",
-          "holder": "r-squad-10"
-        },
-        {
-          "id": "r-dummy-1",
-          "dummy": true,
-          "group": "russian-1",
-          "at": "bd01:W5:0"
-        },
-        {
-          "id": "r-dummy-2",
-          "dummy": true,
-          "group": "russian-1",
-          "at": "bd01:W5:0"
-        },
-        {
-          "id": "r-dummy-3",
-          "dummy": true,
-          "group": "russian-1",
-          "at": "bd01:W5:0"
-        },
-        {
-          "id": "r-dummy-4",
-          "dummy": true,
-          "group": "russian-1",
-          "at": "bd01:X3:0"
-        },
-        {
-          "id": "r-dummy-5",
-          "dummy": true,
-          "group": "russian-1",
-          "at": "bd01:X3:0"
-        },
-        {
-          "id": "r-dummy-6",
-          "dummy": true,
-          "group": "russian-1",
-          "at": "bd01:X3:0"
-        },
-        {
-          "id": "r-dummy-7",
-          "dummy": true,
-          "group": "russian-1",
-          "at": "bd01:Y3:0"
-        },
-        {
-          "id": "r-dummy-8",
-          "dummy": true,
-          "group": "russian-1",
-          "at": "bd01:Y4:0"
-        },
-        {
-          "id": "r-dummy-9",
-          "dummy": true,
-          "group": "russian-1",
-          "at": "bd01:Y5:0"
-        },
-        {
-          "id": "r-dummy-10",
-          "dummy": true,
-          "group": "russian-1",
-          "at": "bd01:X5:0"
-        },
-        {
-          "id": "r-dummy-11",
-          "dummy": true,
-          "group": "russian-1",
-          "at": "bd01:W4:0"
+          "holder": "r-squad-11"
         }
       ]
     },
@@ -425,7 +452,8 @@
         "X5 sees Y6, X6, and W6 at range 1 and Z5, W7, and X7 at 2, the ground south of the building, and Y7 and Z6 at range 2.",
         "X3 and W4 are seen only from U3 and V2, and X2 from U3, V2, and T4; none of them is seen from the engineers' buildings.",
         "The card makes X3 a Factory (SSR 5), which has no upper levels, so every counter stands at ground level, although the board's data gives the building levels 1 and 2.",
-        "The side that Controls six of the building's nine hexes (W4, W5, X2, X3, X4, X5, Y3, Y4, Y5) at game end wins; the Russians Control all nine at the start."
+        "The side that Controls six of the building's nine hexes (W4, W5, X2, X3, X4, X5, Y3, Y4, Y5) at game end wins; the Russians Control all nine at the start.",
+        "The three plans of this card show the same number of counters in every hex of the Works (W4 3, W5 3, X2 2, X3 2, X4 4, X5 2, Y3 3, Y4 3, Y5 3), and every counter is a \"?\", so the Germans cannot tell from the stacks which plan was used. Each holds six hexes with real units and three with Dummies only; the plans differ in which three."
       ],
       "placements": [
         {
@@ -626,6 +654,322 @@
           "dummy": true,
           "group": "russian-1",
           "at": "bd01:W5:0"
+        }
+      ]
+    },
+    {
+      "id": "three-sides",
+      "cardSha256": "ed9c2df4350546dd3fc20214b3b7eaf036d4503c01a27751bfeb1cc3d5bdb19e",
+      "side": "german",
+      "name": "Three sides",
+      "idea": "Every hex of the Works shows the same \"?\" whichever plan the Russians used, so the Germans press three faces at once and learn by fire which stacks are real. The engineers attack the east face: three squads with the LMG at AA4, and behind them, unseen at BB4, the 10-3 with both flamethrowers and three demolition charges. Kampfgruppe Tienham fires from the upper floor of Z6 and Y7 on X5 and Y5 at range 2, with the HMG under the 10-2. Kampfgruppe Stahler stands under \"?\" at V2 and U3, two hexes from the west face, with two squads behind at U2, and its nine Dummies fill T4, S5, and T7 so that it looks twice its size.",
+      "givesUp": "The force is spread over three faces, so no face has the weight to break in alone; the flamethrowers start three hexes from the Works; and the Dummies fool nobody once they are fired on.",
+      "terrain": [
+        "AA4 is seen from Y3, Y4, and Y5 at range 2. BB4, one hex behind it, is seen from no hex of the Works, and has a stairwell.",
+        "Z6 and Y7 see X5 and Y5 at range 2; Y8, behind them, is seen from no hex of the Works.",
+        "V2 sees W4, X2, and X3 at range 2; U3 sees W4 at range 2 and W5, X2, and X3 at range 3; U2 is seen from no hex of the Works.",
+        "Of the Dummy hexes, T4 is seen from X2 at range 4, S5 from W5 at range 4, and T7 from X5 at range 4: each is in a Russian LOS, so the Russians see a \"?\" stack there.",
+        "The plan uses all 12 of Kampfgruppe Stahler's \"?\": 3 for its concealed stacks and 9 Dummies.",
+        "The stacks at BB4 and Y8 are out of every Russian LOS, so each may take a \"?\" once both sides have set up (A12.12).",
+        "The side that Controls six of the building's nine hexes (W4, W5, X2, X3, X4, X5, Y3, Y4, Y5) at game end wins; the Russians Control all nine at the start."
+      ],
+      "placements": [
+        {
+          "id": "g-engineer-1",
+          "definition": "attacker-elite-squad-8-3-8",
+          "group": "german-1",
+          "at": "bd01:BB4:0"
+        },
+        {
+          "id": "g-engineer-2",
+          "definition": "attacker-elite-squad-8-3-8",
+          "group": "german-1",
+          "at": "bd01:BB4:0"
+        },
+        {
+          "id": "g-engineer-3",
+          "definition": "attacker-elite-squad-8-3-8",
+          "group": "german-1",
+          "at": "bd01:BB4:0"
+        },
+        {
+          "id": "g-leader-10-3-1",
+          "definition": "attacker-leader-10-3",
+          "group": "german-1",
+          "at": "bd01:BB4:0"
+        },
+        {
+          "id": "g-engineer-4",
+          "definition": "attacker-elite-squad-8-3-8",
+          "group": "german-1",
+          "at": "bd01:AA4:0"
+        },
+        {
+          "id": "g-engineer-5",
+          "definition": "attacker-elite-squad-8-3-8",
+          "group": "german-1",
+          "at": "bd01:AA4:0"
+        },
+        {
+          "id": "g-engineer-6",
+          "definition": "attacker-elite-squad-8-3-8",
+          "group": "german-1",
+          "at": "bd01:AA4:0"
+        },
+        {
+          "id": "g-ft-1",
+          "definition": "attacker-ft",
+          "group": "german-1",
+          "holder": "g-engineer-1"
+        },
+        {
+          "id": "g-ft-2",
+          "definition": "attacker-ft",
+          "group": "german-1",
+          "holder": "g-engineer-2"
+        },
+        {
+          "id": "g-dc-1",
+          "definition": "attacker-dc",
+          "group": "german-1",
+          "holder": "g-engineer-1"
+        },
+        {
+          "id": "g-dc-2",
+          "definition": "attacker-dc",
+          "group": "german-1",
+          "holder": "g-engineer-2"
+        },
+        {
+          "id": "g-dc-3",
+          "definition": "attacker-dc",
+          "group": "german-1",
+          "holder": "g-engineer-3"
+        },
+        {
+          "id": "g-dc-4",
+          "definition": "attacker-dc",
+          "group": "german-1",
+          "holder": "g-engineer-6"
+        },
+        {
+          "id": "g-lmg-1",
+          "definition": "attacker-lmg",
+          "group": "german-1",
+          "holder": "g-engineer-4"
+        },
+        {
+          "id": "g-lmg-2",
+          "definition": "attacker-lmg",
+          "group": "german-1",
+          "holder": "g-engineer-5"
+        },
+        {
+          "id": "g-squad-1",
+          "definition": "attacker-squad",
+          "group": "german-2",
+          "at": "bd01:V2:1",
+          "concealed": true
+        },
+        {
+          "id": "g-squad-2",
+          "definition": "attacker-squad",
+          "group": "german-2",
+          "at": "bd01:V2:1",
+          "concealed": true
+        },
+        {
+          "id": "g-squad-3",
+          "definition": "attacker-squad",
+          "group": "german-2",
+          "at": "bd01:U3:0",
+          "concealed": true
+        },
+        {
+          "id": "g-squad-4",
+          "definition": "attacker-squad",
+          "group": "german-2",
+          "at": "bd01:U3:0",
+          "concealed": true
+        },
+        {
+          "id": "g-squad-5",
+          "definition": "attacker-squad",
+          "group": "german-2",
+          "at": "bd01:U3:0",
+          "concealed": true
+        },
+        {
+          "id": "g-squad-6",
+          "definition": "attacker-squad",
+          "group": "german-2",
+          "at": "bd01:U2:0",
+          "concealed": true
+        },
+        {
+          "id": "g-squad-7",
+          "definition": "attacker-squad",
+          "group": "german-2",
+          "at": "bd01:U2:0",
+          "concealed": true
+        },
+        {
+          "id": "g-leader-9-2-1",
+          "definition": "attacker-leader-9-2",
+          "group": "german-2",
+          "at": "bd01:V2:1",
+          "concealed": true
+        },
+        {
+          "id": "g-leader-8-1-1",
+          "definition": "attacker-leader-8-1",
+          "group": "german-2",
+          "at": "bd01:U3:0",
+          "concealed": true
+        },
+        {
+          "id": "g-mmg-1",
+          "definition": "attacker-mmg",
+          "group": "german-2",
+          "holder": "g-squad-1"
+        },
+        {
+          "id": "g-mmg-2",
+          "definition": "attacker-mmg",
+          "group": "german-2",
+          "holder": "g-squad-2"
+        },
+        {
+          "id": "g-lmg-3",
+          "definition": "attacker-lmg",
+          "group": "german-2",
+          "holder": "g-squad-3"
+        },
+        {
+          "id": "g-lmg-4",
+          "definition": "attacker-lmg",
+          "group": "german-2",
+          "holder": "g-squad-4"
+        },
+        {
+          "id": "g-dummy-1",
+          "dummy": true,
+          "group": "german-2",
+          "at": "bd01:T4:1"
+        },
+        {
+          "id": "g-dummy-2",
+          "dummy": true,
+          "group": "german-2",
+          "at": "bd01:T4:1"
+        },
+        {
+          "id": "g-dummy-3",
+          "dummy": true,
+          "group": "german-2",
+          "at": "bd01:T4:1"
+        },
+        {
+          "id": "g-dummy-4",
+          "dummy": true,
+          "group": "german-2",
+          "at": "bd01:S5:1"
+        },
+        {
+          "id": "g-dummy-5",
+          "dummy": true,
+          "group": "german-2",
+          "at": "bd01:S5:1"
+        },
+        {
+          "id": "g-dummy-6",
+          "dummy": true,
+          "group": "german-2",
+          "at": "bd01:S5:1"
+        },
+        {
+          "id": "g-dummy-7",
+          "dummy": true,
+          "group": "german-2",
+          "at": "bd01:T7:1"
+        },
+        {
+          "id": "g-dummy-8",
+          "dummy": true,
+          "group": "german-2",
+          "at": "bd01:T7:1"
+        },
+        {
+          "id": "g-dummy-9",
+          "dummy": true,
+          "group": "german-2",
+          "at": "bd01:T7:1"
+        },
+        {
+          "id": "g-squad-8",
+          "definition": "attacker-squad",
+          "group": "german-3",
+          "at": "bd01:Z6:1"
+        },
+        {
+          "id": "g-squad-9",
+          "definition": "attacker-squad",
+          "group": "german-3",
+          "at": "bd01:Z6:1"
+        },
+        {
+          "id": "g-squad-10",
+          "definition": "attacker-squad",
+          "group": "german-3",
+          "at": "bd01:Y7:1"
+        },
+        {
+          "id": "g-squad-11",
+          "definition": "attacker-squad",
+          "group": "german-3",
+          "at": "bd01:Y7:1"
+        },
+        {
+          "id": "g-squad-12",
+          "definition": "attacker-squad",
+          "group": "german-3",
+          "at": "bd01:Y8:0"
+        },
+        {
+          "id": "g-squad-13",
+          "definition": "attacker-squad",
+          "group": "german-3",
+          "at": "bd01:Y8:0"
+        },
+        {
+          "id": "g-leader-10-2-1",
+          "definition": "attacker-leader-10-2",
+          "group": "german-3",
+          "at": "bd01:Z6:1"
+        },
+        {
+          "id": "g-leader-9-1-1",
+          "definition": "attacker-leader-9-1",
+          "group": "german-3",
+          "at": "bd01:Y7:1"
+        },
+        {
+          "id": "g-leader-8-0-1",
+          "definition": "attacker-leader-8-0",
+          "group": "german-3",
+          "at": "bd01:Y8:0"
+        },
+        {
+          "id": "g-hmg-1",
+          "definition": "attacker-hmg",
+          "group": "german-3",
+          "holder": "g-squad-8"
+        },
+        {
+          "id": "g-mmg-3",
+          "definition": "attacker-mmg",
+          "group": "german-3",
+          "holder": "g-squad-10"
         }
       ]
     }
