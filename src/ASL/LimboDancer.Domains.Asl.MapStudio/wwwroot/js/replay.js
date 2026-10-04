@@ -25,9 +25,36 @@ export function watchKeys(dotnet) {
 }
 
 export function unwatchKeys() {
+    unwatchStop();
     if (keyWatcher) {
         document.removeEventListener("keydown", keyWatcher);
         keyWatcher = null;
+    }
+}
+
+// While the replay runs at a pace, any key and any click stops it (design D5). The key or the click is not taken: it still does what it does. The
+// Play button answers its own click, so it is left out here.
+let stopWatcher = null;
+
+export function watchStop(dotnet) {
+    unwatchStop();
+    stopWatcher = event => {
+        if (event.target instanceof Element && event.target.closest("#replay-play")) {
+            return;
+        }
+
+        unwatchStop();
+        dotnet.invokeMethodAsync("OnReplayStop");
+    };
+    document.addEventListener("keydown", stopWatcher, true);
+    document.addEventListener("pointerdown", stopWatcher, true);
+}
+
+export function unwatchStop() {
+    if (stopWatcher) {
+        document.removeEventListener("keydown", stopWatcher, true);
+        document.removeEventListener("pointerdown", stopWatcher, true);
+        stopWatcher = null;
     }
 }
 

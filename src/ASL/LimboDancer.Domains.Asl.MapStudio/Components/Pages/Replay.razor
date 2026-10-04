@@ -51,7 +51,19 @@
     {
         @* The step shown is announced as it changes; the context's own status line stays empty, since the page proposes nothing. *@
         <p id="replay-position" class="replay-position" role="status" aria-live="polite"><strong>Step @counted.Number of @timeline.Steps.Count</strong> @counted.Title</p>
-        <ReplayTransport Timeline="@timeline" Number="@counted.Number" Go="@GoTo" />
+        <ReplayTransport Timeline="@timeline" Number="@counted.Number" Go="@GoByHand">
+            @* Design D5: running forward at a pace; it stops at the last step, at any key, and at a click. *@
+            <button type="button" id="replay-play" class="@(playing ? "primary" : null)" aria-pressed="@(playing ? "true" : "false")" disabled="@(!playing && counted.Number >= timeline.Steps.Count)"
+                    title="@(playing ? "Stop. Any key or a click stops it too." : "Run forward from this step, a step at a time")" @onclick="TogglePlay">@(playing ? "Stop" : "Play")</button>
+            <label class="replay-pace">
+                Pace
+                <select id="replay-pace" value="@pace" @onchange="@(args => pace = int.TryParse(args.Value as string, out var seconds) && seconds is 1 or 2 or 4 ? seconds : pace)">
+                    <option value="1">a step a second</option>
+                    <option value="2">a step every 2 seconds</option>
+                    <option value="4">a step every 4 seconds</option>
+                </select>
+            </label>
+        </ReplayTransport>
     }
 </PlayContextHeader>
 
@@ -109,7 +121,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
         <section id="replay-panel-timeline" class="play-pane play-actions replay-timeline-pane" tabindex="-1" data-replay-keys @attributes="@Pane("timeline", "Timeline")">
             <h3>Timeline</h3>
             <p id="replay-count" class="muted">@timeline.Steps.Count steps in @timeline.Phases.Count phases, as @DisplayText.ViewName(viewAs) may read them. With the timeline or the map focused, Left and Right step, Page Up and Page Down go a phase, and Home and End go to the ends.</p>
-            <ReplayTimelineList Timeline="@timeline" Current="@step.Number" Go="@GoTo" />
+            <ReplayTimelineList Timeline="@timeline" Current="@step.Number" Go="@GoByHand" />
         </section>
             </text>;
         }
@@ -257,6 +269,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
     /// </summary>
     private void Load(string game)
     {
+        StopPlay();
         (gameId, highlight, handOver, records, revealed) = (game, null, null, null, 0);
         (viewCache, mapCache, standingCache, unitCache, changeCache) = (default, default, default, default, default);
         entry = game.Length == 0 ? null : GamesLibrary.Load(GameLibrary.LivePrefix + game);
@@ -288,6 +301,8 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
         {
             return;
         }
+
+        StopPlay();
 
         if (GameEnded)
         {
@@ -361,6 +376,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
             return;
         }
 
+        StopPlay();
         GoTo(key switch
         {
             "ArrowLeft" => stepNumber - 1,
@@ -373,6 +389,89 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
         });
         StateHasChanged();
     });
+
+    // Running at a pace (design D5): whether it runs, the seconds a step is shown, and what stops the run in hand.
+    private bool playing;
+    private int pace = 2;
+    private CancellationTokenSource? run;
+
+    /// <summary>A step chosen by hand, which ends a run.</summary>
+    private void GoByHand(int number)
+    {
+        StopPlay();
+        GoTo(number);
+    }
+
+    /// <summary>Starts running forward from the step shown, or stops. A run shows a step, waits the pace, and goes on, until the last step.</summary>
+    private async Task TogglePlay()
+    {
+        if (playing)
+        {
+            StopPlay();
+            return;
+        }
+
+        if (!Shown || stepNumber >= timeline.Steps.Count)
+        {
+            return;
+        }
+
+        var mine = run = new CancellationTokenSource();
+        playing = true;
+        try
+        {
+            if (replayScript is not null && self is not null)
+            {
+                await replayScript.InvokeVoidAsync("watchStop", self);
+            }
+
+            while (!mine.IsCancellationRequested && Shown && stepNumber < timeline.Steps.Count)
+            {
+                GoTo(stepNumber + 1);
+                StateHasChanged();
+                await Task.Delay(TimeSpan.FromSeconds(pace), mine.Token);
+            }
+        }
+        catch (Exception exception) when (exception is OperationCanceledException or JSDisconnectedException or JSException)
+        {
+            // Stopped, or the circuit is gone.
+        }
+        finally
+        {
+            if (ReferenceEquals(run, mine))
+            {
+                StopPlay();
+            }
+
+            mine.Dispose();
+        }
+    }
+
+    /// <summary>A key or a click while a run goes on (the script's watch); the key or the click still does what it does.</summary>
+    [JSInvokable]
+    public Task OnReplayStop() => InvokeAsync(() =>
+    {
+        if (playing)
+        {
+            StopPlay();
+            StateHasChanged();
+        }
+    });
+
+    private void StopPlay()
+    {
+        if (run is { } running)
+        {
+            run = null;
+            running.Cancel();
+        }
+
+        if (playing)
+        {
+            playing = false;
+            _ = replayScript?.InvokeVoidAsync("unwatchStop");
+        }
+    }
 
     private void GoTo(int number)
     {
@@ -707,6 +806,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
     {
         try
         {
+            StopPlay();
             if (replayScript is not null)
             {
                 await replayScript.InvokeVoidAsync("unwatchKeys");
