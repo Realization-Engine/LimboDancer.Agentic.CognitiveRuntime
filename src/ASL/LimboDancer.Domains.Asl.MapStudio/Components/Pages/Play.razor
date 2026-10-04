@@ -41,7 +41,8 @@
                      BoardLink="@(state is not null && handOver is null ? Games.BoardLink(ViewTarget, GameLibrary.LivePrefix + gameId, Viewer, state.Revision, highlight?.ToString()) : null)" />
 </PlayContextHeader>
 
-<HandOverScreen Next="@handOver" Label="@ViewLabel(handOver)" Confirmed="ConfirmView">
+<HandOverScreen Next="@handOver" Label="@ViewLabel(handOver)" Confirmed="ConfirmView" When="@HandOverWhen" Why="@HandOverWhy" Tasks="@HandOverTasks"
+                HappenedTitle="@HandOverHappenedTitle" Happened="@HandOverHappened" Score="@HandOverScore">
 
 @if (state?.Scenario is { } scenario)
 {
@@ -3866,6 +3867,12 @@ else if (state is not null)
             return;
         }
 
+        // Pass 31 (ruling R31.7): the revision a view was last shown at, so its next hand-over says what has happened since.
+        if (handOver is null && !unconfirmed && state is not null && viewAs.Length > 0)
+        {
+            lastShown[viewAs] = state.Revision;
+        }
+
         // Referee, pass 29: the view shown again drops the hand-over only once it has been confirmed; on load and on a game change it has not.
         handOver = next == viewAs && !unconfirmed ? null : next;
         openingHex = null;
@@ -5218,6 +5225,7 @@ else if (state is not null)
 
         gameId = args.Value as string ?? string.Empty;
         handOver = null;
+        lastShown.Clear();
         (highlight, openingHex) = (null, null);
         inspectorTab = "selection";
 
@@ -6373,9 +6381,122 @@ else if (state is not null)
     {
         if (AwaitingView is { } next)
         {
+            // Pass 31: the arriving view opens on the Location the game waits on, which both sides know.
+            var at = MovingAt;
             ChangeView(next);
+            openingHex = at;
         }
     }
+
+    // ---- Pass 31: the hand-over screen (ruling R31.7). Everything below is made of what both sides know: it names no unit, and reads only the
+    // events no view is kept from. ----
+
+    /// <summary>The revision each view was last shown at in this session; a view not yet shown has none.</summary>
+    private readonly Dictionary<string, long> lastShown = new(StringComparer.Ordinal);
+
+    private string? HandOverWhen => handOver is null || state is null || history?.Current is null ? null
+        : SetupOpen ? "Setup is open."
+        : state.Ended is not null ? $"The game has ended. {ResultTitle} {ResultReason}"
+        : $"Turn {state.Turn}{TurnsText}, {DisplayText.Side(state.PhasingSide)} {Games.PhaseLabel(state.Phase)}.";
+
+    /// <summary>Whether the view waiting behind the hand-over is the one the game waits for.</summary>
+    private bool HandOverAwaited => handOver is { } next && state is { Ended: null } && !SetupOpen && Awaiting(state).Side == next;
+
+    private string? HandOverWhy => handOver is null || state is null || history?.Current is null || state.Ended is not null ? null
+        : state.Perspectives.FirstOrDefault(perspective => perspective.Name == handOver) is { IsAdjudicator: true } ? "The adjudicator's view shows the whole game."
+        : SetupOpen ? "A side sets up out of the other's sight."
+        : !HandOverAwaited ? "The game does not wait on this side now; its view is opened to look."
+        : state.Phase == "mph" && state.Movement is { WindowOpen: true } moving
+            ? $"A {DisplayText.Side(state.PhasingSide)} stack {(moving.Members.Count == 0 ? "was stopped by fire" : "spent MF")} in {DisplayText.Location(moving.Location)}. The {DisplayText.Side(handOver)} side, as the DEFENDER, may fire at it or pass (A8.1)."
+        : Awaiting(state).Note;
+
+    private IReadOnlyList<string> HandOverTasks
+    {
+        get
+        {
+            if (handOver is not { } next || state is null || history?.Current is null || state.Ended is not null || SetupOpen
+                || state.Perspectives.FirstOrDefault(perspective => perspective.Name == next) is { IsAdjudicator: true })
+            {
+                return [];
+            }
+
+            if (!HandOverAwaited)
+            {
+                return ["Look at your view; the game waits on the other side."];
+            }
+
+            var phase = Games.PhaseLabel(state.Phase);
+            var ends = GamePlanner.PhaseEndedBy(state, next) == next;
+            return state.Choice is not null ? ["Answer the choice the game waits on; nothing else is proposed until it is answered."]
+                : state.PendingSurrenders.Count > 0 ? ["Take the surrendering unit prisoner, refuse it, or free it (A20.21)."]
+                : state.Phase == "mph" && state.Movement is { WindowOpen: true } moving
+                    ? [$"Fire at the moving stack in {DisplayText.Location(moving.Location)} with your units that see it, or pass.", "Hand the screen back once you have passed."]
+                : state.Phase switch
+                {
+                    "rph" => ["Rally your broken units, repair weapons, and transfer or recover SW.", "End the Rally Phase when both sides are done, or hand the screen back."],
+                    "rtph" => ["Rout each of your broken units that must rout; a unit that must and does not is eliminated or surrenders.", "End the Rout Phase when both sides are done, or hand the screen back."],
+                    "ccph" => ["Declare your Close Combat attacks in each Location, then resolve the round.", "End the Close Combat Phase when every Location is resolved."],
+                    "dfph" => ["Fire with your units that have not fired, as Final Fire.", $"End the {phase}."],
+                    "pfph" => ["Fire with the units you will not move this turn.", $"End the {phase}."],
+                    "mph" => ["Move your stacks one at a time; after each Location entered the DEFENDER may fire.", $"End the {phase} when no more units move."],
+                    "afph" => ["Fire with the units that moved and have not fired, at half FP.", $"End the {phase}."],
+                    "aph" => ["Advance your units one Location; an advance into an enemy Location brings Close Combat.", $"End the {phase}."],
+                    _ => ends ? [$"Act in the {phase}, then end it."] : [$"Act in the {phase}."],
+                };
+        }
+    }
+
+    private string HandOverHappenedTitle => handOver is { } next && lastShown.ContainsKey(next) ? $"What has happened since {ViewLabel(next)} last had the screen" : "The latest that both sides know";
+
+    /// <summary>
+    /// What happened, oldest first, since the waiting view was last shown, or the latest when it has not been shown: only events no view is kept
+    /// from, in words that name no unit, so both sides read the same lines.
+    /// </summary>
+    private IReadOnlyList<string> HandOverHappened
+    {
+        get
+        {
+            if (handOver is not { } next || state is null || history?.Current is null || SetupOpen)
+            {
+                return [];
+            }
+
+            var since = lastShown.TryGetValue(next, out var shown) ? shown : -1;
+            var lines = new List<string>();
+            foreach (var item in history.Events.Where(item => item.Visibility is null && (since < 0 || item.Revision > since)))
+            {
+                var line = item.Payload switch
+                {
+                    PhaseChanged phase => $"{DisplayText.Side(phase.PhasingSide)} {Games.PhaseLabel(phase.Phase)}, Turn {phase.Turn}.",
+                    MovementStepped step => $"A stack moved into {DisplayText.Location(step.To)}.",
+                    AdvanceMoved advance => $"Units advanced into {DisplayText.Location(advance.To)}.",
+                    RoutStepped rout => $"A broken unit routed to {DisplayText.Location(rout.To)}.",
+                    FireResolved fire when fire.Resolution.Deserialize<FireResolution>(LiveFire.Json) is { Arithmetic: { } arithmetic }
+                        => $"Fire from {PublicLocation(fire.FirerLocation)} at {PublicLocation(fire.TargetLocation)}: {arithmetic.Result}.",
+                    FireReported report when report.Arithmetic.Deserialize<FireArithmetic>(LiveFire.Json) is { } reported
+                        => $"Fire from {PublicLocation(report.FirerLocation)} at {PublicLocation(report.TargetLocation)}: {reported.Result}.",
+                    CloseCombatResolved combat => $"A round of Close Combat in {DisplayText.Location(combat.Location)}.",
+                    InstanceEliminated gone when state.Unit(gone.Id) is { } unit && unit.Kind != UnitKinds.Dummy => $"A {DisplayText.Side(unit.Side)} unit was eliminated.",
+                    InstanceCaptured taken when state.Unit(taken.Id) is { } prisoner => $"A {DisplayText.Side(prisoner.Side)} unit was captured.",
+                    GameEnded => "The game ended.",
+                    _ => null,
+                };
+                if (line is not null && (lines.Count == 0 || lines[^1] != line))
+                {
+                    lines.Add(line);
+                }
+            }
+
+            // With nothing to count from, the latest few; otherwise everything since, capped so the screen stays a screen.
+            return [.. lines.TakeLast(since < 0 ? 6 : 30)];
+        }
+    }
+
+    private static string PublicLocation(string location) => BoardLocation.TryParse(location, out var at) ? DisplayText.Location(at) : location;
+
+    /// <summary>Each side's CVP and Exit VP, which both sides know (A26.2); Control and the unbroken squad counts may be read differently by each side, so they are left out.</summary>
+    private string? HandOverScore => handOver is null || state is null || history?.Current is null || SetupOpen || VictoryNow is not { } standing ? null
+        : "Score: " + string.Join("; ", standing.Sides.Select(side => $"{DisplayText.Side(side.Side)} {side.Cvp} CVP, {side.ExitVp} Exit VP")) + ".";
 
     private void FocusReview() => ShowProposal();
 

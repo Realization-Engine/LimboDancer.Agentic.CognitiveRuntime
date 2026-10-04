@@ -1,6 +1,9 @@
 @* Ruling R23.2 (plan section 3, decision 1): between views the map and the side panels are not rendered until the next viewer confirms it is at the
    screen, so nothing of the last view stays in the page, hidden or not. Focus is not moved: an arrow key in the view picker fires its change, so the
-   picker keeps the focus and Tab reaches the confirm button next. *@
+   picker keeps the focus and Tab reaches the confirm button next.
+   Pass 31 (the user, 2026-10-04; ruling R31.7): the screen says what is going on at this moment: when, why the game waits, what the arriving side
+   will be asked to do, what has happened since it last had the screen, and the score. Both the side leaving and the side arriving read it, so the
+   page gives it only what both sides know: it names no unit, and it reads only events that both sides see. *@
 @if (Next is null)
 {
     @ChildContent
@@ -9,11 +12,47 @@ else
 {
     <section id="play-handover" class="handover" aria-labelledby="play-handover-title">
         <h3 id="play-handover-title">Hand the screen to @Label</h3>
-        <p>
-            The map and the panels stay blank until @Label is at the screen, so no side sees what only another may: the other side's setup while it sets
-            up, its hidden units, and what lies under its "?" (A12.12, A12.3, A2.9; ruling R23.2).
-        </p>
+        @if (When is { Length: > 0 })
+        {
+            <p id="play-handover-when" class="handover-when">@When</p>
+        }
+        @if (Why is { Length: > 0 })
+        {
+            <p id="play-handover-why" class="handover-why">@Why</p>
+        }
+        @if (Tasks.Count > 0)
+        {
+            <div class="handover-block">
+                <h4>What @Label will be asked to do</h4>
+                <ul id="play-handover-tasks">
+                    @foreach (var task in Tasks)
+                    {
+                        <li>@task</li>
+                    }
+                </ul>
+            </div>
+        }
+        @if (Happened.Count > 0)
+        {
+            <div class="handover-block">
+                <h4>@HappenedTitle</h4>
+                <ol id="play-handover-happened">
+                    @foreach (var line in Happened)
+                    {
+                        <li>@line</li>
+                    }
+                </ol>
+            </div>
+        }
+        @if (Score is { Length: > 0 })
+        {
+            <p id="play-handover-score" class="handover-score">@Score</p>
+        }
         <button id="play-handover-confirm" class="primary" @onclick="Confirmed">I am @Label: show my view</button>
+        <p class="handover-note">
+            Only what both sides know is shown here. The map and the panels stay blank until @Label is at the screen, so no side sees what only another
+            may: the other side's setup while it sets up, its hidden units, and what lies under its "?" (A12.12, A12.3, A2.9; ruling R23.2).
+        </p>
     </section>
 }
 
@@ -25,6 +64,30 @@ else
     /// <summary>How the waiting view is named to its viewer, such as "the russian side" or "the adjudicator".</summary>
     [Parameter]
     public string Label { get; set; } = string.Empty;
+
+    /// <summary>The turn and phase, such as "Turn 4 of 5, Russian Movement Phase".</summary>
+    [Parameter]
+    public string? When { get; set; }
+
+    /// <summary>Why the game waits for this view, in a sentence both sides may read.</summary>
+    [Parameter]
+    public string? Why { get; set; }
+
+    /// <summary>What the arriving side will be asked to do.</summary>
+    [Parameter]
+    public IReadOnlyList<string> Tasks { get; set; } = [];
+
+    /// <summary>The heading of the list of what happened: since the view last had the screen, or the latest events.</summary>
+    [Parameter]
+    public string HappenedTitle { get; set; } = "What has happened";
+
+    /// <summary>What happened, oldest first, in words that name no unit.</summary>
+    [Parameter]
+    public IReadOnlyList<string> Happened { get; set; } = [];
+
+    /// <summary>The score both sides know: each side's CVP and Exit VP.</summary>
+    [Parameter]
+    public string? Score { get; set; }
 
     [Parameter]
     public EventCallback Confirmed { get; set; }
