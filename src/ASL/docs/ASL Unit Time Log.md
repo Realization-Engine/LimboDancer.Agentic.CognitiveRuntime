@@ -931,3 +931,12 @@ Added by the user on 2026-10-04. Split on the user's answer into pass 31 (estima
 | Pass 31b planned at the user's word while the suite ran: the Replay page takes the number 31b and the play test's second pass becomes 31c; its design (9 decisions, 8 tasks, 11:15, 7 questions) and the plan's passes 31b and 31c | 09:34 | 09:41 | 0:07 | Commit 426178b. Not part of pass 31's time. Waits for the user's approval |
 | The Docker Linux check of the branch at acab625: all eleven test projects passed (2,797 passed, 30 skipped), with the two CI regeneration checks | 09:43 | 10:03 | 0:20 | The user's word to merge when Docker passes was given while the local suite ran |
 | The merge into main at the user's word (0614d4b, `--no-ff`), the push, and the CI run on main (ASL Authoring CI, passed in 11m48s) | 10:04 | 10:16 | 0:12 | Pass 31 is merged; about 2:56 logged against the estimate of 13:00, the design and the renumbering included. Pass 31b (the Replay page) waits for the user's word |
+
+## Pass 31b: The Replay page
+
+Added by the user on 2026-10-04; started at the user's word the same day. Estimate 11:15 (build 9:45). Branch `feature/asl-backlog-pass-31b`. The Studio is the only test until the code is complete.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| The opening checks (the repository's state, CI on main for 0614d4b, the pass 31 merge's rows in the time log) and the reading: the pass 31b design, the plan's pass table, pass 31b, and sections 15.2, 15.4, and 15.9 to 15.11, the pass 30 handover prompt, the pass 31 design's sections 13 and 14 and its review, backlog sections 44, 47, and 48, and the code the design names | 10:12 | 10:17 | 0:05 | The pass 31 session logged its merge at the same minute as this one; the doubled row was removed on main (fe461b1). Writes confirmed with the first edit |
+| Step 1: the user's seven answers written into the design (its section 11), the design's and the plan's status | 10:17 | 10:18 | 0:01 | Every answer as recommended: no decision, task, or estimate changes, so the build goes on |

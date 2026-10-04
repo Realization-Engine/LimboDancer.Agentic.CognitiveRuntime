@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 31b Design
 
-**Status:** Draft, 2026-10-04, waiting for the user's approval and answers (section 11). Nothing is built. Pass 31b (the Replay page) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, added by the user on 2026-10-04. It takes the number 31b; the pass that held it (the page's words, layout, map, and records, from the play test) becomes pass 31c and keeps its design, section 5 of the [pass 31 design](<ASL Unit Backlog Pass 31 Design.md>).
+**Status:** Approved 2026-10-04 with the user's answers (section 11), every one as recommended; the decisions, the tasks, and the estimate stand as written. Being built on branch `feature/asl-backlog-pass-31b`. Pass 31b (the Replay page) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, added by the user on 2026-10-04. It takes the number 31b; the pass that held it (the page's words, layout, map, and records, from the play test) becomes pass 31c and keeps its design, section 5 of the [pass 31 design](<ASL Unit Backlog Pass 31 Design.md>).
 
 **Date:** 2026-10-04
 
@@ -142,14 +142,16 @@ On the played game and on one game with hidden units (The Tractor Works or Armor
 
 Recent passes ran at about a third of their estimates. The largest risk is task 31b.2: `Play.razor` is about 6,700 lines, and its record builders read the page's own view and caches.
 
-## 11. Questions for the user
+## 11. The user's answers
 
-Each with a recommendation.
+Given 2026-10-04, each as recommended. None changes a decision, a task, or the estimate.
 
-1. **The pass that held the number 31b.** Recommended: it becomes pass 31c, unchanged, and follows this one. It holds the rest of the play test's problems (unit names, picking on the map, the fire proposal, the layout, the map, records, rout speed, and the full second play test). The other reading of "supersedes" is that it is dropped; say so if that is what you meant.
-2. **Whose view (D6).** Recommended: an ended game opens in the adjudicator's view and lets any view be chosen freely; a game not ended keeps Play's views and hand-over.
-3. **What a step is (D2).** Recommended: one confirmed proposal, with jumps by phase and by Game Turn. The other way is larger steps (a stack's whole move with the fire it drew as one), which reads more like a narrative and hides who decided what when.
-4. **Play on from here (D8).** Recommended: build it, for ended games and the adjudicator's view. It makes a past moment a test game in one click.
-5. **Running at a pace (task 31b.6).** Recommended: build it; it is small once the steps exist.
-6. **The Game states page.** Recommended: leave it as it is in this pass, and decide its place in the navigation in pass 31c, with the layout.
-7. **The order.** This pass comes before pass 31c, so until 31c the Replay page shows unit ids and Locations as Play does today ("fire-a672887feaab-g-squad-1", "bd01:G4:1"). Recommended: accept that; pass 31c's names then reach both pages through the shared records service.
+| # | Question | Answer |
+|---|---|---|
+| 1 | The pass that held the number 31b | It is pass 31c, unchanged, and follows this one. It holds the rest of the play test's problems: unit names, picking on the map, the fire proposal, the layout, the map, records, rout speed, and the full second play test. |
+| 2 | Whose view (D6) | An ended game opens in the adjudicator's view and any view may be chosen freely; a game not ended keeps Play's views and hand-over. Ruling R31b.1. |
+| 3 | What a step is (D2) | One confirmed proposal, with jumps by phase and by Game Turn. A stack's whole move as one step stays in the backlog. |
+| 4 | Play on from here (D8) | Built, for ended games and the adjudicator's view. |
+| 5 | Running at a pace (task 31b.6) | Built. |
+| 6 | The Game states page | Left as it is in this pass; its place in the navigation is decided in pass 31c, with the layout. |
+| 7 | The order | Accepted: until pass 31c the Replay page shows unit ids and Locations as Play does today; pass 31c's names then reach both pages through the shared records service. |

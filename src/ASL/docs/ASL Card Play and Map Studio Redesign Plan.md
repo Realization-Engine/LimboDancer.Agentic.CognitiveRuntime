@@ -388,7 +388,7 @@ Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (backlog sect
 
 **Purpose:** a played game can be watched and studied, and any moment of it reached without cutting its file by hand. **After:** pass 31. **From:** the user's request of 2026-10-04; backlog section 48's row on a played game's record as a page of its own.
 
-**Status:** designed 2026-10-04; waits for the user's approval and answers (the design's section 11).
+**Status:** approved 2026-10-04 with the user's seven answers, each as recommended (the design's section 11); being built on branch `feature/asl-backlog-pass-31b`.
 
 | Task | What it changes | Estimate |
 |---|---|---|
