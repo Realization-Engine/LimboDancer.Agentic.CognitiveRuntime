@@ -46,7 +46,7 @@ Standing rules:
 - A setup plan places the card's fixed OB and never changes it. Adding plans never changes a card's hash or its saved games.
 - If a tool call is refused with "no verdict" by auto mode, do not route the same change through another tool. Tell me and wait. Run the pass outside auto mode: on 2026-10-03 auto mode gave "no verdict" on every Edit, although Edit and Write are allowed in .claude/settings.local.json, and the edits passed once I left auto mode. Before step 2, make one small edit to confirm that writes pass; if it is refused, say so at once.
 
-Pass numbering: 30 is prepared setups; 31 and 32 are DYO (deferred); the rule packages are 33 to 42, with 34b.
+Pass numbering (renumbered 2026-10-04): 30 is prepared setups and 30b its second-side plans; 31 is the play-test UI; 32 and 33 are DYO (deferred); the rule packages are 34 to 43, with 35b.
 
 Harness lessons:
 
