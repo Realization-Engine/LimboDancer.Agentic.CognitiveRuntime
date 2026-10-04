@@ -468,7 +468,8 @@
         "P9 has no LOS to or from the upper floor of the farmhouse, O6 or P6: the house at P8 blocks it. It is three hexes from P6 and one from the road hexes Q9 and Q10.",
         "L8 has no LOS to or from the upper floor of O6 or P6: the woods at M8 block it. It is four hexes from O6.",
         "R8 is woods and sees the upper floor of P6 at range 3; O6 does not see it.",
-        "Neither P9 nor L8 is seen by the farmhouse, so each stack may take a \"?\" once both sides have set up (A12.12)."
+        "Neither P9 nor L8 is seen by the farmhouse, so each stack may take a \"?\" once both sides have set up (A12.12).",
+        "The exits are on board 2, ten hexes south of board 4's last hexrow: 2Y1 below 4I10 (the west), 2Q1 below 4Q10 (the centre), and 2I1 below 4Y10 (the east)."
       ],
       "placements": [
         {
@@ -548,7 +549,7 @@
         "placementsSha256": "903b01437c6cf851c9fc94f6e6af4a2bc8eba3d616c8d6ca10d8d5e0c6b7b417"
       },
       "name": "Seal the west road",
-      "idea": "The British post in the woods at H6 and I5 marks the west road as the battalion's way. Three squads and the 9-2 in the woods at K9 fire on H6 and block the road south of it, a squad holds the house at I10 beside the west exit, two squads and the 9-1 start unseen at N8 to come at the woods from the east, and two squads with the 8-1 behind the house at P8 keep the centre road.",
+      "idea": "The British post in the woods at H6 and I5 marks the west road as the battalion's way. Three squads and the 9-2 in the woods at K9 fire on H6 and block the road south of it, a squad holds the house at I10 where the west road leaves board 4, two squads and the 9-1 start unseen at N8 to come at the woods from the east, and two squads with the 8-1 behind the house at P8 keep the centre road.",
       "givesUp": "The east third of the board is empty, and the centre is two squads; the K9 stack is in the LOS of the squad at H6 from the start.",
       "terrain": [
         "K9 is woods and sees H6 at range 4 through a hindrance of 3, and the road hex I9 at range 2; I5 does not see it.",
@@ -556,7 +557,8 @@
         "N8 has no LOS to or from H6 or I5: the woods at M8 block both. It is six hexes from H6.",
         "P9 has no LOS to or from H6 or I5, and sees the centre road at Q9 and Q10 at range 1.",
         "Neither N8 nor P9 is seen by the British post, so each stack may take a \"?\" once both sides have set up (A12.12).",
-        "The Studio's LOS counts grain as a hindrance; the card's date is May, when grain is not in season, so the hindered lines here are at least this open."
+        "The Studio's LOS counts grain as a hindrance; the card's date is May, when grain is not in season, so the hindered lines here are at least this open.",
+        "The exits are on board 2, ten hexes south of board 4's last hexrow: 2Y1 below 4I10 (the west), 2Q1 below 4Q10 (the centre), and 2I1 below 4Y10 (the east)."
       ],
       "placements": [
         {
@@ -637,13 +639,14 @@
       },
       "name": "Both posts",
       "idea": "Each British post is one squad, and the two cannot help each other. Three squads and the 9-2 behind the house at P8 go for the farmhouse, three squads and the 9-1 in the woods at K9 go for the woods at H6, and two squads with the 8-1 wait unseen in the woods at T9 to turn east or centre once the battalion shows its route.",
-      "givesUp": "The force is in three parts from the start, and only the reserve of two squads covers the east exit; the K9 stack is in the LOS of the squad at H6.",
+      "givesUp": "The force is in three parts from the start, and only the reserve of two squads covers the east road; the K9 stack is in the LOS of the squad at H6.",
       "terrain": [
         "P9 has no LOS to or from the upper floor of P6, nor H6: the house at P8 and the woods at M8 block them. It is three hexes from P6.",
         "K9 is woods and sees H6 at range 4 through a hindrance of 3; the farmhouse does not see it.",
-        "T9 is woods; neither post sees it. It sees the centre road at Q9 and Q10 at range 3 and the east exit at Y10 at range 5.",
+        "T9 is woods; neither post sees it. It sees the centre road at Q9 and Q10 at range 3 and Y10, where the east road leaves board 4, at range 5.",
         "Neither P9 nor T9 is seen by a British post, so each stack may take a \"?\" once both sides have set up (A12.12).",
-        "The Studio's LOS counts grain as a hindrance; the card's date is May, when grain is not in season, so the hindered lines here are at least this open."
+        "The Studio's LOS counts grain as a hindrance; the card's date is May, when grain is not in season, so the hindered lines here are at least this open.",
+        "The exits are on board 2, ten hexes south of board 4's last hexrow: 2Y1 below 4I10 (the west), 2Q1 below 4Q10 (the centre), and 2I1 below 4Y10 (the east)."
       ],
       "placements": [
         {
@@ -719,13 +722,14 @@
       "cardSha256": "b68c06850a76c7f7a8ee84404b0ed9b16e7f6a5107ddbad71047fbcf0be4134b",
       "side": "german",
       "name": "Three roads",
-      "idea": "One group stands in a building on each way south, whatever the five British counters show: three squads and the 9-2 in the house at P8 on the centre road, two squads and the 8-1 in the house at I10 by the west exit, two squads and the 9-1 in the house at X8 and a squad in the house at Y9 by the east exit.",
+      "idea": "One group stands in a building on each way south, whatever the five British counters show: three squads and the 9-2 in the house at P8 on the centre road, two squads and the 8-1 in the house at I10 where the west road leaves board 4, two squads and the 9-1 in the house at X8 and a squad in the house at Y9 where the east road leaves board 4.",
       "givesUp": "No group is strong enough to attack the British posts in the first turn, and the three cannot help each other quickly: the Germans wait for the battalion to choose its road.",
       "terrain": [
         "P8 is a wooden building; it sees the centre road at Q9 at range 1 and Q10 at range 2, and the upper floor of the farmhouse sees it at range 2 to 3.",
-        "I10 is a wooden building beside the west exit; it sees I9 at range 1. Only a post at H6 sees it, at range 4.",
-        "X8 and Y9 are wooden buildings; they see the east exit at Y10 at range 2 and 1. The farmhouse, H6, and I5 do not see them.",
-        "X8 and Y9, and I10 unless H6 is held, are out of every British LOS, so their stacks may take a \"?\" once both sides have set up (A12.12)."
+        "I10 is a wooden building where the west road leaves board 4; it sees I9 at range 1. Only a post at H6 sees it, at range 4.",
+        "X8 and Y9 are wooden buildings; they see Y10, where the east road leaves board 4, at range 2 and 1. The farmhouse, H6, and I5 do not see them.",
+        "X8 and Y9, and I10 unless H6 is held, are out of every British LOS, so their stacks may take a \"?\" once both sides have set up (A12.12).",
+        "The exits are on board 2, ten hexes south of board 4's last hexrow: 2Y1 below 4I10 (the west), 2Q1 below 4Q10 (the centre), and 2I1 below 4Y10 (the east)."
       ],
       "placements": [
         {

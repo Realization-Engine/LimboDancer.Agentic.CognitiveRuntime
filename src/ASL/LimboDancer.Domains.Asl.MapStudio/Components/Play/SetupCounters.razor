@@ -1,7 +1,8 @@
 @* Pass 30 (the workflow rebuilt): the setup list as the Counters tab of the setup mode, grouped as a player reads a setup. "On the map" holds one
    block per stack: its Location in words, its level, and "Move stack", then one line per counter in its printed values with its id after it; a SW, a
-   towed Gun, or a Passenger sits under what holds it. Counters with no hex yet come first, and those that wait off board to enter last. The page
-   keeps the list and builds this model from it; the gate checks the setup when it is proposed. *@
+   towed Gun, or a Passenger sits under what holds it. Counters with no hex yet come first, and those that wait off board to enter last. "Swap"
+   on a stack (pass 30b) makes the next stack chosen change hexes with it. The page keeps the list and builds this model from it; the gate checks
+   the setup when it is proposed. *@
 <div id="setup-counters">
     @foreach (var note in Model.Notes)
     {
@@ -27,11 +28,17 @@
     {
         <section id="setup-on-map" aria-labelledby="setup-on-map-title">
             <h4 id="setup-on-map-title">On the map: @Model.OnMapSummary</h4>
+            @{
+                // Pass 30b: a swap needs two hexes of the list, and while one waits a stack's name completes it.
+                var hexes = Model.OnMap.Select(other => HexOf(other.Location)).Distinct(StringComparer.Ordinal).Count();
+                var swapping = Model.OnMap.Any(other => other.Swapping);
+            }
             @foreach (var stack in Model.OnMap)
             {
                 <div class="@StackClass(stack)" id="@StackId(stack.Location)" data-location="@stack.Location">
                     <div class="setup-stack-head">
-                        <button type="button" class="link setup-stack-name" aria-pressed="@(stack.Selected ? "true" : "false")" aria-label="@($"Show the stack at {stack.Title} on the map")"
+                        <button type="button" class="link setup-stack-name" aria-pressed="@(stack.Selected ? "true" : "false")"
+                                aria-label="@(swapping && !stack.Swapping ? $"Swap with the stack at {stack.Title}" : $"Show the stack at {stack.Title} on the map")"
                                 @onclick="@(() => OnSelect.InvokeAsync(stack.Location))">@stack.Title</button>
                         @if (stack.Selected)
                         {
@@ -54,12 +61,15 @@
                         {
                             <button type="button" class="link setup-stack-move" aria-pressed="@(stack.Moving ? "true" : "false")" aria-label="@($"Move the stack at {stack.Title}")"
                                     @onclick="@(() => OnMove.InvokeAsync(StackKey(stack.Location)))">Move stack</button>
-                            @if (Model.OnMap.Select(other => HexOf(other.Location)).Distinct(StringComparer.Ordinal).Count() > 1)
+                            @if (hexes > 1)
                             {
-                                <button type="button" class="link setup-stack-swap" aria-pressed="@(stack.Swapping ? "true" : "false")" aria-label="@($"Swap the stack at {stack.Title} with another stack")"
-                                        title="Swaps this stack's hex with another stack's. Swapping a Dummy stack with a real one keeps what the other side sees."
-                                        @onclick="@(() => OnSwap.InvokeAsync(stack.Location))">Swap</button>
+                                <button type="button" class="link setup-stack-swap" aria-pressed="@(stack.Swapping ? "true" : "false")"
+                                        aria-label="@($"Swap the counters in the hex of {stack.Title} with another hex's")" @onclick="@(() => OnSwap.InvokeAsync(stack.Location))">Swap</button>
                             }
+                        }
+                        @if (stack.Swapping)
+                        {
+                            <span class="status-badge warning setup-stack-swapping">swapping: choose another stack, here or on the map</span>
                         }
                     </div>
                     <ul class="setup-rows">

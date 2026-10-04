@@ -147,7 +147,7 @@ One file per card, `<card id>.setups.json`, as in pass 30. The card's text is un
 - **The format version changes** to `asl-setup-plans/2`. A `/1` file is still read, with pass 30's rules: it may hold no `answers`. The four built-in files become `/2`; the user's `p30-guards-copy.setups.json` stays `/1` and reads as before.
 - **A plan's order.** Every group a plan places has one setup order, and that is the plan's order. Its side is the side of those groups.
 - **`answers`** names a plan of the same file with an earlier order and another side, and holds the SHA-256 of that plan's placements in a fixed form (its placements sorted by id, one line each). A plan of order 1 has no `answers`.
-- **The caps.** For each side and order: at most three plans that answer nothing when the order is 1 (as now); for a later order, at most one response for each answered plan and at most one for any setup. Ids are unique in the file.
+- **The caps.** For each side and order: at most three plans that answer nothing (the first side's plans; for a later order, its plans for any setup, changed from one at the reviews, section 16); for a later order, also at most one response for each answered plan. Ids are unique in the file.
 - `Validate` checks a plan's definitions and groups against the plan's own side, in place of the first side.
 - Reading still checks form only; whether a response is a legal setup is the gate's question.
 
@@ -470,7 +470,7 @@ What each plan gives away if recognised is listed on its card under "More", as b
 
 **Three sides** (`three-sides`), the Germans, for any setup
 
-The German side has this one plan, since no first-side plan can be told from another (section 14).
+The German side has no answers, since no first-side plan can be told from another (section 14). After the reviews it has two plans for any setup that look alike, and Three sides' engineers all start at BB4: section 16. The table below is the plan as first approved.
 
 | | |
 |---|---|
@@ -554,3 +554,43 @@ Checked in my Studio at 1366x768:
 - Armor Test, the Russian view: each of the three plans reads "Setup plans are public, but West trap shows the other side the same stacks as Forward screen and Back stop, so an unchanged setup does not say which plan was used: it does not give away where its hidden counters are (2-2-8 crew in K9, gun in K9); what is under each \"?\"." The review of West trap proposed unchanged says the same.
 - The Tractor Works: Dummy west reads the same way, naming East front and Hidden core.
 - The Guards Counterattack, whose German plans differ to the eye: Forward line keeps the warning, "Set up unchanged, this plan can be recognised by the other side, which then knows which unit holds each of its 8 SW."
+
+## 16. The reviews (step 4)
+
+**2026-10-03.** Three read-only reviews read the branch at commit d45db80: a referee (disclosure and the gate), a table player (every plan against its words and its card, and every new string), and a UI and Blazor review. None found a blocker in the code. The referee raised one point for a ruling. The review document lists each finding with its fix; in short:
+
+**The user's five answers, 2026-10-03, each as recommended.**
+
+1. **Ruling R23.6 stands.** The offer of a non-OB "?" tests LOS against real enemy units only, so a stack seen only by Dummies is offered a "?", and the offer tells its owner that those are Dummies. At the table an opponent denies a "?" only by showing a real unit, so the rule is kept. A plan with hexes of Dummies only now says so to the side that may use it: "Before play, an enemy stack that only your Dummies see may take a \"?\" (A12.12), and being offered it tells the other side that those are Dummies."
+2. **Three sides revised.** Its three engineer squads at AA4 were seen only from Y3, Y4, and Y5, which Hidden core holds with Dummies alone, so the offer of a "?" there would have named Hidden core. They now stand on the upper floor of BB4, which no hex of the Works sees: all six engineer squads start unseen, and are offered a "?" whichever plan the Russians used.
+3. **Feint west, a second German plan with the same look.** Three sides was the card's only German plan, so unchanged it was read in full. Feint west puts the same counters on top in the same Locations: Stahler's nine real counters stand at T4, S5, and T7, and its nine Dummies at V2, U3, and U2; a flamethrower stands on each level of BB4; Tienham's HMG is at Y7 under the 10-2. The Russians cannot tell the two apart.
+4. **East front:** the 9-2 and a Dummy changed places between Y4 and Y5, so the HMG at Y5 has its leader. The hexes show the same counts.
+5. **X3 and X5 hold real units in all three 308th plans.** Three plans of this footprint can leave at best one hex always real, so it is left; each plan's terrain facts now say that those two hexes are no secret.
+
+**The data.** A side may now have up to three plans that answer none in each setup order (`MostPlans`), where a later order had one plan for any setup: the two German plans of The Tractor Works need it. A file of the earlier format keeps its own cap of three plans in all and is not held to one setup order a plan, so it reads exactly as before.
+
+**The page.**
+
+- When the other side's plans tie, none is followed closely, or the closest has no answer, "For any setup" opens first, and the tied groups stay closed. A line says "Their plans look the same from here, so the stacks do not say which was used."
+- A closest plan that differs in some hexes says so: "N hexes differ from <plan>: check its outline on the map before you use an answer to it."
+- The groups, their scores, the notes on public plans, and the earlier-version marks are read once for each state of the game and view (`Reading`), not on every render.
+- A group opened by the page or holding the plan shown or used stays open across the tabs; a group and a plan card have a key, so a change of order does not move an open state.
+- A plan whose answered plan is not among those compared is listed under "For any setup".
+- "Swap" names hexes, since all levels of the two hexes change places. It does nothing, and says so, when the same hex is chosen or a hex no longer holds a counter of the list; a list change ends a swap whose hex is empty. It says when a counter went to ground level. Its words are in the map's live region and in the list, and the stack waiting is marked "swapping: choose another stack, here or on the map".
+- The note on a public plan that looks like the card's others says what still shows: "The other side still knows it is one of these, and whatever all of them share; move or swap stacks to hide more."
+- "Tick every stack that may take a \"?\" (N)" stays enabled and keeps the focus.
+- What a plan gives away names a hex with its board on a map of several boards.
+- The outline toggle returns to on, and the swap's words go, at a hand-over and a game change.
+
+**The plans' words** (no placement changed): Gambit's German plans said "the exit" for the south edge of board 4, and now say where each road leaves board 4, with a fact naming the exits on board 2; Cross unseen no longer says there is nothing to fire on, and gives up that J4 and J5 see the street; Break the tripwires says what the 308th does; Back stop says the Gun must change its Covered Arc to fire on Y10; West trap names H9 as the Bore Sighted hex and gives up that the 8-1 stands alone.
+
+**Studio check of the fixes, 2026-10-03**, by script, at 1920x1080 and 1366x768:
+
+- The Tractor Works, `p30b-tw-5`: East front accepted by the gate. The German view: "The Russian side has set up: you see its stacks in 9 hexes. Their plans look the same from here, so the stacks do not say which was used."; "For any setup" first and open with Three sides and Feint west; the three tied groups closed. Feint west's note names Three sides as looking the same. The gate accepted Feint west (48 counters in 10 hexes).
+- `p30b-tw-6`: Hidden core, then the revised Three sides, accepted by the gate.
+- The Guards Counterattack, `p30b-gc-8`, the German view with Tripwire and reserve in the list: "Swap" on the F6 stack showed the banner and the badge, and another stack's name read "Swap with the stack at H5 on board 01, level 1"; the other level of F6 gave "That is the same hex, F6 on board 01, so nothing was swapped."; I7 swapped, with "A counter whose level the other hex lacks went to ground level"; a swap begun on L7 ended when L7's counter was removed.
+- The Russian view of the same game: Tripwire and reserve first and open at 10 of 10; the Forward line group opened by hand stayed open after "Use this plan" and a return to the Plans tab; after Confirm, "Tick every stack that may take a \"?\" (3)" ticked three of three and kept the focus; nothing scrolled sideways.
+
+**For the merge gate.** Pass 30's tests fail in five known places (`BacklogPass30Tests`: the plan ids of each card, three Guards plans, every plan for the first side, `/2` as a refused format, and `all-round` twice).
+
+**To the backlog:** Passengers and a top counter's SW in the comparison and the look (no card needs them today); the `PlanCard` fragment written as a Razor template.

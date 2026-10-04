@@ -70,6 +70,8 @@ public static class SetupPlanMatch
     /// <summary>A plan's footprint against what the view holds of the plan's side: the hexes where the counts are equal, of the hexes in either.</summary>
     public static SetupPlanScore Score(GameView view, SetupPlan plan, UnitCatalog catalog)
     {
+        ArgumentNullException.ThrowIfNull(view);
+        ArgumentNullException.ThrowIfNull(plan);
         var footprint = Footprint(plan, catalog);
         var seen = Seen(view, plan.Side);
         var hexes = footprint.Keys.Union(seen.Keys).ToArray();

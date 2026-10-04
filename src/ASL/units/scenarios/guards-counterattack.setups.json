@@ -702,8 +702,8 @@
         "placementsSha256": "89e537dbfc556f5e0d53308334ec271b7c6738961f9a03040b4d305a7529c33b"
       },
       "name": "Cross unseen",
-      "idea": "The German wing platoons have left the fronts of their buildings empty, so there is nothing to fire on and the first turn is for moving. The Guards start where the German squads that look out cannot see them: six squads and the 10-2 on two levels of F3, three at ground level in G3, and three at ground level in E4. They cross to F5, G6, and H5 in the first Movement Phase. The 308th waits at ground level in N3 and N4.",
-      "givesUp": "No Russian fires in the first turn, and the squads on the upper floor of F3 spend movement coming down; if the Germans did not set up as Out of sight, nine Guards squads stand packed in two hexes.",
+      "idea": "The German wing platoons have left the fronts of their buildings empty, so the Guards have no target in the F5 building and the first turn is for moving. The Guards start where the German squads that look out cannot see them: six squads and the 10-2 on two levels of F3, three at ground level in G3, and three at ground level in E4. They cross to F5, G6, and H5 in the first Movement Phase. The 308th waits at ground level in N3 and N4.",
+      "givesUp": "No Russian fires in the first turn, and the squads on the upper floor of F3 spend movement coming down; if the Germans did not set up as Out of sight, nine Guards squads stand packed in two hexes. The German squads at J4 and J5 see the street the Guards cross, and no Russian fires on them.",
       "terrain": [
         "F3, at every level, is seen only from F5 and G6, which Out of sight leaves empty.",
         "G3 at ground level is seen from no German setup Location.",
@@ -874,7 +874,7 @@
         "placementsSha256": "00110aa3949727d134bdaf58a33597712a9a3210e054ff6931453d320823b622"
       },
       "name": "Break the tripwires",
-      "idea": "Each large German building shows one squad forward and holds the rest back. Six Guards squads and the 10-2 on two levels of G4 fire on the squad at H5 at range 2, and when it breaks the six squads waiting unseen at F3 and G3 cross to F5 and G6. The 308th does the same to the squad with the MMG at L6, from the upper floor of N5 and M5 at range 2.",
+      "idea": "Each large German building shows one squad forward and holds the rest back. Six Guards squads and the 10-2 on two levels of G4 fire on the squad at H5 at range 2, and when it breaks the six squads waiting unseen at F3 and G3 cross to F5 and G6. The 308th fires on the squad with the MMG at L6 from the upper floor of N5 and M5 at range 2.",
       "givesUp": "G4 is in the LOS of H5, J4, and K4, and holds half the Guards and their leader; if the squad at H5 holds, the crossing waits.",
       "terrain": [
         "G4 sees H5, F5, and G6 at range 2. A 6-2-8 fires at full strength to range 2.",

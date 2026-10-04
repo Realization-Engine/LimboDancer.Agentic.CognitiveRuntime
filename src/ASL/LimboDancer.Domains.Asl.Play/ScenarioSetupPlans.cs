@@ -48,7 +48,10 @@ public static partial class ScenarioSetupPlans
 
     public const string Suffix = ".setups.json";
 
-    /// <summary>The most plans a card offers the side that sets up first; a later order has one answer for each of them and one plan for any setup.</summary>
+    /// <summary>
+    /// The most plans a card offers a side that answer no plan: for the side that sets up first, its plans; for a later order, its plans for any
+    /// setup, which may be several that look alike to the other side. A later order also has one answer for each plan it answers.
+    /// </summary>
     public const int MostPlans = 3;
 
     private const string Prefix = "Scenarios.";
@@ -164,14 +167,16 @@ public static partial class ScenarioSetupPlans
             orders[plan] = OrderOf(card, plan);
         }
 
-        // Pass 30b: the side that sets up first has up to three plans; a later order has one answer for each plan it answers and one plan for any setup.
-        foreach (var set in plans.Where(plan => orders[plan] is not null).GroupBy(plan => (plan.Side, Order: orders[plan]!.Value)))
+        // A file of the earlier format keeps its own cap: three plans in all.
+        Check(!earlier || plans.Count <= MostPlans, $"setups.plans: a card offers at most {MostPlans} plans, and the file has {plans.Count}");
+
+        // Pass 30b: a side has up to three plans that answer none, in each setup order; a later order also has one answer for each plan it answers.
+        foreach (var set in plans.Where(plan => !earlier && orders[plan] is not null).GroupBy(plan => (plan.Side, Order: orders[plan]!.Value)))
         {
             var open = set.Count(plan => plan.Answers is null);
-            var most = set.Key.Order == first ? MostPlans : 1;
-            Check(open <= most, set.Key.Order == first
+            Check(open <= MostPlans, set.Key.Order == first
                 ? $"setups.plans: a card offers at most {MostPlans} plans to the side that sets up first, and the file has {open} for {set.Key.Side}"
-                : $"setups.plans: a card offers one plan for any setup to {set.Key.Side} in setup order {set.Key.Order}, and the file has {open}");
+                : $"setups.plans: a card offers at most {MostPlans} plans for any setup to {set.Key.Side} in setup order {set.Key.Order}, and the file has {open}");
             foreach (var answered in set.Where(plan => plan.Answers is not null).GroupBy(plan => plan.Answers!.Plan, StringComparer.Ordinal).Where(answers => answers.Count() > 1))
             {
                 Check(false, $"setups.plans: {answered.Count()} plans of {set.Key.Side} answer '{answered.Key}', and a card offers one");
@@ -183,7 +188,7 @@ public static partial class ScenarioSetupPlans
             var name = string.IsNullOrWhiteSpace(plan.Id) ? "a plan" : $"'{plan.Id}'";
             Check(plan.Id is not null && IdPattern().IsMatch(plan.Id), $"setups.plan: {name} has an id of lower-case letters, digits, and hyphens");
             Check(card.Sides.Any(item => item.Side == plan.Side), $"setups.plan: {name} is for {plan.Side}, not a side of the card");
-            Check(orders[plan] is not null, $"setups.plan: {name} places OB groups of one setup order");
+            Check(earlier || orders[plan] is not null, $"setups.plan: {name} places OB groups of one setup order");
             Check(!earlier || (plan.Side == card.Turns.SetsUpFirst && plan.Answers is null),
                 $"setups.plan: {name} is for {plan.Side}, and {card.Turns.SetsUpFirst} sets up first; a plan for another side, or one that answers a plan, needs the format '{Format}'");
             if (plan.Answers is { } answers)

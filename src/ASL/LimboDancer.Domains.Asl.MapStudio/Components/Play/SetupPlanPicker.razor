@@ -21,10 +21,10 @@
         }
         else
         {
-            <p class="muted" id="setup-plans-match">Based on the stacks you can see. Dummies and hidden units can mislead it.</p>
+            <p class="muted" id="setup-plans-match">The match is with the stacks you can see. Dummies and hidden units can mislead it.@(MatchNote is { Length: > 0 } ? " " + MatchNote : string.Empty)</p>
             @foreach (var group in Groups)
             {
-                <details class="@(group.Closest ? "setup-plan-group closest" : "setup-plan-group")" id="@($"setup-plan-group-{group.Key}")" data-group="@group.Key" open="@(group.Open)">
+                <details @key="group.Key" class="@(group.Closest ? "setup-plan-group closest" : "setup-plan-group")" id="@($"setup-plan-group-{group.Key}")" data-group="@group.Key" open="@(group.Open)">
                     <summary>
                         <span class="setup-plan-group-title">@group.Title</span>@if (group.Score is { Length: > 0 })
                         {
@@ -41,7 +41,7 @@
                     }
                     @if (group.Plans.Count == 0)
                     {
-                        <p class="muted setup-plan-none">No response written. Use the plan for any setup, or set up by hand.</p>
+                        <p class="muted setup-plan-none">No answer to this plan is written. Use the plan for any setup, or set up by hand.</p>
                     }
                     @foreach (var plan in group.Plans)
                     {
@@ -70,6 +70,10 @@
     /// <summary>The plans in groups, for a side that sets up after the other; empty for the side that sets up first, whose plans are listed as they are.</summary>
     [Parameter]
     public IReadOnlyList<Group> Groups { get; set; } = [];
+
+    /// <summary>What the comparison says in words, said with the help line: the other side's plans tie, or none is followed closely.</summary>
+    [Parameter]
+    public string? MatchNote { get; set; }
 
     /// <summary>Why the card's setups file is refused; empty when it was read.</summary>
     [Parameter]
@@ -112,7 +116,7 @@
     {
         var chosen = plan.Id == Chosen;
         var shown = plan.Id == Shown;
-        <article class="@(chosen ? "setup-plan chosen" : shown ? "setup-plan shown" : "setup-plan")" data-plan="@plan.Id" aria-labelledby="@($"setup-plan-{plan.Id}-name")">
+        <article @key="plan.Id" class="@(chosen ? "setup-plan chosen" : shown ? "setup-plan shown" : "setup-plan")" data-plan="@plan.Id" aria-labelledby="@($"setup-plan-{plan.Id}-name")">
             <h4 id="@($"setup-plan-{plan.Id}-name")">
                 @plan.Name
                 @if (chosen)
@@ -129,7 +133,7 @@
                 }
                 @if (EarlierAnswers.TryGetValue(plan.Id, out var answered))
                 {
-                    <span class="status-badge warning">Made for an earlier version of @answered</span>
+                    <span class="status-badge warning setup-plan-earlier-badge">Made for an earlier version of @answered</span>
                 }
             </h4>
             <p class="setup-plan-idea">@plan.Idea</p>

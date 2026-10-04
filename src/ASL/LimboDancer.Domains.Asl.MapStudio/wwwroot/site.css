@@ -1858,6 +1858,18 @@ details.advanced > summary {
     white-space: nowrap;
 }
 
+/* A badge that carries a plan's name may wrap, so a long name does not push the tab sideways. */
+.setup-plan-earlier-badge,
+.setup-stack-swapping {
+    white-space: normal;
+}
+
+.setup-non-ob button {
+    height: auto;
+    min-height: 2.1rem;
+    white-space: normal;
+}
+
 .setup-plan-their,
 .setup-plan-public {
     font-size: 0.9em;
