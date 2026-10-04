@@ -32,8 +32,8 @@
     <button id="propose-transfer" disabled="@(!Held || Unit.Length == 0)" @onclick="@(() => OnPropose.InvokeAsync(Transfer))">Propose: transfer</button>
     <button id="propose-drop" disabled="@(!Held)" @onclick="@(() => OnPropose.InvokeAsync(Drop))">Propose: drop</button>
     <button id="propose-recover" disabled="@(Held || Weapon.Length == 0 || Unit.Length == 0)" @onclick="@(() => OnPropose.InvokeAsync(Recover))">Propose: recover</button>
-    <button id="propose-dismantle" disabled="@(!Held)" @onclick="@(() => OnPropose.InvokeAsync(Dismantle))">Propose: dismantle or assemble</button>
-    <span id="sw-ready" class="toolbar-note">Transfer, drop, and dismantle take a SW a unit holds; recover takes a SW lying in the Location and the unit that recovers it.</span>
+    <button id="propose-dismantle" disabled="@(!Held || !Dismantles)" @onclick="@(() => OnPropose.InvokeAsync(Dismantle))">Propose: dismantle or assemble</button>
+    <span id="sw-ready" class="toolbar-note">Transfer and drop take a SW a unit holds; recover takes a SW lying in the Location and the unit that recovers it; only the German MMG is dismantled or assembled, in its side's Prep Fire or Defensive Fire Phase (A9.8).</span>
 </div>
 
 @code {
@@ -59,6 +59,10 @@
     /// <summary>Whether a unit possesses the chosen weapon, so it may be transferred, dropped, or dismantled.</summary>
     [Parameter]
     public bool Held { get; set; }
+
+    /// <summary>Whether the game dismantles or assembles the chosen SW now (pass 31, play test P-19; A9.8; ruling R13.6).</summary>
+    [Parameter]
+    public bool Dismantles { get; set; }
 
     [Parameter]
     public EventCallback<string> OnWeapon { get; set; }

@@ -63,7 +63,15 @@ public sealed partial class GamePlanner
         var precheck = ScenarioA1RallyCalculator.Precheck(attempt, reference);
         if (precheck.Count != 0)
         {
-            return Refused(scope, label, expected, RefusalReasons.Refusal("play.rally-refused", "Rally", "attempt", precheck));
+            // Pass 31 (play test R-04; A10.63, A18.11, A10.71): which of the Self-Rally rules bars this unit is said, not only that one does.
+            string[] why = precheck.Contains("asl.a1.rally.self-rally-not-capable")
+                ? [unit.Side != state.PhasingSide
+                    ? $"play.rally-self: {unit.Id} has no Self-Rally capability, and only its own side's RPh gives one MMC a Self-Rally without it (A10.63, A18.11); it needs an unbroken leader in its Location"
+                    : state.FirstMmcRallyTaken.Contains(unit.Side)
+                        ? $"play.rally-self: {unit.Id} has no Self-Rally capability, and its side has already made the first MMC Rally attempt of this RPh, the only one that may be a Self-Rally without it (A18.11); it needs an unbroken leader in its Location"
+                        : $"play.rally-self: {unit.Id} has no Self-Rally capability, and a broken leader is in its Location, so its side's first MMC Rally attempt is not open to it (A10.71, A18.11); rally the leader first"]
+                : [];
+            return Refused(scope, label, expected, [.. RefusalReasons.Refusal("play.rally-refused", "Rally", "attempt", precheck), .. why]);
         }
 
         var package = ScenarioA1RallyPackage.Identity.ToString();

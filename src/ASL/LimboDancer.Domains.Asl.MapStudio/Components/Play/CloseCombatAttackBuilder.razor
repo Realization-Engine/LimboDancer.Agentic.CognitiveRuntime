@@ -44,7 +44,8 @@
                     }
                 </select>
             </label>
-            <label>Defender's choice, in order <input id="cc-yield" value="@Yield" placeholder="r1, r2" @onchange="@(args => OnYield.InvokeAsync(args.Value as string ?? string.Empty))" /></label>
+            @* Pass 31 (play test P-10; A20.22): at the Kill Number one defender is captured, of the defender's choice; left empty, the order is the targets' as listed. *@
+            <label>The defender's order of choice, when several are attacked <input id="cc-yield" value="@Yield" placeholder="@(Defenders.Count > 1 ? string.Join(", ", Defenders.Order(StringComparer.Ordinal)) : "the one target")" @onchange="@(args => OnYield.InvokeAsync(args.Value as string ?? string.Empty))" /></label>
         }
         <button id="cc-add-attack" disabled="@(Attackers.Count == 0 || Defenders.Count == 0)" @onclick="@(() => OnAdd.InvokeAsync())">Add the attack</button>
     </div>

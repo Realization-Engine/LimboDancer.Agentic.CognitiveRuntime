@@ -750,6 +750,16 @@ public sealed partial class GamePlanner
         return false;
     }
 
+    /// <summary>
+    /// Pass 31 (play test P-03; A4.7, B23.4, B23.421, B23.422): the Locations an advance from a Location may enter, as the movement rules read them:
+    /// the ADJACENT hexes at ground level, the same level of an ADJACENT hex of the same building, and the levels a stairwell joins in the hex.
+    /// </summary>
+    public IReadOnlyList<BoardLocation> AdvanceLocations(GameState state, BoardLocation at)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return [.. ChargeNeighbors(state, at).Distinct().Where(to => InfantryStep(state, at, to) is { Entry: { AllMf: false } })];
+    }
+
     /// <summary>The ADJACENT ground-level Locations of a Location, such as an advance may enter (A4.7).</summary>
     public IReadOnlyList<BoardLocation> AdjacentLocations(GameState state, BoardLocation at)
     {

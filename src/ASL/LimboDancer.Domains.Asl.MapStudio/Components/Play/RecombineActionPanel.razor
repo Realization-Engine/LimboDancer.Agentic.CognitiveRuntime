@@ -24,7 +24,7 @@
     <label>
         Leader
         <select id="recombine-leader" value="@Leader" @onchange="@(args => OnLeader.InvokeAsync(args.Value as string ?? string.Empty))">
-            <option value="">none (Guards)</option>
+            <option value="">choose</option>
             @foreach (var leader in Leaders)
             {
                 <option value="@leader">@leader</option>

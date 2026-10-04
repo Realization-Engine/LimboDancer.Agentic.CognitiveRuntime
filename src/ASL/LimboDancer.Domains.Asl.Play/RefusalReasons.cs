@@ -61,7 +61,7 @@ public static class RefusalReasons
         ["cc.prisoners-unreviewed"] = "prisoners in CC are not reviewed (A20.55)",
         ["cc.overstacked-unreviewed"] = "an overstacked Location in CC is not reviewed (A5.12)",
         ["cc.round-outside"] = "after an Ambush the ambusher's attacks come first, and only then the ambushed side's round (A11.3, A11.32)",
-        ["cc.stacking-outside"] = "a SMC must be stacked with an MMC of its side in the Location (A11.14)",
+        ["cc.stacking-outside"] = "a SMC stacked with an MMC attacks with it and is attacked with it: name the MMC and every SMC stacked with it together, or declare the SMC alone before the attacks (A11.14)",
         ["cc.attack-outside"] = "an attack must name attackers of one side and defenders of the other",
         ["cc.broken-attacker"] = "a broken unit never attacks in CC (A11.16)",
         ["cc.attacked-twice"] = "no unit attacks or is attacked more than once per CCPh (A11.12)",

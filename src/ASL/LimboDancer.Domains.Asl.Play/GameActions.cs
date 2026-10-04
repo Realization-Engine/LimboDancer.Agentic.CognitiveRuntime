@@ -61,7 +61,7 @@ public static class GameActions
         """);
 
     public static readonly ActionDescriptor Deploy = Descriptor("asl.game.deploy", "Deploy a squad",
-        "In the RPh, a Good Order squad with a Good Order leader of its nationality in its Location takes a NTC modified by his leadership (Guards need no leader and take it unmodified) to become two HS; the first keeps its SW unless some are named for the second (A1.31; ruling R13.4).",
+        "In the RPh, a Good Order squad with a Good Order leader of its nationality in its Location takes a NTC modified by his leadership to become two HS; the first keeps its SW unless some are named for the second (A1.31; ruling R13.4).",
         PlayPermission, "asl.game.sequence-v1", """
         {
           "type": "object", "additionalProperties": false,
