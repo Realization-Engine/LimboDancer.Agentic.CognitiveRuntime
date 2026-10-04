@@ -214,6 +214,13 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return Refused(scope, label, expected, unfinished);
         }
 
+        // Pass 31 (ruling R31.6): a side's view proposes only what its side may do; setup is guarded by its own checks of each group's side.
+        if (action.Id.Value != "asl.game.setup" && ProposedBy(arguments) is { } proposer && existing.Count > 0 && Replay(existing).Current is { } proposerState
+            && ProposerBar(proposerState, action.Id.Value, arguments, proposer) is { } notYours)
+        {
+            return Refused(scope, label, expected, notYours);
+        }
+
         // Ruling R26.2: a Passenger acts only with its vehicle until it unloads.
         if (action.Id.Value is not ("asl.game.setup" or "asl.game.move-vehicle" or "asl.game.hook-gun" or "asl.game.advance-phase" or "asl.game.choose" or "asl.game.pass-fire"
             or "asl.game.end-move" or "asl.game.button-up") && existing.Count > 0 && Replay(existing).Current is { } boardState && AboardBar(boardState, arguments) is { } aboard)

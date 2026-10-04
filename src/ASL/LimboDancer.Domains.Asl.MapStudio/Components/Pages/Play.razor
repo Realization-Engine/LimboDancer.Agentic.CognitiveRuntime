@@ -350,8 +350,22 @@ else if (state is not null)
                     <OpenEntryDeclaration EventId="@open.EventId" Unit="@open.Unit" Target="@open.Target.ToString()" OnDecline='@(() => ProposeDeclaration(open.Unit, "decline"))'
                         OnElect='@(() => ProposeDeclaration(open.Unit, "elect"))' />
                 }
+                @* Pass 31 (ruling R5.8; play test P-09): while a choice or a surrender waits, nothing else is proposed. *@
+                @if (WaitsOnAnswer)
+                {
+                    <p id="play-answer-first" class="muted">Every other action waits until the choice above is answered (ruling R5.8).</p>
+                }
+                <fieldset class="plain" id="play-actions" disabled="@WaitsOnAnswer">
                 <div class="toolbar">
-                    <button id="propose-advance" @onclick="ProposeAdvance">Propose: end the @Games.PhaseLabel(state.Phase)</button>
+                    @* Pass 31 (ruling R31.6; play test P-07): the phase is ended by the side that acts in it. *@
+                    @if (MayEndPhase)
+                    {
+                        <button id="propose-advance" @onclick="ProposeAdvance">Propose: end the @Games.PhaseLabel(state.Phase)</button>
+                    }
+                    else
+                    {
+                        <span id="advance-other" class="toolbar-note">The @DisplayText.Side(GamePlanner.PhaseEndedBy(state, viewAs)) side ends the @Games.PhaseLabel(state.Phase).</span>
+                    }
                 </div>
                 @if (!SetupOpen && VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Hidden) == ConditionState.True
                     && state.Location(unit.Id) is not null && (Viewer.IsAdjudicator || unit.Side == viewAs)).ToArray() is { Length: > 0 } hiddenUnits)
@@ -649,6 +663,7 @@ else if (state is not null)
                         }
                     }
                 }
+                </fieldset>
             }
             </CascadingValue>
         </section>
@@ -4589,7 +4604,7 @@ else if (state is not null)
     private IReadOnlyList<string> EntryWaiting => [.. MoveCandidates.Where(unit => state!.Location(unit.Id) is null).Select(unit => unit.Id)];
 
     /// <summary>The units the building entry offers (plan A01): those the view sees.</summary>
-    private IReadOnlyList<BuildingEntryAction.Choice> EnterRows => [.. VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active).Select(unit => new BuildingEntryAction.Choice(unit.Id, $"{unit.Id} ({unit.Side})"))];
+    private IReadOnlyList<BuildingEntryAction.Choice> EnterRows => [.. VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit)).Select(unit => new BuildingEntryAction.Choice(unit.Id, $"{unit.Id} ({unit.Side})"))];
 
     /// <summary>
     /// Pass 25 (UI review; plan section 15.3): a SMOKE squad or place, a DC, or an advance destination the panels no longer offer is dropped, so no select
@@ -5596,7 +5611,7 @@ else if (state is not null)
     }));
 
     /// <summary>The SW on the map, possessed or not, other than Guns.</summary>
-    private IEnumerable<EquipmentInstance> SupportWeapons => state is null ? [] : VisibleEquipment.Where(item => item.Status == InstanceStatus.Active
+    private IEnumerable<EquipmentInstance> SupportWeapons => state is null ? [] : VisibleEquipment.Where(item => item.Status == InstanceStatus.Active && Mine(item)
         && item.Holding?.Role != HoldingRole.Manned && item.Holding?.Role != HoldingRole.Towed && item.Kind != "asl:gun" && state.Location(item.Id) is not null)
         .OrderBy(item => item.Id, StringComparer.Ordinal);
 
@@ -5628,25 +5643,25 @@ else if (state is not null)
 
     /// <summary>Pass 28b: the broken units the view sees that may rout, and what each owes (A10.5; ruling R23.1).</summary>
     private IReadOnlyList<RoutActionPanel.Obligation> RoutObligations => state is null ? []
-        : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Broken) == ConditionState.True && Live.Planner.MayRout(state, unit))
+        : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && GameState.Condition(unit, Conditions.Broken) == ConditionState.True && Live.Planner.MayRout(state, unit))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal)
             .Select(unit => new RoutActionPanel.Obligation(unit.Id, $"{unit.Id} ({unit.Side}): "
                 + (Live.Planner.MustRout(state, unit) is { } why ? $"must rout: {why}" : "may rout: it is under DM")
                 + (state.RoutedThisPhase.Contains(unit.Id) ? "; has routed" : RoutAdviceText(unit))))];
 
     private IReadOnlyList<PlayChoice> RoutChoices => state is null ? []
-        : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Broken) == ConditionState.True
+        : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && GameState.Condition(unit, Conditions.Broken) == ConditionState.True
             && !state.RoutedThisPhase.Contains(unit.Id) && Live.Planner.MayRout(state, unit)).Select(Labelled)];
 
     private IReadOnlyList<PlayChoice> RallyChoices =>
-        [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Broken) == ConditionState.True).Select(Labelled)];
+        [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && GameState.Condition(unit, Conditions.Broken) == ConditionState.True).Select(Labelled)];
 
     private IReadOnlyList<PlayChoice> RepairChoices =>
     [
-        .. VisibleEquipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed }
+        .. VisibleEquipment.Where(item => item.Status == InstanceStatus.Active && Mine(item) && item.Holding is { Role: HoldingRole.Possessed }
                 && GameState.Condition(item, Conditions.Malfunctioned) == ConditionState.True)
             .Select(weapon => new PlayChoice(weapon.Id, $"{weapon.Id} (held by {weapon.Holding!.Holder})")),
-        .. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit) && LiveFire.CrewExposed(unit)
+        .. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && LiveFire.IsVehicle(unit) && LiveFire.CrewExposed(unit)
                 && GameState.Condition(unit, Conditions.Malfunctioned) == ConditionState.True && GameState.Condition(unit, Conditions.Disabled) != ConditionState.True)
             .Select(vehicle => new PlayChoice(vehicle.Id, $"{vehicle.Id}'s AAMG (a dr of 1 repairs it, a 6 disables it; D3.7)")),
     ];
@@ -5662,7 +5677,7 @@ else if (state is not null)
             .Select(item => item.Id)];
 
     private IReadOnlyList<PlayChoice> RecombineChoices => state is null ? []
-        : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && unit.Kind == "asl:half-squad" && state.Location(unit.Id) is not null).Select(Labelled)];
+        : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && unit.Kind == "asl:half-squad" && state.Location(unit.Id) is not null).Select(Labelled)];
 
     private IReadOnlyList<string> DmRetainers => state is null ? []
         : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.DesperationMorale) == ConditionState.True
@@ -5748,7 +5763,7 @@ else if (state is not null)
 
     /// <summary>The units in the chosen SW's Location that could Recover or receive it.</summary>
     private IEnumerable<UnitInstance> SupportWeaponUnits => SeenOnly(state?.Location(swWeapon)?.Location is { } at
-        ? state.At(at).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Id != SupportWeaponHolder && !LiveFire.IsVehicle(unit))
+        ? state.At(at).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && unit.Id != SupportWeaponHolder && !LiveFire.IsVehicle(unit))
         : []);
 
     private Task ProposeSupportWeapon(ActionDescriptor action)
@@ -5842,6 +5857,7 @@ else if (state is not null)
 
         (busy, status) = (true, "Checking the proposal.");
         var asked = AskedBy;
+        arguments = FromView(arguments);
         Proposal proposed;
         try
         {
@@ -5868,6 +5884,26 @@ else if (state is not null)
         ShowProposal();
         Refresh();
     }
+
+    /// <summary>Pass 31 (ruling R31.6): a proposal names the view it comes from, so the planner refuses what that side may not do.</summary>
+    private JsonElement FromView(JsonElement arguments)
+    {
+        var node = System.Text.Json.Nodes.JsonNode.Parse(arguments.GetRawText())!;
+        node[GamePlanner.ProposedByArgument] = Viewer.IsAdjudicator ? GamePlanner.AdjudicatorView : viewAs;
+        return JsonSerializer.SerializeToElement(node);
+    }
+
+    /// <summary>Pass 31 (ruling R31.6): the units the view acts for: its side's, or every unit for the adjudicator.</summary>
+    private bool Mine(UnitInstance unit) => Viewer.IsAdjudicator || unit.Side == viewAs;
+
+    /// <summary>Pass 31: whether a weapon is the view's to handle: one its side holds, or one lying unpossessed.</summary>
+    private bool Mine(EquipmentInstance weapon) => Viewer.IsAdjudicator || weapon.Holding is not { } holding || state?.Unit(holding.Holder) is not { } holder || holder.Side == viewAs;
+
+    /// <summary>Pass 31 (ruling R31.6): whether the view shown may end the present phase.</summary>
+    private bool MayEndPhase => state is not null && (Viewer.IsAdjudicator || GamePlanner.PhaseEndedBy(state, viewAs) == viewAs);
+
+    /// <summary>Pass 31 (ruling R5.8): a choice or a surrender waits for its answer, and nothing else is proposed until it has one.</summary>
+    private bool WaitsOnAnswer => state is { } waiting && (waiting.Choice is not null || waiting.PendingSurrenders.Count > 0);
 
     /// <summary>
     /// Lets the busy state be drawn before the gate is asked (pass 29). A component test that registers <see cref="ImmediateProposals"/> skips the
