@@ -164,6 +164,10 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache
 
         var projection = entry.History is { HasErrors: false } ? games.Projection(entry, viewer, revision) : null;
         var overlay = projection is not null && units.Renderer(UnitLibrary.DefaultSheet) is { } renderer ? units.Overlay(board, projection.Set, renderer) : null;
+        if (overlay is not null && entry.History is { HasErrors: false } named)
+        {
+            overlay = Named(overlay, games.NamesOf(named, viewer), revision, map.Boards.Count);
+        }
 
         // Residual FP is public (A8.2): every viewer sees each counter's value. Pass 31c (design D16; play test P-30): at the hex's upper
         // corner, small, and taking no click, so it never covers the counter in the hex or stands between a click and it.
@@ -204,6 +208,35 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache
         {
             Overlay = overlay,
             View = projection?.View,
+        };
+    }
+
+    /// <summary>
+    /// The overlay with each counter's tooltip and name beginning with its hex and the unit's own name, such as "[H5], level 1: 4-6-7 squad G3.
+    /// German 1st Line squad, 4-6-7" (the user, 2026-10-04): the hex in brackets, as every hex is written, and the name the records use, so a
+    /// counter on the map is the unit a record names. A "?" has its hex alone.
+    /// </summary>
+    private static UnitOverlay Named(UnitOverlay overlay, UnitNames names, long revision, int boards)
+    {
+        var lead = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var unit in overlay.Units)
+        {
+            var name = names.Held(unit.Document.Id, revision);
+            lead[unit.Document.Id] = DisplayText.Place(boards, unit.Location) + (name == unit.Document.Id || name == UnitNames.Unnamed ? ": " : $": {name}. ");
+        }
+
+        // One pass over the layer: each counter's group carries its id, its accessible name, and then its title.
+        var svg = System.Text.RegularExpressions.Regex.Replace(overlay.Svg, "(<g data-unit-id=\"([^\"]+)\"[^>]*aria-label=\")([^\"]*\"[^>]*>\\s*<title>)",
+            match => lead.TryGetValue(match.Groups[2].Value, out var said)
+                ? match.Groups[1].Value + System.Net.WebUtility.HtmlEncode(said) + match.Groups[3].Value + System.Net.WebUtility.HtmlEncode(said)
+                : match.Value);
+        return overlay with
+        {
+            Svg = svg,
+            Units = [.. overlay.Units.Select(unit => unit with
+            {
+                Name = lead[unit.Document.Id] + unit.Name,
+            })],
         };
     }
 

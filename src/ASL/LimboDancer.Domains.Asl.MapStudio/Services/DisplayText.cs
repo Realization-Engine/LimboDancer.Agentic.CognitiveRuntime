@@ -112,7 +112,7 @@ public static class DisplayText
             -1 => ", cellar",
             var other => $", level {other}",
         };
-        return $"{location.Hex} on {board}{level}";
+        return $"[{location.Hex}] on {board}{level}";
     }
 
     /// <summary>
@@ -309,8 +309,9 @@ public static class DisplayText
     }
 
     /// <summary>
-    /// The one way a game's Location is written for a player (pass 31c, design D12): "G4, level 1" on a map of one board, and
-    /// "G4 on board 01, level 1" on a map of several; ground level is the hex alone, and level -1 the cellar.
+    /// The one way a game's Location is written for a player (pass 31c, design D12): "[G4], level 1" on a map of one board, and
+    /// "[G4] on board 01, level 1" on a map of several; ground level is the hex alone, and level -1 the cellar. A hex stands in brackets
+    /// wherever it is written (the user, 2026-10-04), which tells it from a unit's tag: "4-6-7 squad G4 in [G4]".
     /// </summary>
     public static string Place(int boards, BoardLocation location)
     {
@@ -322,9 +323,9 @@ public static class DisplayText
 
         return location.Level switch
         {
-            0 => location.Hex.ToString(),
-            -1 => $"{location.Hex}, cellar",
-            var level => string.Create(CultureInfo.InvariantCulture, $"{location.Hex}, level {level}"),
+            0 => $"[{location.Hex}]",
+            -1 => $"[{location.Hex}], cellar",
+            var level => string.Create(CultureInfo.InvariantCulture, $"[{location.Hex}], level {level}"),
         };
     }
 
@@ -341,7 +342,8 @@ public static class DisplayText
     {
         ArgumentNullException.ThrowIfNull(text);
         ArgumentNullException.ThrowIfNull(boards);
-        var typed = text.Trim();
+        // A hex is written in brackets, "[G4]" (the user, 2026-10-04), and is read with or without them.
+        var typed = text.Trim().Replace("[", string.Empty, StringComparison.Ordinal).Replace("]", string.Empty, StringComparison.Ordinal);
         if (typed.Length == 0 || BoardLocation.TryParse(typed, out _))
         {
             return typed;

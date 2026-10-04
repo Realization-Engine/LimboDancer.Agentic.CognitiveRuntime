@@ -66,6 +66,14 @@ public sealed class PlayRecords
     public UnitNames? Names => names;
 
     /// <summary>
+    /// Where a unit or a weapon was just before an event, as " in bd01:G4:1" (the user, 2026-10-04: a record says the hex of the units that act
+    /// and of their targets); empty when it was not on the map. The view's words turn the identifier into "G4, level 1".
+    /// </summary>
+    private static string In(GameState? before, string? id) => id is not null && before?.Location(id)?.Location is { } at ? $" in {at}" : string.Empty;
+
+    private static string From(GameState? before, string? id) => id is not null && before?.Location(id)?.Location is { } at ? $" from {at}" : string.Empty;
+
+    /// <summary>
     /// A record's text in the view's words (design D11): the one place a record's identifiers become names, so no record is worded twice and none
     /// misses the view check (plan section 15.9).
     /// </summary>
@@ -203,17 +211,17 @@ public sealed class PlayRecords
             static string Many(IReadOnlyList<string> ids, string one, string several) => $"{string.Join(", ", ids)} {(ids.Count == 1 ? one : several)}";
             var text = item.Payload switch
             {
-                MovementStepped step => Many(step.Movers, "moves", "move") + $" to {step.To}{(step.Assault ? " by Assault Movement" : string.Empty)}",
-                VehicleStepped { Kind: not VehicleStepped.Turn } drive => $"{drive.Vehicle} moves to {drive.At}",
-                AdvanceMoved advance => Many(advance.Units, "advances", "advance") + (advance.Exit is { } edge ? $" off the {edge} edge from {advance.To}" : $" to {advance.To}"),
+                MovementStepped step => Many(step.Movers, "moves", "move") + $"{From(before, step.Movers.Count > 0 ? step.Movers[0] : null)} to {step.To}{(step.Assault ? " by Assault Movement" : string.Empty)}",
+                VehicleStepped { Kind: not VehicleStepped.Turn } drive => $"{drive.Vehicle} moves{From(before, drive.Vehicle)} to {drive.At}",
+                AdvanceMoved advance => Many(advance.Units, "advances", "advance") + (advance.Exit is { } edge ? $" off the {edge} edge from {advance.To}" : $"{From(before, advance.Units.Count > 0 ? advance.Units[0] : null)} to {advance.To}"),
                 MovementWindowClosed => $"The {DisplayText.Side(before?.Sides.FirstOrDefault(side => side.Id != before.PhasingSide)?.Id)} side, the DEFENDER, declines First Fire",
-                MovementEnded ended => Many(ended.Movers, "ends its move", "end their move"),
-                OpportunityFireDeclared held => Many(held.Units, "is", "are") + " held for Opportunity Fire (A7.25)",
+                MovementEnded ended => Many(ended.Movers, "ends its move", "end their move") + In(before, ended.Movers.Count > 0 ? ended.Movers[0] : null),
+                OpportunityFireDeclared held => string.Join(", ", held.Units.Select(id => id + In(before, id))) + (held.Units.Count == 1 ? " is" : " are") + " held for Opportunity Fire (A7.25)",
                 ChoiceMade => "A choice the game waited for was answered",
-                SurrenderPending surrender => $"{surrender.Unit} surrenders, and its captor is to be chosen (A20.21)",
+                SurrenderPending surrender => $"{surrender.Unit}{In(before, surrender.Unit)} surrenders, and its captor is to be chosen (A20.21)",
                 SurrenderRejected refused => $"The surrender of {refused.Unit} is refused (A20.3)",
-                InstanceCaptured taken => $"{taken.Id} is captured, guarded by {taken.Custodian} (A20.2)",
-                PrisonerFreed freed => $"{freed.Unit} is no longer guarded (A20.5)",
+                InstanceCaptured taken => $"{taken.Id}{In(before, taken.Id)} is captured, guarded by {taken.Custodian} (A20.2)",
+                PrisonerFreed freed => $"{freed.Unit}{In(before, freed.Unit)} is no longer guarded (A20.5)",
                 BuildingMoppedUp mopped => $"The {DisplayText.Side(mopped.Side)} side Mops Up building {mopped.Building} (A12.153)",
                 PhaseChanged phase => $"The {DisplayText.Side(phase.PhasingSide)} {GameText.PhaseLabel(phase.Phase)} of Turn {phase.Turn} begins",
                 GameEnded => "The game ends",
@@ -283,7 +291,7 @@ public sealed class PlayRecords
                 if (item.Payload is OrdnanceFired { } checking && checking.Resolution.Deserialize<OrdnanceResolution>(LiveFire.Json) is { ToHit: null, PanzerfaustCheck: { } failed })
                 {
                     // C13.31 (ruling R9.7): a PF Check that gave no shot.
-                    records.Add((item.EventId, $"{checking.Crew} makes a PF Check: dr {failed.Dr}{ModifierText(failed.Drm)} = {failed.FinalDr}: "
+                    records.Add((item.EventId, $"{checking.Crew}{In(history.At(item.Revision - 1), checking.Crew)} makes a PF Check: dr {failed.Dr}{ModifierText(failed.Drm)} = {failed.FinalDr}: "
                         + (failed.Outcome == OrdnancePanzerfaustCheck.NoShot ? "no shot (C13.31)" : $"no PF in position, and {failed.Outcome} (C13.31)")));
                     continue;
                 }
@@ -304,7 +312,7 @@ public sealed class PlayRecords
                 var check = resolution.PanzerfaustCheck is { } pf ? $"PF Check dr {pf.Dr}{ModifierText(pf.Drm)} = {pf.FinalDr}: a shot; " : "";
                 var parts = new List<string>
                 {
-                    check + $"{fired.Gun} fires {aim}"
+                    check + $"{fired.Gun}{In(history.At(item.Revision - 1), fired.Gun)} fires {aim}"
                         + (fired.Facing is { } facing ? $", turning to {UnitFacings.Name(facing)}" : "")
                         + $": Basic TH# {hit.BasicToHit} ({hit.Color}){modifications} = {hit.ModifiedToHit}; DR {dice} = {hit.OriginalDr}{ModifierText(hit.Drm)} = Final DR {hit.FinalDr}"
                         + (hit.SubsequentDr is { } dr ? $", subsequent dr {dr}" : "") + (hit.Improbable ? " (Improbable Hit, C3.6)" : "") + $": {outcome}",
@@ -503,12 +511,12 @@ public sealed class PlayRecords
                 var start = starts[attempt] > 0 ? history.States.ElementAtOrDefault(starts[attempt] - 1) : null;
                 if (item.Payload is RallyAttempted rally && rally.Resolution.Deserialize<RallyResolution>(LiveFire.Json) is { Arithmetic: { } arithmetic } resolution)
                 {
-                    records.Add((item.EventId, "rally", RallyText(rally, arithmetic, resolution.Effect)));
+                    records.Add((item.EventId, "rally", RallyText(rally, arithmetic, resolution.Effect, In(before, rally.Unit))));
                 }
                 else if (item.Payload is RoutStepped routed)
                 {
                     var mf = (routed.HalfMf / 2.0).ToString("0.#", CultureInfo.InvariantCulture);
-                    records.Add((item.EventId, "rout", $"{routed.Unit} routs to {routed.To} for {mf} MF{(routed.LowCrawl ? " by Low Crawl (A10.52)" : " (A10.5)")}"));
+                    records.Add((item.EventId, "rout", $"{routed.Unit} routs{From(before, routed.Unit)} to {routed.To} for {mf} MF{(routed.LowCrawl ? " by Low Crawl (A10.52)" : " (A10.5)")}"));
                 }
                 else if (item.Payload is RoutInterdicted interdicted)
                 {
@@ -519,13 +527,13 @@ public sealed class PlayRecords
                 else if (item.Payload is LineageRecorded { Action: LineageAction.Deployed or LineageAction.Recombined } lineage && lineage.Consumed.All(id => Open(before, id)))
                 {
                     records.Add((item.EventId, "lineage", lineage.Action == LineageAction.Deployed
-                        ? $"{lineage.Consumed[0]} becomes the HS {string.Join(" and ", lineage.Produced.Select(unit => unit.Id))} (A1.31){DeploySplit(attempts[attempt], lineage)}"
-                        : $"{string.Join(" and ", lineage.Consumed)} Recombine into {lineage.Produced[0].Id} (A1.32)"));
+                        ? $"{lineage.Consumed[0]}{In(before, lineage.Consumed[0])} becomes the HS {string.Join(" and ", lineage.Produced.Select(unit => unit.Id))} (A1.31){DeploySplit(attempts[attempt], lineage)}"
+                        : $"{string.Join(" and ", lineage.Consumed)}{In(before, lineage.Consumed[0])} Recombine into {lineage.Produced[0].Id} (A1.32)"));
                 }
                 else if (item.Payload is ConditionsChanged dismantled && dismantled.Conditions.TryGetValue(Conditions.Dismantled, out var taken)
                     && (before?.Find(dismantled.Id) is not EquipmentInstance { Holding: { } heldBy } || Open(before, heldBy.Holder)))
                 {
-                    records.Add((item.EventId, "dismantle", $"{dismantled.Id} is {(taken == ConditionState.True ? "dismantled" : "assembled")} (A9.8)"));
+                    records.Add((item.EventId, "dismantle", $"{dismantled.Id}{In(before, dismantled.Id)} is {(taken == ConditionState.True ? "dismantled" : "assembled")} (A9.8)"));
                 }
                 else if (item.Payload is ConditionsChanged marked && marked.Conditions.TryGetValue(Conditions.DesperationMorale, out var gained)
                     && gained == ConditionState.True && Open(before, marked.Id))
@@ -534,17 +542,17 @@ public sealed class PlayRecords
                     // DM gained.
                     if (start?.Unit(marked.Id) is not { } earlier || GameState.Condition(earlier, Conditions.DesperationMorale) != ConditionState.True)
                     {
-                        records.Add((item.EventId, "dm", $"{marked.Id} comes under DM (A10.62)"));
+                        records.Add((item.EventId, "dm", $"{marked.Id}{In(before, marked.Id)} comes under DM (A10.62)"));
                     }
                     else if (start.Phase == "rph")
                     {
-                        records.Add((item.EventId, "dm", $"{marked.Id} keeps DM as the RPh ends ({(start.Night ? "E1.54" : "A10.62")})"));
+                        records.Add((item.EventId, "dm", $"{marked.Id}{In(before, marked.Id)} keeps DM as the RPh ends ({(start.Night ? "E1.54" : "A10.62")})"));
                     }
                 }
                 else if (item.Payload is InstanceEliminated eliminated && item.RulePackage is null && before?.Phase == "rtph"
                     && attempts[attempt].Any(other => other.Payload is PhaseChanged) && Open(before, eliminated.Id))
                 {
-                    records.Add((item.EventId, "failure-to-rout", $"{eliminated.Id} is eliminated for Failure to Rout as the RtPh ends (A10.5)"));
+                    records.Add((item.EventId, "failure-to-rout", $"{eliminated.Id}{In(before, eliminated.Id)} is eliminated for Failure to Rout as the RtPh ends (A10.5)"));
                 }
                 else if (item.Payload is EquipmentTransferred { Holding: null, Position: MapPosition left } dropped)
                 {
@@ -555,18 +563,18 @@ public sealed class PlayRecords
                     && before?.Find(passed.Id) is EquipmentInstance { Holding: { Role: HoldingRole.Possessed } held } && held.Holder != receiver.Holder
                     && Open(before, held.Holder) && Open(before, receiver.Holder))
                 {
-                    records.Add((item.EventId, "transfer", $"{held.Holder} passes {passed.Id} to {receiver.Holder} (A4.431)"));
+                    records.Add((item.EventId, "transfer", $"{held.Holder} passes {passed.Id} to {receiver.Holder}{In(before, receiver.Holder)} (A4.431)"));
                 }
                 else if (item.Payload is DeploymentAttempted deployment && Open(before, deployment.Squad))
                 {
                     var dr = rolls.TryGetValue(deployment.Roll, out var roll) ? roll.Values.Sum().ToString(CultureInfo.InvariantCulture) : "?";
-                    records.Add((item.EventId, "deployment", $"{deployment.Squad} tries to Deploy{(deployment.Leader is { } leader ? $" with {leader}" : "")}: NTC DR {dr} "
+                    records.Add((item.EventId, "deployment", $"{deployment.Squad}{In(before, deployment.Squad)} tries to Deploy{(deployment.Leader is { } leader ? $" with {leader}" : "")}: NTC DR {dr} "
                         + $"{deployment.Drm:+0;-0;+0} against morale {deployment.Morale}: {(deployment.Passed ? "two HS" : "stays a squad")} (A1.31)"));
                 }
                 else if (item.Payload is RecoveryAttempted recovery && Open(before, recovery.Unit))
                 {
                     var dr = rolls.TryGetValue(recovery.Roll, out var roll) ? roll.Values[0].ToString(CultureInfo.InvariantCulture) : "?";
-                    records.Add((item.EventId, "recovery", $"{recovery.Unit} tries to Recover {recovery.Weapon}: dr {dr} {recovery.Drm:+0;-0;+0}, needing below 6: "
+                    records.Add((item.EventId, "recovery", $"{recovery.Unit}{In(before, recovery.Unit)} tries to Recover {recovery.Weapon}: dr {dr} {recovery.Drm:+0;-0;+0}, needing below 6: "
                         + $"{(recovery.Recovered ? "recovered" : "not recovered")} (A4.44)"));
                 }
                 else if (item.Payload is RepairAttempted repair)
@@ -578,16 +586,16 @@ public sealed class PlayRecords
                         RepairAttempted.Eliminated => "eliminated (a 6)",
                         _ => "still malfunctioned",
                     };
-                    records.Add((item.EventId, "repair", $"{repair.Unit} repairs {repair.Equipment}: dr {dr} against R{repair.RepairNumber}: {result}"));
+                    records.Add((item.EventId, "repair", $"{repair.Unit}{In(before, repair.Unit)} repairs {repair.Equipment}: dr {dr} against R{repair.RepairNumber}: {result}"));
                 }
                 else if (item.Payload is ManhandlingRolled push)
                 {
                     var dr = rolls.TryGetValue(push.Roll, out var roll) ? roll.Values.Sum().ToString(CultureInfo.InvariantCulture) : "?";
-                    records.Add((item.EventId, "manhandling", $"Manhandling DR for {push.Gun}: {dr} {push.Drm:+0;-0;+0} against M{push.Manhandling}: {push.Result} (C10.3)"));
+                    records.Add((item.EventId, "manhandling", $"Manhandling DR for {push.Gun}{In(before, push.Gun)}: {dr} {push.Drm:+0;-0;+0} against M{push.Manhandling}: {push.Result} (C10.3)"));
                 }
                 else if (item.Payload is GunTurned turned)
                 {
-                    records.Add((item.EventId, "turn", $"{turned.Gun} turns to {UnitFacings.Name(turned.Facing)} without firing (C3.22)"));
+                    records.Add((item.EventId, "turn", $"{turned.Gun}{In(before, turned.Gun)} turns to {UnitFacings.Name(turned.Facing)} without firing (C3.22)"));
                 }
                 else if (item.Payload is GunHooked hooked)
                 {
@@ -612,9 +620,9 @@ public sealed class PlayRecords
     }
 
     /// <summary>A rally in words, for example "rl rallies r1: DR 5, 1 = 6 - 1 (terrain, A10.61) = Final DR 5 against 7: rallied".</summary>
-    private static string RallyText(RallyAttempted rally, RallyArithmetic arithmetic, RallyEffect? effect)
+    private static string RallyText(RallyAttempted rally, RallyArithmetic arithmetic, RallyEffect? effect, string where)
     {
-        var who = rally.Leader is { } leader ? $"{leader} rallies {rally.Unit}" : $"{rally.Unit} Self-Rallies";
+        var who = rally.Leader is { } leader ? $"{leader} rallies {rally.Unit}{where}" : $"{rally.Unit}{where} Self-Rallies";
         var drm = string.Concat(arithmetic.Drm.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({DisplayText.Modifier(item.Name)}, {item.Rule})"));
         List<string> results = [arithmetic.Rallied ? "rallied" : "not rallied"];
         if (arithmetic.Fate)
@@ -789,7 +797,7 @@ public sealed class PlayRecords
                 + (wind.Nvr is { } nvr ? $": the Base NVR is {nvr}" : string.Empty)
                 + (wind.Precipitation is { } falling ? $"; {falling.Replace('-', ' ')} falls" : string.Empty)
                 + (wind.Gust ? "; a Gust blows" : string.Empty) + " (B25.65, E1.12, E3.51)",
-            StarshellFired starshell => $"{starshell.Unit} fires a Starshell ({starshell.Method}): "
+            StarshellFired starshell => $"{starshell.Unit}{In(history.At(item.Revision - 1), starshell.Unit)} fires a Starshell ({starshell.Method}): "
                 + (!starshell.Passed ? "its Usage dr fails (E1.921)"
                     : starshell.At is { } at ? $"it lands in {at} and Illuminates three hexes around it (E1.922, E1.923)" : "it lands off the map"),
             _ => string.Empty,

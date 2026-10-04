@@ -61,6 +61,14 @@ public sealed class GameLibrary(UnitLibrary units, IBoardProvider boards, LivePl
             && !record.Events.Any(item => item.Payload is GameEnded);
     }
 
+    /// <summary>The names a view reads for a game's units (pass 31c, design D11), with the planner's reading of who sets up out of sight.</summary>
+    public UnitNames NamesOf(GameHistory history, Perspective viewer)
+    {
+        ArgumentNullException.ThrowIfNull(viewer);
+        var planner = live?.Planner;
+        return UnitNames.For(history, viewer, Catalogs, planner is null ? null : state => planner.OutOfSight(state, viewer));
+    }
+
     private string GamesRoot => Path.Combine(units.UnitsRoot, "games");
 
     public GameEntry Load(string name)

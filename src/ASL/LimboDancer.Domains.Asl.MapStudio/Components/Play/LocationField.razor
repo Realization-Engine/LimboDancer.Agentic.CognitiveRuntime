@@ -97,7 +97,7 @@
     private string Words(string location) => Boards.Count > 0 ? DisplayText.Place(Boards.Count, location) : DisplayText.Location(location);
 
     private string Short(string location) => BoardLocation.TryParse(location, out var at)
-        ? (Boards.Count > 1 ? $"{at.Board.Value}:" : string.Empty) + at.Hex + (at.Level == 0 ? string.Empty : $":{at.Level}")
+        ? (Boards.Count > 1 ? $"{at.Board.Value}:" : string.Empty) + $"[{at.Hex}]" + (at.Level == 0 ? string.Empty : $":{at.Level}")
         : location;
 
     protected override async Task OnParametersSetAsync()
@@ -127,7 +127,7 @@
 
     // A route typed with a level in words ("H4, level 1") is read as "H4:1" before its steps are split (the reviews, pass 31c).
     private Task Typed(string text) => OnChange.InvokeAsync(Many
-        ? string.Join(", ", System.Text.RegularExpressions.Regex.Replace(System.Text.RegularExpressions.Regex.Replace(text, @",?\s*level\s+(-?\d)", ":$1", System.Text.RegularExpressions.RegexOptions.IgnoreCase),
+        ? string.Join(", ", System.Text.RegularExpressions.Regex.Replace(System.Text.RegularExpressions.Regex.Replace(text.Replace("[", string.Empty, StringComparison.Ordinal).Replace("]", string.Empty, StringComparison.Ordinal), @",?\s*level\s+(-?\d)", ":$1", System.Text.RegularExpressions.RegexOptions.IgnoreCase),
                 @",?\s*cellar", ":-1", System.Text.RegularExpressions.RegexOptions.IgnoreCase)
             .Split([',', ' ', ';'], StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Select(token => DisplayText.ReadPlace(token, Boards)))
         : DisplayText.ReadPlace(text.Trim(), Boards));
