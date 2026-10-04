@@ -911,9 +911,10 @@ Added by the user on 2026-10-03. Estimate 8:00 (build 6:30). Branch `feature/asl
 
 ## Pass 31: Play-test UI
 
-Added by the user on 2026-10-04. Estimate 24:45 (build 22:45), before the user's answer on splitting it into 31 and 31b. Branch `feature/asl-backlog-pass-31`. The Studio is the only test until the code is complete.
+Added by the user on 2026-10-04. Split on the user's answer into pass 31 (estimate 13:00, build 11:30) and pass 31b (14:00, build 12:30); this section is pass 31's. Branch `feature/asl-backlog-pass-31`. The Studio is the only test until the code is complete.
 
 | Sub-task | Start | End | Duration | Notes |
 |---|---|---|---|---|
 | Step 0, the renumbering: DYO to 32 and 33, the rule packages to 34 to 43 with 35b, in the plan, the backlog, ruling R26.2, the pass 30 handover prompt, and one code comment; the old-to-new table in the plan's section 4; the memory notes | 06:38 | 06:40 | 0:02 | Commit 076ce53. The plan's total corrected to 230:34 (pass 30b's 9:00 had not been added) |
 | Step 1, the design, read-only: the play test's report (31 problems, 8 possible rules errors), the game's record on the Play page, the event log (613 events) and the audit log (21 refusals), two of the 92 screenshots; the plan's sections 5 and 15, the handover prompt, the pass 28c and 30b designs, backlog sections 44 to 47; three read-only surveys of the code in parallel (movement and sides; fire, Close Combat, and rally; layout, text, and records); the design written with 19 decisions, 17 tasks, and 9 questions; the pass added to the plan | 07:05 | 07:15 | 0:10 | Stopped for the user's approval. R-02 closed as a misreading; P-01 confirmed in the event log |
+| The user's nine answers worked into the design: two passes (31 and 31b), the hand-overs left as they are and the hand-over screen redesigned (D10, task 31.9), the Victory code read for answer 8 (the result is already computed from the card's Victory Conditions, so nothing goes to a pass 31c; the account of every condition added to task 31.4), the referee's check moved first (task 31.1) with the rulebook read at every task; the plan's passes 31 and 31b and its totals | 07:22 | 07:33 | 0:11 | The start is approximate. Estimates: 13:00 and 14:00. Stopped for the user's word to build |

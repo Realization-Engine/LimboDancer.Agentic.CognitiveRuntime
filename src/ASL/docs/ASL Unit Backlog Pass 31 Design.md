@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 31 Design
 
-**Status:** Draft, 2026-10-04, waiting for the user's approval and answers (section 12). Nothing is built. Pass 31 (Play-test UI) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, added by the user on 2026-10-04.
+**Status:** Revised 2026-10-04 with the user's answers (section 12), and waiting for the user's word to build. Nothing is built. It covers two passes, 31 (section 4) and 31b (section 5). Pass 31 (Play-test UI) of the [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>), section 5, added by the user on 2026-10-04.
 
 **Date:** 2026-10-04
 
@@ -9,6 +9,8 @@
 **What the pass is.** On 2026-10-03 and 2026-10-04 Claude in Chrome played one live game of The Guards Counterattack from setup to its end through the Play page's own controls, both sides, with the hand-over between them. Its report lists 31 problems and 8 possible rules errors. This pass makes the Play page fit to play such a game: no legal action is blocked or lost, a proposal says what it will do, the game says when it ends and who won, and the page holds still and speaks in the player's words. It ends with a second play test.
 
 Unlike the Studio passes before it, this pass changes the game too, so it adds rulings (R31.1 onward, section 9).
+
+**The rulebook comes first** (the user, 2026-10-04). The check of the possible rules errors is the pass's first task, not its last. Every task after it reads the rulebook PDF's passages for what it touches before any code changes, cites them in its commit and in the review, and brings a difference between the rulebook and the code to a ruling. A citation in this design that the PDF does not bear out is corrected here before its task is built.
 
 ## 1. The four sources
 
@@ -69,7 +71,9 @@ Three read-only surveys of the code found a cause for every problem but one part
 | P-30 | The hand-over unmounts the map, so the next view starts fitted. A pane that changes height while the view is fitted fits again. The Residual FP disc is drawn over the counter's center and takes its clicks. The map has no loading sign. | `HandOverScreen`, `boardViewport.js`, `GameMaps` |
 | P-31 | The header keeps the last proposal's name after a commit, by design; it should show it only while a proposal waits. | `Play.razor` |
 
-## 4. Decisions, part A: nothing blocks play
+## 4. Decisions, pass 31: nothing blocks play
+
+**D0. The referee's check comes first** (task 31.1). Each of R-01 and R-03 to R-08 is checked against the rulebook PDF before any code changes. A confirmed error becomes a ruling and a fix with its test, built in the task that owns its code; a cleared one is recorded in the review with its citation. R-02 is closed (section 2). R-06 (Height Advantage shown for a building's upper level) and R-07 (an original 12 in Close Combat) are expected to need a fix; R-01 (a Guards squad Deploying with no leader) and R-08 (an unarmed leader's CC strength) are expected to need a citation or a ruling. The same task reads the passages behind D2, D6, D8, and D9 (A8.1, A8.3, A9.2, A10.2, A10.21, A7.8, A11.14, A20.22, A10.63, A18.11), so their tasks start from the rulebook's words.
 
 **D1. A proposal says who proposes it** (P-07; backlog section 44's row on the phase end).
 
@@ -89,12 +93,24 @@ Three read-only surveys of the code found a cause for every problem but one part
 
 **D3. A waiting choice comes first** (P-09). While a choice or a surrender waits, the page shows its panel and the hand-over, and every other Propose button is disabled with the note "Answer the choice first." Records gain a line for a resolution that waits on a choice ("Fire at F5 waits for the German side's choice"), so the cause is on the page before its answer.
 
-**D4. The last turn and the result are in the header** (P-08; the user's note of 2026-10-04).
+**D4. The last turn and the result are in the header** (P-08; the user's note of 2026-10-04 and answer 8).
+
+The game already computes its result from the card's Victory Conditions; nothing is deferred to a pass 31c. What the code has:
+
+- `ScenarioVictory.Evaluate` reads a card's structured Victory Conditions (`victoryConditions.outcomes` and `otherwise`) over the game's states. It knows six kinds of condition: a margin of buildings Controlled, a count of a building's hexes Controlled, a ratio of unbroken squad-equivalents, the only unbroken units in a building, Exit VP, and CVP. It returns the Control of each building, each side's CVP, Exit VP, and unbroken squad-equivalents, a result that holds at once (for an outcome marked immediate), and the result if the game ended now.
+- The planner uses it twice: after every commit, to end the game at once when an immediate outcome holds (`WithImmediateVictory`, reason "victory"), and as the last phase of the last Game Turn ends (ruling R21.4). Either way the `game-ended` event stores the winner, the reason, and the facts.
+- The four built-in cards all have structured conditions: The Guards Counterattack (a margin of two buildings, or three times the unbroken squads, else German), Gambit and Armor Test (Exit VP at once, else the other side), The Tractor Works (six hexes of X3, or the only unbroken units there, else a draw).
+- In `guards-dl-01` the stored result is a German win: the Russians Controlled none of the five German buildings and lost none of their four, and had 14 unbroken squad-equivalents against 8, so neither Russian condition held.
+- A card with no structured conditions (a user's card with text only) ends with no result stored. That is the one case with no definitive result, and the page says so.
+
+So the gap is in the page and in the wording of the reason, and the pass closes both:
 
 - The header reads "Turn 4 of 5". In the last Game Turn it adds "last turn", and the proposal that ends the last phase is a consequence (D5): "This ends the game."
-- Once the game has ended, the header shows the result in every view: "German win: no Victory Condition of the other side holds (A26.3)", with "Why" opening the facts. The actions pane shows the same notice in place of "its result is above".
-- A game that ends with no winner says so: "The game ended with no winner", with its reason. A game that ended in a state the Victory Conditions do not decide says "ended; the result is not decided", with the reason.
-- After the end the hand-over is not needed to read the result. "View as" stays as it is (question 8).
+- Once the game has ended, the header shows the result in every view: "German win", with the reason beside it and "Why" opening the account. The actions pane shows the same notice in place of "its result is above". The card panel keeps its copy.
+- **The account lists every condition, held or not.** `Evaluate` gains, beside each outcome, why each of its conditions holds or fails, with its numbers: "Russian needs a margin of 2 buildings: Controls 0 of F5, K5, I7, M7, M9 and lost 0 of N4, J2, M2, F3: not met. Russian needs 3 times the unbroken squad-equivalents: 14 against 8: not met. So the German side wins (A26.3)." Today a condition that fails says nothing, and the reason is only "no Victory Condition of the other side holds".
+- During play the same account is the standing: each side's view reads it as that side may know it (A26.15; ruling R23.4), as the standing table does now.
+- A draw reads "A draw", with its account. A card with no structured conditions reads "The game has ended. This card's Victory Conditions are text only, so the game does not decide the result", with the card's text.
+- After the end the hand-over is not needed to read the result. The views stay as they are: "?" and hidden units stay hidden to the other side, and the adjudicator's view shows everything.
 
 **D5. A proposal lists its consequences apart from its checks** (P-06, P-12, P-13).
 
@@ -128,9 +144,21 @@ Three read-only surveys of the code found a cause for every problem but one part
 - "May not Self-Rally" becomes three texts: the unit's kind may not; the side's one MMC Self-Rally of this Player Turn is used (naming the unit that used it); a leader in the Location must rally it.
 - The referee checks whether a leader-directed rally should use up the side's one MMC Self-Rally (A18.11), and whether a leader's own Self-Rally takes the +1 (A10.63). Rulings R31.4 and R31.5.
 
-**D10. The referee's check of the possible rules errors.** Each of R-01 and R-03 to R-08 is checked against the rulebook PDF before any code changes. A confirmed error becomes a ruling and a fix with its test; a cleared one is recorded in the review with its citation. R-02 is closed (section 2). R-06 (Height Advantage shown for a building's upper level) and R-07 (an original 12 in Close Combat) are expected to need a fix; R-01 (a Guards squad Deploying with no leader) and R-08 (an unarmed leader's CC strength) are expected to need a citation or a ruling.
+**D10. The hand-over screen says what is going on** (the user's answer 3, 2026-10-04). Today the screen is the same text for every hand-over. It becomes an account of the moment, made only of what both sides know, since the side leaving and the side arriving both see it.
 
-## 5. Decisions, part B: the page reads and holds still
+- **Who and when.** "Hand the screen to the German side", then "Turn 4 of 5, Russian Movement Phase", and "last turn" when it is.
+- **Why now.** One sentence from the reason the game waits (the page's `Awaiting`, pass 28c): "A Russian stack entered I3 for 1 MF. The German side, as the DEFENDER, may fire at it or pass (A8.1)." Others: a choice to answer, a surrender to accept or refuse, the other side's rallies in the RPh, its routs in the RtPh, its Close Combat attacks to declare, Defensive Fire, the phasing side's next phase, a setup to make, a game just opened.
+- **What the arriving side will be asked to do,** as a short list: "Fire at the stack in I3, or pass", "Answer: keep the 9-1 or Battle Harden", "Rally your broken units, then hand back".
+- **What happened since that side last had the screen,** in the words both sides may read: the phases that passed, the moves, the fire and its results, the routs, the Close Combat. A line is shown only when both sides' views read the same record with the same text; anything one side reads differently is left for the view itself (D17's "Since you last looked", in pass 31b, shows the rest after the confirm). The count of lines left out is not shown.
+- **Where.** A map of the terrain alone, with no counters, outlines the Locations those lines name, so the arriving player looks at the right part of the board before the view opens. After the confirm the map opens on that part.
+- **The score both sides know:** each side's CVP and Exit VP. Control and the unbroken squad counts are left out, since each side may read them differently (A26.15).
+- **At the game's end** the screen is not shown; the result is in every view (D4).
+- The confirm button and its focus are as now. The screen still renders nothing of either view: no unit layer, no panel, no draft.
+- The rule for a line ("both views read it alike") is one function with its own tests, and the referee's review reads the screen in a game with concealed and hidden units on both sides.
+
+Fewer hand-overs in the Movement Phase (P-23) are not built: the hand-overs stay as they are, at the user's word, and the row stays in the backlog.
+
+## 5. Decisions, pass 31b: the page reads and holds still
 
 **D11. A unit has a name** (P-18). `DisplayText.Unit` gives every unit the same name wherever a player reads it: its printed values, its kind, and a tag that never changes, such as "4-6-7 squad G4" and "9-2 leader G2".
 
@@ -155,7 +183,7 @@ Three read-only surveys of the code found a cause for every problem but one part
 - The headline names the weapons: "4-6-7 squad G10 with its MMG" and "the MMG of 4-6-7 squad G10, alone".
 - A result says when a weapon kept its rate of fire and may fire again.
 - "MGs alone" is shown, disabled with a note, before the squad and MG are ticked.
-- A fire group may take firers from several ADJACENT Locations (question 6): "From" becomes a list of Locations, each with its firers.
+- A fire group may take firers from several ADJACENT Locations (the user's answer 6): "From" becomes a list of Locations, each with its firers.
 
 **D15. The workspace holds still** (P-28, P-29, P-31).
 
@@ -182,12 +210,7 @@ Three read-only surveys of the code found a cause for every problem but one part
 - Records opens over the activity strip with its own scroll and takes no height from the map.
 - The Deploy record of Turn 1 is traced, and every record kind is checked against the rule of plan section 15.9 in each side's view.
 
-**D18. Fewer hand-overs in the Movement Phase** (P-23; backlog section 44's row). Two changes, the second by the DEFENDER's choice (question 3):
-
-- **A pass is one step.** "Pass" commits at once and offers the hand-over back; it is a declaration with nothing to review. Each step then costs the mover one proposal and the DEFENDER one click between two hand-overs.
-- **A standing pass.** The DEFENDER may say, for the rest of the Movement Phase, "pass unless a moving stack is in the LOS of a unit of mine that could fire at it". The game then closes a step's window itself when no unit of the DEFENDER, hidden ones included, has LOS to the Location with a shot left. The DEFENDER is told what this gives away: a step that does not stop tells the mover that nothing sees the Location, hidden units included. The order is stored as an event, visible to its side only, and ends with the phase. Ruling R31.6.
-
-**D19. Rout is quick** (P-24). The rout search's result is kept for a unit at a revision, in the planner and on the page; the composed map is kept for a map; Low Crawl searches to its targets and no farther. The aim is a check and a Confirm under 2 seconds each for any rout in this game, measured in the Studio. A gate request that runs past half a second shows "Working" beside the button that started it.
+**D18. Rout is quick** (P-24). The rout search's result is kept for a unit at a revision, in the planner and on the page; the composed map is kept for a map; Low Crawl searches to its targets and no farther. The aim is a check and a Confirm under 2 seconds each for any rout in this game, measured in the Studio. A gate request that runs past half a second shows "Working" beside the button that started it.
 
 ## 6. Disclosure
 
@@ -196,7 +219,7 @@ Rulings R23.1 to R23.6 stand. What this pass adds is read for the view:
 - A unit's name (D11) comes from what the view may know: a unit under "?" has no name to the other side, and a replaced unit's tag tells nothing its counter does not.
 - The fire arithmetic (D14) is cut where a target is not disclosed.
 - "Since you last looked" (D17) is built from the incoming view's records only.
-- The standing pass (D18) is the one change that tells a side something it did not know. It is the DEFENDER's choice, it is told what it gives away, and the order itself is never shown to the mover.
+- The hand-over screen (D10) shows a line only when both views read it alike, draws no counter, and gives only the score both sides know.
 - The proposing side (D1) is checked by the planner; a refusal for the wrong side names the side that may act and nothing else.
 - The hand-over still clears the last view's drafts, proposal, armed field, and announcement. The kept view box (D16) is a zoom and a center, which hold no hidden fact.
 
@@ -205,6 +228,7 @@ Rulings R23.1 to R23.6 stand. What this pass adds is read for the view:
 | Item | Why |
 |---|---|
 | LOS to the vertices of a Bypassing stack (P-11) | Ruling R10.7; a LOS change, not a page change |
+| Fewer hand-overs in the Movement Phase: a pass in one step, and a standing pass by the DEFENDER (P-23) | The user, 2026-10-04: the hand-overs stay as they are for now. Backlog section 44's row stands |
 | Controls the play test did not reach and the second play test still does not: Ambush, withdrawal from Melee, a prisoners' escape, Recombine, Repair, leaving the map | Listed with what was reached |
 | A unit's name chosen by the player | D11 gives a fixed name |
 | A played game's record as a page of its own, with a way to step through it | The Records tab and the game file hold it |
@@ -214,8 +238,8 @@ Rulings R23.1 to R23.6 stand. What this pass adds is read for the view:
 
 Written at the merge gate, by the handover prompt's rule. The Studio on port 6670 is the only test until the code is complete.
 
-- `BacklogPass31Tests` (Play): the proposing side refused and accepted for each action family; a move ended by fire, for a broken, a pinned, and an eliminated mover; the MF limit across stacks, phases, and turns; fire at a Location with two leaders; a pinned firer's SW; a created leader directing fire; the consequences of a phase end; the standing pass and its event's visibility; the rout search's results the same with and without the cache.
-- The played game as a fixture (question 5): `guards-dl-01` replays to revision 613 with the winner it recorded, and its state at revision 441 offers the DEFENDER a pass.
+- `BacklogPass31Tests` (Play): the proposing side refused and accepted for each action family; a move ended by fire, for a broken, a pinned, and an eliminated mover; the MF limit across stacks, phases, and turns; fire at a Location with two leaders; a pinned firer's SW; a created leader directing fire; the consequences of a phase end; each Victory condition's account, held and not held; the hand-over screen's lines, shown only when both views read them alike; the rout search's results the same with and without the cache.
+- The played game as a fixture (the user's answer 5): `guards-dl-01` replays to revision 613 with the winner it recorded, and its state at revision 441 offers the DEFENDER a pass.
 - Studio tests: the names of replaced and created units; no raw id or reason code in the text of the review, the records, and the units table; the pickers by view; the header's result; the Advance list from an upper level; the Close Combat form with a prisoner; a field filled from the map.
 - The harness lessons of passes 28c to 30b apply: `UseViewport`, a non-minimal card, the Studio test project run before the full suite, trx files read for failures.
 
@@ -228,60 +252,74 @@ Written at the merge gate, by the handover prompt's rule. The Studio on port 667
 | R31.3 | Is a pinned firer's SW halved? | A7.8; the referee's check |
 | R31.4 | Does a leader-directed rally use the side's one MMC Self-Rally? | A18.11; the referee's check |
 | R31.5 | Does a leader's Self-Rally take the +1? | A10.63; the referee's check |
-| R31.6 | May the DEFENDER give a standing pass, and what does it close? | A8.1; the user's answer to question 3 |
-| R31.7 | Who may propose what? | D1; the user's answer to question 2 |
+| R31.6 | Who may propose what? | D1; the user's answer 2 |
+| R31.7 | What may the hand-over screen show? | D10; rulings R23.1 to R23.6 |
 
 More are added if the check of R-01, R-06, R-07, and R-08 finds errors.
 
-## 10. The second play test
+## 10. The two play tests
 
-The pass ends with a game played through the page, as the first was: The Guards Counterattack from setup to its end, both sides, with real pointer and keyboard events in my Studio on port 6670, at 1568 by 677 pixels (the first test's window) and at 1366 by 768.
+**Pass 31 ends with a short one** (task 31.10): two Game Turns of The Guards Counterattack through the page in my Studio on port 6670, both sides, at 1568 by 677 pixels (the first test's window), and the report's own steps for P-01 to P-10, P-12, P-13, P-16, P-19, P-22, P-25, and P-26, each marked fixed, changed, or left. The game's end and its result are checked on a copy of `guards-dl-01` taken back to its last phase.
 
-- Each of P-01 to P-31 is tried again by the report's own steps and marked fixed, changed, or left, with what the page now does.
+**Pass 31b ends with the full one** (task 31b.8): the same card from setup to its end, both sides, with real pointer and keyboard events, at 1568 by 677 and at 1366 by 768.
+
+- Each of P-01 to P-31 is tried again by the report's own steps.
 - The controls the first test did not reach are tried where the game allows: a Fire Lane, a SW recovered and transferred, Recombine, a withdrawal from Melee, Ambush, the adjudicator's view.
 - The time for five turns and the count of proposals and refusals are compared with the first game's 2:14, 218, and 21.
 - Its report goes into the review document. Screenshots go to the user in the chat.
 
-The user may also want an independent test by Claude in Chrome on another card before the merge (question 7).
+After reading that report the user decides whether Claude in Chrome plays another card before the merge (answer 7).
 
 ## 11. Tasks and estimate
 
+**Pass 31: nothing blocks play**
+
 | Task | What it changes | Problems | Estimate |
 |---|---|---|---|
-| **Part A** | | | |
-| 31.1 Who may act | The proposing side in every proposal and the planner's check of it; the pickers by view; the phase end for the view that may end it; a waiting choice first | P-07, P-09 | 1:30 |
-| 31.2 A move that fire stops | The DEFENDER's pass for a stack with no member left; the move ended by the fire that eliminates it; the mover's note | P-01 | 0:30 |
-| 31.3 The last turn and the result | "Turn N of M", "last turn", the result in the header and the actions pane in every view | P-08 | 0:45 |
-| 31.4 Consequences | A proposal's consequences by kind, the warning heading and Confirm, a blocked LOS and a Melee as consequences | P-06, P-12, P-13 | 1:00 |
-| 31.5 Fire corrections | The MF limit, two leaders among the targets, the Effect column, a created unit's conditions, a pinned firer's SW | P-05, P-02, P-16, P-26, R-05 | 1:45 |
-| 31.6 Advance and Close Combat | The Advance list by level, concealed units in it; prisoners out of the form, the stacked SMC ticked with its MMC, the four refusal texts, the ordered capture list | P-03, P-22, P-04, P-25, P-10 | 1:30 |
-| 31.7 The Rally Phase | Ralliers, Dismantle, the three Self-Rally texts, the Self-Rally allowance | P-19, R-03, R-04 | 0:45 |
-| 31.8 The referee's check | R-01 and R-03 to R-08 against the PDF; the fixes and rulings for those confirmed | R-01, R-06, R-07, R-08 | 1:00 |
-| **Part B** | | | |
-| 31.9 Names and words | `DisplayText.Unit` and its tags; modifier names; reasons without codes; Locations in words; about 170 call sites | P-18, P-20 | 2:30 |
-| 31.10 Picking on the map | Every typed Location a `LocationField`; an armed field; routes and paths by clicks; the fire panel's From and Target | P-20 | 1:15 |
-| 31.11 The fire proposal | The arithmetic before the dice, the headline with weapons, rate of fire kept, "MGs alone", fire groups across Locations | P-14, P-17 | 2:15 |
-| 31.12 A workspace that holds still | No window scroll; the card as a dialog and the units as a tab; a header of fixed height; short windows; fixed places for Propose and Confirm | P-28, P-29, P-31 | 2:00 |
-| 31.13 The map | The kept view box, the loading line, the Residual FP marker, the Melee mark | P-30, P-27 | 0:45 |
-| 31.14 Records and the latest line | The side in the heading, every event in "Latest" with a fire's result, "Since you last looked", Records over the strip, the disclosure check of every record kind | P-15, P-21 | 1:00 |
-| 31.15 Fewer hand-overs | The one-step pass; the DEFENDER's standing pass | P-23 | 1:30 |
-| 31.16 Rout speed | The kept search, the composed map kept, the Low Crawl search, the "Working" sign | P-24 | 1:15 |
-| 31.17 The second play test | Section 10 | all | 1:30 |
-| | Overhead: three reviews and their fixes, the Studio check of the whole pass, the documents, the tests, the merge gate | | 2:00 |
-| | **Pass 31 total** (build 22:45; part A 8:45, part B 14:00) | | **24:45** |
+| 31.1 The referee's check, first | R-01 and R-03 to R-08 against the PDF, and the passages behind D2, D6, D8, and D9; the rulings; a fix for each confirmed error goes to the task that owns its code | R-01, R-03 to R-08 | 1:15 |
+| 31.2 Who may act | The proposing side in every proposal and the planner's check of it; the pickers by view; the phase end for the view that may end it; a waiting choice first | P-07, P-09 | 1:30 |
+| 31.3 A move that fire stops | The DEFENDER's pass for a stack with no member left; the move ended by the fire that eliminates it; the mover's note | P-01 | 0:30 |
+| 31.4 The last turn and the result | "Turn N of M", "last turn", the result in the header and the actions pane in every view, the account of every Victory condition, a card with text-only conditions | P-08 | 1:00 |
+| 31.5 Consequences | A proposal's consequences by kind, the warning heading and Confirm, a blocked LOS and a Melee as consequences | P-06, P-12, P-13 | 1:00 |
+| 31.6 Fire corrections | The MF limit, two leaders among the targets, the Effect column, a created unit's conditions, a pinned firer's SW | P-05, P-02, P-16, P-26, R-05 | 1:45 |
+| 31.7 Advance and Close Combat | The Advance list by level, concealed units in it; prisoners out of the form, the stacked SMC ticked with its MMC, the four refusal texts, the ordered capture list | P-03, P-22, P-04, P-25, P-10 | 1:30 |
+| 31.8 The Rally Phase | Ralliers, Dismantle, the three Self-Rally texts, the Self-Rally allowance | P-19, R-03, R-04 | 0:45 |
+| 31.9 The hand-over screen | Who and when, why now, what the arriving side will do, what both sides know happened, the terrain map with its outlines, the score both know | The user's answer 3 | 1:30 |
+| 31.10 A short play test | Two Game Turns and the report's steps for the problems of this pass | | 0:45 |
+| | Overhead: three reviews and their fixes, the Studio check, the documents, the tests, the merge gate | | 1:30 |
+| | **Pass 31 total** (build 11:30) | | **13:00** |
 
-Passes 30 and 30b took about 3:26 against 9:45 and 3:18 against 9:00, so the estimate is likely high. It is still more than twice any pass before it, which is why question 1 asks about splitting it.
+**Pass 31b: the page reads and holds still**
 
-## 12. Questions for the user
+| Task | What it changes | Problems | Estimate |
+|---|---|---|---|
+| 31b.1 Names and words | `DisplayText.Unit` and its tags; modifier names; reasons without codes; Locations in words; about 170 call sites | P-18, P-20 | 2:30 |
+| 31b.2 Picking on the map | Every typed Location a `LocationField`; an armed field; routes and paths by clicks; the fire panel's From and Target | P-20 | 1:15 |
+| 31b.3 The fire proposal | The arithmetic before the dice, the headline with weapons, rate of fire kept, "MGs alone", fire groups across ADJACENT Locations | P-14, P-17 | 2:15 |
+| 31b.4 A workspace that holds still | No window scroll; the card as a dialog and the units as a tab; a header of fixed height; short windows; fixed places for Propose and Confirm | P-28, P-29, P-31 | 2:00 |
+| 31b.5 The map | The kept view box, the loading line, the Residual FP marker, the Melee mark | P-30, P-27 | 0:45 |
+| 31b.6 Records and the latest line | The side in the heading, every event in "Latest" with a fire's result, "Since you last looked", Records over the strip, the disclosure check of every record kind | P-15, P-21 | 1:00 |
+| 31b.7 Rout speed | The kept search, the composed map kept, the Low Crawl search, the "Working" sign | P-24 | 1:15 |
+| 31b.8 The second play test | Section 10 | all | 1:30 |
+| | Overhead: three reviews and their fixes, the Studio check, the documents, the tests, the merge gate | | 1:30 |
+| | **Pass 31b total** (build 12:30) | | **14:00** |
 
-Each with a recommendation.
+The two passes total 27:00. Passes 30 and 30b took about 3:26 against 9:45 and 3:18 against 9:00, so the estimates are likely high.
 
-1. **One pass, or two?** Recommended: two. Pass 31 is part A (tasks 31.1 to 31.8: nothing blocks play, the result, the rules), with a short play test of its own; pass 31b is part B (31.9 to 31.17: names, picking, the fire proposal, the layout, the map, records, hand-overs, rout speed), ending in the full second play test. Each has its three reviews, its Studio check, and its merge. Part A is the part that changes the game, and it is better reviewed and merged before 170 call sites change their text. No pass is renumbered: 31b follows 31 as 30b followed 30.
-2. **Who may act (D1).** Recommended: the planner checks the proposing side, and the pickers list the viewing side's units. The other way is the page alone, which leaves the gate accepting any action from any view.
-3. **Fewer hand-overs (D18).** Recommended: both the one-step pass and the standing pass, the second as the DEFENDER's own choice with what it gives away stated. The other ways: the one-step pass alone; or a window that closes itself whenever no Known enemy unit could fire, which is wrong for hidden units and is not proposed.
-4. **Unit names (D11).** Recommended: "4-6-7 squad G4", "9-2 leader G2": printed values, kind, and a tag of the side's letter and a number within the kind. The other ways: keep the present ids for units that were never replaced and name only the others; or a leader's name from a list ("Lt. Weber").
-5. **The played game as a test fixture.** Recommended: yes. `guards-dl-01.game.json` (725 KB of JSON, no images) is copied into the Play tests' fixtures, so a real 613-revision game replays in the tests. The audit log is not committed.
-6. **Fire groups across Locations (in 31.11).** Recommended: build it. The planner forms them already, and a fire group of ADJACENT Locations is ordinary play.
-7. **The second play test (section 10).** Recommended: I play The Guards Counterattack in my Studio as the pass's last task, and you decide after reading its report whether Claude in Chrome plays another card before the merge.
-8. **After the game has ended.** Recommended: the result shows in every view, and the views stay as they are, with "?" and hidden units still hidden to the other side; the adjudicator's view shows everything. The other way is to open every unit to both sides once the game ends.
-9. **Rules changes.** Recommended: each possible rules error is checked against the PDF first; a confirmed one is fixed under a new ruling and listed in the review for you to read at the merge stop, without a stop of its own, unless its fix changes the pass's scope.
+Each pass runs the handover prompt's steps: build one task at a time with the Studio on port 6670 as the only test, commit each task once it passes its Studio check, three read-only reviews, the Studio check of the whole pass at the five widths, the documents, the merge gate, and a stop before the merge. Pass 31b starts only on the user's word after pass 31 is merged.
+
+## 12. The user's answers
+
+Answered 2026-10-04.
+
+| # | Question | Answer |
+|---|---|---|
+| 1 | One pass, or two? | Two, as recommended: pass 31 and pass 31b. |
+| 2 | Who may act (D1) | As recommended: the planner checks the proposing side, and the pickers list the viewing side's units. |
+| 3 | Fewer hand-overs | No. The hand-overs stay as they are for now. The hand-over screen itself is to be fixed: it is a static screen that says nothing of the game at that moment, and it should show the player exactly what is going on. D10 and task 31.9 are that work; the old D18 is removed and its row stays in the backlog. |
+| 4 | Unit names (D11) | As recommended: "4-6-7 squad G4", "9-2 leader G2". |
+| 5 | The played game as a test fixture | Yes. |
+| 6 | Fire groups across ADJACENT Locations | Yes, in 31b.3. |
+| 7 | The second play test | As recommended: Claude plays it in its Studio; the user decides after its report whether Claude in Chrome plays another card before the merge. |
+| 8 | After the game has ended | The user asked that the result be computed from the card's Victory Conditions, with a pass 31c if the code for it were missing. It is there (D4), so nothing is deferred, and the pass shows the result with an account of every condition. The views after the end stay as they are, which was the recommendation and is taken as accepted unless the user says otherwise. |
+| 9 | Rules changes | As recommended, and with top priority: the rulebook PDF is checked first and at every task as the work goes, not at the end. The referee's check is task 31.1, and the rule at the head of this document holds for every task. |
