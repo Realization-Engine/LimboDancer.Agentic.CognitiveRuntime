@@ -48,7 +48,8 @@ function viewportFixture() {
         }
     };
     globalThis.fetch = async () => ({ ok: true, async text() { return "<svg><g id=\"layer-grid\"/></svg>"; } });
-    const host = { replaceChildren() {}, addEventListener() {}, focus() {}, classList: { toggle() {} } };
+    // Pass 31c (design D16): the viewport reads the host's data-view-key for the view it keeps; a host with none keeps no view.
+    const host = { replaceChildren() {}, addEventListener() {}, focus() {}, classList: { toggle() {} }, dataset: {} };
     const viewport = create(host, { invokeMethodAsync(...args) { calls.push(args); } });
     return { viewport, svg, handlers, calls };
 }
