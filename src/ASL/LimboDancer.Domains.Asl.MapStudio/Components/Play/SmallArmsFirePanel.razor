@@ -21,17 +21,38 @@
         </select>
     </label>
     <PickedOption For="fire-from" Options="@Locations" Value="@From" OnChange="@OnFrom" />
+    @* Pass 31c (design D14; A7.5): the group's other Locations, each ADJACENT to another of them. *@
+    @foreach (var at in Also)
+    {
+        <span class="fire-also" data-location="@at">and @Say(at) <button type="button" class="link fire-also-remove" aria-label="@($"Take {Say(at)} out of the fire group")" @onclick="@(() => OnAlso.InvokeAsync(new UnitSelectionList.Toggle(at, false)))">remove</button></span>
+    }
+    @if (From.Length > 0 && AlsoChoices.Count > 0)
+    {
+        <label title="A7.5: a fire group may take firers from several Locations, each ADJACENT to another Location of the group.">
+            Add an ADJACENT Location
+            <select id="fire-also" value="" @onchange="@(args => OnAlso.InvokeAsync(new UnitSelectionList.Toggle(args.Value as string ?? string.Empty, true)))">
+                <option value="">choose</option>
+                @foreach (var at in AlsoChoices)
+                {
+                    <option value="@at">@Say(at)</option>
+                }
+            </select>
+        </label>
+        <PickedOption For="fire-also" Options="@AlsoChoices" Value="" OnChange="@(at => OnAlso.InvokeAsync(new UnitSelectionList.Toggle(at, true)))" />
+    }
     @foreach (var unit in Firers)
     {
-        <label><input class="fire-firer" type="checkbox" data-unit="@unit" checked="@SelectedFirers.Contains(unit)" @onchange="@(args => OnFirer.InvokeAsync(new UnitSelectionList.Toggle(unit, args.Value is true)))" /> @Say(unit)</label>
+        <label><input class="fire-firer" type="checkbox" data-unit="@unit" checked="@SelectedFirers.Contains(unit)" @onchange="@(args => OnFirer.InvokeAsync(new UnitSelectionList.Toggle(unit, args.Value is true)))" /> @Say(unit)@(Places.TryGetValue(unit, out var place) ? Say($" in {place}") : "")</label>
     }
     @foreach (var weapon in Weapons)
     {
         <label><input class="fire-weapon" type="checkbox" data-weapon="@weapon.Id" checked="@SelectedWeapons.Contains(weapon.Id)" @onchange="@(args => OnWeapon.InvokeAsync(new UnitSelectionList.Toggle(weapon.Id, args.Value is true)))" /> @Say(weapon.Id) of @Say(weapon.Holder)</label>
     }
-    @foreach (var id in SelectedFirers.Where(id => Weapons.Any(weapon => weapon.Holder == id && SelectedWeapons.Contains(weapon.Id))).Order(StringComparer.Ordinal))
+    @* Pass 31c (play test P-17): "MGs alone" is in sight for every firer with a MG, and waits for the firer and its MG to be ticked. *@
+    @foreach (var id in AloneCandidates.Union(SelectedFirers.Where(id => Weapons.Any(weapon => weapon.Holder == id))).Order(StringComparer.Ordinal))
     {
-        <label><input class="fire-alone" type="checkbox" data-unit="@id" checked="@Alone.Contains(id)" @onchange="@(args => OnAlone.InvokeAsync(new UnitSelectionList.Toggle(id, args.Value is true)))" /> @Say(id)'s MGs alone</label>
+        var ready = SelectedFirers.Contains(id) && Weapons.Any(weapon => weapon.Holder == id && SelectedWeapons.Contains(weapon.Id));
+        <label title="@(ready ? "The MG fires without its holder's own FP (A9.1)." : "Tick the unit and its MG first; then its MG may fire without the unit's own FP (A9.1).")"><input class="fire-alone" type="checkbox" data-unit="@id" disabled="@(!ready)" checked="@(ready && Alone.Contains(id))" @onchange="@(args => OnAlone.InvokeAsync(new UnitSelectionList.Toggle(id, args.Value is true)))" /> @Say(id)'s MGs alone@(ready ? "" : " (tick the unit and its MG first)")</label>
     }
     <label>
         Director
@@ -129,6 +150,26 @@
     /// <summary>The Locations the side may fire from.</summary>
     [Parameter]
     public IReadOnlyList<string> Locations { get; set; } = [];
+
+    /// <summary>The group's other Locations (A7.5), in the order they joined.</summary>
+    [Parameter]
+    public IReadOnlyList<string> Also { get; set; } = [];
+
+    /// <summary>The Locations that may join the group: ADJACENT to one of it, with a unit that may fire.</summary>
+    [Parameter]
+    public IReadOnlyList<string> AlsoChoices { get; set; } = [];
+
+    /// <summary>A Location joining (on) or leaving the group.</summary>
+    [Parameter]
+    public EventCallback<UnitSelectionList.Toggle> OnAlso { get; set; }
+
+    /// <summary>Where each unit of a group of several Locations is; empty for a group of one.</summary>
+    [Parameter]
+    public IReadOnlyDictionary<string, string> Places { get; set; } = new Dictionary<string, string>();
+
+    /// <summary>The firers that possess a MG, whether or not they are ticked yet.</summary>
+    [Parameter]
+    public IReadOnlyList<string> AloneCandidates { get; set; } = [];
 
     [Parameter]
     public string From { get; set; } = string.Empty;

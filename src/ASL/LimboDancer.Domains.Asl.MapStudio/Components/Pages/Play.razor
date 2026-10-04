@@ -231,6 +231,12 @@
                                  Consequences="@([.. ConsequencesOf(proposal).Select(item => item.Text.EndsWith('.') ? item.Text : item.Text + ".")])" ConfirmLabel="@ConfirmLabel(ConsequencesOf(proposal))"
                                  CanConfirm="@(proposal.Result.Outcome == PlayOutcome.NeedsConfirmation)" Busy="@busy" Confirm="Confirm" Cancel="@CancelProposal">
                 <Lead>
+                    @* Pass 31c (design D14; play test P-14): a fire's arithmetic before the dice, for the firing side and the adjudicator. *@
+                    @if (proposal.Result is { Outcome: PlayOutcome.NeedsConfirmation, Plan.Fire: { } previewed } && (Viewer.IsAdjudicator || Viewer.Name == previewed.FiringSide)
+                        && ScenarioA1FireCalculator.Preview(previewed.Attack, FirePreviewReference.Value) is { } preview)
+                    {
+                        <FireArithmeticPreview Arithmetic="@preview" Incomplete="@(!Viewer.IsAdjudicator && previewed.FiringSideReasons.Count > 0)" />
+                    }
                     @if (PlacesCounters(proposal) && setupReview is { } summary)
                     {
                         <div id="setup-review">
@@ -656,11 +662,12 @@ else if (state is not null)
                         </div>
                     }
                     <SmallArmsFirePanel Side="@firing" Phase="@state.Phase" PhaseLabel="@Games.PhaseLabel(state.Phase)" Locations="@([.. FireLocations(firing)])" From="@fireFrom"
+                        Also="@fireAlso" AlsoChoices="@FireAlsoChoices(firing)" OnAlso="@(pick => ToggleFireAlso(pick.Id, pick.On))" Places="@FirerPlaces(firing)" AloneCandidates="@FireAloneCandidates(firing)"
                         Firers="@FirerChoices(firing)" SelectedFirers="@fireFirers" Weapons="@([.. FireWeapons.Select(weapon => new SmallArmsFirePanel.Weapon(weapon.Id, weapon.Holding!.Holder))])"
                         SelectedWeapons="@fireWeapons" Alone="@fireAlone" Leaders="@([.. FireLeaders(firing).Select(leader => leader.Id)])" Director="@fireDirector"
                         MolAllowed='@state.SpecialRules.Contains("mol:" + firing, StringComparer.Ordinal)' Mol="@fireMol" Targets="@([.. FireTargets(firing)])" Target="@fireTarget"
                         FreeTarget="@fireFreeTarget" SnapShot="@fireSnapShot" Spray="@fireSpray" LaneWeapon="@fireLaneWeapon" LaneTo="@fireLaneTo" Partners="@FirePartners(firing)"
-                        Partner="@firePartner" OnFrom="@(at => { fireFrom = at; PruneFire(); })" OnFirer="@(pick => Toggle(fireFirers, pick.Id, pick.On))"
+                        Partner="@firePartner" OnFrom="@(at => { fireFrom = at; fireAlso.Clear(); PruneFire(); })" OnFirer="@(pick => Toggle(fireFirers, pick.Id, pick.On))"
                         OnWeapon="@(pick => Toggle(fireWeapons, pick.Id, pick.On))" OnAlone="@(pick => Toggle(fireAlone, pick.Id, pick.On))" OnDirector="@(id => fireDirector = id)"
                         OnMol="@(id => fireMol = id)" OnTarget="@(at => fireTarget = at)" OnFreeTarget="@(at => fireFreeTarget = at)" OnSnapShot="@(on => fireSnapShot = on)"
                         OnSpray="@(at => fireSpray = at)" OnLaneWeapon="@(id => fireLaneWeapon = id)" OnLaneTo="@(at => fireLaneTo = at)" OnPartner="@(id => firePartner = id)"
@@ -2988,6 +2995,47 @@ else if (state is not null)
     private bool movePush = true;
     private string unhookFacing = "east";
     private string fireFrom = string.Empty;
+
+    // Pass 31c (design D14; A7.5): the other Locations of the fire group, each ADJACENT to another of them.
+    private readonly List<string> fireAlso = [];
+    private (long Revision, string Group, IReadOnlyList<string> Choices) fireAlsoCache;
+    private static readonly Lazy<ScenarioA1FireReference> FirePreviewReference = new(() => new ScenarioA1FirePackage().Reference);
+
+    /// <summary>
+    /// The Locations that may join the fire group (A7.5: "each participating unit occupies a Location ADJACENT to another participating unit of
+    /// the same FG"): those holding a unit that may fire, ADJACENT to a Location already in the group. None at night (E1.75; ruling R16.3).
+    /// </summary>
+    private IReadOnlyList<string> FireAlsoChoices(string side)
+    {
+        if (state is null || fireFrom.Length == 0 || state.Night)
+        {
+            return [];
+        }
+
+        var group = string.Join('|', fireAlso.Prepend(fireFrom));
+        if (fireAlsoCache.Choices is null || fireAlsoCache.Revision != state.Revision || fireAlsoCache.Group != group)
+        {
+            var inGroup = fireAlso.Prepend(fireFrom).Select(BoardLocation.Parse).ToArray();
+            fireAlsoCache = (state.Revision, group, [.. FireLocations(side).Where(at => at != fireFrom && !fireAlso.Contains(at)
+                && BoardLocation.TryParse(at, out var other) && inGroup.Any(one => Live.Planner.Adjacent(state, one, other)))]);
+        }
+
+        return fireAlsoCache.Choices;
+    }
+
+    private void ToggleFireAlso(string at, bool on)
+    {
+        if (on && at.Length > 0 && !fireAlso.Contains(at))
+        {
+            fireAlso.Add(at);
+        }
+        else if (!on)
+        {
+            fireAlso.Remove(at);
+        }
+
+        PruneFire();
+    }
     private readonly HashSet<string> fireFirers = new(StringComparer.Ordinal);
     private string fireDirector = string.Empty;
     private string fireTarget = string.Empty;
@@ -4071,8 +4119,18 @@ else if (state is not null)
         ? [.. FireGroupAt(side).Where(unit => unit.Kind is "asl:leader" or "asl:hero" && !fireFirers.Contains(unit.Id)).Select(unit => unit.Id)]
         : null;
 
+    /// <summary>Where each unit of the group is, said beside it once the group has more than one Location.</summary>
+    private IReadOnlyDictionary<string, string> FirerPlaces(string side) => fireAlso.Count == 0 || state is null ? new Dictionary<string, string>()
+        : FireGroupAt(side).ToDictionary(unit => unit.Id, unit => state.Location(unit.Id)!.Location.ToString(), StringComparer.Ordinal);
+
+    /// <summary>The firers that possess a MG, FT, or ATR, each of which may fire it without its own FP (play test P-17: shown before it is ticked).</summary>
+    private IReadOnlyList<string> FireAloneCandidates(string side) => state is null ? []
+        : [.. FirerChoices(side).Where(id => state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == id
+            && (Library.Vocabulary.IsA(item.Kind, "asl:mg") || item.Kind == "asl:ft")))];
+
     private void ClearFire()
     {
+        fireAlso.Clear();
         fireFrom = string.Empty;
         fireFirers.Clear();
         fireWeapons.Clear();
@@ -4552,9 +4610,9 @@ else if (state is not null)
         && (!LiveFire.IsVehicle(unit) || (GamePlanner.HasVehicleMg(unit) && LiveFire.CrewExposed(unit)));
 
     private IEnumerable<UnitInstance> FireGroupAt(string side) => state is null || fireFrom.Length == 0 ? []
-        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && state.Location(unit.Id)?.Location.ToString() == fireFrom
-            && state.Aboard(unit.Id) is null)
-            .OrderBy(unit => unit.Id, StringComparer.Ordinal);
+        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && state.Location(unit.Id)?.Location.ToString() is { } at
+            && (at == fireFrom || fireAlso.Contains(at)) && state.Aboard(unit.Id) is null)
+            .OrderBy(unit => state.Location(unit.Id)!.Location.ToString() == fireFrom ? 0 : 1 + fireAlso.IndexOf(state.Location(unit.Id)!.Location.ToString())).ThenBy(unit => unit.Id, StringComparer.Ordinal);
 
     /// <summary>
     /// The Locations the firing side may target: those holding an enemy unit it can see or a concealed one it knows is there
@@ -4744,6 +4802,15 @@ else if (state is not null)
         if (fireFrom.Length > 0 && !FireLocations(side).Contains(fireFrom, StringComparer.Ordinal))
         {
             fireFrom = string.Empty;
+        }
+
+        if (fireFrom.Length == 0)
+        {
+            fireAlso.Clear();
+        }
+        else
+        {
+            fireAlso.RemoveAll(at => !FireLocations(side).Contains(at, StringComparer.Ordinal));
         }
 
         if (fireTarget.Length > 0 && !FireTargets(side).Contains(fireTarget, StringComparer.Ordinal))

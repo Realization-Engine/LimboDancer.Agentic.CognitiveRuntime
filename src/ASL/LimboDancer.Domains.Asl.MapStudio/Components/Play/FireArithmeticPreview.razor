@@ -1,0 +1,58 @@
+@* Pass 31c (design D14; play test P-14): a fire proposal's arithmetic before the dice, from the Fire package's own preview: each firer's FP with
+   its multipliers, the total and its column, and the DRM known now. It shows no dice, no result, and no Cowering, which the DR decides. When the
+   firing view does not hold what the target Location holds, what would tell of it (a concealed target's halving, and so the total and the column)
+   is said as not known, never shown. It writes the preview's numbers and recalculates nothing. *@
+@using System.Globalization
+@using LimboDancer.Domains.Asl.Rules
+<div id="fire-preview">
+    <h4>Before the dice</h4>
+    <ul>
+        @foreach (var firer in Arithmetic.Firers)
+        {
+            var multipliers = firer.Multipliers.Where(item => !Incomplete || !TargetDependent(item.Name)).ToArray();
+            <li class="fire-fp" data-unit="@firer.UnitId" title="@firer.UnitId">
+                @Say(firer.UnitId)@(firer.Operator is { } by ? Say($", fired by {by}") : ""): @firer.Printed FP@(string.Concat(multipliers.Select(item => $" × {FireText.Number(item.Value)} ({DisplayText.Modifier(item.Name)}, {item.Rule})")))@(Incomplete ? "" : $" = {FireText.Number(firer.Firepower)}")
+            </li>
+        }
+        @if (Arithmetic.Firers.Any(firer => firer.Multipliers.Any(item => item.Name == "area-fire")))
+        {
+            <li id="fire-preview-area">A unit that has already fired fires again only as Area Fire, at half FP; in Final Fire only at an adjacent or its own hex (A8.4).</li>
+        }
+        @if (Incomplete)
+        {
+            <li id="fire-preview-unknown" class="fire-column">
+                The total and its column are not known to you: they depend on what the target Location holds, and a concealed target halves the
+                attack as Area Fire (A12.14). The lines above leave that out.
+            </li>
+        }
+        else
+        {
+            <li class="fire-column">
+                Total @FireText.Number(Arithmetic.TotalFirepower) FP: the @(Arithmetic.UnshiftedColumnFp?.ToString(CultureInfo.InvariantCulture) ?? "no") column@(Arithmetic.ColumnShift != 0 ? $", shifted {Arithmetic.ColumnShift} to the {Arithmetic.ColumnFp?.ToString(CultureInfo.InvariantCulture) ?? "no"} column" : "")
+            </li>
+        }
+        <li class="fire-drm">
+            DRM: @(Arithmetic.Drm.Count == 0 ? "none" : Say(FireText.ModifierText(Arithmetic.Drm).Trim()) + $", {Net} in all")
+        </li>
+    </ul>
+</div>
+
+@code {
+    /// <summary>The page's words for the view (design D11): a unit's name for its id.</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    /// <summary>The Fire package's preview of the attack; its dice and result are a placeholder and are not shown.</summary>
+    [Parameter, EditorRequired]
+    public FireArithmetic Arithmetic { get; set; } = default!;
+
+    /// <summary>Whether the firing view does not hold what the target Location holds, so the lines that rest on it are cut.</summary>
+    [Parameter]
+    public bool Incomplete { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
+    private string Net => Arithmetic.Drm.Sum(item => item.Value) is var net && net > 0 ? $"+{FireText.Number(net)}" : FireText.Number(net);
+
+    private static bool TargetDependent(string name) => name.Contains("concealed", StringComparison.Ordinal);
+}

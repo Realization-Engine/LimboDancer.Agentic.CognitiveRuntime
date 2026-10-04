@@ -26,6 +26,12 @@ public sealed record FireView(string EventId, string Group, string Target, strin
         get; init;
     }
 
+    /// <summary>What the attack did to each MG used in it (pass 31c, play test P-17): a kept rate of fire, a malfunction. Null when none was used or the record is withheld.</summary>
+    public IReadOnlyList<FireWeaponEffect>? Weapons
+    {
+        get; init;
+    }
+
     /// <summary>
     /// A text of this record in the view's words (pass 31c, design D11): the units and counters its arithmetic and effects name by id, as the view
     /// could name them just before the attack. The records give it; without one a text keeps its identifiers.
@@ -92,6 +98,18 @@ internal static class FireText
         }
 
         return $"Heat of Battle DR {string.Join(", ", heat.Dice)} = {heat.OriginalDr}{ModifierText(heat.Drm)} = Final DR {heat.FinalDr}: {string.Join(", ", parts)} (A15.1)";
+    }
+
+    /// <summary>
+    /// What an attack did to a MG, in words (A9.2, A9.7); null when there is nothing a player needs to be told. A MG that kept its rate of fire may
+    /// fire again in the phase, which the page said nowhere before (play test P-17).
+    /// </summary>
+    public static string? WeaponText(FireWeaponEffect weapon)
+    {
+        ArgumentNullException.ThrowIfNull(weapon);
+        return weapon.Malfunctioned ? $"{weapon.EquipmentId} malfunctioned (A9.7)"
+            : weapon.RateOfFireRetained ? $"{weapon.EquipmentId} kept its rate of fire and may fire again this phase (A9.2)"
+            : null;
     }
 
     /// <summary>What an attack did to a target unit, in words.</summary>

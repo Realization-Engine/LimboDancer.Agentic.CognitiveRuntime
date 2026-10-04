@@ -115,6 +115,18 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
+    /// Whether two Locations are ADJACENT, as the planner reads it for a fire group across Locations (A7.5): the page offers a second Location
+    /// to a group only when this holds, and the Fire package checks it again.
+    /// </summary>
+    public bool Adjacent(GameState state, BoardLocation one, BoardLocation two)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(one);
+        ArgumentNullException.ThrowIfNull(two);
+        return IsAdjacent(state, one, two);
+    }
+
+    /// <summary>
     /// ADJACENT (A.8, p. 43): the Locations share a hexside at the same level, with a clear LOS and no hexside terrain or
     /// cliff between them, so Infantry could advance from one to the other. The review reads it this way for the
     /// terrain it admits.
