@@ -8,7 +8,7 @@
 
 ## Status
 
-Built, reviewed, checked in the Studio, and played: tasks 31c.0 to 31c.8. The tests and the merge gate follow the user's answers to the questions at the end of this document. The pass changes how the page words, lays out, and draws a game. It changes no rule's result: nothing under the Rules project changed, the planner's two changes are a refusal's words and a public reading of ADJACENT, and the played game `guards-dl-01` still opens on Play and on Replay with its 613 revisions and its 221 steps.
+Built, reviewed, checked in the Studio, and played: tasks 31c.0 to 31c.9. After the report the user answered its questions (the bracket form for hexes; Range in this pass; The Tractor Works in my own Studio), Range was designed and built (design section 14), and The Tractor Works was played to its end (the third play test below). The tests and the merge gate follow. The pass changes how the page words, lays out, and draws a game. It changes no rule's result. What changed outside the Studio: a refusal's words and a public reading of ADJACENT and of range in the planner; `FireRange` in the Rules project, which resolves nothing; and one check of the phase's end in the projector, which now lets a phase end that it refused before (ruling R31c.5). The played game `guards-dl-01` still opens on Play and on Replay with its 613 revisions and its 221 steps.
 
 ## What a player now meets
 
@@ -125,6 +125,75 @@ Each problem was not tried by the report's own steps one by one: those the game 
 | 7 | A choice that waits hides the fire that caused it from "Latest" until it is answered | Backlog section 48's row stands |
 | 8 | The pending choice named a unit by id and a side in lower case; the phase's start read as a code; the result's account said "russian Controls"; a Close Combat label read "4-6-7 squad G7 (4-6-7)"; a fire's result read "none" | Fixed during the test |
 
+## The third play test (The Tractor Works)
+
+**The game.** `p31c-tw`: The Tractor Works from a new game to its end, both sides and their hand-overs, through the Play page in my own Studio at the pane's full size (2193 by 1195), by a script's clicks. The first Russian group set up from the plan "Hidden core" (31 counters, 12 of them Dummies), the German side from "Three sides" (48 counters, 9 Dummies), and the second Russian group by hand on the map (33 counters; the card has no plan for it); both sides took their non-OB "?". Eight Game Turns. **Result: a Russian win** ("Russian Controls 8 hexes of building [X3], at least 6"), stated in the header with its account. 716 revisions; 231 steps on Replay.
+
+**The numbers,** from the gate's audit log (`boards/units/live/audit.jsonl`, 20:38 to 22:06 UTC):
+
+| | Second play test | Third |
+|---|---|---|
+| Proposals | 190 | 273 |
+| Confirmed | 135 | 230 |
+| Cancelled before Confirm | 4 | 17 |
+| Refused | 51 | 26 |
+| Refused for range | 48 | 0 |
+| The clock | 0:26 | 1:29, of which 0:14 were three stops at the user's word |
+
+Fire was chosen from the Target list read by range (task 31c.9). No target was tried blind, and no proposal was refused for range.
+
+**The refusals, and whose they were.** 17 came in the German view and 9 in the Russian.
+
+| Count | View | Refusal | Whose |
+|---|---|---|---|
+| 6 | German 5, Russian 1 | A rout by a unit that "carries more PP than its IPC and drops a SW before it routs" | The page's. The refusal does not say which SW or how many PP, and the rout panel offers no drop. A player meets it at every rout of a laden unit |
+| 1 | German | Dropping the FT of a broken Guard, refused until its DC was dropped first | For the referee: the two checks of what lies "beyond its IPC" do not agree |
+| 3 | German 1, Russian 2 | The Close Combat Phase could not be ended: "The CC in [X4] awaits the ambushed side's round" after the ambusher's round eliminated every defender, and no view offered the Location | The engine's. Fixed (ruling R31c.5) |
+| 3 | Russian | Fire by concealed units at a Location holding only Dummies: "the Fire package does not decide every outcome ..., for reasons about units the firing side cannot see" | For the referee. The same fire by unconcealed units is accepted, so the refusal itself can tell the firing side that the stack is Dummies |
+| 2 | German 1, Russian 1 | A group with a broken unit ticked | The page's: it offered a broken unit as a firer. Fixed |
+| 1 | German | A FT ticked with squads; the reason was hidden behind "units the firing side cannot see" because the target held a "?" | The page's twice: it offers the FT beside the squads with no word that a FT fires alone (A22.31), and it hides a reason that is about the firer's own group |
+| 1 | German | Fire at the firers' own Location, offered as a target because their prisoners stood in it | The page's. Fixed |
+| 1 | German | A MG that had already fired offered as a weapon to tick | The page's. Backlog |
+| 1 | Russian | An Ambush in a Location with a prisoners' Guard: "The Close Combat package does not decide the Ambush here / Prisoner guard outside" | For the referee: a prisoner there had no Guard in the Location. The reason reads as a code's last words |
+| 4 | German | A rout route that named only its last hex | Mine. The gate was right ([AA4] and [Z6] are two hexes from [Y5]). The rout status lists where a route may end and not the way there |
+| 1 | German | Assault Movement with "2 MF left, and the entry costs 2" | Mine, and right (A4.61); the text does not say that Assault Movement may not spend every MF |
+| 1 | German | A Self-Rally by a unit that may not | Mine |
+| 1 | Russian | Ending the Rout Phase while the German side still had a unit that must rout | Mine, and a good refusal: it says to hand over first (ruling R31.6) |
+
+**What a side may not know.** Read in each side's view through the game: every record, "Since you last looked", the hand-over screen and its map, the fire preview, the counters' tooltips, and the names.
+
+- The other side's concealed units read "a concealed unit" in every record, and a Dummy stack moved by Assault Movement read the same as a real one. The hand-over screen listed "A stack moved into [T4]" and fire "from [V2], level 1 at [S1]: none", with no unit named.
+- The fire preview at a Location with a "?" gave the firers' FP lines and said "The total and its column are not known to you"; at a Known stack it gave the total and the DRM.
+- The German view's tags for Russian units ran to R30 while it held 21 by name. That is right: all 26 squads of the second Russian group set up in German sight before nine took a non-OB "?", so the view had seen them.
+- **Found:** a Dummy stack that moved without Assault Movement in enemy sight was removed (A12.11), and Dummies in a Location entered for Close Combat were removed (A11.19), with no line in either side's records and no word before Confirm.
+- **Found:** a refusal can tell what it hides (the Dummy row above).
+- **Found:** the game's own refusal showed its code and a revision number to a side ("UNIT-STATE-030 revision 525"). Fixed.
+- **Found:** a proposed attack whose LOS is blocked says so before Confirm and can be cancelled, which is an LOS check before the attack is declared (A6.11). My script used it 17 times. For the referee.
+
+**What Range showed in play.** Targets read "[S1]: 2 hexes, Normal Range", "[U2]: 3 hexes, Long Range", "[Y5]: 1 hex, PBF". A First Fire unit's targets beyond one hex in the DFPh read as closed to it, which the list first worded as "out of range"; it now says "no fire there". A group of two squads and a FT at one hex read "Normal Range"; it now says "PBF for 2 of 3".
+
+**Reached that the earlier tests did not reach:** a card with Dummies and "?" on both sides; a group set up by hand on the map; Dummies moved; a hero created; three surrenders for Failure to Rout and their captors chosen; prisoners carried by a routing Guard; a rout after two SW were dropped; the end of an eight-turn game. **Not reached:** a Fire Lane, a SW transferred, Recombine, a withdrawal from Melee, a vehicle, a Gun, night.
+
+**New findings.**
+
+| # | Finding | What was done |
+|---|---|---|
+| 1 | After an Ambush whose attacks eliminate every unit of the ambushed side, the Close Combat Phase cannot be ended, and no view can resolve the round the game waits for | Fixed in the phase's check (ruling R31c.5; A11.3) |
+| 2 | A phase's end takes longer as the game grows: about 3 seconds in Turn 1, and 4.4 to check with 8.0 to confirm in Turn 5 (95 counters, 570 revisions) | Backlog. Pass 31c.7's aim of 2 seconds was met on The Guards Counterattack and is not on a card this size |
+| 3 | The surrender block showed internal ids, and its labels ran out of their buttons | Fixed at the user's word |
+| 4 | The prisoner, massacre, and unit-picker labels named units with no hex | Fixed at the user's word (ruling R31c.6) |
+| 5 | "Units moving" was an open box of checkboxes, empty when no unit may move | Fixed at the user's word: a dropdown of checkboxes |
+| 6 | The Close Combat panel showed ids, identifier Locations, and sides in lower case | Fixed |
+| 7 | The Victory account wrote "building X3" and "bd01:W4" | Fixed: "building [X3]", "[W4]" |
+| 8 | A laden unit's rout is refused with no word of what to drop | Backlog |
+| 9 | Dummies removed without a record or a warning | Backlog, for the referee |
+| 10 | Fire at prisoners' Location from outside reduced the firer's own captured units, with no word before Confirm | Backlog, for the referee (A20.54) |
+| 11 | The Close Combat Phase can be ended with a Location entered for CC and no round fought, when the Ambush is refused | Backlog section 50's row stands |
+| 12 | Setup by hand names counters by id ("r-line-squad-1"), writes "[P7] on board 01" on a map of one board, and lists "[P3] bd01:P3:0" for the non-OB "?" | Backlog |
+| 13 | Wording: "9 unit(s) of Russian placed under \"?\""; "Heat of Battle DR 4, 4 = 8 = Final DR 8"; "x 1 (Assault Fire, A7.36)" for a bonus that adds 1; "PTC." with no unit named; a rout of two hexes says the unit's name twice; "This card has no setup plans for this side" for a group | Backlog |
+| 14 | Tooltips of counters during setup, and of the other side's "?", do not begin with their hex | Backlog |
+| 15 | The Close Combat panel's due line stays for a Location with nothing left to resolve | Backlog |
+
 ## At the user's word during the pass
 
 - A Location field's three actions ran together on one line; each is on a line of its own.
@@ -132,7 +201,13 @@ Each problem was not tried by the report's own steps one by one: those the game 
 - The building entry block and its paragraph were on screen in every phase. The block is offered only in the moving side's Movement Phase, and its paragraph is a closed line.
 - The play test was run at the pane's full size so the user could follow it.
 - The action a phase is about was often scrolled out of sight under sections that phase seldom uses (in the Close Combat Phase, Support weapons stood above Close Combat). Every section of the Play page's actions now opens and closes at its heading (`ActionSection`): the sections the phase is about start open, the others closed, and a click on a heading changes that.
-- Range should be a sibling of LOS and be drawn on the map with it: backlog section 50, question 2.
+- Range should be a sibling of LOS and be drawn on the map with it: designed and built in this pass (task 31c.9; design section 14).
+- A hex is written in brackets wherever it is written, "[G4]", which tells it from a unit's tag; a record says the hex of the units that act and of their targets; a counter's tooltip begins with its hex and the unit's name (ruling R31c.6).
+- "Units moving" and "Units advancing" are a dropdown of checkboxes, and say so when no unit may be chosen.
+- The surrender block says units by name, one answer to a line, and a button grows with a label that wraps.
+- A unit named with no Location beside it carries its hex: "8-3-8 squad G3 in [Y5] hands its prisoners to ...".
+- Dummies may move (A12.11, read in the PDF at the user's question): the list is right to offer them.
+- A refusal the user took for a bug ("[AA4] is not ADJACENT to [Y5]") was right; the route had named only its last hex.
 
 ## Tests
 
@@ -143,6 +218,8 @@ Written at the merge gate. The design's section 9 has the list; the time log has
 Backlog section 50.
 
 ## Questions for the user
+
+Answered 2026-10-04. 1: "[G4]" is the hex; every hex is written in brackets and the tag stays as it is. 2: Range in this pass. 3: The Tractor Works, played in my own Studio.
 
 | # | Question | Recommendation |
 |---|---|---|

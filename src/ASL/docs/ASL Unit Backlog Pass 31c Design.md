@@ -95,7 +95,7 @@ So `fire-a672887feaab-g-squad-1` reads "4-4-7 squad G1" to the German side, and 
 
 ### D12. One way to write a Location (P-20)
 
-`DisplayText.Place` is the one way: "G4, level 1" on a one-board map and "G4 on board 01, level 1" otherwise; "cellar" for level -1; ground level is the hex alone. `ReplaySteps.Place` becomes a call to it. Play's records, reasons, selects, the units table (backlog section 45's row), Replay's step panel, titles, and changes all use it.
+`DisplayText.Place` is the one way: "[G4], level 1" on a one-board map and "[G4] on board 01, level 1" otherwise; "cellar" for level -1; ground level is the hex alone. The hex stands in brackets (the user, 2026-10-04; ruling R31c.6), which tells it from a unit's tag: "4-6-7 squad G4 in [G4]". `ReplaySteps.Place` becomes a call to it. Play's records, reasons, selects, the units table (backlog section 45's row), Replay's step panel, titles, and changes all use it.
 
 A typed field takes that form, the short "G4" and "G4:1", and the identifier form. The page reads the text into the identifier before it proposes; the planner's parsing is unchanged.
 
@@ -308,6 +308,8 @@ Answered 2026-10-04: all eight as recommended. The other side's units are number
 - **D17.** "Latest" is the last attempt's lines, passing over a phase's start. "Since you last looked" opens on arrival.
 - **D18.** One board handle and the Rout panel read once met the aim (a rout under 2 seconds); the search's result, the composed map, and the Low Crawl search were not touched.
 
+**After the report,** at the user's word (ruling R31c.6): every section of the Play page's actions opens and closes at its heading (`ActionSection`); a hex is written in brackets; a record says the hex of the units that act and of their targets; a counter's tooltip begins with its hex and the unit's name; "Units moving" and "Units advancing" are a dropdown of checkboxes (`UnitSelectionList`); the surrender block says names, one answer to a line; a button grows with a label that wraps; a unit named with no Location beside it carries its hex (a second cascaded function, `SayAt`); the Victory account and the result write "building [X3]" and "[W4]" (`DisplayText.Hexes`). Range is section 14. The third play test (The Tractor Works) is in the review document, with its fixes: the phase's check after an Ambush (ruling R31c.5), the Close Combat panel's words, a broken unit not offered as a firer, a Guard's own Location not offered as a target.
+
 **The second play test** differed from section 10: it was played at the pane's full size at the user's word, by a script's clicks, and each of P-01 to P-31 was marked from what the game met rather than tried by the first report's steps one by one.
 
 ## 14. Range (added after the report)
@@ -461,4 +463,6 @@ What differs from the decisions:
 - **R5.** The range line under the Target select lists a line for each firer and weapon and has "Show the range on the map", which opens the Range tab with the group drawn.
 - **R6.** The planner's sentence takes the place of the package's under the package's own code, so the code is still in the refusal. Where the target Location holds nothing the firing side may see, that side was told only that the package does not decide the attack; it is now told the range lines and nothing else, since they rest on its own units and the map alone. Whatever else the package found stays untold.
 - **Checked:** the Target list by range and nearest first; "6 hexes, Long Range for 1 of 2"; the outlines at 4 and 8 with the line's "6"; a refusal naming the squad (10 hexes, fires to 8) and both the squad and its MMG (23 hexes, fires to 20); the tab's rows for own units and Known enemy units and none for a Location with a leader alone; the board viewer's hexes alone, with the LOS line drawn over the range marks and each Clear removing its own; `guards-dl-01` with 613 revisions and 221 steps and `p31c-play` with 134 steps.
-- **Not yet seen in the Studio:** a target disabled because every ticked firer is out, and the fire kind's own limit (A8.3, A8.31, A8.4) in a row. Both are watched for in The Tractor Works.
+- **Seen in The Tractor Works:** a fire kind's own limit. Two First Fire units' targets beyond one hex in the DFPh read as closed to them; the note first said "out of range for 2 of 3" and now says "no fire there for 2 of 3", since the limit is the kind's (A8.4), not the range's. A group of two squads and a FT at one hex read "Normal Range" and now reads "PBF for 2 of 3". No proposal of that game was refused for range.
+- **Not seen in the Studio:** a target disabled because every ticked firer is out. The tests cover it.
+- **The FT.** A22.32 was read in the PDF after the build: an Infantry FT attacks an adjacent hex at full FP or a Location two hexes away at Long Range, which is twice its Normal Range of one, as `FireRange` has it. A vehicular FT (Normal Range two, Long Range three) is not in the Fire package.

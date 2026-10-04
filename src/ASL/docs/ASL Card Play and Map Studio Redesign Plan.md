@@ -409,7 +409,7 @@ Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (backlog sect
 
 **Purpose:** a page that speaks in the player's words, takes its Locations from the map, shows a fire's arithmetic before the dice, and does not move under the pointer. **After:** pass 31b. **From:** the play test's report of 2026-10-04.
 
-**Status:** built 2026-10-04 on branch `feature/asl-backlog-pass-31c`, with the user's answers (option (b) for the Game states page, and the eight recommendations of the design): tasks 31c.0 to 31c.8, three reviews and their fixes, the Studio check, and the second play test, a German win in The Guards Counterattack. See the [pass 31c design](<ASL Unit Backlog Pass 31c Design.md>), section 13, and the [review document](<Scenario A1 Backlog Pass 31c Review 2026-10-04.md>). Rulings R31c.1 to R31c.4. Section 15.13 holds its decisions; what it leaves out is in backlog section 50. The merge gate waits for the user's answers on the report.
+**Status:** built 2026-10-04 on branch `feature/asl-backlog-pass-31c`, with the user's answers (option (b) for the Game states page, and the eight recommendations of the design): tasks 31c.0 to 31c.9, three reviews and their fixes, the Studio check, the second play test (a German win in The Guards Counterattack), Range (task 31c.9), and the third play test (a Russian win in The Tractor Works). See the [pass 31c design](<ASL Unit Backlog Pass 31c Design.md>), sections 13 and 14, and the [review document](<Scenario A1 Backlog Pass 31c Review 2026-10-04.md>). Rulings R31c.1 to R31c.7. Section 15.13 holds its decisions; what it leaves out is in backlog section 50.
 
 | Task | What it changes | Estimate |
 |---|---|---|
@@ -926,6 +926,8 @@ These folders express ownership, not a requirement to create every directory imm
 - **The window does not scroll.** With a game open nothing sits outside the workspace: the card is a dialog, and the records, the units, the dice, and the audit are panels that open over the activity strip. The workspace fills the window from its own measured top. The context reserves its action row and status line only where the page asks (`Reserve`, on Play).
 - **The map's view is the view's own.** The viewport's script keeps the view for a key the host gives (a game and a view) while the page is open.
 - **What both sides know is drawn from both views.** `GameMaps.Public` takes from each side's view the other sides' units, chosen by who owns them (ruling R31c.3).
+- **Range is read, not resolved.** `FireRange` (Rules) says where a range falls for a Normal Range and is called by nothing that resolves an attack; the Fire package decides every attack, and a test holds the two together. The Range tab, the map's outlines, and the fire panel's Target list read it for the view (ruling R31c.7).
+- **A hex is in brackets, and a unit named alone carries its hex** (ruling R31c.6): `DisplayText.Place` and `Hexes`, and the cascaded `SayAt` beside `Say`.
 - **A game still played has two doors:** Play and Replay. The Game inspector and the board viewer open it in no view chosen at will (ruling R31c.2).
 - **A board has one handle while it is loaded** (`StudioBoardCatalog`), so what the planner keeps by the handle, a board's LOS map and its LOS reads, is kept.
 
