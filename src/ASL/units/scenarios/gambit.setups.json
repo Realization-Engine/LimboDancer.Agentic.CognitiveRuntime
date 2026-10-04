@@ -1,5 +1,5 @@
 {
-  "format": "asl-setup-plans/1",
+  "format": "asl-setup-plans/2",
   "card": "gambit",
   "plans": [
     {
@@ -450,6 +450,353 @@
           "definition": "british-atr",
           "group": "british-1",
           "holder": "b-elite-squad-5"
+        }
+      ]
+    },
+    {
+      "id": "storm-the-farmhouse",
+      "cardSha256": "b68c06850a76c7f7a8ee84404b0ed9b16e7f6a5107ddbad71047fbcf0be4134b",
+      "side": "german",
+      "answers": {
+        "plan": "farmhouse",
+        "placementsSha256": "739e00b634215b871a7ce6a4e8ef71c85bdf8b493d807ba542de2f7996b6f30f"
+      },
+      "name": "Storm the farmhouse",
+      "idea": "The Germans move first, and the farmhouse holds two squads and the best British leader, alone until the battalion enters. Three squads and the 9-2 wait behind the house at P8, three squads and the 8-1 behind the woods at M8, and two squads with the 9-1 fire from the woods at R8: the house is attacked from the south and the west in the first German turn, before help can reach it.",
+      "givesUp": "Nothing stands east of hexrow R or west of hexrow L, so both flank roads are open; if the farmhouse holds through the first turn, the battalion enters behind eight squads that are all in the centre.",
+      "terrain": [
+        "P9 has no LOS to or from the upper floor of the farmhouse, O6 or P6: the house at P8 blocks it. It is three hexes from P6 and one from the road hexes Q9 and Q10.",
+        "L8 has no LOS to or from the upper floor of O6 or P6: the woods at M8 block it. It is four hexes from O6.",
+        "R8 is woods and sees the upper floor of P6 at range 3; O6 does not see it.",
+        "Neither P9 nor L8 is seen by the farmhouse, so each stack may take a \"?\" once both sides have set up (A12.12).",
+        "The exits are on board 2, ten hexes south of board 4's last hexrow: 2Y1 below 4I10 (the west), 2Q1 below 4Q10 (the centre), and 2I1 below 4Y10 (the east)."
+      ],
+      "placements": [
+        {
+          "id": "g-squad-1",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:P9:0"
+        },
+        {
+          "id": "g-squad-2",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:P9:0"
+        },
+        {
+          "id": "g-squad-3",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:P9:0"
+        },
+        {
+          "id": "g-leader-9-2-1",
+          "definition": "attacker-leader-9-2",
+          "group": "german-1",
+          "at": "bd04:P9:0"
+        },
+        {
+          "id": "g-squad-4",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:L8:0"
+        },
+        {
+          "id": "g-squad-5",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:L8:0"
+        },
+        {
+          "id": "g-squad-6",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:L8:0"
+        },
+        {
+          "id": "g-leader-8-1-1",
+          "definition": "attacker-leader-8-1",
+          "group": "german-1",
+          "at": "bd04:L8:0"
+        },
+        {
+          "id": "g-squad-7",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:R8:0"
+        },
+        {
+          "id": "g-squad-8",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:R8:0"
+        },
+        {
+          "id": "g-leader-9-1-1",
+          "definition": "attacker-leader-9-1",
+          "group": "german-1",
+          "at": "bd04:R8:0"
+        }
+      ]
+    },
+    {
+      "id": "seal-the-west-road",
+      "cardSha256": "b68c06850a76c7f7a8ee84404b0ed9b16e7f6a5107ddbad71047fbcf0be4134b",
+      "side": "german",
+      "answers": {
+        "plan": "west-woods",
+        "placementsSha256": "903b01437c6cf851c9fc94f6e6af4a2bc8eba3d616c8d6ca10d8d5e0c6b7b417"
+      },
+      "name": "Seal the west road",
+      "idea": "The British post in the woods at H6 and I5 marks the west road as the battalion's way. Three squads and the 9-2 in the woods at K9 fire on H6 and block the road south of it, a squad holds the house at I10 where the west road leaves board 4, two squads and the 9-1 start unseen at N8 to come at the woods from the east, and two squads with the 8-1 behind the house at P8 keep the centre road.",
+      "givesUp": "The east third of the board is empty, and the centre is two squads; the K9 stack is in the LOS of the squad at H6 from the start.",
+      "terrain": [
+        "K9 is woods and sees H6 at range 4 through a hindrance of 3, and the road hex I9 at range 2; I5 does not see it.",
+        "I10 is a wooden building; it sees H6 at range 4 and I9 at range 1.",
+        "N8 has no LOS to or from H6 or I5: the woods at M8 block both. It is six hexes from H6.",
+        "P9 has no LOS to or from H6 or I5, and sees the centre road at Q9 and Q10 at range 1.",
+        "Neither N8 nor P9 is seen by the British post, so each stack may take a \"?\" once both sides have set up (A12.12).",
+        "The Studio's LOS counts grain as a hindrance; the card's date is May, when grain is not in season, so the hindered lines here are at least this open.",
+        "The exits are on board 2, ten hexes south of board 4's last hexrow: 2Y1 below 4I10 (the west), 2Q1 below 4Q10 (the centre), and 2I1 below 4Y10 (the east)."
+      ],
+      "placements": [
+        {
+          "id": "g-squad-1",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:K9:0"
+        },
+        {
+          "id": "g-squad-2",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:K9:0"
+        },
+        {
+          "id": "g-squad-3",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:K9:0"
+        },
+        {
+          "id": "g-leader-9-2-1",
+          "definition": "attacker-leader-9-2",
+          "group": "german-1",
+          "at": "bd04:K9:0"
+        },
+        {
+          "id": "g-squad-4",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:I10:0"
+        },
+        {
+          "id": "g-squad-5",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:N8:0"
+        },
+        {
+          "id": "g-squad-6",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:N8:0"
+        },
+        {
+          "id": "g-leader-9-1-1",
+          "definition": "attacker-leader-9-1",
+          "group": "german-1",
+          "at": "bd04:N8:0"
+        },
+        {
+          "id": "g-squad-7",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:P9:0"
+        },
+        {
+          "id": "g-squad-8",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:P9:0"
+        },
+        {
+          "id": "g-leader-8-1-1",
+          "definition": "attacker-leader-8-1",
+          "group": "german-1",
+          "at": "bd04:P9:0"
+        }
+      ]
+    },
+    {
+      "id": "both-posts",
+      "cardSha256": "b68c06850a76c7f7a8ee84404b0ed9b16e7f6a5107ddbad71047fbcf0be4134b",
+      "side": "german",
+      "answers": {
+        "plan": "two-posts",
+        "placementsSha256": "2983c34fa50e1d4b5defad1b6db3c202e9be506ec0ecad285c699ccb3557efda"
+      },
+      "name": "Both posts",
+      "idea": "Each British post is one squad, and the two cannot help each other. Three squads and the 9-2 behind the house at P8 go for the farmhouse, three squads and the 9-1 in the woods at K9 go for the woods at H6, and two squads with the 8-1 wait unseen in the woods at T9 to turn east or centre once the battalion shows its route.",
+      "givesUp": "The force is in three parts from the start, and only the reserve of two squads covers the east road; the K9 stack is in the LOS of the squad at H6.",
+      "terrain": [
+        "P9 has no LOS to or from the upper floor of P6, nor H6: the house at P8 and the woods at M8 block them. It is three hexes from P6.",
+        "K9 is woods and sees H6 at range 4 through a hindrance of 3; the farmhouse does not see it.",
+        "T9 is woods; neither post sees it. It sees the centre road at Q9 and Q10 at range 3 and Y10, where the east road leaves board 4, at range 5.",
+        "Neither P9 nor T9 is seen by a British post, so each stack may take a \"?\" once both sides have set up (A12.12).",
+        "The Studio's LOS counts grain as a hindrance; the card's date is May, when grain is not in season, so the hindered lines here are at least this open.",
+        "The exits are on board 2, ten hexes south of board 4's last hexrow: 2Y1 below 4I10 (the west), 2Q1 below 4Q10 (the centre), and 2I1 below 4Y10 (the east)."
+      ],
+      "placements": [
+        {
+          "id": "g-squad-1",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:P9:0"
+        },
+        {
+          "id": "g-squad-2",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:P9:0"
+        },
+        {
+          "id": "g-squad-3",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:P9:0"
+        },
+        {
+          "id": "g-leader-9-2-1",
+          "definition": "attacker-leader-9-2",
+          "group": "german-1",
+          "at": "bd04:P9:0"
+        },
+        {
+          "id": "g-squad-4",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:K9:0"
+        },
+        {
+          "id": "g-squad-5",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:K9:0"
+        },
+        {
+          "id": "g-squad-6",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:K9:0"
+        },
+        {
+          "id": "g-leader-9-1-1",
+          "definition": "attacker-leader-9-1",
+          "group": "german-1",
+          "at": "bd04:K9:0"
+        },
+        {
+          "id": "g-squad-7",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:T9:0"
+        },
+        {
+          "id": "g-squad-8",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:T9:0"
+        },
+        {
+          "id": "g-leader-8-1-1",
+          "definition": "attacker-leader-8-1",
+          "group": "german-1",
+          "at": "bd04:T9:0"
+        }
+      ]
+    },
+    {
+      "id": "three-roads",
+      "cardSha256": "b68c06850a76c7f7a8ee84404b0ed9b16e7f6a5107ddbad71047fbcf0be4134b",
+      "side": "german",
+      "name": "Three roads",
+      "idea": "One group stands in a building on each way south, whatever the five British counters show: three squads and the 9-2 in the house at P8 on the centre road, two squads and the 8-1 in the house at I10 where the west road leaves board 4, two squads and the 9-1 in the house at X8 and a squad in the house at Y9 where the east road leaves board 4.",
+      "givesUp": "No group is strong enough to attack the British posts in the first turn, and the three cannot help each other quickly: the Germans wait for the battalion to choose its road.",
+      "terrain": [
+        "P8 is a wooden building; it sees the centre road at Q9 at range 1 and Q10 at range 2, and the upper floor of the farmhouse sees it at range 2 to 3.",
+        "I10 is a wooden building where the west road leaves board 4; it sees I9 at range 1. Only a post at H6 sees it, at range 4.",
+        "X8 and Y9 are wooden buildings; they see Y10, where the east road leaves board 4, at range 2 and 1. The farmhouse, H6, and I5 do not see them.",
+        "X8 and Y9, and I10 unless H6 is held, are out of every British LOS, so their stacks may take a \"?\" once both sides have set up (A12.12).",
+        "The exits are on board 2, ten hexes south of board 4's last hexrow: 2Y1 below 4I10 (the west), 2Q1 below 4Q10 (the centre), and 2I1 below 4Y10 (the east)."
+      ],
+      "placements": [
+        {
+          "id": "g-squad-1",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:P8:0"
+        },
+        {
+          "id": "g-squad-2",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:P8:0"
+        },
+        {
+          "id": "g-squad-3",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:P8:0"
+        },
+        {
+          "id": "g-leader-9-2-1",
+          "definition": "attacker-leader-9-2",
+          "group": "german-1",
+          "at": "bd04:P8:0"
+        },
+        {
+          "id": "g-squad-4",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:I10:0"
+        },
+        {
+          "id": "g-squad-5",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:I10:0"
+        },
+        {
+          "id": "g-leader-8-1-1",
+          "definition": "attacker-leader-8-1",
+          "group": "german-1",
+          "at": "bd04:I10:0"
+        },
+        {
+          "id": "g-squad-6",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:X8:0"
+        },
+        {
+          "id": "g-squad-7",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:X8:0"
+        },
+        {
+          "id": "g-leader-9-1-1",
+          "definition": "attacker-leader-9-1",
+          "group": "german-1",
+          "at": "bd04:X8:0"
+        },
+        {
+          "id": "g-squad-8",
+          "definition": "attacker-elite-squad-5-4-8",
+          "group": "german-1",
+          "at": "bd04:Y9:0"
         }
       ]
     }

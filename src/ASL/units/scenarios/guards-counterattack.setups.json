@@ -1,5 +1,5 @@
 {
-  "format": "asl-setup-plans/1",
+  "format": "asl-setup-plans/2",
   "card": "guards-counterattack",
   "plans": [
     {
@@ -519,6 +519,688 @@
           "definition": "attacker-hmg",
           "group": "german-1",
           "holder": "g-squad-13"
+        }
+      ]
+    },
+    {
+      "id": "fire-first",
+      "cardSha256": "ad43d29ddd9a989bd30953abbf620a93e866ec9bbc566906e696b115fd348dae",
+      "side": "russian",
+      "answers": {
+        "plan": "forward-line",
+        "placementsSha256": "02b0096f5b42765e21eab239c618da9273a2ff5a790ae7a2d41fe42bac2536bc"
+      },
+      "name": "Fire first",
+      "idea": "The German forward line stands in the Guards' LOS at range 2, and the Russians move first. Nine Guards squads on the upper floor of E4, F3, and G4, with the 10-2 at F3, fire on the F5 platoon in the first Prep Fire Phase; three squads wait unseen at G3 to cross once it breaks. The 308th fires from the upper floor of M5 and N5 on K4, K5, L6, and M7 at range 2.",
+      "givesUp": "The nine squads that fire do not move in the first turn, and they stand in the LOS of the German squads they fire on; only three squads are fresh for the first crossing.",
+      "terrain": [
+        "E4 and F3 see F5 at range 2; G4 sees F5, G6, and H5 at range 2. A 6-2-8 fires at full strength to range 2.",
+        "G3 at ground level is seen from no German setup Location.",
+        "M5 sees K4 and K5 at range 2, and L6 and M7 at range 2; N5 sees L6 and M7 at range 2.",
+        "J2, M2, and N2 are one-hex buildings with a ground level only, so their groups have no choice of hex; N2 is seen from no German setup Location.",
+        "The stacks at G3 and N2 are out of every German LOS, so each may take a \"?\" once both sides have set up (A12.12)."
+      ],
+      "placements": [
+        {
+          "id": "r-squad-1",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:M5:1"
+        },
+        {
+          "id": "r-squad-2",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:M5:1"
+        },
+        {
+          "id": "r-squad-3",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:N5:1"
+        },
+        {
+          "id": "r-squad-4",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:N5:1"
+        },
+        {
+          "id": "r-commissar-9-0-1",
+          "definition": "defender-commissar-9-0",
+          "group": "russian-1",
+          "at": "bd01:N5:1"
+        },
+        {
+          "id": "r-squad-5",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:J2:0"
+        },
+        {
+          "id": "r-leader-9-1-1",
+          "definition": "defender-leader-9-1",
+          "group": "russian-1",
+          "at": "bd01:J2:0"
+        },
+        {
+          "id": "r-mmg-1",
+          "definition": "defender-mmg",
+          "group": "russian-1",
+          "holder": "r-squad-5"
+        },
+        {
+          "id": "r-squad-6",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:M2:0"
+        },
+        {
+          "id": "r-squad-7",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:M2:0"
+        },
+        {
+          "id": "r-squad-8",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:M2:0"
+        },
+        {
+          "id": "r-squad-9",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:N2:0"
+        },
+        {
+          "id": "r-squad-10",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:E4:1"
+        },
+        {
+          "id": "r-squad-11",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:E4:1"
+        },
+        {
+          "id": "r-squad-12",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:E4:1"
+        },
+        {
+          "id": "r-squad-13",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:F3:1"
+        },
+        {
+          "id": "r-squad-14",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:F3:1"
+        },
+        {
+          "id": "r-squad-15",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:F3:1"
+        },
+        {
+          "id": "r-squad-16",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:G4:1"
+        },
+        {
+          "id": "r-squad-17",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:G4:1"
+        },
+        {
+          "id": "r-squad-18",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:G4:1"
+        },
+        {
+          "id": "r-squad-19",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:G3:0"
+        },
+        {
+          "id": "r-squad-20",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:G3:0"
+        },
+        {
+          "id": "r-squad-21",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:G3:0"
+        },
+        {
+          "id": "r-leader-10-2-1",
+          "definition": "defender-leader-10-2",
+          "group": "russian-2",
+          "at": "bd01:F3:1"
+        }
+      ]
+    },
+    {
+      "id": "cross-unseen",
+      "cardSha256": "ad43d29ddd9a989bd30953abbf620a93e866ec9bbc566906e696b115fd348dae",
+      "side": "russian",
+      "answers": {
+        "plan": "out-of-sight",
+        "placementsSha256": "89e537dbfc556f5e0d53308334ec271b7c6738961f9a03040b4d305a7529c33b"
+      },
+      "name": "Cross unseen",
+      "idea": "The German wing platoons have left the fronts of their buildings empty, so the Guards have no target in the F5 building and the first turn is for moving. The Guards start where the German squads that look out cannot see them: six squads and the 10-2 on two levels of F3, three at ground level in G3, and three at ground level in E4. They cross to F5, G6, and H5 in the first Movement Phase. The 308th waits at ground level in N3 and N4.",
+      "givesUp": "No Russian fires in the first turn, and the squads on the upper floor of F3 spend movement coming down; if the Germans did not set up as Out of sight, nine Guards squads stand packed in two hexes. The German squads at J4 and J5 see the street the Guards cross, and no Russian fires on them.",
+      "terrain": [
+        "F3, at every level, is seen only from F5 and G6, which Out of sight leaves empty.",
+        "G3 at ground level is seen from no German setup Location.",
+        "E4 is seen from F5, G6, and H5 at range 2 to 3, and from J5 at range 5: of the squads of Out of sight only the one at J5 sees it.",
+        "N3 and N4 at ground level are seen from no German setup Location.",
+        "J2, M2, and N2 are one-hex buildings with a ground level only, so their groups have no choice of hex; N2 is seen from no German setup Location.",
+        "The stacks at F3, G3, N3, N4, and N2 are out of every German LOS, so each may take a \"?\" once both sides have set up (A12.12)."
+      ],
+      "placements": [
+        {
+          "id": "r-squad-1",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:N3:0"
+        },
+        {
+          "id": "r-squad-2",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:N3:0"
+        },
+        {
+          "id": "r-squad-3",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:N4:0"
+        },
+        {
+          "id": "r-squad-4",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:N4:0"
+        },
+        {
+          "id": "r-commissar-9-0-1",
+          "definition": "defender-commissar-9-0",
+          "group": "russian-1",
+          "at": "bd01:N4:0"
+        },
+        {
+          "id": "r-squad-5",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:J2:0"
+        },
+        {
+          "id": "r-leader-9-1-1",
+          "definition": "defender-leader-9-1",
+          "group": "russian-1",
+          "at": "bd01:J2:0"
+        },
+        {
+          "id": "r-mmg-1",
+          "definition": "defender-mmg",
+          "group": "russian-1",
+          "holder": "r-squad-5"
+        },
+        {
+          "id": "r-squad-6",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:M2:0"
+        },
+        {
+          "id": "r-squad-7",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:M2:0"
+        },
+        {
+          "id": "r-squad-8",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:M2:0"
+        },
+        {
+          "id": "r-squad-9",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:N2:0"
+        },
+        {
+          "id": "r-squad-10",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:F3:0"
+        },
+        {
+          "id": "r-squad-11",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:F3:0"
+        },
+        {
+          "id": "r-squad-12",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:F3:0"
+        },
+        {
+          "id": "r-squad-13",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:F3:1"
+        },
+        {
+          "id": "r-squad-14",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:F3:1"
+        },
+        {
+          "id": "r-squad-15",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:F3:1"
+        },
+        {
+          "id": "r-squad-16",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:G3:0"
+        },
+        {
+          "id": "r-squad-17",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:G3:0"
+        },
+        {
+          "id": "r-squad-18",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:G3:0"
+        },
+        {
+          "id": "r-squad-19",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:E4:0"
+        },
+        {
+          "id": "r-squad-20",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:E4:0"
+        },
+        {
+          "id": "r-squad-21",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:E4:0"
+        },
+        {
+          "id": "r-leader-10-2-1",
+          "definition": "defender-leader-10-2",
+          "group": "russian-2",
+          "at": "bd01:F3:0"
+        }
+      ]
+    },
+    {
+      "id": "break-the-tripwires",
+      "cardSha256": "ad43d29ddd9a989bd30953abbf620a93e866ec9bbc566906e696b115fd348dae",
+      "side": "russian",
+      "answers": {
+        "plan": "tripwire-and-reserve",
+        "placementsSha256": "00110aa3949727d134bdaf58a33597712a9a3210e054ff6931453d320823b622"
+      },
+      "name": "Break the tripwires",
+      "idea": "Each large German building shows one squad forward and holds the rest back. Six Guards squads and the 10-2 on two levels of G4 fire on the squad at H5 at range 2, and when it breaks the six squads waiting unseen at F3 and G3 cross to F5 and G6. The 308th fires on the squad with the MMG at L6 from the upper floor of N5 and M5 at range 2.",
+      "givesUp": "G4 is in the LOS of H5, J4, and K4, and holds half the Guards and their leader; if the squad at H5 holds, the crossing waits.",
+      "terrain": [
+        "G4 sees H5, F5, and G6 at range 2. A 6-2-8 fires at full strength to range 2.",
+        "H5 sees E4 at range 3 and G4 at range 2, and neither F3 nor G3.",
+        "F3, at every level, is seen only from F5 and G6, which Tripwire and reserve leaves empty; G3 at ground level is seen from no German setup Location.",
+        "N5 sees L6 and M7 at range 2; M5 sees K4, K5, L6, and M7 at range 2.",
+        "J2, M2, and N2 are one-hex buildings with a ground level only, so their groups have no choice of hex; N2 is seen from no German setup Location.",
+        "The stacks at F3, G3, and N2 are out of every German LOS, so each may take a \"?\" once both sides have set up (A12.12)."
+      ],
+      "placements": [
+        {
+          "id": "r-squad-1",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:N5:1"
+        },
+        {
+          "id": "r-squad-2",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:N5:1"
+        },
+        {
+          "id": "r-squad-3",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:M5:1"
+        },
+        {
+          "id": "r-squad-4",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:M5:1"
+        },
+        {
+          "id": "r-commissar-9-0-1",
+          "definition": "defender-commissar-9-0",
+          "group": "russian-1",
+          "at": "bd01:N5:1"
+        },
+        {
+          "id": "r-squad-5",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:J2:0"
+        },
+        {
+          "id": "r-leader-9-1-1",
+          "definition": "defender-leader-9-1",
+          "group": "russian-1",
+          "at": "bd01:J2:0"
+        },
+        {
+          "id": "r-mmg-1",
+          "definition": "defender-mmg",
+          "group": "russian-1",
+          "holder": "r-squad-5"
+        },
+        {
+          "id": "r-squad-6",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:M2:0"
+        },
+        {
+          "id": "r-squad-7",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:M2:0"
+        },
+        {
+          "id": "r-squad-8",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:M2:0"
+        },
+        {
+          "id": "r-squad-9",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:N2:0"
+        },
+        {
+          "id": "r-squad-10",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:G4:1"
+        },
+        {
+          "id": "r-squad-11",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:G4:1"
+        },
+        {
+          "id": "r-squad-12",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:G4:1"
+        },
+        {
+          "id": "r-squad-13",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:G4:0"
+        },
+        {
+          "id": "r-squad-14",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:G4:0"
+        },
+        {
+          "id": "r-squad-15",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:G4:0"
+        },
+        {
+          "id": "r-squad-16",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:F3:0"
+        },
+        {
+          "id": "r-squad-17",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:F3:0"
+        },
+        {
+          "id": "r-squad-18",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:F3:0"
+        },
+        {
+          "id": "r-squad-19",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:G3:0"
+        },
+        {
+          "id": "r-squad-20",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:G3:0"
+        },
+        {
+          "id": "r-squad-21",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:G3:0"
+        },
+        {
+          "id": "r-leader-10-2-1",
+          "definition": "defender-leader-10-2",
+          "group": "russian-2",
+          "at": "bd01:G4:1"
+        }
+      ]
+    },
+    {
+      "id": "two-up-two-back",
+      "cardSha256": "ad43d29ddd9a989bd30953abbf620a93e866ec9bbc566906e696b115fd348dae",
+      "side": "russian",
+      "name": "Two up, two back",
+      "idea": "Half the Guards fire and half move, whatever the Germans show: three squads on the upper floor of E4 and three on the upper floor of G4 cover the street, and six squads with the 10-2 wait at ground level in F3 and G3 to cross where the fire tells. The 308th keeps two squads on the upper floor of N5 and two with the commissar out of sight at N4.",
+      "givesUp": "Neither the fire nor the crossing has the weight of a plan made for the German setup.",
+      "terrain": [
+        "E4 and G4 see F5 at range 2; G4 also sees G6 and H5 at range 2.",
+        "G3 at ground level is seen from no German setup Location; F3 is seen only from F5 and G6.",
+        "N5 sees L6 and M7 at range 2; N4 at ground level is seen from no German setup Location.",
+        "J2, M2, and N2 are one-hex buildings with a ground level only, so their groups have no choice of hex; N2 is seen from no German setup Location.",
+        "The stacks at G3, N4, and N2, and at F3 unless a German stands in F5 or G6, are out of every German LOS, so each may take a \"?\" once both sides have set up (A12.12)."
+      ],
+      "placements": [
+        {
+          "id": "r-squad-1",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:N5:1"
+        },
+        {
+          "id": "r-squad-2",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:N5:1"
+        },
+        {
+          "id": "r-squad-3",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:N4:0"
+        },
+        {
+          "id": "r-squad-4",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:N4:0"
+        },
+        {
+          "id": "r-commissar-9-0-1",
+          "definition": "defender-commissar-9-0",
+          "group": "russian-1",
+          "at": "bd01:N4:0"
+        },
+        {
+          "id": "r-squad-5",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:J2:0"
+        },
+        {
+          "id": "r-leader-9-1-1",
+          "definition": "defender-leader-9-1",
+          "group": "russian-1",
+          "at": "bd01:J2:0"
+        },
+        {
+          "id": "r-mmg-1",
+          "definition": "defender-mmg",
+          "group": "russian-1",
+          "holder": "r-squad-5"
+        },
+        {
+          "id": "r-squad-6",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:M2:0"
+        },
+        {
+          "id": "r-squad-7",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:M2:0"
+        },
+        {
+          "id": "r-squad-8",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:M2:0"
+        },
+        {
+          "id": "r-squad-9",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd01:N2:0"
+        },
+        {
+          "id": "r-squad-10",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:E4:1"
+        },
+        {
+          "id": "r-squad-11",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:E4:1"
+        },
+        {
+          "id": "r-squad-12",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:E4:1"
+        },
+        {
+          "id": "r-squad-13",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:G4:1"
+        },
+        {
+          "id": "r-squad-14",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:G4:1"
+        },
+        {
+          "id": "r-squad-15",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:G4:1"
+        },
+        {
+          "id": "r-squad-16",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:F3:0"
+        },
+        {
+          "id": "r-squad-17",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:F3:0"
+        },
+        {
+          "id": "r-squad-18",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:F3:0"
+        },
+        {
+          "id": "r-squad-19",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:G3:0"
+        },
+        {
+          "id": "r-squad-20",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:G3:0"
+        },
+        {
+          "id": "r-squad-21",
+          "definition": "defender-guards-squad",
+          "group": "russian-2",
+          "at": "bd01:G3:0"
+        },
+        {
+          "id": "r-leader-10-2-1",
+          "definition": "defender-leader-10-2",
+          "group": "russian-2",
+          "at": "bd01:F3:0"
         }
       ]
     }

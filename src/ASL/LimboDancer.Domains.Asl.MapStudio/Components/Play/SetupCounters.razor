@@ -1,7 +1,8 @@
 @* Pass 30 (the workflow rebuilt): the setup list as the Counters tab of the setup mode, grouped as a player reads a setup. "On the map" holds one
    block per stack: its Location in words, its level, and "Move stack", then one line per counter in its printed values with its id after it; a SW, a
-   towed Gun, or a Passenger sits under what holds it. Counters with no hex yet come first, and those that wait off board to enter last. The page
-   keeps the list and builds this model from it; the gate checks the setup when it is proposed. *@
+   towed Gun, or a Passenger sits under what holds it. Counters with no hex yet come first, and those that wait off board to enter last. "Swap"
+   on a stack (pass 30b) makes the next stack chosen change hexes with it. The page keeps the list and builds this model from it; the gate checks
+   the setup when it is proposed. *@
 <div id="setup-counters">
     @foreach (var note in Model.Notes)
     {
@@ -27,11 +28,17 @@
     {
         <section id="setup-on-map" aria-labelledby="setup-on-map-title">
             <h4 id="setup-on-map-title">On the map: @Model.OnMapSummary</h4>
+            @{
+                // Pass 30b: a swap needs two hexes of the list, and while one waits a stack's name completes it.
+                var hexes = Model.OnMap.Select(other => HexOf(other.Location)).Distinct(StringComparer.Ordinal).Count();
+                var swapping = Model.OnMap.Any(other => other.Swapping);
+            }
             @foreach (var stack in Model.OnMap)
             {
                 <div class="@StackClass(stack)" id="@StackId(stack.Location)" data-location="@stack.Location">
                     <div class="setup-stack-head">
-                        <button type="button" class="link setup-stack-name" aria-pressed="@(stack.Selected ? "true" : "false")" aria-label="@($"Show the stack at {stack.Title} on the map")"
+                        <button type="button" class="link setup-stack-name" aria-pressed="@(stack.Selected ? "true" : "false")"
+                                aria-label="@(swapping && !stack.Swapping ? $"Swap with the stack at {stack.Title}" : $"Show the stack at {stack.Title} on the map")"
                                 @onclick="@(() => OnSelect.InvokeAsync(stack.Location))">@stack.Title</button>
                         @if (stack.Selected)
                         {
@@ -54,6 +61,15 @@
                         {
                             <button type="button" class="link setup-stack-move" aria-pressed="@(stack.Moving ? "true" : "false")" aria-label="@($"Move the stack at {stack.Title}")"
                                     @onclick="@(() => OnMove.InvokeAsync(StackKey(stack.Location)))">Move stack</button>
+                            @if (hexes > 1)
+                            {
+                                <button type="button" class="link setup-stack-swap" aria-pressed="@(stack.Swapping ? "true" : "false")"
+                                        aria-label="@($"Swap the counters in the hex of {stack.Title} with another hex's")" @onclick="@(() => OnSwap.InvokeAsync(stack.Location))">Swap</button>
+                            }
+                        }
+                        @if (stack.Swapping)
+                        {
+                            <span class="status-badge warning setup-stack-swapping">swapping: choose another stack, here or on the map</span>
                         }
                     </div>
                     <ul class="setup-rows">
@@ -194,6 +210,12 @@
             get; init;
         }
 
+        /// <summary>Whether the next stack chosen changes hexes with this one (pass 30b).</summary>
+        public bool Swapping
+        {
+            get; init;
+        }
+
         public bool Problem => Rows.Any(row => row.Problem);
     }
 
@@ -234,6 +256,10 @@
     [Parameter]
     public EventCallback<string> OnMove { get; set; }
 
+    /// <summary>"Swap" (pass 30b): the stack's Location; the next stack chosen changes hexes with it.</summary>
+    [Parameter]
+    public EventCallback<string> OnSwap { get; set; }
+
     [Parameter]
     public EventCallback<LevelChange> OnLevel { get; set; }
 
@@ -257,10 +283,13 @@
     /// <summary>The id of a stack's block, which the page brings into view.</summary>
     public static string StackId(string location) => "setup-stack-" + location.Replace(':', '-');
 
+    // A Location's board and hex, without its level: two stacks of one hex do not swap.
+    private static string HexOf(string location) => location.LastIndexOf(':') is > 0 and var cut ? location[..cut] : location;
+
     private static string LevelText(int level) => level == 0 ? "ground level" : "level " + level.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
     private static string StackClass(Stack stack) => "setup-stack" + (stack.Selected ? " selected" : string.Empty) + (stack.Problem ? " problem" : string.Empty)
-        + (stack.Moving ? " moving" : string.Empty);
+        + (stack.Moving || stack.Swapping ? " moving" : string.Empty);
 
     private Task Changed(Row row, string field, string value) => OnChange.InvokeAsync(new SetupPlacementList.Change(row.Key, field, value));
 

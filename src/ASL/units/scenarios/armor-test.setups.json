@@ -1,5 +1,5 @@
 {
-  "format": "asl-setup-plans/1",
+  "format": "asl-setup-plans/2",
   "card": "armor-test",
   "plans": [
     {
@@ -15,7 +15,8 @@
         "From level 1 of the farmhouse, P6 sees the whole road from Q1 (range 6) to Q10 (range 4).",
         "Q8 is a dirt road hex; it sees Q7 at range 1 and Q6 and Q10 at 2.",
         "The Gun and its crew set up hidden, Emplaced in woods, which A12.34 allows without an SSR (the card's SSR 3); the group has two \"?\" besides.",
-        "The Germans win by exiting 8 Exit VP off the south edge near G10 (the west), Q10 (the centre, at the foot of the dirt road Q8-Q9-Q10), or Y10 (the east); they enter along the north edge and have five turns."
+        "The Germans win by exiting 8 Exit VP off the south edge near G10 (the west), Q10 (the centre, at the foot of the dirt road Q8-Q9-Q10), or Y10 (the east); they enter along the north edge and have five turns.",
+        "The three plans of this card look the same to the Germans: a stack of two counters under \"?\" in the woods at O5, one counter under \"?\" on the upper floor of P6, a squad in the house at P8, and the T-34 on the road at Q8. They differ in what the Germans cannot see: the hex, the facing, and the Bore Sighted Location of the hidden Gun, and where the 8-1 stands under the \"?\"."
       ],
       "placements": [
         {
@@ -68,6 +69,210 @@
           "group": "russian-1",
           "at": "bd04:Q8:0",
           "facing": "north-west"
+        }
+      ]
+    },
+    {
+      "id": "west-trap",
+      "cardSha256": "8c51c9f87f7c84088c4e06d33fa3dc8fa33ee4d0659af4d1bf698e13217edc3b",
+      "side": "russian",
+      "name": "West trap",
+      "idea": "What the Germans see is a screen across the centre road, which invites the column to go round it by the west road. The Gun waits there, hidden in the woods at K9, facing the west exit, with H9, on the way to that exit, Bore Sighted. Two squads hold the woods at O5, and the 8-1 stands alone upstairs in the farmhouse, where squads falling back from O5 and P8 can reach him.",
+      "givesUp": "The Gun sees nothing of the centre road north of Q8, so a column that drives straight down it meets only the squads and the T-34; the forward squads at O5 have no leader with them. The 8-1 holds the upper floor of the farmhouse, the best view of the centre road, alone and with no firepower.",
+      "terrain": [
+        "K9 is woods; it sees the west exit at G10 at range 4, F10 at 5, and H9 at 3, and the ground south of the west woods at H7 and I7 at range 3 and G7 at 4, each through a grain hindrance of 2.",
+        "K9 does not see the centre road north of Q8; it sees Q8 and Q9 at range 6 through a hindrance of 2 to 3.",
+        "O5 is woods and sees P4, O4, and N4 at range 1, Q4, M4, N3, and P3 at 2, and Q3 at 3.",
+        "From level 1 of the farmhouse, P6 sees the whole centre road from Q1 (range 6) to Q10 (range 4).",
+        "Q8 is a dirt road hex; it sees Q7 at range 1 and Q6 and Q10 at 2.",
+        "The three plans of this card look the same to the Germans: a stack of two counters under \"?\" in the woods at O5, one counter under \"?\" on the upper floor of P6, a squad in the house at P8, and the T-34 on the road at Q8. They differ in what the Germans cannot see: the hex, the facing, and the Bore Sighted Location of the hidden Gun, and where the 8-1 stands under the \"?\"."
+      ],
+      "placements": [
+        {
+          "id": "r-squad-1",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd04:O5:0",
+          "concealed": true
+        },
+        {
+          "id": "r-squad-2",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd04:O5:0",
+          "concealed": true
+        },
+        {
+          "id": "r-leader-8-1-1",
+          "definition": "defender-leader-8-1",
+          "group": "russian-1",
+          "at": "bd04:P6:1",
+          "concealed": true
+        },
+        {
+          "id": "r-squad-3",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd04:P8:0",
+          "concealed": false
+        },
+        {
+          "id": "r-crew-1",
+          "definition": "defender-crew",
+          "group": "russian-1",
+          "at": "bd04:K9:0",
+          "hidden": true
+        },
+        {
+          "id": "r-at-gun-1",
+          "definition": "defender-at-gun",
+          "group": "russian-1",
+          "at": "bd04:K9:0",
+          "holder": "r-crew-1",
+          "facing": "south-west",
+          "hidden": true,
+          "boreSighted": "bd04:H9:0"
+        },
+        {
+          "id": "r-tank-1",
+          "definition": "defender-tank",
+          "group": "russian-1",
+          "at": "bd04:Q8:0",
+          "facing": "north-west"
+        }
+      ]
+    },
+    {
+      "id": "back-stop",
+      "cardSha256": "8c51c9f87f7c84088c4e06d33fa3dc8fa33ee4d0659af4d1bf698e13217edc3b",
+      "side": "russian",
+      "name": "Back stop",
+      "idea": "The visible screen takes the first blows, and the Gun is the last line: hidden in the woods at U8, it sees both the centre exit at Q10 and the east exit at Y10 at range 4, with Q10 Bore Sighted. A squad and the 8-1 hold the woods at O5 and a squad the upper floor of the farmhouse, as in Forward screen.",
+      "givesUp": "The Gun does not fire until the column is nearly off the board, and it sees nothing of the west exit; a column that goes west is stopped only by the T-34. Facing south-west it covers Q10; it must change its Covered Arc to fire on Y10.",
+      "terrain": [
+        "U8 is woods and sees Q10, Y10, and X10 at range 4, R9 at range 3, and the centre road at Q6 (range 4) and Q4 (range 6).",
+        "U8 also sees the east road at U6 and T6 at range 2 and U5 at range 3.",
+        "O5 is woods and sees P4, O4, and N4 at range 1, Q4, M4, N3, and P3 at 2, and Q3 at 3.",
+        "From level 1 of the farmhouse, P6 sees the whole centre road from Q1 (range 6) to Q10 (range 4).",
+        "Q8 is a dirt road hex; it sees Q7 at range 1 and Q6 and Q10 at 2.",
+        "The three plans of this card look the same to the Germans: a stack of two counters under \"?\" in the woods at O5, one counter under \"?\" on the upper floor of P6, a squad in the house at P8, and the T-34 on the road at Q8. They differ in what the Germans cannot see: the hex, the facing, and the Bore Sighted Location of the hidden Gun, and where the 8-1 stands under the \"?\"."
+      ],
+      "placements": [
+        {
+          "id": "r-squad-1",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd04:O5:0",
+          "concealed": true
+        },
+        {
+          "id": "r-leader-8-1-1",
+          "definition": "defender-leader-8-1",
+          "group": "russian-1",
+          "at": "bd04:O5:0",
+          "concealed": true
+        },
+        {
+          "id": "r-squad-2",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd04:P6:1",
+          "concealed": true
+        },
+        {
+          "id": "r-squad-3",
+          "definition": "defender-squad",
+          "group": "russian-1",
+          "at": "bd04:P8:0",
+          "concealed": false
+        },
+        {
+          "id": "r-crew-1",
+          "definition": "defender-crew",
+          "group": "russian-1",
+          "at": "bd04:U8:0",
+          "hidden": true
+        },
+        {
+          "id": "r-at-gun-1",
+          "definition": "defender-at-gun",
+          "group": "russian-1",
+          "at": "bd04:U8:0",
+          "holder": "r-crew-1",
+          "facing": "south-west",
+          "hidden": true,
+          "boreSighted": "bd04:Q10:0"
+        },
+        {
+          "id": "r-tank-1",
+          "definition": "defender-tank",
+          "group": "russian-1",
+          "at": "bd04:Q8:0",
+          "facing": "north-west"
+        }
+      ]
+    },
+    {
+      "id": "loaded-column",
+      "cardSha256": "8c51c9f87f7c84088c4e06d33fa3dc8fa33ee4d0659af4d1bf698e13217edc3b",
+      "side": "german",
+      "name": "Loaded column",
+      "idea": "The column never sets up on the map: it waits off board and enters along the north edge on Turn 1. This plan loads it so that nothing walks: the infantry gun in tow of the truck with its crew aboard, and the squad and the 8-1 aboard the halftrack, with the PzKpfw IIIH to lead. Where it enters is chosen when it enters, once the Russian setup has been read.",
+      "givesUp": "Everything rides, so a hit on the truck costs the Gun and its crew together, and one on the halftrack costs the only squad and the leader; nothing is on foot to find a hidden Gun before the vehicles meet it.",
+      "terrain": [
+        "The whole group enters along the north edge on Turn 1, the vehicles in Motion and loaded as they choose (A2.52); no hex is chosen at setup.",
+        "Three dirt roads leave the north edge of board 4, at I1, Q1, and V1; the centre road runs from Q1 to the exit at Q10.",
+        "The column wins by exiting 8 Exit VP off the south edge near G10, Q10, or Y10 within five turns."
+      ],
+      "placements": [
+        {
+          "id": "g-tank-1",
+          "definition": "attacker-tank",
+          "group": "german-1",
+          "facing": "south-east",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "g-halftrack-1",
+          "definition": "attacker-halftrack",
+          "group": "german-1",
+          "facing": "south-east",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "g-truck-1",
+          "definition": "attacker-truck",
+          "group": "german-1",
+          "facing": "south-east",
+          "offBoard": true,
+          "entry": "entry"
+        },
+        {
+          "id": "g-squad-1",
+          "definition": "attacker-squad",
+          "group": "german-1",
+          "holder": "g-halftrack-1"
+        },
+        {
+          "id": "g-leader-8-1-1",
+          "definition": "attacker-leader-8-1",
+          "group": "german-1",
+          "holder": "g-halftrack-1"
+        },
+        {
+          "id": "g-crew-1",
+          "definition": "attacker-crew",
+          "group": "german-1",
+          "holder": "g-truck-1"
+        },
+        {
+          "id": "g-inf-gun-1",
+          "definition": "attacker-inf-gun",
+          "group": "german-1",
+          "holder": "g-truck-1",
+          "facing": "south-east"
         }
       ]
     }

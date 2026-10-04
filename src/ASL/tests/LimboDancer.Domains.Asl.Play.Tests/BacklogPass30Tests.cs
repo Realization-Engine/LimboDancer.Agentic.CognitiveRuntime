@@ -67,7 +67,7 @@ public sealed class BacklogPass30Tests : IDisposable
     private static SetupPlansRead Plans(string name) => ScenarioSetupPlans.Parse(Card(name), ScenarioSetupPlans.EmbeddedText(name)!, Catalog);
 
     /// <summary>A plan's placement as the setup action reads it, the way the Play page sends it.</summary>
-    private static Dictionary<string, object?> Arguments(SetupPlan plan, SetupPlanPlacement item)
+    internal static Dictionary<string, object?> Arguments(SetupPlan plan, SetupPlanPlacement item)
     {
         var placement = new Dictionary<string, object?> { ["id"] = item.Id, ["side"] = plan.Side, ["group"] = item.Group };
         var waits = item.OffBoard && item.Holder is null;
@@ -177,10 +177,10 @@ public sealed class BacklogPass30Tests : IDisposable
     }
 
     [Theory]
-    [InlineData("armor-test", "forward-screen")]
-    [InlineData("gambit", "farmhouse", "west-woods", "two-posts")]
-    [InlineData("guards-counterattack", "forward-line", "out-of-sight", "tripwire-and-reserve")]
-    [InlineData("tractor-works", "all-round", "east-front", "hidden-core")]
+    [InlineData("armor-test", "forward-screen", "west-trap", "back-stop", "loaded-column")]
+    [InlineData("gambit", "farmhouse", "west-woods", "two-posts", "storm-the-farmhouse", "seal-the-west-road", "both-posts", "three-roads")]
+    [InlineData("guards-counterattack", "forward-line", "out-of-sight", "tripwire-and-reserve", "fire-first", "cross-unseen", "break-the-tripwires", "two-up-two-back")]
+    [InlineData("tractor-works", "dummy-west", "east-front", "hidden-core", "three-sides", "feint-west")]
     public void EveryBuiltInCardKeepsItsPlansInAFileOfValidForm(string name, params string[] ids)
     {
         var card = Card(name);
@@ -190,8 +190,9 @@ public sealed class BacklogPass30Tests : IDisposable
         Assert.Equal(ids, read.Plans.Select(plan => plan.Id));
         Assert.All(read.Plans, plan =>
         {
-            // A plan is for the side that sets up first, and names the card text it was made for: the card's current text.
-            Assert.Equal(card.Turns.SetsUpFirst, plan.Side);
+            // A plan is for a side of the card (pass 30b: the side that sets up second has plans too), and names the card text it was made for: the
+            // card's current text.
+            Assert.Contains(card.Sides, side => side.Side == plan.Side);
             Assert.Equal(ScenarioCards.Sha256(name), plan.CardSha256);
             Assert.NotEmpty(plan.Terrain);
         });
@@ -226,7 +227,7 @@ public sealed class BacklogPass30Tests : IDisposable
         var read = cards.Plans("my-guards", Catalog)!;
 
         Assert.Empty(read.Diagnostics);
-        Assert.Equal(3, read.Plans.Count);
+        Assert.Equal(7, read.Plans.Count);
         Assert.Equal(without, cards.Sha256("my-guards"));
         Assert.Equal([.. ScenarioCards.Names, "my-guards"], cards.Names);
 
@@ -265,7 +266,7 @@ public sealed class BacklogPass30Tests : IDisposable
         Refused("""{"format":"asl-setup-plans/1","card":"guards-counterattack"}""", "setups.plans:");
         Refused("""{"format":"asl-setup-plans/1","card":"guards-counterattack","plans":[null]}""", "setups.plans:");
         Refused(File(Plan("one", "null")), "setups.plans:");
-        Refused(text.Replace("asl-setup-plans/1", "asl-setup-plans/2", StringComparison.Ordinal), "setups.format:");
+        Refused(text.Replace(ScenarioSetupPlans.Format, "asl-setup-plans/3", StringComparison.Ordinal), "setups.format:");
         Refused(text.Replace("\"card\": \"guards-counterattack\"", "\"card\": \"gambit\"", StringComparison.Ordinal), "setups.card:");
         Refused(text.Replace("\"idea\":", "\"thought\":", StringComparison.Ordinal), "setups.json:");
         Refused(File(Plan("a", Squad), Plan("b", Squad), Plan("c", Squad), Plan("d", Squad)), "setups.plans: a card offers at most 3");
@@ -289,7 +290,7 @@ public sealed class BacklogPass30Tests : IDisposable
     [InlineData("guards-counterattack", "forward-line")]
     [InlineData("guards-counterattack", "out-of-sight")]
     [InlineData("guards-counterattack", "tripwire-and-reserve")]
-    [InlineData("tractor-works", "all-round")]
+    [InlineData("tractor-works", "dummy-west")]
     [InlineData("tractor-works", "east-front")]
     [InlineData("tractor-works", "hidden-core")]
     public async Task TheGateAcceptsEveryKeptPlanOfBoard01(string name, string id)
@@ -308,7 +309,7 @@ public sealed class BacklogPass30Tests : IDisposable
     [Fact]
     public async Task ASidesOwnDummiesAreDrawnForItAlone()
     {
-        var plan = Plans("tractor-works").Plans.Single(item => item.Id == "all-round");
+        var plan = Plans("tractor-works").Plans.Single(item => item.Id == "dummy-west");
         var dummies = plan.Placements.Count(item => item.Dummy);
         Assert.True(dummies > 0);
         Assert.Equal(PlayOutcome.Committed, (await SetUp("tractor-works", plan)).Outcome);

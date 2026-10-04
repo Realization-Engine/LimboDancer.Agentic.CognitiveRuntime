@@ -1834,6 +1834,48 @@ details.advanced > summary {
     margin: 0.2rem 0;
 }
 
+/* Pass 30b: the plans of a side that sets up after the other, in groups, one for each plan of the other side. A group's head carries its match
+   with the stacks seen; the closest is marked by a bar and a badge, never by color alone. */
+.setup-plan-group {
+    border-left: 4px solid var(--line);
+    margin: 0.5rem 0;
+    padding: 0 0 0 0.5rem;
+}
+
+.setup-plan-group.closest {
+    border-left-color: var(--pass);
+}
+
+.setup-plan-group > summary {
+    cursor: pointer;
+    font-weight: 600;
+    padding: 0.25rem 0;
+}
+
+.setup-plan-group-score {
+    font-weight: 400;
+    margin: 0 0.4rem 0 0;
+    white-space: nowrap;
+}
+
+/* A badge that carries a plan's name may wrap, so a long name does not push the tab sideways. */
+.setup-plan-earlier-badge,
+.setup-stack-swapping {
+    white-space: normal;
+}
+
+.setup-non-ob button {
+    height: auto;
+    min-height: 2.1rem;
+    white-space: normal;
+}
+
+.setup-plan-their,
+.setup-plan-public {
+    font-size: 0.9em;
+    margin: 0.2rem 0;
+}
+
 /* Pass 30: the list grouped by stack. A stack's head names its Location; each counter is one line in its printed values, its id after it in
    small type, and what it holds or carries indented under it. The stack chosen on the map and a refused line are marked by a bar and a word,
    never by color alone. */
@@ -1948,7 +1990,8 @@ details.advanced > summary {
     position: static;
 }
 
-.play-workspace.narrow .setup-switcher .muted {
+.play-workspace.narrow .setup-switcher .muted,
+.play-workspace.narrow #setup-their-legend {
     display: none;
 }
 
@@ -1976,7 +2019,8 @@ details.advanced > summary {
 /* A row or a stack brought into view stops below the bar that stays at the top of the pane, not under it. */
 .setup-row,
 .setup-stack,
-.setup-plan {
+.setup-plan,
+.setup-plan-group {
     scroll-margin-top: 8rem;
 }
 

@@ -691,3 +691,22 @@ Pass 30 (2026-10-03) built setup from the card on the map, setup plans as data b
 | The Tractor Works' Factory X3 offering its upper levels to setup | The table player's review, pass 30 | B23.74, the card's SSR | A check of the Factory's levels in the board's data | A row's level select offers the levels the board's data gives for its hex; the three plans stand at ground level. |
 | Tests of the gate accepting the plans of Gambit and Armor Test on board 4's real terrain | The merge gate, pass 30 | None | A board 4 fixture in the tests, as board 01 has | The gate accepted the four plans in the Studio on the real board; the tests check their form. |
 | The zoom to the setup area applied when a plan is shown on the map | The Studio check, pass 30 | None | Nothing | The map zooms to the setup area when the setup opens and by its button; showing a plan keeps the current zoom. |
+
+## 47. Added by the redesign pass 30b
+
+Pass 30b (2026-10-03) gave the side that sets up second its setup plans: answers to the first side's plans and plans for any setup, ordered by how closely each first-side plan matches the stacks the viewer sees; sixteen plans made or remade on the four built-in cards; and hidden and concealed setup used to the full. Items it leaves out:
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| "Rehearse": a test game started with a first-side plan already committed, for development runs | Claude Design's report (its section 8); deferred by the user, pass 30b | None | Nothing | A browser script in the developer's Studio commits the first-side plan for each pair. |
+| Setup plans for a later setup order of the first side, such as The Tractor Works' remnants | The user, pass 30b, as in pass 30 | None | Nothing | The file's rules allow a plan of any order; no card has one, and the remnants set up by hand. |
+| Passengers on the map and the SW of an open top counter in the comparison and in a plan's look | The referee's review, pass 30b | A2.9 | A card whose plans put a loaded vehicle on the map | `SetupPlanMatch` counts units and Dummies that stand in a Location; no plan of the four cards has a Passenger on the map or an open top counter with a SW that differs between look-alike plans. |
+| A page, outside any game, that lists a card's plans and answers for study | Claude Design's report; deferred by the user, pass 30b | None | Nothing | The plans are read in the Plans tab of a game, and in the files. |
+| The answered plan's footprint drawn as a hatch | The design, pass 30b | None | An SVG pattern in the map's marks layer | It is a dashed outline in another color with the count in a disc. |
+| A hex of the Works that holds only Dummies in at least one 308th plan, for X3 and X5 | The table player's review; left by the user, pass 30b | None | Remaking Dummy west again; at best one hex stays real in all three | X3 and X5 hold real units in all three plans, and each plan's facts say so. |
+| Tests of the gate accepting the second sides' plans of Gambit and Armor Test on board 4's real terrain | The user, pass 30b; section 46 has the same row for the first sides | None | A board 4 fixture in the tests, with board 2 for Gambit's map | The gate accepted the plans in the Studio on the real boards; the tests check their form. |
+| The LOS facts of the pass 30b plans checked one by one in the Studio's LOS tab | The pass, 30b | None | Nothing | They come from the scratchpad script, which runs the Studio's own LOS code; pass 30's were also checked in the tab. |
+| The non-OB "?" for the German stacks at BB4 and Y8 on The Tractor Works confirmed in the Studio | The pass, 30b | A12.12 | A test game in which the remnants set up | The plans' facts say both stacks are out of every LOS from the Works; the offer comes after the remnants set up. |
+| Whether the offer of a non-OB "?" should treat an enemy "?" as a possible unit | The referee's review; ruling R23.6 kept by the user, pass 30b | A12.12 | A ruling | A stack seen only by enemy Dummies is offered a "?", which tells its owner that those are Dummies; a plan with hexes of Dummies only says so to its user. |
+| The Plans tab's help lines shortened under 1024 pixels | The Studio check, pass 30b | None | Nothing | At 320 pixels the bar and the two help lines fill the first screen, and the groups start below it. |
+| `SetupPlanPicker.PlanCard` written as a Razor template, as `RowLine` is | The UI review, pass 30b | None | Nothing | It is built with the generated builder's name, which compiles and works. |

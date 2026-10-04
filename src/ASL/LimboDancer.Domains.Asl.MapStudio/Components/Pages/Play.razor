@@ -74,6 +74,9 @@
                     }
                     else
                     {
+                        @* Pass 30b: every stack that may take a "?" in one step; a "?" costs a unit nothing until it acts, so all of them is the start. *@
+                        <button type="button" class="non-ob-all" id="@($"non-ob-all-{side.Id}")"
+                                @onclick="@(() => nonObChosen.UnionWith(choices.Select(at => $"{side.Id}|{at}")))">Tick every stack that may take a "?" (@choices.Count)</button>
                         @foreach (var at in choices)
                         {
                             var key = $"{side.Id}|{at}";
@@ -124,15 +127,24 @@
             {
                 <p id="place-note" class="diagnostic warning">@placeNote</p>
             }
-            @if (PlansOffered is null && MaySetUp.Count > 0 && modeReport.CurrentOrder == 1 && !Viewer.IsAdjudicator)
+            @if (swapNote is not null)
             {
-                <p id="setup-no-plans" class="muted">This card has no setup plans: set up by hand under Counters.</p>
+                <p id="setup-swap-note-list" class="diagnostic">@swapNote</p>
+            }
+            @if (SeenNote is { } seenNote)
+            {
+                <p id="setup-seen" class="muted">@seenNote</p>
+            }
+            @if (PlansOffered is null && MaySetUp.Count > 0 && modeReport.CurrentOrder is not null && !Viewer.IsAdjudicator)
+            {
+                <p id="setup-no-plans" class="muted">This card has no setup plans for this side: set up by hand under Counters.</p>
             }
             <InspectorTabs Tabs="@SetupTabs" Selected="@SetupTab" SelectedChanged="@(tab => setupTab = tab)" Label="Setup" IdPrefix="setup">
                 @if (SetupTab == "plans" && PlansOffered is { } offered)
                 {
-                    <SetupPlanPicker Side="@DisplayText.Side(viewAs)" Plans="@offered.Plans" Problems="@offered.Problems" Chosen="@chosenPlan" Changes="@PlanChanges.Count" Shown="@shownPlan"
+                    <SetupPlanPicker Side="@DisplayText.Side(viewAs)" Plans="@offered.Plans" Groups="@PlanGroups" MatchNote="@MatchNote" Problems="@offered.Problems" Chosen="@chosenPlan" Changes="@PlanChanges.Count" Shown="@shownPlan"
                         Earlier="@(offered.Plans.Where(plan => plan.CardSha256 != state!.Scenario!.Sha256).Select(plan => plan.Id).ToHashSet(StringComparer.Ordinal))"
+                        EarlierAnswers="@(Reading?.Earlier ?? new Dictionary<string, string>())" PublicNotes="@(Reading?.Notes ?? new Dictionary<string, string>())"
                         OnUse="@AskUsePlan" OnShow="@ShowPlan" />
                 }
                 else if (SetupTab == "ob")
@@ -152,8 +164,8 @@
                             <span class="toolbar-note">Adds one line for each counter the group still has to set up and the list does not hold yet.</span>
                         </div>
                     }
-                    <SetupCounters Model="@CounterModel" OnChange="@ChangePlacement" OnMove="@(key => pickingKey = pickingKey == key ? null : key)" OnLevel="@SetStackLevel"
-                                   OnSelect="@SelectStack" OnRemove="@RemovePlacement" />
+                    <SetupCounters Model="@CounterModel" OnChange="@ChangePlacement" OnMove="@(key => (pickingKey, swapFrom) = (pickingKey == key ? null : key, null))" OnLevel="@SetStackLevel"
+                                   OnSelect="@SelectStack" OnRemove="@RemovePlacement" OnSwap="@(location => (swapFrom, pickingKey, swapNote) = (swapFrom == SwapHex(location) ? null : SwapHex(location), null, null))" />
                     @nonObBlock
                     <details id="setup-by-hand">
                         <summary>Add a counter by hand</summary>
@@ -177,9 +189,11 @@
             @if (history is null && ChosenCard is { Minimal: false } startCard)
             {
                 @* Pass 30: the game may start with no counter placed, so each side sets up on the game's map, in its own view. *@
-                @if (ChosenPlanCount > 0)
+                @if (ChosenPlanCount + chosenPlans.Others > 0)
                 {
-                    <p id="start-plans-note">This card has @ChosenPlanCount setup @(ChosenPlanCount == 1 ? "plan" : "plans") for the @DisplayText.Side(startCard.Turns.SetsUpFirst) side, offered once the game has started.</p>
+                    var otherSide = startCard.Sides.FirstOrDefault(side => side.Side != startCard.Turns.SetsUpFirst)?.Side;
+                    <p id="start-plans-note">This card has @(string.Join(" and ", new[] { (Count: ChosenPlanCount, Side: startCard.Turns.SetsUpFirst), (Count: chosenPlans.Others, Side: otherSide ?? string.Empty) }
+                        .Where(item => item.Count > 0).Select(item => $"{Count(item.Count, "setup plan", "setup plans")} for the {DisplayText.Side(item.Side)} side"))), each offered in that side's own view once the game has started.</p>
                 }
                 <div class="toolbar" id="start-game-bar">
                     <button type="button" id="start-game" disabled="@(placements.Count > 0)" aria-describedby="start-game-note" @onclick="@StartGame">Start the game, then set up on the map</button>
@@ -706,6 +720,15 @@ else if (state is not null)
                     {
                         <div class="toolbar" id="setup-map-tools">
                             <button type="button" id="map-zoom-setup" @onclick="@ZoomToSetup">Zoom to the setup area</button>
+                            @if (AnsweredPlan is { } theirPlan)
+                            {
+                                @* Pass 30b: the plan a response answers, drawn under the enemy's stacks from that plan's public placements and never from the game. *@
+                                <button type="button" id="map-their-outline" aria-pressed="@(theirOutline ? "true" : "false")" @onclick="@(() => theirOutline = !theirOutline)">Their plan's outline</button>
+                                @if (theirOutline)
+                                {
+                                    <span class="muted" id="setup-their-legend">Dashed purple with a number: where @theirPlan.Name would put their stacks, and how many counters. A stack with no outline, or an outline with no stack, is where their setup differs from that plan.</span>
+                                }
+                            }
                             <span class="muted" id="setup-draft-note">@(shownPlan is not null ? "The counters of the plan shown are a draft: nothing is in the game yet."
                                 : placements.Count > 0 ? "The counters of your list are a draft, drawn paler, with their hexes outlined: nothing is in the game until you propose and confirm." : string.Empty)</span>
                         </div>
@@ -720,6 +743,18 @@ else if (state is not null)
                                     <label>or type its Location <input id="setup-move-location" size="11" placeholder="bd01:F5:1" @onchange="@(args => MoveTyped(args.Value as string ?? string.Empty))" /></label>
                                     <button type="button" class="link" id="setup-move-cancel" @onclick="@(() => pickingKey = null)">Cancel</button>
                                 </p>
+                            }
+                            @if (swapFrom is { } swapping && BoardLocation.TryParse(swapping, out var swapAt))
+                            {
+                                <p id="setup-swap-banner" class="diagnostic">
+                                    Click another hex of your list, on the map or by a stack's name in the list, to swap its counters with those in @DisplayText.Location(swapAt): all levels of both hexes change places.
+                                    A stack of Dummies swapped with a stack under "?" of the same height looks the same to the other side. Esc on the map cancels.
+                                    <button type="button" class="link" id="setup-swap-cancel" @onclick="@(() => swapFrom = null)">Cancel</button>
+                                </p>
+                            }
+                            else if (swapNote is not null)
+                            {
+                                <p id="setup-swap-note" class="diagnostic">@swapNote</p>
                             }
                         </div>
                     }
@@ -1039,8 +1074,9 @@ else if (state is not null)
     private (string? Game, string? Card, string? Sha256, SetupPlansRead? Read) planCache;
 
     /// <summary>
-    /// The setup plans offered now (pass 30; ruling R23.3): only in the view of the side that sets up first, never the other side's or the
-    /// adjudicator's, while the groups a plan places are setting up. Null when none is offered; a setups file that cannot be read gives its reasons.
+    /// The setup plans offered now (passes 30 and 30b; ruling R23.3): only in the view of the side whose groups are setting up, never the other side's
+    /// or the adjudicator's, while the groups a plan places are setting up. Null when none is offered; a setups file that cannot be read gives its
+    /// reasons.
     /// </summary>
     private (IReadOnlyList<SetupPlan> Plans, IReadOnlyList<string> Problems)? PlansOffered
     {
@@ -1062,12 +1098,14 @@ else if (state is not null)
     {
         {
             if (state is not { Scenario: { } playing } || !SetupOpen || history?.Current is null || handOver is not null || Viewer.IsAdjudicator
-                || SetupCard is not { Minimal: false } card || card.Turns.SetsUpFirst != viewAs || SetupView is not { } report || PublishedCatalog is not { } catalog)
+                || SetupCard is not { Minimal: false } || SetupView is not { } report || PublishedCatalog is not { } catalog)
             {
                 return null;
             }
 
-            var settingUp = report.Groups.Where(group => group.Side == viewAs && group.SetsUp && !group.Complete && group.Order == report.CurrentOrder)
+            // A group that only enters sets up off board, whatever the order setting up on the map (Armor Test's column).
+            var settingUp = report.Groups.Where(group => group.Side == viewAs
+                    && ((group.SetsUp && !group.Complete && group.Order == report.CurrentOrder) || (!group.SetsUp && group.OffBoard.Count > 0)))
                 .Select(group => group.Id).ToHashSet(StringComparer.Ordinal);
             if (settingUp.Count == 0)
             {
@@ -1087,6 +1125,312 @@ else if (state is not null)
             var plans = read.Plans.Where(plan => plan.Side == viewAs && plan.Placements.All(item => item.Group is { } group && settingUp.Contains(group))).ToArray();
             return plans.Length == 0 && read.Diagnostics.Count == 0 ? null : (plans, read.Diagnostics);
         }
+    }
+
+    // Pass 30b: whether the map draws the footprint of the plan a response answers.
+    private bool theirOutline = true;
+
+    // Pass 30b: the hex of the list whose counters the next hex chosen changes places with, as its ground-level Location; null when none is.
+    private string? swapFrom;
+
+    // Pass 30b: what the last swap did, or why it was not done; said where the move banner is, and in the list.
+    private string? swapNote;
+
+    // Pass 30b: the plan groups the page has opened. A group once opened is never closed by the page, so a render does not close it under the
+    // player, who may still close it by hand.
+    private readonly HashSet<string> groupsOpened = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// What the page reads of the plans offered, once for each state of the game and view (pass 30b): the other side's plans with how closely each
+    /// matches the stacks in the viewer's own view and the viewer's answers to it, the plans for any setup, the hexes where the other side is
+    /// seen, and what each offered plan says of an earlier version and of being public.
+    /// </summary>
+    private sealed record PlanReading(IReadOnlyList<(SetupPlan Plan, SetupPlanScore Score, IReadOnlyList<SetupPlan> Answers)> Theirs, IReadOnlyList<SetupPlan> Any,
+        int HexesSeen, IReadOnlyDictionary<string, string> Earlier, IReadOnlyDictionary<string, string> Notes);
+
+    private ((GameHistory? History, long Revision, string View, string? HandOver, bool Open) Key, bool Read, PlanReading? Reading) readingCache;
+
+    private PlanReading? Reading
+    {
+        get
+        {
+            var key = (history, state?.Revision ?? -1, viewAs, handOver, SetupOpen);
+            if (!readingCache.Read || readingCache.Key != key)
+            {
+                readingCache = (key, true, ComputeReading());
+            }
+
+            return readingCache.Reading;
+        }
+    }
+
+    /// <summary>
+    /// The reading of the plans offered (pass 30b; rulings R23.1, R23.3). It uses the viewer's own view and the card's public plans, never the game's
+    /// state. The other side's plans are compared only once that side's setup is in sight.
+    /// </summary>
+    private PlanReading? ComputeReading()
+    {
+        if (PlansOffered is not { Plans.Count: > 0 } offered || SetupCard is not { } card || planCache.Read is not { } read || PublishedCatalog is not { } catalog)
+        {
+            return null;
+        }
+
+        var earlier = offered.Plans
+            .Select(plan => (plan.Id, Answered: plan.Answers is { } answers && read.Plans.FirstOrDefault(other => other.Id == answers.Plan) is { } answered
+                && ScenarioSetupPlans.PlacementsSha256(answered) != answers.PlacementsSha256 ? answered.Name : null))
+            .Where(item => item.Answered is not null).ToDictionary(item => item.Id, item => item.Answered!, StringComparer.Ordinal);
+        var notes = offered.Plans.Select(plan => (plan.Id, Note: PlanPublicNote(plan, review: false))).Where(item => item.Note is not null)
+            .ToDictionary(item => item.Id, item => item.Note!, StringComparer.Ordinal);
+        if (View is not { } view || SetupView is not { } report)
+        {
+            return new PlanReading([], [], 0, earlier, notes);
+        }
+
+        var order = offered.Plans.Select(plan => ScenarioSetupPlans.OrderOf(card, plan)).FirstOrDefault(found => found is not null);
+        var theirs = read.Plans.Where(plan => plan.Side != viewAs && ScenarioSetupPlans.OrderOf(card, plan) is { } before && before < order
+            && plan.Placements.All(item => report.Groups.Any(group => group.Id == item.Group && (!group.SetsUp || group.Complete) && !Unseen.Contains(group.Id))))
+            .Select(plan => (Plan: plan, Score: SetupPlanMatch.Score(view, plan, catalog),
+                Answers: (IReadOnlyList<SetupPlan>)[.. offered.Plans.Where(answer => answer.Answers?.Plan == plan.Id)]))
+            .OrderByDescending(item => item.Score.Share).ToArray();
+        if (theirs.Length == 0)
+        {
+            return new PlanReading([], [], 0, earlier, notes);
+        }
+
+        // A plan that answers nothing is for any setup; so is one whose answered plan is not among those compared, so that no plan goes unlisted.
+        SetupPlan[] any = [.. offered.Plans.Where(plan => plan.Answers is null || theirs.All(item => item.Plan.Id != plan.Answers.Plan))];
+        return new PlanReading(theirs, any, SetupPlanMatch.Seen(view, theirs[0].Plan.Side).Count, earlier, notes);
+    }
+
+    // The share of the hexes that must agree for a plan to count as followed; under it the plan for any setup comes first.
+    private const double CloseShare = 0.6;
+
+    // The key of the group of plans for any setup; a plan's id never starts with an underscore.
+    private const string AnyGroup = "_any";
+
+    /// <summary>
+    /// The viewer's plans in groups (pass 30b; rulings R23.1, R23.3), for a side that sets up after the other: one group for each of the other side's
+    /// plans, in the order of how closely that plan matches the stacks in the viewer's own view, and the plans for any setup. Every plan is always
+    /// listed, whatever the other side did; only the order and which group stands open come from the view. A single closest plan with an answer
+    /// opens first; when the other side's plans tie, when none is followed closely, or when the closest has no answer, the plans for any setup do.
+    /// Empty for the side that sets up first, and until the other side's setup is in sight.
+    /// </summary>
+    private IReadOnlyList<SetupPlanPicker.Group> PlanGroups
+    {
+        get
+        {
+            if (Reading is not { Theirs.Count: > 0 } reading)
+            {
+                return [];
+            }
+
+            var theirs = reading.Theirs;
+            var close = theirs[0].Score.Share >= CloseShare;
+            var alone = theirs.Count == 1 || theirs[1].Score.Share < theirs[0].Score.Share;
+            var lead = close && alone && theirs[0].Answers.Count > 0;
+            var picked = shownPlan ?? chosenPlan;
+            bool Open(string key, bool first, IReadOnlyList<SetupPlan> plans)
+            {
+                if (first || plans.Any(plan => plan.Id == picked))
+                {
+                    groupsOpened.Add(key);
+                }
+
+                return groupsOpened.Contains(key);
+            }
+
+            var any = new SetupPlanPicker.Group(AnyGroup, "For any setup", null, false, Open(AnyGroup, !lead, reading.Any), null, reading.Any);
+            SetupPlanPicker.Group[] groups = [.. theirs.Select((item, index) => new SetupPlanPicker.Group(item.Plan.Id, $"If they set up like {item.Plan.Name}",
+                $"{item.Score.Matching} of {Count(item.Score.Hexes, "hex", "hexes")} match", close && alone && index == 0, Open(item.Plan.Id, lead && index == 0, item.Answers),
+                item.Plan, item.Answers))];
+            return reading.Any.Count == 0 ? groups : lead ? [.. groups, any] : [any, .. groups];
+        }
+    }
+
+    /// <summary>What the comparison says in words: the other side's plans tie, none is followed closely, or the closest differs in some hexes.</summary>
+    private string? MatchNote
+    {
+        get
+        {
+            if (Reading is not { Theirs.Count: > 0 } reading)
+            {
+                return null;
+            }
+
+            var (best, last) = (reading.Theirs[0], reading.Theirs[^1]);
+            return reading.Theirs.Count > 1 && best.Score.Matching == last.Score.Matching && best.Score.Hexes == last.Score.Hexes
+                    ? "Their plans look the same from here, so the stacks do not say which was used."
+                : best.Score.Share < CloseShare ? "Their setup does not follow any of their plans closely."
+                : best.Score.Matching < best.Score.Hexes && (reading.Theirs.Count == 1 || reading.Theirs[1].Score.Share < best.Score.Share)
+                    ? $"{Count(best.Score.Hexes - best.Score.Matching, "hex differs", "hexes differ")} from {best.Plan.Name}: check its outline on the map before you use an answer to it."
+                : null;
+        }
+    }
+
+    /// <summary>What the bar says of the other side's setup, for a side that sets up after it: in how many hexes its stacks are seen, and what the comparison says.</summary>
+    private string? SeenNote => Reading is { Theirs.Count: > 0 } reading
+        ? $"The {DisplayText.Side(reading.Theirs[0].Plan.Side)} side has set up: you see its stacks in {Count(reading.HexesSeen, "hex", "hexes")}."
+            + (MatchNote is { } note ? " " + note : string.Empty)
+        : null;
+
+    /// <summary>The plan of the other side that the plan shown on the map, or else the plan in the list, answers; null when it answers none.</summary>
+    private SetupPlan? AnsweredPlan => (shownPlan ?? chosenPlan) is { } id && PlansOffered?.Plans.FirstOrDefault(plan => plan.Id == id)?.Answers is { } answers
+        ? Reading?.Theirs.Where(item => item.Plan.Id == answers.Plan).Select(item => item.Plan).FirstOrDefault() : null;
+
+    /// <summary>A plan's name with the plan it answers, as the bar, the review, and the notice say it.</summary>
+    private string PlanTitle(SetupPlan plan) => plan.Answers is { } answers && planCache.Read?.Plans.FirstOrDefault(other => other.Id == answers.Plan) is { } answered
+        ? $"{plan.Name} (answers {answered.Name})" : plan.Name;
+
+    /// <summary>
+    /// What a plan tells the other side when it is set up unchanged (pass 30b): the plans are public, so a side that recognises one knows where its
+    /// hidden counters are, which of its hexes hold only Dummies, what is under its "?", and who holds its SW. Computed from the plan's own
+    /// placements, in the view of the side that may use it.
+    /// </summary>
+    private (IReadOnlyList<string> Told, bool DummyHexes) PlanGivesAway(SetupPlan plan)
+    {
+        var told = new List<string>();
+
+        // A hex is named with its board on a map of several boards, where two boards have a hex of the same name.
+        var boards = SetupCard?.Boards.Count ?? 1;
+        BoardLocation? HexOf(string? at) => BoardLocation.TryParse(at, out var parsed) ? parsed with { Level = 0 } : null;
+        string Name(BoardLocation hex) => boards > 1 ? DisplayText.Location(hex) : hex.Hex.ToString();
+        BoardLocation? Where(SetupPlanPlacement item) => HexOf(item.At ?? plan.Placements.FirstOrDefault(other => other.Id == item.Holder)?.At);
+        var hidden = plan.Placements.Where(item => item.Hidden && !item.OffBoard && item.Definition is not null && Where(item) is not null).ToArray();
+        if (hidden.Length > 0)
+        {
+            // A definition with no printed label, such as a Gun, is named by its kind.
+            string Named(string definition) => DefinitionLabel(definition) is var label && label != definition ? label
+                : PublishedCatalog?.Definition(definition) is { } found ? found.Kind == "asl:gun" ? "Gun" : DisplayText.Kind(found.Kind) : definition;
+            told.Add("where its hidden counters are (" + string.Join(", ", hidden.Select(item => $"{Named(item.Definition!)} in {Name(Where(item)!)}")) + ")");
+        }
+
+        var standing = plan.Placements.Where(item => item.Holder is null && !item.OffBoard && HexOf(item.At) is not null).ToArray();
+        var dummyOnly = standing.GroupBy(item => HexOf(item.At)!).Where(hex => hex.All(item => item.Dummy)).Select(hex => Name(hex.Key)).Order(StringComparer.Ordinal).ToArray();
+        if (dummyOnly.Length > 0)
+        {
+            told.Add("which hexes hold only Dummies (" + string.Join(", ", dummyOnly) + ")");
+        }
+
+        if (standing.Any(item => item.Concealed && !item.Dummy))
+        {
+            told.Add("what is under each \"?\"");
+        }
+
+        var held = plan.Placements.Count(item => item.Holder is not null && !item.OffBoard && item.Definition is { } named && PublishedCatalog?.Definition(named) is { } definition
+            && Library.Vocabulary.IsA(definition.Kind, "asl:equipment") && definition.Kind != "asl:gun"
+            && plan.Placements.FirstOrDefault(other => other.Id == item.Holder) is { OffBoard: false });
+        if (held > 0)
+        {
+            told.Add(held == 1 ? "which unit holds its SW" : $"which unit holds each of its {held} SW");
+        }
+
+        return (told, dummyOnly.Length > 0);
+    }
+
+    /// <summary>
+    /// The card's other plans for the same side and setup order that look to the other side exactly as this one does (pass 30b): the same "?" and the
+    /// same top counters in the same Locations. Such plans cannot be told apart by the stacks.
+    /// </summary>
+    private (IReadOnlyList<string> Twins, int Others) PlanTwins(SetupPlan plan)
+    {
+        if (SetupCard is not { } card || planCache.Read is not { } read || PublishedCatalog is not { } catalog)
+        {
+            return ([], 0);
+        }
+
+        var order = ScenarioSetupPlans.OrderOf(card, plan);
+        var others = read.Plans.Where(other => other.Id != plan.Id && other.Side == plan.Side && ScenarioSetupPlans.OrderOf(card, other) == order).ToArray();
+        var look = SetupPlanMatch.Look(plan, catalog);
+        return ([.. others.Where(other => SetupPlanMatch.Look(other, catalog) == look).Select(other => other.Name)], others.Length);
+    }
+
+    /// <summary>
+    /// What the side that may use a plan is told of its being public (pass 30b): what an unchanged setup gives away to a side that recognises it, or,
+    /// when every other plan of the card looks the same to the other side, that the stacks do not say which of them was used, though the other side
+    /// still knows what they all share. A plan with hexes of Dummies only is told how the non-OB "?" may show them (A12.12; ruling R23.6). Null when
+    /// the plan has nothing to give away.
+    /// </summary>
+    private string? PlanPublicNote(SetupPlan plan, bool review)
+    {
+        var (told, dummyHexes) = PlanGivesAway(plan);
+        if (told.Count == 0)
+        {
+            return null;
+        }
+
+        var (twins, others) = PlanTwins(plan);
+        var secrets = string.Join("; ", told);
+        var dummies = dummyHexes
+            ? " Before play, an enemy stack that only your Dummies see may take a \"?\" (A12.12), and being offered it tells the other side that those are Dummies."
+            : string.Empty;
+        if (twins.Count > 0 && twins.Count == others)
+        {
+            return $"Setup plans are public. {plan.Name} shows the other side the same stacks as {string.Join(" and ", twins)}, so an unchanged setup does not say which of them was used. "
+                + $"The other side still knows it is one of these, and whatever all of them share; move or swap stacks to hide more.{dummies}";
+        }
+
+        var partly = twins.Count > 0 ? $" It looks the same as {string.Join(" and ", twins)}, and can be told from the card's other plans." : string.Empty;
+        return (review
+            ? $"Setup plans are public: if the other side recognises {plan.Name}, it knows {secrets}.{partly} Move or swap those stacks first to keep that secret."
+            : $"Set up unchanged, this plan can be recognised by the other side, which then knows {secrets}.{partly} To keep that secret, move or swap those stacks before you propose.")
+            + dummies;
+    }
+
+    /// <summary>A Location's hex as the swap names it: its ground-level Location.</summary>
+    private static string? SwapHex(string location) => BoardLocation.TryParse(location, out var at) ? (at with { Level = 0 }).ToString() : null;
+
+    /// <summary>The counters of the list that stand in a hex, at any level.</summary>
+    private Placement[] RowsIn(BoardLocation hex) =>
+        [.. placements.Where(item => OnMap(item) && BoardLocation.TryParse(item.Location, out var there) && (there with { Level = 0 }) == hex)];
+
+    /// <summary>
+    /// "Swap" (pass 30b): the counters of two hexes of the list change places, all levels of each hex together, each counter keeping its level when
+    /// the other hex has it. A stack of Dummies swapped with a concealed stack of the same height leaves what the other side sees as it was and
+    /// changes what is under it. It is the player's act: the page swaps nothing by itself.
+    /// </summary>
+    private void SwapStacks(StudioBoard board, string to)
+    {
+        var from = swapFrom;
+        swapFrom = null;
+        if (!BoardLocation.TryParse(from, out var first) || !BoardLocation.TryParse(to, out var second))
+        {
+            return;
+        }
+
+        var (hexA, hexB) = (first with { Level = 0 }, second with { Level = 0 });
+        if (hexA == hexB)
+        {
+            swapNote = $"That is the same hex, {DisplayText.Location(hexA)}, so nothing was swapped.";
+            return;
+        }
+
+        if (RowsIn(hexA).Length == 0 || RowsIn(hexB).Length == 0)
+        {
+            swapNote = "One of the two hexes no longer holds a counter of your list, so nothing was swapped.";
+            return;
+        }
+
+        var (levelsA, levelsB, lowered) = (LevelsAt(board, hexA), LevelsAt(board, hexB), false);
+        for (var index = 0; index < placements.Count; index++)
+        {
+            if (!OnMap(placements[index]) || !BoardLocation.TryParse(placements[index].Location, out var at))
+            {
+                continue;
+            }
+
+            var hex = at with { Level = 0 };
+            if (hex == hexA || hex == hexB)
+            {
+                var (target, levels) = hex == hexA ? (hexB, levelsB) : (hexA, levelsA);
+                lowered |= !levels.Contains(at.Level);
+                placements[index] = placements[index] with { Location = (target with { Level = levels.Contains(at.Level) ? at.Level : 0 }).ToString() };
+            }
+        }
+
+        (selectedStack, highlight, shownPlan) = (null, hexB, null);
+        ListChanged();
+        swapNote = $"Swapped the counters in {DisplayText.Location(hexA)} and {DisplayText.Location(hexB)}."
+            + (lowered ? " A counter whose level the other hex lacks went to ground level; change its level in the list if you mean another." : string.Empty);
     }
 
     /// <summary>A setup plan's placements as rows of the list, each keyed by its id; the holder says how a counter is held.</summary>
@@ -1208,7 +1552,7 @@ else if (state is not null)
     private void ClearPlacements()
     {
         placements.Clear();
-        (pickingKey, chosenPlan, selectedStack, setupAsk) = (null, null, null, null);
+        (pickingKey, chosenPlan, selectedStack, setupAsk, swapFrom, swapNote) = (null, null, null, null, null, null);
         listVersion++;
     }
 
@@ -1351,6 +1695,14 @@ else if (state is not null)
             return null;
         }
 
+        // Pass 30b: a side that sets up after the other sets up against the stacks it sees, so the box takes those in too.
+        if (!Viewer.IsAdjudicator && View is { } view)
+        {
+            corners = [.. corners, .. view.Units.Where(unit => unit.Side != viewAs && view.Locations.ContainsKey(unit.Id)).Select(unit => view.Locations[unit.Id].Location)
+                .Concat(view.Sealed.Where(presence => presence.Side != viewAs).Select(presence => presence.Location))
+                .Select(at => target.Locate(at with { Level = 0 })).OfType<HexIndex>().Distinct().SelectMany(hex => geometry.Vertices(hex))];
+        }
+
         var margin = geometry.HexHeight * 1.5;
         var (left, top) = (corners.Min(point => point.X) - margin, corners.Min(point => point.Y) - margin);
         return (left, top, corners.Max(point => point.X) + margin - left, corners.Max(point => point.Y) + margin - top);
@@ -1387,7 +1739,14 @@ else if (state is not null)
             (pending, status) = (null, proposal.Result.Outcome == PlayOutcome.NeedsConfirmation ? "The list changed, so the setup proposed before is dropped: propose it again." : string.Empty);
         }
 
-        (setupAsk, setupDone) = (null, null);
+        (setupAsk, setupDone, swapNote) = (null, null, null);
+
+        // A swap waits on a hex of the list: when its counters have left it, there is nothing to swap.
+        if (swapFrom is not null && (!BoardLocation.TryParse(swapFrom, out var waiting) || RowsIn(waiting).Length == 0))
+        {
+            swapFrom = null;
+        }
+
         if (unplacedNote is not null && ReferenceEquals(placeNote, unplacedNote))
         {
             placeNote = null;
@@ -1556,7 +1915,7 @@ else if (state is not null)
         : SetupIncomplete ? null : "Stacks out of the enemy's LOS may still take a \"?\" (A12.12), under Counters; the first action of play closes the setup.";
 
     private string? SetupBarSource => ChosenPlan is { } plan
-        ? $"From {plan.Name}" + (PlanChanges.Count > 0 ? $", {Count(PlanChanges.Count, "change", "changes")}" : string.Empty)
+        ? $"From {PlanTitle(plan)}" + (PlanChanges.Count > 0 ? $", {Count(PlanChanges.Count, "change", "changes")}" : string.Empty)
             + (shownPlan is { } shown && shown != plan.Id ? ". The map shows another plan, not your list." : string.Empty)
         : shownPlan is not null ? "The map shows a setup plan, not your list." : null;
 
@@ -1565,7 +1924,7 @@ else if (state is not null)
         : key.StartsWith("stack:", StringComparison.Ordinal) ? $"Click a hex for the stack at {DisplayText.Location(key["stack:".Length..])}. Esc on the map cancels."
         : placements.FirstOrDefault(row => row.Key == key) is { } moving ? $"Click a hex for {PrintedLabel(moving)} {moving.Id}. Esc on the map cancels." : null;
 
-    /// <summary>The map's keys during setup: Esc ends a move; [ and ] step the map through the setup plans and the list.</summary>
+    /// <summary>The map's keys during setup: Esc ends a move or a swap; [ and ] step the map through the setup plans and the list.</summary>
     private void MapKey(string key)
     {
         if (!SetupMode)
@@ -1575,7 +1934,7 @@ else if (state is not null)
 
         if (key == "Escape")
         {
-            pickingKey = null;
+            (pickingKey, swapFrom) = (null, null);
         }
         else if (key is "[" or "]" && PlansOffered is { Plans.Count: > 0 } offered)
         {
@@ -1592,6 +1951,13 @@ else if (state is not null)
 
     private void SelectStack(string location)
     {
+        if (swapFrom is not null && MapLayers?.Board is { } swapBoard)
+        {
+            SwapStacks(swapBoard, location);
+            ShowActions(scroll: false);
+            return;
+        }
+
         selectedStack = location;
         if (BoardLocation.TryParse(location, out var at))
         {
@@ -1699,7 +2065,7 @@ else if (state is not null)
         : SetupProblems is not null ? [] : [.. Reasons(proposal).Where(reason => !reason.StartsWith("play.setup:", StringComparison.Ordinal))];
 
     // The plans of the card chosen for a new game, counted once per card text.
-    private (string? Card, string? Sha256, int Count) chosenPlans;
+    private (string? Card, string? Sha256, int Count, int Others) chosenPlans;
 
     private int ChosenPlanCount
     {
@@ -1712,7 +2078,9 @@ else if (state is not null)
 
             if (chosenPlans.Card != scenarioCard || chosenPlans.Sha256 != scenarioSha)
             {
-                chosenPlans = (scenarioCard, scenarioSha, Live.Cards.Plans(scenarioCard, catalog)?.Plans.Count ?? 0);
+                var plans = Live.Cards.Plans(scenarioCard, catalog)?.Plans ?? [];
+                var first = plans.Count(plan => plan.Side == ChosenCard?.Turns.SetsUpFirst);
+                chosenPlans = (scenarioCard, scenarioSha, first, plans.Count - first);
             }
 
             return chosenPlans.Count;
@@ -1793,6 +2161,7 @@ else if (state is not null)
                     {
                         Selected = selectedStack == stack.Key,
                         Moving = pickingKey == SetupCounters.StackKey(stack.Key),
+                        Swapping = swapFrom is not null && swapFrom == SwapHex(stack.Key),
                     };
                 }).ToArray();
             var offBoard = standing.Where(row => row.OffBoard).ToArray();
@@ -1848,7 +2217,7 @@ else if (state is not null)
     }
 
     /// <summary>
-    /// A click on the map (pass 30): the hex is kept as before. During setup it also fills the Location of the row being picked, at ground level, and
+    /// A click on the map (pass 30): the hex is kept as before. During setup it first ends a swap that waits on a hex (pass 30b); it also fills the Location of the row being picked, at ground level, and
     /// the next row still without a Location is picked next; with no row being picked, a hex that may take the viewer's non-OB "?" is ticked or unticked.
     /// </summary>
     private void PickHex(StudioBoard board, HexFacts? facts)
@@ -1856,6 +2225,20 @@ else if (state is not null)
         highlight = facts is null ? null : GameMaps.LocationOf(board, facts.Index);
         if (highlight is not { } at || state is null || !SetupOpen || handOver is not null)
         {
+            return;
+        }
+
+        if (swapFrom is not null && SetupMode)
+        {
+            if (RowsIn(at).Length > 0)
+            {
+                SwapStacks(board, at.ToString());
+            }
+            else
+            {
+                swapNote = "A swap needs another hex that holds counters of your list: click one, or press Esc on the map to cancel.";
+            }
+
             return;
         }
 
@@ -1985,6 +2368,15 @@ else if (state is not null)
         {
             var picking = hex.Any(item => item.Key == pickingKey);
             extra.Append(GameMaps.HexMark(board, hex.Key, picking ? "setup-draft picking" : "setup-draft", "none", "#a06000", picking ? 6 : 3, false, null));
+        }
+
+        // Pass 30b: the plan a response answers, from that plan's public placements as the viewer would see them; never from the game's state.
+        if (SetupMode && theirOutline && AnsweredPlan is { } their && PublishedCatalog is { } catalog)
+        {
+            foreach (var (at, count) in SetupPlanMatch.Footprint(their, catalog))
+            {
+                extra.Append(GameMaps.HexMark(board, at, "setup-their-plan", "none", "#7a1f6b", 4, true, count.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+            }
         }
 
         foreach (var side in NonObSides)
@@ -3404,6 +3796,8 @@ else if (state is not null)
         inspectorTab = "selection";
         ClearPlacements();
         (shownPlan, setupTab, setupDone, setupReview, revealId) = (null, null, null, null, null);
+        (theirOutline, swapNote) = (true, null);
+        groupsOpened.Clear();
         placeNote = null;
         placeLocation = placeId = placeBore = placeGroup = string.Empty;
         placeHidden = false;
@@ -4742,6 +5136,8 @@ else if (state is not null)
         shownPhase = null;
         ClearPlacements();
         (shownPlan, setupTab, setupDone, setupReview, revealId) = (null, null, null, null, null);
+        (theirOutline, swapNote) = (true, null);
+        groupsOpened.Clear();
         placeNote = null;
         placeLocation = placeId = placeBore = placeGroup = string.Empty;
         placeHidden = placeConcealed = placeBroken = placeOffBoard = false;
@@ -5018,9 +5414,11 @@ else if (state is not null)
         var waiting = placements.Count(Waits);
         setupReview = placements.Count == 0
             ? ($"Start the game from its card with no counter placed. The side that sets up first then sets up on the map, in its own view.", [], 0)
-            : ($"Set up the {sides} side" + (ChosenPlan is { } from ? $" from {from.Name}" + (PlanChanges.Count > 0 ? $", with {Count(PlanChanges.Count, "change", "changes")}" : ", unchanged") : " from your list")
+            : ($"Set up the {sides} side" + (ChosenPlan is { } from ? $" from {PlanTitle(from)}" + (PlanChanges.Count > 0 ? $", with {Count(PlanChanges.Count, "change", "changes")}" : ", unchanged") : " from your list")
                 + $": {Count(placements.Count, "counter", "counters")}" + (hexes > 0 ? $" in {Count(hexes, "hex", "hexes")}" : string.Empty)
-                + (waiting == placements.Count ? ", all off board to enter" : waiting > 0 ? $", {waiting} of them off board to enter" : string.Empty) + ".", PlanChanges, placements.Count);
+                + (waiting == placements.Count ? ", all off board to enter" : waiting > 0 ? $", {waiting} of them off board to enter" : string.Empty) + "."
+                + (ChosenPlan is { } open && PlanChanges.Count == 0 && PlanPublicNote(open, review: true) is { } publicNote ? " " + publicNote : string.Empty),
+                PlanChanges, placements.Count);
         (setupAsk, shownPlan) = (null, null);
         var catalog = PublishedCatalog is { } published ? $"{published.Identity.Catalog}@{published.Identity.Version}" : string.Empty;
         var arguments = history is null
@@ -5502,7 +5900,7 @@ else if (state is not null)
         var created = history is null;
         var placed = PlacesCounters(proposal) && placements.Count > 0
             ? (Sides: string.Join(" and ", placements.Select(row => DisplayText.Side(row.Side)).Distinct(StringComparer.Ordinal)),
-                From: ChosenPlan is { } from ? $", from {from.Name}" + (PlanChanges.Count > 0 ? $" with {Count(PlanChanges.Count, "change", "changes")}" : string.Empty) : string.Empty)
+                From: ChosenPlan is { } from ? $", from {PlanTitle(from)}" + (PlanChanges.Count > 0 ? $" with {Count(PlanChanges.Count, "change", "changes")}" : string.Empty) : string.Empty)
             : ((string Sides, string From)?)null;
 
         // Plan section 13.4: after a reconnect, another tab, or another viewer's commit, the game is read again first; a proposal made at another
@@ -5649,7 +6047,7 @@ else if (state is not null)
                 var onMap = SettingUpSide;
                 var next = onMap ?? SetupView?.Groups.FirstOrDefault(group => group.OffBoard.Count > 0)?.Side;
                 setupDone = ($"The {done.Sides} setup is in the game{done.From}. "
-                    + (next is null ? "Every group has set up: play may start."
+                    + (next is null ? "Every group has set up. Each side may now place a \"?\" on its stacks out of the enemy's LOS (A12.12), under Counters; the first action of play closes the setup."
                         : onMap is not null ? $"Next: the {DisplayText.Side(next)} side sets up."
                         : $"Next: the {DisplayText.Side(next)} side sets up the counters that enter, off board."), next);
             }
