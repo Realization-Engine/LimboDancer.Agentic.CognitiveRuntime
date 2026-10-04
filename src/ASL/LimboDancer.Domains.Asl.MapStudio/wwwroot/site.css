@@ -1031,6 +1031,19 @@ button.link {
     text-underline-offset: 2px;
 }
 
+/* Pass 31c (design D13; the user, 2026-10-04): a typed Location with its actions ("Pick on the map", "Use G4", "Remove I4"), each on a
+   line of its own under the field. */
+.location-field {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+}
+
+.location-field[data-armed="true"] > button.pick-on-map {
+    font-weight: 600;
+}
+
 button.link:hover:not(:disabled) {
     background: none;
     color: #2c4016;
