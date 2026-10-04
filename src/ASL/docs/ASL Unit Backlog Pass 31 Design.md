@@ -120,7 +120,7 @@ So the gap is in the page and in the wording of the reason, and the pass closes 
 
 **D6. Fire: five corrections** (P-05, P-02, P-16, P-26, R-05).
 
-- **The MF limit** counts the firer's attacks on this moving stack in this Location in this Movement Phase, a weapon apart from the unit that fires it, and no longer truncates a half MF. Ruling R31.1.
+- **The MF limit** counts the firer's attacks on this moving stack in this Location in this Movement Phase, a weapon apart from the unit that fires it. The MF spent there are rounded down, with a least of one attack a hex, as A8.3 and A9.2 say ("FRD, but a minimum of once per hex"), so the present rounding stays. Ruling R31.1.
 - **Two leaders in a target Location.** The Fire package's order of checks for several leaders, the modifier each takes, and Leader Loss with more than one leader are reviewed against A10.2 and A10.21, tested, and the refusal removed. A leader whose broken Morale Level the catalog lacks keeps its own refusal. Ruling R31.2.
 - **The Effect column** shows what the attack changed. A target that was already broken or pinned reads "already broken".
 - **A created unit's conditions.** A unit created in play (a created leader, a replacement, a Deployed HS) has broken, berserk, captured, and Melee recorded, so its Good Order is known. Older games read as before (backlog section 45's row, for new events only).
@@ -142,7 +142,8 @@ So the gap is in the page and in the wording of the reason, and the pass closes 
 - Broken leaders are not offered as ralliers.
 - "Dismantle or assemble" is enabled only for a weapon the game dismantles, in a phase that allows it.
 - "May not Self-Rally" becomes three texts: the unit's kind may not; the side's one MMC Self-Rally of this Player Turn is used (naming the unit that used it); a leader in the Location must rally it.
-- The referee checks whether a leader-directed rally should use up the side's one MMC Self-Rally (A18.11), and whether a leader's own Self-Rally takes the +1 (A10.63). Rulings R31.4 and R31.5.
+- The referee's check (section 13) cleared both doubts: a leader-directed rally does use up the allowance, and a leader's Self-Rally does take the +1. Only the texts change.
+- **Deploy.** Russian squads may not Deploy (A25.2), Guards squads included; "Guards" in A1.31 and A1.32 are the Guards of prisoners (A20.5). Ruling R31.4, which corrects ruling R13.4.
 
 **D10. The hand-over screen says what is going on** (the user's answer 3, 2026-10-04). Today the screen is the same text for every hand-over. It becomes an account of the moment, made only of what both sides know, since the side leaving and the side arriving both see it.
 
@@ -249,9 +250,9 @@ Written at the merge gate, by the handover prompt's rule. The Studio on port 667
 |---|---|---|
 | R31.1 | What does the Defensive First Fire MF limit count? | A8.3, A9.2; D6 |
 | R31.2 | How do several leaders in a target Location check, and who modifies whom? | A10.2, A10.21; the referee's review |
-| R31.3 | Is a pinned firer's SW halved? | A7.8; the referee's check |
-| R31.4 | Does a leader-directed rally use the side's one MMC Self-Rally? | A18.11; the referee's check |
-| R31.5 | Does a leader's Self-Rally take the +1? | A10.63; the referee's check |
+| R31.3 | How does a pinned unit fire its MG? | A7.81; section 13 |
+| R31.4 | Who may Deploy and Recombine without a leader, and may Russian squads Deploy? | A1.31, A1.32, A20.5, A25.2; section 13; corrects R13.4 |
+| R31.5 | Which leader's modifier does a MC or TC take when several leaders are present? | A10.21, A10.22, A10.72; section 13 |
 | R31.6 | Who may propose what? | D1; the user's answer 2 |
 | R31.7 | What may the hand-over screen show? | D10; rulings R23.1 to R23.6 |
 
@@ -323,3 +324,29 @@ Answered 2026-10-04.
 | 7 | The second play test | As recommended: Claude plays it in its Studio; the user decides after its report whether Claude in Chrome plays another card before the merge. |
 | 8 | After the game has ended | The user asked that the result be computed from the card's Victory Conditions, with a pass 31c if the code for it were missing. It is there (D4), so nothing is deferred, and the pass shows the result with an account of every condition. The views after the end stay as they are, which was the recommendation and is taken as accepted unless the user says otherwise. |
 | 9 | Rules changes | As recommended, and with top priority: the rulebook PDF is checked first and at every task as the work goes, not at the end. The referee's check is task 31.1, and the rule at the head of this document holds for every task. |
+
+## 13. The referee's check (task 31.1)
+
+**Done 2026-10-04,** before any code changed, against the registered rulebook PDF (`eASLRB_v3_01.pdf`; pages are the PDF's physical pages).
+
+| Id | The rulebook | Verdict | What the pass does |
+|---|---|---|---|
+| R-01 | A25.2 (p. 93): "Russian squads may not Deploy [EXC: 20.5 & 21.22]". A20.5 (p. 87): "An unbroken Guard squad can Deploy into HS automatically at any time, regardless of nationality or leader requirements." A1.31 and A1.32 (p. 45) exempt "Guards" from the leader. | **An error, and a wider one than reported.** Ruling R13.4 read A1.31's "Guards" as the Russian Guards squads. A25.2 bars every Russian squad from Deploying, so the exemption can only mean the Guards of prisoners, whom A20.5 lets Deploy. The Turn 1 attempt by `r-squad-21` was not legal. | Task 31.8, ruling R31.4: a Russian squad's Deploy is refused with A25.2; no squad Deploys without a leader for being a Guards squad; Recombining still needs a leader, for Guards squads too. The panel's "Guards need no leader" goes. A Guard of prisoners Deploying at will (A20.5) and a temporary crew (A21.22) go to the backlog. |
+| R-02 | | Closed in section 2: an original 11, not 12. | Nothing. |
+| R-03 | A10.63 (p. 68): "Any unit attempting Self-Rally (i.e., attempting to Rally without the presence of an unbroken leader) must add a +1 DRM." | **No error.** "Any unit" includes a leader. | Nothing. |
+| R-04 | A18.11 (p. 85): "The first MMC Rally attempt of a player's own RPh may be performed as Self-Rally regardless of Self-Rally capability (10.63) ... provided there is no Good Order leader in that Location and the broken unit is not Disrupted." | **No error in the rule.** The allowance is the first MMC Rally attempt, so a leader-directed rally made first uses it, as the code has it. The fault is one text for every case. | Task 31.8: a text for each case, naming the attempt that used the allowance. |
+| R-05 | A7.81 (p. 58): "Pinned Infantry fires MG/IFE/Canister as Area Fire ... and cannot ... declare a Fire Lane ... or use Intensive Fire or a Multiple ROF". | **An error.** A pinned unit's MG is halved as Area Fire; the code halves only the unit's own FP. Whether the code also keeps a pinned unit's MG from its rate of fire and a Fire Lane is read at the task. | Task 31.6, ruling R31.3. |
+| R-06 | B10.31 (p. 136): the +1 for Height Advantage holds only when the unit is "not eligible to receive any other positive TEM". | **No error in the result:** the code adds it only with no other positive TEM. The fact row shows it whenever the firer is lower, which misleads. | Task 31.6: the row is shown only when the +1 applies. |
+| R-07 | A11.22 (p. 71): a unit attacked by an Original 12 "may likewise withdraw from CC immediately thereafter". | **No error against ruling R14.8,** which has the withdrawal declared with the round, since the round is resolved in one action. The record says nothing when a 12 comes and no withdrawal was declared. | Task 31.7: the record says so, citing A11.22. Asking after the DR, as a choice, goes to the backlog. |
+| R-08 | A11.14 (p. 70): "Any SMC in CC has an inherent FP attack and defense strength of one", added to its MMC's. Ruling R14.5 gives an Unarmed unit a CC FP of one. | **No error** in the strength of 4 + 1 + 1. | Nothing. See the next row. |
+| new | A20.551 (p. 88): "Escaped SMC are always Armed." Ruling R14.6 arms a SMC again when its own escape succeeds; ruling R14.5 frees a prisoner as Unarmed when its Guard is eliminated. | **A question, not built.** In Turn 4 the 9-2 was freed when `g-squad-7` eliminated his Guard, and stayed Unarmed for the rest of the game. Whether a SMC freed by his own side is "escaped" is a reading. | Put to the user at the next stop, with the recommendation that a SMC freed in any way is Armed. |
+
+**The passages behind the pass's other rule changes.**
+
+| Decision | The rulebook | What it settles |
+|---|---|---|
+| D2 (P-01) | A8.1 (p. 59): Defensive First Fire is "only vs a moving unit(s)", made "in that Location with as many attacks as he can bring to bear". Ruling R25.7 already has the pass ending the move once fire has broken, pinned, or eliminated every mover. | The window stays open for the DEFENDER after a mover breaks or is pinned; the pass must be reachable. |
+| D6, the MF limit (P-05) | A8.3 (p. 60): "The same unit/weapon can never fire on a moving unit in the same Location more times than the number of MF/MP expended (FRD, but a minimum of once per hex) in that Location during that MPh". A9.2 (p. 61) says the same of a MG. | The count is by unit and by weapon, of this moving unit, in this Location, in this MPh; rounded down, at least once. |
+| D6, several leaders (P-02) | A10.2 (p. 65): leaders check first, "higher Morale Level leaders checking before lower". A10.21 (p. 66): one unbroken leader's modifier applies, not cumulative, and "the owner must choose which". A10.22: a leader takes the modifier of "an unbroken leader of higher morale", never his own. A10.72 (p. 68): a non-zero modifier cannot be declined unless another leader's is substituted. | Ruling R31.5: the game takes the most favorable modifier among the unbroken leaders who may give it, since the owner would choose it; a leader takes one only from a leader of higher Morale Level. Each lost leader causes its own LLMC or LLTC in units of lower Morale Level (A10.2). |
+| D8 (P-04) | A11.14 (p. 70): "the smallest increment which can be the subject of a single CC attack is a single MMC (plus any SMC stacked directly above it)", and stacks are rearranged "prior to both sides' declaration of CC attacks". | The check is right; the form must tick the SMC with its MMC and keep the stacking. |
+| D8 (P-10) | A20.22 (p. 87): at the Kill Number "one defending unit of the defender's choice is captured". | The order of choice belongs to the defender's side. |
