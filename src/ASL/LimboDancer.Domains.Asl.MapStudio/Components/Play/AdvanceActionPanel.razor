@@ -14,7 +14,7 @@
     </p>
 }
 <div class="toolbar">
-    <UnitSelectionList Rows="@Units" Selected="@Selected" CssClass="advance-unit" Legend="Units advancing" OnToggle="@OnToggle" />
+    <UnitSelectionList Rows="@Units" Selected="@Selected" CssClass="advance-unit" Legend="Units advancing" Empty="none may advance now." OnToggle="@OnToggle" />
     <label>
         To
         <select id="advance-to" aria-describedby="@(Waiting.Count > 0 ? "advance-help-summary advance-entry" : "advance-help-summary")" value="@To" @onchange="@(args => OnTo.InvokeAsync(args.Value as string ?? string.Empty))">

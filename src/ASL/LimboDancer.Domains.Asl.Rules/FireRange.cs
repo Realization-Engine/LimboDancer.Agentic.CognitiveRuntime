@@ -44,7 +44,8 @@ public static class FireRange
     /// <summary>
     /// The band of a range. <paramref name="levelAbove"/> is the target's level less the firer's; a weapon with
     /// <paramref name="noLongRange"/> fires to its Normal Range only (an ATR, C13.24), and one with
-    /// <paramref name="noPointBlank"/> is never raised for PBF or TPBF (a FT, A22.1).
+    /// <paramref name="noPointBlank"/> is never raised for PBF or TPBF (a FT, as the Fire package has it: ruling R15.1). An Infantry FT's
+    /// Long Range is two hexes (A22.32), which is twice its Normal Range of one.
     /// </summary>
     public static FireRangeReading Band(int range, bool sameLocation, int normalRange, int levelAbove = 0, bool noLongRange = false, bool noPointBlank = false)
     {
