@@ -18,24 +18,35 @@
 
 <PageTitle>Play - ASL Map Studio</PageTitle>
 
-<PageHeader Title="Play">
-    @* Claude Design's review: one plain sentence, with how it works a click away. *@
-    <RuleHelp Id="play-intro" DetailLabel="How this works" Summary="Play a game from a scenario card: choose an action, review what it will do, then confirm it.">
+@* Pass 31c (design D15; play test P-28, P-29): with a game open nothing sits outside the workspace, so the window does not scroll: the page's
+   title is kept for assistive technology, its introduction is the context's "How this works", and the scripted dice are a tab of the activity
+   strip. *@
+@{
+    RenderFragment intro = @<RuleHelp Id="play-intro" DetailLabel="How this works" Summary="Play a game from a scenario card: choose an action, review what it will do, then confirm it.">
         Live games are the Studio's chosen game source (D2). Every change is a registered action through the Execution Gate: the Studio proposes it,
         the gate checks it against the current game, boards, and catalog, and it commits only after you confirm. Nothing here edits a game directly.
-    </RuleHelp>
-</PageHeader>
-
-@if (Scripted is { } scripted)
+    </RuleHelp>;
+}
+@if (history is null)
 {
-    <ScriptedDicePanel Queued="@([.. scripted.Queued])" @bind-Input="scriptedInput" Add="QueueDice" Clear="@(() => scripted.Clear())" Problem="@scriptedProblem" />
+    <PageHeader Title="Play">
+        @intro
+    </PageHeader>
+    @if (Scripted is { } scripted)
+    {
+        <ScriptedDicePanel Queued="@([.. scripted.Queued])" @bind-Input="scriptedInput" Add="QueueDice" Clear="@(() => scripted.Clear())" Problem="@scriptedProblem" />
+    }
+}
+else
+{
+    <h2 class="page visually-hidden">Play</h2>
 }
 
-<PlayContextHeader Summary="@ContextSummary" Revision="@(state is not null && history?.Current is not null ? state.Revision : null)" Acting="@ActingNote" Busy="@busy" Live="@(state is null || history is null ? null : history.Current is not null)" Ended="@(state?.Ended is not null)"
+<PlayContextHeader Summary="@ContextSummary" Revision="@(state is not null && history?.Current is not null && (Viewer.IsAdjudicator || state.Ended is not null) ? state.Revision : null)" Acting="@ActingNote" Busy="@busy" Live="@(state is null || history is null ? null : history.Current is not null)" Ended="@(state?.Ended is not null)"
                    Result="@ResultTitle" ResultReason="@ResultReason" ResultWhy="@ResultWhy"
                    Conditions="@(state is null ? null : NightAndWeather(state))" HasCard="@(state?.Scenario is not null && handOver is null)" CardChanged="@(state?.Scenario is { } changedCard && !Live.Cards.Matches(changedCard.Id, changedCard.Sha256))"
                    PendingTitle="@(handOver is null && pending is { Result.Outcome: PlayOutcome.NeedsConfirmation } waitingProposal ? DisplayText.Action(waitingProposal.Action.Name) : null)" Review="@FocusReview" Awaiting="@(AwaitingView is { } awaited ? ViewLabel(awaited) : null)"
-                   AwaitingNote="@AwaitingNote" HandOver="@HandOverToAwaiting" Status="@Said(status)" OpenCard="@OpenCard">
+                   AwaitingNote="@AwaitingNote" HandOver="@HandOverToAwaiting" Status="@Said(status)" OpenCard="@OpenCard" Help="@(history is null ? null : intro)">
     <LiveGameToolbar Games="@([.. Live.Games().Select(scope => scope.Game)])" GameId="@gameId" GameChanged="ChangeGame" Disabled="@busy" Views="@ViewChoices"
                      ViewAs="@(handOver ?? viewAs)" ViewChanged="ChangeView" BoardLabel="@ViewTarget"
                      BoardLink="@(state is not null && handOver is null ? Games.BoardLink(ViewTarget, GameLibrary.LivePrefix + gameId, Viewer, Viewer.IsAdjudicator || state.Ended is not null ? state.Revision : null, highlight?.ToString()) : null)" />
@@ -843,8 +854,16 @@ else if (state is not null)
         }
         <section id="play-panel-activity" class="play-pane play-activity" @attributes="@Pane("activity", "Activity")">
             <p id="play-latest">@(LatestRecord ?? "No record yet.")</p>
-            <details id="play-history">
-                <summary>Records, latest first</summary>
+            @* Pass 31c (designs D15 and D17): the records, the units, the scripted dice, and the audit open over the strip, each with its own
+               scroll, and take no height from the map. Every panel stays in the page; only the one chosen shows. *@
+            <div class="toolbar play-activity-tabs" role="group" aria-label="More of the game">
+                @foreach (var (key, label, panel) in ActivityTabs)
+                {
+                    <button type="button" class="link" id="@($"play-activity-{key}")" aria-expanded="@(activityTab == key ? "true" : "false")" aria-controls="@panel"
+                            @onclick="@(() => activityTab = activityTab == key ? null : key)">@label</button>
+                }
+            </div>
+            <div id="play-history" class="play-activity-panel" role="region" aria-label="Records, latest first" hidden="@(activityTab != "records")">
                 <DiceRollHistory Rolls="@RollRows" Scripted="@(Scripted is not null)" />
                 @* Pass 31b: each record leads to its step on the Replay page, read in the view shown here. *@
                 <ActionRecordList Heading="Ordnance" ListId="play-ordnance" When="@WhenOf" Replay="@ReplayFrom" Records='@Entries(OrdnanceRecords, "ordnance")' />
@@ -854,14 +873,27 @@ else if (state is not null)
                 <ActionRecordList Heading="Snipers" ListId="play-snipers" When="@WhenOf" Replay="@ReplayFrom" Records='@Entries(SniperRecords, "sniper")' />
                 <ActionRecordList Heading="Rally, Rout, and other actions" ListId="play-rallies" When="@WhenOf" Replay="@ReplayFrom"
                                   Records="@([.. RallyAndRepairRecords.Select(item => new ActionRecordList.Entry(item.EventId, item.Kind, item.Text))])" />
-            </details>
+            </div>
+            <div id="play-units-panel" class="play-activity-panel" role="region" aria-label="Units" hidden="@(activityTab != "units")">
+                <h3>Units</h3>
+                @* A side is shown no revision in a game still played (backlog section 49; ruling R31b.1). *@
+                <PlayUnitTable ViewNote="@(Viewer.IsAdjudicator ? $"As the adjudicator sees them: every unit, at revision {state.Revision}." : $"As {DisplayText.ViewName(Viewer.Name)} sees them{(state.Ended is not null ? $", at revision {state.Revision}" : string.Empty)}.")"
+                               Rows="@UnitRows" Sealed="@([.. SealedPresences])" Locate="@LocateHex" />
+            </div>
+            @if (Scripted is { } scriptedDice)
+            {
+                <div id="play-dice-panel" class="play-activity-panel" role="region" aria-label="Scripted dice" hidden="@(activityTab != "dice")">
+                    <ScriptedDicePanel Queued="@([.. scriptedDice.Queued])" @bind-Input="scriptedInput" Add="QueueDice" Clear="@(() => scriptedDice.Clear())" Problem="@scriptedProblem" />
+                </div>
+            }
+            @if (Viewer.IsAdjudicator)
+            {
+                <div id="play-audit-panel" class="play-activity-panel" role="region" aria-label="Audit" hidden="@(activityTab != "audit")">
+                    <AdjudicatorAuditPanel Lines="@Live.Audit.Tail(12).ToArray()" />
+                </div>
+            }
         </section>
     </div>
-
-    <h3>Units</h3>
-    <PlayUnitTable ViewNote="@($"As {(Viewer.IsAdjudicator ? "the adjudicator sees them: every unit" : $"{Viewer.Name} sees them")}, at revision {state.Revision}.")"
-                   Rows="@UnitRows" Sealed="@([.. SealedPresences])" Locate="@LocateHex" />
-    <AdjudicatorAuditPanel Lines="@(Viewer.IsAdjudicator ? Live.Audit.Tail(12).ToArray() : null)" />
 }
 
 </CascadingValue>
@@ -6075,6 +6107,17 @@ else if (state is not null)
         }
     }
 
+    // Pass 31c (design D15): the panel open over the activity strip: "records", "units", "dice", "audit", or none.
+    private string? activityTab;
+
+    private IEnumerable<(string Key, string Label, string Panel)> ActivityTabs =>
+    [
+        ("records", "Records, latest first", "play-history"),
+        ("units", "Units", "play-units-panel"),
+        .. Scripted is null ? Array.Empty<(string, string, string)>() : [("dice", "Scripted dice", "play-dice-panel")],
+        .. Viewer.IsAdjudicator ? [("audit", "Audit", "play-audit-panel")] : Array.Empty<(string, string, string)>(),
+    ];
+
     private void CancelProposal()
     {
         if (!busy)
@@ -6180,7 +6223,8 @@ else if (state is not null)
             if (focusReview || focusActions || focusMap)
             {
                 var pane = focusReview ? workspace?.Inspector ?? reviewFallback : focusMap ? workspace?.Stage ?? default : actionsPane;
-                var scroll = focusReview || focusMap || !focusInPlace;
+                // Pass 31c (design D15): from 1024px every pane is in view, so the focus moves and nothing scrolls; the narrow layout still scrolls.
+                var scroll = narrow && (focusReview || focusMap || !focusInPlace);
                 (focusReview, focusActions, focusMap, focusInPlace) = (false, false, false, false);
                 workspaceScript ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/playWorkspace.js");
                 await workspaceScript.InvokeVoidAsync("reveal", pane, scroll);

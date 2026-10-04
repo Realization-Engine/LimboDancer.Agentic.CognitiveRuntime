@@ -4,6 +4,7 @@
    waiting answer needs. Everything here is known to both sides; the page shows it while a hand-over waits, too. *@
 <div id="play-context" class="play-context">
     @ChildContent
+    @Help
     @if (Summary is { Length: > 0 })
     {
         @* Claude Design's UX analysis: the game line Play shares with the board viewer; the game and the view are in the pickers above it. *@
@@ -50,9 +51,11 @@
             <p class="muted" id="play-acting">@acting</p>
         }
     }
-    @if (PendingTitle is { Length: > 0 } || Awaiting is { Length: > 0 })
+    @* Pass 31c (design D15; play test P-28, P-31): the row and the status line keep their places whether or not they have anything to say, so
+       the header has one height and the workspace under it does not move. *@
+    @if (Summary is { Length: > 0 } || PendingTitle is { Length: > 0 } || Awaiting is { Length: > 0 })
     {
-        <div class="toolbar play-context-actions">
+        <div class="@(PendingTitle is { Length: > 0 } || Awaiting is { Length: > 0 } ? "toolbar play-context-actions" : "toolbar play-context-actions idle")">
             @if (PendingTitle is { Length: > 0 } title)
             {
                 <button type="button" id="play-review-jump" class="primary" @onclick="@(() => Review.InvokeAsync())">Review: @title</button>
@@ -64,12 +67,16 @@
             }
         </div>
     }
-    <p id="play-status" class="@(Busy ? "play-status busy" : "play-status")" role="status" aria-live="polite">@(Busy ? "Working: " : string.Empty)@Status</p>
+    <p id="play-status" class="@(Busy ? "play-status busy" : "play-status")" role="status" aria-live="polite" title="@Status">@(Busy ? "Working: " : string.Empty)@Status</p>
 </div>
 
 @code {
     [Parameter]
     public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>The page's "How this works", which a page with a game open shows here instead of above the context (pass 31c).</summary>
+    [Parameter]
+    public RenderFragment? Help { get; set; }
 
     /// <summary>The revision, turn, phase, and phasing side in words, and whether setup is open; empty when no game is shown.</summary>
     [Parameter]

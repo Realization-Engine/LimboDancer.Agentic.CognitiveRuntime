@@ -64,8 +64,12 @@ export function watchContext() {
         return;
     }
 
+    // Pass 31c (design D15): where the context ends on the page is kept too, so the workspace fills what is left of the window below it,
+    // whatever sits above the context (the Studio's bar), and the window does not scroll.
     contextWatcher = new ResizeObserver(() => {
-        document.documentElement.style.setProperty("--play-context-height", `${context.getBoundingClientRect().height}px`);
+        const box = context.getBoundingClientRect();
+        document.documentElement.style.setProperty("--play-context-height", `${box.height}px`);
+        document.documentElement.style.setProperty("--play-workspace-top", `${box.bottom + window.scrollY}px`);
     });
     contextWatcher.observe(context);
 }
@@ -75,5 +79,6 @@ export function unwatchContext() {
         contextWatcher.disconnect();
         contextWatcher = null;
         document.documentElement.style.removeProperty("--play-context-height");
+        document.documentElement.style.removeProperty("--play-workspace-top");
     }
 }

@@ -2095,11 +2095,6 @@ details.advanced > summary {
     }
 }
 
-@media (min-width: 1024px) and (max-width: 1439.98px) {
-    .play-workspace.setup .play-review {
-        max-height: 26vh;
-    }
-}
 
 #setup-problems {
     margin: 0.25rem 0;
@@ -2247,8 +2242,9 @@ details.advanced > summary {
         "activity activity activity";
     gap: 0.75rem;
     height: var(--workspace-height);
-    min-height: 32rem;
-    margin-bottom: 1rem;
+    /* Pass 31c (design D15): the least height fits a window 600px high; a shorter window takes the narrow layout. */
+    min-height: 20rem;
+    margin-bottom: 0;
 }
 
 @supports (height: 100dvh) {
@@ -2273,7 +2269,7 @@ details.advanced > summary {
     scroll-margin-top: calc(var(--play-context-height, 6rem) + 0.75rem);
 }
 
-@media (max-width: 1023.98px) {
+@media (max-width: 1023.98px), (max-height: 599.98px) {
     .play-pane,
     #play-card {
         scroll-margin-top: 0.75rem;
@@ -2363,14 +2359,19 @@ details.advanced > summary {
             "activity activity";
     }
 
-    .play-review {
-        max-height: 40vh;
+    /* Pass 31c (design D15): the review has a track of its own height and scrolls inside it, so a proposal moves nothing. */
+    .play-workspace:not(.replay) {
+        grid-template-rows: 38% minmax(0, 1fr) auto;
+    }
+
+    .play-workspace.setup:not(.replay) {
+        grid-template-rows: 26% minmax(0, 1fr) auto;
     }
 }
 
 /* Under 1024px (and at 200% zoom): the context scrolls away with the page, so it does not fill a short window, and its Review and hand-over
    buttons stay reachable in a bar fixed to the window's foot (plan section 13.1). */
-@media (max-width: 1023.98px) {
+@media (max-width: 1023.98px), (max-height: 599.98px) {
     .play-context {
         position: static;
     }
@@ -2401,7 +2402,7 @@ details.advanced > summary {
 
 /* Under 1024px: the review above labelled Map, Actions, and Activity tabs; the page scrolls, and the map keeps a usable height. The layout follows
    the width itself, so it holds before the script reports it too (UI review, pass 28c); the tabs come with the script. */
-@media (max-width: 1023.98px) {
+@media (max-width: 1023.98px), (max-height: 599.98px) {
     .play-workspace {
         display: block;
         height: auto;
@@ -2557,7 +2558,7 @@ details.advanced > summary {
 
 /* Under 1024px the context scrolls away with the page, so the transport stays within reach in a bar fixed to the window's foot, as Play's Review
    and hand-over buttons do. */
-@media (max-width: 1023.98px) {
+@media (max-width: 1023.98px), (max-height: 599.98px) {
     .replay-transport {
         position: fixed;
         right: 0.75rem;
@@ -2719,4 +2720,118 @@ main :is(.toolbar, .fields, .field-group, .form-grid) > * {
     max-width: 100%;
     white-space: normal;
     text-align: left;
+}
+
+/* ---- Pass 31c: a workspace that holds still (design D15; play test P-28, P-29, P-31) -------------------------------------------------- */
+
+/* The context's row of actions and its status line keep their places whether or not they hold anything, and a long status is cut on one
+   line with its full text in its title, so the header has one height. */
+.play-context-actions {
+    min-height: 2.25rem;
+}
+
+.play-status {
+    min-height: 1.5em;
+    margin: 0.25rem 0 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.play-context .rule-help {
+    margin: 0.25rem 0 0;
+}
+
+/* The introduction's one line is kept for assistive technology; the context shows its disclosure alone. */
+.play-context .rule-help-summary {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* The activity strip: the latest line, and the buttons that open the records, the units, the dice, and the audit over it. */
+.play-activity-tabs {
+    gap: 0.25rem 1.25rem;
+}
+
+.play-activity-tabs > button[aria-expanded="true"] {
+    font-weight: 600;
+}
+
+@media (min-width: 1024px) and (min-height: 600px) {
+    /* The workspace fills the window from where the context ends, as the script measures it, so nothing is left for the window to scroll. */
+    .play-workspace {
+        --workspace-height: calc(100vh - var(--play-workspace-top, calc(var(--play-context-height, 6rem) - 0.25rem)) - 1.75rem);
+    }
+
+    @supports (height: 100dvh) {
+        .play-workspace {
+            --workspace-height: calc(100dvh - var(--play-workspace-top, calc(var(--play-context-height, 6rem) - 0.25rem)) - 1.75rem);
+        }
+    }
+
+    /* An empty status keeps its line. */
+    .play-status:empty {
+        display: block;
+    }
+
+    /* The strip is as tall as its two lines; a panel opens over the panes above it, with its own scroll, and takes no height from the map. */
+    .play-activity {
+        position: relative;
+        max-height: none;
+        overflow: visible;
+    }
+
+    .play-activity-panel {
+        position: absolute;
+        right: 0;
+        bottom: calc(100% + 0.25rem);
+        left: 0;
+        z-index: 6;
+        max-height: min(60vh, 34rem);
+        overflow: auto;
+        padding: 0.5rem 0.75rem;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: 0 -0.25rem 1rem rgba(0, 0, 0, 0.18);
+    }
+
+    /* The scenario card opens as a dialog from the context's link and takes no room when it is closed. */
+    #play-card:not([open]) {
+        display: none;
+    }
+
+    #play-card[open] {
+        position: fixed;
+        inset: 6vh 12vw;
+        z-index: 20;
+        overflow: auto;
+        margin: 0;
+        padding: 0.75rem 1rem;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: 0 0.5rem 2.5rem rgba(0, 0, 0, 0.35);
+    }
+}
+
+.play-activity-panel[hidden] {
+    display: none;
+}
+
+@media (max-width: 1023.98px), (max-height: 599.98px) {
+    .play-context-actions.idle {
+        display: none;
+    }
+
+    .play-status {
+        white-space: normal;
+    }
 }
