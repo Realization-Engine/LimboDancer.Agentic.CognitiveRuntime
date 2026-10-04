@@ -388,7 +388,7 @@ Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (backlog sect
 
 **Purpose:** a played game can be watched and studied, and any moment of it reached without cutting its file by hand. **After:** pass 31. **From:** the user's request of 2026-10-04; backlog section 48's row on a played game's record as a page of its own.
 
-**Status:** approved 2026-10-04 with the user's seven answers, each as recommended (the design's section 11); being built on branch `feature/asl-backlog-pass-31b`.
+**Built 2026-10-04** on branch `feature/asl-backlog-pass-31b`, with the user's seven answers, each as recommended: tasks 31b.1 to 31b.8, three reviews and their fixes, and the Studio check; see the [pass 31b design](<ASL Unit Backlog Pass 31b Design.md>), section 12, and the [review document](<Scenario A1 Backlog Pass 31b Review 2026-10-04.md>). Rulings R31b.1 and R31b.2. Section 15.12 holds its decisions; what it leaves out is in backlog section 49.
 
 | Task | What it changes | Estimate |
 |---|---|---|
@@ -899,6 +899,19 @@ These folders express ownership, not a requirement to create every directory imm
 - **The turned map** (backlog section 44, the user's row). "Rotate map" turns the whole map a quarter clockwise as one, counters included, by a CSS transform; the board's coordinates and the pointer mapping are unchanged. The browser remembers the choice for each shape of pane, tall or wide, and Fit on a turned map fills the pane's width.
 - **Narrow windows.** Under 1024px the inspector sits below the map in the Map tab; a proposal opens the Map tab on its Proposal tab.
 - **The Proposal tab holds** while a proposal waits for Confirm, and is counted only then. The game and view pickers are disabled while the gate works, and the workspace is keyed by the game and the view.
+
+### 15.12 Decisions of pass 31b
+
+**Added 2026-10-04.**
+
+- **One reader of the records.** `PlayRecords` (Services) words a game's records for a history, a view, and a last revision. Play reads them at the game's last revision and Replay filters them to a step's attempt, so a record is worded once. A change to a record's words is made there.
+- **A step is an attempt.** `ReplaySteps` groups a game's events by attempt. A view's steps are read from the events that view is entitled to at the game's last revision; their titles name sides and Locations, never a unit, and are worded from the readable events alone.
+- **The view decides what is a step (ruling R31b.2).** An attempt a view reads nothing of is a step only when the view sees the map change over it; a step that says only that something minor was done is a side's step only when that view sees a change.
+- **What changed is the difference of two views.** `ReplayDiff` compares the view before a step with the view after it and never reads the full state. An enemy under "?" is a count by side and Location.
+- **The page keeps by step and view.** The view, the map's layers, the changes, the step panel's content, and the unit rows are read once for a step and a view; a view change or another game drops them all, with the picked hex and the inspector's tab.
+- **The address** carries the game, the view, and the view's own step number. The page follows it only when the address itself changes, and not while its own move is on its way.
+- **Whose view (ruling R31b.1).** An ended game shows any view at once; a game still played hands a view over as Play does, shows a side no revision, and offers "Play on from here" only to the adjudicator.
+- **The page writes one thing:** a new game's file, through `LivePlay.PlayOn`. It proposes nothing and changes no game.
 
 # Part IV. The component inventory
 
