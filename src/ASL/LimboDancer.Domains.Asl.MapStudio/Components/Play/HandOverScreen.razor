@@ -49,9 +49,19 @@ else
             <p id="play-handover-score" class="handover-score">@Score</p>
         }
         <button id="play-handover-confirm" class="primary" @onclick="Confirmed">I am @Label: show my view</button>
-        <p class="handover-note">
-            Only what both sides know is shown here. The map and the panels stay blank until @Label is at the screen, so no side sees what only another
-            may: the other side's setup while it sets up, its hidden units, and what lies under its "?" (A12.12, A12.3, A2.9; ruling R23.2).
+        @* The user, 2026-10-04: the note says what holds at this moment, not everything the screen ever keeps back. *@
+        <p class="handover-note" id="play-handover-note">
+            @if (Setup)
+            {
+                <text>Only what both sides know is shown here. A side sets up out of the other's sight, so no map is drawn now, and @Label's
+                own map and panels open when @Label takes the screen (A12.12, A2.9; ruling R23.2).</text>
+            }
+            else
+            {
+                <text>Only what both sides know is shown here. The map below shows the units both sides can see, with a "?" where a side's
+                units are concealed; hidden units are not on it (A12.11, A12.3). @CapitalLabel's own view opens when @Label takes the screen
+                (ruling R23.2).</text>
+            }
         </p>
         @* Pass 31c: the terrain alone comes last, so the button to take the screen keeps its place above it. *@
         @Map
@@ -59,9 +69,15 @@ else
 }
 
 @code {
-    /// <summary>The terrain alone, with the Locations the lines name outlined (pass 31c, design D16); none when the page gives none.</summary>
+    /// <summary>The map as both sides know it, with the Locations the lines name outlined (pass 31c); none when the page gives none.</summary>
     [Parameter]
     public RenderFragment? Map { get; set; }
+
+    /// <summary>Whether setup is open, when a side sets up out of the other's sight and no map is drawn.</summary>
+    [Parameter]
+    public bool Setup { get; set; }
+
+    private string CapitalLabel => DisplayText.Sentence(Label ?? string.Empty);
 
     /// <summary>The view waiting for its viewer, or null when none is: then the page's content is shown.</summary>
     [Parameter]

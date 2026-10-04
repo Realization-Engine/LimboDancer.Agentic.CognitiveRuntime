@@ -7,7 +7,7 @@
 @using LimboDancer.Domains.Asl.Rules
 @using LimboDancer.Domains.Asl.Units.Catalog
 @using LimboDancer.Domains.Asl.Units.State
-@using static LimboDancer.Domains.Asl.MapStudio.Components.Play.FireText
+@using static LimboDancer.Domains.Asl.MapStudio.Services.FireText
 @inject LivePlay Live
 @inject NavigationManager Navigation
 @inject UnitLibrary Library
@@ -53,12 +53,14 @@ else
 </PlayContextHeader>
 
 <HandOverScreen Next="@handOver" Label="@ViewLabel(handOver)" Confirmed="ConfirmView" When="@HandOverWhen" Why="@HandOverWhy" Tasks="@HandOverTasks"
-                HappenedTitle="@HandOverHappenedTitle" Happened="@HandOverHappened" Score="@HandOverScore">
+                HappenedTitle="@HandOverHappenedTitle" Happened="@HandOverHappened" Score="@HandOverScore" Setup="@SetupOpen">
 <Map>
-    @* Pass 31c (design D16; ruling R31.7): the terrain alone, with the Locations the screen's lines name outlined. *@
-    @if (handOver is not null && HandOverHappened.Count > 0 && happenedAt.Count > 0 && HandOverBoard is { } handOverBoard)
+    @* Pass 31c (design D16; the user, 2026-10-04; ruling R31c.3): the map as both sides know it, with the Locations the screen's lines name
+       outlined. None during setup, when a side sets up out of the other's sight. *@
+    @if (handOver is not null && state is not null && history?.Current is not null && !SetupOpen && HandOverPublic is { Board: { } handOverBoard } known)
     {
-        <HandOverMap Board="@handOverBoard" Outlined="@happenedAt" />
+        _ = HandOverHappened;
+        <HandOverMap Board="@handOverBoard" Units="@known.Units" Outlined="@happenedAt" />
     }
 </Map>
 <ChildContent>
@@ -871,6 +873,23 @@ else if (state is not null)
                             @onclick="@(() => activityTab = activityTab == key ? null : key)">@label</button>
                 }
             </div>
+            @if (SinceLooked.Count > 0)
+            {
+                <div id="play-since-panel" class="play-activity-panel" role="region" aria-label="Since you last looked" hidden="@(activityTab != "since")">
+                    <h3>Since you last looked</h3>
+                    <ol id="play-since">
+                        @{
+                            string? under = null;
+                        }
+                        @foreach (var line in SinceLooked)
+                        {
+                            var when = WhenOf(line.EventId);
+                            <li data-event="@line.EventId">@(when != under ? $"{when}: " : string.Empty)@DisplayText.Sentence(line.Text)</li>
+                            under = when;
+                        }
+                    </ol>
+                </div>
+            }
             <div id="play-history" class="play-activity-panel" role="region" aria-label="Records, latest first" hidden="@(activityTab != "records")">
                 <DiceRollHistory Rolls="@RollRows" Scripted="@(Scripted is not null)" />
                 @* Pass 31b: each record leads to its step on the Replay page, read in the view shown here. *@
@@ -3875,6 +3894,8 @@ else if (state is not null)
     /// <summary>Everything the last view prepared: the proposal, the drafts of setup and of every action, and the LOS line.</summary>
     private void ResetForView()
     {
+        // The last view's records are not kept in memory for the next (the UI review, pass 31b).
+        (recordsCache, activityTab) = (null, null);
         (Picking.Armed, Picking.ArmedLabel) = (null, null);
         pending = null;
         status = string.Empty;
@@ -3900,6 +3921,8 @@ else if (state is not null)
     {
         if (handOver is { } next)
         {
+            // Pass 31c (design D17): what the arriving view missed is counted from the revision it last saw.
+            sinceLooked = lastShown.TryGetValue(next, out var looked) ? looked : null;
             viewAs = next;
             handOver = null;
             unconfirmed = false;
@@ -6057,8 +6080,27 @@ else if (state is not null)
     // Pass 31c (design D16): the Locations the lines of what happened name, for the outlines of the hand-over screen's map.
     private IReadOnlyList<BoardLocation> happenedAt = [];
 
-    /// <summary>The board of the game's map, for the hand-over screen's terrain; read without any view's counters.</summary>
-    private StudioBoard? HandOverBoard => state is null ? null : MapLayers?.Board;
+    private (string Game, long Revision, StudioBoard? Board, string? Units) handOverPublic;
+
+    /// <summary>The game's map and the units both sides know, for the hand-over screen; read once for a game and a revision.</summary>
+    private (StudioBoard? Board, string? Units) HandOverPublic
+    {
+        get
+        {
+            if (state is null)
+            {
+                return (null, null);
+            }
+
+            if (handOverPublic.Game != gameId || handOverPublic.Revision != state.Revision)
+            {
+                var (board, known) = GameMaps.Public(gameId, state.Map, state.Revision);
+                handOverPublic = (gameId, state.Revision, board, known);
+            }
+
+            return (handOverPublic.Board, handOverPublic.Units);
+        }
+    }
 
     /// <summary>What the page knows of a hex beyond its counters, for the Selection tab: Residual FP (A8.2), which is public, and a Melee the view holds a unit of.</summary>
     private IReadOnlyList<string> HexNotes(HexFacts facts)
@@ -6152,11 +6194,18 @@ else if (state is not null)
         }
     }
 
-    // Pass 31c (design D15): the panel open over the activity strip: "records", "units", "dice", "audit", or none.
+    // Pass 31c (design D15): the panel open over the activity strip: "since", "records", "units", "dice", "audit", or none.
     private string? activityTab;
+
+    // Pass 31c (design D17): the revision the view shown last saw before the screen went to another view; null when it has not had the screen.
+    private long? sinceLooked;
+
+    /// <summary>What the view shown missed while another had the screen, from its own records (design D17).</summary>
+    private IReadOnlyList<(long Revision, string EventId, string Text)> SinceLooked => sinceLooked is { } revision && Records is { } records ? records.Since(revision) : [];
 
     private IEnumerable<(string Key, string Label, string Panel)> ActivityTabs =>
     [
+        .. SinceLooked.Count > 0 ? [("since", $"Since you last looked ({SinceLooked.Count})", "play-since-panel")] : Array.Empty<(string, string, string)>(),
         ("records", "Records, latest first", "play-history"),
         ("units", "Units", "play-units-panel"),
         .. Scripted is null ? Array.Empty<(string, string, string)>() : [("dice", "Scripted dice", "play-dice-panel")],
@@ -6389,7 +6438,7 @@ else if (state is not null)
         }
     }
 
-    private IReadOnlyList<DiceRollHistory.Row> RollRows => Records?.RollRows ?? [];
+    private IReadOnlyList<RollRow> RollRows => Records?.RollRows ?? [];
 
     private IReadOnlyList<(string EventId, string Text)> OrdnanceRecords => Records?.Ordnance ?? [];
 

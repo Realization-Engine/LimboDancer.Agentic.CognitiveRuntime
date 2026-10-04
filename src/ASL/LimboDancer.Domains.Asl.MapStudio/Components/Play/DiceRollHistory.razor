@@ -22,11 +22,8 @@
 }
 
 @code {
-    /// <summary>A roll: its id, what it was for with its dice and units, such as "rally: 1, 2 for r1", and how it was drawn.</summary>
-    public sealed record Row(string Roll, string Text, string Drawn);
-
     [Parameter, EditorRequired]
-    public IReadOnlyList<Row> Rolls { get; set; } = [];
+    public IReadOnlyList<RollRow> Rolls { get; set; } = [];
 
     [Parameter]
     public bool Scripted { get; set; }

@@ -6,6 +6,7 @@ using LimboDancer.Domains.Asl.Maps.Derivation;
 using LimboDancer.Domains.Asl.Maps.Geometry;
 using LimboDancer.Domains.Asl.Maps.Rendering;
 using LimboDancer.Domains.Asl.Units.Rendering;
+using LimboDancer.Domains.Asl.Units.Documents;
 using LimboDancer.Domains.Asl.Units.State;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Services;
@@ -69,6 +70,44 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache
             ? new BoardLoadResult(board, [])
             : new BoardLoadResult(null, [new MapDiagnostic("STUDIO-MAP-003", MapDiagnosticSeverity.Error,
                 $"{map.Boards[0].Board} version {map.Boards[0].Version} is not available.")]);
+    }
+
+    /// <summary>
+    /// The map as both sides know it (pass 31c; the user, 2026-10-04; ruling R31c.3), for the hand-over screen, which both the side leaving and the
+    /// side arriving read: each side's units as the other side's view holds them. A Known unit is drawn as its counter, a concealed one as its
+    /// "?", and a hidden one not at all (A12.11, A12.3); before play starts a stack shows its top counter alone, and a side setting up now is not
+    /// drawn (A2.9, A12.12; ruling R23.3). So the map shows nothing that either player could not already see on the board.
+    /// </summary>
+    public (StudioBoard? Board, string? Units) Public(string gameId, MapInPlay map, long revision)
+    {
+        ArgumentNullException.ThrowIfNull(gameId);
+        ArgumentNullException.ThrowIfNull(map);
+        var entry = games.Load(GameLibrary.LivePrefix + gameId);
+        if (Board(map).Board is not { } board)
+        {
+            return (null, null);
+        }
+
+        if (entry.History is not { HasErrors: false } history || history.At(revision) is not { } state || units.Renderer(UnitLibrary.DefaultSheet) is not { } renderer)
+        {
+            return (board, null);
+        }
+
+        UnitPlacementSet? first = null;
+        var seen = new List<UnitDocument>();
+        foreach (var side in state.Sides)
+        {
+            var projection = games.Projection(entry, Perspective.Side(side.Id), revision);
+            first ??= projection.Set;
+            seen.AddRange(projection.Set.Units.Where(unit => unit.Side != side.Id));
+        }
+
+        return first is null ? (board, null) : (board, units.Overlay(board, first with
+        {
+            SetId = $"{first.SetId}-public",
+            Units = seen,
+            Hash = $"{first.Hash}-public-{revision}",
+        }, renderer).Svg);
     }
 
     /// <summary>

@@ -1,8 +1,7 @@
 using System.Globalization;
-using LimboDancer.Domains.Asl.MapStudio.Services;
 using LimboDancer.Domains.Asl.Rules;
 
-namespace LimboDancer.Domains.Asl.MapStudio.Components.Play;
+namespace LimboDancer.Domains.Asl.MapStudio.Services;
 
 /// <summary>
 /// A fire attack as the viewer may see it (pass 28b, moved from the Play page): the record, or the public report of one withheld from the viewer,
@@ -43,7 +42,7 @@ public sealed record FireView(string EventId, string Group, string Target, strin
 /// The wording of fire results (pass 28b, moved from the Play page so the fire history's components and the page's other records share it). It
 /// formats what a record already holds and never recalculates an adjudication.
 /// </summary>
-internal static class FireText
+public static class FireText
 {
     public static string Number(decimal value) => value.ToString("0.##", CultureInfo.InvariantCulture);
 

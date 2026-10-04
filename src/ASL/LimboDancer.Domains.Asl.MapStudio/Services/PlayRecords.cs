@@ -1,13 +1,12 @@
 using System.Globalization;
 using System.Text.Json;
 using LimboDancer.Domains.Asl.MapStudio.Components.Games;
-using LimboDancer.Domains.Asl.MapStudio.Components.Play;
 using LimboDancer.Domains.Asl.Play;
 using LimboDancer.Domains.Asl.Rules;
 using LimboDancer.Domains.Asl.Units.Catalog;
 using LimboDancer.Domains.Asl.Units.Documents;
 using LimboDancer.Domains.Asl.Units.State;
-using static LimboDancer.Domains.Asl.MapStudio.Components.Play.FireText;
+using static LimboDancer.Domains.Asl.MapStudio.Services.FireText;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Services;
 
@@ -26,7 +25,7 @@ public sealed class PlayRecords
     private readonly UnitNames? names;
     private Dictionary<string, long>? revisions;
     private Dictionary<string, long>? rollRevisions;
-    private IReadOnlyList<DiceRollHistory.Row>? rollRows;
+    private IReadOnlyList<RollRow>? rollRows;
     private IReadOnlyList<(string EventId, string Text)>? ordnance;
     private IReadOnlyList<FireView>? fire;
     private IReadOnlyList<(string EventId, string Text)>? closeCombat;
@@ -61,7 +60,7 @@ public sealed class PlayRecords
     }
 
     /// <summary>The latest six rolls the view may see, latest first.</summary>
-    public IReadOnlyList<DiceRollHistory.Row> RollRows => rollRows ??= RowsOf(Rolls, RollText);
+    public IReadOnlyList<RollRow> RollRows => rollRows ??= RowsOf(Rolls, RollText);
 
     /// <summary>The view's names, when the records were read with them.</summary>
     public UnitNames? Names => names;
@@ -94,7 +93,7 @@ public sealed class PlayRecords
     }
 
     /// <summary>Every roll the view may see among the events of the revisions <paramref name="first"/> to <paramref name="last"/>, in order.</summary>
-    public IReadOnlyList<DiceRollHistory.Row> RollsIn(long first, long last)
+    public IReadOnlyList<RollRow> RollsIn(long first, long last)
     {
         GameEvent[] seen = [.. events.Where(item => item.IsVisibleTo(viewer))];
         return RowsOf(seen.Where(item => item.Revision >= first && item.Revision <= last).Select(item => item.Payload).OfType<DiceRolled>()
@@ -129,7 +128,8 @@ public sealed class PlayRecords
                 // The phase the event was proposed in: the state before it, or the start's own state.
                 if ((history.At(item.Revision - 1) ?? history.At(item.Revision)) is { } before)
                 {
-                    when[item.EventId] = $"Turn {before.Turn}, {GameText.PhaseLabel(before.Phase)}";
+                    // Pass 31c (design D17): the heading names the side whose phase it is.
+                    when[item.EventId] = $"Turn {before.Turn}, {DisplayText.Side(before.PhasingSide)} {GameText.PhaseLabel(before.Phase)}";
                 }
             }
         }
@@ -137,24 +137,103 @@ public sealed class PlayRecords
         return when.GetValueOrDefault(eventId);
     }
 
-    /// <summary>The latest record the view may read, with its turn and phase, for the activity strip.</summary>
+    /// <summary>
+    /// The latest thing the view may read, with its turn and phase, for the activity strip (pass 31c, design D17; play test P-15): the lines of the
+    /// last attempt that has any, so a fire reads with its result and what it did, and a move, a pass, a choice, a surrender, a capture, and a
+    /// declaration are said too.
+    /// </summary>
     public string? Latest
     {
         get
         {
             if (!latest.Read)
             {
-                var revisions = events.ToDictionary(item => item.EventId, item => item.Revision, StringComparer.Ordinal);
-                var all = Ordnance.Concat(CloseCombat).Concat(Night).Concat(Snipers)
-                    .Concat(RallyAndRepair.Select(item => (item.EventId, item.Text)))
-                    .Concat(Fire.Select(fire => (fire.EventId, $"{fire.Group} fires at {fire.Target}.")));
-                var newest = all.Where(item => revisions.ContainsKey(item.EventId)).OrderByDescending(item => revisions[item.EventId]).FirstOrDefault();
-                latest = (true, newest.EventId is null ? null : $"Latest: {WhenOf(newest.EventId)}: {newest.Item2}");
+                var last = Lines.Count == 0 ? null : AttemptOf(Lines[^1].EventId);
+                string[] said = last is null ? [] : [.. Lines.Where(line => AttemptOf(line.EventId) == last).Select(line => Sentence(line.Text))];
+                // The result of the attempt first, then what followed from it; a long attempt is cut, and the records have the rest.
+                latest = (true, said.Length == 0 ? null : $"Latest: {WhenOf(Lines[^1].EventId)}: {string.Join(" ", said.Take(4))}{(said.Length > 4 ? " More is in the records." : string.Empty)}");
             }
 
             return latest.Text;
         }
     }
+
+    private IReadOnlyList<(long Revision, string EventId, string Text)>? lines;
+
+    /// <summary>
+    /// Everything the view may read of the game, in the order it happened, one line for each thing (design D17): the records, a fire with its
+    /// result and what it changed, and the events the records leave out: a move, an advance, the DEFENDER's pass, a move's end, a choice, a
+    /// surrender, a capture, a declaration, a phase's start. Each line is said in the view's words, with the view check of a name.
+    /// </summary>
+    public IReadOnlyList<(long Revision, string EventId, string Text)> Lines => lines ??= ReadLines();
+
+    /// <summary>The lines of what happened after a revision: what the view missed while another had the screen ("Since you last looked").</summary>
+    public IReadOnlyList<(long Revision, string EventId, string Text)> Since(long revision) => [.. Lines.Where(line => line.Revision > revision)];
+
+    private List<(long Revision, string EventId, string Text)> ReadLines()
+    {
+        var revisionOf = events.ToDictionary(item => item.EventId, item => item.Revision, StringComparer.Ordinal);
+        var read = new List<(long Revision, string EventId, string Text)>();
+        void Add(string eventId, string text)
+        {
+            if (revisionOf.TryGetValue(eventId, out var revision))
+            {
+                read.Add((revision, eventId, text));
+            }
+        }
+
+        foreach (var record in Ordnance.Concat(CloseCombat).Concat(Night).Concat(Snipers).Concat(RallyAndRepair.Select(item => (item.EventId, item.Text))))
+        {
+            Add(record.EventId, record.Text);
+        }
+
+        foreach (var fire in Fire)
+        {
+            Add(fire.EventId, FireLine(fire));
+        }
+
+        foreach (var item in events.Where(item => item.IsVisibleTo(viewer)))
+        {
+            var before = history.At(item.Revision - 1);
+            static string Many(IReadOnlyList<string> ids, string one, string several) => $"{string.Join(", ", ids)} {(ids.Count == 1 ? one : several)}";
+            var text = item.Payload switch
+            {
+                MovementStepped step => Many(step.Movers, "moves", "move") + $" to {step.To}{(step.Assault ? " by Assault Movement" : string.Empty)}",
+                VehicleStepped { Kind: not VehicleStepped.Turn } drive => $"{drive.Vehicle} moves to {drive.At}",
+                AdvanceMoved advance => Many(advance.Units, "advances", "advance") + (advance.Exit is { } edge ? $" off the {edge} edge from {advance.To}" : $" to {advance.To}"),
+                MovementWindowClosed => $"The {DisplayText.Side(before?.Sides.FirstOrDefault(side => side.Id != before.PhasingSide)?.Id)} side, the DEFENDER, declines First Fire",
+                MovementEnded ended => Many(ended.Movers, "ends its move", "end their move"),
+                OpportunityFireDeclared held => Many(held.Units, "is", "are") + " held for Opportunity Fire (A7.25)",
+                ChoiceMade => "A choice the game waited for was answered",
+                SurrenderPending surrender => $"{surrender.Unit} surrenders, and its captor is to be chosen (A20.21)",
+                SurrenderRejected refused => $"The surrender of {refused.Unit} is refused (A20.3)",
+                InstanceCaptured taken => $"{taken.Id} is captured, guarded by {taken.Custodian} (A20.2)",
+                PrisonerFreed freed => $"{freed.Unit} is no longer guarded (A20.5)",
+                BuildingMoppedUp mopped => $"The {DisplayText.Side(mopped.Side)} side Mops Up building {mopped.Building} (A12.153)",
+                PhaseChanged phase => $"The {DisplayText.Side(phase.PhasingSide)} {GameText.PhaseLabel(phase.Phase)} of Turn {phase.Turn} begins",
+                GameEnded => "The game ends",
+                _ => null,
+            };
+            if (text is not null)
+            {
+                Add(item.EventId, Say(item.EventId, text));
+            }
+        }
+
+        // The order it happened in; lines of one event keep the order they were read in.
+        return [.. read.Select((line, index) => (line, index)).OrderBy(pair => pair.line.Revision).ThenBy(pair => pair.index).Select(pair => pair.line)];
+    }
+
+    /// <summary>A fire in one line (play test P-15): who fired at what, the result, and what it did to each unit the view may read of.</summary>
+    private static string FireLine(FireView fire)
+    {
+        var changed = fire.Effects is null ? []
+            : fire.Effects.Select(effect => (effect.UnitId, Text: EffectText(effect, fire.BrokenBefore.Contains(effect.UnitId), fire.PinnedBefore.Contains(effect.UnitId))))
+                .Where(effect => effect.Text is not ("unaffected" or "already broken" or "already pinned")).Select(effect => fire.Say($"{effect.UnitId}: {effect.Text}")).ToArray();
+        return $"{fire.Group} fires at {fire.Target}: {fire.Arithmetic.Result}" + (changed.Length > 0 ? "; " + string.Join("; ", changed) : string.Empty);
+    }
+
+    private static string Sentence(string text) => DisplayText.Sentence(text.TrimEnd()) + (text.TrimEnd().EndsWith('.') ? string.Empty : ".");
 
     /// <summary>
     /// The rolls the viewer may see, latest first, with the unit each die belongs to when the viewer may see that too:
@@ -181,7 +260,7 @@ public sealed class PlayRecords
             + $"against morale {check.MoraleLevel}: {(check.Passed ? "passed" : "failed")}";
     }
 
-    private IReadOnlyList<DiceRollHistory.Row> RowsOf(IEnumerable<(DiceRolled Roll, IReadOnlyList<string>? Subjects)> rolls, Func<DiceRolled, string> RollText) => [.. rolls.Select(item => new DiceRollHistory.Row(item.Roll.Roll,
+    private IReadOnlyList<RollRow> RowsOf(IEnumerable<(DiceRolled Roll, IReadOnlyList<string>? Subjects)> rolls, Func<DiceRolled, string> RollText) => [.. rolls.Select(item => new RollRow(item.Roll.Roll,
         SayRoll(item.Roll.Roll, RollText(item.Roll) + (item.Subjects is null ? "" : $" for {string.Join(", ", item.Subjects)}")),
         $"{item.Roll.Count} d{item.Roll.Sides}, drawn by the {item.Roll.Source} for {item.Roll.Actor}"))];
 

@@ -463,7 +463,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
         : $"Turn {step.Turn}, {DisplayText.Side(step.PhasingSide)} {GameText.PhaseLabel(step.Phase)}.";
 
     /// <summary>What the step panel shows of a step: its rolls, its records, and what changed.</summary>
-    private sealed record StepPanel(IReadOnlyList<DiceRollHistory.Row> Rolls, IReadOnlyList<FireView> Fire, IReadOnlyList<ActionRecordList.Entry> Ordnance,
+    private sealed record StepPanel(IReadOnlyList<RollRow> Rolls, IReadOnlyList<FireView> Fire, IReadOnlyList<ActionRecordList.Entry> Ordnance,
         IReadOnlyList<ActionRecordList.Entry> CloseCombat, IReadOnlyList<ActionRecordList.Entry> Night, IReadOnlyList<ActionRecordList.Entry> Snipers,
         IReadOnlyList<ActionRecordList.Entry> Actions, IReadOnlyList<string> Changes);
 
