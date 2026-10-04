@@ -2459,9 +2459,110 @@ details.advanced > summary {
     margin-top: 0;
 }
 
-.replay-step {
-    padding: 0.15rem 0;
+/* A step of the timeline is a button that reads as a line of a list: its number, then its title. */
+.replay-timeline .replay-step {
+    display: grid;
+    grid-template-columns: 2.25rem minmax(0, 1fr);
+    gap: 0.4rem;
+    width: 100%;
+    min-height: 1.75rem;
+    padding: 0.2rem 0.35rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius);
+    background: none;
+    color: inherit;
+    font: inherit;
     font-size: 0.9rem;
+    text-align: left;
+    cursor: pointer;
+}
+
+.replay-timeline .replay-step:hover {
+    background: var(--surface-2);
+}
+
+.replay-timeline .replay-step.current {
+    border-color: var(--accent);
+    background: var(--surface-2);
+    font-weight: 600;
+}
+
+.replay-step-number {
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+}
+
+.replay-position {
+    margin: 0.35rem 0 0;
+}
+
+.replay-transport {
+    margin-top: 0.4rem;
+}
+
+.replay-transport button {
+    min-height: 2rem;
+}
+
+.replay-step-field input {
+    width: 4.5rem;
+}
+
+.replay-step-panel > h3 {
+    margin-top: 0;
+}
+
+/* Under 1024px the context scrolls away with the page, so the transport stays within reach in a bar fixed to the window's foot, as Play's Review
+   and hand-over buttons do. */
+@media (max-width: 1023.98px) {
+    .replay-transport {
+        position: fixed;
+        right: 0.75rem;
+        bottom: 0.75rem;
+        left: 0.75rem;
+        z-index: 15;
+        margin: 0;
+        padding: 0.4rem 0.6rem;
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        box-shadow: 0 0.25rem 1rem rgba(0, 0, 0, 0.15);
+    }
+
+    /* One row that scrolls sideways when it must, the step controls first, so the bar stays one line high in a narrow window. */
+    .replay-transport {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+    }
+
+    .replay-transport > * {
+        flex: none;
+    }
+
+    .replay-transport #replay-back {
+        order: -5;
+    }
+
+    .replay-transport .replay-step-field {
+        order: -4;
+    }
+
+    .replay-transport #replay-forward {
+        order: -3;
+    }
+
+    .replay-transport #replay-phase-back {
+        order: -2;
+    }
+
+    .replay-transport #replay-phase-forward {
+        order: -1;
+    }
+
+    main:has(.replay-transport) {
+        padding-bottom: 5rem;
+    }
 }
 
 /* A wide table scrolls inside its own labelled region rather than widening the page (plan section 11.1, 320px reflow). */

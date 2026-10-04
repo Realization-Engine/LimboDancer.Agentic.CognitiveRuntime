@@ -1,0 +1,69 @@
+@* Pass 31b (design D3 and D4): one step of a replay in a player's words: what was done, when, its dice and arithmetic, and what changed. The records
+   are the Play page's own, already read for the view (PlayRecords), so a step reads here exactly as its attempt reads on Play. *@
+<div id="replay-step-panel" class="replay-step-panel" data-step="@Step.Number">
+    <h3 id="replay-step-title">@Step.Title</h3>
+    <p id="replay-step-when" class="muted">Step @Step.Number of @Count. @When</p>
+    @if (Step.Read == ReplayRead.Part)
+    {
+        <p id="replay-step-part" class="diagnostic">This view reads only part of this step: the rest is the other side's to know.</p>
+    }
+    @if (Changes.Count > 0)
+    {
+        <h4>What changed</h4>
+        <ul id="replay-changes">
+            @foreach (var change in Changes)
+            {
+                <li>@change</li>
+            }
+        </ul>
+    }
+    <DiceRollHistory Rolls="@Rolls" Scripted="false" />
+    <ActionRecordList Heading="Ordnance" ListId="replay-ordnance" Records="@Ordnance" />
+    <FireHistory Records="@Fire" />
+    <ActionRecordList Heading="Close Combat" ListId="replay-close-combats" Records="@CloseCombat" />
+    <ActionRecordList Heading="Night and weather" ListId="replay-night" Records="@Night" />
+    <ActionRecordList Heading="Snipers" ListId="replay-snipers" Records="@Snipers" />
+    <ActionRecordList Heading="Rally, Rout, and other actions" ListId="replay-rallies" Records="@Actions" />
+    @if (Rolls.Count + Ordnance.Count + Fire.Count + CloseCombat.Count + Night.Count + Snipers.Count + Actions.Count == 0)
+    {
+        <p id="replay-step-plain" class="muted">This step has no dice and no record of its own.</p>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public ReplayStep Step { get; set; } = default!;
+
+    /// <summary>How many steps the view has.</summary>
+    [Parameter]
+    public int Count { get; set; }
+
+    /// <summary>The turn and phase the step was taken in, in words.</summary>
+    [Parameter]
+    public string When { get; set; } = string.Empty;
+
+    /// <summary>What the view saw change over the step, in words (design D4).</summary>
+    [Parameter]
+    public IReadOnlyList<string> Changes { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<DiceRollHistory.Row> Rolls { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<FireView> Fire { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<ActionRecordList.Entry> Ordnance { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<ActionRecordList.Entry> CloseCombat { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<ActionRecordList.Entry> Night { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<ActionRecordList.Entry> Snipers { get; set; } = [];
+
+    [Parameter]
+    public IReadOnlyList<ActionRecordList.Entry> Actions { get; set; } = [];
+}
