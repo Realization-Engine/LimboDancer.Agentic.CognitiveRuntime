@@ -123,6 +123,13 @@ public static class DisplayText
     public static (string? Code, string Text) Reason(string reason)
     {
         ArgumentNullException.ThrowIfNull(reason);
+        // The second play test: a phase's advance says "Turn 1, pfph, russian phasing"; a player reads the phase that begins.
+        var phase = System.Text.RegularExpressions.Regex.Match(reason, @"^(?:[a-z.]+:\s+)?[Tt]urn (\d+), ([a-z]+), (\w+) phasing$");
+        if (phase.Success)
+        {
+            return ("play.advance", $"The {Side(phase.Groups[3].Value)} {Components.Games.GameText.PhaseLabel(phase.Groups[2].Value)} of Turn {phase.Groups[1].Value} begins");
+        }
+
         var match = System.Text.RegularExpressions.Regex.Match(reason, @"^([a-z][a-z0-9]*(?:\.[a-z0-9-]+)+(?::[\w-]+)?)(?::\s+(.*))?$", System.Text.RegularExpressions.RegexOptions.Singleline);
         if (!match.Success)
         {

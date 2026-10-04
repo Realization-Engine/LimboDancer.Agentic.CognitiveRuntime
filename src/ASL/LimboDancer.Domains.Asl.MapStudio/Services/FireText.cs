@@ -117,6 +117,9 @@ public static class FireText
             : null;
     }
 
+    /// <summary>An IFT result as a player says it: the record's "none" reads "no effect".</summary>
+    public static string ResultText(string result) => result == "none" ? "no effect" : result;
+
     /// <summary>What an attack did to a target unit, in words.</summary>
     public static string EffectText(FireUnitEffect effect) => EffectText(effect, false, false);
 

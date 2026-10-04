@@ -3421,9 +3421,10 @@ else if (state is not null)
     private static bool IsBroken(UnitInstance unit) => GameState.Condition(unit, Conditions.Broken) == ConditionState.True;
 
     /// <summary>A unit as a player reads it: its id, its definition, and its state in CC.</summary>
-    private string UnitLabel(UnitInstance unit) => $"{unit.Id} ({PrintedValues(unit) ?? unit.Definition?.Definition}"
-        + string.Concat(new[] { Conditions.Broken, Conditions.Pinned, Conditions.Berserk, Conditions.Melee, Conditions.Concealed, Conditions.Captured, Conditions.Unarmed, "asl:ti" }
-            .Where(name => GameState.Condition(unit, name) == ConditionState.True).Select(name => ", " + name.Replace("asl:", "", StringComparison.Ordinal))) + ")";
+    // Pass 31c (the second play test): the unit's name already says its printed values, so the label adds only its conditions.
+    private static string UnitLabel(UnitInstance unit) => unit.Id + (new[] { Conditions.Broken, Conditions.Pinned, Conditions.Berserk, Conditions.Melee, Conditions.Concealed, Conditions.Captured, Conditions.Unarmed, "asl:ti" }
+        .Where(name => GameState.Condition(unit, name) == ConditionState.True).Select(name => name.Replace("asl:", "", StringComparison.Ordinal)).ToArray() is { Length: > 0 } held
+            ? $" ({string.Join(", ", held)})" : string.Empty);
 
     /// <summary>A condition as the Units table names it: the flipped STUN counter is "Stun +1" (D5.34).</summary>
     private static string ConditionText(string condition) => condition == Conditions.StunRecovery ? "Stun +1" : condition.Replace("asl:", string.Empty, StringComparison.Ordinal);
@@ -4594,7 +4595,7 @@ else if (state is not null)
     private IReadOnlyList<string> EntryWaiting => [.. MoveCandidates.Where(unit => state!.Location(unit.Id) is null).Select(unit => unit.Id)];
 
     /// <summary>The units the building entry offers (plan A01): those the view sees.</summary>
-    private IReadOnlyList<BuildingEntryAction.Choice> EnterRows => [.. VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit)).Select(unit => new BuildingEntryAction.Choice(unit.Id, $"{unit.Id} ({unit.Side})"))];
+    private IReadOnlyList<BuildingEntryAction.Choice> EnterRows => [.. VisibleUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit)).Select(unit => new BuildingEntryAction.Choice(unit.Id, unit.Id))];
 
     /// <summary>
     /// Pass 25 (UI review; plan section 15.3): a SMOKE squad or place, a DC, or an advance destination the panels no longer offer is dropped, so no select
@@ -5968,7 +5969,9 @@ else if (state is not null)
         : "This card's Victory Conditions are text only, so the game does not decide the result; read them on the card (A26).";
 
     /// <summary>Every Victory condition with whether it was met, then the facts the result rests on.</summary>
-    private IReadOnlyList<string> ResultWhy => state?.Ended is not { Result: { } result } ? []
+    private IReadOnlyList<string> ResultWhy => [.. ResultWhyRaw.Select(Words)];
+
+    private IReadOnlyList<string> ResultWhyRaw => state?.Ended is not { Result: { } result } ? []
         : [.. (VictoryNow?.Conditions ?? []).Select(line => $"{(line.Winner == "draw" ? "A condition for a draw" : $"A condition for a {DisplayText.Side(line.Winner)} win")}, {(line.Holds ? "met" : "not met")}: {line.Text}."),
             .. result.Facts.Select(Sentence)];
 

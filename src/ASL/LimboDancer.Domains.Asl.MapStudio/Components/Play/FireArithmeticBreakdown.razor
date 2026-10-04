@@ -12,7 +12,7 @@
     </li>
     <li class="fire-dr">
         IFT DR @string.Join(", ", Arithmetic.Dice) = @Arithmetic.OriginalDr@Say(FireText.ModifierText(Arithmetic.Drm)):
-        Final DR <span class="fire-final-dr">@Arithmetic.FinalDr</span>, result <strong class="fire-result">@Arithmetic.Result</strong>
+        Final DR <span class="fire-final-dr">@Arithmetic.FinalDr</span>, result <strong class="fire-result">@FireText.ResultText(Arithmetic.Result)</strong>
     </li>
 </ul>
 

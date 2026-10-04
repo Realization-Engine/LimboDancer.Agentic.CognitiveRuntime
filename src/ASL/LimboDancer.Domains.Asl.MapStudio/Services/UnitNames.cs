@@ -196,7 +196,18 @@ public sealed partial class UnitNames
             // A leader a Close Combat attack creates joins it before it has an id of its own (A18.12).
             named = CreatedLeader().Replace(named, "the leader created");
             var boards = history.States.Count > 0 ? history.States[0].Map.Boards.Count : 1;
-            return LocationPattern().Replace(named, match => DisplayText.Place(boards, match.Value));
+            named = LocationPattern().Replace(named, match => DisplayText.Place(boards, match.Value));
+
+            // The second play test: a side reads as its counters name it ("the russian side" is "the Russian side").
+            if (history.States.Count > 0)
+            {
+                foreach (var side in history.States[0].Sides.Select(side => side.Id).Where(id => id.Length > 2 && char.IsLower(id[0])))
+                {
+                    named = Regex.Replace(named, $@"(?<![A-Za-z0-9-]){Regex.Escape(side)}(?![A-Za-z0-9-])", DisplayText.Side(side), RegexOptions.CultureInvariant);
+                }
+            }
+
+            return named;
         }
     }
 

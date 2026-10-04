@@ -39,7 +39,7 @@
     @if (Entry is { } entry)
     {
         <span id="cc-status">
-            @(entry.AmbushRolled ? entry.Ambusher is { } ambusher ? $"The {ambusher} side ambushes." : "No Ambush." : "")
+            @(entry.AmbushRolled ? entry.Ambusher is { } ambusher ? $"The {DisplayText.Side(ambusher)} side ambushes." : "No Ambush." : "")
             @(entry.Closed ? "Resolved this CCPh." : entry.Rounds.Count > 0 ? "The ambusher may attack again, or the ambushed side's round follows." : "")
         </span>
         @if (!entry.Closed && entry.Ambusher is not null && entry.Rounds.Count > 0)

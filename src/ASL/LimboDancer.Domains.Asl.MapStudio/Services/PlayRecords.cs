@@ -153,7 +153,8 @@ public sealed class PlayRecords
                 var told = Lines.Where(line => !line.Minor).ToArray();
                 var from = told.Length > 0 ? told : [.. Lines];
                 var last = from.Length == 0 ? null : AttemptOf(from[^1].EventId);
-                string[] said = last is null ? [] : [.. Lines.Where(line => AttemptOf(line.EventId) == last).Select(line => Sentence(line.Text))];
+                var ofLast = last is null ? [] : Lines.Where(line => AttemptOf(line.EventId) == last).ToArray();
+                string[] said = [.. (ofLast.Any(line => !line.Minor) ? ofLast.Where(line => !line.Minor) : ofLast).Select(line => Sentence(line.Text))];
                 // The result of the attempt first, then what followed from it; a long attempt is cut, and the records have the rest.
                 latest = (true, said.Length == 0 ? null : $"Latest: {WhenOf(from[^1].EventId)}: {string.Join(" ", said.Take(4))}{(said.Length > 4 ? " More is in the records." : string.Empty)}");
             }
@@ -234,7 +235,7 @@ public sealed class PlayRecords
         var changed = fire.Effects is null ? []
             : fire.Effects.Select(effect => (effect.UnitId, Text: EffectText(effect, fire.BrokenBefore.Contains(effect.UnitId), fire.PinnedBefore.Contains(effect.UnitId))))
                 .Where(effect => effect.Text is not ("unaffected" or "already broken" or "already pinned")).Select(effect => fire.Say($"{effect.UnitId}: {effect.Text}")).ToArray();
-        return $"{fire.Group} {(fire.Several ? "fire" : "fires")} at {fire.Target}: {fire.Arithmetic.Result}" + (changed.Length > 0 ? "; " + string.Join("; ", changed) : string.Empty);
+        return $"{fire.Group} {(fire.Several ? "fire" : "fires")} at {fire.Target}: {ResultText(fire.Arithmetic.Result)}" + (changed.Length > 0 ? "; " + string.Join("; ", changed) : string.Empty);
     }
 
     private static string Sentence(string text) => DisplayText.Sentence(text.TrimEnd()) + (text.TrimEnd().EndsWith('.') ? string.Empty : ".");
