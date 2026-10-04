@@ -82,3 +82,55 @@ export function unwatchContext() {
         document.documentElement.style.removeProperty("--play-workspace-top");
     }
 }
+
+// Pass 31c (design D18; play test P-24): a gate request that runs past half a second says "Working" beside the button that started it. The page
+// marks its status busy while the gate works; the button last clicked in the workspace is marked while that lasts, and the stylesheet says the
+// word. Only an attribute is written here.
+let workingWatcher = null;
+
+export function watchWorking() {
+    unwatchWorking();
+    const status = document.getElementById("play-status");
+    if (!status || typeof MutationObserver === "undefined") {
+        return;
+    }
+
+    const state = { button: null, timer: null, marked: null };
+    const clear = () => {
+        clearTimeout(state.timer);
+        state.timer = null;
+        state.marked?.removeAttribute("data-working");
+        state.marked = null;
+    };
+    const onClick = event => {
+        const button = event.target instanceof Element ? event.target.closest("button") : null;
+        if (button && button.closest("#play-workspace, #play-context")) {
+            state.button = button;
+        }
+    };
+    const observer = new MutationObserver(() => {
+        if (!status.classList.contains("busy")) {
+            clear();
+        } else if (!state.timer && !state.marked && state.button?.isConnected) {
+            state.timer = setTimeout(() => {
+                state.timer = null;
+                if (status.classList.contains("busy") && state.button?.isConnected) {
+                    state.marked = state.button;
+                    state.marked.setAttribute("data-working", "true");
+                }
+            }, 500);
+        }
+    });
+    observer.observe(status, { attributes: true, attributeFilter: ["class"] });
+    document.addEventListener("click", onClick, true);
+    workingWatcher = { observer, onClick, clear };
+}
+
+export function unwatchWorking() {
+    if (workingWatcher) {
+        workingWatcher.observer.disconnect();
+        document.removeEventListener("click", workingWatcher.onClick, true);
+        workingWatcher.clear();
+        workingWatcher = null;
+    }
+}

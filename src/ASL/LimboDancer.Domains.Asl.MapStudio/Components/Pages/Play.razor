@@ -5323,14 +5323,44 @@ else if (state is not null)
     }) is { } action ? ProposeSupportWeapon(action) : Task.CompletedTask;
 
     /// <summary>Pass 28b: the broken units the view sees that may rout, and what each owes (A10.5; ruling R23.1).</summary>
-    private IReadOnlyList<RoutActionPanel.Obligation> RoutObligations => state is null ? []
+    // Pass 31c (design D18; play test P-24): what each broken unit owes is read once for a state and a view, not on every render of the Rout
+    // panel; each reading runs the rout search for every broken unit.
+    private (GameState? State, string Viewer, IReadOnlyList<RoutActionPanel.Obligation>? Obligations, IReadOnlyList<PlayChoice>? Choices) routCache;
+
+    private IReadOnlyList<RoutActionPanel.Obligation> RoutObligations
+    {
+        get
+        {
+            if (!ReferenceEquals(routCache.State, state) || routCache.Viewer != Viewer.Name)
+            {
+                routCache = (state, Viewer.Name, null, null);
+            }
+
+            return routCache.Obligations ??= ReadRoutObligations;
+        }
+    }
+
+    private IReadOnlyList<PlayChoice> RoutChoices
+    {
+        get
+        {
+            if (!ReferenceEquals(routCache.State, state) || routCache.Viewer != Viewer.Name)
+            {
+                routCache = (state, Viewer.Name, null, null);
+            }
+
+            return routCache.Choices ??= ReadRoutChoices;
+        }
+    }
+
+    private IReadOnlyList<RoutActionPanel.Obligation> ReadRoutObligations => state is null ? []
         : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && GameState.Condition(unit, Conditions.Broken) == ConditionState.True && Live.Planner.MayRout(state, unit))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal)
             .Select(unit => new RoutActionPanel.Obligation(unit.Id, unit.Id
                 + (Live.Planner.MustRout(state, unit) is { } why ? $" must rout: {why}" : " may rout, since it is under DM")
                 + (state.RoutedThisPhase.Contains(unit.Id) ? ". It has routed." : RoutAdviceText(unit, Live.Planner.MustRout(state, unit) is not null))))];
 
-    private IReadOnlyList<PlayChoice> RoutChoices => state is null ? []
+    private IReadOnlyList<PlayChoice> ReadRoutChoices => state is null ? []
         : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && GameState.Condition(unit, Conditions.Broken) == ConditionState.True
             && !state.RoutedThisPhase.Contains(unit.Id) && Live.Planner.MayRout(state, unit)).Select(Labelled)];
 
@@ -6299,6 +6329,7 @@ else if (state is not null)
             {
                 workspaceScript ??= await JS.InvokeAsync<IJSObjectReference>("import", "./js/playWorkspace.js");
                 await workspaceScript.InvokeVoidAsync("watchContext");
+                await workspaceScript.InvokeVoidAsync("watchWorking");
             }
 
             if (dropHexQuery)
@@ -6337,6 +6368,7 @@ else if (state is not null)
             if (workspaceScript is not null)
             {
                 await workspaceScript.InvokeVoidAsync("unwatchContext");
+                await workspaceScript.InvokeVoidAsync("unwatchWorking");
                 await workspaceScript.DisposeAsync();
             }
         }

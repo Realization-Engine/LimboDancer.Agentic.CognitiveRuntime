@@ -2873,3 +2873,9 @@ main :is(.toolbar, .fields, .field-group, .form-grid) > * {
     margin: 0.25rem 0 0.5rem;
     padding-left: 1.1rem;
 }
+
+/* ---- Pass 31c: a gate request that runs long says so beside its button (design D18) --------------------------------------------------- */
+button[data-working]::after {
+    content: " \00B7\0020Working";
+    font-weight: 600;
+}
