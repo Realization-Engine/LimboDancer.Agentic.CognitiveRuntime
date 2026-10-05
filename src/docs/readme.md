@@ -47,7 +47,7 @@ When documents disagree, use this order of authority:
 | Document | Role |
 | --- | --- |
 | [Domain Integration Model](<./LimboDancer.Agentic.CognitiveRuntime Domain Integration Model.md>) | Defines the boundary, dependency direction, composition model, and interface timing for separately implemented domain packages. |
-| [Platoon and Company Simulation Design](<./LimboDancer.Agentic.CognitiveRuntime Platoon and Company Simulation Design.md>) | Proposed digital formation simulation with an ASL-inspired eight-phase turn and linked ASL scenario decomposition, including persistent forces/terrain, shared support, synchronized outcomes and staged acceptance. |
+| [Military Command and Multiscale Simulation Design](<./Military Command and Multiscale Simulation Design.md>) | Proposed military hierarchy, organization and communication architecture with an ASL tactical foundation, mission lifecycle, Scenario Card contracts and staged multiscale execution. |
 | [Domain Knowledge Modeling Requirements](<./LimboDancer.Agentic.CognitiveRuntime Domain Knowledge Modeling Requirements.md>) | Supporting guidance for authoritative knowledge, semantic evidence, and changing domain state. |
 | [ASL Ontology Transformation Specification](<../ASL/docs/Requirements/LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md>) | Current authoring lifecycle, intermediate representation, validation and publication gates, package profile, and first occupied-building adjudication slice. |
 | [ASL-OT-01 Source Registry Review](<../ASL/docs/Reviews/LimboDancer.Agentic.CognitiveRuntime ASL-OT-01 Source Registry Review.md>) | Approved source registry, fragment-locator evidence, explicit unverified sample, isolation boundary, and ASL-OT-02 admission. |

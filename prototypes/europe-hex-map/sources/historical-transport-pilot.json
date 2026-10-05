@@ -1,0 +1,2735 @@
+{
+  "baselineDate": "1939-09-01",
+  "reviewedOn": "2026-10-05",
+  "status": "prewar-existence-pilot",
+  "gameAdmitted": false,
+  "coverage": "Regional survey with selected examples; not a complete 1939 network",
+  "geometryPolicy": "Straight schematic links between approximate town centers, manually placed to 0.01 degrees. Not station locations, road centerlines, surveyed alignments or evidence of service on the baseline date. Do not derive distance, crossings, capacity or travel times.",
+  "sources": [
+    {
+      "id": "prorail",
+      "title": "ProRail: origins of the railways",
+      "url": "https://www.prorail.nl/nieuws/180-jaar-spoor-het-begin-van-de-spoorwegen",
+      "locator": "Eerste spoorlijn",
+      "finding": "Amsterdam to Haarlem opened in 1839; extensions via Leiden and The Hague reached Rotterdam between 1842 and 1847."
+    },
+    {
+      "id": "trainworld",
+      "title": "Train World: Belgium on track",
+      "url": "https://trainworld.be/en/collections/history-of-the-belgian-railways/2-belgium-on-track-19th-century/",
+      "locator": "A festive start; 556 km of iron ways by 1843",
+      "finding": "Brussels to Mechelen opened on 5 May 1835. Brussels and Paris were connected by rail in 1846. No intermediate alignment is established here."
+    },
+    {
+      "id": "rws",
+      "title": "Rijkswaterstaat: first motorway",
+      "url": "https://www.rijkswaterstaat.nl/wegen/wegenoverzicht",
+      "locator": "De eerste snelweg; podcast transcript 00:00:25 to 00:00:52",
+      "finding": "Rijksweg 12 between Voorburg and Zoetermeer opened on 15 April 1937. The historian describes continuity of alignment at the interview location, not a surveyed geometry for this overlay."
+    },
+    {
+      "id": "nr-birmingham",
+      "title": "Network Rail: Birmingham station history",
+      "url": "https://www.networkrail.co.uk/who-we-are/our-history/iconic-infrastructure/the-history-of-birmingham-new-street-station/",
+      "finding": "London to Birmingham opened in 1838.",
+      "locator": "The first link with London",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "nr-bristol",
+      "title": "Network Rail: Bristol station history",
+      "url": "https://www.networkrail.co.uk/who-we-are/our-history/iconic-infrastructure/the-history-of-bristol-temple-meads-station/",
+      "finding": "Bristol to Bath opened in 1840, with London through traffic following in 1841.",
+      "locator": "Historical account",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "dublin",
+      "title": "Dublin City: railway architecture",
+      "url": "https://dublin.ie/whats-on/listings/dublins-railway-architecture/",
+      "finding": "The Dublin and Kingstown passenger railway opened in December 1834. Kingstown is now Dun Laoghaire.",
+      "locator": "Historical account",
+      "access": "indexed-excerpt",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "rouen",
+      "title": "City of Rouen: nineteenth century",
+      "url": "https://www.rouen.fr/fr/xixe-et-xxe-siecles",
+      "finding": "Rouen was connected to Paris by rail in 1843.",
+      "locator": "Historical account",
+      "access": "indexed-excerpt",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "havre",
+      "title": "Le Havre municipal archives: economy",
+      "url": "https://archives.lehavre.fr/economie",
+      "finding": "Paris to Le Havre rail opened in 1847. A carriage road between Le Havre and Rouen opened in 1769. The road evidence does not establish its 1939 standard.",
+      "locator": "1769 and 1847 entries",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "cp",
+      "title": "Comboios de Portugal: chronology",
+      "url": "https://www.cp.pt/info/pt/cronologia",
+      "finding": "Lisbon to Carregado opened in 1856. A Lisbon to Badajoz postal train timetable was approved in September 1863. These establish connections, not modern alignment.",
+      "locator": "1856 and 1863 entries",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "renfe",
+      "title": "Renfe: Madrid to Aranjuez history",
+      "url": "https://blog.renfe.com/el-tren-de-la-fresa-un-viaje-a-aranjuez-con-los-colores-del-otono/",
+      "finding": "Madrid to Aranjuez opened in 1851. Modern excursion train terminals must not be substituted for the original terminals.",
+      "locator": "Historical account",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "hamburg",
+      "title": "City of Hamburg: Lohbruegge history",
+      "url": "https://www.hamburg.de/leben-in-hamburg/bezirke-hamburg/stadtteile-bezirk-bergedorf/lohbruegge-371664",
+      "finding": "The Hamburg to Berlin railway opened in 1846, with a station in southern Bergedorf.",
+      "locator": "Historical account",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "saxony",
+      "title": "Saxon industrial heritage: Dresden Transport Museum",
+      "url": "https://www.iku-sachsen.de/erleben/akteure-erlebnisorte/details/verkehrsmuseum-dresden-1/",
+      "finding": "The museum account identifies the Leipzig to Dresden railway opening in 1839.",
+      "locator": "Historical account",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "bonn",
+      "title": "City of Bonn: chronology",
+      "url": "https://www.bonn.de/themen-entdecken/bildung-lernen/zeittafel.php?loc=de",
+      "finding": "The grade-separated Cologne to Bonn motor road opened to traffic in 1932. Historical naming retained; modern route number not inferred.",
+      "locator": "1932 entry",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "sbb",
+      "title": "SBB: 175 years of Swiss railways",
+      "url": "https://news.sbb.ch/de/019d7b7b-e520-781b-8e93-a37713b6332b/175-jahre-bahnland-schweiz",
+      "finding": "Zurich to Baden opened in 1847.",
+      "locator": "Bahnbau",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "unesco",
+      "title": "UNESCO: Semmering Railway",
+      "url": "https://whc.unesco.org/en/list/785/",
+      "finding": "The Gloggnitz to Muerzzuschlag mountain railway was built between 1848 and 1854. This schematic link does not locate its tunnels or viaducts.",
+      "locator": "Brief synthesis",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "fs",
+      "title": "Fondazione FS: Bologna to Florence anniversary",
+      "url": "https://www.fondazionefs.it/it/focus-tematici/2024/4/22/i-novant-anni-della-direttissima-firenze-bologna.html",
+      "finding": "Bologna to Florence via Prato opened in 1934. Pre-baseline electrification milestones establish other corridors: Naples to Salerno (1934), Florence to Rome to Naples (1935), Salerno to Reggio Calabria (1937), Bologna to Milan (1938). The October 1939 Chiasso milestone is excluded.",
+      "locator": "Direttissima and five electrification phases",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "aspi",
+      "title": "Autostrade per Italia: Milan to Varese centenary",
+      "url": "https://www.autostrade.it/it/comunicazione-e-media/comunicati-stampa-corporate/-/bulletin/view/db1f7e8f-5903-492a-abdd-775232b4e04e",
+      "finding": "Milan to Varese motorway opened on 21 September 1924. No modern lane count is carried into the historical record.",
+      "locator": "Historical account",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "norway",
+      "title": "Bane NOR: Bergen station",
+      "url": "https://www.banenor.no/en/traffic-and-travel/railway-stations/-b-/bergen/",
+      "finding": "The Bergen line entered use in 1909, four years before the present Bergen station. The page identifies the Oslo to Bergen connection.",
+      "locator": "Facts about the station",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "sweden",
+      "title": "Trafikverket: Western Main Line centenary",
+      "url": "https://www.trafikverket.se/om-oss/nyheter/nationella-nyheter/2026/maj/100-ar-av-elektrifiering-pa-vastra-stambanan-uppmarksammas/",
+      "finding": "Stockholm to Gothenburg Western Main Line was electrified in 1926. This is evidence of existence by that year, not its opening date.",
+      "locator": "Historical account",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "finland",
+      "title": "City of Helsinki: arrival of rail",
+      "url": "https://historia.hel.fi/fi/kaannekohdat/1800-luku/rautatie-saapuu-helsinkiin",
+      "finding": "Helsinki to Hameenlinna rail connection opened in 1862.",
+      "locator": "Historical account",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "denmark",
+      "title": "Danish Railway Museum newsletter October 2019",
+      "url": "https://www.jernbanemuseet.dk/media/2153/nyhedsbrev-nr-3-oktober-2019.pdf",
+      "finding": "Copenhagen to Roskilde opened in 1847.",
+      "locator": "PDF page 3, centenary article",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "pkp",
+      "title": "PKP: Warsaw to Vienna railway anniversary",
+      "url": "https://www.pkp.pl/pl/?id=1976&option=com_content&view=article",
+      "finding": "Warsaw to Grodzisk opened in 1845. Rail travel from Warsaw to Krakow, Wroclaw and Vienna was possible from October 1848. Only the short opening section is plotted here.",
+      "locator": "Historical account",
+      "access": "indexed-excerpt; full-page retrieval failed",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "cd",
+      "title": "Czech Railways: Brandys station history",
+      "url": "https://zeleznicar.cd.cz/zeleznicar/historie/-pg119/483/19/",
+      "finding": "Prague to Olomouc was completed in 1845 and an inaugural train ran in August.",
+      "locator": "30 August 2018 article summary",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "zsr",
+      "title": "Slovak Railways: first railways",
+      "url": "https://www.zsr.sk/o-nas/historia-zeleznic/prve-zeleznice/",
+      "finding": "Marchegg to Bratislava received a steam train in 1848. Bratislava to Sturovo to Vac was completed in 1850. The earlier horse railway is not used as a steam main line proxy.",
+      "locator": "Historical account",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "mav-vac",
+      "title": "MAV: Pest railway origins",
+      "url": "https://megallo.mavcsoport.hu/anno/pesti-vasut-gorongyos-utja-elso-kapavagastol-elso-utazasig",
+      "finding": "Pest to Vac opened in July 1846. Budapest is a display label, not a claim about the historical city name.",
+      "locator": "Historical account",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "mav-szolnok",
+      "title": "MAV: Szolnok anniversary",
+      "url": "https://megallo.mavcsoport.hu/jeles-napok/szolnok-vasutallomason-megunnepeltek-varos-napjat",
+      "finding": "The first train on Pest to Szolnok ran in September 1847.",
+      "locator": "Historical account",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "hz",
+      "title": "HZ Infrastruktura: Zagreb railway anniversary",
+      "url": "https://www.hzinfra.hr/160-godina-prve-pruge-na-zagrebackom-podrucju/",
+      "finding": "Zidani Most to Zagreb to Sisak opened on 1 October 1862.",
+      "locator": "Historical account",
+      "access": "indexed-excerpt; full-page retrieval failed",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "serbia",
+      "title": "Serbian transport ministry: railway anniversary",
+      "url": "https://mgsi.gov.rs/lat/aktuelnosti/ministarka-sofronijevic-cestitala-dan-zeleznicara-srbije-i-141-rodendan-srpske-zeleznice",
+      "finding": "The first regular Belgrade to Nis train ran in 1884.",
+      "locator": "Historical account",
+      "access": "indexed-excerpt; full-page retrieval failed",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "cfr",
+      "title": "CFR: railway history",
+      "url": "https://cfr.ro/file-de-istorie-feroviara/",
+      "finding": "Bucharest to Giurgiu opened in 1869. Pitesti to Bucharest to Galati to Roman opened in 1872.",
+      "locator": "1869 and 1872 entries",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "bdz",
+      "title": "BDZ: railway history",
+      "url": "https://www.bdz.bg/en/a/the-history-of-bdz",
+      "finding": "Ruse to Varna opened in 1866; Constantinople to Belovo in 1873; Caribrod to Sofia to Belovo opened for international traffic in 1888.",
+      "locator": "1866, 1873 and 1888 entries",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "ert",
+      "title": "ERT archive: Athens to Piraeus",
+      "url": "https://www.ert.gr/ert-arxeio/17-fevroyarioy-1869-proto-dromologio-astikoy-sidirodromoy-athinas-peiraia/",
+      "finding": "An archival account dates the steam connection between Piraeus and Athens (Thiseio terminus) to 1869. This is a short urban connection, not the Greek mainline network.",
+      "locator": "Historical account",
+      "access": "indexed-excerpt",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "evr",
+      "title": "Estonian Railways: history",
+      "url": "https://www.evr.ee/et/ettevottest/29-ajalugu/46-ajalugu",
+      "finding": "Paldiski to Tallinn to Narva to Gatchina opened in 1870. Cross-border operation in 1939 is not established.",
+      "locator": "Historical account",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "ldz",
+      "title": "Latvian Railways: Riga to Daugavpils",
+      "url": "https://www.ldz.lv/en/content/r%C4%ABga-%E2%80%94-daugavpils-l%C4%ABnijas-v%C4%93sture",
+      "finding": "Riga to Daugavpils railway opened in 1861. Calendar/day differences are avoided by retaining the year only.",
+      "locator": "Historical account",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "vle",
+      "title": "Lithuanian national encyclopedia: rail transport",
+      "url": "https://www.vle.lt/straipsnis/lietuvos-gelezinkeliu-transportas/",
+      "finding": "Services from St Petersburg to Vilnius and Vilnius to Virbalis began in 1862. Vilnius to Lida was built in 1884. These connections do not imply open 1939 borders.",
+      "locator": "Early railway development",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "mintrans",
+      "title": "Russian transport ministry: railway history",
+      "url": "https://railways.projects.mintrans.ru/19.html",
+      "finding": "St Petersburg to Moscow railway opened in 1851. Leningrad is the 1939 display name.",
+      "locator": "Nikolaevskaya railway",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "ukraine",
+      "title": "Great Ukrainian Encyclopedia: Balta",
+      "url": "https://vue.gov.ua/%D0%91%D0%B0%D0%BB%D1%82%D0%B0",
+      "finding": "The Odesa to Balta railway opened in 1865.",
+      "locator": "Historical account",
+      "access": "indexed-excerpt; full-page retrieval returned 403",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "darmstadt-1935",
+      "title": "Darmstaedter Tagblatt, 4 October 1935 (ULB Darmstadt)",
+      "url": "https://exist.ulb.tu-darmstadt.de/3/v/pa000241-0271",
+      "finding": "The contemporary report states that the complete Frankfurt to Darmstadt to Mannheim to Heidelberg motorway was handed over to public traffic the previous Thursday. Used only for the opening report; political rhetoric and OCR errors are not treated as transport facts.",
+      "locator": "Motorway opening report, OCR lines 1997-2004",
+      "kind": "contemporary-newspaper",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "monitor-1933",
+      "title": "Monitor Polski, 27 February 1933, no. 47",
+      "url": "https://dziennikustaw.gov.pl/M1933047000000.pdf",
+      "finding": "A railway directorate notice announces Herby to Gdynia service from 1 March 1933 and related timetable changes. As an advance announcement, it is paired with the PKP retrospective confirmation of opening.",
+      "locator": "PDF page 2, Z Ministerstwa Komunikacji",
+      "kind": "contemporary-official-notice",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "pkp-1930s",
+      "title": "PKP: 90 years chronology",
+      "url": "https://www.pkp.pl/pl/pkp-aktualnosci/1287-90-lat-polskich-kolei-pastwowych",
+      "finding": "PKP records the coal trunk opening in 1933, Pruszkow to Warsaw to Otwock electrification in 1936, followed by Grodzisk and Zyrardow, and Minsk Mazowiecki in December 1937. These are service and upgrade observations, not opening dates for all underlying lines.",
+      "locator": "1933-1937 entries",
+      "kind": "institutional-retrospective",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "db-1933",
+      "title": "DB Museum: Fliegender Hamburger",
+      "url": "https://dbmuseum.de/nuernberg/fahrzeuge/fliegender-hamburger-vt877",
+      "finding": "The museum records scheduled Berlin to Hamburg service from May 1933. This improves temporal evidence for the existing connection without adding a duplicate line or establishing its September 1939 operating condition.",
+      "locator": "Vehicle history",
+      "kind": "institutional-retrospective",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "sncf-strasbourg",
+      "title": "SNCF Heritage: Strasbourg station",
+      "url": "https://patrimoine.sncf.com/gares-et-reseau-ferre/",
+      "finding": "The Paris to Strasbourg passenger line opened in July 1852.",
+      "locator": "La gare de Strasbourg",
+      "kind": "institutional-retrospective",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    },
+    {
+      "id": "marseille-1866",
+      "title": "La Ville de Marseille, ses Finances et ses Travaux publics (period account)",
+      "url": "https://fr.wikisource.org/wiki/La_Ville_de_Marseille,_ses_Finances_et_ses_Travaux_publics",
+      "finding": "The nineteenth-century account describes the complete main railway operating in 1856 and travel between Paris and Marseille through Lyon. This is early existence evidence, not a 1939 service record.",
+      "locator": "Rail transport discussion, paragraph beginning La gare de Marseille",
+      "kind": "contemporary-account-transcription",
+      "access": "page-read",
+      "reviewedOn": "2026-10-05"
+    }
+  ],
+  "places": {
+    "Amsterdam": [
+      4.9,
+      52.37
+    ],
+    "Haarlem": [
+      4.64,
+      52.38
+    ],
+    "Leiden": [
+      4.49,
+      52.16
+    ],
+    "The Hague": [
+      4.3,
+      52.08
+    ],
+    "Rotterdam": [
+      4.48,
+      51.92
+    ],
+    "Voorburg": [
+      4.36,
+      52.07
+    ],
+    "Zoetermeer": [
+      4.49,
+      52.06
+    ],
+    "Brussels": [
+      4.35,
+      50.85
+    ],
+    "Mechelen": [
+      4.48,
+      51.03
+    ],
+    "Paris": [
+      2.35,
+      48.86
+    ],
+    "London": [
+      -0.13,
+      51.51
+    ],
+    "Birmingham": [
+      -1.9,
+      52.49
+    ],
+    "Bristol": [
+      -2.59,
+      51.45
+    ],
+    "Dublin": [
+      -6.26,
+      53.35
+    ],
+    "Kingstown (Dun Laoghaire)": [
+      -6.13,
+      53.29
+    ],
+    "Rouen": [
+      1.1,
+      49.44
+    ],
+    "Le Havre": [
+      0.11,
+      49.49
+    ],
+    "Lisbon": [
+      -9.14,
+      38.72
+    ],
+    "Carregado": [
+      -8.97,
+      39.02
+    ],
+    "Badajoz": [
+      -6.97,
+      38.88
+    ],
+    "Madrid": [
+      -3.7,
+      40.42
+    ],
+    "Aranjuez": [
+      -3.6,
+      40.03
+    ],
+    "Hamburg": [
+      9.99,
+      53.55
+    ],
+    "Berlin": [
+      13.4,
+      52.52
+    ],
+    "Leipzig": [
+      12.37,
+      51.34
+    ],
+    "Dresden": [
+      13.74,
+      51.05
+    ],
+    "Cologne": [
+      6.96,
+      50.94
+    ],
+    "Bonn": [
+      7.1,
+      50.74
+    ],
+    "Zurich": [
+      8.54,
+      47.38
+    ],
+    "Baden": [
+      8.31,
+      47.47
+    ],
+    "Gloggnitz": [
+      15.94,
+      47.67
+    ],
+    "Muerzzuschlag": [
+      15.67,
+      47.61
+    ],
+    "Milan": [
+      9.19,
+      45.46
+    ],
+    "Varese": [
+      8.83,
+      45.82
+    ],
+    "Bologna": [
+      11.34,
+      44.49
+    ],
+    "Prato": [
+      11.1,
+      43.88
+    ],
+    "Florence": [
+      11.25,
+      43.77
+    ],
+    "Rome": [
+      12.5,
+      41.9
+    ],
+    "Naples": [
+      14.27,
+      40.85
+    ],
+    "Salerno": [
+      14.77,
+      40.68
+    ],
+    "Reggio Calabria": [
+      15.65,
+      38.11
+    ],
+    "Oslo": [
+      10.75,
+      59.91
+    ],
+    "Bergen": [
+      5.32,
+      60.39
+    ],
+    "Stockholm": [
+      18.07,
+      59.33
+    ],
+    "Gothenburg": [
+      11.97,
+      57.71
+    ],
+    "Helsinki": [
+      24.94,
+      60.17
+    ],
+    "Hameenlinna": [
+      24.46,
+      61.0
+    ],
+    "Copenhagen": [
+      12.57,
+      55.68
+    ],
+    "Roskilde": [
+      12.08,
+      55.64
+    ],
+    "Warsaw": [
+      21.01,
+      52.23
+    ],
+    "Grodzisk": [
+      20.63,
+      52.1
+    ],
+    "Prague": [
+      14.44,
+      50.08
+    ],
+    "Olomouc": [
+      17.25,
+      49.59
+    ],
+    "Marchegg": [
+      16.91,
+      48.28
+    ],
+    "Bratislava": [
+      17.11,
+      48.15
+    ],
+    "Sturovo": [
+      18.72,
+      47.8
+    ],
+    "Vac": [
+      19.13,
+      47.78
+    ],
+    "Budapest": [
+      19.05,
+      47.5
+    ],
+    "Szolnok": [
+      20.19,
+      47.17
+    ],
+    "Zidani Most": [
+      15.18,
+      46.09
+    ],
+    "Zagreb": [
+      15.98,
+      45.81
+    ],
+    "Sisak": [
+      16.37,
+      45.49
+    ],
+    "Belgrade": [
+      20.46,
+      44.82
+    ],
+    "Nis": [
+      21.9,
+      43.32
+    ],
+    "Bucharest": [
+      26.1,
+      44.43
+    ],
+    "Giurgiu": [
+      25.97,
+      43.9
+    ],
+    "Pitesti": [
+      24.87,
+      44.86
+    ],
+    "Galati": [
+      28.05,
+      45.44
+    ],
+    "Roman": [
+      26.92,
+      46.93
+    ],
+    "Ruse": [
+      25.95,
+      43.85
+    ],
+    "Varna": [
+      27.91,
+      43.21
+    ],
+    "Caribrod (Dimitrovgrad)": [
+      22.78,
+      43.01
+    ],
+    "Sofia": [
+      23.32,
+      42.7
+    ],
+    "Belovo": [
+      24.02,
+      42.21
+    ],
+    "Istanbul": [
+      28.98,
+      41.01
+    ],
+    "Athens": [
+      23.73,
+      37.98
+    ],
+    "Piraeus": [
+      23.65,
+      37.94
+    ],
+    "Paldiski": [
+      24.06,
+      59.36
+    ],
+    "Tallinn": [
+      24.75,
+      59.44
+    ],
+    "Narva": [
+      28.19,
+      59.38
+    ],
+    "Gatchina": [
+      30.12,
+      59.57
+    ],
+    "Riga": [
+      24.11,
+      56.95
+    ],
+    "Daugavpils": [
+      26.53,
+      55.87
+    ],
+    "Vilnius": [
+      25.28,
+      54.69
+    ],
+    "Virbalis": [
+      22.82,
+      54.63
+    ],
+    "Lida": [
+      25.3,
+      53.9
+    ],
+    "Leningrad": [
+      30.32,
+      59.94
+    ],
+    "Moscow": [
+      37.62,
+      55.75
+    ],
+    "Odesa": [
+      30.72,
+      46.48
+    ],
+    "Balta": [
+      29.62,
+      47.94
+    ],
+    "Frankfurt": [
+      8.68,
+      50.11
+    ],
+    "Darmstadt": [
+      8.65,
+      49.87
+    ],
+    "Mannheim": [
+      8.47,
+      49.49
+    ],
+    "Heidelberg": [
+      8.69,
+      49.4
+    ],
+    "Herby": [
+      18.89,
+      50.75
+    ],
+    "Gdynia": [
+      18.54,
+      54.52
+    ],
+    "Pruszkow": [
+      20.81,
+      52.17
+    ],
+    "Otwock": [
+      21.26,
+      52.11
+    ],
+    "Zyrardow": [
+      20.45,
+      52.05
+    ],
+    "Minsk Mazowiecki": [
+      21.57,
+      52.18
+    ],
+    "Strasbourg": [
+      7.75,
+      48.58
+    ],
+    "Lyon": [
+      4.84,
+      45.76
+    ],
+    "Marseille": [
+      5.37,
+      43.3
+    ]
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "oude-lijn",
+        "name": "Oude Lijn",
+        "mode": "rail",
+        "existenceByYear": 1847,
+        "dateNote": "Amsterdam Haarlem Leiden The Hague Rotterdam",
+        "sourceId": "prorail",
+        "places": [
+          "Amsterdam",
+          "Haarlem",
+          "Leiden",
+          "The Hague",
+          "Rotterdam"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false,
+        "region": "France and Low Countries"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.9,
+            52.37
+          ],
+          [
+            4.64,
+            52.38
+          ],
+          [
+            4.49,
+            52.16
+          ],
+          [
+            4.3,
+            52.08
+          ],
+          [
+            4.48,
+            51.92
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "brussels-mechelen",
+        "name": "Brussels to Mechelen",
+        "mode": "rail",
+        "existenceByYear": 1835,
+        "dateNote": "Opened 5 May 1835",
+        "sourceId": "trainworld",
+        "places": [
+          "Brussels",
+          "Mechelen"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false,
+        "region": "France and Low Countries"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.35,
+            50.85
+          ],
+          [
+            4.48,
+            51.03
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "paris-brussels",
+        "name": "Paris to Brussels connection",
+        "mode": "rail",
+        "existenceByYear": 1846,
+        "dateNote": "Connection documented in 1846; intermediate route not plotted",
+        "sourceId": "trainworld",
+        "places": [
+          "Paris",
+          "Brussels"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false,
+        "region": "France and Low Countries"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.35,
+            48.86
+          ],
+          [
+            4.35,
+            50.85
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "rijksweg12",
+        "name": "Rijksweg 12: Voorburg to Zoetermeer",
+        "mode": "road",
+        "existenceByYear": 1937,
+        "dateNote": "Opened 15 April 1937",
+        "sourceId": "rws",
+        "places": [
+          "Voorburg",
+          "Zoetermeer"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false,
+        "region": "France and Low Countries"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            4.36,
+            52.07
+          ],
+          [
+            4.49,
+            52.06
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "london-birmingham",
+        "name": "London to Birmingham",
+        "region": "Britain and Ireland",
+        "mode": "rail",
+        "existenceByYear": 1838,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "nr-birmingham",
+        "places": [
+          "London",
+          "Birmingham"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -0.13,
+            51.51
+          ],
+          [
+            -1.9,
+            52.49
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "london-bristol",
+        "name": "London to Bristol",
+        "region": "Britain and Ireland",
+        "mode": "rail",
+        "existenceByYear": 1841,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "nr-bristol",
+        "places": [
+          "London",
+          "Bristol"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -0.13,
+            51.51
+          ],
+          [
+            -2.59,
+            51.45
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "dublin-kingstown",
+        "name": "Dublin to Kingstown (Dun Laoghaire)",
+        "region": "Britain and Ireland",
+        "mode": "rail",
+        "existenceByYear": 1834,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "dublin",
+        "places": [
+          "Dublin",
+          "Kingstown (Dun Laoghaire)"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -6.26,
+            53.35
+          ],
+          [
+            -6.13,
+            53.29
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "paris-rouen",
+        "name": "Paris to Rouen",
+        "region": "France and Low Countries",
+        "mode": "rail",
+        "existenceByYear": 1843,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "rouen",
+        "places": [
+          "Paris",
+          "Rouen"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.35,
+            48.86
+          ],
+          [
+            1.1,
+            49.44
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "paris-havre",
+        "name": "Paris to Le Havre",
+        "region": "France and Low Countries",
+        "mode": "rail",
+        "existenceByYear": 1847,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "havre",
+        "places": [
+          "Paris",
+          "Le Havre"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.35,
+            48.86
+          ],
+          [
+            0.11,
+            49.49
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "havre-rouen-road",
+        "name": "Le Havre to Rouen",
+        "region": "France and Low Countries",
+        "mode": "road",
+        "existenceByYear": 1769,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "havre",
+        "places": [
+          "Le Havre",
+          "Rouen"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            0.11,
+            49.49
+          ],
+          [
+            1.1,
+            49.44
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "lisbon-carregado",
+        "name": "Lisbon to Carregado",
+        "region": "Iberia",
+        "mode": "rail",
+        "existenceByYear": 1856,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "cp",
+        "places": [
+          "Lisbon",
+          "Carregado"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -9.14,
+            38.72
+          ],
+          [
+            -8.97,
+            39.02
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "lisbon-badajoz",
+        "name": "Lisbon to Badajoz",
+        "region": "Iberia",
+        "mode": "rail",
+        "existenceByYear": 1863,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "cp",
+        "places": [
+          "Lisbon",
+          "Badajoz"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -9.14,
+            38.72
+          ],
+          [
+            -6.97,
+            38.88
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "madrid-aranjuez",
+        "name": "Madrid to Aranjuez",
+        "region": "Iberia",
+        "mode": "rail",
+        "existenceByYear": 1851,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "renfe",
+        "places": [
+          "Madrid",
+          "Aranjuez"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -3.7,
+            40.42
+          ],
+          [
+            -3.6,
+            40.03
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "hamburg-berlin",
+        "name": "Hamburg to Berlin",
+        "region": "Germany",
+        "mode": "rail",
+        "existenceByYear": 1846,
+        "dateNote": "Opened in 1846; scheduled service separately documented from May 1933.",
+        "sourceId": "db-1933",
+        "places": [
+          "Hamburg",
+          "Berlin"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false,
+        "corroboratingSourceIds": [
+          "hamburg"
+        ]
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            9.99,
+            53.55
+          ],
+          [
+            13.4,
+            52.52
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "leipzig-dresden",
+        "name": "Leipzig to Dresden",
+        "region": "Germany",
+        "mode": "rail",
+        "existenceByYear": 1839,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "saxony",
+        "places": [
+          "Leipzig",
+          "Dresden"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            12.37,
+            51.34
+          ],
+          [
+            13.74,
+            51.05
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "cologne-bonn",
+        "name": "Cologne to Bonn",
+        "region": "Germany",
+        "mode": "road",
+        "existenceByYear": 1932,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "bonn",
+        "places": [
+          "Cologne",
+          "Bonn"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            6.96,
+            50.94
+          ],
+          [
+            7.1,
+            50.74
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "zurich-baden",
+        "name": "Zurich to Baden",
+        "region": "Alps",
+        "mode": "rail",
+        "existenceByYear": 1847,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "sbb",
+        "places": [
+          "Zurich",
+          "Baden"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            8.54,
+            47.38
+          ],
+          [
+            8.31,
+            47.47
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "semmering",
+        "name": "Gloggnitz to Muerzzuschlag",
+        "region": "Alps",
+        "mode": "rail",
+        "existenceByYear": 1854,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "unesco",
+        "places": [
+          "Gloggnitz",
+          "Muerzzuschlag"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            15.94,
+            47.67
+          ],
+          [
+            15.67,
+            47.61
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "milan-varese",
+        "name": "Milan to Varese",
+        "region": "Italy",
+        "mode": "road",
+        "existenceByYear": 1924,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "aspi",
+        "places": [
+          "Milan",
+          "Varese"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            9.19,
+            45.46
+          ],
+          [
+            8.83,
+            45.82
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "bologna-florence",
+        "name": "Bologna to Prato to Florence",
+        "region": "Italy",
+        "mode": "rail",
+        "existenceByYear": 1934,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "fs",
+        "places": [
+          "Bologna",
+          "Prato",
+          "Florence"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            11.34,
+            44.49
+          ],
+          [
+            11.1,
+            43.88
+          ],
+          [
+            11.25,
+            43.77
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "milan-bologna",
+        "name": "Milan to Bologna",
+        "region": "Italy",
+        "mode": "rail",
+        "existenceByYear": 1938,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "fs",
+        "places": [
+          "Milan",
+          "Bologna"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            9.19,
+            45.46
+          ],
+          [
+            11.34,
+            44.49
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "florence-naples",
+        "name": "Florence to Rome to Naples",
+        "region": "Italy",
+        "mode": "rail",
+        "existenceByYear": 1935,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "fs",
+        "places": [
+          "Florence",
+          "Rome",
+          "Naples"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            11.25,
+            43.77
+          ],
+          [
+            12.5,
+            41.9
+          ],
+          [
+            14.27,
+            40.85
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "naples-salerno",
+        "name": "Naples to Salerno",
+        "region": "Italy",
+        "mode": "rail",
+        "existenceByYear": 1934,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "fs",
+        "places": [
+          "Naples",
+          "Salerno"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            14.27,
+            40.85
+          ],
+          [
+            14.77,
+            40.68
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "salerno-reggio",
+        "name": "Salerno to Reggio Calabria",
+        "region": "Italy",
+        "mode": "rail",
+        "existenceByYear": 1937,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "fs",
+        "places": [
+          "Salerno",
+          "Reggio Calabria"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            14.77,
+            40.68
+          ],
+          [
+            15.65,
+            38.11
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "oslo-bergen",
+        "name": "Oslo to Bergen",
+        "region": "Nordic region",
+        "mode": "rail",
+        "existenceByYear": 1909,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "norway",
+        "places": [
+          "Oslo",
+          "Bergen"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            10.75,
+            59.91
+          ],
+          [
+            5.32,
+            60.39
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "stockholm-gothenburg",
+        "name": "Stockholm to Gothenburg",
+        "region": "Nordic region",
+        "mode": "rail",
+        "existenceByYear": 1926,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "sweden",
+        "places": [
+          "Stockholm",
+          "Gothenburg"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            18.07,
+            59.33
+          ],
+          [
+            11.97,
+            57.71
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "helsinki-hameenlinna",
+        "name": "Helsinki to Hameenlinna",
+        "region": "Nordic region",
+        "mode": "rail",
+        "existenceByYear": 1862,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "finland",
+        "places": [
+          "Helsinki",
+          "Hameenlinna"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            24.94,
+            60.17
+          ],
+          [
+            24.46,
+            61.0
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "copenhagen-roskilde",
+        "name": "Copenhagen to Roskilde",
+        "region": "Nordic region",
+        "mode": "rail",
+        "existenceByYear": 1847,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "denmark",
+        "places": [
+          "Copenhagen",
+          "Roskilde"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            12.57,
+            55.68
+          ],
+          [
+            12.08,
+            55.64
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "warsaw-grodzisk",
+        "name": "Warsaw to Grodzisk",
+        "region": "Poland and Carpathian region",
+        "mode": "rail",
+        "existenceByYear": 1845,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "pkp",
+        "places": [
+          "Warsaw",
+          "Grodzisk"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            21.01,
+            52.23
+          ],
+          [
+            20.63,
+            52.1
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "prague-olomouc",
+        "name": "Prague to Olomouc",
+        "region": "Poland and Carpathian region",
+        "mode": "rail",
+        "existenceByYear": 1845,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "cd",
+        "places": [
+          "Prague",
+          "Olomouc"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            14.44,
+            50.08
+          ],
+          [
+            17.25,
+            49.59
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "marchegg-bratislava",
+        "name": "Marchegg to Bratislava",
+        "region": "Poland and Carpathian region",
+        "mode": "rail",
+        "existenceByYear": 1848,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "zsr",
+        "places": [
+          "Marchegg",
+          "Bratislava"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            16.91,
+            48.28
+          ],
+          [
+            17.11,
+            48.15
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "bratislava-vac",
+        "name": "Bratislava to Sturovo to Vac",
+        "region": "Poland and Carpathian region",
+        "mode": "rail",
+        "existenceByYear": 1850,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "zsr",
+        "places": [
+          "Bratislava",
+          "Sturovo",
+          "Vac"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            17.11,
+            48.15
+          ],
+          [
+            18.72,
+            47.8
+          ],
+          [
+            19.13,
+            47.78
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "pest-vac",
+        "name": "Budapest to Vac",
+        "region": "Poland and Carpathian region",
+        "mode": "rail",
+        "existenceByYear": 1846,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "mav-vac",
+        "places": [
+          "Budapest",
+          "Vac"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            19.05,
+            47.5
+          ],
+          [
+            19.13,
+            47.78
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "pest-szolnok",
+        "name": "Budapest to Szolnok",
+        "region": "Poland and Carpathian region",
+        "mode": "rail",
+        "existenceByYear": 1847,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "mav-szolnok",
+        "places": [
+          "Budapest",
+          "Szolnok"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            19.05,
+            47.5
+          ],
+          [
+            20.19,
+            47.17
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "zagreb-sisak",
+        "name": "Zidani Most to Zagreb to Sisak",
+        "region": "Balkans and European Turkey",
+        "mode": "rail",
+        "existenceByYear": 1862,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "hz",
+        "places": [
+          "Zidani Most",
+          "Zagreb",
+          "Sisak"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            15.18,
+            46.09
+          ],
+          [
+            15.98,
+            45.81
+          ],
+          [
+            16.37,
+            45.49
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "belgrade-nis",
+        "name": "Belgrade to Nis",
+        "region": "Balkans and European Turkey",
+        "mode": "rail",
+        "existenceByYear": 1884,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "serbia",
+        "places": [
+          "Belgrade",
+          "Nis"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            20.46,
+            44.82
+          ],
+          [
+            21.9,
+            43.32
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "bucharest-giurgiu",
+        "name": "Bucharest to Giurgiu",
+        "region": "Balkans and European Turkey",
+        "mode": "rail",
+        "existenceByYear": 1869,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "cfr",
+        "places": [
+          "Bucharest",
+          "Giurgiu"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            26.1,
+            44.43
+          ],
+          [
+            25.97,
+            43.9
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "pitesti-roman",
+        "name": "Pitesti to Bucharest to Galati to Roman",
+        "region": "Balkans and European Turkey",
+        "mode": "rail",
+        "existenceByYear": 1872,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "cfr",
+        "places": [
+          "Pitesti",
+          "Bucharest",
+          "Galati",
+          "Roman"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            24.87,
+            44.86
+          ],
+          [
+            26.1,
+            44.43
+          ],
+          [
+            28.05,
+            45.44
+          ],
+          [
+            26.92,
+            46.93
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "ruse-varna",
+        "name": "Ruse to Varna",
+        "region": "Balkans and European Turkey",
+        "mode": "rail",
+        "existenceByYear": 1866,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "bdz",
+        "places": [
+          "Ruse",
+          "Varna"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            25.95,
+            43.85
+          ],
+          [
+            27.91,
+            43.21
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "sofia-belovo",
+        "name": "Caribrod (Dimitrovgrad) to Sofia to Belovo",
+        "region": "Balkans and European Turkey",
+        "mode": "rail",
+        "existenceByYear": 1888,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "bdz",
+        "places": [
+          "Caribrod (Dimitrovgrad)",
+          "Sofia",
+          "Belovo"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            22.78,
+            43.01
+          ],
+          [
+            23.32,
+            42.7
+          ],
+          [
+            24.02,
+            42.21
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "istanbul-belovo",
+        "name": "Istanbul to Belovo",
+        "region": "Balkans and European Turkey",
+        "mode": "rail",
+        "existenceByYear": 1873,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "bdz",
+        "places": [
+          "Istanbul",
+          "Belovo"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            28.98,
+            41.01
+          ],
+          [
+            24.02,
+            42.21
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "athens-piraeus",
+        "name": "Athens to Piraeus",
+        "region": "Balkans and European Turkey",
+        "mode": "rail",
+        "existenceByYear": 1869,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "ert",
+        "places": [
+          "Athens",
+          "Piraeus"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            23.73,
+            37.98
+          ],
+          [
+            23.65,
+            37.94
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "estonia-gatchina",
+        "name": "Paldiski to Tallinn to Narva to Gatchina",
+        "region": "Baltic region",
+        "mode": "rail",
+        "existenceByYear": 1870,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "evr",
+        "places": [
+          "Paldiski",
+          "Tallinn",
+          "Narva",
+          "Gatchina"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            24.06,
+            59.36
+          ],
+          [
+            24.75,
+            59.44
+          ],
+          [
+            28.19,
+            59.38
+          ],
+          [
+            30.12,
+            59.57
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "riga-daugavpils",
+        "name": "Riga to Daugavpils",
+        "region": "Baltic region",
+        "mode": "rail",
+        "existenceByYear": 1861,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "ldz",
+        "places": [
+          "Riga",
+          "Daugavpils"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            24.11,
+            56.95
+          ],
+          [
+            26.53,
+            55.87
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "vilnius-virbalis",
+        "name": "Vilnius to Virbalis",
+        "region": "Baltic region",
+        "mode": "rail",
+        "existenceByYear": 1862,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "vle",
+        "places": [
+          "Vilnius",
+          "Virbalis"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            25.28,
+            54.69
+          ],
+          [
+            22.82,
+            54.63
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "vilnius-lida",
+        "name": "Vilnius to Lida",
+        "region": "Baltic region",
+        "mode": "rail",
+        "existenceByYear": 1884,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "vle",
+        "places": [
+          "Vilnius",
+          "Lida"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            25.28,
+            54.69
+          ],
+          [
+            25.3,
+            53.9
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "leningrad-moscow",
+        "name": "Leningrad to Moscow",
+        "region": "Eastern region",
+        "mode": "rail",
+        "existenceByYear": 1851,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "mintrans",
+        "places": [
+          "Leningrad",
+          "Moscow"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            30.32,
+            59.94
+          ],
+          [
+            37.62,
+            55.75
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "odesa-balta",
+        "name": "Odesa to Balta",
+        "region": "Eastern region",
+        "mode": "rail",
+        "existenceByYear": 1865,
+        "dateNote": "Prewar existence documented; intermediate alignment not asserted",
+        "sourceId": "ukraine",
+        "places": [
+          "Odesa",
+          "Balta"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            30.72,
+            46.48
+          ],
+          [
+            29.62,
+            47.94
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "frankfurt-heidelberg",
+        "name": "Frankfurt to Darmstadt to Mannheim to Heidelberg",
+        "region": "Germany",
+        "mode": "road",
+        "existenceByYear": 1935,
+        "dateNote": "Public opening reported 4 October 1935; town links do not trace junction geometry.",
+        "sourceId": "darmstadt-1935",
+        "corroboratingSourceIds": [],
+        "places": [
+          "Frankfurt",
+          "Darmstadt",
+          "Mannheim",
+          "Heidelberg"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            8.68,
+            50.11
+          ],
+          [
+            8.65,
+            49.87
+          ],
+          [
+            8.47,
+            49.49
+          ],
+          [
+            8.69,
+            49.4
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "herby-gdynia",
+        "name": "Herby to Gdynia",
+        "region": "Poland and Carpathian region",
+        "mode": "rail",
+        "existenceByYear": 1933,
+        "dateNote": "March 1933 opening announcement, corroborated by PKP. Herby is a town anchor; intermediate stations are not plotted.",
+        "sourceId": "monitor-1933",
+        "corroboratingSourceIds": [
+          "pkp-1930s"
+        ],
+        "places": [
+          "Herby",
+          "Gdynia"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            18.89,
+            50.75
+          ],
+          [
+            18.54,
+            54.52
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "pruszkow-otwock",
+        "name": "Pruszkow to Warsaw to Otwock",
+        "region": "Poland and Carpathian region",
+        "mode": "rail",
+        "existenceByYear": 1936,
+        "dateNote": "1936 electrified service evidence; underlying railway is older.",
+        "sourceId": "pkp-1930s",
+        "corroboratingSourceIds": [],
+        "places": [
+          "Pruszkow",
+          "Warsaw",
+          "Otwock"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            20.81,
+            52.17
+          ],
+          [
+            21.01,
+            52.23
+          ],
+          [
+            21.26,
+            52.11
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "warsaw-zyrardow",
+        "name": "Warsaw to Grodzisk to Zyrardow",
+        "region": "Poland and Carpathian region",
+        "mode": "rail",
+        "existenceByYear": 1937,
+        "dateNote": "Electric trains documented after the 1936 initial section; 1937 is an evidence-by year.",
+        "sourceId": "pkp-1930s",
+        "corroboratingSourceIds": [],
+        "places": [
+          "Warsaw",
+          "Grodzisk",
+          "Zyrardow"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            21.01,
+            52.23
+          ],
+          [
+            20.63,
+            52.1
+          ],
+          [
+            20.45,
+            52.05
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "warsaw-minsk",
+        "name": "Warsaw to Minsk Mazowiecki",
+        "region": "Poland and Carpathian region",
+        "mode": "rail",
+        "existenceByYear": 1937,
+        "dateNote": "Electric service documented in December 1937.",
+        "sourceId": "pkp-1930s",
+        "corroboratingSourceIds": [],
+        "places": [
+          "Warsaw",
+          "Minsk Mazowiecki"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            21.01,
+            52.23
+          ],
+          [
+            21.57,
+            52.18
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "paris-strasbourg",
+        "name": "Paris to Strasbourg",
+        "region": "France and Low Countries",
+        "mode": "rail",
+        "existenceByYear": 1852,
+        "dateNote": "Passenger opening in July 1852. This is the historical conventional connection, not the modern high-speed line.",
+        "sourceId": "sncf-strasbourg",
+        "corroboratingSourceIds": [],
+        "places": [
+          "Paris",
+          "Strasbourg"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.35,
+            48.86
+          ],
+          [
+            7.75,
+            48.58
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "paris-marseille",
+        "name": "Paris to Lyon to Marseille",
+        "region": "France and Low Countries",
+        "mode": "rail",
+        "existenceByYear": 1856,
+        "dateNote": "Period account of full railway operation in 1856; exact route still schematic.",
+        "sourceId": "marseille-1866",
+        "corroboratingSourceIds": [],
+        "places": [
+          "Paris",
+          "Lyon",
+          "Marseille"
+        ],
+        "alignmentStatus": "schematic",
+        "baselineOperation": "unverified",
+        "gameAdmitted": false
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            2.35,
+            48.86
+          ],
+          [
+            4.84,
+            45.76
+          ],
+          [
+            5.37,
+            43.3
+          ]
+        ]
+      }
+    }
+  ],
+  "regionPolicy": "Regions are navigation groups, not 1939 states or sovereignty claims. Town names are modern navigation labels except where explicitly historical. No border crossing permission is implied.",
+  "regions": [
+    {
+      "name": "France and Low Countries",
+      "status": "partial",
+      "gaps": "Paris to Strasbourg and the Lyon/Marseille axis now have early existence evidence. Western and southern branches, Luxembourg and most arterial roads remain incomplete."
+    },
+    {
+      "name": "Britain and Ireland",
+      "status": "partial",
+      "gaps": "Scotland, Wales, northern England and Ireland mainlines need further review. No road network yet."
+    },
+    {
+      "name": "Iberia",
+      "status": "partial",
+      "gaps": "Spain and Portugal represented by a few examples. Civil War damage, border service and roads are unverified."
+    },
+    {
+      "name": "Germany",
+      "status": "partial",
+      "gaps": "Berlin/Hamburg now has 1933 service evidence; the Frankfurt/Heidelberg road has a 1935 opening report. Full Reichsbahn and Autobahn coverage still needs period-map review."
+    },
+    {
+      "name": "Alps",
+      "status": "partial",
+      "gaps": "Swiss and Austrian examples only; major passes and through corridors remain incomplete. Liechtenstein not reviewed."
+    },
+    {
+      "name": "Italy",
+      "status": "partial",
+      "gaps": "Selected mainland trunk rail connections and one motorway. Islands, eastern corridors and most roads unrepresented."
+    },
+    {
+      "name": "Nordic region",
+      "status": "partial",
+      "gaps": "Norway, Sweden, Denmark and Finland have examples. Northern corridors, ferries, wartime gauges and roads unreviewed; Iceland not represented."
+    },
+    {
+      "name": "Poland and Carpathian region",
+      "status": "partial",
+      "gaps": "Added the coal trunk and Warsaw-area 1930s electrification evidence. Eastern Poland and most mainlines and roads remain incomplete; the 1939 map candidate has not been digitized."
+    },
+    {
+      "name": "Balkans and European Turkey",
+      "status": "partial",
+      "gaps": "Romanian, Bulgarian, Yugoslav-area, Greek and European Turkish examples. Bosnia, Montenegro, Albania and much of Greece unrepresented; no road network."
+    },
+    {
+      "name": "Baltic region",
+      "status": "partial",
+      "gaps": "Estonian, Latvian and Lithuanian examples. Border closures, gauge history and roads need review."
+    },
+    {
+      "name": "Eastern region",
+      "status": "partial",
+      "gaps": "Western Russia and Ukraine examples only. Belarus trunk network, Moldova, Caucasus and roads need further review."
+    }
+  ],
+  "mapCandidates": [
+    {
+      "title": "German transport and administrative map of Poland, 1939",
+      "url": "https://maps.geshergalicia.org/galicia/poland-interwar-1939-2/",
+      "status": "Catalog description reviewed; map geometry not traced",
+      "finding": "The catalog describes four railway classes and three road classes, based on a Polish original. Original-map public-domain status is stated; the web viewer has separate rights. Pre-invasion dating is the catalog author's inference, not a precise survey date. The Polona link currently resolves to its homepage.",
+      "nextStep": "Recover the exact Polona item and inspect the legend, imprint and route symbols before georeferencing."
+    },
+    {
+      "title": "Central Europe and Mediterranean, Truman Library M1200",
+      "url": "https://www.trumanlibrary.gov/maps/m1200-map-central-europe-and-mediterranean",
+      "status": "Catalog reviewed; excluded from imported geometry",
+      "finding": "Catalog dates the map to circa October 1939. September 1 refers to boundaries and does not establish railway currency. The catalog identifies reproduction restrictions.",
+      "nextStep": "Use as a bibliographic lead; locate a suitable reusable, dated transport source before importing."
+    }
+  ]
+}

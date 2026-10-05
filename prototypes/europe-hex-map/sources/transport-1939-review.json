@@ -1,0 +1,14 @@
+{
+  "baselineDate": "1939-09-01",
+  "status": "pending-source-admission",
+  "coverage": "unknown",
+  "features": [],
+  "firstReviewRegion": "France and the Low Countries",
+  "admissionRequirements": ["segment identity and geometry", "dated evidence supporting existence on 1939-09-01", "source fragment and review decision", "uncertainty and geometry accuracy", "separate evidence for operational attributes"],
+  "candidates": [
+    {"title":"Mitteleuropa","url":"https://purl.stanford.edu/vv402mj3929","date":"1940","status":"candidate-only","limitation":"Post-baseline publication; additions and changes need checking."},
+    {"title":"European railways 1920-1940, Polo Martin","url":"https://doi.org/10.34847/NKL.6296QX69","status":"candidate-only","limitation":"Bibliographic record identified; files not inspected. Date interval is not an exact September 1939 snapshot."},
+    {"title":"Seine railway reconstruction for 1939","url":"https://commons.wikimedia.org/wiki/File:Railway_map_of_France_-_75_-_1939_-_fr_-_small.svg","status":"candidate-only","limitation":"Modern reconstruction uses December 31 status and excludes temporary wartime changes. Requires source-level corroboration."},
+    {"title":"RShapes","url":"https://icr.ethz.ch/data/rshapes/","status":"candidate-only","limitation":"Ends in 1922, with British Isles coverage limitations; cannot establish 1939 operation."}
+  ]
+}

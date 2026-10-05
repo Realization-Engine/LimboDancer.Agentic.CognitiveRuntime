@@ -1,0 +1,247 @@
+{
+  "version": 1,
+  "collectionsIds": [
+    "10.34847/nkl.a50e4x53"
+  ],
+  "files": [
+    {
+      "name": "europe_1940.cpg",
+      "extension": "cpg",
+      "size": "5",
+      "mime_type": "",
+      "sha1": "663b90c899fa25a111067be0c22ffc64dcf581c2",
+      "embargoed": "2024-11-24T18:00:00-05:00",
+      "description": null,
+      "humanReadableEmbargoedDelay": [],
+      "puid": "fmt/1253",
+      "format": "ESRI Code Page File"
+    },
+    {
+      "name": "europe_1940.dbf",
+      "extension": "dbf",
+      "size": "5685264",
+      "mime_type": "",
+      "sha1": "420c3d2a4b94dc7c16b34a5d7ba421ba978c8bb7",
+      "embargoed": "2024-11-24T18:00:00-05:00",
+      "description": null,
+      "humanReadableEmbargoedDelay": [],
+      "puid": "x-fmt/9",
+      "format": "dBASE Database"
+    },
+    {
+      "name": "europe_1940.prj",
+      "extension": "prj",
+      "size": "380",
+      "mime_type": "",
+      "sha1": "0ee56e8aa6778cd0533e6326172d222df025d396",
+      "embargoed": "2024-11-24T18:00:00-05:00",
+      "description": null,
+      "humanReadableEmbargoedDelay": [],
+      "puid": "fmt/320",
+      "format": "ESRI Shapefile Projection (Well-Known Text) Format"
+    },
+    {
+      "name": "europe_1940.qmd",
+      "extension": "qmd",
+      "size": "3437",
+      "mime_type": "text/html",
+      "sha1": "9c4fc69b55029ecd62409e905419765556491dc2",
+      "embargoed": "2024-11-24T18:00:00-05:00",
+      "description": null,
+      "humanReadableEmbargoedDelay": [],
+      "puid": null,
+      "format": null
+    },
+    {
+      "name": "europe_1940.shp",
+      "extension": "shp",
+      "size": "5229916",
+      "mime_type": "",
+      "sha1": "062845aec6377bdaa5a9b2346413f8f0e684fe9a",
+      "embargoed": "2024-11-24T18:00:00-05:00",
+      "description": null,
+      "humanReadableEmbargoedDelay": [],
+      "puid": "x-fmt/235",
+      "format": "ESRI Arc/View ShapeFile"
+    },
+    {
+      "name": "europe_1940.shx",
+      "extension": "shx",
+      "size": "115516",
+      "mime_type": "",
+      "sha1": "0c7cf4689a5f745f3f8d993868efe865cc5b1c52",
+      "embargoed": "2024-11-24T18:00:00-05:00",
+      "description": null,
+      "humanReadableEmbargoedDelay": [],
+      "puid": "fmt/277",
+      "format": "ESRI Arc/View Shapefile Index"
+    }
+  ],
+  "lastModerator": null,
+  "lastModerationDate": null,
+  "moderationRequester": null,
+  "lastModerationRequestDate": null,
+  "relations": [],
+  "status": "published",
+  "fileEmbargoed": false,
+  "uri": "https://doi.org/10.34847/nkl.6296qx69",
+  "identifier": "10.34847/nkl.6296qx69",
+  "metas": [
+    {
+      "value": "Shapefile of railways in Europe between 1920 and 1940",
+      "lang": "en",
+      "typeUri": null,
+      "propertyUri": "http://nakala.fr/terms#title"
+    },
+    {
+      "value": "Shapefile des chemins de fer en Europe entre 1920 et 1940",
+      "lang": "fr",
+      "typeUri": null,
+      "propertyUri": "http://nakala.fr/terms#title"
+    },
+    {
+      "value": "2023",
+      "lang": null,
+      "typeUri": null,
+      "propertyUri": "http://nakala.fr/terms#created"
+    },
+    {
+      "value": "CC-BY-NC-4.0",
+      "lang": null,
+      "typeUri": null,
+      "propertyUri": "http://nakala.fr/terms#license"
+    },
+    {
+      "value": "http://purl.org/coar/resource_type/c_ddb1",
+      "lang": null,
+      "typeUri": "http://purl.org/dc/terms/URI",
+      "propertyUri": "http://nakala.fr/terms#type"
+    },
+    {
+      "value": "Cartography",
+      "lang": "en",
+      "typeUri": null,
+      "propertyUri": "http://purl.org/dc/terms/subject"
+    },
+    {
+      "value": "Railways",
+      "lang": "en",
+      "typeUri": null,
+      "propertyUri": "http://purl.org/dc/terms/subject"
+    },
+    {
+      "value": "Cartographie",
+      "lang": "fr",
+      "typeUri": null,
+      "propertyUri": "http://purl.org/dc/terms/subject"
+    },
+    {
+      "value": "Chemins de fer",
+      "lang": "fr",
+      "typeUri": null,
+      "propertyUri": "http://purl.org/dc/terms/subject"
+    },
+    {
+      "value": "Shapefile of railways in Europe between 1920 and 1940 based on historical cartography of different libraries. Shapefiles each 20 years because of the impossibility of finding historical cartography every year.",
+      "lang": "en",
+      "typeUri": null,
+      "propertyUri": "http://purl.org/dc/terms/description"
+    },
+    {
+      "value": "Shapefile des chemins de fer en Europe entre 1920 et 1940 basé sur la cartographie historique de différentes bibliothèques. Shapefiles tous les 20 ans en raison de l'impossibilité de trouver des cartographies historiques chaque année.",
+      "lang": "fr",
+      "typeUri": null,
+      "propertyUri": "http://purl.org/dc/terms/description"
+    },
+    {
+      "value": "https://link.springer.com/chapter/10.1007/978-3-031-21731-9_4",
+      "lang": null,
+      "typeUri": "http://purl.org/dc/terms/URI",
+      "propertyUri": "http://purl.org/dc/terms/relation"
+    },
+    {
+      "value": "http://dx.doi.org/10.4236/jgis.2012.42023",
+      "lang": null,
+      "typeUri": "http://purl.org/dc/terms/URI",
+      "propertyUri": "http://purl.org/dc/terms/relation"
+    },
+    {
+      "value": "Evolution of the railways at world level between 1880 and 2020.\nIt has been made in the frame of the project MAGNETICS ANR  (ANR-22-CE22-0002).\n\nThe MAGNETICS project aims to further understand the circular causality between local socio-economic development and transport activities, more precisely in the case of the port and maritime sector. While empirical studies on the economic impact and connectivity of ports are numerous, they remain dispersed and divergent by their methods, sources, and results. An untapped database (Lloyd's) on the merchant marine fleet navigation from 1880 to nowadays will allow us to construct the global maritime network. Extracting road and railway segments from old and recent maps will serve to build the land-based network. Both networks will be combined and fed by the harmonisation of four urban databases on cities' population since 1880. Using graph theory, we will search for the mechanisms linking these three components based on the theoretical model of Fujita and Mori (1996), not yet applied, on port-related growth in an urban system.\n\nIn the more recent period (since the 2000s), we will use the previous results to work on more detailed regional indicators about employment, firms, and regional productivity. Complementary methods such as spatial analysis, spatial econometrics, and autocorrelation shall evaluate the intensity and directionality of port-region influences in various contexts. Such analyses will include original variables such as the centrality of cities and regions - port and non-port - in the global sea-land network.\n\nFinally, the analysis of socio-economic impacts will be complemented by the one of environmental and health impacts. The quantitative part will analyse the feasibility of a modal shift from road to short sea shipping, to attenuate congestion in large hubs, reduce the carbon footprint of landside detours, and favor the development of peripheral port cities. It will also propose a new analysis of port traffic impacts on the urban environment and the health of local populations, based on indicators such as congestion, air quality, and demography (e.g. mortality). An intensive fielwork will complement the quantitative analyses by in-depth case studies of selected French and Italian port cities.",
+      "lang": "en",
+      "typeUri": null,
+      "propertyUri": "http://purl.org/dc/terms/abstract"
+    },
+    {
+      "value": "Évolution des chemins de fer au niveau mondial entre 1880 et 2020.\nRéalisé dans le cadre du projet MAGNETICS ANR (ANR-22-CE22-0002).\n\nLe projet MAGNETICS vise à mieux comprendre la causalité circulaire entre développement socio-économique local et activités du transport, plus précisément dans le cas du secteur maritime et portuaire. Si les travaux empiriques sur l'impact économique des ports et leur connectivité abondent, ils sont autant de travaux dispersés et divers de par leurs méthodes, sources, et résultats. Une base de données inédite (Lloyd's) sur la navigation de la marine marchande de 1880 à nos jours permettra de reconstruire le réseau maritime mondial. L'exploitation de cartes anciennes et récentes sur le réseau routier et ferroviaire mondial servira à bâtir son pendant terrestre, le tout alimenté par l'harmonisation de quatre bases de données sur la population des villes du monde depuis 1880 également. En utilisant la théorie des graphes, nous chercherons les mécanismes reliant ces trois composantes avec comme base théorique le modèle de Fujita et Mori (1996), jusqu'ici inappliqué, sur la croissance économique et urbaine liée au port dans un système urbain, et celui de Barabasi-Albert (1999) sur l'évolution des réseaux dits invariants d'échelle (scale-free).\n\nDans la période plus récente (depuis les années 2000), nous mettrons à profit les résultats obtenus en travaillant sur des indicateurs régionaux plus fins sur l'emploi, les entreprises, et la richesse régionale. Des méthodes complémentaires en analyse spatiale, économétrie spatiale, et autocorrélation seront à même d'évaluer la teneur et la direction des influences port-région en des contextes variés. Ces analyses incluront des variables originales comme la centralité des villes et régions - portuaires et non portuaires - dans le réseau mondial maritime-terrestre.\n\nEnfin, l'analyse des impacts socio-économiques sera complétée par celle des impacts environnementaux et sur la santé. L'approche quantitative étudiera la faisabilité du report modal de la route vers des services maritimes à courte distance pour atténuer la congestion des grands hubs, réduire l'impact carbone causé par les détours terrestres, et favoriser le développement des villes portuaires périphériques. Elle proposera également une analyse nouvelle de l'impact des trafics portuaires sur l'environnement urbain et la santé des populations locales, à partir d'indicateurs sur la congestion, la qualité de l'air, et la démographie (ex : mortalité). Un travail de terrain viendra compléter le volet quantitatif par l'analyse en profondeur d'un échantillon de villes portuaires françaises et italiennes.",
+      "lang": "fr",
+      "typeUri": null,
+      "propertyUri": "http://purl.org/dc/terms/abstract"
+    },
+    {
+      "value": "2024",
+      "lang": null,
+      "typeUri": "http://purl.org/dc/terms/W3CDTF",
+      "propertyUri": "http://purl.org/dc/terms/available"
+    },
+    {
+      "value": "https://anr.fr/Projet-ANR-22-CE22-0002",
+      "lang": null,
+      "typeUri": "http://purl.org/dc/terms/URI",
+      "propertyUri": "http://purl.org/dc/terms/isPartOf"
+    },
+    {
+      "value": "Europe",
+      "lang": "fr",
+      "typeUri": null,
+      "propertyUri": "http://purl.org/dc/terms/spatial"
+    },
+    {
+      "value": "1000003",
+      "lang": null,
+      "typeUri": "http://purl.org/dc/terms/TGN",
+      "propertyUri": "http://purl.org/dc/terms/spatial"
+    },
+    {
+      "value": "start=1920; end=1940; scheme=W3C-DTF",
+      "lang": null,
+      "typeUri": "http://purl.org/dc/terms/Period",
+      "propertyUri": "http://purl.org/dc/terms/temporal"
+    },
+    {
+      "value": {
+        "givenname": "Bárbara",
+        "surname": "Polo Martín",
+        "orcid": "https://orcid.org/0000-0001-7891-3414",
+        "authorId": "0bbae26d-c8b8-4d55-b610-a0b29a59533a",
+        "fullName": "Bárbara Polo Martín"
+      },
+      "propertyUri": "http://nakala.fr/terms#creator"
+    }
+  ],
+  "creDate": "2024-11-25T09:02:05-05:00",
+  "depositor": {
+    "id": "65c33551-9138-11ef-89cb-52540084ccd3",
+    "name": "BARBARA POLO-MARTIN",
+    "type": "user",
+    "username": "bpolo",
+    "givenname": "BARBARA",
+    "surname": "POLO-MARTIN",
+    "photo": null,
+    "organisation": null
+  },
+  "owner": {
+    "id": "65c33551-9138-11ef-89cb-52540084ccd3",
+    "name": "BARBARA POLO-MARTIN",
+    "type": "user",
+    "username": "bpolo",
+    "givenname": "BARBARA",
+    "surname": "POLO-MARTIN",
+    "photo": null,
+    "organisation": null
+  },
+  "isDepositor": false,
+  "isOwner": false,
+  "isAdmin": false,
+  "isEditor": false,
+  "modDate": "2026-04-24T06:01:43-04:00"
+}

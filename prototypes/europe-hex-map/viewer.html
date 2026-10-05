@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Europe | Campaign Atlas</title>
+<style>
+:root{color-scheme:light;--ink:#263c3b;--muted:#647573;--line:#d6dfd8;--paper:#f5f4ed;--green:#315d50}
+*{box-sizing:border-box}body{margin:0;font:14px/1.5 system-ui,sans-serif;color:var(--ink);background:var(--paper)}
+header{height:86px;padding:18px 28px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
+h1{font:600 26px Georgia,serif;margin:0}h2{font-size:16px;margin:0 0 12px}small,.muted{color:var(--muted)}.eyebrow{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--green)}
+.shell{display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 86px)}aside{padding:24px;overflow:auto;border-right:1px solid var(--line)}
+section{margin-bottom:24px;padding-bottom:22px;border-bottom:1px solid var(--line)}button,input{font:inherit}button{cursor:pointer;border:1px solid #b9c9be;background:#fffdf6;color:var(--ink);padding:8px 12px;border-radius:5px}button:hover{background:#e3ece3}button:focus-visible,input:focus-visible{outline:3px solid #ad7331}
+.primary{background:var(--green);color:white;border-color:var(--green)}input[type=text]{width:100%;padding:9px;border:1px solid var(--line);border-radius:4px;margin:7px 0;background:#fffdf6}
+.toggle{display:block;margin:8px 0}.toggle input{accent-color:var(--green);margin-right:8px}.row{display:flex;gap:6px;flex-wrap:wrap}.fact{display:flex;justify-content:space-between;margin:7px 0;gap:8px}.pill{font-size:11px;padding:4px 8px;border-radius:12px;background:#e6ecdf}.note{font-size:12px;color:var(--muted)}#details{min-height:170px}code{font-size:11px;overflow-wrap:anywhere}
+main{position:relative;overflow:hidden;background:#dce8e8}#map{width:100%;height:100%;display:block;touch-action:none;cursor:grab}#map:active{cursor:grabbing}.toolbar{position:absolute;top:18px;right:18px;display:flex;gap:5px}.maptitle{position:absolute;top:18px;left:20px;pointer-events:none;background:#f5f4edee;padding:12px 16px;border:1px solid #ffffff99;border-radius:5px}.maptitle strong{display:block;font:600 18px Georgia,serif}.footer{position:absolute;bottom:14px;left:18px;right:18px;display:flex;justify-content:space-between;gap:16px;pointer-events:none;font-size:11px}.footer span{background:#f5f4edea;padding:6px 9px;border-radius:4px}.hex{fill:transparent;stroke:#315e583b;stroke-width:1;vector-effect:non-scaling-stroke}.hex:hover{fill:#ffffff40;stroke:#456e5c}.hex.selected{fill:#d6a54855;stroke:#b77725;stroke-width:2}.city{font:40px system-ui;fill:#304845;paint-order:stroke;stroke:#f7f4e9;stroke-width:9px;stroke-linejoin:round}.waterlabel{font:italic 65px Georgia;fill:#6b9097;letter-spacing:8px;pointer-events:none}
+@media(max-width:750px){header{height:70px;padding:12px 16px}.shell{height:auto;display:flex;flex-direction:column-reverse}main{height:65vh}aside{border:0;padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:20px}section{margin:0}.headernote{display:none}}
+</style>
+<header><div><div class="eyebrow">Military command / geographic prototype</div><h1>Campaign Atlas</h1></div><div class="headernote"><span class="pill"><span id="viewLevel">EUROPE · CONTINENTAL VIEW</span></span><br><small>Structured geography. One continuous battlefield.</small></div></header>
+<div class="shell" id="shell"><aside><section id="westernWorkspace" style="display:none"><div class="eyebrow">Theater workspace</div><h2>Western Europe</h2><div class="row"><button id="mode-geography">Geography</button><button id="mode-logistics">Logistics</button><button id="mode-planning">Planning</button></div><p id="westernModeSummary" class="note"></p><div id="westernDetail" aria-live="polite">Select a sector or a historical logistics point.</div><div id="planPanel" style="display:none"><label for="planText">Sector planning note</label><textarea id="planText" maxlength="500" rows="3" style="width:100%" placeholder="Objective, reconnaissance question or supply concern"></textarea><button id="savePlan" disabled>Save planning note</button><p id="planNotice" class="note"></p><div id="planList"></div></div><p class="note">Command: unassigned. No forces or live supply status loaded. Settlements and rivers are modern reference geography; historical logistics examples are dated separately.</p></section>
+<section><h2>Explore theaters</h2><label class="toggle"><input id="theaterToggle" type="checkbox">Show theater areas</label><label for="theaterChoice">Theater</label><select id="theaterChoice" style="width:100%;padding:8px;margin:8px 0"><option value="">Choose a theater</option></select><p id="theaterInfo" class="note">Select an area on the map or choose one here. These are illustrative campaign areas, not historical command boundaries.</p><div class="row"><button id="enterTheater" disabled>Enter Theater</button><button id="returnEurope" disabled>Return to Europe</button></div><p class="note">One continuous map. Commands and objectives are not yet assigned.</p></section><section><h2>Map layers</h2><label class="toggle"><input id="mountainToggle" type="checkbox" checked>Mountain ranges</label><label class="toggle"><input id="forestToggle" type="checkbox" checked>Forests <small>(2000 reference)</small></label><label class="toggle"><input id="gridToggle" type="checkbox" checked>Hex grid</label><label class="toggle"><input id="riverToggle" type="checkbox" checked>Major rivers and lakes</label><label class="toggle"><input id="cityToggle" type="checkbox" checked>Selected cities</label><div class="note" id="gridScale">Approximately 104 km across each hex. Coastlines remain geographic rather than snapping to hex edges.</div></section>
+<section><h2>Historical railway atlas</h2><label class="toggle"><input id="historicalRailToggle" type="checkbox" checked>Mapped railway network</label><p class="note">1920–1940 research layer: 12,933 mapped segments, shown in burgundy. Major corridor candidates appear first; zoom in for through routes and local detail. Based on historical cartography, with generalized alignments. Exact service on 1 September 1939 remains under review. Display importance is estimated from network connectivity, not historical traffic or capacity.</p><p id="railDetail" class="note" aria-live="polite"></p><p class="note"><a href="https://doi.org/10.34847/nkl.6296qx69" target="_blank" rel="noopener">Bárbara Polo Martín / NAKALA</a> · CC-BY-NC-4.0. Research use; excluded from campaign exports.</p></section><section id="pilotSection"><h2>Transport evidence · 1 Sep 1939</h2><p class="note">Prewar transport survey: <span id="pilotCount"></span> sourced connections across <span id="regionCount"></span> regions. Purple dashed lines: rail. Orange: road. Lines join approximate town centers; exact alignments and operation on 1 Sep 1939 remain unverified. Blank areas mean unknown.</p><label class="toggle"><input id="pilotToggle" type="checkbox">Prewar connection evidence</label><label for="pilotRegion">Country / region</label><select id="pilotRegion" style="width:100%;padding:8px;margin:8px 0"><option value="all">All regions</option></select><button id="focusPilot">Focus selected region</button><p id="regionGaps" class="note"></p><div id="pilotRoutes" style="max-height:240px;overflow:auto"></div><p><a href="transport-research.html" target="_blank">Full research register</a></p><p class="note">Select a connection below for its evidence and a closer view. These research links are excluded from campaign exports.</p><div id="pilotEvidence" class="note" aria-live="polite"></div><details id="researchPanel"><summary>Modern research overlays</summary><p class="note">Comparison only. Excluded from campaign exports and gameplay.</p><label class="toggle"><input id="roadToggle" type="checkbox">Major roads <small>(modern)</small></label><label class="toggle"><input id="railToggle" type="checkbox">Main railways <small>(modern)</small></label></details></section><section id="coarseSelection"><h2>Selected hex</h2><div id="details" aria-live="polite">Select a hex to inspect its geography and stable identity.</div><button id="exportHex" disabled>Export selected hex</button></section>
+<section><h2>Campaign</h2><label for="seed">Map seed</label><input id="seed" type="text" readonly><div class="row"><button id="newCampaign">New campaign</button><button id="exportCampaign" class="primary">Export map</button></div><p class="note">The seed is saved in this browser. A new campaign changes local refinement seeds, not sourced geography. Fine terrain generation is not yet implemented.</p></section>
+<section><h2>Source & scope</h2><p class="note">Natural Earth mountain regions and modern transport; JRC tree-cover reference for 2000. Brown: approximate ranges. Green: generalized tree cover. Transport baseline: 1 September 1939. A regional prewar connection survey is visible; full network validation remains pending. Modern routes are confined to research overlays. Numeric elevations and historical corrections remain unmodeled.</p><a href="https://www.naturalearthdata.com/about/terms-of-use/" target="_blank" rel="noopener">Natural Earth source</a> · <a href="https://forobs.jrc.ec.europa.eu/glc2000/data" target="_blank" rel="noopener">JRC GLC2000</a><p class="note" id="sourceId"></p></section>
+</aside><main><svg id="map" xmlns="http://www.w3.org/2000/svg" aria-label="Interactive Europe hex map"></svg>
+<div class="maptitle"><strong id="mapHeading">Europe</strong><small id="breadcrumb">Continental campaign view</small></div>
+<div class="toolbar"><button id="zoomIn" aria-label="Zoom in">+</button><button id="zoomOut" aria-label="Zoom out">−</button><button id="reset">Fit Europe</button></div>
+<div class="footer"><span>Drag to pan · Scroll to zoom · Select a hex</span><span id="mapStatus"></span></div>
+</main></div>
+<script>
+"use strict";
+const DATA=__MAP_DATA__;
+const svg=document.getElementById("map"), NS="http://www.w3.org/2000/svg";
+function element(name,attrs,parent){const e=document.createElementNS(NS,name);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));(parent||svg).append(e);return e;}
+function path(g){const line=coords=>"M"+coords.map(p=>p[0].toFixed(2)+","+p[1].toFixed(2)).join("L");switch(g.type){case"Polygon":return g.coordinates.map(r=>line(r)+"Z").join("");case"MultiPolygon":return g.coordinates.map(p=>path({type:"Polygon",coordinates:p})).join("");case"LineString":return line(g.coordinates);case"MultiLineString":return g.coordinates.map(line).join("");case"GeometryCollection":return g.geometries.map(path).join("");default:return"";}}
+const land=element("g",{}), forest=element("g",{}), mountains=element("g",{}), water=element("g",{}), roads=element("g",{display:"none"}), railways=element("g",{display:"none"}), grid=element("g",{}), terrainLabels=element("g",{"pointer-events":"none"}), cities=element("g",{"pointer-events":"none"});
+const layerStyle={land:[land,"#d8ddc3","#a4b7a4",2],lakes:[water,"#accbd0","none",0],rivers:[water,"none","#729fae",5],forest:[forest,"#69976d","none",0],mountains:[mountains,"#9c8970","#877862",2],roads:[roads,"none","#b17c42",4],railways:[railways,"none","#535760",4]};
+for(const f of [...DATA.features,...DATA.researchTransport.features]){const s=layerStyle[f.properties.layer];if(!s)continue;const attrs={d:path(f.geometry),fill:s[1],stroke:s[2],"stroke-width":s[3],"fill-rule":"evenodd"};if(f.properties.layer==="mountains")attrs.opacity=.48;if(f.properties.layer==="forest")attrs.opacity=.60;if(f.properties.layer==="railways")attrs["stroke-dasharray"]="13 8";element("path",attrs,s[0]);}
+for(const t of DATA.terrainLabels){const e=element("text",{x:t.x,y:t.y,"text-anchor":"middle",fill:"#77654e","font-size":33,"font-style":"italic","paint-order":"stroke",stroke:"#eee8da","stroke-width":5},terrainLabels);e.textContent=t.name;}
+const historicalRail=element("g",{"pointer-events":"none"});
+const railTiers=[0,1,2].map(t=>element("path",{d:DATA.historicalRailNetwork.features.filter(f=>f.properties.displayTier===t).map(f=>path(f.geometry)).join(""),fill:"none",stroke:["#71384c","#8a5163","#a77786"][t],"stroke-width":[1.3,1,.7][t],"vector-effect":"non-scaling-stroke",opacity:.9},historicalRail));
+document.getElementById("historicalRailToggle").onchange=e=>{historicalRail.style.display=e.target.checked?"":"none";};
+const pilot=element("g",{"pointer-events":"none"}), pilotPaths=new Map(), pilotPlaceNodes=new Map();
+for(const f of DATA.historicalPilot.features){
+ const color=f.properties.mode==="road"?"#bc591c":"#773f86";
+ const e=element("path",{d:path(f.geometry),fill:"none",stroke:color,"stroke-width":3,"vector-effect":"non-scaling-stroke","stroke-dasharray":"6 4"},pilot);pilotPaths.set(f.properties.id,e);
+}
+pilot.style.display="none";
+const pilotLabels=element("g",{"pointer-events":"none"},pilot);
+for(const [name,[x,y]] of Object.entries(DATA.historicalPilot.places)){
+ const group=element("g",{},pilotLabels);
+ element("circle",{cx:x,cy:y,r:1.7,fill:"#773f86"},group);
+ const offset={"The Hague":[-25,-4],"Voorburg":[-24,5],"Zoetermeer":[4,5],"Rotterdam":[3,4]}[name]||[3,-3];
+ const e=element("text",{x:x+offset[0],y:y+offset[1],"font-size":4,fill:"#452b4c","paint-order":"stroke",stroke:"#f5f4ed","stroke-width":1},group);e.textContent=name;pilotPlaceNodes.set(name,group);
+}
+const nodes=new Map();
+for(const c of DATA.cells){const e=element("polygon",{points:c.vertices.map(p=>p.join(",")).join(" "),class:"hex","data-id":c.id},grid);nodes.set(c.id,e);e.addEventListener("click",()=>{if(!dragged)select(c);});}
+const cityNodes=DATA.cities.map(c=>{
+ const group=element("g",{},cities);
+ element("circle",{cx:0,cy:0,r:3,fill:"#40594b",stroke:"#f7f4e9","stroke-width":1},group);
+ const label=element("text",{x:6,y:-5,class:"city"},group);
+ label.style.fontSize="14px";label.style.strokeWidth="3px";label.textContent=c.name;
+ return {city:c,node:group};
+});
+function focusConnections(features){
+ if(!features.length)return;
+ const pts=features.flatMap(f=>f.geometry.coordinates), xs=pts.map(p=>p[0]),ys=pts.map(p=>p[1]);
+ const w=Math.max(60,Math.max(...xs)-Math.min(...xs)+35),h=Math.max(60,Math.max(...ys)-Math.min(...ys)+35);
+ view=[(Math.max(...xs)+Math.min(...xs)-w)/2,(Math.max(...ys)+Math.min(...ys)-h)/2,w,h];renderView();
+ document.getElementById("pilotToggle").checked=true;pilot.style.display="";
+}
+let regionFeatures=DATA.historicalPilot.features;
+function showConnections(features){
+ const ids=new Set(features.map(f=>f.properties.id)),places=new Set(features.flatMap(f=>f.properties.places));
+ for(const [id,node] of pilotPaths)node.style.display=ids.has(id)?"":"none";
+ for(const [name,node] of pilotPlaceNodes)node.style.display=places.has(name)?"":"none";
+}
+function routeList(){
+ const list=document.getElementById("pilotRoutes");list.replaceChildren();
+ for(const f of regionFeatures){
+  const b=document.createElement("button");b.textContent=(f.properties.mode==="rail"?"Rail: ":"Road: ")+f.properties.name;b.style.margin="4px 0";
+  b.onclick=()=>{showConnections([f]);focusConnections([f]);const d=document.getElementById("pilotEvidence");d.replaceChildren();const src=DATA.historicalPilot.sources.find(s=>s.id===f.properties.sourceId);const p=document.createElement("p");p.textContent="Existence by "+f.properties.existenceByYear+". "+f.properties.dateNote+" "+src.finding+" Schematic connection only; baseline service and capacity unverified. Source review: "+(src.access||"page-read")+".";d.append(p);const a=document.createElement("a");a.textContent=src.title;a.href=src.url;a.target="_blank";a.rel="noopener";d.append(a);for(const id of f.properties.corroboratingSourceIds||[]){const other=DATA.historicalPilot.sources.find(s=>s.id===id);const para=document.createElement("p");para.textContent=other.finding;d.append(para);const link=document.createElement("a");link.textContent=other.title;link.href=other.url;link.target="_blank";link.rel="noopener";d.append(link);}};list.append(b);
+ }
+}
+for(const region of DATA.historicalPilot.regions){const option=document.createElement("option");option.value=region.name;option.textContent=region.name;document.getElementById("pilotRegion").append(option);}
+document.getElementById("pilotRegion").onchange=e=>{
+ const region=DATA.historicalPilot.regions.find(r=>r.name===e.target.value);
+ regionFeatures=region?DATA.historicalPilot.features.filter(f=>f.properties.region===region.name):DATA.historicalPilot.features;
+ document.getElementById("regionGaps").textContent=region?region.gaps:"Selected examples in every listed region. Coverage is partial; no complete national network is claimed.";
+ document.getElementById("pilotEvidence").replaceChildren();routeList();showConnections(regionFeatures);focusConnections(regionFeatures);
+};
+document.getElementById("pilotCount").textContent=DATA.historicalPilot.features.length;
+document.getElementById("regionCount").textContent=DATA.historicalPilot.regions.length;
+document.getElementById("regionGaps").textContent="Selected examples only. Region names are navigation groups, not 1939 borders. Select a region to see remaining gaps.";
+routeList();
+document.getElementById("focusPilot").onclick=()=>{showConnections(regionFeatures);focusConnections(regionFeatures);};
+document.getElementById("pilotToggle").onchange=e=>{pilot.style.display=e.target.checked?"":"none";};
+__WESTERN_SCRIPT__
+const theaterAreas=element("g",{}), theaterNodes=new Map();
+let chosenTheater=null,activeTheater=null;
+for(const t of DATA.theaterDefinitions.theaters){
+ const option=document.createElement("option");option.value=t.id;option.textContent=t.name;document.getElementById("theaterChoice").append(option);
+ const node=element("path",{d:path({type:"Polygon",coordinates:[t.boundary]}),fill:"#b68a3920",stroke:"#86602f","stroke-width":2,"stroke-dasharray":"7 5","vector-effect":"non-scaling-stroke",tabindex:0,role:"button","aria-label":"Select "+t.name},theaterAreas);
+ const title=element("title",{},node);title.textContent=t.name;
+ node.addEventListener("click",()=>{if(!dragged)chooseTheater(t.id);});
+ node.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();chooseTheater(t.id);}});
+ theaterNodes.set(t.id,node);
+}
+theaterAreas.style.display="none";
+function chooseTheater(id){
+ chosenTheater=DATA.theaterDefinitions.theaters.find(t=>t.id===id)||null;
+ document.getElementById("theaterChoice").value=chosenTheater?chosenTheater.id:"";
+ document.getElementById("enterTheater").disabled=!chosenTheater;
+ document.getElementById("theaterInfo").textContent=chosenTheater?chosenTheater.name+". Campaign area; command and objectives unassigned. Enter to explore its geography.":"Choose a theater. Areas are illustrative, not historical command boundaries.";
+ for(const [key,node] of theaterNodes)node.setAttribute("fill",key===id?"#b68a3950":"#b68a3920");
+}
+function enterTheater(){
+ if(!chosenTheater)return;
+ activeTheater=chosenTheater;view=[...activeTheater.view];
+ document.getElementById("theaterToggle").checked=false;theaterAreas.style.display="none";
+ document.getElementById("returnEurope").disabled=false;
+ document.getElementById("mapHeading").textContent=activeTheater.name;
+ document.getElementById("breadcrumb").textContent="Europe › "+activeTheater.name;
+ document.getElementById("viewLevel").textContent="THEATER VIEW";renderView();
+}
+function returnEurope(){
+ activeTheater=null;view=[-2400,-2500,5200,4600];
+ document.getElementById("returnEurope").disabled=true;
+ document.getElementById("mapHeading").textContent="Europe";
+ document.getElementById("breadcrumb").textContent="Continental campaign view";
+ document.getElementById("viewLevel").textContent="EUROPE · CONTINENTAL VIEW";renderView();
+}
+document.getElementById("theaterChoice").onchange=e=>chooseTheater(e.target.value);
+document.getElementById("theaterToggle").onchange=e=>{theaterAreas.style.display=e.target.checked?"":"none";};
+document.getElementById("enterTheater").onclick=enterTheater;
+document.getElementById("returnEurope").onclick=returnEurope;
+let view=[-2400,-2500,5200,4600];function renderView(){svg.setAttribute("viewBox",view.join(" "));pilotLabels.style.display=view[2]>900?"none":"";cities.style.display=document.getElementById("cityToggle").checked===false?"none":"";
+ const railLevel=Math.max(activeTheater?1:0,view[2]>2400?0:view[2]>900?1:2);
+ railTiers.forEach((node,t)=>node.style.display=t<=railLevel?"":"none");
+ document.getElementById("railDetail").textContent=["Europe: major corridor candidates","Regional: corridors and through routes","Local: all mapped railway detail"][railLevel];
+ const unitsPerPixel=Math.max(view[2]/(svg.clientWidth||1200),view[3]/(svg.clientHeight||900));
+ for(const {city,node} of cityNodes)node.setAttribute("transform",`translate(${city.x} ${city.y}) scale(${unitsPerPixel})`);updateWestern();}renderView();
+window.addEventListener("resize",renderView);
+function zoom(f){const [x,y,w,h]=view;const nw=Math.max(20,Math.min(9000,w*f)),nh=nw*h/w;view=[x+(w-nw)/2,y+(h-nh)/2,nw,nh];renderView();}
+document.getElementById("zoomIn").onclick=()=>zoom(.7);document.getElementById("zoomOut").onclick=()=>zoom(1/.7);document.getElementById("reset").onclick=returnEurope;
+svg.addEventListener("wheel",e=>{e.preventDefault();zoom(e.deltaY>0?1.15:1/1.15);},{passive:false});
+let down=null,dragged=false;
+svg.addEventListener("pointerdown",e=>{down=[e.clientX,e.clientY,...view];dragged=false;});
+svg.addEventListener("pointermove",e=>{if(!down)return;const dx=e.clientX-down[0],dy=e.clientY-down[1];if(Math.abs(dx)+Math.abs(dy)>5)dragged=true;if(dragged){const scale=Math.max(down[4]/svg.clientWidth,down[5]/svg.clientHeight);view=[down[2]-dx*scale,down[3]-dy*scale,down[4],down[5]];renderView();}});
+window.addEventListener("pointerup",()=>{down=null;});
+for(const [id,layer] of [["gridToggle",grid],["riverToggle",water],["cityToggle",cities],["forestToggle",forest],["mountainToggle",mountains],["roadToggle",roads],["railToggle",railways]])document.getElementById(id).onchange=e=>{layer.removeAttribute("display");layer.style.display=e.target.checked?"":"none";if(id==="mountainToggle")terrainLabels.style.display=layer.style.display;renderView();};
+document.getElementById("researchPanel").ontoggle=e=>{if(!e.target.open){for(const [id,layer] of [["roadToggle",roads],["railToggle",railways]]){document.getElementById(id).checked=false;layer.style.display="none";}}};
+let selected=null,selectSerial=0;
+const storageKey="europe-hex-prototype-campaign-v1";
+function freshSeed(){return Array.from(crypto.getRandomValues(new Uint32Array(4))).map(x=>x.toString(16).padStart(8,"0")).join("");}
+let seed;try{seed=localStorage.getItem(storageKey);}catch{}
+if(!seed||!/^[0-9a-f]{32}$/.test(seed))seed=freshSeed();
+function saveSeed(){document.getElementById("seed").value=seed;try{localStorage.setItem(storageKey,seed);}catch{}}
+saveSeed();
+async function localSeed(c){const s=[DATA.metadata.generator,DATA.metadata.baseHash,seed,c.id,"future-refinement"].join("|");return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s)))).map(x=>x.toString(16).padStart(2,"0")).join("");}
+async function select(c){const serial=++selectSerial;if(selected)nodes.get(selected.id).classList.remove("selected");selected=c;nodes.get(c.id).classList.add("selected");const token=await localSeed(c);if(serial!==selectSerial)return;const d=document.getElementById("details");d.replaceChildren();function row(a,b){const div=document.createElement("div");div.className="fact";const label=document.createElement("span");label.textContent=a;const value=document.createElement("strong");value.textContent=b;div.append(label,value);d.append(div);}row("Hex",c.id);row("Surface",c.surface);row("Dry land",Math.round(c.landFraction*100)+"%");row("Forest footprint (2000)",Math.round(c.forestReferenceFraction*100)+"%");row("1939 transport","Not validated");row("Latitude",c.lat.toFixed(3)+"°");row("Longitude",c.lon.toFixed(3)+"°");const p=document.createElement("p");p.className="note";p.textContent="Ranges: "+(c.mountainRegions.join(", ")||"None mapped")+" · Waterways: "+(c.rivers.join(", ")||"None in source")+" · Cities: "+(c.cities.join(", ")||"None selected");d.append(p);const small=document.createElement("p");small.className="note";small.textContent="Local refinement seed: "+token.slice(0,16)+"…";d.append(small);document.getElementById("exportHex").disabled=false;}
+function download(name,obj){const url=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:"application/json"}));const a=document.createElement("a");a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+document.getElementById("newCampaign").onclick=()=>{seed=freshSeed();saveSeed();if(selected)select(selected);if(activeTheater)renderView();};
+document.getElementById("exportCampaign").onclick=()=>{const {researchTransport,historicalPilot,historicalRailNetwork,theaterDefinitions,westernTheater,...campaignData}=DATA;download("europe-campaign-map.json",{campaign:{mapSeed:seed,geographyHash:DATA.metadata.baseHash,theaterDefinitions,planningNotes:readPlans()},...campaignData});};
+document.getElementById("exportHex").onclick=async()=>{const c=selected,s=seed;const token=await localSeed(c);download(c.id.replaceAll(":","-")+".json",{mapSeed:s,baseHash:DATA.metadata.baseHash,cell:c,refinementSeed:token});};
+document.getElementById("sourceId").textContent="Source revision "+DATA.metadata.sourceManifest.commit.slice(0,12)+" · Base "+DATA.metadata.baseHash.slice(0,12);
+document.getElementById("mapStatus").textContent=DATA.cells.length.toLocaleString()+" hexes · Equal-area Europe projection";
+</script></html>
