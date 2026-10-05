@@ -169,7 +169,10 @@ def build():
     from prepare_theaters import prepare as prepare_theaters
     workspaces=prepare_theaters(sys.modules[__name__],western,pilot,southern)
     view_data={**data,"theaterWorkspaces":workspaces,"southernTransport":southern,"researchTransport":research,"historicalPilot":pilot,"historicalRailNetwork":historical_network,"westernTheater":western,"theaterDefinitions":json.loads((ROOT/"theaters.json").read_text(encoding="utf-8"))}
-    html=(ROOT/"viewer.html").read_text(encoding="utf-8").replace("__WESTERN_SCRIPT__",(ROOT/"theater-view.js").read_text(encoding="utf-8-sig")).replace("__MAP_DATA__",canonical(view_data).replace("</","<\\/"))
+    app=(ROOT/"app.template.js").read_text(encoding="utf-8").replace("__WESTERN_SCRIPT__",(ROOT/"theater-view.js").read_text(encoding="utf-8-sig"))
+    (ROOT/"app.js").write_text(app,encoding="utf-8",newline="\n")
+    (ROOT/"map-data.js").write_text("window.CAMPAIGN_MAP_DATA="+canonical(view_data)+";\n",encoding="utf-8",newline="\n")
+    html=(ROOT/"viewer.html").read_text(encoding="utf-8")
     (ROOT/"index.html").write_text(html,encoding="utf-8",newline="\n")
     # Standards-based geographic hex export. Exact source feature topology remains in map.json.
     geo={"type":"FeatureCollection","features":[{"type":"Feature","properties":{k:v for k,v in c.items() if k not in ("vertices","x","y")},
