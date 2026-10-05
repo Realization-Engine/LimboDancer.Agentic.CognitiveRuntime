@@ -406,7 +406,7 @@ public sealed class BacklogPass17Tests
         typo["victoryCondition"] = "x";
         Assert.Contains(Diagnostics(typo), item => item.StartsWith("card.json:", StringComparison.Ordinal));
         var old = Json("gambit");
-        old["catalog"] = "asl-scenario-a1@1.10.0";
+        old["catalog"] = "asl-another-catalog@1.10.0";
         Assert.Contains(Diagnostics(old), item => item.StartsWith("card.catalog:", StringComparison.Ordinal));
     }
 

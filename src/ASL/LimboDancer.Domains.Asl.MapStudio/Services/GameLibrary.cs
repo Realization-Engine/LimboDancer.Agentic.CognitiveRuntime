@@ -39,7 +39,7 @@ public sealed class GameLibrary(UnitLibrary units, IBoardProvider boards, LivePl
     private const string Suffix = ".game.json";
     private readonly ConcurrentDictionary<string, GameEntry> embedded = new(StringComparer.Ordinal);
     private readonly Lazy<IReadOnlyList<UnitCatalog>> catalogs = new(() =>
-        [.. UnitCatalogs.ReplayNames.Select(name => UnitCatalogs.Read(name, units.Vocabulary)?.Catalog).OfType<UnitCatalog>()]);
+        [.. UnitCatalogs.Names.Select(name => UnitCatalogs.Read(name, units.Vocabulary)?.Catalog).OfType<UnitCatalog>()]);
 
     public IReadOnlyList<UnitCatalog> Catalogs => catalogs.Value;
 

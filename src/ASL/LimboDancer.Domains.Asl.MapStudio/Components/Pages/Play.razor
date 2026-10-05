@@ -325,7 +325,7 @@ else
 else if (history.Current is null && state is null)
 {
     <GameReplayFailure Diagnostics="@history.Diagnostics"
-                       MissingCatalog="@(history.Events.FirstOrDefault()?.Payload is GameStarted started && Live.Catalogs.All(catalog => $"{catalog.Identity.Catalog}@{catalog.Identity.Version}" != started.Catalog) ? started.Catalog : null)" />
+                       MissingCatalog="@(history.Events.FirstOrDefault()?.Payload is GameStarted started && UnitCatalogs.For(Live.Catalogs, started.Catalog) is null ? started.Catalog : null)" />
 }
 else if (state is not null)
 {
@@ -5024,7 +5024,7 @@ else if (state is not null)
         PublishedCatalog?.Definitions ?? [];
 
     private UnitCatalog? PublishedCatalog => history?.Events.FirstOrDefault()?.Payload is GameStarted started
-        ? Live.Catalogs.FirstOrDefault(catalog => $"{catalog.Identity.Catalog}@{catalog.Identity.Version}" == started.Catalog)
+        ? UnitCatalogs.For(Live.Catalogs, started.Catalog)
         : Live.Catalogs.FirstOrDefault(catalog => catalog.Publication == CatalogPublication.Published);
 
     /// <summary>Setup stays open until the first event that is not the start or a placement.</summary>

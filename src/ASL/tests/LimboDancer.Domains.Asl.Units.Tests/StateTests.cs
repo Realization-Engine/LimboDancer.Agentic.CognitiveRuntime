@@ -316,7 +316,7 @@ public sealed class StateTests
         AssertRefused([.. events.Take(3), events[0] with { EventId = "again", Revision = 4 }], "UNIT-STATE-004");
         var started = (GameStarted)events[0].Payload;
         AssertRefused([events[0] with { Payload = started with { Synthetic = false } }], "UNIT-STATE-017");
-        AssertRefused([events[0] with { Payload = started with { Catalog = "asl-scenario-a1@9.0.0" } }], "UNIT-STATE-008");
+        AssertRefused([events[0] with { Payload = started with { Catalog = "asl-no-such-catalog@1.0.0" } }], "UNIT-STATE-008");
     }
 
     [Fact]

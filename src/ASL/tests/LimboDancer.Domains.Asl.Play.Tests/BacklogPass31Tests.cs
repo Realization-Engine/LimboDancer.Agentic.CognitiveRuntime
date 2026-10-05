@@ -23,7 +23,7 @@ public sealed class BacklogPass31Tests : IDisposable
     private static readonly UnitVocabulary Vocabulary = UnitVocabulary.Asl();
 
     private static readonly UnitCatalog[] Catalogs =
-        [.. UnitCatalogs.ReplayNames.Select(name => UnitCatalogs.Read(name, Vocabulary)?.Catalog).OfType<UnitCatalog>()];
+        [.. UnitCatalogs.Names.Select(name => UnitCatalogs.Read(name, Vocabulary)?.Catalog).OfType<UnitCatalog>()];
 
     private static readonly JsonSerializerOptions Compact = new()
     {

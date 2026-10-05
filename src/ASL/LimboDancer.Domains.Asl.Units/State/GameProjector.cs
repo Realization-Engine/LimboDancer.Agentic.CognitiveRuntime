@@ -340,7 +340,8 @@ public static class GameProjector
                     : $"Side '{side.Id}' is {side.Nationality}; only an Axis Minor side names a nation (A25.8).");
             }
 
-            catalog = catalogs.FirstOrDefault(candidate => $"{candidate.Identity.Catalog}@{candidate.Identity.Version}" == started.Catalog);
+            // The version a game records is where it was set up, not a lock: it reads the loaded catalog of that name (UnitCatalogs.For).
+            catalog = Catalog.UnitCatalogs.For(catalogs, started.Catalog);
             if (catalog is null)
             {
                 return Fail<GameState>("UNIT-STATE-008", $"The catalog '{started.Catalog}' is not loaded.");

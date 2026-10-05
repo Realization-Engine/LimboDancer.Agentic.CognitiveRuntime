@@ -933,7 +933,7 @@ else if (StepNow is { } step && StateNow is { } state && MapLayers is { } layers
         if (!cards.TryGetValue(id, out var card))
         {
             var catalog = history?.Events.FirstOrDefault()?.Payload is GameStarted started
-                ? Live.Catalogs.FirstOrDefault(item => $"{item.Identity.Catalog}@{item.Identity.Version}" == started.Catalog)
+                ? UnitCatalogs.For(Live.Catalogs, started.Catalog)
                 : null;
             cards[id] = card = catalog is null ? null : Live.Cards.Read(id, catalog)?.Card;
         }
