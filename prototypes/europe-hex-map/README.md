@@ -113,3 +113,26 @@ Research: Morillas-Torne (2012), pages 179-180, describes a broad main-line/pass
 rail_display.py constructs a deterministic display approximation from source vertices quantized into 100 m bins. A representative well-connected vertex per 250 km tile is a display hub. Shortest source-network paths to up to four nearby hubs within 800 km form the top layer. Terminal branches up to 60 km are peeled for the intermediate layer; all remaining features appear at close zoom. Geometry is never replaced with straight hub-to-hub lines. The output records algorithm settings and tier counts. Binning may miss actual joins or merge nearby endpoints; disconnected components and isolated local lines may be absent from the top view. This display graph must not be used for simulation routing.
 
 The next historical refinement is to replace inferred hub importance with reviewed period trunk routes, principal junctions, ports and timetable service classes. Line length, gauge and the ML field alone do not establish strategic importance. Existing historical dates and admission status are unchanged.
+
+
+## Continental and theater navigation
+The Europe view is now labeled Continental View. Enable Show theater areas and select an outline, or use the theater selector, then Enter Theater. Return to Europe (or Fit Europe) restores the continental framing. Theater outlines support keyboard selection. Outlines hide on entry so they do not intercept hex selection. Panning beyond an area is unrestricted.
+
+The four areas in theaters.json are illustrative campaign presets, not historical command boundaries: Western Europe, Eastern Europe, Mediterranean and Northern Europe. They may overlap. Definitions use the same local EPSG:3035 coordinates as the map, and contain unassigned command/objective fields. Campaign exports include these definitions separately from base geography. Editing area definitions does not regenerate terrain or alter the geography hash. Entering a theater preserves the campaign seed and selected hex, and reveals at least the regional railway tier.
+
+This implements navigation and transport detail on the existing continuous map. The 104 km hex grid and existing source geography are retained. Finer hex resolution, additional settlement data, formations, logistics and command assignments are not yet implemented. No new geographic detail is invented by entering a theater.
+
+
+## Western Europe theater workspace
+The earlier navigation-only limitation is superseded for Western Europe. Enter this theater to switch to Geography, Logistics and Planning modes. Its globally anchored 15 km-radius grid is approximately 26 km across flats, with 3,200 land-intersecting sectors. It is a separate resolution on shared coordinates, not an assertion that coarse hexes subdivide exactly. Sectors are selectable and show reference settlements; these do not carry ASL terrain or movement adjudication.
+
+The theater adds 293 reference settlements and 54 river features from Natural Earth 1:10m geography, clipped from the pinned upstream commit. sources/western-manifest.json records upstream and clipped-file hashes; prepare_western.py verifies the clipped files. This provides greater cartographic detail, not historical urban extents, 1939 river engineering, or crossing availability. Continental geography and its hash remain unchanged. The finer grid uses the existing generalized land mask, so coastal accuracy remains limited. Close town labels are suppressed deterministically to reduce collisions.
+
+Logistics mode displays 12 approximate town-center markers with individual sources and date labels. Roland G. Ruppenthal, U.S. Army official history, Logistical Support of the Armies, Volume II, chapters V and VI, documents the 1944-1945 ports, transport transfers and forward depot areas. These examples are not backdated to the campaign's September 1939 baseline. Port capacity, working rail routes, depots and unit positions are not synthesized as live state. Sources:
+- https://www.ibiblio.org/hyperwar/USA/USA-E-Logistics2/USA-E-Logistics2-5.html
+- https://www.ibiblio.org/hyperwar/USA/USA-E-Logistics2/USA-E-Logistics2-6.html
+
+Planning mode stores user-written sector notes under the current campaign seed in browser storage. Clicking a saved note returns to its sector. Campaign export includes notes and theater definitions, but excludes the reference theater package and research rail layers. No order is dispatched and no formation or mission lifecycle is simulated. Commands remain unassigned. Other theater presets retain basic navigation. Browser rendering remains unverified because local-file browser access is unavailable; logic tests cover modes, inspection, storage separation, return navigation and exports.
+
+
+Western theater focus: a translucent gray veil covers the area outside the union of its hex sectors, with a thin, constant-screen-width perimeter. The footprint is compiled from full-precision lattice vertices to avoid internal seams. Open water outside the hexes is gently dimmed but remains visible. The veil follows the viewport through pan/zoom, ignores pointer events, remains independent of the grid toggle, and disappears outside Western Europe. This is a presentation boundary, not a movement restriction or historical command boundary.

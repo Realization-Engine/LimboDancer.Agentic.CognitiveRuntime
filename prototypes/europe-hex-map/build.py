@@ -148,8 +148,10 @@ def build():
     (ROOT/"historical-transport-pilot.json").write_text(canonical(pilot),encoding="utf-8")
     from prepare_historical_rail import prepare
     historical_network=prepare()
-    view_data={**data,"researchTransport":research,"historicalPilot":pilot,"historicalRailNetwork":historical_network}
-    html=(ROOT/"viewer.html").read_text(encoding="utf-8").replace("__MAP_DATA__",canonical(view_data).replace("</","<\\/"))
+    from prepare_western import prepare as prepare_western
+    western=prepare_western()
+    view_data={**data,"researchTransport":research,"historicalPilot":pilot,"historicalRailNetwork":historical_network,"westernTheater":western,"theaterDefinitions":json.loads((ROOT/"theaters.json").read_text(encoding="utf-8"))}
+    html=(ROOT/"viewer.html").read_text(encoding="utf-8").replace("__WESTERN_SCRIPT__",(ROOT/"western-view.js").read_text(encoding="utf-8-sig")).replace("__MAP_DATA__",canonical(view_data).replace("</","<\\/"))
     (ROOT/"index.html").write_text(html,encoding="utf-8",newline="\n")
     # Standards-based geographic hex export. Exact source feature topology remains in map.json.
     geo={"type":"FeatureCollection","features":[{"type":"Feature","properties":{k:v for k,v in c.items() if k not in ("vertices","x","y")},

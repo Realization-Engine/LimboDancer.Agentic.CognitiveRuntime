@@ -1,0 +1,19 @@
+{
+  "sources": [
+    {
+      "file": "ne_10m_populated_places-western.geojson",
+      "sha256": "7d99fd4ee231aba492fb79d66768fb8dc0df8dd49f3cda1cd0ef4b789b50b87e",
+      "upstreamSha256": "9b8e3de09048ef00dfc70357dbb9fa324493f214b5e0ae4daf1aa79a8d10116b",
+      "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_10m_populated_places.geojson",
+      "modification": "Clipped to longitude -6..16, latitude 43..57; reference geography, not historical status"
+    },
+    {
+      "file": "ne_10m_rivers_lake_centerlines-western.geojson",
+      "sha256": "82768744d8070902465c164b70748269c32ef3d733b59360ba3653fac39ef9cf",
+      "upstreamSha256": "bb854a900ecbd3b408df46d5e16e3e0f974ba55993f9d8b5c26e855273c0905a",
+      "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_10m_rivers_lake_centerlines.geojson",
+      "modification": "Clipped to longitude -6..16, latitude 43..57; reference geography, not historical status"
+    }
+  ],
+  "license": "Natural Earth, public domain"
+}
