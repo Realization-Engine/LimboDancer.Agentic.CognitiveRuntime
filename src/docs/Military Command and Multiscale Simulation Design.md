@@ -1,16 +1,16 @@
-# Platoon and Company Simulation Design
+# Military Command and Multiscale Simulation Design
 
 **Status:** Proposed design for review, not an implementation authorization or a published rules package
 
-**Date:** 2026-10-04
+**Date:** 2026-10-05
 
 **Authority:** Subordinate to the Plane Runtime Specification and Domain Integration Model
 
-**Scope:** A new digital platoon/company simulation with an ASL-inspired turn cycle; PanzerBlitz, Panzer Leader and historical studies supply references rather than binding legacy rules
+**Scope:** A military simulation architecture spanning squad engagements through higher command, organized around hierarchy, organization and communication, with shared time and sustainment constraints. ASL supplies the tactical foundation; platoon/company simulation is the first delivery scope.
 
 ## 1. Design decision
 
-Extend LimboDancer with a sibling Panzer domain that uses the existing cognitive runtime and follows the ASL implementation's evidence, state, and execution patterns. Preserve ASL as an independently functioning domain. The first objective is a complete, bounded formation-scale engagement using a new eight-phase cycle modeled on ASL. Section 6 defines that cycle. Reproducing either original Panzer game is optional future work, not a prerequisite.
+Build a persistent military command and multiscale simulation architecture on the existing cognitive runtime and ASL combat foundation. Hierarchy, organization and communication are core domain responsibilities at every supported echelon. The first new simulation domain is the sibling Panzer domain, following the ASL implementation's evidence, state and execution patterns. Preserve ASL as an independently functioning domain. The first objective is a complete, bounded formation-scale engagement using a new eight-phase cycle modeled on ASL. Section 6 defines that cycle. Reproducing either original Panzer game is optional future work, not a prerequisite.
 
 The change in scale belongs primarily in the domain: represented forces, map semantics, combat resolution, time, information, and coordination. It does not require new runtime authority transitions. Reasoning still proposes; published semantics establish applicability; Governance and the Execution Gate permit execution; committed events establish game state.
 
@@ -20,7 +20,7 @@ Three choices define the design:
 2. **Publish our own explicit simulation rules.** ASL provides the phase structure and architectural discipline; PanzerBlitz and Panzer Leader provide scale, combined-arms and support-fire references. Adopted, modified and newly designed mechanics are identified separately. Digital bookkeeping enables persistent orders, interrupted movement, support commitments and restricted observations without inheriting the limits of physical counters.
 3. **Prove reuse through a second working domain.** Reuse the runtime now. Extract shared wargame components only where both ASL and Panzer demonstrate equivalent semantics and tests prove that ASL behavior is preserved.
 
-This is a change in tactical resolution and command scope. It is not yet a division-level operational campaign engine.
+The first executable scope remains platoon/company combat. The architectural direction extends through battalion, regiment or brigade, division, corps, army, army group and theater where appropriate to the modeled organization. Section 17 defines that direction without claiming a working campaign engine or expanding the initial delivery gate.
 
 ## 2. Evidence and limits
 
@@ -33,6 +33,8 @@ Some PDF text extraction corrupts fractions and table layout. Exact numeric thre
 The supplied ASL PDF `eASLRB_v3_01.pdf` is already available through the existing source references. The [ASL source registry](../../docs/ASL/SourceRegistry/README.md) records its identity and whole-rulebook scope, including Chapter H. A new copy is not needed.
 
 Historical evidence informs model requirements; it does not automatically establish simulation parameters. Rottman's discussion of changing organization and uneven tank-infantry doctrine motivates dated establishments and command models. It does not establish a numerical command-delay rule. Proposed mechanics become authoritative for our simulation through review and publication in our own package. [H1]
+
+The submitted organization and scale notes are design prompts, not admitted historical or rules evidence. We adopt their interest in constituent readiness and company coordination, with the constraints in Sections 5.4 and 8.2. We adopt communication as a foundational model in Section 8.3 and do not adopt a replacement impulse turn or independent reaction-point currency. Their counter statistics, Situation 1 account and universal organization assumptions must not populate scenario fixtures. Exact source identity and reviewed passages take precedence. [N1, S1]
 
 ## 3. What the current architecture already gives us
 
@@ -84,7 +86,7 @@ Scenario special rules are reviewed package content with explicit scope and prec
 
 ### 4.2 Baseline and later fidelity
 
-The baseline includes formation orders, cohesion, support commitments and defensive reactions. Initially, valid orders issued during Command and Rally take effect immediately; there is no invented universal radio radius or random command-delay penalty. Later versions may add modeled communications, detailed ammunition, fatigue and persistent equipment losses. Each added behavior needs evidence, explicit assumptions, calibrated parameters and sensitivity tests.
+The baseline includes formation orders, communication links and message delivery, cohesion, support commitments and defensive reactions. Its initial communication policy delivers valid orders and eligible reports immediately over configured links, recording issue and receipt even when they share a cursor. Order execution still follows the phase and authority rules. This is an explicit idealized policy within the core communication architecture, not a bypass around it. Later profiles may add transmission delays, link failures, detailed ammunition, fatigue and persistent equipment losses. Each added behavior needs evidence, explicit assumptions, calibrated parameters and sensitivity tests; no universal radio radius or random delay is presumed.
 
 A company grouping coordinates subordinate units but has no extra movement or fire budget of its own. Changes to modeled behavior require a new package version, even when the UI looks the same.
 
@@ -106,7 +108,7 @@ The following are proposed domain records, not additions to Runtime Abstractions
 | `TransportAssignment` | Rule-defined carrier/passenger relationship and activity constraints |
 | `ContactRecord` | Information available to a perspective, where the profile supports uncertain or concealed information |
 | `FormationOrder` | Persistent objective, assignments, constraints and completion/supersession state |
-| `ActivityLedger` | Offensive and defensive commitments, spent/reserved movement and recovery opportunities with exact reset boundaries |
+| `ActivityLedger` | Activity-group fire/recovery ownership, constituent movement expenditure and reservations, with exact reset boundaries |
 | `SupportMission` | Committed area, resource, payload, observation requirements, due cursor and resolution/cancellation state |
 | `EngagementInstance` | Local assault participants, concealed choices, contested position and continuing engagement status |
 | `ForceRoster` and `DeploymentRecord` | Stable constituent identities and persistent deployment for cross-scale projection; see Section 14 |
@@ -123,7 +125,7 @@ A definition's equipment count is not multiplied into an already aggregated atta
 
 Baseline state stores position, carrier/passenger status, cohesion, suppression, elimination, movement and fire budgets, orders, committed support, reaction windows and scenario progress. Cohesion distinguishes effective, disorganized and broken formations; suppression is a separate restriction. Combat tables must explicitly map outcomes to these states. Panzer dispersal and ASL broken morale are reference mechanisms, not interchangeable state codes. [R1, R2, R3]
 
-Later versions may store detailed personnel and vehicle availability, ammunition, fatigue and communications. Unknown values remain unknown. Do not populate invented precise strengths merely because a record has a numeric field.
+Baseline state also records communication endpoints, configured links, message identities, delivery state and recipient knowledge under Section 8.3. Later versions may store detailed personnel and vehicle availability, ammunition, fatigue and transmission conditions. Unknown values remain unknown. Do not populate invented precise strengths merely because a record has a numeric field.
 
 Use separate fields for authorized establishment, scenario starting strength, current modeled strength and estimated enemy strength. Each has different evidence and visibility. Nationality selects applicable catalog and rule content; it does not by itself supply an assumed quality score.
 
@@ -136,6 +138,18 @@ Provide formation-scale movement, LOS and observation calculations. Visible map 
 Each calculation returns the facts used, rule/profile identity, board version, applicable modifiers and a disposition. Unsupported terrain or ambiguous board evidence returns an explicit unsupported/indeterminate result. Do not fall back to ASL LOS or geometric visibility alone.
 
 Candidate reusable components include coordinate arithmetic, board placement transforms and rendering primitives. Extract them only after verifying they do not depend on ASL naming, VASL dimensions, terrain codes or location semantics.
+
+### 5.4 Formation readiness and capability
+
+A formation summary is a projection of authoritative state. Where constituent conditions have been admitted, derive the summary from those roster assets, their conditions, attachments and activity commitments. Where only aggregate conditions exist, show that supported resolution and leave constituent readiness unknown. Do not synthesize squad casualties from a coarse cohesion result. The baseline retains Section 5.2's aggregate resolution; detailed loss allocation and cross-scale condition mappings require published rules before use.
+
+Keep surviving strength, temporary suppression/cohesion, equipment availability, command/support relationships and remaining action commitments distinct. A squad can be both surviving and suppressed; these are separate dimensions, not mutually exclusive steps. Detachment changes assignment and location, not survival. Company totals count each constituent once even when several counters or attachments refer to it. The summary is not a second writable store of strength.
+
+For an authored three-squad example, two effective squads and one suppressed squad still constitute three surviving squads. Recovery can restore the third squad's availability; it cannot recreate a destroyed squad. Three squads are a scenario choice, not the definition of every platoon. Dated establishment, actual starting strength and subsequent events determine composition.
+
+Capability depends on which assets remain usable, not merely the fraction of surviving squads. Loss of an attached antitank gun can remove an antitank capability without a proportional personnel loss. A versioned capability projection must specify eligibility, modifiers and treatment of unknown conditions; it cannot multiply an already aggregated fire value by an assumed squad count or grant extra attacks. Section 6.2's activity ledger remains authoritative.
+
+The displayed summary applies the viewer's disclosure policy after derivation. Enemy strength, readiness counts and missing capabilities must not reveal hidden constituent state through totals, tooltips or action previews. Preserve detailed facts for future expansion even when several conditions map to the same displayed readiness category.
 
 ## 6. Time, actions and durable consequences
 
@@ -167,7 +181,7 @@ An empty phase is explicitly completed in the event log. A scenario without airc
 
 ### 6.2 Formation commitments and eligibility
 
-The phase order needs enforceable budgets, not just labels. Proposed baseline rules are:
+The phase order needs enforceable budgets, not just labels. In the rules below, a unit means its original activity group for fire and recovery accounting; detachments inherit that ownership as specified after the list. Proposed baseline rules are:
 
 - **Offensive fire:** one fire commitment per unit in its own player turn, spent in PFPh or AFPh, not both. Several units combining fire each spend their commitment. Close combat is a separate engagement entitlement, not a second ordinary fire attack.
 - **Defensive fire:** one fire commitment per unit during the opponent's player turn, shared across MPh reactions, DFPh and APh reactions. Passing an opportunity preserves it; DFPh passage does not refresh it. Multiple ROF, subsequent fire and final protective fire are not baseline mechanics. Each would require an explicit later rule.
@@ -178,7 +192,11 @@ The phase order needs enforceable budgets, not just labels. Proposed baseline ru
 - **Recovery:** each side receives one recovery opportunity per unit per complete game turn, usable in either RPh. Recovery is never automatic phase cleanup. The package defines the check and condition change; the per-game-turn limit prevents two recovery attempts merely because both player turns have an RPh.
 - **Assaults:** an eligible unit may use AFPh and subsequently assault, paying the reserved approach cost. A moving assault uses both the offensive-fire and movement restrictions above. Units in a continuing close engagement cannot conduct ordinary movement or ranged fire; they must resolve disengagement or combat through the engagement rules.
 
-Offensive and defensive fire ledgers are distinct abstractions, as active and defensive opportunities are distinct in ASL. Both can be used within one game turn; calibration must account for that total fire volume. If detailed ammunition is added, both draw from the same ammunition inventory. Fire budgets reset only at the start of the corresponding player turn, never at a phase transition. Recovery opportunities reset at the complete game-turn boundary.
+Offensive and defensive fire ledgers are distinct abstractions, as active and defensive opportunities are distinct in ASL. Both can be used within one game turn; calibration must account for that total fire volume. If detailed ammunition is added, both draw from the same ammunition inventory. Fire budgets reset only at the start of the corresponding player turn, never at a phase transition. Recovery opportunities reset at the complete game-turn boundary. These entitlements belong to persistent activity groups, not to the number of displayed counters or newly created detachments.
+
+A formation unit starts with an `ActivityGroupId` identifying its budget owner. Splitting its roster creates disjoint detachments but retains that group and its spent/reserved ledger. In the baseline, the group still has one offensive commitment, one defensive commitment and one recovery opportunity at the specified boundaries. A firing detachment spends the shared commitment and uses only its own admitted capability; other detachments do not supply remote firepower. A recovery action fixes the eligible participants before its roll, applies the published result to those participants and consumes the group's opportunity. It cannot be retried by another fragment. Movement expenditure and reservations remain attached to constituent assets; each detachment inherits their remaining allowances, with its group movement limited by its participating assets. Recombination preserves all constituent expenditure and originating budget ownership rather than adding or refreshing allowances. Independent new groups require an explicit reorganization rule and capability allocation at a future boundary; splitting for display is not that rule.
+
+Formation activity groups are not imposed as literal ASL firing limits. An admitted cross-scale mapping translates the group's interval entitlement to child capabilities once, reserves the parent group for that interval and records the child expenditures. Splitting a group across several children requires a reviewed allocation of constituent capabilities and interval entitlements; if that mapping is absent, keep the group under one adjudicator. Recombination cannot restore either a spent parent entitlement or a child action.
 
 For the initial retreat rule, immediate danger means an adjacent known effective enemy or exposed terrain under a known enemy's eligible direct-fire threat. A retreat step must increase separation from the triggering threat, avoid known enemy-occupied positions and stay within the package's withdrawal allowance; stop when a qualifying covered position is reached. If no legal retreat exists, surrender when an adjacent enemy can accept it under the capture rule; otherwise record disintegration. These are proposed game abstractions requiring fixtures, not historical casualty assertions. No defensive reaction fire is allowed during RtPh in the baseline; retreat hazard rules still apply.
 
@@ -220,9 +238,16 @@ Stored missions never contain reusable Runtime authorization. Due resolution pas
 
 ASL Defensive First Fire supplies the architectural place for movement reactions; Panzer Leader's optional opportunity fire supplies a reference for exposure and later activity restrictions. Our baseline does not inherit its optional status or its expenditure threshold. Reactions are a core capability. [R2, XV.B; R3, A3.3]
 
-Each committed movement or APh approach step opens an exposure checkpoint after entry hazards. Eligible defenders need an unspent defensive budget, legal weapon/target conditions and an observed target at that checkpoint. A defender chooses firing units in recorded order; after each attack, re-evaluate eligibility and the mover's condition. A decline closes that checkpoint for the declining unit but does not spend its budget. There are no reactions to reactions in the baseline; air defense has its separately specified support window.
+Ordinary MPh movement commits the destination position and due entry hazards before opening its defensive reaction window. Surviving targets are evaluated at that destination for observation, LOS, range and cover. APh instead uses the explicit pre-entry approach state below. Eligible defenders need an unspent defensive budget, legal weapon/target conditions and an observed target at the applicable checkpoint. A defender chooses firing units in recorded order; after each attack, re-evaluate eligibility and the mover's condition. A decline closes that checkpoint for the declining unit but does not spend its budget. There are no reactions to reactions in the baseline; air defense has its separately specified support window.
 
-Commit a movement step and its pending window together. No later step can commit until the window closes. If an APh reaction suppresses or breaks an entering attacker, cancel its assault entry and retain it in the origin position after applying the committed approach cost; entry hazard effects are retained. This approach checkpoint precedes co-location. Ordinary MPh reactions affect the unit at its newly entered position. This distinction must be represented in the pending action, not improvised during replay.
+An APh `ApproachState` records origin, reserved destination, cost, participant identities, intended assault and current substep. Its baseline sequence is:
+
+1. Revalidate the reserve and participants. Commit the approach cost and pending state; the unit still occupies its origin. Resolve only hazards whose published trigger is crossing/approach, not destination occupancy.
+2. Recheck eligibility after those hazards. If still eligible, open a defender window using the origin position for observation, LOS, range and cover. Destination cover never protects a unit before entry. This is an explicit coarse-scale abstraction; no intermediate position or destination-based shot is inferred.
+3. After each reaction and again at window closure, apply all entry restrictions. Elimination, suppression, broken or disorganized condition, immobilization where relevant, an invalid destination or any other failed requirement cancels entry. Surviving units remain at the origin; spent cost and hazard/attack effects persist. Cancel outstanding approach choices when entry is no longer possible.
+4. If eligible, commit entry once, then resolve destination-entry hazards at the new position. Failure caused after entry does not roll back the position or restore movement. Resolve mandatory consequences and admit only eligible participants to an assault. Broken entrants use the next RtPh unless the engagement rules require an immediate capture or other consequence.
+
+No later movement or phase advancement can bypass these pending substeps. Opening a window, committing entry and applying hazards use unique causal IDs, so replay or retry cannot charge cost, trigger a hazard or move a unit twice. If pre-entry hazards cancel an approach, destination-entry hazards never fire. Ordinary MPh interruption leaves the unit at its already committed destination.
 
 A UI route or company maneuver is a proposal of atomic actions, each freshly validated after earlier consequences. Semantic actions include issue order, attempt rally, declare/resolve/cancel support, fire, move step, load/unload, reserve advance, withdraw, assault approach, commit close-combat choice, react/pass and advance phase. Multi-unit fire and simultaneous close-combat outcomes commit as causally complete batches.
 
@@ -236,7 +261,7 @@ In DFPh the gun cannot fire again, but an enemy platoon with an unspent budget m
 
 ## 7. State authority, transactions and replay
 
-The existing ASL execution path is the template:
+The existing ASL execution path supplies the template. The proposed Panzer path explicitly adds candidate-state validation before append and the failure-handling requirements below:
 
 ```text
 Player or agent request
@@ -246,14 +271,17 @@ Player or agent request
   -> Governance, Diagnostics and Execution Gate
   -> AuthorizedAction
   -> fresh plan and validated revision check
-  -> atomic event append, including necessary dice
-  -> state projection and effect readback
+  -> candidate events and projected-state validation, with transactional dice
+  -> atomic durable event append
+  -> committed-state projection and effect readback
   -> audience-filtered result
 ```
 
 Use one ordered authoritative event stream per game initially. Each envelope carries tenant/game scope, event and attempt IDs, revision, exact profile/package identities, causal links, time cursor and disclosure classification. Payloads are domain-specific. The runtime audit records the authority decision; the domain event log records what occurred in the simulated world. They refer to each other without being interchangeable.
 
-A compare-and-append checks the expected revision and idempotency before drawing dice. Append a causally complete batch, validate the resulting state, and expose outcomes only after durable commit. Repeating a committed attempt returns its stored outcome. A stale attempt draws nothing. Replay consumes recorded random outcomes, never fresh randomness. This follows ASL `AppendRolled`; the new store must prove the same guarantees.
+Within the single-writer commit boundary, check idempotency and expected revision before drawing dice. Build a candidate event batch, project it against the validated state and check resulting invariants before authoritative append. Only a valid, causally complete batch becomes durable game history. Publish its outcomes after successful commit; post-commit projection and effect readback verify the committed result rather than deciding whether an invalid state should have been accepted.
+
+Randomness used to construct the candidate belongs to the attempt. Invalid candidates do not mutate game state or reveal rolls to the player. An engine invariant failure faults that attempt and blocks automatic retry; retain its diagnostic roll record so repair cannot silently reroll it. An uncertain persistence outcome is recovered by attempt ID before any retry or new draw. Repeating a committed attempt returns its stored outcome, and a stale attempt draws nothing. Replay consumes recorded random outcomes, never fresh randomness. The new store must prove these contracts; citing ASL `AppendRolled` as a precedent does not establish that candidate validation and failure recovery already exist.
 
 For simultaneous agent proposals, the single writer establishes a total committed order. A losing proposal is stale and must be re-observed. Do not resolve contradictory moves by last-writer-wins state replacement.
 
@@ -275,11 +303,37 @@ Filter plans, legal-action lists, refusal reasons, logs and explanations as well
 
 A company-level interface can record an objective, assigned formations, route or phase line, support allocation, constraints and termination conditions. These are planning artifacts until committed by actions authorized under the selected profile.
 
-Baseline orders follow issued, executing, superseded and completed states under Section 6's RPh timing. A later communications model may insert received and acknowledged states with explicit delivery time, failure and initiative rules. An order constrains candidate plans but never grants Runtime permission. Unspecified historical behavior produces an unresolved modeling requirement, not an LLM ruling.
+Orders retain issued, executing, superseded and completed states under Section 6's RPh timing. Their associated messages independently record issue, receipt and any required acknowledgment under Section 8.3. Receipt makes an order available for eligible execution; it does not mean the order has been executed or the mission completed. An order constrains candidate plans but never grants Runtime permission. Unspecified historical behavior produces an unresolved modeling requirement, not an LLM ruling.
+
+Company selection groups planning and presentation within the current phase. During RPh, assign objectives, subordinate roles, routes and support under the existing order rules. During MPh, execute eligible subordinate moves as individually validated steps, resolving each reaction before continuing. Re-observe and replan after material changes; a company plan is interruptible, not an atomic promise that every subordinate action will succeed.
+
+Company selection does not run a private eight-phase cycle, skip the opponent's decision windows or create movement/fire resources. Defensive reactions use Section 6's existing shared commitments, with no separate reaction-point pool. A local ambush resolves at formation scale during that interrupt. If detailed adjudication is desired, admit a later ASL engagement only at Section 14.5's supported boundary; never replay an already resolved ambush in the child.
 
 Agent hierarchy and military hierarchy need not be one-to-one. Start with one bounded planner operating on a side's view, with a deterministic policy baseline. Later subordinate agents may propose platoon tasks, but each proposal remains subject to the same permissions, state versions and gate. An organizational commander never acquires Runtime authorization by virtue of its simulated rank.
 
 Evaluation separates legality, information discipline, plan completion and tactical utility. Winning a game does not prove historical validity. Use held-out situations, multiple recorded random streams and comparable information budgets; compare against legal deterministic policies before attributing gains to a more complex agent arrangement.
+
+### 8.3 Communication architecture
+
+Communication is a central pillar alongside hierarchy and organization. Orders, reports, support requests, acknowledgments and changes of command pass through explicit domain communication records. This model is required from the baseline; historical transmission fidelity can grow without replacing its lifecycle.
+
+| Concept | Required responsibility |
+| --- | --- |
+| Endpoint | Identifies a headquarters, formation or observer and its authorized recipients and senders |
+| Link | Defines a permitted command, reporting or support path; the selected profile supplies its availability and delivery policy |
+| Message | Stable identity, kind, sender, recipients, mission/order reference, payload provenance, issue cursor and supersession reference where applicable |
+| Delivery | Per-recipient pending, delivered or explicitly failed/cancelled state, delivery cursor and any required acknowledgment |
+| Recipient knowledge | Information available to that command from its permitted observations and delivered messages |
+
+The initial policy assumes configured links remain available and eligible messages arrive immediately. Issue and receipt remain distinct recorded facts even at the same cursor. Acknowledgment, where required, confirms receipt rather than acceptance, execution or success. Delivery does not bypass RPh order eligibility, the Execution Gate or a Scenario Card's declared interaction rules. Later profiles may model means of communication, delay, congestion, interruption and restoration. Historical signal constraints motivate those extensions but do not supply numerical reliability or radius parameters. [H1, H4]
+
+Maintain authoritative battlefield state separately from each command's knowledge. Reports carry observation provenance and the time of the reported event as well as delivery time. A report cannot refresh its underlying observation merely by arriving later. Intelligence can remain partial or stale. A shared player interface or planner must use the selected command's permitted view; military rank and access to a child scene do not grant omniscient information. The immediate-delivery baseline simplifies timing without removing these disclosure constraints.
+
+Issued orders can be superseded or cancelled only through declared rules. Delivery retries and duplicate acknowledgments must not repeat execution, support commitments or parent outcome imports. If a later policy allows out-of-order arrival, explicit order versions and supersession references determine applicability; a late obsolete order cannot silently replace a newer one. Sending, delivery and handling are durable, replayable transitions, distinct from mission and engagement status.
+
+When a profile models link or headquarters loss, the unit retains its roster, representation scale and spent actions. It continues its last valid standing order within a published local-initiative policy, including permitted defense and withdrawal. New coordinated orders and support requests require the specified path. The profile defines succession and treatment of already committed missions. Reconnection cannot replay completed orders, replenish budgets or grant recovery. Baseline tests establish delivery, disclosure and idempotency; delay, failure and succession tests apply when those mechanisms are enabled.
+
+Communication records and scheduling belong to domain services composed by the Host. They use existing Runtime authority and persistence patterns. Domain message delivery is a simulated event, not permission to send real messages or to introduce a second execution path.
 
 ## 9. Historical modeling without false precision
 
@@ -297,7 +351,7 @@ Imported Panzer counter data retains its original identity as reference data. Ou
 
 The Advanced Panzer Blitz orders-of-battle material explicitly acknowledges invented data in one edition. It can suggest organization questions and candidate scenarios, but is not admitted as historical establishment authority without corroboration. The excluded promotional file remains outside the source set. [V1]
 
-Model validation must address command timing, cohesion and observation in the baseline, and communications, detailed losses and sustainment as they are added. The present corpus is stronger for German equipment and U.S. armored infantry than for Soviet infantry command practice. The first bounded engagement should reflect that evidence imbalance rather than claim symmetrical coverage of every army.
+Model validation must address message delivery, recipient knowledge, command timing, cohesion and observation in the baseline, and transmission failures, detailed losses and sustainment as they are added. The present corpus is stronger for German equipment and U.S. armored infantry than for Soviet infantry command practice. The first bounded engagement should reflect that evidence imbalance rather than claim symmetrical coverage of every army.
 
 ## 10. Source authoring and rule admission
 
@@ -347,7 +401,7 @@ Keep ASL file formats and package identities unchanged. Do not add a required Pa
 
 A Panzer application should reuse suitable visual components without turning the ASL Play page into a large game-family switch. Start with a separate route or application composition that selects the exact domain before setup.
 
-The main view combines a map, a formation tree, selected-unit details, legal actions and pending commitments. Company summaries show subordinate counters, readiness under the selected rules, transport and support assignments. Preserve access to each counter's actual values and rule explanation.
+The main view combines a map, a formation tree, selected-unit details, legal actions and pending commitments. Company summaries show subordinate counters, readiness under Section 5.4, transport and support assignments. Distinguish surviving strength from temporary effectiveness and remaining action commitments; show unknown detail explicitly. Selecting a company exposes its current-phase subordinate actions and order progress without changing the decision owner. Preserve access to each counter's actual values and rule explanation.
 
 Show the eight-phase strip, active side and current decision owner, plus pending support, fire budgets, reserved approaches and objectives. Friendly artillery commitments are visible to their owner; enemy missions remain hidden unless observation rules reveal them. An agent proposal states intended action, known cost, unresolved consequences and rule basis. A preview does not reveal future dice or concealed information. The review and confirmation behavior follows existing Governance policy; grouping actions visually does not bypass individual authorization.
 
@@ -355,7 +409,7 @@ Display the active game/profile and enabled optional rules in ordinary terms. Di
 
 ## 13. Scale, performance and evaluation
 
-Platoon counters reduce some entity detail, while larger boards, combined attacks, many potential targets and historical information models create different costs. Do not assume zooming out automatically makes execution cheaper.
+Platoon counters reduce some entity detail, while larger boards, combined attacks, many potential targets and historical information models create different costs. Do not assume zooming out automatically makes execution cheaper. Measure player decision workload separately from computational cost; neither a high squad count nor detailed ASL rules alone establishes an engine capacity limit.
 
 Bound candidate generation by phase, side, supported capabilities and legal range. Maintain indexed positions, roads, formation membership and pending effects. Cache immutable board geometry and rule tables by exact content identity; cache LOS with all material terrain/profile versions. Never reuse perspective-dependent observations across tenants, sides or revisions.
 
@@ -374,6 +428,8 @@ One parent formation scenario can decompose into several linked ASL scenarios. E
 There are two entry paths. A newly authored scenario can start with detailed terrain and force rosters, then derive its formation view. An imported Panzer board and counter set starts with less information: its first expansion must supply the missing terrain detail, composition and deployment. A town hex alone cannot tell us where individual buildings stand, and a platoon label cannot establish its exact squads or remaining tanks. Store those additions as scenario assumptions with provenance. They are not recovered historical facts.
 
 This changes the earlier bridge concept: multiscale identity is a foundational data requirement, although transferring live adjudication remains a later implementation stage. Existing ASL packages stay independent. Shared scenario records and a mapping package connect the two domains without adding formation semantics to Runtime.
+
+Scale changes preserve military identity and recorded consequences while changing the decisions presented to the player. They do not require continuously running every squad's ASL procedures beneath formation play. Inspection is state-preserving; live resolution uses the admitted domain for that interval. Calibration should compare movement, losses, suppression and objective outcomes under comparable conditions across repeated trials, rather than claim identical combat results from different resolvers or identical random seeds.
 
 ### 14.2 Expanding the board
 
@@ -423,7 +479,7 @@ Zooming changes resolution, not knowledge permissions. An enemy contact at compa
 
 The first executable handoff uses a game-turn boundary with no unresolved attacks or reactions. Pause normal parent advancement while coordinating that interval. A region cannot be independently played while the parent simultaneously moves reinforcements into it or fires the same artillery. The data model supports several children immediately; the first executable slice resolves one child at a time. Mid-phase handoffs and dynamically interacting concurrent engagements require a more advanced scheduler and are deferred.
 
-An `EngagementContract` pins the parent revision, region and surrounding influence area, participating roster IDs, ASL package and board identities, objectives, information policy, start/end cursors, external support, entry/exit rules and reconciliation version. Include enough surrounding terrain to represent approaches and fire into the region, not just the selected objective hex. Outside forces either join that scope or act through explicit, budgeted support/arrival events. Never invent an unlimited off-map fire source.
+An `EngagementContract` records the starting-state revision and the admitted reservation revision defined in Section 14.8, region and surrounding influence area, participating roster IDs, ASL package and board identities, objectives, information policy, start/end cursors, external support, entry/exit rules and reconciliation version. Include enough surrounding terrain to represent approaches and fire into the region, not just the selected objective hex. Outside forces either join that scope or act through explicit, budgeted support/arrival events. Never invent an unlimited off-map fire source.
 
 At the nominal scales, three complete ASL game turns are a candidate interval for one six-minute formation game turn. This is a scheduling proposal, not proof of equivalent action rates or movement. Calibration must show that the mapping does not give transferred forces extra fire, recovery or distance. Transfer at a full-turn boundary, not from the formation APh into a fresh ASL RPh that grants an extra turn of actions. An early local victory does not reset the interval; represent the remaining time explicitly before reconciliation.
 
@@ -433,9 +489,9 @@ Resolve all children and the remaining formation-scale activity for the interval
 
 Return an `EngagementOutcome` containing surviving roster identities, detailed positions, conditions, equipment and crew status, material terrain changes, control and disclosed contacts, plus consumed support and elapsed interval. Reconcile these facts through the mapping package. Do not translate an ASL result into a single Panzer elimination/dispersal roll and discard the underlying survivors.
 
-If a platoon's survivors end in different formation hexes, create linked detachments or represent a multi-cell footprint. Do not teleport them together to recover one convenient counter. Recombining them later requires actual movement and reorganization. Company totals always count the underlying roster once, regardless of how many display markers represent it.
+If a platoon's survivors end in different formation hexes, create linked detachments or represent a multi-cell footprint. Do not teleport them together to recover one convenient counter. Recombining them later requires actual movement and reorganization. Company totals always count the underlying roster once, regardless of how many display markers represent it. Detachments inherit the activity-group and constituent ledgers in Section 6.2; reconciliation validates both roster conservation and entitlement conservation.
 
-The parent treats the child interval as already adjudicated for those assets. Their movement, fire, recovery and support expenditures cannot also be executed at formation scale. Store each completed child outcome durably under its engagement and contract IDs; completion alone does not advance the parent. The interval coordinator validates all required outcomes against the common pinned parent revision and commits one causally complete reconciliation batch through the Execution Gate. A retry returns the prior result. Failed or abandoned sessions preserve an explicit pending state; restoring a pre-engagement snapshot must be a declared branch or rollback, not a concealed reroll.
+The parent treats the child interval as already adjudicated for those assets. Their movement, fire, recovery and support expenditures cannot also be executed at formation scale. Store each completed child outcome durably under its engagement and contract IDs; completion alone does not advance the parent. The interval coordinator validates all required outcomes against the common starting snapshot and admitted interval contract, then compares the live parent revision with the reservation revision and commits one causally complete reconciliation batch through the Execution Gate. A retry returns the prior result. Failed or abandoned sessions preserve an explicit pending state; restoring a pre-engagement snapshot must be a declared branch or rollback, not a concealed reroll.
 
 ### 14.7 Several ASL scenarios within one parent battle
 
@@ -459,16 +515,20 @@ Reserve each roster asset for at most one adjudicator at a time. Shared artiller
 The proposed coordinator belongs in the domain integration layer. It uses ordinary registered actions and existing Runtime authority, not an independent execution path. Its first lifecycle is:
 
 1. **Plan:** identify candidate engagements, local objectives and boundaries from the parent state and reviewed scenario rules. Candidate plans grant no authority and can be revised freely before admission.
-2. **Admit and reserve:** validate capability coverage, dependencies, influence boundaries, force exclusivity, shared support and information policies. Pin the plan version and parent revision; reserve all participating assets and publish the interval contract atomically.
-3. **Resolve:** run admitted children and remaining coarse activity for the agreed interval. Each child uses its own revisioned log under the pinned contract. The first implementation processes them sequentially while preserving their common simulated start/end times.
-4. **Stage outcomes:** persist child checkpoints or final outcomes. Children still running, awaiting a required choice or requiring boundary repair block reconciliation. A completed sibling remains staged across a restart and is not replayed with new dice.
-5. **Reconcile:** verify complete interval coverage, no duplicated assets/effects and consistent shared facts. Gate and atomically append the parent outcome batch, resource consumption, continuing reservations and next boundary. Only then release resources or activate eligible successor engagements.
+2. **Admit and reserve:** require the issued Scenario Card and operational bindings from Section 14.12; pin their identity and hash. Validate card completeness, executable capability coverage, dependencies, influence boundaries, force exclusivity, shared support and information policies against `StartRevision`. Atomically append reservations and the interval contract, producing `ReservationRevision`. Record the plan version and starting snapshot identity. The resulting reservation revision, not the earlier starting revision, becomes the expected parent revision for reconciliation.
+3. **Resolve:** freeze normal writes to the parent game stream at `ReservationRevision`. Run admitted children and the remaining coarse activity for the agreed interval from the starting snapshot constrained by the admitted reservations. Each child uses its own revisioned log; coarse activity uses an interval-local provisional log. Both are durable execution records under registered actions, but neither advances the live parent revision. The first implementation processes them sequentially while preserving their common simulated start/end times.
+4. **Stage outcomes:** persist a checkpoint or final outcome for every participant through the agreed interval end. An engagement may remain ongoing while its current interval is complete. Only an incomplete interval, an unresolved choice/effect due within it or required boundary repair blocks reconciliation. Ready sibling outcomes remain staged across restart and are not replayed with new dice.
+5. **Reconcile:** verify complete interval coverage, all participant checkpoint/log hashes, no duplicated assets/effects and consistent shared facts. Build and validate the candidate parent projection before commit. Through the gate, compare against `ReservationRevision` and atomically append the outcome batch, resource consumption, continuing reservations and next boundary. Record the interval ID and imported participant ranges exactly once. Only then release resources or activate eligible successor engagements.
+
+Keep engagement lifetime and interval readiness separate. `EngagementStatus` can be ongoing, completed or explicitly terminated; `IntervalStatus` progresses through resolving, ready and reconciled, with blocked for required repair. An ongoing engagement becomes ready when its checkpoint reaches the contracted end cursor with all consequences due through that cursor resolved. Its future missions and continuing close combats remain recorded pending state, not reasons to block the completed interval. Early local completion must still account for the rest of the interval through an explicit hold, withdrawal or termination rule; it cannot leave an unadjudicated time gap. No child executes its next interval until parent reconciliation admits it.
+
+Staged outcomes, checkpoint references and coordinator progress belong to the interval record outside the frozen parent game stream. Their durable updates have their own revision checks. Lifecycle operations that must change parent reservations, including cancellation or boundary repair, explicitly invalidate the old reservation revision and require a new admitted contract before further play. Preserve committed child history during that repair; never reinterpret it under a new contract or reroll it automatically. Unexpected parent changes make reconciliation fail closed. Resume only after an explicit compatible re-admission or a separately identified branch.
 
 Independent children with the same input boundary should produce the same reconciled result regardless of processing order, using their respective recorded random streams. Conflicting outcomes do not resolve by last-writer-wins. They reveal a failed boundary or ownership assumption and require explicit repair before parent advancement.
 
 Sequential processing must not provide hindsight. Keep unrelated child observations isolated and commit shared allocation decisions before exposing outcomes. Where a human controls multiple concurrent children, lock decisions that cannot legitimately depend on the first child's result, or coordinate play in shorter synchronized intervals. Merely labeling two sessions concurrent does not remove the information advantage of having watched one finish.
 
-Do not cancel an unfavorable completed child and regenerate it. Cancellation before play releases reservations under an explicit rule; interruption after committed play requires a checkpoint, reconciliation or an explicitly separate exploratory branch. A stale parent revision blocks the whole interval commit. Recover from durable plan, reservation, child-log and staged-outcome records without silently changing force ownership.
+Do not cancel an unfavorable completed child and regenerate it. Cancellation before play releases reservations under an explicit rule; interruption after committed play requires a checkpoint, reconciliation or an explicitly separate exploratory branch. A live parent revision different from `ReservationRevision` blocks the whole interval commit. Recover from durable plan, reservation, child-log and staged-outcome records without silently changing force ownership.
 
 ### 14.9 Scenario-driven decomposition from the corpus
 
@@ -505,20 +565,49 @@ The ASL engagement starts with those exact assets in their recorded approach pos
 
 Required bridge tests include: unchanged expand/collapse preserves state; repeated expansion preserves detail; terrain connectivity survives panel seams; roster and equipment totals are conserved except for recorded events; fine positions aggregate without teleportation; hidden contacts remain hidden; interval budgets are spent only once; neighboring effects cannot cross an unhandled boundary; and reconciliation is deterministic and idempotent. Authoring-time aggregation need not be mathematically invertible, but returning from an unchanged detailed state must not create or lose information that was already known.
 
+### 14.12 Scenario Cards as the ASL mission contract
+
+Every ASL-level mission must be expressed through the Scenario Card model, whether standalone, imported, generated from a parent mission or explored in a separate branch. Higher headquarters assign subordinate missions; planning and contact determine which become ASL engagements. One mission can generate several cards over time. Missions resolved without ASL execution need no artificial combat scenario.
+
+Reuse the existing card reader, validation and setup path. The current ScenarioCard describes boards, turns, sides, order-of-battle groups, setup/entry, special rules and structured victory conditions. ScenarioCardReference records an ID and SHA-256. These are implementation anchors, not evidence that operational bindings already exist. The existing minimal-card mode remains available for standalone manual play; it cannot bypass completeness and capability checks for linked missions. [A1]
+
+Extend the existing model through a versioned operational context. Exact field names and storage layout remain implementation decisions.
+
+| Existing card content | Required operational binding |
+| --- | --- |
+| Situation and introduction | Parent operation and mission IDs, issuing command, intent and contribution to the parent objective |
+| Boards and setup | Persistent region and terrain version, deployment snapshot, entry/exit constraints and influence boundaries |
+| Order of battle | Stable roster-to-counter bindings, admitted starting conditions, attachments and allocated support |
+| Turns and reinforcements | Shared-clock interval, first side, arrival dependencies and behavior after early local completion |
+| Victory conditions | Executable local criteria and mapping from recorded facts and occurrence times to parent assessment |
+| Special rules | Published external-effect and amendment policies, exact rule/package versions and supported capabilities |
+
+An issued card is an immutable mission definition. The EngagementContract pins its ID, version and content hash and binds it to admission, reservations, temporal ownership and reconciliation. Card bindings and contract references use one authoritative assignment snapshot; independently editable copies of forces, objectives or timing are prohibited. Both hashes belong in execution provenance. A mismatch blocks admission. The setup adapter can attach persistent identities and conditions through validated bindings, but cannot introduce unrecorded forces or instructions outside the card and its declared rules.
+
+Admission verifies playable terrain, complete force assignments, starting conditions, setup legality, interval coverage, executable victory criteria and every required special rule. A parseable card is insufficient: display-only or unsupported rules cannot silently govern linked play. Missing capability returns an explicit authoring or implementation requirement. Preserve existing standalone cards through a compatible versioned extension.
+
+Reinforcements, support and changed orders enter through the issued card's declared mechanisms. An amendment outside those mechanisms creates a new version, effective cursor and governed transition; validate it against committed history and reservations at a supported boundary. Never overwrite the original card or reinterpret earlier actions. Reservation changes also require re-admission under Section 14.8. Continuing engagements preserve their identity and checkpoint across intervals rather than restarting from fresh cards.
+
+Card views obey disclosure policy. A briefing must not expose an opponent's hidden roster, setup, future arrivals or parent orders merely because the adjudicator's card contains them. The present standalone setup workflow is not proof that protected linked setup exists; establish that capability before admitting missions that require it.
+
+Outcomes report facts with occurrence times, roster lineage and card/contract identities. Local victory is separate from parent success: capturing a bridge after the operation's deadline can satisfy the local card while failing the parent mission. Reports convey only information available to their sender at the applicable delivery time. Authoritative reconciliation does not automatically give every headquarters knowledge of the result.
+
 ## 15. Delivery sequence and acceptance gates
 
 | Stage | Deliverable | Evidence required to proceed |
 | --- | --- | --- |
 | 0. Authored baseline | Publish the Section 6 phase contract, initial numerical rules, source/departure register and a small designed engagement; establish terrain/roster lineage for later ASL expansion | Reviewed phase ownership, budgets, recovery, withdrawal, observation and combat fixtures; unsupported capabilities named |
 | 1. Read-only formation slice | Unit definitions, a verified board and direct-fire adjudication | Legal/illegal/unknown cases with authored rule and evidence references; no mutations |
-| 2. Governed turn cycle | Setup, all eight phases, basic movement/fire, reserve/withdrawal/assault and boundary state | Event replay, expected revision, idempotency, transactional dice and lifecycle tests |
+| 2. Governed turn cycle | Setup, all eight phases, baseline message issue/delivery and recipient views, basic movement/fire, reserve/withdrawal/assault and boundary state | Event replay, expected revision, idempotency, transactional dice and lifecycle tests |
 | 3. Reactions and support | Interruptible movement, delayed support and condition/control consequences | No double fire, no free advance, no silent retarget, correct cancellation and crash recovery |
 | 4. Complete bounded engagement | One company-scale combined-arms engagement traversing the entire cycle | Capability closure, scenario objectives, transport and information discipline; verified complete-game replay |
 | 5. Formation planning | Company view, persistent orders and bounded intent-to-action proposals | No extra authority; no information leaks; stale plans re-observe; objective progress reported honestly |
 | 6. Calibrated historical fidelity | Evidence-supported force and measured model improvements | Parameter provenance, uncertainty, sensitivity analysis and versioned behavior changes |
-| 7a. Scenario decomposition | An inspectable EngagementPlan for a parent scenario, beginning with one Situation 1 installation sector | Source/assumption separation, roster lineage, terrain continuity, local objectives and reviewed interaction boundaries |
+| 7a. Scenario decomposition | An inspectable EngagementPlan and validated Scenario Cards for a parent scenario, beginning with one Situation 1 installation sector | Source/assumption separation, complete card bindings, roster lineage, terrain continuity, local objectives and reviewed interaction boundaries |
 | 7b. Bounded ASL handoff | One child engagement with persistent outcome and parent return | Conservation, no double simulation, temporal ownership, visibility and retry/recovery proofs from Section 14 |
 | 7c. Linked ASL engagements | Multiple children with sequential dependencies and independently resolvable shared intervals; process one child at a time initially | Exclusive asset reservations, support accounting, staged outcomes, synchronized parent commit and no processing-order information advantage |
+
+After Stage 7c, prove a bounded battalion operation with several company missions, shared support, a reserve, report delivery and one supply constraint before adding division or higher domains. This later acceptance gate does not expand the formation baseline.
 
 The first implementation slice should complete Stage 0 and one Stage 1 adjudication fixture. Use a small designed engagement whose units and terrain exercise the authored rules. Original Panzer situations may inspire the setting and forces, but adaptation must account for our reaction, recovery, advance and observation rules. Legacy compatibility is not an acceptance gate.
 
@@ -544,9 +633,27 @@ The first implementation slice should complete Stage 0 and one Stage 1 adjudicat
 18. One roster asset cannot belong to two adjudicators in the same interval; child transfers preserve physical travel, surviving strength and equipment.
 19. Two children cannot consume the same support mission or claim the same parent objective twice; decomposing a garrison does not multiply its objective value.
 20. Resolving independent concurrent children in a different processing order produces equivalent parent state using the same per-child recorded rolls; no child receives premature sibling results.
-21. Restart after one child completes preserves its staged result and remaining reservations; the parent advances only when the interval's required outcomes are complete and consistent.
+21. Restart after one child reaches interval readiness preserves its staged result and remaining reservations; the parent advances only when all required interval outcomes are complete and consistent, even if some engagements remain ongoing.
 22. Cross-boundary fire or movement outside admitted contracts blocks independent resolution; conflicts cannot be hidden by the order of parent reconciliation.
 23. Sequential child activation uses committed prerequisites and feasible arrival times, while continuing engagements carry forward their state without resetting actions or recovery.
+24. Admission advances `StartRevision` to `ReservationRevision`; child, staging and provisional coarse writes do not advance the parent. Reconciliation succeeds against the reservation revision, imports each outcome once and refuses an unexpected parent change.
+25. Splitting and recombining a formation preserves activity-group fire/recovery commitments and constituent movement expenditure. A spent entitlement cannot be restored by new counter IDs, and multiple children cannot each receive the full original capability.
+26. APh reaction observation, LOS, range and cover use the recorded origin. Pre-entry hazards or reactions that invalidate eligibility cancel entry without refund; destination hazards apply only after entry and cannot roll it back. Each hazard and cost applies once across retries.
+27. Invalid candidate projections never enter authoritative game history or expose random results. Faulted attempts do not silently reroll, and uncertain commit outcomes are recovered by attempt ID before retry.
+28. An ongoing engagement at a complete interval checkpoint permits reconciliation; a finished engagement without coverage through interval end does not. Future effects survive into the next admitted interval without resetting conditions, missions or budgets.
+
+29. For an admitted constituent roster, suppressing and recovering a squad changes availability without changing surviving strength; destroyed assets remain lost. Aggregate-only conditions do not invent constituent casualties.
+30. Removing an attached support weapon changes only capabilities justified by the published projection; summaries do not multiply aggregate attack factors, double-count attachments or expose hidden enemy conditions.
+31. A company movement plan pauses for every required reaction, rechecks eligibility after consequences and preserves the common phase cursor and action ledger; selecting another company grants no new entitlements.
+32. Baseline issue and per-recipient delivery remain recorded even under immediate delivery; duplicate messages and acknowledgments cannot repeat actions or reveal information to unintended recipients. Profiles with link loss preserve standing orders and local defense; succession and reconnection neither repeat orders nor reset budgets.
+
+33. Every ASL mission starts through a validated Scenario Card with pinned identity and operational bindings. Missing cards, mismatched assignments and unsupported mandatory rules block admission.
+34. Card amendments preserve issued versions and committed history, take effect only at an admitted cursor and cannot duplicate reinforcements, support or reservations.
+35. Local victory after a parent deadline retains its actual occurrence time and is assessed under parent criteria; card views and report delivery do not disclose hidden or premature information.
+36. Subordinate missions preserve lineage and exclusive resource ownership across command levels. Repeated receipt, execution or reporting cannot duplicate tasks, actions or outcome imports.
+
+37. Recipient knowledge changes only through permitted observations and deliveries; event time and report arrival time remain distinct, and a delayed report does not become a fresh observation.
+38. Receipt or acknowledgment cannot execute an order outside its phase or card contract. Profiles allowing reordered delivery reject obsolete superseded orders without undoing committed actions.
 
 These are future implementation acceptance tests. No new simulation implementation or runtime test execution is claimed by this design document.
 
@@ -554,7 +661,53 @@ These are future implementation acceptance tests. No new simulation implementati
 
 The proposed eight-phase order, acting sides, fire budgets, advance reservation and support timing are specified in Section 6. Before executable publication, settle numerical movement/fire/recovery tables, suppression durations, withdrawal allowances, observation and capture criteria, initial unit/board definitions and the first army/date/theater. Validate the six-minute/250-meter baseline against those rules together. These are calibration and rule-completion tasks, not a requirement to follow either legacy Panzer sequence. Before autonomous play, settle control permissions within existing Governance.
 
+Before admitting constituent readiness mechanics, settle the condition-to-capability projection, allocation of coarse losses and handling of unknown constituent state. These rules must preserve detailed facts and the existing action ledger. Communication identities, permitted paths, delivery transitions, disclosure and order applicability are baseline requirements. Quantitative delays, transmission failures and succession under disruption remain profile-specific fidelity decisions.
+
 Terrain and force identity must support ASL expansion from the initial scenario design. The parent-to-many-child EngagementPlan and reservation records should be designed now; live scheduling and condition conversion follow Section 14's staged implementation. Before linked live play, settle safe influence boundaries, interval granularity, cross-boundary interactions, human information controls and parent objective mappings. No decision is currently needed on distributed simulation, dynamic domain plugins, a universal war-game ontology or a new database. Evidence from bounded formation engagements should determine whether those become necessary.
+
+## 17. Command hierarchy and mission lifecycle
+
+### 17.1 Architecture across echelons
+
+The existing ASL combat engine is the tactical resolution foundation. Higher command architecture organizes hierarchy, forces and communication around admitted engagements, with time and sustainment as shared constraints. Reuse remains subject to verified capability coverage and performance; it does not imply that every theater engagement can already be resolved or continuously simulated at squad detail.
+
+Keep organizational echelon, simulation resolution and player role independent. A division commander can inspect an admitted company engagement without acquiring instantaneous control of each squad or its hidden information. The eight-phase formation sequence remains the baseline in Section 6. Higher domains need separately published decision cycles and timing; they do not inherit ASL phases solely because subordinate battles use ASL.
+
+| Pillar | Domain responsibility |
+| --- | --- |
+| Hierarchy | Command relationships, mission delegation, objective ownership and assessment |
+| Organization | Persistent force identity, composition, attachments, reserves and support assignments |
+| Communication | Orders, acknowledgments, reports and requests with source, destination and delivery state |
+| Time and sustainment | Feasible movement and arrival, consumption, supply, maintenance and recovery |
+
+Organic membership, tactical control, support, supply and communications are distinct time-bounded relationships. Validate permitted structures by army, period and formation type; do not require every command to have three children or include every echelon. Military command authority never substitutes for Runtime authorization.
+
+Higher formations may occupy regions and corridors with dispersed subordinates, headquarters and supply routes. Their display marker summarizes those dispositions. Preserve known identities at the finest admitted resolution; missing detail requires explicit authoring with conservation and provenance before expansion. Continuous squad-level simulation is not a prerequisite for maintaining an organization.
+
+### 17.2 Mission lifecycle
+
+A proposed Mission record carries identity and parent lineage, issuing and executing commands, objective, constraints, allocated resources, dependencies, deadline and assessment criteria. A FormationOrder carries executable direction within the selected profile and can reference a mission. A mission may produce several subordinate missions and ASL Scenario Cards; it is not synonymous with one battle.
+
+The lifecycle is assignment, receipt, planning, execution, reporting and assessment. For an ASL task, card authoring, validation and engagement admission occur between planning and execution:
+
+1. **Assignment:** record intent, permitted resources and success criteria. Assignment alone neither moves forces nor reserves the same asset in several children.
+2. **Receipt:** deliver the order under the current profile and record receipt or acknowledgment as required. The formation baseline records immediate delivery through Section 8.3's core lifecycle; later fidelity profiles may introduce transmission delay and failure.
+3. **Planning:** create bounded subordinate tasks, dependencies and support requests. For every ASL task, produce and validate its Scenario Card, then admit the EngagementContract and reservations through Section 14.8.
+4. **Execution:** perform authorized actions under the pinned card or higher-domain rules. Interruptions, continuing engagements and revised orders preserve committed history.
+5. **Reporting:** send progress and results with observation provenance, occurrence time and delivery state. Reports can be partial or delayed and differ from the adjudicator's complete outcome.
+6. **Assessment:** evaluate parent objectives and deadlines from authoritative facts, while commander decisions use only delivered information. Record continuation, completion, failure, cancellation or supersession explicitly.
+
+These responsibilities can overlap: progress reports and replanning occur during execution. Keep mission status, order delivery, card version, engagement lifetime and interval readiness distinct. Cancellation after combat begins must reconcile committed effects; it cannot release spent resources or erase losses. Persistent identities and idempotent transitions prevent duplicate orders or reports from repeating execution.
+
+### 17.3 Coordination and the next proof
+
+The first higher-level proof is a battalion operation to secure a crossing: one company attacks the approach, another protects the flank and a third remains in reserve. Subordinate missions generate complete ASL cards when tactical execution is required. Outcomes determine crossing availability, losses, routes and feasible reserve arrival. The battalion objective and deadline govern overall success; a majority of local victories does not.
+
+Use Section 14.8's bounded synchronization first. A later operational coordinator may let independent regions advance within a common clock, but interacting regions must synchronize before dependent movement, supply or fire resolves. Road movement cannot assume an unresolved crossing is available. Avoiding indefinite theater-wide pauses while preserving local reservations requires a later scheduler, not a change to the initial contract.
+
+Progress toward regiment/brigade, division, corps, army and theater introduces wider objectives, transport capacity, supply allocation, replacement and recovery, and competing operations. Each added mechanic needs an explicit domain profile and evidence. Shared supplies need quantity, location, ownership and transit constraints, with consumption recorded once. A force roster alone does not establish executable logistics.
+
+Keep military models and coordination in domain packages composed by the Host. Reuse Runtime evidence, lifecycle, governance and execution contracts. Extract shared military components only when concrete domains demonstrate common behavior; this direction does not authorize a universal ontology, distributed engine or new Runtime authority path.
 
 ## Appendix A Source references
 
@@ -569,6 +722,8 @@ Terrain and force identity must support ASL expansion from the initial scenario 
 - [GameGate](../ASL/LimboDancer.Domains.Asl.Play/GameGate.cs), [GameStore](../ASL/LimboDancer.Domains.Asl.Play/GameStore.cs) and [GamePlanner](../ASL/LimboDancer.Domains.Asl.Play/GamePlanner.cs), current commit/replay and disclosure patterns.
 - [ASL LOS calculator](../ASL/LimboDancer.Domains.Asl.Maps/Los/LosCalculator.cs) and [ASL state types](../ASL/LimboDancer.Domains.Asl.Units/State/GameTypes.cs), evidence of domain-specific semantics.
 
+- **A1. Existing Scenario Card foundation:** [Card model and validation](../ASL/LimboDancer.Domains.Asl.Play/ScenarioCards.cs), [setup adapter](../ASL/LimboDancer.Domains.Asl.Play/ScenarioSetup.cs), [card reference](../ASL/LimboDancer.Domains.Asl.Units/State/GameTypes.cs), and [Scenario Card Games Plan](<../ASL/docs/ASL Unit Scenario Card Games Plan.md>), Section 1. Establishes the existing card-based entry path, core fields and ID/hash provenance. Section 14.12 proposes operational extensions; it does not claim they are implemented.
+
 ### Corpus references used in this design
 
 Paths below refer to the local archive. They are reading references, not a completed source-registration manifest. Physical PDF page numbers are distinguished from printed page numbers where necessary. A reproducible implementation package must add hashes and reviewed fragment locators.
@@ -581,6 +736,9 @@ Paths below refer to the local archive. They are reading references, not a compl
 - **H2. Stephen Bull, World War II Infantry Tactics, Squad and Platoon:** [Local PDF](<E:/Archive/WWII-Docs/3-Tactics-Platoon-and-Company/516380891-World-War-II-Infantry-Tactics-Squad-and-Platoon-Osprey-Elite-51-Text.pdf>). Contents at PDF p. 2 and introductory soldier-experience passages sampled. The platoon chapter starts printed p. 48; recommended for detailed model work, not treated here as a verified numerical model.
 - **H3. German Field Fortifications 1939-45:** [Local PDF](<E:/Archive/WWII-Docs/3-Tactics-Platoon-and-Company/399303335-German-Field-Fortifications-1939-45-pdf.pdf>), contents and introduction at PDF pp. 4-5. Defense doctrine, planning and firepower are identified follow-up readings.
 - **V1. Advanced Panzer Blitz Wargaming Orders of Battle:** [Local PDF](<E:/Archive/WWII-Docs/1-PanzerBlitz-PanzerLeader/Variants-and-Articles/37053579-The-Advanced-Panzer-Blitz-to-e-Book-Version-3.pdf>), PDF p. 2 introduction. Explicit invented-data qualification governs its use here.
+
+- **H4. War Department, FM 7-15, Heavy Weapons Company, Rifle Regiment, 19 May 1942:** [Manual](https://www.ibiblio.org/hyperwar/USA/ref/FM/PDFs/FM7-15.PDF), printed pp. 1-4 (PDF pp. 5-8). Specifies two .30-caliber heavy-machine-gun platoons and an 81mm mortar platoon; discusses observation, ammunition and signal constraints on fire. Supports separating weapon capability, organization and communications. Does not establish simulation command radii or delay values.
+- **N1. Submitted organization and scale notes:** [Local note](<E:/Archive/WWII-Docs/1-PanzerBlitz-PanzerLeader/WWII-Organization-and-Panzer-Scale-User-Notes.md>), including the 5 October 2026 scale comparison. Unverified proposal material. Constituent readiness and company coordination are adapted in Sections 5.4 and 8.2; communication is foundational in Section 8.3, with transmission fidelity staged by profile. Counter factors, scenario narrative and claims of universal organization are not admitted evidence.
 
 ### Decomposition references inspected
 
