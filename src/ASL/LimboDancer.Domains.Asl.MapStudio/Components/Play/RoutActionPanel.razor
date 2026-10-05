@@ -14,11 +14,17 @@
     {
         <li @key="item.Unit" class="rout-obligation" data-unit="@item.Unit">
             @DisplayText.Sentence(Say(item.Text))
-            @* Pass 31d (design D3): a way to each place the rout may end; the button fills the route, which stays the player's to change. *@
-            @foreach (var way in item.Routes ?? [])
+            @* Pass 31d (design D3): a way to each place the rout may end, each on a line of its own (the table player); the button fills the
+               route, which stays the player's to change. *@
+            @if (item.Routes is { Count: > 0 } ways)
             {
-                <button type="button" class="link use-route" data-unit="@item.Unit" data-route="@way.Route" title="Chooses this unit and fills its route; you may still change it."
-                        @onclick="@(() => OnUseRoute.InvokeAsync((item.Unit, way.Route)))">Use the route to @Say(way.Target)</button>
+                <ul class="rout-ways">
+                    @foreach (var way in ways)
+                    {
+                        <li><button type="button" class="link use-route" data-unit="@item.Unit" data-route="@way.Route" title="Chooses this unit and fills its route; you may still change it."
+                                    @onclick="@(() => OnUseRoute.InvokeAsync((item.Unit, way.Route)))">Use the route to @Say(way.Target)</button></li>
+                    }
+                </ul>
             }
         </li>
     }

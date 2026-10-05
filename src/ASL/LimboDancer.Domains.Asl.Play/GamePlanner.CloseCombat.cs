@@ -200,16 +200,16 @@ public sealed partial class GamePlanner
             .OrderBy(unit => unit.Id, StringComparer.Ordinal).ToArray();
         string[] takers = [.. unitList.Where(unit => !Is(unit, Conditions.Unarmed) && !Is(unit, Conditions.Concealed) && !Is(unit, Conditions.Hidden)
             && (vocabulary.IsA(unit.Kind, "asl:mmc") || vocabulary.IsA(unit.Kind, "asl:smc"))).Select(unit => unit.Id).Order(StringComparer.Ordinal)];
-        var summary = $"play.advance: {string.Join(", ", ids)} advance into {to} ({terrain})"
+        var summary = $"play.advance: {string.Join(", ", ids)} {(ids.Length == 1 ? "advances" : "advance")} into {to} ({terrain})"
             + (entering is not null ? " from off board, entering the map (A2.5; ruling R25.1)" : string.Empty) + (Opposing(enemies) is { Length: > 0 } opposing ? $", with {opposing}: CC follows (A3.7)" : string.Empty)
-            + (tiring.Count > 0 ? $"; {string.Join(", ", tiring)} become CX advancing into Difficult Terrain (A4.72)" : string.Empty)
+            + (tiring.Count > 0 ? $"; {string.Join(", ", tiring)} {(tiring.Count == 1 ? "becomes" : "become")} CX advancing into Difficult Terrain (A4.72)" : string.Empty)
             + (excess > 0 ? $"; the Location is overstacked by {excess} squad-equivalent(s), which costs {excess} more MF (A5.11)" : string.Empty)
             + (surrendering.Length > 0 && takers.Length > 0 ? $"; {string.Join(", ", surrendering.Select(unit => unit.Id))} is Disrupted and surrenders (A19.12)" : string.Empty);
 
         // Pass 31d (design D5; A11.19, p. 73): the proposer's own Dummies that advance into a Location with an enemy counter are removed as the CCPh
         // begins. It is said of the advancing side's own counters and of counters it sees there; nothing is said of what the other side's "?" holds.
         string[] dummiesWarning = unitList.Any(unit => unit.Kind == UnitKinds.Dummy) && enemies.Any(unit => !Is(unit, Conditions.Hidden))
-            ? [$"play.dummies: the Dummies among {string.Join(", ", ids)} are removed in {to} as the Close Combat Phase begins, before any attack (A11.19)"]
+            ? [$"play.dummies: {(unitList.All(unit => unit.Kind == UnitKinds.Dummy) ? "these Dummies" : $"the Dummies among {string.Join(", ", ids)}")} are removed in {to} as the Close Combat Phase begins, before any attack (A11.19)"]
             : [];
         var package = ScenarioA1CloseCombatPackage.Identity.ToString();
         var testing = afv is null ? [] : unitList.Where(unit => NeedsPaatc(state, unit, afv)).ToArray();
@@ -867,7 +867,7 @@ public sealed partial class GamePlanner
             .Select(unit => state.Location(unit.Id)!.Location).Distinct().OrderBy(item => item.ToString(), StringComparer.Ordinal).ToArray();
         // Pass 31d (design D9): where the package would refuse the Ambush, the line says so, and no longer asks for drs that cannot be made.
         due.AddRange(locations.Where(location => AmbushDue(state, location)).Select(location => AmbushUndecided(state, location) is { } why
-            ? $"{location}: the Close Combat package does not decide this Location: {why}"
+            ? $"{location}: the Close Combat package does not decide this Location, since {why}"
             : $"{location}: the Ambush drs (A11.4)"));
         if (CloseCombatRequired(state) is { } required)
         {

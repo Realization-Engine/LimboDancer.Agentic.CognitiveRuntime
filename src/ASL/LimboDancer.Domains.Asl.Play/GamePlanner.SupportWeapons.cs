@@ -381,7 +381,8 @@ public sealed partial class GamePlanner
             "ccph" when !broken && state.CloseCombats.Count == 0 => null,
             "rtph" when broken && !state.RoutedThisPhase.Contains(unit.Id) && RoutLoadOf(state, unit) is { Laden: true } load =>
                 load.BestLoads.Any(best => !best.Contains(weapon.Id, StringComparer.Ordinal)) ? null
-                    : $"play.drop-phase: {unit.Id} carries {load.Total} PP and routs with at most {load.Ipc}; it keeps {weapon.Id} ({load.Pp(weapon.Id)} PP) and leaves {LeftText(load)} (A10.4; ruling R13.5)",
+                    : $"play.drop-phase: {unit.Id} may not leave {weapon.Id} ({load.Pp(weapon.Id)} PP): it carries {load.Total} PP, routs with at most {load.Ipc} PP, and keeps the most it can, "
+                        + $"of which {weapon.Id} is a part whatever else it leaves (A10.4; ruling R13.5)",
             _ => "play.drop-phase: an unbroken unit drops a SW in its MPh during its move, its APh before it advances, or at the start of the CCPh; a broken unit, before it routs, the SW beyond its IPC (A4.43, A10.4; ruling R13.5)",
         };
         if (when is not null)
@@ -402,19 +403,22 @@ public sealed partial class GamePlanner
     /// its choice exactly equal to its IPC or, failing that, equal to the highest number of PP it can portage which is also &lt; its IPC"). A broken unit
     /// is not CX (A4.51), and no leader adds his IPC to it (A4.42). Each SW is read with its own PP, so no order of the lists can part them: before
     /// pass 31d the PP were listed in the order the SW were created and the SW in the order of their ids, and a FT was taken for its DC's 2 PP.
-    /// Null when a SW's PP is not recorded, or the unit holds more than ten.
+    /// Null when a SW's PP is not recorded, or the unit holds more than sixteen.
     /// </summary>
     public RoutLoad? RoutLoadOf(GameState state, UnitInstance unit)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(unit);
         var held = Held(state, unit.Id);
-        if (held.Length > 10 || held.Any(item => PortageOf(item) is null))
+        if (held.Length > 16 || held.Any(item => PortageOf(item) is null))
         {
             return null;
         }
 
-        RoutLoadItem[] carried = [.. held.Select(item => new RoutLoadItem(item.Id, PortageOf(item)!.Value))];
+        RoutLoadItem[] carried = [.. held.Select(item => new RoutLoadItem(item.Id, PortageOf(item)!.Value)
+        {
+            Kind = $"{item.Definition?.Definition ?? item.Kind}{(Is(item, Conditions.Dismantled) ? " dismantled" : string.Empty)}{(Is(item, Conditions.Malfunctioned) ? " malfunctioned" : string.Empty)}",
+        })];
         var ipc = vocabulary.IsA(unit.Kind, "asl:smc") ? (Is(unit, Conditions.Wounded) ? 0 : 1) : 3;
         var loads = Enumerable.Range(0, 1 << carried.Length)
             .Select(mask => carried.Where((_, index) => (mask & (1 << index)) != 0).ToArray())
@@ -423,10 +427,6 @@ public sealed partial class GamePlanner
         return new RoutLoad(ipc, carried, [.. loads.Where(load => load.Sum(item => item.Pp) == best).Select(load => (IReadOnlyList<string>)[.. load.Select(item => item.Weapon)])]);
     }
 
-    /// <summary>The SW a laden unit leaves, for a refusal: by name when it has one best load, and as "the rest" of each when it has a choice.</summary>
-    private static string LeftText(RoutLoad load) => load.BestLoads.Count == 1
-        ? string.Join(", ", load.Left(load.BestLoads[0]).Select(item => $"{item.Weapon} ({item.Pp} PP)"))
-        : "the rest of " + string.Join(", or of ", load.BestLoads.Select(best => best.Count == 0 ? "nothing" : string.Join(" and ", best)));
 
     /// <summary>
     /// Recovery (A4.44; ruling R13.5): an unpinned Good Order unit Recovers an unpossessed SW in its Location, friendly or enemy, on a Final dr below 6

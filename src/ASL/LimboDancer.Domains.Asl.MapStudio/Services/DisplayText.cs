@@ -16,6 +16,9 @@ public static class DisplayText
     public static string Side(string? side) =>
         string.IsNullOrEmpty(side) ? string.Empty : char.ToUpper(side[0], CultureInfo.InvariantCulture) + side[1..];
 
+    /// <summary>A side with its article, "A German" or "An American", to begin a sentence about one of its counters.</summary>
+    public static string ASide(string? side) => Side(side) is { Length: > 0 } name ? ("AEIOU".Contains(name[0], StringComparison.Ordinal) ? "An " : "A ") + name : "A";
+
     /// <summary>A side in a sentence: "the German side", or "the adjudicator".</summary>
     public static string ViewName(string? name) =>
         name is null ? string.Empty : name == Perspective.AdjudicatorName ? "the adjudicator" : $"the {Side(name)} side";
@@ -150,7 +153,8 @@ public static class DisplayText
         var fact = System.Text.RegularExpressions.Regex.Match(reason, @"^fact\.(unknown|outside-reviewed-case):(\w+)$");
         if (fact.Success)
         {
-            return (code, $"{(fact.Groups[1].Value == "unknown" ? "the game cannot say whether" : "outside the reviewed case:")} {Fact(fact.Groups[2].Value)}");
+            // The table player, pass 31d: the fact named is the one that failed, so the sentence says that it does not hold.
+            return (code, $"{(fact.Groups[1].Value == "unknown" ? "the game cannot say whether this holds:" : "this does not hold:")} {Fact(fact.Groups[2].Value)}");
         }
 
         if (match.Groups[2].Success && match.Groups[2].Value.Length > 0)
@@ -187,6 +191,7 @@ public static class DisplayText
     {
         ArgumentNullException.ThrowIfNull(text);
         var said = text.Replace("stone-building", "stone building", StringComparison.Ordinal).Replace("wooden-building", "wooden building", StringComparison.Ordinal)
+            .Replace("stone-rubble", "stone rubble", StringComparison.Ordinal).Replace("wooden-rubble", "wooden rubble", StringComparison.Ordinal)
             .Replace("open-ground", "Open Ground", StringComparison.Ordinal);
         return System.Text.RegularExpressions.Regex.Replace(said, @"\bin the (RPh|PFPh|MPh|DFPh|AFPh|RtPh|APh|CCPh)\b",
             match => "in the " + Components.Games.GameText.PhaseLabel(match.Groups[1].Value.ToLowerInvariant()));

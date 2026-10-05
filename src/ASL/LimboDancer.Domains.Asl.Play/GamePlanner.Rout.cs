@@ -421,12 +421,13 @@ public sealed partial class GamePlanner
         if (RoutLoadOf(state, unit) is { Laden: true } load)
         {
             string[]? named = arguments.TryGetProperty("keep", out var keep) && keep.ValueKind == JsonValueKind.Array ? [.. Strings(arguments, "keep").Order(StringComparer.Ordinal)] : null;
-            var chosen = named is null ? (load.BestLoads.Count == 1 ? load.BestLoads[0] : null)
+            // Loads that differ only in which of two like counters is kept are one choice (the table player, pass 31d), and the game takes it.
+            var chosen = named is null ? (load.Choices.Count == 1 ? load.Choices[0] : null)
                 : load.BestLoads.FirstOrDefault(best => best.Order(StringComparer.Ordinal).SequenceEqual(named, StringComparer.Ordinal));
             if (chosen is null)
             {
-                var loads = string.Join(", or ", load.BestLoads.Select(best => best.Count == 0 ? "nothing" : string.Join(" and ", best.Select(id => $"{id} ({load.Pp(id)} PP)"))));
-                return Refused(scope, label, expected, $"play.rout-laden: {unit.Id} carries {load.Total} PP and routs with at most {load.Ipc}; it keeps {loads}, and leaves the rest (A10.4)");
+                var loads = string.Join(", or ", load.Choices.Select(best => best.Count == 0 ? "no SW" : string.Join(" with ", best.Select(id => $"{id} ({load.Pp(id)} PP)"))));
+                return Refused(scope, label, expected, $"play.rout-laden: {unit.Id} carries {load.Total} PP and routs with at most {load.Ipc} PP; its owner chooses what it keeps: {loads}; it leaves the rest (A10.4)");
             }
 
             (kept, left) = (chosen, load.Left(chosen));
@@ -736,7 +737,10 @@ public sealed partial class GamePlanner
         var reach = RoutReach(state, unit, at, SeenBy(state, unit.Side, at), 0, RoutHalfMf(unit), routes: found);
         var targets = RoutTargets(state, unit, at, reach);
         var near = KnownEnemies(state, unit.Side).Where(item => Armed(item.Unit) && AdjacentOrSame(state, item.At, at)).ToArray();
-        return (targets, reach.Count > 1, targets.Where(target => found.ContainsKey(target) && !near.Any(item => AdjacentOrSame(state, item.At, target)))
+        // A least-cost way to one place may run through another and out into the open again, which a rout may not do once it has reached woods or a
+        // building (A10.51): such a way is not offered (found by the sweep of The Tractor Works, pass 31d).
+        bool Holds(BoardLocation[] route) => Array.FindIndex(route, targets.Contains) is var reached && route.Skip(reached + 1).All(step => RoutCover(state, step));
+        return (targets, reach.Count > 1, targets.Where(target => found.TryGetValue(target, out var route) && Holds(route) && !near.Any(item => AdjacentOrSame(state, item.At, target)))
             .ToDictionary(target => target, target => (IReadOnlyList<BoardLocation>)found[target]));
     }
 

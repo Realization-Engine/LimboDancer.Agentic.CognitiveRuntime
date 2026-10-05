@@ -573,6 +573,169 @@ public sealed class BacklogPass13Tests : IDisposable
         }), "play.");
     }
 
+    // ---- Pass 31d (designs D2 and D3; A10.4, p. 66; ruling R31d.1) ----
+
+    private static readonly string[] TwoLmg = ["ga", "gb"];
+    private static readonly string[] LmgAndDc = ["gb", "gd"];
+    private static readonly string[] TwoDc = ["gd1", "gd2"];
+
+    private static Dictionary<string, object> Sw(string id, string kind, string definition, string holder, string side) => new()
+    {
+        ["id"] = id,
+        ["kind"] = kind,
+        ["definition"] = definition,
+        ["side"] = side,
+        ["holding"] = new
+        {
+            holder,
+            role = "possessed"
+        },
+        ["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false },
+    };
+
+    /// <summary>The German RtPh: the broken g1 in E5, in the LOS of the Russian r9 in E2, with woods in E7; g1 holds what the test gives it.</summary>
+    private Task SetupLaden(params Dictionary<string, object>[] weapons)
+    {
+        terrain["E7"] = "Woods";
+        return SetupAt(5, "german", [Unit("r9", "defender-squad", "E2", "russian"), Unit("g1", "attacker-squad", "E5", "german", "asl:broken"), .. weapons]);
+    }
+
+    [Fact]
+    public async Task ABrokenUnitsLoadReadsEachWeaponWithItsOwnPpWhateverTheirOrder()
+    {
+        // The play test's case: a FT (5 PP) created before a DC (2 PP) whose id sorts first. Before pass 31d the PP were listed in the order of
+        // creation and the SW in the order of their ids, so the DC was taken for 5 PP, and the squad was made to leave the DC and then the FT.
+        // A10.4: with an IPC of 3 it keeps the DC, the most it can carry, and leaves the FT.
+        await SetupLaden(Sw("gf", "asl:ft", "attacker-ft", "g1", "german"), Sw("gd", "asl:dc", "attacker-dc", "g1", "german"));
+        var load = Planner().RoutLoadOf(Current, Current.Unit("g1")!)!;
+        Assert.Equal((3, 7, true), (load.Ipc, load.Total, load.Laden));
+        Assert.Equal(["gd"], Assert.Single(load.BestLoads));
+        Assert.Equal((2, 5), (load.Pp("gd"), load.Pp("gf")));
+
+        var kept = await Do(GameActions.Drop, NoRoll(), new
+        {
+            unitId = "g1",
+            equipmentId = "gd"
+        });
+        Refused(kept, "play.drop-phase");
+        Assert.Contains(kept.Reasons, reason => reason.Contains("g1 may not leave gd (2 PP)", StringComparison.Ordinal) && reason.Contains("carries 7 PP, routs with at most 3 PP", StringComparison.Ordinal));
+        Committed(await Do(GameActions.Drop, NoRoll(), new
+        {
+            unitId = "g1",
+            equipmentId = "gf"
+        }));
+
+        // Carrying the DC alone it is laden no longer, and drops nothing more before it routs.
+        Refused(await Do(GameActions.Drop, NoRoll(), new
+        {
+            unitId = "g1",
+            equipmentId = "gd"
+        }), "play.drop-phase");
+    }
+
+    [Fact]
+    public async Task ALadenUnitsRoutLeavesWhatItCannotCarryAndKeepsTheRest()
+    {
+        await SetupLaden(Sw("gf", "asl:ft", "attacker-ft", "g1", "german"), Sw("gd", "asl:dc", "attacker-dc", "g1", "german"));
+        var before = Revision;
+
+        // Before pass 31d the rout was refused with "carries more PP than its IPC and drops a SW before it routs", naming no SW and no PP.
+        var result = await Rout("g1", ["E6", "E7"], Once(3, 3));
+        Committed(result);
+        Assert.Contains(result.Reasons, reason => reason.StartsWith("play.rout-leaves:", StringComparison.Ordinal) && reason.Contains("gf (5 PP)", StringComparison.Ordinal)
+            && reason.Contains("routs with gd", StringComparison.Ordinal));
+        Assert.Equal(ConsequenceKind.Left, GamePlanner.ConsequenceOf(result.Reasons.Single(reason => reason.StartsWith("play.rout-leaves:", StringComparison.Ordinal)))!.Kind);
+
+        // The FT is left first, unpossessed, in the Location the rout begins in; the DC goes with the squad.
+        var left = Assert.IsType<EquipmentTransferred>(Since(before)[0].Payload);
+        Assert.Equal("gf", left.Id);
+        Assert.Null(left.Holding);
+        Assert.Null(((EquipmentInstance)Current.Find("gf")!).Holding);
+        Assert.Equal(L("E5"), Current.Location("gf")!.Location.ToString());
+        Assert.Equal("g1", ((EquipmentInstance)Current.Find("gd")!).Holding!.Holder);
+        Assert.Equal(L("E7"), Current.Location("g1")!.Location.ToString());
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task ALadenUnitWithAChoiceOfLoadsNamesTheOneItKeeps()
+    {
+        // A DC (2 PP), a German LMG, and a captured Russian LMG (1 PP each), 4 PP against an IPC of 3: the DC with either LMG is a load of exactly
+        // 3 (A10.4: "a combination of SW of its choice exactly equal to its IPC"), and the LMGs are not alike, so the choice is the owner's.
+        await SetupLaden(Sw("gd", "asl:dc", "attacker-dc", "g1", "german"), Mg("ga", "attacker-lmg", "g1", "german"), Mg("gb", "defender-lmg", "g1", "german"));
+        var load = Planner().RoutLoadOf(Current, Current.Unit("g1")!)!;
+        Assert.Equal(2, load.BestLoads.Count);
+        Assert.Equal(2, load.Choices.Count);
+        Assert.All(load.BestLoads, best => Assert.Equal(3, best.Sum(load.Pp)));
+
+        var unnamed = await Rout("g1", ["E6", "E7"], Once(3, 3));
+        Refused(unnamed, "play.rout-laden");
+        Assert.Contains(unnamed.Reasons, reason => reason.Contains("carries 4 PP and routs with at most 3 PP", StringComparison.Ordinal) && reason.Contains("its owner chooses what it keeps", StringComparison.Ordinal)
+            && reason.Contains("ga (1 PP)", StringComparison.Ordinal) && reason.Contains("gb (1 PP)", StringComparison.Ordinal));
+
+        // A load that is not one of the best is refused; one of them is taken.
+        Refused(await Do(GameActions.Rout, Once(3, 3), new
+        {
+            unitId = "g1",
+            route = new[] { L("E6"), L("E7") },
+            lowCrawl = false,
+            keep = TwoLmg,
+        }), "play.rout-laden");
+        Committed(await Do(GameActions.Rout, Once(3, 3), new
+        {
+            unitId = "g1",
+            route = new[] { L("E6"), L("E7") },
+            lowCrawl = false,
+            keep = LmgAndDc,
+        }));
+        Assert.Null(((EquipmentInstance)Current.Find("ga")!).Holding);
+        Assert.All(LmgAndDc, id => Assert.Equal("g1", ((EquipmentInstance)Current.Find(id)!).Holding!.Holder));
+    }
+
+    [Fact]
+    public async Task LoadsThatDifferOnlyInWhichOfTwoLikeCountersIsKeptAreNoChoice()
+    {
+        // Two DC (2 PP each) and a LMG (1 PP): either DC with the LMG is a best load, and the two DC are the same counter to a player, who could
+        // not tell one "DC (2 PP)" from the other (the table player, pass 31d). The rout takes one and asks nothing.
+        await SetupLaden(Sw("gd1", "asl:dc", "attacker-dc", "g1", "german"), Sw("gd2", "asl:dc", "attacker-dc", "g1", "german"), Mg("gl", "attacker-lmg", "g1", "german"));
+        var load = Planner().RoutLoadOf(Current, Current.Unit("g1")!)!;
+        Assert.Equal((2, 1), (load.BestLoads.Count, load.Choices.Count));
+        Committed(await Rout("g1", ["E6", "E7"], Once(3, 3)));
+        Assert.Single(TwoDc, id => ((EquipmentInstance)Current.Find(id)!).Holding is null);
+        Assert.Equal("g1", ((EquipmentInstance)Current.Find("gl")!).Holding!.Holder);
+    }
+
+    [Fact]
+    public async Task ARoutOfAUnitThatIsNotLadenLeavesNothing()
+    {
+        await SetupLaden(Mg("gl", "attacker-lmg", "g1", "german"));
+        Assert.False(Planner().RoutLoadOf(Current, Current.Unit("g1")!)!.Laden);
+        var before = Revision;
+        var result = await Rout("g1", ["E6", "E7"], Once(3, 3));
+        Committed(result);
+        Assert.DoesNotContain(result.Reasons, reason => reason.StartsWith("play.rout-leaves:", StringComparison.Ordinal));
+        Assert.IsType<RoutStepped>(Since(before)[0].Payload);
+        Assert.Equal("g1", ((EquipmentInstance)Current.Find("gl")!).Holding!.Holder);
+    }
+
+    [Fact]
+    public async Task TheWayOfferedToEachPlaceARoutMayEndIsARouteTheGameTakes()
+    {
+        // Design D3: the search keeps where it came from, and the advice gives one least-cost route to each place the rout may end.
+        await SetupLaden();
+        var (targets, canRout, routes) = Planner().RoutAdvice(Current, Current.Unit("g1")!);
+        Assert.True(canRout);
+        Assert.Equal([L("E7")], targets.Select(target => target.ToString()));
+        var route = routes[targets[0]];
+        Assert.Equal([L("E6"), L("E7")], route.Select(step => step.ToString()));
+        Committed(await Do(GameActions.Rout, Once(3, 3), new
+        {
+            unitId = "g1",
+            route = route.Select(step => step.ToString()).ToArray(),
+            lowCrawl = false,
+        }));
+    }
+
     [Fact]
     public async Task ABrokenUnitDropsOnlyWhatItCannotCarry()
     {

@@ -577,14 +577,16 @@ public sealed partial class GamePlanner
         // A12.14: a concealed firer or director loses "?" by this attack when every firer is within 16 hexes and a target is Good Order,
         // as the Fire package decides it; one that does is Known when a target's Heat of Battle result is read (A15.44, A15.5).
         var firers = attack.Firers ?? [];
-        string[] revealed = firers.Count > 0 && firers.All(item => (item.Range ?? attack.Range) <= 16)
-            && attack.Targets!.Any(item => item.Broken == false && item.Dummy != true)
+        // Pass 31d (ruling R31d.2): with the planner's read for every concealed unit of the group, the units a Good Order enemy unit sees; without
+        // it, as the package decided before.
+        var directing = new[] { attack.Director }.Concat(attack.OtherDirectors ?? []).OfType<FireDirector>().ToArray();
+        var read = firers.Where(item => item.Concealed == true).All(item => item.SeenByGoodOrderEnemy is not null) && directing.Where(item => item.Concealed == true).All(item => item.SeenByGoodOrderEnemy is not null);
+        string[] revealed = read
+            ? [.. firers.Where(item => item.SeenByGoodOrderEnemy == true).Select(item => item.UnitId).Concat(directing.Where(item => item.SeenByGoodOrderEnemy == true).Select(item => item.UnitId)).OfType<string>()]
+            : firers.Count > 0 && firers.All(item => (item.Range ?? attack.Range) <= 16) && attack.Targets!.Any(item => item.Broken == false && item.Dummy != true)
             ? [.. firers.Select(item => item.UnitId).Concat(new[] { attack.Director?.UnitId }).Concat((attack.OtherDirectors ?? []).Select(item => item.UnitId))
                 .OfType<string>().Where(id => state.Unit(id) is { } unit && Is(unit, Conditions.Concealed))]
-
-            // Pass 31d (ruling R31d.2): with no Good Order target, the units a Good Order enemy unit sees, by the planner's read.
-            : [.. firers.Where(item => item.SeenByGoodOrderEnemy == true).Select(item => item.UnitId)
-                .Concat(new[] { attack.Director }.Concat(attack.OtherDirectors ?? []).Where(item => item?.SeenByGoodOrderEnemy == true).Select(item => item!.UnitId)).OfType<string>()];
+            : [];
         FireTarget Read(FireTarget target)
         {
             if (target.Dummy == true || state.Unit(target.UnitId!) is not { } unit || state.Location(unit.Id) is not { } at)

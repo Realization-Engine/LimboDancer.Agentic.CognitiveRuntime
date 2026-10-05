@@ -32,7 +32,7 @@ public sealed partial class FireTests
     /// The Russian PFPh: r1, r2, and the 8-0 rl concealed in D4; two German Dummies in the stone building E4; the German g2 in A2, hidden or not.
     /// D4 and E4 see each other; A2 sees D4 only when the test says so.
     /// </summary>
-    private async Task SetupDummies(bool watched, bool watcherHidden = false)
+    private async Task SetupDummies(bool watched, bool watcherHidden = false, bool hiddenTarget = false)
     {
         los.By = (from, to) => (from.Hex.ToString(), to.Hex.ToString()) is ("D4", "E4") or ("E4", "D4") || (watched && (from.Hex.ToString(), to.Hex.ToString()) is ("A2", "D4") or ("D4", "A2"))
             ? new LosResult(LosStatus.Clear, false, from.Hex.ToString() == "A2" || to.Hex.ToString() == "A2" ? 3 : 1, 0, null, string.Empty)
@@ -56,8 +56,8 @@ public sealed partial class FireTests
                 Placement("r1", "asl:squad", "defender-squad", "bd01:D4:0", "russian", concealed: true),
                 Placement("r2", "asl:squad", "defender-squad", "bd01:D4:0", "russian", concealed: true),
                 Placement("rl", "asl:leader", "defender-leader", "bd01:D4:0", "russian", concealed: true),
-                DummyAt("d1", "bd01:E4:0", "german"),
-                DummyAt("d2", "bd01:E4:0", "german"),
+                hiddenTarget ? Placement("gt", "asl:squad", "attacker-squad", "bd01:E4:0", "german", hidden: true) : DummyAt("d1", "bd01:E4:0", "german"),
+                hiddenTarget ? Placement("gu", "asl:squad", "attacker-squad", "bd01:B5:0", "german") : DummyAt("d2", "bd01:E4:0", "german"),
                 Placement("g2", "asl:squad", "attacker-squad", "bd01:A2:0", "german", hidden: watcherHidden),
             },
         }))).Outcome);
@@ -105,6 +105,18 @@ public sealed partial class FireTests
         Assert.True(result.Outcome == PlayOutcome.Committed, string.Join("; ", result.Reasons));
         Assert.All(FireGroup, id => Assert.True(Marked(Current.Unit(id)!, Conditions.Concealed)));
         Assert.True(Marked(Current.Unit("g2")!, Conditions.Hidden));
+    }
+
+    [Fact]
+    public async Task AHiddenUnitInTheTargetLocationDoesNotTakeTheFirersConcealment()
+    {
+        // The referee, pass 31d: the target Location's units are no measure of who sees the firer. A hidden squad there would have to show
+        // itself to force the loss, and does not; before the fix its presence alone took the firers' "?", which told them it was there.
+        await SetupDummies(watched: false, hiddenTarget: true);
+        var result = await Commit(Play(Once(6, 6)), GameActions.Fire, Fire("fire-1", ["r1", "r2"]));
+        Assert.True(result.Outcome == PlayOutcome.Committed, string.Join("; ", result.Reasons));
+        Assert.All(FireGroup, id => Assert.True(Marked(Current.Unit(id)!, Conditions.Concealed), $"{id} lost its \"?\" to a hidden unit."));
+        Assert.True(Marked(Current.Unit("gt")!, Conditions.Hidden));
     }
 
     [Fact]

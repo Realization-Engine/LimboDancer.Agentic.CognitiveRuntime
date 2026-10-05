@@ -181,7 +181,7 @@ public sealed partial class GamePlanner
             && state.Location(unit.Id)?.Location is { } at
             ? state.Units.Where(other => other.Side != side && other.Kind != UnitKinds.Dummy && GoodOrder(other) && !Is(other, Conditions.Hidden) && state.Aboard(other.Id) is null)
                 .Select(other => state.Location(other.Id)?.Location).OfType<BoardLocation>().Distinct()
-                .Any(location => Los(state, location, at) is { Status: LosStatus.Clear, Range: <= 16 })
+                .Any(location => location == at || Los(state, location, at) is { Status: LosStatus.Clear, Range: <= 16 })
             : null;
         FireFirer Firer(FireFirer item) => Seen(item.UnitId, item.Concealed) is not { } seen ? item : item with
         {

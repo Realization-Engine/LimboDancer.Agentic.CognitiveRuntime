@@ -47,7 +47,7 @@
     @foreach (var weapon in Weapons)
     {
         @* Pass 31d (design D10): a weapon that has fired or malfunctioned is listed and cannot be ticked, and a FT says that it fires alone (A22.31). *@
-        <label class="@(weapon.Bar is null ? null : "muted")"><input class="fire-weapon" type="checkbox" data-weapon="@weapon.Id" disabled="@(weapon.Bar is not null)" checked="@(weapon.Bar is null && SelectedWeapons.Contains(weapon.Id))" @onchange="@(args => OnWeapon.InvokeAsync(new UnitSelectionList.Toggle(weapon.Id, args.Value is true)))" /> @Say(weapon.Id) of @Say(weapon.Holder)@(weapon.Bar is { } bar ? $": {bar}" : weapon.Ft ? ": fires alone (A22.31)" : "")</label>
+        <label class="@(weapon.Bar is null ? null : "muted")"><input class="fire-weapon" type="checkbox" data-weapon="@weapon.Id" disabled="@(weapon.Bar is not null)" checked="@(weapon.Bar is null && SelectedWeapons.Contains(weapon.Id))" @onchange="@(args => OnWeapon.InvokeAsync(new UnitSelectionList.Toggle(weapon.Id, args.Value is true)))" /> @Say(weapon.Id) of @Say(weapon.Holder)@(weapon.Bar is { } bar ? $": {bar}" : weapon.Ft ? ": fires alone, without its holder's own FP (A22.31)" : "")</label>
     }
     @* Pass 31c (play test P-17): "MGs alone" is in sight for every firer with a MG, and waits for the firer and its MG to be ticked. *@
     @foreach (var id in AloneCandidates.Union(SelectedFirers.Where(id => Weapons.Any(weapon => weapon.Holder == id && !weapon.Ft && weapon.Bar is null))).Order(StringComparer.Ordinal))
@@ -139,7 +139,7 @@
     }
     @if (FtWithOthers)
     {
-        <span id="fire-ft-alone" class="toolbar-note">A FT fires alone: untick the other units and weapons, and choose no director (A22.31).</span>
+        <span id="fire-ft-alone" class="toolbar-note" role="status">A FT fires alone: untick the other units and weapons, and choose no director (A22.31).</span>
     }
     <button id="propose-fire" disabled="@(SelectedFirers.Count == 0 || FtWithOthers || (FreeTarget.Trim().Length == 0 && Target.Length == 0))" aria-describedby="@(FtWithOthers ? "fire-ft-alone" : null)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: fire</button>
     <button id="fire-clear" class="link" @onclick="@(() => OnClear.InvokeAsync())">clear</button>

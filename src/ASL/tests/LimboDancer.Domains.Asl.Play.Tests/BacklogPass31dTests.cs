@@ -17,6 +17,9 @@ namespace LimboDancer.Domains.Asl.Play.Tests;
 public sealed class BacklogPass31dTests : IDisposable
 {
     private const string Played = "guards-dl-01";
+
+    // The Tractor Works as it was played on 2026-10-04 (pass 31c's third play test).
+    private const string Tractor = "p31c-tw";
     private static readonly Guid Tenant = Guid.Parse("5a7d1f00-0000-4000-8000-0000000057d0");
     private static readonly UnitVocabulary Vocabulary = UnitVocabulary.Asl();
 
@@ -53,9 +56,9 @@ public sealed class BacklogPass31dTests : IDisposable
     private string FileOf(string name) => Path.Combine(root, "games", Tenant.ToString("N"), name + ".game.json");
 
     /// <summary>The played game cut back to a revision, saved under a name of its own.</summary>
-    private GameScope Cut(int revision, string name)
+    private GameScope Cut(int revision, string name, string played = Played)
     {
-        var game = JsonNode.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", Played + ".game.json")))!;
+        var game = JsonNode.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Fixtures", played + ".game.json")))!;
         game["game"] = name;
         var events = game["events"]!.AsArray();
         while (events.Count > revision)
@@ -92,6 +95,67 @@ public sealed class BacklogPass31dTests : IDisposable
         {
             Assert.Equal(Text(whole.States[index]), Text(stepped.States[index]));
         }
+    }
+
+    [Fact]
+    public void TheTractorWorksContinuedPhaseByPhaseIsTheGameReplayedWhole()
+    {
+        // The larger game (716 revisions, 112 counters at its start, Dummies, prisoners, and surrenders): each phase's events applied to what
+        // was kept give, at every phase change, the state the whole replay has there.
+        var events = store.Read(Cut(716, "p31d-tractor", Tractor))!.Events;
+        var whole = Planner().Replay(events);
+        Assert.False(whole.HasErrors);
+        Assert.Equal(716, whole.States.Count);
+
+        var planner = Planner();
+        var changes = events.Where(item => item.Payload is PhaseChanged).Select(item => (int)item.Revision).Append(events.Count).Distinct().ToArray();
+        Assert.True(changes.Length > 100);
+        foreach (var count in changes)
+        {
+            var stepped = planner.Replay([.. events.Take(count)]);
+            Assert.False(stepped.HasErrors);
+            Assert.Equal(Text(whole.States[count - 1]), Text(stepped.Current!));
+        }
+    }
+
+    [Fact]
+    public async Task EveryWayOfferedForARoutInTheTractorWorksIsARouteTheGameTakes()
+    {
+        // Design D3: at the start of each Rout Phase of the played game, each route the advice offers a broken unit that may rout is planned as its
+        // rout. The plan may wait on another unit's rout or on the unit's surrender; it is never refused for its route.
+        var events = store.Read(Cut(716, "p31d-routs", Tractor))!.Events;
+        var history = Planner().Replay(events);
+        var offered = 0;
+        foreach (var start in events.Where(item => item.Payload is PhaseChanged { Phase: "rtph" }).Select(item => (int)item.Revision))
+        {
+            var state = history.States[start - 1];
+            var planner = Planner();
+            GameScope? scope = null;
+            foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Broken) == ConditionState.True
+                && planner.MayRout(state, unit)))
+            {
+                foreach (var (target, route) in planner.RoutAdvice(state, unit).Routes)
+                {
+                    scope ??= Cut(start, $"p31d-rout-{start}", Tractor);
+                    offered++;
+                    Assert.Equal(target, route[^1]);
+                    var plan = await planner.PlanAsync(GameActions.Rout, JsonSerializer.SerializeToElement(new
+                    {
+                        gameId = scope.Game,
+                        attemptId = $"rout-{start}-{offered}",
+                        expectedRevision = start,
+                        unitId = unit.Id,
+                        route = route.Select(step => step.ToString()).ToArray(),
+                        lowCrawl = false,
+                    }), Tenant, "tester");
+                    Assert.True(plan.Status == GamePlanStatus.Ready || plan.Reasons.Any(reason => reason.StartsWith("play.rout-order", StringComparison.Ordinal)
+                            || reason.StartsWith("play.rout-surrender", StringComparison.Ordinal)),
+                        $"Revision {start}, {unit.Id} to {target}: {string.Join("; ", plan.Reasons)}");
+                }
+            }
+        }
+
+        Assert.True(offered >= 5, $"Only {offered} routes were offered in the whole game.");
     }
 
     [Fact]
@@ -175,6 +239,10 @@ public sealed class BacklogPass31dTests : IDisposable
         {
             Assert.Same(before[index], after[index]);
         }
+
+        // The referee, pass 31d: the kept record pairs the events read before with the new ones as they read back. Written again it is the
+        // file, byte for byte, so the events read before are what a new parse of the file gives.
+        Assert.Equal(File.ReadAllText(FileOf(scope.Game)), GameEventWriter.Write(scope, store.Read(scope)!));
 
         // What the store keeps is what the file says: a store that has kept nothing of this file parses the same game, state for state.
         var kept = planner.Replay(after);

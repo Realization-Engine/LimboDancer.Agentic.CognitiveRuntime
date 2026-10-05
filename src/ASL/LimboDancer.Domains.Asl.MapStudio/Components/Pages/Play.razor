@@ -446,8 +446,8 @@ else if (state is not null)
                 {
                     <RoutActionPanel Obligations="@RoutObligations" Units="@RoutChoices" Unit="@routUnit" Route="@routRoute" LowCrawl="@routLowCrawl"
                         Load="@RoutLoadText" Loads="@RoutLoads" Keep="@string.Join(",", RoutKept)" OnKeep="@(keep => routKeep = keep)"
-                        OnUseRoute="@(way => (routUnit, routRoute, routKeep) = (way.Unit, way.Route, way.Unit == routUnit ? routKeep : string.Empty))"
-                        OnUnit="@(id => (routUnit, routKeep) = (id, string.Empty))" OnRoute="@(route => routRoute = route)" OnLowCrawl="@(on => routLowCrawl = on)" OnPropose="@ProposeRout" />
+                        OnUseRoute="@(way => (routUnit, routRoute, routKeep, routLowCrawl) = (way.Unit, way.Route, way.Unit == routUnit ? routKeep : string.Empty, routLowCrawl && !way.Route.Contains(',')))"
+                        OnUnit="@(id => (routUnit, routKeep, routRoute) = (id, string.Empty, id == routUnit ? routRoute : string.Empty))" OnRoute="@(route => routRoute = route)" OnLowCrawl="@(on => routLowCrawl = on)" OnPropose="@ProposeRout" />
                 }
                 @if (state.Phase is "rph" or "pfph" or "mph" or "dfph" or "aph" or "ccph" or "rtph" && SupportWeapons.Any())
                 {
@@ -5530,7 +5530,15 @@ else if (state is not null)
         // Pass 31c (backlog section 48; play test P-19): one sentence that says what the unit may or must do. Pass 31d (design D3): each place the
         // rout may end is said with the hexes on a least-cost way to it, "[AA4] (by [Z5])", and the way is offered as a route to use.
         var (targets, canRout, routes) = Live.Planner.RoutAdvice(state!, unit);
-        string Place(BoardLocation target) => routes.TryGetValue(target, out var route) && route.Count > 1 ? $"{target} (by {string.Join(", ", route.Take(route.Count - 1))})" : target.ToString();
+        string Place(BoardLocation target) => routes.TryGetValue(target, out var route) && route.Count > 1 ? $"{target} (by {string.Join(" then ", route.Take(route.Count - 1))})" : target.ToString();
+
+        // The table player, pass 31d: a place the unit may not end in (it lies ADJACENT to the enemy unit it began ADJACENT to, A10.51) is given no
+        // route, and is not said as a place to end in while another is.
+        if (targets.Any(routes.ContainsKey))
+        {
+            targets = [.. targets.Where(routes.ContainsKey)];
+        }
+
         return (!canRout
             ? must ? ". It has no legal rout step, so it is eliminated for Failure to Rout, or surrenders, when the RtPh ends (A10.5)." : ". It has no legal rout step, so it stays where it is."
             : targets.Count > 0 ? $". Its route must end in {string.Join(" or ", targets.Select(Place))}."
@@ -5542,15 +5550,15 @@ else if (state is not null)
     private RoutLoad? RoutLoadNow => state is not null && state.Unit(routUnit) is { } unit && Mine(unit) && Live.Planner.RoutLoadOf(state, unit) is { Laden: true } load ? load : null;
 
     /// <summary>The SW the unit keeps: the load chosen, or its first best load.</summary>
-    private IReadOnlyList<string> RoutKept => RoutLoadNow is { } load ? load.BestLoads.FirstOrDefault(best => string.Join(",", best) == routKeep) ?? load.BestLoads[0] : [];
+    private IReadOnlyList<string> RoutKept => RoutLoadNow is { } load ? load.Choices.FirstOrDefault(best => string.Join(",", best) == routKeep) ?? load.Choices[0] : [];
 
     private string? RoutLoadText => RoutLoadNow is { } load && state?.Location(routUnit)?.Location is { } at
-        ? $"{routUnit} carries {load.Total} PP and may rout with {load.Ipc} (A10.4). It leaves {string.Join(" and ", load.Left(RoutKept).Select(item => $"{item.Weapon} ({item.Pp} PP)"))} in {at}"
+        ? $"{routUnit} carries {load.Total} PP and may rout with {load.Ipc} PP (A10.4). It leaves {string.Join(" and ", load.Left(RoutKept).Select(item => $"{item.Weapon} ({item.Pp} PP)"))} in {at}"
             + $" and keeps {(RoutKept.Count == 0 ? "no SW" : string.Join(" and ", RoutKept.Select(id => $"{id} ({load.Pp(id)} PP)")))}."
         : null;
 
-    private IReadOnlyList<PlayChoice> RoutLoads => RoutLoadNow is { BestLoads.Count: > 1 } load
-        ? [.. load.BestLoads.Select(best => new PlayChoice(string.Join(",", best), best.Count == 0 ? "no SW" : string.Join(" and ", best.Select(id => $"{id} ({load.Pp(id)} PP)"))))]
+    private IReadOnlyList<PlayChoice> RoutLoads => RoutLoadNow is { Choices.Count: > 1 } load
+        ? [.. load.Choices.Select(best => new PlayChoice(string.Join(",", best), best.Count == 0 ? "no SW" : string.Join(" and ", best.Select(id => $"{id} ({load.Pp(id)} PP)"))))]
         : [];
 
     /// <summary>A route typed as hexes, each on the routing unit's board (A10.5).</summary>
@@ -6116,9 +6124,10 @@ else if (state is not null)
             : consequences.Any(item => item.Kind == ConsequenceKind.End) ? "Confirm and end the game"
             : consequences.Any(item => item.Kind == ConsequenceKind.OwnUnits) ? "Confirm and fire on your own units"
             : consequences.Any(item => item.Kind == ConsequenceKind.Waste) ? "Confirm the shot with no LOS"
-            : consequences.Any(item => item.Kind == ConsequenceKind.Left) ? "Confirm: a SW is left behind"
+            : consequences.Any(item => item.Kind == ConsequenceKind.Left) ? "Confirm, leaving SW behind"
             : consequences.Any(item => item.Kind == ConsequenceKind.Unfought) ? "Confirm with a Close Combat not fought"
-            : consequences.Any(item => item.Kind == ConsequenceKind.Dummies) ? "Confirm: the Dummies may be removed"
+            : consequences.Any(item => item.Kind == ConsequenceKind.Dummies) ? (consequences.Any(item => item.Kind == ConsequenceKind.Dummies && item.Text.Contains(" if ", StringComparison.Ordinal))
+                ? "Confirm: the Dummies may be removed" : "Confirm: the Dummies are removed")
             : "Confirm";
     }
 
@@ -6446,6 +6455,8 @@ else if (state is not null)
             var lines = new List<(string Text, int Count, BoardLocation[] At)>();
             var named = Array.Empty<BoardLocation>();
             void At(params string?[] locations) => named = [.. locations.Select(text => BoardLocation.TryParse(text, out var at) ? at with { Level = 0 } : null).OfType<BoardLocation>()];
+            // One line for a stack, whatever its count of counters, as the records have it (the referee, pass 31d).
+            var dummyStacks = new HashSet<string>(StringComparer.Ordinal);
             foreach (var item in history!.Events.Where(item => item.Visibility is null && (since < 0 || item.Revision > since)))
             {
                 var line = item.Payload switch
@@ -6462,7 +6473,8 @@ else if (state is not null)
                     InstanceEliminated gone when state.Unit(gone.Id) is { } unit && unit.Kind != UnitKinds.Dummy => $"A {DisplayText.Side(unit.Side)} unit was eliminated.",
 
                     // Pass 31d (ruling R31d.3, which amends R31.7's "a Dummy gives no line"): both sides saw the counters leave the map.
-                    InstanceEliminated gone when state.Unit(gone.Id) is { Kind: UnitKinds.Dummy } dummy => $"A {DisplayText.Side(dummy.Side)} Dummy counter was removed.",
+                    InstanceEliminated gone when state.Unit(gone.Id) is { Kind: UnitKinds.Dummy } dummy
+                        => dummyStacks.Add($"{ReplaySteps.AttemptOf(item.EventId)}|{history.At(item.Revision - 1)?.Location(dummy.Id)?.Location}|{dummy.Side}") ? $"{DisplayText.ASide(dummy.Side)} Dummy stack was removed." : null,
                     InstanceCaptured taken when state.Unit(taken.Id) is { } prisoner => $"A {DisplayText.Side(prisoner.Side)} unit was captured.",
                     GameEnded => "The game ended.",
                     _ => null,
@@ -6491,6 +6503,16 @@ else if (state is not null)
                 else
                 {
                     lines.Add((line, 1, named));
+                }
+
+                // A11.19 (ruling R31d.3): the Dummies the game removes as the CCPh begins, for which it records no event, read from the two states.
+                if (item.Payload is PhaseChanged { Phase: "ccph" } && history.At(item.Revision - 1) is { } before && history.At(item.Revision) is { } begun)
+                {
+                    foreach (var gone in before.Units.Where(unit => unit.Kind == UnitKinds.Dummy && unit.Status == InstanceStatus.Active && begun.Unit(unit.Id) is { Status: InstanceStatus.Eliminated }
+                        && before.Location(unit.Id) is not null).GroupBy(unit => (At: before.Location(unit.Id)!.Location, unit.Side)).OrderBy(group => group.Key.At.ToString(), StringComparer.Ordinal))
+                    {
+                        lines.Add(($"{DisplayText.Side(gone.Key.Side)} Dummies were removed in {PlaceOf(gone.Key.At)} before Close Combat.", 1, [gone.Key.At with { Level = 0 }]));
+                    }
                 }
             }
 

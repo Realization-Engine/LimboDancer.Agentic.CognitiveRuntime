@@ -217,12 +217,16 @@ public sealed class PlayRecords
             {
                 var attempt = AttemptOf(item.EventId);
                 var ofAttempt = events.Where(other => AttemptOf(other.EventId) == attempt).Select(other => other.Payload).ToArray();
-                if (!ofAttempt.Any(payload => payload is FireResolved or OrdnanceFired) && dummiesSaid.Add((attempt, dummyAt.ToString(), dummy.Side)))
+                // The referee, pass 31d: a fire's own line says it only where the view reads that fire's effects and this Dummy is among them; a
+                // fire withheld from the view, and a Residual FP attack in the attempt of a move that removed the stack, leave the line to be said.
+                var inFireLine = Fire.Any(view => AttemptOf(view.EventId) == attempt && view.Effects?.Any(effect => effect.UnitId == dummy.Id && effect.Events.Contains("dummy-removed", StringComparer.Ordinal)) == true);
+                if (!inFireLine && dummiesSaid.Add((attempt, dummyAt.ToString(), dummy.Side)))
                 {
-                    Add(item.EventId, Say(item.EventId, $"A {DisplayText.Side(dummy.Side)} Dummy stack is removed in {dummyAt}"
+                    Add(item.EventId, Say(item.EventId, $"{DisplayText.ASide(dummy.Side)} Dummy stack is removed in {dummyAt}"
                         + (ofAttempt.OfType<MovementStepped>().Any(step => step.Movers.Contains(dummy.Id, StringComparer.Ordinal))
                             ? ": it moved without Assault Movement, or into Open Ground, in the LOS of a Good Order enemy unit (A12.11)"
                             : ofAttempt.Any(payload => payload is MovementStepped or EntryAttempted or EntryForcedBack) ? ": a unit tried to enter its Location, and it held no real unit (A12.15)"
+                            : ofAttempt.Any(payload => payload is FireResolved or FireReported or OrdnanceFired) ? ": an attack reached it (A12.14)"
                             : string.Empty)));
                 }
 
@@ -577,7 +581,7 @@ public sealed class PlayRecords
                         routs[key] = earlier = (earlier.Index, earlier.From, [.. earlier.Steps, routed.To.ToString()], earlier.HalfMf + routed.HalfMf);
                         var total = (earlier.HalfMf / 2.0).ToString("0.#", CultureInfo.InvariantCulture);
                         records[earlier.Index] = (records[earlier.Index].Item1, "rout",
-                            $"{routed.Unit} routs{earlier.From} by {string.Join(", ", earlier.Steps.Take(earlier.Steps.Count - 1))} to {earlier.Steps[^1]} for {total} MF (A10.5)");
+                            $"{routed.Unit} routs{earlier.From} by {string.Join(" then ", earlier.Steps.Take(earlier.Steps.Count - 1))} to {earlier.Steps[^1]} for {total} MF (A10.5)");
                     }
                     else
                     {

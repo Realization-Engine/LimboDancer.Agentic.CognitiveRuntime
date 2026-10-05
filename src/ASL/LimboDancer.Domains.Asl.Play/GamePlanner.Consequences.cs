@@ -29,8 +29,11 @@ public enum ConsequenceKind
     Unfought,
 }
 
-/// <summary>One SW a unit possesses, with its PP (A4.4).</summary>
-public sealed record RoutLoadItem(string Weapon, int Pp);
+/// <summary>One SW a unit possesses, with its PP (A4.4), and what it is: its counter and state, by which two like SW are the same to a player.</summary>
+public sealed record RoutLoadItem(string Weapon, int Pp)
+{
+    public string Kind { get; init; } = string.Empty;
+}
 
 /// <summary>
 /// What a broken unit carries before it routs (A10.4; pass 31d, ruling R31d.1): its IPC, its SW with their PP, and the sets of them it may rout with.
@@ -41,6 +44,13 @@ public sealed record RoutLoad(int Ipc, IReadOnlyList<RoutLoadItem> Carried, IRea
 
     /// <summary>Whether the unit carries more than its IPC, and so leaves a SW before it routs.</summary>
     public bool Laden => Total > Ipc;
+
+    /// <summary>
+    /// The best loads that differ to a player (the table player, pass 31d): two that differ only in which of two like counters is kept are one
+    /// choice, since a SW has no name of its own. The first of each is given.
+    /// </summary>
+    public IReadOnlyList<IReadOnlyList<string>> Choices =>
+        [.. BestLoads.GroupBy(best => string.Join("|", best.Select(id => Carried.First(item => item.Weapon == id).Kind).Order(StringComparer.Ordinal)), StringComparer.Ordinal).Select(group => group.First())];
 
     public int Pp(string weapon) => Carried.FirstOrDefault(item => item.Weapon == weapon)?.Pp ?? 0;
 
@@ -116,8 +126,11 @@ public sealed partial class GamePlanner
             .Select(target => target.UnitId!).Order(StringComparer.Ordinal)];
         if (captured.Length > 0)
         {
-            yield return $"play.fire-own-units: {string.Join(", ", captured)}, captured {(captured.Length == 1 ? "unit" : "units")} of the firing side, {(captured.Length == 1 ? "is" : "are")} in {facts.TargetLocationId} and "
-                + $"{(captured.Length == 1 ? "is" : "are")} attacked with {(captured.Length == 1 ? "its" : "their")} Guard, as if in a Melee: one that fails a MC is Reduced, and one eliminated by its own side's fire counts double (A20.54)";
+            yield return captured.Length == 1
+                ? $"play.fire-own-units: {captured[0]}, a captured unit of the firing side, is in {facts.TargetLocationId} and is attacked with its Guard, as if in a Melee: if it fails a MC it is Reduced, "
+                    + "and if its own side's fire eliminates it, it counts double for the Victory Conditions (A20.54)"
+                : $"play.fire-own-units: {string.Join(", ", captured)}, captured units of the firing side, are in {facts.TargetLocationId} and are attacked with their Guard, as if in a Melee: "
+                    + "one that fails a MC is Reduced, and one that its own side's fire eliminates counts double for the Victory Conditions (A20.54)";
         }
     }
 }

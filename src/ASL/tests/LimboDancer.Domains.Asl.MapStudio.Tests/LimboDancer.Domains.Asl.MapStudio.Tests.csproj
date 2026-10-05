@@ -21,5 +21,6 @@
   <ItemGroup>
     <!-- Pass 31b: the game played to its end through the Play page, the Play tests' fixture, replayed step by step by the Replay page's tests. -->
     <None Include="..\LimboDancer.Domains.Asl.Play.Tests\Fixtures\guards-dl-01.game.json" Link="Fixtures\guards-dl-01.game.json" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\LimboDancer.Domains.Asl.Play.Tests\Fixtures\p31c-tw.game.json" Link="Fixtures\p31c-tw.game.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
