@@ -39,7 +39,7 @@
 ## 3. Where things are
 
 - **Documents:** only the working documents are at the root of `src/ASL/docs`. A pass writes its design and its review in `Passes/`. Other designs are in `Designs/`, reviews in `Reviews/`, requirements in `Requirements/`, plans carried out in `Plans/`. The README has the table.
-- **Pass numbers** (since 2026-10-05): 32 and 33 are armored combat, with 33b night and winter; 34 and 35 are the DYO purchase, deferred; 36 to 43 are the other rule packages. The legacy card track (display batches D1 to D18) is deferred.
+- **Pass numbers** (since the second renumbering of 2026-10-05): 32 is the Rules migration, in sub-passes 32.a, 32.b, and on; 33 and 34 are armored combat, with 34b night; 35 and 36 are the DYO purchase, deferred; 37 to 44 are the other planned rule packages, and 45 to 64 the ones section 22.1 adds. The legacy card track (display batches D1 to D18) is deferred.
 - **The Studio's routes:** `/` (Library), `/fidelity`, `/maps`, `/units/games` (the Game inspector), `/units/cards/edit`, `/units/lab`, `/boards/{name}` (for example `/boards/bd01`), `/games/play`, and `/games/replay`. There is no `/play`.
 - **The rules projects** are `LimboDancer.Domains.Asl.Rules` and its tests; both are in the solution. Shared C# helpers of the Studio live in `Services`.
 
