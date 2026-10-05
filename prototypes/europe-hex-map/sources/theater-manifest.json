@@ -1,0 +1,19 @@
+{
+  "license": "Natural Earth public domain",
+  "sources": [
+    {
+      "file": "ne_10m_populated_places-theaters.geojson",
+      "sha256": "0f48a47d2ead445fc00e5815251f60a4ed731818cd831c138fa174d20e23e992",
+      "upstreamSha256": "9b8e3de09048ef00dfc70357dbb9fa324493f214b5e0ae4daf1aa79a8d10116b",
+      "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_10m_populated_places.geojson",
+      "modification": "Clipped to -40,10,65,85; contemporary reference, not wartime conditions"
+    },
+    {
+      "file": "ne_10m_rivers_lake_centerlines-theaters.geojson",
+      "sha256": "15c4df64fa2149f40916016b2f04a2ed801f34eb750720a5f5652f67c0ac9f50",
+      "upstreamSha256": "bb854a900ecbd3b408df46d5e16e3e0f974ba55993f9d8b5c26e855273c0905a",
+      "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_10m_rivers_lake_centerlines.geojson",
+      "modification": "Clipped to -40,10,65,85; contemporary reference, not wartime conditions"
+    }
+  ]
+}

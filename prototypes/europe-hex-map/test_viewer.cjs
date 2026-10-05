@@ -4,7 +4,7 @@ const html=fs.readFileSync(__dirname+"/index.html","utf8"),script=html.match(/<s
 const ids=new Map(), polygons=[], saved=new Map(), blobs=[];
 class Element{
  constructor(){this.attrs={};this.children=[];this.style={};this.events={};this.clientWidth=1200;this.clientHeight=900;this.classList={add(){},remove(){}};}
- setAttribute(k,v){this.attrs[k]=v;} removeAttribute(k){delete this.attrs[k];} append(e){this.children.push(e);} addEventListener(k,f){this.events[k]=f;}
+ setAttribute(k,v){this.attrs[k]=v;} removeAttribute(k){delete this.attrs[k];} append(...e){this.children.push(...e);} addEventListener(k,f){this.events[k]=f;}
  replaceChildren(){this.children=[];} click(){if(this.onclick)this.onclick();}
 }
 const document={getElementById(id){if(!ids.has(id))ids.set(id,new Element());return ids.get(id);},createElement(){return new Element();},
@@ -80,10 +80,26 @@ vm.runInContext(script,context);
   assert.equal(ids.get("enterTheater").disabled,false);
   ids.get("enterTheater").onclick();
   assert.equal(vm.runInContext("activeTheater.id",context),id);
-  assert.equal(vm.runInContext('grid.attrs["clip-path"]',context),id==="western"?undefined:"url(#theater-grid-clip)");
+  assert.equal(vm.runInContext('grid.attrs["clip-path"]',context),undefined);
   assert.equal(vm.runInContext('theaterGridBoundary.attrs.d',context),vm.runInContext('theaterPerimeter.attrs.d',context));
   assert.equal(vm.runInContext("theaterFocus.style.display",context),"");
-  assert.equal(vm.runInContext('theaterPerimeter.attrs.d',context),vm.runInContext('activeTheater.id==="western"?westernFootprintPath:path({type:"Polygon",coordinates:[activeTheater.boundary]})',context));
+  assert.equal(vm.runInContext('theaterPerimeter.attrs.d',context),vm.runInContext('westernFootprintPath',context));
+  assert.equal(ids.get("westernWorkspace").style.display,"");
+  assert.equal(ids.get("workspaceTitle").textContent,vm.runInContext("activeTheater.name",context));
+  assert.equal(vm.runInContext("grid.style.display",context),"none");
+  assert.ok(vm.runInContext("westernCells.size",context)>100);
+  assert.ok(vm.runInContext("westernLabels.length",context)>0);
+  ids.get("mode-logistics").onclick();assert.equal(vm.runInContext("westernSites.style.display",context),"");
+  assert.ok(vm.runInContext("siteLabels.length",context)>0);
+  vm.runInContext("siteLabels[0].node.events.click()",context);assert.ok(ids.get("westernDetail").children.length>=2);
+  ids.get("mode-planning").onclick();assert.equal(ids.get("planPanel").style.display,"");
+  vm.runInContext("selectWestern(theaterData.cells[0])",context);
+  ids.get("planText").value="Plan for "+id;ids.get("savePlan").onclick();
+  assert.ok(vm.runInContext("readPlans().every(n=>n.theaterId===activeTheater.id)",context));
+  assert.equal(vm.runInContext("readPlans().at(-1).text",context),"Plan for "+id);
+  ids.get("gridToggle").checked=false;vm.runInContext("renderView()",context);assert.equal(vm.runInContext("westernGrid.style.display",context),"none");
+  ids.get("gridToggle").checked=true;ids.get("cityToggle").checked=false;ids.get("mode-geography").onclick();assert.equal(vm.runInContext("westernPlaces.style.display",context),"none");
+  ids.get("cityToggle").checked=true;
   const theaterShadeBefore=vm.runInContext("theaterShade.attrs.d",context);
   ids.get("zoomIn").onclick();assert.notEqual(vm.runInContext("theaterShade.attrs.d",context),theaterShadeBefore);
   assert.equal(ids.get("returnEurope").disabled,false);
@@ -98,6 +114,15 @@ vm.runInContext(script,context);
   assert.equal(vm.runInContext("theaterFocus.style.display",context),"none");
   assert.equal(ids.get("map").attrs.viewBox,"-2400 -2500 5200 5800");
  }
+ ids.get("exportCampaign").onclick();const multi=JSON.parse(await blobs.pop().text());
+ assert.equal(new Set(multi.campaign.planningNotes.map(n=>n.theaterId)).size,6);
+ assert.equal(multi.theaterWorkspaces,undefined);
+ // Legacy Western notes remain readable, and do not leak to another theater.
+ const currentSeed=vm.runInContext("seed",context);
+ saved.set("western-plans-v1-legacy-test",JSON.stringify([{cellId:"western:26km:0:0",text:"Legacy note"}]));
+ vm.runInContext('seed="legacy-test"',context);
+ assert.equal(vm.runInContext('allPlans()[0].theaterId',context),"western");
+ vm.runInContext('seed='+JSON.stringify(currentSeed),context);
  ids.get("theaterChoice").onchange({target:{value:""}});assert.equal(ids.get("enterTheater").disabled,true);
  vm.runInContext('theaterNodes.get("western").events.click()',context);
  assert.equal(ids.get("theaterChoice").value,"western");
@@ -109,7 +134,7 @@ vm.runInContext(script,context);
  const token3=await vm.runInContext("localSeed(DATA.cells[100])",context);assert.notEqual(token1,token3);
  ids.get("exportCampaign").onclick();const out=JSON.parse(await blobs.pop().text());assert.equal(out.cells.length,polygons.length);assert.equal(out.researchTransport,undefined);assert.equal(out.historicalPilot,undefined);assert.equal(out.historicalRailNetwork,undefined);assert.equal(out.westernTheater,undefined);assert.ok(Array.isArray(out.campaign.planningNotes));assert.ok(out.features.every(f=>!["roads","railways"].includes(f.properties.layer)));assert.equal(out.metadata.transportBaseline.baselineDate,"1939-09-01");
  assert.equal(out.campaign.mapSeed,ids.get("seed").value);assert.equal(out.campaign.theaterDefinitions.theaters.length,6);
- assert.equal(out.southernTransport,undefined);
+ assert.equal(out.southernTransport,undefined);assert.equal(out.theaterWorkspaces,undefined);
  ids.get("southLater").checked=false;vm.runInContext("view=[0,0,600,600];renderView()",context);
  assert.equal(vm.runInContext(`southernNodes.filter(x=>x.f.properties.evidenceYear>1939 && x.node.style.display!=="none").length`,context),0);
  ids.get("southLater").checked=true;ids.get("southLater").onchange();
