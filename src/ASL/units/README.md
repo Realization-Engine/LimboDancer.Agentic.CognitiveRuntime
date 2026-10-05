@@ -1,14 +1,14 @@
 # ASL units: vocabulary, style sheets, palettes, and examples
 
-Data for the [ASL Unit Display Design](../docs/ASL%20Unit%20Display%20Design.md). All of it is original LimboDancer content: vocabulary, styles, and colors, with no rulebook text and no counter artwork (ASL-UNIT-072).
+Data for the [ASL Unit Display Design](../docs/Designs/ASL%20Unit%20Display%20Design.md). All of it is original LimboDancer content: vocabulary, styles, and colors, with no rulebook text and no counter artwork (ASL-UNIT-072).
 
 | Folder | Content |
 |---|---|
 | `vocabulary/` | Vocabulary packs (`{pack}.vocab.json`). `asl.vocab.json` covers Personnel, support weapons, Guns, vehicles, and entities that are not units (section 4). |
 | `styles/` | Unit style sheets (`{name}.uss`): `asl-classic` follows the printed counter conventions, `asl-digital` a digital form. |
 | `palettes/` | Side palette sets (`{set}.palette.json`): `asl-customary` and `limbodancer`. |
-| `catalog/` | Definition catalogs (`{name}.catalog.json`) and the Scenario A1 catalog manifest, per the [Scenario A1 Catalog Design](../docs/ASL%20Scenario%20A1%20Catalog%20Design.md). `scenario-a1.synthetic.catalog.json` holds illustrative values for tests, never counter data; `scenario-a1.catalog.json` is the published catalog, built from the reviewed counter transcription. |
-| `games/` | Synthetic game records (`{name}.game.json`): ordered events the [State Model Design](../docs/ASL%20Unit%20State%20Model%20Design.md) replays. They are fixtures, never game state. |
+| `catalog/` | Definition catalogs (`{name}.catalog.json`) and the Scenario A1 catalog manifest, per the [Scenario A1 Catalog Design](../docs/Designs/ASL%20Scenario%20A1%20Catalog%20Design.md). `scenario-a1.synthetic.catalog.json` holds illustrative values for tests, never counter data; `scenario-a1.catalog.json` is the published catalog, built from the reviewed counter transcription. |
+| `games/` | Synthetic game records (`{name}.game.json`): ordered events the [State Model Design](../docs/Designs/ASL%20Unit%20State%20Model%20Design.md) replays. They are fixtures, never game state. |
 | `examples/` | Synthetic unit documents and placement sets. Their values are illustrative, not catalog entries, and they are never game state. |
 
-The Unit Lab in Map Studio saves documents, sheets, and placement sets under the configured boards folder, in `units/`. Live games, set up and played on the Play page, are kept there too, in `units/live/`, and change only through the governed path of the [Governed Writes Design](../docs/ASL%20Unit%20Governed%20Writes%20Design.md); they are never committed.
+The Unit Lab in Map Studio saves documents, sheets, and placement sets under the configured boards folder, in `units/`. Live games, set up and played on the Play page, are kept there too, in `units/live/`, and change only through the governed path of the [Governed Writes Design](../docs/Designs/ASL%20Unit%20Governed%20Writes%20Design.md); they are never committed.

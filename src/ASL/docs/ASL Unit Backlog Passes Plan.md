@@ -4,7 +4,7 @@
 
 **Date:** 2026-09-27
 
-**Scope:** every open row of the [ASL Unit Backlog](<ASL Unit Backlog.md>) (138 rows after the 2026-09-27 housekeeping), in thirteen passes, 5 to 17 (the scenario cards moved from pass 16 to a pass 17 of their own on 2026-09-29), numbered after the four of the [ASL Unit Deviations, Ordnance, and Vehicles Plan](<ASL Unit Deviations, Ordnance, and Vehicles Plan.md>). Backlog section 13 (the Studio demo findings) is all fixed and not planned.
+**Scope:** every open row of the [ASL Unit Backlog](<ASL Unit Backlog.md>) (138 rows after the 2026-09-27 housekeeping), in thirteen passes, 5 to 17 (the scenario cards moved from pass 16 to a pass 17 of their own on 2026-09-29), numbered after the four of the [ASL Unit Deviations, Ordnance, and Vehicles Plan](<Plans/ASL Unit Deviations, Ordnance, and Vehicles Plan.md>). Backlog section 13 (the Studio demo findings) is all fixed and not planned.
 
 ## 1. How a pass is run
 

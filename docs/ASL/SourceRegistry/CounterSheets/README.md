@@ -1,6 +1,6 @@
 # Counter-sheet source for the Scenario A1 catalog
 
-This folder registers the published counter sheets as the source of printed counter values, as decided in D1 ([ASL Unit Requirements](<../../../../src/ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Unit Requirements.md>), section 12). The [Scenario A1 Catalog Design](<../../../../src/ASL/docs/ASL Scenario A1 Catalog Design.md>), section 9, describes the format and lifecycle.
+This folder registers the published counter sheets as the source of printed counter values, as decided in D1 ([ASL Unit Requirements](<../../../../src/ASL/docs/Requirements/LimboDancer.Agentic.CognitiveRuntime ASL Unit Requirements.md>), section 12). The [Scenario A1 Catalog Design](<../../../../src/ASL/docs/Designs/ASL Scenario A1 Catalog Design.md>), section 9, describes the format and lifecycle.
 
 | File | Content |
 |---|---|
@@ -10,17 +10,17 @@ This folder registers the published counter sheets as the source of printed coun
 
 ## First transcription
 
-At the user's request, Claude filled in the worksheet from the A./G. National Capabilities Chart (physical PDF page 695) and the A18.2 Leader Creation Table (page 694), not from physical counter sheets: a German 1st Line 4-6-7 squad and 2-4-7 half-squad attack a Russian 1st Line 4-4-7 squad (class 1 in a square) and an 8-0 leader. Values the charts do not show are `not-in-source`. The [Scenario A1 Catalog Design](<../../../../src/ASL/docs/ASL Scenario A1 Catalog Design.md>), section 9.1, gives the details. Dennis Landi reviewed all 57 rows on 2026-09-25 and confirmed them; the published catalog is `src/ASL/units/catalog/scenario-a1.catalog.json`. Where a physical counter differs from the chart, the counter governs under D1.
+At the user's request, Claude filled in the worksheet from the A./G. National Capabilities Chart (physical PDF page 695) and the A18.2 Leader Creation Table (page 694), not from physical counter sheets: a German 1st Line 4-6-7 squad and 2-4-7 half-squad attack a Russian 1st Line 4-4-7 squad (class 1 in a square) and an 8-0 leader. Values the charts do not show are `not-in-source`. The [Scenario A1 Catalog Design](<../../../../src/ASL/docs/Designs/ASL Scenario A1 Catalog Design.md>), section 9.1, gives the details. Dennis Landi reviewed all 57 rows on 2026-09-25 and confirmed them; the published catalog is `src/ASL/units/catalog/scenario-a1.catalog.json`. Where a physical counter differs from the chart, the counter governs under D1.
 
 No counter artwork, scans, or photographs belong here. VASL piece definitions are not used (D1).
 
 ## Fire additions
 
-On 2026-09-26 nine counters were added for the Fire package: the Russian 1st Line HS and the A19.13 Replacement units and leaders, from the same chart. The leaders' values, including broken morale, which the rulebook shows only in counter artwork, were supplied by Dennis Landi from the printed counters (sheet `USR`). He accepted all 130 added rows. The [Scenario A1 Catalog Design](<../../../../src/ASL/docs/ASL Scenario A1 Catalog Design.md>), section 9.2, gives the details.
+On 2026-09-26 nine counters were added for the Fire package: the Russian 1st Line HS and the A19.13 Replacement units and leaders, from the same chart. The leaders' values, including broken morale, which the rulebook shows only in counter artwork, were supplied by Dennis Landi from the printed counters (sheet `USR`). He accepted all 130 added rows. The [Scenario A1 Catalog Design](<../../../../src/ASL/docs/Designs/ASL Scenario A1 Catalog Design.md>), section 9.2, gives the details.
 
 ## MGs
 
-On 2026-09-26 four MG counters were added under sheet `MFG`. No registered source lists their values, so they are manufactured under the user's ruling R0.3. The [Scenario A1 Catalog Design](<../../../../src/ASL/docs/ASL Scenario A1 Catalog Design.md>), section 9.3, gives the details.
+On 2026-09-26 four MG counters were added under sheet `MFG`. No registered source lists their values, so they are manufactured under the user's ruling R0.3. The [Scenario A1 Catalog Design](<../../../../src/ASL/docs/Designs/ASL Scenario A1 Catalog Design.md>), section 9.3, gives the details.
 
 ## Heat of Battle and Leader Creation additions
 
@@ -30,11 +30,11 @@ On 2026-09-27, 25 counters were added for unit steps 27 and 28 (299 rows):
 - Every leader grade of both sides, from the Chapter H leader table (p. 331) and the A18.2 Leader Creation Table (sheet `LGR`).
 - A hero of each side, from A15.2 and the Counter Examples (sheet `CEX`).
 
-Under the Deviations, Ordnance, and Vehicles Plan, a separate agent briefed as an ASL rules referee reviewed every row in place of the user; the reviewer column names it, and the source record lists it under `additionalReviewers`. The [Scenario A1 Catalog Design](<../../../../src/ASL/docs/ASL Scenario A1 Catalog Design.md>), section 9.4, gives the details.
+Under the Deviations, Ordnance, and Vehicles Plan, a separate agent briefed as an ASL rules referee reviewed every row in place of the user; the reviewer column names it, and the source record lists it under `additionalReviewers`. The [Scenario A1 Catalog Design](<../../../../src/ASL/docs/Designs/ASL Scenario A1 Catalog Design.md>), section 9.4, gives the details.
 
 ## Ordnance additions
 
-On 2026-09-27, four counters were added for unit step 24 (78 rows): the German 7.5cm leIG 18 from the German Ordnance Listing (sheet `OLG`, p. 351), the Russian 45mm PTP obr. 32 from the Russian Ordnance Listing (sheet `OLR`, p. 363), and a 2-2-8 Infantry crew of each side from the National Capabilities Chart (sheet `NCC`). A separate agent briefed as an ASL rules referee reviewed every row in place of the user. The [Scenario A1 Catalog Design](<../../../../src/ASL/docs/ASL Scenario A1 Catalog Design.md>), section 9.5, gives the details.
+On 2026-09-27, four counters were added for unit step 24 (78 rows): the German 7.5cm leIG 18 from the German Ordnance Listing (sheet `OLG`, p. 351), the Russian 45mm PTP obr. 32 from the Russian Ordnance Listing (sheet `OLR`, p. 363), and a 2-2-8 Infantry crew of each side from the National Capabilities Chart (sheet `NCC`). A separate agent briefed as an ASL rules referee reviewed every row in place of the user. The [Scenario A1 Catalog Design](<../../../../src/ASL/docs/Designs/ASL Scenario A1 Catalog Design.md>), section 9.5, gives the details.
 
 ## Transcription worksheet
 

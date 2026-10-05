@@ -2,11 +2,35 @@
 
 This directory holds the current specifications, designs, and reviews for the Advanced Squad Leader (ASL) domain package under `src/ASL/`.
 
-ASL is the first reference domain and architectural fitness test for LimboDancer. ASL-specific concepts are not part of the core `LimboDancer.Agentic.CognitiveRuntime` architecture. The requirements and acceptance scenarios in the [ASL Reference-Domain Requirements](<./LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md>) are authoritative for reference-domain capability but do not prescribe runtime structure, technology choices, or implementation sequence.
+ASL is the first reference domain and architectural fitness test for LimboDancer. ASL-specific concepts are not part of the core `LimboDancer.Agentic.CognitiveRuntime` architecture. The requirements and acceptance scenarios in the [ASL Reference-Domain Requirements](<./Requirements/LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md>) are authoritative for reference-domain capability but do not prescribe runtime structure, technology choices, or implementation sequence.
 
-The separate-package boundary and contract timing are defined in the [Domain Integration Model](<../../docs/LimboDancer.Agentic.CognitiveRuntime Domain Integration Model.md>). The [ASL Ontology Transformation Specification](<./LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md>) governs the rulebook-to-package authoring lifecycle, validation and publication gates, and first occupied-building adjudication slice.
+The separate-package boundary and contract timing are defined in the [Domain Integration Model](<../../docs/LimboDancer.Agentic.CognitiveRuntime Domain Integration Model.md>). The [ASL Ontology Transformation Specification](<./Requirements/LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md>) governs the rulebook-to-package authoring lifecycle, validation and publication gates, and first occupied-building adjudication slice.
 
 Source data, schemas, generated TIR artifacts, and the rulebook conversion stay under [`docs/ASL/`](../../../docs/ASL/). See that directory's README for those materials and for historical ASL research.
+
+**How this directory is laid out (2026-10-05).** Only the working documents in use stay here:
+
+| Document | What it is |
+|---|---|
+| [ASL Card Play and Map Studio Redesign Plan](<ASL Card Play and Map Studio Redesign Plan.md>) | The plan in force: the passes, their order, and the rule packages. |
+| [ASL Unit Backlog](<ASL Unit Backlog.md>) | Everything left out or simplified, by the pass that deferred it. |
+| [ASL Unit Backlog Passes Plan](<ASL Unit Backlog Passes Plan.md>) | How a pass is run, and every ruling (section 5). The Studio links to this file by its path. |
+| [ASL Rule Coverage](<ASL Rule Coverage.md>) | What the game implements, by rulebook section. |
+| [ASL Unit Time Log](<ASL Unit Time Log.md>) | Start, end, and duration of every task. |
+| [ASL Week Review 2026-09-28 to 2026-10-04](<ASL Week Review 2026-09-28 to 2026-10-04.md>) | The latest review, with its open questions. |
+
+Everything executed is sorted by kind:
+
+| Folder | Holds |
+|---|---|
+| [`Requirements/`](Requirements/) | Requirements and specifications: the Reference-Domain, Unit, and Map Studio Requirements, the Ontology Transformation Specification, and the Dice Roller Requirements. |
+| [`Designs/`](Designs/) | Designs outside the passes: the designs of the earlier steps, the package-level designs (map model, Map Studio architecture, VASL board ingestion, ASL-OT-02 and ASL-OT-03, the dice roller), the Domain Model Analysis, and the Model Decisions D1 to D4. Each says in its status line whether it is built, in progress, or proposed. |
+| [`Reviews/`](Reviews/) | Reviews and evidence outside the passes: the ASL-OT reviews, the Back-Matter Source Boundary Review, the Scenario A1 Source Review Packet, the fourteen Scenario A1 reviews of the steps and of passes 1 to 4, and the VASL Board 01 Terrain Evidence. |
+| [`Plans/`](Plans/) | Plans that have been carried out: the Rally and Fire Extensions Plan, the Deviations, Ordnance, and Vehicles Plan, and the Scenario Card Games Plan. |
+| [`Passes/`](Passes/) | The design and the review of each executed pass: `ASL Unit Deviations Pass N Design`, `ASL Unit Backlog Pass N Design`, and `Scenario A1 Backlog Pass N Review <date>`. A new pass writes its design and its review here. |
+| [`Media-Production/`](Media-Production/) | The Guards Counterattack media scripts and production records. |
+
+A document leaves this directory for its folder when its work is done: a review once its questions are answered, a plan once its passes are merged.
 
 ## Current implementation sequence
 
@@ -29,7 +53,7 @@ Second-defender consequence       7 cases: 2 definitive (return; 2 MF in previou
 Second-defender return execution  gated action for the clear-return subset of the 2 definitive cases
 ```
 
-See the [Scenario A1 execution milestone report](<../../docs/LimboDancer.Agentic.CognitiveRuntime Milestone Report 2026-09-24 Scenario A1 Execution.md>) for evidence and limits. The separate map sequence (ASL-MAP-01 to 08) is defined in the [ASL Map Studio Requirements](<./LimboDancer.Agentic.CognitiveRuntime ASL Map Studio Requirements.md>).
+See the [Scenario A1 execution milestone report](<../../docs/LimboDancer.Agentic.CognitiveRuntime Milestone Report 2026-09-24 Scenario A1 Execution.md>) for evidence and limits. The separate map sequence (ASL-MAP-01 to 08) is defined in the [ASL Map Studio Requirements](<./Requirements/LimboDancer.Agentic.CognitiveRuntime ASL Map Studio Requirements.md>).
 
 Scenario A1 state changes only in live games: the Map Studio's registered game actions pass the common authority path and Execution Gate and append to the game log, which is the only record of unit state. The earlier second-defender return action, its `LimboDancer.Domains.Asl.Execution` adapter and journal, and the runtime Host's `AddScenarioA1Return` opt-in were retired at unit step 11, and the runtime references no ASL project. No other ASL artifact authorizes execution. A `DomainConclusion` remains an interpretation; any state change independently passes through the common authority path and Execution Gate.
 
@@ -80,5 +104,5 @@ Scenario A1 state changes only in live games: the Map Studio's registered game a
 - `ASL Unit Model Decisions D1 to D4.md`: the decision memo for the unit model's counter data source, live game source, perspective set, and first slice, decided on 2026-09-25.
 - `ASL Unit Counter Map Rendering Design.md`, `ASL Unit Map Rendering Slice.md`, and `ASL Unit Domain Model Analysis.md`: the first counter overlay, now superseded by the display design, and the background unit analysis.
 - `VASL Board 01 Terrain Evidence.md`: partial building-override inventory from VASL board 01 metadata and the validated snapshot rules that depend on it.
-- [NET Dice Roller Requirements](<NET Dice Roller Requirements.md>): approved requirements for the implemented standalone dice library and the planned ASL audit boundary.
-- [NET Dice Roller Design](<NET Dice Roller Design.md>): implemented minimal API and random generation, validation results, and planned governed ASL integration.
+- [NET Dice Roller Requirements](<Requirements/NET Dice Roller Requirements.md>): approved requirements for the implemented standalone dice library and the planned ASL audit boundary.
+- [NET Dice Roller Design](<Designs/NET Dice Roller Design.md>): implemented minimal API and random generation, validation results, and planned governed ASL integration.

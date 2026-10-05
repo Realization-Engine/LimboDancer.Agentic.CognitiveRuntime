@@ -1,6 +1,6 @@
 # ASL Unit Backlog
 
-**Status:** Open. Started 2026-09-26, when the user accepted the proposed rulings of the [ASL Unit Rally and Fire Extensions Plan](<ASL Unit Rally and Fire Extensions Plan.md>) and asked that every item left out be recorded here.
+**Status:** Open. Started 2026-09-26, when the user accepted the proposed rulings of the [ASL Unit Rally and Fire Extensions Plan](<Plans/ASL Unit Rally and Fire Extensions Plan.md>) and asked that every item left out be recorded here.
 
 **Rule:** anything a ruling leaves out, and any recorded deviation from the rules, gets an entry here. An entry names the ruling that deferred it, the rules it needs (physical pages of `eASLRB_v3_01.pdf`), and what it depends on. An entry leaves this list when a step builds it, with that step named.
 

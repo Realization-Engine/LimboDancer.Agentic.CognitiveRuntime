@@ -562,9 +562,9 @@ Terrain and force identity must support ASL expansion from the initial scenario 
 
 - [Plane Runtime Specification](<LimboDancer.Agentic.CognitiveRuntime Plane Runtime Specification.md>), authority transitions, dependency rules and conformance.
 - [Domain Integration Model](<LimboDancer.Agentic.CognitiveRuntime Domain Integration Model.md>), sections 2-8 and 10-12.
-- [ASL Ontology Transformation Specification](<../ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md>), sections 1-5, source admission and immutable packages.
-- [ASL Unit State Model Design](<../ASL/docs/ASL Unit State Model Design.md>) and [Governed Writes Design](<../ASL/docs/ASL Unit Governed Writes Design.md>), architectural precedents; early scope statements are historical.
-- [ASL Map Model and Authoring Design](<../ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Map Model and Authoring Design.md>), coordinates, terrain and exact derivation.
+- [ASL Ontology Transformation Specification](<../ASL/docs/Requirements/LimboDancer.Agentic.CognitiveRuntime ASL Ontology Transformation Specification.md>), sections 1-5, source admission and immutable packages.
+- [ASL Unit State Model Design](<../ASL/docs/Designs/ASL Unit State Model Design.md>) and [Governed Writes Design](<../ASL/docs/Designs/ASL Unit Governed Writes Design.md>), architectural precedents; early scope statements are historical.
+- [ASL Map Model and Authoring Design](<../ASL/docs/Designs/LimboDancer.Agentic.CognitiveRuntime ASL Map Model and Authoring Design.md>), coordinates, terrain and exact derivation.
 - [DomainConclusion](../LimboDancer/LimboDancer.Abstractions/Domain/DomainConclusion.cs) and [DomainConclusionContext](../LimboDancer/LimboDancer.Abstractions/Domain/DomainConclusionContext.cs), current exact-package constraints.
 - [GameGate](../ASL/LimboDancer.Domains.Asl.Play/GameGate.cs), [GameStore](../ASL/LimboDancer.Domains.Asl.Play/GameStore.cs) and [GamePlanner](../ASL/LimboDancer.Domains.Asl.Play/GamePlanner.cs), current commit/replay and disclosure patterns.
 - [ASL LOS calculator](../ASL/LimboDancer.Domains.Asl.Maps/Los/LosCalculator.cs) and [ASL state types](../ASL/LimboDancer.Domains.Asl.Units/State/GameTypes.cs), evidence of domain-specific semantics.

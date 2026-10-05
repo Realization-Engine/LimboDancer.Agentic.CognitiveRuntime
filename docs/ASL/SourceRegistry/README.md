@@ -38,7 +38,7 @@ The Markdown conversion covers the TOC, Index/Glossary, and Chapters A–E: seve
 | `asl-scenario-a1.pass17-pdf-comparison.json` | Backlog pass 17 comparison of the 22 rule fragments the scenario cards cite (the board configuration, the Turn Record Chart, SAN, Battlefield Integrity, ELR, the Friendly Board Edge, A25.22, A25.44, Victory Conditions, Balance, B8.1, B8.4, B25.5, B25.63, A7.7, A24.1, and C8.2) with their physical page text, verified by `AslScenarioA1FireSourceReview.BuildPass17`. |
 | `asl-scenario-a1.rally-case-matrix.json` | Rally case matrix of unit step 19: the user's rulings of 2026-09-26 (R19.1 to R19.10, R0.2), the resolution, 10 cases, and digests of catalog 1.2.0 and 19 verified fragments. |
 | `asl-scenario-a1.rally-package.json` | The published `scenario-a1-rally` package manifest, pinning the matrix; read-only, no execution authority. |
-| `CounterSheets/` | The D1 counter-sheet source for the Scenario A1 unit catalog: its source record, the transcription worksheet, and, once written, the transcription. See its README and the [Scenario A1 Catalog Design](<../../../src/ASL/docs/ASL Scenario A1 Catalog Design.md>). |
+| `CounterSheets/` | The D1 counter-sheet source for the Scenario A1 unit catalog: its source record, the transcription worksheet, and, once written, the transcription. See its README and the [Scenario A1 Catalog Design](<../../../src/ASL/docs/Designs/ASL Scenario A1 Catalog Design.md>). |
 | `asl-scenario-a1.first-case-review-decision.json` | User-delegated xUnit decision over the remaining ten exact TIR subjects and bounded first-case semantics. Pins the previous attestation, comparison, chart decision and TIR digest; an executable test verifies the decision and refuses unknown inputs. |
 
 The manifests contain locators and hashes, not duplicated rule text. The Markdown and image files under `../Rulebook_Markdown/` remain the registered content.
@@ -78,7 +78,7 @@ The A1 inventory fails closed if the pinned Chapter A/B source digests, an expec
 
 The PDF comparison file is review evidence, not an automatically accepted `TirSourceVerificationRecord`. It records matching alphanumeric sequences across the complete bounded paragraphs and identifies only line-layout hyphens among the remaining punctuation differences. The source provider attested fidelity for the initial 11 subjects in conversation; the C# builder validates the pinned PDF digest and fragment set, regenerates the full TIR, and creates exact per-fragment `Verified` records. Additional source subjects require their own attestation and verification. Neither the comparison nor these records establish semantic meaning.
 
-The [Scenario A1 source review packet](<../../../src/ASL/docs/LimboDancer.Agentic.CognitiveRuntime Scenario A1 Source Review Packet.md>) lists the 11 reviewed subjects and a narrowly scoped first case for dependency review.
+The [Scenario A1 source review packet](<../../../src/ASL/docs/Reviews/LimboDancer.Agentic.CognitiveRuntime Scenario A1 Source Review Packet.md>) lists the 11 reviewed subjects and a narrowly scoped first case for dependency review.
 
 The first-case comparison evidence pins eight more prose fragments and the images for A2.4 and B23.1. B23.1 inherits Markdown conversion page 134 even though its rule and figure appear on physical PDF page 135. The C# conformance test validates all ten fragment IDs, source hashes, line numbers, page markers and registered image hashes; the matching text and visual observations remain review evidence, not verified dispositions.
 
@@ -94,7 +94,7 @@ dotnet run --project src/ASL/LimboDancer.Domains.Asl.Authoring.Cli -- \
   --a1-comparison-output docs/ASL/SourceRegistry/asl-scenario-a1.pending-comparison-records.json
 ```
 
-The [back-matter boundary review](<../../../src/ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Back-Matter Source Boundary Review.md>) identifies the B. Terrain Chart on physical PDF page 698 and other A–E-related player aids outside the initial registered page range. They are candidates for explicitly reviewed source additions, not implicit members of this registry.
+The [back-matter boundary review](<../../../src/ASL/docs/Reviews/LimboDancer.Agentic.CognitiveRuntime ASL Back-Matter Source Boundary Review.md>) identifies the B. Terrain Chart on physical PDF page 698 and other A–E-related player aids outside the initial registered page range. They are candidates for explicitly reviewed source additions, not implicit members of this registry.
 
 The supplementary chart registry is reproducible with the C# CLI using the existing `--source-commit`, `--registry-output` and `--verification-output` arguments plus `--a1-supplement-candidate docs/ASL/SourceRegistry/asl-scenario-a1.backmatter-chart-candidate.json` and `--a1-supplement-output docs/ASL/SourceRegistry/asl-scenario-a1.supplementary-source-registry.json`. CI checks the generated JSON against the committed file. The user-supplied original PDF is not stored in this repository, so byte and visual fidelity still require source review against that PDF.
 
@@ -114,7 +114,7 @@ The supplementary chart registry is reproducible with the C# CLI using the exist
 
 The consequence observation adapter reuses the prior eligibility event projection and adds a supplied previous Location, attempted-entry event and recorded 2 MF cost. End-to-end xUnit conformance covers all seven cases and checks pinned evidence and the absence of execution.
 
-`asl-scenario-a1.second-defender-execution-review.json` pins the next source-backed execution boundary: A12.15 return, attempted-entry MF location, concealment and MPh end for two exact cases; it separately records conditional attacks, special return placement, runtime gating, versioned atomic write and idempotency needs. Its affirmative xUnit review grants no executor or mutation authority. See the [execution boundary review](<../../../src/ASL/docs/Scenario A1 Second Defender Execution Boundary Review 2026-09-24.md>).
+`asl-scenario-a1.second-defender-execution-review.json` pins the next source-backed execution boundary: A12.15 return, attempted-entry MF location, concealment and MPh end for two exact cases; it separately records conditional attacks, special return placement, runtime gating, versioned atomic write and idempotency needs. Its affirmative xUnit review grants no executor or mutation authority. See the [execution boundary review](<../../../src/ASL/docs/Reviews/Scenario A1 Second Defender Execution Boundary Review 2026-09-24.md>).
 
 `asl-scenario-a1.ovr-ntc-pdf-comparison.json` is the delegated PDF comparison, hashes only, that verifies four further subjects for the OVR NTC review: A.9 Random Selection (p. 43), A10.1 Morale Check and Task Check (p. 65), B23.3 building TEM (p. 136), and the NTC glossary entry (p. 30). `AslScenarioA1OvrNtcSourceReview` pins it and records the subjects Verified, apart from the attestation and the earlier reviews.
 

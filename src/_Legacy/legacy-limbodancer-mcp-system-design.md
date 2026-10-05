@@ -2,7 +2,7 @@
 
 **Status:** Historical. Describes the legacy `LimboDancer.MCP` architecture archived in `src/_Legacy/`. Not current guidance.
 
-**Current requirements:** The ASL reference-domain requirements and acceptance scenarios formerly at the top of this document are now maintained in [`src/ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md`](<../ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md>).
+**Current requirements:** The ASL reference-domain requirements and acceptance scenarios formerly at the top of this document are now maintained in [`src/ASL/docs/LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md`](<../ASL/docs/Requirements/LimboDancer.Agentic.CognitiveRuntime ASL Reference-Domain Requirements.md>).
 
 References to `LimboDancer.MCP` as the product, .NET 9, direct MCP tool execution, the old project layout, generalized plugins, legacy Planner/ReAct behavior, deployment topology, package versions, and implementation status describe the legacy system only.
 
