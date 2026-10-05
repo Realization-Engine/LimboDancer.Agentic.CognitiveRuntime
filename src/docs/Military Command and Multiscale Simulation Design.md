@@ -743,6 +743,12 @@ Broader geographic constraints guide finer generation, while broader views summa
 
 Legacy geomorphic boards remain useful for constructed scenarios. They do not automatically describe a real European location. Importing one into a historical campaign requires an explicit, validated geographic adaptation; incompatible geometry must not overwrite the campaign foundation.
 
+The initial European transport baseline is **1 September 1939**. Admit each road or railway segment only with reviewed, dated evidence for its existence and alignment at that date. Modern networks are research candidates, not a fallback historical network. Separate route existence from operational state and from capacity, gauge, track count, electrification, surface and junction characteristics; unknown attributes stay unknown. A modern multi-track or highway classification cannot establish 1939 strategic importance.
+
+Maintain source fragments, date applicability, spatial accuracy, uncertainty and admission decisions per segment, plus geographic coverage records. An empty unreviewed region means unknown coverage, not absence of transport. Later construction, destruction, closure, repair and gauge conversion are dated campaign events. Seeded generation cannot invent or relocate admitted historical routes. Start with a bounded France/Low Countries review before claiming Europe-wide coverage.
+
+Modern comparison overlays must be explicitly separated from campaign transport, hidden by default and excluded from campaign exports and movement/supply calculations. Maps published after the baseline and reconstructions using year-end status require additional evidence before admission; a year label alone does not prove the September snapshot.
+
 ### 18.2 Campaign creation and Map Seed
 
 When a new Campaign is created, generate and durably record one immutable Map Seed. Reuse it throughout the campaign at every scale. A proposed CampaignGeographyManifest pins that seed, historical baseline/date, source-data versions and hashes, geographic reference and transforms, generation rules and parameters, deterministic algorithm version and artifact schema. Campaign creation must persist the manifest before any map generation; retries recover the original seed rather than choose another.

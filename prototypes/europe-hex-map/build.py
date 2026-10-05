@@ -1,5 +1,5 @@
 """Build an offline Europe hex-map prototype from pinned Natural Earth inputs."""
-import argparse, hashlib, json, math
+import argparse, hashlib, json, math, html as html_module
 from pathlib import Path
 from pyproj import Transformer
 from shapely.geometry import shape, mapping, Polygon, box, Point
@@ -87,15 +87,69 @@ def build():
         c["cities"]=[a["name"] for a in cities if g.covers(Point(a["x"],a["y"]))]
     import overlays, sys
     terrain_labels=overlays.enrich(cells,vector,land,lakes,sys.modules[__name__])
-    meta={"format":"europe-hex-prototype-v1","generator":"1.1.0","projection":"EPSG:3035",
+    meta={"format":"europe-hex-prototype-v1","generator":"1.2.0","projection":"EPSG:3035",
           "localTransform":"x=(E-4321000)/1000; y=(3210000-N)/1000",
           "radiusKm":RADIUS,"acrossFlatsKm":round(math.sqrt(3)*RADIUS,3),"bounds":BOUNDS,
           "sourceManifest":manifest,"historicalStatus":"Contemporary generalized reference, not WWII-admitted",
           "unmodeled":["numeric elevation","WWII forest coverage","WWII roads and railways","WWII boundaries","historical crossings","lower-scale terrain generation"],"overlayPolicy":"Mountains are generalized region outlines; forest is GLC2000-derived; roads and multi-track rail are contemporary reference only."}
+    transport=json.loads((ROOT/"sources/transport-1939-review.json").read_text(encoding="utf-8-sig"))
+    assert transport["baselineDate"]=="1939-09-01"
+    # No feature is admitted by relabeling a modern reference. Future admission needs
+    # a reviewed importer and per-segment temporal validation, not just JSON edits.
+    assert not transport["features"], "Historical transport importer not implemented"
+    research={"status":"modern-research-only","features":[f for f in vector if f["properties"]["layer"] in ("roads","railways")],"cellSummaries":{}}
+    vector=[f for f in vector if f["properties"]["layer"] not in ("roads","railways")]
+    for c in cells:
+        research["cellSummaries"][c["id"]]={"roadKm":c.pop("roadsReferenceKm"),"railKm":c.pop("railwaysReferenceKm")}
+        c["historicalTransport"]={"baselineDate":"1939-09-01","coverage":"unknown","roadKm":None,"railKm":None}
+    meta["transportBaseline"]=transport
     data={"metadata":meta,"cells":cells,"features":vector,"cities":cities,"terrainLabels":terrain_labels}
     data["metadata"]["baseHash"]=digest(data)
     (ROOT/"map.json").write_text(canonical(data),encoding="utf-8")
-    html=(ROOT/"viewer.html").read_text(encoding="utf-8").replace("__MAP_DATA__",canonical(data).replace("</","<\\/"))
+    (ROOT/"research-transport.json").write_text(canonical(research),encoding="utf-8")
+    pilot=json.loads((ROOT/"sources/historical-transport-pilot.json").read_text(encoding="utf-8"))
+    pilot["sourceHash"]=digest(pilot)
+    assert pilot["gameAdmitted"] is False
+    source_ids={s["id"] for s in pilot["sources"]}
+    assert len(source_ids)==len(pilot["sources"])
+    assert len({f["properties"]["id"] for f in pilot["features"]})==len(pilot["features"])
+    region_names={r["name"] for r in pilot["regions"]}
+    for feature in pilot["features"]:
+        props=feature["properties"]
+        assert props["region"] in region_names
+        assert all(id in source_ids for id in props.get("corroboratingSourceIds",[]))
+        assert props["existenceByYear"] < 1939 and props["sourceId"] in source_ids
+        assert props["gameAdmitted"] is False and props["alignmentStatus"]=="schematic"
+        feature["geometry"]=mapping(transform(project,shape(feature["geometry"])))
+    # Human-readable evidence register, generated from the same reviewed source records.
+    esc=html_module.escape
+    report=['<!doctype html><meta charset="utf-8"><title>Prewar transport research</title><style>body{font:16px/1.6 system-ui;max-width:1000px;margin:40px auto;padding:20px;color:#263c3b}table{border-collapse:collapse;width:100%}td,th{padding:12px;text-align:left;border-bottom:1px solid #ddd}small{color:#586762}</style><h1>Prewar transport research register</h1>',
+        '<p>Reviewed '+esc(pilot["reviewedOn"])+'. Baseline: 1 September 1939. '+esc(pilot["coverage"])+'.</p>',
+        '<p>'+esc(pilot["geometryPolicy"])+'</p><p>'+esc(pilot["regionPolicy"])+'</p>',
+        '<p>Opening and upgrade dates establish existence by a date. They do not establish uninterrupted service, 1939 border access, track gauge, capacity, bridges or military usability. Indexed-excerpt records need full-page verification. All plotted connections remain research-only.</p>']
+    report.append('<h2>Historical railway GIS acquired</h2><p><a href="https://doi.org/10.34847/nkl.6296qx69">Bárbara Polo Martín: European railways, 1920-1940</a>. Downloaded and inspected 14,427 mapped segments. The map displays 12,933 records classified ML or SL in TYPE_1940, with 0.5 km simplification. This is a period research layer, not a verified September 1939 network. Original files and repository metadata are retained with checksums. License: CC-BY-NC-4.0.</p><p>7,108 records have opening year zero; eight have opening years after 1939. Some opening and decade fields conflict. Exact service dates, source code meanings, completeness, mainline selection, junction topology and military capacity require further review. See README for the acquisition audit and next steps.</p>')
+    for region in pilot["regions"]:
+        report.append('<h2>'+esc(region["name"])+'</h2><p>'+esc(region["gaps"])+'</p><table><tr><th>Connection</th><th>Evidence by</th><th>Evidence and source</th></tr>')
+        for feature in pilot["features"]:
+            props=feature["properties"]
+            if props["region"]!=region["name"]:continue
+            src=next(s for s in pilot["sources"] if s["id"]==props["sourceId"])
+            report.append('<tr><td>'+esc(props["name"])+'<br><small>'+esc(props["mode"])+'</small></td><td>'+str(props["existenceByYear"])+'</td><td>'+esc(props["dateNote"]+' '+src["finding"])+'<br><a href="'+esc(src["url"],quote=True)+'">'+esc(src["title"])+'</a><br><small>'+esc(src.get("locator",""))+'; '+esc(src.get("access","page-read"))+'</small></td></tr>')
+            for other_id in props.get("corroboratingSourceIds",[]):
+                other=next(s for s in pilot["sources"] if s["id"]==other_id)
+                report.append('<tr><td colspan="3">Additional evidence: '+esc(other["finding"])+' <a href="'+esc(other["url"],quote=True)+'">'+esc(other["title"])+'</a></td></tr>')
+        report.append('</table>')
+    report.append('<h2>Period-map research leads</h2><p>These catalog records have not supplied admitted route geometry.</p>')
+    for candidate in pilot.get("mapCandidates",[]):
+        report.append('<h3><a href="'+esc(candidate["url"],quote=True)+'">'+esc(candidate["title"])+'</a></h3><p>'+esc(candidate["status"])+'. '+esc(candidate["finding"])+'</p><p>Next: '+esc(candidate["nextStep"])+'</p>')
+    (ROOT/"transport-research.html").write_text('\n'.join(report),encoding="utf-8")
+    pilot["places"]={name:list(project(*xy)) for name,xy in pilot["places"].items()}
+    pilot["projection"]="local EPSG:3035 kilometers, same transform as map.json"
+    (ROOT/"historical-transport-pilot.json").write_text(canonical(pilot),encoding="utf-8")
+    from prepare_historical_rail import prepare
+    historical_network=prepare()
+    view_data={**data,"researchTransport":research,"historicalPilot":pilot,"historicalRailNetwork":historical_network}
+    html=(ROOT/"viewer.html").read_text(encoding="utf-8").replace("__MAP_DATA__",canonical(view_data).replace("</","<\\/"))
     (ROOT/"index.html").write_text(html,encoding="utf-8",newline="\n")
     # Standards-based geographic hex export. Exact source feature topology remains in map.json.
     geo={"type":"FeatureCollection","features":[{"type":"Feature","properties":{k:v for k,v in c.items() if k not in ("vertices","x","y")},

@@ -56,3 +56,60 @@ https://forobs.jrc.ec.europa.eu/glc2000/metadata?product=Global
 https://forobs.jrc.ec.europa.eu/static/glc2000/legend/GLC2000_Lccs_110604_export.htm
 https://icr.ethz.ch/data/rshapes/
 https://geodiscovery.uwm.edu/catalog/stanford-vv402mj3929
+
+## September 1939 transport admission
+The target baseline is 1939-09-01. No historical segments are admitted yet. The campaign data and GeoJSON use unknown/null coverage instead of zero route length. Modern routes are held separately in research-transport.json and in a collapsible research-only viewer section. Normal campaign export explicitly removes those research features. Closing that section hides its overlays.
+
+sources/transport-1939-review.json records candidate evidence and its limitations. The first review area is France and the Low Countries. The inspected Seine reconstruction uses December 31 status and excludes temporary wartime changes; the Mitteleuropa catalog dates its map to 1940. Neither establishes September 1 coverage. The 1920-1940 NAKALA dataset has been identified bibliographically but its files have not been inspected.
+
+The historical importer is deliberately not implemented: a nonempty admission file fails the build until segment/date validation is implemented. This prevents manually relabeling modern features as historical. The missing work is source acquisition, georeferencing/digitization, per-segment corroboration, uncertainty and topology review. Modern data is retained solely for comparison, not automatically backdated.
+
+## Regional prewar transport survey
+
+Refresh index.html and use **Country / region**, then **Focus selected region**. The survey includes 55 selected connections across 11 regions, supported by 42 source records. Purple dashed lines show rail connections and orange dashed lines show roads. Selecting an individual connection isolates it, focuses the map, and shows its evidence date and source link. The Full research register link opens transport-research.html, generated from the same provenance records.
+
+The sources/historical-transport-pilot.json registry retains its existing filename for compatibility. It records findings, source sections, retrieval limitations, approximate town coordinates, region groups and coverage gaps. The generated historical-transport-pilot.json uses the map projection. Region names are navigation groups, not 1939 borders or sovereignty claims. Display names generally use familiar modern town names; Leningrad is explicitly historical.
+
+Reviewed 5 October 2026. Most records use railway operators, infrastructure managers, municipal archives or museums; the Lithuanian and Ukrainian records use national encyclopedias. Indexed-excerpt records are identified in the register and need full-page follow-up. Findings are paraphrased; publication dates are not confused with infrastructure dates. Existence-by years include opening dates and documented upgrades, for example the 1926 electrification of Stockholm to Gothenburg. The October 1939 Chiasso electrification milestone is excluded from the September baseline evidence.
+
+These are schematic connections, not digitized historical alignments. Straight lines may cross water, hills or borders where the actual route did not. Shared town markers do not establish shared stations or interoperable tracks. Opening evidence does not prove uninterrupted service or condition on 1 September 1939. Distances, crossings, gauges, capacities and movement costs must not be inferred. No route has yet passed admission into gameplay.
+
+The research overlays stay outside map.json, campaign exports, cell transport summaries and the campaign geography hash. Their own source hash tracks changes independently. Regional gaps are visible in both the viewer and the register. Whole national networks remain incomplete, especially roads. Subsequent work requires period maps and timetables, georeferenced geometry and segment-level date, border, gauge and operational review.
+
+Validation: run the geography tests, test_transport.py and test_viewer.cjs. preview.py --pilot produces a static geographic overview, not a browser rendering test.
+
+The second research pass adds seven connections, including a contemporary 1935 motorway opening report and a 1933 Polish official notice corroborated by PKP. Berlin to Hamburg now carries separate 1933 scheduled-service evidence. Supporting sources and period-map candidate limitations appear in the register. None of this changes the gameplay admission status.
+
+## Historical railway GIS acquisition, 5 October 2026
+
+The research approach now starts with existing historical networks, followed by targeted date and service checks. Individual line-opening histories remain corroboration rather than the primary geometry source.
+
+### Acquired and displayed
+Bárbara Polo Martín, *Shapefile of railways in Europe between 1920 and 1940* (2023), NAKALA / MAGNETICS: https://doi.org/10.34847/nkl.6296qx69
+
+The public NAKALA API supplied all six original shapefile/metadata components. They are retained in sources/europe-railways-1920-1940 together with the repository metadata. prepare_historical_rail.py verifies every supplied SHA-1 and records SHA-256 digests. The source CRS is EPSG:3035. There are 14,427 source records; 12,933 with TYPE_1940 equal to ML or SL are displayed in burgundy. The source geometry is transformed to the map's local coordinates and simplified by 0.5 km for display. This does not establish junction topology, bridge positions, track capacity or a mainline hierarchy. Original geometry remains available for subsequent work.
+
+The repository dates the collection to the interval 1920-1940, not September 1939. Fields include OP_YEAR, CL_YEAR, REOP_YEAR, RECL_YEAR, decade classifications, gauge and notes. Audit of all source records found 7,108 opening years recorded as zero and eight opening years after 1939; some decade classifications disagree with opening years. Zero is not a real opening year, and 5000 appears as a closure sentinel. Do not apply naive date filtering. The map uses the explicit 1940 classification filter as a period research view, not as proof of prewar operation. Source code semantics and conflicts remain to be reconciled.
+
+Attribution: Bárbara Polo Martín. License: Creative Commons Attribution-NonCommercial 4.0 (CC-BY-NC-4.0), https://creativecommons.org/licenses/by-nc/4.0/. Display conversion and simplification are our modifications. This research layer is excluded from campaign exports, campaign hashes and gameplay admission. Commercial inclusion would require appropriate permission or replacement sources.
+
+The earlier statement that NAKALA files had not been inspected is superseded by this acquisition. A complete exact-date 1939 network is still outstanding.
+
+### Systematic source chain
+- NAKALA dataset and its related study: https://www.techscience.com/RIG/v35n1/65922/html . The study documents a wider historical transportation GIS, with regional variation in precision and completeness.
+- Morillas-Torne (2012), *Creation of a Geo-Spatial Database to Analyse Railways in Europe (1830-2010)*: https://file.scirp.org/pdf/JGIS20120200013_30315294.pdf . Its methods identify historical atlases, library maps and company records; use it to trace the provenance and limitations of inherited fields. Its basic passenger-network scope omits some freight and narrow-gauge lines, a relevant military-logistics gap. This is a related methodology, not proof of the exact lineage of every downloaded record.
+- ETH RShapes: https://icr.ethz.ch/data/rshapes/ . Construction history and digitized geometry through 1922 offer an earlier comparison network; not a 1939 snapshot. British Isles are excluded from the analysis. CC-BY-NC-SA-4.0. Inspected documentation, not imported.
+- Period timetables and national railway maps remain the evidence for late openings, closures, freight branches and cross-border service. Existing regional evidence and the 1939 Poland map lead remain in transport-research.html.
+
+### Next reconciliation pass
+Compare the 1930 and 1940 classifications to isolate changed segments, rather than re-research every established route. Resolve conflicts against period maps/timetables; explicitly handle changes during 1939. Audit geographic gaps, particularly eastern Europe, against an independent network. Then separate strategic main lines from local branches and validate junction connectivity. Retain a source/date/confidence record per admitted segment. The atlas is not sufficiently detailed to determine ASL-scale crossings.
+
+
+## Railway display hierarchy
+Railways use burgundy, while waterways retain blue. The Europe view (viewport width over 2,400 km) shows a provisional corridor backbone. Regional views reveal additional through routes; at 900 km width or less all mapped segments appear. Zooming out reverses the reveal. The railway toggle remains authoritative at every zoom.
+
+Research: Morillas-Torne (2012), pages 179-180, describes a broad main-line/passenger-network scope, not a strategic trunk ranking. The acquired TYPE_1940 field puts 12,302 records in ML and 631 in SL. Treating ML alone as the Europe layer would remove very little clutter, and the exact code meanings have not been independently confirmed. We therefore preserve these fields and add a separate displayTier, explicitly not a historical traffic or capacity classification.
+
+rail_display.py constructs a deterministic display approximation from source vertices quantized into 100 m bins. A representative well-connected vertex per 250 km tile is a display hub. Shortest source-network paths to up to four nearby hubs within 800 km form the top layer. Terminal branches up to 60 km are peeled for the intermediate layer; all remaining features appear at close zoom. Geometry is never replaced with straight hub-to-hub lines. The output records algorithm settings and tier counts. Binning may miss actual joins or merge nearby endpoints; disconnected components and isolated local lines may be absent from the top view. This display graph must not be used for simulation routing.
+
+The next historical refinement is to replace inferred hub importance with reviewed period trunk routes, principal junctions, ports and timetable service classes. Line length, gauge and the ML field alone do not establish strategic importance. Existing historical dates and admission status are unchanged.

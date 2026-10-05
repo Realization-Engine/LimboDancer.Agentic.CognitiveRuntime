@@ -41,13 +41,15 @@ class GeographyTests(unittest.TestCase):
         self.assertEqual(geo["features"][0]["geometry"]["coordinates"][0][0],geo["features"][0]["geometry"]["coordinates"][0][-1])
     def test_reference_overlays_and_scope(self):
         layers={f["properties"]["layer"] for f in self.data["features"]}
-        self.assertTrue({"mountains","forest","roads","railways"}<=layers)
+        self.assertTrue({"mountains","forest"}<=layers)
         self.assertIn("Alps",{t["name"] for t in self.data["terrainLabels"]})
         self.assertIn("WWII roads and railways",self.data["metadata"]["unmodeled"])
         for c in self.data["cells"]:
             self.assertTrue(0<=c["forestReferenceFraction"]<=1)
-            self.assertGreaterEqual(c["roadsReferenceKm"],0)
-            self.assertGreaterEqual(c["railwaysReferenceKm"],0)
+            self.assertIsNone(c["historicalTransport"]["roadKm"])
+            self.assertIsNone(c["historicalTransport"]["railKm"])
+        self.assertFalse({"roads","railways"} & layers)
+        self.assertEqual(self.data["metadata"]["transportBaseline"]["baselineDate"],"1939-09-01")
         for f in self.data["features"]:
             if f["properties"]["layer"] in ("roads","railways"):
                 self.assertIn("not WWII-validated",f["properties"]["status"])
