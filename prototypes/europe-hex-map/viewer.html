@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Europe | Campaign Atlas</title>
+<style>
+:root{color-scheme:light;--ink:#263c3b;--muted:#647573;--line:#d6dfd8;--paper:#f5f4ed;--green:#315d50}
+*{box-sizing:border-box}body{margin:0;font:14px/1.5 system-ui,sans-serif;color:var(--ink);background:var(--paper)}
+header{height:86px;padding:18px 28px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
+h1{font:600 26px Georgia,serif;margin:0}h2{font-size:16px;margin:0 0 12px}small,.muted{color:var(--muted)}.eyebrow{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--green)}
+.shell{display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 86px)}aside{padding:24px;overflow:auto;border-right:1px solid var(--line)}
+section{margin-bottom:24px;padding-bottom:22px;border-bottom:1px solid var(--line)}button,input{font:inherit}button{cursor:pointer;border:1px solid #b9c9be;background:#fffdf6;color:var(--ink);padding:8px 12px;border-radius:5px}button:hover{background:#e3ece3}button:focus-visible,input:focus-visible{outline:3px solid #ad7331}
+.primary{background:var(--green);color:white;border-color:var(--green)}input[type=text]{width:100%;padding:9px;border:1px solid var(--line);border-radius:4px;margin:7px 0;background:#fffdf6}
+.toggle{display:block;margin:8px 0}.toggle input{accent-color:var(--green);margin-right:8px}.row{display:flex;gap:6px;flex-wrap:wrap}.fact{display:flex;justify-content:space-between;margin:7px 0;gap:8px}.pill{font-size:11px;padding:4px 8px;border-radius:12px;background:#e6ecdf}.note{font-size:12px;color:var(--muted)}#details{min-height:170px}code{font-size:11px;overflow-wrap:anywhere}
+main{position:relative;overflow:hidden;background:#dce8e8}#map{width:100%;height:100%;display:block;touch-action:none;cursor:grab}#map:active{cursor:grabbing}.toolbar{position:absolute;top:18px;right:18px;display:flex;gap:5px}.maptitle{position:absolute;top:18px;left:20px;pointer-events:none;background:#f5f4edee;padding:12px 16px;border:1px solid #ffffff99;border-radius:5px}.maptitle strong{display:block;font:600 18px Georgia,serif}.footer{position:absolute;bottom:14px;left:18px;right:18px;display:flex;justify-content:space-between;gap:16px;pointer-events:none;font-size:11px}.footer span{background:#f5f4edea;padding:6px 9px;border-radius:4px}.hex{fill:transparent;stroke:#315e583b;stroke-width:1;vector-effect:non-scaling-stroke}.hex:hover{fill:#ffffff40;stroke:#456e5c}.hex.selected{fill:#d6a54855;stroke:#b77725;stroke-width:2}.city{font:40px system-ui;fill:#304845;paint-order:stroke;stroke:#f7f4e9;stroke-width:9px;stroke-linejoin:round}.waterlabel{font:italic 65px Georgia;fill:#6b9097;letter-spacing:8px;pointer-events:none}
+@media(max-width:750px){header{height:70px;padding:12px 16px}.shell{height:auto;display:flex;flex-direction:column-reverse}main{height:65vh}aside{border:0;padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:20px}section{margin:0}.headernote{display:none}}
+</style>
+<header><div><div class="eyebrow">Military command / geographic prototype</div><h1>Campaign Atlas</h1></div><div class="headernote"><span class="pill">EUROPE · THEATER VIEW</span><br><small>Structured geography. One continuous battlefield.</small></div></header>
+<div class="shell"><aside>
+<section><h2>Map layers</h2><label class="toggle"><input id="mountainToggle" type="checkbox" checked>Mountain ranges</label><label class="toggle"><input id="forestToggle" type="checkbox" checked>Forests <small>(2000 reference)</small></label><label class="toggle"><input id="roadToggle" type="checkbox">Major roads <small>(modern)</small></label><label class="toggle"><input id="railToggle" type="checkbox">Main railways <small>(modern)</small></label><label class="toggle"><input id="gridToggle" type="checkbox" checked>Hex grid</label><label class="toggle"><input id="riverToggle" type="checkbox" checked>Major rivers and lakes</label><label class="toggle"><input id="cityToggle" type="checkbox" checked>Selected cities</label><div class="note">Approximately 104 km across each hex. Coastlines remain geographic rather than snapping to hex edges.</div></section>
+<section><h2>Selected hex</h2><div id="details" aria-live="polite">Select a hex to inspect its geography and stable identity.</div><button id="exportHex" disabled>Export selected hex</button></section>
+<section><h2>Campaign</h2><label for="seed">Map seed</label><input id="seed" type="text" readonly><div class="row"><button id="newCampaign">New campaign</button><button id="exportCampaign" class="primary">Export map</button></div><p class="note">The seed is saved in this browser. A new campaign changes local refinement seeds, not sourced geography. Fine terrain generation is not yet implemented.</p></section>
+<section><h2>Source & scope</h2><p class="note">Natural Earth mountain regions and modern transport; JRC tree-cover reference for 2000. Brown: approximate ranges. Green: generalized tree cover. Roads and dashed railways are optional modern references, not a WWII network. Numeric elevations and historical corrections remain unmodeled.</p><a href="https://www.naturalearthdata.com/about/terms-of-use/" target="_blank" rel="noopener">Natural Earth source</a> · <a href="https://forobs.jrc.ec.europa.eu/glc2000/data" target="_blank" rel="noopener">JRC GLC2000</a><p class="note" id="sourceId"></p></section>
+</aside><main><svg id="map" xmlns="http://www.w3.org/2000/svg" aria-label="Interactive Europe hex map"></svg>
+<div class="maptitle"><strong>Europe</strong><small>Relief · Forests · Waterways</small></div>
+<div class="toolbar"><button id="zoomIn" aria-label="Zoom in">+</button><button id="zoomOut" aria-label="Zoom out">−</button><button id="reset">Fit Europe</button></div>
+<div class="footer"><span>Drag to pan · Scroll to zoom · Select a hex</span><span id="mapStatus"></span></div>
+</main></div>
+<script>
+"use strict";
+const DATA=__MAP_DATA__;
+const svg=document.getElementById("map"), NS="http://www.w3.org/2000/svg";
+function element(name,attrs,parent){const e=document.createElementNS(NS,name);Object.entries(attrs).forEach(([k,v])=>e.setAttribute(k,v));(parent||svg).append(e);return e;}
+function path(g){const line=coords=>"M"+coords.map(p=>p[0].toFixed(2)+","+p[1].toFixed(2)).join("L");switch(g.type){case"Polygon":return g.coordinates.map(r=>line(r)+"Z").join("");case"MultiPolygon":return g.coordinates.map(p=>path({type:"Polygon",coordinates:p})).join("");case"LineString":return line(g.coordinates);case"MultiLineString":return g.coordinates.map(line).join("");case"GeometryCollection":return g.geometries.map(path).join("");default:return"";}}
+const land=element("g",{}), forest=element("g",{}), mountains=element("g",{}), water=element("g",{}), roads=element("g",{display:"none"}), railways=element("g",{display:"none"}), grid=element("g",{}), terrainLabels=element("g",{"pointer-events":"none"}), cities=element("g",{"pointer-events":"none"});
+const layerStyle={land:[land,"#d8ddc3","#a4b7a4",2],lakes:[water,"#accbd0","none",0],rivers:[water,"none","#729fae",5],forest:[forest,"#69976d","none",0],mountains:[mountains,"#9c8970","#877862",2],roads:[roads,"none","#b17c42",4],railways:[railways,"none","#535760",4]};
+for(const f of DATA.features){const s=layerStyle[f.properties.layer];if(!s)continue;const attrs={d:path(f.geometry),fill:s[1],stroke:s[2],"stroke-width":s[3],"fill-rule":"evenodd"};if(f.properties.layer==="mountains")attrs.opacity=.48;if(f.properties.layer==="forest")attrs.opacity=.60;if(f.properties.layer==="railways")attrs["stroke-dasharray"]="13 8";element("path",attrs,s[0]);}
+for(const t of DATA.terrainLabels){const e=element("text",{x:t.x,y:t.y,"text-anchor":"middle",fill:"#77654e","font-size":33,"font-style":"italic","paint-order":"stroke",stroke:"#eee8da","stroke-width":5},terrainLabels);e.textContent=t.name;}
+const nodes=new Map();
+for(const c of DATA.cells){const e=element("polygon",{points:c.vertices.map(p=>p.join(",")).join(" "),class:"hex","data-id":c.id},grid);nodes.set(c.id,e);e.addEventListener("click",()=>{if(!dragged)select(c);});}
+for(const c of DATA.cities){element("circle",{cx:c.x,cy:c.y,r:9,fill:"#40594b",stroke:"#f7f4e9","stroke-width":4},cities);const label=element("text",{x:c.x+18,y:c.y-13,class:"city"},cities);label.textContent=c.name;}
+let view=[-2400,-2500,5200,4600];function renderView(){svg.setAttribute("viewBox",view.join(" "));}renderView();
+function zoom(f){const [x,y,w,h]=view;const nw=Math.max(350,Math.min(9000,w*f)),nh=nw*h/w;view=[x+(w-nw)/2,y+(h-nh)/2,nw,nh];renderView();}
+document.getElementById("zoomIn").onclick=()=>zoom(.7);document.getElementById("zoomOut").onclick=()=>zoom(1/.7);document.getElementById("reset").onclick=()=>{view=[-2400,-2500,5200,4600];renderView();};
+svg.addEventListener("wheel",e=>{e.preventDefault();zoom(e.deltaY>0?1.15:1/1.15);},{passive:false});
+let down=null,dragged=false;
+svg.addEventListener("pointerdown",e=>{down=[e.clientX,e.clientY,...view];dragged=false;});
+svg.addEventListener("pointermove",e=>{if(!down)return;const dx=e.clientX-down[0],dy=e.clientY-down[1];if(Math.abs(dx)+Math.abs(dy)>5)dragged=true;if(dragged){const scale=Math.max(down[4]/svg.clientWidth,down[5]/svg.clientHeight);view=[down[2]-dx*scale,down[3]-dy*scale,down[4],down[5]];renderView();}});
+window.addEventListener("pointerup",()=>{down=null;});
+for(const [id,layer] of [["gridToggle",grid],["riverToggle",water],["cityToggle",cities],["forestToggle",forest],["mountainToggle",mountains],["roadToggle",roads],["railToggle",railways]])document.getElementById(id).onchange=e=>{layer.removeAttribute("display");layer.style.display=e.target.checked?"":"none";if(id==="mountainToggle")terrainLabels.style.display=layer.style.display;};
+let selected=null,selectSerial=0;
+const storageKey="europe-hex-prototype-campaign-v1";
+function freshSeed(){return Array.from(crypto.getRandomValues(new Uint32Array(4))).map(x=>x.toString(16).padStart(8,"0")).join("");}
+let seed;try{seed=localStorage.getItem(storageKey);}catch{}
+if(!seed||!/^[0-9a-f]{32}$/.test(seed))seed=freshSeed();
+function saveSeed(){document.getElementById("seed").value=seed;try{localStorage.setItem(storageKey,seed);}catch{}}
+saveSeed();
+async function localSeed(c){const s=[DATA.metadata.generator,DATA.metadata.baseHash,seed,c.id,"future-refinement"].join("|");return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s)))).map(x=>x.toString(16).padStart(2,"0")).join("");}
+async function select(c){const serial=++selectSerial;if(selected)nodes.get(selected.id).classList.remove("selected");selected=c;nodes.get(c.id).classList.add("selected");const token=await localSeed(c);if(serial!==selectSerial)return;const d=document.getElementById("details");d.replaceChildren();function row(a,b){const div=document.createElement("div");div.className="fact";const label=document.createElement("span");label.textContent=a;const value=document.createElement("strong");value.textContent=b;div.append(label,value);d.append(div);}row("Hex",c.id);row("Surface",c.surface);row("Dry land",Math.round(c.landFraction*100)+"%");row("Forest footprint (2000)",Math.round(c.forestReferenceFraction*100)+"%");row("Modern road km",c.roadsReferenceKm);row("Modern main rail km",c.railwaysReferenceKm);row("Latitude",c.lat.toFixed(3)+"°");row("Longitude",c.lon.toFixed(3)+"°");const p=document.createElement("p");p.className="note";p.textContent="Ranges: "+(c.mountainRegions.join(", ")||"None mapped")+" · Waterways: "+(c.rivers.join(", ")||"None in source")+" · Cities: "+(c.cities.join(", ")||"None selected");d.append(p);const small=document.createElement("p");small.className="note";small.textContent="Local refinement seed: "+token.slice(0,16)+"…";d.append(small);document.getElementById("exportHex").disabled=false;}
+function download(name,obj){const url=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:"application/json"}));const a=document.createElement("a");a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
+document.getElementById("newCampaign").onclick=()=>{seed=freshSeed();saveSeed();if(selected)select(selected);};
+document.getElementById("exportCampaign").onclick=()=>download("europe-campaign-map.json",{campaign:{mapSeed:seed,geographyHash:DATA.metadata.baseHash},...DATA});
+document.getElementById("exportHex").onclick=async()=>{const c=selected,s=seed;const token=await localSeed(c);download(c.id.replaceAll(":","-")+".json",{mapSeed:s,baseHash:DATA.metadata.baseHash,cell:c,refinementSeed:token});};
+document.getElementById("sourceId").textContent="Source revision "+DATA.metadata.sourceManifest.commit.slice(0,12)+" · Base "+DATA.metadata.baseHash.slice(0,12);
+document.getElementById("mapStatus").textContent=DATA.cells.length.toLocaleString()+" hexes · Equal-area Europe projection";
+</script></html>

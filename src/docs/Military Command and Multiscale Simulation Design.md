@@ -433,7 +433,7 @@ Scale changes preserve military identity and recorded consequences while changin
 
 ### 14.2 Expanding the board
 
-Use one scenario-local coordinate frame measured in ground distance. Both grids map into it through explicit scale, origin and orientation transforms. Keep rendering pixels separate, especially because the existing ASL board design documents non-regular display hex geometry.
+Use the campaign geographic reference defined in Section 18. Engagement-local frames map into that reference through pinned transforms. Both tactical grids use explicit ground scale, origin and orientation; local coordinates do not create a separate world. Keep rendering pixels separate, especially because the existing ASL board design documents non-regular display hex geometry.
 
 At the initial scales, 250 / 40 = 6.25 is the linear ratio, and its square is approximately 39.1 in area for similarly shaped hexes. Thus one formation hex covers roughly 39 ASL hex areas. It does not map to a neat six-by-six block or a whole ASL board. The grids do not nest exactly; ASL hexes can cross formation boundaries. Use polygon overlap to summarize terrain, and the unit's precise position to determine its formation-cell membership. Never duplicate a unit because its location overlaps a boundary.
 
@@ -447,7 +447,7 @@ The terrain model separates:
 
 Imported coarse terrain constrains detailed authoring. For example, expanding a wooded hex should preserve its intended cover and access characteristics, not quietly introduce a highway through it. Fine terrain is summarized back into coarse coverage, mobility and observation features. If the detailed scene contradicts an important coarse property, resolve that discrepancy during scenario admission rather than changing terrain when a player zooms.
 
-The existing ASL terrain compiler and board-package validation are the output target. Prefer scene geometry capable of being compiled into that representation; use stock ASL boards only when their terrain actually fits the region. Display panels are a packaging choice, not the spatial simulation boundary. A custom generated scene must still satisfy the supported ASL terrain and location semantics.
+Dynamically assemble each ASL engagement map from its selected formation-map region, preserving established terrain, connectivity and geographic identity. Generate missing detail under the campaign Map Seed and pinned generation rules in Section 18, then construct ASL hexes, hexside features and locations through the existing terrain compiler and board-package validation. Stock ASL boards may supply compatible reusable material; display panels do not define simulation boundaries. Persist the generated artifacts and bind their versions to the Scenario Card. The same constrained generation approach applies to formation, operational and regional maps.
 
 ### 14.3 Expanding the forces
 
@@ -457,11 +457,11 @@ Roster values require explicit scenario decisions. ASL leadership ratings, squad
 
 Every detailed instance keeps its force identity and parent lineage. Crew, passengers, carriers and attached weapons remain separate linked objects, preventing duplication during expansion. Deployment uses a persistent `DeploymentRecord`: occupied area, posture, facing, route progress and actual fine positions once materialized. The parent hex is a coarse location report, not an instruction to place every squad and tank at its center.
 
-If only aggregate deployment exists, generate or author a legal detailed deployment consistent with that footprint and posture before the engagement starts. Record the result and its assumptions. Store the scenario seed, generator version and resulting immutable artifact, not just a seed that could produce different results after an upgrade. Repeated expansion retrieves that deployment. It cannot reroll cover, leaders, weapons or surviving vehicles.
+If only aggregate deployment exists, generate or author a legal detailed deployment consistent with that footprint and posture before the engagement starts. Record the result and its assumptions. Store the deployment generator version, its reproducibility inputs and resulting immutable artifact. Deployment randomness is separate from terrain generation: a different mission or force assignment cannot reseed the campaign geography. Repeated expansion retrieves that deployment. It cannot reroll cover, leaders, weapons or surviving vehicles.
 
 ### 14.4 Detail ownership and information
 
-Maintain a scenario registry with `TerrainRegion`, `ForceRoster`, `DeploymentRecord` and persistent material changes. Fine geometry may exist from scenario authoring or be materialized on demand. Each region records which representation currently adjudicates its state and the exact revision of its last cross-scale mapping.
+Maintain a scenario registry with `TerrainRegion`, `ForceRoster`, `DeploymentRecord` and persistent material changes. Terrain records belong to the campaign geography registry in Section 18 and are referenced by scenarios. Fine geometry may exist from campaign authoring or be materialized on demand under its pinned manifest. Each region records which representation currently adjudicates its state and the exact revision of its last cross-scale mapping.
 
 Coarse resolution must preserve enough detail to support later expansion. When a formation-scale result specifies actual equipment losses, select and record the affected roster assets under an admitted allocation rule at resolution time. If a result only establishes lost combat effectiveness, record that condition without inventing deaths or vehicle destruction. First expansion must explicitly translate any unresolved aggregate condition through a versioned rule. It may not postpone casualty allocation until a player can inspect alternative favorable deployments.
 
@@ -576,7 +576,7 @@ Extend the existing model through a versioned operational context. Exact field n
 | Existing card content | Required operational binding |
 | --- | --- |
 | Situation and introduction | Parent operation and mission IDs, issuing command, intent and contribution to the parent objective |
-| Boards and setup | Persistent region and terrain version, deployment snapshot, entry/exit constraints and influence boundaries |
+| Boards and setup | Campaign geography manifest, region and generated map hashes, terrain-change revision, deployment snapshot, entry/exit constraints and influence boundaries; no independent terrain seed |
 | Order of battle | Stable roster-to-counter bindings, admitted starting conditions, attachments and allocated support |
 | Turns and reinforcements | Shared-clock interval, first side, arrival dependencies and behavior after early local completion |
 | Victory conditions | Executable local criteria and mapping from recorded facts and occurrence times to parent assessment |
@@ -655,6 +655,14 @@ The first implementation slice should complete Stage 0 and one Stage 1 adjudicat
 37. Recipient knowledge changes only through permitted observations and deliveries; event time and report arrival time remain distinct, and a delayed report does not become a fresh observation.
 38. Receipt or acknowledgment cannot execute an order outside its phase or card contract. Profiles allowing reordered delivery reject obsolete superseded orders without undoing committed actions.
 
+39. The same campaign location regenerates identical base terrain from pinned inputs across save/load, supported machines, different request extents and generation orders. Changing combat or deployment random streams cannot change terrain.
+40. Overlapping and adjacent requests agree on shared features and boundaries; operational, formation and ASL views preserve feature identity and connectivity without requiring identical grids or visual detail.
+41. Different Map Seeds can vary admitted missing detail while preserving fixed historical constraints. Reusing the same seed and pinned world inputs reproduces the same base; a new campaign ID alone does not change it.
+42. Campaign damage survives regeneration and zoom changes. New campaigns do not inherit that damage; branches inherit the original geography and existing event history unless explicitly created as new worlds.
+43. Missing pinned generator or source versions block regeneration rather than silently substitute newer versions. Existing verified artifacts remain identifiable and usable where supported.
+
+44. The Europe view remains a clean hex map with essential geography and selective overlays. Hiding labels or fine features does not change route/crossing connectivity, lower-scale generation or world state.
+
 These are future implementation acceptance tests. No new simulation implementation or runtime test execution is claimed by this design document.
 
 ## 16. Decisions still needed
@@ -708,6 +716,58 @@ Use Section 14.8's bounded synchronization first. A later operational coordinato
 Progress toward regiment/brigade, division, corps, army and theater introduces wider objectives, transport capacity, supply allocation, replacement and recovery, and competing operations. Each added mechanic needs an explicit domain profile and evidence. Shared supplies need quantity, location, ownership and transit constraints, with consumption recorded once. A force roster alone does not establish executable logistics.
 
 Keep military models and coordination in domain packages composed by the Host. Reuse Runtime evidence, lifecycle, governance and execution contracts. Extract shared military components only when concrete domains demonstrate common behavior; this direction does not authorize a universal ontology, distributed engine or new Runtime authority path.
+
+## 18. Campaign geography and deterministic maps
+
+### 18.1 Historical foundation and display scales
+
+Use a clean, uncluttered, historically dated hex map of Europe as the shared geographic foundation. Include only geographic detail needed for gameplay and consistent generation at lower scales. The visible map shows coastlines and major water bodies, broad terrain and elevation, major rivers, cities and transport corridors. Show campaign-relevant boundaries and objectives as selective overlays; avoid dense labels and fine tactical features at this level.
+
+Each Europe hex references the geographic constraints needed to generate its region and connect it to neighboring regions. Underlying data may be richer than the visible symbols, but every retained feature should support movement, observation, supply, objectives or lower-scale terrain generation. This is a game map, not a requirement to reproduce every geographic feature. Visual simplification must preserve consequential connectivity: omitting a crossing or route from the display does not delete it from the underlying world.
+
+The Europe grid is the top-level display and spatial index. Operational, formation and ASL grids use explicit transforms into the same geographic reference; they need not nest exactly inside Europe hexes. Roads, rivers and generated terrain remain continuous across Europe hex boundaries.
+
+Select and admit source data appropriate to the campaign period; this document does not yet select a geographic dataset. Modern roads, bridges or settlement footprints must not silently become WWII facts. Record known features, uncertain interpretations and generated assumptions separately.
+
+| View | Principal map content |
+| --- | --- |
+| ASL tactical | Local buildings, walls, hexside features, positions and detailed observation geometry |
+| Formation tactical | Connected engagements, villages, hills, woods and platoon/company maneuver |
+| Operational | Towns, route networks, crossings, assembly areas, reserves and supply routes |
+| Regional campaign | Cities, major rivers, transport corridors, operation boundaries and supply centers |
+| Theater | Clean Europe hex map with essential broad geography and major transport links; selective campaign overlays |
+
+These are proposed display bands, not fixed echelon assignments or prescribed hex sizes. Generate maps below the Europe foundation for the region and resolution a mission requires. All views refer to one continuous world; the Europe view uses hexes, while other views need not share its hex boundaries and may supplement their grids with routes, regions and networks. Zooming changes presentation and inspection, not the active adjudicator or simulation clock. ASL execution still requires Scenario Card admission.
+
+Broader geographic constraints guide finer generation, while broader views summarize established detailed facts and campaign changes. Known roads omitted for readability remain present in the world. A missing hedge generated as an assumption is different from a known feature hidden by display simplification. Preserve identities and connectivity across resolutions, including when detail is first requested in a different order.
+
+Legacy geomorphic boards remain useful for constructed scenarios. They do not automatically describe a real European location. Importing one into a historical campaign requires an explicit, validated geographic adaptation; incompatible geometry must not overwrite the campaign foundation.
+
+### 18.2 Campaign creation and Map Seed
+
+When a new Campaign is created, generate and durably record one immutable Map Seed. Reuse it throughout the campaign at every scale. A proposed CampaignGeographyManifest pins that seed, historical baseline/date, source-data versions and hashes, geographic reference and transforms, generation rules and parameters, deterministic algorithm version and artifact schema. Campaign creation must persist the manifest before any map generation; retries recover the original seed rather than choose another.
+
+The seed varies detail for which historical sources leave room for interpretation. Major rivers, documented settlements, crossings and other admitted facts constrain generation. A fresh seed can produce fresh detail without moving established historical features. Fixed source coverage may leave some regions unchanged between campaigns; every campaign need not differ at every location.
+
+Determinism means the same seed and pinned world inputs produce the same base geography. Campaign ID, scenario ID, player identity, request order, viewport and requested extent are not terrain-randomness inputs. Scenario Cards reference the campaign manifest and selected region; they cannot assign a separate map seed. A saved game or exploratory branch retains the manifest. Generating a fresh seed creates a new world rather than quietly changing an ongoing campaign.
+
+### 18.3 Generation independent of request order
+
+Derive local randomness with a specified stable hash or equivalent deterministic function of the Map Seed, canonical geographic feature or generation-cell identity, generation layer and pinned rule version. Do not use a process-dependent hash, a mutable global random stream or iteration order. Separate terrain generation from combat dice, weather and force deployment streams.
+
+Generate canonical geographic features and then derive each scale's representation from them. A different resolution must not independently invent a conflicting river or settlement. Larger requests must preserve the geometry that a smaller request would produce, even when neither request has been cached. Request extent selects output, not the world to generate.
+
+Generation rules must define deterministic ownership of boundary features and sufficient surrounding context for connected roads, rivers and terrain. Cross-region features require consistent identities and constraints; processing neighboring cells independently without shared boundary rules is insufficient. Pin coordinate precision, ordering and numerical behavior so supported environments produce the same authoritative geometry and artifact hashes. Screen rendering need not be pixel-identical.
+
+Cache and retain validated map artifacts with their manifest, geographic coverage, resolution, generator provenance and content hash. A seed alone is not a reproducibility guarantee after software or source changes. Retain compatible generators and admitted inputs or verified artifacts; if reproduction is unsupported, return an explicit failure rather than regenerate with current defaults.
+
+### 18.4 Persistent campaign changes and delivery
+
+Keep deterministic base terrain separate from campaign events such as demolished bridges, craters, rubble and field fortifications. The effective map combines the base with recorded changes through a particular campaign cursor. Apply each event once to stable geographic identities, then derive its effects at each supported scale. Returning to a region, expanding it or restoring a cache cannot repair a destroyed bridge.
+
+Environmental or seasonal state follows separately pinned rules and event time; it does not trigger a new terrain seed. A new campaign starts from its admitted historical baseline, while a branch preserves the parent campaign state at the branch point. Generator or source upgrades create a new manifest version through explicit migration or a new campaign; they never silently reinterpret existing terrain or outcomes.
+
+Before generated maps enter executable play, choose source coverage, geographic transforms, canonical generation units, feature ownership and constraint rules. Prove a bounded region first: request overlapping formation maps, dynamically compile an ASL region within them, regenerate in a different order and compare shared geography. Include an operational view and one persistent crossing change. Use the existing map validation and Scenario Card gates; full European detail need not be materialized in advance.
 
 ## Appendix A Source references
 

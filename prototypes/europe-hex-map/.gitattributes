@@ -1,0 +1,2 @@
+# Preserve checksum-pinned geographic inputs as exact bytes.
+sources/*.geojson -text -diff

@@ -1,0 +1,4 @@
+__pycache__/
+.venv/
+sources/glc2000.zip
+sources/glc2000.tif
