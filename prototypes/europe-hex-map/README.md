@@ -174,3 +174,8 @@ All six theaters now use one workspace implementation: Geography, Logistics and 
 The workspace title, selection and note entry reset when changing theater. Notes carry theater identity, are filtered to the active theater and all theaters' notes are exported together. Existing Western notes are read from their original storage key and migrate on the next save. Shared coordinate IDs identify matching sectors across overlapping theaters, while theater-specific IDs preserve planning scope.
 
 Logistics combines Western's dated port/depot examples with source-linked transportation reference points in every theater. These are not equivalent to verified depots, facilities or operational capacities. Geographic and source coverage limitations remain explicit. The generated theater packages are excluded from gameplay exports; saved planning notes remain included.
+
+
+### UI assets
+
+`viewer.html` contains the HTML template. `site.css` holds the stylesheet. `app.template.js` contains application logic; the build inserts `theater-view.js` into it to produce `app.js`. `index.html` loads these sibling CSS and JavaScript files directly, including when opened locally. Keep them together when copying the viewer. `map-data.js` contains the generated map payload and loads before `app.js`. A classic script allows direct local-file viewing without a server or JSON fetch. Keep `index.html`, `site.css`, `app.js` and `map-data.js` together. Edit source templates, not generated `index.html`, `app.js` or `map-data.js`.

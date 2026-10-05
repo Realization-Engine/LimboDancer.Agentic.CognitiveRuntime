@@ -1,6 +1,15 @@
 /* Logic smoke test with a minimal DOM double; not a browser rendering test. */
 const fs=require("node:fs"),vm=require("node:vm"),assert=require("node:assert/strict"),{webcrypto}=require("node:crypto");
-const html=fs.readFileSync(__dirname+"/index.html","utf8"),script=html.match(/<script>([\s\S]*)<\/script>/)[1];
+const html=fs.readFileSync(__dirname+"/index.html","utf8"),script=fs.readFileSync(__dirname+"/app.js","utf8");
+const mapData=fs.readFileSync(__dirname+"/map-data.js","utf8");
+assert.ok(html.indexOf('<script src="map-data.js"></script>')<html.indexOf('<script src="app.js"></script>'));
+assert.ok(!html.includes("application/json"));
+assert.ok(Buffer.byteLength(html)<20000);
+assert.ok(html.includes('<script src="app.js"></script>'));
+assert.ok(html.includes('<link rel="stylesheet" href="site.css">'));
+assert.ok(!html.includes('<script>'));
+assert.equal(script,fs.readFileSync(__dirname+"/app.template.js","utf8").replace("__WESTERN_SCRIPT__",fs.readFileSync(__dirname+"/theater-view.js","utf8")));
+
 const ids=new Map(), polygons=[], saved=new Map(), blobs=[];
 class Element{
  constructor(){this.attrs={};this.children=[];this.style={};this.events={};this.clientWidth=1200;this.clientHeight=900;this.classList={add(){},remove(){}};}
@@ -11,6 +20,7 @@ const document={getElementById(id){if(!ids.has(id))ids.set(id,new Element());ret
 createElementNS(ns,tag){const e=new Element();if(tag==="polygon")polygons.push(e);return e;}};
 const context=vm.createContext({document,window:{addEventListener(){}},crypto:webcrypto,TextEncoder,Uint8Array,Uint32Array,Blob,
  localStorage:{getItem:k=>saved.get(k),setItem:(k,v)=>saved.set(k,v)},URL:{createObjectURL(b){blobs.push(b);return"blob:test";},revokeObjectURL(){}},setTimeout:f=>f(),console});
+vm.runInContext(mapData,context);
 vm.runInContext(script,context);
 (async()=>{
  assert.equal(polygons.length,vm.runInContext("DATA.cells.length",context));
