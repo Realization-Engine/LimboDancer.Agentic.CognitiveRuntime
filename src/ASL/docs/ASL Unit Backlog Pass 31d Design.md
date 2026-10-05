@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 31d Design
 
-**Status:** Designed 2026-10-04, read-only, and answered the same day: all 12 questions as recommended (section 12). The build is on branch `feature/asl-backlog-pass-31d`. Pass 31d is my name for the short pass the user chose on 2026-10-04 after pass 31c: its leftovers (backlog section 50) before passes 32 and 34. The plan has no row for it yet.
+**Status:** Built 2026-10-04 on branch `feature/asl-backlog-pass-31d`, with the user's answers (section 12), every one as recommended: tasks 31d.1 to 31d.6, two reviews and their fixes, the Studio check, and the tests. Section 14 says what was built and where it differs from this design; the [review document](<Scenario A1 Backlog Pass 31d Review 2026-10-04.md>) has the reviews, the check, and the tests. Pass 31d is my name for the short pass the user chose on 2026-10-04 after pass 31c: its leftovers (backlog section 50) before passes 32 and 34. The plan has no row for it yet.
 
 **Date:** 2026-10-04
 
@@ -354,3 +354,55 @@ Answered 2026-10-04: "Build, all as recommended". The order of weight with secti
 - **The profiler.** `dotnet tool install dotnet-trace --tool-path <scratchpad>/tools`, then `dotnet-trace collect -p <pid> --profile dotnet-sampled-thread-time --duration 00:00:00:28 --format Speedscope` while the page proposes. The profile named `cpu-sampling` is for Linux only.
 - **The Play page's address** is `/games/play?game=<id>`; `/units/play` is not a page.
 - **A phase's end leads to a hand-over** when the next phase is the other side's, so a script waits for the review to go, not for the actions pane to come back.
+
+## 14. Pass 31d as built
+
+**Built 2026-10-04,** tasks 31d.1 to 31d.6, one commit a task, each checked in my Studio on port 6670 on cuts of `p31c-tw` before its commit; then a referee's and a table player's review and their fixes. Rulings R31d.1 to R31d.6; backlog section 51. `guards-dl-01` opens with 221 steps, `p31c-tw` with 231, and `p31c-play` with 134, as before.
+
+**The time of a phase's end,** measured as in section 2.1 on the final build:
+
+| Copy cut at | Check before | Check now | Confirm before | Confirm now |
+|---|---|---|---|---|
+| Turn 1, revision 250 | 0.57 s | 0.05 to 0.08 s | 1.1 s | 0.48 s |
+| Turn 5, revision 607 | 1.9 to 2.4 s | 0.07 to 0.08 s | 3.75 s | 0.43 s |
+| Turn 7, revision 693 | 2.2 to 2.3 s | 0.08 to 0.10 s | 3.77 s | 0.43 to 0.58 s |
+
+The first check after a game is opened takes longer (0.4 to 1.0 s), since the page's own first reads come with it. The time no longer grows with the game.
+
+**The code.**
+
+| Part | Where | What it holds |
+|---|---|---|
+| `ReplayedGame`, `GameProjector.Begin` | Units | A history with what its replay carried; `Continue` applies only the later events to a copy; `Begins` matches a list by the identity of its events |
+| `GamePlanner.Replay` | Play | The last eight projections; the longest one a list begins with is continued |
+| `FileGameStore.Parse` | Play | The record last parsed from a file, by the SHA-256 of its bytes; after a commit, the events already read followed by the new ones as they read back |
+| `RoutLoad`, `RoutLoadOf`, `PortageOf` | Play | A broken unit's IPC, its SW with their PP, its best loads, and the choices among them that differ to a player |
+| `PlanRout`, `PlanDrop` | Play | The rout that leaves the rest; the drop allowed for a SW some best load leaves out |
+| `RoutReach`, `RoutAdvice` | Play | Where each node was reached from; a least-cost way to each place a rout may end |
+| `WithSeen`; `SeenByGoodOrderEnemy` | Play; Rules | The planner's read of who sees each concealed firer, and its place in the Fire package's facts |
+| `OwnGroupCodes` | Play | The refusals that rest on the firing side's own group and the map alone |
+| `ConsequenceKind.Left`, `Dummies`, `Unfought`; `Opposing` | Play | The new consequences; an advance's enemy counters as the advancing side may read them |
+| `LiveFire.WeaponBar` | Play | Why a SW may not be chosen to fire |
+| `PlayRecords`, `FireText`, `ReplaySteps` | Services | The Dummy lines, the blocked LOS, who passed, a rout in one sentence, `MultiplierText` |
+| `DisplayText.Planner`, `Fact`, `ASide` | Services | A planner's tokens, the entry case's facts, and a side's article in words |
+| `GameMaps.Led` | Services | An overlay's leads |
+| `RoutActionPanel`, `SmallArmsFirePanel` | Components/Play | The load line, "It keeps", and the ways; a weapon's note and the FT's |
+| `WideBoards` | Map Studio tests | A page-test board of 12 by 6 hexes |
+
+**What differs from the design:**
+
+- **D1.** Every projection asked for is kept, among the last eight, and not only the committed log's: a plan asks for the same candidate several times. A continuation is made whatever its events, since the location chains come from the game's first event alone. The store's kept record after a commit is the events already read with the new ones as they read back, not the events as they were built in memory.
+- **D2.** Best loads that differ only in which of two like counters is kept are one choice, and the game takes it (the table player: two "the DC (2 PP)" cannot be told apart). The load line says "the FT", as the page says a SW, and not "its FT". The button reads "Confirm, leaving SW behind".
+- **D3.** A way is not offered to a place the unit may not end in (it began ADJACENT to a Known armed enemy unit that is ADJACENT to that place too), nor a way that runs through another such place and out into the open again; such a place is not said as one to end in while another is. The route's hexes are joined by "then".
+- **D4.** Where the read is recorded for every concealed firer it decides alone, before the target Location is asked (the referee): a hidden unit there, a prisoner of the firing side, or a unit of it in a Melee is no measure of who sees the firer. The read counts a Good Order unit, which movement's read does not; movement's is a backlog row. A hidden unit does not force the loss. No read is given at night.
+- **D5.** The hand-over screen says a stack once, as the records do, and says the A11.19 removal. A stack removed by an attempted entry (A12.15) has its line too. An advance's summary no longer lists the other side's counters one by one.
+- **D6.** The consequences block was seen on screen before anything was changed; it had been there in pass 31c.
+- **D7.** Option (a), free LOS checks, as answered. Only the record's words were built.
+- **D8.** As designed. A group's own fault is found before the package looks at the target's ELR, so the test of both together asserts that the firing side reads less than the adjudicator, never something else.
+- **D9.** The Locations listed hold units of both sides whatever their state, broken ones too, since a broken unit may be attacked in CC. The due line joins the package's reason with "since".
+- **D10.** A weapon that has malfunctioned is barred too. A First Fire counter does not bar a weapon, which may fire again as Subsequent First Fire or in Final Fire. A FT's row adds "without its holder's own FP".
+- **D11.** The planner's sentences for "enters", "advances", and the non-OB "?" were changed in the planner; the terrain keys and "in the PFPh" are worded by the page. A fact that failed reads "this does not hold: ...".
+- **D12.** As designed.
+- **D13.** The board is 12 by 6 hexes, so that a 4-4-7 has a target beyond twice its Normal Range. A page test sets its game up through the gate (units, SW, and a broken unit in one setup) and then opens the page.
+
+**Not done:** the page tests of the setup map's tooltips, of "Since you last looked" after the view acts, and of a blocked LOS confirmed (backlog section 51). The Studio check at each width of pass 31c's list was not repeated: the pass moves no pane, and the Rout panel was read at the pane's own width after the fixes.
