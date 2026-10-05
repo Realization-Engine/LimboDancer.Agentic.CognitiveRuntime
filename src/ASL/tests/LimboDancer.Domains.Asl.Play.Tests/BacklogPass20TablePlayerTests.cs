@@ -768,7 +768,7 @@ public sealed class BacklogPass20TablePlayerTests : IDisposable
         }));
         var broken = Current.At(BoardLocation.Parse("bd01:O10:0")).OfType<UnitInstance>().Single(unit => GameState.Condition(unit, Conditions.Broken) == ConditionState.True);
         await AdvanceTo("german", "rtph");
-        var (targets, canRout) = Planner().RoutAdvice(Current, Current.Unit(broken.Id)!);
+        var (targets, canRout, _) = Planner().RoutAdvice(Current, Current.Unit(broken.Id)!);
         output.WriteLine($"{broken.Id}: may rout {canRout}, to {string.Join(", ", targets)}");
         Assert.True(canRout);
         Assert.All(targets, target => Assert.True(ScenarioCards.Playable(Card("tractor-works"), target)));

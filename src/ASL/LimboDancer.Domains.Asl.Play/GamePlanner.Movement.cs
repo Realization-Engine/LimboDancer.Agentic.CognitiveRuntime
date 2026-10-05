@@ -63,19 +63,16 @@ public sealed partial class GamePlanner
     private int[]? Portage(GameState state, UnitInstance unit)
     {
         var values = state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id)
-            .Select(item => item.Definition is { } reference
-                ? catalogs.FirstOrDefault(catalog => catalog.Identity == reference.Catalog)?.Definition(reference.Definition)?.Printed("front", "asl:portage")?.Value?.Number
-                : null).ToArray();
-        if (values.Any(value => value is null))
-        {
-            return null;
-        }
-
-        // A9.8 (ruling R13.6): a dismantled weapon's PP are halved, FRU.
-        var halved = state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id)
-            .Select(item => Is(item, Conditions.Dismantled)).ToArray();
-        return [.. values.Select((value, index) => halved[index] ? (value!.Value + 1) / 2 : value!.Value)];
+            .Select(PortageOf).ToArray();
+        return values.Any(value => value is null) ? null : [.. values.Select(value => value!.Value)];
     }
+
+    /// <summary>The PP of one SW (A4.4), from the catalog; a dismantled weapon's are halved, FRU (A9.8; ruling R13.6). Null when none is recorded.</summary>
+    public int? PortageOf(EquipmentInstance item) =>
+        item is null ? throw new ArgumentNullException(nameof(item)) : item.Definition is { } reference
+            && catalogs.FirstOrDefault(catalog => catalog.Identity == reference.Catalog)?.Definition(reference.Definition)?.Printed("front", "asl:portage")?.Value?.Number is { } value
+            ? Is(item, Conditions.Dismantled) ? (value + 1) / 2 : value
+            : null;
 
     /// <summary>
     /// The half MF Infantry spend to enter a terrain (B15.4, B15.6; ruling R5.19): grain costs 1½ MF from April to September and is Open Ground

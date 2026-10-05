@@ -18,6 +18,32 @@ public enum ConsequenceKind
 
     /// <summary>The action is spent to no effect.</summary>
     Waste,
+
+    /// <summary>A SW is left behind, unpossessed (pass 31d: a broken unit's rout, A10.4).</summary>
+    Left,
+}
+
+/// <summary>One SW a unit possesses, with its PP (A4.4).</summary>
+public sealed record RoutLoadItem(string Weapon, int Pp);
+
+/// <summary>
+/// What a broken unit carries before it routs (A10.4; pass 31d, ruling R31d.1): its IPC, its SW with their PP, and the sets of them it may rout with.
+/// </summary>
+public sealed record RoutLoad(int Ipc, IReadOnlyList<RoutLoadItem> Carried, IReadOnlyList<IReadOnlyList<string>> BestLoads)
+{
+    public int Total => Carried.Sum(item => item.Pp);
+
+    /// <summary>Whether the unit carries more than its IPC, and so leaves a SW before it routs.</summary>
+    public bool Laden => Total > Ipc;
+
+    public int Pp(string weapon) => Carried.FirstOrDefault(item => item.Weapon == weapon)?.Pp ?? 0;
+
+    /// <summary>The SW left behind when a load is kept.</summary>
+    public IReadOnlyList<RoutLoadItem> Left(IReadOnlyList<string> kept)
+    {
+        ArgumentNullException.ThrowIfNull(kept);
+        return [.. Carried.Where(item => !kept.Contains(item.Weapon, StringComparer.Ordinal))];
+    }
 }
 
 /// <summary>A consequence of a proposal: its kind, and the sentence the review shows.</summary>
@@ -38,6 +64,7 @@ public sealed partial class GamePlanner
         ("play.result:", ConsequenceKind.End),
         ("play.fire-own-units:", ConsequenceKind.OwnUnits),
         ("play.fire-los-blocked:", ConsequenceKind.Waste),
+        ("play.rout-leaves:", ConsequenceKind.Left),
     ];
 
     /// <summary>The consequence a reason of a plan states, or null for a routine reason.</summary>

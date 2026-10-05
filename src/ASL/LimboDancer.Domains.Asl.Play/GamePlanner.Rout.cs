@@ -181,8 +181,12 @@ public sealed partial class GamePlanner
     /// armed enemy units have had the unit in their LOS, since it never moves closer to them afterwards. An entry that costs all MF is a first step only.
     /// </summary>
     private Dictionary<BoardLocation, int> RoutReach(GameState state, UnitInstance unit, BoardLocation start, IEnumerable<string> seen, int spent, int limit,
-        bool avoidInterdiction = false)
+        bool avoidInterdiction = false, Dictionary<BoardLocation, BoardLocation[]>? routes = null)
     {
+        // Pass 31d (design D3): when the caller asks for the routes, the search keeps where each node was reached from, and gives one least-cost
+        // route to each Location it reaches.
+        var came = new Dictionary<(BoardLocation, long), (BoardLocation At, long Mask)>();
+        var reached = new Dictionary<BoardLocation, (BoardLocation At, long Mask)>();
         string[] enemies = [.. KnownEnemies(state, unit.Side).Where(item => Armed(item.Unit)).Select(item => item.Unit.Id).Order(StringComparer.Ordinal)];
         var sight = new Dictionary<BoardLocation, long>();
         long Mask(IEnumerable<string> ids) => ids.Select(id => Array.IndexOf(enemies, id)).Where(index => index is >= 0 and < 63).Aggregate(0L, (mask, index) => mask | (1L << index));
@@ -261,9 +265,30 @@ public sealed partial class GamePlanner
                 if (total < best.GetValueOrDefault(key, int.MaxValue))
                 {
                     best[key] = total;
+                    came[key] = node;
+                    if (total < reach.GetValueOrDefault(next, int.MaxValue))
+                    {
+                        reached[next] = key;
+                    }
+
                     reach[next] = Math.Min(reach.GetValueOrDefault(next, int.MaxValue), total);
                     queue.Enqueue(key, total);
                 }
+            }
+        }
+
+        if (routes is not null)
+        {
+            foreach (var (at, last) in reached)
+            {
+                var steps = new List<BoardLocation>();
+                for (var node = last; node != first && steps.Count <= limit; node = came[node])
+                {
+                    steps.Add(node.At);
+                }
+
+                steps.Reverse();
+                routes[at] = [.. steps];
             }
         }
 
@@ -389,9 +414,22 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.rout-surrender: {unit.Id} {cause}, so it surrenders to {string.Join(" or ", captors)} as the RtPh ends instead of routing (A20.21)");
         }
 
-        if (Laden(state, unit))
+        // A10.4 (read in the PDF, p. 66; ruling R31d.1): before it routs a broken unit leaves in its Location what it carries beyond its IPC, and routs
+        // with the most PP it can carry within it; the choice is the owner's only among loads of equal PP. The rout does the leaving.
+        IReadOnlyList<RoutLoadItem> left = [];
+        IReadOnlyList<string> kept = [];
+        if (RoutLoadOf(state, unit) is { Laden: true } load)
         {
-            return Refused(scope, label, expected, $"play.rout-laden: {unit.Id} carries more PP than its IPC and drops a SW before it routs (A4.42, A10.4; ruling R13.5)");
+            string[]? named = arguments.TryGetProperty("keep", out var keep) && keep.ValueKind == JsonValueKind.Array ? [.. Strings(arguments, "keep").Order(StringComparer.Ordinal)] : null;
+            var chosen = named is null ? (load.BestLoads.Count == 1 ? load.BestLoads[0] : null)
+                : load.BestLoads.FirstOrDefault(best => best.Order(StringComparer.Ordinal).SequenceEqual(named, StringComparer.Ordinal));
+            if (chosen is null)
+            {
+                var loads = string.Join(", or ", load.BestLoads.Select(best => best.Count == 0 ? "nothing" : string.Join(" and ", best.Select(id => $"{id} ({load.Pp(id)} PP)"))));
+                return Refused(scope, label, expected, $"play.rout-laden: {unit.Id} carries {load.Total} PP and routs with at most {load.Ipc}; it keeps {loads}, and leaves the rest (A10.4)");
+            }
+
+            (kept, left) = (chosen, load.Left(chosen));
         }
 
         if (route.Count == 0 || (lowCrawl && route.Count != 1))
@@ -496,6 +534,13 @@ public sealed partial class GamePlanner
             var routing = unit;
             var rolls = 0;
             var used = 0;
+
+            // A10.4, A4.431: what it leaves is unpossessed in the Location it routs from, written as a drop is.
+            foreach (var item in left)
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "equipment-transferred", new EquipmentTransferred(item.Weapon, null, new MapPosition(start)), package, null));
+            }
+
             for (var index = 0; index < route.Count; index++)
             {
                 // A10.5: a leader wounded on the way routs on only with the MF a wounded SMC has.
@@ -561,7 +606,10 @@ public sealed partial class GamePlanner
         var interdiction = lowCrawl ? "Low Crawl is never Interdicted (A10.52)"
             : threatened.Length == 0 ? "no step enters Open Ground an enemy unit could Interdict (A10.53)"
             : $"Interdicted as it enters {string.Join(", ", threatened)}, a NMC each (A10.53)";
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [$"play.rout: {unit.Id} routs{(lowCrawl ? " by Low Crawl" : "")} to {steps}; {interdiction}"])
+        string[] leaves = left.Count == 0 ? []
+            : [$"play.rout-leaves: {unit.Id} leaves {string.Join(" and ", left.Select(item => $"{item.Weapon} ({item.Pp} PP)"))} in {start}, unpossessed, and routs with "
+                + $"{(kept.Count == 0 ? "no SW" : string.Join(" and ", kept))} (A10.4, A4.431)"];
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [$"play.rout: {unit.Id} routs{(lowCrawl ? " by Low Crawl" : "")} to {steps}; {interdiction}", .. leaves])
         {
             Roll = new PlannedRoll("rout", Build),
             FirstEventId = EventId(attemptId, 1),
@@ -671,17 +719,25 @@ public sealed partial class GamePlanner
     /// What a player needs before routing a broken unit (A10.5, A10.51; table player, pass 13): the woods or building Locations it must reach, and
     /// whether it has any legal step.
     /// </summary>
-    public (IReadOnlyList<BoardLocation> Targets, bool CanRout) RoutAdvice(GameState state, UnitInstance unit)
+    public (IReadOnlyList<BoardLocation> Targets, bool CanRout, IReadOnlyDictionary<BoardLocation, IReadOnlyList<BoardLocation>> Routes) RoutAdvice(GameState state,
+        UnitInstance unit)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(unit);
         if (state.Location(unit.Id)?.Location is not { } at)
         {
-            return ([], false);
+            return ([], false, new Dictionary<BoardLocation, IReadOnlyList<BoardLocation>>());
         }
 
-        var reach = RoutReach(state, unit, at, SeenBy(state, unit.Side, at), 0, RoutHalfMf(unit));
-        return (RoutTargets(state, unit, at, reach), reach.Count > 1);
+        // Pass 31d (design D3): one least-cost route to each place the rout may end, from the search's own steps. The search reads Known enemy
+        // units alone (A10.533), so a route tells the routing side nothing it does not hold. A place the unit may not end in, since it began
+        // ADJACENT to a Known armed enemy unit that is ADJACENT to that place too (A10.51), is given no route.
+        var found = new Dictionary<BoardLocation, BoardLocation[]>();
+        var reach = RoutReach(state, unit, at, SeenBy(state, unit.Side, at), 0, RoutHalfMf(unit), routes: found);
+        var targets = RoutTargets(state, unit, at, reach);
+        var near = KnownEnemies(state, unit.Side).Where(item => Armed(item.Unit) && AdjacentOrSame(state, item.At, at)).ToArray();
+        return (targets, reach.Count > 1, targets.Where(target => found.ContainsKey(target) && !near.Any(item => AdjacentOrSame(state, item.At, target)))
+            .ToDictionary(target => target, target => (IReadOnlyList<BoardLocation>)found[target]));
     }
 
     /// <summary>Whether a unit may keep its DM as the RPh ends (A10.62; ruling R13.1).</summary>

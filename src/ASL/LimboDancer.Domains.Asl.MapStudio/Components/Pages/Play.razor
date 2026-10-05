@@ -445,7 +445,9 @@ else if (state is not null)
                 @if (state.Phase == "rtph")
                 {
                     <RoutActionPanel Obligations="@RoutObligations" Units="@RoutChoices" Unit="@routUnit" Route="@routRoute" LowCrawl="@routLowCrawl"
-                        OnUnit="@(id => routUnit = id)" OnRoute="@(route => routRoute = route)" OnLowCrawl="@(on => routLowCrawl = on)" OnPropose="@ProposeRout" />
+                        Load="@RoutLoadText" Loads="@RoutLoads" Keep="@string.Join(",", RoutKept)" OnKeep="@(keep => routKeep = keep)"
+                        OnUseRoute="@(way => (routUnit, routRoute, routKeep) = (way.Unit, way.Route, way.Unit == routUnit ? routKeep : string.Empty))"
+                        OnUnit="@(id => (routUnit, routKeep) = (id, string.Empty))" OnRoute="@(route => routRoute = route)" OnLowCrawl="@(on => routLowCrawl = on)" OnPropose="@ProposeRout" />
                 }
                 @if (state.Phase is "rph" or "pfph" or "mph" or "dfph" or "aph" or "ccph" or "rtph" && SupportWeapons.Any())
                 {
@@ -3163,6 +3165,9 @@ else if (state is not null)
     private string routUnit = string.Empty;
     private string routRoute = string.Empty;
     private bool routLowCrawl;
+
+    // Pass 31d (design D2): the load a laden unit keeps as it routs, as its SW ids joined by commas; empty for the first of its best loads.
+    private string routKeep = string.Empty;
     private string swWeapon = string.Empty;
     private string swUnit = string.Empty;
     private string deploySquad = string.Empty;
@@ -5179,7 +5184,7 @@ else if (state is not null)
         rallyUnit = rallyLeader = repairWeapon = string.Empty;
         ordnanceGun = ordnanceTarget = ordnanceVehicle = string.Empty;
         ordnanceTurn = "east";
-        routUnit = routRoute = string.Empty;
+        routUnit = routRoute = routKeep = string.Empty;
         routLowCrawl = false;
         swWeapon = swUnit = string.Empty;
         deploySquad = deployLeader = string.Empty;
@@ -5500,15 +5505,33 @@ else if (state is not null)
     /// The destination a broken unit must reach, or that it has no legal step and so fails to rout or surrenders as the RtPh ends (A10.5, A10.51,
     /// A20.21; table player, pass 13).
     /// </summary>
-    private string RoutAdviceText(UnitInstance unit, bool must)
+    private (string Text, IReadOnlyList<RoutActionPanel.Way> Routes) RoutAdviceText(UnitInstance unit, bool must)
     {
-        // Pass 31c (backlog section 48; play test P-19): one sentence that says what the unit may or must do.
-        var (targets, canRout) = Live.Planner.RoutAdvice(state!, unit);
-        return !canRout
+        // Pass 31c (backlog section 48; play test P-19): one sentence that says what the unit may or must do. Pass 31d (design D3): each place the
+        // rout may end is said with the hexes on a least-cost way to it, "[AA4] (by [Z5])", and the way is offered as a route to use.
+        var (targets, canRout, routes) = Live.Planner.RoutAdvice(state!, unit);
+        string Place(BoardLocation target) => routes.TryGetValue(target, out var route) && route.Count > 1 ? $"{target} (by {string.Join(", ", route.Take(route.Count - 1))})" : target.ToString();
+        return (!canRout
             ? must ? ". It has no legal rout step, so it is eliminated for Failure to Rout, or surrenders, when the RtPh ends (A10.5)." : ". It has no legal rout step, so it stays where it is."
-            : targets.Count > 0 ? $". Its route must end in {string.Join(" or ", targets)}."
-            : ". No woods or building is within its reach, so any legal route will do.";
+            : targets.Count > 0 ? $". Its route must end in {string.Join(" or ", targets.Select(Place))}."
+            : ". No woods or building is within its reach, so any legal route will do.",
+            [.. targets.Where(routes.ContainsKey).Select(target => new RoutActionPanel.Way(target.ToString(), string.Join(", ", routes[target])))]);
     }
+
+    /// <summary>Pass 31d (design D2; A10.4): the load of the unit chosen for the rout, when it carries more than its IPC.</summary>
+    private RoutLoad? RoutLoadNow => state is not null && state.Unit(routUnit) is { } unit && Mine(unit) && Live.Planner.RoutLoadOf(state, unit) is { Laden: true } load ? load : null;
+
+    /// <summary>The SW the unit keeps: the load chosen, or its first best load.</summary>
+    private IReadOnlyList<string> RoutKept => RoutLoadNow is { } load ? load.BestLoads.FirstOrDefault(best => string.Join(",", best) == routKeep) ?? load.BestLoads[0] : [];
+
+    private string? RoutLoadText => RoutLoadNow is { } load && state?.Location(routUnit)?.Location is { } at
+        ? $"{routUnit} carries {load.Total} PP and may rout with {load.Ipc} (A10.4). It leaves {string.Join(" and ", load.Left(RoutKept).Select(item => $"{item.Weapon} ({item.Pp} PP)"))} in {at}"
+            + $" and keeps {(RoutKept.Count == 0 ? "no SW" : string.Join(" and ", RoutKept.Select(id => $"{id} ({load.Pp(id)} PP)")))}."
+        : null;
+
+    private IReadOnlyList<PlayChoice> RoutLoads => RoutLoadNow is { BestLoads.Count: > 1 } load
+        ? [.. load.BestLoads.Select(best => new PlayChoice(string.Join(",", best), best.Count == 0 ? "no SW" : string.Join(" and ", best.Select(id => $"{id} ({load.Pp(id)} PP)"))))]
+        : [];
 
     /// <summary>A route typed as hexes, each on the routing unit's board (A10.5).</summary>
     private string[] RouteLocations(string text) => state?.Location(routUnit)?.Location is { } at
@@ -5519,6 +5542,7 @@ else if (state is not null)
     private Task ProposeRout() => Propose(GameActions.Rout, JsonSerializer.SerializeToElement(new
     {
         gameId, attemptId = Attempt("rout"), expectedRevision = (long)history!.Events.Count, unitId = routUnit, route = RouteLocations(routRoute), lowCrawl = routLowCrawl,
+        keep = RoutLoadNow is null ? null : RoutKept,
     }));
 
     /// <summary>The SW on the map, possessed or not, other than Guns.</summary>
@@ -5528,7 +5552,8 @@ else if (state is not null)
 
     private string SupportWeaponText(EquipmentInstance weapon) =>
         $"{weapon.Id} ({(weapon.Holding is { } holding ? $"held by {holding.Holder}" : $"left in {state!.Location(weapon.Id)!.Location}")}"
-        + $"{(GameState.Condition(weapon, Conditions.Dismantled) == ConditionState.True ? ", dismantled" : "")})";
+        + $"{(GameState.Condition(weapon, Conditions.Dismantled) == ConditionState.True ? ", dismantled" : "")}"
+        + $"{(Live.Planner.PortageOf(weapon) is { } pp ? $", {pp} PP" : "")})";
 
     // Pass 31c (design D11): the label is the unit's id, which every panel reads as its name; the name's tag says the side.
     private static PlayChoice Labelled(UnitInstance unit) => new(unit.Id, unit.Id);
@@ -5587,9 +5612,17 @@ else if (state is not null)
     private IReadOnlyList<RoutActionPanel.Obligation> ReadRoutObligations => state is null ? []
         : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && GameState.Condition(unit, Conditions.Broken) == ConditionState.True && Live.Planner.MayRout(state, unit))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal)
-            .Select(unit => new RoutActionPanel.Obligation(unit.Id, unit.Id
-                + (Live.Planner.MustRout(state, unit) is { } why ? $" must rout: {why}" : " may rout, since it is under DM")
-                + (state.RoutedThisPhase.Contains(unit.Id) ? ". It has routed." : RoutAdviceText(unit, Live.Planner.MustRout(state, unit) is not null))))];
+            .Select(unit =>
+            {
+                var owes = unit.Id + (Live.Planner.MustRout(state, unit) is { } why ? $" must rout: {why}" : " may rout, since it is under DM");
+                if (state.RoutedThisPhase.Contains(unit.Id))
+                {
+                    return new RoutActionPanel.Obligation(unit.Id, owes + ". It has routed.");
+                }
+
+                var (advice, routes) = RoutAdviceText(unit, Live.Planner.MustRout(state, unit) is not null);
+                return new RoutActionPanel.Obligation(unit.Id, owes + advice, routes);
+            })];
 
     private IReadOnlyList<PlayChoice> ReadRoutChoices => state is null ? []
         : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && GameState.Condition(unit, Conditions.Broken) == ConditionState.True
@@ -5963,6 +5996,7 @@ else if (state is not null)
             {
                 routUnit = string.Empty;
                 routRoute = string.Empty;
+                routKeep = string.Empty;
                 routLowCrawl = false;
             }
             else if (proposal.Action == GameActions.Deploy || proposal.Action == GameActions.Recombine)
@@ -6062,6 +6096,7 @@ else if (state is not null)
             : consequences.Any(item => item.Kind == ConsequenceKind.End) ? "Confirm and end the game"
             : consequences.Any(item => item.Kind == ConsequenceKind.OwnUnits) ? "Confirm and fire on your own units"
             : consequences.Any(item => item.Kind == ConsequenceKind.Waste) ? "Confirm the shot with no LOS"
+            : consequences.Any(item => item.Kind == ConsequenceKind.Left) ? "Confirm: a SW is left behind"
             : "Confirm";
     }
 
