@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 31d Design
 
-**Status:** Built 2026-10-04 on branch `feature/asl-backlog-pass-31d`, with the user's answers (section 12), every one as recommended: tasks 31d.1 to 31d.6, two reviews and their fixes, the Studio check, and the tests. Section 14 says what was built and where it differs from this design; the [review document](<Scenario A1 Backlog Pass 31d Review 2026-10-04.md>) has the reviews, the check, and the tests. Pass 31d is my name for the short pass the user chose on 2026-10-04 after pass 31c: its leftovers (backlog section 50) before passes 32 and 34. The plan has no row for it yet.
+**Status:** Built 2026-10-04 on branch `feature/asl-backlog-pass-31d` and merged into main as 5120516 the same day, with the user's answers (section 12), every one as recommended: tasks 31d.1 to 31d.6, two reviews and their fixes, the Studio check, and the tests. Section 14 says what was built and where it differs from this design; the [review document](<Scenario A1 Backlog Pass 31d Review 2026-10-04.md>) has the reviews, the check, and the tests. Pass 31d is my name for the short pass the user chose on 2026-10-04 after pass 31c: its leftovers (backlog section 50) before passes 32 and 34. The plan has no row for it yet.
 
 **Date:** 2026-10-04
 

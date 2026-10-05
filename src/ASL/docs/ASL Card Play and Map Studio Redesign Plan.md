@@ -433,7 +433,7 @@ Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (backlog sect
 
 **Purpose:** what the third play test (The Tractor Works) left: a phase's end that took seconds on a large card, a laden unit's rout refused with no word of what to drop, and the referee's items. **After:** pass 31c. **From:** backlog section 50.
 
-**Status:** built 2026-10-04 on branch `feature/asl-backlog-pass-31d`: tasks 31d.1 to 31d.6, a referee's and a table player's review and their fixes, the Studio check, and the tests. The design's section 14 says what was built and where it differs; the [review document](<Scenario A1 Backlog Pass 31d Review 2026-10-04.md>) has the reviews, the check, and the tests. Rulings R31d.1 to R31d.6; backlog section 51. Unlike pass 31c it is not a Studio pass only: it changes how a game's log is read (the store, the projector, the planner), the check of what a broken unit leaves, and what the Fire package decides for concealed firers. It waits for the user's word before the merge.
+**Status:** built 2026-10-04 on branch `feature/asl-backlog-pass-31d`: tasks 31d.1 to 31d.6, a referee's and a table player's review and their fixes, the Studio check, and the tests. The design's section 14 says what was built and where it differs; the [review document](<Scenario A1 Backlog Pass 31d Review 2026-10-04.md>) has the reviews, the check, and the tests. Rulings R31d.1 to R31d.6; backlog section 51. Unlike pass 31c it is not a Studio pass only: it changes how a game's log is read (the store, the projector, the planner), the check of what a broken unit leaves, and what the Fire package decides for concealed firers. Merged into main as 5120516 on 2026-10-04 at the user's word.
 
 | Task | What it changes | Estimate |
 |---|---|---|

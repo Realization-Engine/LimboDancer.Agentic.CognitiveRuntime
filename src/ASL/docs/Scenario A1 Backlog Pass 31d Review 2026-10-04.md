@@ -6,7 +6,7 @@
 
 ## Status
 
-Built on branch `feature/asl-backlog-pass-31d`, at the user's word ("Build, all as recommended"): six tasks, two reviews and their fixes, the Studio check, the tests, and the documents. Nothing is merged or pushed; the merge waits for the user's word.
+Built on branch `feature/asl-backlog-pass-31d`, at the user's word ("Build, all as recommended"): six tasks, two reviews and their fixes, the Studio check, the tests, and the documents. Merged into main as 5120516 on 2026-10-04 at the user's word and pushed.
 
 ## What a player now meets
 
@@ -114,6 +114,8 @@ No existing test was changed but one: `BacklogPass20TablePlayerTests` reads the 
 Backlog section 51. In short: A6.11 kept for a side; the viewing side's option not to force a loss of "?"; movement's read of A12.14; setup by hand in a player's words; why a prisoner stood without its Guard; three tests of pass 31c and four page tests of this pass.
 
 ## Questions for the user
+
+Answered 2026-10-04: "Agree with 1. and 2. and then hold." The pass is merged; movement's read of A12.14 is brought in line with fire's in the next rules pass (backlog section 51); nothing further is started until the user says.
 
 | # | Question | Recommendation |
 |---|---|---|
