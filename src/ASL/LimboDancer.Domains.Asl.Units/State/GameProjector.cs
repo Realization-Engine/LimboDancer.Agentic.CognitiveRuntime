@@ -15,23 +15,36 @@ public static class GameProjector
 {
     public static GameHistory Project(IReadOnlyList<GameEvent> events, UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs,
         ILocationChains? chains = null, IReadOnlyCollection<string>? liveSources = null, IFireRecordVerifier? fire = null,
+        IRallyRecordVerifier? rally = null, ICloseCombatRecordVerifier? closeCombat = null, IOrdnanceRecordVerifier? ordnance = null) =>
+        Begin(events, vocabulary, catalogs, chains, liveSources, fire, rally, closeCombat, ordnance).History;
+
+    /// <summary>
+    /// Replays a game's events as <see cref="Project"/> does, and keeps what the replay carries from one event to the next, so the
+    /// events that follow can be applied later without the first ones being replayed again (pass 31d, design D1).
+    /// </summary>
+    public static ReplayedGame Begin(IReadOnlyList<GameEvent> events, UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs,
+        ILocationChains? chains = null, IReadOnlyCollection<string>? liveSources = null, IFireRecordVerifier? fire = null,
         IRallyRecordVerifier? rally = null, ICloseCombatRecordVerifier? closeCombat = null, IOrdnanceRecordVerifier? ordnance = null)
     {
         ArgumentNullException.ThrowIfNull(events);
         ArgumentNullException.ThrowIfNull(vocabulary);
         ArgumentNullException.ThrowIfNull(catalogs);
         var diagnostics = new List<UnitDiagnostic>();
-        var states = new List<GameState>();
         if (chains is null)
         {
             diagnostics.Add(UnitDiagnostic.Warning("UNIT-STATE-020", "No location chains were given, so map positions are not checked against the boards in play."));
         }
 
-        var replay = new Replay(vocabulary, catalogs, chains, liveSources ?? [], fire, rally, closeCombat, ordnance, diagnostics);
-        foreach (var gameEvent in events)
+        return Run(new Replay(vocabulary, catalogs, chains, liveSources ?? [], fire, rally, closeCombat, ordnance, diagnostics), [.. events], [], diagnostics);
+    }
+
+    /// <summary>Applies the events that have no state yet, stopping at the first that breaks a rule.</summary>
+    internal static ReplayedGame Run(Replay replay, GameEvent[] events, List<GameState> states, List<UnitDiagnostic> diagnostics)
+    {
+        for (var index = states.Count; index < events.Length; index++)
         {
             var errors = Errors(diagnostics);
-            var state = replay.Apply(gameEvent, states.Count > 0 ? states[^1] : null);
+            var state = replay.Apply(events[index], states.Count > 0 ? states[^1] : null);
             if (Errors(diagnostics) > errors || state is null)
             {
                 break;
@@ -40,13 +53,13 @@ public static class GameProjector
             states.Add(state);
         }
 
-        return new GameHistory(events, states, diagnostics);
+        return new ReplayedGame(replay, new GameHistory(events, states, diagnostics));
     }
 
     private static int Errors(List<UnitDiagnostic> diagnostics) =>
         diagnostics.Count(diagnostic => diagnostic.Severity == UnitDiagnosticSeverity.Error);
 
-    private sealed class Replay(UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs, ILocationChains? chains, IReadOnlyCollection<string> liveSources,
+    internal sealed class Replay(UnitVocabulary vocabulary, IReadOnlyList<UnitCatalog> catalogs, ILocationChains? chains, IReadOnlyCollection<string> liveSources,
         IFireRecordVerifier? fireVerifier, IRallyRecordVerifier? rallyVerifier, ICloseCombatRecordVerifier? closeCombatVerifier,
         IOrdnanceRecordVerifier? ordnanceVerifier, List<UnitDiagnostic> diagnostics)
     {
@@ -56,6 +69,32 @@ public static class GameProjector
         private UnitCatalog? catalog;
         private MapLayout? layout;
         private string path = string.Empty;
+
+        /// <summary>
+        /// A replay that carries what this one carries and writes to its own diagnostics (pass 31d, design D1): what it applies leaves this one as
+        /// it is. Everything carried between events is one of these six fields.
+        /// </summary>
+        public Replay Copy(List<UnitDiagnostic> ownDiagnostics)
+        {
+            var copy = new Replay(vocabulary, catalogs, chains, liveSources, fireVerifier, rallyVerifier, closeCombatVerifier, ordnanceVerifier, ownDiagnostics)
+            {
+                catalog = catalog,
+                layout = layout,
+                path = path,
+            };
+            copy.eventIds.UnionWith(eventIds);
+            foreach (var roll in rolls)
+            {
+                copy.rolls[roll.Key] = roll.Value;
+            }
+
+            foreach (var fire in fires)
+            {
+                copy.fires[fire.Key] = fire.Value;
+            }
+
+            return copy;
+        }
 
         public GameState? Apply(GameEvent gameEvent, GameState? previous)
         {
@@ -3993,5 +4032,66 @@ public static class GameProjector
             Error(code, message);
             return null;
         }
+    }
+}
+
+/// <summary>
+/// A game's history with what its replay carried at its last event (pass 31d, design D1). It never changes: <see cref="Continue"/> makes another
+/// projection and leaves this one as it is, so a kept projection serves any number of continuations.
+/// </summary>
+public sealed class ReplayedGame
+{
+    private readonly GameProjector.Replay replay;
+
+    internal ReplayedGame(GameProjector.Replay replay, GameHistory history)
+    {
+        this.replay = replay;
+        History = history;
+    }
+
+    /// <summary>The history: its events are a copy of the list given, so a caller's later change to its list changes nothing here.</summary>
+    public GameHistory History
+    {
+        get;
+    }
+
+    /// <summary>Whether every event was applied, so that events may follow.</summary>
+    public bool Complete => !History.HasErrors && History.States.Count == History.Events.Count;
+
+    /// <summary>Whether a list begins with this projection's events, object for object.</summary>
+    public bool Begins(IReadOnlyList<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(events);
+        var own = History.Events;
+        if (own.Count == 0 || own.Count > events.Count || !ReferenceEquals(own[^1], events[own.Count - 1]))
+        {
+            return false;
+        }
+
+        for (var index = 0; index < own.Count - 1; index++)
+        {
+            if (!ReferenceEquals(own[index], events[index]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// The projection of a list that begins with this one's events: only the events after them are applied, by the code a whole replay runs, and
+    /// each is verified as a whole replay verifies it.
+    /// </summary>
+    public ReplayedGame Continue(IReadOnlyList<GameEvent> events)
+    {
+        ArgumentNullException.ThrowIfNull(events);
+        if (!Complete || !Begins(events))
+        {
+            throw new ArgumentException("The events do not continue this projection.", nameof(events));
+        }
+
+        var diagnostics = new List<UnitDiagnostic>(History.Diagnostics);
+        return GameProjector.Run(replay.Copy(diagnostics), [.. events], [.. History.States], diagnostics);
     }
 }

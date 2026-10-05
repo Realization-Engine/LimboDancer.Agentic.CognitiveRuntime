@@ -167,12 +167,68 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
     private readonly TimeProvider clock = time ?? TimeProvider.System;
 
-    /// <summary>Replays a live game's events against the exact boards in play; refuses when a board cannot be read.</summary>
+    // Pass 31d (design D1): the projections last asked for, the most recent first. A request replayed the whole game at each of its guards, some
+    // twenty times; a list that begins with a kept projection's events, object for object, now has only its later events applied.
+    private const int KeptProjections = 8;
+    private readonly List<ReplayedGame> projections = [];
+
+    /// <summary>
+    /// Replays a live game's events against the exact boards in play; refuses when a board cannot be read. The events of a list already replayed
+    /// are not replayed again (pass 31d): a list that begins with them, as the same objects, has the rest applied to what was kept. Every event is
+    /// still applied and verified once, by the same code.
+    /// </summary>
     public GameHistory Replay(IReadOnlyList<GameEvent> events)
     {
         ArgumentNullException.ThrowIfNull(events);
-        return GameProjector.Project(events, vocabulary, catalogs, Chains(events), LiveGames.Sources, FireRecordVerifier.Shared, RallyRecordVerifier.Shared,
+        ReplayedGame? kept = null;
+        lock (projections)
+        {
+            foreach (var candidate in projections)
+            {
+                if ((kept is null || candidate.History.Events.Count > kept.History.Events.Count) && candidate.Begins(events))
+                {
+                    kept = candidate;
+                }
+            }
+        }
+
+        if (kept is not null && kept.History.Events.Count == events.Count)
+        {
+            Keep(kept);
+            return kept.History;
+        }
+
+        if (kept is { Complete: true })
+        {
+            Keep(kept);
+            var continued = kept.Continue(events);
+            Keep(continued);
+            return continued.History;
+        }
+
+        // A board that cannot be read is asked for again at the next request, so a replay without its chains is not kept.
+        var chains = Chains(events);
+        var projection = GameProjector.Begin(events, vocabulary, catalogs, chains, LiveGames.Sources, FireRecordVerifier.Shared, RallyRecordVerifier.Shared,
             CloseCombatRecordVerifier.Shared, OrdnanceRecordVerifier.Shared);
+        if (chains is not null && events.Count > 0)
+        {
+            Keep(projection);
+        }
+
+        return projection.History;
+    }
+
+    private void Keep(ReplayedGame projection)
+    {
+        lock (projections)
+        {
+            projections.Remove(projection);
+            projections.Insert(0, projection);
+            if (projections.Count > KeptProjections)
+            {
+                projections.RemoveRange(KeptProjections, projections.Count - KeptProjections);
+            }
+        }
     }
 
     public async Task<GamePlan> PlanAsync(ActionDescriptor action, JsonElement arguments, Guid tenant, string? actor = null,

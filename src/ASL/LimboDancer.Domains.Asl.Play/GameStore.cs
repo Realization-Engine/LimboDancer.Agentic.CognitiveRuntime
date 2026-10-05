@@ -1,5 +1,6 @@
 using LimboDancer.Dice;
 using System.Collections.Concurrent;
+using System.Security.Cryptography;
 using System.Text;
 using LimboDancer.Domains.Asl.Units;
 using LimboDancer.Domains.Asl.Units.State;
@@ -70,11 +71,45 @@ public sealed class FileGameStore(string root) : IGameStore
     private const string Suffix = ".game.json";
     private static readonly ConcurrentDictionary<string, object> Locks = new(StringComparer.OrdinalIgnoreCase);
 
+    // Pass 31d (design D1): the record last parsed from each file, with the SHA-256 of the bytes it was parsed from. While a file's bytes are the
+    // same, a read gives the same event objects, which is how the planner knows the events it has replayed already.
+    private const int KeptRecords = 32;
+    private static readonly ConcurrentDictionary<string, (byte[] Hash, GameRecord? Record)> Parsed = new(StringComparer.OrdinalIgnoreCase);
+
     public GameRecord? Read(GameScope scope)
     {
         ArgumentNullException.ThrowIfNull(scope);
-        var path = PathOf(scope);
-        return File.Exists(path) ? GameEventReader.Read(File.ReadAllBytes(path)).Record : null;
+        return Parse(PathOf(scope));
+    }
+
+    /// <summary>The record in a file: the one parsed last when the file's bytes are those it was parsed from, and a new parse otherwise.</summary>
+    private static GameRecord? Parse(string path)
+    {
+        if (!File.Exists(path))
+        {
+            return null;
+        }
+
+        var bytes = File.ReadAllBytes(path);
+        var hash = SHA256.HashData(bytes);
+        if (Parsed.TryGetValue(path, out var kept) && kept.Hash.AsSpan().SequenceEqual(hash))
+        {
+            return kept.Record;
+        }
+
+        var record = GameEventReader.Read(bytes).Record;
+        Remember(path, hash, record);
+        return record;
+    }
+
+    private static void Remember(string path, byte[] hash, GameRecord? record)
+    {
+        if (Parsed.Count >= KeptRecords && !Parsed.ContainsKey(path))
+        {
+            Parsed.Clear();
+        }
+
+        Parsed[path] = (hash, record);
     }
 
     public IReadOnlyList<GameScope> List(Guid tenant)
@@ -117,7 +152,7 @@ public sealed class FileGameStore(string root) : IGameStore
         var path = PathOf(scope);
         lock (Locks.GetOrAdd(path, _ => new object()))
         {
-            var current = File.Exists(path) ? GameEventReader.Read(File.ReadAllBytes(path)).Record : null;
+            var current = Parse(path);
             var existing = current?.Events ?? [];
             if (firstEventId is not null && existing.Any(item => item.EventId == firstEventId))
             {
@@ -146,7 +181,8 @@ public sealed class FileGameStore(string root) : IGameStore
 
             // The log is written only if it reads back: a batch built in memory must meet the rules a stored log meets.
             var text = GameEventWriter.Write(scope, new GameRecord(current?.Label ?? label, Synthetic: false, all));
-            var reread = GameEventReader.Read(Encoding.UTF8.GetBytes(text));
+            var written = new UTF8Encoding(false).GetBytes(text);
+            var reread = GameEventReader.Read(written);
             if (reread.HasErrors)
             {
                 return new AppendResult(AppendStatus.Invalid, existing.Count, reread.Diagnostics);
@@ -154,8 +190,18 @@ public sealed class FileGameStore(string root) : IGameStore
 
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
             var temporary = path + ".tmp";
-            File.WriteAllText(temporary, text, new UTF8Encoding(false));
+            File.WriteAllBytes(temporary, written);
             File.Move(temporary, path, overwrite: true);
+
+            // Pass 31d: the file now holds the events it held, written again as they were read, and the new ones. The record kept for it is the
+            // events already read, as the objects they were, followed by the new events as they read back from the text just written.
+            if (reread.Record is { } stored && stored.Events.Count == all.Length)
+            {
+                Remember(path, SHA256.HashData(written), stored with
+                {
+                    Events = [.. existing, .. stored.Events.Skip(existing.Count)]
+                });
+            }
             return new AppendResult(AppendStatus.Committed, all.Length, []);
         }
     }
