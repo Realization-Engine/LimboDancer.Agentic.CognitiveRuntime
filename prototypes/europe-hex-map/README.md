@@ -1,6 +1,6 @@
-# Europe hex map prototype
+# Europe and North Africa campaign map prototype
 
-A standalone, offline geographic prototype for the Military Command and Multiscale Simulation Design. Open **index.html** in a browser. Select hexes, pan/zoom, toggle layers, create a campaign seed and export the structured map or selected hex.
+An offline geographic prototype for the Military Command and Multiscale Simulation Design. Open **index.html** in a browser, keeping `site.css`, `app.js`, `map-data.js` and `image-export.js` beside it. Select hexes, pan/zoom, explore theater workspaces, toggle layers, create a campaign seed, and export campaign data, a selected overview hex, or a PNG of the current map view.
 
 ## Implemented
 - Natural Earth land, lakes, river lines and selected cities from a pinned upstream commit. Original inputs and SHA-256 checksums are in sources/.
@@ -8,34 +8,61 @@ A standalone, offline geographic prototype for the Military Command and Multisca
 - Polygon-intersection land fractions, river intersection lists, city associations, stable hex IDs and geographic GeoJSON export.
 - Campaign seed persisted in browser local storage. SHA-256 derives a stable per-hex refinement token from seed, base hash, generator version, hex ID and layer.
 - Source geometry remains fixed across seeds. Lower-scale procedural terrain generation is not implemented; fresh seeds currently change refinement tokens only.
-- No dependencies or network requests when opening the generated HTML. Browser storage is local to the opening origin/path and exports preserve the seed explicitly.
+- No server, package installation or network requests are needed to use the generated viewer. It loads four sibling asset files. Browser storage is local to the opening origin/path and exports preserve the seed explicitly.
+- All six theaters provide Geography, Logistics and Planning workspaces with approximately 26 km sectors.
+- Export campaign data produces JSON; Export map image produces PNG.
 
 ## Files
-- index.html: self-contained interactive deliverable.
-- preview.png: static geographic preview, not a browser screenshot.
-- map.json: projected features, hex metadata, source manifest and base hash. Feature coordinates use the documented local-kilometer transform, not geographic GeoJSON.
-- hexes.geojson: standard longitude/latitude hex polygons and properties.
-- viewer.html: interface template.
-- build.py: reproducible builder; verifies original input hashes.
-- test_map.py: source/hash, coordinate, subset/order, neighbor geometry and export checks.
+
+| File | Role |
+| --- | --- |
+| `index.html` | Generated browser entry point; loads the sibling assets below. |
+| `site.css` | Viewer stylesheet. |
+| `app.js` | Generated application logic. |
+| `map-data.js` | Generated map payload, loaded before application logic. |
+| `image-export.js` | PNG serialization, rasterization and download. |
+| `viewer.html` | HTML source template. |
+| `app.template.js` | Application source template. |
+| `theater-view.js` | Shared theater workspace code inserted into `app.js` by the builder. |
+| `build.py` | Builder and source-hash verification. |
+| `prepare_theaters.py` | Compiles all six detailed theater packages. |
+| `map.json` | Projected base geography, source manifest and geography hash. |
+| `hexes.geojson` | Geographic overview hex polygons and metadata. |
+| `theater-workspaces.json` | Generated detailed theater reference packages. |
+| `transport-research.html`, `southern-transport-research.html`, `africa-terrain-research.html` | Linked evidence registers; keep these with a distributed viewer to preserve the local links. |
+| `preview.py`, `preview.png` | Independent static preview generator and output, not a browser screenshot. |
+| `test_map.py`, `test_transport.py`, `test_theaters.py` | Geography, provenance and workspace data checks. |
+| `test_viewer.cjs`, `test_image_export.cjs` | Viewer and PNG-export logic checks using test doubles. |
+
+Additional preparation modules and source manifests document the individual terrain and transport layers. Edit the templates and source modules, rather than generated outputs.
 
 ## Rebuild
-Use Python 3.12 with requirements.txt installed in an isolated environment:
-    python -m pip install -r requirements.txt
-    python build.py
-    python -m unittest test_map.py
+Use Python 3.12 with `requirements.txt` installed in an isolated environment. Node.js is needed for the JavaScript checks.
 
-Optional static preview requires Pillow:
-    python preview.py
+```text
+python -m pip install -r requirements.txt
+python build.py
+python -m unittest test_map test_transport test_theaters
+node test_viewer.cjs
+node test_image_export.cjs
+```
+
+Optional static preview generation requires Pillow:
+
+```text
+python preview.py
+```
+
+The build writes `index.html`, `app.js` and `map-data.js`. The authored `site.css` and `image-export.js` remain separate. Rebuilding the forest extraction additionally requires the dependencies described below and its locally retained raster input.
 
 Pin the full environment for cross-platform byte-identical build guarantees; the prototype's same-environment reproducibility is tested. Generated outputs retain source hashes. Dependency or PROJ changes require revalidation, not silent source substitution.
 
 ## Scope and limitations
 This is contemporary generalized reference geography, not WWII-admitted terrain. Cities use source names. No political boundaries are displayed. Mountain regions, year-2000 tree cover and modern transport are reference overlays, not gameplay-admitted WWII layers. Numeric elevation, historical crossings and dated settlements still need reviewed sources. A land cell is not an assertion of open ground.
 
-The source is cartographic 1:50 million geography, too generalized to directly recover ASL terrain or precise bridge positions. River lists indicate geometric intersection, not navigability, crossing rules or a routed logistics graph. Coastlines retain their actual simplified geometry inside mixed hexes.
+The base uses generalized 1:50 million geography, supplemented with 1:10 million reference detail and other documented sources. These sources are too generalized to directly recover ASL terrain or precise bridge positions. River lists indicate geometric intersection, not navigability, crossing rules or a routed logistics graph. Coastlines retain their actual simplified geometry inside mixed hexes.
 
-The map has a bounded Europe viewport; cropped geographic features may continue outside it. Full hexes near viewport edges remain identified. The map seed is not combat randomness. No campaign battle-damage system or live ASL integration is implemented.
+The map has a bounded Europe and North Africa viewport; cropped geographic features may continue outside it. Full hexes near viewport edges remain identified. The map seed is not combat randomness. No campaign battle-damage system or live ASL integration is implemented.
 
 Source: Natural Earth, public domain. https://www.naturalearthdata.com/about/terms-of-use/
 Exact source URLs, commit and hashes: sources/manifest.json.
@@ -60,9 +87,9 @@ https://geodiscovery.uwm.edu/catalog/stanford-vv402mj3929
 ## September 1939 transport admission
 The target baseline is 1939-09-01. No historical segments are admitted yet. The campaign data and GeoJSON use unknown/null coverage instead of zero route length. Modern routes are held separately in research-transport.json and in a collapsible research-only viewer section. Normal campaign export explicitly removes those research features. Closing that section hides its overlays.
 
-sources/transport-1939-review.json records candidate evidence and its limitations. The first review area is France and the Low Countries. The inspected Seine reconstruction uses December 31 status and excludes temporary wartime changes; the Mitteleuropa catalog dates its map to 1940. Neither establishes September 1 coverage. The 1920-1940 NAKALA dataset has been identified bibliographically but its files have not been inspected.
+sources/transport-1939-review.json records candidate evidence and its limitations. The first review area is France and the Low Countries. The inspected Seine reconstruction uses December 31 status and excludes temporary wartime changes; the Mitteleuropa catalog dates its map to 1940. Neither establishes September 1 coverage. The 1920-1940 NAKALA files have been acquired, inspected and displayed as a research layer, as described below; they are not admitted September 1939 gameplay data.
 
-The historical importer is deliberately not implemented: a nonempty admission file fails the build until segment/date validation is implemented. This prevents manually relabeling modern features as historical. The missing work is source acquisition, georeferencing/digitization, per-segment corroboration, uncertainty and topology review. Modern data is retained solely for comparison, not automatically backdated.
+The historical importer is deliberately not implemented: a nonempty admission file fails the build until segment/date validation is implemented. This prevents manually relabeling modern features as historical. Remaining work includes filling source gaps, georeferencing/digitization where needed, per-segment corroboration, uncertainty and topology review. Modern data is retained solely for comparison, not automatically backdated.
 
 ## Regional prewar transport survey
 
@@ -93,7 +120,7 @@ The repository dates the collection to the interval 1920-1940, not September 193
 
 Attribution: Bárbara Polo Martín. License: Creative Commons Attribution-NonCommercial 4.0 (CC-BY-NC-4.0), https://creativecommons.org/licenses/by-nc/4.0/. Display conversion and simplification are our modifications. This research layer is excluded from campaign exports, campaign hashes and gameplay admission. Commercial inclusion would require appropriate permission or replacement sources.
 
-The earlier statement that NAKALA files had not been inspected is superseded by this acquisition. A complete exact-date 1939 network is still outstanding.
+A complete exact-date 1939 network is still outstanding.
 
 ### Systematic source chain
 - NAKALA dataset and its related study: https://www.techscience.com/RIG/v35n1/65922/html . The study documents a wider historical transportation GIS, with regional variation in precision and completeness.
@@ -116,42 +143,32 @@ The next historical refinement is to replace inferred hub importance with review
 
 
 ## Continental and theater navigation
-The Europe view is now labeled Continental View. Enable Show theater areas and select an outline, or use the theater selector, then Enter Theater. Return to Europe (or Fit Europe) restores the continental framing. Theater outlines support keyboard selection. Outlines hide on entry so they do not intercept hex selection. Panning beyond an area is unrestricted.
 
-The four areas in theaters.json are illustrative campaign presets, not historical command boundaries: Western Europe, Eastern Europe, Mediterranean and Northern Europe. They may overlap. Definitions use the same local EPSG:3035 coordinates as the map, and contain unassigned command/objective fields. Campaign exports include these definitions separately from base geography. Editing area definitions does not regenerate terrain or alter the geography hash. Entering a theater preserves the campaign seed and selected hex, and reveals at least the regional railway tier.
+Enable **Show theater areas** and select an outline, or use the theater selector, then **Enter Theater**. **Return to overview** or **Fit overview** restores continental framing. Return to overview remains visible but disabled in the overview. Theater outlines support keyboard selection and hide on entry so they do not intercept sector selection. Panning beyond the area is unrestricted.
 
-This implements navigation and transport detail on the existing continuous map. The 104 km hex grid and existing source geography are retained. Finer hex resolution, additional settlement data, formations, logistics and command assignments are not yet implemented. No new geographic detail is invented by entering a theater.
+The six presets are Western Europe, Eastern Europe, Mediterranean, Northern Europe, Northwest Africa and Libya-Egypt. They are illustrative campaign areas, not historical command boundaries, and may overlap. Definitions share the map's local EPSG:3035 coordinates. Command and objective assignments remain unassigned. Entering a theater preserves the campaign seed and overview selection, and reveals at least the regional railway tier.
 
+Every theater uses the shared workspace described below. The continental grid is approximately 104 km across flats; theater sectors are approximately 26 km. Both use fixed origins and coordinates. This does not imply that coarse hexes subdivide exactly into the finer hexes.
 
-## Western Europe theater workspace
-The earlier navigation-only limitation is superseded for Western Europe. Enter this theater to switch to Geography, Logistics and Planning modes. Its globally anchored 15 km-radius grid is approximately 26 km across flats, with 3,200 land-intersecting sectors. It is a separate resolution on shared coordinates, not an assertion that coarse hexes subdivide exactly. Sectors are selectable and show reference settlements; these do not carry ASL terrain or movement adjudication.
+The gray focus veil and perimeter follow the union of the active theater's sector footprints. They update with pan/zoom, ignore pointer events, remain independent of the grid toggle and disappear on return to the overview. Only the active theater's finer grid is shown. The footprint is a presentation boundary, not a movement restriction.
 
-The theater adds 293 reference settlements and 54 river features from Natural Earth 1:10m geography, clipped from the pinned upstream commit. sources/western-manifest.json records upstream and clipped-file hashes; prepare_western.py verifies the clipped files. This provides greater cartographic detail, not historical urban extents, 1939 river engineering, or crossing availability. Continental geography and its hash remain unchanged. The finer grid uses the existing generalized land mask, so coastal accuracy remains limited. Close town labels are suppressed deterministically to reduce collisions.
+### Western logistics provenance
 
-Logistics mode displays 12 approximate town-center markers with individual sources and date labels. Roland G. Ruppenthal, U.S. Army official history, Logistical Support of the Armies, Volume II, chapters V and VI, documents the 1944-1945 ports, transport transfers and forward depot areas. These examples are not backdated to the campaign's September 1939 baseline. Port capacity, working rail routes, depots and unit positions are not synthesized as live state. Sources:
+Western Europe retains 12 original approximate port, transfer and depot markers, supplemented with transportation references by the shared workspace builder. The original examples come from Roland G. Ruppenthal's U.S. Army official history, *Logistical Support of the Armies*, Volume II, chapters V and VI, and describe 1944-1945 conditions. They are not backdated to September 1939:
+
 - https://www.ibiblio.org/hyperwar/USA/USA-E-Logistics2/USA-E-Logistics2-5.html
 - https://www.ibiblio.org/hyperwar/USA/USA-E-Logistics2/USA-E-Logistics2-6.html
 
-Planning mode stores user-written sector notes under the current campaign seed in browser storage. Clicking a saved note returns to its sector. Campaign export includes notes and theater definitions, but excludes the reference theater package and research rail layers. No order is dispatched and no formation or mission lifecycle is simulated. Commands remain unassigned. Other theater presets retain basic navigation. Browser rendering remains unverified because local-file browser access is unavailable; logic tests cover modes, inspection, storage separation, return navigation and exports.
-
-
-Western theater focus: a translucent gray veil covers the area outside the union of its hex sectors, with a thin, constant-screen-width perimeter. The footprint is compiled from full-precision lattice vertices to avoid internal seams. Open water outside the hexes is gently dimmed but remains visible. The veil follows the viewport through pan/zoom, ignores pointer events, remains independent of the grid toggle, and disappears outside Western Europe. This is a presentation boundary, not a movement restriction or historical command boundary.
-
+`prepare_western.py` retains this legacy reference package and its source verification. The displayed workspace for every theater is compiled by `prepare_theaters.py`, using `sources/theater-manifest.json` for the expanded detailed geography. Logistics markers are dated evidence, not live facilities or available capacity.
 
 ## North African map extension
-The continental overview now covers Europe and North Africa through Egypt: local bounds (-2400, -2500, 2800, 3300) km. Hex radius, origin, projection and IDs remain unchanged. The southward extension adds cells; it does not move existing ones. Generator 1.3.0 and a new geography hash identify the expanded baseline. Browser campaign seeds are retained, but refinement tokens include the revised geography hash and therefore change. Existing exported campaigns retain their old baseline; this prototype has no automatic save migration.
+The continental overview now covers Europe and North Africa through Egypt: local bounds (-2400, -2500, 2800, 3300) km. Hex radius, origin, projection and IDs remain unchanged. The southward extension adds cells; it does not move existing ones. Generator 1.4.0 and the geography hash identify the current baseline. Browser campaign seeds are retained, but refinement tokens include the revised geography hash and therefore change. Existing exported campaigns retain their old baseline; this prototype has no automatic save migration.
 
-Two additional illustrative campaign areas are available: Northwest Africa (Morocco, Algeria and Tunisia) and Libya–Egypt. They use sampled geographic perimeter edges projected into the common coordinate system. They are selectable navigation areas at continental reference resolution, not yet dedicated 26 km workspaces. Western Europe's existing detailed workspace remains intact. Historical motivation: U.S. Army Center of Military History, Northwest Africa and Egypt-Libya campaign studies:
+Two additional illustrative campaign areas are available: Northwest Africa (Morocco, Algeria and Tunisia) and Libya–Egypt. They use sampled geographic perimeter edges projected into the common coordinate system. Both have the same detailed 26 km workspace capabilities as the four European theaters. Historical motivation: U.S. Army Center of Military History, Northwest Africa and Egypt-Libya campaign studies:
 - https://history.army.mil/Publications/Publications-Catalog/Northwest-Africa/
 - https://history.army.mil/portals/143/Images/Publications/catalog/72-13.pdf
 
-Additional city-center reference points come from the pinned Natural Earth 1:10m populated places source, with reviewed display aliases for Benghazi, Tobruk, Port Said and Mersa Matruh. These are not historical city extents. The Nile and African coastline use the existing global reference sources. The historical European railway dataset is not extended by inference into North Africa. Sparse rail coverage remains unknown. The old forest extraction stops at local y=2100 km; sectors crossing or beyond that boundary report unknown forest coverage rather than a false zero. African transport, desert terrain and dated operational overlays remain future work.
-
-
-The focus overlay now applies to all six theaters. Western Europe uses its detailed hex footprint; the other five use their defined theater polygons until detailed sector footprints exist. Shading and the perimeter update when switching theaters or moving the viewport, ignore pointer events, and disappear on return to the continental overview.
-
-All theater views now hide grid geometry outside their active boundary. Western Europe retains its dedicated sector grid; other theaters clip the continental grid to their theater polygon. The grid toggle still applies, and returning to the overview removes clipping. Hex coordinates, selection data and exports remain unchanged.
-
+Additional city-center reference points come from the pinned Natural Earth 1:10m populated places source, with reviewed display aliases for Benghazi, Tobruk, Port Said and Mersa Matruh. These are not historical city extents. The Nile and African coastline use the existing global reference sources. The historical European railway dataset is not extended by inference into North Africa. Sparse rail coverage remains unknown. Forest reference coverage spans the expanded map. The southern terrain and transport research described below improves the regional coverage without claiming a fully reconstructed WWII operational map.
 
 ### Southern terrain review, October 2026
 
@@ -169,7 +186,7 @@ Sources include the contemporary 1935 Railway Wonders survey, SNCFT/ONCF histori
 
 ### Shared theater workspace audit
 
-All six theaters now use one workspace implementation: Geography, Logistics and Planning modes; 26 km land sectors on the same lattice; detailed settlements and waterways; footprint shading; source-linked logistics references; and campaign-local notes. Packages are built from the same pinned Natural Earth inputs. Lakes and salt basins remain visible in theater views, fixing their previous disappearance in Western Europe. Layer toggles apply consistently.
+All six theaters use one workspace implementation: Geography, Logistics and Planning modes; 26 km land sectors on the same lattice; detailed settlements and waterways; footprint shading; source-linked logistics references; and campaign-local notes. Packages are built from the same pinned Natural Earth inputs. Lakes and salt basins remain visible in theater views, fixing their previous disappearance in Western Europe. Layer toggles apply consistently.
 
 The workspace title, selection and note entry reset when changing theater. Notes carry theater identity, are filtered to the active theater and all theaters' notes are exported together. Existing Western notes are read from their original storage key and migrate on the next save. Shared coordinate IDs identify matching sectors across overlapping theaters, while theater-specific IDs preserve planning scope.
 
@@ -178,4 +195,9 @@ Logistics combines Western's dated port/depot examples with source-linked transp
 
 ### UI assets
 
-`viewer.html` contains the HTML template. `site.css` holds the stylesheet. `app.template.js` contains application logic; the build inserts `theater-view.js` into it to produce `app.js`. `index.html` loads these sibling CSS and JavaScript files directly, including when opened locally. Keep them together when copying the viewer. `map-data.js` contains the generated map payload and loads before `app.js`. A classic script allows direct local-file viewing without a server or JSON fetch. Keep `index.html`, `site.css`, `app.js` and `map-data.js` together. Edit source templates, not generated `index.html`, `app.js` or `map-data.js`.
+`viewer.html` contains the HTML template. `site.css` holds the stylesheet. `app.template.js` contains application logic; the build inserts `theater-view.js` into it to produce `app.js`. `index.html` loads these sibling CSS and JavaScript files directly, including when opened locally. Keep them together when copying the viewer. `map-data.js` contains the generated map payload and loads before `app.js`. A classic script allows direct local-file viewing without a server or JSON fetch. Keep `index.html`, `site.css`, `app.js`, `map-data.js` and `image-export.js` together, plus the linked research pages. Edit source templates, not generated `index.html`, `app.js` or `map-data.js`.
+
+
+### Image export
+
+Export campaign data saves JSON. Export map image saves the current SVG map viewport as a PNG, preserving zoom, theater shading, selected sectors and visible layers. The sidebar and HTML toolbar are excluded. The image uses an opaque water-colored background and up to 2x display resolution, capped at 4096 pixels on the longest side. `image-export.js` supplies serialization and rasterization; keep it alongside the other viewer assets. Image export does not establish additional reuse rights for the research layers.
