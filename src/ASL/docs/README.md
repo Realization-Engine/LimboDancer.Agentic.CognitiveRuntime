@@ -16,6 +16,7 @@ Source data, schemas, generated TIR artifacts, and the rulebook conversion stay 
 | [ASL Unit Backlog](<ASL Unit Backlog.md>) | Everything left out or simplified, by the pass that deferred it. |
 | [ASL Unit Backlog Passes Plan](<ASL Unit Backlog Passes Plan.md>) | How a pass is run, and every ruling (section 5). The Studio links to this file by its path. |
 | [ASL Rule Coverage](<ASL Rule Coverage.md>) | What the game implements, by rulebook section. |
+| [ASL Rule Inventory A to E](<ASL Rule Inventory A to E.md>) | Every numbered rule of Chapters A to E: its page, its status, where the code is, and the pass or ruling that takes it. |
 | [ASL Unit Time Log](<ASL Unit Time Log.md>) | Start, end, and duration of every task. |
 | [ASL Week Review 2026-09-28 to 2026-10-04](<ASL Week Review 2026-09-28 to 2026-10-04.md>) | The latest review, with its open questions. |
 

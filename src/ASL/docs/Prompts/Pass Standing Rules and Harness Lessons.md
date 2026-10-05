@@ -12,14 +12,15 @@
 2. **Build**, one commit a task, on the pass's own branch. Check each task in the Studio.
 3. **Reviews**, read-only and in parallel: a referee (the rules and what a side may know), a table player, and for a page a UI and Blazor review. Fix what they find.
 4. **The Studio check of the whole pass**, at 1920x1080, 1366x768, 1024x768, 683x384, and 320 pixels, by keyboard and mouse, in each side's view and the adjudicator's.
-5. **The documents:** the review, the design's "as built" section, the rulings, the backlog section, the plan's status, the [rule coverage](<../ASL Rule Coverage.md>) rows the pass changes.
+5. **The documents:** the review, the design's "as built" section, the rulings, the backlog section, the plan's status, and the rows the pass changes in the [rule inventory](<../ASL Rule Inventory A to E.md>) (one row a numbered rule) and the [rule coverage](<../ASL Rule Coverage.md>) (one row a section, its status computed from the inventory).
 6. **The merge gate**, only once step 4 passes: the pass's tests written, the solution build with warnings as errors, the full local suite, CI's Node viewport test by hand, the chart supplement regenerated, the Docker Linux check.
 7. **Stop before the merge** for the user's word. Merge with `--no-ff`, push, read the CI run. Stop after the merge and ask before starting anything else.
 
 ## 2. Standing rules
 
 - **The Studio is the only test until the code is complete.** While code is being written and fixed, build MapStudio only and check the work in the Studio. Write and run no unit tests, and run no solution build, suite, `dotnet format`, chart supplement regeneration, or Docker, until the Studio check of the whole pass has passed. Tests that sit below the page (the planner, the projector, a rules package) may be written with the change they guard.
-- **The rulebook first.** Read the rulebook PDF before anything that states a rule, and cite the rule and its page.
+- **The rulebook first.** Read the rulebook PDF before anything that states a rule, and cite the rule and its page. The page comes from the PDF or from the [rule inventory](<../ASL Rule Inventory A to E.md>), never from the transcription's page markers, which run a page low for about 420 rules.
+- **Rules live in the Rules project alone** (the user, 2026-10-05; the plan's section 19, decision 7). Every ASL rule is a calculator in `LimboDancer.Domains.Asl.Rules` that takes facts and returns a verdict. Play reads the state and the map, hands the facts over, and writes the events; it decides no rule. The Rules project references only Abstractions: never give it a reference to Units, Maps, or Play.
 - **The branch.** Run `git branch --show-current` before every commit and merge. The branch `asl-narrative-extensions` is checked out in another worktree; leave it alone.
 - **Staging.** Stage explicit paths only: `git -c core.quotepath=false diff --name-only` into a file, add any new file's path by hand, then `git add --pathspec-from-file`. Never `git add -A` or `git add src/ASL`. Never add `src/ASL/boards/` or `.claude/`. Never commit an image.
 - **No force push.** Never stop Visual Studio.
@@ -65,6 +66,8 @@
 - `jq` is not on the Git Bash path. Compare JSON with Python (`json.dumps` with `sort_keys`).
 - `git rev-parse --short` takes one ref per call. `git merge -F -` does not read standard input: write the merge message to a scratchpad file and pass its path.
 - Agent worktree isolation fails here and leaves stray folders under `.claude/worktrees`: run read-only agents in the main checkout.
+- A heredoc slips in by reflex, even an empty one (twice on 2026-10-05). Before sending a Bash call, look for `<<`. Edit a scratch script with the Edit tool, not `sed -i`.
+- A large read splits well: dump the PDF's pages to one text file a page (PyMuPDF; `doc.get_toc()` gives the outline with titles and pages), give each read-only agent about 100 rows, an exact output shape (one pipe-separated line a row), and a findings file, and check by script that every row came back once. Nineteen such audits ran in 16 minutes. Say in the result which rows were checked by hand and which are an agent's.
 
 **C#, Razor, and Blazor**
 
