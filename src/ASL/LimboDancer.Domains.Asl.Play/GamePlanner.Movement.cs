@@ -503,6 +503,13 @@ public sealed partial class GamePlanner
             + (minimumMove ? ", a Minimum Move: pinned and CX once the DEFENDER's fire is done (A4.134)" : string.Empty)
             + (charge is not null ? $", charging {charge} (A15.43)" : string.Empty)
             + (abandoned.Count > 0 ? $"; {string.Join(", ", abandoned.Select(item => item.Id))} abandoned before the charge (A15.431)" : string.Empty);
+
+        // Pass 31d (design D5; A12.11, read in the PDF, p. 76; ruling R31d.3): a stack of Dummies alone that moves without Assault Movement, or into
+        // Open Ground, is removed in the LOS of a Good Order enemy unit. The mover is told so with "if", whatever the game knows: whether an enemy
+        // "?" that sees the hex is a real unit is not the mover's to learn before the move. At night the rule is another (E1.31), and nothing is said.
+        string[] dummyWarning = !state.Night && !forcedBack && movers.Length > 0 && movers.All(unit => unit!.Kind == UnitKinds.Dummy) && (!assault || terrain == "open-ground")
+            ? [$"play.dummies: this stack holds no real unit; it is removed if a Good Order enemy unit within 16 hexes has a LOS to it in {to} (A12.11)"]
+            : [];
         List<GameEvent> prefix = [.. abandoned.Select((item, index) => Event(scope, attemptId, index + 1, expected, "equipment-transferred",
             new EquipmentTransferred(item.Id, null, new MapPosition(from)), package, null))];
         var landed = forcedBack ? from : to;
@@ -627,7 +634,7 @@ public sealed partial class GamePlanner
                 summary += $"; {string.Join(", ", lost)} loses its \"?\" (A12.2)";
             }
 
-            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [summary]);
+            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [summary, .. dummyWarning]);
         }
 
         // A8.22, A12.15: Residual FP attacks a unit entering its Location, or returned to it, first, alone, with any FFNAM and FFMO.
@@ -674,7 +681,7 @@ public sealed partial class GamePlanner
             return events;
         }
 
-        string[] reasons = [summary, .. residual is not null ? [$"play.move: {residual.Fp} Residual FP in {landed} attacks the stack first (A8.22)"] : Array.Empty<string>(),
+        string[] reasons = [summary, .. dummyWarning, .. residual is not null ? [$"play.move: {residual.Fp} Residual FP in {landed} attacks the stack first (A8.22)"] : Array.Empty<string>(),
             .. lanes.Select(item => $"play.move: the Fire Lane of {item.Lane.Weapon} attacks the stack in {landed} with {item.Entry.Fp} Residual FP (A9.22)")];
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], reasons)
         {

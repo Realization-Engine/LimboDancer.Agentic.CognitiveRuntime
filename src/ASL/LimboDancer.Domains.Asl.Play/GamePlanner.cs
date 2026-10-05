@@ -757,6 +757,20 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             }
         }
 
+        // Pass 31d (design D9; A11.15, read in the PDF, p. 72; ruling R31d.6): a Location that holds units of both sides, prisoners apart, in which no
+        // round was fought this phase is said before the phase ends. It is a consequence and not a refusal: where the Close Combat package does
+        // not decide the Location, a refusal would leave the phase with no way to end (ruling R31c.5).
+        if (state.Phase == "ccph")
+        {
+            foreach (var unfought in state.Units.Where(unit => unit.Status == InstanceStatus.Active && !Is(unit, Conditions.Captured) && unit.Kind != UnitKinds.Dummy && state.Location(unit.Id) is not null)
+                .GroupBy(unit => state.Location(unit.Id)!.Location).Where(group => group.Select(unit => unit.Side).Distinct(StringComparer.Ordinal).Count() > 1
+                    && !state.CloseCombats.Any(item => item.Location == group.Key && item.Rounds.Count > 0))
+                .Select(group => group.Key).OrderBy(location => location.ToString(), StringComparer.Ordinal))
+            {
+                reasons.Add($"play.cc-unfought: no Close Combat was fought in {unfought} this phase; the units of both sides stay there, held in Melee unless they keep their \"?\" (A11.15)");
+            }
+        }
+
         // A12.12, A12.122 (ruling R12.5): as a Player Turn ends, the phasing side's Good Order Infantry may gain "?", some on a Final Concealment dr.
         var gains = !ending && state.Phase == "ccph" && phasing != state.PhasingSide ? ConcealmentGains(state) : [];
         // B25.65 (backlog pass 16, rulings R16.1, R16.10): the Wind Change DR at the start of a RPh.

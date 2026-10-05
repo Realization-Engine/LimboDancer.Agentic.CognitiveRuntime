@@ -205,10 +205,40 @@ public sealed class PlayRecords
             Add(fire.EventId, FireLine(fire));
         }
 
+        // Pass 31d (design D5; ruling R31d.3): a Dummy stack's removal is said to both sides, who both see the counters leave the map (A12.11, A12.15,
+        // A11.19). One line for a stack, whatever its count of counters; removal by fire is said in the fire's own line.
+        var dummiesSaid = new HashSet<(string Attempt, string At, string? Side)>();
         foreach (var item in events.Where(item => item.IsVisibleTo(viewer)))
         {
             var before = history.At(item.Revision - 1);
             static string Many(IReadOnlyList<string> ids, string one, string several) => $"{string.Join(", ", ids)} {(ids.Count == 1 ? one : several)}";
+            if (item.Payload is InstanceEliminated removed && before?.Unit(removed.Id) is { Kind: UnitKinds.Dummy } dummy && before.Location(dummy.Id)?.Location is { } dummyAt)
+            {
+                var attempt = AttemptOf(item.EventId);
+                var ofAttempt = events.Where(other => AttemptOf(other.EventId) == attempt).Select(other => other.Payload).ToArray();
+                if (!ofAttempt.Any(payload => payload is FireResolved or OrdnanceFired) && dummiesSaid.Add((attempt, dummyAt.ToString(), dummy.Side)))
+                {
+                    Add(item.EventId, Say(item.EventId, $"A {DisplayText.Side(dummy.Side)} Dummy stack is removed in {dummyAt}"
+                        + (ofAttempt.OfType<MovementStepped>().Any(step => step.Movers.Contains(dummy.Id, StringComparer.Ordinal))
+                            ? ": it moved without Assault Movement, or into Open Ground, in the LOS of a Good Order enemy unit (A12.11)"
+                            : ofAttempt.Any(payload => payload is MovementStepped or EntryAttempted or EntryForcedBack) ? ": a unit tried to enter its Location, and it held no real unit (A12.15)"
+                            : string.Empty)));
+                }
+
+                continue;
+            }
+
+            // A11.19: the Dummies in a Location that holds units of both sides are removed as the CCPh begins. The game records no event for it,
+            // so the line is read from the states on each side of the phase change.
+            if (item.Payload is PhaseChanged { Phase: "ccph" } && before is not null && history.At(item.Revision) is { } begun)
+            {
+                foreach (var gone in before.Units.Where(unit => unit.Kind == UnitKinds.Dummy && unit.Status == InstanceStatus.Active && begun.Unit(unit.Id) is { Status: InstanceStatus.Eliminated }
+                        && before.Location(unit.Id) is not null)
+                    .GroupBy(unit => (At: before.Location(unit.Id)!.Location, unit.Side)).OrderBy(group => group.Key.At.ToString(), StringComparer.Ordinal))
+                {
+                    Add(item.EventId, Say(item.EventId, $"The {DisplayText.Side(gone.Key.Side)} Dummies in {gone.Key.At} are removed before Close Combat (A11.19)"));
+                }
+            }
             var text = item.Payload switch
             {
                 MovementStepped step => Many(step.Movers, "moves", "move") + $"{From(before, step.Movers.Count > 0 ? step.Movers[0] : null)} to {step.To}{(step.Assault ? " by Assault Movement" : string.Empty)}",
@@ -243,7 +273,20 @@ public sealed class PlayRecords
         var changed = fire.Effects is null ? []
             : fire.Effects.Select(effect => (effect.UnitId, Text: EffectText(effect, fire.BrokenBefore.Contains(effect.UnitId), fire.PinnedBefore.Contains(effect.UnitId))))
                 .Where(effect => effect.Text is not ("unaffected" or "already broken" or "already pinned")).Select(effect => fire.Say($"{effect.UnitId}: {effect.Text}")).ToArray();
-        return $"{fire.Group} {(fire.Several ? "fire" : "fires")} at {fire.Target}: {ResultText(fire.Arithmetic.Result)}" + (changed.Length > 0 ? "; " + string.Join("; ", changed) : string.Empty);
+
+        // Pass 31d (design D5): Dummies removed by the attack are said once, as what they were (A12.14).
+        if (fire.Effects is not null && fire.Effects.Any(effect => effect.Events.Contains("dummy-removed", StringComparer.Ordinal)))
+        {
+            changed = [.. fire.Effects.Where(effect => !effect.Events.Contains("dummy-removed", StringComparer.Ordinal))
+                    .Select(effect => (effect.UnitId, Text: EffectText(effect, fire.BrokenBefore.Contains(effect.UnitId), fire.PinnedBefore.Contains(effect.UnitId))))
+                    .Where(effect => effect.Text is not ("unaffected" or "already broken" or "already pinned")).Select(effect => fire.Say($"{effect.UnitId}: {effect.Text}")),
+                "the Dummies there are removed (A12.14)"];
+        }
+
+        // Pass 31d (design D7; A6.11, p. 53): a blocked LOS is said as what it was, and not as an attack that missed.
+        return fire.LosBlocked
+            ? $"{fire.Group} {(fire.Several ? "fire" : "fires")} at {fire.Target}: the LOS is blocked, so the attack has no effect and its firers have fired (A6.11)"
+            : $"{fire.Group} {(fire.Several ? "fire" : "fires")} at {fire.Target}: {ResultText(fire.Arithmetic.Result)}" + (changed.Length > 0 ? "; " + string.Join("; ", changed) : string.Empty);
     }
 
     private static string Sentence(string text) => DisplayText.Sentence(text.TrimEnd()) + (text.TrimEnd().EndsWith('.') ? string.Empty : ".");
@@ -395,6 +438,7 @@ public sealed class PlayRecords
                     {
                         Say = text => Say(item.EventId, text),
                         Several = fire.Firers.Count > 1,
+                        LosBlocked = resolution.LosBlocked == true,
                         Weapons = resolution.WeaponEffects,
                         Vehicles = resolution.VehicleEffects,
                         BrokenBefore = before.Where(target => target.Broken == true && target.UnitId is not null).Select(target => target.UnitId!).ToHashSet(StringComparer.Ordinal),
@@ -409,6 +453,9 @@ public sealed class PlayRecords
                     {
                         Say = text => Say(item.EventId, text),
                         Several = withheld.Payload is FireResolved { Firers.Count: > 1 },
+
+                        // The LOS is the map's, and both sides see that the shot went nowhere (A6.11).
+                        LosBlocked = withheld.Payload is FireResolved unseen && unseen.Resolution.Deserialize<FireResolution>(LiveFire.Json)?.LosBlocked == true,
                     });
                 }
             }

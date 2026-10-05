@@ -21,6 +21,12 @@ public enum ConsequenceKind
 
     /// <summary>A SW is left behind, unpossessed (pass 31d: a broken unit's rout, A10.4).</summary>
     Left,
+
+    /// <summary>The proposer's own Dummies are removed, or may be (pass 31d: A12.11, A11.19).</summary>
+    Dummies,
+
+    /// <summary>A Close Combat is left unfought as its phase ends (pass 31d: A11.15).</summary>
+    Unfought,
 }
 
 /// <summary>One SW a unit possesses, with its PP (A4.4).</summary>
@@ -65,6 +71,8 @@ public sealed partial class GamePlanner
         ("play.fire-own-units:", ConsequenceKind.OwnUnits),
         ("play.fire-los-blocked:", ConsequenceKind.Waste),
         ("play.rout-leaves:", ConsequenceKind.Left),
+        ("play.dummies:", ConsequenceKind.Dummies),
+        ("play.cc-unfought:", ConsequenceKind.Unfought),
     ];
 
     /// <summary>The consequence a reason of a plan states, or null for a routine reason.</summary>
@@ -95,11 +103,21 @@ public sealed partial class GamePlanner
 
         // Referee, pass 31: the attack's own targets say who is hit; Defensive First Fire attacks only the moving stack (A8.1), so the firing side's
         // other units in the Location are not among them.
-        string[] own = [.. (facts.Targets ?? []).Where(target => target.Friendly == true && target.Dummy != true && target.UnitId is not null)
+        // Pass 31d (design D6; A20.54, read in the PDF, p. 87): the firing side's captured units are said apart from its units in a Melee, with what
+        // the rule does to them. The play test confirmed such an attack twice without reading a line that named no prisoner.
+        string[] own = [.. (facts.Targets ?? []).Where(target => target.Friendly == true && target.Dummy != true && target.UnitId is not null && target.GuardId is null)
             .Select(target => target.UnitId!).Order(StringComparer.Ordinal)];
         if (own.Length > 0)
         {
             yield return $"play.fire-own-units: {string.Join(", ", own)} of the firing side {(own.Length == 1 ? "is" : "are")} in {facts.TargetLocationId} and {(own.Length == 1 ? "is" : "are")} attacked too (A11.15, A20.54)";
+        }
+
+        string[] captured = [.. (facts.Targets ?? []).Where(target => target.Friendly == true && target.Dummy != true && target.UnitId is not null && target.GuardId is not null)
+            .Select(target => target.UnitId!).Order(StringComparer.Ordinal)];
+        if (captured.Length > 0)
+        {
+            yield return $"play.fire-own-units: {string.Join(", ", captured)}, captured {(captured.Length == 1 ? "unit" : "units")} of the firing side, {(captured.Length == 1 ? "is" : "are")} in {facts.TargetLocationId} and "
+                + $"{(captured.Length == 1 ? "is" : "are")} attacked with {(captured.Length == 1 ? "its" : "their")} Guard, as if in a Melee: one that fails a MC is Reduced, and one eliminated by its own side's fire counts double (A20.54)";
         }
     }
 }

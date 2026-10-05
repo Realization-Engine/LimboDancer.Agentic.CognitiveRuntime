@@ -31,6 +31,12 @@ public sealed record FireView(string EventId, string Group, string Target, strin
         get; init;
     }
 
+    /// <summary>Whether the attack's LOS was blocked (A6.11; pass 31d, design D7): it has no effect, and its firers have fired.</summary>
+    public bool LosBlocked
+    {
+        get; init;
+    }
+
     /// <summary>What the attack did to each MG used in it (pass 31c, play test P-17): a kept rate of fire, a malfunction. Null when none was used or the record is withheld.</summary>
     public IReadOnlyList<FireWeaponEffect>? Weapons
     {

@@ -491,12 +491,17 @@ public sealed partial class GamePlanner
                 var refusal = RefusalReasons.Refusal("play.fire-refused", "Fire", "attack", partCheck);
                 var ranged = RangeNamed(part, refusal);
                 var proposal = Proposal(part, undecided: true);
+
+                // Pass 31d (design D8; ruling R31d.5): the same holds for every reason that rests on the proposer's own group and the map alone (a
+                // FT fired with other units, a firer that may not fire, a weapon that has fired). Where there is one, the firing side reads those
+                // reasons and nothing else; where there is none, it reads the one sentence. What it reads then depends only on its own group.
+                string[] ownGroup = [.. ranged.Named, .. ranged.Reasons.Where(reason => OwnGroupCodes.Any(code => reason.StartsWith(code, StringComparison.Ordinal)))];
                 return Refused(scope, label, expected, ranged.Reasons) with
                 {
-                    Fire = ranged.Named.Count > 0 && proposal.FiringSideReasons.Count > 0
+                    Fire = ownGroup.Length > 0 && proposal.FiringSideReasons.Count > 0
                         ? proposal with
                         {
-                            FiringSideReasons = ["play.fire-refused: the Fire package refuses this attack as proposed", .. ranged.Named]
+                            FiringSideReasons = ["play.fire-refused: the Fire package refuses this attack as proposed", .. ownGroup.Distinct(StringComparer.Ordinal)]
                         }
                         : proposal
                 };
@@ -1319,6 +1324,17 @@ public sealed partial class GamePlanner
 
         return conditions.Count == 0 ? null : ("conditions-changed", new ConditionsChanged(unit.Id, conditions));
     }
+
+    /// <summary>
+    /// The Fire package's refusals that rest on the firing side's own group and the map alone (pass 31d, design D8; each read against the package's
+    /// pre-check): a FT that does not fire alone (A22.31), a firer that may not fire or uses no weapon, one that has fired, a weapon that may not
+    /// fire, firers of two sides, a director who may not direct, and a fire kind its phase does not have. None reads a unit of the target Location.
+    /// </summary>
+    private static readonly string[] OwnGroupCodes =
+    [
+        "asl.a1.fire.flamethrower-outside", "asl.a1.fire.firer-outside", "asl.a1.fire.firer-already-fired", "asl.a1.fire.weapon-outside",
+        "asl.a1.fire.firers-of-two-sides", "asl.a1.fire.director-outside", "asl.a1.fire.phase-outside",
+    ];
 
     /// <summary>
     /// A refusal for range says what was out of range (pass 31c, design section 14; A7.21, A7.22): the package's one sentence for

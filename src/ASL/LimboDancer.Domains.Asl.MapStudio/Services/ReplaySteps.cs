@@ -440,7 +440,8 @@ public static class ReplaySteps
 
         if (First<InstanceEliminated>(payloads) is { } gone)
         {
-            return ("other", null, $"{A(SideOf(gone.Id), "unit")} is eliminated", false);
+            // Pass 31d (design D5): a Dummy is no unit; its stack is removed.
+            return ("other", null, before.Unit(gone.Id) is { Kind: UnitKinds.Dummy } ? $"{A(SideOf(gone.Id), "Dummy stack")} is removed" : $"{A(SideOf(gone.Id), "unit")} is eliminated", false);
         }
 
         if (First<GunTurned>(payloads) is { } turned)

@@ -4369,7 +4369,9 @@ else if (state is not null)
             {
                 var rows = FireRangeRows(to);
                 ranges[target] = hexes;
-                notes[target] = RangeNote(hexes, rows);
+                // Pass 31d (design D6; A20.54): a Location that holds the view's own captured units says so before it is chosen.
+                notes[target] = RangeNote(hexes, rows) + (VisibleUnits.Any(unit => unit.Status == InstanceStatus.Active && unit.Side == side
+                    && GameState.Condition(unit, Conditions.Captured) == ConditionState.True && state.Location(unit.Id)?.Location == to) ? "; holds your captured units" : string.Empty);
                 if (rows.Count > 0 && rows.All(row => row.Out))
                 {
                     beyond.Add(target);
@@ -6097,6 +6099,8 @@ else if (state is not null)
             : consequences.Any(item => item.Kind == ConsequenceKind.OwnUnits) ? "Confirm and fire on your own units"
             : consequences.Any(item => item.Kind == ConsequenceKind.Waste) ? "Confirm the shot with no LOS"
             : consequences.Any(item => item.Kind == ConsequenceKind.Left) ? "Confirm: a SW is left behind"
+            : consequences.Any(item => item.Kind == ConsequenceKind.Unfought) ? "Confirm with a Close Combat not fought"
+            : consequences.Any(item => item.Kind == ConsequenceKind.Dummies) ? "Confirm: the Dummies may be removed"
             : "Confirm";
     }
 
@@ -6438,6 +6442,9 @@ else if (state is not null)
                         => $"Fire from {PublicLocation(report.FirerLocation)} at {PublicLocation(report.TargetLocation)}: {reported.Result}.",
                     CloseCombatResolved combat => $"A round of Close Combat in {PlaceOf(combat.Location)}.",
                     InstanceEliminated gone when state.Unit(gone.Id) is { } unit && unit.Kind != UnitKinds.Dummy => $"A {DisplayText.Side(unit.Side)} unit was eliminated.",
+
+                    // Pass 31d (ruling R31d.3, which amends R31.7's "a Dummy gives no line"): both sides saw the counters leave the map.
+                    InstanceEliminated gone when state.Unit(gone.Id) is { Kind: UnitKinds.Dummy } dummy => $"A {DisplayText.Side(dummy.Side)} Dummy counter was removed.",
                     InstanceCaptured taken when state.Unit(taken.Id) is { } prisoner => $"A {DisplayText.Side(prisoner.Side)} unit was captured.",
                     GameEnded => "The game ended.",
                     _ => null,
