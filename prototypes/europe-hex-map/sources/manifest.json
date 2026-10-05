@@ -25,6 +25,20 @@
       "sha256": "a86028b083182b68c7620fc6e1a8a47ee547cb9cd2fb62ccbb78bea786440899"
     },
     {
+      "name": "north_africa_places",
+      "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_10m_populated_places.geojson",
+      "sha256": "6b3aeb95bb0e2bec76bff8334dda1ffcb4d4cfb1d7479107ab7fbd105a565d85",
+      "upstreamSha256": "9b8e3de09048ef00dfc70357dbb9fa324493f214b5e0ae4daf1aa79a8d10116b",
+      "license": "Public domain",
+      "method": "Selected North African town-center points; modern reference locations, not WWII urban extents.",
+      "displayAliases": {
+        "Banghazi": "Benghazi",
+        "Tubruq": "Tobruk",
+        "Bur Said": "Port Said",
+        "Matruh": "Mersa Matruh"
+      }
+    },
+    {
       "name": "ne_50m_geography_regions_polys",
       "sha256": "33396643d8f0eed408e80bf5ca43dcdb7993f790fdc4eadae311660f8b91fe76",
       "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_50m_geography_regions_polys.geojson",
@@ -44,7 +58,7 @@
     },
     {
       "name": "glc2000_forest_europe",
-      "sha256": "d9cd45e05e58da29a63cd08bdaf8a63c24f1a08af45f7e894d6d1d4c3aa52dc2",
+      "sha256": "51b0fbcabdca2f1509a7a1f34d363e38fd18f01485ccbea727cf9b1a9fc9ca6d",
       "url": "https://forobs.jrc.ec.europa.eu/glc2000/data",
       "attribution": "GLC2000 database, European Commission Joint Research Centre, 2003",
       "sourceYear": 2000,
@@ -52,6 +66,38 @@
       "archiveSha256": "eeeb6f9c162d24abb5d98c0fadfc9983d4ea64fa0a775cfe6969b3ed8287a28f",
       "method": "Classes 1-8 tree cover; 10 km equal-area average; threshold 40%; patches >=200 km2; 2 km simplification. Classes 9 mosaics and 10 burnt excluded.",
       "license": "JRC terms apply; see source review. Not Natural Earth public-domain data."
+    },
+    {
+      "name": "africa_ranges",
+      "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_10m_geography_regions_polys.geojson",
+      "sha256": "107bdcf516ab516388c81deb375b64e8159d28e99d8d63aacb6b4cdcfd5d21de",
+      "upstreamSha256": "b7b26e50ea917d3696aec87f932def2bf5f890f5770e441d59c162c6f4c92a77",
+      "license": "Public domain",
+      "method": "Selected/clipped North African reference geometry. Historical existence and modern alignment accuracy are separate."
+    },
+    {
+      "name": "africa_rivers",
+      "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_10m_rivers_lake_centerlines.geojson",
+      "sha256": "385645ffee7ac25c8c35eead003cfc14a8a9992fdc13a43a88551a99c36ef181",
+      "upstreamSha256": "bb854a900ecbd3b408df46d5e16e3e0f974ba55993f9d8b5c26e855273c0905a",
+      "license": "Public domain",
+      "method": "Selected/clipped North African reference geometry. Historical existence and modern alignment accuracy are separate."
+    },
+    {
+      "name": "africa_lakes",
+      "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_10m_lakes.geojson",
+      "sha256": "4d6d9baccdd477e05b3cb04c58097b9b9e78d94080b2621682cd5f699d79fbad",
+      "upstreamSha256": "2d036f53dedec578001c5c30c2959ee7d4eebc1306900fa4367c49929ec8f2d9",
+      "license": "Public domain",
+      "method": "Selected/clipped North African reference geometry. Historical existence and modern alignment accuracy are separate."
+    },
+    {
+      "name": "africa_salt_basins",
+      "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/ca96624a56bd078437bca8184e78163e5039ad19/geojson/ne_10m_playas.geojson",
+      "sha256": "6325c9e44788b2bb8915bb6c41cf72e446c789fe501ebb70ccd41374b6ced0eb",
+      "upstreamSha256": "3ece2a37f3e87d46869a45b05205bb78e273c83e191cee9ab60936368f4b9cc6",
+      "license": "Public domain",
+      "method": "Selected/clipped North African reference geometry. Historical existence and modern alignment accuracy are separate."
     }
   ]
 }

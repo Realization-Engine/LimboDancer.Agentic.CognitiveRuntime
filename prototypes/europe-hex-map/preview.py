@@ -7,17 +7,18 @@ data=json.loads((ROOT/"map.json").read_text())
 im=Image.new("RGB",(1700,1570),"#f5f4ed"); d=ImageDraw.Draw(im)
 def font(size,bold=False):
     return ImageFont.truetype("C:/Windows/Fonts/"+("segoeuib.ttf" if bold else "segoeui.ttf"),size)
-d.text((55,28),"EUROPE / CAMPAIGN ATLAS",font=font(30,True),fill="#263c3b")
+d.text((55,28),"EUROPE & NORTH AFRICA / CAMPAIGN ATLAS",font=font(30,True),fill="#263c3b")
 d.text((55,73),"Mountain ranges and year-2000 tree cover  |  104 km hex spacing  |  Reference geography",font=font(18),fill="#647573")
 pilot_mode="--pilot" in sys.argv
 pilot=json.loads((ROOT/"historical-transport-pilot.json").read_text()) if pilot_mode else None
-scale=.295
+left,top,right,bottom=data["metadata"]["bounds"]
+scale=min(1534/(right-left),1357/(bottom-top))
 if pilot_mode:
     pts=[xy for f in pilot["features"] for xy in f["geometry"]["coordinates"]]
     left=min(x for x,y in pts)-100;top=min(y for x,y in pts)-40
     scale=min(1450/(max(x for x,y in pts)-left+100),1260/(max(y for x,y in pts)-top+40))
 
-def xy(p): return ((p[0]-left)*scale+80,(p[1]-top)*scale+130) if pilot_mode else ((p[0]+2400)*scale+80,(p[1]+2500)*scale+130)
+def xy(p): return ((p[0]-left)*scale+80,(p[1]-top)*scale+130) if pilot_mode else ((p[0]-left)*scale+80,(p[1]-top)*scale+130)
 d.rectangle((80,130,1614,1487),fill="#dce8e8")
 def drawgeom(g,layer):
     typ=g["type"]; coords=g.get("coordinates")
@@ -26,13 +27,13 @@ def drawgeom(g,layer):
     elif typ=="MultiPolygon":
         for poly in coords: drawgeom({"type":"Polygon","coordinates":poly},layer)
     elif typ=="Polygon":
-        color={"land":"#d8ddc3","lakes":"#accbd0","forest":"#a4b997","mountains":"#b3ab92"}[layer]
+        color={"saltBasins":"#d6c5ad","land":"#d8ddc3","lakes":"#accbd0","forest":"#a4b997","mountains":"#b3ab92"}[layer]
         d.polygon([xy(p) for p in coords[0]],fill=color)
         for ring in coords[1:]:d.polygon([xy(p) for p in ring],fill="#dce8e8" if layer=="land" else "#d8ddc3")
     elif typ=="MultiLineString":
         for line in coords:drawgeom({"type":"LineString","coordinates":line},layer)
     elif typ=="LineString":d.line([xy(p) for p in coords],fill="#729fae",width=2)
-order={"land":0,"forest":1,"mountains":2,"lakes":3,"rivers":4}
+order={"saltBasins":3,"land":0,"forest":1,"mountains":2,"lakes":3,"rivers":4}
 for f in sorted([f for f in data["features"] if f["properties"]["layer"] in order],key=lambda f:order[f["properties"]["layer"]]):drawgeom(f["geometry"],f["properties"]["layer"])
 for c in data["cells"]:
     pts=[xy(p) for p in c["vertices"]];d.line(pts+[pts[0]],fill="#a0b6ac",width=1)

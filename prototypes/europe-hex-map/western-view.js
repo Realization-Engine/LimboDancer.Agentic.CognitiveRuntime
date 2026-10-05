@@ -2,11 +2,14 @@
 const westernLayer=element("g",{}), westernWater=element("g",{"pointer-events":"none"},westernLayer), westernGrid=element("g",{},westernLayer), westernPlaces=element("g",{},westernLayer), westernSites=element("g",{},westernLayer);
 westernLayer.style.display="none";
 // A non-interactive veil emphasizes the active footprint while retaining context.
-const westernFocus=element("g",{"pointer-events":"none","aria-hidden":"true"});
-const westernShade=element("path",{fill:"#6c7378",opacity:.32,"fill-rule":"evenodd"},westernFocus);
+const theaterFocus=element("g",{"pointer-events":"none","aria-hidden":"true"});
+const theaterShade=element("path",{fill:"#6c7378",opacity:.32,"fill-rule":"evenodd"},theaterFocus);
 const westernFootprintPath=path(DATA.westernTheater.hexFootprint);
-const westernPerimeter=element("path",{d:westernFootprintPath,fill:"none",stroke:"#59665d","stroke-width":1.3,"vector-effect":"non-scaling-stroke","stroke-linejoin":"round"},westernFocus);
-westernFocus.style.display="none";
+const theaterPerimeter=element("path",{d:westernFootprintPath,fill:"none",stroke:"#59665d","stroke-width":1.3,"vector-effect":"non-scaling-stroke","stroke-linejoin":"round"},theaterFocus);
+theaterFocus.style.display="none";
+const theaterGridDefs=element("defs",{});
+const theaterGridClip=element("clipPath",{id:"theater-grid-clip",clipPathUnits:"userSpaceOnUse"},theaterGridDefs);
+const theaterGridBoundary=element("path",{},theaterGridClip);
 
 let westernMode="geography",westernSelected=null;
 const westernCells=new Map(), westernLabels=[],siteLabels=[];
@@ -42,15 +45,20 @@ for(const mode of ["geography","logistics","planning"])document.getElementById("
 function updateWestern(){
  const active=activeTheater&&activeTheater.id==="western";
  westernLayer.style.display=active?"":"none";
- westernFocus.style.display=active?"":"none";
- if(active){
+ theaterFocus.style.display=activeTheater?"":"none";
+ if(activeTheater){
+  const footprint=active?westernFootprintPath:path({type:"Polygon",coordinates:[activeTheater.boundary]});
+  theaterPerimeter.setAttribute("d",footprint);
+  theaterGridBoundary.setAttribute("d",footprint);
   // Extend beyond the viewBox to cover letterboxing and remain seamless when panning.
   const [x,y,w,h]=view,pad=Math.max(w,h)*2;
-  westernShade.setAttribute("d",path({type:"Polygon",coordinates:[[[x-pad,y-pad],[x+w+pad,y-pad],[x+w+pad,y+h+pad],[x-pad,y+h+pad],[x-pad,y-pad]]]})+westernFootprintPath);
+  theaterShade.setAttribute("d",path({type:"Polygon",coordinates:[[[x-pad,y-pad],[x+w+pad,y-pad],[x+w+pad,y+h+pad],[x-pad,y+h+pad],[x-pad,y-pad]]]})+footprint);
  }
  document.getElementById("westernWorkspace").style.display=active?"":"none";
  document.getElementById("shell").style.gridTemplateColumns=active?"350px 1fr":"";
  for(const id of ["pilotSection","coarseSelection"])document.getElementById(id).style.display=active?"none":"";
+ if(activeTheater&&!active)grid.setAttribute("clip-path","url(#theater-grid-clip)");
+ else grid.removeAttribute("clip-path");
  grid.style.display=active||document.getElementById("gridToggle").checked===false?"none":"";
  document.getElementById("gridScale").textContent=active?"26 km theater sectors, anchored to shared coordinates. Reference detail, not tactical terrain.":"Approximately 104 km across each hex. Coastlines remain geographic rather than snapping to hex edges.";
  if(!active){water.style.display=document.getElementById("riverToggle").checked===false?"none":"";return;}

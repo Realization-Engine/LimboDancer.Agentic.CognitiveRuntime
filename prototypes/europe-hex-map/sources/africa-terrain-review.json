@@ -1,0 +1,82 @@
+{
+  "baseline": "1939-1943 terrain research",
+  "geometryPolicy": "Historical accounts support terrain character and existence, not precise WWII boundaries. Evidence boxes locate discussion areas and are not terrain polygons.",
+  "records": [
+    {
+      "id": "tunisia",
+      "title": "Tunisia: mountain corridors",
+      "bounds": [
+        7,
+        32,
+        12,
+        37.5
+      ],
+      "period": "1942-1943",
+      "finding": "The campaign account describes the Atlas mountain corridors and the influence of terrain on operations. Numeric elevations and pass capacities remain unmodeled.",
+      "url": "https://www.ibiblio.org/hyperwar/USA/USA-C-Tunisia/index.html"
+    },
+    {
+      "id": "chotts",
+      "title": "Southern Tunisia: chotts and wadis",
+      "bounds": [
+        7,
+        32.5,
+        11,
+        35
+      ],
+      "period": "1943",
+      "finding": "The official history describes the chotts as shallow salt-crusted basins and identifies wadi barriers around Mareth. Salt basins are not treated as permanent open water; seasonal passability is unknown.",
+      "url": "https://www.ibiblio.org/hyperwar/USA/USA-MTO-NWA/USA-MTO-NWA-27.html"
+    },
+    {
+      "id": "western-desert",
+      "title": "Western Desert: plateau, scrub and Qattara",
+      "bounds": [
+        23,
+        28,
+        30.5,
+        32.5
+      ],
+      "period": "1940",
+      "finding": "The British history describes a rocky plateau, coastal escarpment, low scrub, scarce water and the Qattara Depression. Desert is not uniformly sand or woodland. Qattara and escarpment limits still need digitization.",
+      "url": "https://www.ibiblio.org/hyperwar/UN/UK/UK-Med-I/UK-Med-I-6.html"
+    },
+    {
+      "id": "medjerda",
+      "title": "Medjerda valley",
+      "bounds": [
+        8.3,
+        36,
+        10.4,
+        37.3
+      ],
+      "period": "1943",
+      "finding": "The official campaign history documents fighting across the Medjerda valley. The displayed river alignment is modern generalized reference; crossings and wartime flow are unverified.",
+      "url": "https://www.ibiblio.org/hyperwar/USA/USA-MTO-NWA/USA-MTO-NWA-32.html"
+    },
+    {
+      "id": "nasser",
+      "title": "Lake Nasser excluded",
+      "bounds": [
+        30,
+        20,
+        34.5,
+        24.5
+      ],
+      "period": "Postwar correction",
+      "finding": "The Aswan High Dam was built in 1960-1970. Its Lake Nasser footprint is excluded. The earlier Aswan Low Dam reservoir is not reconstructed by this correction.",
+      "url": "https://science.nasa.gov/earth/earth-observatory/aswan-high-dam-85992/"
+    }
+  ],
+  "forestReview": "Full-area GLC2000 reference coverage restored. No 1939-1943 forest polygon reconstruction has been verified; do not infer period forest extent from the modern green layer.",
+  "mapLeads": [
+    {
+      "url": "https://maps.lib.utexas.edu/maps/ams/africa_1m/",
+      "status": "Catalog reviewed; dates vary by sheet. No scan has been digitized for this update."
+    },
+    {
+      "url": "https://maps.lib.utexas.edu/maps/ams/tunisia_city_plans/",
+      "status": "1942-1943 city plan leads; not forest-coverage evidence."
+    }
+  ]
+}
