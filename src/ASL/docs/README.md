@@ -28,6 +28,7 @@ Everything executed is sorted by kind:
 | [`Reviews/`](Reviews/) | Reviews and evidence outside the passes: the ASL-OT reviews, the Back-Matter Source Boundary Review, the Scenario A1 Source Review Packet, the fourteen Scenario A1 reviews of the steps and of passes 1 to 4, and the VASL Board 01 Terrain Evidence. |
 | [`Plans/`](Plans/) | Plans that have been carried out: the Rally and Fire Extensions Plan, the Deviations, Ordnance, and Vehicles Plan, and the Scenario Card Games Plan. |
 | [`Passes/`](Passes/) | The design and the review of each executed pass: `ASL Unit Deviations Pass N Design`, `ASL Unit Backlog Pass N Design`, and `Scenario A1 Backlog Pass N Review <date>`. A new pass writes its design and its review here. |
+| [`Prompts/`](Prompts/) | Working material, not executed work: the [Pass Standing Rules and Harness Lessons](<Prompts/Pass Standing Rules and Harness Lessons.md>), which every session prompt for a pass cites. It is kept current and is not deleted when a pass ends. |
 | [`Media-Production/`](Media-Production/) | The Guards Counterattack media scripts and production records. |
 
 A document leaves this directory for its folder when its work is done: a review once its questions are answered, a plan once its passes are merged.
