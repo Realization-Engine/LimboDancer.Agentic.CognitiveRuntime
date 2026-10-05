@@ -1768,7 +1768,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         var id = Text(scenario, "id", out var named) ? named : string.Empty;
         var sha256 = Text(scenario, "sha256", out var hash) ? hash : string.Empty;
         var catalogName = Text(start, "catalog", out var catalogText) ? catalogText : null;
-        var catalog = catalogs.FirstOrDefault(item => $"{item.Identity.Catalog}@{item.Identity.Version}" == catalogName);
+        var catalog = UnitCatalogs.For(catalogs, catalogName);
         if (CardLibrary.Sha256(id) is not { } current)
         {
             reason = $"play.scenario: '{id}' is not a scenario card of the game (ruling R18.1)";
@@ -1934,7 +1934,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         label = Text(start, "label", out var text) ? text : "Live game";
         reason = null;
         var catalogName = Text(start, "catalog", out var catalogText) ? catalogText : null;
-        var catalog = catalogs.FirstOrDefault(item => $"{item.Identity.Catalog}@{item.Identity.Version}" == catalogName);
+        var catalog = UnitCatalogs.For(catalogs, catalogName);
         if (catalog is not { Publication: CatalogPublication.Published })
         {
             reason = $"play.catalog: a live game uses a published catalog, and '{catalogName}' is not one";

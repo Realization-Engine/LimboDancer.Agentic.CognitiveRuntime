@@ -140,7 +140,7 @@ public sealed partial class GamePlanner
         }
 
         // Only a card with an immediate condition is read after every action (Gambit's Exit VP).
-        if (catalogs.FirstOrDefault(catalog => $"{catalog.Identity.Catalog}@{catalog.Identity.Version}" == started.Catalog) is not { } catalog
+        if (Units.Catalog.UnitCatalogs.For(catalogs, started.Catalog) is not { } catalog
             || CachedCard(scenario.Id, catalog) is not { Card.VictoryConditions.Outcomes: { } outcomes }
             || !outcomes.Any(outcome => outcome.Immediate))
         {

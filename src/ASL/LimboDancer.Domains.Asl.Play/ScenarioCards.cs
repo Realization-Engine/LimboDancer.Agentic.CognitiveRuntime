@@ -354,7 +354,8 @@ public static partial class ScenarioCards
 
         Check(card.Format == Format, $"card.format: a card is '{Format}', not '{card.Format}'");
         Check(!string.IsNullOrWhiteSpace(card.Id) && !string.IsNullOrWhiteSpace(card.Title), "card.id: a card has an id and a title");
-        Check(card.Catalog == $"{catalog.Identity.Catalog}@{catalog.Identity.Version}",
+        // A card names its catalog; the version it names is where it was written, not a lock (UnitCatalogs.For).
+        Check(card.Catalog is { } cardCatalog && (cardCatalog == catalog.Identity.Catalog || cardCatalog.StartsWith(catalog.Identity.Catalog + "@", StringComparison.Ordinal)),
             $"card.catalog: the card names '{card.Catalog}', and the catalog is {catalog.Identity.Catalog}@{catalog.Identity.Version}");
         Check(card.Source is { Basis.Length: > 0, Legacy.Length: > 0 }, "card.source: a card says what it rests on and which legacy card it adapts (ruling R17.2)");
         Check((card.Minimal && card.Date.Day == 0 && card.Date.Month is >= 0 and <= 12 && card.Date.Year is 0 or (>= 1936 and <= 1945))

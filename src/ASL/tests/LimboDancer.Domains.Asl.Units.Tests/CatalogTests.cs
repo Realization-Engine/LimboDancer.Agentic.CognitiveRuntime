@@ -86,16 +86,17 @@ public sealed class CatalogTests
     private static string Hash(byte[] bytes) => Convert.ToHexStringLower(SHA256.HashData(bytes));
 
     [Fact]
-    public void ArchivedCatalogsAreAvailableForReplayButNotCurrentSelection()
+    public void ARecordedCatalogNameReadsTheLoadedCatalogWhateverVersionItNames()
     {
-        const string archived = "scenario-a1-1.12.0";
-        Assert.Contains(archived, UnitCatalogs.ReplayNames);
-        Assert.DoesNotContain(archived, UnitCatalogs.Names);
-        var result = UnitCatalogs.Read(archived, UnitsTestData.Asl.Value);
-        Assert.NotNull(result?.Catalog);
-        Assert.Empty(result.Diagnostics);
-        Assert.StartsWith("asl-scenario-a1@1.12.0+sha256:", result.Catalog.Identity.ToString(), StringComparison.Ordinal);
-        Assert.DoesNotContain(result.Catalog.Definitions, definition => definition.Id == "axis-minor-squad");
+        // The user, 2026-10-05: the version a game or a card records is where it was made, not a lock.
+        var catalog = UnitCatalogs.Read(UnitCatalogs.ScenarioA1, UnitsTestData.Asl.Value)!.Catalog!;
+        UnitCatalog[] loaded = [catalog];
+
+        Assert.Same(catalog, UnitCatalogs.For(loaded, $"{catalog.Identity.Catalog}@{catalog.Identity.Version}"));
+        Assert.Same(catalog, UnitCatalogs.For(loaded, catalog.Identity.Catalog + "@1.1.0"));
+        Assert.Same(catalog, UnitCatalogs.For(loaded, catalog.Identity.Catalog));
+        Assert.Null(UnitCatalogs.For(loaded, "asl-no-such-catalog@1.0.0"));
+        Assert.Null(UnitCatalogs.For(loaded, null));
     }
 
     [Fact]

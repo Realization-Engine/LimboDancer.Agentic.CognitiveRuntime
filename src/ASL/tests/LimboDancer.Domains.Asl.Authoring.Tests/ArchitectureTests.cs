@@ -25,8 +25,10 @@ public sealed class ArchitectureTests
             {
                 var relative = Path.GetRelativePath(RepositoryPaths.Root, path)
                     .Replace(Path.DirectorySeparatorChar, '/');
+                // The prototypes folder is outside ASL authoring and runtime (the user, 2026-10-05): the map prototypes there are Python.
                 return relative != AslSourceRegistryBuilder.ConversionToolPath
-                    && relative != "utils/asl_curated_edition/build_curated_edition.py";
+                    && relative != "utils/asl_curated_edition/build_curated_edition.py"
+                    && !relative.StartsWith("prototypes/", StringComparison.Ordinal);
             })
             .ToArray();
         Assert.Empty(unexpectedPython);
