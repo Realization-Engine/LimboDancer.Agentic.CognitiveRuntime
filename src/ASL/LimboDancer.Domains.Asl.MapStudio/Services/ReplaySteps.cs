@@ -353,7 +353,7 @@ public static class ReplaySteps
 
         if (First<BuildingMoppedUp>(payloads) is { } mopped)
         {
-            return ("other", mopped.Side, $"{The(mopped.Side, "side")} Mops Up building {mopped.Building}{end}", false);
+            return ("other", mopped.Side, DisplayText.Hexes($"{The(mopped.Side, "side")} Mops Up building {mopped.Building}", before.Map.Boards.Count) + end, false);
         }
 
         if (First<PrisonersMassacred>(payloads) is not null)

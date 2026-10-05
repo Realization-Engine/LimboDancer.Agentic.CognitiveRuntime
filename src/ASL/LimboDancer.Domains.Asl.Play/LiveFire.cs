@@ -685,6 +685,17 @@ public static class LiveFire
     internal static bool Fired(IGameObject item) => Is(item, Conditions.PrepFire) || Is(item, Conditions.FinalFire);
 
     /// <summary>
+    /// Why a SW may not be chosen to fire now, in a few words, or null when it may (pass 31d, design D10; A9.2, A9.7): it has malfunctioned, or it
+    /// carries a Prep Fire or Final Fire counter, which a MG that kept its rate of fire does not. A First Fire counter does not bar it: it may fire
+    /// again as Subsequent First Fire or in Final Fire (A8.3, A8.4), which the Fire package decides.
+    /// </summary>
+    public static string? WeaponBar(EquipmentInstance weapon)
+    {
+        ArgumentNullException.ThrowIfNull(weapon);
+        return Is(weapon, Conditions.Malfunctioned) ? "has malfunctioned" : Fired(weapon) ? "has fired" : null;
+    }
+
+    /// <summary>
     /// Whether a unit has spent its fire for this phase, as the Fire package reads it for the PFPh, AFPh, and DFPh (A7.1, A8.4): marked
     /// Prep or Final Fire, unless in the DFPh it is marked First Fire, and unless it still possesses a MG that has not fired (A9.2). The
     /// MPh is not read here: Subsequent First Fire and FPF let marked units fire again (A8.3, A8.31).

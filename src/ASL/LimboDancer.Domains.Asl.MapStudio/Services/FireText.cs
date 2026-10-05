@@ -108,7 +108,9 @@ public static class FireText
             parts.Add("no change");
         }
 
-        return $"Heat of Battle DR {string.Join(", ", heat.Dice)} = {heat.OriginalDr}{ModifierText(heat.Drm)} = Final DR {heat.FinalDr}: {string.Join(", ", parts)} (A15.1)";
+        // Pass 31d (design D11): with no DRM the DR is its own Final DR, and is said once ("DR 4, 4 = 8", not "= 8 = Final DR 8").
+        return $"Heat of Battle DR {string.Join(", ", heat.Dice)} = {heat.OriginalDr}{(heat.Drm.Count == 0 && heat.OriginalDr == heat.FinalDr ? string.Empty : $"{ModifierText(heat.Drm)} = Final DR {heat.FinalDr}")}"
+            + $": {string.Join(", ", parts)} (A15.1)";
     }
 
     /// <summary>
@@ -121,6 +123,16 @@ public static class FireText
         return weapon.Malfunctioned ? $"{weapon.EquipmentId} malfunctioned (A9.7)"
             : weapon.RateOfFireRetained ? $"{weapon.EquipmentId} kept its rate of fire and may fire again this phase (A9.2)"
             : null;
+    }
+
+    /// <summary>
+    /// One of a firer's FP modifiers as a player reads it (pass 31d, design D11): the Fire package lists Assault Fire's one FP among the multipliers
+    /// with the value 1, and it adds one (A7.36), so it reads "+ 1", not "x 1".
+    /// </summary>
+    public static string MultiplierText(FireModifier item)
+    {
+        ArgumentNullException.ThrowIfNull(item);
+        return item.Name == "assault-fire" ? $" + {Number(item.Value)} ({DisplayText.Modifier(item.Name)}, {item.Rule})" : $" × {Number(item.Value)} ({DisplayText.Modifier(item.Name)}, {item.Rule})";
     }
 
     /// <summary>An IFT result as a player says it: the record's "none" reads "no effect".</summary>

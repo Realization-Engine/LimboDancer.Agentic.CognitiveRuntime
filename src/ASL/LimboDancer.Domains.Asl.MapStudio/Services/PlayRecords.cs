@@ -181,7 +181,8 @@ public sealed class PlayRecords
     public IReadOnlyList<(long Revision, string EventId, string Text, bool Minor)> Lines => lines ??= ReadLines();
 
     /// <summary>The lines of what happened after a revision: what the view missed while another had the screen ("Since you last looked").</summary>
-    public IReadOnlyList<(long Revision, string EventId, string Text, bool Minor)> Since(long revision) => [.. Lines.Where(line => line.Revision > revision)];
+    public IReadOnlyList<(long Revision, string EventId, string Text, bool Minor)> Since(long revision, long through = long.MaxValue) =>
+        [.. Lines.Where(line => line.Revision > revision && line.Revision <= through)];
 
     private List<(long Revision, string EventId, string Text, bool Minor)> ReadLines()
     {
@@ -252,7 +253,7 @@ public sealed class PlayRecords
                 SurrenderRejected refused => $"The surrender of {refused.Unit} is refused (A20.3)",
                 InstanceCaptured taken => $"{taken.Id}{In(before, taken.Id)} is captured, guarded by {taken.Custodian} (A20.2)",
                 PrisonerFreed freed => $"{freed.Unit}{In(before, freed.Unit)} is no longer guarded (A20.5)",
-                BuildingMoppedUp mopped => $"The {DisplayText.Side(mopped.Side)} side Mops Up building {mopped.Building} (A12.153)",
+                BuildingMoppedUp mopped => DisplayText.Hexes($"The {DisplayText.Side(mopped.Side)} side Mops Up building {mopped.Building} (A12.153)", history.States.Count > 0 ? history.States[0].Map.Boards.Count : 1),
                 PhaseChanged phase => $"The {DisplayText.Side(phase.PhasingSide)} {GameText.PhaseLabel(phase.Phase)} of Turn {phase.Turn} begins",
                 GameEnded => "The game ends",
                 _ => null,
@@ -273,6 +274,12 @@ public sealed class PlayRecords
         var changed = fire.Effects is null ? []
             : fire.Effects.Select(effect => (effect.UnitId, Text: EffectText(effect, fire.BrokenBefore.Contains(effect.UnitId), fire.PinnedBefore.Contains(effect.UnitId))))
                 .Where(effect => effect.Text is not ("unaffected" or "already broken" or "already pinned")).Select(effect => fire.Say($"{effect.UnitId}: {effect.Text}")).ToArray();
+
+        // Pass 31d (design D11): a result that asked a check of a unit and changed nothing says who passed, so "PTC." does not stand alone.
+        if (changed.Length == 0 && fire.Effects is not null)
+        {
+            changed = [.. fire.Effects.Where(effect => effect.Checks.Count > 0 && effect.Checks.All(check => check.Passed)).Select(effect => fire.Say($"{effect.UnitId}: passed"))];
+        }
 
         // Pass 31d (design D5): Dummies removed by the attack are said once, as what they were (A12.14).
         if (fire.Effects is not null && fire.Effects.Any(effect => effect.Events.Contains("dummy-removed", StringComparer.Ordinal)))
@@ -546,6 +553,7 @@ public sealed class PlayRecords
         get
         {
             var rolls = events.Select(item => item.Payload).OfType<DiceRolled>().ToDictionary(item => item.Roll, StringComparer.Ordinal);
+            var routs = new Dictionary<(string Attempt, string Unit), (int Index, string From, IReadOnlyList<string> Steps, int HalfMf)>();
             var records = new List<(string, string, string)>();
             // Backlog section 23 (pass 28b): each attempt's events, to tell a Failure to Rout and a lone SW transfer from the same events elsewhere.
             var attempts = events.GroupBy(item => AttemptOf(item.EventId), StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.ToArray(), StringComparer.Ordinal);
@@ -562,8 +570,21 @@ public sealed class PlayRecords
                 }
                 else if (item.Payload is RoutStepped routed)
                 {
-                    var mf = (routed.HalfMf / 2.0).ToString("0.#", CultureInfo.InvariantCulture);
-                    records.Add((item.EventId, "rout", $"{routed.Unit} routs{From(before, routed.Unit)} to {routed.To} for {mf} MF{(routed.LowCrawl ? " by Low Crawl (A10.52)" : " (A10.5)")}"));
+                    // Pass 31d (design D11): the steps of one rout are one sentence, "routs from [Y5] by [Z5] to [AA5] for 3 MF", and name the unit once.
+                    var key = (AttemptOf(item.EventId), routed.Unit);
+                    if (routs.TryGetValue(key, out var earlier))
+                    {
+                        routs[key] = earlier = (earlier.Index, earlier.From, [.. earlier.Steps, routed.To.ToString()], earlier.HalfMf + routed.HalfMf);
+                        var total = (earlier.HalfMf / 2.0).ToString("0.#", CultureInfo.InvariantCulture);
+                        records[earlier.Index] = (records[earlier.Index].Item1, "rout",
+                            $"{routed.Unit} routs{earlier.From} by {string.Join(", ", earlier.Steps.Take(earlier.Steps.Count - 1))} to {earlier.Steps[^1]} for {total} MF (A10.5)");
+                    }
+                    else
+                    {
+                        var mf = (routed.HalfMf / 2.0).ToString("0.#", CultureInfo.InvariantCulture);
+                        routs[key] = (records.Count, From(before, routed.Unit), [routed.To.ToString()], routed.HalfMf);
+                        records.Add((item.EventId, "rout", $"{routed.Unit} routs{From(before, routed.Unit)} to {routed.To} for {mf} MF{(routed.LowCrawl ? " by Low Crawl (A10.52)" : " (A10.5)")}"));
+                    }
                 }
                 else if (item.Payload is RoutInterdicted interdicted)
                 {

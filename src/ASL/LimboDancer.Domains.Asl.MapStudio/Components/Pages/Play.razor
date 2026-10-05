@@ -107,7 +107,7 @@ else
                         {
                             var key = $"{side.Id}|{at}";
                             <label><input type="checkbox" class="non-ob-location" value="@at" checked="@nonObChosen.Contains(key)"
-                                          @onchange="@(args => Toggle(nonObChosen, key, args.Value is true))" /> @PlaceOf(at) <span class="muted">@at</span></label>
+                                          @onchange="@(args => Toggle(nonObChosen, key, args.Value is true))" /> @PlaceOf(at)</label>
                         }
                         <button class="propose-non-ob" disabled="@(!choices.Any(at => nonObChosen.Contains($"{side.Id}|{at}")))" aria-describedby="@($"non-ob-ready-{side.Id}")"
                                 @onclick="@(() => ProposeNonOb(side.Id, choices))">Propose: place @DisplayText.Side(side.Id)'s non-OB "?"</button>
@@ -703,7 +703,7 @@ else if (state is not null)
                     <SmallArmsFirePanel Side="@firing" Phase="@state.Phase" PhaseLabel="@Games.PhaseLabel(state.Phase)" Locations="@([.. FireLocations(firing)])" From="@fireFrom"
                         TargetNotes="@byRange.Notes" TargetsOut="@byRange.Out" RangeSummary="@ofTarget.Summary" RangeRows="@ofTarget.Rows" OnShowRange="@ShowFireRange"
                         Also="@fireAlso" AlsoChoices="@FireAlsoChoices(firing)" OnAlso="@(pick => ToggleFireAlso(pick.Id, pick.On))" Places="@FirerPlaces(firing)" AloneCandidates="@FireAloneCandidates(firing)"
-                        Firers="@FirerChoices(firing)" SelectedFirers="@fireFirers" Weapons="@([.. FireWeapons.Select(weapon => new SmallArmsFirePanel.Weapon(weapon.Id, weapon.Holding!.Holder))])"
+                        Firers="@FirerChoices(firing)" SelectedFirers="@fireFirers" Weapons="@([.. FireWeapons.Select(weapon => new SmallArmsFirePanel.Weapon(weapon.Id, weapon.Holding!.Holder, LiveFire.WeaponBar(weapon), weapon.Kind == "asl:ft"))])"
                         SelectedWeapons="@fireWeapons" Alone="@fireAlone" Leaders="@([.. FireLeaders(firing).Select(leader => leader.Id)])" Director="@fireDirector"
                         MolAllowed='@state.SpecialRules.Contains("mol:" + firing, StringComparer.Ordinal)' Mol="@fireMol" Targets="@byRange.Targets" Target="@fireTarget"
                         FreeTarget="@fireFreeTarget" SnapShot="@fireSnapShot" Spray="@fireSpray" LaneWeapon="@fireLaneWeapon" LaneTo="@fireLaneTo" Partners="@FirePartners(firing)"
@@ -1798,7 +1798,16 @@ else if (state is not null)
                 }
             }
 
-            draftCache = (key, UnitOverlayBuilder.Build(UnitLibrary.TargetFor(board), committed.SetId, [.. committed.Units.Select(unit => unit.Document), .. drafts], renderer));
+            // Pass 31d (design D12; ruling R31c.6): the overlay built again from the documents has lost the leads the game's own overlay had, so
+            // each counter is led again by its hex, and by the unit's name where the view has one: a committed unit's as the records name it, and
+            // a draft counter's as its counter reads ("[P7]: 4-4-7 squad"), since a draft has no tag until it is in the game.
+            var built = UnitOverlayBuilder.Build(UnitLibrary.TargetFor(board), committed.SetId, [.. committed.Units.Select(unit => unit.Document), .. drafts], renderer);
+            var names = history is null ? null : Live.NamesOf(history, Viewer);
+            var draftNames = rows.Where(row => row.Definition is not null && catalog.Definition(row.Definition!) is not null)
+                .ToDictionary(row => DraftPrefix + row.Id, row => UnitNames.Counter(catalog.Definition(row.Definition!)!), StringComparer.Ordinal);
+            draftCache = (key, GameMaps.Led(built, unit => DisplayText.Place(MapBoards, unit.Location)
+                + (draftNames.TryGetValue(unit.Document.Id, out var counter) ? $": {counter}. "
+                    : names?.Held(unit.Document.Id, state.Revision) is { } held && held != unit.Document.Id && held != UnitNames.Unnamed ? $": {held}. " : ": ")));
         }
 
         return draftCache.Overlay;
@@ -1914,14 +1923,20 @@ else if (state is not null)
         // A Gun or a vehicle has no short printed name in the catalog: its kind in words, then its definition.
         : DefinitionLabel(definition) is var label && label != definition ? label : $"{DisplayText.Kind(row.Kind)} {definition}";
 
-    private static string WhereText(Placement row) => row.Holder is { } holder ? row.Role switch
+    private string WhereText(Placement row) => row.Holder is { } holder ? row.Role switch
         {
             "passenger" => $"aboard {holder}",
             "towed" => $"towed by {holder}",
-            "manned" => $"manned by {holder} at {DisplayText.Location(row.Location)}",
+            "manned" => $"manned by {holder} at {PlaceOf(row.Location)}",
             _ => $"held by {holder}",
         }
-        : row.OffBoard ? "off board" : row.Location.Length == 0 ? "not placed" : DisplayText.Location(row.Location);
+        : row.OffBoard ? "off board" : row.Location.Length == 0 ? "not placed" : PlaceOf(row.Location);
+
+    /// <summary>
+    /// The boards of the map: the game's, or before a game exists those the new game names (pass 31d, design D12), so a Location on a map of one
+    /// board is written "[P7]" during setup too.
+    /// </summary>
+    private int MapBoards => state?.Map.Boards.Count ?? Math.Max(1, newBoard.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length);
 
     private static bool Differs(Placement was, Placement now) => was.Location != now.Location || was.OffBoard != now.OffBoard || was.Holder != now.Holder
         || was.Concealed != now.Concealed || was.Facing != now.Facing;
@@ -3984,6 +3999,9 @@ else if (state is not null)
         {
             // Pass 31c (design D17): what the arriving view missed is counted from the revision it last saw.
             sinceLooked = lastShown.TryGetValue(next, out var looked) ? looked : null;
+
+            // Pass 31d (design D12): and through the revision it arrives at, so what the view then does itself is not listed as missed.
+            sinceThrough = state?.Revision ?? long.MaxValue;
             viewAs = next;
             handOver = null;
             unconfirmed = false;
@@ -4252,7 +4270,7 @@ else if (state is not null)
     /// <summary>The firers that possess a MG, FT, or ATR, each of which may fire it without its own FP (play test P-17: shown before it is ticked).</summary>
     private IReadOnlyList<string> FireAloneCandidates(string side) => state is null ? []
         : [.. FirerChoices(side).Where(id => state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == id
-            && (Library.Vocabulary.IsA(item.Kind, "asl:mg") || item.Kind == "asl:ft")))];
+            && Library.Vocabulary.IsA(item.Kind, "asl:mg") && LiveFire.WeaponBar(item) is null))];
 
     // Pass 31c (design section 14): Range. The fire panel reads its targets by range before any proposal, and the inspector's Range tab reads a
     // range for the units a view holds by name. No LOS is read here (A6.11: no LOS check before an attack is declared).
@@ -4970,7 +4988,7 @@ else if (state is not null)
         }
 
         // A9.2: the MGs each firer uses, and the firers whose MGs fire without their inherent FP.
-        var weapons = FireWeapons.Where(item => fireWeapons.Contains(item.Id)).GroupBy(item => item.Holding!.Holder)
+        var weapons = FireWeapons.Where(item => fireWeapons.Contains(item.Id) && LiveFire.WeaponBar(item) is null).GroupBy(item => item.Holding!.Holder)
             .ToDictionary(group => group.Key, group => group.Select(item => item.Id).ToArray(), StringComparer.Ordinal);
         if (weapons.Count > 0)
         {
@@ -6508,8 +6526,11 @@ else if (state is not null)
     // Pass 31c (design D17): the revision the view shown last saw before the screen went to another view; null when it has not had the screen.
     private long? sinceLooked;
 
-    /// <summary>What the view shown missed while another had the screen, from its own records (design D17).</summary>
-    private IReadOnlyList<(long Revision, string EventId, string Text, bool Minor)> SinceLooked => sinceLooked is { } revision && Records is { } records ? records.Since(revision) : [];
+    // The revision the view shown arrived at.
+    private long sinceThrough = long.MaxValue;
+
+    /// <summary>What the view shown missed while another had the screen, from its own records (design D17), and nothing it has done since it came back.</summary>
+    private IReadOnlyList<(long Revision, string EventId, string Text, bool Minor)> SinceLooked => sinceLooked is { } revision && Records is { } records ? records.Since(revision, sinceThrough) : [];
 
     private IEnumerable<(string Key, string Label, string Panel)> ActivityTabs =>
     [
@@ -6702,7 +6723,9 @@ else if (state is not null)
                 var names = Live.NamesOf(history, Viewer);
                 var before = (long)history.Events.Count;
                 var said = new Dictionary<string, string>(StringComparer.Ordinal);
-                wordsCache = (history, Viewer.Name, text => said.TryGetValue(text, out var kept) ? kept : said[text] = names.InText(text, before));
+                // Pass 31d (design D11): a planner's terrain keys and phase short forms, and a building's hex in brackets, are said with the names.
+                var boards = state?.Map.Boards.Count ?? 1;
+                wordsCache = (history, Viewer.Name, text => said.TryGetValue(text, out var kept) ? kept : said[text] = DisplayText.Hexes(DisplayText.Planner(names.InText(text, before)), boards));
             }
 
             return wordsCache.Say;
@@ -6771,9 +6794,9 @@ else if (state is not null)
     };
 
     /// <summary>A Location as the game writes it (pass 31c, design D12): "G4, level 1" on a map of one board.</summary>
-    private string PlaceOf(BoardLocation at) => DisplayText.Place(state?.Map.Boards.Count ?? 2, at);
+    private string PlaceOf(BoardLocation at) => DisplayText.Place(MapBoards, at);
 
-    private string PlaceOf(string at) => DisplayText.Place(state?.Map.Boards.Count ?? 2, at);
+    private string PlaceOf(string at) => DisplayText.Place(MapBoards, at);
 
     /// <summary>A status or note in the view's words, without the code at its head.</summary>
     private string? Said(string? text) => text is null ? null : DisplayText.Sentence(Words(DisplayText.Reason(text).Text));

@@ -478,7 +478,8 @@ public sealed partial class GamePlanner
             var left = (allowance * 2) - spent;
             if (left < halfMf || (assault && (plain * 2) - spent <= halfMf))
             {
-                return Refused(scope, label, expected, $"play.move-mf: {unit.Id} has {left / 2m} MF left, and the entry costs {halfMf / 2m} (A4.11, A4.42, A4.61; Minimum Move, A4.134)");
+                return Refused(scope, label, expected, $"play.move-mf: {unit.Id} has {left / 2m} MF left, and the entry costs {halfMf / 2m}"
+                    + (assault && left >= halfMf ? "; Assault Movement may not use all of a unit's MF (A4.61)" : " (A4.11, A4.42, A4.61; Minimum Move, A4.134)"));
             }
         }
 
@@ -496,7 +497,7 @@ public sealed partial class GamePlanner
             Attempted = forcedBack ? to : null,
             Bypass = bypassing,
         };
-        var summary = $"{(entering is not null ? "play.enter" : "play.move")}: {string.Join(", ", ids)} " + (forcedBack ? $"attempt {to}" : occupy ? $"occupy the obstacle of {to}" : $"enter {to}")
+        var summary = $"{(entering is not null ? "play.enter" : "play.move")}: {string.Join(", ", ids)} " + (forcedBack ? $"{(ids.Length == 1 ? "attempts" : "attempt")} {to}" : occupy ? $"{(ids.Length == 1 ? "occupies" : "occupy")} the obstacle of {to}" : $"{(ids.Length == 1 ? "enters" : "enter")} {to}")
             + $" ({terrain}{(bypassing is not null ? " in Bypass along " + string.Join(", ", bypassing.Select(side => side.ToString().ToLowerInvariant())) : string.Empty)}) for {halfMf / 2m} MF"
             + (assault ? ", by Assault Movement" : string.Empty)
             + (doubleTime ? ", Double Timing and now CX (A4.5)" : string.Empty)

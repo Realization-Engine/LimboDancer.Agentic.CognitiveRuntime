@@ -5,7 +5,7 @@
 <ul>
     @foreach (var firer in Arithmetic.Firers)
     {
-        <li class="fire-fp" data-unit="@firer.UnitId" title="@(Say(firer.UnitId) == UnitNames.Unnamed ? null : firer.UnitId)">@Say(firer.UnitId): @firer.Printed FP@(string.Concat(firer.Multipliers.Select(item => $" × {FireText.Number(item.Value)} ({DisplayText.Modifier(item.Name)}, {item.Rule})"))) = @FireText.Number(firer.Firepower)</li>
+        <li class="fire-fp" data-unit="@firer.UnitId" title="@(Say(firer.UnitId) == UnitNames.Unnamed ? null : firer.UnitId)">@Say(firer.UnitId): @firer.Printed FP@(string.Concat(firer.Multipliers.Select(FireText.MultiplierText))) = @FireText.Number(firer.Firepower)</li>
     }
     <li class="fire-column">
         Total @FireText.Number(Arithmetic.TotalFirepower) FP: the @(Arithmetic.UnshiftedColumnFp?.ToString(CultureInfo.InvariantCulture) ?? "no") column@(Arithmetic.ColumnShift != 0 || Arithmetic.Cowered ? $", shifted {Arithmetic.ColumnShift}{(Arithmetic.Cowered ? " by Cowering (A7.9)" : "")} to the {Arithmetic.ColumnFp?.ToString(CultureInfo.InvariantCulture) ?? "no"} column" : "")
