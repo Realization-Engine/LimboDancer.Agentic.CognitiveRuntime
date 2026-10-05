@@ -7,7 +7,7 @@ from shapely.ops import transform, unary_union
 from shapely import make_valid
 ROOT = Path(__file__).resolve().parent
 RADIUS = 60.0
-BOUNDS = (-2400., -2500., 2800., 2100.)
+BOUNDS = (-2400., -2500., 2800., 3300.)
 AREA = box(*BOUNDS)
 FORWARD = Transformer.from_crs("EPSG:4326", "EPSG:3035", always_xy=True)
 INVERSE = Transformer.from_crs("EPSG:3035", "EPSG:4326", always_xy=True)
@@ -31,14 +31,21 @@ def load():
     for key, name in [("land","ne_50m_land"),("lakes","ne_50m_lakes"),("rivers","ne_50m_rivers_lake_centerlines")]:
         features = []
         for f in read(name):
+            if key=="lakes" and "nasser" in str(f["properties"]).lower(): continue
             g = shape(f["geometry"])
-            if not g.intersects(box(-40,20,65,85)): continue
+            if key=="rivers": g=g.difference(box(-13,20,36,37.5))
+            if not g.intersects(box(-40,10,65,85)): continue
             # Clip geographic input before projection to avoid remote antipodal artifacts.
-            g = transform(project, make_valid(g.intersection(box(-40,20,65,85))))
+            g = make_valid(transform(project, make_valid(g.intersection(box(-40,10,65,85)))))
             if not g.intersects(AREA.buffer(150)): continue
             p = f["properties"]
             features.append((g, p.get("name_en") or p.get("name") or "Unnamed", p.get("ne_id")))
         layers[key] = features
+    for key in ("rivers","lakes","saltBasins"):
+        name={"rivers":"africa_rivers","lakes":"africa_lakes","saltBasins":"africa_salt_basins"}[key]
+        for f in read(name):
+            p=f["properties"];g=make_valid(transform(project,shape(f["geometry"])))
+            layers.setdefault(key,[]).append((g,p.get("name_en") or p.get("name") or ("Unnamed salt basin" if key=="saltBasins" else "Unnamed waterway"),p.get("ne_id")))
     land = unary_union([f[0] for f in layers["land"]])
     lakes = unary_union([f[0] for f in layers["lakes"]])
     cities = []
@@ -49,6 +56,9 @@ def load():
         lon,lat=f["geometry"]["coordinates"]; x,y=project(lon,lat)
         if AREA.contains(Point(x,y)):
             cities.append({"name":name,"x":round(x,3),"y":round(y,3),"lon":lon,"lat":lat})
+    for f in read("north_africa_places"):
+        p=f["properties"];lon,lat=f["geometry"]["coordinates"];x,y=project(lon,lat)
+        cities.append({"name":p.get("NAMEASCII") or p["NAME"],"x":round(x,3),"y":round(y,3),"lon":lon,"lat":lat})
     return manifest,layers,land,lakes,sorted(cities,key=lambda c:c["name"])
 def center(q,r):
     return RADIUS*math.sqrt(3)*(q+r/2), RADIUS*1.5*r
@@ -69,12 +79,12 @@ def cell(q,r,land,lakes):
 def build():
     manifest,layers,land,lakes,cities=load()
     cells=[]
-    for r in range(-30,31):
+    for r in range(-30,math.ceil(BOUNDS[3]/(RADIUS*1.5))+1):
         for q in range(-45,46):
             x,y=center(q,r)
             if AREA.contains(Point(x,y)): cells.append(cell(q,r,land,lakes))
     vector=[]
-    for layer in ("land","lakes","rivers"):
+    for layer in ("land","lakes","rivers","saltBasins"):
         for i,(g,name,sourceid) in enumerate(layers[layer]):
             clipped=g.intersection(AREA)
             if clipped.is_empty: continue
@@ -84,10 +94,14 @@ def build():
     for c in cells:
         g=polygon(c["q"],c["r"])
         c["rivers"]=sorted({n for line,n in rivers if line.intersects(g)})
+        for key in ("lakes","saltBasins"):
+            c[key]=sorted({n for geom,n,_ in layers[key] if geom.intersects(g)})
         c["cities"]=[a["name"] for a in cities if g.covers(Point(a["x"],a["y"]))]
     import overlays, sys
     terrain_labels=overlays.enrich(cells,vector,land,lakes,sys.modules[__name__])
-    meta={"format":"europe-hex-prototype-v1","generator":"1.2.0","projection":"EPSG:3035",
+    from terrain_review import attach
+    terrain_review=attach(cells,vector,sys.modules[__name__])
+    meta={"format":"europe-hex-prototype-v1","generator":"1.4.0","projection":"EPSG:3035",
           "localTransform":"x=(E-4321000)/1000; y=(3210000-N)/1000",
           "radiusKm":RADIUS,"acrossFlatsKm":round(math.sqrt(3)*RADIUS,3),"bounds":BOUNDS,
           "sourceManifest":manifest,"historicalStatus":"Contemporary generalized reference, not WWII-admitted",
@@ -103,7 +117,7 @@ def build():
         research["cellSummaries"][c["id"]]={"roadKm":c.pop("roadsReferenceKm"),"railKm":c.pop("railwaysReferenceKm")}
         c["historicalTransport"]={"baselineDate":"1939-09-01","coverage":"unknown","roadKm":None,"railKm":None}
     meta["transportBaseline"]=transport
-    data={"metadata":meta,"cells":cells,"features":vector,"cities":cities,"terrainLabels":terrain_labels}
+    data={"metadata":meta,"cells":cells,"features":vector,"cities":cities,"terrainLabels":terrain_labels,"terrainReview":terrain_review}
     data["metadata"]["baseHash"]=digest(data)
     (ROOT/"map.json").write_text(canonical(data),encoding="utf-8")
     (ROOT/"research-transport.json").write_text(canonical(research),encoding="utf-8")
@@ -150,7 +164,9 @@ def build():
     historical_network=prepare()
     from prepare_western import prepare as prepare_western
     western=prepare_western()
-    view_data={**data,"researchTransport":research,"historicalPilot":pilot,"historicalRailNetwork":historical_network,"westernTheater":western,"theaterDefinitions":json.loads((ROOT/"theaters.json").read_text(encoding="utf-8"))}
+    from prepare_southern_transport import prepare as prepare_south
+    southern=prepare_south(sys.modules[__name__])
+    view_data={**data,"southernTransport":southern,"researchTransport":research,"historicalPilot":pilot,"historicalRailNetwork":historical_network,"westernTheater":western,"theaterDefinitions":json.loads((ROOT/"theaters.json").read_text(encoding="utf-8"))}
     html=(ROOT/"viewer.html").read_text(encoding="utf-8").replace("__WESTERN_SCRIPT__",(ROOT/"western-view.js").read_text(encoding="utf-8-sig")).replace("__MAP_DATA__",canonical(view_data).replace("</","<\\/"))
     (ROOT/"index.html").write_text(html,encoding="utf-8",newline="\n")
     # Standards-based geographic hex export. Exact source feature topology remains in map.json.

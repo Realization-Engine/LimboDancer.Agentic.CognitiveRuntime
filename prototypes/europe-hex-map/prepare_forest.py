@@ -19,10 +19,10 @@ with zipfile.ZipFile(src/"glc2000.zip") as z:
             import shutil
             shutil.copyfileobj(i,o)
 with rasterio.open(target) as ds:
-    window=from_bounds(-40,20,65,85,ds.transform).round_offsets().round_lengths()
+    window=from_bounds(-40,10,65,85,ds.transform).round_offsets().round_lengths()
     raw=ds.read(1,window=window)
     trees=np.where((raw>=1)&(raw<=8),1.,np.where((raw>=1)&(raw<=22),0.,-1.)).astype("float32")
-    dst=np.full((460,520),-1,dtype="float32")
+    dst=np.full((580,520),-1,dtype="float32")
     grid=from_origin(1921000,5710000,10000,10000)
     reproject(trees,dst,src_transform=ds.window_transform(window),src_crs="EPSG:4326",
               src_nodata=-1,dst_transform=grid,dst_crs="EPSG:3035",dst_nodata=-1,resampling=Resampling.average)

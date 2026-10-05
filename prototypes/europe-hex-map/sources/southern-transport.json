@@ -1,0 +1,1233 @@
+{
+  "reviewedOn": "2026-10-05",
+  "status": "dated-schematic-research",
+  "gameAdmitted": false,
+  "geometryPolicy": "Approximate town-to-town connections, not traced historical alignments. No distances, capacities, crossings or travel times may be inferred. Display tiers express our presentation choices, not historical railway classes.",
+  "sources": [
+    {
+      "id": "rw35",
+      "title": "Railway Wonders of the World: In Northern Africa (1935)",
+      "url": "https://www.railwaywondersoftheworld.com/northern-africa.html",
+      "finding": "Contemporary account of the Maghreb trunk and selected branches. Intermediate points are schematic, not traced alignments."
+    },
+    {
+      "id": "sncft",
+      "title": "SNCFT historical chronology",
+      "url": "https://www.sncft.com.tn/en/the-sncft/history/",
+      "finding": "Operator dates northern and southern Tunisian openings; Heidra to Kasserine opened in 1940 and is omitted from the prewar view."
+    },
+    {
+      "id": "oncf",
+      "title": "ONCF 2013 annual report, historical timeline",
+      "url": "https://www.oncf.ma/content/download/2471/27285/file/RAPPORT-ANNUEL-ONCF-2013.pdf",
+      "finding": "Timeline dates Casablanca-Rabat to 1925, Oujda-Bouarfa to 1931 and Benguerir-Safi to 1936."
+    },
+    {
+      "id": "nile35",
+      "title": "Railway Wonders of the World: In the Nile Valley (1935)",
+      "url": "https://www.railwaywondersoftheworld.com/nile_valley.html",
+      "finding": "Contemporary Egyptian network account. Cairo-Aswan and Alexandria-Cairo are represented as schematic corridors."
+    },
+    {
+      "id": "uk39",
+      "title": "British official history: Mediterranean and Middle East I, chapter IV",
+      "url": "https://www.ibiblio.org/hyperwar/UN/UK/UK-Med-I/UK-Med-I-4.html",
+      "finding": "Pages 67-68 document road and single-track railway supply to Matruh at the outbreak of war. Water supply constrained railway operations."
+    },
+    {
+      "id": "nwa42",
+      "title": "US Army: Northwest Africa, chapter II",
+      "url": "https://www.ibiblio.org/hyperwar/USA/USA-MTO-NWA/USA-MTO-NWA-2.html",
+      "finding": "Pages 18-20 describe the 1942 road system, inland links and railways. Some roads had recent military improvements; this is not proof of 1939 condition."
+    },
+    {
+      "id": "luce37",
+      "title": "Milan civic historical collections: Pariani papers",
+      "url": "https://www2.comune.milano.it/documents/462956031/464298261/Archivio_della_Guerra_Fondi_personali_II.pdf/68990940-5650-8265-1a70-4e6587006e00",
+      "finding": "Archive catalog identifies March 1937 coastal-road inauguration documents at Bardia, Arae Philenorum and Misurata. Catalog evidence, not surveyed road geometry."
+    },
+    {
+      "id": "w41",
+      "title": "Wavell dispatch: operations December 1940-February 1941",
+      "url": "https://www.ibiblio.org/hyperwar/UN/UK/LondonGazette/37628.pdf",
+      "finding": "Dispatch identifies Benghazi railway junction and terminals at Barce and Soluch. This review establishes 1941 existence only."
+    },
+    {
+      "id": "uk40",
+      "title": "British official history: Mediterranean and Middle East I, chapter VI",
+      "url": "https://www.ibiblio.org/hyperwar/UN/UK/UK-Med-I/UK-Med-I-6.html",
+      "finding": "The 1940 account distinguishes the coast road from desert tracks, including Trigh Capuzzo. Road and track are separate classes."
+    }
+  ],
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na01",
+        "name": "Moroccan Atlantic trunk",
+        "region": "Northwest Africa",
+        "mode": "rail",
+        "evidenceYear": 1935,
+        "displayTier": 0,
+        "sourceId": "rw35",
+        "places": [
+          "Marrakech",
+          "Benguerir",
+          "Casablanca",
+          "Rabat",
+          "Port Lyautey",
+          "Petit Jean"
+        ],
+        "note": "",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.98,
+            31.63
+          ],
+          [
+            -7.95,
+            32.23
+          ],
+          [
+            -7.59,
+            33.57
+          ],
+          [
+            -6.84,
+            34.02
+          ],
+          [
+            -6.58,
+            34.26
+          ],
+          [
+            -5.71,
+            34.22
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na02",
+        "name": "Fez-Oujda connection",
+        "region": "Northwest Africa",
+        "mode": "rail",
+        "evidenceYear": 1935,
+        "displayTier": 0,
+        "sourceId": "rw35",
+        "places": [
+          "Petit Jean",
+          "Meknes",
+          "Fez",
+          "Taza",
+          "Guercif",
+          "Oujda"
+        ],
+        "note": "",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -5.71,
+            34.22
+          ],
+          [
+            -5.55,
+            33.89
+          ],
+          [
+            -5,
+            34.03
+          ],
+          [
+            -4.01,
+            34.21
+          ],
+          [
+            -3.35,
+            34.23
+          ],
+          [
+            -1.91,
+            34.68
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na03",
+        "name": "Western Algerian trunk",
+        "region": "Northwest Africa",
+        "mode": "rail",
+        "evidenceYear": 1935,
+        "displayTier": 0,
+        "sourceId": "rw35",
+        "places": [
+          "Oujda",
+          "Tlemcen",
+          "Oran",
+          "Algiers"
+        ],
+        "note": "",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -1.91,
+            34.68
+          ],
+          [
+            -1.32,
+            34.88
+          ],
+          [
+            -0.64,
+            35.7
+          ],
+          [
+            3.06,
+            36.75
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na04",
+        "name": "Algiers-Tunis through corridor",
+        "region": "Northwest Africa",
+        "mode": "rail",
+        "evidenceYear": 1935,
+        "displayTier": 0,
+        "sourceId": "rw35",
+        "places": [
+          "Algiers",
+          "Setif",
+          "Constantine",
+          "Souk Ahras",
+          "Ghardimaou",
+          "Beja",
+          "Medjez el Bab",
+          "Tunis"
+        ],
+        "note": "Waypoints summarize the corridor; exact junction topology unverified.",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            3.06,
+            36.75
+          ],
+          [
+            5.41,
+            36.19
+          ],
+          [
+            6.61,
+            36.37
+          ],
+          [
+            7.95,
+            36.29
+          ],
+          [
+            8.44,
+            36.45
+          ],
+          [
+            9.18,
+            36.73
+          ],
+          [
+            9.61,
+            36.65
+          ],
+          [
+            10.18,
+            36.81
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na05",
+        "name": "Tangier branch",
+        "region": "Northwest Africa",
+        "mode": "rail",
+        "evidenceYear": 1935,
+        "displayTier": 1,
+        "sourceId": "rw35",
+        "places": [
+          "Petit Jean",
+          "Tangier"
+        ],
+        "note": "",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -5.71,
+            34.22
+          ],
+          [
+            -5.81,
+            35.76
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na06",
+        "name": "Oujda-Bou Arfa",
+        "region": "Northwest Africa",
+        "mode": "rail",
+        "evidenceYear": 1931,
+        "displayTier": 1,
+        "sourceId": "oncf",
+        "places": [
+          "Oujda",
+          "Bou Arfa"
+        ],
+        "note": "",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -1.91,
+            34.68
+          ],
+          [
+            -1.96,
+            32.53
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na07",
+        "name": "Benguerir-Safi",
+        "region": "Northwest Africa",
+        "mode": "rail",
+        "evidenceYear": 1936,
+        "displayTier": 1,
+        "sourceId": "oncf",
+        "places": [
+          "Benguerir",
+          "Safi"
+        ],
+        "note": "",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.95,
+            32.23
+          ],
+          [
+            -9.24,
+            32.3
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na08",
+        "name": "Guercif-Midelt military branch",
+        "region": "Northwest Africa",
+        "mode": "rail",
+        "evidenceYear": 1935,
+        "displayTier": 2,
+        "sourceId": "rw35",
+        "places": [
+          "Guercif",
+          "Midelt"
+        ],
+        "note": "",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -3.35,
+            34.23
+          ],
+          [
+            -4.74,
+            32.68
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na09",
+        "name": "Oran-Colomb Bechar corridor",
+        "region": "Northwest Africa",
+        "mode": "rail",
+        "evidenceYear": 1935,
+        "displayTier": 1,
+        "sourceId": "rw35",
+        "places": [
+          "Oran",
+          "Saida",
+          "Colomb Bechar"
+        ],
+        "note": "Narrow-gauge corridor; through compatibility is not assumed.",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -0.64,
+            35.7
+          ],
+          [
+            0.15,
+            34.83
+          ],
+          [
+            -2.22,
+            31.62
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na10",
+        "name": "Constantine-Philippeville port link",
+        "region": "Northwest Africa",
+        "mode": "rail",
+        "evidenceYear": 1935,
+        "displayTier": 1,
+        "sourceId": "rw35",
+        "places": [
+          "Constantine",
+          "Philippeville"
+        ],
+        "note": "",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            6.61,
+            36.37
+          ],
+          [
+            6.91,
+            36.88
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na11",
+        "name": "Jedeida-Bizerte",
+        "region": "Northwest Africa",
+        "mode": "rail",
+        "evidenceYear": 1894,
+        "displayTier": 1,
+        "sourceId": "sncft",
+        "places": [
+          "Jedeida",
+          "Bizerte"
+        ],
+        "note": "",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            9.94,
+            36.85
+          ],
+          [
+            9.87,
+            37.27
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na12",
+        "name": "Tunis-Sousse",
+        "region": "Northwest Africa",
+        "mode": "rail",
+        "evidenceYear": 1895,
+        "displayTier": 0,
+        "sourceId": "sncft",
+        "places": [
+          "Tunis",
+          "Hammam Lif",
+          "Sousse"
+        ],
+        "note": "",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            10.18,
+            36.81
+          ],
+          [
+            10.34,
+            36.73
+          ],
+          [
+            10.64,
+            35.83
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na13",
+        "name": "Sousse-Sfax",
+        "region": "Northwest Africa",
+        "mode": "rail",
+        "evidenceYear": 1912,
+        "displayTier": 0,
+        "sourceId": "sncft",
+        "places": [
+          "Sousse",
+          "Sfax"
+        ],
+        "note": "",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            10.64,
+            35.83
+          ],
+          [
+            10.76,
+            34.74
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na14",
+        "name": "Sfax-Gafsa-Metlaoui",
+        "region": "Northwest Africa",
+        "mode": "rail",
+        "evidenceYear": 1909,
+        "displayTier": 1,
+        "sourceId": "sncft",
+        "places": [
+          "Sfax",
+          "Gafsa",
+          "Metlaoui"
+        ],
+        "note": "",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            10.76,
+            34.74
+          ],
+          [
+            8.78,
+            34.42
+          ],
+          [
+            8.4,
+            34.32
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na15",
+        "name": "Tunisian southern coastal rail",
+        "region": "Northwest Africa",
+        "mode": "rail",
+        "evidenceYear": 1942,
+        "displayTier": 1,
+        "sourceId": "nwa42",
+        "places": [
+          "Sfax",
+          "Gabes"
+        ],
+        "note": "Station construction in 1916 alone does not verify this entire segment; 1942 route description used.",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            10.76,
+            34.74
+          ],
+          [
+            10.1,
+            33.88
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na16",
+        "name": "Algerian-Tunisian inland road",
+        "region": "Northwest Africa",
+        "mode": "road",
+        "evidenceYear": 1942,
+        "displayTier": 0,
+        "sourceId": "nwa42",
+        "places": [
+          "Constantine",
+          "Tebessa",
+          "Gafsa",
+          "Gabes"
+        ],
+        "note": "Wartime military improvements are not backdated.",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            6.61,
+            36.37
+          ],
+          [
+            8.12,
+            35.4
+          ],
+          [
+            8.78,
+            34.42
+          ],
+          [
+            10.1,
+            33.88
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na17",
+        "name": "Sbeitla-Sfax road connection",
+        "region": "Northwest Africa",
+        "mode": "road",
+        "evidenceYear": 1942,
+        "displayTier": 1,
+        "sourceId": "nwa42",
+        "places": [
+          "Tebessa",
+          "Sbeitla",
+          "Sfax"
+        ],
+        "note": "",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            8.12,
+            35.4
+          ],
+          [
+            9.12,
+            35.24
+          ],
+          [
+            10.76,
+            34.74
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na18",
+        "name": "Sbeitla-Sousse road connection",
+        "region": "Northwest Africa",
+        "mode": "road",
+        "evidenceYear": 1942,
+        "displayTier": 1,
+        "sourceId": "nwa42",
+        "places": [
+          "Sbeitla",
+          "Sousse"
+        ],
+        "note": "",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            9.12,
+            35.24
+          ],
+          [
+            10.64,
+            35.83
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na19",
+        "name": "Casablanca-Tunis road corridor",
+        "region": "Northwest Africa",
+        "mode": "road",
+        "evidenceYear": 1942,
+        "displayTier": 0,
+        "sourceId": "nwa42",
+        "places": [
+          "Casablanca",
+          "Rabat",
+          "Fez",
+          "Oujda",
+          "Oran",
+          "Algiers",
+          "Constantine",
+          "Tunis"
+        ],
+        "note": "Broad connection only; parallel coastal and inland routes are not resolved.",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            -7.59,
+            33.57
+          ],
+          [
+            -6.84,
+            34.02
+          ],
+          [
+            -5,
+            34.03
+          ],
+          [
+            -1.91,
+            34.68
+          ],
+          [
+            -0.64,
+            35.7
+          ],
+          [
+            3.06,
+            36.75
+          ],
+          [
+            6.61,
+            36.37
+          ],
+          [
+            10.18,
+            36.81
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na20",
+        "name": "Alexandria-Cairo",
+        "region": "Libya and Egypt",
+        "mode": "rail",
+        "evidenceYear": 1935,
+        "displayTier": 0,
+        "sourceId": "nile35",
+        "places": [
+          "Alexandria",
+          "Tanta",
+          "Benha",
+          "Cairo"
+        ],
+        "note": "",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            29.92,
+            31.2
+          ],
+          [
+            31.0,
+            30.79
+          ],
+          [
+            31.18,
+            30.47
+          ],
+          [
+            31.24,
+            30.04
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na21",
+        "name": "Nile valley trunk",
+        "region": "Libya and Egypt",
+        "mode": "rail",
+        "evidenceYear": 1935,
+        "displayTier": 0,
+        "sourceId": "nile35",
+        "places": [
+          "Cairo",
+          "Beni Suef",
+          "Minya",
+          "Assiut",
+          "Nag Hammadi",
+          "Luxor",
+          "Aswan"
+        ],
+        "note": "",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            31.24,
+            30.04
+          ],
+          [
+            31.1,
+            29.07
+          ],
+          [
+            30.75,
+            28.11
+          ],
+          [
+            31.18,
+            27.18
+          ],
+          [
+            32.24,
+            26.05
+          ],
+          [
+            32.64,
+            25.7
+          ],
+          [
+            32.9,
+            24.09
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na22",
+        "name": "Western Desert railhead at Matruh",
+        "region": "Libya and Egypt",
+        "mode": "rail",
+        "evidenceYear": 1939,
+        "displayTier": 0,
+        "sourceId": "uk39",
+        "places": [
+          "Alexandria",
+          "El Alamein",
+          "Mersa Matruh"
+        ],
+        "note": "Outbreak-of-war account. Later extensions west of Matruh are excluded.",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            29.92,
+            31.2
+          ],
+          [
+            28.95,
+            30.83
+          ],
+          [
+            27.24,
+            31.35
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na23",
+        "name": "Alexandria-Matruh coastal road",
+        "region": "Libya and Egypt",
+        "mode": "road",
+        "evidenceYear": 1939,
+        "displayTier": 0,
+        "sourceId": "uk39",
+        "places": [
+          "Alexandria",
+          "El Alamein",
+          "Mersa Matruh"
+        ],
+        "note": "",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            29.92,
+            31.2
+          ],
+          [
+            28.95,
+            30.83
+          ],
+          [
+            27.24,
+            31.35
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na24",
+        "name": "Libyan coastal highway",
+        "region": "Libya and Egypt",
+        "mode": "road",
+        "evidenceYear": 1937,
+        "displayTier": 0,
+        "sourceId": "luce37",
+        "places": [
+          "Zuwara",
+          "Tripoli",
+          "Misurata",
+          "Sirte",
+          "El Agheila",
+          "Ajdabiya",
+          "Benghazi",
+          "Barce",
+          "Derna",
+          "Tobruk",
+          "Bardia"
+        ],
+        "note": "1937 inauguration evidence. Town sequence is a schematic corridor, not a digitized road.",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            12.08,
+            32.93
+          ],
+          [
+            13.19,
+            32.89
+          ],
+          [
+            15.09,
+            32.38
+          ],
+          [
+            16.59,
+            31.21
+          ],
+          [
+            19.2,
+            30.26
+          ],
+          [
+            20.22,
+            30.76
+          ],
+          [
+            20.07,
+            32.12
+          ],
+          [
+            20.83,
+            32.49
+          ],
+          [
+            22.64,
+            32.76
+          ],
+          [
+            23.96,
+            32.08
+          ],
+          [
+            25.09,
+            31.76
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na25",
+        "name": "Bardia-Matruh coast road",
+        "region": "Libya and Egypt",
+        "mode": "road",
+        "evidenceYear": 1940,
+        "displayTier": 0,
+        "sourceId": "uk40",
+        "places": [
+          "Bardia",
+          "Sollum",
+          "Sidi Barrani",
+          "Mersa Matruh"
+        ],
+        "note": "1940 evidence; not admitted to the prewar subset.",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            25.09,
+            31.76
+          ],
+          [
+            25.16,
+            31.56
+          ],
+          [
+            25.93,
+            31.61
+          ],
+          [
+            27.24,
+            31.35
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na26",
+        "name": "Benghazi-Barce local railway",
+        "region": "Libya and Egypt",
+        "mode": "rail",
+        "evidenceYear": 1941,
+        "displayTier": 2,
+        "sourceId": "w41",
+        "places": [
+          "Benghazi",
+          "Barce"
+        ],
+        "note": "",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            20.07,
+            32.12
+          ],
+          [
+            20.83,
+            32.49
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na27",
+        "name": "Benghazi-Soluch local railway",
+        "region": "Libya and Egypt",
+        "mode": "rail",
+        "evidenceYear": 1941,
+        "displayTier": 2,
+        "sourceId": "w41",
+        "places": [
+          "Benghazi",
+          "Soluch"
+        ],
+        "note": "",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            20.07,
+            32.12
+          ],
+          [
+            20.25,
+            31.67
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "na28",
+        "name": "Trigh Capuzzo track",
+        "region": "Libya and Egypt",
+        "mode": "track",
+        "evidenceYear": 1940,
+        "displayTier": 2,
+        "sourceId": "uk40",
+        "places": [
+          "Fort Capuzzo",
+          "El Adem"
+        ],
+        "note": "Recognized desert track, not a surfaced highway. Western continuation omitted.",
+        "alignmentStatus": "schematic",
+        "gameAdmitted": false,
+        "baselineOperation": "unverified"
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [
+            24.97,
+            31.58
+          ],
+          [
+            23.92,
+            31.86
+          ]
+        ]
+      }
+    }
+  ],
+  "gaps": [
+    "Tripolitanian local railways, Egyptian Delta branches and Suez connections still need route-level review.",
+    "A continent-wide prewar railway GIS of matching European detail has not been acquired for North Africa.",
+    "Post-1939 evidence is optional and is not backdated. Changes in gauge, wartime destruction and capacity are not modeled."
+  ]
+}

@@ -45,7 +45,7 @@ class GeographyTests(unittest.TestCase):
         self.assertIn("Alps",{t["name"] for t in self.data["terrainLabels"]})
         self.assertIn("WWII roads and railways",self.data["metadata"]["unmodeled"])
         for c in self.data["cells"]:
-            self.assertTrue(0<=c["forestReferenceFraction"]<=1)
+            self.assertTrue(c["forestReferenceFraction"] is None or 0<=c["forestReferenceFraction"]<=1)
             self.assertIsNone(c["historicalTransport"]["roadKm"])
             self.assertIsNone(c["historicalTransport"]["railKm"])
         self.assertFalse({"roads","railways"} & layers)
@@ -53,4 +53,33 @@ class GeographyTests(unittest.TestCase):
         for f in self.data["features"]:
             if f["properties"]["layer"] in ("roads","railways"):
                 self.assertIn("not WWII-validated",f["properties"]["status"])
+
+
+    def test_north_african_campaign_coverage(self):
+        from shapely.geometry import shape
+        for lon,lat in [(-7.59,33.57),(3.06,36.75),(10.18,36.8),(13.19,32.89),(20.07,32.12),(23.96,32.08),(28.95,30.83),(31.24,30.04),(32.55,29.97),(32.9,24.1)]:
+            pt=Point(*build.project(lon,lat))
+            self.assertTrue(build.AREA.contains(pt))
+            self.assertTrue(any(build.polygon(c['q'],c['r']).covers(pt) for c in self.data['cells']))
+        self.assertTrue(self.land.covers(Point(0,3250)), 'Southern Sahara must remain land beyond the old input clip')
+        names={c['name'] for c in self.data['cities']}
+        self.assertTrue({'Cairo','Alexandria','Tripoli','Tunis','Algiers','Casablanca'}<=names)
+        definitions=json.loads((build.ROOT/'theaters.json').read_text(encoding='utf-8'))
+        self.assertEqual(len(definitions['theaters']),6)
+        for t in definitions['theaters']:
+            self.assertTrue(shape({'type':'Polygon','coordinates':[t['boundary']]}).is_valid)
+
+    def test_southern_terrain_period_corrections(self):
+        features=self.data["features"]
+        names={f["properties"]["name"] for f in features}
+        self.assertFalse(any("nasser" in n.lower() for n in names))
+        self.assertTrue(any("Bitter" in n for n in names))
+        self.assertTrue({"Rif","Tell Atlas","Al Jabal Al Akhdar"} <= names, sorted(n for n in names if "Atlas" in n or "Akhdar" in n))
+        salt=[f for f in features if f["properties"]["layer"]=="saltBasins"]
+        self.assertEqual(len(salt),9)
+        self.assertTrue(all(f["properties"]["permanentOpenWater"] is False for f in salt))
+        self.assertTrue(all(c["forestReferenceFraction"] is not None and 0<=c["forestReferenceFraction"]<=1 for c in self.data["cells"]))
+        self.assertTrue(any(c["saltBasins"] for c in self.data["cells"]))
+        self.assertTrue(any("western-desert" in c["periodTerrainContext"] for c in self.data["cells"]))
+
 if __name__=="__main__": unittest.main()

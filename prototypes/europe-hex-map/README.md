@@ -136,3 +136,32 @@ Planning mode stores user-written sector notes under the current campaign seed i
 
 
 Western theater focus: a translucent gray veil covers the area outside the union of its hex sectors, with a thin, constant-screen-width perimeter. The footprint is compiled from full-precision lattice vertices to avoid internal seams. Open water outside the hexes is gently dimmed but remains visible. The veil follows the viewport through pan/zoom, ignores pointer events, remains independent of the grid toggle, and disappears outside Western Europe. This is a presentation boundary, not a movement restriction or historical command boundary.
+
+
+## North African map extension
+The continental overview now covers Europe and North Africa through Egypt: local bounds (-2400, -2500, 2800, 3300) km. Hex radius, origin, projection and IDs remain unchanged. The southward extension adds cells; it does not move existing ones. Generator 1.3.0 and a new geography hash identify the expanded baseline. Browser campaign seeds are retained, but refinement tokens include the revised geography hash and therefore change. Existing exported campaigns retain their old baseline; this prototype has no automatic save migration.
+
+Two additional illustrative campaign areas are available: Northwest Africa (Morocco, Algeria and Tunisia) and Libya–Egypt. They use sampled geographic perimeter edges projected into the common coordinate system. They are selectable navigation areas at continental reference resolution, not yet dedicated 26 km workspaces. Western Europe's existing detailed workspace remains intact. Historical motivation: U.S. Army Center of Military History, Northwest Africa and Egypt-Libya campaign studies:
+- https://history.army.mil/Publications/Publications-Catalog/Northwest-Africa/
+- https://history.army.mil/portals/143/Images/Publications/catalog/72-13.pdf
+
+Additional city-center reference points come from the pinned Natural Earth 1:10m populated places source, with reviewed display aliases for Benghazi, Tobruk, Port Said and Mersa Matruh. These are not historical city extents. The Nile and African coastline use the existing global reference sources. The historical European railway dataset is not extended by inference into North Africa. Sparse rail coverage remains unknown. The old forest extraction stops at local y=2100 km; sectors crossing or beyond that boundary report unknown forest coverage rather than a false zero. African transport, desert terrain and dated operational overlays remain future work.
+
+
+The focus overlay now applies to all six theaters. Western Europe uses its detailed hex footprint; the other five use their defined theater polygons until detailed sector footprints exist. Shading and the perimeter update when switching theaters or moving the viewport, ignore pointer events, and disappear on return to the continental overview.
+
+All theater views now hide grid geometry outside their active boundary. Western Europe retains its dedicated sector grid; other theaters clip the continental grid to their theater polygon. The grid toggle still applies, and returning to the overview removes clipping. Hex coordinates, selection data and exports remain unchanged.
+
+
+### Southern terrain review, October 2026
+
+The southern coverage now includes finer Natural Earth mountain regions, 18 river features, Great Bitter Lake and nine salt-basin features. Lake Nasser is removed because the Aswan High Dam and its reservoir postdate WWII; the older Low Dam reservoir is not reconstructed. Salt basins have separate tan dashed styling and do not contribute to open-water fractions. Regional historical context appears in intersecting hexes and in `africa-terrain-research.html`. Discussion boxes are evidence locators, not terrain geometry.
+
+GLC2000 forest extraction now covers the expanded map, superseding the earlier southern coverage limitation. This remains year-2000 tree cover, not verified wartime woodland. The official campaign histories support distinctions between Atlas corridors, chotts, wadis, rocky desert and scrub. Precise period forest boundaries, water seasonality, Qattara and escarpment geometry, crossings and terrain passability still need reconstruction. Source geometry is pinned and checksummed in the manifest.
+
+
+### Southern transportation survey
+
+The separate `southern-transport.json` research overlay supplies 28 dated schematic rail, road and track connections across Northwest Africa and Libya-Egypt. Major corridors display at overview scale, branches at regional scale and local lines/tracks at close zoom. Burgundy rail is distinct from blue waterways; roads are orange. The default subset uses evidence dated by 1939. An explicit control enables 1940-1942 evidence, including campaign roads and the Benghazi local railway descriptions. No wartime evidence is silently backdated.
+
+Sources include the contemporary 1935 Railway Wonders survey, SNCFT/ONCF histories, British and US official histories, Wavell's dispatch and the Milan archive catalog of the 1937 road inauguration. `southern-transport-research.html` lists every connection and source. Coordinates are approximate town waypoints, not digitized railway or road centerlines. Presentation tiers are editorial, not measured historical capacity. Gauge changes, bridges, daily service and wartime damage remain unmodeled. Tripolitanian railways, Egyptian branches and Suez connections remain gaps. This does not yet match the geometric detail of the acquired European railway GIS. Research is excluded from campaign and hex exports.
