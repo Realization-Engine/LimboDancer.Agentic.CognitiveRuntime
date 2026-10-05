@@ -191,6 +191,8 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, reason!);
         }
 
+        attack = WithSeen(state, attack);
+
         // A22.611 (ruling R15.4): no MOL through a woods or orchard hexside, one both of whose hexes are woods, or both orchard.
         if (mol is not null && state.Location(mol)?.Location is { } molAt && molAt != target
             && ReadLocation(state, molAt) is { } molRead && ReadLocation(state, target) is { } targetRead
@@ -357,6 +359,7 @@ public sealed partial class GamePlanner
                     return (null, why);
                 }
 
+                part = WithSeen(state, part);
                 var (read, readWhy) = FireMapFacts(state, part with
                 {
                     SnapShot = attack.SnapShot
@@ -403,6 +406,8 @@ public sealed partial class GamePlanner
             {
                 return Refused(scope, label, expected, sprayReason!);
             }
+
+            sprayAttack = WithSeen(state, sprayAttack);
 
             var (sprayMap, sprayMapReason) = FireMapFacts(state, sprayAttack, second, existing);
             if (sprayMap is null)
@@ -511,7 +516,7 @@ public sealed partial class GamePlanner
                     [.. facts.Firers!.Where(item => item.UsesInherentFp == false).Select(item => item.UnitId!)],
                     facts.Firers!.Where(item => item.Partner is not null).ToDictionary(item => item.UnitId!, item => item.Partner!),
                     facts.Firers!.FirstOrDefault(item => item.Mol == true)?.UnitId).Attack;
-                if (reread is not null && FireMapFacts(after, reread, target, [.. existing, .. events]).Facts is { } rereadMap)
+                if (reread is not null && FireMapFacts(after, WithSeen(after, reread), target, [.. existing, .. events]).Facts is { } rereadMap)
                 {
                     AddFireEvents(scope, attemptId, expected, actor, after, HeatOfBattleFacts(after, rereadMap) with
                     {
@@ -571,7 +576,10 @@ public sealed partial class GamePlanner
             && attack.Targets!.Any(item => item.Broken == false && item.Dummy != true)
             ? [.. firers.Select(item => item.UnitId).Concat(new[] { attack.Director?.UnitId }).Concat((attack.OtherDirectors ?? []).Select(item => item.UnitId))
                 .OfType<string>().Where(id => state.Unit(id) is { } unit && Is(unit, Conditions.Concealed))]
-            : [];
+
+            // Pass 31d (ruling R31d.2): with no Good Order target, the units a Good Order enemy unit sees, by the planner's read.
+            : [.. firers.Where(item => item.SeenByGoodOrderEnemy == true).Select(item => item.UnitId)
+                .Concat(new[] { attack.Director }.Concat(attack.OtherDirectors ?? []).Where(item => item?.SeenByGoodOrderEnemy == true).Select(item => item!.UnitId)).OfType<string>()];
         FireTarget Read(FireTarget target)
         {
             if (target.Dummy == true || state.Unit(target.UnitId!) is not { } unit || state.Location(unit.Id) is not { } at)

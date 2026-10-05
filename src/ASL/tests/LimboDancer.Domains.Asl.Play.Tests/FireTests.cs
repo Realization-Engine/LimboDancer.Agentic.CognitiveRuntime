@@ -46,7 +46,13 @@ public sealed partial class FireTests : IDisposable
     {
         public LosResult Result { get; set; } = new(LosStatus.Clear, false, 1, 0, null, string.Empty);
 
-        public LosResult? Read(GameState state, BoardLocation from, BoardLocation target) => Result;
+        /// <summary>A LOS for each pair of Locations, for a test that needs some units to see and others not; the one result otherwise.</summary>
+        public Func<BoardLocation, BoardLocation, LosResult?>? By
+        {
+            get; set;
+        }
+
+        public LosResult? Read(GameState state, BoardLocation from, BoardLocation target) => By is { } by ? by(from, target) : Result;
     }
 
     private GamePlanner Planner() => new(store, boards, Vocabulary, [Catalog], fireLos: los);

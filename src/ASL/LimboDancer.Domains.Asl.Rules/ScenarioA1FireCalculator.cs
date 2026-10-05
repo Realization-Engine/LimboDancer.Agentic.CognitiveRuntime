@@ -103,7 +103,8 @@ public static class ScenarioA1FireCalculator
 
         var concealed = attack.Firers?.Any(item => item.Concealed == true) == true || attack.Director?.Concealed == true
             || attack.OtherDirectors?.Any(item => item.Concealed == true) == true;
-        if (concealed && !(attack.Firers!.All(item => RangeOf(attack, item) <= 16) && attack.Targets!.Any(item => item.Broken == false && item.Dummy != true)))
+        if (concealed && !(attack.Firers!.All(item => RangeOf(attack, item) <= 16) && attack.Targets!.Any(item => item.Broken == false && item.Dummy != true))
+            && !ConcealedFirers(attack).All(item => item.Seen is not null))
         {
             reasons.Add("asl.a1.fire.concealment-unreviewed:firer-concealment");
         }
@@ -192,6 +193,11 @@ public static class ScenarioA1FireCalculator
 
     private static IEnumerable<FireDirector> Directors(FireAttack attack) =>
         (attack.Director is null ? Array.Empty<FireDirector>() : [attack.Director]).Concat(attack.OtherDirectors ?? []);
+
+    /// <summary>The concealed units that fire or direct, each with the planner's read of whether a Good Order enemy unit sees it (A12.14; pass 31d).</summary>
+    private static IEnumerable<(string UnitId, bool? Seen)> ConcealedFirers(FireAttack attack) =>
+        (attack.Firers ?? []).Where(item => item.Concealed == true).Select(item => (item.UnitId!, item.SeenByGoodOrderEnemy))
+            .Concat(Directors(attack).Where(item => item.Concealed == true).Select(item => (item.UnitId!, item.SeenByGoodOrderEnemy)));
 
     // A8.4: in the DFPh, a unit already marked First Fire fires again as Area Fire at an adjacent or same-hex target.
     private static bool IsFinalFireAgain(FireAttack attack, FireFirer firer) => attack.Phase == "DFPh" && firer.FirstFireMarked == true;
@@ -3143,6 +3149,15 @@ public static class ScenarioA1FireCalculator
             if (attack.Firers!.All(item => RangeOf(attack, item) <= 16) && attack.Targets!.Any(item => item.Broken == false && item.Dummy != true))
             {
                 return concealed.ToList();
+            }
+
+            // Pass 31d (ruling R31d.2): where no target says it, the planner's read does, for each unit: a Good Order enemy ground unit within 16
+            // hexes has a LOS to it, and its "?" is lost, or none has, and it keeps it. The loss is taken as forced whenever such a unit sees
+            // (A12.14 leaves a concealed viewer the choice). An attack recorded without the read is undecided here, as it was.
+            var read = ConcealedFirers(attack).ToArray();
+            if (read.All(item => item.Seen is not null))
+            {
+                return [.. read.Where(item => item.Seen == true).Select(item => item.UnitId)];
             }
 
             undecided.Add("asl.a1.fire.concealment-unreviewed:firer-concealment");

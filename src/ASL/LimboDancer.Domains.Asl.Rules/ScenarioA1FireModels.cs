@@ -471,6 +471,17 @@ public sealed record FireFirer(
         get; init;
     }
 
+    /// <summary>
+    /// Whether a Good Order enemy ground unit within 16 hexes has a LOS to this concealed unit as it fires or directs (A12.14, read in the PDF, p. 77;
+    /// pass 31d, ruling R31d.2), read by the planner from the game and the map. Null in every attack recorded before, and at night: the package then
+    /// decides from the target Location alone, as it did.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? SeenByGoodOrderEnemy
+    {
+        get; init;
+    }
+
     /// <summary>Whether this crew fired its Gun this Player Turn, which costs it its inherent FP (A7.352; ruling R8.4); null is false.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? GunFired
@@ -619,6 +630,17 @@ public sealed record FireDirector(
     bool? DirectedThisPlayerTurn,
     bool? Wounded)
 {
+    /// <summary>
+    /// Whether a Good Order enemy ground unit within 16 hexes has a LOS to this concealed unit as it fires or directs (A12.14, read in the PDF, p. 77;
+    /// pass 31d, ruling R31d.2), read by the planner from the game and the map. Null in every attack recorded before, and at night: the package then
+    /// decides from the target Location alone, as it did.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? SeenByGoodOrderEnemy
+    {
+        get; init;
+    }
+
     /// <summary>Whether the directing leader is CX (A4.51): +1 to the attack's IFT DR; null is false.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Cx

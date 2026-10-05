@@ -796,6 +796,9 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
                     Los = record.Los,
                     KnownEnemyInLos = record.KnownEnemyInLos,
                     Captors = record.Captors,
+
+                    // Pass 31d (ruling R31d.2): who sees a concealed firer is the planner's read of the map, recorded with the attack.
+                    SeenByGoodOrderEnemy = record.SeenByGoodOrderEnemy,
                 })],
             // A7.7 (ruling R12.11): the Encirclement an attack completes is read before the attack, and recorded with it.
             Targets = recorded.Targets is null || expected.Targets is null ? expected.Targets
@@ -854,8 +857,17 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
                         Weapons = record.Weapons,
                     }
                     : fact with { TargetLevelAbove = record.TargetLevelAbove })],
-            Director = recorded.SprayShare == true ? recorded.Director : merged.Director,
-            OtherDirectors = recorded.SprayShare == true ? recorded.OtherDirectors : merged.OtherDirectors,
+            Director = recorded.SprayShare == true ? recorded.Director : merged.Director is { } director && recorded.Director is { } directed
+                ? director with
+                {
+                    SeenByGoodOrderEnemy = directed.SeenByGoodOrderEnemy
+                }
+                : merged.Director,
+            OtherDirectors = recorded.SprayShare == true || merged.OtherDirectors is null || recorded.OtherDirectors is null ? (recorded.SprayShare == true ? recorded.OtherDirectors : merged.OtherDirectors)
+                : [.. merged.OtherDirectors.Zip(recorded.OtherDirectors, (fact, record) => fact with
+                {
+                    SeenByGoodOrderEnemy = record.SeenByGoodOrderEnemy
+                })],
         };
         if (JsonSerializer.Serialize(merged, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json))
         {
