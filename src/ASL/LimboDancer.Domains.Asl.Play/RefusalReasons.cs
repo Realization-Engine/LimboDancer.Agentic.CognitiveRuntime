@@ -40,7 +40,7 @@ public static class RefusalReasons
         ["fire.leaders-interact"] = "a broken leader among the targets has no Morale Level recorded in the catalog, so his loss cannot be decided",
         ["fire.elr-undecided"] = "a side's ELR is not declared, or a MMC's underscored Morale Factor is not recorded (A19.1, A19.13)",
         ["fire.movement-drm-differs"] = "a moving stack of pinned and unpinned units would need two DRM (A7.83)",
-        ["fire.concealment-unreviewed"] = "fire by concealed units beyond 16 hexes, or at no Good Order target, is not reviewed",
+        ["fire.concealment-unreviewed"] = "fire by concealed units beyond 16 hexes, or at night at no Good Order target, is not reviewed",
         ["fire.reduction-counter-missing"] = "the catalog has no half-squad for a squad's Casualty Reduction (A7.302)",
         ["fire.definition-incomplete"] = "a unit's catalog definition lacks a printed value the attack needs",
 

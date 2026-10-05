@@ -379,7 +379,10 @@ public sealed partial class GamePlanner
             "mph" when !broken && unit.Side == state.PhasingSide && !unit.MovementEnded => null,
             "aph" when !broken && unit.Side == state.PhasingSide && state.Advances.All(item => item.Unit != unit.Id) => null,
             "ccph" when !broken && state.CloseCombats.Count == 0 => null,
-            "rtph" when broken && !state.RoutedThisPhase.Contains(unit.Id) && Laden(state, unit) && KeepsBestLoad(state, unit, weapon.Id) => null,
+            "rtph" when broken && !state.RoutedThisPhase.Contains(unit.Id) && RoutLoadOf(state, unit) is { Laden: true } load =>
+                load.BestLoads.Any(best => !best.Contains(weapon.Id, StringComparer.Ordinal)) ? null
+                    : $"play.drop-phase: {unit.Id} may not leave {weapon.Id} ({load.Pp(weapon.Id)} PP): it carries {load.Total} PP, routs with at most {load.Ipc} PP, and keeps the most it can, "
+                        + $"of which {weapon.Id} is a part whatever else it leaves (A10.4; ruling R13.5)",
             _ => "play.drop-phase: an unbroken unit drops a SW in its MPh during its move, its APh before it advances, or at the start of the CCPh; a broken unit, before it routs, the SW beyond its IPC (A4.43, A10.4; ruling R13.5)",
         };
         if (when is not null)
@@ -395,23 +398,35 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
-    /// Whether dropping a SW leaves a broken unit on the way to the most PP it can carry within its IPC (A10.4): some best load leaves that SW out.
+    /// What a broken unit carries before it routs, and what it may rout with (A4.42, A10.4, read in the PDF, p. 50 and 66; ruling R31d.1): its IPC, each
+    /// SW it possesses with its own PP, and its best loads, the sets of its SW with the most PP that is not over its IPC ("a combination of SW of
+    /// its choice exactly equal to its IPC or, failing that, equal to the highest number of PP it can portage which is also &lt; its IPC"). A broken unit
+    /// is not CX (A4.51), and no leader adds his IPC to it (A4.42). Each SW is read with its own PP, so no order of the lists can part them: before
+    /// pass 31d the PP were listed in the order the SW were created and the SW in the order of their ids, and a FT was taken for its DC's 2 PP.
+    /// Null when a SW's PP is not recorded, or the unit holds more than sixteen.
     /// </summary>
-    private bool KeepsBestLoad(GameState state, UnitInstance unit, string weaponId)
+    public RoutLoad? RoutLoadOf(GameState state, UnitInstance unit)
     {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(unit);
         var held = Held(state, unit.Id);
-        if (Portage(state, unit) is not { } carried || carried.Length != held.Length || held.Length > 10)
+        if (held.Length > 16 || held.Any(item => PortageOf(item) is null))
         {
-            return true;
+            return null;
         }
 
+        RoutLoadItem[] carried = [.. held.Select(item => new RoutLoadItem(item.Id, PortageOf(item)!.Value)
+        {
+            Kind = $"{item.Definition?.Definition ?? item.Kind}{(Is(item, Conditions.Dismantled) ? " dismantled" : string.Empty)}{(Is(item, Conditions.Malfunctioned) ? " malfunctioned" : string.Empty)}",
+        })];
         var ipc = vocabulary.IsA(unit.Kind, "asl:smc") ? (Is(unit, Conditions.Wounded) ? 0 : 1) : 3;
-        var loads = Enumerable.Range(0, 1 << held.Length).Select(mask => (Mask: mask, Pp: Enumerable.Range(0, held.Length).Where(index => (mask & (1 << index)) != 0).Sum(index => carried[index])))
-            .Where(load => load.Pp <= ipc).ToArray();
-        var best = loads.Max(load => load.Pp);
-        var index = Array.FindIndex(held, item => item.Id == weaponId);
-        return loads.Any(load => load.Pp == best && (load.Mask & (1 << index)) == 0);
+        var loads = Enumerable.Range(0, 1 << carried.Length)
+            .Select(mask => carried.Where((_, index) => (mask & (1 << index)) != 0).ToArray())
+            .Where(load => load.Sum(item => item.Pp) <= ipc).ToArray();
+        var best = loads.Max(load => load.Sum(item => item.Pp));
+        return new RoutLoad(ipc, carried, [.. loads.Where(load => load.Sum(item => item.Pp) == best).Select(load => (IReadOnlyList<string>)[.. load.Select(item => item.Weapon)])]);
     }
+
 
     /// <summary>
     /// Recovery (A4.44; ruling R13.5): an unpinned Good Order unit Recovers an unpossessed SW in its Location, friendly or enemy, on a Final dr below 6

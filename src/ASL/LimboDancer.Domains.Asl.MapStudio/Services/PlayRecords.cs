@@ -181,7 +181,8 @@ public sealed class PlayRecords
     public IReadOnlyList<(long Revision, string EventId, string Text, bool Minor)> Lines => lines ??= ReadLines();
 
     /// <summary>The lines of what happened after a revision: what the view missed while another had the screen ("Since you last looked").</summary>
-    public IReadOnlyList<(long Revision, string EventId, string Text, bool Minor)> Since(long revision) => [.. Lines.Where(line => line.Revision > revision)];
+    public IReadOnlyList<(long Revision, string EventId, string Text, bool Minor)> Since(long revision, long through = long.MaxValue) =>
+        [.. Lines.Where(line => line.Revision > revision && line.Revision <= through)];
 
     private List<(long Revision, string EventId, string Text, bool Minor)> ReadLines()
     {
@@ -205,10 +206,44 @@ public sealed class PlayRecords
             Add(fire.EventId, FireLine(fire));
         }
 
+        // Pass 31d (design D5; ruling R31d.3): a Dummy stack's removal is said to both sides, who both see the counters leave the map (A12.11, A12.15,
+        // A11.19). One line for a stack, whatever its count of counters; removal by fire is said in the fire's own line.
+        var dummiesSaid = new HashSet<(string Attempt, string At, string? Side)>();
         foreach (var item in events.Where(item => item.IsVisibleTo(viewer)))
         {
             var before = history.At(item.Revision - 1);
             static string Many(IReadOnlyList<string> ids, string one, string several) => $"{string.Join(", ", ids)} {(ids.Count == 1 ? one : several)}";
+            if (item.Payload is InstanceEliminated removed && before?.Unit(removed.Id) is { Kind: UnitKinds.Dummy } dummy && before.Location(dummy.Id)?.Location is { } dummyAt)
+            {
+                var attempt = AttemptOf(item.EventId);
+                var ofAttempt = events.Where(other => AttemptOf(other.EventId) == attempt).Select(other => other.Payload).ToArray();
+                // The referee, pass 31d: a fire's own line says it only where the view reads that fire's effects and this Dummy is among them; a
+                // fire withheld from the view, and a Residual FP attack in the attempt of a move that removed the stack, leave the line to be said.
+                var inFireLine = Fire.Any(view => AttemptOf(view.EventId) == attempt && view.Effects?.Any(effect => effect.UnitId == dummy.Id && effect.Events.Contains("dummy-removed", StringComparer.Ordinal)) == true);
+                if (!inFireLine && dummiesSaid.Add((attempt, dummyAt.ToString(), dummy.Side)))
+                {
+                    Add(item.EventId, Say(item.EventId, $"{DisplayText.ASide(dummy.Side)} Dummy stack is removed in {dummyAt}"
+                        + (ofAttempt.OfType<MovementStepped>().Any(step => step.Movers.Contains(dummy.Id, StringComparer.Ordinal))
+                            ? ": it moved without Assault Movement, or into Open Ground, in the LOS of a Good Order enemy unit (A12.11)"
+                            : ofAttempt.Any(payload => payload is MovementStepped or EntryAttempted or EntryForcedBack) ? ": a unit tried to enter its Location, and it held no real unit (A12.15)"
+                            : ofAttempt.Any(payload => payload is FireResolved or FireReported or OrdnanceFired) ? ": an attack reached it (A12.14)"
+                            : string.Empty)));
+                }
+
+                continue;
+            }
+
+            // A11.19: the Dummies in a Location that holds units of both sides are removed as the CCPh begins. The game records no event for it,
+            // so the line is read from the states on each side of the phase change.
+            if (item.Payload is PhaseChanged { Phase: "ccph" } && before is not null && history.At(item.Revision) is { } begun)
+            {
+                foreach (var gone in before.Units.Where(unit => unit.Kind == UnitKinds.Dummy && unit.Status == InstanceStatus.Active && begun.Unit(unit.Id) is { Status: InstanceStatus.Eliminated }
+                        && before.Location(unit.Id) is not null)
+                    .GroupBy(unit => (At: before.Location(unit.Id)!.Location, unit.Side)).OrderBy(group => group.Key.At.ToString(), StringComparer.Ordinal))
+                {
+                    Add(item.EventId, Say(item.EventId, $"The {DisplayText.Side(gone.Key.Side)} Dummies in {gone.Key.At} are removed before Close Combat (A11.19)"));
+                }
+            }
             var text = item.Payload switch
             {
                 MovementStepped step => Many(step.Movers, "moves", "move") + $"{From(before, step.Movers.Count > 0 ? step.Movers[0] : null)} to {step.To}{(step.Assault ? " by Assault Movement" : string.Empty)}",
@@ -222,7 +257,7 @@ public sealed class PlayRecords
                 SurrenderRejected refused => $"The surrender of {refused.Unit} is refused (A20.3)",
                 InstanceCaptured taken => $"{taken.Id}{In(before, taken.Id)} is captured, guarded by {taken.Custodian} (A20.2)",
                 PrisonerFreed freed => $"{freed.Unit}{In(before, freed.Unit)} is no longer guarded (A20.5)",
-                BuildingMoppedUp mopped => $"The {DisplayText.Side(mopped.Side)} side Mops Up building {mopped.Building} (A12.153)",
+                BuildingMoppedUp mopped => DisplayText.Hexes($"The {DisplayText.Side(mopped.Side)} side Mops Up building {mopped.Building} (A12.153)", history.States.Count > 0 ? history.States[0].Map.Boards.Count : 1),
                 PhaseChanged phase => $"The {DisplayText.Side(phase.PhasingSide)} {GameText.PhaseLabel(phase.Phase)} of Turn {phase.Turn} begins",
                 GameEnded => "The game ends",
                 _ => null,
@@ -243,7 +278,26 @@ public sealed class PlayRecords
         var changed = fire.Effects is null ? []
             : fire.Effects.Select(effect => (effect.UnitId, Text: EffectText(effect, fire.BrokenBefore.Contains(effect.UnitId), fire.PinnedBefore.Contains(effect.UnitId))))
                 .Where(effect => effect.Text is not ("unaffected" or "already broken" or "already pinned")).Select(effect => fire.Say($"{effect.UnitId}: {effect.Text}")).ToArray();
-        return $"{fire.Group} {(fire.Several ? "fire" : "fires")} at {fire.Target}: {ResultText(fire.Arithmetic.Result)}" + (changed.Length > 0 ? "; " + string.Join("; ", changed) : string.Empty);
+
+        // Pass 31d (design D11): a result that asked a check of a unit and changed nothing says who passed, so "PTC." does not stand alone.
+        if (changed.Length == 0 && fire.Effects is not null)
+        {
+            changed = [.. fire.Effects.Where(effect => effect.Checks.Count > 0 && effect.Checks.All(check => check.Passed)).Select(effect => fire.Say($"{effect.UnitId}: passed"))];
+        }
+
+        // Pass 31d (design D5): Dummies removed by the attack are said once, as what they were (A12.14).
+        if (fire.Effects is not null && fire.Effects.Any(effect => effect.Events.Contains("dummy-removed", StringComparer.Ordinal)))
+        {
+            changed = [.. fire.Effects.Where(effect => !effect.Events.Contains("dummy-removed", StringComparer.Ordinal))
+                    .Select(effect => (effect.UnitId, Text: EffectText(effect, fire.BrokenBefore.Contains(effect.UnitId), fire.PinnedBefore.Contains(effect.UnitId))))
+                    .Where(effect => effect.Text is not ("unaffected" or "already broken" or "already pinned")).Select(effect => fire.Say($"{effect.UnitId}: {effect.Text}")),
+                "the Dummies there are removed (A12.14)"];
+        }
+
+        // Pass 31d (design D7; A6.11, p. 53): a blocked LOS is said as what it was, and not as an attack that missed.
+        return fire.LosBlocked
+            ? $"{fire.Group} {(fire.Several ? "fire" : "fires")} at {fire.Target}: the LOS is blocked, so the attack has no effect and its firers have fired (A6.11)"
+            : $"{fire.Group} {(fire.Several ? "fire" : "fires")} at {fire.Target}: {ResultText(fire.Arithmetic.Result)}" + (changed.Length > 0 ? "; " + string.Join("; ", changed) : string.Empty);
     }
 
     private static string Sentence(string text) => DisplayText.Sentence(text.TrimEnd()) + (text.TrimEnd().EndsWith('.') ? string.Empty : ".");
@@ -395,6 +449,7 @@ public sealed class PlayRecords
                     {
                         Say = text => Say(item.EventId, text),
                         Several = fire.Firers.Count > 1,
+                        LosBlocked = resolution.LosBlocked == true,
                         Weapons = resolution.WeaponEffects,
                         Vehicles = resolution.VehicleEffects,
                         BrokenBefore = before.Where(target => target.Broken == true && target.UnitId is not null).Select(target => target.UnitId!).ToHashSet(StringComparer.Ordinal),
@@ -409,6 +464,9 @@ public sealed class PlayRecords
                     {
                         Say = text => Say(item.EventId, text),
                         Several = withheld.Payload is FireResolved { Firers.Count: > 1 },
+
+                        // The LOS is the map's, and both sides see that the shot went nowhere (A6.11).
+                        LosBlocked = withheld.Payload is FireResolved unseen && unseen.Resolution.Deserialize<FireResolution>(LiveFire.Json)?.LosBlocked == true,
                     });
                 }
             }
@@ -499,6 +557,7 @@ public sealed class PlayRecords
         get
         {
             var rolls = events.Select(item => item.Payload).OfType<DiceRolled>().ToDictionary(item => item.Roll, StringComparer.Ordinal);
+            var routs = new Dictionary<(string Attempt, string Unit), (int Index, string From, IReadOnlyList<string> Steps, int HalfMf)>();
             var records = new List<(string, string, string)>();
             // Backlog section 23 (pass 28b): each attempt's events, to tell a Failure to Rout and a lone SW transfer from the same events elsewhere.
             var attempts = events.GroupBy(item => AttemptOf(item.EventId), StringComparer.Ordinal).ToDictionary(group => group.Key, group => group.ToArray(), StringComparer.Ordinal);
@@ -515,8 +574,21 @@ public sealed class PlayRecords
                 }
                 else if (item.Payload is RoutStepped routed)
                 {
-                    var mf = (routed.HalfMf / 2.0).ToString("0.#", CultureInfo.InvariantCulture);
-                    records.Add((item.EventId, "rout", $"{routed.Unit} routs{From(before, routed.Unit)} to {routed.To} for {mf} MF{(routed.LowCrawl ? " by Low Crawl (A10.52)" : " (A10.5)")}"));
+                    // Pass 31d (design D11): the steps of one rout are one sentence, "routs from [Y5] by [Z5] to [AA5] for 3 MF", and name the unit once.
+                    var key = (AttemptOf(item.EventId), routed.Unit);
+                    if (routs.TryGetValue(key, out var earlier))
+                    {
+                        routs[key] = earlier = (earlier.Index, earlier.From, [.. earlier.Steps, routed.To.ToString()], earlier.HalfMf + routed.HalfMf);
+                        var total = (earlier.HalfMf / 2.0).ToString("0.#", CultureInfo.InvariantCulture);
+                        records[earlier.Index] = (records[earlier.Index].Item1, "rout",
+                            $"{routed.Unit} routs{earlier.From} by {string.Join(" then ", earlier.Steps.Take(earlier.Steps.Count - 1))} to {earlier.Steps[^1]} for {total} MF (A10.5)");
+                    }
+                    else
+                    {
+                        var mf = (routed.HalfMf / 2.0).ToString("0.#", CultureInfo.InvariantCulture);
+                        routs[key] = (records.Count, From(before, routed.Unit), [routed.To.ToString()], routed.HalfMf);
+                        records.Add((item.EventId, "rout", $"{routed.Unit} routs{From(before, routed.Unit)} to {routed.To} for {mf} MF{(routed.LowCrawl ? " by Low Crawl (A10.52)" : " (A10.5)")}"));
+                    }
                 }
                 else if (item.Payload is RoutInterdicted interdicted)
                 {

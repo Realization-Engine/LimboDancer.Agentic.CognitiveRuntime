@@ -123,12 +123,13 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache
             }
         }
 
-        return first is null ? (board, null) : (board, units.Overlay(board, first with
+        // Pass 31d (design D12; ruling R31c.6): each counter of the hand-over screen's map is led by its hex, and by no name, since both sides read it.
+        return first is null ? (board, null) : (board, Led(units.Overlay(board, first with
         {
             SetId = $"{first.SetId}-public",
             Units = seen,
             Hash = $"{first.Hash}-public-{revision}",
-        }, renderer).Svg);
+        }, renderer), unit => DisplayText.Place(map.Boards.Count, unit.Location) + ": ").Svg);
     }
 
     /// <summary>
@@ -216,13 +217,24 @@ public sealed class GameMaps(IBoardProvider boards, MapService maps, RenderCache
     /// German 1st Line squad, 4-6-7" (the user, 2026-10-04): the hex in brackets, as every hex is written, and the name the records use, so a
     /// counter on the map is the unit a record names. A "?" has its hex alone.
     /// </summary>
-    private static UnitOverlay Named(UnitOverlay overlay, UnitNames names, long revision, int boards)
+    private static UnitOverlay Named(UnitOverlay overlay, UnitNames names, long revision, int boards) => Led(overlay, unit =>
     {
+        var name = names.Held(unit.Document.Id, revision);
+        return DisplayText.Place(boards, unit.Location) + (name == unit.Document.Id || name == UnitNames.Unnamed ? ": " : $": {name}. ");
+    });
+
+    /// <summary>
+    /// An overlay with each counter's tooltip and accessible name led by a text of the caller's (pass 31d, design D12): the setup map, whose
+    /// overlay is built again from its documents, and the hand-over screen's map lead their counters as the game's own map does.
+    /// </summary>
+    public static UnitOverlay Led(UnitOverlay overlay, Func<PlacedUnit, string> leadOf)
+    {
+        ArgumentNullException.ThrowIfNull(overlay);
+        ArgumentNullException.ThrowIfNull(leadOf);
         var lead = new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var unit in overlay.Units)
         {
-            var name = names.Held(unit.Document.Id, revision);
-            lead[unit.Document.Id] = DisplayText.Place(boards, unit.Location) + (name == unit.Document.Id || name == UnitNames.Unnamed ? ": " : $": {name}. ");
+            lead[unit.Document.Id] = leadOf(unit);
         }
 
         // One pass over the layer: each counter's group carries its id, its accessible name, and then its title.

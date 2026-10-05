@@ -18,6 +18,48 @@ public enum ConsequenceKind
 
     /// <summary>The action is spent to no effect.</summary>
     Waste,
+
+    /// <summary>A SW is left behind, unpossessed (pass 31d: a broken unit's rout, A10.4).</summary>
+    Left,
+
+    /// <summary>The proposer's own Dummies are removed, or may be (pass 31d: A12.11, A11.19).</summary>
+    Dummies,
+
+    /// <summary>A Close Combat is left unfought as its phase ends (pass 31d: A11.15).</summary>
+    Unfought,
+}
+
+/// <summary>One SW a unit possesses, with its PP (A4.4), and what it is: its counter and state, by which two like SW are the same to a player.</summary>
+public sealed record RoutLoadItem(string Weapon, int Pp)
+{
+    public string Kind { get; init; } = string.Empty;
+}
+
+/// <summary>
+/// What a broken unit carries before it routs (A10.4; pass 31d, ruling R31d.1): its IPC, its SW with their PP, and the sets of them it may rout with.
+/// </summary>
+public sealed record RoutLoad(int Ipc, IReadOnlyList<RoutLoadItem> Carried, IReadOnlyList<IReadOnlyList<string>> BestLoads)
+{
+    public int Total => Carried.Sum(item => item.Pp);
+
+    /// <summary>Whether the unit carries more than its IPC, and so leaves a SW before it routs.</summary>
+    public bool Laden => Total > Ipc;
+
+    /// <summary>
+    /// The best loads that differ to a player (the table player, pass 31d): two that differ only in which of two like counters is kept are one
+    /// choice, since a SW has no name of its own. The first of each is given.
+    /// </summary>
+    public IReadOnlyList<IReadOnlyList<string>> Choices =>
+        [.. BestLoads.GroupBy(best => string.Join("|", best.Select(id => Carried.First(item => item.Weapon == id).Kind).Order(StringComparer.Ordinal)), StringComparer.Ordinal).Select(group => group.First())];
+
+    public int Pp(string weapon) => Carried.FirstOrDefault(item => item.Weapon == weapon)?.Pp ?? 0;
+
+    /// <summary>The SW left behind when a load is kept.</summary>
+    public IReadOnlyList<RoutLoadItem> Left(IReadOnlyList<string> kept)
+    {
+        ArgumentNullException.ThrowIfNull(kept);
+        return [.. Carried.Where(item => !kept.Contains(item.Weapon, StringComparer.Ordinal))];
+    }
 }
 
 /// <summary>A consequence of a proposal: its kind, and the sentence the review shows.</summary>
@@ -38,6 +80,9 @@ public sealed partial class GamePlanner
         ("play.result:", ConsequenceKind.End),
         ("play.fire-own-units:", ConsequenceKind.OwnUnits),
         ("play.fire-los-blocked:", ConsequenceKind.Waste),
+        ("play.rout-leaves:", ConsequenceKind.Left),
+        ("play.dummies:", ConsequenceKind.Dummies),
+        ("play.cc-unfought:", ConsequenceKind.Unfought),
     ];
 
     /// <summary>The consequence a reason of a plan states, or null for a routine reason.</summary>
@@ -68,11 +113,24 @@ public sealed partial class GamePlanner
 
         // Referee, pass 31: the attack's own targets say who is hit; Defensive First Fire attacks only the moving stack (A8.1), so the firing side's
         // other units in the Location are not among them.
-        string[] own = [.. (facts.Targets ?? []).Where(target => target.Friendly == true && target.Dummy != true && target.UnitId is not null)
+        // Pass 31d (design D6; A20.54, read in the PDF, p. 87): the firing side's captured units are said apart from its units in a Melee, with what
+        // the rule does to them. The play test confirmed such an attack twice without reading a line that named no prisoner.
+        string[] own = [.. (facts.Targets ?? []).Where(target => target.Friendly == true && target.Dummy != true && target.UnitId is not null && target.GuardId is null)
             .Select(target => target.UnitId!).Order(StringComparer.Ordinal)];
         if (own.Length > 0)
         {
             yield return $"play.fire-own-units: {string.Join(", ", own)} of the firing side {(own.Length == 1 ? "is" : "are")} in {facts.TargetLocationId} and {(own.Length == 1 ? "is" : "are")} attacked too (A11.15, A20.54)";
+        }
+
+        string[] captured = [.. (facts.Targets ?? []).Where(target => target.Friendly == true && target.Dummy != true && target.UnitId is not null && target.GuardId is not null)
+            .Select(target => target.UnitId!).Order(StringComparer.Ordinal)];
+        if (captured.Length > 0)
+        {
+            yield return captured.Length == 1
+                ? $"play.fire-own-units: {captured[0]}, a captured unit of the firing side, is in {facts.TargetLocationId} and is attacked with its Guard, as if in a Melee: if it fails a MC it is Reduced, "
+                    + "and if its own side's fire eliminates it, it counts double for the Victory Conditions (A20.54)"
+                : $"play.fire-own-units: {string.Join(", ", captured)}, captured units of the firing side, are in {facts.TargetLocationId} and are attacked with their Guard, as if in a Melee: "
+                    + "one that fails a MC is Reduced, and one that its own side's fire eliminates counts double for the Victory Conditions (A20.54)";
         }
     }
 }

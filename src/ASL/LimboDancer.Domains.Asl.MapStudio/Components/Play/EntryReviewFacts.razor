@@ -6,7 +6,7 @@
     <tbody>
         @foreach (var (name, value) in Review.Facts)
         {
-            <tr data-fact="@name"><td>@name</td><td class="@(value == true ? "pass" : value == false ? "fail" : "muted")">@(value?.ToString().ToLowerInvariant() ?? "unknown")</td></tr>
+            <tr data-fact="@name"><td>@DisplayText.Sentence(DisplayText.Fact(name))</td><td class="@(value == true ? "pass" : value == false ? "fail" : "muted")">@(value?.ToString().ToLowerInvariant() ?? "unknown")</td></tr>
         }
     </tbody>
 </table>

@@ -4,7 +4,7 @@
 
 **Date:** 2026-09-30
 
-**Scope:** nineteen passes in one order, followed by the legacy scenario migration (Part VI: display batches D1 to D18 and rule passes 34 to 43, with 35b). Ten game passes, 23 to 28, 30, 30b, 32, and 33, close three groups of open backlog rows: card-driven play (backlog sections 27 to 32), rules deferred by earlier passes (entry and exit, the Heat of Battle, Leader Creation, and berserk gaps), and the Chapter H DYO purchase, which generates a scenario card. Passes 31 and 31c, the play-test UI, change the Play page and the game together, from the findings of a played game; pass 31b, between them, adds the Replay page. Six Studio passes, 22b to 22d, 28b, 28c, and 29, carry out the Map Studio redesign: the supplied theme, grouped navigation, shared components, every page's markup extracted into Blazor components, and the map-centered Play workspace. The game passes also extract the Play components they change.
+**Scope:** twenty passes in one order, followed by the legacy scenario migration (Part VI: display batches D1 to D18 and rule passes 34 to 43, with 35b). Ten game passes, 23 to 28, 30, 30b, 32, and 33, close three groups of open backlog rows: card-driven play (backlog sections 27 to 32), rules deferred by earlier passes (entry and exit, the Heat of Battle, Leader Creation, and berserk gaps), and the Chapter H DYO purchase, which generates a scenario card. Passes 31 and 31c, the play-test UI, change the Play page and the game together, from the findings of a played game; pass 31b, between them, adds the Replay page; pass 31d, added at the user's word on 2026-10-04, takes the leftovers of 31c. Six Studio passes, 22b to 22d, 28b, 28c, and 29, carry out the Map Studio redesign: the supplied theme, grouped navigation, shared components, every page's markup extracted into Blazor components, and the map-centered Play workspace. The game passes also extract the Play components they change.
 
 Section 1 of the [ASL Unit Backlog Passes Plan](<ASL Unit Backlog Passes Plan.md>) (how a pass is run, the standing rules, and the merge gate) applies unchanged to every pass here, including its visual check in the Studio before the costly tests (section 17.2).
 
@@ -88,9 +88,10 @@ New rules adjudication, changes to game persistence, VASL artwork, a new compone
 | 31 | Play-test UI I: nothing blocks play | Studio and game | 10 | 11:30 | 13:00 | 9:06 to 16:54 |
 | 31b | The Replay page | Studio | 8 | 9:45 | 11:15 | 7:53 to 14:38 |
 | 31c | Play-test UI II: the page reads and holds still | Studio | 9 | 14:15 | 15:45 | 11:02 to 20:29 |
+| 31d | The leftovers of pass 31c | Studio and game | 6 | 8:15 | 9:30 | 6:39 to 12:21 |
 | 32 | DYO purchase I: Infantry, leaders, and SW | Game | 5 | 3:15 | 4:30 | 3:09 to 5:51 |
 | 33 | DYO purchase II: ordnance, vehicles, and conditions | Game | 4 | 2:30 | 3:45 | 2:38 to 4:52 |
-| | **All passes** | | **109** | **103:50** | **128:35** | **90:01 to 167:10** |
+| | **All passes** | | **115** | **112:05** | **138:05** | **96:40 to 179:31** |
 
 **Order.** The passes run in the order listed, one at a time on the user's go-ahead.
 
@@ -101,6 +102,7 @@ New rules adjudication, changes to game persistence, VASL artwork, a new compone
 - **29 after 28c,** the board viewer's inspector shared with Play (added 2026-10-02).
 - **30 after 29,** prepared setups for a card's first side (added 2026-10-03).
 - **31 after 30b,** the play-test UI: the problems a played game of The Guards Counterattack found (added 2026-10-04), in two passes at the user's word: 31 for what blocks play, the result, the rules, and the hand-over screen, and 31c for the page's words, layout, map, and records. Between them comes 31b, the Replay page, which the user added the same day in the number first given to 31c.
+- **31d after 31c,** a short pass on what The Tractor Works left (added 2026-10-04 at the user's word, before passes 32 and 34): a phase's end in seconds on a large card, a laden unit's rout, and the referee's items.
 - **32 and 33 last,** the DYO page built from the shared components from the start.
 
 **Separable groups.** The game passes alone are 23 to 28, 30, 30b, 32, and 33, without their component tasks; within them, card play alone is passes 23, 24, 26, and 28 (pass 26 then takes pass 25's entry tasks it needs), the deferred rules alone are passes 25 and 27, and DYO needs pass 28 only for opening a DYO card in forms, so it could follow pass 22 directly with the JSON editor. The Studio passes alone are 22b, 22c, 22d, 28b, 28c, and 29; without the game passes, the card pages' components of task 28.5 move into 22c and the Play components of tasks 23.5 to 27.5 into 28b, which then follows 22d.
@@ -424,6 +426,25 @@ Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (backlog sect
 | 31c.8 The second play test | The Guards Counterattack played again from setup to its end; each of the 31 problems tried again by the report's steps. | 1:30 |
 | | Overhead | 1:30 |
 | | **Pass 31c total** (build 14:15) | **15:45** |
+
+### Pass 31d: the leftovers of pass 31c
+
+**Added 2026-10-04** at the user's word, after pass 31c was merged: "a short pass on the leftovers first", before passes 32 and 34. Its [design](<ASL Unit Backlog Pass 31d Design.md>) holds the measurements, the decisions, and the user's answers ("Build, all as recommended").
+
+**Purpose:** what the third play test (The Tractor Works) left: a phase's end that took seconds on a large card, a laden unit's rout refused with no word of what to drop, and the referee's items. **After:** pass 31c. **From:** backlog section 50.
+
+**Status:** built 2026-10-04 on branch `feature/asl-backlog-pass-31d`: tasks 31d.1 to 31d.6, a referee's and a table player's review and their fixes, the Studio check, and the tests. The design's section 14 says what was built and where it differs; the [review document](<Scenario A1 Backlog Pass 31d Review 2026-10-04.md>) has the reviews, the check, and the tests. Rulings R31d.1 to R31d.6; backlog section 51. Unlike pass 31c it is not a Studio pass only: it changes how a game's log is read (the store, the projector, the planner), the check of what a broken unit leaves, and what the Fire package decides for concealed firers. It waits for the user's word before the merge.
+
+| Task | What it changes | Estimate |
+|---|---|---|
+| 31d.1 A game read once | The store keeps the record it parsed; the projector goes on from where it stopped; the planner keeps its projections. A check no longer replays the game about fifteen times, nor a confirm twenty-six. | 1:30 |
+| 31d.2 The rout | A broken unit's load read in one place (A10.4); the rout leaves what it cannot carry; the Rout panel's load line; a way to each place a rout may end. | 1:30 |
+| 31d.3 Concealed firers | The planner's read of who sees each concealed firer (A12.14), given to the Fire package and recorded. | 1:15 |
+| 31d.4 For the referee | A Dummy stack's removal said; the firing side's captured units; a blocked LOS in the record; a refusal's own reasons; the CCPh's end. | 1:30 |
+| 31d.5 The page | A FT and a weapon that may not fire; words; tooltips; "Since you last looked"; setup's two lines. | 1:00 |
+| 31d.6 The board and the tests | A page-test board of 12 by 6 hexes; the pass's tests, with The Tractor Works as a second played fixture. | 1:30 |
+| | Overhead | 1:15 |
+| | **Pass 31d total** (build 8:15) | **9:30** |
 
 ### Pass 32: DYO purchase I: Infantry, leaders, and SW
 
@@ -932,6 +953,15 @@ These folders express ownership, not a requirement to create every directory imm
 - **A board has one handle while it is loaded** (`StudioBoardCatalog`), so what the planner keeps by the handle, a board's LOS map and its LOS reads, is kept.
 
 # Part IV. The component inventory
+
+### 15.14 Decisions of pass 31d
+
+- **A game's log is read once.** `FileGameStore` gives the same event objects while a file's bytes are the same; `GameProjector.Begin` returns a `ReplayedGame`, which `Continue` extends by applying only the later events to a copy of what the replay carries; `GamePlanner.Replay` keeps the last eight and continues the longest one a list begins with, object for object. Every event is still applied and verified once, by the same code. A Studio service that replays for a view (`GameLibrary`) still replays whole.
+- **A rout's way and a unit's load are the planner's** (`RoutAdvice`, `RoutLoadOf`); the page words them and offers them, and decides nothing.
+- **A consequence has a kind** the Confirm button names: `Left`, `Dummies`, and `Unfought` join pass 31's four.
+- **A planner's last tokens are worded where the page words names** (`DisplayText.Planner` and `DisplayText.Hexes` inside the page's `Words`), so a refusal's audit line reads as it did.
+- **A map overlay's leads are one function** (`GameMaps.Led`): the game's map, the setup map built again from its documents, and the hand-over screen's map.
+- **Page tests that need room use `WideBoards`** (12 by 6 hexes painted in code, with woods in one hex), and set a game up through the game's own gate before the page opens it; the 3 by 2 board stays for the rest.
 
 ## 16. Component extraction inventory
 

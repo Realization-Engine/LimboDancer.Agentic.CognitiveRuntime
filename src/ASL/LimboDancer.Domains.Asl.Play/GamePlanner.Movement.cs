@@ -63,19 +63,16 @@ public sealed partial class GamePlanner
     private int[]? Portage(GameState state, UnitInstance unit)
     {
         var values = state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id)
-            .Select(item => item.Definition is { } reference
-                ? catalogs.FirstOrDefault(catalog => catalog.Identity == reference.Catalog)?.Definition(reference.Definition)?.Printed("front", "asl:portage")?.Value?.Number
-                : null).ToArray();
-        if (values.Any(value => value is null))
-        {
-            return null;
-        }
-
-        // A9.8 (ruling R13.6): a dismantled weapon's PP are halved, FRU.
-        var halved = state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id)
-            .Select(item => Is(item, Conditions.Dismantled)).ToArray();
-        return [.. values.Select((value, index) => halved[index] ? (value!.Value + 1) / 2 : value!.Value)];
+            .Select(PortageOf).ToArray();
+        return values.Any(value => value is null) ? null : [.. values.Select(value => value!.Value)];
     }
+
+    /// <summary>The PP of one SW (A4.4), from the catalog; a dismantled weapon's are halved, FRU (A9.8; ruling R13.6). Null when none is recorded.</summary>
+    public int? PortageOf(EquipmentInstance item) =>
+        item is null ? throw new ArgumentNullException(nameof(item)) : item.Definition is { } reference
+            && catalogs.FirstOrDefault(catalog => catalog.Identity == reference.Catalog)?.Definition(reference.Definition)?.Printed("front", "asl:portage")?.Value?.Number is { } value
+            ? Is(item, Conditions.Dismantled) ? (value + 1) / 2 : value
+            : null;
 
     /// <summary>
     /// The half MF Infantry spend to enter a terrain (B15.4, B15.6; ruling R5.19): grain costs 1½ MF from April to September and is Open Ground
@@ -481,7 +478,8 @@ public sealed partial class GamePlanner
             var left = (allowance * 2) - spent;
             if (left < halfMf || (assault && (plain * 2) - spent <= halfMf))
             {
-                return Refused(scope, label, expected, $"play.move-mf: {unit.Id} has {left / 2m} MF left, and the entry costs {halfMf / 2m} (A4.11, A4.42, A4.61; Minimum Move, A4.134)");
+                return Refused(scope, label, expected, $"play.move-mf: {unit.Id} has {left / 2m} MF left, and the entry costs {halfMf / 2m}"
+                    + (assault && left >= halfMf ? "; Assault Movement may not use all of a unit's MF (A4.61)" : " (A4.11, A4.42, A4.61; Minimum Move, A4.134)"));
             }
         }
 
@@ -499,13 +497,20 @@ public sealed partial class GamePlanner
             Attempted = forcedBack ? to : null,
             Bypass = bypassing,
         };
-        var summary = $"{(entering is not null ? "play.enter" : "play.move")}: {string.Join(", ", ids)} " + (forcedBack ? $"attempt {to}" : occupy ? $"occupy the obstacle of {to}" : $"enter {to}")
+        var summary = $"{(entering is not null ? "play.enter" : "play.move")}: {string.Join(", ", ids)} " + (forcedBack ? $"{(ids.Length == 1 ? "attempts" : "attempt")} {to}" : occupy ? $"{(ids.Length == 1 ? "occupies" : "occupy")} the obstacle of {to}" : $"{(ids.Length == 1 ? "enters" : "enter")} {to}")
             + $" ({terrain}{(bypassing is not null ? " in Bypass along " + string.Join(", ", bypassing.Select(side => side.ToString().ToLowerInvariant())) : string.Empty)}) for {halfMf / 2m} MF"
             + (assault ? ", by Assault Movement" : string.Empty)
             + (doubleTime ? ", Double Timing and now CX (A4.5)" : string.Empty)
             + (minimumMove ? ", a Minimum Move: pinned and CX once the DEFENDER's fire is done (A4.134)" : string.Empty)
             + (charge is not null ? $", charging {charge} (A15.43)" : string.Empty)
             + (abandoned.Count > 0 ? $"; {string.Join(", ", abandoned.Select(item => item.Id))} abandoned before the charge (A15.431)" : string.Empty);
+
+        // Pass 31d (design D5; A12.11, read in the PDF, p. 76; ruling R31d.3): a stack of Dummies alone that moves without Assault Movement, or into
+        // Open Ground, is removed in the LOS of a Good Order enemy unit. The mover is told so with "if", whatever the game knows: whether an enemy
+        // "?" that sees the hex is a real unit is not the mover's to learn before the move. At night the rule is another (E1.31), and nothing is said.
+        string[] dummyWarning = !state.Night && !forcedBack && movers.Length > 0 && movers.All(unit => unit!.Kind == UnitKinds.Dummy) && (!assault || terrain == "open-ground")
+            ? [$"play.dummies: this stack holds no real unit; it is removed if a Good Order enemy unit within 16 hexes has a LOS to it in {to} (A12.11)"]
+            : [];
         List<GameEvent> prefix = [.. abandoned.Select((item, index) => Event(scope, attemptId, index + 1, expected, "equipment-transferred",
             new EquipmentTransferred(item.Id, null, new MapPosition(from)), package, null))];
         var landed = forcedBack ? from : to;
@@ -630,7 +635,7 @@ public sealed partial class GamePlanner
                 summary += $"; {string.Join(", ", lost)} loses its \"?\" (A12.2)";
             }
 
-            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [summary]);
+            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [summary, .. dummyWarning]);
         }
 
         // A8.22, A12.15: Residual FP attacks a unit entering its Location, or returned to it, first, alone, with any FFNAM and FFMO.
@@ -677,7 +682,7 @@ public sealed partial class GamePlanner
             return events;
         }
 
-        string[] reasons = [summary, .. residual is not null ? [$"play.move: {residual.Fp} Residual FP in {landed} attacks the stack first (A8.22)"] : Array.Empty<string>(),
+        string[] reasons = [summary, .. dummyWarning, .. residual is not null ? [$"play.move: {residual.Fp} Residual FP in {landed} attacks the stack first (A8.22)"] : Array.Empty<string>(),
             .. lanes.Select(item => $"play.move: the Fire Lane of {item.Lane.Weapon} attacks the stack in {landed} with {item.Entry.Fp} Residual FP (A9.22)")];
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], reasons)
         {

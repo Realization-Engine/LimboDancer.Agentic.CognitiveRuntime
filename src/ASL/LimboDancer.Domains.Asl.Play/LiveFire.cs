@@ -685,6 +685,17 @@ public static class LiveFire
     internal static bool Fired(IGameObject item) => Is(item, Conditions.PrepFire) || Is(item, Conditions.FinalFire);
 
     /// <summary>
+    /// Why a SW may not be chosen to fire now, in a few words, or null when it may (pass 31d, design D10; A9.2, A9.7): it has malfunctioned, or it
+    /// carries a Prep Fire or Final Fire counter, which a MG that kept its rate of fire does not. A First Fire counter does not bar it: it may fire
+    /// again as Subsequent First Fire or in Final Fire (A8.3, A8.4), which the Fire package decides.
+    /// </summary>
+    public static string? WeaponBar(EquipmentInstance weapon)
+    {
+        ArgumentNullException.ThrowIfNull(weapon);
+        return Is(weapon, Conditions.Malfunctioned) ? "has malfunctioned" : Fired(weapon) ? "has fired" : null;
+    }
+
+    /// <summary>
     /// Whether a unit has spent its fire for this phase, as the Fire package reads it for the PFPh, AFPh, and DFPh (A7.1, A8.4): marked
     /// Prep or Final Fire, unless in the DFPh it is marked First Fire, and unless it still possesses a MG that has not fired (A9.2). The
     /// MPh is not read here: Subsequent First Fire and FPF let marked units fire again (A8.3, A8.31).
@@ -796,6 +807,9 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
                     Los = record.Los,
                     KnownEnemyInLos = record.KnownEnemyInLos,
                     Captors = record.Captors,
+
+                    // Pass 31d (ruling R31d.2): who sees a concealed firer is the planner's read of the map, recorded with the attack.
+                    SeenByGoodOrderEnemy = record.SeenByGoodOrderEnemy,
                 })],
             // A7.7 (ruling R12.11): the Encirclement an attack completes is read before the attack, and recorded with it.
             Targets = recorded.Targets is null || expected.Targets is null ? expected.Targets
@@ -854,8 +868,17 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
                         Weapons = record.Weapons,
                     }
                     : fact with { TargetLevelAbove = record.TargetLevelAbove })],
-            Director = recorded.SprayShare == true ? recorded.Director : merged.Director,
-            OtherDirectors = recorded.SprayShare == true ? recorded.OtherDirectors : merged.OtherDirectors,
+            Director = recorded.SprayShare == true ? recorded.Director : merged.Director is { } director && recorded.Director is { } directed
+                ? director with
+                {
+                    SeenByGoodOrderEnemy = directed.SeenByGoodOrderEnemy
+                }
+                : merged.Director,
+            OtherDirectors = recorded.SprayShare == true || merged.OtherDirectors is null || recorded.OtherDirectors is null ? (recorded.SprayShare == true ? recorded.OtherDirectors : merged.OtherDirectors)
+                : [.. merged.OtherDirectors.Zip(recorded.OtherDirectors, (fact, record) => fact with
+                {
+                    SeenByGoodOrderEnemy = record.SeenByGoodOrderEnemy
+                })],
         };
         if (JsonSerializer.Serialize(merged, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json))
         {

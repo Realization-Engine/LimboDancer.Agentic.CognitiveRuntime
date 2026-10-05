@@ -182,6 +182,6 @@ public sealed partial class GamePlanner
         return reasons.Count > 0
             ? Refused(scope, label, expected, [.. reasons])
             : new GamePlan(GamePlanStatus.Ready, scope, label, expected, events,
-                [$"play.non-ob-concealment: {events.Count} unit(s) of {side} placed under \"?\" (A12.12; ruling R23.6)"]);
+                [$"play.non-ob-concealment: the {side} side places {events.Count} {(events.Count == 1 ? "unit" : "units")} under \"?\" (A12.12; ruling R23.6)"]);
     }
 }

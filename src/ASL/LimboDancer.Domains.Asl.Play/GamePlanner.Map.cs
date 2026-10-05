@@ -3,6 +3,7 @@ using LimboDancer.Domains.Asl.Maps.Derivation;
 using LimboDancer.Domains.Asl.Maps.Geometry;
 using LimboDancer.Domains.Asl.Maps.Los;
 using LimboDancer.Domains.Asl.Maps.Read;
+using LimboDancer.Domains.Asl.Rules;
 using LimboDancer.Domains.Asl.Units.State;
 
 namespace LimboDancer.Domains.Asl.Play;
@@ -161,6 +162,42 @@ public sealed partial class GamePlanner
                 && GameState.Condition(unit, Conditions.Broken) != ConditionState.True)
             .Select(unit => state.Location(unit.Id)?.Location).OfType<BoardLocation>().Distinct()
             .Select(location => Los(state, location, at) is { Status: LosStatus.Clear } los ? los.Range : (int?)null).Where(range => range is not null).Min();
+
+    /// <summary>
+    /// An attack with, for each concealed unit that fires or directs, whether a Good Order enemy ground unit within 16 hexes has a LOS to it (A12.14,
+    /// read in the PDF, p. 77; pass 31d, ruling R31d.2). The Fire package sees the target Location alone, and refused fire by concealed units at a
+    /// Location with no Good Order unit as undecided; a refusal marks no firer, so a side could try a "?" stack and read from the refusal that it
+    /// held Dummies. With this read the attack is made, and the firer's "?" is lost or kept as the rule has it. A hidden unit, which would have to
+    /// show itself to force the loss, does not force it. At night the read is not given (E1.31), and the package decides as before.
+    /// </summary>
+    private FireAttack WithSeen(GameState state, FireAttack attack)
+    {
+        if (state.Night)
+        {
+            return attack;
+        }
+
+        bool? Seen(string? unitId, bool? concealed) => concealed == true && unitId is not null && state.Unit(unitId) is { Side: { } side } unit
+            && state.Location(unit.Id)?.Location is { } at
+            ? state.Units.Where(other => other.Side != side && other.Kind != UnitKinds.Dummy && GoodOrder(other) && !Is(other, Conditions.Hidden) && state.Aboard(other.Id) is null)
+                .Select(other => state.Location(other.Id)?.Location).OfType<BoardLocation>().Distinct()
+                .Any(location => location == at || Los(state, location, at) is { Status: LosStatus.Clear, Range: <= 16 })
+            : null;
+        FireFirer Firer(FireFirer item) => Seen(item.UnitId, item.Concealed) is not { } seen ? item : item with
+        {
+            SeenByGoodOrderEnemy = seen
+        };
+        FireDirector Leader(FireDirector item) => Seen(item.UnitId, item.Concealed) is not { } seen ? item : item with
+        {
+            SeenByGoodOrderEnemy = seen
+        };
+        return attack with
+        {
+            Firers = attack.Firers is null ? null : [.. attack.Firers.Select(Firer)],
+            Director = attack.Director is null ? null : Leader(attack.Director),
+            OtherDirectors = attack.OtherDirectors is null ? null : [.. attack.OtherDirectors.Select(Leader)],
+        };
+    }
 
     /// <summary>Whether any Good Order enemy ground unit within 16 hexes has a clear LOS to a Location (A12.14, A12.141).</summary>
 

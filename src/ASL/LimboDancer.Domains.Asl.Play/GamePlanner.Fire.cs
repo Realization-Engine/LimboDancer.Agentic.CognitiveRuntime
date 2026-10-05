@@ -191,6 +191,8 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, reason!);
         }
 
+        attack = WithSeen(state, attack);
+
         // A22.611 (ruling R15.4): no MOL through a woods or orchard hexside, one both of whose hexes are woods, or both orchard.
         if (mol is not null && state.Location(mol)?.Location is { } molAt && molAt != target
             && ReadLocation(state, molAt) is { } molRead && ReadLocation(state, target) is { } targetRead
@@ -357,6 +359,7 @@ public sealed partial class GamePlanner
                     return (null, why);
                 }
 
+                part = WithSeen(state, part);
                 var (read, readWhy) = FireMapFacts(state, part with
                 {
                     SnapShot = attack.SnapShot
@@ -403,6 +406,8 @@ public sealed partial class GamePlanner
             {
                 return Refused(scope, label, expected, sprayReason!);
             }
+
+            sprayAttack = WithSeen(state, sprayAttack);
 
             var (sprayMap, sprayMapReason) = FireMapFacts(state, sprayAttack, second, existing);
             if (sprayMap is null)
@@ -486,12 +491,17 @@ public sealed partial class GamePlanner
                 var refusal = RefusalReasons.Refusal("play.fire-refused", "Fire", "attack", partCheck);
                 var ranged = RangeNamed(part, refusal);
                 var proposal = Proposal(part, undecided: true);
+
+                // Pass 31d (design D8; ruling R31d.5): the same holds for every reason that rests on the proposer's own group and the map alone (a
+                // FT fired with other units, a firer that may not fire, a weapon that has fired). Where there is one, the firing side reads those
+                // reasons and nothing else; where there is none, it reads the one sentence. What it reads then depends only on its own group.
+                string[] ownGroup = [.. ranged.Named, .. ranged.Reasons.Where(reason => OwnGroupCodes.Any(code => reason.StartsWith(code, StringComparison.Ordinal)))];
                 return Refused(scope, label, expected, ranged.Reasons) with
                 {
-                    Fire = ranged.Named.Count > 0 && proposal.FiringSideReasons.Count > 0
+                    Fire = ownGroup.Length > 0 && proposal.FiringSideReasons.Count > 0
                         ? proposal with
                         {
-                            FiringSideReasons = ["play.fire-refused: the Fire package refuses this attack as proposed", .. ranged.Named]
+                            FiringSideReasons = ["play.fire-refused: the Fire package refuses this attack as proposed", .. ownGroup.Distinct(StringComparer.Ordinal)]
                         }
                         : proposal
                 };
@@ -511,7 +521,7 @@ public sealed partial class GamePlanner
                     [.. facts.Firers!.Where(item => item.UsesInherentFp == false).Select(item => item.UnitId!)],
                     facts.Firers!.Where(item => item.Partner is not null).ToDictionary(item => item.UnitId!, item => item.Partner!),
                     facts.Firers!.FirstOrDefault(item => item.Mol == true)?.UnitId).Attack;
-                if (reread is not null && FireMapFacts(after, reread, target, [.. existing, .. events]).Facts is { } rereadMap)
+                if (reread is not null && FireMapFacts(after, WithSeen(after, reread), target, [.. existing, .. events]).Facts is { } rereadMap)
                 {
                     AddFireEvents(scope, attemptId, expected, actor, after, HeatOfBattleFacts(after, rereadMap) with
                     {
@@ -567,8 +577,13 @@ public sealed partial class GamePlanner
         // A12.14: a concealed firer or director loses "?" by this attack when every firer is within 16 hexes and a target is Good Order,
         // as the Fire package decides it; one that does is Known when a target's Heat of Battle result is read (A15.44, A15.5).
         var firers = attack.Firers ?? [];
-        string[] revealed = firers.Count > 0 && firers.All(item => (item.Range ?? attack.Range) <= 16)
-            && attack.Targets!.Any(item => item.Broken == false && item.Dummy != true)
+        // Pass 31d (ruling R31d.2): with the planner's read for every concealed unit of the group, the units a Good Order enemy unit sees; without
+        // it, as the package decided before.
+        var directing = new[] { attack.Director }.Concat(attack.OtherDirectors ?? []).OfType<FireDirector>().ToArray();
+        var read = firers.Where(item => item.Concealed == true).All(item => item.SeenByGoodOrderEnemy is not null) && directing.Where(item => item.Concealed == true).All(item => item.SeenByGoodOrderEnemy is not null);
+        string[] revealed = read
+            ? [.. firers.Where(item => item.SeenByGoodOrderEnemy == true).Select(item => item.UnitId).Concat(directing.Where(item => item.SeenByGoodOrderEnemy == true).Select(item => item.UnitId)).OfType<string>()]
+            : firers.Count > 0 && firers.All(item => (item.Range ?? attack.Range) <= 16) && attack.Targets!.Any(item => item.Broken == false && item.Dummy != true)
             ? [.. firers.Select(item => item.UnitId).Concat(new[] { attack.Director?.UnitId }).Concat((attack.OtherDirectors ?? []).Select(item => item.UnitId))
                 .OfType<string>().Where(id => state.Unit(id) is { } unit && Is(unit, Conditions.Concealed))]
             : [];
@@ -1311,6 +1326,17 @@ public sealed partial class GamePlanner
 
         return conditions.Count == 0 ? null : ("conditions-changed", new ConditionsChanged(unit.Id, conditions));
     }
+
+    /// <summary>
+    /// The Fire package's refusals that rest on the firing side's own group and the map alone (pass 31d, design D8; each read against the package's
+    /// pre-check): a FT that does not fire alone (A22.31), a firer that may not fire or uses no weapon, one that has fired, a weapon that may not
+    /// fire, firers of two sides, a director who may not direct, and a fire kind its phase does not have. None reads a unit of the target Location.
+    /// </summary>
+    private static readonly string[] OwnGroupCodes =
+    [
+        "asl.a1.fire.flamethrower-outside", "asl.a1.fire.firer-outside", "asl.a1.fire.firer-already-fired", "asl.a1.fire.weapon-outside",
+        "asl.a1.fire.firers-of-two-sides", "asl.a1.fire.director-outside", "asl.a1.fire.phase-outside",
+    ];
 
     /// <summary>
     /// A refusal for range says what was out of range (pass 31c, design section 14; A7.21, A7.22): the package's one sentence for

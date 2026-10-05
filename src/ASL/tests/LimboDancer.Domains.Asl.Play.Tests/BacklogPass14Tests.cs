@@ -217,6 +217,54 @@ public sealed class BacklogPass14Tests : IDisposable
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
     }
 
+    // ---- Pass 31d (design D9; A11.15, p. 72; ruling R31d.6) ----
+
+    [Fact]
+    public async Task EndingTheCcphWithALocationNotFoughtSaysSoAsAConsequence()
+    {
+        await Setup("german", Unit("g1", "asl:squad", "attacker-squad", "bd01:B1:0", "german"), Unit("r1", "asl:squad", "defender-squad", "bd01:B1:0", "russian"),
+            Unit("g2", "asl:squad", "attacker-squad", "bd01:E5:0", "german"));
+        await Advance(7);
+        Assert.Equal("ccph", Current.Phase);
+
+        // No round is fought in B1: the phase's end is not refused, and says what was not fought.
+        var ended = await Do(GameActions.AdvancePhase, Once(3, 3, 3, 3), new
+        {
+        });
+        Committed(ended);
+        var unfought = Assert.Single(ended.Reasons, reason => reason.StartsWith("play.cc-unfought:", StringComparison.Ordinal));
+        Assert.Contains("bd01:B1:0", unfought, StringComparison.Ordinal);
+        Assert.Equal(ConsequenceKind.Unfought, GamePlanner.ConsequenceOf(unfought)!.Kind);
+    }
+
+    [Fact]
+    public async Task EndingTheCcphAfterARoundWasFoughtSaysNothingOfIt()
+    {
+        await Setup("german", HandToHandRules, Unit("g1", "asl:squad", "attacker-squad", "bd01:B1:0", "german"), Unit("r1", "asl:squad", "defender-squad", "bd01:B1:0", "russian"));
+        await Advance(7);
+
+        // 6, 6: no effect either way, so both squads are still there, and the round was fought.
+        Committed(await Do(GameActions.CloseCombat, Once(6, 6, 6, 6), new
+        {
+            location = "bd01:B1:0",
+            attacks = new[] { Attack(G1, ["r1"]) },
+        }));
+        if (Planner().CloseCombatDue(Current).Count > 0)
+        {
+            Committed(await Do(GameActions.CloseCombat, Once(6, 6, 6, 6), new
+            {
+                location = "bd01:B1:0",
+                attacks = new[] { Attack(R1, ["g1"]) },
+            }));
+        }
+
+        var ended = await Do(GameActions.AdvancePhase, Once(3, 3, 3, 3), new
+        {
+        });
+        Committed(ended);
+        Assert.DoesNotContain(ended.Reasons, reason => reason.StartsWith("play.cc-unfought:", StringComparison.Ordinal));
+    }
+
     [Fact]
     public async Task HandToHandNeedsItsSsrAndUsesTheRedKillNumber()
     {

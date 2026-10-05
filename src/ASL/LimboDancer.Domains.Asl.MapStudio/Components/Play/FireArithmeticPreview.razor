@@ -12,7 +12,7 @@
         {
             var multipliers = firer.Multipliers.Where(item => !Incomplete || !TargetDependent(item.Name)).ToArray();
             <li class="fire-fp" data-unit="@firer.UnitId">
-                @Say(firer.UnitId)@(firer.Operator is { } by ? Say($", fired by {by}") : ""): @firer.Printed FP@(string.Concat(multipliers.Select(item => $" × {FireText.Number(item.Value)} ({DisplayText.Modifier(item.Name)}, {item.Rule})")))@(Incomplete ? "" : $" = {FireText.Number(firer.Firepower)}")
+                @Say(firer.UnitId)@(firer.Operator is { } by ? Say($", fired by {by}") : ""): @firer.Printed FP@(string.Concat(multipliers.Select(FireText.MultiplierText)))@(Incomplete ? "" : $" = {FireText.Number(firer.Firepower)}")
             </li>
         }
         @if (Arithmetic.Firers.Any(firer => firer.Multipliers.Any(item => item.Name == "area-fire" && item.Rule.Contains("A8.4", StringComparison.Ordinal))))

@@ -12,7 +12,21 @@
 <ul id="rout-obligations">
     @foreach (var item in Obligations)
     {
-        <li @key="item.Unit" class="rout-obligation" data-unit="@item.Unit">@DisplayText.Sentence(Say(item.Text))</li>
+        <li @key="item.Unit" class="rout-obligation" data-unit="@item.Unit">
+            @DisplayText.Sentence(Say(item.Text))
+            @* Pass 31d (design D3): a way to each place the rout may end, each on a line of its own (the table player); the button fills the
+               route, which stays the player's to change. *@
+            @if (item.Routes is { Count: > 0 } ways)
+            {
+                <ul class="rout-ways">
+                    @foreach (var way in ways)
+                    {
+                        <li><button type="button" class="link use-route" data-unit="@item.Unit" data-route="@way.Route" title="Chooses this unit and fills its route; you may still change it."
+                                    @onclick="@(() => OnUseRoute.InvokeAsync((item.Unit, way.Route)))">Use the route to @Say(way.Target)</button></li>
+                    }
+                </ul>
+            }
+        </li>
     }
 </ul>
 <div class="toolbar">
@@ -26,6 +40,23 @@
             }
         </select>
     </label>
+    @* Pass 31d (design D2; A10.4): what a laden unit leaves and keeps, said only for a unit that carries more than its IPC. *@
+    @if (Load is { Length: > 0 })
+    {
+        <span id="rout-load" class="toolbar-note">@DisplayText.Sentence(Say(Load))</span>
+        @if (Loads.Count > 1)
+        {
+            <label>
+                It keeps
+                <select id="rout-keep" value="@Keep" @onchange="@(args => OnKeep.InvokeAsync(args.Value as string ?? string.Empty))">
+                    @foreach (var load in Loads)
+                    {
+                        <option value="@load.Id">@Say(load.Label)</option>
+                    }
+                </select>
+            </label>
+        }
+    }
     <LocationField Id="rout-route" Label="Route (hexes in order)" Name="the rout route" Many="true" Placeholder="E6, E7" Size="24" Value="@Route" OnChange="@OnRoute" />
     <label><input id="rout-low-crawl" type="checkbox" checked="@LowCrawl" @onchange="@(args => OnLowCrawl.InvokeAsync(args.Value is true))" /> Low Crawl</label>
     <button id="propose-rout" disabled="@(!Units.Any(unit => unit.Id == Unit) || Route.Trim().Length == 0)" aria-describedby="propose-rout-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: rout</button>
@@ -49,8 +80,28 @@
 
     private string At(string? text) => text is null ? string.Empty : WordsAt?.Invoke(text) ?? Say(text);
 
-    /// <summary>A broken unit that may rout and what it owes, such as "r1 (russian): must rout: ...; has routed".</summary>
-    public sealed record Obligation(string Unit, string Text);
+    /// <summary>A broken unit that may rout and what it owes, such as "r1 (russian): must rout: ...; has routed", with a way to each place it may end.</summary>
+    public sealed record Obligation(string Unit, string Text, IReadOnlyList<Way>? Routes = null);
+
+    /// <summary>One least-cost route to a place a rout may end (pass 31d, design D3): the place, and the route as its Locations in order.</summary>
+    public sealed record Way(string Target, string Route);
+
+    /// <summary>What the chosen unit leaves and keeps before it routs (A10.4); null or empty for a unit that carries no more than its IPC.</summary>
+    [Parameter]
+    public string? Load { get; set; }
+
+    /// <summary>The loads the unit may keep, when it has a choice among loads of equal PP.</summary>
+    [Parameter]
+    public IReadOnlyList<PlayChoice> Loads { get; set; } = [];
+
+    [Parameter]
+    public string Keep { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnKeep { get; set; }
+
+    [Parameter]
+    public EventCallback<(string Unit, string Route)> OnUseRoute { get; set; }
 
     [Parameter, EditorRequired]
     public IReadOnlyList<Obligation> Obligations { get; set; } = [];
