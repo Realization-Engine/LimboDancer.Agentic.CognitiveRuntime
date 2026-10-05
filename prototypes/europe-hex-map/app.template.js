@@ -150,3 +150,11 @@ document.getElementById("exportCampaign").onclick=()=>{const {researchTransport,
 document.getElementById("exportHex").onclick=async()=>{const c=selected,s=seed;const token=await localSeed(c);download(c.id.replaceAll(":","-")+".json",{mapSeed:s,baseHash:DATA.metadata.baseHash,cell:c,refinementSeed:token});};
 document.getElementById("sourceId").textContent="Source revision "+DATA.metadata.sourceManifest.commit.slice(0,12)+" · Base "+DATA.metadata.baseHash.slice(0,12);
 document.getElementById("mapStatus").textContent=DATA.cells.length.toLocaleString()+" hexes · Equal-area Europe projection";
+
+document.getElementById("exportImage").onclick=async()=>{
+ const button=document.getElementById("exportImage"),status=document.getElementById("imageExportStatus");
+ button.disabled=true;status.textContent="Preparing map image...";
+ try{await exportMapPng(svg,(activeTheater?activeTheater.id:"europe-north-africa")+"-map.png");status.textContent="Map image exported as PNG.";}
+ catch(error){status.textContent="Image export failed: "+error.message;}
+ finally{button.disabled=false;}
+};
