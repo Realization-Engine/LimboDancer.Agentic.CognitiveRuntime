@@ -504,7 +504,9 @@ public static class ScenarioA1FireEligibility
         var kind = facts.Phase == "mph" && facts.Mode != FireDemolitionCharge.Thrower ? ScenarioA1FireCalculator.FirstFire : null;
         return (new FireAttack(PhaseName(facts.Phase), facts.Phasing ? "phasing" : "non-phasing", null, facts.UserLocation ?? facts.Target,
             facts.Target, null, null, null, null, null, facts.ScenarioMonth, null,
-            [.. targets.Select(unit => facts.TargetOf(unit.Id))],
+            // Rulings R12.8, R12.9, R12.11: the user's own units as Friendly, a prisoner's Guard, and Encirclement.
+            [.. targets.Select(unit => AttackTarget(new AttackTargetFacts(facts.TargetOf(unit.Id), unit.Side == facts.UserSide, unit.Captured, facts.CustodianOf(unit.Id),
+                facts.EncircledOf(unit.Id))))],
             facts.TargetSideElr, null)
         {
             FireKind = kind,

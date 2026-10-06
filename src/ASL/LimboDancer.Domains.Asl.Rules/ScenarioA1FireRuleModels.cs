@@ -219,7 +219,9 @@ public sealed record DemolitionChargeFacts(
     IReadOnlyList<string>? FiringNationalities,
     int? ScenarioMonth,
     Func<string, FireTarget> TargetOf,
-    Func<string, FireVehicle> VehicleOf);
+    Func<string, FireVehicle> VehicleOf,
+    Func<string, string?> CustodianOf,
+    Func<string, bool> EncircledOf);
 
 /// <summary>A firer's named weapons as the FT read finds them (A22.3): the firer and whether any named weapon is a FT.</summary>
 public sealed record FirerFtFacts(string Firer, bool NamesFt);

@@ -286,7 +286,8 @@ public static class LiveFire
                 Is(unit, Conditions.Captured), here && movement!.Movers.Contains(unit.Id)))],
             targetSide, targetSide is null ? null : state.Side(targetSide)?.Elr, targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal),
             ok ? state.Side(side!)?.Elr : null, ok && state.NoQuarter.Contains(side, StringComparer.Ordinal), ok ? Allies(state, side!) : null, state.ScenarioMonth,
-            id => Target(state, units.First(unit => unit.Id == id), target), id => Vehicle(units.First(unit => unit.Id == id), target)));
+            id => Target(state, units.First(unit => unit.Id == id), target), id => Vehicle(units.First(unit => unit.Id == id), target),
+            id => units.First(unit => unit.Id == id).Custodian, id => state.Encircled(units.First(unit => unit.Id == id))));
     }
 
     /// <summary>
