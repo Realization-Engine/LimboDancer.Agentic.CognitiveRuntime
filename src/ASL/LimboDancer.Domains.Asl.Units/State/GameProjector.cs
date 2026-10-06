@@ -194,7 +194,7 @@ public static class GameProjector
                     SetupClosed = true,
                     SetupHalfSquads = previous.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side is not null)
                         .GroupBy(unit => unit.Side!, StringComparer.Ordinal)
-                        .ToDictionary(group => group.Key, group => group.Sum(unit => unit.Kind == "asl:squad" ? 2 : unit.Kind is "asl:half-squad" or "asl:crew" ? 1 : 0),
+                        .ToDictionary(group => group.Key, group => group.Sum(unit => Rules.ScenarioA1OrdnanceProjection.HalfSquadEquivalents(unit.Kind)),
                             StringComparer.Ordinal),
                 };
             }
@@ -1037,11 +1037,12 @@ public static class GameProjector
             // Rulings R9.10, R9.11: an ATR or PSK is fired by its possessor too.
             var mortar = firer is EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Possessed } possession } weapon
                 && (vocabulary.IsA(weapon.Kind, "asl:light-mortar") || vocabulary.IsA(weapon.Kind, "asl:latw")) && possession.Holder == fired.Crew;
-            var panzerfaust = fired.Gun == fired.Crew + ":pf";
-            if (state.Phase is not ("pfph" or "afph" or "dfph" or "mph")
+            var panzerfaust = Rules.ScenarioA1OrdnanceProjection.IsPanzerfaust(fired.Gun, fired.Crew);
+            if (!Rules.ScenarioA1OrdnanceProjection.FirePhase(state.Phase)
                 || !(tank || mortar || panzerfaust || (firer is EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Manned } manning } && manning.Holder == fired.Crew))
                 || Active(state, fired.Crew) is not UnitInstance shooter
-                || (shots is not null && !shots.RateOfFireKept && !panzerfaust && !(fired.Facts.TryGetProperty("intensiveFire", out var intensive) && intensive.ValueKind == JsonValueKind.True)))
+                || !Rules.ScenarioA1OrdnanceProjection.FiresAgain(shots is not null, shots?.RateOfFireKept ?? false, panzerfaust,
+                    () => fired.Facts.TryGetProperty("intensiveFire", out var intensive) && intensive.ValueKind == JsonValueKind.True))
             {
                 return Fail<GameState>("UNIT-STATE-033", "A Gun fires in a fire phase, manned by its crew, and again only on a kept Multiple ROF (C2.24).");
             }
@@ -1065,7 +1066,7 @@ public static class GameProjector
             // and was never fired: nothing else about the Gun changes.
             var use = fired.Resolution.TryGetProperty("ammunitionUse", out var used) && used.ValueKind == JsonValueKind.String ? used.GetString() : null;
             var malfunctioned = fired.Resolution.TryGetProperty("gun", out var gunResult) && gunResult.ValueKind == JsonValueKind.Object && gunResult.TryGetProperty("malfunctioned", out var broke) && broke.ValueKind == JsonValueKind.True;
-            if (use is "depleted" or "none" && fired.Facts.TryGetProperty("ammunition", out var ammunition) && ammunition.GetString() is { } depleted)
+            if (Rules.ScenarioA1OrdnanceProjection.AmmunitionDepleted(use) && fired.Facts.TryGetProperty("ammunition", out var ammunition) && ammunition.GetString() is { } depleted)
             {
                 state = state with
                 {
@@ -1074,7 +1075,7 @@ public static class GameProjector
             }
 
             // C8.9: unless the Gun malfunctioned, when the shot counts as fired.
-            if (use == "none" && !malfunctioned)
+            if (Rules.ScenarioA1OrdnanceProjection.NeverFired(use, malfunctioned))
             {
                 return state;
             }
@@ -1118,7 +1119,7 @@ public static class GameProjector
                             ? spent.GetInt32() : 0,
                     }]
                     : state.OrdnanceShotsHere,
-                GunCrewsFired = tank || panzerfaust || state.GunCrewsFired.Contains(fired.Crew) ? state.GunCrewsFired : [.. state.GunCrewsFired, fired.Crew],
+                GunCrewsFired = Rules.ScenarioA1OrdnanceProjection.CrewLosesInherentFp(tank, panzerfaust, state.GunCrewsFired.Contains(fired.Crew)) ? [.. state.GunCrewsFired, fired.Crew] : state.GunCrewsFired,
             };
             state = SupportWeapons(state, fired, shooter, mortar, panzerfaust);
             return state with
@@ -1673,11 +1674,10 @@ public static class GameProjector
             var shots = state.OrdnanceShots.FirstOrDefault(item => item.Gun == turned.Gun);
             if (Active(state, turned.Gun) is not EquipmentInstance { Holding: { Role: HoldingRole.Manned } manning, Position: MapPosition at } gun
                 || Active(state, manning.Holder) is not UnitInstance crew
-                || state.Phase is not ("pfph" or "afph" or "dfph") || (crew.Side == state.PhasingSide) != (state.Phase != "dfph")
-                || new[] { Conditions.Broken, Conditions.Pinned }.Any(name => GameState.Condition(crew, name) == ConditionState.True)
-                || new[] { Conditions.Malfunctioned, Conditions.PrepFire, Conditions.FinalFire, Conditions.FirstFire, Conditions.IntensiveFire }.Any(name => GameState.Condition(gun, name) == ConditionState.True)
-                    && !(shots?.RateOfFireKept ?? false)
-                || (shots is not null && !shots.RateOfFireKept))
+                || !Rules.ScenarioA1OrdnanceProjection.TurnGunAllowed(state.Phase, crew.Side == state.PhasingSide,
+                    () => new[] { Conditions.Broken, Conditions.Pinned }.Any(name => GameState.Condition(crew, name) == ConditionState.True),
+                    () => new[] { Conditions.Malfunctioned, Conditions.PrepFire, Conditions.FinalFire, Conditions.FirstFire, Conditions.IntensiveFire }.Any(name => GameState.Condition(gun, name) == ConditionState.True),
+                    shots is not null, shots?.RateOfFireKept ?? false))
             {
                 return Fail<GameState>("UNIT-STATE-039", "A Gun changes its CA without firing in a friendly fire phase while its Good Order, unpinned crew could still fire it (C3.22).");
             }
@@ -1686,7 +1686,7 @@ public static class GameProjector
             {
                 Equipment = [.. state.Equipment.Select(item => item.Id == gun.Id ? gun with { Position = at with { Facing = turned.Facing } } : item)],
                 OrdnanceShots = [.. state.OrdnanceShots.Where(item => item.Gun != gun.Id), new OrdnanceShotRecord(gun.Id, shots?.Shots ?? 0, false)],
-                NoMoveThisPlayerTurn = state.Phase == "pfph" ? [.. state.NoMoveThisPlayerTurn, gun.Id, crew.Id] : state.NoMoveThisPlayerTurn,
+                NoMoveThisPlayerTurn = Rules.ScenarioA1OrdnanceProjection.TurnFreezesMovement(state.Phase) ? [.. state.NoMoveThisPlayerTurn, gun.Id, crew.Id] : state.NoMoveThisPlayerTurn,
                 GunsTurnedThisPhase = [.. state.GunsTurnedThisPhase, gun.Id],
             };
         }
@@ -1719,11 +1719,11 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-039", "A Stopped vehicle hooks up a Gun its crew mans in its hex, or unhooks its towed Gun there for a crew on foot (C10.11, C10.12).");
             }
 
-            var halves = (vehicle.MfSpent * 2) + (vehicle.HalfMfSpent ? 1 : 0) + (hooked.Mp * 2);
+            var (mfSpent, halfMfSpent) = Rules.ScenarioA1OrdnanceProjection.HookMp(vehicle.MfSpent, vehicle.HalfMfSpent, hooked.Mp);
             var next = Replace(state, vehicle with
             {
-                MfSpent = halves / 2,
-                HalfMfSpent = halves % 2 == 1
+                MfSpent = mfSpent,
+                HalfMfSpent = halfMfSpent
             })!;
 
             // C10.11, C10.12 (ruling R26.2): the crew may board the towing vehicle as it hooks up, and disembarks beneath it as it unhooks.
@@ -2385,7 +2385,7 @@ public static class GameProjector
         {
             if (state.Phase != "rph" || Active(state, deployment.Squad) is not UnitInstance squad || GameState.Condition(squad, Conditions.Broken) == ConditionState.True
                 || !rolls.TryGetValue(deployment.Roll, out var roll) || roll.Count != 2 || roll.Sides != 6
-                || (roll.Values[0] + roll.Values[1] + deployment.Drm <= deployment.Morale) != deployment.Passed
+                || Rules.ScenarioA1OrdnanceProjection.DeploymentPassed(roll.Values[0], roll.Values[1], deployment.Drm, deployment.Morale) != deployment.Passed
                 || state.RallyPhaseActions.Contains(squad.Id, StringComparer.Ordinal)
                 || (deployment.Leader is { } leader && state.RallyPhaseActions.Contains(leader, StringComparer.Ordinal)))
             {
@@ -2401,7 +2401,7 @@ public static class GameProjector
         /// <summary>A Recombination's or a Transfer's RPh action (A1.32, A4.431; rulings R13.4, R13.5): each unit's first this RPh.</summary>
         private GameState? TakeRallyPhaseAction(GameState state, RallyPhaseActionTaken action)
         {
-            if (state.Phase is not ("rph" or "aph") || action.Units.Count == 0 || action.Units.Any(id => state.Unit(id) is null)
+            if (!Rules.ScenarioA1OrdnanceProjection.RallyPhaseActionPhase(state.Phase) || action.Units.Count == 0 || action.Units.Any(id => state.Unit(id) is null)
                 || (state.Phase == "rph" && action.Units.Any(id => state.RallyPhaseActions.Contains(id, StringComparer.Ordinal))))
             {
                 return Fail<GameState>("UNIT-STATE-041", "A Recombination or Transfer is its units' RPh action, or a Transfer at the start of their APh (A1.32, A4.431).");
@@ -2418,7 +2418,7 @@ public static class GameProjector
         {
             var key = recovery.Unit + "|" + recovery.Weapon;
             if (state.Phase is not ("rph" or "mph") || Active(state, recovery.Unit) is not UnitInstance unit || state.Find(recovery.Weapon) is not EquipmentInstance
-                || !rolls.TryGetValue(recovery.Roll, out var roll) || roll.Count != 1 || roll.Sides != 6 || (roll.Values[0] + recovery.Drm < 6) != recovery.Recovered
+                || !rolls.TryGetValue(recovery.Roll, out var roll) || roll.Count != 1 || roll.Sides != 6 || Rules.ScenarioA1OrdnanceProjection.Recovered(roll.Values[0], recovery.Drm) != recovery.Recovered
                 || state.RecoveryAttempts.Contains(key, StringComparer.Ordinal)
                 || (state.Phase == "rph" && state.RallyPhaseActions.Contains(unit.Id, StringComparer.Ordinal)))
             {
