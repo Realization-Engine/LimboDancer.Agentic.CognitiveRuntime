@@ -13,12 +13,7 @@ namespace LimboDancer.Domains.Asl.Play;
 /// </summary>
 public sealed partial class GamePlanner
 {
-    /// <summary>
-    /// One Infantry step's cost in half MF and what it enters: the terrain key, whether it crossed a road hexside at the road rate into a hex with
-    /// no SMOKE, burning wreck, or rubble (the Road Bonus, B3.4), whether it costs the unit's whole MF allotment (marsh, B16.4), and whether only
-    /// a Minimum Move may make it (marsh from a lower elevation, B16.4).
-    /// </summary>
-    private sealed record InfantryEntry(int HalfMf, string Terrain, bool RoadRate, bool AllMf, bool MinimumMoveOnly, bool LevelChange);
+    // One Infantry step's cost and what it enters: the InfantryEntry record moved to Rules (pass 32.b).
 
     /// <summary>The angle between two bearings in degrees, 0 to 180.</summary>
     private static double AngleBetween(double one, double two) => ScenarioA1Geometry.AngleBetween(one, two);
@@ -28,13 +23,15 @@ public sealed partial class GamePlanner
     private static bool IsRubbleTerrain(string? key) => ScenarioA1Definitions.IsRubbleTerrain(key);
 
     /// <summary>The wall or hedge on a hexside, as <c>wall</c> or <c>hedge</c>; null for none; <c>other</c> for hexside terrain the pass does not review.</summary>
-    private static string? WallOn(HexsideFacts? side) => side?.HexsideTerrain?.Name switch
-    {
-        null => null,
-        "Wall" => "wall",
-        "Hedge" => "hedge",
-        _ => "other",
-    };
+    private static string? WallOn(HexsideFacts? side) => ScenarioA1TerrainCosts.WallOn(side?.HexsideTerrain?.Name);
+
+    /// <summary>The hexside an Infantry step crosses, as Rules reads it (pass 32.b).</summary>
+    private static CrossedHexsideFacts CrossedFacts(HexsideFacts crossed) =>
+        new(crossed.Cliff, crossed.Slope, crossed.HexsideTerrain?.Name, crossed.Terrain?.IsRoad == true, crossed.Terrain?.Name);
+
+    /// <summary>One Location of an Infantry step as Rules reads it (pass 32.b); null when the map cannot read it.</summary>
+    private static StepLocationFacts? StepLocation(LocationRead? read) =>
+        read is null ? null : new(TerrainKey(read), (read.Level.Terrain ?? read.Hex.Center.Terrain)?.Name, read.Hex.BaseLevel, read.Hex.Stairway);
 
     /// <summary>
     /// The cost of an Infantry step from one Location to another (rulings R10.1 to R10.3, R10.5): up or down one level in a stairwell hex
@@ -45,53 +42,14 @@ public sealed partial class GamePlanner
     /// </summary>
     private (InfantryEntry? Entry, string? Reason) InfantryStep(GameState state, BoardLocation from, BoardLocation to)
     {
-        if (from.Side is not null || to.Side is not null)
-        {
-            return (null, "play.move-step: a unit moves between Locations, not hexsides");
-        }
-
-        if (from.Board == to.Board && from.Hex == to.Hex)
-        {
-            // B23.4, B23.22, B23.23 (ruling R10.2): one level up or down within a building, only in a stairwell hex.
-            if (from.Level == to.Level || Math.Abs(from.Level - to.Level) != 1 || ReadLocation(state, from) is not { } fromLevel
-                || ReadLocation(state, to) is not { } toLevel || !IsBuildingTerrain(TerrainKey(fromLevel)) || !IsBuildingTerrain(TerrainKey(toLevel)))
-            {
-                return (null, $"play.move-level: {to} is not the next level of the building Location {from} (B23.4, B23.42)");
-            }
-
-            return !fromLevel.Hex.Stairway
-                ? (null, $"play.move-stairwell: {from.Hex} has no stairwell, so its levels do not connect (B23.23, B23.4)")
-                // E1.51 (referee, pass 16): a building Location is Concealment Terrain, one MF more at night.
-                : (new InfantryEntry(2 + BlazeEntryHalfMf(state, to) + (state.Night ? 2 : 0), TerrainKey(toLevel)!, false, false, false, true), null);
-        }
-
-        var (fromRead, toRead, adjacent, crossed) = Step(state, from, to);
-        if (fromRead is null || toRead is null || !adjacent || crossed is null)
-        {
-            return (null, $"play.move-step: {to} is not an adjacent Location the map reads");
-        }
-
-        if (TerrainKey(toRead) is not { } terrain)
-        {
-            var name = (toRead.Level.Terrain ?? toRead.Hex.Center.Terrain)?.Name ?? "the terrain";
-            return (null, name is "Rooftop" or "Cellar"
-                ? $"play.move-terrain: a {name} is not a Location units enter (rooftops by SSR only, B23.8; cellars, B23.41)"
-                : $"play.move-terrain: {name} is not a reviewed entry (ruling R10.1)");
-        }
-
-        if (from.Level != 0 || to.Level != 0)
-        {
-            // B23.421, B23.422 (ruling R10.2): at an upper level, only into the same level of an ADJACENT hex of the same building.
-            var connected = from.Level == to.Level && from.Level > 0 && IsBuildingTerrain(TerrainKey(fromRead)) && IsBuildingTerrain(terrain)
-                && fromRead.Hex.BaseLevel == toRead.Hex.BaseLevel && crossed.HexsideTerrain is null && crossed.Terrain is { } shared
-                && OrdinaryBuildings.Contains(shared.Name);
-            // E1.51 (backlog pass 16, ruling R16.5): a building Location is Concealment Terrain, one MF more at night.
-            return connected
-                ? (new InfantryEntry(EntryHalfMf[terrain] + BlazeEntryHalfMf(state, to) + (state.Night ? 2 : 0), terrain, false, false, false, false), null)
-                : (null, "play.move-upper-level: from an upper level a unit moves only into the same level of an ADJACENT hex of the same building (B23.421, B23.422)");
-        }
-
-        return GroundStep(state, to, crossed, terrain, toRead.Hex.BaseLevel - fromRead.Hex.BaseLevel);
+        // Pass 32.b: the map is read here as the step read it (both Locations within one hex, the step between two), and Rules decides.
+        var hexsides = from.Side is not null || to.Side is not null;
+        var sameHex = from.Board == to.Board && from.Hex == to.Hex;
+        var (fromRead, toRead, adjacent, crossed) = hexsides ? (null, null, false, null)
+            : sameHex ? (ReadLocation(state, from), ReadLocation(state, to), false, null) : Step(state, from, to);
+        var facts = new InfantryStepFacts(from.Side is not null, to.Side is not null, sameHex, from.Level, to.Level, from.ToString(), to.ToString(), from.Hex.ToString(),
+            StepLocation(fromRead), StepLocation(toRead), adjacent, crossed is null ? null : CrossedFacts(crossed), state.Night, state.ScenarioMonth);
+        return ScenarioA1TerrainCosts.InfantryStep(facts, () => BlazeEntryHalfMf(state, to), (terrain, road, rise) => InfantryWeatherHalfMf(state, crossed!, terrain, road, rise));
     }
 
     /// <summary>
@@ -99,67 +57,9 @@ public sealed partial class GamePlanner
     /// adjacent hex <paramref name="rise"/> levels lower, or the entry from off board across the map edge's hexside, from the mirror-image hex at the same
     /// level (A2.51, A2.6; ruling R25.3).
     /// </summary>
-    private static (InfantryEntry? Entry, string? Reason) GroundStep(GameState state, BoardLocation to, Maps.Derivation.HexsideFacts crossed, string terrain, int rise)
-    {
-        if (crossed.Cliff)
-        {
-            return (null, "play.move-cliff: a cliff hexside is crossed only by Climbing, which is not built (B11)");
-        }
-
-        if (crossed.Slope)
-        {
-            return (null, "play.move-slope: Continuous Slopes are not reviewed (ruling R10.1)");
-        }
-
-        var wall = WallOn(crossed);
-        if (wall == "other")
-        {
-            return (null, $"play.move-hexside: {crossed.HexsideTerrain!.Name} hexsides are not reviewed (ruling R10.1)");
-        }
-
-        var road = crossed.Terrain?.IsRoad == true && !IsRubbleTerrain(terrain);
-        int cost;
-        var allMf = false;
-        var minimumOnly = false;
-        if (terrain == "marsh")
-        {
-            // B16.4 (ruling R10.1): marsh takes the whole MF allotment; from a lower elevation only as a Minimum Move.
-            allMf = true;
-            minimumOnly = rise > 0;
-            cost = 0;
-        }
-        else if (road)
-        {
-            cost = 2;
-        }
-        else if (InfantryEntryHalfMf(state, terrain) is { } halfMf)
-        {
-            cost = halfMf;
-        }
-        else
-        {
-            return (null, "play.move-grain: grain's MF cost depends on the season, and the game names no scenario month (B15.6)");
-        }
-
-        // A4.133, B10.4, B10.51 (ruling R10.3): one level up doubles the cost; each intermediate level of an Abrupt Elevation Change costs two MF up
-        // or one down, and the last level its own cost, doubled up.
-        cost = rise switch
-        {
-            >= 1 => (4 * (rise - 1)) + (2 * cost),
-            <= -2 => (2 * (-rise - 1)) + cost,
-            _ => cost,
-        };
-
-        // B9.4 (ruling R10.1): one MF more across a wall or hedge, not across a road gap in it.
-        if (wall is not null && !road)
-        {
-            cost += 2;
-        }
-
-        var smoke = BlazeEntryHalfMf(state, to);
-        var (weather, roadRate) = allMf ? (0, road) : InfantryWeatherHalfMf(state, crossed, terrain, road, rise);
-        return (new InfantryEntry(cost + smoke + weather, terrain, roadRate && smoke == 0, allMf, minimumOnly, rise != 0), null);
-    }
+    private static (InfantryEntry? Entry, string? Reason) GroundStep(GameState state, BoardLocation to, Maps.Derivation.HexsideFacts crossed, string terrain, int rise) =>
+        ScenarioA1TerrainCosts.GroundStep(CrossedFacts(crossed), terrain, rise, state.ScenarioMonth, () => BlazeEntryHalfMf(state, to),
+            (entered, road, climbed) => InfantryWeatherHalfMf(state, crossed, entered, road, climbed));
 
     /// <summary>
     /// The facts of a Location's hexside named in the map's frame (table player, pass 10): on a reversed board of a placed map the board's own
@@ -223,101 +123,27 @@ public sealed partial class GamePlanner
     private (FireHexsideTem? Tem, string? Reason) HexsideTemAt(GameState state, BoardLocation target, IReadOnlyList<(BoardLocation From, int Range)> firers,
         string firingSide, IReadOnlyList<GameEvent>? history)
     {
-        if (ReadLocation(state, target) is not { } targetRead || !targetRead.Hex.Hexsides.Any(side => WallOn(side) is not null))
+        // Pass 32.b: the target hex, each firer's LOS entry hexsides, and the hexes beyond them are read here, and Rules decides.
+        var targetRead = ReadLocation(state, target);
+        WallTemFirerFacts Firer(BoardLocation from, int range)
         {
-            return (null, null);
-        }
-
-        if (targetRead.Hex.Hexsides.Any(side => WallOn(side) == "other"))
-        {
-            return (null, "play.fire-hexside: hexside terrain other than walls and hedges at the target is not reviewed (ruling R10.1)");
-        }
-
-        FireHexsideTem? common = null;
-        var first = true;
-        foreach (var (from, range) in firers)
-        {
-            FireHexsideTem? tem = null;
-
-            // B9.35: only a target at the base level of its hex, where its walls are, claims them.
-            if (target.Level == 0 && from != target)
+            var sides = LosEntrySides(state, target, from);
+            IReadOnlyList<LosEntrySideFacts>? entry = sides is null ? null : [.. sides.Select(side =>
             {
-                if (LosEntrySides(state, target, from) is not { } sides)
-                {
-                    return (null, "play.fire-hexside: the bearing of the LOS into the target hex cannot be read");
-                }
-
-                var crossed = new List<(string Wall, HexsideDirection? Side)>();
-                foreach (var side in sides)
-                {
-                    if (WallOn(HexsideAt(state, target, side)) is { } wall)
-                    {
-                        crossed.Add((wall, side));
-                    }
-                }
-
-                // B9.2, B9.3: an LOS through a vertex is also affected by the wall or hedge on the hexspine leading away from it.
-                if (sides.Count == 2 && Across(state, target, sides[0]) is { } one && Across(state, target, sides[1]) is { } two
-                    && Step(state, one, two).Crossed is { } spine && WallOn(spine) is { } spineWall)
-                {
-                    if (spineWall == "other")
-                    {
-                        return (null, "play.fire-hexside: hexside terrain other than walls and hedges on the LOS is not reviewed (ruling R10.1)");
-                    }
-
-                    crossed.Add((spineWall, null));
-                }
-
-                foreach (var (wall, side) in crossed.OrderByDescending(item => ScenarioA1FireReference.HexsideTem[item.Wall]))
-                {
-                    // B9.6 (ruling R10.5): a Hillside wall or hedge is not reviewed.
-                    if (side is { } hexside && Across(state, target, hexside) is { } beyond && ReadLocation(state, beyond) is { } beyondRead
-                        && beyondRead.Hex.BaseLevel != targetRead.Hex.BaseLevel)
-                    {
-                        return (null, "play.fire-hillside-wall: a wall or hedge between hexes of different levels is a Hillside wall, which is not reviewed (B9.6)");
-                    }
-
-                    // B9.3 (referee, pass 10): through a road gap in the wall, its TEM applies only to a unit that is not moving.
-                    if (side is { } gap && HexsideAt(state, target, gap)?.Terrain?.IsRoad == true && state.Phase == "mph"
-                        && state.Movement?.Location == target)
-                    {
-                        continue;
-                    }
-
-                    // B9.31, B9.321 EX (ruling R10.6): no wall TEM against a firer that holds Wall Advantage over the shared hexside; B9.32 (referee,
-                    // pass 10): only a ground-level unit at the wall's level holds it.
-                    if (side is { } shared && from.Level == 0 && Across(state, target, shared) is { } across && across.Board == from.Board && across.Hex == from.Hex)
-                    {
-                        var (holder, reason) = WallAdvantageHolder(state, target, from, history);
-                        if (reason is not null)
-                        {
-                            return (null, reason);
-                        }
-
-                        if (holder == firingSide)
-                        {
-                            continue;
-                        }
-                    }
-
-                    // B9.33: a higher firer lowers the TEM by one for each full level its height above the target hex exceeds the range.
-                    var height = ReadLocation(state, from) is { } firerRead ? firerRead.Hex.BaseLevel + from.Level - targetRead.Hex.BaseLevel : 0;
-                    var value = Math.Max(0, ScenarioA1FireReference.HexsideTem[wall] - Math.Max(0, height - range));
-                    tem = value > 0 ? new FireHexsideTem(wall, value) : null;
-                    break;
-                }
-            }
-
-            // A.5, A7.52 (table player, pass 10): a DRM that helps the target applies to the whole group, so the highest wall TEM stands.
-            if (first || (tem?.Tem ?? 0) > (common?.Tem ?? 0))
-            {
-                common = tem;
-            }
-
-            first = false;
+                var beyond = Across(state, target, side);
+                return new LosEntrySideFacts((int)side, WallOn(HexsideAt(state, target, side)), HexsideAt(state, target, side)?.Terrain?.IsRoad == true,
+                    beyond is null ? null : ReadLocation(state, beyond)?.Hex.BaseLevel, beyond is { } across && across.Board == from.Board && across.Hex == from.Hex);
+            })];
+            var spine = sides is { Count: 2 } && Across(state, target, sides[0]) is { } one && Across(state, target, sides[1]) is { } two
+                && Step(state, one, two).Crossed is { } crossed ? WallOn(crossed) : null;
+            return new WallTemFirerFacts(from == target, from.Level, range, entry, spine, ReadLocation(state, from)?.Hex.BaseLevel,
+                () => WallAdvantageHolder(state, target, from, history));
         }
 
-        return (common, null);
+        var facts = new WallTemFacts(targetRead is not null, target.Level, targetRead?.Hex.BaseLevel ?? 0,
+            targetRead is null ? [] : [.. targetRead.Hex.Hexsides.Select(side => side.HexsideTerrain?.Name)],
+            [.. firers.Select(item => Firer(item.From, item.Range))], firingSide, state.Phase == "mph" && state.Movement?.Location == target);
+        return ScenarioA1TerrainCosts.HexsideTemAt(facts);
     }
 
     /// <summary>
@@ -327,35 +153,13 @@ public sealed partial class GamePlanner
     /// </summary>
     private (string? Side, string? Reason) WallAdvantageHolder(GameState state, BoardLocation one, BoardLocation two, IReadOnlyList<GameEvent>? history)
     {
-        int InHexTem(BoardLocation at) => ReadLocation(state, at) is { } read && TerrainKey(read) is { } key ? ScenarioA1FireReference.Tem.GetValueOrDefault(key) : 0;
-
-        // B9.31, B9.321 EX, B9.323 (referee, pass 10): a unit keeping a positive in-hex TEM does not hold WA; one with none must claim it.
-        UnitInstance[] Claimants(BoardLocation at) => at.Level != 0 || InHexTem(at) > 0 ? []
-            : [.. state.At(at).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active
-                && unit.Kind != UnitKinds.Dummy && !LiveFire.IsVehicle(unit) && !Is(unit, Conditions.Captured) && !Is(unit, Conditions.Broken))];
-        var first = Claimants(one);
-        var second = Claimants(two);
-        if (first.Length == 0 || second.Length == 0)
-        {
-            return (first.Length > 0 ? first[0].Side : second.Length > 0 ? second[0].Side : null, null);
-        }
-
-        if (history is null)
-        {
-            return (null, "play.fire-wall-advantage: which side holds Wall Advantage cannot be read here (ruling R10.6)");
-        }
-
-        var arrivals = Arrivals(history);
-        var oneAt = first.Min(unit => arrivals.GetValueOrDefault(unit.Id));
-        var twoAt = second.Min(unit => arrivals.GetValueOrDefault(unit.Id));
-        if (oneAt != twoAt)
-        {
-            return (oneAt < twoAt ? first[0].Side : second[0].Side, null);
-        }
-
-        return state.ScenarioDefender is { } defender
-            ? (defender, null)
-            : (null, "play.fire-wall-advantage: both sides' units have held their Locations since setup and no Scenario Defender is named, so which holds Wall Advantage is not decided (B9.32; ruling R10.6)");
+        // Pass 32.b: both Locations and the units in them are read here, the arrivals only when Rules asks, and Rules decides.
+        WallAdvantageLocationFacts Location(BoardLocation at) => new(at.Level, ReadLocation(state, at) is { } read ? TerrainKey(read) : null,
+            [.. state.At(at).OfType<UnitInstance>().Select(unit => new WallAdvantageUnitFacts(unit.Id, unit.Side, unit.Status == InstanceStatus.Active,
+                unit.Kind == UnitKinds.Dummy, LiveFire.IsVehicle(unit), Is(unit, Conditions.Captured), Is(unit, Conditions.Broken)))]);
+        var arrivals = new Lazy<Dictionary<string, long>>(() => Arrivals(history!));
+        return ScenarioA1TerrainCosts.WallAdvantageHolder(new WallAdvantageFacts(Location(one), Location(two), history is not null,
+            id => arrivals.Value.GetValueOrDefault(id), state.ScenarioDefender));
     }
 
     /// <summary>
@@ -424,22 +228,14 @@ public sealed partial class GamePlanner
     /// </summary>
     private bool HeightAdvantageAt(GameState state, BoardLocation target, LocationRead targetRead, IReadOnlyList<(BoardLocation From, int Level)> firers, bool snapShot)
     {
-        // A.5, A7.52 (referee, pass 10): a DRM that helps the target applies to the whole group when any firer is lower.
-        var height = targetRead.Hex.BaseLevel + target.Level;
-        var lower = firers.Where(item => item.Level < height).ToArray();
-        if (lower.Length == 0)
-        {
-            return false;
-        }
-
-        if (state.Phase == "mph" && state.Movement is { From: { } left } movement && movement.Location == target
-            && ReadLocation(state, left) is { } leftRead && leftRead.Hex.BaseLevel < targetRead.Hex.BaseLevel && SideToward(state, target, left) is { } climbed)
-        {
-            // A Snap Shot is traced to the climbed hexside itself (referee, pass 10).
-            return !snapShot && lower.Any(item => LosEntrySides(state, target, item.From) is { } sides && !sides.Contains(climbed));
-        }
-
-        return true;
+        // Pass 32.b: the moving stack's origin and the LOS entry hexsides are read here, the latter only when Rules asks, and Rules decides.
+        var movement = state.Movement;
+        var left = movement?.From;
+        var facts = new HeightAdvantageFacts(targetRead.Hex.BaseLevel, target.Level, [.. firers.Select(item => item.Level)], state.Phase == "mph",
+            left is not null && movement!.Location == target, left is null ? null : ReadLocation(state, left)?.Hex.BaseLevel,
+            left is null ? null : SideToward(state, target, left) is { } climbed ? (int)climbed : null,
+            index => LosEntrySides(state, target, firers[index].From) is { } sides ? [.. sides.Select(side => (int)side)] : null, snapShot);
+        return ScenarioA1TerrainCosts.HeightAdvantageAt(facts);
     }
 
     /// <summary>
@@ -450,73 +246,47 @@ public sealed partial class GamePlanner
     private (InfantryEntry? Entry, string? Reason, IReadOnlyList<HexsideDirection>? Bypass, bool Occupy) MoveEntry(GameState state, UnitInstance[] movers,
         BoardLocation from, BoardLocation to, MovementState? current, List<HexsideDirection>? bypass)
     {
-        // A4.3, A4.31, A4.32 (ruling R10.7): a stack in Bypass leaves through the far vertex of its last hexside, or pays the obstacle's cost to occupy it.
-        if (current is { Bypass: { Count: > 0 } lane } && current.Location == from && movers.All(unit => current.Movers.Contains(unit.Id, StringComparer.Ordinal)))
+        // Pass 32.b: the state and the map are read here, and Rules decides which step the stack takes and reads it.
+        var lane = current?.Bypass ?? [];
+        var fromRead = ReadLocation(state, from);
+        var sideTowardFrom = SideToward(state, to, from);
+        var facts = new MoveEntryFacts(
+            lane.Count > 0,
+            [.. lane.Select(item => (int)item)],
+            current is not null && current.Location == from,
+            current is not null && movers.All(unit => current.Movers.Contains(unit.Id, StringComparer.Ordinal)),
+            current is not null && current.Movers.Any(id => current.Members.Contains(id, StringComparer.Ordinal) && !movers.Any(unit => unit.Id == id)),
+            to == from,
+            movers.Length > 0 && state.At(from).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != movers[0].Side && !Is(unit, Conditions.Captured)),
+            bypass is not null,
+            fromRead is null ? null : TerrainKey(fromRead),
+            from.Level,
+            fromRead is not null,
+            to.Level == 0,
+            sideTowardFrom is { } toward ? (int)toward : null,
+            SideToward(state, from, to) is { } facing ? WallOn(HexsideAt(state, from, facing)) : null,
+            to.ToString());
+        var verdict = ScenarioA1TerrainCosts.MoveEntry(facts,
+            () => BypassEntered(state, from, current!.From, lane) is { } entered ? (int)entered : null,
+            side => Across(state, from, (HexsideDirection)side) is { } open && open.Board == to.Board && open.Hex == to.Hex,
+            () => BlazeEntryHalfMf(state, from));
+        if (verdict.Refusal is { } refusal)
         {
-            // Table player, pass 10: the Bypassing stack moves on together, so its Bypass is kept for every member.
-            if (current.Movers.Any(id => current.Members.Contains(id, StringComparer.Ordinal) && !movers.Any(unit => unit.Id == id)))
-            {
-                return (null, "play.move-bypass: a stack in Bypass leaves it or occupies the obstacle together; splitting it there is not built (A4.3; ruling R10.7)", null, false);
-            }
+            return (null, refusal, null, false);
+        }
 
-            if (to == from && state.At(from).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != movers[0].Side && !Is(unit, Conditions.Captured)))
-            {
-                return (null, "play.move-bypass: occupying an obstacle that holds enemy units is not built (A4.14, A12.15; ruling R10.7)", null, false);
-            }
+        if (verdict.Occupy is { } occupy)
+        {
+            return (occupy, null, null, true);
+        }
 
-            if (bypass is not null)
-            {
-                return (null, "play.move-bypass: continuing Bypass around the same hex is not built; leave it or occupy the obstacle (A4.31; ruling R10.7)", null, false);
-            }
-
-            if (to == from)
-            {
-                return ReadLocation(state, from) is { } obstacleRead && TerrainKey(obstacleRead) is { } obstacle && (obstacle == "woods" || IsBuildingTerrain(obstacle))
-                    ? (new InfantryEntry(EntryHalfMf[obstacle] + BlazeEntryHalfMf(state, from), obstacle, false, false, false, false), null, null, true)
-                    : (null, "play.move-bypass: the Bypassed hex has no woods or building to occupy", null, false);
-            }
-
-            if (BypassEntered(state, from, current.From, lane) is not { } entered)
-            {
-                return (null, "play.move-bypass: the hexside the stack entered its Bypass by cannot be read", null, false);
-            }
-
-            var turn = ((int)lane[0] - (int)entered + 6) % 6;
-            var far = (HexsideDirection)(((int)lane[^1] + turn) % 6);
-            if (!new[] { lane[^1], far }.Select(side => Across(state, from, side)).Any(exit => exit is { } open && open.Board == to.Board && open.Hex == to.Hex && to.Level == 0))
-            {
-                return (null, "play.move-bypass: from Bypass the stack leaves only into a hex at the far vertex of its last hexside, or occupies the obstacle (A4.31, A4.32)", null, false);
-            }
-
+        if (verdict.OrdinaryStep)
+        {
             var (exit, exitReason) = InfantryStep(state, from, to);
             return (exit, exitReason, null, false);
         }
 
-        if (current is { Bypass.Count: > 0 })
-        {
-            return (null, "play.move-bypass: while the stack is in Bypass, only it moves, together, out of the hex or into the obstacle (A4.32; ruling R10.7)", null, false);
-        }
-
-        if (bypass is null)
-        {
-            var (entry, reason) = InfantryStep(state, from, to);
-            return (entry, reason, null, false);
-        }
-
-        // A4.3, A4.31 (ruling R10.7): into a woods or building hex along one or two contiguous hexsides the obstacle does not touch, starting at a vertex
-        // of the hexside crossed.
-        if (from.Level != 0 || ReadLocation(state, from) is not { } fromRead)
-        {
-            return (null, "play.move-bypass: Bypass moves at ground level along one or two hexsides of an adjacent woods or building hex (A4.3, A4.31)", null, false);
-        }
-
-        if (SideToward(state, to, from) is not { } side)
-        {
-            return (null, $"play.move-step: {to} is not an adjacent Location the map reads", null, false);
-        }
-
-        var entryWall = SideToward(state, from, to) is { } toward ? WallOn(HexsideAt(state, from, toward)) : null;
-        return BypassStep(state, movers, to, side, fromRead.Hex.BaseLevel, entryWall, bypass);
+        return BypassStep(state, movers, to, sideTowardFrom!.Value, fromRead!.Hex.BaseLevel, facts.EntryWall, bypass!);
     }
 
     /// <summary>
@@ -534,97 +304,42 @@ public sealed partial class GamePlanner
     private (InfantryEntry? Entry, string? Reason, IReadOnlyList<HexsideDirection>? Bypass, bool Occupy) BypassStep(GameState state, UnitInstance[] movers,
         BoardLocation to, HexsideDirection side, int fromBaseLevel, string? entryWall, List<HexsideDirection> bypass)
     {
-        if (bypass.Count is < 1 or > 2 || to.Level != 0 || ReadLocation(state, to) is not { } targetRead
-            || TerrainKey(targetRead) is not { } obstacleKey || !(obstacleKey == "woods" || IsBuildingTerrain(obstacleKey)))
-        {
-            return (null, "play.move-bypass: Bypass moves at ground level along one or two hexsides of an adjacent woods or building hex (A4.3, A4.31)", null, false);
-        }
-
-        var direction = ((int)bypass[0] - (int)side + 6) % 6;
-        if (direction is not (1 or 5) || (bypass.Count == 2 && ((int)bypass[1] - (int)bypass[0] + 6) % 6 != direction))
-        {
-            return (null, "play.move-bypass: the Bypassed hexsides are contiguous and start at a vertex of the hexside the stack crosses (A4.31)", null, false);
-        }
-
-        var laneCost = 0;
-        var laneTerrain = "open-ground";
-        foreach (var bypassed in bypass)
-        {
-            var facts = HexsideAt(state, to, bypassed);
-            var name = facts?.Terrain?.Name;
-            if (facts is null || name is null || name == "Woods" || OrdinaryBuildings.Contains(name) || WallOn(facts) == "other"
-                || (FireTerrain.GetValueOrDefault(name) ?? (facts.Terrain!.IsRoad ? "open-ground" : null)) is not { } key || InfantryEntryHalfMf(state, key) is not { } cost)
-            {
-                return (null, $"play.move-bypass: the obstacle touches the {bypassed.ToString().ToLowerInvariant()} hexside, or its other terrain is not reviewed, so it may not be Bypassed there (A4.3, A4.31)", null, false);
-            }
-
-            if (cost >= laneCost)
-            {
-                (laneCost, laneTerrain) = (cost, key);
-            }
-        }
-
-        // Table player, pass 10: a hex with a wall or hedge is not Bypassed until the vertex LOS for fire at a Bypassing stack is built, nor one
-        // holding friendly units, whose TEM a Bypassing stack would share in the fire at the Location.
-        if (targetRead.Hex.Hexsides.Any(item => WallOn(item) is not null)
-            || state.At(to).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side == movers[0].Side))
-        {
-            return (null, $"play.move-bypass: {to} has a wall or hedge, or holds friendly units; that Bypass is not built (A4.34; ruling R10.7)", null, false);
-        }
-
-        // A4.3: no Bypass of an obstacle holding an armed Known enemy unit (rubble is not an obstacle here).
-        if (state.At(to).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != movers[0].Side && KnownEnemy(unit)
-            && !Is(unit, Conditions.Disrupted)))
-        {
-            return (null, $"play.move-bypass: {to} holds an armed Known enemy unit, so its obstacle may not be Bypassed (A4.3)", null, false);
-        }
-
-        var rise = targetRead.Hex.BaseLevel - fromBaseLevel;
-        if (Math.Abs(rise) > 1)
-        {
-            return (null, "play.move-bypass: a Bypass across an Abrupt Elevation Change is not reviewed (B10.51; ruling R10.7)", null, false);
-        }
-
-        if (entryWall == "other")
-        {
-            return (null, "play.move-hexside: that hexside terrain is not reviewed (ruling R10.1)", null, false);
-        }
-
-        var halfMf = (rise == 1 ? 2 * laneCost : laneCost) + (entryWall is not null ? 2 : 0) + BlazeEntryHalfMf(state, to);
-        return (new InfantryEntry(halfMf, laneTerrain, false, false, false, rise != 0), null, bypass, false);
+        // Pass 32.b: the target hex, its hexsides, and the units in it are read here, and Rules decides.
+        var targetRead = ReadLocation(state, to);
+        var there = state.At(to).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active).ToArray();
+        var facts = new BypassStepFacts(
+            [.. bypass.Select(bypassed => HexsideAt(state, to, bypassed) is { } read
+                ? new BypassedHexsideFacts((int)bypassed, bypassed.ToString().ToLowerInvariant(), true, read.Terrain?.Name, read.HexsideTerrain?.Name, read.Terrain?.IsRoad == true)
+                : new BypassedHexsideFacts((int)bypassed, bypassed.ToString().ToLowerInvariant(), false, null, null, false))],
+            (int)side,
+            to.Level,
+            to.ToString(),
+            targetRead is not null,
+            targetRead is null ? null : TerrainKey(targetRead),
+            targetRead?.Hex.BaseLevel ?? 0,
+            targetRead is null ? [] : [.. targetRead.Hex.Hexsides.Select(item => item.HexsideTerrain?.Name)],
+            movers.Length > 0 && there.Any(unit => unit.Side == movers[0].Side),
+            movers.Length > 0 && there.Any(unit => unit.Side != movers[0].Side && KnownEnemy(unit) && !Is(unit, Conditions.Disrupted)),
+            fromBaseLevel,
+            entryWall,
+            state.ScenarioMonth);
+        var (entry, reason) = ScenarioA1TerrainCosts.BypassStep(facts, () => BlazeEntryHalfMf(state, to));
+        return (entry, reason, entry is null ? null : bypass, false);
     }
 
     /// <summary>
     /// Whether a Good Order MMC moving with a Good Order leader of its nationality, who began the MPh with it and has moved with it at every step, has
     /// the leader's two MF bonus (A4.12; ruling R10.8). A berserk unit's MF are never increased but by the Road Bonus (A15.431).
     /// </summary>
-    private bool LeaderBonus(GameState state, UnitInstance unit, IReadOnlyList<UnitInstance> movers)
-    {
-        // A12.11 (table player, pass 10): a Dummy moves with a leader's bonus as a real MMC would.
-        var dummy = unit.Kind == UnitKinds.Dummy;
-        if ((!dummy && !vocabulary.IsA(unit.Kind, "asl:mmc")) || Is(unit, Conditions.Berserk) || Is(unit, Conditions.Broken)
-            || (dummy ? movers.FirstOrDefault(item => vocabulary.IsA(item.Kind, "asl:leader") && item.Side == unit.Side) is not { } guide ? null : Nationality(guide) : Nationality(unit)) is not { } nationality)
-        {
-            return false;
-        }
-
-        var first = unit.MovedWith is null && unit.MfSpent == 0 && !unit.HalfMfSpent;
-        return movers.Any(leader => leader.Id != unit.Id && vocabulary.IsA(leader.Kind, "asl:leader") && !Is(leader, Conditions.Broken) && !Is(leader, Conditions.Berserk)
-            && Nationality(leader) == nationality
-            && (first ? leader.MfSpent == 0 && !leader.HalfMfSpent && leader.MovedWith is null : unit.MovedWith?.Contains(leader.Id, StringComparer.Ordinal) == true));
-    }
+    private bool LeaderBonus(GameState state, UnitInstance unit, IReadOnlyList<UnitInstance> movers) =>
+        state is null ? throw new ArgumentNullException(nameof(state)) : ScenarioA1MovementCalculator.LeaderBonus(MovingUnit(unit), [.. movers.Select(MovingUnit)]);
 
     /// <summary>
     /// The MMC a leader lends his IPC to (A4.42; ruling R10.8): the only MMC of the stack with his leader bonus that carries more than its own IPC; the
     /// leader's own IPC is then spent. Nulls when there is none, or more than one.
     /// </summary>
-    private (string? Recipient, string? Leader) LeaderIpcRecipient(GameState state, IReadOnlyList<UnitInstance> movers)
-    {
-        var laden = movers.Where(unit => LeaderBonus(state, unit, movers) && Laden(state, unit)).ToArray();
-        var leader = laden.Length != 1 ? null : movers.FirstOrDefault(item => vocabulary.IsA(item.Kind, "asl:leader") && !Is(item, Conditions.Broken) && !Is(item, Conditions.Wounded)
-            && Nationality(item) == Nationality(laden[0]));
-        return leader is not null ? (laden[0].Id, leader.Id) : (null, null);
-    }
+    private (string? Recipient, string? Leader) LeaderIpcRecipient(GameState state, UnitInstance[] movers) =>
+        ScenarioA1MovementCalculator.LeaderIpcRecipient([.. movers.Select(MovingUnit)], index => Laden(state, movers[index]));
 
     /// <summary>A unit's nationality from the reviewed catalog; null when the catalog does not name it.</summary>
     private static string? Nationality(UnitInstance unit) =>

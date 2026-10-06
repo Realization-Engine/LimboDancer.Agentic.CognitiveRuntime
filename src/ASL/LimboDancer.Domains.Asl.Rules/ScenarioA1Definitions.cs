@@ -173,6 +173,14 @@ public static class ScenarioA1Definitions
     }
 
     /// <summary>
+    /// Good Order as the planner reads it (A10.6, A1.31): an active unit not broken, Disrupted, in Melee, a prisoner, or TI. The planner's own
+    /// definition (pass 32.b, from the planner's SupportWeapons file, a step ahead of its slice): it differs from the state's
+    /// <see cref="GoodOrder"/> and from the Close Combat calculator's, and the three are listed for pass 45 (the pass 32 design, section 12).
+    /// </summary>
+    public static bool GoodOrderAsPlanned(bool active, bool broken, bool disrupted, bool melee, bool captured, bool ti) =>
+        active && !broken && !disrupted && !melee && !captured && !ti;
+
+    /// <summary>
     /// Whether a unit in a Location is Encircled (A7.7; ruling R12.11): of the Encircled side there (<paramref name="encircledForSide"/>), or in Melee
     /// there while any side is Encircled there (<paramref name="encircledForAnySide"/>); never berserk or heroic, a hero, or a vehicle.
     /// </summary>

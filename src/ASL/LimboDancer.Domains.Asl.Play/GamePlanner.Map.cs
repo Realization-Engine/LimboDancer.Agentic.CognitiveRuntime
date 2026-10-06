@@ -146,22 +146,64 @@ public sealed partial class GamePlanner
     /// </summary>
     private bool IsAdjacent(GameState state, BoardLocation one, BoardLocation two)
     {
+        // Pass 32.b: the step is read here, the LOS when Rules asks, and Rules decides.
         var (from, to, adjacent, crossed) = Step(state, one, two);
-        return adjacent && from is not null && to is not null && crossed is not null
-            && from.Hex.BaseLevel + from.Level.Level == to.Hex.BaseLevel + to.Level.Level
-            && crossed.HexsideTerrain is null && !crossed.Cliff
-            && Los(state, one, two) is { Status: LosStatus.Clear };
+        var facts = new AdjacencyFacts(adjacent, from is not null, to is not null, from is null ? 0 : from.Hex.BaseLevel + from.Level.Level,
+            to is null ? 0 : to.Hex.BaseLevel + to.Level.Level, crossed is null ? null : CrossedFacts(crossed));
+        return ScenarioA1MovementCalculator.IsAdjacent(facts, () => Los(state, one, two) is { Status: LosStatus.Clear });
+    }
+
+    /// <summary>
+    /// The units of the game as the scans for a seeing enemy read them (pass 32.b), with a table of their Locations by index, and the LOS between two
+    /// Locations of the table as Rules asks for it (the pass 32 design, D4).
+    /// </summary>
+    private sealed class EnemyScan : ILosFactReader
+    {
+        private readonly GamePlanner planner;
+        private readonly GameState state;
+        private readonly List<BoardLocation> locations = [];
+        private readonly Dictionary<BoardLocation, int> indexes = [];
+
+        public EnemyScan(GamePlanner planner, GameState state)
+        {
+            this.planner = planner;
+            this.state = state;
+            Units = [.. state.Units.Select(unit => new EnemyUnitFacts(unit.Status == InstanceStatus.Active, unit.Side, unit.Kind == UnitKinds.Dummy, state.Aboard(unit.Id) is not null,
+                GameState.Condition(unit, Conditions.Broken) switch { ConditionState.True => true, ConditionState.False => false, _ => null },
+                Is(unit, Conditions.Hidden), GoodOrder(unit), state.Location(unit.Id)?.Location is { } at ? Index(at) : null))];
+        }
+
+        public IReadOnlyList<EnemyUnitFacts> Units
+        {
+            get;
+        }
+
+        /// <summary>The index of a Location in the table, added when it is new.</summary>
+        public int Index(BoardLocation location)
+        {
+            if (!indexes.TryGetValue(location, out var index))
+            {
+                index = locations.Count;
+                locations.Add(location);
+                indexes[location] = index;
+            }
+
+            return index;
+        }
+
+        public LosFacts? Los(int fromLocation, int toLocation) =>
+            planner.Los(state, locations[fromLocation], locations[toLocation]) is { } result ? new LosFacts(result.Status == LosStatus.Clear, result.Range) : null;
     }
 
     /// <summary>
     /// The range to the nearest Good Order enemy ground unit with a clear LOS to a Location (A12.34); null when none has one. A Passenger is not counted:
     /// its vehicle is (ruling R26.2).
     /// </summary>
-    private int? NearestGoodOrderEnemyInLos(GameState state, string side, BoardLocation at) =>
-        state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side != side && unit.Kind != UnitKinds.Dummy && state.Aboard(unit.Id) is null
-                && GameState.Condition(unit, Conditions.Broken) != ConditionState.True)
-            .Select(unit => state.Location(unit.Id)?.Location).OfType<BoardLocation>().Distinct()
-            .Select(location => Los(state, location, at) is { Status: LosStatus.Clear } los ? los.Range : (int?)null).Where(range => range is not null).Min();
+    private int? NearestGoodOrderEnemyInLos(GameState state, string side, BoardLocation at)
+    {
+        var scan = new EnemyScan(this, state);
+        return ScenarioA1MovementCalculator.NearestGoodOrderEnemyInLos(scan.Units, side, scan.Index(at), scan);
+    }
 
     /// <summary>
     /// An attack with, for each concealed unit that fires or directs, whether a Good Order enemy ground unit within 16 hexes has a LOS to it (A12.14,
@@ -172,38 +214,25 @@ public sealed partial class GamePlanner
     /// </summary>
     private FireAttack WithSeen(GameState state, FireAttack attack)
     {
-        if (state.Night)
+        // Pass 32.b: the attack's firers and directors are found in the state here, the units and their LOS read through the scan, and Rules decides.
+        var scan = new EnemyScan(this, state);
+        var subjects = new Dictionary<string, SeenSubjectFacts>(StringComparer.Ordinal);
+        foreach (var unitId in (attack.Firers ?? []).Select(item => item.UnitId).Append(attack.Director?.UnitId).Concat((attack.OtherDirectors ?? []).Select(item => item.UnitId)))
         {
-            return attack;
+            if (unitId is not null && !subjects.ContainsKey(unitId) && state.Unit(unitId) is { } unit)
+            {
+                subjects[unitId] = new SeenSubjectFacts(unit.Side, state.Location(unit.Id)?.Location is { } at ? scan.Index(at) : null);
+            }
         }
 
-        bool? Seen(string? unitId, bool? concealed) => concealed == true && unitId is not null && state.Unit(unitId) is { Side: { } side } unit
-            && state.Location(unit.Id)?.Location is { } at
-            ? state.Units.Where(other => other.Side != side && other.Kind != UnitKinds.Dummy && GoodOrder(other) && !Is(other, Conditions.Hidden) && state.Aboard(other.Id) is null)
-                .Select(other => state.Location(other.Id)?.Location).OfType<BoardLocation>().Distinct()
-                .Any(location => location == at || Los(state, location, at) is { Status: LosStatus.Clear, Range: <= 16 })
-            : null;
-        FireFirer Firer(FireFirer item) => Seen(item.UnitId, item.Concealed) is not { } seen ? item : item with
-        {
-            SeenByGoodOrderEnemy = seen
-        };
-        FireDirector Leader(FireDirector item) => Seen(item.UnitId, item.Concealed) is not { } seen ? item : item with
-        {
-            SeenByGoodOrderEnemy = seen
-        };
-        return attack with
-        {
-            Firers = attack.Firers is null ? null : [.. attack.Firers.Select(Firer)],
-            Director = attack.Director is null ? null : Leader(attack.Director),
-            OtherDirectors = attack.OtherDirectors is null ? null : [.. attack.OtherDirectors.Select(Leader)],
-        };
+        return ScenarioA1MovementCalculator.WithSeen(attack, state.Night, subjects, scan.Units, scan);
     }
 
     /// <summary>Whether any Good Order enemy ground unit within 16 hexes has a clear LOS to a Location (A12.14, A12.141).</summary>
 
-    private bool EnemyGoodOrderInLosWithin16(GameState state, string side, BoardLocation at) =>
-        state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side != side && unit.Kind != UnitKinds.Dummy
-                && GameState.Condition(unit, Conditions.Broken) != ConditionState.True)
-            .Select(unit => state.Location(unit.Id)?.Location).OfType<BoardLocation>().Distinct()
-            .Any(location => Los(state, location, at) is { Status: LosStatus.Clear, Range: <= 16 });
+    private bool EnemyGoodOrderInLosWithin16(GameState state, string side, BoardLocation at)
+    {
+        var scan = new EnemyScan(this, state);
+        return ScenarioA1MovementCalculator.EnemyGoodOrderInLosWithin16(scan.Units, side, scan.Index(at), scan);
+    }
 }

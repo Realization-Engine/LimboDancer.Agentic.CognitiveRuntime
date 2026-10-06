@@ -1855,44 +1855,24 @@ public static class GameProjector
         private GameState? StepMovement(GameState state, MovementStepped moving)
         {
             var movers = moving.Movers.Select(id => Active(state, id) as UnitInstance).ToArray();
-            if (state.Phase != "mph" || movers.Length == 0 || movers.Any(unit => unit is null || unit.Side != state.PhasingSide || unit.MovementEnded)
-                || movers.Select(unit => state.Location(unit!.Id)?.Location).Distinct().Count() != 1 || moving.HalfMf <= 0)
-            {
-                return Fail<GameState>("UNIT-STATE-029", "A movement step moves a stack of the phasing side that may still move, in one Location, in the MPh.");
-            }
 
-            // A3.3 (p. 47): a unit that fired in the PFPh does not move in the MPh.
-            if (movers.FirstOrDefault(unit => GameState.Condition(unit!, Conditions.PrepFire) == ConditionState.True) is { } fired)
-            {
-                return Fail<GameState>("UNIT-STATE-029", $"'{fired.Id}' fired in the PFPh, so it may not move in the MPh (A3.3, p. 47).");
-            }
-
-            // A11.15: a unit held in Melee does not leave its Location; a prisoner moves only with its Guard (A20.53).
-            if (movers.FirstOrDefault(unit => GameState.Condition(unit!, Conditions.Melee) == ConditionState.True
-                || GameState.Condition(unit!, Conditions.Captured) == ConditionState.True) is { } held)
-            {
-                return Fail<GameState>("UNIT-STATE-029", $"'{held.Id}' is held in Melee or captured, so it does not move (A11.15, A20.53).");
-            }
-
-            // A4.2: the stack's members may move on together or apart, but only they may move until every one has ended.
+            // Pass 32.b: the record's fields and the state are read here, and Rules decides (ScenarioA1MovementCalculator.VerifyStepStart and
+            // VerifyStepRecord); the SMOKE attempt's check between them is its own calculator's (pass 32.a), made where it was made.
             var current = state.Movement;
-            if (current is not null && (moving.Movers.Any(id => !current.Members.Contains(id, StringComparer.Ordinal))
-                || current.WindowOpen || current.Assault != moving.Assault))
+            var facts = new Rules.StepRecordFacts(state.Phase, state.PhasingSide,
+                [.. moving.Movers.Select((id, index) => movers[index] is { } unit
+                    ? new Rules.StepMoverFacts(unit.Id, true, unit.Side, state.Location(unit.Id)?.Location.ToString(), unit.MovementEnded,
+                        GameState.Condition(unit, Conditions.PrepFire) == ConditionState.True, GameState.Condition(unit, Conditions.Melee) == ConditionState.True,
+                        GameState.Condition(unit, Conditions.Captured) == ConditionState.True, vocabulary.IsA(unit.Kind, "asl:personnel"), state.NoDoubleTime.Contains(unit.Id),
+                        GameState.Condition(unit, Conditions.Broken) == ConditionState.True, GameState.Condition(unit, Conditions.Wounded) == ConditionState.True,
+                        GameState.Condition(unit, Conditions.Berserk) == ConditionState.True, GameState.Condition(unit, Conditions.Cx) == ConditionState.True,
+                        unit.Position is OffMapPosition && state.Location(unit.Id) is null, unit.MfSpent, unit.HalfMfSpent)
+                    : new Rules.StepMoverFacts(id, false, null, null, false, false, false, false, false, false, false, false, false, false, false, 0, false))],
+                moving.HalfMf, moving.Assault, moving.Step, moving.DoubleTime, moving.MinimumMove, moving.Attempted?.ToString(), moving.To.ToString(), moving.Bypass?.Count,
+                moving.Exit is not null, current is not null, current?.Members ?? [], current is { WindowOpen: true }, current?.Assault == true, current?.Step ?? 0);
+            if (Rules.ScenarioA1MovementCalculator.VerifyStepStart(facts) is { } refused)
             {
-                return Fail<GameState>("UNIT-STATE-029",
-                    "The moving stack's members continue, together or apart, only after the DEFENDER's window closes; another stack moves after every member ends (A4.2, A8.11).");
-            }
-
-            if (moving.Step != (current?.Step ?? 0) + 1)
-            {
-                return Fail<GameState>("UNIT-STATE-029", $"The next movement step is {(current?.Step ?? 0) + 1}.");
-            }
-
-            // A4.5 (ruling R5.1): Double Time by Infantry neither broken, wounded, berserk, nor CX, nor rested from CX at this MPh's start.
-            if (moving.DoubleTime && movers.FirstOrDefault(unit => !vocabulary.IsA(unit!.Kind, "asl:personnel") || state.NoDoubleTime.Contains(unit.Id)
-                || new[] { Conditions.Broken, Conditions.Wounded, Conditions.Berserk, Conditions.Cx }.Any(name => GameState.Condition(unit, name) == ConditionState.True)) is { } tired)
-            {
-                return Fail<GameState>("UNIT-STATE-029", $"'{tired.Id}' may not Double Time: it is broken, wounded, berserk, or CX, or its CX counter left at this MPh's start (A4.5, A4.51).");
+                return Fail<GameState>(refused.Code, refused.Text);
             }
 
             // A24.1 (ruling R9.5): a SMOKE attempt is made once per MPh by a moving squad, in its Location, with its recorded dr.
@@ -1904,10 +1884,15 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-029", "A SMOKE placement is one attempt per MPh by a squad of the moving stack, in its Location, with its dr (A24.1).");
             }
 
+            var verdict = Rules.ScenarioA1MovementCalculator.VerifyStepRecord(facts);
+            if (verdict.Refusal is { } refusal)
+            {
+                return Fail<GameState>(refusal.Code, refusal.Text);
+            }
+
             // A12.15, A2.51 (ruling R25.3): a stack entering from off board that is forced back stays off board, its MF spent and its move over; no fire
             // reaches it there, so no window opens.
-            if (moving.Attempted is { } offBoardAttempt && offBoardAttempt == moving.To && current is null
-                && movers.All(unit => unit!.Position is OffMapPosition && state.Location(unit.Id) is null))
+            if (verdict.OffBoardForcedBack)
             {
                 var waiting = state;
                 foreach (var unit in movers)
@@ -1924,31 +1909,19 @@ public static class GameProjector
                 return waiting;
             }
 
-            // A4.134 (ruling R10.9): a Minimum Move is a stack's first and only step; A12.15 (ruling R10.11): a forced-back stack stays in its Location.
-            if ((moving.MinimumMove && (current is not null || movers.Any(unit => unit!.MfSpent != 0 || unit.HalfMfSpent)))
-                || (moving.Attempted is { } attempted && (attempted == moving.To || movers.Any(unit => state.Location(unit!.Id)?.Location != moving.To)))
-                || (moving.Bypass is { Count: < 1 or > 2 }))
-            {
-                return Fail<GameState>("UNIT-STATE-029", "A Minimum Move is a stack's only step, a forced back leaves the stack in its Location, and a Bypass follows one or two hexsides (A4.134, A12.15, A4.31).");
-            }
-
             // A2.6 (ruling R21.5): an exit leaves the map from the stack's Location; the units are Exited, not eliminated, and the move ends.
             if (moving.Exit is { } edge)
             {
-                if (movers.Any(unit => state.Location(unit!.Id)?.Location != moving.To))
-                {
-                    return Fail<GameState>("UNIT-STATE-029", "An exit leaves the map from the moving stack's own Location (A2.6).");
-                }
-
                 // C10.3 (ruling R26.4): a pushed Gun leaves with its crew.
                 var gone = ExitUnits(state, [.. movers.Select(unit => unit!)], moving.To, edge);
-                if (moving.PushedGun is { } gunPushed && gone.Find(gunPushed) is EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Manned } } pushedGun
-                    && movers.Any(unit => unit!.Id == pushedGun.Holding!.Holder))
+                var pushedGun = moving.PushedGun is { } gunPushed ? gone.Find(gunPushed) as EquipmentInstance : null;
+                var mannedPushed = pushedGun is { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Manned } };
+                if (Rules.ScenarioA1MovementCalculator.PushedGunExits(mannedPushed, mannedPushed && movers.Any(unit => unit!.Id == pushedGun!.Holding!.Holder)))
                 {
                     gone = gone with
                     {
-                        Equipment = [.. gone.Equipment.Select(item => item.Id == gunPushed ? item with { Status = InstanceStatus.Exited, Position = OffMapPosition.Instance } : item)],
-                        Exits = [.. gone.Exits, new UnitExit(gunPushed, moving.To, edge, state.Turn, false)],
+                        Equipment = [.. gone.Equipment.Select(item => item.Id == pushedGun!.Id ? item with { Status = InstanceStatus.Exited, Position = OffMapPosition.Instance } : item)],
+                        Exits = [.. gone.Exits, new UnitExit(pushedGun!.Id, moving.To, edge, state.Turn, false)],
                     };
                 }
 
@@ -1958,25 +1931,24 @@ public static class GameProjector
                 };
             }
 
+            // A4.5, B3.4, A4.12 (ruling R10.8): each mover's MF, CX, Double Time MF, Road Bonus, and leaders moved with are decided by Rules.
             string[] leaders = [.. movers.Where(unit => vocabulary.IsA(unit!.Kind, "asl:leader")).Select(unit => unit!.Id)];
             var next = state;
             foreach (var unit in movers)
             {
-                var halves = (unit!.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0) + moving.HalfMf;
-                var conditions = moving.DoubleTime
+                var update = Rules.ScenarioA1MovementCalculator.StepMover(unit!.MfSpent, unit.HalfMfSpent, unit.DoubleTimeMf, unit.OffRoad, unit.MovedWith, unit.Id, moving.HalfMf, moving.DoubleTime, moving.Road, leaders);
+                var conditions = update.SetCx
                     ? new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal) { [Conditions.Cx] = ConditionState.True }
                     : unit.Conditions;
                 next = Replace(next, unit with
                 {
                     Position = new MapPosition(moving.To),
-                    MfSpent = halves / 2,
-                    HalfMfSpent = halves % 2 == 1,
+                    MfSpent = update.MfSpent,
+                    HalfMfSpent = update.HalfMfSpent,
                     Conditions = conditions,
-                    DoubleTimeMf = moving.DoubleTime ? (unit.MfSpent == 0 && !unit.HalfMfSpent ? 2 : 1) : unit.DoubleTimeMf,
-
-                    // B3.4, A4.12 (ruling R10.8): the Road Bonus needs every step at the road rate; the leader bonus a leader at every step.
-                    OffRoad = unit.OffRoad || !moving.Road,
-                    MovedWith = [.. (unit.MovedWith ?? (unit.MfSpent == 0 && !unit.HalfMfSpent ? leaders : [])).Where(id => id != unit.Id && leaders.Contains(id, StringComparer.Ordinal))],
+                    DoubleTimeMf = update.DoubleTimeMf,
+                    OffRoad = update.OffRoad,
+                    MovedWith = [.. update.MovedWith],
                 })!;
                 next = MovePrisoners(next, unit.Id, new MapPosition(moving.To));
             }
@@ -1994,13 +1966,15 @@ public static class GameProjector
                 };
             }
 
+            // A4.134, A24.1, A4.41 (rulings R9.5, R10.9): the members whose move ends and the light mortars marked moved are decided by Rules.
+            var locationChanged = movers[0]!.Position is MapPosition before && before.Location != moving.To;
             return next with
             {
                 Movement = new MovementState(moving.Movers, moving.To, moving.HalfMf, moving.Step, moving.Assault, WindowOpen: true)
                 {
                     Members = current?.Members ?? moving.Movers,
                     Charge = moving.Charge,
-                    EndingMembers = moving.MinimumMove || moving.Attempted is not null ? moving.Movers : moving.Smoke is { Dr: 6 } sixed ? [sixed.Unit] : [],
+                    EndingMembers = Rules.ScenarioA1MovementCalculator.EndingMembers(moving.MinimumMove, moving.Attempted is not null, moving.Movers, moving.Smoke?.Unit, moving.Smoke?.Dr),
                     MinimumMove = moving.MinimumMove,
                     Bypass = moving.Bypass,
                     From = movers[0]!.Position is MapPosition left && left.Location != moving.To ? left.Location : null,
@@ -2008,11 +1982,10 @@ public static class GameProjector
                 },
                 SmokeAttempts = moving.Smoke is { } attempt ? [.. next.SmokeAttempts, attempt.Unit] : next.SmokeAttempts,
                 SmokePending = moving.Smoke is { Placed: true } placing ? placing.Target : null,
-
-                // A4.41 (referee, pass 9): a light mortar carried into a new Location does not fire in the AFPh.
-                MovedWeapons = [.. next.MovedWeapons, .. next.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding
-                    && moving.Movers.Contains(holding.Holder, StringComparer.Ordinal) && vocabulary.IsA(item.Kind, "asl:light-mortar")
-                    && movers[0]!.Position is MapPosition before && before.Location != moving.To && !next.MovedWeapons.Contains(item.Id, StringComparer.Ordinal)).Select(item => item.Id)],
+                MovedWeapons = [.. next.MovedWeapons, .. Rules.ScenarioA1MovementCalculator.MovedLightMortars(
+                    [.. next.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && moving.Movers.Contains(holding.Holder, StringComparer.Ordinal))
+                        .Select(item => new Rules.CarriedWeaponFacts(item.Id, vocabulary.IsA(item.Kind, "asl:light-mortar"), next.MovedWeapons.Contains(item.Id, StringComparer.Ordinal)))],
+                    locationChanged)],
             };
         }
 
@@ -2532,35 +2505,30 @@ public static class GameProjector
 
         private GameState? CloseWindow(GameState state, MovementWindowClosed closed)
         {
-            if (state.Movement is not { WindowOpen: true } movement || movement.Step != closed.Step)
-            {
-                return Fail<GameState>("UNIT-STATE-029", $"No DEFENDER window is open on step {closed.Step}.");
-            }
-
-            var next = state with
+            // Pass 32.b: the moving stack is read here, and Rules decides whose move ends and who is pinned.
+            var movement = state.Movement;
+            var next = movement is null ? state : state with
             {
                 Movement = movement with
                 {
                     WindowOpen = false
                 }
             };
-
-            // Ruling R5.15: a vehicle that spent its MP left in its final hex ends its move when the DEFENDER passes; A24.1 (ruling R9.5): so does a squad
-            // whose SMOKE dr was a 6.
-            // D7.1 (ruling R11.11): a vehicle that bogs or is immobilized entering the Location it OVRs still resolves the OVR, and its move ends only
-            // after the Reaction window that follows (table-player finding).
-            var ending = movement.EndingMembers.Where(id => movement.Members.Contains(id, StringComparer.Ordinal) && Active(next, id) is UnitInstance { MovementEnded: false }).ToArray();
-            var ended = movement.Overrun is not null ? next
-                : movement.Ending ? EndMovement(next, new MovementEnded([.. movement.Members.Count > 0 ? movement.Members : movement.Movers]))
-                : ending.Length > 0 ? EndMovement(next, new MovementEnded(ending)) : next;
-
-            // A4.134 (ruling R10.9): once all First Fire at a Minimum Move is done, its unbroken survivors are pinned and CX; a vehicle's Minimum Move
-            // (D2.15) is not Infantry's and leaves it in Motion only (table-player finding).
-            if (ended is not null && movement.MinimumMove && !movement.Vehicle)
+            var verdict = Rules.ScenarioA1MovementCalculator.VerifyCloseWindow(
+                new Rules.CloseWindowFacts(movement is { WindowOpen: true }, movement?.Step ?? 0, closed.Step, movement?.EndingMembers ?? [], movement?.Overrun is not null, movement?.Ending == true,
+                    movement?.Members ?? [], movement?.Movers ?? [], movement?.MinimumMove == true, movement?.Vehicle == true),
+                id => Active(next, id) is UnitInstance { MovementEnded: false });
+            if (verdict.Refusal is { } refusal)
             {
-                foreach (var id in movement.Movers)
+                return Fail<GameState>(refusal.Code, refusal.Text);
+            }
+
+            var ended = verdict.EndMove is { } ending ? EndMovement(next, new MovementEnded([.. ending])) : next;
+            if (ended is not null && verdict.PinMinimumMovers)
+            {
+                foreach (var id in movement!.Movers)
                 {
-                    if (Active(ended, id) is UnitInstance { } mover && GameState.Condition(mover, Conditions.Broken) != ConditionState.True)
+                    if (Active(ended, id) is UnitInstance { } mover && Rules.ScenarioA1MovementCalculator.MinimumMoveSurvivorPinned(true, GameState.Condition(mover, Conditions.Broken) == ConditionState.True))
                     {
                         ended = Replace(ended, mover with
                         {
@@ -2583,11 +2551,10 @@ public static class GameProjector
         /// </summary>
         private GameState? EndMovement(GameState state, MovementEnded ended)
         {
-            if (state.Movement is not { WindowOpen: false } movement || ended.Movers.Count == 0
-                || ended.Movers.Distinct(StringComparer.Ordinal).Count() != ended.Movers.Count
-                || ended.Movers.Any(id => !movement.Members.Contains(id, StringComparer.Ordinal) && !movement.Movers.Contains(id, StringComparer.Ordinal)))
+            var movement = state.Movement;
+            if (Rules.ScenarioA1MovementCalculator.VerifyEndMovement(movement is not null, movement?.WindowOpen == true, ended.Movers, movement?.Members ?? [], movement?.Movers ?? []) is { } refusal)
             {
-                return Fail<GameState>("UNIT-STATE-029", "The ATTACKER ends the move of the moving stack's members once the DEFENDER's window closes (A4.2, A8.11).");
+                return Fail<GameState>(refusal.Code, refusal.Text);
             }
 
             // Pass 25 (table player, pass 15): a mover eliminated or Replaced by the DEFENDER's fire is ended with the rest, not refused.
@@ -2598,10 +2565,10 @@ public static class GameProjector
                 {
                     // D2.4: a vehicle that ends its move without stopping is in Motion; one that stopped, or was stopped by a Stun or
                     // immobilization (D5.34), is not.
-                    var conditions = movement.Vehicle
+                    var conditions = movement!.Vehicle
                         ? new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal)
                         {
-                            [Conditions.Motion] = movement.Stopped || !movement.Members.Contains(id, StringComparer.Ordinal) ? ConditionState.False : ConditionState.True,
+                            [Conditions.Motion] = Rules.ScenarioA1MovementCalculator.InMotionAfterMove(movement.Stopped, movement.Members.Contains(id, StringComparer.Ordinal)) ? ConditionState.True : ConditionState.False,
                         }
                         : unit.Conditions;
                     next = Replace(next, unit with
@@ -2612,7 +2579,7 @@ public static class GameProjector
                 }
             }
 
-            return Settle(next, movement with
+            return Settle(next, movement! with
             {
                 Members = [.. movement.Members.Where(id => !ended.Movers.Contains(id, StringComparer.Ordinal))],
                 Movers = [.. movement.Movers.Where(id => !ended.Movers.Contains(id, StringComparer.Ordinal))],
@@ -2625,7 +2592,7 @@ public static class GameProjector
         /// go with it.
         /// </summary>
         private static GameState Settle(GameState state, MovementState movement) =>
-            movement.Members.Count > 0
+            !Rules.ScenarioA1MovementCalculator.MoveIsOver(movement.Members.Count)
                 ? state with
                 {
                     Movement = movement
@@ -2633,7 +2600,7 @@ public static class GameProjector
                 : state with
                 {
                     Movement = null,
-                    FiresThisPhase = [.. state.FiresThisPhase.Where(record => record.Step is null)],
+                    FiresThisPhase = [.. state.FiresThisPhase.Where(record => Rules.ScenarioA1MovementCalculator.FireRecordStays(record.Step is not null))],
                 };
 
         /// <summary>
@@ -2643,44 +2610,29 @@ public static class GameProjector
         /// </summary>
         private static GameState KeepMovingStack(GameState next, EventPayload payload)
         {
-            if (next.Movement is not { } movement || next.Phase != "mph")
+            if (next.Movement is not { } movement)
             {
                 return next;
             }
 
-            var members = movement.Members.ToList();
-            var movers = movement.Movers.ToList();
-            if (payload is LineageRecorded lineage && lineage.Consumed.Any(id => members.Contains(id, StringComparer.Ordinal) || movers.Contains(id, StringComparer.Ordinal)))
-            {
-                var produced = lineage.Produced.Select(item => item.Id).ToArray();
-                if (lineage.Consumed.Any(id => members.Contains(id, StringComparer.Ordinal)))
-                {
-                    members = [.. members.Where(id => !lineage.Consumed.Contains(id, StringComparer.Ordinal)), .. produced];
-                }
-
-                if (lineage.Consumed.Any(id => movers.Contains(id, StringComparer.Ordinal)))
-                {
-                    movers = [.. movers.Where(id => !lineage.Consumed.Contains(id, StringComparer.Ordinal)), .. produced];
-                }
-            }
-
-            // D5.34, A7.82 (unit step 25): a moving vehicle stops when its crew is Stunned or Recalled or it is immobilized, but a pin
-            // never stops it.
-            var leaving = members.Where(id => next.Unit(id) is not { Status: InstanceStatus.Active } unit
-                || (movement.Vehicle
-                    ? new[] { Conditions.Stunned, Conditions.Shocked, Conditions.UnconfirmedKill, Conditions.Immobilized, Conditions.Abandoned }.Any(name => GameState.Condition(unit, name) == ConditionState.True)
-
-                        // D8.2 (ruling R11.9): a Bog, or a Bog Removal that does not free it, stops it too.
-                        || (GameState.Condition(unit, Conditions.Bogged) == ConditionState.True && payload is VehicleCheckRolled)
-                        || (GameState.Condition(unit, Conditions.Recalled) == ConditionState.True && GameState.Condition(unit, Conditions.StunRecovery) != ConditionState.True)
-                    : GameState.Condition(unit, Conditions.Broken) == ConditionState.True || GameState.Condition(unit, Conditions.Pinned) == ConditionState.True))
-                .ToArray();
-            if (leaving.Length == 0 && members.Count == movement.Members.Count && movers.SequenceEqual(movement.Movers))
+            // Pass 32.b: the stack, the lineage, and each member's conditions are read here, and Rules decides who leaves the stack.
+            var lineage = payload as LineageRecorded;
+            var verdict = Rules.ScenarioA1MovementCalculator.KeepMovingStack(next.Phase, movement.Members, movement.Movers, movement.Vehicle,
+                lineage?.Consumed, lineage is null ? null : [.. lineage.Produced.Select(item => item.Id)], payload is VehicleCheckRolled,
+                id => next.Unit(id) is { } unit
+                    ? new Rules.StackMemberFacts(unit.Id, unit.Status == InstanceStatus.Active,
+                        GameState.Condition(unit, Conditions.Stunned) == ConditionState.True, GameState.Condition(unit, Conditions.Shocked) == ConditionState.True,
+                        GameState.Condition(unit, Conditions.UnconfirmedKill) == ConditionState.True, GameState.Condition(unit, Conditions.Immobilized) == ConditionState.True,
+                        GameState.Condition(unit, Conditions.Abandoned) == ConditionState.True, GameState.Condition(unit, Conditions.Bogged) == ConditionState.True,
+                        GameState.Condition(unit, Conditions.Recalled) == ConditionState.True, GameState.Condition(unit, Conditions.StunRecovery) == ConditionState.True,
+                        GameState.Condition(unit, Conditions.Broken) == ConditionState.True, GameState.Condition(unit, Conditions.Pinned) == ConditionState.True)
+                    : null);
+            if (verdict.Unchanged)
             {
                 return next;
             }
 
-            foreach (var id in leaving)
+            foreach (var id in verdict.Leaving)
             {
                 if (next.Unit(id) is { Status: InstanceStatus.Active, MovementEnded: false } unit)
                 {
@@ -2695,8 +2647,8 @@ public static class GameProjector
             {
                 Movement = movement with
                 {
-                    Members = [.. members.Where(id => !leaving.Contains(id, StringComparer.Ordinal))],
-                    Movers = movers,
+                    Members = [.. verdict.Members],
+                    Movers = [.. verdict.Movers],
                 }
             };
         }
@@ -2895,24 +2847,10 @@ public static class GameProjector
                 return null;
             }
 
-            if (item is UnitInstance { MovementEnded: true } && move.Mf is > 0)
+            // Pass 32.b: the item and the open attempts are read here, and Rules decides (A4.1, A20.53).
+            if (Rules.ScenarioA1MovementCalculator.VerifyMove(item.Id, item is UnitInstance, item is UnitInstance { MovementEnded: true }, state.OpenAttempts.Any(open => open.Unit == item.Id), move.Mf) is { } refusal)
             {
-                return Fail<GameState>("UNIT-STATE-018", $"'{item.Id}' may not move again this phase (A4.1, p. 48).");
-            }
-
-            if (state.OpenAttempts.Any(open => open.Unit == item.Id))
-            {
-                return Fail<GameState>("UNIT-STATE-018", $"'{item.Id}' has an open entry attempt, so it may not move.");
-            }
-
-            if (move.Mf is < 0)
-            {
-                return Fail<GameState>("UNIT-STATE-010", "A move cannot spend negative MF.");
-            }
-
-            if (move.Mf is not null && item is not UnitInstance)
-            {
-                return Fail<GameState>("UNIT-STATE-010", "Only units spend MF.");
+                return Fail<GameState>(refusal.Code, refusal.Text);
             }
 
             return item switch
