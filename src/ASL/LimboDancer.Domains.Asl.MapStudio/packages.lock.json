@@ -47,7 +47,8 @@
       "limbodancer.domains.asl.units": {
         "type": "Project",
         "dependencies": {
-          "LimboDancer.Domains.Asl.Maps": "[1.0.0, )"
+          "LimboDancer.Domains.Asl.Maps": "[1.0.0, )",
+          "LimboDancer.Domains.Asl.Rules": "[1.0.0, )"
         }
       },
       "limbodancer.domains.asl.units.rendering": {
