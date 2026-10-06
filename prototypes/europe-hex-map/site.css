@@ -143,3 +143,72 @@ main,aside{min-width:0}
 .theater-command-counter{cursor:pointer;outline:none}
 .theater-command-counter:focus-visible{outline:none}
 .theater-command-counter:focus-visible rect{stroke:var(--amber);stroke-width:3px;vector-effect:non-scaling-stroke}
+
+/* Task stages remain above the map; authority and mission selection stay at left. */
+body{height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+header{height:72px;flex:0 0 72px;padding-block:10px}
+.workflow{flex:none;padding:12px 22px 10px;border-bottom:1px solid var(--line-strong);background:var(--card)}
+.workflow-context{display:flex;flex-wrap:wrap;justify-content:space-between;gap:4px 18px;font-size:12px;margin-bottom:9px}
+#workflowStatus{color:var(--muted)}
+.workflow-stages{display:flex;gap:6px}
+.workflow-stages button{flex:1;text-align:left;min-height:40px}
+.workflow-stages button span{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--tint-strong);margin-right:5px;font:12px var(--mono)}
+.workflow-stages button[aria-current="step"]{background:var(--olive);border-color:var(--olive);color:white;font-weight:600}
+.workflow-stages button[aria-current="step"] span{color:var(--olive-deep)}
+#workflowHint{font-size:12px;margin:7px 0 0;color:var(--muted);line-height:1.4}
+.shell{flex:1;min-height:0;height:auto;grid-template-columns:260px minmax(240px,1fr) 360px}
+aside{padding:18px;overscroll-behavior:contain}
+#workflowInspector{border-right:0;border-left:1px solid var(--line);background:var(--card)}
+#workflowInspector:focus{outline:none}
+#workflowInspector:focus-visible{outline:3px solid var(--focus);outline-offset:-3px}
+#workflowInspector>section{padding-bottom:14px;margin-bottom:12px}
+#workflowInspector button{min-height:38px;margin:4px 0}
+#workflowChoose>button,#workflowBrief>button{width:100%;text-align:left}
+#regionalNext{padding:12px;background:var(--tint-strong);border-left:3px solid var(--olive)}
+#regionalStep{font-size:11px;color:var(--muted)}
+#regionalMissionDetail{font-size:13px}
+#regionalWorkspace .row{position:sticky;bottom:-18px;background:var(--card);padding:8px 0;z-index:2;border-top:1px solid var(--line)}
+#regionalWorkspace .row button{flex:1 1 130px}
+#regionalWorkspace h3{margin-top:20px}
+#commandNavigation h3{font:600 17px var(--display);margin:12px 0}
+#regionalCurrent{font-size:16px!important;overflow-wrap:anywhere}
+#regionalBreadcrumb button{font-size:12px}
+#regionalBreadcrumb button:disabled{color:var(--olive-deep);font-weight:600;border-color:var(--olive)}
+#preparationPanel{margin-top:18px;padding:14px;background:var(--tint);border:1px solid var(--line);border-radius:5px}
+#preparationPanel button{width:100%;text-align:left}
+.shell[data-workflow-stage="prepare"] #regionalMissionDetail{display:none}
+#formationControls{border:0;background:transparent}
+#formationControls>summary{font-size:20px}
+#formationControls>div{padding:6px 0}
+.maptitle{max-width:calc(100% - 30px);left:15px;top:15px}
+.maptitle strong{font-size:18px}
+.footer{font-size:10px;flex-wrap:wrap;gap:4px;left:12px;right:12px}
+@media(max-width:1150px){
+ .shell{grid-template-columns:210px minmax(200px,1fr) 310px}
+ aside{padding:12px}
+ .workflow{padding:10px 12px}
+ #regionalWorkspace .row{bottom:-12px}
+}
+@media(max-width:850px){
+ body{height:auto;min-height:100dvh;overflow:auto}
+ header{height:auto;min-height:66px;flex-basis:auto}
+ .workflow{position:sticky;top:0;z-index:5}
+ .workflow-stages{overflow-x:auto;padding-bottom:3px}
+ .workflow-stages button{flex:1 0 105px}
+ .shell{display:grid;height:auto;grid-template-columns:minmax(0,1fr) minmax(280px,1fr)}
+ .shell>aside:first-child{grid-column:1/-1;display:block;max-height:260px;border-bottom:1px solid var(--line)}
+ .shell>main{height:65dvh;min-height:360px}
+ #workflowInspector{height:65dvh;min-height:360px;display:block}
+ #workflowContext{font-size:12px}
+ .headernote{display:none}
+}
+@media(max-width:600px){
+ .shell{grid-template-columns:minmax(0,1fr)}
+ .shell>main{height:48dvh;min-height:280px}
+ #workflowInspector{height:auto;min-height:0;border-left:0;border-top:1px solid var(--line)}
+ #workflowStatus{display:block;width:100%}
+ .workflow-context{margin-bottom:6px}
+ #workflowHint{max-height:3em;overflow:auto}
+ .shell>aside:first-child{max-height:190px}
+ #regionalWorkspace .row{bottom:0}
+}

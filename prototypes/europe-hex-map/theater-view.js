@@ -69,7 +69,7 @@ function updateWestern(){
  }
  document.getElementById("westernWorkspace").style.display=active&&!activeRegion?"":"none";
  document.getElementById("workspaceControls").style.display=activeTheater&&!formationOpen?"":"none";
- document.getElementById("shell").style.gridTemplateColumns=active?"350px 1fr":"";
+ // Responsive workspace columns are defined in site.css.
  for(const id of ["coarseSelection","selectionControls"])document.getElementById(id).style.display=active?"none":"";
  if(activeTheater&&!active)grid.setAttribute("clip-path","url(#theater-grid-clip)");
  else grid.removeAttribute("clip-path");

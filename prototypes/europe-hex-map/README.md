@@ -24,6 +24,7 @@ An offline geographic prototype for the Military Command and Multiscale Simulati
 | `viewer.html` | HTML source template. |
 | `app.template.js` | Application source template. |
 | `theater-view.js` | Shared theater workspace code inserted into `app.js` by the builder. |
+| `workflow-view.js` | Stage navigation, mission inspector coordination, sector picker and local mission drafts; loaded after `app.js`. |
 | `build.py` | Builder and source-hash verification. |
 | `prepare_theaters.py` | Compiles all six detailed theater packages. |
 | `map.json` | Projected base geography, source manifest and geography hash. |
@@ -314,4 +315,17 @@ Version 4 changes the reference hash, creating a fresh exercise. Earlier saves r
 
 ### Campaign action navigation
 
-Clear campaign data and Open Situation are always visible at the top of Game controls. Clear is enabled for an active dated campaign, including while its Formation map is open. Open Situation uses the saved Situation selector and works from any headquarters once a card exists. With no card, the adjacent message explains the battalion planning prerequisites. Dated campaigns is nested inside Theater workspace, which remains available in the regional view. Campaign formation counters is nested within Dated campaigns, below the campaign selector and briefing. Clearing preserves the map seed and returns to First Army. This UI change does not alter the campaign reference version or migrate older saves.
+Clear campaign data and Open Situation are grouped under Saved Situations and campaign data in the left panel. Clear is enabled for an active dated campaign, including while its Formation map is open. Open Situation uses the saved Situation selector and works from any headquarters once a card exists; a card without an established setup opens Prepare first. With no card, the adjacent message explains the battalion planning prerequisites. Dated campaigns is nested inside Theater workspace, which remains available in the regional view. Campaign formation counters is nested within Dated campaigns, below the campaign selector and briefing. Clearing preserves the map seed and returns to First Army. This UI change does not alter the campaign reference version or migrate older saves.
+
+
+### Guided exercise workspace
+
+The stage bar sits below the campaign header, above the map. Choose opens the task selector; Brief explains Normandy; Command preserves the existing authority and delivery rules; Prepare is available for a planned battalion mission; Maneuver opens a prepared or existing formation; Review presents communications and exports. Stages reflect the selected mission, not overall campaign completion. Revisiting a stage does not issue orders or advance time.
+
+Command ancestry, subordinate navigation and mission selection live in the left panel. The active mission, preparation controls and formation controls live in the right inspector. At narrower widths the panels reflow around the map. Saved Situations and campaign data are grouped in a disclosure in the left panel.
+
+Open Normandy exercise resumes the current reference-package record without resetting it. First-time Situation opening requires an explicit maneuver-only choice or preparation of the catalog-backed tactical test. Saved Situations without a chosen setup return to Prepare. After formation creation, the action reads Resume Situation. Existing formation state and roster restrictions are unchanged.
+
+Mission text is retained per campaign, headquarters, mission and action in browser storage, separately from submitted plans/reports. Successful submission removes the corresponding draft; communication steps retain it. Clearing campaign data also clears that campaign seed's drafts. If storage is unavailable, typed drafts remain in memory for this page session and the inspector explains the limitation. The regional sector dropdown provides a keyboard alternative to map clicks.
+
+Keep `workflow-view.js` with the other runtime assets when distributing the viewer. `test_viewer.cjs` covers stage gating, mission authority, draft navigation/reload, keyboard sector selection, both formation setup routes, and return navigation using a DOM double. It does not verify rendered layout, screen-reader behavior or touch interaction.

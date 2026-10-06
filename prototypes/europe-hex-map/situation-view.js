@@ -12,7 +12,12 @@ function renderSituation(){
   const b=add("button","Create Situation Card");b.disabled=force?.echelon!=="Battalion"||mission?.recipient!==regionalHQ||!["planned","executing"].includes(mission?.status)||!regionalSector;
   b.onclick=()=>changeSituation("create");return;
  }
- const openButton=add("button","Open Situation");openButton.onclick=openFormation;
+ if(situation.formation||situation.tacticalTest){
+  const openButton=add("button",situation.formation?"Resume Situation":"Open Situation");openButton.onclick=openFormation;
+ }else{
+  add("p","Choose your setup before opening the map. Maneuver only has no opposing counter. To include the authored opponent, prepare the engagement drafts and catalog-backed tactical test below first. Setup cannot change after the formation map has been created.");
+  const maneuver=add("button","Start maneuver-only Situation");maneuver.onclick=openFormation;
+ }
  add("h4",situation.title);add("p","Parent: "+situation.parentFormationId+" | Area: "+situation.area.sectorId+" | Campaign interval: "+situation.campaignInterval.start+" to "+situation.campaignInterval.endExclusive);
  add("p",situation.objective.intent);add("p","Situation success: "+situation.objective.success);add("p",situation.objective.evaluation);
  add("p",situation.provenance.roster);

@@ -1,7 +1,7 @@
 """Reject UTF-8 text that was accidentally decoded as Windows-1252."""
 import re
 from pathlib import Path
-UI_FILES = ('viewer.html', 'index.html', 'app.template.js', 'theater-view.js',
+UI_FILES = ('viewer.html', 'index.html', 'app.template.js', 'theater-view.js', 'workflow-view.js',
             'regional-view.js', 'situation-state.js', 'situation-view.js', 'tactical-reference.js', 'tactical-handoff.js', 'formation-state.js', 'formation-view.js', 'theater-counters.js', 'regional-state.js', 'app.js', 'site.css', 'image-export.js')
 def check_text(text, name):
     if '\ufffd' in text:
