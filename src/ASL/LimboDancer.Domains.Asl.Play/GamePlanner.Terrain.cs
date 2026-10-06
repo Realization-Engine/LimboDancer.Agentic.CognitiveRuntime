@@ -13,12 +13,7 @@ namespace LimboDancer.Domains.Asl.Play;
 /// </summary>
 public sealed partial class GamePlanner
 {
-    /// <summary>
-    /// One Infantry step's cost in half MF and what it enters: the terrain key, whether it crossed a road hexside at the road rate into a hex with
-    /// no SMOKE, burning wreck, or rubble (the Road Bonus, B3.4), whether it costs the unit's whole MF allotment (marsh, B16.4), and whether only
-    /// a Minimum Move may make it (marsh from a lower elevation, B16.4).
-    /// </summary>
-    private sealed record InfantryEntry(int HalfMf, string Terrain, bool RoadRate, bool AllMf, bool MinimumMoveOnly, bool LevelChange);
+    // One Infantry step's cost and what it enters: the InfantryEntry record moved to Rules (pass 32.b).
 
     /// <summary>The angle between two bearings in degrees, 0 to 180.</summary>
     private static double AngleBetween(double one, double two) => ScenarioA1Geometry.AngleBetween(one, two);
@@ -28,13 +23,15 @@ public sealed partial class GamePlanner
     private static bool IsRubbleTerrain(string? key) => ScenarioA1Definitions.IsRubbleTerrain(key);
 
     /// <summary>The wall or hedge on a hexside, as <c>wall</c> or <c>hedge</c>; null for none; <c>other</c> for hexside terrain the pass does not review.</summary>
-    private static string? WallOn(HexsideFacts? side) => side?.HexsideTerrain?.Name switch
-    {
-        null => null,
-        "Wall" => "wall",
-        "Hedge" => "hedge",
-        _ => "other",
-    };
+    private static string? WallOn(HexsideFacts? side) => ScenarioA1TerrainCosts.WallOn(side?.HexsideTerrain?.Name);
+
+    /// <summary>The hexside an Infantry step crosses, as Rules reads it (pass 32.b).</summary>
+    private static CrossedHexsideFacts CrossedFacts(HexsideFacts crossed) =>
+        new(crossed.Cliff, crossed.Slope, crossed.HexsideTerrain?.Name, crossed.Terrain?.IsRoad == true, crossed.Terrain?.Name);
+
+    /// <summary>One Location of an Infantry step as Rules reads it (pass 32.b); null when the map cannot read it.</summary>
+    private static StepLocationFacts? StepLocation(LocationRead? read) =>
+        read is null ? null : new(TerrainKey(read), (read.Level.Terrain ?? read.Hex.Center.Terrain)?.Name, read.Hex.BaseLevel, read.Hex.Stairway);
 
     /// <summary>
     /// The cost of an Infantry step from one Location to another (rulings R10.1 to R10.3, R10.5): up or down one level in a stairwell hex
@@ -45,53 +42,14 @@ public sealed partial class GamePlanner
     /// </summary>
     private (InfantryEntry? Entry, string? Reason) InfantryStep(GameState state, BoardLocation from, BoardLocation to)
     {
-        if (from.Side is not null || to.Side is not null)
-        {
-            return (null, "play.move-step: a unit moves between Locations, not hexsides");
-        }
-
-        if (from.Board == to.Board && from.Hex == to.Hex)
-        {
-            // B23.4, B23.22, B23.23 (ruling R10.2): one level up or down within a building, only in a stairwell hex.
-            if (from.Level == to.Level || Math.Abs(from.Level - to.Level) != 1 || ReadLocation(state, from) is not { } fromLevel
-                || ReadLocation(state, to) is not { } toLevel || !IsBuildingTerrain(TerrainKey(fromLevel)) || !IsBuildingTerrain(TerrainKey(toLevel)))
-            {
-                return (null, $"play.move-level: {to} is not the next level of the building Location {from} (B23.4, B23.42)");
-            }
-
-            return !fromLevel.Hex.Stairway
-                ? (null, $"play.move-stairwell: {from.Hex} has no stairwell, so its levels do not connect (B23.23, B23.4)")
-                // E1.51 (referee, pass 16): a building Location is Concealment Terrain, one MF more at night.
-                : (new InfantryEntry(2 + BlazeEntryHalfMf(state, to) + (state.Night ? 2 : 0), TerrainKey(toLevel)!, false, false, false, true), null);
-        }
-
-        var (fromRead, toRead, adjacent, crossed) = Step(state, from, to);
-        if (fromRead is null || toRead is null || !adjacent || crossed is null)
-        {
-            return (null, $"play.move-step: {to} is not an adjacent Location the map reads");
-        }
-
-        if (TerrainKey(toRead) is not { } terrain)
-        {
-            var name = (toRead.Level.Terrain ?? toRead.Hex.Center.Terrain)?.Name ?? "the terrain";
-            return (null, name is "Rooftop" or "Cellar"
-                ? $"play.move-terrain: a {name} is not a Location units enter (rooftops by SSR only, B23.8; cellars, B23.41)"
-                : $"play.move-terrain: {name} is not a reviewed entry (ruling R10.1)");
-        }
-
-        if (from.Level != 0 || to.Level != 0)
-        {
-            // B23.421, B23.422 (ruling R10.2): at an upper level, only into the same level of an ADJACENT hex of the same building.
-            var connected = from.Level == to.Level && from.Level > 0 && IsBuildingTerrain(TerrainKey(fromRead)) && IsBuildingTerrain(terrain)
-                && fromRead.Hex.BaseLevel == toRead.Hex.BaseLevel && crossed.HexsideTerrain is null && crossed.Terrain is { } shared
-                && OrdinaryBuildings.Contains(shared.Name);
-            // E1.51 (backlog pass 16, ruling R16.5): a building Location is Concealment Terrain, one MF more at night.
-            return connected
-                ? (new InfantryEntry(EntryHalfMf[terrain] + BlazeEntryHalfMf(state, to) + (state.Night ? 2 : 0), terrain, false, false, false, false), null)
-                : (null, "play.move-upper-level: from an upper level a unit moves only into the same level of an ADJACENT hex of the same building (B23.421, B23.422)");
-        }
-
-        return GroundStep(state, to, crossed, terrain, toRead.Hex.BaseLevel - fromRead.Hex.BaseLevel);
+        // Pass 32.b: the map is read here as the step read it (both Locations within one hex, the step between two), and Rules decides.
+        var hexsides = from.Side is not null || to.Side is not null;
+        var sameHex = from.Board == to.Board && from.Hex == to.Hex;
+        var (fromRead, toRead, adjacent, crossed) = hexsides ? (null, null, false, null)
+            : sameHex ? (ReadLocation(state, from), ReadLocation(state, to), false, null) : Step(state, from, to);
+        var facts = new InfantryStepFacts(from.Side is not null, to.Side is not null, sameHex, from.Level, to.Level, from.ToString(), to.ToString(), from.Hex.ToString(),
+            StepLocation(fromRead), StepLocation(toRead), adjacent, crossed is null ? null : CrossedFacts(crossed), state.Night, state.ScenarioMonth);
+        return ScenarioA1TerrainCosts.InfantryStep(facts, () => BlazeEntryHalfMf(state, to), (terrain, road, rise) => InfantryWeatherHalfMf(state, crossed!, terrain, road, rise));
     }
 
     /// <summary>
@@ -99,67 +57,9 @@ public sealed partial class GamePlanner
     /// adjacent hex <paramref name="rise"/> levels lower, or the entry from off board across the map edge's hexside, from the mirror-image hex at the same
     /// level (A2.51, A2.6; ruling R25.3).
     /// </summary>
-    private static (InfantryEntry? Entry, string? Reason) GroundStep(GameState state, BoardLocation to, Maps.Derivation.HexsideFacts crossed, string terrain, int rise)
-    {
-        if (crossed.Cliff)
-        {
-            return (null, "play.move-cliff: a cliff hexside is crossed only by Climbing, which is not built (B11)");
-        }
-
-        if (crossed.Slope)
-        {
-            return (null, "play.move-slope: Continuous Slopes are not reviewed (ruling R10.1)");
-        }
-
-        var wall = WallOn(crossed);
-        if (wall == "other")
-        {
-            return (null, $"play.move-hexside: {crossed.HexsideTerrain!.Name} hexsides are not reviewed (ruling R10.1)");
-        }
-
-        var road = crossed.Terrain?.IsRoad == true && !IsRubbleTerrain(terrain);
-        int cost;
-        var allMf = false;
-        var minimumOnly = false;
-        if (terrain == "marsh")
-        {
-            // B16.4 (ruling R10.1): marsh takes the whole MF allotment; from a lower elevation only as a Minimum Move.
-            allMf = true;
-            minimumOnly = rise > 0;
-            cost = 0;
-        }
-        else if (road)
-        {
-            cost = 2;
-        }
-        else if (InfantryEntryHalfMf(state, terrain) is { } halfMf)
-        {
-            cost = halfMf;
-        }
-        else
-        {
-            return (null, "play.move-grain: grain's MF cost depends on the season, and the game names no scenario month (B15.6)");
-        }
-
-        // A4.133, B10.4, B10.51 (ruling R10.3): one level up doubles the cost; each intermediate level of an Abrupt Elevation Change costs two MF up
-        // or one down, and the last level its own cost, doubled up.
-        cost = rise switch
-        {
-            >= 1 => (4 * (rise - 1)) + (2 * cost),
-            <= -2 => (2 * (-rise - 1)) + cost,
-            _ => cost,
-        };
-
-        // B9.4 (ruling R10.1): one MF more across a wall or hedge, not across a road gap in it.
-        if (wall is not null && !road)
-        {
-            cost += 2;
-        }
-
-        var smoke = BlazeEntryHalfMf(state, to);
-        var (weather, roadRate) = allMf ? (0, road) : InfantryWeatherHalfMf(state, crossed, terrain, road, rise);
-        return (new InfantryEntry(cost + smoke + weather, terrain, roadRate && smoke == 0, allMf, minimumOnly, rise != 0), null);
-    }
+    private static (InfantryEntry? Entry, string? Reason) GroundStep(GameState state, BoardLocation to, Maps.Derivation.HexsideFacts crossed, string terrain, int rise) =>
+        ScenarioA1TerrainCosts.GroundStep(CrossedFacts(crossed), terrain, rise, state.ScenarioMonth, () => BlazeEntryHalfMf(state, to),
+            (entered, road, climbed) => InfantryWeatherHalfMf(state, crossed, entered, road, climbed));
 
     /// <summary>
     /// The facts of a Location's hexside named in the map's frame (table player, pass 10): on a reversed board of a placed map the board's own

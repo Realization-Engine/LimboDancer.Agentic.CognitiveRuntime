@@ -64,15 +64,7 @@ public sealed partial class GamePlanner
     /// The half MF Infantry spend to enter a terrain (B15.4, B15.6; ruling R5.19): grain costs 1½ MF from April to September and is Open Ground
     /// otherwise, and a game with no scenario month does not decide it; null when the terrain is not a reviewed entry.
     /// </summary>
-    private static int? InfantryEntryHalfMf(GameState state, string terrain)
-    {
-        if (terrain == "grain")
-        {
-            return state.ScenarioMonth is not { } month ? null : month is >= 4 and <= 9 ? EntryHalfMf["grain"] : EntryHalfMf["open-ground"];
-        }
-
-        return EntryHalfMf.TryGetValue(terrain, out var halfMf) ? halfMf : null;
-    }
+    private static int? InfantryEntryHalfMf(GameState state, string terrain) => ScenarioA1TerrainCosts.InfantryEntryHalfMf(terrain, state.ScenarioMonth);
 
     private GamePlan PlanMove(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label,
         string actor)
