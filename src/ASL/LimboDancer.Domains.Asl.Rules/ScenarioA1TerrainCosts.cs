@@ -162,4 +162,181 @@ public static class ScenarioA1TerrainCosts
         var (extra, roadRate) = allMf ? (0, road) : weather(terrain, road, rise);
         return (new InfantryEntry(cost + smoke + extra, terrain, roadRate && smoke == 0, allMf, minimumOnly, rise != 0), null);
     }
+
+    /// <summary>
+    /// The first step of a stack waiting off board (A2.51, A2.6; ruling R25.3): into a ground-level hex of its entry edge across the edge's hexside, as if from
+    /// the mirror-image hex beyond it at the same level: the hex's own cost, at the road rate across a road hexside, one MF more across a wall or hedge,
+    /// or in Bypass along one or two hexsides starting at a vertex of the edge's hexside. <paramref name="entryReadable"/> says the map read the hex and the
+    /// edge's hexside; <paramref name="bypassStep"/> and <paramref name="groundEntry"/> are read by the caller for the step the verdict takes.
+    /// </summary>
+    public static (InfantryEntry? Entry, string? Reason) EntryStep(bool bypassGiven, bool entryReadable, string toText,
+        Func<(InfantryEntry? Entry, string? Reason)> bypassStep, Func<(InfantryEntry? Entry, string? Reason)> groundEntry)
+    {
+        ArgumentNullException.ThrowIfNull(bypassStep);
+        ArgumentNullException.ThrowIfNull(groundEntry);
+        if (bypassGiven)
+        {
+            return entryReadable ? bypassStep() : (null, $"play.entry-terrain: the entry cost of {toText} is not decided (ruling R20.5)");
+        }
+
+        return groundEntry();
+    }
+
+    /// <summary>
+    /// The cost of crossing a map edge's hexside into a ground-level hex, or out of it into the mirror-image hex beyond (A2.51, A2.6; rulings R25.3, R25.5):
+    /// the hex's own terrain at the same level, at the road rate across a road hexside (the A2.6 EX's 2Y1), one MF more across a wall or hedge.
+    /// <paramref name="terrain"/> is null when the map does not read the hex or admits no terrain there; <paramref name="crossed"/> null when it does not read the hexside.
+    /// </summary>
+    public static (InfantryEntry? Entry, string? Reason) EntryGround(string? terrain, CrossedHexsideFacts? crossed, string atText, int? month, Func<int> smokeHalfMf, InfantryWeatherRead weather) =>
+        terrain is not null && crossed is not null
+            ? GroundStep(crossed, terrain, 0, month, smokeHalfMf, weather)
+            : (null, $"play.entry-terrain: the cost of crossing the map edge at {atText} is not decided (ruling R25.3)");
+
+    /// <summary>
+    /// A moving stack's step (rulings R10.1 to R10.3, R10.7): an ordinary step, a step into a woods or building hex in Bypass along one or two of its
+    /// hexsides, or, from Bypass, a step out through the far vertex or into the obstacle itself. <paramref name="enteredSide"/> is read for the hexside the
+    /// stack entered its Bypass by, <paramref name="acrossIsTarget"/> for whether the hex across a hexside of the origin is the target's hex, and
+    /// <paramref name="smokeAtFrom"/> for the SMOKE cost of the obstacle, each where the planner read it.
+    /// </summary>
+    public static MoveEntryVerdict MoveEntry(MoveEntryFacts facts, Func<int?> enteredSide, Func<int, bool> acrossIsTarget, Func<int> smokeAtFrom)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(enteredSide);
+        ArgumentNullException.ThrowIfNull(acrossIsTarget);
+        ArgumentNullException.ThrowIfNull(smokeAtFrom);
+
+        // A4.3, A4.31, A4.32 (ruling R10.7): a stack in Bypass leaves through the far vertex of its last hexside, or pays the obstacle's cost to occupy it.
+        if (facts.StackInBypass && facts.CurrentAtFrom && facts.MoversAllInCurrent)
+        {
+            var lane = facts.Lane;
+
+            // Table player, pass 10: the Bypassing stack moves on together, so its Bypass is kept for every member.
+            if (facts.CurrentMemberLeftBehind)
+            {
+                return new MoveEntryVerdict("play.move-bypass: a stack in Bypass leaves it or occupies the obstacle together; splitting it there is not built (A4.3; ruling R10.7)", null, false, false);
+            }
+
+            if (facts.ToIsFrom && facts.EnemyAtFrom)
+            {
+                return new MoveEntryVerdict("play.move-bypass: occupying an obstacle that holds enemy units is not built (A4.14, A12.15; ruling R10.7)", null, false, false);
+            }
+
+            if (facts.BypassGiven)
+            {
+                return new MoveEntryVerdict("play.move-bypass: continuing Bypass around the same hex is not built; leave it or occupy the obstacle (A4.31; ruling R10.7)", null, false, false);
+            }
+
+            if (facts.ToIsFrom)
+            {
+                return facts.ObstacleTerrainKey is { } obstacle && (obstacle == "woods" || ScenarioA1Definitions.IsBuildingTerrain(obstacle))
+                    ? new MoveEntryVerdict(null, new InfantryEntry(ScenarioA1ResultTables.EntryHalfMf[obstacle] + smokeAtFrom(), obstacle, false, false, false, false), false, false)
+                    : new MoveEntryVerdict("play.move-bypass: the Bypassed hex has no woods or building to occupy", null, false, false);
+            }
+
+            if (enteredSide() is not { } entered)
+            {
+                return new MoveEntryVerdict("play.move-bypass: the hexside the stack entered its Bypass by cannot be read", null, false, false);
+            }
+
+            var turn = (lane[0] - entered + 6) % 6;
+            var far = (lane[^1] + turn) % 6;
+            if (!new[] { lane[^1], far }.Any(side => acrossIsTarget(side) && facts.ToIsGround))
+            {
+                return new MoveEntryVerdict("play.move-bypass: from Bypass the stack leaves only into a hex at the far vertex of its last hexside, or occupies the obstacle (A4.31, A4.32)", null, false, false);
+            }
+
+            return new MoveEntryVerdict(null, null, true, false);
+        }
+
+        if (facts.StackInBypass)
+        {
+            return new MoveEntryVerdict("play.move-bypass: while the stack is in Bypass, only it moves, together, out of the hex or into the obstacle (A4.32; ruling R10.7)", null, false, false);
+        }
+
+        if (!facts.BypassGiven)
+        {
+            return new MoveEntryVerdict(null, null, true, false);
+        }
+
+        // A4.3, A4.31 (ruling R10.7): into a woods or building hex along one or two contiguous hexsides the obstacle does not touch, starting at a vertex
+        // of the hexside crossed.
+        if (facts.FromLevel != 0 || !facts.FromReadable)
+        {
+            return new MoveEntryVerdict("play.move-bypass: Bypass moves at ground level along one or two hexsides of an adjacent woods or building hex (A4.3, A4.31)", null, false, false);
+        }
+
+        if (facts.SideTowardFrom is null)
+        {
+            return new MoveEntryVerdict($"play.move-step: {facts.ToText} is not an adjacent Location the map reads", null, false, false);
+        }
+
+        return new MoveEntryVerdict(null, null, false, true);
+    }
+
+    /// <summary>
+    /// A Bypass step into a woods or building hex (A4.3, A4.31; ruling R10.7) across its hexside <see cref="BypassStepFacts.Crossed"/>: from an adjacent hex at
+    /// <see cref="BypassStepFacts.FromBaseLevel"/>, or from off board across the map edge (ruling R25.3), with the wall or hedge on the hexside crossed.
+    /// <paramref name="smokeHalfMf"/> is read for the target where the planner read it. The Bypass hexsides are the caller's when the entry is given.
+    /// </summary>
+    public static (InfantryEntry? Entry, string? Reason) BypassStep(BypassStepFacts facts, Func<int> smokeHalfMf)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(smokeHalfMf);
+        var bypass = facts.Bypass;
+        if (bypass.Count is < 1 or > 2 || facts.ToLevel != 0 || !facts.TargetReadable
+            || facts.TargetTerrainKey is not { } obstacleKey || !(obstacleKey == "woods" || ScenarioA1Definitions.IsBuildingTerrain(obstacleKey)))
+        {
+            return (null, "play.move-bypass: Bypass moves at ground level along one or two hexsides of an adjacent woods or building hex (A4.3, A4.31)");
+        }
+
+        var direction = (bypass[0].Side - facts.Crossed + 6) % 6;
+        if (direction is not (1 or 5) || (bypass.Count == 2 && (bypass[1].Side - bypass[0].Side + 6) % 6 != direction))
+        {
+            return (null, "play.move-bypass: the Bypassed hexsides are contiguous and start at a vertex of the hexside the stack crosses (A4.31)");
+        }
+
+        var laneCost = 0;
+        var laneTerrain = "open-ground";
+        foreach (var bypassed in bypass)
+        {
+            var name = bypassed.Terrain;
+            if (!bypassed.Read || name is null || name == "Woods" || ScenarioA1Definitions.OrdinaryBuildings.Contains(name) || WallOn(bypassed.HexsideTerrain) == "other"
+                || (ScenarioA1Definitions.FireTerrain.GetValueOrDefault(name) ?? (bypassed.Road ? "open-ground" : null)) is not { } key || InfantryEntryHalfMf(key, facts.Month) is not { } cost)
+            {
+                return (null, $"play.move-bypass: the obstacle touches the {bypassed.SideText} hexside, or its other terrain is not reviewed, so it may not be Bypassed there (A4.3, A4.31)");
+            }
+
+            if (cost >= laneCost)
+            {
+                (laneCost, laneTerrain) = (cost, key);
+            }
+        }
+
+        // Table player, pass 10: a hex with a wall or hedge is not Bypassed until the vertex LOS for fire at a Bypassing stack is built, nor one
+        // holding friendly units, whose TEM a Bypassing stack would share in the fire at the Location.
+        if (facts.TargetHexsideTerrains.Any(item => WallOn(item) is not null) || facts.FriendlyUnitsAtTarget)
+        {
+            return (null, $"play.move-bypass: {facts.ToText} has a wall or hedge, or holds friendly units; that Bypass is not built (A4.34; ruling R10.7)");
+        }
+
+        // A4.3: no Bypass of an obstacle holding an armed Known enemy unit (rubble is not an obstacle here).
+        if (facts.ArmedKnownEnemyAtTarget)
+        {
+            return (null, $"play.move-bypass: {facts.ToText} holds an armed Known enemy unit, so its obstacle may not be Bypassed (A4.3)");
+        }
+
+        var rise = facts.TargetBaseLevel - facts.FromBaseLevel;
+        if (Math.Abs(rise) > 1)
+        {
+            return (null, "play.move-bypass: a Bypass across an Abrupt Elevation Change is not reviewed (B10.51; ruling R10.7)");
+        }
+
+        if (facts.EntryWall == "other")
+        {
+            return (null, "play.move-hexside: that hexside terrain is not reviewed (ruling R10.1)");
+        }
+
+        var halfMf = (rise == 1 ? 2 * laneCost : laneCost) + (facts.EntryWall is not null ? 2 : 0) + smokeHalfMf();
+        return (new InfantryEntry(halfMf, laneTerrain, false, false, false, rise != 0), null);
+    }
 }

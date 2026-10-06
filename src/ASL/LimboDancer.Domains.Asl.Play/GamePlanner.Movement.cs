@@ -677,25 +677,31 @@ public sealed partial class GamePlanner
     private (InfantryEntry? Entry, string? Reason, IReadOnlyList<HexsideDirection>? Bypass, bool Occupy) EntryStep(GameState state, UnitInstance[] movers, BoardLocation to,
         HexsideDirection side, List<HexsideDirection>? bypass)
     {
-        if (bypass is not null)
-        {
-            return ReadLocation(state, to) is { } read && HexsideAt(state, to, side) is { } crossed
-                ? BypassStep(state, movers, to, side, read.Hex.BaseLevel, WallOn(crossed), bypass)
-                : (null, $"play.entry-terrain: the entry cost of {to} is not decided (ruling R20.5)", null, false);
-        }
-
-        var (entry, reason) = EntryGround(state, to, side);
-        return (entry, reason, null, false);
+        // Pass 32.b: the hex and the edge's hexside are read here, and Rules decides which step is read.
+        var read = ReadLocation(state, to);
+        var crossed = HexsideAt(state, to, side);
+        var (entry, reason) = ScenarioA1TerrainCosts.EntryStep(bypass is not null, read is not null && crossed is not null, to.ToString(),
+            () =>
+            {
+                var (lane, laneReason, _, _) = BypassStep(state, movers, to, side, read!.Hex.BaseLevel, WallOn(crossed), bypass!);
+                return (lane, laneReason);
+            },
+            () => EntryGround(state, to, side));
+        return (entry, reason, bypass is not null && entry is not null ? bypass : null, false);
     }
 
     /// <summary>
     /// The cost of crossing a map edge's hexside into a ground-level hex, or out of it into the mirror-image hex beyond (A2.51, A2.6; rulings R25.3, R25.5):
     /// the hex's own terrain at the same level, at the road rate across a road hexside (the A2.6 EX's 2Y1), one MF more across a wall or hedge.
     /// </summary>
-    private (InfantryEntry? Entry, string? Reason) EntryGround(GameState state, BoardLocation at, HexsideDirection side) =>
-        ReadLocation(state, at) is { } read && TerrainKey(read) is { } terrain && HexsideAt(state, at, side) is { } crossed
-            ? GroundStep(state, at, crossed, terrain, 0)
-            : (null, $"play.entry-terrain: the cost of crossing the map edge at {at} is not decided (ruling R25.3)");
+    private (InfantryEntry? Entry, string? Reason) EntryGround(GameState state, BoardLocation at, HexsideDirection side)
+    {
+        // Pass 32.b: the hex and the edge's hexside are read here, and Rules decides.
+        var read = ReadLocation(state, at);
+        var crossed = HexsideAt(state, at, side);
+        return ScenarioA1TerrainCosts.EntryGround(read is null ? null : TerrainKey(read), crossed is null ? null : CrossedFacts(crossed), at.ToString(), state.ScenarioMonth,
+            () => BlazeEntryHalfMf(state, at), (terrain, road, rise) => InfantryWeatherHalfMf(state, crossed!, terrain, road, rise));
+    }
 
     /// <summary>
     /// A berserk stack's step (A15.43, A15.431): every berserk unit of the Location that is not done moving, with the same wounded

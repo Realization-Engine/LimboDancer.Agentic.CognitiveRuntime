@@ -350,73 +350,47 @@ public sealed partial class GamePlanner
     private (InfantryEntry? Entry, string? Reason, IReadOnlyList<HexsideDirection>? Bypass, bool Occupy) MoveEntry(GameState state, UnitInstance[] movers,
         BoardLocation from, BoardLocation to, MovementState? current, List<HexsideDirection>? bypass)
     {
-        // A4.3, A4.31, A4.32 (ruling R10.7): a stack in Bypass leaves through the far vertex of its last hexside, or pays the obstacle's cost to occupy it.
-        if (current is { Bypass: { Count: > 0 } lane } && current.Location == from && movers.All(unit => current.Movers.Contains(unit.Id, StringComparer.Ordinal)))
+        // Pass 32.b: the state and the map are read here, and Rules decides which step the stack takes and reads it.
+        var lane = current?.Bypass ?? [];
+        var fromRead = ReadLocation(state, from);
+        var sideTowardFrom = SideToward(state, to, from);
+        var facts = new MoveEntryFacts(
+            lane.Count > 0,
+            [.. lane.Select(item => (int)item)],
+            current is not null && current.Location == from,
+            current is not null && movers.All(unit => current.Movers.Contains(unit.Id, StringComparer.Ordinal)),
+            current is not null && current.Movers.Any(id => current.Members.Contains(id, StringComparer.Ordinal) && !movers.Any(unit => unit.Id == id)),
+            to == from,
+            movers.Length > 0 && state.At(from).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != movers[0].Side && !Is(unit, Conditions.Captured)),
+            bypass is not null,
+            fromRead is null ? null : TerrainKey(fromRead),
+            from.Level,
+            fromRead is not null,
+            to.Level == 0,
+            sideTowardFrom is { } toward ? (int)toward : null,
+            SideToward(state, from, to) is { } facing ? WallOn(HexsideAt(state, from, facing)) : null,
+            to.ToString());
+        var verdict = ScenarioA1TerrainCosts.MoveEntry(facts,
+            () => BypassEntered(state, from, current!.From, lane) is { } entered ? (int)entered : null,
+            side => Across(state, from, (HexsideDirection)side) is { } open && open.Board == to.Board && open.Hex == to.Hex,
+            () => BlazeEntryHalfMf(state, from));
+        if (verdict.Refusal is { } refusal)
         {
-            // Table player, pass 10: the Bypassing stack moves on together, so its Bypass is kept for every member.
-            if (current.Movers.Any(id => current.Members.Contains(id, StringComparer.Ordinal) && !movers.Any(unit => unit.Id == id)))
-            {
-                return (null, "play.move-bypass: a stack in Bypass leaves it or occupies the obstacle together; splitting it there is not built (A4.3; ruling R10.7)", null, false);
-            }
+            return (null, refusal, null, false);
+        }
 
-            if (to == from && state.At(from).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != movers[0].Side && !Is(unit, Conditions.Captured)))
-            {
-                return (null, "play.move-bypass: occupying an obstacle that holds enemy units is not built (A4.14, A12.15; ruling R10.7)", null, false);
-            }
+        if (verdict.Occupy is { } occupy)
+        {
+            return (occupy, null, null, true);
+        }
 
-            if (bypass is not null)
-            {
-                return (null, "play.move-bypass: continuing Bypass around the same hex is not built; leave it or occupy the obstacle (A4.31; ruling R10.7)", null, false);
-            }
-
-            if (to == from)
-            {
-                return ReadLocation(state, from) is { } obstacleRead && TerrainKey(obstacleRead) is { } obstacle && (obstacle == "woods" || IsBuildingTerrain(obstacle))
-                    ? (new InfantryEntry(EntryHalfMf[obstacle] + BlazeEntryHalfMf(state, from), obstacle, false, false, false, false), null, null, true)
-                    : (null, "play.move-bypass: the Bypassed hex has no woods or building to occupy", null, false);
-            }
-
-            if (BypassEntered(state, from, current.From, lane) is not { } entered)
-            {
-                return (null, "play.move-bypass: the hexside the stack entered its Bypass by cannot be read", null, false);
-            }
-
-            var turn = ((int)lane[0] - (int)entered + 6) % 6;
-            var far = (HexsideDirection)(((int)lane[^1] + turn) % 6);
-            if (!new[] { lane[^1], far }.Select(side => Across(state, from, side)).Any(exit => exit is { } open && open.Board == to.Board && open.Hex == to.Hex && to.Level == 0))
-            {
-                return (null, "play.move-bypass: from Bypass the stack leaves only into a hex at the far vertex of its last hexside, or occupies the obstacle (A4.31, A4.32)", null, false);
-            }
-
+        if (verdict.OrdinaryStep)
+        {
             var (exit, exitReason) = InfantryStep(state, from, to);
             return (exit, exitReason, null, false);
         }
 
-        if (current is { Bypass.Count: > 0 })
-        {
-            return (null, "play.move-bypass: while the stack is in Bypass, only it moves, together, out of the hex or into the obstacle (A4.32; ruling R10.7)", null, false);
-        }
-
-        if (bypass is null)
-        {
-            var (entry, reason) = InfantryStep(state, from, to);
-            return (entry, reason, null, false);
-        }
-
-        // A4.3, A4.31 (ruling R10.7): into a woods or building hex along one or two contiguous hexsides the obstacle does not touch, starting at a vertex
-        // of the hexside crossed.
-        if (from.Level != 0 || ReadLocation(state, from) is not { } fromRead)
-        {
-            return (null, "play.move-bypass: Bypass moves at ground level along one or two hexsides of an adjacent woods or building hex (A4.3, A4.31)", null, false);
-        }
-
-        if (SideToward(state, to, from) is not { } side)
-        {
-            return (null, $"play.move-step: {to} is not an adjacent Location the map reads", null, false);
-        }
-
-        var entryWall = SideToward(state, from, to) is { } toward ? WallOn(HexsideAt(state, from, toward)) : null;
-        return BypassStep(state, movers, to, side, fromRead.Hex.BaseLevel, entryWall, bypass);
+        return BypassStep(state, movers, to, sideTowardFrom!.Value, fromRead!.Hex.BaseLevel, facts.EntryWall, bypass!);
     }
 
     /// <summary>
@@ -434,64 +408,27 @@ public sealed partial class GamePlanner
     private (InfantryEntry? Entry, string? Reason, IReadOnlyList<HexsideDirection>? Bypass, bool Occupy) BypassStep(GameState state, UnitInstance[] movers,
         BoardLocation to, HexsideDirection side, int fromBaseLevel, string? entryWall, List<HexsideDirection> bypass)
     {
-        if (bypass.Count is < 1 or > 2 || to.Level != 0 || ReadLocation(state, to) is not { } targetRead
-            || TerrainKey(targetRead) is not { } obstacleKey || !(obstacleKey == "woods" || IsBuildingTerrain(obstacleKey)))
-        {
-            return (null, "play.move-bypass: Bypass moves at ground level along one or two hexsides of an adjacent woods or building hex (A4.3, A4.31)", null, false);
-        }
-
-        var direction = ((int)bypass[0] - (int)side + 6) % 6;
-        if (direction is not (1 or 5) || (bypass.Count == 2 && ((int)bypass[1] - (int)bypass[0] + 6) % 6 != direction))
-        {
-            return (null, "play.move-bypass: the Bypassed hexsides are contiguous and start at a vertex of the hexside the stack crosses (A4.31)", null, false);
-        }
-
-        var laneCost = 0;
-        var laneTerrain = "open-ground";
-        foreach (var bypassed in bypass)
-        {
-            var facts = HexsideAt(state, to, bypassed);
-            var name = facts?.Terrain?.Name;
-            if (facts is null || name is null || name == "Woods" || OrdinaryBuildings.Contains(name) || WallOn(facts) == "other"
-                || (FireTerrain.GetValueOrDefault(name) ?? (facts.Terrain!.IsRoad ? "open-ground" : null)) is not { } key || InfantryEntryHalfMf(state, key) is not { } cost)
-            {
-                return (null, $"play.move-bypass: the obstacle touches the {bypassed.ToString().ToLowerInvariant()} hexside, or its other terrain is not reviewed, so it may not be Bypassed there (A4.3, A4.31)", null, false);
-            }
-
-            if (cost >= laneCost)
-            {
-                (laneCost, laneTerrain) = (cost, key);
-            }
-        }
-
-        // Table player, pass 10: a hex with a wall or hedge is not Bypassed until the vertex LOS for fire at a Bypassing stack is built, nor one
-        // holding friendly units, whose TEM a Bypassing stack would share in the fire at the Location.
-        if (targetRead.Hex.Hexsides.Any(item => WallOn(item) is not null)
-            || state.At(to).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side == movers[0].Side))
-        {
-            return (null, $"play.move-bypass: {to} has a wall or hedge, or holds friendly units; that Bypass is not built (A4.34; ruling R10.7)", null, false);
-        }
-
-        // A4.3: no Bypass of an obstacle holding an armed Known enemy unit (rubble is not an obstacle here).
-        if (state.At(to).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != movers[0].Side && KnownEnemy(unit)
-            && !Is(unit, Conditions.Disrupted)))
-        {
-            return (null, $"play.move-bypass: {to} holds an armed Known enemy unit, so its obstacle may not be Bypassed (A4.3)", null, false);
-        }
-
-        var rise = targetRead.Hex.BaseLevel - fromBaseLevel;
-        if (Math.Abs(rise) > 1)
-        {
-            return (null, "play.move-bypass: a Bypass across an Abrupt Elevation Change is not reviewed (B10.51; ruling R10.7)", null, false);
-        }
-
-        if (entryWall == "other")
-        {
-            return (null, "play.move-hexside: that hexside terrain is not reviewed (ruling R10.1)", null, false);
-        }
-
-        var halfMf = (rise == 1 ? 2 * laneCost : laneCost) + (entryWall is not null ? 2 : 0) + BlazeEntryHalfMf(state, to);
-        return (new InfantryEntry(halfMf, laneTerrain, false, false, false, rise != 0), null, bypass, false);
+        // Pass 32.b: the target hex, its hexsides, and the units in it are read here, and Rules decides.
+        var targetRead = ReadLocation(state, to);
+        var there = state.At(to).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active).ToArray();
+        var facts = new BypassStepFacts(
+            [.. bypass.Select(bypassed => HexsideAt(state, to, bypassed) is { } read
+                ? new BypassedHexsideFacts((int)bypassed, bypassed.ToString().ToLowerInvariant(), true, read.Terrain?.Name, read.HexsideTerrain?.Name, read.Terrain?.IsRoad == true)
+                : new BypassedHexsideFacts((int)bypassed, bypassed.ToString().ToLowerInvariant(), false, null, null, false))],
+            (int)side,
+            to.Level,
+            to.ToString(),
+            targetRead is not null,
+            targetRead is null ? null : TerrainKey(targetRead),
+            targetRead?.Hex.BaseLevel ?? 0,
+            targetRead is null ? [] : [.. targetRead.Hex.Hexsides.Select(item => item.HexsideTerrain?.Name)],
+            movers.Length > 0 && there.Any(unit => unit.Side == movers[0].Side),
+            movers.Length > 0 && there.Any(unit => unit.Side != movers[0].Side && KnownEnemy(unit) && !Is(unit, Conditions.Disrupted)),
+            fromBaseLevel,
+            entryWall,
+            state.ScenarioMonth);
+        var (entry, reason) = ScenarioA1TerrainCosts.BypassStep(facts, () => BlazeEntryHalfMf(state, to));
+        return (entry, reason, entry is null ? null : bypass, false);
     }
 
     /// <summary>

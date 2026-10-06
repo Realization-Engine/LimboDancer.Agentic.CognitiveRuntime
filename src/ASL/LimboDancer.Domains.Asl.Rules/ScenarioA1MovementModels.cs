@@ -37,5 +37,56 @@ public sealed record InfantryStepFacts(
     bool Night,
     int? Month);
 
+/// <summary>One hexside a Bypass runs along, as the map reads the target hex's hexside: its direction as an int and its lower-case name, whether it was read, and the names of its terrain and hexside terrain and whether it carries a road.</summary>
+public sealed record BypassedHexsideFacts(int Side, string SideText, bool Read, string? Terrain, string? HexsideTerrain, bool Road);
+
+/// <summary>
+/// The facts of a Bypass step into a woods or building hex (A4.3, A4.31; ruling R10.7) across the target's hexside <paramref name="Crossed"/>:
+/// the hexsides named, the target Location and hex as the map reads them, who is in the hex, the base level of the hex left (or the mirror hex
+/// beyond the map edge), and the wall or hedge on the hexside crossed.
+/// </summary>
+public sealed record BypassStepFacts(
+    IReadOnlyList<BypassedHexsideFacts> Bypass,
+    int Crossed,
+    int ToLevel,
+    string ToText,
+    bool TargetReadable,
+    string? TargetTerrainKey,
+    int TargetBaseLevel,
+    IReadOnlyList<string?> TargetHexsideTerrains,
+    bool FriendlyUnitsAtTarget,
+    bool ArmedKnownEnemyAtTarget,
+    int FromBaseLevel,
+    string? EntryWall,
+    int? Month);
+
+/// <summary>
+/// The facts of a moving stack's step (rulings R10.1 to R10.3, R10.7): the moving stack's Bypass as the state has it, the movers against it, the
+/// Locations named, and the reads of the Location left. <paramref name="SideTowardFrom"/> is the target hex's hexside toward the origin, null when
+/// they are not adjacent; <paramref name="EntryWall"/> the wall or hedge on the origin's hexside toward the target.
+/// </summary>
+public sealed record MoveEntryFacts(
+    bool StackInBypass,
+    IReadOnlyList<int> Lane,
+    bool CurrentAtFrom,
+    bool MoversAllInCurrent,
+    bool CurrentMemberLeftBehind,
+    bool ToIsFrom,
+    bool EnemyAtFrom,
+    bool BypassGiven,
+    string? ObstacleTerrainKey,
+    int FromLevel,
+    bool FromReadable,
+    bool ToIsGround,
+    int? SideTowardFrom,
+    string? EntryWall,
+    string ToText);
+
+/// <summary>
+/// The verdict on a moving stack's step: the first refusal; the cost of occupying the Bypassed obstacle; or which step the caller reads next, the
+/// ordinary Infantry step from the origin to the target or a Bypass step into the target.
+/// </summary>
+public sealed record MoveEntryVerdict(string? Refusal, InfantryEntry? Occupy, bool OrdinaryStep, bool BypassStep);
+
 /// <summary>The night and weather half MF of an Infantry step and whether the road rate survives them (E1.51, E3.54, E3.6, E3.64, E3.723, E3.733), read by the caller for a terrain, a road crossing, and a rise.</summary>
 public delegate (int HalfMf, bool RoadRate) InfantryWeatherRead(string terrain, bool road, int rise);
