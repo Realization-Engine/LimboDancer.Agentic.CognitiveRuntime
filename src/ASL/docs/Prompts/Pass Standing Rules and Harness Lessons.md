@@ -111,6 +111,7 @@
 - The chart supplement's command is in `.github/workflows/asl-authoring-ci.yml`, step "Regenerate bounded Scenario A1 chart supplement". Run it locally with `--no-build` after the solution build.
 - Docker: `bash src/ASL/tools/docker-check/docker_check.sh <branch>` from the repository root, on the committed branch; about 15 minutes. Start Docker Desktop first if `docker info` fails. Read the per-project results, not only the last line. A Studio fix that was seen in the Studio needs no Docker check.
 - If a merge on main fails ("Permission denied", or untracked files that would be overwritten), check that the leftovers match the branch (`git hash-object` against `git rev-parse branch:path`), remove them, restore any deleted file, and retry.
+- When `main` is checked out in another worktree (a Codex session's under `C:/Users/dland/.codex/worktrees`), or the user's uncommitted file blocks the switch, merge in a temporary worktree: `git worktree add -b merge-<pass> E:/Archive/GitHub/dlandi/m<pass> origin/main` (a short path on the repository's drive; the scratchpad's path is too long for the Oracle fixtures, and the temp drive fails the ownership check), run every command there as `git -c safe.directory=<path> -C <path> ...`, merge with `--no-ff -F <file>`, `push origin merge-<pass>:main`, then `git worktree remove --force` and delete the branch. The local `main` ref then lags until that worktree pulls; say so.
 - After every push: `gh run list --branch main --limit 3`, then `gh run watch <id> --exit-status`.
 
 **Measuring**
