@@ -88,5 +88,69 @@ public sealed record MoveEntryFacts(
 /// </summary>
 public sealed record MoveEntryVerdict(string? Refusal, InfantryEntry? Occupy, bool OrdinaryStep, bool BypassStep);
 
+/// <summary>
+/// One hexside an LOS crosses into the target hex, as the map reads it for one firer: the wall or hedge on it (<c>wall</c>, <c>hedge</c>, null, or
+/// <c>other</c>), whether it carries a road, the base level of the hex beyond it (null when the map cannot read that hex), and whether the hex beyond
+/// it is the firer's own hex.
+/// </summary>
+public sealed record LosEntrySideFacts(int Side, string? Wall, bool Road, int? BeyondBaseLevel, bool BeyondIsFirer);
+
+/// <summary>
+/// One firer's Location against a target's walls and hedges (B9.3, B9.31, B9.33, B9.35): whether it is the target Location itself, its level, its range,
+/// the hexsides its LOS crosses into the target hex (null when the bearing cannot be read; read only for a base-level target), the wall or hedge on the
+/// hexspine leading away from a vertex (null when there is none or the LOS crosses one hexside), its hex's base level (null when unread), and a read
+/// of which side holds Wall Advantage over the hexside it shares with the target, made only when the rule asks.
+/// </summary>
+public sealed record WallTemFirerFacts(
+    bool IsTarget,
+    int Level,
+    int Range,
+    IReadOnlyList<LosEntrySideFacts>? EntrySides,
+    string? SpineWall,
+    int? BaseLevel,
+    Func<(string? Side, string? Reason)> WallAdvantage);
+
+/// <summary>
+/// The facts of a target's wall or hedge TEM against a group (B9.3, B9.31, B9.33, B9.35; rulings R10.5, R10.6): the target Location's level, its hex's base
+/// level and the hexside terrains of its hexsides (empty when the map cannot read it), each firer, the firing side, and whether the moving stack is in the
+/// target Location in the MPh (B9.3, the road gap).
+/// </summary>
+public sealed record WallTemFacts(
+    bool TargetReadable,
+    int TargetLevel,
+    int TargetBaseLevel,
+    IReadOnlyList<string?> TargetHexsideTerrains,
+    IReadOnlyList<WallTemFirerFacts> Firers,
+    string FiringSide,
+    bool MovingStackAtTarget);
+
+/// <summary>One unit in a Location that might claim Wall Advantage: its side and the conditions the claim reads (B9.32, B9.321, B9.323).</summary>
+public sealed record WallAdvantageUnitFacts(string Id, string? Side, bool Active, bool Dummy, bool Vehicle, bool Captured, bool Broken);
+
+/// <summary>One of the two ADJACENT Locations that share a hexside: its level, its terrain key (null when unread or not admitted), and the units in it.</summary>
+public sealed record WallAdvantageLocationFacts(int Level, string? TerrainKey, IReadOnlyList<WallAdvantageUnitFacts> Units);
+
+/// <summary>
+/// The facts of which side holds Wall Advantage (B9.32, B9.321, B9.41; ruling R10.6): the two Locations, whether the game's history is at hand, the
+/// revision at which a unit last entered its Location (read only when both Locations hold claimants), and the Scenario Defender when named.
+/// </summary>
+public sealed record WallAdvantageFacts(WallAdvantageLocationFacts One, WallAdvantageLocationFacts Two, bool HistoryKnown, Func<string, long> ArrivalOf, string? ScenarioDefender);
+
+/// <summary>
+/// The facts of Height Advantage (B10.31; ruling R10.4): the target hex's base level and Location level, each firer's level, whether the moving stack is in
+/// the target Location in the MPh with the base level of the hex it left and the target's hexside toward it (null when unread or not adjacent), and the
+/// hexsides each firer's LOS crosses into the target hex, read by index only when the rule asks.
+/// </summary>
+public sealed record HeightAdvantageFacts(
+    int TargetBaseLevel,
+    int TargetLevel,
+    IReadOnlyList<int> FirerLevels,
+    bool MovementPhase,
+    bool MovingStackAtTarget,
+    int? LeftBaseLevel,
+    int? ClimbedSide,
+    Func<int, IReadOnlyList<int>?> EntrySidesOf,
+    bool SnapShot);
+
 /// <summary>The night and weather half MF of an Infantry step and whether the road rate survives them (E1.51, E3.54, E3.6, E3.64, E3.723, E3.733), read by the caller for a terrain, a road crossing, and a rise.</summary>
 public delegate (int HalfMf, bool RoadRate) InfantryWeatherRead(string terrain, bool road, int rise);

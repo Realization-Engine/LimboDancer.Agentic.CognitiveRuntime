@@ -339,4 +339,169 @@ public static class ScenarioA1TerrainCosts
         var halfMf = (rise == 1 ? 2 * laneCost : laneCost) + (facts.EntryWall is not null ? 2 : 0) + smokeHalfMf();
         return (new InfantryEntry(halfMf, laneTerrain, false, false, false, rise != 0), null);
     }
+
+    /// <summary>
+    /// The wall or hedge TEM a target claims against a group's LOS (B9.3, B9.31, B9.33, B9.35; rulings R10.5, R10.6): from the wall or hedge on
+    /// the hexside each firer's LOS crosses into the target hex, or at a vertex on either hexside there or the hexspine leading away; reduced
+    /// by one for each full level a firer's height above the target hex exceeds the range; none against a firer that holds Wall Advantage
+    /// over that hexside. Every firer Location must give the same TEM. Null TEM with no reason when none applies.
+    /// </summary>
+    public static (FireHexsideTem? Tem, string? Reason) HexsideTemAt(WallTemFacts facts)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        if (!facts.TargetReadable || !facts.TargetHexsideTerrains.Any(side => WallOn(side) is not null))
+        {
+            return (null, null);
+        }
+
+        if (facts.TargetHexsideTerrains.Any(side => WallOn(side) == "other"))
+        {
+            return (null, "play.fire-hexside: hexside terrain other than walls and hedges at the target is not reviewed (ruling R10.1)");
+        }
+
+        FireHexsideTem? common = null;
+        var first = true;
+        foreach (var firer in facts.Firers)
+        {
+            FireHexsideTem? tem = null;
+
+            // B9.35: only a target at the base level of its hex, where its walls are, claims them.
+            if (facts.TargetLevel == 0 && !firer.IsTarget)
+            {
+                if (firer.EntrySides is not { } sides)
+                {
+                    return (null, "play.fire-hexside: the bearing of the LOS into the target hex cannot be read");
+                }
+
+                var crossed = new List<(string Wall, LosEntrySideFacts? Side)>();
+                foreach (var side in sides)
+                {
+                    if (side.Wall is { } wall)
+                    {
+                        crossed.Add((wall, side));
+                    }
+                }
+
+                // B9.2, B9.3: an LOS through a vertex is also affected by the wall or hedge on the hexspine leading away from it.
+                if (sides.Count == 2 && firer.SpineWall is { } spineWall)
+                {
+                    if (spineWall == "other")
+                    {
+                        return (null, "play.fire-hexside: hexside terrain other than walls and hedges on the LOS is not reviewed (ruling R10.1)");
+                    }
+
+                    crossed.Add((spineWall, null));
+                }
+
+                foreach (var (wall, side) in crossed.OrderByDescending(item => ScenarioA1FireReference.HexsideTem[item.Wall]))
+                {
+                    // B9.6 (ruling R10.5): a Hillside wall or hedge is not reviewed.
+                    if (side is { BeyondBaseLevel: { } beyondLevel } && beyondLevel != facts.TargetBaseLevel)
+                    {
+                        return (null, "play.fire-hillside-wall: a wall or hedge between hexes of different levels is a Hillside wall, which is not reviewed (B9.6)");
+                    }
+
+                    // B9.3 (referee, pass 10): through a road gap in the wall, its TEM applies only to a unit that is not moving.
+                    if (side is { Road: true } && facts.MovingStackAtTarget)
+                    {
+                        continue;
+                    }
+
+                    // B9.31, B9.321 EX (ruling R10.6): no wall TEM against a firer that holds Wall Advantage over the shared hexside; B9.32 (referee,
+                    // pass 10): only a ground-level unit at the wall's level holds it.
+                    if (side is { BeyondIsFirer: true } && firer.Level == 0)
+                    {
+                        var (holder, reason) = firer.WallAdvantage();
+                        if (reason is not null)
+                        {
+                            return (null, reason);
+                        }
+
+                        if (holder == facts.FiringSide)
+                        {
+                            continue;
+                        }
+                    }
+
+                    // B9.33: a higher firer lowers the TEM by one for each full level its height above the target hex exceeds the range.
+                    var height = firer.BaseLevel is { } firerBase ? firerBase + firer.Level - facts.TargetBaseLevel : 0;
+                    var value = Math.Max(0, ScenarioA1FireReference.HexsideTem[wall] - Math.Max(0, height - firer.Range));
+                    tem = value > 0 ? new FireHexsideTem(wall, value) : null;
+                    break;
+                }
+            }
+
+            // A.5, A7.52 (table player, pass 10): a DRM that helps the target applies to the whole group, so the highest wall TEM stands.
+            if (first || (tem?.Tem ?? 0) > (common?.Tem ?? 0))
+            {
+                common = tem;
+            }
+
+            first = false;
+        }
+
+        return (common, null);
+    }
+
+    /// <summary>
+    /// Which side holds Wall Advantage over the hexside two ADJACENT Locations share (B9.32, B9.321, B9.41; ruling R10.6): of the Good Order
+    /// units there, the one that entered its Location first; units there since setup give it to the Scenario Defender when named. Null holder
+    /// with no reason when neither Location holds a unit that may claim it.
+    /// </summary>
+    public static (string? Side, string? Reason) WallAdvantageHolder(WallAdvantageFacts facts)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        static int InHexTem(WallAdvantageLocationFacts at) => at.TerrainKey is { } key ? ScenarioA1FireReference.Tem.GetValueOrDefault(key) : 0;
+
+        // B9.31, B9.321 EX, B9.323 (referee, pass 10): a unit keeping a positive in-hex TEM does not hold WA; one with none must claim it.
+        static WallAdvantageUnitFacts[] Claimants(WallAdvantageLocationFacts at) => at.Level != 0 || InHexTem(at) > 0 ? []
+            : [.. at.Units.Where(unit => unit.Active && !unit.Dummy && !unit.Vehicle && !unit.Captured && !unit.Broken)];
+        var first = Claimants(facts.One);
+        var second = Claimants(facts.Two);
+        if (first.Length == 0 || second.Length == 0)
+        {
+            return (first.Length > 0 ? first[0].Side : second.Length > 0 ? second[0].Side : null, null);
+        }
+
+        if (!facts.HistoryKnown)
+        {
+            return (null, "play.fire-wall-advantage: which side holds Wall Advantage cannot be read here (ruling R10.6)");
+        }
+
+        var oneAt = first.Min(unit => facts.ArrivalOf(unit.Id));
+        var twoAt = second.Min(unit => facts.ArrivalOf(unit.Id));
+        if (oneAt != twoAt)
+        {
+            return (oneAt < twoAt ? first[0].Side : second[0].Side, null);
+        }
+
+        return facts.ScenarioDefender is { } defender
+            ? (defender, null)
+            : (null, "play.fire-wall-advantage: both sides' units have held their Locations since setup and no Scenario Defender is named, so which holds Wall Advantage is not decided (B9.32; ruling R10.6)");
+    }
+
+    /// <summary>
+    /// Whether a target at a higher elevation than every firer may claim Height Advantage (B10.31; ruling R10.4): not a mover under Defensive
+    /// First Fire whose step came from a lower hex across the hexside a firer's LOS crosses into its hex.
+    /// </summary>
+    public static bool HeightAdvantageAt(HeightAdvantageFacts facts)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+
+        // A.5, A7.52 (referee, pass 10): a DRM that helps the target applies to the whole group when any firer is lower.
+        var height = facts.TargetBaseLevel + facts.TargetLevel;
+        var lower = facts.FirerLevels.Select((level, index) => (Level: level, Index: index)).Where(item => item.Level < height).ToArray();
+        if (lower.Length == 0)
+        {
+            return false;
+        }
+
+        if (facts.MovementPhase && facts.MovingStackAtTarget && facts.LeftBaseLevel is { } leftLevel && leftLevel < facts.TargetBaseLevel && facts.ClimbedSide is { } climbed)
+        {
+            // A Snap Shot is traced to the climbed hexside itself (referee, pass 10).
+            return !facts.SnapShot && lower.Any(item => facts.EntrySidesOf(item.Index) is { } sides && !sides.Contains(climbed));
+        }
+
+        return true;
+    }
 }
