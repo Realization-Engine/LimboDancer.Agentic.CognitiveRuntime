@@ -198,5 +198,120 @@ public interface ILosFactReader
 /// <summary>A firer or director of an attack as the "seen" read finds it in the state: its side and its Location's index (null when it has none).</summary>
 public sealed record SeenSubjectFacts(string Side, int? Location);
 
+/// <summary>One unit a move names, as the state finds it: whether it is active, and its side (null when not found).</summary>
+public sealed record MoveStartUnitFacts(bool Active, string? Side);
+
+/// <summary>
+/// One mover against the bars of a move (A3.3, A4.1, A4.8, A7.25, A7.83, A11.15, A12.32, A20.4, A20.53, D2.1): its conditions as the state has them,
+/// Broken as a three-valued fact, and whether it massacred a prisoner in the PFPh.
+/// </summary>
+public sealed record MoveBarUnitFacts(
+    string Id,
+    bool NoMoveThisPlayerTurn,
+    bool Ti,
+    bool BoundingFire,
+    bool Vehicle,
+    bool Berserk,
+    bool PrepFire,
+    bool MassacredInPrepFire,
+    bool Melee,
+    bool Captured,
+    bool Dummy,
+    bool? Broken,
+    bool Pinned,
+    bool MovementEnded,
+    bool Hidden);
+
+/// <summary>
+/// The facts of the bars of a move (the planner's PlanMove, blocks 3 and 4): the Gun push named and what the state says of the pusher and the Gun,
+/// the movers, the moving stack as the state has it, the enemy vehicle in the target Location (its id, null for none), and the move's flags.
+/// </summary>
+public sealed record MoveBarsFacts(
+    bool PushGiven,
+    bool SinglePusher,
+    bool GunMannedByPusher,
+    bool PusherCrewOrHalfSquad,
+    bool PusherPinned,
+    bool PusherBroken,
+    bool GunManhandlingKnown,
+    bool Assault,
+    bool PushingOn,
+    IReadOnlyList<MoveBarUnitFacts> Movers,
+    bool CurrentExists,
+    IReadOnlyList<string> CurrentMembers,
+    IReadOnlyList<string> CurrentMovers,
+    bool WindowOpen,
+    string? EnemyVehicleId,
+    bool DoubleTime,
+    string ToText);
+
+/// <summary>One step a berserk charge's shortest route may take (ruling R27.2): the Location it charges, its cost, whether it is taken in the open, and its Bypass lanes.</summary>
+public sealed record ChargeStepFacts(string Target, int HalfMf, bool Plain, IReadOnlyList<string> Lanes);
+
+/// <summary>A berserk charge's route as the planner's search gives it: the steps by the Location text they enter, and why the route is undecided (null when it is decided).</summary>
+public sealed record ChargeRouteFacts(IReadOnlyDictionary<string, ChargeStepFacts> Steps, string? Undecided);
+
+/// <summary>One mover of a berserk stack: its id and side, and whether it is berserk and wounded.</summary>
+public sealed record BerserkMoverFacts(string Id, string Side, bool Berserk, bool Wounded);
+
+/// <summary>One unit in the Location a berserk stack charges from (A15.43): whether it is active, its side, berserk, done moving, wounded.</summary>
+public sealed record BerserkNeighbourFacts(string Id, bool Active, string? Side, bool Berserk, bool MovementEnded, bool Wounded);
+
+/// <summary>One SW a berserk unit holds, with the portage its catalog definition prints (null when none).</summary>
+public sealed record BerserkCarriedFacts(string ItemId, int? Portage);
+
+/// <summary>One berserk mover as the abandonment of its SW reads it (A15.431): whether it has moved this MPh, a SMC, and what it holds in the state's order.</summary>
+public sealed record BerserkAbandonFacts(string Id, bool FirstStep, bool Smc, IReadOnlyList<BerserkCarriedFacts> Carried);
+
+/// <summary>One mover against Assault Movement and Double Time (A4.5, A4.42, A4.61, E1.51): its conditions, whether its CX counter left at this MPh's start, a SMC, and the PP it carries (null when one is not recorded).</summary>
+public sealed record MoveTimingUnitFacts(string Id, bool Wounded, bool Berserk, bool Cx, bool NoDoubleTime, bool Smc, int? PortageSum);
+
+/// <summary>The verdict on a DC Placement or SMOKE attempt named with a move: the refusal, or which action the planner reads next.</summary>
+public sealed record MoveActionVerdict(string? Refusal, bool PlaceDc, bool Smoke);
+
+/// <summary>One mover against the entry's cost: whether it has spent MF this MPh, its Double Time MF, and CX.</summary>
+public sealed record EntryMoverFacts(bool Spent, int DoubleTimeMf, bool Cx);
+
+/// <summary>
+/// The facts of an entry's cost (A4.134, A7.7, B16.4, C10.3; rulings R8.6, R10.9, R12.11): the step as the terrain read gives it, the movers, and the
+/// move's flags. A mover's MF allotment is read by index when the rule asks.
+/// </summary>
+public sealed record EntryCostFacts(
+    InfantryEntry Entry,
+    bool AnyEncircled,
+    bool Pushed,
+    bool Bypassing,
+    bool Occupy,
+    bool MinimumMove,
+    bool Assault,
+    int Berserk,
+    bool CurrentExists,
+    bool DoubleTime,
+    IReadOnlyList<EntryMoverFacts> Movers);
+
+/// <summary>One unit in the target Location as the entry reads it (A4.14, A12.15): active, its side, captured, Known, a Dummy.</summary>
+public sealed record UnitAtTargetFacts(string Id, bool Active, string? Side, bool Captured, bool Known, bool Dummy);
+
+/// <summary>The verdict on the enemy units in the target Location: the refusal; a stack of Dummies alone removed; the enemies there and the hidden enemies a charge enters, in the state's order.</summary>
+public sealed record MoveEnemiesVerdict(string? Refusal, bool RemoveDummies, string? Summary, IReadOnlyList<string> EnemiesThere, IReadOnlyList<string> HiddenEnemies);
+
+/// <summary>One mover against the MF it has left (A4.11, A4.42, A4.5, A4.12, B3.4): whether this is its first step, its Double Time MF, CX, off the road, and its leader bonus.</summary>
+public sealed record MfLeftMoverFacts(string Id, bool FirstStep, int DoubleTimeMf, bool Cx, bool OffRoad, bool LeaderBonus, int HalfMfSpent);
+
+/// <summary>A mover's MF allotment as the caller reads it (A4.11, A4.42; rulings R5.1, R5.4), by the mover's index, with the Double Time MF, CX, and the bonuses the rule names.</summary>
+public delegate int? MfAllotmentRead(int mover, int doubleTimeMf, bool cx, int bonusMf, int ipcBonus);
+
+/// <summary>The moving stack as the DEFENDER's pass reads it (A8.11): the window, its members, a vehicle, ending, an OVR pending, its movers and those still active, and its Location.</summary>
+public sealed record PassFireFacts(bool WindowOpen, int Members, bool Vehicle, bool Ending, bool OverrunPending, IReadOnlyList<string> Movers, IReadOnlyList<string> Living, string LocationText);
+
+/// <summary>The moving stack as the ATTACKER's end of the move reads it (A4.2, A8.11): the window, its Location, members and movers, a vehicle, in Bypass, and the units named.</summary>
+public sealed record EndMoveFacts(bool WindowOpen, string LocationText, IReadOnlyList<string> Members, IReadOnlyList<string> Movers, bool Vehicle, bool InBypass, IReadOnlyList<string> Named);
+
+/// <summary>A berserk unit that would end its move (A15.43, A15.431): the cost of each step its route offers, why the route is undecided, and the half MF it has left.</summary>
+public sealed record EndMoveBerserkFacts(IReadOnlyList<int> StepHalfMfs, string? Undecided, int Left);
+
+/// <summary>The verdict on the end of a move: the refusal; a vehicle's own plan; or the units ending, those that may move on, and the summary.</summary>
+public sealed record EndMoveVerdict(string? Refusal, bool Vehicle, IReadOnlyList<string> Ending, IReadOnlyList<string> Remaining, string Summary);
+
 /// <summary>The night and weather half MF of an Infantry step and whether the road rate survives them (E1.51, E3.54, E3.6, E3.64, E3.723, E3.733), read by the caller for a terrain, a road crossing, and a rise.</summary>
 public delegate (int HalfMf, bool RoadRate) InfantryWeatherRead(string terrain, bool road, int rise);

@@ -71,34 +71,30 @@ public sealed partial class GamePlanner
 
         var assault = arguments.TryGetProperty("assault", out var flag) && flag.ValueKind == JsonValueKind.True;
         var doubleTime = arguments.TryGetProperty("doubleTime", out var timed) && timed.ValueKind == JsonValueKind.True;
-        if (state.Phase != "mph")
+
+        // Pass 32.b: the planner reads the state, the map, and the catalog block by block, in the order the old body read them, and Rules decides each
+        // block (ScenarioA1MovementCalculator); the arguments' parsing and the reads that belong to other slices (the entry edge, the playable area,
+        // the charge route) stay here.
+        var found = ids.Select(id => state.Unit(id)).ToArray();
+        if (ScenarioA1MovementCalculator.MoveStart(state.Phase, [.. found.Select(unit => new MoveStartUnitFacts(unit is { Status: InstanceStatus.Active }, unit?.Side))], state.PhasingSide) is { } notStarted)
         {
-            return Refused(scope, label, expected, "play.move-phase: units move in their side's MPh (A3.3, p. 47)");
+            return Refused(scope, label, expected, notStarted);
         }
 
-        var movers = ids.Select(id => state.Unit(id)).ToArray();
-        if (movers.Any(unit => unit is not { Status: InstanceStatus.Active } || unit.Side != state.PhasingSide))
-        {
-            return Refused(scope, label, expected, "play.move-stack: every mover is an active unit of the phasing side");
-        }
+        var movers = found.Select(unit => unit!).ToArray();
 
         // Rulings R20.5, R25.3: a stack waiting off board enters along its entry edge as its first step, which is a step like any other; it never moves
         // with units on the map, and takes no action off board (A2.52).
-        var offBoard = movers.Count(unit => unit!.Position is OffMapPosition && state.Location(unit.Id) is null);
+        var offBoard = movers.Count(unit => unit.Position is OffMapPosition && state.Location(unit.Id) is null);
         HexsideDirection? entering = null;
+        if (ScenarioA1MovementCalculator.OffBoardEntry(offBoard, movers.Length, Text(arguments, "smoke", out _) || Text(arguments, "placeDc", out _) || Text(arguments, "pushGun", out _)) is { } notEntering)
+        {
+            return Refused(scope, label, expected, notEntering);
+        }
+
         if (offBoard > 0)
         {
-            if (offBoard < movers.Length)
-            {
-                return Refused(scope, label, expected, "play.entry-stack: units waiting off board enter apart from units on the map (A2.51; ruling R20.5)");
-            }
-
-            if (Text(arguments, "smoke", out _) || Text(arguments, "placeDc", out _) || Text(arguments, "pushGun", out _))
-            {
-                return Refused(scope, label, expected, "play.entry-offboard-action: no action is allowed by units waiting off board; a stack places SMOKE or a DC once it is on the map (A2.52; ruling R25.3)");
-            }
-
-            var (edge, crossing, barred) = EntryCheck(state, [.. movers.Select(unit => unit!)], to, false);
+            var (edge, crossing, barred) = EntryCheck(state, movers, to, false);
             if (edge is null)
             {
                 return Refused(scope, label, expected, barred!);
@@ -108,19 +104,13 @@ public sealed partial class GamePlanner
         }
 
         // An entering stack has no Location yet: the steps below read its origin only for a stack on the map (ruling R25.3).
-        BoardLocation from;
-        if (entering is not null)
+        var origins = movers.Select(unit => state.Location(unit.Id)?.Location).Distinct().ToArray();
+        if (ScenarioA1MovementCalculator.Origin(entering is not null, origins.Length, origins is [{ }]) is { } noOrigin)
         {
-            from = to;
+            return Refused(scope, label, expected, noOrigin);
         }
-        else if (movers.Select(unit => state.Location(unit!.Id)?.Location).Distinct().ToArray() is [{ } origin])
-        {
-            from = origin;
-        }
-        else
-        {
-            return Refused(scope, label, expected, "play.move-stack: the stack moves from one Location (A4.2)");
-        }
+
+        var from = entering is not null ? to : origins[0]!;
 
         // A2.1 (ruling R20.6): never out of the card's playable area.
         if (to != from && PlayableBar(state, to) is { } outside)
@@ -128,102 +118,49 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, outside);
         }
 
-        // C10.3, C10.111 (ruling R8.6): a crew pushes the Gun it mans, alone, Good Order and unpinned, a QSU Gun; a crew that moves otherwise
-        // abandons its Gun. C3.22 (ruling R8.9): a Gun that changed its CA in the PFPh, and its crew, do not move; A4.8: nor a TI unit.
-        EquipmentInstance? pushed = null;
-        if (Text(arguments, "pushGun", out var pushGunId))
-        {
-            if (movers is not [{ } pusher] || state.Find(pushGunId) is not EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Manned } manning } gunToPush
-                || manning.Holder != pusher.Id || !vocabulary.IsA(pusher.Kind, "asl:crew") && !vocabulary.IsA(pusher.Kind, "asl:half-squad")
-                || Is(pusher, Conditions.Pinned) || Is(pusher, Conditions.Broken)
-                || OrdnanceReference.Value.Guns.GetValueOrDefault(gunToPush.Definition?.Definition ?? string.Empty) is not { Manhandling: not null })
-            {
-                return Refused(scope, label, expected, "play.move-push: a Good Order, unpinned crew or HS alone pushes the Gun it mans (C10.3, C10.111)");
-            }
-
-            pushed = gunToPush;
-        }
-
-        // C10.3: a crew pushing its Gun in the moving stack may push on though its last push made it TI; A4.61: pushing is never Assault Movement.
-        if (pushed is not null && assault)
-        {
-            return Refused(scope, label, expected, "play.move-push: pushing a Gun prevents Assault Movement (C10.3)");
-        }
-
-        var pushingOn = pushed is not null && state.Movement?.Members.Contains(movers[0]!.Id) == true;
-        if (movers.FirstOrDefault(unit => state.NoMoveThisPlayerTurn.Contains(unit!.Id) || (Is(unit, "asl:ti") && !pushingOn)) is { } halted)
-        {
-            return Refused(scope, label, expected, Is(halted, Conditions.BoundingFire)
-                ? $"play.move-halted: {halted.Id} is an Opportunity Firer and does not move this MPh (A7.25)"
-                : $"play.move-halted: {halted.Id} is TI, fired a SW in the PFPh, or changed its Gun's CA there, and does not move this Player Turn (A4.8, A3.3, C3.22)");
-        }
-
-        // D2.1 (ruling R25.3): a vehicle spends its MP one expenditure at a time, by its own action; Infantry may not enter an enemy vehicle's
-        // Location, since OVR (D7) and CC against a vehicle (A11.5) are not reviewed.
-        if (movers.FirstOrDefault(unit => LiveFire.IsVehicle(unit!)) is { } driven)
-        {
-            return Refused(scope, label, expected, $"play.move-vehicle-kind: {driven.Id} is a vehicle and moves by its MP expenditures (D2.1)");
-        }
-
-        // A15.43 (ruling R27.2): a berserk charge enters a vehicle's Location for the sequential CC there (A11.31); its route decides whether it may.
-        if (EnemyVehicleAt(state, state.PhasingSide!, to) is { } blocking && !movers.All(unit => Is(unit!, Conditions.Berserk)))
-        {
-            return Refused(scope, label, expected, $"play.move-enemy-vehicle: the enemy vehicle {blocking.Id} is in {to}; Infantry OVR of a vehicle is not built, and only a berserk charge enters its Location in the MPh (D7, A11.5, A15.43; rulings R25.3, R27.2)");
-        }
-
-        // A3.3 (p. 47): a unit that fired in the PFPh does not move in the MPh.
-        if (movers.FirstOrDefault(unit => GameState.Condition(unit!, Conditions.PrepFire) == ConditionState.True) is { } fired)
-        {
-            return Refused(scope, label, expected, $"play.move-prep-fire: {fired.Id} fired in the PFPh, so it may not move this MPh (A3.3, p. 47)");
-        }
-
-        // A20.4, A7.351 (ruling R5.7): a Massacre in the PFPh is made as if using a SW, so the unit has Prep Fired.
-        if (movers.FirstOrDefault(unit => MassacredInPrepFire(existing, unit!.Id)) is { } massacring)
-        {
-            return Refused(scope, label, expected, $"play.move-prep-fire: {massacring.Id} massacred a prisoner in the PFPh, as if using a SW, so it may not move this MPh (A20.4, A3.3)");
-        }
-
-        // A4.61: Assault Movement is not used where the move requires CX status.
-        if (assault && doubleTime)
-        {
-            return Refused(scope, label, expected, "play.move-assault: Assault Movement may not be combined with Double Time (A4.61, A4.5)");
-        }
-
-        // A11.15: a unit held in Melee does not leave its Location; a prisoner moves only with its Guard (A20.53).
-        if (movers.FirstOrDefault(unit => Is(unit!, Conditions.Melee) || Is(unit!, Conditions.Captured)) is { } held)
-        {
-            return Refused(scope, label, expected, $"play.move-melee: {held.Id} is held in Melee or captured, so it does not move (A11.15, A20.53)");
-        }
-
-        // A4.1, A7.83: broken, pinned, or already-ended units do not move; A12.11, A12.14 (ruling R10.10): concealed units and Dummies move, a
-        // hidden unit does not.
-        if (movers.Any(unit => (unit!.Kind != UnitKinds.Dummy && GameState.Condition(unit, Conditions.Broken) != ConditionState.False)
-            || GameState.Condition(unit, Conditions.Pinned) == ConditionState.True || unit.MovementEnded
-            || GameState.Condition(unit, Conditions.Hidden) == ConditionState.True))
-        {
-            return Refused(scope, label, expected, "play.move-unit: every mover is Good Order, unpinned, not hidden, and not done moving; a hidden unit is first placed beneath \"?\" (A4.1, A7.83, A12.32; ruling R23.5)");
-        }
-
-        // A4.2: once a stack moves, only its members move, together or apart, until the ATTACKER ends them all.
         var current = state.Movement;
-        if (current is not null && ids.Any(id => !current.Members.Contains(id, StringComparer.Ordinal)))
+        var pushGiven = Text(arguments, "pushGun", out var pushGunId);
+        var pusher = movers.Length == 1 ? movers[0] : null;
+        var gunToPush = pushGiven && pusher is not null && state.Find(pushGunId) is EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Manned } } gun ? gun : null;
+        var bars = new MoveBarsFacts(
+            pushGiven,
+            pusher is not null,
+            gunToPush is not null && gunToPush.Holding!.Holder == pusher!.Id,
+            pusher is not null && (vocabulary.IsA(pusher.Kind, "asl:crew") || vocabulary.IsA(pusher.Kind, "asl:half-squad")),
+            pusher is not null && Is(pusher, Conditions.Pinned),
+            pusher is not null && Is(pusher, Conditions.Broken),
+            gunToPush is not null && OrdnanceReference.Value.Guns.GetValueOrDefault(gunToPush.Definition?.Definition ?? string.Empty) is { Manhandling: not null },
+            assault,
+            pushGiven && current?.Members.Contains(movers[0].Id) == true,
+            [.. movers.Select(unit => new MoveBarUnitFacts(unit.Id, state.NoMoveThisPlayerTurn.Contains(unit.Id), Is(unit, "asl:ti"), Is(unit, Conditions.BoundingFire), LiveFire.IsVehicle(unit),
+                Is(unit, Conditions.Berserk), GameState.Condition(unit, Conditions.PrepFire) == ConditionState.True, MassacredInPrepFire(existing, unit.Id), Is(unit, Conditions.Melee),
+                Is(unit, Conditions.Captured), unit.Kind == UnitKinds.Dummy, GameState.Condition(unit, Conditions.Broken) switch
+                {
+                    ConditionState.True => true,
+                    ConditionState.False => false,
+                    _ => null,
+                },
+                GameState.Condition(unit, Conditions.Pinned) == ConditionState.True, unit.MovementEnded, GameState.Condition(unit, Conditions.Hidden) == ConditionState.True))],
+            current is not null,
+            current?.Members ?? [],
+            current?.Movers ?? [],
+            current is { WindowOpen: true },
+            EnemyVehicleAt(state, state.PhasingSide!, to)?.Id,
+            doubleTime,
+            to.ToString());
+        if (ScenarioA1MovementCalculator.MoveBars(bars) is { } barredMove)
         {
-            return Refused(scope, label, expected, current.Members.Count == 0
-                ? $"play.move-order: {string.Join(", ", current.Movers)} can move no farther; end their move first (A4.2, A8.11)"
-                : $"play.move-order: only {string.Join(", ", current.Members)} of the moving stack may move until its move ends (A4.2)");
+            return Refused(scope, label, expected, barredMove);
         }
 
-        if (current is { WindowOpen: true })
-        {
-            return Refused(scope, label, expected, "play.move-window: the DEFENDER may still fire at the stack's last MF expenditure (A8.1, A8.11)");
-        }
+        var pushed = pushGiven ? gunToPush : null;
 
         // A15.43: at the start of the MPh every berserk unit charges before any other unit moves.
-        var berserk = movers.Count(unit => Is(unit!, Conditions.Berserk));
+        var berserk = movers.Count(unit => Is(unit, Conditions.Berserk));
         BoardLocation? charge = null;
-        if (berserk == 0 && current is null && MustCharge(state) is [{ } charging, ..])
+        if (ScenarioA1MovementCalculator.BerserkFirst(berserk, current is not null, () => MustCharge(state) is [{ } charging, ..] ? charging.Id : null) is { } notFirst)
         {
-            return Refused(scope, label, expected, $"play.berserk-first: {charging.Id} is berserk and charges before any other unit moves (A15.43)");
+            return Refused(scope, label, expected, notFirst);
         }
 
         var abandoned = new List<EquipmentInstance>();
@@ -231,7 +168,7 @@ public sealed partial class GamePlanner
         {
             var lane = arguments.TryGetProperty("bypass", out var laneList) && laneList.ValueKind == JsonValueKind.Array
                 ? string.Join(",", Strings(arguments, "bypass").Select(item => item.ToLowerInvariant())) : null;
-            var (allowed, target, reason) = BerserkStep(state, [.. movers.Select(unit => unit!)], from, to, current, assault, lane);
+            var (allowed, target, reason) = BerserkStep(state, movers, from, to, current, assault, lane);
             if (allowed is null)
             {
                 return Refused(scope, label, expected, reason!);
@@ -240,84 +177,45 @@ public sealed partial class GamePlanner
             charge = target;
 
             // A15.431: before its charge a berserk unit abandons every SW of more than one PP; its 1PP SW beyond its IPC (A4.42: three for
-            // a MMC, one for a SMC) are its own choice, which is not reviewed.
-            foreach (var unit in movers.Where(unit => unit!.MfSpent == 0 && !unit.HalfMfSpent))
+            // a MMC, one for a SMC) are its own choice, which is not reviewed. The SW held and their printed portage are read here; Rules decides.
+            var carriedBy = movers.ToDictionary(unit => unit.Id, unit => state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding?.Holder == unit.Id).ToArray(), StringComparer.Ordinal);
+            var (noPortage, abandonedIds) = ScenarioA1MovementCalculator.BerserkAbandons(
+                [.. movers.Select(unit => new BerserkAbandonFacts(unit.Id, unit.MfSpent == 0 && !unit.HalfMfSpent, vocabulary.IsA(unit.Kind, "asl:smc"),
+                    [.. carriedBy[unit.Id].Select(item => new BerserkCarriedFacts(item.Id, item.Definition is { } reference
+                        ? catalogs.FirstOrDefault(catalog => catalog.Identity == reference.Catalog)?.Definition(reference.Definition)?.Printed("front", "asl:portage")?.Value?.Number
+                        : null))]))],
+                [.. Strings(arguments, "keep")]);
+            if (noPortage is not null)
             {
-                var carried = state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding?.Holder == unit!.Id).ToArray();
-                var portage = carried.ToDictionary(item => item, item => item.Definition is { } reference
-                    ? catalogs.FirstOrDefault(catalog => catalog.Identity == reference.Catalog)?.Definition(reference.Definition)?.Printed("front", "asl:portage")?.Value?.Number
-                    : null);
-                if (portage.Values.Any(value => value is null))
-                {
-                    return Refused(scope, label, expected, $"play.berserk-sw: the portage of a SW {unit!.Id} holds is not recorded (A15.431)");
-                }
-
-                abandoned.AddRange(carried.Where(item => portage[item] > 1));
-
-                // Backlog pass 15 (ruling R15.14): the owner names the 1PP SW it keeps within its IPC; with none named, those first in id order are kept.
-                var light = carried.Where(item => portage[item] == 1).OrderBy(item => item.Id, StringComparer.Ordinal).ToArray();
-                var capacity = vocabulary.IsA(unit!.Kind, "asl:smc") ? 1 : 3;
-                if (light.Length > capacity)
-                {
-                    string[] keep = [.. Strings(arguments, "keep").Where(id => light.Any(item => item.Id == id))];
-                    if (keep.Length > capacity)
-                    {
-                        return Refused(scope, label, expected, $"play.berserk-sw: {unit.Id} keeps at most {capacity} 1PP SW within its IPC (A15.431, A4.42)");
-                    }
-
-                    var kept = keep.Concat(light.Select(item => item.Id).Where(id => !keep.Contains(id))).Take(capacity).ToHashSet(StringComparer.Ordinal);
-                    abandoned.AddRange(light.Where(item => !kept.Contains(item.Id)));
-                }
-            }
-        }
-
-        // A4.61: Assault Movement is declared before the stack moves, and moves it no more than one Location.
-        if (current is not null && (current.Assault || assault))
-        {
-            return Refused(scope, label, expected, "play.move-assault: Assault Movement is declared at the start of the move and enters one Location (A4.61)");
-        }
-
-        // A4.5 (ruling R5.1): Double Time by Infantry neither broken, wounded, berserk, nor already CX, nor whose CX counter left at this MPh's start.
-        // E1.51 (backlog pass 16, ruling R16.5): no Double Time for a unit whose NVR is 0.
-        if (doubleTime && state.Nvr == 0)
-        {
-            return Refused(scope, label, expected, "play.night-double-time: with an NVR of 0 a unit may not Double Time (E1.51)");
-        }
-
-        if (doubleTime && movers.FirstOrDefault(unit => Is(unit!, Conditions.Wounded) || Is(unit!, Conditions.Berserk) || Is(unit!, Conditions.Cx)
-            || state.NoDoubleTime.Contains(unit!.Id)) is { } tired)
-        {
-            return Refused(scope, label, expected, Is(tired, Conditions.Cx) || state.NoDoubleTime.Contains(tired.Id)
-                ? $"play.move-double-time: {tired.Id} is CX, or its CX counter left at the start of this MPh, so it may not Double Time (A4.5, A4.51)"
-                : $"play.move-double-time: {tired.Id} is wounded or berserk and may not Double Time (A4.5, A17.2, A15.431)");
-        }
-
-        // A4.42: a SMC never portages more than two PP.
-        if (movers.FirstOrDefault(unit => vocabulary.IsA(unit!.Kind, "asl:smc") && Portage(state, unit) is { } carried && carried.Sum() > 2) is { } laden)
-        {
-            return Refused(scope, label, expected, $"play.move-portage: {laden.Id} carries more than two PP, which a SMC never portages (A4.42)");
-        }
-
-        // A23.3 (ruling R15.2): a DC Placement spends the stack's MF in its own Location.
-        if (Text(arguments, "placeDc", out var chargeId))
-        {
-            return berserk > 0 || current is { Bypass.Count: > 0 } || !Text(arguments, "placeDcAt", out var placeAt) || to != from
-                ? Refused(scope, label, expected, "play.dc-arguments: a DC Placement names its DC and Location, the stack stays where it is, not in Bypass; a berserk stack charges (A23.3, A15.431)")
-                : PlanPlaceDc(scope, attemptId, expected, label, state, [.. movers.Select(unit => unit!)], ids, from, chargeId, placeAt, assault, doubleTime);
-        }
-
-        // A24.1 (ruling R9.5): a SMOKE grenade attempt spends the stack's MF in its own Location.
-        if (Text(arguments, "smoke", out var smokeAt))
-        {
-            // Table player, pass 10: a SMOKE attempt in Bypass is not built.
-            if (current is { Bypass.Count: > 0 })
-            {
-                return Refused(scope, label, expected, "play.smoke-bypass: a SMOKE attempt by a stack in Bypass is not built (A24.1, A4.3; ruling R10.7)");
+                return Refused(scope, label, expected, noPortage);
             }
 
-            return berserk > 0 || !Text(arguments, "smokeBy", out var placerId) || to != from
-                ? Refused(scope, label, expected, "play.smoke-arguments: a SMOKE attempt names its squad and Location, and the stack stays where it is; a berserk stack charges (A24.1, A15.43)")
-                : PlanSmoke(scope, attemptId, expected, label, actor, state, [.. movers.Select(unit => unit!)], ids, from, placerId, smokeAt, assault, doubleTime);
+            var items = carriedBy.Values.SelectMany(list => list).ToDictionary(item => item.Id, StringComparer.Ordinal);
+            abandoned.AddRange(abandonedIds.Select(id => items[id]));
+        }
+
+        if (ScenarioA1MovementCalculator.MoveTiming(current is not null, current?.Assault == true, assault, doubleTime, state.Nvr,
+            [.. movers.Select(unit => new MoveTimingUnitFacts(unit.Id, Is(unit, Conditions.Wounded), Is(unit, Conditions.Berserk), Is(unit, Conditions.Cx), state.NoDoubleTime.Contains(unit.Id),
+                vocabulary.IsA(unit.Kind, "asl:smc"), Portage(state, unit)?.Sum()))]) is { } badTiming)
+        {
+            return Refused(scope, label, expected, badTiming);
+        }
+
+        var action = ScenarioA1MovementCalculator.SpecialAction(Text(arguments, "placeDc", out var chargeId), Text(arguments, "placeDcAt", out var placeAt),
+            Text(arguments, "smoke", out var smokeAt), Text(arguments, "smokeBy", out var placerId), berserk, current is { Bypass.Count: > 0 }, to == from);
+        if (action.Refusal is { } noAction)
+        {
+            return Refused(scope, label, expected, noAction);
+        }
+
+        if (action.PlaceDc)
+        {
+            return PlanPlaceDc(scope, attemptId, expected, label, state, movers, ids, from, chargeId, placeAt, assault, doubleTime);
+        }
+
+        if (action.Smoke)
+        {
+            return PlanSmoke(scope, attemptId, expected, label, actor, state, movers, ids, from, placerId, smokeAt, assault, doubleTime);
         }
 
         var minimumMove = arguments.TryGetProperty("minimumMove", out var minimal) && minimal.ValueKind == JsonValueKind.True;
@@ -337,116 +235,53 @@ public sealed partial class GamePlanner
         }
 
         var (entry, stepReason, bypassing, occupy) = entering is { } edgeSide
-            ? EntryStep(state, [.. movers.Select(unit => unit!)], to, edgeSide, bypass)
-            : MoveEntry(state, [.. movers.Select(unit => unit!)], from, to, current, bypass);
+            ? EntryStep(state, movers, to, edgeSide, bypass)
+            : MoveEntry(state, movers, from, to, current, bypass);
         if (entry is null)
         {
             return Refused(scope, label, expected, stepReason!);
         }
 
         var terrain = entry.Terrain;
-
-        // A7.7 (ruling R12.11): the first Location an Encircled unit enters costs twice its MF.
-        var halfMf = entry.HalfMf * (movers.Any(unit => state.Encircled(unit!)) ? 2 : 1);
-
-        // C10.3 (ruling R8.6): a Gun is pushed only into Open Ground or grain (a road hex counted as its terrain), at double the MF, never up a
-        // level, into Bypass, or by Minimum Move (A4.134).
-        if (pushed is not null && (terrain is not ("open-ground" or "grain") || entry.LevelChange || bypassing is not null || occupy || minimumMove))
+        var (noCost, halfMf) = ScenarioA1MovementCalculator.EntryCost(
+            new EntryCostFacts(entry, movers.Any(state.Encircled), pushed is not null, bypassing is not null, occupy, minimumMove, assault, berserk, current is not null, doubleTime,
+                [.. movers.Select(unit => new EntryMoverFacts(unit.MfSpent != 0 || unit.HalfMfSpent, unit.DoubleTimeMf, Is(unit, Conditions.Cx)))]),
+            (index, doubleTimeMf, cx) => MfAllotment(state, movers[index], doubleTimeMf, cx));
+        if (noCost is not null)
         {
-            return Refused(scope, label, expected, $"play.move-push-terrain: a Gun is pushed only into Open Ground or grain at its own level in the review, not {terrain} (C10.3, A4.134; ruling R8.6)");
+            return Refused(scope, label, expected, noCost);
         }
 
-        if (pushed is not null)
+        // A4.14, A12.15 (rulings R10.11, R10.15): the units of the target Location are read here, and Rules decides who is revealed and who is barred.
+        var there = state.At(to).OfType<UnitInstance>().ToArray();
+        var enemies = ScenarioA1MovementCalculator.EnemiesAtTarget(
+            [.. there.Select(unit => new UnitAtTargetFacts(unit.Id, unit.Status == InstanceStatus.Active, unit.Side, Is(unit, Conditions.Captured), KnownEnemy(unit), unit.Kind == UnitKinds.Dummy))],
+            state.PhasingSide, charge is not null, occupy, bypassing is not null, movers.All(unit => unit.Kind == UnitKinds.Dummy), minimumMove, string.Join(", ", ids), to.ToString());
+        if (enemies.Refusal is { } occupied)
         {
-            halfMf *= 2;
+            return Refused(scope, label, expected, occupied);
         }
 
-        // A4.134 (ruling R10.9): a Minimum Move is the stack's first and only step, by units with at least one MF after portage.
-        if (minimumMove && (current is not null || assault || berserk > 0 || occupy || bypassing is not null
-            || movers.Any(unit => unit!.MfSpent != 0 || unit.HalfMfSpent || MfAllotment(state, unit, 0, Is(unit, Conditions.Cx)) is not >= 1)))
+        if (enemies.RemoveDummies)
         {
-            return Refused(scope, label, expected, "play.move-minimum: a Minimum Move is the stack's only step this MPh, by units left with at least one MF after portage, not by Assault Movement, Bypass, or a berserk charge (A4.134; ruling R10.9)");
-        }
-
-        if (entry.MinimumMoveOnly && !minimumMove)
-        {
-            return Refused(scope, label, expected, "play.move-marsh: marsh is entered from a lower elevation only by Minimum Move (B16.4)");
-        }
-
-        // B16.4 (ruling R10.1): marsh costs each mover its whole allotment, so only units that have spent no MF this MPh enter it.
-        if (entry.AllMf)
-        {
-            // A4.61 (table player, pass 10): marsh takes all the MF, so it is never Assault Movement.
-            if (assault)
-            {
-                return Refused(scope, label, expected, "play.move-assault: entering marsh uses all of a unit's MF, which Assault Movement may not (A4.61, B16.4)");
-            }
-
-            if (!minimumMove && movers.Any(unit => unit!.MfSpent != 0 || unit.HalfMfSpent))
-            {
-                return Refused(scope, label, expected, "play.move-marsh: entering marsh costs a unit's whole MF allotment, so only units that have spent no MF this MPh enter it (B16.4)");
-            }
-
-            // A4.134 EX (referee, pass 10): from a lower level it costs twice the allotment.
-            halfMf = movers.Select(unit => MfAllotment(state, unit!, doubleTime ? 2 : unit!.DoubleTimeMf, doubleTime || Is(unit!, Conditions.Cx)) ?? 0).Max() * (entry.MinimumMoveOnly ? 4 : 2);
-            if (halfMf <= 0)
-            {
-                return Refused(scope, label, expected, "play.move-mf: no mover has an MF allotment the catalog decides");
-            }
-        }
-
-        // A4.14, A12.15 (rulings R10.11, R10.15): a Location with a Known enemy unit is not entered in the MPh, but by a berserk charge; one with only
-        // concealed or hidden enemy units or Dummies reveals one, forcing the stack back unless it charges or they were all Dummies.
-        UnitInstance[] enemiesThere = charge is not null || occupy || bypassing is not null ? []
-            : [.. state.At(to).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side != state.PhasingSide && !Is(unit, Conditions.Captured))];
-        UnitInstance[] hiddenEnemies = charge is null || occupy ? []
-            : [.. state.At(to).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side != state.PhasingSide && !Is(unit, Conditions.Captured) && !KnownEnemy(unit))];
-        if (enemiesThere.Any(KnownEnemy))
-        {
-            return Refused(scope, label, expected, "play.move-occupied: Infantry may not enter a Location holding a Known enemy unit in the MPh; Infantry OVR outside the reviewed building case is not built (A4.14, A4.15; ruling R10.11)");
-        }
-
-        // A12.15 (referee, pass 10): a moving stack of Dummies that tries to enter concealed enemy units is asked to show a real unit, and is removed.
-        if (enemiesThere.Length > 0 && movers.All(unit => unit!.Kind == UnitKinds.Dummy))
-        {
-            List<GameEvent> removed = [.. movers.Select((unit, index) => Event(scope, attemptId, index + 1, expected, "instance-eliminated", new InstanceEliminated(unit!.Id),
+            List<GameEvent> removed = [.. movers.Select((unit, index) => Event(scope, attemptId, index + 1, expected, "instance-eliminated", new InstanceEliminated(unit.Id),
                 ScenarioA1FirePackage.Identity.ToString(), null))];
-            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, removed,
-                [$"play.move: {string.Join(", ", ids)} attempt {to}, holding concealed enemy units; the moving stack shows no real unit, so its Dummies are removed (A12.15)"]);
+            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, removed, [enemies.Summary!]);
         }
 
-        if (enemiesThere.Length > 0 && minimumMove)
+        var byId = there.ToDictionary(unit => unit.Id, StringComparer.Ordinal);
+        UnitInstance[] enemiesThere = [.. enemies.EnemiesThere.Select(id => byId[id])];
+        UnitInstance[] hiddenEnemies = [.. enemies.HiddenEnemies.Select(id => byId[id])];
+
+        // A4.11, A4.42, A4.5, A4.12, B3.4, A4.61, A4.134, B16.4: the MF each mover has left, decided by Rules from each mover's facts and allotment.
+        var leaderIpcTo = LeaderIpcRecipient(state, movers);
+        if (ScenarioA1MovementCalculator.MfLeft(
+            [.. movers.Select(unit => new MfLeftMoverFacts(unit.Id, unit.MfSpent == 0 && !unit.HalfMfSpent, unit.DoubleTimeMf, Is(unit, Conditions.Cx), unit.OffRoad, LeaderBonus(state, unit, movers),
+                (unit.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0)))],
+            minimumMove, entry.AllMf, doubleTime, entry.RoadRate, pushed is not null, state.Nvr, assault, halfMf, leaderIpcTo,
+            (index, doubleTimeMf, cx, bonusMf, ipcBonus) => MfAllotment(state, movers[index], doubleTimeMf, cx, bonusMf, ipcBonus)) is { } noMf)
         {
-            return Refused(scope, label, expected, "play.move-occupied: a Minimum Move into concealed enemy units is not reviewed (A4.134, A12.15)");
-        }
-
-        // A4.11, A4.42, A4.5, A4.12, B3.4: the MF each mover has left, with Double Time, portage, and the leader and Road bonuses; A4.61: Assault Movement
-        // may not use all of the allotment without Double Time. A Minimum Move needs none (A4.134), and marsh takes it all (B16.4).
-        var leaderIpcTo = LeaderIpcRecipient(state, [.. movers.Select(unit => unit!)]);
-        foreach (var unit in movers)
-        {
-            if (minimumMove || entry.AllMf)
-            {
-                continue;
-            }
-
-            var extra = doubleTime ? (unit!.MfSpent == 0 && !unit.HalfMfSpent ? 2 : 1) : unit!.DoubleTimeMf;
-            var exhausted = doubleTime || Is(unit, Conditions.Cx);
-            // E1.51 (backlog pass 16, ruling R16.5): no road bonus with an NVR of 0.
-            var bonus = (entry.RoadRate && !unit.OffRoad && pushed is null && state.Nvr != 0 ? 1 : 0) + (LeaderBonus(state, unit, [.. movers.Select(item => item!)]) ? 2 : 0);
-            var ipc = unit.Id == leaderIpcTo.Recipient ? 1 : unit.Id == leaderIpcTo.Leader ? -1 : 0;
-            if (MfAllotment(state, unit, extra, exhausted, bonus, ipc) is not { } allowance || MfAllotment(state, unit, 0, exhausted, bonus, ipc) is not { } plain)
-            {
-                return Refused(scope, label, expected, $"play.move-mf: {unit.Id} has no MF allowance the catalog decides");
-            }
-
-            var spent = (unit.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0);
-            var left = (allowance * 2) - spent;
-            if (left < halfMf || (assault && (plain * 2) - spent <= halfMf))
-            {
-                return Refused(scope, label, expected, $"play.move-mf: {unit.Id} has {left / 2m} MF left, and the entry costs {halfMf / 2m}"
-                    + (assault && left >= halfMf ? "; Assault Movement may not use all of a unit's MF (A4.61)" : " (A4.11, A4.42, A4.61; Minimum Move, A4.134)"));
-            }
+            return Refused(scope, label, expected, noMf);
         }
 
         var step = (current?.Step ?? 0) + 1;
@@ -700,46 +535,15 @@ public sealed partial class GamePlanner
     private (bool? Allowed, BoardLocation? Target, string? Reason) BerserkStep(GameState state, UnitInstance[] movers, BoardLocation from, BoardLocation to,
         MovementState? current, bool assault, string? lane)
     {
-        if (movers.Any(unit => !Is(unit, Conditions.Berserk)))
-        {
-            return (null, null, "play.berserk-stack: berserk units charge apart from units that are not berserk (A15.43)");
-        }
-
-        if (assault)
-        {
-            return (null, null, "play.berserk-assault: a berserk unit never uses Assault Movement (A15.431)");
-        }
-
-        var wounded = Is(movers[0], Conditions.Wounded);
-        if (current is null && state.At(from).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side == movers[0].Side
-            && Is(unit, Conditions.Berserk) && !unit.MovementEnded && Is(unit, Conditions.Wounded) == wounded && !movers.Contains(unit)))
-        {
-            return (null, null, "play.berserk-stack: berserk units in one Location charge together unless one is wounded and one is not (A15.43)");
-        }
-
-        var (steps, _, undecided) = ChargeSteps(state, movers, from, current);
-        if (steps.TryGetValue(to, out var step))
-        {
-            // Ruling R27.2: the step is taken as the shortest route takes it, in the open or in one of its Bypass lanes.
-            if (lane is null ? step.Plain : step.Lanes.Contains(lane, StringComparer.Ordinal))
-            {
-                return (true, step.Target, null);
-            }
-
-            return (null, null, $"play.berserk-charge: the shortest route enters {to} "
-                + string.Join(" or ", (step.Plain ? ["as an ordinary step"] : Array.Empty<string>()).Concat(step.Lanes.Select(item => $"in Bypass along {item.Replace(",", " and ", StringComparison.Ordinal)}")))
-                + " (A15.431, A4.3; ruling R27.2)");
-        }
-
-        if (undecided is not null)
-        {
-            return (null, null, undecided);
-        }
-
-        return (null, null, steps.Count == 0
-            ? $"play.berserk-charge: {string.Join(", ", movers.Select(unit => unit.Id))} has no Known enemy unit to charge, or is already in its Location (A15.43)"
-            : $"play.berserk-charge: {string.Join(", ", movers.Select(unit => unit.Id))} charges the nearest Known enemy unit in its LOS by a shortest route: "
-                + $"{string.Join(", ", steps.Keys.Select(item => item.ToString()).Order(StringComparer.Ordinal))}, not {to} (A15.43, A15.431)");
+        // Pass 32.b: the stack and the units of its Location are read here, the route search only when Rules asks, and Rules decides.
+        var route = new Lazy<(IReadOnlyDictionary<BoardLocation, ChargeStep> Steps, BoardLocation? Target, string? Undecided)>(() => ChargeSteps(state, movers, from, current));
+        var (allowed, _, reason) = ScenarioA1MovementCalculator.BerserkStep(
+            [.. movers.Select(unit => new BerserkMoverFacts(unit.Id, unit.Side, Is(unit, Conditions.Berserk), Is(unit, Conditions.Wounded)))], assault, current is not null,
+            [.. state.At(from).OfType<UnitInstance>().Select(unit => new BerserkNeighbourFacts(unit.Id, unit.Status == InstanceStatus.Active, unit.Side, Is(unit, Conditions.Berserk), unit.MovementEnded, Is(unit, Conditions.Wounded)))],
+            to.ToString(), lane,
+            () => new ChargeRouteFacts(route.Value.Steps.ToDictionary(item => item.Key.ToString(), item => new ChargeStepFacts(item.Value.Target.ToString(), item.Value.HalfMf, item.Value.Plain, item.Value.Lanes), StringComparer.Ordinal),
+                route.Value.Undecided));
+        return (allowed, allowed is true ? route.Value.Steps[to].Target : null, reason);
     }
 
     /// <summary>The DEFENDER passes on the moving stack's latest MF expenditure (A8.11).</summary>
@@ -750,26 +554,23 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.no-game: the game has no state yet");
         }
 
-        if (state.Movement is not { WindowOpen: true } movement)
+        // Pass 32.b: the moving stack is read here, and Rules decides.
+        var movement = state.Movement;
+        var (refusal, gone, summary) = ScenarioA1MovementCalculator.PassFire(movement is null ? null
+            : new PassFireFacts(movement.WindowOpen, movement.Members.Count, movement.Vehicle, movement.Ending, movement.Overrun is not null, movement.Movers,
+                [.. movement.Movers.Where(id => state.Unit(id) is { Status: InstanceStatus.Active })], movement.Location.ToString()));
+        if (refusal is not null)
         {
-            return Refused(scope, label, expected, "play.pass-window: no moving stack awaits the DEFENDER");
+            return Refused(scope, label, expected, refusal);
         }
 
-        // Pass 25 (table player, pass 15): with every member broken, pinned, or eliminated by the DEFENDER's fire, passing also ends the stack's move.
-        List<GameEvent> events = [Event(scope, attemptId, 1, expected, "movement-window-closed", new MovementWindowClosed(movement.Step), null, null)];
-        var gone = movement.Members.Count == 0 && !movement.Vehicle && !movement.Ending && movement.Overrun is null;
+        List<GameEvent> events = [Event(scope, attemptId, 1, expected, "movement-window-closed", new MovementWindowClosed(movement!.Step), null, null)];
         if (gone)
         {
             events.Add(Event(scope, attemptId, 2, expected, "movement-ended", new MovementEnded([.. movement.Movers]), null, null));
         }
 
-        var living = movement.Movers.Where(id => state.Unit(id) is { Status: InstanceStatus.Active }).ToArray();
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events,
-            [gone
-                ? $"play.pass: the DEFENDER fires no more in {movement.Location}; no member of the moving stack is left to move"
-                    + (living.Length > 0 ? $" ({string.Join(", ", living)} broken or pinned)" : " (every mover eliminated)") + ", so its move is over (A4.2, A8.1)"
-                : $"play.pass: the DEFENDER does not fire at {string.Join(", ", movement.Movers)} in {movement.Location}"
-                    + (movement.Ending ? $"; {string.Join(", ", movement.Movers)} ends its move (D2.1)" : string.Empty)]);
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [summary]);
     }
 
     /// <summary>
@@ -785,65 +586,37 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.no-game: the game has no state yet");
         }
 
-        if (state.Movement is not { } movement)
-        {
-            return Refused(scope, label, expected, "play.end-move: no stack is moving");
-        }
-
-        // Pass 25 (table player, pass 15): the refusal says what to do, and that no member is left when the DEFENDER's fire broke or eliminated them all.
-        if (movement.WindowOpen)
-        {
-            return Refused(scope, label, expected, $"play.end-move: the DEFENDER's window at {movement.Location} is open; the DEFENDER fires or passes first (A8.11)"
-                + (movement.Members.Count == 0 ? "; no member of the moving stack is left to move, so passing ends its move" : string.Empty));
-        }
-
+        // Pass 32.b: the moving stack and the units named are read here, a berserk unit's route only when Rules asks, and Rules decides.
+        var movement = state.Movement;
         var named = Strings(arguments, "unitIds").ToArray();
-        var ending = named.Length > 0 ? named : movement.Members.Count > 0 ? [.. movement.Members] : movement.Movers.ToArray();
-        if (ending.Distinct(StringComparer.Ordinal).Count() != ending.Length
-            || ending.Any(id => !movement.Members.Contains(id, StringComparer.Ordinal) && !movement.Movers.Contains(id, StringComparer.Ordinal)))
+        EndMoveBerserkFacts? Charge(string id)
         {
-            return Refused(scope, label, expected, $"play.end-move: only the moving stack's members ({string.Join(", ", movement.Members)}) end their move (A4.2)");
-        }
-
-        // D2.1, D2.4: a vehicle ends its move in Motion or stopped, spending its MP left in its hex first (rulings R5.14, R5.15).
-        if (movement.Vehicle && state.Unit(movement.Members.Count > 0 ? movement.Members[0] : movement.Movers[0]) is { } vehicle)
-        {
-            return PlanEndVehicle(scope, arguments, existing, attemptId, expected, label, state, movement, vehicle, actor);
-        }
-
-        // A4.32 (ruling R10.7): no unit ends its move in Bypass; it leaves or occupies the obstacle first (a unit that broke or was pinned there has left
-        // the stack).
-        if (movement.Bypass is { Count: > 0 } && ending.Any(id => movement.Members.Contains(id, StringComparer.Ordinal) && movement.Movers.Contains(id, StringComparer.Ordinal)))
-        {
-            return Refused(scope, label, expected, "play.end-move-bypass: Infantry may not end its move in Bypass; it leaves the hex or pays to occupy the obstacle (A4.32)");
-        }
-
-        // A15.43, A15.431: a berserk unit keeps charging while it has the MF for a step on its route; when the model cannot decide the
-        // route it may end its move, a recorded deviation (ruling R30.5).
-        var note = string.Empty;
-        foreach (var unit in ending.Select(state.Unit).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Berserk)))
-        {
-            if (state.Location(unit.Id) is not { } at)
+            if (state.Unit(id) is not { Status: InstanceStatus.Active } unit || !Is(unit, Conditions.Berserk) || state.Location(unit.Id) is not { } at)
             {
-                continue;
+                return null;
             }
 
             var (steps, _, undecided) = ChargeSteps(state, [unit], at.Location, movement);
             var left = MfAllotment(state, unit, unit.DoubleTimeMf, Is(unit, Conditions.Cx)) is { } allowance ? (allowance * 2) - (unit.MfSpent * 2) - (unit.HalfMfSpent ? 1 : 0) : 0;
-            if (steps.Values.Any(step => step.HalfMf <= left))
-            {
-                return Refused(scope, label, expected, $"play.berserk-charge: {unit.Id} still has the MF to charge on (A15.43, A15.431)");
-            }
-
-            if (undecided is not null)
-            {
-                note = $"; {unit.Id}'s charge is not decided by the model, so it ends in place (ruling R30.5: {undecided})";
-            }
+            return new EndMoveBerserkFacts([.. steps.Values.Select(step => step.HalfMf)], undecided, left);
         }
 
-        var remaining = movement.Members.Where(id => !ending.Contains(id, StringComparer.Ordinal)).ToArray();
+        var verdict = ScenarioA1MovementCalculator.EndMove(movement is null ? null
+            : new EndMoveFacts(movement.WindowOpen, movement.Location.ToString(), movement.Members, movement.Movers,
+                movement.Vehicle && state.Unit(movement.Members.Count > 0 ? movement.Members[0] : movement.Movers[0]) is not null, movement.Bypass is { Count: > 0 }, named), Charge);
+        if (verdict.Refusal is { } refusal)
+        {
+            return Refused(scope, label, expected, refusal);
+        }
+
+        // D2.1, D2.4: a vehicle ends its move in Motion or stopped, spending its MP left in its hex first (rulings R5.14, R5.15).
+        if (verdict.Vehicle)
+        {
+            return PlanEndVehicle(scope, arguments, existing, attemptId, expected, label, state, movement!, state.Unit(movement!.Members.Count > 0 ? movement.Members[0] : movement.Movers[0])!, actor);
+        }
+
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
-            [Event(scope, attemptId, 1, expected, "movement-ended", new MovementEnded(ending), null, null)],
-            [$"play.end-move: {string.Join(", ", ending)} end their move" + (remaining.Length > 0 ? $"; {string.Join(", ", remaining)} may move on (A4.2)" : string.Empty) + note]);
+            [Event(scope, attemptId, 1, expected, "movement-ended", new MovementEnded(verdict.Ending), null, null)],
+            [verdict.Summary]);
     }
 }

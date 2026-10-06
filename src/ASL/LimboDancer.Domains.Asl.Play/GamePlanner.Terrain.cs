@@ -338,7 +338,7 @@ public sealed partial class GamePlanner
     /// The MMC a leader lends his IPC to (A4.42; ruling R10.8): the only MMC of the stack with his leader bonus that carries more than its own IPC; the
     /// leader's own IPC is then spent. Nulls when there is none, or more than one.
     /// </summary>
-    private (string? Recipient, string? Leader) LeaderIpcRecipient(GameState state, IReadOnlyList<UnitInstance> movers) =>
+    private (string? Recipient, string? Leader) LeaderIpcRecipient(GameState state, UnitInstance[] movers) =>
         ScenarioA1MovementCalculator.LeaderIpcRecipient([.. movers.Select(MovingUnit)], index => Laden(state, movers[index]));
 
     /// <summary>A unit's nationality from the reviewed catalog; null when the catalog does not name it.</summary>
