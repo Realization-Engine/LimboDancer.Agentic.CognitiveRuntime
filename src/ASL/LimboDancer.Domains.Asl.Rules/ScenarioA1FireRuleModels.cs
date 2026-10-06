@@ -303,3 +303,50 @@ public interface IFireLaneFactReader
 
 /// <summary>One Location of a Fire Lane: the table index, the Residual FP there, and the Hindrance DRM of the LOS from the MG.</summary>
 public sealed record FireLaneLocation(int Location, int Fp, int HindranceDrm);
+
+/// <summary>A unit of the game as the concealment gain reads it (A12.12, A12.121, A11.15; ruling R12.5): its id and kind, whether it is active, of the phasing side, a vehicle, Personnel, a Dummy, from the catalog, a squad or HS; its Location's index in the caller's table (null off the map); its conditions; and five reads made when asked: whether it holds a Gun, whether an uncaptured enemy unit shares its Location, its Location's terrain key, whether SMOKE is in its hex, and the best Leadership of an unbroken, unpinned leader of its side there (0 with none).</summary>
+public sealed record ConcealmentCandidateFacts(
+    string Id,
+    string Kind,
+    bool Active,
+    bool PhasingSide,
+    bool Vehicle,
+    bool Personnel,
+    bool Dummy,
+    bool HasDefinition,
+    bool Squad,
+    bool HalfSquad,
+    int? Location,
+    bool Concealed,
+    bool Hidden,
+    bool Broken,
+    bool Berserk,
+    bool Melee,
+    bool Captured,
+    Func<bool> HoldsGun,
+    Func<bool> EnemyInLocation,
+    Func<string?> TerrainKey,
+    Func<bool> SmokeInHex,
+    Func<int> BestLeadership);
+
+/// <summary>A unit of the game as the concealment gain's enemy scan reads it: its index (for its NVR), whether it is active, of the enemy side, broken, captured, and its Location's index (null off the map).</summary>
+public sealed record WatchingEnemyFacts(int Index, bool Active, bool Enemy, bool Broken, bool Captured, int? Location);
+
+/// <summary>A fact reader for the concealment gain's search over the enemies that may see a Location (A12.12, E1.101; the pass 32 design, D4): Locations are indexes into the caller's table, units into its list.</summary>
+public interface IConcealmentFactReader
+{
+    /// <summary>The hex distance between two Locations; null when it cannot be read.</summary>
+    public int? Range(int from, int target);
+
+    /// <summary>Whether the LOS between two Locations is read and not blocked.</summary>
+    public bool LosOpen(int from, int target);
+
+    /// <summary>A unit's NVR at night; null when it has none.</summary>
+    public int? Nvr(int unit);
+
+    /// <summary>Whether a Location is Illuminated at night.</summary>
+    public bool Illuminated(int location);
+}
+
+/// <summary>A unit that gains "?" as its Player Turn ends, with the Final Concealment dr modifier it needs, or null when it gains "?" with no dr.</summary>
+public sealed record ConcealmentGain(string Id, int? Drm);

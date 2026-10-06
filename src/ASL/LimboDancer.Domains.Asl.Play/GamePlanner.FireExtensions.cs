@@ -195,76 +195,62 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// The units that gain "?" as their Player Turn ends (A12.12, A12.121, A12.122, the Concealment Table; ruling R12.5): each with the Final
-    /// Concealment dr modifier it needs, or null when it gains "?" with no dr.
+    /// Concealment dr modifier it needs, or null when it gains "?" with no dr. Rules decides it (pass 32.c) as a search through a fact reader over the
+    /// map (the design, D4); the units cross as facts, their costlier reads made when asked.
     /// </summary>
     private List<(UnitInstance Unit, int? Drm)> ConcealmentGains(GameState state)
     {
-        var gains = new List<(UnitInstance, int?)>();
-        var enemies = state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side != state.PhasingSide && !Is(unit, Conditions.Broken)
-            && !Is(unit, Conditions.Captured) && state.Location(unit.Id) is not null).ToArray();
-        foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && !LiveFire.IsVehicle(unit)
-            && vocabulary.IsA(unit.Kind, "asl:personnel") && unit.Kind != UnitKinds.Dummy && unit.Definition is not null)
-            .OrderBy(unit => unit.Id, StringComparer.Ordinal))
-        {
-            if (state.Location(unit.Id) is not { } at || new[] { Conditions.Concealed, Conditions.Hidden, Conditions.Broken, Conditions.Berserk, Conditions.Melee,
-                Conditions.Captured }.Any(name => Is(unit, name))
-                || state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Holding is { } holding && holding.Holder == unit.Id)
-                || state.At(at.Location).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && !Is(other, Conditions.Captured)))
-            {
-                // A unit sharing its Location with enemy units is about to be held in Melee (A11.15), and gains no "?" (a reading).
-                continue;
-            }
-
-            var inLosNear = false;
-            var inLosFar = false;
-            var within16 = false;
-            foreach (var enemy in enemies)
-            {
-                var from = state.Location(enemy.Id)!.Location;
-                var range = HexDistance(state, from, at.Location);
-                within16 |= range <= 16;
-                // E1.101 (backlog pass 16, ruling R16.4): at night an enemy sees a Location within its NVR or Illuminated.
-                if (Los(state, from, at.Location) is { IsBlocked: false } && (!state.Night || range <= NvrOf(state, enemy) || Illuminated(state, at.Location)))
-                {
-                    inLosNear |= range <= 16;
-                    inLosFar |= range > 16;
-                }
-            }
-
-            var read = ReadLocation(state, at.Location);
-            var terrain = read is null ? null : TerrainKey(read);
-            var inSeason = state.ScenarioMonth is >= 6 and <= 9;
-            var concealmentTerrain = terrain is "brush" or "woods" or "orchard" or "marsh" or "wooden-building" or "stone-building" or "wooden-rubble" or "stone-rubble"
-                || (terrain == "grain" && inSeason);
-            if (inLosNear || (inLosFar && !concealmentTerrain))
-            {
-                continue;
-            }
-
-            // E1.32 (backlog pass 16, ruling R16.4): at night what would need a Concealment dr gains "?" without one.
-            var needsDr = !state.Night && (inLosFar || (!concealmentTerrain && within16));
-            if (!needsDr)
-            {
-                gains.Add((unit, null));
-                continue;
-            }
-
-            // A12.122: +US#, + the best Good Order leader's Leadership in the Location unless alone, - the Location's TEM and in-hex Hindrance.
-            var size = vocabulary.IsA(unit.Kind, "asl:squad") ? 3 : vocabulary.IsA(unit.Kind, "asl:half-squad") || unit.Kind == "asl:crew" ? 2 : 1;
-            var leadership = state.At(at.Location).OfType<UnitInstance>().Where(other => other != unit && other.Status == InstanceStatus.Active
-                    && other.Side == unit.Side && other.Kind == "asl:leader" && !Is(other, Conditions.Broken) && !Is(other, Conditions.Pinned)
-                    && other.Definition is { } definition && FireReference.Value.Definitions.GetValueOrDefault(definition.Definition)?.Leadership is not null)
-                .Select(other => FireReference.Value.Definitions[other.Definition!.Definition].Leadership!.Value).DefaultIfEmpty(0).Min();
-            var tem = terrain is not null && ScenarioA1FireReference.Tem.TryGetValue(terrain, out var value) ? value : 0;
-            // A6.7 (referee, pass 12): only SMOKE in the Location hinders its own units; brush, grain, orchard, and marsh do not.
-            var smoke = SmokeSources(state).Any(place => place.Board == at.Location.Board && place.Hex == at.Location.Hex) ? 2 : 0;
-            gains.Add((unit, size + leadership - tem - smoke));
-        }
-
-        return gains;
+        var map = new ConcealmentMap(this, state);
+        UnitInstance[] units = [.. state.Units];
+        int? LocationIndex(UnitInstance unit) => state.Location(unit.Id) is { } at ? map.Index(at.Location) : null;
+        var gains = ScenarioA1FireFollowUps.ConcealmentGains(
+            units.Select(unit => new ConcealmentCandidateFacts(unit.Id, unit.Kind, unit.Status == InstanceStatus.Active, unit.Side == state.PhasingSide, LiveFire.IsVehicle(unit),
+                vocabulary.IsA(unit.Kind, "asl:personnel"), unit.Kind == UnitKinds.Dummy, unit.Definition is not null, vocabulary.IsA(unit.Kind, "asl:squad"),
+                vocabulary.IsA(unit.Kind, "asl:half-squad"), LocationIndex(unit), Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden), Is(unit, Conditions.Broken),
+                Is(unit, Conditions.Berserk), Is(unit, Conditions.Melee), Is(unit, Conditions.Captured),
+                () => state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Holding is { } holding && holding.Holder == unit.Id),
+                () => state.At(state.Location(unit.Id)!.Location).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && !Is(other, Conditions.Captured)),
+                () => ReadLocation(state, state.Location(unit.Id)!.Location) is { } read ? TerrainKey(read) : null,
+                () => SmokeSources(state).Any(place => place.Board == state.Location(unit.Id)!.Location.Board && place.Hex == state.Location(unit.Id)!.Location.Hex),
+                () => state.At(state.Location(unit.Id)!.Location).OfType<UnitInstance>().Where(other => other != unit && other.Status == InstanceStatus.Active
+                        && other.Side == unit.Side && other.Kind == "asl:leader" && !Is(other, Conditions.Broken) && !Is(other, Conditions.Pinned)
+                        && other.Definition is { } definition && FireReference.Value.Definitions.GetValueOrDefault(definition.Definition)?.Leadership is not null)
+                    .Select(other => FireReference.Value.Definitions[other.Definition!.Definition].Leadership!.Value).DefaultIfEmpty(0).Min())),
+            units.Select((unit, index) => new WatchingEnemyFacts(index, unit.Status == InstanceStatus.Active, unit.Side != state.PhasingSide, Is(unit, Conditions.Broken),
+                Is(unit, Conditions.Captured), LocationIndex(unit))),
+            state.Night, state.ScenarioMonth, map);
+        return [.. gains.Select(gain => (units.First(unit => unit.Id == gain.Id), gain.Drm))];
     }
 
-    /// <summary>The events of the concealment gained as a Player Turn ends (ruling R12.5): each dr needed, then each unit's "?".</summary>
+    /// <summary>The map and the night as the concealment gain's search reads them: a table of Locations by index, the hex distance and LOS between two, a unit's NVR, and Illumination.</summary>
+    private sealed class ConcealmentMap(GamePlanner planner, GameState state) : IConcealmentFactReader
+    {
+        private readonly List<BoardLocation> locations = [];
+        private readonly Dictionary<BoardLocation, int> indexes = [];
+
+        /// <summary>The index of a Location in the table, added when it is new.</summary>
+        public int Index(BoardLocation location)
+        {
+            if (!indexes.TryGetValue(location, out var index))
+            {
+                index = locations.Count;
+                locations.Add(location);
+                indexes[location] = index;
+            }
+
+            return index;
+        }
+
+        public int? Range(int from, int target) => planner.HexDistance(state, locations[from], locations[target]);
+
+        public bool LosOpen(int from, int target) => planner.Los(state, locations[from], locations[target]) is { IsBlocked: false };
+
+        public int? Nvr(int unit) => NvrOf(state, state.Units.ElementAt(unit));
+
+        public bool Illuminated(int location) => planner.Illuminated(state, locations[location]);
+    }
+
+    /// <summary>The events of the concealment gained as a Player Turn ends (ruling R12.5): each dr needed, then each unit's "?"; Rules reads each dr (pass 32.c).</summary>
     private void AddConcealmentGains(GameScope scope, string attemptId, long expected, string actor, IReadOnlyList<(UnitInstance Unit, int? Drm)> gains,
         List<GameEvent> events, Func<RollRequest, RollResult>? draw, List<string> reasons)
     {
@@ -281,16 +267,16 @@ public sealed partial class GamePlanner
                 var rollId = $"{attemptId}-roll-{(events.Count(item => item.Payload is DiceRolled) + 1).ToString(CultureInfo.InvariantCulture)}";
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
                     new DiceRolled(rollId, "concealment", 1, 6, dice.Values, DiceRolled.SystemSource, actor), null, null));
-                var final = dice.Values[0] + modifier;
-                reasons.Add($"play.concealment: {unit.Id}'s Final Concealment dr is {dice.Values[0]}{modifier:+0;-0;+0} = {final}: {(final <= 5 ? "gains" : "no")} \"?\" (A12.122)");
-                if (final > 5)
+                var (gained, reason) = ScenarioA1FireFollowUps.ConcealmentDr(unit.Id, dice.Values[0], modifier);
+                reasons.Add(reason);
+                if (!gained)
                 {
                     continue;
                 }
             }
             else
             {
-                reasons.Add($"play.concealment: {unit.Id} gains \"?\" (A12.12, the Concealment Table)");
+                reasons.Add(ScenarioA1FireFollowUps.ConcealmentWithoutDr(unit.Id));
             }
 
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "concealment-gained",
