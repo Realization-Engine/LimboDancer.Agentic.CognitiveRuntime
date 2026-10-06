@@ -1013,6 +1013,11 @@ public sealed partial class GamePlanner
         UnitCondition.Immobilized => Conditions.Immobilized,
         UnitCondition.Motion => Conditions.Motion,
         UnitCondition.BmgMalfunctioned => Conditions.BmgMalfunctioned,
+        UnitCondition.IntensiveFire => Conditions.IntensiveFire,
+        UnitCondition.Shocked => Conditions.Shocked,
+        UnitCondition.UnconfirmedKill => Conditions.UnconfirmedKill,
+        UnitCondition.ButtonedUp => Conditions.ButtonedUp,
+        UnitCondition.Abandoned => Conditions.Abandoned,
         _ => Conditions.CmgMalfunctioned,
     };
 

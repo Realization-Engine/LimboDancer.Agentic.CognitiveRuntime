@@ -623,12 +623,7 @@ public sealed partial class GamePlanner
         // C13.31, C13.36 (ruling R9.7): a PF Check's Original 6 pins or breaks its firer, or gives Casualty Reduction; so does an Original 12 To Hit DR.
         if (resolution.FirerEffect is { } firerEffect && state.Unit(facts.Crew.UnitId!) is { } shooter)
         {
-            var phaseMarker = facts.Phase switch
-            {
-                "DFPh" => Conditions.FinalFire,
-                "MPh" => Conditions.FirstFire,
-                _ => Conditions.PrepFire,
-            };
+            var phaseMarker = ConditionName(ScenarioA1OrdnanceEventRules.FirerPhaseMarker(facts.Phase));
             foreach (var (type, payload) in FirerEffectEvents(shooter, firerEffect, attemptId, phaseMarker))
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, type, payload, package, null, [recordId]));
@@ -691,12 +686,7 @@ public sealed partial class GamePlanner
 
         // C2.28: the malfunction; A7.1, C2.24: the Gun and its crew carry the fire phase's marker from their first shot; A8.1, C2.241 (ruling R8.1):
         // in the MPh a First Fire counter only once its ROF is spent; C5.6 (ruling R8.2): an Intensive Fire counter beside it.
-        string? marker = facts.Phase switch
-        {
-            "DFPh" => Conditions.FinalFire,
-            "MPh" => gunResult.FireCounter is "first-fire" or "intensive-fire" ? Conditions.FirstFire : null,
-            _ => Conditions.PrepFire,
-        };
+        string? marker = ScenarioA1OrdnanceEventRules.ShotMarker(facts.Phase, gunResult.FireCounter) is { } shotMarker ? ConditionName(shotMarker) : null;
         var gunConditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
 
         // C13.47 (ruling R9.11): a PSK is removed on its X#.
@@ -729,11 +719,7 @@ public sealed partial class GamePlanner
             && rolls.ToHit is [var colored, ..] && state.Location(firingGun.Id) is { } firingAt)
         {
             var nearest = NearestGoodOrderEnemyInLos(state, gunCrew.Side, firingAt.Location);
-            emplacedReveal = nearest is null
-                ? []
-                : (colored >= 5 && nearest <= 16) || (colored == 6 && nearest >= 17)
-                    ? new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [Conditions.Concealed] = ConditionState.False, [Conditions.Hidden] = ConditionState.False }
-                    : new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [Conditions.Concealed] = ConditionState.True, [Conditions.Hidden] = ConditionState.False };
+            emplacedReveal = ConditionChanges(ScenarioA1OrdnanceEventRules.EmplacedReveal(nearest, colored));
             foreach (var (name, value) in emplacedReveal)
             {
                 if (GameState.Condition(firingGun, name) != value)
@@ -828,7 +814,7 @@ public sealed partial class GamePlanner
     private static IEnumerable<(string Type, EventPayload Payload)> KillEvents(GameState state, UnitInstance vehicle, OrdnanceKill kill, string attemptId)
     {
         var at = state.Location(vehicle.Id)?.Location;
-        if (kill.Result is OrdnanceKill.Burn or OrdnanceKill.Eliminated)
+        if (ScenarioA1OrdnanceEventRules.Wrecks(kill.Result))
         {
             var burning = kill.Result == OrdnanceKill.Burn;
             yield return ("vehicle-wrecked", new VehicleWrecked(vehicle.Id, burning));
@@ -845,27 +831,7 @@ public sealed partial class GamePlanner
             yield break;
         }
 
-        var changed = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
-        if (Is(vehicle, Conditions.Concealed) || Is(vehicle, Conditions.Hidden))
-        {
-            changed[Conditions.Concealed] = ConditionState.False;
-            changed[Conditions.Hidden] = ConditionState.False;
-        }
-
-        if (kill.Result == OrdnanceKill.Immobilized)
-        {
-            changed[Conditions.Immobilized] = ConditionState.True;
-            changed[Conditions.Motion] = ConditionState.False;
-        }
-
-        if (kill.Shocked == true)
-        {
-            changed[Conditions.Shocked] = ConditionState.True;
-            changed[Conditions.UnconfirmedKill] = ConditionState.False;
-            changed[Conditions.ButtonedUp] = ConditionState.True;
-            changed[Conditions.Motion] = ConditionState.False;
-        }
-
+        var changed = ConditionChanges(ScenarioA1OrdnanceEventRules.KillConditions(kill, Is(vehicle, Conditions.Concealed) || Is(vehicle, Conditions.Hidden)));
         if (changed.Count > 0)
         {
             yield return ("conditions-changed", new ConditionsChanged(vehicle.Id, changed));
@@ -873,11 +839,7 @@ public sealed partial class GamePlanner
 
         if (kill.Abandoned == true)
         {
-            yield return ("conditions-changed", new ConditionsChanged(vehicle.Id, new Dictionary<string, ConditionState>(StringComparer.Ordinal)
-            {
-                [Conditions.Abandoned] = ConditionState.True,
-                [Conditions.Motion] = ConditionState.False,
-            }));
+            yield return ("conditions-changed", new ConditionsChanged(vehicle.Id, ConditionChanges(ScenarioA1OrdnanceEventRules.AbandonedConditions)));
             if (CrewCounter(vehicle, attemptId) is { } crew)
             {
                 yield return ("instance-created", crew);
@@ -908,14 +870,17 @@ public sealed partial class GamePlanner
             yield break;
         }
 
-        if (unit.Kind == "asl:squad" && unit.Definition is { } squad && ScenarioA1FireReference.HalfSquadOf(squad.Definition) is { } half)
+        string? half = null;
+        var casualty = ScenarioA1OrdnanceEventRules.Casualty(unit.Kind, () => unit.Definition is { } squad && (half = ScenarioA1FireReference.HalfSquadOf(squad.Definition)) is not null,
+            GameState.Condition(unit, Conditions.Wounded) == ConditionState.True);
+        if (casualty == FirerCasualty.HalfSquad)
         {
             // Table player, pass 9: the HS has fired, as its squad had.
             yield return ("lineage", new LineageRecorded(LineageAction.Reduced, [unit.Id],
                 [new NewInstance($"{attemptId}-{unit.Id}", "asl:half-squad", half, unit.Side, unit.Position, null,
                     new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal) { [marker] = ConditionState.True })]));
         }
-        else if (unit.Kind is "asl:leader" or "asl:hero" && GameState.Condition(unit, Conditions.Wounded) != ConditionState.True)
+        else if (casualty == FirerCasualty.Wounded)
         {
             yield return ("conditions-changed", new ConditionsChanged(unit.Id, new Dictionary<string, ConditionState>(StringComparer.Ordinal)
             {
