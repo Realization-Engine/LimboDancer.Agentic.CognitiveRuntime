@@ -367,5 +367,72 @@ public sealed record MoverConcealmentFacts(string Id, bool Dummy, bool Concealed
 /// <summary>A Fire Lane with Residual FP in the Location a stack enters (A9.22): its weapon and the FP.</summary>
 public sealed record FireLaneAttackFacts(string Weapon, int Fp);
 
+/// <summary>The refusal of a recorded event by the projector: the diagnostic's code and its text.</summary>
+public sealed record RecordRefusal(string Code, string Text);
+
+/// <summary>One mover of a recorded movement step as the projector finds it (A3.3, A4.2, A4.5, A11.15, A20.53): found and active, its side, its Location's text (null off the map), its conditions, Personnel, and whether its CX counter left at this MPh's start.</summary>
+public sealed record StepMoverFacts(
+    string Id,
+    bool Active,
+    string? Side,
+    string? LocationText,
+    bool MovementEnded,
+    bool PrepFire,
+    bool Melee,
+    bool Captured,
+    bool Personnel,
+    bool NoDoubleTime,
+    bool Broken,
+    bool Wounded,
+    bool Berserk,
+    bool Cx,
+    bool OffMapWaiting,
+    int MfSpent,
+    bool HalfMfSpent);
+
+/// <summary>
+/// A recorded movement step against the state (the projector's StepMovement, blocks 1 to 4 and 6 to 8): the phase and phasing side, the movers,
+/// the record's fields, and the moving stack as the state has it.
+/// </summary>
+public sealed record StepRecordFacts(
+    string? Phase,
+    string? PhasingSide,
+    IReadOnlyList<StepMoverFacts> Movers,
+    int HalfMf,
+    bool Assault,
+    int Step,
+    bool DoubleTime,
+    bool MinimumMove,
+    string? AttemptedText,
+    string ToText,
+    int? BypassCount,
+    bool Exit,
+    bool CurrentExists,
+    IReadOnlyList<string> CurrentMembers,
+    bool CurrentWindowOpen,
+    bool CurrentAssault,
+    int CurrentStep);
+
+/// <summary>The verdict on a recorded movement step: the refusal, or whether the stack forced back from off board stays there with its move over.</summary>
+public sealed record StepRecordVerdict(RecordRefusal? Refusal, bool OffBoardForcedBack);
+
+/// <summary>One mover's bookkeeping after a step (A4.5, B3.4, A4.12; ruling R10.8): its MF spent in halves, CX when Double Timing, its Double Time MF, off the road, and the leaders it has moved with.</summary>
+public sealed record StepMoverUpdate(int MfSpent, bool HalfMfSpent, bool SetCx, int DoubleTimeMf, bool OffRoad, IReadOnlyList<string> MovedWith);
+
+/// <summary>A SW possessed by a mover as the AFPh bar reads it (A4.41): its id, a light mortar, and whether it is already marked moved.</summary>
+public sealed record CarriedWeaponFacts(string Id, bool LightMortar, bool AlreadyMoved);
+
+/// <summary>The moving stack as the DEFENDER's window closes (A4.134, A24.1, D2.15, D7.1; rulings R5.15, R9.5, R10.9, R11.11): the record's step against the state's, its ending members, and its state.</summary>
+public sealed record CloseWindowFacts(bool WindowOpen, int Step, int ClosedStep, IReadOnlyList<string> EndingMembers, bool OverrunPending, bool Ending, IReadOnlyList<string> Members, IReadOnlyList<string> Movers, bool MinimumMove, bool Vehicle);
+
+/// <summary>The verdict on the window's closing: the refusal; the units whose move ends (none, every member or mover, or the named ones); and whether the Minimum Move's unbroken movers are pinned and CX.</summary>
+public sealed record CloseWindowVerdict(RecordRefusal? Refusal, IReadOnlyList<string>? EndMove, bool PinMinimumMovers);
+
+/// <summary>One member of the moving stack as the stack keeps or drops it (A4.2, A7.8, D5.34, D8.2; ruling R11.9): active and its conditions.</summary>
+public sealed record StackMemberFacts(string Id, bool Active, bool Stunned, bool Shocked, bool UnconfirmedKill, bool Immobilized, bool Abandoned, bool Bogged, bool Recalled, bool StunRecovery, bool Broken, bool Pinned);
+
+/// <summary>The verdict on the moving stack after an event: unchanged, or its members and movers and the members that leave it and end their MPh.</summary>
+public sealed record KeepMovingStackVerdict(bool Unchanged, IReadOnlyList<string> Members, IReadOnlyList<string> Movers, IReadOnlyList<string> Leaving);
+
 /// <summary>The night and weather half MF of an Infantry step and whether the road rate survives them (E1.51, E3.54, E3.6, E3.64, E3.723, E3.733), read by the caller for a terrain, a road crossing, and a rise.</summary>
 public delegate (int HalfMf, bool RoadRate) InfantryWeatherRead(string terrain, bool road, int rise);

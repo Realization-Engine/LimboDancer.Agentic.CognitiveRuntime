@@ -808,6 +808,243 @@ public static class ScenarioA1MovementCalculator
             .. lanes.Select(item => $"play.move: the Fire Lane of {item.Weapon} attacks the stack in {landedText} with {item.Fp} Residual FP (A9.22)")];
     }
 
+    /// <summary>
+    /// A recorded movement step's checks as the projector makes them (the projector's StepMovement, blocks 1 to 4 and 6 to 8; UNIT-STATE-029), in
+    /// their order: a stack of the phasing side that may still move, in one Location, in the MPh, at a positive cost; no Prep Firer, no unit held in
+    /// Melee or captured; the moving stack's members continue after the window closes with the same Assault declaration, on the next step; Double
+    /// Time by Personnel that may; a stack entering from off board that is forced back stays there; a Minimum Move the first and only step, a forced
+    /// back in place, a Bypass of one or two hexsides; an exit from the stack's own Location. The SMOKE attempt's check is its own calculator's.
+    /// </summary>
+    public static RecordRefusal? VerifyStepStart(StepRecordFacts facts)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        var movers = facts.Movers;
+        if (facts.Phase != "mph" || movers.Count == 0 || movers.Any(unit => !unit.Active || unit.Side != facts.PhasingSide || unit.MovementEnded)
+            || movers.Select(unit => unit.LocationText).Distinct().Count() != 1 || facts.HalfMf <= 0)
+        {
+            return new RecordRefusal("UNIT-STATE-029", "A movement step moves a stack of the phasing side that may still move, in one Location, in the MPh.");
+        }
+
+        // A3.3 (p. 47): a unit that fired in the PFPh does not move in the MPh.
+        if (movers.FirstOrDefault(unit => unit.PrepFire) is { } fired)
+        {
+            return new RecordRefusal("UNIT-STATE-029", $"'{fired.Id}' fired in the PFPh, so it may not move in the MPh (A3.3, p. 47).");
+        }
+
+        // A11.15: a unit held in Melee does not leave its Location; a prisoner moves only with its Guard (A20.53).
+        if (movers.FirstOrDefault(unit => unit.Melee || unit.Captured) is { } held)
+        {
+            return new RecordRefusal("UNIT-STATE-029", $"'{held.Id}' is held in Melee or captured, so it does not move (A11.15, A20.53).");
+        }
+
+        // A4.2: the stack's members may move on together or apart, but only they may move until every one has ended.
+        if (facts.CurrentExists && (movers.Any(unit => !facts.CurrentMembers.Contains(unit.Id, StringComparer.Ordinal)) || facts.CurrentWindowOpen || facts.CurrentAssault != facts.Assault))
+        {
+            return new RecordRefusal("UNIT-STATE-029",
+                "The moving stack's members continue, together or apart, only after the DEFENDER's window closes; another stack moves after every member ends (A4.2, A8.11).");
+        }
+
+        var nextStep = (facts.CurrentExists ? facts.CurrentStep : 0) + 1;
+        if (facts.Step != nextStep)
+        {
+            return new RecordRefusal("UNIT-STATE-029", $"The next movement step is {nextStep}.");
+        }
+
+        // A4.5 (ruling R5.1): Double Time by Infantry neither broken, wounded, berserk, nor CX, nor rested from CX at this MPh's start.
+        if (facts.DoubleTime && movers.FirstOrDefault(unit => !unit.Personnel || unit.NoDoubleTime || unit.Broken || unit.Wounded || unit.Berserk || unit.Cx) is { } tired)
+        {
+            return new RecordRefusal("UNIT-STATE-029", $"'{tired.Id}' may not Double Time: it is broken, wounded, berserk, or CX, or its CX counter left at this MPh's start (A4.5, A4.51).");
+        }
+
+        return null;
+    }
+
+    /// <summary>The checks of a recorded movement step that follow the SMOKE attempt's (the projector's StepMovement, blocks 6 to 8), in their order; see <see cref="VerifyStepStart"/>.</summary>
+    public static StepRecordVerdict VerifyStepRecord(StepRecordFacts facts)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        var movers = facts.Movers;
+
+        // A12.15, A2.51 (ruling R25.3): a stack entering from off board that is forced back stays off board, its MF spent and its move over; no fire
+        // reaches it there, so no window opens.
+        if (facts.AttemptedText is { } offBoardAttempt && offBoardAttempt == facts.ToText && !facts.CurrentExists && movers.All(unit => unit.OffMapWaiting))
+        {
+            return new StepRecordVerdict(null, true);
+        }
+
+        // A4.134 (ruling R10.9): a Minimum Move is a stack's first and only step; A12.15 (ruling R10.11): a forced-back stack stays in its Location.
+        if ((facts.MinimumMove && (facts.CurrentExists || movers.Any(unit => unit.MfSpent != 0 || unit.HalfMfSpent)))
+            || (facts.AttemptedText is { } attempted && (attempted == facts.ToText || movers.Any(unit => unit.LocationText != facts.ToText)))
+            || (facts.BypassCount is < 1 or > 2))
+        {
+            return new StepRecordVerdict(new RecordRefusal("UNIT-STATE-029", "A Minimum Move is a stack's only step, a forced back leaves the stack in its Location, and a Bypass follows one or two hexsides (A4.134, A12.15, A4.31)."), false);
+        }
+
+        // A2.6 (ruling R21.5): an exit leaves the map from the stack's Location; the units are Exited, not eliminated, and the move ends.
+        if (facts.Exit && movers.Any(unit => unit.LocationText != facts.ToText))
+        {
+            return new StepRecordVerdict(new RecordRefusal("UNIT-STATE-029", "An exit leaves the map from the moving stack's own Location (A2.6)."), false);
+        }
+
+        return new StepRecordVerdict(null, false);
+    }
+
+    /// <summary>C10.3 (ruling R26.4): a pushed Gun leaves the map with its crew when the crew is among the movers and still mans it.</summary>
+    public static bool PushedGunExits(bool gunActiveAndManned, bool holderAmongMovers) => gunActiveAndManned && holderAmongMovers;
+
+    /// <summary>
+    /// A mover's bookkeeping after a step (A4.5, B3.4, A4.12; ruling R10.8): MF accumulate in halves; Double Time makes it CX and records the MF Double
+    /// Time added (two on its first step, one after); the Road Bonus needs every step at the road rate; the leader bonus a leader at every step, so
+    /// the leaders it moves with are those it began with (every leader of the stack on its first step) that are still among the leaders.
+    /// </summary>
+    public static StepMoverUpdate StepMover(int mfSpent, bool halfMfSpent, int doubleTimeMf, bool offRoad, IReadOnlyList<string>? movedWith, string id,
+        int halfMf, bool doubleTime, bool road, IReadOnlyList<string> leaders)
+    {
+        ArgumentNullException.ThrowIfNull(leaders);
+        var halves = (mfSpent * 2) + (halfMfSpent ? 1 : 0) + halfMf;
+        var first = mfSpent == 0 && !halfMfSpent;
+        return new StepMoverUpdate(halves / 2, halves % 2 == 1, doubleTime, doubleTime ? (first ? 2 : 1) : doubleTimeMf, offRoad || !road,
+            [.. (movedWith ?? (first ? leaders : [])).Where(leader => leader != id && leaders.Contains(leader, StringComparer.Ordinal))]);
+    }
+
+    /// <summary>
+    /// The members whose move ends once the DEFENDER's window closes (A4.134, A12.15, A24.1; rulings R9.5, R10.9): every mover after a Minimum Move
+    /// or a forced back; the squad whose SMOKE dr was a 6; else none.
+    /// </summary>
+    public static IReadOnlyList<string> EndingMembers(bool minimumMove, bool forcedBack, IReadOnlyList<string> movers, string? smokeUnit, int? smokeDr)
+    {
+        ArgumentNullException.ThrowIfNull(movers);
+        return minimumMove || forcedBack ? movers : smokeUnit is { } sixed && smokeDr == 6 ? [sixed] : [];
+    }
+
+    /// <summary>A4.41 (referee, pass 9): a light mortar carried into a new Location does not fire in the AFPh; the ones newly marked moved, in the state's order.</summary>
+    public static IReadOnlyList<string> MovedLightMortars(IReadOnlyList<CarriedWeaponFacts> carried, bool locationChanged)
+    {
+        ArgumentNullException.ThrowIfNull(carried);
+        return [.. carried.Where(item => item.LightMortar && locationChanged && !item.AlreadyMoved).Select(item => item.Id)];
+    }
+
+    /// <summary>
+    /// The DEFENDER's window closes (UNIT-STATE-029). Ruling R5.15: a vehicle that spent its MP left in its final hex ends its move when the DEFENDER
+    /// passes; A24.1 (ruling R9.5): so does a squad whose SMOKE dr was a 6. D7.1 (ruling R11.11): a vehicle that bogs or is immobilized entering the
+    /// Location it OVRs still resolves the OVR, and its move ends only after the Reaction window that follows. A4.134 (ruling R10.9): once all First
+    /// Fire at a Minimum Move is done, its unbroken survivors are pinned and CX; a vehicle's Minimum Move (D2.15) is not Infantry's and leaves it in
+    /// Motion only.
+    /// </summary>
+    public static CloseWindowVerdict VerifyCloseWindow(CloseWindowFacts facts, Func<string, bool> mayStillMove)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(mayStillMove);
+        if (!facts.WindowOpen || facts.Step != facts.ClosedStep)
+        {
+            return new CloseWindowVerdict(new RecordRefusal("UNIT-STATE-029", $"No DEFENDER window is open on step {facts.ClosedStep}."), null, false);
+        }
+
+        string[] ending = [.. facts.EndingMembers.Where(id => facts.Members.Contains(id, StringComparer.Ordinal) && mayStillMove(id))];
+        IReadOnlyList<string>? ended = facts.OverrunPending ? null
+            : facts.Ending ? (facts.Members.Count > 0 ? facts.Members : facts.Movers)
+            : ending.Length > 0 ? ending : null;
+        return new CloseWindowVerdict(null, ended, facts.MinimumMove && !facts.Vehicle);
+    }
+
+    /// <summary>A4.134 (ruling R10.9): once all First Fire at a Minimum Move is done, each unbroken survivor among its movers is pinned and CX.</summary>
+    public static bool MinimumMoveSurvivorPinned(bool active, bool broken) => active && !broken;
+
+    /// <summary>The ATTACKER ends the move of some or all of the stack's members once the DEFENDER's window closes (A4.2, A8.11; UNIT-STATE-029).</summary>
+    public static RecordRefusal? VerifyEndMovement(bool movementExists, bool windowOpen, IReadOnlyList<string> ended, IReadOnlyList<string> members, IReadOnlyList<string> movers)
+    {
+        ArgumentNullException.ThrowIfNull(ended);
+        ArgumentNullException.ThrowIfNull(members);
+        ArgumentNullException.ThrowIfNull(movers);
+        return !movementExists || windowOpen || ended.Count == 0
+            || ended.Distinct(StringComparer.Ordinal).Count() != ended.Count
+            || ended.Any(id => !members.Contains(id, StringComparer.Ordinal) && !movers.Contains(id, StringComparer.Ordinal))
+            ? new RecordRefusal("UNIT-STATE-029", "The ATTACKER ends the move of the moving stack's members once the DEFENDER's window closes (A4.2, A8.11).")
+            : null;
+    }
+
+    /// <summary>D2.4: a vehicle that ends its move without stopping is in Motion; one that stopped, or was stopped by a Stun or immobilization (D5.34), is not.</summary>
+    public static bool InMotionAfterMove(bool stopped, bool stillMember) => !(stopped || !stillMember);
+
+    /// <summary>The moving stack after the ATTACKER ends some of its members: while a member may still move it goes on; when none may, its move is over (A4.2).</summary>
+    public static bool MoveIsOver(int members) => members == 0;
+
+    /// <summary>A7.55: the step-keyed fire records of a move, which concern only its own MF expenditures, go with it; the others stay.</summary>
+    public static bool FireRecordStays(bool stepKeyed) => !stepKeyed;
+
+    /// <summary>
+    /// A4.2, A7.8: a member of the moving stack that is broken, pinned, or no longer active leaves the stack and ends its MPh, and the others may move
+    /// on; a member Reduced to a HS is followed by the HS (A7.302). D5.34, A7.82 (unit step 25): a moving vehicle stops when its crew is Stunned or
+    /// Recalled or it is immobilized, but a pin never stops it; D8.2 (ruling R11.9): a Bog, or a Bog Removal that does not free it, stops it too.
+    /// <paramref name="member"/> gives a member's facts by id, null when it is not in the state.
+    /// </summary>
+    public static KeepMovingStackVerdict KeepMovingStack(string? phase, IReadOnlyList<string> currentMembers, IReadOnlyList<string> currentMovers, bool vehicle,
+        IReadOnlyList<string>? consumed, IReadOnlyList<string>? produced, bool vehicleCheck, Func<string, StackMemberFacts?> member)
+    {
+        ArgumentNullException.ThrowIfNull(currentMembers);
+        ArgumentNullException.ThrowIfNull(currentMovers);
+        ArgumentNullException.ThrowIfNull(member);
+        if (phase != "mph")
+        {
+            return new KeepMovingStackVerdict(true, currentMembers, currentMovers, []);
+        }
+
+        var members = currentMembers.ToList();
+        var movers = currentMovers.ToList();
+        if (consumed is not null && produced is not null && consumed.Any(id => members.Contains(id, StringComparer.Ordinal) || movers.Contains(id, StringComparer.Ordinal)))
+        {
+            if (consumed.Any(id => members.Contains(id, StringComparer.Ordinal)))
+            {
+                members = [.. members.Where(id => !consumed.Contains(id, StringComparer.Ordinal)), .. produced];
+            }
+
+            if (consumed.Any(id => movers.Contains(id, StringComparer.Ordinal)))
+            {
+                movers = [.. movers.Where(id => !consumed.Contains(id, StringComparer.Ordinal)), .. produced];
+            }
+        }
+
+        var leaving = members.Where(id => member(id) is not { Active: true } unit
+            || (vehicle
+                ? unit.Stunned || unit.Shocked || unit.UnconfirmedKill || unit.Immobilized || unit.Abandoned
+                    || (unit.Bogged && vehicleCheck)
+                    || (unit.Recalled && !unit.StunRecovery)
+                : unit.Broken || unit.Pinned))
+            .ToArray();
+        if (leaving.Length == 0 && members.Count == currentMembers.Count && movers.SequenceEqual(currentMovers))
+        {
+            return new KeepMovingStackVerdict(true, currentMembers, currentMovers, []);
+        }
+
+        return new KeepMovingStackVerdict(false, [.. members.Where(id => !leaving.Contains(id, StringComparer.Ordinal))], movers, leaving);
+    }
+
+    /// <summary>A unit whose move ended may not spend MF (A4.1, p. 48); none moves with an open entry attempt; a move spends no negative MF; only units spend MF (UNIT-STATE-018, UNIT-STATE-010).</summary>
+    public static RecordRefusal? VerifyMove(string id, bool unit, bool movementEnded, bool openAttempt, int? mf)
+    {
+        if (unit && movementEnded && mf is > 0)
+        {
+            return new RecordRefusal("UNIT-STATE-018", $"'{id}' may not move again this phase (A4.1, p. 48).");
+        }
+
+        if (openAttempt)
+        {
+            return new RecordRefusal("UNIT-STATE-018", $"'{id}' has an open entry attempt, so it may not move.");
+        }
+
+        if (mf is < 0)
+        {
+            return new RecordRefusal("UNIT-STATE-010", "A move cannot spend negative MF.");
+        }
+
+        if (mf is not null && !unit)
+        {
+            return new RecordRefusal("UNIT-STATE-010", "Only units spend MF.");
+        }
+
+        return null;
+    }
+
     /// <summary>Whether any Good Order enemy ground unit within 16 hexes has a clear LOS to a Location (A12.14, A12.141). The units are read in the state's order.</summary>
     public static bool EnemyGoodOrderInLosWithin16(IReadOnlyList<EnemyUnitFacts> units, string side, int at, ILosFactReader los)
     {
