@@ -1,11 +1,15 @@
 namespace LimboDancer.Domains.Asl.Rules;
 
-/// <summary>What a vehicle result sets (D.7, D5.34, D5.341, A7.82): each condition it changes, true or false; null leaves it as it is.</summary>
-public sealed record VehicleConditionChanges(bool? Immobilized = null, bool? Motion = null, bool? Stunned = null, bool? StunRecovery = null, bool? Recalled = null,
-    bool? ButtonedUp = null, bool? Pinned = null)
+/// <summary>The conditions of a vehicle a fire result may set (D.7, D5.34, D5.341, A7.82).</summary>
+public enum VehicleCondition
 {
-    public bool Any => Immobilized is not null || Motion is not null || Stunned is not null || StunRecovery is not null || Recalled is not null || ButtonedUp is not null
-        || Pinned is not null;
+    Immobilized,
+    Motion,
+    Stunned,
+    StunRecovery,
+    Recalled,
+    ButtonedUp,
+    Pinned,
 }
 
 /// <summary>
@@ -71,47 +75,36 @@ public static class ScenarioA1ResultTables
 
     /// <summary>
     /// The conditions a vehicle result sets (D.7, D5.34, D5.341, A7.82): Immobilized loses Motion; Stunned buttons up and Stops; Recalled is a Stun that
-    /// removes the vehicle at the end of the Player Turn, so it is marked Recalled, not Stunned, buttoned up, and Stopped; Pinned pins.
+    /// removes the vehicle at the end of the Player Turn, so it is marked Recalled, not Stunned, buttoned up, and Stopped; Pinned pins. The changes are
+    /// in the order the result sets them, which is the order a record writes them; empty when the result sets none.
     /// </summary>
-    public static VehicleConditionChanges VehicleConditions(FireVehicleEffect effect)
+    public static IReadOnlyList<(VehicleCondition Condition, bool Value)> VehicleConditions(FireVehicleEffect effect)
     {
         ArgumentNullException.ThrowIfNull(effect);
-        var changes = new VehicleConditionChanges();
+        var changes = new List<(VehicleCondition Condition, bool Value)>();
         if (effect.Result == FireVehicleEffect.Immobilized)
         {
-            changes = changes with
-            {
-                Immobilized = true,
-                Motion = false
-            };
+            changes.Add((VehicleCondition.Immobilized, true));
+            changes.Add((VehicleCondition.Motion, false));
         }
 
         switch (effect.CrewResult)
         {
             case FireVehicleEffect.Stunned:
-                changes = changes with
-                {
-                    Stunned = true,
-                    ButtonedUp = true,
-                    Motion = false
-                };
+                changes.Add((VehicleCondition.Stunned, true));
+                changes.Add((VehicleCondition.ButtonedUp, true));
+                changes.Add((VehicleCondition.Motion, false));
                 break;
             case FireVehicleEffect.Recalled:
                 // A Recall is a Stun that removes the vehicle at the end of the Player Turn (D5.341); every check reads either.
-                changes = changes with
-                {
-                    Recalled = true,
-                    Stunned = false,
-                    StunRecovery = false,
-                    ButtonedUp = true,
-                    Motion = false
-                };
+                changes.Add((VehicleCondition.Recalled, true));
+                changes.Add((VehicleCondition.Stunned, false));
+                changes.Add((VehicleCondition.StunRecovery, false));
+                changes.Add((VehicleCondition.ButtonedUp, true));
+                changes.Add((VehicleCondition.Motion, false));
                 break;
             case FireVehicleEffect.Pinned:
-                changes = changes with
-                {
-                    Pinned = true
-                };
+                changes.Add((VehicleCondition.Pinned, true));
                 break;
         }
 

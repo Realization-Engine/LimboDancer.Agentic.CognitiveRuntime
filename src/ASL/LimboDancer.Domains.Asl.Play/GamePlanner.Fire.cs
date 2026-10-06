@@ -1070,27 +1070,27 @@ public sealed partial class GamePlanner
     private static Dictionary<string, ConditionState>? VehicleConditions(FireVehicleEffect effect)
     {
         var changes = ScenarioA1ResultTables.VehicleConditions(effect);
-        if (!changes.Any)
+        if (changes.Count == 0)
         {
             return null;
         }
 
+        // In the order Rules gives them: the record writes the conditions in the order they were set.
         var conditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
-        void Set(string condition, bool? value)
+        foreach (var (condition, value) in changes)
         {
-            if (value is { } set)
+            conditions[condition switch
             {
-                conditions[condition] = set ? ConditionState.True : ConditionState.False;
-            }
+                VehicleCondition.Immobilized => Conditions.Immobilized,
+                VehicleCondition.Motion => Conditions.Motion,
+                VehicleCondition.Stunned => Conditions.Stunned,
+                VehicleCondition.StunRecovery => Conditions.StunRecovery,
+                VehicleCondition.Recalled => Conditions.Recalled,
+                VehicleCondition.ButtonedUp => Conditions.ButtonedUp,
+                _ => Conditions.Pinned,
+            }] = value ? ConditionState.True : ConditionState.False;
         }
 
-        Set(Conditions.Immobilized, changes.Immobilized);
-        Set(Conditions.Motion, changes.Motion);
-        Set(Conditions.Stunned, changes.Stunned);
-        Set(Conditions.StunRecovery, changes.StunRecovery);
-        Set(Conditions.Recalled, changes.Recalled);
-        Set(Conditions.ButtonedUp, changes.ButtonedUp);
-        Set(Conditions.Pinned, changes.Pinned);
         return conditions;
     }
 
