@@ -77,6 +77,10 @@ def cell(q,r,land,lakes):
             "lakeFraction":round(wf,5),"surface":kind,"elevation":None,"vegetation":None,
             "vertices":[[round(a,3),round(b,3)] for a,b in list(g.exterior.coords)[:-1]]}
 def build():
+    from prepare_tactical import prepare as prepare_tactical
+    prepare_tactical()
+    from check_ui_encoding import check_files
+    check_files(ROOT)
     manifest,layers,land,lakes,cities=load()
     cells=[]
     for r in range(-30,math.ceil(BOUNDS[3]/(RADIUS*1.5))+1):
@@ -168,8 +172,10 @@ def build():
     southern=prepare_south(sys.modules[__name__])
     from prepare_theaters import prepare as prepare_theaters
     workspaces=prepare_theaters(sys.modules[__name__],western,pilot,southern)
-    view_data={**data,"theaterWorkspaces":workspaces,"southernTransport":southern,"researchTransport":research,"historicalPilot":pilot,"historicalRailNetwork":historical_network,"westernTheater":western,"theaterDefinitions":json.loads((ROOT/"theaters.json").read_text(encoding="utf-8"))}
-    app=(ROOT/"app.template.js").read_text(encoding="utf-8").replace("__WESTERN_SCRIPT__",(ROOT/"theater-view.js").read_text(encoding="utf-8-sig"))
+    from prepare_regional import prepare as prepare_regional
+    regional=prepare_regional(sys.modules[__name__],workspaces)
+    view_data={**data,"regionalCampaign":regional,"theaterWorkspaces":workspaces,"southernTransport":southern,"researchTransport":research,"historicalPilot":pilot,"historicalRailNetwork":historical_network,"westernTheater":western,"theaterDefinitions":json.loads((ROOT/"theaters.json").read_text(encoding="utf-8"))}
+    app=(ROOT/"app.template.js").read_text(encoding="utf-8").replace("__WESTERN_SCRIPT__",(ROOT/"theater-view.js").read_text(encoding="utf-8-sig")).replace("__REGIONAL_SCRIPT__",(ROOT/"regional-view.js").read_text(encoding="utf-8-sig"))
     (ROOT/"app.js").write_text(app,encoding="utf-8",newline="\n")
     (ROOT/"map-data.js").write_text("window.CAMPAIGN_MAP_DATA="+canonical(view_data)+";\n",encoding="utf-8",newline="\n")
     html=(ROOT/"viewer.html").read_text(encoding="utf-8")

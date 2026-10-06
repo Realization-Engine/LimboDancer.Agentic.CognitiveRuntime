@@ -1,0 +1,8 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');const ctx=vm.createContext({});for(const name of ['regional-state','situation-state','formation-state'])vm.runInContext(fs.readFileSync(__dirname+'/'+name+'.js','utf8'),ctx);
+const R=vm.runInContext('RegionalModel',ctx),S=vm.runInContext('SituationModel',ctx),F=vm.runInContext('FormationModel',ctx),config=JSON.parse(fs.readFileSync(__dirname+'/regional-campaign.json','utf8'));
+const r=R.create(config,'seed','geo'),opening=r.clock.current;R.act(r,'beachhead','assign','first-army');R.advance(r);assert.equal(r.clock.current,opening);assert.equal(r.messages[0].sentAtCampaignTime,opening);
+r.missions.find(m=>m.id==='1-18-approaches').status='planned';const s=S.create(r,'1-18-approaches',config.cells[0],config);S.decompose(s);const d=S.draft(s,s.engagements[1].id);assert.equal(Date.parse(d.engagement.absoluteStart)-Date.parse(s.campaignInterval.start),60*60000);
+const f=F.create(s);for(let i=0;i<8;i++)F.next(f);assert.equal(Date.parse(f.clock.current),Date.parse(opening));for(let i=0;i<8;i++)F.next(f);assert.equal(Date.parse(f.clock.current)-Date.parse(opening),6*60000);F.validate(f,s);
+for(let i=0;i<19*16;i++)F.next(f);assert.equal(Date.parse(f.clock.current),Date.parse(s.campaignInterval.endExclusive));assert.throws(()=>F.next(f));assert.throws(()=>F.move(f,f.counters[0].id,f.cells[0].id));
+r.clock.current='1944-06-08T23:00:00Z';assert.throws(()=>S.create(r,'1-18-approaches',config.cells[0],config));r.clock.current='1944-06-10T00:00:00Z';assert.throws(()=>R.validate(r,config,'seed','geo'));
+console.log('Campaign time checks passed: communication separation, child intervals, six-minute full turns, window exhaustion and invalid-date rejection.');

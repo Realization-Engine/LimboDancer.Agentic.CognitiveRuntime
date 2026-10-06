@@ -796,7 +796,7 @@ Paths below refer to the local archive. They are reading references, not a compl
 
 - **R1. PanzerBlitz Rules of Play:** [Local PDF](<E:/Archive/WWII-Docs/1-PanzerBlitz-PanzerLeader/Original-Rules-and-Situations/152049563-Panzer-Blitz-Rules.pdf>). Two PDF sheets. Sheet 1: unit definitions, movement and transport. Sheet 2: spotting, combat results, play sequence and Optional Rules, including indirect fire. Supports separate original-game semantics.
 - **R2. Panzer Leader Rules:** [Local PDF](<E:/Archive/WWII-Docs/1-PanzerBlitz-PanzerLeader/Original-Rules-and-Situations/152048103-Panzer-Leader-Rules.pdf>). PDF p. 3: scale and IV sequence; pp. 4-5: movement/transport and combat; p. 6: VII.C indirect fire; p. 7: weapon effectiveness; p. 15: XV.B optional opportunity fire. Numeric tables and fractions still require visual verification before implementation.
-- **R3. ASL rulebook:** existing `eASLRB_v3_01.pdf`, Chapter A §§2.1 and 3.1-3.9; source identity in the existing registry. The [local Chapter A transcription](<../../docs/ASL/Rulebook_Markdown/02 - Chapter A - Infantry and Basic Game Rules.md>) supplies the eight-phase reference, active/defending roles and player-turn cycle. Section 6 explicitly authors the formation-scale departures.
+- **R3. ASL rulebook:** existing `eASLRB_v3_01.pdf`, Chapter A Â§Â§2.1 and 3.1-3.9; source identity in the existing registry. The [local Chapter A transcription](<../../docs/ASL/Rulebook_Markdown/02 - Chapter A - Infantry and Basic Game Rules.md>) supplies the eight-phase reference, active/defending roles and player-turn cycle. Section 6 explicitly authors the formation-scale departures.
 - **D1. PanzerBlitz Designer's Notes and Campaign Analysis:** [Local PDF](<E:/Archive/WWII-Docs/1-PanzerBlitz-PanzerLeader/Original-Rules-and-Situations/396376051-PanzerBlitz-Designer-s-Notes-Campaign-Analysis.pdf>), opening designer discussion, PDF pp. 3-5. Supports examining how factors combine technical and organizational judgments, not adopting every historical generalization uncritically.
 - **H1. Gordon L. Rottman, World War II US Armored Infantry Tactics:** [Local PDF](<E:/Archive/WWII-Docs/3-Tactics-Platoon-and-Company/462234665-azdoc-pl-elite-176-world-war-ii-us-armored-infantry-tactics-pdf.pdf>). Contents at PDF p. 5; organization section starts printed p. 17/PDF p. 19; company/platoon discussion includes printed p. 20/PDF p. 22; doctrine discussion printed p. 31/PDF p. 33; tank-infantry coordination printed pp. 48-54/PDF pp. 50-56. Selected passages, rather than all pages in those ranges, were read for this design.
 - **H2. Stephen Bull, World War II Infantry Tactics, Squad and Platoon:** [Local PDF](<E:/Archive/WWII-Docs/3-Tactics-Platoon-and-Company/516380891-World-War-II-Infantry-Tactics-Squad-and-Platoon-Osprey-Elite-51-Text.pdf>). Contents at PDF p. 2 and introductory soldier-experience passages sampled. The platoon chapter starts printed p. 48; recommended for detailed model work, not treated here as a verified numerical model.
@@ -820,3 +820,76 @@ Paths below refer to the local archive. They are reading references, not a compl
 - **M1. Imaginative Strategist PanzerBlitz Board 1:** [Local PDF](<E:/Archive/WWII-Docs/1-PanzerBlitz-PanzerLeader/Original-Rules-and-Situations/MapBoards/PB Map 1 Full.pdf>), full-map image visually inspected for roads, settlements, woods, water features and elevation markings. Provides coarse terrain constraints, not surveyed individual building geometry. Situation 1's defended installations are on board 2; their detailed terrain still needs specific inspection.
 
 The [consolidated archive index](E:/Archive/WWII-Docs/WWII-Study-Index.html) is a discovery aid for the earlier survey. The later download folders and their manifests contain additional references, including those above. Historical organization and campaign titles not examined beyond the survey are follow-up sources, not evidence for detailed assertions in this design.
+
+
+### 18.5 Regional command prototype boundary
+
+The offline map now includes a bounded Normandy / Omaha beachhead regional workspace, referenced to 7-8 June 1944. It shares the campaign coordinate system and uses approximately 13 km sectors. Its partial command tree contains First Army, V Corps, and the 1st and 29th Infantry Divisions. This is a reference-backed planning exercise, not a complete historical order of battle or an operational simulation.
+
+The prototype demonstrates assignment, delayed receipt, planning, manual execution status, delayed reporting and assessment. Subordinate missions depend on the parent plan, and parent reporting requires assessed subordinate reports. Communications advance by explicit demonstration steps, without claiming historical minute-by-minute latency. Formation identity and mission state persist under the campaign seed and pinned reference hashes; strengths, positions, supply and combat outcomes remain unknown.
+
+The 1st Division branch now includes the 18th Infantry Regiment and its three organic battalions, with subordinate missions and recursive reporting dependencies. Division, regiment and battalion share the regional view; command echelon does not dictate map scale. Named planning areas and support/timing guidance are exercise prompts, not reconstructed tactical boundaries or allocated attachments. This implementation does not yet provide company/platoon organizations, movement, logistics adjudication or ASL admission. Every eventual ASL engagement must still pass the Scenario Card and engagement contracts defined above. Regional map selection alone cannot create a playable tactical scenario. The prototype README documents its sources, interaction sequence, tests and remaining boundaries.
+
+
+### 18.6 Situation Card decomposition prototype
+
+Formation play is bounded by a Situation Card beneath a campaign mission. Its participating formations, persistent roster, geographic scope, starting conditions, support, time window and parent success criteria constrain all derived ASL engagements. A situation may yield multiple scenarios according to contact and mission boundaries; neither counters nor map hexes imply a fixed scenario count. Scenario outcomes contribute state changes to parent objectives rather than votes toward victory.
+
+The offline prototype demonstrates this contract with an explicitly illustrative company beneath a planned battalion mission: two linked engagement candidates and one reserve platoon. Stable squad placeholder identities and planning holds demonstrate allocation conservation. The second candidate is conditional on the first; the actual tactical footprint, contact and transition eligibility remain admission requirements. A regional sector is only an anchor, not an ASL board or tactical boundary.
+
+Exports separate a formation handoff envelope from the nested existing ASL ScenarioCard fields. The envelope carries parent situation revision, mission, seed, geography/reference hashes, asset bindings, time window, dependencies and reconciliation requirements. Draft cards have unresolved catalog, board, setup, turns, sides and victory fields and cannot execute. Before play, complete and validate the Scenario Card, bind its hash and campaign revision, and replace planning holds with exclusive execution reservations. Reconciliation must accept authoritative results once, preserve asset identities, reject stale/duplicate results, update time/location/loss/expenditure facts and then evaluate the parent situation. This last path is specified but not implemented in the prototype.
+
+
+### 18.7 Catalog-backed tactical rehearsal boundary
+
+The Situation Card prototype can map its existing squad identities to registered American squad definitions, add authored platoon leaders and register a bounded German test detachment. The initial engagement exports a complete ASL Scenario Card and a companion manifest containing source hashes, parent revision, catalog identity, individual asset bindings and a hash of the exact exported card bytes. Allocation checks preserve the second platoon and reserve.
+
+The card template is tested through the real ASL parser, user-card library and start-request builder. It uses representative board 04, not terrain compiled from the selected region. Therefore this is a separate tactical rehearsal with campaign admission and result reconciliation disabled. Engine-valid card syntax must never stand in for geographic validation, historical roster evidence, exclusive execution reservations or authoritative outcome reconciliation. A future live adapter must validate all of these before any tactical result can change the situation or satisfy its parent mission.
+
+
+### 18.8 Formation display prototype boundary
+
+Open Situation now enters a dedicated 250 m hex display anchored to the selected regional sector. Counters retain constituent asset identities and have persistent positions, hold/maneuver orders and bounded adjacent movement. The illustrative terrain generator uses campaign seed, version and global hex identity. This establishes deterministic continuity for the prototype lattice, but does not yet refine the historical base geography or produce an ASL terrain package.
+
+The UI traverses the eight formation phases for both sides, with unsupported combat phases explicitly passed. It does not implement the full budgets, fire, recovery or calibrated time rules of Section 6. Adjacent opposition produces a persisted contact and stops progression pending tactical admission. The next integration must derive engagement scope, participants and dependencies from that contact under the Situation Card; no automatic card creation, adjudication or campaign reconciliation is claimed by this display.
+
+
+## 19. Dated theater campaigns and historical time
+
+A geographic theater has no single permanent wartime date. It contains multiple dated campaign packages, which may overlap packages in other theaters. The play hierarchy is: WWII setting, geographic theater, dated campaign, operations/command missions, Formation Situation Cards, ASL Scenario Cards. Select the dated package before assigning forces or orders. Critical periods are useful selection criteria, but coherent objectives, source coverage and opening deployments determine defensible package boundaries.
+
+A package must pin its opening instant, exclusive ending instant, clock convention, reference period, purpose, order of battle, dated command attachments, deployment evidence, geographic revision, scheduled events, environmental assumptions and source provenance. Evidence validity times are distinct from when information becomes known to a commander. Historical accounts covering an entire battle cannot serve directly as opening intelligence. Unknown strength and location remain unknown; estimates and authored placements are labeled separately. Period transport, infrastructure and weather require their own evidence, not a date stamped on modern geometry.
+
+Historical reference time describes evidence. Campaign simulation time describes the evolving game. Resolution sequence describes phases, interrupts and communication processing. A full two-sided formation turn represents the nominal six-minute interval specified in Section 6. Phases do not each add that duration. ASL turns require an explicit admitted engagement time mapping rather than an assumed one-to-one conversion. A Situation Card and each derived ASL card must fit their parent intervals; asset reservations cover actual execution time, including reinforcement arrival and transit constraints.
+
+Historical deployments initialize a campaign, with dated schedules for subsequent availability. Player action then changes its course; historical positions must not repeatedly overwrite simulation state. Reinforcements and withdrawals need availability windows, command authority and route/transport conditions. Outcomes, losses, elapsed time and ground control must be reconciled once against the issuing revision before assessing parent objectives.
+
+### 19.1 Implemented Normandy time boundary
+
+Reference package v3 formalizes a one-day Omaha expansion prototype on 8 June 1944, using the official 7-8 June narrative as context. Midnight boundaries and UTC normalization are authored choices. It is not a complete historical opening snapshot. Regional state has a bounded campaign clock; Situation Cards and engagement drafts carry absolute intervals. Formation full turns advance six nominal minutes and stop at the situation deadline. Demonstration communication steps record campaign timestamps but do not advance simulation time. Concurrent situations cannot independently advance a shared clock: the current serial prototype rejects stale-clock actions. No new historical reinforcement, weather or deployment schedules are implied.
+
+### 19.2 Campaign research and admission work
+
+Each theater needs separately reviewed packages. For each candidate operation: establish a defensible bounded period from authoritative accounts; reconstruct the opening command tree and attachments; distinguish verified positions from estimates; pin period geography and transport; document reinforcement/withdrawal and environmental schedules; and validate Situation Card time/force budgets. Publish source coverage and uncertainty before enabling play. Do not populate other theaters with copied Normandy forces or select an alleged peak of fighting without historical evidence. The current UI marks those dated packages unavailable pending this work.
+
+
+### 19.3 Dated campaign counter demonstration
+
+Geographic theater selection shows no campaign-specific units. Selecting the dated Normandy package enters the regional map and displays its two division counters and corps headquarters. Visibility requires the matching campaign identity and a simulation time within its opening/end interval. Individual dated arrivals and withdrawals remain a future deployment-package responsibility. Formation view hides these higher-echelon counters and returning restores the campaign presentation.
+
+Counters resolve to organizational identities, not fixed numbers of fine hexes. The illustration uses regional-cell anchors near Normandy objective references with dashed callouts; these are authored presentation positions, not historical deployments or footprints. Inspection shows the populated subordinate branch and explicitly reports incomplete organization. The command-workflow link preserves headquarters, orders and saved progress. No formations are copied into undated theaters or unrelated campaigns.
+
+
+## Historical division infantry prototype (reference v4)
+
+The Omaha package opens on 8 June 1944 after an Allied beachhead has been established. Amphibious assault is outside simulation scope. Beaches are abstract supply and reinforcement entry points; no arrival schedule or unloading model is implemented.
+
+The 1st Infantry Division now contains the 16th, 18th and 26th Infantry; the 29th contains the 115th, 116th and 175th. Each regiment has three persistent infantry battalion identities. This infantry core is not a full divisional order of battle. Personnel, equipment availability, supporting arms, supply and precise deployment geometry remain unverified.
+
+Division counters show organic composition, approximate opening-area reports and subordinate order status known to that headquarters. Select Western Europe, then the dated Omaha campaign, then a division counter or its list button. The guided First Army / V Corps / division workflow now supplies missions for every infantry regiment and battalion. The new battalion paths reach the existing illustrative Situation Card prototype; their squad rosters do not become historical merely because the parent battalion is real.
+
+Orders remain authored player plans. Temporary historical attachments are displayed separately from organic membership and are not executable command transfers or duplicate force allocations. Historical later outcomes are not forced. Counter anchors remain illustrative callouts, not headquarters locations or occupied hexes. There is no division movement or combat resolver in this increment.
+
+Evidence: [U.S. Army, Omaha Beachhead, 7-8 June](https://www.ibiblio.org/hyperwar/USA/USA-A-Omaha/USA-A-Omaha-6.html) supplies dated area context; [Army ETO order of battle, 29th Division](https://history.army.mil/documents/ETO-OB/29ID-ETO.htm) corroborates its organic regiments. June 7 actions inform starting conditions rather than becoming scheduled June 8 attacks.
+
+Version 4 changes the reference hash, creating a fresh exercise. Earlier saves remain under their original keys. Validation: `test_divisions.cjs` checks roster identity, all new mission branches, delayed headquarters knowledge, persistence and post-landing scope; existing lifecycle and viewer checks cover navigation and handoff behavior.

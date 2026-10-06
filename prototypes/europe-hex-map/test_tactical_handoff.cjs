@@ -1,0 +1,12 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),crypto=require('node:crypto');
+const ctx=vm.createContext({crypto:crypto.webcrypto,TextEncoder,Uint8Array});
+for(const name of ['regional-state','situation-state','tactical-reference','tactical-handoff'])vm.runInContext(fs.readFileSync(__dirname+'/'+name+'.js','utf8'),ctx);
+const R=vm.runInContext('RegionalModel',ctx),S=vm.runInContext('SituationModel',ctx),T=vm.runInContext('TacticalHandoff',ctx),ref=vm.runInContext('TACTICAL_REFERENCE',ctx);
+const config=JSON.parse(fs.readFileSync(__dirname+'/regional-campaign.json','utf8')),state=R.create(config,'abcd1234','geo');state.missions.find(m=>m.id==='1-18-approaches').status='planned';
+const s=S.create(state,'1-18-approaches',config.cells[0],config);S.decompose(s);const original=s.assets.map(a=>a.id);T.prepare(s);
+assert.ok(original.every(id=>s.assets.some(a=>a.id===id)));assert.equal(s.assets.length,15);assert.equal(s.reserveIds.length,4);assert.equal(s.engagements[0].assetIds.length,7);assert.equal(s.engagements[1].assetIds.length,4);assert.throws(()=>T.prepare(s));
+assert.equal(T.validate(s),s);assert.equal(S.validate(s,state),s);
+const broken=JSON.parse(JSON.stringify(s));broken.tacticalTest.assetBindings[0].definition='unknown';assert.throws(()=>T.validate(broken));
+const catalogBytes=fs.readFileSync(__dirname+'/../../src/ASL/units/catalog/scenario-a1.catalog.json');assert.equal(ref.catalogSha256,crypto.createHash('sha256').update(catalogBytes).digest('hex'));
+assert.equal(JSON.stringify(ref.card),JSON.stringify(JSON.parse(fs.readFileSync(__dirname+'/sources/formation-access-test.scenario-card.json','utf8'))));
+(async()=>{const b=await T.bundle(s);assert.equal(b.cardSha256,crypto.createHash('sha256').update(JSON.stringify(s.tacticalTest.scenarioCard,null,2)).digest('hex'));assert.equal(b.campaignExecutable,false);assert.equal(b.reconciliation,'disabled');console.log('Tactical handoff checks passed: catalog pinning, roster conservation, reserve isolation, card counts, manifest hash and campaign block.');})().catch(e=>{console.error(e);process.exitCode=1;});

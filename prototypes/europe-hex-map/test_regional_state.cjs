@@ -1,0 +1,30 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const context=vm.createContext({});vm.runInContext(fs.readFileSync(__dirname+'/regional-state.js','utf8'),context);const model=vm.runInContext('RegionalModel',context);
+const c=JSON.parse(fs.readFileSync(__dirname+'/regional-campaign.json','utf8')),s=model.create(c,'seed','base');
+assert.throws(()=>model.act(s,'beachhead','assign','v-corps'));
+assert.throws(()=>model.act(s,'westward','assign','v-corps'));
+model.act(s,'beachhead','assign','first-army');assert.equal(model.messages(s,'v-corps').length,0);
+model.advance(s);assert.equal(s.missions[0].status,'received');assert.equal(model.status(s.missions[0],'first-army'),'assigned');
+assert.throws(()=>model.act(s,'beachhead','plan','v-corps',''));
+model.act(s,'beachhead','plan','v-corps','Coordinate divisions');model.act(s,'beachhead','execute','v-corps');
+assert.throws(()=>model.act(s,'beachhead','report','v-corps','Done'));
+function complete(id){
+ const m=s.missions.find(m=>m.id===id);
+ model.act(s,id,'assign',m.issuer);model.advance(s);
+ model.act(s,id,'plan',m.recipient,'Review objectives, boundaries, timing and support','EU13:1:1');model.act(s,id,'execute',m.recipient);
+ const children=s.missions.filter(x=>x.parentId===id);
+ if(children.length)assert.throws(()=>model.act(s,id,'report',m.recipient,'Premature parent report'));
+ for(const child of children)complete(child.id);
+ model.act(s,id,'report',m.recipient,'Planning exercise complete, no combat result');assert.throws(()=>model.act(s,id,'assess',m.issuer,'Reviewed'));
+ model.advance(s);model.act(s,id,'assess',m.issuer,'Reviewed');assert.equal(model.status(m,m.recipient),'reported');model.advance(s);assert.equal(model.status(m,m.recipient),'assessed');
+}
+assert.throws(()=>model.act(s,'18-advance','assign','1-id'));
+assert.throws(()=>model.act(s,'1-18-approaches','assign','18-ir'));
+for(const id of ['westward','inland'])complete(id);
+assert.equal(s.missions.filter(m=>m.recipient.endsWith('-18')).length,3);
+assert.ok(s.missions.filter(m=>m.recipient.endsWith('-18')).every(m=>m.status==='assessed'));
+const invalid=JSON.parse(JSON.stringify(s));invalid.forces.find(f=>f.id==='1-18').parentId='v-corps';assert.throws(()=>model.validate(invalid,c,'seed','base'));
+model.act(s,'beachhead','report','v-corps','Both subordinate reports reviewed');model.advance(s);model.act(s,'beachhead','assess','first-army','Accepted exercise report');
+assert.equal(model.validate(JSON.parse(JSON.stringify(s)),c,'seed','base').missions[0].status,'assessed');assert.throws(()=>model.validate(s,c,'another','base'));
+assert.equal(model.create(c,'another','base').messages.length,0);assert.ok(s.forces.every(f=>f.strength===null));
+console.log('Regional lifecycle passed: authority, parent dependencies, order/receipt/report delays, assessment visibility, persistence and campaign isolation.');

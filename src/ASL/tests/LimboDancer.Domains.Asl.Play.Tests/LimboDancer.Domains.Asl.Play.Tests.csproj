@@ -18,4 +18,7 @@
     <None Include="Fixtures/guards-dl-01.game.json" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Fixtures/p31c-tw.game.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="../../../../prototypes/europe-hex-map/sources/formation-access-test.scenario-card.json" Link="Fixtures/formation-access-test.scenario-card.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
 </Project>
