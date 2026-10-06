@@ -56,110 +56,68 @@ public static class LiveFire
             return (null, $"play.fire-catalog: the Fire package reads {Catalog}@{CatalogVersion}, and this game uses {state.Catalog.Catalog}@{state.Catalog.Version}");
         }
 
-        // D1.83, D3.4 (ruling R25.7): a vehicle's MG fires alone, with no leader and no Infantry in its group.
+        // D1.83, D3.4 (ruling R25.7): a vehicle's MG fires alone, with no leader and no Infantry in its group. Rules decides each block (pass 32.c).
         var vehicleFirers = firerIds.Select(state.Unit).OfType<UnitInstance>().Where(IsVehicle).ToArray();
-        if (vehicleFirers.Length > 0 && (firerIds.Count > 1 || directorIds.Count > 0 || weapons is { Count: > 0 }))
+        if (ScenarioA1FireEligibility.VehicleFiresAlone(vehicleFirers.Length, firerIds.Count, directorIds.Count, weapons is { Count: > 0 }) is { } grouped)
         {
-            return (null, "play.fire-vehicle-group: a vehicle's MG fires alone, with no leader or Infantry in its fire group (D3.4)");
+            return (null, grouped);
         }
 
         var firers = new List<(UnitInstance Unit, BoardLocation At)>();
         foreach (var id in firerIds)
         {
-            if (state.Unit(id) is not { Status: InstanceStatus.Active, Definition: not null } unit || state.Location(unit.Id)?.Location is not { } at)
+            var unit = state.Unit(id);
+            BoardLocation? at = unit is null ? null : state.Location(unit.Id)?.Location;
+            if (ScenarioA1FireEligibility.FirerBar(new FirerStateFacts(id, unit is { Status: InstanceStatus.Active, Definition: not null }, at is not null,
+                unit is not null && Is(unit, "asl:ti"))) is { } barred)
             {
-                return (null, $"play.fire-firers: '{id}' is not an active unit from the catalog on the map");
+                return (null, barred);
             }
 
-            // A4.8, C10.3 (table player, pass 8): a TI unit does not fire.
-            if (Is(unit, "asl:ti"))
-            {
-                return (null, $"play.fire-ti: '{id}' is TI and does not fire this Player Turn (A4.8, C10.3)");
-            }
-
-            firers.Add((unit, at));
+            firers.Add((unit!, at!));
         }
 
         var locations = firers.Select(item => item.At).Distinct().ToArray();
         var directors = new List<(UnitInstance Unit, BoardLocation At)>();
         foreach (var id in directorIds)
         {
-            if (state.Unit(id) is not { Status: InstanceStatus.Active, Definition: not null } leader || state.Location(leader.Id)?.Location is not { } at
-                || !locations.Contains(at))
+            var leader = state.Unit(id);
+            BoardLocation? at = leader is null ? null : state.Location(leader.Id)?.Location;
+            if (ScenarioA1FireEligibility.DirectorBar(new DirectorStateFacts(id, leader is { Status: InstanceStatus.Active, Definition: not null },
+                at is { } here ? locations.Contains(here) : null)) is { } barred)
             {
-                return (null, $"play.fire-director: '{id}' is not an active unit in a Location of the fire group");
+                return (null, barred);
             }
 
-            directors.Add((leader, at));
+            directors.Add((leader!, at!));
         }
 
         var side = firers[0].Unit.Side;
-        var kind = (string?)null;
-        if (state.Phase == "mph" && vehicleFirers.Length > 0)
-        {
-            // D3.3, A8.1 (ruling R6.9): the DEFENDER's vehicle fires as Defensive First Fire; the moving vehicle, once the DEFENDER has
-            // passed on its last MP expenditure, as Bounding First Fire.
-            if (vehicleFirers[0].Side != state.PhasingSide)
-            {
-                kind = ScenarioA1FireCalculator.FirstFire;
-            }
-            else if (MayBoundingFire(state, vehicleFirers[0].Id))
-            {
-                kind = ScenarioA1FireCalculator.BoundingFirstFire;
-            }
-            else
-            {
-                return (null, "play.fire-vehicle-phase: in its own MPh a vehicle fires only while it moves, as Bounding First Fire, after the DEFENDER has passed on its last MP expenditure (D3.3)");
-            }
-        }
-        else if (state.Phase == "mph")
-        {
-            // A8.1, A8.3, A8.31: the firers' markers decide the kind of Defensive fire.
-            // A8.31 (ruling R12.3): FPF firers may group with other Defensive fire; First Fire and Subsequent First Fire firers may not.
-            var marks = firers.Select(item => Is(item.Unit, Conditions.FinalFire) ? 2 : Is(item.Unit, Conditions.FirstFire) ? 1 : 0).Distinct().ToArray();
-            if (marks.Length != 1 && !(marks.Contains(2) && !marks.Contains(0)) && firers.All(item => withoutInherent?.Contains(item.Unit.Id) != true))
-            {
-                return (null, "play.fire-kind: a group mixes firers marked for different kinds of Defensive fire (A8.3, A8.31)");
-            }
 
-            kind = marks.Max() switch
-            {
-                0 => ScenarioA1FireCalculator.FirstFire,
-                1 => withoutInherent is { Count: > 0 } ? ScenarioA1FireCalculator.FirstFire : ScenarioA1FireCalculator.SubsequentFirstFire,
-                _ => ScenarioA1FireCalculator.FinalProtectiveFire,
-            };
+        // D3.3, A8.1, A8.3, A8.31 (rulings R6.9, R12.3): the kind of MPh fire; the Bounding Fire read and the firers' marks are read when asked.
+        var (kindRefusal, kind) = ScenarioA1FireEligibility.MphFireKind(state.Phase, new FireKindFacts(vehicleFirers.Length > 0,
+            vehicleFirers.Length > 0 && vehicleFirers[0].Side == state.PhasingSide, () => MayBoundingFire(state, vehicleFirers[0].Id),
+            () => [.. firers.Select(item => (Is(item.Unit, Conditions.FinalFire), Is(item.Unit, Conditions.FirstFire)))],
+            firers.All(item => withoutInherent?.Contains(item.Unit.Id) != true), withoutInherent is { Count: > 0 }));
+        if (kindRefusal is not null)
+        {
+            return (null, kindRefusal);
         }
 
+        // A8.1, A7.308, A15.41: who the attack hits, as Rules sorts the target Location's units.
         var movers = state.Phase == "mph" && state.Movement is { } movement && movement.Location == target ? movement.Movers : null;
-        UnitInstance[] attacked = [.. state.At(target).OfType<UnitInstance>()
-            .Where(unit => unit.Status == InstanceStatus.Active && (movers is null || movers.Contains(unit.Id)))
-            .OrderBy(unit => unit.Id, StringComparer.Ordinal)];
-
-        // A7.308: the target Location's vehicles share the attack's DR; Defensive First Fire attacks only the moving stack or vehicle.
-        UnitInstance[] targets = [.. attacked.Where(unit => !IsVehicle(unit))];
-        UnitInstance[] vehicles = [.. attacked.Where(IsVehicle)];
-
-        // A15.41: the target side's units the attack does not attack (in the MPh, those not moving) are a berserk leader's companions.
-        UnitInstance[] companions = movers is null || targets.Length == 0 ? [] : [.. state.At(target).OfType<UnitInstance>()
-            .Where(unit => unit.Status == InstanceStatus.Active && !movers.Contains(unit.Id) && unit.Side == targets[0].Side && unit.Definition is not null
-                && !IsVehicle(unit))
-            .OrderBy(unit => unit.Id, StringComparer.Ordinal)];
-        if (targets.Any(unit => unit.Definition is null && unit.Kind != UnitKinds.Dummy))
+        UnitInstance[] atTarget = [.. state.At(target).OfType<UnitInstance>()];
+        UnitInstance UnitAt(string id) => atTarget.First(unit => unit.Id == id);
+        var selection = ScenarioA1FireEligibility.SelectTargets([.. atTarget.Select(unit => new TargetUnitStateFacts(unit.Id, unit.Status == InstanceStatus.Active, unit.Side,
+            IsVehicle(unit), unit.Kind == UnitKinds.Dummy, unit.Definition is not null, movers?.Contains(unit.Id)))], movers is not null);
+        if (selection.Refusal is { } outside)
         {
-            return (null, "play.fire-target: the target Location holds a unit outside the catalog");
+            return (null, outside);
         }
 
-        var phase = state.Phase switch
-        {
-            "pfph" => "PFPh",
-            "dfph" => "DFPh",
-            "afph" => "AFPh",
-            "mph" => "MPh",
-            _ => state.Phase,
-        };
-        var targetSide = targets.FirstOrDefault(unit => unit.Side != side)?.Side ?? vehicles.FirstOrDefault()?.Side ?? state.Sides.FirstOrDefault(item => item.Id != side)?.Id;
-        var friendlyTargets = targets.Any(unit => unit.Side == side);
-        var multi = locations.Length > 1;
+        var targetSide = ScenarioA1FireEligibility.TargetSide(side, selection.Targets.Select(id => UnitAt(id).Side),
+            selection.Vehicles.Count > 0 ? UnitAt(selection.Vehicles[0]).Side : null, state.Sides.FirstOrDefault(item => item.Id != side)?.Id);
+        var friendlyTargets = selection.Targets.Any(id => UnitAt(id).Side == side);
 
         FireWeapon Weapon(string id) => state.Find(id) is EquipmentInstance equipment
             ? new FireWeapon(equipment.Id, equipment.Definition?.Definition, Is(equipment, Conditions.Malfunctioned), Fired(equipment),
@@ -172,57 +130,32 @@ public static class LiveFire
             IReadOnlyList<FireWeapon>? used = null;
             if (weapons?.TryGetValue(unit.Id, out var named) == true && named.Count > 0)
             {
-                // A7.35: a SW fires only when possessed by its unit.
-                if (named.Any(id => state.Find(id) is not EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Possessed } holding }
-                    || holding.Holder != unit.Id))
+                // A7.35, A9.8, A22.3, A7.351 (rulings R13.6, R12.4): the limits on the named weapons; the two state scans are read when asked.
+                if (ScenarioA1FireEligibility.NamedWeaponsBar(new NamedWeaponsFacts(unit.Id,
+                    [.. named.Select(id => new NamedWeaponFacts(id,
+                        state.Find(id) is EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Possessed } holding } && holding.Holder == unit.Id,
+                        state.Find(id) is EquipmentInstance held && Is(held, Conditions.Dismantled),
+                        state.Find(id) is EquipmentInstance { Kind: "asl:ft" }))],
+                    state.AssaultWeaponUsers.Contains(unit.Id, StringComparer.Ordinal), withoutInherent?.Contains(unit.Id) == true,
+                    () => state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } other && other.Holder == unit.Id
+                        && !named.Contains(item.Id, StringComparer.Ordinal) && (Fired(item) || Is(item, Conditions.FirstFire))),
+                    () => state.SupportWeaponUses.Any(item => item.Unit == unit.Id))) is { } weaponBar)
                 {
-                    return (null, $"play.fire-weapon: every weapon '{unit.Id}' fires must be one it possesses (A7.35)");
-                }
-
-                // A9.8 (ruling R13.6): a dismantled weapon is not fired.
-                if (named.FirstOrDefault(id => state.Find(id) is EquipmentInstance held && Is(held, Conditions.Dismantled)) is { } dismantled)
-                {
-                    return (null, $"play.fire-weapon: {dismantled} is dismantled and is not fired until it is assembled (A9.8)");
+                    return (null, weaponBar);
                 }
 
                 used = [.. named.Select(id => Weapon(id) is var weapon && CapturedBy(weapon.DefinitionId, unit) is { } captured ? weapon with { Captured = captured } : weapon)];
-
-                // A22.3 (table player, pass 15): a unit uses one FT or DC in a Player Turn.
-                if (named.Any(id => state.Find(id) is EquipmentInstance { Kind: "asl:ft" }) && state.AssaultWeaponUsers.Contains(unit.Id, StringComparer.Ordinal))
-                {
-                    return (null, $"play.fire-ft-once: {unit.Id} has used a FT or DC this Player Turn and uses no other (A22.3)");
-                }
-
-                // A7.351 (ruling R12.4): a squad that fired one MG apart from its inherent FP fires no second one with that FP.
-                if (withoutInherent?.Contains(unit.Id) != true && state.Equipment.Any(item => item.Status == InstanceStatus.Active
-                    && item.Holding is { Role: HoldingRole.Possessed } other && other.Holder == unit.Id && !named.Contains(item.Id, StringComparer.Ordinal)
-                    && (Fired(item) || Is(item, Conditions.FirstFire))))
-                {
-                    return (null, $"play.fire-sw-limit: {unit.Id} fired one MG this phase; with its inherent FP it fires no second SW (A7.351)");
-                }
-
-                // A7.351 (table player, pass 9): a squad that used one SW (a mortar, a PF Check, or spotting) fires its inherent FP with no second SW.
-                if (state.SupportWeaponUses.Any(item => item.Unit == unit.Id))
-                {
-                    return (null, $"play.fire-sw-limit: {unit.Id} has used a SW this phase; with its inherent FP it fires no other (A7.351)");
-                }
             }
 
-            // A3.3, A7.1 (table player, pass 15): a unit whose SW fired alone in the PFPh has Prep Fired, and does not fire in the AFPh.
-            if (state.Phase == "afph" && !Is(unit, Conditions.BoundingFire) && state.Equipment.Any(item => item.Status == InstanceStatus.Active
-                && item.Holding is { Role: HoldingRole.Possessed } prepped && prepped.Holder == unit.Id && Is(item, Conditions.PrepFire)))
+            // A3.3, A7.1, A7.351: the phase's limits on a firer; the Prep Fire scan and the count of its other fired weapons are read when asked.
+            if (ScenarioA1FireEligibility.FirerLimitBar(new FirerLimitFacts(unit.Id, state.Phase, Is(unit, Conditions.BoundingFire), unit.Kind == "asl:squad",
+                withoutInherent?.Contains(unit.Id) == true, Fired(unit), used is { Count: > 0 },
+                () => state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } prepped && prepped.Holder == unit.Id
+                    && Is(item, Conditions.PrepFire)),
+                () => state.Equipment.Count(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holder && holder.Holder == unit.Id
+                    && !(used ?? []).Any(weapon => weapon.EquipmentId == item.Id) && (Fired(item) || Is(item, Conditions.FirstFire))))) is { } limit)
             {
-                return (null, $"play.fire-prep-fired: {unit.Id} fired a SW in the PFPh, so it has Prep Fired and does not fire in the AFPh (A3.3, A7.1)");
-            }
-
-            // A7.351 (referee, pass 12): a squad that fired two SW this phase has no inherent FP left, and one that fired its inherent FP and one SW fires
-            // no other.
-            var otherFired = state.Equipment.Count(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holder
-                && holder.Holder == unit.Id && !(used ?? []).Any(weapon => weapon.EquipmentId == item.Id) && (Fired(item) || Is(item, Conditions.FirstFire)));
-            if (unit.Kind == "asl:squad" && ((withoutInherent?.Contains(unit.Id) != true && otherFired >= 2)
-                || (withoutInherent?.Contains(unit.Id) == true && Fired(unit) && otherFired >= 1 && used is { Count: > 0 })))
-            {
-                return (null, $"play.fire-sw-limit: {unit.Id} fires no more than two SW in a phase, and no inherent FP with two (A7.351)");
+                return (null, limit);
             }
 
             // A7.351 (rulings R9.2, R9.7): a squad whose only fire this phase is one SW use still fires its inherent FP.
@@ -233,82 +166,39 @@ public static class LiveFire
             string? partner = null;
             if (leader && partners?.TryGetValue(unit.Id, out var named2) == true)
             {
-                if (state.Unit(named2) is not { Status: InstanceStatus.Active } helper || helper.Kind is not ("asl:leader" or "asl:hero") || helper.Side != unit.Side
-                    || state.Location(helper.Id)?.Location != at || firerIds.Contains(helper.Id) || directorIds.Contains(helper.Id) || Fired(helper)
-                    || Is(helper, Conditions.Broken))
+                var helper = state.Unit(named2);
+                if (ScenarioA1FireEligibility.PartnerBar(unit.Id, new PartnerFacts(named2, helper is { Status: InstanceStatus.Active }, helper?.Kind is "asl:leader" or "asl:hero",
+                    helper?.Side == unit.Side, helper is not null && state.Location(helper.Id)?.Location == at, firerIds.Contains(named2) || directorIds.Contains(named2),
+                    helper is not null && Fired(helper), helper is not null && Is(helper, Conditions.Broken))) is { } partnerBar)
                 {
-                    return (null, $"play.fire-partner: '{named2}' is not a Good Order SMC stacked with {unit.Id} that has not fired (A9.12)");
+                    return (null, partnerBar);
                 }
 
-                partner = helper.Id;
+                partner = helper!.Id;
             }
 
-            firerFacts.Add(new FireFirer(unit.Id, unit.Definition!.Definition, at.ToString(), Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned),
-                Is(unit, Conditions.Concealed), Fired(unit) && !swOnly, used is not null)
-            {
-                Elr = unit.Group is not null ? state.ElrOf(unit) : null,
-                FirstFireMarked = Is(unit, Conditions.FirstFire) && !swOnly ? true : null,
-                FinalFireMarked = state.Phase == "mph" && Is(unit, Conditions.FinalFire) ? true : null,
-                // A7.351, A7.352: a crew, HS, or SMC that fired a Gun loses its inherent FP; a squad does not.
-                GunFired = state.GunCrewsFired.Contains(unit.Id, StringComparer.Ordinal) && unit.Kind != "asl:squad" ? true : null,
-                Weapons = used,
-                UsesInherentFp = withoutInherent?.Contains(unit.Id) == true || leader ? false : null,
-                Fanatic = Is(unit, Conditions.Fanatic) ? true : null,
-                Wounded = Is(unit, Conditions.Wounded) ? true : null,
-                Cx = Is(unit, Conditions.Cx) ? true : null,
-                // A7.25 (ruling R12.1): an Opportunity Firer fires in the AFPh under its Bounding Fire counter.
-                OpportunityFire = state.Phase == "afph" && Is(unit, Conditions.BoundingFire) ? true : null,
-                Encircled = state.Encircled(unit) ? true : null,
-                Partner = partner,
-                // A22.611 (ruling R15.4): the unit that makes the attack's MOL Check.
-                Mol = molUser == unit.Id ? true : null,
-                // A19.2 (ruling R15.10): a Green firer's Inexperience, for the Heat of Battle of an FPF NMC and a FT's removal number (A19.32).
-                Inexperienced = GreenInexperienced(state, unit),
-            });
+            firerFacts.Add(ScenarioA1FireEligibility.Firer(new FirerRecordFacts(unit.Id, unit.Definition!.Definition, at.ToString(), Is(unit, Conditions.Broken),
+                Is(unit, Conditions.Pinned), Is(unit, Conditions.Concealed), Fired(unit), used is not null,
+                unit.Group is not null ? state.ElrOf(unit) : null, Is(unit, Conditions.FirstFire), Is(unit, Conditions.FinalFire), state.Phase, swOnly,
+                state.GunCrewsFired.Contains(unit.Id, StringComparer.Ordinal), unit.Kind == "asl:squad", leader, withoutInherent?.Contains(unit.Id) == true, used,
+                Is(unit, Conditions.Fanatic), Is(unit, Conditions.Wounded), Is(unit, Conditions.Cx), Is(unit, Conditions.BoundingFire), state.Encircled(unit), partner,
+                molUser == unit.Id, GreenInexperienced(state, unit))));
         }
 
         FireDirector Director((UnitInstance Unit, BoardLocation At) item) =>
-            new(item.Unit.Id, item.Unit.Definition!.Definition, item.At.ToString(), Is(item.Unit, Conditions.Broken), Is(item.Unit, Conditions.Pinned),
-                Is(item.Unit, Conditions.Concealed), Fired(item.Unit) || Is(item.Unit, Conditions.FirstFire)
-                    || state.SupportWeaponDirectors.Any(directed => directed.Leader == item.Unit.Id), Is(item.Unit, Conditions.Wounded))
-            {
-                Cx = Is(item.Unit, Conditions.Cx) ? true : null,
-            };
+            ScenarioA1FireEligibility.Director(new DirectorRecordFacts(item.Unit.Id, item.Unit.Definition!.Definition, item.At.ToString(), Is(item.Unit, Conditions.Broken),
+                Is(item.Unit, Conditions.Pinned), Is(item.Unit, Conditions.Concealed), Fired(item.Unit), Is(item.Unit, Conditions.FirstFire),
+                state.SupportWeaponDirectors.Any(directed => directed.Leader == item.Unit.Id), Is(item.Unit, Conditions.Wounded), Is(item.Unit, Conditions.Cx)));
 
-        return (new FireAttack(
-            phase,
-            side == state.PhasingSide ? "phasing" : "non-phasing",
-            true,
-            firers[0].At.ToString(),
-            target.ToString(),
-            firerFacts,
-            directors.Count == 0 ? null : Director(directors[0]),
-            null,
-            null,
-            null,
-            state.ScenarioMonth,
-            null,
-            [.. targets.Select(unit => Target(state, unit, target) with
-            {
-                // Rulings R12.8, R12.9, R12.11: the firing side's units in a Melee or as prisoners, a prisoner's Guard, and Encirclement.
-                Friendly = unit.Side == side ? true : null,
-                GuardId = Is(unit, Conditions.Captured) ? unit.Custodian : null,
-                Encircled = state.Encircled(unit) ? true : null,
-            })],
-            targetSide is null ? null : state.Side(targetSide)?.Elr,
-            null)
-        {
-            FireKind = kind,
-            TargetMovement = kind is null or ScenarioA1FireCalculator.BoundingFirstFire ? null : new FireMovement(state.Movement?.Assault ?? false),
-            FiringSideElr = kind == ScenarioA1FireCalculator.FinalProtectiveFire || friendlyTargets ? state.Side(side)?.Elr : null,
-            OtherDirectors = directors.Count > 1 ? [.. directors.Skip(1).Select(Director)] : null,
-            Vehicles = vehicles.Length > 0 ? [.. vehicles.Select(unit => Vehicle(unit, target))] : null,
-            VehicleFire = vehicleFirers.Length > 0 ? VehicleFire(state, vehicleFirers[0], firers[0].At) : null,
-            TargetSideNoQuarter = targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal) ? true : null,
-            FiringSideNoQuarter = (kind == ScenarioA1FireCalculator.FinalProtectiveFire || friendlyTargets) && state.NoQuarter.Contains(side, StringComparer.Ordinal) ? true : null,
-            FiringNationalities = Allies(state, side),
-            Companions = companions.Length > 0 ? [.. companions.Select(unit => Target(state, unit, target))] : null,
-        }, null);
+        // Rulings R12.8, R12.9, R12.11: the firing side's units in a Melee or as prisoners, a prisoner's Guard, and Encirclement; Rules assembles the attack.
+        return (ScenarioA1FireEligibility.Assemble(new AttackAssemblyFacts(state.Phase, side == state.PhasingSide, firers[0].At.ToString(), target.ToString(),
+            firerFacts, [.. directors.Select(Director)], state.ScenarioMonth,
+            [.. selection.Targets.Select(UnitAt).Select(unit => ScenarioA1FireEligibility.AttackTarget(new AttackTargetFacts(Target(state, unit, target), unit.Side == side,
+                Is(unit, Conditions.Captured), unit.Custodian, state.Encircled(unit))))],
+            targetSide is null ? null : state.Side(targetSide)?.Elr, kind, state.Movement?.Assault ?? false, () => state.Side(side)?.Elr, friendlyTargets,
+            [.. selection.Vehicles.Select(id => Vehicle(UnitAt(id), target))], vehicleFirers.Length > 0 ? VehicleFire(state, vehicleFirers[0], firers[0].At) : null,
+            targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal), state.NoQuarter.Contains(side, StringComparer.Ordinal),
+            Allies(state, side), [.. selection.Companions.Select(id => Target(state, UnitAt(id), target))])), null);
     }
 
     /// <summary>
@@ -374,61 +264,29 @@ public static class LiveFire
             return (null, $"play.fire-catalog: the Fire package reads {Catalog}@{CatalogVersion}, and this game uses {state.Catalog.Catalog}@{state.Catalog.Version}");
         }
 
-        if (state.Find(chargeId) is not EquipmentInstance { Status: InstanceStatus.Active, Definition: { } dcReference } charge)
-        {
-            return (null, $"play.dc: '{chargeId}' is not a DC in play");
-        }
-
-        var placement = mode == FireDemolitionCharge.Placed ? state.PlacedCharges.FirstOrDefault(item => item.Charge == chargeId && item.Operable) : null;
-        var userId = placement?.Unit ?? (charge.Holding is { Role: HoldingRole.Possessed } holding ? holding.Holder : null);
-        if (userId is null || state.Unit(userId) is not { Definition: not null } user || (mode == FireDemolitionCharge.Placed && placement is null))
-        {
-            return (null, $"play.dc: '{chargeId}' has no unit to Place or Throw it");
-        }
-
-        var side = user.Side;
-        var phase = state.Phase switch
-        {
-            "pfph" => "PFPh",
-            "dfph" => "DFPh",
-            "afph" => "AFPh",
-            "mph" => "MPh",
-            _ => state.Phase,
-        };
-        var movers = state.Phase == "mph" && state.Movement is { } movement && movement.Location == target ? movement.Movers : null;
-        UnitInstance[] attacked = [.. state.At(target).OfType<UnitInstance>()
-            .Where(unit => unit.Status == InstanceStatus.Active && (movers is null || movers.Contains(unit.Id) || unit.Side == side))
-            .OrderBy(unit => unit.Id, StringComparer.Ordinal)];
-        UnitInstance[] targets = [.. attacked.Where(unit => !IsVehicle(unit))];
-        UnitInstance[] vehicles = [.. attacked.Where(IsVehicle)];
-        var targetSide = state.Sides.FirstOrDefault(item => item.Id != side)?.Id;
-        var friendlyTargets = targets.Any(unit => unit.Side == side);
-        var kind = state.Phase == "mph" && mode != FireDemolitionCharge.Thrower ? ScenarioA1FireCalculator.FirstFire : null;
-        return (new FireAttack(phase, side == state.PhasingSide ? "phasing" : "non-phasing", null, state.Location(userId)?.Location.ToString() ?? target.ToString(),
-            target.ToString(), null, null, null, null, null, state.ScenarioMonth, null,
-            [.. targets.Select(unit => Target(state, unit, target) with
-            {
-                Friendly = unit.Side == side ? true : null,
-                GuardId = Is(unit, Conditions.Captured) ? unit.Custodian : null,
-                Encircled = state.Encircled(unit) ? true : null,
-            })],
-            targetSide is null ? null : state.Side(targetSide)?.Elr, null)
-        {
-            FireKind = kind,
-            TargetMovement = kind is null ? null : new FireMovement(state.Movement?.Assault ?? false),
-            FiringSideElr = friendlyTargets ? state.Side(side)?.Elr : null,
-            Vehicles = vehicles.Length > 0 ? [.. vehicles.Select(unit => Vehicle(unit, target))] : null,
-            TargetSideNoQuarter = targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal) ? true : null,
-            FiringSideNoQuarter = friendlyTargets && state.NoQuarter.Contains(side, StringComparer.Ordinal) ? true : null,
-            FiringNationalities = Allies(state, side),
-            DemolitionCharge = new FireDemolitionCharge(chargeId, dcReference.Definition, mode, userId, user.Definition!.Definition,
-                placement?.Cx ?? Is(user, Conditions.Cx), CapturedBy(dcReference.Definition, user) == true,
-                mode == FireDemolitionCharge.Placed ? placement!.TargetsConcealed : null,
-                mode != FireDemolitionCharge.Placed && state.Phase == "afph" && Is(user, Conditions.BoundingFire) ? true : null)
-            {
-                Inexperienced = GreenInexperienced(state, user),
-            },
-        }, null);
+        // Rules decides it (pass 32.c): the charge, its placement, its user, and the units of the target Location are read and handed over.
+        var charge = state.Find(chargeId) as EquipmentInstance;
+        var chargeOk = charge is { Status: InstanceStatus.Active, Definition: not null };
+        var placement = chargeOk && mode == FireDemolitionCharge.Placed ? state.PlacedCharges.FirstOrDefault(item => item.Charge == chargeId && item.Operable) : null;
+        var possessor = charge?.Holding is { Role: HoldingRole.Possessed } holding ? holding.Holder : null;
+        var userId = placement?.Unit ?? possessor;
+        var user = chargeOk && userId is not null ? state.Unit(userId) : null;
+        var ok = user is { Definition: not null } && (mode != FireDemolitionCharge.Placed || placement is not null);
+        var side = user?.Side;
+        var movement = state.Movement;
+        var here = state.Phase == "mph" && movement is not null && movement.Location == target;
+        UnitInstance[] units = ok ? [.. state.At(target).OfType<UnitInstance>()] : [];
+        var targetSide = ok ? state.Sides.FirstOrDefault(item => item.Id != side)?.Id : null;
+        return ScenarioA1FireEligibility.DemolitionCharge(new DemolitionChargeFacts(chargeId, chargeOk, charge?.Definition?.Definition, mode, placement is not null,
+            placement?.Unit, placement?.Cx, placement?.TargetsConcealed, possessor, user is { Definition: not null }, user?.Definition?.Definition, side,
+            user is not null && Is(user, Conditions.Cx), user is not null && Is(user, Conditions.BoundingFire), ok ? GreenInexperienced(state, user!) : null,
+            ok ? CapturedBy(charge!.Definition!.Definition, user!) : null, ok ? state.Location(userId!)?.Location.ToString() : null, side == state.PhasingSide, state.Phase,
+            target.ToString(), here, movement?.Assault ?? false,
+            [.. units.Select(unit => new LocationUnitFacts(unit.Id, unit.Status == InstanceStatus.Active, unit.Side, IsVehicle(unit), unit.Definition is not null,
+                Is(unit, Conditions.Captured), here && movement!.Movers.Contains(unit.Id)))],
+            targetSide, targetSide is null ? null : state.Side(targetSide)?.Elr, targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal),
+            ok ? state.Side(side!)?.Elr : null, ok && state.NoQuarter.Contains(side, StringComparer.Ordinal), ok ? Allies(state, side!) : null, state.ScenarioMonth,
+            id => Target(state, units.First(unit => unit.Id == id), target), id => Vehicle(units.First(unit => unit.Id == id), target)));
     }
 
     /// <summary>
@@ -489,33 +347,16 @@ public static class LiveFire
     public static (FireAttack? Attack, string? Reason) ResidualFromState(GameState state, BoardLocation target, int fp)
     {
         ArgumentNullException.ThrowIfNull(state);
-        if (state.Movement is not { } movement || movement.Location != target)
-        {
-            return (null, "play.fire-residual: Residual FP attacks the moving stack in its Location (A8.2)");
-        }
-
-        UnitInstance[] targets = [.. state.At(target).OfType<UnitInstance>()
-            .Where(unit => unit.Status == InstanceStatus.Active && movement.Movers.Contains(unit.Id) && !IsVehicle(unit)).OrderBy(unit => unit.Id, StringComparer.Ordinal)];
-
-        // A8.2, A8.222 (ruling R6.6): a moving vehicle is attacked on the Vehicle line, or its Vulnerable crew Collaterally.
-        UnitInstance[] vehicles = [.. state.At(target).OfType<UnitInstance>()
-            .Where(unit => unit.Status == InstanceStatus.Active && movement.Movers.Contains(unit.Id) && IsVehicle(unit))];
-        var targetSide = state.PhasingSide;
-        UnitInstance[] companions = [.. state.At(target).OfType<UnitInstance>()
-            .Where(unit => unit.Status == InstanceStatus.Active && !movement.Movers.Contains(unit.Id) && unit.Side == targetSide && unit.Definition is not null
-                && !IsVehicle(unit))
-            .OrderBy(unit => unit.Id, StringComparer.Ordinal)];
-        return (new FireAttack("MPh", "non-phasing", null, null, target.ToString(), null, null, null, null, null, state.ScenarioMonth, null,
-            [.. targets.Select(unit => Target(state, unit, target))],
-            state.Side(targetSide)?.Elr, null)
-        {
-            FireKind = ScenarioA1FireCalculator.ResidualFire,
-            TargetMovement = new FireMovement(movement.Assault),
-            ResidualFp = fp,
-            Vehicles = vehicles.Length > 0 ? [.. vehicles.Select(unit => Vehicle(unit, target))] : null,
-            Companions = companions.Length > 0 ? [.. companions.Select(unit => Target(state, unit, target))] : null,
-            TargetSideNoQuarter = state.NoQuarter.Contains(targetSide, StringComparer.Ordinal) ? true : null,
-        }, null);
+        // Rules decides it (pass 32.c): the moving stack and the units of its Location; a target's and a vehicle's facts are read for the units the attack takes.
+        var movement = state.Movement;
+        var here = movement is not null && movement.Location == target;
+        UnitInstance[] units = here ? [.. state.At(target).OfType<UnitInstance>()] : [];
+        return ScenarioA1FireEligibility.Residual(new ResidualFacts(here, movement?.Assault ?? false,
+            [.. units.Select(unit => new LocationUnitFacts(unit.Id, unit.Status == InstanceStatus.Active, unit.Side, IsVehicle(unit), unit.Definition is not null,
+                Is(unit, Conditions.Captured), movement!.Movers.Contains(unit.Id)))],
+            state.PhasingSide, here ? state.Side(state.PhasingSide)?.Elr : null, here && state.NoQuarter.Contains(state.PhasingSide, StringComparer.Ordinal),
+            state.ScenarioMonth, fp, target.ToString(),
+            id => Target(state, units.First(unit => unit.Id == id), target), id => Vehicle(units.First(unit => unit.Id == id), target)));
     }
 
     /// <summary>
@@ -525,28 +366,22 @@ public static class LiveFire
     public static (FireAttack? Attack, string? Reason) OverrunFromState(GameState state, string vehicleId)
     {
         ArgumentNullException.ThrowIfNull(state);
-        // D7.11 (referee, pass 11): a vehicle destroyed before its declared OVR resolves still makes it, at half FP.
-        if (state.Unit(vehicleId) is not { Status: InstanceStatus.Active or InstanceStatus.Wrecked } vehicle || !IsVehicle(vehicle) || state.Location(vehicleId)?.Location is not { } at
-            || vehicle.Definition is not { } definition)
-        {
-            return (null, "play.overrun: an OVR is made by a vehicle on the map (D7.1)");
-        }
-
-        UnitInstance[] enemies = [.. state.At(at).OfType<UnitInstance>()
-            .Where(unit => unit.Status == InstanceStatus.Active && unit.Side != vehicle.Side && !Is(unit, Conditions.Captured)).OrderBy(unit => unit.Id, StringComparer.Ordinal)];
-        var targetSide = state.Sides.FirstOrDefault(side => side.Id != vehicle.Side)?.Id;
-        var immobile = Is(vehicle, Conditions.Immobilized) || Is(vehicle, Conditions.Bogged) || vehicle.Status == InstanceStatus.Wrecked;
-        var vehicles = enemies.Where(IsVehicle).ToArray();
-        return (new FireAttack("MPh", "phasing", null, at.ToString(), at.ToString(), null, null, 0, true, null, state.ScenarioMonth, null,
-            [.. enemies.Where(unit => !IsVehicle(unit)).Select(unit => Target(state, unit, at))],
-            targetSide is null ? null : state.Side(targetSide)?.Elr, null)
-        {
-            FireKind = ScenarioA1FireCalculator.OverrunFire,
-            Overrun = new FireOverrun(vehicle.Id, definition.Definition, at.ToString(), CrewExposed(vehicle), immobile,
-                Is(vehicle, Conditions.Malfunctioned) || Is(vehicle, Conditions.Disabled), Is(vehicle, Conditions.BmgMalfunctioned), Is(vehicle, Conditions.CmgMalfunctioned)),
-            Vehicles = vehicles.Length > 0 ? [.. vehicles.Select(unit => Vehicle(unit, at))] : null,
-            TargetSideNoQuarter = targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal) ? true : null,
-        }, null);
+        // D7.11 (referee, pass 11): a vehicle destroyed before its declared OVR resolves still makes it, at half FP. Rules decides it (pass 32.c).
+        var vehicle = state.Unit(vehicleId);
+        var found = vehicle is { Status: InstanceStatus.Active or InstanceStatus.Wrecked };
+        var isVehicle = found && IsVehicle(vehicle!);
+        BoardLocation? at = isVehicle ? state.Location(vehicleId)?.Location : null;
+        var ok = at is not null && vehicle!.Definition is not null;
+        UnitInstance[] units = ok ? [.. state.At(at!).OfType<UnitInstance>()] : [];
+        var targetSide = ok ? state.Sides.FirstOrDefault(side => side.Id != vehicle!.Side)?.Id : null;
+        return ScenarioA1FireEligibility.Overrun(new OverrunFacts(found, isVehicle, at is not null, vehicle?.Definition is not null, vehicleId, vehicle?.Definition?.Definition,
+            at?.ToString() ?? string.Empty, vehicle?.Side, ok && CrewExposed(vehicle!), ok && Is(vehicle!, Conditions.Immobilized), ok && Is(vehicle!, Conditions.Bogged),
+            vehicle?.Status == InstanceStatus.Wrecked, ok && Is(vehicle!, Conditions.Malfunctioned), ok && Is(vehicle!, Conditions.Disabled),
+            ok && Is(vehicle!, Conditions.BmgMalfunctioned), ok && Is(vehicle!, Conditions.CmgMalfunctioned),
+            [.. units.Select(unit => new LocationUnitFacts(unit.Id, unit.Status == InstanceStatus.Active, unit.Side, IsVehicle(unit), unit.Definition is not null,
+                Is(unit, Conditions.Captured), false))],
+            targetSide is null ? null : state.Side(targetSide)?.Elr, targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal), state.ScenarioMonth,
+            id => Target(state, units.First(unit => unit.Id == id), at!), id => Vehicle(units.First(unit => unit.Id == id), at!)));
     }
 
     /// <summary>The rolls of a record, rebuilt from its roll ids and the recorded dice, in the calculator's shape.</summary>
