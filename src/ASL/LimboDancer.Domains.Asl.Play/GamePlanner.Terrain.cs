@@ -331,33 +331,15 @@ public sealed partial class GamePlanner
     /// Whether a Good Order MMC moving with a Good Order leader of its nationality, who began the MPh with it and has moved with it at every step, has
     /// the leader's two MF bonus (A4.12; ruling R10.8). A berserk unit's MF are never increased but by the Road Bonus (A15.431).
     /// </summary>
-    private bool LeaderBonus(GameState state, UnitInstance unit, IReadOnlyList<UnitInstance> movers)
-    {
-        // A12.11 (table player, pass 10): a Dummy moves with a leader's bonus as a real MMC would.
-        var dummy = unit.Kind == UnitKinds.Dummy;
-        if ((!dummy && !vocabulary.IsA(unit.Kind, "asl:mmc")) || Is(unit, Conditions.Berserk) || Is(unit, Conditions.Broken)
-            || (dummy ? movers.FirstOrDefault(item => vocabulary.IsA(item.Kind, "asl:leader") && item.Side == unit.Side) is not { } guide ? null : Nationality(guide) : Nationality(unit)) is not { } nationality)
-        {
-            return false;
-        }
-
-        var first = unit.MovedWith is null && unit.MfSpent == 0 && !unit.HalfMfSpent;
-        return movers.Any(leader => leader.Id != unit.Id && vocabulary.IsA(leader.Kind, "asl:leader") && !Is(leader, Conditions.Broken) && !Is(leader, Conditions.Berserk)
-            && Nationality(leader) == nationality
-            && (first ? leader.MfSpent == 0 && !leader.HalfMfSpent && leader.MovedWith is null : unit.MovedWith?.Contains(leader.Id, StringComparer.Ordinal) == true));
-    }
+    private bool LeaderBonus(GameState state, UnitInstance unit, IReadOnlyList<UnitInstance> movers) =>
+        state is null ? throw new ArgumentNullException(nameof(state)) : ScenarioA1MovementCalculator.LeaderBonus(MovingUnit(unit), [.. movers.Select(MovingUnit)]);
 
     /// <summary>
     /// The MMC a leader lends his IPC to (A4.42; ruling R10.8): the only MMC of the stack with his leader bonus that carries more than its own IPC; the
     /// leader's own IPC is then spent. Nulls when there is none, or more than one.
     /// </summary>
-    private (string? Recipient, string? Leader) LeaderIpcRecipient(GameState state, IReadOnlyList<UnitInstance> movers)
-    {
-        var laden = movers.Where(unit => LeaderBonus(state, unit, movers) && Laden(state, unit)).ToArray();
-        var leader = laden.Length != 1 ? null : movers.FirstOrDefault(item => vocabulary.IsA(item.Kind, "asl:leader") && !Is(item, Conditions.Broken) && !Is(item, Conditions.Wounded)
-            && Nationality(item) == Nationality(laden[0]));
-        return leader is not null ? (laden[0].Id, leader.Id) : (null, null);
-    }
+    private (string? Recipient, string? Leader) LeaderIpcRecipient(GameState state, IReadOnlyList<UnitInstance> movers) =>
+        ScenarioA1MovementCalculator.LeaderIpcRecipient([.. movers.Select(MovingUnit)], index => Laden(state, movers[index]));
 
     /// <summary>A unit's nationality from the reviewed catalog; null when the catalog does not name it.</summary>
     private static string? Nationality(UnitInstance unit) =>

@@ -23,27 +23,15 @@ public sealed partial class GamePlanner
     /// carries beyond its IPC (three for a MMC, one for a SMC, none for a wounded SMC; one less while CX). A berserk unit counts only its 1PP SW,
     /// since it abandons the others before it charges (A15.431). Null when the catalog does not decide it.
     /// </summary>
-    private int? MfAllotment(GameState state, UnitInstance unit, int doubleTimeMf, bool cx, int bonusMf = 0, int ipcBonus = 0)
-    {
-        // A12.11 (ruling R10.10): a Dummy stack moves as if it holds a real unit, with four MF.
-        if ((unit.Kind == UnitKinds.Dummy ? 4 : Experience.MoveAllowance(state, unit, catalogs, vocabulary)) is not { } allotment || Portage(state, unit) is not { } carried)
-        {
-            return null;
-        }
+    private int? MfAllotment(GameState state, UnitInstance unit, int doubleTimeMf, bool cx, int bonusMf = 0, int ipcBonus = 0) =>
+        ScenarioA1MovementCalculator.MfAllotment(
+            new MfAllotmentFacts(unit.Kind == UnitKinds.Dummy, DefinitionOf(unit)?.Class, vocabulary.IsA(unit.Kind, "asl:smc"), Is(unit, Conditions.Wounded), Is(unit, Conditions.Berserk)),
+            doubleTimeMf, cx, bonusMf, ipcBonus, () => Experience.MoveAllowance(state, unit, catalogs, vocabulary), () => Portage(state, unit));
 
-        if (doubleTimeMf > 0)
-        {
-            var conscript = unit.Definition is { } reference && FireReference.Value.Definitions.GetValueOrDefault(reference.Definition)?.Class == "conscript";
-            allotment = Math.Min(allotment + doubleTimeMf, conscript ? 7 : 8);
-        }
-
-        var smc = vocabulary.IsA(unit.Kind, "asl:smc");
-        var ipc = (smc ? (Is(unit, Conditions.Wounded) ? 0 : 1) : 3) - (cx ? 1 : 0) + ipcBonus;
-        var pp = Is(unit, Conditions.Berserk) ? carried.Where(item => item == 1).Sum() : carried.Sum();
-
-        // B3.4, A4.12 (ruling R10.8): the Road Bonus and a leader's bonus add to the allotment.
-        return allotment + bonusMf - Math.Max(0, pp - Math.Max(ipc, 0));
-    }
+    /// <summary>One unit of a moving stack as Rules reads it for the leader bonus (pass 32.b).</summary>
+    private MovingUnitFacts MovingUnit(UnitInstance unit) =>
+        new(unit.Id, unit.Side, unit.Kind == UnitKinds.Dummy, vocabulary.IsA(unit.Kind, "asl:mmc"), vocabulary.IsA(unit.Kind, "asl:leader"),
+            Is(unit, Conditions.Berserk), Is(unit, Conditions.Broken), Is(unit, Conditions.Wounded), Nationality(unit), unit.MfSpent, unit.HalfMfSpent, unit.MovedWith);
 
     /// <summary>The PP of each SW a unit possesses (A4.4), from the catalog; null when one is not recorded.</summary>
     private int[]? Portage(GameState state, UnitInstance unit)

@@ -152,5 +152,26 @@ public sealed record HeightAdvantageFacts(
     Func<int, IReadOnlyList<int>?> EntrySidesOf,
     bool SnapShot);
 
+/// <summary>A unit whose MF allotment is read (A4.11, A4.42): a Dummy, the class its catalog definition prints (null when none), a SMC, wounded, berserk.</summary>
+public sealed record MfAllotmentFacts(bool Dummy, string? Class, bool Smc, bool Wounded, bool Berserk);
+
+/// <summary>
+/// One unit of a moving stack as the leader bonus reads it (A4.12, A4.42; ruling R10.8): its kinds, its conditions, the nationality its catalog
+/// definition names (null when none), the MF it has spent, and the leaders it has moved with (null before its first step).
+/// </summary>
+public sealed record MovingUnitFacts(
+    string Id,
+    string Side,
+    bool Dummy,
+    bool Mmc,
+    bool Leader,
+    bool Berserk,
+    bool Broken,
+    bool Wounded,
+    string? Nationality,
+    int MfSpent,
+    bool HalfMfSpent,
+    IReadOnlyList<string>? MovedWith);
+
 /// <summary>The night and weather half MF of an Infantry step and whether the road rate survives them (E1.51, E3.54, E3.6, E3.64, E3.723, E3.733), read by the caller for a terrain, a road crossing, and a rise.</summary>
 public delegate (int HalfMf, bool RoadRate) InfantryWeatherRead(string terrain, bool road, int rise);

@@ -676,11 +676,9 @@ public sealed partial class GamePlanner
         return (aided, ipcTo);
     }
 
-    private bool Laden(GameState state, UnitInstance unit)
-    {
-        var ipc = (vocabulary.IsA(unit.Kind, "asl:smc") ? (Is(unit, Conditions.Wounded) ? 0 : 1) : 3) - (Is(unit, Conditions.Cx) ? 1 : 0);
-        return Portage(state, unit) is { } carried && carried.Sum() > Math.Max(ipc, 0);
-    }
+    // A4.42: moved to Rules with the MF allotment (pass 32.b), a step ahead of its slice.
+    private bool Laden(GameState state, UnitInstance unit) =>
+        ScenarioA1MovementCalculator.Laden(vocabulary.IsA(unit.Kind, "asl:smc"), Is(unit, Conditions.Wounded), Is(unit, Conditions.Cx), Portage(state, unit));
 
     /// <summary>Whether a withdrawal to a Location makes the unit CX (A11.21, A4.72; ruling R5.5).</summary>
     private bool WithdrawalTires(GameState state, UnitInstance unit, BoardLocation from, BoardLocation to) =>
