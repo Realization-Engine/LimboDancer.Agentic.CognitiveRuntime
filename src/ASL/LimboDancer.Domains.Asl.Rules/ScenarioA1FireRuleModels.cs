@@ -220,3 +220,24 @@ public sealed record DemolitionChargeFacts(
     int? ScenarioMonth,
     Func<string, FireTarget> TargetOf,
     Func<string, FireVehicle> VehicleOf);
+
+/// <summary>A firer's named weapons as the FT read finds them (A22.3): the firer and whether any named weapon is a FT.</summary>
+public sealed record FirerFtFacts(string Firer, bool NamesFt);
+
+/// <summary>A MOL Check's user against the MOL rules (A22.6, A22.61, A22.611; ruling R15.4): whether it is a firer and a unit of the state, its side, whether an SSR gives that side MOL, the phase, whether it made a MOL Check in Defensive First Fire this Player Turn (read only in the DFPh), and its conditions.</summary>
+public sealed record MolUserFacts(string Id, bool IsFirer, bool Found, string? Side, Func<bool> SsrGivesMol, string? Phase, Func<bool> CheckedInFirstFire, bool Broken, bool Captured, bool Melee);
+
+/// <summary>One recorded event, as the MOL Check scan reads it from the end of the record: whether it starts a RPh, and whether it is a Defensive First Fire record in which the unit made a MOL Check.</summary>
+public sealed record MolEventFacts(bool RallyPhase, bool MolCheckByUnit);
+
+/// <summary>A firer against the fire a leader may make with a MG (A9.12; referee, pass 12): its id, whether it is a leader, and three reads made for a leader only: whether he directed fire this phase, directed a SW use, or fired another MG he possesses.</summary>
+public sealed record LeaderMgFacts(string Id, bool Leader, Func<bool> DirectedThisPhase, Func<bool> DirectedSupportWeapon, Func<bool> FiredAnotherMg);
+
+/// <summary>A fire record of the phase as the state keeps it (A7.55): the firing Location, the target Location, the step it answered, and whether a vehicle fired.</summary>
+public sealed record PhaseFireFacts(string FirerLocation, string TargetLocation, int? Step, bool Vehicle);
+
+/// <summary>A target unit of the Encirclement marking as the state has it (A7.7): whether it is found, its kind and side, and whether it is held in Melee.</summary>
+public sealed record EncircledUnitFacts(bool Found, string? Kind, string? Side, bool Melee);
+
+/// <summary>A declared Fire Lane against its conditions (A9.22): the phase, the attack, the manning firer and its MG as the attack has them, whether the MG's definition is a MG with its Normal Range and FP, and whether the MG's Location was read.</summary>
+public sealed record FireLaneDeclarationFacts(string? Phase, FireAttack Attack, FireFirer? Manning, FireWeapon? Mg, bool MgIsMg, int? MgRange, int? MgFirepower, bool MgLocationRead);

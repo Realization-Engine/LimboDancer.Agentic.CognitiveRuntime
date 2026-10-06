@@ -523,4 +523,318 @@ public static class ScenarioA1FireEligibility
             },
         }, null);
     }
+
+    // The planner's checks of a proposed fire attack (GamePlanner.PlanFire of Play, blocks 2 to 23; pass 32.c): one function a block, called in the
+    // old order. The parsing of the request and the reads of the state, the map, and the record stay in Play.
+
+    /// <summary>A22.3 (table player, pass 15): a FT fires apart from its user's inherent FP, so a firer naming one fires without it, as does a firer the request names.</summary>
+    public static string[] FiresWithoutInherent(IEnumerable<string> withoutInherent, IEnumerable<FirerFtFacts> weapons)
+    {
+        ArgumentNullException.ThrowIfNull(withoutInherent);
+        ArgumentNullException.ThrowIfNull(weapons);
+        return [.. withoutInherent.Concat(weapons.Where(entry => entry.NamesFt).Select(entry => entry.Firer)).Distinct(StringComparer.Ordinal)];
+    }
+
+    /// <summary>A22.6, A22.611 (backlog pass 15, ruling R15.4): a MOL Check by one firer, where an SSR gives its side MOL, none after a Defensive First Fire check, by a unit that is Good Order or berserk.</summary>
+    public static string? MolBar(MolUserFacts user)
+    {
+        ArgumentNullException.ThrowIfNull(user);
+        if (!user.IsFirer || !user.Found)
+        {
+            return "play.fire-mol: the MOL user is one of the firers (A22.611)";
+        }
+
+        if (!user.SsrGivesMol())
+        {
+            return $"play.fire-mol: no SSR gives the {user.Side} side MOL (A22.6; an SSR mol:{user.Side})";
+        }
+
+        if (user.Phase == "dfph" && user.CheckedInFirstFire())
+        {
+            return $"play.fire-mol: {user.Id} made a MOL Check in Defensive First Fire and makes none in Final Fire (A22.611)";
+        }
+
+        return user.Broken || user.Captured || user.Melee ? $"play.fire-mol: {user.Id} is not Good Order or berserk, and uses no MOL (A22.61)" : null;
+    }
+
+    /// <summary>Whether a unit made a MOL Check in Defensive First Fire this Player Turn (A22.611; ruling R15.4): the record read from its end, each event when asked, to the last RPh.</summary>
+    public static bool MolCheckedInFirstFire(int events, Func<int, MolEventFacts> eventAt)
+    {
+        ArgumentNullException.ThrowIfNull(eventAt);
+        for (var index = events - 1; index >= 0; index--)
+        {
+            var facts = eventAt(index);
+            if (facts.RallyPhase)
+            {
+                return false;
+            }
+
+            if (facts.MolCheckByUnit)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>D3.3 (ruling R6.9): the moving vehicle's Bounding First Fire; A8.1, A8.11: otherwise in the MPh, Defensive fire answers the moving stack's MF expenditure, in its Location.</summary>
+    public static (bool Bounding, string? Refusal) MphWindow(string? phase, int firers, Func<bool> mayBoundingFire, bool windowOpenAtTarget)
+    {
+        ArgumentNullException.ThrowIfNull(mayBoundingFire);
+        var bounding = phase == "mph" && firers == 1 && mayBoundingFire();
+        return (bounding, phase == "mph" && !bounding && !windowOpenAtTarget
+            ? "play.fire-window: Defensive First Fire attacks the moving stack in its Location, while the DEFENDER's window on its MF expenditure is open (A8.1, A8.11)"
+            : null);
+    }
+
+    /// <summary>A22.611 (ruling R15.4): no MOL through a woods or orchard hexside, one both of whose hexes are woods, or both orchard. The terrains are null when the MOL user is in the target Location or a Location cannot be read.</summary>
+    public static string? MolHexsideBar(string? molTerrain, string? targetTerrain) =>
+        molTerrain is "woods" or "orchard" && molTerrain == targetTerrain ? $"play.fire-mol: a MOL is not thrown through a {molTerrain} hexside (A22.611)" : null;
+
+    /// <summary>A9.22, A9.223 (referee, pass 12): a MG with a Fire Lane does not fire again this MPh, nor does its manning Infantry use Subsequent First Fire or FPF.</summary>
+    public static string? FireLaneInUseBar(IEnumerable<(string Weapon, string Operator)> lanes, FireAttack attack)
+    {
+        ArgumentNullException.ThrowIfNull(lanes);
+        ArgumentNullException.ThrowIfNull(attack);
+        return lanes.FirstOrDefault(lane => attack.Firers!.Any(item => item.Weapons?.Any(weapon => weapon.EquipmentId == lane.Weapon) == true
+            || (item.UnitId == lane.Operator && attack.FireKind is ScenarioA1FireCalculator.SubsequentFirstFire or ScenarioA1FireCalculator.FinalProtectiveFire))) is { Weapon: { } inUse }
+            ? $"play.fire-lane-mg: {inUse} has a Fire Lane and fires again only in the DFPh (A9.22, A9.223)"
+            : null;
+    }
+
+    /// <summary>A9.12 (referee, pass 12): a leader who directed fire this phase gives up leadership by firing a MG, so fires none; he fires one MG a phase.</summary>
+    public static string? LeaderMgBar(IEnumerable<LeaderMgFacts> firers)
+    {
+        ArgumentNullException.ThrowIfNull(firers);
+        foreach (var leader in firers.Where(item => item.Leader))
+        {
+            if (leader.DirectedThisPhase() || leader.DirectedSupportWeapon() || leader.FiredAnotherMg())
+            {
+                return $"play.fire-smc: {leader.Id} directed fire or fired another MG this phase, and fires one MG only without leading (A9.12)";
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>A15.42 (ruling R12.10): a berserk leader gives no leadership, so directs no fire.</summary>
+    public static string? BerserkDirectorBar(IEnumerable<(string Id, bool Berserk)> directors)
+    {
+        ArgumentNullException.ThrowIfNull(directors);
+        return directors.FirstOrDefault(item => item.Berserk) is { Id: { } berserkLeader } ? $"play.fire-barred: {berserkLeader} is berserk and gives no leadership (A15.42)" : null;
+    }
+
+    /// <summary>D2.4: a vehicle under a Motion counter may not Prep Fire.</summary>
+    public static string? MotionPrepFireBar(FireVehicleFire? vehicleFire, string? phase) =>
+        vehicleFire is { InMotion: true } inMotion && phase == "pfph" ? $"play.fire-vehicle-motion: {inMotion.VehicleId} is in Motion and may not Prep Fire (D2.4)" : null;
+
+    /// <summary>A15.432, A11.15, A20.52, A20.54: the first firer or director that may not fire refuses the attack (<see cref="FireBar"/>); the facts are read as the units are tried.</summary>
+    public static string? GroupFireBar(IEnumerable<(string Id, FireBarFacts Facts)> units)
+    {
+        ArgumentNullException.ThrowIfNull(units);
+        return units.Select(item => (item.Id, Cause: FireBar(item.Facts))).FirstOrDefault(item => item.Cause is not null) is ({ } barred, { } cause)
+            ? $"play.fire-barred: {barred} {cause}"
+            : null;
+    }
+
+    /// <summary>A11.15, A20.54 (rulings R12.8, R12.9): a Location holding units in Melee or prisoners is fired at from outside it, and every unit there is attacked.</summary>
+    public static string? MeleeLocationBar(bool meleeOrPrisonersAtTarget, bool firerInTarget) =>
+        meleeOrPrisonersAtTarget && firerInTarget ? "play.fire-melee: units fire into a Melee or prisoners' Location only from outside it (A11.15, A20.54)" : null;
+
+    /// <summary>A8.3, A8.31: Subsequent First Fire and FPF use every usable MG the firer possesses; <paramref name="possessed"/> reads a firer's usable MGs in id order.</summary>
+    public static string? EveryMgBar(FireAttack attack, Func<string, string[]> possessed)
+    {
+        ArgumentNullException.ThrowIfNull(attack);
+        ArgumentNullException.ThrowIfNull(possessed);
+        return attack.FireKind is ScenarioA1FireCalculator.SubsequentFirstFire or ScenarioA1FireCalculator.FinalProtectiveFire
+            && attack.Firers!.Any(item => !(item.Weapons?.Select(weapon => weapon.EquipmentId!).Order(StringComparer.Ordinal).ToArray() ?? [])
+                .SequenceEqual(possessed(item.UnitId!)))
+            ? "play.fire-weapons: Subsequent First Fire and FPF use every MG the firer possesses (A8.3, A8.31)"
+            : null;
+    }
+
+    /// <summary>The target side of a proposal: the first target's side, else the first vehicle target's, else the other side of the game (read only then).</summary>
+    public static string ProposalTargetSide(bool hasTargets, string? firstTargetSide, bool hasVehicles, string? firstVehicleSide, Func<string> otherSide)
+    {
+        ArgumentNullException.ThrowIfNull(otherSide);
+        return hasTargets ? firstTargetSide! : hasVehicles ? firstVehicleSide! : otherSide();
+    }
+
+    /// <summary>Whether the firing side sees nothing, or not everything, at the target, so its refusals say only that the attack is undecided; a concealed vehicle is unseen too (ruling R6.7).</summary>
+    public static bool Unseen(int seen, int targets, bool anyVehicles, bool concealedVehicle) => seen < targets || (seen == 0 && !anyVehicles) || concealedVehicle;
+
+    /// <summary>The reasons the firing side reads for a proposal: the one undisclosed sentence when the attack is undecided and the target is unseen, else none.</summary>
+    public static IReadOnlyList<string> FiringSideReasons(bool undecided, bool unseen) => undecided && unseen ? [FireProposalUndisclosed] : [];
+
+    /// <summary>The sentence the firing side reads when the Fire package refuses an attack for reasons about units it cannot see.</summary>
+    public const string FireProposalUndisclosed =
+        "play.fire-refused: the Fire package does not decide every outcome of an attack on this Location, for reasons about units the firing side cannot see";
+
+    /// <summary>A7.55: the step a MPh attack answers; null in a fire phase and for Bounding First Fire.</summary>
+    public static int? MphStep(string? phase, bool bounding, int? movementStep) => phase == "mph" && !bounding ? movementStep : null;
+
+    /// <summary>
+    /// A7.55: the units of a Location that fire at a target in a phase (in the MPh, at one MF expenditure) form one fire group, so it fires once; a MG
+    /// firing again alone on its Multiple ROF is not a new group.
+    /// </summary>
+    public static string? FireGroupBar(bool firesAlone, IEnumerable<PhaseFireFacts> fires, FireAttack attack, IReadOnlyList<string> fromLocations, int? step)
+    {
+        ArgumentNullException.ThrowIfNull(fires);
+        ArgumentNullException.ThrowIfNull(attack);
+        ArgumentNullException.ThrowIfNull(fromLocations);
+        return !firesAlone && fires.Any(record => !(attack.VehicleFire is not null && record.Vehicle)
+            && (fromLocations.Contains(record.FirerLocation) || record.FirerLocation == attack.FirerLocationId)
+            && record.TargetLocation == attack.TargetLocationId && record.Step == step)
+            ? $"play.fire-group: a Location of the group has already fired at {attack.TargetLocationId}{(step is null ? " this phase" : " at this MF expenditure")}, and its units fire as one fire group (A7.55, p. 57)"
+            : null;
+    }
+
+    /// <summary>
+    /// A8.3, A9.2: a unit or MG fires at a moving stack in a Location no more often than the MF the stack spent entering it (FRD, at least once); the
+    /// count is of this stack's move alone, a unit and each weapon it fires counted apart (pass 31, play test P-05; ruling R31.1). <paramref name="recordedFirers"/>
+    /// are the firers of the attacks made at this step since the move's first step.
+    /// </summary>
+    public static string? MfLimitBar(int halfMfInLocation, string location, IEnumerable<FireFirer> recordedFirers, FireAttack attack)
+    {
+        ArgumentNullException.ThrowIfNull(recordedFirers);
+        ArgumentNullException.ThrowIfNull(attack);
+        var limit = Math.Max(1, halfMfInLocation / 2);
+        var fired = recordedFirers.SelectMany(ScenarioA1ResultTables.FiringParts).GroupBy(id => id, StringComparer.Ordinal)
+            .ToDictionary(group => group.Key, group => group.Count(), StringComparer.Ordinal);
+        return attack.Firers!.SelectMany(ScenarioA1ResultTables.FiringParts).FirstOrDefault(id => fired.GetValueOrDefault(id) >= limit) is { } spent
+            ? $"play.fire-mf-limit: {spent} has attacked this moving stack in {location} {(limit == 1 ? "once" : $"{limit} times")} already, as often as the MF the stack spent there (A8.3, A9.2)"
+            : null;
+    }
+
+    /// <summary>C11 (ruling R8.3): Infantry fire, not Residual FP, at a Location takes the gunshield or Emplacement of a Gun's crew alone there, which the caller then reads.</summary>
+    public static bool InfantryFireAtGun(FireAttack attack)
+    {
+        ArgumentNullException.ThrowIfNull(attack);
+        return attack.VehicleFire is null && attack.FireKind != ScenarioA1FireCalculator.ResidualFire && attack.Firers is { Count: > 0 };
+    }
+
+    /// <summary>
+    /// A6.11, A7.52 (ruling R12.2): in a group spanning Locations with some but not all LOS blocked, the firers whose LOS is blocked make their DR
+    /// first and drop out; the others attack as a smaller group. The Locations whose firers are blocked, or null when the group is not split.
+    /// </summary>
+    public static IReadOnlySet<string>? BlockedLocations(FireAttack attack)
+    {
+        ArgumentNullException.ThrowIfNull(attack);
+        if (attack.Firers is { Count: > 1 } everyFirer && everyFirer.Select(item => item.LocationId).Distinct().Count() > 1
+            && everyFirer.Count(item => (item.Los ?? attack.Los)?.Blocked == true) is var blockedCount && blockedCount > 0 && blockedCount < everyFirer.Count)
+        {
+            return everyFirer.Where(item => (item.Los ?? attack.Los)?.Blocked == true).Select(item => item.LocationId!).ToHashSet(StringComparer.Ordinal);
+        }
+
+        return null;
+    }
+
+    /// <summary>The firers of one part of a split group: those in the blocked Locations, or those outside them.</summary>
+    public static string[] PartFirers(IReadOnlyList<FireFirer> firers, IReadOnlySet<string> blockedLocations, bool blockedPart)
+    {
+        ArgumentNullException.ThrowIfNull(firers);
+        ArgumentNullException.ThrowIfNull(blockedLocations);
+        return [.. firers.Where(item => blockedLocations.Contains(item.LocationId!) == blockedPart).Select(item => item.UnitId!)];
+    }
+
+    /// <summary>The directors of one part of a split group, by their Locations (null for a director with none).</summary>
+    public static string[] PartDirectors(IEnumerable<(string Id, string? Location)> directors, IReadOnlySet<string> blockedLocations, bool blockedPart)
+    {
+        ArgumentNullException.ThrowIfNull(directors);
+        ArgumentNullException.ThrowIfNull(blockedLocations);
+        return [.. directors.Where(item => item.Location is { } at && blockedLocations.Contains(at) == blockedPart).Select(item => item.Id)];
+    }
+
+    /// <summary>A9.5 (ruling R12.6): Spraying Fire attacks two Locations that share a hexside, at the same level.</summary>
+    public static string? SprayTargetBar(bool parsed, bool sameAsTarget, bool sameLevel, bool sharesHexside) =>
+        !parsed || sameAsTarget || !sameLevel || !sharesHexside ? "play.fire-spray: Spraying Fire attacks two Locations that share a hexside (A9.5)" : null;
+
+    /// <summary>A9.5 (ruling R12.6): Spraying Fire is made in the PFPh, AFPh, or DFPh, by a group that can see both Locations.</summary>
+    public static string? SprayPhaseBar(string? phase, bool blockedFirst) =>
+        phase is not ("pfph" or "afph" or "dfph") || blockedFirst
+            ? "play.fire-spray: Spraying Fire is made in the PFPh, AFPh, or DFPh, by a group that can see both Locations (A9.5; ruling R12.6)"
+            : null;
+
+    /// <summary>A22.611: a MOL goes with a PBF or TPBF attack at one Location.</summary>
+    public static string? SprayMolBar(bool mol) => mol ? "play.fire-mol: a MOL goes with a PBF or TPBF attack at one Location (A22.611)" : null;
+
+    /// <summary>A7.55, A9.52: a Location of the group that has fired at the second Location this phase sprays no more at it.</summary>
+    public static string? SprayGroupBar(IEnumerable<PhaseFireFacts> fires, IReadOnlyList<string> fromLocations, string second)
+    {
+        ArgumentNullException.ThrowIfNull(fires);
+        ArgumentNullException.ThrowIfNull(fromLocations);
+        return fires.Any(record => fromLocations.Contains(record.FirerLocation) && record.TargetLocation == second && record.Step is null)
+            ? $"play.fire-group: a Location of the group has already fired at {second} this phase (A7.55, A9.52)"
+            : null;
+    }
+
+    /// <summary>A9.52: a First-Fire-marked unit sprays in Final Fire only at two ADJACENT Locations.</summary>
+    public static string? SprayAdjacentBar(string? phase, FireAttack attack, FireAttack spray)
+    {
+        ArgumentNullException.ThrowIfNull(attack);
+        ArgumentNullException.ThrowIfNull(spray);
+        return phase == "dfph" && attack.Firers!.Any(item => item.FirstFireMarked == true)
+            && new[] { attack, spray }.Any(one => one.Firers!.Any(item => (item.Range ?? one.Range) > 1))
+            ? "play.fire-spray: a First-Fire-marked unit sprays in Final Fire only at two ADJACENT Locations (A9.52)"
+            : null;
+    }
+
+    /// <summary>A7.7 (ruling R12.11): the targets of the sealed side (and units in Melee), not Dummy, berserk, heroic, a hero, or guarded, are marked Encircled against this attack.</summary>
+    public static FireAttack MarkEncircled(FireAttack attack, string encircles, Func<string, EncircledUnitFacts> unitOf)
+    {
+        ArgumentNullException.ThrowIfNull(attack);
+        ArgumentNullException.ThrowIfNull(unitOf);
+        return attack with
+        {
+            Targets = [.. attack.Targets!.Select(item => unitOf(item.UnitId!) is { Found: true } unit && item.Dummy != true && item.Berserk != true && item.Heroic != true
+                && unit.Kind != "asl:hero" && item.GuardId is null && (unit.Side == encircles || unit.Melee) ? item with { Encircled = true } : item)],
+        };
+    }
+
+    /// <summary>
+    /// A9.22 (ruling R12.7): a Fire Lane goes with MPh Defensive First Fire by an unpinned Infantry unit's Good Order MG, within its Normal Range at a
+    /// same-level target, not TPBF or a Snap Shot.
+    /// </summary>
+    public static string? FireLaneDeclarationBar(FireLaneDeclarationFacts facts)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        var range = facts.Manning?.Range ?? facts.Attack.Range;
+        return facts.Phase != "mph" || facts.Attack.FireKind != ScenarioA1FireCalculator.FirstFire || facts.Manning is null || !facts.MgIsMg
+            || facts.MgRange is not { } mgRange || facts.MgFirepower is null
+            || facts.Manning.Pinned == true || facts.Mg!.Malfunctioned == true || range is not { } distance || distance < 1 || distance > mgRange
+            || (facts.Manning.SameLevel ?? facts.Attack.SameLevel) != true || facts.Attack.SnapShot == true || !facts.MgLocationRead
+            ? "play.fire-lane: a Fire Lane goes with Defensive First Fire by an unpinned Infantry unit's Good Order MG, within its Normal Range at a same-level target, not TPBF or a Snap Shot (A9.22)"
+            : null;
+    }
+
+    /// <summary>
+    /// A12.14 (pass 31d, ruling R31d.2): the concealed firers and directors this attack reveals: with the planner's read for every concealed unit of the
+    /// group, the units a Good Order enemy unit sees; without it, as the package decided before: every concealed one when every firer is within 16
+    /// hexes and a target is Good Order. <paramref name="concealed"/> reads whether a unit is concealed, for the second way only.
+    /// </summary>
+    public static string[] RevealedByAttack(FireAttack attack, Func<string, bool> concealed)
+    {
+        ArgumentNullException.ThrowIfNull(attack);
+        ArgumentNullException.ThrowIfNull(concealed);
+        var firers = attack.Firers ?? [];
+        var directing = new[] { attack.Director }.Concat(attack.OtherDirectors ?? []).OfType<FireDirector>().ToArray();
+        var read = firers.Where(item => item.Concealed == true).All(item => item.SeenByGoodOrderEnemy is not null) && directing.Where(item => item.Concealed == true).All(item => item.SeenByGoodOrderEnemy is not null);
+        return read
+            ? [.. firers.Where(item => item.SeenByGoodOrderEnemy == true).Select(item => item.UnitId).Concat(directing.Where(item => item.SeenByGoodOrderEnemy == true).Select(item => item.UnitId)).OfType<string>()]
+            : firers.Count > 0 && firers.All(item => (item.Range ?? attack.Range) <= 16) && attack.Targets!.Any(item => item.Broken == false && item.Dummy != true)
+            ? [.. firers.Select(item => item.UnitId).Concat(new[] { attack.Director?.UnitId }).Concat((attack.OtherDirectors ?? []).Select(item => item.UnitId))
+                .OfType<string>().Where(concealed)]
+            : [];
+    }
+
+    /// <summary>A15.44: a target's Known enemy in LOS is settled by this attack's reveal; otherwise the map is read.</summary>
+    public static bool? KnownEnemyInLosAfterReveal(bool revealedAny, Func<bool?> read)
+    {
+        ArgumentNullException.ThrowIfNull(read);
+        return revealedAny ? true : read();
+    }
+
+    /// <summary>A15.44, A15.5: the Heat of Battle reads are made for every target, and for the firers of FPF alone.</summary>
+    public static bool FirersTakeHeatOfBattleReads(string? fireKind) => fireKind == ScenarioA1FireCalculator.FinalProtectiveFire;
 }
