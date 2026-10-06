@@ -24,49 +24,47 @@ public sealed partial class GamePlanner
     /// <summary>
     /// The Acquisition events a commit calls for after it moved acquired units (ruling R5.13): a unit that entered a Location out of its Gun's
     /// LOS is no longer acquired, and when none is left the counter stays in the last Location in LOS; when the acquired units are in more than
-    /// one Location as one of them ends its MPh or APh, the Gun's side chooses which Location keeps it.
+    /// one Location as one of them ends its MPh or APh, the Gun's side chooses which Location keeps it. Rules decides it (pass 32.c); Locations
+    /// cross as their texts and come back as the Locations they were.
     /// </summary>
     private List<(string Type, EventPayload Payload)> AcquisitionFollowUp(GameState before, GameState after)
     {
-        var events = new List<(string, EventPayload)>();
-        foreach (var acquisition in after.Acquisitions.Where(item => item.Units.Count > 0))
+        var locations = new Dictionary<string, BoardLocation>(StringComparer.Ordinal);
+        string? Text(BoardLocation? location)
         {
-            if (after.Find(acquisition.Gun) is not EquipmentInstance { Position: MapPosition gunAt } gun
-                || before.Acquisitions.FirstOrDefault(item => item.Gun == acquisition.Gun) is not { } previous)
+            if (location is null)
             {
-                continue;
+                return null;
             }
 
-            var kept = new List<string>();
-            BoardLocation? last = null;
-            foreach (var id in acquisition.Units)
+            var text = location.ToString();
+            locations[text] = location;
+            return text;
+        }
+
+        var verdicts = ScenarioA1FireFollowUps.AcquisitionFollowUp(after.Acquisitions.Select(acquisition =>
+        {
+            var gun = after.Find(acquisition.Gun) as EquipmentInstance;
+            var gunAt = gun?.Position as MapPosition;
+            var previous = before.Acquisitions.FirstOrDefault(item => item.Gun == acquisition.Gun);
+            return new AcquisitionFacts(acquisition.Gun, gun?.Side, gunAt is not null, previous is not null, Text(previous?.Location), Text(acquisition.Location)!,
+                [.. acquisition.Units.Select(id => new AcquiredUnitFacts(id, Text(before.Location(id)?.Location), Text(after.Location(id)?.Location),
+                    () => Los(after, gunAt!.Location, after.Location(id)!.Location) is { Status: LosStatus.Clear },
+                    before.Unit(id)?.MovementEnded == true, after.Unit(id) is { MovementEnded: true }))]);
+        }), after.Phase, after.Choice is not null);
+
+        var events = new List<(string, EventPayload)>();
+        foreach (var verdict in verdicts)
+        {
+            if (verdict.Changed is { } changed)
             {
-                var was = before.Location(id)?.Location;
-                var now = after.Location(id)?.Location;
-                if (now is null || was is null || now == was || Los(after, gunAt.Location, now) is { Status: LosStatus.Clear })
-                {
-                    kept.Add(id);
-                }
-                else
-                {
-                    last = was;
-                }
+                events.Add(("acquisition-changed", new AcquisitionChanged(verdict.Gun, locations[changed.Location], changed.Units)));
             }
 
-            var locations = kept.Select(id => after.Location(id)!.Location).Distinct().ToArray();
-            if (kept.Count < acquisition.Units.Count)
+            if (verdict.ChoiceLocations is { } options)
             {
-                events.Add(("acquisition-changed", new AcquisitionChanged(gun.Id, locations is [{ } only] ? only : kept.Count == 0 ? last ?? previous.Location : acquisition.Location,
-                    kept)));
-            }
-
-            // C6.51: the choice is due once a split unit has finished its MPh, APh, or CCPh withdrawal.
-            var ended = kept.Any(id => (after.Unit(id) is { MovementEnded: true } && before.Unit(id)?.MovementEnded != true)
-                || (after.Phase != "mph" && before.Location(id)?.Location != after.Location(id)?.Location));
-            if (locations.Length > 1 && ended && after.Choice is null)
-            {
-                events.Add(("choice-pending", new ChoicePending($"acquisition:{gun.Id}", ChoicePending.Acquisition, gun.Side ?? after.PhasingSide,
-                    [.. locations.Select(item => item.ToString()).Order(StringComparer.Ordinal)], JsonSerializer.SerializeToElement(new JsonObject { ["gun"] = gun.Id }))));
+                events.Add(("choice-pending", new ChoicePending($"acquisition:{verdict.Gun}", ChoicePending.Acquisition, (after.Find(verdict.Gun) as EquipmentInstance)?.Side ?? after.PhasingSide,
+                    options, JsonSerializer.SerializeToElement(new JsonObject { ["gun"] = verdict.Gun }))));
             }
         }
 

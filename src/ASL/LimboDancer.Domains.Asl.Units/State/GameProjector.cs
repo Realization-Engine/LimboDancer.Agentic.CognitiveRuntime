@@ -219,7 +219,7 @@ public static class GameProjector
                 };
             }
 
-            // A7.351 (table player, pass 9): the units of a fire record have fired this phase, with the SW each used.
+            // A7.351 (table player, pass 9): the units of a fire record have fired this phase, with the SW each used (Rules decides it, pass 32.c).
             if (gameEvent.Payload is FireResolved firing && firing.Firers.Count > 0)
             {
                 var used = firing.Facts.TryGetProperty("firers", out var firerFacts) && firerFacts.ValueKind == JsonValueKind.Array
@@ -228,13 +228,13 @@ public static class GameProjector
                     : [];
                 next = next with
                 {
-                    PhaseFirers = [.. next.PhaseFirers.Where(item => !firing.Firers.Contains(item.Unit, StringComparer.Ordinal)),
-                        .. firing.Firers.Select(unit => new SupportWeaponUse(unit, used.GetValueOrDefault(unit).ToString(System.Globalization.CultureInfo.InvariantCulture)))],
+                    PhaseFirers = [.. Rules.ScenarioA1FireFollowUps.PhaseFirersAfterFire([.. next.PhaseFirers.Select(item => (item.Unit, item.Weapon))], firing.Firers, unit => used.GetValueOrDefault(unit))
+                        .Select(item => new SupportWeaponUse(item.Unit, item.Weapon))],
                 };
             }
 
-            // A7.351 (ruling R9.2): a squad that fires its inherent FP after its one SW use has fired.
-            if (gameEvent.Payload is FireResolved resolved && next.SupportWeaponUses.Any(item => resolved.Firers.Contains(item.Unit, StringComparer.Ordinal)))
+            // A7.351 (ruling R9.2): a squad that fires its inherent FP after its one SW use has fired (Rules decides it, pass 32.c).
+            if (gameEvent.Payload is FireResolved resolved && Rules.ScenarioA1FireFollowUps.SupportWeaponUseEnds(next.SupportWeaponUses.Select(item => item.Unit), resolved.Firers))
             {
                 next = next with
                 {
@@ -1142,14 +1142,10 @@ public static class GameProjector
 
             static bool Marked(UnitInstance unit) => new[] { Conditions.PrepFire, Conditions.FinalFire, Conditions.FirstFire }
                 .Any(name => GameState.Condition(unit, name) == ConditionState.True);
-            IReadOnlyList<SupportWeaponUse> Use(IReadOnlyList<SupportWeaponUse> uses, UnitInstance unit, string weapon)
-            {
-                var existing = uses.FirstOrDefault(item => item.Unit == unit.Id);
-                return unit.Kind != "asl:squad" ? uses
-                    : existing is null ? (Marked(unit) ? uses : [.. uses, new SupportWeaponUse(unit.Id, weapon)])
-                    : existing.Weapon != weapon || weapon == "panzerfaust" ? [.. uses.Where(item => item.Unit != unit.Id)]
-                    : uses;
-            }
+            // Rules decides a squad's one SW use (pass 32.c).
+            IReadOnlyList<SupportWeaponUse> Use(IReadOnlyList<SupportWeaponUse> uses, UnitInstance unit, string weapon) =>
+                [.. Rules.ScenarioA1FireFollowUps.SupportWeaponUse([.. uses.Select(item => (item.Unit, item.Weapon))], unit.Id, unit.Kind == "asl:squad", Marked(unit), weapon)
+                    .Select(item => new SupportWeaponUse(item.Unit, item.Weapon))];
 
             var uses = Use(state.SupportWeaponUses, shooter, panzerfaust ? "panzerfaust" : fired.Gun);
             var spotters = state.MortarSpotters;
@@ -1167,8 +1163,9 @@ public static class GameProjector
             }
 
             var shots = state.PanzerfaustShots;
-            if (panzerfaust && fired.Resolution.TryGetProperty("panzerfaustCheck", out var check) && check.TryGetProperty("outcome", out var outcome)
-                && outcome.GetString() == "shot" && shooter.Side is { } side)
+            if (Rules.ScenarioA1FireFollowUps.PanzerfaustShotCounts(panzerfaust,
+                fired.Resolution.TryGetProperty("panzerfaustCheck", out var check) && check.TryGetProperty("outcome", out var outcome) ? outcome.GetString() : null)
+                && shooter.Side is { } side)
             {
                 shots = new Dictionary<string, int>(shots, StringComparer.Ordinal) { [side] = shots.GetValueOrDefault(side) + 1 };
             }
@@ -1421,16 +1418,19 @@ public static class GameProjector
         /// </summary>
         private GameState? ChangeAcquisition(GameState state, AcquisitionChanged change)
         {
-            if (state.Acquisitions.FirstOrDefault(item => item.Gun == change.Gun) is not { } acquisition || state.Find(change.Gun)?.Side is not { } side
-                || change.Units.Any(id => state.Unit(id) is not { Status: InstanceStatus.Active } unit || unit.Side == side
-                    || state.Location(id)?.Location != change.Location || GameState.Condition(unit, Conditions.Concealed) == ConditionState.True))
+            // Rules decides it (pass 32.c).
+            var acquisition = state.Acquisitions.FirstOrDefault(item => item.Gun == change.Gun);
+            if (Rules.ScenarioA1FireFollowUps.VerifyAcquisitionChange(acquisition is not null, state.Find(change.Gun)?.Side, change.Units.Select(id => state.Unit(id) is { } unit
+                ? new Rules.AcquiredUnitRecordFacts(unit.Status == InstanceStatus.Active, unit.Side, state.Location(id)?.Location == change.Location,
+                    GameState.Condition(unit, Conditions.Concealed) == ConditionState.True)
+                : new Rules.AcquiredUnitRecordFacts(false, null, false, false))) is { } refused)
             {
-                return Fail<GameState>("UNIT-STATE-033", "An Acquisition changes for a Gun that has one, onto Known enemy units in its Location (C6.5, C6.51).");
+                return Fail<GameState>(refused.Code, refused.Text);
             }
 
             return state with
             {
-                Acquisitions = [.. state.Acquisitions.Select(item => item.Gun != change.Gun ? item : acquisition with { Location = change.Location, Units = change.Units })],
+                Acquisitions = [.. state.Acquisitions.Select(item => item.Gun != change.Gun ? item : acquisition! with { Location = change.Location, Units = change.Units })],
             };
         }
 
@@ -1464,36 +1464,45 @@ public static class GameProjector
             var kept = new List<GunAcquisition>();
             foreach (var acquisition in next.Acquisitions)
             {
-                // A Gun keeps it while its Good Order crew mans it; a tank while it is active and not Abandoned (C6.5, D1.3).
-                var holds = next.Find(acquisition.Gun) switch
-                {
-                    EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Manned } manning } =>
-                        next.Unit(manning.Holder) is { Status: InstanceStatus.Active } crew && GameState.GoodOrder(crew, vocabulary) != ConditionState.False,
-
-                    // C9.2 (table player, pass 9): a light mortar keeps its Area Target Acquisition while its Good Order possessor holds it.
-                    EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Possessed } possession } mortar when vocabulary.IsA(mortar.Kind, "asl:light-mortar") =>
-                        next.Unit(possession.Holder) is { Status: InstanceStatus.Active } possessor && GameState.GoodOrder(possessor, vocabulary) != ConditionState.False,
-                    UnitInstance { Status: InstanceStatus.Active } tank => vocabulary.IsA(tank.Kind, "asl:vehicle")
-                        && GameState.Condition(tank, Conditions.Abandoned) != ConditionState.True,
-                    _ => false,
-                };
+                // A Gun keeps it while its Good Order crew mans it; a light mortar while its Good Order possessor holds it (C9.2; table player, pass 9); a
+                // tank while it is active and not Abandoned (C6.5, D1.3). Rules decides it (pass 32.c) from the holder's facts.
+                var holder = next.Find(acquisition.Gun);
+                var manning = holder is EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Manned } manned } ? manned.Holder : null;
+                var possessing = holder is EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Possessed } possession } mortar
+                    && vocabulary.IsA(mortar.Kind, "asl:light-mortar") ? possession.Holder : null;
+                var crew = manning is not null ? next.Unit(manning) : possessing is not null ? next.Unit(possessing) : null;
+                var holds = Rules.ScenarioA1FireFollowUps.AcquisitionHolds(new Rules.AcquisitionHolderFacts(manning is not null && crew is { Status: InstanceStatus.Active },
+                    possessing is not null && crew is { Status: InstanceStatus.Active },
+                    crew is { Status: InstanceStatus.Active } ? GameState.RuleStateOf(GameState.GoodOrder(crew, vocabulary)) : Rules.RuleState.Unknown,
+                    holder is UnitInstance { Status: InstanceStatus.Active } tank && vocabulary.IsA(tank.Kind, "asl:vehicle"),
+                    holder is UnitInstance abandoned && GameState.Condition(abandoned, Conditions.Abandoned) == ConditionState.True));
                 if (!holds)
                 {
                     continue;
                 }
 
-                var units = acquisition.Units.ToList();
-                if (payload is LineageRecorded lineage && units.Any(lineage.Consumed.Contains))
+                // The units it follows, and the one Location they share (their texts), as Rules decides them.
+                var locations = new Dictionary<string, BoardLocation>(StringComparer.Ordinal);
+                string? Text(BoardLocation? at)
                 {
-                    units = [.. units.Where(id => !lineage.Consumed.Contains(id)), .. lineage.Produced.Select(item => item.Id)];
+                    if (at is null)
+                    {
+                        return null;
+                    }
+
+                    var text = at.ToString();
+                    locations[text] = at;
+                    return text;
                 }
 
-                units = [.. units.Where(id => next.Unit(id) is { Status: InstanceStatus.Active } unit && GameState.Condition(unit, Conditions.Captured) != ConditionState.True)];
-                var locations = units.Select(id => next.Location(id)?.Location).Distinct().ToArray();
+                var lineage = payload as LineageRecorded;
+                var (units, location) = Rules.ScenarioA1FireFollowUps.AcquisitionAfter(acquisition.Units, lineage?.Consumed, lineage?.Produced.Select(item => item.Id).ToArray(),
+                    id => next.Unit(id) is { Status: InstanceStatus.Active } unit && GameState.Condition(unit, Conditions.Captured) != ConditionState.True,
+                    id => Text(next.Location(id)?.Location), Text(acquisition.Location)!);
                 kept.Add(acquisition with
                 {
                     Units = units,
-                    Location = locations is [{ } only] ? only : acquisition.Location,
+                    Location = locations[location],
                 });
             }
 
@@ -1527,22 +1536,16 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-023", $"The fire record's roll '{missing}' is not recorded before it.");
             }
 
-            // A Defensive fire record answers the open window of the moving stack's latest step (A8.1).
-            if (fire.MovementStep is { } answered && (state.Movement is not { WindowOpen: true } open || open.Step != answered))
-            {
-                return Fail<GameState>("UNIT-STATE-024", $"Defensive First Fire answers the open window on the moving stack's step {answered} (A8.1).");
-            }
-
-            // A7.55: a Location's units fire at a target once per phase (in the MPh, once per MF expenditure), as one fire
-            // group; Residual FP has no firers and never forms one (A8.22). A vehicle's MG fires alone (D3.4, ruling R25.7), but the Mandatory
-            // Fire Group binds it with its Location's Infantry (D3.5): only its own Multiple ROF fires again.
-            // D7.14 (ruling R11.11): each OVR is its vehicle's own attack, as a vehicle's MG shot is.
+            // A Defensive fire record answers the open window of the moving stack's latest step (A8.1). A7.55: a Location's units fire at a target
+            // once per phase (in the MPh, once per MF expenditure), as one fire group; Residual FP has no firers and never forms one (A8.22). A
+            // vehicle's MG fires alone (D3.4, ruling R25.7), but the Mandatory Fire Group binds it with its Location's Infantry (D3.5): only its own
+            // Multiple ROF fires again. D7.14 (ruling R11.11): each OVR is its vehicle's own attack, as a vehicle's MG shot is. Rules decides both (pass 32.c).
             var byVehicle = (fire.Facts.TryGetProperty("vehicleFire", out var firing) && firing.ValueKind == JsonValueKind.Object)
                 || (fire.Facts.TryGetProperty("overrun", out var overrunning) && overrunning.ValueKind == JsonValueKind.Object);
-            if (fire.Firers.Count > 0 && state.FiresThisPhase.Any(item => !(byVehicle && item.Vehicle) && item.FirerLocation == fire.FirerLocation
-                && item.TargetLocation == fire.TargetLocation && item.Step == fire.MovementStep))
+            if (Rules.ScenarioA1FireFollowUps.VerifyFireRecord(fire.MovementStep, state.Movement is { WindowOpen: true }, state.Movement?.Step, fire.Firers.Count, byVehicle,
+                state.FiresThisPhase.Select(item => new Rules.PhaseFireFacts(item.FirerLocation, item.TargetLocation, item.Step, item.Vehicle)), fire.FirerLocation, fire.TargetLocation) is { } refused)
             {
-                return Fail<GameState>("UNIT-STATE-024", $"{fire.FirerLocation} has already fired at {fire.TargetLocation} this phase (A7.55).");
+                return Fail<GameState>(refused.Code, refused.Text);
             }
 
             if (fireVerifier.Verify(state, fire, rolls) is { } reason)
@@ -1566,10 +1569,12 @@ public static class GameProjector
             if (fire.Facts.TryGetProperty("vehicleFire", out var vehicleFire) && vehicleFire.ValueKind == JsonValueKind.Object
                 && vehicleFire.TryGetProperty("vehicleId", out var vehicleId) && vehicleId.GetString() is { } vehicle)
             {
-                var kept = fire.Resolution.TryGetProperty("weaponEffects", out var effects) && effects.ValueKind == JsonValueKind.Array
-                    && effects.GetArrayLength() == 1 && effects[0].TryGetProperty("rateOfFireRetained", out var retained) && retained.GetBoolean();
+                // Rules decides the kept ROF and the count (pass 32.c).
+                var effects = fire.Resolution.TryGetProperty("weaponEffects", out var weaponEffects) && weaponEffects.ValueKind == JsonValueKind.Array ? weaponEffects : (JsonElement?)null;
+                var kept = Rules.ScenarioA1FireFollowUps.VehicleShotKeepsRof(effects?.GetArrayLength() ?? 0,
+                    effects is { } list && list.GetArrayLength() == 1 && list[0].TryGetProperty("rateOfFireRetained", out var retained) ? retained.GetBoolean() : null);
                 var previous = shots.FirstOrDefault(item => item.Gun == vehicle);
-                shots = [.. shots.Where(item => item.Gun != vehicle), new OrdnanceShotRecord(vehicle, (previous?.Shots ?? 0) + 1, kept)];
+                shots = [.. shots.Where(item => item.Gun != vehicle), new OrdnanceShotRecord(vehicle, Rules.ScenarioA1FireFollowUps.VehicleShotCount(previous?.Shots), kept)];
             }
 
             return state with
@@ -1582,17 +1587,14 @@ public static class GameProjector
         /// <summary>Residual FP a fire record left (A8.2, A8.21): the record's own value, in its target Location, in the MPh.</summary>
         private GameState? PlaceResidual(GameState state, ResidualFirePlaced residual)
         {
-            if (state.Phase != "mph" || !fires.TryGetValue(residual.Fire, out var recorded) || recorded.Fire.TargetLocation != residual.Location.ToString()
-                || !recorded.Fire.Resolution.TryGetProperty("arithmetic", out var arithmetic)
-                || !arithmetic.TryGetProperty("residualFp", out var value) || value.GetInt32() != residual.Fp)
+            // Rules decides it (pass 32.c).
+            var recorded = fires.TryGetValue(residual.Fire, out var found) ? found.Fire : null;
+            var recordedFp = recorded is not null && recorded.Resolution.TryGetProperty("arithmetic", out var arithmetic) && arithmetic.TryGetProperty("residualFp", out var value)
+                ? value.GetInt32() : (int?)null;
+            if (Rules.ScenarioA1FireFollowUps.VerifyResidualFp(state.Phase, recorded is not null, recorded?.TargetLocation == residual.Location.ToString(), recordedFp, residual.Fp,
+                residual.Fire, state.ResidualFire.FirstOrDefault(item => item.Location == residual.Location)?.Fp) is { } refused)
             {
-                return Fail<GameState>("UNIT-STATE-026", $"Residual FP must be the value its fire record '{residual.Fire}' leaves in its target Location (A8.2).");
-            }
-
-            var existing = state.ResidualFire.FirstOrDefault(item => item.Location == residual.Location);
-            if (existing is not null && existing.Fp >= residual.Fp)
-            {
-                return Fail<GameState>("UNIT-STATE-026", "Only a larger Residual FP counter replaces one already in the Location (A8.21).");
+                return Fail<GameState>(refused.Code, refused.Text);
             }
 
             return state with
@@ -2307,13 +2309,17 @@ public static class GameProjector
         /// </summary>
         private GameState? DeclareOpportunityFire(GameState state, OpportunityFireDeclared declared)
         {
+            // Rules decides it (pass 32.c).
             var units = declared.Units.Select(id => Active(state, id)).ToArray();
-            if (state.Phase != "pfph" || units.Length == 0 || declared.Units.Distinct(StringComparer.Ordinal).Count() != units.Length
-                || units.Any(unit => unit is not UnitInstance { } infantry || infantry.Side != state.PhasingSide || !vocabulary.IsA(infantry.Kind, "asl:personnel")
-                    || new[] { Conditions.Broken, Conditions.Berserk, Conditions.Melee, Conditions.Captured, Conditions.PrepFire, Conditions.BoundingFire }
-                        .Any(name => GameState.Condition(infantry, name) == ConditionState.True)))
+            if (Rules.ScenarioA1FireFollowUps.VerifyOpportunityFire(state.Phase, units.Length, declared.Units.Distinct(StringComparer.Ordinal).Count() == units.Length,
+                units.Select(unit => unit is UnitInstance infantry
+                    ? new Rules.OpportunityRecordUnitFacts(true, infantry.Side == state.PhasingSide, vocabulary.IsA(infantry.Kind, "asl:personnel"),
+                        GameState.Condition(infantry, Conditions.Broken) == ConditionState.True, GameState.Condition(infantry, Conditions.Berserk) == ConditionState.True,
+                        GameState.Condition(infantry, Conditions.Melee) == ConditionState.True, GameState.Condition(infantry, Conditions.Captured) == ConditionState.True,
+                        GameState.Condition(infantry, Conditions.PrepFire) == ConditionState.True, GameState.Condition(infantry, Conditions.BoundingFire) == ConditionState.True)
+                    : new Rules.OpportunityRecordUnitFacts(false, false, false, false, false, false, false, false, false))) is { } refused)
             {
-                return Fail<GameState>("UNIT-STATE-040", "Opportunity Fire is declared in the PFPh for Good Order Infantry of the phasing side that have not fired (A7.25).");
+                return Fail<GameState>(refused.Code, refused.Text);
             }
 
             var next = state;
@@ -2434,14 +2440,17 @@ public static class GameProjector
         /// <summary>An Encirclement (A7.7; ruling R12.11): placed by a fire record of a fire phase at the Location, on a side with units there.</summary>
         private GameState? Encircle(GameState state, EncirclementPlaced encirclement)
         {
-            if (state.Phase is not ("pfph" or "dfph" or "afph") || !fires.TryGetValue(encirclement.Fire, out var recorded)
-                || recorded.Fire.TargetLocation != encirclement.Location.ToString()
-                || !state.At(encirclement.Location).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side == encirclement.Side))
+            // Rules decides it (pass 32.c).
+            var recorded = fires.TryGetValue(encirclement.Fire, out var found) ? found.Fire : null;
+            var (refused, add) = Rules.ScenarioA1FireFollowUps.VerifyEncirclement(state.Phase, recorded is not null, recorded?.TargetLocation == encirclement.Location.ToString(),
+                state.At(encirclement.Location).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side == encirclement.Side),
+                state.Encirclements.Any(item => item.Location == encirclement.Location && item.Side == encirclement.Side));
+            if (refused is not null)
             {
-                return Fail<GameState>("UNIT-STATE-040", "An Encirclement is placed by a fire record of a fire phase at a Location holding units of the Encircled side (A7.7).");
+                return Fail<GameState>(refused.Code, refused.Text);
             }
 
-            return state.Encirclements.Any(item => item.Location == encirclement.Location && item.Side == encirclement.Side) ? state : state with
+            return !add ? state : state with
             {
                 Encirclements = [.. state.Encirclements, new Encirclement(encirclement.Location, encirclement.Side)],
             };
@@ -2451,18 +2460,20 @@ public static class GameProjector
         private static GameState KeepEncirclements(GameState next) =>
             next.Encirclements.Count == 0 ? next : next with
             {
-                Encirclements = [.. next.Encirclements.Where(item => next.At(item.Location).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active
-                    && unit.Kind != UnitKinds.Dummy && GameState.Condition(unit, Conditions.Captured) != ConditionState.True && next.Encircled(unit)))],
+                // Rules decides it (pass 32.c).
+                Encirclements = [.. next.Encirclements.Where(item => Rules.ScenarioA1FireFollowUps.EncirclementStands(next.At(item.Location).OfType<UnitInstance>()
+                    .Select(unit => new Rules.EncircledLocationUnitFacts(unit.Status == InstanceStatus.Active, unit.Kind == UnitKinds.Dummy,
+                        GameState.Condition(unit, Conditions.Captured) == ConditionState.True, next.Encircled(unit)))))],
             };
 
         /// <summary>A Fire Lane (A9.22; ruling R12.7): placed in the MPh by its MG's fire record, with at least one Location.</summary>
         private GameState? PlaceFireLane(GameState state, FireLanePlaced lane)
         {
-            if (state.Phase != "mph" || !fires.ContainsKey(lane.Fire) || state.Find(lane.Weapon) is not EquipmentInstance { Status: InstanceStatus.Active }
-                || Active(state, lane.Operator) is not UnitInstance || lane.Entries.Any(entry => entry.Fp <= 0)
-                || state.FireLanes.Any(item => item.Weapon == lane.Weapon))
+            // Rules decides it (pass 32.c).
+            if (Rules.ScenarioA1FireFollowUps.VerifyFireLane(state.Phase, fires.ContainsKey(lane.Fire), state.Find(lane.Weapon) is EquipmentInstance { Status: InstanceStatus.Active },
+                Active(state, lane.Operator) is UnitInstance, lane.Entries.Select(entry => entry.Fp), state.FireLanes.Any(item => item.Weapon == lane.Weapon)) is { } refused)
             {
-                return Fail<GameState>("UNIT-STATE-040", "A Fire Lane is placed in the MPh by its MG's fire record (A9.22).");
+                return Fail<GameState>(refused.Code, refused.Text);
             }
 
             return state with
@@ -2475,10 +2486,15 @@ public static class GameProjector
         private static GameState KeepFireLanes(GameState next) =>
             next.FireLanes.Count == 0 ? next : next with
             {
-                FireLanes = [.. next.FireLanes.Where(lane => next.Find(lane.Weapon) is EquipmentInstance { Status: InstanceStatus.Active } mg
-                    && GameState.Condition(mg, Conditions.Malfunctioned) != ConditionState.True
-                    && next.Unit(lane.Operator) is { Status: InstanceStatus.Active } manning
-                    && GameState.Condition(manning, Conditions.Broken) != ConditionState.True && GameState.Condition(manning, Conditions.Pinned) != ConditionState.True)],
+                // Rules decides it (pass 32.c).
+                FireLanes = [.. next.FireLanes.Where(lane =>
+                {
+                    var mg = next.Find(lane.Weapon) as EquipmentInstance;
+                    var manning = next.Unit(lane.Operator);
+                    return Rules.ScenarioA1FireFollowUps.FireLaneStands(mg is { Status: InstanceStatus.Active }, mg is not null && GameState.Condition(mg, Conditions.Malfunctioned) == ConditionState.True,
+                        manning is { Status: InstanceStatus.Active }, manning is not null && GameState.Condition(manning, Conditions.Broken) == ConditionState.True,
+                        manning is not null && GameState.Condition(manning, Conditions.Pinned) == ConditionState.True);
+                })],
             };
 
         /// <summary>A PAATC (A11.6, A12.41): its DR agrees with its result; the units that pass need no other PAATC against that vehicle this phase.</summary>

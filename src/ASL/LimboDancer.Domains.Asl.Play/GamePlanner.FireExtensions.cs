@@ -17,6 +17,7 @@ public sealed partial class GamePlanner
     /// <summary>
     /// Opportunity Fire (A7.25; ruling R12.1): in their PFPh, Good Order Infantry of the phasing side that have not fired or directed fire this
     /// Player Turn are marked with a Bounding Fire counter; one in the LOS of a Good Order enemy ground unit within 16 hexes loses its "?" (Case D).
+    /// Rules decides each check (pass 32.c).
     /// </summary>
     private GamePlan PlanOpportunityFire(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label)
     {
@@ -25,9 +26,9 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.no-game: the game has no state yet");
         }
 
-        if (state.Phase != "pfph")
+        if (ScenarioA1FireEligibility.OpportunityFirePhaseBar(state.Phase) is { } phaseBar)
         {
-            return Refused(scope, label, expected, "play.opportunity-fire-phase: Opportunity Fire is declared in the PFPh (A7.25)");
+            return Refused(scope, label, expected, phaseBar);
         }
 
         string[] ids = [.. Strings(arguments, "unitIds")];
@@ -38,53 +39,30 @@ public sealed partial class GamePlanner
 
         foreach (var id in ids)
         {
-            if (state.Unit(id) is not { Status: InstanceStatus.Active } unit || state.Location(id) is null || unit.Side != state.PhasingSide
-                || LiveFire.IsVehicle(unit) || !vocabulary.IsA(unit.Kind, "asl:personnel") || unit.Kind == UnitKinds.Dummy)
+            var unit = state.Unit(id);
+            if (ScenarioA1FireEligibility.OpportunityFirerBar(new OpportunityFirerFacts(id, unit is { Status: InstanceStatus.Active } && state.Location(id) is not null,
+                unit?.Side == state.PhasingSide, unit is not null && LiveFire.IsVehicle(unit), unit is not null && vocabulary.IsA(unit.Kind, "asl:personnel"),
+                unit?.Kind == UnitKinds.Dummy, unit is not null && Is(unit, Conditions.Broken), unit is not null && Is(unit, Conditions.Berserk),
+                unit is not null && Is(unit, Conditions.Melee), unit is not null && Is(unit, Conditions.Captured), unit is not null && Is(unit, "asl:ti"),
+                unit is not null && LiveFire.Fired(unit), unit is not null && Is(unit, Conditions.BoundingFire), state.PhaseFirers.Any(item => item.Unit == id),
+                state.SupportWeaponUses.Any(item => item.Unit == id), state.SupportWeaponDirectors.Any(item => item.Leader == id))) is { } unitBar)
             {
-                return Refused(scope, label, expected, $"play.opportunity-fire: '{id}' is not Infantry of the phasing side on the map (A7.25)");
-            }
-
-            if (new[] { Conditions.Broken, Conditions.Berserk, Conditions.Melee, Conditions.Captured, "asl:ti" }.Any(name => Is(unit, name)))
-            {
-                return Refused(scope, label, expected, $"play.opportunity-fire: {id} is not Good Order, or is berserk, TI, in Melee, or a prisoner (A7.25, A15.432)");
-            }
-
-            if (LiveFire.Fired(unit) || Is(unit, Conditions.BoundingFire) || state.PhaseFirers.Any(item => item.Unit == id)
-                || state.SupportWeaponUses.Any(item => item.Unit == id) || state.SupportWeaponDirectors.Any(item => item.Leader == id))
-            {
-                return Refused(scope, label, expected, $"play.opportunity-fire: {id} has already fired or directed fire this Player Turn (A7.25)");
+                return Refused(scope, label, expected, unitBar);
             }
         }
 
         var events = new List<GameEvent> { Event(scope, attemptId, 1, expected, "opportunity-fire-declared", new OpportunityFireDeclared(ids), null, null) };
-        var revealed = new List<string>();
-        foreach (var unit in ids.Select(id => state.Unit(id)!).Where(unit => Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden)))
+        var revealed = ScenarioA1FireEligibility.OpportunityFireReveals(ids.Select(id => state.Unit(id)!).Select(unit => (unit.Id,
+            Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden), (Func<bool>)(() => SeenByEnemy(state, unit.Side, state.Location(unit.Id)!.Location, 16)))));
+        foreach (var id in revealed)
         {
-            if (SeenByEnemy(state, unit.Side, state.Location(unit.Id)!.Location, 16))
-            {
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "concealment-lost",
-                    new ConditionsChanged(unit.Id, new Dictionary<string, ConditionState> { [Conditions.Concealed] = ConditionState.False, [Conditions.Hidden] = ConditionState.False }),
-                    null, null));
-                revealed.Add(unit.Id);
-            }
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "concealment-lost",
+                new ConditionsChanged(id, new Dictionary<string, ConditionState> { [Conditions.Concealed] = ConditionState.False, [Conditions.Hidden] = ConditionState.False }),
+                null, null));
         }
 
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events,
-            [$"play.opportunity-fire: {string.Join(", ", ids)} hold their fire for the AFPh under a Bounding Fire counter, and do not move in the MPh (A7.25)"
-                + (revealed.Count > 0 ? $"; {string.Join(", ", revealed)} loses its \"?\" (Case D)" : string.Empty)]);
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [ScenarioA1FireEligibility.OpportunityFireSummary(ids, revealed)]);
     }
-
-    /// <summary>
-    /// Where an LOS enters a target hex, as a position on its perimeter (A7.7; ruling R12.11): hexside i is 2i + 1, the hexspine between hexsides i and
-    /// i + 1 is 2i + 2, counting 12 positions clockwise from the north vertex of the north hexside; null when the entry cannot be read.
-    /// </summary>
-    private static int? PerimeterPosition(IReadOnlyList<HexsideDirection> sides) => sides switch
-    {
-        [var one] => (2 * (int)one) + 1,
-        [var a, var b] when ((int)a + 1) % 6 == (int)b => ((2 * (int)a) + 2) % 12,
-        [var a, var b] when ((int)b + 1) % 6 == (int)a => ((2 * (int)b) + 2) % 12,
-        _ => null,
-    };
 
     /// <summary>
     /// Whether LOS entries Encircle a hex (A7.7; ruling R12.11): two opposite hexspines, two opposite hexsides (exactly three vertices between them both
@@ -92,161 +70,85 @@ public sealed partial class GamePlanner
     /// </summary>
     internal static bool Encircles(IReadOnlyCollection<int> positions) => ScenarioA1Geometry.Encircles(positions);
 
-    /// <summary>
-    /// An attack's share of an Encirclement (A7.7; ruling R12.11): the units firing inherent FP or a SW at no more than Normal Range, when its FP could
-    /// inflict at least a NMC allowing for Cowering, with the positions where their LOS enters the target hex; none for other fire.
-    /// </summary>
-    private (int Units, List<int> Entries) EncirclementShare(GameState state, FireAttack facts, FireArithmetic? arithmetic)
-    {
-        if (facts.VehicleFire is not null || facts.Overrun is not null || facts.OrdnanceHit is not null || facts.FireKind == ScenarioA1FireCalculator.ResidualFire
-            || facts.Firers is not { Count: > 0 } firers || arithmetic is null || !BoardLocation.TryParse(facts.TargetLocationId, out var target))
-        {
-            return (0, []);
-        }
+    /// <summary>An attack's share of an Encirclement (A7.7; ruling R12.11), as Rules decides it from each firer's LOS entry (pass 32.c).</summary>
+    private (int Units, List<int> Entries) EncirclementShare(GameState state, FireAttack facts, FireArithmetic? arithmetic) =>
+        ScenarioA1FireMapRules.EncirclementShare(facts, arithmetic, BoardLocation.TryParse(facts.TargetLocationId, out var target), FireReference.Value,
+            EncirclementFirers(state, facts, target));
 
-        var could = CouldCauseNmc(facts, arithmetic);
-        if (!could(false) && !could(true))
-        {
-            return (0, []);
-        }
-
-        var reference = FireReference.Value;
-        var units = 0;
-        var entries = new List<int>();
-        foreach (var firer in firers)
-        {
-            var definition = reference.Definitions.GetValueOrDefault(firer.DefinitionId ?? string.Empty);
-            var weaponRanges = (firer.Weapons ?? []).Select(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty)?.Range).OfType<int>();
-            int? normal = firer.UsesInherentFp == false ? weaponRanges.DefaultIfEmpty(0).Max() : definition?.Range;
-            var range = firer.Range ?? facts.Range;
-            if (normal is not { } limit || range is not { } distance || distance < 1 || distance > limit || !BoardLocation.TryParse(firer.LocationId, out var from))
-            {
-                continue;
-            }
-
-            units++;
-            if (LosEntrySides(state, target, from) is { } sides && PerimeterPosition(sides) is { } position)
-            {
-                entries.Add(position);
-            }
-        }
-
-        return (units, entries);
-    }
+    /// <summary>Each firer of an attack as the Encirclement share reads it, in the attack's order: whether its Location is known, and its LOS entry sides, read when asked.</summary>
+    private IReadOnlyList<EncirclementFirerFacts> EncirclementFirers(GameState state, FireAttack facts, BoardLocation? target) =>
+        [.. (facts.Firers ?? []).Select(firer => BoardLocation.TryParse(firer.LocationId, out var from)
+            ? new EncirclementFirerFacts(true, () => target is null ? null : LosEntrySides(state, target, from)?.Select(side => (int)side).ToArray())
+            : new EncirclementFirerFacts(false, () => null))];
 
     /// <summary>
-    /// The side this attack Encircles in its target Location, or null (A7.7; ruling R12.11): with the side's earlier attacks this phase on that Location,
-    /// made consecutively (none of its attacks at another Location between), by at least two counting units whose LOS entries Encircle it.
+    /// The side this attack Encircles in its target Location, or null (A7.7; ruling R12.11), as Rules decides it from the phase's earlier attacks, read
+    /// latest first as the scan reaches them (pass 32.c).
     /// </summary>
     private string? EncirclementSeal(GameState state, IReadOnlyList<GameEvent> existing, FireAttack facts, string firingSide)
     {
-        if (state.Phase is not ("pfph" or "dfph" or "afph") || facts.SprayingFire == true || !BoardLocation.TryParse(facts.TargetLocationId, out var target))
+        var targetKnown = BoardLocation.TryParse(facts.TargetLocationId, out var target);
+        return ScenarioA1FireMapRules.EncirclementSeal(state.Phase, facts, targetKnown, id => state.Unit(id)?.Side,
+            side => state.Encirclements.Any(item => item.Location == target && item.Side == side), FireReference.Value, EncirclementFirers(state, facts, target),
+            ThisPhase(existing).Select(item => item.Payload).Where(item => item is FireResolved or OrdnanceFired).Reverse().Select(payload => payload is OrdnanceFired shot
+                ? new EarlierAttackFacts(true, state.Unit(shot.Crew)?.Side, shot.Target == target, () => null)
+                : EarlierFire(state, (FireResolved)payload, facts, target)),
+            firingSide);
+    }
+
+    /// <summary>A fire record of the phase as the Encirclement scan reads it: its first firer's side, whether it was at the target, and its facts when asked.</summary>
+    private EarlierAttackFacts EarlierFire(GameState state, FireResolved record, FireAttack facts, BoardLocation? target) =>
+        new(false, record.Firers.Count == 0 ? null : state.Unit(record.Firers[0])?.Side, record.TargetLocation == facts.TargetLocationId, () =>
         {
-            return null;
-        }
-
-        var targetSide = (facts.Targets ?? []).Where(item => item.Friendly != true && item.Dummy != true && item.GuardId is null)
-            .Select(item => state.Unit(item.UnitId!)?.Side).FirstOrDefault(side => side is not null);
-        if (targetSide is null || state.Encirclements.Any(item => item.Location == target && item.Side == targetSide))
-        {
-            return null;
-        }
-
-        var (units, entries) = EncirclementShare(state, facts, ScenarioA1FireCalculator.Preview(facts, FireReference.Value));
-        if (units == 0)
-        {
-            return null;
-        }
-
-        foreach (var payload in ThisPhase(existing).Select(item => item.Payload).Where(item => item is FireResolved or OrdnanceFired).Reverse())
-        {
-            // Table player, pass 12: a Gun's shot at another Location breaks the sequence too.
-            if (payload is OrdnanceFired shot)
-            {
-                if (state.Unit(shot.Crew)?.Side == firingSide && shot.Target != target)
-                {
-                    break;
-                }
-
-                continue;
-            }
-
-            var record = (FireResolved)payload;
-            if (record.Firers.Count == 0 || state.Unit(record.Firers[0])?.Side != firingSide)
-            {
-                continue;
-            }
-
-            if (record.TargetLocation != facts.TargetLocationId)
-            {
-                break;
-            }
-
             var recorded = record.Facts.Deserialize<FireAttack>(LiveFire.Json);
             var blocked = record.Resolution.TryGetProperty("losBlocked", out var flag) && flag.ValueKind == JsonValueKind.True;
             var arithmetic = record.Resolution.TryGetProperty("arithmetic", out var value) && value.ValueKind == JsonValueKind.Object
                 ? value.Deserialize<FireArithmetic>(LiveFire.Json) : null;
-            if (recorded is null || blocked || recorded.SprayingFire == true)
-            {
-                continue;
-            }
-
-            var (more, seen) = EncirclementShare(state, recorded, arithmetic);
-            units += more;
-            entries.AddRange(seen);
-        }
-
-        return units >= 2 && Encircles(entries) ? targetSide : null;
-    }
+            return recorded is null ? null : new RecordedAttackFacts(recorded, blocked, arithmetic, EncirclementFirers(state, recorded, target));
+        });
 
     /// <summary>
-    /// The Locations of a Fire Lane (A9.22; ruling R12.7): along the Hex Grain from the MG's hex through the target hex to the counter's hex, each at the
-    /// MG's level, within its Normal Range and in its manning Infantry's LOS, with its Fire Lane Residual FP (the IFT column left of the MG's FP, doubled
-    /// ADJACENT) and the LOS Hindrance DRM from the MG; null with the reason when the lane is not on a Hex Grain.
+    /// The Locations of a Fire Lane (A9.22; ruling R12.7), as Rules searches them along the Hex Grain through a fact reader over the map (the pass 32
+    /// design, D4; pass 32.c); null with the reason when the lane is not on a Hex Grain.
     /// </summary>
     private (IReadOnlyList<FireLaneEntry>? Entries, string? Reason) FireLaneEntries(GameState state, BoardLocation from, BoardLocation target, BoardLocation to,
         int normalRange, int firepower)
     {
-        var column = Array.FindLastIndex(ScenarioA1FireReference.ColumnFp, fp => fp <= firepower) - 1;
-        if (column < 0)
+        var map = new FireLaneMap(this, state);
+        var (entries, reason) = ScenarioA1FireMapRules.FireLaneEntries(map.Index(from), from.Level, map.Index(target), map.Index(to), target.ToString(), to.ToString(),
+            normalRange, firepower, map);
+        return entries is null ? (null, reason) : ([.. entries.Select(entry => new FireLaneEntry(map.LocationOf(entry.Location), entry.Fp, entry.HindranceDrm))], null);
+    }
+
+    /// <summary>The map as the Fire Lane's search reads it: a table of Locations by index, the Location across a hexside, a hex's identity, a base level, and a LOS.</summary>
+    private sealed class FireLaneMap(GamePlanner planner, GameState state) : IFireLaneFactReader
+    {
+        private readonly List<BoardLocation> locations = [];
+        private readonly Dictionary<BoardLocation, int> indexes = [];
+
+        /// <summary>The index of a Location in the table, added when it is new.</summary>
+        public int Index(BoardLocation location)
         {
-            return (null, "play.fire-lane: the MG's FP has no IFT column to its left, so its Fire Lane has no Residual FP (A9.22)");
+            if (!indexes.TryGetValue(location, out var index))
+            {
+                index = locations.Count;
+                locations.Add(location);
+                indexes[location] = index;
+            }
+
+            return index;
         }
 
-        var laneFp = ScenarioA1FireReference.ColumnFp[column];
-        var fromLevel = ReadLocation(state, from) is { } fromRead ? fromRead.Hex.BaseLevel + from.Level : (int?)null;
-        foreach (var direction in Enum.GetValues<HexsideDirection>())
-        {
-            var path = new List<BoardLocation>();
-            var at = from;
-            for (var step = 1; step <= normalRange && Across(state, at, direction) is { } next; step++)
-            {
-                at = next;
-                path.Add(at);
-            }
+        public BoardLocation LocationOf(int index) => locations[index];
 
-            var targetIndex = path.FindIndex(item => item.Board == target.Board && item.Hex == target.Hex);
-            var toIndex = path.FindIndex(item => item.Board == to.Board && item.Hex == to.Hex);
-            if (targetIndex < 0 || toIndex < targetIndex)
-            {
-                continue;
-            }
+        public int? Across(int location, int side) => planner.Across(state, locations[location], (HexsideDirection)side) is { } next ? Index(next) : null;
 
-            var entries = new List<FireLaneEntry>();
-            foreach (var (location, index) in path.Take(toIndex + 1).Select((item, index) => (item, index)))
-            {
-                if (ReadLocation(state, location) is not { } read || read.Hex.BaseLevel != fromLevel || Los(state, from, location) is not { IsBlocked: false } los)
-                {
-                    continue;
-                }
+        public int HexOf(int location) => locations.FindIndex(item => item.Board == locations[location].Board && item.Hex == locations[location].Hex);
 
-                entries.Add(new FireLaneEntry(location, index == 0 ? 2 * laneFp : laneFp, los.Hindrance));
-            }
+        public int? BaseLevel(int location) => planner.ReadLocation(state, locations[location])?.Hex.BaseLevel;
 
-            return entries.Count == 0 ? (null, "play.fire-lane: no Location of the lane is at the MG's level and in its LOS (A9.22)") : (entries, null);
-        }
-
-        return (null, $"play.fire-lane: {to} is not on the Hex Grain through the MG's hex and {target}, within the MG's Normal Range (A9.22)");
+        public (bool Blocked, int Hindrance)? Los(int from, int target) =>
+            planner.Los(state, locations[from], locations[target]) is { } los ? (los.IsBlocked != false, los.Hindrance) : null;
     }
 
     /// <summary>
@@ -260,26 +162,21 @@ public sealed partial class GamePlanner
             return null;
         }
 
-        return HeatOfBattleFacts(state, map) with
-        {
-            FireLane = true,
-            Los = (map.Los ?? new FireLos(false, 0, true, false)) with
-            {
-                HindranceDrm = (map.Los?.HindranceDrm ?? 0) + entry.HindranceDrm
-            },
-        };
+        return ScenarioA1FireFollowUps.FireLaneAttack(HeatOfBattleFacts(state, map), entry.HindranceDrm);
     }
 
     /// <summary>
     /// A Fire Lane's attack as the moving stack enters one of its Locations (A9.22, A9.223): once the other attacks there are made, on the stack still
-    /// there, while the lane is in place; an Original DR at least its MG's Breakdown Number malfunctions the MG, which ends the lane.
+    /// there, while the lane is in place; an Original DR at least its MG's Breakdown Number malfunctions the MG, which ends the lane. Rules decides both
+    /// (pass 32.c).
     /// </summary>
     private void AddFireLaneAttack(GameScope scope, string attemptId, long expected, string actor, IReadOnlyList<GameEvent> existing, List<GameEvent> events,
         FireLane lane, FireLaneEntry entry, BoardLocation at, int? step, Func<RollRequest, RollResult> draw)
     {
-        if (events.Any(item => item.Payload is ChoicePending) || Replay([.. existing, .. events]).Current is not { } state || !state.FireLanes.Any(item => item.Weapon == lane.Weapon)
-            || state.Movement is not { } movement || movement.Location != at || movement.Movers.Count == 0 || FireLaneFacts(state, at, entry) is not { } facts
-            || ScenarioA1FireCalculator.Precheck(facts, FireReference.Value).Count != 0)
+        if (events.Any(item => item.Payload is ChoicePending) || Replay([.. existing, .. events]).Current is not { } state
+            || !ScenarioA1FireFollowUps.FireLaneAttacks(state.FireLanes.Any(item => item.Weapon == lane.Weapon), state.Movement is { } movement && movement.Location == at,
+                state.Movement?.Movers.Count ?? 0)
+            || FireLaneFacts(state, at, entry) is not { } facts || ScenarioA1FireCalculator.Precheck(facts, FireReference.Value).Count != 0)
         {
             return;
         }
@@ -288,8 +185,8 @@ public sealed partial class GamePlanner
         AddFireEvents(scope, attemptId, expected, actor, state, facts, state.PhasingSide, step, events, draw);
         if (events.Skip(start).FirstOrDefault(item => item.Payload is FireResolved)?.Payload is FireResolved record && record.Resolution.TryGetProperty("arithmetic", out var arithmetic)
             && arithmetic.TryGetProperty("originalDr", out var original) && state.Find(lane.Weapon) is EquipmentInstance { Definition: { } weapon }
-            && original.GetInt32() >= (FireReference.Value.Definitions.GetValueOrDefault(weapon.Definition)?.Breakdown ?? 12)
-                - (state.Unit(lane.Operator) is { } manning && LiveFire.CapturedBy(weapon.Definition, manning) == true ? 2 : 0))
+            && ScenarioA1FireFollowUps.FireLaneMalfunctions(original.GetInt32(), FireReference.Value.Definitions.GetValueOrDefault(weapon.Definition)?.Breakdown,
+                state.Unit(lane.Operator) is { } manning && LiveFire.CapturedBy(weapon.Definition, manning) == true))
         {
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
                 new ConditionsChanged(lane.Weapon, new Dictionary<string, ConditionState> { [Conditions.Malfunctioned] = ConditionState.True }), null, null));
@@ -298,76 +195,62 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// The units that gain "?" as their Player Turn ends (A12.12, A12.121, A12.122, the Concealment Table; ruling R12.5): each with the Final
-    /// Concealment dr modifier it needs, or null when it gains "?" with no dr.
+    /// Concealment dr modifier it needs, or null when it gains "?" with no dr. Rules decides it (pass 32.c) as a search through a fact reader over the
+    /// map (the design, D4); the units cross as facts, their costlier reads made when asked.
     /// </summary>
     private List<(UnitInstance Unit, int? Drm)> ConcealmentGains(GameState state)
     {
-        var gains = new List<(UnitInstance, int?)>();
-        var enemies = state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side != state.PhasingSide && !Is(unit, Conditions.Broken)
-            && !Is(unit, Conditions.Captured) && state.Location(unit.Id) is not null).ToArray();
-        foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && !LiveFire.IsVehicle(unit)
-            && vocabulary.IsA(unit.Kind, "asl:personnel") && unit.Kind != UnitKinds.Dummy && unit.Definition is not null)
-            .OrderBy(unit => unit.Id, StringComparer.Ordinal))
-        {
-            if (state.Location(unit.Id) is not { } at || new[] { Conditions.Concealed, Conditions.Hidden, Conditions.Broken, Conditions.Berserk, Conditions.Melee,
-                Conditions.Captured }.Any(name => Is(unit, name))
-                || state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Holding is { } holding && holding.Holder == unit.Id)
-                || state.At(at.Location).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && !Is(other, Conditions.Captured)))
-            {
-                // A unit sharing its Location with enemy units is about to be held in Melee (A11.15), and gains no "?" (a reading).
-                continue;
-            }
-
-            var inLosNear = false;
-            var inLosFar = false;
-            var within16 = false;
-            foreach (var enemy in enemies)
-            {
-                var from = state.Location(enemy.Id)!.Location;
-                var range = HexDistance(state, from, at.Location);
-                within16 |= range <= 16;
-                // E1.101 (backlog pass 16, ruling R16.4): at night an enemy sees a Location within its NVR or Illuminated.
-                if (Los(state, from, at.Location) is { IsBlocked: false } && (!state.Night || range <= NvrOf(state, enemy) || Illuminated(state, at.Location)))
-                {
-                    inLosNear |= range <= 16;
-                    inLosFar |= range > 16;
-                }
-            }
-
-            var read = ReadLocation(state, at.Location);
-            var terrain = read is null ? null : TerrainKey(read);
-            var inSeason = state.ScenarioMonth is >= 6 and <= 9;
-            var concealmentTerrain = terrain is "brush" or "woods" or "orchard" or "marsh" or "wooden-building" or "stone-building" or "wooden-rubble" or "stone-rubble"
-                || (terrain == "grain" && inSeason);
-            if (inLosNear || (inLosFar && !concealmentTerrain))
-            {
-                continue;
-            }
-
-            // E1.32 (backlog pass 16, ruling R16.4): at night what would need a Concealment dr gains "?" without one.
-            var needsDr = !state.Night && (inLosFar || (!concealmentTerrain && within16));
-            if (!needsDr)
-            {
-                gains.Add((unit, null));
-                continue;
-            }
-
-            // A12.122: +US#, + the best Good Order leader's Leadership in the Location unless alone, - the Location's TEM and in-hex Hindrance.
-            var size = vocabulary.IsA(unit.Kind, "asl:squad") ? 3 : vocabulary.IsA(unit.Kind, "asl:half-squad") || unit.Kind == "asl:crew" ? 2 : 1;
-            var leadership = state.At(at.Location).OfType<UnitInstance>().Where(other => other != unit && other.Status == InstanceStatus.Active
-                    && other.Side == unit.Side && other.Kind == "asl:leader" && !Is(other, Conditions.Broken) && !Is(other, Conditions.Pinned)
-                    && other.Definition is { } definition && FireReference.Value.Definitions.GetValueOrDefault(definition.Definition)?.Leadership is not null)
-                .Select(other => FireReference.Value.Definitions[other.Definition!.Definition].Leadership!.Value).DefaultIfEmpty(0).Min();
-            var tem = terrain is not null && ScenarioA1FireReference.Tem.TryGetValue(terrain, out var value) ? value : 0;
-            // A6.7 (referee, pass 12): only SMOKE in the Location hinders its own units; brush, grain, orchard, and marsh do not.
-            var smoke = SmokeSources(state).Any(place => place.Board == at.Location.Board && place.Hex == at.Location.Hex) ? 2 : 0;
-            gains.Add((unit, size + leadership - tem - smoke));
-        }
-
-        return gains;
+        var map = new ConcealmentMap(this, state);
+        UnitInstance[] units = [.. state.Units];
+        int? LocationIndex(UnitInstance unit) => state.Location(unit.Id) is { } at ? map.Index(at.Location) : null;
+        var gains = ScenarioA1FireFollowUps.ConcealmentGains(
+            units.Select(unit => new ConcealmentCandidateFacts(unit.Id, unit.Kind, unit.Status == InstanceStatus.Active, unit.Side == state.PhasingSide, LiveFire.IsVehicle(unit),
+                vocabulary.IsA(unit.Kind, "asl:personnel"), unit.Kind == UnitKinds.Dummy, unit.Definition is not null, vocabulary.IsA(unit.Kind, "asl:squad"),
+                vocabulary.IsA(unit.Kind, "asl:half-squad"), LocationIndex(unit), Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden), Is(unit, Conditions.Broken),
+                Is(unit, Conditions.Berserk), Is(unit, Conditions.Melee), Is(unit, Conditions.Captured),
+                () => state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Holding is { } holding && holding.Holder == unit.Id),
+                () => state.At(state.Location(unit.Id)!.Location).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && !Is(other, Conditions.Captured)),
+                () => ReadLocation(state, state.Location(unit.Id)!.Location) is { } read ? TerrainKey(read) : null,
+                () => SmokeSources(state).Any(place => place.Board == state.Location(unit.Id)!.Location.Board && place.Hex == state.Location(unit.Id)!.Location.Hex),
+                () => state.At(state.Location(unit.Id)!.Location).OfType<UnitInstance>().Where(other => other != unit && other.Status == InstanceStatus.Active
+                        && other.Side == unit.Side && other.Kind == "asl:leader" && !Is(other, Conditions.Broken) && !Is(other, Conditions.Pinned)
+                        && other.Definition is { } definition && FireReference.Value.Definitions.GetValueOrDefault(definition.Definition)?.Leadership is not null)
+                    .Select(other => FireReference.Value.Definitions[other.Definition!.Definition].Leadership!.Value).DefaultIfEmpty(0).Min())),
+            units.Select((unit, index) => new WatchingEnemyFacts(index, unit.Status == InstanceStatus.Active, unit.Side != state.PhasingSide, Is(unit, Conditions.Broken),
+                Is(unit, Conditions.Captured), LocationIndex(unit))),
+            state.Night, state.ScenarioMonth, map);
+        return [.. gains.Select(gain => (units.First(unit => unit.Id == gain.Id), gain.Drm))];
     }
 
-    /// <summary>The events of the concealment gained as a Player Turn ends (ruling R12.5): each dr needed, then each unit's "?".</summary>
+    /// <summary>The map and the night as the concealment gain's search reads them: a table of Locations by index, the hex distance and LOS between two, a unit's NVR, and Illumination.</summary>
+    private sealed class ConcealmentMap(GamePlanner planner, GameState state) : IConcealmentFactReader
+    {
+        private readonly List<BoardLocation> locations = [];
+        private readonly Dictionary<BoardLocation, int> indexes = [];
+
+        /// <summary>The index of a Location in the table, added when it is new.</summary>
+        public int Index(BoardLocation location)
+        {
+            if (!indexes.TryGetValue(location, out var index))
+            {
+                index = locations.Count;
+                locations.Add(location);
+                indexes[location] = index;
+            }
+
+            return index;
+        }
+
+        public int? Range(int from, int target) => planner.HexDistance(state, locations[from], locations[target]);
+
+        public bool LosOpen(int from, int target) => planner.Los(state, locations[from], locations[target]) is { IsBlocked: false };
+
+        public int? Nvr(int unit) => NvrOf(state, state.Units.ElementAt(unit));
+
+        public bool Illuminated(int location) => planner.Illuminated(state, locations[location]);
+    }
+
+    /// <summary>The events of the concealment gained as a Player Turn ends (ruling R12.5): each dr needed, then each unit's "?"; Rules reads each dr (pass 32.c).</summary>
     private void AddConcealmentGains(GameScope scope, string attemptId, long expected, string actor, IReadOnlyList<(UnitInstance Unit, int? Drm)> gains,
         List<GameEvent> events, Func<RollRequest, RollResult>? draw, List<string> reasons)
     {
@@ -384,16 +267,16 @@ public sealed partial class GamePlanner
                 var rollId = $"{attemptId}-roll-{(events.Count(item => item.Payload is DiceRolled) + 1).ToString(CultureInfo.InvariantCulture)}";
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
                     new DiceRolled(rollId, "concealment", 1, 6, dice.Values, DiceRolled.SystemSource, actor), null, null));
-                var final = dice.Values[0] + modifier;
-                reasons.Add($"play.concealment: {unit.Id}'s Final Concealment dr is {dice.Values[0]}{modifier:+0;-0;+0} = {final}: {(final <= 5 ? "gains" : "no")} \"?\" (A12.122)");
-                if (final > 5)
+                var (gained, reason) = ScenarioA1FireFollowUps.ConcealmentDr(unit.Id, dice.Values[0], modifier);
+                reasons.Add(reason);
+                if (!gained)
                 {
                     continue;
                 }
             }
             else
             {
-                reasons.Add($"play.concealment: {unit.Id} gains \"?\" (A12.12, the Concealment Table)");
+                reasons.Add(ScenarioA1FireFollowUps.ConcealmentWithoutDr(unit.Id));
             }
 
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "concealment-gained",
