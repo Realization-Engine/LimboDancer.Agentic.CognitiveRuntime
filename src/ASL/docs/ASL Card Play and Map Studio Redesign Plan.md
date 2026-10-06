@@ -2176,7 +2176,7 @@ The first version of this section gave 107:50 for 19 passes. The difference is w
 
 ### 22.2 Pass 32: the Rules migration
 
-**Status:** Designed and answered 2026-10-05 ([design](<Passes/ASL Unit Backlog Pass 32 Design.md>), with its [appendix](<Passes/ASL Unit Backlog Pass 32 Design Appendix.md>) of every member that moves). Not started.
+**Status:** Designed and answered 2026-10-05 ([design](<Passes/ASL Unit Backlog Pass 32 Design.md>), with its [appendix](<Passes/ASL Unit Backlog Pass 32 Design Appendix.md>) of every member that moves). 32.a built 2026-10-05 to 06 on `feature/asl-backlog-pass-32a` (the design's section 16: S0, S1 with 50 members and AngleBetween, S11, the SMOKE action; every proof equal), awaiting its gate and merge; 32.b not started.
 
 **What it is.** Section 19, decision 7: every ASL rule implemented in the Rules project alone. The pass moves the rule logic that sits in Play and Units into calculators in Rules and changes no behavior. Maps keeps LOS, range, and its reading of the board. It comes before the rule passes 33 and on, which then write their rules in Rules.
 

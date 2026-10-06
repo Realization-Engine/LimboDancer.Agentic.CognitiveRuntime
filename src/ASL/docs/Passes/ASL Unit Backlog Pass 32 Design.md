@@ -310,3 +310,23 @@ What was built, on branch `fix/asl-older-games-replay`:
 What this rests on, for later passes: a catalog's definitions are added to and corrected, never removed or renamed. A pass that corrects a printed value may make an older game's record fail to reproduce; the replay then says so, as it did for these three.
 
 **The size under answer 2.** 223:10 of build in ten sub-passes, 12:30 of overhead: 235:40 on the plan's basis, about 118 hours likely. The first sub-pass measures the pace.
+
+## 16. Pass 32.a as built (2026-10-05 to 2026-10-06)
+
+Branch `feature/asl-backlog-pass-32a`, on main at 82d4381. The user's go-ahead came at 22:10 on 2026-10-05 after the preparation's stop, with the proposal below accepted.
+
+**What the preparation found.** The Appendix marks 55 rows WHOLE in Play and Units (44 and 11), not 46; the figure of 46 could not be reconstructed from the documents. The members section 9 names for S1 as "US#, IPC, squad-equivalents, Target Facing, and the Covered Arc wedge" are not WHOLE rows but parts of SPLIT members (`UnitSize`, `FireBar`, `Laden`, `MfAllotment`, `OverstackExcess`, `SquadEquivalents`, `OrdnanceMapFacts`, `SupportWeaponMapFacts`, `BypassTargetFacing`) and stay for S3, S4, S6, S7, and S8. `AngleBetween` is in no row and was moved with the geometry. Five WHOLE rows were left in place: `UnitPlausibility.ArmorFactors` (D12), `HexsideTemAt#4` and `PlanExit#7` (blocks of S3 and S10 members), `MoverFacts` and `MoveOptions` (the A1 entry cases, S2). So S1 moved 50 members and `AngleBetween`.
+
+**The commits.**
+
+| Commit | Slice | What |
+|---|---|---|
+| c967a19 | S0 | Units references Rules; the eleven lock files that carry Units (Units, Play, Units.Rendering, Units.CounterSheets, MapStudio, and the tests of Units, Play, Rules, MapStudio, Units.Rendering, Units.CounterSheets; the CLI and Authoring carry no Units entry, against section 7.2); `CONVENTIONS.md` in the Rules folder |
+| 767261a | S1 | 50 members and `AngleBetween` into `ScenarioA1Definitions.cs`, `ScenarioA1Geometry.cs`, `ScenarioA1ResultTables.cs`, with one-line forwards; facings and hexsides cross as ints; the two identical Concealment Terrain copies forward to one function (D6's allowance); the card-typed members take ints and bools |
+| 8101141 | S11 | Good Order, Encircled, and the setup events in `ScenarioA1Definitions.cs`; `ScenarioA1Experience.cs`; `ScenarioA1Visibility.cs`, where `GameView.Of` hands over each counter's container and holder chain as facts, so no fact reader was needed; `RuleState` carries a condition's five states |
+| (next) | fix | The Play forward of the vehicle result conditions inserted its dictionary keys in a changed order, which the record writer would have serialized in that order; found by the read-only review, the verdict is now an ordered list |
+| (next) | action | `ScenarioA1SmokeCalculator`: `Plan` with the planner's seven checks in their order, `Verify` with the projector's one combined check (two functions, D6) |
+
+**The proofs, as run.** P1: no test file changed (the lock files under `tests/` changed with S0). P2: the replay digest over the 157 live games, the synthetic game, the two fixtures, and 48 cuts of `p31c-tw`, one digest a state; equal after every commit (the baseline's only diagnostics difference was the tool's own map configuration, fixed after the first run). P3: at the user's word the sweep runs over one game, `p31c-tw` (Tractor Works, 716 events), at its last state, at every fourth phase change (32 cuts), and at every entry into the MPh (16 cuts), with one request of each kind per unit and about thirty public reads per unit, 3:30 a run; its baseline is taken from a build of main's own sources in the scratchpad. P4: the text list, with interpolation holes normalized, since a hole's expression is not a character a player sees; one literal (the SMOKE proposal's sentence) holds a nested hole with quotes that the script cuts short, and that literal was compared by eye. A read-only review compared all 59 moved members' old and new bodies and found the one difference above.
+
+**Measured pace.** S0 2:00 estimated; S1 3:50; S11 3:40; the action 0:40: 10:10 of build. The time log has the hours; most of the session went to the proof tools, not the moves.
