@@ -68,8 +68,9 @@ public sealed record GameView(
             throw new ArgumentException($"The events include some '{perspective}' is not entitled to.", nameof(events));
         }
 
-        // A wreck stays on the map for every perspective (D10.1; ruling R6.5).
-        var active = state.Objects.Where(item => item.Status is InstanceStatus.Active or InstanceStatus.Wrecked).ToArray();
+        // A wreck stays on the map for every perspective (D10.1; ruling R6.5). Pass 32.a: each verdict below is Rules' (ScenarioA1Visibility); this method
+        // reads the state and applies it.
+        var active = state.Objects.Where(item => Rules.ScenarioA1Visibility.OnMapForEveryone(item.Status == InstanceStatus.Active, item.Status == InstanceStatus.Wrecked)).ToArray();
         if (perspective.IsAdjudicator)
         {
             return new GameView(perspective, state.Stamp, state.Synthetic, state.Sides, state.Map, state.Turn, state.Phase, state.PhasingSide,
@@ -81,7 +82,8 @@ public sealed record GameView(
         bool Is(IGameObject item, string condition) => GameState.Condition(item, condition) == ConditionState.True;
 
         // A Dummy is a "?" with nothing beneath it (A12.11), so it is always concealed to the enemy, whatever its condition says (referee, pass 23).
-        bool Concealed(IGameObject item) => Is(item, Conditions.Concealed) || item is UnitInstance { Kind: UnitKinds.Dummy };
+        bool Dummy(IGameObject item) => item is UnitInstance { Kind: UnitKinds.Dummy };
+        bool Concealed(IGameObject item) => Rules.ScenarioA1Visibility.ConcealedToEnemy(Is(item, Conditions.Concealed), Dummy(item));
 
         // Ruling R23.3 (A2.9): before play starts, an enemy stack not under "?" shows only its top counter, so what its other counters hold is withheld too.
         var beforePlay = !state.SetupClosed;
@@ -93,9 +95,9 @@ public sealed record GameView(
                 && state.Location(unit.Id) is not null).GroupBy(unit => (unit.Side, state.Location(unit.Id)!.Location)))
             {
                 stacked.Add(stack.Key);
-                if (stack.FirstOrDefault(unit => !Concealed(unit)) is { } top)
+                if (Rules.ScenarioA1Visibility.TopCounter(stack.Select(unit => (unit.Id, Concealed(unit)))) is { } top)
                 {
-                    tops.Add(top.Id);
+                    tops.Add(top);
                 }
             }
         }
@@ -104,21 +106,19 @@ public sealed record GameView(
         // units beneath it, so it is a top counter.
         bool Beneath(IGameObject item) => item.Position is MapPosition && state.Location(item.Id) is { } at && stacked.Contains((item.Side!, at.Location));
 
-        // An instance is withheld if it, or anything it is inside or held by, is an enemy's hidden or concealed instance, belongs to a side setting up
-        // out of sight (ruling R23.3), or lies beneath the top of an enemy stack before play (A2.9).
-        bool Withheld(IGameObject item, bool sealAllowed)
+        // The facts of one counter the verdicts read.
+        Rules.CounterFacts FactsOf(IGameObject item) => new(Enemy(item), Is(item, Conditions.Hidden), Is(item, Conditions.Concealed), Dummy(item),
+            item is UnitInstance { Group: { } group } && outOfSight?.Contains(group) == true, item is UnitInstance, tops.Contains(item.Id),
+            item is EquipmentInstance && Beneath(item));
+
+        // The instance, then each holder or container outward: what it is inside or held by, each read once.
+        IReadOnlyList<Rules.CounterFacts> Chain(IGameObject item)
         {
+            var chain = new List<Rules.CounterFacts>();
             var seen = new HashSet<string>(StringComparer.Ordinal);
             for (IGameObject? current = item; current is not null && seen.Add(current.Id);)
             {
-                if (Enemy(current) && (Is(current, Conditions.Hidden) || (Concealed(current) && !(sealAllowed && current == item))
-                    || (current is UnitInstance { Group: { } group } && outOfSight?.Contains(group) == true)
-                    || (beforePlay && current is UnitInstance && !tops.Contains(current.Id) && !(sealAllowed && current == item))
-                    || (beforePlay && current is EquipmentInstance && Beneath(current))))
-                {
-                    return true;
-                }
-
+                chain.Add(FactsOf(current));
                 current = current switch
                 {
                     EquipmentInstance { Holding: { } holding } => state.Find(holding.Holder),
@@ -127,19 +127,21 @@ public sealed record GameView(
                 };
             }
 
-            return false;
+            return chain;
         }
+
+        bool Withheld(IGameObject item, bool sealAllowed) => Rules.ScenarioA1Visibility.Withheld(Chain(item), beforePlay, sealAllowed);
 
         var units = new List<UnitInstance>();
         var sealedUnits = new List<(string Side, BoardLocation Location, bool Uninspected)>();
         foreach (var unit in active.OfType<UnitInstance>().Where(unit => !Withheld(unit, sealAllowed: true)))
         {
-            var concealed = Enemy(unit) && Concealed(unit);
-            if (concealed || (beforePlay && Enemy(unit) && !tops.Contains(unit.Id)))
+            var presence = Rules.ScenarioA1Visibility.UnitPresence(FactsOf(unit), beforePlay);
+            if (presence != Rules.CounterPresence.Shown)
             {
                 if (state.Location(unit.Id) is { } location)
                 {
-                    sealedUnits.Add((unit.Side, location.Location, !concealed));
+                    sealedUnits.Add((unit.Side, location.Location, presence == Rules.CounterPresence.SealedUninspected));
                 }
 
                 continue;
@@ -159,8 +161,8 @@ public sealed record GameView(
         // instances no longer in play; the creation of a counter it may not see stays out of its list.
         var shown = units.Select(unit => unit.Id).Concat(equipment.Select(item => item.Id)).Concat(entities.Select(item => item.Id)).ToHashSet(StringComparer.Ordinal);
         var activeIds = active.Select(item => item.Id).ToHashSet(StringComparer.Ordinal);
-        GameEvent[] entitled = [.. events.Where(item => item.Payload is not InstanceCreated { Instance: var created } || created.Side == perspective.Name
-            || shown.Contains(created.Id) || !activeIds.Contains(created.Id))];
+        GameEvent[] entitled = [.. events.Where(item => item.Payload is not InstanceCreated { Instance: var created }
+            || Rules.ScenarioA1Visibility.CreationShown(created.Side == perspective.Name, shown.Contains(created.Id), activeIds.Contains(created.Id)))];
         return new GameView(perspective, state.Stamp, state.Synthetic, state.Sides, state.Map, state.Turn, state.Phase, state.PhasingSide, units,
             sealedPresences, equipment, entities, entitled, LocationsOf(state, [.. units, .. equipment, .. entities]));
     }

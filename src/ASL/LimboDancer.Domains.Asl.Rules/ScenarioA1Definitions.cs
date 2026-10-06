@@ -153,4 +153,52 @@ public static class ScenarioA1Definitions
         bool Lists(char letter) => gun.SpecialAmmo.Any(item => item.Length > 1 && item[0] == letter && char.IsDigit(item[1]));
         return [.. new[] { ("ap", !gun.NoAp), ("apcr", Lists('A')), ("heat", Lists('H')), ("he", !gun.NoHe) }.Where(item => item.Item2).Select(item => item.Item1)];
     }
+
+    /// <summary>
+    /// Good Order (Index, p. 23): a Personnel unit neither broken, berserk, captured, nor held in Melee. Unknown while any of those is not known;
+    /// inapplicable to other kinds, since vehicular crews' stun and shock are not yet modelled. The state's own definition (pass 32.a, slice S11);
+    /// the planner's and the Close Combat calculator's differ and are listed for pass 45.
+    /// </summary>
+    public static RuleState GoodOrder(bool personnel, RuleState broken, RuleState berserk, RuleState captured, RuleState melee)
+    {
+        if (!personnel)
+        {
+            return RuleState.Inapplicable;
+        }
+
+        RuleState[] states = [broken, berserk, captured, melee];
+        return states.Contains(RuleState.True) ? RuleState.False
+            : states.All(state => state == RuleState.False) ? RuleState.True
+            : RuleState.Unknown;
+    }
+
+    /// <summary>
+    /// Whether a unit in a Location is Encircled (A7.7; ruling R12.11): of the Encircled side there (<paramref name="encircledForSide"/>), or in Melee
+    /// there while any side is Encircled there (<paramref name="encircledForAnySide"/>); never berserk or heroic, a hero, or a vehicle.
+    /// </summary>
+    public static bool Encircled(bool onMap, bool encircledForSide, bool encircledForAnySide, string kind, RuleState melee, RuleState berserk, RuleState heroic) =>
+        onMap && (encircledForSide || (encircledForAnySide && melee == RuleState.True))
+        && berserk != RuleState.True && heroic != RuleState.True && kind != "asl:hero" && kind != "asl:vehicle";
+
+    /// <summary>
+    /// Whether an event belongs to the setup (C13.31, ruling R9.7; ruling R19.2), by its type: the start, a unit set up, a Bore Sighted Location, or
+    /// the drs a start from a card draws for the first move and the Balance (rulings R20.2, R20.3).
+    /// </summary>
+    public static bool IsSetupEvent(string eventType, string? dicePurpose) =>
+        eventType is "game-started" or "instance-created" or "bore-sighted" or "setup-concealed" || (eventType == "dice-rolled" && dicePurpose is "first-move" or "balance");
+}
+
+/// <summary>What is known of a condition, as a fact handed to Rules or a verdict handed back (pass 32.a): one value for each of Units' ConditionState.</summary>
+public enum RuleState
+{
+    /// <summary>Nothing is recorded.</summary>
+    Unknown,
+    False,
+    True,
+
+    /// <summary>The viewer may not know it.</summary>
+    Withheld,
+
+    /// <summary>The condition does not apply to the kind.</summary>
+    Inapplicable,
 }

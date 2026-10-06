@@ -292,10 +292,10 @@ public sealed record GameState(
     public bool Encircled(UnitInstance unit)
     {
         ArgumentNullException.ThrowIfNull(unit);
-        return Location(unit.Id)?.Location is { } at && Encirclements.Any(item => item.Location == at
-            && (item.Side == unit.Side || Condition(unit, Conditions.Melee) == ConditionState.True))
-            && Condition(unit, Conditions.Berserk) != ConditionState.True && Condition(unit, Conditions.Heroic) != ConditionState.True && unit.Kind != "asl:hero"
-            && unit.Kind != "asl:vehicle";
+        var at = Location(unit.Id)?.Location;
+        var here = at is null ? [] : Encirclements.Where(item => item.Location == at).ToArray();
+        return Rules.ScenarioA1Definitions.Encircled(at is not null, here.Any(item => item.Side == unit.Side), here.Length > 0, unit.Kind,
+            RuleStateOf(Condition(unit, Conditions.Melee)), RuleStateOf(Condition(unit, Conditions.Berserk)), RuleStateOf(Condition(unit, Conditions.Heroic)));
     }
 
     /// <summary>The vehicles whose Shock or Unconfirmed Kill dr was made this RPh (C7.42; ruling R7.8); cleared at every phase change.</summary>
@@ -327,7 +327,15 @@ public sealed record GameState(
     /// from a card draws for the first move and the Balance (rulings R20.2, R20.3).
     /// </summary>
     public static bool IsSetupEvent(EventPayload payload) =>
-        payload is GameStarted or InstanceCreated or BoreSighted or SetupConcealed or DiceRolled { Purpose: "first-move" or "balance" };
+        Rules.ScenarioA1Definitions.IsSetupEvent(payload switch
+        {
+            GameStarted => "game-started",
+            InstanceCreated => "instance-created",
+            BoreSighted => "bore-sighted",
+            SetupConcealed => "setup-concealed",
+            DiceRolled => "dice-rolled",
+            _ => "other",
+        }, (payload as DiceRolled)?.Purpose);
 
     /// <summary>The units that left the map (A2.6; ruling R21.5), in order, for Exit VP and CVP (A26.221, A26.23).</summary>
     public IReadOnlyList<UnitExit> Exits { get; init; } = [];
@@ -451,16 +459,29 @@ public sealed record GameState(
     {
         ArgumentNullException.ThrowIfNull(unit);
         ArgumentNullException.ThrowIfNull(vocabulary);
-        if (!vocabulary.IsA(unit.Kind, "asl:personnel"))
-        {
-            return ConditionState.Inapplicable;
-        }
-
-        var states = new[] { Conditions.Broken, Conditions.Berserk, Conditions.Captured, Conditions.Melee }.Select(name => Condition(unit, name)).ToArray();
-        return states.Contains(ConditionState.True) ? ConditionState.False
-            : states.All(state => state == ConditionState.False) ? ConditionState.True
-            : ConditionState.Unknown;
+        return ConditionStateOf(Rules.ScenarioA1Definitions.GoodOrder(vocabulary.IsA(unit.Kind, "asl:personnel"), RuleStateOf(Condition(unit, Conditions.Broken)),
+            RuleStateOf(Condition(unit, Conditions.Berserk)), RuleStateOf(Condition(unit, Conditions.Captured)), RuleStateOf(Condition(unit, Conditions.Melee))));
     }
+
+    /// <summary>A condition's state as Rules names it (pass 32.a): the same five values.</summary>
+    internal static Rules.RuleState RuleStateOf(ConditionState state) => state switch
+    {
+        ConditionState.True => Rules.RuleState.True,
+        ConditionState.False => Rules.RuleState.False,
+        ConditionState.Withheld => Rules.RuleState.Withheld,
+        ConditionState.Inapplicable => Rules.RuleState.Inapplicable,
+        _ => Rules.RuleState.Unknown,
+    };
+
+    /// <summary>A Rules verdict as a condition's state (pass 32.a): the same five values.</summary>
+    internal static ConditionState ConditionStateOf(Rules.RuleState state) => state switch
+    {
+        Rules.RuleState.True => ConditionState.True,
+        Rules.RuleState.False => ConditionState.False,
+        Rules.RuleState.Withheld => ConditionState.Withheld,
+        Rules.RuleState.Inapplicable => ConditionState.Inapplicable,
+        _ => ConditionState.Unknown,
+    };
 
     /// <summary>Whether a conclusion stamped earlier still describes this state (ASL-UNIT-041).</summary>
     public StampStatus Check(StateStamp stamp)
