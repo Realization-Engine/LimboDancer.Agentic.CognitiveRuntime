@@ -30,7 +30,8 @@ public static class LiveOrdnance
     public static bool IsTank(UnitInstance vehicle)
     {
         ArgumentNullException.ThrowIfNull(vehicle);
-        return LiveFire.IsVehicle(vehicle) && vehicle.Definition is { } definition && Reference.Value.Guns.TryGetValue(definition.Definition, out var gun) && gun.GunType == "vehicle";
+        return ScenarioA1OrdnanceEligibility.IsTank(LiveFire.IsVehicle(vehicle),
+            () => vehicle.Definition is { } definition && Reference.Value.Guns.TryGetValue(definition.Definition, out var gun) ? gun.GunType : null);
     }
 
     /// <summary>The id a PF shot is recorded under (C13.3; ruling R9.7): its firer's, with <c>:pf</c>.</summary>
@@ -43,13 +44,7 @@ public static class LiveOrdnance
     public static int PanzerfaustAllowance(GameState state, string side)
     {
         ArgumentNullException.ThrowIfNull(state);
-        var halves = state.SetupHalfSquads.GetValueOrDefault(side);
-        return state.ScenarioYear switch
-        {
-            >= 1945 => halves,
-            1944 => halves * 3 / 4,
-            _ => halves / 2,
-        };
+        return ScenarioA1OrdnanceEligibility.PanzerfaustAllowance(state.SetupHalfSquads.GetValueOrDefault(side), state.ScenarioYear);
     }
 
     /// <summary>The state's part of a shot, or the reason the Gun cannot fire from this state.</summary>
@@ -319,19 +314,11 @@ public static class LiveOrdnance
     /// </summary>
     private static OrdnanceVehicleTarget VehicleTargetFacts(GameState state, UnitInstance vehicleTarget)
     {
-        var inMotion = Is(vehicleTarget, Conditions.Motion);
-        return new OrdnanceVehicleTarget(vehicleTarget.Id, vehicleTarget.Definition?.Definition, null, null,
-            inMotion || state.MovedVehicles.Contains(vehicleTarget.Id, StringComparer.Ordinal), inMotion,
-            Is(vehicleTarget, Conditions.Concealed) || Is(vehicleTarget, Conditions.Hidden),
-            Is(vehicleTarget, Conditions.Stunned) || Is(vehicleTarget, Conditions.Shocked) || Is(vehicleTarget, Conditions.UnconfirmedKill)
-                || Is(vehicleTarget, Conditions.Recalled),
-            // D5.5: a Stunned or Shocked crew takes no Immobilization TC, nor does an absent crew or one already immobilized.
-            !Is(vehicleTarget, Conditions.Stunned) && !Is(vehicleTarget, Conditions.Shocked) && !Is(vehicleTarget, Conditions.UnconfirmedKill)
-                && !Is(vehicleTarget, Conditions.Abandoned) && !Is(vehicleTarget, Conditions.Immobilized))
-        {
-            Abandoned = Is(vehicleTarget, Conditions.Abandoned) ? true : null,
-            StunRecovery = Is(vehicleTarget, Conditions.StunRecovery) ? true : null,
-        };
+        return ScenarioA1OrdnanceEligibility.VehicleTarget(new OrdnanceVehicleTargetStateFacts(vehicleTarget.Id, vehicleTarget.Definition?.Definition,
+            Is(vehicleTarget, Conditions.Motion), state.MovedVehicles.Contains(vehicleTarget.Id, StringComparer.Ordinal),
+            Is(vehicleTarget, Conditions.Concealed), Is(vehicleTarget, Conditions.Hidden), Is(vehicleTarget, Conditions.Stunned), Is(vehicleTarget, Conditions.Shocked),
+            Is(vehicleTarget, Conditions.UnconfirmedKill), Is(vehicleTarget, Conditions.Recalled), Is(vehicleTarget, Conditions.Abandoned),
+            Is(vehicleTarget, Conditions.Immobilized), Is(vehicleTarget, Conditions.StunRecovery)));
     }
 
     /// <summary>
@@ -342,53 +329,44 @@ public static class LiveOrdnance
     private static ((OrdnanceSpotter? Spotter, FireDirector? Director)? Support, string? Reason) MortarSupport(GameState state, string gun, UnitInstance firer, string? spotter,
         string? director, string phase)
     {
-        OrdnanceSpotter? spotting = null;
         var kept = state.MortarSpotters.FirstOrDefault(item => item.Gun == gun)?.Spotter is { } recorded && state.Unit(recorded) is { Status: InstanceStatus.Active } still
             && !Is(still, Conditions.Broken) && !Is(still, Conditions.Captured) && still.Side == firer.Side ? still : null;
-        if (spotter is not null)
+        return ScenarioA1OrdnanceEligibility.MortarSupport(gun, kept?.Id, spotter, () => SpotterFacts(state, gun, firer, spotter!), director,
+            () => DirectorFacts(state, gun, firer, director!), phase);
+    }
+
+    private static OrdnanceSpotterFacts SpotterFacts(GameState state, string gun, UnitInstance firer, string spotter)
+    {
+        if (state.Unit(spotter) is not { Status: InstanceStatus.Active, Definition: not null } unit)
         {
-            if (state.Unit(spotter) is not { Status: InstanceStatus.Active, Definition: not null } unit || unit.Side != firer.Side || Is(unit, Conditions.Captured) || Is(unit, Conditions.Melee))
-            {
-                return (null, $"play.ordnance-spotter: '{spotter}' is not an active unit of the firer's side (C9.3)");
-            }
-
-            // C9.3 (ruling R9.4): a new Spotter is named only when the original is broken, eliminated, or captured.
-            if (kept is not null && kept.Id != unit.Id)
-            {
-                return (null, $"play.ordnance-spotter-kept: {kept.Id} spots for {gun} while it is Good Order (C9.3)");
-            }
-
-            // C9.31 EX, A7.352 (table player, pass 9): a unit spots for one mortar a phase; a HS, crew, or SMC that has fired does not spot.
-            if (state.SpottedThisPhase.Any(item => item.Spotter == unit.Id && item.Gun != gun)
-                || (unit.Kind != "asl:squad" && (LiveFire.Fired(unit) || Is(unit, Conditions.FirstFire)) && !state.SpottedThisPhase.Any(item => item.Spotter == unit.Id)))
-            {
-                return (null, $"play.ordnance-spotter-used: {unit.Id} has spotted for another mortar or fired this phase (C9.31, A7.352)");
-            }
-
-            if (unit.Kind == "asl:squad" && !state.SpottedThisPhase.Any(item => item.Spotter == unit.Id) && SquadSupportRefusal(state, unit, phase, false) is { } spotterRefusal)
-            {
-                return (null, spotterRefusal);
-            }
-
-            spotting = new OrdnanceSpotter(unit.Id, unit.Definition.Definition, Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned));
+            return new OrdnanceSpotterFacts(spotter, false, null, false, false, false, false, false, false, false, false, false,
+                new SquadSupportFacts(spotter, false, false, false, false, null, false));
         }
 
-        FireDirector? directing = null;
-        if (director is not null)
-        {
-            if (state.Unit(director) is not { Status: InstanceStatus.Active, Definition: not null } leader || leader.Side != firer.Side
-                || state.Location(leader.Id)?.Location is not { } leaderAt || leaderAt != state.Location(firer.Id)?.Location)
-            {
-                return (null, $"play.ordnance-director: '{director}' is not an active unit of the firer's side in its Location (A7.531)");
-            }
+        return new OrdnanceSpotterFacts(unit.Id, true, unit.Definition.Definition, unit.Side == firer.Side, Is(unit, Conditions.Captured), Is(unit, Conditions.Melee),
+            Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned), unit.Kind == "asl:squad", LiveFire.Fired(unit) || Is(unit, Conditions.FirstFire),
+            state.SpottedThisPhase.Any(item => item.Spotter == unit.Id && item.Gun != gun), state.SpottedThisPhase.Any(item => item.Spotter == unit.Id),
+            SquadSupport(state, unit));
+    }
 
-            // A7.53 (referee, pass 9): the leader directing a SW this phase goes on directing its further ROF shots.
-            var continuing = state.SupportWeaponDirectors.Any(item => item.Gun == gun && item.Leader == leader.Id);
-            directing = new FireDirector(leader.Id, leader.Definition.Definition, leaderAt.ToString(), Is(leader, Conditions.Broken), Is(leader, Conditions.Pinned),
-                Is(leader, Conditions.Concealed), (LiveFire.Fired(leader) || Is(leader, Conditions.FirstFire)) && !continuing, Is(leader, Conditions.Wounded));
+    private static OrdnanceDirectorFacts DirectorFacts(GameState state, string gun, UnitInstance firer, string director)
+    {
+        if (state.Unit(director) is not { Status: InstanceStatus.Active, Definition: not null } leader || leader.Side != firer.Side
+            || state.Location(leader.Id)?.Location is not { } leaderAt)
+        {
+            return new OrdnanceDirectorFacts(director, false, null, false, null, false, false, false, false, false, false, false);
         }
 
-        return ((spotting, directing), null);
+        return new OrdnanceDirectorFacts(leader.Id, true, leader.Definition.Definition, true, leaderAt.ToString(), leaderAt == state.Location(firer.Id)?.Location,
+            Is(leader, Conditions.Broken), Is(leader, Conditions.Pinned), Is(leader, Conditions.Concealed), LiveFire.Fired(leader) || Is(leader, Conditions.FirstFire),
+            state.SupportWeaponDirectors.Any(item => item.Gun == gun && item.Leader == leader.Id), Is(leader, Conditions.Wounded));
+    }
+
+    private static SquadSupportFacts SquadSupport(GameState state, UnitInstance squad)
+    {
+        var firedHere = state.PhaseFirers.FirstOrDefault(item => item.Unit == squad.Id);
+        return new SquadSupportFacts(squad.Id, squad.Kind == "asl:squad", Is(squad, Conditions.FirstFire), LiveFire.Fired(squad), firedHere is not null, firedHere?.Weapon,
+            state.SupportWeaponUses.Any(item => item.Unit == squad.Id));
     }
 
     /// <summary>
@@ -396,25 +374,8 @@ public static class LiveOrdnance
     /// not get this phase), it fired its inherent FP with a SW this phase, or, for a PF, it is marked First Fire in the MPh (no PF Check in
     /// Subsequent First Fire). Null when it may.
     /// </summary>
-    private static string? SquadSupportRefusal(GameState state, UnitInstance squad, string phase, bool panzerfaust)
-    {
-        if (squad.Kind != "asl:squad")
-        {
-            return null;
-        }
-
-        var firedHere = state.PhaseFirers.FirstOrDefault(item => item.Unit == squad.Id);
-        var usedHere = state.SupportWeaponUses.Any(item => item.Unit == squad.Id);
-        if (phase == "MPh" ? Is(squad, Conditions.FirstFire) && (panzerfaust || (firedHere is null && !usedHere))
-            : LiveFire.Fired(squad) && firedHere is null && !usedHere)
-        {
-            return $"play.sw-fired: {squad.Id} fired earlier{(phase == "MPh" ? " this MPh" : string.Empty)} and may not use a SW now (A7.351, C13.31)";
-        }
-
-        return firedHere is { Weapon: not "0" }
-            ? $"play.sw-limit: {squad.Id} fired its inherent FP with a SW this phase and uses no other (A7.351)"
-            : null;
-    }
+    private static string? SquadSupportRefusal(GameState state, UnitInstance squad, string phase, bool panzerfaust) =>
+        ScenarioA1OrdnanceEligibility.SquadSupportRefusal(SquadSupport(state, squad), phase, panzerfaust);
 
     /// <summary>
     /// The state's part of a PF shot (C13.3 to C13.36; rulings R9.7, R9.8): the firing unit, its PF Checks this phase, whether it may still fire
@@ -515,15 +476,14 @@ public static class LiveOrdnance
     {
         ArgumentNullException.ThrowIfNull(state);
         var units = state.At(at).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && !Is(unit, Conditions.Captured)).ToArray();
-        var squads = units.Count(unit => unit.Kind == "asl:squad") + (units.Count(unit => unit.Kind is "asl:half-squad" or "asl:crew") / 2m);
-        return squads > 3 ? (int)Math.Ceiling(squads - 3) : 0;
+        return ScenarioA1OrdnanceEligibility.OverstackExcessForOrdnance(units.Count(unit => unit.Kind == "asl:squad"), units.Count(unit => unit.Kind is "asl:half-squad" or "asl:crew"));
     }
 
     /// <summary>Whether a Gun fires at its Bore Sighted Location with its original crew from its setup Location (C6.43).</summary>
     public static bool BoreSighted(GameState state, string gun, string crew, BoardLocation from, BoardLocation target)
     {
         ArgumentNullException.ThrowIfNull(state);
-        return state.BoreSights.Any(item => item.Gun == gun && item.Location == target && item.Crew == crew && item.SetupLocation == from);
+        return ScenarioA1OrdnanceEligibility.BoreSighted(state.BoreSights.Select(item => (item.Gun, item.Location, item.Crew, item.SetupLocation)), gun, crew, from, target);
     }
 
     /// <summary>Whether a Gun is Emplaced: manned by a crew, never moved or hooked up (C11.2, C11.3).</summary>
@@ -531,7 +491,8 @@ public static class LiveOrdnance
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(gun);
-        return gun.Holding is { Role: HoldingRole.Manned } manning && state.Unit(manning.Holder)?.Kind == "asl:crew" && !state.UnemplacedGuns.Contains(gun.Id, StringComparer.Ordinal);
+        return ScenarioA1OrdnanceEligibility.Emplaced(gun.Holding is { Role: HoldingRole.Manned } manning ? state.Unit(manning.Holder)?.Kind : null,
+            () => state.UnemplacedGuns.Contains(gun.Id, StringComparer.Ordinal));
     }
 
     /// <summary>A turreted AFV's TCA: its recorded turret facing, or its VCA (D3.12; ruling R7.10).</summary>
@@ -539,7 +500,8 @@ public static class LiveOrdnance
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(vehicle);
-        return state.TurretFacings.FirstOrDefault(item => item.Vehicle == vehicle.Id)?.Facing ?? (vehicle.Position as MapPosition)?.Facing;
+        return (UnitFacing?)ScenarioA1OrdnanceEligibility.TurretFacing((int?)state.TurretFacings.FirstOrDefault(item => item.Vehicle == vehicle.Id)?.Facing,
+            (int?)(vehicle.Position as MapPosition)?.Facing);
     }
 
     /// <summary>The rolls of a record, rebuilt from its roll ids and the recorded dice, in the package's shape; null when one is misshapen.</summary>
