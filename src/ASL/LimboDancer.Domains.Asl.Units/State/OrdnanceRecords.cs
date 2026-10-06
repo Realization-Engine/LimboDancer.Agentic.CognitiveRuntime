@@ -41,7 +41,7 @@ public sealed record ShockRecoveryRolled(string Vehicle, string Roll, string Res
     public const string Wrecked = "wrecked";
 
     /// <summary>The result of a dr for a Shocked AFV, or for an Unconfirmed Kill.</summary>
-    public static string For(bool unconfirmedKill, int dr) => unconfirmedKill ? dr <= 3 ? Recovered : Wrecked : dr <= 2 ? Recovered : UnconfirmedKill;
+    public static string For(bool unconfirmedKill, int dr) => Rules.ScenarioA1ResultTables.ShockRecovery(unconfirmedKill, dr);
 }
 
 /// <summary>
@@ -67,7 +67,7 @@ public sealed record ManhandlingRolled(string Gun, string Roll, int Drm, int Man
     public const string Stay = "stay";
 
     /// <summary>The result of a Final Manhandling DR against the M# (C10.3).</summary>
-    public static string For(int final, int manhandling) => final < manhandling ? Enter : final == manhandling ? EnterStop : Stay;
+    public static string For(int final, int manhandling) => Rules.ScenarioA1ResultTables.Manhandling(final, manhandling);
 }
 
 /// <summary>

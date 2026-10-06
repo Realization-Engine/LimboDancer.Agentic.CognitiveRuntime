@@ -14,15 +14,11 @@ namespace LimboDancer.Domains.Asl.Play;
 /// </summary>
 public sealed partial class GamePlanner
 {
-    /// <summary>The weather an SSR may name (E3; ruling R16.9).</summary>
-    private static readonly string[] WeatherKinds =
-        ["overcast", "gusty", "mist", "rain", "heavy-rain", "mud", "falling-snow", "ground-snow", "deep-snow", "extreme-winter"];
-
-    private static readonly string[] Clouds = ["none", "scattered", "overcast"];
-    private static readonly string[] Moons = ["none", "half", "full"];
-
-    /// <summary>The Axis nationalities of the catalog, for Extreme Winter (E3.741, E3.742): the Finns are Axis too, but excepted there.</summary>
-    private static readonly string[] Axis = ["german", "italian", "finnish", "japanese", "axis-minor"];
+    // The weather, sky, and Axis lists (E3, E1.11, E3.741), moved to Rules (pass 32.a).
+    private static readonly IReadOnlyList<string> WeatherKinds = ScenarioA1Definitions.WeatherKinds;
+    private static readonly IReadOnlyList<string> Clouds = ScenarioA1Definitions.Clouds;
+    private static readonly IReadOnlyList<string> Moons = ScenarioA1Definitions.Moons;
+    private static readonly IReadOnlyList<string> Axis = ScenarioA1Definitions.AxisNationalities;
 
     /// <summary>Why the SSRs of a new game are refused (rulings R16.1, R16.9, and R23.5 for HIP), or null.</summary>
     internal static string? NightAndWeatherRulesBar(JsonElement start)
@@ -78,9 +74,7 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>Whether a terrain is Concealment Terrain (A12.12, as the concealment gain reads it): grain only June to September.</summary>
-    private static bool ConcealmentTerrain(string terrain, int? month) =>
-        terrain is "brush" or "woods" or "orchard" or "marsh" or "wooden-building" or "stone-building" or "wooden-rubble" or "stone-rubble"
-        || (terrain == "grain" && month is >= 6 and <= 9);
+    private static bool ConcealmentTerrain(string terrain, int? month) => ScenarioA1Definitions.IsConcealmentTerrain(terrain, month);
 
     /// <summary>Whether rain has fallen, as the SSRs name it or the Wind Change DR started it (E3.54; ruling R16.12).</summary>
     private static bool Rain(GameState state) =>

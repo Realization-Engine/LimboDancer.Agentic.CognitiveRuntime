@@ -20,7 +20,7 @@ public sealed partial class GamePlanner
 {
     private static readonly Lazy<ScenarioA1OrdnanceReference> OrdnanceReference = new(() => new ScenarioA1OrdnancePackage().Reference);
 
-    private static readonly string[] WoodsOrBuilding = ["woods", "wooden-building", "stone-building"];
+    private static readonly IReadOnlyList<string> WoodsOrBuilding = ScenarioA1Definitions.WoodsOrBuilding;
 
     private GamePlan PlanFireOrdnance(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label,
         string actor)

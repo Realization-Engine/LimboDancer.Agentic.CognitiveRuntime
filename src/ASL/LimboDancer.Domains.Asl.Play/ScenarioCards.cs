@@ -120,7 +120,7 @@ public sealed record ScenarioCard(
     /// date and edges may be left unrecorded; units set up by hand, and the players judge the result.
     /// </summary>
     [System.Text.Json.Serialization.JsonIgnore]
-    public bool Minimal => Sides.Count > 0 && Sides.All(side => side.Groups.Count == 0);
+    public bool Minimal => Rules.ScenarioA1ResultTables.CardIsMinimal(Sides.Count, Sides.Select(side => side.Groups.Count));
 }
 
 /// <summary>A card and why it is refused, if it is: each diagnostic is a code and a message.</summary>
@@ -675,7 +675,7 @@ public static partial class ScenarioCards
     public static bool EndsAfter(ScenarioCardTurns turns, int turn, bool firstSidePhasing)
     {
         ArgumentNullException.ThrowIfNull(turns);
-        return turn >= turns.Count && (!firstSidePhasing || turns.HalfTurn);
+        return Rules.ScenarioA1ResultTables.EndsAfter(turns.Count, turns.HalfTurn, turn, firstSidePhasing);
     }
 
     /// <summary>A lettered hexrow's place from west to east (A2.2): A is 0, Z 25, AA 26, and GG 32; null for anything else.</summary>

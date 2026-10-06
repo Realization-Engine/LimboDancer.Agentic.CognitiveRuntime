@@ -19,7 +19,7 @@ namespace LimboDancer.Domains.Asl.Play;
 public sealed partial class GamePlanner
 {
     // A vehicle's facing is a hexspine (D2.11), whose direction counterclockwise from east is 60 degrees per UnitFacing step.
-    private static double FacingDegrees(UnitFacing facing) => 60 * (int)facing;
+    private static double FacingDegrees(UnitFacing facing) => ScenarioA1Geometry.FacingDegrees((int)facing);
 
     private static FireDefinition? VehicleDefinition(UnitInstance vehicle) =>
         vehicle.Definition is { } definition ? FireReference.Value.Definitions.GetValueOrDefault(definition.Definition) : null;
@@ -858,20 +858,7 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>The fewest hexspines a VCA turns to point at a neighbor at a bearing: its VCA holds the two hexes 30 degrees either side.</summary>
-    private static int VcaTurns(UnitFacing facing, double bearing)
-    {
-        var turns = int.MaxValue;
-        foreach (var candidate in Enum.GetValues<UnitFacing>())
-        {
-            if (Math.Abs(Math.Abs(((bearing - FacingDegrees(candidate) + 540) % 360) - 180) - 30) < 1)
-            {
-                var steps = Math.Abs((int)candidate - (int)facing);
-                turns = Math.Min(turns, Math.Min(steps, 6 - steps));
-            }
-        }
-
-        return turns == int.MaxValue ? 6 : turns;
-    }
+    private static int VcaTurns(UnitFacing facing, double bearing) => ScenarioA1Geometry.VcaTurns((int)facing, bearing);
 
     private static string Mp(int halfMp) => halfMp % 2 == 0 ? (halfMp / 2).ToString(CultureInfo.InvariantCulture)
         : halfMp == 1 ? "½" : $"{(halfMp / 2).ToString(CultureInfo.InvariantCulture)}½";

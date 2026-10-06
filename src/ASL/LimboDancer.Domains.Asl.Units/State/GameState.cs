@@ -268,7 +268,7 @@ public sealed record GameState(
     public IReadOnlyList<string> StarshellAttempts { get; init; } = [];
 
     /// <summary>Whether the game is at night (E1.1; ruling R16.1).</summary>
-    public bool Night => Nvr is not null;
+    public bool Night => Rules.ScenarioA1Definitions.IsNight(Nvr);
 
     /// <summary>Whether an SSR names the weather <paramref name="kind"/> (E3; ruling R16.9), as <c>weather:kind</c>.</summary>
     public bool Weather(string kind) => SpecialRules.Contains("weather:" + kind, StringComparer.Ordinal);
@@ -283,14 +283,7 @@ public sealed record GameState(
     }
 
     /// <summary>The precipitation an SSR names at the start (E3.51, E3.71; ruling R16.9), or null.</summary>
-    public static string? PrecipitationRule(IReadOnlyList<string> rules)
-    {
-        ArgumentNullException.ThrowIfNull(rules);
-        return rules.Contains("weather:heavy-rain", StringComparer.Ordinal) ? "heavy-rain"
-            : rules.Contains("weather:rain", StringComparer.Ordinal) ? "rain"
-            : rules.Contains("weather:falling-snow", StringComparer.Ordinal) ? "snow"
-            : null;
-    }
+    public static string? PrecipitationRule(IReadOnlyList<string> rules) => Rules.ScenarioA1Definitions.PrecipitationRule(rules);
 
     /// <summary>The Fire Lanes in place (A9.22, A9.223; ruling R12.7); cleared at every phase change.</summary>
     public IReadOnlyList<FireLane> FireLanes { get; init; } = [];

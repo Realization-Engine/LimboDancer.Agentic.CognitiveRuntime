@@ -20,7 +20,7 @@ public sealed record SetupPlanScore(int Matching, int Hexes)
 public static class SetupPlanMatch
 {
     // The kinds a view shows as a counter of a stack; SW and Guns lie beneath their units and are not seen before play (A2.9).
-    private static readonly string[] UnitKinds = ["asl:squad", "asl:half-squad", "asl:crew", "asl:leader", "asl:hero", "asl:vehicle"];
+    private static readonly IReadOnlyList<string> UnitKinds = Rules.ScenarioA1Definitions.StackCounterKinds;
 
     /// <summary>
     /// A plan's footprint as the other side would see it: for each hex, the number of its units and Dummies on the map that are not hidden. SW, Guns,

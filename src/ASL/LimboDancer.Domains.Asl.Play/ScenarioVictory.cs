@@ -131,10 +131,10 @@ internal sealed record VictoryFold(int Count, string LastEventId, Dictionary<str
 /// </summary>
 public static class ScenarioVictory
 {
-    private static readonly string[] Mmc = ["asl:squad", "asl:half-squad", "asl:crew"];
+    private static readonly IReadOnlyList<string> Mmc = Rules.ScenarioA1Definitions.MmcKinds;
 
     /// <summary>A non-vehicular Gun's VP, even dismantled (A26.212; ruling R24.3).</summary>
-    public const int GunVp = 2;
+    public const int GunVp = Rules.ScenarioA1Definitions.GunVp;
 
     /// <summary>
     /// Evaluates a card's Victory Conditions over the states of a game, the last being the present. <paramref name="vp"/> gives a unit's VP (A26.211,

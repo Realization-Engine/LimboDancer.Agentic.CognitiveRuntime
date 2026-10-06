@@ -13,7 +13,7 @@ public static class Experience
 {
     public const string ClassAttribute = "asl:class";
 
-    private static readonly HashSet<string> InexperiencedClasses = new(StringComparer.Ordinal) { "green", "conscript" };
+    private static readonly IReadOnlySet<string> InexperiencedClasses = Rules.ScenarioA1Definitions.InexperiencedClasses;
 
     /// <summary>
     /// Whether an MMC is Inexperienced: unknown when its definition, its class, or a stacked leader's condition cannot
