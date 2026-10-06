@@ -354,6 +354,7 @@ public sealed record MoveStepVerdict(
     bool OffMap,
     bool RoadBonus,
     string Summary,
+    string PushSummary,
     IReadOnlyList<string> DummyWarning,
     IReadOnlyList<string> Pool,
     bool NeedsSelection,

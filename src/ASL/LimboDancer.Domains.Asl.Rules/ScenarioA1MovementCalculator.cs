@@ -702,6 +702,9 @@ public static class ScenarioA1MovementCalculator
         // the Dummies drawn below it stay. Ties are all drawn together.
         string[] pool = charge && realOnes.Length > 0 ? [.. revealing.OrderBy(unit => unit.Id, StringComparer.Ordinal).Select(unit => unit.Id)] : realOnes;
         var needsSelection = revealing.Count > 0 && realOnes.Length > 0 && pool.Length > 1;
+
+        // C10.3: a Gun's push plan takes the summary as it stands here, before the entry's and the reveal's sentences are added.
+        var pushSummary = summary;
         if (facts.Entering)
         {
             summary += " from off board, the stack's first MF expenditure (A2.51; ruling R25.3)";
@@ -717,7 +720,7 @@ public static class ScenarioA1MovementCalculator
                 : $"; only Dummies were at {facts.ToText}, and they are removed (A12.15)";
         }
 
-        return new MoveStepVerdict(revealing, realOnes, forcedBack, offMap, facts.RoadRate && !facts.Pushed && !forcedBack, summary, dummyWarning, pool, needsSelection,
+        return new MoveStepVerdict(revealing, realOnes, forcedBack, offMap, facts.RoadRate && !facts.Pushed && !forcedBack, summary, pushSummary, dummyWarning, pool, needsSelection,
             revealing.Count > 0 && facts.EnemiesThere.Count > 0, revealing.Count > 0 && facts.EnemiesThere.Count == 0, needsSelection ? "random-selection" : "residual");
     }
 

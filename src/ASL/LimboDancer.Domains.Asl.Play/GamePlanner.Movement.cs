@@ -322,7 +322,7 @@ public sealed partial class GamePlanner
 
         if (gate.Push)
         {
-            return PushPlan(scope, attemptId, expected, label, actor, state, pushed!, moved, halfMf / 2 - (entry.RoadRate ? 2 : 0), summary);
+            return PushPlan(scope, attemptId, expected, label, actor, state, pushed!, moved, halfMf / 2 - (entry.RoadRate ? 2 : 0), verdict.PushSummary);
         }
 
         string[] pool = [.. verdict.Pool];
