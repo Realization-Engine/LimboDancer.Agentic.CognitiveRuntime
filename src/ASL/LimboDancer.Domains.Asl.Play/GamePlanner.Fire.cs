@@ -55,27 +55,8 @@ public sealed partial class GamePlanner
 {
     private static readonly Lazy<ScenarioA1FireReference> FireReference = new(() => new ScenarioA1FirePackage().Reference);
 
-    // The VASL terrain names the Fire package's TEM admits (Terrain Chart p. 698; B1.1, B12, B13, B14, B15, B23). A road hex is
-    // Open Ground apart from its road (B1.11, p. 113).
-    private static readonly IReadOnlyDictionary<string, string> FireTerrain = new Dictionary<string, string>(StringComparer.Ordinal)
-    {
-        ["Open Ground"] = "open-ground",
-        ["Paved Road"] = "open-ground",
-        ["Dirt Road"] = "open-ground",
-        ["Brush"] = "brush",
-        ["Woods"] = "woods",
-        ["Orchard"] = "orchard",
-        ["Grain"] = "grain",
-
-        // Backlog pass 10 (ruling R10.1): marsh (B16) and rubble (B24).
-        ["Marsh"] = "marsh",
-        ["Wooden Rubble"] = "wooden-rubble",
-        ["Stone Rubble"] = "stone-rubble",
-    };
-
-    // The IFT results that are at least a NMC (A10.62).
-    private static readonly string[] AtLeastNmc =
-        ["NMC", "1MC", "2MC", "3MC", "4MC", "K/1", "K/2", "K/3", "K/4", "1KIA", "2KIA", "3KIA", "4KIA", "5KIA", "6KIA", "7KIA"];
+    // The VASL terrain names the Fire package's TEM admits (Terrain Chart p. 698; B1.1, B12, B13, B14, B15, B23), moved to Rules (pass 32.a).
+    private static readonly IReadOnlyDictionary<string, string> FireTerrain = ScenarioA1Definitions.FireTerrain;
 
     /// <summary>
     /// Why a unit may not fire or direct fire now, or null: a berserk unit never fires in its PFPh and directs no fire (A15.432, A15.42; ruling
@@ -98,8 +79,7 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>What fires in a firer's attack, each counted on its own (A8.3, A9.2): the unit when it uses its own FP, and each weapon it fires.</summary>
-    private static IEnumerable<string> FiringParts(FireFirer firer) =>
-        (firer.UsesInherentFp == false || firer.UnitId is null ? [] : new[] { firer.UnitId }).Concat(firer.Weapons?.Select(weapon => weapon.EquipmentId).OfType<string>() ?? []);
+    private static IEnumerable<string> FiringParts(FireFirer firer) => ScenarioA1ResultTables.FiringParts(firer);
 
     private GamePlan PlanFire(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label,
         string actor)
@@ -1086,36 +1066,32 @@ public sealed partial class GamePlanner
         }
     }
 
+    /// <summary>The conditions a vehicle result sets, as Rules decides them (pass 32.a), under Units' condition names; null when it sets none.</summary>
     private static Dictionary<string, ConditionState>? VehicleConditions(FireVehicleEffect effect)
     {
+        var changes = ScenarioA1ResultTables.VehicleConditions(effect);
+        if (changes.Count == 0)
+        {
+            return null;
+        }
+
+        // In the order Rules gives them: the record writes the conditions in the order they were set.
         var conditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
-        if (effect.Result == FireVehicleEffect.Immobilized)
+        foreach (var (condition, value) in changes)
         {
-            conditions[Conditions.Immobilized] = ConditionState.True;
-            conditions[Conditions.Motion] = ConditionState.False;
+            conditions[condition switch
+            {
+                VehicleCondition.Immobilized => Conditions.Immobilized,
+                VehicleCondition.Motion => Conditions.Motion,
+                VehicleCondition.Stunned => Conditions.Stunned,
+                VehicleCondition.StunRecovery => Conditions.StunRecovery,
+                VehicleCondition.Recalled => Conditions.Recalled,
+                VehicleCondition.ButtonedUp => Conditions.ButtonedUp,
+                _ => Conditions.Pinned,
+            }] = value ? ConditionState.True : ConditionState.False;
         }
 
-        switch (effect.CrewResult)
-        {
-            case FireVehicleEffect.Stunned:
-                conditions[Conditions.Stunned] = ConditionState.True;
-                conditions[Conditions.ButtonedUp] = ConditionState.True;
-                conditions[Conditions.Motion] = ConditionState.False;
-                break;
-            case FireVehicleEffect.Recalled:
-                // A Recall is a Stun that removes the vehicle at the end of the Player Turn (D5.341); every check reads either.
-                conditions[Conditions.Recalled] = ConditionState.True;
-                conditions[Conditions.Stunned] = ConditionState.False;
-                conditions[Conditions.StunRecovery] = ConditionState.False;
-                conditions[Conditions.ButtonedUp] = ConditionState.True;
-                conditions[Conditions.Motion] = ConditionState.False;
-                break;
-            case FireVehicleEffect.Pinned:
-                conditions[Conditions.Pinned] = ConditionState.True;
-                break;
-        }
-
-        return conditions.Count == 0 ? null : conditions;
+        return conditions;
     }
 
     private static string Marker(string counter) => counter switch
@@ -1130,40 +1106,7 @@ public sealed partial class GamePlanner
     /// Whether the attack could inflict at least a NMC on a target of a group (A10.62): over every DR, with the Cowering a
     /// doubles DR brings when no leader directs, on the group's column and with the attack's DRM.
     /// </summary>
-    private static Func<bool, bool> CouldCauseNmc(FireAttack facts, FireArithmetic arithmetic)
-    {
-        var reference = FireReference.Value;
-        var drm = (int)arithmetic.Drm.Sum(item => item.Value);
-        var directed = facts.Director is not null;
-        // Residual FP and an ordnance hit are never subject to Cowering (A8.224, C.2).
-        var residual = facts.FireKind == ScenarioA1FireCalculator.ResidualFire || facts.OrdnanceHit is not null;
-        bool Could(int? columnFp)
-        {
-            var column = columnFp is { } fp ? Array.IndexOf(ScenarioA1FireReference.ColumnFp, fp) : -1;
-            if (column < 0)
-            {
-                return false;
-            }
-
-            for (var first = 1; first <= 6; first++)
-            {
-                for (var second = 1; second <= 6; second++)
-                {
-                    var shifted = column - (!residual && !directed && first == second ? 1 : 0);
-                    if (shifted >= 0 && AtLeastNmc.Contains(reference.Result(first + second + drm, shifted)))
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        var known = Could(arithmetic.UnshiftedColumnFp);
-        var concealed = arithmetic.Concealed is { } second ? Could(second.UnshiftedColumnFp) : known;
-        return vsConcealed => vsConcealed ? concealed : known;
-    }
+    private static Func<bool, bool> CouldCauseNmc(FireAttack facts, FireArithmetic arithmetic) => ScenarioA1ResultTables.CouldCauseNmc(facts, arithmetic);
 
     private static Dictionary<string, T> Add<T>(IReadOnlyDictionary<string, T>? existing, string id, T value)
     {
@@ -1343,57 +1286,7 @@ public sealed partial class GamePlanner
     /// <c>out-of-range</c> gives way to a line for each firer and weapon, with its range, its Normal Range, and how far it fires. The code stays.
     /// A refusal records nothing, so no recorded game reads this.
     /// </summary>
-    private static (string[] Reasons, IReadOnlyList<string> Named) RangeNamed(FireAttack part, string[] reasons)
-    {
-        const string code = "asl.a1.fire.out-of-range";
-        if (!reasons.Any(reason => reason.StartsWith(code, StringComparison.Ordinal)) || part.TargetLocationId is not { } target)
-        {
-            return (reasons, []);
-        }
-
-        var named = new List<string>();
-        foreach (var firer in part.Firers ?? [])
-        {
-            if ((firer.Range ?? part.Range) is not { } range || firer.LocationId is not { } at)
-            {
-                continue;
-            }
-
-            var own = at == target;
-            var levelAbove = firer.TargetLevelAbove ?? part.TargetLevelAbove ?? 0;
-            void Say(string who, FireDefinition? definition, bool wounded)
-            {
-                if (definition is null || FireRange.Band(definition, range, own, levelAbove, wounded) is not { } reading)
-                {
-                    return;
-                }
-
-                if (reading.Band == FireRangeBand.Out)
-                {
-                    named.Add($"{code}: {who} in {at} is {range} {(range == 1 ? "hex" : "hexes")} from {target}; its Normal Range is {reading.NormalRange}, so it fires to {reading.Limit} "
-                        + (reading.Limit == reading.NormalRange ? "(C13.24: an ATR has no Long Range)" : "(A7.22)"));
-                }
-                else if (reading.Band == FireRangeBand.SameHexOtherLevel)
-                {
-                    named.Add($"{code}: {who} in {at} fires at {target}, another level of its own hex, which is not built (A7.21)");
-                }
-            }
-
-            if (firer.UsesInherentFp != false)
-            {
-                Say(firer.UnitId!, FireReference.Value.Definitions.GetValueOrDefault(firer.DefinitionId ?? string.Empty), firer.Wounded == true);
-            }
-
-            foreach (var weapon in firer.Weapons ?? [])
-            {
-                Say($"{weapon.EquipmentId} of {firer.UnitId}", FireReference.Value.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty), false);
-            }
-        }
-
-        named = [.. named.Distinct(StringComparer.Ordinal)];
-        return named.Count == 0 ? (reasons, [])
-            : ([.. reasons.SelectMany(reason => reason.StartsWith(code, StringComparison.Ordinal) ? named : [reason]).Distinct(StringComparer.Ordinal)], named);
-    }
+    private static (string[] Reasons, IReadOnlyList<string> Named) RangeNamed(FireAttack part, string[] reasons) => ScenarioA1ResultTables.RangeNamed(part, reasons);
 
     /// <summary>
     /// The map's facts of an attack: for each firer's Location, its range, level, and LOS and its attributed Hindrance; the

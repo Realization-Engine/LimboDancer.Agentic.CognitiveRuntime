@@ -159,7 +159,7 @@ public sealed record SmokeAttempt(string Unit, BoardLocation Target, string Roll
         get; init;
     }
 
-    public bool Placed => Dr + (Cx ? 1 : 0) <= Exponent;
+    public bool Placed => Rules.ScenarioA1ResultTables.SmokePlaced(Dr, Cx, Exponent);
 }
 
 /// <summary>The leader directing a SW's To Hit DR this phase (A7.53).</summary>
@@ -285,14 +285,7 @@ public sealed record VehicleCheckRolled(string Vehicle, string Check, string Rol
     }
 
     /// <summary>The result a check's Final DR or dr gives (D2.5, D2.51, D8.21, D8.3).</summary>
-    public static string For(string check, int final) => check switch
-    {
-        Bog => final >= 12 ? Bogged : Passed,
-        Esb => final >= 12 ? Immobilized : Passed,
-        Mechanical => final >= 12 ? Immobilized : Passed,
-        BogRemoval => final <= 4 ? Freed : final == 5 ? Mired : Immobilized,
-        _ => Passed,
-    };
+    public static string For(string check, int final) => Rules.ScenarioA1ResultTables.VehicleCheck(check, final);
 }
 
 /// <summary>
@@ -331,8 +324,7 @@ public sealed record RoutInterdicted(string Unit, BoardLocation At, string Roll,
     }
 
     /// <summary>The result of an Interdiction NMC (A10.53, A10.31): an Original 12 eliminates, a Final DR above the Morale Level reduces, equal pins.</summary>
-    public static string For(int original, int final, int morale) =>
-        original == 12 ? Eliminated : final > morale ? Reduced : final == morale ? Pinned : Passed;
+    public static string For(int original, int final, int morale) => Rules.ScenarioA1ResultTables.RoutInterdiction(original, final, morale);
 }
 
 /// <summary>

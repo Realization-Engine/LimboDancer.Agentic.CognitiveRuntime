@@ -56,7 +56,7 @@ public sealed record SideState(string Id, string Nationality, int? Elr, int? San
     }
 
     /// <summary>The Axis Minor nations (A25.8).</summary>
-    public static IReadOnlyList<string> AxisMinorNations { get; } = ["romanian", "hungarian", "slovakian", "croatian", "bulgarian"];
+    public static IReadOnlyList<string> AxisMinorNations { get; } = Rules.ScenarioA1Definitions.AxisMinorNations;
 
     /// <summary>
     /// Whether Hungarians fight Romanians in a game with these sides (A25.8, A25.82; ruling R27.1): No Quarter is then in effect for both.
@@ -135,7 +135,7 @@ public sealed record MapInPlay(string Reference, string Version, IReadOnlyList<P
 /// <summary>The phases of a Player Turn (A3.1 to A3.8, p. 47).</summary>
 public static class Phases
 {
-    public static IReadOnlyList<string> All { get; } = ["rph", "pfph", "mph", "dfph", "afph", "rtph", "aph", "ccph"];
+    public static IReadOnlyList<string> All { get; } = Rules.ScenarioA1Definitions.Phases;
 }
 
 /// <summary>What is known about one condition of an instance (ASL-UNIT-023).</summary>

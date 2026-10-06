@@ -21,16 +21,7 @@ public static class LiveOrdnance
     /// The ammunition a Gun or MA of this definition may carry (C8.1): AP and HE unless its listing denies them, APCR and HEAT where it lists a
     /// Depletion Number. The year and depletion still decide each shot.
     /// </summary>
-    public static IReadOnlyList<string> Ammunitions(string definition)
-    {
-        if (!Reference.Value.Guns.TryGetValue(definition, out var gun))
-        {
-            return [];
-        }
-
-        bool Lists(char letter) => gun.SpecialAmmo.Any(item => item.Length > 1 && item[0] == letter && char.IsDigit(item[1]));
-        return [.. new[] { ("ap", !gun.NoAp), ("apcr", Lists('A')), ("heat", Lists('H')), ("he", !gun.NoHe) }.Where(item => item.Item2).Select(item => item.Item1)];
-    }
+    public static IReadOnlyList<string> Ammunitions(string definition) => ScenarioA1Definitions.Ammunitions(definition);
 
     /// <summary>A LATW definition's type (C13.1): <c>pf</c>, <c>psk</c>, or <c>atr</c>; null for any other.</summary>
     public static string? LatwType(string definition) => Reference.Value.Guns.GetValueOrDefault(definition)?.LatwType;

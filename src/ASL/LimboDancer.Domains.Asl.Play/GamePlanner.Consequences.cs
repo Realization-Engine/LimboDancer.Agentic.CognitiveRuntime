@@ -43,14 +43,13 @@ public sealed record RoutLoad(int Ipc, IReadOnlyList<RoutLoadItem> Carried, IRea
     public int Total => Carried.Sum(item => item.Pp);
 
     /// <summary>Whether the unit carries more than its IPC, and so leaves a SW before it routs.</summary>
-    public bool Laden => Total > Ipc;
+    public bool Laden => ScenarioA1ResultTables.RoutLaden(Total, Ipc);
 
     /// <summary>
     /// The best loads that differ to a player (the table player, pass 31d): two that differ only in which of two like counters is kept are one
     /// choice, since a SW has no name of its own. The first of each is given.
     /// </summary>
-    public IReadOnlyList<IReadOnlyList<string>> Choices =>
-        [.. BestLoads.GroupBy(best => string.Join("|", best.Select(id => Carried.First(item => item.Weapon == id).Kind).Order(StringComparer.Ordinal)), StringComparer.Ordinal).Select(group => group.First())];
+    public IReadOnlyList<IReadOnlyList<string>> Choices => ScenarioA1ResultTables.RoutLoadChoices(BestLoads, id => Carried.First(item => item.Weapon == id).Kind);
 
     public int Pp(string weapon) => Carried.FirstOrDefault(item => item.Weapon == weapon)?.Pp ?? 0;
 
@@ -104,33 +103,5 @@ public sealed partial class GamePlanner
     /// What an attack does beyond its target (play test P-12, P-13): every firer's LOS is blocked, so the shot is spent for nothing (A6.1), or the
     /// target Location holds units of the firing side, in a Melee or as Guards of prisoners, which the attack hits too (A11.15, A20.54).
     /// </summary>
-    private static IEnumerable<string> FireWarnings(FireAttack facts)
-    {
-        if (facts.Firers is { Count: > 0 } firers && firers.All(firer => (firer.Los ?? facts.Los)?.Blocked == true))
-        {
-            yield return $"play.fire-los-blocked: no firer has a LOS to {facts.TargetLocationId}, so the attack has no effect and its firers are still marked as having fired (A6.11)";
-        }
-
-        // Referee, pass 31: the attack's own targets say who is hit; Defensive First Fire attacks only the moving stack (A8.1), so the firing side's
-        // other units in the Location are not among them.
-        // Pass 31d (design D6; A20.54, read in the PDF, p. 87): the firing side's captured units are said apart from its units in a Melee, with what
-        // the rule does to them. The play test confirmed such an attack twice without reading a line that named no prisoner.
-        string[] own = [.. (facts.Targets ?? []).Where(target => target.Friendly == true && target.Dummy != true && target.UnitId is not null && target.GuardId is null)
-            .Select(target => target.UnitId!).Order(StringComparer.Ordinal)];
-        if (own.Length > 0)
-        {
-            yield return $"play.fire-own-units: {string.Join(", ", own)} of the firing side {(own.Length == 1 ? "is" : "are")} in {facts.TargetLocationId} and {(own.Length == 1 ? "is" : "are")} attacked too (A11.15, A20.54)";
-        }
-
-        string[] captured = [.. (facts.Targets ?? []).Where(target => target.Friendly == true && target.Dummy != true && target.UnitId is not null && target.GuardId is not null)
-            .Select(target => target.UnitId!).Order(StringComparer.Ordinal)];
-        if (captured.Length > 0)
-        {
-            yield return captured.Length == 1
-                ? $"play.fire-own-units: {captured[0]}, a captured unit of the firing side, is in {facts.TargetLocationId} and is attacked with its Guard, as if in a Melee: if it fails a MC it is Reduced, "
-                    + "and if its own side's fire eliminates it, it counts double for the Victory Conditions (A20.54)"
-                : $"play.fire-own-units: {string.Join(", ", captured)}, captured units of the firing side, are in {facts.TargetLocationId} and are attacked with their Guard, as if in a Melee: "
-                    + "one that fails a MC is Reduced, and one that its own side's fire eliminates counts double for the Victory Conditions (A20.54)";
-        }
-    }
+    private static IEnumerable<string> FireWarnings(FireAttack facts) => ScenarioA1ResultTables.FireWarnings(facts);
 }

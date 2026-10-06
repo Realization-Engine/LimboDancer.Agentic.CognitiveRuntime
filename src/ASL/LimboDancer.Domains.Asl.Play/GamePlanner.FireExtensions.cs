@@ -90,17 +90,7 @@ public sealed partial class GamePlanner
     /// Whether LOS entries Encircle a hex (A7.7; ruling R12.11): two opposite hexspines, two opposite hexsides (exactly three vertices between them both
     /// ways), or three hexsides no two of which are adjacent.
     /// </summary>
-    internal static bool Encircles(IReadOnlyCollection<int> positions)
-    {
-        var set = positions.ToHashSet();
-        if (set.Any(position => set.Contains((position + 6) % 12)))
-        {
-            return true;
-        }
-
-        var sides = set.Where(position => position % 2 == 1).Select(position => (position - 1) / 2).ToHashSet();
-        return sides.Any(side => sides.Contains((side + 2) % 6) && sides.Contains((side + 4) % 6));
-    }
+    internal static bool Encircles(IReadOnlyCollection<int> positions) => ScenarioA1Geometry.Encircles(positions);
 
     /// <summary>
     /// An attack's share of an Encirclement (A7.7; ruling R12.11): the units firing inherent FP or a SW at no more than Normal Range, when its FP could

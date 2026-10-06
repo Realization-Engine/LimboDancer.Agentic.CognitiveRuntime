@@ -68,7 +68,7 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>The two VCAs of a vehicle entering across a hexside: its VCA holds the hex it enters, so it faces a hexspine 30 degrees either side of its travel (D2.11).</summary>
-    private static UnitFacing[] EntryFacings(HexsideDirection side) => [(UnitFacing)((10 - (int)side) % 6), (UnitFacing)((11 - (int)side) % 6)];
+    private static UnitFacing[] EntryFacings(HexsideDirection side) => [.. Rules.ScenarioA1Geometry.EntryFacings((int)side).Select(facing => (UnitFacing)facing)];
 
     /// <summary>
     /// The entries a vehicle waiting off board may make in this MPh (A2.5, A2.52, D2.4; ruling R26.1), each hex of its entry open to it this Game Turn with

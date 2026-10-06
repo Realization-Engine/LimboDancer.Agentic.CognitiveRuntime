@@ -22,64 +22,33 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.invalid-arguments: a SMOKE placement names its Location");
         }
 
-        // A24.1: a squad of the moving stack with a Smoke Placement Exponent, once per MPh, not berserk (A15.43).
-        if (movers.FirstOrDefault(unit => unit.Id == placerId) is not { } placer || placer.Kind != "asl:squad" || Is(placer, Conditions.Berserk)
-            || SmokeExponent(placer) is not { } exponent)
-        {
-            return Refused(scope, label, expected, $"play.smoke-placer: {placerId} is not a squad of the moving stack with a Smoke Placement Exponent (A24.1)");
-        }
-
-        if (state.SmokeAttempts.Contains(placer.Id, StringComparer.Ordinal))
-        {
-            return Refused(scope, label, expected, $"play.smoke-once: {placer.Id} has already attempted to place SMOKE this MPh (A24.1)");
-        }
-
-        if (state.ResidualFire.Any(item => item.Location == from))
-        {
-            return Refused(scope, label, expected, "play.smoke-residual: spending MF in a Residual FP Location to place SMOKE is not reviewed (A8.2)");
-        }
-
-        // E3.53, E3.734 (referee, pass 16): in rain, Mud, or Deep Snow the only SMOKE is a Blaze's or SMOKE placed inside a building.
-        if ((state.Precipitation is "rain" or "heavy-rain" || state.Weather("mud") || state.Weather("deep-snow"))
-            && !(ReadLocation(state, target) is { } smokeRead && TerrainKey(smokeRead) is "wooden-building" or "stone-building"))
-        {
-            return Refused(scope, label, expected, "play.smoke-weather: in rain, Mud, or Deep Snow no SMOKE is placed but inside a building (E3.53, E3.734)");
-        }
-
-        // A24.1 (ruling R9.5): the own Location for 1 MF, or an ADJACENT Location at its level for 2 MF; no other level, water, or marsh.
-        int halfMf;
-        if (target == from)
-        {
-            halfMf = 2;
-        }
-        else
-        {
-            var (fromRead, toRead, adjacent, crossed) = Step(state, from, target);
-            if (fromRead is null || toRead is null || !adjacent || crossed is null || fromRead.Hex.BaseLevel + fromRead.Level.Level != toRead.Hex.BaseLevel + toRead.Level.Level
-                || target.Level != from.Level || crossed.Cliff || TerrainKey(toRead) is not { } terrain || !EntryHalfMf.ContainsKey(terrain))
+        // Pass 32.a (the worked action): the planner reads the facts and ScenarioA1SmokeCalculator decides, in the order the checks had here.
+        var placer = movers.FirstOrDefault(unit => unit.Id == placerId);
+        var targetRead = ReadLocation(state, target);
+        var (fromRead, toRead, adjacent, crossed) = target == from ? (null, null, false, null) : Step(state, from, target);
+        var facts = new SmokeAttemptFacts(placerId, placer is not null, placer?.Kind == "asl:squad", placer is not null && Is(placer, Conditions.Berserk),
+            placer is null ? null : SmokeExponent(placer), placer is not null && state.SmokeAttempts.Contains(placer.Id, StringComparer.Ordinal),
+            state.ResidualFire.Any(item => item.Location == from), state.Precipitation, state.Weather("mud"), state.Weather("deep-snow"),
+            targetRead is null ? null : TerrainKey(targetRead), toRead is null ? null : TerrainKey(toRead), target.ToString(), target == from,
+            fromRead is not null && toRead is not null && adjacent && crossed is not null,
+            fromRead is not null && toRead is not null && fromRead.Hex.BaseLevel + fromRead.Level.Level == toRead.Hex.BaseLevel + toRead.Level.Level,
+            target.Level == from.Level, crossed?.Cliff == true, assault,
+            [.. movers.Select(unit =>
             {
-                return Refused(scope, label, expected, $"play.smoke-target: SMOKE grenades go in the squad's Location or an ADJACENT reviewed Location at its level, not {target} (A24.1; ruling R9.5)");
-            }
-
-            halfMf = 4;
-        }
-
-        foreach (var unit in movers)
+                var extra = doubleTime ? (unit.MfSpent == 0 && !unit.HalfMfSpent ? 2 : 1) : unit.DoubleTimeMf;
+                var exhausted = doubleTime || Is(unit, Conditions.Cx);
+                return new SmokeMoverFacts(unit.Id, MfAllotment(state, unit, extra, exhausted), MfAllotment(state, unit, 0, exhausted), (unit.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0));
+            })]);
+        var verdict = ScenarioA1SmokeCalculator.Plan(facts);
+        if (verdict.Refusal is { } refusal)
         {
-            var extra = doubleTime ? (unit.MfSpent == 0 && !unit.HalfMfSpent ? 2 : 1) : unit.DoubleTimeMf;
-            var exhausted = doubleTime || Is(unit, Conditions.Cx);
-            if (MfAllotment(state, unit, extra, exhausted) is not { } allowance || MfAllotment(state, unit, 0, exhausted) is not { } plain)
-            {
-                return Refused(scope, label, expected, $"play.move-mf: {unit.Id} has no MF allowance the catalog decides");
-            }
-
-            var spent = (unit.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0);
-            var left = (allowance * 2) - spent;
-            if (left < halfMf || (assault && (plain * 2) - spent <= halfMf))
-            {
-                return Refused(scope, label, expected, $"play.move-mf: {unit.Id} has {left / 2m} MF left, and the SMOKE attempt costs {halfMf / 2m} (A24.1, A4.61)");
-            }
+            return Refused(scope, label, expected, refusal);
         }
+
+        // The verdict passed, so the placer is a squad of the stack with an exponent.
+        var halfMf = verdict.HalfMf;
+        var exponent = facts.Exponent!.Value;
+        var squad = placer!;
 
         var step = (current?.Step ?? 0) + 1;
         var package = ScenarioA1FirePackage.Identity.ToString();
@@ -90,7 +59,7 @@ public sealed partial class GamePlanner
             var rollId = $"{attemptId}-roll-1";
             events.Add(Event(scope, attemptId, 1, expected, "dice-rolled", new DiceRolled(rollId, "smoke-placement", 1, 6, drawn.Values, DiceRolled.SystemSource, actor), package, null));
             // A4.51 (table player, pass 9): +1 to the dr of a CX squad, or one Double Timing with this step.
-            var attempt = new SmokeAttempt(placer.Id, target, rollId, drawn.Values[0], exponent) { Cx = doubleTime || Is(placer, Conditions.Cx) };
+            var attempt = new SmokeAttempt(squad.Id, target, rollId, drawn.Values[0], exponent) { Cx = doubleTime || Is(squad, Conditions.Cx) };
             events.Add(Event(scope, attemptId, 2, expected, "movement-step", new MovementStepped(ids, from, halfMf, current?.Assault ?? assault, step)
             {
                 DoubleTime = doubleTime,
@@ -106,7 +75,7 @@ public sealed partial class GamePlanner
         }
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-            [$"play.smoke: {placer.Id} attempts to place SMOKE grenades in {target} for {halfMf / 2m} MF of the stack; a dr of {exponent} or less{(doubleTime || Is(placer, Conditions.Cx) ? " (+1 while CX)" : string.Empty)} places a +2 SMOKE counter until the end of this MPh, a 6 ends {placer.Id}'s MPh (A24.1, A24.11)"])
+            [$"play.smoke: {squad.Id} attempts to place SMOKE grenades in {target} for {halfMf / 2m} MF of the stack; a dr of {exponent} or less{(doubleTime || Is(squad, Conditions.Cx) ? " (+1 while CX)" : string.Empty)} places a +2 SMOKE counter until the end of this MPh, a 6 ends {squad.Id}'s MPh (A24.1, A24.11)"])
         {
             Roll = new PlannedRoll("smoke", Build),
             FirstEventId = EventId(attemptId, 1),

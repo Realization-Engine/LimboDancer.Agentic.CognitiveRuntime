@@ -15,19 +15,8 @@ namespace LimboDancer.Domains.Asl.Play;
 /// </summary>
 public sealed partial class GamePlanner
 {
-    // The Terrain Chart's MP Entrance Cost (p. 698) in half MP, by movement type: Fully Tracked, Halftrack, Truck (ruling R11.7).
-    private static readonly Dictionary<(string MovementType, string Terrain), int> VehicleTerrainHalfMp = new()
-    {
-        [("fully-tracked", "open-ground")] = 2,
-        [("half-tracked", "open-ground")] = 2,
-        [("truck", "open-ground")] = 8,
-        [("fully-tracked", "grain")] = 2,
-        [("half-tracked", "grain")] = 2,
-        [("truck", "grain")] = 10,
-        [("fully-tracked", "brush")] = 4,
-        [("half-tracked", "brush")] = 4,
-        [("truck", "brush")] = 12,
-    };
+    // The Terrain Chart's MP Entrance Cost (p. 698) in half MP, by movement type (ruling R11.7), moved to Rules (pass 32.a).
+    private static readonly IReadOnlyDictionary<(string MovementType, string Terrain), int> VehicleTerrainHalfMp = ScenarioA1ResultTables.VehicleTerrainHalfMp;
 
     /// <summary>
     /// One vehicle entry (rulings R11.1, R11.2, R11.5, R11.7, R11.9): its cost in half MP, whether it takes the whole printed allotment (ALL), the Bog DR

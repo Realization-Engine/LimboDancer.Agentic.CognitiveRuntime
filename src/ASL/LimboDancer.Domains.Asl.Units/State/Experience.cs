@@ -13,7 +13,7 @@ public static class Experience
 {
     public const string ClassAttribute = "asl:class";
 
-    private static readonly HashSet<string> InexperiencedClasses = new(StringComparer.Ordinal) { "green", "conscript" };
+    private static readonly IReadOnlySet<string> InexperiencedClasses = Rules.ScenarioA1Definitions.InexperiencedClasses;
 
     /// <summary>
     /// Whether an MMC is Inexperienced: unknown when its definition, its class, or a stacked leader's condition cannot
@@ -25,42 +25,17 @@ public static class Experience
         ArgumentNullException.ThrowIfNull(unit);
         ArgumentNullException.ThrowIfNull(catalogs);
         ArgumentNullException.ThrowIfNull(vocabulary);
-        if (!vocabulary.IsA(unit.Kind, "asl:mmc"))
-        {
-            return ConditionState.Inapplicable;
-        }
 
+        // The facts (pass 32.a): the kind, the current definition's class and whether the vocabulary knows it, the Location, and the same-side leaders there.
         var @class = unit.Definition is { } reference
             ? catalogs.FirstOrDefault(catalog => catalog.Identity == reference.Catalog)?.Definition(reference.Definition)?.Class
             : null;
-        if (@class is null || !vocabulary.TryGetAttribute(ClassAttribute, out var attribute) || attribute.Member(@class) is null)
-        {
-            return ConditionState.Unknown;
-        }
-
-        if (!InexperiencedClasses.Contains(@class))
-        {
-            return ConditionState.False;
-        }
-
-        if (@class == "conscript")
-        {
-            return ConditionState.True;
-        }
-
-        // A19.3: a Green MMC stacked with an unbroken leader is exempt.
-        if (state.Location(unit.Id) is not { } location)
-        {
-            return ConditionState.True;
-        }
-
-        var leaders = state.At(location.Location).OfType<UnitInstance>()
+        var known = @class is not null && vocabulary.TryGetAttribute(ClassAttribute, out var attribute) && attribute.Member(@class) is not null;
+        var location = state.Location(unit.Id);
+        Rules.RuleState[] leaders = location is null ? [] : [.. state.At(location.Location).OfType<UnitInstance>()
             .Where(item => item.Id != unit.Id && item.Side == unit.Side && vocabulary.IsA(item.Kind, "asl:leader"))
-            .Select(leader => GameState.Condition(leader, Conditions.Broken))
-            .ToArray();
-        return leaders.Contains(ConditionState.False) ? ConditionState.False
-            : leaders.Contains(ConditionState.Unknown) ? ConditionState.Unknown
-            : ConditionState.True;
+            .Select(leader => GameState.RuleStateOf(GameState.Condition(leader, Conditions.Broken)))];
+        return GameState.ConditionStateOf(Rules.ScenarioA1Experience.Inexperienced(vocabulary.IsA(unit.Kind, "asl:mmc"), @class, known, location is not null, leaders));
     }
 
     /// <summary>
@@ -69,12 +44,7 @@ public static class Experience
     /// it, and conveyances, are not modelled.
     /// </summary>
     public static int? MfAllowance(GameState state, UnitInstance unit, IReadOnlyList<UnitCatalog> catalogs, UnitVocabulary vocabulary) =>
-        Inexperienced(state, unit, catalogs, vocabulary) switch
-        {
-            ConditionState.True => 3,
-            ConditionState.False => 4,
-            _ => null,
-        };
+        Rules.ScenarioA1Experience.MfAllowance(GameState.RuleStateOf(Inexperienced(state, unit, catalogs, vocabulary)));
 
     /// <summary>
     /// The MF allotment of a Good Order unit moving hex by hex (unit step 22): a MMC's as <see cref="MfAllowance"/> gives,
@@ -86,14 +56,7 @@ public static class Experience
     {
         ArgumentNullException.ThrowIfNull(unit);
         ArgumentNullException.ThrowIfNull(vocabulary);
-
-        // A15.431: a berserk unit has eight MF, a wounded one still three (A17.2).
-        if (GameState.Condition(unit, Conditions.Berserk) == ConditionState.True)
-        {
-            return GameState.Condition(unit, Conditions.Wounded) == ConditionState.True ? 3 : 8;
-        }
-
-        return !vocabulary.IsA(unit.Kind, "asl:smc") ? MfAllowance(state, unit, catalogs, vocabulary)
-            : GameState.Condition(unit, Conditions.Wounded) == ConditionState.True ? 3 : 6;
+        return Rules.ScenarioA1Experience.MoveAllowance(GameState.Condition(unit, Conditions.Berserk) == ConditionState.True,
+            GameState.Condition(unit, Conditions.Wounded) == ConditionState.True, vocabulary.IsA(unit.Kind, "asl:smc"), () => MfAllowance(state, unit, catalogs, vocabulary));
     }
 }

@@ -21,11 +21,11 @@ public sealed partial class GamePlanner
     private sealed record InfantryEntry(int HalfMf, string Terrain, bool RoadRate, bool AllMf, bool MinimumMoveOnly, bool LevelChange);
 
     /// <summary>The angle between two bearings in degrees, 0 to 180.</summary>
-    private static double AngleBetween(double one, double two) => Math.Abs(((one - two) % 360 + 540) % 360 - 180);
+    private static double AngleBetween(double one, double two) => ScenarioA1Geometry.AngleBetween(one, two);
 
-    private static bool IsBuildingTerrain(string? key) => key is "wooden-building" or "stone-building";
+    private static bool IsBuildingTerrain(string? key) => ScenarioA1Definitions.IsBuildingTerrain(key);
 
-    private static bool IsRubbleTerrain(string? key) => key is "wooden-rubble" or "stone-rubble";
+    private static bool IsRubbleTerrain(string? key) => ScenarioA1Definitions.IsRubbleTerrain(key);
 
     /// <summary>The wall or hedge on a hexside, as <c>wall</c> or <c>hedge</c>; null for none; <c>other</c> for hexside terrain the pass does not review.</summary>
     private static string? WallOn(HexsideFacts? side) => side?.HexsideTerrain?.Name switch

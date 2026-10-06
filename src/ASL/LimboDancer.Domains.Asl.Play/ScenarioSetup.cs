@@ -77,7 +77,7 @@ public sealed record SetupGroup(string Side, string Id, string Name, int Order, 
 public sealed record SetupReport(IReadOnlyList<SetupGroup> Groups, int? CurrentOrder, IReadOnlyList<string> Reasons)
 {
     /// <summary>Every group that sets up on board has finished, and every entering counter waits off board (rulings R19.2, R20.5).</summary>
-    public bool Complete => Groups.All(group => (!group.SetsUp || group.Complete) && group.OffBoard.Count == 0);
+    public bool Complete => ScenarioA1ResultTables.SetupComplete(Groups.Select(group => (group.SetsUp, group.Complete, group.OffBoard.Count)));
 }
 
 /// <summary>
@@ -88,10 +88,10 @@ public sealed record SetupReport(IReadOnlyList<SetupGroup> Groups, int? CurrentO
 /// </summary>
 public static class ScenarioSetup
 {
-    private static readonly string[] SmcKinds = ["asl:leader", "asl:hero"];
+    private static readonly IReadOnlyList<string> SmcKinds = ScenarioA1Definitions.SmcKinds;
 
     // Ruling R23.5: the kinds that may set up hidden.
-    private static readonly string[] InfantryKinds = ["asl:squad", "asl:half-squad", "asl:crew", "asl:leader", "asl:hero"];
+    private static readonly IReadOnlyList<string> InfantryKinds = ScenarioA1Definitions.HiddenSetupKinds;
 
     /// <summary>The order a group sets up in (R17.12): its own, else 1 for the side that sets up first and 2 for the other.</summary>
     public static int OrderOf(ScenarioCard card, ScenarioCardSide side, ScenarioCardGroup group)
@@ -99,7 +99,7 @@ public static class ScenarioSetup
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(side);
         ArgumentNullException.ThrowIfNull(group);
-        return group.SetupOrder ?? (side.Side == card.Turns.SetsUpFirst ? 1 : 2);
+        return ScenarioA1ResultTables.SetupOrder(group.SetupOrder, side.Side == card.Turns.SetsUpFirst);
     }
 
     /// <summary>
@@ -111,8 +111,8 @@ public static class ScenarioSetup
         ArgumentNullException.ThrowIfNull(group);
         ArgumentNullException.ThrowIfNull(line);
         var entries = group.Areas.Where(area => area.Kind == "entry").OrderBy(area => area.Turn).ToArray();
-        return line.Area is { } named ? entries.FirstOrDefault(area => area.Id == named)
-            : entries.Length > 0 && (group.Areas.Any(area => area.Counters is not null) || group.Areas.All(area => area.Kind == "entry")) ? entries[0] : null;
+        return ScenarioA1ResultTables.EntryAreaIndex([.. entries.Select(area => area.Id)], line.Area, group.Areas.Any(area => area.Counters is not null),
+            group.Areas.All(area => area.Kind == "entry")) is { } index ? entries[index] : null;
     }
 
     /// <summary>Whether a Location lies in a setup area of the card (R17.8, R19.3): a building's hexes, or a board's hex numbers.</summary>
@@ -422,7 +422,7 @@ public static class ScenarioSetup
     /// Whether a nationality's squads may Deploy (A25.2; ruling R31.4): every nationality the game has but the Russian. One list for play and for
     /// setup. A Guard of prisoners (A20.5) and a temporary crew (A21.22) are the rule's exceptions and are not built.
     /// </summary>
-    public static bool MayDeploy(string? nationality) => nationality != "russian";
+    public static bool MayDeploy(string? nationality) => ScenarioA1Definitions.MayDeploy(nationality);
 
     private static (List<SetupNeed> Remaining, List<string> Reasons, int Deployed, List<SetupNeed> OffBoard, Dictionary<int, (int Squads, int Deployed)> Entering) Fill(
         ScenarioCard card, ScenarioCardGroup group, string id, IReadOnlyList<SetupCounter> mine, Func<string, string?> halfSquadOf, Dictionary<string, int> pool)
@@ -549,18 +549,8 @@ public static class ScenarioSetup
     /// The squad-equivalents a side may set up hidden (A12.3; ruling R23.5): the largest n of its SSR tokens <c>hip:&lt;side&gt;:&lt;n&gt;</c>; null when it has
     /// none.
     /// </summary>
-    public static decimal? HipAllowance(IEnumerable<string> tokens, string side)
-    {
-        ArgumentNullException.ThrowIfNull(tokens);
-        var prefix = $"hip:{side}:";
-        return tokens.Where(token => token.StartsWith(prefix, StringComparison.Ordinal))
-            .Select(token => decimal.TryParse(token[prefix.Length..], System.Globalization.NumberStyles.AllowDecimalPoint, System.Globalization.CultureInfo.InvariantCulture,
-                out var count) ? count : (decimal?)null)
-            .Where(count => count > 0).Max();
-    }
+    public static decimal? HipAllowance(IEnumerable<string> tokens, string side) => ScenarioA1Definitions.HipAllowance(tokens, side);
 
     /// <summary>Concealment Terrain for setup (A12.12, as the planner reads it): grain only June to September.</summary>
-    public static bool ConcealmentTerrain(string terrain, int? month) =>
-        terrain is "brush" or "woods" or "orchard" or "marsh" or "wooden-building" or "stone-building" or "wooden-rubble" or "stone-rubble"
-        || (terrain == "grain" && month is >= 6 and <= 9);
+    public static bool ConcealmentTerrain(string terrain, int? month) => ScenarioA1Definitions.IsConcealmentTerrain(terrain, month);
 }

@@ -18,26 +18,8 @@ public sealed partial class GamePlanner
     /// The Known units a shot leaves acquired (C6.5, C6.51): the target units that were Known or lost "?" to the shot and survived it, under
     /// the ids their Reduction or Replacement gives them; empty when there are none, and the Acquisition then stays on the Location.
     /// </summary>
-    private static List<string> AcquiredUnits(OrdnanceShot facts, IReadOnlyList<FireUnitEffect> effects, string attemptId)
-    {
-        var units = new List<string>();
-        foreach (var target in facts.Hit?.Targets ?? [])
-        {
-            if (target.Dummy == true)
-            {
-                continue;
-            }
-
-            var effect = effects.FirstOrDefault(item => item.UnitId == target.UnitId);
-            var known = !(target.Concealed == true || target.Hidden == true) || effect?.ConcealmentLost == true;
-            if (known && effect?.Eliminated != true)
-            {
-                units.Add(effect is not null && effect.FinalDefinitionId != effect.DefinitionId ? $"{attemptId}-{target.UnitId}" : target.UnitId!);
-            }
-        }
-
-        return units;
-    }
+    private static List<string> AcquiredUnits(OrdnanceShot facts, IReadOnlyList<FireUnitEffect> effects, string attemptId) =>
+        ScenarioA1ResultTables.AcquiredUnits(facts, effects, attemptId);
 
     /// <summary>
     /// The Acquisition events a commit calls for after it moved acquired units (ruling R5.13): a unit that entered a Location out of its Gun's

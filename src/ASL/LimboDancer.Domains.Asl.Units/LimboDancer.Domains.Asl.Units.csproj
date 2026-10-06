@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <ProjectReference Include="..\LimboDancer.Domains.Asl.Maps\LimboDancer.Domains.Asl.Maps.csproj" />
+    <!-- Pass 32 (the plan's section 19, decision 7): the projector calls the Rules calculators the planner calls. Rules references Abstractions only. -->
+    <ProjectReference Include="..\LimboDancer.Domains.Asl.Rules\LimboDancer.Domains.Asl.Rules.csproj" />
   </ItemGroup>
   <ItemGroup>
     <!-- WithCulture="false": names such as catalog.units.json would otherwise be read as resources for a culture "units" on Linux. -->

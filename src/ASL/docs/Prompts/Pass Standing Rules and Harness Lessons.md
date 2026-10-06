@@ -70,6 +70,7 @@
 - Read-only agents cannot write a Markdown report file here: the harness refuses "report files" (13 of 14 on 2026-10-05). They can write a plain-text rows file. Ask for the findings in the closing message and keep a digest in the scratchpad.
 - A tool built in the scratchpad against the Studio's build (bin/p31b) must set StudioOptions.BoardsRoot to src/ASL/boards, or it reads an empty cache folder under the user's local application data.
 - The catalog version a game or a card records locks nothing (the user, 2026-10-05): UnitCatalogs.For reads the loaded catalog of the recorded name. Definitions are added and corrected, never removed; a correction may make an older record fail to reproduce, and the replay says so.
+- A long proof or sweep is measured on a few games first, and its progress goes to a log file, never through a `tail` pipe that hides it until the end. On 2026-10-05 a sweep ran twelve minutes unseen and was restarted; the user's time was wasted. Each phase-change fixture of a planner sweep costs about 8 seconds with one request of each kind per unit, a whole game a few seconds.
 - A large read splits well: dump the PDF's pages to one text file a page (PyMuPDF; `doc.get_toc()` gives the outline with titles and pages), give each read-only agent about 100 rows, an exact output shape (one pipe-separated line a row), and a findings file, and check by script that every row came back once. Nineteen such audits ran in 16 minutes. Say in the result which rows were checked by hand and which are an agent's.
 
 **C#, Razor, and Blazor**

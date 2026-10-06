@@ -156,11 +156,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         "hasNoRoadBypassElevationOrAdditionalTerrain", "hasEnoughMovementFactors", "hasNoSpecialRuleOrOtherModifier",
     ];
 
-    private static readonly HashSet<string> OrdinaryBuildings = new(
-        from material in new[] { "Wooden", "Stone" }
-        from suffix in new[] { string.Empty, ", 1 Level", ", 2 Level", ", 3 Level", ", 4 Level" }
-        select $"{material} Building{suffix}",
-        StringComparer.Ordinal);
+    private static readonly IReadOnlySet<string> OrdinaryBuildings = ScenarioA1Definitions.OrdinaryBuildings;
 
     // Ruling R10.12 (table player, pass 10): move options the reviewed entry cases do not take.
     private static readonly string[] MoveOptions = ["assault", "doubleTime", "minimumMove"];

@@ -93,6 +93,9 @@
           "xunit.extensibility.core": "[2.9.2]"
         }
       },
+      "limbodancer.abstractions": {
+        "type": "Project"
+      },
       "limbodancer.domains.asl.maps": {
         "type": "Project"
       },
@@ -102,10 +105,17 @@
           "LimboDancer.Domains.Asl.Maps": "[1.0.0, )"
         }
       },
+      "limbodancer.domains.asl.rules": {
+        "type": "Project",
+        "dependencies": {
+          "LimboDancer.Abstractions": "[1.0.0, )"
+        }
+      },
       "limbodancer.domains.asl.units": {
         "type": "Project",
         "dependencies": {
-          "LimboDancer.Domains.Asl.Maps": "[1.0.0, )"
+          "LimboDancer.Domains.Asl.Maps": "[1.0.0, )",
+          "LimboDancer.Domains.Asl.Rules": "[1.0.0, )"
         }
       },
       "limbodancer.domains.asl.units.rendering": {

@@ -14,22 +14,8 @@ namespace LimboDancer.Domains.Asl.Play;
 /// </summary>
 public sealed partial class GamePlanner
 {
-    // MF to enter the admitted terrain, in half MF: Open Ground and orchard 1 (A4.13; B14.4), brush and woods 2 (B12.4,
-    // B13.4), grain 1½ (B15.4), a building 2 (B23.4); entry across a road hexside 1 (A4.132, B3.4).
-    private static readonly Dictionary<string, int> EntryHalfMf = new(StringComparer.Ordinal)
-    {
-        ["open-ground"] = 2,
-        ["orchard"] = 2,
-        ["brush"] = 4,
-        ["woods"] = 4,
-        ["grain"] = 3,
-        ["wooden-building"] = 4,
-        ["stone-building"] = 4,
-
-        // B24.4 (ruling R10.1): rubble costs three MF.
-        ["wooden-rubble"] = 6,
-        ["stone-rubble"] = 6,
-    };
+    // MF to enter the admitted terrain, in half MF (A4.13, B12.4, B13.4, B14.4, B15.4, B23.4, B24.4), moved to Rules (pass 32.a).
+    private static readonly IReadOnlyDictionary<string, int> EntryHalfMf = ScenarioA1ResultTables.EntryHalfMf;
 
     /// <summary>
     /// The MF a unit may spend this phase (A4.11, A4.42, A4.5, A4.52; rulings R5.1 and R5.4): its allotment (a MMC's four or three, a SMC's
