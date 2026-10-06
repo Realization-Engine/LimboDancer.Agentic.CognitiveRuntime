@@ -173,5 +173,30 @@ public sealed record MovingUnitFacts(
     bool HalfMfSpent,
     IReadOnlyList<string>? MovedWith);
 
+/// <summary>
+/// The facts of ADJACENT (A.8, p. 43) for two Locations: whether their hexes are adjacent and both read, each Location's elevation (its hex's base
+/// level plus its level), and the hexside between them (null when the map cannot give it).
+/// </summary>
+public sealed record AdjacencyFacts(bool Adjacent, bool FromRead, bool ToRead, int FromElevation, int ToElevation, CrossedHexsideFacts? Crossed);
+
+/// <summary>
+/// One unit of the game as the scans for a seeing enemy read it (A12.14, A12.34): active, its side, a Dummy, aboard a vehicle, Broken as a
+/// three-valued fact, Hidden, Good Order as the planner reads it, and its Location as an index into the caller's table of Locations (null off
+/// the map).
+/// </summary>
+public sealed record EnemyUnitFacts(bool Active, string? Side, bool Dummy, bool Aboard, bool? Broken, bool Hidden, bool GoodOrder, int? Location);
+
+/// <summary>The LOS between two Locations as the map gives it: whether it is clear, and its range.</summary>
+public sealed record LosFacts(bool Clear, int Range);
+
+/// <summary>A fact reader for a scan of who sees a Location (the pass 32 design, D4): the LOS between two Locations of the caller's table, or null when the map cannot give it.</summary>
+public interface ILosFactReader
+{
+    public LosFacts? Los(int fromLocation, int toLocation);
+}
+
+/// <summary>A firer or director of an attack as the "seen" read finds it in the state: its side and its Location's index (null when it has none).</summary>
+public sealed record SeenSubjectFacts(string Side, int? Location);
+
 /// <summary>The night and weather half MF of an Infantry step and whether the road rate survives them (E1.51, E3.54, E3.6, E3.64, E3.723, E3.733), read by the caller for a terrain, a road crossing, and a rise.</summary>
 public delegate (int HalfMf, bool RoadRate) InfantryWeatherRead(string terrain, bool road, int rise);

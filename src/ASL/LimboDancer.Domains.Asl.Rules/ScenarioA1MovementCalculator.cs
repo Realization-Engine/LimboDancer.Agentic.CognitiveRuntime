@@ -84,4 +84,82 @@ public static class ScenarioA1MovementCalculator
             && item.Nationality == heavy[0].Nationality);
         return leader is not null ? (heavy[0].Id, leader.Id) : (null, null);
     }
+
+    /// <summary>
+    /// ADJACENT (A.8, p. 43): the Locations share a hexside at the same level, with a clear LOS and no hexside terrain or
+    /// cliff between them, so Infantry could advance from one to the other. The review reads it this way for the
+    /// terrain it admits. <paramref name="losClear"/> is read once the geometry allows it, as the planner read it.
+    /// </summary>
+    public static bool IsAdjacent(AdjacencyFacts facts, Func<bool> losClear)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(losClear);
+        return facts.Adjacent && facts.FromRead && facts.ToRead && facts.Crossed is { } crossed
+            && facts.FromElevation == facts.ToElevation
+            && crossed.HexsideTerrain is null && !crossed.Cliff
+            && losClear();
+    }
+
+    /// <summary>
+    /// The range to the nearest Good Order enemy ground unit with a clear LOS to a Location (A12.34); null when none has one. A Passenger is not counted:
+    /// its vehicle is (ruling R26.2). The units are read in the state's order.
+    /// </summary>
+    public static int? NearestGoodOrderEnemyInLos(IReadOnlyList<EnemyUnitFacts> units, string side, int at, ILosFactReader los)
+    {
+        ArgumentNullException.ThrowIfNull(units);
+        ArgumentNullException.ThrowIfNull(los);
+        return units.Where(unit => unit.Active && unit.Side != side && !unit.Dummy && !unit.Aboard && unit.Broken != true)
+            .Select(unit => unit.Location).OfType<int>().Distinct()
+            .Select(location => los.Los(location, at) is { Clear: true } result ? result.Range : (int?)null).Where(range => range is not null).Min();
+    }
+
+    /// <summary>
+    /// An attack with, for each concealed unit that fires or directs, whether a Good Order enemy ground unit within 16 hexes has a LOS to it (A12.14,
+    /// read in the PDF, p. 77; pass 31d, ruling R31d.2). The Fire package sees the target Location alone, and refused fire by concealed units at a
+    /// Location with no Good Order unit as undecided; a refusal marks no firer, so a side could try a "?" stack and read from the refusal that it
+    /// held Dummies. With this read the attack is made, and the firer's "?" is lost or kept as the rule has it. A hidden unit, which would have to
+    /// show itself to force the loss, does not force it. At night the read is not given (E1.31), and the package decides as before.
+    /// <paramref name="subjects"/> gives each firer or director the state finds, by unit id.
+    /// </summary>
+    public static FireAttack WithSeen(FireAttack attack, bool night, IReadOnlyDictionary<string, SeenSubjectFacts> subjects, IReadOnlyList<EnemyUnitFacts> units, ILosFactReader los)
+    {
+        ArgumentNullException.ThrowIfNull(attack);
+        ArgumentNullException.ThrowIfNull(subjects);
+        ArgumentNullException.ThrowIfNull(units);
+        ArgumentNullException.ThrowIfNull(los);
+        if (night)
+        {
+            return attack;
+        }
+
+        bool? Seen(string? unitId, bool? concealed) => concealed == true && unitId is not null && subjects.GetValueOrDefault(unitId) is { Side: { } side, Location: { } at }
+            ? units.Where(other => other.Side != side && !other.Dummy && other.GoodOrder && !other.Hidden && !other.Aboard)
+                .Select(other => other.Location).OfType<int>().Distinct()
+                .Any(location => location == at || los.Los(location, at) is { Clear: true, Range: <= 16 })
+            : null;
+        FireFirer Firer(FireFirer item) => Seen(item.UnitId, item.Concealed) is not { } seen ? item : item with
+        {
+            SeenByGoodOrderEnemy = seen
+        };
+        FireDirector Leader(FireDirector item) => Seen(item.UnitId, item.Concealed) is not { } seen ? item : item with
+        {
+            SeenByGoodOrderEnemy = seen
+        };
+        return attack with
+        {
+            Firers = attack.Firers is null ? null : [.. attack.Firers.Select(Firer)],
+            Director = attack.Director is null ? null : Leader(attack.Director),
+            OtherDirectors = attack.OtherDirectors is null ? null : [.. attack.OtherDirectors.Select(Leader)],
+        };
+    }
+
+    /// <summary>Whether any Good Order enemy ground unit within 16 hexes has a clear LOS to a Location (A12.14, A12.141). The units are read in the state's order.</summary>
+    public static bool EnemyGoodOrderInLosWithin16(IReadOnlyList<EnemyUnitFacts> units, string side, int at, ILosFactReader los)
+    {
+        ArgumentNullException.ThrowIfNull(units);
+        ArgumentNullException.ThrowIfNull(los);
+        return units.Where(unit => unit.Active && unit.Side != side && !unit.Dummy && unit.Broken != true)
+            .Select(unit => unit.Location).OfType<int>().Distinct()
+            .Any(location => los.Los(location, at) is { Clear: true, Range: <= 16 });
+    }
 }

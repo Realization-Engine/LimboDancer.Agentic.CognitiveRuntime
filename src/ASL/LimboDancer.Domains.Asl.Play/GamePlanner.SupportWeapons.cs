@@ -14,8 +14,8 @@ namespace LimboDancer.Domains.Asl.Play;
 public sealed partial class GamePlanner
 {
     /// <summary>A10.6, A1.31: a Good Order unit: not broken, Disrupted, in Melee, a prisoner, or TI.</summary>
-    private static bool GoodOrder(UnitInstance unit) => unit.Status == InstanceStatus.Active && !Is(unit, Conditions.Broken) && !Is(unit, Conditions.Disrupted)
-        && !Is(unit, Conditions.Melee) && !Is(unit, Conditions.Captured) && !Is(unit, "asl:ti");
+    private static bool GoodOrder(UnitInstance unit) => ScenarioA1Definitions.GoodOrderAsPlanned(unit.Status == InstanceStatus.Active, Is(unit, Conditions.Broken),
+        Is(unit, Conditions.Disrupted), Is(unit, Conditions.Melee), Is(unit, Conditions.Captured), Is(unit, "asl:ti"));
 
     private static FireDefinition? DefinitionOf(UnitInstance unit) =>
         unit.Definition is { } reference ? FireReference.Value.Definitions.GetValueOrDefault(reference.Definition) : null;
