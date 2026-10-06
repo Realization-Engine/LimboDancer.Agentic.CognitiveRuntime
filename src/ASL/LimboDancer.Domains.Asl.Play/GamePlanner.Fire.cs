@@ -67,15 +67,10 @@ public sealed partial class GamePlanner
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(unit);
-        static int Size(UnitInstance item) => item.Kind == "asl:squad" ? 3 : item.Kind is "asl:half-squad" or "asl:crew" ? 2 : 1;
-        var prisoners = state.Units.Where(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == unit.Id).Sum(Size);
-        return Is(unit, Conditions.Berserk) && state.Phase == "pfph" && unit.Side == state.PhasingSide ? "is berserk and never fires in its PFPh (A15.432)"
-            : Is(unit, Conditions.BoundingFire) && state.Phase == "pfph" && !LiveFire.IsVehicle(unit) ? "is an Opportunity Firer and fires in the AFPh (A7.25)"
-            : Is(unit, Conditions.Melee) ? "is held in Melee and fires only in CC (A11.15)"
-            : Is(unit, Conditions.Captured) ? "is a prisoner and does not fire (A20.5)"
-            : Is(unit, Conditions.Unarmed) ? "is Unarmed, and its FP is used only in CC (A20.5)"
-            : prisoners > Size(unit) ? "guards prisoners whose US# exceeds its own, so it attacks only them (A20.52)"
-            : null;
+        // Rules decides it (pass 32.c): the unit's conditions and kind, the phase, and the kinds of the prisoners in its custody.
+        return ScenarioA1FireEligibility.FireBar(new FireBarFacts(unit.Kind, unit.Side, Is(unit, Conditions.Berserk), Is(unit, Conditions.BoundingFire),
+            Is(unit, Conditions.Melee), Is(unit, Conditions.Captured), Is(unit, Conditions.Unarmed), LiveFire.IsVehicle(unit), state.Phase, state.PhasingSide,
+            [.. state.Units.Where(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == unit.Id).Select(prisoner => prisoner.Kind)]));
     }
 
     /// <summary>What fires in a firer's attack, each counted on its own (A8.3, A9.2): the unit when it uses its own FP, and each weapon it fires.</summary>
@@ -617,11 +612,11 @@ public sealed partial class GamePlanner
 
     /// <summary>The usable MGs and ATR a unit possesses, in id order (table player, pass 9b: a mortar or PSK takes no part in its fire groups).</summary>
     private static string[] Possessed(GameState state, string unitId) =>
-        [.. state.Equipment.Where(equipment => equipment.Status == InstanceStatus.Active && equipment.Holding is { Role: HoldingRole.Possessed } holding
-                && holding.Holder == unitId && GameState.Condition(equipment, Conditions.Malfunctioned) != ConditionState.True
-                && GameState.Condition(equipment, Conditions.Dismantled) != ConditionState.True
-                && (equipment.Kind == "asl:mg" || (equipment.Definition is { } weapon && LiveOrdnance.LatwType(weapon.Definition) == "atr")))
-            .Select(equipment => equipment.Id).Order(StringComparer.Ordinal)];
+        ScenarioA1FireEligibility.UsableMgs(state.Equipment.Where(equipment => equipment.Status == InstanceStatus.Active
+                && equipment.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unitId)
+            .Select(equipment => new PossessedWeaponFacts(equipment.Id, GameState.Condition(equipment, Conditions.Malfunctioned) == ConditionState.True,
+                GameState.Condition(equipment, Conditions.Dismantled) == ConditionState.True, equipment.Kind,
+                () => equipment.Definition is { } weapon ? LiveOrdnance.LatwType(weapon.Definition) : null)));
 
     /// <summary>
     /// What follows a fire attack once its owners' options are answered (ruling R27.4): Spraying Fire's second Location on the same Original DR (A9.5),

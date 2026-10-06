@@ -15,12 +15,11 @@ public static class LiveFire
 {
     private static readonly Lazy<ScenarioA1FireReference> CatalogReference = new(() => new ScenarioA1FirePackage().Reference);
 
-    /// <summary>A21.1 (ruling R13.7): a weapon of another nationality than its possessor's is captured.</summary>
+    /// <summary>A21.1 (ruling R13.7): a weapon of another nationality than its possessor's is captured (Rules decides it, pass 32.c).</summary>
     public static bool? CapturedBy(string? weaponDefinition, UnitInstance unit) =>
-        weaponDefinition is not null && unit.Definition is { } holder
-            && CatalogReference.Value.Definitions.GetValueOrDefault(weaponDefinition) is { } weapon
-            && CatalogReference.Value.Definitions.GetValueOrDefault(holder.Definition) is { } firer
-            && weapon.Nationality != firer.Nationality ? true : null;
+        ScenarioA1FireEligibility.CapturedBy(
+            weaponDefinition is null ? null : CatalogReference.Value.Definitions.GetValueOrDefault(weaponDefinition)?.Nationality,
+            unit.Definition is { } holder ? CatalogReference.Value.Definitions.GetValueOrDefault(holder.Definition)?.Nationality : null);
 
     public const string Catalog = "asl-scenario-a1";
     public const string CatalogVersion = "1.13.0";
@@ -319,37 +318,37 @@ public static class LiveFire
     public static IReadOnlyList<string>? Allies(GameState state, string side)
     {
         ArgumentNullException.ThrowIfNull(state);
-        string[] nationalities = [.. state.Units.Where(unit => unit.Side == side && unit.Definition is { } reference
+        return ScenarioA1FireEligibility.Allies(state.Units.Where(unit => unit.Side == side && unit.Definition is { } reference
                 && CatalogReference.Value.Definitions.ContainsKey(reference.Definition))
-            .Select(unit => CatalogReference.Value.Definitions[unit.Definition!.Definition].Nationality)
-            .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)];
-        return nationalities.Length > 1 ? nationalities : null;
+            .Select(unit => CatalogReference.Value.Definitions[unit.Definition!.Definition].Nationality));
     }
 
     /// <summary>
     /// Whether a Green or Conscript MMC is Inexperienced (A19.2, A19.3; ruling R15.10): a Conscript always, a Green MMC unless stacked with an unbroken
-    /// leader of its side; null for any other unit.
+    /// leader of its side; null for any other unit. Rules decides it (pass 32.c) as the Fire facts' own definition, beside the state's.
     /// </summary>
     public static bool? Inexperienced(GameState state, UnitInstance unit)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(unit);
         var definition = unit.Definition is { } reference ? CatalogReference.Value.Definitions.GetValueOrDefault(reference.Definition) : null;
-        return definition?.Class switch
-        {
-            "conscript" => true,
-            "green" => state.Location(unit.Id) is not { } at || !state.At(at.Location).OfType<UnitInstance>().Any(other => other.Id != unit.Id
-                && other.Side == unit.Side && other.Kind == "asl:leader" && other.Status == InstanceStatus.Active && !Is(other, Conditions.Broken)),
-            _ => null,
-        };
+        return ScenarioA1FireEligibility.InexperiencedForFire(definition?.Class, () => StackedWithUnbrokenLeader(state, unit));
     }
 
     /// <summary>A Green MMC's Inexperience (A19.3; ruling R15.10); null for any other unit.</summary>
     public static bool? GreenInexperienced(GameState state, UnitInstance unit)
     {
         ArgumentNullException.ThrowIfNull(unit);
-        return unit.Definition is { } reference && CatalogReference.Value.Definitions.GetValueOrDefault(reference.Definition)?.Class == "green"
-            ? Inexperienced(state, unit) : null;
+        var @class = unit.Definition is { } reference ? CatalogReference.Value.Definitions.GetValueOrDefault(reference.Definition)?.Class : null;
+        return ScenarioA1FireEligibility.GreenInexperienced(@class, () => StackedWithUnbrokenLeader(state, unit));
+    }
+
+    /// <summary>A19.3: whether an unbroken, active leader of the unit's side shares its Location; false off the map.</summary>
+    private static bool StackedWithUnbrokenLeader(GameState state, UnitInstance unit)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return state.Location(unit.Id) is { } at && state.At(at.Location).OfType<UnitInstance>().Any(other => other.Id != unit.Id
+            && other.Side == unit.Side && other.Kind == "asl:leader" && other.Status == InstanceStatus.Active && !Is(other, Conditions.Broken));
     }
 
     /// <summary>The FT a unit possesses (A22.4; ruling R15.1); null when none.</summary>
@@ -439,8 +438,11 @@ public static class LiveFire
     public static bool MayBoundingFire(GameState state, string vehicleId)
     {
         ArgumentNullException.ThrowIfNull(state);
-        return state.Phase == "mph" && state.Unit(vehicleId) is { Status: InstanceStatus.Active } vehicle && IsVehicle(vehicle) && vehicle.Side == state.PhasingSide
-            && (state.Movement is { Vehicle: true, WindowOpen: false } moving ? moving.Movers.Contains(vehicleId) : state.Movement is null && !vehicle.MovementEnded);
+        var vehicle = state.Unit(vehicleId);
+        return ScenarioA1FireEligibility.MayBoundingFire(new BoundingFireFacts(state.Phase,
+            vehicle is { Status: InstanceStatus.Active } && IsVehicle(vehicle) && vehicle.Side == state.PhasingSide,
+            state.Movement is not null, state.Movement?.Vehicle == true, state.Movement?.WindowOpen == true,
+            state.Movement?.Movers.Contains(vehicleId) == true, vehicle?.MovementEnded == true));
     }
 
     /// <summary>Whether a unit is a vehicle (D1).</summary>
@@ -452,30 +454,33 @@ public static class LiveFire
     /// vehicle has no crew to expose (D5.1).
     /// </summary>
     public static bool CrewExposed(UnitInstance vehicle) =>
-        !Is(vehicle, Conditions.ButtonedUp) && !Is(vehicle, Conditions.Stunned) && !Is(vehicle, Conditions.Recalled) && !Is(vehicle, Conditions.Shocked)
-        && !Is(vehicle, Conditions.UnconfirmedKill)
-        && (!GamePlanner.IsClosedTopped(vehicle) || GameState.Condition(vehicle, Conditions.ButtonedUp) == ConditionState.False);
+        ScenarioA1FireEligibility.CrewExposed(new CrewExposedFacts(GameState.Condition(vehicle, Conditions.ButtonedUp) switch
+        {
+            ConditionState.True => RuleState.True,
+            ConditionState.False => RuleState.False,
+            _ => RuleState.Unknown,
+        },
+            Is(vehicle, Conditions.Stunned), Is(vehicle, Conditions.Recalled), Is(vehicle, Conditions.Shocked), Is(vehicle, Conditions.UnconfirmedKill),
+            GamePlanner.IsClosedTopped(vehicle)));
 
     /// <summary>A vehicle in the target Location, with its crew's state (A7.307, A7.308, D.8B).</summary>
     internal static FireVehicle Vehicle(UnitInstance vehicle, BoardLocation at) =>
-        new(vehicle.Id, vehicle.Definition?.Definition, at.ToString(), CrewExposed(vehicle), Is(vehicle, Conditions.Stunned) || Is(vehicle, Conditions.Recalled),
-            Is(vehicle, Conditions.StunRecovery), Is(vehicle, Conditions.Immobilized))
-        {
-            Concealed = Is(vehicle, Conditions.Concealed) || Is(vehicle, Conditions.Hidden) ? true : null,
-        };
+        ScenarioA1FireEligibility.VehicleTarget(new VehicleTargetFacts(vehicle.Id, vehicle.Definition?.Definition, at.ToString(), CrewExposed(vehicle),
+            Is(vehicle, Conditions.Stunned), Is(vehicle, Conditions.Recalled), Is(vehicle, Conditions.StunRecovery), Is(vehicle, Conditions.Immobilized),
+            Is(vehicle, Conditions.Concealed), Is(vehicle, Conditions.Hidden)));
 
     /// <summary>
     /// A vehicle's MA MG attack (ruling R25.7): its crew's state, Motion (D2.42), a pin (A7.82), its MG's malfunction (D3.7), whether it
     /// fired this Player Turn, and whether its last shot this phase kept its Multiple ROF (C2.24), which the state records.
     /// </summary>
     private static FireVehicleFire VehicleFire(GameState state, UnitInstance vehicle, BoardLocation at) =>
-        new(vehicle.Id, vehicle.Definition?.Definition, at.ToString(), CrewExposed(vehicle),
-            Is(vehicle, Conditions.Motion) || (state.Movement is { Vehicle: true, Started: true, Stopped: false } moving && moving.Movers.Contains(vehicle.Id)),
+        ScenarioA1FireEligibility.VehicleFirer(new VehicleFirerFacts(vehicle.Id, vehicle.Definition?.Definition, at.ToString(), CrewExposed(vehicle),
+            Is(vehicle, Conditions.Motion), state.Movement is { Vehicle: true, Started: true, Stopped: false } moving && moving.Movers.Contains(vehicle.Id),
             Is(vehicle, Conditions.Pinned),
-            Is(vehicle, Conditions.Stunned) || Is(vehicle, Conditions.Recalled) || Is(vehicle, Conditions.Shocked) || Is(vehicle, Conditions.UnconfirmedKill),
+            Is(vehicle, Conditions.Stunned), Is(vehicle, Conditions.Recalled), Is(vehicle, Conditions.Shocked), Is(vehicle, Conditions.UnconfirmedKill),
             Is(vehicle, Conditions.StunRecovery), Is(vehicle, Conditions.Malfunctioned),
-            Fired(vehicle) || Is(vehicle, Conditions.FirstFire) || Is(vehicle, Conditions.BoundingFire),
-            state.OrdnanceShots.Any(item => item.Gun == vehicle.Id && item.RateOfFireKept));
+            Fired(vehicle), Is(vehicle, Conditions.FirstFire), Is(vehicle, Conditions.BoundingFire),
+            state.OrdnanceShots.Any(item => item.Gun == vehicle.Id && item.RateOfFireKept)));
 
     /// <summary>
     /// The state's part of a Residual FP attack on the moving stack as it enters a Location (A8.2, A8.22): no firers, the
@@ -668,21 +673,16 @@ public static class LiveFire
     /// R15.10), and the FT it possesses (A22.4; ruling R15.1).
     /// </summary>
     internal static FireTarget Target(GameState state, UnitInstance unit, BoardLocation at) =>
-        new(unit.Id, unit.Definition?.Definition, at.ToString(), Is(unit, Conditions.Broken),
+        ScenarioA1FireEligibility.Target(new TargetUnitFacts(unit.Id, unit.Definition?.Definition, at.ToString(), Is(unit, Conditions.Broken),
             Is(unit, Conditions.Pinned), Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden), unit.Kind == UnitKinds.Dummy,
-            Is(unit, Conditions.Wounded), Is(unit, Conditions.Disrupted))
-        {
+            Is(unit, Conditions.Wounded), Is(unit, Conditions.Disrupted),
             // Ruling R18.3: a unit of an OB group takes its group's ELR.
-            Elr = unit.Group is not null ? state.ElrOf(unit) : null,
-            Fanatic = Is(unit, Conditions.Fanatic) ? true : null,
-            Heroic = Is(unit, Conditions.Heroic) ? true : null,
-            Berserk = Is(unit, Conditions.Berserk) ? true : null,
-            Inexperienced = GreenInexperienced(state, unit),
-            Flamethrowers = Flamethrowers(state, unit),
-        };
+            unit.Group is not null ? state.ElrOf(unit) : null,
+            Is(unit, Conditions.Fanatic), Is(unit, Conditions.Heroic), Is(unit, Conditions.Berserk),
+            GreenInexperienced(state, unit), Flamethrowers(state, unit)));
 
     // A7.1: a unit fires in one fire phase per Player Turn; A7.531: a directing leader is marked too.
-    internal static bool Fired(IGameObject item) => Is(item, Conditions.PrepFire) || Is(item, Conditions.FinalFire);
+    internal static bool Fired(IGameObject item) => ScenarioA1FireEligibility.Fired(Is(item, Conditions.PrepFire), Is(item, Conditions.FinalFire));
 
     /// <summary>
     /// Why a SW may not be chosen to fire now, in a few words, or null when it may (pass 31d, design D10; A9.2, A9.7): it has malfunctioned, or it
@@ -692,7 +692,7 @@ public static class LiveFire
     public static string? WeaponBar(EquipmentInstance weapon)
     {
         ArgumentNullException.ThrowIfNull(weapon);
-        return Is(weapon, Conditions.Malfunctioned) ? "has malfunctioned" : Fired(weapon) ? "has fired" : null;
+        return ScenarioA1FireEligibility.WeaponBar(Is(weapon, Conditions.Malfunctioned), Fired(weapon));
     }
 
     /// <summary>
@@ -704,23 +704,16 @@ public static class LiveFire
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(unit);
-        if (state.Phase is not ("pfph" or "afph" or "dfph") || !Fired(unit) || (state.Phase == "dfph" && Is(unit, Conditions.FirstFire)))
-        {
-            return false;
-        }
-
-        // C2.24, D3.5: a vehicle's MG fires again this phase only on the Multiple ROF its last shot kept.
-        if (IsVehicle(unit))
-        {
-            return !state.OrdnanceShots.Any(item => item.Gun == unit.Id && item.RateOfFireKept);
-        }
-
-        // A7.351 (table player, pass 9b): a squad whose only fire is one SW still fires its inherent FP, and an unfired ATR fires like a MG; so does an
-        // unfired FT (A22.3; backlog pass 15).
-        return !state.SupportWeaponUses.Any(item => item.Unit == unit.Id)
-            && !state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding
+        // Rules decides it (pass 32.c); the three state reads are made where the old body made them.
+        return ScenarioA1FireEligibility.FireSpent(new FireSpentFacts(state.Phase, Fired(unit), Is(unit, Conditions.FirstFire), IsVehicle(unit),
+            // C2.24, D3.5: a vehicle's MG fires again this phase only on the Multiple ROF its last shot kept.
+            () => state.OrdnanceShots.Any(item => item.Gun == unit.Id && item.RateOfFireKept),
+            // A7.351 (table player, pass 9b): a squad whose only fire is one SW still fires its inherent FP, and an unfired ATR fires like a MG; so does an
+            // unfired FT (A22.3; backlog pass 15).
+            () => state.SupportWeaponUses.Any(item => item.Unit == unit.Id),
+            () => state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding
                 && holding.Holder == unit.Id && (item.Kind is "asl:mg" or "asl:ft" || (item.Definition is { } weapon && LiveOrdnance.LatwType(weapon.Definition) == "atr"))
-                && !Fired(item) && !Is(item, Conditions.Malfunctioned));
+                && !Fired(item) && !Is(item, Conditions.Malfunctioned))));
     }
 }
 
