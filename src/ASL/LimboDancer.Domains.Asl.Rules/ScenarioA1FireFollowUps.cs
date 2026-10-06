@@ -111,4 +111,421 @@ public static class ScenarioA1FireFollowUps
 
     /// <summary>A12.12, the Concealment Table: the sentence of a unit that gains "?" with no dr.</summary>
     public static string ConcealmentWithoutDr(string id) => $"play.concealment: {id} gains \"?\" (A12.12, the Concealment Table)";
+
+    // The events of an attack (GamePlanner.AddFireEvents, VehicleEffectEvents, EffectEvents, HeroOf, EffectEvent, AddFireFollowUps, and
+    // AcquisitionFollowUp of Play; pass 32.c): one function a block, called in the old order. The dice, the records, the lineage, and the events
+    // themselves stay in Play, which maps each condition to its name and writes the conditions in the order given.
+
+    /// <summary>
+    /// What the Fire package asks for next (ruling R5.8): the attack resolved; an option its owner answers; a roll, named by its key, with its dice count and
+    /// purpose (a Random Selection names the units it selects among, one die each, A.9, A8.31, A9.71); or an attack the package accepted and left undecided.
+    /// </summary>
+    public static FireNextStep NextFireStep(FireResolution resolution)
+    {
+        ArgumentNullException.ThrowIfNull(resolution);
+        if (resolution.Disposition == FireResolution.Resolved)
+        {
+            return new FireNextStep(true, null, null, 0, null, null);
+        }
+
+        // An option the attack reaches stops it until its owner answers (ruling R5.8).
+        if (resolution.Reasons is [{ } option] && option.StartsWith("asl.a1.fire.choice-missing:", StringComparison.Ordinal))
+        {
+            return new FireNextStep(false, option["asl.a1.fire.choice-missing:".Length..], null, 0, null, null);
+        }
+
+        // The pre-check leaves only missing rolls, asked for one at a time.
+        if (resolution.Reasons is not [{ } missing] || !missing.StartsWith("asl.a1.fire.roll-missing:", StringComparison.Ordinal))
+        {
+            return new FireNextStep(false, null, null, 0, null, string.Join("; ", resolution.Reasons));
+        }
+
+        var key = missing["asl.a1.fire.roll-missing:".Length..];
+        var split = key.IndexOf(':', StringComparison.Ordinal);
+        var (kind, unit) = split < 0 ? (key, string.Empty) : (key[..split], key[(split + 1)..]);
+        var selected = kind is "randomSelection" or "weaponSelection" or "firerSelection" ? unit.Split(',') : [];
+        var (count, purpose) = kind switch
+        {
+            "attack" => (2, "fire-ift"),
+            "randomSelection" => (selected.Length, "fire-random-selection"),
+            "weaponSelection" => (selected.Length, "fire-weapon-selection"),
+            "firerSelection" => (selected.Length, "fire-firer-selection"),
+            "checks" => (2, "fire-check"),
+            "leaderLoss" => (2, "fire-leader-loss"),
+            "heatOfBattle" => (2, "fire-heat-of-battle"),
+            "berserkCheck" => (2, "fire-berserk-check"),
+            "crewCheck" => (2, "fire-crew-check"),
+            "unlikelyKill" => (1, "fire-unlikely-kill"),
+            "molCheck" => (1, "fire-mol-check"),
+            _ => (1, "fire-wound-severity"),
+        };
+        return new FireNextStep(false, null, key, count, purpose, null);
+    }
+
+    /// <summary>A12.13, A12.14 (ruling R21.1): a result of none that leaves unseen targets, or nothing, unaffected is not identified to the firing side, which learns the arithmetic alone.</summary>
+    public static bool HidesIdentity(FireArithmetic arithmetic, IReadOnlyList<FireTarget> targets)
+    {
+        ArgumentNullException.ThrowIfNull(arithmetic);
+        ArgumentNullException.ThrowIfNull(targets);
+        var hiddenResult = arithmetic.Concealed?.Result ?? arithmetic.Result;
+        return hiddenResult == "none" && (targets.Count == 0 || targets.Any(item => item.Concealed == true || item.Hidden == true || item.Dummy == true));
+    }
+
+    /// <summary>A10.62: a broken target attacked by FP that could inflict at least a NMC, allowing for Cowering, is under DM; <paramref name="couldCauseNmc"/> is the attack's read, by column (concealed or known).</summary>
+    public static bool AttackedWhileBroken(FireTarget target, Func<bool, bool> couldCauseNmc)
+    {
+        ArgumentNullException.ThrowIfNull(target);
+        ArgumentNullException.ThrowIfNull(couldCauseNmc);
+        return target.Broken == true && couldCauseNmc(target.Concealed == true || target.Hidden == true || target.Dummy == true);
+    }
+
+    /// <summary>D5.341, D5.41 (ruling R5.18): a Recalled AFV on its way off the map that is immobilized is Abandoned by its crew.</summary>
+    public static bool AbandonsWhenImmobilized(FireVehicleEffect effect, bool mustLeave)
+    {
+        ArgumentNullException.ThrowIfNull(effect);
+        return effect.Result == FireVehicleEffect.Immobilized && mustLeave;
+    }
+
+    /// <summary>A22.6111 (ruling R15.4): a colored dr of 6 breaks the MOL's user, under DM, when the user is active and not already broken; the conditions set, or null.</summary>
+    public static IReadOnlyList<(UnitCondition Condition, bool Value)>? MolUserBreaks(FireMolCheck? molCheck, bool userActive, bool userBroken) =>
+        molCheck is { UserBroken: true } && userActive && !userBroken
+            ? [(UnitCondition.Broken, true), (UnitCondition.Pinned, false), (UnitCondition.DesperationMorale, true)]
+            : null;
+
+    /// <summary>A fire counter's condition: prep-fire, first-fire, bounding-fire, or final-fire.</summary>
+    public static UnitCondition Marker(string counter) => counter switch
+    {
+        "prep-fire" => UnitCondition.PrepFire,
+        "first-fire" => UnitCondition.FirstFire,
+        "bounding-fire" => UnitCondition.BoundingFire,
+        _ => UnitCondition.FinalFire,
+    };
+
+    /// <summary>The MGs: a malfunction (A9.7), and the fire counter of a MG that lost its Multiple ROF (A9.2), a Final Fire counter replacing a First Fire one. <paramref name="firstFireMarked"/> is read for a Final Fire counter.</summary>
+    public static IReadOnlyList<(UnitCondition Condition, bool Value)> WeaponEffectConditions(FireWeaponEffect weapon, Func<bool> firstFireMarked)
+    {
+        ArgumentNullException.ThrowIfNull(weapon);
+        ArgumentNullException.ThrowIfNull(firstFireMarked);
+        var conditions = new List<(UnitCondition, bool)>();
+        if (weapon.Malfunctioned)
+        {
+            conditions.Add((UnitCondition.Malfunctioned, true));
+        }
+
+        if (weapon.FireCounter is { } counter)
+        {
+            conditions.Add((Marker(counter), true));
+            if (counter == "final-fire" && firstFireMarked())
+            {
+                conditions.Add((UnitCondition.FirstFire, false));
+            }
+        }
+
+        return conditions;
+    }
+
+    /// <summary>D7.17 (ruling R11.11): an OVR's Original 12 malfunctions a weapon that added FP (the BMG, the CMG, or the MA), or immobilizes a vehicle with none, which loses Motion; a wreck keeps no weapons.</summary>
+    public static IReadOnlyList<(UnitCondition Condition, bool Value)> OverrunEffectConditions(FireOverrunEffect effect)
+    {
+        ArgumentNullException.ThrowIfNull(effect);
+        var conditions = new List<(UnitCondition, bool)>();
+        foreach (var weapon in effect.MalfunctionedWeapons)
+        {
+            conditions.Add((weapon switch
+            {
+                FireOverrunEffect.BowMg => UnitCondition.BmgMalfunctioned,
+                FireOverrunEffect.CoaxialMg => UnitCondition.CmgMalfunctioned,
+                _ => UnitCondition.Malfunctioned,
+            }, true));
+        }
+
+        if (effect.Immobilized)
+        {
+            conditions.Add((UnitCondition.Immobilized, true));
+            conditions.Add((UnitCondition.Motion, false));
+        }
+
+        return conditions;
+    }
+
+    /// <summary>The fire markers (A3.2, A3.4, A3.5, A8.1, A8.3, A8.4): the units the package marks, in its order, but a unit whose MG fired alone on its Multiple ROF, which keeps its state, and a unit no longer active (<paramref name="inactive"/> is read for each).</summary>
+    public static IEnumerable<string> FireMarkerUnits(FireAttack facts, FireResolution resolution, Func<string, bool> inactive)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(resolution);
+        ArgumentNullException.ThrowIfNull(inactive);
+        var alone = (facts.Firers ?? []).Where(item => item.UsesInherentFp == false && !resolution.FireCounterUnitIds.Contains(item.UnitId!))
+            .Select(item => item.UnitId!).ToHashSet(StringComparer.Ordinal);
+        return resolution.FireCounterUnitIds.Where(id => !alone.Contains(id) && !inactive(id));
+    }
+
+    /// <summary>A unit's fire marker: the counter, a Final Fire counter replacing a First Fire one, and the "?" a concealed firer or firing vehicle loses (A12.2; ruling R6.7).</summary>
+    public static IReadOnlyList<(UnitCondition Condition, bool Value)> FireMarkerConditions(string id, FireAttack facts, FireResolution resolution, bool firstFireMarked, bool concealedOrHidden)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(resolution);
+        var conditions = new List<(UnitCondition, bool)> { (Marker(resolution.FireCounter!), true) };
+        if (resolution.FireCounter == "final-fire" && firstFireMarked)
+        {
+            conditions.Add((UnitCondition.FirstFire, false));
+        }
+
+        if (resolution.FirerConcealmentLost.Contains(id) || (facts.VehicleFire?.VehicleId == id && concealedOrHidden))
+        {
+            conditions.Add((UnitCondition.Concealed, false));
+        }
+
+        return conditions;
+    }
+
+    /// <summary>A8.2, A8.21: Residual FP is placed, at the attack's value, unless a counter at least as large is already in the Location (<paramref name="counterAtLeast"/> is read for the value).</summary>
+    public static int? ResidualFpPlaced(FireArithmetic arithmetic, bool targetKnown, Func<int, bool> counterAtLeast)
+    {
+        ArgumentNullException.ThrowIfNull(arithmetic);
+        ArgumentNullException.ThrowIfNull(counterAtLeast);
+        return arithmetic.ResidualFp is { } residual && targetKnown && !counterAtLeast(residual) ? residual : null;
+    }
+
+    /// <summary>A15.5: a surviving unit that surrendered to ADJACENT captors waits for the captor's choice, under the id its Reduction or Replacement gives it.</summary>
+    public static IReadOnlyList<(string Id, IReadOnlyList<string> Captors)> SurrenderPendings(FireResolution resolution, string attemptId)
+    {
+        ArgumentNullException.ThrowIfNull(resolution);
+        var pending = new List<(string, IReadOnlyList<string>)>();
+        foreach (var effect in resolution.Effects.Concat(resolution.FirerEffects ?? []))
+        {
+            if (!effect.Eliminated && (effect.SecondHeatOfBattle ?? effect.HeatOfBattle) is { Result: HeatOfBattleOutcome.Surrender, Captors.Count: > 0 } surrender)
+            {
+                pending.Add((effect.FinalDefinitionId != effect.DefinitionId ? $"{attemptId}-{effect.UnitId}" : effect.UnitId, surrender.Captors!));
+            }
+        }
+
+        return pending;
+    }
+
+    /// <summary>
+    /// A vehicle's effect (rulings R25.5, R25.6, R6.5, R6.7): a destroyed vehicle becomes a wreck, with a Blaze when it burns (D10.1, B25.14); else its
+    /// conditions change as the result sets them (D.7, D5.34, D5.341, A7.82), and a concealed vehicle given a Vehicle line result, or whose crew took at
+    /// least a PTC, loses its "?" to the firer in its LOS (A12.2); Residual FP has no firer.
+    /// </summary>
+    public static VehicleEffectVerdict VehicleEffect(FireVehicleEffect effect, string? fireKind, bool concealedOrHidden)
+    {
+        ArgumentNullException.ThrowIfNull(effect);
+        if (effect.Result is FireVehicleEffect.Eliminated or FireVehicleEffect.BurningWreck)
+        {
+            return new VehicleEffectVerdict(true, effect.Result == FireVehicleEffect.BurningWreck, false, false);
+        }
+
+        var notResidual = fireKind != ScenarioA1FireCalculator.ResidualFire;
+        if (ScenarioA1ResultTables.VehicleConditions(effect).Count > 0)
+        {
+            return new VehicleEffectVerdict(false, false, true,
+                concealedOrHidden && notResidual && (effect.Result != FireVehicleEffect.None || effect.CrewCheck is not null || effect.CrewResult == FireVehicleEffect.Recalled));
+        }
+
+        return new VehicleEffectVerdict(false, false, false, concealedOrHidden && notResidual && effect.CrewCheck is not null);
+    }
+
+    /// <summary>A15.21: the heroes a unit's effect creates, in its Location, sharing its fire and movement status (ruling R5.11); a second Heat of Battle DR may create a second (ruling R5.10); concealed only when the unit kept its "?"; the creator named unless eliminated, under its Reduction's id.</summary>
+    public static IReadOnlyList<HeroCreation> HeroCreations(FireUnitEffect effect, string attemptId)
+    {
+        ArgumentNullException.ThrowIfNull(effect);
+        var creatorId = effect.FinalDefinitionId != effect.DefinitionId && !effect.Eliminated ? $"{attemptId}-{effect.UnitId}" : effect.UnitId;
+        var alive = !effect.Eliminated;
+        var concealed = !effect.ConcealmentLost && !effect.Eliminated;
+        var heroes = new List<HeroCreation>();
+        if (effect.HeatOfBattle?.HeroDefinitionId is { } hero)
+        {
+            heroes.Add(new HeroCreation(hero, "hero", concealed, alive ? creatorId : null));
+        }
+
+        if (effect.SecondHeatOfBattle?.HeroDefinitionId is { } second)
+        {
+            heroes.Add(new HeroCreation(second, "hero-2", concealed, alive ? creatorId : null));
+        }
+
+        return heroes;
+    }
+
+    /// <summary>The id of a hero a unit creates: the attempt, the creator, and the suffix.</summary>
+    public static string HeroId(string attemptId, string creatorId, string suffix) => $"{attemptId}-{creatorId}-{suffix}";
+
+    /// <summary>A hero a unit creates (A15.21): unbroken, unpinned, unwounded, with the unit's fire markers, Fanaticism, and CX; concealed when the unit is and keeps its "?" (A12.1; backlog pass 15, ruling R15.12). <paramref name="creatorHas"/> reads the creator's conditions.</summary>
+    public static IReadOnlyList<(UnitCondition Condition, bool Value)> HeroConditions(bool concealed, Func<UnitCondition, bool> creatorHas)
+    {
+        ArgumentNullException.ThrowIfNull(creatorHas);
+        var conditions = new List<(UnitCondition, bool)>
+        {
+            (UnitCondition.Broken, false),
+            (UnitCondition.Pinned, false),
+            (UnitCondition.Wounded, false),
+            (UnitCondition.Concealed, concealed && creatorHas(UnitCondition.Concealed)),
+            (UnitCondition.Hidden, false),
+        };
+        foreach (var marker in new[] { UnitCondition.PrepFire, UnitCondition.FirstFire, UnitCondition.FinalFire, UnitCondition.Fanatic, UnitCondition.Cx })
+        {
+            if (creatorHas(marker))
+            {
+                conditions.Add((marker, true));
+            }
+        }
+
+        return conditions;
+    }
+
+    /// <summary>
+    /// A unit's effect (A10.62, A10.8, A15.3, A15.21, A15.4, A15.42, A19.13, A7.302, A12.14): elimination; else the conditions it sets, only where they
+    /// change (broken, pinned, wounded, disrupted; DM on breaking or when attacked broken; "?" lost; Fanatic; berserk, heroic, and Battle Hardened end
+    /// DM), and a lineage: a squad Replaced by its two HS (ruling R15.9), Casualty Reduction, or Replacement, where only a Battle Hardened unit that
+    /// did not lose it keeps "?". <paramref name="currentlyTrue"/> reads the unit's conditions; <paramref name="finalKind"/> the final definition's kind.
+    /// </summary>
+    public static EffectVerdict Effect(FireUnitEffect effect, bool attackedWhileBroken, Func<UnitCondition, bool> currentlyTrue, string unitKind, Func<string> finalKind)
+    {
+        ArgumentNullException.ThrowIfNull(effect);
+        ArgumentNullException.ThrowIfNull(currentlyTrue);
+        ArgumentNullException.ThrowIfNull(finalKind);
+        if (effect.Eliminated)
+        {
+            return new EffectVerdict(true, [], null, false);
+        }
+
+        var conditions = new List<(UnitCondition, bool)>();
+        void Set(UnitCondition name, bool value)
+        {
+            if (currentlyTrue(name) != value)
+            {
+                conditions.Add((name, value));
+            }
+        }
+
+        Set(UnitCondition.Broken, effect.Broken);
+        Set(UnitCondition.Pinned, effect.Pinned);
+        Set(UnitCondition.Wounded, effect.Wounded);
+        Set(UnitCondition.Disrupted, effect.Disrupted);
+        if (effect.Broken && (!currentlyTrue(UnitCondition.Broken) || attackedWhileBroken))
+        {
+            Set(UnitCondition.DesperationMorale, true);
+        }
+
+        if (effect.ConcealmentLost)
+        {
+            conditions.Add((UnitCondition.Concealed, false));
+            conditions.Add((UnitCondition.Hidden, false));
+        }
+
+        // A10.8, A15.3: Fanaticism, once gained, lasts; A15.21: a heroic leader.
+        if (effect.Fanatic == true)
+        {
+            Set(UnitCondition.Fanatic, true);
+        }
+
+        // A15.4, A15.42: a unit that goes berserk is rallied and no longer under DM.
+        if (effect.Berserk == true)
+        {
+            Set(UnitCondition.Berserk, true);
+            Set(UnitCondition.DesperationMorale, false);
+        }
+
+        if (effect.Heroic == true)
+        {
+            Set(UnitCondition.Heroic, true);
+        }
+
+        // A15.3: a Battle Hardened unit is unbroken, so no longer under DM; A15.21: nor is a leader made heroic.
+        if (effect.HeatOfBattle?.Hardening == true || effect.HeatOfBattle?.Heroic == true)
+        {
+            Set(UnitCondition.DesperationMorale, false);
+        }
+
+        if (effect.SplitIntoHalfSquads == true)
+        {
+            // A19.13 (ruling R15.9): a squad with an underscored Morale Factor is Replaced by its two broken HS; the first keeps its SW, as a Deployment's does.
+            return new EffectVerdict(false, conditions, EffectVerdict.Deployed, false);
+        }
+
+        if (effect.FinalDefinitionId != effect.DefinitionId)
+        {
+            // A7.302: Casualty Reduction makes a HS of the same broken status; A19.13: Replacement by a lesser unit; A15.3: Battle Hardening by an
+            // unbroken, unpinned unit of the next higher quality. A12.14: a unit that passed its MC and was Battle Hardened keeps "?" unless the attack
+            // cost it; any other Reduction or Replacement loses it.
+            var reduced = unitKind == "asl:squad" && finalKind() == "asl:half-squad";
+            var hardened = effect.HeatOfBattle?.HardenedDefinitionId == effect.FinalDefinitionId;
+            return new EffectVerdict(false, conditions, reduced ? EffectVerdict.Reduced : EffectVerdict.Replaced, hardened && !effect.ConcealmentLost);
+        }
+
+        return new EffectVerdict(false, conditions, null, false);
+    }
+
+    /// <summary>A9.5: Spraying Fire's second Location takes the same Original DR, against the side of its first unit not the firing side's own, else the first attack's target side.</summary>
+    public static string SprayTargetSide(FireAttack spray, Func<string, string> unitSide, string targetSide)
+    {
+        ArgumentNullException.ThrowIfNull(spray);
+        ArgumentNullException.ThrowIfNull(unitSide);
+        return spray.Targets!.FirstOrDefault(item => item.Friendly != true) is { } sprayed ? unitSide(sprayed.UnitId!) : targetSide;
+    }
+
+    /// <summary>A7.7: the Encirclement is placed when units of the sealed side remain in the target Location after the attack.</summary>
+    public static bool PlacesEncirclement(bool recordMade, bool sealedSideRemains) => recordMade && sealedSideRemains;
+
+    /// <summary>A9.22: no Fire Lane when the manning Infantry Cowered or the MG malfunctioned; a placed lane marks the MG First Fire unless it is already.</summary>
+    public static (bool Placed, bool MarkFirstFire) PlacesFireLane(bool recordMade, bool cowered, bool weaponInPlay, bool malfunctioned, bool firstFireMarked)
+    {
+        var placed = recordMade && !cowered && weaponInPlay && !malfunctioned;
+        return (placed, placed && !firstFireMarked);
+    }
+
+    /// <summary>A23.6 (ruling R15.3): a Thrown DC that did not malfunction attacks its thrower's Location next, at range 0, at the same level, in the thrower's terrain.</summary>
+    public static FireAttack ThrowerAttack(FireAttack back, string? thrownFromTerrain)
+    {
+        ArgumentNullException.ThrowIfNull(back);
+        return back with
+        {
+            Range = 0,
+            SameLevel = true,
+            TargetTerrain = thrownFromTerrain,
+        };
+    }
+
+    /// <summary>
+    /// The Acquisition events a commit calls for after it moved acquired units (C6.5, C6.51; ruling R5.13): a unit that entered a Location out of its
+    /// Gun's LOS is no longer acquired, and when none is left the counter stays in the last Location in LOS; when the acquired units are in more than one
+    /// Location as one of them ends its MPh, APh, or CCPh withdrawal, the Gun's side chooses which Location keeps it (once no choice is pending).
+    /// </summary>
+    public static IReadOnlyList<AcquisitionVerdict> AcquisitionFollowUp(IEnumerable<AcquisitionFacts> acquisitions, string? phase, bool choicePending)
+    {
+        ArgumentNullException.ThrowIfNull(acquisitions);
+        var verdicts = new List<AcquisitionVerdict>();
+        foreach (var acquisition in acquisitions.Where(item => item.Units.Count > 0))
+        {
+            if (!acquisition.GunOnMap || !acquisition.ExistedBefore)
+            {
+                continue;
+            }
+
+            var kept = new List<AcquiredUnitFacts>();
+            string? last = null;
+            foreach (var unit in acquisition.Units)
+            {
+                if (unit.Now is null || unit.Was is null || unit.Now == unit.Was || unit.LosClear())
+                {
+                    kept.Add(unit);
+                }
+                else
+                {
+                    last = unit.Was;
+                }
+            }
+
+            string[] locations = [.. kept.Select(unit => unit.Now!).Distinct(StringComparer.Ordinal)];
+            (string, IReadOnlyList<string>)? changed = kept.Count < acquisition.Units.Count
+                ? (locations is [{ } only] ? only : kept.Count == 0 ? last ?? acquisition.PreviousLocation! : acquisition.Location, [.. kept.Select(unit => unit.Id)])
+                : null;
+
+            // C6.51: the choice is due once a split unit has finished its MPh, APh, or CCPh withdrawal.
+            var ended = kept.Any(unit => (unit.EndedAfter && !unit.EndedBefore) || (phase != "mph" && unit.Was != unit.Now));
+            IReadOnlyList<string>? choice = locations.Length > 1 && ended && !choicePending ? [.. locations.Order(StringComparer.Ordinal)] : null;
+            verdicts.Add(new AcquisitionVerdict(acquisition.Gun, changed, choice));
+        }
+
+        return verdicts;
+    }
 }

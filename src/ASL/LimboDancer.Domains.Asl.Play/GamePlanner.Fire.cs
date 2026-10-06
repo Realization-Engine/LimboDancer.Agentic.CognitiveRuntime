@@ -628,7 +628,7 @@ public sealed partial class GamePlanner
         public sealed record LaneEntry(string Location, int Fp, int HindranceDrm);
     }
 
-    /// <summary>The follow-ups of an attack whose record is the last in <paramref name="events"/> (ruling R27.4); nothing while a choice is pending.</summary>
+    /// <summary>The follow-ups of an attack whose record is the last in <paramref name="events"/> (ruling R27.4); nothing while a choice is pending. Rules decides each (pass 32.c).</summary>
     private void AddFireFollowUps(GameScope scope, string attemptId, long expected, string actor, IReadOnlyList<GameEvent> existing, GameState state, string targetSide,
         int? step, List<GameEvent> events, Func<RollRequest, RollResult> draw, FireFollowUps followUps)
     {
@@ -644,7 +644,7 @@ public sealed partial class GamePlanner
         {
             // A9.5: the second Location takes the same Original DR.
             var sprayState = Replay([.. existing, .. events]).Current!;
-            var sprayTargetSide = spray.Targets!.FirstOrDefault(item => item.Friendly != true) is { } sprayed ? state.Unit(sprayed.UnitId!)!.Side : targetSide;
+            var sprayTargetSide = ScenarioA1FireFollowUps.SprayTargetSide(spray, id => state.Unit(id)!.Side, targetSide);
             AddFireEvents(scope, attemptId, expected, actor, sprayState, spray, sprayTargetSide, step, events, draw,
                 new ResumedRolls(new Dictionary<string, string>(StringComparer.Ordinal) { ["attack"] = attackRoll }, [("attack", dice.Values)]), followUps with
                 {
@@ -656,24 +656,31 @@ public sealed partial class GamePlanner
             }
         }
 
-        if (followUps.Encircles is { } encircles && record is not null && Replay([.. existing, .. events]).Current is { } sealedState
-            && sealedState.At(target).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side == encircles))
+        if (followUps.Encircles is { } encircles && ScenarioA1FireFollowUps.PlacesEncirclement(record is not null,
+            record is not null && Replay([.. existing, .. events]).Current is { } sealedState
+                && sealedState.At(target).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side == encircles)))
         {
-            events.Add(Event(scope, attemptId, events.Count + 1, expected, "encirclement-placed", new EncirclementPlaced(target, encircles, record.EventId), null, null,
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "encirclement-placed", new EncirclementPlaced(target, encircles, record!.EventId), null, null,
                 [record.EventId]));
         }
 
         // A9.22: no Fire Lane when the manning Infantry Cowered or the MG malfunctioned; the MG is marked First Fire.
-        if (followUps is { LaneWeapon: { } laneWeapon, LaneOperator: { } laneOperator, LaneEntries: { } laneEntries } && record?.Payload is FireResolved laneRecord
-            && !(laneRecord.Resolution.TryGetProperty("arithmetic", out var laneArithmetic) && laneArithmetic.TryGetProperty("cowered", out var cowered) && cowered.GetBoolean())
-            && Replay([.. existing, .. events]).Current is { } laned && laned.Find(laneWeapon) is EquipmentInstance weapon && !Is(weapon, Conditions.Malfunctioned))
+        if (followUps is { LaneWeapon: { } laneWeapon, LaneOperator: { } laneOperator, LaneEntries: { } laneEntries })
         {
-            events.Add(Event(scope, attemptId, events.Count + 1, expected, "fire-lane-placed", new FireLanePlaced(record.EventId, laneWeapon, laneOperator,
-                [.. laneEntries.Select(item => new FireLaneEntry(BoardLocation.Parse(item.Location), item.Fp, item.HindranceDrm))]), null, null, [record.EventId]));
-            if (!Is(weapon, Conditions.FirstFire))
+            var cowered = record?.Payload is FireResolved laneRecord && laneRecord.Resolution.TryGetProperty("arithmetic", out var laneArithmetic)
+                && laneArithmetic.TryGetProperty("cowered", out var coweredFlag) && coweredFlag.GetBoolean();
+            var weapon = record is null || cowered ? null : Replay([.. existing, .. events]).Current?.Find(laneWeapon) as EquipmentInstance;
+            var (placed, markFirstFire) = ScenarioA1FireFollowUps.PlacesFireLane(record is not null, cowered, weapon is not null,
+                weapon is not null && Is(weapon, Conditions.Malfunctioned), weapon is not null && Is(weapon, Conditions.FirstFire));
+            if (placed)
             {
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
-                    new ConditionsChanged(laneWeapon, new Dictionary<string, ConditionState> { [Conditions.FirstFire] = ConditionState.True }), null, null, [record.EventId]));
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "fire-lane-placed", new FireLanePlaced(record!.EventId, laneWeapon, laneOperator,
+                    [.. laneEntries.Select(item => new FireLaneEntry(BoardLocation.Parse(item.Location), item.Fp, item.HindranceDrm))]), null, null, [record.EventId]));
+                if (markFirstFire)
+                {
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                        new ConditionsChanged(laneWeapon, new Dictionary<string, ConditionState> { [Conditions.FirstFire] = ConditionState.True }), null, null, [record.EventId]));
+                }
             }
         }
 
@@ -689,15 +696,11 @@ public sealed partial class GamePlanner
             && BoardLocation.Parse(throwerText) is var own && LiveFire.DemolitionChargeFromState(after, chargeId, FireDemolitionCharge.Thrower, own).Attack is { } back
             && back.DemolitionCharge?.UserId is { } user && after.Unit(user) is { } thrower)
         {
-            AddFireEvents(scope, attemptId, expected, actor, after, HeatOfBattleFacts(after, back with
-            {
-                Range = 0,
-                SameLevel = true,
-                TargetTerrain = ReadLocation(after, own) is { } ownRead ? TerrainKey(ownRead) : null,
-            }), thrower.Side, null, events, draw, followUps: followUps with
-            {
-                DcThrower = null
-            });
+            AddFireEvents(scope, attemptId, expected, actor, after, HeatOfBattleFacts(after, ScenarioA1FireFollowUps.ThrowerAttack(back,
+                ReadLocation(after, own) is { } ownRead ? TerrainKey(ownRead) : null)), thrower.Side, null, events, draw, followUps: followUps with
+                {
+                    DcThrower = null
+                });
             if (events.Any(item => item.Payload is ChoicePending))
             {
                 return;
@@ -712,7 +715,7 @@ public sealed partial class GamePlanner
     /// Draws the rolls the package asks for, one at a time, and adds the attack's events: the dice, the fire record (withheld
     /// from the firing side when it would identify unseen targets the attack leaves unaffected), its public report, the
     /// effects on the targets, the FPF firers' NMC, the MGs' malfunctions and markers, the fire markers, and the Residual FP
-    /// it leaves.
+    /// it leaves. Rules decides each block (pass 32.c); the dice, the records, and the events are written here.
     /// </summary>
     private void AddFireEvents(GameScope scope, string attemptId, long expected, string actor, GameState state, FireAttack facts, string targetSide,
         int? step, List<GameEvent> events, Func<RollRequest, RollResult> draw, ResumedRolls? resumed = null, FireFollowUps? followUps = null)
@@ -740,15 +743,15 @@ public sealed partial class GamePlanner
             {
                 Rolls = rolls
             }, reference);
-            if (resolution.Disposition == FireResolution.Resolved)
+            var next = ScenarioA1FireFollowUps.NextFireStep(resolution);
+            if (next.Resolved)
             {
                 break;
             }
 
             // An option the attack reaches stops it until its owner answers (ruling R5.8).
-            if (resolution.Reasons is [{ } option] && option.StartsWith("asl.a1.fire.choice-missing:", StringComparison.Ordinal))
+            if (next.ChoiceKey is { } choiceKey)
             {
-                var choiceKey = option["asl.a1.fire.choice-missing:".Length..];
                 var resume = new JsonObject
                 {
                     ["record"] = "fire",
@@ -771,47 +774,23 @@ public sealed partial class GamePlanner
                 return;
             }
 
-            // The pre-check leaves only missing rolls, asked for one at a time.
-            if (resolution.Reasons is not [{ } missing] || !missing.StartsWith("asl.a1.fire.roll-missing:", StringComparison.Ordinal))
+            if (next.Undecided is { } undecided)
             {
-                throw new InvalidOperationException("The Fire package left an attack it had accepted undecided: " + string.Join("; ", resolution.Reasons));
+                throw new InvalidOperationException("The Fire package left an attack it had accepted undecided: " + undecided);
             }
 
-            var key = missing["asl.a1.fire.roll-missing:".Length..];
-            var split = key.IndexOf(':', StringComparison.Ordinal);
-            var (kind, unit) = split < 0 ? (key, string.Empty) : (key[..split], key[(split + 1)..]);
-
-            // A Random Selection names the units it selects among, one die each (A.9, A8.31, A9.71).
-            var selected = kind is "randomSelection" or "weaponSelection" or "firerSelection" ? unit.Split(',') : [];
-            var (count, purpose) = kind switch
-            {
-                "attack" => (2, "fire-ift"),
-                "randomSelection" => (selected.Length, "fire-random-selection"),
-                "weaponSelection" => (selected.Length, "fire-weapon-selection"),
-                "firerSelection" => (selected.Length, "fire-firer-selection"),
-                "checks" => (2, "fire-check"),
-                "leaderLoss" => (2, "fire-leader-loss"),
-                "heatOfBattle" => (2, "fire-heat-of-battle"),
-                "berserkCheck" => (2, "fire-berserk-check"),
-                "crewCheck" => (2, "fire-crew-check"),
-                "unlikelyKill" => (1, "fire-unlikely-kill"),
-                "molCheck" => (1, "fire-mol-check"),
-                _ => (1, "fire-wound-severity"),
-            };
-            var drawn = draw(new RollRequest(count, 6));
+            var drawn = draw(new RollRequest(next.Count, 6));
             var rollId = $"{attemptId}-roll-{(events.Count(item => item.Payload is DiceRolled) + 1).ToString(CultureInfo.InvariantCulture)}";
-            rollIds[key] = rollId;
+            rollIds[next.RollKey!] = rollId;
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
-                new DiceRolled(rollId, purpose, count, 6, drawn.Values, DiceRolled.SystemSource, actor), package, null));
-            rolls = ApplyFireRoll(rolls, key, drawn.Values);
+                new DiceRolled(rollId, next.Purpose!, next.Count, 6, drawn.Values, DiceRolled.SystemSource, actor), package, null));
+            rolls = ApplyFireRoll(rolls, next.RollKey!, drawn.Values);
         }
 
         // A12.13: concealed, hidden, and Dummy targets have their own column when known targets share the Location. A
         // result that leaves unseen targets, or nothing, unaffected is not identified to the firing side (A12.14; R21.1).
         var arithmetic = resolution.Arithmetic!;
-        var hiddenResult = arithmetic.Concealed?.Result ?? arithmetic.Result;
-        var hidesIdentity = hiddenResult == "none"
-            && (facts.Targets!.Count == 0 || facts.Targets.Any(item => item.Concealed == true || item.Hidden == true || item.Dummy == true));
+        var hidesIdentity = ScenarioA1FireFollowUps.HidesIdentity(arithmetic, facts.Targets!);
         var fireId = EventId(attemptId, events.Count + 1);
         var firerLocation = facts.FirerLocationId ?? facts.TargetLocationId!;
         events.Add(Event(scope, attemptId, events.Count + 1, expected, "fire-resolved",
@@ -835,7 +814,7 @@ public sealed partial class GamePlanner
         foreach (var effect in resolution.Effects)
         {
             var target = facts.Targets!.First(item => item.UnitId == effect.UnitId);
-            var attackedBroken = target.Broken == true && desperate(target.Concealed == true || target.Hidden == true || target.Dummy == true);
+            var attackedBroken = ScenarioA1FireFollowUps.AttackedWhileBroken(target, desperate);
             foreach (var payload in EffectEvents(state, effect, attemptId, attackedBroken))
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, payload.Type, payload.Payload, package, null, [fireId]));
@@ -851,7 +830,7 @@ public sealed partial class GamePlanner
             }
 
             // D5.341, D5.41 (ruling R5.18): a Recalled AFV on its way off the map that is immobilized is Abandoned by its crew.
-            if (vehicle.Result == FireVehicleEffect.Immobilized && state.Unit(vehicle.VehicleId) is { } stuck && MustLeave(stuck))
+            if (state.Unit(vehicle.VehicleId) is { } stuck && ScenarioA1FireFollowUps.AbandonsWhenImmobilized(vehicle, MustLeave(stuck)))
             {
                 foreach (var (type, abandon) in AbandonEvents(stuck, attemptId))
                 {
@@ -878,14 +857,10 @@ public sealed partial class GamePlanner
         }
 
         // A22.6111 (ruling R15.4): a colored dr of 6 breaks the MOL's user, under DM.
-        if (resolution.MolCheck is { UserBroken: true } molBreak && state.Unit(molBreak.UnitId) is { Status: InstanceStatus.Active } molUser && !Is(molUser, Conditions.Broken))
+        if (resolution.MolCheck is { } molCheck && state.Unit(molCheck.UnitId) is { } molUser
+            && ScenarioA1FireFollowUps.MolUserBreaks(molCheck, molUser.Status == InstanceStatus.Active, Is(molUser, Conditions.Broken)) is { } molConditions)
         {
-            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(molUser.Id, new Dictionary<string, ConditionState>
-            {
-                [Conditions.Broken] = ConditionState.True,
-                [Conditions.Pinned] = ConditionState.False,
-                [Conditions.DesperationMorale] = ConditionState.True,
-            }), package, null, [fireId]));
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(molUser.Id, ConditionChanges(molConditions)), package, null, [fireId]));
         }
 
         // A22.5 (ruling R15.1): a FT run out of fuel is removed after the attack.
@@ -897,21 +872,8 @@ public sealed partial class GamePlanner
         // The MGs: a malfunction (A9.7), and the fire counter of a MG that lost its Multiple ROF (A9.2).
         foreach (var weapon in (resolution.WeaponEffects ?? []).Where(item => item.EquipmentId != resolution.FlamethrowerRemoved))
         {
-            var conditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
-            if (weapon.Malfunctioned)
-            {
-                conditions[Conditions.Malfunctioned] = ConditionState.True;
-            }
-
-            if (weapon.FireCounter is { } counter)
-            {
-                conditions[Marker(counter)] = ConditionState.True;
-                if (counter == "final-fire" && state.Find(weapon.EquipmentId) is { } equipment && GameState.Condition(equipment, Conditions.FirstFire) == ConditionState.True)
-                {
-                    conditions[Conditions.FirstFire] = ConditionState.False;
-                }
-            }
-
+            var conditions = ConditionChanges(ScenarioA1FireFollowUps.WeaponEffectConditions(weapon,
+                () => state.Find(weapon.EquipmentId) is { } equipment && GameState.Condition(equipment, Conditions.FirstFire) == ConditionState.True));
             if (conditions.Count > 0)
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(weapon.EquipmentId, conditions),
@@ -922,81 +884,47 @@ public sealed partial class GamePlanner
         // D7.17 (ruling R11.11): an OVR's Original 12 malfunctions a weapon that added FP, or immobilizes a vehicle with none; a wreck keeps no weapons.
         if (resolution.OverrunEffect is { } overrunEffect && state.Unit(overrunEffect.VehicleId) is { Status: InstanceStatus.Active })
         {
-            var conditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
-            foreach (var weapon in overrunEffect.MalfunctionedWeapons)
-            {
-                conditions[weapon switch
-                {
-                    FireOverrunEffect.BowMg => Conditions.BmgMalfunctioned,
-                    FireOverrunEffect.CoaxialMg => Conditions.CmgMalfunctioned,
-                    _ => Conditions.Malfunctioned,
-                }] = ConditionState.True;
-            }
-
-            if (overrunEffect.Immobilized)
-            {
-                conditions[Conditions.Immobilized] = ConditionState.True;
-                conditions[Conditions.Motion] = ConditionState.False;
-            }
-
-            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(overrunEffect.VehicleId, conditions), package, null,
-                [fireId]));
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                new ConditionsChanged(overrunEffect.VehicleId, ConditionChanges(ScenarioA1FireFollowUps.OverrunEffectConditions(overrunEffect))), package, null, [fireId]));
         }
 
         // The fire markers (A3.2, A3.4, A3.5, A8.1, A8.3, A8.4); a MG firing again alone on its Multiple ROF leaves its unit as it was.
-        var alone = (facts.Firers ?? []).Where(item => item.UsesInherentFp == false && !resolution.FireCounterUnitIds.Contains(item.UnitId!))
-            .Select(item => item.UnitId!).ToHashSet(StringComparer.Ordinal);
-        foreach (var id in resolution.FireCounterUnitIds.Where(id => !alone.Contains(id) && state.Unit(id) is not { Status: not InstanceStatus.Active }))
+        foreach (var id in ScenarioA1FireFollowUps.FireMarkerUnits(facts, resolution, id => state.Unit(id) is { Status: not InstanceStatus.Active }))
         {
-            var conditions = new Dictionary<string, ConditionState> { [Marker(resolution.FireCounter!)] = ConditionState.True };
-            if (resolution.FireCounter == "final-fire" && state.Unit(id) is { } marked && GameState.Condition(marked, Conditions.FirstFire) == ConditionState.True)
-            {
-                conditions[Conditions.FirstFire] = ConditionState.False;
-            }
-
-            // A12.2 (ruling R6.7): a concealed vehicle that fires loses its "?".
-            if (resolution.FirerConcealmentLost.Contains(id) || (facts.VehicleFire?.VehicleId == id && state.Unit(id) is { } firing
-                && (Is(firing, Conditions.Concealed) || Is(firing, Conditions.Hidden))))
-            {
-                conditions[Conditions.Concealed] = ConditionState.False;
-            }
-
+            var marked = state.Unit(id);
+            var conditions = ConditionChanges(ScenarioA1FireFollowUps.FireMarkerConditions(id, facts, resolution,
+                marked is not null && GameState.Condition(marked, Conditions.FirstFire) == ConditionState.True,
+                marked is not null && (Is(marked, Conditions.Concealed) || Is(marked, Conditions.Hidden))));
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(id, conditions), package, null, [fireId]));
         }
 
         // A8.2, A8.21: Residual FP, unless a counter at least as large is already there.
-        if (arithmetic.ResidualFp is { } residual && BoardLocation.TryParse(facts.TargetLocationId!, out var location)
-            && !state.ResidualFire.Any(item => item.Location == location && item.Fp >= residual))
+        var targetKnown = BoardLocation.TryParse(facts.TargetLocationId!, out var location);
+        if (ScenarioA1FireFollowUps.ResidualFpPlaced(arithmetic, targetKnown, residual => state.ResidualFire.Any(item => item.Location == location && item.Fp >= residual)) is { } residualFp)
         {
-            events.Add(Event(scope, attemptId, events.Count + 1, expected, "residual-fp-placed", new ResidualFirePlaced(fireId, location, residual), package, null,
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "residual-fp-placed", new ResidualFirePlaced(fireId, location!, residualFp), package, null,
                 [fireId]));
         }
 
         // A15.5: a unit that surrendered to ADJACENT captors waits for the captor's choice, last, since nothing else happens until then.
-        foreach (var effect in resolution.Effects.Concat(resolution.FirerEffects ?? []))
+        foreach (var (id, captors) in ScenarioA1FireFollowUps.SurrenderPendings(resolution, attemptId))
         {
-            if (!effect.Eliminated && (effect.SecondHeatOfBattle ?? effect.HeatOfBattle) is { Result: HeatOfBattleOutcome.Surrender, Captors.Count: > 0 } surrender)
-            {
-                var id = effect.FinalDefinitionId != effect.DefinitionId ? $"{attemptId}-{effect.UnitId}" : effect.UnitId;
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "surrender-pending", new SurrenderPending(id, surrender.Captors!), package, null, [fireId]));
-            }
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "surrender-pending", new SurrenderPending(id, captors), package, null, [fireId]));
         }
     }
 
     /// <summary>
-    /// The events that record a vehicle's effect (rulings R25.5, R25.6, R6.5, R6.7): a destroyed vehicle becomes a wreck, with a Blaze when it
-    /// burns (D10.1, B25.14); an immobilized one loses Motion (D.7); a Stunned crew buttons up and the vehicle Stops (D5.34); a Recalled crew
-    /// is treated as Stunned but marked Recalled alone (D5.341); a pinned crew is pinned (A7.82). A concealed vehicle given a Vehicle line
-    /// result, or whose crew took at least a PTC, loses its "?" to the firer in its LOS (A12.2); Residual FP has no firer.
+    /// The events that record a vehicle's effect (rulings R25.5, R25.6, R6.5, R6.7), as Rules decides it (pass 32.c): a destroyed vehicle becomes a
+    /// wreck, with a Blaze when it burns; else its conditions change, and a concealed vehicle may lose its "?".
     /// </summary>
     private static IEnumerable<(string Type, EventPayload Payload)> VehicleEffectEvents(GameState state, FireVehicleEffect effect, FireAttack facts)
     {
         var vehicle = state.Unit(effect.VehicleId);
-        if (effect.Result is FireVehicleEffect.Eliminated or FireVehicleEffect.BurningWreck)
+        var verdict = ScenarioA1FireFollowUps.VehicleEffect(effect, facts.FireKind, vehicle is not null && (Is(vehicle, Conditions.Concealed) || Is(vehicle, Conditions.Hidden)));
+        if (verdict.Wrecked)
         {
-            var burning = effect.Result == FireVehicleEffect.BurningWreck;
-            yield return ("vehicle-wrecked", new VehicleWrecked(effect.VehicleId, burning));
-            if (burning && vehicle is not null && state.Location(vehicle.Id) is { } at)
+            yield return ("vehicle-wrecked", new VehicleWrecked(effect.VehicleId, verdict.Burning));
+            if (verdict.Burning && vehicle is not null && state.Location(vehicle.Id) is { } at)
             {
                 yield return ("instance-created", new InstanceCreated(new NewInstance(BlazeId(vehicle.Id), "asl:fire", null, null, new MapPosition(at.Location), null,
                     new Dictionary<string, ConditionState>())));
@@ -1005,10 +933,10 @@ public sealed partial class GamePlanner
             yield break;
         }
 
-        if (VehicleConditions(effect) is { } changed)
+        if (verdict.Changes)
         {
-            if (vehicle is not null && (Is(vehicle, Conditions.Concealed) || Is(vehicle, Conditions.Hidden)) && facts.FireKind != ScenarioA1FireCalculator.ResidualFire
-                && (effect.Result != FireVehicleEffect.None || effect.CrewCheck is not null || effect.CrewResult == FireVehicleEffect.Recalled))
+            var changed = VehicleConditions(effect)!;
+            if (verdict.LosesConcealment)
             {
                 changed[Conditions.Concealed] = ConditionState.False;
                 changed[Conditions.Hidden] = ConditionState.False;
@@ -1016,8 +944,7 @@ public sealed partial class GamePlanner
 
             yield return ("conditions-changed", new ConditionsChanged(effect.VehicleId, changed));
         }
-        else if (vehicle is not null && (Is(vehicle, Conditions.Concealed) || Is(vehicle, Conditions.Hidden)) && facts.FireKind != ScenarioA1FireCalculator.ResidualFire
-            && effect.CrewCheck is not null)
+        else if (verdict.LosesConcealment)
         {
             yield return ("conditions-changed", new ConditionsChanged(effect.VehicleId,
                 new Dictionary<string, ConditionState> { [Conditions.Concealed] = ConditionState.False, [Conditions.Hidden] = ConditionState.False }));
@@ -1052,12 +979,41 @@ public sealed partial class GamePlanner
         return conditions;
     }
 
-    private static string Marker(string counter) => counter switch
+    /// <summary>A verdict's condition changes as the record writes them (pass 32.c): each condition under its name, in the order given, a later value replacing an earlier one in its place.</summary>
+    private static Dictionary<string, ConditionState> ConditionChanges(IReadOnlyList<(UnitCondition Condition, bool Value)> changes)
     {
-        "prep-fire" => Conditions.PrepFire,
-        "first-fire" => Conditions.FirstFire,
-        "bounding-fire" => Conditions.BoundingFire,
-        _ => Conditions.FinalFire,
+        var conditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
+        foreach (var (condition, value) in changes)
+        {
+            conditions[ConditionName(condition)] = value ? ConditionState.True : ConditionState.False;
+        }
+
+        return conditions;
+    }
+
+    /// <summary>A condition of the Rules verdicts under Units' name.</summary>
+    private static string ConditionName(UnitCondition condition) => condition switch
+    {
+        UnitCondition.Broken => Conditions.Broken,
+        UnitCondition.Pinned => Conditions.Pinned,
+        UnitCondition.Wounded => Conditions.Wounded,
+        UnitCondition.Disrupted => Conditions.Disrupted,
+        UnitCondition.DesperationMorale => Conditions.DesperationMorale,
+        UnitCondition.Concealed => Conditions.Concealed,
+        UnitCondition.Hidden => Conditions.Hidden,
+        UnitCondition.Fanatic => Conditions.Fanatic,
+        UnitCondition.Berserk => Conditions.Berserk,
+        UnitCondition.Heroic => Conditions.Heroic,
+        UnitCondition.PrepFire => Conditions.PrepFire,
+        UnitCondition.FirstFire => Conditions.FirstFire,
+        UnitCondition.FinalFire => Conditions.FinalFire,
+        UnitCondition.BoundingFire => Conditions.BoundingFire,
+        UnitCondition.Cx => Conditions.Cx,
+        UnitCondition.Malfunctioned => Conditions.Malfunctioned,
+        UnitCondition.Immobilized => Conditions.Immobilized,
+        UnitCondition.Motion => Conditions.Motion,
+        UnitCondition.BmgMalfunctioned => Conditions.BmgMalfunctioned,
+        _ => Conditions.CmgMalfunctioned,
     };
 
     /// <summary>
@@ -1075,7 +1031,8 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// The event that records one unit's effect: an elimination, a Reduction or Replacement, or new conditions. A unit that
-    /// breaks, or that is attacked while broken by enough FP, is under DM (A10.62).
+    /// breaks, or that is attacked while broken by enough FP, is under DM (A10.62). The heroes Heat of Battle creates follow (A15.21; rulings R5.10,
+    /// R5.11), as Rules names them (pass 32.c).
     /// </summary>
     private static IEnumerable<(string Type, EventPayload Payload)> EffectEvents(GameState state, FireUnitEffect effect, string attemptId,
         bool attackedWhileBroken)
@@ -1085,130 +1042,35 @@ public sealed partial class GamePlanner
             yield return own;
         }
 
-        // A15.21: a hero created by Heat of Battle, in the unit's Location, sharing its fire and movement status (ruling R5.11); a hero created
-        // from a Fanatic unit is Fanatic (A10.8). A second Heat of Battle DR may create a second hero (ruling R5.10).
         if (state.Unit(effect.UnitId) is { } creator)
         {
-            var creatorId = effect.FinalDefinitionId != effect.DefinitionId && !effect.Eliminated ? $"{attemptId}-{effect.UnitId}" : effect.UnitId;
-            var alive = !effect.Eliminated;
-            var concealed = !effect.ConcealmentLost && !effect.Eliminated;
-            if (effect.HeatOfBattle?.HeroDefinitionId is { } hero)
+            foreach (var hero in ScenarioA1FireFollowUps.HeroCreations(effect, attemptId))
             {
-                yield return ("instance-created", new InstanceCreated(HeroOf(creator, hero, attemptId, concealed: concealed)) { Creator = alive ? creatorId : null });
-            }
-
-            if (effect.SecondHeatOfBattle?.HeroDefinitionId is { } second)
-            {
-                yield return ("instance-created", new InstanceCreated(HeroOf(creator, second, attemptId, "hero-2", concealed)) { Creator = alive ? creatorId : null });
+                yield return ("instance-created", new InstanceCreated(HeroOf(creator, hero.DefinitionId, attemptId, hero.Suffix, hero.Concealed)) { Creator = hero.CreatorId });
             }
         }
     }
 
-    /// <summary>
-    /// A hero a unit creates (A15.21): unbroken, with the unit's fire markers and Fanaticism; concealed when the unit is and keeps its "?" (A12.1; backlog
-    /// pass 15, ruling R15.12).
-    /// </summary>
-    private static NewInstance HeroOf(UnitInstance creator, string hero, string attemptId, string suffix = "hero", bool concealed = false)
-    {
-        var conditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal)
-        {
-            [Conditions.Broken] = ConditionState.False,
-            [Conditions.Pinned] = ConditionState.False,
-            [Conditions.Wounded] = ConditionState.False,
-            [Conditions.Concealed] = concealed && Is(creator, Conditions.Concealed) ? ConditionState.True : ConditionState.False,
-            [Conditions.Hidden] = ConditionState.False,
-        };
-        foreach (var marker in new[] { Conditions.PrepFire, Conditions.FirstFire, Conditions.FinalFire, Conditions.Fanatic, Conditions.Cx })
-        {
-            if (GameState.Condition(creator, marker) == ConditionState.True)
-            {
-                conditions[marker] = ConditionState.True;
-            }
-        }
-
-        return new NewInstance($"{attemptId}-{creator.Id}-{suffix}", "asl:hero", hero, creator.Side, creator.Position, null, conditions);
-    }
+    /// <summary>A hero a unit creates (A15.21), with the conditions Rules gives it (pass 32.c), in its creator's Location.</summary>
+    private static NewInstance HeroOf(UnitInstance creator, string hero, string attemptId, string suffix = "hero", bool concealed = false) =>
+        new(ScenarioA1FireFollowUps.HeroId(attemptId, creator.Id, suffix), "asl:hero", hero, creator.Side, creator.Position, null,
+            ConditionChanges(ScenarioA1FireFollowUps.HeroConditions(concealed, condition => GameState.Condition(creator, ConditionName(condition)) == ConditionState.True)));
 
     private static (string Type, EventPayload Payload)? EffectEvent(GameState state, FireUnitEffect effect, string attemptId, bool attackedWhileBroken)
     {
         var unit = state.Unit(effect.UnitId)!;
-        if (effect.Eliminated)
+        // Rules decides the conditions and the lineage (pass 32.c); the dictionaries are built here in the order given.
+        var verdict = ScenarioA1FireFollowUps.Effect(effect, attackedWhileBroken, condition => GameState.Condition(unit, ConditionName(condition)) == ConditionState.True,
+            unit.Kind, () => FireReference.Value.Definitions[effect.FinalDefinitionId].Kind);
+        if (verdict.Eliminated)
         {
             return ("instance-eliminated", new InstanceEliminated(unit.Id));
         }
 
-        var conditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
-        void Set(string name, bool value)
+        var conditions = ConditionChanges(verdict.Conditions);
+        if (verdict.Lineage is { } lineage)
         {
-            if ((GameState.Condition(unit, name) == ConditionState.True) != value)
-            {
-                conditions[name] = value ? ConditionState.True : ConditionState.False;
-            }
-        }
-
-        Set(Conditions.Broken, effect.Broken);
-        Set(Conditions.Pinned, effect.Pinned);
-        Set(Conditions.Wounded, effect.Wounded);
-        Set(Conditions.Disrupted, effect.Disrupted);
-        if (effect.Broken && (GameState.Condition(unit, Conditions.Broken) != ConditionState.True || attackedWhileBroken))
-        {
-            Set(Conditions.DesperationMorale, true);
-        }
-
-        if (effect.ConcealmentLost)
-        {
-            conditions[Conditions.Concealed] = ConditionState.False;
-            conditions[Conditions.Hidden] = ConditionState.False;
-        }
-
-        // A10.8, A15.3: Fanaticism, once gained, lasts; A15.21: a heroic leader.
-        if (effect.Fanatic == true)
-        {
-            Set(Conditions.Fanatic, true);
-        }
-
-        // A15.4, A15.42: a unit that goes berserk is rallied and no longer under DM.
-        if (effect.Berserk == true)
-        {
-            Set(Conditions.Berserk, true);
-            Set(Conditions.DesperationMorale, false);
-        }
-
-        if (effect.Heroic == true)
-        {
-            Set(Conditions.Heroic, true);
-        }
-
-        // A15.3: a Battle Hardened unit is unbroken, so no longer under DM; A15.21: nor is a leader made heroic.
-        if (effect.HeatOfBattle?.Hardening == true || effect.HeatOfBattle?.Heroic == true)
-        {
-            Set(Conditions.DesperationMorale, false);
-        }
-
-        if (effect.SplitIntoHalfSquads == true)
-        {
-            // A19.13 (ruling R15.9): a squad with an underscored Morale Factor is Replaced by its two broken HS; the first keeps its SW, as a Deployment's does.
-            var half = FireReference.Value.Definitions[effect.FinalDefinitionId];
-            var produced = unit.Conditions.Where(item => item.Key != Conditions.Concealed && item.Key != Conditions.Hidden)
-                .ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal);
-            foreach (var (name, value) in conditions)
-            {
-                produced[name] = value;
-            }
-
-            produced[Conditions.Concealed] = ConditionState.False;
-            produced[Conditions.Hidden] = ConditionState.False;
-            return ("lineage", new LineageRecorded(LineageAction.Deployed, [unit.Id],
-                [new NewInstance($"{attemptId}-{unit.Id}", half.Kind, half.Id, unit.Side, unit.Position, null, produced),
-                    new NewInstance($"{attemptId}-{unit.Id}-2", half.Kind, half.Id, unit.Side, unit.Position, null, new Dictionary<string, ConditionState>(produced, StringComparer.Ordinal))]));
-        }
-
-        if (effect.FinalDefinitionId != effect.DefinitionId)
-        {
-            // A7.302: Casualty Reduction makes a HS of the same broken status; A19.13: Replacement by a lesser unit; A15.3:
-            // Battle Hardening by an unbroken, unpinned unit of the next higher quality.
             var reference = FireReference.Value.Definitions[effect.FinalDefinitionId];
-            var reduced = unit.Kind == "asl:squad" && reference.Kind == "asl:half-squad";
             var produced = unit.Conditions.Where(item => item.Key != Conditions.Concealed && item.Key != Conditions.Hidden)
                 .ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal);
             foreach (var (name, value) in conditions)
@@ -1216,13 +1078,14 @@ public sealed partial class GamePlanner
                 produced[name] = value;
             }
 
-            // A12.14: a unit that passed its MC and was Battle Hardened keeps "?" unless the attack cost it; any other
-            // Reduction or Replacement loses it.
-            var hardened = effect.HeatOfBattle?.HardenedDefinitionId == effect.FinalDefinitionId;
-            produced[Conditions.Concealed] = hardened && !effect.ConcealmentLost ? GameState.Condition(unit, Conditions.Concealed) : ConditionState.False;
+            produced[Conditions.Concealed] = verdict.KeepsConcealment ? GameState.Condition(unit, Conditions.Concealed) : ConditionState.False;
             produced[Conditions.Hidden] = ConditionState.False;
-            return ("lineage", new LineageRecorded(reduced ? LineageAction.Reduced : LineageAction.Replaced, [unit.Id],
-                [new NewInstance($"{attemptId}-{unit.Id}", reference.Kind, reference.Id, unit.Side, unit.Position, null, produced)]));
+            return lineage == EffectVerdict.Deployed
+                ? ("lineage", new LineageRecorded(LineageAction.Deployed, [unit.Id],
+                    [new NewInstance($"{attemptId}-{unit.Id}", reference.Kind, reference.Id, unit.Side, unit.Position, null, produced),
+                        new NewInstance($"{attemptId}-{unit.Id}-2", reference.Kind, reference.Id, unit.Side, unit.Position, null, new Dictionary<string, ConditionState>(produced, StringComparer.Ordinal))]))
+                : ("lineage", new LineageRecorded(lineage == EffectVerdict.Reduced ? LineageAction.Reduced : LineageAction.Replaced, [unit.Id],
+                    [new NewInstance($"{attemptId}-{unit.Id}", reference.Kind, reference.Id, unit.Side, unit.Position, null, produced)]));
         }
 
         return conditions.Count == 0 ? null : ("conditions-changed", new ConditionsChanged(unit.Id, conditions));

@@ -350,3 +350,54 @@ public interface IConcealmentFactReader
 
 /// <summary>A unit that gains "?" as its Player Turn ends, with the Final Concealment dr modifier it needs, or null when it gains "?" with no dr.</summary>
 public sealed record ConcealmentGain(string Id, int? Drm);
+
+/// <summary>A unit's condition as the fire effects set it (pass 32.c); the caller maps each to its own name. The order of a verdict's conditions is the order the record writes them.</summary>
+public enum UnitCondition
+{
+    Broken,
+    Pinned,
+    Wounded,
+    Disrupted,
+    DesperationMorale,
+    Concealed,
+    Hidden,
+    Fanatic,
+    Berserk,
+    Heroic,
+    PrepFire,
+    FirstFire,
+    FinalFire,
+    BoundingFire,
+    Cx,
+    Malfunctioned,
+    Immobilized,
+    Motion,
+    BmgMalfunctioned,
+    CmgMalfunctioned,
+}
+
+/// <summary>What the Fire package asks for next (ruling R5.8): the attack is resolved; or an option its owner answers (the choice's key); or a roll (its key, the dice count, the roll's purpose); or the package left the attack undecided (its reasons joined).</summary>
+public sealed record FireNextStep(bool Resolved, string? ChoiceKey, string? RollKey, int Count, string? Purpose, string? Undecided);
+
+/// <summary>The verdict on a vehicle's result (rulings R25.5, R25.6, R6.5, R6.7): a wreck (burning or not), or condition changes (as <see cref="ScenarioA1ResultTables.VehicleConditions"/> gives them) with its "?" lost or not, or its "?" lost alone.</summary>
+public sealed record VehicleEffectVerdict(bool Wrecked, bool Burning, bool Changes, bool LosesConcealment);
+
+/// <summary>A hero a unit's effect creates (A15.21; rulings R5.10, R5.11): its definition, the suffix of its id, whether it may be concealed, and its creator's id for the record (null when the creator was eliminated).</summary>
+public sealed record HeroCreation(string DefinitionId, string Suffix, bool Concealed, string? CreatorId);
+
+/// <summary>The verdict on a unit's effect (A10.62, A15.21, A19.13, A7.302, A12.14): eliminated; or the conditions it sets (only those that change), and a lineage (deployed into two HS, reduced, or replaced) with whether the produced unit keeps the "?" the unit has.</summary>
+public sealed record EffectVerdict(bool Eliminated, IReadOnlyList<(UnitCondition Condition, bool Value)> Conditions, string? Lineage, bool KeepsConcealment)
+{
+    public const string Deployed = "deployed";
+    public const string Reduced = "reduced";
+    public const string Replaced = "replaced";
+}
+
+/// <summary>An acquired unit as the Acquisition follow-up reads it (C6.5, C6.51; ruling R5.13): its id, its Location's text before and after the events (null off the map), whether the Gun's LOS to its new Location is clear (read when asked), and whether its move ended before and after.</summary>
+public sealed record AcquiredUnitFacts(string Id, string? Was, string? Now, Func<bool> LosClear, bool EndedBefore, bool EndedAfter);
+
+/// <summary>An Acquisition as the follow-up reads it: the Gun's id and side, whether the Gun is found on the map and the Acquisition existed before, the Location it had before and has now, and its units.</summary>
+public sealed record AcquisitionFacts(string Gun, string? GunSide, bool GunOnMap, bool ExistedBefore, string? PreviousLocation, string Location, IReadOnlyList<AcquiredUnitFacts> Units);
+
+/// <summary>The follow-up of one Acquisition: the Location and units it changes to (null when unchanged), and the Locations the Gun's side chooses among (null when no choice is due).</summary>
+public sealed record AcquisitionVerdict(string Gun, (string Location, IReadOnlyList<string> Units)? Changed, IReadOnlyList<string>? ChoiceLocations);
