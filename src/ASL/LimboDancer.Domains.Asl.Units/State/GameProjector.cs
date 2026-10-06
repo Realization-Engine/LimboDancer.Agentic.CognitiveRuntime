@@ -559,6 +559,17 @@ public static class GameProjector
                 : null;
         }
 
+        /// <summary>The facts of a recorded SMOKE attempt against the state, the catalog, and the recorded dr (pass 32.a), for Rules to check.</summary>
+        private Rules.SmokeRecordFacts SmokeFacts(GameState state, MovementStepped moving, SmokeAttempt smoke)
+        {
+            var placer = Active(state, smoke.Unit) as UnitInstance;
+            var rollFound = rolls.TryGetValue(smoke.Roll, out var roll);
+            return new Rules.SmokeRecordFacts(moving.Movers.Contains(smoke.Unit, StringComparer.Ordinal), state.SmokeAttempts.Contains(smoke.Unit, StringComparer.Ordinal),
+                moving.To == state.Location(smoke.Unit)?.Location, rollFound, roll?.Count ?? 0, roll is not null && roll.Count == 1 ? roll.Values[0] : null, smoke.Dr, smoke.Exponent,
+                placer is not null, placer is null ? null : SmokeExponent(placer), smoke.Cx, moving.DoubleTime,
+                placer is not null && GameState.Condition(placer, Conditions.Cx) == ConditionState.True, moving.HalfMf, smoke.Target == moving.To);
+        }
+
         /// <summary>A Smoke Placement Exponent as the unit's catalog definition prints it (A1.21); null when none is printed.</summary>
         private int? SmokeExponent(UnitInstance unit) => unit.Definition is { } reference
             ? catalogs.FirstOrDefault(catalog => catalog.Identity == reference.Catalog)?.Definition(reference.Definition)?.Printed("front", "asl:smoke-exponent")?.Value?.Number
@@ -1887,12 +1898,8 @@ public static class GameProjector
             // A24.1 (ruling R9.5): a SMOKE attempt is made once per MPh by a moving squad, in its Location, with its recorded dr.
             // Table player, pass 9: the exponent is the catalog's, CX (or Double Time with this step) adds one, and the cost is 1 MF in the own
             // Location and 2 in another.
-            if (moving.Smoke is { } smoke && (!moving.Movers.Contains(smoke.Unit, StringComparer.Ordinal) || state.SmokeAttempts.Contains(smoke.Unit, StringComparer.Ordinal)
-                || moving.To != state.Location(smoke.Unit)?.Location || !rolls.TryGetValue(smoke.Roll, out var smokeRoll) || smokeRoll.Count != 1
-                || smokeRoll.Values[0] != smoke.Dr || smoke.Exponent < 1 || Active(state, smoke.Unit) is not UnitInstance placer
-                || SmokeExponent(placer) != smoke.Exponent
-                || smoke.Cx != (moving.DoubleTime || GameState.Condition(placer, Conditions.Cx) == ConditionState.True)
-                || moving.HalfMf != (smoke.Target == moving.To ? 2 : 4)))
+            // Pass 32.a (the worked action): the projector reads the record's facts and Rules decides (ScenarioA1SmokeCalculator.Verify).
+            if (moving.Smoke is { } smoke && !Rules.ScenarioA1SmokeCalculator.Verify(SmokeFacts(state, moving, smoke)))
             {
                 return Fail<GameState>("UNIT-STATE-029", "A SMOKE placement is one attempt per MPh by a squad of the moving stack, in its Location, with its dr (A24.1).");
             }
