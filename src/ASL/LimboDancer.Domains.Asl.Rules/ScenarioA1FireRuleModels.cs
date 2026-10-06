@@ -401,3 +401,15 @@ public sealed record AcquisitionFacts(string Gun, string? GunSide, bool GunOnMap
 
 /// <summary>The follow-up of one Acquisition: the Location and units it changes to (null when unchanged), and the Locations the Gun's side chooses among (null when no choice is due).</summary>
 public sealed record AcquisitionVerdict(string Gun, (string Location, IReadOnlyList<string> Units)? Changed, IReadOnlyList<string>? ChoiceLocations);
+
+/// <summary>A unit named by an Opportunity Fire record as the projector finds it (A7.25): found as an active unit, of the phasing side, Personnel, and its conditions.</summary>
+public sealed record OpportunityRecordUnitFacts(bool Found, bool PhasingSide, bool Personnel, bool Broken, bool Berserk, bool Melee, bool Captured, bool PrepFire, bool BoundingFire);
+
+/// <summary>A unit in an Encircled Location as the projector finds it (A7.7): active, a Dummy, captured, and Encircled.</summary>
+public sealed record EncircledLocationUnitFacts(bool Active, bool Dummy, bool Captured, bool Encircled);
+
+/// <summary>A unit an Acquisition change names, as the projector finds it (C6.5, C6.51): active, its side, whether it is in the named Location, and whether it is concealed.</summary>
+public sealed record AcquiredUnitRecordFacts(bool Active, string? Side, bool InLocation, bool Concealed);
+
+/// <summary>The holder of an Acquisition as the projector finds it (C6.5, C9.2, D1.3): a Gun manned by an active crew, a light mortar possessed by an active unit, or an active vehicle; the holder's Good Order as three values; the vehicle's Abandoned condition.</summary>
+public sealed record AcquisitionHolderFacts(bool GunMannedByActiveCrew, bool LightMortarPossessedByActiveUnit, RuleState HolderGoodOrder, bool ActiveVehicle, bool Abandoned);

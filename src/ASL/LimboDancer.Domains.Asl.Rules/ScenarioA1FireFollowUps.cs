@@ -528,4 +528,153 @@ public static class ScenarioA1FireFollowUps
 
         return verdicts;
     }
+
+    // The projector's fire, Residual FP, SW, Opportunity Fire, Encirclement, Fire Lane, and Acquisition records (GameProjector of Units; pass 32.c). A
+    // refusal crosses as its code and text, so each diagnostic keeps its count in the text list.
+
+    /// <summary>
+    /// A fire record (A8.1, A7.55, A8.22, D3.4, D3.5, D7.14; rulings R25.7, R11.11): a Defensive fire record answers the open window of the moving
+    /// stack's latest step; a Location's units fire at a target once per phase (in the MPh, once per MF expenditure), as one fire group; Residual FP has
+    /// no firers and never forms one; a vehicle's MG shot and an OVR are the vehicle's own attacks.
+    /// </summary>
+    public static RecordRefusal? VerifyFireRecord(int? movementStep, bool windowOpen, int? windowStep, int firers, bool byVehicle, IEnumerable<PhaseFireFacts> fires,
+        string firerLocation, string targetLocation)
+    {
+        ArgumentNullException.ThrowIfNull(fires);
+        if (movementStep is { } answered && (!windowOpen || windowStep != answered))
+        {
+            return new RecordRefusal("UNIT-STATE-024", $"Defensive First Fire answers the open window on the moving stack's step {answered} (A8.1).");
+        }
+
+        return firers > 0 && fires.Any(item => !(byVehicle && item.Vehicle) && item.FirerLocation == firerLocation && item.TargetLocation == targetLocation && item.Step == movementStep)
+            ? new RecordRefusal("UNIT-STATE-024", $"{firerLocation} has already fired at {targetLocation} this phase (A7.55).")
+            : null;
+    }
+
+    /// <summary>C2.24, D3.5 (unit step 25): a vehicle's MG shot keeps its Multiple ROF for this phase when its one weapon effect says so.</summary>
+    public static bool VehicleShotKeepsRof(int weaponEffects, bool? rateOfFireRetained) => weaponEffects == 1 && rateOfFireRetained == true;
+
+    /// <summary>A vehicle's MG shots this phase: one more than before.</summary>
+    public static int VehicleShotCount(int? previousShots) => (previousShots ?? 0) + 1;
+
+    /// <summary>Residual FP a fire record left (A8.2, A8.21): placed in the MPh, in its record's target Location, at the record's own value; only a larger counter replaces one there.</summary>
+    public static RecordRefusal? VerifyResidualFp(string? phase, bool recordKnown, bool sameTarget, int? recordedFp, int fp, string fireId, int? existingFp)
+    {
+        if (phase != "mph" || !recordKnown || !sameTarget || recordedFp != fp)
+        {
+            return new RecordRefusal("UNIT-STATE-026", $"Residual FP must be the value its fire record '{fireId}' leaves in its target Location (A8.2).");
+        }
+
+        return existingFp is { } present && present >= fp ? new RecordRefusal("UNIT-STATE-026", "Only a larger Residual FP counter replaces one already in the Location (A8.21).") : null;
+    }
+
+    /// <summary>
+    /// A7.351 (rulings R9.2, R9.4, R9.7): a squad whose only fire this phase is one SW use: a squad not yet marked gains the entry for its weapon; an entry
+    /// for another weapon, or a second Panzerfaust, ends it; a non-squad has none. The uses after this use.
+    /// </summary>
+    public static IReadOnlyList<(string Unit, string Weapon)> SupportWeaponUse(IReadOnlyList<(string Unit, string Weapon)> uses, string unitId, bool squad, bool marked, string weapon)
+    {
+        ArgumentNullException.ThrowIfNull(uses);
+        var existing = uses.FirstOrDefault(item => item.Unit == unitId);
+        return !squad ? uses
+            : existing.Unit is null ? (marked ? uses : [.. uses, (unitId, weapon)])
+            : existing.Weapon != weapon || weapon == "panzerfaust" ? [.. uses.Where(item => item.Unit != unitId)]
+            : uses;
+    }
+
+    /// <summary>C13.31 (ruling R9.7): a Panzerfaust shot counts against its side's usage when its check's outcome is a shot.</summary>
+    public static bool PanzerfaustShotCounts(bool panzerfaust, string? outcome) => panzerfaust && outcome == "shot";
+
+    /// <summary>A7.351 (table player, pass 9): the units of a fire record have fired this phase, each with the count of SW it used, replacing their earlier entries.</summary>
+    public static IReadOnlyList<(string Unit, string Weapon)> PhaseFirersAfterFire(IReadOnlyList<(string Unit, string Weapon)> phaseFirers, IReadOnlyList<string> firers, Func<string, int> weaponsUsed)
+    {
+        ArgumentNullException.ThrowIfNull(phaseFirers);
+        ArgumentNullException.ThrowIfNull(firers);
+        ArgumentNullException.ThrowIfNull(weaponsUsed);
+        return [.. phaseFirers.Where(item => !firers.Contains(item.Unit, StringComparer.Ordinal)),
+            .. firers.Select(unit => (unit, weaponsUsed(unit).ToString(System.Globalization.CultureInfo.InvariantCulture)))];
+    }
+
+    /// <summary>A7.351 (ruling R9.2): a squad that fires its inherent FP after its one SW use has fired, and its use ends: whether any firer of the record has a use.</summary>
+    public static bool SupportWeaponUseEnds(IEnumerable<string> useUnits, IReadOnlyList<string> firers)
+    {
+        ArgumentNullException.ThrowIfNull(useUnits);
+        ArgumentNullException.ThrowIfNull(firers);
+        return useUnits.Any(unit => firers.Contains(unit, StringComparer.Ordinal));
+    }
+
+    /// <summary>Opportunity Fire (A7.25; ruling R12.1): declared in the PFPh for Good Order Infantry of the phasing side, named once each, that have not fired, not berserk, in Melee, or prisoners.</summary>
+    public static RecordRefusal? VerifyOpportunityFire(string? phase, int units, bool namedOnce, IEnumerable<OpportunityRecordUnitFacts> declared)
+    {
+        ArgumentNullException.ThrowIfNull(declared);
+        return phase != "pfph" || units == 0 || !namedOnce
+            || declared.Any(unit => !unit.Found || !unit.PhasingSide || !unit.Personnel || unit.Broken || unit.Berserk || unit.Melee || unit.Captured || unit.PrepFire || unit.BoundingFire)
+            ? new RecordRefusal("UNIT-STATE-040", "Opportunity Fire is declared in the PFPh for Good Order Infantry of the phasing side that have not fired (A7.25).")
+            : null;
+    }
+
+    /// <summary>An Encirclement (A7.7; ruling R12.11): placed by a fire record of a fire phase at the Location, on a side with units there; one already there is kept as it is.</summary>
+    public static (RecordRefusal? Refusal, bool Add) VerifyEncirclement(string? phase, bool recordKnown, bool sameTarget, bool sideThere, bool exists) =>
+        phase is not ("pfph" or "dfph" or "afph") || !recordKnown || !sameTarget || !sideThere
+            ? (new RecordRefusal("UNIT-STATE-040", "An Encirclement is placed by a fire record of a fire phase at a Location holding units of the Encircled side (A7.7)."), false)
+            : (null, !exists);
+
+    /// <summary>A7.7 (ruling R12.11): an Encirclement stands while an active, uncaptured, non-Dummy unit it Encircles is left in its Location.</summary>
+    public static bool EncirclementStands(IEnumerable<EncircledLocationUnitFacts> unitsThere)
+    {
+        ArgumentNullException.ThrowIfNull(unitsThere);
+        return unitsThere.Any(unit => unit.Active && !unit.Dummy && !unit.Captured && unit.Encircled);
+    }
+
+    /// <summary>A Fire Lane (A9.22; ruling R12.7): placed in the MPh by its MG's fire record, for an active MG and operator, every entry with FP, one per MG.</summary>
+    public static RecordRefusal? VerifyFireLane(string? phase, bool recordKnown, bool weaponActive, bool operatorActive, IEnumerable<int> entryFps, bool laneExists)
+    {
+        ArgumentNullException.ThrowIfNull(entryFps);
+        return phase != "mph" || !recordKnown || !weaponActive || !operatorActive || entryFps.Any(fp => fp <= 0) || laneExists
+            ? new RecordRefusal("UNIT-STATE-040", "A Fire Lane is placed in the MPh by its MG's fire record (A9.22).")
+            : null;
+    }
+
+    /// <summary>A9.223 (ruling R12.7): a Fire Lane stands while its MG is in play and working and its manning Infantry is in play, unbroken, and unpinned.</summary>
+    public static bool FireLaneStands(bool mgActive, bool mgMalfunctioned, bool operatorActive, bool operatorBroken, bool operatorPinned) =>
+        mgActive && !mgMalfunctioned && operatorActive && !operatorBroken && !operatorPinned;
+
+    /// <summary>C6.5, C6.51 (ruling R5.13): an Acquisition changes only for a Gun that has one, onto active, unconcealed enemy units all in the named Location.</summary>
+    public static RecordRefusal? VerifyAcquisitionChange(bool hasAcquisition, string? gunSide, IEnumerable<AcquiredUnitRecordFacts> units)
+    {
+        ArgumentNullException.ThrowIfNull(units);
+        return !hasAcquisition || gunSide is null || units.Any(unit => !unit.Active || unit.Side == gunSide || !unit.InLocation || unit.Concealed)
+            ? new RecordRefusal("UNIT-STATE-033", "An Acquisition changes for a Gun that has one, onto Known enemy units in its Location (C6.5, C6.51).")
+            : null;
+    }
+
+    /// <summary>C6.5, D1.3, C9.2: an Acquisition is kept while its Gun is manned by an active crew not known to be out of Good Order, its light mortar is possessed by such a unit, or its tank is active and not Abandoned.</summary>
+    public static bool AcquisitionHolds(AcquisitionHolderFacts holder)
+    {
+        ArgumentNullException.ThrowIfNull(holder);
+        return holder.GunMannedByActiveCrew ? holder.HolderGoodOrder != RuleState.False
+            : holder.LightMortarPossessedByActiveUnit ? holder.HolderGoodOrder != RuleState.False
+            : holder.ActiveVehicle && !holder.Abandoned;
+    }
+
+    /// <summary>
+    /// C6.5, C6.51 (ruling R5.13): an Acquisition follows its units into their successors (A7.302, A19.13), drops those no longer active or taken
+    /// prisoner, and follows them while they share one Location (their texts); else it keeps its Location.
+    /// </summary>
+    public static (IReadOnlyList<string> Units, string Location) AcquisitionAfter(IReadOnlyList<string> units, IReadOnlyList<string>? consumed, IReadOnlyList<string>? produced,
+        Func<string, bool> activeUncaptured, Func<string, string?> locationOf, string location)
+    {
+        ArgumentNullException.ThrowIfNull(units);
+        ArgumentNullException.ThrowIfNull(activeUncaptured);
+        ArgumentNullException.ThrowIfNull(locationOf);
+        var kept = units.ToList();
+        if (consumed is not null && produced is not null && kept.Any(consumed.Contains))
+        {
+            kept = [.. kept.Where(id => !consumed.Contains(id)), .. produced];
+        }
+
+        kept = [.. kept.Where(activeUncaptured)];
+        var locations = kept.Select(locationOf).Distinct(StringComparer.Ordinal).ToArray();
+        return (kept, locations is [{ } only] ? only : location);
+    }
 }
