@@ -286,99 +286,70 @@ public sealed partial class GamePlanner
 
         var step = (current?.Step ?? 0) + 1;
         var package = ScenarioA1FirePackage.Identity.ToString();
-        var revealing = enemiesThere.Length > 0 ? enemiesThere : hiddenEnemies;
-        var realOnes = revealing.Where(unit => unit.Kind != UnitKinds.Dummy).OrderBy(unit => unit.Id, StringComparer.Ordinal).ToArray();
-        var forcedBack = enemiesThere.Length > 0 && realOnes.Length > 0;
+
+        // A12.15, A.9, A12.11, A2.51 (rulings R10.11, R10.15, R25.3, R27.3): who is revealed, whether the stack is forced back, the record's Road
+        // Bonus, the summary, and the Random Selection's pool are decided by Rules from the facts read above; the events are built here.
+        var verdict = ScenarioA1MovementCalculator.MoveStep(new MoveStepFacts(ids, from.ToString(), to.ToString(), entering is not null, charge?.ToString(), occupy, terrain,
+            bypassing is null ? null : [.. bypassing.Select(side => side.ToString().ToLowerInvariant())], halfMf, assault, doubleTime, minimumMove,
+            [.. abandoned.Select(item => item.Id)], entry.RoadRate, pushed is not null, state.Night, movers.Length > 0 && movers.All(unit => unit.Kind == UnitKinds.Dummy),
+            [.. enemiesThere.Select(unit => new MoveRevealUnitFacts(unit.Id, unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Hidden)))],
+            [.. hiddenEnemies.Select(unit => new MoveRevealUnitFacts(unit.Id, unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Hidden)))]));
+        var forcedBack = verdict.ForcedBack;
         var moved = new MovementStepped(ids, forcedBack ? from : to, halfMf, assault, step)
         {
             Charge = charge,
             DoubleTime = doubleTime,
-            Road = entry.RoadRate && pushed is null && !forcedBack,
+            Road = verdict.RoadBonus,
             MinimumMove = minimumMove,
             Attempted = forcedBack ? to : null,
             Bypass = bypassing,
         };
-        var summary = $"{(entering is not null ? "play.enter" : "play.move")}: {string.Join(", ", ids)} " + (forcedBack ? $"{(ids.Length == 1 ? "attempts" : "attempt")} {to}" : occupy ? $"{(ids.Length == 1 ? "occupies" : "occupy")} the obstacle of {to}" : $"{(ids.Length == 1 ? "enters" : "enter")} {to}")
-            + $" ({terrain}{(bypassing is not null ? " in Bypass along " + string.Join(", ", bypassing.Select(side => side.ToString().ToLowerInvariant())) : string.Empty)}) for {halfMf / 2m} MF"
-            + (assault ? ", by Assault Movement" : string.Empty)
-            + (doubleTime ? ", Double Timing and now CX (A4.5)" : string.Empty)
-            + (minimumMove ? ", a Minimum Move: pinned and CX once the DEFENDER's fire is done (A4.134)" : string.Empty)
-            + (charge is not null ? $", charging {charge} (A15.43)" : string.Empty)
-            + (abandoned.Count > 0 ? $"; {string.Join(", ", abandoned.Select(item => item.Id))} abandoned before the charge (A15.431)" : string.Empty);
-
-        // Pass 31d (design D5; A12.11, read in the PDF, p. 76; ruling R31d.3): a stack of Dummies alone that moves without Assault Movement, or into
-        // Open Ground, is removed in the LOS of a Good Order enemy unit. The mover is told so with "if", whatever the game knows: whether an enemy
-        // "?" that sees the hex is a real unit is not the mover's to learn before the move. At night the rule is another (E1.31), and nothing is said.
-        string[] dummyWarning = !state.Night && !forcedBack && movers.Length > 0 && movers.All(unit => unit!.Kind == UnitKinds.Dummy) && (!assault || terrain == "open-ground")
-            ? [$"play.dummies: this stack holds no real unit; it is removed if a Good Order enemy unit within 16 hexes has a LOS to it in {to} (A12.11)"]
-            : [];
+        var summary = verdict.Summary;
+        var dummyWarning = verdict.DummyWarning;
         List<GameEvent> prefix = [.. abandoned.Select((item, index) => Event(scope, attemptId, index + 1, expected, "equipment-transferred",
             new EquipmentTransferred(item.Id, null, new MapPosition(from)), package, null))];
         var landed = forcedBack ? from : to;
-
-        // A2.51 (ruling R25.3): a stack forced back off board is beyond every attack.
-        var offMap = entering is not null && forcedBack;
+        var offMap = verdict.OffMap;
         var residual = offMap ? null : state.ResidualFire.FirstOrDefault(item => item.Location == landed);
 
         // A9.22 (ruling R12.7): each Fire Lane with Residual FP in the Location attacks the stack after any other Residual FP.
         var lanes = offMap ? [] : state.FireLanes.SelectMany(lane => lane.Entries.Where(item => item.Location == landed).Select(item => (Lane: lane, Entry: item))).ToArray();
-        if (pushed is not null)
+        var gate = ScenarioA1MovementCalculator.StepGate(verdict.NeedsSelection, residual is not null, lanes.Length, pushed is not null);
+        if (gate.Refusal is { } noPush)
         {
-            return residual is not null || lanes.Length > 0
-                ? Refused(scope, label, expected, "play.move-push-residual: pushing a Gun into Residual FP is not reviewed (C10.3, A8.2)")
-                : PushPlan(scope, attemptId, expected, label, actor, state, pushed, moved, halfMf / 2 - (entry.RoadRate ? 2 : 0), summary);
+            return Refused(scope, label, expected, noPush);
         }
 
-        // A12.15 (rulings R10.11, R10.15): the reveal. Hidden units first go beneath a "?"; a Random Selection among several real units reveals the
-        // highest dr (ties all); Dummies alone are removed and the stack enters.
-        // A.9 (ruling R27.3): a charge draws among every counter there, Dummies too; each Dummy drawn above the first real unit is eliminated, and
-        // the Dummies drawn below it stay. Ties are all drawn together.
-        var pool = charge is not null && realOnes.Length > 0 ? [.. revealing.OrderBy(unit => unit.Id, StringComparer.Ordinal)] : realOnes;
-        var needsSelection = revealing.Length > 0 && realOnes.Length > 0 && pool.Length > 1;
+        if (gate.Push)
+        {
+            return PushPlan(scope, attemptId, expected, label, actor, state, pushed!, moved, halfMf / 2 - (entry.RoadRate ? 2 : 0), summary);
+        }
+
+        string[] pool = [.. verdict.Pool];
+        var needsSelection = verdict.NeedsSelection;
         void Reveal(List<GameEvent> events, IReadOnlyList<int>? dice)
         {
-            foreach (var hidden in revealing.Where(unit => Is(unit, Conditions.Hidden)))
+            var (toConceal, shown, drawnDummies) = ScenarioA1MovementCalculator.RevealDraw(verdict, dice);
+            foreach (var hidden in toConceal)
             {
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(hidden.Id,
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(hidden,
                     new Dictionary<string, ConditionState> { [Conditions.Hidden] = ConditionState.False, [Conditions.Concealed] = ConditionState.True }), package, null));
-            }
-
-            var shown = new List<string>();
-            var drawnDummies = realOnes.Length == 0 ? [.. revealing.Where(unit => unit.Kind == UnitKinds.Dummy)] : new List<UnitInstance>();
-            if (realOnes.Length > 0 && dice is null)
-            {
-                shown.Add(realOnes[0].Id);
-            }
-            else if (realOnes.Length > 0)
-            {
-                foreach (var draw in pool.Select((unit, index) => (Unit: unit, Dr: dice![index])).GroupBy(item => item.Dr).OrderByDescending(group => group.Key))
-                {
-                    drawnDummies.AddRange(draw.Where(item => item.Unit.Kind == UnitKinds.Dummy).Select(item => item.Unit));
-                    shown.AddRange(draw.Where(item => item.Unit.Kind != UnitKinds.Dummy).Select(item => item.Unit.Id));
-                    if (shown.Count > 0)
-                    {
-                        break;
-                    }
-                }
             }
 
             events.AddRange(RevealEvents(scope, attemptId, expected, events.Count + 1, shown));
             foreach (var dummy in drawnDummies)
             {
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(dummy.Id), package, null));
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(dummy), package, null));
             }
         }
 
-        // A12.14 (ruling R10.10): a concealed mover or Dummy loses "?" when it moves without Assault Movement, or into Open Ground, in the LOS of a
-        // Good Order enemy ground unit within 16 hexes; a forced back reveals the whole stack (A12.15).
+        // A12.14, A12.15, E1.31 (rulings R10.10, R16.4): the movers that lose their "?" are decided by Rules; the LOS scan and the illumination are read when it asks.
         void Unmask(List<GameEvent> events)
         {
-            // E1.31 (backlog pass 16, ruling R16.4): at night a mover loses "?" only by Non-Assault Movement in an Illuminated Location.
-            var seen = forcedBack || (EnemyGoodOrderInLosWithin16(state, state.PhasingSide!, landed)
-                && (state.Night ? !assault && Illuminated(state, landed) : !assault || terrain == "open-ground"));
-            foreach (var unit in movers.Where(unit => seen && (unit!.Kind == UnitKinds.Dummy || Is(unit, Conditions.Concealed))))
+            foreach (var unit in ScenarioA1MovementCalculator.Unmasked([.. movers.Select(mover => new MoverConcealmentFacts(mover.Id, mover.Kind == UnitKinds.Dummy, Is(mover, Conditions.Concealed)))],
+                forcedBack, assault, state.Night, terrain, () => EnemyGoodOrderInLosWithin16(state, state.PhasingSide!, landed), () => Illuminated(state, landed)))
             {
-                events.Add(unit!.Kind == UnitKinds.Dummy
+                events.Add(unit.Dummy
                     ? Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(unit.Id), package, null)
                     : RevealEvents(scope, attemptId, expected, events.Count + 1, [unit.Id]).Single());
             }
@@ -395,13 +366,13 @@ public sealed partial class GamePlanner
                     new DiceRolled($"{attemptId}-reveal", "random-selection", roll.Request.Count, roll.Request.Sides, roll.Values, DiceRolled.SystemSource, actor), package, null));
             }
 
-            if (revealing.Length > 0 && enemiesThere.Length > 0)
+            if (verdict.RevealBeforeStep)
             {
                 Reveal(events, dice);
             }
 
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "movement-step", moved, package, null));
-            if (revealing.Length > 0 && enemiesThere.Length == 0)
+            if (verdict.RevealAfterStep)
             {
                 Reveal(events, dice);
             }
@@ -410,22 +381,7 @@ public sealed partial class GamePlanner
             return events;
         }
 
-        if (entering is not null)
-        {
-            summary += " from off board, the stack's first MF expenditure (A2.51; ruling R25.3)";
-        }
-
-        if (revealing.Length > 0)
-        {
-            summary += offMap
-                ? $"; a concealed unit at {to} is revealed and the stack is forced back off board with the MF spent, its MPh over; it may still enter by advance in the APh (A12.15, A2.5; ruling R25.3)"
-                : forcedBack
-                ? $"; a concealed unit at {to} is revealed and the stack stays in {from} with the MF spent, its move ending (A12.15)"
-                : charge is not null ? $"; the charge enters {to} and draws among the counters there by Random Selection: each Dummy drawn before a real unit is eliminated (A15.431, A12.15, A.9)"
-                : $"; only Dummies were at {to}, and they are removed (A12.15)";
-        }
-
-        if (!needsSelection && residual is null && lanes.Length == 0)
+        if (gate.ReadyWithoutRoll)
         {
             var events = Stepped(null, null);
 
@@ -447,14 +403,13 @@ public sealed partial class GamePlanner
                 || LiveFire.ResidualFromState(entered, landed, residual.Fp) is not ({ } residualAttack, null)
                 || FireMapFacts(entered, residualAttack, landed) is not ({ } mapFacts, null))
             {
-                return Refused(scope, label, expected, "play.move-residual: the Residual FP attack on the entering stack cannot be read");
+                return Refused(scope, label, expected, ScenarioA1MovementCalculator.ResidualUnreadable);
             }
 
             residualFacts = HeatOfBattleFacts(entered, mapFacts);
-            var precheck = ScenarioA1FireCalculator.Precheck(residualFacts, FireReference.Value);
-            if (precheck.Count != 0)
+            if (ScenarioA1MovementCalculator.ResidualUndecided(ScenarioA1FireCalculator.Precheck(residualFacts, FireReference.Value)) is { } undecided)
             {
-                return Refused(scope, label, expected, ["play.move-residual: the Fire package does not decide the Residual FP attack this entry would suffer", .. precheck]);
+                return Refused(scope, label, expected, [.. undecided]);
             }
         }
 
@@ -463,7 +418,7 @@ public sealed partial class GamePlanner
             if (Replay([.. existing, .. Stepped([.. pool.Select(_ => 6)], null)]).Current is not { } laneState
                 || lanes.Any(item => FireLaneFacts(laneState, landed, item.Entry) is not { } laneFacts || ScenarioA1FireCalculator.Precheck(laneFacts, FireReference.Value).Count != 0))
             {
-                return Refused(scope, label, expected, "play.move-fire-lane: the Fire package does not decide the Fire Lane attack this entry would suffer (A9.22)");
+                return Refused(scope, label, expected, ScenarioA1MovementCalculator.FireLaneUndecided);
             }
         }
 
@@ -483,11 +438,10 @@ public sealed partial class GamePlanner
             return events;
         }
 
-        string[] reasons = [summary, .. dummyWarning, .. residual is not null ? [$"play.move: {residual.Fp} Residual FP in {landed} attacks the stack first (A8.22)"] : Array.Empty<string>(),
-            .. lanes.Select(item => $"play.move: the Fire Lane of {item.Lane.Weapon} attacks the stack in {landed} with {item.Entry.Fp} Residual FP (A9.22)")];
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], reasons)
+        var reasons = ScenarioA1MovementCalculator.StepReasons(summary, dummyWarning, residual?.Fp, landed.ToString(), [.. lanes.Select(item => new FireLaneAttackFacts(item.Lane.Weapon, item.Entry.Fp))]);
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [.. reasons])
         {
-            Roll = new PlannedRoll(needsSelection ? "random-selection" : "residual", Build),
+            Roll = new PlannedRoll(verdict.RollPurpose, Build),
             FirstEventId = EventId(attemptId, 1),
         };
     }

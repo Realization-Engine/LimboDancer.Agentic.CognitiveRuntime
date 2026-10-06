@@ -664,6 +664,150 @@ public static class ScenarioA1MovementCalculator
             $"play.end-move: {string.Join(", ", ending)} end their move" + (remaining.Length > 0 ? $"; {string.Join(", ", remaining)} may move on (A4.2)" : string.Empty) + note);
     }
 
+    /// <summary>
+    /// A step's reveal and record (A12.15, A.9, A12.11, A2.51; rulings R10.11, R10.15, R25.3, R27.3, R31d.3): a Location with concealed or hidden
+    /// enemy units reveals one, forcing the stack back unless it charges or they were all Dummies; a charge draws among every counter there, Dummies
+    /// too; a stack forced back off board is beyond every attack; a stack of Dummies alone that moves without Assault Movement, or into Open Ground,
+    /// is warned with "if", whatever the game knows, and at night nothing is said (E1.31).
+    /// </summary>
+    public static MoveStepVerdict MoveStep(MoveStepFacts facts)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        var ids = facts.Ids;
+        var revealing = facts.EnemiesThere.Count > 0 ? facts.EnemiesThere : facts.HiddenEnemies;
+        string[] realOnes = [.. revealing.Where(unit => !unit.Dummy).OrderBy(unit => unit.Id, StringComparer.Ordinal).Select(unit => unit.Id)];
+        var forcedBack = facts.EnemiesThere.Count > 0 && realOnes.Length > 0;
+        var charge = facts.ChargeText is not null;
+        var summary = $"{(facts.Entering ? "play.enter" : "play.move")}: {string.Join(", ", ids)} " + (forcedBack ? $"{(ids.Count == 1 ? "attempts" : "attempt")} {facts.ToText}" : facts.Occupy ? $"{(ids.Count == 1 ? "occupies" : "occupy")} the obstacle of {facts.ToText}" : $"{(ids.Count == 1 ? "enters" : "enter")} {facts.ToText}")
+            + $" ({facts.Terrain}{(facts.BypassTexts is not null ? " in Bypass along " + string.Join(", ", facts.BypassTexts) : string.Empty)}) for {facts.HalfMf / 2m} MF"
+            + (facts.Assault ? ", by Assault Movement" : string.Empty)
+            + (facts.DoubleTime ? ", Double Timing and now CX (A4.5)" : string.Empty)
+            + (facts.MinimumMove ? ", a Minimum Move: pinned and CX once the DEFENDER's fire is done (A4.134)" : string.Empty)
+            + (charge ? $", charging {facts.ChargeText} (A15.43)" : string.Empty)
+            + (facts.AbandonedIds.Count > 0 ? $"; {string.Join(", ", facts.AbandonedIds)} abandoned before the charge (A15.431)" : string.Empty);
+
+        // Pass 31d (design D5; A12.11, read in the PDF, p. 76; ruling R31d.3): a stack of Dummies alone that moves without Assault Movement, or into
+        // Open Ground, is removed in the LOS of a Good Order enemy unit. The mover is told so with "if", whatever the game knows: whether an enemy
+        // "?" that sees the hex is a real unit is not the mover's to learn before the move. At night the rule is another (E1.31), and nothing is said.
+        string[] dummyWarning = !facts.Night && !forcedBack && facts.AllDummies && (!facts.Assault || facts.Terrain == "open-ground")
+            ? [$"play.dummies: this stack holds no real unit; it is removed if a Good Order enemy unit within 16 hexes has a LOS to it in {facts.ToText} (A12.11)"]
+            : [];
+
+        // A2.51 (ruling R25.3): a stack forced back off board is beyond every attack.
+        var offMap = facts.Entering && forcedBack;
+
+        // A12.15 (rulings R10.11, R10.15): the reveal. Hidden units first go beneath a "?"; a Random Selection among several real units reveals the
+        // highest dr (ties all); Dummies alone are removed and the stack enters.
+        // A.9 (ruling R27.3): a charge draws among every counter there, Dummies too; each Dummy drawn above the first real unit is eliminated, and
+        // the Dummies drawn below it stay. Ties are all drawn together.
+        string[] pool = charge && realOnes.Length > 0 ? [.. revealing.OrderBy(unit => unit.Id, StringComparer.Ordinal).Select(unit => unit.Id)] : realOnes;
+        var needsSelection = revealing.Count > 0 && realOnes.Length > 0 && pool.Length > 1;
+        if (facts.Entering)
+        {
+            summary += " from off board, the stack's first MF expenditure (A2.51; ruling R25.3)";
+        }
+
+        if (revealing.Count > 0)
+        {
+            summary += offMap
+                ? $"; a concealed unit at {facts.ToText} is revealed and the stack is forced back off board with the MF spent, its MPh over; it may still enter by advance in the APh (A12.15, A2.5; ruling R25.3)"
+                : forcedBack
+                ? $"; a concealed unit at {facts.ToText} is revealed and the stack stays in {facts.FromText} with the MF spent, its move ending (A12.15)"
+                : charge ? $"; the charge enters {facts.ToText} and draws among the counters there by Random Selection: each Dummy drawn before a real unit is eliminated (A15.431, A12.15, A.9)"
+                : $"; only Dummies were at {facts.ToText}, and they are removed (A12.15)";
+        }
+
+        return new MoveStepVerdict(revealing, realOnes, forcedBack, offMap, facts.RoadRate && !facts.Pushed && !forcedBack, summary, dummyWarning, pool, needsSelection,
+            revealing.Count > 0 && facts.EnemiesThere.Count > 0, revealing.Count > 0 && facts.EnemiesThere.Count == 0, needsSelection ? "random-selection" : "residual");
+    }
+
+    /// <summary>
+    /// The reveal's outcome (A12.15, A.9): the hidden units that first go beneath a "?", the units shown (the first real unit with no dice; with dice,
+    /// the highest group that holds a real unit), and the Dummies drawn above them, or every Dummy when no real unit is there.
+    /// </summary>
+    public static (IReadOnlyList<string> ToConceal, IReadOnlyList<string> Shown, IReadOnlyList<string> DrawnDummies) RevealDraw(MoveStepVerdict verdict, IReadOnlyList<int>? dice)
+    {
+        ArgumentNullException.ThrowIfNull(verdict);
+        var revealing = verdict.Revealing;
+        var realOnes = verdict.RealOnes;
+        var dummies = revealing.Where(unit => unit.Dummy).Select(unit => unit.Id).ToHashSet(StringComparer.Ordinal);
+        string[] toConceal = [.. revealing.Where(unit => unit.Hidden).Select(unit => unit.Id)];
+        var shown = new List<string>();
+        var drawnDummies = realOnes.Count == 0 ? [.. revealing.Where(unit => unit.Dummy).Select(unit => unit.Id)] : new List<string>();
+        if (realOnes.Count > 0 && dice is null)
+        {
+            shown.Add(realOnes[0]);
+        }
+        else if (realOnes.Count > 0)
+        {
+            foreach (var draw in verdict.Pool.Select((id, index) => (Id: id, Dr: dice![index])).GroupBy(item => item.Dr).OrderByDescending(group => group.Key))
+            {
+                drawnDummies.AddRange(draw.Where(item => dummies.Contains(item.Id)).Select(item => item.Id));
+                shown.AddRange(draw.Where(item => !dummies.Contains(item.Id)).Select(item => item.Id));
+                if (shown.Count > 0)
+                {
+                    break;
+                }
+            }
+        }
+
+        return (toConceal, shown, drawnDummies);
+    }
+
+    /// <summary>
+    /// A12.14 (ruling R10.10): a concealed mover or Dummy loses "?" when it moves without Assault Movement, or into Open Ground, in the LOS of a
+    /// Good Order enemy ground unit within 16 hexes; a forced back reveals the whole stack (A12.15). E1.31 (backlog pass 16, ruling R16.4): at night
+    /// a mover loses "?" only by Non-Assault Movement in an Illuminated Location. <paramref name="enemySees"/> and <paramref name="illuminated"/>
+    /// are read where the planner read them. Returns each mover that loses its "?", a Dummy to be removed and a real unit to be revealed.
+    /// </summary>
+    public static IReadOnlyList<MoverConcealmentFacts> Unmasked(IReadOnlyList<MoverConcealmentFacts> movers, bool forcedBack, bool assault, bool night, string terrain,
+        Func<bool> enemySees, Func<bool> illuminated)
+    {
+        ArgumentNullException.ThrowIfNull(movers);
+        ArgumentNullException.ThrowIfNull(enemySees);
+        ArgumentNullException.ThrowIfNull(illuminated);
+        var seen = forcedBack || (enemySees() && (night ? !assault && illuminated() : !assault || terrain == "open-ground"));
+        return [.. movers.Where(unit => seen && (unit.Dummy || unit.Concealed))];
+    }
+
+    /// <summary>
+    /// What follows the step's record (A8.22, A9.22, C10.3, A8.2; ruling R12.7): a pushed Gun never enters Residual FP; with no Random Selection, no
+    /// Residual FP, and no Fire Lane the plan needs no roll.
+    /// </summary>
+    public static (string? Refusal, bool Push, bool ReadyWithoutRoll) StepGate(bool needsSelection, bool residualPresent, int lanes, bool pushed)
+    {
+        if (pushed)
+        {
+            return residualPresent || lanes > 0
+                ? ("play.move-push-residual: pushing a Gun into Residual FP is not reviewed (C10.3, A8.2)", false, false)
+                : (null, true, false);
+        }
+
+        return (null, false, !needsSelection && residualPresent is false && lanes == 0);
+    }
+
+    /// <summary>A8.22, A12.15: the Residual FP attack on the entering stack could not be read from the state after the step.</summary>
+    public static string ResidualUnreadable => "play.move-residual: the Residual FP attack on the entering stack cannot be read";
+
+    /// <summary>The reasons the Residual FP attack is refused when the Fire package's precheck finds any; null when it finds none.</summary>
+    public static IReadOnlyList<string>? ResidualUndecided(IReadOnlyList<string> precheck)
+    {
+        ArgumentNullException.ThrowIfNull(precheck);
+        return precheck.Count != 0 ? ["play.move-residual: the Fire package does not decide the Residual FP attack this entry would suffer", .. precheck] : null;
+    }
+
+    /// <summary>A9.22: a Fire Lane attack the Fire package does not decide refuses the entry.</summary>
+    public static string FireLaneUndecided => "play.move-fire-lane: the Fire package does not decide the Fire Lane attack this entry would suffer (A9.22)";
+
+    /// <summary>The reasons of a plan whose step rolls: the summary, the Dummy warning, the Residual FP attack (A8.22), and each Fire Lane's (A9.22).</summary>
+    public static IReadOnlyList<string> StepReasons(string summary, IReadOnlyList<string> dummyWarning, int? residualFp, string landedText, IReadOnlyList<FireLaneAttackFacts> lanes)
+    {
+        ArgumentNullException.ThrowIfNull(dummyWarning);
+        ArgumentNullException.ThrowIfNull(lanes);
+        return [summary, .. dummyWarning, .. residualFp is { } fp ? [$"play.move: {fp} Residual FP in {landedText} attacks the stack first (A8.22)"] : Array.Empty<string>(),
+            .. lanes.Select(item => $"play.move: the Fire Lane of {item.Weapon} attacks the stack in {landedText} with {item.Fp} Residual FP (A9.22)")];
+    }
+
     /// <summary>Whether any Good Order enemy ground unit within 16 hexes has a clear LOS to a Location (A12.14, A12.141). The units are read in the state's order.</summary>
     public static bool EnemyGoodOrderInLosWithin16(IReadOnlyList<EnemyUnitFacts> units, string side, int at, ILosFactReader los)
     {

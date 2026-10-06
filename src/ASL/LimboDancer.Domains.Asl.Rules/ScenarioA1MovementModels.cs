@@ -313,5 +313,59 @@ public sealed record EndMoveBerserkFacts(IReadOnlyList<int> StepHalfMfs, string?
 /// <summary>The verdict on the end of a move: the refusal; a vehicle's own plan; or the units ending, those that may move on, and the summary.</summary>
 public sealed record EndMoveVerdict(string? Refusal, bool Vehicle, IReadOnlyList<string> Ending, IReadOnlyList<string> Remaining, string Summary);
 
+/// <summary>One enemy unit in the Location a stack enters or attempts, as the reveal reads it (A12.15, A.9): a Dummy, hidden.</summary>
+public sealed record MoveRevealUnitFacts(string Id, bool Dummy, bool Hidden);
+
+/// <summary>
+/// The facts of a step once its cost and the enemies there are known (the planner's PlanMove, blocks 11 to 16): the stack and the Locations as
+/// the summary names them, the charge, the step's terrain and Bypass hexsides (lower-case names), its cost and flags, the SW abandoned before a charge,
+/// the road rate, a pushed Gun, night, a stack of Dummies alone, and the enemies there and the hidden enemies a charge enters, in the state's order.
+/// </summary>
+public sealed record MoveStepFacts(
+    IReadOnlyList<string> Ids,
+    string FromText,
+    string ToText,
+    bool Entering,
+    string? ChargeText,
+    bool Occupy,
+    string Terrain,
+    IReadOnlyList<string>? BypassTexts,
+    int HalfMf,
+    bool Assault,
+    bool DoubleTime,
+    bool MinimumMove,
+    IReadOnlyList<string> AbandonedIds,
+    bool RoadRate,
+    bool Pushed,
+    bool Night,
+    bool AllDummies,
+    IReadOnlyList<MoveRevealUnitFacts> EnemiesThere,
+    IReadOnlyList<MoveRevealUnitFacts> HiddenEnemies);
+
+/// <summary>
+/// The verdict on a step's reveal and record (A12.15, A.9, A12.11, A2.51): the units revealed, the real ones among them by id, whether the stack is
+/// forced back (and off board), the Road Bonus the record carries, the summary and the Dummy warning, the Random Selection's pool and whether it is
+/// needed, whether the reveal precedes or follows the step, and the planned roll's purpose.
+/// </summary>
+public sealed record MoveStepVerdict(
+    IReadOnlyList<MoveRevealUnitFacts> Revealing,
+    IReadOnlyList<string> RealOnes,
+    bool ForcedBack,
+    bool OffMap,
+    bool RoadBonus,
+    string Summary,
+    IReadOnlyList<string> DummyWarning,
+    IReadOnlyList<string> Pool,
+    bool NeedsSelection,
+    bool RevealBeforeStep,
+    bool RevealAfterStep,
+    string RollPurpose);
+
+/// <summary>One mover as the loss of concealment on a step reads it (A12.14, E1.31): a Dummy, concealed.</summary>
+public sealed record MoverConcealmentFacts(string Id, bool Dummy, bool Concealed);
+
+/// <summary>A Fire Lane with Residual FP in the Location a stack enters (A9.22): its weapon and the FP.</summary>
+public sealed record FireLaneAttackFacts(string Weapon, int Fp);
+
 /// <summary>The night and weather half MF of an Infantry step and whether the road rate survives them (E1.51, E3.54, E3.6, E3.64, E3.723, E3.733), read by the caller for a terrain, a road crossing, and a rise.</summary>
 public delegate (int HalfMf, bool RoadRate) InfantryWeatherRead(string terrain, bool road, int rise);
