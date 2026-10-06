@@ -1,0 +1,825 @@
+{
+  "id": "normandy-1944-06-08",
+  "version": 4,
+  "theaterId": "western",
+  "name": "Normandy: Omaha beachhead",
+  "referenceDate": "1944-06-08",
+  "period": "7-8 June 1944",
+  "bounds": [
+    -1.5,
+    48.9,
+    -0.2,
+    49.6
+  ],
+  "status": "Historical reference with player-authored planning state; not a historical replay",
+  "sources": [
+    {
+      "id": "omaha-plan",
+      "title": "U.S. Army: Omaha Beachhead, V Corps planning",
+      "url": "https://www.ibiblio.org/hyperwar/USA/USA-A-Omaha/USA-A-Omaha-2.html",
+      "finding": "V Corps was tasked with establishing and expanding the Omaha beachhead."
+    },
+    {
+      "id": "omaha-advance",
+      "title": "U.S. Army: Attainment of D-Day Objectives, 7-8 June",
+      "url": "https://www.ibiblio.org/hyperwar/USA/USA-A-Omaha/USA-A-Omaha-6.html",
+      "finding": "Describes the divisional advances, difficulties supplying the beachhead, and changing tactical attachments. This package selects only part of the command structure."
+    },
+    {
+      "id": "29-oob",
+      "title": "U.S. Army Center of Military History: 29th Infantry Division, ETO order of battle",
+      "url": "https://history.army.mil/documents/ETO-OB/29ID-ETO.htm",
+      "finding": "Composition identifies the 115th, 116th and 175th Infantry; attachment tables distinguish external support from organic units."
+    }
+  ],
+  "forces": [
+    {
+      "id": "first-army",
+      "name": "U.S. First Army",
+      "echelon": "Army",
+      "parentId": null,
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "omaha-advance"
+    },
+    {
+      "id": "v-corps",
+      "name": "U.S. V Corps",
+      "echelon": "Corps",
+      "parentId": "first-army",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "omaha-advance"
+    },
+    {
+      "id": "1-id",
+      "name": "1st Infantry Division",
+      "echelon": "Division",
+      "parentId": "v-corps",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "omaha-advance",
+      "organizationNote": "Infantry core: three regiments, nine infantry battalions. Divisional services and supporting arms are not an allocated roster.",
+      "openingReport": {
+        "asOf": "Close of 7 June 1944; approximate opening context",
+        "text": "Eastern Omaha beachhead.",
+        "sourceId": "omaha-advance",
+        "precision": "Area narrative, not a coordinate or measured footprint"
+      }
+    },
+    {
+      "id": "29-id",
+      "name": "29th Infantry Division",
+      "echelon": "Division",
+      "parentId": "v-corps",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "omaha-advance",
+      "organizationNote": "Infantry core: three regiments, nine infantry battalions. Divisional services and supporting arms are not an allocated roster.",
+      "openingReport": {
+        "asOf": "Close of 7 June 1944; approximate opening context",
+        "text": "Western Omaha beachhead.",
+        "sourceId": "omaha-advance",
+        "precision": "Area narrative, not a coordinate or measured footprint"
+      }
+    },
+    {
+      "id": "16-ir",
+      "name": "16th Infantry Regiment",
+      "echelon": "Regiment",
+      "parentId": "1-id",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "omaha-advance",
+      "organizationNote": "Organic battalion roster. Temporary attachments are recorded separately as historical context, not duplicate units.",
+      "openingReport": {
+        "asOf": "Close of 7 June 1944; not an exact midnight fix",
+        "text": "Colleville and Huppain area; scattered elements regrouping.",
+        "sourceId": "omaha-advance",
+        "precision": "Approximate area report"
+      }
+    },
+    {
+      "id": "18-ir",
+      "name": "18th Infantry Regiment",
+      "echelon": "Regiment",
+      "parentId": "1-id",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "omaha-advance",
+      "organizationNote": "Organic battalion roster. Temporary attachments are recorded separately as historical context, not duplicate units.",
+      "openingReport": {
+        "asOf": "Close of 7 June 1944; not an exact midnight fix",
+        "text": "Battalions around Engranville, Mosles and Mandeville.",
+        "sourceId": "omaha-advance",
+        "precision": "Approximate area report"
+      }
+    },
+    {
+      "id": "26-ir",
+      "name": "26th Infantry Regiment",
+      "echelon": "Regiment",
+      "parentId": "1-id",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "omaha-advance",
+      "organizationNote": "Organic battalion roster. Temporary attachments are recorded separately as historical context, not duplicate units.",
+      "openingReport": {
+        "asOf": "Close of 7 June 1944; not an exact midnight fix",
+        "text": "Battalions dispersed on separate tasks; regiment not concentrated.",
+        "sourceId": "omaha-advance",
+        "precision": "Approximate area report"
+      }
+    },
+    {
+      "id": "115-ir",
+      "name": "115th Infantry Regiment",
+      "echelon": "Regiment",
+      "parentId": "29-id",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "29-oob",
+      "organizationNote": "Organic battalion roster. Temporary attachments are recorded separately as historical context, not duplicate units.",
+      "openingReport": {
+        "asOf": "Close of 7 June 1944; not an exact midnight fix",
+        "text": "Battalions separated between Louvieres and the Longueville approach.",
+        "sourceId": "omaha-advance",
+        "precision": "Approximate area report"
+      }
+    },
+    {
+      "id": "116-ir",
+      "name": "116th Infantry Regiment",
+      "echelon": "Regiment",
+      "parentId": "29-id",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "29-oob",
+      "organizationNote": "Organic battalion roster. Temporary attachments are recorded separately as historical context, not duplicate units.",
+      "openingReport": {
+        "asOf": "Close of 7 June 1944; not an exact midnight fix",
+        "text": "Elements at Vierville and near Pointe du Hoc.",
+        "sourceId": "omaha-advance",
+        "precision": "Approximate area report"
+      }
+    },
+    {
+      "id": "175-ir",
+      "name": "175th Infantry Regiment",
+      "echelon": "Regiment",
+      "parentId": "29-id",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "29-oob",
+      "organizationNote": "Organic battalion roster. Temporary attachments are recorded separately as historical context, not duplicate units.",
+      "openingReport": {
+        "asOf": "Close of 7 June 1944; not an exact midnight fix",
+        "text": "Moving west from Gruchy toward Englesqueville.",
+        "sourceId": "omaha-advance",
+        "precision": "Approximate area report"
+      }
+    },
+    {
+      "id": "1-115",
+      "name": "1st Battalion, 115th Infantry",
+      "echelon": "Battalion",
+      "parentId": "115-ir",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "29-oob",
+      "organizationNote": "Organic infantry identity. Actual present strength and equipment are not reconstructed; supporting arms are not included in this infantry roster."
+    },
+    {
+      "id": "2-115",
+      "name": "2nd Battalion, 115th Infantry",
+      "echelon": "Battalion",
+      "parentId": "115-ir",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "29-oob",
+      "organizationNote": "Organic infantry identity. Actual present strength and equipment are not reconstructed; supporting arms are not included in this infantry roster."
+    },
+    {
+      "id": "3-115",
+      "name": "3rd Battalion, 115th Infantry",
+      "echelon": "Battalion",
+      "parentId": "115-ir",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "29-oob",
+      "organizationNote": "Organic infantry identity. Actual present strength and equipment are not reconstructed; supporting arms are not included in this infantry roster."
+    },
+    {
+      "id": "1-116",
+      "name": "1st Battalion, 116th Infantry",
+      "echelon": "Battalion",
+      "parentId": "116-ir",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "29-oob",
+      "organizationNote": "Organic infantry identity. Actual present strength and equipment are not reconstructed; supporting arms are not included in this infantry roster."
+    },
+    {
+      "id": "2-116",
+      "name": "2nd Battalion, 116th Infantry",
+      "echelon": "Battalion",
+      "parentId": "116-ir",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "29-oob",
+      "organizationNote": "Organic infantry identity. Actual present strength and equipment are not reconstructed; supporting arms are not included in this infantry roster."
+    },
+    {
+      "id": "3-116",
+      "name": "3rd Battalion, 116th Infantry",
+      "echelon": "Battalion",
+      "parentId": "116-ir",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "29-oob",
+      "organizationNote": "Organic infantry identity. Actual present strength and equipment are not reconstructed; supporting arms are not included in this infantry roster."
+    },
+    {
+      "id": "1-16",
+      "name": "1st Battalion, 16th Infantry",
+      "echelon": "Battalion",
+      "parentId": "16-ir",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "omaha-advance",
+      "organizationNote": "Organic infantry identity. Actual present strength and equipment are not reconstructed; supporting arms are not included in this infantry roster."
+    },
+    {
+      "id": "2-16",
+      "name": "2nd Battalion, 16th Infantry",
+      "echelon": "Battalion",
+      "parentId": "16-ir",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "omaha-advance",
+      "organizationNote": "Organic infantry identity. Actual present strength and equipment are not reconstructed; supporting arms are not included in this infantry roster."
+    },
+    {
+      "id": "3-16",
+      "name": "3rd Battalion, 16th Infantry",
+      "echelon": "Battalion",
+      "parentId": "16-ir",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "omaha-advance",
+      "organizationNote": "Organic infantry identity. Actual present strength and equipment are not reconstructed; supporting arms are not included in this infantry roster."
+    },
+    {
+      "id": "1-175",
+      "name": "1st Battalion, 175th Infantry",
+      "echelon": "Battalion",
+      "parentId": "175-ir",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "29-oob",
+      "organizationNote": "Organic infantry identity. Actual present strength and equipment are not reconstructed; supporting arms are not included in this infantry roster."
+    },
+    {
+      "id": "2-175",
+      "name": "2nd Battalion, 175th Infantry",
+      "echelon": "Battalion",
+      "parentId": "175-ir",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "29-oob",
+      "organizationNote": "Organic infantry identity. Actual present strength and equipment are not reconstructed; supporting arms are not included in this infantry roster."
+    },
+    {
+      "id": "3-175",
+      "name": "3rd Battalion, 175th Infantry",
+      "echelon": "Battalion",
+      "parentId": "175-ir",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "29-oob",
+      "organizationNote": "Organic infantry identity. Actual present strength and equipment are not reconstructed; supporting arms are not included in this infantry roster."
+    },
+    {
+      "id": "1-18",
+      "name": "1st Battalion, 18th Infantry",
+      "echelon": "Battalion",
+      "parentId": "18-ir",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "omaha-advance",
+      "organizationNote": "Organic hierarchy for the 7-8 June reference. Temporary attachments and supporting armor are not allocated in this exercise."
+    },
+    {
+      "id": "2-18",
+      "name": "2nd Battalion, 18th Infantry",
+      "echelon": "Battalion",
+      "parentId": "18-ir",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "omaha-advance",
+      "organizationNote": "Organic hierarchy for the 7-8 June reference. Temporary attachments and supporting armor are not allocated in this exercise."
+    },
+    {
+      "id": "3-18",
+      "name": "3rd Battalion, 18th Infantry",
+      "echelon": "Battalion",
+      "parentId": "18-ir",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "omaha-advance",
+      "organizationNote": "Organic hierarchy for the 7-8 June reference. Temporary attachments and supporting armor are not allocated in this exercise."
+    },
+    {
+      "id": "1-26",
+      "name": "1st Battalion, 26th Infantry",
+      "echelon": "Battalion",
+      "parentId": "26-ir",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "omaha-advance",
+      "organizationNote": "Organic infantry identity. Actual present strength and equipment are not reconstructed; supporting arms are not included in this infantry roster."
+    },
+    {
+      "id": "2-26",
+      "name": "2nd Battalion, 26th Infantry",
+      "echelon": "Battalion",
+      "parentId": "26-ir",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "omaha-advance",
+      "organizationNote": "Organic infantry identity. Actual present strength and equipment are not reconstructed; supporting arms are not included in this infantry roster."
+    },
+    {
+      "id": "3-26",
+      "name": "3rd Battalion, 26th Infantry",
+      "echelon": "Battalion",
+      "parentId": "26-ir",
+      "strength": null,
+      "readiness": null,
+      "supply": null,
+      "position": null,
+      "sourceId": "omaha-advance",
+      "organizationNote": "Organic infantry identity. Actual present strength and equipment are not reconstructed; supporting arms are not included in this infantry roster."
+    }
+  ],
+  "objectives": [
+    {
+      "id": "omaha",
+      "name": "Omaha beachhead",
+      "lon": -0.88,
+      "lat": 49.36
+    },
+    {
+      "id": "isigny",
+      "name": "Isigny",
+      "lon": -1.1,
+      "lat": 49.32
+    },
+    {
+      "id": "trevieres",
+      "name": "Trevieres",
+      "lon": -0.905,
+      "lat": 49.31
+    }
+  ],
+  "missions": [
+    {
+      "id": "beachhead",
+      "parentId": null,
+      "issuer": "first-army",
+      "recipient": "v-corps",
+      "objectiveId": "omaha",
+      "title": "Expand and secure the beachhead",
+      "intent": "Develop room for further operations and support the landing of supplies.",
+      "sourceId": "omaha-plan"
+    },
+    {
+      "id": "westward",
+      "parentId": "beachhead",
+      "issuer": "v-corps",
+      "recipient": "29-id",
+      "objectiveId": "isigny",
+      "title": "Develop the western advance",
+      "intent": "Plan subordinate missions toward the Isigny area, accounting for crossings and support.",
+      "sourceId": "omaha-advance"
+    },
+    {
+      "id": "inland",
+      "parentId": "beachhead",
+      "issuer": "v-corps",
+      "recipient": "1-id",
+      "objectiveId": "trevieres",
+      "title": "Develop the inland advance",
+      "intent": "Plan subordinate missions around the Trevieres area and report constraints.",
+      "sourceId": "omaha-advance"
+    },
+    {
+      "id": "18-advance",
+      "parentId": "inland",
+      "issuer": "1-id",
+      "recipient": "18-ir",
+      "objectiveId": "trevieres",
+      "title": "Coordinate the 18th Infantry advance",
+      "intent": "Develop three battalion plans and reconcile their crossing, flank and support requirements.",
+      "sourceId": "omaha-advance",
+      "area": "Aure valley and approaches to Trevieres",
+      "timing": "Sequence after receipt of the parent order and coordination of the plan; no historical start time imposed.",
+      "support": "Identify artillery, armor and crossing-support requests. No assets are allocated automatically.",
+      "boundary": "Named area only. Tactical boundaries and crossing locations require finer mapping."
+    },
+    {
+      "id": "1-18-approaches",
+      "parentId": "18-advance",
+      "issuer": "18-ir",
+      "recipient": "1-18",
+      "objectiveId": "trevieres",
+      "title": "Plan the western approaches",
+      "intent": "Plan observation and security of the approaches, coordinating the exposed flank toward Formigny.",
+      "sourceId": "omaha-advance",
+      "area": "Engranville and approaches to the Aure",
+      "timing": "Sequence after receipt of the parent order and coordination of the plan; no historical start time imposed.",
+      "support": "Identify artillery, armor and crossing-support requests. No assets are allocated automatically.",
+      "boundary": "Named area only. Tactical boundaries and crossing locations require finer mapping."
+    },
+    {
+      "id": "2-18-crossing",
+      "parentId": "18-advance",
+      "issuer": "18-ir",
+      "recipient": "2-18",
+      "objectiveId": "trevieres",
+      "title": "Secure the Mosles sector",
+      "intent": "Plan security and follow-on operations from the sector reached before campaign opening. Do not replay the June 7 crossing as a June 8 event.",
+      "sourceId": "omaha-advance",
+      "area": "Houtteville, Bellefontaine and Mosles",
+      "timing": "Sequence after receipt of the parent order and coordination of the plan; no historical start time imposed.",
+      "support": "Identify artillery, armor and crossing-support requests. No assets are allocated automatically.",
+      "boundary": "Named area only. Tactical boundaries and crossing locations require finer mapping."
+    },
+    {
+      "id": "3-18-flank",
+      "parentId": "18-advance",
+      "issuer": "18-ir",
+      "recipient": "3-18",
+      "objectiveId": "trevieres",
+      "title": "Plan the southern flank",
+      "intent": "Plan local security and communication around Mandeville, including the regimental flank.",
+      "sourceId": "omaha-advance",
+      "area": "Surrain, Mandeville and the Trevieres flank",
+      "timing": "Sequence after receipt of the parent order and coordination of the plan; no historical start time imposed.",
+      "support": "Identify artillery, armor and crossing-support requests. No assets are allocated automatically.",
+      "boundary": "Named area only. Tactical boundaries and crossing locations require finer mapping."
+    },
+    {
+      "id": "16-advance",
+      "parentId": "inland",
+      "issuer": "1-id",
+      "recipient": "16-ir",
+      "objectiveId": "trevieres",
+      "title": "Plan 16th Infantry operations",
+      "intent": "Prepare an inland plan for eastern flank and contact toward port-en-bessin. Coordinate adjacent units and request support.",
+      "sourceId": "omaha-advance",
+      "area": "Eastern flank and contact toward Port-en-Bessin",
+      "timing": "Player-authored June 8 plan, not a historical order.",
+      "support": "Request support; no tanks, artillery or engineers are allocated automatically.",
+      "boundary": "Planning area only; exact tactical boundaries remain to be defined."
+    },
+    {
+      "id": "1-16-mission",
+      "parentId": "16-advance",
+      "issuer": "16-ir",
+      "recipient": "1-16",
+      "objectiveId": "trevieres",
+      "title": "Plan 1/16 inland mission",
+      "intent": "Define this battalion's objective, route, boundaries, reserve and support requirements within the regimental plan.",
+      "sourceId": "omaha-advance",
+      "area": "Eastern flank and contact toward Port-en-Bessin",
+      "timing": "Player-authored June 8 mission; no historical battalion task is inferred."
+    },
+    {
+      "id": "2-16-mission",
+      "parentId": "16-advance",
+      "issuer": "16-ir",
+      "recipient": "2-16",
+      "objectiveId": "trevieres",
+      "title": "Plan 2/16 inland mission",
+      "intent": "Define this battalion's objective, route, boundaries, reserve and support requirements within the regimental plan.",
+      "sourceId": "omaha-advance",
+      "area": "Eastern flank and contact toward Port-en-Bessin",
+      "timing": "Player-authored June 8 mission; no historical battalion task is inferred."
+    },
+    {
+      "id": "3-16-mission",
+      "parentId": "16-advance",
+      "issuer": "16-ir",
+      "recipient": "3-16",
+      "objectiveId": "trevieres",
+      "title": "Plan 3/16 inland mission",
+      "intent": "Define this battalion's objective, route, boundaries, reserve and support requirements within the regimental plan.",
+      "sourceId": "omaha-advance",
+      "area": "Eastern flank and contact toward Port-en-Bessin",
+      "timing": "Player-authored June 8 mission; no historical battalion task is inferred."
+    },
+    {
+      "id": "26-advance",
+      "parentId": "inland",
+      "issuer": "1-id",
+      "recipient": "26-ir",
+      "objectiveId": "trevieres",
+      "title": "Plan 26th Infantry operations",
+      "intent": "Prepare an inland plan for eastern inland sector toward tour-en-bessin. Coordinate adjacent units and request support.",
+      "sourceId": "omaha-advance",
+      "area": "Eastern inland sector toward Tour-en-Bessin",
+      "timing": "Player-authored June 8 plan, not a historical order.",
+      "support": "Request support; no tanks, artillery or engineers are allocated automatically.",
+      "boundary": "Planning area only; exact tactical boundaries remain to be defined."
+    },
+    {
+      "id": "1-26-mission",
+      "parentId": "26-advance",
+      "issuer": "26-ir",
+      "recipient": "1-26",
+      "objectiveId": "trevieres",
+      "title": "Plan 1/26 inland mission",
+      "intent": "Define this battalion's objective, route, boundaries, reserve and support requirements within the regimental plan.",
+      "sourceId": "omaha-advance",
+      "area": "Eastern inland sector toward Tour-en-Bessin",
+      "timing": "Player-authored June 8 mission; no historical battalion task is inferred."
+    },
+    {
+      "id": "2-26-mission",
+      "parentId": "26-advance",
+      "issuer": "26-ir",
+      "recipient": "2-26",
+      "objectiveId": "trevieres",
+      "title": "Plan 2/26 inland mission",
+      "intent": "Define this battalion's objective, route, boundaries, reserve and support requirements within the regimental plan.",
+      "sourceId": "omaha-advance",
+      "area": "Eastern inland sector toward Tour-en-Bessin",
+      "timing": "Player-authored June 8 mission; no historical battalion task is inferred."
+    },
+    {
+      "id": "3-26-mission",
+      "parentId": "26-advance",
+      "issuer": "26-ir",
+      "recipient": "3-26",
+      "objectiveId": "trevieres",
+      "title": "Plan 3/26 inland mission",
+      "intent": "Define this battalion's objective, route, boundaries, reserve and support requirements within the regimental plan.",
+      "sourceId": "omaha-advance",
+      "area": "Eastern inland sector toward Tour-en-Bessin",
+      "timing": "Player-authored June 8 mission; no historical battalion task is inferred."
+    },
+    {
+      "id": "115-advance",
+      "parentId": "westward",
+      "issuer": "29-id",
+      "recipient": "115-ir",
+      "objectiveId": "isigny",
+      "title": "Plan 115th Infantry operations",
+      "intent": "Prepare an inland plan for southern flank of the western advance. Coordinate adjacent units and request support.",
+      "sourceId": "omaha-advance",
+      "area": "Southern flank of the western advance",
+      "timing": "Player-authored June 8 plan, not a historical order.",
+      "support": "Request support; no tanks, artillery or engineers are allocated automatically.",
+      "boundary": "Planning area only; exact tactical boundaries remain to be defined."
+    },
+    {
+      "id": "1-115-mission",
+      "parentId": "115-advance",
+      "issuer": "115-ir",
+      "recipient": "1-115",
+      "objectiveId": "isigny",
+      "title": "Plan 1/115 inland mission",
+      "intent": "Define this battalion's objective, route, boundaries, reserve and support requirements within the regimental plan.",
+      "sourceId": "omaha-advance",
+      "area": "Southern flank of the western advance",
+      "timing": "Player-authored June 8 mission; no historical battalion task is inferred."
+    },
+    {
+      "id": "2-115-mission",
+      "parentId": "115-advance",
+      "issuer": "115-ir",
+      "recipient": "2-115",
+      "objectiveId": "isigny",
+      "title": "Plan 2/115 inland mission",
+      "intent": "Define this battalion's objective, route, boundaries, reserve and support requirements within the regimental plan.",
+      "sourceId": "omaha-advance",
+      "area": "Southern flank of the western advance",
+      "timing": "Player-authored June 8 mission; no historical battalion task is inferred."
+    },
+    {
+      "id": "3-115-mission",
+      "parentId": "115-advance",
+      "issuer": "115-ir",
+      "recipient": "3-115",
+      "objectiveId": "isigny",
+      "title": "Plan 3/115 inland mission",
+      "intent": "Define this battalion's objective, route, boundaries, reserve and support requirements within the regimental plan.",
+      "sourceId": "omaha-advance",
+      "area": "Southern flank of the western advance",
+      "timing": "Player-authored June 8 mission; no historical battalion task is inferred."
+    },
+    {
+      "id": "116-advance",
+      "parentId": "westward",
+      "issuer": "29-id",
+      "recipient": "116-ir",
+      "objectiveId": "isigny",
+      "title": "Plan 116th Infantry operations",
+      "intent": "Prepare an inland plan for coastal corridor toward grandcamp. Coordinate adjacent units and request support.",
+      "sourceId": "omaha-advance",
+      "area": "Coastal corridor toward Grandcamp",
+      "timing": "Player-authored June 8 plan, not a historical order.",
+      "support": "Request support; no tanks, artillery or engineers are allocated automatically.",
+      "boundary": "Planning area only; exact tactical boundaries remain to be defined."
+    },
+    {
+      "id": "1-116-mission",
+      "parentId": "116-advance",
+      "issuer": "116-ir",
+      "recipient": "1-116",
+      "objectiveId": "isigny",
+      "title": "Plan 1/116 inland mission",
+      "intent": "Define this battalion's objective, route, boundaries, reserve and support requirements within the regimental plan.",
+      "sourceId": "omaha-advance",
+      "area": "Coastal corridor toward Grandcamp",
+      "timing": "Player-authored June 8 mission; no historical battalion task is inferred."
+    },
+    {
+      "id": "2-116-mission",
+      "parentId": "116-advance",
+      "issuer": "116-ir",
+      "recipient": "2-116",
+      "objectiveId": "isigny",
+      "title": "Plan 2/116 inland mission",
+      "intent": "Define this battalion's objective, route, boundaries, reserve and support requirements within the regimental plan.",
+      "sourceId": "omaha-advance",
+      "area": "Coastal corridor toward Grandcamp",
+      "timing": "Player-authored June 8 mission; no historical battalion task is inferred."
+    },
+    {
+      "id": "3-116-mission",
+      "parentId": "116-advance",
+      "issuer": "116-ir",
+      "recipient": "3-116",
+      "objectiveId": "isigny",
+      "title": "Plan 3/116 inland mission",
+      "intent": "Define this battalion's objective, route, boundaries, reserve and support requirements within the regimental plan.",
+      "sourceId": "omaha-advance",
+      "area": "Coastal corridor toward Grandcamp",
+      "timing": "Player-authored June 8 mission; no historical battalion task is inferred."
+    },
+    {
+      "id": "175-advance",
+      "parentId": "westward",
+      "issuer": "29-id",
+      "recipient": "175-ir",
+      "objectiveId": "isigny",
+      "title": "Plan 175th Infantry operations",
+      "intent": "Prepare an inland plan for inland corridor toward isigny. Coordinate adjacent units and request support.",
+      "sourceId": "omaha-advance",
+      "area": "Inland corridor toward Isigny",
+      "timing": "Player-authored June 8 plan, not a historical order.",
+      "support": "Request support; no tanks, artillery or engineers are allocated automatically.",
+      "boundary": "Planning area only; exact tactical boundaries remain to be defined."
+    },
+    {
+      "id": "1-175-mission",
+      "parentId": "175-advance",
+      "issuer": "175-ir",
+      "recipient": "1-175",
+      "objectiveId": "isigny",
+      "title": "Plan 1/175 inland mission",
+      "intent": "Define this battalion's objective, route, boundaries, reserve and support requirements within the regimental plan.",
+      "sourceId": "omaha-advance",
+      "area": "Inland corridor toward Isigny",
+      "timing": "Player-authored June 8 mission; no historical battalion task is inferred."
+    },
+    {
+      "id": "2-175-mission",
+      "parentId": "175-advance",
+      "issuer": "175-ir",
+      "recipient": "2-175",
+      "objectiveId": "isigny",
+      "title": "Plan 2/175 inland mission",
+      "intent": "Define this battalion's objective, route, boundaries, reserve and support requirements within the regimental plan.",
+      "sourceId": "omaha-advance",
+      "area": "Inland corridor toward Isigny",
+      "timing": "Player-authored June 8 mission; no historical battalion task is inferred."
+    },
+    {
+      "id": "3-175-mission",
+      "parentId": "175-advance",
+      "issuer": "175-ir",
+      "recipient": "3-175",
+      "objectiveId": "isigny",
+      "title": "Plan 3/175 inland mission",
+      "intent": "Define this battalion's objective, route, boundaries, reserve and support requirements within the regimental plan.",
+      "sourceId": "omaha-advance",
+      "area": "Inland corridor toward Isigny",
+      "timing": "Player-authored June 8 mission; no historical battalion task is inferred."
+    }
+  ],
+  "assumptions": [
+    "Mission wording is an authored exercise inspired by the sources, not a transcription of historical orders.",
+    "Strength, readiness, supply, unit locations and enemy knowledge are unknown. Objective markers are approximate place references, not unit positions.",
+    "One communication step is a demonstration delay, not a minute or a calibrated WWII transmission model.",
+    "13 km sectors use shared reference geography, not generated ASL terrain.",
+    "Two real divisions with their six organic infantry regiments and eighteen battalions. This is not a complete divisional order of battle.",
+    "Historical attachments are context only. The playable order chain remains organic until operational control and dated transfers are implemented.",
+    "No amphibious invasion is simulated. Historical outcomes after opening are not scheduled or forced."
+  ],
+  "campaign": {
+    "id": "omaha-beachhead-1944-06-08",
+    "title": "Omaha beachhead expansion",
+    "opening": "1944-06-08T00:00:00Z",
+    "endExclusive": "1944-06-09T00:00:00Z",
+    "windowLabel": "8 June 1944 (one-day prototype)",
+    "historicalReferencePeriod": "7-8 June 1944",
+    "purpose": "Begin with Allied forces ashore. Expand the beachhead through inland operations; beaches provide abstract supply and reinforcement entry points.",
+    "timeBasis": "UTC is a simulation normalization. Midnight and the one-day boundary are authored prototype choices, not sourced operation start/end times.",
+    "deploymentStatus": "Historical infantry organization and dated area reports. Map badges are organizational callouts, not exact deployments. Actual strengths, equipment availability and front lines remain unverified.",
+    "geographyStatus": "Modern reference geography and transport research with mixed dates. Not a validated 8 June 1944 operational network.",
+    "scheduledEvents": [],
+    "eventStatus": "No reinforcement, withdrawal, weather or daylight schedule has been reconstructed.",
+    "sourceIds": [
+      "omaha-plan",
+      "omaha-advance"
+    ],
+    "scope": {
+      "amphibiousAssault": false,
+      "openingCondition": "Established Allied beachhead; landing losses are prior history.",
+      "reinforcements": "Arrivals are abstract entry events when sourced; none scheduled in this package."
+    }
+  },
+  "historicalAttachments": [
+    {
+      "unitId": "1-26",
+      "toId": "16-ir",
+      "reportedDate": "1944-06-07",
+      "sourceId": "omaha-advance",
+      "status": "Historical context only; exact opening command interval unverified."
+    },
+    {
+      "unitId": "3-26",
+      "toId": "18-ir",
+      "reportedDate": "1944-06-07",
+      "sourceId": "omaha-advance",
+      "status": "Historical context only; exact opening command interval unverified."
+    }
+  ]
+}

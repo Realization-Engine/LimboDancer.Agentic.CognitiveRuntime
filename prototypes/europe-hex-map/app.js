@@ -79,6 +79,7 @@ document.getElementById("regionGaps").textContent="Selected examples only. Regio
 routeList();
 document.getElementById("focusPilot").onclick=()=>{showConnections(regionFeatures);focusConnections(regionFeatures);};
 document.getElementById("pilotToggle").onchange=e=>{pilot.style.display=e.target.checked?"":"none";};
+let activeRegion=null;
 // Western Europe is a distinct reference and planning presentation of shared geography.
 const westernLayer=element("g",{}), westernWater=element("g",{"pointer-events":"none"},westernLayer), westernGrid=element("g",{},westernLayer), westernPlaces=element("g",{},westernLayer), westernSites=element("g",{},westernLayer);
 westernLayer.style.display="none";
@@ -97,7 +98,7 @@ let westernMode="geography",westernSelected=null;
 const westernCells=new Map(), westernLabels=[],siteLabels=[];
 function loadWorkspace(id){
  if(loadedTheater===id)return;
- loadedTheater=id;theaterData=DATA.theaterWorkspaces[id];westernFootprintPath=path(theaterData.hexFootprint);
+ loadedTheater=id;theaterData=id===DATA.regionalCampaign.id?{...DATA.regionalCampaign,sites:[]}:DATA.theaterWorkspaces[id];westernFootprintPath=path(theaterData.hexFootprint);
  for(const group of [westernWater,westernGrid,westernPlaces,westernSites])group.replaceChildren();
  westernCells.clear();westernLabels.length=0;siteLabels.length=0;westernSelected=null;westernMode="geography";
  document.getElementById("savePlan").disabled=true;document.getElementById("planText").value="";document.getElementById("planNotice").textContent="";
@@ -118,25 +119,26 @@ for(const site of theaterData.sites){
  const node=element("g",{tabindex:0,role:"button","aria-label":site.name+" historical "+site.kind},westernSites);
  element("rect",{x:-6,y:-6,width:12,height:12,fill:site.kind==="port"?"#71384c":"#99651f",stroke:"#fff","stroke-width":1},node);
  const label=element("text",{x:9,y:4,fill:"#553923","font-size":13,"paint-order":"stroke",stroke:"#fff9e9","stroke-width":3},node);label.textContent=site.name;
- function inspect(){const detail=document.getElementById("westernDetail");detail.replaceChildren();const p=document.createElement("p");p.textContent=site.name+" · "+site.kind+". "+site.note+" "+site.period+". Approximate town center, not a facility position.";detail.append(p);const a=document.createElement("a");a.href=site.source;a.target="_blank";a.rel="noopener";a.textContent="Historical source";detail.append(a);}
+ function inspect(){const detail=document.getElementById("westernDetail");detail.replaceChildren();const p=document.createElement("p");p.textContent=site.name+" · "+site.kind+". "+site.note+" "+"Approximate town center, not a facility position.";detail.append(p);const date=document.createElement("code");date.textContent=site.period;detail.append(date);const a=document.createElement("a");a.href=site.source;a.target="_blank";a.rel="noopener";a.textContent="Historical source";detail.append(a);}
  node.addEventListener("click",()=>{if(!dragged)inspect();});node.addEventListener("keydown",e=>{if(e.key==="Enter"){inspect();}});siteLabels.push({site,node});
 }
 }
 function selectWestern(cell){
  if(westernSelected)westernCells.get(westernSelected.id)?.classList.remove("selected");
  westernSelected=cell;westernCells.get(cell.id).classList.add("selected");
- document.getElementById("westernDetail").textContent="Sector "+cell.id+" · 26 km across. Settlements: "+(cell.towns.join(", ")||"None in the reference source")+". Ranges: "+((cell.mountainRegions||[]).join(", ")||"None mapped")+". Lakes and salt basins: "+((cell.waterNames||[]).join(", ")||"None mapped")+". Terrain and route availability are not adjudicated at this resolution.";
+ if(activeRegion){regionalSector=cell;renderRegional();return;}
+ const detail=document.getElementById("westernDetail");detail.replaceChildren();const identity=document.createElement("code");identity.textContent=cell.id;detail.append(identity);const description=document.createElement("p");description.textContent="26 km across. Settlements: "+(cell.towns.join(", ")||"None in the reference source")+". Ranges: "+((cell.mountainRegions||[]).join(", ")||"None mapped")+". Lakes and salt basins: "+((cell.waterNames||[]).join(", ")||"None mapped")+". Terrain and route availability are not adjudicated at this resolution.";detail.append(description);
  document.getElementById("savePlan").disabled=false;
 }
 function planKey(){return "theater-plans-v1-"+seed;}
 function allPlans(){try{const p=JSON.parse(localStorage.getItem(planKey())||"null");if(Array.isArray(p))return p.filter(n=>typeof n.text==="string"&&typeof n.cellId==="string"&&typeof n.theaterId==="string");const old=JSON.parse(localStorage.getItem("western-plans-v1-"+seed)||"[]");return Array.isArray(old)?old.filter(n=>typeof n.text==="string"&&typeof n.cellId==="string").map(n=>({...n,theaterId:"western"})):[];}catch{return [];}}
 function readPlans(){return allPlans().filter(n=>n.theaterId===(activeTheater?.id||"western"));}
 function showPlans(){const list=document.getElementById("planList");list.replaceChildren();for(const item of readPlans()){const b=document.createElement("button");b.textContent=item.cellId+": "+item.text;b.style.display="block";b.style.margin="6px 0";b.onclick=()=>{const c=theaterData.cells.find(c=>c.id===item.cellId);if(c){selectWestern(c);view=[c.x-180,c.y-150,360,300];renderView();}};list.append(b);}}
-document.getElementById("savePlan").onclick=()=>{if(!westernSelected)return;const text=document.getElementById("planText").value.trim();if(!text)return;const plans=allPlans();plans.push({theaterId:activeTheater.id,cellId:westernSelected.id,text:text.slice(0,500)});try{localStorage.setItem(planKey(),JSON.stringify(plans));document.getElementById("planText").value="";showPlans();document.getElementById("planNotice").textContent="Planning note saved for this campaign. No order issued.";}catch{document.getElementById("planNotice").textContent="Browser storage is unavailable. Copy the note before leaving.";}};
+document.getElementById("savePlan").onclick=()=>{if(!westernSelected)return;const text=document.getElementById("planText").value.trim();if(!text)return;const plans=allPlans();plans.push({theaterId:activeTheater.id,cellId:westernSelected.id,text:text.slice(0,500)});try{localStorage.setItem(planKey(),JSON.stringify(plans));document.getElementById("planText").value="";showPlans();document.getElementById("planNotice").setAttribute("data-state","success");document.getElementById("planNotice").textContent="Planning note saved for this campaign. No order issued.";}catch{document.getElementById("planNotice").setAttribute("data-state","error");document.getElementById("planNotice").textContent="Browser storage is unavailable. Copy the note before leaving.";}};
 for(const mode of ["geography","logistics","planning"])document.getElementById("mode-"+mode).onclick=()=>{westernMode=mode;renderView();};
 function updateWestern(){
  const active=!!activeTheater;
- if(active)loadWorkspace(activeTheater.id);
+ if(active)loadWorkspace(activeRegion?activeRegion.id:activeTheater.id);
  westernLayer.style.display=active?"":"none";
  theaterFocus.style.display=activeTheater?"":"none";
  if(activeTheater){
@@ -147,9 +149,10 @@ function updateWestern(){
   const [x,y,w,h]=view,pad=Math.max(w,h)*2;
   theaterShade.setAttribute("d",path({type:"Polygon",coordinates:[[[x-pad,y-pad],[x+w+pad,y-pad],[x+w+pad,y+h+pad],[x-pad,y+h+pad],[x-pad,y-pad]]]})+footprint);
  }
- document.getElementById("westernWorkspace").style.display=active?"":"none";
+ document.getElementById("westernWorkspace").style.display=active&&!activeRegion?"":"none";
+ document.getElementById("workspaceControls").style.display=activeTheater&&!formationOpen?"":"none";
  document.getElementById("shell").style.gridTemplateColumns=active?"350px 1fr":"";
- for(const id of ["pilotSection","coarseSelection"])document.getElementById(id).style.display=active?"none":"";
+ for(const id of ["coarseSelection","selectionControls"])document.getElementById(id).style.display=active?"none":"";
  if(activeTheater&&!active)grid.setAttribute("clip-path","url(#theater-grid-clip)");
  else grid.removeAttribute("clip-path");
  grid.style.display=active||document.getElementById("gridToggle").checked===false?"none":"";
@@ -173,6 +176,134 @@ function updateWestern(){
  if(westernMode==="planning")showPlans();
 }
 
+// Regional workspace shares the theater renderer and adds explicit command state.
+let regionalState=null,regionalHQ="first-army",regionalMission="beachhead",regionalSector=null;
+function regionalKey(){return "regional-exercise-v1-"+seed+"-"+DATA.regionalCampaign.sourceHash+"-"+DATA.metadata.baseHash;}
+function loadRegionalState(){
+ const raw=localStorage.getItem(regionalKey());
+ regionalState=raw?RegionalModel.validate(JSON.parse(raw),DATA.regionalCampaign,seed,DATA.metadata.baseHash):RegionalModel.create(DATA.regionalCampaign,seed,DATA.metadata.baseHash);
+}
+function regionalForExport(){
+ if(regionalState&&regionalState.seed===seed)return regionalState;
+ const raw=localStorage.getItem(regionalKey());
+ return raw?RegionalModel.validate(JSON.parse(raw),DATA.regionalCampaign,seed,DATA.metadata.baseHash):null;
+}
+function regionalNotice(text,state="pending"){const n=document.getElementById("regionalNotice");n.textContent=text;n.setAttribute("data-state",state);}
+function enterRegional(){
+ if(!activeTheater||activeTheater.id!==DATA.regionalCampaign.theaterId)return;
+ try{loadRegionalState();}catch(error){regionalState=null;document.getElementById("regionalWorkspace").style.display="";document.getElementById("regionalWorkspace").open=true;regionalNotice("Could not load saved exercise: "+error.message,"error");return;}
+ activeRegion=DATA.regionalCampaign;regionalSector=null;regionalHQ="first-army";regionalMission="beachhead";
+ view=[...activeRegion.view];document.getElementById("regionChoice").value=activeRegion.id;
+ document.getElementById("regionalEntry").open=true;document.getElementById("regionalWorkspace").open=true;
+ document.getElementById("mapHeading").textContent=activeRegion.name;document.getElementById("breadcrumb").textContent="Whole Map › "+activeTheater.name+" › Normandy, 8 June 1944";document.getElementById("viewLevel").textContent="REGIONAL CAMPAIGN";renderView();
+}
+function changeRegional(action){
+ try{
+  if(!regionalState)throw new Error("Open the regional exercise first.");
+  const next=JSON.parse(JSON.stringify(regionalState));
+  if(action==="advance")RegionalModel.advance(next);
+  else RegionalModel.act(next,regionalMission,action,regionalHQ,document.getElementById("regionalText").value,regionalSector?.id||null);
+  localStorage.setItem(regionalKey(),JSON.stringify(next));regionalState=next;
+  document.getElementById("regionalText").value="";regionalNotice("Exercise saved. No combat or real order has been executed.","success");renderRegional();updateTheaterCounters();
+ }catch(error){regionalNotice(error.message,"error");}
+}
+function renderRegional(){
+ renderCampaignActions();
+ const eligible=activeTheater?.id===DATA.regionalCampaign.theaterId;
+ document.getElementById("regionalEntry").style.display=activeTheater?"":"none";
+ document.getElementById("regionChoice").disabled=!eligible;
+ document.getElementById("campaignBrief").textContent=eligible?DATA.regionalCampaign.campaign.windowLabel+". "+DATA.regionalCampaign.campaign.purpose+" "+DATA.regionalCampaign.campaign.timeBasis+" "+DATA.regionalCampaign.campaign.deploymentStatus+" "+DATA.regionalCampaign.campaign.geographyStatus:"No dated campaign package is available for this theater yet. Geography browsing remains available; deployments and campaign dates are not inferred from another theater.";
+ document.getElementById("regionalWorkspace").style.display=activeRegion?"":"none";
+ if(formationOpen){document.getElementById("regionalWorkspace").style.display="none";document.getElementById("regionalEntry").style.display="none";renderFormation();return;}
+ if(!activeRegion||!regionalState)return;
+ const c=DATA.regionalCampaign,s=regionalState;
+ document.getElementById("regionalStep").textContent="Campaign time: "+s.clock.current.replace("T"," ").replace("Z"," UTC")+" | Ends: "+c.campaign.endExclusive+" | Communication demonstration step "+s.step+" (no clock advance)";
+ const hierarchy=document.getElementById("regionalHierarchy");hierarchy.replaceChildren();
+ const current=s.forces.find(f=>f.id===regionalHQ);
+ const trail=[];for(let node=current;node;node=s.forces.find(f=>f.id===node.parentId))trail.unshift(node);
+ const navigate=id=>{regionalHQ=id;regionalMission=null;regionalSector=null;document.getElementById("regionalText").value="";renderRegional();};
+ const crumbs=document.getElementById("regionalBreadcrumb");crumbs.replaceChildren();
+ for(const node of trail){const b=document.createElement("button");b.textContent=node.name;b.disabled=node.id===regionalHQ;b.onclick=()=>navigate(node.id);crumbs.append(b);}
+ const incoming=s.missions.filter(m=>m.recipient===regionalHQ);
+ const planned=incoming.length===0||incoming.every(m=>["planned","executing","reported","assessed"].includes(m.status));
+ const children=s.forces.filter(f=>f.parentId===regionalHQ);
+ const outgoing=s.missions.filter(m=>m.issuer===regionalHQ);
+ const ready=planned&&(incoming.length>0||outgoing.every(m=>!["draft","assigned"].includes(m.status)));
+ if(ready)for(const child of children){const orders=outgoing.filter(m=>m.recipient===child.id),delivered=orders.length>0&&orders.every(m=>!["draft","assigned"].includes(m.status));const b=document.createElement("button");b.textContent=child.name+(delivered?"":" (assign and deliver order first)");b.disabled=!delivered;b.onclick=()=>navigate(child.id);hierarchy.append(b);}
+ document.getElementById("regionalCurrent").textContent=current.name+" | "+current.echelon;
+ document.getElementById("regionalNext").textContent=!planned?"Next: save your plan for the received mission. Subordinate orders unlock afterward.":outgoing.some(m=>m.status==="draft")?"Next: select a subordinate mission and Assign it, then advance communications to deliver the order.":outgoing.some(m=>m.status==="assigned")?"Next: advance communications to deliver the assigned order.":children.length?"Next: choose a direct subordinate below to continue. Use the command path above to return for reports or another branch.":"Next: select a map sector and create your Situation Card. Execution and reporting remain available for this headquarters.";
+ const force=s.forces.find(f=>f.id===regionalHQ);
+ document.getElementById("regionalForce").textContent=force.name+". Strength, readiness, supply and position: unknown. Formation identity persists; no force movement is simulated. "+(force.organizationNote||"")+(force.openingReport?" Opening context: "+force.openingReport.text+" ("+force.openingReport.asOf+").":"");
+ const available=s.missions.filter(m=>(m.issuer===regionalHQ&&planned)||(m.recipient===regionalHQ&&!["draft","assigned"].includes(m.status)));
+ if(!available.some(m=>m.id===regionalMission))regionalMission=available[0]?.id||null;
+ const list=document.getElementById("regionalMissions");list.replaceChildren();
+ for(const m of available){const b=document.createElement("button");b.textContent=m.title+" · "+RegionalModel.status(m,regionalHQ);b.setAttribute("aria-pressed",m.id===regionalMission?"true":"false");b.onclick=()=>{regionalMission=m.id;document.getElementById("regionalText").value="";renderRegional();};list.append(b);}
+ const m=s.missions.find(m=>m.id===regionalMission),detail=document.getElementById("regionalMissionDetail");detail.replaceChildren();
+ if(m){const p=document.createElement("p");p.textContent=m.intent+" Issuer: "+m.issuer+". Recipient: "+m.recipient+". Parent mission: "+(m.parentId||"none")+". Known status: "+RegionalModel.status(m,regionalHQ)+".";detail.append(p);
+  for(const [label,key] of [["Planning area","area"],["Boundary","boundary"],["Timing","timing"],["Support","support"]]){if(m[key]){const note=document.createElement("p");note.textContent=label+": "+m[key];detail.append(note);}}
+  const children=s.missions.filter(x=>x.parentId===m.id);
+  if(children.length){const note=document.createElement("p");note.textContent="Subordinate missions: "+children.length+". Complete and assess their reports before reporting this mission.";detail.append(note);}
+  if(m.recipient===regionalHQ&&m.plan){const plan=document.createElement("p");plan.textContent="Your plan: "+m.plan;detail.append(plan);}
+  const source=c.sources.find(x=>x.id===m.sourceId);const a=document.createElement("a");a.textContent="Historical context (exercise wording is authored)";a.href=source.url;a.target="_blank";a.rel="noopener";detail.append(a);
+ }else detail.textContent="No delivered mission at this headquarters. Advance communications or select the issuing headquarters.";
+ for(const action of ["assign","plan","execute","report","assess"]){let enabled=false;if(m){const recipient=m.recipient===regionalHQ,issuer=m.issuer===regionalHQ;enabled=action==="assign"?issuer&&m.status==="draft"&&(!m.parentId||s.missions.some(p=>p.id===m.parentId&&["planned","executing"].includes(p.status))):action==="plan"?recipient&&m.status==="received":action==="execute"?recipient&&m.status==="planned":action==="report"?recipient&&m.status==="executing"&&s.missions.filter(x=>x.parentId===m.id).every(x=>x.status==="assessed"):issuer&&m.status==="reported"&&m.knownToIssuer==="reported";}document.getElementById("regional-"+action).disabled=!enabled;document.getElementById("regional-"+action).style.display=enabled?"":"none";}
+ const writing=["plan","report","assess"].some(a=>!document.getElementById("regional-"+a).disabled);
+ document.getElementById("regionalText").style.display=writing?"":"none";
+ document.getElementById("regionalTextLabel").style.display=writing?"":"none";
+ document.getElementById("regionalAdvance").style.display=s.messages.some(m=>m.deliveredAt===null&&(m.from===regionalHQ||m.to===regionalHQ))?"":"none";
+ document.getElementById("regionalSector").textContent=regionalSector?"Selected sector: "+regionalSector.id+". Settlements: "+(regionalSector.towns.join(", ")||"none mapped"):"Select a 13 km sector to attach a geographic reference to a plan.";
+ const messages=document.getElementById("regionalMessages");messages.replaceChildren();
+ for(const message of RegionalModel.messages(s,regionalHQ)){const p=document.createElement("p");p.textContent=message.kind+" | "+message.from+" → "+message.to+" | "+(message.deliveredAt===null?"queued, due step "+message.dueAt:"delivered step "+message.deliveredAt)+": "+message.text;messages.append(p);}
+ const blockers=document.getElementById("regionalAdmission");blockers.replaceChildren();for(const text of RegionalModel.admission()){const li=document.createElement("li");li.textContent=text;blockers.append(li);}
+ renderSituation();
+ document.getElementById("gridScale").textContent="13 km regional sectors. Shared reference geography; no tactical terrain or unit locations inferred.";
+}
+const regionalObjectives=element("g",{}),regionalObjectiveNodes=[];
+for(const o of DATA.regionalCampaign.objectives){const node=element("g",{role:"button",tabindex:0,"aria-label":o.name+" objective reference"},regionalObjectives);element("circle",{r:5,fill:"#b77725",stroke:"#fff","stroke-width":1},node);const label=element("text",{x:9,y:4,"font-size":12,fill:"#594018","paint-order":"stroke",stroke:"#fff","stroke-width":3},node);label.textContent=o.name;const inspect=()=>{regionalNotice(o.name+": approximate objective reference, not a unit location.");};node.addEventListener("click",inspect);node.addEventListener("keydown",e=>{if(e.key==="Enter")inspect();});regionalObjectiveNodes.push({o,node});}
+function updateRegional(){
+ renderRegional();regionalObjectives.style.display=activeRegion?"":"none";
+ if(!activeRegion)return;
+ const scale=Math.max(view[2]/(svg.clientWidth||1200),view[3]/(svg.clientHeight||900));for(const {o,node} of regionalObjectiveNodes)node.setAttribute("transform",`translate(${o.x} ${o.y}) scale(${scale})`);
+}
+document.getElementById("regionChoice").onchange=e=>{if(e.target.value)enterRegional();else{activeRegion=null;regionalSector=null;enterTheater();}};
+for(const a of ["assign","plan","execute","report","assess"])document.getElementById("regional-"+a).onclick=()=>changeRegional(a);
+document.getElementById("regionalAdvance").onclick=()=>changeRegional("advance");
+document.getElementById("regionalExport").onclick=()=>{if(regionalState)download("normandy-planning-exercise.json",{kind:"regional-planning-exercise",executable:false,referenceId:DATA.regionalCampaign.id,referenceSources:DATA.regionalCampaign.sources,state:regionalState,aslAdmissionRequirements:RegionalModel.admission()});};
+
+function clearRegionalExercise(){
+ try{
+  if(!activeRegion||!regionalState)return;
+  if(formationOpen)closeFormation();
+  // Remove current and earlier reference-package versions for this campaign only.
+  const prefix="regional-exercise-v1-"+seed+"-",keys=[];
+  for(let i=0;i<localStorage.length;i++){const key=localStorage.key(i);if(key?.startsWith(prefix))keys.push(key);}
+  for(const key of keys)localStorage.removeItem(key);
+  if(westernSelected)westernCells.get(westernSelected.id)?.classList.remove("selected");
+  westernSelected=null;regionalSector=null;regionalState=null;
+  document.getElementById("regionalText").value="";
+  enterRegional();
+  regionalNotice("Cleared. Start again at First Army by assigning the beachhead mission.","success");
+ }catch(error){regionalNotice("Could not finish clearing saved exercise data: "+error.message,"error");}
+}
+document.getElementById("regionalClear").onclick=clearRegionalExercise;
+
+function renderCampaignActions(){
+ const active=!!activeRegion&&!!regionalState,choice=document.getElementById("savedSituationChoice"),selected=choice.value;
+ document.getElementById("regionalClear").disabled=!active;
+ choice.replaceChildren();
+ const cards=active?(regionalState.situations||[]):[];
+ for(const card of cards){const option=document.createElement("option");option.value=card.id;option.textContent=card.title+" | "+card.parentFormationId;choice.append(option);}
+ choice.value=cards.some(c=>c.id===selected)?selected:(cards[0]?.id||"");choice.disabled=!cards.length||formationOpen;
+ document.getElementById("openSavedSituation").disabled=!cards.length||formationOpen;
+ document.getElementById("campaignActionHint").textContent=!active?"Choose a theater, then a dated campaign inside Theater Workspace.":formationOpen?"Situation map is open. Clear campaign data restarts this campaign, keeping the map seed.":cards.length?"Open a saved Situation from any headquarters. Clear campaign data removes this campaign's plans, messages and Situations; the map seed is kept.":"No Situations in this campaign version. Follow the command workflow to a battalion, save its plan, select a sector and choose Create Situation Card. Older reference-version saves are kept separately and are not loaded here.";
+}
+document.getElementById("openSavedSituation").onclick=()=>{
+ const card=activeRegion&&regionalState?.situations?.find(s=>s.id===document.getElementById("savedSituationChoice").value);
+ if(!card||formationOpen)return;
+ regionalHQ=card.parentFormationId;regionalMission=card.parentMissionId;regionalSector=null;
+ document.getElementById("regionalText").value="";openFormation();
+};
+
 const theaterAreas=element("g",{}), theaterNodes=new Map();
 let chosenTheater=null,activeTheater=null;
 for(const t of DATA.theaterDefinitions.theaters){
@@ -185,42 +316,43 @@ for(const t of DATA.theaterDefinitions.theaters){
 }
 theaterAreas.style.display="none";
 function chooseTheater(id){
+ activeRegion=null;regionalSector=null;document.getElementById("regionChoice").value="";
  chosenTheater=DATA.theaterDefinitions.theaters.find(t=>t.id===id)||null;
  document.getElementById("theaterChoice").value=chosenTheater?chosenTheater.id:"";
- document.getElementById("enterTheater").disabled=!chosenTheater;
- document.getElementById("theaterInfo").textContent=chosenTheater?chosenTheater.name+". "+(chosenTheater.scope||"")+" Campaign area; command and objectives unassigned. Enter to explore its geography.":"Choose a theater. Areas are illustrative, not historical command boundaries.";
+ document.getElementById("theaterInfo").textContent=chosenTheater?chosenTheater.name+". "+(chosenTheater.scope||"")+" Campaign area; command and objectives unassigned. ":"Whole Map. Choose a theater to explore its geography.";
  for(const [key,node] of theaterNodes)node.setAttribute("fill",key===id?"#b68a3950":"#b68a3920");
+ if(chosenTheater)enterTheater();else returnEurope();
 }
 function enterTheater(){
+ document.getElementById("workspaceControls").open=true;
  if(!chosenTheater)return;
  activeTheater=chosenTheater;view=[...activeTheater.view];
  document.getElementById("theaterToggle").checked=false;theaterAreas.style.display="none";
- document.getElementById("returnEurope").disabled=false;
  document.getElementById("mapHeading").textContent=activeTheater.name;
  document.getElementById("breadcrumb").textContent="Overview › "+activeTheater.name;
  document.getElementById("viewLevel").textContent="THEATER VIEW";renderView();
 }
 function returnEurope(){
- activeTheater=null;view=[...continentalView];
- document.getElementById("returnEurope").disabled=true;
+ activeRegion=null;regionalSector=null;document.getElementById("regionChoice").value="";
+ activeTheater=null;chosenTheater=null;document.getElementById("theaterChoice").value="";view=[...continentalView];
  document.getElementById("mapHeading").textContent="Europe & North Africa";
- document.getElementById("breadcrumb").textContent="Continental campaign view";
+ document.getElementById("breadcrumb").textContent="Overview";
  document.getElementById("viewLevel").textContent="EUROPE & NORTH AFRICA · CONTINENTAL VIEW";renderView();
 }
 document.getElementById("theaterChoice").onchange=e=>chooseTheater(e.target.value);
 document.getElementById("theaterToggle").onchange=e=>{theaterAreas.style.display=e.target.checked?"":"none";};
-document.getElementById("enterTheater").onclick=enterTheater;
-document.getElementById("returnEurope").onclick=returnEurope;
+
+
 let view=[...continentalView];function renderView(){svg.setAttribute("viewBox",view.join(" "));pilotLabels.style.display=view[2]>900?"none":"";cities.style.display=document.getElementById("cityToggle").checked===false?"none":"";
  const railLevel=Math.max(activeTheater?1:0,view[2]>2400?0:view[2]>900?1:2);
  updateSouthern(railLevel);
  railTiers.forEach((node,t)=>node.style.display=t<=railLevel?"":"none");
  document.getElementById("railDetail").textContent=["Europe: major corridor candidates","Regional: corridors and through routes","Local: all mapped railway detail"][railLevel];
  const unitsPerPixel=Math.max(view[2]/(svg.clientWidth||1200),view[3]/(svg.clientHeight||900));
- for(const {city,node} of cityNodes)node.setAttribute("transform",`translate(${city.x} ${city.y}) scale(${unitsPerPixel})`);updateWestern();}renderView();
+ for(const {city,node} of cityNodes)node.setAttribute("transform",`translate(${city.x} ${city.y}) scale(${unitsPerPixel})`);updateWestern();updateRegional();updateTheaterCounters();}renderView();
 window.addEventListener("resize",renderView);
 function zoom(f){const [x,y,w,h]=view;const nw=Math.max(20,Math.min(9000,w*f)),nh=nw*h/w;view=[x+(w-nw)/2,y+(h-nh)/2,nw,nh];renderView();}
-document.getElementById("zoomIn").onclick=()=>zoom(.7);document.getElementById("zoomOut").onclick=()=>zoom(1/.7);document.getElementById("reset").onclick=returnEurope;
+document.getElementById("zoomIn").onclick=()=>zoom(.7);document.getElementById("zoomOut").onclick=()=>zoom(1/.7);document.getElementById("reset").onclick=()=>{view=activeRegion?[...activeRegion.view]:activeTheater?[...activeTheater.view]:[...continentalView];renderView();};
 svg.addEventListener("wheel",e=>{e.preventDefault();zoom(e.deltaY>0?1.15:1/1.15);},{passive:false});
 let down=null,dragged=false;
 svg.addEventListener("pointerdown",e=>{down=[e.clientX,e.clientY,...view];dragged=false;});
@@ -238,16 +370,22 @@ saveSeed();
 async function localSeed(c){const s=[DATA.metadata.generator,DATA.metadata.baseHash,seed,c.id,"future-refinement"].join("|");return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s)))).map(x=>x.toString(16).padStart(2,"0")).join("");}
 async function select(c){const serial=++selectSerial;if(selected)nodes.get(selected.id).classList.remove("selected");selected=c;nodes.get(c.id).classList.add("selected");const token=await localSeed(c);if(serial!==selectSerial)return;const d=document.getElementById("details");d.replaceChildren();function row(a,b){const div=document.createElement("div");div.className="fact";const label=document.createElement("span");label.textContent=a;const value=document.createElement("strong");value.textContent=b;div.append(label,value);d.append(div);}row("Hex",c.id);row("Surface",c.surface);row("Dry land",Math.round(c.landFraction*100)+"%");row("Forest footprint (2000)",c.forestReferenceFraction===null?"Outside reference coverage":Math.round(c.forestReferenceFraction*100)+"%");row("1939 transport","Not validated");row("Latitude",c.lat.toFixed(3)+"°");row("Longitude",c.lon.toFixed(3)+"°");const p=document.createElement("p");p.className="note";p.textContent="Ranges: "+(c.mountainRegions.join(", ")||"None mapped")+" · Waterways: "+(c.rivers.join(", ")||"None in source")+" · Lakes: "+((c.lakes||[]).join(", ")||"None mapped")+" · Salt basins: "+((c.saltBasins||[]).join(", ")||"None mapped")+" · Cities: "+(c.cities.join(", ")||"None selected");d.append(p);for(const id of c.periodTerrainContext||[]){const r=DATA.terrainReview.records.find(r=>r.id===id);if(!r)continue;const note=document.createElement("p");note.className="note";note.textContent="Regional historical context ("+r.period+"): "+r.finding+" ";const a=document.createElement("a");a.href=r.url;a.target="_blank";a.rel="noopener";a.textContent=r.title;note.append(a);d.append(note);}const small=document.createElement("p");small.className="note";small.textContent="Local refinement seed: "+token.slice(0,16)+"…";d.append(small);document.getElementById("exportHex").disabled=false;}
 function download(name,obj){const url=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:"application/json"}));const a=document.createElement("a");a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-document.getElementById("newCampaign").onclick=()=>{seed=freshSeed();saveSeed();if(selected)select(selected);if(activeTheater)renderView();};
-document.getElementById("exportCampaign").onclick=()=>{const {researchTransport,historicalPilot,historicalRailNetwork,southernTransport,theaterDefinitions,westernTheater,theaterWorkspaces,...campaignData}=DATA;download("europe-campaign-map.json",{campaign:{mapSeed:seed,geographyHash:DATA.metadata.baseHash,theaterDefinitions,planningNotes:allPlans()},...campaignData});};
+document.getElementById("newCampaign").onclick=()=>{seed=freshSeed();saveSeed();document.getElementById("regionalText").value="";if(activeRegion){regionalState=RegionalModel.create(DATA.regionalCampaign,seed,DATA.metadata.baseHash);regionalSector=null;}if(selected)select(selected);if(activeTheater)renderView();};
+document.getElementById("exportCampaign").onclick=()=>{const {researchTransport,historicalPilot,historicalRailNetwork,southernTransport,theaterDefinitions,westernTheater,theaterWorkspaces,regionalCampaign,...campaignData}=DATA;download("europe-campaign-map.json",{campaign:{mapSeed:seed,geographyHash:DATA.metadata.baseHash,theaterDefinitions,planningNotes:allPlans(),regionalExercise:regionalForExport()},...campaignData});};
 document.getElementById("exportHex").onclick=async()=>{const c=selected,s=seed;const token=await localSeed(c);download(c.id.replaceAll(":","-")+".json",{mapSeed:s,baseHash:DATA.metadata.baseHash,cell:c,refinementSeed:token});};
 document.getElementById("sourceId").textContent="Source revision "+DATA.metadata.sourceManifest.commit.slice(0,12)+" · Base "+DATA.metadata.baseHash.slice(0,12);
 document.getElementById("mapStatus").textContent=DATA.cells.length.toLocaleString()+" hexes · Equal-area Europe projection";
 
 document.getElementById("exportImage").onclick=async()=>{
  const button=document.getElementById("exportImage"),status=document.getElementById("imageExportStatus");
- button.disabled=true;status.textContent="Preparing map image...";
- try{await exportMapPng(svg,(activeTheater?activeTheater.id:"europe-north-africa")+"-map.png");status.textContent="Map image exported as PNG.";}
- catch(error){status.textContent="Image export failed: "+error.message;}
+ button.disabled=true;status.setAttribute("data-state","pending");status.textContent="Preparing map image...";
+ const caption=document.getElementById("imageCaption").checked?[
+ activeRegion?activeRegion.name:activeTheater?activeTheater.name:"Europe & North Africa",
+ "Reference geography; tree cover: 2000; European rail: 1920-1940 (when shown).",
+ "Southern transport evidence: "+(document.getElementById("southLater").checked?"through 1942":"by 1939")+". Operational status unverified.",
+ "Sources: Natural Earth; EC JRC GLC2000; B. Polo Martin / NAKALA, CC-BY-NC-4.0 (rail)."
+ ]:[];
+ try{await exportMapPng(svg,(activeRegion?activeRegion.id:activeTheater?activeTheater.id:"europe-north-africa")+"-map.png",caption);status.setAttribute("data-state","success");status.textContent="Map image exported as PNG.";}
+ catch(error){status.setAttribute("data-state","error");status.textContent="Image export failed: "+error.message;}
  finally{button.disabled=false;}
 };

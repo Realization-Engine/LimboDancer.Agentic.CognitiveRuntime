@@ -1,10 +1,145 @@
-:root{color-scheme:light;--ink:#263c3b;--muted:#647573;--line:#d6dfd8;--paper:#f5f4ed;--green:#315d50}
-*{box-sizing:border-box}body{margin:0;font:14px/1.5 system-ui,sans-serif;color:var(--ink);background:var(--paper)}
-header{height:86px;padding:18px 28px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--line)}
-h1{font:600 26px Georgia,serif;margin:0}h2{font-size:16px;margin:0 0 12px}small,.muted{color:var(--muted)}.eyebrow{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--green)}
-.shell{display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 86px)}aside{padding:24px;overflow:auto;border-right:1px solid var(--line)}
-section{margin-bottom:24px;padding-bottom:22px;border-bottom:1px solid var(--line)}button,input{font:inherit}button{cursor:pointer;border:1px solid #b9c9be;background:#fffdf6;color:var(--ink);padding:8px 12px;border-radius:5px}button:hover{background:#e3ece3}button:focus-visible,input:focus-visible{outline:3px solid #ad7331}
-.primary{background:var(--green);color:white;border-color:var(--green)}input[type=text]{width:100%;padding:9px;border:1px solid var(--line);border-radius:4px;margin:7px 0;background:#fffdf6}
-.toggle{display:block;margin:8px 0}.toggle input{accent-color:var(--green);margin-right:8px}.row{display:flex;gap:6px;flex-wrap:wrap}.fact{display:flex;justify-content:space-between;margin:7px 0;gap:8px}.pill{font-size:11px;padding:4px 8px;border-radius:12px;background:#e6ecdf}.note{font-size:12px;color:var(--muted)}#details{min-height:170px}code{font-size:11px;overflow-wrap:anywhere}
-main{position:relative;overflow:hidden;background:#dce8e8}#map{width:100%;height:100%;display:block;touch-action:none;cursor:grab}#map:active{cursor:grabbing}.toolbar{position:absolute;top:18px;right:18px;display:flex;gap:5px}.maptitle{position:absolute;top:18px;left:20px;pointer-events:none;background:#f5f4edee;padding:12px 16px;border:1px solid #ffffff99;border-radius:5px}.maptitle strong{display:block;font:600 18px Georgia,serif}.footer{position:absolute;bottom:14px;left:18px;right:18px;display:flex;justify-content:space-between;gap:16px;pointer-events:none;font-size:11px}.footer span{background:#f5f4edea;padding:6px 9px;border-radius:4px}.hex{fill:transparent;stroke:#315e583b;stroke-width:1;vector-effect:non-scaling-stroke}.hex:hover{fill:#ffffff40;stroke:#456e5c}.hex.selected{fill:#d6a54855;stroke:#b77725;stroke-width:2}.city{font:40px system-ui;fill:#304845;paint-order:stroke;stroke:#f7f4e9;stroke-width:9px;stroke-linejoin:round}.waterlabel{font:italic 65px Georgia;fill:#6b9097;letter-spacing:8px;pointer-events:none}
-@media(max-width:750px){header{height:70px;padding:12px 16px}.shell{height:auto;display:flex;flex-direction:column-reverse}main{height:65vh}aside{border:0;padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:20px}section{margin:0}.headernote{display:none}}
+/* Campaign Atlas — field-manual palette shared with ASL Map Studio.
+   Fonts resolve locally only (no network). Install or vendor IBM Plex Sans/Mono
+   and Barlow Condensed to get the intended type; system fallbacks are tuned to hold up without them. */
+@font-face{font-family:"Atlas Sans";src:local("IBM Plex Sans"),local("IBMPlexSans")}
+@font-face{font-family:"Atlas Mono";src:local("IBM Plex Mono"),local("IBMPlexMono")}
+@font-face{font-family:"Atlas Display";font-weight:600 700;src:local("Barlow Condensed SemiBold"),local("BarlowCondensed-SemiBold"),local("Barlow Condensed")}
+
+:root{
+  color-scheme:light;
+  --ink:#1f261b; --muted:#5b6152; --line:#d6d1c2; --line-strong:#cfc9b8;
+  --paper:#f7f5ee; --card:#fffdf6; --tint:#f5f7ee; --tint-strong:#e5ebd6; --code:#e7e3d6;
+  --olive:#4a6326; --olive-deep:#2f4215;
+  --night:#1e2719; --night-raised:#2c3826; --on-night:#f2efe6; --on-night-muted:#c9d2b2; --on-night-label:#b9c79a;
+  --amber:#b77725; --focus:#ad7331; --alert:#8a3b2a;
+  --water:#dce8e8;
+  --green:var(--olive); /* legacy alias */
+  --sans:"Atlas Sans","IBM Plex Sans",system-ui,"Segoe UI",sans-serif;
+  --mono:"Atlas Mono","IBM Plex Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+  --display:"Atlas Display","Barlow Condensed","Arial Narrow","Roboto Condensed",sans-serif-condensed,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;font:14px/1.5 var(--sans);color:var(--ink);background:var(--paper);-webkit-font-smoothing:antialiased}
+a{color:var(--olive)}a:hover{color:var(--olive-deep)}
+code{font:11px var(--mono);background:var(--code);padding:1px 4px;border-radius:3px;overflow-wrap:anywhere}
+
+/* Header: dark command bar */
+header{height:86px;padding:16px 28px;display:flex;justify-content:space-between;align-items:center;gap:24px;background:var(--night);color:var(--on-night);border-bottom:3px solid var(--olive)}
+h1{font:700 30px/1 var(--display);margin:2px 0 0;letter-spacing:.01em;text-transform:uppercase}
+.eyebrow{font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--olive)}
+header .eyebrow{color:var(--on-night-label)}
+header small{color:var(--on-night-muted)}
+.headernote{text-align:right;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.headernote br{display:none}
+header .pill{background:var(--night-raised);color:var(--on-night);border:1px solid #47553a}
+
+h2{font:600 19px/1.1 var(--display);letter-spacing:.02em;text-transform:uppercase;margin:0 0 12px}
+small,.muted{color:var(--muted)}
+.note{font-size:12px;line-height:1.5;color:var(--muted);text-wrap:pretty}
+.pill{display:inline-block;font:500 11px var(--mono);letter-spacing:.04em;padding:3px 8px;border-radius:3px;background:var(--tint-strong);color:var(--olive-deep)}
+
+/* Layout */
+.shell{display:grid;grid-template-columns:280px 1fr;height:calc(100vh - 86px)}
+aside{padding:22px 22px 32px;overflow:auto;border-right:1px solid var(--line);background:var(--paper)}
+aside section{margin-bottom:22px;padding-bottom:20px;border-bottom:1px solid var(--line)}
+aside section:last-child{border-bottom:0}
+#westernWorkspace{background:var(--tint);border:1px solid var(--line-strong);border-radius:6px;padding:14px 14px 4px;margin:-6px -8px 22px}
+
+/* Controls */
+button,input,select,textarea{font:inherit;color:var(--ink)}
+button{cursor:pointer;border:1px solid var(--line-strong);background:var(--card);padding:7px 12px;border-radius:4px;line-height:1.3}
+button:hover{background:var(--tint-strong);border-color:#b9bfa4}
+button:disabled{cursor:default;color:#9a9e90;background:transparent;border-color:var(--line)}
+button[aria-pressed="true"]{background:var(--tint-strong);border-color:var(--olive);color:var(--olive-deep);font-weight:600;box-shadow:inset 0 -2px 0 var(--olive)}
+.primary{background:var(--olive);color:#fff;border-color:var(--olive)}
+.primary:hover{background:var(--olive-deep);border-color:var(--olive-deep)}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px}
+label{font-weight:500}
+input[type=text],select,textarea{width:100%;padding:8px 9px;border:1px solid var(--line-strong);border-radius:4px;margin:6px 0;background:var(--card)}
+#seed{font:12px var(--mono);color:var(--muted)}
+textarea{resize:vertical}
+.toggle{display:flex;align-items:baseline;gap:8px;margin:7px 0;font-weight:400}
+.toggle input{accent-color:var(--olive);margin:0;transform:translateY(1px)}
+.row{display:flex;gap:6px;flex-wrap:wrap}
+.fact{display:flex;justify-content:space-between;gap:8px;margin:0;padding:5px 0;border-bottom:1px dashed var(--line)}
+.fact strong{font:500 12px var(--mono);text-align:right}
+#details{min-height:170px}
+details{margin:8px 0;border:1px solid var(--line);border-radius:4px;background:var(--card)}
+summary{cursor:pointer;padding:7px 10px;font-weight:500}
+details[open] summary{border-bottom:1px solid var(--line)}
+details>div{padding:6px 8px}
+details button,#planList button{width:100%;text-align:left;font-size:12px;margin:3px 0}
+
+/* Map surface */
+main{position:relative;overflow:hidden;background:var(--water)}
+#map{width:100%;height:100%;display:block;touch-action:none;cursor:grab}#map:active{cursor:grabbing}
+.toolbar{position:absolute;top:18px;right:18px;display:flex;gap:4px;background:#f7f5eee6;padding:4px;border:1px solid var(--line-strong);border-radius:5px}
+.toolbar button{min-width:34px;padding:6px 10px;border-color:transparent;background:transparent}
+.toolbar button:hover{background:var(--tint-strong)}
+.maptitle{position:absolute;top:18px;left:20px;pointer-events:none;background:#f7f5eeee;padding:10px 14px 9px;border:1px solid var(--line-strong);border-left:4px solid var(--olive);border-radius:4px}
+.maptitle strong{display:block;font:700 21px/1.05 var(--display);text-transform:uppercase;letter-spacing:.02em}
+.maptitle small{font:11px var(--mono);letter-spacing:.03em}
+.footer{position:absolute;bottom:14px;left:18px;right:18px;display:flex;justify-content:space-between;gap:16px;pointer-events:none;font:11px var(--mono)}
+.footer span{background:#f7f5eeea;padding:5px 9px;border-radius:3px;border:1px solid #cfc9b880}
+
+/* SVG: selection is amber, never olive, so it reads against forest and land */
+.hex{fill:transparent;stroke:#315e583b;stroke-width:1;vector-effect:non-scaling-stroke}
+.hex:hover{fill:#ffffff40;stroke:#4a6326}
+.hex.selected{fill:#d6a54855;stroke:var(--amber);stroke-width:2}
+.city{font:500 40px var(--sans);fill:#25301f;paint-order:stroke;stroke:#f7f4e9;stroke-width:9px;stroke-linejoin:round}
+.waterlabel{font:italic 65px Georgia,serif;fill:#6b9097;letter-spacing:8px;pointer-events:none}
+
+@media(max-width:750px){
+  header{height:70px;padding:10px 16px}h1{font-size:24px}
+  .shell{height:auto;display:flex;flex-direction:column-reverse}main{height:65vh}
+  aside{border:0;padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  aside section{margin:0}.headernote{display:none}
+}
+@media(max-width:480px){aside{grid-template-columns:1fr}}
+
+/* Shared workspace refinements */
+[hidden]{display:none!important}
+.shell{grid-template-columns:280px minmax(0,1fr)}
+main,aside{min-width:0}
+#workspaceTitle{overflow-wrap:anywhere}
+#westernWorkspace .row button{flex:1 1 85px;padding-inline:8px}
+.research-group{margin:0 0 20px}
+.research-group>summary{font:600 17px var(--display);text-transform:uppercase;color:var(--olive-deep)}
+.research-group>div{padding:12px}
+#breadcrumb{display:block;margin-top:5px;font:600 12px var(--mono);color:var(--olive-deep);overflow-wrap:anywhere}
+#planNotice,#imageExportStatus,#mapStatus{font-family:var(--mono)}
+[data-state="success"]{color:var(--olive)}
+[data-state="error"]{color:var(--alert)}
+[data-state="pending"]{color:var(--muted)}
+.maptitle{max-width:calc(100% - 220px)}
+@media(max-width:1100px){
+ .maptitle{top:68px;max-width:calc(100% - 40px)}
+ .toolbar{top:12px;right:12px}
+ .footer{flex-wrap:wrap;gap:5px}
+}
+@media(max-width:750px){
+ #westernWorkspace{grid-column:1/-1;margin:0}
+ header>div{min-width:0}h1{font-size:22px}
+ .footer{font-size:10px;left:10px;right:10px}
+}
+
+/* Game navigation stays visible; map tools are closed disclosures by default. */
+#gameControls,#mapControls{grid-column:1/-1}
+#mapControls{border:0;padding:0}
+.map-control>div,.game-control>div{padding:12px}
+.map-control>summary,.game-control>summary{font:600 17px var(--display);color:var(--olive-deep)}
+#mapControls section{margin:0 0 12px}
+#westernWorkspace{margin:0}
+.maptitle{top:18px;max-width:calc(100% - 40px)}
+
+.command-list{display:grid;gap:5px;margin:8px 0}.command-list button{text-align:left;white-space:pre-wrap}.data-label{font:12px var(--mono);overflow-wrap:anywhere}.message-list{max-height:220px;overflow:auto;font:12px var(--mono)}#regionalWorkspace h3{font:600 17px var(--display);text-transform:uppercase;margin:18px 0 8px}
+
+
+/* Formation coordinates are kilometres: never use the HTML focus outline here. */
+#formationMap{position:absolute;inset:0;display:block;width:100%;height:100%;min-height:0;overflow:hidden;background:var(--water)}
+#formationMap [role="button"]{cursor:pointer;outline:none}
+#formationMap [role="button"]:focus-visible{outline:none;stroke:var(--amber);stroke-width:3px;vector-effect:non-scaling-stroke}
+
+.theater-command-counter{cursor:pointer;outline:none}
+.theater-command-counter:focus-visible{outline:none}
+.theater-command-counter:focus-visible rect{stroke:var(--amber);stroke-width:3px;vector-effect:non-scaling-stroke}

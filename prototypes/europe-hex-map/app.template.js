@@ -79,7 +79,9 @@ document.getElementById("regionGaps").textContent="Selected examples only. Regio
 routeList();
 document.getElementById("focusPilot").onclick=()=>{showConnections(regionFeatures);focusConnections(regionFeatures);};
 document.getElementById("pilotToggle").onchange=e=>{pilot.style.display=e.target.checked?"":"none";};
+let activeRegion=null;
 __WESTERN_SCRIPT__
+__REGIONAL_SCRIPT__
 const theaterAreas=element("g",{}), theaterNodes=new Map();
 let chosenTheater=null,activeTheater=null;
 for(const t of DATA.theaterDefinitions.theaters){
@@ -92,42 +94,43 @@ for(const t of DATA.theaterDefinitions.theaters){
 }
 theaterAreas.style.display="none";
 function chooseTheater(id){
+ activeRegion=null;regionalSector=null;document.getElementById("regionChoice").value="";
  chosenTheater=DATA.theaterDefinitions.theaters.find(t=>t.id===id)||null;
  document.getElementById("theaterChoice").value=chosenTheater?chosenTheater.id:"";
- document.getElementById("enterTheater").disabled=!chosenTheater;
- document.getElementById("theaterInfo").textContent=chosenTheater?chosenTheater.name+". "+(chosenTheater.scope||"")+" Campaign area; command and objectives unassigned. Enter to explore its geography.":"Choose a theater. Areas are illustrative, not historical command boundaries.";
+ document.getElementById("theaterInfo").textContent=chosenTheater?chosenTheater.name+". "+(chosenTheater.scope||"")+" Campaign area; command and objectives unassigned. ":"Whole Map. Choose a theater to explore its geography.";
  for(const [key,node] of theaterNodes)node.setAttribute("fill",key===id?"#b68a3950":"#b68a3920");
+ if(chosenTheater)enterTheater();else returnEurope();
 }
 function enterTheater(){
+ document.getElementById("workspaceControls").open=true;
  if(!chosenTheater)return;
  activeTheater=chosenTheater;view=[...activeTheater.view];
  document.getElementById("theaterToggle").checked=false;theaterAreas.style.display="none";
- document.getElementById("returnEurope").disabled=false;
  document.getElementById("mapHeading").textContent=activeTheater.name;
  document.getElementById("breadcrumb").textContent="Overview › "+activeTheater.name;
  document.getElementById("viewLevel").textContent="THEATER VIEW";renderView();
 }
 function returnEurope(){
- activeTheater=null;view=[...continentalView];
- document.getElementById("returnEurope").disabled=true;
+ activeRegion=null;regionalSector=null;document.getElementById("regionChoice").value="";
+ activeTheater=null;chosenTheater=null;document.getElementById("theaterChoice").value="";view=[...continentalView];
  document.getElementById("mapHeading").textContent="Europe & North Africa";
- document.getElementById("breadcrumb").textContent="Continental campaign view";
+ document.getElementById("breadcrumb").textContent="Overview";
  document.getElementById("viewLevel").textContent="EUROPE & NORTH AFRICA · CONTINENTAL VIEW";renderView();
 }
 document.getElementById("theaterChoice").onchange=e=>chooseTheater(e.target.value);
 document.getElementById("theaterToggle").onchange=e=>{theaterAreas.style.display=e.target.checked?"":"none";};
-document.getElementById("enterTheater").onclick=enterTheater;
-document.getElementById("returnEurope").onclick=returnEurope;
+
+
 let view=[...continentalView];function renderView(){svg.setAttribute("viewBox",view.join(" "));pilotLabels.style.display=view[2]>900?"none":"";cities.style.display=document.getElementById("cityToggle").checked===false?"none":"";
  const railLevel=Math.max(activeTheater?1:0,view[2]>2400?0:view[2]>900?1:2);
  updateSouthern(railLevel);
  railTiers.forEach((node,t)=>node.style.display=t<=railLevel?"":"none");
  document.getElementById("railDetail").textContent=["Europe: major corridor candidates","Regional: corridors and through routes","Local: all mapped railway detail"][railLevel];
  const unitsPerPixel=Math.max(view[2]/(svg.clientWidth||1200),view[3]/(svg.clientHeight||900));
- for(const {city,node} of cityNodes)node.setAttribute("transform",`translate(${city.x} ${city.y}) scale(${unitsPerPixel})`);updateWestern();}renderView();
+ for(const {city,node} of cityNodes)node.setAttribute("transform",`translate(${city.x} ${city.y}) scale(${unitsPerPixel})`);updateWestern();updateRegional();updateTheaterCounters();}renderView();
 window.addEventListener("resize",renderView);
 function zoom(f){const [x,y,w,h]=view;const nw=Math.max(20,Math.min(9000,w*f)),nh=nw*h/w;view=[x+(w-nw)/2,y+(h-nh)/2,nw,nh];renderView();}
-document.getElementById("zoomIn").onclick=()=>zoom(.7);document.getElementById("zoomOut").onclick=()=>zoom(1/.7);document.getElementById("reset").onclick=returnEurope;
+document.getElementById("zoomIn").onclick=()=>zoom(.7);document.getElementById("zoomOut").onclick=()=>zoom(1/.7);document.getElementById("reset").onclick=()=>{view=activeRegion?[...activeRegion.view]:activeTheater?[...activeTheater.view]:[...continentalView];renderView();};
 svg.addEventListener("wheel",e=>{e.preventDefault();zoom(e.deltaY>0?1.15:1/1.15);},{passive:false});
 let down=null,dragged=false;
 svg.addEventListener("pointerdown",e=>{down=[e.clientX,e.clientY,...view];dragged=false;});
@@ -145,16 +148,22 @@ saveSeed();
 async function localSeed(c){const s=[DATA.metadata.generator,DATA.metadata.baseHash,seed,c.id,"future-refinement"].join("|");return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",new TextEncoder().encode(s)))).map(x=>x.toString(16).padStart(2,"0")).join("");}
 async function select(c){const serial=++selectSerial;if(selected)nodes.get(selected.id).classList.remove("selected");selected=c;nodes.get(c.id).classList.add("selected");const token=await localSeed(c);if(serial!==selectSerial)return;const d=document.getElementById("details");d.replaceChildren();function row(a,b){const div=document.createElement("div");div.className="fact";const label=document.createElement("span");label.textContent=a;const value=document.createElement("strong");value.textContent=b;div.append(label,value);d.append(div);}row("Hex",c.id);row("Surface",c.surface);row("Dry land",Math.round(c.landFraction*100)+"%");row("Forest footprint (2000)",c.forestReferenceFraction===null?"Outside reference coverage":Math.round(c.forestReferenceFraction*100)+"%");row("1939 transport","Not validated");row("Latitude",c.lat.toFixed(3)+"°");row("Longitude",c.lon.toFixed(3)+"°");const p=document.createElement("p");p.className="note";p.textContent="Ranges: "+(c.mountainRegions.join(", ")||"None mapped")+" · Waterways: "+(c.rivers.join(", ")||"None in source")+" · Lakes: "+((c.lakes||[]).join(", ")||"None mapped")+" · Salt basins: "+((c.saltBasins||[]).join(", ")||"None mapped")+" · Cities: "+(c.cities.join(", ")||"None selected");d.append(p);for(const id of c.periodTerrainContext||[]){const r=DATA.terrainReview.records.find(r=>r.id===id);if(!r)continue;const note=document.createElement("p");note.className="note";note.textContent="Regional historical context ("+r.period+"): "+r.finding+" ";const a=document.createElement("a");a.href=r.url;a.target="_blank";a.rel="noopener";a.textContent=r.title;note.append(a);d.append(note);}const small=document.createElement("p");small.className="note";small.textContent="Local refinement seed: "+token.slice(0,16)+"…";d.append(small);document.getElementById("exportHex").disabled=false;}
 function download(name,obj){const url=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:"application/json"}));const a=document.createElement("a");a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);}
-document.getElementById("newCampaign").onclick=()=>{seed=freshSeed();saveSeed();if(selected)select(selected);if(activeTheater)renderView();};
-document.getElementById("exportCampaign").onclick=()=>{const {researchTransport,historicalPilot,historicalRailNetwork,southernTransport,theaterDefinitions,westernTheater,theaterWorkspaces,...campaignData}=DATA;download("europe-campaign-map.json",{campaign:{mapSeed:seed,geographyHash:DATA.metadata.baseHash,theaterDefinitions,planningNotes:allPlans()},...campaignData});};
+document.getElementById("newCampaign").onclick=()=>{seed=freshSeed();saveSeed();document.getElementById("regionalText").value="";if(activeRegion){regionalState=RegionalModel.create(DATA.regionalCampaign,seed,DATA.metadata.baseHash);regionalSector=null;}if(selected)select(selected);if(activeTheater)renderView();};
+document.getElementById("exportCampaign").onclick=()=>{const {researchTransport,historicalPilot,historicalRailNetwork,southernTransport,theaterDefinitions,westernTheater,theaterWorkspaces,regionalCampaign,...campaignData}=DATA;download("europe-campaign-map.json",{campaign:{mapSeed:seed,geographyHash:DATA.metadata.baseHash,theaterDefinitions,planningNotes:allPlans(),regionalExercise:regionalForExport()},...campaignData});};
 document.getElementById("exportHex").onclick=async()=>{const c=selected,s=seed;const token=await localSeed(c);download(c.id.replaceAll(":","-")+".json",{mapSeed:s,baseHash:DATA.metadata.baseHash,cell:c,refinementSeed:token});};
 document.getElementById("sourceId").textContent="Source revision "+DATA.metadata.sourceManifest.commit.slice(0,12)+" · Base "+DATA.metadata.baseHash.slice(0,12);
 document.getElementById("mapStatus").textContent=DATA.cells.length.toLocaleString()+" hexes · Equal-area Europe projection";
 
 document.getElementById("exportImage").onclick=async()=>{
  const button=document.getElementById("exportImage"),status=document.getElementById("imageExportStatus");
- button.disabled=true;status.textContent="Preparing map image...";
- try{await exportMapPng(svg,(activeTheater?activeTheater.id:"europe-north-africa")+"-map.png");status.textContent="Map image exported as PNG.";}
- catch(error){status.textContent="Image export failed: "+error.message;}
+ button.disabled=true;status.setAttribute("data-state","pending");status.textContent="Preparing map image...";
+ const caption=document.getElementById("imageCaption").checked?[
+ activeRegion?activeRegion.name:activeTheater?activeTheater.name:"Europe & North Africa",
+ "Reference geography; tree cover: 2000; European rail: 1920-1940 (when shown).",
+ "Southern transport evidence: "+(document.getElementById("southLater").checked?"through 1942":"by 1939")+". Operational status unverified.",
+ "Sources: Natural Earth; EC JRC GLC2000; B. Polo Martin / NAKALA, CC-BY-NC-4.0 (rail)."
+ ]:[];
+ try{await exportMapPng(svg,(activeRegion?activeRegion.id:activeTheater?activeTheater.id:"europe-north-africa")+"-map.png",caption);status.setAttribute("data-state","success");status.textContent="Map image exported as PNG.";}
+ catch(error){status.setAttribute("data-state","error");status.textContent="Image export failed: "+error.message;}
  finally{button.disabled=false;}
 };

@@ -1,0 +1,142 @@
+{
+  "format": "asl-scenario-card/1",
+  "id": "formation-access-test",
+  "title": "Formation access: tactical test",
+  "catalog": "asl-scenario-a1@1.13.0",
+  "source": {
+    "basis": "Authored tactical integration test, not a historical scenario",
+    "legacy": "None; original exercise",
+    "adaptation": [
+      "Board 04 is representative test terrain, not generated Normandy geography.",
+      "Forces, six turns and exit objective are authored test choices, not reconstructed orders."
+    ]
+  },
+  "place": "Representative board 04, not a georeferenced Normandy battlefield",
+  "date": {
+    "day": 8,
+    "month": 6,
+    "year": 1944
+  },
+  "introduction": "Test a platoon gaining access for follow-on forces. Campaign admission and result reconciliation are disabled.",
+  "boards": [
+    {
+      "board": "bd04",
+      "column": 0,
+      "row": 0,
+      "reversed": false
+    }
+  ],
+  "north": "top",
+  "playableArea": null,
+  "turns": {
+    "count": 6,
+    "halfTurn": false,
+    "setsUpFirst": "german",
+    "movesFirst": "american"
+  },
+  "scenarioDefender": null,
+  "sides": [
+    {
+      "side": "american",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "top",
+        "basis": "manufactured",
+        "note": "Authored tactical test"
+      },
+      "balance": "No balance adjustment.",
+      "groups": [
+        {
+          "name": "Authored american detachment",
+          "elr": 3,
+          "areas": [
+            {
+              "id": "deployment",
+              "kind": "hex-numbers",
+              "board": "bd04",
+              "from": 1,
+              "to": 3
+            }
+          ],
+          "units": [
+            {
+              "definition": "american-squad",
+              "count": 3,
+              "area": "deployment"
+            },
+            {
+              "definition": "american-leader-8-0",
+              "count": 1,
+              "area": "deployment"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "side": "german",
+      "san": 0,
+      "friendlyEdge": {
+        "edge": "bottom",
+        "basis": "manufactured",
+        "note": "Authored tactical test"
+      },
+      "balance": "No balance adjustment.",
+      "groups": [
+        {
+          "name": "Authored german detachment",
+          "elr": 3,
+          "areas": [
+            {
+              "id": "deployment",
+              "kind": "hex-numbers",
+              "board": "bd04",
+              "from": 7,
+              "to": 9
+            }
+          ],
+          "units": [
+            {
+              "definition": "attacker-squad",
+              "count": 2,
+              "area": "deployment"
+            },
+            {
+              "definition": "attacker-leader-8-0",
+              "count": 1,
+              "area": "deployment"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "specialRules": [],
+  "victoryConditions": {
+    "kind": "exit",
+    "text": "At game end the American side wins if it has exited at least 4 Exit VP off the bottom edge on or adjacent to Q10. Otherwise the German side wins.",
+    "rules": [
+      "A26.23",
+      "A26.211"
+    ],
+    "outcomes": [
+      {
+        "winner": "american",
+        "immediate": false,
+        "any": [
+          {
+            "type": "exit-vp",
+            "side": "american",
+            "atLeast": 4,
+            "edge": "bottom",
+            "near": [
+              "bd04:Q10"
+            ]
+          }
+        ]
+      }
+    ],
+    "otherwise": "german"
+  },
+  "aftermath": "Test results must not be applied to the regional campaign."
+}

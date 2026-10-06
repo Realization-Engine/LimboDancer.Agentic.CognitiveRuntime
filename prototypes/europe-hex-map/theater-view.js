@@ -16,7 +16,7 @@ let westernMode="geography",westernSelected=null;
 const westernCells=new Map(), westernLabels=[],siteLabels=[];
 function loadWorkspace(id){
  if(loadedTheater===id)return;
- loadedTheater=id;theaterData=DATA.theaterWorkspaces[id];westernFootprintPath=path(theaterData.hexFootprint);
+ loadedTheater=id;theaterData=id===DATA.regionalCampaign.id?{...DATA.regionalCampaign,sites:[]}:DATA.theaterWorkspaces[id];westernFootprintPath=path(theaterData.hexFootprint);
  for(const group of [westernWater,westernGrid,westernPlaces,westernSites])group.replaceChildren();
  westernCells.clear();westernLabels.length=0;siteLabels.length=0;westernSelected=null;westernMode="geography";
  document.getElementById("savePlan").disabled=true;document.getElementById("planText").value="";document.getElementById("planNotice").textContent="";
@@ -37,25 +37,26 @@ for(const site of theaterData.sites){
  const node=element("g",{tabindex:0,role:"button","aria-label":site.name+" historical "+site.kind},westernSites);
  element("rect",{x:-6,y:-6,width:12,height:12,fill:site.kind==="port"?"#71384c":"#99651f",stroke:"#fff","stroke-width":1},node);
  const label=element("text",{x:9,y:4,fill:"#553923","font-size":13,"paint-order":"stroke",stroke:"#fff9e9","stroke-width":3},node);label.textContent=site.name;
- function inspect(){const detail=document.getElementById("westernDetail");detail.replaceChildren();const p=document.createElement("p");p.textContent=site.name+" · "+site.kind+". "+site.note+" "+site.period+". Approximate town center, not a facility position.";detail.append(p);const a=document.createElement("a");a.href=site.source;a.target="_blank";a.rel="noopener";a.textContent="Historical source";detail.append(a);}
+ function inspect(){const detail=document.getElementById("westernDetail");detail.replaceChildren();const p=document.createElement("p");p.textContent=site.name+" · "+site.kind+". "+site.note+" "+"Approximate town center, not a facility position.";detail.append(p);const date=document.createElement("code");date.textContent=site.period;detail.append(date);const a=document.createElement("a");a.href=site.source;a.target="_blank";a.rel="noopener";a.textContent="Historical source";detail.append(a);}
  node.addEventListener("click",()=>{if(!dragged)inspect();});node.addEventListener("keydown",e=>{if(e.key==="Enter"){inspect();}});siteLabels.push({site,node});
 }
 }
 function selectWestern(cell){
  if(westernSelected)westernCells.get(westernSelected.id)?.classList.remove("selected");
  westernSelected=cell;westernCells.get(cell.id).classList.add("selected");
- document.getElementById("westernDetail").textContent="Sector "+cell.id+" · 26 km across. Settlements: "+(cell.towns.join(", ")||"None in the reference source")+". Ranges: "+((cell.mountainRegions||[]).join(", ")||"None mapped")+". Lakes and salt basins: "+((cell.waterNames||[]).join(", ")||"None mapped")+". Terrain and route availability are not adjudicated at this resolution.";
+ if(activeRegion){regionalSector=cell;renderRegional();return;}
+ const detail=document.getElementById("westernDetail");detail.replaceChildren();const identity=document.createElement("code");identity.textContent=cell.id;detail.append(identity);const description=document.createElement("p");description.textContent="26 km across. Settlements: "+(cell.towns.join(", ")||"None in the reference source")+". Ranges: "+((cell.mountainRegions||[]).join(", ")||"None mapped")+". Lakes and salt basins: "+((cell.waterNames||[]).join(", ")||"None mapped")+". Terrain and route availability are not adjudicated at this resolution.";detail.append(description);
  document.getElementById("savePlan").disabled=false;
 }
 function planKey(){return "theater-plans-v1-"+seed;}
 function allPlans(){try{const p=JSON.parse(localStorage.getItem(planKey())||"null");if(Array.isArray(p))return p.filter(n=>typeof n.text==="string"&&typeof n.cellId==="string"&&typeof n.theaterId==="string");const old=JSON.parse(localStorage.getItem("western-plans-v1-"+seed)||"[]");return Array.isArray(old)?old.filter(n=>typeof n.text==="string"&&typeof n.cellId==="string").map(n=>({...n,theaterId:"western"})):[];}catch{return [];}}
 function readPlans(){return allPlans().filter(n=>n.theaterId===(activeTheater?.id||"western"));}
 function showPlans(){const list=document.getElementById("planList");list.replaceChildren();for(const item of readPlans()){const b=document.createElement("button");b.textContent=item.cellId+": "+item.text;b.style.display="block";b.style.margin="6px 0";b.onclick=()=>{const c=theaterData.cells.find(c=>c.id===item.cellId);if(c){selectWestern(c);view=[c.x-180,c.y-150,360,300];renderView();}};list.append(b);}}
-document.getElementById("savePlan").onclick=()=>{if(!westernSelected)return;const text=document.getElementById("planText").value.trim();if(!text)return;const plans=allPlans();plans.push({theaterId:activeTheater.id,cellId:westernSelected.id,text:text.slice(0,500)});try{localStorage.setItem(planKey(),JSON.stringify(plans));document.getElementById("planText").value="";showPlans();document.getElementById("planNotice").textContent="Planning note saved for this campaign. No order issued.";}catch{document.getElementById("planNotice").textContent="Browser storage is unavailable. Copy the note before leaving.";}};
+document.getElementById("savePlan").onclick=()=>{if(!westernSelected)return;const text=document.getElementById("planText").value.trim();if(!text)return;const plans=allPlans();plans.push({theaterId:activeTheater.id,cellId:westernSelected.id,text:text.slice(0,500)});try{localStorage.setItem(planKey(),JSON.stringify(plans));document.getElementById("planText").value="";showPlans();document.getElementById("planNotice").setAttribute("data-state","success");document.getElementById("planNotice").textContent="Planning note saved for this campaign. No order issued.";}catch{document.getElementById("planNotice").setAttribute("data-state","error");document.getElementById("planNotice").textContent="Browser storage is unavailable. Copy the note before leaving.";}};
 for(const mode of ["geography","logistics","planning"])document.getElementById("mode-"+mode).onclick=()=>{westernMode=mode;renderView();};
 function updateWestern(){
  const active=!!activeTheater;
- if(active)loadWorkspace(activeTheater.id);
+ if(active)loadWorkspace(activeRegion?activeRegion.id:activeTheater.id);
  westernLayer.style.display=active?"":"none";
  theaterFocus.style.display=activeTheater?"":"none";
  if(activeTheater){
@@ -66,9 +67,10 @@ function updateWestern(){
   const [x,y,w,h]=view,pad=Math.max(w,h)*2;
   theaterShade.setAttribute("d",path({type:"Polygon",coordinates:[[[x-pad,y-pad],[x+w+pad,y-pad],[x+w+pad,y+h+pad],[x-pad,y+h+pad],[x-pad,y-pad]]]})+footprint);
  }
- document.getElementById("westernWorkspace").style.display=active?"":"none";
+ document.getElementById("westernWorkspace").style.display=active&&!activeRegion?"":"none";
+ document.getElementById("workspaceControls").style.display=activeTheater&&!formationOpen?"":"none";
  document.getElementById("shell").style.gridTemplateColumns=active?"350px 1fr":"";
- for(const id of ["pilotSection","coarseSelection"])document.getElementById(id).style.display=active?"none":"";
+ for(const id of ["coarseSelection","selectionControls"])document.getElementById(id).style.display=active?"none":"";
  if(activeTheater&&!active)grid.setAttribute("clip-path","url(#theater-grid-clip)");
  else grid.removeAttribute("clip-path");
  grid.style.display=active||document.getElementById("gridToggle").checked===false?"none":"";
