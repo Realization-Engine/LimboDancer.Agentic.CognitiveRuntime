@@ -256,3 +256,50 @@ public sealed record FirerLocationFacts(string Location, bool Read, string? Terr
 
 /// <summary>The verdict on a firer's Location: the refusal, or whether the firers there fire at their own Location (range 0, no LOS read).</summary>
 public sealed record FirerLocationVerdict(string? Refusal, bool OwnLocation);
+
+/// <summary>A unit named for Opportunity Fire as the state finds it (A7.25, A15.432; ruling R12.1): its id, whether it is active with a Location, of the phasing side, a vehicle, Personnel, a Dummy, its conditions, and whether it has fired or directed fire this Player Turn by any record.</summary>
+public sealed record OpportunityFirerFacts(
+    string Id,
+    bool ActiveOnMap,
+    bool PhasingSide,
+    bool Vehicle,
+    bool Personnel,
+    bool Dummy,
+    bool Broken,
+    bool Berserk,
+    bool Melee,
+    bool Captured,
+    bool Ti,
+    bool Fired,
+    bool BoundingFire,
+    bool PhaseFirer,
+    bool SupportWeaponUser,
+    bool SupportWeaponDirector);
+
+/// <summary>A firer of an attack against its share of an Encirclement (A7.7): whether its Location is known, and where its LOS enters the target hex as hexside directions (read when asked; null when the entry cannot be read).</summary>
+public sealed record EncirclementFirerFacts(bool LocationKnown, Func<IReadOnlyList<int>?> EntrySides);
+
+/// <summary>An earlier attack of the phase as the Encirclement scan reads it, latest first (A7.7): an ordnance shot or a fire record, the side that made it, whether it was at the target Location, and the record's facts, read when asked.</summary>
+public sealed record EarlierAttackFacts(bool Ordnance, string? Side, bool SameTarget, Func<RecordedAttackFacts?> Read);
+
+/// <summary>A recorded fire attack for the Encirclement scan: its facts, whether its LOS was blocked, its arithmetic, and its firers' entry reads.</summary>
+public sealed record RecordedAttackFacts(FireAttack Recorded, bool Blocked, FireArithmetic? Arithmetic, IReadOnlyList<EncirclementFirerFacts> Firers);
+
+/// <summary>A fact reader for the Fire Lane's search along a Hex Grain (A9.22; the pass 32 design, D4): Locations are indexes into the caller's table.</summary>
+public interface IFireLaneFactReader
+{
+    /// <summary>The Location across a hexside (0 to 5) of a Location, added to the table; null at the map's edge.</summary>
+    public int? Across(int location, int side);
+
+    /// <summary>The index of a Location's hex, by which two Locations of one hex agree.</summary>
+    public int HexOf(int location);
+
+    /// <summary>A Location's base level; null when it cannot be read.</summary>
+    public int? BaseLevel(int location);
+
+    /// <summary>The LOS from one Location to another: whether it is blocked and its Hindrance; null when it cannot be read.</summary>
+    public (bool Blocked, int Hindrance)? Los(int from, int target);
+}
+
+/// <summary>One Location of a Fire Lane: the table index, the Residual FP there, and the Hindrance DRM of the LOS from the MG.</summary>
+public sealed record FireLaneLocation(int Location, int Fp, int HindranceDrm);

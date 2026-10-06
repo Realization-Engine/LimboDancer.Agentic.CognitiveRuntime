@@ -837,4 +837,44 @@ public static class ScenarioA1FireEligibility
 
     /// <summary>A15.44, A15.5: the Heat of Battle reads are made for every target, and for the firers of FPF alone.</summary>
     public static bool FirersTakeHeatOfBattleReads(string? fireKind) => fireKind == ScenarioA1FireCalculator.FinalProtectiveFire;
+
+    // Opportunity Fire (GamePlanner.PlanOpportunityFire of Play; pass 32.c).
+
+    /// <summary>A7.25 (ruling R12.1): Opportunity Fire is declared in the PFPh.</summary>
+    public static string? OpportunityFirePhaseBar(string? phase) => phase != "pfph" ? "play.opportunity-fire-phase: Opportunity Fire is declared in the PFPh (A7.25)" : null;
+
+    /// <summary>A7.25, A15.432 (ruling R12.1): a unit declared for Opportunity Fire is Good Order Infantry of the phasing side on the map, not berserk, TI, in Melee, or a prisoner, that has not fired or directed fire this Player Turn.</summary>
+    public static string? OpportunityFirerBar(OpportunityFirerFacts unit)
+    {
+        ArgumentNullException.ThrowIfNull(unit);
+        if (!unit.ActiveOnMap || !unit.PhasingSide || unit.Vehicle || !unit.Personnel || unit.Dummy)
+        {
+            return $"play.opportunity-fire: '{unit.Id}' is not Infantry of the phasing side on the map (A7.25)";
+        }
+
+        if (unit.Broken || unit.Berserk || unit.Melee || unit.Captured || unit.Ti)
+        {
+            return $"play.opportunity-fire: {unit.Id} is not Good Order, or is berserk, TI, in Melee, or a prisoner (A7.25, A15.432)";
+        }
+
+        return unit.Fired || unit.BoundingFire || unit.PhaseFirer || unit.SupportWeaponUser || unit.SupportWeaponDirector
+            ? $"play.opportunity-fire: {unit.Id} has already fired or directed fire this Player Turn (A7.25)"
+            : null;
+    }
+
+    /// <summary>A7.25, A12.14 (Case D): a concealed or hidden Opportunity Firer in the LOS of a Good Order enemy ground unit within 16 hexes loses its "?"; <paramref name="seen"/> is read for the concealed units only.</summary>
+    public static IReadOnlyList<string> OpportunityFireReveals(IEnumerable<(string Id, bool ConcealedOrHidden, Func<bool> Seen)> units)
+    {
+        ArgumentNullException.ThrowIfNull(units);
+        return [.. units.Where(unit => unit.ConcealedOrHidden && unit.Seen()).Select(unit => unit.Id)];
+    }
+
+    /// <summary>The sentence of an Opportunity Fire declaration, with the units that lose their "?".</summary>
+    public static string OpportunityFireSummary(IReadOnlyList<string> ids, IReadOnlyList<string> revealed)
+    {
+        ArgumentNullException.ThrowIfNull(ids);
+        ArgumentNullException.ThrowIfNull(revealed);
+        return $"play.opportunity-fire: {string.Join(", ", ids)} hold their fire for the AFPh under a Bounding Fire counter, and do not move in the MPh (A7.25)"
+            + (revealed.Count > 0 ? $"; {string.Join(", ", revealed)} loses its \"?\" (Case D)" : string.Empty);
+    }
 }

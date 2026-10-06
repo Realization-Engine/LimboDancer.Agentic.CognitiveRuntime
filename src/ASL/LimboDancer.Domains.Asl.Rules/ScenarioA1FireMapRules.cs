@@ -301,4 +301,186 @@ public static class ScenarioA1FireMapRules
         return firerLocations.All(pair => enemyLocations
             .Select(enemy => pair.Range == 0 ? 0 : los.Los(pair.Location, enemy)?.Range ?? int.MaxValue).DefaultIfEmpty(int.MaxValue).Min() >= pair.Range);
     }
+
+    // Encirclement and Fire Lanes (GamePlanner.FireExtensions of Play, backlog pass 12, rulings R12.7 and R12.11; pass 32.c).
+
+    /// <summary>
+    /// Where an LOS enters a target hex, as a position on its perimeter (A7.7; ruling R12.11): hexside i is 2i + 1, the hexspine between hexsides i and
+    /// i + 1 is 2i + 2, counting 12 positions clockwise from the north vertex of the north hexside; null when the entry cannot be read.
+    /// </summary>
+    public static int? PerimeterPosition(IReadOnlyList<int> sides)
+    {
+        ArgumentNullException.ThrowIfNull(sides);
+        return sides switch
+        {
+            [var one] => (2 * one) + 1,
+            [var a, var b] when (a + 1) % 6 == b => ((2 * a) + 2) % 12,
+            [var a, var b] when (b + 1) % 6 == a => ((2 * b) + 2) % 12,
+            _ => null,
+        };
+    }
+
+    /// <summary>
+    /// An attack's share of an Encirclement (A7.7; ruling R12.11): the units firing inherent FP or a SW at no more than Normal Range, when its FP could
+    /// inflict at least a NMC allowing for Cowering, with the positions where their LOS enters the target hex; none for other fire. <paramref name="firers"/>
+    /// gives, for each firer of the attack in order, whether its Location is known and its LOS entry read.
+    /// </summary>
+    public static (int Units, List<int> Entries) EncirclementShare(FireAttack facts, FireArithmetic? arithmetic, bool targetKnown, ScenarioA1FireReference reference,
+        IReadOnlyList<EncirclementFirerFacts> firers)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(reference);
+        ArgumentNullException.ThrowIfNull(firers);
+        if (facts.VehicleFire is not null || facts.Overrun is not null || facts.OrdnanceHit is not null || facts.FireKind == ScenarioA1FireCalculator.ResidualFire
+            || facts.Firers is not { Count: > 0 } firing || arithmetic is null || !targetKnown)
+        {
+            return (0, []);
+        }
+
+        var could = ScenarioA1ResultTables.CouldCauseNmc(facts, arithmetic);
+        if (!could(false) && !could(true))
+        {
+            return (0, []);
+        }
+
+        var units = 0;
+        var entries = new List<int>();
+        foreach (var (firer, index) in firing.Select((firer, index) => (firer, index)))
+        {
+            var definition = reference.Definitions.GetValueOrDefault(firer.DefinitionId ?? string.Empty);
+            var weaponRanges = (firer.Weapons ?? []).Select(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty)?.Range).OfType<int>();
+            int? normal = firer.UsesInherentFp == false ? weaponRanges.DefaultIfEmpty(0).Max() : definition?.Range;
+            var range = firer.Range ?? facts.Range;
+            if (normal is not { } limit || range is not { } distance || distance < 1 || distance > limit || !firers[index].LocationKnown)
+            {
+                continue;
+            }
+
+            units++;
+            if (firers[index].EntrySides() is { } sides && PerimeterPosition(sides) is { } position)
+            {
+                entries.Add(position);
+            }
+        }
+
+        return (units, entries);
+    }
+
+    /// <summary>
+    /// The side this attack Encircles in its target Location, or null (A7.7; ruling R12.11): with the side's earlier attacks this phase on that Location,
+    /// made consecutively (none of its attacks at another Location between; a Gun's shot at another Location breaks the sequence too), by at least two
+    /// counting units whose LOS entries Encircle it. <paramref name="unitSide"/> reads a target's side; <paramref name="encirclementExists"/> whether the
+    /// Location already Encircles a side; <paramref name="earlier"/> is the phase's attacks, latest first, each read when reached.
+    /// </summary>
+    public static string? EncirclementSeal(string? phase, FireAttack facts, bool targetKnown, Func<string, string?> unitSide, Func<string, bool> encirclementExists,
+        ScenarioA1FireReference reference, IReadOnlyList<EncirclementFirerFacts> firers, IEnumerable<EarlierAttackFacts> earlier, string firingSide)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(unitSide);
+        ArgumentNullException.ThrowIfNull(encirclementExists);
+        ArgumentNullException.ThrowIfNull(earlier);
+        if (phase is not ("pfph" or "dfph" or "afph") || facts.SprayingFire == true || !targetKnown)
+        {
+            return null;
+        }
+
+        var targetSide = (facts.Targets ?? []).Where(item => item.Friendly != true && item.Dummy != true && item.GuardId is null)
+            .Select(item => unitSide(item.UnitId!)).FirstOrDefault(side => side is not null);
+        if (targetSide is null || encirclementExists(targetSide))
+        {
+            return null;
+        }
+
+        var (units, entries) = EncirclementShare(facts, ScenarioA1FireCalculator.Preview(facts, reference), targetKnown, reference, firers);
+        if (units == 0)
+        {
+            return null;
+        }
+
+        foreach (var attack in earlier)
+        {
+            if (attack.Ordnance)
+            {
+                if (attack.Side == firingSide && !attack.SameTarget)
+                {
+                    break;
+                }
+
+                continue;
+            }
+
+            if (attack.Side != firingSide)
+            {
+                continue;
+            }
+
+            if (!attack.SameTarget)
+            {
+                break;
+            }
+
+            if (attack.Read() is not { } record || record.Blocked || record.Recorded.SprayingFire == true)
+            {
+                continue;
+            }
+
+            var (more, seen) = EncirclementShare(record.Recorded, record.Arithmetic, targetKnown, reference, record.Firers);
+            units += more;
+            entries.AddRange(seen);
+        }
+
+        return units >= 2 && ScenarioA1Geometry.Encircles(entries) ? targetSide : null;
+    }
+
+    /// <summary>
+    /// The Locations of a Fire Lane (A9.22; ruling R12.7): along the Hex Grain from the MG's hex through the target hex to the counter's hex, each at the
+    /// MG's level, within its Normal Range and in its manning Infantry's LOS, with its Fire Lane Residual FP (the IFT column left of the MG's FP, doubled
+    /// ADJACENT) and the LOS Hindrance DRM from the MG; null with the reason when the lane is not on a Hex Grain. A search over the map through the
+    /// fact reader (the design's D4); the MG's, the target's, and the counter's Locations are table indexes.
+    /// </summary>
+    public static (IReadOnlyList<FireLaneLocation>? Entries, string? Reason) FireLaneEntries(int from, int fromLevel, int target, int to, string targetText, string toText,
+        int normalRange, int firepower, IFireLaneFactReader map)
+    {
+        ArgumentNullException.ThrowIfNull(map);
+        var column = Array.FindLastIndex(ScenarioA1FireReference.ColumnFp, fp => fp <= firepower) - 1;
+        if (column < 0)
+        {
+            return (null, "play.fire-lane: the MG's FP has no IFT column to its left, so its Fire Lane has no Residual FP (A9.22)");
+        }
+
+        var laneFp = ScenarioA1FireReference.ColumnFp[column];
+        int? fromHeight = map.BaseLevel(from) is { } fromBase ? fromBase + fromLevel : null;
+        for (var direction = 0; direction < 6; direction++)
+        {
+            var path = new List<int>();
+            var at = from;
+            for (var step = 1; step <= normalRange && map.Across(at, direction) is { } next; step++)
+            {
+                at = next;
+                path.Add(at);
+            }
+
+            var targetIndex = path.FindIndex(item => map.HexOf(item) == map.HexOf(target));
+            var toIndex = path.FindIndex(item => map.HexOf(item) == map.HexOf(to));
+            if (targetIndex < 0 || toIndex < targetIndex)
+            {
+                continue;
+            }
+
+            var entries = new List<FireLaneLocation>();
+            foreach (var (location, index) in path.Take(toIndex + 1).Select((item, index) => (item, index)))
+            {
+                if (map.BaseLevel(location) is not { } level || level != fromHeight || map.Los(from, location) is not { Blocked: false } los)
+                {
+                    continue;
+                }
+
+                entries.Add(new FireLaneLocation(location, index == 0 ? 2 * laneFp : laneFp, los.Hindrance));
+            }
+
+            return entries.Count == 0 ? (null, "play.fire-lane: no Location of the lane is at the MG's level and in its LOS (A9.22)") : (entries, null);
+        }
+
+        return (null, $"play.fire-lane: {toText} is not on the Hex Grain through the MG's hex and {targetText}, within the MG's Normal Range (A9.22)");
+    }
 }
