@@ -1162,3 +1162,21 @@ Branch `feature/asl-backlog-pass-32c`. Estimate: 22:20 of build and 1:15 of over
 | The gate, second run: the solution build with warnings as errors into bin/gate (0 warnings, 2:21); the Docker Linux check on the committed branch (every project passes, the CI verification and pending steps exit 0, 10:10); the chart supplement (equal); the local suite one project at a time with --no-build (Dice 24, Rules 498, Units 408, Maps 244, Maps.Vasl 121 with 28 skipped, Maps.Rendering 34 with 2 skipped, Units.Rendering 352, CounterSheets 19, MapStudio 381, Play 690, Authoring 167: all pass) | 14:16 | 14:44 | 0:28 | Docker ran beside the suite |
 | **Total** | 11:02 | 14:44 | **3:22** | On the clock to the gate's end, with the stops' waits left out. Estimate 23:35 on the plan's basis; the eight code commits ran 11:53 to 13:40 (1:47), the proofs of each overlapping the drafting of the next |
 | At the user's word ("merge and push"): main had moved by four Codex commits to 0b42b51 and a Codex worktree holds it checked out, so the merge was made with --no-ff in a temporary worktree beside the repository and pushed as 91a4c18; CI run 37514231003 ended green at 15:00 | 14:46 | 14:50 | 0:04 | The temporary worktree removed; the local main ref lags until that worktree pulls |
+
+## Pass 32.d: Ordnance, Guns, and support weapons (S7)
+
+Branch `feature/asl-backlog-pass-32d`, from 91a4c18. Times are the commits' clock; the waits for the user's Studio check after each commit are left in, as the session ran one commit a stop.
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Commit 1 (27d9973): the small LiveOrdnance members and WoodsOrBuilding into ScenarioA1OrdnanceEligibility.cs; proofs equal | 15:21 | 16:00 | 0:39 | After the checks, the baseline, and the proof tools' repair |
+| Commit 2 (f3e4a0d): FromState, the Panzerfaust, the Verify merges; proofs equal | 16:00 | 16:55 | 0:55 | Studio check between |
+| Commit 3 (48725c0): the ordnance map facts into ScenarioA1OrdnanceMapRules.cs; a dropped line caught by the build; proofs equal | 16:55 | 17:31 | 0:36 | |
+| Commit 4 (729030b): the ordnance event builders into ScenarioA1OrdnanceEventRules.cs, five UnitCondition members; proofs equal | 17:31 | 18:04 | 0:33 | |
+| Commit 5 (f1eb8ca): the projector's twelve into ScenarioA1OrdnanceProjection.cs (three stay as state writes or the Units rule); proofs equal | 18:04 | 18:39 | 0:35 | |
+| Commit 6 (e01c539): Guns into ScenarioA1GunCalculator.cs; a dropped lookup caught by the build; Guns tests 39; proofs equal | 18:39 | 20:05 | 1:26 | Studio wait included |
+| Commit 7 (c086093): Demolition Charges into ScenarioA1DemolitionChargeRules.cs; a truncated summary line caught by the build; the Throw's AFPh clause moved back when the text list differed; DC tests 59; proofs equal | 20:05 | 22:24 | 2:19 | Studio wait included |
+| Commit 8 (e1128f1): support weapons into ScenarioA1SupportWeaponRules.cs; a dropped line caught by the build; SW tests 33; proofs equal | 22:24 | 23:38 | 1:14 | Studio wait included |
+| The read-only review of the whole diff from 91a4c18: boundaries, refusal texts, tests untouched; no fixes | 23:38 | 23:41 | 0:03 | |
+| The gate: solution build with warnings as errors into bin/gate (0 warnings, 8:10); chart supplement equal; Node viewport 5 of 5; the local suite (Dice 24, Rules 498, Units 408, Maps 244, Maps.Vasl 121 with 28 skipped, Maps.Rendering 34 with 2 skipped, Units.Rendering 352, CounterSheets 19, MapStudio 381, Play 691, Authoring 167: all pass); Docker on the committed branch, every project passes, CI steps exit 0 | 23:41 | 00:52 | 1:11 | Docker ran beside the suite |
+| The documents: the design's section 19, this table | 00:52 | 00:58 | 0:06 | Stopped before merge |
