@@ -33,51 +33,23 @@ public sealed partial class GamePlanner
 
     private static string? MovementTypeOf(UnitInstance vehicle) => VehicleDefinition(vehicle)?.MovementType;
 
-    private static bool Tracked(UnitInstance vehicle) => MovementTypeOf(vehicle) is "fully-tracked" or "half-tracked";
+    private static bool Tracked(UnitInstance vehicle) => ScenarioA1VehicleTerrainCosts.Tracked(MovementTypeOf(vehicle));
 
     /// <summary>Whether a vehicle is tracked, and so may attempt ESB (D2.5).</summary>
     public static bool IsTracked(UnitInstance vehicle) => Tracked(vehicle);
 
     /// <summary>D2.21 (ruling R11.1): Reverse costs four times the entry for a tracked vehicle, three times for a truck.</summary>
-    private static int ReverseMultiplier(UnitInstance vehicle) => MovementTypeOf(vehicle) == "truck" ? 3 : 4;
+    private static int ReverseMultiplier(UnitInstance vehicle) => ScenarioA1VehicleTerrainCosts.ReverseMultiplier(MovementTypeOf(vehicle));
 
     /// <summary>
     /// The Bog DRM of a vehicle (D8.21; ruling R11.9) that belong to it, whatever the terrain: +1 Normal Ground Pressure (none printed), +2 High, 0 Low;
     /// +1 towing a Gun; +1 not fully-tracked; +1 truck-type MP.
     /// </summary>
-    private static List<(string Cause, int Drm)> VehicleBogDrm(GameState state, UnitInstance vehicle)
-    {
-        var definition = VehicleDefinition(vehicle);
-        var drm = new List<(string, int)>();
-        switch (definition?.GroundPressure)
-        {
-            case "low":
-                break;
-            case "high":
-                drm.Add(("high-ground-pressure", 2));
-                break;
-            default:
-                drm.Add(("normal-ground-pressure", 1));
-                break;
-        }
+    private static List<(string Cause, int Drm)> VehicleBogDrm(GameState state, UnitInstance vehicle) =>
+        ScenarioA1VehicleTerrainCosts.VehicleBogDrm(VehicleDefinition(vehicle)?.GroundPressure, Towing(state, vehicle), VehicleDefinition(vehicle)?.MovementType);
 
-        if (state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == vehicle.Id))
-        {
-            drm.Add(("towing", 1));
-        }
-
-        if (definition?.MovementType != "fully-tracked")
-        {
-            drm.Add(("not-fully-tracked", 1));
-        }
-
-        if (definition?.MovementType == "truck")
-        {
-            drm.Add(("truck-type-mp", 1));
-        }
-
-        return drm;
-    }
+    private static bool Towing(GameState state, UnitInstance vehicle) =>
+        state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == vehicle.Id);
 
     /// <summary>
     /// A vehicle's outright entry of an ADJACENT ground-level Location (rulings R11.6 to R11.9): the Terrain Chart cost of its movement type, a road
@@ -109,190 +81,20 @@ public sealed partial class GamePlanner
     private static (VehicleEntry? Entry, string? Reason) VehicleCost(GameState state, UnitInstance vehicle, LocationRead fromRead, LocationRead toRead, HexsideFacts crossed, BoardLocation to,
         bool reverse, bool allMp)
     {
-        if (MovementTypeOf(vehicle) is not { } type)
-        {
-            return (null, $"{to} is not an adjacent Location the map reads");
-        }
-
-        if (to.Level != 0)
-        {
-            return (null, "vehicles stay at ground level (B23.4)");
-        }
-
-        if (crossed.Cliff || crossed.Slope)
-        {
-            return (null, "cliffs and Continuous Slopes are not reviewed for vehicles (ruling R11.7)");
-        }
-
-        if (TerrainKey(toRead) is not { } terrain)
-        {
-            return (null, $"{(toRead.Level.Terrain ?? toRead.Hex.Center.Terrain)?.Name ?? "that terrain"} is not a reviewed entry for vehicles (ruling R11.7)");
-        }
-
-        var wall = WallOn(crossed);
-        if (wall == "other")
-        {
-            return (null, $"{crossed.HexsideTerrain!.Name} hexsides are not reviewed (ruling R11.7)");
-        }
-
-        var road = crossed.Terrain?.IsRoad == true && !IsRubbleTerrain(terrain);
-        var rise = toRead.Hex.BaseLevel - fromRead.Hex.BaseLevel;
-
-        // B10.52 (ruling R11.7): on a board whose elevations are hills, an Abrupt Elevation Change crosses two hillside Crest Lines, a Double-Crest
-        // hexside, which a vehicle crosses only by road.
-        if (Math.Abs(rise) >= 2 && !road)
-        {
-            return (null, "an Abrupt Elevation Change between hill levels is a Double-Crest hexside, crossed by a vehicle only along a road (B10.52; ruling R11.7)");
-        }
-
-        // B15.6: grain is Open Ground outside its season, April to September for MP.
-        if (terrain == "grain")
-        {
-            if (state.ScenarioMonth is not { } month)
-            {
-                return (null, "grain's MP cost depends on the season, and the game names no scenario month (B15.6)");
-            }
-
-            terrain = month is >= 4 and <= 9 ? "grain" : "open-ground";
-        }
-
-        // E3.6 (backlog pass 16, ruling R16.12; referee, pass 16): in Mud a vehicle using an unpaved road pays the Open Ground COT, whatever the hex holds.
-        var paved = road && crossed.Terrain?.Name == "Paved Road";
-        var plowed = road && state.SpecialRules.Contains("plowed-roads", StringComparer.Ordinal);
-        if (road && state.Weather("mud") && !paved)
-        {
-            road = false;
-            terrain = "open-ground";
-        }
-
-        // B13.41, B13.42, B24.4: ALL and half the allotment are of the printed allotment (D1.1), whatever ESB added.
-        var allotment = PrintedHalfMp(vehicle);
-        var bog = new List<(string Cause, int Drm)>();
-        var all = false;
-        int cost;
-        var woods = terrain == "woods";
-        if (road)
-        {
-            // E3.724, E3.7331 (referee, pass 16): in Ground or Deep Snow a road entry costs at least one MP.
-            cost = IsAfv(vehicle) && Is(vehicle, Conditions.ButtonedUp) || state.Weather("ground-snow") || state.Weather("deep-snow") ? 2 : 1;
-        }
-        else if (woods)
-        {
-            // B13.41, B13.42: ALL with a Bog DR, or for a fully-tracked vehicle half its allotment with a Bog DR at +3.
-            if (type == "fully-tracked" && !allMp)
-            {
-                cost = allotment / 2;
-                bog.Add(("woods-at-half-allotment", 3));
-            }
-            else
-            {
-                all = true;
-                cost = allotment;
-            }
-
-            bog.Add(("woods", 0));
-            if (rise > 0)
-            {
-                bog.Add(("gaining-elevation-into-woods", 1));
-            }
-        }
-        else if (IsRubbleTerrain(terrain))
-        {
-            // B24.4: a fully-tracked vehicle only, at half its allotment, with a Bog DR at +3.
-            if (type != "fully-tracked")
-            {
-                return (null, "only a fully-tracked vehicle enters rubble (B24.4)");
-            }
-
-            cost = allotment / 2;
-            bog.Add(("rubble-at-half-allotment", 3));
-        }
-        else if (IsBuildingTerrain(terrain))
-        {
-            return (null, "a vehicle enters a building hex only by VBM here; the B23.41 entry of a fully-tracked AFV is not built (ruling R11.7)");
-        }
-        else if (!VehicleTerrainHalfMp.TryGetValue((type, terrain), out cost))
-        {
-            return (null, $"{terrain} is not allowed to a {type} vehicle (Terrain Chart; ruling R11.7)");
-        }
-
-        // Terrain Chart note H, B10.4: 4 MP more for the level climbed, 2 by a road hexside; B10.51 (referee, pass 11): across an Abrupt Elevation Change
-        // each intermediate level climbed costs 4 MP more and each descended 2 MP.
-        if (rise > 0 && !all)
-        {
-            cost += (road ? 4 : 8) + ((rise - 1) * 8);
-        }
-        else if (rise <= -2 && !all)
-        {
-            cost += (-rise - 1) * 4;
-        }
-
-        // B9.4: a wall or hedge hexside, not crossed by the road through a gap in it: fully-tracked 1 + COT; a halftrack a hedge only, 2 + COT with a
-        // Bog DR in the hex it leaves; a truck neither.
-        var bogInLeft = false;
-        if (wall is not null && !road)
-        {
-            switch (type, wall)
-            {
-                case ("fully-tracked", _):
-                    cost += all ? 0 : 2;
-                    break;
-                case ("half-tracked", "hedge"):
-                    cost += all ? 0 : 4;
-                    bogInLeft = true;
-                    break;
-                default:
-                    return (null, $"a {type} vehicle may not cross a {wall} (Terrain Chart; B9.4)");
-            }
-        }
-
-        // D2.14, B13.41, R6.4: one more MP per wreck or vehicle there, two by a road hexside at the road rate, doubled in woods off the road; SMOKE
-        // and towing add one MP each (A24.7, C10.1).
-        var penalty = WreckEntryHalfMp(state, to, road);
-        if (woods && !road)
-        {
-            penalty += WreckEntryHalfMp(state, to, false) - (HasSmoke(state, to) ? 2 : 0);
-        }
-
-        var towing = state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == vehicle.Id) ? 2 : 0;
-        cost = all ? cost : cost + penalty + towing + VehicleWeatherHalfMp(state, type, terrain, road, paved, plowed, rise);
-        if (reverse && !all)
-        {
-            cost *= ReverseMultiplier(vehicle);
-        }
-
-        int? bogDrm = null;
-        var causes = new List<string>();
-        var own = VehicleBogDrm(state, vehicle);
-
-        // D8.21 notes 2 and 3 (backlog pass 16, rulings R16.12, R16.13; referee, pass 16): +1 on mud or snow-covered ground, +1 more with Deep Snow, not in
-        // a building (a Bog DR is never made by road).
-        if (terrain is not ("wooden-building" or "stone-building") && (state.Weather("mud") || state.Weather("ground-snow") || state.Weather("deep-snow")))
-        {
-            own.Add((state.Weather("mud") ? "mud" : "snow", 1));
-            if (state.Weather("deep-snow"))
-            {
-                own.Add(("deep-snow", 1));
-            }
-        }
-        if (bog.Count > 0 && !road)
-        {
-            var total = bog.Concat(own).ToArray();
-            bogDrm = total.Sum(item => item.Drm);
-            causes.AddRange(total.Select(item => item.Cause));
-        }
-
-        // B9.4 (referee, pass 11): a halftrack crossing a hedge into a Bog hex takes the hedge's Bog DR in the hex it leaves, then the hex's own.
-        int? hedgeDrm = bogInLeft ? own.Sum(item => item.Drm) : null;
-        if (bogInLeft)
-        {
-            causes.Insert(0, "hedge");
-        }
-
-        return (new VehicleEntry(cost, all, bogDrm, causes, to, null, terrain, road, reverse, hedgeDrm), null);
+        var type = MovementTypeOf(vehicle);
+        var (entry, reason) = ScenarioA1VehicleTerrainCosts.EntryCost(type, to.ToString(), to.Level, crossed.Cliff || crossed.Slope, TerrainKey(toRead),
+            (toRead.Level.Terrain ?? toRead.Hex.Center.Terrain)?.Name, WallOn(crossed), crossed.HexsideTerrain?.Name, crossed.Terrain?.IsRoad == true,
+            toRead.Hex.BaseLevel - fromRead.Hex.BaseLevel, state.ScenarioMonth, state.Weather("mud"), crossed.Terrain?.Name == "Paved Road",
+            state.SpecialRules.Contains("plowed-roads", StringComparer.Ordinal), PrintedHalfMp(vehicle), IsAfv(vehicle) && Is(vehicle, Conditions.ButtonedUp),
+            state.Weather("ground-snow"), state.Weather("deep-snow"), road => WreckEntryHalfMp(state, to, road), () => HasSmoke(state, to), Towing(state, vehicle),
+            (terrain, road, paved, plowed) => VehicleWeatherHalfMp(state, type!, terrain, road, paved, plowed, toRead.Hex.BaseLevel - fromRead.Hex.BaseLevel),
+            reverse, allMp, VehicleBogDrm(state, vehicle));
+        return entry is null
+            ? (null, reason)
+            : (new VehicleEntry(entry.HalfMp, entry.All, entry.BogDrm, entry.BogCauses, to, null, entry.Terrain, entry.Road, reverse, entry.HedgeBogDrm), null);
     }
 
-    /// <summary>The two ADJACENT hexes both of two ADJACENT hexes border (the hexes at the ends of their shared hexside), ground level.</summary>
+    /// <summary>The two ADJACENT
     private BoardLocation[] SharedNeighbors(GameState state, BoardLocation one, BoardLocation two)
     {
         var second = Neighbors(state, two).Select(item => (item.Board, item.Hex)).ToHashSet();
@@ -369,22 +171,8 @@ public sealed partial class GamePlanner
             return (null, "a VBM across an Abrupt Elevation Change is not reviewed (ruling R11.2)");
         }
 
-        var smoke = HasSmoke(state, obstacle) ? 2 : 0;
-        var cost = 2 * (open + (rise > 0 ? rise * 8 : 0) + smoke);
-        if (state.Location(vehicle.Id)?.Location is { } now && now != obstacle)
-        {
-            cost += WreckEntryHalfMp(state, obstacle, false) - smoke;
-        }
-
-        if (state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == vehicle.Id))
-        {
-            cost += 2;
-        }
-
-        if (reverse)
-        {
-            cost *= ReverseMultiplier(vehicle);
-        }
+        var cost = ScenarioA1VehicleTerrainCosts.BypassHalfMp(open, rise, HasSmoke(state, obstacle), state.Location(vehicle.Id)?.Location is { } now && now != obstacle,
+            () => WreckEntryHalfMp(state, obstacle, false), Towing(state, vehicle), reverse, MovementTypeOf(vehicle));
 
         return (new VehicleEntry(cost, false, null, [], obstacle, other, "open-ground", false, reverse, null), null);
     }
@@ -409,69 +197,63 @@ public sealed partial class GamePlanner
         }
 
         var here = at.Location;
+        var map = new VehicleStepMap(this, state);
+        var steps = ScenarioA1VehicleMovementCalculator.MoveOptions(map, map.Index(here), vehicle.Straddling is { } lane ? map.Index(lane) : null, (int)facing, reverse,
+            () => TurnedAtCafp(state, vehicle));
         var options = new List<(VehicleEntry?, BoardLocation, BoardLocation?, string?)>();
-        void Outright(BoardLocation to, BoardLocation from)
+        foreach (var step in steps)
         {
-            var (entry, reason) = VehicleOutright(state, vehicle, from, to, reverse, allMp);
-            options.Add((entry is null ? null : entry with
+            var to = map.LocationOf(step.To);
+            if (step.Other is { } other)
             {
-                To = to
-            }, to, null, reason));
-        }
-
-        void Lane(BoardLocation one, BoardLocation two)
-        {
-            foreach (var (obstacle, other) in new[] { (one, two), (two, one) })
+                var (entry, reason) = VehicleBypass(state, vehicle, here, to, map.LocationOf(other), reverse);
+                options.Add((entry, to, map.LocationOf(other), reason));
+            }
+            else
             {
-                if (Bypassable(state, obstacle))
+                var (entry, reason) = VehicleOutright(state, vehicle, map.LocationOf(step.From), to, reverse, allMp);
+                options.Add((entry is null ? null : entry with
                 {
-                    var (entry, reason) = VehicleBypass(state, vehicle, here, obstacle, other, reverse);
-                    options.Add((entry, obstacle, other, reason));
-                }
+                    To = to
+                }, to, null, reason));
             }
-        }
-
-        var direction = reverse ? (UnitFacing)(((int)facing + 3) % 6) : facing;
-        if (vehicle.Straddling is { } lane)
-        {
-            if (TurnedAtCafp(state, vehicle))
-            {
-                // D2.33: after a VCA change at its CAFP the vehicle goes on in Bypass along the hexside it now faces along.
-                if (!reverse)
-                {
-                    foreach (var (one, two) in new[] { (here, lane) }.SelectMany(pair => SharedNeighbors(state, pair.Item1, pair.Item2)
-                        .SelectMany(third => new[] { (pair.Item1, third), (pair.Item2, third) })))
-                    {
-                        if (LaneEnds(state, one, two, facing) is ({ } _, { } behind) && (behind == here || behind == lane))
-                        {
-                            Lane(one, two);
-                        }
-                    }
-                }
-
-                return options;
-            }
-
-            var (front, rear) = LaneEnds(state, here, lane, facing);
-            if ((reverse ? rear : front) is { } beyond)
-            {
-                Outright(beyond, lane);
-            }
-
-            return options;
-        }
-
-        foreach (var to in VcaHexes(state, here, direction))
-        {
-            Outright(to, here);
-        }
-
-        if (VcaHexes(state, here, direction) is [{ } first, { } second])
-        {
-            Lane(first, second);
         }
 
         return options;
+    }
+
+    /// <summary>The map as the search of a vehicle's steps reads it: a table of Locations by index, the VCA hexes, shared neighbors, a hexside's ends, and Bypass obstacles.</summary>
+    private sealed class VehicleStepMap(GamePlanner planner, GameState state) : IVehicleStepFactReader
+    {
+        private readonly List<BoardLocation> locations = [];
+        private readonly Dictionary<BoardLocation, int> indexes = [];
+
+        /// <summary>The index of a Location in the table, added when it is new.</summary>
+        public int Index(BoardLocation location)
+        {
+            if (!indexes.TryGetValue(location, out var index))
+            {
+                index = locations.Count;
+                locations.Add(location);
+                indexes[location] = index;
+            }
+
+            return index;
+        }
+
+        public BoardLocation LocationOf(int index) => locations[index];
+
+        public IReadOnlyList<int> VcaHexes(int location, int facing) => [.. planner.VcaHexes(state, locations[location], (UnitFacing)facing).Select(Index)];
+
+        public IReadOnlyList<int> SharedNeighbors(int one, int two) => [.. planner.SharedNeighbors(state, locations[one], locations[two]).Select(Index)];
+
+        public (int? Front, int? Rear) LaneEnds(int one, int two, int facing)
+        {
+            var (front, rear) = planner.LaneEnds(state, locations[one], locations[two], (UnitFacing)facing);
+            return (front is null ? null : Index(front), rear is null ? null : Index(rear));
+        }
+
+        public bool Bypassable(int location) => planner.Bypassable(state, locations[location]);
     }
 
     /// <summary>
@@ -487,16 +269,7 @@ public sealed partial class GamePlanner
             return (2, null, []);
         }
 
-        var obstacle = terrain == "woods" || IsBuildingTerrain(terrain) || IsRubbleTerrain(terrain);
-        if (!obstacle)
-        {
-            return (2, null, []);
-        }
-
-        var drm = VehicleBogDrm(state, vehicle);
-        return terrain is "woods" || IsRubbleTerrain(terrain)
-            ? (4, drm.Sum(item => item.Drm), [terrain, .. drm.Select(item => item.Cause)])
-            : (4, null, []);
+        return ScenarioA1VehicleTerrainCosts.TurnCost(terrain, () => VehicleBogDrm(state, vehicle));
     }
 
     /// <summary>
@@ -534,7 +307,7 @@ public sealed partial class GamePlanner
 
         // The Target Facing of the hexside the vehicle entered by, from the AFV's VCA for its hull and its TCA for its turret (D3.2; referee, pass 11);
         // with no entry read, the side.
-        static string Facing(double off) => off <= 60 + 1e-6 ? "front" : off <= 120 + 1e-6 ? "side" : "rear";
+        static string Facing(double off) => ScenarioA1VehicleTerrainCosts.Facing(off);
         var hullFacing = "side";
         var turretFacing = "side";
         if (came is { } from && state.Location(afv.Id)?.Location is { } at && Bearing(state, at, from) is { } back && afv.Position is MapPosition { Facing: { } hull })
@@ -545,8 +318,7 @@ public sealed partial class GamePlanner
 
         var hullAf = ScenarioA1ArmorReference.ArmorFactor(armor, "hull", hullFacing);
         var turretAf = armor.Turreted ? ScenarioA1ArmorReference.ArmorFactor(armor, "turret", turretFacing) : null;
-        return (hullAf is { } h && basic + caseD + (hullFacing == "rear" ? 1 : 0) - h > 5)
-            || (turretAf is { } t && basic + caseD + (turretFacing == "rear" ? 1 : 0) - t >= 5);
+        return ScenarioA1VehicleTerrainCosts.KillsWithFive(basic, caseD, hullAf, hullFacing, turretAf, turretFacing);
     }
 
     /// <summary>

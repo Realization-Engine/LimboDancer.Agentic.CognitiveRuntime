@@ -801,12 +801,12 @@ public static class GameProjector
 
                 next = Replace(next, unit with
                 {
-                    Status = container.Status == InstanceStatus.Exited ? InstanceStatus.Exited : InstanceStatus.Eliminated,
+                    Status = Rules.ScenarioA1VehicleProjection.PassengerExits(container.Status == InstanceStatus.Exited) ? InstanceStatus.Exited : InstanceStatus.Eliminated,
                 })!;
                 next = next with
                 {
                     Equipment = [.. next.Equipment.Select(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id
-                        ? item with { Status = container.Status == InstanceStatus.Exited ? InstanceStatus.Exited : InstanceStatus.Eliminated }
+                        ? item with { Status = Rules.ScenarioA1VehicleProjection.PassengerExits(container.Status == InstanceStatus.Exited) ? InstanceStatus.Exited : InstanceStatus.Eliminated }
                         : item)],
                 };
             }
@@ -1301,7 +1301,7 @@ public static class GameProjector
         /// </summary>
         private GameState? Wreck(GameState state, VehicleWrecked wreck)
         {
-            if (Active(state, wreck.Id) is not UnitInstance vehicle || !vocabulary.IsA(vehicle.Kind, "asl:vehicle") || state.Location(vehicle.Id) is null)
+            if (Active(state, wreck.Id) is not UnitInstance vehicle || !Rules.ScenarioA1VehicleProjection.WreckAllowed(vocabulary.IsA(vehicle.Kind, "asl:vehicle"), () => state.Location(vehicle.Id) is not null))
             {
                 return Fail<GameState>("UNIT-STATE-037", $"'{wreck.Id}' is not an active vehicle on the map, so it cannot become a wreck (D10.1).");
             }
@@ -2000,8 +2000,8 @@ public static class GameProjector
         /// </summary>
         private GameState? StepVehicle(GameState state, VehicleStepped step)
         {
-            if (state.Phase != "mph" || Active(state, step.Vehicle) is not UnitInstance vehicle || !vocabulary.IsA(vehicle.Kind, "asl:vehicle")
-                || vehicle.Side != state.PhasingSide || vehicle.MovementEnded || step.HalfMp < 0 || (step.HalfMp == 0 && step.Kind != VehicleStepped.Load))
+            if (!Rules.ScenarioA1VehicleProjection.StepPhase(state.Phase) || Active(state, step.Vehicle) is not UnitInstance vehicle || !Rules.ScenarioA1VehicleProjection.StepAllowed(vocabulary.IsA(vehicle.Kind, "asl:vehicle"),
+                vehicle.Side == state.PhasingSide, vehicle.MovementEnded, step.HalfMp, step.Kind == VehicleStepped.Load))
             {
                 return Fail<GameState>("UNIT-STATE-034", "A vehicle step moves a vehicle of the phasing side that has not ended its move, in the MPh (D2.1).");
             }
@@ -2026,7 +2026,7 @@ public static class GameProjector
             }
 
             // D5.341: a Recall stops the AFV like a Stun for the rest of that Player Turn; once its counter shows Recall; +1 it must move.
-            var recalling = GameState.Condition(vehicle, Conditions.Recalled) == ConditionState.True && GameState.Condition(vehicle, Conditions.StunRecovery) != ConditionState.True;
+            var recalling = Rules.ScenarioA1VehicleProjection.Recalling(GameState.Condition(vehicle, Conditions.Recalled) == ConditionState.True, GameState.Condition(vehicle, Conditions.StunRecovery) == ConditionState.True);
             // D8.3 (ruling R11.10): a bogged vehicle's only expenditure is its Bog Removal Start MP.
             var bogged = GameState.Condition(vehicle, Conditions.Bogged) == ConditionState.True;
             // D6.5, D6.1 (ruling R26.2): Passengers leave a vehicle that Prep Fired, is immobilized, or is Abandoned.
@@ -2073,7 +2073,7 @@ public static class GameProjector
             var valid = current?.Ending != true && step.Kind switch
             {
                 VehicleStepped.Start => !moving && step.At == at.Location && step.Facing is null && (step.BogRemoval ? bogged : step.HalfMp == 2),
-                VehicleStepped.Turn => moving && step.At == at.Location && step.Facing is { } turned && Math.Abs(((int)turned - (int)facing + 6) % 6) is 1 or 5
+                VehicleStepped.Turn => moving && step.At == at.Location && step.Facing is { } turned && Rules.ScenarioA1VehicleProjection.OneHexspine((int)turned, (int)facing)
                     && step.HalfMp is 2 or 4,
                 VehicleStepped.Enter => entering ? !step.Reverse && step.Straddling is null
                     : moving && (step.At != at.Location || (step.Straddling is { } lane && lane != vehicle.Straddling)) && step.Facing is null && step.Reverse == reverse,
@@ -2130,11 +2130,11 @@ public static class GameProjector
 
             if (step.Kind is VehicleStepped.Load or VehicleStepped.Unload)
             {
-                var spent = (vehicle.MfSpent * 2) + (vehicle.HalfMfSpent ? 1 : 0) + step.HalfMp;
+                var (loadMf, loadHalfMf) = Rules.ScenarioA1VehicleProjection.Spend(vehicle.MfSpent, vehicle.HalfMfSpent, step.HalfMp);
                 var loaded = Replace(state, vehicle with
                 {
-                    MfSpent = spent / 2,
-                    HalfMfSpent = spent % 2 == 1,
+                    MfSpent = loadMf,
+                    HalfMfSpent = loadHalfMf,
                 })!;
                 foreach (var id in step.Units!)
                 {
@@ -2167,7 +2167,7 @@ public static class GameProjector
                 };
             }
 
-            var halves = (vehicle.MfSpent * 2) + (vehicle.HalfMfSpent ? 1 : 0) + step.HalfMp;
+            var (stepMf, stepHalfMf) = Rules.ScenarioA1VehicleProjection.Spend(vehicle.MfSpent, vehicle.HalfMfSpent, step.HalfMp);
             var conditions = new Dictionary<string, ConditionState>(vehicle.Conditions, StringComparer.Ordinal);
             if (inMotion)
             {
@@ -2179,8 +2179,8 @@ public static class GameProjector
             var next = Replace(state, vehicle with
             {
                 Position = new MapPosition(step.At) { Facing = step.Facing ?? facing },
-                MfSpent = halves / 2,
-                HalfMfSpent = halves % 2 == 1,
+                MfSpent = stepMf,
+                HalfMfSpent = stepHalfMf,
                 Conditions = conditions,
                 Straddling = step.Kind == VehicleStepped.Enter ? step.Straddling : vehicle.Straddling,
             })!;
@@ -2234,7 +2234,7 @@ public static class GameProjector
             }
 
             // D8.3: a Bog Removal is decided by its colored dr, the first die.
-            var final = (check.Check == VehicleCheckRolled.BogRemoval ? roll.Values[0] : roll.Values[0] + roll.Values[1]) + check.Drm;
+            var final = Rules.ScenarioA1VehicleProjection.CheckFinal(check.Check == VehicleCheckRolled.BogRemoval, roll.Values[0], roll.Values[1], check.Drm);
             if (check.Result != VehicleCheckRolled.For(check.Check, final) || (check.Check == VehicleCheckRolled.Esb) != (check.Mp > 0))
             {
                 return Fail<GameState>("UNIT-STATE-039", "The vehicle check's result disagrees with its DR.");
@@ -2270,8 +2270,8 @@ public static class GameProjector
                 Conditions = conditions,
                 EsbMp = esb
             })!;
-            var stuck = check.Result is VehicleCheckRolled.Bogged or VehicleCheckRolled.Immobilized
-                || (check.Check == VehicleCheckRolled.BogRemoval && check.Result != VehicleCheckRolled.Freed);
+            var stuck = Rules.ScenarioA1VehicleProjection.CheckStops(check.Result is VehicleCheckRolled.Bogged or VehicleCheckRolled.Immobilized, check.Check == VehicleCheckRolled.BogRemoval,
+                check.Result == VehicleCheckRolled.Freed);
             return stuck && next.Movement is { Vehicle: true } movement && movement.Members.Contains(vehicle.Id, StringComparer.Ordinal)
                 ? next with
                 {
@@ -2286,8 +2286,8 @@ public static class GameProjector
         /// <summary>An OVR's resolution (D7.1, D7.2; ruling R11.11): the declared OVR is done, and the DEFENDER's Reaction Fire window opens.</summary>
         private GameState? ResolveOverrun(GameState state, OverrunResolved overrun)
         {
-            if (state.Movement is not { Vehicle: true, WindowOpen: false } movement || movement.Overrun != overrun.At
-                || !movement.Movers.Contains(overrun.Vehicle, StringComparer.Ordinal) || !fires.ContainsKey(overrun.Fire))
+            if (state.Movement is not { } movement || !Rules.ScenarioA1VehicleProjection.OverrunResolvable(movement is { Vehicle: true, WindowOpen: false }, movement.Overrun == overrun.At,
+                () => movement.Movers.Contains(overrun.Vehicle, StringComparer.Ordinal), () => fires.ContainsKey(overrun.Fire)))
             {
                 return Fail<GameState>("UNIT-STATE-039", "An OVR is resolved by its vehicle's fire record after the DEFENDER's window on its declaration closes (D7.1).");
             }
@@ -2506,7 +2506,7 @@ public static class GameProjector
             }
 
             if (!rolls.TryGetValue(paatc.Roll, out var roll) || roll.Count != 2 || roll.Sides != 6
-                || (roll.Values[0] + roll.Values[1] + paatc.Drm <= paatc.Morale) != paatc.Passed)
+                || Rules.ScenarioA1VehicleProjection.PaatcPassed(roll.Values[0], roll.Values[1], paatc.Drm, paatc.Morale) != paatc.Passed)
             {
                 return Fail<GameState>("UNIT-STATE-039", "The PAATC's result disagrees with its DR (A11.6).");
             }

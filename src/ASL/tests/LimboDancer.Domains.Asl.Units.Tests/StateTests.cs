@@ -390,6 +390,20 @@ public sealed class StateTests
         AssertRefused(events, code);
     }
 
+    /// <summary>
+    /// Pass 32.e commit 10b: a vehicle step out of the MPh is refused on its phase before the vehicle is read, so an unknown vehicle adds no
+    /// UNIT-STATE-006.
+    /// </summary>
+    [Fact]
+    public void AVehicleStepOutOfTheMphIsRefusedBeforeTheVehicleIsRead()
+    {
+        var states = Replayed().States;
+        var revision = Enumerable.Range(0, states.Count).First(index => states[index].Phase is { } phase && phase != "mph") + 1;
+        var events = Then(revision, new VehicleStepped("nobody", VehicleStepped.Start, BoardLocation.Parse("bd01:D4:0"), null, 2, 1));
+        AssertRefused(events, "UNIT-STATE-034");
+        Assert.DoesNotContain(Project(events).Diagnostics, diagnostic => diagnostic.Code == "UNIT-STATE-006");
+    }
+
     [Fact]
     public void EliminationLeavesHeldEquipmentWhereItsHolderWas()
     {

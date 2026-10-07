@@ -1,5 +1,6 @@
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Los;
+using LimboDancer.Domains.Asl.Rules;
 using LimboDancer.Domains.Asl.Units.State;
 
 namespace LimboDancer.Domains.Asl.Play;
@@ -35,7 +36,7 @@ public sealed partial class GamePlanner
     /// AFPh, one that spent MP in this Player Turn's MPh (the Case J clause).
     /// </summary>
     private static bool Standing(GameState state, UnitInstance vehicle) =>
-        !Is(vehicle, Conditions.Motion) && !(state.Phase is "mph" or "dfph" or "afph" && state.MovedVehicles.Contains(vehicle.Id, StringComparer.Ordinal));
+        ScenarioA1VehicleSightRules.Standing(Is(vehicle, Conditions.Motion), state.Phase, state.MovedVehicles.Contains(vehicle.Id, StringComparer.Ordinal));
 
     /// <summary>
     /// The wreck or AFV whose +1 TEM Infantry of a side claim at a Location (D9.3, D10.3; ruling R6.1): a non-burning wreck of either
@@ -49,9 +50,10 @@ public sealed partial class GamePlanner
             return null;
         }
 
-        return WrecksAt(state, at).FirstOrDefault(wreck => !IsBurning(state, wreck) && Standing(state, wreck))?.Id
-            ?? state.At(at).OfType<UnitInstance>().FirstOrDefault(unit => IsAfv(unit) && (unit.Side == infantrySide || Is(unit, Conditions.Abandoned))
-                && Standing(state, unit))?.Id;
+        return ScenarioA1VehicleSightRules.Cover(
+            WrecksAt(state, at).Select(wreck => (wreck.Id, (Func<bool>)(() => IsBurning(state, wreck)), (Func<bool>)(() => Standing(state, wreck)))),
+            state.At(at).OfType<UnitInstance>().Select(unit => (unit.Id, (Func<bool>)(() => IsAfv(unit)),
+                (Func<bool>)(() => unit.Side == infantrySide || Is(unit, Conditions.Abandoned)), (Func<bool>)(() => Standing(state, unit)))));
     }
 
     /// <summary>
@@ -85,7 +87,7 @@ public sealed partial class GamePlanner
 
             // A6.7: a map Hindrance at this range in another hex is the higher; one in the vehicle's own hex is added to.
             var ownTerrain = ReadLocation(state, hindering) is { } hinderingRead ? TerrainKey(hinderingRead) : null;
-            if (mapRanges.Contains(crossed.Range) && !(ownTerrain == "brush" || (ownTerrain == "grain" && state.ScenarioMonth is >= 6 and <= 9)))
+            if (!ScenarioA1VehicleSightRules.HindersAtRange(mapRanges.Contains(crossed.Range), ownTerrain, state.ScenarioMonth))
             {
                 continue;
             }
@@ -108,11 +110,8 @@ public sealed partial class GamePlanner
         foreach (var hex in SmokeSources(state).GroupBy(place => (place.Board, place.Hex)))
         {
             var sameHex = (BoardLocation place) => place.Board == hex.Key.Board && place.Hex == hex.Key.Hex;
-            var drm = Math.Min(3, 2 * hex.Count());
-            smoke += sameHex(from) ? drm + 1
-                : sameHex(target) ? drm
-                : los.Crossed.Any(item => item.Board == hex.Key.Board && item.Hex == hex.Key.Hex) ? drm
-                : 0;
+            smoke += ScenarioA1VehicleSightRules.SmokeDrm(hex.Count(), sameHex(from), sameHex(target),
+                () => los.Crossed.Any(item => item.Board == hex.Key.Board && item.Hex == hex.Key.Hex));
         }
 
         return (ranges.Count + smoke, null);
@@ -132,9 +131,9 @@ public sealed partial class GamePlanner
     {
         var wrecks = WrecksAt(state, to);
         var vehicles = state.At(to).OfType<UnitInstance>().Count(LiveFire.IsVehicle);
-        return ((wrecks.Count + vehicles) * (road ? 2 : 1) + (HasSmoke(state, to) ? 1 : 0)) * 2;
+        return ScenarioA1VehicleTerrainCosts.WreckEntryHalfMp(wrecks.Count, vehicles, road, HasSmoke(state, to));
     }
 
     /// <summary>The extra half MF Infantry pay to enter a SMOKE Location: a burning wreck's or a grenade's (B25.141, A24.7; ruling R9.6).</summary>
-    private static int BlazeEntryHalfMf(GameState state, BoardLocation to) => HasSmoke(state, to) ? 2 : 0;
+    private static int BlazeEntryHalfMf(GameState state, BoardLocation to) => ScenarioA1VehicleTerrainCosts.BlazeEntryHalfMf(HasSmoke(state, to));
 }
