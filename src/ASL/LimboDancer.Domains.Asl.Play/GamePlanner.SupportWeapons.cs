@@ -35,7 +35,7 @@ public sealed partial class GamePlanner
     {
         ArgumentNullException.ThrowIfNull(state);
         return state.Find(weaponId) is EquipmentInstance { Holding: { } holding } weapon && Dismantlable(weapon) && state.Unit(holding.Holder) is { } unit
-            && ((state.Phase == "pfph" && unit.Side == state.PhasingSide) || (state.Phase == "dfph" && unit.Side != state.PhasingSide));
+            && ScenarioA1SupportWeaponRules.DismantlePhase(state.Phase, unit.Side == state.PhasingSide);
     }
 
     /// <summary>Why a unit may take no more RPh actions this RPh (A3.1, A1.31; ruling R13.4), or null.</summary>
@@ -175,7 +175,7 @@ public sealed partial class GamePlanner
         }
 
         // A1.31, A10.7: the leader's modifier, one worse when wounded (A17.3).
-        var drm = leader is null ? 0 : (DefinitionOf(leader)?.Leadership ?? 0) + (Is(leader, Conditions.Wounded) ? 1 : 0);
+        var drm = leader is null ? 0 : ScenarioA1SupportWeaponRules.LeaderDrm(DefinitionOf(leader)?.Leadership, Is(leader, Conditions.Wounded));
         var package = ScenarioA1FirePackage.Identity.ToString();
         var first = $"{attemptId}-{squad.Id}-1";
         var other = $"{attemptId}-{squad.Id}-2";
@@ -198,7 +198,7 @@ public sealed partial class GamePlanner
         {
             var drawn = draw(new RollRequest(2, 6));
             var rollId = $"{attemptId}-roll-1";
-            var passed = drawn.Values[0] + drawn.Values[1] + drm <= morale;
+            var passed = ScenarioA1OrdnanceProjection.DeploymentPassed(drawn.Values[0], drawn.Values[1], drm, morale);
             var events = new List<GameEvent>
             {
                 Event(scope, attemptId, 1, expected, "dice-rolled", new DiceRolled(rollId, "deployment", 2, 6, drawn.Values, DiceRolled.SystemSource, actor), package, null),
@@ -269,7 +269,7 @@ public sealed partial class GamePlanner
         var produced = $"{attemptId}-{one.Id}";
         var conditions = new Dictionary<string, ConditionState>(one.Conditions, StringComparer.Ordinal)
         {
-            [Conditions.Fanatic] = Is(one, Conditions.Fanatic) && Is(two, Conditions.Fanatic) ? ConditionState.True : ConditionState.False,
+            [Conditions.Fanatic] = ScenarioA1SupportWeaponRules.RecombinedFanatic(Is(one, Conditions.Fanatic), Is(two, Conditions.Fanatic)) ? ConditionState.True : ConditionState.False,
         };
         string[] acting = [one.Id, two.Id, .. leader is null || state.RallyPhaseActions.Contains(leader.Id) ? Array.Empty<string>() : [leader.Id]];
         var events = new List<GameEvent>
@@ -419,12 +419,9 @@ public sealed partial class GamePlanner
         {
             Kind = $"{item.Definition?.Definition ?? item.Kind}{(Is(item, Conditions.Dismantled) ? " dismantled" : string.Empty)}{(Is(item, Conditions.Malfunctioned) ? " malfunctioned" : string.Empty)}",
         })];
-        var ipc = vocabulary.IsA(unit.Kind, "asl:smc") ? (Is(unit, Conditions.Wounded) ? 0 : 1) : 3;
-        var loads = Enumerable.Range(0, 1 << carried.Length)
-            .Select(mask => carried.Where((_, index) => (mask & (1 << index)) != 0).ToArray())
-            .Where(load => load.Sum(item => item.Pp) <= ipc).ToArray();
-        var best = loads.Max(load => load.Sum(item => item.Pp));
-        return new RoutLoad(ipc, carried, [.. loads.Where(load => load.Sum(item => item.Pp) == best).Select(load => (IReadOnlyList<string>)[.. load.Select(item => item.Weapon)])]);
+        var ipc = ScenarioA1SupportWeaponRules.RoutIpc(vocabulary.IsA(unit.Kind, "asl:smc"), Is(unit, Conditions.Wounded));
+        var best = ScenarioA1SupportWeaponRules.BestLoads([.. carried.Select(item => item.Pp)], ipc);
+        return new RoutLoad(ipc, carried, [.. best.Select(load => (IReadOnlyList<string>)[.. load.Select(index => carried[index].Weapon)])]);
     }
 
 
@@ -461,7 +458,7 @@ public sealed partial class GamePlanner
             "rph" => RallyPhaseActionBar(state, unit.Id) is { } bar ? $"play.rph-action: {bar} (A4.44)" : null,
             "mph" => unit.Side != state.PhasingSide || unit.MovementEnded
                 ? "play.recover-phase: in the MPh a unit Recovers a SW during its own move (A4.44; ruling R13.5)"
-                : MfAllotment(state, unit, unit.DoubleTimeMf, Is(unit, Conditions.Cx)) is { } allotment && 2 * unit.MfSpent + (unit.HalfMfSpent ? 1 : 0) + 2 > 2 * allotment
+                : MfAllotment(state, unit, unit.DoubleTimeMf, Is(unit, Conditions.Cx)) is { } allotment && ScenarioA1SupportWeaponRules.RecoveryMfShort(allotment, unit.MfSpent, unit.HalfMfSpent)
                     ? $"play.recover-mf: {unit.Id} has no MF left for a Recovery attempt (A4.44)" : null,
             _ => "play.recover-phase: a SW is Recovered in the RPh or the MPh (A4.44)",
         };
@@ -493,13 +490,13 @@ public sealed partial class GamePlanner
         }
 
         // E1.56 (backlog pass 16, ruling R16.7): +1 at night.
-        var drm = (Is(unit, Conditions.Cx) ? 1 : 0) + (state.Night ? 1 : 0);
+        var drm = ScenarioA1SupportWeaponRules.RecoveryDrm(Is(unit, Conditions.Cx), state.Night);
         var package = ScenarioA1FirePackage.Identity.ToString();
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
         {
             var drawn = draw(new RollRequest(1, 6));
             var rollId = $"{attemptId}-roll-1";
-            var recovered = drawn.Values[0] + drm < 6;
+            var recovered = ScenarioA1OrdnanceProjection.Recovered(drawn.Values[0], drm);
             var events = new List<GameEvent>
             {
                 Event(scope, attemptId, 1, expected, "dice-rolled", new DiceRolled(rollId, "recovery", 1, 6, drawn.Values, DiceRolled.SystemSource, actor), package, null),
