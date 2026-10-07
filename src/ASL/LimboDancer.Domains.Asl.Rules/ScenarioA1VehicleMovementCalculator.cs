@@ -248,6 +248,168 @@ public static class ScenarioA1VehicleMovementCalculator
     /// <summary>A vehicle entry's bar (rulings R11.6, R25.10): the step's own reason first, else the Location's.</summary>
     public static string? EntryOptionBar(string? reason, Func<string?> locationBar) => reason ?? locationBar();
 
+    /// <summary>
+    /// A.4.2, E1.52, D.3, D.7, D5.34, C7.42, D5.41, C10.11, D5.341, A8.1, D7.1, D7.2, A15.43, D8.2, D8.3: why a vehicle on the map may not spend this MP,
+    /// or null. Checked in this order: move ended, BU at NVR 0, its conditions (Passengers still Unload from one that Prep Fired, is immobilized, or
+    /// Abandoned), Recalled and not leaving, another unit's move, the DEFENDER's window, an OVR to resolve, a berserk charge first, and a bog.
+    /// </summary>
+    public static string? MoveBar(string id, string kind, bool moveEnded, Func<bool> nightBuBlind, Func<string, bool> has, bool leaving,
+        IReadOnlyList<string>? otherMovers, bool windowOpen, bool reaction, string? overrun, Func<string?> berserk, bool started)
+    {
+        ArgumentNullException.ThrowIfNull(nightBuBlind);
+        ArgumentNullException.ThrowIfNull(has);
+        ArgumentNullException.ThrowIfNull(berserk);
+        if (moveEnded)
+        {
+            return $"play.move-vehicle: {id} has ended its move this MPh (A4.2)";
+        }
+
+        if (kind != "stop" && nightBuBlind())
+        {
+            return $"play.night-bu: {id} is BU with an NVR of 0 and spends no MP but to Stop (E1.52)";
+        }
+
+        if (new[] { ("asl:prep-fire", "it Prep Fired (D.3)"), ("asl:immobilized", "it is immobilized (D.7)"),
+            ("asl:stunned", "its crew is Stunned (D5.34)"), ("asl:shocked", "it is Shocked (C7.42)"),
+            ("asl:unconfirmed-kill", "it is an Unconfirmed Kill, still Shocked (C7.42)"), ("asl:abandoned", "it is Abandoned (D5.41)"),
+            ("asl:ti", "it is TI after hooking up a Gun (C10.11)") }
+            .Where(item => kind != "unload" || item.Item1 is not ("asl:prep-fire" or "asl:immobilized" or "asl:abandoned"))
+            .FirstOrDefault(item => has(item.Item1)) is { Item2: { } why })
+        {
+            return $"play.move-vehicle: {id} may not move: {why}";
+        }
+
+        if (has("asl:recalled") && !leaving)
+        {
+            return $"play.move-vehicle: {id} may not move: it is Recalled and stopped for the rest of this Player Turn (D5.341)";
+        }
+
+        if (otherMovers is not null)
+        {
+            return $"play.move-order: {string.Join(", ", otherMovers)} moves until its move ends (A4.2)";
+        }
+
+        if (windowOpen)
+        {
+            return reaction
+                ? "play.move-window: the DEFENDER may still make Reaction Fire at the OVRing vehicle (D7.2)"
+                : "play.move-window: the DEFENDER may still fire at the vehicle's last MP expenditure (A8.1, A8.11)";
+        }
+
+        if (overrun is { } declared)
+        {
+            return $"play.move-vehicle-ovr: {id} resolves its OVR of {declared} before it spends more MP (D7.1)";
+        }
+
+        if (berserk() is { } charging)
+        {
+            return $"play.berserk-first: {charging} is berserk and charges before any other unit moves (A15.43)";
+        }
+
+        if (has("asl:bogged") && (kind != "start" || started))
+        {
+            return $"play.move-vehicle-bog: {id} is bogged; it may only attempt Bog Removal as its first expenditure of its MPh (D8.2, D8.3)";
+        }
+
+        return null;
+    }
+
+    /// <summary>D2.12, D2.7: why a vehicle may not spend a moving MP, or null: it must be moving, and after an ALL entry it may only Stop.</summary>
+    public static string? MovingBar(string id, string kind, bool moving, bool afterAll) =>
+        !moving ? $"play.move-vehicle: {id} is not moving; it must start first (D2.12)"
+        : afterAll && kind != "stop" ? $"play.move-vehicle-all: {id} made an ALL entry, so it may only Stop or end its move in Motion (D2.7)"
+        : null;
+
+    /// <summary>D2.11, D2.33 (ruling R11.2): a VCA change turns one hexspine, and not again after one at the CAFP in Bypass.</summary>
+    public static string? TurnBar(string id, int? next, int facing, bool straddling, Func<bool> turnedAtCafp)
+    {
+        ArgumentNullException.ThrowIfNull(turnedAtCafp);
+        if (next is not { } value || Math.Abs((value - facing + 6) % 6) is not (1 or 5))
+        {
+            return "play.move-vehicle: a VCA change turns one hexspine (D2.11)";
+        }
+
+        return straddling && turnedAtCafp() ? $"play.move-vehicle-bypass: {id} changed its VCA at its CAFP and must now move on in Bypass (D2.33)" : null;
+    }
+
+    /// <summary>
+    /// B13.41, D2.7, D2.15, D2.24 (ruling R11.5): why an entry's cost bars it, or null. An ALL entry is the first after the Start MP; a Minimum Move
+    /// enters only a hex costing more than the printed allotment, as the only forward non-VBM entry; otherwise the entry costs no more than the allotment.
+    /// </summary>
+    public static string? EntryCostBar(string id, string to, bool all, int halfMp, int printed, bool first, bool minimumMove, bool reverse, bool bypass)
+    {
+        if (all && !first)
+        {
+            return $"play.move-vehicle-all: entering {to} takes {id}'s whole MP allotment, so it is its first expenditure after its Start MP (B13.41, D2.7; ruling R11.5)";
+        }
+
+        if (minimumMove)
+        {
+            if (halfMp <= printed || all)
+            {
+                return $"play.move-vehicle-minimum: {to} costs {Mp(halfMp)} MP, no more than {id}'s allotment, so it needs no Minimum Move (D2.15)";
+            }
+
+            if (!first || reverse || bypass)
+            {
+                return "play.move-vehicle-minimum: a Minimum Move is a vehicle's only entry of its MPh, made forward and not in VBM, with no VCA change (D2.15, D2.24; ruling R11.5)";
+            }
+        }
+        else if (halfMp > printed && !all)
+        {
+            return $"play.move-vehicle-mp: {to} costs {Mp(halfMp)} MP, more than {id}'s allotment; only a Minimum Move enters it (D2.15)";
+        }
+
+        return null;
+    }
+
+    /// <summary>D2.7, D7.1: an ALL entry or a Minimum Move leaves no MP for an OVR.</summary>
+    public static string? OverrunAllBar(string id, bool all, bool minimumMove) =>
+        all || minimumMove ? $"play.move-vehicle-ovr: an ALL entry or a Minimum Move spends {id}'s whole allotment, leaving no MP for an OVR (D2.7, D7.1)" : null;
+
+    /// <summary>D5.341, D2.6, D2.33: why a vehicle may not Stop, or null: a leaving AFV goes on in Motion; one that may move on may not Stop in an enemy AFV's Location or after a VCA change at its CAFP.</summary>
+    public static string? StopBar(string id, bool leaving, Func<string?> enemyAfvBar, Func<bool> mayMoveOn, bool straddling, Func<bool> turnedAtCafp)
+    {
+        ArgumentNullException.ThrowIfNull(enemyAfvBar);
+        ArgumentNullException.ThrowIfNull(mayMoveOn);
+        ArgumentNullException.ThrowIfNull(turnedAtCafp);
+        if (leaving)
+        {
+            return $"play.recall-motion: {id} is Recalled and leaves in Motion, so it does not Stop (D5.341)";
+        }
+
+        if (enemyAfvBar() is { } blocked && mayMoveOn())
+        {
+            return "play.move-vehicle-enemy-afv: " + blocked;
+        }
+
+        return straddling && turnedAtCafp() && mayMoveOn()
+            ? $"play.move-vehicle-bypass: {id} changed its VCA at its CAFP and must now move on in Bypass (D2.33)"
+            : null;
+    }
+
+    /// <summary>
+    /// D2.1, D2.4, D2.7, D2.24 (rulings R11.1, R11.5; referee, pass 11): why the MP left cannot pay this expenditure, or null. A Stop after an ALL
+    /// entry, a Minimum Move, or an ALL entry may exceed them; in Reverse an entry or VCA change keeps one MP to Stop.
+    /// </summary>
+    public static string? ExpenditureBar(string id, string kind, bool afterAll, bool minimumMove, bool? entryAll, bool reverse, int spent, int allotment, int cost,
+        bool tracked)
+    {
+        var mayExceed = (kind == "stop" && afterAll) || minimumMove || entryAll == true;
+        if (!mayExceed && spent + cost > allotment)
+        {
+            return $"play.move-vehicle-mp: {id} has {Mp(Math.Max(0, allotment - spent))} of its {Mp(allotment)} MP left, and this costs {Mp(cost)}"
+                + (tracked ? "; an ESB DR may add MP (D2.5)" : string.Empty) + " (D2.1)";
+        }
+
+        if (reverse && ((kind == "enter" && entryAll == false) || kind == "turn") && spent + cost + 2 > allotment)
+        {
+            return $"play.move-vehicle-reverse: {id} in Reverse keeps one MP to Stop, since Reverse Motion is not built (D2.24; ruling R11.1)";
+        }
+
+        return null;
+    }
+
     /// <summary>Half MP as MP for the texts: whole MP, or with a half.</summary>
     public static string Mp(int halfMp) => halfMp % 2 == 0 ? (halfMp / 2).ToString(CultureInfo.InvariantCulture)
         : halfMp == 1 ? "½" : $"{(halfMp / 2).ToString(CultureInfo.InvariantCulture)}½";

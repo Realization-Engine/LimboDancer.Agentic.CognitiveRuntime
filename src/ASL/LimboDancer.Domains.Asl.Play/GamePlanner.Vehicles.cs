@@ -273,65 +273,19 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.move-vehicle: a vehicle of the phasing side on the map moves in its MPh (D2.1)");
         }
 
-        if (vehicle.MovementEnded)
-        {
-            return Refused(scope, label, expected, $"play.move-vehicle: {id} has ended its move this MPh (A4.2)");
-        }
-
-        // E1.52 (referee, pass 16): an AFV whose NVR is 0 spends no MP while BU but to Stop.
-        if (IsAfv(vehicle) && Is(vehicle, Conditions.ButtonedUp) && NvrOf(state, vehicle) == 0 && kind != VehicleStepped.Stop)
-        {
-            return Refused(scope, label, expected, $"play.night-bu: {id} is BU with an NVR of 0 and spends no MP but to Stop (E1.52)");
-        }
-
-        if (new[] { (Conditions.PrepFire, "it Prep Fired (D.3)"), (Conditions.Immobilized, "it is immobilized (D.7)"),
-            (Conditions.Stunned, "its crew is Stunned (D5.34)"), (Conditions.Shocked, "it is Shocked (C7.42)"),
-            (Conditions.UnconfirmedKill, "it is an Unconfirmed Kill, still Shocked (C7.42)"), (Conditions.Abandoned, "it is Abandoned (D5.41)"),
-            ("asl:ti", "it is TI after hooking up a Gun (C10.11)") }
-            // D6.5, D6.1 (referee, pass 26): Passengers leave a vehicle that Prep Fired, is immobilized, or is Abandoned.
-            .Where(item => kind != VehicleStepped.Unload || item.Item1 is not (Conditions.PrepFire or Conditions.Immobilized or Conditions.Abandoned))
-            .FirstOrDefault(item => Is(vehicle, item.Item1)) is { Item2: { } why })
-        {
-            return Refused(scope, label, expected, $"play.move-vehicle: {id} may not move: {why}");
-        }
-
         // D5.341: a Recall stops the AFV like a Stun for the rest of that Player Turn; once its counter shows Recall; +1 it must leave.
         var leaving = MustLeave(vehicle);
-        if (Is(vehicle, Conditions.Recalled) && !leaving)
-        {
-            return Refused(scope, label, expected, $"play.move-vehicle: {id} may not move: it is Recalled and stopped for the rest of this Player Turn (D5.341)");
-        }
-
         var current = state.Movement;
-        if (current is not null && (!current.Vehicle || !current.Members.SequenceEqual([vehicle.Id], StringComparer.Ordinal)))
+        if (ScenarioA1VehicleMovementCalculator.MoveBar(id, kind, vehicle.MovementEnded,
+            () => IsAfv(vehicle) && Is(vehicle, Conditions.ButtonedUp) && NvrOf(state, vehicle) == 0, condition => Is(vehicle, condition), leaving,
+            current is not null && (!current.Vehicle || !current.Members.SequenceEqual([vehicle.Id], StringComparer.Ordinal)) ? current.Members : null,
+            current is { WindowOpen: true }, current?.Reaction == true, current?.Overrun?.ToString(),
+            () => current is null && MustCharge(state) is [{ } charging, ..] ? charging.Id : null, current is not null) is { } moveBar)
         {
-            return Refused(scope, label, expected, $"play.move-order: {string.Join(", ", current.Members)} moves until its move ends (A4.2)");
+            return Refused(scope, label, expected, moveBar);
         }
 
-        if (current is { WindowOpen: true })
-        {
-            return Refused(scope, label, expected, current.Reaction
-                ? "play.move-window: the DEFENDER may still make Reaction Fire at the OVRing vehicle (D7.2)"
-                : "play.move-window: the DEFENDER may still fire at the vehicle's last MP expenditure (A8.1, A8.11)");
-        }
-
-        if (current?.Overrun is { } declared)
-        {
-            return Refused(scope, label, expected, $"play.move-vehicle-ovr: {id} resolves its OVR of {declared} before it spends more MP (D7.1)");
-        }
-
-        // A15.43: at the start of the MPh every berserk unit charges before any other unit moves.
-        if (current is null && MustCharge(state) is [{ } charging, ..])
-        {
-            return Refused(scope, label, expected, $"play.berserk-first: {charging.Id} is berserk and charges before any other unit moves (A15.43)");
-        }
-
-        // D8.2, D8.3 (ruling R11.10): a bogged vehicle's only expenditure is its Bog Removal, as the Start MP of its MPh.
         var bogged = Is(vehicle, Conditions.Bogged);
-        if (bogged && (kind != VehicleStepped.Start || current is not null))
-        {
-            return Refused(scope, label, expected, $"play.move-vehicle-bog: {id} is bogged; it may only attempt Bog Removal as its first expenditure of its MPh (D8.2, D8.3)");
-        }
 
         var moving = current is not null ? current.Started && !current.Stopped : Is(vehicle, Conditions.Motion);
         var reverse = current is { Reverse: true } && moving;
@@ -352,14 +306,9 @@ public sealed partial class GamePlanner
                 return PlanUnload(scope, arguments, existing, attemptId, expected, label, actor, state, vehicle, at.Location, step);
         }
 
-        if (!moving)
+        if (ScenarioA1VehicleMovementCalculator.MovingBar(id, kind, moving, afterAll) is { } movingBar)
         {
-            return Refused(scope, label, expected, $"play.move-vehicle: {id} is not moving; it must start first (D2.12)");
-        }
-
-        if (afterAll && kind != VehicleStepped.Stop)
-        {
-            return Refused(scope, label, expected, $"play.move-vehicle-all: {id} made an ALL entry, so it may only Stop or end its move in Motion (D2.7)");
+            return Refused(scope, label, expected, movingBar);
         }
 
         BoardLocation to = at.Location;
@@ -375,23 +324,17 @@ public sealed partial class GamePlanner
         switch (kind)
         {
             case VehicleStepped.Turn:
-                if (!Text(arguments, "facing", out var facingName) || !UnitFacings.TryParse(facingName, out var next)
-                    || Math.Abs(((int)next - (int)facing + 6) % 6) is not (1 or 5))
+                UnitFacing? next = Text(arguments, "facing", out var facingName) && UnitFacings.TryParse(facingName, out var parsedFacing) ? parsedFacing : null;
+                if (ScenarioA1VehicleMovementCalculator.TurnBar(id, (int?)next, (int)facing, vehicle.Straddling is not null, () => TurnedAtCafp(state, vehicle)) is { } turnBar)
                 {
-                    return Refused(scope, label, expected, "play.move-vehicle: a VCA change turns one hexspine (D2.11)");
+                    return Refused(scope, label, expected, turnBar);
                 }
 
-                // D2.33 (ruling R11.2): in Bypass, one VCA change at the CAFP, after which the vehicle must move on.
-                if (vehicle.Straddling is not null && TurnedAtCafp(state, vehicle))
-                {
-                    return Refused(scope, label, expected, $"play.move-vehicle-bypass: {id} changed its VCA at its CAFP and must now move on in Bypass (D2.33)");
-                }
-
-                turned = next;
+                turned = next!.Value;
                 var turnCost = VehicleTurnCost(state, vehicle, at.Location);
                 cost = turnCost.HalfMp;
                 turnBog = (turnCost.BogDrm, turnCost.Causes);
-                summary = $"{id} changes its VCA to {UnitFacings.Name(next)} in {at.Location} for {Mp(cost)} MP (D2.11)"
+                summary = $"{id} changes its VCA to {UnitFacings.Name(next.Value)} in {at.Location} for {Mp(cost)} MP (D2.11)"
                     + (turnBog.Drm is { } turnDrm ? $", with a Bog DR at {turnDrm:+0;-0;0} (D8.2)" : string.Empty);
                 break;
             case VehicleStepped.Enter:
@@ -435,27 +378,9 @@ public sealed partial class GamePlanner
                 straddling = entry.Straddling;
                 var printed = PrintedHalfMp(vehicle);
                 var first = FirstEntry(existing, vehicle.Id);
-                if (entry.All && !first)
+                if (ScenarioA1VehicleMovementCalculator.EntryCostBar(id, to.ToString(), entry.All, entry.HalfMp, printed, first, minimumMove, reverse, entry.Bypass) is { } costBar)
                 {
-                    return Refused(scope, label, expected, $"play.move-vehicle-all: entering {to} takes {id}'s whole MP allotment, so it is its first expenditure after its Start MP (B13.41, D2.7; ruling R11.5)");
-                }
-
-                // D2.15 (ruling R11.5): a Minimum Move enters a hex whose cost exceeds the printed allotment, spending that allotment.
-                if (minimumMove)
-                {
-                    if (entry.HalfMp <= printed || entry.All)
-                    {
-                        return Refused(scope, label, expected, $"play.move-vehicle-minimum: {to} costs {Mp(entry.HalfMp)} MP, no more than {id}'s allotment, so it needs no Minimum Move (D2.15)");
-                    }
-
-                    if (!first || reverse || entry.Bypass)
-                    {
-                        return Refused(scope, label, expected, $"play.move-vehicle-minimum: a Minimum Move is a vehicle's only entry of its MPh, made forward and not in VBM, with no VCA change (D2.15, D2.24; ruling R11.5)");
-                    }
-                }
-                else if (entry.HalfMp > printed && !entry.All)
-                {
-                    return Refused(scope, label, expected, $"play.move-vehicle-mp: {to} costs {Mp(entry.HalfMp)} MP, more than {id}'s allotment; only a Minimum Move enters it (D2.15)");
+                    return Refused(scope, label, expected, costBar);
                 }
 
                 cost = entry.All || minimumMove ? printed : entry.HalfMp;
@@ -469,9 +394,9 @@ public sealed partial class GamePlanner
                         return Refused(scope, label, expected, refused);
                     }
 
-                    if (entry.All || minimumMove)
+                    if (ScenarioA1VehicleMovementCalculator.OverrunAllBar(id, entry.All, minimumMove) is { } allBar)
                     {
-                        return Refused(scope, label, expected, $"play.move-vehicle-ovr: an ALL entry or a Minimum Move spends {id}'s whole allotment, leaving no MP for an OVR (D2.7, D7.1)");
+                        return Refused(scope, label, expected, allBar);
                     }
 
                     cost += OverrunHalfMp(vehicle);
@@ -483,19 +408,10 @@ public sealed partial class GamePlanner
                     + (entry.BogDrm is { } entryBog ? $"; Bog DR at {entryBog:+0;-0;0} (D8.21)" : string.Empty);
                 break;
             case VehicleStepped.Stop:
-                if (leaving)
+                if (ScenarioA1VehicleMovementCalculator.StopBar(id, leaving, () => EnemyAfvBar(state, vehicle, existing), () => MayMoveOn(state, vehicle),
+                    vehicle.Straddling is not null, () => TurnedAtCafp(state, vehicle)) is { } stopBar)
                 {
-                    return Refused(scope, label, expected, $"play.recall-motion: {id} is Recalled and leaves in Motion, so it does not Stop (D5.341)");
-                }
-
-                if (EnemyAfvBar(state, vehicle, existing) is { } blocked && MayMoveOn(state, vehicle))
-                {
-                    return Refused(scope, label, expected, "play.move-vehicle-enemy-afv: " + blocked);
-                }
-
-                if (vehicle.Straddling is not null && TurnedAtCafp(state, vehicle) && MayMoveOn(state, vehicle))
-                {
-                    return Refused(scope, label, expected, $"play.move-vehicle-bypass: {id} changed its VCA at its CAFP and must now move on in Bypass (D2.33)");
+                    return Refused(scope, label, expected, stopBar);
                 }
 
                 cost = 2;
@@ -549,17 +465,9 @@ public sealed partial class GamePlanner
 
         // D2.1, D2.4, D2.7 (rulings R11.1, R11.5): the MP left must pay the expenditure; after an ALL entry the Stop MP is still allowed; a Minimum Move
         // spends the whole allotment; a vehicle in Reverse keeps one MP to Stop, since Reverse Motion is not built.
-        var mayExceed = (kind == VehicleStepped.Stop && afterAll) || minimumMove || entry is { All: true };
-        if (!mayExceed && spent + cost > allotment)
+        if (ScenarioA1VehicleMovementCalculator.ExpenditureBar(id, kind, afterAll, minimumMove, entry?.All, reverse, spent, allotment, cost, Tracked(vehicle)) is { } mpBar)
         {
-            return Refused(scope, label, expected, $"play.move-vehicle-mp: {id} has {Mp(Math.Max(0, allotment - spent))} of its {Mp(allotment)} MP left, and this costs {Mp(cost)}"
-                + (Tracked(vehicle) ? "; an ESB DR may add MP (D2.5)" : string.Empty) + " (D2.1)");
-        }
-
-        // Referee, pass 11: an ALL entry keeps its Stop MP beyond the allotment (D2.7, B13.41), and a VCA change in Reverse keeps it too.
-        if (reverse && ((kind == VehicleStepped.Enter && entry is { All: false }) || kind == VehicleStepped.Turn) && spent + cost + 2 > allotment)
-        {
-            return Refused(scope, label, expected, $"play.move-vehicle-reverse: {id} in Reverse keeps one MP to Stop, since Reverse Motion is not built (D2.24; ruling R11.1)");
+            return Refused(scope, label, expected, mpBar);
         }
 
         var text = $"play.move-vehicle: {summary}; {Mp(Math.Max(0, allotment - spent - cost))} MP left";
