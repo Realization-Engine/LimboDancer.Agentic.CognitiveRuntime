@@ -1181,3 +1181,10 @@ Branch `feature/asl-backlog-pass-32d`, from 91a4c18. Times are the commits' cloc
 | The gate: solution build with warnings as errors into bin/gate (0 warnings, 8:10); chart supplement equal; Node viewport 5 of 5; the local suite (Dice 24, Rules 498, Units 408, Maps 244, Maps.Vasl 121 with 28 skipped, Maps.Rendering 34 with 2 skipped, Units.Rendering 352, CounterSheets 19, MapStudio 381, Play 691, Authoring 167: all pass); Docker on the committed branch, every project passes, CI steps exit 0 | 23:41 | 00:52 | 1:11 | Docker ran beside the suite |
 | The documents: the design's section 19, this table | 00:52 | 00:58 | 0:06 | Stopped before merge |
 | At the user's word: merged into main with --no-ff as 6c30148 and pushed; CI run 37573731995 ended green at 01:01 (6m45s) | 00:54 | 00:55 | 0:01 | The documents' commit 8606fb1 is at 00:53 by git; the row above kept the session's clock |
+
+## Pass 32.e: S8, Vehicles, into Rules
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Preparation (read-only): the rules, the design, the Appendix's S8 rows, the code, the proof tools; the 32.d merge row committed on main as 0a37365; before/ rebuilt from 6c30148 and equal to 32.d's after/; three vehicle sweeps added (pass11-check-3, p26-check, pass7-check) | | | | Session clock not kept for this row |
+| Commit 1: the vehicle definitions, MP, VCA, entry bar, ALL entry, Halted, MayMoveOn, intended entry cost, and the setup bars (vehicle, Passenger, tow) into ScenarioA1VehicleMovementCalculator.cs and ScenarioA1VehicleModels.cs; MapStudio 0 warnings; vehicle and setup tests 66; proofs equal, the three vehicle sweeps equal | | 09:20 | | Studio check next |

@@ -24,14 +24,16 @@ public sealed partial class GamePlanner
     private static FireDefinition? VehicleDefinition(UnitInstance vehicle) =>
         vehicle.Definition is { } definition ? FireReference.Value.Definitions.GetValueOrDefault(definition.Definition) : null;
 
-    private static bool IsAfv(UnitInstance vehicle) => LiveFire.IsVehicle(vehicle) && VehicleDefinition(vehicle) is { Unarmored: false };
+    private static bool IsAfv(UnitInstance vehicle) =>
+        ScenarioA1VehicleMovementCalculator.IsAfv(LiveFire.IsVehicle(vehicle), LiveFire.IsVehicle(vehicle) ? VehicleDefinition(vehicle)?.Unarmored : null);
 
     /// <summary>Whether a vehicle is a closed-topped AFV (D1.23; ruling R7.11): armored and not open-topped.</summary>
-    public static bool IsClosedTopped(UnitInstance vehicle) => IsAfv(vehicle) && VehicleDefinition(vehicle) is { OpenTopped: not true };
+    public static bool IsClosedTopped(UnitInstance vehicle) =>
+        ScenarioA1VehicleMovementCalculator.IsClosedTopped(IsAfv(vehicle), IsAfv(vehicle) ? VehicleDefinition(vehicle)?.OpenTopped : null);
 
     /// <summary>The half MP a vehicle has spent this MPh and its allotment, with the MP a successful ESB added (D1.1, D2.5).</summary>
     private static (int Spent, int Allotment) HalfMp(UnitInstance vehicle) =>
-        ((vehicle.MfSpent * 2) + (vehicle.HalfMfSpent ? 1 : 0), ((VehicleDefinition(vehicle)?.MovementPoints ?? 0) + vehicle.EsbMp) * 2);
+        ScenarioA1VehicleMovementCalculator.HalfMp(vehicle.MfSpent, vehicle.HalfMfSpent, VehicleDefinition(vehicle)?.MovementPoints ?? 0, vehicle.EsbMp);
 
     /// <summary>A vehicle's printed MP allotment in half MP (D1.1).</summary>
     private static int PrintedHalfMp(UnitInstance vehicle) => (VehicleDefinition(vehicle)?.MovementPoints ?? 0) * 2;
@@ -44,7 +46,7 @@ public sealed partial class GamePlanner
     {
         var face = FacingDegrees(facing);
         return [.. Neighbors(state, at).Where(next => Bearing(state, at, next) is { } bearing
-            && Math.Abs(Math.Abs(((bearing - face + 540) % 360) - 180) - 30) < 1)];
+            && ScenarioA1VehicleMovementCalculator.InVca(bearing, face))];
     }
 
     /// <summary>
@@ -52,7 +54,7 @@ public sealed partial class GamePlanner
     /// otherwise.
     /// </summary>
     private int? VehicleEntryCost(GameState state, UnitInstance vehicle, BoardLocation from, BoardLocation to) =>
-        VehicleOutright(state, vehicle, from, to, false, false).Entry is { All: false, BogDrm: null } entry ? entry.HalfMp : null;
+        VehicleOutright(state, vehicle, from, to, false, false).Entry is { } entry ? ScenarioA1VehicleMovementCalculator.RecallEntryHalfMp(entry.All, entry.BogDrm, entry.HalfMp) : null;
 
     /// <summary>
     /// Why the set-up vehicles are outside the reviewed cases (rulings R25.3, R25.10, R11.6, R11.7), or null: a vehicle is placed on the map with a VCA,
@@ -64,34 +66,15 @@ public sealed partial class GamePlanner
         foreach (var vehicle in state.Units.Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)))
         {
             // A2.52 (ruling R26.1): a vehicle may wait off board to enter, in Motion, loaded up to its capacity, its Gun in tow.
-            if ((TowSetupBar(state, vehicle) ?? PassengerSetupBar(state, vehicle)) is { } loadBar)
+            var at = vehicle.Position is MapPosition { Facing: not null } ? state.Location(vehicle.Id) : null;
+            if (ScenarioA1VehicleMovementCalculator.VehicleSetupBar(vehicle.Id, () => TowSetupBar(state, vehicle) ?? PassengerSetupBar(state, vehicle),
+                vehicle.Position is OffMapPosition, at?.Location.ToString(), Is(vehicle, Conditions.Concealed) || Is(vehicle, Conditions.Hidden),
+                () => VehicleConcealmentTerrain(state, at!.Location), at?.Location.Level ?? 0,
+                () => ReadLocation(state, at!.Location) is { } read ? TerrainKey(read) : null,
+                () => state.At(at!.Location).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Id != vehicle.Id && unit.Side != vehicle.Side))
+                is { } bar)
             {
-                return loadBar;
-            }
-
-            if (vehicle.Position is OffMapPosition)
-            {
-                continue;
-            }
-
-            if (vehicle.Position is not MapPosition { Facing: not null } || state.Location(vehicle.Id) is not { } at)
-            {
-                return $"play.setup-vehicle: {vehicle.Id} is set up on the map with its VCA facing a hexspine, or off board to enter (D2.11, A2.52)";
-            }
-
-            if ((Is(vehicle, Conditions.Concealed) || Is(vehicle, Conditions.Hidden)) && !VehicleConcealmentTerrain(state, at.Location))
-            {
-                return $"play.setup-vehicle: {vehicle.Id} sets up concealed or hidden only in Concealment Terrain, which for a vehicle here is grain in season (A12.2, A12.12, B15.6; ruling R6.7)";
-            }
-
-            if (at.Location.Level != 0 || ReadLocation(state, at.Location) is not { } read || TerrainKey(read) is not ("open-ground" or "grain" or "brush" or "woods"))
-            {
-                return $"play.setup-vehicle: {vehicle.Id} sets up at ground level in Open Ground, Grain, brush, woods, or a road hex, the terrain the Vehicle rules reviewed (rulings R25.3, R11.7)";
-            }
-
-            if (state.At(at.Location).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Id != vehicle.Id && unit.Side != vehicle.Side))
-            {
-                return $"play.setup-vehicle: {vehicle.Id} shares {at.Location} with an enemy unit at setup, which is not reviewed (ruling R25.3)";
+                return bar;
             }
         }
 
@@ -102,26 +85,10 @@ public sealed partial class GamePlanner
     /// Why a vehicle's Passengers at setup are refused (A2.52, D6.1; ruling R26.2): they are Personnel of its side and OB group, on foot nowhere else,
     /// within its capacity; null when they are not.
     /// </summary>
-    private string? PassengerSetupBar(GameState state, UnitInstance vehicle)
-    {
-        var riding = state.Passengers(vehicle.Id);
-        if (riding.Count == 0)
-        {
-            return null;
-        }
-
-        if (riding.FirstOrDefault(unit => unit.Side != vehicle.Side || unit.Group != vehicle.Group || LiveFire.IsVehicle(unit) || !vocabulary.IsA(unit.Kind, "asl:personnel")) is { } stranger)
-        {
-            return $"play.setup-passenger: {stranger.Id} sets up as a Passenger of {vehicle.Id}, which takes Personnel of its own side and OB group (A2.52; ruling R26.2)";
-        }
-
-        if (riding.FirstOrDefault(unit => Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden)) is { } hiding)
-        {
-            return $"play.setup-passenger: {hiding.Id} sets up as a Passenger, neither under \"?\" nor hidden (ruling R26.2)";
-        }
-
-        return CapacityBar(state, vehicle, []) is { } full ? $"play.setup-passenger: {full}" : null;
-    }
+    private string? PassengerSetupBar(GameState state, UnitInstance vehicle) =>
+        ScenarioA1VehicleMovementCalculator.PassengerSetupBar(vehicle.Side, vehicle.Group, [.. state.Passengers(vehicle.Id).Select(unit => new PassengerSetupFacts(unit.Id,
+                unit.Side, unit.Group, LiveFire.IsVehicle(unit), vocabulary.IsA(unit.Kind, "asl:personnel"), Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden)))],
+            vehicle.Id, () => CapacityBar(state, vehicle, []));
 
     /// <summary>
     /// Why a Gun set up in tow is refused (C10.1, C10.2, C10.13; ruling R26.1): the vehicle's T# exceeds the Gun's M#, the Gun is not QSU (limbering is not
@@ -130,36 +97,18 @@ public sealed partial class GamePlanner
     private static string? TowSetupBar(GameState state, UnitInstance vehicle)
     {
         EquipmentInstance[] towed = [.. state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == vehicle.Id)];
-        if (towed.Length == 0)
-        {
-            return null;
-        }
-
-        if (towed.Length > 1)
-        {
-            return $"play.setup-tow: {vehicle.Id} tows one Gun (C10.1)";
-        }
-
-        var gun = towed[0];
-        if (VehicleDefinition(vehicle)?.Towing is not { } towing || OrdnanceReference.Value.Guns.GetValueOrDefault(gun.Definition?.Definition ?? string.Empty) is not { Manhandling: { } manhandling }
-            || towing > manhandling)
-        {
-            return $"play.setup-tow: {vehicle.Id} tows {gun.Id} only when it has a T# no greater than the Gun's M# (C10.1)";
-        }
-
-        if (gun.Definition is not { } reference || FireReference.Value.Definitions.GetValueOrDefault(reference.Definition)?.QuickSetUp != true)
-        {
-            return $"play.setup-tow: {gun.Id} is not QSU, and limbering is not built, so it is not set up in tow (C10.2; ruling R26.1)";
-        }
-
-        return null;
+        var gun = towed.Length == 1 ? towed[0] : null;
+        return ScenarioA1VehicleMovementCalculator.TowSetupBar(vehicle.Id, [.. towed.Select(item => item.Id)], gun is null ? null : VehicleDefinition(vehicle)?.Towing,
+            gun is null ? null : OrdnanceReference.Value.Guns.GetValueOrDefault(gun.Definition?.Definition ?? string.Empty)?.Manhandling,
+            gun?.Definition is { } reference && FireReference.Value.Definitions.GetValueOrDefault(reference.Definition)?.QuickSetUp == true);
     }
 
     /// <summary>Whether a unit is an AFV (D1.2): a vehicle whose AF is printed.</summary>
     public static bool IsArmoredVehicle(UnitInstance unit) => IsAfv(unit);
 
     /// <summary>Whether a vehicle has a MG that fires on the IFT (ruling R25.7): the SPW 251/1's MA AAMG; a truck is unarmed (D5.1).</summary>
-    public static bool HasVehicleMg(UnitInstance unit) => LiveFire.IsVehicle(unit) && VehicleDefinition(unit) is { MainArmament: "aamg", AntiAircraftMg: not null };
+    public static bool HasVehicleMg(UnitInstance unit) =>
+        ScenarioA1VehicleMovementCalculator.HasVehicleMg(LiveFire.IsVehicle(unit), VehicleDefinition(unit)?.MainArmament, VehicleDefinition(unit)?.AntiAircraftMg is not null);
 
     /// <summary>The half MP a vehicle has spent this MPh and its allotment in half MP (D1.1, D2.5), for the Play page.</summary>
     public static (int Spent, int Allotment) VehicleHalfMp(UnitInstance vehicle) => HalfMp(vehicle);
@@ -273,9 +222,7 @@ public sealed partial class GamePlanner
     /// not reviewed; any number of vehicles of either side may share a Location, and a vehicle may enter one holding enemy units (D2.1).
     /// </summary>
     private static string? VehicleEntryBar(GameState state, UnitInstance vehicle, BoardLocation to) =>
-        state.At(to).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Melee))
-            ? "units there are held in Melee, and a vehicle's entry into a Melee Location is not reviewed"
-            : null;
+        ScenarioA1VehicleMovementCalculator.EntryBar(state.At(to).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Melee)));
 
     /// <summary>The events of this phase so far.</summary>
     private static IEnumerable<GameEvent> ThisPhase(IReadOnlyList<GameEvent> existing)
@@ -292,11 +239,11 @@ public sealed partial class GamePlanner
     /// entry or a Minimum Move.
     /// </summary>
     private static bool FirstEntry(IReadOnlyList<GameEvent> existing, string vehicle) =>
-        StepsThisPhase(existing, vehicle).All(step => step.Kind == VehicleStepped.Start && !step.BogRemoval);
+        ScenarioA1VehicleMovementCalculator.FirstEntry(StepsThisPhase(existing, vehicle).Select(step => (step.Kind == VehicleStepped.Start, step.BogRemoval)));
 
     /// <summary>Whether the vehicle made an ALL entry this MPh, after which it may only Stop or end in Motion (D2.7; ruling R11.5).</summary>
     private static bool AfterAllEntry(IReadOnlyList<GameEvent> existing, UnitInstance vehicle) =>
-        StepsThisPhase(existing, vehicle.Id).Any(step => step.Kind == VehicleStepped.Enter && step.All);
+        ScenarioA1VehicleMovementCalculator.AfterAllEntry(StepsThisPhase(existing, vehicle.Id).Select(step => (step.Kind == VehicleStepped.Enter, step.All)));
 
     private static bool Flag(JsonElement arguments, string name) => arguments.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.True;
 
@@ -877,15 +824,14 @@ public sealed partial class GamePlanner
         }
 
         var (spent, allotment) = HalfMp(vehicle);
-        var left = allotment - spent;
-        return VehicleEntries(state, vehicle).Any(item => item.HalfMp is { } cost && !item.All && cost <= left)
-            || (!(vehicle.Straddling is not null && TurnedAtCafp(state, vehicle)) && VehicleTurnCost(state, vehicle, at.Location).HalfMp + 2 <= left);
+        return ScenarioA1VehicleMovementCalculator.MayMoveOn(spent, allotment, () => VehicleEntries(state, vehicle).Select(item => (item.HalfMp, item.All)),
+            vehicle.Straddling is not null, () => TurnedAtCafp(state, vehicle), () => VehicleTurnCost(state, vehicle, at.Location).HalfMp);
     }
 
     private static bool Halted(UnitInstance vehicle) =>
-        vehicle.Status != InstanceStatus.Active || Is(vehicle, Conditions.Immobilized) || Is(vehicle, Conditions.Stunned) || Is(vehicle, Conditions.Shocked)
-        || Is(vehicle, Conditions.UnconfirmedKill) || Is(vehicle, Conditions.Abandoned) || Is(vehicle, Conditions.Bogged)
-        || (Is(vehicle, Conditions.Recalled) && !Is(vehicle, Conditions.StunRecovery));
+        ScenarioA1VehicleMovementCalculator.Halted(vehicle.Status == InstanceStatus.Active, Is(vehicle, Conditions.Immobilized), Is(vehicle, Conditions.Stunned),
+            Is(vehicle, Conditions.Shocked), Is(vehicle, Conditions.UnconfirmedKill), Is(vehicle, Conditions.Abandoned), Is(vehicle, Conditions.Bogged),
+            Is(vehicle, Conditions.Recalled), Is(vehicle, Conditions.StunRecovery));
 
     /// <summary>
     /// The half MP to enter an ADJACENT hex from a vehicle's Location, with one MP for each hexspine its VCA must turn to point at it (D2.11), or
@@ -900,7 +846,8 @@ public sealed partial class GamePlanner
         }
 
         return VehicleOutright(state, vehicle, at.Location, to, false, false).Entry is { } entry && Bearing(state, at.Location, to) is { } bearing
-            ? (entry.All ? PrintedHalfMp(vehicle) : entry.HalfMp) + (VehicleTurnCost(state, vehicle, at.Location).HalfMp * VcaTurns(facing, bearing))
+            ? ScenarioA1VehicleMovementCalculator.IntendedEntryHalfMp(entry.All, entry.HalfMp, PrintedHalfMp(vehicle), VehicleTurnCost(state, vehicle, at.Location).HalfMp,
+                VcaTurns(facing, bearing))
             : null;
     }
 
