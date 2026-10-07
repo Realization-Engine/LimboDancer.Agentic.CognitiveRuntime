@@ -36,7 +36,7 @@ public sealed partial class GamePlanner
     /// AFPh, one that spent MP in this Player Turn's MPh (the Case J clause).
     /// </summary>
     private static bool Standing(GameState state, UnitInstance vehicle) =>
-        ScenarioA1VehicleTerrainCosts.Standing(Is(vehicle, Conditions.Motion), state.Phase, state.MovedVehicles.Contains(vehicle.Id, StringComparer.Ordinal));
+        ScenarioA1VehicleSightRules.Standing(Is(vehicle, Conditions.Motion), state.Phase, state.MovedVehicles.Contains(vehicle.Id, StringComparer.Ordinal));
 
     /// <summary>
     /// The wreck or AFV whose +1 TEM Infantry of a side claim at a Location (D9.3, D10.3; ruling R6.1): a non-burning wreck of either
@@ -50,9 +50,10 @@ public sealed partial class GamePlanner
             return null;
         }
 
-        return WrecksAt(state, at).FirstOrDefault(wreck => !IsBurning(state, wreck) && Standing(state, wreck))?.Id
-            ?? state.At(at).OfType<UnitInstance>().FirstOrDefault(unit => IsAfv(unit) && (unit.Side == infantrySide || Is(unit, Conditions.Abandoned))
-                && Standing(state, unit))?.Id;
+        return ScenarioA1VehicleSightRules.Cover(
+            WrecksAt(state, at).Select(wreck => (wreck.Id, (Func<bool>)(() => IsBurning(state, wreck)), (Func<bool>)(() => Standing(state, wreck)))),
+            state.At(at).OfType<UnitInstance>().Select(unit => (unit.Id, (Func<bool>)(() => IsAfv(unit)),
+                (Func<bool>)(() => unit.Side == infantrySide || Is(unit, Conditions.Abandoned)), (Func<bool>)(() => Standing(state, unit)))));
     }
 
     /// <summary>
@@ -86,7 +87,7 @@ public sealed partial class GamePlanner
 
             // A6.7: a map Hindrance at this range in another hex is the higher; one in the vehicle's own hex is added to.
             var ownTerrain = ReadLocation(state, hindering) is { } hinderingRead ? TerrainKey(hinderingRead) : null;
-            if (mapRanges.Contains(crossed.Range) && !ScenarioA1VehicleTerrainCosts.AddsToOwnHindrance(ownTerrain, state.ScenarioMonth))
+            if (!ScenarioA1VehicleSightRules.HindersAtRange(mapRanges.Contains(crossed.Range), ownTerrain, state.ScenarioMonth))
             {
                 continue;
             }
@@ -109,7 +110,7 @@ public sealed partial class GamePlanner
         foreach (var hex in SmokeSources(state).GroupBy(place => (place.Board, place.Hex)))
         {
             var sameHex = (BoardLocation place) => place.Board == hex.Key.Board && place.Hex == hex.Key.Hex;
-            smoke += ScenarioA1VehicleTerrainCosts.SmokeDrm(hex.Count(), sameHex(from), sameHex(target),
+            smoke += ScenarioA1VehicleSightRules.SmokeDrm(hex.Count(), sameHex(from), sameHex(target),
                 () => los.Crossed.Any(item => item.Board == hex.Key.Board && item.Hex == hex.Key.Hex));
         }
 

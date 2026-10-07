@@ -292,29 +292,6 @@ public static class ScenarioA1VehicleTerrainCosts
         (hullAf is { } h && basic + caseD + (hullFacing == "rear" ? 1 : 0) - h > 5)
         || (turretAf is { } t && basic + caseD + (turretFacing == "rear" ? 1 : 0) - t >= 5);
 
-    /// <summary>
-    /// Whether an AFV or wreck gives cover and Hindrance now (D2.41, D9.3, D9.4; ruling R6.1): not in Motion, and not, in the MPh, DFPh, or
-    /// AFPh, one that spent MP in this Player Turn's MPh (the Case J clause).
-    /// </summary>
-    public static bool Standing(bool motion, string? phase, bool movedThisTurn) =>
-        !motion && !(phase is "mph" or "dfph" or "afph" && movedThisTurn);
-
-    /// <summary>A6.7: a vehicle in a brush or in-season grain hex adds its +1 to that hex's own Hindrance (rulings R6.2, R6.3).</summary>
-    public static bool AddsToOwnHindrance(string? terrain, int? month) => terrain == "brush" || (terrain == "grain" && month is >= 6 and <= 9);
-
-    /// <summary>
-    /// A24.2, A24.5, A24.8 (ruling R9.6): a Location's SMOKE, +2 per source and at most +3, with +1 more for fire traced out of or within it; none when
-    /// the LOS does not enter it.
-    /// </summary>
-    public static int SmokeDrm(int sources, bool firerThere, bool targetThere, Func<bool> crossed)
-    {
-        var drm = Math.Min(3, 2 * sources);
-        return firerThere ? drm + 1
-            : targetThere ? drm
-            : crossed() ? drm
-            : 0;
-    }
-
     /// <summary>The extra MP a vehicle pays to enter a hex for its wrecks and vehicles, doubled by a road entry, and a Blaze's smoke (D2.14, B25.141).</summary>
     public static int WreckEntryHalfMp(int wrecks, int vehicles, bool road, bool smoke) => ((wrecks + vehicles) * (road ? 2 : 1) + (smoke ? 1 : 0)) * 2;
 

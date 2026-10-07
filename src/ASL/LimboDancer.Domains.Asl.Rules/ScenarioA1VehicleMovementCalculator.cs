@@ -164,22 +164,6 @@ public static class ScenarioA1VehicleMovementCalculator
         return null;
     }
 
-    /// <summary>Whether a Location is Concealment Terrain for a vehicle (A12.2; ruling R6.7): grain in season, June to September (B15.6).</summary>
-    public static bool ConcealmentTerrain(int? month, Func<string?> terrain) => month is >= 6 and <= 9 && terrain() == "grain";
-
-    /// <summary>Whether a unit is a Good Order enemy ground unit that can see (A12.2): Good Order Personnel, or a vehicle whose crew is not Stunned or Recalled.</summary>
-    public static bool Watching(bool active, bool vehicle, bool stunned, bool shocked, bool unconfirmedKill, bool recalled, bool abandoned, Func<bool> personnel,
-        bool broken, bool berserk, bool captured, bool melee) => active
-        && (vehicle ? !stunned && !shocked && !unconfirmedKill && !recalled && !abandoned
-            : personnel() && !broken && !berserk && !captured && !melee);
-
-    /// <summary>
-    /// Whether a concealed or hidden vehicle loses its "?" (A12.2; ruling R6.7): the moving vehicle moved within 16 hexes and in the LOS of a Good
-    /// Order enemy ground unit, or it is not in Concealment Terrain and in the LOS of one (Case H).
-    /// </summary>
-    public static bool ConcealmentLost(bool movedNow, Func<int?, bool> seen, Func<bool> concealmentTerrain) =>
-        (movedNow && seen(16)) || (!concealmentTerrain() && seen(null));
-
     /// <summary>
     /// The steps a moving vehicle may try now (rulings R11.1, R11.2, R11.7): forward outright into a hex of its VCA, or from Bypass into the hex beyond
     /// its CAFP; forward in VBM along the hexside its VCA runs along (from its hex center, the hexside its VCA hexes share; after a VCA change at its
