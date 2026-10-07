@@ -17,7 +17,7 @@ namespace LimboDancer.Domains.Asl.Play;
 public sealed partial class GamePlanner
 {
     /// <summary>D7.1 (ruling R11.11): an OVR costs a quarter of the vehicle's printed MP allotment (FRU), in half MP.</summary>
-    private static int OverrunHalfMp(UnitInstance vehicle) => (((VehicleDefinition(vehicle)?.MovementPoints ?? 0) + 3) / 4) * 2;
+    private static int OverrunHalfMp(UnitInstance vehicle) => ScenarioA1OverrunCalculator.OverrunHalfMp(VehicleDefinition(vehicle)?.MovementPoints);
 
     /// <summary>Whether a Location holds an enemy unit the vehicle's side can see (A12.41): a unit neither concealed nor hidden.</summary>
     private static bool KnownTargets(GameState state, UnitInstance vehicle, BoardLocation at) =>
@@ -28,47 +28,11 @@ public sealed partial class GamePlanner
     /// Why a vehicle may not OVR a Location (D7.1, D7.12 to D7.14; ruling R11.11), or null: not in Reverse or VBM, not after its own Bounding First Fire
     /// (an earlier OVR aside), with an enemy unit there to attack, none of them in Melee and no enemy vehicle there in Motion.
     /// </summary>
-    private static string? OverrunBar(GameState state, IReadOnlyList<GameEvent> existing, UnitInstance vehicle, BoardLocation at, bool reverse, bool bypass)
-    {
-        if (reverse)
-        {
-            return "play.move-vehicle-ovr: no OVR is made in Reverse (D7.13)";
-        }
-
-        if (bypass)
-        {
-            return "play.move-vehicle-ovr: no OVR is made from VBM (D7.13; ruling R11.11)";
-        }
-
-        var overrunsThisPhase = ThisPhase(existing).Select(item => item.Payload).OfType<OverrunResolved>().Where(item => item.Vehicle == vehicle.Id).ToArray();
-        if (Is(vehicle, Conditions.BoundingFire) && overrunsThisPhase.Length == 0)
-        {
-            return $"play.move-vehicle-ovr: {vehicle.Id} is marked Bounding Fire from its own fire, so it makes no OVR (D7.1, D7.13)";
-        }
-
-        var enemies = state.At(at).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side != vehicle.Side && !Is(unit, Conditions.Captured)).ToArray();
-        if (enemies.Length == 0)
-        {
-            return $"play.move-vehicle-ovr: {at} holds no enemy unit to OVR (D7.1)";
-        }
-
-        if (enemies.All(unit => IsAfv(unit) && !LiveFire.CrewExposed(unit)))
-        {
-            return $"play.move-vehicle-ovr: an AFV is not OVR, and {at} holds nothing else it could attack (D7.12)";
-        }
-
-        if (enemies.Any(unit => Is(unit, Conditions.Melee)))
-        {
-            return $"play.move-vehicle-ovr: an OVR of units held in Melee is not reviewed (ruling R11.11)";
-        }
-
-        if (enemies.Any(unit => LiveFire.IsVehicle(unit) && Is(unit, Conditions.Motion)))
-        {
-            return "play.move-vehicle-ovr: an OVR of a Location holding an enemy vehicle in Motion, with its +2 against the vehicle's PRC, is not built (D7.12)";
-        }
-
-        return null;
-    }
+    private static string? OverrunBar(GameState state, IReadOnlyList<GameEvent> existing, UnitInstance vehicle, BoardLocation at, bool reverse, bool bypass) =>
+        ScenarioA1OverrunCalculator.OverrunBar(vehicle.Id, at.ToString(), reverse, bypass, Is(vehicle, Conditions.BoundingFire),
+            () => ThisPhase(existing).Select(item => item.Payload).OfType<OverrunResolved>().Any(item => item.Vehicle == vehicle.Id),
+            () => [.. state.At(at).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side != vehicle.Side && !Is(unit, Conditions.Captured))
+                .Select(unit => new OverrunEnemy(IsAfv(unit), LiveFire.CrewExposed(unit), Is(unit, Conditions.Melee), LiveFire.IsVehicle(unit) && Is(unit, Conditions.Motion)))]);
 
     /// <summary>
     /// D7.1, A12.41 (ruling R11.12): the OVR declared in the vehicle's own Location, after its entry revealed the concealed units there or they passed their
@@ -91,9 +55,9 @@ public sealed partial class GamePlanner
 
         var (spent, allotment) = HalfMp(vehicle);
         var cost = OverrunHalfMp(vehicle);
-        if (spent + cost > allotment)
+        if (ScenarioA1OverrunCalculator.OverrunMpBar(vehicle.Id, spent, allotment, cost) is { } mp)
         {
-            return Refused(scope, label, expected, $"play.move-vehicle-mp: {vehicle.Id} has {Mp(Math.Max(0, allotment - spent))} MP left, and an OVR costs {Mp(cost)} (D7.1)");
+            return Refused(scope, label, expected, mp);
         }
 
         GameEvent[] declared = [Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(vehicle.Id, VehicleStepped.Overrun, at, null, cost, step) { Overrunning = true }, null, null)];
@@ -117,20 +81,15 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.no-game: the game has no state yet");
         }
 
-        if (state.Movement is not { Vehicle: true, Overrun: { } at } movement || movement.Movers is not [{ } id])
+        var declared = state.Movement is { Vehicle: true, Overrun: not null, Movers: [{ } mover] } ? mover : null;
+        if (ScenarioA1OverrunCalculator.ResolveBar(declared, Text(arguments, "vehicleId", out var named) ? named : null, state.Movement?.WindowOpen == true) is { } bar)
         {
-            return Refused(scope, label, expected, "play.overrun: no OVR is declared (D7.1)");
+            return Refused(scope, label, expected, bar);
         }
 
-        if (Text(arguments, "vehicleId", out var named) && named != id)
-        {
-            return Refused(scope, label, expected, $"play.overrun: the declared OVR is {id}'s");
-        }
-
-        if (movement.WindowOpen)
-        {
-            return Refused(scope, label, expected, "play.overrun: the DEFENDER may still fire at the OVR's MP expenditure; the OVR is resolved when he passes (D7.1)");
-        }
+        var movement = state.Movement!;
+        var id = declared!;
+        var at = movement.Overrun!;
 
         var (attack, refusal, terrain, wall, smoke, targetSide) = OverrunAttack(state, movement, id, at);
         if (attack is null)
@@ -177,7 +136,7 @@ public sealed partial class GamePlanner
         // A24.2 (ruling R9.6): SMOKE in the Location hinders an attack within it, +1 more than traced into it; D7.15: a wall or hedge TEM only across the
         // hexside the vehicle entered by.
         var sources = SmokeSources(state).Count(place => place.Board == at.Board && place.Hex == at.Hex);
-        var smoke = sources == 0 ? 0 : Math.Min(3, 2 * sources) + 1;
+        var smoke = ScenarioA1OverrunCalculator.OverrunSmoke(sources);
         FireHexsideTem? wall = null;
         if (movement.EnteredFrom is { } from && at.Level == 0 && SideToward(state, at, from) is { } side && WallOn(HexsideAt(state, at, side)) is ("wall" or "hedge") and var kind)
         {
@@ -187,7 +146,7 @@ public sealed partial class GamePlanner
         var targetSide = state.Sides.First(item => item.Id != vehicle.Side).Id;
         attack = HeatOfBattleFacts(state, attack with
         {
-            TargetTerrain = terrain == "grain" && state.ScenarioMonth is not (>= 6 and <= 9) ? "open-ground" : terrain,
+            TargetTerrain = ScenarioA1OverrunCalculator.OverrunTargetTerrain(terrain, state.ScenarioMonth),
             Los = new FireLos(false, smoke, true, false),
             HexsideTem = wall,
             AfvCover = CoverAt(state, at, targetSide),
@@ -217,11 +176,11 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>The key of the A12.41 choice of a vehicle's entry (ruling R11.12).</summary>
-    private static string PaatcKey(string vehicle, BoardLocation at) => $"paatc:{vehicle}:{at}";
+    private static string PaatcKey(string vehicle, BoardLocation at) => ScenarioA1OverrunCalculator.PaatcKey(vehicle, at.ToString());
 
     /// <summary>Whether a unit is exempt from a PAATC (A11.6): a SMC, a Fanatic unit, or a berserk one.</summary>
     private bool PaatcExempt(UnitInstance unit) =>
-        vocabulary.IsA(unit.Kind, "asl:leader") || vocabulary.IsA(unit.Kind, "asl:hero") || Is(unit, Conditions.Fanatic) || Is(unit, Conditions.Berserk);
+        ScenarioA1OverrunCalculator.PaatcExempt(vocabulary.IsA(unit.Kind, "asl:leader"), vocabulary.IsA(unit.Kind, "asl:hero"), Is(unit, Conditions.Fanatic), Is(unit, Conditions.Berserk));
 
     /// <summary>
     /// The concealed or hidden enemy Personnel, and Dummies, a vehicle's entry subjects to the A12.41 choice (ruling R11.12): none exempt from a PAATC, and
@@ -259,17 +218,11 @@ public sealed partial class GamePlanner
     /// </summary>
     private (int Morale, int Drm, IReadOnlyList<string> Causes) PaatcFacts(GameState state, IReadOnlyList<UnitInstance> units, BoardLocation at)
     {
-        var morale = units.Select(unit => unit.Kind == UnitKinds.Dummy ? 7
-            : unit.Definition is { } reference && FireReference.Value.Definitions.GetValueOrDefault(reference.Definition) is { Morale: { } printed } definition
-                ? printed + (Is(unit, Conditions.Fanatic) ? 1 : 0) - (definition.IsLeader && Is(unit, Conditions.Wounded) ? 1 : 0)
-                : 7).DefaultIfEmpty(7).Min();
-        var drm = 0;
-        var causes = new List<string>();
-        if (units.Any(unit => unit.Kind != UnitKinds.Dummy && Experience.Inexperienced(state, unit, catalogs, vocabulary) == ConditionState.True))
-        {
-            drm += 1;
-            causes.Add("inexperienced-1paatc");
-        }
+        var morale = ScenarioA1OverrunCalculator.PaatcMorale(units.Select(unit =>
+            unit.Definition is { } reference && FireReference.Value.Definitions.GetValueOrDefault(reference.Definition) is { } definition
+                ? new PaatcUnit(unit.Kind == UnitKinds.Dummy, definition.Morale, Is(unit, Conditions.Fanatic), definition.IsLeader && Is(unit, Conditions.Wounded))
+                : new PaatcUnit(unit.Kind == UnitKinds.Dummy, null, false, false)));
+        var inexperienced = units.Any(unit => unit.Kind != UnitKinds.Dummy && Experience.Inexperienced(state, unit, catalogs, vocabulary) == ConditionState.True);
 
         var side = units[0].Side;
         var leader = state.At(at).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && vocabulary.IsA(unit.Kind, "asl:leader")
@@ -277,12 +230,7 @@ public sealed partial class GamePlanner
                 && unit.Definition is { } reference && FireReference.Value.Definitions.GetValueOrDefault(reference.Definition)?.Leadership is not null)
             .Select(unit => (unit.Id, Value: FireReference.Value.Definitions[unit.Definition!.Definition].Leadership!.Value + (Is(unit, Conditions.Wounded) ? 1 : 0)))
             .OrderBy(item => item.Value).FirstOrDefault();
-        if (leader.Id is not null && leader.Value != 0)
-        {
-            drm += leader.Value;
-            causes.Add("leadership:" + leader.Id);
-        }
-
+        var (drm, causes) = ScenarioA1OverrunCalculator.PaatcDrm(inexperienced, leader.Id, leader.Value);
         return (morale, drm, causes);
     }
 
@@ -332,7 +280,7 @@ public sealed partial class GamePlanner
             var dice = draw(new RollRequest(2, 6));
             var rollId = $"{attemptId}-roll-1";
             events.Add(Event(scope, attemptId, 2, expected, "dice-rolled", new DiceRolled(rollId, "paatc", 2, 6, dice.Values, DiceRolled.SystemSource, actor), null, null));
-            var passed = dice.Values[0] + dice.Values[1] + drm <= morale;
+            var passed = ScenarioA1OverrunCalculator.PaatcPassed(dice.Values[0], dice.Values[1], drm, morale);
             events.Add(Event(scope, attemptId, 3, expected, "paatc-taken", new PaatcTaken([.. units.Select(unit => unit.Id)], vehicle, rollId, morale, drm, passed), null, null,
                 [EventId(attemptId, 2)]));
             if (!passed)
@@ -362,7 +310,7 @@ public sealed partial class GamePlanner
         var dice = draw(new RollRequest(2, 6));
         var rollId = $"{attemptId}-roll-{(events.Count(item => item.Payload is DiceRolled) + 1).ToString(CultureInfo.InvariantCulture)}";
         events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled", new DiceRolled(rollId, "paatc", 2, 6, dice.Values, DiceRolled.SystemSource, actor), null, null));
-        passed = dice.Values[0] + dice.Values[1] + drm <= morale;
+        passed = ScenarioA1OverrunCalculator.PaatcPassed(dice.Values[0], dice.Values[1], drm, morale);
         var record = EventId(attemptId, events.Count);
         events.Add(Event(scope, attemptId, events.Count + 1, expected, "paatc-taken", new PaatcTaken([.. units.Select(unit => unit.Id)], afv.Id, rollId, morale, drm, passed), null, null,
             [record]));
@@ -378,6 +326,6 @@ public sealed partial class GamePlanner
 
     /// <summary>Whether a MMC must pass a PAATC to advance on or make CC Reaction Fire at an AFV (A11.6, D7.21): a manned, unconcealed AFV, not exempt, not passed this phase.</summary>
     private bool NeedsPaatc(GameState state, UnitInstance unit, UnitInstance vehicle) =>
-        IsAfv(vehicle) && !Is(vehicle, Conditions.Abandoned) && !Is(vehicle, Conditions.Concealed) && !Is(vehicle, Conditions.Hidden) && !PaatcExempt(unit)
-        && !state.PaatcPassed.Contains(unit.Id + "|" + vehicle.Id, StringComparer.Ordinal);
+        ScenarioA1OverrunCalculator.NeedsPaatc(IsAfv(vehicle), Is(vehicle, Conditions.Abandoned), Is(vehicle, Conditions.Concealed), Is(vehicle, Conditions.Hidden),
+            () => PaatcExempt(unit), () => state.PaatcPassed.Contains(unit.Id + "|" + vehicle.Id, StringComparer.Ordinal));
 }
