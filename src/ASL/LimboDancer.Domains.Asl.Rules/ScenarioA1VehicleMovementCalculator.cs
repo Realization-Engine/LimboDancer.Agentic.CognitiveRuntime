@@ -177,4 +177,72 @@ public static class ScenarioA1VehicleMovementCalculator
     /// </summary>
     public static bool ConcealmentLost(bool movedNow, Func<int?, bool> seen, Func<bool> concealmentTerrain) =>
         (movedNow && seen(16)) || (!concealmentTerrain() && seen(null));
+
+    /// <summary>
+    /// The steps a moving vehicle may try now (rulings R11.1, R11.2, R11.7): forward outright into a hex of its VCA, or from Bypass into the hex beyond
+    /// its CAFP; forward in VBM along the hexside its VCA runs along (from its hex center, the hexside its VCA hexes share; after a VCA change at its
+    /// CAFP, the hexside ahead); in Reverse outright into a rear hex, from Bypass the hex beyond its rear vertex; and in Reverse VBM from its hex center
+    /// along the hexside its rear hexes share (D2.22).
+    /// </summary>
+    public static IReadOnlyList<VehicleStepOption> MoveOptions(IVehicleStepFactReader reader, int here, int? lane, int facing, bool reverse, Func<bool> turnedAtCafp)
+    {
+        var options = new List<VehicleStepOption>();
+        void Outright(int to, int from) => options.Add(new VehicleStepOption(to, from, null));
+
+        void Lane(int one, int two)
+        {
+            foreach (var (obstacle, other) in new[] { (one, two), (two, one) })
+            {
+                if (reader.Bypassable(obstacle))
+                {
+                    options.Add(new VehicleStepOption(obstacle, here, other));
+                }
+            }
+        }
+
+        var direction = reverse ? (facing + 3) % 6 : facing;
+        if (lane is { } straddling)
+        {
+            if (turnedAtCafp())
+            {
+                // D2.33: after a VCA change at its CAFP the vehicle goes on in Bypass along the hexside it now faces along.
+                if (!reverse)
+                {
+                    foreach (var (one, two) in new[] { (here, straddling) }.SelectMany(pair => reader.SharedNeighbors(pair.Item1, pair.Item2)
+                        .SelectMany(third => new[] { (pair.Item1, third), (pair.Item2, third) })))
+                    {
+                        if (reader.LaneEnds(one, two, facing) is ({ } _, { } behind) && (behind == here || behind == straddling))
+                        {
+                            Lane(one, two);
+                        }
+                    }
+                }
+
+                return options;
+            }
+
+            var (front, rear) = reader.LaneEnds(here, straddling, facing);
+            if ((reverse ? rear : front) is { } beyond)
+            {
+                Outright(beyond, straddling);
+            }
+
+            return options;
+        }
+
+        foreach (var to in reader.VcaHexes(here, direction))
+        {
+            Outright(to, here);
+        }
+
+        if (reader.VcaHexes(here, direction) is [{ } first, { } second])
+        {
+            Lane(first, second);
+        }
+
+        return options;
+    }
+
+    /// <summary>A vehicle entry's bar (rulings R11.6, R25.10): the step's own reason first, else the Location's.</summary>
+    public static string? EntryOptionBar(string? reason, Func<string?> locationBar) => reason ?? locationBar();
 }

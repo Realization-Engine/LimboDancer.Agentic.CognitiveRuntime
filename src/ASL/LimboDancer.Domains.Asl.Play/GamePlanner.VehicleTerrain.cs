@@ -197,69 +197,63 @@ public sealed partial class GamePlanner
         }
 
         var here = at.Location;
+        var map = new VehicleStepMap(this, state);
+        var steps = ScenarioA1VehicleMovementCalculator.MoveOptions(map, map.Index(here), vehicle.Straddling is { } lane ? map.Index(lane) : null, (int)facing, reverse,
+            () => TurnedAtCafp(state, vehicle));
         var options = new List<(VehicleEntry?, BoardLocation, BoardLocation?, string?)>();
-        void Outright(BoardLocation to, BoardLocation from)
+        foreach (var step in steps)
         {
-            var (entry, reason) = VehicleOutright(state, vehicle, from, to, reverse, allMp);
-            options.Add((entry is null ? null : entry with
+            var to = map.LocationOf(step.To);
+            if (step.Other is { } other)
             {
-                To = to
-            }, to, null, reason));
-        }
-
-        void Lane(BoardLocation one, BoardLocation two)
-        {
-            foreach (var (obstacle, other) in new[] { (one, two), (two, one) })
+                var (entry, reason) = VehicleBypass(state, vehicle, here, to, map.LocationOf(other), reverse);
+                options.Add((entry, to, map.LocationOf(other), reason));
+            }
+            else
             {
-                if (Bypassable(state, obstacle))
+                var (entry, reason) = VehicleOutright(state, vehicle, map.LocationOf(step.From), to, reverse, allMp);
+                options.Add((entry is null ? null : entry with
                 {
-                    var (entry, reason) = VehicleBypass(state, vehicle, here, obstacle, other, reverse);
-                    options.Add((entry, obstacle, other, reason));
-                }
+                    To = to
+                }, to, null, reason));
             }
-        }
-
-        var direction = reverse ? (UnitFacing)(((int)facing + 3) % 6) : facing;
-        if (vehicle.Straddling is { } lane)
-        {
-            if (TurnedAtCafp(state, vehicle))
-            {
-                // D2.33: after a VCA change at its CAFP the vehicle goes on in Bypass along the hexside it now faces along.
-                if (!reverse)
-                {
-                    foreach (var (one, two) in new[] { (here, lane) }.SelectMany(pair => SharedNeighbors(state, pair.Item1, pair.Item2)
-                        .SelectMany(third => new[] { (pair.Item1, third), (pair.Item2, third) })))
-                    {
-                        if (LaneEnds(state, one, two, facing) is ({ } _, { } behind) && (behind == here || behind == lane))
-                        {
-                            Lane(one, two);
-                        }
-                    }
-                }
-
-                return options;
-            }
-
-            var (front, rear) = LaneEnds(state, here, lane, facing);
-            if ((reverse ? rear : front) is { } beyond)
-            {
-                Outright(beyond, lane);
-            }
-
-            return options;
-        }
-
-        foreach (var to in VcaHexes(state, here, direction))
-        {
-            Outright(to, here);
-        }
-
-        if (VcaHexes(state, here, direction) is [{ } first, { } second])
-        {
-            Lane(first, second);
         }
 
         return options;
+    }
+
+    /// <summary>The map as the search of a vehicle's steps reads it: a table of Locations by index, the VCA hexes, shared neighbors, a hexside's ends, and Bypass obstacles.</summary>
+    private sealed class VehicleStepMap(GamePlanner planner, GameState state) : IVehicleStepFactReader
+    {
+        private readonly List<BoardLocation> locations = [];
+        private readonly Dictionary<BoardLocation, int> indexes = [];
+
+        /// <summary>The index of a Location in the table, added when it is new.</summary>
+        public int Index(BoardLocation location)
+        {
+            if (!indexes.TryGetValue(location, out var index))
+            {
+                index = locations.Count;
+                locations.Add(location);
+                indexes[location] = index;
+            }
+
+            return index;
+        }
+
+        public BoardLocation LocationOf(int index) => locations[index];
+
+        public IReadOnlyList<int> VcaHexes(int location, int facing) => [.. planner.VcaHexes(state, locations[location], (UnitFacing)facing).Select(Index)];
+
+        public IReadOnlyList<int> SharedNeighbors(int one, int two) => [.. planner.SharedNeighbors(state, locations[one], locations[two]).Select(Index)];
+
+        public (int? Front, int? Rear) LaneEnds(int one, int two, int facing)
+        {
+            var (front, rear) = planner.LaneEnds(state, locations[one], locations[two], (UnitFacing)facing);
+            return (front is null ? null : Index(front), rear is null ? null : Index(rear));
+        }
+
+        public bool Bypassable(int location) => planner.Bypassable(state, locations[location]);
     }
 
     /// <summary>
