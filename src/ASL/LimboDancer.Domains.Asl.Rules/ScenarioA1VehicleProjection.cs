@@ -6,11 +6,14 @@ namespace LimboDancer.Domains.Asl.Rules;
 /// </summary>
 public static class ScenarioA1VehicleProjection
 {
+    /// <summary>D2.1 (UNIT-STATE-034): a vehicle step is made in the MPh; the projector asks before it reads the vehicle.</summary>
+    public static bool StepPhase(string? phase) => phase == "mph";
+
     /// <summary>
-    /// D2.1 (UNIT-STATE-034): a vehicle step moves a vehicle of the phasing side that has not ended its move, in the MPh; only a Load spends no MP.
+    /// D2.1 (UNIT-STATE-034): a vehicle step moves a vehicle of the phasing side that has not ended its move; only a Load spends no MP.
     /// </summary>
-    public static bool StepAllowed(string? phase, bool vehicle, bool phasing, bool movementEnded, int halfMp, bool load) =>
-        phase == "mph" && vehicle && phasing && !movementEnded && halfMp >= 0 && (halfMp != 0 || load);
+    public static bool StepAllowed(bool vehicle, bool phasing, bool movementEnded, int halfMp, bool load) =>
+        vehicle && phasing && !movementEnded && halfMp >= 0 && (halfMp != 0 || load);
 
     /// <summary>D5.341: a Recall stops the AFV like a Stun for the rest of that Player Turn; once its counter shows Recall; +1 it must move.</summary>
     public static bool Recalling(bool recalled, bool stunRecovery) => recalled && !stunRecovery;

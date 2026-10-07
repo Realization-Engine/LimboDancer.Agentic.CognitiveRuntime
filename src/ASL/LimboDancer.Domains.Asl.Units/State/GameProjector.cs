@@ -2000,7 +2000,7 @@ public static class GameProjector
         /// </summary>
         private GameState? StepVehicle(GameState state, VehicleStepped step)
         {
-            if (Active(state, step.Vehicle) is not UnitInstance vehicle || !Rules.ScenarioA1VehicleProjection.StepAllowed(state.Phase, vocabulary.IsA(vehicle.Kind, "asl:vehicle"),
+            if (!Rules.ScenarioA1VehicleProjection.StepPhase(state.Phase) || Active(state, step.Vehicle) is not UnitInstance vehicle || !Rules.ScenarioA1VehicleProjection.StepAllowed(vocabulary.IsA(vehicle.Kind, "asl:vehicle"),
                 vehicle.Side == state.PhasingSide, vehicle.MovementEnded, step.HalfMp, step.Kind == VehicleStepped.Load))
             {
                 return Fail<GameState>("UNIT-STATE-034", "A vehicle step moves a vehicle of the phasing side that has not ended its move, in the MPh (D2.1).");
