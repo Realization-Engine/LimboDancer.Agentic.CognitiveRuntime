@@ -249,9 +249,10 @@ public static class ScenarioA1VehicleMovementCalculator
     public static string? EntryOptionBar(string? reason, Func<string?> locationBar) => reason ?? locationBar();
 
     /// <summary>
-    /// A.4.2, E1.52, D.3, D.7, D5.34, C7.42, D5.41, C10.11, D5.341, A8.1, D7.1, D7.2, A15.43, D8.2, D8.3: why a vehicle on the map may not spend this MP,
-    /// or null. Checked in this order: move ended, BU at NVR 0, its conditions (Passengers still Unload from one that Prep Fired, is immobilized, or
-    /// Abandoned), Recalled and not leaving, another unit's move, the DEFENDER's window, an OVR to resolve, a berserk charge first, and a bog.
+    /// A4.2, E1.52, D.3, D.7, D5.34, C7.42, D5.41, C10.11, D5.341, A8.1, D7.1, D7.2, A15.43, D8.2, D8.3: why a vehicle on the map may not spend this MP,
+    /// or null. Checked in this order: move ended, BU at NVR 0 (referee, pass 16), its conditions (D6.5, D6.1, referee, pass 26: Passengers still Unload
+    /// from one that Prep Fired, is immobilized, or Abandoned), Recalled and not leaving, another unit's move, the DEFENDER's window, an OVR to resolve,
+    /// a berserk charge first, and a bog (ruling R11.10).
     /// </summary>
     public static string? MoveBar(string id, string kind, bool moveEnded, Func<bool> nightBuBlind, Func<string, bool> has, bool leaving,
         IReadOnlyList<string>? otherMovers, bool windowOpen, bool reaction, string? overrun, Func<string?> berserk, bool started)
