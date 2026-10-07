@@ -660,23 +660,13 @@ public sealed partial class GamePlanner
         string actor, GameState state, UnitInstance vehicle, BoardLocation at, bool moving, bool bogged, bool leaving, int step)
     {
         var id = vehicle.Id;
-        if (moving)
-        {
-            return Refused(scope, label, expected, Is(vehicle, Conditions.Motion) && state.Movement is null
-                ? $"play.move-vehicle: {id} is in Motion and needs no Start MP (D2.4)"
-                : $"play.move-vehicle: {id} is already moving; it starts again only after it stops (D2.12, D2.13)");
-        }
-
         var reverse = Flag(arguments, "reverse");
-        if (reverse && (leaving || state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == id)))
-        {
-            return Refused(scope, label, expected, $"play.move-vehicle-reverse: {id} {(leaving ? "leaves forward by its Friendly Board Edge (D5.341)" : "tows a Gun and may not use Reverse movement (D2.2)")}");
-        }
-
         var (spent, allotment) = HalfMp(vehicle);
-        if (!bogged && spent + 2 > allotment)
+        if (ScenarioA1VehicleMovementCalculator.StartBar(id, moving, Is(vehicle, Conditions.Motion) && state.Movement is null, reverse, leaving,
+            () => state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == id), bogged, spent,
+            allotment) is { } startBar)
         {
-            return Refused(scope, label, expected, $"play.move-vehicle-mp: {id} has {Mp(Math.Max(0, allotment - spent))} MP left, and starting costs 1 (D2.12)");
+            return Refused(scope, label, expected, startBar);
         }
 
         if (bogged)
@@ -695,7 +685,7 @@ public sealed partial class GamePlanner
 
                 var dice = draw(new RollRequest(2, 6));
                 var rollId = $"{attemptId}-roll-1";
-                var halfMp = dice.Values[0] * dice.Values[1] * (truck ? 2 : 1) * 2;
+                var halfMp = ScenarioA1VehicleMovementCalculator.BogRemovalHalfMp(dice.Values[0], dice.Values[1], truck);
                 var result = VehicleCheckRolled.For(VehicleCheckRolled.BogRemoval, dice.Values[0] + drm);
                 events.Add(Event(scope, attemptId, 1, expected, "dice-rolled", new DiceRolled(rollId, "vehicle-bog-removal", 2, 6, dice.Values, DiceRolled.SystemSource, actor), null, null));
                 events.Add(Event(scope, attemptId, 2, expected, "vehicle-step", new VehicleStepped(id, VehicleStepped.Start, at, null, halfMp, step) { BogRemoval = true }, null, null));
@@ -746,43 +736,17 @@ public sealed partial class GamePlanner
     {
         var id = vehicle.Id;
         var maximum = (VehicleDefinition(vehicle)?.MovementPoints ?? 0) / 4;
-        if (!Tracked(vehicle))
+        int? requested = arguments.TryGetProperty("mp", out var mpValue) && mpValue.TryGetInt32(out var parsedMp) ? parsedMp : null;
+        if (ScenarioA1VehicleMovementCalculator.EsbBar(id, Tracked(vehicle), moving,
+            () => ThisPhase(existing).Select(item => item.Payload).OfType<VehicleCheckRolled>().Any(check => check.Vehicle == id && check.Check == VehicleCheckRolled.Esb),
+            afterAll, () => EnemyAfvBar(state, vehicle, existing), requested, maximum) is { } esbBar)
         {
-            return Refused(scope, label, expected, $"play.move-vehicle-esb: only a tracked vehicle attempts ESB; {id} is a truck (D2.5)");
+            return Refused(scope, label, expected, esbBar);
         }
 
-        if (!moving)
-        {
-            return Refused(scope, label, expected, $"play.move-vehicle-esb: {id} attempts ESB while moving: after its Start MP, or in Motion (D2.5; ruling R11.3)");
-        }
-
-        if (ThisPhase(existing).Select(item => item.Payload).OfType<VehicleCheckRolled>().Any(check => check.Vehicle == id && check.Check == VehicleCheckRolled.Esb))
-        {
-            return Refused(scope, label, expected, $"play.move-vehicle-esb: {id} has attempted ESB this MPh (D2.5)");
-        }
-
-        if (afterAll)
-        {
-            return Refused(scope, label, expected, $"play.move-vehicle-esb: {id} made an ALL entry, after which ESB is not allowed (D2.7)");
-        }
-
-        if (EnemyAfvBar(state, vehicle, existing) is { } blocked)
-        {
-            return Refused(scope, label, expected, "play.move-vehicle-esb: " + blocked);
-        }
-
-        if (!arguments.TryGetProperty("mp", out var mpValue) || !mpValue.TryGetInt32(out var mp) || mp < 1 || mp > maximum)
-        {
-            return Refused(scope, label, expected, $"play.move-vehicle-esb: ESB seeks from 1 to {maximum} MP for {id}, a quarter of its printed allotment (FRD) (D2.5)");
-        }
-
+        var mp = requested!.Value;
         var nationality = VehicleDefinition(vehicle)?.Nationality;
-        var national = nationality switch
-        {
-            "german" => 2,
-            "russian" => 1,
-            _ => 3,
-        };
+        var national = ScenarioA1VehicleMovementCalculator.EsbNationalDrm(nationality);
         var drm = mp + national;
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
         {
@@ -807,8 +771,7 @@ public sealed partial class GamePlanner
     /// <summary>The fewest hexspines a VCA turns to point at a neighbor at a bearing: its VCA holds the two hexes 30 degrees either side.</summary>
     private static int VcaTurns(UnitFacing facing, double bearing) => ScenarioA1Geometry.VcaTurns((int)facing, bearing);
 
-    private static string Mp(int halfMp) => halfMp % 2 == 0 ? (halfMp / 2).ToString(CultureInfo.InvariantCulture)
-        : halfMp == 1 ? "½" : $"{(halfMp / 2).ToString(CultureInfo.InvariantCulture)}½";
+    private static string Mp(int halfMp) => ScenarioA1VehicleMovementCalculator.Mp(halfMp);
 
     /// <summary>Whether a vehicle may spend no more MP this Player Turn: immobilized, bogged, Stunned, or Recalled and not yet leaving (D.7, D5.34, D5.341, D8.2).</summary>
     /// <summary>
@@ -858,41 +821,11 @@ public sealed partial class GamePlanner
     /// </summary>
     private string? MotionBar(GameState state, UnitInstance vehicle, BoardLocation? intended, bool reverse)
     {
-        if (Halted(vehicle))
-        {
-            return null;
-        }
-
-        if (reverse)
-        {
-            return $"play.vehicle-motion: {vehicle.Id} is moving in Reverse and Stops to end its move, since Reverse Motion is not built (D2.24; ruling R11.1)";
-        }
-
         var (spent, allotment) = HalfMp(vehicle);
         var left = allotment - spent;
-        if (MustLeave(vehicle))
-        {
-            var (moves, _, undecided) = RecallRoute(state, vehicle);
-            return undecided is null && moves.Any(move => move.HalfMp <= left)
-                ? $"play.recall-route: {vehicle.Id} is Recalled and has the MP to go on along its route to its Friendly Board Edge (D5.341)"
-                : null;
-        }
-
-        if (left < 2)
-        {
-            return null;
-        }
-
-        if (intended is null)
-        {
-            return $"play.vehicle-motion: {vehicle.Id} has {Mp(left)} MP left, so it Stops (1 MP), moves on, or names the hex it wished to enter next to end in Motion (D2.4)";
-        }
-
-        return IntendedEntryCost(state, vehicle, intended) is not { } cost
-            ? $"play.vehicle-motion: {intended} is not an ADJACENT hex {vehicle.Id} could enter over reviewed terrain, so it cannot be the next hex it wished to enter (D2.4)"
-            : cost <= left
-                ? $"play.vehicle-motion: {vehicle.Id} has {Mp(left)} MP left, enough to enter {intended} for {Mp(cost)}, so it Stops or moves on (D2.4)"
-                : null;
+        return ScenarioA1VehicleMovementCalculator.MotionBar(vehicle.Id, Halted(vehicle), reverse, left, MustLeave(vehicle),
+            () => RecallRoute(state, vehicle) is var (moves, _, undecided) && undecided is null && moves.Any(move => move.HalfMp <= left),
+            intended?.ToString(), () => intended is null ? null : IntendedEntryCost(state, vehicle, intended));
     }
 
     /// <summary>
@@ -904,30 +837,15 @@ public sealed partial class GamePlanner
     private GamePlan PlanEndVehicle(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label,
         GameState state, MovementState movement, UnitInstance vehicle, string actor)
     {
-        if (movement.Ending)
+        if (ScenarioA1VehicleMovementCalculator.EndMoveBar(vehicle.Id, movement.Ending, movement.Overrun?.ToString(), Halted(vehicle),
+            () => EnemyAfvBar(state, vehicle, existing), () => MayMoveOn(state, vehicle), vehicle.Straddling is not null, () => TurnedAtCafp(state, vehicle),
+            () =>
+            {
+                BoardLocation? intended = Text(arguments, "intended", out var named) && BoardLocation.TryParse(named, out var parsed) ? parsed : null;
+                return movement.Started && !movement.Stopped ? MotionBar(state, vehicle, intended, movement.Reverse) : null;
+            }) is { } endBar)
         {
-            return Refused(scope, label, expected, "play.end-move: the vehicle has spent its MP left, and its move ends when the DEFENDER passes (D2.1)");
-        }
-
-        if (movement.Overrun is { } declared)
-        {
-            return Refused(scope, label, expected, $"play.end-move: {vehicle.Id} resolves its OVR of {declared} first (D7.1)");
-        }
-
-        if (!Halted(vehicle) && EnemyAfvBar(state, vehicle, existing) is { } blocked && MayMoveOn(state, vehicle))
-        {
-            return Refused(scope, label, expected, "play.end-move: " + blocked);
-        }
-
-        if (!Halted(vehicle) && vehicle.Straddling is not null && TurnedAtCafp(state, vehicle) && MayMoveOn(state, vehicle))
-        {
-            return Refused(scope, label, expected, $"play.end-move: {vehicle.Id} changed its VCA at its CAFP and must move on in Bypass before its move ends (D2.33)");
-        }
-
-        BoardLocation? intended = Text(arguments, "intended", out var named) && BoardLocation.TryParse(named, out var parsed) ? parsed : null;
-        if (movement.Started && !movement.Stopped && MotionBar(state, vehicle, intended, movement.Reverse) is { } motion)
-        {
-            return Refused(scope, label, expected, motion);
+            return Refused(scope, label, expected, endBar);
         }
 
         var (spent, allotment) = HalfMp(vehicle);
@@ -964,40 +882,20 @@ public sealed partial class GamePlanner
         }
 
         var buttonedUp = value.GetBoolean();
-        if (state.Unit(id) is not { Status: InstanceStatus.Active } vehicle || !IsAfv(vehicle))
+        var vehicle = state.Unit(id) is { Status: InstanceStatus.Active } unit && IsAfv(unit) ? unit : null;
+        if (ScenarioA1VehicleMovementCalculator.ButtonUpBar(id, vehicle is not null,
+            vehicle is not null && vehicle.Side == state.PhasingSide && state.Phase is "mph" or "aph",
+            vehicle is not null && (Is(vehicle, Conditions.Stunned) || Is(vehicle, Conditions.Recalled) || Is(vehicle, Conditions.Shocked) || Is(vehicle, Conditions.UnconfirmedKill)),
+            vehicle is not null && state.Phase == "mph" && Is(vehicle, Conditions.PrepFire),
+            state.Movement is { WindowOpen: true } window && window.Movers.Contains(id, StringComparer.Ordinal),
+            vehicle is not null && Is(vehicle, Conditions.ButtonedUp) == buttonedUp, buttonedUp,
+            () =>
+            {
+                var since = existing.Select((item, index) => (item, index)).LastOrDefault(pair => pair.item.Payload is PhaseChanged or GameStarted).index;
+                return existing.Skip(since).Any(item => item.Type == "crew-exposure-changed" && item.Payload is ConditionsChanged changed && changed.Id == id);
+            }) is { } buttonBar)
         {
-            return Refused(scope, label, expected, "play.button-up: only an AFV's crew buttons up or exposes itself (D5.2, D5.3)");
-        }
-
-        if (vehicle.Side != state.PhasingSide || state.Phase is not ("mph" or "aph"))
-        {
-            return Refused(scope, label, expected, "play.button-up: a BU counter is placed or removed only in its owner's MPh or APh (D5.33)");
-        }
-
-        if (Is(vehicle, Conditions.Stunned) || Is(vehicle, Conditions.Recalled) || Is(vehicle, Conditions.Shocked) || Is(vehicle, Conditions.UnconfirmedKill))
-        {
-            return Refused(scope, label, expected, $"play.button-up: {id}'s crew is Stunned and stays BU this Player Turn (D5.34)");
-        }
-
-        if (state.Phase == "mph" && Is(vehicle, Conditions.PrepFire))
-        {
-            return Refused(scope, label, expected, $"play.button-up: {id} Prep Fired, so it may not change its CE status this MPh (D5.33)");
-        }
-
-        if (state.Movement is { WindowOpen: true } window && window.Movers.Contains(id, StringComparer.Ordinal))
-        {
-            return Refused(scope, label, expected, "play.button-up: the DEFENDER may still fire at its last MP expenditure (D5.33)");
-        }
-
-        if (Is(vehicle, Conditions.ButtonedUp) == buttonedUp)
-        {
-            return Refused(scope, label, expected, $"play.button-up: {id} is already {(buttonedUp ? "BU" : "CE")}");
-        }
-
-        var since = existing.Select((item, index) => (item, index)).LastOrDefault(pair => pair.item.Payload is PhaseChanged or GameStarted).index;
-        if (existing.Skip(since).Any(item => item.Type == "crew-exposure-changed" && item.Payload is ConditionsChanged changed && changed.Id == id))
-        {
-            return Refused(scope, label, expected, $"play.button-up: {id}'s BU counter was already placed or removed this phase (D5.33)");
+            return Refused(scope, label, expected, buttonBar);
         }
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected,

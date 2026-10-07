@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace LimboDancer.Domains.Asl.Rules;
 
 /// <summary>
@@ -245,4 +247,211 @@ public static class ScenarioA1VehicleMovementCalculator
 
     /// <summary>A vehicle entry's bar (rulings R11.6, R25.10): the step's own reason first, else the Location's.</summary>
     public static string? EntryOptionBar(string? reason, Func<string?> locationBar) => reason ?? locationBar();
+
+    /// <summary>Half MP as MP for the texts: whole MP, or with a half.</summary>
+    public static string Mp(int halfMp) => halfMp % 2 == 0 ? (halfMp / 2).ToString(CultureInfo.InvariantCulture)
+        : halfMp == 1 ? "½" : $"{(halfMp / 2).ToString(CultureInfo.InvariantCulture)}½";
+
+    /// <summary>
+    /// D2.12, D2.13, D2.2, D2.4, D5.341: why a vehicle may not take its Start MP, or null. Not while moving; not in Reverse when leaving or towing;
+    /// not without 1 MP left unless its Start MP is its Bog Removal.
+    /// </summary>
+    public static string? StartBar(string id, bool moving, bool inMotionUnmoved, bool reverse, bool leaving, Func<bool> towing, bool bogged, int spent,
+        int allotment)
+    {
+        ArgumentNullException.ThrowIfNull(towing);
+        if (moving)
+        {
+            return inMotionUnmoved
+                ? $"play.move-vehicle: {id} is in Motion and needs no Start MP (D2.4)"
+                : $"play.move-vehicle: {id} is already moving; it starts again only after it stops (D2.12, D2.13)";
+        }
+
+        if (reverse && (leaving || towing()))
+        {
+            return $"play.move-vehicle-reverse: {id} {(leaving ? "leaves forward by its Friendly Board Edge (D5.341)" : "tows a Gun and may not use Reverse movement (D2.2)")}";
+        }
+
+        if (!bogged && spent + 2 > allotment)
+        {
+            return $"play.move-vehicle-mp: {id} has {Mp(Math.Max(0, allotment - spent))} MP left, and starting costs 1 (D2.12)";
+        }
+
+        return null;
+    }
+
+    /// <summary>D8.3, D8.31: a Bog Removal's half MP, the colored dr times the white dr, doubled for a truck.</summary>
+    public static int BogRemovalHalfMp(int colored, int white, bool truck) => colored * white * (truck ? 2 : 1) * 2;
+
+    /// <summary>
+    /// D2.5, D2.6, D2.7 (ruling R11.3): why a vehicle may not attempt ESB, or null. Tracked, moving, once per MPh, not after an ALL entry, not in an
+    /// enemy AFV's Location it could not remain in, and for 1 to a quarter of its printed MP (FRD).
+    /// </summary>
+    public static string? EsbBar(string id, bool tracked, bool moving, Func<bool> attempted, bool afterAll, Func<string?> enemyAfvBar, int? mp, int maximum)
+    {
+        ArgumentNullException.ThrowIfNull(attempted);
+        ArgumentNullException.ThrowIfNull(enemyAfvBar);
+        if (!tracked)
+        {
+            return $"play.move-vehicle-esb: only a tracked vehicle attempts ESB; {id} is a truck (D2.5)";
+        }
+
+        if (!moving)
+        {
+            return $"play.move-vehicle-esb: {id} attempts ESB while moving: after its Start MP, or in Motion (D2.5; ruling R11.3)";
+        }
+
+        if (attempted())
+        {
+            return $"play.move-vehicle-esb: {id} has attempted ESB this MPh (D2.5)";
+        }
+
+        if (afterAll)
+        {
+            return $"play.move-vehicle-esb: {id} made an ALL entry, after which ESB is not allowed (D2.7)";
+        }
+
+        if (enemyAfvBar() is { } blocked)
+        {
+            return "play.move-vehicle-esb: " + blocked;
+        }
+
+        if (mp is not { } value || value < 1 || value > maximum)
+        {
+            return $"play.move-vehicle-esb: ESB seeks from 1 to {maximum} MP for {id}, a quarter of its printed allotment (FRD) (D2.5)";
+        }
+
+        return null;
+    }
+
+    /// <summary>D2.5: the ESB DR's manufacturer DRM, +2 German, +1 Russian, otherwise +3.</summary>
+    public static int EsbNationalDrm(string? nationality) => nationality switch
+    {
+        "german" => 2,
+        "russian" => 1,
+        _ => 3,
+    };
+
+    /// <summary>
+    /// D2.4 (rulings R5.14, R5.17, R11.1): why a moving vehicle may not end in Motion, or null. A halted vehicle may; never in Reverse; a Recalled one
+    /// when it cannot go on along its route; otherwise when under 1 MP is left or the named next hex costs more than it has left.
+    /// </summary>
+    public static string? MotionBar(string id, bool halted, bool reverse, int left, bool mustLeave, Func<bool> recallMayGoOn, string? intended,
+        Func<int?> intendedCost)
+    {
+        ArgumentNullException.ThrowIfNull(recallMayGoOn);
+        ArgumentNullException.ThrowIfNull(intendedCost);
+        if (halted)
+        {
+            return null;
+        }
+
+        if (reverse)
+        {
+            return $"play.vehicle-motion: {id} is moving in Reverse and Stops to end its move, since Reverse Motion is not built (D2.24; ruling R11.1)";
+        }
+
+        if (mustLeave)
+        {
+            return recallMayGoOn()
+                ? $"play.recall-route: {id} is Recalled and has the MP to go on along its route to its Friendly Board Edge (D5.341)"
+                : null;
+        }
+
+        if (left < 2)
+        {
+            return null;
+        }
+
+        if (intended is null)
+        {
+            return $"play.vehicle-motion: {id} has {Mp(left)} MP left, so it Stops (1 MP), moves on, or names the hex it wished to enter next to end in Motion (D2.4)";
+        }
+
+        return intendedCost() is not { } cost
+            ? $"play.vehicle-motion: {intended} is not an ADJACENT hex {id} could enter over reviewed terrain, so it cannot be the next hex it wished to enter (D2.4)"
+            : cost <= left
+                ? $"play.vehicle-motion: {id} has {Mp(left)} MP left, enough to enter {intended} for {Mp(cost)}, so it Stops or moves on (D2.4)"
+                : null;
+    }
+
+    /// <summary>
+    /// D2.1, D2.6, D2.33, D7.1: why a vehicle may not end its move yet, or null: its MP left are already spent, its OVR is unresolved, it may move on
+    /// from an enemy AFV's Location or after a VCA change at its CAFP, or it may not end in Motion.
+    /// </summary>
+    public static string? EndMoveBar(string id, bool ending, string? overrun, bool halted, Func<string?> enemyAfvBar, Func<bool> mayMoveOn, bool straddling,
+        Func<bool> turnedAtCafp, Func<string?> motionBar)
+    {
+        ArgumentNullException.ThrowIfNull(enemyAfvBar);
+        ArgumentNullException.ThrowIfNull(mayMoveOn);
+        ArgumentNullException.ThrowIfNull(turnedAtCafp);
+        ArgumentNullException.ThrowIfNull(motionBar);
+        if (ending)
+        {
+            return "play.end-move: the vehicle has spent its MP left, and its move ends when the DEFENDER passes (D2.1)";
+        }
+
+        if (overrun is { } declared)
+        {
+            return $"play.end-move: {id} resolves its OVR of {declared} first (D7.1)";
+        }
+
+        if (!halted && enemyAfvBar() is { } blocked && mayMoveOn())
+        {
+            return "play.end-move: " + blocked;
+        }
+
+        if (!halted && straddling && turnedAtCafp() && mayMoveOn())
+        {
+            return $"play.end-move: {id} changed its VCA at its CAFP and must move on in Bypass before its move ends (D2.33)";
+        }
+
+        return motionBar();
+    }
+
+    /// <summary>
+    /// D5.2, D5.3, D5.33, D5.34 (ruling R25.8): why an AFV's BU counter may not be placed or removed, or null. An active AFV, its owner's MPh or APh,
+    /// not Stunned or Recalled, not after Prep Fire in the MPh, not while the DEFENDER may fire at its MP, a change, and once per phase.
+    /// </summary>
+    public static string? ButtonUpBar(string id, bool activeAfv, bool ownPhase, bool stunned, bool prepFiredInMph, bool windowOpen, bool already,
+        bool buttonedUp, Func<bool> changedThisPhase)
+    {
+        ArgumentNullException.ThrowIfNull(changedThisPhase);
+        if (!activeAfv)
+        {
+            return "play.button-up: only an AFV's crew buttons up or exposes itself (D5.2, D5.3)";
+        }
+
+        if (!ownPhase)
+        {
+            return "play.button-up: a BU counter is placed or removed only in its owner's MPh or APh (D5.33)";
+        }
+
+        if (stunned)
+        {
+            return $"play.button-up: {id}'s crew is Stunned and stays BU this Player Turn (D5.34)";
+        }
+
+        if (prepFiredInMph)
+        {
+            return $"play.button-up: {id} Prep Fired, so it may not change its CE status this MPh (D5.33)";
+        }
+
+        if (windowOpen)
+        {
+            return "play.button-up: the DEFENDER may still fire at its last MP expenditure (D5.33)";
+        }
+
+        if (already)
+        {
+            return $"play.button-up: {id} is already {(buttonedUp ? "BU" : "CE")}";
+        }
+
+        if (changedThisPhase())
+        {
+            return $"play.button-up: {id}'s BU counter was already placed or removed this phase (D5.33)";
+        }
+
+        return null;
+    }
 }
