@@ -1,4 +1,5 @@
 using LimboDancer.Domains.Asl.Maps.Coordinates;
+using LimboDancer.Domains.Asl.Rules;
 using LimboDancer.Domains.Asl.Units.State;
 
 namespace LimboDancer.Domains.Asl.Play;
@@ -14,13 +15,12 @@ public sealed partial class GamePlanner
 {
     /// <summary>Whether a Location is Concealment Terrain for a vehicle (A12.2; ruling R6.7): grain in season, June to September (B15.6).</summary>
     private bool VehicleConcealmentTerrain(GameState state, BoardLocation at) =>
-        state.ScenarioMonth is >= 6 and <= 9 && ReadLocation(state, at) is { } read && TerrainKey(read) == "grain";
+        ScenarioA1VehicleMovementCalculator.ConcealmentTerrain(state.ScenarioMonth, () => ReadLocation(state, at) is { } read ? TerrainKey(read) : null);
 
     /// <summary>Whether a unit is a Good Order enemy ground unit that can see (A12.2): Good Order Personnel, or a vehicle whose crew is not Stunned or Recalled.</summary>
-    private bool Watching(UnitInstance unit) => unit.Status == InstanceStatus.Active
-        && (LiveFire.IsVehicle(unit) ? !Is(unit, Conditions.Stunned) && !Is(unit, Conditions.Shocked) && !Is(unit, Conditions.UnconfirmedKill) && !Is(unit, Conditions.Recalled) && !Is(unit, Conditions.Abandoned)
-            : vocabulary.IsA(unit.Kind, "asl:personnel") && !Is(unit, Conditions.Broken) && !Is(unit, Conditions.Berserk) && !Is(unit, Conditions.Captured)
-                && !Is(unit, Conditions.Melee));
+    private bool Watching(UnitInstance unit) => ScenarioA1VehicleMovementCalculator.Watching(unit.Status == InstanceStatus.Active, LiveFire.IsVehicle(unit),
+        Is(unit, Conditions.Stunned), Is(unit, Conditions.Shocked), Is(unit, Conditions.UnconfirmedKill), Is(unit, Conditions.Recalled), Is(unit, Conditions.Abandoned),
+        () => vocabulary.IsA(unit.Kind, "asl:personnel"), Is(unit, Conditions.Broken), Is(unit, Conditions.Berserk), Is(unit, Conditions.Captured), Is(unit, Conditions.Melee));
 
     /// <summary>Whether a Good Order enemy ground unit has LOS to a Location, within a range when one is given (A12.2).</summary>
     private bool SeenByEnemy(GameState state, string side, BoardLocation at, int? within)
@@ -62,8 +62,8 @@ public sealed partial class GamePlanner
                 continue;
             }
 
-            if ((vehicle.Id == moving && moved && SeenByEnemy(state, vehicle.Side, at, 16))
-                || (!VehicleConcealmentTerrain(state, at) && SeenByEnemy(state, vehicle.Side, at, null)))
+            if (ScenarioA1VehicleMovementCalculator.ConcealmentLost(vehicle.Id == moving && moved, within => SeenByEnemy(state, vehicle.Side, at, within),
+                () => VehicleConcealmentTerrain(state, at)))
             {
                 lost.Add(vehicle.Id);
             }
