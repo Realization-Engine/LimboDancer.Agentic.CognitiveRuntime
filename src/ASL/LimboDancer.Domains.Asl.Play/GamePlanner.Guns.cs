@@ -32,11 +32,12 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.turn-gun: '{gunId}' is not an active Gun manned by an active unit (C3.22)");
         }
 
-        var friendly = state.Phase is "pfph" or "afph" ? crew.Side == state.PhasingSide : state.Phase == "dfph" && crew.Side != state.PhasingSide;
+        var friendly = ScenarioA1GunCalculator.FriendlyFirePhase(state.Phase, crew.Side == state.PhasingSide);
         var shots = state.OrdnanceShots.FirstOrDefault(item => item.Gun == gun.Id);
-        var marked = new[] { Conditions.Malfunctioned, Conditions.PrepFire, Conditions.FinalFire, Conditions.FirstFire, Conditions.IntensiveFire }.Any(name => Is(gun, name));
-        if (!friendly || Is(crew, Conditions.Broken) || Is(crew, Conditions.Pinned) || Is(crew, "asl:ti") || Is(gun, "asl:ti")
-            || (shots is not null ? !shots.RateOfFireKept : marked) || at.Facing == facing)
+        if (ScenarioA1GunCalculator.TurnGunRefused(friendly, Is(crew, Conditions.Broken), Is(crew, Conditions.Pinned), Is(crew, "asl:ti"), Is(gun, "asl:ti"),
+            shots is not null, shots?.RateOfFireKept ?? false,
+            () => new[] { Conditions.Malfunctioned, Conditions.PrepFire, Conditions.FinalFire, Conditions.FirstFire, Conditions.IntensiveFire }.Any(name => Is(gun, name)),
+            at.Facing == facing))
         {
             return Refused(scope, label, expected,
                 "play.turn-gun: a Gun changes its CA without firing in its side's fire phase, to a new hexspine, while its Good Order, unpinned crew could still fire it (C3.22)");
@@ -55,7 +56,7 @@ public sealed partial class GamePlanner
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events,
             [$"play.turn-gun: {gun.Id} turns to {UnitFacings.Name(facing)} and fires no more this phase (C3.22)"
-                + (state.Phase == "pfph" ? "; it and its crew do not move this Player Turn" : string.Empty)]);
+                + ScenarioA1GunCalculator.TurnGunNote(state.Phase)]);
     }
 
     /// <summary>
@@ -143,15 +144,15 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.hook-stopped: {vehicle.Id} hooks or unhooks a Gun Stopped, and not while another unit moves (C10.11)");
         }
 
-        var cost = (mp + 1) / 2;
-        var spent = vehicle.MfSpent + (vehicle.HalfMfSpent ? 1 : 0);
+        var cost = ScenarioA1GunCalculator.HookCost(mp);
+        var spent = ScenarioA1GunCalculator.MpSpent(vehicle.MfSpent, vehicle.HalfMfSpent);
         if (spent + cost > mp)
         {
             return Refused(scope, label, expected, $"play.hook-mp: {vehicle.Id} has {mp - spent} MP left, and a hook-up costs half its MP, {cost} (C10.11)");
         }
 
         if (state.Find(gunId) is not EquipmentInstance { Status: InstanceStatus.Active, Position: MapPosition gunAt } gun || gunAt.Location != at.Location
-            || OrdnanceReference.Value.Guns.GetValueOrDefault(gun.Definition?.Definition ?? string.Empty) is not { Manhandling: { } manhandling } || towing > manhandling)
+            || OrdnanceReference.Value.Guns.GetValueOrDefault(gun.Definition?.Definition ?? string.Empty) is not { Manhandling: { } manhandling } || !ScenarioA1GunCalculator.Towable(towing, manhandling))
         {
             return Refused(scope, label, expected, $"play.hook-gun: '{gunId}' is not a Gun in {vehicle.Id}'s hex whose M# its T# does not exceed (C10.1)");
         }
@@ -180,11 +181,11 @@ public sealed partial class GamePlanner
         var boards = hook && Flag(arguments, "boards");
         if (hook)
         {
-            var reduction = (gun.Definition is { } caliberType ? FireReference.Value.Definitions.GetValueOrDefault(caliberType.Definition)?.Caliber : null) >= 100 ? 8 : 4;
+            var reduction = ScenarioA1GunCalculator.AmmunitionPp(gun.Definition is { } caliberType ? FireReference.Value.Definitions.GetValueOrDefault(caliberType.Definition)?.Caliber : null);
             var room = (PassengerCapacity(state, vehicle) ?? 0) - reduction;
             UnitInstance[] riding = [.. state.Passengers(vehicle.Id), .. boards ? [crew] : Array.Empty<UnitInstance>()];
             var load = riding.Sum(unit => PassengerPp(state, unit) ?? int.MaxValue / 8);
-            if (riding.Length > 0 && load > room)
+            if (ScenarioA1GunCalculator.Overloaded(riding.Length, load, room))
             {
                 return Refused(scope, label, expected, boards
                     ? $"play.hook-capacity: with {gun.Id}'s ammunition {vehicle.Id} has {Math.Max(0, room)} PP for Passengers, and they would take {load} (C10.13, D6.1)"

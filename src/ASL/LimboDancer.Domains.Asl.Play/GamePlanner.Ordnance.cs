@@ -229,12 +229,11 @@ public sealed partial class GamePlanner
         }
 
         // C3.2: the Covered Arc is the 60-degree wedge on the barrel's hexspine; C5.1: the fewest hexspines turned brings the target in.
-        static double Off(double one, double two) => Math.Abs(((one - two) % 360 + 540) % 360 - 180);
-        var turns = Enumerable.Range(0, 6).Select(step => (Facing: (UnitFacing)(((int)facing + step) % 6), Steps: Math.Min(step, 6 - step)))
-            .Where(item => Off(bearing, (int)item.Facing * 60) <= 30 + 1e-6).OrderBy(item => item.Steps).First();
-        if (tank is not null && !turreted && turns.Steps > 0)
+        var turn = ScenarioA1OrdnanceMapRules.CoveredArcTurn((int)facing, bearing);
+        var turns = (Facing: (UnitFacing)turn.Facing, turn.Steps);
+        if (ScenarioA1OrdnanceMapRules.VcaRefusal(tank?.Id, turreted, turns.Steps) is { } vca)
         {
-            return (null, $"play.ordnance-vca: {tank.Id}'s MA is not in a turret, and pivoting the vehicle to fire is not reviewed (C5.11)");
+            return (null, vca);
         }
 
         // D3.2 (ruling R7.4): the Target Facing is read from the hexside of the target hex the firer's LOS crosses: within 60 degrees of the
@@ -247,18 +246,19 @@ public sealed partial class GamePlanner
                 return (null, $"play.ordnance-facing: {targetVehicle.Id}'s Target Facing is read only on one board not reversed, from a vehicle with a VCA (D3.2)");
             }
 
-            static string Facing(double off) => off <= 60 + 1e-6 ? "front" : off <= 120 + 1e-6 ? "side" : "rear";
             var targetTurreted = OrdnanceReference.Value.Armor.Vehicles.GetValueOrDefault(vehicleTarget.DefinitionId!)?.Turreted == true;
             // D2.32 (ruling R11.2): a vehicle in Bypass has its Target Facing read from the firer's hex, for its turret too.
             var bypassFacing = BypassTargetFacing(state, targetVehicle, from);
+            var (hullFacing, turretFacing) = ScenarioA1OrdnanceMapRules.VehicleTargetFacings(back, (int)hull, targetTurreted, bypassFacing,
+                () => (int?)LiveOrdnance.TurretFacing(state, targetVehicle));
             aimed = vehicleTarget with
             {
-                HullFacing = bypassFacing ?? Facing(Off(back, (int)hull * 60)),
-                TurretFacing = targetTurreted ? bypassFacing ?? (LiveOrdnance.TurretFacing(state, targetVehicle) is { } tca ? Facing(Off(back, (int)tca * 60)) : null) : null,
+                HullFacing = hullFacing,
+                TurretFacing = turretFacing,
             };
         }
 
-        // A12.14, A15.44: a concealed crew that firing reveals is Known when a target's Heat of Battle result is read.
+        // A12.14, A15.44: a concealed crew
         var revealing = HeatOfBattleFacts(state, read);
         var hit = shot.Hit! with
         {
@@ -278,7 +278,7 @@ public sealed partial class GamePlanner
             // C2.6 (ruling R8.7): a Gun fires at another level only if the range is at least the elevation difference; other levels are then
             // undecided in the package until levels come to fire.
             ElevationAllowed = ReadLocation(state, target) is not { } targetRead
-                || Math.Abs(gunRead.Hex.BaseLevel + gunRead.Level.Level - (targetRead.Hex.BaseLevel + targetRead.Level.Level)) is var rise && (rise == 0 || read.Range >= rise),
+                || ScenarioA1OrdnanceMapRules.ElevationAllowed(Math.Abs(gunRead.Hex.BaseLevel + gunRead.Level.Level - (targetRead.Hex.BaseLevel + targetRead.Level.Level)), read.Range),
             Hit = hit,
             VehicleTarget = aimed ?? shot.VehicleTarget,
         };
@@ -332,17 +332,12 @@ public sealed partial class GamePlanner
         }
 
         var latwType = OrdnanceReference.Value.Guns.GetValueOrDefault(shot.Gun!.DefinitionId ?? string.Empty)?.LatwType;
-        var panzerfaust = latwType is "pf" or "psk";
-        var building = firerTerrain is "wooden-building" or "stone-building";
+        var building = ScenarioA1OrdnanceMapRules.IsBuilding(firerTerrain);
 
         // B23.423 (referee, pass 9): no mortar fires from a non-rooftop building Location.
-        if (latwType is null && building)
+        if (ScenarioA1OrdnanceMapRules.SupportWeaponLocationRefusal(latwType, building, firerRead.Level.Level) is { } placed)
         {
-            return (null, "play.ordnance-mortar-building: a mortar does not fire from a building Location (B23.423)");
-        }
-        if (panzerfaust && building && firerRead.Level.Level > 0)
-        {
-            return (null, "play.panzerfaust-backblast: a PF or PSK is not fired from above a building's ground level; Desperation fire is not built (C13.8, C13.81; rulings R9.8, R9.11)");
+            return (null, placed);
         }
 
         OrdnanceVehicleTarget? aimed = null;
@@ -353,15 +348,15 @@ public sealed partial class GamePlanner
                 return (null, $"play.ordnance-facing: {targetVehicle.Id}'s Target Facing is read only on one board not reversed, from a vehicle with a VCA (D3.2)");
             }
 
-            static double Off(double one, double two) => Math.Abs(((one - two) % 360 + 540) % 360 - 180);
-            static string Facing(double off) => off <= 60 + 1e-6 ? "front" : off <= 120 + 1e-6 ? "side" : "rear";
             var targetTurreted = OrdnanceReference.Value.Armor.Vehicles.GetValueOrDefault(vehicleTarget.DefinitionId!)?.Turreted == true;
             // D2.32 (ruling R11.2): a vehicle in Bypass has its Target Facing read from the firer's hex, for its turret too.
             var bypassFacing = BypassTargetFacing(state, targetVehicle, from);
+            var (hullFacing, turretFacing) = ScenarioA1OrdnanceMapRules.VehicleTargetFacings(back, (int)hull, targetTurreted, bypassFacing,
+                () => (int?)LiveOrdnance.TurretFacing(state, targetVehicle));
             aimed = vehicleTarget with
             {
-                HullFacing = bypassFacing ?? Facing(Off(back, (int)hull * 60)),
-                TurretFacing = targetTurreted ? bypassFacing ?? (LiveOrdnance.TurretFacing(state, targetVehicle) is { } tca ? Facing(Off(back, (int)tca * 60)) : null) : null,
+                HullFacing = hullFacing,
+                TurretFacing = turretFacing,
             };
         }
 
@@ -410,7 +405,7 @@ public sealed partial class GamePlanner
                     }
                     : movement with
                     {
-                        OpenGround = shot.Hit!.TargetTerrain == "open-ground" && shot.Hit.Los?.HindranceDrm == 0
+                        OpenGround = ScenarioA1OrdnanceMapRules.OpenGround(shot.Hit!.TargetTerrain, shot.Hit.Los?.HindranceDrm)
                     },
             };
         }
@@ -447,20 +442,10 @@ public sealed partial class GamePlanner
         var history = store.Read(state.Scope)?.Events ?? [];
         var start = history.Select((item, index) => (item, index)).LastOrDefault(pair => pair.item.Payload is PhaseChanged).index;
         var steps = history.Skip(start).Select(item => item.Payload).OfType<VehicleStepped>().Where(step => step.Vehicle == vehicle).ToArray();
-        var halfMp = 0;
-        for (var index = steps.Length - 1; index >= 0; index--)
-        {
-            if (Los(state, firer, steps[index].At) is not { Status: LosStatus.Clear })
-            {
-                return (halfMp + 1) / 2;
-            }
-
-            halfMp += steps[index].HalfMp;
-        }
-
         // C6.15 (table player, pass 8): a vehicle that began its MPh out of the firer's LOS has spent all its MP since in that LOS.
-        var begun = Replay([.. history.Take(start + 1)]).Current?.Location(vehicle)?.Location;
-        return begun is { } origin && Los(state, firer, origin) is not { Status: LosStatus.Clear } ? (halfMp + 1) / 2 : 99;
+        return ScenarioA1OrdnanceMapRules.MpInLos(
+            [.. steps.Select(step => (step.HalfMp, (Func<bool>)(() => Los(state, firer, step.At) is { Status: LosStatus.Clear })))],
+            () => Replay([.. history.Take(start + 1)]).Current?.Location(vehicle)?.Location is { } origin && Los(state, firer, origin) is not { Status: LosStatus.Clear });
     }
 
     /// <summary>
@@ -479,12 +464,12 @@ public sealed partial class GamePlanner
         var definition = OrdnanceReference.Value.Guns.GetValueOrDefault(gun.Definition?.Definition ?? string.Empty);
         var facing = (gun.Position as MapPosition)?.Facing;
         var withinCa = firers.Count > 0 && facing is { } barrel && firers.Any(from => from != target && Bearing(state, target, from) is { } bearing
-            && Math.Abs(((bearing - ((int)barrel * 60)) % 360 + 540) % 360 - 180) <= 30 + 1e-6);
+            && ScenarioA1OrdnanceMapRules.WithinArc(bearing, (int)barrel));
         // C11.5 (referee, pass 8): the gunshield protects only a Good Order crew, never one moving or pushing the Gun under Defensive First Fire.
         var crewKind = crew.Kind == "asl:crew";
         var emplaced = LiveOrdnance.Emplaced(state, gun);
         var moving = state.Phase == "mph" && state.Movement?.Movers.Contains(crew.Id) == true;
-        return new FireGunTarget(gun.Id, gun.Definition?.Definition, crew.Id, emplaced, definition?.GunType is "at" or "inf" && withinCa && crewKind && !moving);
+        return new FireGunTarget(gun.Id, gun.Definition?.Definition, crew.Id, emplaced, ScenarioA1OrdnanceMapRules.Gunshield(definition?.GunType, withinCa, crewKind, moving));
     }
 
     /// <summary>
@@ -510,25 +495,10 @@ public sealed partial class GamePlanner
             return "no LOS";
         }
 
-        if (definition.RangeMaximum is { } maximum && los.Range > maximum)
-        {
-            return $"beyond its range of {maximum} hexes";
-        }
-
-        if (ReadLocation(state, at.Location) is { } gunRead && ReadLocation(state, target) is { } targetRead
-            && Math.Abs(gunRead.Hex.BaseLevel + gunRead.Level.Level - (targetRead.Hex.BaseLevel + targetRead.Level.Level)) is var rise && rise > los.Range)
-        {
-            return $"refused: {rise} levels apart at range {los.Range} (C2.6)";
-        }
-
-        if (Bearing(state, at.Location, target) is not { } bearing)
-        {
-            return $"range {los.Range}; its CA cannot be read here";
-        }
-
-        static double Off(double one, double two) => Math.Abs(((one - two) % 360 + 540) % 360 - 180);
-        var steps = Enumerable.Range(0, 6).Where(step => Off(bearing, (int)facing * 60 + step * 60) <= 30 + 1e-6).Select(step => Math.Min(step, 6 - step)).DefaultIfEmpty(0).Min();
-        return steps == 0 ? $"range {los.Range}, in its CA" : $"range {los.Range}, turn {steps} hexspine(s) (Case A)";
+        return ScenarioA1OrdnanceMapRules.GunTargetStatus(los.Range, definition.RangeMaximum,
+            () => ReadLocation(state, at.Location) is { } gunRead && ReadLocation(state, target) is { } targetRead
+                ? Math.Abs(gunRead.Hex.BaseLevel + gunRead.Level.Level - (targetRead.Hex.BaseLevel + targetRead.Level.Level)) : null,
+            () => Bearing(state, at.Location, target), (int)facing);
     }
 
     /// <summary>Where a Gun, a tank, a SW's possessor, or a PF's firer is.</summary>
@@ -653,12 +623,7 @@ public sealed partial class GamePlanner
         // C13.31, C13.36 (ruling R9.7): a PF Check's Original 6 pins or breaks its firer, or gives Casualty Reduction; so does an Original 12 To Hit DR.
         if (resolution.FirerEffect is { } firerEffect && state.Unit(facts.Crew.UnitId!) is { } shooter)
         {
-            var phaseMarker = facts.Phase switch
-            {
-                "DFPh" => Conditions.FinalFire,
-                "MPh" => Conditions.FirstFire,
-                _ => Conditions.PrepFire,
-            };
+            var phaseMarker = ConditionName(ScenarioA1OrdnanceEventRules.FirerPhaseMarker(facts.Phase));
             foreach (var (type, payload) in FirerEffectEvents(shooter, firerEffect, attemptId, phaseMarker))
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, type, payload, package, null, [recordId]));
@@ -721,12 +686,7 @@ public sealed partial class GamePlanner
 
         // C2.28: the malfunction; A7.1, C2.24: the Gun and its crew carry the fire phase's marker from their first shot; A8.1, C2.241 (ruling R8.1):
         // in the MPh a First Fire counter only once its ROF is spent; C5.6 (ruling R8.2): an Intensive Fire counter beside it.
-        string? marker = facts.Phase switch
-        {
-            "DFPh" => Conditions.FinalFire,
-            "MPh" => gunResult.FireCounter is "first-fire" or "intensive-fire" ? Conditions.FirstFire : null,
-            _ => Conditions.PrepFire,
-        };
+        string? marker = ScenarioA1OrdnanceEventRules.ShotMarker(facts.Phase, gunResult.FireCounter) is { } shotMarker ? ConditionName(shotMarker) : null;
         var gunConditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
 
         // C13.47 (ruling R9.11): a PSK is removed on its X#.
@@ -759,11 +719,7 @@ public sealed partial class GamePlanner
             && rolls.ToHit is [var colored, ..] && state.Location(firingGun.Id) is { } firingAt)
         {
             var nearest = NearestGoodOrderEnemyInLos(state, gunCrew.Side, firingAt.Location);
-            emplacedReveal = nearest is null
-                ? []
-                : (colored >= 5 && nearest <= 16) || (colored == 6 && nearest >= 17)
-                    ? new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [Conditions.Concealed] = ConditionState.False, [Conditions.Hidden] = ConditionState.False }
-                    : new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [Conditions.Concealed] = ConditionState.True, [Conditions.Hidden] = ConditionState.False };
+            emplacedReveal = ConditionChanges(ScenarioA1OrdnanceEventRules.EmplacedReveal(nearest, colored));
             foreach (var (name, value) in emplacedReveal)
             {
                 if (GameState.Condition(firingGun, name) != value)
@@ -858,7 +814,7 @@ public sealed partial class GamePlanner
     private static IEnumerable<(string Type, EventPayload Payload)> KillEvents(GameState state, UnitInstance vehicle, OrdnanceKill kill, string attemptId)
     {
         var at = state.Location(vehicle.Id)?.Location;
-        if (kill.Result is OrdnanceKill.Burn or OrdnanceKill.Eliminated)
+        if (ScenarioA1OrdnanceEventRules.Wrecks(kill.Result))
         {
             var burning = kill.Result == OrdnanceKill.Burn;
             yield return ("vehicle-wrecked", new VehicleWrecked(vehicle.Id, burning));
@@ -875,27 +831,7 @@ public sealed partial class GamePlanner
             yield break;
         }
 
-        var changed = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
-        if (Is(vehicle, Conditions.Concealed) || Is(vehicle, Conditions.Hidden))
-        {
-            changed[Conditions.Concealed] = ConditionState.False;
-            changed[Conditions.Hidden] = ConditionState.False;
-        }
-
-        if (kill.Result == OrdnanceKill.Immobilized)
-        {
-            changed[Conditions.Immobilized] = ConditionState.True;
-            changed[Conditions.Motion] = ConditionState.False;
-        }
-
-        if (kill.Shocked == true)
-        {
-            changed[Conditions.Shocked] = ConditionState.True;
-            changed[Conditions.UnconfirmedKill] = ConditionState.False;
-            changed[Conditions.ButtonedUp] = ConditionState.True;
-            changed[Conditions.Motion] = ConditionState.False;
-        }
-
+        var changed = ConditionChanges(ScenarioA1OrdnanceEventRules.KillConditions(kill, Is(vehicle, Conditions.Concealed) || Is(vehicle, Conditions.Hidden)));
         if (changed.Count > 0)
         {
             yield return ("conditions-changed", new ConditionsChanged(vehicle.Id, changed));
@@ -903,11 +839,7 @@ public sealed partial class GamePlanner
 
         if (kill.Abandoned == true)
         {
-            yield return ("conditions-changed", new ConditionsChanged(vehicle.Id, new Dictionary<string, ConditionState>(StringComparer.Ordinal)
-            {
-                [Conditions.Abandoned] = ConditionState.True,
-                [Conditions.Motion] = ConditionState.False,
-            }));
+            yield return ("conditions-changed", new ConditionsChanged(vehicle.Id, ConditionChanges(ScenarioA1OrdnanceEventRules.AbandonedConditions)));
             if (CrewCounter(vehicle, attemptId) is { } crew)
             {
                 yield return ("instance-created", crew);
@@ -938,14 +870,17 @@ public sealed partial class GamePlanner
             yield break;
         }
 
-        if (unit.Kind == "asl:squad" && unit.Definition is { } squad && ScenarioA1FireReference.HalfSquadOf(squad.Definition) is { } half)
+        string? half = null;
+        var casualty = ScenarioA1OrdnanceEventRules.Casualty(unit.Kind, () => unit.Definition is { } squad && (half = ScenarioA1FireReference.HalfSquadOf(squad.Definition)) is not null,
+            GameState.Condition(unit, Conditions.Wounded) == ConditionState.True);
+        if (casualty == FirerCasualty.HalfSquad)
         {
             // Table player, pass 9: the HS has fired, as its squad had.
             yield return ("lineage", new LineageRecorded(LineageAction.Reduced, [unit.Id],
                 [new NewInstance($"{attemptId}-{unit.Id}", "asl:half-squad", half, unit.Side, unit.Position, null,
                     new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal) { [marker] = ConditionState.True })]));
         }
-        else if (unit.Kind is "asl:leader" or "asl:hero" && GameState.Condition(unit, Conditions.Wounded) != ConditionState.True)
+        else if (casualty == FirerCasualty.Wounded)
         {
             yield return ("conditions-changed", new ConditionsChanged(unit.Id, new Dictionary<string, ConditionState>(StringComparer.Ordinal)
             {

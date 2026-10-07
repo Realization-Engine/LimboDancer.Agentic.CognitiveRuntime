@@ -71,16 +71,14 @@ public sealed partial class GamePlanner
 
         foreach (var unit in movers)
         {
-            var extra = doubleTime ? (unit.MfSpent == 0 && !unit.HalfMfSpent ? 2 : 1) : unit.DoubleTimeMf;
+            var extra = ScenarioA1DemolitionChargeRules.DoubleTimeMf(doubleTime, unit.MfSpent, unit.HalfMfSpent, unit.DoubleTimeMf);
             var exhausted = doubleTime || Is(unit, Conditions.Cx);
             if (MfAllotment(state, unit, extra, exhausted) is not { } allowance || MfAllotment(state, unit, 0, exhausted) is not { } plain)
             {
                 return Refused(scope, label, expected, $"play.move-mf: {unit.Id} has no MF allowance the catalog decides");
             }
 
-            var spent = (unit.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0);
-            var left = (allowance * 2) - spent;
-            if (left < halfMf || (assault && (plain * 2) - spent <= halfMf))
+            if (ScenarioA1DemolitionChargeRules.PlacementShort(allowance, plain, unit.MfSpent, unit.HalfMfSpent, halfMf, assault) is { } left)
             {
                 return Refused(scope, label, expected, $"play.move-mf: {unit.Id} has {left / 2m} MF left, and Placing the DC costs {halfMf / 2m} (A23.3, A4.61)");
             }
@@ -88,7 +86,7 @@ public sealed partial class GamePlanner
 
         // A23.1 (ruling R15.2): the DC's attack is Area Fire when every unit it will attack is concealed at its operable Placement.
         UnitInstance[] there = [.. state.At(target).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side != placer.Side)];
-        var concealed = there.Length > 0 && there.All(unit => Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden) || unit.Kind == UnitKinds.Dummy);
+        var concealed = ScenarioA1DemolitionChargeRules.AllConcealed([.. there.Select(unit => Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden) || unit.Kind == UnitKinds.Dummy)]);
         var step = (current?.Step ?? 0) + 1;
         var package = ScenarioA1FirePackage.Identity.ToString();
         var placement = new DcPlacement(placer.Id, charge.Id, target, doubleTime || Is(placer, Conditions.Cx), concealed);
@@ -166,21 +164,16 @@ public sealed partial class GamePlanner
         }
 
         var phasing = thrower.Side == state.PhasingSide;
-        var firePhase = state.Phase switch
-        {
-            "pfph" or "afph" => phasing,
-            "dfph" => !phasing && !Is(thrower, Conditions.FirstFire),
-            "mph" => !phasing && state.Movement is { WindowOpen: true } window && window.Location == target && !Is(thrower, Conditions.FirstFire)
-                && !Is(thrower, Conditions.FinalFire),
-            _ => false,
-        };
+        var firePhase = ScenarioA1DemolitionChargeRules.ThrowPhase(state.Phase, phasing, () => Is(thrower, Conditions.FirstFire),
+            () => state.Movement is { WindowOpen: true } window && window.Location == target, () => Is(thrower, Conditions.FinalFire));
         if (!firePhase)
         {
             return Refused(scope, label, expected, "play.dc-phase: a DC is Thrown in a friendly fire phase or as Defensive First Fire at the moving stack, never by a unit marked First Fire (A23.6, A23.63)");
         }
 
         // A7.351: a squad that fired its inherent FP alone this phase may still use one SW; any other firer has spent its fire.
-        if (LiveFire.Fired(thrower) && state.Phase != "mph" && !(thrower.Kind == "asl:squad" && state.PhaseFirers.Any(item => item.Unit == thrower.Id && item.Weapon == "0")))
+        if (ScenarioA1DemolitionChargeRules.FiredRefusal(LiveFire.Fired(thrower), state.Phase, thrower.Kind,
+            () => state.PhaseFirers.Any(item => item.Unit == thrower.Id && item.Weapon == "0")))
         {
             return Refused(scope, label, expected, $"play.dc-thrower: {unitId} has fired this phase and Throws no DC (A7.351, A23.6)");
         }
