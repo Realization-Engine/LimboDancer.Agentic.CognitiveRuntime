@@ -29,8 +29,8 @@ public sealed partial class GamePlanner
 
     /// <summary>Whether a vehicle must leave by its Friendly Board Edge: Recalled, with its counter on the Recall; +1 side (D5.341).</summary>
     public static bool MustLeave(UnitInstance vehicle) =>
-        LiveFire.IsVehicle(vehicle) && Is(vehicle, Conditions.Recalled) && Is(vehicle, Conditions.StunRecovery) && !Is(vehicle, Conditions.Immobilized)
-        && !Is(vehicle, Conditions.Abandoned);
+        ScenarioA1RecallCalculator.MustLeave(LiveFire.IsVehicle(vehicle), Is(vehicle, Conditions.Recalled), Is(vehicle, Conditions.StunRecovery), Is(vehicle, Conditions.Immobilized),
+            Is(vehicle, Conditions.Abandoned));
 
     /// <summary>
     /// The directions in which a Location's hex lies on the edge of the map, each with the edge it crosses (<c>top</c>, <c>bottom</c>,
@@ -95,24 +95,13 @@ public sealed partial class GamePlanner
             return null;
         }
 
-        if (terrain == "grain")
-        {
-            if (state.ScenarioMonth is not { } month)
-            {
-                return null;
-            }
-
-            terrain = month is >= 4 and <= 9 ? "grain" : "open-ground";
-        }
-
-        if (!VehicleTerrainHalfMp.TryGetValue((type, terrain), out var halfMp))
+        if (ScenarioA1RecallCalculator.ExitTerrain(terrain, state.ScenarioMonth) is not { } paid || !VehicleTerrainHalfMp.TryGetValue((type, paid), out var halfMp))
         {
             return null;
         }
 
-        return read.Hex.Hexsides.FirstOrDefault(item => item.Side == side)?.Terrain?.IsRoad == true
-            ? (IsAfv(vehicle) && Is(vehicle, Conditions.ButtonedUp) ? 2 : 1)
-            : halfMp;
+        return ScenarioA1RecallCalculator.ExitHalfMp(halfMp, read.Hex.Hexsides.FirstOrDefault(item => item.Side == side)?.Terrain?.IsRoad == true,
+            IsAfv(vehicle) && Is(vehicle, Conditions.ButtonedUp));
     }
 
     /// <summary>
@@ -152,7 +141,7 @@ public sealed partial class GamePlanner
         }
 
         return [.. EdgeSides(state, at.Location).Where(item => (edge is null || item.Edge == edge)
-                && Math.Abs(Math.Abs(((DirectionDegrees(item.Side) - FacingDegrees(facing) + 540) % 360) - 180) - 30) < 1)
+                && ScenarioA1RecallCalculator.ExitWithinVca(DirectionDegrees(item.Side), FacingDegrees(facing)))
             .Select(item => (item.Side, Cost: VehicleExitCost(state, vehicle, at.Location, item.Side))).Where(item => item.Cost is not null)
             .Select(item => new VehicleMove(VehicleStepped.Exit, null, null, item.Side, item.Cost!.Value))];
     }
@@ -220,7 +209,7 @@ public sealed partial class GamePlanner
                     Position = new MapPosition(node.At) { Facing = node.Facing }
                 };
                 exits[node] = cost = EdgeSides(state, node.At).Where(item => item.Edge == edge
-                        && Math.Abs(Math.Abs(((DirectionDegrees(item.Side) - FacingDegrees(node.Facing) + 540) % 360) - 180) - 30) < 1)
+                        && ScenarioA1RecallCalculator.ExitWithinVca(DirectionDegrees(item.Side), FacingDegrees(node.Facing)))
                     .Select(item => VehicleExitCost(state, moved, node.At, item.Side)).OfType<int>().DefaultIfEmpty(int.MaxValue).Min() is var least && least < int.MaxValue
                     ? least : null;
             }
@@ -228,66 +217,12 @@ public sealed partial class GamePlanner
             return cost;
         }
 
-        int? Distance((BoardLocation At, UnitFacing Facing) start, bool lowerBound)
-        {
-            var best = new Dictionary<(BoardLocation, UnitFacing), int> { [start] = 0 };
-            var queue = new PriorityQueue<(BoardLocation, UnitFacing), int>();
-            queue.Enqueue(start, 0);
-            int? goal = null;
-            while (queue.TryDequeue(out var node, out var cost))
-            {
-                if (goal is { } found && cost >= found)
-                {
-                    break;
-                }
-
-                if (cost > best[node])
-                {
-                    continue;
-                }
-
-                if (Exit(node) is { } exit && cost + exit < (goal ?? int.MaxValue))
-                {
-                    goal = cost + exit;
-                }
-
-                foreach (var (move, to, turned) in Moves(node, lowerBound))
-                {
-                    var total = cost + move.HalfMp;
-                    if (total < best.GetValueOrDefault((to, turned), int.MaxValue))
-                    {
-                        best[(to, turned)] = total;
-                        queue.Enqueue((to, turned), total);
-                    }
-                }
-            }
-
-            return goal;
-        }
-
-        var origin = (at.Location, facing);
-        var exact = Distance(origin, lowerBound: false);
-        var lower = Distance(origin, lowerBound: true);
-        if (exact is not { } route || lower < route)
-        {
-            return ([], exact, $"play.recall-route: the shortest route from {at.Location} to the {edge} edge may cross terrain the review does not admit, so {vehicle.Id} may end its move in place (ruling R5.17)");
-        }
-
-        var first = new List<VehicleMove>();
-        if (Exit(origin) is { } here && here == route)
-        {
-            first.AddRange(VehicleExits(state, vehicle, edge).Where(item => item.HalfMp == here));
-        }
-
-        foreach (var (move, to, turned) in Moves(origin, lowerBound: false))
-        {
-            if (Distance((to, turned), lowerBound: false) is { } rest && move.HalfMp + rest == route)
-            {
-                first.Add(move);
-            }
-        }
-
-        return (first, route, null);
+        var (first, route, undecided) = ScenarioA1RecallCalculator.Route<(BoardLocation At, UnitFacing Facing), VehicleMove>((at.Location, facing),
+            (node, lowerBound) => Moves(node, lowerBound).Select(item => (item.Move, item.Move.HalfMp, (item.At, item.Facing))), Exit,
+            here => VehicleExits(state, vehicle, edge).Where(item => item.HalfMp == here));
+        return undecided
+            ? ([], route, $"play.recall-route: the shortest route from {at.Location} to the {edge} edge may cross terrain the review does not admit, so {vehicle.Id} may end its move in place (ruling R5.17)")
+            : (first, route, null);
     }
 
     /// <summary>
