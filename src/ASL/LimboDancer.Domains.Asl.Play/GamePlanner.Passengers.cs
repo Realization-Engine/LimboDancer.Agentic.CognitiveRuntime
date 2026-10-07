@@ -2,6 +2,7 @@ using LimboDancer.Dice;
 using System.Text.Json;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Geometry;
+using LimboDancer.Domains.Asl.Rules;
 using LimboDancer.Domains.Asl.Units.Documents;
 using LimboDancer.Domains.Asl.Units.State;
 
@@ -19,20 +20,15 @@ public sealed partial class GamePlanner
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(vehicle);
-        if (VehicleDefinition(vehicle)?.PassengerCapacity is not { } printed)
-        {
-            return null;
-        }
-
-        return printed - state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == vehicle.Id)
-            .Sum(gun => (gun.Definition is { } reference ? FireReference.Value.Definitions.GetValueOrDefault(reference.Definition)?.Caliber : null) >= 100 ? 8 : 4);
+        return ScenarioA1PassengerCalculator.PassengerCapacity(VehicleDefinition(vehicle)?.PassengerCapacity,
+            state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == vehicle.Id)
+                .Select(gun => gun.Definition is { } reference ? FireReference.Value.Definitions.GetValueOrDefault(reference.Definition)?.Caliber : null));
     }
 
     /// <summary>The PP a unit takes as a Passenger (D6.1): a squad ten, a HS or crew five, a SMC none, plus the SW it carries; null when a SW's PP are not recorded.</summary>
     private int? PassengerPp(GameState state, UnitInstance unit) =>
-        Portage(state, unit) is { } carried
-            ? (vocabulary.IsA(unit.Kind, "asl:squad") ? 10 : vocabulary.IsA(unit.Kind, "asl:half-squad") || vocabulary.IsA(unit.Kind, "asl:crew") ? 5 : 0) + carried.Sum()
-            : null;
+        ScenarioA1PassengerCalculator.PassengerPp(vocabulary.IsA(unit.Kind, "asl:squad"), vocabulary.IsA(unit.Kind, "asl:half-squad") || vocabulary.IsA(unit.Kind, "asl:crew"),
+            Portage(state, unit));
 
     /// <summary>
     /// Why a vehicle may not carry its Passengers with <paramref name="boarding"/> added (D6.1, A5.5, C10.13; ruling R26.2): it has no Passenger capacity,
@@ -40,31 +36,15 @@ public sealed partial class GamePlanner
     /// </summary>
     internal string? CapacityBar(GameState state, UnitInstance vehicle, IEnumerable<UnitInstance> boarding)
     {
-        if (PassengerCapacity(state, vehicle) is not { } capacity)
+        var capacity = PassengerCapacity(state, vehicle);
+        if (capacity is null)
         {
-            return $"{vehicle.Id} carries no Passengers (D6.1)";
+            return ScenarioA1PassengerCalculator.CapacityBar(vehicle.Id, null, null, 0, []);
         }
 
         UnitInstance[] aboard = [.. state.Passengers(vehicle.Id).Concat(boarding).DistinctBy(unit => unit.Id)];
-        if (aboard.Count(unit => vocabulary.IsA(unit.Kind, "asl:smc")) > 4)
-        {
-            return $"more than four SMC would ride {vehicle.Id}; up to four count as zero PP (D6.1, A5.5)";
-        }
-
-        var total = 0;
-        foreach (var unit in aboard)
-        {
-            if (PassengerPp(state, unit) is not { } pp)
-            {
-                return $"the PP of what {unit.Id} carries are not recorded (A4.4)";
-            }
-
-            total += pp;
-        }
-
-        return total > capacity
-            ? $"its Passengers would take {total} PP, and {vehicle.Id} carries {capacity} PP{(capacity < (VehicleDefinition(vehicle)?.PassengerCapacity ?? 0) ? " with its towed Gun's ammunition (C10.13)" : string.Empty)} (D6.1)"
-            : null;
+        return ScenarioA1PassengerCalculator.CapacityBar(vehicle.Id, capacity, VehicleDefinition(vehicle)?.PassengerCapacity, aboard.Count(unit => vocabulary.IsA(unit.Kind, "asl:smc")),
+            aboard.Select(unit => (unit.Id, (Func<int?>)(() => PassengerPp(state, unit)))));
     }
 
     /// <summary>The two VCAs of a vehicle entering across a hexside: its VCA holds the hex it enters, so it faces a hexspine 30 degrees either side of its travel (D2.11).</summary>
@@ -93,7 +73,7 @@ public sealed partial class GamePlanner
 
             var (cost, reason) = VehicleEdgeEntry(state, vehicle, at, crossing.Side, false);
             var bar = EntryHexBar(state, vehicle.Side, at, vehicle: true) ?? reason
-                ?? (cost is { All: false } && cost.HalfMp > PrintedHalfMp(vehicle) ? $"entering {at} costs {Mp(cost.HalfMp)} MP, more than {vehicle.Id}'s allotment" : null);
+                ?? (cost is not null ? ScenarioA1PassengerCalculator.EntryAllotmentBar(vehicle.Id, at.ToString(), cost.HalfMp, cost.All, PrintedHalfMp(vehicle)) : null);
             foreach (var facing in EntryFacings(crossing.Side))
             {
                 options.Add((at, facing, bar is null ? (cost!.All ? PrintedHalfMp(vehicle) : cost.HalfMp) : null, bar));
@@ -247,7 +227,7 @@ public sealed partial class GamePlanner
                 return Refused(scope, label, expected, $"play.load: {unitId}'s MF are not decided by the catalog (A4.1)");
             }
 
-            var left = (allotment * 2) - ((unit.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0)) - 2;
+            var left = ScenarioA1PassengerCalculator.BoardingHalfMfLeft(allotment, unit.MfSpent, unit.HalfMfSpent);
             if (left < 0)
             {
                 return Refused(scope, label, expected, $"play.load: {unitId} has no MF left to board, which costs one (D6.4)");
@@ -263,7 +243,7 @@ public sealed partial class GamePlanner
         }
 
         var printed = PrintedHalfMp(vehicle);
-        var kept = printed * Math.Min(least, 4) / 4;
+        var kept = ScenarioA1PassengerCalculator.LoadKeptHalfMp(printed, least);
         var cost = printed - kept;
         var text = $"play.load: {string.Join(", ", boarding.Select(unit => unit.Id))} board{(boarding.Count == 1 ? "s" : string.Empty)} {id} in {at} for one MF; {id} keeps {Mp(kept)} of its {Mp(printed)} MP (D6.4; ruling R26.2)";
         return VehicleStepPlan(scope, label, attemptId, expected, actor, existing,
@@ -300,19 +280,18 @@ public sealed partial class GamePlanner
 
         var printed = PrintedHalfMp(vehicle);
         var (spent, allotment) = HalfMp(vehicle);
-        if (spent * 4 > printed * 3)
+        if (ScenarioA1PassengerCalculator.UnloadTooLate(spent, printed))
         {
             return Refused(scope, label, expected, $"play.unload: {id} has spent more than three-fourths of its MP, so its Passengers may not unload this MPh (D6.5)");
         }
 
-        var quarter = ((printed / 2) + 3) / 4 * 2;
+        var quarter = ScenarioA1PassengerCalculator.UnloadHalfMp(printed);
         if (spent + quarter > allotment)
         {
             return Refused(scope, label, expected, $"play.unload: unloading costs {id} a quarter of its MP, {Mp(quarter)}, and it has {Mp(Math.Max(0, allotment - spent))} left (D6.5)");
         }
 
-        var before = printed == 0 ? 0 : ((spent * 4) + printed - 1) / printed;
-        var mf = 1 + before;
+        var mf = ScenarioA1PassengerCalculator.UnloadMf(spent, printed);
         var text = $"play.unload: {string.Join(", ", ids)} disembark{(ids.Count == 1 ? "s" : string.Empty)} beneath {id} in {at} for {Mp(quarter)} of its MP; "
             + $"{(ids.Count == 1 ? "it spends" : "each spends")} {mf} MF more"
             + (Is(vehicle, Conditions.PrepFire) ? $" and stays in {at} this MPh, since {id} Prep Fired" : " and may move on with the MF left") + " (D6.5; ruling R26.2)";
