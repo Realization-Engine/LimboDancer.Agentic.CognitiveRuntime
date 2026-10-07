@@ -118,3 +118,6 @@
 
 - Before saying a speed aim is met, measure on the largest saved game, not on the game the report came from.
 - To profile the Studio: cut a game at a revision, time the page with a stopwatch, and sample the Studio with `dotnet-trace` installed in the scratchpad.
+- After an edit tool applies a change, read every changed line of the diff before building. In pass 32.d the editor dropped a line's prefix, a lookup, or half an interpolated string in four of eight commits; the build caught each, but a dropped clause that still compiles would not be caught. Restore on disk and diff again.
+- A move must not change an interpolated text or the cut of a hole. Run `textlist.py` before the build; when it differs, keep the text inline in Play (the Throw summary of pass 32.d moved to Rules and was put back).
+- Line endings are LF: `src/ASL/.gitattributes` sets `text=auto eol=lf`. A file a tool wrote with CRLF shows as modified with no content change (`git diff --ignore-cr-at-eol --quiet` exits 0); never stage it for that alone, and restore it with `git restore` if it blocks a branch switch. Write files with LF and a UTF-8 encoding without a BOM.
