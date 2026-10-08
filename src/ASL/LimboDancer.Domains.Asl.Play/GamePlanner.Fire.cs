@@ -1018,6 +1018,7 @@ public sealed partial class GamePlanner
         UnitCondition.UnconfirmedKill => Conditions.UnconfirmedKill,
         UnitCondition.ButtonedUp => Conditions.ButtonedUp,
         UnitCondition.Abandoned => Conditions.Abandoned,
+        UnitCondition.Disabled => Conditions.Disabled,
         _ => Conditions.CmgMalfunctioned,
     };
 

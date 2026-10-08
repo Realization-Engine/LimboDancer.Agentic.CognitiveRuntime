@@ -1192,12 +1192,13 @@ public static class GameProjector
         /// </summary>
         private GameState? Surrender(GameState state, SurrenderPending surrender, string eventId)
         {
-            if (Active(state, surrender.Unit) is not UnitInstance unit || GameState.Condition(unit, Conditions.Broken) != ConditionState.True
-                || GameState.Condition(unit, Conditions.Captured) == ConditionState.True || surrender.Captors.Count == 0
-                || surrender.Captors.Any(id => state.Unit(id) is not { Status: InstanceStatus.Active } captor || captor.Side == unit.Side)
-                || state.PendingSurrenders.Any(item => item.Unit == unit.Id))
+            if (Active(state, surrender.Unit) is not UnitInstance unit || !Rules.ScenarioA1RoutRallyProjection.SurrenderAllowed(GameState.Condition(unit, Conditions.Broken) == ConditionState.True,
+                GameState.Condition(unit, Conditions.Captured) == ConditionState.True, surrender.Captors.Count,
+                surrender.Captors.Select(id => state.Unit(id) is { Status: InstanceStatus.Active } captor ? (true, captor.Side != unit.Side) : (false, false)),
+                () => state.PendingSurrenders.Any(item => item.Unit == unit.Id)))
             {
-                return Fail<GameState>("UNIT-STATE-031", "A surrender names a broken unit and the enemy units it may surrender to (A15.5).");
+                var refused = Rules.ScenarioA1RoutRallyProjection.SurrenderRefusal();
+                return Fail<GameState>(refused.Code, refused.Text);
             }
 
             return state with
@@ -1333,7 +1334,8 @@ public static class GameProjector
         {
             if (state.PendingSurrenders.FirstOrDefault(item => item.Unit == rejected.Unit) is not { } pending || Active(state, pending.Unit) is not UnitInstance unit)
             {
-                return Fail<GameState>("UNIT-STATE-031", $"'{rejected.Unit}' has no pending surrender to reject (A20.3).");
+                var refused = Rules.ScenarioA1RoutRallyProjection.RejectSurrenderRefusal(rejected.Unit);
+                return Fail<GameState>(refused.Code, refused.Text);
             }
 
             var next = Eliminate(state with
@@ -1342,7 +1344,7 @@ public static class GameProjector
             }, unit.Id);
             return next is null ? null : next with
             {
-                NoQuarter = next.NoQuarter.Contains(unit.Side, StringComparer.Ordinal) ? next.NoQuarter : [.. next.NoQuarter, unit.Side],
+                NoQuarter = Rules.ScenarioA1RoutRallyProjection.NoQuarterAfter(next.NoQuarter, unit.Side),
             };
         }
 
@@ -1355,25 +1357,26 @@ public static class GameProjector
         {
             var units = massacre.Units.Select(state.Unit).ToArray();
             var prisoners = massacre.Prisoners.Select(state.Unit).ToArray();
-            if (units.Length == 0 || prisoners.Length == 0 || units.Any(unit => unit is not { Status: InstanceStatus.Active })
-                || prisoners.Any(unit => unit is not { Status: InstanceStatus.Active }))
+            if (!Rules.ScenarioA1RoutRallyProjection.MassacreNamesActive(units.Length, prisoners.Length, units.All(unit => unit is { Status: InstanceStatus.Active }),
+                prisoners.All(unit => unit is { Status: InstanceStatus.Active })))
             {
-                return Fail<GameState>("UNIT-STATE-036", "A Massacre names active units and the active prisoners they eliminate (A20.4).");
+                var refused = Rules.ScenarioA1RoutRallyProjection.MassacreNamesRefusal();
+                return Fail<GameState>(refused.Code, refused.Text);
             }
 
             var side = units[0]!.Side;
             var at = state.Location(units[0]!.Id)?.Location;
-            var firePhase = state.Phase is "pfph" or "afph" ? state.PhasingSide == side : state.Phase == "dfph" && state.PhasingSide != side;
+            var firePhase = Rules.ScenarioA1RoutRallyProjection.MassacreFirePhase(state.Phase, state.PhasingSide == side);
             string Nationality(UnitInstance unit) => unit.Definition is { } reference ? catalog?.Definition(reference.Definition)?.Nationality ?? string.Empty : string.Empty;
             if (!firePhase || at is null
-                || units.Any(unit => unit!.Side != side || state.Location(unit.Id)?.Location != at || !vocabulary.IsA(unit.Kind, "asl:personnel")
-                    || GameState.Condition(unit, Conditions.Melee) == ConditionState.True || GameState.Condition(unit, Conditions.Captured) == ConditionState.True
-                    || (massacre.Berserk ? GameState.Condition(unit, Conditions.Berserk) != ConditionState.True
-                        : GameState.Condition(unit, Conditions.Berserk) != ConditionState.True && Nationality(unit) != "russian"))
-                || prisoners.Any(unit => unit!.Side == side || GameState.Condition(unit, Conditions.Captured) != ConditionState.True || state.Location(unit.Id)?.Location != at))
+                || units.Any(unit => !Rules.ScenarioA1RoutRallyProjection.MassacreUnitAllowed(unit!.Side == side, state.Location(unit.Id)?.Location == at, vocabulary.IsA(unit.Kind, "asl:personnel"),
+                    GameState.Condition(unit, Conditions.Melee) == ConditionState.True, GameState.Condition(unit, Conditions.Captured) == ConditionState.True, massacre.Berserk,
+                    GameState.Condition(unit, Conditions.Berserk) == ConditionState.True, () => Nationality(unit)))
+                || prisoners.Any(unit => !Rules.ScenarioA1RoutRallyProjection.MassacrePrisonerAllowed(unit!.Side == side, GameState.Condition(unit, Conditions.Captured) == ConditionState.True,
+                    state.Location(unit.Id)?.Location == at)))
             {
-                return Fail<GameState>("UNIT-STATE-036",
-                    "Only Russian or berserk Infantry not in Melee massacre the prisoners in their Location, in a fire phase of their own side (A20.4).");
+                var refused = Rules.ScenarioA1RoutRallyProjection.MassacreRefusal();
+                return Fail<GameState>(refused.Code, refused.Text);
             }
 
             GameState? next = state;
@@ -1386,7 +1389,7 @@ public static class GameProjector
                 }
             }
 
-            if (massacre.Berserk)
+            if (Rules.ScenarioA1RoutRallyProjection.MassacreEndsBerserk(massacre.Berserk))
             {
                 foreach (var unit in units)
                 {
@@ -1399,16 +1402,16 @@ public static class GameProjector
             }
 
             var victims = prisoners[0]!.Side;
-            var raise = !next!.MassacreElrRaised.Contains(victims, StringComparer.Ordinal);
+            var raise = Rules.ScenarioA1RoutRallyProjection.MassacreRaisesElr(next!.MassacreElrRaised.Contains(victims, StringComparer.Ordinal));
             return next with
             {
-                NoQuarter = next.NoQuarter.Contains(victims, StringComparer.Ordinal) ? next.NoQuarter : [.. next.NoQuarter, victims],
+                NoQuarter = Rules.ScenarioA1RoutRallyProjection.NoQuarterAfter(next.NoQuarter, victims),
                 MassacreElrRaised = raise ? [.. next.MassacreElrRaised, victims] : next.MassacreElrRaised,
                 // A20.4: the ELR of every OB group of the massacred side rises too (ruling R18.3).
                 Sides = raise ? [.. next.Sides.Select(item => item.Id != victims ? item : item with
                 {
-                    Elr = item.Elr is { } elr ? Math.Min(elr + 1, 6) : null,
-                    Groups = [.. item.Groups.Select(group => group.Elr is { } groupElr ? group with { Elr = Math.Min(groupElr + 1, 6) } : group)],
+                    Elr = Rules.ScenarioA1RoutRallyProjection.MassacreRaisedElr(item.Elr),
+                    Groups = [.. item.Groups.Select(group => group.Elr is { } groupElr ? group with { Elr = Rules.ScenarioA1RoutRallyProjection.MassacreRaisedElr(groupElr) } : group)],
                 })] : next.Sides,
             };
         }
@@ -1617,14 +1620,15 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-023", $"The Rally record's roll '{missing}' is not recorded before it.");
             }
 
-            if (state.Phase != "rph" || Active(state, rally.Unit) is not UnitInstance unit)
+            if (!Rules.ScenarioA1RoutRallyProjection.RallyPhase(state.Phase) || Active(state, rally.Unit) is not UnitInstance unit)
             {
-                return Fail<GameState>("UNIT-STATE-027", "A Rally attempt is made in the RPh by an active unit (A10.6).");
+                var refused = Rules.ScenarioA1RoutRallyProjection.RallyRefusal();
+                return Fail<GameState>(refused.Code, refused.Text);
             }
 
-            if (state.RallyAttemptsThisPlayerTurn.Contains(unit.Id) || state.RepairsThisPhase.Contains(unit.Id))
+            if (Rules.ScenarioA1RoutRallyProjection.VerifyRallyOnce(unit.Id, state.RallyAttemptsThisPlayerTurn.Contains(unit.Id), state.RepairsThisPhase.Contains(unit.Id)) is { } once)
             {
-                return Fail<GameState>("UNIT-STATE-027", $"'{unit.Id}' already attempted to rally this Player Turn, or to repair this RPh (A10.6, A3.1).");
+                return Fail<GameState>(once.Code, once.Text);
             }
 
             if (rallyVerifier.Verify(state, rally, rolls) is { } reason)
@@ -1642,7 +1646,7 @@ public static class GameProjector
                 ChoicesMade = new Dictionary<string, string>(StringComparer.Ordinal)
             };
 
-            var mmc = vocabulary.IsA(unit.Kind, "asl:mmc") && unit.Side == state.PhasingSide && !state.FirstMmcRallyTaken.Contains(unit.Side);
+            var mmc = Rules.ScenarioA1RoutRallyProjection.TakesFirstMmcRally(vocabulary.IsA(unit.Kind, "asl:mmc"), unit.Side == state.PhasingSide, state.FirstMmcRallyTaken.Contains(unit.Side));
             return state with
             {
                 RallyAttemptsThisPlayerTurn = [.. state.RallyAttemptsThisPlayerTurn, unit.Id],
@@ -1758,11 +1762,12 @@ public static class GameProjector
         private GameState? ShockRecovery(GameState state, ShockRecoveryRolled shock)
         {
             // C7.42 (ruling R7.8): one dr per RPh for a Shocked AFV or an Unconfirmed Kill.
-            if (state.Phase != "rph" || Active(state, shock.Vehicle) is not UnitInstance vehicle || !vocabulary.IsA(vehicle.Kind, "asl:vehicle")
-                || state.ShockRollsThisPhase.Contains(vehicle.Id)
-                || (GameState.Condition(vehicle, Conditions.Shocked) != ConditionState.True && GameState.Condition(vehicle, Conditions.UnconfirmedKill) != ConditionState.True))
+            if (!Rules.ScenarioA1RallyRules.ShockRollPhase(state.Phase) || Active(state, shock.Vehicle) is not UnitInstance vehicle
+                || !Rules.ScenarioA1RoutRallyProjection.ShockRecoveryAllowed(vocabulary.IsA(vehicle.Kind, "asl:vehicle"), state.ShockRollsThisPhase.Contains(vehicle.Id),
+                    GameState.Condition(vehicle, Conditions.Shocked) == ConditionState.True, GameState.Condition(vehicle, Conditions.UnconfirmedKill) == ConditionState.True))
             {
-                return Fail<GameState>("UNIT-STATE-038", "A Shocked AFV or an Unconfirmed Kill makes one dr in the RPh (C7.42).");
+                var refused = Rules.ScenarioA1RoutRallyProjection.ShockRecoveryRefusal();
+                return Fail<GameState>(refused.Code, refused.Text);
             }
 
             if (!rolls.TryGetValue(shock.Roll, out var roll) || roll.Count != 1 || roll.Sides != 6)
@@ -1771,9 +1776,10 @@ public static class GameProjector
             }
 
             var unconfirmed = GameState.Condition(vehicle, Conditions.UnconfirmedKill) == ConditionState.True;
-            if (shock.Result != ShockRecoveryRolled.For(unconfirmed, roll.Values[0]))
+            if (!Rules.ScenarioA1RoutRallyProjection.ShockRecoveryAgrees(shock.Result, unconfirmed, roll.Values[0]))
             {
-                return Fail<GameState>("UNIT-STATE-038", "The Shock recovery record disagrees with its dr (C7.42).");
+                var disagrees = Rules.ScenarioA1RoutRallyProjection.ShockRecoveryDisagrees();
+                return Fail<GameState>(disagrees.Code, disagrees.Text);
             }
 
             return state with
@@ -1788,13 +1794,14 @@ public static class GameProjector
             // disables it.
             if (repair.Unit == repair.Equipment && Active(state, repair.Unit) is UnitInstance vehicle && vocabulary.IsA(vehicle.Kind, "asl:vehicle"))
             {
-                if (state.Phase != "rph" || GameState.Condition(vehicle, Conditions.Malfunctioned) != ConditionState.True
-                    || GameState.Condition(vehicle, Conditions.Disabled) == ConditionState.True || GameState.Condition(vehicle, Conditions.ButtonedUp) == ConditionState.True
-                    || GameState.Condition(vehicle, Conditions.Stunned) == ConditionState.True || GameState.Condition(vehicle, Conditions.Recalled) == ConditionState.True
-                    || GameState.Condition(vehicle, Conditions.Shocked) == ConditionState.True || GameState.Condition(vehicle, Conditions.UnconfirmedKill) == ConditionState.True
-                    || state.RepairsThisPhase.Contains(vehicle.Id))
+                if (!Rules.ScenarioA1RoutRallyProjection.VehicleRepairAllowedAsRecorded(state.Phase, GameState.Condition(vehicle, Conditions.Malfunctioned) == ConditionState.True,
+                    GameState.Condition(vehicle, Conditions.Disabled) == ConditionState.True, GameState.Condition(vehicle, Conditions.ButtonedUp) == ConditionState.True,
+                    GameState.Condition(vehicle, Conditions.Stunned) == ConditionState.True, GameState.Condition(vehicle, Conditions.Recalled) == ConditionState.True,
+                    GameState.Condition(vehicle, Conditions.Shocked) == ConditionState.True, GameState.Condition(vehicle, Conditions.UnconfirmedKill) == ConditionState.True,
+                    state.RepairsThisPhase.Contains(vehicle.Id)))
                 {
-                    return Fail<GameState>("UNIT-STATE-028", "A vehicle's malfunctioned MG is repaired once per RPh by its CE crew that is not Stunned or Recalled (D3.7).");
+                    var refused = Rules.ScenarioA1RoutRallyProjection.VehicleRepairRefusal();
+                    return Fail<GameState>(refused.Code, refused.Text);
                 }
 
                 if (!rolls.TryGetValue(repair.Roll, out var vehicleRoll) || vehicleRoll.Count != 1 || vehicleRoll.Sides != 6)
@@ -1803,10 +1810,11 @@ public static class GameProjector
                 }
 
                 var vehicleDr = vehicleRoll.Values[0];
-                var vehicleResult = vehicleDr == 6 ? RepairAttempted.Eliminated : vehicleDr == 1 ? RepairAttempted.Repaired : RepairAttempted.NoChange;
-                if (repair.RepairNumber != 1 || repair.Result != vehicleResult)
+                var vehicleResult = RepairResult(Rules.ScenarioA1RallyRules.VehicleMgRepairResult(vehicleDr));
+                if (!Rules.ScenarioA1RoutRallyProjection.VehicleRepairRecordAgrees(repair.RepairNumber, repair.Result == vehicleResult))
                 {
-                    return Fail<GameState>("UNIT-STATE-028", "The Repair record disagrees with the vehicle MG's dr (D3.7).");
+                    var disagrees = Rules.ScenarioA1RoutRallyProjection.VehicleRepairDisagrees();
+                    return Fail<GameState>(disagrees.Code, disagrees.Text);
                 }
 
                 return state with
@@ -1815,17 +1823,18 @@ public static class GameProjector
                 };
             }
 
-            if (state.Phase != "rph" || Active(state, repair.Unit) is not UnitInstance unit
+            if (!Rules.ScenarioA1RoutRallyProjection.SwRepairPhase(state.Phase) || Active(state, repair.Unit) is not UnitInstance unit
                 || Active(state, repair.Equipment) is not EquipmentInstance { Holding: { Role: HoldingRole.Possessed } holding } equipment
-                || holding.Holder != unit.Id || GameState.Condition(equipment, Conditions.Malfunctioned) != ConditionState.True)
+                || !Rules.ScenarioA1RallyRules.SwRepairWeaponAllowed(holding.Holder == unit.Id, GameState.Condition(equipment, Conditions.Malfunctioned) == ConditionState.True))
             {
-                return Fail<GameState>("UNIT-STATE-028", "A Repair is attempted in the RPh on a malfunctioned SW its unit possesses (A9.72).");
+                var refused = Rules.ScenarioA1RoutRallyProjection.SwRepairRefusal();
+                return Fail<GameState>(refused.Code, refused.Text);
             }
 
             // A3.1: a unit takes one kind of action in the RPh, so one that attempted to rally does not also repair.
-            if (state.RallyAttemptsThisPlayerTurn.Contains(unit.Id))
+            if (Rules.ScenarioA1RoutRallyProjection.VerifySwRepairOnce(unit.Id, state.RallyAttemptsThisPlayerTurn.Contains(unit.Id)) is { } once)
             {
-                return Fail<GameState>("UNIT-STATE-028", $"'{unit.Id}' attempted to rally this RPh, so it may not also repair (A3.1).");
+                return Fail<GameState>(once.Code, once.Text);
             }
 
             if (!rolls.TryGetValue(repair.Roll, out var roll) || roll.Count != 1 || roll.Sides != 6)
@@ -1837,10 +1846,11 @@ public static class GameProjector
                 ? definition.Printed("malfunctioned", "asl:repair")?.Value?.Number
                 : null;
             var dr = roll.Values[0];
-            var expected = dr == 6 ? RepairAttempted.Eliminated : dr <= repair.RepairNumber ? RepairAttempted.Repaired : RepairAttempted.NoChange;
-            if (printed != repair.RepairNumber || repair.Result != expected)
+            var expected = RepairResult(Rules.ScenarioA1RallyRules.SwRepairResult(dr, repair.RepairNumber));
+            if (!Rules.ScenarioA1RoutRallyProjection.SwRepairRecordAgrees(printed, repair.RepairNumber, repair.Result == expected))
             {
-                return Fail<GameState>("UNIT-STATE-028", "The Repair record disagrees with the SW's Repair Number or its dr (A9.72).");
+                var disagrees = Rules.ScenarioA1RoutRallyProjection.SwRepairDisagrees();
+                return Fail<GameState>(disagrees.Code, disagrees.Text);
             }
 
             return state with
@@ -2343,20 +2353,21 @@ public static class GameProjector
         /// </summary>
         private GameState? Rout(GameState state, RoutStepped routed)
         {
-            if (state.Phase != "rtph" || Active(state, routed.Unit) is not UnitInstance unit || GameState.Condition(unit, Conditions.Broken) != ConditionState.True
-                || GameState.Condition(unit, Conditions.Melee) == ConditionState.True || GameState.Condition(unit, Conditions.Pinned) == ConditionState.True
-                || routed.HalfMf < 0 || (!routed.LowCrawl && (unit.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0) + routed.HalfMf > RoutHalfMf(unit))
-                || (routed.LowCrawl && state.RoutedThisPhase.Contains(unit.Id, StringComparer.Ordinal)))
+            if (!Rules.ScenarioA1RoutRallyProjection.RoutPhase(state.Phase) || Active(state, routed.Unit) is not UnitInstance unit
+                || !Rules.ScenarioA1RoutRallyProjection.RoutStepAllowed(GameState.Condition(unit, Conditions.Broken) == ConditionState.True, GameState.Condition(unit, Conditions.Melee) == ConditionState.True,
+                    GameState.Condition(unit, Conditions.Pinned) == ConditionState.True, routed.HalfMf, routed.LowCrawl, unit.MfSpent, unit.HalfMfSpent, RoutHalfMf(unit),
+                    state.RoutedThisPhase.Contains(unit.Id, StringComparer.Ordinal)))
             {
-                return Fail<GameState>("UNIT-STATE-041", "A rout step moves a broken unit not in Melee or pinned in the RtPh, within its MF (A10.5, A10.52).");
+                var refused = Rules.ScenarioA1RoutRallyProjection.RoutStepRefusal();
+                return Fail<GameState>(refused.Code, refused.Text);
             }
 
-            var spent = unit.MfSpent * 2 + (unit.HalfMfSpent ? 1 : 0) + routed.HalfMf;
+            var (mfSpent, halfMfSpent) = Rules.ScenarioA1RoutRallyProjection.RoutMfSpent(unit.MfSpent, unit.HalfMfSpent, routed.HalfMf);
             return Replace(state, unit with
             {
                 Position = new MapPosition(routed.To),
-                MfSpent = spent / 2,
-                HalfMfSpent = spent % 2 == 1,
+                MfSpent = mfSpent,
+                HalfMfSpent = halfMfSpent,
             }) is { } routedTo ? MovePrisoners(routedTo, unit.Id, new MapPosition(routed.To)) is var moved ? moved with
             {
                 RoutedThisPhase = moved.RoutedThisPhase.Contains(unit.Id, StringComparer.Ordinal) ? moved.RoutedThisPhase : [.. moved.RoutedThisPhase, unit.Id],
@@ -2365,16 +2376,26 @@ public static class GameProjector
 
         /// <summary>A10.5: a broken unit has six MF in the RtPh, a wounded SMC three.</summary>
         private static int RoutHalfMf(UnitInstance unit) =>
-            unit.Kind is "asl:leader" or "asl:hero" && GameState.Condition(unit, Conditions.Wounded) == ConditionState.True ? 6 : 12;
+            Rules.ScenarioA1RoutRallyProjection.RoutHalfMfAsRecorded(unit.Kind is "asl:leader" or "asl:hero", GameState.Condition(unit, Conditions.Wounded) == ConditionState.True);
+
+        /// <summary>A Repair outcome of Rules as the record names it.</summary>
+        private static string RepairResult(Rules.RepairOutcome outcome) => outcome switch
+        {
+            Rules.RepairOutcome.Eliminated => RepairAttempted.Eliminated,
+            Rules.RepairOutcome.Repaired => RepairAttempted.Repaired,
+            _ => RepairAttempted.NoChange,
+        };
 
         /// <summary>An Interdiction NMC (A10.53; ruling R13.3): in the RtPh, on a routing unit, its DR agreeing with its result.</summary>
         private GameState? Interdict(GameState state, RoutInterdicted interdicted)
         {
-            if (state.Phase != "rtph" || Active(state, interdicted.Unit) is not UnitInstance || !state.RoutedThisPhase.Contains(interdicted.Unit, StringComparer.Ordinal)
+            if (!Rules.ScenarioA1RoutRallyProjection.RoutPhase(state.Phase) || Active(state, interdicted.Unit) is not UnitInstance
+                || !Rules.ScenarioA1RoutRallyProjection.InterdictionByRoutingUnit(state.RoutedThisPhase.Contains(interdicted.Unit, StringComparer.Ordinal))
                 || !rolls.TryGetValue(interdicted.Roll, out var roll) || roll.Count != 2 || roll.Sides != 6
-                || RoutInterdicted.For(roll.Values[0] + roll.Values[1], roll.Values[0] + roll.Values[1] + interdicted.Drm, interdicted.Morale) != interdicted.Result)
+                || !Rules.ScenarioA1RoutRallyProjection.InterdictionAgrees(roll.Values[0], roll.Values[1], interdicted.Drm, interdicted.Morale, interdicted.Result))
             {
-                return Fail<GameState>("UNIT-STATE-041", "An Interdiction NMC is taken by a routing unit, and its result agrees with its DR (A10.53).");
+                var refused = Rules.ScenarioA1RoutRallyProjection.InterdictionRefusal();
+                return Fail<GameState>(refused.Code, refused.Text);
             }
 
             return state;

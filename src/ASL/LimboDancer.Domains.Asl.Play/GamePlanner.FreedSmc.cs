@@ -1,3 +1,4 @@
+using LimboDancer.Domains.Asl.Rules;
 using LimboDancer.Domains.Asl.Units.State;
 
 namespace LimboDancer.Domains.Asl.Play;
@@ -12,8 +13,8 @@ public sealed partial class GamePlanner
 {
     /// <summary>The SMC that are free (not prisoners) and still Unarmed.</summary>
     private UnitInstance[] FreedUnarmedSmc(GameState state) =>
-        [.. state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Custodian is null && vocabulary.IsA(unit.Kind, "asl:smc")
-            && Is(unit, Conditions.Unarmed) && !Is(unit, Conditions.Captured)).OrderBy(unit => unit.Id, StringComparer.Ordinal)];
+        [.. state.Units.Where(unit => ScenarioA1RoutCalculator.FreedUnarmedSmc(unit.Status == InstanceStatus.Active, unit.Custodian is null, vocabulary.IsA(unit.Kind, "asl:smc"),
+            Is(unit, Conditions.Unarmed), Is(unit, Conditions.Captured))).OrderBy(unit => unit.Id, StringComparer.Ordinal)];
 
     private void AddArmedSmc(GameScope scope, string attemptId, long expected, GameState state, List<GameEvent> events)
     {
@@ -41,7 +42,8 @@ public sealed partial class GamePlanner
                     Build = draw =>
                     {
                         var events = roll.Build(draw).ToList();
-                        if (events.Count > 0 && events[^1].Payload is not (GameEnded or ChoicePending or SurrenderPending) && Replay([.. existing, .. events]) is { HasErrors: false, Current: { } rolled })
+                        if (ScenarioA1RoutCalculator.ArmsFreedSmc(events.Count, events.Count > 0 && events[^1].Payload is GameEnded or ChoicePending or SurrenderPending)
+                            && Replay([.. existing, .. events]) is { HasErrors: false, Current: { } rolled })
                         {
                             AddArmedSmc(scope, attemptId, expected, rolled, events);
                         }
@@ -52,8 +54,8 @@ public sealed partial class GamePlanner
             };
         }
 
-        if (plan.Events.Count == 0 || plan.Events[^1].Payload is GameEnded or ChoicePending or SurrenderPending || Replay([.. existing, .. plan.Events]) is not { HasErrors: false, Current: { } after }
-            || FreedUnarmedSmc(after) is not { Length: > 0 } freed)
+        if (!ScenarioA1RoutCalculator.ArmsFreedSmc(plan.Events.Count, plan.Events.Count > 0 && plan.Events[^1].Payload is GameEnded or ChoicePending or SurrenderPending)
+            || Replay([.. existing, .. plan.Events]) is not { HasErrors: false, Current: { } after } || FreedUnarmedSmc(after) is not { Length: > 0 } freed)
         {
             return plan;
         }
@@ -63,7 +65,7 @@ public sealed partial class GamePlanner
         return plan with
         {
             Events = armed,
-            Reasons = [.. plan.Reasons, $"play.smc-armed: {string.Join(", ", freed.Select(unit => unit.Id))} {(freed.Length == 1 ? "is" : "are")} free and so Armed again (A20.551; ruling R31.8)"],
+            Reasons = [.. plan.Reasons, ScenarioA1RoutCalculator.SmcArmedReason([.. freed.Select(unit => unit.Id)])],
         };
     }
 }
