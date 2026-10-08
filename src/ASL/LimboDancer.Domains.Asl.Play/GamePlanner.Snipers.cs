@@ -12,14 +12,15 @@ namespace LimboDancer.Domains.Asl.Play;
 /// other side's SAN calls for that side's Sniper attack, in the order the DRs were made, resolved in the same commit (A14.1). The Sniper dr decides it (1 or 2;
 /// A14.3); a Random Location DR from the Sniper counter's hex finds the target hex, or the closest hex holding an eligible target, ties to the lowest TEM and then
 /// the first hex by name (A14.2, A14.21); the Location there with the most targets is attacked, and Random Selection picks among them, a concealed stack
-/// counting as one (A14.23). The Sniper player never forfeits an attack, so never repositions (backlog).
+/// counting as one (A14.23). The Sniper player never forfeits an attack, so never repositions (backlog). The rules are <see cref="ScenarioA1Sniper"/>'s
+/// (pass 32.h); this file reads the records, the state, and the map, draws the dice, and writes the events.
 /// </summary>
 public sealed partial class GamePlanner
 {
     private void AddSniperAttacks(GameScope scope, string attemptId, long expected, string actor, IReadOnlyList<GameEvent> existing, List<GameEvent> events,
         Func<RollRequest, RollResult> draw)
     {
-        if (events.Any(item => item.Payload is ChoicePending) || Replay(existing).Current is not { Phase: "pfph" or "mph" or "dfph" or "afph" } before)
+        if (events.Any(item => item.Payload is ChoicePending) || Replay(existing).Current is not { } before || !ScenarioA1Sniper.TriggerPhase(before.Phase))
         {
             return;
         }
@@ -38,25 +39,14 @@ public sealed partial class GamePlanner
                     continue;
                 }
 
-                var split = key.IndexOf(':', StringComparison.Ordinal);
-                var (kind, unitId) = split < 0 ? (key, string.Empty) : (key[..split], key[(split + 1)..]);
+                var (kind, unitId) = ScenarioA1Sniper.RollKey(key);
 
-                // Pass 31 (ruling R31.5): a unit's second Leader Loss check in an attack is keyed "<unit>#2"; it is the same unit's DR.
-                if (unitId.IndexOf('#', StringComparison.Ordinal) is var numbered and > 0)
-                {
-                    unitId = unitId[..numbered];
-                }
-
-                // A14.1: an IFT DR is its firing side's; a MC or TC DR (a check, a leader loss check, a berserk NTC, a crew's) its unit's, never a prisoner's.
-                var maker = kind switch
-                {
-                    "attack" => firingSide,
-                    "checks" or "leaderLoss" or "berserkCheck" or "crewCheck" when before.Unit(unitId) is { } checker && !Is(checker, Conditions.Captured) => checker.Side,
-                    _ => null,
-                };
+                // A14.1: an IFT DR is its firing side's; a MC or TC DR its unit's, never a prisoner's (Rules decides, pass 32.h).
+                var maker = ScenarioA1Sniper.RollMaker(kind, firingSide,
+                    () => before.Unit(unitId) is { } checker ? (checker.Side, Is(checker, Conditions.Captured)) : null);
                 // E1.76 (backlog pass 16, ruling R16.7): at night each side's SAN is two higher, to at most 7.
                 if (maker is null || before.Sides.FirstOrDefault(item => item.Id != maker) is not { San: { } printed } enemy
-                    || roll.Values.Sum() != (before.Night ? Math.Min(printed + 2, 7) : printed))
+                    || !ScenarioA1Sniper.Triggers(roll.Values.Sum(), printed, before.Night))
                 {
                     continue;
                 }
@@ -74,23 +64,13 @@ public sealed partial class GamePlanner
         }
     }
 
-    /// <summary>The side that made a fire record's IFT DR: its firers', a DC's user's, or the DEFENDER's for Residual FP (A8.2).</summary>
-    private static string? FiringSideOf(GameState state, FireResolved fire)
-    {
-        if (fire.Firers.Count > 0)
-        {
-            return state.Unit(fire.Firers[0])?.Side;
-        }
-
-        if (fire.Facts.TryGetProperty("demolitionCharge", out var charge) && charge.TryGetProperty("userId", out var user) && user.GetString() is { } userId)
-        {
-            return state.Unit(userId)?.Side;
-        }
-
-        return fire.Facts.TryGetProperty("fireKind", out var kind) && kind.GetString() == ScenarioA1FireCalculator.ResidualFire
-            ? state.Sides.FirstOrDefault(item => item.Id != state.PhasingSide)?.Id
-            : null;
-    }
+    /// <summary>The side that made a fire record's IFT DR: its firers', a DC's user's, or the DEFENDER's for Residual FP (A8.2); the record's reads are made as Rules asks.</summary>
+    private static string? FiringSideOf(GameState state, FireResolved fire) =>
+        ScenarioA1Sniper.FiringSide(fire.Firers.Count > 0, () => state.Unit(fire.Firers[0])?.Side,
+            () => fire.Facts.TryGetProperty("demolitionCharge", out var charge) && charge.TryGetProperty("userId", out var user) && user.GetString() is { } userId
+                ? state.Unit(userId)?.Side : null,
+            () => fire.Facts.TryGetProperty("fireKind", out var kind) && kind.GetString() == ScenarioA1FireCalculator.ResidualFire,
+            () => state.Sides.FirstOrDefault(item => item.Id != state.PhasingSide)?.Id);
 
     private void Snipe(GameScope scope, string attemptId, long expected, string actor, IReadOnlyList<GameEvent> existing, List<GameEvent> events,
         Func<RollRequest, RollResult> draw, string sniperId, string trigger)
@@ -103,7 +83,7 @@ public sealed partial class GamePlanner
         }
 
         // A14.31: a pinned Sniper makes no further attack this Player Turn.
-        if (Is(sniper, Conditions.Pinned))
+        if (!ScenarioA1Sniper.Attacks(Is(sniper, Conditions.Pinned)))
         {
             return;
         }
@@ -124,56 +104,49 @@ public sealed partial class GamePlanner
 
         var sniperRoll = Roll(1, "sniper");
         var dr = Values(sniperRoll)[0];
-        if (dr > 2)
+        if (!ScenarioA1Sniper.Effective(dr))
         {
-            Record(sniperRoll, dr, null, null, "none");
+            Record(sniperRoll, dr, null, null, ScenarioA1Sniper.NoEffect);
             return;
         }
 
-        // A14.2 (ruling R15.5): the Random Location DR: the colored dr a hexside direction (1 the top hexside, clockwise), the white dr the hexes along it,
-        // stopping at the last hex on the map.
+        // A14.2 (ruling R15.5): the Random Location DR: the colored dr a hexside direction, the white dr the hexes along it, stopping at the last hex on the map.
         var locationRoll = Roll(2, "sniper-location");
-        var (colored, white) = (Values(locationRoll)[0], Values(locationRoll)[1]);
+        var (direction, extent) = ScenarioA1Sniper.RandomLocation(Values(locationRoll)[0], Values(locationRoll)[1]);
         var (board, hex) = (sniperAt.Location.Board, sniperAt.Location.Hex);
-        for (var step = 0; step < white && Next(state, board, hex, (HexsideDirection)(colored - 1)) is { } next; step++)
+        for (var step = 0; step < extent && Next(state, board, hex, (HexsideDirection)direction) is { } next; step++)
         {
             (board, hex) = next;
         }
 
         // A14.22 (ruling R15.5): the eligible targets are the attacked side's Personnel and Dummies, not hidden, not prisoners.
-        UnitInstance[] eligible = [.. state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == attacked && !LiveFire.IsVehicle(unit)
-            && !Is(unit, Conditions.Hidden) && !Is(unit, Conditions.Captured) && state.Location(unit.Id) is not null)];
+        UnitInstance[] eligible = [.. state.Units.Where(unit => ScenarioA1Sniper.Eligible(unit.Status == InstanceStatus.Active, unit.Side == attacked, LiveFire.IsVehicle(unit),
+            Is(unit, Conditions.Hidden), Is(unit, Conditions.Captured), state.Location(unit.Id) is not null))];
         if (eligible.Length == 0)
         {
-            Record(sniperRoll, dr, null, null, "no-target");
+            Record(sniperRoll, dr, null, null, ScenarioA1Sniper.NoTarget);
             return;
         }
 
-        // A14.21: the target hex, or the closest hex holding an eligible target; ties go to the lowest TEM, then the first hex by name.
-        int Tem(BoardLocation location) => ReadLocation(state, location) is { } read && TerrainKey(read) is { } terrain
-            ? ScenarioA1FireReference.Tem.GetValueOrDefault(terrain) : 0;
+        // A14.21: the target hex, or the closest hex holding an eligible target; ties go to the lowest TEM, then the first hex by name (Rules orders them).
+        int Tem(BoardLocation location) => ScenarioA1Sniper.TargetTem(ReadLocation(state, location) is { } read ? TerrainKey(read) : null);
         var hexes = eligible.GroupBy(unit => (state.Location(unit.Id)!.Location.Board, state.Location(unit.Id)!.Location.Hex))
-            .Select(group => (group.Key.Board, group.Key.Hex, Distance: Distance(state, board, hex, group.Key.Board, group.Key.Hex) ?? int.MaxValue,
-                Tem: group.Min(unit => Tem(state.Location(unit.Id)!.Location))))
-            .OrderBy(item => item.Distance).ThenBy(item => item.Tem).ThenBy(item => item.Hex.ToString(), StringComparer.Ordinal).ToArray();
-        var chosen = hexes[0];
+            .Select((group, index) => (group.Key.Board, group.Key.Hex, Facts: new SniperTargetHex(index, Distance(state, board, hex, group.Key.Board, group.Key.Hex),
+                group.Min(unit => Tem(state.Location(unit.Id)!.Location)), group.Key.Hex.ToString()))).ToArray();
+        var chosen = hexes[ScenarioA1Sniper.TargetHex([.. hexes.Select(item => item.Facts)])];
 
         // Ruling R15.5: of several Locations in the hex, the one holding the most eligible targets, then the lowest.
-        var location = eligible.Select(unit => state.Location(unit.Id)!.Location).Where(item => item.Board == chosen.Board && item.Hex == chosen.Hex)
-            .GroupBy(item => item).OrderByDescending(group => group.Count()).ThenBy(group => group.Key.Level).First().Key;
+        var inHex = eligible.Select(unit => state.Location(unit.Id)!.Location).Where(item => item.Board == chosen.Board && item.Hex == chosen.Hex)
+            .GroupBy(item => item).Select((group, index) => (group.Key, Facts: new SniperTargetLocation(index, group.Count(), group.Key.Level))).ToArray();
+        var location = inHex[ScenarioA1Sniper.TargetLocation([.. inHex.Select(item => item.Facts)])].Key;
         UnitInstance[] here = [.. eligible.Where(unit => state.Location(unit.Id)!.Location == location).OrderBy(unit => unit.Id, StringComparer.Ordinal)];
 
         // Ruling R15.5: the Sniper counter moves to the Location attacked.
         events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-moved", new InstanceMoved(sniper.Id, new MapPosition(location)), package, null));
 
         // A14.23: a concealed stack is one possible target; the others one each.
-        UnitInstance[] hidden = [.. here.Where(unit => Is(unit, Conditions.Concealed) || unit.Kind == UnitKinds.Dummy)];
-        var candidates = here.Except(hidden).Select(unit => (IReadOnlyList<UnitInstance>)[unit]).ToList();
-        if (hidden.Length > 0)
-        {
-            candidates.Add(hidden);
-        }
-
+        bool[] concealedOrDummy = [.. here.Select(unit => Is(unit, Conditions.Concealed) || unit.Kind == UnitKinds.Dummy)];
+        var candidates = ScenarioA1Sniper.Candidates(concealedOrDummy).Select(group => (IReadOnlyList<UnitInstance>)[.. group.Select(index => here[index])]).ToList();
         var targets = new List<(IReadOnlyList<UnitInstance> Stack, string Roll, int Dr)>();
         if (candidates.Count == 1)
         {
@@ -182,9 +155,7 @@ public sealed partial class GamePlanner
         else
         {
             var selection = Roll(candidates.Count, "sniper-random-selection");
-            var values = Values(selection);
-            var highest = values.Max();
-            var tied = candidates.Where((_, index) => values[index] == highest).ToArray();
+            var tied = ScenarioA1Sniper.Tied(Values(selection)).Select(index => candidates[index]).ToArray();
 
             // A14.2: the first selected takes the Sniper dr; each other one takes a new Sniper dr of its own.
             targets.Add((tied[0], sniperRoll, dr));
@@ -197,21 +168,21 @@ public sealed partial class GamePlanner
 
         foreach (var (stack, rollId, value) in targets)
         {
-            if (value > 2)
+            if (!ScenarioA1Sniper.Effective(value))
             {
-                Record(rollId, value, location, null, "none");
+                Record(rollId, value, location, null, ScenarioA1Sniper.NoEffect);
                 continue;
             }
 
             var unit = stack[0];
-            if (stack.Count > 1 || hidden.Contains(stack[0]))
+            if (stack.Count > 1 || concealedOrDummy[Array.IndexOf(here, stack[0])])
             {
                 // A14.23: a concealed stack reveals how many real units it holds: none is a Dummy stack, eliminated; one is the target; more are chosen by
                 // Random Selection.
                 UnitInstance[] real = [.. stack.Where(item => item.Kind != UnitKinds.Dummy)];
                 if (real.Length == 0)
                 {
-                    Record(rollId, value, location, null, "dummy-stack-eliminated");
+                    Record(rollId, value, location, null, ScenarioA1Sniper.DummyStackEliminated);
                     foreach (var dummy in stack)
                     {
                         events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(dummy.Id), package, null));
@@ -227,19 +198,18 @@ public sealed partial class GamePlanner
                 else
                 {
                     var among = Roll(real.Length, "sniper-random-selection");
-                    var picked = Values(among);
-                    unit = real[Array.IndexOf([.. picked], picked.Max())];
+                    unit = real[ScenarioA1Sniper.Picked(Values(among))];
                 }
             }
 
-            SnipeUnit(scope, attemptId, expected, events, state, unit, rollId, value, location, package, Roll, Values, Record);
+            SnipeUnit(scope, attemptId, expected, events, unit, rollId, value, location, package, Roll, Values, Record);
         }
 
         // A14.3: an effective Sniper attack puts every broken unit of the attacked side in the Location under DM.
         if (Replay([.. existing, .. events]).Current is { } after)
         {
-            foreach (var broken in after.At(location).OfType<UnitInstance>().Where(item => item.Status == InstanceStatus.Active && item.Side == attacked
-                && Is(item, Conditions.Broken) && !Is(item, Conditions.DesperationMorale)))
+            foreach (var broken in after.At(location).OfType<UnitInstance>().Where(item => ScenarioA1Sniper.ComesUnderDm(item.Status == InstanceStatus.Active, item.Side == attacked,
+                Is(item, Conditions.Broken), Is(item, Conditions.DesperationMorale))))
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
                     new ConditionsChanged(broken.Id, new Dictionary<string, ConditionState> { [Conditions.DesperationMorale] = ConditionState.True }), package, null));
@@ -249,76 +219,67 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// A14.3 (ruling R15.5): dr 1 eliminates a SMC and breaks a MMC, Casualty Reducing one that cannot break (broken or berserk); dr 2 wounds a SMC (its Wound
-    /// Severity dr, A17.11) and pins a MMC not immune to Pin results. A unit the attack affects loses its "?" (A12.14).
+    /// Severity dr, A17.11) and pins a MMC not immune to Pin results. A unit the attack affects loses its "?" (A12.14). Rules decides the effect (pass 32.h).
     /// </summary>
-    private void SnipeUnit(GameScope scope, string attemptId, long expected, List<GameEvent> events, GameState state, UnitInstance unit, string rollId, int dr,
+    private void SnipeUnit(GameScope scope, string attemptId, long expected, List<GameEvent> events, UnitInstance unit, string rollId, int dr,
         BoardLocation location, string package, Func<int, string, string> roll, Func<string, IReadOnlyList<int>> values,
         Action<string, int, BoardLocation?, string?, string> record)
     {
-        void Change(Dictionary<string, ConditionState> conditions)
-        {
-            conditions[Conditions.Concealed] = ConditionState.False;
-            conditions[Conditions.Hidden] = ConditionState.False;
-            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(unit.Id, conditions), package, null));
-        }
+        void Change(IReadOnlyList<(UnitCondition Condition, bool Value)> conditions) =>
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(unit.Id, ConditionChanges(conditions)), package, null));
+        void Eliminate() => events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(unit.Id), package, null));
 
         var smc = unit.Kind is "asl:leader" or "asl:hero";
-        if (smc && dr == 1)
+        switch (ScenarioA1Sniper.UnitEffect(smc, dr, Is(unit, Conditions.Broken), Is(unit, Conditions.Berserk), Is(unit, Conditions.Pinned)))
         {
-            record(rollId, dr, location, unit.Id, "eliminated");
-            events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(unit.Id), package, null));
-        }
-        else if (smc)
-        {
-            var severity = roll(1, "sniper-wound-severity");
-            var mortal = values(severity)[0] + (Is(unit, Conditions.Wounded) ? 1 : 0) >= 5;
-            record(rollId, dr, location, unit.Id, mortal ? "eliminated" : "wounded");
-            if (mortal)
-            {
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(unit.Id), package, null));
-            }
-            else
-            {
-                Change(new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [Conditions.Wounded] = ConditionState.True });
-            }
-        }
-        else if (dr == 1 && !Is(unit, Conditions.Broken) && !Is(unit, Conditions.Berserk))
-        {
-            record(rollId, dr, location, unit.Id, "broken");
-            Change(new Dictionary<string, ConditionState>(StringComparer.Ordinal)
-            {
-                [Conditions.Broken] = ConditionState.True,
-                [Conditions.Pinned] = ConditionState.False,
-                [Conditions.DesperationMorale] = ConditionState.True,
-            });
-        }
-        else if (dr == 1)
-        {
-            // A7.302: a squad is Reduced to its HS, a HS eliminated.
-            if (unit.Kind == "asl:squad" && unit.Definition is { } reference && ScenarioA1FireReference.HalfSquadOf(reference.Definition) is { } half
-                && FireReference.Value.Definitions.TryGetValue(half, out var halfDefinition))
-            {
-                record(rollId, dr, location, unit.Id, "casualty-reduced");
-                var produced = unit.Conditions.ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal);
-                produced[Conditions.Concealed] = ConditionState.False;
-                produced[Conditions.Hidden] = ConditionState.False;
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "lineage", new LineageRecorded(LineageAction.Reduced, [unit.Id],
-                    [new NewInstance($"{attemptId}-{unit.Id}-sniped", halfDefinition.Kind, halfDefinition.Id, unit.Side, unit.Position, null, produced)]), package, null));
-            }
-            else
-            {
-                record(rollId, dr, location, unit.Id, "eliminated");
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(unit.Id), package, null));
-            }
-        }
-        else if (!Is(unit, Conditions.Broken) && !Is(unit, Conditions.Berserk) && !Is(unit, Conditions.Pinned))
-        {
-            record(rollId, dr, location, unit.Id, "pinned");
-            Change(new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [Conditions.Pinned] = ConditionState.True });
-        }
-        else
-        {
-            record(rollId, dr, location, unit.Id, "none");
+            case SniperEffect.Eliminated:
+                record(rollId, dr, location, unit.Id, ScenarioA1Sniper.Eliminated);
+                Eliminate();
+                break;
+            case SniperEffect.WoundSeverity:
+                var severity = roll(1, "sniper-wound-severity");
+                var mortal = ScenarioA1Sniper.Mortal(values(severity)[0], Is(unit, Conditions.Wounded));
+                record(rollId, dr, location, unit.Id, mortal ? ScenarioA1Sniper.Eliminated : ScenarioA1Sniper.Wounded);
+                if (mortal)
+                {
+                    Eliminate();
+                }
+                else
+                {
+                    Change(ScenarioA1Sniper.WoundedConditions());
+                }
+
+                break;
+            case SniperEffect.Broken:
+                record(rollId, dr, location, unit.Id, ScenarioA1Sniper.Broken);
+                Change(ScenarioA1Sniper.BrokenConditions());
+                break;
+            case SniperEffect.CasualtyReduction:
+                // A7.302: a squad is Reduced to its HS, a HS eliminated.
+                var half = unit.Kind == "asl:squad" && unit.Definition is { } reference && ScenarioA1FireReference.HalfSquadOf(reference.Definition) is { } halfId
+                    && FireReference.Value.Definitions.TryGetValue(halfId, out var halfDefinition) ? halfDefinition : null;
+                record(rollId, dr, location, unit.Id, ScenarioA1Sniper.ReductionResult(half is not null));
+                if (half is not null)
+                {
+                    var produced = unit.Conditions.ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal);
+                    produced[Conditions.Concealed] = ConditionState.False;
+                    produced[Conditions.Hidden] = ConditionState.False;
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "lineage", new LineageRecorded(LineageAction.Reduced, [unit.Id],
+                        [new NewInstance($"{attemptId}-{unit.Id}-sniped", half.Kind, half.Id, unit.Side, unit.Position, null, produced)]), package, null));
+                }
+                else
+                {
+                    Eliminate();
+                }
+
+                break;
+            case SniperEffect.Pinned:
+                record(rollId, dr, location, unit.Id, ScenarioA1Sniper.Pinned);
+                Change(ScenarioA1Sniper.PinnedConditions());
+                break;
+            default:
+                record(rollId, dr, location, unit.Id, ScenarioA1Sniper.NoEffect);
+                break;
         }
     }
 
