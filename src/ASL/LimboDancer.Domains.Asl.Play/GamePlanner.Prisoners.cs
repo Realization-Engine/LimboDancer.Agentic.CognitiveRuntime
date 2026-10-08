@@ -29,25 +29,26 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.invalid-arguments: an Ambush Withdrawal names its Location, its units, and where they go");
         }
 
-        if (state.Phase != "ccph" || state.CloseCombats.FirstOrDefault(item => item.Location == location) is not { Ambusher: { } ambusher } entry
-            || (entry.Rounds.Count > 0 && !entry.Closed))
+        var entry = state.CloseCombats.FirstOrDefault(item => item.Location == location);
+        if (ScenarioA1PrisonerCalculator.AmbushWithdrawalPhaseBar(state.Phase, entry?.Ambusher is not null, entry is { } begun && begun.Rounds.Count > 0 && !begun.Closed) is { } phaseBar)
         {
-            return Refused(scope, label, expected,
-                "play.ambush-withdraw-phase: an Ambush Withdrawal is made in the CCPh by the side that ambushed, before the Location's first round or once its CC is over (A11.41)");
+            return Refused(scope, label, expected, phaseBar);
         }
+
+        var ambusher = entry!.Ambusher!;
 
         var tiring = new List<string>();
         foreach (var id in ids)
         {
-            if (state.Unit(id) is not { Status: InstanceStatus.Active } unit || unit.Side != ambusher || state.Location(id)?.Location != location
-                || new[] { Conditions.Pinned, Conditions.Berserk, Conditions.Disrupted, Conditions.Captured }.Any(condition => Is(unit, condition)) || LiveFire.IsVehicle(unit))
+            if (state.Unit(id) is not { Status: InstanceStatus.Active } unit || !ScenarioA1PrisonerCalculator.AmbushWithdrawer(true, unit.Side == ambusher, state.Location(id)?.Location == location,
+                Is(unit, Conditions.Pinned), Is(unit, Conditions.Berserk), Is(unit, Conditions.Disrupted), Is(unit, Conditions.Captured), LiveFire.IsVehicle(unit)))
             {
-                return Refused(scope, label, expected, $"play.ambush-withdraw-unit: {id} is not Infantry of the ambushing side in {location} that is free to withdraw (A11.41)");
+                return Refused(scope, label, expected, ScenarioA1PrisonerCalculator.AmbushWithdrawerText(id, location.ToString()));
             }
 
-            if (!WithdrawalDestinations(state, unit, location).Contains(to))
+            if (ScenarioA1PrisonerCalculator.AmbushWithdrawalToBar(id, WithdrawalDestinations(state, unit, location).Contains(to)) is { } toBar)
             {
-                return Refused(scope, label, expected, $"play.ambush-withdraw-to: {id} may withdraw only to an ADJACENT Location a withdrawal could reach (A11.41, A11.21)");
+                return Refused(scope, label, expected, toBar);
             }
 
             if (WithdrawalTires(state, unit, location, to))
@@ -70,7 +71,7 @@ public sealed partial class GamePlanner
         }
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events,
-            [$"play.ambush-withdraw: {string.Join(", ", ids)} withdraw from {location} to {to} (A11.41)" + (tiring.Count > 0 ? $"; {string.Join(", ", tiring)} become CX (A4.72)" : string.Empty)]);
+            [ScenarioA1PrisonerCalculator.AmbushWithdrawalSummary(ids, location.ToString(), to.ToString(), tiring)]);
     }
 
     /// <summary>
@@ -93,12 +94,12 @@ public sealed partial class GamePlanner
         UnitInstance[] prisoners = [.. state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Custodian == guard.Id).OrderBy(unit => unit.Id, StringComparer.Ordinal)];
         if (prisoners.Length == 0)
         {
-            return Refused(scope, label, expected, $"play.guard-none: {guard.Id} guards no prisoners (A20.5)");
+            return Refused(scope, label, expected, ScenarioA1PrisonerCalculator.GuardNoneText(guard.Id));
         }
 
-        if (state.Phase is not ("rph" or "aph") || guard.Side != state.PhasingSide || Is(guard, Conditions.Melee))
+        if (ScenarioA1PrisonerCalculator.GuardPhaseBar(state.Phase, guard.Side == state.PhasingSide, Is(guard, Conditions.Melee)) is { } phaseBar)
         {
-            return Refused(scope, label, expected, "play.guard-phase: a Guard hands over or abandons its prisoners in its own side's RPh or APh, when not held in Melee (A20.5)");
+            return Refused(scope, label, expected, phaseBar);
         }
 
         var package = ScenarioA1FirePackage.Identity.ToString();
@@ -106,23 +107,24 @@ public sealed partial class GamePlanner
         {
             return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
                 [.. prisoners.Select((prisoner, index) => Event(scope, attemptId, index + 1, expected, "prisoner-freed", new PrisonerFreed(prisoner.Id), package, null))],
-                [$"play.prisoners-abandoned: {guard.Id} abandons {string.Join(", ", prisoners.Select(unit => unit.Id))}, who are Unarmed units of their own side (A20.5, A20.53)"]);
+                [ScenarioA1PrisonerCalculator.PrisonersAbandonedText(guard.Id, [.. prisoners.Select(unit => unit.Id)])]);
         }
 
         Text(arguments, "to", out var toId);
-        if (state.Unit(toId) is not { Status: InstanceStatus.Active } heir || heir.Id == guard.Id || heir.Side != guard.Side || state.Location(heir.Id)?.Location != state.Location(guard.Id)?.Location
-            || Is(heir, Conditions.Captured) || Is(heir, Conditions.Unarmed) || Is(heir, Conditions.Melee) || !(vocabulary.IsA(heir.Kind, "asl:mmc") || vocabulary.IsA(heir.Kind, "asl:smc")))
+        if (state.Unit(toId) is not { Status: InstanceStatus.Active } heir || !ScenarioA1PrisonerCalculator.Heir(true, heir.Id == guard.Id, heir.Side == guard.Side,
+            state.Location(heir.Id)?.Location == state.Location(guard.Id)?.Location, Is(heir, Conditions.Captured), Is(heir, Conditions.Unarmed), Is(heir, Conditions.Melee),
+            vocabulary.IsA(heir.Kind, "asl:mmc") || vocabulary.IsA(heir.Kind, "asl:smc")))
         {
-            return Refused(scope, label, expected, $"play.guard-heir: {toId} is not an armed Personnel unit of {guard.Side} in {guard.Id}'s Location, free of Melee (A20.5)");
+            return Refused(scope, label, expected, ScenarioA1PrisonerCalculator.HeirText(toId, guard.Side, guard.Id));
         }
 
-        if (GuardLoad(state, heir) + prisoners.Sum(UnitSize) > 5 * UnitSize(heir))
+        if (ScenarioA1PrisonerCalculator.GuardCapacityBar(heir.Id, ScenarioA1PrisonerCalculator.CanGuard(GuardLoad(state, heir), prisoners.Sum(UnitSize), UnitSize(heir))) is { } capacityBar)
         {
-            return Refused(scope, label, expected, $"play.guard-capacity: {heir.Id} can guard prisoners of at most five times its US# (A20.51)");
+            return Refused(scope, label, expected, capacityBar);
         }
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
             [.. prisoners.Select((prisoner, index) => Event(scope, attemptId, index + 1, expected, "instance-captured", new InstanceCaptured(prisoner.Id, heir.Id), package, null))],
-            [$"play.prisoners-transferred: {guard.Id} hands {string.Join(", ", prisoners.Select(unit => unit.Id))} to {heir.Id} (A20.5, A4.431)"]);
+            [ScenarioA1PrisonerCalculator.PrisonersTransferredText(guard.Id, [.. prisoners.Select(unit => unit.Id)], heir.Id)]);
     }
 }

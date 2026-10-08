@@ -914,28 +914,13 @@ public sealed partial class GamePlanner
     {
         foreach (var leader in resolution.CreatedLeaders)
         {
-            var id = $"{attemptId}-leader-{leader.Attack.ToString(CultureInfo.InvariantCulture)}";
-            var conditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal)
-            {
-                [Conditions.Broken] = ConditionState.False,
-                [Conditions.Pinned] = ConditionState.False,
-                [Conditions.Wounded] = ConditionState.False,
-                [Conditions.Concealed] = ConditionState.False,
-                [Conditions.Hidden] = ConditionState.False,
-
-                // Pass 31 (play test P-26): a created leader is neither berserk nor a prisoner, so his Good Order is known and he may direct fire; the
-                // Melee of his Location is recorded for him with its other units.
-                [Conditions.Berserk] = ConditionState.False,
-                [Conditions.Captured] = ConditionState.False,
-                [Conditions.Melee] = ConditionState.False,
-            };
-            if (state.Unit(leader.StackedWith) is { } mmc && GameState.Condition(mmc, Conditions.Fanatic) == ConditionState.True)
-            {
-                conditions[Conditions.Fanatic] = ConditionState.True;
-            }
+            var id = ScenarioA1PrisonerCalculator.CreatedLeaderId(attemptId, leader.Attack);
+            // Pass 31 (play test P-26): a created leader is neither berserk nor a prisoner, so his Good Order is known and he may direct fire; the
+            // Melee of his Location is recorded for him with its other units. Rules gives the conditions in the record's order (pass 32.g).
+            var conditions = ConditionChanges(ScenarioA1PrisonerCalculator.CreatedCcLeaderConditions(state.Unit(leader.StackedWith) is { } mmc && GameState.Condition(mmc, Conditions.Fanatic) == ConditionState.True));
 
             // A11.22, A18.12 (ruling R14.8): a leader created by an attack whose MMC infiltrates goes with it.
-            var placedAt = resolution.Effects.FirstOrDefault(item => item.UnitId == leader.StackedWith)?.InfiltratedTo is { } gone ? BoardLocation.Parse(gone) : location;
+            var placedAt = BoardLocation.Parse(ScenarioA1PrisonerCalculator.CreatedLeaderPlacedAt(resolution.Effects.FirstOrDefault(item => item.UnitId == leader.StackedWith)?.InfiltratedTo, location.ToString()));
             yield return ("instance-created", new InstanceCreated(new NewInstance(id, "asl:leader", leader.DefinitionId, leader.Side, new MapPosition(placedAt), null, conditions)));
             if (leader.Eliminated)
             {
@@ -974,18 +959,8 @@ public sealed partial class GamePlanner
                 yield return ("prisoner-freed", new PrisonerFreed(unit.Id));
             }
 
-            var conditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
-            if (effect.Armed == true)
-            {
-                conditions[Conditions.Unarmed] = ConditionState.False;
-            }
-
-            // A11.19, A12.14 (ruling R14.2): the unit loses its "?".
-            if (effect.ConcealmentLost == true)
-            {
-                conditions[Conditions.Concealed] = ConditionState.False;
-                conditions[Conditions.Hidden] = ConditionState.False;
-            }
+            // A20.551, A11.19, A12.14 (rulings R14.2, R14.6): Armed again and the "?" lost, in the record's order (pass 32.g).
+            var conditions = ConditionChanges(ScenarioA1PrisonerCalculator.RoundConditions(effect.Armed == true, effect.ConcealmentLost == true));
 
             // A20.551 (ruling R14.6): an Unarmed MMC is rearmed as a Conscript MMC of its size and nationality.
             if (effect.RearmedAs is { } rearmed)
@@ -997,29 +972,23 @@ public sealed partial class GamePlanner
                     armed[name] = value;
                 }
 
-                armed[Conditions.Unarmed] = ConditionState.False;
-
                 // Table player, pass 14: a rearmed prisoner is no longer captured.
-                if (effect.Escaped == true)
+                foreach (var (condition, value) in ScenarioA1PrisonerCalculator.RearmedConditions(effect.Escaped == true))
                 {
-                    armed[Conditions.Captured] = ConditionState.False;
+                    armed[ConditionName(condition)] = value ? ConditionState.True : ConditionState.False;
                 }
+
                 yield return ("lineage", new LineageRecorded(LineageAction.Replaced, [unit.Id],
                     [new NewInstance($"{attemptId}-{unit.Id}", conscript.Kind, conscript.Id, unit.Side, unit.Position, null, armed)]));
                 continue;
             }
 
-            if (effect.Wounded && GameState.Condition(unit, Conditions.Wounded) != ConditionState.True)
+            foreach (var (condition, value) in ScenarioA1PrisonerCalculator.AfterRoundConditions(effect.Wounded, GameState.Condition(unit, Conditions.Wounded) == ConditionState.True, effect.BerserkEnded == true))
             {
-                conditions[Conditions.Wounded] = ConditionState.True;
+                conditions[ConditionName(condition)] = value ? ConditionState.True : ConditionState.False;
             }
 
-            if (effect.BerserkEnded == true)
-            {
-                conditions[Conditions.Berserk] = ConditionState.False;
-            }
-
-            if (effect.FinalDefinitionId != effect.DefinitionId)
+            if (ScenarioA1PrisonerCalculator.Reduced(effect.DefinitionId, effect.FinalDefinitionId))
             {
                 // A11.11, A7.302: Casualty Reduction makes the squad's HS, with the same status.
                 var half = CloseCombatReference.Value.Definitions[effect.FinalDefinitionId];
@@ -1045,9 +1014,9 @@ public sealed partial class GamePlanner
 
         // A11.2: a withdrawing unit neither eliminated nor Reduced leaves the Melee for the Location it declared, CX when the withdrawal needs it
         // (A11.21, A4.72; ruling R5.5); A11.22 (ruling R14.8): so does an infiltrating unit.
-        foreach (var effect in resolution.Effects.Where(item => (item.WithdrewTo ?? item.InfiltratedTo) is not null && item.RearmedAs is null))
+        foreach (var (effect, moved) in resolution.Effects.Select(item => (item, ScenarioA1PrisonerCalculator.MovesAfterRound(item.WithdrewTo, item.InfiltratedTo, item.RearmedAs))).Where(pair => pair.Item2 is not null))
         {
-            yield return ("instance-moved", new InstanceMoved(effect.UnitId, new MapPosition(BoardLocation.Parse((effect.WithdrewTo ?? effect.InfiltratedTo)!))));
+            yield return ("instance-moved", new InstanceMoved(effect.UnitId, new MapPosition(BoardLocation.Parse(moved!))));
             if (tiring.Contains(effect.UnitId))
             {
                 yield return ("conditions-changed", new ConditionsChanged(effect.UnitId, new Dictionary<string, ConditionState> { [Conditions.Cx] = ConditionState.True }));
@@ -1065,7 +1034,7 @@ public sealed partial class GamePlanner
     private static IEnumerable<(string Type, EventPayload Payload)> CaptureEffects(GameState state, UnitInstance unit, CloseCombatUnitEffect effect, string attemptId)
     {
         var at = state.Location(unit.Id)!.Location;
-        foreach (var weapon in effect.CapturedHalf == true ? Enumerable.Empty<EquipmentInstance>()
+        foreach (var weapon in !ScenarioA1PrisonerCalculator.CaptiveDropsWeapons(effect.CapturedHalf) ? Enumerable.Empty<EquipmentInstance>()
             : state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding?.Holder == unit.Id).OrderBy(item => item.Id, StringComparer.Ordinal))
         {
             yield return ("equipment-transferred", new EquipmentTransferred(weapon.Id, null, new MapPosition(at)));
@@ -1075,8 +1044,8 @@ public sealed partial class GamePlanner
         if (effect.CapturedHalf == true)
         {
             var half = CloseCombatReference.Value.Definitions[ScenarioA1FireReference.HalfSquadOf(unit.Definition!.Definition)!];
-            captive = $"{attemptId}-{unit.Id}-a";
-            var free = $"{attemptId}-{unit.Id}-b";
+            var (captiveHalf, free) = ScenarioA1PrisonerCalculator.CapturedHalfIds(attemptId, unit.Id);
+            captive = captiveHalf;
             yield return ("lineage", new LineageRecorded(LineageAction.Deployed, [unit.Id],
                 [new NewInstance(captive, half.Kind, half.Id, unit.Side, unit.Position, null, unit.Conditions),
                     new NewInstance(free, half.Kind, half.Id, unit.Side, unit.Position, null, unit.Conditions)]));
@@ -1088,17 +1057,13 @@ public sealed partial class GamePlanner
             }
         }
 
-        yield return ("conditions-changed", new ConditionsChanged(captive, new Dictionary<string, ConditionState>
+        var captured = new Dictionary<string, ConditionState>();
+        foreach (var (condition, value) in ScenarioA1PrisonerCalculator.CapturedConditions())
         {
-            [Conditions.Broken] = ConditionState.False,
-            [Conditions.Disrupted] = ConditionState.False,
-            [Conditions.Pinned] = ConditionState.False,
-            [Conditions.DesperationMorale] = ConditionState.False,
-            [Conditions.Concealed] = ConditionState.False,
-            [Conditions.Hidden] = ConditionState.False,
-            [Conditions.Melee] = ConditionState.False,
-            [Conditions.Unarmed] = ConditionState.True,
-        }));
+            captured[ConditionName(condition)] = value ? ConditionState.True : ConditionState.False;
+        }
+
+        yield return ("conditions-changed", new ConditionsChanged(captive, captured));
         if (effect.GuardId is { } guard)
         {
             yield return ("instance-captured", new InstanceCaptured(captive, guard));
@@ -1126,23 +1091,23 @@ public sealed partial class GamePlanner
         var captorId = Text(arguments, "captorId", out var named) ? named : string.Empty;
         if (state.PendingSurrenders.FirstOrDefault(item => item.Unit == unitId) is not { } pending)
         {
-            return Refused(scope, label, expected, $"play.no-surrender: {unitId} has not surrendered");
+            return Refused(scope, label, expected, ScenarioA1PrisonerCalculator.NoSurrenderText(unitId));
         }
 
         // A20.21, A20.51 (ruling R14.5): the unit goes to a captor with Guard capacity; when none has any, it is freed as Unarmed.
         var able = pending.Captors.Where(id => state.Unit(id) is { Status: InstanceStatus.Active } captor && state.Unit(unitId) is { } surrendered
-            && GuardLoad(state, captor) + UnitSize(surrendered) <= 5 * UnitSize(captor)).ToArray();
+            && ScenarioA1PrisonerCalculator.CanGuard(GuardLoad(state, captor), UnitSize(surrendered), UnitSize(captor))).ToArray();
         var free = arguments.TryGetProperty("free", out var freeing) && freeing.ValueKind == JsonValueKind.True;
-        if (free || (!reject && able.Length > 0 && !able.Contains(captorId, StringComparer.Ordinal) && pending.Captors.Contains(captorId, StringComparer.Ordinal)))
+        if (ScenarioA1PrisonerCalculator.FreesOrRedirects(free, reject, able.Length > 0, able.Contains(captorId, StringComparer.Ordinal), pending.Captors.Contains(captorId, StringComparer.Ordinal)))
         {
             if (able.Length > 0)
             {
-                return Refused(scope, label, expected, $"play.captor-capacity: {string.Join(", ", able)} can guard {unitId}, so it is taken by one of them (A20.21, A20.51)");
+                return Refused(scope, label, expected, ScenarioA1PrisonerCalculator.CaptorCapacityText(able, unitId));
             }
 
             if (state.Unit(unitId) is not { } loose || state.Location(loose.Id) is not { } looseAt)
             {
-                return Refused(scope, label, expected, $"play.no-surrender: {unitId} has not surrendered");
+                return Refused(scope, label, expected, ScenarioA1PrisonerCalculator.NoSurrenderText(unitId));
             }
 
             var releasing = ScenarioA1FirePackage.Identity.ToString();
@@ -1155,7 +1120,7 @@ public sealed partial class GamePlanner
 
             released.Add(Event(scope, attemptId, released.Count + 1, expected, "prisoner-freed", new PrisonerFreed(loose.Id), releasing, null, [pending.Event]));
             return new GamePlan(GamePlanStatus.Ready, scope, label, expected, released,
-                [$"play.freed-unarmed: no captor can guard {unitId}, so it abandons its SW and is freed as an Unarmed unit (A20.21, A20.51)"]);
+                [ScenarioA1PrisonerCalculator.FreedUnarmedText(unitId)]);
         }
 
         // A20.3 (ruling R5.6): the captor's side may reject the surrender, eliminating the unit and facing its side with No Quarter.
@@ -1164,13 +1129,13 @@ public sealed partial class GamePlanner
             var side = state.Unit(unitId)?.Side;
             return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
                 [Event(scope, attemptId, 1, expected, "surrender-rejected", new SurrenderRejected(unitId), ScenarioA1FirePackage.Identity.ToString(), null, [pending.Event])],
-                [$"play.no-quarter: the surrender of {unitId} is rejected and it is eliminated; the {side} side is faced with No Quarter from now on: its units never surrender (A20.3, A15.5)"]);
+                [ScenarioA1PrisonerCalculator.NoQuarterText(unitId, side)]);
         }
 
         if (!pending.Captors.Contains(captorId, StringComparer.Ordinal) || state.Unit(captorId) is not { Status: InstanceStatus.Active } captor
             || state.Location(captor.Id) is not { } guardAt || state.Unit(unitId) is not { } prisoner || state.Location(prisoner.Id) is not { } prisonerAt)
         {
-            return Refused(scope, label, expected, $"play.captor: {unitId} surrenders to one of {string.Join(", ", pending.Captors)} (A15.5)");
+            return Refused(scope, label, expected, ScenarioA1PrisonerCalculator.CaptorText(unitId, pending.Captors));
         }
 
         var package = ScenarioA1FirePackage.Identity.ToString();
@@ -1187,16 +1152,16 @@ public sealed partial class GamePlanner
                 [pending.Event]));
         }
 
-        events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(prisoner.Id, new Dictionary<string, ConditionState>
+        var taken = new Dictionary<string, ConditionState>();
+        foreach (var (condition, value) in ScenarioA1PrisonerCalculator.TakenPrisonerConditions())
         {
-            [Conditions.Broken] = ConditionState.False,
-            [Conditions.Disrupted] = ConditionState.False,
-            [Conditions.Pinned] = ConditionState.False,
-            [Conditions.DesperationMorale] = ConditionState.False,
-        }), package, null, [pending.Event]));
+            taken[ConditionName(condition)] = value ? ConditionState.True : ConditionState.False;
+        }
+
+        events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(prisoner.Id, taken), package, null, [pending.Event]));
         events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-captured", new InstanceCaptured(prisoner.Id, captor.Id), package, null, [pending.Event]));
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events,
-            [$"play.capture: {prisoner.Id} surrenders to {captor.Id} and is its prisoner in {guardAt.Location} (A15.5, A20.5)"]);
+            [ScenarioA1PrisonerCalculator.CaptureSummary(prisoner.Id, captor.Id, guardAt.Location.ToString())]);
     }
 
     /// <summary>
@@ -1205,33 +1170,19 @@ public sealed partial class GamePlanner
     /// </summary>
     public bool? KnownEnemyInLos(GameState state, string side, BoardLocation at)
     {
+        // Pass 32.g: the Known enemies' Locations cross as indexes into a table, the LOS read as Rules asks for it, in their order.
         var locations = state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side != side && KnownEnemy(unit))
-            .Select(unit => state.Location(unit.Id)?.Location).OfType<BoardLocation>().Distinct().ToArray();
-        if (locations.Contains(at))
+            .Select(unit => state.Location(unit.Id)?.Location).OfType<BoardLocation>().Distinct().ToList();
+        var table = locations.Contains(at) ? locations : [.. locations, at];
+        return ScenarioA1PrisonerCalculator.KnownEnemyInLos([.. Enumerable.Range(0, locations.Count)], table.IndexOf(at), index => Los(state, table[index], at)?.Status switch
         {
-            return true;
-        }
-
-        var unknown = false;
-        foreach (var location in locations)
-        {
-            switch (Los(state, location, at)?.Status)
-            {
-                case LosStatus.Clear:
-                    return true;
-                case LosStatus.Blocked:
-                    break;
-                default:
-                    unknown = true;
-                    break;
-            }
-        }
-
-        return unknown ? null : false;
+            LosStatus.Clear => true,
+            LosStatus.Blocked => false,
+            _ => null,
+        });
     }
 
-    private static bool KnownEnemy(UnitInstance unit) => unit.Kind != UnitKinds.Dummy && !Is(unit, Conditions.Concealed) && !Is(unit, Conditions.Hidden)
-        && !Is(unit, Conditions.Captured);
+    private static bool KnownEnemy(UnitInstance unit) => ScenarioA1PrisonerCalculator.KnownEnemy(unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden), Is(unit, Conditions.Captured));
 
     /// <summary>
     /// The units a unit may surrender to (A15.5, A20.21): ADJACENT (A.8) Known, Good Order, armed enemy Infantry that can guard
@@ -1244,15 +1195,14 @@ public sealed partial class GamePlanner
             return [];
         }
 
-        var adjacent = state.Units.Where(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && other.Definition is not null
-                && (KnownEnemy(other) || (revealed?.Contains(other.Id) == true && other.Kind != UnitKinds.Dummy && !Is(other, Conditions.Captured)))
-                && !Is(other, Conditions.Broken) && !Is(other, Conditions.Berserk) && !Is(other, Conditions.Melee) && !Is(other, Conditions.Unarmed)
-                && (vocabulary.IsA(other.Kind, "asl:mmc") || vocabulary.IsA(other.Kind, "asl:smc"))
+        // Pass 32.g: the captor test is Rules'; the ADJACENCY (a LOS read) is read only for a unit that passes it, as before.
+        var adjacent = state.Units.Where(other => ScenarioA1PrisonerCalculator.Captor(other.Status == InstanceStatus.Active, other.Side != unit.Side, other.Definition is not null, KnownEnemy(other),
+                revealed?.Contains(other.Id) == true && other.Kind != UnitKinds.Dummy && !Is(other, Conditions.Captured), Is(other, Conditions.Broken), Is(other, Conditions.Berserk),
+                Is(other, Conditions.Melee), Is(other, Conditions.Unarmed), vocabulary.IsA(other.Kind, "asl:mmc") || vocabulary.IsA(other.Kind, "asl:smc"))
                 && state.Location(other.Id)?.Location is { } there && IsAdjacent(state, there, at)).ToArray();
 
         // A20.21, A20.51 (ruling R14.5): the captors with Guard capacity; with none, every captor, and the captor's side frees the unit as Unarmed.
-        string[] guards = [.. adjacent.Where(other => GuardLoad(state, other) + UnitSize(unit) <= 5 * UnitSize(other)).Select(other => other.Id).Order(StringComparer.Ordinal)];
-        return guards.Length > 0 ? guards : [.. adjacent.Select(other => other.Id).Order(StringComparer.Ordinal)];
+        return ScenarioA1PrisonerCalculator.Captors([.. adjacent.Select(other => new CaptorFacts(other.Id, true, ScenarioA1PrisonerCalculator.CanGuard(GuardLoad(state, other), UnitSize(unit), UnitSize(other))))]);
     }
 
     /// <summary>The US# of a unit's prisoners (A20.51).</summary>
@@ -1260,7 +1210,7 @@ public sealed partial class GamePlanner
         state.Units.Where(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == guard.Id).Sum(UnitSize);
 
     /// <summary>A unit's US# (A1.6, p. 45; A20.51): a squad 3, a HS or crew 2, a SMC 1.</summary>
-    private int UnitSize(UnitInstance unit) => vocabulary.IsA(unit.Kind, "asl:squad") ? 3 : vocabulary.IsA(unit.Kind, "asl:half-squad") || vocabulary.IsA(unit.Kind, "asl:crew") ? 2 : 1;
+    private int UnitSize(UnitInstance unit) => ScenarioA1PrisonerCalculator.UnitSize(vocabulary.IsA(unit.Kind, "asl:squad"), vocabulary.IsA(unit.Kind, "asl:half-squad") || vocabulary.IsA(unit.Kind, "asl:crew"));
 
     /// <summary>The ADJACENT Location across each hexside of a Location's hex, at ground level, on one board or across a seam.</summary>
     private IEnumerable<BoardLocation> Neighbors(GameState state, BoardLocation at)

@@ -382,6 +382,9 @@ public enum UnitCondition
     ButtonedUp,
     Abandoned,
     Disabled,
+    Captured,
+    Melee,
+    Unarmed,
 }
 
 /// <summary>What the Fire package asks for next (ruling R5.8): the attack is resolved; or an option its owner answers (the choice's key); or a roll (its key, the dice count, the roll's purpose); or the package left the attack undecided (its reasons joined).</summary>
