@@ -582,9 +582,10 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return Refused(scope, label, expected, "play.no-game: the game has no state yet");
         }
 
-        if (state.Sides.Count != 2)
+        // Pass 32.i: the phase's end and what it requires, in the old order; Rules decides each bar over the state's reads and the other slices' reads.
+        if (ScenarioA1SequenceCalculator.TwoSidesBar(state.Sides.Count) is { } twoSides)
         {
-            return Refused(scope, label, expected, "play.two-sides: the sequence of play alternates two sides");
+            return Refused(scope, label, expected, twoSides);
         }
 
         // Pass 19 (ruling R19.2): play starts when every group of a card that sets up on board has finished.
@@ -593,74 +594,65 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return Refused(scope, label, expected, incomplete);
         }
 
-        if (state.OpenAttempts.Count > 0)
+        if (ScenarioA1SequenceCalculator.DeclarationPendingBar(state.OpenAttempts.Count > 0 ? state.OpenAttempts[0].EventId : null,
+            state.OpenAttempts.Count > 0 ? state.OpenAttempts[0].Unit : null) is { } declarationPending)
         {
-            return Refused(scope, label, expected, $"play.declaration-pending: the entry attempt '{state.OpenAttempts[0].EventId}' by "
-                + $"{state.OpenAttempts[0].Unit} awaits the attacker's OVR declaration (A12.15, p. 78), so the phase cannot advance");
+            return Refused(scope, label, expected, declarationPending);
         }
 
         // C7.42 (ruling R7.8): the RPh does not end while a Shocked AFV or an Unconfirmed Kill owes its dr.
-        if (ShockRollsOwed(state).FirstOrDefault() is { } shocked)
+        if (ScenarioA1SequenceCalculator.ShockPendingBar(ShockRollsOwed(state).FirstOrDefault()?.Id) is { } shockPending)
         {
-            return Refused(scope, label, expected, $"play.shock-recovery-pending: {shocked.Id} makes its Shock or Unconfirmed Kill dr before the RPh ends (C7.42)");
+            return Refused(scope, label, expected, shockPending);
         }
 
         // A25.222 (backlog pass 15, ruling R15.6): a Commissar must attempt to rally every broken unit of his Location; the RPh does not end while one has made
         // no attempt that the Rally package would decide.
-        if (state.Phase == "rph")
+        foreach (var broken in state.Units.Where(unit => ScenarioA1SequenceCalculator.CommissarCandidate(state.Phase, unit.Status == InstanceStatus.Active, Is(unit, Conditions.Broken),
+            Is(unit, Conditions.Captured), state.RallyAttemptsThisPlayerTurn.Contains(unit.Id), state.RallyPhaseActions.Contains(unit.Id))).OrderBy(unit => unit.Id, StringComparer.Ordinal))
         {
-            foreach (var broken in state.Units.Where(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Broken) && !Is(unit, Conditions.Captured)
-                && !state.RallyAttemptsThisPlayerTurn.Contains(unit.Id) && !state.RallyPhaseActions.Contains(unit.Id)).OrderBy(unit => unit.Id, StringComparer.Ordinal))
-            {
-                if (LiveRally.Commissar(state, broken) is { } commissar && !state.RallyPhaseActions.Contains(commissar.Id)
-                    && PlanRally(scope, JsonSerializer.SerializeToElement(new
-                    {
-                        unitId = broken.Id,
-                        leader = commissar.Id
-                    }), existing, attemptId + "-commissar", expected, label,
-                        actor).Status == GamePlanStatus.Ready)
+            if (LiveRally.Commissar(state, broken) is { } commissar && ScenarioA1SequenceCalculator.CommissarOwes(state.RallyPhaseActions.Contains(commissar.Id),
+                !state.RallyPhaseActions.Contains(commissar.Id) && PlanRally(scope, JsonSerializer.SerializeToElement(new
                 {
-                    return Refused(scope, label, expected, $"play.commissar-rally: {commissar.Id} must attempt to rally {broken.Id} before the RPh ends (A25.222)");
-                }
+                    unitId = broken.Id,
+                    leader = commissar.Id
+                }), existing, attemptId + "-commissar", expected, label,
+                    actor).Status == GamePlanStatus.Ready))
+            {
+                return Refused(scope, label, expected, ScenarioA1SequenceCalculator.CommissarRallyText(commissar.Id, broken.Id));
             }
         }
 
         // A3.1 to A3.8 (p. 47): the eight phases in order; after the CCPh the other side's Player Turn begins, and a new
         // Game Turn begins when the side that moved first is phasing again.
-        var index = Phases.All.ToList().IndexOf(state.Phase);
-        var (turn, phase, phasing) = index < Phases.All.Count - 1
-            ? (state.Turn, Phases.All[index + 1], state.PhasingSide)
-            : (state.Turn, Phases.All[0], state.Sides.First(side => side.Id != state.PhasingSide).Id);
-        if (index == Phases.All.Count - 1 && phasing == state.FirstSide)
-        {
-            turn++;
-        }
+        var (turn, phase, phasing) = ScenarioA1SequenceCalculator.NextPhase(state.Phase, state.Turn, state.PhasingSide, state.Sides.First(side => side.Id != state.PhasingSide).Id, state.FirstSide);
 
         // A23.4 (backlog pass 15, ruling R15.2): a DC operably Placed detonates before the AFPh ends, unless the Fire package refuses its attack; it then stays
         // in its Location.
-        if (state.Phase == "afph" && state.PlacedCharges.Where(item => item.Operable).FirstOrDefault(item => PlanDetonateDc(scope,
+        if (state.PlacedCharges.FirstOrDefault(item => ScenarioA1SequenceCalculator.PlacedChargeDue(state.Phase, item.Operable, () => PlanDetonateDc(scope,
             JsonSerializer.SerializeToElement(new
             {
                 equipmentId = item.Charge
-            }), existing, attemptId + "-dc", expected, label, actor).Status == GamePlanStatus.Ready) is { } unexploded)
+            }), existing, attemptId + "-dc", expected, label, actor).Status == GamePlanStatus.Ready)) is { } unexploded)
         {
-            return Refused(scope, label, expected, $"play.dc-detonate-pending: {unexploded.Charge} was Placed in {unexploded.Target} and detonates before the AFPh ends (A23.4)");
+            return Refused(scope, label, expected, ScenarioA1SequenceCalculator.DcDetonatePendingText(unexploded.Charge, unexploded.Target.ToString()));
         }
 
         // A2.5 (rulings R20.5, R25.1): the APh does not end while a unit whose entry turn has come waits off board and may still enter by advance.
-        if (state.Phase == "aph" && EntryDue(state) is { } due)
+        if (ScenarioA1SequenceCalculator.EntryDueBar(state.Phase, () => EntryDue(state)) is { } due)
         {
             return Refused(scope, label, expected, due);
         }
 
         // A2.5 (ruling R26.1): vehicles cannot advance, so the MPh does not end while a vehicle whose entry turn has come waits off board and may enter.
-        if (state.Phase == "mph" && VehicleEntryDue(state) is { } vehicleDue)
+        if (ScenarioA1SequenceCalculator.VehicleEntryDueBar(state.Phase, () => VehicleEntryDue(state)) is { } vehicleDue)
         {
             return Refused(scope, label, expected, vehicleDue);
         }
 
         // A3.9 (ruling R20.1): the game from a card ends after its last Game Turn, or after the first side's Player Turn of a half turn.
-        var ending = index == Phases.All.Count - 1 && CardOf(state) is { } endCard && ScenarioCards.EndsAfter(endCard.Turns, state.Turn, state.PhasingSide == state.FirstSide);
+        var ending = ScenarioA1SequenceCalculator.GameEnds(ScenarioA1SequenceCalculator.LastPhase(state.Phase),
+            () => CardOf(state) is { } endCard ? ScenarioCards.EndsAfter(endCard.Turns, state.Turn, state.PhasingSide == state.FirstSide) : null);
 
         // A15.43: the MPh does not end while a berserk unit must still charge.
         var reasons = new List<string>();
@@ -668,9 +660,9 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
         // A10.62 (ruling R13.1): as the RPh ends, a broken unit under DM outside woods and buildings may keep it.
         string[] retained = [.. Strings(arguments, "retainDm")];
-        if (retained.Length > 0 && state.Phase != "rph")
+        if (ScenarioA1SequenceCalculator.RetainDmPhaseBar(retained.Length, state.Phase) is { } retainPhaseBar)
         {
-            return Refused(scope, label, expected, "play.retain-dm: DM is retained as the RPh ends (A10.62)");
+            return Refused(scope, label, expected, retainPhaseBar);
         }
 
         if (retained.Select(id => RetainDmBar(state, id)).FirstOrDefault(bar => bar is not null) is { } retainBar)
@@ -679,7 +671,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         }
 
         // A10.5, A20.21 (ruling R13.3): as the RtPh ends, a broken unit that failed to rout is eliminated, or surrenders to its captors first.
-        if (state.Phase == "rtph")
+        if (ScenarioA1SequenceCalculator.FailuresToRoutDue(state.Phase))
         {
             var failed = FailureToRout(state, existing);
             var surrendering = failed.Where(item => item.Captors is not null).ToArray();
@@ -688,7 +680,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
                 foreach (var (unit, why, captors) in surrendering)
                 {
                     events.Add(Event(scope, attemptId, events.Count + 1, expected, "surrender-pending", new SurrenderPending(unit.Id, captors!), null, null));
-                    reasons.Add($"play.failure-to-rout-surrender: {unit.Id} would be eliminated for Failure to Rout ({why}), so it surrenders to {string.Join(" or ", captors!)} (A20.21); advance the phase again once its captor's side has chosen");
+                    reasons.Add(ScenarioA1SequenceCalculator.FailureToRoutSurrenderText(unit.Id, why, captors!));
                 }
 
                 return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [.. reasons]);
@@ -697,82 +689,74 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             foreach (var (unit, why, _) in failed)
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(unit.Id), null, null));
-                reasons.Add($"play.failure-to-rout: {unit.Id} is eliminated for Failure to Rout: {why} (A10.5)");
+                reasons.Add(ScenarioA1SequenceCalculator.FailureToRoutText(unit.Id, why));
             }
         }
-        if (state.Phase == "mph" && MustCharge(state) is [{ } charging, ..])
+        if (ScenarioA1SequenceCalculator.BerserkChargeBar(state.Phase, () => MustCharge(state) is [{ } charging, ..] ? charging.Id : null) is { } berserkCharge)
         {
-            return Refused(scope, label, expected, $"play.berserk-charge: {charging.Id} is berserk and must charge before the MPh ends (A15.43)");
+            return Refused(scope, label, expected, berserkCharge);
         }
 
         // D2.4: a vehicle under a Motion counter must expend at least one MP in its MPh.
-        if (state.Phase == "mph" && state.Units.FirstOrDefault(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && LiveFire.IsVehicle(unit)
-            && Is(unit, Conditions.Motion) && unit is { MfSpent: 0, HalfMfSpent: false, MovementEnded: false }) is { } idle)
+        if (state.Units.FirstOrDefault(unit => ScenarioA1SequenceCalculator.IdleMotionVehicle(state.Phase, unit.Status == InstanceStatus.Active, unit.Side == state.PhasingSide,
+            LiveFire.IsVehicle(unit), Is(unit, Conditions.Motion), unit.MfSpent, unit.HalfMfSpent, unit.MovementEnded)) is { } idle)
         {
-            return Refused(scope, label, expected, $"play.vehicle-motion: {idle.Id} is in Motion and must expend at least one MP this MPh (D2.4)");
+            return Refused(scope, label, expected, ScenarioA1SequenceCalculator.VehicleMotionText(idle.Id));
         }
 
         // D5.341 (ruling R5.17): a Recalled AFV must move toward its Friendly Board Edge in its MPh, when its route is decided.
-        if (state.Phase == "mph" && state.Units.FirstOrDefault(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && MustLeave(unit)
-            && !unit.MovementEnded && RecallRoute(state, unit) is { Undecided: null, Moves.Count: > 0 }) is { } recalled)
+        if (state.Units.FirstOrDefault(unit => ScenarioA1SequenceCalculator.RecallMoveDue(state.Phase, unit.Status == InstanceStatus.Active, unit.Side == state.PhasingSide, MustLeave(unit),
+            unit.MovementEnded, () => RecallRoute(state, unit) is { Undecided: null, Moves.Count: > 0 })) is { } recalled)
         {
-            return Refused(scope, label, expected, $"play.recall-move: {recalled.Id} is Recalled and must move off by its side's Friendly Board Edge this MPh (D5.341)");
+            return Refused(scope, label, expected, ScenarioA1SequenceCalculator.RecallMoveText(recalled.Id));
         }
 
         // A15.431, A15.46: at the end of its MPh a berserk unit with no Known enemy unit in its LOS returns to normal.
-        if (state.Phase == "mph")
+        foreach (var unit in state.Units.Where(unit => ScenarioA1SequenceCalculator.BerserkReturns(state.Phase, unit.Status == InstanceStatus.Active, unit.Side == state.PhasingSide,
+            Is(unit, Conditions.Berserk), Is(unit, Conditions.Melee), state.Location(unit.Id) is not null, () => KnownEnemyInLos(state, unit.Side, state.Location(unit.Id)!.Location))))
         {
-            foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && Is(unit, Conditions.Berserk)
-                && !Is(unit, Conditions.Melee) && state.Location(unit.Id) is { } at && KnownEnemyInLos(state, unit.Side, at.Location) == false))
-            {
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
-                    new ConditionsChanged(unit.Id, new Dictionary<string, ConditionState> { [Conditions.Berserk] = ConditionState.False }), null, null));
-                reasons.Add($"play.berserk-ends: {unit.Id} sees no Known enemy unit and returns to normal (A15.431, A15.46)");
-            }
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                new ConditionsChanged(unit.Id, ConditionChanges(ScenarioA1SequenceCalculator.BerserkEndsConditions())), null, null));
+            reasons.Add(ScenarioA1SequenceCalculator.BerserkEndsText(unit.Id));
         }
 
         // A11.16, A19.12: a broken or Disrupted unit held in Melee is eliminated at the end of the CCPh unless it withdrew (ruling R29.11);
         // one that could withdraw attempts it in its Location's CC first.
-        if (state.Phase == "ccph" && state.Units.FirstOrDefault(unit => unit.Status == InstanceStatus.Active && state.Location(unit.Id) is { } held
-            && !state.CloseCombats.Any(item => item.Location == held.Location) && MustWithdraw(state, unit, held.Location)) is { } withdrawing)
+        if (state.Units.FirstOrDefault(unit => ScenarioA1SequenceCalculator.WithdrawalRequired(state.Phase, unit.Status == InstanceStatus.Active, state.Location(unit.Id) is not null,
+            state.Location(unit.Id) is { } held && state.CloseCombats.Any(item => item.Location == held.Location), () => MustWithdraw(state, unit, state.Location(unit.Id)!.Location))) is { } withdrawing)
         {
-            return Refused(scope, label, expected, $"play.cc-withdraw-required: {withdrawing.Id} is broken in Melee and must attempt to withdraw in its Location's CC first (A11.16)");
+            return Refused(scope, label, expected, ScenarioA1SequenceCalculator.CcWithdrawRequiredText(withdrawing.Id));
         }
 
         // A15.43, A11.15: a berserk unit with a Known enemy unit in its Location, or a unit that advanced into a Melee, must attack, so a
         // Location that holds one and whose CC the package can resolve has its round before the CCPh ends.
-        if (state.Phase == "ccph" && CloseCombatRequired(state) is { } required)
+        if (ScenarioA1SequenceCalculator.CloseCombatRequiredBar(state.Phase, () => CloseCombatRequired(state)) is { } required)
         {
             return Refused(scope, label, expected, required);
         }
 
         // A11.16: a broken Guard is not eliminated in Melee.
-        if (state.Phase == "ccph")
+        foreach (var unit in state.Units.Where(unit => ScenarioA1SequenceCalculator.MeleeEliminated(state.Phase, unit.Status == InstanceStatus.Active, Is(unit, Conditions.Melee),
+            Is(unit, Conditions.Captured), IsGuard(state, unit), Is(unit, Conditions.Broken), Is(unit, Conditions.Disrupted))).OrderBy(unit => unit.Id, StringComparer.Ordinal))
         {
-            foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Melee) && !Is(unit, Conditions.Captured) && !IsGuard(state, unit)
-                && (Is(unit, Conditions.Broken) || Is(unit, Conditions.Disrupted))).OrderBy(unit => unit.Id, StringComparer.Ordinal))
-            {
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(unit.Id), null, null));
-                reasons.Add($"play.melee-eliminated: {unit.Id} is broken or Disrupted in Melee and cannot withdraw, so it is eliminated (A11.16, A19.12)");
-            }
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(unit.Id), null, null));
+            reasons.Add(ScenarioA1SequenceCalculator.MeleeEliminatedText(unit.Id));
         }
 
         // Pass 31d (design D9; A11.15, read in the PDF, p. 72; ruling R31d.6): a Location that holds units of both sides, prisoners apart, in which no
         // round was fought this phase is said before the phase ends. It is a consequence and not a refusal: where the Close Combat package does
         // not decide the Location, a refusal would leave the phase with no way to end (ruling R31c.5).
-        if (state.Phase == "ccph")
+        foreach (var unfought in state.Units.Where(unit => ScenarioA1SequenceCalculator.UnfoughtCandidate(state.Phase, unit.Status == InstanceStatus.Active, Is(unit, Conditions.Captured),
+                unit.Kind == UnitKinds.Dummy, state.Location(unit.Id) is not null))
+            .GroupBy(unit => state.Location(unit.Id)!.Location).Where(group => ScenarioA1SequenceCalculator.Unfought(group.Select(unit => unit.Side).Distinct(StringComparer.Ordinal).Count(),
+                state.CloseCombats.Any(item => item.Location == group.Key && item.Rounds.Count > 0)))
+            .Select(group => group.Key).OrderBy(location => location.ToString(), StringComparer.Ordinal))
         {
-            foreach (var unfought in state.Units.Where(unit => unit.Status == InstanceStatus.Active && !Is(unit, Conditions.Captured) && unit.Kind != UnitKinds.Dummy && state.Location(unit.Id) is not null)
-                .GroupBy(unit => state.Location(unit.Id)!.Location).Where(group => group.Select(unit => unit.Side).Distinct(StringComparer.Ordinal).Count() > 1
-                    && !state.CloseCombats.Any(item => item.Location == group.Key && item.Rounds.Count > 0))
-                .Select(group => group.Key).OrderBy(location => location.ToString(), StringComparer.Ordinal))
-            {
-                reasons.Add($"play.cc-unfought: no Close Combat was fought in {unfought} this phase; the units of both sides stay there, held in Melee unless they keep their \"?\" (A11.15)");
-            }
+            reasons.Add(ScenarioA1SequenceCalculator.CcUnfoughtText(unfought.ToString()));
         }
 
         // A12.12, A12.122 (ruling R12.5): as a Player Turn ends, the phasing side's Good Order Infantry may gain "?", some on a Final Concealment dr.
-        var gains = !ending && state.Phase == "ccph" && phasing != state.PhasingSide ? ConcealmentGains(state) : [];
+        var gains = ScenarioA1SequenceCalculator.ConcealmentGainsDue(ending, state.Phase, phasing != state.PhasingSide) ? ConcealmentGains(state) : [];
         // B25.65 (backlog pass 16, rulings R16.1, R16.10): the Wind Change DR at the start of a RPh.
         var wind = !ending && WindChangeDue(state, phase, turn, phasing);
         if (gains.Any(item => item.Drm is not null) || wind)
@@ -787,11 +771,11 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             }
 
             return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-                [$"play.advance: turn {turn}, {phase}, {phasing} phasing", .. reasons,
+                [ScenarioA1SequenceCalculator.AdvanceText(turn, phase, phasing), .. reasons,
                     .. gains.Any(item => item.Drm is not null)
-                        ? [$"play.concealment: {string.Join(", ", gains.Where(item => item.Drm is not null).Select(item => item.Unit.Id))} make a Final Concealment dr (A12.122)"]
+                        ? [ScenarioA1SequenceCalculator.ConcealmentRollText([.. gains.Where(item => item.Drm is not null).Select(item => item.Unit.Id)])]
                         : Array.Empty<string>(),
-                    .. wind ? ["play.wind-change: the Wind Change DR is made as the RPh begins (B25.65)"] : Array.Empty<string>()])
+                    .. wind ? [ScenarioA1SequenceCalculator.WindChangeDueText()] : Array.Empty<string>()])
             {
                 Roll = new PlannedRoll(wind ? "wind-change" : "concealment", Rolled),
                 FirstEventId = EventId(attemptId, 1),
@@ -802,7 +786,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         Finish(events, reasons);
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [ending
             ? $"play.game-ended: Game Turn {state.Turn} was the card's last{(turn > state.Turn ? string.Empty : ", a half turn")}, so the game ends (A3.9; ruling R20.1)"
-            : $"play.advance: turn {turn}, {phase}, {phasing} phasing", .. reasons]);
+            : ScenarioA1SequenceCalculator.AdvanceText(turn, phase, phasing), .. reasons]);
 
         void Finish(List<GameEvent> events, List<string> reasons, Func<RollRequest, RollResult>? draw = null)
         {
