@@ -337,6 +337,50 @@ public static class ScenarioA1SequenceCalculator
     /// <summary>B25.65: the Wind Change DR is made as the RPh begins.</summary>
     public static string WindChangeDueText() => "play.wind-change: the Wind Change DR is made as the RPh begins (B25.65)";
 
+    // What follows the phase change (pass 32.i): the game's end, the DM of the night and of the RtPh, the captured vehicle, the Recalled AFV's crew.
+
+    /// <summary>A3.9 (ruling R20.1): why the game ends: after its last Game Turn, or after the first side's Player Turn of a half turn.</summary>
+    public static string GameEndReason(bool turnAdvanced) => turnAdvanced ? "last-game-turn" : "half-turn";
+
+    /// <summary>E1.54 (ruling R16.6): at night DM leaves only with a Rally Original DR at most the printed morale.</summary>
+    public static bool NightDmShed(int originalDr, int printedMorale) => originalDr <= printedMorale;
+
+    /// <summary>E1.54: as the RPh ends at night, a broken DM unit that shed no DM and is not already retained keeps it.</summary>
+    public static bool NightDmKept(string? phase, bool night, bool active, bool broken, bool desperationMorale, bool shed, bool retained) =>
+        phase == "rph" && night && active && broken && desperationMorale && !shed && !retained;
+
+    /// <summary>A10.62: a unit under DM stays or comes under it.</summary>
+    public static IReadOnlyList<(UnitCondition Condition, bool Value)> DesperationMoraleConditions() => [(UnitCondition.DesperationMorale, true)];
+
+    /// <summary>E1.54, in words.</summary>
+    public static string NightDmText(string unitId) => $"play.night-dm: {unitId} keeps its DM: at night DM leaves only with a Rally Original DR at most the printed morale (E1.54)";
+
+    /// <summary>A10.62 (ruling R13.1): the DM its owner keeps as the RPh ends, in words.</summary>
+    public static string RetainDmText(string unitId) => $"play.retain-dm: {unitId} keeps its DM (A10.62)";
+
+    /// <summary>A10.62: units come under DM as the RtPh begins.</summary>
+    public static bool RoutPhaseDmDue(string nextPhase) => nextPhase == "rtph";
+
+    /// <summary>A10.62, in words.</summary>
+    public static string RoutPhaseDmText(string unitId, string why) => $"play.dm: {unitId} comes under DM {why} as the RtPh begins (A10.62)";
+
+    /// <summary>A11.52 (ruling R11.16): an unarmed vehicle alone with enemy Infantry is captured as the CCPh begins.</summary>
+    public static bool VehicleCaptureDue(string nextPhase) => nextPhase == "ccph";
+
+    /// <summary>A11.52, A21.2: the captured vehicle is Abandoned too.</summary>
+    public static IReadOnlyList<(UnitCondition Condition, bool Value)> CapturedVehicleConditions() => [(UnitCondition.Captured, true), (UnitCondition.Abandoned, true)];
+
+    /// <summary>A11.52, in words.</summary>
+    public static string CcVehicleCaptureText(string vehicleId) =>
+        $"play.cc-vehicle-capture: {vehicleId} is unarmed and alone with enemy Infantry, so it is captured; the use of captured vehicles is not built (A11.52, A21.2)";
+
+    /// <summary>D5.341, D5.41 (ruling R5.18): at the end of the Player Turn of its Recall, an immobilized Recalled AFV not yet Abandoned is Abandoned by its crew.</summary>
+    public static bool RecallAbandoned(bool newPlayerTurn, bool active, bool vehicle, bool recalled, bool immobilized, bool abandoned) =>
+        newPlayerTurn && active && vehicle && recalled && immobilized && !abandoned;
+
+    /// <summary>D5.341, D5.41, in words.</summary>
+    public static string RecallAbandonedText(string vehicleId) => $"play.recall-abandoned: {vehicleId} is Recalled and immobilized, so its crew Abandons it (D5.341, D5.41)";
+
     // The owners' options (ruling R5.8) and the Massacre (A20.4; ruling R5.7).
 
     /// <summary>The unit a resolution's option key names: the key is kind:subject, and the subject starts with the unit.</summary>

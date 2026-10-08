@@ -795,7 +795,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
                 // Pass 21 (ruling R21.4): the card's Victory Conditions decide the result as the game ends.
                 var result = Victory(Replay([.. existing, .. events]), ended: true)?.AtEnd;
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "game-ended",
-                    new GameEnded(state.Turn, turn > state.Turn ? "last-game-turn" : "half-turn") { Result = result }, rulePackage: null, visibility: null));
+                    new GameEnded(state.Turn, ScenarioA1SequenceCalculator.GameEndReason(turn > state.Turn)) { Result = result }, rulePackage: null, visibility: null));
                 if (result is not null)
                 {
                     reasons.Add($"play.result: {(result.Winner is { } winner ? $"{winner} wins" : "a draw")}: {result.Reason}");
@@ -812,21 +812,22 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
                 AddWindChange(scope, attemptId, expected, actor, state, events, reasons, draw, changed);
             }
 
-            // E1.54 (backlog pass 16, ruling R16.6): at night a DM unit keeps DM until a Rally Original DR at most its printed morale.
+            // E1.54 (backlog pass 16, ruling R16.6): at night a DM unit keeps DM until a Rally Original DR at most its printed morale; the records are read here,
+            // and Rules decides (pass 32.i).
             if (state.Phase == "rph" && state.Night)
             {
                 var start = existing.Select((item, index) => (item, index)).LastOrDefault(pair => pair.item.Payload is PhaseChanged).index;
                 var shed = existing.Skip(start).Select(item => item.Payload).OfType<RallyAttempted>()
                     .Where(item => item.Resolution.TryGetProperty("arithmetic", out var arithmetic) && arithmetic.ValueKind == JsonValueKind.Object
                         && arithmetic.TryGetProperty("originalDr", out var original) && state.Unit(item.Unit)?.Definition is { } definition
-                        && FireReference.Value.Definitions.GetValueOrDefault(definition.Definition)?.BrokenMorale is { } printed && original.GetInt32() <= printed)
+                        && FireReference.Value.Definitions.GetValueOrDefault(definition.Definition)?.BrokenMorale is { } printed && ScenarioA1SequenceCalculator.NightDmShed(original.GetInt32(), printed))
                     .Select(item => item.Unit).ToHashSet(StringComparer.Ordinal);
-                foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Broken) && Is(unit, Conditions.DesperationMorale)
-                    && !shed.Contains(unit.Id) && !retained.Contains(unit.Id)).OrderBy(unit => unit.Id, StringComparer.Ordinal))
+                foreach (var unit in state.Units.Where(unit => ScenarioA1SequenceCalculator.NightDmKept(state.Phase, state.Night, unit.Status == InstanceStatus.Active, Is(unit, Conditions.Broken),
+                    Is(unit, Conditions.DesperationMorale), shed.Contains(unit.Id), retained.Contains(unit.Id))).OrderBy(unit => unit.Id, StringComparer.Ordinal))
                 {
                     events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
-                        new ConditionsChanged(unit.Id, new Dictionary<string, ConditionState> { [Conditions.DesperationMorale] = ConditionState.True }), null, null, [changed]));
-                    reasons.Add($"play.night-dm: {unit.Id} keeps its DM: at night DM leaves only with a Rally Original DR at most the printed morale (E1.54)");
+                        new ConditionsChanged(unit.Id, ConditionChanges(ScenarioA1SequenceCalculator.DesperationMoraleConditions())), null, null, [changed]));
+                    reasons.Add(ScenarioA1SequenceCalculator.NightDmText(unit.Id));
                 }
             }
 
@@ -834,28 +835,28 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             foreach (var id in retained)
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
-                    new ConditionsChanged(id, new Dictionary<string, ConditionState> { [Conditions.DesperationMorale] = ConditionState.True }), null, null, [changed]));
-                reasons.Add($"play.retain-dm: {id} keeps its DM (A10.62)");
+                    new ConditionsChanged(id, ConditionChanges(ScenarioA1SequenceCalculator.DesperationMoraleConditions())), null, null, [changed]));
+                reasons.Add(ScenarioA1SequenceCalculator.RetainDmText(id));
             }
 
-            if (phase == "rtph")
+            if (ScenarioA1SequenceCalculator.RoutPhaseDmDue(phase))
             {
                 foreach (var (unit, why) in RoutPhaseDm(state))
                 {
                     events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
-                        new ConditionsChanged(unit.Id, new Dictionary<string, ConditionState> { [Conditions.DesperationMorale] = ConditionState.True }), null, null, [changed]));
-                    reasons.Add($"play.dm: {unit.Id} comes under DM {why} as the RtPh begins (A10.62)");
+                        new ConditionsChanged(unit.Id, ConditionChanges(ScenarioA1SequenceCalculator.DesperationMoraleConditions())), null, null, [changed]));
+                    reasons.Add(ScenarioA1SequenceCalculator.RoutPhaseDmText(unit.Id, why));
                 }
             }
 
             // A11.52 (ruling R11.16): an unarmed vehicle alone with enemy Infantry is captured as the CCPh begins.
-            if (phase == "ccph")
+            if (ScenarioA1SequenceCalculator.VehicleCaptureDue(phase))
             {
                 foreach (var vehicle in CapturedVehicles(state))
                 {
-                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(vehicle.Id,
-                        new Dictionary<string, ConditionState> { [Conditions.Captured] = ConditionState.True, [Conditions.Abandoned] = ConditionState.True }), null, null, [changed]));
-                    reasons.Add($"play.cc-vehicle-capture: {vehicle.Id} is unarmed and alone with enemy Infantry, so it is captured; the use of captured vehicles is not built (A11.52, A21.2)");
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                        new ConditionsChanged(vehicle.Id, ConditionChanges(ScenarioA1SequenceCalculator.CapturedVehicleConditions())), null, null, [changed]));
+                    reasons.Add(ScenarioA1SequenceCalculator.CcVehicleCaptureText(vehicle.Id));
                 }
             }
 
@@ -867,18 +868,15 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             }
 
             // D5.341, D5.41 (ruling R5.18): at the end of the Player Turn of its Recall, an immobilized Recalled AFV is Abandoned.
-            if (phasing != state.PhasingSide)
+            foreach (var vehicle in state.Units.Where(unit => ScenarioA1SequenceCalculator.RecallAbandoned(phasing != state.PhasingSide, unit.Status == InstanceStatus.Active, LiveFire.IsVehicle(unit),
+                Is(unit, Conditions.Recalled), Is(unit, Conditions.Immobilized), Is(unit, Conditions.Abandoned))).OrderBy(unit => unit.Id, StringComparer.Ordinal))
             {
-                foreach (var vehicle in state.Units.Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit) && Is(unit, Conditions.Recalled)
-                    && Is(unit, Conditions.Immobilized) && !Is(unit, Conditions.Abandoned)).OrderBy(unit => unit.Id, StringComparer.Ordinal))
+                foreach (var (type, abandon) in AbandonEvents(vehicle, attemptId))
                 {
-                    foreach (var (type, abandon) in AbandonEvents(vehicle, attemptId))
-                    {
-                        events.Add(Event(scope, attemptId, events.Count + 1, expected, type, abandon, null, null, [changed]));
-                    }
-
-                    reasons.Add($"play.recall-abandoned: {vehicle.Id} is Recalled and immobilized, so its crew Abandons it (D5.341, D5.41)");
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, type, abandon, null, null, [changed]));
                 }
+
+                reasons.Add(ScenarioA1SequenceCalculator.RecallAbandonedText(vehicle.Id));
             }
         }
     }
