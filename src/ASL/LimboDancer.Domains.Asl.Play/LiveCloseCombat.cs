@@ -19,36 +19,27 @@ public static class LiveCloseCombat
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(location);
-        if (state.Catalog.Catalog != LiveFire.Catalog || state.Catalog.Version != LiveFire.CatalogVersion)
+        if (ScenarioA1CloseCombatFactBuilders.CatalogBar(state.Catalog.Catalog, state.Catalog.Version, LiveFire.Catalog, LiveFire.CatalogVersion) is { } catalogBar)
         {
-            return (null, $"play.cc-catalog: the Close Combat package reads {LiveFire.Catalog}@{LiveFire.CatalogVersion}, and this game uses {state.Catalog.Catalog}@{state.Catalog.Version}");
+            return (null, catalogBar);
         }
 
         // A11.19 (ruling R14.2): Dummies are removed before any attack is declared, so they are never CC units.
-        UnitInstance[] units = [.. state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Kind != UnitKinds.Dummy)
+        UnitInstance[] units = [.. state.At(location).OfType<UnitInstance>().Where(unit => ScenarioA1CloseCombatFactBuilders.IsCcUnit(unit.Status == InstanceStatus.Active, unit.Kind == UnitKinds.Dummy))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal)];
         if (units.Any(unit => unit.Definition is null))
         {
-            return (null, "play.cc-units: the Location holds a unit outside the catalog (A11.19)");
+            return (null, ScenarioA1CloseCombatFactBuilders.OutsideCatalogText());
         }
 
-        return ([.. units.Select(unit => new CloseCombatUnit(unit.Id, unit.Definition!.Definition, unit.Side, Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned),
+        // Rulings R14.3, R14.5, R14.8: TI, Unarmed units and prisoners' Guards, and the declared Infiltrations; Rules builds each unit (pass 32.g).
+        return ([.. units.Select(unit => ScenarioA1CloseCombatFactBuilders.Unit(unit.Id, unit.Definition!.Definition, unit.Side, Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned),
             Is(unit, Conditions.Wounded), Is(unit, Conditions.Disrupted), Is(unit, Conditions.Berserk), Is(unit, Conditions.Fanatic), Is(unit, Conditions.Heroic),
-            Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden), Is(unit, Conditions.Captured),
-            state.Advances.Any(item => item.Unit == unit.Id && item.To == location), Is(unit, Conditions.Melee))
-        {
-            StackedWith = stacking?.GetValueOrDefault(unit.Id),
-            WithdrawingTo = withdrawals?.GetValueOrDefault(unit.Id),
-            Cx = Is(unit, Conditions.Cx) ? true : null,
-
-            // Rulings R14.3, R14.5, R14.8: TI, Unarmed units and prisoners' Guards, and the declared Infiltrations.
-            Ti = Is(unit, "asl:ti") ? true : null,
-            Unarmed = Is(unit, Conditions.Unarmed) ? true : null,
-            GuardId = Is(unit, Conditions.Captured) ? unit.Custodian : null,
-            InfiltrateTo = infiltrations?.GetValueOrDefault(unit.Id),
-            Weapons = state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id)
-                .Select(item => item.Id).Order(StringComparer.Ordinal).ToArray() is { Length: > 0 } weapons ? weapons : null,
-        })], null);
+            Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden), Is(unit, Conditions.Captured), state.Advances.Any(item => item.Unit == unit.Id && item.To == location),
+            Is(unit, Conditions.Melee), stacking?.GetValueOrDefault(unit.Id), withdrawals?.GetValueOrDefault(unit.Id), Is(unit, Conditions.Cx), Is(unit, "asl:ti"),
+            Is(unit, Conditions.Unarmed), unit.Custodian, infiltrations?.GetValueOrDefault(unit.Id),
+            [.. state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id)
+                .Select(item => item.Id).Order(StringComparer.Ordinal)]))], null);
     }
 
     /// <summary>The Ambush facts of a Location, before the drs; <paramref name="terrain"/> is the planner's read.</summary>
@@ -58,10 +49,8 @@ public static class LiveCloseCombat
         var (units, reason) = Units(state, location, null);
 
         // A11.4 (ruling R14.2): a hidden unit placed there as the CCPh began makes an Ambush possible.
-        return units is null ? (null, reason) : (new AmbushFacts(state.Phase == "ccph" ? "CCPh" : state.Phase, location.ToString(), terrain, state.PhasingSide, units, null)
-        {
-            HiddenPlaced = units.Any(unit => state.HiddenPlaced.Contains(unit.UnitId!, StringComparer.Ordinal)) ? true : null,
-        }, null);
+        return units is null ? (null, reason) : (ScenarioA1CloseCombatFactBuilders.Ambush(state.Phase, location.ToString(), terrain, state.PhasingSide, units,
+            units.Any(unit => state.HiddenPlaced.Contains(unit.UnitId!, StringComparer.Ordinal))), null);
     }
 
     /// <summary>
@@ -86,32 +75,20 @@ public static class LiveCloseCombat
         // A4.152 (ruling R27.3): the CC of an Infantry OVR follows its entry at once, with no Ambush (A11.4 is for units that advance into CC).
         if (overrun)
         {
-            return (new CloseCombatFacts("MPh", location.ToString(), terrain, state.PhasingSide, CloseCombatFacts.Simultaneous, null, units, [], [], attacks, null)
-            {
-                InfantryOverrun = true,
-            }, null);
+            return (ScenarioA1CloseCombatFactBuilders.Overrun(location.ToString(), terrain, state.PhasingSide, units, attacks), null);
         }
 
-        if (entry is null && ScenarioA1CloseCombatCalculator.AmbushPossible(terrain, units, units.Any(unit => state.HiddenPlaced.Contains(unit.UnitId!, StringComparer.Ordinal))))
+        if (ScenarioA1CloseCombatFactBuilders.AmbushFirstBar(entry is not null, ScenarioA1CloseCombatCalculator.AmbushPossible(terrain, units, units.Any(unit => state.HiddenPlaced.Contains(unit.UnitId!, StringComparer.Ordinal))),
+            location.ToString()) is { } ambushFirst)
         {
-            return (null, $"play.cc-ambush-first: Infantry advanced into CC in {location}, so the Ambush drs come first (A11.4)");
+            return (null, ambushFirst);
         }
 
-        // A11.33, A11.34 (ruling R14.6): the prisoners' escape round, when asked for, comes before any other; the rounds after it follow as before.
-        var rounds = entry?.Rounds.Where(item => item != CloseCombatFacts.PrisonersRound).Count() ?? 0;
-        var ambushers = entry?.Ambusher is { } ambusher && units.Any(unit => unit.Side == ambusher && unit.Captured != true);
-        var round = requested == CloseCombatFacts.PrisonersRound && (entry is null || entry.Rounds.Count == 0) ? CloseCombatFacts.PrisonersRound
-            : entry?.Ambusher is null ? CloseCombatFacts.Simultaneous
-            : ambushers && (rounds == 0 || requested == CloseCombatFacts.AmbusherRound) ? CloseCombatFacts.AmbusherRound
-            : CloseCombatFacts.AmbushedRound;
-
-        // J2.31 (ruling R14.1): the Location's first round other than the prisoners' declares Hand-to-Hand for the CCPh.
-        var hand = rounds > 0 ? entry!.HandToHand : round != CloseCombatFacts.PrisonersRound && handToHand;
-        return (new CloseCombatFacts(state.Phase == "ccph" ? "CCPh" : state.Phase, location.ToString(), terrain, state.PhasingSide, round, entry?.Ambusher, units,
-            entry?.Attacked ?? [], entry?.Attacking ?? [], attacks, null)
-        {
-            HandToHand = hand ? true : null,
-        }, null);
+        // A11.33, A11.34 (ruling R14.6): the prisoners' escape round, when asked for, comes before any other; the rounds after it follow as before. J2.31
+        // (ruling R14.1): the Location's first round other than the prisoners' declares Hand-to-Hand for the CCPh.
+        var (round, rounds) = ScenarioA1CloseCombatFactBuilders.NextRound(requested, entry?.Rounds ?? [], entry?.Ambusher, entry?.Ambusher is { } ambusher && units.Any(unit => unit.Side == ambusher && unit.Captured != true));
+        var hand = ScenarioA1CloseCombatFactBuilders.HandToHand(rounds, entry?.HandToHand == true, round, handToHand);
+        return (ScenarioA1CloseCombatFactBuilders.Round(state.Phase, location.ToString(), terrain, state.PhasingSide, round, entry?.Ambusher, units, entry?.Attacked ?? [], entry?.Attacking ?? [], attacks, hand), null);
     }
 
     /// <summary>The rolls of a CC record, rebuilt from its roll ids and the recorded dice, in the package's shape.</summary>
@@ -209,7 +186,7 @@ public static class LiveCloseCombat
         if (state.Unit(vehicleId) is not { Status: InstanceStatus.Active } vehicle || !LiveFire.IsVehicle(vehicle) || state.Location(vehicleId)?.Location != location
             || vehicle.Definition is not { } definition)
         {
-            return (null, $"play.cc-vehicle: {vehicleId} is not an active vehicle in {location}");
+            return (null, ScenarioA1CloseCombatFactBuilders.VehicleNotActiveText(vehicleId, location.ToString()));
         }
 
         var (units, reason) = Units(state, location, null);
@@ -218,18 +195,15 @@ public static class LiveCloseCombat
             return (null, reason);
         }
 
-        var moving = reaction && state.Movement is { Vehicle: true, Started: true, Stopped: false } movement && movement.Members.Contains(vehicle.Id, StringComparer.Ordinal);
-        var facts = new VehicleCloseCombatFacts(state.Phase == "ccph" ? "CCPh" : state.Phase == "mph" ? "MPh" : state.Phase, location.ToString(),
-            new VehicleCloseCombatVehicle(vehicle.Id, definition.Definition, vehicle.Side, LiveFire.CrewExposed(vehicle), Is(vehicle, Conditions.Motion) || moving,
-                Is(vehicle, Conditions.Immobilized) || Is(vehicle, Conditions.Bogged), Is(vehicle, Conditions.Stunned) || Is(vehicle, Conditions.Recalled),
-                Is(vehicle, Conditions.Shocked) || Is(vehicle, Conditions.UnconfirmedKill), Is(vehicle, Conditions.Abandoned),
-                Is(vehicle, Conditions.Malfunctioned) || Is(vehicle, Conditions.Disabled), Is(vehicle, Conditions.BmgMalfunctioned), Is(vehicle, Conditions.CmgMalfunctioned)),
-            [.. units.Where(unit => state.Unit(unit.UnitId!) is { } found && !LiveFire.IsVehicle(found))],
-            byVehicle ? [] : attackers, byVehicle ? defenders : [], byVehicle, reaction, null)
-        {
-            FireMarked = reaction && attackers.Where(id => state.Unit(id) is { } unit && (Is(unit, Conditions.FirstFire) || Is(unit, Conditions.FinalFire))).ToArray() is { Length: > 0 } marked
-                ? marked : null,
-        };
+        var moving = ScenarioA1CloseCombatFactBuilders.VehicleMoving(reaction, state.Movement is { Vehicle: true, Started: true, Stopped: false },
+            state.Movement?.Members.Contains(vehicle.Id, StringComparer.Ordinal) == true);
+        var facts = ScenarioA1CloseCombatFactBuilders.VehicleAttack(state.Phase, location.ToString(),
+            ScenarioA1CloseCombatFactBuilders.Vehicle(vehicle.Id, definition.Definition, vehicle.Side, LiveFire.CrewExposed(vehicle), Is(vehicle, Conditions.Motion), moving,
+                Is(vehicle, Conditions.Immobilized), Is(vehicle, Conditions.Bogged), Is(vehicle, Conditions.Stunned), Is(vehicle, Conditions.Recalled),
+                Is(vehicle, Conditions.Shocked), Is(vehicle, Conditions.UnconfirmedKill), Is(vehicle, Conditions.Abandoned),
+                Is(vehicle, Conditions.Malfunctioned), Is(vehicle, Conditions.Disabled), Is(vehicle, Conditions.BmgMalfunctioned), Is(vehicle, Conditions.CmgMalfunctioned)),
+            [.. units.Where(unit => state.Unit(unit.UnitId!) is { } found && !LiveFire.IsVehicle(found))], attackers, defenders, byVehicle, reaction,
+            ScenarioA1CloseCombatFactBuilders.FireMarked(reaction, [.. attackers.Where(id => state.Unit(id) is { } unit && (Is(unit, Conditions.FirstFire) || Is(unit, Conditions.FinalFire)))]));
         return (facts, null);
     }
 
