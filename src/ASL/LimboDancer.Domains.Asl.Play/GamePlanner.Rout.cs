@@ -182,155 +182,46 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
-    /// The least half MF, within the unit's allowance, to reach each Location from a start over legal rout steps (A10.51): the search follows which Known
-    /// armed enemy units have had the unit in their LOS, since it never moves closer to them afterwards. An entry that costs all MF is a first step only.
+    /// The least half MF, within the unit's allowance, to reach each Location from a start over legal rout steps (A10.51), as Rules searches it over the
+    /// rout's fact reader; the Locations come back through the scan's table in the order the search reached them.
     /// </summary>
     private Dictionary<BoardLocation, int> RoutReach(GameState state, UnitInstance unit, BoardLocation start, IEnumerable<string> seen, int spent, int limit,
         bool avoidInterdiction = false, Dictionary<BoardLocation, BoardLocation[]>? routes = null)
     {
-        // Pass 31d (design D3): when the caller asks for the routes, the search keeps where each node was reached from, and gives one least-cost
-        // route to each Location it reaches.
-        var came = new Dictionary<(BoardLocation, long), (BoardLocation At, long Mask)>();
-        var reached = new Dictionary<BoardLocation, (BoardLocation At, long Mask)>();
-        string[] enemies = [.. KnownEnemies(state, unit.Side).Where(item => Armed(item.Unit)).Select(item => item.Unit.Id).Order(StringComparer.Ordinal)];
-        var sight = new Dictionary<BoardLocation, long>();
-        long Mask(IEnumerable<string> ids) => ids.Select(id => Array.IndexOf(enemies, id)).Where(index => index is >= 0 and < 63).Aggregate(0L, (mask, index) => mask | (1L << index));
-        long Sight(BoardLocation at) => sight.TryGetValue(at, out var mask) ? mask : sight[at] = Mask(SeenBy(state, unit.Side, at));
-        string[] Seen(long mask) => [.. enemies.Where((_, index) => index < 63 && (mask & (1L << index)) != 0)];
-
-        var encircled = state.Encircled(unit);
-        var bars = new Dictionary<(BoardLocation, BoardLocation, long), bool>();
-        var interdicted = new Dictionary<BoardLocation, bool>();
-        var entries = new Dictionary<(BoardLocation, BoardLocation, bool), (int? HalfMf, bool AllMf, string? Reason)>();
-        var best = new Dictionary<(BoardLocation, long), int>();
-        var reach = new Dictionary<BoardLocation, int> { [start] = spent };
-        var queue = new PriorityQueue<(BoardLocation At, long Mask), int>();
-        var first = (start, Mask(seen) | Sight(start));
-        best[first] = spent;
-        queue.Enqueue(first, spent);
-        while (queue.TryDequeue(out var node, out var cost))
-        {
-            if (cost > best[node])
-            {
-                continue;
-            }
-
-            // A2.1 (ruling R20.6; referee, pass 20): a rout never leaves the playable area, so its targets lie within it.
-            foreach (var next in Neighbors(state, node.At).Where(at => PlayableBar(state, at) is null))
-            {
-                // Each LOS read is costly on a real board, so the search keeps what it has read.
-                if (!bars.TryGetValue((node.At, next, node.Mask), out var barred))
-                {
-                    bars[(node.At, next, node.Mask)] = barred = RoutStepBar(state, unit.Side, node.At, next, Seen(node.Mask)) is not null;
-                }
-
-                if (barred)
-                {
-                    continue;
-                }
-
-                if (avoidInterdiction && (interdicted.TryGetValue(next, out var open) ? open : interdicted[next] = Interdictor(state, unit.Side, next) is not null))
-                {
-                    continue;
-                }
-
-                var firstStep = encircled && cost == spent && node.At == start;
-                if (!entries.TryGetValue((node.At, next, firstStep), out var entry))
-                {
-                    entries[(node.At, next, firstStep)] = entry = RoutEntry(state, node.At, next, firstStep);
-                }
-
-                var (halfMf, allMf, _) = entry;
-                int step;
-                if (allMf)
-                {
-                    if (cost != 0)
-                    {
-                        continue;
-                    }
-
-                    step = limit;
-                }
-                else if (halfMf is { } value)
-                {
-                    step = value;
-                }
-                else
-                {
-                    continue;
-                }
-
-                var total = cost + step;
-                if (total > limit)
-                {
-                    continue;
-                }
-
-                var key = (next, node.Mask | Sight(next));
-                if (total < best.GetValueOrDefault(key, int.MaxValue))
-                {
-                    best[key] = total;
-                    came[key] = node;
-                    if (total < reach.GetValueOrDefault(next, int.MaxValue))
-                    {
-                        reached[next] = key;
-                    }
-
-                    reach[next] = Math.Min(reach.GetValueOrDefault(next, int.MaxValue), total);
-                    queue.Enqueue(key, total);
-                }
-            }
-        }
-
+        var scan = new RoutScan(this, state);
+        var found = routes is null ? null : new Dictionary<int, int[]>();
+        var reach = ScenarioA1RoutCalculator.RoutReach(scan, scan.Enemies(unit.Side), scan.Index(start), seen, spent, limit, state.Encircled(unit), state.ScenarioMonth,
+            avoidInterdiction, found);
         if (routes is not null)
         {
-            foreach (var (at, last) in reached)
+            foreach (var (at, route) in found!)
             {
-                var steps = new List<BoardLocation>();
-                for (var node = last; node != first && steps.Count <= limit; node = came[node])
-                {
-                    steps.Add(node.At);
-                }
-
-                steps.Reverse();
-                routes[at] = [.. steps];
+                routes[scan.At(at)] = [.. route.Select(scan.At)];
             }
         }
 
-        return reach;
+        return reach.ToDictionary(item => scan.At(item.Key), item => item.Value);
     }
 
-    /// <summary>
-    /// The woods and building Locations a rout may make for (A10.51, A10.532 EXC): the nearest in MF within its allowance, calculated at the start of its
-    /// rout, and any no nearer than that which is no farther from a Known enemy unit than the start, which the unit may prefer; empty when none is reached.
-    /// </summary>
+    /// <summary>The woods and building Locations a rout may make for (A10.51, A10.532 EXC); empty when none is reached.</summary>
     private BoardLocation[] RoutTargets(GameState state, UnitInstance unit, BoardLocation start, IReadOnlyDictionary<BoardLocation, int> reach)
     {
-        var enemies = KnownEnemies(state, unit.Side).ToArray();
-        bool Ignorable(BoardLocation at) => enemies.Any(enemy => HexDistance(state, enemy.At, at) is { } there && HexDistance(state, enemy.At, start) is { } here && there <= here);
-        var covers = reach.Where(item => item.Key != start && RoutCover(state, item.Key)).ToArray();
-        var binding = covers.Where(item => !Ignorable(item.Key)).ToArray();
-        if (binding.Length == 0)
-        {
-            return [];
-        }
-
-        var nearest = binding.Min(item => item.Value);
-        return [.. covers.Where(item => item.Value <= nearest).Select(item => item.Key)];
+        var scan = new RoutScan(this, state);
+        var targets = ScenarioA1RoutCalculator.RoutTargets(scan, scan.Enemies(unit.Side), scan.Index(start), reach.ToDictionary(item => scan.Index(item.Key), item => item.Value));
+        return [.. targets.Select(scan.At)];
     }
 
     /// <summary>Whether a broken unit has any legal rout step (A10.5): a step or a Low Crawl the rules allow.</summary>
     private bool CanRout(GameState state, UnitInstance unit) =>
-        state.Location(unit.Id)?.Location is { } at && RoutReach(state, unit, at, SeenBy(state, unit.Side, at), 0, RoutHalfMf(unit)).Count > 1;
+        state.Location(unit.Id)?.Location is { } at && ScenarioA1RoutCalculator.CanRout(RoutReach(state, unit, at, SeenBy(state, unit.Side, at), 0, RoutHalfMf(unit)).Count);
 
-    /// <summary>
-    /// Whether a broken unit ADJACENT to its captors can get away from every Known unbroken armed enemy unit only by Interdiction or Low Crawl (A20.21):
-    /// no Location within its MF, reached without entering an Open Ground Location an enemy unit could Interdict, is clear of them.
-    /// </summary>
+    /// <summary>Whether a broken unit ADJACENT to its captors can get away from every Known unbroken armed enemy unit only by Interdiction or Low Crawl (A20.21).</summary>
     private bool TrappedByInterdiction(GameState state, UnitInstance unit, BoardLocation start)
     {
-        var reach = RoutReach(state, unit, start, SeenBy(state, unit.Side, start), 0, RoutHalfMf(unit), avoidInterdiction: true);
-        return !reach.Keys.Any(at => at != start && NearUnbrokenArmedEnemy(state, unit.Side, at) is null);
+        var scan = new RoutScan(this, state);
+        var reach = ScenarioA1RoutCalculator.RoutReach(scan, scan.Enemies(unit.Side), scan.Index(start), SeenBy(state, unit.Side, start), 0, RoutHalfMf(unit), state.Encircled(unit),
+            state.ScenarioMonth, avoidInterdiction: true);
+        return ScenarioA1RoutCalculator.TrappedByInterdiction(scan, scan.Enemies(unit.Side), scan.Index(start), reach);
     }
 
     /// <summary>A10.5: the half MF a broken unit has in the RtPh, six MF, a wounded SMC three.</summary>
@@ -740,17 +631,13 @@ public sealed partial class GamePlanner
         }
 
         // Pass 31d (design D3): one least-cost route to each place the rout may end, from the search's own steps. The search reads Known enemy
-        // units alone (A10.533), so a route tells the routing side nothing it does not hold. A place the unit may not end in, since it began
-        // ADJACENT to a Known armed enemy unit that is ADJACENT to that place too (A10.51), is given no route.
-        var found = new Dictionary<BoardLocation, BoardLocation[]>();
-        var reach = RoutReach(state, unit, at, SeenBy(state, unit.Side, at), 0, RoutHalfMf(unit), routes: found);
-        var targets = RoutTargets(state, unit, at, reach);
-        var near = KnownEnemies(state, unit.Side).Where(item => Armed(item.Unit) && AdjacentOrSame(state, item.At, at)).ToArray();
-        // A least-cost way to one place may run through another and out into the open again, which a rout may not do once it has reached woods or a
-        // building (A10.51): such a way is not offered (found by the sweep of The Tractor Works, pass 31d).
-        bool Holds(BoardLocation[] route) => Array.FindIndex(route, targets.Contains) is var reached && route.Skip(reached + 1).All(step => RoutCover(state, step));
-        return (targets, reach.Count > 1, targets.Where(target => found.TryGetValue(target, out var route) && Holds(route) && !near.Any(item => AdjacentOrSame(state, item.At, target)))
-            .ToDictionary(target => target, target => (IReadOnlyList<BoardLocation>)found[target]));
+        // units alone (A10.533), so a route tells the routing side nothing it does not hold. Rules decides which places are offered (pass 32.f).
+        var scan = new RoutScan(this, state);
+        var found = new Dictionary<int, int[]>();
+        var reach = ScenarioA1RoutCalculator.RoutReach(scan, scan.Enemies(unit.Side), scan.Index(at), SeenBy(state, unit.Side, at), 0, RoutHalfMf(unit), state.Encircled(unit),
+            state.ScenarioMonth, routes: found);
+        var (targets, canRout, routes) = ScenarioA1RoutCalculator.RoutAdvice(scan, scan.Enemies(unit.Side), scan.Index(at), reach, found);
+        return ([.. targets.Select(scan.At)], canRout, routes.ToDictionary(item => scan.At(item.Key), item => (IReadOnlyList<BoardLocation>)[.. item.Value.Select(scan.At)]));
     }
 
     /// <summary>Whether a unit may keep its DM as the RPh ends (A10.62; ruling R13.1).</summary>
