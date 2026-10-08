@@ -1001,7 +1001,7 @@ public static class GameProjector
                 Attacked = [.. attacked, .. combat.Defenders],
 
                 // J2.31 (ruling R14.1): the first round declares the Location Hand-to-Hand for the CCPh.
-                HandToHand = Rules.ScenarioA1CloseCombatProjection.RecordHandToHand(entry?.HandToHand == true, combat.Round, combat.Facts.TryGetProperty("handToHand", out var hand) && hand.ValueKind == JsonValueKind.True),
+                HandToHand = Rules.ScenarioA1CloseCombatProjection.RecordHandToHand(entry?.HandToHand == true, combat.Round, () => combat.Facts.TryGetProperty("handToHand", out var hand) && hand.ValueKind == JsonValueKind.True),
             };
             return state with
             {

@@ -141,7 +141,11 @@ public static class ScenarioA1CloseCombatProjection
     public static bool Closes(string round) => round is not (CloseCombatFacts.AmbusherRound or CloseCombatFacts.PrisonersRound);
 
     /// <summary>J2.31 (ruling R14.1): the first round other than the prisoners' declares the Location Hand-to-Hand for the CCPh; once declared it stays.</summary>
-    public static bool RecordHandToHand(bool entryHandToHand, string round, bool factsHandToHand) => entryHandToHand || (round != CloseCombatFacts.PrisonersRound && factsHandToHand);
+    public static bool RecordHandToHand(bool entryHandToHand, string round, Func<bool> factsHandToHand)
+    {
+        ArgumentNullException.ThrowIfNull(factsHandToHand);
+        return entryHandToHand || (round != CloseCombatFacts.PrisonersRound && factsHandToHand());
+    }
 
     /// <summary>A11.31 (table-player finding, pass 11): a HS a CC attacker is Reduced to has made its attack in the sequential CC of that Location.</summary>
     public static bool ReducedAttackerHasAttacked(bool consumedHasAttacked) => consumedHasAttacked;
