@@ -316,14 +316,14 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.invalid-arguments: the Ambush names its Location");
         }
 
-        if (state.Phase != "ccph")
+        if (ScenarioA1CloseCombatRules.CcPhaseBar(state.Phase) is { } phaseBar)
         {
-            return Refused(scope, label, expected, "play.cc-phase: CC is resolved in the CCPh (A3.8, A11.1)");
+            return Refused(scope, label, expected, phaseBar);
         }
 
-        if (state.CloseCombats.Any(item => item.Location == location || !item.Closed))
+        if (ScenarioA1CloseCombatRules.AmbushOrderBar(state.CloseCombats.Any(item => item.Location == location || !item.Closed)) is { } orderBar)
         {
-            return Refused(scope, label, expected, "play.ambush-order: the Ambush drs come before any CC in the Location, with no other Location's CC open (A11.4, A11.12)");
+            return Refused(scope, label, expected, orderBar);
         }
 
         var terrain = ReadLocation(state, location) is { } read ? TerrainKey(read) : null;
@@ -336,12 +336,12 @@ public sealed partial class GamePlanner
         // E1.77 (backlog pass 16, ruling R16.7): at night, unless Illuminated, an Ambush needs a Final dr only two lower.
         facts = facts with
         {
-            DarkNight = state.Night && !Illuminated(state, location) ? true : null
+            DarkNight = ScenarioA1CloseCombatRules.DarkNight(state.Night, Illuminated(state, location))
         };
 
         var reference = CloseCombatReference.Value;
         var first = ScenarioA1CloseCombatCalculator.ResolveAmbush(facts, reference);
-        if (first.Reasons is not [{ } missing] || !missing.StartsWith("asl.a1.cc.roll-missing:ambush:", StringComparison.Ordinal))
+        if (ScenarioA1CloseCombatRules.AmbushRollSide(first.Reasons) is null)
         {
             // Pass 31d (design D9): each reason in its sentence, as a round's refusal is worded ("Prisoner guard outside" was a code's last words).
             return Refused(scope, label, expected, RefusalReasons.Refusal("play.ambush-refused", "Close Combat", "Ambush", first.Reasons));
@@ -359,12 +359,11 @@ public sealed partial class GamePlanner
                 Rolls = drs
             }, reference)).Disposition != CloseCombatResolution.Resolved)
             {
-                if (resolution.Reasons is not [{ } key] || !key.StartsWith("asl.a1.cc.roll-missing:ambush:", StringComparison.Ordinal))
+                if (ScenarioA1CloseCombatRules.AmbushRollSide(resolution.Reasons) is not { } side)
                 {
                     throw new InvalidOperationException("The Close Combat package left an Ambush it had accepted undecided: " + string.Join("; ", resolution.Reasons));
                 }
 
-                var side = key["asl.a1.cc.roll-missing:ambush:".Length..];
                 var drawn = draw(new RollRequest(1, 6));
                 var rollId = $"{attemptId}-roll-{(rollIds.Count + 1).ToString(CultureInfo.InvariantCulture)}";
                 rollIds[side] = rollId;
@@ -378,20 +377,22 @@ public sealed partial class GamePlanner
                 JsonSerializer.SerializeToElement(facts, LiveFire.Json), JsonSerializer.SerializeToElement(resolution, LiveFire.Json)), package, null));
 
             // A11.4 (ruling R14.2): the ambushed side loses all its concealment.
-            foreach (var unit in resolution.Ambusher is { } ambusher ? facts.Units!.Where(unit => unit.Side != ambusher && unit.Concealed == true && unit.Captured != true) : [])
+            foreach (var unit in facts.Units!.Where(unit => ScenarioA1CloseCombatRules.AmbushedLosesConcealment(resolution.Ambusher, unit.Side!, unit.Concealed, unit.Captured)))
             {
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(unit.UnitId!, new Dictionary<string, ConditionState>
+                var lost = new Dictionary<string, ConditionState>();
+                foreach (var (condition, value) in ScenarioA1CloseCombatRules.AmbushedConditions())
                 {
-                    [Conditions.Concealed] = ConditionState.False,
-                    [Conditions.Hidden] = ConditionState.False,
-                }), package, null, [recordId]));
+                    lost[ConditionName(condition)] = value ? ConditionState.True : ConditionState.False;
+                }
+
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(unit.UnitId!, lost), package, null, [recordId]));
             }
 
             return events;
         }
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-            [$"play.ambush: each side makes an Ambush dr for {location}; one at least three below the other ambushes (A11.4)"])
+            [ScenarioA1CloseCombatRules.AmbushSummary(location.ToString())])
         {
             Roll = new PlannedRoll("cc-ambush", Build),
             FirstEventId = EventId(attemptId, 1),
@@ -417,16 +418,16 @@ public sealed partial class GamePlanner
         }
 
         // A4.152, A15.432 (ruling R27.3): the CC of a berserk Infantry OVR onto a lone SMC is resolved at once in the MPh.
-        var overrun = state.Phase == "mph" && BerserkOverrunPending(state) == location;
-        if (state.Phase != "ccph" && !overrun)
+        var overrun = ScenarioA1CloseCombatRules.OverrunCc(state.Phase, state.Phase == "mph" && BerserkOverrunPending(state) == location);
+        if (ScenarioA1CloseCombatRules.RoundPhaseBar(state.Phase, overrun) is { } phaseBar)
         {
-            return Refused(scope, label, expected, "play.cc-phase: CC is resolved in the CCPh, or in the MPh after a berserk Infantry OVR onto a lone SMC (A3.8, A11.1, A4.152)");
+            return Refused(scope, label, expected, phaseBar);
         }
 
         // A11.31 (ruling R11.16): CC in a Location holding a vehicle is sequential, one attack at a time, with the vehicle CC action.
-        if (state.At(location).OfType<UnitInstance>().FirstOrDefault(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)) is { } present)
+        if (ScenarioA1CloseCombatRules.VehiclePresentBar(state.At(location).OfType<UnitInstance>().FirstOrDefault(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit))?.Id, location.ToString()) is { } vehicleBar)
         {
-            return Refused(scope, label, expected, $"play.cc-vehicle: {present.Id} is in {location}, so its CC is sequential, one attack at a time (asl.game.vehicle-close-combat; A11.31)");
+            return Refused(scope, label, expected, vehicleBar);
         }
 
         var attacks = new List<CloseCombatDeclaration>();
@@ -454,10 +455,10 @@ public sealed partial class GamePlanner
             var berserkHere = state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide
                 && Is(unit, Conditions.Berserk)).Select(unit => unit.Id).ToHashSet(StringComparer.Ordinal);
             var phasing = attacks.Where(item => item.Attackers!.All(berserkHere.Contains)).ToArray();
-            if (phasing.Length != 1 || !phasing[0].Attackers!.ToHashSet(StringComparer.Ordinal).SetEquals(berserkHere) || attacks.Count > 2
-                || attacks.Any(item => item.Capture == true) || arguments.TryGetProperty("withdrawals", out _) || arguments.TryGetProperty("infiltrations", out _))
+            if (ScenarioA1CloseCombatRules.OverrunAttacksBar(phasing.Length, phasing.Length == 1 && phasing[0].Attackers!.ToHashSet(StringComparer.Ordinal).SetEquals(berserkHere), attacks.Count,
+                attacks.Any(item => item.Capture == true), arguments.TryGetProperty("withdrawals", out _), arguments.TryGetProperty("infiltrations", out _)) is { } overrunBar)
             {
-                return Refused(scope, label, expected, "play.cc-overrun: in the OVR's CC every berserk unit attacks the SMC together, and the SMC may attack them; no capture, withdrawal, or Infiltration (A4.152, A15.432, A20.21)");
+                return Refused(scope, label, expected, overrunBar);
             }
         }
 
@@ -470,22 +471,22 @@ public sealed partial class GamePlanner
         foreach (var (unitId, destination) in withdrawals)
         {
             // A11.21, A4.43 (ruling R5.5): a withdrawing unit carries no more than its IPC; dropping the SW beyond it is not built.
-            if (state.Unit(unitId) is { Status: InstanceStatus.Active } laden && Laden(state, laden))
+            if (ScenarioA1CloseCombatRules.WithdrawalPortageBar(unitId, state.Unit(unitId) is { Status: InstanceStatus.Active } laden && Laden(state, laden)) is { } portageBar)
             {
-                return Refused(scope, label, expected, $"play.cc-withdrawal-portage: {unitId} carries more than its IPC and may not withdraw with it; dropping a SW is not built (A11.21, A4.43)");
+                return Refused(scope, label, expected, portageBar);
             }
 
-            if (state.Unit(unitId) is not { Status: InstanceStatus.Active } unit || state.Location(unit.Id)?.Location != location || !Is(unit, Conditions.Melee)
-                || !BoardLocation.TryParse(destination, out var to) || !WithdrawalDestinations(state, unit, location).Contains(to))
+            if (ScenarioA1CloseCombatRules.WithdrawalBar(unitId, state.Unit(unitId) is { Status: InstanceStatus.Active } unit && state.Location(unit.Id)?.Location == location && Is(unit, Conditions.Melee)
+                && BoardLocation.TryParse(destination, out var to) && WithdrawalDestinations(state, unit, location).Contains(to)) is { } withdrawalBar)
             {
-                return Refused(scope, label, expected, $"play.cc-withdrawal: {unitId} withdraws only from Melee, to an ADJACENT Location it could advance into that holds no Known enemy unit (A11.2, A11.21)");
+                return Refused(scope, label, expected, withdrawalBar);
             }
         }
 
         if (state.Units.FirstOrDefault(unit => unit.Status == InstanceStatus.Active && state.Location(unit.Id)?.Location == location && MustWithdraw(state, unit, location)
             && !withdrawals.ContainsKey(unit.Id)) is { } broken)
         {
-            return Refused(scope, label, expected, $"play.cc-withdraw-required: {broken.Id} is broken in Melee and must attempt to withdraw (A11.16)");
+            return Refused(scope, label, expected, ScenarioA1CloseCombatRules.WithdrawRequiredText(broken.Id));
         }
 
         // A11.21, A4.72 (ruling R5.5): a withdrawal an advance could make only by becoming CX makes the unit CX.
@@ -495,10 +496,10 @@ public sealed partial class GamePlanner
         var infiltrations = Map(arguments, "infiltrations") ?? new Dictionary<string, string>(StringComparer.Ordinal);
         foreach (var (unitId, destination) in infiltrations)
         {
-            if (state.Unit(unitId) is not { Status: InstanceStatus.Active } unit || state.Location(unit.Id)?.Location != location
-                || !BoardLocation.TryParse(destination, out var to) || !WithdrawalDestinations(state, unit, location).Contains(to))
+            if (ScenarioA1CloseCombatRules.InfiltrationBar(unitId, state.Unit(unitId) is { Status: InstanceStatus.Active } unit && state.Location(unit.Id)?.Location == location
+                && BoardLocation.TryParse(destination, out var to) && WithdrawalDestinations(state, unit, location).Contains(to)) is { } infiltrationBar)
             {
-                return Refused(scope, label, expected, $"play.cc-infiltration: {unitId} may infiltrate only to an ADJACENT Location a withdrawal could reach (A11.22, A11.21)");
+                return Refused(scope, label, expected, infiltrationBar);
             }
         }
 
@@ -507,18 +508,17 @@ public sealed partial class GamePlanner
 
         // J2.31 (ruling R14.1): Hand-to-Hand is declared only where an SSR allows it, with the Location's first round.
         var handToHand = arguments.TryGetProperty("handToHand", out var hand) && hand.ValueKind == JsonValueKind.True;
-        if (handToHand && !state.SpecialRules.Contains(HandToHandRule, StringComparer.Ordinal))
+        if (ScenarioA1CloseCombatRules.HandToHandSsrBar(handToHand, state.SpecialRules.Contains(HandToHandRule, StringComparer.Ordinal)) is { } ssrBar)
         {
-            return Refused(scope, label, expected, "play.cc-hand-to-hand: Hand-to-Hand CC is declared only where an SSR allows it (J2.31, G1.64)");
+            return Refused(scope, label, expected, ssrBar);
         }
 
         // Referee, pass 14 (A25.43, G1.64): the ATTACKER declares it with the Location's first round other than the prisoners', unless it was ambushed.
         var begun = state.CloseCombats.FirstOrDefault(item => item.Location == location);
-        if (handToHand && ((Text(arguments, "round", out var handRound) && handRound == CloseCombatFacts.PrisonersRound)
-            || begun?.Rounds.Any(item => item != CloseCombatResolved.PrisonersRound) == true || (begun?.Ambusher is { } ambushed && ambushed != state.PhasingSide)))
+        if (ScenarioA1CloseCombatRules.HandToHandTimingBar(handToHand, Text(arguments, "round", out var handRound) && handRound == CloseCombatFacts.PrisonersRound,
+            begun?.Rounds.Any(item => item != CloseCombatResolved.PrisonersRound) == true, begun?.Ambusher is { } ambushed && ambushed != state.PhasingSide) is { } timingBar)
         {
-            return Refused(scope, label, expected,
-                "play.cc-hand-to-hand: the ATTACKER declares Hand-to-Hand with the Location's first round, not in the prisoners' round, and not after being ambushed (J2.31, A25.43)");
+            return Refused(scope, label, expected, timingBar);
         }
 
         var terrain = ReadLocation(state, location) is { } read ? TerrainKey(read) : null;
@@ -548,30 +548,14 @@ public sealed partial class GamePlanner
                 Rolls = rolls
             }, reference)).Disposition != CloseCombatResolution.Resolved)
             {
-                if (resolution.Reasons is not [{ } missing] || !missing.StartsWith("asl.a1.cc.roll-missing:", StringComparison.Ordinal))
+                var next = ScenarioA1CloseCombatRules.NextStep(resolution.Disposition, resolution.Reasons);
+                if (next.Undecided is { } undecided)
                 {
-                    throw new InvalidOperationException("The Close Combat package left a round it had accepted undecided: " + string.Join("; ", resolution.Reasons));
+                    throw new InvalidOperationException("The Close Combat package left a round it had accepted undecided: " + undecided);
                 }
 
-                var key = missing["asl.a1.cc.roll-missing:".Length..];
-                var split = key.IndexOf(':', StringComparison.Ordinal);
-                var (kind, rest) = (key[..split], key[(split + 1)..]);
-                string[] selected = kind == "randomSelection" ? rest[(rest.IndexOf(':', StringComparison.Ordinal) + 1)..].Split(',') : [];
-                if (kind == "leaderStack")
-                {
-                    selected = rest[(rest.IndexOf(':', StringComparison.Ordinal) + 1)..].Split(',');
-                }
-
-                var (count, purpose) = kind switch
-                {
-                    "attack" => (2, "cc-attack"),
-                    "escapeNtc" => (2, "cc-escape-ntc"),
-                    "leaderStack" => (selected.Length, "cc-leader-stack"),
-                    "randomSelection" => (selected.Length, "cc-random-selection"),
-                    "woundSeverity" => (1, "cc-wound-severity"),
-                    "leaderCreation" => (1, "cc-leader-creation"),
-                    _ => (1, "cc-weapon-loss"),
-                };
+                var (kind, rest, selected, count, purpose) = (next.Kind!, next.Rest!, next.Selected, next.Count, next.Purpose!);
+                var key = kind + ":" + rest;
                 var drawn = draw(new RollRequest(count, 6));
                 var rollId = $"{attemptId}-roll-{(rollIds.Count + 1).ToString(CultureInfo.InvariantCulture)}";
                 rollIds[key] = rollId;
@@ -583,7 +567,7 @@ public sealed partial class GamePlanner
                     "randomSelection" => rolls with
                     {
                         RandomSelection = selected.Select((id, index) => (id, index)).Aggregate(rolls.RandomSelection,
-                            (map, pair) => With(map, rest[..rest.IndexOf(':', StringComparison.Ordinal)] + ":" + pair.id, drawn.Values[pair.index]))
+                            (map, pair) => With(map, ScenarioA1CloseCombatRules.SelectionKey(rest, pair.id), drawn.Values[pair.index]))
                     },
                     "woundSeverity" => rolls with { WoundSeverity = With(rolls.WoundSeverity, rest, drawn.Values[0]) },
                     "leaderCreation" => rolls with { LeaderCreation = With(rolls.LeaderCreation, rest, drawn.Values[0]) },
@@ -591,7 +575,7 @@ public sealed partial class GamePlanner
                     "leaderStack" => rolls with
                     {
                         LeaderStack = selected.Select((id, index) => (id, index)).Aggregate(rolls.LeaderStack,
-                            (map, pair) => With(map, rest[..rest.IndexOf(':', StringComparison.Ordinal)] + ":" + pair.id, drawn.Values[pair.index]))
+                            (map, pair) => With(map, ScenarioA1CloseCombatRules.SelectionKey(rest, pair.id), drawn.Values[pair.index]))
                     },
                     _ => rolls with { WeaponLoss = With(rolls.WeaponLoss, rest, drawn.Values[0]) },
                 };
@@ -610,7 +594,7 @@ public sealed partial class GamePlanner
             if (overrun && Replay([.. existing, .. events]).Current is { } after)
             {
                 var left = after.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && !Is(unit, Conditions.Captured)).ToArray();
-                if (left.Select(unit => unit.Side).Distinct(StringComparer.Ordinal).Count() > 1)
+                if (ScenarioA1CloseCombatRules.OverrunHoldsInMelee(overrun, left.Select(unit => unit.Side).Distinct(StringComparer.Ordinal).Count()))
                 {
                     foreach (var unit in left.OrderBy(unit => unit.Id, StringComparer.Ordinal))
                     {
@@ -623,10 +607,7 @@ public sealed partial class GamePlanner
             return events;
         }
 
-        var described = attacks.Count == 0 ? "no attacks"
-            : string.Join("; ", attacks.Select(item => $"{string.Join(", ", item.Attackers!)} {(item.Capture == true ? "attempt to capture" : "attack")} {string.Join(", ", item.Defenders!)}"
-                + (item.Director is { } director ? $", directed by {director}" : string.Empty)));
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [$"play.cc: {facts.Round} round in {location}{(facts.HandToHand == true ? ", Hand-to-Hand" : string.Empty)}: {described} (A11.11, A11.12)"])
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [ScenarioA1CloseCombatRules.RoundSummary(facts, location.ToString(), ScenarioA1CloseCombatRules.DescribedAttacks(attacks))])
         {
             Roll = new PlannedRoll("cc", Build),
             FirstEventId = EventId(attemptId, 1),
@@ -647,9 +628,9 @@ public sealed partial class GamePlanner
     /// not make it (A4.72; ruling R5.5).
     /// </summary>
     public IReadOnlyList<BoardLocation> WithdrawalDestinations(GameState state, UnitInstance unit, BoardLocation from) => Laden(state, unit) ? []
-        : [.. Neighbors(state, from).Where(to => PlayableBar(state, to) is null && InfantryStep(state, from, to).Entry is { AllMf: false } entry
-            && DifficultAdvance(state, unit, entry.HalfMf) is { } difficult && !(difficult && Is(unit, Conditions.Cx))
-            && !state.At(to).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && !Is(other, Conditions.Captured)))];
+        : [.. Neighbors(state, from).Where(to => PlayableBar(state, to) is null && InfantryStep(state, from, to).Entry is { } entry
+            && ScenarioA1CloseCombatRules.WithdrawalDestination(true, !entry.AllMf, entry.AllMf ? null : DifficultAdvance(state, unit, entry.HalfMf), Is(unit, Conditions.Cx),
+                !entry.AllMf && state.At(to).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && !Is(other, Conditions.Captured))))];
 
     /// <summary>Whether a unit carries more PP than its IPC (A4.42): three for a MMC, one for a SMC, none for a wounded SMC, one less while CX.</summary>
     /// <summary>
@@ -666,12 +647,12 @@ public sealed partial class GamePlanner
 
     /// <summary>Whether a withdrawal to a Location makes the unit CX (A11.21, A4.72; ruling R5.5).</summary>
     private bool WithdrawalTires(GameState state, UnitInstance unit, BoardLocation from, BoardLocation to) =>
-        InfantryStep(state, from, to).Entry is { AllMf: false } entry && DifficultAdvance(state, unit, entry.HalfMf) == true;
+        InfantryStep(state, from, to).Entry is { } entry && ScenarioA1CloseCombatRules.WithdrawalTires(!entry.AllMf, entry.AllMf ? null : DifficultAdvance(state, unit, entry.HalfMf));
 
     /// <summary>A11.16: a broken unit held in Melee, not Disrupted and not a Guard, must attempt to withdraw when it can.</summary>
     private bool MustWithdraw(GameState state, UnitInstance unit, BoardLocation at) =>
-        Is(unit, Conditions.Broken) && Is(unit, Conditions.Melee) && !Is(unit, Conditions.Disrupted) && !Is(unit, Conditions.Captured)
-        && !IsGuard(state, unit) && WithdrawalDestinations(state, unit, at).Count > 0;
+        ScenarioA1CloseCombatRules.MustWithdraw(Is(unit, Conditions.Broken), Is(unit, Conditions.Melee), Is(unit, Conditions.Disrupted), Is(unit, Conditions.Captured),
+            () => IsGuard(state, unit), () => WithdrawalDestinations(state, unit, at).Count > 0);
 
     /// <summary>
     /// The first Location whose CC must still be resolved this CCPh (A15.43, A11.15): it holds a berserk unit with a Known enemy unit, or
@@ -914,7 +895,7 @@ public sealed partial class GamePlanner
     /// <summary>The stacking the Location's first round declared this CCPh, which the ambushed side's round keeps (A11.14).</summary>
     private static Dictionary<string, string>? FirstRoundStacking(IReadOnlyList<GameEvent> existing, GameState state, BoardLocation location)
     {
-        if (state.CloseCombats.FirstOrDefault(item => item.Location == location) is not { Rounds.Count: > 0 })
+        if (!ScenarioA1CloseCombatRules.KeepsFirstRoundStacking(state.CloseCombats.FirstOrDefault(item => item.Location == location)?.Rounds.Count ?? 0))
         {
             return null;
         }
