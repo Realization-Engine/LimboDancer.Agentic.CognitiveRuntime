@@ -69,25 +69,15 @@ public enum EntryRoute
 /// </summary>
 public sealed record EntryDisclosure(string Mover, EntryRoute Route, bool Withheld, IReadOnlyList<string> MoverReasons)
 {
-    public const string ResolvedOnConfirmation = "play.resolved-on-confirmation: the entry is declared, and its outcome is resolved when it is confirmed";
+    public const string ResolvedOnConfirmation = ScenarioA1EntryRules.ResolvedOnConfirmation;
 
-    public const string CannotResolve = "play.adjudicator-cannot-resolve: no reviewed case covers this entry, and nothing was committed";
+    public const string CannotResolve = ScenarioA1EntryRules.CannotResolve;
 
-    /// <summary>The reasons the mover's side may see for a plan, before or after confirmation.</summary>
+    /// <summary>The reasons the mover's side may see for a plan, before or after confirmation; Rules decides (pass 32.i).</summary>
     public IReadOnlyList<string> ReasonsForMover(GamePlan plan, bool confirmed)
     {
         ArgumentNullException.ThrowIfNull(plan);
-        if (!Withheld)
-        {
-            return plan.Reasons;
-        }
-
-        if (MoverReasons.Count > 0)
-        {
-            return MoverReasons;
-        }
-
-        return !confirmed ? [ResolvedOnConfirmation] : plan.CanCommit ? ["play.committed"] : [CannotResolve];
+        return ScenarioA1EntryRules.ReasonsForMover(Withheld, plan.Reasons, MoverReasons, confirmed, plan.CanCommit);
     }
 }
 
@@ -150,16 +140,12 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
     /// The facts of the first case that depend only on the mover and the terrain; the others read the target's occupants.
     /// A known-enemy or concealed entry needs every one of them true.
     /// </summary>
-    private static readonly string[] MoverFacts =
-    [
-        "isKnownGoodOrderInfantrySquad", "isAttackerMovementPhase", "canMoveThisPhase", "isAdjacentGroundLevelOrdinaryBuilding",
-        "hasNoRoadBypassElevationOrAdditionalTerrain", "hasEnoughMovementFactors", "hasNoSpecialRuleOrOtherModifier",
-    ];
+    private static readonly IReadOnlyList<string> MoverFacts = ScenarioA1EntryRules.MoverFacts;
 
     private static readonly IReadOnlySet<string> OrdinaryBuildings = ScenarioA1Definitions.OrdinaryBuildings;
 
-    // Ruling R10.12 (table player, pass 10): move options the reviewed entry cases do not take.
-    private static readonly string[] MoveOptions = ["assault", "doubleTime", "minimumMove"];
+    // Ruling R10.12 (table player, pass 10): move options the reviewed entry cases do not take (Rules names them, pass 32.i).
+    private static readonly IReadOnlyList<string> MoveOptions = ScenarioA1EntryRules.MoveOptions;
 
     private readonly TimeProvider clock = time ?? TimeProvider.System;
 
@@ -893,7 +879,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
         if (Replay(existing).Current is not { } state || state.Unit(unitId) is not { Status: InstanceStatus.Active } unit)
         {
-            return Refused(scope, label, expected, $"play.unit-unavailable: no active unit '{unitId}'");
+            return Refused(scope, label, expected, ScenarioA1EntryRules.UnitUnavailableText(unitId));
         }
 
         var review = await ReviewEntryAsync(scope, state, unit, target, cancellationToken);
@@ -901,13 +887,13 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         if (conclusion.Disposition != ConclusionDisposition.Definitive)
         {
             return new GamePlan(GamePlanStatus.Refused, scope, label, expected, [],
-                [$"play.not-definitive: the reviewed first case is {conclusion.Disposition.ToString().ToLowerInvariant()}", .. conclusion.ReasonCodes], review);
+                [ScenarioA1EntryRules.FirstCaseNotDefinitive(conclusion.Disposition.ToString().ToLowerInvariant()), .. conclusion.ReasonCodes], review);
         }
 
-        var move = new InstanceMoved(unit.Id, new MapPosition(target), Mf: 2);
+        var move = new InstanceMoved(unit.Id, new MapPosition(target), Mf: ScenarioA1EntryRules.EntryMf);
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
             [Event(scope, attemptId, 1, expected, "instance-moved", move, ScenarioA1Package.Identity.ToString(), visibility: null)],
-            [$"play.enter: {unit.Id} into {target} for 2 MF ({conclusion.ConclusionId})"], review);
+            [ScenarioA1EntryRules.EnterText(unit.Id, target.ToString(), conclusion.ConclusionId)], review);
     }
 
     /// <summary>
@@ -917,14 +903,18 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
     private async Task<GamePlan> PlanMoveOrEntryAsync(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected,
         string label, string actor, CancellationToken cancellationToken)
     {
-        if (Strings(arguments, "unitIds").ToArray() is [{ } unitId] && Text(arguments, "to", out var toText) && BoardLocation.TryParse(toText, out var to)
-            && !arguments.TryGetProperty("smoke", out _) && !arguments.TryGetProperty("bypass", out _)
-            && !MoveOptions.Any(name => arguments.TryGetProperty(name, out var option) && option.ValueKind == JsonValueKind.True)
-            && Replay(existing).Current is { Phase: "mph", Movement: null } state && state.Unit(unitId) is { Status: InstanceStatus.Active } unit
-            && vocabulary.IsA(unit.Kind, "asl:squad") && !Is(unit, Conditions.Berserk)
-            && state.At(to).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && !Is(other, Conditions.Captured))
-            && state.Map.Board(to.Board) is { } placed && boards.TryGetBoard(to.Board, placed.Version).Board is { } handle
-            && new BoardCatalogTerrainEvidence(boards).Bind(handle, to) is not null)
+        // Pass 32.i: Rules decides the routing over the request's and the state's reads, the target's occupants and binding read last, when asked.
+        var oneUnit = Strings(arguments, "unitIds").ToArray() is [{ } single] ? single : null;
+        var toParsed = Text(arguments, "to", out var toText) && BoardLocation.TryParse(toText, out var parsedTo) ? parsedTo : null;
+        var entryState = oneUnit is not null && toParsed is not null ? Replay(existing).Current : null;
+        var mover = oneUnit is not null && entryState is { Phase: "mph", Movement: null } && entryState.Unit(oneUnit) is { Status: InstanceStatus.Active } found ? found : null;
+        if (ScenarioA1EntryRules.ReviewedEntry(oneUnit is not null, toParsed is not null, arguments.TryGetProperty("smoke", out _), arguments.TryGetProperty("bypass", out _),
+            MoveOptions.Any(name => arguments.TryGetProperty(name, out var option) && option.ValueKind == JsonValueKind.True),
+            entryState is { Phase: "mph" }, entryState is { Movement: not null }, mover is not null && vocabulary.IsA(mover.Kind, "asl:squad"), mover is not null && Is(mover, Conditions.Berserk),
+            () => entryState!.At(toParsed!).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != mover!.Side && !Is(other, Conditions.Captured)),
+            () => entryState!.Map.Board(toParsed!.Board) is { } placed && boards.TryGetBoard(toParsed.Board, placed.Version).Board is { } handle
+                && new BoardCatalogTerrainEvidence(boards).Bind(handle, toParsed) is not null)
+            && oneUnit is { } unitId && toParsed is { } to)
         {
             var entry = JsonSerializer.SerializeToElement(new Dictionary<string, object>
             {
@@ -961,14 +951,13 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
         if (Replay(existing).Current is not { } state || state.Unit(unitId) is not { Status: InstanceStatus.Active } unit)
         {
-            return Refused(scope, label, expected, $"play.unit-unavailable: no active unit '{unitId}'");
+            return Refused(scope, label, expected, ScenarioA1EntryRules.UnitUnavailableText(unitId));
         }
 
         var occupants = state.At(target).Where(item => item.Id != unit.Id).ToArray();
-        var withheld = occupants.Length == 0 || occupants.Any(item => !VisibleTo(item, unit.Side));
+        var withheld = ScenarioA1EntryRules.Withheld(occupants.Length, occupants.Any(item => !VisibleTo(item, unit.Side)));
         var facts = EntryFacts(state, unit, target);
-        string[] moverReasons = [.. MoverFacts.Where(name => facts[name] != true)
-            .Select(name => facts[name] is null ? $"play.fact-unknown: {name}" : $"play.fact-false: {name}")];
+        var moverReasons = ScenarioA1EntryRules.MoverReasons(facts);
 
         if (occupants.Length == 0)
         {
@@ -986,39 +975,28 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             };
 
         var units = occupants.OfType<UnitInstance>().ToArray();
-        var enemies = units.Length == occupants.Length && units.All(item => item.Side != unit.Side);
-        bool Mmc(UnitInstance item) => vocabulary.IsA(item.Kind, "asl:mmc");
-        bool Smc(UnitInstance item) => vocabulary.IsA(item.Kind, "asl:smc");
-        var knownEnemy = enemies && units.All(Mmc) && units.All(item => VisibleTo(item, unit.Side));
-        var concealedAll = enemies && units.All(item => Mmc(item) || Smc(item)) && units.All(item => Is(item, Conditions.Concealed) || Is(item, Conditions.Hidden));
-        var route = knownEnemy ? EntryRoute.KnownEnemy
-            : !concealedAll ? EntryRoute.Outside
-            : units.Length == 1 && Mmc(units[0]) ? EntryRoute.Concealed
-
-            // The reviewed decline covers only an SMC that was concealed, not hidden, when the attempt began.
-            : units.Length == 1 && Is(units[0], Conditions.Concealed) && !Is(units[0], Conditions.Hidden) ? EntryRoute.LoneSmc
-            : units.Length > 1 && !units.Any(item => Smc(item) && Is(item, Conditions.Hidden)) ? EntryRoute.RandomSelection
-            : EntryRoute.Outside;
+        var route = RouteOf(ScenarioA1EntryRules.Route([.. occupants.Select(item => new EntryOccupantFacts(item is UnitInstance, item.Side == unit.Side,
+            item is UnitInstance && vocabulary.IsA(item.Kind, "asl:mmc"), item is UnitInstance && vocabulary.IsA(item.Kind, "asl:smc"), VisibleTo(item, unit.Side),
+            Is(item, Conditions.Concealed), Is(item, Conditions.Hidden)))]));
         if (route == EntryRoute.Outside)
         {
-            return Refuse(route, null, "play.outside-reviewed-cases: the target holds units no reviewed case covers "
-                + "(a hidden SMC, a friendly unit, known and concealed units together, or an entity)");
+            return Refuse(route, null, ScenarioA1EntryRules.OutsideReviewedCases);
         }
 
-        if (moverReasons.Length > 0)
+        if (moverReasons.Count > 0)
         {
-            return Refuse(route, null, ["play.mover-cannot-attempt", .. moverReasons]);
+            return Refuse(route, null, [ScenarioA1EntryRules.MoverCannotAttempt, .. moverReasons]);
         }
 
         if (A414Exception(unit) is not false)
         {
-            return Refuse(route, null, "play.a414-exception: the mover may be Berserk, Disrupted, or captured, so A4.14 (p. 49) may not apply");
+            return Refuse(route, null, ScenarioA1EntryRules.A414ExceptionText);
         }
 
         if (state.Map.Board(target.Board) is not { } placed || boards.TryGetBoard(target.Board, placed.Version).Board is not { } handle
             || new BoardCatalogTerrainEvidence(boards).Bind(handle, target) is not { } binding)
         {
-            return Refuse(route, null, "play.outside-reviewed-board: the reviewed cases cover only the explicit building overrides of VASL board 01");
+            return Refuse(route, null, ScenarioA1EntryRules.OutsideReviewedBoard);
         }
 
         return route == EntryRoute.KnownEnemy
@@ -1044,7 +1022,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             cancellationToken);
         if (observed.Observations.Count != 1)
         {
-            return ["play.not-definitive: the Occupied package observed no reviewed case", .. observed.ReasonCodes];
+            return [ScenarioA1EntryRules.OccupiedObservedNone, .. observed.ReasonCodes];
         }
 
         const string caseId = "A1-known-enemy-mmc-mph";
@@ -1058,9 +1036,24 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             }, observed.Observations[0], now),
             cancellationToken);
         return conclusion.Disposition == ConclusionDisposition.Definitive
-            ? [$"play.prohibited: A4.14 (p. 49) prohibits entering a location with a known enemy unit in the MPh ({conclusion.ConclusionId})", .. conclusion.ReasonCodes]
-            : [$"play.not-definitive: the Occupied case is {conclusion.Disposition.ToString().ToLowerInvariant()}", .. conclusion.ReasonCodes];
+            ? [ScenarioA1EntryRules.ProhibitedText(conclusion.ConclusionId), .. conclusion.ReasonCodes]
+            : [ScenarioA1EntryRules.OccupiedCaseNotDefinitive(conclusion.Disposition.ToString().ToLowerInvariant()), .. conclusion.ReasonCodes];
     }
+
+    /// <summary>A route as Rules names it, under Play's public name.</summary>
+    private static EntryRoute RouteOf(ScenarioA1EntryRoute route) => route switch
+    {
+        ScenarioA1EntryRoute.Empty => EntryRoute.Empty,
+        ScenarioA1EntryRoute.KnownEnemy => EntryRoute.KnownEnemy,
+        ScenarioA1EntryRoute.Concealed => EntryRoute.Concealed,
+        ScenarioA1EntryRoute.LoneSmc => EntryRoute.LoneSmc,
+        ScenarioA1EntryRoute.RandomSelection => EntryRoute.RandomSelection,
+        _ => EntryRoute.Outside,
+    };
+
+    /// <summary>The counters in a Location that bar the reviewed forced back (a fortification, Residual FP, a fire), by kind.</summary>
+    private string[] HazardKinds(GameState state, BoardLocation at) =>
+        [.. state.At(at).Where(item => ScenarioA1EntryRules.HazardKinds.Any(kind => vocabulary.IsA(item.Kind, kind))).Select(item => item.Kind)];
 
     /// <summary>
     /// An entry into concealed or hidden enemy units (A12.15, p. 78): one MMC is revealed and forces the mover back (step 8);
@@ -1078,11 +1071,10 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         };
 
         var from = state.Location(unit.Id)!.Location;
-        var hazards = state.At(from).Where(item => vocabulary.IsA(item.Kind, "asl:fortification") || vocabulary.IsA(item.Kind, "asl:residual")
-            || vocabulary.IsA(item.Kind, "asl:fire")).ToArray();
+        var hazards = HazardKinds(state, from);
         if (hazards.Length > 0)
         {
-            return Refuse($"play.return-hazard: {string.Join(", ", hazards.Select(item => item.Kind))} at {from}; the forced back covers only a clear return");
+            return Refuse(ScenarioA1EntryRules.ReturnHazardText(hazards, from.ToString()));
         }
 
         var package = ScenarioA1PostRevealPackage.Identity.ToString();
@@ -1120,9 +1112,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         // The forced back is checked once, before any roll: the PostReveal facts do not depend on which non-Dummy unit is
         // revealed, so a candidate that reveals one stands for every branch that forces the mover back. A lone SMC's
         // branch ends in the same forced back once the OVR is declined, so it is checked the same way.
-        var sample = defenders.FirstOrDefault(item => vocabulary.IsA(item.Kind, "asl:mmc")) is { } mmc
-            ? [mmc.Id]
-            : defenders.Select(item => item.Id).Take(defenders.Length > 1 ? 2 : 1).ToArray();
+        var sample = ScenarioA1EntryRules.SampleBranch([.. defenders.Select(item => (item.Id, vocabulary.IsA(item.Kind, "asl:mmc")))]);
         var candidateEvents = Prefix();
         Reveal(candidateEvents, sample);
         ForceBack(candidateEvents);
@@ -1135,7 +1125,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         var conclusion = await PostRevealAsync(scope, after, unit, target, from, facts, binding, cancellationToken);
         if (conclusion.Disposition != ConclusionDisposition.Definitive)
         {
-            return Refuse([$"play.not-definitive: the PostReveal case is {conclusion.Disposition.ToString().ToLowerInvariant()}", .. conclusion.Reasons]);
+            return Refuse([ScenarioA1EntryRules.PostRevealNotDefinitive(conclusion.Disposition.ToString().ToLowerInvariant()), .. conclusion.Reasons]);
         }
 
         GamePlan Ready(IReadOnlyList<GameEvent> events, string reason) => new(GamePlanStatus.Ready, scope, label, expected, events, [reason])
@@ -1150,16 +1140,14 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
                     var events = Prefix();
                     Reveal(events, [defenders[0].Id]);
                     ForceBack(events);
-                    return Ready(events,
-                        $"play.forced-back: {unit.Id} attempts {target}, {defenders[0].Id} is revealed, and {unit.Id} returns to {from} with 2 MF spent and its MPh ended ({conclusion.ConclusionId})");
+                    return Ready(events, ScenarioA1EntryRules.ForcedBackText(unit.Id, target.ToString(), defenders[0].Id, from.ToString(), conclusion.ConclusionId));
                 }
 
             case EntryRoute.LoneSmc:
                 {
                     var events = Prefix();
                     Reveal(events, [defenders[0].Id]);
-                    return Ready(events,
-                        $"play.declaration-pending: {unit.Id} attempts {target} and {defenders[0].Id} is revealed; the attacker may decline or elect an Infantry OVR (A12.15, p. 78)");
+                    return Ready(events, ScenarioA1EntryRules.DeclarationPendingText(unit.Id, target.ToString(), defenders[0].Id));
                 }
 
             default:
@@ -1183,7 +1171,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
                         // A12.15 and A4.15 (p. 49): a revealed MMC, or more than one revealed SMC, forces the mover back; a lone
                         // revealed SMC leaves the attempt open for the attacker's OVR declaration.
-                        var loneSmc = revealing.Length == 1 && defenders.First(item => item.Id == revealing[0]) is var only && vocabulary.IsA(only.Kind, "asl:smc");
+                        var loneSmc = ScenarioA1EntryRules.LoneSmcRevealed(revealing.Length, revealing.Length == 1 && vocabulary.IsA(defenders.First(item => item.Id == revealing[0]).Kind, "asl:smc"));
                         if (!loneSmc)
                         {
                             ForceBack(events);
@@ -1193,7 +1181,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
                     }
 
                     return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-                        [$"play.random-selection: one dr for each of the {order.Length} units at {target} decides the reveal (A.9, p. 43); a revealed MMC, or more than one revealed SMC, forces {unit.Id} back ({conclusion.ConclusionId})"])
+                        [ScenarioA1EntryRules.RandomSelectionText(order.Length, target.ToString(), unit.Id, conclusion.ConclusionId)])
                     {
                         Disclosure = new EntryDisclosure(unit.Side, route, withheld, []),
                         Roll = new PlannedRoll("random-selection", Build),
@@ -1224,7 +1212,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             cancellationToken);
         if (observed.Observations.Count != 1)
         {
-            return (ConclusionDisposition.Abstained, null, ["play.not-definitive: the PostReveal package observed no reviewed case", .. observed.ReasonCodes]);
+            return (ConclusionDisposition.Abstained, null, [ScenarioA1EntryRules.PostRevealObservedNone, .. observed.ReasonCodes]);
         }
 
         var conclusion = await new ScenarioA1PostRevealConclusionResolver().ConcludeAsync(Context(scope, after, descriptor, unit.Id, locationId,
@@ -1254,39 +1242,38 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
         if (Replay(existing).Current is not { } state || state.Unit(unitId) is not { Status: InstanceStatus.Active } unit)
         {
-            return Refused(scope, label, expected, $"play.unit-unavailable: no active unit '{unitId}'");
+            return Refused(scope, label, expected, ScenarioA1EntryRules.UnitUnavailableText(unitId));
         }
 
         if (state.OpenAttempts.FirstOrDefault(open => open.Unit == unit.Id && open.Declaration is null) is not { } open)
         {
-            return Refused(scope, label, expected, $"play.no-pending-declaration: {unit.Id} has no entry attempt awaiting an OVR declaration");
+            return Refused(scope, label, expected, ScenarioA1EntryRules.NoPendingDeclarationText(unit.Id));
         }
 
-        // The declaration exists only when the attempt revealed exactly one SMC and nothing else (A12.15, p. 78).
+        // The declaration exists only when the attempt revealed exactly one SMC and nothing else (A12.15, p. 78); Rules decides (pass 32.i).
         var revealed = state.At(open.Target).OfType<UnitInstance>()
             .Where(item => item.Side != unit.Side && GameState.Condition(item, Conditions.Concealed) == ConditionState.False
                 && GameState.Condition(item, Conditions.Hidden) != ConditionState.True)
             .ToArray();
-        if (revealed.Length != 1 || !vocabulary.IsA(revealed[0].Kind, "asl:smc") || (open.Revealing.Count > 0 && !open.Revealing.SequenceEqual([revealed[0].Id])))
+        if (!ScenarioA1EntryRules.DeclarationExists(revealed.Length, revealed.Length == 1 && vocabulary.IsA(revealed[0].Kind, "asl:smc"),
+            revealed.Length == 1 && (open.Revealing.Count == 0 || open.Revealing.SequenceEqual([revealed[0].Id]))))
         {
-            return Refused(scope, label, expected, "play.no-pending-declaration: the attempt did not reveal exactly one SMC");
+            return Refused(scope, label, expected, ScenarioA1EntryRules.NotExactlyOneSmc);
         }
 
         var smc = revealed[0];
 
         var from = state.Location(unit.Id)!.Location;
-        var hazards = state.At(from).Where(item => vocabulary.IsA(item.Kind, "asl:fortification") || vocabulary.IsA(item.Kind, "asl:residual")
-            || vocabulary.IsA(item.Kind, "asl:fire")).ToArray();
+        var hazards = HazardKinds(state, from);
         if (hazards.Length > 0)
         {
-            return Refused(scope, label, expected,
-                $"play.return-hazard: {string.Join(", ", hazards.Select(item => item.Kind))} at {from}; the forced back covers only a clear return");
+            return Refused(scope, label, expected, ScenarioA1EntryRules.ReturnHazardText(hazards, from.ToString()));
         }
 
         if (state.Map.Board(open.Target.Board) is not { } placed || boards.TryGetBoard(open.Target.Board, placed.Version).Board is not { } handle
             || new BoardCatalogTerrainEvidence(boards).Bind(handle, open.Target) is not { } binding)
         {
-            return Refused(scope, label, expected, "play.outside-reviewed-board: the reviewed cases cover only the explicit building overrides of VASL board 01");
+            return Refused(scope, label, expected, ScenarioA1EntryRules.OutsideReviewedBoard);
         }
 
         // The facts of the attempt as it was made: the unit's movement is held by the open attempt, which is not a reason
@@ -1311,7 +1298,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         var locationId = open.Target.ToString();
         var snapshot = new ScenarioA1ConcealedSmcOverrunSnapshot(scope.Tenant, ScenarioA1ConcealedSmcOverrunPackage.Identity, unit.Id, locationId, version, now,
             LiveGames.Source, binding,
-            placedBeneathQuestionMark ? ScenarioA1InitialConcealedOccupancy.Hidden : ScenarioA1InitialConcealedOccupancy.Concealed,
+            ScenarioA1EntryRules.InitialOccupancy(placedBeneathQuestionMark),
             revealedByAttempt, ScenarioA1RevealedOccupant.EnemySmc, smc.Position is MapPosition,
             facts["isAttackerMovementPhase"], facts["isKnownGoodOrderInfantrySquad"], facts["isAdjacentGroundLevelOrdinaryBuilding"], true,
             A414Exception(unit) is false, And(facts["hasNoRoadBypassElevationOrAdditionalTerrain"], facts["hasNoSpecialRuleOrOtherModifier"]),
@@ -1334,7 +1321,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             }), 1), cancellationToken);
         if (observed.Observations.Count != 1)
         {
-            return Refused(scope, label, expected, ["play.not-definitive: the concealed-SMC OVR package observed no reviewed case", .. observed.ReasonCodes]);
+            return Refused(scope, label, expected, [ScenarioA1EntryRules.ConcealedSmcObservedNone, .. observed.ReasonCodes]);
         }
 
         var delegation = await new ScenarioA1ConcealedSmcOverrunConclusionResolver().ConcludeAsync(Context(scope, state, package, unit.Id, locationId,
@@ -1348,7 +1335,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             cancellationToken);
         if (!delegation.ReasonCodes.Contains(DeclinedDelegation))
         {
-            return Refused(scope, label, expected, ["play.not-delegated: the concealed-SMC OVR package did not delegate the declined case", .. delegation.ReasonCodes]);
+            return Refused(scope, label, expected, [ScenarioA1EntryRules.NotDelegated, .. delegation.ReasonCodes]);
         }
 
         var declaration = EventId(attemptId, 1);
@@ -1367,10 +1354,9 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
         var conclusion = await PostRevealAsync(scope, after, unit, open.Target, from, facts, binding, cancellationToken);
         return conclusion.Disposition != ConclusionDisposition.Definitive
-            ? Refused(scope, label, expected, [$"play.not-definitive: the PostReveal case is {conclusion.Disposition.ToString().ToLowerInvariant()}", .. conclusion.Reasons])
+            ? Refused(scope, label, expected, [ScenarioA1EntryRules.PostRevealNotDefinitive(conclusion.Disposition.ToString().ToLowerInvariant()), .. conclusion.Reasons])
             : new GamePlan(GamePlanStatus.Ready, scope, label, expected, events,
-                [$"play.declined: {unit.Id} declines the OVR against {smc.Id}; the reviewed matrix delegates the case ({delegation.ConclusionId}), "
-                    + $"and {unit.Id} returns to {from} with {open.Mf} MF spent and its MPh ended ({conclusion.ConclusionId})"]);
+                [ScenarioA1EntryRules.DeclinedText(unit.Id, smc.Id, delegation.ConclusionId, from.ToString(), open.Mf, conclusion.ConclusionId)]);
     }
 
     /// <summary>
@@ -1387,18 +1373,16 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         var remaining = Experience.MfAllowance(state, unit, catalogs, vocabulary) is { } allowance ? allowance - unit.MfSpent : (int?)null;
         if (remaining is null)
         {
-            return Refused(scope, label, expected, "play.election-unavailable: the mover's MF allowance is unknown");
+            return Refused(scope, label, expected, ScenarioA1EntryRules.ElectionAllowanceUnknown);
         }
 
+        // Pass 32.i: Rules decides the election's first branch by the MF left, and words each refusal.
+        var election = ScenarioA1EntryRules.Election(remaining.Value);
         var observed = await OvrNtcAsync(scope, state, unit, open, from, facts, binding, initiallyConcealed, revealedByAttempt,
-            remaining >= 4 ? ScenarioA1OvrElection.Elected : ScenarioA1OvrElection.Requested,
-            remaining >= 4 ? ScenarioA1OvrRemainingMf.AtLeastFour : ScenarioA1OvrRemainingMf.BelowFour,
-            remaining >= 4 ? ScenarioA1OvrNtcResult.Failed : null, null, null, remaining >= 4 ? "A1-ovr-ntc-failed" : "A1-ovr-ntc-mf-insufficient",
-            cancellationToken);
-        if (remaining < 4)
+            election.Election, election.RemainingMf, election.Ntc, null, null, election.CaseId, cancellationToken);
+        if (ScenarioA1EntryRules.ElectionMfBar(remaining.Value, unit.Id, observed.ConclusionId) is { } mfBar)
         {
-            return Refused(scope, label, expected,
-                $"play.election-unavailable: {unit.Id} has {remaining} MF left, and an Infantry OVR needs four (A4.15, p. 49) ({observed.ConclusionId})");
+            return Refused(scope, label, expected, mfBar);
         }
 
         // Another concealed non-Dummy unit must be present; against a lone SMC a passed NTC leads to its options and CC,
@@ -1407,14 +1391,14 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         UnitInstance[] others = [.. state.At(open.Target).OfType<UnitInstance>()
             .Where(item => item.Id != smc.Id && item.Side != unit.Side && GameState.Condition(item, Conditions.Concealed) == ConditionState.True
                 && (vocabulary.IsA(item.Kind, "asl:mmc") || vocabulary.IsA(item.Kind, "asl:smc")))];
-        if (others.Length == 0)
+        if (ScenarioA1EntryRules.NoOtherConcealedBar(others.Length) is { } noOther)
         {
-            return Refused(scope, label, expected, EntryDisclosure.CannotResolve + " (the election could lead to outcomes that are not yet reviewed)");
+            return Refused(scope, label, expected, noOther);
         }
 
         if (observed.Disposition != ConclusionDisposition.Definitive)
         {
-            return Refused(scope, label, expected, ["play.not-definitive: the OVR NTC failed case is not Definitive", .. observed.Reasons]);
+            return Refused(scope, label, expected, [ScenarioA1EntryRules.NtcFailedCaseNotDefinitive, .. observed.Reasons]);
         }
 
         var passedBranch = await OvrNtcAsync(scope, state, unit, open, from, facts, binding, initiallyConcealed, revealedByAttempt,
@@ -1422,7 +1406,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             "A1-ovr-ntc-passed-second-defender-revealed", cancellationToken);
         if (passedBranch.Disposition != ConclusionDisposition.Definitive)
         {
-            return Refused(scope, label, expected, ["play.not-definitive: the OVR NTC passed case is not Definitive", .. passedBranch.Reasons]);
+            return Refused(scope, label, expected, [ScenarioA1EntryRules.NtcPassedCaseNotDefinitive, .. passedBranch.Reasons]);
         }
 
         // The NTC: two dice against the Morale Level, with the building TEM as DRM (A10.1, p. 65; B23.3, p. 136).
@@ -1431,10 +1415,10 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             : null;
         if (morale is not { } moraleLevel || !new Board01TerrainCatalog().TryGetBuilding(binding.Hex, out var building))
         {
-            return Refused(scope, label, expected, "play.ntc-unavailable: the mover's printed morale or the building's construction is unknown");
+            return Refused(scope, label, expected, ScenarioA1EntryRules.NtcUnavailable);
         }
 
-        var tem = new TaskCheckModifier("B23.3", building!.Material == "stone" ? 3 : 2);
+        var tem = new TaskCheckModifier(ScenarioA1EntryRules.NtcTemRule, ScenarioA1EntryRules.NtcTem(building!.Material));
         var package = ScenarioA1OvrNtcPackage.Identity.ToString();
         var declaration = EventId(attemptId, 1);
         string[] order = [.. others.Select(item => item.Id).Order(StringComparer.Ordinal)];
@@ -1451,7 +1435,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
                 new DiceRolled(ntcRoll, TaskCheck.OvrNtc, 2, 6, ntc.Values, DiceRolled.SystemSource, actor), package, null, [open.EventId, declaration]));
             var finalDr = ntc.Values.Sum() + tem.Value;
-            var passed = finalDr <= moraleLevel;
+            var passed = ScenarioA1EntryRules.NtcPassed(finalDr, moraleLevel);
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "task-check",
                 new TaskCheck(unit.Id, ntcRoll, TaskCheck.OvrNtc, moraleLevel, [tem], finalDr, passed), package, null, [open.EventId, declaration]));
             if (passed)
@@ -1480,8 +1464,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         }
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-            [$"play.elected: {unit.Id} attempts an Infantry OVR against {smc.Id}. The NTC is two dice + {tem.Value} (B23.3) against morale {moraleLevel}; "
-                + $"a failure forces {unit.Id} back ({observed.ConclusionId}), and a pass reveals another unit by Random Selection and forces it back ({passedBranch.ConclusionId})"])
+            [ScenarioA1EntryRules.ElectedText(unit.Id, smc.Id, tem.Value, moraleLevel, observed.ConclusionId, passedBranch.ConclusionId)])
         {
             Roll = new PlannedRoll(TaskCheck.OvrNtc, Build),
             FirstEventId = declaration,
@@ -1506,7 +1489,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             cancellationToken);
         if (observed.Observations.Count != 1)
         {
-            return (ConclusionDisposition.Abstained, null, ["play.not-definitive: the OVR NTC package observed no reviewed case", .. observed.ReasonCodes]);
+            return (ConclusionDisposition.Abstained, null, [ScenarioA1EntryRules.OvrNtcObservedNone, .. observed.ReasonCodes]);
         }
 
         var question = new DomainQuestion($"{ScenarioA1OvrNtcConclusionResolver.QuestionKind}-{scope.Game}-r{state.Revision}-{unit.Id}-{caseId}", scope.Tenant,
@@ -1533,7 +1516,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
     }
 
     /// <summary>The reason the concealed-SMC OVR resolver gives when it delegates a declined election to the PostReveal package.</summary>
-    private const string DeclinedDelegation = "asl.a1.ovr.declined-use-exact-post-reveal-package";
+    private const string DeclinedDelegation = ScenarioA1EntryRules.DeclinedDelegation;
 
     private static bool? And(bool? left, bool? right) => left == false || right == false ? false : left == true && right == true ? true : null;
 
@@ -1567,15 +1550,19 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
     }
 
     /// <summary>Whether a unit may be an A4.14 exception (p. 49): Berserk, Disrupted, or captured (and so Unarmed). Null when unknown.</summary>
-    private static bool? A414Exception(UnitInstance unit)
-    {
-        ConditionState[] states = [GameState.Condition(unit, Conditions.Berserk), GameState.Condition(unit, "asl:disrupted"), GameState.Condition(unit, Conditions.Captured)];
-        return states.Contains(ConditionState.True) ? true : states.All(item => item == ConditionState.False) ? false : null;
-    }
+    private static bool? A414Exception(UnitInstance unit) =>
+        ScenarioA1EntryRules.A414Exception(Known(unit, Conditions.Berserk), Known(unit, "asl:disrupted"), Known(unit, Conditions.Captured));
 
-    /// <summary>Whether a side can see an object: its own, or an enemy's that is neither concealed nor hidden.</summary>
-    private static bool VisibleTo(IGameObject item, string side) =>
-        item.Side == side || (GameState.Condition(item, Conditions.Concealed) == ConditionState.False && GameState.Condition(item, Conditions.Hidden) != ConditionState.True);
+    /// <summary>A condition as a three-valued fact: true, false, or null when the state does not say.</summary>
+    private static bool? Known(IGameObject item, string condition) => GameState.Condition(item, condition) switch
+    {
+        ConditionState.True => true,
+        ConditionState.False => false,
+        _ => null,
+    };
+
+    /// <summary>Whether a side can see an object: its own, or an enemy's that is neither concealed nor hidden (Rules decides, pass 32.i).</summary>
+    private static bool VisibleTo(IGameObject item, string side) => ScenarioA1EntryRules.VisibleTo(item.Side == side, Known(item, Conditions.Concealed), Known(item, Conditions.Hidden));
 
     private static bool Is(IGameObject item, string condition) => GameState.Condition(item, condition) == ConditionState.True;
 
@@ -1624,13 +1611,6 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(unit);
         ArgumentNullException.ThrowIfNull(target);
-        bool? Known(string condition) => GameState.Condition(unit, condition) switch
-        {
-            ConditionState.True => true,
-            ConditionState.False => false,
-            _ => null,
-        };
-
         var goodOrder = GameState.GoodOrder(unit, vocabulary);
         var from = state.Location(unit.Id);
 
@@ -1661,39 +1641,22 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         }
 
         var definitive = targetRead is { IsDefinitive: true } && fromRead is { IsDefinitive: true };
-
-        bool? And(params bool?[] values) => values.Any(value => value == false) ? false : values.All(value => value == true) ? true : null;
-
-        var known = Known(Conditions.Concealed) is { } concealed && Known(Conditions.Hidden) is { } hidden ? !concealed && !hidden : (bool?)null;
-        var squad = vocabulary.IsA(unit.Kind, "asl:squad");
         var occupants = state.At(target).Where(item => item.Id != unit.Id).ToArray();
 
-        return new Dictionary<string, bool?>(StringComparer.Ordinal)
-        {
-            ["isKnownGoodOrderInfantrySquad"] = And(squad, goodOrder switch { ConditionState.True => true, ConditionState.False => false, _ => null }, known),
-            ["isAttackerMovementPhase"] = state.Phase == "mph" && state.PhasingSide == unit.Side,
-
-            // A4.1 (p. 48): a unit that is broken, TI, or held in Melee cannot move. Fire and Opportunity Fire are not
-            // actions of the live source yet, so no live unit has fired.
-            // A unit forced back has ended its MPh (A12.15, p. 78) and cannot move again in it.
-            ["canMoveThisPhase"] = And(Known(Conditions.Broken) is { } broken ? !broken : null, Known("asl:ti") is { } ti ? !ti : null,
-                Known(Conditions.Melee) is { } melee ? !melee : null, !unit.MovementEnded, !state.OpenAttempts.Any(open => open.Unit == unit.Id)),
-            ["isAdjacentGroundLevelOrdinaryBuilding"] = !definitive ? null
-                : adjacent && target.Level == 0 && target.Side is null && OrdinaryBuildings.Contains(targetRead!.Level.Terrain?.Name ?? string.Empty),
-            ["isDestinationKnownEmpty"] = occupants.Length == 0,
-            ["hasNoRoadBypassElevationOrAdditionalTerrain"] = !definitive || crossed is null ? (adjacent ? (bool?)null : false)
-                : fromRead!.Hex.BaseLevel == targetRead!.Hex.BaseLevel && crossed.HexsideTerrain is null && crossed.Terrain?.IsRoad != true
-                    && !crossed.Cliff && !crossed.Slope && !crossed.RailroadEmbankment && crossed.DepressionTerrain is null
-                    && fromRead.Level.DepressionTerrain is null && targetRead.Level.DepressionTerrain is null,
-
-            // A4.11 (p. 48) and A19.31 (p. 86): a Good Order MMC has four MF, three if Inexperienced. When the status is
-            // unknown, two MF remain under either allotment after one MF spent, and under neither after three.
-            ["hasEnoughMovementFactors"] = Experience.MfAllowance(state, unit, catalogs, vocabulary) is { } allowance
-                ? allowance - unit.MfSpent >= 2
-                : unit.MfSpent <= 1 ? true : unit.MfSpent >= 3 ? false : null,
-            ["isBelowStackingLimit"] = occupants.Length == 0,
-            ["hasNoSpecialRuleOrOtherModifier"] = state.SpecialRules.Count == 0,
-        };
+        // Pass 32.i: the state and map facts are read here, in the old order; Rules derives the nine facts.
+        return ScenarioA1EntryRules.EntryFacts(new EntryFactInputs(vocabulary.IsA(unit.Kind, "asl:squad"),
+            goodOrder switch
+            {
+                ConditionState.True => true,
+                ConditionState.False => false,
+                _ => null
+            }, Known(unit, Conditions.Concealed), Known(unit, Conditions.Hidden),
+            state.Phase == "mph" && state.PhasingSide == unit.Side, Known(unit, Conditions.Broken), Known(unit, "asl:ti"), Known(unit, Conditions.Melee), unit.MovementEnded,
+            state.OpenAttempts.Any(open => open.Unit == unit.Id), definitive, adjacent, target.Level, target.Side is not null, targetRead?.Level.Terrain?.Name, occupants.Length,
+            crossed is not null, definitive && crossed is not null && fromRead!.Hex.BaseLevel == targetRead!.Hex.BaseLevel, crossed?.HexsideTerrain is null, crossed?.Terrain?.IsRoad != true,
+            crossed is not null && !crossed.Cliff && !crossed.Slope && !crossed.RailroadEmbankment && crossed.DepressionTerrain is null,
+            definitive && fromRead!.Level.DepressionTerrain is null && targetRead!.Level.DepressionTerrain is null,
+            Experience.MfAllowance(state, unit, catalogs, vocabulary), unit.MfSpent, state.SpecialRules.Count));
     }
 
     private async Task<DomainConclusion> ConcludeAsync(GameScope scope, GameState state, UnitInstance unit, BoardLocation target,
