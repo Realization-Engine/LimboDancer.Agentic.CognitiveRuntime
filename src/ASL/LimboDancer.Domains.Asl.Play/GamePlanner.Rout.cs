@@ -22,21 +22,87 @@ public sealed partial class GamePlanner
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(unit);
         // D6.1 (ruling R26.2): a broken Passenger may stay aboard, free of rout requirements.
-        if (unit.Status != InstanceStatus.Active || !Is(unit, Conditions.Broken) || Is(unit, Conditions.Melee) || Is(unit, Conditions.Captured)
-            || state.Aboard(unit.Id) is not null || state.Location(unit.Id)?.Location is not { } at)
+        if (!ScenarioA1RoutCalculator.MustRoutCandidate(unit.Status == InstanceStatus.Active, Is(unit, Conditions.Broken), Is(unit, Conditions.Melee),
+                Is(unit, Conditions.Captured), state.Aboard(unit.Id) is not null)
+            || state.Location(unit.Id)?.Location is not { } at)
         {
             return null;
         }
 
-        return NearUnbrokenArmedEnemy(state, unit.Side, at) is { } enemy ? $"{enemy} is a Known unbroken armed enemy unit ADJACENT to it or in its Location"
-            : ExposedInOpenGround(state, unit.Side, at) is { } seen ? $"it is in Open Ground in the LOS and Normal Range of {seen}"
-            : null;
+        var scan = new RoutScan(this, state);
+        return ScenarioA1RoutCalculator.MustRout(scan, scan.Enemies(unit.Side), scan.Index(at), state.ScenarioMonth);
     }
 
     /// <summary>Whether a broken unit may rout (A10.5): it must, or it is under DM.</summary>
     public bool MayRout(GameState state, UnitInstance unit) =>
-        MustRout(state, unit) is not null || (unit.Status == InstanceStatus.Active && Is(unit, Conditions.Broken) && Is(unit, Conditions.DesperationMorale)
-            && !Is(unit, Conditions.Melee) && !Is(unit, Conditions.Captured));
+        ScenarioA1RoutCalculator.MayRout(MustRout(state, unit), unit.Status == InstanceStatus.Active, Is(unit, Conditions.Broken), Is(unit, Conditions.DesperationMorale),
+            Is(unit, Conditions.Melee), Is(unit, Conditions.Captured));
+
+    /// <summary>
+    /// The rout's fact reader (pass 32.f; the pass 32 design, D4): a table of Locations by index, the Known enemy units of a side as Rules reads them, and
+    /// the map and state reads the search and the scans make through it. The LOS keeps its cache in the planner.
+    /// </summary>
+    private sealed class RoutScan : IRoutFactReader
+    {
+        private readonly GamePlanner planner;
+        private readonly GameState state;
+        private readonly List<BoardLocation> locations = [];
+        private readonly Dictionary<BoardLocation, int> indexes = [];
+        private readonly Dictionary<string, IReadOnlyList<RoutEnemyFacts>> enemies = new(StringComparer.Ordinal);
+
+        public RoutScan(GamePlanner planner, GameState state)
+        {
+            this.planner = planner;
+            this.state = state;
+        }
+
+        /// <summary>The index of a Location in the table, added when it is new.</summary>
+        public int Index(BoardLocation location)
+        {
+            if (!indexes.TryGetValue(location, out var index))
+            {
+                index = locations.Count;
+                locations.Add(location);
+                indexes[location] = index;
+            }
+
+            return index;
+        }
+
+        /// <summary>The Location at an index of the table.</summary>
+        public BoardLocation At(int index) => locations[index];
+
+        /// <summary>The Known enemy units of a side (A10.51, A10.533) as the rout reads them, in the state's order, read once a side.</summary>
+        public IReadOnlyList<RoutEnemyFacts> Enemies(string side)
+        {
+            if (!enemies.TryGetValue(side, out var known))
+            {
+                enemies[side] = known = [.. KnownEnemies(state, side).Select(item => new RoutEnemyFacts(item.Unit.Id, Index(item.At), Armed(item.Unit),
+                    Is(item.Unit, Conditions.Broken), Is(item.Unit, Conditions.Melee), LiveFire.IsVehicle(item.Unit), Is(item.Unit, Conditions.Cx),
+                    Is(item.Unit, Conditions.Pinned), state.Encircled(item.Unit), NormalRange(state, item.Unit)))];
+            }
+
+            return known;
+        }
+
+        public string Name(int location) => locations[location].ToString();
+
+        public IEnumerable<int> Neighbors(int location) => planner.Neighbors(state, locations[location]).Select(Index);
+
+        public bool Playable(int location) => planner.PlayableBar(state, locations[location]) is null;
+
+        public RoutLocationFacts? Location(int location) =>
+            locations[location] is var at && planner.ReadLocation(state, at) is { } read ? new RoutLocationFacts(TerrainKey(read), HasSmoke(state, at)) : null;
+
+        public RoutLosFacts? Los(int fromLocation, int toLocation) =>
+            planner.Los(state, locations[fromLocation], locations[toLocation]) is { } los ? new RoutLosFacts(los.Status == LosStatus.Clear, los.Hindrance, los.Range) : null;
+
+        public int? Distance(int one, int two) => planner.HexDistance(state, locations[one], locations[two]);
+
+        public bool Adjacent(int one, int two) => planner.IsAdjacent(state, locations[one], locations[two]);
+
+        public (InfantryEntry? Entry, string? Reason) Entry(int fromLocation, int toLocation) => planner.InfantryStep(state, locations[fromLocation], locations[toLocation]);
+    }
 
     /// <summary>A Known enemy unit (A10.51, A10.533): not a Dummy, concealed, hidden, or a prisoner.</summary>
     private static IEnumerable<(UnitInstance Unit, BoardLocation At)> KnownEnemies(GameState state, string side) =>
@@ -44,22 +110,16 @@ public sealed partial class GamePlanner
             .Select(other => (Unit: other, At: state.Location(other.Id)?.Location)).Where(item => item.At is not null).Select(item => (item.Unit, item.At!));
 
     /// <summary>A10.5, A10.62: an armed enemy unit is Personnel (a leader without a SW counts), or a vehicle not Abandoned.</summary>
-    private static bool Armed(UnitInstance unit) => !LiveFire.IsVehicle(unit) || !Is(unit, Conditions.Abandoned);
+    private static bool Armed(UnitInstance unit) => ScenarioA1RoutCalculator.Armed(LiveFire.IsVehicle(unit), Is(unit, Conditions.Abandoned));
 
     private bool AdjacentOrSame(GameState state, BoardLocation one, BoardLocation two) => one == two || IsAdjacent(state, one, two);
 
     /// <summary>A Known unbroken armed enemy unit ADJACENT to a Location or in it (A10.5), or null.</summary>
-    private string? NearUnbrokenArmedEnemy(GameState state, string side, BoardLocation at) =>
-        KnownEnemies(state, side).Where(item => Armed(item.Unit) && !Is(item.Unit, Conditions.Broken) && AdjacentOrSame(state, item.At, at))
-            .Select(item => item.Unit.Id).Order(StringComparer.Ordinal).FirstOrDefault();
-
-    /// <summary>
-    /// Open Ground (A10.531; ruling R13.3): a hex where the enemy could apply the FFMO DRM, read as Open Ground or road terrain, or grain outside June to
-    /// September (B15.6; ruling R5.19), with no SMOKE there.
-    /// </summary>
-    private bool OpenGround(GameState state, BoardLocation at) =>
-        ReadLocation(state, at) is { } read && !HasSmoke(state, at)
-            && (TerrainKey(read) == "open-ground" || (TerrainKey(read) == "grain" && state.ScenarioMonth is < 6 or > 9));
+    private string? NearUnbrokenArmedEnemy(GameState state, string side, BoardLocation at)
+    {
+        var scan = new RoutScan(this, state);
+        return ScenarioA1RoutCalculator.NearUnbrokenArmedEnemy(scan, scan.Enemies(side), scan.Index(at));
+    }
 
     /// <summary>
     /// The Normal Range in hexes of a unit's fire (A10.532): the longest of its own printed range and the Normal Ranges of the functioning SW it
@@ -68,12 +128,12 @@ public sealed partial class GamePlanner
     private static int NormalRange(GameState state, UnitInstance unit)
     {
         var definitions = FireReference.Value.Definitions;
-        var own = unit.Definition is { } reference && definitions.GetValueOrDefault(reference.Definition) is { } definition && definition.Kind != "asl:leader"
-            ? definition.Range ?? 0 : 0;
+        var definition = unit.Definition is { } reference ? definitions.GetValueOrDefault(reference.Definition) : null;
+        var own = ScenarioA1RoutCalculator.OwnRange(definition is not null, definition?.Kind == "asl:leader", definition?.Range);
         var weapons = state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding
                 && holding.Holder == unit.Id && !Is(item, Conditions.Malfunctioned) && !Is(item, Conditions.Dismantled))
             .Select(item => item.Definition is { } weapon ? definitions.GetValueOrDefault(weapon.Definition)?.Range ?? 0 : 0);
-        return Math.Min(16, weapons.Append(own).Max());
+        return ScenarioA1RoutCalculator.NormalRange(own, weapons);
     }
 
     /// <summary>
@@ -81,100 +141,45 @@ public sealed partial class GamePlanner
     /// </summary>
     private string? ExposedInOpenGround(GameState state, string side, BoardLocation at)
     {
-        if (!OpenGround(state, at))
-        {
-            return null;
-        }
-
-        // A10.531 (table player, pass 13): only an enemy unit that could fire applies FFMO, so broken ones do not count.
-        foreach (var (enemy, there) in KnownEnemies(state, side).Where(item => !Is(item.Unit, Conditions.Melee) && !Is(item.Unit, Conditions.Broken))
-            .OrderBy(item => item.Unit.Id, StringComparer.Ordinal))
-        {
-            if (NormalRange(state, enemy) is > 0 and var range && Los(state, there, at) is { Status: LosStatus.Clear, Hindrance: 0 } los && los.Range <= range)
-            {
-                return enemy.Id;
-            }
-        }
-
-        return null;
+        var scan = new RoutScan(this, state);
+        return ScenarioA1RoutCalculator.ExposedInOpenGround(scan, scan.Enemies(side), scan.Index(at), state.ScenarioMonth);
     }
 
-    /// <summary>
-    /// The enemy unit able to Interdict a routing unit entering an Open Ground Location (A10.53, A10.532, A10.533; ruling R13.3), or null: Known unbroken
-    /// Infantry not CX, pinned, Encircled, in Melee, or a prisoner, with the Location in its LOS and Normal Range and no Hindrance between. Vehicles, and
-    /// units whose FP is halved for other reasons, are not read (backlog).
-    /// </summary>
+    /// <summary>The enemy unit able to Interdict a routing unit entering an Open Ground Location (A10.53, A10.532, A10.533; ruling R13.3), or null.</summary>
     private string? Interdictor(GameState state, string side, BoardLocation at)
     {
-        if (!OpenGround(state, at))
-        {
-            return null;
-        }
-
-        foreach (var (enemy, there) in KnownEnemies(state, side).Where(item => !LiveFire.IsVehicle(item.Unit) && !Is(item.Unit, Conditions.Broken)
-            && !Is(item.Unit, Conditions.Cx) && !Is(item.Unit, Conditions.Pinned) && !Is(item.Unit, Conditions.Melee) && !state.Encircled(item.Unit))
-            .OrderBy(item => item.Unit.Id, StringComparer.Ordinal))
-        {
-            if (NormalRange(state, enemy) is > 0 and var range && Los(state, there, at) is { Status: LosStatus.Clear, Hindrance: 0 } los && los.Range <= range)
-            {
-                return enemy.Id;
-            }
-        }
-
-        return null;
+        var scan = new RoutScan(this, state);
+        return ScenarioA1RoutCalculator.Interdictor(scan, scan.Enemies(side), scan.Index(at), state.ScenarioMonth);
     }
 
-    /// <summary>
-    /// Why a rout step from one Location to an ADJACENT one is not allowed (A10.5, A10.51; ruling R13.3), or null: it enters a Location holding a Known
-    /// enemy unit, or a Location ADJACENT to one unless it leaves that unit's Location, or it decreases the range to a Known armed enemy unit that has had
-    /// the routing unit in its LOS this rout.
-    /// </summary>
+    /// <summary>Why a rout step from one Location to an ADJACENT one is not allowed (A10.5, A10.51; ruling R13.3), or null.</summary>
     private string? RoutStepBar(GameState state, string side, BoardLocation from, BoardLocation to, IReadOnlyCollection<string> seenBy)
     {
-        foreach (var (enemy, at) in KnownEnemies(state, side))
-        {
-            if (at == to)
-            {
-                return $"play.rout-step: a routing unit never enters {to}, which holds the Known enemy unit {enemy.Id} (A10.51)";
-            }
-
-            if (at != from && IsAdjacent(state, at, to))
-            {
-                return $"play.rout-step: a routing unit never moves ADJACENT to the Known enemy unit {enemy.Id} unless it is leaving its Location (A10.51)";
-            }
-
-            if (Armed(enemy) && seenBy.Contains(enemy.Id) && HexDistance(state, at, to) is { } near && HexDistance(state, at, from) is { } far && near < far)
-            {
-                return $"play.rout-step: a routing unit never moves closer to the Known armed enemy unit {enemy.Id}, which has had it in its LOS (A10.51)";
-            }
-        }
-
-        return null;
+        var scan = new RoutScan(this, state);
+        return ScenarioA1RoutCalculator.RoutStepBar(scan, scan.Enemies(side), scan.Index(from), scan.Index(to), seenBy);
     }
 
     /// <summary>The Known armed enemy units with a clear LOS to a Location (A10.51).</summary>
-    private IEnumerable<string> SeenBy(GameState state, string side, BoardLocation at) =>
-        KnownEnemies(state, side).Where(item => Armed(item.Unit) && Los(state, item.At, at) is { Status: LosStatus.Clear }).Select(item => item.Unit.Id);
+    private IEnumerable<string> SeenBy(GameState state, string side, BoardLocation at)
+    {
+        var scan = new RoutScan(this, state);
+        return ScenarioA1RoutCalculator.SeenBy(scan, scan.Enemies(side), scan.Index(at));
+    }
 
-    /// <summary>
-    /// The half MF a routing unit pays to step between ADJACENT Locations (A10.5): the Infantry entry cost, without Bypass or Road Bonus, doubled for the
-    /// first Location an Encircled unit enters (A7.7; ruling R12.11); or why it may not.
-    /// </summary>
+    /// <summary>The half MF a routing unit pays to step between ADJACENT Locations (A10.5, A7.7; ruling R12.11), or why it may not.</summary>
     private (int? HalfMf, bool AllMf, string? Reason) RoutEntry(GameState state, BoardLocation from, BoardLocation to, bool encircledFirst)
     {
-        var (entry, reason) = InfantryStep(state, from, to);
-        return entry switch
-        {
-            null => (null, false, reason ?? $"play.rout-step: the step from {from} to {to} is not one the game allows"),
-            { MinimumMoveOnly: true } => (null, false, $"play.rout-step: {to} is entered only by Minimum Move, which a rout does not use (A10.5)"),
-            { AllMf: true } => (null, true, null),
-            _ => (entry.HalfMf * (encircledFirst ? 2 : 1), false, null),
-        };
+        var scan = new RoutScan(this, state);
+        var (halfMf, allMf, reason) = ScenarioA1RoutCalculator.RoutEntry(scan, scan.Index(from), scan.Index(to), encircledFirst);
+        return (halfMf, allMf, reason);
     }
 
     /// <summary>A10.51: a woods or building Location is a rout destination.</summary>
-    private bool RoutCover(GameState state, BoardLocation at) =>
-        ReadLocation(state, at) is { } read && TerrainKey(read) is "woods" or "wooden-building" or "stone-building";
+    private bool RoutCover(GameState state, BoardLocation at)
+    {
+        var scan = new RoutScan(this, state);
+        return ScenarioA1RoutCalculator.RoutCover(scan.Location(scan.Index(at)));
+    }
 
     /// <summary>
     /// The least half MF, within the unit's allowance, to reach each Location from a start over legal rout steps (A10.51): the search follows which Known
@@ -329,7 +334,7 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>A10.5: the half MF a broken unit has in the RtPh, six MF, a wounded SMC three.</summary>
-    private int RoutHalfMf(UnitInstance unit) => vocabulary.IsA(unit.Kind, "asl:smc") && Is(unit, Conditions.Wounded) ? 6 : 12;
+    private int RoutHalfMf(UnitInstance unit) => ScenarioA1RoutCalculator.RoutHalfMfAsPlanned(vocabulary.IsA(unit.Kind, "asl:smc"), Is(unit, Conditions.Wounded));
 
     private GamePlan PlanRout(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, string actor)
     {
@@ -618,32 +623,35 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>The broken Morale Level (A10.4), one lower for a wounded SMC (A17.3), from the catalog.</summary>
-    private static int? BrokenMorale(UnitInstance unit) =>
-        unit.Definition is { } reference && FireReference.Value.Definitions.GetValueOrDefault(reference.Definition) is { } definition
-            ? (definition.BrokenMorale ?? definition.Morale) - (Is(unit, Conditions.Wounded) ? 1 : 0)
-            : null;
+    private static int? BrokenMorale(UnitInstance unit)
+    {
+        var definition = unit.Definition is { } reference ? FireReference.Value.Definitions.GetValueOrDefault(reference.Definition) : null;
+        return ScenarioA1RoutCalculator.BrokenMorale(definition is not null, definition?.BrokenMorale, definition?.Morale, Is(unit, Conditions.Wounded));
+    }
 
     /// <summary>Casualty Reduction (A7.302): a squad becomes its HS, a SMC is wounded, or eliminated if already wounded, and anything else is eliminated.</summary>
     private static (string Type, EventPayload Payload) CasualtyReduction(UnitInstance unit, string attemptId)
     {
-        if (unit.Kind == "asl:squad" && unit.Definition is { } squad && ScenarioA1FireReference.HalfSquadOf(squad.Definition) is { } half)
+        var half = unit.Kind == "asl:squad" && unit.Definition is { } squad ? ScenarioA1FireReference.HalfSquadOf(squad.Definition) : null;
+        return ScenarioA1RoutCalculator.CasualtyReduction(half is not null, unit.Kind is "asl:leader" or "asl:hero", Is(unit, Conditions.Wounded)) switch
         {
-            return ("lineage", new LineageRecorded(LineageAction.Reduced, [unit.Id],
-                [new NewInstance($"{attemptId}-{unit.Id}", "asl:half-squad", half, unit.Side, unit.Position, null,
-                    new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal))]));
-        }
-
-        return unit.Kind is "asl:leader" or "asl:hero" && !Is(unit, Conditions.Wounded)
-            ? ("conditions-changed", new ConditionsChanged(unit.Id, new Dictionary<string, ConditionState> { [Conditions.Wounded] = ConditionState.True }))
-            : ("instance-eliminated", new InstanceEliminated(unit.Id));
+            CasualtyOutcome.Reduced => ("lineage", new LineageRecorded(LineageAction.Reduced, [unit.Id],
+                [new NewInstance($"{attemptId}-{unit.Id}", "asl:half-squad", half!, unit.Side, unit.Position, null,
+                    new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal))])),
+            CasualtyOutcome.Wounded => ("conditions-changed", new ConditionsChanged(unit.Id, new Dictionary<string, ConditionState> { [Conditions.Wounded] = ConditionState.True })),
+            _ => ("instance-eliminated", new InstanceEliminated(unit.Id)),
+        };
     }
 
     /// <summary>A10.62 (ruling R13.1): the broken units not under DM with a Known armed enemy unit ADJACENT to them or in their Location.</summary>
-    private UnitInstance[] AdjacentDm(GameState state) =>
-        [.. state.Units.Where(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Broken) && !Is(unit, Conditions.DesperationMorale)
-                && !Is(unit, Conditions.Captured) && state.Location(unit.Id)?.Location is { } at
-                && KnownEnemies(state, unit.Side).Any(item => Armed(item.Unit) && AdjacentOrSame(state, item.At, at)))
+    private UnitInstance[] AdjacentDm(GameState state)
+    {
+        var scan = new RoutScan(this, state);
+        return [.. state.Units.Where(unit => ScenarioA1RoutCalculator.DmCandidate(unit.Status == InstanceStatus.Active, Is(unit, Conditions.Broken),
+                    Is(unit, Conditions.DesperationMorale), Is(unit, Conditions.Captured)) && state.Location(unit.Id)?.Location is { } at
+                && ScenarioA1RoutCalculator.ArmedEnemyNear(scan, scan.Enemies(unit.Side), scan.Index(at)))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal)];
+    }
 
     /// <summary>Adds the DM that Known armed enemy units ADJACENT to broken units give them (A10.62; ruling R13.1), after the events so far.</summary>
     private void AddAdjacentDm(GameScope scope, string attemptId, long expected, GameState state, List<GameEvent> events)
@@ -696,20 +704,21 @@ public sealed partial class GamePlanner
         return plan with
         {
             Events = events,
-            Reasons = [.. plan.Reasons, $"play.dm: {string.Join(", ", gaining.Select(unit => unit.Id))} come under DM from an ADJACENT Known armed enemy unit (A10.62)"],
+            Reasons = [.. plan.Reasons, ScenarioA1RoutCalculator.AdjacentDmReason(gaining.Select(unit => unit.Id))],
         };
     }
 
     /// <summary>A10.62 (ruling R13.1): at the start of the RtPh a broken unit in Open Ground in the LOS and Normal Range of a Known enemy unit comes under DM.</summary>
     private (UnitInstance Unit, string Why)[] RoutPhaseDm(GameState state)
     {
+        var scan = new RoutScan(this, state);
         var gaining = new List<(UnitInstance, string)>();
-        foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Broken) && !Is(unit, Conditions.DesperationMorale)
-            && !Is(unit, Conditions.Captured)).OrderBy(unit => unit.Id, StringComparer.Ordinal))
+        foreach (var unit in state.Units.Where(unit => ScenarioA1RoutCalculator.DmCandidate(unit.Status == InstanceStatus.Active, Is(unit, Conditions.Broken),
+            Is(unit, Conditions.DesperationMorale), Is(unit, Conditions.Captured))).OrderBy(unit => unit.Id, StringComparer.Ordinal))
         {
-            if (state.Location(unit.Id)?.Location is { } at && ExposedInOpenGround(state, unit.Side, at) is { } seen)
+            if (state.Location(unit.Id)?.Location is { } at && ScenarioA1RoutCalculator.ExposedInOpenGround(scan, scan.Enemies(unit.Side), scan.Index(at), state.ScenarioMonth) is { } seen)
             {
-                gaining.Add((unit, $"in Open Ground in the LOS and Normal Range of {seen}"));
+                gaining.Add((unit, ScenarioA1RoutCalculator.RoutPhaseDmReason(seen)));
             }
         }
 
@@ -748,12 +757,12 @@ public sealed partial class GamePlanner
     public bool MayRetainDm(GameState state, string id) => RetainDmBar(state, id) is null;
 
     /// <summary>Why a unit may not keep its DM as the RPh ends (A10.62; ruling R13.1), or null: it is a broken unit under DM, not in woods or a building.</summary>
-    private string? RetainDmBar(GameState state, string id) =>
-        state.Unit(id) is not { Status: InstanceStatus.Active } unit || !Is(unit, Conditions.Broken) || !Is(unit, Conditions.DesperationMorale)
-            ? $"play.retain-dm: '{id}' is not a broken unit under DM (A10.62)"
-            : state.Location(unit.Id)?.Location is not { } at || RoutCover(state, at)
-                ? $"play.retain-dm: {id} is in a woods or building Location, where DM is not retained (A10.62)"
-                : null;
+    private string? RetainDmBar(GameState state, string id)
+    {
+        var unit = state.Unit(id);
+        return ScenarioA1RoutCalculator.RetainDmBar(id, unit is { Status: InstanceStatus.Active }, unit is not null && Is(unit, Conditions.Broken),
+            unit is not null && Is(unit, Conditions.DesperationMorale), () => state.Location(unit!.Id)?.Location is not { } at || RoutCover(state, at));
+    }
 
     /// <summary>
     /// The broken units the end of the RtPh eliminates for Failure to Rout (A10.5, A10.53; ruling R13.3), with why: ADJACENT to or in the Location of a
