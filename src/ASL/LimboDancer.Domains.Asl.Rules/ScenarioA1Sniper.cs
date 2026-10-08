@@ -187,6 +187,12 @@ public static class ScenarioA1Sniper
     /// <summary>A unit the attack pins loses its "?" and hidden status.</summary>
     public static IReadOnlyList<(UnitCondition Condition, bool Value)> PinnedConditions() => [(UnitCondition.Pinned, true), (UnitCondition.Concealed, false), (UnitCondition.Hidden, false)];
 
+    /// <summary>The projector's check of a recorded Sniper attack (A14; ruling R15.5): its Sniper counter is in play, its rolls recorded, and its dr 1 to 6; the events after it apply it.</summary>
+    public static RecordRefusal? VerifySniperAttack(bool sniperActive, bool rollRecorded, bool triggerRecorded, int dr) =>
+        !sniperActive || !rollRecorded || !triggerRecorded || dr is < 1 or > 6
+            ? new RecordRefusal("UNIT-STATE-042", "A Sniper attack names a Sniper counter in play and recorded rolls (A14.1).")
+            : null;
+
     /// <summary>A14.3: an effective Sniper attack puts every broken unit of the attacked side in the Location under DM.</summary>
     public static bool ComesUnderDm(bool active, bool attackedSide, bool broken, bool desperationMorale) => active && attackedSide && broken && !desperationMorale;
 }

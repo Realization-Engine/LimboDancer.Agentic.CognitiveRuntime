@@ -3697,17 +3697,18 @@ public static class GameProjector
         /// </summary>
         private GameState? ChangeWind(GameState state, WindChanged wind)
         {
-            if (state.Phase != "rph" || !rolls.ContainsKey(wind.Roll) || (wind.NvrRoll is { } nvrRoll && !rolls.ContainsKey(nvrRoll))
-                || (wind.Nvr is not null) != state.Night || wind.Nvr is < 0 or > 9 || wind.Precipitation is not (null or "rain" or "heavy-rain" or "snow" or "heavy-snow"))
+            // Pass 32.h: the record's reads are made here, and Rules decides (B25.65, E1.12).
+            if (Rules.ScenarioA1NightAndWeather.VerifyWindChange(state.Phase, rolls.ContainsKey(wind.Roll), wind.NvrRoll is not { } nvrRoll || rolls.ContainsKey(nvrRoll), state.Night,
+                wind.Nvr, wind.Precipitation) is { } refusal)
             {
-                return Fail<GameState>("UNIT-STATE-043", "A Wind Change DR is made in the RPh with a recorded roll, and sets a Base NVR of 0 to 9 only at night (B25.65, E1.12).");
+                return Fail<GameState>(refusal.Code, refusal.Text);
             }
 
             return state with
             {
                 Nvr = wind.Nvr,
                 Precipitation = wind.Precipitation,
-                Rained = state.Rained || wind.Precipitation is "rain" or "heavy-rain",
+                Rained = Rules.ScenarioA1NightAndWeather.RainedAfter(state.Rained, wind.Precipitation),
             };
         }
 
@@ -3717,18 +3718,19 @@ public static class GameProjector
         /// </summary>
         private GameState? FireStarshell(GameState state, StarshellFired starshell)
         {
-            if (!state.Night || state.Unit(starshell.Unit) is not { Status: InstanceStatus.Active } || !rolls.ContainsKey(starshell.UsageRoll)
-                || (starshell.PlacementRoll is { } placement && !rolls.ContainsKey(placement)) || (starshell.At is not null) != (starshell.Starshell is not null)
-                || (!starshell.Passed && starshell.At is not null) || state.StarshellAttempts.Contains(starshell.From.ToString(), StringComparer.Ordinal))
+            // Pass 32.h: the record's reads are made here, and Rules decides (E1.92 to E1.923).
+            if (Rules.ScenarioA1Starshells.VerifyStarshell(state.Night, state.Unit(starshell.Unit) is { Status: InstanceStatus.Active }, rolls.ContainsKey(starshell.UsageRoll),
+                starshell.PlacementRoll is not { } placement || rolls.ContainsKey(placement), starshell.At is not null, starshell.Starshell is not null, starshell.Passed,
+                state.StarshellAttempts.Contains(starshell.From.ToString(), StringComparer.Ordinal)) is { } refusal)
             {
-                return Fail<GameState>("UNIT-STATE-044", "A Starshell is fired at night by a unit in play, once per hex per phase, with its rolls recorded (E1.92).");
+                return Fail<GameState>(refusal.Code, refusal.Text);
             }
 
             var next = state with
             {
                 StarshellAttempts = [.. state.StarshellAttempts, starshell.From.ToString()],
                 StarshellUsed = state.StarshellUsed || starshell.Passed,
-                StarshellTurn = state.StarshellTurn ?? (starshell.Passed ? $"{state.Turn}|{state.PhasingSide}" : null),
+                StarshellTurn = Rules.ScenarioA1Starshells.StarshellTurnAfter(state.StarshellTurn, starshell.Passed, $"{state.Turn}|{state.PhasingSide}"),
             };
             return starshell.At is not { } at ? next : next with
             {
@@ -3740,10 +3742,11 @@ public static class GameProjector
         /// <summary>A Sniper attack (A14; ruling R15.5): its Sniper counter and roll are in play and recorded; the events after it apply it.</summary>
         private GameState? Snipe(GameState state, SniperAttacked sniper)
         {
-            if (state.Find(sniper.Sniper) is not EntityInstance { Kind: "asl:sniper", Status: InstanceStatus.Active } || !rolls.ContainsKey(sniper.Roll)
-                || !rolls.ContainsKey(sniper.Trigger) || sniper.Dr is < 1 or > 6)
+            // Pass 32.h: the record's reads are made here, and Rules decides (A14.1).
+            if (Rules.ScenarioA1Sniper.VerifySniperAttack(state.Find(sniper.Sniper) is EntityInstance { Kind: "asl:sniper", Status: InstanceStatus.Active }, rolls.ContainsKey(sniper.Roll),
+                rolls.ContainsKey(sniper.Trigger), sniper.Dr) is { } refusal)
             {
-                return Fail<GameState>("UNIT-STATE-042", "A Sniper attack names a Sniper counter in play and recorded rolls (A14.1).");
+                return Fail<GameState>(refusal.Code, refusal.Text);
             }
 
             return state;

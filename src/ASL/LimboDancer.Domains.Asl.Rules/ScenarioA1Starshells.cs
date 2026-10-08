@@ -86,6 +86,19 @@ public static class ScenarioA1Starshells
     /// <summary>E1.921: a hidden firer is placed beneath a "?".</summary>
     public static IReadOnlyList<(UnitCondition Condition, bool Value)> HiddenFirerConditions() => [(UnitCondition.Hidden, false), (UnitCondition.Concealed, true)];
 
+    /// <summary>
+    /// The projector's check of a recorded Starshell attempt (E1.92 to E1.923; ruling R16.8): by an active unit at night, once per hex per phase, its rolls recorded; a
+    /// Starshell is placed only where one that passed its Usage dr landed.
+    /// </summary>
+    public static RecordRefusal? VerifyStarshell(bool night, bool unitActive, bool usageRollRecorded, bool placementRollRecorded, bool landed, bool starshellNamed, bool passed,
+        bool attemptedFromHex) =>
+        !night || !unitActive || !usageRollRecorded || !placementRollRecorded || landed != starshellNamed || (!passed && landed) || attemptedFromHex
+            ? new RecordRefusal("UNIT-STATE-044", "A Starshell is fired at night by a unit in play, once per hex per phase, with its rolls recorded (E1.92).")
+            : null;
+
+    /// <summary>E1.921: the Player Turn of the game's first Starshell, kept once a Starshell has passed its Usage dr.</summary>
+    public static string? StarshellTurnAfter(string? starshellTurn, bool passed, string thisTurn) => starshellTurn ?? (passed ? thisTurn : null);
+
     /// <summary>The attempt in words (E1.92, E1.923).</summary>
     public static string Summary(string unitId, string method, int need) =>
         $"play.starshell: {unitId} tries to fire a Starshell ({method}): a Usage dr of {need} or less fires it, and it Illuminates three hexes around where it lands until the end of the CCPh (E1.92, E1.923)";

@@ -410,4 +410,16 @@ public static class ScenarioA1NightAndWeather
         ArgumentNullException.ThrowIfNull(notes);
         return $"play.wind-change: the Wind Change DR is {colored} + {white} = {dr}: {(notes.Count == 0 ? "no change" : string.Join("; ", notes))} (B25.65, E1.12, E3.51)";
     }
+
+    /// <summary>
+    /// The projector's check of a recorded Wind Change (B25.65, E1.12): made in the RPh with its roll recorded (and its NVR dr when it names one), it sets a
+    /// Base NVR of 0 to 9 only at night, and any precipitation.
+    /// </summary>
+    public static RecordRefusal? VerifyWindChange(string? phase, bool rollRecorded, bool nvrRollRecorded, bool night, int? nvr, string? precipitation) =>
+        phase != "rph" || !rollRecorded || !nvrRollRecorded || (nvr is not null) != night || nvr is < 0 or > 9 || precipitation is not (null or "rain" or "heavy-rain" or "snow" or "heavy-snow")
+            ? new RecordRefusal("UNIT-STATE-043", "A Wind Change DR is made in the RPh with a recorded roll, and sets a Base NVR of 0 to 9 only at night (B25.65, E1.12).")
+            : null;
+
+    /// <summary>E3.54: whether rain has fallen after a Wind Change: it had, or the change brings rain.</summary>
+    public static bool RainedAfter(bool rained, string? precipitation) => rained || precipitation is "rain" or "heavy-rain";
 }
