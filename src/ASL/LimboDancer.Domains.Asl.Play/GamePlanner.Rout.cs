@@ -87,7 +87,11 @@ public sealed partial class GamePlanner
 
         public string Name(int location) => locations[location].ToString();
 
-        public IEnumerable<int> Neighbors(int location) => planner.Neighbors(state, locations[location]).Select(Index);
+        /// <summary>
+        /// The Locations one rout step may reach (A10.5, B23.4, B23.421; the upstairs rout fix of 2026-10-08): the ADJACENT ground hexes, from an upper level
+        /// that level of the ADJACENT hexes, and the levels above and below in the hex, as a charge reads them; the Infantry entry decides which are legal.
+        /// </summary>
+        public IEnumerable<int> Neighbors(int location) => planner.ChargeNeighbors(state, locations[location]).Select(Index);
 
         public bool Playable(int location) => planner.PlayableBar(state, locations[location]) is null;
 

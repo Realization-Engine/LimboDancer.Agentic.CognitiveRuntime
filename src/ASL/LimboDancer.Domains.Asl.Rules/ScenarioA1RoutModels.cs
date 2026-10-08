@@ -43,7 +43,10 @@ public interface IRoutFactReader
     /// <summary>The Location's text, for a refusal.</summary>
     public string Name(int location);
 
-    /// <summary>The ADJACENT Locations of a Location, ground level, in the order the map enumerates its hexsides.</summary>
+    /// <summary>
+    /// The Locations one rout step may reach from a Location, in the order the map enumerates them: the ADJACENT hexes at ground level, from an upper
+    /// level that level of the ADJACENT hexes, and the levels above and below in the same hex (A10.5, B23.4, B23.421); <see cref="Entry"/> decides which are legal.
+    /// </summary>
     public IEnumerable<int> Neighbors(int location);
 
     /// <summary>Whether the card's playable area holds the Location (A2.1; ruling R20.6).</summary>

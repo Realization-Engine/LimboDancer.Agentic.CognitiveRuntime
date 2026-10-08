@@ -1228,3 +1228,11 @@ full Rules 596 tests pass; textlist equal; no production code changed | 17:12 | 
 | The gate: solution build with warnings as errors into bin/gate (0 warnings, 4:11); Node viewport 5 of 5; chart supplement equal; the local suite (Dice 24, Rules 649, Units 409, Maps 244, Maps.Vasl 121 with 28 skipped, Maps.Rendering 34 with 2 skipped, Units.Rendering 352, CounterSheets 19, MapStudio 381, Play 691, Authoring 167: all pass); Docker on the committed branch (started after Docker Desktop was launched twice), every project passes, CI steps exit 0 | 00:13 | 01:02 | 0:49 | Docker ran beside the suite; Rules took 20:47 locally |
 | The documents' gate rows, the design's proofs paragraph, the documents committed | 01:02 | 01:06 | 0:04 | |
 | At the user's word: merged into main with --no-ff as 93cf0e8 and pushed; CI run 37730423820 ended green at 01:13 (10m50s) | 01:06 | 01:13 | 0:07 | The documents' commit is 944e480; next the upstairs rout fix on its own branch |
+
+## The upstairs rout fix (after pass 32.f)
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| The branch fix/asl-upstairs-rout from main (3f96c38); the rulebook read: A10.5 and A10.51 (pp. 66, 67), B23.22 to B23.24 (p. 136); the map reader's stairway rule confirmed (inherent for a one-level building, VASL's symbol for a two-level one); the fix found in the charge's neighbour set | 09:05 | 09:20 | 0:15 | The user: two-story houses have a stairwell in every hex, so the maps are probably right |
+| RoutScan.Neighbors reads ChargeNeighbors (the ground hexes, the level's ADJACENT hexes, the levels above and below); the Rules comment; the test ABrokenUnitUpstairsRoutsDownItsStairwell added to the pass 10 tests; backlog section 52 (the stairwell symbol, the voluntary rout) | 09:20 | 09:29 | 0:09 | |
+| The pass 10 rout tests and 169 rout, DM, and night tests pass with the change; the new test corrected twice (an ADJACENT ground hex for the refused step; an enemy in the Location in place of DM, which the RPh's end removes); MapStudio built into bin/p31b; the Studio check on 6670: cd-guards-5 offers G10 at [L6] level 1 twelve routes and G1 at [F5] level 1 (no stairwell, B23.23) its level's [F6] and [G6], 2 MF each | 09:29 | 09:50 | 0:21 | The user: no proofs or gate for the fix; it rolls into pass 32.g's gate |
