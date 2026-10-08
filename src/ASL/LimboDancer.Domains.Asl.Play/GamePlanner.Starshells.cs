@@ -11,7 +11,8 @@ namespace LimboDancer.Domains.Asl.Play;
 /// Starshells (E1.91 to E1.923; backlog pass 16, ruling R16.8): a leader, CE AFV, or MMC fires one in the PFPh, or in the DFPh or as Defensive First Fire,
 /// one attempt per hex per phase, after a Usage dr (4 or less for a leader, 2 or less otherwise), by one of the three placement methods; the Starshell
 /// Illuminates every Location within three hexes until the end of the CCPh. Firing it is not firing. A Random Direction that leaves the map stops at its
-/// last hex (a Starshell off the map is not built).
+/// last hex (a Starshell off the map is not built). The rules are <see cref="ScenarioA1Starshells"/>'s (pass 32.h); this file reads the request, the state,
+/// and the map, and writes the events.
 /// </summary>
 public sealed partial class GamePlanner
 {
@@ -22,9 +23,9 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.no-game: the game has no state yet");
         }
 
-        if (!state.Night)
+        if (ScenarioA1Starshells.DayBar(state.Night) is { } dayBar)
         {
-            return Refused(scope, label, expected, "play.starshell-day: Starshells are fired only at night (E1.9)");
+            return Refused(scope, label, expected, dayBar);
         }
 
         if (!Text(arguments, "unitId", out var unitId) || !Text(arguments, "method", out var method) || method is not ("own-hex" or "at-target" or "three-hexes"))
@@ -34,47 +35,46 @@ public sealed partial class GamePlanner
 
         if (state.Unit(unitId) is not { Status: InstanceStatus.Active } unit || state.Location(unit.Id)?.Location is not { } from)
         {
-            return Refused(scope, label, expected, $"play.starshell-firer: '{unitId}' is not a unit on the map");
+            return Refused(scope, label, expected, ScenarioA1Starshells.FirerOffMapText(unitId));
         }
 
         var leader = unit.Kind == "asl:leader";
         var afv = LiveFire.IsVehicle(unit);
         var mmc = unit.Kind is "asl:squad" or "asl:half-squad" or "asl:crew";
-        if ((!leader && !afv && !mmc) || (afv && (Is(unit, Conditions.ButtonedUp) || Is(unit, Conditions.Stunned) || Is(unit, Conditions.Shocked)))
-            || (!afv && !GoodOrder(unit)) || Is(unit, Conditions.Pinned) || Is(unit, "asl:ti") || Is(unit, Conditions.Captured))
+        if (ScenarioA1Starshells.FirerBar(unitId, leader, afv, mmc, Is(unit, Conditions.ButtonedUp), Is(unit, Conditions.Stunned), Is(unit, Conditions.Shocked),
+            GoodOrder(unit), Is(unit, Conditions.Pinned), Is(unit, "asl:ti"), Is(unit, Conditions.Captured)) is { } firerBar)
         {
-            return Refused(scope, label, expected, $"play.starshell-firer: {unitId} is not a Good Order, unpinned, not TI leader, CE AFV, or MMC (E1.92, E1.921)");
+            return Refused(scope, label, expected, firerBar);
         }
 
         var phasing = unit.Side == state.PhasingSide;
-        if (!(state.Phase == "pfph" && phasing) && !(state.Phase is "dfph" or "mph" && !phasing))
+        if (ScenarioA1Starshells.PhaseBar(state.Phase, phasing) is { } phaseBar)
         {
-            return Refused(scope, label, expected, "play.starshell-phase: a Starshell is fired in the PFPh by the phasing side, or in the DFPh or as Defensive First Fire by the other (E1.92)");
+            return Refused(scope, label, expected, phaseBar);
         }
 
         var hex = new BoardLocation(from.Board, from.Hex, 0);
-        if (state.StarshellAttempts.Contains(hex.ToString(), StringComparer.Ordinal))
+        if (ScenarioA1Starshells.OnceBar(state.StarshellAttempts.Contains(hex.ToString(), StringComparer.Ordinal), from.Hex.ToString()) is { } onceBar)
         {
-            return Refused(scope, label, expected, $"play.starshell-once: a Starshell attempt was made from {from.Hex} this phase; one per hex (E1.92)");
+            return Refused(scope, label, expected, onceBar);
         }
 
-        // E1.91: the first Starshell of the game needs an enemy unit in the firer's LOS, or a Gunflash on the map.
-        // E1.33 (referee, pass 16): at night an enemy unit is seen within the firer's NVR or Illuminated.
+        // E1.91, E1.33 (referee, pass 16): the scans for a seen enemy unit and for a Gunflash, read when Rules asks.
         bool Seen(UnitInstance other) => state.Location(other.Id) is { } seen && Los(state, from, seen.Location) is { IsBlocked: false } sight
             && NightSight(state, unit, from, seen.Location, sight.Range, [other]) is { BeyondNvr: false, Reason: null };
-        if (!state.StarshellUsed && !state.Units.Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && other.Kind != UnitKinds.Dummy && Seen(other))
-            && !state.Units.Any(other => other.Status == InstanceStatus.Active && state.Location(other.Id) is { } marked && Gunflash(state, marked.Location)))
+        if (ScenarioA1Starshells.FirstBar(state.StarshellUsed,
+            () => state.Units.Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && other.Kind != UnitKinds.Dummy && Seen(other)),
+            () => state.Units.Any(other => other.Status == InstanceStatus.Active && state.Location(other.Id) is { } marked && Gunflash(state, marked.Location))) is { } firstBar)
         {
-            return Refused(scope, label, expected, "play.starshell-first: no Starshell is fired until the firer sees an enemy unit or a Gunflash is placed (E1.91)");
+            return Refused(scope, label, expected, firstBar);
         }
 
-        // E1.921: after the Player Turn of the first Starshell, a firer other than a leader fires it at the start of the PFPh or the enemy MPh, before any
-        // fire or movement.
+        // E1.921: whether any fire or movement has happened this phase.
         var start = existing.Select((item, index) => (item, index)).LastOrDefault(pair => pair.item.Payload is PhaseChanged).index;
         var acted = existing.Skip(start).Any(item => item.Payload is FireResolved or MovementStepped or VehicleStepped);
-        if (state.StarshellUsed && state.StarshellTurn != $"{state.Turn}|{state.PhasingSide}" && !leader && (state.Phase == "dfph" || acted))
+        if (ScenarioA1Starshells.TimingBar(state.StarshellUsed, state.StarshellTurn, $"{state.Turn}|{state.PhasingSide}", leader, state.Phase, acted) is { } timingBar)
         {
-            return Refused(scope, label, expected, "play.starshell-timing: after the first Starshell, only a leader fires one after the start of the PFPh or the enemy MPh (E1.921)");
+            return Refused(scope, label, expected, timingBar);
         }
 
         BoardLocation initial = hex;
@@ -86,22 +86,21 @@ public sealed partial class GamePlanner
             }
 
             initial = new BoardLocation(aimed.Board, aimed.Hex, 0);
-            if (method == "three-hexes" && range != 3)
+            if (ScenarioA1Starshells.ThreeHexesBar(method, aimed.Hex.ToString(), range) is { } threeBar)
             {
-                return Refused(scope, label, expected, $"play.starshell-placement: {aimed.Hex} is {range} hexes away, not exactly three (E1.922)");
+                return Refused(scope, label, expected, threeBar);
             }
 
-            // E1.922 method 2: a Gunflash or Known enemy unit in the firer's LOS, less than nine hexes away, at most six (placement along the LOS is not built).
-            if (method == "at-target" && (range > 6 || Los(state, from, aimed) is not { IsBlocked: false }
-                || !(state.At(aimed).Any(item => item is UnitInstance { Status: InstanceStatus.Active } seen && seen.Side != unit.Side && VisibleTo(seen, unit.Side)
-                    && Seen(seen)) || Gunflash(state, aimed))))
+            if (ScenarioA1Starshells.AtTargetBar(method, range, () => Los(state, from, aimed) is { IsBlocked: false },
+                () => state.At(aimed).Any(item => item is UnitInstance { Status: InstanceStatus.Active } seen && seen.Side != unit.Side && VisibleTo(seen, unit.Side) && Seen(seen))
+                    || Gunflash(state, aimed), aimed.Hex.ToString(), unitId) is { } aimBar)
             {
-                return Refused(scope, label, expected, $"play.starshell-placement: {aimed.Hex} is not a Gunflash or Known enemy unit in {unitId}'s LOS within six hexes (E1.922)");
+                return Refused(scope, label, expected, aimBar);
             }
         }
 
         var package = ScenarioA1FirePackage.Identity.ToString();
-        var need = leader ? 4 : 2;
+        var need = ScenarioA1Starshells.UsageNeed(leader);
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
         {
             var events = new List<GameEvent>();
@@ -115,15 +114,15 @@ public sealed partial class GamePlanner
             }
 
             var usage = Roll(1, "starshell-usage");
-            var passed = ((DiceRolled)events[^1].Payload).Values[0] <= need;
+            var passed = ScenarioA1Starshells.UsagePassed(((DiceRolled)events[^1].Payload).Values[0], need);
             string? placement = null;
             BoardLocation? at = null;
             if (passed)
             {
-                // B.8: the colored dr a hexside direction (1 the top hexside, clockwise); one hex from the firer's hex, or the white dr (halved, FRU, for method 2).
-                placement = Roll(method == "own-hex" ? 1 : 2, "starshell-placement");
+                // B.8: the colored dr a hexside direction (1 the top hexside, clockwise); the extent is Rules' (pass 32.h); the walk stops at the map's edge.
+                placement = Roll(ScenarioA1Starshells.PlacementDice(method), "starshell-placement");
                 var dice = ((DiceRolled)events[^1].Payload).Values;
-                var extent = method == "own-hex" ? 1 : method == "at-target" ? (dice[1] + 1) / 2 : dice[1];
+                var extent = ScenarioA1Starshells.PlacementExtent(method, dice);
                 var (board, hexName) = (initial.Board, initial.Hex);
                 for (var step = 0; step < extent && Next(state, board, hexName, (HexsideDirection)(dice[0] - 1)) is { } next; step++)
                 {
@@ -139,15 +138,14 @@ public sealed partial class GamePlanner
             // E1.921: a hidden firer is placed beneath a "?".
             if (Is(unit, Conditions.Hidden))
             {
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(unit.Id,
-                    new Dictionary<string, ConditionState> { [Conditions.Hidden] = ConditionState.False, [Conditions.Concealed] = ConditionState.True }), package, null));
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                    new ConditionsChanged(unit.Id, ConditionChanges(ScenarioA1Starshells.HiddenFirerConditions())), package, null));
             }
 
             return events;
         }
 
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-            [$"play.starshell: {unit.Id} tries to fire a Starshell ({method}): a Usage dr of {need} or less fires it, and it Illuminates three hexes around where it lands until the end of the CCPh (E1.92, E1.923)"])
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [ScenarioA1Starshells.Summary(unit.Id, method, need)])
         {
             Roll = new PlannedRoll("starshell", Build),
             FirstEventId = EventId(attemptId, 1),
