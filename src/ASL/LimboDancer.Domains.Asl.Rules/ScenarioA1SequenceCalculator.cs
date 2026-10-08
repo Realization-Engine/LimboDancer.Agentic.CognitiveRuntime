@@ -101,6 +101,63 @@ public static class ScenarioA1SequenceCalculator
     public static string? NotYourUnitBar(string id, string? side, string proposer) =>
         side is not null && side != proposer ? $"play.not-your-unit: {id} belongs to the {side} side; the {proposer} side's view does not act for it (ruling R31.6)" : null;
 
+    // The bars every request meets, in their order (pass 32.i); each read of the game is made only when its bar is checked.
+
+    /// <summary>Pass 20 (ruling R20.1): nothing happens in a game that has ended.</summary>
+    public static string? GameOverBar(int? endedAfterTurn) => endedAfterTurn is { } turn ? $"play.game-over: the game ended after Game Turn {turn} (A3.9; ruling R20.1)" : null;
+
+    /// <summary>Pass 19 (ruling R19.2; referee, pass 19): in a game from a card nothing but setup happens until every group has set up.</summary>
+    public static string? SetupOnlyBar(string action, bool anyEvents, Func<string?> cardSetupIncomplete)
+    {
+        ArgumentNullException.ThrowIfNull(cardSetupIncomplete);
+        return action != "asl.game.setup" && anyEvents && cardSetupIncomplete() is { } unfinished ? unfinished : null;
+    }
+
+    /// <summary>Pass 31 (ruling R31.6): a side's view proposes only what its side may do; setup is guarded by its own checks of each group's side.</summary>
+    public static string? ProposerViewBar(string action, string? proposer, bool anyEvents, Func<string?> proposerBar)
+    {
+        ArgumentNullException.ThrowIfNull(proposerBar);
+        return action != "asl.game.setup" && proposer is not null && anyEvents && proposerBar() is { } notYours ? notYours : null;
+    }
+
+    /// <summary>Ruling R26.2: a Passenger acts only with its vehicle until it unloads; eight actions are exempt.</summary>
+    public static string? PassengerBar(string action, bool anyEvents, Func<string?> aboardBar)
+    {
+        ArgumentNullException.ThrowIfNull(aboardBar);
+        return action is not ("asl.game.setup" or "asl.game.move-vehicle" or "asl.game.hook-gun" or "asl.game.advance-phase" or "asl.game.choose" or "asl.game.pass-fire"
+            or "asl.game.end-move" or "asl.game.button-up") && anyEvents && aboardBar() is { } aboard ? aboard : null;
+    }
+
+    /// <summary>A4.152 (ruling R27.3): once the DEFENDER's window on a berserk OVR's entry closes, its CC comes first; <paramref name="overrunAt"/> reads where it is pending.</summary>
+    public static string? OverrunCloseCombatFirstBar(string action, bool anyEvents, Func<string?> overrunAt)
+    {
+        ArgumentNullException.ThrowIfNull(overrunAt);
+        return action is not ("asl.game.close-combat" or "asl.game.choose" or "asl.game.take-prisoner") && anyEvents && overrunAt() is { } at
+            ? $"play.cc-overrun-first: the berserk Infantry OVR in {at} has its CC at once, before anything else happens (A4.152, A15.432)"
+            : null;
+    }
+
+    /// <summary>Ruling R5.8: a pending choice is answered before anything else happens in the game; <paramref name="pendingChoice"/> reads its side and its words.</summary>
+    public static string? ChoicePendingBar(bool ready, string action, Func<(string Side, string Described)?> pendingChoice)
+    {
+        ArgumentNullException.ThrowIfNull(pendingChoice);
+        return ready && action is not ("asl.game.choose" or "asl.game.setup") && pendingChoice() is { } choice
+            ? $"play.choice-pending: the {choice.Side} side answers first: {choice.Described}"
+            : null;
+    }
+
+    /// <summary>A15.5: a surrender waits for its captor before anything else happens in the game; <paramref name="surrenderedUnit"/> reads the first unit that waits.</summary>
+    public static string? SurrenderPendingBar(bool ready, string action, Func<string?> surrenderedUnit)
+    {
+        ArgumentNullException.ThrowIfNull(surrenderedUnit);
+        return ready && action is not ("asl.game.take-prisoner" or "asl.game.setup") && surrenderedUnit() is { } pending
+            ? $"play.surrender-pending: {pending} has surrendered; its captor's side chooses the Guard or rejects it first (A15.5, A20.3)"
+            : null;
+    }
+
+    /// <summary>A10.62, A20.551, pass 21 (rulings R13.1, R31.8, R21.4): the follow-ups of a plan (ADJACENT DM, the re-armed SMC, an immediate Victory) apply to every action but setup.</summary>
+    public static bool FollowUpsApply(string action) => action != "asl.game.setup";
+
     // The owners' options (ruling R5.8) and the Massacre (A20.4; ruling R5.7).
 
     /// <summary>The unit a resolution's option key names: the key is kind:subject, and the subject starts with the unit.</summary>

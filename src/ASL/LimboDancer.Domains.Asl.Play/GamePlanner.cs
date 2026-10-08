@@ -253,38 +253,41 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return new GamePlan(GamePlanStatus.Stale, scope, label, expected, [], [$"play.stale: the game is at revision {existing.Count}"]);
         }
 
+        // Pass 32.i: the bars every request meets, in their order; Rules decides each over a read made only when it is checked.
         // Pass 20 (ruling R20.1): nothing happens in a game that has ended.
-        if (existing.Count > 0 && existing[^1].Payload is GameEnded over)
+        if (ScenarioA1SequenceCalculator.GameOverBar(existing.Count > 0 && existing[^1].Payload is GameEnded over ? over.Turn : null) is { } gameOver)
         {
-            return Refused(scope, label, expected, $"play.game-over: the game ended after Game Turn {over.Turn} (A3.9; ruling R20.1)");
+            return Refused(scope, label, expected, gameOver);
         }
 
         // Pass 19 (ruling R19.2; referee, pass 19): in a game from a card nothing but setup happens until every group has set up.
-        if (action.Id.Value != "asl.game.setup" && existing.Count > 0 && existing.All(item => GameState.IsSetupEvent(item.Payload))
-            && Replay(existing).Current is { Scenario: not null } setupState && CardSetupIncomplete(setupState, existing) is { } unfinished)
+        if (ScenarioA1SequenceCalculator.SetupOnlyBar(action.Id.Value, existing.Count > 0,
+            () => existing.All(item => GameState.IsSetupEvent(item.Payload)) && Replay(existing).Current is { Scenario: not null } setupState ? CardSetupIncomplete(setupState, existing) : null)
+            is { } unfinished)
         {
             return Refused(scope, label, expected, unfinished);
         }
 
         // Pass 31 (ruling R31.6): a side's view proposes only what its side may do; setup is guarded by its own checks of each group's side.
-        if (action.Id.Value != "asl.game.setup" && ProposedBy(arguments) is { } proposer && existing.Count > 0 && Replay(existing).Current is { } proposerState
-            && ProposerBar(proposerState, action.Id.Value, arguments, proposer, existing) is { } notYours)
+        var proposer = ProposedBy(arguments);
+        if (ScenarioA1SequenceCalculator.ProposerViewBar(action.Id.Value, proposer, existing.Count > 0,
+            () => Replay(existing).Current is { } proposerState ? ProposerBar(proposerState, action.Id.Value, arguments, proposer!, existing) : null) is { } notYours)
         {
             return Refused(scope, label, expected, notYours);
         }
 
         // Ruling R26.2: a Passenger acts only with its vehicle until it unloads.
-        if (action.Id.Value is not ("asl.game.setup" or "asl.game.move-vehicle" or "asl.game.hook-gun" or "asl.game.advance-phase" or "asl.game.choose" or "asl.game.pass-fire"
-            or "asl.game.end-move" or "asl.game.button-up") && existing.Count > 0 && Replay(existing).Current is { } boardState && AboardBar(boardState, arguments) is { } aboard)
+        if (ScenarioA1SequenceCalculator.PassengerBar(action.Id.Value, existing.Count > 0,
+            () => Replay(existing).Current is { } boardState ? AboardBar(boardState, arguments) : null) is { } aboard)
         {
             return Refused(scope, label, expected, aboard);
         }
 
         // A4.152 (ruling R27.3): once the DEFENDER's window on a berserk OVR's entry closes, its CC comes first.
-        if (action.Id.Value is not ("asl.game.close-combat" or "asl.game.choose" or "asl.game.take-prisoner") && existing.Count > 0 && Replay(existing).Current is { } overrunState
-            && BerserkOverrunPending(overrunState) is { } overrunAt)
+        if (ScenarioA1SequenceCalculator.OverrunCloseCombatFirstBar(action.Id.Value, existing.Count > 0,
+            () => Replay(existing).Current is { } overrunState ? BerserkOverrunPending(overrunState)?.ToString() : null) is { } overrunFirst)
         {
-            return Refused(scope, label, expected, $"play.cc-overrun-first: the berserk Infantry OVR in {overrunAt} has its CC at once, before anything else happens (A4.152, A15.432)");
+            return Refused(scope, label, expected, overrunFirst);
         }
 
         var plan = action.Id.Value switch
@@ -333,36 +336,37 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         };
 
         // Ruling R5.8: a pending choice is answered before anything else happens in the game.
-        if (plan.Status == GamePlanStatus.Ready && action.Id.Value is not ("asl.game.choose" or "asl.game.setup")
-            && Replay(existing).Current is { Choice: { } choice })
+        if (ScenarioA1SequenceCalculator.ChoicePendingBar(plan.Status == GamePlanStatus.Ready, action.Id.Value,
+            () => Replay(existing).Current is { Choice: { } choice } ? (choice.Side, DescribeChoice(choice)) : null) is { } choicePending)
         {
-            return Refused(scope, label, expected, $"play.choice-pending: the {choice.Side} side answers first: {DescribeChoice(choice)}");
+            return Refused(scope, label, expected, choicePending);
         }
 
         // A15.5: a surrender waits for its captor before anything else happens in the game.
-        if (plan.Status == GamePlanStatus.Ready && action.Id.Value is not ("asl.game.take-prisoner" or "asl.game.setup")
-            && Replay(existing).Current is { PendingSurrenders: [{ } pending, ..] })
+        if (ScenarioA1SequenceCalculator.SurrenderPendingBar(plan.Status == GamePlanStatus.Ready, action.Id.Value,
+            () => Replay(existing).Current is { PendingSurrenders: [{ } pending, ..] } ? pending.Unit : null) is { } surrenderPending)
         {
-            return Refused(scope, label, expected, $"play.surrender-pending: {pending.Unit} has surrendered; its captor's side chooses the Guard or rejects it first (A15.5, A20.3)");
+            return Refused(scope, label, expected, surrenderPending);
         }
 
         // C6.5, C6.51 (ruling R5.13): an Acquisition follows the units it is on.
         plan = WithAcquisitions(plan, scope, existing, attemptId, expected);
 
         // A10.62 (ruling R13.1): a broken unit comes under DM when a Known armed enemy unit is ADJACENT to it.
-        if (action.Id.Value != "asl.game.setup")
+        var followUps = ScenarioA1SequenceCalculator.FollowUpsApply(action.Id.Value);
+        if (followUps)
         {
             plan = WithAdjacentDm(plan, scope, existing, attemptId, expected);
         }
 
         // A20.551 (ruling R31.8): a SMC the action leaves free and Unarmed is Armed again.
-        if (action.Id.Value != "asl.game.setup")
+        if (followUps)
         {
             plan = WithArmedSmc(plan, scope, existing, attemptId, expected);
         }
 
         // Pass 21 (ruling R21.4): an immediate Victory Condition met by the action ends the game after it.
-        if (plan.Status == GamePlanStatus.Ready && action.Id.Value != "asl.game.setup")
+        if (plan.Status == GamePlanStatus.Ready && followUps)
         {
             plan = plan.Roll is { } rolled
                 ? plan with
