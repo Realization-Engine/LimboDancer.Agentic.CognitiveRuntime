@@ -40,6 +40,14 @@ public sealed record RallyAttemptStateFacts(
     string? CommissarId,
     bool ExtremeWinter);
 
+/// <summary>What a Repair dr does (A9.72, D3.7): repairs the weapon, changes nothing, or eliminates or disables it.</summary>
+public enum RepairOutcome
+{
+    Repaired,
+    NoChange,
+    Eliminated,
+}
+
 /// <summary>Which Self-Rally rule bars a unit without the capability (A10.63, A18.11, A10.71): none, not its own side's RPh, the side's one MMC Self-Rally used, or a broken leader in its Location.</summary>
 public enum SelfRallyBar
 {
