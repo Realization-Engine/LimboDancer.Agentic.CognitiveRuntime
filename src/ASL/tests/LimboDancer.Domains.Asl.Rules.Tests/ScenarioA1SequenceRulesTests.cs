@@ -231,7 +231,8 @@ public sealed class ScenarioA1SequenceRulesTests
         Assert.Equal(ScenarioA1EntryRoute.Outside, ScenarioA1EntryRules.Route([mmc, new EntryOccupantFacts(false, false, false, false, true, false, false)]));
         Assert.True(ScenarioA1EntryRules.A414Exception(null, false, true));
         Assert.Null(ScenarioA1EntryRules.A414Exception(null, false, false));
-        Assert.False(ScenarioA1EntryRules.VisibleTo(false, false, null));
+        Assert.True(ScenarioA1EntryRules.VisibleTo(false, false, null));
+        Assert.False(ScenarioA1EntryRules.VisibleTo(false, null, false));
         Assert.Equal(["b"], ScenarioA1EntryRules.SampleBranch([("a", false), ("b", true)]));
         Assert.Equal(["a", "c"], ScenarioA1EntryRules.SampleBranch([("a", false), ("c", false), ("d", false)]));
         var facts = ScenarioA1EntryRules.EntryFacts(new EntryFactInputs(true, true, false, false, true, false, false, null, false, false, true, true, 0, false, "Wooden Building", 0, true, true, true,

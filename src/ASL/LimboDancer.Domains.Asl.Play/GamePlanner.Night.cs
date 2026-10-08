@@ -83,7 +83,8 @@ public sealed partial class GamePlanner
     {
         var verdict = ScenarioA1NightAndWeather.NightSight(NvrOf(state, viewer), from.ToString(), target.ToString(), range, () => Illuminated(state, target), () => Gunflash(state, target),
             () => Illuminated(state, from),
-            targets.Where(unit => LiveFire.IsVehicle(unit) && Is(unit, Conditions.Motion)).Select(unit => VehicleDefinition(unit)?.MovementType));
+            targets.Where(unit => LiveFire.IsVehicle(unit) && Is(unit, Conditions.Motion))
+                .Select(unit => VehicleDefinition(unit) is { } definition ? definition.MovementType ?? string.Empty : null));
         return (verdict.BeyondNvr, verdict.Reason);
     }
 

@@ -217,7 +217,8 @@ public static class ScenarioA1NightAndWeather
     /// What a viewer at <paramref name="from"/> sees at night of a Location <paramref name="target"/>, <paramref name="range"/> hexes away (E1.101, E1.13,
     /// E1.14, E1.81; ruling R16.2): within NVR or Illuminated, it sees it; beyond NVR, a moving vehicle within 1.5 times the NVR (twice if tracked) is within
     /// it, and a Gunflash is seen as a concealed target; an Illuminated viewer sees only Illuminated Locations and Gunflashes. By day it sees what its LOS
-    /// allows. The Illumination and Gunflash reads are made in the old order, and the Motion vehicles' movement types are read as they are asked for.
+    /// allows. The Illumination and Gunflash reads are made in the old order, and the Motion vehicles' movement types are read as they are asked for: null for a
+    /// vehicle with no definition, an empty text for a definition that names no type (which counts as wheeled).
     /// </summary>
     public static NightSightVerdict NightSight(int? nvr, string from, string target, int range, Func<bool> targetIlluminated, Func<bool> targetGunflash, Func<bool> fromIlluminated,
         IEnumerable<string?> motionVehicleTypes)
@@ -325,8 +326,10 @@ public static class ScenarioA1NightAndWeather
         var range = perLocation.Max(item => item.Range);
         var nightDrm = night && range > 0 && facts.HeightAdvantage != true && facts.FireLane != true
             && !perLocation.All(item => targetTop >= item.Height + 1) ? 1 : 0;
+        // E3.32, E3.51, E3.71: falling precipitation counts as Mist for the range DRM (the review of 2026-10-08 restored it).
+        var lowVisibilityWeather = mist || precipitation is not null;
         var heavy = precipitation is "heavy-rain" or "heavy-snow";
-        var weatherDrm = range == 0 || facts.FireLane == true ? 0 : (mist && range > 6 ? (range - 1) / 6 : 0) + (heavy ? 1 : 0);
+        var weatherDrm = range == 0 || facts.FireLane == true ? 0 : (lowVisibilityWeather && range > 6 ? (range - 1) / 6 : 0) + (heavy ? 1 : 0);
         // A6.2, E3.1 (referee, pass 16): Low Visibility and other Hindrances of 6 or more block the LOS.
         var lowVisibility = nightDrm + weatherDrm;
         if (lowVisibility > 0 && lowVisibility + perLocation.Max(item => item.HindranceDrm ?? 0) >= 6)
