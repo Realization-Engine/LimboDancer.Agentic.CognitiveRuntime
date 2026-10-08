@@ -5,18 +5,18 @@ function renderSituation(){
  const mission=regionalState.missions.find(m=>m.id===regionalMission),force=regionalState.forces.find(f=>f.id===mission?.recipient);
  if(force?.echelon!=="Battalion"||mission?.recipient!==regionalHQ)return;
  const add=(tag,text)=>{const n=document.createElement(tag);n.textContent=text;panel.append(n);return n;};
- add("h3","Formation Situation Card");
+ add("h3","Campaign Situation Card");
  let situation=regionalState.situations?.find(s=>s.parentMissionId===regionalMission);
  if(!situation){
   add("p","At a battalion headquarters, receive and plan its mission, select a map sector, then create a Situation Card. This example uses an illustrative company roster, not reconstructed historical strengths.");
-  const b=add("button","Create Situation Card");b.disabled=force?.echelon!=="Battalion"||mission?.recipient!==regionalHQ||!["planned","executing"].includes(mission?.status)||!regionalSector;
+  const b=add("button","Create Campaign Situation Card");b.disabled=force?.echelon!=="Battalion"||mission?.recipient!==regionalHQ||!["planned","executing"].includes(mission?.status)||!regionalSector;
   b.onclick=()=>changeSituation("create");return;
  }
  if(situation.formation||situation.tacticalTest){
-  const openButton=add("button",situation.formation?"Resume Situation":"Open Situation");openButton.onclick=openFormation;
+  const openButton=add("button",situation.formation?"Resume campaign map":"Open campaign map");openButton.onclick=openFormation;
  }else{
   add("p","Choose your setup before opening the map. Maneuver only has no opposing counter. To include the authored opponent, prepare the engagement drafts and catalog-backed tactical test below first. Setup cannot change after the formation map has been created.");
-  const maneuver=add("button","Start maneuver-only Situation");maneuver.onclick=openFormation;
+  const maneuver=add("button","Open campaign map (maneuver only)");maneuver.onclick=openFormation;
  }
  add("h4",situation.title);add("p","Parent: "+situation.parentFormationId+" | Area: "+situation.area.sectorId+" | Campaign interval: "+situation.campaignInterval.start+" to "+situation.campaignInterval.endExclusive);
  add("p",situation.objective.intent);add("p","Situation success: "+situation.objective.success);add("p",situation.objective.evaluation);
@@ -37,7 +37,7 @@ function renderSituation(){
   const cardButton=add("button","Export ASL test Scenario Card");cardButton.onclick=()=>download(situation.tacticalTest.scenarioCard.id+".scenario-card.json",situation.tacticalTest.scenarioCard);
   const bundleButton=add("button","Export test identity manifest");bundleButton.onclick=async()=>{try{download("formation-tactical-test.json",await TacticalHandoff.bundle(situation));}catch(error){regionalNotice(error.message,"error");}};
  }
- const exportButton=add("button","Export Situation Card");exportButton.onclick=()=>download("formation-situation.json",situation);
+ const exportButton=add("button","Export Campaign Situation Card");exportButton.onclick=()=>download("formation-situation.json",situation);
 }
 function changeSituation(action){
  try{

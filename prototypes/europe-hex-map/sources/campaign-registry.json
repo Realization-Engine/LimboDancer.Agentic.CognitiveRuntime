@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "campaigns": [
+    {
+      "id": "normandy-inland-june-1944",
+      "title": "Normandy inland operations",
+      "startDate": "1944-06-08",
+      "endDate": "1944-06-30",
+      "commandSnapshotId": "normandy-1944-06-08",
+      "timeBasis": "Authored parent browsing window. Each child Situation retains its own date and simulation clock.",
+      "nextSituationNumber": 2,
+      "situations": [
+        {
+          "id": "normandy-inland-june-1944:st-lo",
+          "number": 1,
+          "title": "St. Lo",
+          "sourcePackageId": "panzer-leader-04-st-lo"
+        }
+      ]
+    }
+  ]
+}

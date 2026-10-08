@@ -1,4 +1,4 @@
-/* Campaign Atlas — field-manual palette shared with ASL Map Studio.
+/* Campaign Atlas â€” field-manual palette shared with ASL Map Studio.
    Fonts resolve locally only (no network). Install or vendor IBM Plex Sans/Mono
    and Barlow Condensed to get the intended type; system fallbacks are tuned to hold up without them. */
 @font-face{font-family:"Atlas Sans";src:local("IBM Plex Sans"),local("IBMPlexSans")}
@@ -212,3 +212,53 @@ aside{padding:18px;overscroll-behavior:contain}
  .shell>aside:first-child{max-height:190px}
  #regionalWorkspace .row{bottom:0}
 }
+
+/* Original Panzer Situation Card workspace. */
+#panzerSituation{width:min(1400px,94vw);max-width:none;height:90vh;max-height:94vh;overflow:auto;background:#f7f5ee;color:#1e2719;border:2px solid #4a6326;padding:20px}
+#panzerSituation::backdrop{background:#1e2719bb}
+.panzer-toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center}.panzer-toolbar h2{flex:1}
+.panzer-layout{display:grid;grid-template-columns:minmax(230px,340px) minmax(300px,1fr);gap:24px;align-items:start}
+.panzer-tray{max-height:75vh;overflow:auto}.panzer-tray img{width:100px;height:100px}.panzer-tray button{display:block;width:100%;margin:5px 0}.panzer-tray small{display:block}
+.panzer-board{position:relative;max-width:735px}.panzer-board>img{display:block;width:100%;height:auto}.panzer-token{position:absolute;transform:translate(-50%,-50%);width:32px;height:32px;padding:0;border:1px solid #b77725;min-height:0}.panzer-token img{width:100%;height:100%;display:block}.panzer-card-scan{max-width:800px;width:100%}
+#panzerSituation textarea{display:block;width:100%;min-height:70px;margin:8px 0}#panzerSituation button[aria-pressed="true"]{outline:3px solid #b77725}
+@media(max-width:700px){.panzer-layout{grid-template-columns:1fr}.panzer-tray{max-height:35vh}}
+
+.panzer-terrain{position:absolute;inset:0;width:100%;height:100%;display:block}.panzer-terrain text{pointer-events:none;fill:#1e2719}.panzer-token{z-index:2}
+
+.panzer-north-rose{position:absolute;top:10px;left:10px;width:64px;height:64px;z-index:3;pointer-events:none}
+
+.panzer-joined-scroll{min-width:0;height:clamp(260px,55vh,650px);overflow:auto;overscroll-behavior:contain;border:1px solid #aaa88f}
+.panzer-joined{display:flex;width:100%}
+
+.panzer-joined[data-detail="false"] .panzer-token{width:20px;height:20px}
+.panzer-joined[data-detail="false"] .panzer-north-rose{width:42px;height:42px;top:4px;left:4px}
+.panzer-sheet{flex:1;min-width:0}.panzer-sheet>h3,.panzer-sheet>p{padding:8px 12px;margin:0;background:#eeeadd}
+.panzer-board-joined{max-width:none;width:100%;aspect-ratio:3138/1130}
+.panzer-joined-svg{display:block;width:100%;height:100%;overflow:hidden}
+.panzer-layout{grid-template-columns:minmax(230px,300px) minmax(0,1fr)}
+@media(max-width:700px){.panzer-layout{grid-template-columns:minmax(0,1fr)}}
+
+.panzer-placement-status{grid-column:1/-1;position:sticky;top:0;z-index:4;margin:0;padding:10px;background:#f7f5ee;border-left:4px solid #b77725}
+.panzer-board-joined{cursor:crosshair}
+
+#panzerSituation[data-pan-ready="true"] .panzer-joined-scroll,#panzerSituation[data-pan-ready="true"] .panzer-joined-scroll *{cursor:grab!important}
+.panzer-joined-scroll[data-panning="true"],.panzer-joined-scroll[data-panning="true"] *{cursor:grabbing!important;user-select:none}
+
+.panzer-placed-count{float:right;margin-left:12px;font-weight:400;color:var(--olive);font-variant-numeric:tabular-nums}
+.panzer-tray summary::after{content:"";display:block;clear:both}
+
+.panzer-placed-count[data-complete="false"]{color:var(--alert)}
+.panzer-placed-count[data-complete="true"]{color:var(--olive)}
+
+.panzer-side-group{border:0;background:transparent;margin:0 0 16px}
+.panzer-side-group>summary{font-size:18px;font-weight:700;background:var(--tint);border-radius:4px}
+.panzer-side-group>details{margin:8px 0}
+
+#panzerSituation[data-map-mode="game"]{width:98vw;height:96vh;max-height:96vh;padding:12px}
+#panzerSituation[data-map-mode="game"] .panzer-layout{grid-template-columns:minmax(0,1fr);gap:8px}
+#panzerSituation[data-map-mode="game"] .panzer-joined-scroll{height:72vh}
+#panzerSituation[data-map-mode="game"] .panzer-placement-status{padding:5px 10px}
+
+.campaign-situation-marker{cursor:pointer}.campaign-situation-marker:focus-visible{outline:none}.campaign-situation-marker:focus-visible circle{stroke:#b77725;stroke-width:4px}
+.campaign-situation-preview{border-left:4px solid #b77725;background:var(--tint);padding:12px;margin:10px 0}
+#campaignSituations>button{display:block;width:100%;text-align:left}

@@ -23,12 +23,15 @@ function restoreWorkflowDraft(){
  if(workflowDrafts.has(key))workflowNode("regionalText").value=workflowDrafts.get(key);
 }
 function showWorkflowStage(stage){
+ if(window.CampaignSituationWorkflow?.active){window.CampaignSituationWorkflow.showStage(stage);return;}
  if(!workflowStages.includes(stage)||workflowNode("stage-"+stage).disabled)return;
  if(formationOpen&&stage!=="maneuver")closeFormation();
  if(stage==="maneuver"&&!formationOpen){openFormation();if(!formationOpen)return;}
  workflowStage=stage;renderWorkflow();workflowNode("workflowInspector").focus?.();
 }
 function renderWorkflow(){
+ if(window.CampaignSituationWorkflow?.active){window.CampaignSituationWorkflow.render();return;}
+ window.CampaignSituationWorkflow?.hide();
  const active=!!activeRegion&&!!regionalState,m=workflowMission();
  const force=active?regionalState.forces.find(f=>f.id===regionalHQ):null;
  const card=active?regionalState.situations?.find(s=>s.parentMissionId===regionalMission):null;
@@ -52,9 +55,9 @@ function renderWorkflow(){
  workflowNode("regionalWorkspace").style.display=active&&["command","prepare","review"].includes(workflowStage)?"":"none";
  workflowNode("formationControls").style.display=formationOpen?"":"none";
  workflowNode("preparationPanel").hidden=!canPrepare||workflowStage==="command";
- workflowNode("missionInspectorTitle").textContent=workflowStage==="prepare"?"Prepare Situation":workflowStage==="review"?"Review and handoff":"Mission and next action";
+ workflowNode("missionInspectorTitle").textContent=workflowStage==="prepare"?"Campaign Situation Card":workflowStage==="review"?"Review and handoff":"Mission and next action";
  workflowNode("workflowBriefText").textContent=DATA.regionalCampaign.campaign.purpose+" "+DATA.regionalCampaign.campaign.deploymentStatus;
- const hints={choose:"Open Normandy to begin or resume an exercise. Use the theater selector to explore geography.",brief:"Review the objective and limitations, then continue to the command workspace.",command:workflowNode("regionalNext").textContent,prepare:card?"Review the Situation setup before opening the formation map.":"Select a sector on the map or in the inspector, then create a Situation Card.",maneuver:"Select a counter. Movement is manual; contact pauses play without resolving combat.",review:"Review delivered communications, submit available reports, or export records. ASL test results cannot update this campaign."};
+ const hints={choose:"Open Normandy to begin or resume an exercise. Use the theater selector to explore geography.",brief:"Review the objective and limitations, then continue to the command workspace.",command:workflowNode("regionalNext").textContent,prepare:card?"Review the Campaign Situation Card before opening the campaign map.":"Select a sector on the map or in the inspector, then create a Situation Card.",maneuver:"Select a counter. Movement is manual; contact pauses play without resolving combat.",review:"Review delivered communications, submit available reports, or export records. ASL test results cannot update this campaign."};
  workflowNode("workflowHint").textContent=hints[workflowStage];
  const writing=["plan","report","assess"].find(a=>!workflowNode("regional-"+a).disabled);
  const labels={plan:"Mission plan",report:"Report to issuing headquarters",assess:"Assessment of received report"};
@@ -69,6 +72,7 @@ function renderWorkflow(){
  }
  picker.value=regionalSector?.id||"";
  restoreWorkflowDraft();
+ window.CampaignSituationWorkflow?.renderParent();
 }
 for(const stage of workflowStages)workflowNode("stage-"+stage).onclick=()=>showWorkflowStage(stage);
 workflowNode("workflowStart").onclick=()=>{
