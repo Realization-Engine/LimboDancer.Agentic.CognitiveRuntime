@@ -1022,6 +1022,7 @@ public sealed partial class GamePlanner
         UnitCondition.Captured => Conditions.Captured,
         UnitCondition.Melee => Conditions.Melee,
         UnitCondition.Unarmed => Conditions.Unarmed,
+        UnitCondition.CcReaction => Conditions.CcReaction,
         _ => Conditions.CmgMalfunctioned,
     };
 
