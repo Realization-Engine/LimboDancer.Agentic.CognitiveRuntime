@@ -1241,16 +1241,10 @@ public sealed partial class GamePlanner
     /// as an ordinary step, and the Bypass lanes (hexsides, lowercase, comma-separated) it may be taken in.</summary>
     private sealed record ChargeStep(BoardLocation Target, int HalfMf, bool Plain, IReadOnlyList<string> Lanes);
 
-    /// <summary>A node of a charge's route (ruling R27.2): a Location, or an obstacle hex in Bypass with the hexside entered by and the lane.</summary>
-    private readonly record struct ChargeNode(BoardLocation At, HexsideDirection? Entered, string? Lane);
-
-    /// <summary>A first move of a charge's route: the Location entered, the Bypass lane when it enters Bypass, and its half MF.</summary>
-    private readonly record struct ChargeMove(BoardLocation To, string? Lane, int HalfMf);
-
     /// <summary>A Bypass lane's key: its hexsides, lowercase, comma-separated.</summary>
-    private static string LaneKey(IEnumerable<HexsideDirection> lane) => string.Join(",", lane.Select(side => side.ToString().ToLowerInvariant()));
+    internal static string LaneKey(IEnumerable<HexsideDirection> lane) => string.Join(",", lane.Select(side => side.ToString().ToLowerInvariant()));
 
-    private static List<HexsideDirection> Lane(string key) => [.. key.Split(',').Select(name => Enum.Parse<HexsideDirection>(name, ignoreCase: true))];
+    internal static List<HexsideDirection> Lane(string key) => [.. key.Split(',').Select(name => Enum.Parse<HexsideDirection>(name, ignoreCase: true))];
 
     /// <summary>
     /// The Locations a charge may step to from a Location (B23.4, B23.421; ruling R27.2): the ADJACENT hexes at ground level and, from an upper
@@ -1281,186 +1275,108 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
-    /// The moves out of a node of a charge's route (A15.431, A4.3, A4.31; ruling R27.2): from a Location, each step the movement rules allow and each
-    /// Bypass of an ADJACENT woods or building hex along one or two of its hexsides; from Bypass, the steps out through the far vertex.
+    /// The charge search's fact reader (pass 32.g, S6): Locations as indexes into a table built as the search asks for them, hexsides as 0 to 5, the map
+    /// reads, the entry and Bypass costs (for the movers), and the LOS and distances, all Play's; the search is Rules'.
     /// </summary>
-    private IEnumerable<(ChargeNode Node, ChargeMove Move)> ChargeEdges(GameState state, UnitInstance[] movers, ChargeNode node)
+    private sealed class ChargeScan : IChargeFactReader
     {
-        if (node.Lane is { } key)
-        {
-            var lane = Lane(key);
-            var turn = ((int)lane[0] - (int)node.Entered!.Value + 6) % 6;
-            var far = (HexsideDirection)(((int)lane[^1] + turn) % 6);
-            foreach (var side in new[] { lane[^1], far }.Distinct())
-            {
-                if (Across(state, node.At, side) is { } exit && exit.Level == 0 && PlayableBar(state, exit) is null && EntryCost(state, node.At, exit) is { } cost)
-                {
-                    yield return (new ChargeNode(exit, null, null), new ChargeMove(exit, null, cost));
-                }
-            }
+        private readonly GamePlanner planner;
+        private readonly GameState state;
+        private readonly UnitInstance[] movers;
+        private readonly Func<UnitInstance, bool> crew;
+        private readonly List<BoardLocation> locations = [];
+        private readonly Dictionary<BoardLocation, int> indexes = [];
 
-            yield break;
+        public ChargeScan(GamePlanner planner, GameState state, UnitInstance[] movers, Func<UnitInstance, bool> crew)
+        {
+            this.planner = planner;
+            this.state = state;
+            this.movers = movers;
+            this.crew = crew;
         }
 
-        foreach (var next in ChargeNeighbors(state, node.At).Where(at => PlayableBar(state, at) is null))
+        /// <summary>The index of a Location in the table, added when it is new.</summary>
+        public int Index(BoardLocation location)
         {
-            if (EntryCost(state, node.At, next) is { } cost)
+            if (!indexes.TryGetValue(location, out var index))
             {
-                yield return (new ChargeNode(next, null, null), new ChargeMove(next, null, cost));
+                index = locations.Count;
+                locations.Add(location);
+                indexes[location] = index;
             }
 
-            if (node.At.Level != 0 || next.Level != 0 || ReadLocation(state, node.At) is not { } fromRead || SideToward(state, next, node.At) is not { } side)
-            {
-                continue;
-            }
+            return index;
+        }
 
-            var wall = SideToward(state, node.At, next) is { } toward ? WallOn(HexsideAt(state, node.At, toward)) : null;
-            foreach (var turn in new[] { 1, 5 })
-            {
-                foreach (var length in new[] { 1, 2 })
-                {
-                    List<HexsideDirection> lane = [.. Enumerable.Range(1, length).Select(index => (HexsideDirection)(((int)side + (turn * index)) % 6))];
-                    if (BypassStep(state, movers, next, side, fromRead.Hex.BaseLevel, wall, lane).Entry is { } entry)
-                    {
-                        yield return (new ChargeNode(next, side, LaneKey(lane)), new ChargeMove(next, LaneKey(lane), entry.HalfMf));
-                    }
-                }
-            }
+        /// <summary>The Location at an index of the table.</summary>
+        public BoardLocation At(int index) => locations[index];
+
+        public string Name(int location) => locations[location].ToString();
+
+        public int Level(int location) => locations[location].Level;
+
+        public IEnumerable<int> Neighbors(int location) => planner.ChargeNeighbors(state, locations[location]).Select(Index);
+
+        public bool Playable(int location) => planner.PlayableBar(state, locations[location]) is null;
+
+        public int? EntryCost(int fromLocation, int toLocation) => planner.EntryCost(state, locations[fromLocation], locations[toLocation]);
+
+        public int? Across(int location, int side) => planner.Across(state, locations[location], (HexsideDirection)side) is { } exit ? Index(exit) : null;
+
+        public int? SideToward(int fromLocation, int toLocation) => planner.SideToward(state, locations[fromLocation], locations[toLocation]) is { } side ? (int)side : null;
+
+        public bool Reads(int location) => planner.ReadLocation(state, locations[location]) is not null;
+
+        /// <summary>A Bypass of an obstacle hex from a Location the map reads (A4.3, A4.31): the wall on the hexside entered counts, and the movers' entry decides.</summary>
+        public int? BypassHalfMf(int obstacle, int side, IReadOnlyList<int> lane, int fromLocation)
+        {
+            var from = locations[fromLocation];
+            var wall = planner.SideToward(state, from, locations[obstacle]) is { } toward ? WallOn(planner.HexsideAt(state, from, toward)) : null;
+            return planner.BypassStep(state, movers, locations[obstacle], (HexsideDirection)side, planner.ReadLocation(state, from)!.Hex.BaseLevel, wall,
+                [.. lane.Select(item => (HexsideDirection)item)]).Entry?.HalfMf;
+        }
+
+        public string LaneKey(IReadOnlyList<int> lane) => GamePlanner.LaneKey(lane.Select(item => (HexsideDirection)item));
+
+        public IReadOnlyList<int> Lane(string key) => [.. GamePlanner.Lane(key).Select(item => (int)item)];
+
+        public bool LosClear(int fromLocation, int toLocation) => planner.Los(state, locations[fromLocation], locations[toLocation]) is { Status: LosStatus.Clear };
+
+        public int? Distance(int one, int two) => planner.HexDistance(state, locations[one], locations[two]);
+
+        public ChargeOccupantFacts Occupants(int location)
+        {
+            var enemies = state.At(locations[location]).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side != movers[0].Side).ToArray();
+            return new ChargeOccupantFacts(enemies.Any(crew), enemies.Any(LiveFire.IsVehicle), enemies.Any(unit => !LiveFire.IsVehicle(unit)));
         }
     }
 
     /// <summary>
-    /// The steps a berserk stack may take toward the nearest Known enemy unit in its LOS (A15.43, A15.431): the first move of each shortest route
-    /// in MF to that unit's Location, over the entries the game allows, Bypass lanes, stairwells, and upper levels (ruling R27.2), around other
-    /// Locations holding enemy units. Equidistant targets and routes are the ATTACKER's choice, so their steps are all allowed. With no Known enemy
-    /// unit in LOS, the charge keeps to the Location it charged. <paramref name="current"/> is the stack's move this MPh, when the movers are in it.
+    /// The steps a berserk stack may take toward the nearest Known enemy unit in its LOS (A15.43, A15.431; ruling R27.2): the Known enemy units' Locations
+    /// and the stack's start (its Location, or its Bypass lane, A4.32) are read here, Rules searches through a <see cref="ChargeScan"/>, and the steps come
+    /// back by Location. <paramref name="current"/> is the stack's move this MPh, when the movers are in it.
     /// </summary>
     private (IReadOnlyDictionary<BoardLocation, ChargeStep> Steps, BoardLocation? Target, string? Undecided) ChargeSteps(GameState state,
         UnitInstance[] movers, BoardLocation from, MovementState? current)
     {
         var side = movers[0].Side;
-        var previous = current?.Charge;
-        var none = new Dictionary<BoardLocation, ChargeStep>();
+        var scan = new ChargeScan(this, state, movers, unit => vocabulary.IsA(unit.Kind, "asl:crew"));
 
         // Table player, pass 27: an Abandoned vehicle is no unit to charge.
-        var enemies = state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side != side && KnownEnemy(unit) && !(LiveFire.IsVehicle(unit) && Is(unit, Conditions.Abandoned)))
-            .Select(unit => state.Location(unit.Id)?.Location).OfType<BoardLocation>().Distinct().ToArray();
-        if (enemies.Contains(from))
+        int[] enemies = [.. state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side != side && ScenarioA1ChargeCalculator.ChargeTarget(KnownEnemy(unit), LiveFire.IsVehicle(unit), Is(unit, Conditions.Abandoned)))
+            .Select(unit => state.Location(unit.Id)?.Location).OfType<BoardLocation>().Distinct().Select(scan.Index)];
+        ChargeNodeFacts Start()
         {
-            return (none, from, null);
+            var at = scan.Index(from);
+            return current is { Bypass: { Count: > 0 } lane } && current.Location == from && movers.All(unit => current.Movers.Contains(unit.Id, StringComparer.Ordinal))
+                && BypassEntered(state, from, current.From, lane) is { } entered
+                ? new ChargeNodeFacts(at, (int)entered, LaneKey(lane))
+                : new ChargeNodeFacts(at, null, null);
         }
 
-        var inLos = enemies.Where(location => Los(state, from, location) is { Status: LosStatus.Clear }).ToArray();
-        BoardLocation[] targets;
-
-        // A15.431: a charge keeps to its Location until a closer Known enemy unit comes into its LOS (ruling R30.5).
-        if (previous is not null && HexDistance(state, from, previous) is { } kept)
-        {
-            var closer = inLos.Select(location => (location, Distance: HexDistance(state, from, location))).Where(item => item.Distance < kept).ToArray();
-            inLos = [.. closer.Select(item => item.location)];
-        }
-
-        if (inLos.Length > 0)
-        {
-            var distances = inLos.Select(location => (location, Distance: HexDistance(state, from, location))).ToArray();
-            if (distances.Any(item => item.Distance is null))
-            {
-                return (none, null, "play.charge-undecided: a distance to a Known enemy unit cannot be read");
-            }
-
-            var nearest = distances.Min(item => item.Distance!.Value);
-            targets = [.. distances.Where(item => item.Distance == nearest).Select(item => item.location)];
-        }
-        else if (previous is not null)
-        {
-            targets = [previous];
-        }
-        else
-        {
-            return (none, null, null);
-        }
-
-        // A4.32 (ruling R27.2): a stack in Bypass starts from its lane.
-        var start = new ChargeNode(from, null, null);
-        if (current is { Bypass: { Count: > 0 } lane } && current.Location == from && movers.All(unit => current.Movers.Contains(unit.Id, StringComparer.Ordinal))
-            && BypassEntered(state, from, current.From, lane) is { } entered)
-        {
-            start = new ChargeNode(from, entered, LaneKey(lane));
-        }
-
-        var steps = new Dictionary<BoardLocation, ChargeStep>();
-        var undecided = new List<string>();
-        foreach (var target in targets)
-        {
-            var blocked = enemies.Where(location => location != target).ToHashSet();
-            if (ChargeFirstMoves(state, movers, start, target, blocked) is not { } moves)
-            {
-                undecided.Add($"play.charge-no-route: no route the game allows leads from {from} to {target}; the charge ends in place (A15.431)");
-                continue;
-            }
-
-            foreach (var move in moves.OrderBy(item => item.To.ToString(), StringComparer.Ordinal))
-            {
-                // A step the model cannot take leaves the charge undecided, so it may end in place (ruling R30.5).
-                if (ChargeBarred(state, side, move.To) is { } barred)
-                {
-                    undecided.Add(barred);
-                    continue;
-                }
-
-                var known = steps.GetValueOrDefault(move.To);
-                IReadOnlyList<string> lanes = known?.Lanes ?? [];
-                if (move.Lane is { } key && !lanes.Contains(key))
-                {
-                    lanes = [.. lanes, key];
-                }
-
-                steps[move.To] = new ChargeStep(known?.Target ?? target, Math.Min(known?.HalfMf ?? int.MaxValue, move.HalfMf), (known?.Plain ?? false) || move.Lane is null, lanes);
-            }
-        }
-
-        return steps.Count == 0 && undecided.Count > 0
-            ? (steps, targets[0], undecided[0])
-            : (steps, targets.Length == 1 ? targets[0] : null, null);
-    }
-
-    /// <summary>
-    /// The first moves of every shortest route in MF from a node to a target Location (A15.431; ruling R27.2), by Dijkstra over the charge's moves;
-    /// Locations holding other enemy units are not passed through. Null when no route reaches the target.
-    /// </summary>
-    private HashSet<ChargeMove>? ChargeFirstMoves(GameState state, UnitInstance[] movers, ChargeNode start, BoardLocation target, HashSet<BoardLocation> blocked)
-    {
-        var best = new Dictionary<ChargeNode, int> { [start] = 0 };
-        var firsts = new Dictionary<ChargeNode, HashSet<ChargeMove>> { [start] = [] };
-        var done = new HashSet<ChargeNode>();
-        var queue = new PriorityQueue<ChargeNode, int>();
-        queue.Enqueue(start, 0);
-        var goal = new ChargeNode(target, null, null);
-        while (queue.TryDequeue(out var node, out var cost))
-        {
-            if (!done.Add(node) || node == goal || (node != start && node.Lane is null && blocked.Contains(node.At)))
-            {
-                continue;
-            }
-
-            foreach (var (next, move) in ChargeEdges(state, movers, node))
-            {
-                var total = cost + Math.Max(1, move.HalfMf);
-                HashSet<ChargeMove> via = node == start ? [move] : firsts[node];
-                if (total < best.GetValueOrDefault(next, int.MaxValue))
-                {
-                    best[next] = total;
-                    firsts[next] = [.. via];
-                    queue.Enqueue(next, total);
-                }
-                else if (total == best[next] && !done.Contains(next))
-                {
-                    firsts[next].UnionWith(via);
-                }
-            }
-        }
-
-        return firsts.TryGetValue(goal, out var found) && found.Count > 0 ? found : null;
+        var (steps, target, undecided) = ScenarioA1ChargeCalculator.Steps(scan, scan.Index(from), enemies, current?.Charge is { } previous ? scan.Index(previous) : null, Start);
+        return (steps.ToDictionary(item => scan.At(item.Key), item => new ChargeStep(scan.At(item.Value.Target), item.Value.HalfMf, item.Value.Plain, item.Value.Lanes)),
+            target is { } found ? scan.At(found) : null, undecided);
     }
 
     /// <summary>
@@ -1518,5 +1434,5 @@ public sealed partial class GamePlanner
             && !unit.MovementEnded && state.Location(unit.Id) is { } at
             && ChargeSteps(state, [unit], at.Location, state.Movement?.Members.Contains(unit.Id) == true ? state.Movement : null) is { Steps.Count: > 0 } charge
             && MfAllotment(state, unit, unit.DoubleTimeMf, Is(unit, Conditions.Cx)) is { } allowance
-            && charge.Steps.Values.Any(step => (allowance * 2) - (unit.MfSpent * 2) - (unit.HalfMfSpent ? 1 : 0) >= step.HalfMf))];
+            && charge.Steps.Values.Any(step => ScenarioA1ChargeCalculator.Affordable(allowance, unit.MfSpent, unit.HalfMfSpent, step.HalfMf)))];
 }

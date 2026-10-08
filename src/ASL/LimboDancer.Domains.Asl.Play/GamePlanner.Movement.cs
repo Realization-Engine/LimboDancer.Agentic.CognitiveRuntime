@@ -551,7 +551,7 @@ public sealed partial class GamePlanner
             }
 
             var (steps, _, undecided) = ChargeSteps(state, [unit], at.Location, movement);
-            var left = MfAllotment(state, unit, unit.DoubleTimeMf, Is(unit, Conditions.Cx)) is { } allowance ? (allowance * 2) - (unit.MfSpent * 2) - (unit.HalfMfSpent ? 1 : 0) : 0;
+            var left = ScenarioA1ChargeCalculator.HalfMfLeft(MfAllotment(state, unit, unit.DoubleTimeMf, Is(unit, Conditions.Cx)), unit.MfSpent, unit.HalfMfSpent);
             return new EndMoveBerserkFacts([.. steps.Values.Select(step => step.HalfMf)], undecided, left);
         }
 
