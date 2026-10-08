@@ -42,9 +42,9 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.invalid-arguments: an advance names its units and the Location they enter");
         }
 
-        if (state.Phase != "aph")
+        if (ScenarioA1AdvanceCalculator.AdvancePhaseBar(state.Phase) is { } phaseBar)
         {
-            return Refused(scope, label, expected, "play.advance-phase: units advance in their side's APh (A3.7, p. 47)");
+            return Refused(scope, label, expected, phaseBar);
         }
 
         // A2.1 (ruling R20.6): never out of the card's playable area.
@@ -54,9 +54,9 @@ public sealed partial class GamePlanner
         }
 
         var units = ids.Select(state.Unit).ToArray();
-        if (units.Any(unit => unit is not { Status: InstanceStatus.Active } || unit.Side != state.PhasingSide || unit.Definition is null))
+        if (units.Any(unit => !ScenarioA1AdvanceCalculator.AdvanceUnitAllowed(unit is { Status: InstanceStatus.Active }, unit?.Side == state.PhasingSide, unit?.Definition is not null)))
         {
-            return Refused(scope, label, expected, "play.advance-unit: every unit is an active unit of the phasing side from the catalog");
+            return Refused(scope, label, expected, ScenarioA1AdvanceCalculator.AdvanceUnitText());
         }
 
         // A2.5 (ruling R25.1): units whose entry turn has come and that did not enter in the MPh enter by advance, as one advance into a hex of their edge.
@@ -64,9 +64,9 @@ public sealed partial class GamePlanner
         HexsideDirection? entering = null;
         if (offBoard > 0)
         {
-            if (offBoard < units.Length)
+            if (ScenarioA1AdvanceCalculator.EntryStackBar(offBoard, units.Length) is { } stackBar)
             {
-                return Refused(scope, label, expected, "play.entry-stack: units waiting off board enter apart from units on the map (A2.51; ruling R20.5)");
+                return Refused(scope, label, expected, stackBar);
             }
 
             var (edge, crossing, barred) = EntryCheck(state, [.. units.Select(unit => unit!)], to, true);
@@ -90,7 +90,7 @@ public sealed partial class GamePlanner
         }
         else
         {
-            return Refused(scope, label, expected, "play.advance-unit: the units advance from one Location");
+            return Refused(scope, label, expected, ScenarioA1AdvanceCalculator.OneOriginText());
         }
 
         // A4.7: neither broken, pinned, nor TI; A15.431: a berserk unit does not advance; A11.15: nor one held in Melee; A12.14:
@@ -98,46 +98,47 @@ public sealed partial class GamePlanner
         // Table player, pass 14: the refusal names the condition; a concealed unit may advance (A12.14; ruling R14.2), a hidden one may not (A12.3).
         foreach (var unit in units)
         {
-            if (new[] { Conditions.Broken, Conditions.Pinned, Conditions.Berserk, Conditions.Melee, Conditions.Captured, Conditions.Hidden, "asl:ti" }
-                .FirstOrDefault(condition => Is(unit!, condition)) is { } condition)
+            // Rules names the condition (pass 32.g); the text stays here, since its hole on a Play local is cut by the text list at a nested quote.
+            if (ScenarioA1AdvanceCalculator.AdvanceBarringCondition(Is(unit!, Conditions.Broken), Is(unit!, Conditions.Pinned), Is(unit!, Conditions.Berserk), Is(unit!, Conditions.Melee),
+                Is(unit!, Conditions.Captured), Is(unit!, Conditions.Hidden), Is(unit!, "asl:ti")) is { } condition)
             {
                 return Refused(scope, label, expected,
                     $"play.advance-unit: {unit!.Id} is {condition.Replace("asl:", string.Empty, StringComparison.Ordinal)}, so it may not advance (A4.7, A15.431, A11.15, A12.3)"
-                    + (condition == Conditions.Hidden ? "; a hidden unit is first placed beneath \"?\" (A12.32; ruling R23.5)" : string.Empty));
+                    + (condition == "hidden" ? "; a hidden unit is first placed beneath \"?\" (A12.32; ruling R23.5)" : string.Empty));
             }
 
-            if (unit!.MovementEnded)
+            if (ScenarioA1AdvanceCalculator.MovementEndedBar(unit!.Id, unit.MovementEnded) is { } endedBar)
             {
-                return Refused(scope, label, expected, $"play.advance-unit: {unit.Id} has advanced or moved as far as it may this phase (A4.7)");
+                return Refused(scope, label, expected, endedBar);
             }
         }
 
         if (units.FirstOrDefault(unit => Mans(state, unit!)) is { } gunner)
         {
-            return Refused(scope, label, expected, $"play.advance-crew-mans-gun: {gunner.Id} mans a Gun; abandoning or moving a Gun is not reviewed (C10, A21.13)");
+            return Refused(scope, label, expected, ScenarioA1AdvanceCalculator.GunnerText(gunner.Id));
         }
 
         // A4.7 (ruling R25.3): Infantry advance; a vehicle does not, and CC against an enemy vehicle (A11.5) is not reviewed.
         if (units.FirstOrDefault(unit => LiveFire.IsVehicle(unit!)) is { } driven)
         {
-            return Refused(scope, label, expected, $"play.advance-unit: {driven.Id} is a vehicle; only Infantry advance (A4.7)");
+            return Refused(scope, label, expected, ScenarioA1AdvanceCalculator.VehicleText(driven.Id));
         }
 
         // A11.6 (ruling R11.17): a MMC advancing into the Location of a manned, unconcealed enemy AFV passes a PAATC first, aided by a leader in its
         // Location; SMC, Fanatic, and berserk units are exempt. Concealed vehicles are refused below with other concealed units.
-        var afv = state.At(to).OfType<UnitInstance>().FirstOrDefault(unit => unit.Status == InstanceStatus.Active && unit.Side != state.PhasingSide && IsAfv(unit)
-            && !Is(unit, Conditions.Abandoned) && !Is(unit, Conditions.Concealed) && !Is(unit, Conditions.Hidden));
+        var afv = state.At(to).OfType<UnitInstance>().FirstOrDefault(unit => ScenarioA1AdvanceCalculator.PaatcAfv(unit.Status == InstanceStatus.Active, unit.Side != state.PhasingSide, IsAfv(unit),
+            Is(unit, Conditions.Abandoned), Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden)));
 
         // A4.7 (rulings R10.1 to R10.3): one hex, or one level up or down in a stairwell hex, at the MF cost the move would pay; B16.4: never into marsh.
         var (entry, stepReason) = entering is { } edgeSide ? EntryGround(state, to, edgeSide) : InfantryStep(state, from, to);
         if (entry is null)
         {
-            return Refused(scope, label, expected, stepReason!.Replace("play.move-", "play.advance-", StringComparison.Ordinal));
+            return Refused(scope, label, expected, ScenarioA1AdvanceCalculator.AdvanceStepReason(stepReason!));
         }
 
-        if (entry.AllMf)
+        if (ScenarioA1AdvanceCalculator.MarshBar(entry.AllMf) is { } marshBar)
         {
-            return Refused(scope, label, expected, "play.advance-marsh: a marsh hex cannot be entered in the APh (B16.4)");
+            return Refused(scope, label, expected, marshBar);
         }
 
         var terrain = entry.Terrain;
@@ -148,7 +149,7 @@ public sealed partial class GamePlanner
         var excess = OverstackExcess(arriving);
 
         // A7.7 (ruling R12.11): the first Location an Encircled unit enters costs twice its MF.
-        var halfMf = (entry.HalfMf * (units.Any(unit => state.Encircled(unit!)) ? 2 : 1)) + (2 * excess);
+        var halfMf = ScenarioA1AdvanceCalculator.AdvanceHalfMf(entry.HalfMf, units.Any(unit => state.Encircled(unit!)), excess);
 
         // A4.72 EX, A4.12, A4.42 (ruling R10.8): a Good Order leader of its nationality advancing with a MMC adds two MF and one IPC to it.
         var unitList = units.Select(unit => unit!).ToArray();
@@ -163,12 +164,12 @@ public sealed partial class GamePlanner
         {
             if (DifficultAdvance(state, unit!, halfMf, Aided(unit!), unit!.Id == ipcTo) is not { } difficult)
             {
-                return Refused(scope, label, expected, $"play.advance-mf: {unit!.Id} has no MF allotment the catalog decides, or none left after portage (A4.7, A4.72)");
+                return Refused(scope, label, expected, ScenarioA1AdvanceCalculator.NoMfText(unit!.Id));
             }
 
-            if (difficult && Is(unit!, Conditions.Cx))
+            if (ScenarioA1AdvanceCalculator.CxDifficultBar(unit!.Id, difficult, Is(unit!, Conditions.Cx)) is { } cxBar)
             {
-                return Refused(scope, label, expected, $"play.advance-difficult-terrain: {unit!.Id} is CX and may not advance into Difficult Terrain (A4.72)");
+                return Refused(scope, label, expected, cxBar);
             }
 
             if (difficult)
@@ -183,32 +184,28 @@ public sealed partial class GamePlanner
             .ToArray();
 
         // A20.54 (ruling R14.5): an Unarmed unit that is not a prisoner never enters a Location of a Known enemy unit.
-        if (enemies.Any(KnownEnemy) && units.FirstOrDefault(unit => Is(unit!, Conditions.Unarmed)) is { } unarmed)
+        if (ScenarioA1AdvanceCalculator.UnarmedBar(enemies.Any(KnownEnemy), units.FirstOrDefault(unit => Is(unit!, Conditions.Unarmed))?.Id) is { } unarmedBar)
         {
-            return Refused(scope, label, expected, $"play.advance-unarmed: {unarmed.Id} is Unarmed and may not enter a Location of a Known enemy unit (A20.54)");
+            return Refused(scope, label, expected, unarmedBar);
         }
 
         // A crew in CC, and the Gun it mans, are not reviewed (ruling R24.3).
-        if (enemies.Any(unit => vocabulary.IsA(unit.Kind, "asl:crew")))
+        if (ScenarioA1AdvanceCalculator.CrewBar(enemies.Any(unit => vocabulary.IsA(unit.Kind, "asl:crew"))) is { } crewBar)
         {
-            return Refused(scope, label, expected, "play.advance-crew: CC with a Gun's crew is not reviewed (C11, ruling R24.3)");
+            return Refused(scope, label, expected, crewBar);
         }
 
         // A19.12 (ruling R14.11): a Disrupted unit there, not in Melee, surrenders to the Good Order armed Known units advancing in, unless No Quarter.
         // E1.54 (backlog pass 16, ruling R16.6): at night a unit surrenders only in CC.
-        var surrendering = enemies.Where(unit => !state.Night && Is(unit, Conditions.Disrupted) && !state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal))
+        var surrendering = enemies.Where(unit => ScenarioA1AdvanceCalculator.Surrenders(state.Night, Is(unit, Conditions.Disrupted), state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal)))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal).ToArray();
-        string[] takers = [.. unitList.Where(unit => !Is(unit, Conditions.Unarmed) && !Is(unit, Conditions.Concealed) && !Is(unit, Conditions.Hidden)
-            && (vocabulary.IsA(unit.Kind, "asl:mmc") || vocabulary.IsA(unit.Kind, "asl:smc"))).Select(unit => unit.Id).Order(StringComparer.Ordinal)];
-        var summary = $"play.advance: {string.Join(", ", ids)} {(ids.Length == 1 ? "advances" : "advance")} into {to} ({terrain})"
-            + (entering is not null ? " from off board, entering the map (A2.5; ruling R25.1)" : string.Empty) + (Opposing(enemies) is { Length: > 0 } opposing ? $", with {opposing}: CC follows (A3.7)" : string.Empty)
-            + (tiring.Count > 0 ? $"; {string.Join(", ", tiring)} {(tiring.Count == 1 ? "becomes" : "become")} CX advancing into Difficult Terrain (A4.72)" : string.Empty)
-            + (excess > 0 ? $"; the Location is overstacked by {excess} squad-equivalent(s), which costs {excess} more MF (A5.11)" : string.Empty)
-            + (surrendering.Length > 0 && takers.Length > 0 ? $"; {string.Join(", ", surrendering.Select(unit => unit.Id))} is Disrupted and surrenders (A19.12)" : string.Empty);
+        string[] takers = [.. unitList.Where(unit => ScenarioA1AdvanceCalculator.Taker(Is(unit, Conditions.Unarmed), Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden),
+            vocabulary.IsA(unit.Kind, "asl:mmc"), vocabulary.IsA(unit.Kind, "asl:smc"))).Select(unit => unit.Id).Order(StringComparer.Ordinal)];
+        var summary = ScenarioA1AdvanceCalculator.AdvanceSummary(ids, to.ToString(), terrain, entering is not null, Opposing(enemies), tiring, excess, [.. surrendering.Select(unit => unit.Id)], takers.Length > 0);
 
         // Pass 31d (design D5; A11.19, p. 73): the proposer's own Dummies that advance into a Location with an enemy counter are removed as the CCPh
         // begins. It is said of the advancing side's own counters and of counters it sees there; nothing is said of what the other side's "?" holds.
-        string[] dummiesWarning = unitList.Any(unit => unit.Kind == UnitKinds.Dummy) && enemies.Any(unit => !Is(unit, Conditions.Hidden))
+        string[] dummiesWarning = ScenarioA1AdvanceCalculator.DummiesWarned(unitList.Any(unit => unit.Kind == UnitKinds.Dummy), enemies.Any(unit => !Is(unit, Conditions.Hidden)))
             ? [$"play.dummies: {(unitList.All(unit => unit.Kind == UnitKinds.Dummy) ? "these Dummies" : $"the Dummies among {string.Join(", ", ids)}")} are removed in {to} as the Close Combat Phase begins, before any attack (A11.19)"]
             : [];
         var package = ScenarioA1CloseCombatPackage.Identity.ToString();
@@ -244,7 +241,7 @@ public sealed partial class GamePlanner
             }
 
             return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-                [summary, .. dummiesWarning, $"play.advance-paatc: {string.Join(", ", testing.Select(unit => unit.Id))} each pass a PAATC before advancing on {afv.Id}; a unit that fails is pinned and stays (A11.6)"])
+                [summary, .. dummiesWarning, ScenarioA1AdvanceCalculator.PaatcText([.. testing.Select(unit => unit.Id)], afv.Id)])
             {
                 Roll = new PlannedRoll("paatc", Build),
                 FirstEventId = EventId(attemptId, 1),
@@ -261,7 +258,7 @@ public sealed partial class GamePlanner
         // A12.14 (ruling R14.2; table player, pass 14): a concealed unit keeps its "?" advancing, even into CC, unless it enters Open Ground in the LOS of a
         // Good Order enemy ground unit within 16 hexes.
         // E1.31 (backlog pass 16, ruling R16.4): not at night.
-        if (!state.Night && terrain == "open-ground" && EnemyGoodOrderInLosWithin16(state, state.PhasingSide, to))
+        if (ScenarioA1AdvanceCalculator.LosesConcealment(state.Night, terrain, () => EnemyGoodOrderInLosWithin16(state, state.PhasingSide, to)))
         {
             foreach (var seen in unitList.Where(unit => Is(unit, Conditions.Concealed)))
             {
@@ -285,19 +282,15 @@ public sealed partial class GamePlanner
     /// The enemy counters an advance meets, as the advancing side may read them (pass 31d; rulings R23.1, R31d.3): a Known unit by its id, every
     /// other counter that is on the map as one "concealed stack", whatever its count and whether it holds a unit, and a hidden unit not at all.
     /// </summary>
-    private static string Opposing(UnitInstance[] enemies)
-    {
-        string[] known = [.. enemies.Where(KnownEnemy).Select(unit => unit.Id)];
-        var stack = enemies.Any(unit => !KnownEnemy(unit) && !Is(unit, Conditions.Hidden));
-        return string.Join(", ", known) + (stack ? (known.Length > 0 ? " and " : string.Empty) + "a concealed stack" : string.Empty);
-    }
+    private static string Opposing(UnitInstance[] enemies) =>
+        ScenarioA1AdvanceCalculator.Opposing([.. enemies.Select(unit => new OpposingCounterFacts(unit.Id, KnownEnemy(unit), Is(unit, Conditions.Hidden)))]);
 
     /// <summary>
     /// Whether an advance into a Location of this half MF cost is into Difficult Terrain for the unit (A4.72): at least four MF, or all of its
     /// non-Double Time allotment after portage, whichever is less. Null when the allotment is not decided or none is left after portage.
     /// </summary>
     private bool? DifficultAdvance(GameState state, UnitInstance unit, int halfMf, bool aided = false, bool lent = false) =>
-        MfAllotment(state, unit, 0, Is(unit, Conditions.Cx), aided ? 2 : 0, lent ? 1 : 0) is { } allotment && allotment > 0 ? halfMf >= 2 * Math.Min(4, allotment) : null;
+        ScenarioA1AdvanceCalculator.DifficultAdvance(MfAllotment(state, unit, 0, Is(unit, Conditions.Cx), aided ? 2 : 0, lent ? 1 : 0), halfMf);
 
     /// <summary>
     /// A5.1, A5.5 (ruling R14.10): the squad-equivalents of one side's units above three, rounded up, a HS or crew half and five SMC a HS (four or fewer
@@ -306,10 +299,8 @@ public sealed partial class GamePlanner
     private int OverstackExcess(IEnumerable<UnitInstance> units)
     {
         var list = units.ToArray();
-        var smc = list.Count(unit => vocabulary.IsA(unit.Kind, "asl:smc"));
-        var squads = list.Count(unit => vocabulary.IsA(unit.Kind, "asl:squad"))
-            + (list.Count(unit => vocabulary.IsA(unit.Kind, "asl:half-squad") || vocabulary.IsA(unit.Kind, "asl:crew")) / 2m) + (Math.Floor(smc / 5m) / 2m);
-        return squads > 3 ? (int)Math.Ceiling(squads - 3) : 0;
+        return ScenarioA1AdvanceCalculator.OverstackExcess(list.Count(unit => vocabulary.IsA(unit.Kind, "asl:squad")),
+            list.Count(unit => vocabulary.IsA(unit.Kind, "asl:half-squad") || vocabulary.IsA(unit.Kind, "asl:crew")), list.Count(unit => vocabulary.IsA(unit.Kind, "asl:smc")));
     }
 
     /// <summary>The Ambush drs of a CC Location (A11.4): one dr for each side, the ATTACKER's first, resolved by the Close Combat package.</summary>
@@ -665,16 +656,9 @@ public sealed partial class GamePlanner
     /// A4.72 EX, A4.12, A4.42 (ruling R10.8): the MMC advancing with a Good Order leader of their nationality, who add his two MF, and the one laden MMC that
     /// takes his IPC; used by the advance and by an exit by advance (referee, pass 25).
     /// </summary>
-    private (HashSet<string> Aided, string? IpcTo) AdvanceAid(GameState state, UnitInstance[] units)
-    {
-        var aided = units.Where(unit => vocabulary.IsA(unit.Kind, "asl:mmc") && Nationality(unit) is { } nationality && units.Any(leader => leader.Id != unit.Id
-            && vocabulary.IsA(leader.Kind, "asl:leader") && !Is(leader, Conditions.Broken) && Nationality(leader) == nationality)).Select(unit => unit.Id)
-            .ToHashSet(StringComparer.Ordinal);
-        var ipcTo = units.Where(unit => aided.Contains(unit.Id) && Laden(state, unit)).ToArray() is [{ } onlyLaden]
-            && units.Any(leader => vocabulary.IsA(leader.Kind, "asl:leader") && !Is(leader, Conditions.Broken) && !Is(leader, Conditions.Wounded)
-                && Nationality(leader) == Nationality(onlyLaden)) ? onlyLaden.Id : null;
-        return (aided, ipcTo);
-    }
+    private (HashSet<string> Aided, string? IpcTo) AdvanceAid(GameState state, UnitInstance[] units) =>
+        ScenarioA1AdvanceCalculator.AdvanceAid([.. units.Select(unit => new AdvancingUnitFacts(unit.Id, vocabulary.IsA(unit.Kind, "asl:mmc"), vocabulary.IsA(unit.Kind, "asl:leader"), Nationality(unit),
+            Is(unit, Conditions.Broken), Is(unit, Conditions.Wounded), Laden(state, unit)))]);
 
     // A4.42: moved to Rules with the MF allotment (pass 32.b), a step ahead of its slice.
     private bool Laden(GameState state, UnitInstance unit) =>
