@@ -113,13 +113,13 @@ The second research pass adds seven connections, including a contemporary 1935 m
 The research approach now starts with existing historical networks, followed by targeted date and service checks. Individual line-opening histories remain corroboration rather than the primary geometry source.
 
 ### Acquired and displayed
-Bárbara Polo Martín, *Shapefile of railways in Europe between 1920 and 1940* (2023), NAKALA / MAGNETICS: https://doi.org/10.34847/nkl.6296qx69
+BÃƒÂ¡rbara Polo MartÃƒÂ­n, *Shapefile of railways in Europe between 1920 and 1940* (2023), NAKALA / MAGNETICS: https://doi.org/10.34847/nkl.6296qx69
 
 The public NAKALA API supplied all six original shapefile/metadata components. They are retained in sources/europe-railways-1920-1940 together with the repository metadata. prepare_historical_rail.py verifies every supplied SHA-1 and records SHA-256 digests. The source CRS is EPSG:3035. There are 14,427 source records; 12,933 with TYPE_1940 equal to ML or SL are displayed in burgundy. The source geometry is transformed to the map's local coordinates and simplified by 0.5 km for display. This does not establish junction topology, bridge positions, track capacity or a mainline hierarchy. Original geometry remains available for subsequent work.
 
 The repository dates the collection to the interval 1920-1940, not September 1939. Fields include OP_YEAR, CL_YEAR, REOP_YEAR, RECL_YEAR, decade classifications, gauge and notes. Audit of all source records found 7,108 opening years recorded as zero and eight opening years after 1939; some decade classifications disagree with opening years. Zero is not a real opening year, and 5000 appears as a closure sentinel. Do not apply naive date filtering. The map uses the explicit 1940 classification filter as a period research view, not as proof of prewar operation. Source code semantics and conflicts remain to be reconciled.
 
-Attribution: Bárbara Polo Martín. License: Creative Commons Attribution-NonCommercial 4.0 (CC-BY-NC-4.0), https://creativecommons.org/licenses/by-nc/4.0/. Display conversion and simplification are our modifications. This research layer is excluded from campaign exports, campaign hashes and gameplay admission. Commercial inclusion would require appropriate permission or replacement sources.
+Attribution: BÃƒÂ¡rbara Polo MartÃƒÂ­n. License: Creative Commons Attribution-NonCommercial 4.0 (CC-BY-NC-4.0), https://creativecommons.org/licenses/by-nc/4.0/. Display conversion and simplification are our modifications. This research layer is excluded from campaign exports, campaign hashes and gameplay admission. Commercial inclusion would require appropriate permission or replacement sources.
 
 A complete exact-date 1939 network is still outstanding.
 
@@ -165,7 +165,7 @@ Western Europe retains 12 original approximate port, transfer and depot markers,
 ## North African map extension
 The continental overview now covers Europe and North Africa through Egypt: local bounds (-2400, -2500, 2800, 3300) km. Hex radius, origin, projection and IDs remain unchanged. The southward extension adds cells; it does not move existing ones. Generator 1.4.0 and the geography hash identify the current baseline. Browser campaign seeds are retained, but refinement tokens include the revised geography hash and therefore change. Existing exported campaigns retain their old baseline; this prototype has no automatic save migration.
 
-Two additional illustrative campaign areas are available: Northwest Africa (Morocco, Algeria and Tunisia) and Libya–Egypt. They use sampled geographic perimeter edges projected into the common coordinate system. Both have the same detailed 26 km workspace capabilities as the four European theaters. Historical motivation: U.S. Army Center of Military History, Northwest Africa and Egypt-Libya campaign studies:
+Two additional illustrative campaign areas are available: Northwest Africa (Morocco, Algeria and Tunisia) and LibyaÃ¢â‚¬â€œEgypt. They use sampled geographic perimeter edges projected into the common coordinate system. Both have the same detailed 26 km workspace capabilities as the four European theaters. Historical motivation: U.S. Army Center of Military History, Northwest Africa and Egypt-Libya campaign studies:
 - https://history.army.mil/Publications/Publications-Catalog/Northwest-Africa/
 - https://history.army.mil/portals/143/Images/Publications/catalog/72-13.pdf
 
@@ -233,7 +233,7 @@ The tree renders arbitrary depth. Division, regiment and battalion share the reg
 Reference version 2 uses a new package hash, so this expanded exercise starts fresh for an existing campaign seed. Earlier exercise records remain in local storage under their original hash; no automatic migration or historical force allocation is performed.
 
 
-### Formation Situation Card and ASL handoff drafts
+### Campaign Situation Card and ASL handoff drafts
 
 At a battalion headquarters in the Normandy exercise, receive and plan its mission, select a regional sector, and choose **Create Situation Card**. The panel records the parent mission, date, geographic anchor, intent, success criteria, authored 120-minute planning window, support limitations and roster provenance. **Prepare two engagement drafts** divides the illustrative company into an access engagement, a conditional objective engagement and a reserve. The second engagement depends on the first; this is an authored decomposition example, not automatic contact detection.
 
@@ -265,7 +265,7 @@ The card template passes the actual C# `ScenarioCards.Parse`, user-card `Save`/`
 `prepare_tactical.py` regenerates `tactical-reference.js` from the card source and existing catalog during the map build. Keep `tactical-reference.js` and `tactical-handoff.js` with the offline viewer. Existing Situation Cards can opt into the new test without clearing their mission progress. Clear removes the prepared test along with the rest of the workflow.
 
 
-### Formation Situation map
+### Campaign Situation map
 
 At a battalion's Situation Card, optionally prepare the catalog-backed tactical test first to include a German opposing counter, then choose **Open Situation**. A dedicated formation display replaces the regional map and controls. It has 99 hexes, 250 m across flats, on a globally anchored axial grid near the selected regional sector center. Terrain is generated from campaign seed, generator version and global hex identity, making overlapping cells deterministic. The terrain and objectives are illustrative; no claim of historical Normandy geometry or ASL terrain compatibility is made.
 
@@ -329,3 +329,100 @@ Open Normandy exercise resumes the current reference-package record without rese
 Mission text is retained per campaign, headquarters, mission and action in browser storage, separately from submitted plans/reports. Successful submission removes the corresponding draft; communication steps retain it. Clearing campaign data also clears that campaign seed's drafts. If storage is unavailable, typed drafts remain in memory for this page session and the inspector explains the limitation. The regional sector dropdown provides a keyboard alternative to map clicks.
 
 Keep `workflow-view.js` with the other runtime assets when distributing the viewer. `test_viewer.cjs` covers stage gating, mission authority, draft navigation/reload, keyboard sector selection, both formation setup routes, and return navigation using a DOM double. It does not verify rendered layout, screen-reader behavior or touch interaction.
+
+
+## Panzer Leader Situation 4: St. Lo
+Open **St. Lo Situation 4** in Game controls or Choose your task. This is a separate, locally saved June 29 package, not the June 8 Omaha exercise. Review the original card, then place the German counters on board A and complete German setup. Place the Allied counters on C and complete Allied setup. Expand a counter type to select individual counters; click the board to place or reposition them. Clear this Situation resets only this package. Export Situation plan preserves the full roster and placements.
+
+The package includes 21 verified counter types, 76 individual counter identities, Imaginative Strategist artwork, source-board images, source hashes, the original card, setup order, 15-turn limit and victory alternatives. Boards are displayed separately in source-sheet orientation. Planning positions now carry hex identities and normalized image centers. Terrain remains a first-pass interpretation rather than an admitted combat map. No combat or victory adjudication is implemented. Infantry artwork range asterisks remain source annotations pending interpretation.
+
+After setup, select participants from both sides, enter a local objective and create an ASL engagement draft. Counter identities are held against duplicate draft allocation. These blocked drafts require dated squad/crew/vehicle decomposition, contact and time boundaries, compiled terrain, completed Scenario Cards and engine admission. A Panzer counter is not automatically one ASL squad. There is no campaign reconciliation yet.
+
+Files: `panzer-situation-data.js` is the offline package; `panzer-situation-state.js` owns validated setup and engagement draft state; `panzer-situation-view.js` supplies the UI; `assets/panzer-leader-04/` holds the manifest, counter images, boards and original card excerpt. Keep these files with the viewer. Artwork attribution: Imaginative Strategist; original Situation Card: Avalon Hill Panzer Leader. Archive source paths and hashes are retained in the manifest. The game card's date and unit attribution are not independent historical verification.
+
+
+## Authoritative Situation contract
+
+`schemas/situation.schema.json` is the JSON Schema 2020-12 contract. `sources/situations/panzer-leader-04.json` is the canonical St. Lo instance. Edit that instance, then run `python build_situation.py`. The regular `build.py` invokes the same validator. The offline `panzer-situation-data.js` and asset manifest are generated outputs. The Atlas renderer and Situation exports consume that generated package; neither the images nor a hand-edited JavaScript roster are the source of truth. Runtime planning saves remain separate from the immutable Situation definition.
+
+The contract includes:
+
+- Card identity, printed date, source references and hashes, briefing, setup sequence, first player, turn limit, special rules and victory text.
+- Counter types, original factors, quantities, artwork provenance, unique counter instances, optional formation lineage, initial hex positions and reinforcement availability. Historical personnel/equipment composition is separate from game factors and has its own evidence status.
+- Boards, scale, axial coordinates, assembly transforms and transcription coverage. Each hex has a stable ID, base terrain, additional features, elevation, six directional edges, barriers, crossings, route references, place membership and an optional image anchor.
+- Named places and objective/setup zones with explicit hex membership; route paths; cross-board seams and reciprocal adjacency. A board image is reference artwork, not terrain semantics. Directions 0 through 5 require a consistent convention in the admitting geometry compiler; rotations and seams cannot be inferred from page orientation.
+- Optional geographic binding, campaign seed and generator version. Legacy geomorphic boards have no asserted real-world coordinate binding. Fixed source-board geography is not randomized by the campaign seed.
+- Campaign/mission lineage, date and optional absolute interval, weather, proposed ASL-inspired phases, terrain/combat profiles and structured victory predicates. The Allied victory is an OR of two alternatives; the second is an AND of four control zones. German victory prevents that Allied result at the end of the game.
+- ASL Scenario Card handoff format, identity conservation, reservation and reconciliation requirements, plus explicit admission status and blockers.
+
+`reference-only` permits missing terrain and unresolved composition. `setup-ready` requires complete board geometry, known terrain and resolved zones. `engine-ready` additionally requires engine/rule profiles, no blockers and verified decomposition. These are data admission gates, not proof that a combat engine or ASL validator has executed. Actual engine admission still needs its own validated Scenario Card and board-package contract.
+
+JSON Schema checks field structure and types. `build_situation.py` additionally checks cross-references, unique IDs, roster totals, setup order, formation cycles, hex adjacency, seams, objective references and readiness. JSON Schema alone cannot enforce those relationships. Both validation layers are mandatory before generating the Atlas payload.
+
+St. Lo remains **reference-only**. Both boards now have 346 hex records and `coverage: partial`; terrain interpretation and assembly still require review. Its five victory zones remain unresolved. See the board transcription section below for the current data and interaction model. Synthetic test hexes are isolated validator fixtures, not additional St. Lo geography.
+
+Checks: `python -m unittest test_situation_schema`, `node test_panzer_situation.cjs`, and `node test_viewer.cjs`. Install the pinned `jsonschema` dependency from `requirements.txt` before building.
+
+
+### Board transcription, first pass
+Both boards now contain 346 uniquely addressed hex fragments (692 total), with A..Z/AA..GG row labels and the original column-counting convention. Each has image polygons, centers, six reciprocal neighbors, terrain, feature memberships, elevation categories and colored LOS-symbol interpretations. Source directions are east, northeast, northwest, west, southwest and southeast. Ground/slope/hilltop are relative categories; no surveyed meter elevation is asserted.
+
+The workspace opens in **JSON terrain** mode, rendered from the Situation records. **Show source artwork** switches to the source scan. Click a hex to inspect it; with a counter selected, click an interior hex to place it. Positions now store board/hex identity and snap to its center. Boundary half-hexes are excluded from setup, following original rule XIV.B.2. Earlier freehand saves remain under their v1 storage key; hex setup uses v2 and does not silently reinterpret them.
+
+`transcribe_panzer_maps.py` compiles `sources/situations/panzer-leader-04-terrain-review.json` and samples heavy colored source hexsides. It writes the canonical Situation and two labeled review images. Then run `build_situation.py` to validate and regenerate the Atlas payload. Requires Pillow in addition to the existing schema dependency. The board images must remain unchanged for the recorded calibration to hold.
+
+This is an interpreted first pass, not validated engine terrain. All 692 cells exist, but coverage remains **partial** because decorative terrain spill, slope extent, source LOS-symbol classification, road/stream connectivity, crossings and assembled boundary identities need further review. Town candidates are recorded for Grancelles, Kuhn, Sambleu, Caverge, Wiln and St. Athan. Victory zones remain unresolved, especially the east-of-stream subset. No movement cost, LOS result or victory is inferred from the colored view. Rivers/roads now include source-traced line geometry and ordered hex crossings; the operational transport graph remains unadmitted. Two board-local fragments must not be counted as two unique world hexes once joined.
+
+
+### Road and stream line geometry
+The Situation JSON now carries source-aligned `LineString` geometry for each road/stream trace in normalized board-image coordinates. The SVG renderer uses those coordinates directly, preserving bends and town streets instead of linking hex centers. Streams use blue strokes; roads use a pale center with a dark casing. Roads draw over streams at source crossings; this visual ordering does not certify bridge capacity or movement rules.
+
+`sources/situations/panzer-leader-04-lines.json` retains control points and refined trace points. `compile_panzer_lines.py` writes these to the canonical Situation and derives the ordered hex traversals, reciprocal edge route IDs and road/stream feature membership. It also generates `board-A-line-review.png` and `board-C-line-review.png`, with pink road traces and blue stream traces over the artwork for comparison. Run it before `build_situation.py` when changing linework. The terrain transcription compiler invokes the same line compiler to preserve route geometry after rebuilding hexes.
+
+Tracing is raster-derived display geometry. It preserves the source board's alignment, not surveyed geographic accuracy. Grancelles streets were refined from an enlarged source crop to avoid rooftop false positives. Transport graph junctions, shared board seams, legal crossings and bridge rules remain separate admission work. Source scans remain available through Show source artwork.
+
+### Situation map illustration
+
+`panzer-map-art.js` renders the generated board with muted ground texture, irregular woodland patches, layered stream banks, outlined roads and lighter hex lines. Grancelles has 43 source-guided illustrative building footprints. The canonical Situation package keeps these in `illustration`, separate from game terrain. Building shapes are not verified tactical obstacles. A fixed illustration seed gives stable woodland symbols across redraws.
+
+Use **Show hex details** for terrain annotations, or **Show source artwork** to compare with the original board. Selecting a hex still reveals its identity and recorded terrain. Sambleu, Caverge, Kuhn, Wiln and St. Athan also have source-guided building artwork, with roof colors, shadows and ridgelines. All building footprints remain illustration rather than admitted tactical obstacles.
+
+The Situation maps show an N compass rose in both generated and source-artwork views. Bearings are stored in `illustration.northIndicators`, measured clockwise from the displayed sheet top. Situation 4 uses A = 90 degrees (right) and C = 270 degrees (left), interpreted from the card diagram and the inverted board letters on the source sheets. This does not resolve board assembly translations or seams.
+
+### Joined Situation setup
+
+Both boards now display side by side: A rotated 90 degrees clockwise on the left, C rotated 90 degrees counter-clockwise on the right, following the specified Situation assembly. North points up in this joined view. This supersedes the earlier separate-sheet bearing interpretation. The source sheets are preserved. Counter placement and inspection convert rotated display coordinates back to saved sheet coordinates, preserving existing plans. The same assembly applies to source artwork. Labeled approach arrows indicate opposing setup sides, not mandatory entry routes. Horizontal scrolling keeps counters readable. Cross-board hex seam admission remains pending.
+
+The joined view uses one compass rose at the upper left of the left board, with 70% opaque background. Matching boundary half-hexes inherit woods visually if either half is wooded. Both sheets render identical deterministic woodland geometry in shared seam coordinates, so the patch continues across the join. This illustration reconciliation preserves the source transcription and does not admit cross-board movement rules.
+
+Mouse-wheel zoom on either Situation board follows the pointer, from fitted size to 6x. The board viewport scrolls horizontally and vertically for panning. Zoom and pan survive counter selection and placement redraws. **Fit both boards** returns to the overview. Wheel input outside the boards keeps normal page scrolling.
+
+Pan the Situation setup with **Space + left-mouse drag** or **middle-button drag**. Pointer capture keeps the drag active outside the map until release. Panning suppresses counter placement and native middle-button autoscroll. Space remains available for typing in notes and other text fields.
+
+German and American roster groups can be expanded or collapsed independently. Their open/closed state, and the nested unit-type sections, are retained during setup redraws.
+
+### Campaign Situation Card workflow
+
+Open **Normandy campaign** to enter the parent operational workspace (8-30 June 1944). Its **Campaign Situations** list contains **St. Lo | 29 June 1944 | Review card** and saved Situations generated by battalion mission planning. Select a card, review its forces, setup, objectives and map, then choose **Open campaign map**. Returning from the detailed map returns to the Normandy workspace. St. Lo is not a separate campaign entry.
+
+The parent browsing window is authored scope, not an expanded simulation clock. The existing 8 June command snapshot retains its own dated forces and save state; St. Lo retains its 29 June roster and placements. The canonical Situation package records its `parentCampaign` identity and window. Cross-situation scheduling, force reconciliation and combat remain pending. Panzer Leader remains source attribution; ASL Scenario Cards are lower-scale engagement contracts.
+
+### Deployment setup and game map
+
+The Situation Card opens **Set up campaign map**, or **Resume map setup** when counters have been placed. Complete German setup, then American setup. **Launch situation game map** becomes available only after both sides are complete. The game view uses a wider dialog and taller map viewport, with no deployment roster or setup editing. Zoom, drag panning, source artwork and inspection remain available. **Review deployment** returns to the completed setup view. The launched state and original counter positions are saved; the card then offers **Resume game map**. This is a game presentation shell, not an implemented turn/combat engine.
+
+### Parent map and organization references
+
+The Normandy parent map no longer displays the former illustrative 1st/29th Infantry Division and V Corps badges. Their dated organization records remain in the collapsed **8 June command organization (reference)** section. Actual deployment counters belong to each selected Campaign Situation map; the parent workspace lists Situation Cards.
+
+### Situation marker preview
+
+The Normandy parent map shows a numbered **01** marker for St. Lo, synchronized with the Situation list. Select it with the mouse or Enter/Space to see its date, objective, force totals, deployment count and next action. Progress derives from the saved Situation: Not started, Deploying, Ready to launch or Game map opened. The marker is a [town location reference](https://en.wikipedia.org/wiki/Saint-L%C3%B4), not a board footprint or historical deployment coordinate. The marker is hidden outside the parent workspace and while a child map is open.
+
+### Campaign-local Situation numbering
+
+`sources/campaign-registry.json` is the campaign list. Each campaign has a stable ID, its own Situation records and a monotonically increasing `nextSituationNumber`. Normandy currently assigns **01** to St. Lo; its next number is **02**. Another campaign may independently have a Situation 01. Situation IDs remain stable and distinct from display numbers. `campaignAssignment` links the exported Situation package to this registry. Build validation rejects duplicate campaign IDs, duplicate Situation IDs, duplicate numbers within a campaign and reuse of an assigned number.
+
+Panzer Leader Situation **4** remains the source reference. Its existing package ID and save keys are retained for compatibility and do not define the campaign display number. Generated battalion cards are still unnumbered until registered; their list order is not an implicit numbering scheme.
+
+Situation marker titles and progress labels appear only at 0.10 map kilometers per screen pixel or closer. At wider zoom, only the number remains; hover reveals the name, date and progress in an SVG tooltip. Accessible marker names and the selectable side-panel preview retain these details at every zoom. The threshold is defined by `situationLabelMaxKmPerPixel` in the Situation view.

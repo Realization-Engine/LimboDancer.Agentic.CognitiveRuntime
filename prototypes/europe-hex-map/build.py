@@ -77,6 +77,8 @@ def cell(q,r,land,lakes):
             "lakeFraction":round(wf,5),"surface":kind,"elevation":None,"vegetation":None,
             "vertices":[[round(a,3),round(b,3)] for a,b in list(g.exterior.coords)[:-1]]}
 def build():
+    from build_situation import build as build_situation
+    build_situation()
     from prepare_tactical import prepare as prepare_tactical
     prepare_tactical()
     from check_ui_encoding import check_files

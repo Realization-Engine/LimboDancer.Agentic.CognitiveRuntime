@@ -893,3 +893,21 @@ Orders remain authored player plans. Temporary historical attachments are displa
 Evidence: [U.S. Army, Omaha Beachhead, 7-8 June](https://www.ibiblio.org/hyperwar/USA/USA-A-Omaha/USA-A-Omaha-6.html) supplies dated area context; [Army ETO order of battle, 29th Division](https://history.army.mil/documents/ETO-OB/29ID-ETO.htm) corroborates its organic regiments. June 7 actions inform starting conditions rather than becoming scheduled June 8 attacks.
 
 Version 4 changes the reference hash, creating a fresh exercise. Earlier saves remain under their original keys. Validation: `test_divisions.cjs` checks roster identity, all new mission branches, delayed headquarters knowledge, persistence and post-landing scope; existing lifecycle and viewer checks cover navigation and handoff behavior.
+
+### Campaign Situation Cards within the parent operational map
+
+The hierarchy is theater, dated parent operational campaign map, Campaign Situation Card, company/platoon map, and bounded ASL Scenario Cards. The parent map type demonstrated by the Normandy command workspace contains multiple Campaign Situations. St. Lo is a child Situation, not a parallel campaign or alternative entry workflow.
+
+Each child records its parent campaign identity and its own location/scope, date or interval, persistent forces, objectives, setup, support and special rules. The Situation Card is the final review step before opening that child's detailed map. Returning from the map restores the parent workspace and its Situation list. Mission-generated and source-authored cards are both children of that workspace; source authorship does not bypass parent selection.
+
+The Normandy prototype parent covers an authored browsing window of 8-30 June 1944. Its existing command snapshot remains dated 8 June; St. Lo retains the printed 29 June date and source roster. These dates must fit the parent window, but opening a card does not advance the command snapshot, move its units or reconcile child outcomes. Shared scheduling, force reservations and cross-situation reconciliation require explicit simulation contracts before concurrent play. Several ASL engagements may derive from a single Campaign Situation Card.
+
+The parent workspace lists St. Lo alongside Situations saved through battalion planning. Existing storage keys and placements are retained. Review and map setup remain available while combat admission and cross-board movement rules remain pending.
+
+#### Deployment setup to game view
+
+The Campaign Situation Card opens a deployment setup screen. German and American setup complete separately; launching the situation game map is blocked until both are complete. Launch preserves every counter identity and hex placement, persists the launch state, and opens a larger map workspace without the deployment roster or placement actions. Returning to deployment permits inspection of the completed setup; it does not unlock completed deployments. The card resumes the launched game view on subsequent visits. This presentation transition does not admit turn execution, combat or campaign reconciliation.
+
+#### Campaign and Situation identity
+
+The campaign registry is a list of stable campaign IDs, each owning its own Situation numbering sequence. The display designation (01, 02, ...) is unique within its parent campaign, not globally. A Situation also has a stable identity; reordering the UI must not renumber it. Allocate from the parent's next number and never recycle assigned numbers. Source publication numbers remain provenance, separate from our designation. Normandy assigns 01 to St. Lo, while Panzer Leader Situation 4 remains its source. Existing package/save identifiers remain compatible. Mission-generated cards require explicit registry admission before receiving a campaign number.

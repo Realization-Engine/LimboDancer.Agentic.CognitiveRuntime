@@ -1,0 +1,1860 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:campaign-atlas:situation:1",
+  "title": "Campaign Atlas Situation",
+  "description": "Authoritative Situation input for the Campaign Atlas. Structure is JSON Schema validated; identity, topology, counts and readiness require semantic validation. Unknown geography must never be inferred as open terrain.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "situation": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "game": {
+          "type": "string"
+        },
+        "number": {
+          "type": "integer"
+        },
+        "title": {
+          "type": "string"
+        },
+        "printedDate": {
+          "type": "string"
+        },
+        "sourcePdf": {
+          "type": "string"
+        },
+        "sourcePdfPage": {
+          "type": "integer"
+        },
+        "sourceSha256": {
+          "type": "string"
+        },
+        "dateStatus": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "game",
+        "number",
+        "title",
+        "printedDate",
+        "sourcePdf",
+        "sourcePdfPage",
+        "sourceSha256",
+        "dateStatus"
+      ]
+    },
+    "usage": {
+      "type": "string"
+    },
+    "totals": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "Allied": {
+          "type": "integer"
+        },
+        "German": {
+          "type": "integer"
+        },
+        "types": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "Allied",
+        "German",
+        "types"
+      ]
+    },
+    "sources": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sha256": {
+            "type": "string",
+            "pattern": "^[a-fA-F0-9]{64}$"
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "required": [
+          "path",
+          "sha256",
+          "page"
+        ]
+      }
+    },
+    "counters": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/counterType"
+      },
+      "minItems": 1
+    },
+    "instances": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/counterInstance"
+      },
+      "minItems": 1
+    },
+    "id": {
+      "type": "string"
+    },
+    "turnLimit": {
+      "type": "integer"
+    },
+    "firstSide": {
+      "type": "string"
+    },
+    "setupOrder": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 0
+    },
+    "setupBoards": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "German": {
+          "type": "string"
+        },
+        "Allied": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "German",
+        "Allied"
+      ]
+    },
+    "briefing": {
+      "type": "string"
+    },
+    "victory": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "minItems": 0
+    },
+    "specialRules": {
+      "type": "string"
+    },
+    "boards": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/board"
+      },
+      "minItems": 1
+    },
+    "$schema": {
+      "type": "string"
+    },
+    "mapModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "geographicBinding": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "crs": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "longitude": {
+                  "type": "number",
+                  "minimum": -180,
+                  "maximum": 180
+                },
+                "latitude": {
+                  "type": "number",
+                  "minimum": -90,
+                  "maximum": 90
+                },
+                "evidence": {
+                  "$ref": "#/$defs/evidence"
+                }
+              },
+              "required": [
+                "crs",
+                "longitude",
+                "latitude",
+                "evidence"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "seed": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "generatorVersion": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "geometryBasis": {
+          "enum": [
+            "legacy-board",
+            "historical-reconstruction",
+            "generated"
+          ]
+        },
+        "places": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_:.-]*$"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "hexes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/hexRef"
+                },
+                "minItems": 0
+              },
+              "evidence": {
+                "$ref": "#/$defs/evidence"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "hexes",
+              "evidence"
+            ]
+          },
+          "minItems": 0
+        },
+        "zones": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_:.-]*$"
+              },
+              "description": {
+                "type": "string",
+                "minLength": 1
+              },
+              "hexes": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/hexRef"
+                },
+                "minItems": 0
+              },
+              "resolution": {
+                "enum": [
+                  "unresolved",
+                  "resolved"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "description",
+              "hexes",
+              "resolution"
+            ]
+          },
+          "minItems": 0
+        },
+        "routes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_:.-]*$"
+              },
+              "kind": {
+                "enum": [
+                  "road",
+                  "rail",
+                  "trail",
+                  "stream",
+                  "river"
+                ]
+              },
+              "path": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/$defs/hexRef"
+                },
+                "minItems": 1
+              },
+              "condition": {
+                "enum": [
+                  "unknown",
+                  "intact",
+                  "damaged",
+                  "destroyed"
+                ]
+              },
+              "evidence": {
+                "$ref": "#/$defs/evidence"
+              },
+              "geometry": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": [
+                  "type",
+                  "boardId",
+                  "coordinateSystem",
+                  "coordinates"
+                ],
+                "properties": {
+                  "type": {
+                    "const": "LineString"
+                  },
+                  "boardId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "coordinateSystem": {
+                    "const": "normalized-source-image"
+                  },
+                  "coordinates": {
+                    "type": "array",
+                    "minItems": 2,
+                    "items": {
+                      "type": "array",
+                      "minItems": 2,
+                      "maxItems": 2,
+                      "items": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 1
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            "required": [
+              "id",
+              "kind",
+              "path",
+              "condition",
+              "evidence",
+              "geometry"
+            ]
+          },
+          "minItems": 0
+        },
+        "seams": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "from": {
+                "$ref": "#/$defs/hexRef"
+              },
+              "direction": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 5
+              },
+              "to": {
+                "$ref": "#/$defs/hexRef"
+              },
+              "evidence": {
+                "$ref": "#/$defs/evidence"
+              }
+            },
+            "required": [
+              "from",
+              "direction",
+              "to",
+              "evidence"
+            ]
+          },
+          "minItems": 0
+        }
+      },
+      "required": [
+        "geographicBinding",
+        "seed",
+        "generatorVersion",
+        "geometryBasis",
+        "places",
+        "zones",
+        "routes",
+        "seams"
+      ]
+    },
+    "campaign": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "parentCampaignId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_:.-]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "parentMissionId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_:.-]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "date": {
+          "type": "string",
+          "format": "date"
+        },
+        "startTime": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "endTime": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "turnMinutes": {
+          "anyOf": [
+            {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "chronologyBasis": {
+          "type": "string",
+          "minLength": 1
+        },
+        "weather": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "condition": {
+              "enum": [
+                "unknown",
+                "clear",
+                "rain",
+                "snow",
+                "fog"
+              ]
+            },
+            "visibilityMeters": {
+              "anyOf": [
+                {
+                  "type": "number",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "ground": {
+              "enum": [
+                "unknown",
+                "dry",
+                "mud",
+                "snow",
+                "frozen"
+              ]
+            },
+            "evidence": {
+              "$ref": "#/$defs/evidence"
+            }
+          },
+          "required": [
+            "condition",
+            "visibilityMeters",
+            "ground",
+            "evidence"
+          ]
+        }
+      },
+      "required": [
+        "parentCampaignId",
+        "parentMissionId",
+        "date",
+        "startTime",
+        "endTime",
+        "turnMinutes",
+        "chronologyBasis",
+        "weather"
+      ]
+    },
+    "rules": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "profile": {
+          "type": "string",
+          "minLength": 1
+        },
+        "phases": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        },
+        "phasePolicy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "stackingLimit": {
+          "anyOf": [
+            {
+              "type": "integer",
+              "minimum": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "terrainRuleProfile": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "combatEngine": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "setup": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "side": {
+                "type": "string",
+                "minLength": 1
+              },
+              "order": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "boardIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9_:.-]*$"
+                },
+                "minItems": 1
+              },
+              "zoneIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9_:.-]*$"
+                },
+                "minItems": 0
+              },
+              "instructions": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "side",
+              "order",
+              "boardIds",
+              "zoneIds",
+              "instructions"
+            ]
+          },
+          "minItems": 1
+        },
+        "objectives": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_:.-]*$"
+              },
+              "evaluateAt": {
+                "enum": [
+                  "end-of-game",
+                  "continuous"
+                ]
+              },
+              "predicate": {
+                "$ref": "#/$defs/predicate"
+              }
+            },
+            "required": [
+              "id",
+              "evaluateAt",
+              "predicate"
+            ]
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "profile",
+        "phases",
+        "phasePolicy",
+        "stackingLimit",
+        "terrainRuleProfile",
+        "combatEngine",
+        "setup",
+        "objectives"
+      ]
+    },
+    "formations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_:.-]*$"
+          },
+          "parentId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[A-Za-z0-9][A-Za-z0-9_:.-]*$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "side": {
+            "type": "string",
+            "minLength": 1
+          },
+          "echelon": {
+            "type": "string",
+            "minLength": 1
+          },
+          "evidence": {
+            "$ref": "#/$defs/evidence"
+          }
+        },
+        "required": [
+          "id",
+          "parentId",
+          "name",
+          "side",
+          "echelon",
+          "evidence"
+        ]
+      },
+      "minItems": 0
+    },
+    "handoff": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "scenarioCardFormat": {
+          "const": "asl-scenario-card/1"
+        },
+        "counterIdentityPolicy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reservationPolicy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "reconciliationPolicy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "admissionRequirements": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 1
+        }
+      },
+      "required": [
+        "scenarioCardFormat",
+        "counterIdentityPolicy",
+        "reservationPolicy",
+        "reconciliationPolicy",
+        "admissionRequirements"
+      ]
+    },
+    "admission": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "reference-only",
+            "setup-ready",
+            "engine-ready"
+          ]
+        },
+        "blockers": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "requiredCapabilities": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        }
+      },
+      "required": [
+        "status",
+        "blockers",
+        "requiredCapabilities"
+      ]
+    },
+    "illustration": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "const": 1
+        },
+        "seed": {
+          "type": "string",
+          "minLength": 1
+        },
+        "policy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "boardId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "kind": {
+                "enum": [
+                  "building",
+                  "woodland",
+                  "bridge"
+                ]
+              },
+              "polygon": {
+                "type": "array",
+                "minItems": 3,
+                "items": {
+                  "type": "array",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "number",
+                    "minimum": 0,
+                    "maximum": 1
+                  }
+                }
+              },
+              "color": {
+                "type": "string",
+                "pattern": "^#[0-9a-fA-F]{6}$"
+              },
+              "basis": {
+                "enum": [
+                  "source-guided-illustration",
+                  "authored-symbol"
+                ]
+              }
+            },
+            "required": [
+              "id",
+              "boardId",
+              "kind",
+              "polygon",
+              "color",
+              "basis"
+            ]
+          }
+        },
+        "labels": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "boardId": {
+                "type": "string",
+                "minLength": 1
+              },
+              "text": {
+                "type": "string",
+                "minLength": 1
+              },
+              "position": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              }
+            },
+            "required": [
+              "boardId",
+              "text",
+              "position"
+            ]
+          }
+        },
+        "northIndicators": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "boardId",
+              "clockwiseDegreesFromSheetUp"
+            ],
+            "properties": {
+              "boardId": {
+                "type": "string"
+              },
+              "clockwiseDegreesFromSheetUp": {
+                "type": "number",
+                "minimum": 0,
+                "exclusiveMaximum": 360
+              }
+            }
+          }
+        },
+        "joinedLayout": {
+          "type": "array",
+          "minItems": 2,
+          "maxItems": 2,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "boardId",
+              "clockwiseDegrees"
+            ],
+            "properties": {
+              "boardId": {
+                "type": "string"
+              },
+              "clockwiseDegrees": {
+                "enum": [
+                  90,
+                  270
+                ]
+              }
+            }
+          }
+        }
+      },
+      "required": [
+        "version",
+        "seed",
+        "policy",
+        "features",
+        "labels",
+        "northIndicators"
+      ]
+    },
+    "parentCampaign": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "title",
+        "startDate",
+        "endDate",
+        "commandSnapshotId",
+        "timeBasis"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "startDate": {
+          "type": "string",
+          "minLength": 1
+        },
+        "endDate": {
+          "type": "string",
+          "minLength": 1
+        },
+        "commandSnapshotId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timeBasis": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "parentMapLocation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "longitude",
+        "latitude",
+        "x",
+        "y",
+        "precision",
+        "sourceUrl"
+      ],
+      "properties": {
+        "longitude": {
+          "type": "number"
+        },
+        "latitude": {
+          "type": "number"
+        },
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "precision": {
+          "type": "string"
+        },
+        "sourceUrl": {
+          "type": "string"
+        }
+      }
+    },
+    "campaignAssignment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "campaignId",
+        "situationId",
+        "number"
+      ],
+      "properties": {
+        "campaignId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "situationId": {
+          "type": "string",
+          "minLength": 1
+        },
+        "number": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "situation",
+    "usage",
+    "totals",
+    "sources",
+    "counters",
+    "instances",
+    "id",
+    "turnLimit",
+    "firstSide",
+    "setupOrder",
+    "setupBoards",
+    "briefing",
+    "victory",
+    "specialRules",
+    "boards",
+    "$schema",
+    "mapModel",
+    "campaign",
+    "rules",
+    "formations",
+    "handoff",
+    "admission",
+    "illustration"
+  ],
+  "$defs": {
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "status": {
+          "enum": [
+            "verified",
+            "interpreted",
+            "unknown",
+            "authored"
+          ]
+        },
+        "sourceIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "note": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "status",
+        "sourceIds",
+        "note"
+      ]
+    },
+    "terrain": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "base": {
+          "enum": [
+            "unknown",
+            "open",
+            "woods",
+            "forest",
+            "town",
+            "village",
+            "orchard",
+            "marsh",
+            "water",
+            "desert",
+            "rough"
+          ]
+        },
+        "features": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "bocage",
+              "hedge",
+              "wall",
+              "building",
+              "rubble",
+              "fortification",
+              "minefield",
+              "sand",
+              "dunes",
+              "wadi",
+              "escarpment",
+              "depression",
+              "field",
+              "scrub",
+              "road",
+              "stream",
+              "bridge",
+              "slope",
+              "hilltop"
+            ]
+          },
+          "minItems": 0
+        },
+        "elevationMeters": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "elevationLevel": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "evidence": {
+          "$ref": "#/$defs/evidence"
+        }
+      },
+      "required": [
+        "base",
+        "features",
+        "elevationMeters",
+        "elevationLevel",
+        "evidence"
+      ]
+    },
+    "hexRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "boardId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_:.-]*$"
+        },
+        "hexId": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_:.-]*$"
+        }
+      },
+      "required": [
+        "boardId",
+        "hexId"
+      ]
+    },
+    "edge": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "direction": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        },
+        "neighbor": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/hexRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "barrier": {
+          "enum": [
+            "unknown",
+            "none",
+            "stream",
+            "river",
+            "cliff",
+            "hedge",
+            "wall",
+            "embankment"
+          ]
+        },
+        "crossing": {
+          "enum": [
+            "unknown",
+            "none",
+            "ford",
+            "bridge",
+            "ferry"
+          ]
+        },
+        "routeIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_:.-]*$"
+          },
+          "minItems": 0
+        },
+        "evidence": {
+          "$ref": "#/$defs/evidence"
+        },
+        "sourceObstacle": {
+          "enum": [
+            "unknown",
+            "none",
+            "woods",
+            "slope",
+            "hilltop"
+          ]
+        }
+      },
+      "required": [
+        "direction",
+        "neighbor",
+        "barrier",
+        "crossing",
+        "routeIds",
+        "evidence",
+        "sourceObstacle"
+      ]
+    },
+    "hex": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_:.-]*$"
+        },
+        "q": {
+          "type": "integer"
+        },
+        "r": {
+          "type": "integer"
+        },
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "terrain": {
+          "$ref": "#/$defs/terrain"
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/edge"
+          },
+          "minItems": 6,
+          "maxItems": 6
+        },
+        "placeIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9_:.-]*$"
+          },
+          "minItems": 0
+        },
+        "playable": {
+          "type": "boolean"
+        },
+        "imageCenter": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "u": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                },
+                "v": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1
+                }
+              },
+              "required": [
+                "u",
+                "v"
+              ]
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "imagePolygon": {
+          "type": "array",
+          "minItems": 3,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "u",
+              "v"
+            ],
+            "properties": {
+              "u": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              },
+              "v": {
+                "type": "number",
+                "minimum": 0,
+                "maximum": 1
+              }
+            }
+          }
+        },
+        "boundaryHalfHex": {
+          "type": "boolean"
+        },
+        "setupAllowed": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "q",
+        "r",
+        "label",
+        "terrain",
+        "edges",
+        "placeIds",
+        "playable",
+        "imageCenter",
+        "imagePolygon",
+        "boundaryHalfHex",
+        "setupAllowed"
+      ]
+    },
+    "counterType": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "side": {
+          "type": "string",
+          "minLength": 1
+        },
+        "label": {
+          "type": "string"
+        },
+        "quantity": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "factors": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "attack": {
+              "type": "number",
+              "minimum": 0
+            },
+            "weaponType": {
+              "type": "string",
+              "minLength": 1
+            },
+            "range": {
+              "type": "number",
+              "minimum": 0
+            },
+            "defense": {
+              "type": "number",
+              "minimum": 0
+            },
+            "movement": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "attack",
+            "weaponType",
+            "range",
+            "defense",
+            "movement"
+          ]
+        },
+        "artwork": {
+          "type": "string"
+        },
+        "artworkProvider": {
+          "type": "string"
+        },
+        "sourceSheet": {
+          "type": "string"
+        },
+        "sourceCounterId": {
+          "type": "string"
+        },
+        "sourceCropPointsTopLeft": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          },
+          "minItems": 0
+        },
+        "match": {
+          "type": "string"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          },
+          "minItems": 0
+        },
+        "organization": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "echelon": {
+              "enum": [
+                "unknown",
+                "section",
+                "platoon",
+                "company",
+                "battery",
+                "detachment"
+              ]
+            },
+            "personnel": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "equipment": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "catalogId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "quantity": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": [
+                  "catalogId",
+                  "quantity"
+                ]
+              },
+              "minItems": 0
+            },
+            "decompositionStatus": {
+              "enum": [
+                "unresolved",
+                "verified"
+              ]
+            },
+            "evidence": {
+              "$ref": "#/$defs/evidence"
+            }
+          },
+          "required": [
+            "echelon",
+            "personnel",
+            "equipment",
+            "decompositionStatus",
+            "evidence"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "side",
+        "label",
+        "quantity",
+        "factors",
+        "artwork",
+        "artworkProvider",
+        "sourceSheet",
+        "sourceCounterId",
+        "sourceCropPointsTopLeft",
+        "match",
+        "notes",
+        "organization"
+      ]
+    },
+    "counterInstance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "counterTypeId": {
+          "type": "string"
+        },
+        "artwork": {
+          "type": "string"
+        },
+        "formationId": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_:.-]*$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "initialHex": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/hexRef"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "availability": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": {
+              "enum": [
+                "at-start",
+                "reinforcement"
+              ]
+            },
+            "turn": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "entryZoneId": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[A-Za-z0-9][A-Za-z0-9_:.-]*$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            }
+          },
+          "required": [
+            "kind",
+            "turn",
+            "entryZoneId"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "counterTypeId",
+        "artwork",
+        "formationId",
+        "initialHex",
+        "availability"
+      ]
+    },
+    "board": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "image": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        },
+        "sha256": {
+          "type": "string"
+        },
+        "display": {
+          "type": "string"
+        },
+        "grid": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "orientation": {
+              "enum": [
+                "pointy",
+                "flat",
+                "unknown"
+              ]
+            },
+            "coordinateSystem": {
+              "const": "axial-q-r"
+            },
+            "hexAcrossFlatsMeters": {
+              "type": "number",
+              "exclusiveMinimum": 0
+            },
+            "expectedHexCount": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "coverage": {
+              "enum": [
+                "untranscribed",
+                "partial",
+                "complete"
+              ]
+            }
+          },
+          "required": [
+            "orientation",
+            "coordinateSystem",
+            "hexAcrossFlatsMeters",
+            "expectedHexCount",
+            "coverage"
+          ]
+        },
+        "hexes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/hex"
+          },
+          "minItems": 0
+        },
+        "assembly": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "slot": {
+              "type": "integer"
+            },
+            "rotationDegrees": {
+              "anyOf": [
+                {
+                  "enum": [
+                    0,
+                    60,
+                    90,
+                    120,
+                    180,
+                    240,
+                    270,
+                    300
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "translationMeters": {
+              "anyOf": [
+                {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "x",
+                    "y"
+                  ]
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "evidence": {
+              "$ref": "#/$defs/evidence"
+            }
+          },
+          "required": [
+            "slot",
+            "rotationDegrees",
+            "translationMeters",
+            "evidence"
+          ]
+        }
+      },
+      "required": [
+        "id",
+        "image",
+        "source",
+        "sha256",
+        "display",
+        "grid",
+        "hexes",
+        "assembly"
+      ]
+    },
+    "predicate": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "op": {
+              "enum": [
+                "all",
+                "any"
+              ]
+            },
+            "children": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/predicate"
+              },
+              "minItems": 1
+            }
+          },
+          "required": [
+            "op",
+            "children"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "op": {
+              "const": "control-all"
+            },
+            "side": {
+              "type": "string",
+              "minLength": 1
+            },
+            "zoneId": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_:.-]*$"
+            }
+          },
+          "required": [
+            "op",
+            "side",
+            "zoneId"
+          ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "op": {
+              "const": "prevent"
+            },
+            "side": {
+              "type": "string",
+              "minLength": 1
+            },
+            "objectiveId": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9][A-Za-z0-9_:.-]*$"
+            }
+          },
+          "required": [
+            "op",
+            "side",
+            "objectiveId"
+          ]
+        }
+      ]
+    }
+  }
+}
