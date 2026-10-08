@@ -624,20 +624,20 @@ public static class GameProjector
         private static (GameState State, List<string> Placed) StartCloseCombat(GameState state)
         {
             var placed = new List<string>();
-            var units = state.Units.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Captured) != ConditionState.True
-                && state.Location(unit.Id) is not null).ToArray();
-            foreach (var group in units.GroupBy(unit => state.Location(unit.Id)!.Location).Where(group => group.Select(unit => unit.Side).Distinct(StringComparer.Ordinal).Count() > 1))
+            var units = state.Units.Where(unit => Rules.ScenarioA1CloseCombatProjection.StartUnit(unit.Status == InstanceStatus.Active, GameState.Condition(unit, Conditions.Captured) == ConditionState.True,
+                state.Location(unit.Id) is not null)).ToArray();
+            foreach (var group in units.GroupBy(unit => state.Location(unit.Id)!.Location).Where(group => Rules.ScenarioA1CloseCombatProjection.Contested(group.Select(unit => unit.Side).Distinct(StringComparer.Ordinal).Count())))
             {
                 foreach (var unit in group.OrderBy(unit => unit.Id, StringComparer.Ordinal))
                 {
-                    if (unit.Kind == "asl:dummy")
+                    if (Rules.ScenarioA1CloseCombatProjection.StartEliminates(unit.Kind == "asl:dummy"))
                     {
                         state = Replace(state, unit with
                         {
                             Status = InstanceStatus.Eliminated
                         });
                     }
-                    else if (GameState.Condition(unit, Conditions.Hidden) == ConditionState.True)
+                    else if (Rules.ScenarioA1CloseCombatProjection.StartPlaces(unit.Kind == "asl:dummy", GameState.Condition(unit, Conditions.Hidden) == ConditionState.True))
                     {
                         state = Replace(state, unit with
                         {
@@ -663,39 +663,36 @@ public static class GameProjector
         {
             // A11.7 (ruling R11.16): a vehicle is never held in Melee, and holds the enemy Infantry in its Location unless it is Abandoned or in Motion.
             // A11.15 EXC (ruling R14.2): a unit that keeps its "?" is neither held in Melee nor holds an enemy unit in Melee.
-            var units = state.Units.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Captured) != ConditionState.True
-                && GameState.Condition(unit, Conditions.Concealed) != ConditionState.True && GameState.Condition(unit, Conditions.Hidden) != ConditionState.True
-                && unit.Kind != "asl:dummy" && state.Location(unit.Id) is not null).ToArray();
+            var units = state.Units.Where(unit => Rules.ScenarioA1CloseCombatProjection.MeleeCandidate(unit.Status == InstanceStatus.Active, GameState.Condition(unit, Conditions.Captured) == ConditionState.True,
+                GameState.Condition(unit, Conditions.Concealed) == ConditionState.True, GameState.Condition(unit, Conditions.Hidden) == ConditionState.True,
+                unit.Kind == "asl:dummy", state.Location(unit.Id) is not null)).ToArray();
             return units.GroupBy(unit => state.Location(unit.Id)!.Location)
-                .SelectMany(group => group.Where(unit => !vocabulary.IsA(unit.Kind, "asl:vehicle") && group.Any(other => other.Side != unit.Side && HoldsInMelee(other)
-                    && (!vocabulary.IsA(other.Kind, "asl:vehicle") || (GameState.Condition(unit, Conditions.Concealed) != ConditionState.True
-                        && GameState.Condition(unit, Conditions.Hidden) != ConditionState.True)))))
-                .Select(unit => unit.Id).ToHashSet(StringComparer.Ordinal);
+                .SelectMany(group => Rules.ScenarioA1CloseCombatProjection.InMelee([.. group.Select(unit => new Rules.MeleeUnitFacts(unit.Id, unit.Side, vocabulary.IsA(unit.Kind, "asl:vehicle"), HoldsInMelee(unit),
+                    GameState.Condition(unit, Conditions.Concealed) == ConditionState.True, GameState.Condition(unit, Conditions.Hidden) == ConditionState.True))]))
+                .ToHashSet(StringComparer.Ordinal);
         }
 
         /// <summary>Whether a unit holds the enemy Infantry in its Location in Melee (A11.15, A11.7): any Infantry, or a vehicle not Abandoned and not in Motion.</summary>
-        private bool HoldsInMelee(UnitInstance unit) =>
-            !vocabulary.IsA(unit.Kind, "asl:vehicle")
-            || (GameState.Condition(unit, Conditions.Abandoned) != ConditionState.True && GameState.Condition(unit, Conditions.Motion) != ConditionState.True);
+        private bool HoldsInMelee(UnitInstance unit) => Rules.ScenarioA1CloseCombatProjection.HoldsInMelee(vocabulary.IsA(unit.Kind, "asl:vehicle"),
+            GameState.Condition(unit, Conditions.Abandoned) == ConditionState.True, GameState.Condition(unit, Conditions.Motion) == ConditionState.True);
 
         private static UnitInstance HoldInMelee(UnitInstance unit, HashSet<string>? melee) =>
-            melee is null || (melee.Contains(unit.Id) ? GameState.Condition(unit, Conditions.Melee) == ConditionState.True
-                : GameState.Condition(unit, Conditions.Melee) != ConditionState.True)
+            melee is null || Rules.ScenarioA1CloseCombatProjection.MeleeChange(melee.Contains(unit.Id), GameState.Condition(unit, Conditions.Melee) == ConditionState.True) is not { } held
                 ? unit
                 : unit with
                 {
                     Conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal)
                     {
-                        [Conditions.Melee] = melee.Contains(unit.Id) ? ConditionState.True : ConditionState.False
+                        [Conditions.Melee] = held ? ConditionState.True : ConditionState.False
                     }
                 };
 
         /// <summary>A11.15: a unit is no longer held in Melee once no enemy unit that is not a prisoner shares its Location.</summary>
         private static GameState KeepMelee(GameState next)
         {
-            var freed = next.Units.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Melee) == ConditionState.True
-                && next.Location(unit.Id) is { } at && !next.Units.Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side
-                    && GameState.Condition(other, Conditions.Captured) != ConditionState.True && next.Location(other.Id)?.Location == at.Location)).ToArray();
+            var freed = next.Units.Where(unit => unit.Status == InstanceStatus.Active && next.Location(unit.Id) is { } at && Rules.ScenarioA1CloseCombatProjection.LeavesMelee(GameState.Condition(unit, Conditions.Melee) == ConditionState.True,
+                next.Units.Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side
+                    && GameState.Condition(other, Conditions.Captured) != ConditionState.True && next.Location(other.Id)?.Location == at.Location))).ToArray();
             foreach (var unit in freed)
             {
                 next = Replace(next, unit with
@@ -715,24 +712,25 @@ public static class GameProjector
         private GameState? Advance(GameState state, AdvanceMoved advance)
         {
             var units = advance.Units.Select(id => Active(state, id) as UnitInstance).ToArray();
-            if (state.Phase != "aph" || units.Length == 0 || units.Any(unit => unit is null || unit.Side != state.PhasingSide || unit.MovementEnded)
-                || units.Select(unit => state.Location(unit!.Id)?.Location).Distinct().Count() != 1
-                || advance.Units.Distinct(StringComparer.Ordinal).Count() != advance.Units.Count)
+            if (Rules.ScenarioA1CloseCombatProjection.AdvanceRefusal(state.Phase, units.Length, units.Any(unit => unit is null || unit.Side != state.PhasingSide || unit.MovementEnded),
+                units.Any(unit => unit is null) ? 0 : units.Select(unit => state.Location(unit!.Id)?.Location).Distinct().Count(), advance.Units.Distinct(StringComparer.Ordinal).Count()) is { } refused)
             {
-                return Fail<GameState>("UNIT-STATE-032", "An advance moves units of the phasing side from one Location, once each, in the APh (A4.7).");
+                return Fail<GameState>(refused.Code, refused.Text);
             }
 
-            if (units.FirstOrDefault(unit => new[] { Conditions.Broken, Conditions.Pinned, Conditions.Berserk, Conditions.Melee, Conditions.Captured }
-                .Any(condition => GameState.Condition(unit!, condition) == ConditionState.True)) is { } barred)
+            if (units.FirstOrDefault(unit => Rules.ScenarioA1CloseCombatProjection.AdvanceBarred(GameState.Condition(unit!, Conditions.Broken) == ConditionState.True, GameState.Condition(unit!, Conditions.Pinned) == ConditionState.True,
+                GameState.Condition(unit!, Conditions.Berserk) == ConditionState.True, GameState.Condition(unit!, Conditions.Melee) == ConditionState.True,
+                GameState.Condition(unit!, Conditions.Captured) == ConditionState.True)) is { } barred)
             {
-                return Fail<GameState>("UNIT-STATE-032", $"'{barred.Id}' is broken, pinned, berserk, in Melee, or captured, so it may not advance (A4.7, A15.431, A11.15).");
+                var barredRefusal = Rules.ScenarioA1CloseCombatProjection.AdvanceBarredRefusal(barred.Id);
+                return Fail<GameState>(barredRefusal.Code, barredRefusal.Text);
             }
 
             // A2.6 (ruling R25.5): an advance may leave the map from the units' own Location.
             if (advance.Exit is { } edge)
             {
-                return units.Any(unit => state.Location(unit!.Id)?.Location != advance.To)
-                    ? Fail<GameState>("UNIT-STATE-032", "An exit by advance leaves the map from the units' own Location (A2.6).")
+                return Rules.ScenarioA1CloseCombatProjection.ExitRefusal(units.Any(unit => state.Location(unit!.Id)?.Location != advance.To)) is { } exitRefusal
+                    ? Fail<GameState>(exitRefusal.Code, exitRefusal.Text)
                     : ExitUnits(state, [.. units.Select(unit => unit!)], advance.To, edge);
             }
 
@@ -817,7 +815,7 @@ public static class GameProjector
         /// <summary>A20.53: a Guard's prisoners move with it.</summary>
         private static GameState MovePrisoners(GameState state, string guard, Position position)
         {
-            foreach (var prisoner in state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Custodian == guard).ToArray())
+            foreach (var prisoner in state.Units.Where(unit => Rules.ScenarioA1CloseCombatProjection.FollowsGuard(unit.Status == InstanceStatus.Active, unit.Custodian == guard)).ToArray())
             {
                 state = Replace(state, prisoner with
                 {
@@ -836,22 +834,25 @@ public static class GameProjector
         {
             if (closeCombatVerifier is null)
             {
-                return Fail<GameState>("UNIT-STATE-023", "An Ambush record can be replayed only with the Close Combat verifier.");
+                var noVerifier = Rules.ScenarioA1CloseCombatProjection.AmbushVerifierRefusal();
+                return Fail<GameState>(noVerifier.Code, noVerifier.Text);
             }
 
             if (ambush.Rolls.Values.FirstOrDefault(roll => !rolls.ContainsKey(roll)) is { } missing)
             {
-                return Fail<GameState>("UNIT-STATE-023", $"The Ambush record's roll '{missing}' is not recorded before it.");
+                var noRoll = Rules.ScenarioA1CloseCombatProjection.AmbushRollRefusal(missing);
+                return Fail<GameState>(noRoll.Code, noRoll.Text);
             }
 
-            if (state.Phase != "ccph" || state.CloseCombats.Any(item => item.Location == ambush.Location || !item.Closed))
+            if (Rules.ScenarioA1CloseCombatProjection.AmbushOrderRefusal(state.Phase, state.CloseCombats.Any(item => item.Location == ambush.Location || !item.Closed)) is { } order)
             {
-                return Fail<GameState>("UNIT-STATE-030", "The Ambush drs are made in the CCPh before any CC in the Location, with no other Location's CC open (A11.4, A11.12).");
+                return Fail<GameState>(order.Code, order.Text);
             }
 
             if (closeCombatVerifier.VerifyAmbush(state, ambush, rolls) is { } reason)
             {
-                return Fail<GameState>("UNIT-STATE-030", reason);
+                var verifier = Rules.ScenarioA1CloseCombatProjection.VerifierRefusal(reason);
+                return Fail<GameState>(verifier.Code, verifier.Text);
             }
 
             return state with
@@ -874,38 +875,42 @@ public static class GameProjector
         {
             if (closeCombatVerifier is null)
             {
-                return Fail<GameState>("UNIT-STATE-023", "A CC record can be replayed only with the Close Combat verifier.");
+                var noVerifier = Rules.ScenarioA1CloseCombatProjection.CcVerifierRefusal();
+                return Fail<GameState>(noVerifier.Code, noVerifier.Text);
             }
 
             if (combat.Rolls.Values.FirstOrDefault(roll => !rolls.ContainsKey(roll)) is { } missing)
             {
-                return Fail<GameState>("UNIT-STATE-023", $"The CC record's roll '{missing}' is not recorded before it.");
+                var noRoll = Rules.ScenarioA1CloseCombatProjection.CcRollRefusal(missing);
+                return Fail<GameState>(noRoll.Code, noRoll.Text);
             }
 
             if (combat.Reaction)
             {
-                if (state.Phase != "mph" || state.Movement is not { WindowOpen: true, Vehicle: true } window || !window.Members.Contains(combat.Vehicle, StringComparer.Ordinal))
+                var window = state.Movement;
+                if (Rules.ScenarioA1CloseCombatProjection.ReactionRecordRefusal(state.Phase, window is { WindowOpen: true }, window is { Vehicle: true }, window?.Members.Contains(combat.Vehicle, StringComparer.Ordinal) == true) is { } reaction)
                 {
-                    return Fail<GameState>("UNIT-STATE-030", "CC Reaction Fire answers the open window on the moving vehicle's MP expenditure (D7.21).");
+                    return Fail<GameState>(reaction.Code, reaction.Text);
                 }
             }
             else
             {
                 var entry = state.CloseCombats.FirstOrDefault(item => item.Location == combat.Location);
                 var attacker = combat.ByVehicle ? Active(state, combat.Vehicle) as UnitInstance : combat.Attackers.Select(id => Active(state, id) as UnitInstance).FirstOrDefault();
-                if (state.Phase != "ccph" || entry is { Closed: true } || attacker is null || (entry?.Next is { } next && next != attacker.Side)
-                    || combat.Attackers.Any(id => entry?.Attacking.Contains(id) == true) || state.CloseCombats.Any(item => !item.Closed && item.Location != combat.Location))
+                if (Rules.ScenarioA1CloseCombatProjection.SequentialRecordRefusal(state.Phase, entry is { Closed: true }, attacker?.Side, entry?.Next, combat.Attackers.Any(id => entry?.Attacking.Contains(id) == true),
+                    state.CloseCombats.Any(item => !item.Closed && item.Location != combat.Location)) is { } sequential)
                 {
-                    return Fail<GameState>("UNIT-STATE-030", "CC with a vehicle is sequential in the CCPh: the side named attacks next, and no unit attacks twice (A11.31).");
+                    return Fail<GameState>(sequential.Code, sequential.Text);
                 }
             }
 
             if (closeCombatVerifier.VerifyVehicle(state, combat, rolls) is { } reason)
             {
-                return Fail<GameState>("UNIT-STATE-030", reason);
+                var verifier = Rules.ScenarioA1CloseCombatProjection.VerifierRefusal(reason);
+                return Fail<GameState>(verifier.Code, verifier.Text);
             }
 
-            if (combat.Reaction)
+            if (Rules.ScenarioA1CloseCombatProjection.ReactionLeavesState(combat.Reaction))
             {
                 return state;
             }
@@ -928,10 +933,9 @@ public static class GameProjector
         private GameState? PassVehicleCloseCombat(GameState state, VehicleCloseCombatPassed passed)
         {
             var entry = state.CloseCombats.FirstOrDefault(item => item.Location == passed.Location);
-            if (state.Phase != "ccph" || entry is { Closed: true } || (entry?.Next is { } next && next != passed.Side) || entry?.Passed.Contains(passed.Side) == true
-                || state.Side(passed.Side) is null)
+            if (Rules.ScenarioA1CloseCombatProjection.PassRecordRefusal(state.Phase, entry is { Closed: true }, entry?.Next, passed.Side, entry?.Passed.Contains(passed.Side) == true, state.Side(passed.Side) is not null) is { } refused)
             {
-                return Fail<GameState>("UNIT-STATE-030", "A side passes in a CC Location holding a vehicle when its attack is next (A11.31).");
+                return Fail<GameState>(refused.Code, refused.Text);
             }
 
             var updated = (entry ?? new CloseCombatLocation(passed.Location, false, null, [], false)) with
@@ -950,60 +954,54 @@ public static class GameProjector
         {
             if (closeCombatVerifier is null)
             {
-                return Fail<GameState>("UNIT-STATE-023", "A CC record can be replayed only with the Close Combat verifier.");
+                var noVerifier = Rules.ScenarioA1CloseCombatProjection.CcVerifierRefusal();
+                return Fail<GameState>(noVerifier.Code, noVerifier.Text);
             }
 
             if (combat.Rolls.Values.FirstOrDefault(roll => !rolls.ContainsKey(roll)) is { } missing)
             {
-                return Fail<GameState>("UNIT-STATE-023", $"The CC record's roll '{missing}' is not recorded before it.");
+                var noRoll = Rules.ScenarioA1CloseCombatProjection.CcRollRefusal(missing);
+                return Fail<GameState>(noRoll.Code, noRoll.Text);
             }
 
             var entry = state.CloseCombats.FirstOrDefault(item => item.Location == combat.Location);
 
             // A4.152 (ruling R27.3): or at once in the MPh, the CC of a berserk Infantry OVR, once the DEFENDER's window on the entry has closed.
-            var overrun = state.Phase == "mph" && combat.Facts.ValueKind == JsonValueKind.Object && combat.Facts.TryGetProperty("infantryOverrun", out var flag)
-                && flag.ValueKind == JsonValueKind.True && state.Movement is { WindowOpen: false } movement && movement.Location == combat.Location;
-            if ((state.Phase != "ccph" && !overrun) || entry is { Closed: true } || state.CloseCombats.Any(item => !item.Closed && item.Location != combat.Location))
+            var overrun = Rules.ScenarioA1CloseCombatProjection.OverrunRecord(state.Phase, combat.Facts.ValueKind == JsonValueKind.Object && combat.Facts.TryGetProperty("infantryOverrun", out var flag)
+                && flag.ValueKind == JsonValueKind.True, state.Movement is { WindowOpen: false } movement && movement.Location == combat.Location);
+            if (Rules.ScenarioA1CloseCombatProjection.CcRecordRefusal(state.Phase, overrun, entry is { Closed: true }, state.CloseCombats.Any(item => !item.Closed && item.Location != combat.Location)) is { } refused)
             {
-                return Fail<GameState>("UNIT-STATE-030", "CC is resolved in the CCPh, once per Location, one Location at a time, or at once after a berserk Infantry OVR in the MPh (A11.12, A4.152).");
+                return Fail<GameState>(refused.Code, refused.Text);
             }
 
             // A11.3: the ambusher's attacks are sequential, one record each, until the ambushed side's round closes the Location; A11.33, A11.34
-            // (ruling R14.6): the prisoners' escape round comes before any other.
-            var rounds = entry?.Rounds.Where(item => item != CloseCombatResolved.PrisonersRound).ToArray() ?? [];
-            // A11.41 (referee, pass 14): with every ambusher gone by Ambush Withdrawal, the ambushed side's round closes the Location.
-            var ambushers = entry?.Ambusher is { } ambusher && state.Units.Any(unit => unit.Status == InstanceStatus.Active && unit.Side == ambusher
-                && GameState.Condition(unit, Conditions.Captured) != ConditionState.True && state.Location(unit.Id)?.Location == combat.Location);
-            string[] allowed = entry?.Ambusher is null ? [CloseCombatResolved.Simultaneous]
-                : !ambushers ? [CloseCombatResolved.AmbushedRound]
-                : rounds.Length == 0 ? [CloseCombatResolved.AmbusherRound]
-                : [CloseCombatResolved.AmbusherRound, CloseCombatResolved.AmbushedRound];
-            if (entry is null || entry.Rounds.Count == 0)
-            {
-                allowed = [.. allowed, CloseCombatResolved.PrisonersRound];
-            }
+            // (ruling R14.6): the prisoners' escape round comes before any other. A11.41 (referee, pass 14): with every ambusher gone by Ambush Withdrawal,
+            // the ambushed side's round closes the Location.
+            var allowed = Rules.ScenarioA1CloseCombatProjection.AllowedRounds(entry?.Ambusher, entry?.Ambusher is { } ambusher && state.Units.Any(unit => unit.Status == InstanceStatus.Active && unit.Side == ambusher
+                && GameState.Condition(unit, Conditions.Captured) != ConditionState.True && state.Location(unit.Id)?.Location == combat.Location),
+                entry?.Rounds.Count(item => item != CloseCombatResolved.PrisonersRound) ?? 0, entry?.Rounds.Count ?? 0);
             var attacking = entry?.Attacking ?? [];
             var attacked = entry?.Attacked ?? [];
-            if (!allowed.Contains(combat.Round) || combat.Attackers.Any(attacking.Contains) || combat.Defenders.Any(attacked.Contains))
+            if (Rules.ScenarioA1CloseCombatProjection.RoundRecordRefusal(allowed, combat.Round, combat.Attackers.Any(attacking.Contains), combat.Defenders.Any(attacked.Contains), combat.Location.ToString()) is { } roundRefusal)
             {
-                return Fail<GameState>("UNIT-STATE-030", $"The next CC round in {combat.Location} is {string.Join(" or ", allowed)}, and no unit attacks or is attacked twice (A11.3, A11.12, A11.32).");
+                return Fail<GameState>(roundRefusal.Code, roundRefusal.Text);
             }
 
             if (closeCombatVerifier.Verify(state, combat, rolls) is { } reason)
             {
-                return Fail<GameState>("UNIT-STATE-030", reason);
+                var verifier = Rules.ScenarioA1CloseCombatProjection.VerifierRefusal(reason);
+                return Fail<GameState>(verifier.Code, verifier.Text);
             }
 
             var updated = (entry ?? new CloseCombatLocation(combat.Location, false, null, [], false)) with
             {
                 Rounds = [.. entry?.Rounds ?? [], combat.Round],
-                Closed = combat.Round is not (CloseCombatResolved.AmbusherRound or CloseCombatResolved.PrisonersRound),
+                Closed = Rules.ScenarioA1CloseCombatProjection.Closes(combat.Round),
                 Attacking = [.. attacking, .. combat.Attackers],
                 Attacked = [.. attacked, .. combat.Defenders],
 
                 // J2.31 (ruling R14.1): the first round declares the Location Hand-to-Hand for the CCPh.
-                HandToHand = entry?.HandToHand == true || (combat.Round != CloseCombatResolved.PrisonersRound && combat.Facts.TryGetProperty("handToHand", out var hand)
-                    && hand.ValueKind == JsonValueKind.True),
+                HandToHand = Rules.ScenarioA1CloseCombatProjection.RecordHandToHand(entry?.HandToHand == true, combat.Round, () => combat.Facts.TryGetProperty("handToHand", out var hand) && hand.ValueKind == JsonValueKind.True),
             };
             return state with
             {
@@ -3405,7 +3403,7 @@ public static class GameProjector
             }
 
             // A11.31 (table-player finding, pass 11): a HS a CC attacker is Reduced to has made its attack in the sequential CC of that Location.
-            if (next.CloseCombats.Any(item => item.Attacking.Any(ids.Contains)))
+            if (Rules.ScenarioA1CloseCombatProjection.ReducedAttackerHasAttacked(next.CloseCombats.Any(item => item.Attacking.Any(ids.Contains))))
             {
                 var produced = lineage.Produced.Select(item => item.Id).ToArray();
                 next = next with
@@ -3527,18 +3525,19 @@ public static class GameProjector
         {
             if (Active(state, capture.Id) is not UnitInstance prisoner)
             {
-                return Fail<GameState>("UNIT-STATE-014", $"'{capture.Id}' is not an active unit.");
+                var notActive = Rules.ScenarioA1CloseCombatProjection.CaptureNotActiveRefusal(capture.Id);
+                return Fail<GameState>(notActive.Code, notActive.Text);
             }
 
-            if (GameState.Condition(prisoner, Conditions.Berserk) == ConditionState.True)
+            if (Rules.ScenarioA1CloseCombatProjection.CaptureBerserkRefusal(GameState.Condition(prisoner, Conditions.Berserk) == ConditionState.True) is { } berserk)
             {
-                return Fail<GameState>("UNIT-STATE-014", "Berserk units cannot be captured (A20.2, p. 86).");
+                return Fail<GameState>(berserk.Code, berserk.Text);
             }
 
             // A15.5, A20.21: a pending surrender is taken by one of its captors.
-            if (state.PendingSurrenders.FirstOrDefault(item => item.Unit == prisoner.Id) is { } pending && !pending.Captors.Contains(capture.Custodian, StringComparer.Ordinal))
+            if (Rules.ScenarioA1CloseCombatProjection.CaptorRefusal(prisoner.Id, state.PendingSurrenders.FirstOrDefault(item => item.Unit == prisoner.Id)?.Captors, capture.Custodian) is { } captor)
             {
-                return Fail<GameState>("UNIT-STATE-031", $"'{prisoner.Id}' surrenders to one of {string.Join(", ", pending.Captors)} (A15.5).");
+                return Fail<GameState>(captor.Code, captor.Text);
             }
 
             // A20.5 (ruling R14.5): a captured unit is Unarmed.
@@ -3561,15 +3560,17 @@ public static class GameProjector
         private GameState? FreePrisoner(GameState state, PrisonerFreed freed)
         {
             // Table player, pass 14: a prisoner whose escape eliminated its Guard was already freed when the Guard left play.
-            if (Active(state, freed.Unit) is UnitInstance { Custodian: null } loose && GameState.Condition(loose, Conditions.Unarmed) == ConditionState.True
-                && GameState.Condition(loose, Conditions.Captured) != ConditionState.True)
+            var loose = Active(state, freed.Unit) as UnitInstance;
+            if (Rules.ScenarioA1CloseCombatProjection.AlreadyFreed(loose is not null, loose?.Custodian is null, loose is not null && GameState.Condition(loose, Conditions.Unarmed) == ConditionState.True,
+                loose is not null && GameState.Condition(loose, Conditions.Captured) == ConditionState.True))
             {
                 return state;
             }
 
-            if (Active(state, freed.Unit) is not UnitInstance { Custodian: not null } prisoner)
+            if (loose is not { Custodian: not null } prisoner)
             {
-                return Fail<GameState>("UNIT-STATE-014", $"'{freed.Unit}' is not a guarded prisoner.");
+                var notGuarded = Rules.ScenarioA1CloseCombatProjection.NotGuardedRefusal(freed.Unit);
+                return Fail<GameState>(notGuarded.Code, notGuarded.Text);
             }
 
             return Replace(state, prisoner with
@@ -3755,20 +3756,21 @@ public static class GameProjector
         /// </summary>
         private GameState KeepGuards(GameState next)
         {
-            static int Size(UnitInstance unit) => unit.Kind == "asl:squad" ? 3 : unit.Kind is "asl:half-squad" or "asl:crew" ? 2 : 1;
+            static int Size(UnitInstance unit) => Rules.ScenarioA1PrisonerCalculator.UnitSize(unit.Kind == "asl:squad", unit.Kind is "asl:half-squad" or "asl:crew");
             foreach (var prisoner in next.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Custodian is not null).ToArray())
             {
                 var at = next.Location(prisoner.Id)?.Location;
-                if (next.Unit(prisoner.Custodian!) is { Status: InstanceStatus.Active } guard && GameState.Condition(guard, Conditions.Captured) != ConditionState.True)
+                var guard = next.Unit(prisoner.Custodian!);
+                if (!Rules.ScenarioA1CloseCombatProjection.GuardLeft(guard is { Status: InstanceStatus.Active }, guard is not null && GameState.Condition(guard, Conditions.Captured) == ConditionState.True))
                 {
                     continue;
                 }
 
-                var side = next.Unit(prisoner.Custodian!)?.Side;
-                var heir = next.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && at is not null && next.Location(unit.Id)?.Location == at
-                        && GameState.Condition(unit, Conditions.Captured) != ConditionState.True && GameState.Condition(unit, Conditions.Unarmed) != ConditionState.True
-                        && vocabulary.IsA(unit.Kind, "asl:personnel") && !vocabulary.IsA(unit.Kind, "asl:vehicle")
-                        && next.Units.Where(other => other.Status == InstanceStatus.Active && other.Custodian == unit.Id).Sum(Size) + Size(prisoner) <= 5 * Size(unit))
+                var side = guard?.Side;
+                var heir = next.Units.Where(unit => Rules.ScenarioA1CloseCombatProjection.GuardHeir(unit.Status == InstanceStatus.Active, unit.Side == side, at is not null && next.Location(unit.Id)?.Location == at,
+                        GameState.Condition(unit, Conditions.Captured) == ConditionState.True, GameState.Condition(unit, Conditions.Unarmed) == ConditionState.True,
+                        vocabulary.IsA(unit.Kind, "asl:personnel"), vocabulary.IsA(unit.Kind, "asl:vehicle"),
+                        Rules.ScenarioA1PrisonerCalculator.CanGuard(next.Units.Where(other => other.Status == InstanceStatus.Active && other.Custodian == unit.Id).Sum(Size), Size(prisoner), Size(unit))))
                     .OrderBy(unit => unit.Id, StringComparer.Ordinal).FirstOrDefault();
                 next = Replace(next, heir is not null ? prisoner with
                 {

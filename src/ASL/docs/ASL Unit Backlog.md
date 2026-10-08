@@ -797,3 +797,12 @@ Pass 31d (2026-10-04), the leftovers of pass 31c: a game is read once and a requ
 | The side a fire record is kept from, when a prisoner of the firing side sorts first among the targets | The code reading, pass 31d (not confirmed) | A12.14; ruling R23.1 | `PlanFire`'s `targetSide` read from the first target that is not of the firing side | It is read from the first target by id. |
 | The Ambush read for the due list without the hidden units placed as the CCPh began | The code reading, pass 31d (not confirmed) | A11.4 | `AmbushDue` given `HiddenPlaced` as the Ambush and the round are | The panel may say no Ambush is due where a round is still refused until the Ambush drs. |
 | An advancing Dummy stack in Open Ground in enemy sight | The code reading, pass 31d (not confirmed) | A12.14 | A Dummy branch in the advance's loss of "?" | An advance reveals concealed units and has no branch for a Dummy. |
+
+## 52. Added by the upstairs rout fix
+
+The upstairs rout fix (2026-10-08, its own branch after pass 32.f): a broken unit on an upper building level routs down its stairwell and along its level, as the movement rules allow (A10.5, B23.4, B23.421). What the user's Studio test raised beside it:
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| The stairwell symbol drawn on the map, and the hex inspector saying whether a hex's levels connect | The user's Studio test, 2026-10-08 | B23.22, B23.23 | A map layer for the hex's stairway flag (the map reader sets it: inherent for a one-level building, where VASL draws the symbol for a two-level one) | Nothing is drawn or said; a player sees a multi-story building and cannot tell its stairwell hex, so a refused level change (play.move-stairwell) looks like a fault. |
+| A voluntary rout by a broken unit that need not rout and is not under DM | The user's Studio test, 2026-10-08 (G3 in [H5] level 1 of cd-guards-5) | A10.5 (ruling R13.1) | The referee's reading of A10.5 with the PDF | Such a unit is not offered a rout: "need not rout and is not under DM, so it may not rout". |

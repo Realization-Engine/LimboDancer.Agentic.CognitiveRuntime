@@ -365,6 +365,53 @@ public sealed class BacklogPass10Tests : IDisposable
     }
 
     [Fact]
+    public async Task ABrokenUnitUpstairsRoutsDownItsStairwell()
+    {
+        // A10.5, B23.4, B23.421 (the upstairs rout fix of 2026-10-08): a broken unit sharing level 1 of D5 with a Known armed enemy must rout; it routs
+        // down the stairwell to the ground floor (1 MF), and may not leave the level sideways into open ground (B23.422).
+        const string building = "Stone Building, 2 Level";
+        foreach (var hex in new[] { "D5", "D4" })
+        {
+            board.Terrain[hex] = building;
+            board.Upper[hex] = [building, building];
+        }
+
+        board.Stairs.Add("D5");
+        board.Side("D5", HexsideDirection.North, terrain: building);
+        await Setup(Squad("g1", L("D5", 1), "german", "asl:broken"), Squad("r1", L("D5", 1), "russian"));
+        for (var index = 0; index < 3; index++)
+        {
+            Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
+            {
+            }));
+        }
+
+        Assert.Equal("rtph", Current.Phase);
+        var (targets, canRout, routes) = Planner().RoutAdvice(Current, Current.Unit("g1")!);
+        Assert.True(canRout);
+        // The ground floor, the floor above, and D4's level 1 are each one MF away (B23.4, B23.421): the unit chooses among them (A10.51).
+        Assert.Equal([L("D4", 1), L("D5"), L("D5", 2)], targets.Select(target => target.ToString()));
+        Assert.Equal([L("D5")], routes[BoardLocation.Parse(L("D5"))].Select(step => step.ToString()));
+        Refused(await Do(GameActions.Rout, NoRoll(), new
+        {
+            unitId = "g1",
+            route = new[] { L("D4") },
+            lowCrawl = false
+        }), "play.move-upper-level");
+        var before = Revision;
+        Committed(await Do(GameActions.Rout, NoRoll(), new
+        {
+            unitId = "g1",
+            route = new[] { L("D5") },
+            lowCrawl = false
+        }));
+        var step = Assert.Single(Since(before).Select(item => item.Payload).OfType<RoutStepped>());
+        Assert.Equal((L("D5"), 2), (step.To.ToString(), step.HalfMf));
+        Assert.Equal(L("D5"), Current.Location("g1")!.Location.ToString());
+        NoReplayErrors();
+    }
+
+    [Fact]
     public async Task MarshTakesTheWholeAllotment()
     {
         // B16.4 (R10.1): a fresh squad enters marsh for its four MF; one that has moved may not; from a lower hex only by Minimum Move.

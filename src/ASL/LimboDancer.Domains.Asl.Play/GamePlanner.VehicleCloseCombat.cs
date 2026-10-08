@@ -15,16 +15,18 @@ namespace LimboDancer.Domains.Asl.Play;
 public sealed partial class GamePlanner
 {
     /// <summary>Whether a vehicle has a CC attack (A11.62): a CMG not malfunctioned, or an AAMG while CE, with its crew able to fight.</summary>
-    private static bool VehicleCcArmament(UnitInstance vehicle) =>
-        VehicleDefinition(vehicle) is { } definition && !Is(vehicle, Conditions.Stunned) && !Is(vehicle, Conditions.Shocked) && !Is(vehicle, Conditions.UnconfirmedKill)
-        && !Is(vehicle, Conditions.Abandoned) && !Is(vehicle, Conditions.Recalled) && !Is(vehicle, Conditions.Captured)
-        && ((definition.CoaxialMg is not null && !Is(vehicle, Conditions.CmgMalfunctioned))
-            || (definition.AntiAircraftMg is not null && LiveFire.CrewExposed(vehicle) && !(definition.MainArmament == "aamg" && (Is(vehicle, Conditions.Malfunctioned) || Is(vehicle, Conditions.Disabled)))));
+    private static bool VehicleCcArmament(UnitInstance vehicle) => VehicleDefinition(vehicle) is var definition
+        && ScenarioA1VehicleCloseCombatRules.VehicleCcArmament(definition is not null, Is(vehicle, Conditions.Stunned), Is(vehicle, Conditions.Shocked), Is(vehicle, Conditions.UnconfirmedKill),
+            Is(vehicle, Conditions.Abandoned), Is(vehicle, Conditions.Recalled), Is(vehicle, Conditions.Captured), definition?.CoaxialMg is not null, Is(vehicle, Conditions.CmgMalfunctioned),
+            definition?.AntiAircraftMg is not null, LiveFire.CrewExposed(vehicle), definition?.MainArmament == "aamg", Is(vehicle, Conditions.Malfunctioned), Is(vehicle, Conditions.Disabled));
 
     /// <summary>Whether an Infantry unit may make a CC attack in the CCPh (A11.16, A20.5): active, unbroken, and not a prisoner.</summary>
-    private bool CcAttacker(UnitInstance unit) =>
-        unit.Status == InstanceStatus.Active && !LiveFire.IsVehicle(unit) && vocabulary.IsA(unit.Kind, "asl:personnel") && !Is(unit, Conditions.Broken)
-        && !Is(unit, Conditions.Captured) && unit.Kind != UnitKinds.Dummy;
+    private bool CcAttacker(UnitInstance unit) => ScenarioA1VehicleCloseCombatRules.CcAttacker(unit.Status == InstanceStatus.Active, LiveFire.IsVehicle(unit), vocabulary.IsA(unit.Kind, "asl:personnel"),
+        Is(unit, Conditions.Broken), Is(unit, Conditions.Captured), unit.Kind == UnitKinds.Dummy);
+
+    /// <summary>A unit of a Location holding a vehicle as Rules reads it (pass 32.g): its CC armament, attacker status, Personnel, prisoner, berserk, Known, and crew flags.</summary>
+    private VehicleCcUnitFacts VehicleCcUnit(UnitInstance unit) => new(unit.Id, unit.Side, LiveFire.IsVehicle(unit), VehicleCcArmament(unit), CcAttacker(unit),
+        vocabulary.IsA(unit.Kind, "asl:personnel"), Is(unit, Conditions.Captured), Is(unit, Conditions.Berserk), KnownEnemy(unit), vocabulary.IsA(unit.Kind, "asl:crew"));
 
     /// <summary>
     /// The sides with an attack left in a CC Location holding a vehicle (ruling R11.16): Infantry that have not attacked and face an enemy vehicle, and
@@ -32,19 +34,7 @@ public sealed partial class GamePlanner
     /// </summary>
     private HashSet<string> SidesWithAttacks(GameState state, BoardLocation location, IReadOnlyCollection<string> attacked, IReadOnlyCollection<string> passed)
     {
-        var here = state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active).ToArray();
-        var sides = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var unit in here.Where(unit => !attacked.Contains(unit.Id) && !passed.Contains(unit.Side)))
-        {
-            var enemies = here.Where(other => other.Side != unit.Side && !Is(other, Conditions.Captured)).ToArray();
-            if (LiveFire.IsVehicle(unit) ? VehicleCcArmament(unit) && enemies.Any(other => !LiveFire.IsVehicle(other) && CcAttacker(other) || (!LiveFire.IsVehicle(other) && vocabulary.IsA(other.Kind, "asl:personnel")))
-                : CcAttacker(unit) && enemies.Any(LiveFire.IsVehicle))
-            {
-                sides.Add(unit.Side);
-            }
-        }
-
-        return sides;
+        return ScenarioA1VehicleCloseCombatRules.SidesWithAttacks([.. state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active).Select(VehicleCcUnit)], attacked, passed);
     }
 
     /// <summary>
@@ -52,9 +42,8 @@ public sealed partial class GamePlanner
     /// </summary>
     private static string FirstCcSide(GameState state, BoardLocation location)
     {
-        var sides = state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && !Is(unit, Conditions.Captured)).ToArray();
-        var vehicular = sides.Where(LiveFire.IsVehicle).Select(unit => unit.Side).Distinct(StringComparer.Ordinal).ToArray();
-        return vehicular.Length == 1 ? sides.Select(unit => unit.Side).FirstOrDefault(side => side != vehicular[0]) ?? state.PhasingSide! : state.PhasingSide!;
+        return ScenarioA1VehicleCloseCombatRules.FirstCcSide([.. state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && !Is(unit, Conditions.Captured))
+            .Select(unit => (unit.Side, LiveFire.IsVehicle(unit)))], state.PhasingSide!);
     }
 
     /// <summary>
@@ -63,9 +52,7 @@ public sealed partial class GamePlanner
     /// </summary>
     private (string? Next, bool Closed) NextCcSide(GameState after, BoardLocation location, string moved, IReadOnlyCollection<string> attacked, IReadOnlyCollection<string> passed)
     {
-        var left = SidesWithAttacks(after, location, attacked, passed);
-        var other = left.FirstOrDefault(side => side != moved);
-        return other is not null ? (other, false) : left.Contains(moved) ? (moved, false) : (null, true);
+        return ScenarioA1VehicleCloseCombatRules.NextCcSide(SidesWithAttacks(after, location, attacked, passed), moved);
     }
 
     /// <summary>
@@ -75,16 +62,13 @@ public sealed partial class GamePlanner
     private UnitInstance? BerserkOwingVehicleAttack(GameState state, BoardLocation location, string? side)
     {
         var entry = state.CloseCombats.FirstOrDefault(item => item.Location == location);
-        if (state.Phase != "ccph" || entry is { Closed: true } || !VehicleCloseCombatTurn(state, location).Open)
+        if (!ScenarioA1VehicleCloseCombatRules.OwingPossible(state.Phase, entry is { Closed: true }, VehicleCloseCombatTurn(state, location).Open))
         {
             return null;
         }
 
         var here = state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active).ToArray();
-        return here.Any(unit => vocabulary.IsA(unit.Kind, "asl:crew")) ? null
-            : here.Where(unit => (side is null || unit.Side == side) && Is(unit, Conditions.Berserk) && CcAttacker(unit) && entry?.Attacking.Contains(unit.Id) != true
-                && here.Any(other => other.Side != unit.Side && LiveFire.IsVehicle(other) && KnownEnemy(other) && !Is(other, Conditions.Captured)))
-                .OrderBy(unit => unit.Id, StringComparer.Ordinal).FirstOrDefault();
+        return ScenarioA1VehicleCloseCombatRules.BerserkOwingVehicleAttack([.. here.Select(VehicleCcUnit)], side, entry?.Attacking ?? []) is { } owing ? here.First(unit => unit.Id == owing) : null;
     }
 
     /// <summary>
@@ -97,16 +81,18 @@ public sealed partial class GamePlanner
     public BoardLocation? BerserkOverrunPending(GameState state)
     {
         ArgumentNullException.ThrowIfNull(state);
-        if (state.Phase != "mph" || state.Movement is not { WindowOpen: false, Charge: { } charged } movement || movement.Location != charged
-            || state.CloseCombats.Any(item => item.Location == charged))
+        var movement = state.Movement;
+        if (movement?.Charge is not { } charged || !ScenarioA1VehicleCloseCombatRules.OverrunPendingPossible(state.Phase, movement.WindowOpen, true, movement.Location == charged,
+            state.CloseCombats.Any(item => item.Location == charged)))
         {
             return null;
         }
 
         var here = state.At(charged).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && !Is(unit, Conditions.Captured)).ToArray();
         var enemies = here.Where(unit => unit.Side != state.PhasingSide).ToArray();
-        if (!here.Any(unit => unit.Side == state.PhasingSide && movement.Members.Contains(unit.Id, StringComparer.Ordinal) && Is(unit, Conditions.Berserk)
-            && vocabulary.IsA(unit.Kind, "asl:mmc")) || enemies is not [{ } smc] || !vocabulary.IsA(smc.Kind, "asl:smc") || !KnownEnemy(smc) || Is(smc, Conditions.Melee))
+        var smc = enemies.Length > 0 ? enemies[0] : null;
+        if (smc is null || !ScenarioA1VehicleCloseCombatRules.OverrunSmc(here.Any(unit => unit.Side == state.PhasingSide && movement.Members.Contains(unit.Id, StringComparer.Ordinal) && Is(unit, Conditions.Berserk)
+            && vocabulary.IsA(unit.Kind, "asl:mmc")), enemies.Length, vocabulary.IsA(smc.Kind, "asl:smc"), KnownEnemy(smc), Is(smc, Conditions.Melee)))
         {
             return null;
         }
@@ -126,7 +112,7 @@ public sealed partial class GamePlanner
         ArgumentNullException.ThrowIfNull(smc);
         string[] berserk = [.. state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide
             && Is(unit, Conditions.Berserk)).Select(unit => unit.Id).Order(StringComparer.Ordinal)];
-        return CcAttacker(smc) ? [new CloseCombatDeclaration(berserk, [smc.Id]), new CloseCombatDeclaration([smc.Id], berserk)] : [new CloseCombatDeclaration(berserk, [smc.Id])];
+        return ScenarioA1VehicleCloseCombatRules.OverrunAttacks(berserk, smc.Id, CcAttacker(smc));
     }
 
     /// <summary>The sides and units a CC Location holding a vehicle waits for, for the Play page (ruling R11.16).</summary>
@@ -134,14 +120,12 @@ public sealed partial class GamePlanner
     {
         ArgumentNullException.ThrowIfNull(state);
         var entry = state.CloseCombats.FirstOrDefault(item => item.Location == location);
-        if (state.Phase != "ccph" || entry is { Closed: true } || !state.At(location).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)))
+        if (!ScenarioA1VehicleCloseCombatRules.TurnOpen(state.Phase, entry is { Closed: true }, state.At(location).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit))))
         {
             return (null, false);
         }
 
-        var left = SidesWithAttacks(state, location, entry?.Attacking ?? [], entry?.Passed ?? []);
-        var next = entry?.Next ?? FirstCcSide(state, location);
-        return left.Count == 0 ? (null, false) : (left.Contains(next) ? next : left.First(), true);
+        return ScenarioA1VehicleCloseCombatRules.Turn(SidesWithAttacks(state, location, entry?.Attacking ?? [], entry?.Passed ?? []), entry?.Next ?? FirstCcSide(state, location));
     }
 
     private GamePlan PlanVehicleCloseCombat(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label,
@@ -161,12 +145,14 @@ public sealed partial class GamePlanner
         var defenders = Strings(arguments, "defenders").ToArray();
         var vehicleId = Text(arguments, "vehicleId", out var named) ? named : null;
         var pass = Flag(arguments, "pass");
-        return state.Phase switch
+        if (ScenarioA1VehicleCloseCombatRules.VehicleCcPhaseBar(state.Phase) is { } phaseBar)
         {
-            "mph" => PlanReactionFire(scope, existing, attemptId, expected, label, actor, state, location, attackers, vehicleId),
-            "ccph" => PlanSequentialCloseCombat(scope, existing, attemptId, expected, label, actor, state, location, attackers, defenders, vehicleId, pass),
-            _ => Refused(scope, label, expected, "play.cc-vehicle-phase: CC with a vehicle is made in the CCPh, or as CC Reaction Fire in the MPh (A11.5, D7.21)"),
-        };
+            return Refused(scope, label, expected, phaseBar);
+        }
+
+        return state.Phase == "mph"
+            ? PlanReactionFire(scope, existing, attemptId, expected, label, actor, state, location, attackers, vehicleId)
+            : PlanSequentialCloseCombat(scope, existing, attemptId, expected, label, actor, state, location, attackers, defenders, vehicleId, pass);
     }
 
     /// <summary>
@@ -177,43 +163,45 @@ public sealed partial class GamePlanner
     private GamePlan PlanReactionFire(GameScope scope, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, string actor,
         GameState state, BoardLocation location, string[] attackers, string? vehicleId)
     {
-        if (state.Movement is not { WindowOpen: true, Vehicle: true, Members: [{ } moving] } window || state.Unit(moving) is not { } vehicle
-            || state.Location(moving)?.Location != location || (vehicleId is not null && vehicleId != moving))
+        var window = state.Movement;
+        var vehicle = window is { Vehicle: true, Members: [{ } moving] } ? state.Unit(moving) : null;
+        if (ScenarioA1VehicleCloseCombatRules.ReactionWindowBar(window is { WindowOpen: true, Vehicle: true, Members: [_] } && vehicle is not null && state.Location(vehicle.Id)?.Location == location
+            && (vehicleId is null || vehicleId == vehicle.Id)) is { } windowBar)
         {
-            return Refused(scope, label, expected, "play.reaction-fire: CC Reaction Fire attacks the moving vehicle in the attackers' Location while the DEFENDER's window on its MP expenditure is open (D7.2, D7.21)");
+            return Refused(scope, label, expected, windowBar);
         }
 
         // D7.1, D7.2 (referee, pass 11): Reaction Fire at an OVRing vehicle comes after the OVR is resolved.
-        if (window.Overrun is not null)
+        if (ScenarioA1VehicleCloseCombatRules.ReactionOverrunBar(window!.Overrun is not null) is { } overrunBar)
         {
-            return Refused(scope, label, expected, "play.reaction-fire: the OVR is resolved first; CC Reaction Fire follows it (D7.1, D7.2)");
+            return Refused(scope, label, expected, overrunBar);
         }
 
         var units = attackers.Select(state.Unit).ToArray();
-        if (units.Length is < 1 or > 2 || units.Any(unit => unit is not { Status: InstanceStatus.Active } || unit.Side == vehicle.Side || state.Location(unit.Id)?.Location != location
-            || LiveFire.IsVehicle(unit) || Is(unit, Conditions.Broken) || Is(unit, Conditions.Pinned) || Is(unit, Conditions.Captured) || Is(unit, Conditions.Melee)))
+        if (ScenarioA1VehicleCloseCombatRules.ReactionAttackersBar(units.Length, units.Any(unit => !ScenarioA1VehicleCloseCombatRules.ReactionAttacker(unit is { Status: InstanceStatus.Active }, unit?.Side != vehicle!.Side,
+            unit is not null && state.Location(unit.Id)?.Location == location, unit is not null && LiveFire.IsVehicle(unit), unit is not null && Is(unit, Conditions.Broken),
+            unit is not null && Is(unit, Conditions.Pinned), unit is not null && Is(unit, Conditions.Captured), unit is not null && Is(unit, Conditions.Melee))), location.ToString()) is { } attackersBar)
         {
-            return Refused(scope, label, expected, $"play.reaction-fire: the attackers are one or two unbroken, unpinned, armed DEFENDER units in {location}, not in Melee (D7.21)");
+            return Refused(scope, label, expected, attackersBar);
         }
 
-        if (units.FirstOrDefault(unit => Is(unit!, Conditions.FinalFire)) is { } finalFire)
+        if (ScenarioA1VehicleCloseCombatRules.ReactionFinalFireBar(units.FirstOrDefault(unit => Is(unit!, Conditions.FinalFire))?.Id) is { } finalFireBar)
         {
-            return Refused(scope, label, expected, $"play.reaction-fire: {finalFire.Id} is marked Final Fire; FPF CC Reaction Fire is not built (D7.212; ruling R11.13)");
+            return Refused(scope, label, expected, finalFireBar);
         }
 
-        return PlanVehicleAttack(scope, existing, attemptId, expected, label, actor, state, location, vehicle, [.. units.Select(unit => unit!)], true);
+        return PlanVehicleAttack(scope, existing, attemptId, expected, label, actor, state, location, vehicle!, [.. units.Select(unit => unit!)], true);
     }
 
     /// <summary>
     /// A11.52 (ruling R11.16): at the start of the CCPh an unarmed vehicle, not in Motion, with no Personnel of its side in its Location but enemy
     /// Infantry there, is captured: it passes out of play for its side as an Abandoned vehicle, since the use of captured vehicles is not built.
     /// </summary>
-    private IEnumerable<UnitInstance> CapturedVehicles(GameState state) => state.Units.Where(vehicle => vehicle.Status == InstanceStatus.Active && LiveFire.IsVehicle(vehicle)
-        && !Is(vehicle, Conditions.Captured) && !Is(vehicle, Conditions.Motion)
-        && VehicleDefinition(vehicle) is { MainArmament: null, AntiAircraftMg: null, CoaxialMg: null, BowMg: null }
-        && state.Location(vehicle.Id)?.Location is { } at
-        && !state.At(at).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side == vehicle.Side && !LiveFire.IsVehicle(unit) && !Is(unit, Conditions.Captured))
-        && state.At(at).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != vehicle.Side && CcAttacker(unit)))
+    private IEnumerable<UnitInstance> CapturedVehicles(GameState state) => state.Units.Where(vehicle => ScenarioA1VehicleCloseCombatRules.CapturedVehicle(vehicle.Status == InstanceStatus.Active, LiveFire.IsVehicle(vehicle),
+        Is(vehicle, Conditions.Captured), Is(vehicle, Conditions.Motion), VehicleDefinition(vehicle) is { MainArmament: null, AntiAircraftMg: null, CoaxialMg: null, BowMg: null },
+        state.Location(vehicle.Id)?.Location is not null,
+        state.Location(vehicle.Id)?.Location is { } at && state.At(at).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side == vehicle.Side && !LiveFire.IsVehicle(unit) && !Is(unit, Conditions.Captured)),
+        state.Location(vehicle.Id)?.Location is { } there && state.At(there).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != vehicle.Side && CcAttacker(unit))))
         .OrderBy(vehicle => vehicle.Id, StringComparer.Ordinal);
 
     /// <summary>
@@ -226,12 +214,12 @@ public sealed partial class GamePlanner
         var (next, open) = VehicleCloseCombatTurn(state, location);
         if (!open || next is null)
         {
-            return Refused(scope, label, expected, $"play.cc-vehicle: {location} holds no vehicle CC left this CCPh (A11.31)");
+            return Refused(scope, label, expected, ScenarioA1VehicleCloseCombatRules.NoVehicleCcText(location.ToString()));
         }
 
-        if (state.CloseCombats.Any(item => !item.Closed && item.Location != location))
+        if (ScenarioA1VehicleCloseCombatRules.OtherOpenBar(state.CloseCombats.Any(item => !item.Closed && item.Location != location)) is { } otherBar)
         {
-            return Refused(scope, label, expected, "play.cc-vehicle: another Location's CC is open; one Location at a time (A11.12)");
+            return Refused(scope, label, expected, otherBar);
         }
 
         var entry = state.CloseCombats.FirstOrDefault(item => item.Location == location);
@@ -242,51 +230,50 @@ public sealed partial class GamePlanner
             // A15.43 (ruling R27.2): a side with a berserk unit facing a Known enemy vehicle there does not pass; the berserk unit attacks.
             if (BerserkOwingVehicleAttack(state, location, next) is { } owing)
             {
-                return Refused(scope, label, expected, $"play.cc-vehicle-berserk: {owing.Id} is berserk and attacks the enemy vehicle in {location}; its side does not pass (A15.43)");
+                return Refused(scope, label, expected, ScenarioA1VehicleCloseCombatRules.BerserkNoPassText(owing.Id, location.ToString()));
             }
 
             var (following, closed) = NextCcSide(state, location, next, attacked, [.. passed, next]);
             return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
                 [Event(scope, attemptId, 1, expected, "vehicle-close-combat-passed", new VehicleCloseCombatPassed(location, next, following, closed), null, null)],
-                [$"play.cc-vehicle: the {next} side passes in {location} and makes no more attacks there (A11.31)"]);
+                [ScenarioA1VehicleCloseCombatRules.PassSummary(next, location.ToString())]);
         }
 
-        if (vehicleId is null || state.Unit(vehicleId) is not { Status: InstanceStatus.Active } vehicle || !LiveFire.IsVehicle(vehicle) || state.Location(vehicle.Id)?.Location != location)
+        var vehicle = vehicleId is null ? null : state.Unit(vehicleId);
+        if (ScenarioA1VehicleCloseCombatRules.VehicleNamedBar(vehicle is { Status: InstanceStatus.Active } && LiveFire.IsVehicle(vehicle) && state.Location(vehicle.Id)?.Location == location) is { } namedBar)
         {
-            return Refused(scope, label, expected, "play.cc-vehicle: a CC attack here names the vehicle attacking or attacked; CC between Infantry in a Location holding a vehicle is not built (ruling R11.16)");
+            return Refused(scope, label, expected, namedBar);
         }
 
         if (defenders.Length > 0)
         {
             // A11.62 (ruling R11.15): the vehicle attacks enemy Infantry in its Location.
-            if (vehicle.Side != next || attacked.Contains(vehicle.Id))
+            if (ScenarioA1VehicleCloseCombatRules.VehicleAttackOrderBar(next, vehicle!.Side == next, attacked.Contains(vehicle.Id)) is { } orderBar)
             {
-                return Refused(scope, label, expected, $"play.cc-vehicle-order: the {next} side attacks next, and each unit attacks once (A11.31)");
+                return Refused(scope, label, expected, orderBar);
             }
 
-            return PlanVehicleAttacksInfantry(scope, existing, attemptId, expected, label, actor, state, location, vehicle, defenders, attacked, passed);
+            return PlanVehicleAttacksInfantry(scope, existing, attemptId, expected, label, actor, state, location, vehicle!, defenders, attacked, passed);
         }
 
         var units = attackers.Select(state.Unit).ToArray();
-        if (units.Length is < 1 or > 2 || units.Any(unit => unit is not { } found || !CcAttacker(found) || found.Side != next || found.Side == vehicle.Side
-            || state.Location(found.Id)?.Location != location || attacked.Contains(found.Id)))
+        if (ScenarioA1VehicleCloseCombatRules.InfantryAttackersBar(units.Length, units.Any(unit => !ScenarioA1VehicleCloseCombatRules.SequentialAttacker(unit is not null, unit is not null && CcAttacker(unit), unit?.Side == next,
+            unit?.Side != vehicle!.Side, unit is not null && state.Location(unit.Id)?.Location == location, unit is not null && attacked.Contains(unit.Id))), next, location.ToString()) is { } attackersBar)
         {
-            return Refused(scope, label, expected, $"play.cc-vehicle-order: the {next} side attacks next, with one or two of its unbroken Infantry units in {location} that have not attacked (A11.31, A11.5)");
+            return Refused(scope, label, expected, attackersBar);
         }
 
-        return PlanVehicleAttack(scope, existing, attemptId, expected, label, actor, state, location, vehicle, [.. units.Select(unit => unit!)], false);
+        return PlanVehicleAttack(scope, existing, attemptId, expected, label, actor, state, location, vehicle!, [.. units.Select(unit => unit!)], false);
     }
 
     /// <summary>The Infantry of a CC attack on a vehicle, with each unit's Inexperience as A19.2 reads it (ruling R11.14).</summary>
-    private VehicleCloseCombatFacts WithInexperience(GameState state, VehicleCloseCombatFacts facts) => facts with
-    {
-        Units = [.. facts.Units!.Select(unit => (state.Unit(unit.UnitId!) is { } found ? Experience.Inexperienced(state, found, catalogs, vocabulary) : ConditionState.Unknown) switch
+    private VehicleCloseCombatFacts WithInexperience(GameState state, VehicleCloseCombatFacts facts) => ScenarioA1VehicleCloseCombatRules.WithInexperience(facts,
+        id => (state.Unit(id) is { } found ? Experience.Inexperienced(state, found, catalogs, vocabulary) : ConditionState.Unknown) switch
         {
-            ConditionState.True => unit with { Inexperienced = true },
-            ConditionState.False => unit with { Inexperienced = false },
-            _ => unit,
-        })],
-    };
+            ConditionState.True => true,
+            ConditionState.False => false,
+            _ => null,
+        });
 
     /// <summary>
     /// Infantry attack a vehicle (A11.5; rulings R11.13, R11.14): in CC Reaction Fire a MMC takes its PAATC first against a manned AFV (a failure pins
@@ -334,29 +321,22 @@ public sealed partial class GamePlanner
                 Rolls = rolls
             }, reference)).Disposition != CloseCombatResolution.Resolved)
             {
-                if (resolution.Reasons is not [{ } missing] || !missing.StartsWith("asl.a1.cc-vehicle.roll-missing:", StringComparison.Ordinal))
+                if (ScenarioA1VehicleCloseCombatRules.VehicleRollMissing(resolution.Reasons) is not { } asked)
                 {
-                    throw new InvalidOperationException("The Close Combat package left an attack on a vehicle it had accepted undecided: " + string.Join("; ", resolution.Reasons));
+                    throw new InvalidOperationException(ScenarioA1VehicleCloseCombatRules.VehicleAttackUndecidedText(resolution.Reasons));
                 }
 
-                var key = missing["asl.a1.cc-vehicle.roll-missing:".Length..];
-                var split = key.IndexOf(':', StringComparison.Ordinal);
-                var (kind, rest) = split < 0 ? (key, string.Empty) : (key[..split], key[(split + 1)..]);
-                var count = kind == "attack" ? 2 : 1;
+                var (key, kind, rest) = asked;
+                var count = ScenarioA1VehicleCloseCombatRules.VehicleAttackDice(kind);
                 var drawn = draw(new RollRequest(count, 6));
                 var rollId = $"{attemptId}-roll-{(events.Count(item => item.Payload is DiceRolled) + 1).ToString(CultureInfo.InvariantCulture)}";
                 rollIds[key] = rollId;
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
                     new DiceRolled(rollId, "cc-vehicle-" + kind, count, 6, drawn.Values, DiceRolled.SystemSource, actor), package, null));
-                rolls = kind switch
-                {
-                    "attack" => rolls with { Attack = drawn.Values },
-                    "unlikelyKill" => rolls with { UnlikelyKill = drawn.Values[0] },
-                    _ => rolls with { WoundSeverity = With(rolls.WoundSeverity, rest, drawn.Values[0]) },
-                };
+                rolls = ScenarioA1VehicleCloseCombatRules.WithVehicleAttackRoll(rolls, kind, rest, drawn.Values);
             }
 
-            var destroyed = resolution.VehicleResult is VehicleCloseCombatResolution.Eliminated or VehicleCloseCombatResolution.BurningWreck;
+            var destroyed = ScenarioA1VehicleCloseCombatRules.Destroyed(resolution.VehicleResult);
             var (following, closed) = reaction ? (null, false) : NextAfter(state, location, vehicle, units, destroyed, entry);
             var recordId = EventId(attemptId, events.Count + 1);
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "vehicle-close-combat-resolved",
@@ -374,7 +354,7 @@ public sealed partial class GamePlanner
             else if (resolution.VehicleResult == VehicleCloseCombatResolution.Immobilized)
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(vehicle.Id,
-                    new Dictionary<string, ConditionState> { [Conditions.Immobilized] = ConditionState.True, [Conditions.Motion] = ConditionState.False }), package, null, [recordId]));
+                    ConditionChanges(ScenarioA1VehicleCloseCombatRules.ImmobilizedConditions())), package, null, [recordId]));
             }
 
             foreach (var (type, payload) in CloseCombatEffects(state, location, new CloseCombatResolution(CloseCombatResolution.Resolved, [], [], resolution.Effects, [], []), attemptId, []))
@@ -386,24 +366,9 @@ public sealed partial class GamePlanner
             // vehicle survives.
             if (reaction)
             {
-                foreach (var unit in units.Where(unit => !resolution.Effects.Any(effect => effect.UnitId == unit.Id && (effect.Eliminated || effect.FinalDefinitionId != effect.DefinitionId))))
+                foreach (var unit in units.Where(unit => ScenarioA1VehicleCloseCombatRules.Survives(resolution.Effects, unit.Id)))
                 {
-                    var conditions = new Dictionary<string, ConditionState>(StringComparer.Ordinal);
-                    if (Is(unit, Conditions.FirstFire))
-                    {
-                        conditions[Conditions.FinalFire] = ConditionState.True;
-                        conditions[Conditions.FirstFire] = ConditionState.False;
-                    }
-                    else
-                    {
-                        conditions[Conditions.FirstFire] = ConditionState.True;
-                    }
-
-                    if (!destroyed)
-                    {
-                        conditions[Conditions.CcReaction] = ConditionState.True;
-                    }
-
+                    var conditions = ConditionChanges(ScenarioA1VehicleCloseCombatRules.ReactionFireConditions(Is(unit, Conditions.FirstFire), destroyed));
                     events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(unit.Id, conditions), package, null, [recordId]));
                 }
             }
@@ -411,9 +376,9 @@ public sealed partial class GamePlanner
             return events;
         }
 
-        var paatc = testing.Length > 0 ? $"; {string.Join(", ", testing.Select(unit => unit.Id))} first pass{(testing.Length == 1 ? "es" : string.Empty)} a PAATC (A11.6)" : string.Empty;
+        var paatc = ScenarioA1VehicleCloseCombatRules.PaatcText([.. testing.Select(unit => unit.Id)]);
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-            [$"play.cc-vehicle: {string.Join(" and ", units.Select(unit => unit.Id))} attack{(units.Count == 1 ? "s" : string.Empty)} {vehicle.Id} in CC{(reaction ? " as CC Reaction Fire (D7.21)" : " (A11.5)")}{paatc}"])
+            [ScenarioA1VehicleCloseCombatRules.VehicleAttackSummary([.. units.Select(unit => unit.Id)], vehicle.Id, reaction, paatc)])
         {
             Roll = new PlannedRoll("cc-vehicle", Build),
             FirstEventId = EventId(attemptId, 1),
@@ -463,35 +428,20 @@ public sealed partial class GamePlanner
                 Rolls = rolls
             }, reference)).Disposition != CloseCombatResolution.Resolved)
             {
-                if (resolution.Reasons is not [{ } missing] || !missing.StartsWith("asl.a1.cc-vehicle.roll-missing:", StringComparison.Ordinal))
+                if (ScenarioA1VehicleCloseCombatRules.VehicleRollMissing(resolution.Reasons) is not { } asked)
                 {
-                    throw new InvalidOperationException("The Close Combat package left a vehicle's attack it had accepted undecided: " + string.Join("; ", resolution.Reasons));
+                    throw new InvalidOperationException(ScenarioA1VehicleCloseCombatRules.VehicleOwnAttackUndecidedText(resolution.Reasons));
                 }
 
-                var key = missing["asl.a1.cc-vehicle.roll-missing:".Length..];
-                var split = key.IndexOf(':', StringComparison.Ordinal);
-                var (kind, rest) = split < 0 ? (key, string.Empty) : (key[..split], key[(split + 1)..]);
-                var selected = kind == "randomSelection" ? rest.Split(',') : [];
-                var count = kind switch
-                {
-                    "attack" => 2,
-                    "randomSelection" => selected.Length,
-                    _ => 1,
-                };
+                var (key, kind, rest) = asked;
+                var selected = ScenarioA1VehicleCloseCombatRules.RandomSelected(kind, rest);
+                var count = ScenarioA1VehicleCloseCombatRules.VehicleInfantryDice(kind, selected.Length);
                 var drawn = draw(new RollRequest(count, 6));
                 var rollId = $"{attemptId}-roll-{(events.Count(item => item.Payload is DiceRolled) + 1).ToString(CultureInfo.InvariantCulture)}";
                 rollIds[key] = rollId;
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
                     new DiceRolled(rollId, "cc-vehicle-" + kind, count, 6, drawn.Values, DiceRolled.SystemSource, actor), package, null));
-                rolls = kind switch
-                {
-                    "attack" => rolls with { Attack = drawn.Values },
-                    "randomSelection" => rolls with
-                    {
-                        RandomSelection = selected.Select((id, index) => (id, index)).Aggregate(rolls.RandomSelection, (map, pair) => With(map, pair.id, drawn.Values[pair.index])),
-                    },
-                    _ => rolls with { WoundSeverity = With(rolls.WoundSeverity, rest, drawn.Values[0]) },
-                };
+                rolls = ScenarioA1VehicleCloseCombatRules.WithVehicleInfantryRoll(rolls, kind, rest, selected, drawn.Values);
             }
 
             var after = state with
@@ -516,7 +466,7 @@ public sealed partial class GamePlanner
         }
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-            [$"play.cc-vehicle: {vehicle.Id} attacks {string.Join(", ", defenders)} in CC with its CC armament (A11.62)"])
+            [ScenarioA1VehicleCloseCombatRules.VehicleAttacksInfantrySummary(vehicle.Id, defenders)])
         {
             Roll = new PlannedRoll("cc-vehicle", Build),
             FirstEventId = EventId(attemptId, 1),
