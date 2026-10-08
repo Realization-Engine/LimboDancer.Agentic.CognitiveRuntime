@@ -41,43 +41,35 @@ public static class LiveRally
 
         // A10.6, A10.63, A10.71: the other friendly leaders in the unit's Location, Good Order or broken.
         var leaders = state.At(at).OfType<UnitInstance>()
-            .Where(item => item.Status == InstanceStatus.Active && item.Id != unit.Id && item.Side == unit.Side && item.Kind == "asl:leader").ToArray();
+            .Where(item => ScenarioA1RallyRules.OtherFriendlyLeader(item.Status == InstanceStatus.Active, item.Id == unit.Id, item.Side == unit.Side, item.Kind == "asl:leader")).ToArray();
 
         // A15.41: the other friendly units in the Location, whom a leader who goes berserk tries to take with him.
         RallyCompanion[] companions = [.. state.At(at).OfType<UnitInstance>()
-            .Where(item => item.Status == InstanceStatus.Active && item.Id != unit.Id && item.Side == unit.Side && item.Definition is not null && !Is(item, Conditions.Captured))
+            .Where(item => ScenarioA1RallyRules.BerserkCompanion(item.Status == InstanceStatus.Active, item.Id == unit.Id, item.Side == unit.Side, item.Definition is not null,
+                Is(item, Conditions.Captured)))
             .OrderBy(item => item.Id, StringComparer.Ordinal)
             .Select(item => new RallyCompanion(item.Id, item.Definition!.Definition, Is(item, Conditions.Broken), Is(item, Conditions.Wounded), Is(item, Conditions.Fanatic),
                 Is(item, Conditions.Heroic), Is(item, Conditions.Berserk)))];
-        return (new RallyAttempt(
-            state.Phase == "rph" ? "RPh" : state.Phase,
-            unit.Side == state.PhasingSide ? "phasing" : "non-phasing",
-            new RallyUnit(unit.Id, unit.Definition.Definition, at.ToString(), Is(unit, Conditions.Broken), Is(unit, Conditions.Disrupted),
+        // The state's facts cross to Rules, which decides what the attempt declares (pass 32.f); the record keeps its shape.
+        return (ScenarioA1RallyRules.Attempt(new RallyAttemptStateFacts(
+            state.Phase,
+            unit.Side == state.PhasingSide,
+            new RallyUnitStateFacts(unit.Id, unit.Definition.Definition, at.ToString(), Is(unit, Conditions.Broken), Is(unit, Conditions.Disrupted),
                 Is(unit, Conditions.Wounded), Is(unit, Conditions.DesperationMorale), Is(unit, Conditions.Concealed),
-                state.RallyAttemptsThisPlayerTurn.Contains(unit.Id), state.RepairsThisPhase.Contains(unit.Id) || state.RallyPhaseActions.Contains(unit.Id))
-            {
-                Fanatic = Is(unit, Conditions.Fanatic) ? true : null,
-                // A19.3 (ruling R15.10): a Green MMC's Inexperience, for its Heat of Battle DRM.
-                Inexperienced = LiveFire.GreenInexperienced(state, unit),
-            },
-            leader is null ? null : new RallyLeader(leader.Id, leader.Definition!.Definition, state.Location(leader.Id)?.Location.ToString(),
+                state.RallyAttemptsThisPlayerTurn.Contains(unit.Id), state.RepairsThisPhase.Contains(unit.Id), state.RallyPhaseActions.Contains(unit.Id),
+                Is(unit, Conditions.Fanatic), LiveFire.GreenInexperienced(state, unit)),
+            leader is null ? null : new RallyLeaderStateFacts(leader.Id, leader.Definition!.Definition, state.Location(leader.Id)?.Location.ToString(),
                 Is(leader, Conditions.Broken), Is(leader, Conditions.Wounded), Is(leader, Conditions.Concealed)),
-            at.ToString(),
             terrain,
-            leaders.Any(item => !Is(item, Conditions.Broken)),
-            leaders.Any(item => Is(item, Conditions.Broken)),
-            unit.Side == state.PhasingSide && !state.FirstMmcRallyTaken.Contains(unit.Side),
+            [.. leaders.Select(item => Is(item, Conditions.Broken))],
+            state.FirstMmcRallyTaken.Contains(unit.Side),
             enemyGoodOrderInLosWithin16,
-            null)
-        {
-            KnownEnemyInLos = knownEnemyInLos,
-            Captors = captors,
-            Companions = companions.Length > 0 ? companions : null,
-            NoQuarter = state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal) ? true : null,
-            Commissar = Commissar(state, unit)?.Id,
-            // E3.742 (backlog pass 16, ruling R16.14): Extreme Winter's Fate outside a building.
-            ExtremeWinterFate = GamePlanner.ExtremeWinterReduction(state, unit.Side) is not null && terrain is not ("wooden-building" or "stone-building") ? true : null,
-        }, null);
+            knownEnemyInLos,
+            captors,
+            companions,
+            state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal),
+            Commissar(state, unit)?.Id,
+            GamePlanner.ExtremeWinterReduction(state, unit.Side) is not null)), null);
     }
 
     /// <summary>
@@ -88,9 +80,9 @@ public static class LiveRally
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(unit);
-        return state.Location(unit.Id) is not { } at ? null : state.At(at.Location).OfType<UnitInstance>().FirstOrDefault(item => item.Status == InstanceStatus.Active
-            && item.Id != unit.Id && item.Side == unit.Side && item.Definition is { } reference && ScenarioA1FireReference.IsCommissar(reference.Definition)
-            && !Is(item, Conditions.Broken) && !Is(item, Conditions.Pinned) && !Is(item, Conditions.Berserk) && !Is(item, Conditions.Captured));
+        return state.Location(unit.Id) is not { } at ? null : state.At(at.Location).OfType<UnitInstance>().FirstOrDefault(item => ScenarioA1RallyRules.Commissar(
+            item.Status == InstanceStatus.Active, item.Id == unit.Id, item.Side == unit.Side, item.Definition is { } reference && ScenarioA1FireReference.IsCommissar(reference.Definition),
+            Is(item, Conditions.Broken), Is(item, Conditions.Pinned), Is(item, Conditions.Berserk), Is(item, Conditions.Captured)));
     }
 
     /// <summary>The rolls of a record, rebuilt from its roll ids and the recorded dice.</summary>

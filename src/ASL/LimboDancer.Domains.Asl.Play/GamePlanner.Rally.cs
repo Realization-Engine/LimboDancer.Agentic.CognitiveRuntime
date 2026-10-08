@@ -17,7 +17,7 @@ public sealed partial class GamePlanner
     /// <summary>The MMC that made a side's first MMC Rally attempt of the RPh in progress (A18.11), for a refusal's words; null when none is recorded.</summary>
     private static string? FirstMmcRallier(IReadOnlyList<GameEvent> events, GameState state, string side) =>
         Enumerable.Reverse(events).TakeWhile(item => item.Payload is not PhaseChanged).Select(item => item.Payload).OfType<RallyAttempted>()
-            .LastOrDefault(item => state.Unit(item.Unit) is { } rallied && rallied.Side == side && rallied.Kind is "asl:squad" or "asl:half-squad" or "asl:crew")?.Unit;
+            .LastOrDefault(item => state.Unit(item.Unit) is { } rallied && ScenarioA1RallyRules.IsMmcRallier(rallied.Side == side, rallied.Kind))?.Unit;
 
     private static readonly Lazy<ScenarioA1RallyReference> RallyReference = new(() => new ScenarioA1RallyPackage().Reference);
 
@@ -35,27 +35,27 @@ public sealed partial class GamePlanner
         }
 
         string? leaderId = Text(arguments, "leader", out var named) ? named : null;
-        if (leaderId is not null && state.RallyPhaseActions.Contains(leaderId))
+        if (ScenarioA1RallyRules.LeaderRallyPhaseActionBar(leaderId, leaderId is not null && state.RallyPhaseActions.Contains(leaderId)) is { } actionBar)
         {
-            return Refused(scope, label, expected, $"play.rph-action: {leaderId} directed a Deployment or permitted a Recombination this RPh, his sole RPh action (A1.31, A1.32)");
+            return Refused(scope, label, expected, actionBar);
         }
         if (state.Unit(unitId) is not { } unit || state.Location(unit.Id)?.Location is not { } at || ReadLocation(state, at) is not { } read)
         {
-            return Refused(scope, label, expected, $"play.rally-unit: '{unitId}' is not a unit on a Location the map reads");
+            return Refused(scope, label, expected, ScenarioA1RallyRules.RallyUnitUnreadText(unitId));
         }
 
         // A10.6: the rallying leader is of the unit's side; one of another nationality leads it as Allied Troops (A10.7; ruling R15.8).
-        if (leaderId is not null && state.Unit(leaderId) is { } rallying && rallying.Side != unit.Side)
+        if (ScenarioA1RallyRules.LeaderSideBar(leaderId, unitId, leaderId is not null && state.Unit(leaderId) is { } rallying && rallying.Side != unit.Side) is { } sideBar)
         {
-            return Refused(scope, label, expected, $"play.rally-leader: {leaderId} is not of {unitId}'s side (A10.6)");
+            return Refused(scope, label, expected, sideBar);
         }
 
         // A12.141: the attempt costs a concealed unit or rallying leader its "?" in the LOS of a Good Order enemy within 16 hexes.
-        var concealed = GameState.Condition(unit, Conditions.Concealed) == ConditionState.True
-            || (leaderId is not null && state.Unit(leaderId) is { } leaderUnit && GameState.Condition(leaderUnit, Conditions.Concealed) == ConditionState.True);
+        var concealed = ScenarioA1RallyRules.ConcealedAttempt(GameState.Condition(unit, Conditions.Concealed) == ConditionState.True,
+            leaderId is not null && state.Unit(leaderId) is { } leaderUnit && GameState.Condition(leaderUnit, Conditions.Concealed) == ConditionState.True);
         // A15.44, A15.5: a leader's rally can reach Heat of Battle, so the planner reads the unit's LOS to a Known enemy and its captors. A
         // unit that goes berserk with prisoners in its Location massacres them at the start of its next fire phase (A20.4, ruling R5.7).
-        var heat = leaderId is not null;
+        var heat = ScenarioA1RallyRules.ReachesHeatOfBattle(leaderId);
 
         var (attempt, reason) = LiveRally.FromState(state, unitId, leaderId, TerrainKey(read) ?? read.Level.Terrain?.Name ?? "unknown",
             concealed ? EnemyGoodOrderInLosWithin16(state, unit.Side, at) : null, heat ? KnownEnemyInLos(state, unit.Side, at) : null, heat ? Captors(state, unit) : null);
@@ -69,21 +69,24 @@ public sealed partial class GamePlanner
         if (precheck.Count != 0)
         {
             // Pass 31 (play test R-04; A10.63, A18.11, A10.71): which of the Self-Rally rules bars this unit is said, not only that one does.
-            string[] why = precheck.Contains("asl.a1.rally.self-rally-not-capable")
-                ? [unit.Side != state.PhasingSide
-                    ? $"play.rally-self: {unit.Id} has no Self-Rally capability, and only its own side's RPh gives one MMC a Self-Rally without it (A10.63, A18.11); it needs an unbroken leader in its Location"
-                    : state.FirstMmcRallyTaken.Contains(unit.Side)
-                        // Pass 31c (backlog section 48): the refusal names the unit that used the attempt.
-                        ? $"play.rally-self: {unit.Id} cannot Self-Rally: its side's one MMC Self-Rally of this RPh was used{(FirstMmcRallier(existing, state, unit.Side) is { } first ? $" by {first}" : string.Empty)} (A18.11). It needs an unbroken leader in its Location"
-                        : $"play.rally-self: {unit.Id} has no Self-Rally capability, and a broken leader is in its Location, so its side's first MMC Rally attempt is not open to it (A10.71, A18.11); rally the leader first"]
-                : [];
+            string[] why = ScenarioA1RallyRules.SelfRallyRefusal(precheck, unit.Side == state.PhasingSide, state.FirstMmcRallyTaken.Contains(unit.Side)) switch
+            {
+                SelfRallyBar.NotOwnPhase =>
+                    [$"play.rally-self: {unit.Id} has no Self-Rally capability, and only its own side's RPh gives one MMC a Self-Rally without it (A10.63, A18.11); it needs an unbroken leader in its Location"],
+                // Pass 31c (backlog section 48): the refusal names the unit that used the attempt.
+                SelfRallyBar.Used =>
+                    [$"play.rally-self: {unit.Id} cannot Self-Rally: its side's one MMC Self-Rally of this RPh was used{(FirstMmcRallier(existing, state, unit.Side) is { } first ? $" by {first}" : string.Empty)} (A18.11). It needs an unbroken leader in its Location"],
+                SelfRallyBar.BrokenLeader =>
+                    [$"play.rally-self: {unit.Id} has no Self-Rally capability, and a broken leader is in its Location, so its side's first MMC Rally attempt is not open to it (A10.71, A18.11); rally the leader first"],
+                _ => [],
+            };
             return Refused(scope, label, expected, [.. RefusalReasons.Refusal("play.rally-refused", "Rally", "attempt", precheck), .. why]);
         }
 
         var package = ScenarioA1RallyPackage.Identity.ToString();
 
         // A rally by a concealed unit that stays concealed is its side's own business (ruling R19.8).
-        var withheld = concealed && attempt.EnemyGoodOrderInLosWithin16 != true;
+        var withheld = ScenarioA1RallyRules.Withheld(concealed, attempt.EnemyGoodOrderInLosWithin16);
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
         {
             var events = new List<GameEvent>();
@@ -92,7 +95,7 @@ public sealed partial class GamePlanner
         }
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-            [$"play.rally: {unit.Id} attempts to rally in the RPh" + (leaderId is null ? " by Self-Rally" : $", rallied by {leaderId}")])
+            [ScenarioA1RallyRules.RallySummary(unit.Id, leaderId)])
         {
             Roll = new PlannedRoll("rally", Build),
             FirstEventId = EventId(attemptId, 1),
@@ -128,13 +131,14 @@ public sealed partial class GamePlanner
             {
                 Rolls = rolls
             }, reference);
-            if (resolution.Disposition == RallyResolution.Resolved)
+            var next = ScenarioA1RallyRules.NextStep(resolution.Disposition, resolution.Reasons);
+            if (next.Resolved)
             {
                 break;
             }
 
             // An option the attempt reaches stops it until its owner answers (ruling R5.8).
-            if (resolution.Reasons is [{ } option] && option.StartsWith("asl.a1.rally.choice-missing:", StringComparison.Ordinal))
+            if (next.ChoiceKey is { } choiceKey)
             {
                 var resume = new JsonObject
                 {
@@ -150,32 +154,19 @@ public sealed partial class GamePlanner
                 }
 
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "choice-pending",
-                    Pending(state, option["asl.a1.rally.choice-missing:".Length..], resume), package, visibility));
+                    Pending(state, choiceKey, resume), package, visibility));
                 return;
             }
 
-            if (resolution.Reasons is not [{ } missing] || !missing.StartsWith("asl.a1.rally.roll-missing:", StringComparison.Ordinal))
+            if (next.Undecided is { } undecided)
             {
-                throw new InvalidOperationException("The Rally package left an attempt it had accepted undecided: " + string.Join("; ", resolution.Reasons));
+                throw new InvalidOperationException("The Rally package left an attempt it had accepted undecided: " + undecided);
             }
 
             // The Rally DR, a leader's Wound Severity dr (A17.11), the Heat of Battle DR (A15.1), the Leader Creation dr (A18.2), or
-            // the NTC of a companion a berserk leader tries to take with him (A15.41).
-            const string BerserkCheck = "asl.a1.rally.roll-missing:berserkCheck:";
-            var companion = missing.StartsWith(BerserkCheck, StringComparison.Ordinal) ? missing[BerserkCheck.Length..] : null;
-            var rollKey = companion is not null ? "berserkCheck:" + companion
-                : missing.Contains("woundSeverity", StringComparison.Ordinal) ? "woundSeverity"
-                : missing.EndsWith(":heatOfBattle", StringComparison.Ordinal) ? "heatOfBattle"
-                : missing.EndsWith(":leaderCreation", StringComparison.Ordinal) ? "leaderCreation"
-                : "rally";
-            var (count, purpose) = rollKey switch
-            {
-                "woundSeverity" => (1, "rally-wound-severity"),
-                "heatOfBattle" => (2, "rally-heat-of-battle"),
-                "leaderCreation" => (1, "rally-leader-creation"),
-                _ when companion is not null => (2, "rally-berserk-check"),
-                _ => (2, "rally"),
-            };
+            // the NTC of a companion a berserk leader tries to take with him (A15.41), as Rules names them.
+            var rollKey = next.RollKey!;
+            var (count, purpose) = (next.Count, next.Purpose!);
             var drawn = draw(new RollRequest(count, 6));
             var rollId = $"{attemptId}-roll-{(events.Count(item => item.Payload is DiceRolled) + 1).ToString(CultureInfo.InvariantCulture)}";
             rollIds[rollKey] = rollId;
@@ -194,10 +185,11 @@ public sealed partial class GamePlanner
         }
 
         // A15.5: a unit that surrendered to ADJACENT captors waits for the captor's choice, last.
-        if (resolution.Arithmetic!.HeatOfBattle is { Result: HeatOfBattleOutcome.Surrender, Captors.Count: > 0 } surrender && !resolution.Effect!.Eliminated)
+        var heatOfBattle = resolution.Arithmetic!.HeatOfBattle;
+        if (ScenarioA1RallyRules.SurrendersAfterRally(heatOfBattle?.Result == HeatOfBattleOutcome.Surrender, heatOfBattle?.Captors is { Count: > 0 }, resolution.Effect!.Eliminated))
         {
-            var id = resolution.Effect.FinalDefinitionId != resolution.Effect.DefinitionId ? $"{attemptId}-{unit.Id}" : unit.Id;
-            events.Add(Event(scope, attemptId, events.Count + 1, expected, "surrender-pending", new SurrenderPending(id, surrender.Captors!), package, null, [rallyId]));
+            var id = ScenarioA1RallyRules.SurrenderingId(attemptId, unit.Id, resolution.Effect.FinalDefinitionId != resolution.Effect.DefinitionId);
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "surrender-pending", new SurrenderPending(id, heatOfBattle!.Captors!), package, null, [rallyId]));
         }
     }
 
