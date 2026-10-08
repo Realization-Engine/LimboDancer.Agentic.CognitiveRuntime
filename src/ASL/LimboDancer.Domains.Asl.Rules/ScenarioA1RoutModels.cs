@@ -17,6 +17,15 @@ public sealed record RoutLosFacts(bool Clear, int Hindrance, int Range);
 /// </summary>
 public sealed record RoutStepCost(int? HalfMf, bool AllMf, string? Reason);
 
+/// <summary>What an Interdiction result does to the routing unit (A10.53, A10.31): it routs on, is pinned, is Casualty Reduced, or is eliminated.</summary>
+public enum InterdictionOutcome
+{
+    Passed,
+    Pinned,
+    Reduced,
+    Eliminated,
+}
+
 /// <summary>What Casualty Reduction does to a unit (A7.302): a squad becomes its HS, an unwounded leader or hero is wounded, anything else is eliminated.</summary>
 public enum CasualtyOutcome
 {

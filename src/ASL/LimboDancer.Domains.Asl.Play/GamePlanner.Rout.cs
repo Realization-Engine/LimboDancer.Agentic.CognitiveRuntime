@@ -377,7 +377,7 @@ public sealed partial class GamePlanner
             for (var index = 0; index < route.Count; index++)
             {
                 // A10.5: a leader wounded on the way routs on only with the MF a wounded SMC has.
-                if (used + costs[index] > RoutHalfMf(routing))
+                if (ScenarioA1RoutCalculator.StepExceedsMf(used, costs[index], RoutHalfMf(routing)))
                 {
                     break;
                 }
@@ -389,7 +389,7 @@ public sealed partial class GamePlanner
                 AddAdjacentDm(scope, attemptId, expected, after, events);
 
                 // A10.53: Interdiction as it enters an Open Ground hex without Low Crawl, once per hex.
-                if (lowCrawl || route.IndexOf(to) != index || Interdictor(after, routing.Side, to) is not { } interdictor)
+                if (ScenarioA1RoutCalculator.InterdictionDue(lowCrawl, route.IndexOf(to) == index, () => Interdictor(after, routing.Side, to)) is not { } interdictor)
                 {
                     continue;
                 }
@@ -398,19 +398,20 @@ public sealed partial class GamePlanner
                 rolls++;
                 var rollId = $"{attemptId}-roll-{rolls.ToString(CultureInfo.InvariantCulture)}";
                 var current = after.Unit(routing.Id)!;
-                var morale = BrokenMorale(current) ?? 0;
+                var morale = ScenarioA1RoutCalculator.InterdictionMorale(BrokenMorale(current));
                 var original = drawn.Values[0] + drawn.Values[1];
                 var result = RoutInterdicted.For(original, original, morale);
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
                     new DiceRolled(rollId, "interdiction", 2, 6, drawn.Values, DiceRolled.SystemSource, actor), package, null));
                 var record = EventId(attemptId, events.Count + 1);
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "rout-interdicted", new RoutInterdicted(routing.Id, to, rollId, morale, 0, result) { Interdictor = interdictor }, package, null));
-                if (result == RoutInterdicted.Passed)
+                var outcome = ScenarioA1RoutCalculator.InterdictionEffect(result);
+                if (outcome == InterdictionOutcome.Passed)
                 {
                     continue;
                 }
 
-                if (result == RoutInterdicted.Pinned)
+                if (outcome == InterdictionOutcome.Pinned)
                 {
                     // A10.53: pinned, it routs no further this RtPh.
                     events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
@@ -418,11 +419,11 @@ public sealed partial class GamePlanner
                     break;
                 }
 
-                var (type, payload) = result == RoutInterdicted.Reduced ? CasualtyReduction(current, attemptId) : ("instance-eliminated", new InstanceEliminated(routing.Id));
+                var (type, payload) = outcome == InterdictionOutcome.Reduced ? CasualtyReduction(current, attemptId) : ("instance-eliminated", new InstanceEliminated(routing.Id));
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, type, payload, package, null, [record]));
 
                 // A10.53: a HS left by Casualty Reduction, or a wounded SMC, routs on; an eliminated unit does not.
-                if (payload is InstanceEliminated)
+                if (!ScenarioA1RoutCalculator.RoutsOn(payload is InstanceEliminated))
                 {
                     break;
                 }
@@ -433,16 +434,11 @@ public sealed partial class GamePlanner
             return events;
         }
 
-        var steps = string.Join(", ", route.Select((step, index) => $"{step} ({(costs[index] / 2.0).ToString("0.#", CultureInfo.InvariantCulture)} MF)"));
-        string[] threatened = lowCrawl ? [] : [.. route.Distinct().Select(step => (step, By: Interdictor(state, unit.Side, step))).Where(item => item.By is not null)
-            .Select(item => $"{item.step} by {item.By}")];
-        var interdiction = lowCrawl ? "Low Crawl is never Interdicted (A10.52)"
-            : threatened.Length == 0 ? "no step enters Open Ground an enemy unit could Interdict (A10.53)"
-            : $"Interdicted as it enters {string.Join(", ", threatened)}, a NMC each (A10.53)";
-        string[] leaves = left.Count == 0 ? []
-            : [$"play.rout-leaves: {unit.Id} leaves {string.Join(" and ", left.Select(item => $"{item.Weapon} ({item.Pp} PP)"))} in {start}, unpossessed, and routs with "
-                + $"{(kept.Count == 0 ? "no SW" : string.Join(" and ", kept))} (A10.4, A4.431)"];
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [$"play.rout: {unit.Id} routs{(lowCrawl ? " by Low Crawl" : "")} to {steps}; {interdiction}", .. leaves])
+        // The Interdictor of each distinct step is read only for a rout that is not a Low Crawl (A10.52); Rules words the plan (pass 32.f).
+        (string Step, string By)[] threatened = lowCrawl ? [] : [.. route.Distinct().Select(step => (Step: step.ToString(), By: Interdictor(state, unit.Side, step)))
+            .Where(item => item.By is not null).Select(item => (item.Step, item.By!))];
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], ScenarioA1RoutCalculator.RoutSummary(unit.Id, lowCrawl,
+            [.. route.Select((step, index) => (step.ToString(), costs[index]))], threatened, [.. left.Select(item => (item.Weapon, item.Pp))], kept, start.ToString()))
         {
             Roll = new PlannedRoll("rout", Build),
             FirstEventId = EventId(attemptId, 1),
@@ -595,31 +591,31 @@ public sealed partial class GamePlanner
     private (UnitInstance Unit, string Why, IReadOnlyList<string>? Captors)[] FailureToRout(GameState state, IReadOnlyList<GameEvent> existing)
     {
         // E1.54 (backlog pass 16, ruling R16.6): no unit is eliminated for Failure to Rout at night.
-        if (state.Night)
+        if (ScenarioA1RoutCalculator.NoFailureToRout(state.Night))
         {
             return [];
         }
 
+        var scan = new RoutScan(this, state);
         var start = existing.Select((item, index) => (item, index)).LastOrDefault(pair => pair.item.Payload is PhaseChanged).index;
         var rejected = existing.Skip(start).Select(item => item.Payload).OfType<SurrenderRejected>().Select(item => item.Unit).ToHashSet(StringComparer.Ordinal);
         var failed = new List<(UnitInstance, string, IReadOnlyList<string>?)>();
-        foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Broken) && !Is(unit, Conditions.Melee)
-            && !Is(unit, Conditions.Captured) && !LiveFire.IsVehicle(unit) && state.Aboard(unit.Id) is null).OrderBy(unit => unit.Id, StringComparer.Ordinal))
+        foreach (var unit in state.Units.Where(unit => ScenarioA1RoutCalculator.FailureToRoutCandidate(unit.Status == InstanceStatus.Active, Is(unit, Conditions.Broken),
+            Is(unit, Conditions.Melee), Is(unit, Conditions.Captured), LiveFire.IsVehicle(unit), state.Aboard(unit.Id) is not null)).OrderBy(unit => unit.Id, StringComparer.Ordinal))
         {
             if (state.Location(unit.Id)?.Location is not { } at)
             {
                 continue;
             }
 
-            var why = NearUnbrokenArmedEnemy(state, unit.Side, at) is { } enemy ? $"it is ADJACENT to or in the Location of the Known unbroken armed enemy unit {enemy}"
-                : !state.RoutedThisPhase.Contains(unit.Id) && !Is(unit, Conditions.Pinned) && ExposedInOpenGround(state, unit.Side, at) is { } seen
-                    ? $"it did not rout from Open Ground in the LOS and Normal Range of {seen}" : null;
+            var why = ScenarioA1RoutCalculator.FailureToRoutWhy(scan, scan.Enemies(unit.Side), scan.Index(at), state.RoutedThisPhase.Contains(unit.Id), Is(unit, Conditions.Pinned),
+                state.ScenarioMonth);
             if (why is null)
             {
                 continue;
             }
 
-            var surrenders = !Is(unit, Conditions.Fanatic) && !state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal) && !rejected.Contains(unit.Id)
+            var surrenders = ScenarioA1RoutCalculator.SurrendersInstead(Is(unit, Conditions.Fanatic), state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal), rejected.Contains(unit.Id))
                 && Captors(state, unit) is { Count: > 0 } captors ? captors : null;
             failed.Add((unit, why, surrenders));
         }
