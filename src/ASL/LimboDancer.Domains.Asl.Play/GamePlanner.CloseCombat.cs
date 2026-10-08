@@ -667,7 +667,7 @@ public sealed partial class GamePlanner
             // A15.43, A11.31 (ruling R27.2): a berserk unit that charged a vehicle attacks it in the Location's sequential CC.
             if (BerserkOwingVehicleAttack(state, location, null) is { } owing)
             {
-                return $"play.cc-required: {owing.Id} is berserk with a Known enemy vehicle in {location}, so it attacks the vehicle in CC before the CCPh ends (A15.43, A11.31)";
+                return ScenarioA1CloseCombatRules.CcRequiredVehicleText(owing.Id, location.ToString());
             }
 
             if (state.CloseCombats.Any(item => item.Location == location))
@@ -677,17 +677,11 @@ public sealed partial class GamePlanner
 
             var here = active.Where(unit => state.Location(unit.Id)!.Location == location).ToArray();
 
-            // CC with a crew (ruling R24.3) is not reviewed, so it cannot be required; a Location holding a vehicle has its sequential CC (A11.31).
-            if (here.Any(unit => vocabulary.IsA(unit.Kind, "asl:crew") || LiveFire.IsVehicle(unit)))
-            {
-                continue;
-            }
-
-            var berserk = here.FirstOrDefault(unit => Is(unit, Conditions.Berserk) && here.Any(other => other.Side != unit.Side && KnownEnemy(other)));
-            var reinforcing = here.Any(unit => Is(unit, Conditions.Melee))
-                ? here.FirstOrDefault(unit => state.Advances.Any(item => item.Unit == unit.Id && item.To == location) && !Is(unit, Conditions.Broken))
-                : null;
-            if ((berserk ?? reinforcing) is not { } unit)
+            // CC with a crew (ruling R24.3) is not reviewed, so it cannot be required; a Location holding a vehicle has its sequential CC (A11.31). Rules
+            // picks the unit (pass 32.g).
+            if (ScenarioA1CloseCombatRules.RequiredUnit([.. here.Select(unit => new RequiredCcUnitFacts(unit.Id, unit.Side, Is(unit, Conditions.Berserk), Is(unit, Conditions.Melee), Is(unit, Conditions.Broken),
+                KnownEnemy(unit), state.Advances.Any(item => item.Unit == unit.Id && item.To == location), vocabulary.IsA(unit.Kind, "asl:crew"), LiveFire.IsVehicle(unit)))])
+                is not { } required || here.First(item => item.Id == required.Id) is not { } unit)
             {
                 continue;
             }
@@ -695,9 +689,7 @@ public sealed partial class GamePlanner
             var terrain = ReadLocation(state, location) is { } read ? TerrainKey(read) : null;
             if (LiveCloseCombat.AmbushFromState(state, location, terrain).Facts is not null && MandatoryAttackDecidable(state, location, terrain, unit, here))
             {
-                return berserk is not null
-                    ? $"play.cc-required: {unit.Id} is berserk with a Known enemy unit in {location}, so it attacks in CC before the CCPh ends (A15.43)"
-                    : $"play.cc-required: {unit.Id} advanced into the Melee in {location}, so it attacks in CC before the CCPh ends (A11.15)";
+                return ScenarioA1CloseCombatRules.CcRequiredText(unit.Id, location.ToString(), required.Berserk);
             }
         }
 
@@ -720,9 +712,7 @@ public sealed partial class GamePlanner
         {
             var (facts, _) = LiveCloseCombat.FromState(state, location, terrain, [new CloseCombatDeclaration([unit.Id], [enemy.Id])], null);
             // Referee, pass 14: the prisoners kept keep their Guards.
-            var kept = facts?.Units!.Where(item => item.UnitId == unit.Id || item.Side != unit.Side || item.Captured == true).ToList();
-            kept?.AddRange(facts!.Units!.Where(item => item.Side == unit.Side && item.UnitId != unit.Id && kept.Any(prisoner => prisoner.GuardId == item.UnitId)));
-            if (facts is not null && ScenarioA1CloseCombatCalculator.Precheck(facts with { Units = kept }, CloseCombatReference.Value) is { Count: 0 })
+            if (facts is not null && ScenarioA1CloseCombatCalculator.Precheck(facts with { Units = ScenarioA1CloseCombatRules.TrialUnits(facts.Units!, unit.Id, unit.Side) }, CloseCombatReference.Value) is { Count: 0 })
             {
                 return true;
             }
@@ -763,22 +753,17 @@ public sealed partial class GamePlanner
 
         var sides = state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && !Is(unit, Conditions.Captured)).Select(unit => unit.Side)
             .Distinct(StringComparer.Ordinal).OrderBy(side => side == state.PhasingSide ? 0 : 1).ThenBy(side => side, StringComparer.Ordinal).ToArray();
-        return state.CloseCombats.FirstOrDefault(item => item.Location == location) is { Ambusher: { } ambusher } entry
-            ? entry.Rounds.Count == 0 || ambusherAgain ? [ambusher] : [.. sides.Where(side => side != ambusher)]
-            : sides;
+        var entry = state.CloseCombats.FirstOrDefault(item => item.Location == location);
+        return ScenarioA1CloseCombatRules.DeclaringSides(sides, entry?.Ambusher, entry?.Rounds.Count ?? 0, ambusherAgain);
     }
 
     /// <summary>Whether a Location's Ambush drs are due (A11.4): no CC there yet, and the Close Combat package allows an Ambush.</summary>
     public bool AmbushDue(GameState state, BoardLocation location)
     {
         ArgumentNullException.ThrowIfNull(state);
-        if (state.Phase != "ccph" || state.CloseCombats.Any(item => item.Location == location))
-        {
-            return false;
-        }
-
         // Ruling R11.16: no Ambush dr is made in a Location holding a vehicle.
-        if (state.At(location).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)))
+        if (!ScenarioA1CloseCombatRules.AmbushDueCandidate(state.Phase, state.CloseCombats.Any(item => item.Location == location),
+            state.At(location).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit))))
         {
             return false;
         }
@@ -797,8 +782,7 @@ public sealed partial class GamePlanner
         }
 
         var first = ScenarioA1CloseCombatCalculator.ResolveAmbush(facts, CloseCombatReference.Value);
-        return first.Reasons is [{ } missing] && missing.StartsWith("asl.a1.cc.roll-missing:ambush:", StringComparison.Ordinal) ? null
-            : string.Join("; ", first.Reasons.Select(reason => RefusalReasons.Explain(reason).Split(": ", 2) is [_, var sentence] ? sentence : reason));
+        return ScenarioA1CloseCombatRules.AmbushRollSide(first.Reasons) is not null ? null : ScenarioA1CloseCombatRules.AmbushUndecidedText(first.Reasons, RefusalReasons.Explain);
     }
 
     /// <summary>
@@ -816,22 +800,18 @@ public sealed partial class GamePlanner
         var due = new List<string>();
 
         // Pass 31d (design D9): a Location with nothing left after an Ambush (ruling R31c.5) holds the phase no longer, and has no line.
-        bool NothingLeft(CloseCombatLocation item) => item.Ambusher is { } ambusher && item.Rounds.Count > 0
-            && !state.Units.Any(unit => unit.Status == InstanceStatus.Active && unit.Side != ambusher && !Is(unit, Conditions.Captured) && state.Location(unit.Id)?.Location == item.Location);
+        bool NothingLeft(CloseCombatLocation item) => ScenarioA1CloseCombatRules.NothingLeft(item.Ambusher is not null, item.Rounds.Count, item.Ambusher is { } ambusher
+            && state.Units.Any(unit => unit.Status == InstanceStatus.Active && unit.Side != ambusher && !Is(unit, Conditions.Captured) && state.Location(unit.Id)?.Location == item.Location));
         foreach (var open in state.CloseCombats.Where(item => !item.Closed && !NothingLeft(item)))
         {
             // Ruling R11.16 (table-player finding): a Location holding a vehicle has no Ambush; its sides attack in turn.
-            due.Add(open.Next is { } next ? $"{open.Location}: the {next} side attacks or passes (A11.31)"
-                : open.Ambusher is null ? $"{open.Location}: its round after the Ambush drs (A11.12)"
-                : $"{open.Location}: more attacks by the {open.Ambusher} side, then the ambushed side's round, which may declare no attacks (A11.3, A11.32)");
+            due.Add(ScenarioA1CloseCombatRules.DueOpenLine(open.Location.ToString(), open.Next, open.Ambusher));
         }
 
         var locations = state.Units.Where(unit => unit.Status == InstanceStatus.Active && state.Location(unit.Id) is not null)
             .Select(unit => state.Location(unit.Id)!.Location).Distinct().OrderBy(item => item.ToString(), StringComparer.Ordinal).ToArray();
         // Pass 31d (design D9): where the package would refuse the Ambush, the line says so, and no longer asks for drs that cannot be made.
-        due.AddRange(locations.Where(location => AmbushDue(state, location)).Select(location => AmbushUndecided(state, location) is { } why
-            ? $"{location}: the Close Combat package does not decide this Location, since {why}"
-            : $"{location}: the Ambush drs (A11.4)"));
+        due.AddRange(locations.Where(location => AmbushDue(state, location)).Select(location => ScenarioA1CloseCombatRules.DueAmbushLine(location.ToString(), AmbushUndecided(state, location))));
         if (CloseCombatRequired(state) is { } required)
         {
             due.Add(required);
@@ -839,7 +819,7 @@ public sealed partial class GamePlanner
 
         due.AddRange(state.Units.Where(unit => unit.Status == InstanceStatus.Active && state.Location(unit.Id) is { } held
                 && !state.CloseCombats.Any(item => item.Location == held.Location) && MustWithdraw(state, unit, held.Location))
-            .Select(unit => $"{state.Location(unit.Id)!.Location}: {unit.Id} is broken in Melee and must attempt to withdraw (A11.16)"));
+            .Select(unit => ScenarioA1CloseCombatRules.DueWithdrawLine(state.Location(unit.Id)!.Location.ToString(), unit.Id)));
         return due;
     }
 
@@ -869,20 +849,8 @@ public sealed partial class GamePlanner
         var enemies = there.Where(unit => unit.Side != side).ToArray();
 
         // Ruling R10.15: a charge into concealed units reveals them, one into prisoners enters, and one onto a lone SMC is an Infantry OVR; a Gun's
-        // crew in CC stays unreviewed (ruling R24.3).
-        if (enemies.Any(unit => vocabulary.IsA(unit.Kind, "asl:crew")))
-        {
-            return $"play.berserk-crew: a charge into {to}, which holds a Gun's crew, is CC with a crew, which is not reviewed (C11, R24.3); the charge ends in place (ruling R30.5)";
-        }
-
-        // Table player, pass 27: CC between Infantry in a Location holding a vehicle is not built (R11.16), so a charge enters a vehicle's Location only
-        // when no enemy Infantry is there.
-        if (enemies.Any(LiveFire.IsVehicle) && enemies.Any(unit => !LiveFire.IsVehicle(unit)))
-        {
-            return $"play.berserk-vehicle: a charge into {to}, which holds an enemy vehicle and enemy Infantry, needs CC between Infantry beside a vehicle, which is not built (R11.16); the charge ends in place (ruling R30.5)";
-        }
-
-        return null;
+        // crew in CC stays unreviewed (ruling R24.3). Table player, pass 27: CC between Infantry in a Location holding a vehicle is not built (R11.16).
+        return ScenarioA1CloseCombatRules.ChargeBarred(enemies.Any(unit => vocabulary.IsA(unit.Kind, "asl:crew")), enemies.Any(LiveFire.IsVehicle), enemies.Any(unit => !LiveFire.IsVehicle(unit)), to.ToString());
     }
 
     /// <summary>A map of unit ids in the arguments, such as each SMC's MMC or each withdrawing unit's destination.</summary>
