@@ -251,9 +251,9 @@ public sealed partial class GamePlanner
             route.Add(step);
         }
 
-        if (state.Phase != "rtph")
+        if (ScenarioA1RoutCalculator.RoutPhaseBar(state.Phase) is { } phaseBar)
         {
-            return Refused(scope, label, expected, "play.rout-phase: broken units rout in the RtPh (A10.5)");
+            return Refused(scope, label, expected, phaseBar);
         }
 
         // A2.1 (ruling R20.6): a rout never leaves the card's playable area.
@@ -262,52 +262,53 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, outside);
         }
 
-        if (state.Unit(unitId) is not { Status: InstanceStatus.Active } unit || !Is(unit, Conditions.Broken) || Is(unit, Conditions.Melee)
-            || Is(unit, Conditions.Captured) || state.Location(unit.Id)?.Location is not { } start)
+        if (state.Unit(unitId) is not { Status: InstanceStatus.Active } unit
+            || !ScenarioA1RoutCalculator.RoutUnitAllowed(Is(unit, Conditions.Broken), Is(unit, Conditions.Melee), Is(unit, Conditions.Captured))
+            || state.Location(unit.Id)?.Location is not { } start)
         {
-            return Refused(scope, label, expected, $"play.rout-unit: '{unitId}' is not a broken unit on the map outside Melee (A10.5)");
+            return Refused(scope, label, expected, ScenarioA1RoutCalculator.RoutUnitText(unitId));
         }
 
-        if (state.RoutedThisPhase.Contains(unit.Id))
+        if (ScenarioA1RoutCalculator.RoutedBar(unit.Id, state.RoutedThisPhase.Contains(unit.Id)) is { } routedBar)
         {
-            return Refused(scope, label, expected, $"play.rout-unit: {unit.Id} has routed this RtPh (A10.5)");
+            return Refused(scope, label, expected, routedBar);
         }
 
-        if (Is(unit, Conditions.Pinned))
+        if (ScenarioA1RoutCalculator.RoutPinnedBar(unit.Id, Is(unit, Conditions.Pinned)) is { } pinnedBar)
         {
-            return Refused(scope, label, expected, $"play.rout-unit: {unit.Id} is pinned and routs no further this RtPh (A10.53)");
+            return Refused(scope, label, expected, pinnedBar);
         }
 
-        if (!MayRout(state, unit))
+        if (ScenarioA1RoutCalculator.MayRoutBar(unit.Id, MayRout(state, unit)) is { } mayRoutBar)
         {
-            return Refused(scope, label, expected, $"play.rout-not-allowed: {unit.Id} need not rout and is not under DM, so it may not rout (A10.5)");
+            return Refused(scope, label, expected, mayRoutBar);
         }
 
         // A10.5: the ATTACKER's broken units rout first, one at a time, then the DEFENDER's; one with no legal step does not hold the DEFENDER up.
         var attacker = state.PhasingSide;
-        if (unit.Side == attacker && state.RoutedThisPhase.Any(id => state.Unit(id) is { } routed && routed.Side != attacker))
+        if (ScenarioA1RoutCalculator.RoutOrderBar(unit.Side == attacker, () => state.RoutedThisPhase.Any(id => state.Unit(id) is { } routed && routed.Side != attacker)) is { } orderBar)
         {
-            return Refused(scope, label, expected, "play.rout-order: the DEFENDER's units have begun to rout, so the ATTACKER's may not (A10.5)");
+            return Refused(scope, label, expected, orderBar);
         }
 
-        if (unit.Side != attacker && state.Units.FirstOrDefault(other => other.Side == attacker && !state.RoutedThisPhase.Contains(other.Id)
-            && !Is(other, Conditions.Pinned) && MustRout(state, other) is not null && CanRout(state, other)) is { } first)
+        if (unit.Side != attacker && state.Units.FirstOrDefault(other => ScenarioA1RoutCalculator.AttackerMustRoutFirst(other.Side == attacker, state.RoutedThisPhase.Contains(other.Id),
+            Is(other, Conditions.Pinned), () => MustRout(state, other) is not null, () => CanRout(state, other))) is { } first)
         {
-            return Refused(scope, label, expected, $"play.rout-order: the ATTACKER's {first.Id} must rout first (A10.5)");
+            return Refused(scope, label, expected, ScenarioA1RoutCalculator.AttackerFirstText(first.Id));
         }
 
         // E1.54 (backlog pass 16, ruling R16.6): at night a broken unit always Low Crawls, and surrenders only in CC.
-        if (state.Night && !lowCrawl)
+        if (ScenarioA1RoutCalculator.NightRoutBar(unit.Id, state.Night, lowCrawl) is { } nightBar)
         {
-            return Refused(scope, label, expected, $"play.night-rout: at night {unit.Id} does not rout normally but Low Crawls (lowCrawl) (E1.54)");
+            return Refused(scope, label, expected, nightBar);
         }
 
         // A20.21: a unit ADJACENT to its captors that is Disrupted, Encircled, or can get away only by Interdiction or Low Crawl surrenders instead.
-        if (!state.Night && !Is(unit, Conditions.Fanatic) && !state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal) && Captors(state, unit) is { Count: > 0 } captors
-            && (Is(unit, Conditions.Disrupted) ? "is Disrupted" : state.Encircled(unit) ? "is Encircled"
-                : TrappedByInterdiction(state, unit, start) ? $"can get away from {string.Join(" or ", captors)} only by Interdiction or Low Crawl" : null) is { } cause)
+        if (ScenarioA1RoutCalculator.SurrenderCandidate(state.Night, Is(unit, Conditions.Fanatic), state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal))
+            && Captors(state, unit) is { Count: > 0 } captors
+            && ScenarioA1RoutCalculator.SurrenderCause(Is(unit, Conditions.Disrupted), state.Encircled(unit), () => TrappedByInterdiction(state, unit, start), captors) is { } cause)
         {
-            return Refused(scope, label, expected, $"play.rout-surrender: {unit.Id} {cause}, so it surrenders to {string.Join(" or ", captors)} as the RtPh ends instead of routing (A20.21)");
+            return Refused(scope, label, expected, ScenarioA1RoutCalculator.RoutSurrenderText(unit.Id, cause, captors));
         }
 
         // A10.4 (read in the PDF, p. 66; ruling R31d.1): before it routs a broken unit leaves in its Location what it carries beyond its IPC, and routs
@@ -318,110 +319,45 @@ public sealed partial class GamePlanner
         {
             string[]? named = arguments.TryGetProperty("keep", out var keep) && keep.ValueKind == JsonValueKind.Array ? [.. Strings(arguments, "keep").Order(StringComparer.Ordinal)] : null;
             // Loads that differ only in which of two like counters is kept are one choice (the table player, pass 31d), and the game takes it.
-            var chosen = named is null ? (load.Choices.Count == 1 ? load.Choices[0] : null)
-                : load.BestLoads.FirstOrDefault(best => best.Order(StringComparer.Ordinal).SequenceEqual(named, StringComparer.Ordinal));
+            var choices = load.Choices;
+            var chosen = ScenarioA1RoutCalculator.ChosenLoad(named, choices, load.BestLoads);
             if (chosen is null)
             {
-                var loads = string.Join(", or ", load.Choices.Select(best => best.Count == 0 ? "no SW" : string.Join(" with ", best.Select(id => $"{id} ({load.Pp(id)} PP)"))));
-                return Refused(scope, label, expected, $"play.rout-laden: {unit.Id} carries {load.Total} PP and routs with at most {load.Ipc} PP; its owner chooses what it keeps: {loads}; it leaves the rest (A10.4)");
+                return Refused(scope, label, expected, ScenarioA1RoutCalculator.RoutLadenText(unit.Id, load.Total, load.Ipc, choices, load.Pp));
             }
 
             (kept, left) = (chosen, load.Left(chosen));
         }
 
-        if (route.Count == 0 || (lowCrawl && route.Count != 1))
+        if (ScenarioA1RoutCalculator.RouteShapeBar(route.Count, lowCrawl) is { } shapeBar)
         {
-            return Refused(scope, label, expected, "play.rout-route: a rout names at least one Location, and Low Crawl exactly one (A10.52)");
+            return Refused(scope, label, expected, shapeBar);
         }
 
-        if (lowCrawl && !state.Night && state.At(start).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side
-            && other.Kind != UnitKinds.Dummy && !Is(other, Conditions.Captured)))
+        if (ScenarioA1RoutCalculator.LowCrawlOccupiedBar(lowCrawl, state.Night, () => state.At(start).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active
+            && other.Side != unit.Side && other.Kind != UnitKinds.Dummy && !Is(other, Conditions.Captured))) is { } occupiedBar)
         {
-            return Refused(scope, label, expected, "play.rout-low-crawl: Low Crawl does not leave an enemy-occupied Location (A10.52)");
+            return Refused(scope, label, expected, occupiedBar);
         }
 
-        // A10.51: each step, its cost, and the Known armed enemy units that have had the unit in their LOS.
+        // A10.51: each step, its cost, and the Known armed enemy units that have had the unit in their LOS; Rules walks the route over the scan (pass 32.f).
         var limit = RoutHalfMf(unit);
         var encircled = state.Encircled(unit);
-        var seenBy = SeenBy(state, unit.Side, start).ToHashSet(StringComparer.Ordinal);
-        var costs = new List<int>();
-        var spent = 0;
-        var from = start;
-        foreach (var to in route)
+        var scan = new RoutScan(this, state);
+        var enemies = scan.Enemies(unit.Side);
+        var seenBy = ScenarioA1RoutCalculator.SeenBy(scan, enemies, scan.Index(start)).ToHashSet(StringComparer.Ordinal);
+        int[] routeIndexes = [.. route.Select(scan.Index)];
+        var (walkBar, costs, _) = ScenarioA1RoutCalculator.RoutRouteWalk(scan, enemies, unit.Id, scan.Index(start), routeIndexes, lowCrawl, state.Night, limit, encircled, seenBy);
+        if (walkBar is not null)
         {
-            if (!Neighbors(state, from).Contains(to))
-            {
-                return Refused(scope, label, expected, $"play.rout-route: {to} is not ADJACENT to {from}");
-            }
-
-            if (RoutStepBar(state, unit.Side, from, to, seenBy) is { } bar)
-            {
-                return Refused(scope, label, expected, bar);
-            }
-
-            if (lowCrawl && !state.Night && ReadLocation(state, to) is { } crawled && TerrainKey(crawled) == "marsh")
-            {
-                return Refused(scope, label, expected, "play.rout-low-crawl: Low Crawl does not enter marsh (A10.52)");
-            }
-
-            var (halfMf, allMf, why) = RoutEntry(state, from, to, encircled && spent == 0);
-            if (halfMf is null && !allMf)
-            {
-                return Refused(scope, label, expected, why!);
-            }
-
-            if (allMf && spent > 0)
-            {
-                return Refused(scope, label, expected, $"play.rout-route: entering {to} takes all of {unit.Id}'s MF, so it is its only step (A4.134)");
-            }
-
-            var cost = lowCrawl || allMf ? limit - spent : halfMf!.Value;
-            spent += cost;
-            if (spent > limit)
-            {
-                return Refused(scope, label, expected, $"play.rout-mf: the route costs more than {unit.Id}'s {limit / 2} MF in the RtPh (A10.5)");
-            }
-
-            costs.Add(cost);
-            seenBy.UnionWith(SeenBy(state, unit.Side, to));
-            from = to;
+            return Refused(scope, label, expected, walkBar);
         }
 
-        // A10.51: a unit ADJACENT to a Known armed enemy unit does not end its rout ADJACENT to that same unit.
-        var near = KnownEnemies(state, unit.Side).Where(item => Armed(item.Unit) && AdjacentOrSame(state, item.At, start)).ToArray();
-        if (near.FirstOrDefault(item => AdjacentOrSame(state, item.At, route[^1])) is { Unit: { } still })
+        // A10.51, A10.532: no ending ADJACENT to an armed enemy it began ADJACENT to; it must reach the nearest woods or building Location within its MF
+        // this RtPh, not necessarily by a shortest route; with none, any legal route. Low Crawl moves one Location toward it.
+        if (ScenarioA1RoutCalculator.RoutDestinationBar(scan, enemies, unit.Id, scan.Index(start), routeIndexes, lowCrawl, limit, encircled, state.ScenarioMonth) is { } destinationBar)
         {
-            return Refused(scope, label, expected, $"play.rout-route: {unit.Id} began ADJACENT to {still.Id} and may not end its rout ADJACENT to it (A10.51)");
-        }
-
-        // A10.51, A10.532: it must reach the nearest woods or building Location within its MF this RtPh, not necessarily by a shortest route; with none,
-        // any legal route. Low Crawl moves one Location toward it.
-        var startSeen = SeenBy(state, unit.Side, start).ToArray();
-        var targets = RoutTargets(state, unit, start, RoutReach(state, unit, start, startSeen, 0, limit));
-        if (targets.Length > 0)
-        {
-            if (lowCrawl)
-            {
-                var whole = RoutReach(state, unit, start, startSeen, 0, 4 * limit);
-                var after = RoutReach(state, unit, route[0], startSeen.Concat(SeenBy(state, unit.Side, route[0])), 0, 4 * limit);
-                if (!targets.Any(target => after.TryGetValue(target, out var rest) && whole.TryGetValue(target, out var all) && rest < all))
-                {
-                    return Refused(scope, label, expected, $"play.rout-destination: Low Crawl moves toward the nearest woods or building Location, {string.Join(" or ", targets)} (A10.52)");
-                }
-            }
-            else
-            {
-                var reached = route.FindIndex(targets.Contains);
-                if (reached < 0)
-                {
-                    return Refused(scope, label, expected, $"play.rout-destination: {unit.Id} must rout to the nearest woods or building Location, {string.Join(" or ", targets)} (A10.51)");
-                }
-
-                if (route.Skip(reached + 1).FirstOrDefault(step => !RoutCover(state, step)) is { } beyond)
-                {
-                    return Refused(scope, label, expected, $"play.rout-destination: having reached {route[reached]}, {unit.Id} goes on only into woods or building Locations, not {beyond} (A10.51)");
-                }
-            }
+            return Refused(scope, label, expected, destinationBar);
         }
 
         var package = ScenarioA1FirePackage.Identity.ToString();

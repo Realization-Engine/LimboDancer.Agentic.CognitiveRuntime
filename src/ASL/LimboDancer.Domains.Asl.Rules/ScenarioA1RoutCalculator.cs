@@ -392,4 +392,193 @@ public static class ScenarioA1RoutCalculator
         return (targets, CanRout(reach.Count), targets.Where(target => found.TryGetValue(target, out var route) && Holds(route) && !near.Any(item => AdjacentOrSame(reader, item.Location, target)))
             .ToDictionary(target => target, target => (IReadOnlyList<int>)found[target]));
     }
+
+    /// <summary>A10.5: broken units rout in the RtPh.</summary>
+    public static string? RoutPhaseBar(string? phase) => phase != "rtph" ? "play.rout-phase: broken units rout in the RtPh (A10.5)" : null;
+
+    /// <summary>A10.5: a rout is by a broken unit outside Melee that is not a prisoner.</summary>
+    public static bool RoutUnitAllowed(bool broken, bool melee, bool captured) => broken && !melee && !captured;
+
+    /// <summary>A10.5: why a unit may not rout: it is not a broken unit on the map outside Melee.</summary>
+    public static string RoutUnitText(string unitId) => $"play.rout-unit: '{unitId}' is not a broken unit on the map outside Melee (A10.5)";
+
+    /// <summary>A10.5: a unit routs once a RtPh.</summary>
+    public static string? RoutedBar(string unitId, bool routedThisPhase) => routedThisPhase ? $"play.rout-unit: {unitId} has routed this RtPh (A10.5)" : null;
+
+    /// <summary>A10.53: a pinned unit routs no further.</summary>
+    public static string? RoutPinnedBar(string unitId, bool pinned) => pinned ? $"play.rout-unit: {unitId} is pinned and routs no further this RtPh (A10.53)" : null;
+
+    /// <summary>A10.5: a unit that need not rout and is not under DM may not rout.</summary>
+    public static string? MayRoutBar(string unitId, bool mayRout) => mayRout ? null : $"play.rout-not-allowed: {unitId} need not rout and is not under DM, so it may not rout (A10.5)";
+
+    /// <summary>A10.5: the ATTACKER's broken units rout first, one at a time, then the DEFENDER's; the DEFENDER's routs are read only for an ATTACKER's unit.</summary>
+    public static string? RoutOrderBar(bool attackerUnit, Func<bool> defenderBegan)
+    {
+        ArgumentNullException.ThrowIfNull(defenderBegan);
+        return attackerUnit && defenderBegan() ? "play.rout-order: the DEFENDER's units have begun to rout, so the ATTACKER's may not (A10.5)" : null;
+    }
+
+    /// <summary>A10.5: an ATTACKER's unit that has not routed, is not pinned, must rout, and can, routs before the DEFENDER's; the last two are read lazily.</summary>
+    public static bool AttackerMustRoutFirst(bool ofAttacker, bool routedThisPhase, bool pinned, Func<bool> mustRout, Func<bool> canRout)
+    {
+        ArgumentNullException.ThrowIfNull(mustRout);
+        ArgumentNullException.ThrowIfNull(canRout);
+        return ofAttacker && !routedThisPhase && !pinned && mustRout() && canRout();
+    }
+
+    /// <summary>A10.5: the DEFENDER's unit waits for the ATTACKER's.</summary>
+    public static string AttackerFirstText(string firstId) => $"play.rout-order: the ATTACKER's {firstId} must rout first (A10.5)";
+
+    /// <summary>E1.54 (backlog pass 16, ruling R16.6): at night a broken unit always Low Crawls, and surrenders only in CC.</summary>
+    public static string? NightRoutBar(string unitId, bool night, bool lowCrawl) =>
+        night && !lowCrawl ? $"play.night-rout: at night {unitId} does not rout normally but Low Crawls (lowCrawl) (E1.54)" : null;
+
+    /// <summary>A20.21: a unit surrenders to ADJACENT captors by day, unless Fanatic or under No Quarter.</summary>
+    public static bool SurrenderCandidate(bool night, bool fanatic, bool noQuarter) => !night && !fanatic && !noQuarter;
+
+    /// <summary>A20.21: why a unit ADJACENT to its captors surrenders instead of routing: Disrupted, Encircled, or trapped (read last), or null.</summary>
+    public static string? SurrenderCause(bool disrupted, bool encircled, Func<bool> trappedByInterdiction, IReadOnlyList<string> captors)
+    {
+        ArgumentNullException.ThrowIfNull(trappedByInterdiction);
+        return disrupted ? "is Disrupted" : encircled ? "is Encircled"
+            : trappedByInterdiction() ? $"can get away from {string.Join(" or ", captors)} only by Interdiction or Low Crawl" : null;
+    }
+
+    /// <summary>A20.21: the refusal of a rout by a unit that surrenders instead.</summary>
+    public static string RoutSurrenderText(string unitId, string cause, IReadOnlyList<string> captors) =>
+        $"play.rout-surrender: {unitId} {cause}, so it surrenders to {string.Join(" or ", captors)} as the RtPh ends instead of routing (A20.21)";
+
+    /// <summary>
+    /// A10.4 (ruling R31d.1): the load a laden unit routs with: the one named, among the best loads; or the only choice when none is named; or null.
+    /// </summary>
+    public static IReadOnlyList<string>? ChosenLoad(IReadOnlyList<string>? named, IReadOnlyList<IReadOnlyList<string>> choices, IReadOnlyList<IReadOnlyList<string>> bestLoads)
+    {
+        ArgumentNullException.ThrowIfNull(choices);
+        ArgumentNullException.ThrowIfNull(bestLoads);
+        return named is null ? (choices.Count == 1 ? choices[0] : null)
+            : bestLoads.FirstOrDefault(best => best.Order(StringComparer.Ordinal).SequenceEqual(named, StringComparer.Ordinal));
+    }
+
+    /// <summary>A10.4: the owner chooses among loads of equal PP.</summary>
+    public static string RoutLadenText(string unitId, int total, int ipc, IReadOnlyList<IReadOnlyList<string>> choices, Func<string, int> pp)
+    {
+        ArgumentNullException.ThrowIfNull(choices);
+        ArgumentNullException.ThrowIfNull(pp);
+        var loads = string.Join(", or ", choices.Select(best => best.Count == 0 ? "no SW" : string.Join(" with ", best.Select(id => $"{id} ({pp(id)} PP)"))));
+        return $"play.rout-laden: {unitId} carries {total} PP and routs with at most {ipc} PP; its owner chooses what it keeps: {loads}; it leaves the rest (A10.4)";
+    }
+
+    /// <summary>A10.52: a rout names at least one Location, and Low Crawl exactly one.</summary>
+    public static string? RouteShapeBar(int routeCount, bool lowCrawl) =>
+        routeCount == 0 || (lowCrawl && routeCount != 1) ? "play.rout-route: a rout names at least one Location, and Low Crawl exactly one (A10.52)" : null;
+
+    /// <summary>A10.52: Low Crawl does not leave an enemy-occupied Location by day; the occupants are read lazily.</summary>
+    public static string? LowCrawlOccupiedBar(bool lowCrawl, bool night, Func<bool> enemyOccupied)
+    {
+        ArgumentNullException.ThrowIfNull(enemyOccupied);
+        return lowCrawl && !night && enemyOccupied() ? "play.rout-low-crawl: Low Crawl does not leave an enemy-occupied Location (A10.52)" : null;
+    }
+
+    /// <summary>
+    /// A10.51: the walk of a rout's route: each step ADJACENT and allowed, Low Crawl's limits, the entry cost, an entry that takes all MF as the one step,
+    /// the MF limit; the Known armed enemy units that see each step join the seen set. The costs of the steps walked are given with the first refusal.
+    /// </summary>
+    public static (string? Refusal, IReadOnlyList<int> Costs, int Spent) RoutRouteWalk(IRoutFactReader reader, IReadOnlyList<RoutEnemyFacts> enemies, string unitId, int start,
+        IReadOnlyList<int> route, bool lowCrawl, bool night, int limit, bool encircled, HashSet<string> seenBy)
+    {
+        ArgumentNullException.ThrowIfNull(reader);
+        ArgumentNullException.ThrowIfNull(route);
+        ArgumentNullException.ThrowIfNull(seenBy);
+        var costs = new List<int>();
+        var spent = 0;
+        var from = start;
+        foreach (var next in route)
+        {
+            if (!reader.Neighbors(from).Contains(next))
+            {
+                return ($"play.rout-route: {reader.Name(next)} is not ADJACENT to {reader.Name(from)}", costs, spent);
+            }
+
+            if (RoutStepBar(reader, enemies, from, next, seenBy) is { } bar)
+            {
+                return (bar, costs, spent);
+            }
+
+            if (lowCrawl && !night && reader.Location(next) is { TerrainKey: "marsh" })
+            {
+                return ("play.rout-low-crawl: Low Crawl does not enter marsh (A10.52)", costs, spent);
+            }
+
+            var (halfMf, allMf, why) = RoutEntry(reader, from, next, encircled && spent == 0);
+            if (halfMf is null && !allMf)
+            {
+                return (why!, costs, spent);
+            }
+
+            if (allMf && spent > 0)
+            {
+                return ($"play.rout-route: entering {reader.Name(next)} takes all of {unitId}'s MF, so it is its only step (A4.134)", costs, spent);
+            }
+
+            var cost = lowCrawl || allMf ? limit - spent : halfMf!.Value;
+            spent += cost;
+            if (spent > limit)
+            {
+                return ($"play.rout-mf: the route costs more than {unitId}'s {limit / 2} MF in the RtPh (A10.5)", costs, spent);
+            }
+
+            costs.Add(cost);
+            seenBy.UnionWith(SeenBy(reader, enemies, next));
+            from = next;
+        }
+
+        return (null, costs, spent);
+    }
+
+    /// <summary>
+    /// A10.51, A10.532: a unit ADJACENT to a Known armed enemy unit does not end its rout ADJACENT to that same unit; it must reach the nearest woods or
+    /// building Location within its MF this RtPh, not necessarily by a shortest route, and go on only into cover; with none, any legal route. Low Crawl
+    /// moves one Location toward it (A10.52).
+    /// </summary>
+    public static string? RoutDestinationBar(IRoutFactReader reader, IReadOnlyList<RoutEnemyFacts> enemies, string unitId, int start, IReadOnlyList<int> route, bool lowCrawl,
+        int limit, bool encircled, int? scenarioMonth)
+    {
+        ArgumentNullException.ThrowIfNull(reader);
+        ArgumentNullException.ThrowIfNull(route);
+        var near = ArmedEnemiesNear(reader, enemies, start).ToArray();
+        if (near.FirstOrDefault(item => AdjacentOrSame(reader, item.Location, route[^1])) is { } still)
+        {
+            return $"play.rout-route: {unitId} began ADJACENT to {still.Id} and may not end its rout ADJACENT to it (A10.51)";
+        }
+
+        var startSeen = SeenBy(reader, enemies, start).ToArray();
+        var targets = RoutTargets(reader, enemies, start, RoutReach(reader, enemies, start, startSeen, 0, limit, encircled, scenarioMonth));
+        if (targets.Length > 0)
+        {
+            if (lowCrawl)
+            {
+                var whole = RoutReach(reader, enemies, start, startSeen, 0, 4 * limit, encircled, scenarioMonth);
+                var after = RoutReach(reader, enemies, route[0], startSeen.Concat(SeenBy(reader, enemies, route[0])), 0, 4 * limit, encircled, scenarioMonth);
+                if (!targets.Any(target => after.TryGetValue(target, out var rest) && whole.TryGetValue(target, out var all) && rest < all))
+                {
+                    return $"play.rout-destination: Low Crawl moves toward the nearest woods or building Location, {string.Join(" or ", targets.Select(reader.Name))} (A10.52)";
+                }
+            }
+            else
+            {
+                var reached = route.ToList().FindIndex(targets.Contains);
+                if (reached < 0)
+                {
+                    return $"play.rout-destination: {unitId} must rout to the nearest woods or building Location, {string.Join(" or ", targets.Select(reader.Name))} (A10.51)";
+                }
+
+                if (route.Skip(reached + 1).Where(step => !RoutCover(reader.Location(step))).Select(step => (int?)step).FirstOrDefault() is { } beyond)
+                {
+                    return $"play.rout-destination: having reached {reader.Name(route[reached])}, {unitId} goes on only into woods or building Locations, not {reader.Name(beyond)} (A10.51)";
+                }
+            }
+        }
+
+        return null;
+    }
 }
