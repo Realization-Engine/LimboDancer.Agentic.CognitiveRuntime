@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 35 Design
 
-**Status:** In preparation and being built at once, at the user's word of 2026-10-09: each increment is designed, built on the branch feature/asl-backlog-pass-35, given a small test game in the Studio and Play tests, and committed at the user's word. Increment 1 (the frame) answered: yes to F1 to F6. Increment 2a (the Rout Phase: 35.17, 35.2, 35.4, with ADJACENT taken from pass 40) built and committed (section 7). Increment 2b (Infantry: 35.1, 35.3, 35.8) built and committed (section 8). **Increment 2c (terrain: 35.5, 35.6, 35.7, 35.9) built, awaiting the user's word to commit (section 9).** Still to come: ordnance, vehicles, night and weather, the two that are not rules, and the cross-cutting sections.
+**Status:** In preparation and being built at once, at the user's word of 2026-10-09: each increment is designed, built on the branch feature/asl-backlog-pass-35, given a small test game in the Studio and Play tests, and committed at the user's word. Increment 1 (the frame) answered: yes to F1 to F6. Increment 2a (the Rout Phase: 35.17, 35.2, 35.4, with ADJACENT taken from pass 40) built and committed (section 7). Increment 2b (Infantry: 35.1, 35.3, 35.8) built and committed (section 8). Increments 2c to 2f (terrain, ordnance, vehicles, night and weather) built and committed (sections 9 to 12). **Increment 2g (35.15, 35.16, the vehicle Close Combat panel, the two owed tests) built and committed (section 13).** Still to come: the cross-cutting sections 14 to 18, the documents, and the gate.
 
 **Date:** 2026-10-09
 
@@ -548,3 +548,60 @@ Written and built 2026-10-09. The ESB table is commit f6ecc93; 35.14 is uncommit
 | Found in 35.12 | B9.4: a road crosses a wall or hedge by its gap. | In Mud an unpaved road lost its gap with its rate: a tank paid the wall and a truck was refused. | `EntryCost` remembers the gap before Mud takes the road's rate. | Rules only: no such hexside is known on board 3 |
 
 **Left out, each for a backlog row:** the other Open Ground of E3.65 (gullies, dry streams, plowed fields, shellholes, trenches, unplowed roads in Deep Snow), which wait for their terrain; a Recall exit by an unpaved road in Mud still pays the road rate, not the Open Ground COT; Straying (E1.53) is untouched.
+
+## 13. The two that are not rules: 35.15, 35.16 (increment 2g)
+
+Task 35.15 was written and built in the second session (commit 37124f3, with the backlog's section 55.1 in 9ebde38). Task 35.16 and the three items below it were written and built in the third session, 2026-10-09 (commits d667ced, d9e32ca, 9448658).
+
+### 13.1 Task 35.15: a game with a counter whose rules are not built is refused
+
+No rule is stated or repaired here. The coverage document's two notes say that a fortification, a rubble counter, and a Flame could be placed and were then ignored: such a game played as if the counter were absent, with no message.
+
+| What | As built |
+|---|---|
+| The verdict, in Rules | `ScenarioA1SequenceCalculator.UnbuiltCounter` names the kinds: any fortification (wire, foxhole, trench, minefield, roadblock, pillbox, Fortified Building Location; B23.9, B26 to B30), `asl:rubble` (B24), and `asl:flame` (B25.15). `UnbuiltCounterBar` gives the refusal, worded for a setup ("would place") or for a game in play ("holds"). |
+| The facts, from Play | The planner reads the placements of a setup and the entities the state holds before its dispatch, so every action of such a game is refused, the setup included. |
+| The refusal | `play.unbuilt-counters: this game holds <the kinds> counters, whose rules are not built, so it is not played (B23.9, B24, B25.15, B26 to B30; passes 115 and 120)`; for a setup, "would place" and "it is not set up with them". |
+| Tested by | Rules (`ScenarioA1Pass35RulesTests`); Play (`ConcealedEntryTests`, whose wire case of the forced back is gone, since a game with wire is no longer set up); the Studio game `p35-wire`. |
+
+**A stopgap, kept blunt at the user's word.** It refuses the whole game and not the one action a counter would bear on. Passes 115 and 120 build the counters and take the refusal away kind by kind.
+
+**What it reaches.** The 205 live games and the 14 cards were searched and hold none of these counters. `units/games/a1-village.synthetic.game.json` holds a foxhole and is only read and replayed, never planned against. Section 14 carries this to the gate.
+
+**What a Wire counter lacks** was answered twice from too little (the plan's wording, then B26 alone) before the whole PDF was scanned: 313 mentions of Wire, 56 rules in Chapters A to E, 29 of them silent in the inventory. The backlog's section 55.1 has the result for the nine counters the refusal names.
+
+### 13.2 Task 35.16: the seven tests not written, and the sweep of Play
+
+No rule is stated here either. The backlog's sections 50 and 51 each carried a row of page tests their pass's gate left out, and the week review of 2026-10-04 asked for a standing test of Play for what a side may not read.
+
+| Owed | Test | What stages it |
+|---|---|---|
+| A tag through Deployment and Recombination (pass 31c) | `PlayPagePass35Tests.ATagIsKeptThroughDeploymentAndRecombinationInBothViews` | A squad and a leader Deploy in the RPh on the page; sixteen phase ends through the gate; the two HS Recombine in the next RPh. G1, then G1a and G1b, then G1, in both sides' views |
+| The Melee mark by view (pass 31c) | `AMeleeIsMarkedOnItsHexInEachView` | Two units set up in Melee; one mark, on that hex alone, in each side's view and the adjudicator's |
+| A kept rate of fire (pass 31c) | `AKeptRateOfFireIsSaidToBothSidesAndTheMgIsOfferedAgain` | A MMG's colored dr of 1; the record's sentence in both views, and the MG listed again and free to tick |
+| "Since you last looked" after the view acts (pass 31d) | `SinceYouLastLookedLeavesOutWhatTheViewThenDoesItself` | A Russian move, then the German pass on it: the German list keeps the move and not its own pass, and the Russian list has the pass |
+| A blocked LOS confirmed and its record (pass 31d) | `AShotWithNoLosIsConfirmedByItsOwnButtonAndItsRecordSaysSo` | A hill between firer and target: the consequence, "Confirm the shot with no LOS", the record, and the firer marked as having fired |
+| The Close Combat due list where the package refuses the Ambush (pass 31d) | `TheCloseCombatDueListSaysWhyThePackageDoesNotDecideALocation` | A prisoner with no Guard in the woods a squad advances into: the due line, the Ambush's refusal in the same sentence, and the phase's end saying the Location was not fought |
+| The setup map's tooltips (pass 31d) | `SetupPlansPageTests.TheSetupMapLeadsEachDraftCounterWithItsHexAndItsCounter` | A plan's draft counters on a card with an order of battle: each led by its hex and its counter, "[A1]: 4-6-7 squad.", with no identifier |
+| The sweep of Play | `PlayPagePass35Tests.NoPhaseOfThePageNamesAUnitTheViewDoesNotHold` | A game with a concealed stack, a broken concealed unit, a SW under "?", and a hidden unit on each side, taken through the sixteen phases of a Game Turn |
+
+**What the sweep reads.** At each phase and in each side's view it takes the units the view cannot name (by the view's own names) and what they hold, and searches the page's markup and the map's layers for their identifiers: as the page opens, with every firer ticked from each Location the view may fire from, and on every tab. It also checks that no fire target list offers the hex only a hidden unit is in.
+
+**What the sweep does not read.** It ends phases and takes no other action, so a list that appears only in the middle of a move, a rout, or a Close Combat is not swept. It finds an identifier, not a leak in a player's words (a tag or a strength said of a unit under "?"). Both are for a backlog row.
+
+**The test board.** `WideBoards` gained a level 2 hill in its second row, away from the row the pass 31d tests use. The synthetic catalog's woods and buildings have no height for a LOS (a building in the line gave an unattributed Hindrance, not a block), so elevation is the board's one LOS obstacle. A minimal card never enters setup mode, which is why the tooltip test sits with the setup plans' tests.
+
+**One fault the tests found.** The Recombine review named the squad to be made by its identifier ("Recombine into recombine-d642e503e194-..."), since the squad is not in the game when the review is written and has no name yet. The planner's sentence now says "Recombine into their squad" (`GamePlanner.SupportWeapons.cs`; a text, no rule). The Studio game `p35-recombine` shows the review, and then the record "Recombine into 4-6-7 squad G3 (A1.32)".
+
+### 13.3 Found in the second session's games and repaired in the third
+
+**The vehicle Close Combat panel's shared draft** (found in `p35-rst-cc`; commit d667ced). The panel's Locations share one attack draft (attacker, SMC, vehicle, checked defenders), and nothing cleared it: not a commit, a phase's end, a change of view, or another game. A defender checked in one Location was sent with the next Location's attack, which the review refused as outside until the page was reloaded. The page now proposes an attack with its own Location's units only, each Location's block reads only its own units of the draft, and the draft is cleared with the other panel choices and after a committed attack or pass; the CC Reaction Fire draft had the same gap and is cleared with it. Page only. Tested by `PlayPageVehicleTests.AVehicleCloseCombatAttackNamesOnlyItsOwnLocationsUnits` and the panel's component test; the Studio games `p35-cc-panel` (the two sides' views) and `p35-cc-panel2` (the adjudicator's).
+
+**The terrain increment's two owed tests** (section 9, question 2; commit 9448658): out-of-season grain on a LOS and HE halved into a marsh, three Rules tests. Board 3 has grain, so the grain repair got the two games section 9 names.
+
+### 13.4 Left out, each for a backlog row
+
+- The sweep's two gaps above: lists that appear only in the middle of an action, and a leak in a player's words.
+- The page offers a pass in a second Location holding a vehicle while another Location's Close Combat is open, and the planner refuses it ("one Location at a time", A11.12).
+- A shot with no LOS still draws its IFT DR, and its card reads "Total 0 FP: the no column".
+- No page test stages a draft counter of a game set up by hand: setup mode needs a card with an order of battle.
