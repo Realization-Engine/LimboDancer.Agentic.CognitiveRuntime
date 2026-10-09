@@ -183,6 +183,11 @@ public sealed partial class GamePlanner
                 return (null, "play.ordnance-own-hex: only a Gun fires within its own Location, at Infantry (C5.5)");
             }
 
+            // C5.5: a wreck, SMOKE, or an AFV in the hex adds its Hindrance (Case R); the firer is a Gun and the target Infantry, so every one counts.
+            var ownHindrance = ScenarioA1VehicleSightRules.OwnHexHindrance(
+                SmokeSources(state).Count(place => place.Board == target.Board && place.Hex == target.Hex),
+                state.Units.Any(unit => (unit.Status == InstanceStatus.Active ? IsAfv(unit) : unit.Status == InstanceStatus.Wrecked && !IsBurning(state, unit))
+                    && state.Location(unit.Id)?.Location == target && Standing(state, unit)));
             return ((shot with
             {
                 Range = 0,
@@ -193,7 +198,7 @@ public sealed partial class GamePlanner
                 Hit = shot.Hit! with
                 {
                     SameLevel = true,
-                    Los = new FireLos(false, 0, true, false),
+                    Los = new FireLos(false, ownHindrance, true, false),
                     TargetTerrain = ownTerrain,
                     Targets = [.. shot.Hit.Targets!.Select(item => item with { KnownEnemyInLos = true, Captors = item.Captors ?? [] })],
                 },
@@ -380,7 +385,7 @@ public sealed partial class GamePlanner
             VehicleTarget = aimed ?? shot.VehicleTarget,
             Panzerfaust = shot.Panzerfaust is null ? null : shot.Panzerfaust with
             {
-                FromBuilding = building
+                FromBuilding = ScenarioA1OrdnanceMapRules.IsBackblastLocation(firerTerrain)
             },
         }, null), null);
     }
@@ -405,7 +410,11 @@ public sealed partial class GamePlanner
                     }
                     : movement with
                     {
-                        OpenGround = ScenarioA1OrdnanceMapRules.OpenGround(shot.Hit!.TargetTerrain, shot.Hit.Los?.HindranceDrm)
+                        OpenGround = ScenarioA1OrdnanceMapRules.OpenGround(shot.Hit!.TargetTerrain, shot.Hit.Los?.HindranceDrm),
+                        // C6.6, A4.62 (ruling R10.8): a crew pushing its Gun into the target Location is under Hazardous Movement.
+                        Hazardous = state.Movement is { PushedGun: { } pushed } pushing && pushing.Location == target
+                            ? ScenarioA1FireMapRules.HazardousMovement(state.Phase, true, state.Find(pushed) is EquipmentInstance { Holding: { } manning } ? manning.Holder : null, shot.Hit)
+                            : null,
                     },
             };
         }

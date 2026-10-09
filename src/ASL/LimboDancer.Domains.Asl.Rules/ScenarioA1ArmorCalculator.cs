@@ -165,18 +165,19 @@ internal static class ScenarioA1ArmorCalculator
 
         if (latw)
         {
-            // C13.1, C13.8 (ruling R9.8): Case C3 instead of Case B, for the AFPh and for the Backblast of a shot from a ground-level building.
-            if (shot.Phase == "AFPh")
+            // C13.1, C13.8 (ruling R9.8): Case C3 instead of Case B, for the AFPh and for the Backblast of a shot from a ground-level building
+            // or rubble; C5.34 (p. 172; pass 35, task 35.10): neither for an Opportunity Firer.
+            if (ScenarioA1OrdnanceCalculator.AfphFire(shot))
             {
                 drm.Add(new FireModifier("case-c3:afph", 2, "C13.1"));
             }
 
-            if (shot.Panzerfaust?.FromBuilding == true && gun.LatwType is "pf" or "psk")
+            if (shot.Panzerfaust?.FromBuilding == true && gun.LatwType is "pf" or "psk" && !ScenarioA1OrdnanceCalculator.OpportunityFire(shot))
             {
                 drm.Add(new FireModifier("case-c3:backblast", 2, "C13.8"));
             }
         }
-        else if (shot.Phase == "AFPh")
+        else if (ScenarioA1OrdnanceCalculator.AfphFire(shot))
         {
             drm.Add(new FireModifier("case-b", woods ? 3 : 2, "C5.2"));
         }
@@ -222,8 +223,9 @@ internal static class ScenarioA1ArmorCalculator
             drm.Add(new FireModifier("case-k", 2, "C6.2"));
         }
 
-        // C6.3: no Point Blank Range against a Non-Stopped or Motion target, nor by a Motion firer. Cases L, M, and N are not LATW DRM.
-        if (!latw && range <= 2 && target.NonStopped != true && shot.Vehicle?.InMotion != true)
+        // C6.3: no Point Blank Range against a Non-Stopped or Motion target, nor by a Motion firer. Cases M and N are not LATW DRM; Case L is
+        // the ATR's, which reads no To Hit Table of its own (p. 174; pass 35, task 35.10).
+        if ((!latw || gun.LatwType == "atr") && range <= 2 && target.NonStopped != true && shot.Vehicle?.InMotion != true)
         {
             drm.Add(new FireModifier("case-l", range == 1 ? -2 : -1, "C6.3"));
         }

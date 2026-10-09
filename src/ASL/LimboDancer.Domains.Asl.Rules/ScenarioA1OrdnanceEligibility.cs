@@ -288,6 +288,9 @@ public static class ScenarioA1OrdnanceEligibility
             MpClaimed = vehicleTarget && mpHere is > 0 ? mpHere : null,
         };
 
+    /// <summary>A7.25 (p. 55; pass 35, task 35.10): ordnance uses Opportunity Fire only if fired by Infantry, in the AFPh, from beneath its Bounding Fire counter.</summary>
+    public static bool? OpportunityFirer(string? phase, bool infantry, bool boundingFire) => phase == "afph" && infantry && boundingFire ? true : null;
+
     /// <summary>A firing vehicle's facts (D5.2, D5.34, C7.42, D5.341, D2.4; rulings R7.10, R7.11): a CT AFV is BU unless its crew is exposed.</summary>
     public static OrdnanceVehicleFirer VehicleFirer(bool crewExposed, bool motion, bool stunned, bool shocked, bool unconfirmedKill, bool recalled, bool stunRecovery,
         bool moved) =>
@@ -369,6 +372,7 @@ public static class ScenarioA1OrdnanceEligibility
             {
                 MpInLos = recorded.Movement?.MpInLos,
                 OpenGround = recorded.Movement?.OpenGround,
+                Hazardous = recorded.Movement?.Hazardous,
             },
             SameHex = recorded.SameHex,
             CrewSeen = recorded.CrewSeen,

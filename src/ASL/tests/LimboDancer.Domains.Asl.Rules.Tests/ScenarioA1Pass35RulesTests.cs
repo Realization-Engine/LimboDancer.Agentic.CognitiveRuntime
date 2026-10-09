@@ -144,4 +144,100 @@ public sealed class ScenarioA1Pass35RulesTests
         Assert.Null(Vehicle("fully-tracked", "open-ground", road: true, besideMarsh: true).Entry!.BogDrm);
         Assert.Null(Vehicle("fully-tracked", "open-ground").Entry!.BogDrm);
     }
+
+    private static readonly ScenarioA1OrdnanceReference Ordnance = new ScenarioA1OrdnancePackage().Reference;
+    private const string OrdnanceAt = "bd03:G5:0";
+
+    private static FireAttack OrdnanceHit(string phase, string side, bool infantry) =>
+        new(phase, side, null, null, OrdnanceAt, [], null, null, true, new FireLos(false, 0, true, false), 7, "open-ground",
+            infantry ? [new FireTarget("ru-s", "defender-squad", OrdnanceAt, false, false, false, false, false, false, false) { KnownEnemyInLos = true, Captors = [] }] : [], 2, null);
+
+    /// <summary>The German infantry gun at Infantry, or a LATW at a tank; an Opportunity Firer when asked, with the To Hit DR a miss so no IFT roll is owed.</summary>
+    private static OrdnanceResolution Fire(string phase, bool opportunity, string? latw = null, int range = 5, bool pinned = false, bool backblast = false,
+        OrdnanceMovement? movement = null, int shots = 0, bool kept = false)
+    {
+        var side = phase is "DFPh" or "MPh" ? "non-phasing" : "phasing";
+        var russian = latw == "defender-atr";
+        var shot = new OrdnanceShot(phase, side, russian ? "russian" : "german", new OrdnanceGun("gun", latw ?? "attacker-inf-gun", false, shots, kept, shots > 0),
+            new OrdnanceCrew("firer", latw is null ? "attacker-crew" : russian ? "defender-squad" : "attacker-squad", false, pinned, false, false, false)
+            {
+                OpportunityFire = opportunity ? true : null,
+            }, OrdnanceAt, range, 0, false, true, 0, OrdnanceHit(phase, side, latw is null), new OrdnanceRolls([5, 6], null, null, null, null) { ToKill = [6, 6] })
+        {
+            VehicleTarget = latw is null ? null : new OrdnanceVehicleTarget("target", russian ? "attacker-tank" : "defender-tank", "side", "side", false, false, false, false, true),
+            Ammunition = latw is null ? null : russian ? "ap" : "heat",
+            ScenarioYear = 1944,
+            Panzerfaust = backblast ? new OrdnancePanzerfaust(null, null, true, null) : null,
+            FireKind = movement is null ? null : "first-fire",
+            Movement = movement,
+        };
+        return ScenarioA1OrdnanceCalculator.Resolve(shot, Ordnance);
+    }
+
+    private static decimal? CaseOf(OrdnanceResolution result, string name) =>
+        result.ToHit!.Drm.Where(item => item.Name.StartsWith(name, StringComparison.Ordinal)).Select(item => item.Value).ToArray() is { Length: > 0 } values ? values.Sum() : null;
+
+    [Fact]
+    public void RubbleIsAFirersTerrainAsWoodsAndBuildingsAre()
+    {
+        // C5.11, C5.2, C5.5 (p. 172; task 35.10): one list feeds Case A's and Case E's doubling, Case B's +3, and the fixed CA.
+        Assert.Contains("stone-rubble", ScenarioA1Definitions.WoodsOrBuilding);
+        Assert.Contains("wooden-rubble", ScenarioA1Definitions.WoodsOrBuilding);
+
+        // C5.34, C13.8 (pp. 172, 185): rubble is a Backblast Location as a building is.
+        Assert.True(ScenarioA1OrdnanceMapRules.IsBackblastLocation("stone-rubble"));
+        Assert.True(ScenarioA1OrdnanceMapRules.IsBackblastLocation("wooden-building"));
+        Assert.False(ScenarioA1OrdnanceMapRules.IsBackblastLocation("woods"));
+    }
+
+    [Fact]
+    public void AWreckSmokeOrAnAfvInTheGunsHexHindersAShotWithinIt()
+    {
+        // C5.5 (p. 172; task 35.10) with A24.2, A24.8 and D9.4: one SMOKE source is +2 and +1 for fire within it, two are held to +3 and +1; a
+        // wreck or AFV adds +1. Until pass 35 the shot's Hindrance was 0.
+        Assert.Equal(0, ScenarioA1VehicleSightRules.OwnHexHindrance(0, false));
+        Assert.Equal(1, ScenarioA1VehicleSightRules.OwnHexHindrance(0, true));
+        Assert.Equal(3, ScenarioA1VehicleSightRules.OwnHexHindrance(1, false));
+        Assert.Equal(5, ScenarioA1VehicleSightRules.OwnHexHindrance(2, true));
+    }
+
+    [Fact]
+    public void AnAtrTakesCaseLAndAPanzerschreckDoesNot()
+    {
+        // C6.3 (p. 174; task 35.10): only a LATW that reads its own To Hit Table is denied Point Blank Range.
+        Assert.Equal(-1m, CaseOf(Fire("PFPh", false, "defender-atr", 2), "case-l"));
+        Assert.Equal(-2m, CaseOf(Fire("PFPh", false, "defender-atr", 1), "case-l"));
+        Assert.Null(CaseOf(Fire("PFPh", false, "attacker-psk", 2), "case-l"));
+    }
+
+    [Fact]
+    public void HazardousMovementIsCaseOInPlaceOfFfnamAndFfmo()
+    {
+        // C6.6 (p. 175; task 35.10): -2, never with Case J's subcases. Until pass 35 a crew pushing its Gun gave the firer Cases J3 and J4.
+        var pushing = Fire("MPh", false, movement: new OrdnanceMovement(null, true, true, 1, 0) { Hazardous = true });
+        Assert.Equal((-2m, (decimal?)null), (CaseOf(pushing, "case-o"), CaseOf(pushing, "case-j")));
+        var walking = Fire("MPh", false, movement: new OrdnanceMovement(null, true, true, 1, 0));
+        Assert.Equal(((decimal?)null, -2m), (CaseOf(walking, "case-o"), CaseOf(walking, "case-j")));
+    }
+
+    [Fact]
+    public void AnOpportunityFirersOrdnanceTakesNoAfphPenalty()
+    {
+        // C5.2 (p. 172; task 35.10): Case B, one shot, and no Multiple ROF are for AFPh fire not using Opportunity Fire (A7.25).
+        var plain = Fire("AFPh", false);
+        var held = Fire("AFPh", true);
+        Assert.Equal((2m, 0), (CaseOf(plain, "case-b"), plain.Gun!.RateOfFire));
+        Assert.Null(CaseOf(held, "case-b"));
+        Assert.True(held.Gun!.RateOfFire > 0);
+        Assert.Contains("asl.a1.ordnance.gun-already-fired", Fire("AFPh", false, shots: 1, kept: true).Reasons);
+        Assert.Equal(OrdnanceResolution.Resolved, Fire("AFPh", true, shots: 1, kept: true).Disposition);
+        Assert.Contains("asl.a1.ordnance.gun-already-fired", Fire("AFPh", true, shots: 1).Reasons);
+
+        // C5.34, C13.1, C13.8 (pp. 172, 183, 185): Case C3 for the AFPh and for the Backblast, neither for an Opportunity Firer; a pinned firer
+        // in a building or rubble fires only by Desperation, which is not built.
+        Assert.Equal(4m, CaseOf(Fire("AFPh", false, "attacker-psk", 2, backblast: true), "case-c3"));
+        Assert.Null(CaseOf(Fire("AFPh", true, "attacker-psk", 2, backblast: true), "case-c3"));
+        Assert.Equal(2m, CaseOf(Fire("PFPh", false, "attacker-psk", 2, backblast: true), "case-c3"));
+        Assert.Contains("asl.a1.ordnance.panzerfaust-backblast", Fire("AFPh", true, "attacker-psk", 2, pinned: true, backblast: true).Reasons);
+    }
 }

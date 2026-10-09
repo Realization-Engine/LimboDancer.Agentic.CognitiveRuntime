@@ -61,6 +61,9 @@ public static class ScenarioA1OrdnanceMapRules
     /// <summary>Whether a terrain is a building Location.</summary>
     public static bool IsBuilding(string terrain) => terrain is "wooden-building" or "stone-building";
 
+    /// <summary>C5.34, C13.8 (pp. 172, 185; pass 35, task 35.10): a PF or PSK fired from a building or from rubble has its Backblast to answer for.</summary>
+    public static bool IsBackblastLocation(string terrain) => IsBuilding(terrain) || ScenarioA1Definitions.IsRubbleTerrain(terrain);
+
     /// <summary>C6.14: Infantry moving into Open Ground with no Hindrance.</summary>
     public static bool OpenGround(string? terrain, int? hindranceDrm) => terrain == "open-ground" && hindranceDrm == 0;
 

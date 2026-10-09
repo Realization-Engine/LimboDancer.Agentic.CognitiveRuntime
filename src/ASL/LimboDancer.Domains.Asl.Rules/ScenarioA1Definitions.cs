@@ -71,8 +71,11 @@ public static class ScenarioA1Definitions
     } =
         ["NMC", "1MC", "2MC", "3MC", "4MC", "K/1", "K/2", "K/3", "K/4", "1KIA", "2KIA", "3KIA", "4KIA", "5KIA", "6KIA", "7KIA"];
 
-    /// <summary>The terrain names that count as woods or building for the firer's CA change case (C5.11).</summary>
-    public static IReadOnlyList<string> WoodsOrBuilding { get; } = ["woods", "wooden-building", "stone-building"];
+    /// <summary>
+    /// The terrain names that count as woods, building, or rubble for a firing Gun: Case A and Case E doubled, Case B at +3, and the CA fixed after
+    /// its first shot (C5.11, C5.2, C5.5; p. 172). Rubble joined the list in pass 35 (task 35.10); the fact keeps its recorded name.
+    /// </summary>
+    public static IReadOnlyList<string> WoodsOrBuilding { get; } = ["woods", "wooden-building", "stone-building", "wooden-rubble", "stone-rubble"];
 
     /// <summary>
     /// The terrain of an ordinary wooden or stone building (B23; the reviewed B. Terrain Chart supplement): the reviewed case covers its ground

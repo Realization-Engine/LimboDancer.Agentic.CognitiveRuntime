@@ -64,4 +64,11 @@ public static class ScenarioA1VehicleSightRules
             : crossed() ? drm
             : 0;
     }
+
+    /// <summary>
+    /// C5.5 (p. 172; pass 35, task 35.10): the Hindrance of a Gun's shot within its own hex, Case R: the hex's SMOKE as for fire within it (A24.2,
+    /// A24.8), and +1 for a wreck or AFV there that is neither firer nor target (D9.4).
+    /// </summary>
+    public static int OwnHexHindrance(int smokeSources, bool wreckOrAfv) =>
+        (smokeSources > 0 ? SmokeDrm(smokeSources, true, true, () => false) : 0) + (wreckOrAfv ? 1 : 0);
 }

@@ -413,6 +413,51 @@ public sealed class BacklogPass8Tests : IDisposable
     }
 
     [Fact]
+    public async Task AGunFiringAtACrewPushingItsGunTakesCaseOAndNoCaseJ()
+    {
+        // C6.6, A4.62 (p. 175; pass 35, task 35.10): the German crew pushes its Gun into Open Ground B8; the Russian 45mm in B10 takes Case O, -2,
+        // in place of Cases J3 and J4.
+        await Setup("german", 7, 1942, Crew("de-crew", "bd01:A8:0", "german"), Gun("de-gun", "attacker-inf-gun", "bd01:A8:0", "east", "de-crew", "german"),
+            Crew("ru-crew", "bd01:B10:0", "russian"), Gun("ru-gun", "defender-at-gun", "bd01:B10:0", "north-east", "ru-crew", "russian"));
+        await Advance(2);
+        Committed(await Push("de-crew", "bd01:B8:0", "de-gun", 2, 3));
+        var before = Revision;
+        Committed(await FireAt("ru-gun", "bd01:B8:0", null, null, 6, 6, 6, 6));
+        Assert.True(LastFacts(before).Movement!.Hazardous);
+        var shot = LastShot(before);
+        Assert.Contains(shot.ToHit!.Drm, item => item.Name == "case-o" && item.Value == -2);
+        Assert.DoesNotContain(shot.ToHit.Drm, item => item.Name.StartsWith("case-j", StringComparison.Ordinal));
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    private static readonly string[] OpportunityCrew = ["de-crew"];
+
+    [Fact]
+    public async Task AnOpportunityFirersGunFiresInTheAfphWithoutCaseBAndOnItsKeptRof()
+    {
+        // A7.25, C5.2 (pp. 55, 172; pass 35, task 35.10): the crew is marked for Opportunity Fire in its PFPh, where its Gun does not fire; in the AFPh
+        // the Gun takes no Case B, keeps its Multiple ROF on a colored 1, fires again, and loses it on a colored 5.
+        await Setup("german", 7, 1942, Crew("de-crew", "bd01:B10:0", "german"), Gun("de-gun", "attacker-inf-gun", "bd01:B10:0", "north-east", "de-crew", "german"),
+            Squad("r1", "bd01:B8:0", "russian"));
+        await Advance();
+        Committed(await Do(GameActions.OpportunityFire, NoRoll(), new
+        {
+            unitIds = OpportunityCrew
+        }));
+        Refused(await FireAt("de-gun", "bd01:B8:0", null, null, 5, 6), "play.fire-barred");
+        await Advance(3);
+        Assert.Equal("afph", Current.Phase);
+        var before = Revision;
+        Committed(await FireAt("de-gun", "bd01:B8:0", null, null, 1, 6, 6, 6, 6, 6));
+        Assert.DoesNotContain(LastShot(before).ToHit!.Drm, item => item.Name == "case-b");
+        before = Revision;
+        Committed(await FireAt("de-gun", "bd01:B8:0", null, null, 5, 6));
+        Assert.DoesNotContain(LastShot(before).ToHit!.Drm, item => item.Name == "case-b");
+        Refused(await FireAt("de-gun", "bd01:B8:0", null, null, 5, 6), "gun-already-fired");
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
     public async Task InfantryFireAtAnEmplacedGunsCrewTakesPlusTwoAndAnHeKiaDestroysTheGun()
     {
         // C11.2, C11.5 (R8.3): the Russian crew alone with its Emplaced 45mm in Open Ground B8 takes +2 against the German squad in B10.
@@ -600,6 +645,7 @@ public sealed class BacklogPass8Tests : IDisposable
         var shot = LastShot(before);
         Assert.Contains(shot.ToHit!.Drm, item => item.Name == "case-e" && item.Value == 2);
         Assert.DoesNotContain(shot.ToHit.Drm, item => item.Name == "case-l");
+        Assert.DoesNotContain(shot.ToHit.Drm, item => item.Name == "case-r");
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
     }
 

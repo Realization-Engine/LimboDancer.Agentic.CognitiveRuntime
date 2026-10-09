@@ -190,6 +190,7 @@ public static class LiveOrdnance
                     () => state.GunCrewsFired.Contains(crew.Id, StringComparer.Ordinal), sw, crew.Kind == "asl:squad"))
             {
                 Cx = Is(crew, Conditions.Cx) ? true : null,
+                OpportunityFire = ScenarioA1OrdnanceEligibility.OpportunityFirer(state.Phase, !LiveFire.IsVehicle(crew), Is(crew, Conditions.BoundingFire)),
             },
             target.ToString(), null, null, null, null, acquisition, hit, null)
         {
@@ -393,6 +394,7 @@ public static class LiveOrdnance
                 Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden), false)
             {
                 Cx = Is(unit, Conditions.Cx) ? true : null,
+                OpportunityFire = ScenarioA1OrdnanceEligibility.OpportunityFirer(state.Phase, !LiveFire.IsVehicle(unit), Is(unit, Conditions.BoundingFire)),
             },
             target.ToString(), null, 0, null, null, 0, hit, null)
         {

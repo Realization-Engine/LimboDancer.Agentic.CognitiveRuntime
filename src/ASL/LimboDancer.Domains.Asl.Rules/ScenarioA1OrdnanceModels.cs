@@ -188,6 +188,13 @@ public sealed record OrdnanceMovement(int? MpInLos, bool? NonAssault, bool? Open
     {
         get; init;
     }
+
+    /// <summary>Whether the moving target is engaged in Hazardous Movement (C6.6, A4.62; pass 35, task 35.10): Case O in place of Case J's subcases; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Hazardous
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -234,6 +241,16 @@ public sealed record OrdnanceCrew(string? UnitId, string? DefinitionId, bool? Br
     /// <summary>Whether the crew is CX (A4.51): +1 to the Gun's To Hit DR; null is false.</summary>
     [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
     public bool? Cx
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the firer is Infantry using Opportunity Fire in its AFPh (A7.25, p. 55; pass 35, task 35.10): no Case B and no Case C3, and its Gun
+    /// keeps a Multiple ROF (C5.2, C5.34, C13.1); null is false.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public bool? OpportunityFire
     {
         get; init;
     }

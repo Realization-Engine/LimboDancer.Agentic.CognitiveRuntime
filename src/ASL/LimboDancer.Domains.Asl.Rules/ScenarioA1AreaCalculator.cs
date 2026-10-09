@@ -24,7 +24,7 @@ internal static class ScenarioA1AreaCalculator
 
         // C3.331: Cases C1 to C4, E, G, L, and Q do not apply; a SW has no Case A (no CA) and no Case F.
         var drm = new List<FireModifier>();
-        if (shot.Phase == "AFPh")
+        if (ScenarioA1OrdnanceCalculator.AfphFire(shot))
         {
             drm.Add(new FireModifier("case-b", shot.FirerInWoodsOrBuilding == true ? 3 : 2, "C5.2"));
         }
@@ -53,18 +53,10 @@ internal static class ScenarioA1AreaCalculator
             drm.Add(new FireModifier("overstack-firer", over, "A5.12"));
         }
 
-        // C6.13, C6.14 (ruling R8.1): FFNAM and FFMO as To Hit DRM of Defensive First Fire.
+        // C6.13, C6.14 (ruling R8.1): FFNAM and FFMO as To Hit DRM of Defensive First Fire; C6.6: Case O in their place.
         if (shot.FireKind is not null && shot.Movement is { } movement)
         {
-            if (movement.NonAssault == true)
-            {
-                drm.Add(new FireModifier("case-j3", -1, "C6.13"));
-            }
-
-            if (movement.OpenGround == true)
-            {
-                drm.Add(new FireModifier("case-j4", -1, "C6.14"));
-            }
+            drm.AddRange(ScenarioA1OrdnanceCalculator.MoverDrm(movement));
         }
 
         if (hit.Los!.HindranceDrm is int hindrance && hindrance > 0)
@@ -145,7 +137,7 @@ internal static class ScenarioA1AreaCalculator
             rof--;
         }
 
-        if (pinned || shot.Phase == "AFPh" || reference.Fire.Definitions.GetValueOrDefault(crew.DefinitionId!)?.Kind is "asl:leader" or "asl:hero")
+        if (pinned || ScenarioA1OrdnanceCalculator.AfphFire(shot) || reference.Fire.Definitions.GetValueOrDefault(crew.DefinitionId!)?.Kind is "asl:leader" or "asl:hero")
         {
             rof = 0;
         }

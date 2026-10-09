@@ -346,7 +346,7 @@ public static class ScenarioA1OrdnanceCalculator
             : shot.IntensiveFire == true
             ? shot.Vehicle is null && phase != "AFPh" && gunShot.IntensiveFired != true && gunShot.FinalFire != true && crew.Pinned != true
                 && (gunShot.FiredThisPlayerTurn == true || gunShot.FirstFire == true) && gunShot.RateOfFireKept != true
-            : gunShot.IntensiveFired != true && gunShot.FirstFire != true && (phase == "AFPh"
+            : gunShot.IntensiveFired != true && gunShot.FirstFire != true && (phase == "AFPh" && !OpportunityFire(shot)
                 ? gunShot.FiredThisPlayerTurn != true && gunShot.ShotsThisPhase == 0
                 : gunShot.ShotsThisPhase == 0 ? gunShot.FiredThisPlayerTurn != true : gunShot.RateOfFireKept == true);
         if (!mayFire || crew.FiredInherentFp == true)
@@ -485,6 +485,47 @@ public static class ScenarioA1OrdnanceCalculator
         }
     }
 
+    /// <summary>A7.25 (p. 55; pass 35, task 35.10): whether Infantry fires this ordnance by Opportunity Fire in its AFPh.</summary>
+    public static bool OpportunityFire(OrdnanceShot shot)
+    {
+        ArgumentNullException.ThrowIfNull(shot);
+        return shot.Phase == "AFPh" && shot.Vehicle is null && shot.Crew?.OpportunityFire == true;
+    }
+
+    /// <summary>
+    /// C5.2, C5.34, C13.1 (pp. 172, 183; pass 35, task 35.10): whether the shot is AFPh fire with its penalties (Case B or Case C3, one shot, no
+    /// Multiple ROF): any shot in the AFPh but an Opportunity Firer's.
+    /// </summary>
+    public static bool AfphFire(OrdnanceShot shot)
+    {
+        ArgumentNullException.ThrowIfNull(shot);
+        return shot.Phase == "AFPh" && !OpportunityFire(shot);
+    }
+
+    /// <summary>
+    /// The To Hit DRM of Defensive First Fire for how the target moves: C6.6 (p. 175; pass 35, task 35.10), Case O, -2 against Hazardous Movement,
+    /// never with Case J's subcases; otherwise C6.13 and C6.14 (ruling R8.1), FFNAM and FFMO.
+    /// </summary>
+    public static IEnumerable<FireModifier> MoverDrm(OrdnanceMovement movement)
+    {
+        ArgumentNullException.ThrowIfNull(movement);
+        if (movement.Hazardous == true)
+        {
+            yield return new FireModifier("case-o", -2, "C6.6");
+            yield break;
+        }
+
+        if (movement.NonAssault == true)
+        {
+            yield return new FireModifier("case-j3", -1, "C6.13");
+        }
+
+        if (movement.OpenGround == true)
+        {
+            yield return new FireModifier("case-j4", -1, "C6.14");
+        }
+    }
+
     /// <summary>A PF's range (C13.32): one hex before June 1944, two from June to December 1944, three from 1945.</summary>
     public static int PanzerfaustRange(int? year, int? month) => year >= 1945 ? 3 : year == 1944 && month >= 6 ? 2 : 1;
 
@@ -594,7 +635,7 @@ public static class ScenarioA1OrdnanceCalculator
             drm.Add(new FireModifier("case-a:" + turned.ToString(System.Globalization.CultureInfo.InvariantCulture), caseA, "C5.1"));
         }
 
-        if (shot.Phase == "AFPh")
+        if (AfphFire(shot))
         {
             drm.Add(new FireModifier("case-b", woods ? 3 : 2, "C5.2"));
         }
@@ -625,16 +666,7 @@ public static class ScenarioA1OrdnanceCalculator
         }
         else if (shot.FireKind is not null && shot.Movement is { } movement)
         {
-            // C6.13, C6.14 (ruling R8.1): FFNAM and FFMO as To Hit DRM of Defensive First Fire.
-            if (movement.NonAssault == true)
-            {
-                drm.Add(new FireModifier("case-j3", -1, "C6.13"));
-            }
-
-            if (movement.OpenGround == true)
-            {
-                drm.Add(new FireModifier("case-j4", -1, "C6.14"));
-            }
+            drm.AddRange(MoverDrm(movement));
         }
 
         var concealedTarget = hit.Targets!.All(Concealed);
@@ -761,7 +793,7 @@ public static class ScenarioA1OrdnanceCalculator
             rof--;
         }
 
-        if (shot.Crew.Pinned == true || shot.Phase == "AFPh")
+        if (shot.Crew.Pinned == true || AfphFire(shot))
         {
             rof = 0;
         }
