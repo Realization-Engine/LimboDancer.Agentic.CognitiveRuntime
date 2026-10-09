@@ -382,7 +382,8 @@ public static class LiveFire
             [.. units.Select(unit => new LocationUnitFacts(unit.Id, unit.Status == InstanceStatus.Active, unit.Side, IsVehicle(unit), unit.Definition is not null,
                 Is(unit, Conditions.Captured), false))],
             targetSide is null ? null : state.Side(targetSide)?.Elr, targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal), state.ScenarioMonth,
-            id => Target(state, units.First(unit => unit.Id == id), at!), id => Vehicle(units.First(unit => unit.Id == id), at!)));
+            id => Target(state, units.First(unit => unit.Id == id), at!), id => Vehicle(units.First(unit => unit.Id == id), at!),
+            ok && Is(vehicle!, Conditions.StunRecovery)));
     }
 
     /// <summary>The rolls of a record, rebuilt from its roll ids and the recorded dice, in the calculator's shape.</summary>

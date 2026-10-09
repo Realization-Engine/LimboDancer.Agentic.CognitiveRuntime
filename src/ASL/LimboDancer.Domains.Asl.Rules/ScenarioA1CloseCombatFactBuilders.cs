@@ -104,9 +104,13 @@ public static class ScenarioA1CloseCombatFactBuilders
     /// Recalled), shocked (Shocked or an Unconfirmed Kill), Abandoned, its MA malfunctioned or disabled, its BMG and CMG malfunctioned.
     /// </summary>
     public static VehicleCloseCombatVehicle Vehicle(string id, string definition, string side, bool crewExposed, bool motion, bool moving, bool immobilized, bool bogged, bool stunned,
-        bool recalled, bool shocked, bool unconfirmedKill, bool abandoned, bool malfunctioned, bool disabled, bool bmgMalfunctioned, bool cmgMalfunctioned) =>
+        bool recalled, bool shocked, bool unconfirmedKill, bool abandoned, bool malfunctioned, bool disabled, bool bmgMalfunctioned, bool cmgMalfunctioned,
+        bool stunRecovery = false) =>
         new(id, definition, side, crewExposed, motion || moving, immobilized || bogged, stunned || recalled, shocked || unconfirmedKill, abandoned, malfunctioned || disabled,
-            bmgMalfunctioned, cmgMalfunctioned);
+            bmgMalfunctioned, cmgMalfunctioned)
+        {
+            StunRecovery = stunRecovery ? true : null,
+        };
 
     /// <summary>D7.213: in CC Reaction Fire, the attackers already marked First or Final Fire are named; none otherwise.</summary>
     public static IReadOnlyList<string>? FireMarked(bool reaction, IReadOnlyList<string> marked)

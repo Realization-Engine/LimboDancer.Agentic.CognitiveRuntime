@@ -120,6 +120,18 @@ public sealed record FireDefinition(
         get; init;
     }
 
+    /// <summary>A vehicle's MA Type (D1.3 to D1.322): <c>t</c>, <c>st</c>, <c>rst</c>, <c>1mt</c>, or <c>nt</c>; null when it has none.</summary>
+    public string? MaType
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// D1.321, D1.322 (p. 194; pass 35, task 35.13 c): whether the vehicle's MA and CMG may not fire because its crew is CE: a Restricted Slow
+    /// Traverse or One-Man Turret AFV fires neither while CE.
+    /// </summary>
+    public bool TurretBarredWhileCe(bool? crewExposed) => MaType is "rst" or "1mt" && crewExposed == true;
+
     /// <summary>A vehicle's AAMG FP (D1.8, D1.83).</summary>
     public int? AntiAircraftMg
     {
@@ -648,6 +660,7 @@ public sealed class ScenarioA1FireReference
             Unarmored = Trait("front", "asl:unarmored"),
             OpenTopped = Trait("front", "asl:open-topped"),
             MainArmament = Text("front", "ma-weapon"),
+            MaType = Text("front", "ma-type"),
             AntiAircraftMg = Value("front", "aamg"),
             BowMg = Value("front", "bmg"),
             CoaxialMg = Value("front", "cmg"),

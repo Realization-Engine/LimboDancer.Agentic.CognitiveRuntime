@@ -469,7 +469,10 @@ public static class ScenarioA1FireEligibility
         {
             FireKind = ScenarioA1FireCalculator.OverrunFire,
             Overrun = new FireOverrun(facts.VehicleId, facts.Definition!, facts.At, facts.CrewExposed, immobile,
-                facts.MainMalfunctioned || facts.Disabled, facts.BmgMalfunctioned, facts.CmgMalfunctioned),
+                facts.MainMalfunctioned || facts.Disabled, facts.BmgMalfunctioned, facts.CmgMalfunctioned)
+            {
+                StunRecovery = facts.StunRecovery ? true : null,
+            },
             Vehicles = vehicles.Length > 0 ? [.. vehicles.Select(unit => facts.VehicleOf(unit.Id))] : null,
             TargetSideNoQuarter = facts.TargetSideNoQuarter ? true : null,
         }, null);

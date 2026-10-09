@@ -912,8 +912,9 @@ public static class ScenarioA1FireCalculator
                 weapons.Add((FireOverrunEffect.MainArmament, aamg));
             }
         }
-        else if (definition.Caliber is not null && overrun.MainArmamentMalfunctioned != true)
+        else if (definition.Caliber is not null && overrun.MainArmamentMalfunctioned != true && !definition.TurretBarredWhileCe(overrun.CrewExposed))
         {
+            // D1.321, D1.322 (pass 35, task 35.13 c): a CE RST or 1MT AFV fires neither its MA nor its CMG.
             weapons.Add((FireOverrunEffect.MainArmament, 0));
         }
 
@@ -922,7 +923,7 @@ public static class ScenarioA1FireCalculator
             weapons.Add((FireOverrunEffect.BowMg, bmg));
         }
 
-        if (definition.CoaxialMg is { } cmg && overrun.CmgMalfunctioned != true)
+        if (definition.CoaxialMg is { } cmg && overrun.CmgMalfunctioned != true && !definition.TurretBarredWhileCe(overrun.CrewExposed))
         {
             weapons.Add((FireOverrunEffect.CoaxialMg, cmg));
         }
@@ -1981,6 +1982,12 @@ public static class ScenarioA1FireCalculator
             if (attack.VehicleFire is { StunRecovery: true } recovering)
             {
                 drm.Add(new FireModifier("stun-recovery:" + recovering.VehicleId, 1m, "D5.34"));
+            }
+
+            // D5.34 (p. 203; pass 35, task 35.13 d): and to its OVR DR.
+            if (attack.Overrun is { StunRecovery: true } overrunning)
+            {
+                drm.Add(new FireModifier("stun-recovery:" + overrunning.VehicleId, 1m, "D5.34"));
             }
 
             // A7.531: the leadership of the directing leader, the worst of them for a group spanning Locations; A17.3: one

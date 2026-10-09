@@ -184,7 +184,8 @@ public sealed record OverrunFacts(
     bool TargetSideNoQuarter,
     int? ScenarioMonth,
     Func<string, FireTarget> TargetOf,
-    Func<string, FireVehicle> VehicleOf);
+    Func<string, FireVehicle> VehicleOf,
+    bool StunRecovery = false);
 
 /// <summary>A DC's attack as the state has it (A23; rulings R15.2, R15.3): the charge, its placement, its user, the mode, the units in the target Location, the sides, and the reads of a target and a vehicle.</summary>
 public sealed record DemolitionChargeFacts(

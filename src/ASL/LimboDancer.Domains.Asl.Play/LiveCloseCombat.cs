@@ -201,7 +201,8 @@ public static class LiveCloseCombat
             ScenarioA1CloseCombatFactBuilders.Vehicle(vehicle.Id, definition.Definition, vehicle.Side, LiveFire.CrewExposed(vehicle), Is(vehicle, Conditions.Motion), moving,
                 Is(vehicle, Conditions.Immobilized), Is(vehicle, Conditions.Bogged), Is(vehicle, Conditions.Stunned), Is(vehicle, Conditions.Recalled),
                 Is(vehicle, Conditions.Shocked), Is(vehicle, Conditions.UnconfirmedKill), Is(vehicle, Conditions.Abandoned),
-                Is(vehicle, Conditions.Malfunctioned), Is(vehicle, Conditions.Disabled), Is(vehicle, Conditions.BmgMalfunctioned), Is(vehicle, Conditions.CmgMalfunctioned)),
+                Is(vehicle, Conditions.Malfunctioned), Is(vehicle, Conditions.Disabled), Is(vehicle, Conditions.BmgMalfunctioned), Is(vehicle, Conditions.CmgMalfunctioned),
+                Is(vehicle, Conditions.StunRecovery)),
             [.. units.Where(unit => state.Unit(unit.UnitId!) is { } found && !LiveFire.IsVehicle(found))], attackers, defenders, byVehicle, reaction,
             ScenarioA1CloseCombatFactBuilders.FireMarked(reaction, [.. attackers.Where(id => state.Unit(id) is { } unit && (Is(unit, Conditions.FirstFire) || Is(unit, Conditions.FinalFire)))]));
         return (facts, null);
