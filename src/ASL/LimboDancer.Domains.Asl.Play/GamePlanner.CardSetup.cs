@@ -98,9 +98,12 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>Why a Location is refused as outside the card's playable area (A2.1; ruling R20.6); null when it is inside, or the game has no card.</summary>
-    internal string? PlayableBar(GameState state, BoardLocation at) =>
-        ScenarioA1SetupCalculator.PlayableBar(state.Scenario is not null && CardOf(state) is { } card && !ScenarioCards.Playable(card, at), at.ToString(),
-            state.Scenario is not null ? CardOf(state)?.PlayableArea?.Text : null);
+    internal string? PlayableBar(GameState state, BoardLocation at)
+    {
+        // The card is read once a call, as before (the review of pass 32.j: the library checks a user card's file on every read).
+        var card = state.Scenario is not null ? CardOf(state) : null;
+        return ScenarioA1SetupCalculator.PlayableBar(card is not null && !ScenarioCards.Playable(card, at), at.ToString(), card?.PlayableArea?.Text);
+    }
 
     /// <summary>
     /// The Game Turn, edge, and entry area a unit waiting off board enters by (rulings R20.5, R25.4): the entry area its setup named, else its OB group's
