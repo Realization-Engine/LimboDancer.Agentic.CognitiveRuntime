@@ -290,7 +290,7 @@ public sealed partial class GamePlanner
         events.Add(Event(scope, attemptId, events.Count + 1, expected, "rph-action-taken", new RallyPhaseActionTaken([produced], "recombined"), package, null));
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events,
-            [$"play.recombine: {one.Id} and {two.Id} Recombine into {produced}{(leader is null ? "" : $", directed by {leader.Id}")} (A1.32)"]);
+            [$"play.recombine: {one.Id} and {two.Id} Recombine into their squad{(leader is null ? "" : $", directed by {leader.Id}")} (A1.32)"]);
     }
 
     /// <summary>
