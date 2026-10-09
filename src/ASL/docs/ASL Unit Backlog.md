@@ -445,11 +445,11 @@ Pass 22 (2026-09-30) built the card editor, the user's cards under `src/ASL/boar
 
 ## 33. Added by the Card Play and Map Studio Redesign Plan
 
-The plan's legacy scenario migration (2026-09-30, Part VI) ports the portable cards of *The General* display first and makes them playable once the rule passes 33, 34, and 37 to 44 have built what they need. On 2026-10-05 the user separated the two and deferred the card track: the rule passes build rules only (plan section 19, decision 5). The user ruled the same day that Chapters F and G are not built there.
+The plan's legacy scenario migration (2026-09-30, Part VI) ports the portable cards of *The General* display first and makes them playable once the rule passes (35 to 185 since the renumbering of 2026-10-09) have built what they need. On 2026-10-05 the user separated the two and deferred the card track: the rule passes build rules only (plan section 19, decision 5). The user ruled the same day that Chapters F and G are not built there.
 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
-| Chapter F (the desert terrain and rules) and Chapter G (the Pacific terrain and the Japanese national rules), for the legacy cards that need them | User ruling, 2026-09-30 | Chapter F; Chapter G, G1 | Armored combat, fortifications, and terrain (plan passes 33, 34, and 37 to 42) | Their six legacy cards (G9, G16, G19, G20, G24, and G45) are ported display only and cannot be played. |
+| Chapter F (the desert terrain and rules) and Chapter G (the Pacific terrain and the Japanese national rules), for the legacy cards that need them | User ruling, 2026-09-30 | Chapter F; Chapter G, G1 | Armored combat, fortifications, and terrain (plan passes 50, 55, 115, 120, 125, and 140) | Their six legacy cards (G9, G16, G19, G20, G24, and G45) are ported display only and cannot be played. |
 | Small SVG previews in the Board library, loaded when visible and cached by board identity and options | Review of the plan, 2026-09-30 | | The Board library's search and filters (plan pass 22c) | A compact list without previews. |
 
 ## 34. Added by the redesign pass 22b
@@ -490,7 +490,7 @@ Pass 23 (2026-09-30) built a side's view at setup and in play, the hand-over scr
 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
-| Fortifications set up hidden, and hidden vehicles (an Emplaced Gun's HIP and its reveal by fire were built in pass 26) | R23.5; referee, pass 23; R26.5 | A12.33, A12.34, p. 80 | Fortifications (plan pass 37); hidden vehicles | HIP is refused for vehicles. |
+| Fortifications set up hidden, and hidden vehicles (an Emplaced Gun's HIP and its reveal by fire were built in pass 26) | R23.5; referee, pass 23; R26.5 | A12.33, A12.34, p. 80 | Fortifications (plan pass 115); hidden vehicles | HIP is refused for vehicles. |
 | A HIP unit giving up its hidden status to stop an enemy unit in its LOS from gaining "?", at setup or in play | Referee, pass 23 | A12.32, p. 80 | A setup event for it | Placing beneath "?" is from the start of play only; hidden units do not count against a non-OB "?". |
 | A "?" placed on a Good Order stack before it enters the map | R23.6 | A12.12, p. 77 | Entering units concealed (R20.5) | Entering units are never "?". |
 | A CC attack against a "?" declared from a side's view | Table player, pass 23 | A11.1, A12.13 | Attacks on a sealed presence | A side's CC panel lists only units it may see; the adjudicator declares an attack on concealed units. |
@@ -506,23 +506,23 @@ The plan was approved on 2026-09-30. A survey of this backlog the same day found
 
 | Backlog rows | Planned in |
 |---|---|
-| Control of Locations, start Control edge cases, Gun and vehicle VP, the Control cache (§31) | Pass 24, built 2026-09-30 (Control forfeited to a Kindled Fire: pass 44) |
+| Control of Locations, start Control edge cases, Gun and vehicle VP, the Control cache (§31) | Pass 24, built 2026-09-30 (Control forfeited to a Kindled Fire: pass 185) |
 | Entry by advance, delayed and blocked entry, offboard Deployment, the full movement step at entry, several entry areas (§30); leaving the map in the APh, by Bypass, and at the road rate, a Guard leaving with prisoners, captured units exited (§31, §24); the SMOKE panel's eligibility (§19); clearer answers after DFF eliminates every mover, the end-move refusal after a DC placer was Replaced (§25); the raw OB group and Deployment messages (§30); the exit refusal naming the edge hex (§31) | Pass 25, built 2026-10-01 |
 | Vehicles and Guns entering, Gun movement and limbering, hook-up and en portee (§12, §18, §30); a crew manning a Gun stacking (§29); a crew leaving with its Gun (§31); a Covered Arc across boards or on a reversed board, concealed crews and Guns (§12, §22); the Motion "wished to enter next" field (§21) | Pass 26, built 2026-10-01 (limbering and en portee: section 40) |
 | The berserk Dummies, route, and OVR rows (§1, §20, §21); the Axis Minor Heat of Battle row, the Japanese part waiting with Chapter G (§11); a berserk leader's companions' TCs (§11); Spraying Fire after a choice (§22); a DC's owner's options (§25) | Pass 27, built 2026-10-01 (the Japanese part, and CC with a Gun crew: sections 11, 12, 41) |
 | Map picking, forms, edit-time checks, plain messages, renaming, delete confirmation and warning, the Guards SSR 3 note (§32); a test of a card changed or gone (§29) | Pass 28 |
 | The Deploy control splitting several SW, records of DM, Failure to Rout, and SW transfers (§23) | Pass 28b |
-| The full DYO purchase (§27); Gun BPV in the catalog (§12); the DYO Weather and NVR tables (§26) | Passes 35 and 36 (were 29 and 30, then 31 and 32 until 2026-10-04, then 32 and 33 until 2026-10-05, then 34 and 35 until later that day), deferred 2026-10-02 in favor of UI and playability |
+| The full DYO purchase (§27); Gun BPV in the catalog (§12); the DYO Weather and NVR tables (§26) | Passes 190 and 195 (were 29 and 30, then 31 and 32 until 2026-10-04, then 32 and 33 until 2026-10-05, then 34 and 35 until later that day, then 35 and 36 until 2026-10-09), deferred 2026-10-02 in favor of UI and playability |
 | More cards (§27); new nationalities' leaders' broken Morale Level from their counter sheets (§25); a user card shadowed by a built-in card of the same name (§32); the American national rules (§15, batch D4) | Display batches D1 to D18 |
-| Vehicle Target Type, AP, HEAT, and To Kill (§12); closed-topped AFVs, a Gun at a Location with a vehicle (§14); the MA in Bounding First Fire and its related rows (§17); crews Bailing Out (§20) and their inherent fire (§12, §18); FT, DC, and MOL against AFVs (§25); one fire marker for a tank's weapons, BMG and CMG (§1, §14, §17); Gun Duels (§18) | Pass 33 (was 34 until 2026-10-05, then 32 until later that day) |
-| Recalled AFVs' fire and unloading, Shock and UK (§1, §15); ordnance SMOKE and WP (§6, §19); Passengers' fire and rout, Motion attempts, Riders (§14, §21, §23); Recall to a Friendly Board Edge of more than one edge (§15); fire at another level for ordnance and vehicles (§12, §18 to §20); Armor Leaders (§21) | Pass 34 (was 35 until 2026-10-05, then 33 until later that day) |
-| The Scenario Defender at night, Straying, Cloaking, and Lax and Stealthy units at night; Fog, Winter Camouflage, Drifts, and Ice (§26) | Pass 34b (was 35b until 2026-10-05, then 33b until later that day) |
-| Rally and DM in pillboxes and trenches (§2, §23); tasks that place TI (§24); foxholes for the Balance (§27); Manhandling, Entrenching, and foxholes in Mud, snow, and Extreme Winter (§26) | Pass 37 |
-| Wire for vehicles (§21); the French and Norwegian national rules (§15) | Pass 38 |
-| Water, bridges, and fording (§20); the terrain the movement rules refuse (§20, §29); marsh and brush in snow, frozen streams, minefields in Deep Snow (§26); paved road names (§30) | Pass 41 |
-| Hedges and bocage (§20); an AFV entering a building (§21); the Factory SSR and Sewer Movement (§27); the Italian, Finnish, Iraqi, and New Zealand national rules and ANZAC Stealth (§15, §27) | Pass 42 |
-| Partisans, the Dutch and Polish national rules (§15) | Pass 43 |
-| Burning wrecks' spread (§16); Blazes in rout (§23); Flame, Blaze, and Kindling from FT, DC, and MOL (§25); wind, EC and wind as an SSR (§26, §27) | Pass 44 |
+| Vehicle Target Type, AP, HEAT, and To Kill (§12); closed-topped AFVs, a Gun at a Location with a vehicle (§14); the MA in Bounding First Fire and its related rows (§17); crews Bailing Out (§20) and their inherent fire (§12, §18); FT, DC, and MOL against AFVs (§25); one fire marker for a tank's weapons, BMG and CMG (§1, §14, §17); Gun Duels (§18) | Pass 50 (was 34 until 2026-10-05, then 32 until later that day, then 33 until 2026-10-09) |
+| Recalled AFVs' fire and unloading, Shock and UK (§1, §15); ordnance SMOKE and WP (§6, §19); Passengers' fire and rout, Motion attempts, Riders (§14, §21, §23); Recall to a Friendly Board Edge of more than one edge (§15); fire at another level for ordnance and vehicles (§12, §18 to §20); Armor Leaders (§21) | Pass 55 (was 35 until 2026-10-05, then 33 until later that day, then 34 until 2026-10-09) |
+| The Scenario Defender at night, Straying, Cloaking, and Lax and Stealthy units at night; Fog, Winter Camouflage, Drifts, and Ice (§26) | Pass 90 (was 35b until 2026-10-05, then 33b until later that day, then 34b until 2026-10-09) |
+| Rally and DM in pillboxes and trenches (§2, §23); tasks that place TI (§24); foxholes for the Balance (§27); Manhandling, Entrenching, and foxholes in Mud, snow, and Extreme Winter (§26) | Pass 115 |
+| Wire for vehicles (§21); the French and Norwegian national rules (§15) | Pass 120 |
+| Water, bridges, and fording (§20); the terrain the movement rules refuse (§20, §29); marsh and brush in snow, frozen streams, minefields in Deep Snow (§26); paved road names (§30) | Pass 125 |
+| Hedges and bocage (§20); an AFV entering a building (§21); the Factory SSR and Sewer Movement (§27); the Italian, Finnish, Iraqi, and New Zealand national rules and ANZAC Stealth (§15, §27) | Pass 140 |
+| Partisans, the Dutch and Polish national rules (§15) | Pass 165 |
+| Burning wrecks' spread (§16); Blazes in rout (§23); Flame, Blaze, and Kindling from FT, DC, and MOL (§25); wind, EC and wind as an SSR (§26, §27) | Pass 185 |
 
 ## 38. Added by the game pass 24
 
@@ -548,7 +548,7 @@ Pass 25 (2026-10-01) built entry by advance with the APh holding due units, name
 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
-| Rubble or Blaze cutting an entry hex off from the rest of the board (since pass 26 a vehicle's entry is refused into a hex it may not enter, rubble included) | R25.2; R26.1 | A2.5 | Terrain Blaze (pass 44); a board's connectivity | Infantry enter rubble at its cost; the game has no terrain Blaze. |
+| Rubble or Blaze cutting an entry hex off from the rest of the board (since pass 26 a vehicle's entry is refused into a hex it may not enter, rubble included) | R25.2; R26.1 | A2.5 | Terrain Blaze (pass 185); a board's connectivity | Infantry enter rubble at its cost; the game has no terrain Blaze. |
 | A pond on the edge stopping the delayed-entry radius, since VASL names rivers and ponds both Water | R25.2; referee, pass 25 | A2.5, B21 | Terrain that tells a river from a pond | Any Water, River, or Canal hex on the edge stops the radius. |
 | The delay radius counted from the entry turn when entry failed for another reason (a forced back, a unit unable to advance) | R25.2 | A2.5, A12.15 | A record of why an entry failed | The radius grows four hexes per Game Turn since the entry turn. |
 | The offboard setup boards of A2.51: off-board stacks, the leader "stacked with" an off-board squad, movement off board to a hex not adjacent | R25.4 | A2.51, A2.52 | Off-board hexes | Any leader waiting along the same edge serves; a stack enters any open hex of its edge. |
@@ -569,9 +569,9 @@ Pass 26 (2026-10-01) built vehicles entering from off board in Motion with their
 | En portee | R26.1 (the user, 2026-10-01) | C10.5 to C10.54, p. 181 | Ordnance Notes in a registered source | Not built. |
 | HIP of an Emplaced Gun out of every enemy ground unit's LOS outside Concealment Terrain, placed beneath "?" when one gains LOS | R26.5 (the user, 2026-10-01) | A12.34, p. 80 | A LOS check after every enemy step and at each phase | Refused at setup outside Concealment Terrain. |
 | A crew possessing a non-inherent SW barred from A12.34 HIP; the "considered not to have fired" (C8.9), RCL, zero-range, IFE, and FB/DB exceptions to the reveal | Referee, pass 26 | A12.34, C8.9 | A SW in the setup counters; those Guns | Not checked; the catalog's Guns reach none of the fire exceptions. |
-| Fire at a vehicle reaching its Passengers: an unarmored or open-topped vehicle's Passengers, CE halftrack Passengers, Collateral Attacks | R26.2; table player, pass 26 | D6.6, D6.61, p. 205 | Plan pass 33 | Passengers take no fire; only their vehicle does. |
-| Crew Survival for Passengers of a destroyed vehicle | R26.2 | D5.6, p. 204 | Plan pass 33 | They are eliminated with it, for the enemy's CVP. |
-| Passengers' fire, rout beneath a Stopped vehicle, OVR, and CC; Riders | R26.2 | D6.1, D6.2, p. 204 | Plan pass 34 | An action naming a Passenger is refused until it unloads; a broken one stays aboard free of rout. |
+| Fire at a vehicle reaching its Passengers: an unarmored or open-topped vehicle's Passengers, CE halftrack Passengers, Collateral Attacks | R26.2; table player, pass 26 | D6.6, D6.61, p. 205 | Plan passes 60 (Collateral Attacks) and 65 | Passengers take no fire; only their vehicle does. |
+| Crew Survival for Passengers of a destroyed vehicle | R26.2 | D5.6, p. 204 | Plan pass 65 | They are eliminated with it, for the enemy's CVP. |
+| Passengers' fire, rout beneath a Stopped vehicle, OVR, and CC; Riders | R26.2 | D6.1, D6.2, p. 204 | Plan pass 65 | An action naming a Passenger is refused until it unloads; a broken one stays aboard free of rout. |
 | Boarding as a step of the Infantry move, after moving (the D6.4 EX), and a second stack boarding the same vehicle in one MPh | Referee and table player, pass 26 | D6.4, p. 205 | Boarding in the move planner | Only units that have not moved this MPh board, as the vehicle's first expenditure. |
 | Unloading in the MPh an immobilization ends the vehicle's move | Referee, pass 26 | D6.5, p. 205 | Unloading after the move ends | The Passengers unload in its next MPh. |
 | Unloaded units moving only "in the interim" of their vehicle's move; unloading into an enemy-occupied hex with a CC counter; FFNAM and FFMO against (un)loading units and an (un)load that fails under fire; a leader's four-MF limit and IPC aid when unloading | Referee, pass 26 | D6.5, D5.43, A4.42, pp. 204 to 205 | Interleaved movement; fire during (un)loading | Other units may move between; the (un)load always succeeds; a leader unloads against its own allotment. |
@@ -588,10 +588,10 @@ Pass 27 (2026-10-01) built the Axis Minor counters of catalog 1.13.0 with their 
 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
-| Axis Minor 1PAATC, no escape, red TH#, and PF | R27.1 (the user, 2026-10-01) | A25.81 to A25.83, A25.85, pp. 97 to 98 | Plan passes 38 to 43 (A25) | A non-elite Axis Minor takes the normal PAATC; they may escape; ordnance uses black TH#; no PF. |
+| Axis Minor 1PAATC, no escape, red TH#, and PF | R27.1 (the user, 2026-10-01) | A25.81 to A25.83, A25.85, pp. 97 to 98 | Plan passes 80 and 180 (A25) | A non-elite Axis Minor takes the normal PAATC; they may escape; ordnance uses black TH#; no PF. |
 | The broken Morale Level one higher for Hungarians against Romanians, and for Axis Minors fighting within their own borders | R27.1 | A25.8, p. 97 | A broken Morale modifier by side or SSR | The printed broken Morale Level. |
 | A card holding two Axis Minor sides (Hungarians against Romanians), and a side id apart from its nationality on a card | R27.1; table player, pass 27 | A25.8 | The card format (plan pass 28) | Hungarians against Romanians start only from a setup naming both sides; a card side names one nation. |
-| The ATMM of Romanian non-crew MMC and the Hungarians' two-tone counters | R27.1 | A25.86, A25.87 | Plan passes 38 to 43 | Not built. |
+| The ATMM of Romanian non-crew MMC and the Hungarians' two-tone counters | R27.1 | A25.86, A25.87 | Plan pass 180 | Not built. |
 | A berserk charge into a Gun crew's Location | R27.2 | A15.43, C11 | Section 12 (CC with a crew) | The charge is undecided and ends in place (R30.5). |
 | A berserk charge into a vehicle's Location that also holds enemy Infantry | Table player, pass 27 | A15.43, A11.31 | CC between Infantry beside a vehicle (R11.16) | The charge is undecided and ends in place (R30.5). |
 | Destroying a vehicle in CC ending berserk | Table player, pass 27 | A15.45, p. 84 | A berserk end in vehicle CC | The unit stays berserk and charges on. |
@@ -813,7 +813,7 @@ The block of 2026-10-08 (the design's section 23) moved S9 and S2 into Rules. Wh
 
 | Item | Deferred by | Rules | Depends on | What happens now |
 |---|---|---|---|---|
-| `GameProjector.CheckInvariants`: the model invariants checked after every event (a contained object's container is an active fortification or vehicle and not a cycle, UNIT-STATE-011; held equipment's holder is an active unit of the right kind in the same Location, UNIT-STATE-012; a prisoner's custodian is an active enemy unit in its Location, UNIT-STATE-014, citing A20.5) | Pass 32.i, 2026-10-08 | A20.5 for the custodian's Location; the rest are the model's own consistency | Pass 45 or pass 48 deciding whether these are rules or plumbing; a verdict record over the object graph's facts if they move | They run in Units as diagnostics (errors, not refusals) over the whole object graph; A20.5's Guard rules themselves are in `ScenarioA1PrisonerCalculator.cs` and `ScenarioA1CloseCombatProjection.cs` since 32.g. The Appendix counted the member among the projector's rows; the design's eighteen could not be reconstructed, and this one was kept as the invariant it is. |
+| `GameProjector.CheckInvariants`: the model invariants checked after every event (a contained object's container is an active fortification or vehicle and not a cycle, UNIT-STATE-011; held equipment's holder is an active unit of the right kind in the same Location, UNIT-STATE-012; a prisoner's custodian is an active enemy unit in its Location, UNIT-STATE-014, citing A20.5) | Pass 32.i, 2026-10-08 | A20.5 for the custodian's Location; the rest are the model's own consistency | Pass 35 or pass 70 deciding whether these are rules or plumbing; a verdict record over the object graph's facts if they move | They run in Units as diagnostics (errors, not refusals) over the whole object graph; A20.5's Guard rules themselves are in `ScenarioA1PrisonerCalculator.cs` and `ScenarioA1CloseCombatProjection.cs` since 32.g. The Appendix counted the member among the projector's rows; the design's eighteen could not be reconstructed, and this one was kept as the invariant it is. |
 
 ## 54. Added by pass 32.j
 

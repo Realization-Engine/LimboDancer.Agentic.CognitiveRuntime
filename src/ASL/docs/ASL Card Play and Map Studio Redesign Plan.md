@@ -1,10 +1,10 @@
 # ASL Card Play and Map Studio Redesign Plan
 
-**Status:** Approved by the user on 2026-09-30. It merges and replaces two documents: the ASL Unit Card Play, Deferred Rules, and DYO Plan (approved 2026-09-30, passes 23 to 30) and the ASL Map Studio UI Redesign 01 Design (branch `UI-Redesign-01`, commit `800416a`); both were deleted after their content was carried over here, and git history keeps them. Passes 22b, 22c, and 22d are built (2026-09-30; see their designs, [22b](<Passes/ASL Unit Backlog Pass 22b Design.md>), [22c](<Passes/ASL Unit Backlog Pass 22c Design.md>), and [22d](<Passes/ASL Unit Backlog Pass 22d Design.md>), and reviews, [22b](<Passes/Scenario A1 Backlog Pass 22b Review 2026-09-30.md>), [22c](<Passes/Scenario A1 Backlog Pass 22c Review 2026-09-30.md>), and [22d](<Passes/Scenario A1 Backlog Pass 22d Review 2026-09-30.md>)); pass 23, the first game pass, is built too (2026-09-30; its [design](<Passes/ASL Unit Backlog Pass 23 Design.md>) and [review](<Passes/Scenario A1 Backlog Pass 23 Review 2026-09-30.md>)), pass 24 (2026-09-30; its [design](<Passes/ASL Unit Backlog Pass 24 Design.md>) and [review](<Passes/Scenario A1 Backlog Pass 24 Review 2026-09-30.md>)), pass 25 (2026-10-01; its [design](<Passes/ASL Unit Backlog Pass 25 Design.md>) and [review](<Passes/Scenario A1 Backlog Pass 25 Review 2026-10-01.md>)), pass 26 (2026-10-01; its [design](<Passes/ASL Unit Backlog Pass 26 Design.md>) and [review](<Passes/Scenario A1 Backlog Pass 26 Review 2026-10-01.md>)), pass 27 (2026-10-01; its [design](<Passes/ASL Unit Backlog Pass 27 Design.md>) and [review](<Passes/Scenario A1 Backlog Pass 27 Review 2026-10-01.md>)), pass 28 (2026-10-01; its [design](<Passes/ASL Unit Backlog Pass 28 Design.md>) and [review](<Passes/Scenario A1 Backlog Pass 28 Review 2026-10-01.md>)), pass 28b, a Studio pass (2026-10-02; its [design](<Passes/ASL Unit Backlog Pass 28b Design.md>) and [review](<Passes/Scenario A1 Backlog Pass 28b Review 2026-10-02.md>)), and pass 28c, the last Studio pass (2026-10-02; its [design](<Passes/ASL Unit Backlog Pass 28c Design.md>) and [review](<Passes/Scenario A1 Backlog Pass 28c Review 2026-10-02.md>)). The passes run one at a time on the user's go-ahead. Passes 35 and 36, the DYO purchase, are deferred (2026-10-02, the user's word) in favor of UI and playability; they were passes 29 and 30, and every planned pass after them moved up by one when the user added pass 29, the shared board workspace, on 2026-10-02, and again when the user added pass 30, prepared setups, on 2026-10-03, and a third time when the user added pass 31, the play-test UI, on 2026-10-04 (section 4 has the old and the new numbers). Pass 29 is built (2026-10-03; its [design](<Passes/ASL Unit Backlog Pass 29 Design.md>) and [review](<Passes/Scenario A1 Backlog Pass 29 Review 2026-10-03.md>)); pass 30 follows it. On 2026-10-05 the user swapped the numbers of the DYO and the armored combat passes (section 4), separated the rules from the legacy cards, and deferred the card track: the rule passes 33, 34, 34b, and 37 to 44 build rules only, and the display batches D1 to D18, with the making playable of each card, wait for the user's word (section 19, decision 5).
+**Status:** Approved by the user on 2026-09-30. It merges and replaces two documents: the ASL Unit Card Play, Deferred Rules, and DYO Plan (approved 2026-09-30, passes 23 to 30) and the ASL Map Studio UI Redesign 01 Design (branch `UI-Redesign-01`, commit `800416a`); both were deleted after their content was carried over here, and git history keeps them. Passes 22b, 22c, and 22d are built (2026-09-30; see their designs, [22b](<Passes/ASL Unit Backlog Pass 22b Design.md>), [22c](<Passes/ASL Unit Backlog Pass 22c Design.md>), and [22d](<Passes/ASL Unit Backlog Pass 22d Design.md>), and reviews, [22b](<Passes/Scenario A1 Backlog Pass 22b Review 2026-09-30.md>), [22c](<Passes/Scenario A1 Backlog Pass 22c Review 2026-09-30.md>), and [22d](<Passes/Scenario A1 Backlog Pass 22d Review 2026-09-30.md>)); pass 23, the first game pass, is built too (2026-09-30; its [design](<Passes/ASL Unit Backlog Pass 23 Design.md>) and [review](<Passes/Scenario A1 Backlog Pass 23 Review 2026-09-30.md>)), pass 24 (2026-09-30; its [design](<Passes/ASL Unit Backlog Pass 24 Design.md>) and [review](<Passes/Scenario A1 Backlog Pass 24 Review 2026-09-30.md>)), pass 25 (2026-10-01; its [design](<Passes/ASL Unit Backlog Pass 25 Design.md>) and [review](<Passes/Scenario A1 Backlog Pass 25 Review 2026-10-01.md>)), pass 26 (2026-10-01; its [design](<Passes/ASL Unit Backlog Pass 26 Design.md>) and [review](<Passes/Scenario A1 Backlog Pass 26 Review 2026-10-01.md>)), pass 27 (2026-10-01; its [design](<Passes/ASL Unit Backlog Pass 27 Design.md>) and [review](<Passes/Scenario A1 Backlog Pass 27 Review 2026-10-01.md>)), pass 28 (2026-10-01; its [design](<Passes/ASL Unit Backlog Pass 28 Design.md>) and [review](<Passes/Scenario A1 Backlog Pass 28 Review 2026-10-01.md>)), pass 28b, a Studio pass (2026-10-02; its [design](<Passes/ASL Unit Backlog Pass 28b Design.md>) and [review](<Passes/Scenario A1 Backlog Pass 28b Review 2026-10-02.md>)), and pass 28c, the last Studio pass (2026-10-02; its [design](<Passes/ASL Unit Backlog Pass 28c Design.md>) and [review](<Passes/Scenario A1 Backlog Pass 28c Review 2026-10-02.md>)). The passes run one at a time on the user's go-ahead. Passes 190 and 195, the DYO purchase, are deferred (2026-10-02, the user's word) in favor of UI and playability; they were passes 29 and 30, and every planned pass after them moved up by one when the user added pass 29, the shared board workspace, on 2026-10-02, and again when the user added pass 30, prepared setups, on 2026-10-03, and a third time when the user added pass 31, the play-test UI, on 2026-10-04 (section 4 has the old and the new numbers). Pass 29 is built (2026-10-03; its [design](<Passes/ASL Unit Backlog Pass 29 Design.md>) and [review](<Passes/Scenario A1 Backlog Pass 29 Review 2026-10-03.md>)); pass 30 follows it. On 2026-10-05 the user swapped the numbers of the DYO and the armored combat passes (section 4), separated the rules from the legacy cards, and deferred the card track: the rule passes (35 to 185 since the renumbering of 2026-10-09) build rules only, and the display batches D1 to D18, with the making playable of each card, wait for the user's word (section 19, decision 5).
 
 **Date:** 2026-09-30
 
-**Scope:** twenty passes in one order, followed by pass 32, the Rules migration (section 22.2), by the rule passes 33, 34, and 37 to 44, with 34b (Part VI, section 22), and by the legacy card track, deferred on 2026-10-05 (Part VI: display batches D1 to D18). Ten game passes, 23 to 28, 30, 30b, 35, and 36, close three groups of open backlog rows: card-driven play (backlog sections 27 to 32), rules deferred by earlier passes (entry and exit, the Heat of Battle, Leader Creation, and berserk gaps), and the Chapter H DYO purchase, which generates a scenario card. Passes 31 and 31c, the play-test UI, change the Play page and the game together, from the findings of a played game; pass 31b, between them, adds the Replay page; pass 31d, added at the user's word on 2026-10-04, takes the leftovers of 31c. Six Studio passes, 22b to 22d, 28b, 28c, and 29, carry out the Map Studio redesign: the supplied theme, grouped navigation, shared components, every page's markup extracted into Blazor components, and the map-centered Play workspace. The game passes also extract the Play components they change.
+**Scope:** twenty passes in one order, followed by pass 32, the Rules migration (section 22.2), by the 31 rule passes, 35 to 185 in steps of five (Part VI, sections 22.1 and 23), and by the legacy card track, deferred on 2026-10-05 (Part VI: display batches D1 to D18). Ten game passes, 23 to 28, 30, 30b, 190, and 195, close three groups of open backlog rows: card-driven play (backlog sections 27 to 32), rules deferred by earlier passes (entry and exit, the Heat of Battle, Leader Creation, and berserk gaps), and the Chapter H DYO purchase, which generates a scenario card. Passes 31 and 31c, the play-test UI, change the Play page and the game together, from the findings of a played game; pass 31b, between them, adds the Replay page; pass 31d, added at the user's word on 2026-10-04, takes the leftovers of 31c. Six Studio passes, 22b to 22d, 28b, 28c, and 29, carry out the Map Studio redesign: the supplied theme, grouped navigation, shared components, every page's markup extracted into Blazor components, and the map-centered Play workspace. The game passes also extract the Play components they change.
 
 Section 1 of the [ASL Unit Backlog Passes Plan](<ASL Unit Backlog Passes Plan.md>) (how a pass is run, the standing rules, and the merge gate) applies unchanged to every pass here, including its visual check in the Studio before the costly tests (section 17.2).
 
@@ -48,9 +48,9 @@ New rules adjudication, changes to game persistence, VASL artwork, a new compone
 
 1. **Hidden setup in a hot-seat game (pass 23): a hand-over screen.** The Studio blanks the map and the side panels between sides until the next side confirms it is at the screen; there is no separate tab per side. A later answer the same day, when pass 23 was built: in a sequential setup the second side sees the first side's finished setup as on the board (the rulebook, A12.12 and A2.9), not nothing until both have set up.
 2. **Scope of group 2: the berserk gaps stay.** Tasks 27.2 and 27.3 remain in pass 27.
-3. **DYO nationalities (passes 35 and 36): German and Russian first.** The DYO page offers the two nationalities the cards use; the other nationalities the catalog carries, with manufactured counters where needed, go to the backlog when pass 35 is built.
+3. **DYO nationalities (passes 190 and 195): German and Russian first.** The DYO page offers the two nationalities the cards use; the other nationalities the catalog carries, with manufactured counters where needed, go to the backlog when pass 190 is built.
 4. **Order: as numbered.** The game passes run 23 to 28, then 30, 30b, 35, and 36, so each builds on the one before and the editor forms (pass 28) follow the rules they edit. This merged plan keeps that order and inserts the Studio passes around it (section 4); the insertion needs the user's approval.
-5. **Autonomy: one pass at a time.** It applies to every pass here, the Studio passes included. Each pass starts only on the user's go-ahead and stops after its merge, with its times reported; a rule question that changes a pass's scope, or a failure that needs a design change, still stops the pass. Passes 26, 35, and 36 reach into areas not built before (vehicles from off board, Chapter H), which is why they are not run unattended.
+5. **Autonomy: one pass at a time.** It applies to every pass here, the Studio passes included. Each pass starts only on the user's go-ahead and stops after its merge, with its times reported; a rule question that changes a pass's scope, or a failure that needs a design change, still stops the pass. Passes 26, 190, and 195 reach into areas not built before (vehicles from off board, Chapter H), which is why they are not run unattended.
 
 **Studio design decisions** (from the redesign; validated during the passes named):
 
@@ -89,25 +89,25 @@ New rules adjudication, changes to game persistence, VASL artwork, a new compone
 | 31b | The Replay page | Studio | 8 | 9:45 | 11:15 | 7:53 to 14:38 |
 | 31c | Play-test UI II: the page reads and holds still | Studio | 9 | 14:15 | 15:45 | 11:02 to 20:29 |
 | 31d | The leftovers of pass 31c | Studio and game | 6 | 8:15 | 9:30 | 6:39 to 12:21 |
-| 35 | DYO purchase I: Infantry, leaders, and SW | Game | 5 | 3:15 | 4:30 | 3:09 to 5:51 |
-| 36 | DYO purchase II: ordnance, vehicles, and conditions | Game | 4 | 2:30 | 3:45 | 2:38 to 4:52 |
+| 190 | DYO purchase I: Infantry, leaders, and SW | Game | 5 | 3:15 | 4:30 | 3:09 to 5:51 |
+| 195 | DYO purchase II: ordnance, vehicles, and conditions | Game | 4 | 2:30 | 3:45 | 2:38 to 4:52 |
 | | **All passes** | | **115** | **112:05** | **138:05** | **96:40 to 179:31** |
 
 **Order.** The passes run in the order listed, one at a time on the user's go-ahead.
 
 - **22b first.** The theme ends the split between main's app.css and the branch's site.css, which each game pass would otherwise widen, and the shared components (navigation, page header, field groups, findings, feedback, the perspective and card pickers) are reused by pass 23's side views and pass 28's forms.
 - **22c and 22d next.** No game pass touches the collection pages or the workspaces, so they convert without conflicts. Both can move later if the game work is wanted sooner, but 22d must precede pass 28, whose map picking uses 22d's board viewport.
-- **23 to 28 in the game plan's order,** each also extracting the components it changes (tasks 23.5, 24.5, 25.6, 26.5, 27.5, and 28.5; 34.5 builds the DYO page from components): the side's view is an input to every Play component from pass 23 on.
+- **23 to 28 in the game plan's order,** each also extracting the components it changes (tasks 23.5, 24.5, 25.6, 26.5, 27.5, and 28.5; 190.5 builds the DYO page from components): the side's view is an input to every Play component from pass 23 on.
 - **28b and 28c after pass 28,** when Play's content has settled: the Play panels no game pass touched, then the map-centered layout, responsive behavior, and hardening.
 - **29 after 28c,** the board viewer's inspector shared with Play (added 2026-10-02).
 - **30 after 29,** prepared setups for a card's first side (added 2026-10-03).
 - **31 after 30b,** the play-test UI: the problems a played game of The Guards Counterattack found (added 2026-10-04), in two passes at the user's word: 31 for what blocks play, the result, the rules, and the hand-over screen, and 31c for the page's words, layout, map, and records. Between them comes 31b, the Replay page, which the user added the same day in the number first given to 31c.
-- **31d after 31c,** a short pass on what The Tractor Works left (added 2026-10-04 at the user's word, before passes 33 and 35): a phase's end in seconds on a large card, a laden unit's rout, and the referee's items.
+- **31d after 31c,** a short pass on what The Tractor Works left (added 2026-10-04 at the user's word, before passes 50 and 190): a phase's end in seconds on a large card, a laden unit's rout, and the referee's items.
 - **32 after 31d,** the Rules migration: every ASL rule moved into the Rules project, changing no behavior, in sub-passes 32.a, 32.b, and on (the user, 2026-10-05; section 19, decision 7; section 22.2).
-- **33, 34, 34b, and 37 to 44 after 32,** the rule passes of section 22, as rules only (the user, 2026-10-05); the legacy card track is deferred.
-- **35 and 36 last,** the DYO page built from the shared components from the start.
+- **35 to 185 after 32,** the 31 rule passes of section 23 in the order they run, numbered in steps of five (the renumbering of 2026-10-09), as rules only (the user, 2026-10-05); the legacy card track is deferred.
+- **190 and 195 last,** the DYO page built from the shared components from the start.
 
-**Separable groups.** The game passes alone are 23 to 28, 30, 30b, 35, and 36, without their component tasks; within them, card play alone is passes 23, 24, 26, and 28 (pass 26 then takes pass 25's entry tasks it needs), the deferred rules alone are passes 25 and 27, and DYO needs pass 28 only for opening a DYO card in forms, so it could follow pass 22 directly with the JSON editor. The Studio passes alone are 22b, 22c, 22d, 28b, 28c, and 29; without the game passes, the card pages' components of task 28.5 move into 22c and the Play components of tasks 23.5 to 27.5 into 28b, which then follows 22d.
+**Separable groups.** The game passes alone are 23 to 28, 30, 30b, 190, and 195, without their component tasks; within them, card play alone is passes 23, 24, 26, and 28 (pass 26 then takes pass 25's entry tasks it needs), the deferred rules alone are passes 25 and 27, and DYO needs pass 28 only for opening a DYO card in forms, so it could follow pass 22 directly with the JSON editor. The Studio passes alone are 22b, 22c, 22d, 28b, 28c, and 29; without the game passes, the card pages' components of task 28.5 move into 22c and the Play components of tasks 23.5 to 27.5 into 28b, which then follows 22d.
 
 **Renumbering of 2026-10-04.** The user added pass 31, the play-test UI, and every pass not yet started moved up by one. Documents written before that date (time log rows, reviews, designs of finished passes, commit messages) keep the numbers they were written with; read them with this table.
 
@@ -161,6 +161,46 @@ The user settled the order the same day: the rule passes 32, 33, 33b, and 36 to 
 | 42 | 43 | Special units: Cavalry and skis |
 | 43 | 44 | Fire |
 | 44 to 63 | 45 to 64 | The twenty passes section 22.1 adds |
+
+**Renumbering of 2026-10-09.** The user asked that the numbers follow the order the passes run in, in steps of five, so that a pass added later takes a free number between two others and nothing else moves: "reorder the number sequence in increments of 5 so that I can insert ad hoc passes (which happens a lot) when I need to." The 31 rule passes of section 23 take 35 to 185 in the order of section 22.1 (f); the deferred DYO passes follow them. Task numbers moved with their passes (45.1 became 35.1, and so on); the DYO tasks, which had kept 34.x and 35.x from an earlier renumbering, are 190.x and 195.x. Renumbered with this plan: the Rule Inventory, the Rule Coverage, the backlog, the Backlog Passes Plan, and three comments in the Rules project. Documents of finished passes (the pass 32 design, the time log, the week review, the reviews) keep the numbers they were written with; read them with this table.
+
+| Until 2026-10-09 | From 2026-10-09 | Pass |
+|---|---|---|
+| 45 | 35 | Repairs: wrong results in rules already built |
+| 46 | 40 | Infantry I: movement, stacking, and Locations |
+| 47 | 45 | Infantry II: fire, MGs, and SW |
+| 33 | 50 | Armored combat I |
+| 34 | 55 | Armored combat II |
+| 50 | 60 | Armored combat III: other attacks on vehicles and Guns |
+| 51 | 65 | Passengers, Riders, and crews |
+| 48 | 70 | Infantry III: morale, Close Combat, and concealment |
+| 49 | 75 | Infantry IV: the small sections, and Interrogation |
+| 63 | 80 | Nationalities I: the catalog's counters |
+| 56 | 85 | SMOKE, wind, and Environmental Conditions |
+| 34b | 90 | Night |
+| 57 | 95 | Weather II |
+| 52 | 100 | Position and cover |
+| 53 | 105 | Armored combat IV: equipment and formations |
+| 54 | 110 | Guns and anti-tank weapons II |
+| 37 | 115 | Fortifications I |
+| 38 | 120 | Fortifications II |
+| 41 | 125 | Terrain I: Depressions and water |
+| 59 | 130 | Terrain III: bridges |
+| 60 | 135 | Terrain IV: the refused ground terrain |
+| 42 | 140 | Terrain II: buildings and rubble |
+| 61 | 145 | Terrain V: bocage, sewers, and the village |
+| 39 | 150 | Offboard artillery I |
+| 58 | 155 | Offboard artillery II: missions, Bombardment, and Barrage |
+| 40 | 160 | Air support |
+| 43 | 165 | Special units: Cavalry and skis |
+| 62 | 170 | Airborne and waterborne |
+| 55 | 175 | Transport and unusual vehicles |
+| 64 | 180 | Nationalities II: new formations and nations |
+| 44 | 185 | Fire |
+| 35 | 190 | DYO purchase I (deferred) |
+| 36 | 195 | DYO purchase II (deferred) |
+
+A pass added later takes a number between its neighbours (36 to 39 between passes 35 and 40); passes 33 and 34 are free before pass 35.
 
 ## 5. The passes
 
@@ -273,12 +313,12 @@ Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (backlog sect
 | 26.3 Crews leaving with their Gun | A crew with its Gun leaves the map; the Exit VP count the Gun. | A2.6, C10.3, A26.23 | 0:20 |
 | 26.4 A test card with armor | A manufactured test card (R0.3) fielding a halftrack, a tank, and a Gun, played end to end by the table player. | R0.3 | 0:40 |
 | 26.5 Setup and vehicle components | P08 `SetupPlacementEditor` and P09 `SetupPlacementList` (Guns and crews, off-board placement, OB groups), A17 to A22 (vehicle movement, towing, Bounding Fire, CE/BU), C18 `GunArcAction`, and S13 `FacingPicker`; the vehicle panel's "wished to enter next" field for Motion (backlog section 21). | | 1:15 |
-| 26.6 Covered Arcs across boards | A Gun's Covered Arc across composed boards and on a reversed board, checked first against what happens today (backlog section 12); pass 37 reuses it for pillboxes. | C3.2, C3.21 | 0:45 |
+| 26.6 Covered Arcs across boards | A Gun's Covered Arc across composed boards and on a reversed board, checked first against what happens today (backlog section 12); pass 115 reuses it for pillboxes. | C3.2, C3.21 | 0:45 |
 | 26.7 Concealed and hidden Guns | Concealed crews and Guns, a firing crew's loss of concealment, and an Emplaced Gun in Concealment Terrain setting up HIP where A12.34 allows it, confirmed against the PDF (backlog sections 12 and 22). | A12.34, C11 | 0:30 |
 | | Overhead | | 1:15 |
 | | **Pass 26 total** (build 4:45) | | **6:00** |
 
-**Built 2026-10-01** (rulings R26.1 to R26.8). The user answered the five questions on the rulebook's side or the narrower build: Passengers load and unload; limbering and en portee wait, since both catalog Guns are QSU; A12.34's HIP is built for Concealment Terrain only; the MPh holds vehicles until they enter, since they cannot advance; the pass ran whole. The three known bugs are fixed: a vehicle's exit now records its `UnitExit` with its Passengers' and towed Gun's, a manned Gun's hidden flag is checked, and a crew manning a Gun stacks as a squad. Passengers are reached through their vehicle: they take no fire, gain no Control, and act only by unloading, until plan passes 33 and 34 build their fire and survival. The built-in card Armor Test is manufactured under R0.3. All ten candidates of task 26.5 are extracted. Items left out are in section 40 of the [ASL Unit Backlog](<ASL Unit Backlog.md>).
+**Built 2026-10-01** (rulings R26.1 to R26.8). The user answered the five questions on the rulebook's side or the narrower build: Passengers load and unload; limbering and en portee wait, since both catalog Guns are QSU; A12.34's HIP is built for Concealment Terrain only; the MPh holds vehicles until they enter, since they cannot advance; the pass ran whole. The three known bugs are fixed: a vehicle's exit now records its `UnitExit` with its Passengers' and towed Gun's, a manned Gun's hidden flag is checked, and a crew manning a Gun stacks as a squad. Passengers are reached through their vehicle: they take no fire, gain no Control, and act only by unloading, until plan passes 50 and 55 build their fire and survival. The built-in card Armor Test is manufactured under R0.3. All ten candidates of task 26.5 are extracted. Items left out are in section 40 of the [ASL Unit Backlog](<ASL Unit Backlog.md>).
 
 ### Pass 27: Heat of Battle, Leader Creation, and berserk gaps
 
@@ -463,7 +503,7 @@ Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (backlog sect
 
 ### Pass 31d: the leftovers of pass 31c
 
-**Added 2026-10-04** at the user's word, after pass 31c was merged: "a short pass on the leftovers first", before passes 33 and 35. Its [design](<Passes/ASL Unit Backlog Pass 31d Design.md>) holds the measurements, the decisions, and the user's answers ("Build, all as recommended").
+**Added 2026-10-04** at the user's word, after pass 31c was merged: "a short pass on the leftovers first", before passes 50 and 190. Its [design](<Passes/ASL Unit Backlog Pass 31d Design.md>) holds the measurements, the decisions, and the user's answers ("Build, all as recommended").
 
 **Purpose:** what the third play test (The Tractor Works) left: a phase's end that took seconds on a large card, a laden unit's rout refused with no word of what to drop, and the referee's items. **After:** pass 31c. **From:** backlog section 50.
 
@@ -480,7 +520,7 @@ Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (backlog sect
 | | Overhead | 1:15 |
 | | **Pass 31d total** (build 8:15) | **9:30** |
 
-### Pass 35: DYO purchase I: Infantry, leaders, and SW
+### Pass 190: DYO purchase I: Infantry, leaders, and SW
 
 **Deferred 2026-10-02** at the user's word: the DYO purchase is a whole new feature of ASL that can wait; the work turns to the Studio's UI and playability. The pass stays planned as written, and its backlog rows stay where they are.
 
@@ -488,28 +528,28 @@ Control forfeited to a Kindled Fire (A26.16) waits for Fire spread (backlog sect
 
 | Task | What it changes in play | Rules | Estimate |
 |---|---|---|---|
-| 34.1 The DYO setup and roster | A DYO page: German and Russian (user answer, 2026-09-30), the date, boards, and the points each side spends; the Roster, with the counter limits and purchase mechanics. | H1.1 to H1.14 | 0:45 |
-| 34.2 Infantry purchase | Squads and crews by BPV and MPV, with Assault Engineers, Sappers, Commandos, and MOL capabilities where the game plays them; the ELR Chart and SAN. | H1.2 to H1.29 | 0:50 |
-| 34.3 Bonus Infantry and leaders | The second Infantry purchase and bonus Infantry; leader quality and the Leader Exchange DR. | H1.7 to H1.74, H1.8 to H1.82 | 0:40 |
-| 34.4 SW allotment and the card | SW allotted by ratio; the purchase written as a user card (sides, ELR, SAN, OB groups) and opened in the editor. | H1.83, H1.84 | 0:45 |
-| 34.5 The DYO page from components | Built from S02, S04, S06, S07, and K02 from the start; no raw form markup to extract later. | | 0:15 |
+| 190.1 The DYO setup and roster | A DYO page: German and Russian (user answer, 2026-09-30), the date, boards, and the points each side spends; the Roster, with the counter limits and purchase mechanics. | H1.1 to H1.14 | 0:45 |
+| 190.2 Infantry purchase | Squads and crews by BPV and MPV, with Assault Engineers, Sappers, Commandos, and MOL capabilities where the game plays them; the ELR Chart and SAN. | H1.2 to H1.29 | 0:50 |
+| 190.3 Bonus Infantry and leaders | The second Infantry purchase and bonus Infantry; leader quality and the Leader Exchange DR. | H1.7 to H1.74, H1.8 to H1.82 | 0:40 |
+| 190.4 SW allotment and the card | SW allotted by ratio; the purchase written as a user card (sides, ELR, SAN, OB groups) and opened in the editor. | H1.83, H1.84 | 0:45 |
+| 190.5 The DYO page from components | Built from S02, S04, S06, S07, and K02 from the start; no raw form markup to extract later. | | 0:15 |
 | | Overhead | | 1:15 |
-| | **Pass 35 total** (build 3:15) | | **4:30** |
+| | **Pass 190 total** (build 3:15) | | **4:30** |
 
-### Pass 36: DYO purchase II: ordnance, vehicles, and conditions
+### Pass 195: DYO purchase II: ordnance, vehicles, and conditions
 
 **Deferred 2026-10-02** at the user's word: the DYO purchase is a whole new feature of ASL that can wait; the work turns to the Studio's UI and playability. The pass stays planned as written, and its backlog rows stay where they are.
 
-**Purpose:** the DYO purchase covers what the game plays beyond Infantry. **After:** pass 35. **From:** backlog section 27. Its purchase forms reuse pass 35's components.
+**Purpose:** the DYO purchase covers what the game plays beyond Infantry. **After:** pass 190. **From:** backlog section 27. Its purchase forms reuse pass 190's components.
 
 | Task | What it changes in play | Rules | Estimate |
 |---|---|---|---|
-| 35.1 Ordnance and vehicles | Guns and vehicles by BPV with the Availability DR and RF; optional armament and Armor Leaders where the game plays them. | H1.3, H1.4 to H1.43 | 1:00 |
-| 35.2 DYO conditions | The DYO Weather, EC, and NVR tables written to the card's SSR tokens. | E1.11, E3 | 0:40 |
-| 35.3 What is not played | OBA, Air Support, fortifications, boats, gliders, horses, and OP tanks refused with their backlog rows. | H1.44 to H1.6 | 0:20 |
-| 35.4 End to end | A DYO game bought, saved, started, and played to its end by the table player. | | 0:30 |
+| 195.1 Ordnance and vehicles | Guns and vehicles by BPV with the Availability DR and RF; optional armament and Armor Leaders where the game plays them. | H1.3, H1.4 to H1.43 | 1:00 |
+| 195.2 DYO conditions | The DYO Weather, EC, and NVR tables written to the card's SSR tokens. | E1.11, E3 | 0:40 |
+| 195.3 What is not played | OBA, Air Support, fortifications, boats, gliders, horses, and OP tanks refused with their backlog rows. | H1.44 to H1.6 | 0:20 |
+| 195.4 End to end | A DYO game bought, saved, started, and played to its end by the table player. | | 0:30 |
 | | Overhead | | 1:15 |
-| | **Pass 36 total** (build 2:30) | | **3:45** |
+| | **Pass 195 total** (build 2:30) | | **3:45** |
 
 ## 6. Duration report
 
@@ -520,15 +560,15 @@ The game passes keep the Scenario Card Games Plan's basis: 1:15 of overhead per 
 - **Pass 23** changes what every Play panel shows; the page tests read the adjudicator's view and may need a side's view throughout. Its component task (23.5) makes the side's view an explicit input from the start.
 - **Pass 22d's board viewport** is the riskiest extraction: the page and a component must never both install listeners on one element, and reconnection, route changes, repeated mounting, and disposal all need tests (section 15.5).
 - **Pass 26** depends on vehicle movement from off board, which the ordnance and vehicle passes did not build; if Motion and Passengers at entry need more of Chapter D, the pass grows.
-- **Pass 35** needs the catalog's BPV for every purchasable counter; counters the catalog lacks are manufactured (R0.3), which may add catalog versions and package re-pins as pass 17 did.
+- **Pass 190** needs the catalog's BPV for every purchasable counter; counters the catalog lacks are manufactured (R0.3), which may add catalog versions and package re-pins as pass 17 did.
 - **Test hooks.** The 156 MapStudio tests address the pages' element ids and data attributes; every extraction keeps them (section 17.1), adding focused component tests rather than rewriting page tests.
 - **Disclosure.** A component must never receive hidden data and hide it with CSS (section 15.4); the review of each Play extraction checks the DOM and accessible text in both a side's and the adjudicator's view.
 
 ## 8. Left out
 
-These stay in the backlog: Fire spread and Kindling (so Control forfeited to a Kindled Fire, and EC and wind as an SSR the game reads), Sewer Movement and foxholes, Battlefield Integrity, the Factory and Fanaticism SSRs, OBA and Air Support, fortifications, the national rules of A25 for nationalities without counters (those the display batches add are built by batch D4 and passes 38 to 43), and Chapters F and G (the desert and the Pacific; their legacy cards stay display only). Fire, Sewer Movement and foxholes, the Factory, OBA and Air Support, fortifications, and more built-in cards are planned in Part VI.
+These stay in the backlog: Fire spread and Kindling (so Control forfeited to a Kindled Fire, and EC and wind as an SSR the game reads), Sewer Movement and foxholes, Battlefield Integrity, the Factory and Fanaticism SSRs, OBA and Air Support, fortifications, the national rules of A25 for nationalities without counters (those the display batches add are built by batch D4 and the nationalities passes 80 and 180), and Chapters F and G (the desert and the Pacific; their legacy cards stay display only). Fire, Sewer Movement and foxholes, the Factory, OBA and Air Support, fortifications, and more built-in cards are planned in Part VI.
 
-For the Studio, what section 2 places outside the redesign stays out; narrow-screen access and keyboard operation are in it (pass 28c). P2 and P3 candidates a pass leaves inline are recorded in its review, not in the backlog, unless a later pass needs them. A survey of the backlog on 2026-09-30 found 83 rows the passes already build and moved 34 more into passes 23 to 43 and batch D1; on approval they were listed with their planned passes in section 33 of the backlog. The Board library's SVG previews (section 12.1) are not in these passes; they are a row in section 33 of the backlog.
+For the Studio, what section 2 places outside the redesign stays out; narrow-screen access and keyboard operation are in it (pass 28c). P2 and P3 candidates a pass leaves inline are recorded in its review, not in the backlog, unless a later pass needs them. A survey of the backlog on 2026-09-30 found 83 rows the passes already build and moved 34 more into the passes from 23 on and batch D1; on approval they were listed with their planned passes in section 33 of the backlog. The Board library's SVG previews (section 12.1) are not in these passes; they are a row in section 33 of the backlog.
 
 # Part III. The Studio design
 
@@ -1389,7 +1429,7 @@ Section 16.17 assigns every candidate to a pass. The shared components come firs
 
 ### 16.17 Candidates by pass
 
-Every active candidate belongs to exactly one pass; the five retired ones (P03 to P06 and N01) to none. A pass extracts its P1 candidates by default and may leave one inline with a reason; its P2 and P3 candidates are extracted only when the parent stays hard to understand, is rendered on its own, or is reused (section 16.2). The pass's review records every candidate left inline. Pass 24 extends K08 rather than adding one, and passes 35 and 36 build a new page from the shared components rather than extracting any.
+Every active candidate belongs to exactly one pass; the five retired ones (P03 to P06 and N01) to none. A pass extracts its P1 candidates by default and may leave one inline with a reason; its P2 and P3 candidates are extracted only when the parent stays hard to understand, is rendered on its own, or is reused (section 16.2). The pass's review records every candidate left inline. Pass 24 extends K08 rather than adding one, and passes 190 and 195 build a new page from the shared components rather than extracting any.
 
 | Pass | Candidates | P1 | P2 and P3 | Candidates |
 |---|---:|---:|---:|---|
@@ -1538,11 +1578,11 @@ Each game pass adds its rulings to the [ASL Unit Backlog Passes Plan](<ASL Unit 
 | G41 | JABO! | the KGP historical map, not among the VASL boards in scope |
 | G45 | Halha River Bridge | Chapters F and G |
 
-5. **Rules and cards are separate tracks, and the card track is deferred (the user, 2026-10-05).** Porting the legacy cards between the rule passes was not working out. The rule passes 33, 34, 34b, and 37 to 44 build rules only (section 22). The card track is the display batches D1 to D18 and the making playable of each card (steps 1 to 7 below). It is deferred, as the DYO passes are: it stays planned as written and is replanned when the user takes it up. A card whose packages are built by then is ported as playable in one step (steps 5 and 6 together, in its batch), and display only is left for a card that still waits on something. No rule pass makes a legacy card playable; a rule pass's table player plays the built-in cards, or a small test card made for the pass, as Armor Test was for pass 26.
+5. **Rules and cards are separate tracks, and the card track is deferred (the user, 2026-10-05).** Porting the legacy cards between the rule passes was not working out. The rule passes (35 to 185 since the renumbering of 2026-10-09; sections 22.1 and 23) build rules only. The card track is the display batches D1 to D18 and the making playable of each card (steps 1 to 7 below). It is deferred, as the DYO passes are: it stays planned as written and is replanned when the user takes it up. A card whose packages are built by then is ported as playable in one step (steps 5 and 6 together, in its batch), and display only is left for a card that still waits on something. No rule pass makes a legacy card playable; a rule pass's table player plays the built-in cards, or a small test card made for the pass, as Armor Test was for pass 26.
 
-6. **The aim is complete rule coverage of Chapters A to E; Chapters F, G, and H are deferred (the user, 2026-10-05).** With the legacy cards deferred, nothing now needs the desert, the Pacific, or the DYO purchase. Chapters F and G, which decision 4 left unbuilt, and Chapter H, whose passes 35 and 36 were already deferred, wait together for the user's word. The rule passes are planned against the [ASL Rule Coverage](<ASL Rule Coverage.md>): every numbered section of Chapters A to E is to end as built, or as left out by a ruling that says so. The coverage's section 7 lists what no pass yet covers.
+6. **The aim is complete rule coverage of Chapters A to E; Chapters F, G, and H are deferred (the user, 2026-10-05).** With the legacy cards deferred, nothing now needs the desert, the Pacific, or the DYO purchase. Chapters F and G, which decision 4 left unbuilt, and Chapter H, whose passes 190 and 195 were already deferred, wait together for the user's word. The rule passes are planned against the [ASL Rule Coverage](<ASL Rule Coverage.md>): every numbered section of Chapters A to E is to end as built, or as left out by a ruling that says so. The coverage's section 7 lists what no pass yet covers.
 
-7. **Every ASL rule is implemented in the Rules project alone (the user, 2026-10-05).** `LimboDancer.Domains.Asl.Rules` references only the Abstractions project and cannot see the game state or the map; the user confirmed that as the correct design. A rule is a calculator there that takes facts and returns a verdict. Play reads the state and the map, hands the facts over, and writes the events; it decides no rule. This replaces the reading of the same morning that a rule counts as implemented wherever its code sits. Measured that day from the [ASL Rule Inventory](<ASL Rule Inventory A to E.md>): of the 926 rules with logic, 217 name only Rules files, 222 name Rules and another project, and 487 name no Rules file (movement and terrain costs, rout, concealment, vehicle movement, night and weather, and Victory Conditions in Play; legality checks in the Units projector; LOS in Maps). **The move is made in a migration pass before pass 45, changing no behavior** (the user, the same day): the rules that sit in Play, Units, and Maps move into Rules first, and passes 45 to 64 then build on that base. **The migration's design and the user's answers (2026-10-05, later the same day).** The [design](<Passes/ASL Unit Backlog Pass 32 Design.md>) read all of Play, Units, and Maps and found 521 members that hold rule logic outside Rules, 223:10 of build on this plan's task sizes: far more than one pass. The user's answers: the migration is **pass 32**, carved into sub-passes 32.a, 32.b, and on, and **all the rule logic goes into the rule library** before the rule passes (section 22.2); every later pass moved up by one (section 4); a calculator whose decision is a search may take a fact reader, declared in Rules and implemented in Play, that returns facts only; Units gains a project reference to Rules, so the projector calls the same calculators as the planner; **LOS and range stay where they are** (LOS in Maps, read by Play, and handed to Rules as a fact). The passes of section 22.1 write their rules in the Rules project.
+7. **Every ASL rule is implemented in the Rules project alone (the user, 2026-10-05).** `LimboDancer.Domains.Asl.Rules` references only the Abstractions project and cannot see the game state or the map; the user confirmed that as the correct design. A rule is a calculator there that takes facts and returns a verdict. Play reads the state and the map, hands the facts over, and writes the events; it decides no rule. This replaces the reading of the same morning that a rule counts as implemented wherever its code sits. Measured that day from the [ASL Rule Inventory](<ASL Rule Inventory A to E.md>): of the 926 rules with logic, 217 name only Rules files, 222 name Rules and another project, and 487 name no Rules file (movement and terrain costs, rout, concealment, vehicle movement, night and weather, and Victory Conditions in Play; legality checks in the Units projector; LOS in Maps). **The move is made in a migration pass before pass 35, changing no behavior** (the user, the same day): the rules that sit in Play, Units, and Maps move into Rules first, and the rule passes then build on that base. **The migration's design and the user's answers (2026-10-05, later the same day).** The [design](<Passes/ASL Unit Backlog Pass 32 Design.md>) read all of Play, Units, and Maps and found 521 members that hold rule logic outside Rules, 223:10 of build on this plan's task sizes: far more than one pass. The user's answers: the migration is **pass 32**, carved into sub-passes 32.a, 32.b, and on, and **all the rule logic goes into the rule library** before the rule passes (section 22.2); every later pass moved up by one (section 4); a calculator whose decision is a search may take a fact reader, declared in Rules and implemented in Play, that returns facts only; Units gains a project reference to Rules, so the projector calls the same calculators as the planner; **LOS and range stay where they are** (LOS in Maps, read by Play, and handed to Rules as a fact). The passes of section 22.1 write their rules in the Rules project.
 
 **The method, per card** (rulings R17.2, R17.9, R17.13, and R0.3 as for the first three):
 
@@ -1550,7 +1590,7 @@ Each game pass adds its rulings to the [ASL Unit Backlog Passes Plan](<ASL Unit 
 2. Bring every entry to the registered rulebook: each term, rule, and reference is checked against the PDF and cited to it; what the rulebook cannot support is rewritten, manufactured under R0.3, or marked not enforced with a backlog row, never carried over as printed.
 3. Add the card's counters to the catalog from registered sources (the counter sheets, the National Capabilities Chart, the ordnance and vehicle listings), manufacturing under R0.3 on sheet MFG what no source prints; a catalog version per batch, pinned as batch D1's ruling decides (section 21).
 4. Register a PDF comparison for every rule fragment the card newly cites (the pass 17 registry).
-5. Write the card (asl-scenario-card/1) marked display only with the packages it waits for, its ruling (one R number per card for its adaptations), and its tests: the card validates and its provenance is complete (section 13.6). Recheck the card's packages against its image: its boards' terrain (a board holding terrain the movement rules refuse waits for pass 41), its nationalities' A25 rules, night and winter conditions, special units, and whether an SSR's "Kindling NA" still leaves a Fire need (DASL-A, T5, and G15 are flagged for this check). A changed need moves the card's playable pass, recorded in the batch's review.
+5. Write the card (asl-scenario-card/1) marked display only with the packages it waits for, its ruling (one R number per card for its adaptations), and its tests: the card validates and its provenance is complete (section 13.6). Recheck the card's packages against its image: its boards' terrain (a board holding terrain the movement rules refuse waits for pass 125), its nationalities' A25 rules, night and winter conditions, special units, and whether an SSR's "Kindling NA" still leaves a Fire need (DASL-A, T5, and G15 are flagged for this check). A changed need moves the card's playable pass, recorded in the batch's review.
 6. When the card's packages are built, the card track makes it playable (until 2026-10-05, the rule pass that completed them did): tests that it sets up from its OB and plays to its end, its not-enforced entries enforced where the new rules allow, and its display-only mark removed.
 7. A referee reviews each display batch's adaptations against the rulebook; the table player of a batch that makes cards playable plays one of them (until 2026-10-05, each rule pass's table player did).
 
@@ -1597,27 +1637,27 @@ Each display batch ports cards by steps 1 to 5 of section 19. Batch D1 first ext
 | D17 | G37 Forth Bridge; V Auld Lang Syne; G38 Castello Fatato; G39 A Desperate Affair; G40 Will to Fight...Eradicated; G41 JABO! | 2:51 | 4:06 |
 | D18 | G42 The Youth's First Blood; G43 Kangaroo Hop; G44 Abandon Ship!; G45 Halha River Bridge; G46 Triumph atop Taraldsvikfjell | 2:45 | 4:00 |
 
-## 22. The rule packages: passes 33, 34, and 37 to 44
+## 22. The rule packages: the eleven passes as first planned
 
 Each package is a game pass run as in section 1 of the Backlog Passes Plan: rulings, a referee and a table player, the Studio visual check before the costly tests, the merge gate. It builds rules only (the user, 2026-10-05): the cards that wait on a package are listed for the card track and are not made playable in the pass, and its table player plays the built-in cards, or a small test card made for the pass, as Armor Test was for pass 26. Its tasks are planned in detail, in the format of section 5, when the pass before it merges; the package estimates are its scale.
 
 | Pass | Package | What it builds | Rules | Cards that wait on it last (the card track) | Build | Total |
 |---|---|---|---|---|---|---|
-| 33 | Armored combat I | Closed-topped AFVs and their main armament: AFVs as targets of ordnance and of Infantry AT weapons, the To Hit and To Kill process with AP and HEAT, Bounding First Fire with the MA and the Gun Duels it meets, the tank's BMG and CMG with one fire marker for all its weapons, and crews Bailing Out with their own inherent fire (backlog sections 1, 12, 14, 17, and 18). | C2.2401, C3, C7, C8.1 to C8.3, D1.8, D3, D5, A7.35 | none | 5:40 | 6:55 |
-| 34 | Armored combat II | Special ammunition (APCR, APDS, Canister, Smoke) and ordnance SMOKE and WP; Motion and Non-Stopped targets and Motion attempts; Immobilization and Shock from To Kill; burning wrecks as terrain (not fire spread); Recall, to a Friendly Board Edge of more than one edge; Passengers and Riders, their fire and rout; ordnance and vehicle fire at another level; Armor Leaders (the catalog shows them on G, G2, T2, T4, M, and Q) (backlog sections 1, 6, 12, 14, 15, 18 to 21, and 23). | C8.4 to C8.9, C2.6, D2, D5.3, D6, D3.4 | G, T2, T3, T4, I, G6, M, N, Q, G14, S | 5:25 | 6:40 |
-| 34b | Night and winter | The night rules the cards use beyond pass 16's: the Scenario Defender at night (HIP and "?" allotments, Freedom of Movement, the lower ELR, Recon), Cloaking and Straying, and Lax and Stealthy units at night; and the winter conditions the cards set: Fog, Ice, Drifts, and Winter Camouflage (backlog section 26). | E1.2, E1.4 to E1.6, E3.3, E3.7 | R, G33 | 2:45 | 4:00 |
-| 37 | Fortifications I | Foxholes, trenches, and Entrenching, with Manhandling and Entrenching in Mud, snow, and Extreme Winter; the tasks that place TI; pillboxes with their Covered Arc (from task 26.6), Rally terrain, and DM; roadblocks (backlog sections 2, 23, 24, and 26). | B27, B29, B30, A4.8, A10.61, A10.62, E3.61, E3.722 | none | 3:35 | 4:50 |
-| 38 | Fortifications II | Wire, A-P and A-T mines, known and hidden minefields, and their attacks on Infantry and vehicles; the French and Norwegian national rules. | B26, B28, A25 | G3, T6, T9, T10, T13, G31, G44, G46 | 3:15 | 4:30 |
-| 39 | Offboard artillery | OBA: radio and field phone, battery access, Spotting Rounds and Fire for Effect, accuracy and extent of error, the blast area, and its attacks. | C1 | none | 3:30 | 4:45 |
-| 40 | Air support | Aircraft arrival, sighting, bombs and strafing, and AA fire against them. | E7 | D, E, F, G4, J, K, L, P, T7, T11, G29, V, G42, G43 | 3:00 | 4:15 |
-| 41 | Terrain I | Board overlays in the map composer and the Hex Facts; streams, rivers, fords, and canals; bridges; the board terrain the movement rules still refuse (gullies, crags, shellholes, graveyards, lumberyards, sunken and elevated roads, cliffs, and the like); marsh and brush as Open Ground in snow, frozen streams, and minefields in Deep Snow; paved road hexes named as such (backlog sections 20, 26, 29, and 30). | B6, B20, B21, B3, B19, E3.722, E3.73, overlays | none | 5:30 | 6:45 |
-| 42 | Terrain II | Bocage and hedges; cellars; Factories; sewers and Sewer Movement; an AFV entering a building; the Italian, Finnish, Iraqi, and New Zealand national rules, ANZAC Stealth included (backlog sections 15, 20, 21, and 27). | B9, B23.41, B23.74, B8, A25 | C, G1, G5, G8, HASL-A, G18, G21, T, DASL-B, G25, G30, DASL-C, G32, G34, G35, G36, G37 | 3:05 | 4:20 |
-| 43 | Special units | Cavalry and horses, skis, air drops and gliders, boats, and partisans as the cards field them; the Dutch and Polish national rules (backlog section 15). | A13, E4, E5, E8, E9, A25 | G7, O, G10, G11, G12, T12, T15, G17, G26, G39, G40 | 3:40 | 4:55 |
-| 44 | Fire | Kindling, spread, Blazes, and the smoke of fire; Control forfeited to a Kindled Fire; EC and wind as an SSR the game reads. | B24, B25, A26.16 | G2, DASL-A, T5, G15 | 3:00 | 4:15 |
+| 50 | Armored combat I | Closed-topped AFVs and their main armament: AFVs as targets of ordnance and of Infantry AT weapons, the To Hit and To Kill process with AP and HEAT, Bounding First Fire with the MA and the Gun Duels it meets, the tank's BMG and CMG with one fire marker for all its weapons, and crews Bailing Out with their own inherent fire (backlog sections 1, 12, 14, 17, and 18). | C2.2401, C3, C7, C8.1 to C8.3, D1.8, D3, D5, A7.35 | none | 5:40 | 6:55 |
+| 55 | Armored combat II | Special ammunition (APCR, APDS, Canister, Smoke) and ordnance SMOKE and WP; Motion and Non-Stopped targets and Motion attempts; Immobilization and Shock from To Kill; burning wrecks as terrain (not fire spread); Recall, to a Friendly Board Edge of more than one edge; Passengers and Riders, their fire and rout; ordnance and vehicle fire at another level; Armor Leaders (the catalog shows them on G, G2, T2, T4, M, and Q) (backlog sections 1, 6, 12, 14, 15, 18 to 21, and 23). | C8.4 to C8.9, C2.6, D2, D5.3, D6, D3.4 | G, T2, T3, T4, I, G6, M, N, Q, G14, S | 5:25 | 6:40 |
+| 90 | Night and winter | The night rules the cards use beyond pass 16's: the Scenario Defender at night (HIP and "?" allotments, Freedom of Movement, the lower ELR, Recon), Cloaking and Straying, and Lax and Stealthy units at night; and the winter conditions the cards set: Fog, Ice, Drifts, and Winter Camouflage (backlog section 26). | E1.2, E1.4 to E1.6, E3.3, E3.7 | R, G33 | 2:45 | 4:00 |
+| 115 | Fortifications I | Foxholes, trenches, and Entrenching, with Manhandling and Entrenching in Mud, snow, and Extreme Winter; the tasks that place TI; pillboxes with their Covered Arc (from task 26.6), Rally terrain, and DM; roadblocks (backlog sections 2, 23, 24, and 26). | B27, B29, B30, A4.8, A10.61, A10.62, E3.61, E3.722 | none | 3:35 | 4:50 |
+| 120 | Fortifications II | Wire, A-P and A-T mines, known and hidden minefields, and their attacks on Infantry and vehicles; the French and Norwegian national rules. | B26, B28, A25 | G3, T6, T9, T10, T13, G31, G44, G46 | 3:15 | 4:30 |
+| 150 | Offboard artillery | OBA: radio and field phone, battery access, Spotting Rounds and Fire for Effect, accuracy and extent of error, the blast area, and its attacks. | C1 | none | 3:30 | 4:45 |
+| 160 | Air support | Aircraft arrival, sighting, bombs and strafing, and AA fire against them. | E7 | D, E, F, G4, J, K, L, P, T7, T11, G29, V, G42, G43 | 3:00 | 4:15 |
+| 125 | Terrain I | Board overlays in the map composer and the Hex Facts; streams, rivers, fords, and canals; bridges; the board terrain the movement rules still refuse (gullies, crags, shellholes, graveyards, lumberyards, sunken and elevated roads, cliffs, and the like); marsh and brush as Open Ground in snow, frozen streams, and minefields in Deep Snow; paved road hexes named as such (backlog sections 20, 26, 29, and 30). | B6, B20, B21, B3, B19, E3.722, E3.73, overlays | none | 5:30 | 6:45 |
+| 140 | Terrain II | Bocage and hedges; cellars; Factories; sewers and Sewer Movement; an AFV entering a building; the Italian, Finnish, Iraqi, and New Zealand national rules, ANZAC Stealth included (backlog sections 15, 20, 21, and 27). | B9, B23.41, B23.74, B8, A25 | C, G1, G5, G8, HASL-A, G18, G21, T, DASL-B, G25, G30, DASL-C, G32, G34, G35, G36, G37 | 3:05 | 4:20 |
+| 165 | Special units | Cavalry and horses, skis, air drops and gliders, boats, and partisans as the cards field them; the Dutch and Polish national rules (backlog section 15). | A13, E4, E5, E8, E9, A25 | G7, O, G10, G11, G12, T12, T15, G17, G26, G39, G40 | 3:40 | 4:55 |
+| 185 | Fire | Kindling, spread, Blazes, and the smoke of fire; Control forfeited to a Kindled Fire; EC and wind as an SSR the game reads. | B24, B25, A26.16 | G2, DASL-A, T5, G15 | 3:00 | 4:15 |
 
 ### 22.1 Proposed passes for complete coverage of Chapters A to E
 
-**Status:** Proposal of 2026-10-05, second version. **Not approved; it awaits the user's approval.** Nothing here is scheduled, and the tables of sections 22 and 23 are unchanged until it is. The first version, written the same day from the coverage document's rows with no rulebook page read, is replaced by this one.
+**Status:** Proposal of 2026-10-05, second version. Provisionally approved by the user on 2026-10-05; on 2026-10-09, at the user's word, section 23 was rewritten from it and is now the schedule in force. Section 22's table shows the eleven passes as first planned. The passes were renumbered on 2026-10-09 (section 4): each number is now the pass's place in the order of (f), in steps of five. The first version, written the same day from the coverage document's rows with no rulebook page read, is replaced by this one.
 
 **What it rests on.** The [ASL Rule Inventory](<ASL Rule Inventory A to E.md>): every numbered rule of Chapters A to E, 2127 rows, each read on its page of the rulebook PDF and judged against the code and the tests. Of the 1915 rows that carry a rule, 401 are built, 42 are built with a deviation, 391 are partly built, 92 are refused, and 989 are not built. Each of the 1514 rows that is not fully built is placed below in exactly one pass, or left out by a ruling with its reason; the inventory's rows carry the pass.
 
@@ -1627,474 +1667,474 @@ Each package is a game pass run as in section 1 of the Backlog Passes Plan: ruli
 
 | Pass | Keeps | Moves out | Adds | Rows | Planned build | Build from its tasks | Total | Likely |
 |---|---|---|---|---:|---|---|---|---|
-| 33 Armored combat I | Bounding First Fire with the MA, and the Gun Duels it meets; the BMG and CMG. | Crews Bailing Out, to pass 51. (AFVs as targets of ordnance, PF, PSK, and ATR, with AP and HEAT To Hit and To Kill, are built already, by passes 7 and 9.) | Per-weapon fire and repair, which the MGs need first (D3.5, D3.7); MG fire against armor (A9.6, A9.61, D3.54); Target Facing in the firer's own hex (D3.2). | 33 | 5:40 | 5:00 | 6:15 | 3:08 |
-| 34 Armored combat II | APDS and the rest of special ammunition, Canister, Motion attempts, fire at another level, Armor Leaders. | Ordnance SMOKE and WP, to pass 56, which builds the SMOKE they place. Passengers and Riders, to pass 51. (Immobilization and Shock from To Kill, burning wrecks, and Recall are built already; a wreck burned in Close Combat is pass 45's.) | Nothing. | 20 | 5:25 | 3:40 | 4:55 | 2:28 |
-| 34b Night | The Scenario Defender at night, Cloaking, Straying, Stealthy and Lax units. | Fog, Drifts, and Winter Camouflage, to pass 57; Ice, to pass 41. | Jitter Fire, which the rules build on Straying (E1.55); the Gunflash as a mark on the Location (E1.8); NVR in every LOS read (E1.101); the rest of night fire, with Acquisition as E1.74 has it; Starshells completed. | 43 | 2:45 | 4:40 | 5:55 | 2:58 |
-| 37 Fortifications I | Foxholes, trenches, Entrenching, pillboxes, roadblocks, Rally terrain and DM. | Nothing. | Positions inside a Location, which everything else needs first; hidden Fortifications (A12.33); Clearance and Labor (B24.7, B24.8) and Trail Breaks (B13.421), which wire, mines, roadblocks, and rubble all use; the places no Fortification may be set up; Control of a pillbox (A26.132). | 74 | 3:35 | 5:00 | 6:15 | 3:08 |
-| 38 Fortifications II | Wire and minefields. | The French and Norwegian national rules, to pass 64. | Clearance of wire and mines; Known and Dummy minefields, Daisy Chains, Flail Tanks, Booby Traps; mines in Deep Snow (E3.732). | 42 | 3:15 | 4:00 | 5:15 | 2:38 |
-| 39 Offboard artillery I | Radios, Battery Access, the SR and the FFE, accuracy and error, the HE Concentration. | Field Phones, to pass 58. | Nothing. (The draft's Barrage is pass 58's.) | 36 | 3:30 | 3:25 | 4:40 | 2:20 |
-| 40 Air support | All of E7. | Nothing. | Aerial Range and LOS Hindrances (E.5, E.6); Aerial To Kill (C7.12, C7.22); the weather gates (E3.313, E3.55). | 38 | 3:00 | 4:40 | 5:55 | 2:58 |
-| 41 Terrain I: Depressions and water | Gullies, Sunken Roads, streams, rivers, fords, canals, frozen streams. | Bridges, to pass 59. Overlays, shellholes, crags, graveyards, Elevated Roads, and cliffs, to pass 60. Brush as Open Ground in snow, to pass 57; minefields in Deep Snow, to pass 38. | Crest Status (B20.9), without which a unit cannot stand IN a Depression's hex at ground level; the marsh rules that wait on water depth; stream-hex terrain (B33). | 57 | 5:30 | 5:00 | 6:15 | 3:08 |
-| 42 Terrain II: buildings and rubble | Cellars, Factories, an AFV entering a building. | Bocage, sewers, and Sewer Movement, to pass 61. The national rules, to passes 63 and 64. | Rubble made and falling (B24.11, B24.12), which a vehicle's entry needs; Fortified Buildings in live play; Rowhouses; rooftops; Split Level buildings and the Marketplace. | 43 | 3:05 | 5:40 | 6:55 | 3:28 |
-| 43 Special units: Cavalry and skis | Cavalry and skis. | Air drops, gliders, and boats, to pass 62. Partisans and the Dutch and Polish rules, to pass 64. | Nothing. | 36 | 3:40 | 3:00 | 4:15 | 2:08 |
-| 44 Fire | Kindling, spread, Blazes, their smoke, Control forfeited to a Fire. | EC and wind, to pass 56: SMOKE, Fog, Drifts, gliders, and paratroops need them long before Fire does. | Flame from a FT, a MOL, a DC, and WP; each terrain's Kindling and Spread numbers; Illumination by fire at night (E1.94). | 32 | 3:00 | 3:40 | 4:55 | 2:28 |
+| 50 Armored combat I | Bounding First Fire with the MA, and the Gun Duels it meets; the BMG and CMG. | Crews Bailing Out, to pass 65. (AFVs as targets of ordnance, PF, PSK, and ATR, with AP and HEAT To Hit and To Kill, are built already, by passes 7 and 9.) | Per-weapon fire and repair, which the MGs need first (D3.5, D3.7); MG fire against armor (A9.6, A9.61, D3.54); Target Facing in the firer's own hex (D3.2). | 33 | 5:40 | 5:00 | 6:15 | 3:08 |
+| 55 Armored combat II | APDS and the rest of special ammunition, Canister, Motion attempts, fire at another level, Armor Leaders. | Ordnance SMOKE and WP, to pass 85, which builds the SMOKE they place. Passengers and Riders, to pass 65. (Immobilization and Shock from To Kill, burning wrecks, and Recall are built already; a wreck burned in Close Combat is pass 35's.) | Nothing. | 20 | 5:25 | 3:40 | 4:55 | 2:28 |
+| 90 Night | The Scenario Defender at night, Cloaking, Straying, Stealthy and Lax units. | Fog, Drifts, and Winter Camouflage, to pass 95; Ice, to pass 125. | Jitter Fire, which the rules build on Straying (E1.55); the Gunflash as a mark on the Location (E1.8); NVR in every LOS read (E1.101); the rest of night fire, with Acquisition as E1.74 has it; Starshells completed. | 43 | 2:45 | 4:40 | 5:55 | 2:58 |
+| 115 Fortifications I | Foxholes, trenches, Entrenching, pillboxes, roadblocks, Rally terrain and DM. | Nothing. | Positions inside a Location, which everything else needs first; hidden Fortifications (A12.33); Clearance and Labor (B24.7, B24.8) and Trail Breaks (B13.421), which wire, mines, roadblocks, and rubble all use; the places no Fortification may be set up; Control of a pillbox (A26.132). | 74 | 3:35 | 5:00 | 6:15 | 3:08 |
+| 120 Fortifications II | Wire and minefields. | The French and Norwegian national rules, to pass 180. | Clearance of wire and mines; Known and Dummy minefields, Daisy Chains, Flail Tanks, Booby Traps; mines in Deep Snow (E3.732). | 42 | 3:15 | 4:00 | 5:15 | 2:38 |
+| 150 Offboard artillery I | Radios, Battery Access, the SR and the FFE, accuracy and error, the HE Concentration. | Field Phones, to pass 155. | Nothing. (The draft's Barrage is pass 155's.) | 36 | 3:30 | 3:25 | 4:40 | 2:20 |
+| 160 Air support | All of E7. | Nothing. | Aerial Range and LOS Hindrances (E.5, E.6); Aerial To Kill (C7.12, C7.22); the weather gates (E3.313, E3.55). | 38 | 3:00 | 4:40 | 5:55 | 2:58 |
+| 125 Terrain I: Depressions and water | Gullies, Sunken Roads, streams, rivers, fords, canals, frozen streams. | Bridges, to pass 130. Overlays, shellholes, crags, graveyards, Elevated Roads, and cliffs, to pass 135. Brush as Open Ground in snow, to pass 95; minefields in Deep Snow, to pass 120. | Crest Status (B20.9), without which a unit cannot stand IN a Depression's hex at ground level; the marsh rules that wait on water depth; stream-hex terrain (B33). | 57 | 5:30 | 5:00 | 6:15 | 3:08 |
+| 140 Terrain II: buildings and rubble | Cellars, Factories, an AFV entering a building. | Bocage, sewers, and Sewer Movement, to pass 145. The national rules, to passes 80 and 180. | Rubble made and falling (B24.11, B24.12), which a vehicle's entry needs; Fortified Buildings in live play; Rowhouses; rooftops; Split Level buildings and the Marketplace. | 43 | 3:05 | 5:40 | 6:55 | 3:28 |
+| 165 Special units: Cavalry and skis | Cavalry and skis. | Air drops, gliders, and boats, to pass 170. Partisans and the Dutch and Polish rules, to pass 180. | Nothing. | 36 | 3:40 | 3:00 | 4:15 | 2:08 |
+| 185 Fire | Kindling, spread, Blazes, their smoke, Control forfeited to a Fire. | EC and wind, to pass 85: SMOKE, Fog, Drifts, gliders, and paratroops need them long before Fire does. | Flame from a FT, a MOL, a DC, and WP; each terrain's Kindling and Spread numbers; Illumination by fire at night (E1.94). | 32 | 3:00 | 3:40 | 4:55 | 2:28 |
 | **The eleven** | | | | **454** | **42:25** | **47:45** | **61:30** | **30:45** |
 
-Passes 34b, 41, 42, and 43 keep their numbers and lose part of their titles: 34b is night alone, 41 is Depressions and water, 42 is buildings and rubble, 43 is Cavalry and skis.
+Passes 90, 125, 140, and 165 lose part of their titles: 90 is night alone, 125 is Depressions and water, 140 is buildings and rubble, 165 is Cavalry and skis.
 
-**(b) The new passes.** Numbered from 45 (from 44 until the renumbering of 2026-10-05 that made the Rules migration pass 32) so that no planned pass moves; the number is not the order (see (f)).
+**(b) The new passes.** Since the renumbering of 2026-10-09 each pass's number is its place in the order of (f), in steps of five; until then these twenty were 45 to 64, so that no planned pass moved.
 
 | Pass | Package | Rows | Counters it needs | Needs first | Build | Total | Likely |
 |---|---|---:|---|---|---|---|---|
-| 45 | Repairs: wrong results in rules already built | 45 | none | nothing; it comes first | 6:25 | 7:40 | 3:50 |
-| 46 | Infantry I: movement, stacking, and Locations | 49 | none | 45 | 5:20 | 6:35 | 3:18 |
-| 47 | Infantry II: fire, MGs, and SW | 38 | none (the German HMG's and the mortars' dm values are manufactured, R0.3) | 46 (ADJACENT) | 5:40 | 6:55 | 3:28 |
-| 48 | Infantry III: morale, Close Combat, and concealment | 35 | none | 46 (Infantry OVR, ADJACENT) | 7:20 | 8:35 | 4:18 |
-| 49 | Infantry IV: the small sections, and Interrogation | 56 | none | 46; 47 for DC between levels | 6:20 | 7:35 | 3:48 |
-| 50 | Armored combat III: other attacks on vehicles and Guns | 37 | none | 33; 47 (Residual FP from ordnance) | 4:40 | 5:55 | 2:58 |
-| 51 | Passengers, Riders, and crews | 63 | vehicle-crew counters; a Carrier with its HS crew; Rider capacity by vehicle class | 33, 50 (Collateral Attacks) | 7:00 | 8:15 | 4:08 |
-| 52 | Position and cover | 43 | Wall Advantage and HD as kept states (no catalog counter) | 34 (levels for ordnance), 46 | 6:00 | 7:15 | 3:38 |
-| 53 | Armored combat IV: equipment and formations | 68 | an armored car; a non-turreted AFV; an AFV with Secondary Armament; a partially armored AFV; a vehicle FT; an AA Gun with IFE of 40mm or less; an AFV with a G and one with Sz; a radioless trait on the T-34 M41 | 33, 34, 51, 52 (Armored Assault for D14.33) | 7:00 | 8:15 | 4:08 |
-| 54 | Guns and anti-tank weapons II | 77 | R# and X# on the Guns; a Gun that is not QSU, with LF or RFNM; a medium mortar with its dm side; a bazooka; a PIAT; a MOL-Projector; an RCL; a Gun of 100mm or more (many values manufactured, R0.3) | 45; 50 (HE Equivalency for C13.4x) | 7:20 | 8:35 | 4:18 |
-| 55 | Transport and unusual vehicles | 107 | a wagon; motorcycles in three sizes and bicycles; an amphibian and a DD tank; an Aerosan; a trailer and a portee vehicle; an Ammo Supply counter | 41 (water) for D16; 53 (Impulse Movement) for E11; 57 (snow terrain) for D17; 51 (Riders) for D15 and D17 | 7:20 | 8:35 | 4:18 |
-| 56 | SMOKE, wind, and Environmental Conditions | 33 | s# and WP# on Guns and mortars (the British mortar's s7 is already in the catalog, unread); a smoke dispenser value on each vehicle whose counter prints one (the audit says the PzKpfw IIIH does; not checked against the Vehicle Listing) | 45 | 4:20 | 5:35 | 2:48 |
-| 57 | Weather II | 25 | Winter Camouflage as a unit property; a Drift marker | 56 (wind); 34b (Random Location) | 3:20 | 4:35 | 2:18 |
-| 58 | Offboard artillery II: missions, Bombardment, and Barrage | 44 | a field phone; an IR-capable mortar; Barrage and mission markers | 39; 56 (SMOKE) | 3:40 | 4:55 | 2:28 |
-| 59 | Terrain III: bridges | 18 | pontoon and foot bridge counters; a bridge's weight limit as a state; vehicle weights | 41; 49 (Set DC) for destruction | 2:05 | 3:20 | 1:40 |
-| 60 | Terrain IV: the refused ground terrain | 63 | a Shellhole counter; Climb markers; overlay art and data (no source for it is in the repository) | 45, 46 | 5:40 | 6:55 | 3:28 |
-| 61 | Terrain V: bocage, sewers, and the village | 100 | a "Sewer" marker; Rail Cars; PFZ and Debris counters; map data for Narrow Streets, Steeples, railroads, and Towers (no in-scope board prints them, by the audit's reading) | 52 (Wall Advantage, vertex LOS); 37, 42 | 7:20 | 8:35 | 4:18 |
-| 62 | Airborne and waterborne | 61 | boats and rafts; gliders; parachute counters | 41 (water), 40 (Light AA), 56 (wind) | 4:00 | 5:15 | 2:38 |
-| 63 | Nationalities I: the catalog's counters | 14 | none | 45 | 1:25 | 2:40 | 1:20 |
-| 64 | Nationalities II: new formations and nations | 54 | SS, Volksgrenadier, and Assault Engineer MMC; U.S. paratroops and British Airborne; Partisans; Free French and Vichy; Allied Minor and Ethiopian sets; crews, SW, and a Gun for the nations that lack them | 53 (Impulse Movement) for Human Wave; 37 (entrenching); 56 (WP); 54 (PF and PSK for other nations) | 7:00 | 8:15 | 4:08 |
+| 35 | Repairs: wrong results in rules already built | 45 | none | nothing; it comes first | 6:25 | 7:40 | 3:50 |
+| 40 | Infantry I: movement, stacking, and Locations | 49 | none | 35 | 5:20 | 6:35 | 3:18 |
+| 45 | Infantry II: fire, MGs, and SW | 38 | none (the German HMG's and the mortars' dm values are manufactured, R0.3) | 40 (ADJACENT) | 5:40 | 6:55 | 3:28 |
+| 60 | Armored combat III: other attacks on vehicles and Guns | 37 | none | 50; 45 (Residual FP from ordnance) | 4:40 | 5:55 | 2:58 |
+| 65 | Passengers, Riders, and crews | 63 | vehicle-crew counters; a Carrier with its HS crew; Rider capacity by vehicle class | 50, 60 (Collateral Attacks) | 7:00 | 8:15 | 4:08 |
+| 70 | Infantry III: morale, Close Combat, and concealment | 35 | none | 40 (Infantry OVR, ADJACENT) | 7:20 | 8:35 | 4:18 |
+| 75 | Infantry IV: the small sections, and Interrogation | 56 | none | 40; 45 for DC between levels | 6:20 | 7:35 | 3:48 |
+| 80 | Nationalities I: the catalog's counters | 14 | none | 35 | 1:25 | 2:40 | 1:20 |
+| 85 | SMOKE, wind, and Environmental Conditions | 33 | s# and WP# on Guns and mortars (the British mortar's s7 is already in the catalog, unread); a smoke dispenser value on each vehicle whose counter prints one (the audit says the PzKpfw IIIH does; not checked against the Vehicle Listing) | 35 | 4:20 | 5:35 | 2:48 |
+| 95 | Weather II | 25 | Winter Camouflage as a unit property; a Drift marker | 85 (wind); 90 (Random Location) | 3:20 | 4:35 | 2:18 |
+| 100 | Position and cover | 43 | Wall Advantage and HD as kept states (no catalog counter) | 55 (levels for ordnance), 40 | 6:00 | 7:15 | 3:38 |
+| 105 | Armored combat IV: equipment and formations | 68 | an armored car; a non-turreted AFV; an AFV with Secondary Armament; a partially armored AFV; a vehicle FT; an AA Gun with IFE of 40mm or less; an AFV with a G and one with Sz; a radioless trait on the T-34 M41 | 50, 55, 65, 100 (Armored Assault for D14.33) | 7:00 | 8:15 | 4:08 |
+| 110 | Guns and anti-tank weapons II | 77 | R# and X# on the Guns; a Gun that is not QSU, with LF or RFNM; a medium mortar with its dm side; a bazooka; a PIAT; a MOL-Projector; an RCL; a Gun of 100mm or more (many values manufactured, R0.3) | 35; 60 (HE Equivalency for C13.4x) | 7:20 | 8:35 | 4:18 |
+| 130 | Terrain III: bridges | 18 | pontoon and foot bridge counters; a bridge's weight limit as a state; vehicle weights | 125; 75 (Set DC) for destruction | 2:05 | 3:20 | 1:40 |
+| 135 | Terrain IV: the refused ground terrain | 63 | a Shellhole counter; Climb markers; overlay art and data (no source for it is in the repository) | 35, 40 | 5:40 | 6:55 | 3:28 |
+| 145 | Terrain V: bocage, sewers, and the village | 100 | a "Sewer" marker; Rail Cars; PFZ and Debris counters; map data for Narrow Streets, Steeples, railroads, and Towers (no in-scope board prints them, by the audit's reading) | 100 (Wall Advantage, vertex LOS); 115, 140 | 7:20 | 8:35 | 4:18 |
+| 155 | Offboard artillery II: missions, Bombardment, and Barrage | 44 | a field phone; an IR-capable mortar; Barrage and mission markers | 150; 85 (SMOKE) | 3:40 | 4:55 | 2:28 |
+| 170 | Airborne and waterborne | 61 | boats and rafts; gliders; parachute counters | 125 (water), 160 (Light AA), 85 (wind) | 4:00 | 5:15 | 2:38 |
+| 175 | Transport and unusual vehicles | 107 | a wagon; motorcycles in three sizes and bicycles; an amphibian and a DD tank; an Aerosan; a trailer and a portee vehicle; an Ammo Supply counter | 125 (water) for D16; 105 (Impulse Movement) for E11; 95 (snow terrain) for D17; 65 (Riders) for D15 and D17 | 7:20 | 8:35 | 4:18 |
+| 180 | Nationalities II: new formations and nations | 54 | SS, Volksgrenadier, and Assault Engineer MMC; U.S. paratroops and British Airborne; Partisans; Free French and Vichy; Allied Minor and Ethiopian sets; crews, SW, and a Gun for the nations that lack them | 105 (Impulse Movement) for Human Wave; 115 (entrenching); 85 (WP); 110 (PF and PSK for other nations) | 7:00 | 8:15 | 4:08 |
 | | **20 new passes** | **1030** | | | **109:15** | **134:15** | **67:08** |
 
 **(c) Each pass's tasks.** In the order of (f). The rules are cited with the physical page of the PDF each is printed on; a task names its leading rules, and the inventory lists every row the pass takes. Counters and dependencies for the planned passes are given here; for the new passes they are in (b).
 
-**Pass 45: Repairs: wrong results in rules already built** (new; 45 rows of the inventory). Counters: none. Needs first: nothing; it comes first.
+**Pass 35: Repairs: wrong results in rules already built** (new; 45 rows of the inventory). Counters: none. Needs first: nothing; it comes first.
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 45.1 One wound procedure: the Wound Severity dr in a rout's Interdiction, a Mopping Up casualty, and a PF firer's Casualty Reduction, and a second wound's dr with +1 | A17.11 (p. 85) | 0:20 |
-| 45.2 Disrupted units stay put: no rout and no Low Crawl but for the rule's cases | A19.12 (p. 86) | 0:20 |
-| 45.3 Good Order as the rule defines it (a berserk unit is not, a TI unit is); the Morale ceiling of 10 | A.7 (p. 43), A.18 (p. 44) | 0:20 |
-| 45.4 Interdiction and the must-rout test read what fire reads: Height Advantage, wall and hedge TEM, AFV and wreck cover, Hindrance along the LOS; a rout into concealed enemy units is repulsed; a lone SMC with a MG does not Interdict | A10.531 (p. 67), A10.533 (p. 68), B1.14 (p. 113), B1.16 (p. 113), B1.17 (p. 113) | 0:40 |
-| 45.5 SMOKE's MF doubled uphill; a Hindrance total of six blocks whatever its sources | B.2 (p. 112), B.10 (p. 113) | 0:10 |
-| 45.6 Orchards cost vehicles the Open Ground rate and follow the scenario month; out-of-season grain on a LOS is Open Ground, not a refusal | B14.2 (p. 129), B14.4 (p. 129), B15.2 (p. 129) | 0:20 |
-| 45.7 HE into marsh halved; a Bog Check beside marsh | B16.31 (p. 130), B16.43 (p. 130), C3.53 (p. 170) | 0:20 |
-| 45.8 A Russian 4-2-6 Battle Hardens to a 5-2-7 | A25.2 (p. 93) | 0:05 |
-| 45.9 A wreck burned in Close Combat gets its Blaze | B25.14 (p. 143) | 0:05 |
-| 45.10 Ordnance DRM: rubble as a firer's terrain in Cases A, B, and E and the CA lock; Case L for the ATR; Case O for a Hazardous mover; the Opportunity Fire exemptions of Case B and Case C3; a PF or PSK fired from rubble | C5.1 (p. 171), C5.11 (p. 172), C5.2 (p. 172), C5.34 (p. 172), C5.5 (p. 172), C6.3 (p. 174), C6.6 (p. 175), C13.1 (p. 183), C13.8 (p. 185) | 0:40 |
-| 45.11 Acquisition lost when the rule removes it and following a vehicle target | C6.5 (p. 174), C6.51 (p. 174) | 0:40 |
-| 45.12 No Bypass and no wall or hedge crossing while towing | C10.1 (p. 180) | 0:05 |
-| 45.13 Vehicle states: BU by default on a CT AFV; no TEM in Bypass for the Vehicle Target Type; the ESB table by nationality; the RST bar on the CMG; the Stun +1 in OVR and CC and on the bailed crew; the CC Reaction counter read; a bogged vehicle unloads and a bogged Recalled AFV is Abandoned; no Hindrance from a Bypassing AFV the LOS does not touch | D1.321 (p. 194), D2.16 (p. 196), D2.38 (p. 198), D5.33 (p. 203), D5.34 (p. 203), D5.341 (p. 203), D7.21 (p. 207), D8.4 (p. 209), D8.5 (p. 209), D9.4 (p. 210) | 1:00 |
-| 45.14 Night and weather costs charged in Bypass and VBM and on an unpaved road in Mud | E1.52 (p. 224), E3.64 (p. 230), E3.65 (p. 230), E3.9 (p. 231) | 0:20 |
-| 45.15 A refusal for any game that places a fortification counter, until passes 37 and 38 land |  | 0:20 |
-| 45.16 Not rules, from the week review: the seven tests not written, and a sweep test of Play for what a side may not read |  | 0:40 |
+| 35.1 One wound procedure: the Wound Severity dr in a rout's Interdiction, a Mopping Up casualty, and a PF firer's Casualty Reduction, and a second wound's dr with +1 | A17.11 (p. 85) | 0:20 |
+| 35.2 Disrupted units stay put: no rout and no Low Crawl but for the rule's cases | A19.12 (p. 86) | 0:20 |
+| 35.3 Good Order as the rule defines it (a berserk unit is not, a TI unit is); the Morale ceiling of 10 | A.7 (p. 43), A.18 (p. 44) | 0:20 |
+| 35.4 Interdiction and the must-rout test read what fire reads: Height Advantage, wall and hedge TEM, AFV and wreck cover, Hindrance along the LOS; a rout into concealed enemy units is repulsed; a lone SMC with a MG does not Interdict | A10.531 (p. 67), A10.533 (p. 68), B1.14 (p. 113), B1.16 (p. 113), B1.17 (p. 113) | 0:40 |
+| 35.5 SMOKE's MF doubled uphill; a Hindrance total of six blocks whatever its sources | B.2 (p. 112), B.10 (p. 113) | 0:10 |
+| 35.6 Orchards cost vehicles the Open Ground rate and follow the scenario month; out-of-season grain on a LOS is Open Ground, not a refusal | B14.2 (p. 129), B14.4 (p. 129), B15.2 (p. 129) | 0:20 |
+| 35.7 HE into marsh halved; a Bog Check beside marsh | B16.31 (p. 130), B16.43 (p. 130), C3.53 (p. 170) | 0:20 |
+| 35.8 A Russian 4-2-6 Battle Hardens to a 5-2-7 | A25.2 (p. 93) | 0:05 |
+| 35.9 A wreck burned in Close Combat gets its Blaze | B25.14 (p. 143) | 0:05 |
+| 35.10 Ordnance DRM: rubble as a firer's terrain in Cases A, B, and E and the CA lock; Case L for the ATR; Case O for a Hazardous mover; the Opportunity Fire exemptions of Case B and Case C3; a PF or PSK fired from rubble | C5.1 (p. 171), C5.11 (p. 172), C5.2 (p. 172), C5.34 (p. 172), C5.5 (p. 172), C6.3 (p. 174), C6.6 (p. 175), C13.1 (p. 183), C13.8 (p. 185) | 0:40 |
+| 35.11 Acquisition lost when the rule removes it and following a vehicle target | C6.5 (p. 174), C6.51 (p. 174) | 0:40 |
+| 35.12 No Bypass and no wall or hedge crossing while towing | C10.1 (p. 180) | 0:05 |
+| 35.13 Vehicle states: BU by default on a CT AFV; no TEM in Bypass for the Vehicle Target Type; the ESB table by nationality; the RST bar on the CMG; the Stun +1 in OVR and CC and on the bailed crew; the CC Reaction counter read; a bogged vehicle unloads and a bogged Recalled AFV is Abandoned; no Hindrance from a Bypassing AFV the LOS does not touch | D1.321 (p. 194), D2.16 (p. 196), D2.38 (p. 198), D5.33 (p. 203), D5.34 (p. 203), D5.341 (p. 203), D7.21 (p. 207), D8.4 (p. 209), D8.5 (p. 209), D9.4 (p. 210) | 1:00 |
+| 35.14 Night and weather costs charged in Bypass and VBM and on an unpaved road in Mud | E1.52 (p. 224), E3.64 (p. 230), E3.65 (p. 230), E3.9 (p. 231) | 0:20 |
+| 35.15 A refusal for any game that places a fortification counter, until passes 115 and 120 land |  | 0:20 |
+| 35.16 Not rules, from the week review: the seven tests not written, and a sweep test of Play for what a side may not read |  | 0:40 |
 | Overhead | | 1:15 |
-| **Pass 45 total** (build 6:25) | | **7:40** |
+| **Pass 35 total** (build 6:25) | | **7:40** |
 
-**Pass 46: Infantry I: movement, stacking, and Locations** (new; 49 rows of the inventory). Counters: none. Needs first: 45.
+**Pass 40: Infantry I: movement, stacking, and Locations** (new; 49 rows of the inventory). Counters: none. Needs first: 35.
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 46.1 ADJACENT as the rule has it: across a level, a wall or hedge, and a stairwell | A.8 (p. 43) | 0:40 |
-| 46.2 Road entry as the mover's choice, with FFMO and no TEM at the road rate; woods-road hexes; the Road Bonus's cancellations | A4.132 (p. 48), B3.3 (p. 113), B3.4 (p. 114), B13.31 (p. 128), B13.32 (p. 128) | 0:40 |
-| 46.3 Dash | A4.63 (p. 51), C6.1 (p. 173) | 0:40 |
-| 46.4 Infantry OVR in full, and recapture of prisoners by entry | A4.14 (p. 49), A4.15 (p. 49), A4.151 (p. 49), A4.152 (p. 49), A20.54 (p. 87) | 1:00 |
-| 46.5 Mandatory TPBF against an entering unit; FPF by Infantry manning ordnance | A8.311 (p. 61), A8.312 (p. 61) | 0:20 |
-| 46.6 Overstacking in the MPh and on the IFT; vehicles counted; a manning crew's size in play | A5.11 (p. 52), A5.12 (p. 52), A5.131 (p. 52), A5.132 (p. 52), A5.2 (p. 52), A5.4 (p. 53), A5.5 (p. 53) | 0:40 |
-| 46.7 Portage and movement corrections: a moved MMG, HMG, or pushed Gun in the AFPh; no recouped portage; the leader's IPC as a choice; CX removal; Assault Movement after an in-Location MF; SMOKE outside Difficult Terrain; conveyance MF | A4.11 (p. 48), A4.4 (p. 50), A4.41 (p. 50), A4.42 (p. 50), A4.44 (p. 50), A4.51 (p. 51), A4.61 (p. 51), A4.72 (p. 52) | 0:40 |
-| 46.8 Hazardous Movement in every phase | A4.62 (p. 51) | 0:20 |
-| 46.9 Deployment and Recombining exemptions; half-hex seams; offboard options; setup limits; provisional turns | A1.31 (p. 45), A1.32 (p. 45), A1.6 (p. 45), A2.2 (p. 45), A2.3 (p. 45), A2.52 (p. 46), A2.9 (p. 47), A3.9 (p. 47) | 0:20 |
+| 40.1 ADJACENT as the rule has it: across a level, a wall or hedge, and a stairwell | A.8 (p. 43) | 0:40 |
+| 40.2 Road entry as the mover's choice, with FFMO and no TEM at the road rate; woods-road hexes; the Road Bonus's cancellations | A4.132 (p. 48), B3.3 (p. 113), B3.4 (p. 114), B13.31 (p. 128), B13.32 (p. 128) | 0:40 |
+| 40.3 Dash | A4.63 (p. 51), C6.1 (p. 173) | 0:40 |
+| 40.4 Infantry OVR in full, and recapture of prisoners by entry | A4.14 (p. 49), A4.15 (p. 49), A4.151 (p. 49), A4.152 (p. 49), A20.54 (p. 87) | 1:00 |
+| 40.5 Mandatory TPBF against an entering unit; FPF by Infantry manning ordnance | A8.311 (p. 61), A8.312 (p. 61) | 0:20 |
+| 40.6 Overstacking in the MPh and on the IFT; vehicles counted; a manning crew's size in play | A5.11 (p. 52), A5.12 (p. 52), A5.131 (p. 52), A5.132 (p. 52), A5.2 (p. 52), A5.4 (p. 53), A5.5 (p. 53) | 0:40 |
+| 40.7 Portage and movement corrections: a moved MMG, HMG, or pushed Gun in the AFPh; no recouped portage; the leader's IPC as a choice; CX removal; Assault Movement after an in-Location MF; SMOKE outside Difficult Terrain; conveyance MF | A4.11 (p. 48), A4.4 (p. 50), A4.41 (p. 50), A4.42 (p. 50), A4.44 (p. 50), A4.51 (p. 51), A4.61 (p. 51), A4.72 (p. 52) | 0:40 |
+| 40.8 Hazardous Movement in every phase | A4.62 (p. 51) | 0:20 |
+| 40.9 Deployment and Recombining exemptions; half-hex seams; offboard options; setup limits; provisional turns | A1.31 (p. 45), A1.32 (p. 45), A1.6 (p. 45), A2.2 (p. 45), A2.3 (p. 45), A2.52 (p. 46), A2.9 (p. 47), A3.9 (p. 47) | 0:20 |
 | Overhead | | 1:15 |
-| **Pass 46 total** (build 5:20) | | **6:35** |
+| **Pass 40 total** (build 5:20) | | **6:35** |
 
-**Pass 47: Infantry II: fire, MGs, and SW** (new; 38 rows of the inventory). Counters: none (the German HMG's and the mortars' dm values are manufactured, R0.3). Needs first: 46 (ADJACENT).
+**Pass 45: Infantry II: fire, MGs, and SW** (new; 38 rows of the inventory). Counters: none (the German HMG's and the mortars' dm values are manufactured, R0.3). Needs first: 40 (ADJACENT).
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 47.1 Fire between levels of one hex as PBF; vertical ADJACENT; upper-level Encirclement | A7.21 (p. 54), A7.72 (p. 58), B23.25 (p. 136), B23.26 (p. 136) | 0:40 |
-| 47.2 Cowering marks the unit and its SW; the DEFENDER's choice of ROF or Residual FP | A7.9 (p. 58), A8.23 (p. 60) | 0:40 |
-| 47.3 Residual FP completed: the cap after adjustment, CX and the other outside DRM, a malfunctioned weapon, one attack a Location, ordnance HE, Spraying Fire in the MPh | A8.2 (p. 60), A8.22 (p. 60), A8.221 (p. 60), A8.24 (p. 60), A8.25 (p. 60), A8.26 (p. 60) | 0:40 |
-| 47.4 Squad Spraying Fire off the catalog trait; the capability test for a group | A7.34 (p. 56), A9.5 (p. 64), A9.52 (p. 64) | 0:40 |
-| 47.5 Fire Lanes completed: vehicles, later MF, Snap Shots, hexside TEM and Hindrance, cancellation | A9.22 (p. 63), A9.221 (p. 63), A9.222 (p. 63), A9.223 (p. 63) | 0:40 |
-| 47.6 Field of Fire, Mandatory Fire Direction and the 16-hex limit, a leader directing a MG's later shots | A7.53 (p. 57), A9.21 (p. 62), A9.4 (p. 64) | 0:40 |
-| 47.7 Sustained Fire's X#; SW upkeep: repair of mortars, self-destruction, dismantling for every SW the rule names | A.11 (p. 43), A9.3 (p. 63), A9.72 (p. 65), A9.73 (p. 65), A9.8 (p. 65) | 0:40 |
-| 47.8 Fire group shape as one chain; no berserk unit in a multi-Location group; Opportunity Fire by ordnance; a Gun crew's inherent FP; FPF with unmarked units; MG Bore Sighting | A7.5 (p. 57), A7.54 (p. 57), A7.25 (p. 55), A7.353 (p. 56), A8.31 (p. 61), C6.44 (p. 174) | 0:40 |
-| 47.9 Fire package corrections: a crew's and a prisoner's Casualty Reduction, the A7.212 limit | A7.212 (p. 55), A7.302 (p. 55) | 0:20 |
+| 45.1 Fire between levels of one hex as PBF; vertical ADJACENT; upper-level Encirclement | A7.21 (p. 54), A7.72 (p. 58), B23.25 (p. 136), B23.26 (p. 136) | 0:40 |
+| 45.2 Cowering marks the unit and its SW; the DEFENDER's choice of ROF or Residual FP | A7.9 (p. 58), A8.23 (p. 60) | 0:40 |
+| 45.3 Residual FP completed: the cap after adjustment, CX and the other outside DRM, a malfunctioned weapon, one attack a Location, ordnance HE, Spraying Fire in the MPh | A8.2 (p. 60), A8.22 (p. 60), A8.221 (p. 60), A8.24 (p. 60), A8.25 (p. 60), A8.26 (p. 60) | 0:40 |
+| 45.4 Squad Spraying Fire off the catalog trait; the capability test for a group | A7.34 (p. 56), A9.5 (p. 64), A9.52 (p. 64) | 0:40 |
+| 45.5 Fire Lanes completed: vehicles, later MF, Snap Shots, hexside TEM and Hindrance, cancellation | A9.22 (p. 63), A9.221 (p. 63), A9.222 (p. 63), A9.223 (p. 63) | 0:40 |
+| 45.6 Field of Fire, Mandatory Fire Direction and the 16-hex limit, a leader directing a MG's later shots | A7.53 (p. 57), A9.21 (p. 62), A9.4 (p. 64) | 0:40 |
+| 45.7 Sustained Fire's X#; SW upkeep: repair of mortars, self-destruction, dismantling for every SW the rule names | A.11 (p. 43), A9.3 (p. 63), A9.72 (p. 65), A9.73 (p. 65), A9.8 (p. 65) | 0:40 |
+| 45.8 Fire group shape as one chain; no berserk unit in a multi-Location group; Opportunity Fire by ordnance; a Gun crew's inherent FP; FPF with unmarked units; MG Bore Sighting | A7.5 (p. 57), A7.54 (p. 57), A7.25 (p. 55), A7.353 (p. 56), A8.31 (p. 61), C6.44 (p. 174) | 0:40 |
+| 45.9 Fire package corrections: a crew's and a prisoner's Casualty Reduction, the A7.212 limit | A7.212 (p. 55), A7.302 (p. 55) | 0:20 |
 | Overhead | | 1:15 |
-| **Pass 47 total** (build 5:40) | | **6:55** |
+| **Pass 45 total** (build 5:40) | | **6:55** |
 
-**Pass 33: Armored combat I** (planned at 5:40 of build; 33 rows of the inventory). Counters: none new (the PzKpfw IIIH and T-34 M41 suffice); a Gun Duel needs no counter. Needs first: 45 (vehicle states, Acquisition).
+**Pass 50: Armored combat I** (planned at 5:40 of build; 33 rows of the inventory). Counters: none new (the PzKpfw IIIH and T-34 M41 suffice); a Gun Duel needs no counter. Needs first: 35 (vehicle states, Acquisition).
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 33.1 Vehicle weapon states: per-weapon fire in a phase, malfunction and repair for MA, BMG, CMG, and AAMG, Recall with a disabled MA | D1.8 (p. 195), D1.81 (p. 195), D1.82 (p. 195), D3.5 (p. 200), D3.7 (p. 201) | 0:40 |
-| 33.2 BMG and CMG on the IFT, by VCA and TCA, with Case A as an IFT DRM, in Bypass too | D2.35 (p. 198), D3.51 (p. 201), D3.52 (p. 201) | 1:00 |
-| 33.3 The MA while moving: Bounding First Fire, Cases C to C4, Delay, a declared MP expenditure, a TCA or VCA change with MP or at the end of a fire phase | C3.22 (p. 169), C5.13 (p. 172), C5.3 (p. 172), C5.31 (p. 172), C5.32 (p. 172), C5.33 (p. 172), C5.35 (p. 172), C6.16 (p. 173), D2.11 (p. 195), D2.17 (p. 196), D2.18 (p. 196), D2.41 (p. 198), D2.42 (p. 198), D3.11 (p. 199), D3.12 (p. 199), D3.3 (p. 199), D3.31 (p. 200), D3.32 (p. 200) | 1:40 |
-| 33.4 Gun Duels | C2.2401 (p. 167) | 0:40 |
-| 33.5 MG fire against armor: To Hit, To Kill, and the Stun it causes | A9.6 (p. 64), A9.61 (p. 64), A9.611 (p. 65), D3.54 (p. 201) | 0:40 |
-| 33.6 Target Facing against a vehicle in the firer's own hex | D3.2 (p. 199) | 0:20 |
+| 50.1 Vehicle weapon states: per-weapon fire in a phase, malfunction and repair for MA, BMG, CMG, and AAMG, Recall with a disabled MA | D1.8 (p. 195), D1.81 (p. 195), D1.82 (p. 195), D3.5 (p. 200), D3.7 (p. 201) | 0:40 |
+| 50.2 BMG and CMG on the IFT, by VCA and TCA, with Case A as an IFT DRM, in Bypass too | D2.35 (p. 198), D3.51 (p. 201), D3.52 (p. 201) | 1:00 |
+| 50.3 The MA while moving: Bounding First Fire, Cases C to C4, Delay, a declared MP expenditure, a TCA or VCA change with MP or at the end of a fire phase | C3.22 (p. 169), C5.13 (p. 172), C5.3 (p. 172), C5.31 (p. 172), C5.32 (p. 172), C5.33 (p. 172), C5.35 (p. 172), C6.16 (p. 173), D2.11 (p. 195), D2.17 (p. 196), D2.18 (p. 196), D2.41 (p. 198), D2.42 (p. 198), D3.11 (p. 199), D3.12 (p. 199), D3.3 (p. 199), D3.31 (p. 200), D3.32 (p. 200) | 1:40 |
+| 50.4 Gun Duels | C2.2401 (p. 167) | 0:40 |
+| 50.5 MG fire against armor: To Hit, To Kill, and the Stun it causes | A9.6 (p. 64), A9.61 (p. 64), A9.611 (p. 65), D3.54 (p. 201) | 0:40 |
+| 50.6 Target Facing against a vehicle in the firer's own hex | D3.2 (p. 199) | 0:20 |
 | Overhead | | 1:15 |
-| **Pass 33 total** (build 5:00) | | **6:15** |
+| **Pass 50 total** (build 5:00) | | **6:15** |
 
-**Pass 34: Armored combat II** (planned at 5:25 of build; 20 rows of the inventory). Counters: a Gun or AFV with APDS; one with Canister; Armor Leaders 8-1 to 10-2. Needs first: 33.
+**Pass 55: Armored combat II** (planned at 5:25 of build; 20 rows of the inventory). Counters: a Gun or AFV with APDS; one with Canister; Armor Leaders 8-1 to 10-2. Needs first: 50.
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 34.1 Special ammunition: APDS, the Supply Chart's months, Elite depletion, AP# and HE# | C4.3 (p. 171), C7.32 (p. 176), C8.11 (p. 177), C8.12 (p. 177), C8.2 (p. 178), C8.8 (p. 179) | 0:40 |
-| 34.2 Canister | C8.4 (p. 178), C8.41 (p. 178), C8.42 (p. 178) | 0:40 |
-| 34.3 Motion attempts | D2.401 (p. 198) | 0:40 |
-| 34.4 Ordnance and vehicle fire at another level, with Height Advantage | C2.6 (p. 168), B10.3 (p. 125), B10.31 (p. 125) | 0:40 |
-| 34.5 Armor Leaders, in fire, OVR, Close Combat, and Bog Removal; Inexperienced Crews | D3.4 (p. 200), D3.41 (p. 200), D3.42 (p. 200), D3.43 (p. 200), D3.44 (p. 200), D3.45 (p. 200), D7.16 (p. 207) | 0:40 |
-| 34.6 The counters |  | 0:20 |
+| 55.1 Special ammunition: APDS, the Supply Chart's months, Elite depletion, AP# and HE# | C4.3 (p. 171), C7.32 (p. 176), C8.11 (p. 177), C8.12 (p. 177), C8.2 (p. 178), C8.8 (p. 179) | 0:40 |
+| 55.2 Canister | C8.4 (p. 178), C8.41 (p. 178), C8.42 (p. 178) | 0:40 |
+| 55.3 Motion attempts | D2.401 (p. 198) | 0:40 |
+| 55.4 Ordnance and vehicle fire at another level, with Height Advantage | C2.6 (p. 168), B10.3 (p. 125), B10.31 (p. 125) | 0:40 |
+| 55.5 Armor Leaders, in fire, OVR, Close Combat, and Bog Removal; Inexperienced Crews | D3.4 (p. 200), D3.41 (p. 200), D3.42 (p. 200), D3.43 (p. 200), D3.44 (p. 200), D3.45 (p. 200), D7.16 (p. 207) | 0:40 |
+| 55.6 The counters |  | 0:20 |
 | Overhead | | 1:15 |
-| **Pass 34 total** (build 3:40) | | **4:55** |
+| **Pass 55 total** (build 3:40) | | **4:55** |
 
-**Pass 50: Armored combat III: other attacks on vehicles and Guns** (new; 37 rows of the inventory). Counters: none. Needs first: 33; 47 (Residual FP from ordnance).
+**Pass 60: Armored combat III: other attacks on vehicles and Guns** (new; 37 rows of the inventory). Counters: none. Needs first: 50; 45 (Residual FP from ordnance).
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 50.1 Specific Collateral Attacks; the Infantry Target Type against a Location that holds a vehicle, or Known and concealed units together | D.8A (p. 192), C3.32 (p. 169), C3.4 (p. 170), C3.41 (p. 170) | 0:40 |
-| 50.2 Indirect Fire against vehicles; a mortar at a mixed hex; Indirect Fire by building level; Air Bursts in full | C1.55 (p. 165), C3.332 (p. 170), C3.72 (p. 171), C9.1 (p. 179), B23.32 (p. 136), B13.3 (p. 128) | 0:40 |
-| 50.3 FT, MOL, and DC against an AFV | A7.307 (p. 55), A22.34 (p. 89), A22.612 (p. 89), A23.5 (p. 91), C7.344 (p. 177), C7.346 (p. 177) | 0:40 |
-| 50.4 HE Equivalency; shaped-charge weapons against Personnel | C8.31 (p. 178), C13.9 (p. 185), C13.31 (p. 183) | 1:20 |
-| 50.5 Guns as targets: a crew that shares its Location, an unattended Gun, Random SW and Gun Destruction, AP and HEAT, the ATR at a Gun, Emplacement's limits | C11.2 (p. 181), C11.3 (p. 182), C11.4 (p. 182), C11.5 (p. 182), C11.51 (p. 182), C11.52 (p. 182), C11.6 (p. 182), A9.74 (p. 65), C13.23 (p. 183) | 1:00 |
-| 50.6 The rest of the To Kill tables: upper-superstructure hits, the table's notes; Area Acquisition by hex | C3.9 (p. 171), C7.21 (p. 176), C7.7 (p. 177), C6.52 (p. 174), C6.521 (p. 174) | 0:20 |
+| 60.1 Specific Collateral Attacks; the Infantry Target Type against a Location that holds a vehicle, or Known and concealed units together | D.8A (p. 192), C3.32 (p. 169), C3.4 (p. 170), C3.41 (p. 170) | 0:40 |
+| 60.2 Indirect Fire against vehicles; a mortar at a mixed hex; Indirect Fire by building level; Air Bursts in full | C1.55 (p. 165), C3.332 (p. 170), C3.72 (p. 171), C9.1 (p. 179), B23.32 (p. 136), B13.3 (p. 128) | 0:40 |
+| 60.3 FT, MOL, and DC against an AFV | A7.307 (p. 55), A22.34 (p. 89), A22.612 (p. 89), A23.5 (p. 91), C7.344 (p. 177), C7.346 (p. 177) | 0:40 |
+| 60.4 HE Equivalency; shaped-charge weapons against Personnel | C8.31 (p. 178), C13.9 (p. 185), C13.31 (p. 183) | 1:20 |
+| 60.5 Guns as targets: a crew that shares its Location, an unattended Gun, Random SW and Gun Destruction, AP and HEAT, the ATR at a Gun, Emplacement's limits | C11.2 (p. 181), C11.3 (p. 182), C11.4 (p. 182), C11.5 (p. 182), C11.51 (p. 182), C11.52 (p. 182), C11.6 (p. 182), A9.74 (p. 65), C13.23 (p. 183) | 1:00 |
+| 60.6 The rest of the To Kill tables: upper-superstructure hits, the table's notes; Area Acquisition by hex | C3.9 (p. 171), C7.21 (p. 176), C7.7 (p. 177), C6.52 (p. 174), C6.521 (p. 174) | 0:20 |
 | Overhead | | 1:15 |
-| **Pass 50 total** (build 4:40) | | **5:55** |
+| **Pass 60 total** (build 4:40) | | **5:55** |
 
-**Pass 51: Passengers, Riders, and crews** (new; 63 rows of the inventory). Counters: vehicle-crew counters; a Carrier with its HS crew; Rider capacity by vehicle class. Needs first: 33, 50 (Collateral Attacks).
+**Pass 65: Passengers, Riders, and crews** (new; 63 rows of the inventory). Counters: vehicle-crew counters; a Carrier with its HS crew; Rider capacity by vehicle class. Needs first: 50, 60 (Collateral Attacks).
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 51.1 Passengers as units under fire: Collateral Attacks, Unprotected crews, FFNAM on mounting and leaving, their morale, their Survival | D.6 (p. 192), D.8 (p. 192), D.8B (p. 192), D5.31 (p. 203), D5.311 (p. 203), D5.43 (p. 204), D6.61 (p. 205), D6.62 (p. 206), D6.66 (p. 206), D6.7 (p. 206), D6.71 (p. 206), D6.9 (p. 207), D9.1 (p. 209), A7.308 (p. 55), A7.82 (p. 58) | 1:00 |
-| 51.2 Passenger action: Mounted Fire, rout, leaders aboard, in an OVR and in Close Combat | D6.1 (p. 204), D6.31 (p. 205), D6.63 (p. 206), D6.64 (p. 206), D6.65 (p. 206), D6.651 (p. 206), D6.72 (p. 206), D7.11 (p. 207), A11.611 (p. 75), A11.71 (p. 76) | 1:00 |
-| 51.3 Loading and unloading completed | D6.4 (p. 205), D6.5 (p. 205) | 0:40 |
-| 51.4 Riders and Bailing Out | D6.2 (p. 205), D6.21 (p. 205), D6.22 (p. 205), D6.23 (p. 205), D6.24 (p. 205), B13.43 (p. 128) | 0:40 |
-| 51.5 Carriers | D6.8 (p. 206), D6.81 (p. 206), D6.82 (p. 206), D6.83 (p. 206), D6.84 (p. 206) | 0:40 |
-| 51.6 Voluntary Abandonment, self-destruction, re-crewing, a crew's FP, MG Removal | D5.1 (p. 203), D5.41 (p. 204), D5.411 (p. 204), D5.42 (p. 204), D5.8 (p. 204), D6.631 (p. 206) | 0:40 |
-| 51.7 The Immobilization TC's second cause; Crew Survival after every kind of destruction; Brew Ups | D5.5 (p. 204), D5.6 (p. 204), D5.7 (p. 204), D8.11 (p. 208), D8.22 (p. 209), D9.2 (p. 209) | 0:40 |
-| 51.8 Captured vehicles: an Abandoned AFV taken, Temporary Drivers and Crews, their Control | A21.2 (p. 88), A21.21 (p. 88), A21.22 (p. 88), A26.12 (p. 99), D5.343 (p. 204) | 1:00 |
-| 51.9 Wrecks: attacked as their vehicle; Scrounging | D10.1 (p. 210), D10.5 (p. 211), D10.51 (p. 211), D10.52 (p. 211) | 0:40 |
+| 65.1 Passengers as units under fire: Collateral Attacks, Unprotected crews, FFNAM on mounting and leaving, their morale, their Survival | D.6 (p. 192), D.8 (p. 192), D.8B (p. 192), D5.31 (p. 203), D5.311 (p. 203), D5.43 (p. 204), D6.61 (p. 205), D6.62 (p. 206), D6.66 (p. 206), D6.7 (p. 206), D6.71 (p. 206), D6.9 (p. 207), D9.1 (p. 209), A7.308 (p. 55), A7.82 (p. 58) | 1:00 |
+| 65.2 Passenger action: Mounted Fire, rout, leaders aboard, in an OVR and in Close Combat | D6.1 (p. 204), D6.31 (p. 205), D6.63 (p. 206), D6.64 (p. 206), D6.65 (p. 206), D6.651 (p. 206), D6.72 (p. 206), D7.11 (p. 207), A11.611 (p. 75), A11.71 (p. 76) | 1:00 |
+| 65.3 Loading and unloading completed | D6.4 (p. 205), D6.5 (p. 205) | 0:40 |
+| 65.4 Riders and Bailing Out | D6.2 (p. 205), D6.21 (p. 205), D6.22 (p. 205), D6.23 (p. 205), D6.24 (p. 205), B13.43 (p. 128) | 0:40 |
+| 65.5 Carriers | D6.8 (p. 206), D6.81 (p. 206), D6.82 (p. 206), D6.83 (p. 206), D6.84 (p. 206) | 0:40 |
+| 65.6 Voluntary Abandonment, self-destruction, re-crewing, a crew's FP, MG Removal | D5.1 (p. 203), D5.41 (p. 204), D5.411 (p. 204), D5.42 (p. 204), D5.8 (p. 204), D6.631 (p. 206) | 0:40 |
+| 65.7 The Immobilization TC's second cause; Crew Survival after every kind of destruction; Brew Ups | D5.5 (p. 204), D5.6 (p. 204), D5.7 (p. 204), D8.11 (p. 208), D8.22 (p. 209), D9.2 (p. 209) | 0:40 |
+| 65.8 Captured vehicles: an Abandoned AFV taken, Temporary Drivers and Crews, their Control | A21.2 (p. 88), A21.21 (p. 88), A21.22 (p. 88), A26.12 (p. 99), D5.343 (p. 204) | 1:00 |
+| 65.9 Wrecks: attacked as their vehicle; Scrounging | D10.1 (p. 210), D10.5 (p. 211), D10.51 (p. 211), D10.52 (p. 211) | 0:40 |
 | Overhead | | 1:15 |
-| **Pass 51 total** (build 7:00) | | **8:15** |
+| **Pass 65 total** (build 7:00) | | **8:15** |
 
-**Pass 48: Infantry III: morale, Close Combat, and concealment** (new; 35 rows of the inventory). Counters: none. Needs first: 46 (Infantry OVR, ADJACENT).
+**Pass 70: Infantry III: morale, Close Combat, and concealment** (new; 35 rows of the inventory). Counters: none. Needs first: 40 (Infantry OVR, ADJACENT).
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 48.1 Voluntary Break and Voluntary Rout; LLMC and LLTC outside fire | A10.2 (p. 65), A10.41 (p. 66), A10.711 (p. 69) | 0:40 |
-| 48.2 Rout by level and inside a building; Interdiction by vehicles and Guns; Fanaticism by SSR | A10.5 (p. 66), A10.51 (p. 66), A10.53 (p. 67), A10.532 (p. 67), A10.8 (p. 69) | 0:40 |
-| 48.3 Who sees: one Good Order read for fire, movement, advance, Rally, and gain; the other actions that cost a "?" | A12.1 (p. 76), A12.14 (p. 77), A12.141 (p. 78) | 0:40 |
-| 48.4 Owner's choices on a "?": voluntary removal, and the viewer's option not to force a loss | A12.14 (p. 77) | 0:40 |
-| 48.5 "?" for the crew of an Emplaced Gun and for vehicles; units entering concealed; HIP for vehicles and out of Concealment Terrain | A12.11 (p. 76), A12.12 (p. 77), A12.121 (p. 77), A12.2 (p. 79), A12.3 (p. 80), A12.34 (p. 80) | 0:40 |
-| 48.6 Withdrawal completed; Close Combat with a Gun's crew | A11.1 (p. 72), A11.21 (p. 73) | 0:40 |
-| 48.7 Infantry against Infantry in a Location with a vehicle, with its Ambush; Street Fighting | A11.31 (p. 73), A11.34 (p. 73), A11.4 (p. 73), A11.5 (p. 74), A11.51 (p. 74), A11.52 (p. 74), A11.8 (p. 76) | 1:20 |
-| 48.8 Bypass endings and detection leftovers | A12.13 (p. 77), A12.15 (p. 78), A12.151 (p. 78), A12.42 (p. 80) | 0:20 |
-| 48.9 Searching; Mopping Up in any building | A12.152 (p. 79), A12.153 (p. 79), A12.154 (p. 79) | 1:00 |
-| 48.10 Right of Inspection by LOS | A12.16 (p. 79) | 0:40 |
+| 70.1 Voluntary Break and Voluntary Rout; LLMC and LLTC outside fire | A10.2 (p. 65), A10.41 (p. 66), A10.711 (p. 69) | 0:40 |
+| 70.2 Rout by level and inside a building; Interdiction by vehicles and Guns; Fanaticism by SSR | A10.5 (p. 66), A10.51 (p. 66), A10.53 (p. 67), A10.532 (p. 67), A10.8 (p. 69) | 0:40 |
+| 70.3 Who sees: one Good Order read for fire, movement, advance, Rally, and gain; the other actions that cost a "?" | A12.1 (p. 76), A12.14 (p. 77), A12.141 (p. 78) | 0:40 |
+| 70.4 Owner's choices on a "?": voluntary removal, and the viewer's option not to force a loss | A12.14 (p. 77) | 0:40 |
+| 70.5 "?" for the crew of an Emplaced Gun and for vehicles; units entering concealed; HIP for vehicles and out of Concealment Terrain | A12.11 (p. 76), A12.12 (p. 77), A12.121 (p. 77), A12.2 (p. 79), A12.3 (p. 80), A12.34 (p. 80) | 0:40 |
+| 70.6 Withdrawal completed; Close Combat with a Gun's crew | A11.1 (p. 72), A11.21 (p. 73) | 0:40 |
+| 70.7 Infantry against Infantry in a Location with a vehicle, with its Ambush; Street Fighting | A11.31 (p. 73), A11.34 (p. 73), A11.4 (p. 73), A11.5 (p. 74), A11.51 (p. 74), A11.52 (p. 74), A11.8 (p. 76) | 1:20 |
+| 70.8 Bypass endings and detection leftovers | A12.13 (p. 77), A12.15 (p. 78), A12.151 (p. 78), A12.42 (p. 80) | 0:20 |
+| 70.9 Searching; Mopping Up in any building | A12.152 (p. 79), A12.153 (p. 79), A12.154 (p. 79) | 1:00 |
+| 70.10 Right of Inspection by LOS | A12.16 (p. 79) | 0:40 |
 | Overhead | | 1:15 |
-| **Pass 48 total** (build 7:20) | | **8:35** |
+| **Pass 70 total** (build 7:20) | | **8:35** |
 
-**Pass 49: Infantry IV: the small sections, and Interrogation** (new; 56 rows of the inventory). Counters: none. Needs first: 46; 47 for DC between levels.
+**Pass 75: Infantry IV: the small sections, and Interrogation** (new; 56 rows of the inventory). Counters: none. Needs first: 40; 45 for DC between levels.
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 49.1 Snipers completed: the counter at setup, placement, the Sniper player's choices, attacks on vehicles and on the enemy Sniper, Sniper Check, LLMC after a hit | A14.01 (p. 82), A14.1 (p. 82), A14.2 (p. 82), A14.21 (p. 82), A14.22 (p. 82), A14.3 (p. 82), A14.31 (p. 82), A14.33 (p. 82), A14.4 (p. 82) | 1:00 |
-| 49.2 Heat of Battle and berserk remainder: Unarmed and PRC exemptions, a hero's weapons, the next nearest target, the return to normal | A15.1 (p. 83), A15.23 (p. 83), A15.43 (p. 84), A15.431 (p. 84), A15.432 (p. 84), A15.45 (p. 84), A15.46 (p. 84) | 1:00 |
-| 49.3 Wounds: the pin after more than 3 MF, a carried man; Leader Creation in Close Combat against a vehicle | A17.1 (p. 85), A17.2 (p. 85), A18.12 (p. 85), A18.2 (p. 85) | 0:20 |
-| 49.4 Unit Substitution: Unarmed exemption, Ammunition Shortage, an SSR ELR for underscored units, a MG's B# for Inexperienced users | A19.11 (p. 86), A19.131 (p. 86), A19.132 (p. 86), A19.31 (p. 86), A19.32 (p. 86) | 0:40 |
-| 49.5 Prisoners: Commissars and stacks at surrender, the exchange, Massacre of any Unarmed unit, a Guard's Deployment, escape by nationality, rearming, Scrounging, the double VP | A20.21 (p. 86), A20.221 (p. 87), A20.4 (p. 87), A20.5 (p. 87), A20.51 (p. 87), A20.53 (p. 87), A20.55 (p. 88), A20.551 (p. 88), A20.552 (p. 88), A26.222 (p. 100) | 0:40 |
-| 49.6 MOL by a leader; a DC at another level; Set DC and its Clearance | A22.611 (p. 89), A22.62 (p. 90), A23.3 (p. 90), A23.6 (p. 91), A23.61 (p. 91), A23.7 (p. 91), A23.71 (p. 91), A23.72 (p. 91), B24.75 (p. 142) | 1:40 |
-| 49.7 Control of any hex or Location a card names | A26.13 (p. 99) | 0:20 |
-| 49.8 Interrogation, and civilians by SSR | E2.1 (p. 228), E2.2 (p. 228), E2.3 (p. 228), E2.4 (p. 228) | 0:40 |
+| 75.1 Snipers completed: the counter at setup, placement, the Sniper player's choices, attacks on vehicles and on the enemy Sniper, Sniper Check, LLMC after a hit | A14.01 (p. 82), A14.1 (p. 82), A14.2 (p. 82), A14.21 (p. 82), A14.22 (p. 82), A14.3 (p. 82), A14.31 (p. 82), A14.33 (p. 82), A14.4 (p. 82) | 1:00 |
+| 75.2 Heat of Battle and berserk remainder: Unarmed and PRC exemptions, a hero's weapons, the next nearest target, the return to normal | A15.1 (p. 83), A15.23 (p. 83), A15.43 (p. 84), A15.431 (p. 84), A15.432 (p. 84), A15.45 (p. 84), A15.46 (p. 84) | 1:00 |
+| 75.3 Wounds: the pin after more than 3 MF, a carried man; Leader Creation in Close Combat against a vehicle | A17.1 (p. 85), A17.2 (p. 85), A18.12 (p. 85), A18.2 (p. 85) | 0:20 |
+| 75.4 Unit Substitution: Unarmed exemption, Ammunition Shortage, an SSR ELR for underscored units, a MG's B# for Inexperienced users | A19.11 (p. 86), A19.131 (p. 86), A19.132 (p. 86), A19.31 (p. 86), A19.32 (p. 86) | 0:40 |
+| 75.5 Prisoners: Commissars and stacks at surrender, the exchange, Massacre of any Unarmed unit, a Guard's Deployment, escape by nationality, rearming, Scrounging, the double VP | A20.21 (p. 86), A20.221 (p. 87), A20.4 (p. 87), A20.5 (p. 87), A20.51 (p. 87), A20.53 (p. 87), A20.55 (p. 88), A20.551 (p. 88), A20.552 (p. 88), A26.222 (p. 100) | 0:40 |
+| 75.6 MOL by a leader; a DC at another level; Set DC and its Clearance | A22.611 (p. 89), A22.62 (p. 90), A23.3 (p. 90), A23.6 (p. 91), A23.61 (p. 91), A23.7 (p. 91), A23.71 (p. 91), A23.72 (p. 91), B24.75 (p. 142) | 1:40 |
+| 75.7 Control of any hex or Location a card names | A26.13 (p. 99) | 0:20 |
+| 75.8 Interrogation, and civilians by SSR | E2.1 (p. 228), E2.2 (p. 228), E2.3 (p. 228), E2.4 (p. 228) | 0:40 |
 | Overhead | | 1:15 |
-| **Pass 49 total** (build 6:20) | | **7:35** |
+| **Pass 75 total** (build 6:20) | | **7:35** |
 
-**Pass 63: Nationalities I: the catalog's counters** (new; 14 rows of the inventory). Counters: none. Needs first: 45.
+**Pass 80: Nationalities I: the catalog's counters** (new; 14 rows of the inventory). Counters: none. Needs first: 35.
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 63.1 Italians and Axis Minors: who may Deploy, the capture DRM, no escape, Lax, 1PAATC, broken morale against Romanians | A25.61 (p. 97), A25.63 (p. 97), A25.64 (p. 97), A25.65 (p. 97), A25.8 (p. 97), A25.81 (p. 97), A25.82 (p. 98) | 0:25 |
-| 63.2 Finns: Stealthy, Deployment on a 1TC, the Russian MG; Stealthy and Lax as traits in Ambush, Mopping Up, and the Concealment dr | A25.7 (p. 97), A25.71 (p. 97), A25.75 (p. 97), A11.17 (p. 73), A11.18 (p. 73) | 0:40 |
-| 63.3 Commissars completed: the substitution at setup, the PAATC | A25.22 (p. 94), A25.221 (p. 94) | 0:20 |
+| 80.1 Italians and Axis Minors: who may Deploy, the capture DRM, no escape, Lax, 1PAATC, broken morale against Romanians | A25.61 (p. 97), A25.63 (p. 97), A25.64 (p. 97), A25.65 (p. 97), A25.8 (p. 97), A25.81 (p. 97), A25.82 (p. 98) | 0:25 |
+| 80.2 Finns: Stealthy, Deployment on a 1TC, the Russian MG; Stealthy and Lax as traits in Ambush, Mopping Up, and the Concealment dr | A25.7 (p. 97), A25.71 (p. 97), A25.75 (p. 97), A11.17 (p. 73), A11.18 (p. 73) | 0:40 |
+| 80.3 Commissars completed: the substitution at setup, the PAATC | A25.22 (p. 94), A25.221 (p. 94) | 0:20 |
 | Overhead | | 1:15 |
-| **Pass 63 total** (build 1:25) | | **2:40** |
+| **Pass 80 total** (build 1:25) | | **2:40** |
 
-**Pass 56: SMOKE, wind, and Environmental Conditions** (new; 33 rows of the inventory). Counters: s# and WP# on Guns and mortars (the British mortar's s7 is already in the catalog, unread); a smoke dispenser value on each vehicle whose counter prints one (the audit says the PzKpfw IIIH does; not checked against the Vehicle Listing). Needs first: 45.
+**Pass 85: SMOKE, wind, and Environmental Conditions** (new; 33 rows of the inventory). Counters: s# and WP# on Guns and mortars (the British mortar's s7 is already in the catalog, unread); a smoke dispenser value on each vehicle whose counter prints one (the audit says the PzKpfw IIIH does; not checked against the Vehicle Listing). Needs first: 35.
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 56.1 EC and wind as states every game reads: the EC Chart, Wind Force and Direction, the Wind Change DR in every opening RPh, Gusts | B25.5 (p. 143), B25.63 (p. 144), B25.64 (p. 144), B25.65 (p. 144), B25.651 (p. 145), E3.4 (p. 229), E3.51 (p. 229) | 0:40 |
-| 56.2 SMOKE as lasting counters: strength, the Dispersed side, height, duration, Drift, Gusts, weather; grenades up and down a level | A24.1 (p. 91), A24.4 (p. 92), A24.5 (p. 92), A24.6 (p. 92), A24.61 (p. 92), A24.62 (p. 93) | 1:00 |
-| 56.3 WP | A24.3 (p. 92), A24.31 (p. 92) | 0:20 |
-| 56.4 The Area Target Type for Guns; ordnance and mortar SMOKE and WP | C3.33 (p. 169), C3.331 (p. 170), C3.76 (p. 171), C4.4 (p. 171), C6.56 (p. 175), C8.5 (p. 178), C8.51 (p. 178), C8.52 (p. 178), C8.6 (p. 179) | 1:20 |
-| 56.5 Vehicular smoke dispensers and smoke grenades; the sN in Close Combat | D13.1 (p. 212), D13.2 (p. 212), D13.3 (p. 212), D13.31 (p. 212), D13.32 (p. 212), D13.33 (p. 212), D13.34 (p. 212), D13.35 (p. 212), A11.622 (p. 76) | 0:40 |
-| 56.6 The data |  | 0:20 |
+| 85.1 EC and wind as states every game reads: the EC Chart, Wind Force and Direction, the Wind Change DR in every opening RPh, Gusts | B25.5 (p. 143), B25.63 (p. 144), B25.64 (p. 144), B25.65 (p. 144), B25.651 (p. 145), E3.4 (p. 229), E3.51 (p. 229) | 0:40 |
+| 85.2 SMOKE as lasting counters: strength, the Dispersed side, height, duration, Drift, Gusts, weather; grenades up and down a level | A24.1 (p. 91), A24.4 (p. 92), A24.5 (p. 92), A24.6 (p. 92), A24.61 (p. 92), A24.62 (p. 93) | 1:00 |
+| 85.3 WP | A24.3 (p. 92), A24.31 (p. 92) | 0:20 |
+| 85.4 The Area Target Type for Guns; ordnance and mortar SMOKE and WP | C3.33 (p. 169), C3.331 (p. 170), C3.76 (p. 171), C4.4 (p. 171), C6.56 (p. 175), C8.5 (p. 178), C8.51 (p. 178), C8.52 (p. 178), C8.6 (p. 179) | 1:20 |
+| 85.5 Vehicular smoke dispensers and smoke grenades; the sN in Close Combat | D13.1 (p. 212), D13.2 (p. 212), D13.3 (p. 212), D13.31 (p. 212), D13.32 (p. 212), D13.33 (p. 212), D13.34 (p. 212), D13.35 (p. 212), A11.622 (p. 76) | 0:40 |
+| 85.6 The data |  | 0:20 |
 | Overhead | | 1:15 |
-| **Pass 56 total** (build 4:20) | | **5:35** |
+| **Pass 85 total** (build 4:20) | | **5:35** |
 
-**Pass 34b: Night** (planned at 2:45 of build; 43 rows of the inventory). Counters: none. Needs first: 45.
+**Pass 90: Night** (planned at 2:45 of build; 43 rows of the inventory). Counters: none. Needs first: 35.
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 34b.1 Gunflash as a mark on the Location, with every source the rules have today | E1.8 (p. 226), E1.81 (p. 226), E1.84 (p. 226), E1.86 (p. 226), E1.89 (p. 226), E1.91 (p. 226) | 0:20 |
-| 34b.2 Straying, Stealthy and Lax by class, Jitter Fire; the Random Location DR and Majority Squad Type they need | E.3 (p. 222), E.4 (p. 222), E1.53 (p. 224), E1.531 (p. 224), E1.532 (p. 224), E1.533 (p. 224), E1.55 (p. 225), E1.551 (p. 225), E1.552 (p. 225), E1.6 (p. 225), E1.61 (p. 225), E1.62 (p. 225), E1.63 (p. 225) | 1:00 |
-| 34b.3 Cloaking | E1.4 (p. 223), E1.41 (p. 223), E1.411 (p. 224), E1.42 (p. 224), E1.421 (p. 224), E1.422 (p. 224), E1.423 (p. 224), E1.43 (p. 224), E1.72 (p. 225) | 1:00 |
-| 34b.4 The Scenario Defender at night: HIP and "?" allotments, Freedom of Movement, Recon | E1.2 (p. 223), E1.21 (p. 223), E1.23 (p. 223) | 0:40 |
-| 34b.5 NVR in every LOS read: rout, berserk, vehicles, Mopping Up, a VCA change, one building | E1.101 (p. 222), E1.13 (p. 223), E1.14 (p. 223), E1.15 (p. 223), E1.33 (p. 223) | 0:40 |
-| 34b.6 Night fire: Fire Lanes beyond NVR, the Blind Hex case, Acquisition as the rule has it, a captured MG | E1.71 (p. 225), E1.73 (p. 225), E1.74 (p. 225), E1.76 (p. 225) | 0:40 |
-| 34b.7 Starshells completed | E1.921 (p. 226), E1.922 (p. 226), E1.923 (p. 227) | 0:20 |
+| 90.1 Gunflash as a mark on the Location, with every source the rules have today | E1.8 (p. 226), E1.81 (p. 226), E1.84 (p. 226), E1.86 (p. 226), E1.89 (p. 226), E1.91 (p. 226) | 0:20 |
+| 90.2 Straying, Stealthy and Lax by class, Jitter Fire; the Random Location DR and Majority Squad Type they need | E.3 (p. 222), E.4 (p. 222), E1.53 (p. 224), E1.531 (p. 224), E1.532 (p. 224), E1.533 (p. 224), E1.55 (p. 225), E1.551 (p. 225), E1.552 (p. 225), E1.6 (p. 225), E1.61 (p. 225), E1.62 (p. 225), E1.63 (p. 225) | 1:00 |
+| 90.3 Cloaking | E1.4 (p. 223), E1.41 (p. 223), E1.411 (p. 224), E1.42 (p. 224), E1.421 (p. 224), E1.422 (p. 224), E1.423 (p. 224), E1.43 (p. 224), E1.72 (p. 225) | 1:00 |
+| 90.4 The Scenario Defender at night: HIP and "?" allotments, Freedom of Movement, Recon | E1.2 (p. 223), E1.21 (p. 223), E1.23 (p. 223) | 0:40 |
+| 90.5 NVR in every LOS read: rout, berserk, vehicles, Mopping Up, a VCA change, one building | E1.101 (p. 222), E1.13 (p. 223), E1.14 (p. 223), E1.15 (p. 223), E1.33 (p. 223) | 0:40 |
+| 90.6 Night fire: Fire Lanes beyond NVR, the Blind Hex case, Acquisition as the rule has it, a captured MG | E1.71 (p. 225), E1.73 (p. 225), E1.74 (p. 225), E1.76 (p. 225) | 0:40 |
+| 90.7 Starshells completed | E1.921 (p. 226), E1.922 (p. 226), E1.923 (p. 227) | 0:20 |
 | Overhead | | 1:15 |
-| **Pass 34b total** (build 4:40) | | **5:55** |
+| **Pass 90 total** (build 4:40) | | **5:55** |
 
-**Pass 57: Weather II** (new; 25 rows of the inventory). Counters: Winter Camouflage as a unit property; a Drift marker. Needs first: 56 (wind); 34b (Random Location).
+**Pass 95: Weather II** (new; 25 rows of the inventory). Counters: Winter Camouflage as a unit property; a Drift marker. Needs first: 85 (wind); 90 (Random Location).
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 57.1 Fog, by level and density, with the wind's effect | E3.31 (p. 229), E3.311 (p. 229), E3.312 (p. 229) | 1:00 |
-| 57.2 Snow terrain: brush and roads as Open Ground, spread limits | E3.7 (p. 230), E3.72 (p. 230), E3.721 (p. 230), E3.73 (p. 230), B12.6 (p. 127), B16.8 (p. 130) | 0:40 |
-| 57.3 Winter Camouflage; Drifts | E3.712 (p. 230), E3.713 (p. 230), E3.75 (p. 231), E3.751 (p. 231), E3.752 (p. 231) | 1:00 |
-| 57.4 Mud and snow Bog for a whole MPh; Manhandling in Mud; Axis vehicles in Extreme Winter | E3.61 (p. 230), E3.7332 (p. 231), E3.734 (p. 231), E3.744 (p. 231), D8.23 (p. 209) | 0:20 |
-| 57.5 Mist, rain, and Mud leftovers; LV between Locations of one building | E3.3 (p. 229), E3.5 (p. 229), E3.53 (p. 229), E3.6 (p. 229), E3.8 (p. 231) | 0:20 |
+| 95.1 Fog, by level and density, with the wind's effect | E3.31 (p. 229), E3.311 (p. 229), E3.312 (p. 229) | 1:00 |
+| 95.2 Snow terrain: brush and roads as Open Ground, spread limits | E3.7 (p. 230), E3.72 (p. 230), E3.721 (p. 230), E3.73 (p. 230), B12.6 (p. 127), B16.8 (p. 130) | 0:40 |
+| 95.3 Winter Camouflage; Drifts | E3.712 (p. 230), E3.713 (p. 230), E3.75 (p. 231), E3.751 (p. 231), E3.752 (p. 231) | 1:00 |
+| 95.4 Mud and snow Bog for a whole MPh; Manhandling in Mud; Axis vehicles in Extreme Winter | E3.61 (p. 230), E3.7332 (p. 231), E3.734 (p. 231), E3.744 (p. 231), D8.23 (p. 209) | 0:20 |
+| 95.5 Mist, rain, and Mud leftovers; LV between Locations of one building | E3.3 (p. 229), E3.5 (p. 229), E3.53 (p. 229), E3.6 (p. 229), E3.8 (p. 231) | 0:20 |
 | Overhead | | 1:15 |
-| **Pass 57 total** (build 3:20) | | **4:35** |
+| **Pass 95 total** (build 3:20) | | **4:35** |
 
-**Pass 52: Position and cover** (new; 43 rows of the inventory). Counters: Wall Advantage and HD as kept states (no catalog counter). Needs first: 34 (levels for ordnance), 46.
+**Pass 100: Position and cover** (new; 43 rows of the inventory). Counters: Wall Advantage and HD as kept states (no catalog counter). Needs first: 55 (levels for ordnance), 40.
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 52.1 Vertex LOS in the map code | A6.12 (p. 53), C.5 (p. 162), D2.37 (p. 198) | 1:00 |
-| 52.2 Bypass completed: Infantry Bypass, fire to and from the CAFP, the Bypass TCA, loading in Bypass, Snap Shots | A4.3 (p. 49), A4.31 (p. 49), A4.32 (p. 50), A4.33 (p. 50), A4.34 (p. 50), A8.15 (p. 59), B9.42 (p. 121), D2.32 (p. 197), D2.321 (p. 197), D2.36 (p. 198), D2.6 (p. 199) | 1:00 |
-| 52.3 Ordnance, mortar, and vehicle fire at a hex with hexside terrain | B9.3 (p. 119), B9.33 (p. 120), B9.34 (p. 120), B9.35 (p. 120), C6.8 (p. 175) | 0:40 |
-| 52.4 Wall Advantage as a player's claim and a kept state | B9.31 (p. 119), B9.32 (p. 119), B9.321 (p. 119), B9.322 (p. 119), B9.323 (p. 120), B9.324 (p. 120), B9.41 (p. 121) | 1:00 |
-| 52.5 Hull Down | B9.36 (p. 120), D4.1 (p. 202), D4.2 (p. 202), D4.21 (p. 202), D4.22 (p. 202), D4.221 (p. 202), D4.222 (p. 202), D4.223 (p. 202), C7.5 (p. 177) | 1:00 |
-| 52.6 Underbelly hits | D4.3 (p. 202), D4.31 (p. 203), D4.32 (p. 203), D4.33 (p. 203), D4.34 (p. 203) | 0:40 |
-| 52.7 Armored Assault | D9.3 (p. 209), D9.31 (p. 209) | 0:40 |
+| 100.1 Vertex LOS in the map code | A6.12 (p. 53), C.5 (p. 162), D2.37 (p. 198) | 1:00 |
+| 100.2 Bypass completed: Infantry Bypass, fire to and from the CAFP, the Bypass TCA, loading in Bypass, Snap Shots | A4.3 (p. 49), A4.31 (p. 49), A4.32 (p. 50), A4.33 (p. 50), A4.34 (p. 50), A8.15 (p. 59), B9.42 (p. 121), D2.32 (p. 197), D2.321 (p. 197), D2.36 (p. 198), D2.6 (p. 199) | 1:00 |
+| 100.3 Ordnance, mortar, and vehicle fire at a hex with hexside terrain | B9.3 (p. 119), B9.33 (p. 120), B9.34 (p. 120), B9.35 (p. 120), C6.8 (p. 175) | 0:40 |
+| 100.4 Wall Advantage as a player's claim and a kept state | B9.31 (p. 119), B9.32 (p. 119), B9.321 (p. 119), B9.322 (p. 119), B9.323 (p. 120), B9.324 (p. 120), B9.41 (p. 121) | 1:00 |
+| 100.5 Hull Down | B9.36 (p. 120), D4.1 (p. 202), D4.2 (p. 202), D4.21 (p. 202), D4.22 (p. 202), D4.221 (p. 202), D4.222 (p. 202), D4.223 (p. 202), C7.5 (p. 177) | 1:00 |
+| 100.6 Underbelly hits | D4.3 (p. 202), D4.31 (p. 203), D4.32 (p. 203), D4.33 (p. 203), D4.34 (p. 203) | 0:40 |
+| 100.7 Armored Assault | D9.3 (p. 209), D9.31 (p. 209) | 0:40 |
 | Overhead | | 1:15 |
-| **Pass 52 total** (build 6:00) | | **7:15** |
+| **Pass 100 total** (build 6:00) | | **7:15** |
 
-**Pass 53: Armored combat IV: equipment and formations** (new; 68 rows of the inventory). Counters: an armored car; a non-turreted AFV; an AFV with Secondary Armament; a partially armored AFV; a vehicle FT; an AA Gun with IFE of 40mm or less; an AFV with a G and one with Sz; a radioless trait on the T-34 M41. Needs first: 33, 34, 51, 52 (Armored Assault for D14.33).
+**Pass 105: Armored combat IV: equipment and formations** (new; 68 rows of the inventory). Counters: an armored car; a non-turreted AFV; an AFV with Secondary Armament; a partially armored AFV; a vehicle FT; an AA Gun with IFE of 40mm or less; an AFV with a G and one with Sz; a radioless trait on the T-34 M41. Needs first: 50, 55, 65, 100 (Armored Assault for D14.33).
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 53.1 Vehicle variety: armored cars, NT and 1MT AFVs, Secondary Armament, partial armor, the vehicle FT, CC weapons | D1.12 (p. 193), D1.22 (p. 193), D1.322 (p. 194), D1.33 (p. 194), D1.34 (p. 194), D2.21 (p. 196), D3.6 (p. 201), C7.11 (p. 175), A11.62 (p. 76) | 0:40 |
-| 53.2 Light Guns: Multiple Hits, IFE, the 360-degree mount | C3.8 (p. 171), C2.29 (p. 168), C2.3 (p. 168), C6.54 (p. 175) | 0:40 |
-| 53.3 Deliberate Immobilization; OVR Prevention, with Case E against a vehicle | C5.7 (p. 173), C5.71 (p. 173), C5.72 (p. 173), C5.64 (p. 173), C5.641 (p. 173), C5.51 (p. 172) | 1:00 |
-| 53.4 OVR and Reaction Fire completed: a vehicle in Motion, units in Melee, Street Fighting and FPF Reaction Fire, ordnance and LATW, Gun crews | D7.1 (p. 207), D7.12 (p. 207), D7.15 (p. 207), D7.2 (p. 207), D7.211 (p. 207), D7.212 (p. 208), D7.213 (p. 208), D7.22 (p. 208), D7.221 (p. 208), D7.23 (p. 208) | 1:00 |
-| 53.5 Gyrostabilizers; Schuerzen | D11.1 (p. 211), D11.11 (p. 211), D11.12 (p. 211), D11.13 (p. 211), D11.2 (p. 211), D11.21 (p. 211), D11.22 (p. 211), D11.23 (p. 211), C6.55 (p. 175) | 0:40 |
-| 53.6 Radioless AFVs; Impulse Movement; Platoon Movement | D14.1 (p. 212), D14.2 (p. 212), D14.21 (p. 212), D14.211 (p. 212), D14.212 (p. 212), D14.22 (p. 213), D14.23 (p. 213), D14.24 (p. 214), D14.3 (p. 214), D14.31 (p. 214), D14.32 (p. 214), D14.33 (p. 214) | 1:40 |
-| 53.7 Low Ammo; Reverse Motion; Bog on the terrain vehicles newly enter and help from another AFV; a pushed wreck; Dug-In AFVs and Armored Cupolas | D3.71 (p. 201), D2.24 (p. 196), D8.2 (p. 208), D8.21 (p. 209), D8.3 (p. 209), D8.32 (p. 209), D10.42 (p. 210), D9.5 (p. 210), D9.51 (p. 210), D9.52 (p. 210), D9.53 (p. 210), D9.54 (p. 210) | 0:40 |
-| 53.8 The counters |  | 0:40 |
+| 105.1 Vehicle variety: armored cars, NT and 1MT AFVs, Secondary Armament, partial armor, the vehicle FT, CC weapons | D1.12 (p. 193), D1.22 (p. 193), D1.322 (p. 194), D1.33 (p. 194), D1.34 (p. 194), D2.21 (p. 196), D3.6 (p. 201), C7.11 (p. 175), A11.62 (p. 76) | 0:40 |
+| 105.2 Light Guns: Multiple Hits, IFE, the 360-degree mount | C3.8 (p. 171), C2.29 (p. 168), C2.3 (p. 168), C6.54 (p. 175) | 0:40 |
+| 105.3 Deliberate Immobilization; OVR Prevention, with Case E against a vehicle | C5.7 (p. 173), C5.71 (p. 173), C5.72 (p. 173), C5.64 (p. 173), C5.641 (p. 173), C5.51 (p. 172) | 1:00 |
+| 105.4 OVR and Reaction Fire completed: a vehicle in Motion, units in Melee, Street Fighting and FPF Reaction Fire, ordnance and LATW, Gun crews | D7.1 (p. 207), D7.12 (p. 207), D7.15 (p. 207), D7.2 (p. 207), D7.211 (p. 207), D7.212 (p. 208), D7.213 (p. 208), D7.22 (p. 208), D7.221 (p. 208), D7.23 (p. 208) | 1:00 |
+| 105.5 Gyrostabilizers; Schuerzen | D11.1 (p. 211), D11.11 (p. 211), D11.12 (p. 211), D11.13 (p. 211), D11.2 (p. 211), D11.21 (p. 211), D11.22 (p. 211), D11.23 (p. 211), C6.55 (p. 175) | 0:40 |
+| 105.6 Radioless AFVs; Impulse Movement; Platoon Movement | D14.1 (p. 212), D14.2 (p. 212), D14.21 (p. 212), D14.211 (p. 212), D14.212 (p. 212), D14.22 (p. 213), D14.23 (p. 213), D14.24 (p. 214), D14.3 (p. 214), D14.31 (p. 214), D14.32 (p. 214), D14.33 (p. 214) | 1:40 |
+| 105.7 Low Ammo; Reverse Motion; Bog on the terrain vehicles newly enter and help from another AFV; a pushed wreck; Dug-In AFVs and Armored Cupolas | D3.71 (p. 201), D2.24 (p. 196), D8.2 (p. 208), D8.21 (p. 209), D8.3 (p. 209), D8.32 (p. 209), D10.42 (p. 210), D9.5 (p. 210), D9.51 (p. 210), D9.52 (p. 210), D9.53 (p. 210), D9.54 (p. 210) | 0:40 |
+| 105.8 The counters |  | 0:40 |
 | Overhead | | 1:15 |
-| **Pass 53 total** (build 7:00) | | **8:15** |
+| **Pass 105 total** (build 7:00) | | **8:15** |
 
-**Pass 54: Guns and anti-tank weapons II** (new; 77 rows of the inventory). Counters: R# and X# on the Guns; a Gun that is not QSU, with LF or RFNM; a medium mortar with its dm side; a bazooka; a PIAT; a MOL-Projector; an RCL; a Gun of 100mm or more (many values manufactured, R0.3). Needs first: 45; 50 (HE Equivalency for C13.4x).
+**Pass 110: Guns and anti-tank weapons II** (new; 77 rows of the inventory). Counters: R# and X# on the Guns; a Gun that is not QSU, with LF or RFNM; a medium mortar with its dm side; a bazooka; a PIAT; a MOL-Projector; an RCL; a Gun of 100mm or more (many values manufactured, R0.3). Needs first: 35; 60 (HE Equivalency for C13.4x).
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 54.1 Gun and MA repair; the other Gun types; default ammunition; the Intensive Fire counter; Prohibited Hexes at setup; To Hit colors by nationality and date; Heavy Payload | C2.21 (p. 167), C2.22 (p. 167), C2.26 (p. 168), C2.28 (p. 168), C2.5 (p. 168), C2.7 (p. 168), C3.3 (p. 169), B23.423 (p. 137), C.7 (p. 162) | 0:40 |
-| 54.2 Hook-up conditions, the circled M#, the push in full | C10.11 (p. 180), C10.111 (p. 180), C10.12 (p. 180), C10.13 (p. 180), C10.3 (p. 181), C10.31 (p. 181) | 0:40 |
-| 54.3 Limbering, Limbered Fire, NM and RFNM | C10.2 (p. 180), C10.21 (p. 180), C10.22 (p. 180), C10.24 (p. 180), C10.25 (p. 180), C10.26 (p. 180) | 0:40 |
-| 54.4 Bore Sighting and Intensive Fire completed | C6.41 (p. 174), C6.42 (p. 174), C5.6 (p. 172), C5.63 (p. 173) | 0:20 |
-| 54.5 Medium mortars; the Spotter's remaining rules | C9.2 (p. 179), C9.3 (p. 179) | 0:40 |
-| 54.6 Captured SW, Guns, and ordnance, with a non-qualified crew's penalties | A21.1 (p. 88), A21.11 (p. 88), A21.12 (p. 88), A21.13 (p. 88), C5.8 (p. 173) | 0:40 |
-| 54.7 The bazooka and the PIAT; PSK and ATR usage by SMC; the PFk; Desperation fire | C13.21 (p. 183), C13.24 (p. 183), C13.3 (p. 183), C13.32 (p. 183), C13.34 (p. 184), C13.4 (p. 184), C13.48 (p. 184), C13.6 (p. 185), C13.81 (p. 185), E1.88 (p. 226) | 1:00 |
-| 54.8 The ATMM; the MOL-Projector | C13.7 (p. 185), C13.5 (p. 184), E1.85 (p. 226) | 1:20 |
-| 54.9 Recoilless Rifles | C12.1 (p. 182), C12.2 (p. 182), C12.3 (p. 183), C12.4 (p. 183) | 0:40 |
-| 54.10 The counters |  | 0:40 |
+| 110.1 Gun and MA repair; the other Gun types; default ammunition; the Intensive Fire counter; Prohibited Hexes at setup; To Hit colors by nationality and date; Heavy Payload | C2.21 (p. 167), C2.22 (p. 167), C2.26 (p. 168), C2.28 (p. 168), C2.5 (p. 168), C2.7 (p. 168), C3.3 (p. 169), B23.423 (p. 137), C.7 (p. 162) | 0:40 |
+| 110.2 Hook-up conditions, the circled M#, the push in full | C10.11 (p. 180), C10.111 (p. 180), C10.12 (p. 180), C10.13 (p. 180), C10.3 (p. 181), C10.31 (p. 181) | 0:40 |
+| 110.3 Limbering, Limbered Fire, NM and RFNM | C10.2 (p. 180), C10.21 (p. 180), C10.22 (p. 180), C10.24 (p. 180), C10.25 (p. 180), C10.26 (p. 180) | 0:40 |
+| 110.4 Bore Sighting and Intensive Fire completed | C6.41 (p. 174), C6.42 (p. 174), C5.6 (p. 172), C5.63 (p. 173) | 0:20 |
+| 110.5 Medium mortars; the Spotter's remaining rules | C9.2 (p. 179), C9.3 (p. 179) | 0:40 |
+| 110.6 Captured SW, Guns, and ordnance, with a non-qualified crew's penalties | A21.1 (p. 88), A21.11 (p. 88), A21.12 (p. 88), A21.13 (p. 88), C5.8 (p. 173) | 0:40 |
+| 110.7 The bazooka and the PIAT; PSK and ATR usage by SMC; the PFk; Desperation fire | C13.21 (p. 183), C13.24 (p. 183), C13.3 (p. 183), C13.32 (p. 183), C13.34 (p. 184), C13.4 (p. 184), C13.48 (p. 184), C13.6 (p. 185), C13.81 (p. 185), E1.88 (p. 226) | 1:00 |
+| 110.8 The ATMM; the MOL-Projector | C13.7 (p. 185), C13.5 (p. 184), E1.85 (p. 226) | 1:20 |
+| 110.9 Recoilless Rifles | C12.1 (p. 182), C12.2 (p. 182), C12.3 (p. 183), C12.4 (p. 183) | 0:40 |
+| 110.10 The counters |  | 0:40 |
 | Overhead | | 1:15 |
-| **Pass 54 total** (build 7:20) | | **8:35** |
+| **Pass 110 total** (build 7:20) | | **8:35** |
 
-**Pass 37: Fortifications I** (planned at 3:35 of build; 74 rows of the inventory). Counters: foxholes 1S, 2S, 3S; trenches; roadblocks; pillboxes by strength (the vocabulary has the kinds, the catalog no definitions). Needs first: 45.
+**Pass 115: Fortifications I** (planned at 3:35 of build; 74 rows of the inventory). Counters: foxholes 1S, 2S, 3S; trenches; roadblocks; pillboxes by strength (the vocabulary has the kinds, the catalog no definitions). Needs first: 35.
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 37.1 Positions inside a Location; setup of each kind; hidden Fortifications; where none may be placed | A2.8 (p. 47), A5.6 (p. 53), A12.33 (p. 80), B27.1 (p. 146), B27.12 (p. 146), B3.5 (p. 114), E1.16 (p. 223) | 0:40 |
-| 37.2 Foxholes | B27.13 (p. 146), B27.2 (p. 146), B27.3 (p. 146), B27.4 (p. 146), B27.41 (p. 146), B27.42 (p. 147), B27.43 (p. 147), B27.44 (p. 147), B9.21 (p. 118) | 0:40 |
-| 37.3 Entrenching, Labor, Clearance of rubble and roadblocks, Trail Breaks | B27.11 (p. 146), B24.7 (p. 142), B24.71 (p. 142), B24.76 (p. 142), B24.8 (p. 143), B13.421 (p. 128), A25.21 (p. 93), E3.63 (p. 230), E3.743 (p. 231) | 1:00 |
-| 37.4 Trenches, the A-T Ditch, Bunkers | B27.5 (p. 147), B27.51 (p. 147), B27.52 (p. 147), B27.53 (p. 147), B27.54 (p. 147), B27.55 (p. 147), B27.56 (p. 147), B27.6 (p. 147), B30.8 (p. 151) | 0:20 |
-| 37.5 Roadblocks | B29.1 (p. 150), B29.2 (p. 150), B29.3 (p. 150), B29.4 (p. 150), B29.5 (p. 150) | 0:40 |
-| 37.6 Pillboxes | B30.1 (p. 150), B30.2 (p. 150), B30.3 (p. 150), B30.4 (p. 151), B30.5 (p. 151), B30.6 (p. 151), B30.7 (p. 151) | 1:00 |
-| 37.7 Rally terrain and DM in them; Control of a pillbox | A10.61 (p. 68), A10.62 (p. 68), A26.132 (p. 99) | 0:20 |
-| 37.8 The counters |  | 0:20 |
+| 115.1 Positions inside a Location; setup of each kind; hidden Fortifications; where none may be placed | A2.8 (p. 47), A5.6 (p. 53), A12.33 (p. 80), B27.1 (p. 146), B27.12 (p. 146), B3.5 (p. 114), E1.16 (p. 223) | 0:40 |
+| 115.2 Foxholes | B27.13 (p. 146), B27.2 (p. 146), B27.3 (p. 146), B27.4 (p. 146), B27.41 (p. 146), B27.42 (p. 147), B27.43 (p. 147), B27.44 (p. 147), B9.21 (p. 118) | 0:40 |
+| 115.3 Entrenching, Labor, Clearance of rubble and roadblocks, Trail Breaks | B27.11 (p. 146), B24.7 (p. 142), B24.71 (p. 142), B24.76 (p. 142), B24.8 (p. 143), B13.421 (p. 128), A25.21 (p. 93), E3.63 (p. 230), E3.743 (p. 231) | 1:00 |
+| 115.4 Trenches, the A-T Ditch, Bunkers | B27.5 (p. 147), B27.51 (p. 147), B27.52 (p. 147), B27.53 (p. 147), B27.54 (p. 147), B27.55 (p. 147), B27.56 (p. 147), B27.6 (p. 147), B30.8 (p. 151) | 0:20 |
+| 115.5 Roadblocks | B29.1 (p. 150), B29.2 (p. 150), B29.3 (p. 150), B29.4 (p. 150), B29.5 (p. 150) | 0:40 |
+| 115.6 Pillboxes | B30.1 (p. 150), B30.2 (p. 150), B30.3 (p. 150), B30.4 (p. 151), B30.5 (p. 151), B30.6 (p. 151), B30.7 (p. 151) | 1:00 |
+| 115.7 Rally terrain and DM in them; Control of a pillbox | A10.61 (p. 68), A10.62 (p. 68), A26.132 (p. 99) | 0:20 |
+| 115.8 The counters |  | 0:20 |
 | Overhead | | 1:15 |
-| **Pass 37 total** (build 5:00) | | **6:15** |
+| **Pass 115 total** (build 5:00) | | **6:15** |
 
-**Pass 38: Fortifications II** (planned at 3:15 of build; 42 rows of the inventory). Counters: Wire; minefields by strength; A-T mines; a Flail Tank. Needs first: 37.
+**Pass 120: Fortifications II** (planned at 3:15 of build; 42 rows of the inventory). Counters: Wire; minefields by strength; A-T mines; a Flail Tank. Needs first: 115.
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 38.1 Wire, for Infantry and vehicles, and its Clearance | B26.1 (p. 145), B26.31 (p. 145), B26.32 (p. 145), B26.4 (p. 145), B26.41 (p. 145), B26.43 (p. 146), B26.44 (p. 146), B26.45 (p. 146), B26.46 (p. 146), B26.51 (p. 146), B26.53 (p. 146), B24.73 (p. 142) | 1:00 |
-| 38.2 Minefields: the hidden record, the attack, the reveal | B28.1 (p. 148), B28.3 (p. 148), B28.41 (p. 148), B28.411 (p. 148), B28.412 (p. 148), B28.413 (p. 148), B28.44 (p. 148) | 1:00 |
-| 38.3 A-T mines; vehicles and PRC in a minefield | B28.42 (p. 148), B28.43 (p. 148), B28.5 (p. 149), B28.51 (p. 149), B28.52 (p. 149), B28.53 (p. 149) | 0:40 |
-| 38.4 Known and Dummy minefields, Daisy Chains, Flail Tanks, Booby Traps | B28.45 (p. 148), B28.46 (p. 148), B28.47 (p. 148), B28.48 (p. 149), B28.531 (p. 149), B28.7 (p. 149), B28.9 (p. 149) | 0:40 |
-| 38.5 Mine Clearance; mines in Deep Snow; a mine's Gunflash | B24.74 (p. 142), B28.61 (p. 149), B28.62 (p. 149), B28.8 (p. 149), E3.732 (p. 231), E1.83 (p. 226) | 0:20 |
-| 38.6 The counters |  | 0:20 |
+| 120.1 Wire, for Infantry and vehicles, and its Clearance | B26.1 (p. 145), B26.31 (p. 145), B26.32 (p. 145), B26.4 (p. 145), B26.41 (p. 145), B26.43 (p. 146), B26.44 (p. 146), B26.45 (p. 146), B26.46 (p. 146), B26.51 (p. 146), B26.53 (p. 146), B24.73 (p. 142) | 1:00 |
+| 120.2 Minefields: the hidden record, the attack, the reveal | B28.1 (p. 148), B28.3 (p. 148), B28.41 (p. 148), B28.411 (p. 148), B28.412 (p. 148), B28.413 (p. 148), B28.44 (p. 148) | 1:00 |
+| 120.3 A-T mines; vehicles and PRC in a minefield | B28.42 (p. 148), B28.43 (p. 148), B28.5 (p. 149), B28.51 (p. 149), B28.52 (p. 149), B28.53 (p. 149) | 0:40 |
+| 120.4 Known and Dummy minefields, Daisy Chains, Flail Tanks, Booby Traps | B28.45 (p. 148), B28.46 (p. 148), B28.47 (p. 148), B28.48 (p. 149), B28.531 (p. 149), B28.7 (p. 149), B28.9 (p. 149) | 0:40 |
+| 120.5 Mine Clearance; mines in Deep Snow; a mine's Gunflash | B24.74 (p. 142), B28.61 (p. 149), B28.62 (p. 149), B28.8 (p. 149), E3.732 (p. 231), E1.83 (p. 226) | 0:20 |
+| 120.6 The counters |  | 0:20 |
 | Overhead | | 1:15 |
-| **Pass 38 total** (build 4:00) | | **5:15** |
+| **Pass 120 total** (build 4:00) | | **5:15** |
 
-**Pass 41: Terrain I: Depressions and water** (planned at 5:30 of build; 57 rows of the inventory). Counters: Crest, ford, and Current markers as states; a depth setting on a card. Needs first: 45, 46.
+**Pass 125: Terrain I: Depressions and water** (planned at 5:30 of build; 57 rows of the inventory). Counters: Crest, ford, and Current markers as states; a depth setting on a card. Needs first: 35, 40.
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 41.1 Units IN a Depression: gullies and Sunken Roads | B19.2 (p. 131), B19.21 (p. 131), B19.3 (p. 131), B19.4 (p. 131), B19.51 (p. 131), B19.52 (p. 131), B4.2 (p. 114), B4.3 (p. 114), B4.4 (p. 114), B4.41 (p. 114), B4.42 (p. 114), B4.43 (p. 114) | 1:00 |
-| 41.2 Streams by depth, their vehicles, fords, stream-hex terrain | B20.2 (p. 132), B20.3 (p. 132), B20.4 (p. 132), B20.41 (p. 132), B20.42 (p. 132), B20.43 (p. 132), B20.44 (p. 132), B20.45 (p. 132), B20.46 (p. 132), B20.6 (p. 133), B20.7 (p. 133), B20.8 (p. 133), B33.1 (p. 155) | 1:00 |
-| 41.3 Crest Status | B20.9 (p. 133), B20.91 (p. 133), B20.92 (p. 133), B20.93 (p. 133), B20.94 (p. 133), B20.95 (p. 133), B20.96 (p. 133), B20.97 (p. 133), B20.98 (p. 133) | 1:00 |
-| 41.4 Water Obstacles: depth, Current, fording, ice | B21.1 (p. 134), B21.121 (p. 134), B21.122 (p. 134), B21.13 (p. 134), B21.2 (p. 134), B21.21 (p. 134), B21.3 (p. 134), B21.4 (p. 134), B21.41 (p. 134), B21.42 (p. 135), B21.43 (p. 135), B21.6 (p. 135) | 1:00 |
-| 41.5 Marsh leftovers; frozen streams and marsh in snow | B16.1 (p. 130), B16.32 (p. 130), B16.6 (p. 130), B16.7 (p. 130), B16.71 (p. 130), E3.722 (p. 230) | 0:40 |
-| 41.6 LOS fixtures for the boards that print this terrain |  | 0:20 |
+| 125.1 Units IN a Depression: gullies and Sunken Roads | B19.2 (p. 131), B19.21 (p. 131), B19.3 (p. 131), B19.4 (p. 131), B19.51 (p. 131), B19.52 (p. 131), B4.2 (p. 114), B4.3 (p. 114), B4.4 (p. 114), B4.41 (p. 114), B4.42 (p. 114), B4.43 (p. 114) | 1:00 |
+| 125.2 Streams by depth, their vehicles, fords, stream-hex terrain | B20.2 (p. 132), B20.3 (p. 132), B20.4 (p. 132), B20.41 (p. 132), B20.42 (p. 132), B20.43 (p. 132), B20.44 (p. 132), B20.45 (p. 132), B20.46 (p. 132), B20.6 (p. 133), B20.7 (p. 133), B20.8 (p. 133), B33.1 (p. 155) | 1:00 |
+| 125.3 Crest Status | B20.9 (p. 133), B20.91 (p. 133), B20.92 (p. 133), B20.93 (p. 133), B20.94 (p. 133), B20.95 (p. 133), B20.96 (p. 133), B20.97 (p. 133), B20.98 (p. 133) | 1:00 |
+| 125.4 Water Obstacles: depth, Current, fording, ice | B21.1 (p. 134), B21.121 (p. 134), B21.122 (p. 134), B21.13 (p. 134), B21.2 (p. 134), B21.21 (p. 134), B21.3 (p. 134), B21.4 (p. 134), B21.41 (p. 134), B21.42 (p. 135), B21.43 (p. 135), B21.6 (p. 135) | 1:00 |
+| 125.5 Marsh leftovers; frozen streams and marsh in snow | B16.1 (p. 130), B16.32 (p. 130), B16.6 (p. 130), B16.7 (p. 130), B16.71 (p. 130), E3.722 (p. 230) | 0:40 |
+| 125.6 LOS fixtures for the boards that print this terrain |  | 0:20 |
 | Overhead | | 1:15 |
-| **Pass 41 total** (build 5:00) | | **6:15** |
+| **Pass 125 total** (build 5:00) | | **6:15** |
 
-**Pass 59: Terrain III: bridges** (new; 18 rows of the inventory). Counters: pontoon and foot bridge counters; a bridge's weight limit as a state; vehicle weights. Needs first: 41; 49 (Set DC) for destruction.
+**Pass 130: Terrain III: bridges** (new; 18 rows of the inventory). Counters: pontoon and foot bridge counters; a bridge's weight limit as a state; vehicle weights. Needs first: 125; 75 (Set DC) for destruction.
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 59.1 Printed bridges: the bridge Location and the one beneath, movement, TEM, the Hindrance from below | B6.1 (p. 115), B6.2 (p. 115), B6.3 (p. 116), B6.31 (p. 116), B6.32 (p. 116), B6.4 (p. 116), B6.43 (p. 116), B1.15 (p. 113) | 1:00 |
-| 59.2 Bridge counters, weight limits, one lane, destruction, wooden bridges | B6.33 (p. 116), B6.331 (p. 116), B6.332 (p. 116), B6.41 (p. 116), B6.42 (p. 116), B6.431 (p. 116), B6.44 (p. 116), B6.45 (p. 116), B6.5 (p. 116) | 1:00 |
-| 59.3 Control of a Bridge hex | A26.131 (p. 99) | 0:05 |
+| 130.1 Printed bridges: the bridge Location and the one beneath, movement, TEM, the Hindrance from below | B6.1 (p. 115), B6.2 (p. 115), B6.3 (p. 116), B6.31 (p. 116), B6.32 (p. 116), B6.4 (p. 116), B6.43 (p. 116), B1.15 (p. 113) | 1:00 |
+| 130.2 Bridge counters, weight limits, one lane, destruction, wooden bridges | B6.33 (p. 116), B6.331 (p. 116), B6.332 (p. 116), B6.41 (p. 116), B6.42 (p. 116), B6.431 (p. 116), B6.44 (p. 116), B6.45 (p. 116), B6.5 (p. 116) | 1:00 |
+| 130.3 Control of a Bridge hex | A26.131 (p. 99) | 0:05 |
 | Overhead | | 1:15 |
-| **Pass 59 total** (build 2:05) | | **3:20** |
+| **Pass 130 total** (build 2:05) | | **3:20** |
 
-**Pass 60: Terrain IV: the refused ground terrain** (new; 63 rows of the inventory). Counters: a Shellhole counter; Climb markers; overlay art and data (no source for it is in the repository). Needs first: 45, 46.
+**Pass 135: Terrain IV: the refused ground terrain** (new; 63 rows of the inventory). Counters: a Shellhole counter; Climb markers; overlay art and data (no source for it is in the repository). Needs first: 35, 40.
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 60.1 Shellholes, Runways, Elevated Roads | B2.3 (p. 113), B2.4 (p. 113), B7.3 (p. 117), B7.4 (p. 117), B5.2 (p. 115), B5.21 (p. 115), B5.22 (p. 115), B5.3 (p. 115), B5.4 (p. 115), B5.41 (p. 115), B5.42 (p. 115) | 1:00 |
-| 60.2 Crag and graveyard; every Hindrance decided in fire; Light Woods | A6.7 (p. 54), B14.21 (p. 129), B17.2 (p. 130), B17.3 (p. 130), B17.4 (p. 130), B18.2 (p. 130), B18.3 (p. 130), B18.4 (p. 130), B18.41 (p. 130), B18.42 (p. 131), B18.43 (p. 131), B35.1 (p. 156), B35.2 (p. 156), B35.3 (p. 156) | 0:40 |
-| 60.3 Cliffs: fire at a hex with a cliff hexside, Climbing, Scaling | B11.3 (p. 126), B11.31 (p. 126), B11.32 (p. 126), B11.4 (p. 127), B11.41 (p. 127), B11.42 (p. 127), B11.43 (p. 127), B23.424 (p. 137) | 1:20 |
-| 60.4 Slopes: Continuous Slope, the Double-Crest test, a valley fixture | B.5 (p. 112), B10.51 (p. 126), B10.52 (p. 126), B22.2 (p. 135), B22.4 (p. 135) | 0:40 |
-| 60.5 Terrain by SSR: vineyard, paths, forest, pine woods, orchard roads, cactus patch, olive grove | B12.7 (p. 127), B13.6 (p. 128), B13.7 (p. 128), B13.8 (p. 128), B14.6 (p. 129), B14.7 (p. 129), B14.8 (p. 129) | 0:40 |
-| 60.6 Overlays | A2.7 (p. 46), A2.73 (p. 46), A2.74 (p. 46), A2.75 (p. 46), A2.76 (p. 47) | 1:00 |
-| 60.7 The chapter's general rules where terrain now needs them: symbols, Inherent Terrain, cleared rubble on roads | B.1 (p. 112), B.4 (p. 112), B.6 (p. 112), B.9 (p. 112), B1.12 (p. 113), B1.13 (p. 113), B3.43 (p. 114) | 0:20 |
+| 135.1 Shellholes, Runways, Elevated Roads | B2.3 (p. 113), B2.4 (p. 113), B7.3 (p. 117), B7.4 (p. 117), B5.2 (p. 115), B5.21 (p. 115), B5.22 (p. 115), B5.3 (p. 115), B5.4 (p. 115), B5.41 (p. 115), B5.42 (p. 115) | 1:00 |
+| 135.2 Crag and graveyard; every Hindrance decided in fire; Light Woods | A6.7 (p. 54), B14.21 (p. 129), B17.2 (p. 130), B17.3 (p. 130), B17.4 (p. 130), B18.2 (p. 130), B18.3 (p. 130), B18.4 (p. 130), B18.41 (p. 130), B18.42 (p. 131), B18.43 (p. 131), B35.1 (p. 156), B35.2 (p. 156), B35.3 (p. 156) | 0:40 |
+| 135.3 Cliffs: fire at a hex with a cliff hexside, Climbing, Scaling | B11.3 (p. 126), B11.31 (p. 126), B11.32 (p. 126), B11.4 (p. 127), B11.41 (p. 127), B11.42 (p. 127), B11.43 (p. 127), B23.424 (p. 137) | 1:20 |
+| 135.4 Slopes: Continuous Slope, the Double-Crest test, a valley fixture | B.5 (p. 112), B10.51 (p. 126), B10.52 (p. 126), B22.2 (p. 135), B22.4 (p. 135) | 0:40 |
+| 135.5 Terrain by SSR: vineyard, paths, forest, pine woods, orchard roads, cactus patch, olive grove | B12.7 (p. 127), B13.6 (p. 128), B13.7 (p. 128), B13.8 (p. 128), B14.6 (p. 129), B14.7 (p. 129), B14.8 (p. 129) | 0:40 |
+| 135.6 Overlays | A2.7 (p. 46), A2.73 (p. 46), A2.74 (p. 46), A2.75 (p. 46), A2.76 (p. 47) | 1:00 |
+| 135.7 The chapter's general rules where terrain now needs them: symbols, Inherent Terrain, cleared rubble on roads | B.1 (p. 112), B.4 (p. 112), B.6 (p. 112), B.9 (p. 112), B1.12 (p. 113), B1.13 (p. 113), B3.43 (p. 114) | 0:20 |
 | Overhead | | 1:15 |
-| **Pass 60 total** (build 5:40) | | **6:55** |
+| **Pass 135 total** (build 5:40) | | **6:55** |
 
-**Pass 42: Terrain II: buildings and rubble** (planned at 3:05 of build; 43 rows of the inventory). Counters: Breach and rubble as states. Needs first: 52 (vertex LOS for Rowhouses); 37 (Clearance); 47 (levels).
+**Pass 140: Terrain II: buildings and rubble** (planned at 3:05 of build; 43 rows of the inventory). Counters: Breach and rubble as states. Needs first: 100 (vertex LOS for Rowhouses); 115 (Clearance); 45 (levels).
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 42.1 Rubble made and falling; a vehicle entering a building, and cellars | B24.1 (p. 141), B24.11 (p. 141), B24.12 (p. 141), B24.121 (p. 141), B24.2 (p. 141), B24.4 (p. 142), B24.5 (p. 142), B23.41 (p. 136), A23.41 (p. 91) | 1:40 |
-| 42.2 Fortified Buildings in live play, with Breach | B23.5 (p. 137), B23.91 (p. 140), B23.911 (p. 140), B23.912 (p. 140), B23.921 (p. 140), B23.922 (p. 140), B23.9221 (p. 141), B23.93 (p. 141) | 0:40 |
-| 42.3 Rowhouses | B23.71 (p. 137), B23.711 (p. 137), B23.712 (p. 138) | 1:00 |
-| 42.4 Factories, by terrain and by SSR; rooftops | B23.74 (p. 139), B23.741 (p. 139), B23.742 (p. 139), B23.743 (p. 140), B23.8 (p. 140), B23.81 (p. 140), B23.82 (p. 140), B23.83 (p. 140), B23.85 (p. 140), B23.86 (p. 140), B23.87 (p. 140), B23.88 (p. 140), E1.17 (p. 223) | 1:40 |
-| 42.5 Split Level buildings, the Marketplace, lumberyards, third levels, the two-story house | B23.211 (p. 135), B23.24 (p. 136), B23.72 (p. 138), B23.721 (p. 138), B23.722 (p. 138), B23.73 (p. 139), B23.731 (p. 139), B23.732 (p. 139), B23.733 (p. 139), B31.3 (p. 153) | 0:40 |
+| 140.1 Rubble made and falling; a vehicle entering a building, and cellars | B24.1 (p. 141), B24.11 (p. 141), B24.12 (p. 141), B24.121 (p. 141), B24.2 (p. 141), B24.4 (p. 142), B24.5 (p. 142), B23.41 (p. 136), A23.41 (p. 91) | 1:40 |
+| 140.2 Fortified Buildings in live play, with Breach | B23.5 (p. 137), B23.91 (p. 140), B23.911 (p. 140), B23.912 (p. 140), B23.921 (p. 140), B23.922 (p. 140), B23.9221 (p. 141), B23.93 (p. 141) | 0:40 |
+| 140.3 Rowhouses | B23.71 (p. 137), B23.711 (p. 137), B23.712 (p. 138) | 1:00 |
+| 140.4 Factories, by terrain and by SSR; rooftops | B23.74 (p. 139), B23.741 (p. 139), B23.742 (p. 139), B23.743 (p. 140), B23.8 (p. 140), B23.81 (p. 140), B23.82 (p. 140), B23.83 (p. 140), B23.85 (p. 140), B23.86 (p. 140), B23.87 (p. 140), B23.88 (p. 140), E1.17 (p. 223) | 1:40 |
+| 140.5 Split Level buildings, the Marketplace, lumberyards, third levels, the two-story house | B23.211 (p. 135), B23.24 (p. 136), B23.72 (p. 138), B23.721 (p. 138), B23.722 (p. 138), B23.73 (p. 139), B23.731 (p. 139), B23.732 (p. 139), B23.733 (p. 139), B31.3 (p. 153) | 0:40 |
 | Overhead | | 1:15 |
-| **Pass 42 total** (build 5:40) | | **6:55** |
+| **Pass 140 total** (build 5:40) | | **6:55** |
 
-**Pass 61: Terrain V: bocage, sewers, and the village** (new; 100 rows of the inventory). Counters: a "Sewer" marker; Rail Cars; PFZ and Debris counters; map data for Narrow Streets, Steeples, railroads, and Towers (no in-scope board prints them, by the audit's reading). Needs first: 52 (Wall Advantage, vertex LOS); 37, 42.
+**Pass 145: Terrain V: bocage, sewers, and the village** (new; 100 rows of the inventory). Counters: a "Sewer" marker; Rail Cars; PFZ and Debris counters; map data for Narrow Streets, Steeples, railroads, and Towers (no in-scope board prints them, by the audit's reading). Needs first: 100 (Wall Advantage, vertex LOS); 115, 140.
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 61.1 Bocage; hillside walls; cactus hedge | B9.5 (p. 121), B9.51 (p. 121), B9.52 (p. 121), B9.521 (p. 122), B9.53 (p. 122), B9.531 (p. 122), B9.54 (p. 122), B9.541 (p. 122), B9.55 (p. 122), B9.6 (p. 124), B9.61 (p. 124), B9.62 (p. 124), B9.7 (p. 124) | 1:40 |
-| 61.2 Sewers and Sewer Movement; tunnels | B8.1 (p. 117), B8.2 (p. 117), B8.3 (p. 117), B8.4 (p. 117), B8.41 (p. 117), B8.42 (p. 117), B8.43 (p. 117), B8.44 (p. 117), B8.45 (p. 117), B8.5 (p. 117), B8.6 (p. 118), B8.61 (p. 118), B8.62 (p. 118), B8.63 (p. 118) | 1:20 |
-| 61.3 Narrow Streets; Steeples | B31.11 (p. 152), B31.121 (p. 152), B31.131 (p. 152), B31.14 (p. 152), B31.15 (p. 153), B31.2 (p. 153), B31.21 (p. 153) | 1:00 |
-| 61.4 Railroads and their crossings; Rail Cars | B32.11 (p. 153), B32.2 (p. 153), B32.3 (p. 154), B32.4 (p. 154), B32.51 (p. 154), B32.6 (p. 155) | 1:40 |
-| 61.5 Towers; Prepared Fire Zones; Debris | B34.2 (p. 156), B34.3 (p. 156), B34.4 (p. 156), B36.1 (p. 156), B36.2 (p. 156), B37.1 (p. 157), B37.6 (p. 157) | 1:40 |
+| 145.1 Bocage; hillside walls; cactus hedge | B9.5 (p. 121), B9.51 (p. 121), B9.52 (p. 121), B9.521 (p. 122), B9.53 (p. 122), B9.531 (p. 122), B9.54 (p. 122), B9.541 (p. 122), B9.55 (p. 122), B9.6 (p. 124), B9.61 (p. 124), B9.62 (p. 124), B9.7 (p. 124) | 1:40 |
+| 145.2 Sewers and Sewer Movement; tunnels | B8.1 (p. 117), B8.2 (p. 117), B8.3 (p. 117), B8.4 (p. 117), B8.41 (p. 117), B8.42 (p. 117), B8.43 (p. 117), B8.44 (p. 117), B8.45 (p. 117), B8.5 (p. 117), B8.6 (p. 118), B8.61 (p. 118), B8.62 (p. 118), B8.63 (p. 118) | 1:20 |
+| 145.3 Narrow Streets; Steeples | B31.11 (p. 152), B31.121 (p. 152), B31.131 (p. 152), B31.14 (p. 152), B31.15 (p. 153), B31.2 (p. 153), B31.21 (p. 153) | 1:00 |
+| 145.4 Railroads and their crossings; Rail Cars | B32.11 (p. 153), B32.2 (p. 153), B32.3 (p. 154), B32.4 (p. 154), B32.51 (p. 154), B32.6 (p. 155) | 1:40 |
+| 145.5 Towers; Prepared Fire Zones; Debris | B34.2 (p. 156), B34.3 (p. 156), B34.4 (p. 156), B36.1 (p. 156), B36.2 (p. 156), B37.1 (p. 157), B37.6 (p. 157) | 1:40 |
 | Overhead | | 1:15 |
-| **Pass 61 total** (build 7:20) | | **8:35** |
+| **Pass 145 total** (build 7:20) | | **8:35** |
 
-**Pass 39: Offboard artillery I** (planned at 3:30 of build; 36 rows of the inventory). Counters: a radio for each nationality; batteries by caliber; the OBA ACCESS and accuracy columns of the National Capabilities Chart. Needs first: 47 (Residual FP), 50 (Indirect Fire against vehicles).
+**Pass 150: Offboard artillery I** (planned at 3:30 of build; 36 rows of the inventory). Counters: a radio for each nationality; batteries by caliber; the OBA ACCESS and accuracy columns of the National Capabilities Chart. Needs first: 45 (Residual FP), 60 (Indirect Fire against vehicles).
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 39.1 Radios, Contact and Maintenance, Battery Access and its draw pile | C1.1 (p. 163), C1.2 (p. 163), C1.21 (p. 163), C1.211 (p. 163), C1.22 (p. 163) | 0:40 |
-| 39.2 The AR, the SR, accuracy and error, Correction and Conversion | C1.3 (p. 163), C1.31 (p. 164), C1.32 (p. 164), C1.33 (p. 164), C1.34 (p. 164), C1.35 (p. 164), C1.4 (p. 164) | 1:00 |
-| 39.3 The FFE: the HE Concentration and its attack, its Hindrance, entering it, its duration | C.6 (p. 162), C1.5 (p. 164), C1.51 (p. 165), C1.52 (p. 165), C1.53 (p. 165), C1.54 (p. 165), C1.56 (p. 165), C1.57 (p. 165), C1.6 (p. 165), C1.61 (p. 165), C1.62 (p. 165) | 1:00 |
-| 39.4 The FFE's Gunflash | E1.87 (p. 226) | 0:05 |
-| 39.5 The counters and battery data |  | 0:40 |
+| 150.1 Radios, Contact and Maintenance, Battery Access and its draw pile | C1.1 (p. 163), C1.2 (p. 163), C1.21 (p. 163), C1.211 (p. 163), C1.22 (p. 163) | 0:40 |
+| 150.2 The AR, the SR, accuracy and error, Correction and Conversion | C1.3 (p. 163), C1.31 (p. 164), C1.32 (p. 164), C1.33 (p. 164), C1.34 (p. 164), C1.35 (p. 164), C1.4 (p. 164) | 1:00 |
+| 150.3 The FFE: the HE Concentration and its attack, its Hindrance, entering it, its duration | C.6 (p. 162), C1.5 (p. 164), C1.51 (p. 165), C1.52 (p. 165), C1.53 (p. 165), C1.54 (p. 165), C1.56 (p. 165), C1.57 (p. 165), C1.6 (p. 165), C1.61 (p. 165), C1.62 (p. 165) | 1:00 |
+| 150.4 The FFE's Gunflash | E1.87 (p. 226) | 0:05 |
+| 150.5 The counters and battery data |  | 0:40 |
 | Overhead | | 1:15 |
-| **Pass 39 total** (build 3:25) | | **4:40** |
+| **Pass 150 total** (build 3:25) | | **4:40** |
 
-**Pass 58: Offboard artillery II: missions, Bombardment, and Barrage** (new; 44 rows of the inventory). Counters: a field phone; an IR-capable mortar; Barrage and mission markers. Needs first: 39; 56 (SMOKE).
+**Pass 155: Offboard artillery II: missions, Bombardment, and Barrage** (new; 44 rows of the inventory). Counters: a field phone; an IR-capable mortar; Barrage and mission markers. Needs first: 150; 85 (SMOKE).
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 58.1 Field Phones, the Offboard Observer, Pre-Registered Fire | C1.23 (p. 163), C1.63 (p. 166), C1.73 (p. 166), C1.731 (p. 166), C1.732 (p. 166), C1.733 (p. 166) | 0:40 |
-| 58.2 Fire Missions: SMOKE, WP, Harassing Fire, Rocket OBA; Illuminating Rounds | C1.7 (p. 166), C1.71 (p. 166), C1.72 (p. 166), C1.9 (p. 167), C3.75 (p. 171), C8.7 (p. 179), E1.93 (p. 227), E1.931 (p. 227), E1.932 (p. 227), E1.933 (p. 227) | 1:00 |
-| 58.3 Bombardment, and the shellholes HE makes | C1.8 (p. 166), C1.81 (p. 166), C1.82 (p. 166), C1.821 (p. 167), C1.822 (p. 167), C1.823 (p. 167), B2.1 (p. 113) | 1:00 |
-| 58.4 Barrage; Creeping Barrage | E12.1 (p. 246), E12.2 (p. 247), E12.3 (p. 247), E12.4 (p. 247), E12.5 (p. 247), E12.6 (p. 247), E12.7 (p. 247) | 1:00 |
+| 155.1 Field Phones, the Offboard Observer, Pre-Registered Fire | C1.23 (p. 163), C1.63 (p. 166), C1.73 (p. 166), C1.731 (p. 166), C1.732 (p. 166), C1.733 (p. 166) | 0:40 |
+| 155.2 Fire Missions: SMOKE, WP, Harassing Fire, Rocket OBA; Illuminating Rounds | C1.7 (p. 166), C1.71 (p. 166), C1.72 (p. 166), C1.9 (p. 167), C3.75 (p. 171), C8.7 (p. 179), E1.93 (p. 227), E1.931 (p. 227), E1.932 (p. 227), E1.933 (p. 227) | 1:00 |
+| 155.3 Bombardment, and the shellholes HE makes | C1.8 (p. 166), C1.81 (p. 166), C1.82 (p. 166), C1.821 (p. 167), C1.822 (p. 167), C1.823 (p. 167), B2.1 (p. 113) | 1:00 |
+| 155.4 Barrage; Creeping Barrage | E12.1 (p. 246), E12.2 (p. 247), E12.3 (p. 247), E12.4 (p. 247), E12.5 (p. 247), E12.6 (p. 247), E12.7 (p. 247) | 1:00 |
 | Overhead | | 1:15 |
-| **Pass 58 total** (build 3:40) | | **4:55** |
+| **Pass 155 total** (build 3:40) | | **4:55** |
 
-**Pass 40: Air support** (planned at 3:00 of build; 38 rows of the inventory). Counters: Fighter-Bombers and Stukas by year band; AA Guns; Aerial AF for each AFV. Needs first: 53 (IFE and AA Guns), 56 (weather states are built; SMOKE Hindrance to Aerial LOS).
+**Pass 160: Air support** (planned at 3:00 of build; 38 rows of the inventory). Counters: Fighter-Bombers and Stukas by year band; AA Guns; Aerial AF for each AFV. Needs first: 105 (IFE and AA Guns), 85 (weather states are built; SMOKE Hindrance to Aerial LOS).
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 40.1 Arrival, aircraft as units, Damage | E7.2 (p. 235), E7.21 (p. 236), E7.23 (p. 236), E7.24 (p. 236), E7.226 (p. 236) | 0:20 |
-| 40.2 Aerial LOS, Aerial Range, the Sighting TC | E.5 (p. 222), E.6 (p. 222), E7.25 (p. 236), E7.3 (p. 237), E7.31 (p. 237), E7.32 (p. 237), E7.43 (p. 238) | 0:40 |
-| 40.3 Strafing and bombs, with Aerial To Kill | E7.4 (p. 237), E7.401 (p. 237), E7.402 (p. 238), E7.403 (p. 238), E7.41 (p. 238), E7.42 (p. 238), E7.421 (p. 238), E7.422 (p. 238), C7.12 (p. 176), C7.22 (p. 176) | 1:40 |
-| 40.4 Light and Heavy AA fire | E7.5 (p. 239), E7.51 (p. 239), E7.511 (p. 239), E7.512 (p. 239), E7.52 (p. 239) | 0:40 |
-| 40.5 Aerial Combat; the Observation Plane; the weather gates | E7.22 (p. 236), E7.6 (p. 239), E7.61 (p. 239), E7.62 (p. 239), E3.313 (p. 229), E3.55 (p. 229) | 0:40 |
-| 40.6 The counters |  | 0:40 |
+| 160.1 Arrival, aircraft as units, Damage | E7.2 (p. 235), E7.21 (p. 236), E7.23 (p. 236), E7.24 (p. 236), E7.226 (p. 236) | 0:20 |
+| 160.2 Aerial LOS, Aerial Range, the Sighting TC | E.5 (p. 222), E.6 (p. 222), E7.25 (p. 236), E7.3 (p. 237), E7.31 (p. 237), E7.32 (p. 237), E7.43 (p. 238) | 0:40 |
+| 160.3 Strafing and bombs, with Aerial To Kill | E7.4 (p. 237), E7.401 (p. 237), E7.402 (p. 238), E7.403 (p. 238), E7.41 (p. 238), E7.42 (p. 238), E7.421 (p. 238), E7.422 (p. 238), C7.12 (p. 176), C7.22 (p. 176) | 1:40 |
+| 160.4 Light and Heavy AA fire | E7.5 (p. 239), E7.51 (p. 239), E7.511 (p. 239), E7.512 (p. 239), E7.52 (p. 239) | 0:40 |
+| 160.5 Aerial Combat; the Observation Plane; the weather gates | E7.22 (p. 236), E7.6 (p. 239), E7.61 (p. 239), E7.62 (p. 239), E3.313 (p. 229), E3.55 (p. 229) | 0:40 |
+| 160.6 The counters |  | 0:40 |
 | Overhead | | 1:15 |
-| **Pass 40 total** (build 4:40) | | **5:55** |
+| **Pass 160 total** (build 4:40) | | **5:55** |
 
-**Pass 43: Special units: Cavalry and skis** (planned at 3:40 of build; 36 rows of the inventory). Counters: Horse counters in three sizes; Ski counters; an Ahkio. Needs first: 46 (Infantry OVR), 51 (Bailing Out), 57 (snow).
+**Pass 165: Special units: Cavalry and skis** (planned at 3:40 of build; 36 rows of the inventory). Counters: Horse counters in three sizes; Ski counters; an Ahkio. Needs first: 40 (Infantry OVR), 65 (Bailing Out), 95 (snow).
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 43.1 Cavalry: movement and its terrain costs, the charge, fire by and at it, horses | A13.1 (p. 80), A13.2 (p. 80), A13.3 (p. 80), A13.4 (p. 81), A13.5 (p. 81), A13.6 (p. 81), A13.7 (p. 82), B15.4 (p. 129) | 1:20 |
-| 43.2 Ski troops: the ski mode in every phase; the Ahkio | E4.2 (p. 231), E4.21 (p. 231), E4.22 (p. 231), E4.3 (p. 232), E4.31 (p. 232), E4.32 (p. 232), E4.33 (p. 232), E4.4 (p. 232), E4.5 (p. 232), E4.6 (p. 232), E4.7 (p. 232), E4.8 (p. 232), E4.9 (p. 232) | 1:00 |
-| 43.3 The counters |  | 0:40 |
+| 165.1 Cavalry: movement and its terrain costs, the charge, fire by and at it, horses | A13.1 (p. 80), A13.2 (p. 80), A13.3 (p. 80), A13.4 (p. 81), A13.5 (p. 81), A13.6 (p. 81), A13.7 (p. 82), B15.4 (p. 129) | 1:20 |
+| 165.2 Ski troops: the ski mode in every phase; the Ahkio | E4.2 (p. 231), E4.21 (p. 231), E4.22 (p. 231), E4.3 (p. 232), E4.31 (p. 232), E4.32 (p. 232), E4.33 (p. 232), E4.4 (p. 232), E4.5 (p. 232), E4.6 (p. 232), E4.7 (p. 232), E4.8 (p. 232), E4.9 (p. 232) | 1:00 |
+| 165.3 The counters |  | 0:40 |
 | Overhead | | 1:15 |
-| **Pass 43 total** (build 3:00) | | **4:15** |
+| **Pass 165 total** (build 3:00) | | **4:15** |
 
-**Pass 62: Airborne and waterborne** (new; 61 rows of the inventory). Counters: boats and rafts; gliders; parachute counters. Needs first: 41 (water), 40 (Light AA), 56 (wind).
+**Pass 170: Airborne and waterborne** (new; 61 rows of the inventory). Counters: boats and rafts; gliders; parachute counters. Needs first: 125 (water), 160 (Light AA), 85 (wind).
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 62.1 Boats: on land, on water, under fire, in Close Combat | E5.2 (p. 233), E5.3 (p. 234), E5.4 (p. 234), E5.5 (p. 234), E5.6 (p. 234) | 1:40 |
-| 62.2 Swimming | E6.1 (p. 235), E6.2 (p. 235), E6.3 (p. 235), E6.4 (p. 235), E6.5 (p. 235), E6.6 (p. 235) | 0:20 |
-| 62.3 Gliders | E8.1 (p. 241), E8.2 (p. 241), E8.3 (p. 241), E8.4 (p. 242), E8.5 (p. 242) | 0:40 |
-| 62.4 Paratroop landings | E9.1 (p. 242), E9.2 (p. 243), E9.3 (p. 243), E9.4 (p. 243), E9.5 (p. 244), E9.6 (p. 244), E9.7 (p. 244) | 0:40 |
-| 62.5 The counters |  | 0:40 |
+| 170.1 Boats: on land, on water, under fire, in Close Combat | E5.2 (p. 233), E5.3 (p. 234), E5.4 (p. 234), E5.5 (p. 234), E5.6 (p. 234) | 1:40 |
+| 170.2 Swimming | E6.1 (p. 235), E6.2 (p. 235), E6.3 (p. 235), E6.4 (p. 235), E6.5 (p. 235), E6.6 (p. 235) | 0:20 |
+| 170.3 Gliders | E8.1 (p. 241), E8.2 (p. 241), E8.3 (p. 241), E8.4 (p. 242), E8.5 (p. 242) | 0:40 |
+| 170.4 Paratroop landings | E9.1 (p. 242), E9.2 (p. 243), E9.3 (p. 243), E9.4 (p. 243), E9.5 (p. 244), E9.6 (p. 244), E9.7 (p. 244) | 0:40 |
+| 170.5 The counters |  | 0:40 |
 | Overhead | | 1:15 |
-| **Pass 62 total** (build 4:00) | | **5:15** |
+| **Pass 170 total** (build 4:00) | | **5:15** |
 
-**Pass 55: Transport and unusual vehicles** (new; 107 rows of the inventory). Counters: a wagon; motorcycles in three sizes and bicycles; an amphibian and a DD tank; an Aerosan; a trailer and a portee vehicle; an Ammo Supply counter. Needs first: 41 (water) for D16; 53 (Impulse Movement) for E11; 57 (snow terrain) for D17; 51 (Riders) for D15 and D17.
+**Pass 175: Transport and unusual vehicles** (new; 107 rows of the inventory). Counters: a wagon; motorcycles in three sizes and bicycles; an amphibian and a DD tank; an Aerosan; a trailer and a portee vehicle; an Ammo Supply counter. Needs first: 125 (water) for D16; 105 (Impulse Movement) for E11; 95 (snow terrain) for D17; 65 (Riders) for D15 and D17.
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 55.1 Wagons and sledges; animal transport | D12.1 (p. 211), D12.2 (p. 211), D12.3 (p. 211), D12.4 (p. 211), D12.5 (p. 212), D.2 (p. 192) | 0:40 |
-| 55.2 Motorcycles; bicycles | D15.1 (p. 214), D15.4 (p. 214), D15.5 (p. 215), D15.8 (p. 215) | 1:20 |
-| 55.3 Amphibians and DD tanks | D16.1 (p. 215), D16.2 (p. 216), D16.3 (p. 216), D16.4 (p. 216), D16.5 (p. 216), D16.6 (p. 216), D16.7 (p. 216), D16.8 (p. 216), B16.42 (p. 130), B16.72 (p. 130) | 1:00 |
-| 55.4 Aerosans | D17.1 (p. 216), D17.2 (p. 216), D17.3 (p. 217), D17.4 (p. 217), D17.5 (p. 217) | 0:40 |
-| 55.5 Trailers; En Portee | C10.4 (p. 181), C10.41 (p. 181), C10.5 (p. 181), C10.51 (p. 181), C10.52 (p. 181), C10.53 (p. 181), C10.54 (p. 181) | 1:20 |
-| 55.6 Ammo Vehicles | E10.1 (p. 244), E10.2 (p. 244), E10.3 (p. 244), E10.4 (p. 244), E10.5 (p. 244), E10.6 (p. 244) | 0:20 |
-| 55.7 Convoys; Columns | E11.1 (p. 245), E11.2 (p. 245), E11.3 (p. 245), E11.4 (p. 245), E11.5 (p. 245), E11.6 (p. 246), E11.7 (p. 246) | 1:20 |
-| 55.8 The counters |  | 0:40 |
+| 175.1 Wagons and sledges; animal transport | D12.1 (p. 211), D12.2 (p. 211), D12.3 (p. 211), D12.4 (p. 211), D12.5 (p. 212), D.2 (p. 192) | 0:40 |
+| 175.2 Motorcycles; bicycles | D15.1 (p. 214), D15.4 (p. 214), D15.5 (p. 215), D15.8 (p. 215) | 1:20 |
+| 175.3 Amphibians and DD tanks | D16.1 (p. 215), D16.2 (p. 216), D16.3 (p. 216), D16.4 (p. 216), D16.5 (p. 216), D16.6 (p. 216), D16.7 (p. 216), D16.8 (p. 216), B16.42 (p. 130), B16.72 (p. 130) | 1:00 |
+| 175.4 Aerosans | D17.1 (p. 216), D17.2 (p. 216), D17.3 (p. 217), D17.4 (p. 217), D17.5 (p. 217) | 0:40 |
+| 175.5 Trailers; En Portee | C10.4 (p. 181), C10.41 (p. 181), C10.5 (p. 181), C10.51 (p. 181), C10.52 (p. 181), C10.53 (p. 181), C10.54 (p. 181) | 1:20 |
+| 175.6 Ammo Vehicles | E10.1 (p. 244), E10.2 (p. 244), E10.3 (p. 244), E10.4 (p. 244), E10.5 (p. 244), E10.6 (p. 244) | 0:20 |
+| 175.7 Convoys; Columns | E11.1 (p. 245), E11.2 (p. 245), E11.3 (p. 245), E11.4 (p. 245), E11.5 (p. 245), E11.6 (p. 246), E11.7 (p. 246) | 1:20 |
+| 175.8 The counters |  | 0:40 |
 | Overhead | | 1:15 |
-| **Pass 55 total** (build 7:20) | | **8:35** |
+| **Pass 175 total** (build 7:20) | | **8:35** |
 
-**Pass 64: Nationalities II: new formations and nations** (new; 54 rows of the inventory). Counters: SS, Volksgrenadier, and Assault Engineer MMC; U.S. paratroops and British Airborne; Partisans; Free French and Vichy; Allied Minor and Ethiopian sets; crews, SW, and a Gun for the nations that lack them. Needs first: 53 (Impulse Movement) for Human Wave; 37 (entrenching); 56 (WP); 54 (PF and PSK for other nations).
+**Pass 180: Nationalities II: new formations and nations** (new; 54 rows of the inventory). Counters: SS, Volksgrenadier, and Assault Engineer MMC; U.S. paratroops and British Airborne; Partisans; Free French and Vichy; Allied Minor and Ethiopian sets; crews, SW, and a Gun for the nations that lack them. Needs first: 105 (Impulse Movement) for Human Wave; 115 (entrenching); 85 (WP); 110 (PF and PSK for other nations).
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 64.1 The SS, Volksgrenadiers, Assault Engineers | A25.01 (p. 93), A25.11 (p. 93), A25.111 (p. 93), A25.12 (p. 93), A25.13 (p. 93) | 0:40 |
-| 64.2 Americans and British: paratroops, Airborne, Gurkha, ANZAC, their ordnance and WP notes | A25.31 (p. 96), A25.32 (p. 96), A25.33 (p. 96), A25.34 (p. 96), A25.35 (p. 96), A25.42 (p. 96), A25.43 (p. 96), A25.44 (p. 96), A25.46 (p. 96) | 0:40 |
-| 64.3 Partisans; Russian SMG squads and the other Russian notes | A25.211 (p. 93), A25.212 (p. 93), A25.24 (p. 95), A25.241 (p. 95), A25.242 (p. 96) | 0:40 |
-| 64.4 Human Wave | A25.23 (p. 94), A25.231 (p. 94), A25.232 (p. 94), A25.233 (p. 94), A25.234 (p. 95) | 1:00 |
-| 64.5 The French: Free French, Vichy, and their borrowed equipment | A25.52 (p. 96), A25.53 (p. 96), A25.54 (p. 96), A25.55 (p. 96), A25.56 (p. 97), A25.58 (p. 97) | 1:00 |
-| 64.6 Allied Minors; Ethiopians and Eritreans | A25.9 (p. 98), A25.91 (p. 98), A25.93 (p. 98), A25.931 (p. 98), A25.932 (p. 98), A25.933 (p. 98), A25.935 (p. 98), A25.936 (p. 98), A25.937 (p. 98), A25.938 (p. 98), A25.66 (p. 97) | 1:20 |
-| 64.7 Finnish, Italian, and Axis Minor weapons and To Hit colors | A25.6 (p. 97), A25.76 (p. 97), A25.77 (p. 97), A25.78 (p. 97), A25.79 (p. 97), A25.83 (p. 98), A25.85 (p. 98), A25.87 (p. 98) | 0:40 |
-| 64.8 The counters |  | 1:00 |
+| 180.1 The SS, Volksgrenadiers, Assault Engineers | A25.01 (p. 93), A25.11 (p. 93), A25.111 (p. 93), A25.12 (p. 93), A25.13 (p. 93) | 0:40 |
+| 180.2 Americans and British: paratroops, Airborne, Gurkha, ANZAC, their ordnance and WP notes | A25.31 (p. 96), A25.32 (p. 96), A25.33 (p. 96), A25.34 (p. 96), A25.35 (p. 96), A25.42 (p. 96), A25.43 (p. 96), A25.44 (p. 96), A25.46 (p. 96) | 0:40 |
+| 180.3 Partisans; Russian SMG squads and the other Russian notes | A25.211 (p. 93), A25.212 (p. 93), A25.24 (p. 95), A25.241 (p. 95), A25.242 (p. 96) | 0:40 |
+| 180.4 Human Wave | A25.23 (p. 94), A25.231 (p. 94), A25.232 (p. 94), A25.233 (p. 94), A25.234 (p. 95) | 1:00 |
+| 180.5 The French: Free French, Vichy, and their borrowed equipment | A25.52 (p. 96), A25.53 (p. 96), A25.54 (p. 96), A25.55 (p. 96), A25.56 (p. 97), A25.58 (p. 97) | 1:00 |
+| 180.6 Allied Minors; Ethiopians and Eritreans | A25.9 (p. 98), A25.91 (p. 98), A25.93 (p. 98), A25.931 (p. 98), A25.932 (p. 98), A25.933 (p. 98), A25.935 (p. 98), A25.936 (p. 98), A25.937 (p. 98), A25.938 (p. 98), A25.66 (p. 97) | 1:20 |
+| 180.7 Finnish, Italian, and Axis Minor weapons and To Hit colors | A25.6 (p. 97), A25.76 (p. 97), A25.77 (p. 97), A25.78 (p. 97), A25.79 (p. 97), A25.83 (p. 98), A25.85 (p. 98), A25.87 (p. 98) | 0:40 |
+| 180.8 The counters |  | 1:00 |
 | Overhead | | 1:15 |
-| **Pass 64 total** (build 7:00) | | **8:15** |
+| **Pass 180 total** (build 7:00) | | **8:15** |
 
-**Pass 44: Fire** (planned at 3:00 of build; 32 rows of the inventory). Counters: Flame and Blaze as states; the Kindle and Spread numbers of the Terrain Chart. Needs first: 56 (EC and wind), 42 (rubble), 49 (who Kindled).
+**Pass 185: Fire** (planned at 3:00 of build; 32 rows of the inventory). Counters: Flame and Blaze as states; the Kindle and Spread numbers of the Terrain Chart. Needs first: 85 (EC and wind), 140 (rubble), 75 (who Kindled).
 
 | Task | Rules | Estimate |
 |---|---|---|
-| 44.1 Flame and Blaze; Kindling; each terrain's Kindling and Spread numbers | B25.1 (p. 143), B25.11 (p. 143), B25.12 (p. 143), B25.13 (p. 143), B25.15 (p. 143), B25.151 (p. 143), B12.5 (p. 127), B13.5 (p. 128), B14.5 (p. 129), B15.5 (p. 129) | 1:00 |
-| 44.2 Spread; a Blaze's smoke by level; rout from a Blaze; burning buildings and wrecks; extinguishing a Flame; rubble from a burnt building | B25.2 (p. 143), B25.4 (p. 143), B25.6 (p. 144), B25.61 (p. 144), B25.62 (p. 144), B25.66 (p. 145), B23.6 (p. 137), B23.94 (p. 141), B24.6 (p. 142), B24.72 (p. 142), B24.721 (p. 142), D10.41 (p. 210) | 1:00 |
-| 44.3 Flame from a FT, a MOL, a DC, and WP | A22.35 (p. 89), A22.6111 (p. 89), A22.613 (p. 90), A24.32 (p. 92) | 0:20 |
-| 44.4 Control forfeited to a Kindled Fire | A26.16 (p. 99), A26.161 (p. 99), A26.162 (p. 100) | 0:40 |
-| 44.5 Illumination by fire at night | E1.94 (p. 227), E1.941 (p. 227), E1.942 (p. 227) | 0:40 |
+| 185.1 Flame and Blaze; Kindling; each terrain's Kindling and Spread numbers | B25.1 (p. 143), B25.11 (p. 143), B25.12 (p. 143), B25.13 (p. 143), B25.15 (p. 143), B25.151 (p. 143), B12.5 (p. 127), B13.5 (p. 128), B14.5 (p. 129), B15.5 (p. 129) | 1:00 |
+| 185.2 Spread; a Blaze's smoke by level; rout from a Blaze; burning buildings and wrecks; extinguishing a Flame; rubble from a burnt building | B25.2 (p. 143), B25.4 (p. 143), B25.6 (p. 144), B25.61 (p. 144), B25.62 (p. 144), B25.66 (p. 145), B23.6 (p. 137), B23.94 (p. 141), B24.6 (p. 142), B24.72 (p. 142), B24.721 (p. 142), D10.41 (p. 210) | 1:00 |
+| 185.3 Flame from a FT, a MOL, a DC, and WP | A22.35 (p. 89), A22.6111 (p. 89), A22.613 (p. 90), A24.32 (p. 92) | 0:20 |
+| 185.4 Control forfeited to a Kindled Fire | A26.16 (p. 99), A26.161 (p. 99), A26.162 (p. 100) | 0:40 |
+| 185.5 Illumination by fire at night | E1.94 (p. 227), E1.941 (p. 227), E1.942 (p. 227) | 0:40 |
 | Overhead | | 1:15 |
-| **Pass 44 total** (build 3:40) | | **4:55** |
+| **Pass 185 total** (build 3:40) | | **4:55** |
 
 **(d) Left out by a ruling, not built.** Each row of the inventory that no pass takes, with the reason.
 
@@ -2108,7 +2148,7 @@ Passes 34b, 41, 42, and 43 keep their numbers and lose part of their titles: 34b
 | A deviation stands as its ruling has it: Random Selection among Dummies (A.9; R10.11, R27.3), entry and offboard setup (A2.5, A2.51; R20.5, R25.1 to R25.4), the Minimum Move as a unit's only step (A4.134; R10.9), free LOS checks (A6.11; R31d.4, for now, at the user's choice), Infiltration declared with the round (A11.22; R14.8), VBM clearance read from the map (D2.3; R11.2), Extreme Winter named by SSR (E3.74; R16.14). | A.9, A2.5, A2.51, A4.134, A6.11, A11.22, D2.3, E3.74 | 8 |
 | **Left out** | | **30** |
 
-The draft's ruling on A12.16, Right of Inspection, is withdrawn. The reading found a real gap there: a side's view shows an unconcealed enemy stack in full whatever the LOS, where the rule allows inspection only in LOS (p. 79). Pass 48 builds it.
+The draft's ruling on A12.16, Right of Inspection, is withdrawn. The reading found a real gap there: a side's view shows an unconcealed enemy stack in full whatever the LOS, where the rule allows inspection only in LOS (p. 79). Pass 70 builds it.
 
 The 212 rows marked not applicable in the inventory need no ruling: they are headings, definitions, pointers, and table procedure the program replaces (cutting out overlays, counter letters, side records).
 
@@ -2116,34 +2156,34 @@ The 212 rows marked not applicable in the inventory need no ruling: they are hea
 
 | | Passes | Build | Total | Likely |
 |---|---:|---|---|---|
-| The eleven planned passes, as section 23 has them | 11 | 42:25 | 56:10 | |
+| The eleven planned passes, as first planned (section 22) | 11 | 42:25 | 56:10 | |
 | The eleven, from their task lists (a) | 11 | 47:45 | 61:30 | 30:45 |
 | The new passes (b) | 20 | 109:15 | 134:15 | 67:08 |
 | **Complete coverage of A to E** | **31** | **157:00** | **195:45** | **97:52** |
 
-The first version of this section gave 107:50 for 19 passes. The difference is what the reading found: the planned passes held more than their figures (pass 34 alone held three passes' work), the faults in rules already built make a pass of their own, and terrain is five passes, not three. The likely figure, about 98 hours on the clock, is half of the total and no better than the week's pace is as a guide; armored combat and offboard artillery are still the areas least touched, and 22 of the 31 passes need counters or data the catalog lacks.
+The first version of this section gave 107:50 for 19 passes. The difference is what the reading found: the planned passes held more than their figures (pass 55 alone held three passes' work), the faults in rules already built make a pass of their own, and terrain is five passes, not three. The likely figure, about 98 hours on the clock, is half of the total and no better than the week's pace is as a guide; armored combat and offboard artillery are still the areas least touched, and 22 of the 31 passes need counters or data the catalog lacks.
 
 **(f) A recommended order.** By block, one pass at a time on the user's go-ahead. A script checked that no pass runs before one it names under "Needs first".
 
 | Block | Passes | Total | Likely | Why here |
 |---|---|---|---|---|
-| 1. Repairs and the ground under everything | 45, 46, 47 | 21:10 | 10:35 | Pass 45 ends the wrong results. Pass 46 gives ADJACENT, the road state, and entry into enemy Locations; pass 47 gives fire between levels and Residual FP as the rule has it. Rout, armor, and artillery all read these. |
-| 2. Armor | 33, 34, 50, 51 | 25:20 | 12:40 | As the user moved it forward. Each builds on the last. |
-| 3. The rest of Chapter A | 48, 49, 63 | 18:50 | 9:25 | No counters. These could change places with block 2 for the shortest road to a complete Chapter A. |
-| 4. SMOKE, night, and weather | 56, 34b, 57 | 16:05 | 8:02 | Wind and EC come first: SMOKE, Fog, Drifts, gliders, and Fire all read them. |
-| 5. Position, equipment, and Guns | 52, 53, 54 | 24:05 | 12:02 | Pass 52's vertex LOS and Wall Advantage are needed by Rowhouses and bocage; pass 53's Impulse Movement by Human Wave and Convoys. |
-| 6. Fortifications | 37, 38 | 11:30 | 5:45 |  |
-| 7. Terrain | 41, 59, 60, 42, 61 | 32:00 | 16:00 | The widest gap by subsection count. |
-| 8. Artillery and air | 39, 58, 40 | 15:30 | 7:45 |  |
-| 9. Units and vehicles | 43, 62, 55, 64 | 26:20 | 13:10 | Each waits on water, snow, AA fire, or Impulse Movement from the blocks above. |
-| 10. Fire | 44 | 4:55 | 2:28 | Last: it reads EC, wind, rubble, and Control. |
+| 1. Repairs and the ground under everything | 35, 40, 45 | 21:10 | 10:35 | Pass 35 ends the wrong results. Pass 40 gives ADJACENT, the road state, and entry into enemy Locations; pass 45 gives fire between levels and Residual FP as the rule has it. Rout, armor, and artillery all read these. |
+| 2. Armor | 50, 55, 60, 65 | 25:20 | 12:40 | As the user moved it forward. Each builds on the last. |
+| 3. The rest of Chapter A | 70, 75, 80 | 18:50 | 9:25 | No counters. These could change places with block 2 for the shortest road to a complete Chapter A. |
+| 4. SMOKE, night, and weather | 85, 90, 95 | 16:05 | 8:02 | Wind and EC come first: SMOKE, Fog, Drifts, gliders, and Fire all read them. |
+| 5. Position, equipment, and Guns | 100, 105, 110 | 24:05 | 12:02 | Pass 100's vertex LOS and Wall Advantage are needed by Rowhouses and bocage; pass 105's Impulse Movement by Human Wave and Convoys. |
+| 6. Fortifications | 115, 120 | 11:30 | 5:45 |  |
+| 7. Terrain | 125, 130, 135, 140, 145 | 32:00 | 16:00 | The widest gap by subsection count. |
+| 8. Artillery and air | 150, 155, 160 | 15:30 | 7:45 |  |
+| 9. Units and vehicles | 165, 170, 175, 180 | 26:20 | 13:10 | Each waits on water, snow, AA fire, or Impulse Movement from the blocks above. |
+| 10. Fire | 185 | 4:55 | 2:28 | Last: it reads EC, wind, rubble, and Control. |
 
 **(g) What the reading changed.**
 
 *In the coverage document* (corrected the same day; its section 8 has the full list):
 
 - Chapter D has 17 sections, not 16: D17 Aerosans (pp. 216 to 217) had no row. Chapters A to E have 105 numbered sections, and 57 numbered rules in the chapters' introductions that had no rows either. Among those, ADJACENT (A.8, p. 43) is narrower in the code than in the rule, and rout, surrender, DC placement, and fire groups all read it.
-- The audits list 143 faults: code that gives a result the rule forbids, or silently omits part of a rule that is otherwise built, with no ruling to record it. (Some are one fault seen from two sections, and some are read from the code and not settled without a run.) The coverage document had found two. The ones that give wrong results in play today are pass 45; the rest are repaired by the pass that reworks their rule.
+- The audits list 143 faults: code that gives a result the rule forbids, or silently omits part of a rule that is otherwise built, with no ruling to record it. (Some are one fault seen from two sections, and some are read from the code and not settled without a run.) The coverage document had found two. The ones that give wrong results in play today are pass 35; the rest are repaired by the pass that reworks their rule.
 - "Mostly built" was too generous for D5, D7, D8, B16, C5, C6, and C13 ("PF, PSK, ATR in full" was wrong), and "Built" for B1 (Interdiction ignores Height Advantage, hexside TEM, and cover) and A18 (no Leader Creation in Close Combat against a vehicle).
 - Statements that were wrong: Close Combat odds above 10-1 are decided, not refused (R14.13); fire decides six Hindrances, not three; cactus hedge, vineyard, paths, forest, pine woods, and Debris are absent, not refused; one place in the planner does read fortification counters; a valley (B22) needs a test, not code; the "Continuous Slopes" the game refuses are VASL's Slope hexsides, and B.5 itself has no code.
 - Rule numbers read from the transcription's headings that the PDF does not bear out: D8.32 is the unhooking of a Gun, not towing out, and D8 ends at D8.5; D3.6 is the vehicular FT, not Canister; C9.5 is the mortar's Critical Hit, not its SMOKE; B16.21 is not a rule.
@@ -2151,13 +2191,13 @@ The first version of this section gave 107:50 for 19 passes. The difference is w
 
 *In the first version of this section:*
 
-- **The short pass is not short.** It held two faults. Pass 45 takes 45 rows of the inventory and is 7:40.
-- **The additions to pass 33 were two passes.** FT, MOL, and DC against an AFV, mixed Locations, and Guns as targets are pass 50, with the Collateral Attacks and HE Equivalency they need; Abandonment, Crew Survival, and Brew Ups are pass 51, with Passengers.
-- **Pass 34 held three passes.** Ordnance SMOKE cannot be built before SMOKE has strength, height, and Drift, which need wind (pass 56); Passengers as units are the largest single piece of Chapter D (pass 51).
-- **The draft's pass 51 (night and weather II) had no centre and is gone.** Jitter Fire is built on Straying (pass 34b). EC and wind must come before SMOKE, Fog, and Drifts, not after Fire (pass 56). Illuminating Rounds need OBA (pass 58). Trip flares are a Pacific rule. Interrogation goes with prisoners (pass 49) and Swimming with boats (pass 62).
-- **Three foundations were scattered or late.** The vertex LOS serves Infantry Bypass, Snap Shots, fire at a vehicle in Bypass, Underbelly hits, and Rowhouses; the draft had it in three passes. Wall Advantage as a kept state is needed by Hull Down and by bocage; the draft built it after both. Impulse Movement (D14.3) drives Platoon Movement, Human Wave, and Convoys; the draft had them in three passes with no order. Passes 52 and 53 now hold them.
-- **Terrain was three passes and is five.** Planned passes 41 and 42 and the draft's 49 each held two or three passes' work: gullies and streams with Crest Status, water, bridges, Climbing, rubble made and falling, Rowhouses, Factories, bocage, sewers, Narrow Streets, and railroads are each large by the rules' own length.
-- **The nationality rules were spread over passes 38, 42, and 43 for the cards' sake.** With the cards deferred they are two passes, and the first (63) is not new work but the missing half of rules on counters the catalog holds: non-elite Italians may Deploy and take the capture DRM, Finns pay Captured Use on a Russian MG.
+- **The short pass is not short.** It held two faults. Pass 35 takes 45 rows of the inventory and is 7:40.
+- **The additions to pass 50 were two passes.** FT, MOL, and DC against an AFV, mixed Locations, and Guns as targets are pass 60, with the Collateral Attacks and HE Equivalency they need; Abandonment, Crew Survival, and Brew Ups are pass 65, with Passengers.
+- **Pass 55 held three passes.** Ordnance SMOKE cannot be built before SMOKE has strength, height, and Drift, which need wind (pass 85); Passengers as units are the largest single piece of Chapter D (pass 65).
+- **The draft's pass 51, in its own numbering (night and weather II) had no centre and is gone.** Jitter Fire is built on Straying (pass 90). EC and wind must come before SMOKE, Fog, and Drifts, not after Fire (pass 85). Illuminating Rounds need OBA (pass 155). Trip flares are a Pacific rule. Interrogation goes with prisoners (pass 75) and Swimming with boats (pass 170).
+- **Three foundations were scattered or late.** The vertex LOS serves Infantry Bypass, Snap Shots, fire at a vehicle in Bypass, Underbelly hits, and Rowhouses; the draft had it in three passes. Wall Advantage as a kept state is needed by Hull Down and by bocage; the draft built it after both. Impulse Movement (D14.3) drives Platoon Movement, Human Wave, and Convoys; the draft had them in three passes with no order. Passes 100 and 105 now hold them.
+- **Terrain was three passes and is five.** Planned passes 125 and 140 and the draft's 49 each held two or three passes' work: gullies and streams with Crest Status, water, bridges, Climbing, rubble made and falling, Rowhouses, Factories, bocage, sewers, Narrow Streets, and railroads are each large by the rules' own length.
+- **The nationality rules were spread over passes 120, 140, and 165 for the cards' sake.** With the cards deferred they are two passes, and the first (63) is not new work but the missing half of rules on counters the catalog holds: non-elite Italians may Deploy and take the capture DRM, Finns pay Captured Use on a Russian MG.
 - **Two of the draft's three rulings change.** A12.16 is a gap to build, not a ruling. The NVR and weather charts are DYO-only by the rulebook's own text, so nothing is departed from. A16 Battlefield Integrity, which the draft built, is optional by its own text and is recommended left out.
 
 **(h) Questions for the user.** The four of the first version are carried forward as 1 to 4, reworded where the reading changed them.
@@ -2165,11 +2205,11 @@ The first version of this section gave 107:50 for 19 passes. The difference is w
 | # | Question | Recommendation |
 |---|---|---|
 | 1 | Is this the right cut: the eleven planned passes as amended in (a), and the 20 new passes of (b)? | Yes. A pass's design may still merge it with a small neighbour (62 into 48, 58 into 40) when its turn comes. |
-| 2 | Are the rulings of (d) accepted: the five optional rules, and Battlefield Integrity, left out; the DYO, Pacific, and North Africa rows deferred with their chapters; the eight deviations standing? | Accept all. Battlefield Integrity is the one you might want built: it is 7 rows and about 0:40 of build, and would go in pass 49. |
-| 3 | Is the order of blocks in (f) right, and does the rest of Chapter A (block 3) come before armor (block 2) or after? | As listed: passes 45 and 46 first, then armor, since you moved armor forward on 2026-10-05 and pass 46 gives it the ground it needs. |
-| 4 | Does the repairs pass come first, and under what number? | Yes, first, as pass 45. The week review's "31e" suited a short pass; this one is not short. |
-| 5 | Before pass 45, shall I play Armor Test through the Play page, as the week review recommended? | Yes. It is 0:30 to 1:15, and pass 45 repairs ten vehicle faults that no play test has yet met. |
-| 6 | Terrain that exists only by SSR, or that the audit found on no board in scope (Narrow Streets, Steeples, Railroads, Rail Cars, Towers, Prepared Fire Zones, Debris: tasks 61.3 to 61.5), and overlays (task 60.6), for which the repository has no art or data: build them, or leave them out by a ruling until a card needs one? | Build them, last in the terrain block, since the aim is complete coverage. Leaving them out would take 4:20 of build from pass 61 (8:35 in all) and 1:00 from pass 60; say if you prefer that. I did not check the 235 boards for this terrain myself. |
+| 2 | Are the rulings of (d) accepted: the five optional rules, and Battlefield Integrity, left out; the DYO, Pacific, and North Africa rows deferred with their chapters; the eight deviations standing? | Accept all. Battlefield Integrity is the one you might want built: it is 7 rows and about 0:40 of build, and would go in pass 75. |
+| 3 | Is the order of blocks in (f) right, and does the rest of Chapter A (block 3) come before armor (block 2) or after? | As listed: passes 35 and 40 first, then armor, since you moved armor forward on 2026-10-05 and pass 40 gives it the ground it needs. |
+| 4 | Does the repairs pass come first, and under what number? | Yes, first, as pass 35. The week review's "31e" suited a short pass; this one is not short. |
+| 5 | Before pass 35, shall I play Armor Test through the Play page, as the week review recommended? | Yes. It is 0:30 to 1:15, and pass 35 repairs ten vehicle faults that no play test has yet met. |
+| 6 | Terrain that exists only by SSR, or that the audit found on no board in scope (Narrow Streets, Steeples, Railroads, Rail Cars, Towers, Prepared Fire Zones, Debris: tasks 61.3 to 61.5), and overlays (task 60.6), for which the repository has no art or data: build them, or leave them out by a ruling until a card needs one? | Build them, last in the terrain block, since the aim is complete coverage. Leaving them out would take 4:20 of build from pass 145 (8:35 in all) and 1:00 from pass 135; say if you prefer that. I did not check the 235 boards for this terrain myself. |
 | 7 | Counters and tables no registered source prints (RCL, MOL-Projector, bazooka and PIAT To Hit tables on counter backs, Horse and boat counters): manufacture them under R0.3 on sheet MFG, as before? | Yes; your standing ruling. Chapter H's vehicle and ordnance notes are in the PDF and may be cited for values though Chapter H's rules are deferred. |
 | 8 | On approval, shall sections 22 and 23 be rewritten from this section, and the passes' rows marked in the backlog? | Yes, in one commit with this section, the inventory, and the corrected coverage document. |
 
@@ -2178,7 +2218,7 @@ The first version of this section gave 107:50 for 19 passes. The difference is w
 
 **Status:** Designed and answered 2026-10-05 ([design](<Passes/ASL Unit Backlog Pass 32 Design.md>), with its [appendix](<Passes/ASL Unit Backlog Pass 32 Design Appendix.md>) of every member that moves). 32.a built 2026-10-05 to 06 on `feature/asl-backlog-pass-32a` (the design's section 16: S0, S1 with 50 members and AngleBetween, S11, the SMOKE action; every proof equal), merged into main as 38a0c90 on 2026-10-06. 32.b (S3, Infantry movement and terrain) built 2026-10-06 on `feature/asl-backlog-pass-32b` (the design's section 17: 25 planner members and six projector members in eight commits, three new Rules files; every proof equal), merged into main as 9696d59 on 2026-10-06. 32.c (S4, Fire) built 2026-10-06 on `feature/asl-backlog-pass-32c` (the design's section 18: 50 planner and LiveFire members and the projector's twelve in eight commits, three new Rules files and a models file, three searches with fact readers; every proof equal after every commit, the sweep now cut at every PFPh, DFPh, and AFPh entry too), merged into main as 91a4c18 on 2026-10-06. 32.d (S7, Ordnance, Guns, and support weapons) built 2026-10-06 in Visual Studio with Copilot (the design's section 19: eight commits, seven new Rules files, members that are only state reads or refusal texts around a rule already in Rules left in Play; every proof equal), merged into main as 6c30148 on 2026-10-07. 32.e (S8, Vehicles) built 2026-10-07 the same way (the design's section 20: twelve commits with 98 direct Rules tests added, seven new Rules files, the vehicle step search over a fact reader; every proof equal), merged into main as ef96345 on 2026-10-07. 32.f (S5, Rout, Rally, and Repair) built 2026-10-07 on `feature/asl-backlog-pass-32f` (the design's section 21: 38 rout rows, 13 Rally, 3 freed SMC, 3 Shock, 3 LiveRally, and the projector's nine in eight commits with 53 direct Rules tests added, five new Rules files, the rout search over one fact reader; the sweep now cut at every RPh and RtPh entry too), merged into main as 93cf0e8 on 2026-10-08. The upstairs rout fix (a broken unit on an upper level routs down its stairwell and along its level; 0919e8e on `fix/asl-upstairs-rout`) was built after it and rolls into 32.g's gate and merge. 32.g (S6, Close Combat, the advance, and prisoners) built 2026-10-08 on `feature/asl-backlog-pass-32g` from 0919e8e (the design's section 22: the 71 rows in eleven commits with 27 direct Rules tests added, nine new Rules files, the charge search over one fact reader; the sweep now cut at every APh and CCPh entry too, 127 cuts), merged into main as b6a3f80 on 2026-10-08. 32.h (S9, night, weather, Starshells, and Snipers) and 32.i (S2, the sequence of play and the A1 entry) were built as one block on 2026-10-08 on `feature/asl-backlog-pass-32hi` from 8c8f64a, at the user's decision (the design's section 23: thirteen commits with the build and the text list at each, eight new Rules files, 13 direct Rules tests, the tests and proofs once at the end; the read-only review and three pass 16 tests caught one dropped clause, fixed as the last commit; every proof equal against a baseline built from a checked archive), merged into main as 042d14a on 2026-10-08. 32.j (S10, setup, entry, exit, the Victory Conditions, and concealment at setup) was built on 2026-10-08 and 09 on `feature/asl-backlog-pass-32j` from 042d14a (the design's section 24: the 56 members in ten commits with the build and the text list at each, four new Rules files, 14 direct Rules tests, the non-OB "?" scan and the Control fold over fact readers; the replay digest caught a condition the projector's map lacked, fixed as commit 9; the read-only review found no behavior change and one cost, fixed as commit 10; every proof equal against a baseline built from a checked archive of 042d14a), awaiting its merge. **With 32.j merged the migration is complete: every ASL rule the code holds is a calculator in Rules** (the design's section 24, the closing paragraph).
 
-**What it is.** Section 19, decision 7: every ASL rule implemented in the Rules project alone. The pass moves the rule logic that sits in Play and Units into calculators in Rules and changes no behavior. Maps keeps LOS, range, and its reading of the board. It comes before the rule passes 33 and on, which then write their rules in Rules.
+**What it is.** Section 19, decision 7: every ASL rule implemented in the Rules project alone. The pass moves the rule logic that sits in Play and Units into calculators in Rules and changes no behavior. Maps keeps LOS, range, and its reading of the board. It comes before the rule passes 50 and on, which then write their rules in Rules.
 
 **The sub-passes.** Each is built on its own branch, proved (no test file changed; the recorded and live games replayed to the same states; the planner asked the same questions with the same answers; every refusal text and roll key unchanged), and merged on its own. The figures are build time on this plan's task sizes, by script over the 521 members; the design's section 10 says how far to trust them, and the first sub-pass measures the pace.
 
@@ -2200,22 +2240,59 @@ With 1:15 of overhead for each of the ten sub-passes the whole is **235:40 on th
 
 ## 23. Schedule and duration
 
-The rule passes follow the passes of section 4, in this order, one pass at a time on the user's go-ahead. The card track is deferred (2026-10-05; section 19, decision 5), and its batches are listed below the rule passes as they were planned:
+**Rewritten 2026-10-09** from section 22.1 at the user's word: the 31 rule passes of 22.1 (a) and (b), in the order of 22.1 (f), with 22.1's figures. Until that date this section listed the eleven planned passes alone, 33 first, at 56:10. Pass 32, the Rules migration, is complete (32.a to 32.j, merged 2026-10-06 to 2026-10-09; section 22.2), so every pass below writes its rules in the Rules project.
+
+The rule passes run in this order, one pass at a time on the user's go-ahead. **The next pass is 35.** The numbers follow the order in steps of five (the renumbering of 2026-10-09, section 4), so a pass added later takes a free number between two others. "Build" is from the pass's task list in 22.1 (c); "Total" adds 1:15 of overhead; "Likely" is half the total, the pace the week review found for rule passes. "Needs first" names the passes a pass reads; a script checked that none runs before one it names.
+
+| Block | Pass | Title | Rows | Needs first | Build | Total | Likely |
+|---|---|---|---:|---|---|---|---|
+| 1 | 35 | Repairs: wrong results in rules already built | 45 | nothing | 6:25 | 7:40 | 3:50 |
+| 1 | 40 | Infantry I: movement, stacking, and Locations | 49 | 35 | 5:20 | 6:35 | 3:18 |
+| 1 | 45 | Infantry II: fire, MGs, and SW | 38 | 40 | 5:40 | 6:55 | 3:28 |
+| | **1. Repairs and the ground under everything** | | **132** | | **17:25** | **21:10** | **10:35** |
+| 2 | 50 | Armored combat I | 33 | 35 | 5:00 | 6:15 | 3:08 |
+| 2 | 55 | Armored combat II | 20 | 50 | 3:40 | 4:55 | 2:28 |
+| 2 | 60 | Armored combat III: other attacks on vehicles and Guns | 37 | 50, 45 | 4:40 | 5:55 | 2:58 |
+| 2 | 65 | Passengers, Riders, and crews | 63 | 50, 60 | 7:00 | 8:15 | 4:08 |
+| | **2. Armor** | | **153** | | **20:20** | **25:20** | **12:40** |
+| 3 | 70 | Infantry III: morale, Close Combat, and concealment | 35 | 40 | 7:20 | 8:35 | 4:18 |
+| 3 | 75 | Infantry IV: the small sections, and Interrogation | 56 | 40, 45 | 6:20 | 7:35 | 3:48 |
+| 3 | 80 | Nationalities I: the catalog's counters | 14 | 35 | 1:25 | 2:40 | 1:20 |
+| | **3. The rest of Chapter A** | | **105** | | **15:05** | **18:50** | **9:25** |
+| 4 | 85 | SMOKE, wind, and Environmental Conditions | 33 | 35 | 4:20 | 5:35 | 2:48 |
+| 4 | 90 | Night | 43 | 35 | 4:40 | 5:55 | 2:58 |
+| 4 | 95 | Weather II | 25 | 85, 90 | 3:20 | 4:35 | 2:18 |
+| | **4. SMOKE, night, and weather** | | **101** | | **12:20** | **16:05** | **8:02** |
+| 5 | 100 | Position and cover | 43 | 55, 40 | 6:00 | 7:15 | 3:38 |
+| 5 | 105 | Armored combat IV: equipment and formations | 68 | 50, 55, 65, 100 | 7:00 | 8:15 | 4:08 |
+| 5 | 110 | Guns and anti-tank weapons II | 77 | 35, 60 | 7:20 | 8:35 | 4:18 |
+| | **5. Position, equipment, and Guns** | | **188** | | **20:20** | **24:05** | **12:02** |
+| 6 | 115 | Fortifications I | 74 | 35 | 5:00 | 6:15 | 3:08 |
+| 6 | 120 | Fortifications II | 42 | 115 | 4:00 | 5:15 | 2:38 |
+| | **6. Fortifications** | | **116** | | **9:00** | **11:30** | **5:45** |
+| 7 | 125 | Terrain I: Depressions and water | 57 | 35, 40 | 5:00 | 6:15 | 3:08 |
+| 7 | 130 | Terrain III: bridges | 18 | 125, 75 | 2:05 | 3:20 | 1:40 |
+| 7 | 135 | Terrain IV: the refused ground terrain | 63 | 35, 40 | 5:40 | 6:55 | 3:28 |
+| 7 | 140 | Terrain II: buildings and rubble | 43 | 100, 115, 45 | 5:40 | 6:55 | 3:28 |
+| 7 | 145 | Terrain V: bocage, sewers, and the village | 100 | 100, 115, 140 | 7:20 | 8:35 | 4:18 |
+| | **7. Terrain** | | **281** | | **25:45** | **32:00** | **16:00** |
+| 8 | 150 | Offboard artillery I | 36 | 45, 60 | 3:25 | 4:40 | 2:20 |
+| 8 | 155 | Offboard artillery II: missions, Bombardment, and Barrage | 44 | 150, 85 | 3:40 | 4:55 | 2:28 |
+| 8 | 160 | Air support | 38 | 105, 85 | 4:40 | 5:55 | 2:58 |
+| | **8. Artillery and air** | | **118** | | **11:45** | **15:30** | **7:45** |
+| 9 | 165 | Special units: Cavalry and skis | 36 | 40, 65, 95 | 3:00 | 4:15 | 2:08 |
+| 9 | 170 | Airborne and waterborne | 61 | 125, 160, 85 | 4:00 | 5:15 | 2:38 |
+| 9 | 175 | Transport and unusual vehicles | 107 | 125, 65, 105, 95 | 7:20 | 8:35 | 4:18 |
+| 9 | 180 | Nationalities II: new formations and nations | 54 | 115, 105, 110, 85 | 7:00 | 8:15 | 4:08 |
+| | **9. Units and vehicles** | | **258** | | **21:20** | **26:20** | **13:10** |
+| 10 | 185 | Fire | 32 | 85, 140, 75 | 3:40 | 4:55 | 2:28 |
+| | **10. Fire** | | **32** | | **3:40** | **4:55** | **2:28** |
+| | **The rule passes (31)** | | **1484** | | **157:00** | **195:45** | **97:52** |
+
+The card track is deferred (2026-10-05; section 19, decision 5), and its batches are listed here as they were planned:
 
 | Pass | Title | Kind | Build | Total | Range (-30 % to +30 %) |
 |---|---|---|---|---|---|
-| 33 | Armored combat I | Rules | 5:40 | 6:55 | 4:50 to 9:00 |
-| 34 | Armored combat II | Rules | 5:25 | 6:40 | 4:40 to 8:40 |
-| 34b | Night and winter | Rules | 2:45 | 4:00 | 2:48 to 5:12 |
-| 37 | Fortifications I | Rules | 3:35 | 4:50 | 3:23 to 6:17 |
-| 38 | Fortifications II | Rules | 3:15 | 4:30 | 3:09 to 5:51 |
-| 39 | Offboard artillery | Rules | 3:30 | 4:45 | 3:20 to 6:10 |
-| 40 | Air support | Rules | 3:00 | 4:15 | 2:59 to 5:31 |
-| 41 | Terrain I | Rules | 5:30 | 6:45 | 4:44 to 8:46 |
-| 42 | Terrain II | Rules | 3:05 | 4:20 | 3:02 to 5:38 |
-| 43 | Special units | Rules | 3:40 | 4:55 | 3:27 to 6:23 |
-| 44 | Fire | Rules | 3:00 | 4:15 | 2:59 to 5:31 |
-| | **The rule passes** | | **42:25** | **56:10** | **39:19 to 73:01** |
 | D1 | Display: C, D | Display | 2:35 | 3:50 | 2:41 to 4:59 |
 | D2 | Display: E, G1, F, G | Display | 2:45 | 4:00 | 2:48 to 5:12 |
 | D3 | Display: G2, G3, DASL-A, H | Display | 2:25 | 3:40 | 2:34 to 4:46 |
@@ -2238,11 +2315,13 @@ The rule passes follow the passes of section 4, in this order, one pass at a tim
 | | **Making the cards playable, deferred** (it left the rule passes on 2026-10-05) | | **14:50** | **14:50** | |
 | | **The card track, deferred** | | **63:19** | **85:49** | |
 
-The rule passes total 56:10 (build 42:25). That is 14:50 less than before 2026-10-05, when each also made its cards playable; the 14:50 is now the card track's. Deferred: the DYO passes 35 and 36 (8:15, in section 4's total) and the card track (85:49: the display batches' 70:59 and that 14:50, to be replanned when the track is taken up). With the passes of section 4 (138:05, pass 31d's 9:30 included) the whole plan is 280:04, of which 94:04 is deferred; the [week review of 2026-10-05](<ASL Week Review 2026-09-28 to 2026-10-04.md>) has the pace of the actuals.
+The rule passes total 195:45 (build 157:00), about 98 hours likely: the eleven planned passes at 61:30 from their task lists (56:10 as first planned) and the twenty new passes at 134:15 (section 22.1 (e)). Deferred: the DYO passes 190 and 195 (8:15, in section 4's total) and the card track (85:49: the display batches' 70:59 and the 14:50 of making the cards playable, to be replanned when the track is taken up). With the passes of section 4 (138:05, pass 31d's 9:30 included) the whole plan is 419:39, of which 94:04 is deferred; pass 32 stands outside that figure, as it did before. The [week review of 2026-10-05](<ASL Week Review 2026-09-28 to 2026-10-04.md>) has the pace of the actuals.
 
-**Order.** The rule passes come first and build rules only (the user, 2026-10-05); the card track waits. Until that date the display batches came first, so that the whole portable corpus would be readable early. Armored combat is the first rule package because 49 of the playable cards need it; night and winter follows it, since several armor cards are night or winter cards; offboard artillery and terrain make the most cards playable once fortifications are in.
+**Order.** The rule passes come first and build rules only (the user, 2026-10-05); the card track waits. Pass 35 comes first of all: it ends the wrong results in rules already built, and passes 40, 50, 80, 85, 90, 110, 115, 125, and 135 read what it repairs. Passes 40 and 45 give ADJACENT, the road state, entry into enemy Locations, fire between levels, and Residual FP as the rule has it, which rout, armor, and artillery all read. Armor is the second block, as the user moved it forward; block 3 could change places with it for the shortest road to a complete Chapter A. Section 22.1 (f) gives the reason for each block's place.
 
-**Risks.** The package estimates are scale only; armored combat and offboard artillery are the largest rules areas the game has not touched, and either may need a third pass. The catalog was read from page images and its needs corrected by review, but a card may still need a package the catalog missed; its display batch records the change. That includes T1, T8, T16, and H, playable in their display batch only if their boards hold no terrain the movement rules refuse. Each display batch adds counters, so each carries a catalog version, with its effect on earlier games settled by D1's ruling.
+**What this does not update.** The "playable after pass N" entries of section 21 and Appendix A were written against the eleven passes as first planned. Section 22.1 moved rules out of several of them (Passengers and Riders to pass 65, ordnance SMOKE to pass 85, bocage and sewers to pass 145, and others), so a card may now wait for a later pass than its entry names. They are left as they are until the card track is replanned.
+
+**Risks.** The estimates are scale only, and the likely figure is no better than the week's pace is as a guide; armored combat and offboard artillery are still the areas least touched, and 22 of the 31 passes need counters or data the catalog lacks. Pass 35 changes results on purpose, so the replay and sweep proofs of pass 32 will differ, and each difference must be read as intended or not. The catalog was read from page images and its needs corrected by review, but a card may still need a package the catalog missed; its display batch records the change. That includes T1, T8, T16, and H, playable in their display batch only if their boards hold no terrain the movement rules refuse. Each display batch adds counters, so each carries a catalog version, with its effect on earlier games settled by D1's ruling.
 
 # Appendix A. The legacy card catalog
 
@@ -2252,90 +2331,90 @@ The 89 distinct ASL scenario cards of *The General*, Vol. 22 to 32 (the Special 
 |---|---|---|---|---|---|---|---|---|---|
 | A | The Guards Counterattack | Vol22i6 | 6 Oct 1942 | one board, hexrows A-P only (board number not legible in scan; likely board 1) | German vs Russian (Guards) | 5 | small | none | Ported (pass 17), playable |
 | B | The Tractor Works | Vol22i6 | 6 Oct 1942 | one board, hexrows O-GG only (board number not legible in scan; likely board 1) | German (incl. assault engineers) vs Russian | 8 | medium | none | Ported (pass 17b), playable |
-| C | The Streets of Stalingrad | Vol22i6 | 6 Oct 1942 (card header misprints 1944) | Combined layout of scenarios A and B | German vs Russian | as A and B (7 turns shown) | large | Armor, OBA-Air, Terrain | Display D1; playable after pass 42 (settled by its ruling, section 19) |
-| D | The Hedgehog of Piepsk | Vol23i2 | 14 Nov 1941 | 4, 3, 2 (stacked N-S) | German vs Russian | 10 | medium | OBA-Air | Display D1; playable after pass 40 |
-| E | Hill 621 | Vol23i2 | 1 Jul 1944 | 2, 4, 3 (side by side E-W) | German vs Russian (Guards) | 10 | large | Armor, OBA-Air | Display D2; playable after pass 40 |
-| G1 | Timoshenko's Attack | Vol23i3 | 12 Jul 1941 | 22, 11, 10 (side by side, separate lanes) | German vs Russian | 9 | large | Armor, OBA-Air, Terrain | Display D2; playable after pass 42 |
-| F | The Paw of the Tiger | Vol23i5 | 12 Jan 1943 | 2, 4, 5 (side by side E-W) | German vs Russian | 10 | small-medium | Armor, OBA-Air, Fortifications | Display D2; playable after pass 40 |
-| G | Hube's Pocket | Vol23i5 | 6 Apr 1944 | 4, 2, 5 (stacked N-S) | German (SS) vs Russian | 10 (END mark at 4 with restart option to turn 11) | medium | Armor | Display D2; playable after pass 34 |
-| G2 | Last Act in Lorraine | Vol23i6 | 6 Dec 1944 | 12, 17 (stacked N-S) | German vs American | 10 | medium | Armor, OBA-Air, Fire | Display D3; playable after pass 44 |
-| G3 | The Forgotten Front | Vol23i6 | 9 Feb 1945 | 19, 12 (stacked N-S) | German vs American | 8 | medium | Armor, Fortifications | Display D3; playable after pass 38 |
-| DASL-A | To the Last Man | Vol24i1 | 13 Jan 1945 | Deluxe boards a, b, c, d | German (SS cavalry) vs Russian (Guards) | 8 | large | Armor, OBA-Air, Fortifications, Fire | Display D3; playable after pass 44 |
+| C | The Streets of Stalingrad | Vol22i6 | 6 Oct 1942 (card header misprints 1944) | Combined layout of scenarios A and B | German vs Russian | as A and B (7 turns shown) | large | Armor, OBA-Air, Terrain | Display D1; playable after pass 140 (settled by its ruling, section 19) |
+| D | The Hedgehog of Piepsk | Vol23i2 | 14 Nov 1941 | 4, 3, 2 (stacked N-S) | German vs Russian | 10 | medium | OBA-Air | Display D1; playable after pass 160 |
+| E | Hill 621 | Vol23i2 | 1 Jul 1944 | 2, 4, 3 (side by side E-W) | German vs Russian (Guards) | 10 | large | Armor, OBA-Air | Display D2; playable after pass 160 |
+| G1 | Timoshenko's Attack | Vol23i3 | 12 Jul 1941 | 22, 11, 10 (side by side, separate lanes) | German vs Russian | 9 | large | Armor, OBA-Air, Terrain | Display D2; playable after pass 140 |
+| F | The Paw of the Tiger | Vol23i5 | 12 Jan 1943 | 2, 4, 5 (side by side E-W) | German vs Russian | 10 | small-medium | Armor, OBA-Air, Fortifications | Display D2; playable after pass 160 |
+| G | Hube's Pocket | Vol23i5 | 6 Apr 1944 | 4, 2, 5 (stacked N-S) | German (SS) vs Russian | 10 (END mark at 4 with restart option to turn 11) | medium | Armor | Display D2; playable after pass 55 |
+| G2 | Last Act in Lorraine | Vol23i6 | 6 Dec 1944 | 12, 17 (stacked N-S) | German vs American | 10 | medium | Armor, OBA-Air, Fire | Display D3; playable after pass 185 |
+| G3 | The Forgotten Front | Vol23i6 | 9 Feb 1945 | 19, 12 (stacked N-S) | German vs American | 8 | medium | Armor, Fortifications | Display D3; playable after pass 120 |
+| DASL-A | To the Last Man | Vol24i1 | 13 Jan 1945 | Deluxe boards a, b, c, d | German (SS cavalry) vs Russian (Guards) | 8 | large | Armor, OBA-Air, Fortifications, Fire | Display D3; playable after pass 185 |
 | H | Escape from Velikiye Luki | Vol24i1 | 12 Jan 1943 | 4, 2, 3 (side by side E-W) | German vs Russian | 10 (last turn conditional) | small | none | Display D3; playable in D3 (settled by its ruling, section 19) |
 | T1 | Gavin Take | Vol24i2 | 6 Jun 1944 | 3 | German vs American (82nd Airborne) | 6 | small | none | Display D4; playable in D4 |
-| T2 | The Puma Prowls | Vol24i2 | 28 Jun 1944 | 22, 4 (stacked N-S) | German vs Russian | 6 | small | Armor | Display D4; playable after pass 34 |
-| T3 | Ranger Stronghold | Vol24i2 | 14 Sep 1943 | 2 | German vs American (Rangers) | 6 | small | Armor | Display D4; playable after pass 34 |
-| T4 | Shklov's Labors Lost | Vol24i2 | 11 Jul 1941 | 1 | German (Grossdeutschland) vs Russian (officer cadets) | 6 | small | Armor | Display D4; playable after pass 34 |
-| G4 | First Action | Vol24i3 | 8 Nov 1944 | 12, 18, 19 (side by side E-W) | German vs American (761st Tank Bn) | 11 (last turn conditional) | medium | Armor, OBA-Air, Fortifications | Display D4; playable after pass 40 |
-| G5 | Six Came Back | Vol24i3 | 30 Jan 1944 | 12, 17, 16 (stacked N-S) | German (Hermann Goering, 26th Pz) vs American (Rangers) | 9 | medium | Armor, Terrain, Night and winter | Display D5; playable after pass 42 |
-| I | Buchholz Station | Vol24i4 | 16 Dec 1944 | 4, 3 (stacked N-S) | German (Volksgrenadier) vs American | 10 | medium | Armor | Display D5; playable after pass 34 |
-| J | The Bitche Salient | Vol24i4 | 14 Jan 1945 | 4, 2 (side by side E-W) | German (Gebirgsjaeger) vs American | 10 | large | Armor, OBA-Air, Fortifications | Display D5; playable after pass 40 |
-| G6 | Rocket's Red Glare | Vol24i6 | 22 Dec 1944 | 3 | German (SS) vs American (504th Parachute) | 6 | small | Armor | Display D5; playable after pass 34 |
-| K | The Cannes Strongpoint | Vol25i2 | 23 Aug 1944 | 4, 2, 3 (side by side E-W) | German vs American (509th Parachute) | 5 | medium | Armor, OBA-Air, Fortifications | Display D5; playable after pass 40 |
-| L | Hitdorf on the Rhine | Vol25i2 | 6 Apr 1945 | 4, 3 (side by side E-W) | German (Volksgrenadier, 11th Pz) vs American (504th Parachute) | 9 | medium | Armor, OBA-Air, Fortifications | Display D6; playable after pass 40 |
-| G7 | Bring Up the Guns | Vol25i3 | 10 May 1940 | 4, 33 (stacked N-S) | German (cavalry) vs Dutch | 7 | small | Fortifications, Special units | Display D6; playable after pass 43 |
-| M | First Crisis at Army Group North | Vol25i3 | 25 Jun 1941 | 6, 4 (stacked N-S) | German vs Russian | 7 | small | Armor | Display D6; playable after pass 34 |
-| G8 | Recon in Force | Vol25i5 | 16 Jul 1943 | 22, 21 (stacked N-S) | Italian and German (Axis) vs American (Rangers) | 7 | medium | Terrain | Display D6; playable after pass 42 |
+| T2 | The Puma Prowls | Vol24i2 | 28 Jun 1944 | 22, 4 (stacked N-S) | German vs Russian | 6 | small | Armor | Display D4; playable after pass 55 |
+| T3 | Ranger Stronghold | Vol24i2 | 14 Sep 1943 | 2 | German vs American (Rangers) | 6 | small | Armor | Display D4; playable after pass 55 |
+| T4 | Shklov's Labors Lost | Vol24i2 | 11 Jul 1941 | 1 | German (Grossdeutschland) vs Russian (officer cadets) | 6 | small | Armor | Display D4; playable after pass 55 |
+| G4 | First Action | Vol24i3 | 8 Nov 1944 | 12, 18, 19 (side by side E-W) | German vs American (761st Tank Bn) | 11 (last turn conditional) | medium | Armor, OBA-Air, Fortifications | Display D4; playable after pass 160 |
+| G5 | Six Came Back | Vol24i3 | 30 Jan 1944 | 12, 17, 16 (stacked N-S) | German (Hermann Goering, 26th Pz) vs American (Rangers) | 9 | medium | Armor, Terrain, Night and winter | Display D5; playable after pass 140 |
+| I | Buchholz Station | Vol24i4 | 16 Dec 1944 | 4, 3 (stacked N-S) | German (Volksgrenadier) vs American | 10 | medium | Armor | Display D5; playable after pass 55 |
+| J | The Bitche Salient | Vol24i4 | 14 Jan 1945 | 4, 2 (side by side E-W) | German (Gebirgsjaeger) vs American | 10 | large | Armor, OBA-Air, Fortifications | Display D5; playable after pass 160 |
+| G6 | Rocket's Red Glare | Vol24i6 | 22 Dec 1944 | 3 | German (SS) vs American (504th Parachute) | 6 | small | Armor | Display D5; playable after pass 55 |
+| K | The Cannes Strongpoint | Vol25i2 | 23 Aug 1944 | 4, 2, 3 (side by side E-W) | German vs American (509th Parachute) | 5 | medium | Armor, OBA-Air, Fortifications | Display D5; playable after pass 160 |
+| L | Hitdorf on the Rhine | Vol25i2 | 6 Apr 1945 | 4, 3 (side by side E-W) | German (Volksgrenadier, 11th Pz) vs American (504th Parachute) | 9 | medium | Armor, OBA-Air, Fortifications | Display D6; playable after pass 160 |
+| G7 | Bring Up the Guns | Vol25i3 | 10 May 1940 | 4, 33 (stacked N-S) | German (cavalry) vs Dutch | 7 | small | Fortifications, Special units | Display D6; playable after pass 165 |
+| M | First Crisis at Army Group North | Vol25i3 | 25 Jun 1941 | 6, 4 (stacked N-S) | German vs Russian | 7 | small | Armor | Display D6; playable after pass 55 |
+| G8 | Recon in Force | Vol25i5 | 16 Jul 1943 | 22, 21 (stacked N-S) | Italian and German (Axis) vs American (Rangers) | 7 | medium | Terrain | Display D6; playable after pass 140 |
 | G9 | Sunday of the Dead | Vol25i6 | 23 Nov 1941 | 27, 28, 26, 29 (desert boards, side by side) | German vs British (South African) | 9 | large | Armor, OBA-Air, Chapter F or G | Display D6; display only: Chapters F and G |
-| N | Soldiers of Destruction | Vol25i6 | 10 Oct 1944 | 6, 4 (side by side E-W) | German (SS Totenkopf) vs Russian (Guards) | 7 | small | Armor | Display D6; playable after pass 34 |
-| O | The St. Goar Assault | Vol26i1 | 24 Mar 1945 | 2, 1, 4, 3 (side by side E-W) | German (Wehrkreis XIII) vs American (87th Inf Div) | 8 (last turn conditional) | large | Armor, Terrain, Special units, Night and winter | Display D7; playable after pass 43 |
-| P | The Road to Wiltz | Vol26i1 | 18 Dec 1944 | 3, 2 (side by side E-W) | German (Volksgrenadier, Panzer Lehr) vs American (engineers, 707th Tank Bn) | 5, with restart to 10 (restart on turn 11 option) | large | Armor, OBA-Air, Fortifications | Display D7; playable after pass 40 |
-| G10 | Grab at Gribovo | Vol26i2 | 3 Jan 1942 | 18, 12, 4 (stacked N-S) | German vs Russian (paratroops) | 8 | small | Special units, Night and winter | Display D7; playable after pass 43 |
-| Q | Land Leviathans | Vol26i2 | 3 Jul 1941 | 2, 3, 4 (stacked N-S) | German vs Russian | 7 | small | Armor | Display D7; playable after pass 34 |
-| G11 | Pegasus Bridge | Vol26i5 | 6 Jun 1944 | 23 | German vs British (6th Airborne, Ox and Bucks) | 5 | small | Fortifications, Terrain, Special units | Display D7; playable after pass 43 |
-| HASL-A | Ghosts in the Rubble | Vol27i1 | 31 October 1942 | RB map (only hexes numbered >= 38 on/east of hexrow U) | German (Pz Div 14) vs Russian (45th Rifle Div) | 7 | medium | OBA-Air, Fortifications, Terrain | Display D7; playable after pass 42 |
-| G12 | Avalanche! | Vol27i1 | 6 February 1943 | 9, 15 | German (Gebirgsjaeger Div 1) vs Russian (318th Mountain Rifle Div) | 10 | large | Fortifications, Special units, Night and winter | Display D8; playable after pass 43 |
-| T6 | The Dead of Winter | Vol27i2 | 29 December 1941 | 4 (hexrows R-GG only) | German (IR 18) vs Russian (Siberians, 31st Army) | 5 | small | Armor, Fortifications | Display D8; playable after pass 38 |
-| T5 | The Pouppeville Exit | Vol27i2 | 6 June 1944 | 3, 5 | German (IR 1058) vs American (501st Parachute Rgt) | 8 | small | Armor, Terrain, Fire | Display D8; playable after pass 44 |
-| T7 | Hill 253.5 | Vol27i3 | 9 July 1943 | 2 | German (Pz Div 18, Pzjg Abt 653) vs Russian (307th Rifle Div, mech brigade) | 8 | large | Armor, OBA-Air, Fortifications | Display D8; playable after pass 40 |
+| N | Soldiers of Destruction | Vol25i6 | 10 Oct 1944 | 6, 4 (side by side E-W) | German (SS Totenkopf) vs Russian (Guards) | 7 | small | Armor | Display D6; playable after pass 55 |
+| O | The St. Goar Assault | Vol26i1 | 24 Mar 1945 | 2, 1, 4, 3 (side by side E-W) | German (Wehrkreis XIII) vs American (87th Inf Div) | 8 (last turn conditional) | large | Armor, Terrain, Special units, Night and winter | Display D7; playable after pass 165 |
+| P | The Road to Wiltz | Vol26i1 | 18 Dec 1944 | 3, 2 (side by side E-W) | German (Volksgrenadier, Panzer Lehr) vs American (engineers, 707th Tank Bn) | 5, with restart to 10 (restart on turn 11 option) | large | Armor, OBA-Air, Fortifications | Display D7; playable after pass 160 |
+| G10 | Grab at Gribovo | Vol26i2 | 3 Jan 1942 | 18, 12, 4 (stacked N-S) | German vs Russian (paratroops) | 8 | small | Special units, Night and winter | Display D7; playable after pass 165 |
+| Q | Land Leviathans | Vol26i2 | 3 Jul 1941 | 2, 3, 4 (stacked N-S) | German vs Russian | 7 | small | Armor | Display D7; playable after pass 55 |
+| G11 | Pegasus Bridge | Vol26i5 | 6 Jun 1944 | 23 | German vs British (6th Airborne, Ox and Bucks) | 5 | small | Fortifications, Terrain, Special units | Display D7; playable after pass 165 |
+| HASL-A | Ghosts in the Rubble | Vol27i1 | 31 October 1942 | RB map (only hexes numbered >= 38 on/east of hexrow U) | German (Pz Div 14) vs Russian (45th Rifle Div) | 7 | medium | OBA-Air, Fortifications, Terrain | Display D7; playable after pass 140 |
+| G12 | Avalanche! | Vol27i1 | 6 February 1943 | 9, 15 | German (Gebirgsjaeger Div 1) vs Russian (318th Mountain Rifle Div) | 10 | large | Fortifications, Special units, Night and winter | Display D8; playable after pass 165 |
+| T6 | The Dead of Winter | Vol27i2 | 29 December 1941 | 4 (hexrows R-GG only) | German (IR 18) vs Russian (Siberians, 31st Army) | 5 | small | Armor, Fortifications | Display D8; playable after pass 120 |
+| T5 | The Pouppeville Exit | Vol27i2 | 6 June 1944 | 3, 5 | German (IR 1058) vs American (501st Parachute Rgt) | 8 | small | Armor, Terrain, Fire | Display D8; playable after pass 185 |
+| T7 | Hill 253.5 | Vol27i3 | 9 July 1943 | 2 | German (Pz Div 18, Pzjg Abt 653) vs Russian (307th Rifle Div, mech brigade) | 8 | large | Armor, OBA-Air, Fortifications | Display D8; playable after pass 160 |
 | T8 | Aachen's Pall | Vol27i3 | 15 October 1944 | 1 (hexrows A-P only) | German (Aachen HQ) vs American (26th Inf Rgt) | 4 | small | none | Display D8; playable in D8 |
 | G13 | A View from the Top | Vol27i5 | 23 February 1945 | 25, 15 (hexrows R-GG on 15) | German (ID 334) vs American (86th Mountain Inf Rgt) | 8 | medium | OBA-Air, Fortifications, Special units, Night and winter | Display D9; display only: desert boards (Chapter F) |
-| T9 | The Niscemi-Biscari Highway | Vol28i1 | 10 July 1943 | 4, 5 (hexrows Q-GG) | American (504th Parachute Rgt) vs German (Hermann Goering Div recon) | 8 | small | Armor, Fortifications | Display D9; playable after pass 38 |
-| T10 | Devil's Hill | Vol28i1 | 19 September 1944 | 2, 5 | German (Landesschuetzen Div 406) vs American (508th Parachute Rgt) | 7 | small | Armor, Fortifications | Display D9; playable after pass 38 |
-| T11 | The Attempt to Relieve Peiper | Vol28i2 | 21 December 1944 | 2, 5 | American (505th Parachute Rgt) vs German (1st SS Pz Div) | 10 | medium | Armor, OBA-Air, Fortifications | Display D9; playable after pass 40 |
-| T12 | Hunters from the Sky | Vol28i2 | 24 March 1945 | 5, 4, 2 | German (ID 84) vs American (513th Parachute Rgt) | 10 | medium | Armor, Special units | Display D9; playable after pass 43 |
-| G14 | Tiger, Tiger | Vol28i3 | 11 February 1943 | 11, 18, 33, 17 | Russian (46th Tank Bde) vs German (s.Pz.Abt 502) | 7 | medium | Armor | Display D9; playable after pass 34 |
-| R | Burzevo | Vol28i3 | 2 December 1941 | 3 | German (IR 478) vs Russian (20th Tank Bde) | 5 | small | Armor, Night and winter | Display D10; playable after pass 34b |
-| G15 | Bone of Contention | Vol28i4 | 31 August 1944 | 21, 20 | Free French partisans (Maquis) vs German (SS-Pz Abt 102 tank crews) | 7 | small | Armor, Fire, Special units | Display D10; playable after pass 44 |
-| S | The Whirlwind | Vol28i4 | 18 April 1945 | 5, 10 | American (26th Inf Div) vs German (Ersatz Div 471) | 7 | small | Armor | Display D10; playable after pass 34 |
+| T9 | The Niscemi-Biscari Highway | Vol28i1 | 10 July 1943 | 4, 5 (hexrows Q-GG) | American (504th Parachute Rgt) vs German (Hermann Goering Div recon) | 8 | small | Armor, Fortifications | Display D9; playable after pass 120 |
+| T10 | Devil's Hill | Vol28i1 | 19 September 1944 | 2, 5 | German (Landesschuetzen Div 406) vs American (508th Parachute Rgt) | 7 | small | Armor, Fortifications | Display D9; playable after pass 120 |
+| T11 | The Attempt to Relieve Peiper | Vol28i2 | 21 December 1944 | 2, 5 | American (505th Parachute Rgt) vs German (1st SS Pz Div) | 10 | medium | Armor, OBA-Air, Fortifications | Display D9; playable after pass 160 |
+| T12 | Hunters from the Sky | Vol28i2 | 24 March 1945 | 5, 4, 2 | German (ID 84) vs American (513th Parachute Rgt) | 10 | medium | Armor, Special units | Display D9; playable after pass 165 |
+| G14 | Tiger, Tiger | Vol28i3 | 11 February 1943 | 11, 18, 33, 17 | Russian (46th Tank Bde) vs German (s.Pz.Abt 502) | 7 | medium | Armor | Display D9; playable after pass 55 |
+| R | Burzevo | Vol28i3 | 2 December 1941 | 3 | German (IR 478) vs Russian (20th Tank Bde) | 5 | small | Armor, Night and winter | Display D10; playable after pass 90 |
+| G15 | Bone of Contention | Vol28i4 | 31 August 1944 | 21, 20 | Free French partisans (Maquis) vs German (SS-Pz Abt 102 tank crews) | 7 | small | Armor, Fire, Special units | Display D10; playable after pass 185 |
+| S | The Whirlwind | Vol28i4 | 18 April 1945 | 5, 10 | American (26th Inf Div) vs German (Ersatz Div 471) | 7 | small | Armor | Display D10; playable after pass 55 |
 | G16 | Alligator Creek | Vol28i5 | 21 August 1942 | 32, 34 (R-GG) plus overlays Be4, Be6, Ef1, Oc1, Oc2 | American (1st Marine Rgt) vs Japanese (28th Inf Rgt, Ichiki detachment) | 7 | large | OBA-Air, Fortifications, Terrain, Chapter F or G | Display D10; display only: Chapters F and G |
-| T13 | Commando Raid at Dieppe | Vol28i6 | 18 August 1942 | 4, 5 | German (302nd ID, Battery Hess) vs British (No. 4 Commando) with US Rangers | 10 | medium | Fortifications | Display D10; playable after pass 38 |
+| T13 | Commando Raid at Dieppe | Vol28i6 | 18 August 1942 | 4, 5 | German (302nd ID, Battery Hess) vs British (No. 4 Commando) with US Rangers | 10 | medium | Fortifications | Display D10; playable after pass 120 |
 | T14 | Gambit | Vol28i6 | 21 May 1941 | 4, 2 | New Zealand (22nd Bn) vs German (Sturm Rgt 1) | 8 | small | none | Ported (pass 17), playable |
-| T15 | The Akrotiri Peninsula | Vol29i1 | 20 May 1941 | 3, 6, 4 | British (102nd AT Rgt, 151st AA Bty) vs German (Sturm Rgt 1, glider) | 9 | medium | Special units | Display D10; playable after pass 43 |
+| T15 | The Akrotiri Peninsula | Vol29i1 | 20 May 1941 | 3, 6, 4 | British (102nd AT Rgt, 151st AA Bty) vs German (Sturm Rgt 1, glider) | 9 | medium | Special units | Display D10; playable after pass 165 |
 | T16 | Strayer's Strays | Vol29i1 | 6 June 1944 | 6 | German (IR 919) vs American (mixed 502/506/508 PIR) | 4 | small | none | Display D11; playable in D11 |
-| G17 | Hakkaa Paalle | Vol29i2 | 12 January 1940 | 16, 19, 32, 34 (R-GG on 32/34 not playable), overlay O5 | Russian (2nd Ski Bde) vs Finnish (9th Sissi Co) | 10 | medium | Terrain, Special units, Night and winter | Display D11; playable after pass 43 |
-| G18 | Goya | Vol29i2 | 7 January 1945 | 39, 16, 23 | German (VGR 183) vs American (551st PIB) | 11 | large | Terrain, Night and winter | Display D11; playable after pass 42 |
+| G17 | Hakkaa Paalle | Vol29i2 | 12 January 1940 | 16, 19, 32, 34 (R-GG on 32/34 not playable), overlay O5 | Russian (2nd Ski Bde) vs Finnish (9th Sissi Co) | 10 | medium | Terrain, Special units, Night and winter | Display D11; playable after pass 165 |
+| G18 | Goya | Vol29i2 | 7 January 1945 | 39, 16, 23 | German (VGR 183) vs American (551st PIB) | 11 | large | Terrain, Night and winter | Display D11; playable after pass 140 |
 | G19 | A Tough Nut to Crack | Vol29i3 | 1 January 1943 | 37, 35 plus overlays X13, X14 | Japanese (19th Army remnants) vs Australian (2/9th Bn, 2/6th Armoured Rgt) | 9 | medium-large | Armor, OBA-Air, Fortifications, Terrain, Chapter F or G | Display D11; display only: Chapters F and G |
 | G20 | Camp Nibeiwa | Vol29i3 | 9 December 1940 | 30, 31 (Q-GG not playable), 29, 28, overlays D1, D5, D6, H3, H6, S2, S6 | Italian (Gruppo Maletti) vs British (4th Indian Div, 7th RTR) | 10 | large | Armor, Fortifications, Terrain, Chapter F or G | Display D12; display only: Chapters F and G |
-| G21 | Cat's Kill | Vol29i4 | 8 June 1944 | 20, 10 plus overlays O1-O5 | Canadian (Regina Rifles) vs German (12. SS Pz Div Hitlerjugend) | 10 | large | Armor, Terrain, Night and winter | Display D12; playable after pass 42 |
+| G21 | Cat's Kill | Vol29i4 | 8 June 1944 | 20, 10 plus overlays O1-O5 | Canadian (Regina Rifles) vs German (12. SS Pz Div Hitlerjugend) | 10 | large | Armor, Terrain, Night and winter | Display D12; playable after pass 140 |
 | G22 | A Day by the Shore | Vol29i4 | 7 June 1944 | 8, 20, 4 | German (GR 736) vs British (45 Royal Marine Commando) | 10 | large | OBA-Air, Fortifications, Terrain | Display D12; display only: beaches (Chapter G, G13) |
 | G23 | Habbaniya Heights | Vol29i5 | 5 May 1941 | 29, 25 plus overlay E1 | Iraqi (2nd Iraqi Legion) vs British (King's Own Royal Rgt) | 7 | large | Armor, Fortifications, Terrain, Night and winter | Display D13; display only: desert boards (Chapter F) |
 | G24 | Mountain Comes to Mohammed | Vol29i5 | 25 August 1941 | 28, 26 plus overlays S3, S5, S8, X4, D6, H6 | Iranian (Pahlavi Guards) vs British (2/11th Sikh, 13th Lancers) | 8 | large | Armor, Fortifications, Terrain, Chapter F or G | Display D13; display only: Chapters F and G |
-| T | Pavlov's House | Vol29i6 | 20 October 1942 | 1 plus overlays OG1, OG4, OG5 | Russian (42nd Guards Rifle Rgt) vs German (6. Armee Sturmgruppe) | 7 | small | Armor, OBA-Air, Terrain | Display D13; playable after pass 42 |
-| DASL-B | The Kiwis Attack | Vol29i6 | 15 March 1944 | Deluxe boards q, p | German (FJR 3) vs New Zealand (25th Bn, 19th Armd Rgt) | 7 | large | Armor, Fortifications, Terrain | Display D13; playable after pass 42 |
-| G25 | The T-Patchers | Vol30i1 | 15 December 1943 | 41, 11 (R-GG) plus overlays X12, X13, X14 | German (PzGr Div 29) vs American (143rd Inf Rgt, 753rd Tank Bn) | 7 | medium | Armor, Fortifications, Terrain | Display D14; playable after pass 42 |
-| G26 | Parker's Crossroads | Vol30i1 | 23 December 1944 | 42, 19, 33, 43, 35, 16 (parts unplayable) | American (mixed: 589th FA Bn, 3rd Armd Div, 325th GIR) vs German (2nd SS Pz Div Das Reich) | 10 | large | Armor, OBA-Air, Fortifications, Special units | Display D14; playable after pass 43 |
+| T | Pavlov's House | Vol29i6 | 20 October 1942 | 1 plus overlays OG1, OG4, OG5 | Russian (42nd Guards Rifle Rgt) vs German (6. Armee Sturmgruppe) | 7 | small | Armor, OBA-Air, Terrain | Display D13; playable after pass 140 |
+| DASL-B | The Kiwis Attack | Vol29i6 | 15 March 1944 | Deluxe boards q, p | German (FJR 3) vs New Zealand (25th Bn, 19th Armd Rgt) | 7 | large | Armor, Fortifications, Terrain | Display D13; playable after pass 140 |
+| G25 | The T-Patchers | Vol30i1 | 15 December 1943 | 41, 11 (R-GG) plus overlays X12, X13, X14 | German (PzGr Div 29) vs American (143rd Inf Rgt, 753rd Tank Bn) | 7 | medium | Armor, Fortifications, Terrain | Display D14; playable after pass 140 |
+| G26 | Parker's Crossroads | Vol30i1 | 23 December 1944 | 42, 19, 33, 43, 35, 16 (parts unplayable) | American (mixed: 589th FA Bn, 3rd Armd Div, 325th GIR) vs German (2nd SS Pz Div Das Reich) | 10 | large | Armor, OBA-Air, Fortifications, Special units | Display D14; playable after pass 165 |
 | G27 | Vaagso Venture | Vol30i2 | 27 December 1941 | 41 (R-GG), 8 (A-P) | German (ID 181) vs British (2, 3 and 6 Commandos) | 9 | large | Armor, OBA-Air, Fortifications, Terrain, Fire | Display D14; display only: a seaborne assault with landing craft (Chapter G, G14) |
 | G28 | Ramsey's Charge | Vol30i3 | 16 January 1942 | 40, 35 plus overlays 1, X6, OG1, OG2, OG3, OG5 | Japanese (14th Army) vs American (26th Cavalry, Philippine Scouts) | 7 | small-medium | Terrain, Special units, Chapter F or G | Not portable: names board 25, which is not in its board layout |
-| G29 | Shoot-N-Scoot | Vol30i4 | 18 December 1944 | 12, 42 | American (38th Inf Rgt, 644th TD Bn, 741st Tank Bn) vs German (12th SS Pz Div) | 9 | large | Armor, OBA-Air, Fortifications | Display D15; playable after pass 40 |
-| G30 | Morgan's Stand | Vol30i4 | 11 September 1944 | 10, 7 (R-GG) | American (53rd Armd Inf Bn) vs German (Fusilier Rgt 312) | 7 | small-medium | Armor, Terrain | Display D15; playable after pass 42 |
-| DASL-C | Smoke the Kents! | Vol30i5 | 20 May 1940 | Deluxe boards g, d, h, e plus overlays dx2, dx4, dx6, dx7 | British (7th Royal West Kent) vs German (Pz Div 1) | 8 | medium | Armor, Terrain | Display D15; playable after pass 42 |
+| G29 | Shoot-N-Scoot | Vol30i4 | 18 December 1944 | 12, 42 | American (38th Inf Rgt, 644th TD Bn, 741st Tank Bn) vs German (12th SS Pz Div) | 9 | large | Armor, OBA-Air, Fortifications | Display D15; playable after pass 160 |
+| G30 | Morgan's Stand | Vol30i4 | 11 September 1944 | 10, 7 (R-GG) | American (53rd Armd Inf Bn) vs German (Fusilier Rgt 312) | 7 | small-medium | Armor, Terrain | Display D15; playable after pass 140 |
+| DASL-C | Smoke the Kents! | Vol30i5 | 20 May 1940 | Deluxe boards g, d, h, e plus overlays dx2, dx4, dx6, dx7 | British (7th Royal West Kent) vs German (Pz Div 1) | 8 | medium | Armor, Terrain | Display D15; playable after pass 140 |
 | U | Chance d'Une Affaire | Vol30i5 | 14 May 1940 | 9 (rotated label; possibly 6) | German (IR 1, Pz Div 1, Sturmpionier Bn 43) vs French (213e RI, 7e BCC) | 9 | medium | Armor | Not portable: its board number is printed rotated and cannot be read with certainty |
-| G31 | Point of the Sword | Vol30i6 | 6 June 1944 | 10 | German (Pz Div 21) vs British (4th Brigade Commandos) and Canadian (Regiment de la Chaudiere) | 8 | medium | Fortifications | Display D15; playable after pass 38 |
-| G32 | A Helping Hand | Vol30i6 | 13 June 1944 | 11, 2 (A-P) | German (VGR 914, FJR 8) vs American (38th Inf Rgt) | 10 | medium | OBA-Air, Fortifications, Terrain | Display D15; playable after pass 42 |
-| G33 | The Awakening of Spring | Vol31i1 | 14 March 1945 | 11, 16, 17, 4 | Russian (35th Guards Rifle Corps, 23rd Tank Corps) vs German (SS Pz Div 6) | 10 | large | Armor, Night and winter | Display D16; playable after pass 34b |
-| G34 | The Liberators | Vol31i1 | 2 April 1945 | 22, 3 plus overlays X13, X16, X17, St3 | German (SS-Pz Korps 1) vs Russian (IX Guards Mech Corps) | 9 | large | Armor, OBA-Air, Terrain | Display D16; playable after pass 42 |
-| G35 | Going to Church | Vol31i2 | 1 August 1944 | 23 (A-P) | German (SS Pz Div 9) vs Canadian (Les Fusiliers Mont-Royal) | 6 | small | Terrain | Display D16; playable after pass 42 |
-| G36 | Hill of Death | Vol31i2 | 11 July 1944 | 33, 9, 16 | German (SS Pz Divs 9 and 10, s.SS-Pz Abt 102) vs British (5th DCLI, 7th RTR) | 8 | large | Armor, OBA-Air, Fortifications, Terrain | Display D16; playable after pass 42 |
-| G37 | Forth Bridge | Vol31i3 | 11 April 1945 | 17, 18 plus overlays OG5, Wd4, B2, B3, St1, St3 | German (FJ Div 7) vs British (2nd Gordon Highlanders, 3rd Scots Guards) | 9 | medium-large | Armor, Fortifications, Terrain | Display D17; playable after pass 42 |
-| V | Auld Lang Syne | Vol31i3 | 1 January 1945 | 10 (R-GG), 1 (A-P) | American (345th Inf Rgt) vs German (PzGr Div 15) | 6 | small-medium | OBA-Air | Display D17; playable after pass 40 |
+| G31 | Point of the Sword | Vol30i6 | 6 June 1944 | 10 | German (Pz Div 21) vs British (4th Brigade Commandos) and Canadian (Regiment de la Chaudiere) | 8 | medium | Fortifications | Display D15; playable after pass 120 |
+| G32 | A Helping Hand | Vol30i6 | 13 June 1944 | 11, 2 (A-P) | German (VGR 914, FJR 8) vs American (38th Inf Rgt) | 10 | medium | OBA-Air, Fortifications, Terrain | Display D15; playable after pass 140 |
+| G33 | The Awakening of Spring | Vol31i1 | 14 March 1945 | 11, 16, 17, 4 | Russian (35th Guards Rifle Corps, 23rd Tank Corps) vs German (SS Pz Div 6) | 10 | large | Armor, Night and winter | Display D16; playable after pass 90 |
+| G34 | The Liberators | Vol31i1 | 2 April 1945 | 22, 3 plus overlays X13, X16, X17, St3 | German (SS-Pz Korps 1) vs Russian (IX Guards Mech Corps) | 9 | large | Armor, OBA-Air, Terrain | Display D16; playable after pass 140 |
+| G35 | Going to Church | Vol31i2 | 1 August 1944 | 23 (A-P) | German (SS Pz Div 9) vs Canadian (Les Fusiliers Mont-Royal) | 6 | small | Terrain | Display D16; playable after pass 140 |
+| G36 | Hill of Death | Vol31i2 | 11 July 1944 | 33, 9, 16 | German (SS Pz Divs 9 and 10, s.SS-Pz Abt 102) vs British (5th DCLI, 7th RTR) | 8 | large | Armor, OBA-Air, Fortifications, Terrain | Display D16; playable after pass 140 |
+| G37 | Forth Bridge | Vol31i3 | 11 April 1945 | 17, 18 plus overlays OG5, Wd4, B2, B3, St1, St3 | German (FJ Div 7) vs British (2nd Gordon Highlanders, 3rd Scots Guards) | 9 | medium-large | Armor, Fortifications, Terrain | Display D17; playable after pass 140 |
+| V | Auld Lang Syne | Vol31i3 | 1 January 1945 | 10 (R-GG), 1 (A-P) | American (345th Inf Rgt) vs German (PzGr Div 15) | 6 | small-medium | OBA-Air | Display D17; playable after pass 160 |
 | G38 | Castello Fatato | Vol31i4 | 20 December 1942 | 27, 28 (R-GG) plus overlays X7-X15, X18 | Russian (1st Guards Army) vs Italian (3rd Bersaglieri Rgt) | 7 | medium | Terrain, Fire, Night and winter | Display D17; display only: desert boards (Chapter F) |
-| G39 | A Desperate Affair | Vol31i4 | 20 May 1941 | 9, 33, 16, 18 | British (2nd Black Watch) vs German (FJR 1) | 8 | medium-large | Fortifications, Special units | Display D17; playable after pass 43 |
-| G40 | Will to Fight...Eradicated | Vol31i5 | 7 September 1939 | 12 (hexrows K-Y) plus overlays G1, G2, G4, Wd5, X7, X9 | German (LSSAH) vs Polish (2nd Kaniov Rifle Rgt, dismounted cavalry) | 7 | medium | Terrain, Special units | Display D17; playable after pass 43 |
+| G39 | A Desperate Affair | Vol31i4 | 20 May 1941 | 9, 33, 16, 18 | British (2nd Black Watch) vs German (FJR 1) | 8 | medium-large | Fortifications, Special units | Display D17; playable after pass 165 |
+| G40 | Will to Fight...Eradicated | Vol31i5 | 7 September 1939 | 12 (hexrows K-Y) plus overlays G1, G2, G4, Wd5, X7, X9 | German (LSSAH) vs Polish (2nd Kaniov Rifle Rgt, dismounted cavalry) | 7 | medium | Terrain, Special units | Display D17; playable after pass 165 |
 | G41 | JABO! | Vol31i5 | 18 December 1944 | KGP map (hexes <= 14 in rows AA-TT) | German (Kampfgruppe Peiper) vs American (IX Tactical Air Command aircraft) | 3 | small | Armor, OBA-Air | Display D17; display only: the KGP historical map, not among the VASL boards in scope |
-| G42 | The Youth's First Blood | Vol31i6 | 7 June 1944 | 16, 10, 33 | German (ID 716, 12. SS Pz Div) vs Canadian (North Nova Scotia Highlanders, Sherbrooke Fusiliers) | 9 | large | Armor, OBA-Air | Display D18; playable after pass 40 |
-| G43 | Kangaroo Hop | Vol31i6 | 17 September 1944 | 2 | German (Bodenstaendige Div 326) vs Canadian (North Nova Scotia Highlanders, Fort Garry Horse, RE) | 6 | medium | Armor, OBA-Air, Fortifications | Display D18; playable after pass 40 |
-| G44 | Abandon Ship! | Vol32i2 | 19 December 1944 | 24 | American (501st PIR) vs German (Pz Lehr, PGR 902) | 7 | small-medium | Armor, Fortifications | Display D18; playable after pass 38 |
+| G42 | The Youth's First Blood | Vol31i6 | 7 June 1944 | 16, 10, 33 | German (ID 716, 12. SS Pz Div) vs Canadian (North Nova Scotia Highlanders, Sherbrooke Fusiliers) | 9 | large | Armor, OBA-Air | Display D18; playable after pass 160 |
+| G43 | Kangaroo Hop | Vol31i6 | 17 September 1944 | 2 | German (Bodenstaendige Div 326) vs Canadian (North Nova Scotia Highlanders, Fort Garry Horse, RE) | 6 | medium | Armor, OBA-Air, Fortifications | Display D18; playable after pass 160 |
+| G44 | Abandon Ship! | Vol32i2 | 19 December 1944 | 24 | American (501st PIR) vs German (Pz Lehr, PGR 902) | 7 | small-medium | Armor, Fortifications | Display D18; playable after pass 120 |
 | G45 | Halha River Bridge | Vol32i2 | 8 July 1939 | 26, 27 (A-P) plus overlays St1, St3, SD2, SD6 | Russian (149th Motorized Rifle Rgt) vs Japanese (4th Tank Rgt, 72nd Inf Rgt) | 6 | small | Armor, Fortifications, Terrain, Chapter F or G | Display D18; display only: Chapters F and G |
-| G46 | Triumph atop Taraldsvikfjell | Vol32i3 | 28 May 1940 | 2 | German (Gebirgsjaeger Rgt 139 and naval personnel) vs Allied (French Foreign Legion, Norwegian 2/15th Bn) | 7 | medium | Fortifications | Display D18; playable after pass 38 |
+| G46 | Triumph atop Taraldsvikfjell | Vol32i3 | 28 May 1940 | 2 | German (Gebirgsjaeger Rgt 139 and naval personnel) vs Allied (French Foreign Legion, Norwegian 2/15th Bn) | 7 | medium | Fortifications | Display D18; playable after pass 120 |
 | W | The Defense of Luga | Vol32i3 | 19 July 1941 | 4, 3, 5, 1 | German (IR 469, ID 269) vs Russian (Operational Group Luga) | 10 (turn chart also marks END at 4 and a restart; unclear) | large | Armor | Not portable: its Turn Record Chart shows both END after Turn 4 and a restart box |

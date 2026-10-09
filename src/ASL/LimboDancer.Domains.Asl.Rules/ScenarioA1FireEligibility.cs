@@ -25,7 +25,7 @@ public static class ScenarioA1FireEligibility
     /// <summary>
     /// Whether a Green or Conscript MMC is Inexperienced as the Fire facts read it (A19.2, A19.3; ruling R15.10): a Conscript always, a Green unit
     /// unless stacked with an unbroken leader of its side; null for any other class. This is the Fire facts' definition, kept beside
-    /// <see cref="ScenarioA1Experience.Inexperienced"/> (the state's, with a three-valued answer and a leader's Broken as three values) for pass 45
+    /// <see cref="ScenarioA1Experience.Inexperienced"/> (the state's, with a three-valued answer and a leader's Broken as three values) for pass 35
     /// (the pass 32 design, section 12). <paramref name="stackedWithUnbrokenLeader"/> is read for a Green unit only, as the old body read it.
     /// </summary>
     public static bool? InexperiencedForFire(string? @class, Func<bool> stackedWithUnbrokenLeader)

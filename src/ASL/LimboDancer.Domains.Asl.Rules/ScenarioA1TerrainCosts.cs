@@ -20,7 +20,7 @@ public static class ScenarioA1TerrainCosts
     /// The half MF Infantry spend to enter a terrain (B15.4, B15.6; ruling R5.19): grain costs 1½ MF from April to September and is Open Ground
     /// otherwise, and a game with no scenario month does not decide it; null when the terrain is not a reviewed entry. The concealment rules read grain
     /// as Concealment Terrain from June to September (<see cref="ScenarioA1Definitions.IsConcealmentTerrain"/>): two seasons under one citation,
-    /// kept apart for pass 45 (the pass 32 design, section 12).
+    /// kept apart for pass 35 (the pass 32 design, section 12).
     /// </summary>
     public static int? InfantryEntryHalfMf(string terrain, int? month)
     {
