@@ -286,9 +286,11 @@ public sealed class ScenarioA1FireReference
 
     // Battle Hardening (A15.3): the unit of the same size and next higher quality, no part of whose Strength Factor falls,
     // gaining the least (ruling R28.6: the smallest summed increase, then the fewest added capabilities, so a German
-    // Conscript becomes a 4-4-7, not a squared 5-3-7 that adds smoke and Assault Fire). The Russians have no Green or plain
-    // 2nd Line class, so a Russian Conscript becomes NKVD (A25.25: 2nd Line). Elite MMC and the 10-3 are the highest
-    // quality and become Fanatic instead, as does an NKVD MMC (A25.25).
+    // Conscript becomes a 4-4-7, not a squared 5-3-7 that adds smoke and Assault Fire). A Russian 4-2-6 becomes a 5-2-7, as
+    // A25.2 says in so many words (p. 93; pass 35, task 35.8), and its 2-2-6 HS the 5-2-7's own 2-2-7 (A25.211 pairs them);
+    // until pass 35 the table sent both to the NKVD 6-2-8 and 3-2-8, reasoning from the classes. A25.211's exception for
+    // scenarios before 1941 (a 4-4-7 and a 2-3-7, unless the Russian OB holds a 6-2-8 or a 5-2-7) is not built (backlog).
+    // Elite MMC and the 10-3 are the highest quality and become Fanatic instead, as does an NKVD MMC (A25.25).
     private static readonly IReadOnlyDictionary<string, string> Hardened = new Dictionary<string, string>(StringComparer.Ordinal)
     {
         ["attacker-conscript-squad"] = "attacker-2nd-line-squad",
@@ -297,8 +299,8 @@ public sealed class ScenarioA1FireReference
         ["attacker-2nd-line-half-squad"] = "attacker-half-squad",
         ["attacker-squad"] = "attacker-elite-squad",
         ["attacker-half-squad"] = "attacker-elite-half-squad",
-        ["defender-conscript-squad"] = "defender-nkvd-squad",
-        ["defender-conscript-half-squad"] = "defender-nkvd-half-squad",
+        ["defender-conscript-squad"] = "defender-line-squad",
+        ["defender-conscript-half-squad"] = "defender-line-half-squad",
         ["defender-line-squad"] = "defender-guards-squad",
         ["defender-line-half-squad"] = "defender-guards-half-squad",
         ["defender-squad"] = "defender-elite-squad",
