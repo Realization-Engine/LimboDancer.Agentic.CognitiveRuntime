@@ -295,6 +295,52 @@ public sealed class BacklogPass10Tests : IDisposable
     private static string L(string hex, int level = 0) => $"bd01:{hex}:{level}";
 
     [Fact]
+    public async Task AdjacentIsALosAndAnAdvanceThatInfantryCouldMake()
+    {
+        // A.8 (p. 43; pass 35): a hex one level up a hill, a hex across a wall, and the next level of a stairwell hex are ADJACENT; the upper level of
+        // the next building hex is not ADJACENT to the ground beside it, and nothing is ADJACENT without a LOS. Read through the must-rout test (A10.5):
+        // a broken unit must rout from a Known unbroken armed enemy unit ADJACENT to it.
+        board.Base["C4"] = 1;
+        board.Side("E5", HexsideDirection.North, hexside: "Wall");
+        foreach (var hex in new[] { "H5", "H4" })
+        {
+            board.Terrain[hex] = "Stone Building, 2 Level";
+            board.Upper[hex] = ["Stone Building, 2 Level", "Stone Building, 2 Level"];
+        }
+
+        board.Stairs.Add("H5");
+        board.Side("H5", HexsideDirection.North, terrain: "Stone Building, 2 Level");
+        await Setup(Squad("r1", L("C4"), "russian", "asl:broken"), Squad("g1", L("C5"), "german"),
+            Squad("r2", L("E4"), "russian", "asl:broken"), Squad("g2", L("E5"), "german"),
+            Squad("r3", L("H5", 1), "russian", "asl:broken"), Squad("g3", L("H5"), "german"),
+            Squad("r4", L("H4", 1), "russian", "asl:broken"), Squad("r5", L("L4"), "russian", "asl:broken"), Squad("g5", L("L5"), "german"));
+        los.Blocked.Add("L4");
+        var planner = Planner();
+        var state = Current;
+        Assert.Contains("g1 is a Known unbroken armed enemy unit ADJACENT", planner.MustRout(state, state.Unit("r1")!));
+        Assert.Contains("g2 is a Known unbroken armed enemy unit ADJACENT", planner.MustRout(state, state.Unit("r2")!));
+        Assert.Contains("g3 is a Known unbroken armed enemy unit ADJACENT", planner.MustRout(state, state.Unit("r3")!));
+        Assert.DoesNotContain("ADJACENT", planner.MustRout(state, state.Unit("r4")!) ?? string.Empty);
+        Assert.DoesNotContain("ADJACENT", planner.MustRout(state, state.Unit("r5")!) ?? string.Empty);
+    }
+
+    [Fact]
+    public async Task ABrokenUnitAboveItsEnemyInAOneHexBuildingHasNoRoutStep()
+    {
+        // A.8, B23.25 (pass 35): r1 on level 1 of the one-hex building D5 is ADJACENT, by the stairwell, to g1 on its ground floor. Its only step is into
+        // g1's Location, which a rout never enters (A10.51), so it has no legal step.
+        const string building = "Stone Building, 2 Level";
+        board.Terrain["D5"] = building;
+        board.Upper["D5"] = [building];
+        board.Stairs.Add("D5");
+        await Setup(Squad("r1", L("D5", 1), "russian", "asl:broken"), Squad("g1", L("D5"), "german"));
+        var planner = Planner();
+        Assert.Contains("ADJACENT", planner.MustRout(Current, Current.Unit("r1")!));
+        var (targets, canRout, routes) = planner.RoutAdvice(Current, Current.Unit("r1")!);
+        Assert.Equal((0, false, 0), (targets.Count, canRout, routes.Count));
+    }
+
+    [Fact]
     public async Task AWallOrHedgeCostsOneMoreMfButNotThroughARoadGap()
     {
         // B9.4 (R10.1): C5 to C4 across a wall costs 1 + 1 MF; D5 to D4 across a wall with a road through it costs the road's 1 MF.
@@ -367,8 +413,9 @@ public sealed class BacklogPass10Tests : IDisposable
     [Fact]
     public async Task ABrokenUnitUpstairsRoutsDownItsStairwell()
     {
-        // A10.5, B23.4, B23.421 (the upstairs rout fix of 2026-10-08): a broken unit sharing level 1 of D5 with a Known armed enemy must rout; it routs
-        // down the stairwell to the ground floor (1 MF), and may not leave the level sideways into open ground (B23.422).
+        // A10.5, B23.4, B23.421 (the upstairs rout fix of 2026-10-08): a broken unit sharing level 1 of D5 with a Known armed enemy must rout, by the
+        // stairwell and along its level, and may not leave the level sideways into open ground (B23.422). Pass 35 (A.8, B23.25): the floor below, the
+        // floor above, and D4's level 1 are each ADJACENT to the enemy's Location, so the rout may pass through one of them and may not end there (A10.5, A10.51).
         const string building = "Stone Building, 2 Level";
         foreach (var hex in new[] { "D5", "D4" })
         {
@@ -389,25 +436,31 @@ public sealed class BacklogPass10Tests : IDisposable
         Assert.Equal("rtph", Current.Phase);
         var (targets, canRout, routes) = Planner().RoutAdvice(Current, Current.Unit("g1")!);
         Assert.True(canRout);
-        // The ground floor, the floor above, and D4's level 1 are each one MF away (B23.4, B23.421): the unit chooses among them (A10.51).
+        // The ground floor, the floor above, and D4's level 1 are each one MF away (B23.4, B23.421), and none is offered as a place to end in.
         Assert.Equal([L("D4", 1), L("D5"), L("D5", 2)], targets.Select(target => target.ToString()));
-        Assert.Equal([L("D5")], routes[BoardLocation.Parse(L("D5"))].Select(step => step.ToString()));
+        Assert.Empty(routes);
         Refused(await Do(GameActions.Rout, NoRoll(), new
         {
             unitId = "g1",
             route = new[] { L("D4") },
             lowCrawl = false
         }), "play.move-upper-level");
-        var before = Revision;
-        Committed(await Do(GameActions.Rout, NoRoll(), new
+        Refused(await Do(GameActions.Rout, NoRoll(), new
         {
             unitId = "g1",
             route = new[] { L("D5") },
             lowCrawl = false
+        }), "play.rout-route");
+        var before = Revision;
+        Committed(await Do(GameActions.Rout, NoRoll(), new
+        {
+            unitId = "g1",
+            route = new[] { L("D5"), L("D4") },
+            lowCrawl = false
         }));
-        var step = Assert.Single(Since(before).Select(item => item.Payload).OfType<RoutStepped>());
-        Assert.Equal((L("D5"), 2), (step.To.ToString(), step.HalfMf));
-        Assert.Equal(L("D5"), Current.Location("g1")!.Location.ToString());
+        var steps = Since(before).Select(item => item.Payload).OfType<RoutStepped>().ToArray();
+        Assert.Equal([(L("D5"), 2), (L("D4"), 4)], steps.Select(step => (step.To.ToString(), step.HalfMf)));
+        Assert.Equal(L("D4"), Current.Location("g1")!.Location.ToString());
         NoReplayErrors();
     }
 

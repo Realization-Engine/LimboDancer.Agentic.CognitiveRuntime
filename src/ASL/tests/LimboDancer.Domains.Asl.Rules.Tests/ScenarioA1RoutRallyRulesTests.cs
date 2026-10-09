@@ -236,6 +236,17 @@ public sealed class ScenarioA1RoutRallyRulesTests
     }
 
     [Fact]
+    public void AdjacentIsAnAdvanceInfantryCouldMakeAndThenALos()
+    {
+        // A.8 (p. 43; pass 35): the LOS is read only when a step exists, and the two levels a stairwell joins have theirs by it (B23.25).
+        Assert.True(ScenarioA1MovementCalculator.IsAdjacent(false, () => true, () => true));
+        Assert.False(ScenarioA1MovementCalculator.IsAdjacent(false, () => true, () => false));
+        Assert.False(ScenarioA1MovementCalculator.IsAdjacent(false, () => false, Never("the LOS")));
+        Assert.True(ScenarioA1MovementCalculator.IsAdjacent(true, () => true, Never("the LOS")));
+        Assert.False(ScenarioA1MovementCalculator.IsAdjacent(true, () => false, Never("the LOS")));
+    }
+
+    [Fact]
     public void ARoutStepNeverEntersOrApproachesAKnownEnemy()
     {
         var row = new Row();

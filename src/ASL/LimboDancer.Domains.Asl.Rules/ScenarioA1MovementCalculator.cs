@@ -86,18 +86,17 @@ public static class ScenarioA1MovementCalculator
     }
 
     /// <summary>
-    /// ADJACENT (A.8, p. 43): the Locations share a hexside at the same level, with a clear LOS and no hexside terrain or
-    /// cliff between them, so Infantry could advance from one to the other. The review reads it this way for the
-    /// terrain it admits. <paramref name="losClear"/> is read once the geometry allows it, as the planner read it.
+    /// ADJACENT (A.8, p. 43; pass 35): two Locations are ADJACENT when there is a LOS between them and a hypothetical Infantry unit could move from one
+    /// into the other in the APh, enemy presence ignored. So a hex one level up a hill, a hex across a wall or hedge, and the next level of a stairwell
+    /// hex are ADJACENT; a hex across a cliff, and the upper level of the next hex from the ground, are not. The advance is read as the Infantry step the
+    /// movement rules allow, in either direction, and the LOS only when a step exists; the two levels of one hex that a stairwell joins have their LOS by it.
+    /// Until pass 35 the game asked for the same level and no hexside terrain, which was narrower than the rule.
     /// </summary>
-    public static bool IsAdjacent(AdjacencyFacts facts, Func<bool> losClear)
+    public static bool IsAdjacent(bool sameHex, Func<bool> couldAdvanceEitherWay, Func<bool> losClear)
     {
-        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(couldAdvanceEitherWay);
         ArgumentNullException.ThrowIfNull(losClear);
-        return facts.Adjacent && facts.FromRead && facts.ToRead && facts.Crossed is { } crossed
-            && facts.FromElevation == facts.ToElevation
-            && crossed.HexsideTerrain is null && !crossed.Cliff
-            && losClear();
+        return couldAdvanceEitherWay() && (sameHex || losClear());
     }
 
     /// <summary>

@@ -5541,6 +5541,9 @@ else if (state is not null)
 
         return (!canRout
             ? must ? ". It has no legal rout step, so it is eliminated for Failure to Rout, or surrenders, when the RtPh ends (A10.5)." : ". It has no legal rout step, so it stays where it is."
+            // Pass 35 (A.8, A10.51): every place within reach may lie ADJACENT to the enemy unit the rout began beside, where it may not end.
+            : targets.Count > 0 && !targets.Any(routes.ContainsKey)
+                ? $". It may not end its rout ADJACENT to the enemy unit it began beside (A10.51): its route passes through {string.Join(" or ", targets.Select(Place))} and ends in woods or a building beyond."
             : targets.Count > 0 ? $". Its route must end in {string.Join(" or ", targets.Select(Place))}."
             : ". No woods or building is within its reach, so any legal route will do.",
             [.. targets.Where(routes.ContainsKey).Select(target => new RoutActionPanel.Way(target.ToString(), string.Join(", ", routes[target])))]);

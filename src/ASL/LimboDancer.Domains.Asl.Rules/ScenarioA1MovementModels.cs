@@ -174,12 +174,6 @@ public sealed record MovingUnitFacts(
     IReadOnlyList<string>? MovedWith);
 
 /// <summary>
-/// The facts of ADJACENT (A.8, p. 43) for two Locations: whether their hexes are adjacent and both read, each Location's elevation (its hex's base
-/// level plus its level), and the hexside between them (null when the map cannot give it).
-/// </summary>
-public sealed record AdjacencyFacts(bool Adjacent, bool FromRead, bool ToRead, int FromElevation, int ToElevation, CrossedHexsideFacts? Crossed);
-
-/// <summary>
 /// One unit of the game as the scans for a seeing enemy read it (A12.14, A12.34): active, its side, a Dummy, aboard a vehicle, Broken as a
 /// three-valued fact, Hidden, Good Order as the planner reads it, and its Location as an index into the caller's table of Locations (null off
 /// the map).
