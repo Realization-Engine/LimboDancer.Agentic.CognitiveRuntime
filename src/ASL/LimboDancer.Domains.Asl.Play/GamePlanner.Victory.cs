@@ -50,9 +50,10 @@ public sealed partial class GamePlanner
     /// table player, pass 24; ruling R24.1); ground level when unread.
     /// </summary>
     private IReadOnlyList<int> HexLevels(GameState state, BoardLocation hex) =>
-        ReadLocation(state, hex with { Level = 0 }) is { } read
-            ? [.. read.Hex.Locations.Where(item => item.Terrain?.Name is not "Rooftop" && item.Level >= 0).Select(item => item.Level).Distinct().Order()]
-            : [0];
+        ScenarioA1VictoryCalculator.HexLevels(ReadLocation(state, hex with
+        {
+            Level = 0
+        })?.Hex.Locations.Select(item => (item.Terrain?.Name, item.Level)));
 
     // Referee, pass 21: a card that no longer validates decides nothing; each card's validity is read once.
     private static readonly System.Collections.Concurrent.ConcurrentDictionary<(string Card, string Sha256, Units.Catalog.CatalogIdentity Catalog), bool> Validity = new();
@@ -69,16 +70,11 @@ public sealed partial class GamePlanner
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(unit);
-        return unit.Kind switch
-        {
-            "asl:squad" or "asl:crew" => 2,
-            "asl:half-squad" => 1,
-            "asl:leader" => 1 + Math.Max(0, -(unit.Definition is { } reference
+        return ScenarioA1VictoryCalculator.VictoryPoints(unit.Kind,
+            () => unit.Definition is { } reference
                 ? catalogs.FirstOrDefault(catalog => catalog.Identity == reference.Catalog)?.Definition(reference.Definition)?.Printed("front", "asl:leadership")?.Value?.Number ?? 0
-                : 0)),
-            "asl:vehicle" => VehicleVictoryPoints(state, unit),
-            _ => 0,
-        };
+                : 0,
+            () => VehicleVictoryPoints(state, unit));
     }
 
     /// <summary>
@@ -88,32 +84,15 @@ public sealed partial class GamePlanner
     /// </summary>
     private static int VehicleVictoryPoints(GameState state, UnitInstance vehicle)
     {
-        var value = 1;
         var definition = VehicleDefinition(vehicle);
         var armor = vehicle.Definition is { } reference ? OrdnanceReference.Value.Armor.Vehicles.GetValueOrDefault(reference.Definition) : null;
 
         // The MA is a Gun (its type, such as "t") or a MG the catalog names as the MA (a SPW 251/1's AAMG); not malfunctioned, nor disabled (a vehicle MG's
         // condition, so only a MG MA loses its point to it).
-        if ((armor?.MaType is not null || definition?.MainArmament is not null) && !Is(vehicle, Conditions.Malfunctioned)
-            && !(armor?.MaType is null && Is(vehicle, Conditions.Disabled)))
-        {
-            value++;
-        }
-
-        if (armor is { Unarmored: false })
-        {
-            int?[] factors = [armor.FrontAf, armor.SideAf, Rules.ScenarioA1ArmorReference.ArmorFactor(armor, "turret", "front"),
-                Rules.ScenarioA1ArmorReference.ArmorFactor(armor, "turret", "side")];
-            var strongest = factors.Max() ?? 0;
-            value += strongest == 0 ? 1 : (strongest + 4) / 5;
-        }
-
-        if (HasInherentCrew(state, vehicle))
-        {
-            value += 2;
-        }
-
-        return value;
+        return ScenarioA1VictoryCalculator.VehicleVictoryPoints(armor?.MaType is not null || definition?.MainArmament is not null, armor?.MaType is not null,
+            Is(vehicle, Conditions.Malfunctioned), Is(vehicle, Conditions.Disabled), armor is { Unarmored: false },
+            armor is null ? [] : [armor.FrontAf, armor.SideAf, Rules.ScenarioA1ArmorReference.ArmorFactor(armor, "turret", "front"), Rules.ScenarioA1ArmorReference.ArmorFactor(armor, "turret", "side")],
+            () => HasInherentCrew(state, vehicle));
     }
 
     /// <summary>
@@ -124,9 +103,10 @@ public sealed partial class GamePlanner
     {
         var definition = VehicleDefinition(vehicle);
         var armor = vehicle.Definition is { } reference ? OrdnanceReference.Value.Armor.Vehicles.GetValueOrDefault(reference.Definition) : null;
-        var armed = armor?.MaType is not null || definition is { MainArmament: not null } or { AntiAircraftMg: not null } or { BowMg: not null } or { CoaxialMg: not null };
-        return armed && !Is(vehicle, Conditions.Abandoned)
-            && !state.Units.Any(unit => unit.Kind == "asl:crew" && unit.Id.EndsWith($"-{vehicle.Id}-crew", StringComparison.Ordinal));
+        return ScenarioA1VictoryCalculator.HasInherentCrew(
+            ScenarioA1VictoryCalculator.VehicleArmed(armor?.MaType is not null, definition?.MainArmament is not null, definition?.AntiAircraftMg is not null, definition?.BowMg is not null,
+                definition?.CoaxialMg is not null),
+            Is(vehicle, Conditions.Abandoned), () => state.Units.Any(unit => unit.Kind == "asl:crew" && unit.Id.EndsWith($"-{vehicle.Id}-crew", StringComparison.Ordinal)));
     }
 
     /// <summary>
@@ -135,22 +115,19 @@ public sealed partial class GamePlanner
     /// </summary>
     private IReadOnlyList<GameEvent> WithImmediateVictory(GameScope scope, string attemptId, long expected, IReadOnlyList<GameEvent> existing, IReadOnlyList<GameEvent> events)
     {
-        if (events.Count == 0 || events[^1].Payload is GameEnded || existing.Count == 0 || existing[0].Payload is not GameStarted { Scenario: { } scenario } started)
-        {
-            return events;
-        }
-
+        var started = existing.Count > 0 ? existing[0].Payload as GameStarted : null;
         // Only a card with an immediate condition is read after every action (Gambit's Exit VP).
-        if (Units.Catalog.UnitCatalogs.For(catalogs, started.Catalog) is not { } catalog
-            || CachedCard(scenario.Id, catalog) is not { Card.VictoryConditions.Outcomes: { } outcomes }
-            || !outcomes.Any(outcome => outcome.Immediate))
+        if (!ScenarioA1VictoryCalculator.ImmediateVictoryRead(events.Count > 0, events.Count > 0 && events[^1].Payload is GameEnded, started?.Scenario is not null,
+            () => Units.Catalog.UnitCatalogs.For(catalogs, started!.Catalog) is { } catalog
+                && CachedCard(started.Scenario!.Id, catalog) is { Card.VictoryConditions.Outcomes: { } outcomes } && outcomes.Any(outcome => outcome.Immediate)))
         {
             return events;
         }
 
         var history = Replay([.. existing, .. events]);
         // A26.222 (referee, pass 21): during play captured units count their normal VP; and the game ends only with nothing left open (UNIT-STATE-045).
-        return history.Current is { SetupClosed: true, OpenAttempts.Count: 0, Choice: null, PendingSurrenders.Count: 0 } after && !after.CloseCombats.Any(item => !item.Closed)
+        return history.Current is { } after
+            && ScenarioA1VictoryCalculator.NothingLeftOpen(after.SetupClosed, after.OpenAttempts.Count, after.Choice is not null, after.PendingSurrenders.Count, after.CloseCombats.Any(item => !item.Closed))
             && Victory(history, false, null, existing.Count) is { Immediate: { } result }
             ? [.. events, Event(scope, attemptId, events.Count + 1, expected, "game-ended", new GameEnded(after.Turn, "victory") { Result = result }, rulePackage: null, visibility: null)]
             : events;
