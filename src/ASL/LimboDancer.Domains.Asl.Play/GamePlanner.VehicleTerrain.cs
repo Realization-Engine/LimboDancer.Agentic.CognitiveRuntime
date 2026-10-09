@@ -48,6 +48,12 @@ public sealed partial class GamePlanner
     private static List<(string Cause, int Drm)> VehicleBogDrm(GameState state, UnitInstance vehicle) =>
         ScenarioA1VehicleTerrainCosts.VehicleBogDrm(VehicleDefinition(vehicle)?.GroundPressure, Towing(state, vehicle), VehicleDefinition(vehicle)?.MovementType);
 
+    /// <summary>
+    /// Whether a vehicle is a BU AFV (D5.2, p. 203; ruling R7.11; pass 35, task 35.13 a): an AFV whose crew is not CE, as Rules decides it. A CT AFV
+    /// is BU with no counter recorded, so the recorded condition alone does not say.
+    /// </summary>
+    private static bool ButtonedUpAfv(UnitInstance vehicle) => IsAfv(vehicle) && !LiveFire.CrewExposed(vehicle);
+
     private static bool Towing(GameState state, UnitInstance vehicle) =>
         state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == vehicle.Id);
 
@@ -85,7 +91,7 @@ public sealed partial class GamePlanner
         var (entry, reason) = ScenarioA1VehicleTerrainCosts.EntryCost(type, to.ToString(), to.Level, crossed.Cliff || crossed.Slope, TerrainKey(toRead),
             (toRead.Level.Terrain ?? toRead.Hex.Center.Terrain)?.Name, WallOn(crossed), crossed.HexsideTerrain?.Name, crossed.Terrain?.IsRoad == true,
             toRead.Hex.BaseLevel - fromRead.Hex.BaseLevel, state.ScenarioMonth, state.Weather("mud"), crossed.Terrain?.Name == "Paved Road",
-            state.SpecialRules.Contains("plowed-roads", StringComparer.Ordinal), PrintedHalfMp(vehicle), IsAfv(vehicle) && Is(vehicle, Conditions.ButtonedUp),
+            state.SpecialRules.Contains("plowed-roads", StringComparer.Ordinal), PrintedHalfMp(vehicle), ButtonedUpAfv(vehicle),
             state.Weather("ground-snow"), state.Weather("deep-snow"), road => WreckEntryHalfMp(state, to, road), () => HasSmoke(state, to), Towing(state, vehicle),
             (terrain, road, paved, plowed) => VehicleWeatherHalfMp(state, type!, terrain, road, paved, plowed, toRead.Hex.BaseLevel - fromRead.Hex.BaseLevel),
             reverse, allMp, VehicleBogDrm(state, vehicle),

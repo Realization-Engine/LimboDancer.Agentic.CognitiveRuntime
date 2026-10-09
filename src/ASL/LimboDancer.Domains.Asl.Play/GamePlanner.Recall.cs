@@ -101,7 +101,7 @@ public sealed partial class GamePlanner
         }
 
         return ScenarioA1RecallCalculator.ExitHalfMp(halfMp, read.Hex.Hexsides.FirstOrDefault(item => item.Side == side)?.Terrain?.IsRoad == true,
-            IsAfv(vehicle) && Is(vehicle, Conditions.ButtonedUp));
+            ButtonedUpAfv(vehicle), state.Weather("ground-snow") || state.Weather("deep-snow"));
     }
 
     /// <summary>

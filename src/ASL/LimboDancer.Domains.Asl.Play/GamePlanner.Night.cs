@@ -54,7 +54,7 @@ public sealed partial class GamePlanner
 
     /// <summary>A viewer's NVR at night (E1.1, E1.14; ruling R16.2): the Base NVR, halved (FRD) from a BU AFV; null by day.</summary>
     private static int? NvrOf(GameState state, UnitInstance? viewer) =>
-        ScenarioA1NightAndWeather.NvrOf(state.Nvr, viewer is not null && LiveFire.IsVehicle(viewer) && Is(viewer, Conditions.ButtonedUp));
+        ScenarioA1NightAndWeather.NvrOf(state.Nvr, viewer is not null && ButtonedUpAfv(viewer));
 
     /// <summary>
     /// Whether a Location is Illuminated at night (E1.9, E1.923, E1.94; ruling R16.8): within three hexes of a Starshell, or within two hexes of a Blaze

@@ -261,6 +261,10 @@ public sealed class ScenarioA1VehicleMovementRulesTests
         Assert.Equal(1, ScenarioA1RecallCalculator.ExitHalfMp(8, true, false));
         Assert.Equal(2, ScenarioA1RecallCalculator.ExitHalfMp(8, true, true));
         Assert.Equal(8, ScenarioA1RecallCalculator.ExitHalfMp(8, false, true));
+
+        // E3.724, E3.7331 (pass 35, task 35.13 a): in Ground or Deep Snow an exit by road costs a full MP, as an entry by road does.
+        Assert.Equal(2, ScenarioA1RecallCalculator.ExitHalfMp(8, true, false, snow: true));
+        Assert.Equal(8, ScenarioA1RecallCalculator.ExitHalfMp(8, false, false, snow: true));
     }
 
     private static IEnumerable<(string Move, int HalfMp, int To)> Moves(int node, bool lowerBound) => node switch

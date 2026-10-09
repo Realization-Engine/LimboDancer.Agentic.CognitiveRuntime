@@ -277,7 +277,7 @@ public sealed partial class GamePlanner
         var leaving = MustLeave(vehicle);
         var current = state.Movement;
         if (ScenarioA1VehicleMovementCalculator.MoveBar(id, kind, vehicle.MovementEnded,
-            () => IsAfv(vehicle) && Is(vehicle, Conditions.ButtonedUp) && NvrOf(state, vehicle) == 0, condition => Is(vehicle, condition), leaving,
+            () => ButtonedUpAfv(vehicle) && NvrOf(state, vehicle) == 0, condition => Is(vehicle, condition), leaving,
             current is not null && (!current.Vehicle || !current.Members.SequenceEqual([vehicle.Id], StringComparer.Ordinal)) ? current.Members : null,
             current is { WindowOpen: true }, current?.Reaction == true, current?.Overrun?.ToString(),
             () => current is null && MustCharge(state) is [{ } charging, ..] ? charging.Id : null, current is not null) is { } moveBar)
@@ -796,7 +796,7 @@ public sealed partial class GamePlanner
             vehicle is not null && (Is(vehicle, Conditions.Stunned) || Is(vehicle, Conditions.Recalled) || Is(vehicle, Conditions.Shocked) || Is(vehicle, Conditions.UnconfirmedKill)),
             vehicle is not null && state.Phase == "mph" && Is(vehicle, Conditions.PrepFire),
             state.Movement is { WindowOpen: true } window && window.Movers.Contains(id, StringComparer.Ordinal),
-            vehicle is not null && Is(vehicle, Conditions.ButtonedUp) == buttonedUp, buttonedUp,
+            vehicle is not null && ButtonedUpAfv(vehicle) == buttonedUp, buttonedUp,
             () =>
             {
                 var since = existing.Select((item, index) => (item, index)).LastOrDefault(pair => pair.item.Payload is PhaseChanged or GameStarted).index;

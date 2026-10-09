@@ -511,6 +511,26 @@ public sealed class BacklogPass7Tests : IDisposable
     }
 
     [Fact]
+    public async Task ATankButtonedUpByDefaultIsAlreadyBuAndMayExposeItsCrew()
+    {
+        // D5.2 (R7.11; pass 35, task 35.13 a): the CT tank carries no BU counter and is BU all the same. Until pass 35 it was told "already CE".
+        await Tanks();
+        await Advance(2);
+        Assert.Equal("mph", Current.Phase);
+        Refused(await Do(GameActions.ButtonUp, NoRoll(), new
+        {
+            vehicleId = "de-tank",
+            buttonedUp = true
+        }), "is already BU");
+        Committed(await Do(GameActions.ButtonUp, NoRoll(), new
+        {
+            vehicleId = "de-tank",
+            buttonedUp = false
+        }));
+        Assert.True(LiveFire.CrewExposed(Current.Unit("de-tank")!));
+    }
+
+    [Fact]
     public async Task AnAbandonedTankDoesNotFire()
     {
         // D5.41 (table player, item 2): an Abandoned AFV has no crew to fire its MA.
