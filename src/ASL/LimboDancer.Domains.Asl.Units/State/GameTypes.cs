@@ -62,7 +62,7 @@ public sealed record SideState(string Id, string Nationality, int? Elr, int? San
     /// Whether Hungarians fight Romanians in a game with these sides (A25.8, A25.82; ruling R27.1): No Quarter is then in effect for both.
     /// </summary>
     public static bool HungariansVersusRomanians(IReadOnlyList<SideState> sides) =>
-        sides.Any(side => side.Nation == "hungarian") && sides.Any(side => side.Nation == "romanian");
+        Rules.ScenarioA1SequenceProjection.HungariansVersusRomanians(sides.Select(side => side.Nation));
 
     /// <summary>
     /// The side's OB groups when the game starts from a scenario card (A19.1: "each scenario OB will list an ELR for that group of units";

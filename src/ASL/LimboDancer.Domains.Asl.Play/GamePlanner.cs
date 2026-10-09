@@ -69,25 +69,15 @@ public enum EntryRoute
 /// </summary>
 public sealed record EntryDisclosure(string Mover, EntryRoute Route, bool Withheld, IReadOnlyList<string> MoverReasons)
 {
-    public const string ResolvedOnConfirmation = "play.resolved-on-confirmation: the entry is declared, and its outcome is resolved when it is confirmed";
+    public const string ResolvedOnConfirmation = ScenarioA1EntryRules.ResolvedOnConfirmation;
 
-    public const string CannotResolve = "play.adjudicator-cannot-resolve: no reviewed case covers this entry, and nothing was committed";
+    public const string CannotResolve = ScenarioA1EntryRules.CannotResolve;
 
-    /// <summary>The reasons the mover's side may see for a plan, before or after confirmation.</summary>
+    /// <summary>The reasons the mover's side may see for a plan, before or after confirmation; Rules decides (pass 32.i).</summary>
     public IReadOnlyList<string> ReasonsForMover(GamePlan plan, bool confirmed)
     {
         ArgumentNullException.ThrowIfNull(plan);
-        if (!Withheld)
-        {
-            return plan.Reasons;
-        }
-
-        if (MoverReasons.Count > 0)
-        {
-            return MoverReasons;
-        }
-
-        return !confirmed ? [ResolvedOnConfirmation] : plan.CanCommit ? ["play.committed"] : [CannotResolve];
+        return ScenarioA1EntryRules.ReasonsForMover(Withheld, plan.Reasons, MoverReasons, confirmed, plan.CanCommit);
     }
 }
 
@@ -150,16 +140,12 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
     /// The facts of the first case that depend only on the mover and the terrain; the others read the target's occupants.
     /// A known-enemy or concealed entry needs every one of them true.
     /// </summary>
-    private static readonly string[] MoverFacts =
-    [
-        "isKnownGoodOrderInfantrySquad", "isAttackerMovementPhase", "canMoveThisPhase", "isAdjacentGroundLevelOrdinaryBuilding",
-        "hasNoRoadBypassElevationOrAdditionalTerrain", "hasEnoughMovementFactors", "hasNoSpecialRuleOrOtherModifier",
-    ];
+    private static readonly IReadOnlyList<string> MoverFacts = ScenarioA1EntryRules.MoverFacts;
 
     private static readonly IReadOnlySet<string> OrdinaryBuildings = ScenarioA1Definitions.OrdinaryBuildings;
 
-    // Ruling R10.12 (table player, pass 10): move options the reviewed entry cases do not take.
-    private static readonly string[] MoveOptions = ["assault", "doubleTime", "minimumMove"];
+    // Ruling R10.12 (table player, pass 10): move options the reviewed entry cases do not take (Rules names them, pass 32.i).
+    private static readonly IReadOnlyList<string> MoveOptions = ScenarioA1EntryRules.MoveOptions;
 
     private readonly TimeProvider clock = time ?? TimeProvider.System;
 
@@ -253,38 +239,41 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return new GamePlan(GamePlanStatus.Stale, scope, label, expected, [], [$"play.stale: the game is at revision {existing.Count}"]);
         }
 
+        // Pass 32.i: the bars every request meets, in their order; Rules decides each over a read made only when it is checked.
         // Pass 20 (ruling R20.1): nothing happens in a game that has ended.
-        if (existing.Count > 0 && existing[^1].Payload is GameEnded over)
+        if (ScenarioA1SequenceCalculator.GameOverBar(existing.Count > 0 && existing[^1].Payload is GameEnded over ? over.Turn : null) is { } gameOver)
         {
-            return Refused(scope, label, expected, $"play.game-over: the game ended after Game Turn {over.Turn} (A3.9; ruling R20.1)");
+            return Refused(scope, label, expected, gameOver);
         }
 
         // Pass 19 (ruling R19.2; referee, pass 19): in a game from a card nothing but setup happens until every group has set up.
-        if (action.Id.Value != "asl.game.setup" && existing.Count > 0 && existing.All(item => GameState.IsSetupEvent(item.Payload))
-            && Replay(existing).Current is { Scenario: not null } setupState && CardSetupIncomplete(setupState, existing) is { } unfinished)
+        if (ScenarioA1SequenceCalculator.SetupOnlyBar(action.Id.Value, existing.Count > 0,
+            () => existing.All(item => GameState.IsSetupEvent(item.Payload)) && Replay(existing).Current is { Scenario: not null } setupState ? CardSetupIncomplete(setupState, existing) : null)
+            is { } unfinished)
         {
             return Refused(scope, label, expected, unfinished);
         }
 
         // Pass 31 (ruling R31.6): a side's view proposes only what its side may do; setup is guarded by its own checks of each group's side.
-        if (action.Id.Value != "asl.game.setup" && ProposedBy(arguments) is { } proposer && existing.Count > 0 && Replay(existing).Current is { } proposerState
-            && ProposerBar(proposerState, action.Id.Value, arguments, proposer, existing) is { } notYours)
+        var proposer = ProposedBy(arguments);
+        if (ScenarioA1SequenceCalculator.ProposerViewBar(action.Id.Value, proposer, existing.Count > 0,
+            () => Replay(existing).Current is { } proposerState ? ProposerBar(proposerState, action.Id.Value, arguments, proposer!, existing) : null) is { } notYours)
         {
             return Refused(scope, label, expected, notYours);
         }
 
         // Ruling R26.2: a Passenger acts only with its vehicle until it unloads.
-        if (action.Id.Value is not ("asl.game.setup" or "asl.game.move-vehicle" or "asl.game.hook-gun" or "asl.game.advance-phase" or "asl.game.choose" or "asl.game.pass-fire"
-            or "asl.game.end-move" or "asl.game.button-up") && existing.Count > 0 && Replay(existing).Current is { } boardState && AboardBar(boardState, arguments) is { } aboard)
+        if (ScenarioA1SequenceCalculator.PassengerBar(action.Id.Value, existing.Count > 0,
+            () => Replay(existing).Current is { } boardState ? AboardBar(boardState, arguments) : null) is { } aboard)
         {
             return Refused(scope, label, expected, aboard);
         }
 
         // A4.152 (ruling R27.3): once the DEFENDER's window on a berserk OVR's entry closes, its CC comes first.
-        if (action.Id.Value is not ("asl.game.close-combat" or "asl.game.choose" or "asl.game.take-prisoner") && existing.Count > 0 && Replay(existing).Current is { } overrunState
-            && BerserkOverrunPending(overrunState) is { } overrunAt)
+        if (ScenarioA1SequenceCalculator.OverrunCloseCombatFirstBar(action.Id.Value, existing.Count > 0,
+            () => Replay(existing).Current is { } overrunState ? BerserkOverrunPending(overrunState)?.ToString() : null) is { } overrunFirst)
         {
-            return Refused(scope, label, expected, $"play.cc-overrun-first: the berserk Infantry OVR in {overrunAt} has its CC at once, before anything else happens (A4.152, A15.432)");
+            return Refused(scope, label, expected, overrunFirst);
         }
 
         var plan = action.Id.Value switch
@@ -333,36 +322,37 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         };
 
         // Ruling R5.8: a pending choice is answered before anything else happens in the game.
-        if (plan.Status == GamePlanStatus.Ready && action.Id.Value is not ("asl.game.choose" or "asl.game.setup")
-            && Replay(existing).Current is { Choice: { } choice })
+        if (ScenarioA1SequenceCalculator.ChoicePendingBar(plan.Status == GamePlanStatus.Ready, action.Id.Value,
+            () => Replay(existing).Current is { Choice: { } choice } ? (choice.Side, DescribeChoice(choice)) : null) is { } choicePending)
         {
-            return Refused(scope, label, expected, $"play.choice-pending: the {choice.Side} side answers first: {DescribeChoice(choice)}");
+            return Refused(scope, label, expected, choicePending);
         }
 
         // A15.5: a surrender waits for its captor before anything else happens in the game.
-        if (plan.Status == GamePlanStatus.Ready && action.Id.Value is not ("asl.game.take-prisoner" or "asl.game.setup")
-            && Replay(existing).Current is { PendingSurrenders: [{ } pending, ..] })
+        if (ScenarioA1SequenceCalculator.SurrenderPendingBar(plan.Status == GamePlanStatus.Ready, action.Id.Value,
+            () => Replay(existing).Current is { PendingSurrenders: [{ } pending, ..] } ? pending.Unit : null) is { } surrenderPending)
         {
-            return Refused(scope, label, expected, $"play.surrender-pending: {pending.Unit} has surrendered; its captor's side chooses the Guard or rejects it first (A15.5, A20.3)");
+            return Refused(scope, label, expected, surrenderPending);
         }
 
         // C6.5, C6.51 (ruling R5.13): an Acquisition follows the units it is on.
         plan = WithAcquisitions(plan, scope, existing, attemptId, expected);
 
         // A10.62 (ruling R13.1): a broken unit comes under DM when a Known armed enemy unit is ADJACENT to it.
-        if (action.Id.Value != "asl.game.setup")
+        var followUps = ScenarioA1SequenceCalculator.FollowUpsApply(action.Id.Value);
+        if (followUps)
         {
             plan = WithAdjacentDm(plan, scope, existing, attemptId, expected);
         }
 
         // A20.551 (ruling R31.8): a SMC the action leaves free and Unarmed is Armed again.
-        if (action.Id.Value != "asl.game.setup")
+        if (followUps)
         {
             plan = WithArmedSmc(plan, scope, existing, attemptId, expected);
         }
 
         // Pass 21 (ruling R21.4): an immediate Victory Condition met by the action ends the game after it.
-        if (plan.Status == GamePlanStatus.Ready && action.Id.Value != "asl.game.setup")
+        if (plan.Status == GamePlanStatus.Ready && followUps)
         {
             plan = plan.Roll is { } rolled
                 ? plan with
@@ -406,9 +396,10 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
     private GamePlan PlanSetup(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, ref string label,
         string actor)
     {
-        if (existing.Any(item => !GameState.IsSetupEvent(item.Payload)))
+        // Pass 32.i: the setup's steps, in the old order; Rules decides each over the request's and the state's reads.
+        if (ScenarioA1GameStart.SetupClosedBar(existing.Any(item => !GameState.IsSetupEvent(item.Payload))) is { } closed)
         {
-            return Refused(scope, label, expected, "play.setup-closed: play has started, so no more units can be set up");
+            return Refused(scope, label, expected, closed);
         }
 
         // Ruling R23.6 (A12.12): the non-OB "?" each side places once both have set up.
@@ -480,9 +471,9 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             events.Add(EventNode(events.Count + 1, "instance-created", new JsonObject { ["instance"] = node }, hidden && side is not null ? [side] : null));
         }
 
-        if (events.Count == 0)
+        if (ScenarioA1GameStart.NothingToSetUpBar(events.Count) is { } nothing)
         {
-            return Refused(scope, label, expected, "play.nothing-to-set-up");
+            return Refused(scope, label, expected, nothing);
         }
 
         var parsed = Parse(scope, events, attemptId, expected);
@@ -492,11 +483,11 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         {
             foreach (var instance in created.Select(item => item.Payload).OfType<InstanceCreated>().Select(item => item.Instance))
             {
-                if (instance.Group is { } group && instance.Side is { } owner && groupsState.Side(owner) is { } ownSide && ownSide.Groups.All(item => item.Id != group))
+                var ownSide = instance.Side is { } owning ? groupsState.Side(owning) : null;
+                if (ScenarioA1GameStart.GroupOfOtherSide(instance.Group is not null, ownSide is not null, instance.Group is { } named && ownSide is not null && ownSide.Groups.Any(item => item.Id == named)))
                 {
-                    var holder = groupsState.Sides.FirstOrDefault(item => item.Groups.Any(other => other.Id == group))?.Id;
-                    return Refused(scope, label, expected, $"play.setup-group: {instance.Id} is {owner}'s, and the OB group '{group}' is "
-                        + (holder is null ? "not a group of this game" : $"{holder}'s") + "; a unit sets up in an OB group of its own side (ruling R18.3)");
+                    var holder = groupsState.Sides.FirstOrDefault(item => item.Groups.Any(other => other.Id == instance.Group))?.Id;
+                    return Refused(scope, label, expected, ScenarioA1GameStart.SetupGroupText(instance.Id, instance.Side!, instance.Group!, holder));
                 }
             }
         }
@@ -523,31 +514,31 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
         // Ruling R18.3: where a side's OB groups differ in ELR, each of its units names its group, since no side ELR stands in for it.
         if (parsed.Events is { } grouped && Replay([.. existing, .. grouped]).Current is { } groupedState
-            && groupedState.Units.FirstOrDefault(unit => unit.Group is null && unit.Kind is not (UnitKinds.Dummy or "asl:sniper" or "asl:hero" or "asl:crew")
-                && unit.Definition?.Definition.Contains("commissar", StringComparison.Ordinal) != true
-                && groupedState.Side(unit.Side) is { Groups.Count: > 0, Elr: null }) is { } ungrouped)
+            && groupedState.Units.FirstOrDefault(unit => ScenarioA1GameStart.NeedsGroup(unit.Group is not null, unit.Kind, unit.Kind == UnitKinds.Dummy,
+                unit.Definition?.Definition.Contains("commissar", StringComparison.Ordinal) == true, groupedState.Side(unit.Side) is { Groups.Count: > 0 },
+                groupedState.Side(unit.Side) is not { Elr: null })) is { } ungrouped)
         {
-            return Refused(scope, label, expected,
-                $"play.group: {ungrouped.Id} names no OB group, and the groups of {ungrouped.Side} differ in ELR (A19.1; ruling R18.3)");
+            return Refused(scope, label, expected, ScenarioA1GameStart.GroupText(ungrouped.Id, ungrouped.Side));
         }
 
         IReadOnlyList<GameEvent>? withSights = null;
         if (boreSights.Count > 0 && parsed.Events is { } setUp && Replay([.. existing, .. setUp]).Current is { } sightState)
         {
-            // C6.41, C6.42: the Scenario Defender's manned Gun, a Location outside its hex, in its LOS, within 16 hexes.
+            // C6.41, C6.42: the Scenario Defender's manned Gun, a Location outside its hex, in its LOS, within 16 hexes (Rules decides, the LOS read when asked).
             var sightEvents = new List<GameEvent>();
             foreach (var (boreGun, boreAt) in boreSights)
             {
-                if (sightState.Find(boreGun) is not EquipmentInstance { Holding: { Role: HoldingRole.Manned } manning, Position: MapPosition gunAt }
-                    || sightState.Unit(manning.Holder)?.Side != sightState.ScenarioDefender || boreAt == gunAt.Location
-                    || Los(sightState, gunAt.Location, boreAt) is not { Status: LosStatus.Clear, Range: <= 16 })
+                var found = sightState.Find(boreGun) as EquipmentInstance;
+                var manning = found is { Holding: { Role: HoldingRole.Manned } holding, Position: MapPosition } ? holding : null;
+                var gunAt = manning is not null && found!.Position is MapPosition position ? position : null;
+                if (ScenarioA1GameStart.BoreSightBar(gunAt is not null, gunAt is not null && sightState.Unit(manning!.Holder)?.Side == sightState.ScenarioDefender,
+                    gunAt is not null && boreAt == gunAt.Location, () => Los(sightState, gunAt!.Location, boreAt) is { Status: LosStatus.Clear, Range: <= 16 }, boreGun) is { } boreBar)
                 {
-                    return Refused(scope, label, expected,
-                        $"play.bore-sight: {boreGun} may Bore Sight only as the Scenario Defender's manned Gun, a Location outside its hex, in its LOS, within 16 hexes (C6.41, C6.42)");
+                    return Refused(scope, label, expected, boreBar);
                 }
 
                 sightEvents.Add(Event(scope, attemptId, setUp.Count + sightEvents.Count + 1, expected, "bore-sighted",
-                    new BoreSighted(boreGun, boreAt, manning.Holder, gunAt.Location), ScenarioA1OrdnancePackage.Identity.ToString(), [sightState.ScenarioDefender!]));
+                    new BoreSighted(boreGun, boreAt, manning!.Holder, gunAt!.Location), ScenarioA1OrdnancePackage.Identity.ToString(), [sightState.ScenarioDefender!]));
             }
 
             withSights = [.. setUp, .. sightEvents];
@@ -559,15 +550,15 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         }
 
         // Pass 20 (rulings R20.2, R20.3): the start's drs, for the first move and for the Balance, are drawn as the game is written.
-        return startRolls is { } rolls && (rolls.FirstMove is not null || rolls.Balance is not null)
-            ? new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [$"play.setup: {list.Count} event(s)",
-                .. rolls.FirstMove is not null ? ["play.first-move: a dr for each side decides which moves first (A3.9; ruling R20.2)"] : Array.Empty<string>(),
-                .. rolls.Balance is not null ? ["play.balance: both players wish to play the same side, so a dr decides it; the other side takes its Balance (A26.4; ruling R20.3)"] : Array.Empty<string>()])
+        return startRolls is { } rolls && ScenarioA1GameStart.StartRollsDue(rolls.FirstMove is not null, rolls.Balance is not null)
+            ? new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [ScenarioA1GameStart.SetupText(list.Count),
+                .. rolls.FirstMove is not null ? [ScenarioA1GameStart.FirstMoveText()] : Array.Empty<string>(),
+                .. rolls.Balance is not null ? [ScenarioA1GameStart.BalanceRollText()] : Array.Empty<string>()])
             {
                 Roll = new PlannedRoll("start", draw => StartRolled(scope, attemptId, expected, actor, list, rolls, draw)),
                 FirstEventId = EventId(attemptId, 1),
             }
-            : new GamePlan(GamePlanStatus.Ready, scope, label, expected, list, [$"play.setup: {list.Count} event(s)"]);
+            : new GamePlan(GamePlanStatus.Ready, scope, label, expected, list, [ScenarioA1GameStart.SetupText(list.Count)]);
     }
 
     private GamePlan PlanAdvance(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label,
@@ -578,9 +569,10 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return Refused(scope, label, expected, "play.no-game: the game has no state yet");
         }
 
-        if (state.Sides.Count != 2)
+        // Pass 32.i: the phase's end and what it requires, in the old order; Rules decides each bar over the state's reads and the other slices' reads.
+        if (ScenarioA1SequenceCalculator.TwoSidesBar(state.Sides.Count) is { } twoSides)
         {
-            return Refused(scope, label, expected, "play.two-sides: the sequence of play alternates two sides");
+            return Refused(scope, label, expected, twoSides);
         }
 
         // Pass 19 (ruling R19.2): play starts when every group of a card that sets up on board has finished.
@@ -589,74 +581,65 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return Refused(scope, label, expected, incomplete);
         }
 
-        if (state.OpenAttempts.Count > 0)
+        if (ScenarioA1SequenceCalculator.DeclarationPendingBar(state.OpenAttempts.Count > 0 ? state.OpenAttempts[0].EventId : null,
+            state.OpenAttempts.Count > 0 ? state.OpenAttempts[0].Unit : null) is { } declarationPending)
         {
-            return Refused(scope, label, expected, $"play.declaration-pending: the entry attempt '{state.OpenAttempts[0].EventId}' by "
-                + $"{state.OpenAttempts[0].Unit} awaits the attacker's OVR declaration (A12.15, p. 78), so the phase cannot advance");
+            return Refused(scope, label, expected, declarationPending);
         }
 
         // C7.42 (ruling R7.8): the RPh does not end while a Shocked AFV or an Unconfirmed Kill owes its dr.
-        if (ShockRollsOwed(state).FirstOrDefault() is { } shocked)
+        if (ScenarioA1SequenceCalculator.ShockPendingBar(ShockRollsOwed(state).FirstOrDefault()?.Id) is { } shockPending)
         {
-            return Refused(scope, label, expected, $"play.shock-recovery-pending: {shocked.Id} makes its Shock or Unconfirmed Kill dr before the RPh ends (C7.42)");
+            return Refused(scope, label, expected, shockPending);
         }
 
         // A25.222 (backlog pass 15, ruling R15.6): a Commissar must attempt to rally every broken unit of his Location; the RPh does not end while one has made
         // no attempt that the Rally package would decide.
-        if (state.Phase == "rph")
+        foreach (var broken in state.Units.Where(unit => ScenarioA1SequenceCalculator.CommissarCandidate(state.Phase, unit.Status == InstanceStatus.Active, Is(unit, Conditions.Broken),
+            Is(unit, Conditions.Captured), state.RallyAttemptsThisPlayerTurn.Contains(unit.Id), state.RallyPhaseActions.Contains(unit.Id))).OrderBy(unit => unit.Id, StringComparer.Ordinal))
         {
-            foreach (var broken in state.Units.Where(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Broken) && !Is(unit, Conditions.Captured)
-                && !state.RallyAttemptsThisPlayerTurn.Contains(unit.Id) && !state.RallyPhaseActions.Contains(unit.Id)).OrderBy(unit => unit.Id, StringComparer.Ordinal))
-            {
-                if (LiveRally.Commissar(state, broken) is { } commissar && !state.RallyPhaseActions.Contains(commissar.Id)
-                    && PlanRally(scope, JsonSerializer.SerializeToElement(new
-                    {
-                        unitId = broken.Id,
-                        leader = commissar.Id
-                    }), existing, attemptId + "-commissar", expected, label,
-                        actor).Status == GamePlanStatus.Ready)
+            if (LiveRally.Commissar(state, broken) is { } commissar && ScenarioA1SequenceCalculator.CommissarOwes(state.RallyPhaseActions.Contains(commissar.Id),
+                !state.RallyPhaseActions.Contains(commissar.Id) && PlanRally(scope, JsonSerializer.SerializeToElement(new
                 {
-                    return Refused(scope, label, expected, $"play.commissar-rally: {commissar.Id} must attempt to rally {broken.Id} before the RPh ends (A25.222)");
-                }
+                    unitId = broken.Id,
+                    leader = commissar.Id
+                }), existing, attemptId + "-commissar", expected, label,
+                    actor).Status == GamePlanStatus.Ready))
+            {
+                return Refused(scope, label, expected, ScenarioA1SequenceCalculator.CommissarRallyText(commissar.Id, broken.Id));
             }
         }
 
         // A3.1 to A3.8 (p. 47): the eight phases in order; after the CCPh the other side's Player Turn begins, and a new
         // Game Turn begins when the side that moved first is phasing again.
-        var index = Phases.All.ToList().IndexOf(state.Phase);
-        var (turn, phase, phasing) = index < Phases.All.Count - 1
-            ? (state.Turn, Phases.All[index + 1], state.PhasingSide)
-            : (state.Turn, Phases.All[0], state.Sides.First(side => side.Id != state.PhasingSide).Id);
-        if (index == Phases.All.Count - 1 && phasing == state.FirstSide)
-        {
-            turn++;
-        }
+        var (turn, phase, phasing) = ScenarioA1SequenceCalculator.NextPhase(state.Phase, state.Turn, state.PhasingSide, state.Sides.First(side => side.Id != state.PhasingSide).Id, state.FirstSide);
 
         // A23.4 (backlog pass 15, ruling R15.2): a DC operably Placed detonates before the AFPh ends, unless the Fire package refuses its attack; it then stays
         // in its Location.
-        if (state.Phase == "afph" && state.PlacedCharges.Where(item => item.Operable).FirstOrDefault(item => PlanDetonateDc(scope,
+        if (state.PlacedCharges.FirstOrDefault(item => ScenarioA1SequenceCalculator.PlacedChargeDue(state.Phase, item.Operable, () => PlanDetonateDc(scope,
             JsonSerializer.SerializeToElement(new
             {
                 equipmentId = item.Charge
-            }), existing, attemptId + "-dc", expected, label, actor).Status == GamePlanStatus.Ready) is { } unexploded)
+            }), existing, attemptId + "-dc", expected, label, actor).Status == GamePlanStatus.Ready)) is { } unexploded)
         {
-            return Refused(scope, label, expected, $"play.dc-detonate-pending: {unexploded.Charge} was Placed in {unexploded.Target} and detonates before the AFPh ends (A23.4)");
+            return Refused(scope, label, expected, ScenarioA1SequenceCalculator.DcDetonatePendingText(unexploded.Charge, unexploded.Target.ToString()));
         }
 
         // A2.5 (rulings R20.5, R25.1): the APh does not end while a unit whose entry turn has come waits off board and may still enter by advance.
-        if (state.Phase == "aph" && EntryDue(state) is { } due)
+        if (ScenarioA1SequenceCalculator.EntryDueBar(state.Phase, () => EntryDue(state)) is { } due)
         {
             return Refused(scope, label, expected, due);
         }
 
         // A2.5 (ruling R26.1): vehicles cannot advance, so the MPh does not end while a vehicle whose entry turn has come waits off board and may enter.
-        if (state.Phase == "mph" && VehicleEntryDue(state) is { } vehicleDue)
+        if (ScenarioA1SequenceCalculator.VehicleEntryDueBar(state.Phase, () => VehicleEntryDue(state)) is { } vehicleDue)
         {
             return Refused(scope, label, expected, vehicleDue);
         }
 
         // A3.9 (ruling R20.1): the game from a card ends after its last Game Turn, or after the first side's Player Turn of a half turn.
-        var ending = index == Phases.All.Count - 1 && CardOf(state) is { } endCard && ScenarioCards.EndsAfter(endCard.Turns, state.Turn, state.PhasingSide == state.FirstSide);
+        var ending = ScenarioA1SequenceCalculator.GameEnds(ScenarioA1SequenceCalculator.LastPhase(state.Phase),
+            () => CardOf(state) is { } endCard ? ScenarioCards.EndsAfter(endCard.Turns, state.Turn, state.PhasingSide == state.FirstSide) : null);
 
         // A15.43: the MPh does not end while a berserk unit must still charge.
         var reasons = new List<string>();
@@ -664,9 +647,9 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
         // A10.62 (ruling R13.1): as the RPh ends, a broken unit under DM outside woods and buildings may keep it.
         string[] retained = [.. Strings(arguments, "retainDm")];
-        if (retained.Length > 0 && state.Phase != "rph")
+        if (ScenarioA1SequenceCalculator.RetainDmPhaseBar(retained.Length, state.Phase) is { } retainPhaseBar)
         {
-            return Refused(scope, label, expected, "play.retain-dm: DM is retained as the RPh ends (A10.62)");
+            return Refused(scope, label, expected, retainPhaseBar);
         }
 
         if (retained.Select(id => RetainDmBar(state, id)).FirstOrDefault(bar => bar is not null) is { } retainBar)
@@ -675,7 +658,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         }
 
         // A10.5, A20.21 (ruling R13.3): as the RtPh ends, a broken unit that failed to rout is eliminated, or surrenders to its captors first.
-        if (state.Phase == "rtph")
+        if (ScenarioA1SequenceCalculator.FailuresToRoutDue(state.Phase))
         {
             var failed = FailureToRout(state, existing);
             var surrendering = failed.Where(item => item.Captors is not null).ToArray();
@@ -684,7 +667,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
                 foreach (var (unit, why, captors) in surrendering)
                 {
                     events.Add(Event(scope, attemptId, events.Count + 1, expected, "surrender-pending", new SurrenderPending(unit.Id, captors!), null, null));
-                    reasons.Add($"play.failure-to-rout-surrender: {unit.Id} would be eliminated for Failure to Rout ({why}), so it surrenders to {string.Join(" or ", captors!)} (A20.21); advance the phase again once its captor's side has chosen");
+                    reasons.Add(ScenarioA1SequenceCalculator.FailureToRoutSurrenderText(unit.Id, why, captors!));
                 }
 
                 return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [.. reasons]);
@@ -693,82 +676,74 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             foreach (var (unit, why, _) in failed)
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(unit.Id), null, null));
-                reasons.Add($"play.failure-to-rout: {unit.Id} is eliminated for Failure to Rout: {why} (A10.5)");
+                reasons.Add(ScenarioA1SequenceCalculator.FailureToRoutText(unit.Id, why));
             }
         }
-        if (state.Phase == "mph" && MustCharge(state) is [{ } charging, ..])
+        if (ScenarioA1SequenceCalculator.BerserkChargeBar(state.Phase, () => MustCharge(state) is [{ } charging, ..] ? charging.Id : null) is { } berserkCharge)
         {
-            return Refused(scope, label, expected, $"play.berserk-charge: {charging.Id} is berserk and must charge before the MPh ends (A15.43)");
+            return Refused(scope, label, expected, berserkCharge);
         }
 
         // D2.4: a vehicle under a Motion counter must expend at least one MP in its MPh.
-        if (state.Phase == "mph" && state.Units.FirstOrDefault(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && LiveFire.IsVehicle(unit)
-            && Is(unit, Conditions.Motion) && unit is { MfSpent: 0, HalfMfSpent: false, MovementEnded: false }) is { } idle)
+        if (state.Units.FirstOrDefault(unit => ScenarioA1SequenceCalculator.IdleMotionVehicle(state.Phase, unit.Status == InstanceStatus.Active, unit.Side == state.PhasingSide,
+            LiveFire.IsVehicle(unit), Is(unit, Conditions.Motion), unit.MfSpent, unit.HalfMfSpent, unit.MovementEnded)) is { } idle)
         {
-            return Refused(scope, label, expected, $"play.vehicle-motion: {idle.Id} is in Motion and must expend at least one MP this MPh (D2.4)");
+            return Refused(scope, label, expected, ScenarioA1SequenceCalculator.VehicleMotionText(idle.Id));
         }
 
         // D5.341 (ruling R5.17): a Recalled AFV must move toward its Friendly Board Edge in its MPh, when its route is decided.
-        if (state.Phase == "mph" && state.Units.FirstOrDefault(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && MustLeave(unit)
-            && !unit.MovementEnded && RecallRoute(state, unit) is { Undecided: null, Moves.Count: > 0 }) is { } recalled)
+        if (state.Units.FirstOrDefault(unit => ScenarioA1SequenceCalculator.RecallMoveDue(state.Phase, unit.Status == InstanceStatus.Active, unit.Side == state.PhasingSide, MustLeave(unit),
+            unit.MovementEnded, () => RecallRoute(state, unit) is { Undecided: null, Moves.Count: > 0 })) is { } recalled)
         {
-            return Refused(scope, label, expected, $"play.recall-move: {recalled.Id} is Recalled and must move off by its side's Friendly Board Edge this MPh (D5.341)");
+            return Refused(scope, label, expected, ScenarioA1SequenceCalculator.RecallMoveText(recalled.Id));
         }
 
         // A15.431, A15.46: at the end of its MPh a berserk unit with no Known enemy unit in its LOS returns to normal.
-        if (state.Phase == "mph")
+        foreach (var unit in state.Units.Where(unit => ScenarioA1SequenceCalculator.BerserkReturns(state.Phase, unit.Status == InstanceStatus.Active, unit.Side == state.PhasingSide,
+            Is(unit, Conditions.Berserk), Is(unit, Conditions.Melee), state.Location(unit.Id) is not null, () => KnownEnemyInLos(state, unit.Side, state.Location(unit.Id)!.Location))))
         {
-            foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && Is(unit, Conditions.Berserk)
-                && !Is(unit, Conditions.Melee) && state.Location(unit.Id) is { } at && KnownEnemyInLos(state, unit.Side, at.Location) == false))
-            {
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
-                    new ConditionsChanged(unit.Id, new Dictionary<string, ConditionState> { [Conditions.Berserk] = ConditionState.False }), null, null));
-                reasons.Add($"play.berserk-ends: {unit.Id} sees no Known enemy unit and returns to normal (A15.431, A15.46)");
-            }
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                new ConditionsChanged(unit.Id, ConditionChanges(ScenarioA1SequenceCalculator.BerserkEndsConditions())), null, null));
+            reasons.Add(ScenarioA1SequenceCalculator.BerserkEndsText(unit.Id));
         }
 
         // A11.16, A19.12: a broken or Disrupted unit held in Melee is eliminated at the end of the CCPh unless it withdrew (ruling R29.11);
         // one that could withdraw attempts it in its Location's CC first.
-        if (state.Phase == "ccph" && state.Units.FirstOrDefault(unit => unit.Status == InstanceStatus.Active && state.Location(unit.Id) is { } held
-            && !state.CloseCombats.Any(item => item.Location == held.Location) && MustWithdraw(state, unit, held.Location)) is { } withdrawing)
+        if (state.Units.FirstOrDefault(unit => ScenarioA1SequenceCalculator.WithdrawalRequired(state.Phase, unit.Status == InstanceStatus.Active, state.Location(unit.Id) is not null,
+            state.Location(unit.Id) is { } held && state.CloseCombats.Any(item => item.Location == held.Location), () => MustWithdraw(state, unit, state.Location(unit.Id)!.Location))) is { } withdrawing)
         {
-            return Refused(scope, label, expected, $"play.cc-withdraw-required: {withdrawing.Id} is broken in Melee and must attempt to withdraw in its Location's CC first (A11.16)");
+            return Refused(scope, label, expected, ScenarioA1SequenceCalculator.CcWithdrawRequiredText(withdrawing.Id));
         }
 
         // A15.43, A11.15: a berserk unit with a Known enemy unit in its Location, or a unit that advanced into a Melee, must attack, so a
         // Location that holds one and whose CC the package can resolve has its round before the CCPh ends.
-        if (state.Phase == "ccph" && CloseCombatRequired(state) is { } required)
+        if (ScenarioA1SequenceCalculator.CloseCombatRequiredBar(state.Phase, () => CloseCombatRequired(state)) is { } required)
         {
             return Refused(scope, label, expected, required);
         }
 
         // A11.16: a broken Guard is not eliminated in Melee.
-        if (state.Phase == "ccph")
+        foreach (var unit in state.Units.Where(unit => ScenarioA1SequenceCalculator.MeleeEliminated(state.Phase, unit.Status == InstanceStatus.Active, Is(unit, Conditions.Melee),
+            Is(unit, Conditions.Captured), IsGuard(state, unit), Is(unit, Conditions.Broken), Is(unit, Conditions.Disrupted))).OrderBy(unit => unit.Id, StringComparer.Ordinal))
         {
-            foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Melee) && !Is(unit, Conditions.Captured) && !IsGuard(state, unit)
-                && (Is(unit, Conditions.Broken) || Is(unit, Conditions.Disrupted))).OrderBy(unit => unit.Id, StringComparer.Ordinal))
-            {
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(unit.Id), null, null));
-                reasons.Add($"play.melee-eliminated: {unit.Id} is broken or Disrupted in Melee and cannot withdraw, so it is eliminated (A11.16, A19.12)");
-            }
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(unit.Id), null, null));
+            reasons.Add(ScenarioA1SequenceCalculator.MeleeEliminatedText(unit.Id));
         }
 
         // Pass 31d (design D9; A11.15, read in the PDF, p. 72; ruling R31d.6): a Location that holds units of both sides, prisoners apart, in which no
         // round was fought this phase is said before the phase ends. It is a consequence and not a refusal: where the Close Combat package does
         // not decide the Location, a refusal would leave the phase with no way to end (ruling R31c.5).
-        if (state.Phase == "ccph")
+        foreach (var unfought in state.Units.Where(unit => ScenarioA1SequenceCalculator.UnfoughtCandidate(state.Phase, unit.Status == InstanceStatus.Active, Is(unit, Conditions.Captured),
+                unit.Kind == UnitKinds.Dummy, state.Location(unit.Id) is not null))
+            .GroupBy(unit => state.Location(unit.Id)!.Location).Where(group => ScenarioA1SequenceCalculator.Unfought(group.Select(unit => unit.Side).Distinct(StringComparer.Ordinal).Count(),
+                state.CloseCombats.Any(item => item.Location == group.Key && item.Rounds.Count > 0)))
+            .Select(group => group.Key).OrderBy(location => location.ToString(), StringComparer.Ordinal))
         {
-            foreach (var unfought in state.Units.Where(unit => unit.Status == InstanceStatus.Active && !Is(unit, Conditions.Captured) && unit.Kind != UnitKinds.Dummy && state.Location(unit.Id) is not null)
-                .GroupBy(unit => state.Location(unit.Id)!.Location).Where(group => group.Select(unit => unit.Side).Distinct(StringComparer.Ordinal).Count() > 1
-                    && !state.CloseCombats.Any(item => item.Location == group.Key && item.Rounds.Count > 0))
-                .Select(group => group.Key).OrderBy(location => location.ToString(), StringComparer.Ordinal))
-            {
-                reasons.Add($"play.cc-unfought: no Close Combat was fought in {unfought} this phase; the units of both sides stay there, held in Melee unless they keep their \"?\" (A11.15)");
-            }
+            reasons.Add(ScenarioA1SequenceCalculator.CcUnfoughtText(unfought.ToString()));
         }
 
         // A12.12, A12.122 (ruling R12.5): as a Player Turn ends, the phasing side's Good Order Infantry may gain "?", some on a Final Concealment dr.
-        var gains = !ending && state.Phase == "ccph" && phasing != state.PhasingSide ? ConcealmentGains(state) : [];
+        var gains = ScenarioA1SequenceCalculator.ConcealmentGainsDue(ending, state.Phase, phasing != state.PhasingSide) ? ConcealmentGains(state) : [];
         // B25.65 (backlog pass 16, rulings R16.1, R16.10): the Wind Change DR at the start of a RPh.
         var wind = !ending && WindChangeDue(state, phase, turn, phasing);
         if (gains.Any(item => item.Drm is not null) || wind)
@@ -783,11 +758,11 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             }
 
             return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-                [$"play.advance: turn {turn}, {phase}, {phasing} phasing", .. reasons,
+                [ScenarioA1SequenceCalculator.AdvanceText(turn, phase, phasing), .. reasons,
                     .. gains.Any(item => item.Drm is not null)
-                        ? [$"play.concealment: {string.Join(", ", gains.Where(item => item.Drm is not null).Select(item => item.Unit.Id))} make a Final Concealment dr (A12.122)"]
+                        ? [ScenarioA1SequenceCalculator.ConcealmentRollText([.. gains.Where(item => item.Drm is not null).Select(item => item.Unit.Id)])]
                         : Array.Empty<string>(),
-                    .. wind ? ["play.wind-change: the Wind Change DR is made as the RPh begins (B25.65)"] : Array.Empty<string>()])
+                    .. wind ? [ScenarioA1SequenceCalculator.WindChangeDueText()] : Array.Empty<string>()])
             {
                 Roll = new PlannedRoll(wind ? "wind-change" : "concealment", Rolled),
                 FirstEventId = EventId(attemptId, 1),
@@ -798,7 +773,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         Finish(events, reasons);
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [ending
             ? $"play.game-ended: Game Turn {state.Turn} was the card's last{(turn > state.Turn ? string.Empty : ", a half turn")}, so the game ends (A3.9; ruling R20.1)"
-            : $"play.advance: turn {turn}, {phase}, {phasing} phasing", .. reasons]);
+            : ScenarioA1SequenceCalculator.AdvanceText(turn, phase, phasing), .. reasons]);
 
         void Finish(List<GameEvent> events, List<string> reasons, Func<RollRequest, RollResult>? draw = null)
         {
@@ -807,7 +782,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
                 // Pass 21 (ruling R21.4): the card's Victory Conditions decide the result as the game ends.
                 var result = Victory(Replay([.. existing, .. events]), ended: true)?.AtEnd;
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "game-ended",
-                    new GameEnded(state.Turn, turn > state.Turn ? "last-game-turn" : "half-turn") { Result = result }, rulePackage: null, visibility: null));
+                    new GameEnded(state.Turn, ScenarioA1SequenceCalculator.GameEndReason(turn > state.Turn)) { Result = result }, rulePackage: null, visibility: null));
                 if (result is not null)
                 {
                     reasons.Add($"play.result: {(result.Winner is { } winner ? $"{winner} wins" : "a draw")}: {result.Reason}");
@@ -824,21 +799,22 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
                 AddWindChange(scope, attemptId, expected, actor, state, events, reasons, draw, changed);
             }
 
-            // E1.54 (backlog pass 16, ruling R16.6): at night a DM unit keeps DM until a Rally Original DR at most its printed morale.
+            // E1.54 (backlog pass 16, ruling R16.6): at night a DM unit keeps DM until a Rally Original DR at most its printed morale; the records are read here,
+            // and Rules decides (pass 32.i).
             if (state.Phase == "rph" && state.Night)
             {
                 var start = existing.Select((item, index) => (item, index)).LastOrDefault(pair => pair.item.Payload is PhaseChanged).index;
                 var shed = existing.Skip(start).Select(item => item.Payload).OfType<RallyAttempted>()
                     .Where(item => item.Resolution.TryGetProperty("arithmetic", out var arithmetic) && arithmetic.ValueKind == JsonValueKind.Object
                         && arithmetic.TryGetProperty("originalDr", out var original) && state.Unit(item.Unit)?.Definition is { } definition
-                        && FireReference.Value.Definitions.GetValueOrDefault(definition.Definition)?.BrokenMorale is { } printed && original.GetInt32() <= printed)
+                        && FireReference.Value.Definitions.GetValueOrDefault(definition.Definition)?.BrokenMorale is { } printed && ScenarioA1SequenceCalculator.NightDmShed(original.GetInt32(), printed))
                     .Select(item => item.Unit).ToHashSet(StringComparer.Ordinal);
-                foreach (var unit in state.Units.Where(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Broken) && Is(unit, Conditions.DesperationMorale)
-                    && !shed.Contains(unit.Id) && !retained.Contains(unit.Id)).OrderBy(unit => unit.Id, StringComparer.Ordinal))
+                foreach (var unit in state.Units.Where(unit => ScenarioA1SequenceCalculator.NightDmKept(state.Phase, state.Night, unit.Status == InstanceStatus.Active, Is(unit, Conditions.Broken),
+                    Is(unit, Conditions.DesperationMorale), shed.Contains(unit.Id), retained.Contains(unit.Id))).OrderBy(unit => unit.Id, StringComparer.Ordinal))
                 {
                     events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
-                        new ConditionsChanged(unit.Id, new Dictionary<string, ConditionState> { [Conditions.DesperationMorale] = ConditionState.True }), null, null, [changed]));
-                    reasons.Add($"play.night-dm: {unit.Id} keeps its DM: at night DM leaves only with a Rally Original DR at most the printed morale (E1.54)");
+                        new ConditionsChanged(unit.Id, ConditionChanges(ScenarioA1SequenceCalculator.DesperationMoraleConditions())), null, null, [changed]));
+                    reasons.Add(ScenarioA1SequenceCalculator.NightDmText(unit.Id));
                 }
             }
 
@@ -846,28 +822,28 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             foreach (var id in retained)
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
-                    new ConditionsChanged(id, new Dictionary<string, ConditionState> { [Conditions.DesperationMorale] = ConditionState.True }), null, null, [changed]));
-                reasons.Add($"play.retain-dm: {id} keeps its DM (A10.62)");
+                    new ConditionsChanged(id, ConditionChanges(ScenarioA1SequenceCalculator.DesperationMoraleConditions())), null, null, [changed]));
+                reasons.Add(ScenarioA1SequenceCalculator.RetainDmText(id));
             }
 
-            if (phase == "rtph")
+            if (ScenarioA1SequenceCalculator.RoutPhaseDmDue(phase))
             {
                 foreach (var (unit, why) in RoutPhaseDm(state))
                 {
                     events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
-                        new ConditionsChanged(unit.Id, new Dictionary<string, ConditionState> { [Conditions.DesperationMorale] = ConditionState.True }), null, null, [changed]));
-                    reasons.Add($"play.dm: {unit.Id} comes under DM {why} as the RtPh begins (A10.62)");
+                        new ConditionsChanged(unit.Id, ConditionChanges(ScenarioA1SequenceCalculator.DesperationMoraleConditions())), null, null, [changed]));
+                    reasons.Add(ScenarioA1SequenceCalculator.RoutPhaseDmText(unit.Id, why));
                 }
             }
 
             // A11.52 (ruling R11.16): an unarmed vehicle alone with enemy Infantry is captured as the CCPh begins.
-            if (phase == "ccph")
+            if (ScenarioA1SequenceCalculator.VehicleCaptureDue(phase))
             {
                 foreach (var vehicle in CapturedVehicles(state))
                 {
-                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(vehicle.Id,
-                        new Dictionary<string, ConditionState> { [Conditions.Captured] = ConditionState.True, [Conditions.Abandoned] = ConditionState.True }), null, null, [changed]));
-                    reasons.Add($"play.cc-vehicle-capture: {vehicle.Id} is unarmed and alone with enemy Infantry, so it is captured; the use of captured vehicles is not built (A11.52, A21.2)");
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
+                        new ConditionsChanged(vehicle.Id, ConditionChanges(ScenarioA1SequenceCalculator.CapturedVehicleConditions())), null, null, [changed]));
+                    reasons.Add(ScenarioA1SequenceCalculator.CcVehicleCaptureText(vehicle.Id));
                 }
             }
 
@@ -879,18 +855,15 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             }
 
             // D5.341, D5.41 (ruling R5.18): at the end of the Player Turn of its Recall, an immobilized Recalled AFV is Abandoned.
-            if (phasing != state.PhasingSide)
+            foreach (var vehicle in state.Units.Where(unit => ScenarioA1SequenceCalculator.RecallAbandoned(phasing != state.PhasingSide, unit.Status == InstanceStatus.Active, LiveFire.IsVehicle(unit),
+                Is(unit, Conditions.Recalled), Is(unit, Conditions.Immobilized), Is(unit, Conditions.Abandoned))).OrderBy(unit => unit.Id, StringComparer.Ordinal))
             {
-                foreach (var vehicle in state.Units.Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit) && Is(unit, Conditions.Recalled)
-                    && Is(unit, Conditions.Immobilized) && !Is(unit, Conditions.Abandoned)).OrderBy(unit => unit.Id, StringComparer.Ordinal))
+                foreach (var (type, abandon) in AbandonEvents(vehicle, attemptId))
                 {
-                    foreach (var (type, abandon) in AbandonEvents(vehicle, attemptId))
-                    {
-                        events.Add(Event(scope, attemptId, events.Count + 1, expected, type, abandon, null, null, [changed]));
-                    }
-
-                    reasons.Add($"play.recall-abandoned: {vehicle.Id} is Recalled and immobilized, so its crew Abandons it (D5.341, D5.41)");
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, type, abandon, null, null, [changed]));
                 }
+
+                reasons.Add(ScenarioA1SequenceCalculator.RecallAbandonedText(vehicle.Id));
             }
         }
     }
@@ -906,7 +879,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
         if (Replay(existing).Current is not { } state || state.Unit(unitId) is not { Status: InstanceStatus.Active } unit)
         {
-            return Refused(scope, label, expected, $"play.unit-unavailable: no active unit '{unitId}'");
+            return Refused(scope, label, expected, ScenarioA1EntryRules.UnitUnavailableText(unitId));
         }
 
         var review = await ReviewEntryAsync(scope, state, unit, target, cancellationToken);
@@ -914,13 +887,13 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         if (conclusion.Disposition != ConclusionDisposition.Definitive)
         {
             return new GamePlan(GamePlanStatus.Refused, scope, label, expected, [],
-                [$"play.not-definitive: the reviewed first case is {conclusion.Disposition.ToString().ToLowerInvariant()}", .. conclusion.ReasonCodes], review);
+                [ScenarioA1EntryRules.FirstCaseNotDefinitive(conclusion.Disposition.ToString().ToLowerInvariant()), .. conclusion.ReasonCodes], review);
         }
 
-        var move = new InstanceMoved(unit.Id, new MapPosition(target), Mf: 2);
+        var move = new InstanceMoved(unit.Id, new MapPosition(target), Mf: ScenarioA1EntryRules.EntryMf);
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
             [Event(scope, attemptId, 1, expected, "instance-moved", move, ScenarioA1Package.Identity.ToString(), visibility: null)],
-            [$"play.enter: {unit.Id} into {target} for 2 MF ({conclusion.ConclusionId})"], review);
+            [ScenarioA1EntryRules.EnterText(unit.Id, target.ToString(), conclusion.ConclusionId)], review);
     }
 
     /// <summary>
@@ -930,14 +903,18 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
     private async Task<GamePlan> PlanMoveOrEntryAsync(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected,
         string label, string actor, CancellationToken cancellationToken)
     {
-        if (Strings(arguments, "unitIds").ToArray() is [{ } unitId] && Text(arguments, "to", out var toText) && BoardLocation.TryParse(toText, out var to)
-            && !arguments.TryGetProperty("smoke", out _) && !arguments.TryGetProperty("bypass", out _)
-            && !MoveOptions.Any(name => arguments.TryGetProperty(name, out var option) && option.ValueKind == JsonValueKind.True)
-            && Replay(existing).Current is { Phase: "mph", Movement: null } state && state.Unit(unitId) is { Status: InstanceStatus.Active } unit
-            && vocabulary.IsA(unit.Kind, "asl:squad") && !Is(unit, Conditions.Berserk)
-            && state.At(to).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side && !Is(other, Conditions.Captured))
-            && state.Map.Board(to.Board) is { } placed && boards.TryGetBoard(to.Board, placed.Version).Board is { } handle
-            && new BoardCatalogTerrainEvidence(boards).Bind(handle, to) is not null)
+        // Pass 32.i: Rules decides the routing over the request's and the state's reads, the target's occupants and binding read last, when asked.
+        var oneUnit = Strings(arguments, "unitIds").ToArray() is [{ } single] ? single : null;
+        var toParsed = Text(arguments, "to", out var toText) && BoardLocation.TryParse(toText, out var parsedTo) ? parsedTo : null;
+        var entryState = oneUnit is not null && toParsed is not null ? Replay(existing).Current : null;
+        var mover = oneUnit is not null && entryState is { Phase: "mph", Movement: null } && entryState.Unit(oneUnit) is { Status: InstanceStatus.Active } found ? found : null;
+        if (ScenarioA1EntryRules.ReviewedEntry(oneUnit is not null, toParsed is not null, arguments.TryGetProperty("smoke", out _), arguments.TryGetProperty("bypass", out _),
+            MoveOptions.Any(name => arguments.TryGetProperty(name, out var option) && option.ValueKind == JsonValueKind.True),
+            entryState is { Phase: "mph" }, entryState is { Movement: not null }, mover is not null && vocabulary.IsA(mover.Kind, "asl:squad"), mover is not null && Is(mover, Conditions.Berserk),
+            () => entryState!.At(toParsed!).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != mover!.Side && !Is(other, Conditions.Captured)),
+            () => entryState!.Map.Board(toParsed!.Board) is { } placed && boards.TryGetBoard(toParsed.Board, placed.Version).Board is { } handle
+                && new BoardCatalogTerrainEvidence(boards).Bind(handle, toParsed) is not null)
+            && oneUnit is { } unitId && toParsed is { } to)
         {
             var entry = JsonSerializer.SerializeToElement(new Dictionary<string, object>
             {
@@ -974,14 +951,13 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
         if (Replay(existing).Current is not { } state || state.Unit(unitId) is not { Status: InstanceStatus.Active } unit)
         {
-            return Refused(scope, label, expected, $"play.unit-unavailable: no active unit '{unitId}'");
+            return Refused(scope, label, expected, ScenarioA1EntryRules.UnitUnavailableText(unitId));
         }
 
         var occupants = state.At(target).Where(item => item.Id != unit.Id).ToArray();
-        var withheld = occupants.Length == 0 || occupants.Any(item => !VisibleTo(item, unit.Side));
+        var withheld = ScenarioA1EntryRules.Withheld(occupants.Length, occupants.Any(item => !VisibleTo(item, unit.Side)));
         var facts = EntryFacts(state, unit, target);
-        string[] moverReasons = [.. MoverFacts.Where(name => facts[name] != true)
-            .Select(name => facts[name] is null ? $"play.fact-unknown: {name}" : $"play.fact-false: {name}")];
+        var moverReasons = ScenarioA1EntryRules.MoverReasons(facts);
 
         if (occupants.Length == 0)
         {
@@ -999,39 +975,28 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             };
 
         var units = occupants.OfType<UnitInstance>().ToArray();
-        var enemies = units.Length == occupants.Length && units.All(item => item.Side != unit.Side);
-        bool Mmc(UnitInstance item) => vocabulary.IsA(item.Kind, "asl:mmc");
-        bool Smc(UnitInstance item) => vocabulary.IsA(item.Kind, "asl:smc");
-        var knownEnemy = enemies && units.All(Mmc) && units.All(item => VisibleTo(item, unit.Side));
-        var concealedAll = enemies && units.All(item => Mmc(item) || Smc(item)) && units.All(item => Is(item, Conditions.Concealed) || Is(item, Conditions.Hidden));
-        var route = knownEnemy ? EntryRoute.KnownEnemy
-            : !concealedAll ? EntryRoute.Outside
-            : units.Length == 1 && Mmc(units[0]) ? EntryRoute.Concealed
-
-            // The reviewed decline covers only an SMC that was concealed, not hidden, when the attempt began.
-            : units.Length == 1 && Is(units[0], Conditions.Concealed) && !Is(units[0], Conditions.Hidden) ? EntryRoute.LoneSmc
-            : units.Length > 1 && !units.Any(item => Smc(item) && Is(item, Conditions.Hidden)) ? EntryRoute.RandomSelection
-            : EntryRoute.Outside;
+        var route = RouteOf(ScenarioA1EntryRules.Route([.. occupants.Select(item => new EntryOccupantFacts(item is UnitInstance, item.Side == unit.Side,
+            item is UnitInstance && vocabulary.IsA(item.Kind, "asl:mmc"), item is UnitInstance && vocabulary.IsA(item.Kind, "asl:smc"), VisibleTo(item, unit.Side),
+            Is(item, Conditions.Concealed), Is(item, Conditions.Hidden)))]));
         if (route == EntryRoute.Outside)
         {
-            return Refuse(route, null, "play.outside-reviewed-cases: the target holds units no reviewed case covers "
-                + "(a hidden SMC, a friendly unit, known and concealed units together, or an entity)");
+            return Refuse(route, null, ScenarioA1EntryRules.OutsideReviewedCases);
         }
 
-        if (moverReasons.Length > 0)
+        if (moverReasons.Count > 0)
         {
-            return Refuse(route, null, ["play.mover-cannot-attempt", .. moverReasons]);
+            return Refuse(route, null, [ScenarioA1EntryRules.MoverCannotAttempt, .. moverReasons]);
         }
 
         if (A414Exception(unit) is not false)
         {
-            return Refuse(route, null, "play.a414-exception: the mover may be Berserk, Disrupted, or captured, so A4.14 (p. 49) may not apply");
+            return Refuse(route, null, ScenarioA1EntryRules.A414ExceptionText);
         }
 
         if (state.Map.Board(target.Board) is not { } placed || boards.TryGetBoard(target.Board, placed.Version).Board is not { } handle
             || new BoardCatalogTerrainEvidence(boards).Bind(handle, target) is not { } binding)
         {
-            return Refuse(route, null, "play.outside-reviewed-board: the reviewed cases cover only the explicit building overrides of VASL board 01");
+            return Refuse(route, null, ScenarioA1EntryRules.OutsideReviewedBoard);
         }
 
         return route == EntryRoute.KnownEnemy
@@ -1057,7 +1022,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             cancellationToken);
         if (observed.Observations.Count != 1)
         {
-            return ["play.not-definitive: the Occupied package observed no reviewed case", .. observed.ReasonCodes];
+            return [ScenarioA1EntryRules.OccupiedObservedNone, .. observed.ReasonCodes];
         }
 
         const string caseId = "A1-known-enemy-mmc-mph";
@@ -1071,9 +1036,24 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             }, observed.Observations[0], now),
             cancellationToken);
         return conclusion.Disposition == ConclusionDisposition.Definitive
-            ? [$"play.prohibited: A4.14 (p. 49) prohibits entering a location with a known enemy unit in the MPh ({conclusion.ConclusionId})", .. conclusion.ReasonCodes]
-            : [$"play.not-definitive: the Occupied case is {conclusion.Disposition.ToString().ToLowerInvariant()}", .. conclusion.ReasonCodes];
+            ? [ScenarioA1EntryRules.ProhibitedText(conclusion.ConclusionId), .. conclusion.ReasonCodes]
+            : [ScenarioA1EntryRules.OccupiedCaseNotDefinitive(conclusion.Disposition.ToString().ToLowerInvariant()), .. conclusion.ReasonCodes];
     }
+
+    /// <summary>A route as Rules names it, under Play's public name.</summary>
+    private static EntryRoute RouteOf(ScenarioA1EntryRoute route) => route switch
+    {
+        ScenarioA1EntryRoute.Empty => EntryRoute.Empty,
+        ScenarioA1EntryRoute.KnownEnemy => EntryRoute.KnownEnemy,
+        ScenarioA1EntryRoute.Concealed => EntryRoute.Concealed,
+        ScenarioA1EntryRoute.LoneSmc => EntryRoute.LoneSmc,
+        ScenarioA1EntryRoute.RandomSelection => EntryRoute.RandomSelection,
+        _ => EntryRoute.Outside,
+    };
+
+    /// <summary>The counters in a Location that bar the reviewed forced back (a fortification, Residual FP, a fire), by kind.</summary>
+    private string[] HazardKinds(GameState state, BoardLocation at) =>
+        [.. state.At(at).Where(item => ScenarioA1EntryRules.HazardKinds.Any(kind => vocabulary.IsA(item.Kind, kind))).Select(item => item.Kind)];
 
     /// <summary>
     /// An entry into concealed or hidden enemy units (A12.15, p. 78): one MMC is revealed and forces the mover back (step 8);
@@ -1091,11 +1071,10 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         };
 
         var from = state.Location(unit.Id)!.Location;
-        var hazards = state.At(from).Where(item => vocabulary.IsA(item.Kind, "asl:fortification") || vocabulary.IsA(item.Kind, "asl:residual")
-            || vocabulary.IsA(item.Kind, "asl:fire")).ToArray();
+        var hazards = HazardKinds(state, from);
         if (hazards.Length > 0)
         {
-            return Refuse($"play.return-hazard: {string.Join(", ", hazards.Select(item => item.Kind))} at {from}; the forced back covers only a clear return");
+            return Refuse(ScenarioA1EntryRules.ReturnHazardText(hazards, from.ToString()));
         }
 
         var package = ScenarioA1PostRevealPackage.Identity.ToString();
@@ -1133,9 +1112,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         // The forced back is checked once, before any roll: the PostReveal facts do not depend on which non-Dummy unit is
         // revealed, so a candidate that reveals one stands for every branch that forces the mover back. A lone SMC's
         // branch ends in the same forced back once the OVR is declined, so it is checked the same way.
-        var sample = defenders.FirstOrDefault(item => vocabulary.IsA(item.Kind, "asl:mmc")) is { } mmc
-            ? [mmc.Id]
-            : defenders.Select(item => item.Id).Take(defenders.Length > 1 ? 2 : 1).ToArray();
+        var sample = ScenarioA1EntryRules.SampleBranch([.. defenders.Select(item => (item.Id, vocabulary.IsA(item.Kind, "asl:mmc")))]);
         var candidateEvents = Prefix();
         Reveal(candidateEvents, sample);
         ForceBack(candidateEvents);
@@ -1148,7 +1125,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         var conclusion = await PostRevealAsync(scope, after, unit, target, from, facts, binding, cancellationToken);
         if (conclusion.Disposition != ConclusionDisposition.Definitive)
         {
-            return Refuse([$"play.not-definitive: the PostReveal case is {conclusion.Disposition.ToString().ToLowerInvariant()}", .. conclusion.Reasons]);
+            return Refuse([ScenarioA1EntryRules.PostRevealNotDefinitive(conclusion.Disposition.ToString().ToLowerInvariant()), .. conclusion.Reasons]);
         }
 
         GamePlan Ready(IReadOnlyList<GameEvent> events, string reason) => new(GamePlanStatus.Ready, scope, label, expected, events, [reason])
@@ -1163,16 +1140,14 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
                     var events = Prefix();
                     Reveal(events, [defenders[0].Id]);
                     ForceBack(events);
-                    return Ready(events,
-                        $"play.forced-back: {unit.Id} attempts {target}, {defenders[0].Id} is revealed, and {unit.Id} returns to {from} with 2 MF spent and its MPh ended ({conclusion.ConclusionId})");
+                    return Ready(events, ScenarioA1EntryRules.ForcedBackText(unit.Id, target.ToString(), defenders[0].Id, from.ToString(), conclusion.ConclusionId));
                 }
 
             case EntryRoute.LoneSmc:
                 {
                     var events = Prefix();
                     Reveal(events, [defenders[0].Id]);
-                    return Ready(events,
-                        $"play.declaration-pending: {unit.Id} attempts {target} and {defenders[0].Id} is revealed; the attacker may decline or elect an Infantry OVR (A12.15, p. 78)");
+                    return Ready(events, ScenarioA1EntryRules.DeclarationPendingText(unit.Id, target.ToString(), defenders[0].Id));
                 }
 
             default:
@@ -1196,7 +1171,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
                         // A12.15 and A4.15 (p. 49): a revealed MMC, or more than one revealed SMC, forces the mover back; a lone
                         // revealed SMC leaves the attempt open for the attacker's OVR declaration.
-                        var loneSmc = revealing.Length == 1 && defenders.First(item => item.Id == revealing[0]) is var only && vocabulary.IsA(only.Kind, "asl:smc");
+                        var loneSmc = ScenarioA1EntryRules.LoneSmcRevealed(revealing.Length, revealing.Length == 1 && vocabulary.IsA(defenders.First(item => item.Id == revealing[0]).Kind, "asl:smc"));
                         if (!loneSmc)
                         {
                             ForceBack(events);
@@ -1206,7 +1181,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
                     }
 
                     return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-                        [$"play.random-selection: one dr for each of the {order.Length} units at {target} decides the reveal (A.9, p. 43); a revealed MMC, or more than one revealed SMC, forces {unit.Id} back ({conclusion.ConclusionId})"])
+                        [ScenarioA1EntryRules.RandomSelectionText(order.Length, target.ToString(), unit.Id, conclusion.ConclusionId)])
                     {
                         Disclosure = new EntryDisclosure(unit.Side, route, withheld, []),
                         Roll = new PlannedRoll("random-selection", Build),
@@ -1237,7 +1212,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             cancellationToken);
         if (observed.Observations.Count != 1)
         {
-            return (ConclusionDisposition.Abstained, null, ["play.not-definitive: the PostReveal package observed no reviewed case", .. observed.ReasonCodes]);
+            return (ConclusionDisposition.Abstained, null, [ScenarioA1EntryRules.PostRevealObservedNone, .. observed.ReasonCodes]);
         }
 
         var conclusion = await new ScenarioA1PostRevealConclusionResolver().ConcludeAsync(Context(scope, after, descriptor, unit.Id, locationId,
@@ -1267,39 +1242,38 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
         if (Replay(existing).Current is not { } state || state.Unit(unitId) is not { Status: InstanceStatus.Active } unit)
         {
-            return Refused(scope, label, expected, $"play.unit-unavailable: no active unit '{unitId}'");
+            return Refused(scope, label, expected, ScenarioA1EntryRules.UnitUnavailableText(unitId));
         }
 
         if (state.OpenAttempts.FirstOrDefault(open => open.Unit == unit.Id && open.Declaration is null) is not { } open)
         {
-            return Refused(scope, label, expected, $"play.no-pending-declaration: {unit.Id} has no entry attempt awaiting an OVR declaration");
+            return Refused(scope, label, expected, ScenarioA1EntryRules.NoPendingDeclarationText(unit.Id));
         }
 
-        // The declaration exists only when the attempt revealed exactly one SMC and nothing else (A12.15, p. 78).
+        // The declaration exists only when the attempt revealed exactly one SMC and nothing else (A12.15, p. 78); Rules decides (pass 32.i).
         var revealed = state.At(open.Target).OfType<UnitInstance>()
             .Where(item => item.Side != unit.Side && GameState.Condition(item, Conditions.Concealed) == ConditionState.False
                 && GameState.Condition(item, Conditions.Hidden) != ConditionState.True)
             .ToArray();
-        if (revealed.Length != 1 || !vocabulary.IsA(revealed[0].Kind, "asl:smc") || (open.Revealing.Count > 0 && !open.Revealing.SequenceEqual([revealed[0].Id])))
+        if (!ScenarioA1EntryRules.DeclarationExists(revealed.Length, revealed.Length == 1 && vocabulary.IsA(revealed[0].Kind, "asl:smc"),
+            revealed.Length == 1 && (open.Revealing.Count == 0 || open.Revealing.SequenceEqual([revealed[0].Id]))))
         {
-            return Refused(scope, label, expected, "play.no-pending-declaration: the attempt did not reveal exactly one SMC");
+            return Refused(scope, label, expected, ScenarioA1EntryRules.NotExactlyOneSmc);
         }
 
         var smc = revealed[0];
 
         var from = state.Location(unit.Id)!.Location;
-        var hazards = state.At(from).Where(item => vocabulary.IsA(item.Kind, "asl:fortification") || vocabulary.IsA(item.Kind, "asl:residual")
-            || vocabulary.IsA(item.Kind, "asl:fire")).ToArray();
+        var hazards = HazardKinds(state, from);
         if (hazards.Length > 0)
         {
-            return Refused(scope, label, expected,
-                $"play.return-hazard: {string.Join(", ", hazards.Select(item => item.Kind))} at {from}; the forced back covers only a clear return");
+            return Refused(scope, label, expected, ScenarioA1EntryRules.ReturnHazardText(hazards, from.ToString()));
         }
 
         if (state.Map.Board(open.Target.Board) is not { } placed || boards.TryGetBoard(open.Target.Board, placed.Version).Board is not { } handle
             || new BoardCatalogTerrainEvidence(boards).Bind(handle, open.Target) is not { } binding)
         {
-            return Refused(scope, label, expected, "play.outside-reviewed-board: the reviewed cases cover only the explicit building overrides of VASL board 01");
+            return Refused(scope, label, expected, ScenarioA1EntryRules.OutsideReviewedBoard);
         }
 
         // The facts of the attempt as it was made: the unit's movement is held by the open attempt, which is not a reason
@@ -1324,7 +1298,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         var locationId = open.Target.ToString();
         var snapshot = new ScenarioA1ConcealedSmcOverrunSnapshot(scope.Tenant, ScenarioA1ConcealedSmcOverrunPackage.Identity, unit.Id, locationId, version, now,
             LiveGames.Source, binding,
-            placedBeneathQuestionMark ? ScenarioA1InitialConcealedOccupancy.Hidden : ScenarioA1InitialConcealedOccupancy.Concealed,
+            ScenarioA1EntryRules.InitialOccupancy(placedBeneathQuestionMark),
             revealedByAttempt, ScenarioA1RevealedOccupant.EnemySmc, smc.Position is MapPosition,
             facts["isAttackerMovementPhase"], facts["isKnownGoodOrderInfantrySquad"], facts["isAdjacentGroundLevelOrdinaryBuilding"], true,
             A414Exception(unit) is false, And(facts["hasNoRoadBypassElevationOrAdditionalTerrain"], facts["hasNoSpecialRuleOrOtherModifier"]),
@@ -1347,7 +1321,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             }), 1), cancellationToken);
         if (observed.Observations.Count != 1)
         {
-            return Refused(scope, label, expected, ["play.not-definitive: the concealed-SMC OVR package observed no reviewed case", .. observed.ReasonCodes]);
+            return Refused(scope, label, expected, [ScenarioA1EntryRules.ConcealedSmcObservedNone, .. observed.ReasonCodes]);
         }
 
         var delegation = await new ScenarioA1ConcealedSmcOverrunConclusionResolver().ConcludeAsync(Context(scope, state, package, unit.Id, locationId,
@@ -1361,7 +1335,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             cancellationToken);
         if (!delegation.ReasonCodes.Contains(DeclinedDelegation))
         {
-            return Refused(scope, label, expected, ["play.not-delegated: the concealed-SMC OVR package did not delegate the declined case", .. delegation.ReasonCodes]);
+            return Refused(scope, label, expected, [ScenarioA1EntryRules.NotDelegated, .. delegation.ReasonCodes]);
         }
 
         var declaration = EventId(attemptId, 1);
@@ -1380,10 +1354,9 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
         var conclusion = await PostRevealAsync(scope, after, unit, open.Target, from, facts, binding, cancellationToken);
         return conclusion.Disposition != ConclusionDisposition.Definitive
-            ? Refused(scope, label, expected, [$"play.not-definitive: the PostReveal case is {conclusion.Disposition.ToString().ToLowerInvariant()}", .. conclusion.Reasons])
+            ? Refused(scope, label, expected, [ScenarioA1EntryRules.PostRevealNotDefinitive(conclusion.Disposition.ToString().ToLowerInvariant()), .. conclusion.Reasons])
             : new GamePlan(GamePlanStatus.Ready, scope, label, expected, events,
-                [$"play.declined: {unit.Id} declines the OVR against {smc.Id}; the reviewed matrix delegates the case ({delegation.ConclusionId}), "
-                    + $"and {unit.Id} returns to {from} with {open.Mf} MF spent and its MPh ended ({conclusion.ConclusionId})"]);
+                [ScenarioA1EntryRules.DeclinedText(unit.Id, smc.Id, delegation.ConclusionId, from.ToString(), open.Mf, conclusion.ConclusionId)]);
     }
 
     /// <summary>
@@ -1400,18 +1373,16 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         var remaining = Experience.MfAllowance(state, unit, catalogs, vocabulary) is { } allowance ? allowance - unit.MfSpent : (int?)null;
         if (remaining is null)
         {
-            return Refused(scope, label, expected, "play.election-unavailable: the mover's MF allowance is unknown");
+            return Refused(scope, label, expected, ScenarioA1EntryRules.ElectionAllowanceUnknown);
         }
 
+        // Pass 32.i: Rules decides the election's first branch by the MF left, and words each refusal.
+        var election = ScenarioA1EntryRules.Election(remaining.Value);
         var observed = await OvrNtcAsync(scope, state, unit, open, from, facts, binding, initiallyConcealed, revealedByAttempt,
-            remaining >= 4 ? ScenarioA1OvrElection.Elected : ScenarioA1OvrElection.Requested,
-            remaining >= 4 ? ScenarioA1OvrRemainingMf.AtLeastFour : ScenarioA1OvrRemainingMf.BelowFour,
-            remaining >= 4 ? ScenarioA1OvrNtcResult.Failed : null, null, null, remaining >= 4 ? "A1-ovr-ntc-failed" : "A1-ovr-ntc-mf-insufficient",
-            cancellationToken);
-        if (remaining < 4)
+            election.Election, election.RemainingMf, election.Ntc, null, null, election.CaseId, cancellationToken);
+        if (ScenarioA1EntryRules.ElectionMfBar(remaining.Value, unit.Id, observed.ConclusionId) is { } mfBar)
         {
-            return Refused(scope, label, expected,
-                $"play.election-unavailable: {unit.Id} has {remaining} MF left, and an Infantry OVR needs four (A4.15, p. 49) ({observed.ConclusionId})");
+            return Refused(scope, label, expected, mfBar);
         }
 
         // Another concealed non-Dummy unit must be present; against a lone SMC a passed NTC leads to its options and CC,
@@ -1420,14 +1391,14 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         UnitInstance[] others = [.. state.At(open.Target).OfType<UnitInstance>()
             .Where(item => item.Id != smc.Id && item.Side != unit.Side && GameState.Condition(item, Conditions.Concealed) == ConditionState.True
                 && (vocabulary.IsA(item.Kind, "asl:mmc") || vocabulary.IsA(item.Kind, "asl:smc")))];
-        if (others.Length == 0)
+        if (ScenarioA1EntryRules.NoOtherConcealedBar(others.Length) is { } noOther)
         {
-            return Refused(scope, label, expected, EntryDisclosure.CannotResolve + " (the election could lead to outcomes that are not yet reviewed)");
+            return Refused(scope, label, expected, noOther);
         }
 
         if (observed.Disposition != ConclusionDisposition.Definitive)
         {
-            return Refused(scope, label, expected, ["play.not-definitive: the OVR NTC failed case is not Definitive", .. observed.Reasons]);
+            return Refused(scope, label, expected, [ScenarioA1EntryRules.NtcFailedCaseNotDefinitive, .. observed.Reasons]);
         }
 
         var passedBranch = await OvrNtcAsync(scope, state, unit, open, from, facts, binding, initiallyConcealed, revealedByAttempt,
@@ -1435,7 +1406,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             "A1-ovr-ntc-passed-second-defender-revealed", cancellationToken);
         if (passedBranch.Disposition != ConclusionDisposition.Definitive)
         {
-            return Refused(scope, label, expected, ["play.not-definitive: the OVR NTC passed case is not Definitive", .. passedBranch.Reasons]);
+            return Refused(scope, label, expected, [ScenarioA1EntryRules.NtcPassedCaseNotDefinitive, .. passedBranch.Reasons]);
         }
 
         // The NTC: two dice against the Morale Level, with the building TEM as DRM (A10.1, p. 65; B23.3, p. 136).
@@ -1444,10 +1415,10 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             : null;
         if (morale is not { } moraleLevel || !new Board01TerrainCatalog().TryGetBuilding(binding.Hex, out var building))
         {
-            return Refused(scope, label, expected, "play.ntc-unavailable: the mover's printed morale or the building's construction is unknown");
+            return Refused(scope, label, expected, ScenarioA1EntryRules.NtcUnavailable);
         }
 
-        var tem = new TaskCheckModifier("B23.3", building!.Material == "stone" ? 3 : 2);
+        var tem = new TaskCheckModifier(ScenarioA1EntryRules.NtcTemRule, ScenarioA1EntryRules.NtcTem(building!.Material));
         var package = ScenarioA1OvrNtcPackage.Identity.ToString();
         var declaration = EventId(attemptId, 1);
         string[] order = [.. others.Select(item => item.Id).Order(StringComparer.Ordinal)];
@@ -1464,7 +1435,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
                 new DiceRolled(ntcRoll, TaskCheck.OvrNtc, 2, 6, ntc.Values, DiceRolled.SystemSource, actor), package, null, [open.EventId, declaration]));
             var finalDr = ntc.Values.Sum() + tem.Value;
-            var passed = finalDr <= moraleLevel;
+            var passed = ScenarioA1EntryRules.NtcPassed(finalDr, moraleLevel);
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "task-check",
                 new TaskCheck(unit.Id, ntcRoll, TaskCheck.OvrNtc, moraleLevel, [tem], finalDr, passed), package, null, [open.EventId, declaration]));
             if (passed)
@@ -1493,8 +1464,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         }
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-            [$"play.elected: {unit.Id} attempts an Infantry OVR against {smc.Id}. The NTC is two dice + {tem.Value} (B23.3) against morale {moraleLevel}; "
-                + $"a failure forces {unit.Id} back ({observed.ConclusionId}), and a pass reveals another unit by Random Selection and forces it back ({passedBranch.ConclusionId})"])
+            [ScenarioA1EntryRules.ElectedText(unit.Id, smc.Id, tem.Value, moraleLevel, observed.ConclusionId, passedBranch.ConclusionId)])
         {
             Roll = new PlannedRoll(TaskCheck.OvrNtc, Build),
             FirstEventId = declaration,
@@ -1519,7 +1489,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             cancellationToken);
         if (observed.Observations.Count != 1)
         {
-            return (ConclusionDisposition.Abstained, null, ["play.not-definitive: the OVR NTC package observed no reviewed case", .. observed.ReasonCodes]);
+            return (ConclusionDisposition.Abstained, null, [ScenarioA1EntryRules.OvrNtcObservedNone, .. observed.ReasonCodes]);
         }
 
         var question = new DomainQuestion($"{ScenarioA1OvrNtcConclusionResolver.QuestionKind}-{scope.Game}-r{state.Revision}-{unit.Id}-{caseId}", scope.Tenant,
@@ -1546,7 +1516,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
     }
 
     /// <summary>The reason the concealed-SMC OVR resolver gives when it delegates a declined election to the PostReveal package.</summary>
-    private const string DeclinedDelegation = "asl.a1.ovr.declined-use-exact-post-reveal-package";
+    private const string DeclinedDelegation = ScenarioA1EntryRules.DeclinedDelegation;
 
     private static bool? And(bool? left, bool? right) => left == false || right == false ? false : left == true && right == true ? true : null;
 
@@ -1580,15 +1550,19 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
     }
 
     /// <summary>Whether a unit may be an A4.14 exception (p. 49): Berserk, Disrupted, or captured (and so Unarmed). Null when unknown.</summary>
-    private static bool? A414Exception(UnitInstance unit)
-    {
-        ConditionState[] states = [GameState.Condition(unit, Conditions.Berserk), GameState.Condition(unit, "asl:disrupted"), GameState.Condition(unit, Conditions.Captured)];
-        return states.Contains(ConditionState.True) ? true : states.All(item => item == ConditionState.False) ? false : null;
-    }
+    private static bool? A414Exception(UnitInstance unit) =>
+        ScenarioA1EntryRules.A414Exception(Known(unit, Conditions.Berserk), Known(unit, "asl:disrupted"), Known(unit, Conditions.Captured));
 
-    /// <summary>Whether a side can see an object: its own, or an enemy's that is neither concealed nor hidden.</summary>
-    private static bool VisibleTo(IGameObject item, string side) =>
-        item.Side == side || (GameState.Condition(item, Conditions.Concealed) == ConditionState.False && GameState.Condition(item, Conditions.Hidden) != ConditionState.True);
+    /// <summary>A condition as a three-valued fact: true, false, or null when the state does not say.</summary>
+    private static bool? Known(IGameObject item, string condition) => GameState.Condition(item, condition) switch
+    {
+        ConditionState.True => true,
+        ConditionState.False => false,
+        _ => null,
+    };
+
+    /// <summary>Whether a side can see an object: its own, or an enemy's that is neither concealed nor hidden (Rules decides, pass 32.i).</summary>
+    private static bool VisibleTo(IGameObject item, string side) => ScenarioA1EntryRules.VisibleTo(item.Side == side, Known(item, Conditions.Concealed), Known(item, Conditions.Hidden));
 
     private static bool Is(IGameObject item, string condition) => GameState.Condition(item, condition) == ConditionState.True;
 
@@ -1637,13 +1611,6 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(unit);
         ArgumentNullException.ThrowIfNull(target);
-        bool? Known(string condition) => GameState.Condition(unit, condition) switch
-        {
-            ConditionState.True => true,
-            ConditionState.False => false,
-            _ => null,
-        };
-
         var goodOrder = GameState.GoodOrder(unit, vocabulary);
         var from = state.Location(unit.Id);
 
@@ -1674,39 +1641,22 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         }
 
         var definitive = targetRead is { IsDefinitive: true } && fromRead is { IsDefinitive: true };
-
-        bool? And(params bool?[] values) => values.Any(value => value == false) ? false : values.All(value => value == true) ? true : null;
-
-        var known = Known(Conditions.Concealed) is { } concealed && Known(Conditions.Hidden) is { } hidden ? !concealed && !hidden : (bool?)null;
-        var squad = vocabulary.IsA(unit.Kind, "asl:squad");
         var occupants = state.At(target).Where(item => item.Id != unit.Id).ToArray();
 
-        return new Dictionary<string, bool?>(StringComparer.Ordinal)
-        {
-            ["isKnownGoodOrderInfantrySquad"] = And(squad, goodOrder switch { ConditionState.True => true, ConditionState.False => false, _ => null }, known),
-            ["isAttackerMovementPhase"] = state.Phase == "mph" && state.PhasingSide == unit.Side,
-
-            // A4.1 (p. 48): a unit that is broken, TI, or held in Melee cannot move. Fire and Opportunity Fire are not
-            // actions of the live source yet, so no live unit has fired.
-            // A unit forced back has ended its MPh (A12.15, p. 78) and cannot move again in it.
-            ["canMoveThisPhase"] = And(Known(Conditions.Broken) is { } broken ? !broken : null, Known("asl:ti") is { } ti ? !ti : null,
-                Known(Conditions.Melee) is { } melee ? !melee : null, !unit.MovementEnded, !state.OpenAttempts.Any(open => open.Unit == unit.Id)),
-            ["isAdjacentGroundLevelOrdinaryBuilding"] = !definitive ? null
-                : adjacent && target.Level == 0 && target.Side is null && OrdinaryBuildings.Contains(targetRead!.Level.Terrain?.Name ?? string.Empty),
-            ["isDestinationKnownEmpty"] = occupants.Length == 0,
-            ["hasNoRoadBypassElevationOrAdditionalTerrain"] = !definitive || crossed is null ? (adjacent ? (bool?)null : false)
-                : fromRead!.Hex.BaseLevel == targetRead!.Hex.BaseLevel && crossed.HexsideTerrain is null && crossed.Terrain?.IsRoad != true
-                    && !crossed.Cliff && !crossed.Slope && !crossed.RailroadEmbankment && crossed.DepressionTerrain is null
-                    && fromRead.Level.DepressionTerrain is null && targetRead.Level.DepressionTerrain is null,
-
-            // A4.11 (p. 48) and A19.31 (p. 86): a Good Order MMC has four MF, three if Inexperienced. When the status is
-            // unknown, two MF remain under either allotment after one MF spent, and under neither after three.
-            ["hasEnoughMovementFactors"] = Experience.MfAllowance(state, unit, catalogs, vocabulary) is { } allowance
-                ? allowance - unit.MfSpent >= 2
-                : unit.MfSpent <= 1 ? true : unit.MfSpent >= 3 ? false : null,
-            ["isBelowStackingLimit"] = occupants.Length == 0,
-            ["hasNoSpecialRuleOrOtherModifier"] = state.SpecialRules.Count == 0,
-        };
+        // Pass 32.i: the state and map facts are read here, in the old order; Rules derives the nine facts.
+        return ScenarioA1EntryRules.EntryFacts(new EntryFactInputs(vocabulary.IsA(unit.Kind, "asl:squad"),
+            goodOrder switch
+            {
+                ConditionState.True => true,
+                ConditionState.False => false,
+                _ => null
+            }, Known(unit, Conditions.Concealed), Known(unit, Conditions.Hidden),
+            state.Phase == "mph" && state.PhasingSide == unit.Side, Known(unit, Conditions.Broken), Known(unit, "asl:ti"), Known(unit, Conditions.Melee), unit.MovementEnded,
+            state.OpenAttempts.Any(open => open.Unit == unit.Id), definitive, adjacent, target.Level, target.Side is not null, targetRead?.Level.Terrain?.Name, occupants.Length,
+            crossed is not null, definitive && crossed is not null && fromRead!.Hex.BaseLevel == targetRead!.Hex.BaseLevel, crossed?.HexsideTerrain is null, crossed?.Terrain?.IsRoad != true,
+            crossed is not null && !crossed.Cliff && !crossed.Slope && !crossed.RailroadEmbankment && crossed.DepressionTerrain is null,
+            definitive && fromRead!.Level.DepressionTerrain is null && targetRead!.Level.DepressionTerrain is null,
+            Experience.MfAllowance(state, unit, catalogs, vocabulary), unit.MfSpent, state.SpecialRules.Count));
     }
 
     private async Task<DomainConclusion> ConcludeAsync(GameScope scope, GameState state, UnitInstance unit, BoardLocation target,
@@ -1765,39 +1715,26 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         var sha256 = Text(scenario, "sha256", out var hash) ? hash : string.Empty;
         var catalogName = Text(start, "catalog", out var catalogText) ? catalogText : null;
         var catalog = UnitCatalogs.For(catalogs, catalogName);
-        if (CardLibrary.Sha256(id) is not { } current)
-        {
-            reason = $"play.scenario: '{id}' is not a scenario card of the game (ruling R18.1)";
-            return false;
-        }
-
-        if (current != sha256)
-        {
-            reason = $"play.scenario: the card '{id}' has changed since it was read; read it again (ruling R18.2)";
-            return false;
-        }
-
-        if (catalog is null || CardLibrary.Read(id, catalog) is not { IsValid: true, Card: { } card })
-        {
-            reason = $"play.scenario: the card '{id}' is not valid against the catalog '{catalogName}' (ruling R18.1)";
-            return false;
-        }
-
-        // Pass 20 (ruling R20.2): the die roll the card leaves the first move to is drawn at the first setup; the start names no winner.
         var first = Text(start, "firstSide", out var side) && side.Length > 0 ? side : null;
-        if (card.Turns.MovesFirst is null && first is not null)
+
+        // Pass 32.i: the card library is read here, in the old order, as Rules asks; Rules decides and words each refusal.
+        string? current = null;
+        ScenarioCard? card = null;
+        reason = ScenarioA1GameStart.CardStartBar(id, sha256, catalogName, () => current = CardLibrary.Sha256(id),
+            () => catalog is not null && CardLibrary.Read(id, catalog) is { IsValid: true, Card: { } read } && (card = read) is not null,
+            () => card!.Turns.MovesFirst is null, first is not null, () => card!.Turns.MovesFirstNote);
+        if (reason is not null)
         {
-            reason = $"play.scenario: {card.Turns.MovesFirstNote} The game rolls it as it starts, so the start names no winner (A3.9; ruling R20.2)";
             return false;
         }
 
         // A26.4 (ruling R20.3): the Balance, by agreement or by a dr when both players wish to play the same side.
-        if (Balance(card, start, out var balance, out var players, out var wanted, out reason) is false)
+        if (Balance(card!, start, out var balance, out var players, out var wanted, out reason) is false)
         {
             return false;
         }
 
-        fromCard = ScenarioCards.Start(card, current, catalogName!, Text(start, "label", out var cardLabel) ? cardLabel : null, card.Turns.MovesFirst ?? card.Turns.SetsUpFirst);
+        fromCard = ScenarioCards.Start(card!, current!, catalogName!, Text(start, "label", out var cardLabel) ? cardLabel : null, card!.Turns.MovesFirst ?? card.Turns.SetsUpFirst);
         if (balance is not null)
         {
             fromCard["scenario"]!["balance"] = balance;
@@ -1808,21 +1745,18 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             fromCard["scenario"]!["players"] = new JsonArray([.. players.Select(player => (JsonNode)new JsonObject { ["name"] = player.Name, ["side"] = player.Side })]);
         }
 
-        rolls = new StartRolls(card.Turns.MovesFirst is null ? [.. card.Sides.Select(item => item.Side)] : null, wanted);
+        rolls = new StartRolls(card!.Turns.MovesFirst is null ? [.. card!.Sides.Select(item => item.Side)] : null, wanted);
         return true;
     }
 
     /// <summary>The drs a start from a card draws (rulings R20.2, R20.3): the sides that roll for the first move, and the Balance roll's players.</summary>
-    private sealed record StartRolls(IReadOnlyList<string>? FirstMove, BalanceRoll? Balance);
-
-    /// <summary>Two players who wish to play the same side (A26.4): the side, the players in the order the start names them, and the other side.</summary>
-    private sealed record BalanceRoll(string Wanted, string First, string Second, string Other);
+    private sealed record StartRolls(IReadOnlyList<string>? FirstMove, BalanceRollFacts? Balance);
 
     /// <summary>
     /// The start's Balance (A26.4; ruling R20.3): <c>balance.side</c> names the side that takes it by agreement; <c>balance.players</c> names two players
-    /// and the side each wishes to play: the same side for both is decided by a dr, the other side then taking its Balance; different sides, none.
+    /// and the side each wishes to play; the request is parsed here and Rules decides (pass 32.i).
     /// </summary>
-    private static bool Balance(ScenarioCard card, JsonElement start, out string? balance, out List<ScenarioPlayer> players, out BalanceRoll? wanted, out string? reason)
+    private static bool Balance(ScenarioCard card, JsonElement start, out string? balance, out List<ScenarioPlayer> players, out BalanceRollFacts? wanted, out string? reason)
     {
         balance = null;
         players = [];
@@ -1834,40 +1768,21 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         }
 
         var sides = card.Sides.Select(item => item.Side).ToArray();
-        if (Text(node, "side", out var agreed))
+        var agreed = Text(node, "side", out var agreedSide) ? agreedSide : null;
+        (string Name, string? Wants)[]? named = node.TryGetProperty("players", out var list) && list.ValueKind == JsonValueKind.Array
+            ? [.. list.EnumerateArray().Select((item, index) => (ScenarioA1GameStart.PlayerName(Text(item, "name", out var name) ? name : null, index),
+                Text(item, "wants", out var wants) ? wants : null))]
+            : null;
+        var verdict = ScenarioA1GameStart.Balance(sides, agreed, named);
+        if (verdict.Reason is not null)
         {
-            balance = agreed;
-        }
-
-        if (node.TryGetProperty("players", out var list) && list.ValueKind == JsonValueKind.Array)
-        {
-            var named = list.EnumerateArray().Select((item, index) => (Name: Text(item, "name", out var name) && name.Length > 0 ? name : index == 0 ? "the first player" : "the second player",
-                Wants: Text(item, "wants", out var wants) ? wants : null)).ToArray();
-            if (named.Length != 2 || named.Any(item => !sides.Contains(item.Wants, StringComparer.Ordinal)) || named[0].Name == named[1].Name
-                || (balance is not null && named[0].Wants == named[1].Wants))
-            {
-                reason = "play.balance: the Balance names two players by different names, each with a side of the card they wish to play, and, when they wish different sides, the side that takes it by agreement (A26.4; ruling R20.3)";
-                return false;
-            }
-
-            if (named[0].Wants == named[1].Wants)
-            {
-                var other = sides.First(item => item != named[0].Wants);
-                wanted = new BalanceRoll(named[0].Wants!, named[0].Name, named[1].Name, other);
-                balance = other;
-            }
-            else
-            {
-                players = [.. named.Select(item => new ScenarioPlayer(item.Name, item.Wants!))];
-            }
-        }
-
-        if (balance is not null && !sides.Contains(balance, StringComparer.Ordinal))
-        {
-            reason = $"play.balance: '{balance}' is not a side of the card (A26.4; ruling R20.3)";
+            reason = verdict.Reason;
             return false;
         }
 
+        balance = verdict.Balance;
+        players = [.. verdict.Players.Select(item => new ScenarioPlayer(item.Name, item.Side))];
+        wanted = verdict.Roll;
         return true;
     }
 
@@ -1881,27 +1796,19 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
         var events = new List<GameEvent>(placed);
         var started = (GameStarted)events[0].Payload;
         var scenario = started.Scenario!;
-        int Higher(string purpose)
+        int Higher(string purpose) => ScenarioA1GameStart.Higher(attempt =>
         {
-            for (var attempt = 1; attempt <= 20; attempt++)
-            {
-                var roll = draw(new RollRequest(2, 6));
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
-                    new DiceRolled($"{attemptId}-{purpose}-{attempt}", purpose, 2, 6, roll.Values, DiceRolled.SystemSource, actor), null, null));
-                if (roll.Values[0] != roll.Values[1])
-                {
-                    return roll.Values[0] > roll.Values[1] ? 0 : 1;
-                }
-            }
-
-            return 0;
-        }
+            var roll = draw(new RollRequest(2, 6));
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
+                new DiceRolled($"{attemptId}-{purpose}-{attempt}", purpose, 2, 6, roll.Values, DiceRolled.SystemSource, actor), null, null));
+            return roll.Values;
+        });
 
         if (rolls.FirstMove is [var one, var two])
         {
             started = started with
             {
-                PhasingSide = Higher("first-move") == 0 ? one : two
+                PhasingSide = ScenarioA1GameStart.FirstMover(Higher("first-move"), one, two)
             };
         }
 
@@ -1910,7 +1817,7 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             var firstWins = Higher("balance") == 0;
             scenario = scenario with
             {
-                Players = [new ScenarioPlayer(firstWins ? balance.First : balance.Second, balance.Wanted), new ScenarioPlayer(firstWins ? balance.Second : balance.First, balance.Other)],
+                Players = [.. ScenarioA1GameStart.BalancePlayers(firstWins, balance).Select(item => new ScenarioPlayer(item.Name, item.Side))],
             };
         }
 

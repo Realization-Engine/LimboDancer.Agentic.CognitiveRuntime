@@ -177,8 +177,8 @@ public static class GameProjector
                 return null;
             }
 
-            // A24.1 (table player, pass 9): a placed SMOKE counter is created by the event right after its attempt, or not at all.
-            if (next.SmokePending is not null && gameEvent.Payload is not (MovementStepped or InstanceCreated))
+            // A24.1 (table player, pass 9): a placed SMOKE counter is created by the event right after its attempt, or not at all (Rules decides, pass 32.i).
+            if (Rules.ScenarioA1SequenceProjection.SmokePendingLapses(next.SmokePending is not null, gameEvent.Payload is MovementStepped or InstanceCreated))
             {
                 next = next with
                 {
@@ -187,7 +187,7 @@ public static class GameProjector
             }
 
             // C13.31 (ruling R9.7): setup ends with the first event of play; each side's Personnel then are its OB for the PF usage limit.
-            if (previous is not null && !previous.SetupClosed && !GameState.IsSetupEvent(gameEvent.Payload))
+            if (previous is not null && Rules.ScenarioA1SequenceProjection.SetupCloses(previous.SetupClosed, GameState.IsSetupEvent(gameEvent.Payload)))
             {
                 next = next with
                 {
@@ -200,9 +200,8 @@ public static class GameProjector
             }
 
             // C6.1 Case J (ruling R6.1): a vehicle that enters a new hex, or moves while under a Motion counter, this Player Turn.
-            if (gameEvent.Payload is VehicleStepped stepped && !next.MovedVehicles.Contains(stepped.Vehicle, StringComparer.Ordinal)
-                && (stepped.Kind is VehicleStepped.Enter or VehicleStepped.Exit
-                    || (previous?.Unit(stepped.Vehicle) is { } before && GameState.Condition(before, Conditions.Motion) == ConditionState.True)))
+            if (gameEvent.Payload is VehicleStepped stepped && Rules.ScenarioA1SequenceProjection.MovedThisPlayerTurn(next.MovedVehicles.Contains(stepped.Vehicle, StringComparer.Ordinal),
+                stepped.Kind is VehicleStepped.Enter or VehicleStepped.Exit, previous?.Unit(stepped.Vehicle) is { } before && GameState.Condition(before, Conditions.Motion) == ConditionState.True))
             {
                 next = next with
                 {
@@ -211,7 +210,7 @@ public static class GameProjector
             }
 
             // C6.17 (ruling R8.1): Defensive First Fire shots count per Location the moving stack enters.
-            if (gameEvent.Payload is MovementStepped or VehicleStepped { Kind: VehicleStepped.Enter } && next.OrdnanceShotsHere.Count > 0)
+            if (Rules.ScenarioA1SequenceProjection.ClearsShotsHere(gameEvent.Payload is MovementStepped or VehicleStepped { Kind: VehicleStepped.Enter }, next.OrdnanceShotsHere.Count))
             {
                 next = next with
                 {
@@ -306,38 +305,36 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-017", $"'{gameEvent.Source}' is not an accepted live game source, so the game must be synthetic.");
             }
 
-            if (started.Sides.Count == 0 || started.Sides.Select(side => side.Id).Distinct(StringComparer.Ordinal).Count() != started.Sides.Count
-                || started.Sides.Any(side => !VocabularyNames.IsSlug(side.Id) || side.Id == Perspective.AdjudicatorName))
+            // Pass 32.i: the start's reads are made here, in the old order, and Rules decides and words each check.
+            if (Rules.ScenarioA1SequenceProjection.SidesRefusal(started.Sides.Count, started.Sides.Select(side => side.Id).Distinct(StringComparer.Ordinal).Count() == started.Sides.Count,
+                started.Sides.Any(side => !VocabularyNames.IsSlug(side.Id) || side.Id == Perspective.AdjudicatorName)) is { } sidesRefusal)
             {
-                return Fail<GameState>("UNIT-STATE-005", "Sides need distinct slug ids other than 'adjudicator'.");
+                return Fail<GameState>(sidesRefusal.Code, sidesRefusal.Text);
             }
 
             // Ruling R18.3 (referee, pass 18): a side's OB groups have distinct ids and ELRs of 0 to 5 (A19.1), and its own ELR, when it names one,
             // is the ELR its groups share.
             foreach (var side in started.Sides.Where(side => side.Groups.Count > 0))
             {
-                var shared = side.Groups.Select(group => group.Elr).Distinct().ToArray();
-                if (side.Groups.Select(group => group.Id).Distinct(StringComparer.Ordinal).Count() != side.Groups.Count
-                    || side.Groups.Any(group => !VocabularyNames.IsSlug(group.Id) || group.Elr is < 0 or > 5)
-                    || (side.Elr is { } sideElr && (shared.Length != 1 || shared[0] != sideElr)))
+                if (Rules.ScenarioA1SequenceProjection.GroupsRefusal(side.Id, side.Groups.Select(group => group.Id).Distinct(StringComparer.Ordinal).Count() == side.Groups.Count,
+                    side.Groups.Any(group => !VocabularyNames.IsSlug(group.Id)), [.. side.Groups.Select(group => group.Elr)], side.Elr) is { } groupsRefusal)
                 {
-                    return Fail<GameState>("UNIT-STATE-005",
-                        $"The OB groups of side '{side.Id}' need distinct slug ids and ELRs of 0 to 5, and a side ELR only when all its groups share it (A19.1).");
+                    return Fail<GameState>(groupsRefusal.Code, groupsRefusal.Text);
                 }
             }
 
             foreach (var side in started.Sides.Where(side => !vocabulary.TryGetSide(side.Nationality, out _)))
             {
-                Error("UNIT-STATE-005", $"The nationality '{side.Nationality}' of side '{side.Id}' is not declared.");
+                var refusal = Rules.ScenarioA1SequenceProjection.NationalityRefusal(side.Id, side.Nationality);
+                Error(refusal.Code, refusal.Text);
             }
 
             // A25.8 (ruling R27.1): an Axis Minor side names its nation; no other side names one.
-            foreach (var side in started.Sides.Where(side => side.Nationality == "axis-minor"
-                ? !SideState.AxisMinorNations.Contains(side.Nation ?? "", StringComparer.Ordinal) : side.Nation is not null))
+            foreach (var side in started.Sides.Where(side => Rules.ScenarioA1SequenceProjection.NationMisnamed(side.Nationality == "axis-minor",
+                SideState.AxisMinorNations.Contains(side.Nation ?? "", StringComparer.Ordinal), side.Nation is not null)))
             {
-                Error("UNIT-STATE-005", side.Nationality == "axis-minor"
-                    ? $"The Axis Minor side '{side.Id}' needs its nation: {string.Join(", ", SideState.AxisMinorNations)} (A25.8)."
-                    : $"Side '{side.Id}' is {side.Nationality}; only an Axis Minor side names a nation (A25.8).");
+                var refusal = Rules.ScenarioA1SequenceProjection.NationRefusal(side.Id, side.Nationality, side.Nationality == "axis-minor", SideState.AxisMinorNations);
+                Error(refusal.Code, refusal.Text);
             }
 
             // The version a game records is where it was set up, not a lock: it reads the loaded catalog of that name (UnitCatalogs.For).
@@ -372,7 +369,7 @@ public static class GameProjector
                 // E1.1, E3.51, E3.71 (backlog pass 16, rulings R16.1, R16.9): the SSRs' Base NVR and precipitation at the start.
                 Nvr = GameState.NightRule(started.SpecialRules),
                 Precipitation = GameState.PrecipitationRule(started.SpecialRules),
-                Rained = GameState.PrecipitationRule(started.SpecialRules) is "rain" or "heavy-rain",
+                Rained = Rules.ScenarioA1SequenceProjection.RainedAtStart(GameState.PrecipitationRule(started.SpecialRules)),
                 ScenarioMonth = started.ScenarioMonth,
                 ScenarioYear = started.ScenarioYear,
                 ScenarioDefender = started.ScenarioDefender,
@@ -389,10 +386,10 @@ public static class GameProjector
         /// <summary>The Turn counter reaches END (A3.9; ruling R20.1): after the current Game Turn, with nothing left open in it.</summary>
         private GameState? End(GameState state, GameEnded ended)
         {
-            if (ended.Turn != state.Turn || state.OpenAttempts.Count > 0 || state.Choice is not null || state.PendingSurrenders.Count > 0
-                || state.CloseCombats.Any(item => !item.Closed))
+            if (Rules.ScenarioA1SequenceProjection.EndRefusal(ended.Turn, state.Turn, state.OpenAttempts.Count, state.Choice is not null, state.PendingSurrenders.Count,
+                state.CloseCombats.Any(item => !item.Closed)) is { } refusal)
             {
-                return Fail<GameState>("UNIT-STATE-045", "A game ends after its current Game Turn, with no entry attempt, choice, surrender, or CC left open (A3.9).");
+                return Fail<GameState>(refusal.Code, refusal.Text);
             }
 
             return state with
@@ -403,92 +400,79 @@ public static class GameProjector
 
         private GameState? ChangePhase(GameState state, PhaseChanged change)
         {
-            if (change.Turn < state.Turn)
+            // Pass 32.i: the state is read here, in the old order, and Rules decides and words each check of the phase change.
+            if (Rules.ScenarioA1SequenceProjection.TurnRefusal(change.Turn, state.Turn) is { } turnRefusal)
             {
-                return Fail<GameState>("UNIT-STATE-015", $"Turn {change.Turn} is before the current turn {state.Turn}.");
+                return Fail<GameState>(turnRefusal.Code, turnRefusal.Text);
             }
 
             // An entry attempt is resolved within its phase: the phase may not change while one is open.
-            if (state.OpenAttempts.Count > 0)
+            if (Rules.ScenarioA1SequenceProjection.OpenAttemptRefusal(state.OpenAttempts.Count > 0 ? state.OpenAttempts[0].EventId : null) is { } attemptRefusal)
             {
-                return Fail<GameState>("UNIT-STATE-018", $"The entry attempt '{state.OpenAttempts[0].EventId}' is open, so the phase may not change.");
+                return Fail<GameState>(attemptRefusal.Code, attemptRefusal.Text);
             }
 
             // Ruling R5.8: a pending choice is answered before anything else happens.
-            if (state.Choice is { } choice)
+            if (Rules.ScenarioA1SequenceProjection.ChoiceRefusal(state.Choice?.Side, state.Choice?.Key) is { } choiceRefusal)
             {
-                return Fail<GameState>("UNIT-STATE-035", $"The {choice.Side} side's choice '{choice.Key}' is pending, so the phase may not change.");
+                return Fail<GameState>(choiceRefusal.Code, choiceRefusal.Text);
             }
 
             // A15.5: a surrender waits for the captor's choice before anything else happens.
-            if (state.PendingSurrenders.Count > 0)
+            if (Rules.ScenarioA1SequenceProjection.SurrenderRefusal(state.PendingSurrenders.Count > 0 ? state.PendingSurrenders[0].Unit : null) is { } surrenderRefusal)
             {
-                return Fail<GameState>("UNIT-STATE-031", $"'{state.PendingSurrenders[0].Unit}' surrenders and awaits its captor, so the phase may not change (A15.5).");
+                return Fail<GameState>(surrenderRefusal.Code, surrenderRefusal.Text);
             }
 
             // A11.12, A11.32: a Location's CC is completely resolved before the phase ends: after the ambusher's round, the other side's.
             // A11.3 (ruling R31c.5; the third play test): a unit eliminated before it attacks forfeits its attack, so a Location whose
             // ambusher's attacks left no unit of the ambushed side there has nothing more to resolve and does not hold the phase.
-            bool NothingLeft(CloseCombatLocation item) => item.Ambusher is { } ambusher && item.Rounds.Count > 0
-                && !state.Units.Any(unit => unit.Status == InstanceStatus.Active && unit.Side != ambusher
-                    && GameState.Condition(unit, Conditions.Captured) != ConditionState.True && state.Location(unit.Id)?.Location == item.Location);
+            bool NothingLeft(CloseCombatLocation item) => Rules.ScenarioA1SequenceProjection.NothingLeft(item.Ambusher is not null, item.Rounds.Count,
+                item.Ambusher is { } ambusher && state.Units.Any(unit => unit.Status == InstanceStatus.Active && unit.Side != ambusher
+                    && GameState.Condition(unit, Conditions.Captured) != ConditionState.True && state.Location(unit.Id)?.Location == item.Location));
             if (state.CloseCombats.FirstOrDefault(item => !item.Closed && !NothingLeft(item)) is { } open)
             {
-                return Fail<GameState>("UNIT-STATE-030", open.Ambusher is null
-                    ? $"The CC in {open.Location} awaits its round after the Ambush drs, even one with no attacks (A11.12)."
-                    : $"The CC in {open.Location} awaits the ambushed side's round, which may declare no attacks (A11.32).");
+                var refusal = Rules.ScenarioA1SequenceProjection.OpenCloseCombatRefusal(open.Ambusher is not null, open.Location.ToString());
+                return Fail<GameState>(refusal.Code, refusal.Text);
             }
 
             // A11.16, A19.12: a broken or Disrupted unit held in Melee, other than a Guard, is eliminated at the end of the CCPh unless it
             // withdrew (ruling R29.11); its elimination is recorded before the phase changes.
-            if (state.Phase == "ccph" && state.Units.FirstOrDefault(unit => unit.Status == InstanceStatus.Active
-                && GameState.Condition(unit, Conditions.Melee) == ConditionState.True && GameState.Condition(unit, Conditions.Captured) != ConditionState.True
-                && !state.Units.Any(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == unit.Id)
-                && (GameState.Condition(unit, Conditions.Broken) == ConditionState.True || GameState.Condition(unit, Conditions.Disrupted) == ConditionState.True)) is { } held)
+            if (state.Units.FirstOrDefault(unit => Rules.ScenarioA1SequenceProjection.MeleeEliminationOwed(state.Phase, unit.Status == InstanceStatus.Active,
+                GameState.Condition(unit, Conditions.Melee) == ConditionState.True, GameState.Condition(unit, Conditions.Captured) == ConditionState.True,
+                state.Units.Any(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == unit.Id),
+                GameState.Condition(unit, Conditions.Broken) == ConditionState.True, GameState.Condition(unit, Conditions.Disrupted) == ConditionState.True)) is { } held)
             {
-                return Fail<GameState>("UNIT-STATE-030", $"'{held.Id}' is broken or Disrupted in Melee and is eliminated at the end of the CCPh (A11.16, A19.12).");
+                var refusal = Rules.ScenarioA1SequenceProjection.MeleeEliminationRefusal(held.Id);
+                return Fail<GameState>(refusal.Code, refusal.Text);
             }
 
             // MF are spent within a phase, so a new phase starts every unit at none spent and free to move. The phase that
-            // ends removes its markers, from units and weapons alike: First and Final Fire at the end of the DFPh (A3.4), Prep
+            // ends removes its markers, from units and weapons alike (Rules names them, pass 32.i): First and Final Fire at the end of the DFPh (A3.4), Prep
             // Fire at the end of the AFPh (A3.5), and pins in the CCPh (A3.8), all on p. 47; DM at the end of every RPh
             // (A10.62, p. 68). Residual FP is removed at the end of the MPh (A8.2, p. 60), and a new Player Turn gives every
             // unit a new Rally attempt (A10.6, p. 68).
             // E1.8 (backlog pass 16, ruling R16.2): at night First and Final Fire counters stay, as Gunflashes, until the end of the AFPh.
-            string[] cleared = state.Phase switch
-            {
-                "dfph" when state.Night => [Conditions.IntensiveFire],
-                "dfph" => [Conditions.FinalFire, Conditions.FirstFire, Conditions.IntensiveFire],
-                "afph" when state.Night => [Conditions.PrepFire, Conditions.BoundingFire, Conditions.IntensiveFire, Conditions.FinalFire, Conditions.FirstFire],
-                "afph" => [Conditions.PrepFire, Conditions.BoundingFire, Conditions.IntensiveFire],
-                "ccph" => [Conditions.Pinned, "asl:ti"],
-
-                // D7.21 (ruling R11.13): the CC counter of a CC Reaction Fire attack leaves with the MPh.
-                "mph" => [Conditions.CcReaction],
-                "rph" => [Conditions.DesperationMorale],
-                _ => [],
-            };
+            string[] cleared = [.. Rules.ScenarioA1SequenceProjection.ClearedMarkers(state.Phase, state.Night).Select(ConditionName)];
             var newPlayerTurn = change.PhasingSide != state.PhasingSide;
             var melee = state.Phase == "ccph" ? InMelee(state) : null;
 
             // D5.34, D5.341: at the end of the Player Turn in which it was placed, a Stun becomes Stun +1, and a Recall becomes Recall; +1,
             // after which the AFV must leave by its Friendly Board Edge (ruling R5.17).
-            if (newPlayerTurn)
+            if (Rules.ScenarioA1SequenceProjection.StunsEnd(newPlayerTurn))
             {
                 state = EndStuns(state);
             }
 
             // A4.51 (ruling R5.3): a side's CX counters leave at the start of its next MPh, and those units may not Double Time in it.
-            string[] rested = change.Phase == "mph"
-                ? [.. state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == change.PhasingSide
-                    && GameState.Condition(unit, Conditions.Cx) == ConditionState.True).Select(unit => unit.Id)]
-                : [];
+            string[] rested = [.. state.Units.Where(unit => Rules.ScenarioA1SequenceProjection.CxRests(change.Phase, unit.Status == InstanceStatus.Active, unit.Side == change.PhasingSide,
+                GameState.Condition(unit, Conditions.Cx) == ConditionState.True)).Select(unit => unit.Id)];
             foreach (var id in rested)
             {
                 var unit = state.Unit(id)!;
                 state = Replace(state, unit with
                 {
-                    Conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal) { [Conditions.Cx] = ConditionState.False }
+                    Conditions = WithChanges(unit.Conditions, Rules.ScenarioA1SequenceProjection.CxRestedConditions())
                 });
             }
 
@@ -510,9 +494,10 @@ public static class GameProjector
                     MovedVehicles = newPlayerTurn ? [] : state.MovedVehicles,
                     GunCrewsFired = newPlayerTurn ? [] : state.GunCrewsFired,
                     // A3.3 (table player, pass 12): a unit that fired only a SW in the PFPh has Prep Fired and does not move.
-                    NoMoveThisPlayerTurn = newPlayerTurn ? [] : state.Phase == "pfph"
-                        ? [.. state.NoMoveThisPlayerTurn, .. state.PhaseFirers.Select(item => item.Unit).Concat(state.SupportWeaponUses.Select(item => item.Unit)).Distinct().Where(id => !state.NoMoveThisPlayerTurn.Contains(id)
-                            && state.Unit(id) is { } fired && GameState.Condition(fired, Conditions.PrepFire) != ConditionState.True)]
+                    NoMoveThisPlayerTurn = newPlayerTurn ? [] : Rules.ScenarioA1SequenceProjection.NoMoveListGrows(state.Phase, newPlayerTurn)
+                        ? [.. state.NoMoveThisPlayerTurn, .. state.PhaseFirers.Select(item => item.Unit).Concat(state.SupportWeaponUses.Select(item => item.Unit)).Distinct().Where(id =>
+                            Rules.ScenarioA1SequenceProjection.JoinsNoMoveList(state.NoMoveThisPlayerTurn.Contains(id), state.Unit(id) is not null,
+                                state.Unit(id) is { } fired && GameState.Condition(fired, Conditions.PrepFire) == ConditionState.True))]
                         : state.NoMoveThisPlayerTurn,
                     OrdnanceShotsHere = [],
                     GunsTurnedThisPhase = [],
@@ -529,8 +514,8 @@ public static class GameProjector
                     MoppedUpThisPlayerTurn = newPlayerTurn ? [] : state.MoppedUpThisPlayerTurn,
                     StarshellAttempts = [],
                     // E1.923 (ruling R16.8): Starshells are removed at the end of each CCPh.
-                    Entities = state.Phase == "mph" ? RemoveSmokeGrenades(state.Entities)
-                        : state.Phase == "ccph" ? [.. state.Entities.Where(entity => entity.Kind != "asl:starshell")]
+                    Entities = Rules.ScenarioA1SequenceProjection.RemovesSmokeGrenades(state.Phase) ? RemoveSmokeGrenades(state.Entities)
+                        : Rules.ScenarioA1SequenceProjection.RemovesStarshells(state.Phase) ? [.. state.Entities.Where(entity => !Rules.ScenarioA1SequenceProjection.Starshell(entity.Kind))]
                         : state.Entities,
                     Turn = change.Turn,
                     Phase = change.Phase,
@@ -577,45 +562,57 @@ public static class GameProjector
 
         /// <summary>A24.11 (ruling R9.5): the 1/2" SMOKE counters of grenades leave at the end of the MPh they were placed in.</summary>
         private static IReadOnlyList<EntityInstance> RemoveSmokeGrenades(IReadOnlyList<EntityInstance> entities) =>
-            [.. entities.Select(entity => entity.Status == InstanceStatus.Active && entity.Kind == "asl:smoke" && entity.Id.EndsWith(GameState.SmokeGrenadeSuffix, StringComparison.Ordinal)
+            [.. entities.Select(entity => Rules.ScenarioA1SequenceProjection.SmokeGrenade(entity.Status == InstanceStatus.Active, entity.Kind, entity.Id.EndsWith(GameState.SmokeGrenadeSuffix, StringComparison.Ordinal))
                 ? entity with { Status = InstanceStatus.Eliminated } : entity)];
 
+        /// <summary>D5.34, D5.341: a Stun becomes Stun +1 and a Recall becomes Recall; +1 at the Player Turn's end (Rules decides, pass 32.i).</summary>
         private static GameState EndStuns(GameState state)
         {
             var units = state.Units.Select(unit =>
             {
-                if (unit.Status != InstanceStatus.Active)
+                var verdict = Rules.ScenarioA1SequenceProjection.StunEnds(unit.Status == InstanceStatus.Active, GameState.Condition(unit, Conditions.Recalled) == ConditionState.True,
+                    GameState.Condition(unit, Conditions.StunRecovery) == ConditionState.True, GameState.Condition(unit, Conditions.Stunned) == ConditionState.True);
+                return verdict.Conditions.Count == 0 ? unit : unit with
                 {
-                    return unit;
-                }
-
-                // D5.341: a Recall's counter is flipped to its "Recall; +1" side: the AFV adds one as under Stun +1 and must now leave.
-                if (GameState.Condition(unit, Conditions.Recalled) == ConditionState.True)
-                {
-                    return GameState.Condition(unit, Conditions.StunRecovery) == ConditionState.True
-                        ? unit
-                        : unit with
-                        {
-                            Conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal) { [Conditions.StunRecovery] = ConditionState.True },
-                        };
-                }
-
-                return GameState.Condition(unit, Conditions.Stunned) == ConditionState.True
-                    ? unit with
-                    {
-                        Conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal)
-                        {
-                            [Conditions.Stunned] = ConditionState.False,
-                            [Conditions.StunRecovery] = ConditionState.True,
-                        },
-                    }
-                    : unit;
+                    Conditions = WithChanges(unit.Conditions, verdict.Conditions),
+                };
             }).ToArray();
             return state with
             {
                 Units = units
             };
         }
+
+        /// <summary>A unit's conditions with a Rules verdict's changes applied in its order, a later value replacing an earlier one in its place.</summary>
+        private static Dictionary<string, ConditionState> WithChanges(IReadOnlyDictionary<string, ConditionState> conditions, IReadOnlyList<(Rules.UnitCondition Condition, bool Value)> changes)
+        {
+            var merged = new Dictionary<string, ConditionState>(conditions, StringComparer.Ordinal);
+            foreach (var (condition, value) in changes)
+            {
+                merged[ConditionName(condition)] = value ? ConditionState.True : ConditionState.False;
+            }
+
+            return merged;
+        }
+
+        /// <summary>A condition of the Rules verdicts under Units' name.</summary>
+        private static string ConditionName(Rules.UnitCondition condition) => condition switch
+        {
+            Rules.UnitCondition.Pinned => Conditions.Pinned,
+            Rules.UnitCondition.DesperationMorale => Conditions.DesperationMorale,
+            Rules.UnitCondition.PrepFire => Conditions.PrepFire,
+            Rules.UnitCondition.FirstFire => Conditions.FirstFire,
+            Rules.UnitCondition.FinalFire => Conditions.FinalFire,
+            Rules.UnitCondition.BoundingFire => Conditions.BoundingFire,
+            Rules.UnitCondition.IntensiveFire => Conditions.IntensiveFire,
+            Rules.UnitCondition.Cx => Conditions.Cx,
+            Rules.UnitCondition.Stunned => Conditions.Stunned,
+            Rules.UnitCondition.StunRecovery => Conditions.StunRecovery,
+            Rules.UnitCondition.Recalled => Conditions.Recalled,
+            Rules.UnitCondition.CcReaction => Conditions.CcReaction,
+            Rules.UnitCondition.Ti => "asl:ti",
+            _ => throw new ArgumentOutOfRangeException(nameof(condition), condition, "The projector maps no such condition."),
+        };
 
         /// <summary>
         /// The start of a CCPh (A11.19; ruling R14.2): in each Location holding units of both sides that are not prisoners, Dummies are removed and hidden
@@ -1213,7 +1210,7 @@ public static class GameProjector
         {
             if (state.Choice is { } pending)
             {
-                return $"The {pending.Side} side's choice '{pending.Key}' is pending, so no record resolves before it is answered.";
+                return Rules.ScenarioA1SequenceProjection.ChoicePendingText(pending.Side, pending.Key);
             }
 
             var declared = new Dictionary<string, string>(StringComparer.Ordinal);
@@ -1225,22 +1222,17 @@ public static class GameProjector
                 }
             }
 
-            return declared.Count == state.ChoicesMade.Count && declared.All(item => state.ChoicesMade.TryGetValue(item.Key, out var made) && made == item.Value)
-                ? null
-                : $"The record declares the choices {Describe(declared)}, but the choosing sides answered {Describe(state.ChoicesMade)} (ruling R5.8).";
-
-            static string Describe(IReadOnlyDictionary<string, string> map) =>
-                map.Count == 0 ? "none" : string.Join(", ", map.OrderBy(item => item.Key, StringComparer.Ordinal).Select(item => $"{item.Key}={item.Value}"));
+            return Rules.ScenarioA1SequenceProjection.ChoicesMismatch(declared, state.ChoicesMade);
         }
 
         /// <summary>A pending choice (ruling R5.8): one at a time, by a side of the game, with the options it may answer.</summary>
         private GameState? PendChoice(GameState state, ChoicePending pending, string eventId)
         {
-            if (state.Choice is not null || state.Side(pending.Side) is null || pending.Options.Count == 0
-                || pending.Kind is not (ChoicePending.LeaderCreation or ChoicePending.BattleHardening or ChoicePending.UnlikelyKill or ChoicePending.Acquisition or ChoicePending.Paatc)
-                || state.ChoicesMade.ContainsKey(pending.Key))
+            if (Rules.ScenarioA1SequenceProjection.PendChoiceRefusal(state.Choice is not null, state.Side(pending.Side) is not null, pending.Options.Count,
+                pending.Kind is ChoicePending.LeaderCreation or ChoicePending.BattleHardening or ChoicePending.UnlikelyKill or ChoicePending.Acquisition or ChoicePending.Paatc,
+                state.ChoicesMade.ContainsKey(pending.Key)) is { } refusal)
             {
-                return Fail<GameState>("UNIT-STATE-035", "A choice is pending one at a time, for a side of the game, with its options, and once per key (ruling R5.8).");
+                return Fail<GameState>(refusal.Code, refusal.Text);
             }
 
             return state with
@@ -1255,10 +1247,14 @@ public static class GameProjector
         /// </summary>
         private GameState? MakeChoice(GameState state, ChoiceMade made)
         {
-            if (state.Choice is not { } pending || pending.Key != made.Key || !pending.Options.Contains(made.Option, StringComparer.Ordinal))
+            var refusal = Rules.ScenarioA1SequenceProjection.MakeChoiceRefusal(state.Choice is not null, state.Choice?.Key == made.Key,
+                state.Choice?.Options.Contains(made.Option, StringComparer.Ordinal) == true, made.Key, made.Option);
+            if (refusal is not null)
             {
-                return Fail<GameState>("UNIT-STATE-035", $"'{made.Key}' is not the pending choice, or '{made.Option}' is not one of its options (ruling R5.8).");
+                return Fail<GameState>(refusal.Code, refusal.Text);
             }
+
+            var pending = state.Choice!;
 
             var next = state with
             {
@@ -1280,9 +1276,11 @@ public static class GameProjector
 
             var gun = pending.Resume.TryGetProperty("gun", out var gunElement) ? gunElement.GetString() : null;
             var acquisition = state.Acquisitions.FirstOrDefault(item => item.Gun == gun);
-            if (acquisition is null || !BoardLocation.TryParse(made.Option, out var kept))
+            var parsed = BoardLocation.TryParse(made.Option, out var kept);
+            var acquisitionRefusal = Rules.ScenarioA1SequenceProjection.AcquisitionChoiceRefusal(acquisition is not null, parsed);
+            if (acquisitionRefusal is not null || acquisition is null || kept is null)
             {
-                return Fail<GameState>("UNIT-STATE-035", "An Acquisition choice names a Gun with an Acquisition and one of its Locations (C6.51).");
+                return Fail<GameState>(acquisitionRefusal!.Code, acquisitionRefusal!.Text);
             }
 
             return next with
@@ -1439,12 +1437,12 @@ public static class GameProjector
         /// <summary>A4.51 (ruling R5.3): a unit's CX counter is removed when it breaks; A15.42: and when it goes berserk.</summary>
         private static GameState KeepCx(GameState next)
         {
-            foreach (var unit in next.Units.Where(unit => unit.Status == InstanceStatus.Active && GameState.Condition(unit, Conditions.Cx) == ConditionState.True
-                && (GameState.Condition(unit, Conditions.Broken) == ConditionState.True || GameState.Condition(unit, Conditions.Berserk) == ConditionState.True)).ToArray())
+            foreach (var unit in next.Units.Where(unit => Rules.ScenarioA1SequenceProjection.LosesCx(unit.Status == InstanceStatus.Active, GameState.Condition(unit, Conditions.Cx) == ConditionState.True,
+                GameState.Condition(unit, Conditions.Broken) == ConditionState.True, GameState.Condition(unit, Conditions.Berserk) == ConditionState.True)).ToArray())
             {
                 next = Replace(next, unit with
                 {
-                    Conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal) { [Conditions.Cx] = ConditionState.False }
+                    Conditions = WithChanges(unit.Conditions, Rules.ScenarioA1SequenceProjection.CxRestedConditions())
                 });
             }
 
@@ -1656,11 +1654,13 @@ public static class GameProjector
         private GameState? BoreSight(GameState state, BoreSighted sighted)
         {
             // C6.41, C6.42 (ruling R8.8): one Location per Gun of the Scenario Defender, recorded at setup with the Gun's crew and setup Location.
-            if (Active(state, sighted.Gun) is not EquipmentInstance { Holding: { Role: HoldingRole.Manned } manning, Position: MapPosition at }
-                || manning.Holder != sighted.Crew || at.Location != sighted.SetupLocation || sighted.Location == at.Location
-                || state.Unit(sighted.Crew)?.Side is not { } side || side != state.ScenarioDefender || state.BoreSights.Any(item => item.Gun == sighted.Gun))
+            var manned = Active(state, sighted.Gun) is EquipmentInstance { Holding: { Role: HoldingRole.Manned } manning, Position: MapPosition at }
+                ? (Holder: manning.Holder, At: at.Location) : ((string Holder, BoardLocation At)?)null;
+            if (Rules.ScenarioA1SequenceProjection.BoreSightRefusal(manned is not null, manned?.Holder == sighted.Crew, manned is not null && manned.Value.At == sighted.SetupLocation,
+                manned is not null && sighted.Location == manned.Value.At, state.Unit(sighted.Crew)?.Side is { } side && side == state.ScenarioDefender,
+                state.BoreSights.Any(item => item.Gun == sighted.Gun)) is { } refusal)
             {
-                return Fail<GameState>("UNIT-STATE-039", "A Bore Sighting is one Location outside the hex of a Gun the Scenario Defender set up manned (C6.41, C6.42).");
+                return Fail<GameState>(refusal.Code, refusal.Text);
             }
 
             return state with
@@ -2821,21 +2821,21 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-005", "A unit has an owning side (ASL-UNIT-021).");
             }
 
-            // A Dummy is a concealment counter with no unit beneath (A12.11), so it has no definition.
+            // A Dummy is a concealment counter with no unit beneath (A12.11), so it has no definition (Rules decides, pass 32.i).
             if (instance.Kind == UnitKinds.Dummy)
             {
-                return instance.Definition is not null
-                    ? Fail<GameState>("UNIT-STATE-008", "A Dummy has no definition.")
-                    : instance.Group is { } dummyGroup && state.Side(instance.Side)?.Groups.All(item => item.Id != dummyGroup) != false
-                        ? Fail<GameState>("UNIT-STATE-005", $"'{dummyGroup}' is not an OB group of side '{instance.Side}'.")
-                        : state with
+                var dummyRefusal = Rules.ScenarioA1SequenceProjection.DummyDefinitionRefusal(instance.Definition is not null)
+                    ?? Rules.ScenarioA1SequenceProjection.GroupRefusal(instance.Group, instance.Side!, instance.Group is { } dummyGroup && state.Side(instance.Side)?.Groups.All(item => item.Id != dummyGroup) == false);
+                return dummyRefusal is not null
+                    ? Fail<GameState>(dummyRefusal.Code, dummyRefusal.Text)
+                    : state with
+                    {
+                        // Pass 19 (ruling R19.5): a Dummy keeps its OB group, whose "?" it uses.
+                        Units = [.. state.Units, new UnitInstance(instance.Id, instance.Kind, null, instance.Side, position, instance.Conditions, InstanceStatus.Active, from)
                         {
-                            // Pass 19 (ruling R19.5): a Dummy keeps its OB group, whose "?" it uses.
-                            Units = [.. state.Units, new UnitInstance(instance.Id, instance.Kind, null, instance.Side, position, instance.Conditions, InstanceStatus.Active, from)
-                            {
-                                Group = instance.Group,
-                            }]
-                        };
+                            Group = instance.Group,
+                        }]
+                    };
             }
 
             if (instance.Definition is null || catalog!.Definition(instance.Definition) is not { } definition)
@@ -2856,11 +2856,12 @@ public static class GameProjector
 
             // Ruling R18.3: a unit names an OB group of its side, or keeps the group of the units it comes from (Replacement, Deployment).
             // Units of two groups recombined take the group with the lower ELR (referee, pass 18).
-            var group = instance.Group ?? from.Select(id => state.Unit(id)).Where(item => item?.Group is not null)
-                .OrderBy(item => state.ElrOf(item!) ?? int.MaxValue).Select(item => item!.Group).FirstOrDefault();
-            if (instance.Group is { } named && instance.Side is { } owner && state.Side(owner)?.Groups.All(item => item.Id != named) != false)
+            var group = Rules.ScenarioA1SequenceProjection.InheritedGroup(instance.Group,
+                [.. from.Select(id => state.Unit(id)).Select(item => new Rules.GroupSourceFacts(item?.Group, item is null ? null : state.ElrOf(item)))]);
+            if (Rules.ScenarioA1SequenceProjection.GroupRefusal(instance.Group, instance.Side!,
+                instance.Group is { } named && state.Side(instance.Side)?.Groups.All(item => item.Id != named) == false) is { } groupRefusal)
             {
-                return Fail<GameState>("UNIT-STATE-005", $"'{named}' is not an OB group of side '{owner}'.");
+                return Fail<GameState>(groupRefusal.Code, groupRefusal.Text);
             }
 
             var unit = new UnitInstance(instance.Id, instance.Kind, catalog.Reference(definition), instance.Side, position, instance.Conditions,
@@ -2905,29 +2906,13 @@ public static class GameProjector
                 return null;
             }
 
-            if (item is not UnitInstance unit)
+            // Pass 32.i: the record and the state are read here, and Rules decides and words each check in the old order.
+            var unit = item as UnitInstance;
+            var refusal = Rules.ScenarioA1SequenceProjection.AttemptRefusal(unit is not null, state.Phase, unit is not null && state.PhasingSide == unit.Side, unit?.MovementEnded == true,
+                unit is not null && state.OpenAttempts.Any(open => open.Unit == unit.Id), attempt.Mf, attempt.Id);
+            if (refusal is not null || unit is null)
             {
-                return Fail<GameState>("UNIT-STATE-018", $"'{attempt.Id}' is not a unit, so it cannot attempt an entry.");
-            }
-
-            if (state.Phase != "mph" || state.PhasingSide != unit.Side)
-            {
-                return Fail<GameState>("UNIT-STATE-018", $"'{unit.Id}' can attempt an entry only in the MPh of its own side.");
-            }
-
-            if (unit.MovementEnded)
-            {
-                return Fail<GameState>("UNIT-STATE-018", $"'{unit.Id}' may not move again this phase (A4.1, p. 48).");
-            }
-
-            if (state.OpenAttempts.Any(open => open.Unit == unit.Id))
-            {
-                return Fail<GameState>("UNIT-STATE-018", $"'{unit.Id}' already has an open entry attempt.");
-            }
-
-            if (attempt.Mf < 0)
-            {
-                return Fail<GameState>("UNIT-STATE-010", "An attempt cannot cost negative MF.");
+                return Fail<GameState>(refusal!.Code, refusal!.Text);
             }
 
             if (!CheckPosition(state, unit.Kind, new MapPosition(attempt.Target)))
@@ -2947,41 +2932,44 @@ public static class GameProjector
         /// </summary>
         private GameState? Select(GameState state, RandomSelection selection)
         {
-            if (state.OpenAttempts.FirstOrDefault(open => open.EventId == selection.Attempt) is not { } attempt)
+            // Pass 32.i: the record, the rolls, and the state are read here, and Rules decides and words each check in the old order.
+            var attempt = state.OpenAttempts.FirstOrDefault(open => open.EventId == selection.Attempt);
+            var attemptRefusal = Rules.ScenarioA1SequenceProjection.SelectionAttemptRefusal(attempt is not null, selection.Attempt);
+            if (attemptRefusal is not null || attempt is null)
             {
-                return Fail<GameState>("UNIT-STATE-020", $"'{selection.Attempt}' is not an open entry attempt.");
+                return Fail<GameState>(attemptRefusal!.Code, attemptRefusal!.Text);
             }
 
             // After an election, one selection may follow a passed OVR NTC, for the second defender; otherwise an attempt
             // has at most one selection, for its first reveal.
-            var second = attempt.Declaration == OverrunDeclared.Elected;
-            if (second ? attempt.TaskCheckPassed != true || attempt.SecondSelection : attempt.Revealing.Count > 0)
+            var second = Rules.ScenarioA1SequenceProjection.SecondSelection(attempt.Declaration == OverrunDeclared.Elected);
+            if (Rules.ScenarioA1SequenceProjection.SelectionOrderRefusal(second, attempt.TaskCheckPassed, attempt.SecondSelection, attempt.Revealing.Count, attempt.EventId) is { } orderRefusal)
             {
-                return Fail<GameState>("UNIT-STATE-020", second
-                    ? $"After an election, one Random Selection follows only a passed NTC."
-                    : $"The attempt '{attempt.EventId}' already has a Random Selection.");
+                return Fail<GameState>(orderRefusal.Code, orderRefusal.Text);
             }
 
-            if (!rolls.TryGetValue(selection.Roll, out var roll))
+            var rollFound = rolls.TryGetValue(selection.Roll, out var roll);
+            var rollRefusal = Rules.ScenarioA1SequenceProjection.SelectionRollRefusal(rollFound, selection.Roll);
+            if (rollRefusal is not null || roll is null)
             {
-                return Fail<GameState>("UNIT-STATE-020", $"'{selection.Roll}' is not a recorded roll.");
+                return Fail<GameState>(rollRefusal!.Code, rollRefusal!.Text);
             }
 
-            if (selection.Subjects.Count != roll.Count || selection.Subjects.Distinct(StringComparer.Ordinal).Count() != selection.Subjects.Count)
+            if (Rules.ScenarioA1SequenceProjection.SelectionSubjectsRefusal(selection.Subjects.Count, selection.Subjects.Distinct(StringComparer.Ordinal).Count(), roll.Count) is { } subjectsRefusal)
             {
-                return Fail<GameState>("UNIT-STATE-020", $"A selection names one distinct unit for each of the {roll.Count} dice.");
+                return Fail<GameState>(subjectsRefusal.Code, subjectsRefusal.Text);
             }
 
             foreach (var subject in selection.Subjects)
             {
-                if (state.Unit(subject) is not { Status: InstanceStatus.Active } || state.Location(subject)?.Location != attempt.Target)
+                if (Rules.ScenarioA1SequenceProjection.SelectionSubjectRefusal(state.Unit(subject) is { Status: InstanceStatus.Active } && state.Location(subject)?.Location == attempt.Target,
+                    subject, attempt.Target.ToString()) is { } subjectRefusal)
                 {
-                    return Fail<GameState>("UNIT-STATE-020", $"'{subject}' is not an active unit at {attempt.Target}.");
+                    return Fail<GameState>(subjectRefusal.Code, subjectRefusal.Text);
                 }
             }
 
-            var highest = roll.Values.Max();
-            string[] revealing = [.. selection.Subjects.Where((_, index) => roll.Values[index] == highest)];
+            string[] revealing = [.. Rules.ScenarioA1SequenceProjection.Revealing(selection.Subjects, roll.Values)];
             return state with
             {
                 OpenAttempts = [.. state.OpenAttempts.Select(open => open.EventId == attempt.EventId
@@ -2996,24 +2984,15 @@ public static class GameProjector
         /// </summary>
         private GameState? Declare(GameState state, OverrunDeclared declared)
         {
-            if (state.OpenAttempts.FirstOrDefault(open => open.EventId == declared.Attempt) is not { } attempt || attempt.Unit != declared.Id)
+            // Pass 32.i: the record and the state are read here, and Rules decides and words each check in the old order.
+            var attempt = state.OpenAttempts.FirstOrDefault(open => open.EventId == declared.Attempt);
+            var ofUnit = attempt is not null && attempt.Unit == declared.Id;
+            var refusal = Rules.ScenarioA1SequenceProjection.DeclarationRefusal(ofUnit, declared.Attempt, declared.Id, declared.Choice is OverrunDeclared.Declined or OverrunDeclared.Elected, declared.Choice,
+                ofUnit && attempt!.Declaration is not null,
+                ofUnit && !attempt!.Revealing.Any(id => state.Unit(id) is not { } selected || GameState.Condition(selected, Conditions.Concealed) != ConditionState.False));
+            if (refusal is not null || attempt is null)
             {
-                return Fail<GameState>("UNIT-STATE-021", $"'{declared.Attempt}' is not an open entry attempt by '{declared.Id}'.");
-            }
-
-            if (declared.Choice is not (OverrunDeclared.Declined or OverrunDeclared.Elected))
-            {
-                return Fail<GameState>("UNIT-STATE-021", $"'{declared.Choice}' is not declined or elected.");
-            }
-
-            if (attempt.Declaration is not null)
-            {
-                return Fail<GameState>("UNIT-STATE-021", $"The attempt '{attempt.EventId}' already has a declaration.");
-            }
-
-            if (attempt.Revealing.Any(id => state.Unit(id) is not { } selected || GameState.Condition(selected, Conditions.Concealed) != ConditionState.False))
-            {
-                return Fail<GameState>("UNIT-STATE-021", "A declaration follows the reveal of every selected unit.");
+                return Fail<GameState>(refusal!.Code, refusal!.Text);
             }
 
             return state with
@@ -3028,35 +3007,38 @@ public static class GameProjector
         /// </summary>
         private GameState? Check(GameState state, TaskCheck check)
         {
-            if (check.Purpose != TaskCheck.OvrNtc)
+            // Pass 32.i: the record, the rolls, the state, and the catalog are read here, and Rules decides and words each check in the old order.
+            if (Rules.ScenarioA1SequenceProjection.TaskCheckPurposeRefusal(check.Purpose == TaskCheck.OvrNtc, check.Purpose) is { } purposeRefusal)
             {
-                return Fail<GameState>("UNIT-STATE-022", $"'{check.Purpose}' is not a reviewed Task Check.");
+                return Fail<GameState>(purposeRefusal.Code, purposeRefusal.Text);
             }
 
-            if (state.OpenAttempts.FirstOrDefault(open => open.Unit == check.Id) is not { } attempt
-                || attempt.Declaration != OverrunDeclared.Elected || attempt.TaskCheckPassed is not null)
+            var attempt = state.OpenAttempts.FirstOrDefault(open => open.Unit == check.Id);
+            var attemptRefusal = Rules.ScenarioA1SequenceProjection.TaskCheckAttemptRefusal(attempt is { Declaration: OverrunDeclared.Elected, TaskCheckPassed: null }, check.Id);
+            if (attemptRefusal is not null || attempt is null)
             {
-                return Fail<GameState>("UNIT-STATE-022", $"'{check.Id}' has no elected OVR awaiting its NTC.");
+                return Fail<GameState>(attemptRefusal!.Code, attemptRefusal!.Text);
             }
 
-            if (!rolls.TryGetValue(check.Roll, out var roll) || roll.Count != 2 || roll.Sides != 6)
+            var rollFound = rolls.TryGetValue(check.Roll, out var roll);
+            var rollRefusal = Rules.ScenarioA1SequenceProjection.TaskCheckRollRefusal(rollFound, roll?.Count ?? 0, roll?.Sides ?? 0, check.Roll);
+            if (rollRefusal is not null || roll is null)
             {
-                return Fail<GameState>("UNIT-STATE-022", $"'{check.Roll}' is not a recorded roll of two dice.");
+                return Fail<GameState>(rollRefusal!.Code, rollRefusal!.Text);
             }
 
-            var expected = roll.Values.Sum() + check.Modifiers.Sum(modifier => modifier.Value);
-            if (check.FinalDr != expected || check.Passed != (check.FinalDr <= check.MoraleLevel))
+            if (Rules.ScenarioA1SequenceProjection.TaskCheckArithmeticRefusal(roll.Values.Sum(), check.Modifiers.Sum(modifier => modifier.Value), check.FinalDr, check.Passed, check.MoraleLevel)
+                is { } arithmeticRefusal)
             {
-                return Fail<GameState>("UNIT-STATE-022",
-                    $"The final DR is {expected}, and against Morale Level {check.MoraleLevel} it {(expected <= check.MoraleLevel ? "passes" : "fails")}.");
+                return Fail<GameState>(arithmeticRefusal.Code, arithmeticRefusal.Text);
             }
 
             var printed = state.Unit(check.Id) is { Definition: { } reference }
                 ? catalogs.FirstOrDefault(item => item.Identity == reference.Catalog)?.Definition(reference.Definition)?.Printed("front", "asl:morale")?.Value?.Number
                 : null;
-            if (printed != check.MoraleLevel)
+            if (Rules.ScenarioA1SequenceProjection.TaskCheckMoraleRefusal(printed, check.MoraleLevel) is { } moraleRefusal)
             {
-                return Fail<GameState>("UNIT-STATE-022", $"The Morale Level {check.MoraleLevel} is not the unit's printed morale.");
+                return Fail<GameState>(moraleRefusal.Code, moraleRefusal.Text);
             }
 
             return state with
@@ -3068,19 +3050,13 @@ public static class GameProjector
         /// <summary>The unit returns to where it is, the attempt's MF are spent there, and its movement ends (A12.15, p. 78).</summary>
         private GameState? ForceBack(GameState state, EntryForcedBack forced, IReadOnlyList<string> causes)
         {
-            if (state.OpenAttempts.FirstOrDefault(open => open.EventId == forced.Attempt) is not { } attempt || attempt.Unit != forced.Id)
+            // Pass 32.i: the record and the state are read here, and Rules decides and words each check in the old order.
+            var attempt = state.OpenAttempts.FirstOrDefault(open => open.EventId == forced.Attempt);
+            var ofUnit = attempt is not null && attempt.Unit == forced.Id;
+            var refusal = Rules.ScenarioA1SequenceProjection.ForceBackRefusal(ofUnit, forced.Attempt, forced.Id, causes.Contains(forced.Attempt, StringComparer.Ordinal), attempt?.Mf ?? 0, forced.Mf);
+            if (refusal is not null || attempt is null)
             {
-                return Fail<GameState>("UNIT-STATE-018", $"'{forced.Attempt}' is not an open entry attempt by '{forced.Id}'.");
-            }
-
-            if (!causes.Contains(forced.Attempt, StringComparer.Ordinal))
-            {
-                return Fail<GameState>("UNIT-STATE-018", "A forced back names its attempt among its causes.");
-            }
-
-            if (forced.Mf != attempt.Mf)
-            {
-                return Fail<GameState>("UNIT-STATE-018", $"The attempt cost {attempt.Mf} MF, not {forced.Mf}.");
+                return Fail<GameState>(refusal!.Code, refusal!.Text);
             }
 
             if (Active(state, forced.Id) is not UnitInstance unit)
@@ -3090,21 +3066,21 @@ public static class GameProjector
 
             // After an elected OVR the mover is forced back only in the two reviewed outcomes: a failed NTC, or a passed NTC
             // followed by a second reveal that denies the OVR (Scenario A1 OVR NTC Review).
-            if (attempt.Declaration == OverrunDeclared.Elected && !(attempt.TaskCheckPassed == false || attempt.SecondSelection))
+            if (Rules.ScenarioA1SequenceProjection.ForceBackElectionRefusal(attempt.Declaration == OverrunDeclared.Elected, attempt.TaskCheckPassed, attempt.SecondSelection, attempt.EventId)
+                is { } electionRefusal)
             {
-                return Fail<GameState>("UNIT-STATE-021",
-                    $"The attempt '{attempt.EventId}' elected an OVR; it is forced back only after a failed NTC or a second reveal.");
+                return Fail<GameState>(electionRefusal.Code, electionRefusal.Text);
             }
 
-            if (attempt.Revealing.FirstOrDefault(id => state.Unit(id) is { } selected
-                && (GameState.Condition(selected, Conditions.Concealed) != ConditionState.False || GameState.Condition(selected, Conditions.Hidden) == ConditionState.True)) is { } unrevealed)
+            if (Rules.ScenarioA1SequenceProjection.ForceBackUnrevealedRefusal(attempt.Revealing.FirstOrDefault(id => state.Unit(id) is { } selected
+                && (GameState.Condition(selected, Conditions.Concealed) != ConditionState.False || GameState.Condition(selected, Conditions.Hidden) == ConditionState.True))) is { } unrevealedRefusal)
             {
-                return Fail<GameState>("UNIT-STATE-020", $"'{unrevealed}' was selected for the reveal but is still concealed.");
+                return Fail<GameState>(unrevealedRefusal.Code, unrevealedRefusal.Text);
             }
 
-            if (state.Location(unit.Id)?.Location != forced.ReturnedTo)
+            if (Rules.ScenarioA1SequenceProjection.ForceBackLocationRefusal(state.Location(unit.Id)?.Location == forced.ReturnedTo, unit.Id, forced.ReturnedTo.ToString()) is { } locationRefusal)
             {
-                return Fail<GameState>("UNIT-STATE-018", $"'{unit.Id}' is not at {forced.ReturnedTo}, the location it is forced back to.");
+                return Fail<GameState>(locationRefusal.Code, locationRefusal.Text);
             }
 
             return Replace(state with
@@ -3237,14 +3213,15 @@ public static class GameProjector
 
             // A Random Selection decides which units an attempt reveals (A.9, p. 43): no other unit at its target loses concealment.
             var revealed = change.Conditions.TryGetValue(Conditions.Concealed, out var concealed) && concealed == ConditionState.False;
-            if (revealed && state.Location(item.Id)?.Location is { } at
-                && state.OpenAttempts.FirstOrDefault(open => open.Target == at && open.Revealing.Count > 0) is { } selected && !selected.Revealing.Contains(item.Id))
+            var selected = revealed && state.Location(item.Id)?.Location is { } at ? state.OpenAttempts.FirstOrDefault(open => open.Target == at && open.Revealing.Count > 0) : null;
+            if (Rules.ScenarioA1SequenceProjection.RevealOutsideSelectionRefusal(revealed, selected?.EventId, selected?.Revealing.Contains(item.Id) == true, item.Id) is { } refusal)
             {
-                return Fail<GameState>("UNIT-STATE-020", $"'{item.Id}' was not selected for the reveal of the attempt '{selected.EventId}'.");
+                return Fail<GameState>(refusal.Code, refusal.Text);
             }
 
             // A9.8 (table player, pass 13): dismantling or assembling a MG in the PFPh is its possessor's use of a SW, so it does not move in the MPh.
-            if (item is EquipmentInstance { Holding: { Role: HoldingRole.Possessed } dismantler } && state.Phase == "pfph" && change.Conditions.ContainsKey(Conditions.Dismantled))
+            if (item is EquipmentInstance { Holding: { Role: HoldingRole.Possessed } dismantler }
+                && Rules.ScenarioA1SequenceProjection.DismantlingUsesSupportWeapon(true, state.Phase, change.Conditions.ContainsKey(Conditions.Dismantled)))
             {
                 state = state with
                 {
@@ -3274,40 +3251,31 @@ public static class GameProjector
                 consumed.Add(unit);
             }
 
-            var (consumedCount, producedCount) = lineage.Action switch
+            // Pass 32.i: the record and the state are read here, and Rules decides and words each check in the old order.
+            var action = lineage.Action.ToString();
+            if (Rules.ScenarioA1SequenceProjection.LineageCountRefusal(action, consumed.Count, lineage.Produced.Count) is { } countRefusal)
             {
-                LineageAction.Deployed => (1, 2),
-                LineageAction.Recombined => (2, 1),
-                _ => (1, 1),
-            };
-            if (consumed.Count != consumedCount || lineage.Produced.Count != producedCount)
-            {
-                return Fail<GameState>("UNIT-STATE-013",
-                    $"{lineage.Action} consumes {consumedCount} and produces {producedCount}; this event consumes {consumed.Count} and produces {lineage.Produced.Count}.");
+                return Fail<GameState>(countRefusal.Code, countRefusal.Text);
             }
 
-            if (consumed.Select(unit => unit.Side).Distinct(StringComparer.Ordinal).Count() != 1
-                || lineage.Produced.Any(produced => produced.Side is not null && produced.Side != consumed[0].Side))
+            if (Rules.ScenarioA1SequenceProjection.LineageSideRefusal(consumed.Select(unit => unit.Side).Distinct(StringComparer.Ordinal).Count(),
+                lineage.Produced.Any(produced => produced.Side is not null && produced.Side != consumed[0].Side)) is { } sideRefusal)
             {
-                return Fail<GameState>("UNIT-STATE-013", "Lineage keeps one side: the consumed units and the produced ones.");
+                return Fail<GameState>(sideRefusal.Code, sideRefusal.Text);
             }
 
-            var (consumedKind, producedKind) = lineage.Action switch
-            {
-                LineageAction.Reduced or LineageAction.Deployed => ("asl:squad", "asl:half-squad"),
-                LineageAction.Recombined => ("asl:half-squad", "asl:squad"),
-                _ => ((string?)null, (string?)null),
-            };
+            var (consumedKind, producedKind) = Rules.ScenarioA1SequenceProjection.LineageKinds(action);
             if (consumedKind is not null && (consumed.Any(unit => !vocabulary.IsA(unit.Kind, consumedKind))
                 || lineage.Produced.Any(produced => !vocabulary.IsA(produced.Kind, producedKind!))))
             {
-                return Fail<GameState>("UNIT-STATE-013", $"{lineage.Action} turns a {consumedKind} into a {producedKind}.");
+                var kindRefusal = Rules.ScenarioA1SequenceProjection.LineageKindRefusal(action, consumedKind, producedKind!);
+                return Fail<GameState>(kindRefusal.Code, kindRefusal.Text);
             }
 
-            if (lineage.Action == LineageAction.Replaced && vocabulary.HasKind(lineage.Produced[0].Kind)
-                && vocabulary.SizeClass(lineage.Produced[0].Kind) != vocabulary.SizeClass(consumed[0].Kind))
+            if (Rules.ScenarioA1SequenceProjection.ReplacementSizeRefusal(action, vocabulary.HasKind(lineage.Produced[0].Kind),
+                vocabulary.HasKind(lineage.Produced[0].Kind) && vocabulary.SizeClass(lineage.Produced[0].Kind) == vocabulary.SizeClass(consumed[0].Kind)) is { } sizeRefusal)
             {
-                return Fail<GameState>("UNIT-STATE-013", "A Replacement unit is the same size as the unit it replaces (A19.13, p. 86).");
+                return Fail<GameState>(sizeRefusal.Code, sizeRefusal.Text);
             }
 
             var ids = consumed.Select(unit => unit.Id).ToArray();
@@ -3323,7 +3291,7 @@ public static class GameProjector
             }
 
             // A10.53 (referee, pass 13): a HS Reduced from a routing squad has routed this RtPh.
-            if (state.Phase == "rtph" && ids.Any(id => state.RoutedThisPhase.Contains(id, StringComparer.Ordinal)))
+            if (Rules.ScenarioA1SequenceProjection.InheritsRout(state.Phase, ids.Any(id => state.RoutedThisPhase.Contains(id, StringComparer.Ordinal))))
             {
                 next = next with
                 {
@@ -3341,7 +3309,7 @@ public static class GameProjector
             // A Replacement, whether by a lesser unit (A19.13) or by Battle Hardening (A15.3), is a unit substitution, and a squad Reduced
             // to a HS (A7.302) leaves the HS in its place as a sub-unit (A4.431; ruling R5.12): the new unit keeps the SW. Deployment and
             // recombination leave it unpossessed.
-            var keeps = lineage.Action is LineageAction.Replaced or LineageAction.Reduced;
+            var keeps = Rules.ScenarioA1SequenceProjection.LineageKeepsPossessions(action);
             if (!keeps)
             {
                 next = DropHeldBy(next, ids);
@@ -3427,24 +3395,25 @@ public static class GameProjector
         {
             var instance = created.Instance;
 
-            // A24.1 (table player, pass 9): a SMOKE grenade counter is created only by the attempt that placed it, where it placed it.
+            // A24.1 (table player, pass 9): a SMOKE grenade counter is created only by the attempt that placed it, where it placed it (Rules decides, pass 32.i).
+            if (Rules.ScenarioA1SequenceProjection.SmokeCreationRefusal(instance.Kind == "asl:smoke", state.SmokePending is not null,
+                instance.Id.EndsWith(GameState.SmokeGrenadeSuffix, StringComparison.Ordinal), (instance.Position as MapPosition)?.Location == state.SmokePending) is { } smokeRefusal)
+            {
+                return Fail<GameState>(smokeRefusal.Code, smokeRefusal.Text);
+            }
+
             if (instance.Kind == "asl:smoke")
             {
-                if (state.SmokePending is not { } pending || !instance.Id.EndsWith(GameState.SmokeGrenadeSuffix, StringComparison.Ordinal)
-                    || (instance.Position as MapPosition)?.Location != pending)
-                {
-                    return Fail<GameState>("UNIT-STATE-006", "A SMOKE counter is created only by a SMOKE attempt that placed it, in the Location it named (A24.1).");
-                }
-
                 state = state with
                 {
                     SmokePending = null
                 };
             }
             UnitInstance? creator = null;
-            if (created.Creator is { } creatorId && (Active(state, creatorId) is not UnitInstance found || found.Side != instance.Side))
+            if (Rules.ScenarioA1SequenceProjection.CreatorRefusal(created.Creator, created.Creator is { } creatorId && Active(state, creatorId) is UnitInstance found && found.Side == instance.Side)
+                is { } creatorRefusal)
             {
-                return Fail<GameState>("UNIT-STATE-006", $"The creator '{creatorId}' is not an active unit of the created unit's side.");
+                return Fail<GameState>(creatorRefusal.Code, creatorRefusal.Text);
             }
             else if (created.Creator is { } named)
             {
@@ -3455,7 +3424,7 @@ public static class GameProjector
             // or of a unit of its side in its Location.
             if (instance.Group is null && instance.Side is { } createdSide)
             {
-                var joined = creator?.Group ?? (instance.Position is MapPosition createdAt
+                var joined = Rules.ScenarioA1SequenceProjection.JoinedGroup(creator?.Group, () => instance.Position is MapPosition createdAt
                     ? state.Units.Where(item => item.Status == InstanceStatus.Active && item.Side == createdSide && item.Group is not null
                         && item.Position is MapPosition itemAt && itemAt.Location == createdAt.Location).Select(item => item.Group).FirstOrDefault()
                     : null);
@@ -3496,7 +3465,7 @@ public static class GameProjector
                     : next;
             }
 
-            return next.Phase == "mph" && unit.Side == next.PhasingSide
+            return Rules.ScenarioA1SequenceProjection.CreatedMoveEnds(next.Phase, unit.Side == next.PhasingSide)
                 ? Replace(next, unit with
                 {
                     MovementEnded = true
@@ -3697,17 +3666,18 @@ public static class GameProjector
         /// </summary>
         private GameState? ChangeWind(GameState state, WindChanged wind)
         {
-            if (state.Phase != "rph" || !rolls.ContainsKey(wind.Roll) || (wind.NvrRoll is { } nvrRoll && !rolls.ContainsKey(nvrRoll))
-                || (wind.Nvr is not null) != state.Night || wind.Nvr is < 0 or > 9 || wind.Precipitation is not (null or "rain" or "heavy-rain" or "snow" or "heavy-snow"))
+            // Pass 32.h: the record's reads are made here, and Rules decides (B25.65, E1.12).
+            if (Rules.ScenarioA1NightAndWeather.VerifyWindChange(state.Phase, rolls.ContainsKey(wind.Roll), wind.NvrRoll is not { } nvrRoll || rolls.ContainsKey(nvrRoll), state.Night,
+                wind.Nvr, wind.Precipitation) is { } refusal)
             {
-                return Fail<GameState>("UNIT-STATE-043", "A Wind Change DR is made in the RPh with a recorded roll, and sets a Base NVR of 0 to 9 only at night (B25.65, E1.12).");
+                return Fail<GameState>(refusal.Code, refusal.Text);
             }
 
             return state with
             {
                 Nvr = wind.Nvr,
                 Precipitation = wind.Precipitation,
-                Rained = state.Rained || wind.Precipitation is "rain" or "heavy-rain",
+                Rained = Rules.ScenarioA1NightAndWeather.RainedAfter(state.Rained, wind.Precipitation),
             };
         }
 
@@ -3717,18 +3687,19 @@ public static class GameProjector
         /// </summary>
         private GameState? FireStarshell(GameState state, StarshellFired starshell)
         {
-            if (!state.Night || state.Unit(starshell.Unit) is not { Status: InstanceStatus.Active } || !rolls.ContainsKey(starshell.UsageRoll)
-                || (starshell.PlacementRoll is { } placement && !rolls.ContainsKey(placement)) || (starshell.At is not null) != (starshell.Starshell is not null)
-                || (!starshell.Passed && starshell.At is not null) || state.StarshellAttempts.Contains(starshell.From.ToString(), StringComparer.Ordinal))
+            // Pass 32.h: the record's reads are made here, and Rules decides (E1.92 to E1.923).
+            if (Rules.ScenarioA1Starshells.VerifyStarshell(state.Night, state.Unit(starshell.Unit) is { Status: InstanceStatus.Active }, rolls.ContainsKey(starshell.UsageRoll),
+                starshell.PlacementRoll is not { } placement || rolls.ContainsKey(placement), starshell.At is not null, starshell.Starshell is not null, starshell.Passed,
+                state.StarshellAttempts.Contains(starshell.From.ToString(), StringComparer.Ordinal)) is { } refusal)
             {
-                return Fail<GameState>("UNIT-STATE-044", "A Starshell is fired at night by a unit in play, once per hex per phase, with its rolls recorded (E1.92).");
+                return Fail<GameState>(refusal.Code, refusal.Text);
             }
 
             var next = state with
             {
                 StarshellAttempts = [.. state.StarshellAttempts, starshell.From.ToString()],
                 StarshellUsed = state.StarshellUsed || starshell.Passed,
-                StarshellTurn = state.StarshellTurn ?? (starshell.Passed ? $"{state.Turn}|{state.PhasingSide}" : null),
+                StarshellTurn = Rules.ScenarioA1Starshells.StarshellTurnAfter(state.StarshellTurn, starshell.Passed, $"{state.Turn}|{state.PhasingSide}"),
             };
             return starshell.At is not { } at ? next : next with
             {
@@ -3740,10 +3711,11 @@ public static class GameProjector
         /// <summary>A Sniper attack (A14; ruling R15.5): its Sniper counter and roll are in play and recorded; the events after it apply it.</summary>
         private GameState? Snipe(GameState state, SniperAttacked sniper)
         {
-            if (state.Find(sniper.Sniper) is not EntityInstance { Kind: "asl:sniper", Status: InstanceStatus.Active } || !rolls.ContainsKey(sniper.Roll)
-                || !rolls.ContainsKey(sniper.Trigger) || sniper.Dr is < 1 or > 6)
+            // Pass 32.h: the record's reads are made here, and Rules decides (A14.1).
+            if (Rules.ScenarioA1Sniper.VerifySniperAttack(state.Find(sniper.Sniper) is EntityInstance { Kind: "asl:sniper", Status: InstanceStatus.Active }, rolls.ContainsKey(sniper.Roll),
+                rolls.ContainsKey(sniper.Trigger), sniper.Dr) is { } refusal)
             {
-                return Fail<GameState>("UNIT-STATE-042", "A Sniper attack names a Sniper counter in play and recorded rolls (A14.1).");
+                return Fail<GameState>(refusal.Code, refusal.Text);
             }
 
             return state;

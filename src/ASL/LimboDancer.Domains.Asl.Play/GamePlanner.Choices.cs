@@ -14,7 +14,8 @@ internal sealed record ResumedRolls(IReadOnlyDictionary<string, string> RollIds,
 /// <summary>
 /// The owners' options during a resolution (ruling R5.8), the captor's choice at a surrender (A20.3, ruling R5.6), and Massacre (A20.4,
 /// ruling R5.7). A resolution that reaches an option records the rolls it drew and a pending choice, and stops; the choosing side's answer
-/// continues it from those rolls with the answer as a declared fact. Nothing else may happen while a choice is pending.
+/// continues it from those rolls with the answer as a declared fact. Nothing else may happen while a choice is pending. The rules are
+/// <see cref="ScenarioA1SequenceCalculator"/>'s (pass 32.i); this file reads the request and the state and writes the events.
 /// </summary>
 public sealed partial class GamePlanner
 {
@@ -30,38 +31,41 @@ public sealed partial class GamePlanner
         return node;
     }
 
-    /// <summary>
-    /// The pending choice for an option a package asks for (ruling R5.8): Battle Hardening and the Leader Creation dr are the unit's owner's,
-    /// the Unlikely Kill dr the firing side's, the side other than the vehicle's.
-    /// </summary>
+    /// <summary>The pending choice for an option a package asks for (ruling R5.8); Rules decides whose it is (pass 32.i).</summary>
     private static ChoicePending Pending(GameState state, string key, JsonObject resume)
     {
-        var split = key.IndexOf(':', StringComparison.Ordinal);
-        var (kind, subject) = (key[..split], key[(split + 1)..]);
-        var unit = subject.Split(':')[0];
-        var owner = state.Unit(unit)?.Side ?? state.PhasingSide;
-        var (choiceKind, side) = kind switch
-        {
-            "battleHardening" => (ChoicePending.BattleHardening, owner),
-            "leaderCreation" => (ChoicePending.LeaderCreation, owner),
-            _ => (ChoicePending.UnlikelyKill, state.Sides.FirstOrDefault(item => item.Id != owner)?.Id ?? state.PhasingSide),
-        };
-        return new ChoicePending(key, choiceKind, side, [ChoicePending.Take, ChoicePending.Decline], JsonSerializer.SerializeToElement(resume));
+        var (kind, unit) = ScenarioA1SequenceCalculator.OptionKey(key);
+        var owner = state.Unit(unit)?.Side;
+        var (choiceKind, side) = ScenarioA1SequenceCalculator.PendingChoice(kind, owner, state.Sides.FirstOrDefault(item => item.Id != (owner ?? state.PhasingSide))?.Id, state.PhasingSide);
+        return new ChoicePending(key, ChoiceKindName(choiceKind), side, [ChoicePending.Take, ChoicePending.Decline], JsonSerializer.SerializeToElement(resume));
     }
+
+    /// <summary>A choice's kind under Units' name.</summary>
+    private static string ChoiceKindName(ChoiceKind kind) => kind switch
+    {
+        ChoiceKind.BattleHardening => ChoicePending.BattleHardening,
+        ChoiceKind.LeaderCreation => ChoicePending.LeaderCreation,
+        ChoiceKind.UnlikelyKill => ChoicePending.UnlikelyKill,
+        ChoiceKind.Paatc => ChoicePending.Paatc,
+        _ => ChoicePending.Acquisition,
+    };
+
+    /// <summary>A choice's kind as Rules names it.</summary>
+    private static ChoiceKind ChoiceKindOf(string kind) => kind switch
+    {
+        ChoicePending.BattleHardening => ChoiceKind.BattleHardening,
+        ChoicePending.LeaderCreation => ChoiceKind.LeaderCreation,
+        ChoicePending.UnlikelyKill => ChoiceKind.UnlikelyKill,
+        ChoicePending.Paatc => ChoiceKind.Paatc,
+        _ => ChoiceKind.Acquisition,
+    };
 
     /// <summary>What a pending choice asks, in words, for the Play page and the plan's reasons.</summary>
     public static string DescribeChoice(PendingChoice choice)
     {
         ArgumentNullException.ThrowIfNull(choice);
         var subject = choice.Key[(choice.Key.IndexOf(':', StringComparison.Ordinal) + 1)..];
-        return choice.Kind switch
-        {
-            ChoicePending.BattleHardening => $"{subject.Split(':')[0]} may be Battle Hardened; its owner takes it or refuses it (A15.3)",
-            ChoicePending.LeaderCreation => $"{subject} rolled an Original 2 on its Self-Rally; its side may make the Leader Creation dr or decline it (A18.11)",
-            ChoicePending.UnlikelyKill => $"an Original 2 on the Vehicle line: the firer may make the Unlikely Kill dr against {subject} or decline it (A7.309)",
-            ChoicePending.Paatc => $"a vehicle entered concealed units' Location ({subject}): their owner reveals them or takes one combined PAATC (A12.41)",
-            _ => $"the acquired units are in {string.Join(" and ", choice.Options)}; the Gun's side chooses which Location keeps the Acquisition (C6.51)",
-        };
+        return ScenarioA1SequenceCalculator.DescribeChoice(ChoiceKindOf(choice.Kind), subject, choice.Options);
     }
 
     /// <summary>
@@ -82,16 +86,16 @@ public sealed partial class GamePlanner
 
         if (state.Choice is not { } pending || pending.Key != key)
         {
-            return Refused(scope, label, expected, $"play.no-choice: '{key}' is not the pending choice");
+            return Refused(scope, label, expected, ScenarioA1SequenceCalculator.NoChoiceText(key));
         }
 
-        if (!pending.Options.Contains(option, StringComparer.Ordinal))
+        if (ScenarioA1SequenceCalculator.OptionBar(pending.Options, option) is { } optionBar)
         {
-            return Refused(scope, label, expected, $"play.choice-option: the options are {string.Join(", ", pending.Options)}");
+            return Refused(scope, label, expected, optionBar);
         }
 
         var made = Event(scope, attemptId, 1, expected, "choice-made", new ChoiceMade(key, option), null, null, [pending.Event]);
-        var summary = $"play.choice: the {pending.Side} side answers '{option}' to {DescribeChoice(pending)}";
+        var summary = ScenarioA1SequenceCalculator.ChoiceSummary(pending.Side, option, DescribeChoice(pending));
         if (pending.Kind == ChoicePending.Acquisition)
         {
             return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [made], [summary]);
@@ -113,9 +117,9 @@ public sealed partial class GamePlanner
             : new Dictionary<string, string>(StringComparer.Ordinal);
         var dice = existing.Select(item => item.Payload).OfType<DiceRolled>().ToDictionary(item => item.Roll, StringComparer.Ordinal);
         var ordered = existing.Select(item => item.Payload).OfType<DiceRolled>().Select(item => item.Roll).ToList();
-        if (rollIds.Values.Any(id => !dice.ContainsKey(id)))
+        if (ScenarioA1SequenceCalculator.ResumeBar(rollIds.Values.All(dice.ContainsKey)) is { } resumeBar)
         {
-            return Refused(scope, label, expected, "play.choice-resume: a roll the resolution drew is not recorded");
+            return Refused(scope, label, expected, resumeBar);
         }
 
         var resumed = new ResumedRolls(rollIds,
@@ -196,7 +200,7 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// A20.4 (ruling R5.7): in its own fire phase, a Russian or berserk Infantry unit not in Melee, that has not fired this phase, eliminates
-    /// a prisoner in its Location as its attack, and is marked as having fired.
+    /// a prisoner in its Location as its attack, and is marked as having fired. Rules decides each bar (pass 32.i).
     /// </summary>
     private GamePlan PlanMassacre(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label)
     {
@@ -211,38 +215,40 @@ public sealed partial class GamePlanner
         }
 
         if (state.Unit(unitId) is not { Status: InstanceStatus.Active } unit || state.Unit(prisonerId) is not { Status: InstanceStatus.Active } prisoner
-            || !Is(prisoner, Conditions.Captured) || prisoner.Side == unit.Side || state.Location(unit.Id)?.Location is not { } at || state.Location(prisoner.Id)?.Location != at)
+            || state.Location(unit.Id)?.Location is not { } at
+            || !ScenarioA1SequenceCalculator.MassacreTarget(Is(prisoner, Conditions.Captured), prisoner.Side == unit.Side, state.Location(prisoner.Id)?.Location == at))
         {
-            return Refused(scope, label, expected, $"play.massacre-target: {prisonerId} is not a prisoner in {unitId}'s Location (A20.4)");
+            return Refused(scope, label, expected, ScenarioA1SequenceCalculator.MassacreTargetText(prisonerId, unitId));
         }
 
-        var firePhase = state.Phase is "pfph" or "afph" ? state.PhasingSide == unit.Side : state.Phase == "dfph" && state.PhasingSide != unit.Side;
-        if (!firePhase)
+        if (ScenarioA1SequenceCalculator.MassacrePhaseBar(state.Phase, state.PhasingSide == unit.Side) is { } phaseBar)
         {
-            return Refused(scope, label, expected, "play.massacre-phase: a Massacre is made in the unit's own fire phase (A20.4)");
+            return Refused(scope, label, expected, phaseBar);
         }
 
         var russian = unit.Definition is { } reference && FireReference.Value.Definitions.GetValueOrDefault(reference.Definition)?.Nationality == "russian";
-        if (!vocabulary.IsA(unit.Kind, "asl:personnel") || Is(unit, Conditions.Melee) || Is(unit, Conditions.Captured) || !(russian || Is(unit, Conditions.Berserk)))
+        if (ScenarioA1SequenceCalculator.MassacreUnitBar(vocabulary.IsA(unit.Kind, "asl:personnel"), Is(unit, Conditions.Melee), Is(unit, Conditions.Captured), russian,
+            Is(unit, Conditions.Berserk), unit.Id) is { } unitBar)
         {
-            return Refused(scope, label, expected, $"play.massacre-unit: only Russian or berserk Infantry not in Melee massacre prisoners (A20.4); {unit.Id} is not one");
+            return Refused(scope, label, expected, unitBar);
         }
 
         // A20.4 (ruling R5.7): a Massacre is made "as if using a SW", once per phase: a MMC keeps its inherent FP (A7.351), and a SMC forfeits
         // its own (A7.352), so it may not massacre after firing and is marked as having fired.
         var start = existing.Select((item, index) => (item, index)).LastOrDefault(pair => pair.item.Type == "phase-changed").index;
-        if (existing.Skip(start).Any(item => item.Payload is PrisonersMassacred { Berserk: false } done && done.Units.Contains(unit.Id)))
+        if (ScenarioA1SequenceCalculator.MassacreOnceBar(existing.Skip(start).Any(item => item.Payload is PrisonersMassacred { Berserk: false } done && done.Units.Contains(unit.Id)),
+            unit.Id) is { } onceBar)
         {
-            return Refused(scope, label, expected, $"play.massacre-once: {unit.Id} has already massacred a prisoner this phase; a Massacre is its SW use (A20.4, A7.351)");
+            return Refused(scope, label, expected, onceBar);
         }
 
         var smc = vocabulary.IsA(unit.Kind, "asl:smc");
-        if (smc && LiveFire.Fired(unit) && !(state.Phase == "dfph" && Is(unit, Conditions.FirstFire)))
+        if (ScenarioA1SequenceCalculator.MassacreFiredBar(smc, LiveFire.Fired(unit), state.Phase, Is(unit, Conditions.FirstFire), unit.Id) is { } firedBar)
         {
-            return Refused(scope, label, expected, $"play.massacre-fired: {unit.Id} is a SMC that has already fired this phase; a Massacre forfeits its inherent FP (A20.4, A7.352)");
+            return Refused(scope, label, expected, firedBar);
         }
 
-        var marker = state.Phase == "dfph" ? Conditions.FinalFire : Conditions.PrepFire;
+        var marker = ConditionName(ScenarioA1SequenceCalculator.MassacreMarker(state.Phase));
         var massacre = EventId(attemptId, 1);
         List<GameEvent> events = [Event(scope, attemptId, 1, expected, "prisoners-massacred", new PrisonersMassacred([unit.Id], [prisoner.Id], false), null, null)];
         if (smc)
@@ -251,8 +257,7 @@ public sealed partial class GamePlanner
                 null, null, [massacre]));
         }
 
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events,
-            [$"play.massacre: {unit.Id} eliminates the prisoner {prisoner.Id}; the {prisoner.Side} side's ELR rises by one (once) and it is faced with No Quarter (A20.4, A20.3)"]);
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [ScenarioA1SequenceCalculator.MassacreSummary(unit.Id, prisoner.Id, prisoner.Side)]);
     }
 
     /// <summary>Whether a unit massacred a prisoner in the PFPh of this Player Turn (A20.4, A7.351; ruling R5.7).</summary>
@@ -264,26 +269,26 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// A20.4 (ruling R5.7): at the start of a side's AFPh or DFPh (a berserk unit never fires in the PFPh, A15.432), each of its berserk units not in Melee that shares a Location with enemy prisoners
-    /// eliminates them and returns to normal. The events follow the phase change.
+    /// eliminates them and returns to normal. The events follow the phase change. Rules names the side and the words (pass 32.i).
     /// </summary>
     private static IEnumerable<(PrisonersMassacred Massacre, string Reason)> BerserkMassacres(GameState state, string phase, string phasing)
     {
-        var side = phase == "afph" ? phasing : phase == "dfph" ? state.Sides.FirstOrDefault(item => item.Id != phasing)?.Id : null;
+        var side = ScenarioA1SequenceCalculator.BerserkMassacringSide(phase, phasing, state.Sides.FirstOrDefault(item => item.Id != phasing)?.Id);
         if (side is null)
         {
             yield break;
         }
 
-        foreach (var group in state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && Is(unit, Conditions.Berserk) && !Is(unit, Conditions.Melee)
-            && state.Location(unit.Id) is not null).GroupBy(unit => state.Location(unit.Id)!.Location).OrderBy(group => group.Key.ToString(), StringComparer.Ordinal))
+        foreach (var group in state.Units.Where(unit => ScenarioA1SequenceCalculator.BerserkMassacres(unit.Status == InstanceStatus.Active, unit.Side == side, Is(unit, Conditions.Berserk),
+            Is(unit, Conditions.Melee), state.Location(unit.Id) is not null)).GroupBy(unit => state.Location(unit.Id)!.Location).OrderBy(group => group.Key.ToString(), StringComparer.Ordinal))
         {
-            string[] prisoners = [.. state.At(group.Key).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side != side && Is(unit, Conditions.Captured))
+            string[] prisoners = [.. state.At(group.Key).OfType<UnitInstance>()
+                .Where(unit => ScenarioA1SequenceCalculator.MassacredPrisoner(unit.Status == InstanceStatus.Active, unit.Side != side, Is(unit, Conditions.Captured)))
                 .Select(unit => unit.Id).Order(StringComparer.Ordinal)];
             if (prisoners.Length > 0)
             {
                 string[] units = [.. group.Select(unit => unit.Id).Order(StringComparer.Ordinal)];
-                yield return (new PrisonersMassacred(units, prisoners, true),
-                    $"play.berserk-massacre: {string.Join(", ", units)} massacre the prisoners {string.Join(", ", prisoners)} in {group.Key} and return to normal (A20.4)");
+                yield return (new PrisonersMassacred(units, prisoners, true), ScenarioA1SequenceCalculator.BerserkMassacreText(units, prisoners, group.Key.ToString()));
             }
         }
     }
