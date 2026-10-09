@@ -87,7 +87,9 @@ public static class ScenarioA1SequenceCalculator
 
     /// <summary>
     /// Table player, pass 31: either side ends the Rout Phase, but not while the other side still has a unit that must rout: the end would eliminate it, or
-    /// make it surrender, on its opponent's word (A10.5, A20.21). <paramref name="owedSide"/> reads the side of such a unit, only for the RtPh's end.
+    /// make it surrender, on its opponent's word (A10.5, A20.21). <paramref name="owedSide"/> reads the side of such a unit, only for the RtPh's end: a
+    /// unit that still owes a rout (<see cref="ScenarioA1RoutCalculator.RoutStillOwed"/>; pass 35, task 35.17), since one that has routed, is pinned, has
+    /// no legal step, or surrenders instead can do nothing more, and waiting for it would keep the phase from ever ending.
     /// </summary>
     public static string? RoutPhaseEndBar(string action, string? phase, Func<string?> owedSide)
     {

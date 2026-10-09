@@ -420,13 +420,22 @@ public static class ScenarioA1RoutCalculator
         return attackerUnit && defenderBegan() ? "play.rout-order: the DEFENDER's units have begun to rout, so the ATTACKER's may not (A10.5)" : null;
     }
 
-    /// <summary>A10.5: an ATTACKER's unit that has not routed, is not pinned, must rout, and can, routs before the DEFENDER's; the last two are read lazily.</summary>
-    public static bool AttackerMustRoutFirst(bool ofAttacker, bool routedThisPhase, bool pinned, Func<bool> mustRout, Func<bool> canRout)
+    /// <summary>
+    /// A10.5, A20.21 (pass 35, task 35.17): whether a broken unit still has a rout to make this RtPh: it has not routed, is not pinned, must rout, has a
+    /// legal step, and does not surrender instead of routing. A unit bound to surrender (A20.21: it "will surrender ... instead") owes no rout, so it
+    /// holds up neither the rout order nor the phase's end. The last three are read lazily, in that order.
+    /// </summary>
+    public static bool RoutStillOwed(bool routedThisPhase, bool pinned, Func<bool> mustRout, Func<bool> canRout, Func<bool> surrendersInstead)
     {
         ArgumentNullException.ThrowIfNull(mustRout);
         ArgumentNullException.ThrowIfNull(canRout);
-        return ofAttacker && !routedThisPhase && !pinned && mustRout() && canRout();
+        ArgumentNullException.ThrowIfNull(surrendersInstead);
+        return !routedThisPhase && !pinned && mustRout() && canRout() && !surrendersInstead();
     }
+
+    /// <summary>A10.5: an ATTACKER's unit that still owes a rout (<see cref="RoutStillOwed"/>) routs before the DEFENDER's.</summary>
+    public static bool AttackerMustRoutFirst(bool ofAttacker, bool routedThisPhase, bool pinned, Func<bool> mustRout, Func<bool> canRout, Func<bool> surrendersInstead) =>
+        ofAttacker && RoutStillOwed(routedThisPhase, pinned, mustRout, canRout, surrendersInstead);
 
     /// <summary>A10.5: the DEFENDER's unit waits for the ATTACKER's.</summary>
     public static string AttackerFirstText(string firstId) => $"play.rout-order: the ATTACKER's {firstId} must rout first (A10.5)";
@@ -449,6 +458,10 @@ public static class ScenarioA1RoutCalculator
     /// <summary>A20.21: the refusal of a rout by a unit that surrenders instead.</summary>
     public static string RoutSurrenderText(string unitId, string cause, IReadOnlyList<string> captors) =>
         $"play.rout-surrender: {unitId} {cause}, so it surrenders to {string.Join(" or ", captors)} as the RtPh ends instead of routing (A20.21)";
+
+    /// <summary>A20.21 (pass 35, task 35.17): what the Rout panel says of a unit that surrenders instead of routing; it is offered no route.</summary>
+    public static string RoutSurrenderAdvice(string unitId, string cause, IReadOnlyList<string> captors) =>
+        $"{unitId} does not rout: it {cause}, so it surrenders to {string.Join(" or ", captors)} as the RtPh ends (A20.21).";
 
     /// <summary>
     /// A10.4 (ruling R31d.1): the load a laden unit routs with: the one named, among the best loads; or the only choice when none is named; or null.

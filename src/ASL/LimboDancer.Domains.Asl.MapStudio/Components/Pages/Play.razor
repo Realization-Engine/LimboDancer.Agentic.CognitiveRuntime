@@ -5642,6 +5642,12 @@ else if (state is not null)
             .OrderBy(unit => unit.Id, StringComparer.Ordinal)
             .Select(unit =>
             {
+                // Pass 35 (task 35.17; A20.21): a unit that surrenders instead of routing is said to, and is offered no route.
+                if (!state.RoutedThisPhase.Contains(unit.Id) && Live.Planner.RoutSurrenderAdvice(state, unit) is { } surrenders)
+                {
+                    return new RoutActionPanel.Obligation(unit.Id, surrenders);
+                }
+
                 var owes = unit.Id + (Live.Planner.MustRout(state, unit) is { } why ? $" must rout: {why}" : " may rout, since it is under DM");
                 if (state.RoutedThisPhase.Contains(unit.Id))
                 {
@@ -5654,7 +5660,7 @@ else if (state is not null)
 
     private IReadOnlyList<PlayChoice> ReadRoutChoices => state is null ? []
         : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && GameState.Condition(unit, Conditions.Broken) == ConditionState.True
-            && !state.RoutedThisPhase.Contains(unit.Id) && Live.Planner.MayRout(state, unit)).Select(Labelled)];
+            && !state.RoutedThisPhase.Contains(unit.Id) && Live.Planner.MayRout(state, unit) && Live.Planner.RoutSurrenderAdvice(state, unit) is null).Select(Labelled)];
 
     private IReadOnlyList<PlayChoice> RallyChoices =>
         [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && GameState.Condition(unit, Conditions.Broken) == ConditionState.True).Select(Labelled)];

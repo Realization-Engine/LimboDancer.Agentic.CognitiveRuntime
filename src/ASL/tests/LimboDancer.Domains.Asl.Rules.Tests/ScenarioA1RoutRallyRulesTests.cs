@@ -246,7 +246,7 @@ public sealed class ScenarioA1RoutRallyRulesTests
     public void TheBarsReadTheirLazyFactsOnlyWhenTheyMatter()
     {
         Assert.Null(ScenarioA1RoutCalculator.RoutOrderBar(false, Never("the DEFENDER's routs")));
-        Assert.False(ScenarioA1RoutCalculator.AttackerMustRoutFirst(true, false, false, () => false, Never("can rout")));
+        Assert.False(ScenarioA1RoutCalculator.AttackerMustRoutFirst(true, false, false, () => false, Never("can rout"), Never("the surrender")));
         Assert.Equal("is Disrupted", ScenarioA1RoutCalculator.SurrenderCause(true, false, Never("the trap"), ["c"]));
         Assert.Null(ScenarioA1RoutCalculator.LowCrawlOccupiedBar(false, false, Never("the occupants")));
         Assert.Null(ScenarioA1RoutCalculator.InterdictionDue(true, true, () => throw new InvalidOperationException("the Interdictor was read.")));

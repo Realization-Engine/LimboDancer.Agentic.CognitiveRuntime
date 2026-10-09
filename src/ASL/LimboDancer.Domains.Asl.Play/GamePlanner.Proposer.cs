@@ -47,7 +47,7 @@ public sealed partial class GamePlanner
         }
 
         if (ScenarioA1SequenceCalculator.RoutPhaseEndBar(action, state.Phase,
-            () => FailureToRout(state, existing).Select(item => item.Unit).FirstOrDefault(unit => unit.Side != proposer)?.Side) is { } owed)
+            () => FailureToRout(state, existing).Select(item => item.Unit).FirstOrDefault(unit => unit.Side != proposer && RoutStillOwed(state, unit))?.Side) is { } owed)
         {
             return owed;
         }

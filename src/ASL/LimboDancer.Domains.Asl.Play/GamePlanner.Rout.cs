@@ -39,6 +39,34 @@ public sealed partial class GamePlanner
             Is(unit, Conditions.Melee), Is(unit, Conditions.Captured));
 
     /// <summary>
+    /// A20.21 (pass 35, task 35.17): why a broken unit surrenders instead of routing, and to whom, or null: by day, not Fanatic nor under No Quarter,
+    /// ADJACENT to its captors, and Disrupted, Encircled, or able to get away only by Interdiction or Low Crawl. Rules decides; the captors and the
+    /// trap are read here, the trap last.
+    /// </summary>
+    private (string Cause, IReadOnlyList<string> Captors)? RoutSurrender(GameState state, UnitInstance unit, BoardLocation start) =>
+        ScenarioA1RoutCalculator.SurrenderCandidate(state.Night, Is(unit, Conditions.Fanatic), state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal))
+            && Captors(state, unit) is { Count: > 0 } captors
+            && ScenarioA1RoutCalculator.SurrenderCause(Is(unit, Conditions.Disrupted), state.Encircled(unit), () => TrappedByInterdiction(state, unit, start), captors) is { } cause
+            ? (cause, captors) : null;
+
+    /// <summary>A20.21 (pass 35, task 35.17): what the Rout panel says of a unit that surrenders instead of routing, or null when it routs as any other.</summary>
+    public string? RoutSurrenderAdvice(GameState state, UnitInstance unit)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(unit);
+        return MustRout(state, unit) is not null && state.Location(unit.Id)?.Location is { } at && RoutSurrender(state, unit, at) is { } surrender
+            ? ScenarioA1RoutCalculator.RoutSurrenderAdvice(unit.Id, surrender.Cause, surrender.Captors) : null;
+    }
+
+    /// <summary>
+    /// A10.5, A20.21 (pass 35, task 35.17): whether a broken unit still has a rout to make this RtPh; Rules decides, and each search is read only when
+    /// the one before it leaves the question open.
+    /// </summary>
+    private bool RoutStillOwed(GameState state, UnitInstance unit) =>
+        ScenarioA1RoutCalculator.RoutStillOwed(state.RoutedThisPhase.Contains(unit.Id), Is(unit, Conditions.Pinned), () => MustRout(state, unit) is not null,
+            () => CanRout(state, unit), () => state.Location(unit.Id)?.Location is { } at && RoutSurrender(state, unit, at) is not null);
+
+    /// <summary>
     /// The rout's fact reader (pass 32.f; the pass 32 design, D4): a table of Locations by index, the Known enemy units of a side as Rules reads them, and
     /// the map and state reads the search and the scans make through it. The LOS keeps its cache in the planner.
     /// </summary>
@@ -295,8 +323,10 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, orderBar);
         }
 
+        // Pass 35 (task 35.17): nor does one that surrenders instead of routing (A20.21), which owes no rout.
         if (unit.Side != attacker && state.Units.FirstOrDefault(other => ScenarioA1RoutCalculator.AttackerMustRoutFirst(other.Side == attacker, state.RoutedThisPhase.Contains(other.Id),
-            Is(other, Conditions.Pinned), () => MustRout(state, other) is not null, () => CanRout(state, other))) is { } first)
+            Is(other, Conditions.Pinned), () => MustRout(state, other) is not null, () => CanRout(state, other),
+            () => state.Location(other.Id)?.Location is { } otherAt && RoutSurrender(state, other, otherAt) is not null)) is { } first)
         {
             return Refused(scope, label, expected, ScenarioA1RoutCalculator.AttackerFirstText(first.Id));
         }
@@ -308,11 +338,9 @@ public sealed partial class GamePlanner
         }
 
         // A20.21: a unit ADJACENT to its captors that is Disrupted, Encircled, or can get away only by Interdiction or Low Crawl surrenders instead.
-        if (ScenarioA1RoutCalculator.SurrenderCandidate(state.Night, Is(unit, Conditions.Fanatic), state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal))
-            && Captors(state, unit) is { Count: > 0 } captors
-            && ScenarioA1RoutCalculator.SurrenderCause(Is(unit, Conditions.Disrupted), state.Encircled(unit), () => TrappedByInterdiction(state, unit, start), captors) is { } cause)
+        if (RoutSurrender(state, unit, start) is { } surrender)
         {
-            return Refused(scope, label, expected, ScenarioA1RoutCalculator.RoutSurrenderText(unit.Id, cause, captors));
+            return Refused(scope, label, expected, ScenarioA1RoutCalculator.RoutSurrenderText(unit.Id, surrender.Cause, surrender.Captors));
         }
 
         // A10.4 (read in the PDF, p. 66; ruling R31d.1): before it routs a broken unit leaves in its Location what it carries beyond its IPC, and routs
