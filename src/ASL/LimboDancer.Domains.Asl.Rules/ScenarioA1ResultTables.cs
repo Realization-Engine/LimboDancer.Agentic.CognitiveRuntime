@@ -314,6 +314,10 @@ public static class ScenarioA1ResultTables
         [("fully-tracked", "open-ground")] = 2,
         [("half-tracked", "open-ground")] = 2,
         [("truck", "open-ground")] = 8,
+        // B14.4 (p. 129; pass 35, task 35.6): an orchard costs what Open Ground does.
+        [("fully-tracked", "orchard")] = 2,
+        [("half-tracked", "orchard")] = 2,
+        [("truck", "orchard")] = 8,
         [("fully-tracked", "grain")] = 2,
         [("half-tracked", "grain")] = 2,
         [("truck", "grain")] = 10,

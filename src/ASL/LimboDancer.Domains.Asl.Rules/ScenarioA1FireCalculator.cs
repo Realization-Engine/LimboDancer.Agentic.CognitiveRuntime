@@ -1017,7 +1017,7 @@ public static class ScenarioA1FireCalculator
             }
 
             if (attack.Los is { } los && (los.HindranceAttributed != true || los.HindranceDrm < 0
-                || (los.GrainInLos == true && attack.ScenarioMonth is not (>= 6 and <= 9))))
+                || (los.GrainInLos == true && attack.ScenarioMonth is null)))
             {
                 undecided.Add("asl.a1.fire.hindrance-unattributed");
             }
@@ -1037,7 +1037,7 @@ public static class ScenarioA1FireCalculator
             // Ruling R10.4 (backlog pass 10): Infantry fire at another level is decided with the map read's LOS and Hindrance.
             var firers = attack.Firers!;
             if (firers.Select(item => LosOf(attack, item)!).Any(los => los.HindranceAttributed != true || los.HindranceDrm < 0
-                || (los.GrainInLos == true && attack.ScenarioMonth is not (>= 6 and <= 9))))
+                || (los.GrainInLos == true && attack.ScenarioMonth is null)))
             {
                 undecided.Add("asl.a1.fire.hindrance-unattributed");
             }

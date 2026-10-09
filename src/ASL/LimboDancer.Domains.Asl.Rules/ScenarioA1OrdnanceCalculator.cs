@@ -507,7 +507,7 @@ public static class ScenarioA1OrdnanceCalculator
         }
 
         var los = hit.Los!;
-        if (los.HindranceAttributed != true || los.HindranceDrm < 0 || (los.GrainInLos == true && hit.ScenarioMonth is not (>= 6 and <= 9)))
+        if (los.HindranceAttributed != true || los.HindranceDrm < 0 || (los.GrainInLos == true && hit.ScenarioMonth is null))
         {
             undecided.Add(Prefix + "hindrance-unattributed");
         }
