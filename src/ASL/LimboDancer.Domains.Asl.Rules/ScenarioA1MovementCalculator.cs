@@ -107,7 +107,8 @@ public static class ScenarioA1MovementCalculator
     {
         ArgumentNullException.ThrowIfNull(units);
         ArgumentNullException.ThrowIfNull(los);
-        return units.Where(unit => unit.Active && unit.Side != side && !unit.Dummy && !unit.Aboard && unit.Broken != true)
+        // Pass 35 (task 35.3; A.7): Good Order, not merely unbroken, as the two other scans read it.
+        return units.Where(unit => unit.Active && unit.Side != side && !unit.Dummy && !unit.Aboard && unit.GoodOrder)
             .Select(unit => unit.Location).OfType<int>().Distinct()
             .Select(location => los.Los(location, at) is { Clear: true } result ? result.Range : (int?)null).Where(range => range is not null).Min();
     }
@@ -1052,7 +1053,9 @@ public static class ScenarioA1MovementCalculator
     {
         ArgumentNullException.ThrowIfNull(units);
         ArgumentNullException.ThrowIfNull(los);
-        return units.Where(unit => unit.Active && unit.Side != side && !unit.Dummy && unit.Broken != true)
+        // Pass 35 (task 35.3; A.7, A12.14; backlog section 51, the user's word of 2026-10-04): Good Order, not merely unbroken, and as fire reads it
+        // (WithSeen): not a hidden unit, which would have to show itself to force the loss, nor a Passenger, whose vehicle is counted.
+        return units.Where(unit => unit.Active && unit.Side != side && !unit.Dummy && unit.GoodOrder && !unit.Hidden && !unit.Aboard)
             .Select(unit => unit.Location).OfType<int>().Distinct()
             .Any(location => los.Los(location, at) is { Clear: true, Range: <= 16 });
     }

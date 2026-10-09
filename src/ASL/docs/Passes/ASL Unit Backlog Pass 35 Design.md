@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 35 Design
 
-**Status:** In preparation, read-only as to code, written in increments at the user's word. Increment 1 (the frame) written 2026-10-09 and answered the same day: yes to F1 to F6. **Increment 2a begun 2026-10-09 at the user's word to build as it goes: tasks 35.17 and 35.2 are designed and built on the branch feature/asl-backlog-pass-35, uncommitted, and 35.17 is checked in the Studio on a copy of the user's game (section 7); task 35.4 is read on its pages and not yet designed against the code.**
+**Status:** In preparation and being built at once, at the user's word of 2026-10-09: each increment is designed, built on the branch feature/asl-backlog-pass-35, given a small test game in the Studio and Play tests, and committed at the user's word. Increment 1 (the frame) answered: yes to F1 to F6. Increment 2a (the Rout Phase: 35.17, 35.2, 35.4, with ADJACENT taken from pass 40) built and committed (section 7). **Increment 2b (Infantry: 35.1, 35.3, 35.8) built, awaiting the user's word to commit (section 8).** Still to come: terrain, ordnance, vehicles, night and weather, the two that are not rules, and the cross-cutting sections.
 
 **Date:** 2026-10-09
 
@@ -381,3 +381,63 @@ Task 35.4 is built in full. What it leaves: ruling R13.3's new text, written wit
 | 4 | A voluntary rout by a broken unit that need not rout and is not under DM (backlog section 52). | The page settles it: "A broken unit may rout if currently under DM", and otherwise only if it must. The refusal stands; write it as a ruling and close the backlog row. |
 | 5 | Fanaticism in the Interdiction NMC (A10.8). | Read with 35.4's code, where the NMC is built. |
 | 6 | A unit repulsed by a concealed unit ends its RtPh ADJACENT to it. A10.533 says it is eliminated; the phase's end, as built, lets it surrender when a captor can take it. | Keep it as built. A20.21 covers any broken unit ADJACENT to Good Order armed enemy Infantry that cannot rout away, and the repulsed unit is one; A10.533's words are the general consequence, said before the prisoner rules. Say so in the ruling. |
+
+## 8. Infantry: 35.1, 35.3, 35.8 (increment 2b)
+
+Written and built 2026-10-09, at the user's word to build as the design goes and to give each fix a small test game in the Studio and Play tests. Uncommitted as this section is written.
+
+### 8.1 Task 35.1: one wound procedure
+
+**The rule, A17.1 and A17.11 (p. 85).** Wounds are accounted for only for a SMC, and come from Casualty Reduction or a Sniper. Whenever a SMC is wounded another dr is made at once: a 5 or 6 is mortal and is treated as a KIA, a 1 to 4 is minor. A man already wounded adds +1 to that dr, and being wounded again has no other penalty.
+
+**What the code did.** Fire, Close Combat, the rally's Fate, and the Sniper made the dr. Three paths did not: a rout's Interdiction and the Mopping Up casualty (both through `GamePlanner.Rout.cs`, `CasualtyReduction`), and a PF firer's Casualty Reduction (`GamePlanner.Ordnance.cs`, `FirerEffectEvents`). There a SMC was wounded with no dr, and an already wounded SMC was eliminated outright.
+
+**The repair, in Rules.** A new file, `ScenarioA1Wounds.cs`: `SeverityDue` (a leader or a hero), `Mortal` (the dr, +1 if already wounded, 5 or more), and the purpose `wound-severity` of the roll. `ScenarioA1Sniper.Mortal` forwards to it, so there is one procedure. `ScenarioA1RoutCalculator.CasualtyReduction` and `ScenarioA1OrdnanceEventRules.Casualty` take the Wound Severity dr and say Wounded or Eliminated by it; with no dr for a SMC they throw, so no path can skip it again. Play rolls the dr in each of the three paths as the events are built and records it as its own `dice-rolled` event. The record: "Wound Severity dr 3: a 5 or more is mortal, with +1 for a man already wounded (A17.11)".
+
+**Not in this task.** A mortal wound is a KIA, and a leader's loss calls for a LLMC of the units with him (A10.2); the rout path, like the paths that already rolled the dr, does not make one. The record says the dr and not, in a sentence of its own, whether the man was wounded or lost; the events after it do.
+
+**Tests.** Rules: the verdicts with and without the dr, the throw, and that the Sniper's is the same function. Play (`BacklogPass35Tests`, a theory of four): a broken leader fails its Interdiction NMC; unwounded with a dr of 3 he is wounded and routs on, with a 5 he is lost; already wounded with a 3 he survives, with a 4 he is lost. The Mopping Up and PF paths have no Play test: both call the Rules verdicts tested here.
+
+**Test games.** `p35-wound` and `p35-wound-again` (board 3): a broken 8-0 leader in [D10] routs by [D9] to [D8] with the dice queued 6, 5, 3. Both show "NMC DR 11 against broken morale 8 [7 for the wounded one]: reduced" and "Wound Severity dr 3", and the leader routs on to [D8]. Before the repair the already wounded leader was eliminated.
+
+### 8.2 Task 35.3: Good Order, and the Morale ceiling
+
+**The rules.** A.7 (p. 43): Good Order is a Personnel unit or inherent crew that is not broken, berserk, captured, stunned, shocked, or held in Melee; a unit can be pinned, CX, TI, or unarmed and still be in Good Order. A.18 (p. 44): a Morale Level can never be raised beyond 10, "even if the unit is Fanatic, heroic, with a Commissar, and/or part of a Human Wave".
+
+**What the code did.** The planner's definition (`GoodOrderAsPlanned`) left a TI unit out and let a berserk unit in. Two of the three scans for "a Good Order enemy with a LOS" tested only "not broken". A berserk Fanatic unit's Morale Level was 11 (ruling R30.3), and a Fanatic's +1 was added with no ceiling in the rally, the PAATC, and Leader Creation.
+
+**The repair, in Rules.**
+
+- `ScenarioA1Definitions.GoodOrderOf`: active, and not broken, berserk, in Melee, captured, stunned, or shocked. It replaces `GoodOrderAsPlanned`. The state's own `GoodOrder` already read A.7 for Personnel and is left as it is.
+- `FreeToActAsPlanned`: Good Order and not TI. The six SW and Deployment actions (Deploy for the squad and for the leader, Recombine, Transfer, Recover, Drop) used Good Order to keep a TI unit out; they keep that bar under its own name, so nothing changes for a TI unit there, and a berserk unit is now refused them.
+- The scans: `NearestGoodOrderEnemyInLos` and `EnemyGoodOrderInLosWithin16` read the Good Order fact; the second, the move's read of who sees a concealed mover, also leaves out a hidden unit and a Passenger, as fire's `WithSeen` does. This is backlog section 51's row, taken here at the user's word (F5). The read serves movement, the advance, the rally of a concealed unit, and a concealed crew's Gun.
+- `MoraleCeiling`, applied where a Morale Level is raised: fire's `Morale` (a berserk Fanatic is 10), the rally, the berserk leader's companions, the PAATC, Leader Creation in Close Combat, and the rout's broken Morale Level.
+
+**Rulings touched.** R30.3 gave a berserk Fanatic unit 11; A.18 forbids it, and that clause is withdrawn. R10.10's read of who forces a mover's loss of "?" becomes "a Good Order enemy unit that is not hidden".
+
+**The Close Combat calculator's own Good Order** (not broken, berserk, or captured, with no Melee clause) is left as it is: it chooses the leader who directs a Close Combat, where every unit is in the Melee, and the A.7 clause would bar them all. Said here so the difference is a known one.
+
+**Tests.** Rules (`ScenarioA1Pass35RulesTests`, new): Good Order clause by clause; the two scans with an enemy not in Good Order, hidden, aboard, a Dummy, and out of range; the ceiling. Play: a berserk squad may not Deploy and the squad beside it may; a concealed mover loses its "?" to a Good Order enemy and keeps it before a hidden one.
+
+**Test games.** `p35-berserk-deploy`: the berserk squad's Deploy is refused ("is not a Good Order squad"), the other squad's passes. `p35-seen-viewer` and `p35-hidden-viewer`: a concealed Russian squad moves from [D10] to [D9] in the LOS of the German squad in [F10]; seen by a Good Order squad it loses its "?", seen only by a hidden one it keeps it, and the record says only that it moved. The Morale ceiling has no Studio game: it needs a berserk Fanatic unit under fire, and is tested in Rules.
+
+### 8.3 Task 35.8: the Russian 4-2-6's Battle Hardening
+
+**The rule, A25.2 (p. 93).** "A 4-2-6 squad Battle Hardens to a 5-2-7 [EXC: 25.211]; a 2-2-7 HS to a 3-2-8." A25.211: before 1941 the Conscript squad and HS harden to a 4-4-7 and a 2-3-7 "instead of to 5-2-7/2-2-7", unless the Russian OB holds a 6-2-8 or a 5-2-7.
+
+**What the code did.** `ScenarioA1FireReference.Hardened` sent the 4-2-6 to the NKVD 6-2-8 and the 2-2-6 to the NKVD 3-2-8, reasoning from the classes. Two tests asserted it.
+
+**The repair.** The 4-2-6 hardens to the 5-2-7 (`defender-line-squad`) and the 2-2-6 to its 2-2-7 (`defender-line-half-squad`), as A25.211's own words pair them. The 2-2-7 to the 3-2-8 was already right. The two tests are corrected.
+
+**Left out: A25.211's exception** for scenarios before 1941. It needs the scenario's year and the Russian OB as facts of the hardening, which is a lookup by definition today. No card in the library is that early. A backlog row.
+
+**Tests.** Rules: the three hardenings. **Test game.** `p35-harden`: a broken 4-2-6 rallied by its leader with the dice queued 1, 1, then 1, 2: "Heat of Battle DR 1, 2 = 3 + 2 (Russian) + 1 (broken) + 1 (inexperienced) = Final DR 7: Battle Hardened into 5-2-7 squad".
+
+### 8.4 Questions of increment 2b
+
+| # | Question | Proposal |
+|---|---|---|
+| 1 | The SW and Deployment actions keep their bar on a TI unit under its own name. Is that right, or should a TI unit now be free to take them, since A.7 calls it Good Order? | Keep the bar. A.7 says what Good Order is, not what a TI unit may do; I did not read the TI rules for these actions, and the bar is as play had it. A row for the pass that reads them. |
+| 2 | Ruling R30.3's berserk Fanatic at 11 is withdrawn for A.18. | Yes: the page leaves no room. |
+| 3 | A25.211, the pre-1941 exception, goes to the backlog. | Yes. |
+| 4 | A mortal wound in a rout makes no LLMC of the units with the leader. | Backlog, with the same gap wherever a leader is lost outside fire; pass 70 (morale) reads A10.2. |

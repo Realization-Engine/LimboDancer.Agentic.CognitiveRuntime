@@ -13,9 +13,12 @@ namespace LimboDancer.Domains.Asl.Play;
 /// </summary>
 public sealed partial class GamePlanner
 {
-    /// <summary>A10.6, A1.31: a Good Order unit: not broken, Disrupted, in Melee, a prisoner, or TI.</summary>
-    private static bool GoodOrder(UnitInstance unit) => ScenarioA1Definitions.GoodOrderAsPlanned(unit.Status == InstanceStatus.Active, Is(unit, Conditions.Broken),
-        Is(unit, Conditions.Disrupted), Is(unit, Conditions.Melee), Is(unit, Conditions.Captured), Is(unit, "asl:ti"));
+    /// <summary>A.7 (pass 35, task 35.3): a Good Order unit: not broken, berserk, captured, stunned, shocked, or held in Melee. A TI unit is in Good Order.</summary>
+    private static bool GoodOrder(UnitInstance unit) => ScenarioA1Definitions.GoodOrderOf(unit.Status == InstanceStatus.Active, Is(unit, Conditions.Broken),
+        Is(unit, Conditions.Berserk), Is(unit, Conditions.Melee), Is(unit, Conditions.Captured), Is(unit, Conditions.Stunned), Is(unit, Conditions.Shocked));
+
+    /// <summary>Whether a unit may take a SW or Deployment action: in Good Order and not TI, as the planner had it before A.7 was read into Good Order.</summary>
+    private static bool FreeToAct(UnitInstance unit) => ScenarioA1Definitions.FreeToActAsPlanned(GoodOrder(unit), Is(unit, "asl:ti"));
 
     private static FireDefinition? DefinitionOf(UnitInstance unit) =>
         unit.Definition is { } reference ? FireReference.Value.Definitions.GetValueOrDefault(reference.Definition) : null;
@@ -66,7 +69,7 @@ public sealed partial class GamePlanner
         }
 
         // Ruling R25.4: off board, the leader waits to enter along the same edge.
-        if (state.Unit(leaderId) is not { } leader || !vocabulary.IsA(leader.Kind, "asl:leader") || !GoodOrder(leader) || leader.Side != unit.Side
+        if (state.Unit(leaderId) is not { } leader || !vocabulary.IsA(leader.Kind, "asl:leader") || !FreeToAct(leader) || leader.Side != unit.Side
             || state.Location(leader.Id)?.Location != at
             || (at is null && (leader.Position is not OffMapPosition || EntryFor(state, leader) is not { } led || led.Edge != edge || led.Turn > state.Turn))
             || DefinitionOf(leader)?.Nationality != DefinitionOf(unit)?.Nationality)
@@ -123,7 +126,7 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.deploy-phase: squads Deploy in the RPh (A1.31)");
         }
 
-        if (state.Unit(squadId) is not { } squad || !vocabulary.IsA(squad.Kind, "asl:squad") || !GoodOrder(squad)
+        if (state.Unit(squadId) is not { } squad || !vocabulary.IsA(squad.Kind, "asl:squad") || !FreeToAct(squad)
             || (state.Location(squad.Id) is null && squad.Position is not OffMapPosition))
         {
             return Refused(scope, label, expected, $"play.deploy-unit: '{squadId}' is not a Good Order squad on the map or waiting off board to enter (A1.31, A2.52)");
@@ -243,7 +246,7 @@ public sealed partial class GamePlanner
         }
 
         if (state.Unit(oneId) is not { } one || state.Unit(twoId) is not { } two || !vocabulary.IsA(one.Kind, "asl:half-squad") || !vocabulary.IsA(two.Kind, "asl:half-squad")
-            || !GoodOrder(one) || !GoodOrder(two) || one.Side != two.Side || one.Definition?.Definition != two.Definition?.Definition
+            || !FreeToAct(one) || !FreeToAct(two) || one.Side != two.Side || one.Definition?.Definition != two.Definition?.Definition
             || state.Location(one.Id)?.Location is not { } at || state.Location(two.Id)?.Location != at)
         {
             return Refused(scope, label, expected, "play.recombine-unit: Recombining takes two Good Order HS of one definition in one Location (A1.32)");
@@ -311,7 +314,7 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.transfer-phase: a SW is transferred in the RPh or at the start of the APh (A4.431)");
         }
 
-        if (state.Unit(fromId) is not { } giver || state.Unit(toId) is not { } taker || giver.Id == taker.Id || !GoodOrder(giver) || !GoodOrder(taker)
+        if (state.Unit(fromId) is not { } giver || state.Unit(toId) is not { } taker || giver.Id == taker.Id || !FreeToAct(giver) || !FreeToAct(taker)
             || Is(giver, Conditions.Pinned) || Is(taker, Conditions.Pinned) || giver.Side != taker.Side || state.Location(giver.Id)?.Location is not { } at
             || state.Location(taker.Id)?.Location != at || LiveFire.IsVehicle(giver) || LiveFire.IsVehicle(taker))
         {
@@ -442,7 +445,7 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.invalid-arguments: a Recovery names the unit and the SW");
         }
 
-        if (state.Unit(unitId) is not { } unit || !GoodOrder(unit) || Is(unit, Conditions.Pinned) || LiveFire.IsVehicle(unit) || state.Location(unit.Id)?.Location is not { } at)
+        if (state.Unit(unitId) is not { } unit || !FreeToAct(unit) || Is(unit, Conditions.Pinned) || LiveFire.IsVehicle(unit) || state.Location(unit.Id)?.Location is not { } at)
         {
             return Refused(scope, label, expected, $"play.recover-unit: '{unitId}' is not unpinned Good Order Infantry on the map (A4.44)");
         }
@@ -541,7 +544,7 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.invalid-arguments: dismantling names the possessing unit and the SW");
         }
 
-        if (state.Unit(unitId) is not { } unit || !GoodOrder(unit) || Held(state, unit.Id).FirstOrDefault(item => item.Id == equipmentId) is not { } weapon)
+        if (state.Unit(unitId) is not { } unit || !FreeToAct(unit) || Held(state, unit.Id).FirstOrDefault(item => item.Id == equipmentId) is not { } weapon)
         {
             return Refused(scope, label, expected, $"play.dismantle-weapon: '{unitId}' is not a Good Order unit possessing '{equipmentId}' (A9.8)");
         }

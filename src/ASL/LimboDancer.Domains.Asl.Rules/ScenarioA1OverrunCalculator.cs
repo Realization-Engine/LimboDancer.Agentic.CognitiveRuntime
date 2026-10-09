@@ -98,7 +98,7 @@ public static class ScenarioA1OverrunCalculator
     /// Fanatic and -1 for a wounded leader, or 7 when none is printed.
     /// </summary>
     public static int PaatcMorale(IEnumerable<PaatcUnit> units) =>
-        units.Select(unit => unit.Dummy ? 7 : unit.PrintedMorale is { } printed ? printed + (unit.Fanatic ? 1 : 0) - (unit.WoundedLeader ? 1 : 0) : 7)
+        units.Select(unit => unit.Dummy ? 7 : unit.PrintedMorale is { } printed ? ScenarioA1Definitions.MoraleCeiling(printed + (unit.Fanatic ? 1 : 0) - (unit.WoundedLeader ? 1 : 0)) : 7)
             .DefaultIfEmpty(7).Min();
 
     /// <summary>

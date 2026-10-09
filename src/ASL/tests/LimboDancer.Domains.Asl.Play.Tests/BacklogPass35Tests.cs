@@ -25,6 +25,7 @@ public sealed class BacklogPass35Tests : IDisposable
     private static readonly UnitVocabulary Vocabulary = UnitVocabulary.Asl();
     private static readonly UnitCatalog Catalog = UnitCatalogs.Read(UnitCatalogs.ScenarioA1, Vocabulary)!.Catalog!;
     private static readonly string[] Bd01 = ["bd01"];
+    private static readonly string[] R1 = ["r1"];
 
     private static readonly LimboDancer.Abstractions.Execution.RuntimePrincipal Player =
         GamePlay.Principal("player", Tenant, GameActions.SetupPermission, GameActions.PlayPermission);
@@ -385,5 +386,41 @@ public sealed class BacklogPass35Tests : IDisposable
         }
 
         Assert.Equal(routsOn ? L("E7") : L("E6"), (Current.Location("rl")?.Location ?? BoardLocation.Parse(L("E6"))).ToString());
+    }
+
+    [Fact]
+    public async Task ABerserkSquadIsNotInGoodOrderAndMayNotDeploy()
+    {
+        // Task 35.3 (A.7): a berserk unit is not in Good Order. g1 is berserk and may not Deploy with its leader; g2 beside it may.
+        await SetupAt(0, "german", Unit("g1", "attacker-squad", "E3", "german", "asl:berserk"), Unit("g2", "attacker-squad", "E3", "german"),
+            Unit("gl", "attacker-leader-8-1", "E3", "german"), Unit("r1", "defender-squad", "H8", "russian"));
+        Refused(await Do(GameActions.Deploy, Once(3, 3), new
+        {
+            squadId = "g1",
+            leader = "gl"
+        }), "not a Good Order squad");
+        Committed(await Do(GameActions.Deploy, Once(3, 3), new
+        {
+            squadId = "g2",
+            leader = "gl"
+        }));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task AConcealedMoverLosesItsConcealmentToAGoodOrderEnemyAndNotToAHiddenOne(bool viewerHidden)
+    {
+        // Task 35.3 (A.7, A12.14; backlog section 51). r1 moves in Open Ground without Assault Movement in the LOS of g1. A Good Order g1 takes its
+        // "?"; a hidden g1, which would have to show itself to do so, does not, and the move tells the mover nothing of it.
+        string[] viewer = viewerHidden ? ["asl:hidden"] : [];
+        await SetupAt(2, "russian", Unit("r1", "defender-squad", "E5", "russian", "asl:concealed"), Unit("g1", "attacker-squad", "E2", "german", viewer));
+        Assert.Equal("mph", Current.Phase);
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = R1,
+            to = L("E6")
+        }));
+        Assert.Equal(viewerHidden, Is(Current.Unit("r1")!, Conditions.Concealed));
     }
 }

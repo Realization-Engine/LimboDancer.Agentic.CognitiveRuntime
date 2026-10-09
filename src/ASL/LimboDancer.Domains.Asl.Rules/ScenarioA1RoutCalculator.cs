@@ -240,7 +240,7 @@ public static class ScenarioA1RoutCalculator
     /// 10 (A.18), from the catalog; null for a unit the catalog does not know.
     /// </summary>
     public static int? BrokenMorale(bool fromCatalog, int? brokenMorale, int? morale, bool wounded, bool fanatic = false) =>
-        fromCatalog && (brokenMorale ?? morale) is { } level ? Math.Min(10, level - (wounded ? 1 : 0) + (fanatic ? 1 : 0)) : null;
+        fromCatalog && (brokenMorale ?? morale) is { } level ? ScenarioA1Definitions.MoraleCeiling(level - (wounded ? 1 : 0) + (fanatic ? 1 : 0)) : null;
 
     /// <summary>
     /// Casualty Reduction (A7.302, A17.11; pass 35, task 35.1): a squad with a HS becomes it; a SMC is wounded, and its Wound Severity dr says whether the

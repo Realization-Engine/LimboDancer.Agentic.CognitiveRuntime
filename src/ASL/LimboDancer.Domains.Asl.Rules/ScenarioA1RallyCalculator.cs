@@ -294,7 +294,7 @@ public static class ScenarioA1RallyCalculator
         var original = dice[0] + dice[1];
         var final = original + (int)drm.Sum(item => item.Value);
         // A17.3: one lower when wounded; A10.8: one higher when Fanatic; A25.221 (ruling R15.6): one higher with a Commissar in the Location, below 10.
-        var morale = definition.BrokenMorale!.Value - (unit.Wounded == true ? 1 : 0) + (unit.Fanatic == true ? 1 : 0);
+        var morale = ScenarioA1Definitions.MoraleCeiling(definition.BrokenMorale!.Value - (unit.Wounded == true ? 1 : 0) + (unit.Fanatic == true ? 1 : 0));
         if (attempt.Commissar is not null && !ScenarioA1FireReference.IsCommissar(definition.Id) && morale < 10)
         {
             morale++;
@@ -489,7 +489,7 @@ public static class ScenarioA1RallyCalculator
                 }
 
                 var other = reference.Definitions[companion.DefinitionId!];
-                var level = (companion.Broken == true ? other.BrokenMorale : other.Morale)!.Value - (companion.Wounded == true ? 1 : 0) + (companion.Fanatic == true ? 1 : 0);
+                var level = ScenarioA1Definitions.MoraleCeiling((companion.Broken == true ? other.BrokenMorale : other.Morale)!.Value - (companion.Wounded == true ? 1 : 0) + (companion.Fanatic == true ? 1 : 0));
                 List<FireModifier> checkDrm = [new FireModifier("berserk-leader:" + unit.UnitId, leadership, "A15.41")];
                 var checkOriginal = check![0] + check[1];
                 var checkFinal = checkOriginal + leadership;

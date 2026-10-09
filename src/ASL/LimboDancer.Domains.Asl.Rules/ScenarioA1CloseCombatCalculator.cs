@@ -559,9 +559,9 @@ public static class ScenarioA1CloseCombatCalculator
     /// <summary>A unit's US# (A1.6, A20.51): a squad 3, a HS or crew 2, a SMC 1.</summary>
     private static int Size(FireDefinition definition) => definition.Kind == "asl:squad" ? 3 : definition.Kind is "asl:half-squad" or "asl:crew" ? 2 : 1;
 
-    /// <summary>The Morale Level of a MMC as Leader Creation reads it (A18.2): berserk 10 (A15.42), one higher when Fanatic (A10.8).</summary>
+    /// <summary>The Morale Level of a MMC as Leader Creation reads it (A18.2): berserk 10 (A15.42), one higher when Fanatic (A10.8), never beyond 10 (A.18).</summary>
     private static int BaseMorale(CloseCombatUnit unit, ScenarioA1CloseCombatReference reference) =>
-        (unit.Berserk == true ? 10 : reference.Definitions[unit.DefinitionId!].Morale!.Value) + (unit.Fanatic == true ? 1 : 0);
+        ScenarioA1Definitions.MoraleCeiling((unit.Berserk == true ? 10 : reference.Definitions[unit.DefinitionId!].Morale!.Value) + (unit.Fanatic == true ? 1 : 0));
 
     /// <summary>
     /// One round of CC in a Location, with the units' changing state. The ATTACKER's attacks are resolved before the DEFENDER's (A11.12), which

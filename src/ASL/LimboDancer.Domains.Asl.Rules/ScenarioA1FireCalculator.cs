@@ -3278,7 +3278,8 @@ public static class ScenarioA1FireCalculator
         {
             if (berserk)
             {
-                return 10 + (fanatic ? 1 : 0);
+                // A15.42: a berserk unit's Morale Level is 10. A.18 (pass 35, task 35.3): Fanaticism does not raise it to 11, as ruling R30.3 had it.
+                return ScenarioA1Definitions.MoraleCeiling(10 + (fanatic ? 1 : 0));
             }
 
             int? level = definition.IsHero ? (wounded ? definition.WoundedMorale : definition.Morale)
@@ -3290,7 +3291,8 @@ public static class ScenarioA1FireCalculator
                 return Math.Min(value, wounded ? 9 : 10);
             }
 
-            return level;
+            // A.18 (pass 35, task 35.3): never beyond 10.
+            return level is { } raised ? ScenarioA1Definitions.MoraleCeiling(raised) : level;
         }
 
         /// <summary>The leadership modifier, one worse when wounded (A17.3).</summary>
