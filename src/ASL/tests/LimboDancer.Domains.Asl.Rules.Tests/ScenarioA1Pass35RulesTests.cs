@@ -288,4 +288,39 @@ public sealed class ScenarioA1Pass35RulesTests
         });
         Assert.Equal((true, true), (moving.NonStopped, moving.Bypass));
     }
+
+    [Fact]
+    public void ABoggedVehicleLoadsAndUnloadsAndARecalledOneIsAbandonedMakesNoEsbAndStopsOnlyToUnload()
+    {
+        // D8.3, D8.5 (p. 209; task 35.13 f): Bog Removal as its first expenditure, and the non-movement expenditures: Loading and Unloading.
+        Assert.True(ScenarioA1VehicleProjection.BoggedMaySpend("start", true));
+        Assert.False(ScenarioA1VehicleProjection.BoggedMaySpend("start", false));
+        Assert.True(ScenarioA1VehicleProjection.BoggedMaySpend("unload", false));
+        Assert.True(ScenarioA1VehicleProjection.BoggedMaySpend("load", true));
+        Assert.False(ScenarioA1VehicleProjection.BoggedMaySpend("enter", true));
+        Assert.False(ScenarioA1VehicleProjection.BoggedMaySpend("turn", true));
+        static string? Move(string kind, bool started = false) => ScenarioA1VehicleMovementCalculator.MoveBar("tank", kind, false, () => false, name => name == "asl:bogged", false, null, false,
+            false, null, () => null, started);
+        Assert.Null(Move("unload"));
+        Assert.Null(Move("unload", started: true));
+        Assert.Null(Move("start"));
+        Assert.Contains("play.move-vehicle-bog", Move("enter"));
+        Assert.Contains("play.move-vehicle-bog", Move("start", started: true));
+
+        // D5.341 (p. 203; task 35.13 g): a bogged Recalled AFV is Abandoned as an immobilized one is; ESB is NA; it Stops only to unload.
+        Assert.True(ScenarioA1SequenceCalculator.RecallAbandoned(true, true, true, true, false, false, bogged: true));
+        Assert.True(ScenarioA1SequenceCalculator.RecallAbandoned(true, true, true, true, true, false));
+        Assert.False(ScenarioA1SequenceCalculator.RecallAbandoned(true, true, true, true, false, false));
+        Assert.False(ScenarioA1SequenceCalculator.RecallAbandoned(true, true, true, false, false, false, bogged: true));
+        Assert.Contains("bogged", ScenarioA1SequenceCalculator.RecallAbandonedText("tank", true));
+        static string? Esb(bool recalled) => ScenarioA1VehicleMovementCalculator.EsbBar("tank", true, true, () => false, false, () => null, 2, 4, recalled);
+        Assert.Null(Esb(false));
+        Assert.Contains("D5.341", Esb(true));
+        static string? Stop(bool carrying) => ScenarioA1VehicleMovementCalculator.StopBar("tank", true, () => null, () => true, false, () => false, carrying);
+        Assert.Contains("play.recall-motion", Stop(false));
+        Assert.Null(Stop(true));
+        Assert.True(ScenarioA1RecallCalculator.StopsToUnload("stop", true));
+        Assert.False(ScenarioA1RecallCalculator.StopsToUnload("stop", false));
+        Assert.False(ScenarioA1RecallCalculator.StopsToUnload("turn", true));
+    }
 }

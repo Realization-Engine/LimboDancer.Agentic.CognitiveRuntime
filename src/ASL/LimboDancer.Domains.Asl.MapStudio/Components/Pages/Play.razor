@@ -2823,8 +2823,8 @@ else if (state is not null)
         && GameState.Condition(vehicle, Conditions.Bogged) != ConditionState.True;
 
     /// <summary>Whether the vehicle may hook up or unhook a Gun now (C10.11, C10.12): Stopped in its own movement, or not yet moved, not in Motion or bogged.</summary>
-    private bool VehicleStopped(UnitInstance vehicle) => vehicle.Position is MapPosition && GameState.Condition(vehicle, Conditions.Motion) != ConditionState.True
-        && GameState.Condition(vehicle, Conditions.Bogged) != ConditionState.True
+    private bool VehicleStopped(UnitInstance vehicle, bool boggedToo = false) => vehicle.Position is MapPosition && GameState.Condition(vehicle, Conditions.Motion) != ConditionState.True
+        && (boggedToo || GameState.Condition(vehicle, Conditions.Bogged) != ConditionState.True)
         && (state!.Movement is null || (state.Movement is { Vehicle: true, Stopped: true, Overrun: null } own && own.Movers.Contains(vehicle.Id, StringComparer.Ordinal)));
 
     /// <summary>The chosen vehicle's status (plan A18): its VCA, MP, Motion, Reverse, Bypass, ESB, bog, Passengers, and towed Gun.</summary>
@@ -2994,7 +2994,7 @@ else if (state is not null)
 
     /// <summary>The Passengers that may unload (D6.5): the vehicle's, while it is on the map and stopped.</summary>
     private IReadOnlyList<string> UnloadableUnits(UnitInstance vehicle) =>
-        state is null || !VehicleStopped(vehicle) ? [] : [.. state.Passengers(vehicle.Id).Select(unit => unit.Id).Order(StringComparer.Ordinal)];
+        state is null || !VehicleStopped(vehicle, boggedToo: true) ? [] : [.. state.Passengers(vehicle.Id).Select(unit => unit.Id).Order(StringComparer.Ordinal)];
 
     /// <summary>The Guns in a stopped vehicle's hex it may hook up or unhook (C10.11, C10.12).</summary>
     private IReadOnlyList<VehicleTowingActions.TowChoice> TowChoices(UnitInstance vehicle) =>

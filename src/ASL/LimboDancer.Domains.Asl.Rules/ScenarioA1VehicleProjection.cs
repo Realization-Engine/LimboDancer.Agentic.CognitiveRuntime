@@ -34,6 +34,13 @@ public static class ScenarioA1VehicleProjection
     /// <summary>
     /// D8.21, D2.5, D2.51, D8.3: a Bog or an Immobilization, or a Bog Removal that does not free the vehicle, ends its move once the DEFENDER passes.
     /// </summary>
+    /// <summary>
+    /// D8.3, D8.5 (p. 209; ruling R11.10; pass 35, task 35.13 f): what a bogged vehicle may spend MP on: its Bog Removal as its first expenditure,
+    /// remaining where it is, and the non-movement expenditures of D8.5, of which Loading and Unloading are built. The planner and the projector
+    /// read this one answer (the pass 32 design's section 12, item 6).
+    /// </summary>
+    public static bool BoggedMaySpend(string kind, bool firstExpenditure) => kind is "load" or "unload" or "remain" || (kind == "start" && firstExpenditure);
+
     public static bool CheckStops(bool boggedOrImmobilized, bool bogRemoval, bool freed) => boggedOrImmobilized || (bogRemoval && !freed);
 
     /// <summary>D7.1: an OVR is resolved by its vehicle's fire record after the DEFENDER's window on its declaration closes.</summary>

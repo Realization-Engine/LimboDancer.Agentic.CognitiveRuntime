@@ -376,12 +376,16 @@ public static class ScenarioA1SequenceCalculator
     public static string CcVehicleCaptureText(string vehicleId) =>
         $"play.cc-vehicle-capture: {vehicleId} is unarmed and alone with enemy Infantry, so it is captured; the use of captured vehicles is not built (A11.52, A21.2)";
 
-    /// <summary>D5.341, D5.41 (ruling R5.18): at the end of the Player Turn of its Recall, an immobilized Recalled AFV not yet Abandoned is Abandoned by its crew.</summary>
-    public static bool RecallAbandoned(bool newPlayerTurn, bool active, bool vehicle, bool recalled, bool immobilized, bool abandoned) =>
-        newPlayerTurn && active && vehicle && recalled && immobilized && !abandoned;
+    /// <summary>
+    /// D5.341, D5.41 (ruling R5.18): at the end of a Player Turn, a Recalled AFV that is immobilized, or bogged (p. 203; pass 35, task 35.13 g), and not yet
+    /// Abandoned is Abandoned by its crew.
+    /// </summary>
+    public static bool RecallAbandoned(bool newPlayerTurn, bool active, bool vehicle, bool recalled, bool immobilized, bool abandoned, bool bogged = false) =>
+        newPlayerTurn && active && vehicle && recalled && (immobilized || bogged) && !abandoned;
 
     /// <summary>D5.341, D5.41, in words.</summary>
-    public static string RecallAbandonedText(string vehicleId) => $"play.recall-abandoned: {vehicleId} is Recalled and immobilized, so its crew Abandons it (D5.341, D5.41)";
+    public static string RecallAbandonedText(string vehicleId, bool bogged = false) =>
+        $"play.recall-abandoned: {vehicleId} is Recalled and {(bogged ? "bogged" : "immobilized")}, so its crew Abandons it (D5.341, D5.41)";
 
     // The owners' options (ruling R5.8) and the Massacre (A20.4; ruling R5.7).
 

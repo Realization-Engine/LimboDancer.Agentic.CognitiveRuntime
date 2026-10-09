@@ -409,7 +409,8 @@ public sealed partial class GamePlanner
                 break;
             case VehicleStepped.Stop:
                 if (ScenarioA1VehicleMovementCalculator.StopBar(id, leaving, () => EnemyAfvBar(state, vehicle, existing), () => MayMoveOn(state, vehicle),
-                    vehicle.Straddling is not null, () => TurnedAtCafp(state, vehicle)) is { } stopBar)
+                    vehicle.Straddling is not null, () => TurnedAtCafp(state, vehicle),
+                    state.Passengers(id).Count > 0) is { } stopBar)
                 {
                     return Refused(scope, label, expected, stopBar);
                 }
@@ -443,7 +444,7 @@ public sealed partial class GamePlanner
         }
 
         // D5.341 (ruling R5.17): a leaving AFV keeps to a shortest route in MP to its Friendly Board Edge.
-        if (leaving)
+        if (leaving && !ScenarioA1RecallCalculator.StopsToUnload(kind, state.Passengers(id).Count > 0))
         {
             var (moves, _, undecided) = RecallRoute(state, vehicle);
             if (undecided is not null)
@@ -647,7 +648,7 @@ public sealed partial class GamePlanner
         int? requested = arguments.TryGetProperty("mp", out var mpValue) && mpValue.TryGetInt32(out var parsedMp) ? parsedMp : null;
         if (ScenarioA1VehicleMovementCalculator.EsbBar(id, Tracked(vehicle), moving,
             () => ThisPhase(existing).Select(item => item.Payload).OfType<VehicleCheckRolled>().Any(check => check.Vehicle == id && check.Check == VehicleCheckRolled.Esb),
-            afterAll, () => EnemyAfvBar(state, vehicle, existing), requested, maximum) is { } esbBar)
+            afterAll, () => EnemyAfvBar(state, vehicle, existing), requested, maximum, Is(vehicle, Conditions.Recalled)) is { } esbBar)
         {
             return Refused(scope, label, expected, esbBar);
         }

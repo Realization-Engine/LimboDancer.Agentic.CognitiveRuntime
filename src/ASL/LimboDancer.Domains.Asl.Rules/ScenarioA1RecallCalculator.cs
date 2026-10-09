@@ -20,6 +20,12 @@ public static class ScenarioA1RecallCalculator
         terrain != "grain" ? terrain : month is not { } known ? null : known is >= 4 and <= 9 ? "grain" : "open-ground";
 
     /// <summary>
+    /// D5.341 (p. 203; pass 35, task 35.13 g): whether a leaving AFV may make an expenditure that is not on its shortest route: only a Stop, and only
+    /// while it carries Passengers or Riders, which it "may Stop (or remain Stopped) long enough to unload".
+    /// </summary>
+    public static bool StopsToUnload(string kind, bool carrying) => kind == "stop" && carrying;
+
+    /// <summary>
     /// A2.6, D2.16: the half MP of an exit: its hex's own terrain cost, or the road rate when a road crosses the hexside: a full MP for a BU AFV, and
     /// in Ground or Deep Snow (E3.724, E3.7331), as an entry by road pays (pass 35, task 35.13 a; the pass 32 design's section 12, item 15).
     /// </summary>

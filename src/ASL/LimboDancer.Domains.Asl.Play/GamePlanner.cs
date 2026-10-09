@@ -856,14 +856,14 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
             // D5.341, D5.41 (ruling R5.18): at the end of the Player Turn of its Recall, an immobilized Recalled AFV is Abandoned.
             foreach (var vehicle in state.Units.Where(unit => ScenarioA1SequenceCalculator.RecallAbandoned(phasing != state.PhasingSide, unit.Status == InstanceStatus.Active, LiveFire.IsVehicle(unit),
-                Is(unit, Conditions.Recalled), Is(unit, Conditions.Immobilized), Is(unit, Conditions.Abandoned))).OrderBy(unit => unit.Id, StringComparer.Ordinal))
+                Is(unit, Conditions.Recalled), Is(unit, Conditions.Immobilized), Is(unit, Conditions.Abandoned), Is(unit, Conditions.Bogged))).OrderBy(unit => unit.Id, StringComparer.Ordinal))
             {
                 foreach (var (type, abandon) in AbandonEvents(vehicle, attemptId))
                 {
                     events.Add(Event(scope, attemptId, events.Count + 1, expected, type, abandon, null, null, [changed]));
                 }
 
-                reasons.Add(ScenarioA1SequenceCalculator.RecallAbandonedText(vehicle.Id));
+                reasons.Add(ScenarioA1SequenceCalculator.RecallAbandonedText(vehicle.Id, Is(vehicle, Conditions.Bogged) && !Is(vehicle, Conditions.Immobilized)));
             }
         }
     }
