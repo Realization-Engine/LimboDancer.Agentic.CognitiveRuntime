@@ -40,6 +40,13 @@ public sealed record OrdnanceVehicleTarget(
     bool? CrewImpaired,
     bool? CrewMayTakeTc)
 {
+    /// <summary>Whether the target is in Bypass (D2.38, p. 198; pass 35, task 35.13 b): no beneficial TEM of the woods or building it Bypasses; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Bypass
+    {
+        get; init;
+    }
+
     /// <summary>Whether the target is Abandoned (D5.41): it has no crew to survive its elimination (D5.6).</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Abandoned

@@ -285,7 +285,8 @@ public static class LiveOrdnance
             Is(vehicleTarget, Conditions.Motion), state.MovedVehicles.Contains(vehicleTarget.Id, StringComparer.Ordinal),
             Is(vehicleTarget, Conditions.Concealed), Is(vehicleTarget, Conditions.Hidden), Is(vehicleTarget, Conditions.Stunned), Is(vehicleTarget, Conditions.Shocked),
             Is(vehicleTarget, Conditions.UnconfirmedKill), Is(vehicleTarget, Conditions.Recalled), Is(vehicleTarget, Conditions.Abandoned),
-            Is(vehicleTarget, Conditions.Immobilized), Is(vehicleTarget, Conditions.StunRecovery)));
+            Is(vehicleTarget, Conditions.Immobilized), Is(vehicleTarget, Conditions.StunRecovery), vehicleTarget.Straddling is not null,
+            state.Movement is { Vehicle: true, Started: true, Stopped: false } moving && moving.Members.Contains(vehicleTarget.Id, StringComparer.Ordinal)));
     }
 
     /// <summary>

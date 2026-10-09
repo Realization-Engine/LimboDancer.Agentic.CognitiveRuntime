@@ -253,8 +253,10 @@ internal static class ScenarioA1ArmorCalculator
             drm.Add(new FireModifier("case-p:" + armor.TargetSize, size, "C6.7"));
         }
 
+        // D2.38 (p. 198; pass 35, task 35.13 b): a vehicle in Bypass is in the Open Ground of its hex and takes no beneficial TEM of the woods or
+        // building it Bypasses. A building Bypassed inside a woods hex (2I9, 3I1) is not told apart.
         var tem = ScenarioA1FireReference.Tem.GetValueOrDefault(hit.TargetTerrain!);
-        if (tem != 0)
+        if (tem != 0 && !(target.Bypass == true && tem > 0))
         {
             drm.Add(new FireModifier("case-q:" + hit.TargetTerrain, tem, "C6.8"));
         }

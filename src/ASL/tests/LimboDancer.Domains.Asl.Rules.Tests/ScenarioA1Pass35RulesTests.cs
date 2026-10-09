@@ -148,13 +148,13 @@ public sealed class ScenarioA1Pass35RulesTests
     private static readonly ScenarioA1OrdnanceReference Ordnance = new ScenarioA1OrdnancePackage().Reference;
     private const string OrdnanceAt = "bd03:G5:0";
 
-    private static FireAttack OrdnanceHit(string phase, string side, bool infantry) =>
-        new(phase, side, null, null, OrdnanceAt, [], null, null, true, new FireLos(false, 0, true, false), 7, "open-ground",
+    private static FireAttack OrdnanceHit(string phase, string side, bool infantry, string terrain = "open-ground") =>
+        new(phase, side, null, null, OrdnanceAt, [], null, null, true, new FireLos(false, 0, true, false), 7, terrain,
             infantry ? [new FireTarget("ru-s", "defender-squad", OrdnanceAt, false, false, false, false, false, false, false) { KnownEnemyInLos = true, Captors = [] }] : [], 2, null);
 
     /// <summary>The German infantry gun at Infantry, or a LATW at a tank; an Opportunity Firer when asked, with the To Hit DR a miss so no IFT roll is owed.</summary>
     private static OrdnanceResolution Fire(string phase, bool opportunity, string? latw = null, int range = 5, bool pinned = false, bool backblast = false,
-        OrdnanceMovement? movement = null, int shots = 0, bool kept = false)
+        OrdnanceMovement? movement = null, int shots = 0, bool kept = false, string terrain = "open-ground", bool bypass = false, bool nonStopped = false)
     {
         var side = phase is "DFPh" or "MPh" ? "non-phasing" : "phasing";
         var russian = latw == "defender-atr";
@@ -162,9 +162,12 @@ public sealed class ScenarioA1Pass35RulesTests
             new OrdnanceCrew("firer", latw is null ? "attacker-crew" : russian ? "defender-squad" : "attacker-squad", false, pinned, false, false, false)
             {
                 OpportunityFire = opportunity ? true : null,
-            }, OrdnanceAt, range, 0, false, true, 0, OrdnanceHit(phase, side, latw is null), new OrdnanceRolls([5, 6], null, null, null, null) { ToKill = [6, 6] })
+            }, OrdnanceAt, range, 0, false, true, 0, OrdnanceHit(phase, side, latw is null, terrain), new OrdnanceRolls([5, 6], null, null, null, null) { ToKill = [6, 6] })
         {
-            VehicleTarget = latw is null ? null : new OrdnanceVehicleTarget("target", russian ? "attacker-tank" : "defender-tank", "side", "side", false, false, false, false, true),
+            VehicleTarget = latw is null ? null : new OrdnanceVehicleTarget("target", russian ? "attacker-tank" : "defender-tank", "side", "side", false, nonStopped, false, false, true)
+            {
+                Bypass = bypass ? true : null,
+            },
             Ammunition = latw is null ? null : russian ? "ap" : "heat",
             ScenarioYear = 1944,
             Panzerfaust = backblast ? new OrdnancePanzerfaust(null, null, true, null) : null,
@@ -259,5 +262,30 @@ public sealed class ScenarioA1Pass35RulesTests
         Assert.Null(ScenarioA1ResultTables.AcquiredVehicle("tank", true, false, false));
         Assert.Null(ScenarioA1ResultTables.AcquiredVehicle("tank", false, true, true));
         Assert.Null(ScenarioA1ResultTables.AcquiredVehicle(null, false, true, false));
+    }
+
+    [Fact]
+    public void ABypassingVehicleTakesNoTemOfItsObstacleAndHindersOnlyAcrossItsHexside()
+    {
+        // D2.38 (p. 198; task 35.13 b): a vehicle in Bypass is in the Open Ground of its hex. Until pass 35 a shot at it took the woods' Case Q.
+        Assert.Equal(1m, CaseOf(Fire("PFPh", false, "defender-atr", 3, terrain: "woods"), "case-q"));
+        Assert.Null(CaseOf(Fire("PFPh", false, "defender-atr", 3, terrain: "woods", bypass: true), "case-q"));
+
+        // D9.4 (p. 210; task 35.13 h): a Bypassing AFV or wreck hinders only a LOS that touches the hexside it Bypasses.
+        Assert.True(ScenarioA1VehicleSightRules.BypassHinders(false, () => throw new InvalidOperationException("not read")));
+        Assert.True(ScenarioA1VehicleSightRules.BypassHinders(true, () => true));
+        Assert.False(ScenarioA1VehicleSightRules.BypassHinders(true, () => false));
+
+        // C6.3, D2.13 (pp. 174, 196; task 35.13): no Case L against a vehicle that started in its MPh and has not stopped, Motion counter or none.
+        Assert.Equal(-1m, CaseOf(Fire("DFPh", false, "defender-atr", 2), "case-l"));
+        Assert.Null(CaseOf(Fire("DFPh", false, "defender-atr", 2, nonStopped: true), "case-l"));
+        OrdnanceVehicleTargetStateFacts vehicle = new("tank", "attacker-tank", false, true, false, false, false, false, false, false, false, false, false);
+        Assert.False(ScenarioA1OrdnanceEligibility.VehicleTarget(vehicle).NonStopped);
+        var moving = ScenarioA1OrdnanceEligibility.VehicleTarget(vehicle with
+        {
+            Bypass = true,
+            MovingUnstopped = true
+        });
+        Assert.Equal((true, true), (moving.NonStopped, moving.Bypass));
     }
 }

@@ -17,7 +17,9 @@ public sealed record OrdnanceVehicleTargetStateFacts(
     bool Recalled,
     bool Abandoned,
     bool Immobilized,
-    bool StunRecovery);
+    bool StunRecovery,
+    bool Bypass = false,
+    bool MovingUnstopped = false);
 
 /// <summary>
 /// A squad against the use of a SW (A7.351, C13.31): whether it is a squad, its id, its First Fire mark and whether it has fired (a Prep or Final

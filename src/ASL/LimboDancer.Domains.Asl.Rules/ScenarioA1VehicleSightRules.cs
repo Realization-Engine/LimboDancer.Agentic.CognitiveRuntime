@@ -66,6 +66,16 @@ public static class ScenarioA1VehicleSightRules
     }
 
     /// <summary>
+    /// D9.4 (p. 210; pass 35, task 35.13 h): a wreck or AFV in Bypass is no Hindrance to a LOS that does not touch the hexside it Bypasses. The LOS
+    /// is read as touching it when it also enters the hex across that hexside, or starts or ends there.
+    /// </summary>
+    public static bool BypassHinders(bool inBypass, Func<bool> losEntersHexAcrossHexside)
+    {
+        ArgumentNullException.ThrowIfNull(losEntersHexAcrossHexside);
+        return !inBypass || losEntersHexAcrossHexside();
+    }
+
+    /// <summary>
     /// C5.5 (p. 172; pass 35, task 35.10): the Hindrance of a Gun's shot within its own hex, Case R: the hex's SMOKE as for fire within it (A24.2,
     /// A24.8), and +1 for a wreck or AFV there that is neither firer nor target (D9.4).
     /// </summary>
