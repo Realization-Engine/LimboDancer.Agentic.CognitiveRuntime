@@ -323,4 +323,39 @@ public sealed class ScenarioA1Pass35RulesTests
         Assert.False(ScenarioA1RecallCalculator.StopsToUnload("stop", false));
         Assert.False(ScenarioA1RecallCalculator.StopsToUnload("turn", true));
     }
+
+    [Fact]
+    public void ACcCounterBarsNonCcReactionFireBoundingFireFixesTheCeStatusAndBogRemovalDrawsNoCaseJ()
+    {
+        // D7.21 (p. 207; task 35.13 e): the CC counter of CC Reaction Fire prohibits Non-CC Reaction Fire. Until pass 35 nothing read the counter.
+        static FirerLocationVerdict Reaction(bool marked, string phase = "mph") => ScenarioA1FireMapRules.FirerLocation(new FirerLocationFacts("bd01:B8:0", true, "open-ground", true, true,
+            false, phase, () => false, () => false, () => marked));
+        Assert.Contains("D7.21", Reaction(true).Refusal);
+        Assert.Null(Reaction(false).Refusal);
+        Assert.Null(Reaction(true, "dfph").Refusal);
+
+        // D5.33 (p. 203; task 35.13 i): no CE counter placed or removed in a MPh after the vehicle's own Bounding First Fire.
+        static string? Button(bool boundingFired) => ScenarioA1VehicleMovementCalculator.ButtonUpBar("tank", true, true, false, false, false, false, true, () => false, boundingFired);
+        Assert.Null(Button(false));
+        Assert.Contains("Bounding First Fire", Button(true));
+
+        // D8.4 (p. 209; task 35.13 j): a vehicle that began its MPh bogged is fired on in its Bog hex with no Case J for its Bog Removal MP.
+        Assert.True(ScenarioA1OrdnanceMapRules.InBogHex([("start", true)]));
+        Assert.True(ScenarioA1OrdnanceMapRules.InBogHex([("start", true), ("turn", false)]));
+        Assert.Null(ScenarioA1OrdnanceMapRules.InBogHex([("start", true), ("enter", false)]));
+        Assert.Null(ScenarioA1OrdnanceMapRules.InBogHex([("start", false)]));
+        Assert.Null(ScenarioA1OrdnanceMapRules.InBogHex([]));
+        OrdnanceVehicleTargetStateFacts stuck = new("tank", "attacker-tank", false, false, false, false, false, false, false, false, false, false, false, MovingUnstopped: true);
+        Assert.True(ScenarioA1OrdnanceEligibility.VehicleTarget(stuck).NonStopped);
+        Assert.False(ScenarioA1OrdnanceEligibility.VehicleTarget(stuck with
+        {
+            Bogged = true
+        }).NonStopped);
+        Assert.False(ScenarioA1OrdnanceEligibility.VehicleTarget(stuck with
+        {
+            Immobilized = true
+        }).NonStopped);
+        Assert.Equal(4m, CaseOf(Fire("MPh", false, "defender-atr", 3, movement: new OrdnanceMovement(1, null, null, 1, 0)), "case-j"));
+        Assert.Null(CaseOf(Fire("MPh", false, "defender-atr", 3, movement: new OrdnanceMovement(1, null, null, 1, 0) { InBogHex = true }), "case-j"));
+    }
 }

@@ -406,7 +406,9 @@ public sealed partial class GamePlanner
                 Movement = shot.VehicleTarget is { VehicleId: { } moving }
                     ? movement with
                     {
-                        MpInLos = MpInLos(state, from, moving)
+                        MpInLos = MpInLos(state, from, moving),
+                        InBogHex = ScenarioA1OrdnanceMapRules.InBogHex([.. ThisPhase(store.Read(state.Scope)?.Events ?? []).Select(item => item.Payload).OfType<VehicleStepped>()
+                            .Where(step => step.Vehicle == moving).Select(step => (step.Kind, step.BogRemoval))]),
                     }
                     : movement with
                     {

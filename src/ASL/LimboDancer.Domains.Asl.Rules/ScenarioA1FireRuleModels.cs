@@ -255,7 +255,8 @@ public sealed record LosHindranceFacts(int Range, double Value, IReadOnlyList<st
 public sealed record BypassHexsideFacts(string? TerrainName, bool Road);
 
 /// <summary>A firer's Location against the limits on firing from it (B16.32, A7.212, A7.21, D7.22; rulings R10.1, R10.14): its text, whether it was read, its terrain key, whether the fire is direct, whether it is the target Location, a Snap Shot, the phase, and two reads made when asked: whether a Known armed enemy unit is there, and whether a moving vehicle not yet in Reaction Fire is there.</summary>
-public sealed record FirerLocationFacts(string Location, bool Read, string? TerrainKey, bool Direct, bool IsTarget, bool SnapShot, string? Phase, Func<bool> KnownArmedEnemyThere, Func<bool> MovingVehicleThereBeforeOverrun);
+public sealed record FirerLocationFacts(string Location, bool Read, string? TerrainKey, bool Direct, bool IsTarget, bool SnapShot, string? Phase, Func<bool> KnownArmedEnemyThere, Func<bool> MovingVehicleThereBeforeOverrun,
+    Func<bool>? CcMarkedFirerAtVehicle = null);
 
 /// <summary>The verdict on a firer's Location: the refusal, or whether the firers there fire at their own Location (range 0, no LOS read).</summary>
 public sealed record FirerLocationVerdict(string? Refusal, bool OwnLocation);

@@ -189,6 +189,16 @@ public sealed record OrdnanceMovement(int? MpInLos, bool? NonAssault, bool? Open
         get; init;
     }
 
+    /// <summary>
+    /// Whether the vehicle fired at began its MPh bogged and has not left its Bog hex (D8.4, p. 209; pass 35, task 35.13 j): its Bog Removal MP allow
+    /// Defensive First Fire with no Case J; null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? InBogHex
+    {
+        get; init;
+    }
+
     /// <summary>Whether the moving target is engaged in Hazardous Movement (C6.6, A4.62; pass 35, task 35.10): Case O in place of Case J's subcases; null is false.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Hazardous

@@ -571,7 +571,7 @@ public static class ScenarioA1VehicleMovementCalculator
     /// not Stunned or Recalled, not after Prep Fire in the MPh, not while the DEFENDER may fire at its MP, a change, and once per phase.
     /// </summary>
     public static string? ButtonUpBar(string id, bool activeAfv, bool ownPhase, bool stunned, bool prepFiredInMph, bool windowOpen, bool already,
-        bool buttonedUp, Func<bool> changedThisPhase)
+        bool buttonedUp, Func<bool> changedThisPhase, bool boundingFiredInMph = false)
     {
         ArgumentNullException.ThrowIfNull(changedThisPhase);
         if (!activeAfv)
@@ -592,6 +592,12 @@ public static class ScenarioA1VehicleMovementCalculator
         if (prepFiredInMph)
         {
             return $"play.button-up: {id} Prep Fired, so it may not change its CE status this MPh (D5.33)";
+        }
+
+        // D5.33 (p. 203; pass 35, task 35.13 i): nor in a MPh after its own Bounding First Fire, an OVR among it.
+        if (boundingFiredInMph)
+        {
+            return $"play.button-up: {id} made Bounding First Fire, so it may not change its CE status this MPh (D5.33)";
         }
 
         if (windowOpen)

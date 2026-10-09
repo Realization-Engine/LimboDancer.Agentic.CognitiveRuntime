@@ -802,7 +802,7 @@ public sealed partial class GamePlanner
             {
                 var since = existing.Select((item, index) => (item, index)).LastOrDefault(pair => pair.item.Payload is PhaseChanged or GameStarted).index;
                 return existing.Skip(since).Any(item => item.Type == "crew-exposure-changed" && item.Payload is ConditionsChanged changed && changed.Id == id);
-            }) is { } buttonBar)
+            }, vehicle is not null && state.Phase == "mph" && Is(vehicle, Conditions.BoundingFire)) is { } buttonBar)
         {
             return Refused(scope, label, expected, buttonBar);
         }

@@ -68,6 +68,16 @@ public static class ScenarioA1OrdnanceMapRules
     public static bool OpenGround(string? terrain, int? hindranceDrm) => terrain == "open-ground" && hindranceDrm == 0;
 
     /// <summary>
+    /// D8.4 (p. 209; pass 35, task 35.13 j): whether a vehicle began its MPh bogged and has not left its Bog hex: its first MP expenditure of the MPh
+    /// was Bog Removal and it has entered no hex since. The steps are this MPh's, oldest first.
+    /// </summary>
+    public static bool? InBogHex(IReadOnlyList<(string Kind, bool BogRemoval)> steps)
+    {
+        ArgumentNullException.ThrowIfNull(steps);
+        return steps.Count > 0 && steps[0] is ("start", true) && !steps.Any(step => step.Kind is "enter" or "exit") ? true : null;
+    }
+
+    /// <summary>
     /// C6.11, C6.12, C6.15 (search): the MP spent in the firer's continuous LOS, counted back over the steps (oldest first) to the last one out of
     /// LOS; when every step is seen, all of it if the vehicle began out of LOS, else 99. The LOS reads are lazy and taken latest first.
     /// </summary>

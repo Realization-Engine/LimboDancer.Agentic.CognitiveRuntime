@@ -161,6 +161,12 @@ public static class ScenarioA1FireMapRules
                 return new FirerLocationVerdict("play.fire-reaction: a DEFENDER unit fires at a moving vehicle in its own Location only as Reaction Fire after the vehicle's OVR there (D7.22); CC Reaction Fire is the vehicle CC action (D7.21)", false);
             }
 
+            // D7.21 (p. 207; pass 35, task 35.13 e): the CC counter a DEFENDER carries after its CC Reaction Fire prohibits Non-CC Reaction Fire.
+            if (facts.Phase == "mph" && facts.CcMarkedFirerAtVehicle?.Invoke() == true)
+            {
+                return new FirerLocationVerdict("play.fire-reaction: a unit under a CC counter after its CC Reaction Fire makes no Non-CC Reaction Fire at the vehicle (D7.21)", false);
+            }
+
             return new FirerLocationVerdict(null, true);
         }
 
