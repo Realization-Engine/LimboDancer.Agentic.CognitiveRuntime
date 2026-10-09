@@ -108,3 +108,17 @@ Scenario A1 state changes only in live games: the Map Studio's registered game a
 - `VASL Board 01 Terrain Evidence.md`: partial building-override inventory from VASL board 01 metadata and the validated snapshot rules that depend on it.
 - [NET Dice Roller Requirements](<Requirements/NET Dice Roller Requirements.md>): approved requirements for the implemented standalone dice library and the planned ASL audit boundary.
 - [NET Dice Roller Design](<Designs/NET Dice Roller Design.md>): implemented minimal API and random generation, validation results, and planned governed ASL integration.
+
+## Campaign integration analysis
+
+[Campaign Atlas Blazor Migration and ASL Terrain Refinement Analysis](<Campaign Atlas Blazor Migration and ASL Terrain Refinement Analysis.md>) proposes the incremental migration of the campaign prototype into Blazor/C#, followed by deterministic terrain refinement and Scenario Card integration. Status: proposed; implementation has not started.
+
+[LimboDancer.Campaign Implementation Plan](<LimboDancer.Campaign Implementation Plan.md>) identifies the standalone Blazor project and prioritizes campaign-owned implementation without changes to ongoing ASL code.
+
+[Campaign Command, Supply, Leadership and Optional Complexity Analysis](<Campaign Command Supply Leadership and Optional Complexity Analysis.md>) examines purposeful command decisions, structured mission workflows, supply constraints, leadership roles and graduated gameplay complexity. Status: proposed.
+
+[Western Theater Situation Catalog and Decision Cascade](<Western Theater Situation Catalog and Decision Cascade.md>) surveys the legacy Panzer Leader cards, prioritizes additional campaign situations and maps their source constraints to proposed command decisions.
+
+[Ardennes Command Decision Contract Specification](<Ardennes Command Decision Contract Specification.md>) defines the first optional command/supply/leadership window using PL14 and PL15, with finite allocations, timed delivery, explicit variants, deterministic choices and acceptance cases. Status: proposed contract, 9 October 2026.
+
+- [Ardennes Command Prototype Acceptance](<Ardennes Command Prototype Acceptance.md>): implemented smoke-test workflow, browser checks and remaining limits.

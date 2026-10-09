@@ -1,0 +1,22 @@
+const assert=require('node:assert/strict'),fs=require('node:fs');
+const C=require('./campaign-world.js'),M=require('./ardennes-command-state.js'),P=require('./ardennes-spatial.js');
+let serial=0,s=M.initial('world-test','operational',10);
+const act=(type,data={})=>s=M.execute(s,{id:'c'+ ++serial,revision:s.revision,type,...data});
+act('allocate',{plan:{main:'M14',reserve:'M14',delivery:'M14'},sourceHashes:{M14:'fixture14',M15:'fixture15'}});
+while(s.time<50)act('advance');act('commit',{mission:'M14',choice:'reinforced'});
+const source=JSON.parse(fs.readFileSync(__dirname+'/sources/situations/panzer-leader-14.json','utf8'));
+let w=C.create(s,'0123456789abcdef0123456789abcdef',P);w=C.bindMission(w,'M14',source,M);
+assert.deepEqual(C.validate(w,M),w);assert.equal(w.missions.M14.units.length,source.instances.length+2);
+const b=w.missions.M14.footprint,all=C.cells(w,w.bounds,250,50),local=C.cells(w,b,250,50);
+for(const cell of local)assert.deepEqual(cell,all.find(x=>x.id===cell.id));
+for(const cell of C.cells(w,b,40,50))assert.equal(cell.terrain,C.terrain(w,cell.x,cell.y,50));
+assert.deepEqual(C.atlasPoint(w,[40000,16800]),[-280,166.8]);
+const uid=w.missions.M14.units.find(id=>w.forces[id].side==='Allied'),left=local.filter(c=>c.x<b[0]+b[2]/2),right=local.find(c=>c.x>b[0]+b[2]/2);
+assert.throws(()=>C.place(w,'M14',uid,right.id,50));assert.throws(()=>C.place(w,'M14',uid,left[0].id,40));
+w=C.place(w,'M14',uid,left[0].id,50);assert.deepEqual(w.forces[uid].position,[left[0].x,left[0].y]);assert.equal(Object.keys(C.placementsAt(w.missions.M14,49)).length,0);
+w.operation.time=60;w=C.place(w,'M14',uid,left[1].id,60);assert.equal(C.placementsAt(w.missions.M14,50)[uid].cellId,left[0].id);
+const changed=C.event(w,{id:'clear',at:60,area:{x:left[0].x,y:left[0].y,radius:100},terrain:'open'});assert.equal(C.terrain(changed,left[0].x,left[0].y,60),'open');assert.throws(()=>C.event(changed,{id:'clear',at:60}));
+// Repository retains the world across command saves and rejects stale tab writes.
+const storage={getItem(k){return this[k]??null},setItem(k,v){this[k]=v}};
+let repo=C.repository(storage,M,P);repo.saveOperation(s);const seed=repo.get().mapSeed;repo.save(C.bindMission(repo.get(),'M14',source,M));const saved=repo.get();const other=C.repository(storage,M,P);other.load();repo.save({...saved,notes:'note'});assert.throws(()=>other.save(other.get()));repo.saveOperation(s);assert.equal(repo.get().mapSeed,seed);assert.ok(repo.get().missions.M14);assert.deepEqual(C.repository(storage,M,P).load(),repo.get());
+console.log('Campaign world checks passed: shared coordinates, deterministic terrain, mission binding, unit identities, deployment rules, history, terrain events, persistence, stale writes.');

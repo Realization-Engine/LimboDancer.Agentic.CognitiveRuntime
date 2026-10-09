@@ -26,6 +26,7 @@ def validate(data):
     for c in counters.values():
         require(c['side'] in sides and counts[c['id']]==c['quantity'],'Counter side or quantity mismatch')
         require(c['sourceSheet'] in data['sources'],'Unknown counter source')
+        require((c.get('kind') in ['block','aircraft','bridge-equipment']) == (c['factors'] is None),'Only obstacles, aircraft and bridge equipment have no ground combat factors')
     for side in sides:require(sum(c['quantity'] for c in counters.values() if c['side']==side)==data['totals'][side],'Side total mismatch')
     require(data['totals']['types']==len(counters),'Type total mismatch')
     hexes={}
@@ -74,10 +75,12 @@ def validate(data):
             for c in p['children']:predicate(c,trail)
         else:
             require(p['side'] in sides,'Unknown objective side')
-            if p['op']=='control-all':require(p['zoneId'] in zones,'Unknown objective zone')
+            if p['op'] in ('control-all','control-at-least'):require(p['zoneId'] in zones,'Unknown objective zone')
+            elif p['op']=='exit-at-least':require(p['count']>0,'Invalid exit count')
             else:
                 target=p['objectiveId'];require(target in objectives and target not in trail,'Unknown or cyclic objective');predicate(objectives[target]['predicate'],trail|{target})
     for o in objectives.values():predicate(o['predicate'],{o['id']})
+    require(bool(objectives) or (data['admission']['status']=='reference-only' and bool(data.get('sourceRules',{}).get('objectives'))),'Missing objective definition')
     if data['admission']['status']!='reference-only':
         require(all(b['grid']['coverage']=='complete' and b['assembly']['rotationDegrees'] is not None and b['assembly']['translationMeters'] is not None for b in boards.values()),'Playable setup requires complete board geometry')
         require(all(h['terrain']['base']!='unknown' and all(e['barrier']!='unknown' and e['crossing']!='unknown' for e in h['edges']) for h in hexes.values()),'Playable setup has unknown terrain')
@@ -85,6 +88,43 @@ def validate(data):
     if data['admission']['status']=='engine-ready':
         require(not data['admission']['blockers'] and data['rules']['combatEngine'] and data['rules']['terrainRuleProfile'],'Engine admission incomplete')
         require(all(c['organization']['decompositionStatus']=='verified' for c in counters.values()),'Unresolved force decomposition')
+    if 'deployment' in data:
+        dep=data['deployment']
+        require(set(dep['allowedHexes'])==set(instances),'Deployment coverage must match instances')
+        require(set(dep['instructions'])==set(instances),'Deployment instructions must match instances')
+        for iid,refs in dep['allowedHexes'].items():
+            side=counters[instances[iid]['counterTypeId']]['side']
+            air=counters[instances[iid]['counterTypeId']].get('kind')=='aircraft'
+            require(not refs if air else bool(refs),'Invalid ground/support setup zone')
+            for ref in refs:
+                h=hexref(ref)
+                require(ref['boardId'] in next(x['boardIds'] for x in data['rules']['setup'] if x['side']==side) and h['setupAllowed'],'Invalid deployment zone')
+        for rule in dep.get('minimumSeparation',[]):
+            require(rule['side']!=rule['fromSide'] and data['setupOrder'].index(rule['fromSide'])<data['setupOrder'].index(rule['side']),'Separation requires previously deployed opposing side')
+        passengers=set();carriers=set()
+        for load in dep['loads']:
+            a,b=load['passengerId'],load['carrierId']
+            require(a in instances and b in instances and a!=b,'Invalid transport identity')
+            require(a not in passengers and b not in carriers,'Duplicate transport commitment')
+            require(counters[instances[a]['counterTypeId']]['side']==counters[instances[b]['counterTypeId']]['side'],'Cross-side transport')
+            require(dep['allowedHexes'][a]==dep['allowedHexes'][b],'Transport setup zone mismatch')
+            passengers.add(a);carriers.add(b)
+    air_ids={i['id'] for i in instances.values() if counters[i['counterTypeId']].get('kind')=='aircraft'}
+    assigned=[]
+    if 'airSupport' in data:
+        groups=unique(data['airSupport']['groups'],'support group')
+        for group in groups.values():
+            require(group['availableFromTurn']<=data['turnLimit'],'Support arrives after game end')
+            for iid in group['instanceIds']:
+                require(iid in air_ids,'Support group references a ground unit')
+                require(instances[iid]['availability']['turn']==group['availableFromTurn'],'Support arrival mismatch')
+                assigned.append(iid)
+    require(set(assigned)==air_ids and len(assigned)==len(air_ids),'Air support coverage mismatch')
+    if data['situation'].get('printedEndDate'):
+        require(data['situation']['printedDate']<=data['situation']['printedEndDate']<=data['parentCampaign']['endDate'],'Invalid Situation date window')
+    for placement in data['illustration']['joinedLayout']:
+        require(placement['boardId'] in boards,'Unknown illustrated board')
+    require(set(p['boardId'] for p in data['illustration']['joinedLayout'])==set(boards),'Missing board layout')
     if 'parentCampaign' in data:
         parent=data['parentCampaign']
         require(parent['startDate']<=data['situation']['printedDate']<=parent['endDate'],'Situation date lies outside parent campaign window')
@@ -111,9 +151,18 @@ def validate_registry(registry,data):
     return registry
 
 def build():
-    data=validate(json.loads((ROOT/'sources/situations/panzer-leader-04.json').read_text(encoding='utf-8')))
-    registry=validate_registry(json.loads((ROOT/'sources/campaign-registry.json').read_text(encoding='utf-8')),data)
-    (ROOT/'panzer-situation-data.js').write_text('window.PANZER_SITUATION_DATA='+json.dumps(data,separators=(',',':'))+';\nwindow.CAMPAIGN_REGISTRY='+json.dumps(registry,separators=(',',':'))+';\n',encoding='utf-8',newline='\n')
-    (ROOT/'assets/panzer-leader-04/counter-manifest.json').write_text(json.dumps(data,indent=2)+'\n',encoding='utf-8',newline='\n')
-    print('Validated and built Situation '+data['id']+' ('+data['admission']['status']+')')
+    files=sorted(p for p in (ROOT/'sources/situations').glob('panzer-leader-*.json') if p.stem.split('-')[-1].isdigit())
+    packages=[validate(json.loads(p.read_text(encoding='utf-8'))) for p in files]
+    registry=json.loads((ROOT/'sources/campaign-registry.json').read_text(encoding='utf-8'))
+    for data in packages:validate_registry(registry,data)
+    ids=[d['id'] for d in packages]
+    if len(set(ids))!=len(ids):raise ValueError('Duplicate package ID')
+    registered={s['sourcePackageId'] for c in registry['campaigns'] for s in c['situations']}
+    if registered!=set(ids):raise ValueError('Campaign registry/package mismatch')
+    initial=next(d for d in packages if d['situation']['number']==4)
+    payload='window.PANZER_SITUATION_DATA='+json.dumps(initial,separators=(',',':'))+';\n'
+    payload+='window.PANZER_SITUATION_LIBRARY='+json.dumps(packages,separators=(',',':'))+';\n'
+    payload+='window.CAMPAIGN_REGISTRY='+json.dumps(registry,separators=(',',':'))+';\n'
+    (ROOT/'panzer-situation-data.js').write_text(payload,encoding='utf-8',newline='\n')
+    print('Validated and built',len(packages),'Situation packages')
 if __name__=='__main__':build()

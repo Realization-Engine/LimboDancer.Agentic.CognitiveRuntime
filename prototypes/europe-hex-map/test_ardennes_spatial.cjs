@@ -1,0 +1,15 @@
+const assert=require('node:assert/strict');
+const M=require('./ardennes-command-state.js'),P=require('./ardennes-spatial.js');let seq=0;
+const run=(s,type,data={})=>M.execute(s,{id:'s'+(++seq),revision:s.revision,type,...data});
+let s=M.initial('spatial','operational',10,true);s=run(s,'allocate',{plan:{main:'M14',reserve:'M14',delivery:'M14'}});s=run(s,'advance');s=run(s,'advance');
+const original=JSON.stringify(s),f=P.project(M,s,25);assert.equal(f.mode,'Forecast');assert.equal(f.state.time,25);assert.equal(JSON.stringify(s),original);
+const p25=P.transport(f.all,25).position;assert.notDeepEqual(p25,[185,295]);assert.notDeepEqual(p25,P.routes.M14.at(-1));
+assert.equal(P.project(M,s,0).state.stock.A14,'depot');assert.equal(P.project(M,s,0).mode,'Historical view');assert.equal(P.project(M,s,40).state.stock.A14,'M14');
+assert.equal(P.project(M,s,50).state.missions.M14.reserveReady,true);assert.equal(P.project(M,s,100).state.stock.A15,'M15');
+s=run(s,'interrupt',{route:'M14'});assert.deepEqual(P.transport(P.project(M,s,25).all,25).position,[185,295]);assert.equal(P.project(M,s,50).state.stock.A14,'T1');
+s=run(s,'advance');s=run(s,'reopen',{route:'M14'});assert.equal(P.project(M,s,50).state.stock.A14,'M14');
+while(s.queue.length&&s.time<55)s=run(s,'advance');s=run(s,'commit',{mission:'M14',choice:'reinforced'});s=run(s,'fixture-clock',{mission:'M14'});while(s.time<115)s=run(s,'advance');s=run(s,'fixture',{mission:'M14',outcome:'lost'});
+assert.equal(P.knowledge(s).missions.M14.result,undefined);assert.equal(P.knowledge(s).reserve,'committed:M14');assert.equal(P.project(M,s,s.time+5).state.missions.M14.report,undefined);s=run(s,'advance');assert.equal(P.knowledge(s).missions.M14.report.reserveSurvivors,1);
+assert.deepEqual(P.frames(M,s).at(-1),s);assert.deepEqual(P.point([[0,0],[10,0],[10,10]],.75),[10,5]);
+let a=M.initial('recall','operational',10,true);a=run(a,'allocate',{plan:{main:'M14',reserve:'M14',delivery:'M14'}});while(a.time<15)a=run(a,'advance');a=run(a,'interrupt',{route:'M14'});const atHold=P.transport(P.frames(M,a),15).position;a=run(a,'recall',{trip:'T1'});assert.deepEqual(P.transport(P.frames(M,a),15).position,atHold);assert.notDeepEqual(P.transport(P.project(M,a,30).all,30).position,atHold);assert.equal(P.project(M,a,45).state.stock.A14,'depot');
+console.log('Spatial tests passed: read-only history/forecast, interpolation, interruption/reopening/recall, custody, replay and delayed report visibility.');

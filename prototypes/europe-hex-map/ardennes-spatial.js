@@ -1,0 +1,20 @@
+"use strict";
+// Authored operational diagram coordinates, not reconstructed historical deployments.
+const ArdennesSpatial=(()=>{
+ const nodes={HQ:{name:'Ardennes Coordination HQ',echelon:'Division',x:170,y:100,parent:null},M14:{name:'Crossing Defense HQ',echelon:'Regiment',x:735,y:235,parent:'HQ'},M15:{name:'Ridge Defense HQ',echelon:'Regiment',x:750,y:70,parent:'HQ'},depot:{name:'West Supply Depot',x:185,y:295},reserve:{name:'Mobile Reserve | 2 M10 platoons',x:280,y:360}};
+ const routes={M14:[[185,295],[340,305],[470,270],[610,290],[735,295]],M15:[[185,295],[340,305],[445,200],[570,150],[750,130]],mixed:[[185,295],[340,305],[470,270],[735,295],[700,205],[750,130]]};
+ function point(points,f){f=Math.max(0,Math.min(1,f));const lengths=points.slice(1).map((p,i)=>Math.hypot(p[0]-points[i][0],p[1]-points[i][1]));let d=lengths.reduce((a,b)=>a+b,0)*f;for(let i=0;i<lengths.length;i++){if(d<=lengths[i]){const t=lengths[i]?d/lengths[i]:0;return[points[i][0]+(points[i+1][0]-points[i][0])*t,points[i][1]+(points[i+1][1]-points[i][1])*t];}d-=lengths[i];}return points.at(-1);}
+ function frames(M,s){let state=M.initial(s.id,s.profile,s.staff,s.test);const out=[state];for(const c of s.commands){state=M.execute(state,c);out.push(state);}return out;}
+ function forecast(M,s){const out=[];let x=s;for(let i=0;i<100&&x.queue.length;i++){x=M.execute(x,{id:'forecast-'+s.revision+'-'+i,revision:x.revision,type:'advance'});out.push(x);}return out;}
+ function project(M,s,time){const history=frames(M,s),future=time>s.time?forecast(M,s):[],all=[...history,...future];let state=history[0];for(const f of all)if(f.time<=time)state=f;if(time>s.time){state=JSON.parse(JSON.stringify(state));for(const [id,m]of Object.entries(state.missions)){if(!s.missions[id].report){delete m.report;if(m.result){delete m.result;m.state='Committed';}}}if(String(state.reserve).startsWith('survivors:')&&!Object.values(s.missions).some(m=>m.report))state.reserve=knowledge(s).reserve;}return {state,all,mode:time<s.time?'Historical view':time>s.time?'Forecast':'Current'};}
+ function transport(all,time,paths=routes,depot=[185,295]){let pos=depot,segment=null,previous={trips:[]};for(const frame of all){if(frame.time>time)break;for(const t of frame.trips){const old=previous.trips.find(x=>x.id===t.id);if(t.status===old?.status)continue;const at=frame.time;const here=segment?point(segment.path,(at-segment.start)/(segment.end-segment.start)):pos;if(t.status==='transit'){const path=old?.status==='held'?[here,...(segment?.remainingPath||paths[t.route].slice(1))]:paths[t.route];segment={path,start:at,end:t.arrival,trip:t.id};}
+ if(t.status==='held'){pos=here;const path=segment?.path||paths[t.route];const fraction=segment?Math.max(0,Math.min(1,(at-segment.start)/(segment.end-segment.start))):0;const total=path.slice(1).reduce((a,p,i)=>a+Math.hypot(p[0]-path[i][0],p[1]-path[i][1]),0);let dist=0,index=1;for(;index<path.length;index++){dist+=Math.hypot(path[index][0]-path[index-1][0],path[index][1]-path[index-1][1]);if(dist>=fraction*total)break;}segment={path:[pos,pos],remainingPath:path.slice(index),start:at,end:at+1,trip:t.id};}
+ if(t.status==='returning'){const path=t.recalled?[here,depot]:[...paths[t.route]].reverse();segment={path,start:at,end:at+30,trip:t.id};}
+ if(t.status==='complete'){pos=depot;segment=null;}
+ }previous=frame;}
+ return {position:segment?point(segment.path,(time-segment.start)/(segment.end-segment.start)):pos,trip:segment?.trip};}
+ // Parent-HQ knowledge projection: undispatched reports cannot reveal test outcome truth.
+ function knowledge(s){const x=JSON.parse(JSON.stringify(s));for(const m of Object.values(x.missions)){if(m.result&&!m.report){delete m.result;m.state='Committed';}}if(String(x.reserve).startsWith('survivors:')){const m=Object.values(x.missions).find(m=>m.choice==='reinforced');if(m&&!m.report)x.reserve='committed:'+m.id;}x.events=x.events.filter(e=>!e.text.includes('TEST outcome reconciled'));return x;}
+ return{nodes,routes,point,frames,forecast,project,transport,knowledge};
+})();
+if(typeof module!=='undefined')module.exports=ArdennesSpatial;

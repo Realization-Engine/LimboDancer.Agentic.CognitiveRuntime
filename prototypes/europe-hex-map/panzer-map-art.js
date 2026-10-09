@@ -8,7 +8,8 @@ const PanzerMapArt=(()=>{
  function inside(x,y,ps){let hit=false;for(let i=0,j=ps.length-1;i<ps.length;j=i++){const [a,b]=ps[i],[c,e]=ps[j];if((b>y)!==(e>y)&&x<(c-a)*(y-b)/(e-b)+a)hit=!hit;}return hit;}
  function seamWoods(d){
   const a=d.boards.find(b=>b.id==="A"),c=d.boards.find(b=>b.id==="C");
-  if(!a||!c)return [];
+  const layout=d.illustration.joinedLayout,ai=layout.findIndex(x=>x.boardId==="A");
+  if(!a||!c||d.illustration.layoutAxis==="vertical"||layout[ai]?.clockwiseDegrees!==90||layout[ai+1]?.boardId!=="C"||layout[ai+1]?.clockwiseDegrees!==270)return [];
   const edge=b=>b.hexes.filter(h=>h.imageCenter.v*H<4);
   return edge(a).flatMap(h=>{const mate=edge(c).find(k=>Math.abs(h.imageCenter.u-(1-k.imageCenter.u))*W<1);
    return mate&&(h.terrain.base==="woods"||mate.terrain.base==="woods")?[{id:h.id+":"+mate.id,y:h.imageCenter.u*W}]:[];});
@@ -16,10 +17,11 @@ const PanzerMapArt=(()=>{
  function draw(svg,d,bd,selected,details,joined=false){
   const features=d.illustration.features.filter(f=>f.boardId===bd.id),woods=features.filter(f=>f.kind==="woodland");
   const defs=node("defs"),pattern=node("pattern",{id:"panzer-ground-"+bd.id,width:37,height:41,patternUnits:"userSpaceOnUse"});pattern.append(node("path",{d:"M4 8h2 M22 27h1 M12 36h2",stroke:"#837e50","stroke-width":.7,opacity:.17}));defs.append(pattern);svg.append(defs,node("rect",{width:W,height:H,fill:"#eee8bd"}));
-  for(const h of bd.hexes){const fill=h.terrain.base==="marsh"?"#bfd0ac":h.terrain.elevationLevel===2?"#cec899":h.terrain.elevationLevel===1?"#ded7ab":h.terrain.base==="town"?"#e9ddb9":"#eee8bd";svg.append(node("polygon",{points:points(h.imagePolygon.map(p=>[p.u,p.v])),fill}));}
+  for(const h of bd.hexes){const fill=h.terrain.base==="water"&&!features.some(f=>f.kind==="water")?"#79bac5":h.terrain.base==="marsh"?"#bfd0ac":h.terrain.elevationLevel===2?"#cec899":h.terrain.elevationLevel===1?"#ded7ab":h.terrain.base==="town"?"#e9ddb9":"#eee8bd";svg.append(node("polygon",{points:points(h.imagePolygon.map(p=>[p.u,p.v])),fill}));}
+  for(const f of features.filter(f=>f.kind==="water"))svg.append(node("polygon",{points:points(f.polygon),fill:f.color,"data-illustration":"water"}));
   svg.append(node("rect",{width:W,height:H,fill:"url(#panzer-ground-"+bd.id+")","pointer-events":"none"}));
   for(const h of bd.hexes.filter(h=>h.terrain.base==="woods")){
-   if(joined&&h.imageCenter.v*H<4)continue;
+   if(joined&&seamWoods(d).length>0&&(bd.id==="A"||bd.id==="C")&&h.imageCenter.v*H<4)continue;
    if(woods.some(f=>inside(h.imageCenter.u,h.imageCenter.v,f.polygon)))continue;
    const rng=random(d.illustration.seed+bd.id+h.id),cx=h.imageCenter.u,cy=h.imageCenter.v;
    woods.push({id:h.id,polygon:Array.from({length:14},(_,i)=>{const a=i*Math.PI/7,r=39+rng()*15;return[cx+Math.cos(a)*r/W,cy+Math.sin(a)*r/H];}),color:"#9caa73"});
@@ -48,20 +50,20 @@ const PanzerMapArt=(()=>{
   for(const h of bd.hexes){const poly=node("polygon",{points:points(h.imagePolygon.map(p=>[p.u,p.v])),fill:"none",stroke:h.id===selected?"#b77725":"#746f52","stroke-opacity":h.id===selected?1:.27,"stroke-width":h.id===selected?4:.8});poly.append(node("title",{},h.label+": "+h.terrain.base));svg.append(poly);
    if(details||h.id===selected){svg.append(node("text",{x:Math.max(20,Math.min(1105,h.imageCenter.u*W)),y:Math.max(18,Math.min(3125,h.imageCenter.v*H)),"text-anchor":"middle","font-size":17,"paint-order":"stroke",stroke:"#fffbe8","stroke-width":3,"data-hex-label":h.id},h.id));if(details)svg.append(node("text",{x:h.imageCenter.u*W,y:h.imageCenter.v*H+20,"text-anchor":"middle","font-size":11},h.terrain.features.join(" / ")));}
   }
-  if(!details)for(const label of d.illustration.labels.filter(l=>l.boardId===bd.id))svg.append(node("text",{x:label.position[0]*W,y:label.position[1]*H,"text-anchor":"middle","font-family":"Barlow Condensed, sans-serif","font-weight":700,"font-size":28.75,"transform":joined?`rotate(${bd.id==="A"?-90:90} ${label.position[0]*W} ${label.position[1]*H})`:"rotate(0)","data-place-label":label.text,"letter-spacing":1,"paint-order":"stroke",stroke:"#eee8bd","stroke-width":5},label.text));
+  if(!details)for(const label of d.illustration.labels.filter(l=>l.boardId===bd.id))svg.append(node("text",{x:label.position[0]*W,y:label.position[1]*H,"text-anchor":"middle","font-family":"Barlow Condensed, sans-serif","font-weight":700,"font-size":28.75,"transform":joined?`rotate(${-(d.illustration.joinedLayout.find(p=>p.boardId===bd.id)?.clockwiseDegrees===270?-90:d.illustration.joinedLayout.find(p=>p.boardId===bd.id)?.clockwiseDegrees||0)} ${label.position[0]*W} ${label.position[1]*H})`:"rotate(0)","data-place-label":label.text,"letter-spacing":1,"paint-order":"stroke",stroke:"#eee8bd","stroke-width":5},label.text));
  }
  function northRose(d,boardId,joined=false){
   const source=d.illustration.northIndicators.find(n=>n.boardId===boardId);
   const bearing=source&&{...source,clockwiseDegreesFromSheetUp:joined?0:source.clockwiseDegreesFromSheetUp};
   if(!bearing)return null;
   const svg=node("svg",{viewBox:"0 0 80 80",class:"panzer-north-rose",role:"img","aria-label":"North, board "+boardId+", "+bearing.clockwiseDegreesFromSheetUp+" degrees clockwise from sheet top"});
-  svg.append(node("title",{},"North according to Situation 4 mapboard orientation"),node("circle",{cx:40,cy:40,r:37,fill:"#f7f5ee","fill-opacity":.7,stroke:"#9b9b83"}));
+  svg.append(node("title",{},"North according to Situation "+d.situation.number+" mapboard orientation"),node("circle",{cx:40,cy:40,r:37,fill:"#f7f5ee","fill-opacity":.7,stroke:"#9b9b83"}));
   const g=node("g",{transform:`rotate(${bearing.clockwiseDegreesFromSheetUp} 40 40)`});
   g.append(node("path",{d:"M40 21 L32 53 L40 48 Z",fill:"#1e2719"}),node("path",{d:"M40 21 L48 53 L40 48 Z",fill:"#c3c8b4",stroke:"#1e2719","stroke-width":.8}));svg.append(g);
   const a=bearing.clockwiseDegreesFromSheetUp*Math.PI/180;
   svg.append(node("text",{x:40+29*Math.sin(a),y:40-29*Math.cos(a)+4,"text-anchor":"middle","font-family":"sans-serif","font-size":13,"font-weight":700,fill:"#1e2719"},"N"));return svg;
  }
- const project=(rotation,u,v)=>rotation===90?{x:1-v,y:u}:{x:v,y:1-u};
- const unproject=(rotation,x,y)=>rotation===90?{u:y,v:1-x}:{u:1-y,v:x};
+ const project=(rotation,u,v)=>rotation===0?{x:u,y:v}:rotation===180?{x:1-u,y:1-v}:rotation===90?{x:1-v,y:u}:{x:v,y:1-u};
+ const unproject=(rotation,x,y)=>rotation===0?{u:x,v:y}:rotation===180?{u:1-x,v:1-y}:rotation===90?{u:y,v:1-x}:{u:1-y,v:x};
  return {draw,northRose,project,unproject,seamWoods};
 })();

@@ -1,8 +1,8 @@
 """Reject UTF-8 text that was accidentally decoded as Windows-1252."""
 import re
 from pathlib import Path
-UI_FILES = ('viewer.html', 'index.html', 'app.template.js', 'theater-view.js', 'workflow-view.js',
-            'regional-view.js', 'situation-state.js', 'situation-view.js', 'tactical-reference.js', 'tactical-handoff.js', 'formation-state.js', 'formation-view.js', 'theater-counters.js', 'regional-state.js', 'app.js', 'site.css', 'image-export.js')
+UI_FILES = ('atlas-navigation.js', 'ardennes-workspace.js', 'ardennes-spatial.js', 'ardennes-command.html', 'ardennes-command-view.js', 'ardennes-command-state.js', 'ardennes-command-bridge.js', 'viewer.html', 'index.html', 'app.template.js', 'theater-view.js', 'workflow-view.js',
+            'regional-view.js', 'situation-state.js', 'situation-view.js', 'tactical-reference.js', 'tactical-handoff.js', 'formation-state.js', 'formation-view.js', 'theater-counters.js', 'regional-state.js', 'app.js', 'site.css', 'image-export.js', 'panzer-situation-view.js', 'panzer-situation-state.js', 'panzer-map-art.js')
 def check_text(text, name):
     if '\ufffd' in text:
         raise ValueError(f'{name}: replacement character in UI text')

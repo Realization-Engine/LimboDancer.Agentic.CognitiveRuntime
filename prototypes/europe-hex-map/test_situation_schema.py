@@ -7,7 +7,7 @@ class SituationSchemaTests(unittest.TestCase):
  def test_campaign_scoped_numbering(self):
   registry=json.loads((ROOT/'sources/campaign-registry.json').read_text(encoding='utf-8'))
   validate_registry(registry,self.data)
-  other=copy.deepcopy(registry['campaigns'][0]);other['id']='second-campaign';other['situations'][0]['id']='second-campaign:another-situation'
+  other=copy.deepcopy(registry['campaigns'][0]);other['id']='second-campaign';other['situations']=[{**other['situations'][0],'id':'second-campaign:another-situation'}]
   registry['campaigns'].append(other);validate_registry(registry,self.data) # 01 is valid in another campaign.
   duplicate=copy.deepcopy(registry['campaigns'][0]['situations'][0]);duplicate['id']='duplicate-number'
   registry['campaigns'][0]['situations'].append(duplicate)

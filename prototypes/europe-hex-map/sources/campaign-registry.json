@@ -5,18 +5,180 @@
       "id": "normandy-inland-june-1944",
       "title": "Normandy inland operations",
       "startDate": "1944-06-08",
-      "endDate": "1944-06-30",
+      "endDate": "1944-07-18",
       "commandSnapshotId": "normandy-1944-06-08",
-      "timeBasis": "Authored parent browsing window. Each child Situation retains its own date and simulation clock.",
-      "nextSituationNumber": 2,
+      "timeBasis": "Source-card browsing window extended through Goodwood. Stable campaign ID retained; June command snapshot does not describe July forces.",
+      "nextSituationNumber": 3,
       "situations": [
         {
           "id": "normandy-inland-june-1944:st-lo",
           "number": 1,
           "title": "St. Lo",
           "sourcePackageId": "panzer-leader-04-st-lo"
+        },
+        {
+          "id": "normandy-inland-june-1944:goodwood",
+          "number": 2,
+          "title": "Operation Goodwood",
+          "sourcePackageId": "panzer-leader-05-goodwood"
         }
       ]
+    },
+    {
+      "id": "lorraine-september-1944",
+      "title": "Lorraine advance",
+      "startDate": "1944-09-14",
+      "endDate": "1944-09-30",
+      "commandSnapshotId": "lorraine-situations-1944",
+      "timeBasis": "Dated legacy Situation collection; no live headquarters snapshot or geographic force deployment asserted.",
+      "nextSituationNumber": 3,
+      "situations": [
+        {
+          "id": "lorraine-september-1944:marieulles",
+          "number": 1,
+          "title": "Marieulles",
+          "sourcePackageId": "panzer-leader-08-marieulles"
+        },
+        {
+          "id": "lorraine-september-1944:nancy",
+          "number": 2,
+          "title": "Encirclement of Nancy",
+          "sourcePackageId": "panzer-leader-07-nancy"
+        }
+      ]
+    },
+    {
+      "id": "ardennes-december-1944",
+      "title": "Ardennes operations",
+      "startDate": "1944-12-16",
+      "endDate": "1945-01-01",
+      "commandSnapshotId": "ardennes-situations-1944",
+      "timeBasis": "Dated legacy Situation collection; no live headquarters snapshot or geographic force deployment asserted.",
+      "nextSituationNumber": 8,
+      "situations": [
+        {
+          "id": "ardennes-december-1944:bulge-thrust",
+          "number": 1,
+          "title": "Bulge: Thrust",
+          "sourcePackageId": "panzer-leader-14-bulge-thrust"
+        },
+        {
+          "id": "ardennes-december-1944:bastogne-prelude",
+          "number": 2,
+          "title": "Bastogne: Prelude",
+          "sourcePackageId": "panzer-leader-16-bastogne-prelude"
+        },
+        {
+          "id": "ardennes-december-1944:fortified-goose-egg",
+          "number": 3,
+          "title": "The 'Fortified Goose Egg'",
+          "sourcePackageId": "panzer-leader-13-fortified-goose-egg"
+        },
+        {
+          "id": "ardennes-december-1944:elsenborn-ridge",
+          "number": 4,
+          "title": "Elsenborn Ridge",
+          "sourcePackageId": "panzer-leader-15-elsenborn-ridge"
+        },
+        {
+          "id": "ardennes-december-1944:turning-point-celles",
+          "number": 5,
+          "title": "Turning Point: Celles",
+          "sourcePackageId": "panzer-leader-17-turning-point-celles"
+        },
+        {
+          "id": "ardennes-december-1944:bastogne-siege",
+          "number": 6,
+          "title": "Bastogne: Siege",
+          "sourcePackageId": "panzer-leader-18-bastogne-siege"
+        },
+        {
+          "id": "ardennes-december-1944:pattons-counter-offensive",
+          "number": 7,
+          "title": "Patton's Counter Offensive",
+          "sourcePackageId": "panzer-leader-19-pattons-counter-offensive"
+        }
+      ]
+    },
+    {
+      "id": "rhine-march-1945",
+      "title": "Rhine crossing",
+      "startDate": "1945-03-07",
+      "endDate": "1945-03-31",
+      "commandSnapshotId": "rhine-situations-1945",
+      "timeBasis": "Dated legacy Situation collection; no live headquarters snapshot asserted.",
+      "situations": [
+        {
+          "id": "rhine-march-1945:remagen-bridge",
+          "number": 1,
+          "title": "Remagen Bridge",
+          "sourcePackageId": "panzer-leader-20-remagen-bridge"
+        }
+      ],
+      "nextSituationNumber": 2
+    },
+    {
+      "id": "market-garden-september-1944",
+      "title": "Market-Garden ground operations",
+      "startDate": "1944-09-20",
+      "endDate": "1944-09-29",
+      "commandSnapshotId": "market-garden-situations-1944",
+      "timeBasis": "Dated source-card collection; no live headquarters snapshot asserted.",
+      "situations": [
+        {
+          "id": "market-garden-september-1944:nijmegen",
+          "number": 1,
+          "title": "Operation Market: Nijmegen",
+          "sourcePackageId": "panzer-leader-09-nijmegen"
+        },
+        {
+          "id": "market-garden-september-1944:arnhem",
+          "number": 2,
+          "title": "Operation Market: Arnhem",
+          "sourcePackageId": "panzer-leader-10-arnhem"
+        },
+        {
+          "id": "market-garden-september-1944:anticlimax",
+          "number": 3,
+          "title": "Operation Garden: Anticlimax",
+          "sourcePackageId": "panzer-leader-11-anticlimax"
+        }
+      ],
+      "nextSituationNumber": 4
+    },
+    {
+      "id": "reichswald-source-1944",
+      "title": "Reichswald source-card study (date unverified)",
+      "startDate": "1944-09-07",
+      "endDate": "1944-09-07",
+      "commandSnapshotId": "reichswald-source-1944-source-collection",
+      "timeBasis": "Printed source-card collection; no live headquarters snapshot or verified strength return asserted.",
+      "situations": [
+        {
+          "id": "reichswald-source-1944:reichswald",
+          "number": 1,
+          "title": "The Reichswald",
+          "sourcePackageId": "panzer-leader-06-reichswald"
+        }
+      ],
+      "nextSituationNumber": 2
+    },
+    {
+      "id": "saar-november-1944",
+      "title": "Saar counterattack",
+      "startDate": "1944-11-25",
+      "endDate": "1944-11-25",
+      "commandSnapshotId": "saar-november-1944-source-collection",
+      "timeBasis": "Printed source-card collection; no live headquarters snapshot or verified strength return asserted.",
+      "situations": [
+        {
+          "id": "saar-november-1944:saar",
+          "number": 1,
+          "title": "Prelude: The Saar",
+          "sourcePackageId": "panzer-leader-12-saar"
+        }
+      ],
+      "nextSituationNumber": 2
     }
   ]
 }

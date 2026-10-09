@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Counter Colors | Map Utilities</title>
+<link rel="stylesheet" href="site.css"><link rel="stylesheet" href="counter-color-test.css">
+<header><div><div class="eyebrow">Map Utilities / Counter Colors</div><h1>Counter Colors</h1></div><nav aria-label="Utility navigation"><a href="terrain-colors.html">Terrain Colors</a> · <a href="index.html">Return to Campaign Atlas</a></nav></header>
+<div class="lab-layout"><aside>
+<p>Dummy units on the existing St. Lo terrain. These are color samples, not historical deployments or playable unit statistics. Covers WWII ASL nationality groups; countries sharing a palette are listed together.</p>
+<label for="nationality">Selected palette</label><select id="nationality"></select>
+<p id="family"></p><div id="adjustments"></div><p id="value" class="data-label"></p>
+<label><input id="edge" type="checkbox" checked> Off-white edge and shadow</label>
+<label for="size">Counter size</label><input id="size" type="range" min="65" max="130" value="95">
+<label><input id="names" type="checkbox" checked> Show nationality labels</label>
+<div class="lab-actions"><button id="resetOne">Restore selected default</button><button id="resetAll">Restore all defaults</button><button id="export">Export palette JSON</button></div>
+<p id="status" role="status"></p><h2>Same counter, different terrain</h2><div id="proof"></div>
+<p class="note">Sliders stay within proposed nationality color families. These bounds are design choices, not official print specifications. Chinese samples keep a blue center and brown surround. Black SS is an optional comparison.</p>
+<details><summary>Palette reference</summary><p>ASL families follow the <a href="https://texas-asl.com/download/Ye%20Old%20VASL%20Boards%20v6.pdf">nationality color chart</a>, with Finnish light gray and Chinese two-tone variants.</p><p>Your exported palette is the default. Further adjustments are saved in this browser; restore defaults to return to that palette. Campaign artwork is unchanged. Korean War expansions and third-party bespoke schemes are outside this WWII test.</p></details>
+</aside><main id="viewport"><div class="lab-toolbar"><button id="fit">Fit map</button><button id="in" aria-label="Zoom in">+</button><button id="out" aria-label="Zoom out">-</button><span>Wheel to zoom. Space + left drag or middle drag to pan. Click a counter to edit.</span></div><svg id="testMap" xmlns="http://www.w3.org/2000/svg" aria-label="Dummy Campaign Situation nationality color comparison"></svg></main></div>
+<script src="panzer-situation-data.js"></script><script src="panzer-map-art.js"></script><script src="counter-color-test.js"></script></html>

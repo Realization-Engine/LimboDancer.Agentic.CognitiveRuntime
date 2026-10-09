@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Terrain Colors | Map Utilities</title>
+<link rel="stylesheet" href="site.css"><link rel="stylesheet" href="terrain-colors.css">
+<header><div><div class="eyebrow">Map Utilities</div><h1>Terrain Colors</h1></div><nav aria-label="Utility navigation"><a href="counter-color-test.html">Counter Colors</a> · <a href="index.html">Return to Campaign Atlas</a></nav></header>
+<div class="terrain-layout"><aside>
+<p>Compare default artwork with your edited palette. The continuous demo landscape combines every supported base type and feature: wooded hills, village roads, a stream crossing, marshy shores, bocage fields and desert terrain. Select a feature on the edited map, or choose a color below. Edits stay in this utility until approved for campaign use.</p>
+<label for="board">Preview board</label><select id="board"><option value="demo">Combined terrain: demo landscape</option><option value="A">Board A: towns and countryside</option><option value="C">Board C: woods and marsh</option></select>
+<label for="feature">Terrain / feature color</label><select id="feature"></select>
+<div class="color-fields"><input type="color" id="color" aria-label="Feature color"><label for="hex">Hex color<input id="hex" type="text" pattern="#[0-9a-fA-F]{6}" maxlength="7" spellcheck="false"></label></div>
+<p id="description" class="note"></p>
+<label for="gridOpacity">Hex grid opacity <output id="opacityValue"></output></label><input id="gridOpacity" type="range" min="0" max="100" value="27">
+<label><input id="counters" type="checkbox" checked> Show approved ASL counter palette</label>
+<label><input id="hexLabels" type="checkbox"> Show hex identifiers</label>
+<label><input id="compare" type="checkbox" checked> Compare with approved defaults</label>
+<div class="actions"><button id="resetOne">Restore selected color</button><button id="resetAll">Restore all defaults</button><button id="export">Export terrain JSON</button></div>
+<p id="status" role="status" aria-live="polite"></p>
+<details><summary>What is being edited?</summary><p>Colors and grid opacity only. Hex types, elevations, roads, streams and building geometry are unchanged. Defaults use your approved exported terrain palette. Restore defaults returns to those colors. Additional terrain symbols are illustrative preview artwork, not implemented campaign rules. Both previews share the same zoom and position.</p><p>Counter colors come from your approved export, not unsaved changes in Counter Colors. Click terrain in the edited preview to select its color. Drag samples to move them in both previews; Space + left drag or middle drag pans even over a counter. Positions are retained per board during this visit; Reset counters restores their starting positions. Samples are illustrative, not historical deployments. Amber remains the reserved selection color.</p></details>
+</aside><main>
+<div class="terrain-toolbar"><button id="fit">Fit map</button><button id="resetCounters">Reset counters</button><button id="in" aria-label="Zoom in">+</button><button id="out" aria-label="Zoom out">-</button><span>Point to select terrain · Space + left drag or middle drag to pan · Drag counters to move</span></div>
+<div id="previews"><section id="currentPanel"><h2>Default palette</h2><svg id="current" xmlns="http://www.w3.org/2000/svg" aria-label="Approved default terrain colors"></svg></section><div id="paletteSplitter" role="separator" aria-orientation="horizontal" aria-label="Resize palette previews" aria-controls="currentPanel editedPanel" aria-valuemin="15" aria-valuemax="85" aria-valuenow="50" tabindex="0" title="Drag to resize. Double-click to split evenly. Arrow keys adjust."><span></span></div><section id="editedPanel"><h2>Edited palette</h2><svg id="edited" xmlns="http://www.w3.org/2000/svg" aria-label="Edited terrain colors; select a feature to edit its color"></svg></section></div>
+</main></div>
+<script src="panzer-situation-data.js"></script><script src="panzer-map-art.js"></script><script src="counter-palette-defaults.js"></script><script src="terrain-demo.js"></script><script src="terrain-palette-defaults.js"></script><script src="terrain-colors.js"></script><script src="terrain-splitter.js"></script></html>

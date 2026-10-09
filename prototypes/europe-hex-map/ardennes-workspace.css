@@ -1,0 +1,77 @@
+body.ardennes-active{display:flex;flex-direction:column;height:100vh;overflow:hidden}.ardennes-active>#shell,.ardennes-active>.workflow{display:none!important}#ardennesWorkspace{display:grid;grid-template-columns:360px minmax(0,1fr);flex:1;min-height:0;background:#f7f5ee}#ardennesWorkspace .operation-command{width:auto;overflow:auto;padding:18px;border-right:1px solid #bbc1ae;background:#f7f5ee}#ardennesWorkspace .operation-map{display:flex;flex-direction:column;min-width:0;overflow:auto;background:#e4e7da;position:relative}#operationSvg{display:block;width:100%;flex:1;min-height:330px;touch-action:none;background:#ede7c9}#operationTime{padding:12px 18px;background:#fffdf6;border-bottom:2px solid #4a6326}#operationTime strong,#operationTime span{display:inline-block;margin-right:20px}#operationTime input[type=range]{display:block;width:100%;margin:14px 0;accent-color:#4a6326}#operationTime button{padding:6px 10px;margin:4px}#operationTime select{padding:6px}#operationTime p{margin:5px 0;font-size:.9rem}#operationTime details{max-height:120px;overflow:auto}#operationDetail{padding:10px 18px;background:#fffdf6;border-top:1px solid #bbc1ae}#operationDetail h3,#operationDetail p{margin:4px 0}#operationDetail p{font-size:.9rem}.operation-note{font-size:.82rem;color:#5b6152;margin:8px 14px}.operation-tools{display:flex;align-items:center;gap:14px;padding:8px;flex-wrap:wrap;font-size:.85rem}.operation-label{paint-order:stroke;stroke:#f7f5ee;stroke-width:4px;fill:#202819}.operation-marker{cursor:pointer}.operation-marker:focus{outline:3px solid #b77725}.hierarchy-node{display:block;width:100%;text-align:left;margin:6px 0}.hierarchy-node.child{width:calc(100% - 20px);margin-left:20px}.hierarchy-node[aria-current=true]{border:2px solid #b77725;background:#efe4c6}#commandApp section{margin:12px 0;padding:12px;background:#fffdf6;border:1px solid #c4c7b9}#commandApp h2{font-size:1.2rem}#commandApp label{display:block;margin-top:12px}#commandApp select,#commandApp textarea{width:100%;padding:8px}#commandApp button,#commandApp .action{display:inline-block;padding:8px;margin:6px 3px 6px 0}#commandApp p{font-size:.92rem}#commandApp table{width:100%;font-size:.8rem;border-collapse:collapse}#commandApp td,#commandApp th{padding:5px;border-bottom:1px solid #ddd;text-align:left}#commandApp [role=alert]{color:#8a3b2a}#commandApp details{margin:12px 0}#commandApp .test{border:2px solid #8a3b2a}@media(max-width:800px){#ardennesWorkspace{grid-template-columns:280px minmax(400px,1fr);overflow:auto}.ardennes-active>header{padding:8px}#operationTime button{font-size:.8rem}}
+
+#operationTime select{display:inline-block;width:auto}#operationSvg{min-height:560px}#operationTime details{margin:4px 0}#operationTime input[type=range]{margin:8px 0}#operationTime{position:sticky;top:0;z-index:2}#operationDetail{min-height:80px}.operation-map>.operation-note{margin:5px 18px}
+
+#ardennesWorkspace .operation-map{display:grid;grid-template-rows:auto auto minmax(180px,1fr) auto auto;overflow:hidden;min-height:0}#operationSvg{min-height:0;height:100%;width:100%}#operationDetail{min-height:0;max-height:110px;overflow:auto}#operationTime{position:relative;font-size:.9rem}#operationTime details{max-height:85px}#operationTime p{font-size:.8rem}.operation-map>.operation-note{font-size:.72rem}#operationTime select{max-width:220px}
+
+/* Keep campaign situations beside the command map at every workflow step. */
+#ardennesWorkspace{grid-template-columns:320px minmax(0,1fr) 300px}
+#operationSituations{width:auto;min-width:0;overflow:auto;padding:16px;border-left:1px solid #bbc1ae;background:#f7f5ee}
+#operationSituations p{font-size:.88rem;color:#5b6152;line-height:1.45}
+.operation-situation-card{margin:14px 0;padding:14px;border:1px solid #c4c7b9;border-radius:4px;background:#fffdf6}
+.operation-situation-card.selected{border:2px solid #b77725}
+.operation-situation-card h3{margin:0 0 10px;font-size:1.1rem}
+.operation-situation-card a,.operation-situation-card button{display:block;padding:9px;width:100%;box-sizing:border-box;text-align:left}
+.operation-situation-card a{background:#4a6326;color:#fff;text-decoration:none;border-radius:4px}
+html.ardennes-loading #shell,html.ardennes-loading .workflow{display:none!important}
+@media(max-width:1100px){#ardennesWorkspace{grid-template-columns:280px minmax(400px,1fr) 270px;overflow:auto}}
+
+#campaignSituationSurface{min-width:0;min-height:0;overflow:auto;grid-row:2 / -1}
+.operation-map.showing-situation:has(#campaignSituationSurface:not([hidden]))>.operation-tools,.operation-map.showing-situation:has(#campaignSituationSurface:not([hidden]))>#operationSvg,.operation-map.showing-situation:has(#campaignSituationSurface:not([hidden]))>#operationDetail,.operation-map.showing-situation:has(#campaignSituationSurface:not([hidden]))>.operation-note{display:none}
+#panzerSituation.campaign-embedded{position:static;inset:auto;margin:0;width:100%;max-width:none;height:auto;max-height:none;box-sizing:border-box;border:0;padding:12px;overflow:visible}
+#panzerSituation.campaign-embedded .panzer-layout{min-width:0}
+#operationSituations #campaignSituationStep{display:block;padding:0}
+#operationSituations .panzer-card-scan{width:100%;height:auto}
+#operationSituations button{max-width:100%;white-space:normal;margin:5px 0}
+.campaign-board-context{border-left:3px solid #b77725;padding-left:10px}
+
+#panzerSituation.campaign-embedded>p:not([role="status"]),#panzerSituation.campaign-embedded>details:has(.panzer-card-scan){display:none}
+#panzerSituation.campaign-embedded>h3{font-size:1rem;margin:8px 0}
+#panzerSituation.campaign-embedded .panzer-layout{grid-template-columns:220px minmax(0,1fr)}
+#panzerSituation.campaign-embedded[data-map-mode="game"] .panzer-layout{grid-template-columns:minmax(0,1fr)}
+#panzerSituation.campaign-embedded .panzer-toolbar{gap:6px}
+
+#panzerSituation.campaign-embedded .panzer-joined-scroll{height:clamp(300px,56vh,800px)}
+#panzerSituation.campaign-embedded[data-map-mode="game"] .panzer-joined-scroll{height:65vh}
+
+/* Compact controls give the map the remaining height. */
+#ardennesWorkspace{grid-template-columns:var(--left-pane,320px) 8px minmax(440px,1fr) 8px var(--right-pane,300px);overflow-x:auto}
+#ardennesWorkspace .operation-map{grid-template-rows:auto auto minmax(180px,1fr) auto}
+.operation-splitter{cursor:col-resize;touch-action:none;background:#e4e7da;position:relative}
+.operation-splitter::after{content:"";position:absolute;top:0;bottom:0;left:3px;width:2px;background:#bbc1ae}
+.operation-splitter:hover::after,.operation-splitter:focus::after{background:#b77725;width:4px;left:2px}
+.operation-splitter:focus-visible{outline:2px solid #b77725;outline-offset:-2px}
+#operationTime{padding:6px 40px 6px 10px;min-height:32px}
+#operationTimeContent{display:flex;align-items:center;gap:6px;white-space:nowrap;overflow-x:auto;min-width:0}
+#operationTime strong,#operationTime span{margin-right:6px;font-size:.8rem;flex-shrink:0}
+#operationTime button.timeline-icon{flex:0 0 32px;width:32px;height:32px;margin:0;padding:0;font-size:1.2rem;line-height:1}
+#operationTime .timeline-advance{background:#e4ebd3;border-color:#4a6326}
+#operationTime select{flex:0 0 auto;width:auto;max-width:110px;font-size:.75rem;padding:4px}
+#operationTime #timelineToggle{position:absolute;right:4px;top:6px;margin:0;padding:3px;width:28px;height:28px;font-size:.75rem}
+#operationTime [hidden]{display:none!important}
+.operation-scrub-row{display:flex;align-items:center;gap:10px;height:32px}
+#operationScrub{flex:1;min-width:0;width:auto!important;margin:0!important}
+#operationEvents{position:relative;flex:0 0 auto}
+#operationTime .operation-event-list{margin:0;overflow:visible;max-height:none}
+.operation-event-list summary{font-size:.78rem;cursor:pointer}
+#operationTime .operation-event-list[open]{position:absolute;top:-12px;left:0;width:280px;max-height:220px;overflow:auto;z-index:5;background:#fffdf6;border:1px solid #bbc1ae;padding:8px;box-shadow:0 3px 10px #0002}
+#operationTime .operation-event-list button{display:block;font-size:.8rem}
+#operationInformation{background:#fffdf6;min-height:0;border-top:1px solid #bbc1ae}
+#operationInformation>summary{padding:5px 12px;cursor:pointer;font-size:.8rem;color:#4a6326}
+#operationDetail{border:0;max-height:110px}
+#operationInformation>.operation-note{font-size:.7rem;margin:4px 18px}
+.operation-map.showing-situation:has(#campaignSituationSurface:not([hidden]))>#operationInformation{display:none}
+#campaignSituationSurface{grid-row:2 / -1}
+
+/* Embedded boards occupy remaining workspace height, independent of roster length. */
+#campaignSituationSurface{overflow:hidden}
+#panzerSituation.campaign-embedded[open]{display:flex;flex-direction:column;height:100%;min-height:0;overflow:hidden}
+#panzerSituation.campaign-embedded> *{flex-shrink:0}
+#panzerSituation.campaign-embedded>.panzer-layout{flex:1 1 0;min-height:160px;align-items:stretch;overflow:hidden}
+#panzerSituation.campaign-embedded .panzer-joined-scroll,
+#panzerSituation.campaign-embedded[data-map-mode="game"] .panzer-joined-scroll{height:100%;min-height:0;max-height:none;box-sizing:border-box}
+#panzerSituation.campaign-embedded .panzer-tray{height:100%;min-height:0;max-height:none;overflow:auto}
+#panzerSituation.campaign-embedded>.panzer-planning-notes,
+#panzerSituation.campaign-embedded>.panzer-asl-handoff{margin:4px 0;max-height:30vh;overflow:auto}
+#panzerSituation.campaign-embedded>.panzer-planning-notes>summary,
+#panzerSituation.campaign-embedded>.panzer-asl-handoff>summary{cursor:pointer;padding:4px 0}

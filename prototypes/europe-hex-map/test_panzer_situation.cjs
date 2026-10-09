@@ -15,9 +15,9 @@ const twice=JSON.parse(JSON.stringify(s));twice.engagements.push(twice.engagemen
 class E{constructor(tag){this.tag=tag;this.children=[];this.style={};this.attrs={};this.classList={add(){}};}addEventListener(name,fn,options){this["on"+name]=fn;this["options"+name]=options;}append(...x){this.children.push(...x);}prepend(...x){this.children.unshift(...x);}setAttribute(k,v){this.attrs[k]=v;}replaceChildren(){this.children=[];}showModal(){this.open=true;}close(){this.open=false;}}
 const nodes={gameControls:new E("section"),workflowChoose:new E("section")},body=new E("body"),doc={body,createElement:t=>new E(t),createElementNS:(ns,t)=>new E(t),getElementById:id=>nodes[id]||(nodes[id]=new E("section"))};ctx.document=doc;ctx.localStorage={getItem:()=>null,setItem(){}};
 vm.runInContext(fs.readFileSync(path.join(__dirname,"panzer-map-art.js"),"utf8"),ctx);
-vm.runInContext(fs.readFileSync(path.join(__dirname,"panzer-situation-view.js"),"utf8"),ctx);
+for(const f of ["counter-palette-defaults.js","terrain-palette-defaults.js","campaign-appearance.js","panzer-situation-view.js"])vm.runInContext(fs.readFileSync(path.join(__dirname,f),"utf8"),ctx);
 const descendants=e=>[e,...e.children.flatMap(descendants)];
-assert.equal(nodes.workflowChoose.children.length,0);
+assert.equal(nodes.workflowChoose.children.filter(e=>e.id==="legacyCampaignLibrary").length,1);
 assert.equal(nodes.gameControls.children.length,0);
 const flow=ctx.window.CampaignSituationWorkflow;
 flow.choose();assert.equal(flow.active,false); // Cannot open a child outside its parent.
@@ -35,11 +35,11 @@ assert.equal(descendants(body).filter(e=>e.attrs["data-hex-label"]).length,0);
 assert.equal(descendants(body).filter(e=>e.attrs["data-illustration"]==="building").length,d.illustration.features.filter(f=>f.kind==="building").length);
 assert.equal(descendants(body).filter(e=>e.className==="panzer-placed-count").length,21);
 assert.ok(descendants(body).filter(e=>e.className==="panzer-placed-count").every(e=>e.textContent==="0 placed"));
-const before=JSON.stringify(descendants(body).find(e=>e.tag==="svg"));
+const before=JSON.stringify(descendants(body).find(e=>e.attrs?.class==="panzer-joined-svg"));
 descendants(body).find(e=>e.textContent==="Show hex details").onclick();
 assert.equal(descendants(body).filter(e=>e.attrs["data-hex-label"]).length,692);
 descendants(body).find(e=>e.textContent==="Hide hex details").onclick();
-assert.equal(JSON.stringify(descendants(body).find(e=>e.tag==="svg")),before);
+assert.equal(JSON.stringify(descendants(body).find(e=>e.attrs?.class==="panzer-joined-svg")),before);
 console.log("Map illustration checks passed: buildings, optional annotations, deterministic redraw.");
 
 
@@ -54,7 +54,7 @@ const roseNode=descendants(body).find(e=>e.attrs.class==="panzer-north-rose");as
 const placeLabels=descendants(body).filter(e=>e.attrs["data-place-label"]);assert.equal(placeLabels.length,6);
 for(const label of placeLabels){assert.equal(label.attrs["font-size"],"28.75");const angle=["Wiln","St. Athan"].includes(label.textContent)?90:-90;assert.ok(label.attrs.transform.startsWith("rotate("+angle+" "));}
 descendants(body).find(e=>e.textContent==="Show source artwork").onclick();
-assert.equal(descendants(body).filter(e=>e.tag==="image").length,2);
+assert.equal(descendants(body).filter(e=>e.tag==="image"&&/board-[AC]\.png$/.test(e.attrs.href)).length,2);
 assert.ok(!descendants(body).some(e=>/^Inspect Board [AC]$/.test(e.textContent||"")));
 console.log("Joined boards: rotations, coordinate round-trips, single rose and source images passed.");
 
@@ -115,9 +115,9 @@ assert.throws(()=>m.launch(m.create(d),d),/Complete both sides/);
 assert.equal(descendants(body).find(e=>e.textContent==="Launch situation game map").disabled,true);
 for(const i of d.instances.filter(i=>d.counters.find(c=>c.id===i.counterTypeId).side==="Allied")){clickText(i.id+(stored.placements[i.id]?" (placed)":""));clickBoard(1,.4,.6);}
 clickText("Complete Allied setup");assert.equal(descendants(body).find(e=>e.textContent==="Launch situation game map").disabled,false);
-const deployment=JSON.stringify(stored.placements);clickText("Launch situation game map");assert.equal(body.children[0].attrs["data-map-mode"],"game");assert.equal(stored.gameLaunched,true);assert.ok(!descendants(body).some(e=>["Inspect Board A","Inspect Board C","Show source artwork","Show JSON terrain"].includes(e.textContent)));assert.equal(descendants(body).filter(e=>e.tag==="image").length,0);assert.ok(!descendants(body).find(e=>e.textContent==="Show hex details").disabled);assert.equal(descendants(body).filter(e=>e.className==="panzer-tray").length,0);assert.equal(descendants(body).filter(e=>e.className==="panzer-token").length,76);
+const deployment=JSON.stringify(stored.placements);clickText("Launch situation game map");assert.equal(body.children[0].attrs["data-map-mode"],"game");assert.equal(stored.gameLaunched,true);assert.ok(!descendants(body).some(e=>["Inspect Board A","Inspect Board C","Show source artwork","Show JSON terrain"].includes(e.textContent)));assert.equal(descendants(body).filter(e=>e.tag==="image"&&/board-[AC]\.png$/.test(e.attrs.href)).length,0);assert.ok(!descendants(body).find(e=>e.textContent==="Show hex details").disabled);assert.equal(descendants(body).filter(e=>e.className==="panzer-tray").length,0);assert.equal(descendants(body).filter(e=>e.className==="panzer-token").length,76);
 clickBoard(0,.5,.5);assert.equal(JSON.stringify(stored.placements),deployment);
-clickText("Review deployment");assert.equal(body.children[0].attrs["data-map-mode"],"setup");assert.ok(descendants(body).some(e=>e.textContent==="Show JSON terrain"));assert.equal(descendants(body).filter(e=>e.tag==="image").length,2);clickText("Resume game map");
+clickText("Review deployment");assert.equal(body.children[0].attrs["data-map-mode"],"setup");assert.ok(descendants(body).some(e=>e.textContent==="Show JSON terrain"));assert.equal(descendants(body).filter(e=>e.tag==="image"&&/board-[AC]\.png$/.test(e.attrs.href)).length,2);clickText("Resume game map");
 flow.returnParent();flow.choose();flow.openMap();assert.equal(body.children[0].attrs["data-map-mode"],"game");assert.equal(JSON.stringify(stored.placements),deployment);
 m.validate(stored,d);const invalidLaunch=m.create(d);invalidLaunch.gameLaunched=true;assert.throws(()=>m.validate(invalidLaunch,d),/Complete setup/);
 console.log("Setup-to-game checks passed: launch gate, larger view, retained deployment, no placement in game, and resume.");
@@ -126,3 +126,17 @@ flow.returnParent();const finalPreview=descendants(parentPanel).find(e=>e.classN
 console.log("Situation preview resumes the saved game and reports the persisted deployment count.");
 
 assert.equal(d.campaignAssignment.number,1);assert.ok(nodes.map.children.find(e=>e.attrs.id==="campaignSituationMarker").attrs["aria-label"].startsWith("Situation 01,"));assert.ok(descendants(parentPanel).some(e=>(e.textContent||"").startsWith("01 · St. Lo")));
+
+const appearance=vm.runInContext("CampaignAppearance",ctx);
+const terrainProbe=new E("g");
+for(const fill of ["#eee8bd","#e9ddb9"]){const item=new E("polygon");item.setAttribute("fill",fill);terrainProbe.append(item);}
+appearance.terrain(terrainProbe);
+assert.equal(terrainProbe.children[0].attrs.fill,"#d4eebe");
+assert.equal(terrainProbe.children[1].attrs.fill,"#8b95a2");
+for(const [side,id]of [["German","de"],["Allied","us"]]){
+ const image=appearance.counterImage("original.png",side,"sample");
+ assert.equal(image.attrs["data-nationality"],id);
+ assert.equal(image.children[1].attrs.fill,ctx.window.COUNTER_PALETTE_DEFAULTS.palettes.find(p=>p.id===id).css);
+ assert.equal(image.children[2].attrs.href,"original.png");
+}
+console.log("Approved St. Lo terrain and nationality palette checks passed.");

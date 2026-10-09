@@ -36,6 +36,10 @@
         },
         "dateStatus": {
           "type": "string"
+        },
+        "printedEndDate": {
+          "type": "string",
+          "format": "date"
         }
       },
       "required": [
@@ -681,7 +685,7 @@
               "predicate"
             ]
           },
-          "minItems": 1
+          "minItems": 0
         }
       },
       "required": [
@@ -846,7 +850,8 @@
                 "enum": [
                   "building",
                   "woodland",
-                  "bridge"
+                  "bridge",
+                  "water"
                 ]
               },
               "polygon": {
@@ -939,8 +944,8 @@
         },
         "joinedLayout": {
           "type": "array",
-          "minItems": 2,
-          "maxItems": 2,
+          "minItems": 1,
+          "maxItems": 4,
           "items": {
             "type": "object",
             "additionalProperties": false,
@@ -954,12 +959,20 @@
               },
               "clockwiseDegrees": {
                 "enum": [
+                  0,
                   90,
+                  180,
                   270
                 ]
               }
             }
           }
+        },
+        "layoutAxis": {
+          "enum": [
+            "horizontal",
+            "vertical"
+          ]
         }
       },
       "required": [
@@ -1059,6 +1072,215 @@
           "minLength": 1
         },
         "number": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "assetBase": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sourceCardImage": {
+      "type": "string",
+      "minLength": 1
+    },
+    "deployment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "allowedHexes",
+        "instructions",
+        "loads",
+        "evidence"
+      ],
+      "properties": {
+        "allowedHexes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "minItems": 0,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "boardId",
+                "hexId"
+              ],
+              "properties": {
+                "boardId": {
+                  "type": "string"
+                },
+                "hexId": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "instructions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "loads": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "passengerId",
+              "carrierId"
+            ],
+            "properties": {
+              "passengerId": {
+                "type": "string"
+              },
+              "carrierId": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "evidence": {
+          "type": "string"
+        },
+        "minimumSeparation": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "side",
+              "fromSide",
+              "hexes"
+            ],
+            "properties": {
+              "side": {
+                "enum": [
+                  "Allied",
+                  "German"
+                ]
+              },
+              "fromSide": {
+                "enum": [
+                  "Allied",
+                  "German"
+                ]
+              },
+              "hexes": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        }
+      }
+    },
+    "sourceRules": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "objectives",
+        "specialRules",
+        "execution"
+      ],
+      "properties": {
+        "status": {
+          "const": "transcribed-reference"
+        },
+        "objectives": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1
+        },
+        "specialRules": {
+          "type": "string"
+        },
+        "execution": {
+          "type": "string"
+        }
+      }
+    },
+    "airSupport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "groups",
+        "instructions",
+        "maxConcurrentFighterFlights",
+        "allowFlightMixing",
+        "allowRepeatRuns"
+      ],
+      "properties": {
+        "status": {
+          "const": "reference-only"
+        },
+        "instructions": {
+          "type": "string"
+        },
+        "maxConcurrentFighterFlights": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1
+        },
+        "allowFlightMixing": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "allowRepeatRuns": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "groups": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "id",
+              "role",
+              "instanceIds",
+              "availableFromTurn"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "role": {
+                "enum": [
+                  "observer",
+                  "fighter-bomber"
+                ]
+              },
+              "instanceIds": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "type": "string"
+                }
+              },
+              "availableFromTurn": {
+                "type": "integer",
+                "minimum": 1
+              }
+            }
+          }
+        },
+        "maxConcurrentAircraft": {
           "type": "integer",
           "minimum": 1
         }
@@ -1422,36 +1644,43 @@
           "minimum": 1
         },
         "factors": {
-          "type": "object",
-          "additionalProperties": false,
-          "properties": {
-            "attack": {
-              "type": "number",
-              "minimum": 0
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "attack": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "weaponType": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "range": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "defense": {
+                  "type": "number",
+                  "minimum": 0
+                },
+                "movement": {
+                  "type": "number",
+                  "minimum": 0
+                }
+              },
+              "required": [
+                "attack",
+                "weaponType",
+                "range",
+                "defense",
+                "movement"
+              ]
             },
-            "weaponType": {
-              "type": "string",
-              "minLength": 1
-            },
-            "range": {
-              "type": "number",
-              "minimum": 0
-            },
-            "defense": {
-              "type": "number",
-              "minimum": 0
-            },
-            "movement": {
-              "type": "number",
-              "minimum": 0
+            {
+              "type": "null"
             }
-          },
-          "required": [
-            "attack",
-            "weaponType",
-            "range",
-            "defense",
-            "movement"
           ]
         },
         "artwork": {
@@ -1469,7 +1698,7 @@
         "sourceCropPointsTopLeft": {
           "type": "array",
           "items": {
-            "type": "integer"
+            "type": "number"
           },
           "minItems": 0
         },
@@ -1547,6 +1776,23 @@
             "equipment",
             "decompositionStatus",
             "evidence"
+          ]
+        },
+        "nationality": {
+          "enum": [
+            "us",
+            "uk",
+            "de",
+            "am",
+            "ca"
+          ]
+        },
+        "kind": {
+          "enum": [
+            "unit",
+            "block",
+            "aircraft",
+            "bridge-equipment"
           ]
         }
       },
@@ -1631,6 +1877,10 @@
             "turn",
             "entryZoneId"
           ]
+        },
+        "setupGroup": {
+          "type": "string",
+          "minLength": 1
         }
       },
       "required": [
@@ -1853,6 +2103,71 @@
             "side",
             "objectiveId"
           ]
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "side",
+            "zoneId",
+            "count"
+          ],
+          "properties": {
+            "op": {
+              "const": "control-at-least"
+            },
+            "side": {
+              "enum": [
+                "Allied",
+                "German"
+              ]
+            },
+            "zoneId": {
+              "type": "string"
+            },
+            "count": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "op",
+            "side",
+            "edge",
+            "count",
+            "combatOnly"
+          ],
+          "properties": {
+            "op": {
+              "const": "exit-at-least"
+            },
+            "side": {
+              "enum": [
+                "Allied",
+                "German"
+              ]
+            },
+            "edge": {
+              "enum": [
+                "west",
+                "east",
+                "north",
+                "south"
+              ]
+            },
+            "count": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "combatOnly": {
+              "const": true
+            }
+          }
         }
       ]
     }
