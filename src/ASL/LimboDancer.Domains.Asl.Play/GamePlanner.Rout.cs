@@ -36,7 +36,7 @@ public sealed partial class GamePlanner
     /// <summary>Whether a broken unit may rout (A10.5): it must, or it is under DM.</summary>
     public bool MayRout(GameState state, UnitInstance unit) =>
         ScenarioA1RoutCalculator.MayRout(MustRout(state, unit), unit.Status == InstanceStatus.Active, Is(unit, Conditions.Broken), Is(unit, Conditions.DesperationMorale),
-            Is(unit, Conditions.Melee), Is(unit, Conditions.Captured));
+            Is(unit, Conditions.Melee), Is(unit, Conditions.Captured), Is(unit, Conditions.Disrupted));
 
     /// <summary>
     /// A20.21 (pass 35, task 35.17): why a broken unit surrenders instead of routing, and to whom, or null: by day, not Fanatic nor under No Quarter,
@@ -341,6 +341,12 @@ public sealed partial class GamePlanner
         if (RoutSurrender(state, unit, start) is { } surrender)
         {
             return Refused(scope, label, expected, ScenarioA1RoutCalculator.RoutSurrenderText(unit.Id, surrender.Cause, surrender.Captors));
+        }
+
+        // A19.12 (pass 35, task 35.2): a Disrupted unit that must rout may not use Low Crawl.
+        if (ScenarioA1RoutCalculator.DisruptedLowCrawlBar(unit.Id, Is(unit, Conditions.Disrupted), lowCrawl, state.Night) is { } disruptedBar)
+        {
+            return Refused(scope, label, expected, disruptedBar);
         }
 
         // A10.4 (read in the PDF, p. 66; ruling R31d.1): before it routs a broken unit leaves in its Location what it carries beyond its IPC, and routs

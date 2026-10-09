@@ -34,9 +34,12 @@ public static class ScenarioA1RoutCalculator
             : ExposedInOpenGround(reader, enemies, at, scenarioMonth) is { } seen ? $"it is in Open Ground in the LOS and Normal Range of {seen}"
             : null;
 
-    /// <summary>Whether a broken unit may rout (A10.5): it must, or it is under DM.</summary>
-    public static bool MayRout(string? mustRout, bool active, bool broken, bool desperationMorale, bool melee, bool captured) =>
-        mustRout is not null || (active && broken && desperationMorale && !melee && !captured);
+    /// <summary>
+    /// Whether a broken unit may rout (A10.5): it must, or it is under DM. A Disrupted unit stays put unless it must rout (A19.12; pass 35, task 35.2):
+    /// its DM alone gives it no rout.
+    /// </summary>
+    public static bool MayRout(string? mustRout, bool active, bool broken, bool desperationMorale, bool melee, bool captured, bool disrupted) =>
+        mustRout is not null || (active && broken && desperationMorale && !melee && !captured && !disrupted);
 
     /// <summary>Two Locations are the same or ADJACENT.</summary>
     public static bool AdjacentOrSame(IRoutFactReader reader, int one, int two)
@@ -462,6 +465,10 @@ public static class ScenarioA1RoutCalculator
     /// <summary>A20.21 (pass 35, task 35.17): what the Rout panel says of a unit that surrenders instead of routing; it is offered no route.</summary>
     public static string RoutSurrenderAdvice(string unitId, string cause, IReadOnlyList<string> captors) =>
         $"{unitId} does not rout: it {cause}, so it surrenders to {string.Join(" or ", captors)} as the RtPh ends (A20.21).";
+
+    /// <summary>A19.12 (pass 35, task 35.2): a Disrupted unit may not use Low Crawl, but at night (E1.54).</summary>
+    public static string? DisruptedLowCrawlBar(string unitId, bool disrupted, bool lowCrawl, bool night) =>
+        disrupted && lowCrawl && !night ? $"play.rout-low-crawl: {unitId} is Disrupted and may not use Low Crawl (A19.12)" : null;
 
     /// <summary>
     /// A10.4 (ruling R31d.1): the load a laden unit routs with: the one named, among the best loads; or the only choice when none is named; or null.
