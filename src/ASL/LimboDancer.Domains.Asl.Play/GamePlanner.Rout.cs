@@ -77,7 +77,7 @@ public sealed partial class GamePlanner
         private readonly List<BoardLocation> locations = [];
         private readonly Dictionary<BoardLocation, int> indexes = [];
         private readonly Dictionary<string, IReadOnlyList<RoutEnemyFacts>> enemies = new(StringComparer.Ordinal);
-        private readonly Dictionary<(int, int), RoutCoverFacts> covers = [];
+        private readonly Dictionary<(int, int, int?), RoutCoverFacts> covers = [];
 
         // The side whose units rout: the side last asked for its enemies. Every scan and search asks for them before it reads a cover.
         private string? routingSide;
@@ -134,9 +134,10 @@ public sealed partial class GamePlanner
         public RoutLosFacts? Los(int fromLocation, int toLocation) =>
             planner.Los(state, locations[fromLocation], locations[toLocation]) is { } los ? new RoutLosFacts(los.Status == LosStatus.Clear, los.Hindrance, los.Range) : null;
 
-        public RoutCoverFacts Cover(int enemyLocation, int location) =>
-            covers.TryGetValue((enemyLocation, location), out var cover) ? cover
-                : covers[(enemyLocation, location)] = planner.InterdictionCover(state, locations[enemyLocation], locations[location], routingSide);
+        public RoutCoverFacts Cover(int enemyLocation, int location, int? steppedFrom = null) =>
+            covers.TryGetValue((enemyLocation, location, steppedFrom), out var cover) ? cover
+                : covers[(enemyLocation, location, steppedFrom)] = planner.InterdictionCover(state, locations[enemyLocation], locations[location], routingSide,
+                    steppedFrom is { } left ? locations[left] : null);
 
         public int? Distance(int one, int two) => planner.HexDistance(state, locations[one], locations[two]);
 
@@ -199,9 +200,10 @@ public sealed partial class GamePlanner
     /// What keeps the enemy unit in one Location from applying the FFMO DRM to another (A10.531; pass 35, task 35.4), read as fire reads it: the
     /// Hindrances along the LOS by terrain and season with the vehicles, wrecks, and SMOKE on it (A6.7, D9.4, B25.2), the wall or hedge TEM of the hexside
     /// crossed (B9.3), Height Advantage (B10.31), and a wreck's or AFV's cover in the Location (D9.3). Rules decides what the reads come to. A wall
-    /// whose TEM fire cannot decide gives none here, as before the pass.
+    /// whose TEM fire cannot decide gives none here, as before the pass. The Location the routing unit steps in from is handed to the Height
+    /// Advantage read (B1.14, p. 113).
     /// </summary>
-    private RoutCoverFacts InterdictionCover(GameState state, BoardLocation from, BoardLocation at, string? routingSide)
+    private RoutCoverFacts InterdictionCover(GameState state, BoardLocation from, BoardLocation at, string? routingSide, BoardLocation? steppedFrom = null)
     {
         if (from == at || ReadLocation(state, from) is not { } fromRead || ReadLocation(state, at) is not { } atRead || Los(state, from, at) is not { } los)
         {
@@ -223,7 +225,7 @@ public sealed partial class GamePlanner
         var firingSide = state.Sides.FirstOrDefault(side => side.Id != routingSide)?.Id;
         var wall = firingSide is null ? null : HexsideTemAt(state, at, [(from, los.Range)], firingSide, null) is (var tem, null) ? tem : null;
         return ScenarioA1RoutCalculator.CoverFacts(refusal is null, fireLos?.HindranceAttributed == true, fireLos?.HindranceDrm ?? 0, vehiclesAndSmoke,
-            wall?.Tem > 0, HeightAdvantageAt(state, at, atRead, [(from, height)], false), CoverAt(state, at, routingSide) is not null);
+            wall?.Tem > 0, HeightAdvantageAt(state, at, atRead, [(from, height)], false, steppedFrom), CoverAt(state, at, routingSide) is not null);
     }
 
     /// <summary>
@@ -236,10 +238,10 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>The enemy unit able to Interdict a routing unit entering an Open Ground Location (A10.53, A10.532, A10.533; ruling R13.3), or null.</summary>
-    private string? Interdictor(GameState state, string side, BoardLocation at)
+    private string? Interdictor(GameState state, string side, BoardLocation at, BoardLocation steppedFrom)
     {
         var scan = new RoutScan(this, state);
-        return ScenarioA1RoutCalculator.Interdictor(scan, scan.Enemies(side), scan.Index(at), state.ScenarioMonth);
+        return ScenarioA1RoutCalculator.Interdictor(scan, scan.Enemies(side), scan.Index(at), state.ScenarioMonth, scan.Index(steppedFrom));
     }
 
     /// <summary>Why a rout step from one Location to an ADJACENT one is not allowed (A10.5, A10.51; ruling R13.3), or null.</summary>
@@ -525,12 +527,13 @@ public sealed partial class GamePlanner
 
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "rout-stepped", new RoutStepped(routing.Id, to, costs[index], lowCrawl), null, null));
                 var after = Replay([.. existing, .. events]).Current!;
+                var cameFrom = here;
                 here = to;
                 standing = after;
                 AddAdjacentDm(scope, attemptId, expected, after, events);
 
                 // A10.53: Interdiction as it enters an Open Ground hex without Low Crawl, once per hex.
-                if (ScenarioA1RoutCalculator.InterdictionDue(lowCrawl, route.IndexOf(to) == index, () => Interdictor(after, routing.Side, to)) is not { } interdictor)
+                if (ScenarioA1RoutCalculator.InterdictionDue(lowCrawl, route.IndexOf(to) == index, () => Interdictor(after, routing.Side, to, cameFrom)) is not { } interdictor)
                 {
                     continue;
                 }
@@ -587,7 +590,8 @@ public sealed partial class GamePlanner
         }
 
         // The Interdictor of each distinct step is read only for a rout that is not a Low Crawl (A10.52); Rules words the plan (pass 32.f).
-        (string Step, string By)[] threatened = lowCrawl ? [] : [.. route.Distinct().Select(step => (Step: step.ToString(), By: Interdictor(state, unit.Side, step)))
+        (string Step, string By)[] threatened = lowCrawl ? [] : [.. route.Select((step, index) => (Step: step, From: index == 0 ? start : route[index - 1]))
+            .DistinctBy(item => item.Step).Select(item => (Step: item.Step.ToString(), By: Interdictor(state, unit.Side, item.Step, item.From)))
             .Where(item => item.By is not null).Select(item => (item.Step, item.By!))];
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], ScenarioA1RoutCalculator.RoutSummary(unit.Id, lowCrawl,
             [.. route.Select((step, index) => (step.ToString(), costs[index]))], threatened, [.. left.Select(item => (item.Weapon, item.Pp))], kept, start.ToString()))

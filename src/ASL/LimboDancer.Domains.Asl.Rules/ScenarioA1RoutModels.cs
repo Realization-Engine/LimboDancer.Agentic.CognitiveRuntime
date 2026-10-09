@@ -81,9 +81,10 @@ public interface IRoutFactReader
 
     /// <summary>
     /// What keeps the enemy unit in one Location from applying the FFMO DRM to another (A10.531; pass 35, task 35.4), read only for a clear LOS
-    /// within range. A reader that does not give it leaves the map's own Hindrance to decide.
+    /// within range. A reader that does not give it leaves the map's own Hindrance to decide. The Location the routing unit steps in from, when it
+    /// is entering, lets Height Advantage be read as B1.14 and B10.31 read it for a unit crossing a Crest Line.
     /// </summary>
-    public RoutCoverFacts Cover(int enemyLocation, int location) => RoutCoverFacts.None;
+    public RoutCoverFacts Cover(int enemyLocation, int location, int? steppedFrom = null) => RoutCoverFacts.None;
 
     /// <summary>The distance in hexes between two Locations, or null when the map cannot give it.</summary>
     public int? Distance(int one, int two);

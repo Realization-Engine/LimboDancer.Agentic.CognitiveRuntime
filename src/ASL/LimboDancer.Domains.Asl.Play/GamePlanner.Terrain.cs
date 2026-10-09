@@ -226,13 +226,15 @@ public sealed partial class GamePlanner
     /// Whether a target at a higher elevation than every firer may claim Height Advantage (B10.31; ruling R10.4): not a mover under Defensive
     /// First Fire whose step came from a lower hex across the hexside a firer's LOS crosses into its hex.
     /// </summary>
-    private bool HeightAdvantageAt(GameState state, BoardLocation target, LocationRead targetRead, IReadOnlyList<(BoardLocation From, int Level)> firers, bool snapShot)
+    private bool HeightAdvantageAt(GameState state, BoardLocation target, LocationRead targetRead, IReadOnlyList<(BoardLocation From, int Level)> firers, bool snapShot,
+        BoardLocation? routStepFrom = null)
     {
         // Pass 32.b: the moving stack's origin and the LOS entry hexsides are read here, the latter only when Rules asks, and Rules decides.
+        // B1.14 (pass 35, the referee's review): a routing unit's step into the Location is handed over as a mover's is.
         var movement = state.Movement;
-        var left = movement?.From;
-        var facts = new HeightAdvantageFacts(targetRead.Hex.BaseLevel, target.Level, [.. firers.Select(item => item.Level)], state.Phase == "mph",
-            left is not null && movement!.Location == target, left is null ? null : ReadLocation(state, left)?.Hex.BaseLevel,
+        var left = routStepFrom ?? movement?.From;
+        var facts = new HeightAdvantageFacts(targetRead.Hex.BaseLevel, target.Level, [.. firers.Select(item => item.Level)], routStepFrom is not null || state.Phase == "mph",
+            routStepFrom is not null || (left is not null && movement!.Location == target), left is null ? null : ReadLocation(state, left)?.Hex.BaseLevel,
             left is null ? null : SideToward(state, target, left) is { } climbed ? (int)climbed : null,
             index => LosEntrySides(state, target, firers[index].From) is { } sides ? [.. sides.Select(side => (int)side)] : null, snapShot);
         return ScenarioA1TerrainCosts.HeightAdvantageAt(facts);

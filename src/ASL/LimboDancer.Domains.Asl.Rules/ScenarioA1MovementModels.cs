@@ -138,7 +138,7 @@ public sealed record WallAdvantageFacts(WallAdvantageLocationFacts One, WallAdva
 
 /// <summary>
 /// The facts of Height Advantage (B10.31; ruling R10.4): the target hex's base level and Location level, each firer's level, whether the moving stack is in
-/// the target Location in the MPh with the base level of the hex it left and the target's hexside toward it (null when unread or not adjacent), and the
+/// the target Location in the MPh (or a routing unit is entering it, B1.14) with the base level of the hex it left and the target's hexside toward it (null when unread or not adjacent), and the
 /// hexsides each firer's LOS crosses into the target hex, read by index only when the rule asks.
 /// </summary>
 public sealed record HeightAdvantageFacts(

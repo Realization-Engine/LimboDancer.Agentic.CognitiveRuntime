@@ -21,6 +21,7 @@ public sealed class ScenarioA1RoutRallyRulesTests
         private readonly HashSet<(int, int)> blocked = [];
         private readonly HashSet<int> unplayable = [];
         private readonly Dictionary<(int, int), RoutCoverFacts> covers = [];
+        private readonly Dictionary<(int, int, int), RoutCoverFacts> stepCovers = [];
         private readonly List<string> reads = [];
 
         public IReadOnlyList<string> Reads => reads;
@@ -62,10 +63,17 @@ public sealed class ScenarioA1RoutRallyRulesTests
             return this;
         }
 
-        public RoutCoverFacts Cover(int enemyLocation, int location)
+        public Row CoveredFrom(int enemyLocation, int location, int steppedFrom, RoutCoverFacts cover)
+        {
+            stepCovers[(enemyLocation, location, steppedFrom)] = cover;
+            return this;
+        }
+
+        public RoutCoverFacts Cover(int enemyLocation, int location, int? steppedFrom = null)
         {
             reads.Add($"cover {enemyLocation}-{location}");
-            return covers.GetValueOrDefault((enemyLocation, location), RoutCoverFacts.None);
+            return steppedFrom is { } left && stepCovers.TryGetValue((enemyLocation, location, left), out var stepped) ? stepped
+                : covers.GetValueOrDefault((enemyLocation, location), RoutCoverFacts.None);
         }
 
         public RoutLocationFacts? Location(int location) => new(Terrain[location], false);
@@ -158,6 +166,13 @@ public sealed class ScenarioA1RoutRallyRulesTests
         // Fire's count of the map Hindrance, where fire can attribute it, replaces the map's own total: none in fire's count means Open Ground.
         Assert.True(ScenarioA1RoutCalculator.CouldApplyFfmo(new Row().Covered(4, 2, new(0, 0, false, false, false)), 4, 2, 6));
         Assert.True(ScenarioA1RoutCalculator.CouldApplyFfmo(new Row(), 4, 2, 6));
+
+        // B1.14 (p. 113), B10.31: Height Advantage keeps a unit standing on the hill from Interdiction, but not one that enters it across the Crest
+        // Line hexside the enemy's LOS crosses. The reader is asked with the Location the step comes from, and the search reads each step so.
+        var hill = new Row().Covered(4, 2, new(null, 0, false, true, false)).CoveredFrom(4, 2, 3, RoutCoverFacts.None);
+        Assert.Null(ScenarioA1RoutCalculator.Interdictor(hill, [Enemy("a", 4)], 2, 7));
+        Assert.Null(ScenarioA1RoutCalculator.Interdictor(hill, [Enemy("a", 4)], 2, 7, steppedFrom: 1));
+        Assert.Equal("a", ScenarioA1RoutCalculator.Interdictor(hill, [Enemy("a", 4)], 2, 7, steppedFrom: 3));
 
         // The cover is read only for a clear LOS within range.
         var blocked = new Row().Block(4, 2);

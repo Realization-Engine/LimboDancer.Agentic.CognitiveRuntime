@@ -82,8 +82,9 @@ public static class ScenarioA1RoutCalculator
     /// Whether the enemy unit in a Location could apply the FFMO DRM to a unit in an Open Ground Location (A10.531, A10.53; pass 35, task 35.4): a clear
     /// LOS within the range given, no Hindrance of any kind along it (the map's, a vehicle's or wreck's, SMOKE), and no TEM the unit could claim against
     /// that enemy: a wall or hedge on the hexside crossed, Height Advantage, or a wreck or AFV in the Location. The cover is read only for a clear LOS in range.
+    /// A unit entering from <paramref name="steppedFrom"/> has no Height Advantage against a LOS that crosses the Crest Line hexside it climbs (B1.14, p. 113).
     /// </summary>
-    public static bool CouldApplyFfmo(IRoutFactReader reader, int enemyLocation, int at, int range)
+    public static bool CouldApplyFfmo(IRoutFactReader reader, int enemyLocation, int at, int range, int? steppedFrom = null)
     {
         ArgumentNullException.ThrowIfNull(reader);
         if (reader.Los(enemyLocation, at) is not { Clear: true } los || los.Range > range)
@@ -91,7 +92,7 @@ public static class ScenarioA1RoutCalculator
             return false;
         }
 
-        var cover = reader.Cover(enemyLocation, at);
+        var cover = reader.Cover(enemyLocation, at, steppedFrom);
         return (cover.MapHindrance ?? los.Hindrance) + cover.OtherHindrance == 0 && !cover.HexsideTem && !cover.HeightAdvantage && !cover.InHexCover;
     }
 
@@ -131,7 +132,7 @@ public static class ScenarioA1RoutCalculator
     /// Infantry not CX, pinned, Encircled, in Melee, or a prisoner, that could apply the FFMO DRM there (<see cref="CouldApplyFfmo"/>) within the range
     /// it may Interdict at (<see cref="InterdictionRange"/>). Vehicles, and units whose FP is halved for other reasons, are not read (backlog).
     /// </summary>
-    public static string? Interdictor(IRoutFactReader reader, IReadOnlyList<RoutEnemyFacts> enemies, int at, int? scenarioMonth)
+    public static string? Interdictor(IRoutFactReader reader, IReadOnlyList<RoutEnemyFacts> enemies, int at, int? scenarioMonth, int? steppedFrom = null)
     {
         ArgumentNullException.ThrowIfNull(reader);
         ArgumentNullException.ThrowIfNull(enemies);
@@ -143,7 +144,7 @@ public static class ScenarioA1RoutCalculator
         foreach (var enemy in enemies.Where(item => !item.Vehicle && !item.Broken && !item.Cx && !item.Pinned && !item.Melee && !item.Encircled)
             .OrderBy(item => item.Id, StringComparer.Ordinal))
         {
-            if ((enemy.InterdictionRange ?? enemy.NormalRange) is > 0 and var range && CouldApplyFfmo(reader, enemy.Location, at, range))
+            if ((enemy.InterdictionRange ?? enemy.NormalRange) is > 0 and var range && CouldApplyFfmo(reader, enemy.Location, at, range, steppedFrom))
             {
                 return enemy.Id;
             }
@@ -304,7 +305,7 @@ public static class ScenarioA1RoutCalculator
         string[] Seen(long mask) => [.. armed.Where((_, index) => index < 63 && (mask & (1L << index)) != 0)];
 
         var bars = new Dictionary<(int, int, long), bool>();
-        var interdicted = new Dictionary<int, bool>();
+        var interdicted = new Dictionary<(int, int), bool>();
         var entries = new Dictionary<(int, int, bool), RoutStepCost>();
         var best = new Dictionary<(int, long), int>();
         var reach = new Dictionary<int, int> { [start] = spent };
@@ -333,7 +334,8 @@ public static class ScenarioA1RoutCalculator
                     continue;
                 }
 
-                if (avoidInterdiction && (interdicted.TryGetValue(next, out var open) ? open : interdicted[next] = Interdictor(reader, enemies, next, scenarioMonth) is not null))
+                if (avoidInterdiction && (interdicted.TryGetValue((node.At, next), out var open) ? open
+                    : interdicted[(node.At, next)] = Interdictor(reader, enemies, next, scenarioMonth, node.At) is not null))
                 {
                     continue;
                 }

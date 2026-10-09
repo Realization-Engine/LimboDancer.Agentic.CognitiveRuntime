@@ -33,6 +33,7 @@ public sealed class BacklogPass35Tests : IDisposable
     private readonly string root = Path.Combine(Path.GetTempPath(), "asl-pass35-" + Guid.NewGuid().ToString("N"));
     private readonly FileGameStore store;
     private readonly Dictionary<string, string> terrain = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, int> levels = new(StringComparer.Ordinal);
 
     public BacklogPass35Tests() => store = new FileGameStore(root);
 
@@ -56,7 +57,7 @@ public sealed class BacklogPass35Tests : IDisposable
         },
     };
 
-    /// <summary>Board 01's grid, all Open Ground at level 0, with the terrain a test draws on it.</summary>
+    /// <summary>Board 01's grid, all Open Ground at level 0, with the terrain and the hill levels a test draws on it.</summary>
     private BoardHandle Board()
     {
         var geometry = BoardGeometry.StandardGeomorphic;
@@ -68,7 +69,7 @@ public sealed class BacklogPass35Tests : IDisposable
             var type = Type(terrain.GetValueOrDefault(text) ?? "Open Ground");
             var center = new LocationFacts(0, type, null);
             HexsideFacts[] hexsides = [.. Enum.GetValues<HexsideDirection>().Select(side => new HexsideFacts(side, true, type, null, false, false, false, false, null))];
-            hexes.Add(new HexFacts(name, index, 0, false, center, [center], hexsides, null, CenterTerrainSource.CenterSample));
+            hexes.Add(new HexFacts(name, index, levels.GetValueOrDefault(text), false, center, [center], hexsides, null, CenterTerrainSource.CenterSample));
         }
 
         return new BoardHandle(BoardCatalogTerrainEvidence.Board, "authored", BoardReadStatus.Verified, "pass 35 test board", new HexFactSet(geometry, "pass35", hexes));
@@ -296,6 +297,33 @@ public sealed class BacklogPass35Tests : IDisposable
 
         // The record reads back from the store with its attempted Location.
         Assert.Contains(store.Read(Scope)!.Events, item => item.Payload is RoutStepped { Attempted: not null });
+    }
+
+    [Theory]
+    [InlineData("E6", "E8", true)]
+    [InlineData("D5", "E7", false)]
+    public async Task ARoutUpAHillIsInterdictedOnlyAcrossTheCrestLineTheLosCrosses(string from, string enemy, bool interdicted)
+    {
+        // B1.14 (p. 113), B10.31: E5 is a level 1 hill hex, Open Ground, and g1 stands below it in column E. From E6 the squad climbs into E5 across
+        // the hexside g1's LOS crosses, so it has no Height Advantage and is Interdicted; from D5 it climbs across another hexside and is not.
+        levels["E5"] = 1;
+        terrain["E4"] = "Woods";
+        await SetupAt(5, "german", Unit("g1", "attacker-squad", enemy, "german"), Unit("r1", "defender-squad", from, "russian", "asl:broken"));
+        var before = Revision;
+        Committed(await Rout("r1", ["E5", "E4"], interdicted ? Once(3, 3) : null));
+        Assert.Equal(interdicted, Since(before).Any(item => item.Payload is RoutInterdicted { Interdictor: "g1" }));
+        Assert.Equal(L("E4"), Current.Location("r1")!.Location.ToString());
+    }
+
+    [Fact]
+    public async Task AUnitWhoseOnlyWayOutClimbsAcrossTheLosSurrenders()
+    {
+        // The Comprehensive Rout Example (p. 69): the climb into E5 is r1's only way from g1 beside it in E7, and it is Interdicted across the
+        // Crest Line, so r1 cannot rout without Interdiction and surrenders (A20.21).
+        levels["E5"] = 1;
+        terrain["E4"] = "Woods";
+        await SetupAt(5, "german", Unit("g1", "attacker-squad", "E7", "german"), Unit("r1", "defender-squad", "E6", "russian", "asl:broken"));
+        Refused(await Rout("r1", ["E5", "E4"]), "play.rout-surrender");
     }
 
     [Fact]
