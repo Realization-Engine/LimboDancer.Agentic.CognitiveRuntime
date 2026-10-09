@@ -611,6 +611,8 @@ public static class GameProjector
             Rules.UnitCondition.Recalled => Conditions.Recalled,
             Rules.UnitCondition.CcReaction => Conditions.CcReaction,
             Rules.UnitCondition.Ti => "asl:ti",
+            Rules.UnitCondition.Concealed => Conditions.Concealed,
+            Rules.UnitCondition.Hidden => Conditions.Hidden,
             _ => throw new ArgumentOutOfRangeException(nameof(condition), condition, "The projector maps no such condition."),
         };
 
