@@ -281,6 +281,10 @@ public sealed class ScenarioA1VehicleMovementRulesTests
         // E3.724, E3.7331 (pass 35, task 35.13 a): in Ground or Deep Snow an exit by road costs a full MP, as an entry by road does.
         Assert.Equal(2, ScenarioA1RecallCalculator.ExitHalfMp(8, true, false, snow: true));
         Assert.Equal(8, ScenarioA1RecallCalculator.ExitHalfMp(8, false, false, snow: true));
+
+        // E1.52, E3.9 (pass 35, task 35.14): the night's and the weather's MP are added to an exit as to an entry.
+        Assert.Equal(3, ScenarioA1RecallCalculator.ExitHalfMp(8, true, false, weatherHalfMp: 2));
+        Assert.Equal(10, ScenarioA1RecallCalculator.ExitHalfMp(8, false, false, weatherHalfMp: 2));
     }
 
     private static IEnumerable<(string Move, int HalfMp, int To)> Moves(int node, bool lowerBound) => node switch

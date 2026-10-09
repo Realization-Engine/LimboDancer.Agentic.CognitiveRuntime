@@ -281,7 +281,7 @@ public static class ScenarioA1TerrainCosts
     /// <see cref="BypassStepFacts.FromBaseLevel"/>, or from off board across the map edge (ruling R25.3), with the wall or hedge on the hexside crossed.
     /// <paramref name="smokeHalfMf"/> is read for the target where the planner read it. The Bypass hexsides are the caller's when the entry is given.
     /// </summary>
-    public static (InfantryEntry? Entry, string? Reason) BypassStep(BypassStepFacts facts, Func<int> smokeHalfMf)
+    public static (InfantryEntry? Entry, string? Reason) BypassStep(BypassStepFacts facts, Func<int> smokeHalfMf, InfantryWeatherRead? weather = null)
     {
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(smokeHalfMf);
@@ -339,7 +339,10 @@ public static class ScenarioA1TerrainCosts
             return (null, "play.move-hexside: that hexside terrain is not reviewed (ruling R10.1)");
         }
 
-        var halfMf = (rise == 1 ? 2 * laneCost : laneCost) + (facts.EntryWall is not null ? 2 : 0) + smokeHalfMf();
+        // E3.9 (p. 231; pass 35, task 35.14): the weather's MF are added per hexside Bypassed, after the total; a level's own cost once.
+        var perHexside = weather?.Invoke(laneTerrain, false, 0).HalfMf ?? 0;
+        var extra = (weather?.Invoke(laneTerrain, false, rise).HalfMf ?? 0) + ((bypass.Count - 1) * perHexside);
+        var halfMf = (rise == 1 ? 2 * laneCost : laneCost) + (facts.EntryWall is not null ? 2 : 0) + smokeHalfMf() + extra;
         return (new InfantryEntry(halfMf, laneTerrain, false, false, false, rise != 0), null);
     }
 

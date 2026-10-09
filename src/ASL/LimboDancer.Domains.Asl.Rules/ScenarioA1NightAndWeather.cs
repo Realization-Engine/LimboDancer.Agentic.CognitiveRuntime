@@ -125,7 +125,9 @@ public static class ScenarioA1NightAndWeather
         if (mud && !paved)
         {
             roadRate = false;
-            extra += terrain == "open-ground" ? 1 : 0;
+
+            // E3.65 (p. 230; pass 35, task 35.14): an unpaved road is Open Ground in Mud, whatever else its hex holds.
+            extra += terrain == "open-ground" || road ? 1 : 0;
         }
 
         if (snow && !plowed)

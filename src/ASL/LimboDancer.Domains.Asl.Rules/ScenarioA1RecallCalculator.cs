@@ -29,7 +29,8 @@ public static class ScenarioA1RecallCalculator
     /// A2.6, D2.16: the half MP of an exit: its hex's own terrain cost, or the road rate when a road crosses the hexside: a full MP for a BU AFV, and
     /// in Ground or Deep Snow (E3.724, E3.7331), as an entry by road pays (pass 35, task 35.13 a; the pass 32 design's section 12, item 15).
     /// </summary>
-    public static int ExitHalfMp(int terrainHalfMp, bool road, bool buttonedUpAfv, bool snow = false) => road ? (buttonedUpAfv || snow ? 2 : 1) : terrainHalfMp;
+    public static int ExitHalfMp(int terrainHalfMp, bool road, bool buttonedUpAfv, bool snow = false, int weatherHalfMp = 0) =>
+        (road ? (buttonedUpAfv || snow ? 2 : 1) : terrainHalfMp) + weatherHalfMp;
 
     /// <summary>
     /// D5.341 (ruling R5.17): the first moves of a shortest route in half MP from <paramref name="origin"/> off the map, or why it is undecided: an exact

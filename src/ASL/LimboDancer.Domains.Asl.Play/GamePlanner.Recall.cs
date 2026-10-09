@@ -100,8 +100,11 @@ public sealed partial class GamePlanner
             return null;
         }
 
-        return ScenarioA1RecallCalculator.ExitHalfMp(halfMp, read.Hex.Hexsides.FirstOrDefault(item => item.Side == side)?.Terrain?.IsRoad == true,
-            ButtonedUpAfv(vehicle), state.Weather("ground-snow") || state.Weather("deep-snow"));
+        // E1.52, E3.9 (pass 35, task 35.14; the pass 32 design's section 12, item 15): the night's and the weather's MP of the hexside crossed.
+        var crossed = read.Hex.Hexsides.FirstOrDefault(item => item.Side == side)?.Terrain;
+        var road = crossed?.IsRoad == true;
+        return ScenarioA1RecallCalculator.ExitHalfMp(halfMp, road, ButtonedUpAfv(vehicle), state.Weather("ground-snow") || state.Weather("deep-snow"),
+            VehicleWeatherHalfMp(state, type, paid, road, road && crossed?.Name == "Paved Road", road && state.SpecialRules.Contains("plowed-roads", StringComparer.Ordinal), 0));
     }
 
     /// <summary>

@@ -113,6 +113,9 @@ public static class ScenarioA1VehicleTerrainCosts
             terrain = scenarioMonth is >= 4 and <= 9 ? "grain" : "open-ground";
         }
 
+        // B9.4 (pass 35, task 35.14): a road crosses a wall or hedge by its gap, in Mud as in the dry.
+        var gap = road;
+
         // E3.6 (backlog pass 16, ruling R16.12; referee, pass 16): in Mud a vehicle using an unpaved road pays the Open Ground COT, whatever the hex holds.
         var paved = road && pavedRoad;
         var plowed = road && plowedRule;
@@ -187,7 +190,7 @@ public static class ScenarioA1VehicleTerrainCosts
         // B9.4: a wall or hedge hexside, not crossed by the road through a gap in it: fully-tracked 1 + COT; a halftrack a hedge only, 2 + COT with a
         // Bog DR in the hex it leaves; a truck neither.
         var bogInLeft = false;
-        if (wall is not null && !road)
+        if (wall is not null && !gap)
         {
             switch (type, wall)
             {
@@ -212,10 +215,17 @@ public static class ScenarioA1VehicleTerrainCosts
         }
 
         var towingHalfMp = towing ? 2 : 0;
-        cost = all ? cost : cost + penalty + towingHalfMp + weatherHalfMp(terrain, road, paved, plowed);
+        // D2.21, E3.9, E1.52 (pp. 196, 224, 231; pass 35, task 35.14): the Reverse multiplier is on the cost of entry; the weather's MP are added
+        // "after calculating total cost", and the night's "as if towing a Gun" (C10.1: after all other modifications), so neither is multiplied.
+        cost = all ? cost : cost + penalty + towingHalfMp;
         if (reverse && !all)
         {
             cost *= ReverseMultiplier(type);
+        }
+
+        if (!all)
+        {
+            cost += weatherHalfMp(terrain, road, paved, plowed);
         }
 
         // B16.43 (p. 130; pass 35, task 35.7): a ground level or level -1 hex adjacent to a marsh is a Bog hex for a vehicle entering by a non-road hexside.
@@ -261,7 +271,7 @@ public static class ScenarioA1VehicleTerrainCosts
     /// A VBM step's cost in half MP (D2.3, D2.31; ruling R11.2): twice the Open Ground cost with a level climbed and SMOKE, the wreck and vehicle penalty
     /// when the obstacle is a new hex, and the Reverse multiplier.
     /// </summary>
-    public static int BypassHalfMp(int open, int rise, bool smoke, bool newHex, Func<int> wreckHalfMp, bool reverse, string? movementType)
+    public static int BypassHalfMp(int open, int rise, bool smoke, bool newHex, Func<int> wreckHalfMp, bool reverse, string? movementType, int weatherHalfMp = 0)
     {
         var smokeHalfMp = smoke ? 2 : 0;
         var cost = 2 * (open + (rise > 0 ? rise * 8 : 0) + smokeHalfMp);
@@ -275,7 +285,8 @@ public static class ScenarioA1VehicleTerrainCosts
             cost *= ReverseMultiplier(movementType);
         }
 
-        return cost;
+        // E1.52, E3.9 (pp. 224, 231; pass 35, task 35.14): the night's and the weather's MP per hexside "transited via VBM", after the total.
+        return cost + weatherHalfMp;
     }
 
     /// <summary>

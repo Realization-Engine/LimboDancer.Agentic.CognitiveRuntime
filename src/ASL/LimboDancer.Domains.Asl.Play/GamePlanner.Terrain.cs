@@ -323,7 +323,9 @@ public sealed partial class GamePlanner
             fromBaseLevel,
             entryWall,
             state.ScenarioMonth);
-        var (entry, reason) = ScenarioA1TerrainCosts.BypassStep(facts, () => BlazeEntryHalfMf(state, to));
+        var entered = HexsideAt(state, to, side);
+        var (entry, reason) = ScenarioA1TerrainCosts.BypassStep(facts, () => BlazeEntryHalfMf(state, to),
+            entered is null ? null : (terrain, road, climbed) => InfantryWeatherHalfMf(state, entered, terrain, road, climbed));
         return (entry, reason, entry is null ? null : bypass, false);
     }
 

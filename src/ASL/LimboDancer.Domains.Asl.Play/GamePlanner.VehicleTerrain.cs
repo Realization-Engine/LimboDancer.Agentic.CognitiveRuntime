@@ -184,7 +184,8 @@ public sealed partial class GamePlanner
         }
 
         var cost = ScenarioA1VehicleTerrainCosts.BypassHalfMp(open, rise, HasSmoke(state, obstacle), state.Location(vehicle.Id)?.Location is { } now && now != obstacle,
-            () => WreckEntryHalfMp(state, obstacle, false), reverse, MovementTypeOf(vehicle));
+            () => WreckEntryHalfMp(state, obstacle, false), reverse, MovementTypeOf(vehicle),
+            VehicleWeatherHalfMp(state, type, "open-ground", false, false, false, rise));
 
         return (new VehicleEntry(cost, false, null, [], obstacle, other, "open-ground", false, reverse, null), null);
     }

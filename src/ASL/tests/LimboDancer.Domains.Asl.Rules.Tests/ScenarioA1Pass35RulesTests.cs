@@ -358,4 +358,40 @@ public sealed class ScenarioA1Pass35RulesTests
         Assert.Equal(4m, CaseOf(Fire("MPh", false, "defender-atr", 3, movement: new OrdnanceMovement(1, null, null, 1, 0)), "case-j"));
         Assert.Null(CaseOf(Fire("MPh", false, "defender-atr", 3, movement: new OrdnanceMovement(1, null, null, 1, 0) { InBogHex = true }), "case-j"));
     }
+
+    private static (VehicleTerrainEntry? Entry, string? Reason) Weathered(string type, bool reverse = false, bool road = false, bool mud = false, string? wall = null, int weather = 2) =>
+        ScenarioA1VehicleTerrainCosts.EntryCost(type, "G5", 0, false, "open-ground", "Open Ground", wall, wall, road, 0, 7, mud, false, false,
+            24, false, false, false, _ => 0, () => false, false, (_, _, _, _) => weather, reverse, false, []);
+
+    [Fact]
+    public void WeatherAndNightCostsAreAddedAfterTheTotalInReverseInBypassAndOnAMudRoad()
+    {
+        // D2.21, E3.9, E1.52 (pp. 196, 224, 231; task 35.14): a tank in Reverse into Open Ground at night pays 4 x 1 MP, then the night's 1 MP: 5 MP.
+        // Until pass 35 the night's MP was multiplied too: 8 MP.
+        Assert.Equal(4, Weathered("fully-tracked").Entry!.HalfMp);
+        Assert.Equal(10, Weathered("fully-tracked", reverse: true).Entry!.HalfMp);
+        Assert.Equal(8, Weathered("fully-tracked", reverse: true, weather: 0).Entry!.HalfMp);
+
+        // E1.52, E3.9: VBM pays them per hexside transited, after its doubling and the Reverse multiplier.
+        Assert.Equal(6, ScenarioA1VehicleTerrainCosts.BypassHalfMp(2, 0, false, false, () => 0, false, "fully-tracked", 2));
+        Assert.Equal(18, ScenarioA1VehicleTerrainCosts.BypassHalfMp(2, 0, false, false, () => 0, true, "fully-tracked", 2));
+
+        // B9.4, E3.6: in Mud an unpaved road still crosses a wall by its gap; a truck is not refused and a tank pays no wall.
+        Assert.NotNull(Weathered("truck", road: true, mud: true, wall: "wall", weather: 0).Entry);
+        Assert.Equal(Weathered("fully-tracked", road: true, mud: true, weather: 0).Entry!.HalfMp, Weathered("fully-tracked", road: true, mud: true, wall: "wall", weather: 0).Entry!.HalfMp);
+
+        // E3.64, E3.65 (p. 230): Infantry on an unpaved road in Mud pay half an MF more, in a woods-road hex too; not on a paved road.
+        static int Mud(string terrain, bool road, bool paved = false) =>
+            ScenarioA1NightAndWeather.InfantryWeatherHalfMf(false, false, true, false, false, false, 7, paved, terrain, road, 0).HalfMf;
+        Assert.Equal(1, Mud("open-ground", false));
+        Assert.Equal(1, Mud("woods", true));
+        Assert.Equal(0, Mud("woods", false));
+        Assert.Equal(0, Mud("woods", true, paved: true));
+
+        // E1.52: Passengers unload from a BU AFV halted by an NVR of 0.
+        static string? Blind(string kind) => ScenarioA1VehicleMovementCalculator.MoveBar("tank", kind, false, () => true, _ => false, false, null, false, false, null, () => null, false);
+        Assert.Contains("play.night-bu", Blind("enter"));
+        Assert.Null(Blind("stop"));
+        Assert.Null(Blind("unload"));
+    }
 }

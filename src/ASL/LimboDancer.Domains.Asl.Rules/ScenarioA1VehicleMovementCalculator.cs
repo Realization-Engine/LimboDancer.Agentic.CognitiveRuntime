@@ -249,7 +249,8 @@ public static class ScenarioA1VehicleMovementCalculator
             return $"play.move-vehicle: {id} has ended its move this MPh (A4.2)";
         }
 
-        if (kind != "stop" && nightBuBlind())
+        // E1.52 (p. 224; pass 35, task 35.14): "Passengers/Riders may unload as if the AFV had fired in the PFPh".
+        if (kind is not ("stop" or "unload") && nightBuBlind())
         {
             return $"play.night-bu: {id} is BU with an NVR of 0 and spends no MP but to Stop (E1.52)";
         }
