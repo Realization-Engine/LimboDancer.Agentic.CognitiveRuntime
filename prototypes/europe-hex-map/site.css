@@ -230,7 +230,7 @@ aside{padding:18px;overscroll-behavior:contain}
 .panzer-joined-scroll{min-width:0;height:clamp(260px,55vh,650px);overflow:auto;overscroll-behavior:contain;border:1px solid #aaa88f}
 .panzer-joined{display:flex;width:100%}
 
-.panzer-joined[data-detail="false"] .panzer-token{width:20px;height:20px}
+.panzer-board-joined .panzer-token{height:auto;aspect-ratio:1;box-sizing:border-box}
 .panzer-joined[data-detail="false"] .panzer-north-rose{width:42px;height:42px;top:4px;left:4px}
 .panzer-sheet{flex:1;min-width:0}.panzer-sheet>h3,.panzer-sheet>p{padding:8px 12px;margin:0;background:#eeeadd}
 .panzer-board-joined{max-width:none;width:100%;aspect-ratio:3138/1130}

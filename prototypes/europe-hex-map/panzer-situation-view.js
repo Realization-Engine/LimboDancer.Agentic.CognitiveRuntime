@@ -102,6 +102,9 @@
  token.addEventListener("pointermove",ev=>{if(!counterDrag)return;const dx=ev.clientX-counterDrag.x,dy=ev.clientY-counterDrag.y;if(!counterDrag.moved&&Math.hypot(dx,dy)<4)return;counterDrag.moved=true;const rect=map.getBoundingClientRect();token.style.left=(counterDrag.left+dx/rect.width*100)+"%";token.style.top=(counterDrag.top+dy/rect.height*100)+"%";});
  token.addEventListener("pointerup",ev=>{if(!counterDrag)return;const moved=counterDrag.moved;counterDrag=null;if(!moved)return;ev.preventDefault();ev.stopPropagation();suppressPanClick=true;bulkType=null;bulkHint=null;selected=id;const point=svg.createSVGPoint();point.x=ev.clientX;point.y=ev.clientY;const local=point.matrixTransform(drawing.getScreenCTM().inverse());act(()=>PanzerSituationModel.place(s,d,id,boardId,local.x/1130,local.y/3138));});
  token.addEventListener("pointercancel",()=>{if(counterDrag){counterDrag=null;render();}});
+ // Keep the counter square tied to hex geometry, independent of viewport and zoom.
+ const hex=bd.hexes.find(h=>h.id===p.hexId)||bd.hexes[0];
+ if(hex){const points=hex.imagePolygon.map(pt=>PanzerMapArt.project(rotation,pt.u,pt.v));const xs=points.map(pt=>pt.x),ys=points.map(pt=>pt.y);const width=portrait?1130:3138,height=portrait?3138:1130;const side=.72*Math.min((Math.max(...xs)-Math.min(...xs))*width,(Math.max(...ys)-Math.min(...ys))*height);token.style.width=(side/width*100)+"%";}
  token.className="panzer-token";token.style.left=position.x*100+"%";token.style.top=position.y*100+"%";token.title=id;token.setAttribute("aria-pressed",String(selected===id));token.setAttribute("aria-label",id);token.textContent="";const art=CampaignAppearance.counterImage(base+instance.artwork,d.counters.find(c=>c.id===instance.counterTypeId).side,id,d.counters.find(c=>c.id===instance.counterTypeId).nationality);token.append(art);map.append(token);}
    sheet.append(map);joined.append(sheet);
   }

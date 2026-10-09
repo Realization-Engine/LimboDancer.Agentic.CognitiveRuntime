@@ -73,6 +73,12 @@ const placementBeforeError=JSON.stringify(stored.placements);clickBoard(1,.25,.2
 for(const i of d.instances.filter(i=>d.counters.find(c=>c.id===i.counterTypeId).side==="German")){clickText(i.id+(stored.placements[i.id]?" (placed)":""));clickBoard(0,.3,.4);}
 clickText("Complete German setup");clickText("us-rifle-01");clickBoard(1,.4,.6);assert.equal(stored.placements["us-rifle-01"].board,"C");assert.ok(descendants(body).some(e=>e.className==="panzer-token"&&e.attrs["aria-label"]==="us-rifle-01"));
 console.log("UI placement checks passed for both rotated boards, stacking and wrong-side feedback.");
+for(const token of descendants(body).filter(e=>e.className==="panzer-token")){
+ assert.match(token.style.width,/^[0-9.]+%$/,'Counters scale with board width');
+ assert.ok(parseFloat(token.style.width)>1&&parseFloat(token.style.width)<4,'Counter fits within a landscape-board hex');
+}
+assert.match(fs.readFileSync(path.join(__dirname,'site.css'),'utf8'),/\.panzer-board-joined \.panzer-token\{height:auto;aspect-ratio:1/);
+
 
 // Wheel input changes the map size without rebuilding the selection or counter DOM.
 const wheelMap=descendants(body).find(e=>e.className==="panzer-board panzer-board-joined"),zoomContent=descendants(body).find(e=>e.className==="panzer-joined"),zoomViewport=descendants(body).find(e=>e.className==="panzer-joined-scroll");
