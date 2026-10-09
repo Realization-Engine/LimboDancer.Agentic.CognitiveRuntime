@@ -495,4 +495,483 @@ public static class ScenarioA1SetupCalculator
             _ => false,
         };
     }
+
+    // The setup's legality and fill (A2.9, A5.1, A5.5, A12.3, A12.11, A12.12, A12.34, A25.2, A26.4, C10; rulings R19.1 to R19.6, R20.4, R20.5, R20.7, R23.5, R25.4, R26.2, R26.3, R26.5, R31.4).
+
+    /// <summary>
+    /// The setup's state and why it is refused (rulings R19.1 to R19.6): each group's standing, the order being set up now, and the reasons in the order the
+    /// checks give them. <paramref name="terrain"/> gives a Location's terrain key by the Location's text, <paramref name="enterable"/> whether Infantry could
+    /// enter that terrain in play, and <paramref name="halfSquadOf"/> a squad definition's HS.
+    /// </summary>
+    public static SetupVerdict Check(SetupCardFacts card, IReadOnlyList<SetupCounterFacts> counters, Func<string, string?> terrain, Func<string?, bool> enterable,
+        Func<string, string?> halfSquadOf, int? month, string? balance)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        ArgumentNullException.ThrowIfNull(counters);
+        ArgumentNullException.ThrowIfNull(terrain);
+        ArgumentNullException.ThrowIfNull(enterable);
+        ArgumentNullException.ThrowIfNull(halfSquadOf);
+        var reasons = new List<string>();
+        var groups = new List<SetupGroupVerdict>();
+        var placed = counters.Where(counter => counter.Kind != "asl:sniper").ToArray();
+
+        // R20.7 (table player, pass 20): a card's OB sets up in Good Order.
+        foreach (var counter in placed.Where(counter => counter.Broken))
+        {
+            reasons.Add($"play.setup-broken: {counter.Id} sets up broken; a card's OB sets up in Good Order (ruling R20.7)");
+        }
+
+        // R19.1: every counter of a game from a card belongs to an OB group of its side.
+        foreach (var counter in placed.Where(counter => counter.Group is null))
+        {
+            reasons.Add(counter.Equipment
+                ? $"play.setup-group: {counter.Id} sets up possessed by a unit of its OB group (ruling R19.1)"
+                : $"play.setup-group: {counter.Id} belongs to no OB group of {counter.Side} (ruling R19.1)");
+        }
+
+        foreach (var side in card.Sides)
+        {
+            // A2.9: up to 10% (FRU) of the squads that set up on board may be Deployed before setup; the squads counted are those set up on
+            // board, whole or Deployed (referee, pass 19).
+            var sideSquads = placed.Count(counter => counter.Side == side.Side && counter.At is not null && counter.Kind == "asl:squad");
+            var deployedSide = 0;
+
+            // A2.9 (ruling R20.5): and up to 10% (FRU) of the squads that enter in a given turn.
+            var entering = new Dictionary<int, (int Squads, int Deployed)>();
+
+            // A26.4 (ruling R20.4): the counters the side's Balance adds, set up with any of its groups.
+            var pool = side.Side == balance ? side.BalanceUnits.GroupBy(unit => unit.Definition, StringComparer.Ordinal)
+                .ToDictionary(item => item.Key, item => item.Sum(unit => unit.Count), StringComparer.Ordinal) : new Dictionary<string, int>(StringComparer.Ordinal);
+            foreach (var group in side.Groups)
+            {
+                var id = group.Id;
+                var mine = placed.Where(counter => counter.Side == side.Side && counter.Group == id).ToArray();
+                var setsUp = group.Areas.Any(area => area.Kind != "entry");
+                var (remaining, groupReasons, deployed, offBoard, enteringHere) = Fill(card, side, group, id, mine, halfSquadOf, pool);
+                deployedSide += deployed;
+                foreach (var (turn, count) in enteringHere)
+                {
+                    var sum = entering.GetValueOrDefault(turn);
+                    entering[turn] = (sum.Squads + count.Squads, sum.Deployed + count.Deployed);
+                }
+
+                reasons.AddRange(groupReasons);
+
+                // R19.3: each counter within one of its group's setup areas; R20.6: and within the playable area.
+                foreach (var counter in mine.Where(counter => counter.At is not null))
+                {
+                    if (!group.Areas.Any(area => area.Kind != "entry" && In(card, area, counter.At!)))
+                    {
+                        reasons.Add($"play.setup-area: {counter.Id} sets up at {counter.At}, outside the setup areas of {group.Name} (ruling R19.3)");
+                    }
+                    else if (!Playable(card, counter.At!))
+                    {
+                        reasons.Add($"play.setup-playable: {counter.Id} sets up at {counter.At}, outside the playable area: {card.PlayableText} (A2.1; ruling R20.6)");
+                    }
+                }
+
+                // R20.5: off board a counter is neither "?" nor hidden.
+                foreach (var counter in mine.Where(counter => counter.OffBoard && (counter.Concealed || counter.Hidden || counter.Dummy)))
+                {
+                    reasons.Add($"play.setup-offboard: {counter.Id} waits off board to enter, neither under \"?\" nor hidden (A2.51; ruling R20.5)");
+                }
+
+                // R19.5 (A12.11, A12.12): the group's OB "?" are its Dummies plus each Location of its concealed real units.
+                var dummies = mine.Count(counter => counter.Dummy);
+                var concealedStacks = mine.Where(counter => counter.Concealed && !counter.NonOb && !counter.Dummy && !counter.Equipment && counter.At is not null)
+                    .Select(counter => counter.At!.Text).Distinct(StringComparer.Ordinal).Count();
+                var allotment = group.Dummies ?? 0;
+                if (dummies + concealedStacks > allotment)
+                {
+                    reasons.Add($"play.setup-concealment: {group.Name} uses {dummies + concealedStacks} \"?\" at setup and has {allotment} (A12.12; ruling R19.5)");
+                }
+
+                foreach (var counter in mine.Where(counter => ((counter.Concealed && !counter.NonOb) || counter.Dummy) && counter.At is not null))
+                {
+                    var key = terrain(counter.At!.Text);
+                    var area = group.Areas.FirstOrDefault(item => item.Kind != "entry" && In(card, item, counter.At!));
+                    if (key is null || !ScenarioA1Definitions.IsConcealmentTerrain(key, month) || area?.Concealed == false)
+                    {
+                        reasons.Add($"play.setup-concealment: {counter.Id} sets up under \"?\" at {counter.At}, which is not Concealment Terrain"
+                            + (area?.Concealed == false ? " or the SSRs forbid \"?\" there" : string.Empty) + " (A12.12; ruling R19.5)");
+                    }
+                }
+
+                // R19.4: an area whose SSR fixes its counters takes exactly that many, none a "?", with at least the MMC it names.
+                var complete = setsUp && remaining.Count == 0;
+                var limitedComplete = setsUp;
+                foreach (var area in group.Areas.Where(area => area.Counters is not null))
+                {
+                    var inArea = mine.Where(counter => !counter.Dummy && counter.At is not null && In(card, area, counter.At)).ToArray();
+                    var mmc = inArea.Count(counter => counter.Kind is "asl:squad" or "asl:half-squad" or "asl:crew");
+                    if (inArea.Length > area.Counters)
+                    {
+                        reasons.Add($"play.setup-limit: {inArea.Length} counters set up in {area.Id} of {group.Name}, and its SSR allows {area.Counters} (ruling R19.4)");
+                    }
+
+                    limitedComplete &= inArea.Length == area.Counters && mmc >= (area.MinMmc ?? 0);
+                }
+
+                if (group.Areas.Any(area => area.Counters is not null))
+                {
+                    complete = limitedComplete;
+
+                    // Table player, pass 19: what a limited area still owes, for the page and the start-of-play refusal.
+                    foreach (var area in group.Areas.Where(area => area.Counters is not null))
+                    {
+                        var inArea = mine.Where(counter => !counter.Dummy && counter.At is not null && In(card, area, counter.At)).ToArray();
+                        var mmc = inArea.Count(counter => counter.Kind is "asl:squad" or "asl:half-squad" or "asl:crew");
+                        if (inArea.Length < area.Counters)
+                        {
+                            remaining.Add(new SetupNeedVerdict(id, area.Id, "counters", area.Counters!.Value - inArea.Length));
+                        }
+
+                        if (mmc < (area.MinMmc ?? 0))
+                        {
+                            remaining.Add(new SetupNeedVerdict(id, area.Id, "MMC among them", area.MinMmc!.Value - mmc));
+                        }
+                    }
+                }
+
+                groups.Add(new SetupGroupVerdict(side.Side, id, group.Name, ScenarioA1ResultTables.SetupOrder(group.SetupOrder, side.SetsUpFirst), setsUp, complete, remaining,
+                    allotment - dummies - concealedStacks, offBoard, group.Units.Any(line => EntryOf(group, line) is not null)));
+            }
+
+            var allowed = (sideSquads + deployedSide + 9) / 10;
+            if (deployedSide > allowed)
+            {
+                reasons.Add($"play.setup-deployment: {side.Side} Deploys {deployedSide} squad(s) before setup, and 10% (FRU) of its {sideSquads + deployedSide} is {allowed} (A2.9; ruling R19.6)");
+            }
+
+            // R20.4 (table player, pass 20): the Balance counters are part of the OB, so the side's first group that sets up on board owes those not yet
+            // set up, and play does not start without them.
+            if (pool.Where(item => item.Value > 0).ToArray() is { Length: > 0 } owed
+                && groups.FindIndex(group => group.Side == side.Side && group.SetsUp) is var owing and >= 0)
+            {
+                groups[owing] = groups[owing] with
+                {
+                    Complete = false,
+                    Remaining = [.. groups[owing].Remaining, .. owed.Select(item => new SetupNeedVerdict(groups[owing].Id, "the Balance", item.Key, item.Value))],
+                };
+            }
+
+            foreach (var (turn, (squads, deployedThen)) in entering.OrderBy(item => item.Key))
+            {
+                var enteringAllowed = (squads + deployedThen + 9) / 10;
+                if (deployedThen > enteringAllowed)
+                {
+                    reasons.Add($"play.setup-deployment: {side.Side} Deploys {deployedThen} squad(s) entering on Turn {turn}, and 10% (FRU) of its {squads + deployedThen} is {enteringAllowed} (A2.9; ruling R20.5)");
+                }
+            }
+        }
+
+        // R26.3 (A5.5, C10): a Gun sets up manned by a crew or HS of its group, or in tow, never alone on the map.
+        foreach (var gun in placed.Where(counter => counter.Kind == "asl:gun" && counter.At is not null && !counter.Manning && !counter.Towed))
+        {
+            reasons.Add($"play.setup-gun: {gun.Id} sets up manned by a crew or HS of its OB group, or in tow (A5.5, C10; ruling R26.3)");
+        }
+
+        // R26.5 (A12.34): an Emplaced Gun, set up manned and not in tow, and its manning crew may use HIP in Concealment Terrain with no SSR, together.
+        var emplacedHidden = placed.Where(counter => counter.Kind == "asl:gun" && counter.Hidden && counter.Manning && !counter.Towed && counter.At is { } at
+            && terrain(at.Text) is { } key && ScenarioA1Definitions.IsConcealmentTerrain(key, month)
+            && placed.Any(crew => !crew.Equipment && crew.Manning && crew.Hidden && crew.At?.Text == at.Text && crew.Side == counter.Side)).ToArray();
+        bool HiddenWithGun(SetupCounterFacts counter) => !counter.Equipment && counter.Manning && emplacedHidden.Any(gun => gun.At?.Text == counter.At?.Text && gun.Side == counter.Side);
+
+        // R23.5 (A12.3): HIP only by an SSR token hip:<side>:<n>, for up to n squad-equivalents of MMC with the SMC set up with them, only in Concealment
+        // Terrain, and never a Dummy or a unit also under "?".
+        foreach (var side in card.Sides)
+        {
+            var hidden = placed.Where(counter => counter.Side == side.Side && counter.Hidden && !counter.Equipment && !HiddenWithGun(counter)).ToArray();
+            foreach (var counter in placed.Where(counter => counter.Side == side.Side && counter.Hidden && !emplacedHidden.Contains(counter)
+                && (counter.Equipment || !ScenarioA1Definitions.HiddenSetupKinds.Contains(counter.Kind))))
+            {
+                reasons.Add(counter.Kind == "asl:gun"
+                    ? $"play.setup-hidden: {counter.Id} sets up hidden only as an Emplaced Gun, manned and not in tow, in Concealment Terrain, with its manning crew hidden too (A12.34; ruling R26.5)"
+                    : $"play.setup-hidden: {counter.Id} sets up hidden; HIP is built for Infantry and Emplaced Guns only, and hidden vehicles are not built (A12.3, A12.34; rulings R23.5, R26.5)");
+            }
+
+            // A12.34 (ruling R26.5): a hidden crew manning a Gun hides with it.
+            foreach (var crew in placed.Where(counter => counter.Side == side.Side && counter.Hidden && !counter.Equipment && counter.Manning && !HiddenWithGun(counter)))
+            {
+                reasons.Add($"play.setup-hidden: {crew.Id} mans a Gun, so it is hidden only with its Gun, Emplaced in Concealment Terrain (A12.34; ruling R26.5)");
+            }
+
+            if (hidden.Length == 0)
+            {
+                continue;
+            }
+
+            if (ScenarioA1Definitions.HipAllowance(card.Tokens, side.Side) is not { } allowance)
+            {
+                reasons.Add($"play.setup-hidden: no SSR gives {side.Side} HIP (A12.3; an SSR hip:{side.Side}:n; ruling R23.5)");
+                continue;
+            }
+
+            var used = hidden.Count(counter => counter.Kind == "asl:squad") + (hidden.Count(counter => counter.Kind is "asl:half-squad" or "asl:crew") / 2m);
+            if (used > allowance)
+            {
+                reasons.Add($"play.setup-hidden: {side.Side} sets up {used:0.#} squad-equivalents hidden, and its SSR allows {allowance:0.#} (A12.3; ruling R23.5)");
+            }
+
+            foreach (var counter in hidden)
+            {
+                if (counter.Dummy || counter.Concealed)
+                {
+                    reasons.Add($"play.setup-hidden: {counter.Id} is hidden or under \"?\", not both, and a Dummy is never hidden (A12.3; ruling R23.5)");
+                }
+                else if (counter.At is { } at && (terrain(at.Text) is not { } key || !ScenarioA1Definitions.IsConcealmentTerrain(key, month)))
+                {
+                    reasons.Add($"play.setup-hidden: {counter.Id} sets up hidden at {at}, which is not Concealment Terrain (A12.3; ruling R23.5)");
+                }
+                else if (ScenarioA1Definitions.SmcKinds.Contains(counter.Kind) && !hidden.Any(other => other.At?.Text == counter.At?.Text && !ScenarioA1Definitions.SmcKinds.Contains(other.Kind) && !other.Dummy))
+                {
+                    reasons.Add($"play.setup-hidden: {counter.Id} is hidden only with a hidden MMC of its Location (A12.3; ruling R23.5)");
+                }
+            }
+        }
+
+        // R19.3 (A2.9, A5.1): never where Infantry could not enter, never overstacked.
+        foreach (var counter in placed.Where(counter => counter.At is not null && !counter.Equipment))
+        {
+            if (!enterable(terrain(counter.At!.Text)))
+            {
+                reasons.Add($"play.setup-terrain: {counter.Id} sets up at {counter.At}, terrain it could not enter in play (A2.9; ruling R19.3)");
+            }
+        }
+
+        // Ruling R26.2: Passengers are not stacked in their vehicle's Location.
+        foreach (var stack in placed.Where(counter => counter.At is not null && !counter.Equipment && !counter.Dummy && counter.Aboard is null).GroupBy(counter => (counter.Side, counter.At!.Text)))
+        {
+            var smc = stack.Count(counter => ScenarioA1Definitions.SmcKinds.Contains(counter.Kind));
+            // A5.5 (referee, pass 19): four SMC count nothing; beyond that, five SMC equal a HS; a crew or HS manning a Gun counts as a squad (ruling R26.3).
+            var squads = SetupStackSquadEquivalents(stack, smc);
+            if (squads > 3)
+            {
+                reasons.Add($"play.setup-stacking: {stack.Key.Side} sets up {squads:0.#} squad-equivalents at {stack.Key.Text}, and the limit is 3 (A5.1; ruling R19.3)");
+            }
+        }
+
+        // R19.2: a proposal places only groups of the order now setting up; the order advances when all its groups are complete. Counters set up off
+        // board wait outside the order (A2.51; ruling R20.5).
+        var current = groups.Where(group => group.SetsUp && !group.Complete).Select(group => (int?)group.Order).Min();
+        foreach (var counter in placed.Where(counter => counter.New && counter.Group is not null && !counter.OffBoard))
+        {
+            var group = groups.FirstOrDefault(item => item.Side == counter.Side && item.Id == counter.Group);
+            var earlier = groups.Where(item => item.SetsUp && group is not null && item.Order < group.Order && !item.Complete).ToArray();
+            if (group is not null && earlier.Length > 0)
+            {
+                reasons.Add($"play.setup-order: {counter.Id} of {group.Name} may not set up until {earlier[0].Name} has finished (A2.9; ruling R19.2)");
+                break;
+            }
+
+            // A12.12 (table player, pass 19): once a later group has set up, an earlier one adds nothing, "?" included.
+            var later = groups.FirstOrDefault(item => group is not null && item.Order > group.Order
+                && placed.Any(other => !other.New && !other.OffBoard && other.Side == item.Side && other.Group == item.Id));
+            if (group is not null && later is not null)
+            {
+                reasons.Add($"play.setup-order: {counter.Id} of {group.Name} may not set up once {later.Name} has begun setting up (A2.9, A12.12; ruling R19.2)");
+                break;
+            }
+        }
+
+        return new SetupVerdict(groups, current, [.. reasons.Distinct(StringComparer.Ordinal)]);
+    }
+
+    /// <summary>
+    /// A5.5 (referee, pass 19): a setup stack's squad-equivalents: a squad one, a crew or HS manning a Gun one (ruling R26.3), other HS and crews a half,
+    /// SMC nothing up to four and a tenth each beyond. The design's section 12 keeps this count apart from the entering stack's (<see cref="EntryStackOverstacked"/>).
+    /// </summary>
+    public static decimal SetupStackSquadEquivalents(IEnumerable<SetupCounterFacts> stack, int smc)
+    {
+        ArgumentNullException.ThrowIfNull(stack);
+        var counters = stack.ToArray();
+        return counters.Count(counter => counter.Kind == "asl:squad" || (counter.Kind is "asl:half-squad" or "asl:crew" && counter.Manning))
+            + (counters.Count(counter => counter.Kind is "asl:half-squad" or "asl:crew" && !counter.Manning) / 2m)
+            + (smc > 4 ? smc / 10m : 0m);
+    }
+
+    /// <summary>A5.1, A2.51 (referee, pass 25): an entering stack holds at most three squad-equivalents (a HS or crew a half) and four SMC.</summary>
+    public static bool EntryStackOverstacked(double squadEquivalents, int smc) => squadEquivalents > 3 || smc > 4;
+
+    private static bool In(SetupCardFacts card, SetupAreaFacts area, SetupLocationFacts at) =>
+        Within(area.Kind, area.Hexes, area.Board, area.From, area.To, card.BoardCount, card.FirstBoard, at.Board, at.Hex, at.RowNumber);
+
+    private static bool Playable(SetupCardFacts card, SetupLocationFacts at) =>
+        !card.PlayableEnforced || Playable(true, card.PlayableFrom, card.PlayableTo, card.PlayableBoard, card.BoardCount, card.FirstBoard, at.Board, at.Hex);
+
+    /// <summary>The entry area an OB line enters by (ruling R20.5), or null when the line sets up on board.</summary>
+    public static SetupAreaFacts? EntryOf(SetupGroupFacts group, SetupLineFacts line)
+    {
+        ArgumentNullException.ThrowIfNull(group);
+        ArgumentNullException.ThrowIfNull(line);
+        var entries = group.Areas.Where(area => area.Kind == "entry").OrderBy(area => area.Turn).ToArray();
+        return ScenarioA1ResultTables.EntryAreaIndex([.. entries.Select(area => area.Id)], line.Area, group.Areas.Any(area => area.Counters is not null),
+            group.Areas.All(area => area.Kind == "entry")) is { } index ? entries[index] : null;
+    }
+
+    /// <summary>
+    /// Matches a group's placed counters to its OB lines (R19.1): each counter fills a line of its definition whose area holds it (or any area),
+    /// a Deployed squad's two HS fill one squad line (A2.9). What is left, why a counter fits no line, how many squads were Deployed, what is owed
+    /// off board, and the squads entering by turn.
+    /// </summary>
+    private static (List<SetupNeedVerdict> Remaining, List<string> Reasons, int Deployed, List<SetupNeedVerdict> OffBoard, Dictionary<int, (int Squads, int Deployed)> Entering) Fill(
+        SetupCardFacts card, SetupSideFacts owner, SetupGroupFacts group, string id, IReadOnlyList<SetupCounterFacts> mine, Func<string, string?> halfSquadOf, Dictionary<string, int> pool)
+    {
+        var reasons = new List<string>();
+        var lines = group.Units.Select(unit => (Unit: unit, Left: unit.Count)).ToArray();
+        var halves = new Dictionary<(string Definition, string? Area, bool OffBoard), int>();
+        var enteringSquads = new Dictionary<int, int>();
+        var deploys = ScenarioA1Definitions.MayDeploy(owner.Nation ?? owner.Side);
+        foreach (var counter in mine.Where(counter => !counter.Dummy))
+        {
+            // Referee, pass 19: a counter with no Location fills no line, unless it waits off board to enter (ruling R20.5).
+            if (counter.At is null && !counter.OffBoard)
+            {
+                reasons.Add($"play.setup-area: {counter.Id} of {group.Name} is not set up on the map (A2.9; ruling R19.3)");
+                continue;
+            }
+
+            // R25.4: an off-board counter may name one of its group's entry areas.
+            if (counter.OffBoard && counter.Entry is { } named && !group.Areas.Any(area => area.Kind == "entry" && area.Id == named))
+            {
+                reasons.Add($"play.setup-entry: {counter.Id} of {group.Name} names the entry area '{named}', which its group does not have (A2.5; ruling R25.4)");
+                continue;
+            }
+
+            // R20.5: an off-board counter fills a line that enters, by the entry it named (ruling R25.4); an on-board one a line that sets up, in its area.
+            bool Fits(SetupLineFacts unit) => counter.OffBoard ? EntryOf(group, unit) is not null && (counter.Entry is null || unit.Area is null || unit.Area == counter.Entry)
+                : unit.Area is null ? EntryOf(group, unit) is null || group.Areas.Any(area => area.Counters is not null)
+                : group.Areas.FirstOrDefault(area => area.Id == unit.Area) is { Kind: not "entry" } area && In(card, area, counter.At!);
+            // A counter outside all its group's areas takes only the area reason (table player, pass 19).
+            if (!counter.OffBoard && !group.Areas.Any(area => area.Kind != "entry" && In(card, area, counter.At!)))
+            {
+                continue;
+            }
+
+            if (counter.OffBoard && counter.Kind == "asl:squad" && lines.FirstOrDefault(item => item.Unit.Definition == counter.Definition && Fits(item.Unit)).Unit is { } entryLine
+                && (group.Areas.FirstOrDefault(area => area.Kind == "entry" && area.Id == counter.Entry) ?? EntryOf(group, entryLine))?.Turn is { } entryTurn)
+            {
+                enteringSquads[entryTurn] = enteringSquads.GetValueOrDefault(entryTurn) + 1;
+            }
+
+            var line = Array.FindIndex(lines, item => item.Left > 0 && item.Unit.Definition == counter.Definition && Fits(item.Unit));
+            if (line >= 0)
+            {
+                lines[line].Left--;
+                continue;
+            }
+
+            // A2.9, A25.2 (ruling R31.4; referee, pass 31): squads set up Deployed only "if the nationality is capable of Deployment", and Russian
+            // squads may not Deploy. A HS the OB itself lists was placed by the line above; this is a squad's HS.
+            if (!deploys && Array.FindIndex(lines, item => halfSquadOf(item.Unit.Definition) == counter.Definition && Fits(item.Unit)) >= 0)
+            {
+                reasons.Add($"play.setup-deployment: {counter.Id} is a HS of a squad of {group.Name}, and Russian squads may not Deploy, so they do not set up Deployed (A2.9, A25.2; ruling R31.4)");
+                continue;
+            }
+
+            // A2.9: a HS of a squad in the group's OB, set up as half of a Deployed squad: the second HS pairs with the first.
+            var pairing = Array.FindIndex(lines, item => halfSquadOf(item.Unit.Definition) == counter.Definition && Fits(item.Unit)
+                && halves.GetValueOrDefault((item.Unit.Definition, item.Unit.Area, counter.OffBoard)) % 2 == 1);
+            if (pairing >= 0)
+            {
+                var pairKey = (lines[pairing].Unit.Definition, lines[pairing].Unit.Area, counter.OffBoard);
+                halves[pairKey] = halves[pairKey] + 1;
+                continue;
+            }
+
+            var parent = Array.FindIndex(lines, item => item.Left > 0 && halfSquadOf(item.Unit.Definition) == counter.Definition && Fits(item.Unit));
+            if (parent >= 0)
+            {
+                var key = (lines[parent].Unit.Definition, lines[parent].Unit.Area, counter.OffBoard);
+                halves[key] = halves.GetValueOrDefault(key) + 1;
+                if (halves[key] % 2 == 1)
+                {
+                    lines[parent].Left--;
+                }
+
+                continue;
+            }
+
+            // A26.4 (ruling R20.4): a counter the side's Balance adds, with any of its groups.
+            if (counter.Definition is { } added && pool.GetValueOrDefault(added) > 0 && (!counter.OffBoard || group.Areas.Any(area => area.Kind == "entry")))
+            {
+                pool[added]--;
+                continue;
+            }
+
+            reasons.Add($"play.setup-pool: {counter.Id} ({counter.Definition}) is not left in the OB of {group.Name}"
+                + (counter.At is not null ? $" at {counter.At}" : string.Empty) + " (ruling R19.1)");
+        }
+
+        foreach (var ((definition, _, _), count) in halves.Where(item => item.Value % 2 == 1))
+        {
+            reasons.Add($"play.setup-deployment: a Deployed {definition} of {group.Name} sets up both its HS (A2.9; ruling R19.6)");
+        }
+
+        // What a group with only setup areas must still place; a group whose area fixes its counters is judged by that area (R19.4); what enters is
+        // owed off board (R20.5).
+        var limited = group.Areas.Any(area => area.Counters is not null);
+        var remaining = limited || group.Areas.All(area => area.Kind == "entry") ? []
+            : lines.Where(item => item.Left > 0 && EntryOf(group, item.Unit) is null).Select(item => new SetupNeedVerdict(id, item.Unit.Area, item.Unit.Definition, item.Left)).ToList();
+        var offBoard = lines.Where(item => item.Left > 0 && EntryOf(group, item.Unit) is not null)
+            .Select(item => new SetupNeedVerdict(id, EntryOf(group, item.Unit)!.Id, item.Unit.Definition, item.Left)).ToList();
+
+        // A2.9 (ruling R20.5): the squads entering in each turn, whole or Deployed, and how many of them were Deployed.
+        var entering = new Dictionary<int, (int Squads, int Deployed)>();
+        foreach (var (turn, squads) in enteringSquads)
+        {
+            entering[turn] = (squads, 0);
+        }
+
+        foreach (var ((definition, area, offBoardHalf), count) in halves.Where(item => item.Key.OffBoard))
+        {
+            if (lines.FirstOrDefault(item => item.Unit.Definition == definition && item.Unit.Area == area).Unit is { } squadLine && EntryOf(group, squadLine)?.Turn is { } turn)
+            {
+                var sum = entering.GetValueOrDefault(turn);
+                entering[turn] = (sum.Squads, sum.Deployed + ((count + 1) / 2));
+            }
+        }
+
+        return (remaining, reasons, halves.Where(item => !item.Key.OffBoard).Sum(item => (item.Value + 1) / 2), offBoard, entering);
+    }
 }
+
+/// <summary>A Location of a setup counter as facts: its text as the game writes it, its board, its hex name, and the hex's row number.</summary>
+public sealed record SetupLocationFacts(string Text, string Board, string Hex, int RowNumber)
+{
+    public override string ToString() => Text;
+}
+
+/// <summary>
+/// A counter set up in a game from a card as facts (pass 19, rulings R19.1 to R19.6): its side and OB group, definition and kind, Location, whether it
+/// is concealed, hidden, a Dummy, or a SW, whether this proposal places it, whether it waits off board, sets up broken, bears a non-OB "?", the entry it
+/// named, the vehicle it rides, and whether it mans a Gun or is a Gun manned or in tow.
+/// </summary>
+public sealed record SetupCounterFacts(string Id, string Side, string? Group, string? Definition, string Kind, SetupLocationFacts? At, bool Concealed, bool Hidden, bool Dummy,
+    bool Equipment, bool New, bool OffBoard, bool Broken, bool NonOb, string? Entry, string? Aboard, bool Manning, bool Towed);
+
+/// <summary>A setup area of a card as the setup reads it (rulings R17.8, R19.4): its id, kind, hexes, board, hex numbers, entry turn, and SSR counts.</summary>
+public sealed record SetupAreaFacts(string Id, string Kind, IReadOnlyList<string>? Hexes, string? Board, int? From, int? To, int? Turn, int? Counters, int? MinMmc, bool? Concealed);
+
+/// <summary>An OB line as the setup reads it: its definition, count, and area.</summary>
+public sealed record SetupLineFacts(string Definition, int Count, string? Area);
+
+/// <summary>An OB group as the setup reads it: its game id, name, setup order, "?" allotment, areas, and lines.</summary>
+public sealed record SetupGroupFacts(string Id, string Name, int? SetupOrder, int? Dummies, IReadOnlyList<SetupAreaFacts> Areas, IReadOnlyList<SetupLineFacts> Units);
+
+/// <summary>A side as the setup reads it: its id, nation, whether it sets up first, its Balance counters, and its groups.</summary>
+public sealed record SetupSideFacts(string Side, string? Nation, bool SetsUpFirst, IReadOnlyList<SetupLineFacts> BalanceUnits, IReadOnlyList<SetupGroupFacts> Groups);
+
+/// <summary>A card as the setup reads it: its sides, its boards (the count and the only one), its enforced playable area, and its SSR tokens.</summary>
+public sealed record SetupCardFacts(IReadOnlyList<SetupSideFacts> Sides, int BoardCount, string? FirstBoard, bool PlayableEnforced, string? PlayableFrom, string? PlayableTo,
+    string? PlayableBoard, string? PlayableText, IReadOnlyList<string> Tokens);
+
+/// <summary>An OB line still to set up: its group, the area the card names for it (null for any of the group's areas), its definition, and how many.</summary>
+public sealed record SetupNeedVerdict(string Group, string? Area, string Definition, int Count);
+
+/// <summary>Where an OB group stands in the setup (rulings R19.2, R20.5): its side, id, name, order, whether it sets up on board, is done, what it still owes on and off board, its "?" left, and whether it enters.</summary>
+public sealed record SetupGroupVerdict(string Side, string Id, string Name, int Order, bool SetsUp, bool Complete, IReadOnlyList<SetupNeedVerdict> Remaining, int DummiesLeft,
+    IReadOnlyList<SetupNeedVerdict> OffBoard, bool Enters);
+
+/// <summary>The setup's state (ruling R19.2): each group's, the order being set up now, and why the counters as placed are refused.</summary>
+public sealed record SetupVerdict(IReadOnlyList<SetupGroupVerdict> Groups, int? CurrentOrder, IReadOnlyList<string> Reasons);
