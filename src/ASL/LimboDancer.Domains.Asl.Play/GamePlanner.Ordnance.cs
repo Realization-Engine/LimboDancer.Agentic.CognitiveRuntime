@@ -809,7 +809,11 @@ public sealed partial class GamePlanner
 
         // C6.5, C6.51 (ruling R5.13): the Acquisition is on the Known units the shot leaves in its target Location; C9.2: a mortar's Area Target
         // Acquisition stays on its hex.
-        if (acquired is { } acquiredLocation && facts.TargetType is null && AcquiredUnits(facts, effects, attemptId) is { Count: > 0 } units)
+        // C6.51 (pass 35, task 35.11): a vehicle fired at on the Vehicle Target Type carries the counter as Infantry does.
+        var acquiredVehicle = ScenarioA1ResultTables.AcquiredVehicle(facts.VehicleTarget?.VehicleId, facts.VehicleTarget?.Concealed == true, resolution.ToHit?.Hit == true,
+            resolution.Kill is { } killed && ScenarioA1OrdnanceEventRules.Wrecks(killed.Result));
+        if (acquired is { } acquiredLocation && facts.TargetType is null
+            && (acquiredVehicle is null ? AcquiredUnits(facts, effects, attemptId) : [acquiredVehicle]) is { Count: > 0 } units)
         {
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "acquisition-changed", new AcquisitionChanged(facts.Gun.GunId!, acquiredLocation, units), package, null,
                 [recordId]));

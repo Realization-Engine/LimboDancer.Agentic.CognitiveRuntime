@@ -249,7 +249,7 @@ public static class GameProjector
             next = KeepPlacedCharges(next, gameEvent.Payload);
             next = KeepMelee(next);
             next = KeepCx(next);
-            next = KeepAcquisitions(next, gameEvent.Payload);
+            next = KeepAcquisitions(previous, next, gameEvent.Payload);
             next = KeepPassengers(next);
             next = next with
             {
@@ -1456,16 +1456,32 @@ public static class GameProjector
         /// into their successors (A7.302, A19.13), drops those no longer active or taken prisoner, and follows them while they share one
         /// Location. The planner moves it back to the last Location in the Gun's LOS when they leave it.
         /// </summary>
-        private GameState KeepAcquisitions(GameState next, EventPayload payload)
+        private GameState KeepAcquisitions(GameState? previous, GameState next, EventPayload payload)
         {
             if (next.Acquisitions.Count == 0)
             {
                 return next;
             }
 
+            // Where an Acquisition's firer is: a Gun or SW with the unit that mans, possesses, or tows it, else where it lies; a tank where it stands.
+            static string? FirerAt(GameState? state, string id) => state?.Find(id) switch
+            {
+                EquipmentInstance { Holding: { } holding } => state!.Location(holding.Holder)?.Location.ToString(),
+                EquipmentInstance { Position: MapPosition lying } => lying.Location.ToString(),
+                UnitInstance unit => state!.Location(unit.Id)?.Location.ToString(),
+                _ => null,
+            };
+
             var kept = new List<GunAcquisition>();
             foreach (var acquisition in next.Acquisitions)
             {
+                // C6.5 (pass 35, task 35.11): lost when its firer leaves its Location, or turns without having fired on its target this phase.
+                if (Rules.ScenarioA1FireFollowUps.AcquisitionLostByMoveOrTurn(FirerAt(previous, acquisition.Gun), FirerAt(next, acquisition.Gun),
+                    payload is GunTurned turned && turned.Gun == acquisition.Gun, previous?.OrdnanceShots.FirstOrDefault(item => item.Gun == acquisition.Gun)?.Shots ?? 0))
+                {
+                    continue;
+                }
+
                 // A Gun keeps it while its Good Order crew mans it; a light mortar while its Good Order possessor holds it (C9.2; table player, pass 9); a
                 // tank while it is active and not Abandoned (C6.5, D1.3). Rules decides it (pass 32.c) from the holder's facts.
                 var holder = next.Find(acquisition.Gun);

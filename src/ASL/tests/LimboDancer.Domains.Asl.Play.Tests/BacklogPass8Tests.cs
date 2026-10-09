@@ -430,6 +430,63 @@ public sealed class BacklogPass8Tests : IDisposable
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
     }
 
+    [Fact]
+    public async Task AnAcquisitionIsLostWhenTheGunTurnsWithoutFiringOrIsPushed()
+    {
+        // C6.5 (p. 174; pass 35, task 35.11): the leIG in A8 acquires J9 in its PFPh; in the Russian DFPh it turns without firing and the counter is gone.
+        await Setup("german", 7, 1942, Crew("de-crew", "bd01:A8:0", "german"), Gun("de-gun", "attacker-inf-gun", "bd01:A8:0", "east", "de-crew", "german"),
+            Squad("r1", "bd01:J9:0", "russian"));
+        await Advance();
+        Committed(await FireAt("de-gun", "bd01:J9:0", null, null, 5, 6));
+        Assert.Equal("de-gun", Current.Acquisitions.Single().Gun);
+        await Advance(10);
+        Assert.Equal(("dfph", "russian"), (Current.Phase, Current.PhasingSide));
+        Assert.Single(Current.Acquisitions);
+        Committed(await Do(GameActions.TurnGun, NoRoll(), new
+        {
+            gunId = "de-gun",
+            facing = "north-east"
+        }));
+        Assert.Empty(Current.Acquisitions);
+
+        // It acquires J9 again in its next PFPh, and a turn later its crew pushes it into B8: the counter is gone.
+        await Advance(6);
+        Assert.Equal(("pfph", "german"), (Current.Phase, Current.PhasingSide));
+        Committed(await FireAt("de-gun", "bd01:J9:0", null, null, 5, 6));
+        Assert.Single(Current.Acquisitions);
+        await Advance(17);
+        Assert.Equal(("mph", "german"), (Current.Phase, Current.PhasingSide));
+        Assert.Single(Current.Acquisitions);
+        Committed(await Push("de-crew", "bd01:B8:0", "de-gun", 2, 3));
+        Assert.Empty(Current.Acquisitions);
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task AnAcquisitionFollowsAVehicleAndStaysWhereItLeftTheGunsLos()
+    {
+        // C6.51 (p. 174; pass 35, task 35.11): the Russian 45mm in B10 fires at the German tank in A8 and acquires it; the tank enters B8 in the Gun's
+        // LOS and the counter goes with it; it enters C8 out of that LOS and the counter stays in B8, on no unit.
+        await Setup("russian", 7, 1942, Crew("ru-crew", "bd01:B10:0", "russian"), Gun("ru-gun", "defender-at-gun", "bd01:B10:0", "north-east", "ru-crew", "russian"),
+            Vehicle("de-tank", "attacker-tank", "bd01:A8:0", "german"));
+        await Advance();
+        Committed(await FireAt("ru-gun", "bd01:A8:0", "de-tank", null, 5, 6, 6, 6));
+        Assert.Equal((At("bd01:A8:0"), "de-tank"), (Current.Acquisitions.Single().Location, Current.Acquisitions.Single().Units.Single()));
+        await Advance(9);
+        Assert.Equal(("mph", "german"), (Current.Phase, Current.PhasingSide));
+        Committed(await Step("de-tank", "start"));
+        await Pass();
+        Assert.Equal(At("bd01:A8:0"), Current.Acquisitions.Single().Location);
+        Committed(await Step("de-tank", "enter", to: "bd01:B8:0"));
+        Assert.Equal((At("bd01:B8:0"), "de-tank"), (Current.Acquisitions.Single().Location, Current.Acquisitions.Single().Units.Single()));
+        await Pass();
+        los.Blocked.Add(At("bd01:C8:0"));
+        Committed(await Step("de-tank", "enter", to: "bd01:C8:0"));
+        Assert.Equal(At("bd01:B8:0"), Current.Acquisitions.Single().Location);
+        Assert.Empty(Current.Acquisitions.Single().Units);
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
     private static readonly string[] OpportunityCrew = ["de-crew"];
 
     [Fact]

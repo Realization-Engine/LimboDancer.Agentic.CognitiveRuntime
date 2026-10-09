@@ -240,4 +240,24 @@ public sealed class ScenarioA1Pass35RulesTests
         Assert.Equal(2m, CaseOf(Fire("PFPh", false, "attacker-psk", 2, backblast: true), "case-c3"));
         Assert.Contains("asl.a1.ordnance.panzerfaust-backblast", Fire("AFPh", true, "attacker-psk", 2, pinned: true, backblast: true).Reasons);
     }
+
+    [Fact]
+    public void AnAcquisitionIsLostWhenItsFirerLeavesOrTurnsWithoutFiringAndFollowsAVehicle()
+    {
+        // C6.5 (p. 174; task 35.11): lost when the Gun or its manning Infantry leaves its Location, or the Gun changes its CA without having fired
+        // on its acquired target in the current phase.
+        Assert.False(ScenarioA1FireFollowUps.AcquisitionLostByMoveOrTurn("bd01:A8:0", "bd01:A8:0", false, 0));
+        Assert.True(ScenarioA1FireFollowUps.AcquisitionLostByMoveOrTurn("bd01:A8:0", "bd01:B8:0", false, 1));
+        Assert.True(ScenarioA1FireFollowUps.AcquisitionLostByMoveOrTurn("bd01:A8:0", null, false, 0));
+        Assert.True(ScenarioA1FireFollowUps.AcquisitionLostByMoveOrTurn("bd01:A8:0", "bd01:A8:0", true, 0));
+        Assert.False(ScenarioA1FireFollowUps.AcquisitionLostByMoveOrTurn("bd01:A8:0", "bd01:A8:0", true, 1));
+        Assert.False(ScenarioA1FireFollowUps.AcquisitionLostByMoveOrTurn(null, "bd01:A8:0", false, 0));
+
+        // C6.51: a Known vehicle that the shot does not wreck carries the counter; a concealed one only once a hit has revealed it.
+        Assert.Equal("tank", ScenarioA1ResultTables.AcquiredVehicle("tank", false, false, false));
+        Assert.Equal("tank", ScenarioA1ResultTables.AcquiredVehicle("tank", true, true, false));
+        Assert.Null(ScenarioA1ResultTables.AcquiredVehicle("tank", true, false, false));
+        Assert.Null(ScenarioA1ResultTables.AcquiredVehicle("tank", false, true, true));
+        Assert.Null(ScenarioA1ResultTables.AcquiredVehicle(null, false, true, false));
+    }
 }

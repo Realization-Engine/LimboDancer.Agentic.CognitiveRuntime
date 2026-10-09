@@ -658,6 +658,15 @@ public static class ScenarioA1FireFollowUps
     }
 
     /// <summary>
+    /// C6.5 (p. 174; pass 35, task 35.11): an Acquisition is lost when the Gun or its manning Infantry leaves its present Location (a Gun pushed or
+    /// towed, a tank entering another hex, a light mortar carried off; no Gyrostabilizer is built), and when the Gun changes its CA without having
+    /// fired on its acquired target in the current phase. The Locations cross as their texts; a Gun's shots this phase were all at its acquired
+    /// target, since a shot at another replaces the Acquisition.
+    /// </summary>
+    public static bool AcquisitionLostByMoveOrTurn(string? firerWas, string? firerNow, bool turnedWithoutFiring, int shotsThisPhase) =>
+        (firerWas is not null && firerNow != firerWas) || (turnedWithoutFiring && shotsThisPhase == 0);
+
+    /// <summary>
     /// C6.5, C6.51 (ruling R5.13): an Acquisition follows its units into their successors (A7.302, A19.13), drops those no longer active or taken
     /// prisoner, and follows them while they share one Location (their texts); else it keeps its Location.
     /// </summary>

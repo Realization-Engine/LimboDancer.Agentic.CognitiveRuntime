@@ -180,6 +180,13 @@ public static class ScenarioA1ResultTables
     }
 
     /// <summary>
+    /// C6.5, C6.51 (p. 174; pass 35, task 35.11): the vehicle a Vehicle Target Type shot leaves acquired, so the counter follows it: one that is
+    /// Known, or hit and so revealed (A12.2), and not wrecked by the shot; null otherwise, and the Acquisition then stays on the Location.
+    /// </summary>
+    public static string? AcquiredVehicle(string? vehicleId, bool concealed, bool hit, bool wrecked) =>
+        vehicleId is not null && (!concealed || hit) && !wrecked ? vehicleId : null;
+
+    /// <summary>
     /// What an attack does beyond its target (play test P-12, P-13): every firer's LOS is blocked, so the shot is spent for nothing (A6.1), or the
     /// target Location holds units of the firing side, in a Melee or as Guards of prisoners, which the attack hits too (A11.15, A20.54).
     /// </summary>
