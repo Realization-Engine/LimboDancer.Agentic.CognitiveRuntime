@@ -1,6 +1,7 @@
 using System.Text.Json;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Los;
+using LimboDancer.Domains.Asl.Rules;
 using LimboDancer.Domains.Asl.Units.State;
 
 namespace LimboDancer.Domains.Asl.Play;
@@ -20,13 +21,8 @@ public sealed partial class GamePlanner
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(viewer);
-        if (viewer.IsAdjudicator || state.SetupClosed || CardSetup(state, new HashSet<string>()) is not { CurrentOrder: { } now } report)
-        {
-            return new HashSet<string>(StringComparer.Ordinal);
-        }
-
-        return report.Groups.Where(group => group.SetsUp && group.Order == now && group.Side != viewer.Name).Select(group => group.Id)
-            .ToHashSet(StringComparer.Ordinal);
+        return ScenarioA1SetupCalculator.OutOfSight(viewer.IsAdjudicator, state.SetupClosed, viewer.Name,
+            () => CardSetup(state, new HashSet<string>()) is { } report ? (report.CurrentOrder, [.. report.Groups.Select(Verdict)]) : null).ToHashSet(StringComparer.Ordinal);
     }
 
     /// <summary>
@@ -49,17 +45,8 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>Why no non-OB "?" may be placed now (ruling R23.6); null when they may.</summary>
-    private string? NonObConcealmentBar(GameState state)
-    {
-        if (state.SetupClosed)
-        {
-            return "play.non-ob-concealment: play has started; a non-OB \"?\" is placed only after both sides set up and before play (A12.12; ruling R23.6)";
-        }
-
-        return CardSetup(state, new HashSet<string>()) is { CurrentOrder: not null }
-            ? "play.non-ob-concealment: a non-OB \"?\" is placed only after both sides have set up (A12.12; ruling R23.6)"
-            : null;
-    }
+    private string? NonObConcealmentBar(GameState state) =>
+        ScenarioA1Concealment.NonObConcealmentBar(state.SetupClosed, () => CardSetup(state, new HashSet<string>()) is { CurrentOrder: not null });
 
     /// <summary>Why a side may not place a non-OB "?" on its stack at a Location (A12.12; ruling R23.6); null when it may.</summary>
     private string? NonObLocationBar(GameState state, string side, BoardLocation at)

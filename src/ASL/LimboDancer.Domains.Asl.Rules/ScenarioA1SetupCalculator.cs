@@ -793,6 +793,78 @@ public static class ScenarioA1SetupCalculator
     /// <summary>A5.1, A2.51 (referee, pass 25): an entering stack holds at most three squad-equivalents (a HS or crew a half) and four SMC.</summary>
     public static bool EntryStackOverstacked(double squadEquivalents, int smc) => squadEquivalents > 3 || smc > 4;
 
+    // The planner's reading of a setup (rulings R19.1 to R19.6, R20.6, R22.3, R23.3, R26.2, R26.5).
+
+    /// <summary>A2.51 (ruling R20.5): a counter waits off board when its position is off the map or inside a carrier and it has no Location.</summary>
+    public static bool SetupCounterOffBoard(bool offMapOrContained, bool located) => offMapOrContained && !located;
+
+    /// <summary>A12.34 (ruling R26.5): a manned Gun's hidden status is its own; a SW is hidden only with its holder, never of itself.</summary>
+    public static bool EquipmentHiddenOfItsOwn(bool hidden, bool possessed) => hidden && !possessed;
+
+    /// <summary>A SW belongs to its holder's group, at its holder's Location; equipment on its own belongs to no group (referee, pass 19).</summary>
+    public static string EquipmentSetupSide(string? holderSide, string? ownSide) => holderSide ?? ownSide ?? string.Empty;
+
+    /// <summary>A2.9 (ruling R19.3): Infantry could enter a Location in play when it is marsh or its terrain has an entry cost.</summary>
+    public static bool InfantryCouldEnter(string? terrain, Func<string, bool> hasEntryCost)
+    {
+        ArgumentNullException.ThrowIfNull(hasEntryCost);
+        return terrain is "marsh" || (terrain is not null && hasEntryCost(terrain));
+    }
+
+    /// <summary>A2.1 (ruling R20.6): why a Location is refused as outside the card's playable area; null when it is inside.</summary>
+    public static string? PlayableBar(bool outside, string at, string? areaText) =>
+        outside ? $"play.playable: {at} is outside the playable area: {areaText} (A2.1; ruling R20.6)" : null;
+
+    /// <summary>
+    /// Why a game from a card may not start play yet (ruling R19.2): nothing once play has begun; the card gone or changed (its text is Play's, since it reads
+    /// the library); a group that sets up on board not finished; a group still owing counters off board (A2.51; ruling R20.5); null when it may.
+    /// </summary>
+    public static string? SetupIncompleteBar(bool pastSetup, Func<bool> cardGoneOrChanged, Func<string> cardGoneText, Func<IReadOnlyList<SetupGroupVerdict>?> setup)
+    {
+        ArgumentNullException.ThrowIfNull(cardGoneOrChanged);
+        ArgumentNullException.ThrowIfNull(cardGoneText);
+        ArgumentNullException.ThrowIfNull(setup);
+        if (pastSetup)
+        {
+            return null;
+        }
+
+        // Referee, pass 19: a card changed or gone since the game started cannot say whether the setup is done; the library is read only here.
+        if (cardGoneOrChanged())
+        {
+            return cardGoneText();
+        }
+
+        if (setup() is not { } groups)
+        {
+            return null;
+        }
+
+        return groups.FirstOrDefault(group => group.SetsUp && !group.Complete) is { } open
+            ? $"play.setup-incomplete: {open.Name} ({open.Side}) has not finished setting up"
+                + (open.Remaining.Count > 0 ? $": {string.Join(", ", open.Remaining.Select(need => $"{need.Count} {need.Definition}{(need.Area is { } area ? $" in {area}" : string.Empty)}"))} left" : string.Empty)
+                + " (A2.9; ruling R19.2)"
+            : groups.FirstOrDefault(group => group.OffBoard.Count > 0) is { } waiting
+            ? $"play.setup-incomplete: {waiting.Name} ({waiting.Side}) still sets up off board to enter: "
+                + $"{string.Join(", ", waiting.OffBoard.Select(need => $"{need.Count} {need.Definition}"))} (A2.51; ruling R20.5)"
+            : null;
+    }
+
+    /// <summary>
+    /// The OB groups a perspective may not see at all now (A12.12; ruling R23.3): during the setup of a game from a card, the enemy groups of the order
+    /// setting up now; none for the adjudicator, once play has started, or when no order is open. <paramref name="setup"/> is read only when it may matter.
+    /// </summary>
+    public static IEnumerable<string> OutOfSight(bool adjudicator, bool setupClosed, string viewer, Func<(int? CurrentOrder, IReadOnlyList<SetupGroupVerdict> Groups)?> setup)
+    {
+        ArgumentNullException.ThrowIfNull(setup);
+        if (adjudicator || setupClosed || setup() is not { CurrentOrder: { } now } report)
+        {
+            return [];
+        }
+
+        return report.Groups.Where(group => group.SetsUp && group.Order == now && group.Side != viewer).Select(group => group.Id);
+    }
+
     private static bool In(SetupCardFacts card, SetupAreaFacts area, SetupLocationFacts at) =>
         Within(area.Kind, area.Hexes, area.Board, area.From, area.To, card.BoardCount, card.FirstBoard, at.Board, at.Hex, at.RowNumber);
 

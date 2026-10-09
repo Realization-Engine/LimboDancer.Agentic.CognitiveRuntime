@@ -67,7 +67,7 @@ public sealed partial class GamePlanner
             counters.Add(new SetupCounter(unit.Id, unit.Side, unit.Group, unit.Definition?.Definition, unit.Kind, state.Location(unit.Id)?.Location,
                 Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden), unit.Kind == UnitKinds.Dummy, false, placedNow.Contains(unit.Id))
             {
-                OffBoard = unit.Position is OffMapPosition or ContainedPosition && state.Location(unit.Id) is null,
+                OffBoard = ScenarioA1SetupCalculator.SetupCounterOffBoard(unit.Position is OffMapPosition or ContainedPosition, state.Location(unit.Id) is not null),
                 Entry = (unit.Position as OffMapPosition)?.Entry ?? (carrier?.Position as OffMapPosition)?.Entry,
                 Broken = Is(unit, Conditions.Broken),
                 NonOb = state.NonObConcealed.Contains(unit.Id, StringComparer.Ordinal),
@@ -82,26 +82,25 @@ public sealed partial class GamePlanner
             // A SW belongs to its holder's group, at its holder's Location; equipment on its own belongs to no group (referee, pass 19).
             var holder = item.Holding is { } holding ? state.Unit(holding.Holder) : null;
             // A12.34 (ruling R26.5): a manned Gun's hidden status is its own, no longer hidden behind its crew's; a SW is hidden only with its holder.
-            counters.Add(new SetupCounter(item.Id, holder?.Side ?? item.Side ?? string.Empty, holder?.Group, item.Definition?.Definition, item.Kind,
+            counters.Add(new SetupCounter(item.Id, ScenarioA1SetupCalculator.EquipmentSetupSide(holder?.Side, item.Side), holder?.Group, item.Definition?.Definition, item.Kind,
                 holder is not null ? state.Location(holder.Id)?.Location : (item.Position as MapPosition)?.Location, false,
-                Is(item, Conditions.Hidden) && item.Holding is not { Role: HoldingRole.Possessed }, false, true, placedNow.Contains(item.Id))
+                ScenarioA1SetupCalculator.EquipmentHiddenOfItsOwn(Is(item, Conditions.Hidden), item.Holding is { Role: HoldingRole.Possessed }), false, true, placedNow.Contains(item.Id))
             {
-                OffBoard = holder is not null && holder.Position is OffMapPosition or ContainedPosition && state.Location(holder.Id) is null,
+                OffBoard = holder is not null && ScenarioA1SetupCalculator.SetupCounterOffBoard(holder.Position is OffMapPosition or ContainedPosition, state.Location(holder.Id) is not null),
                 Manning = item.Holding is { Role: HoldingRole.Manned },
                 Towed = item.Holding is { Role: HoldingRole.Towed },
             });
         }
 
         return ScenarioSetup.Check(card, counters, at => ReadLocation(state, at) is { } read ? TerrainKey(read) : null,
-            key => key is "marsh" || (key is not null && InfantryEntryHalfMf(state, key) is not null), ScenarioA1FireReference.HalfSquadOf, state.ScenarioMonth,
+            key => ScenarioA1SetupCalculator.InfantryCouldEnter(key, terrain => InfantryEntryHalfMf(state, terrain) is not null), ScenarioA1FireReference.HalfSquadOf, state.ScenarioMonth,
             state.Scenario?.Balance);
     }
 
     /// <summary>Why a Location is refused as outside the card's playable area (A2.1; ruling R20.6); null when it is inside, or the game has no card.</summary>
     internal string? PlayableBar(GameState state, BoardLocation at) =>
-        state.Scenario is not null && CardOf(state) is { } card && !ScenarioCards.Playable(card, at)
-            ? $"play.playable: {at} is outside the playable area: {card.PlayableArea!.Text} (A2.1; ruling R20.6)"
-            : null;
+        ScenarioA1SetupCalculator.PlayableBar(state.Scenario is not null && CardOf(state) is { } card && !ScenarioCards.Playable(card, at), at.ToString(),
+            state.Scenario is not null ? CardOf(state)?.PlayableArea?.Text : null);
 
     /// <summary>
     /// The Game Turn, edge, and entry area a unit waiting off board enters by (rulings R20.5, R25.4): the entry area its setup named, else its OB group's
@@ -326,31 +325,14 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>Why a game from a card may not start play yet (ruling R19.2): a group that sets up on board has not finished; null when it may.</summary>
-    internal string? CardSetupIncomplete(GameState state, IReadOnlyList<GameEvent> existing)
-    {
-        if (existing.Any(item => !GameState.IsSetupEvent(item.Payload)))
-        {
-            return null;
-        }
+    internal string? CardSetupIncomplete(GameState state, IReadOnlyList<GameEvent> existing) =>
+        ScenarioA1SetupCalculator.SetupIncompleteBar(existing.Any(item => !GameState.IsSetupEvent(item.Payload)),
+            () => state.Scenario is { } scenario && (!CardLibrary.Matches(scenario.Id, scenario.Sha256) || CardOf(state) is null),
+            () => $"play.scenario: the card '{state.Scenario!.Id}' {Gone(state.Scenario.Id)}, so its setup cannot be checked (ruling R19.1)",
+            () => CardSetup(state, new HashSet<string>()) is { } report ? [.. report.Groups.Select(Verdict)] : null);
 
-        // Referee, pass 19: a card changed or gone since the game started cannot say whether the setup is done.
-        if (state.Scenario is { } scenario && (!CardLibrary.Matches(scenario.Id, scenario.Sha256) || CardOf(state) is null))
-        {
-            return $"play.scenario: the card '{scenario.Id}' {Gone(scenario.Id)}, so its setup cannot be checked (ruling R19.1)";
-        }
-
-        if (CardSetup(state, new HashSet<string>()) is not { } report)
-        {
-            return null;
-        }
-
-        return report.Groups.FirstOrDefault(group => group.SetsUp && !group.Complete) is { } open
-            ? $"play.setup-incomplete: {open.Name} ({open.Side}) has not finished setting up"
-                + (open.Remaining.Count > 0 ? $": {string.Join(", ", open.Remaining.Select(need => $"{need.Count} {need.Definition}{(need.Area is { } area ? $" in {area}" : string.Empty)}"))} left" : string.Empty)
-                + " (A2.9; ruling R19.2)"
-            : report.Groups.FirstOrDefault(group => group.OffBoard.Count > 0) is { } waiting
-            ? $"play.setup-incomplete: {waiting.Name} ({waiting.Side}) still sets up off board to enter: "
-                + $"{string.Join(", ", waiting.OffBoard.Select(need => $"{need.Count} {need.Definition}"))} (A2.51; ruling R20.5)"
-            : null;
-    }
+    /// <summary>A group's standing as Rules reads it (pass 32.j).</summary>
+    private static SetupGroupVerdict Verdict(SetupGroup group) => new(group.Side, group.Id, group.Name, group.Order, group.SetsUp, group.Complete,
+        [.. group.Remaining.Select(need => new SetupNeedVerdict(need.Group, need.Area, need.Definition, need.Count))], group.DummiesLeft,
+        [.. group.OffBoard.Select(need => new SetupNeedVerdict(need.Group, need.Area, need.Definition, need.Count))], group.Enters);
 }
