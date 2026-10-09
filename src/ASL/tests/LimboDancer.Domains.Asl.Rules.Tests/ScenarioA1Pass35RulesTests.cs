@@ -102,9 +102,26 @@ public sealed class ScenarioA1Pass35RulesTests
         Assert.Equal((false, 5), (five.Blocked, five.HindranceDrm));
     }
 
-    private static (VehicleTerrainEntry? Entry, string? Reason) Vehicle(string type, string terrain, bool road = false, bool besideMarsh = false) =>
-        ScenarioA1VehicleTerrainCosts.EntryCost(type, "G5", 0, false, terrain, "that terrain", null, null, road, 0, 7, false, false, false,
-            24, false, false, false, _ => 0, () => false, false, (_, _, _, _) => 0, false, false, [], besideMarsh);
+    private static (VehicleTerrainEntry? Entry, string? Reason) Vehicle(string type, string terrain, bool road = false, bool besideMarsh = false,
+        string? wall = null, bool towing = false) =>
+        ScenarioA1VehicleTerrainCosts.EntryCost(type, "G5", 0, false, terrain, "that terrain", wall, wall, road, 0, 7, false, false, false,
+            24, false, false, false, _ => 0, () => false, towing, (_, _, _, _) => 0, false, false, [], besideMarsh);
+
+    [Fact]
+    public void AVehicleTowingAGunCrossesNoWallOrHedgeEntersNoRubbleAndUsesNoBypass()
+    {
+        // C10.1 (p. 180; task 35.12). Until pass 35 a halftrack towed a Gun over a hedge, a tank into rubble, and either along a Bypass hexside at +1 MP.
+        Assert.Contains("may not cross a hedge (C10.1)", Vehicle("half-tracked", "open-ground", wall: "hedge", towing: true).Reason);
+        Assert.Contains("may not cross a wall (C10.1)", Vehicle("fully-tracked", "open-ground", wall: "wall", towing: true).Reason);
+        Assert.Contains("may not enter rubble (C10.1)", Vehicle("fully-tracked", "stone-rubble", towing: true).Reason);
+        Assert.Equal("a vehicle towing a Gun may not use Bypass Movement (C10.1)", ScenarioA1VehicleTerrainCosts.TowingBypassBar(true));
+        Assert.Null(ScenarioA1VehicleTerrainCosts.TowingBypassBar(false));
+
+        // Not towing, each is entered as before; towing, a road's gap in the hedge is crossed at the road rate plus the one MP of the tow.
+        Assert.Equal(6, Vehicle("half-tracked", "open-ground", wall: "hedge").Entry!.HalfMp);
+        Assert.NotNull(Vehicle("fully-tracked", "stone-rubble").Entry);
+        Assert.Equal(3, Vehicle("half-tracked", "open-ground", road: true, wall: "hedge", towing: true).Entry!.HalfMp);
+    }
 
     [Fact]
     public void AnOrchardCostsAVehicleWhatOpenGroundDoes()

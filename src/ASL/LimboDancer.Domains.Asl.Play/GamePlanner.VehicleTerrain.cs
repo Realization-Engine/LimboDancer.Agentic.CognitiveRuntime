@@ -137,6 +137,11 @@ public sealed partial class GamePlanner
     private (VehicleEntry? Entry, string? Reason) VehicleBypass(GameState state, UnitInstance vehicle, BoardLocation from, BoardLocation obstacle,
         BoardLocation other, bool reverse)
     {
+        if (ScenarioA1VehicleTerrainCosts.TowingBypassBar(Towing(state, vehicle)) is { } towingBar)
+        {
+            return (null, towingBar);
+        }
+
         if (!Bypassable(state, obstacle))
         {
             return (null, $"{obstacle} holds no woods or building a vehicle may Bypass, or it holds rubble or a Blaze (D2.3, D2.31)");
@@ -173,7 +178,7 @@ public sealed partial class GamePlanner
         }
 
         var cost = ScenarioA1VehicleTerrainCosts.BypassHalfMp(open, rise, HasSmoke(state, obstacle), state.Location(vehicle.Id)?.Location is { } now && now != obstacle,
-            () => WreckEntryHalfMp(state, obstacle, false), Towing(state, vehicle), reverse, MovementTypeOf(vehicle));
+            () => WreckEntryHalfMp(state, obstacle, false), reverse, MovementTypeOf(vehicle));
 
         return (new VehicleEntry(cost, false, null, [], obstacle, other, "open-ground", false, reverse, null), null);
     }

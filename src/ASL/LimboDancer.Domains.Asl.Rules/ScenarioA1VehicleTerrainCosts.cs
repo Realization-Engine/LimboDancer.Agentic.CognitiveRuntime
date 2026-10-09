@@ -84,6 +84,17 @@ public static class ScenarioA1VehicleTerrainCosts
 
         var road = roadHexside && !ScenarioA1Definitions.IsRubbleTerrain(terrain);
 
+        // C10.1 (p. 180; pass 35, task 35.12): no vehicle tows a Gun over a wall or hedge, or into rubble. A road crosses a wall or hedge by its gap.
+        if (towing && wall is not null && !road)
+        {
+            return (null, $"a vehicle towing a Gun may not cross a {wall} (C10.1)");
+        }
+
+        if (towing && ScenarioA1Definitions.IsRubbleTerrain(terrain))
+        {
+            return (null, "a vehicle towing a Gun may not enter rubble (C10.1)");
+        }
+
         // B10.52 (ruling R11.7): on a board whose elevations are hills, an Abrupt Elevation Change crosses two hillside Crest Lines, a Double-Crest
         // hexside, which a vehicle crosses only by road.
         if (Math.Abs(rise) >= 2 && !road)
@@ -243,22 +254,20 @@ public static class ScenarioA1VehicleTerrainCosts
         return (new VehicleTerrainEntry(cost, all, bogDrm, causes, terrain, road, hedgeDrm), null);
     }
 
+    /// <summary>C10.1 (p. 180; pass 35, task 35.12): a vehicle towing a Gun may not use Bypass Movement. The Narrow Streets exception (B31.124) is not built.</summary>
+    public static string? TowingBypassBar(bool towing) => towing ? "a vehicle towing a Gun may not use Bypass Movement (C10.1)" : null;
+
     /// <summary>
     /// A VBM step's cost in half MP (D2.3, D2.31; ruling R11.2): twice the Open Ground cost with a level climbed and SMOKE, the wreck and vehicle penalty
-    /// when the obstacle is a new hex, towing, and the Reverse multiplier.
+    /// when the obstacle is a new hex, and the Reverse multiplier.
     /// </summary>
-    public static int BypassHalfMp(int open, int rise, bool smoke, bool newHex, Func<int> wreckHalfMp, bool towing, bool reverse, string? movementType)
+    public static int BypassHalfMp(int open, int rise, bool smoke, bool newHex, Func<int> wreckHalfMp, bool reverse, string? movementType)
     {
         var smokeHalfMp = smoke ? 2 : 0;
         var cost = 2 * (open + (rise > 0 ? rise * 8 : 0) + smokeHalfMp);
         if (newHex)
         {
             cost += wreckHalfMp() - smokeHalfMp;
-        }
-
-        if (towing)
-        {
-            cost += 2;
         }
 
         if (reverse)

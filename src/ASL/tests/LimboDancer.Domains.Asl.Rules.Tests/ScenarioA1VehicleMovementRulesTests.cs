@@ -196,9 +196,9 @@ public sealed class ScenarioA1VehicleMovementRulesTests
     [Fact]
     public void BypassReadsTheWreckPenaltyOnlyForANewHex()
     {
-        Assert.Equal(4, ScenarioA1VehicleTerrainCosts.BypassHalfMp(2, 0, false, false, Never<int>("wrecks"), false, false, "fully-tracked"));
-        Assert.Equal(8, ScenarioA1VehicleTerrainCosts.BypassHalfMp(2, 0, false, true, () => 2, true, false, "fully-tracked"));
-        Assert.Equal(12, ScenarioA1VehicleTerrainCosts.BypassHalfMp(2, 0, false, false, Never<int>("wrecks"), false, true, "truck"));
+        Assert.Equal(4, ScenarioA1VehicleTerrainCosts.BypassHalfMp(2, 0, false, false, Never<int>("wrecks"), false, "fully-tracked"));
+        Assert.Equal(6, ScenarioA1VehicleTerrainCosts.BypassHalfMp(2, 0, false, true, () => 2, false, "fully-tracked"));
+        Assert.Equal(12, ScenarioA1VehicleTerrainCosts.BypassHalfMp(2, 0, false, false, Never<int>("wrecks"), true, "truck"));
     }
 
     [Fact]
