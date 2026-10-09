@@ -730,9 +730,11 @@ public static class ScenarioA1RoutCalculator
 
     /// <summary>
     /// A20.21: a unit with captors surrenders instead of failing to rout, unless Fanatic, under No Quarter, already rejected this phase, or a Commissar
-    /// (A25.22; pass 35, task 35.4), who is eliminated rather than surrender.
+    /// (A25.22; pass 35, task 35.4), who is eliminated rather than surrender. A unit repulsed this RtPh from a concealed unit's Location (A10.533,
+    /// p. 68) is eliminated too: its enemy takes it prisoner only by giving up its "?" before the rout enters.
     /// </summary>
-    public static bool SurrendersInstead(bool fanatic, bool noQuarter, bool rejected, bool commissar = false) => !fanatic && !noQuarter && !rejected && !commissar;
+    public static bool SurrendersInstead(bool fanatic, bool noQuarter, bool rejected, bool commissar = false, bool repulsed = false) =>
+        !fanatic && !noQuarter && !rejected && !commissar && !repulsed;
 
     /// <summary>A20.551 (ruling R31.8): a SMC that is free (no Custodian, not captured) and still Unarmed is Armed again.</summary>
     public static bool FreedUnarmedSmc(bool active, bool noCustodian, bool smc, bool unarmed, bool captured) => active && noCustodian && smc && unarmed && !captured;

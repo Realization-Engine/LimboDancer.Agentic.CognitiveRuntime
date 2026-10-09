@@ -419,6 +419,9 @@ public sealed class ScenarioA1RoutRallyRulesTests
         Assert.False(ScenarioA1RoutCalculator.SurrenderCandidate(false, false, false, commissar: true));
         Assert.True(ScenarioA1RoutCalculator.SurrendersInstead(false, false, false));
         Assert.False(ScenarioA1RoutCalculator.SurrendersInstead(false, false, false, commissar: true));
+
+        // A10.533 (p. 68): a unit repulsed from a concealed unit's Location is eliminated, not taken prisoner.
+        Assert.False(ScenarioA1RoutCalculator.SurrendersInstead(false, false, false, repulsed: true));
     }
 
     [Fact]

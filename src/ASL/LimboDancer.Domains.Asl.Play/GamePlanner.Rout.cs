@@ -756,6 +756,8 @@ public sealed partial class GamePlanner
         var scan = new RoutScan(this, state);
         var start = existing.Select((item, index) => (item, index)).LastOrDefault(pair => pair.item.Payload is PhaseChanged).index;
         var rejected = existing.Skip(start).Select(item => item.Payload).OfType<SurrenderRejected>().Select(item => item.Unit).ToHashSet(StringComparer.Ordinal);
+        var repulsed = existing.Skip(start).Select(item => item.Payload).OfType<RoutStepped>().Where(item => item.Attempted is not null).Select(item => item.Unit)
+            .ToHashSet(StringComparer.Ordinal);
         var failed = new List<(UnitInstance, string, IReadOnlyList<string>?)>();
         foreach (var unit in state.Units.Where(unit => ScenarioA1RoutCalculator.FailureToRoutCandidate(unit.Status == InstanceStatus.Active, Is(unit, Conditions.Broken),
             Is(unit, Conditions.Melee), Is(unit, Conditions.Captured), LiveFire.IsVehicle(unit), state.Aboard(unit.Id) is not null)).OrderBy(unit => unit.Id, StringComparer.Ordinal))
@@ -772,8 +774,8 @@ public sealed partial class GamePlanner
                 continue;
             }
 
-            var surrenders = ScenarioA1RoutCalculator.SurrendersInstead(Is(unit, Conditions.Fanatic), state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal), rejected.Contains(unit.Id), IsCommissar(unit))
-                && Captors(state, unit) is { Count: > 0 } captors ? captors : null;
+            var surrenders = ScenarioA1RoutCalculator.SurrendersInstead(Is(unit, Conditions.Fanatic), state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal), rejected.Contains(unit.Id), IsCommissar(unit),
+                repulsed.Contains(unit.Id)) && Captors(state, unit) is { Count: > 0 } captors ? captors : null;
             failed.Add((unit, why, surrenders));
         }
 

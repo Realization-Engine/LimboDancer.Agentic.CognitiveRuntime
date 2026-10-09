@@ -284,13 +284,15 @@ public sealed class BacklogPass35Tests : IDisposable
         Assert.False(Is(Current.Unit("g2")!, Conditions.Concealed));
         Assert.DoesNotContain(Since(before), item => item.Payload is DiceRolled { Purpose: "random-selection" });
 
-        // Its rout is over, and it ends the RtPh ADJACENT to g2, now Known: it surrenders, as a unit that fails to rout beside its captors does.
+        // Its rout is over, and it ends the RtPh ADJACENT to g2, now Known: it is eliminated for Failure to Rout (A10.533, p. 68). g2 would have had
+        // to give up its "?" before the rout entered to take it prisoner, so no surrender is offered.
         Refused(await Rout("r1", ["E5"]), "play.rout-unit");
         var result = await Do(GameActions.AdvancePhase, NoRoll(), new
         {
         });
         Committed(result);
-        Assert.Equal("r1", Assert.Single(Current.PendingSurrenders).Unit);
+        Assert.Empty(Current.PendingSurrenders);
+        Assert.Equal(InstanceStatus.Eliminated, Current.Unit("r1")!.Status);
 
         // The record reads back from the store with its attempted Location.
         Assert.Contains(store.Read(Scope)!.Events, item => item.Payload is RoutStepped { Attempted: not null });
