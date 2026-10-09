@@ -31,7 +31,7 @@ public sealed record CardRuleFacts(int Number, string Status, int Tokens, string
 
 /// <summary>A structured Victory Condition of a card as facts (ruling R21.3), with the fields its type reads.</summary>
 public sealed record CardConditionFacts(string Type, string Side, IReadOnlyList<string>? Buildings, IReadOnlyList<string>? Versus, int? Margin, string? Building, int? AtLeast,
-    double? Ratio, string? Edge, IReadOnlyList<string>? Near);
+    double? Ratio, string? Edge, IReadOnlyList<string>? Near, bool? MeleeUncontrolled = null);
 
 /// <summary>
 /// The rules of a scenario card and of a setup from it (pass 32.j, S10): a card's checks beyond its format (A2.1, A3.9, A12.11, A12.12, A14.1, A16, A16.1,

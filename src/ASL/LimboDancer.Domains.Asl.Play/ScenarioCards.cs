@@ -458,7 +458,8 @@ public static class ScenarioCards
     public static CardConditionFacts ConditionFacts(ScenarioCardCondition condition)
     {
         ArgumentNullException.ThrowIfNull(condition);
-        return new(condition.Type, condition.Side, condition.Buildings, condition.Versus, condition.Margin, condition.Building, condition.AtLeast, condition.Ratio, condition.Edge, condition.Near);
+        return new(condition.Type, condition.Side, condition.Buildings, condition.Versus, condition.Margin, condition.Building, condition.AtLeast, condition.Ratio, condition.Edge, condition.Near,
+            condition.MeleeUncontrolled);
     }
 
     /// <summary>The units a side starts with: everything but what enters after Turn 1 (A16.1).</summary>
