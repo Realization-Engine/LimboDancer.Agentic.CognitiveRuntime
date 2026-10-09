@@ -3,6 +3,8 @@ using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Geometry;
 using LimboDancer.Domains.Asl.MapStudio.Services;
 using LimboDancer.Domains.Asl.Play;
+using LimboDancer.Domains.Asl.Units.Documents;
+using LimboDancer.Domains.Asl.Units.State;
 using Microsoft.Extensions.DependencyInjection;
 using PlayPage = LimboDancer.Domains.Asl.MapStudio.Components.Pages.Play;
 
@@ -245,4 +247,71 @@ public sealed class PlayPageVehicleTests : IDisposable
         page.Find(".move-unit[data-unit='de-crew']").Change(true);
         Assert.Single(page.FindAll("#move-push"));
     }
+
+    [Fact]
+    public void AVehicleCloseCombatAttackNamesOnlyItsOwnLocationsUnits()
+    {
+        // Pass 35 (found in the game p35-rst-cc): the Locations share one attack draft. A defender checked in one Location was sent with the next
+        // Location's attack, which was refused as outside the review until the page was reloaded. Each Location now reads and proposes only its own
+        // units, and a committed attack clears the draft.
+        var (one, two) = Hexes();
+        var page = context.Render<PlayPage>();
+        MinimalCards.Choose(page, new Dictionary<string, string> { ["board"] = Board, ["first"] = "german", ["second"] = "russian", ["first-elr"] = "3", ["second-elr"] = "3" });
+        foreach (var (id, at) in new[] { ("g1", one), ("g2", two) })
+        {
+            page.Find("#place-definition").Change("attacker-squad");
+            page.Find("#place-id").Change(id);
+            page.Find("#place-location").Change(at);
+            page.Find("#place-add").Click();
+        }
+
+        Commit(page, "#propose-setup");
+
+        // The setup refuses a vehicle beside an enemy unit, so the two T-34s and the phases to the CCPh are written as the store writes them.
+        var scope = new GameScope(LivePlay.Tenant, "village");
+        var existing = live.Store.Read(scope)!.Events;
+        var clear = new Dictionary<string, ConditionState> { [Conditions.Concealed] = ConditionState.False, [Conditions.Hidden] = ConditionState.False };
+        (string Type, EventPayload Payload)[] batch = [
+            ("instance-created", new InstanceCreated(new NewInstance("t1", "asl:vehicle", "defender-tank", "russian", new MapPosition(BoardLocation.Parse(one), Facing: UnitFacing.East), null, clear))),
+            ("instance-created", new InstanceCreated(new NewInstance("t2", "asl:vehicle", "defender-tank", "russian", new MapPosition(BoardLocation.Parse(two), Facing: UnitFacing.East), null, clear))),
+            .. PhasesToCloseCombat.Select(phase => ("phase-changed", (EventPayload)new PhaseChanged(1, phase, "german")))];
+        GameEvent[] events = [.. batch.Select((item, index) => new GameEvent(scope, $"staged-{index + 1}", existing.Count + index + 1, DateTimeOffset.UnixEpoch,
+            LiveGames.Source, item.Type, item.Payload, null, [], null))];
+        Assert.Equal(AppendStatus.Committed, live.Store.Append(scope, "Village", existing.Count, events, live.Planner.Replay).Status);
+        page.OpenGame(string.Empty);
+        page.OpenGame("village");
+
+        // The adjudicator's view acts for both sides and keeps its draft from one Location to the next. A11.31, A11.12: the Infantry side attacks
+        // first, one Location at a time; the Germans pass in the first, which is then the Russian side's.
+        page.ViewAs(Perspective.AdjudicatorName);
+        string At(string location, string control) => $".vehicle-cc[data-location='{location}'] {control}";
+        Assert.Equal(2, page.FindAll(".vehicle-cc").Count);
+        Commit(page, At(one, ".propose-vehicle-cc-pass"));
+
+        // t1 and g1 are chosen in the first Location: the second reads no vehicle of its own and offers no attack.
+        page.Find(At(one, ".vehicle-cc-vehicle")).Change("t1");
+        page.Find(At(one, ".vehicle-cc-defender")).Change(true);
+        Assert.False(page.Find(At(one, ".propose-vehicle-cc-vehicle")).HasAttribute("disabled"));
+        Assert.Equal(string.Empty, page.Find(At(two, ".vehicle-cc-vehicle")).GetAttribute("value") ?? string.Empty);
+        Assert.True(page.Find(At(two, ".propose-vehicle-cc-vehicle")).HasAttribute("disabled"));
+        dice.Enqueue([6, 6]);
+        Commit(page, At(one, ".propose-vehicle-cc-vehicle"));
+        Assert.Equal(["g1"], VehicleAttacks(scope).Last().Defenders);
+
+        // The committed attack clears the draft: in the second Location nothing is chosen or checked, and its attack names g2 alone.
+        Commit(page, At(two, ".propose-vehicle-cc-pass"));
+        Assert.False(page.Find(At(two, ".vehicle-cc-defender")).HasAttribute("checked"));
+        Assert.True(page.Find(At(two, ".propose-vehicle-cc-vehicle")).HasAttribute("disabled"));
+        page.Find(At(two, ".vehicle-cc-vehicle")).Change("t2");
+        page.Find(At(two, ".vehicle-cc-defender")).Change(true);
+        dice.Enqueue([6, 6]);
+        Commit(page, At(two, ".propose-vehicle-cc-vehicle"));
+        Assert.Equal(["g2"], VehicleAttacks(scope).Last().Defenders);
+        Assert.Equal(2, VehicleAttacks(scope).Count());
+        Assert.False(live.History("village")!.HasErrors);
+    }
+
+    private static readonly string[] PhasesToCloseCombat = ["pfph", "mph", "dfph", "afph", "rtph", "aph", "ccph"];
+
+    private IEnumerable<VehicleCloseCombatResolved> VehicleAttacks(GameScope scope) => live.Store.Read(scope)!.Events.Select(item => item.Payload).OfType<VehicleCloseCombatResolved>();
 }

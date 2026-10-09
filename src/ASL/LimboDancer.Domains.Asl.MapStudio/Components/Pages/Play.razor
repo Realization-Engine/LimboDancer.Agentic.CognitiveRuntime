@@ -623,8 +623,8 @@ else if (state is not null)
                     <VehicleCloseCombatPanel Locations="@vehicleCc" Attacker="@vehicleCcAttacker" Leader="@vehicleCcLeader" Vehicle="@vehicleCcVehicle" Defenders="@vehicleCcDefenders"
                         OnAttacker="@(id => vehicleCcAttacker = id)" OnLeader="@(id => vehicleCcLeader = id)" OnVehicle="@(id => vehicleCcVehicle = id)"
                         OnDefender="@(pick => Toggle(vehicleCcDefenders, pick.Id, pick.On))"
-                        OnProposeAttack="@(at => ProposeVehicleCc(at, [vehicleCcAttacker, .. (vehicleCcLeader.Length > 0 ? new[] { vehicleCcLeader } : [])], vehicleCcVehicle, [], false))"
-                        OnProposeVehicle="@(at => ProposeVehicleCc(at, [], vehicleCcVehicle, [.. vehicleCcDefenders], false))" OnPass="@(at => ProposeVehicleCc(at, [], null, [], true))" />
+                        OnProposeAttack="@(at => ProposeVehicleCcAt(vehicleCc, at, byVehicle: false))"
+                        OnProposeVehicle="@(at => ProposeVehicleCcAt(vehicleCc, at, byVehicle: true))" OnPass="@(at => ProposeVehicleCc(at, [], null, [], true))" />
                 }
                 @if (state.Phase == "ccph")
                 {
@@ -3263,6 +3263,31 @@ else if (state is not null)
             [.. here.Where(unit => !LiveFire.IsVehicle(unit) && unit.Side != nextSide).Select(unit => unit.Id)]);
     })];
 
+    /// <summary>
+    /// Pass 35: the Locations share one attack draft, so an attack proposed in a Location names only that Location's own units; what was chosen or
+    /// checked in another Location stays out of it.
+    /// </summary>
+    private Task ProposeVehicleCcAt(IReadOnlyList<VehicleCloseCombatPanel.CcLocation> rows, string at, bool byVehicle)
+    {
+        if (rows.FirstOrDefault(row => row.Location == at) is not { } row || !row.Vehicles.Any(vehicle => vehicle.Id == vehicleCcVehicle))
+        {
+            return Task.CompletedTask;
+        }
+
+        string[] attackers = byVehicle || !row.Attackers.Contains(vehicleCcAttacker, StringComparer.Ordinal) ? []
+            : [vehicleCcAttacker, .. (row.Leaders.Contains(vehicleCcLeader, StringComparer.Ordinal) && vehicleCcLeader != vehicleCcAttacker ? new[] { vehicleCcLeader } : [])];
+        string[] defenders = byVehicle ? [.. row.Defenders.Where(vehicleCcDefenders.Contains)] : [];
+        return attackers.Length == 0 && defenders.Length == 0 ? Task.CompletedTask : ProposeVehicleCc(at, attackers, vehicleCcVehicle, defenders, false);
+    }
+
+    /// <summary>Pass 35: the vehicle CC and CC Reaction Fire drafts, cleared with the other panel choices and after a committed attack or pass.</summary>
+    private void ClearVehicleCc()
+    {
+        vehicleCcAttacker = vehicleCcLeader = vehicleCcVehicle = string.Empty;
+        vehicleCcDefenders.Clear();
+        reactionAttacker = reactionLeader = string.Empty;
+    }
+
     private Task ProposeVehicleCc(string location, IReadOnlyList<string> attackers, string? vehicle, IReadOnlyList<string> defenders, bool pass)
     {
         var arguments = new Dictionary<string, object>
@@ -5217,6 +5242,7 @@ else if (state is not null)
         ordnanceSpotter = ordnanceDirector = string.Empty;
         ordnanceIntensive = false;
         ordnanceAmmunition = "ap";
+        ClearVehicleCc();
     }
 
     private void Refresh()
@@ -6019,6 +6045,10 @@ else if (state is not null)
             else if (proposal.Action == GameActions.HookGun)
             {
                 hookBoards = false;
+            }
+            else if (proposal.Action == GameActions.VehicleCloseCombat)
+            {
+                ClearVehicleCc();
             }
             else if (proposal.Action == GameActions.Rally)
             {

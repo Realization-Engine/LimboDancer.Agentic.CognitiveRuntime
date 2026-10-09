@@ -50,6 +50,13 @@ public sealed class CloseCombatComponentTests : IDisposable
         panel.Render(parameters => parameters.Add(item => item.Attacker, "r1").Add(item => item.Vehicle, "gt").Add(item => item.Defenders, new HashSet<string> { "r3" }));
         panel.Find(".vehicle-cc[data-location='bd04:E5:0'] .propose-vehicle-cc-attack").Click();
         Assert.Equal("bd04:E5:0", attacked);
+
+        // Pass 35: the draft is shared, so a Location reads only its own units of it: gt is not in the second Location, whose vehicle reads as not
+        // chosen and whose attack waits, though r3 is checked.
+        Assert.True(panel.Find(".vehicle-cc[data-location='bd04:F5:0'] .propose-vehicle-cc-vehicle").HasAttribute("disabled"));
+        Assert.Equal(string.Empty, panel.Find(".vehicle-cc[data-location='bd04:F5:0'] .vehicle-cc-vehicle").GetAttribute("value") ?? string.Empty);
+        panel.Render(parameters => parameters.Add(item => item.Vehicle, "gt2"));
+        Assert.True(panel.Find(".vehicle-cc[data-location='bd04:E5:0'] .propose-vehicle-cc-attack").HasAttribute("disabled"));
         panel.Find(".vehicle-cc[data-location='bd04:F5:0'] .propose-vehicle-cc-vehicle").Click();
         Assert.Equal("bd04:F5:0", byVehicle);
     }

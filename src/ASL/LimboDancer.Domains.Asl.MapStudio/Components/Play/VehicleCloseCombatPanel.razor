@@ -8,11 +8,16 @@
 </RuleHelp>
 @foreach (var location in Locations)
 {
+    // Pass 35: the Locations share one draft, so each shows and proposes only what was chosen among its own units.
+    var attacker = location.Attackers.Contains(Attacker, StringComparer.Ordinal) ? Attacker : string.Empty;
+    var leader = location.Leaders.Contains(Leader, StringComparer.Ordinal) ? Leader : string.Empty;
+    var chosen = location.Vehicles.Any(vehicle => vehicle.Id == Vehicle) ? Vehicle : string.Empty;
+    var anyDefender = location.Defenders.Any(Defenders.Contains);
     <div @key="location.Location" class="toolbar vehicle-cc" data-location="@location.Location">
         <span>@location.Location: the @location.NextSide side attacks next.</span>
         <label>
             Attacker
-            <select class="vehicle-cc-attacker" value="@Attacker" @onchange="@(args => OnAttacker.InvokeAsync(args.Value as string ?? string.Empty))">
+            <select class="vehicle-cc-attacker" value="@attacker" @onchange="@(args => OnAttacker.InvokeAsync(args.Value as string ?? string.Empty))">
                 <option value="">choose</option>
                 @foreach (var unit in location.Attackers)
                 {
@@ -22,7 +27,7 @@
         </label>
         <label>
             With SMC
-            <select class="vehicle-cc-leader" value="@Leader" @onchange="@(args => OnLeader.InvokeAsync(args.Value as string ?? string.Empty))">
+            <select class="vehicle-cc-leader" value="@leader" @onchange="@(args => OnLeader.InvokeAsync(args.Value as string ?? string.Empty))">
                 <option value="">none</option>
                 @foreach (var unit in location.Leaders)
                 {
@@ -32,7 +37,7 @@
         </label>
         <label>
             Vehicle
-            <select class="vehicle-cc-vehicle" value="@Vehicle" @onchange="@(args => OnVehicle.InvokeAsync(args.Value as string ?? string.Empty))">
+            <select class="vehicle-cc-vehicle" value="@chosen" @onchange="@(args => OnVehicle.InvokeAsync(args.Value as string ?? string.Empty))">
                 <option value="">choose</option>
                 @foreach (var vehicle in location.Vehicles)
                 {
@@ -44,8 +49,8 @@
         {
             <label><input type="checkbox" class="vehicle-cc-defender" checked="@Defenders.Contains(unit)" @onchange="@(args => OnDefender.InvokeAsync(new UnitSelectionList.Toggle(unit, args.Value is true)))" /> @Say(unit)</label>
         }
-        <button class="propose-vehicle-cc-attack" disabled="@(Attacker.Length == 0 || Vehicle.Length == 0)" @onclick="@(() => OnProposeAttack.InvokeAsync(location.Location))">Propose: Infantry attack the vehicle</button>
-        <button class="propose-vehicle-cc-vehicle" disabled="@(Vehicle.Length == 0 || Defenders.Count == 0)" @onclick="@(() => OnProposeVehicle.InvokeAsync(location.Location))">Propose: the vehicle attacks the checked Infantry</button>
+        <button class="propose-vehicle-cc-attack" disabled="@(attacker.Length == 0 || chosen.Length == 0)" @onclick="@(() => OnProposeAttack.InvokeAsync(location.Location))">Propose: Infantry attack the vehicle</button>
+        <button class="propose-vehicle-cc-vehicle" disabled="@(chosen.Length == 0 || !anyDefender)" @onclick="@(() => OnProposeVehicle.InvokeAsync(location.Location))">Propose: the vehicle attacks the checked Infantry</button>
         <button class="propose-vehicle-cc-pass" @onclick="@(() => OnPass.InvokeAsync(location.Location))">Propose: the @location.NextSide side passes</button>
     </div>
 }
