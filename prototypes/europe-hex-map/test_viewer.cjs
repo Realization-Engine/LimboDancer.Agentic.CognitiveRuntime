@@ -9,14 +9,16 @@ assert.ok(!html.includes('id="enterTheater"'));assert.ok(!html.includes('id="ret
 assert.ok(!/<details[^>]*\sopen(?:\s|>)/.test(html));
 assert.ok(Buffer.byteLength(html.replace(/<!-- situation-data:start -->[\s\S]*?<!-- situation-data:end -->/, ""))<20000);
 assert.ok(html.includes('<script src="app.js"></script>'));
-assert.ok(html.includes('<link rel="stylesheet" href="site.css">'));
-assert.ok(!html.includes('<script>'));
+assert.match(html, /<link rel="stylesheet" href="site\.css(?:\?[^" ]+)?">/);
+const inlineScripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
+assert.equal(inlineScripts.length,1);
+for(const exercise of ["ardennes","other"]){let loading=false;vm.runInNewContext(inlineScripts[0],{URLSearchParams,location:{search:"?exercise="+exercise},document:{documentElement:{classList:{add(name){assert.equal(name,"ardennes-loading");loading=true;}}}}});assert.equal(loading,exercise==="ardennes");}
 assert.equal(script.replace(/\r\n/g,"\n"),fs.readFileSync(__dirname+"/app.template.js","utf8").replace("__WESTERN_SCRIPT__",fs.readFileSync(__dirname+"/theater-view.js","utf8").replace(/^\uFEFF/,"" )).replace("__REGIONAL_SCRIPT__",fs.readFileSync(__dirname+"/regional-view.js","utf8")).replace(/\r\n/g,"\n"));
 
 const ids=new Map(), polygons=[], saved=new Map(), blobs=[];
 class Element{
  constructor(){this.attrs={};this.children=[];this.style={};this.events={};this.clientWidth=1200;this.clientHeight=900;this.classList={add(){},remove(){}};}
- setAttribute(k,v){this.attrs[k]=v;} removeAttribute(k){delete this.attrs[k];} append(...e){this.children.push(...e);} addEventListener(k,f){this.events[k]=f;}
+ setAttribute(k,v){this.attrs[k]=v;} removeAttribute(k){delete this.attrs[k];} append(...e){this.children.push(...e);} prepend(...e){this.children.unshift(...e);} addEventListener(k,f){this.events[k]=f;}
  replaceChildren(){this.children=[];} click(){if(this.onclick)this.onclick();}
 }
 const document={getElementById(id){if(!ids.has(id))ids.set(id,new Element());return ids.get(id);},createElement(){return new Element();},
@@ -329,7 +331,7 @@ vm.runInContext(fs.readFileSync(__dirname+"/workflow-view.js","utf8"),context);
  assert.equal(ids.get("stage-review").disabled,true);
  // Load the source-card campaign after the workflow, as the real page does.
  document.body=new Element();Element.prototype.showModal=function(){this.open=true;};Element.prototype.close=function(){this.open=false;};
- for(const file of [...JSON.parse(fs.readFileSync(__dirname+"/situation-data/scripts.json","utf8")),"panzer-situation-state.js","panzer-map-art.js","panzer-situation-view.js"])vm.runInContext(fs.readFileSync(__dirname+"/"+file,"utf8"),context);
+ for(const file of [...JSON.parse(fs.readFileSync(__dirname+"/situation-data/scripts.json","utf8")),"panzer-situation-state.js","panzer-map-art.js","counter-palette-defaults.js","terrain-palette-defaults.js","campaign-appearance.js","panzer-situation-view.js"])vm.runInContext(fs.readFileSync(__dirname+"/"+file,"utf8"),context);
  assert.ok(!ids.get("workflowChoose").children.some(e=>e.textContent?.includes("St. Lo")));
  context.window.CampaignSituationWorkflow.choose();assert.equal(context.window.CampaignSituationWorkflow.active,false);
  ids.get("workflowStart").onclick();assert.equal(vm.runInContext("workflowStage",context),"brief");
