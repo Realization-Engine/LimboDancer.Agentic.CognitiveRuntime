@@ -216,6 +216,26 @@ public sealed class ScenarioA1RoutRallyRulesTests
     }
 
     [Fact]
+    public void ARoutIsRepulsedByARealConcealedUnitAndDummiesAloneAreRemoved()
+    {
+        // Pass 35, task 35.4 (A10.533, A.9).
+        var one = ScenarioA1RoutCalculator.RoutRepulse([new("d", true, false), new("b", false, true), new("a", false, false)]);
+        Assert.True(one.Repulsed);
+        Assert.Equal(["b"], one.ToConceal);
+        Assert.Equal(["a", "b"], one.Pool);
+        Assert.True(one.NeedsSelection);
+        Assert.Empty(one.Dummies);
+        var single = ScenarioA1RoutCalculator.RoutRepulse([new("a", false, false), new("d", true, false)]);
+        Assert.Equal((true, false), (single.Repulsed, single.NeedsSelection));
+        var dummies = ScenarioA1RoutCalculator.RoutRepulse([new("d", true, false), new("e", true, false)]);
+        Assert.False(dummies.Repulsed);
+        Assert.Equal(["d", "e"], dummies.Dummies);
+        Assert.Equal(["a"], ScenarioA1RoutCalculator.RoutRepulseShown(["a"], null));
+        Assert.Equal(["b"], ScenarioA1RoutCalculator.RoutRepulseShown(["a", "b"], [2, 5]));
+        Assert.Equal(["a", "b"], ScenarioA1RoutCalculator.RoutRepulseShown(["a", "b"], [4, 4]));
+    }
+
+    [Fact]
     public void ARoutStepNeverEntersOrApproachesAKnownEnemy()
     {
         var row = new Row();

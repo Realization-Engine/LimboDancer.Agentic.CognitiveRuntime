@@ -27,6 +27,13 @@ public sealed record RoutLocationFacts(string? TerrainKey, bool Smoke);
 public sealed record RoutLosFacts(bool Clear, int Hindrance, int Range);
 
 /// <summary>
+/// What happens when a rout step enters a Location holding enemy units the routing side does not know (A10.533; pass 35, task 35.4): whether the
+/// routing unit is repulsed; the hidden units that first go beneath a "?"; the real units among which one loses its "?", by Random Selection when
+/// there are several; and the Dummies removed when no real unit is there and the rout goes on.
+/// </summary>
+public sealed record RoutRepulseVerdict(bool Repulsed, IReadOnlyList<string> ToConceal, IReadOnlyList<string> Pool, bool NeedsSelection, IReadOnlyList<string> Dummies);
+
+/// <summary>
 /// The half MF a rout step costs (A10.5, A7.7), ALL when the entry takes every MF, or why the step is not allowed.
 /// </summary>
 public sealed record RoutStepCost(int? HalfMf, bool AllMf, string? Reason);

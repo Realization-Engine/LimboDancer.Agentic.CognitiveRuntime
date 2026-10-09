@@ -572,6 +572,11 @@ public sealed class PlayRecords
                 {
                     records.Add((item.EventId, "rally", RallyText(rally, arithmetic, resolution.Effect, In(before, rally.Unit))));
                 }
+                else if (item.Payload is RoutStepped { Attempted: { } repulsedFrom } repulsed)
+                {
+                    // Pass 35 (task 35.4; A10.533): a repulsed step is a sentence of its own, after whatever steps the rout made before it.
+                    records.Add((item.EventId, "rout", $"{repulsed.Unit} is repulsed from {repulsedFrom} by a concealed unit there and ends its rout in {repulsed.To} (A10.533)"));
+                }
                 else if (item.Payload is RoutStepped routed)
                 {
                     // Pass 31d (design D11): the steps of one rout are one sentence, "routs from [Y5] by [Z5] to [AA5] for 3 MF", and name the unit once.

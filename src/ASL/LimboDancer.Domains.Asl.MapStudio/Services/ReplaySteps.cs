@@ -295,7 +295,9 @@ public static class ReplaySteps
         if (First<RoutStepped>(payloads) is { } routed)
         {
             var side = SideOf(routed.Unit);
-            return ("rout", side, $"{A(side, "broken unit")} routs to {Place(before, routed.To)}{(routed.LowCrawl ? " by Low Crawl" : string.Empty)}{end}", false);
+            return ("rout", side, routed.Attempted is { } repulsedFrom
+                ? $"{A(side, "broken unit")} is repulsed from {Place(before, repulsedFrom)} by a concealed unit{end}"
+                : $"{A(side, "broken unit")} routs to {Place(before, routed.To)}{(routed.LowCrawl ? " by Low Crawl" : string.Empty)}{end}", false);
         }
 
         if (First<RallyAttempted>(payloads) is { } rally)

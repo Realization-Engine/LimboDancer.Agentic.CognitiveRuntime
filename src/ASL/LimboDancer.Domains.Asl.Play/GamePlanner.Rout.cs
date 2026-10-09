@@ -463,6 +463,8 @@ public sealed partial class GamePlanner
             var routing = unit;
             var rolls = 0;
             var used = 0;
+            var here = start;
+            var standing = state;
 
             // A10.4, A4.431: what it leaves is unpossessed in the Location it routs from, written as a drop is.
             foreach (var item in left)
@@ -480,8 +482,48 @@ public sealed partial class GamePlanner
 
                 var to = route[index];
                 used += costs[index];
+
+                // A10.533 (pass 35, task 35.4): the enemy units of the Location that the routing side does not know. A real one repulses the rout to the
+                // Location it came from, where it ends, and one of them loses its "?"; Dummies alone are removed. Rules decides; the plan said nothing of them.
+                UnitInstance[] unknown = [.. standing.At(to).OfType<UnitInstance>().Where(other => other.Status == InstanceStatus.Active && other.Side != routing.Side
+                    && !Is(other, Conditions.Captured) && !KnownEnemy(other))];
+                if (unknown.Length > 0)
+                {
+                    var repulse = ScenarioA1RoutCalculator.RoutRepulse([.. unknown.Select(other => new MoveRevealUnitFacts(other.Id, other.Kind == UnitKinds.Dummy, Is(other, Conditions.Hidden)))]);
+                    foreach (var dummy in repulse.Dummies)
+                    {
+                        events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(dummy), package, null));
+                    }
+
+                    if (repulse.Repulsed)
+                    {
+                        IReadOnlyList<int>? dice = null;
+                        if (repulse.NeedsSelection)
+                        {
+                            var selection = draw(new RollRequest(repulse.Pool.Count, 6));
+                            rolls++;
+                            dice = selection.Values;
+                            events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled", new DiceRolled($"{attemptId}-roll-{rolls.ToString(CultureInfo.InvariantCulture)}",
+                                "random-selection", selection.Request.Count, selection.Request.Sides, selection.Values, DiceRolled.SystemSource, actor), package, null));
+                        }
+
+                        foreach (var hidden in repulse.ToConceal)
+                        {
+                            events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(hidden,
+                                new Dictionary<string, ConditionState> { [Conditions.Hidden] = ConditionState.False, [Conditions.Concealed] = ConditionState.True }), package, null));
+                        }
+
+                        events.AddRange(RevealEvents(scope, attemptId, expected, events.Count + 1, ScenarioA1RoutCalculator.RoutRepulseShown(repulse.Pool, dice)));
+                        events.Add(Event(scope, attemptId, events.Count + 1, expected, "rout-stepped", new RoutStepped(routing.Id, here, costs[index], lowCrawl) { Attempted = to }, null, null));
+                        AddAdjacentDm(scope, attemptId, expected, Replay([.. existing, .. events]).Current!, events);
+                        break;
+                    }
+                }
+
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "rout-stepped", new RoutStepped(routing.Id, to, costs[index], lowCrawl), null, null));
                 var after = Replay([.. existing, .. events]).Current!;
+                here = to;
+                standing = after;
                 AddAdjacentDm(scope, attemptId, expected, after, events);
 
                 // A10.53: Interdiction as it enters an Open Ground hex without Low Crawl, once per hex.

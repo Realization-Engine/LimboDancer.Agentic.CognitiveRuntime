@@ -555,7 +555,10 @@ public static class GameEventReader
                 var routMf = fields.OptionalInteger(payload, "halfMf", path);
                 return routUnit is null || routTo is null || routMf is null
                     ? Missing(diagnostics, "A rout step names its unit, Location, and MF.", path)
-                    : new RoutStepped(routUnit, routTo, routMf.Value, fields.OptionalBoolean(payload, "lowCrawl", path));
+                    : new RoutStepped(routUnit, routTo, routMf.Value, fields.OptionalBoolean(payload, "lowCrawl", path))
+                    {
+                        Attempted = payload.TryGetProperty("attempted", out _) ? ReadLocation(payload, "attempted", path, fields, diagnostics) : null,
+                    };
             case "rout-interdicted":
                 var interdictedUnit = fields.RequiredString(payload, "unit", path);
                 var interdictedAt = ReadLocation(payload, "at", path, fields, diagnostics);

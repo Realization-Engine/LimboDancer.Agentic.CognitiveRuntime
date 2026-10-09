@@ -183,6 +183,27 @@ public static class ScenarioA1RoutCalculator
         return null;
     }
 
+    /// <summary>
+    /// A10.533 (pass 35, task 35.4): a rout step into a Location holding concealed or hidden enemy units. With a real unit among them the routing unit
+    /// is repulsed to the Location it came from, where its rout ends: the hidden units first go beneath a "?", and one real unit loses its "?", by
+    /// Random Selection when there are several (A.9, as an ordinary entry draws: ruling R10.11). With Dummies alone, they are removed and the rout goes on.
+    /// </summary>
+    public static RoutRepulseVerdict RoutRepulse(IReadOnlyList<MoveRevealUnitFacts> unknownThere)
+    {
+        ArgumentNullException.ThrowIfNull(unknownThere);
+        string[] real = [.. unknownThere.Where(unit => !unit.Dummy).OrderBy(unit => unit.Id, StringComparer.Ordinal).Select(unit => unit.Id)];
+        return real.Length > 0
+            ? new RoutRepulseVerdict(true, [.. unknownThere.Where(unit => unit.Hidden).Select(unit => unit.Id)], real, real.Length > 1, [])
+            : new RoutRepulseVerdict(false, [], [], false, [.. unknownThere.Select(unit => unit.Id)]);
+    }
+
+    /// <summary>A10.533, A.9: the units that lose their "?" in repulsing a rout: the only real unit, or with dice the highest dr, ties all.</summary>
+    public static IReadOnlyList<string> RoutRepulseShown(IReadOnlyList<string> pool, IReadOnlyList<int>? dice)
+    {
+        ArgumentNullException.ThrowIfNull(pool);
+        return dice is null ? [.. pool.Take(1)] : [.. pool.Where((_, index) => dice[index] == dice.Take(pool.Count).Max())];
+    }
+
     /// <summary>The Known armed enemy units with a clear LOS to a Location (A10.51), read as they are enumerated.</summary>
     public static IEnumerable<string> SeenBy(IRoutFactReader reader, IReadOnlyList<RoutEnemyFacts> enemies, int at)
     {

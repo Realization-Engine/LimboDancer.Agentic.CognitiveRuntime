@@ -641,6 +641,11 @@ public static class GameEventWriter
                 writer.WriteString("to", routed.To.ToString());
                 writer.WriteNumber("halfMf", routed.HalfMf);
                 writer.WriteBoolean("lowCrawl", routed.LowCrawl);
+                if (routed.Attempted is { } repulsedFrom)
+                {
+                    writer.WriteString("attempted", repulsedFrom.ToString());
+                }
+
                 break;
             case RoutInterdicted interdicted:
                 writer.WriteString("unit", interdicted.Unit);
