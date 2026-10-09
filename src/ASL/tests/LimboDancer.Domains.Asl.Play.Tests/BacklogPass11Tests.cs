@@ -786,6 +786,26 @@ public sealed class BacklogPass11Tests : IDisposable
     }
 
     [Fact]
+    public async Task AWreckBurnedInCloseCombatCarriesItsBlaze()
+    {
+        // B25.14 (p. 143; pass 35, task 35.9): a CC attack DR of half the DR needed or less burns the wreck, and the Wreck Blaze is a Blaze counter on it.
+        // As above the Russian squad needs a Final DR below 5 with -2 for the OT halftrack; an Original 3 is 1.
+        await Setup("russian", Vehicle("de-ht", "attacker-halftrack", L(Ne("E5")), "german"), Squad("r1", L("E5"), "russian"), Squad("g1", L("J9"), "german"));
+        await Advance(4);
+        Committed(await Do(GameActions.Advance, Once(3, 4), new
+        {
+            unitIds = R1,
+            to = L(Ne("E5"))
+        }));
+        await Advance();
+        var before = Revision;
+        Committed(await VehicleCc(L(Ne("E5")), Once(1, 2), vehicle: "de-ht", attackers: ["r1"]));
+        Assert.Contains(Since(before), item => item.Payload is VehicleWrecked { Id: "de-ht", Burning: true });
+        Assert.Contains(Current.Entities, entity => entity.Id == "de-ht-blaze" && entity.Kind == "asl:fire" && entity.Status == InstanceStatus.Active);
+        NoReplayErrors();
+    }
+
+    [Fact]
     public async Task AVehicleAttacksInfantryInCcAndHoldsItInMelee()
     {
         // A11.62 (R11.15): after the Russian squad's attack fails (Original 11), the CE halftrack attacks it with its 3 FP AAMG against CCV 5: 1-2, Kill 4.

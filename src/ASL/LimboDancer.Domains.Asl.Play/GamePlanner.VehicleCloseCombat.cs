@@ -348,8 +348,17 @@ public sealed partial class GamePlanner
                 }, package, null));
             if (destroyed)
             {
-                events.Add(Event(scope, attemptId, events.Count + 1, expected, "vehicle-wrecked", new VehicleWrecked(vehicle.Id, resolution.VehicleResult == VehicleCloseCombatResolution.BurningWreck),
-                    package, null, [recordId]));
+                var burning = resolution.VehicleResult == VehicleCloseCombatResolution.BurningWreck;
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "vehicle-wrecked", new VehicleWrecked(vehicle.Id, burning), package, null, [recordId]));
+
+                // B25.14 (p. 143; pass 35, task 35.9): a Wreck Blaze is a Blaze counter on the wreck, as fire and ordnance place it; without it the wreck
+                // gave cover and no smoke.
+                if (burning && state.Location(vehicle.Id)?.Location is { } burningAt)
+                {
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-created",
+                        new InstanceCreated(new NewInstance(BlazeId(vehicle.Id), "asl:fire", null, null, new MapPosition(burningAt), null, new Dictionary<string, ConditionState>())),
+                        package, null, [recordId]));
+                }
             }
             else if (resolution.VehicleResult == VehicleCloseCombatResolution.Immobilized)
             {

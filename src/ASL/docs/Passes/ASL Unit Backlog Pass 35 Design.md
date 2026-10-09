@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 35 Design
 
-**Status:** In preparation and being built at once, at the user's word of 2026-10-09: each increment is designed, built on the branch feature/asl-backlog-pass-35, given a small test game in the Studio and Play tests, and committed at the user's word. Increment 1 (the frame) answered: yes to F1 to F6. Increment 2a (the Rout Phase: 35.17, 35.2, 35.4, with ADJACENT taken from pass 40) built and committed (section 7). **Increment 2b (Infantry: 35.1, 35.3, 35.8) built, awaiting the user's word to commit (section 8).** Still to come: terrain, ordnance, vehicles, night and weather, the two that are not rules, and the cross-cutting sections.
+**Status:** In preparation and being built at once, at the user's word of 2026-10-09: each increment is designed, built on the branch feature/asl-backlog-pass-35, given a small test game in the Studio and Play tests, and committed at the user's word. Increment 1 (the frame) answered: yes to F1 to F6. Increment 2a (the Rout Phase: 35.17, 35.2, 35.4, with ADJACENT taken from pass 40) built and committed (section 7). Increment 2b (Infantry: 35.1, 35.3, 35.8) built and committed (section 8). **Increment 2c (terrain: 35.5, 35.6, 35.7, 35.9) built, awaiting the user's word to commit (section 9).** Still to come: ordnance, vehicles, night and weather, the two that are not rules, and the cross-cutting sections.
 
 **Date:** 2026-10-09
 
@@ -441,3 +441,30 @@ Written and built 2026-10-09, at the user's word to build as the design goes and
 | 2 | Ruling R30.3's berserk Fanatic at 11 is withdrawn for A.18. | Yes: the page leaves no room. |
 | 3 | A25.211, the pre-1941 exception, goes to the backlog. | Yes. |
 | 4 | A mortal wound in a rout makes no LLMC of the units with the leader. | Backlog, with the same gap wherever a leader is lost outside fire; pass 70 (morale) reads A10.2. |
+
+## 9. Terrain: 35.5, 35.6, 35.7, 35.9 (increment 2c)
+
+Written and built 2026-10-09. Uncommitted as this section is written. At the user's word of that day, each change was tested by the test classes it touches and no wider.
+
+| Task | Rule, as read | What the code did | The repair, in Rules | Tested by |
+|---|---|---|---|---|
+| 35.5 | B.2 (p. 112): the COT is the hex's cost plus that of the Artificial Terrain in it, so a level climbed doubles SMOKE's MF too: "2 x 2 = 4 MF, not 2 x 1 = 2 + 1 = 3 MF", Abrupt Elevation Changes excepted. | `GroundStep` doubled the terrain's cost and then added SMOKE's. | `ScenarioA1TerrainCosts.GroundStep` doubles the two together one level up; across an Abrupt Elevation Change SMOKE's MF is added once, as before. A burning wreck's extra MF is charged the same way. | Rules; the Studio game `p35-smoke-hill`: a squad climbing from [F5] into [E5], level 1 with a burning wreck, "for 4 MF" |
+| 35.5 | B.10 (p. 113): any combination of SMOKE, weather, and terrain Hindrance of +6 or more blocks the LOS. | The map's own total blocked at six; the terrain's count with vehicles', wrecks', and SMOKE's was never tested, and such an attack was made at +6 or more. | `ScenarioA1FireMapRules.HindranceBlocks`, read in `LocationLos`, where the total is formed. | Rules |
+| 35.6 | B14.4 (p. 129): an orchard costs what Open Ground does. | A vehicle was refused an orchard ("is not allowed"). | Three rows in the vehicle terrain table, equal to Open Ground's. | Rules |
+| 35.6 | B15.2, B15.6 (p. 129): grain is a Hindrance in its season, June to September, and Open Ground outside it. | A LOS through grain out of season was refused as an unattributed Hindrance, in fire and in ordnance. | Only a game with no scenario month leaves grain on a LOS undecided (three conditions). | The existing fire and ordnance tests; no test of its own |
+| 35.7 | C3.53 (p. 170), B16.31 (p. 130): ordnance HE is halved into a marsh, beside any halving of the Area Target Type. | Full FP. | The hit's FP is halved for a marsh target in `ScenarioA1FireCalculator`. Ruling R10.1's leave-out ends. | No test of its own |
+| 35.7 | B16.43 (p. 130): a ground level or level -1 hex adjacent to a marsh is a Bog hex for a vehicle entering by a non-road hexside. | No Bog Check. | `EntryCost` takes "beside a marsh" as a fact, read in Play from the hex's neighbours, and adds a Bog Check. | Rules |
+| 35.9 | B25.14 (p. 143): a Wreck Blaze is a Blaze counter on the wreck; a CC attack DR of half the DR needed or less makes one. | The wreck was recorded as burning with no Blaze entity, so it gave cover and no smoke. | No rule changed: Play writes the Blaze entity after the wreck, as fire and ordnance do. | Play (`AWreckBurnedInCloseCombatCarriesItsBlaze`) |
+
+**Not built, and proposed for another pass: the orchard's season in the LOS (B14.2).** As read: an orchard is a one-level obstacle to a LOS to or from a higher elevation from April to October, and out of season each orchard hex is a +1 Hindrance to such a LOS. Today every orchard is in season, since nothing ties the LOS to the scenario month. The LOS is in Maps, which holds both terrains ("Orchard" and "Orchard, Out of Season") and refuses several of the out-of-season cases outright. Giving it the season means a second LOS map for each board and its cache, and would turn some winter LOS from wrongly blocked into undecided. Fire leaves every orchard Hindrance undecided as well, which pass 135 (task 135.2, "every Hindrance decided in fire", with B14.21) is there to settle. Proposal: the B14.2 row moves to pass 135, with a backlog row.
+
+**The pass 32 design's section 12, item 3** (grain in season April to September for a cost, June to September elsewhere): not a fault. B15.6 says plowed fields in April and May keep grain's movement cost and are Open Ground for everything else. The two copies stay.
+
+**What has no Studio game.** Board 3 has no orchard and no marsh, and a Hindrance total of six, HE into a marsh, and a vehicle's Close Combat are long to stage. Those are tested in Rules or Play as the table says. Two repairs have no test of their own: out-of-season grain on a LOS, and the halved HE.
+
+**Questions of increment 2c**
+
+| # | Question | Proposal |
+|---|---|---|
+| 1 | The orchard's season in the LOS (B14.2) moves to pass 135. | Yes, for the reasons above. |
+| 2 | Write a test each for out-of-season grain on a LOS and HE into a marsh? Both need the fire calculator's test harness. | Yes, at the gate, with the pass's other tests; about 0:10 each. |
