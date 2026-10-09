@@ -394,4 +394,18 @@ public sealed class ScenarioA1Pass35RulesTests
         Assert.Null(Blind("stop"));
         Assert.Null(Blind("unload"));
     }
+
+    [Fact]
+    public void AGameWithACounterWhoseRulesAreNotBuiltIsRefused()
+    {
+        // Task 35.15: fortifications (B23.9, B26 to B30), rubble counters (B24), and Flames (B25.15) wait for passes 115 and 120.
+        Assert.True(ScenarioA1SequenceCalculator.UnbuiltCounter("asl:wire", true));
+        Assert.True(ScenarioA1SequenceCalculator.UnbuiltCounter("asl:rubble", false));
+        Assert.True(ScenarioA1SequenceCalculator.UnbuiltCounter("asl:flame", false));
+        Assert.False(ScenarioA1SequenceCalculator.UnbuiltCounter("asl:smoke", false));
+        Assert.False(ScenarioA1SequenceCalculator.UnbuiltCounter("asl:fire", false));
+        Assert.Null(ScenarioA1SequenceCalculator.UnbuiltCounterBar(false, []));
+        Assert.Contains("holds foxhole, wire counters", ScenarioA1SequenceCalculator.UnbuiltCounterBar(false, ["foxhole", "wire"]));
+        Assert.Contains("would place wire counters", ScenarioA1SequenceCalculator.UnbuiltCounterBar(true, ["wire"]));
+    }
 }

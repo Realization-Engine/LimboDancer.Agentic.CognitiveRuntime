@@ -139,6 +139,24 @@ public static class ScenarioA1SequenceCalculator
             : null;
     }
 
+    /// <summary>
+    /// Whether a counter is one whose rules are not built (pass 35, task 35.15): a fortification (wire, foxhole, trench, minefield, roadblock, pillbox,
+    /// Fortified Building Location; B23.9, B26 to B30), a rubble counter (B24), or a Flame (B25.15). Passes 115 and 120 build them.
+    /// </summary>
+    public static bool UnbuiltCounter(string kind, bool fortification) => fortification || kind is "asl:rubble" or "asl:flame";
+
+    /// <summary>
+    /// Pass 35, task 35.15: a game that places or holds a counter whose rules are not built is refused, where until now it played as if the counter
+    /// were absent. <paramref name="kinds"/> are the labels of the unbuilt kinds, read when the game has events or is being set up.
+    /// </summary>
+    public static string? UnbuiltCounterBar(bool setup, IReadOnlyList<string> kinds)
+    {
+        ArgumentNullException.ThrowIfNull(kinds);
+        return kinds.Count == 0 ? null
+            : $"play.unbuilt-counters: this game {(setup ? "would place" : "holds")} {string.Join(", ", kinds)} counters, whose rules are not built, so "
+                + $"{(setup ? "it is not set up with them" : "it is not played")} (B23.9, B24, B25.15, B26 to B30; passes 115 and 120)";
+    }
+
     /// <summary>Ruling R5.8: a pending choice is answered before anything else happens in the game; <paramref name="pendingChoice"/> reads its side and its words.</summary>
     public static string? ChoicePendingBar(bool ready, string action, Func<(string Side, string Described)?> pendingChoice)
     {

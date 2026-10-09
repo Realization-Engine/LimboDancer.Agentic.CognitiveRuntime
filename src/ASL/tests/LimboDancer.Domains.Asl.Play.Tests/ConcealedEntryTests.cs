@@ -205,7 +205,6 @@ public sealed class ConcealedEntryTests : IDisposable
     [InlineData("hidden-leader", "play.outside-reviewed-cases")]
     [InlineData("hidden-leader-with-squad", "play.outside-reviewed-cases")]
     [InlineData("known-and-concealed", "play.outside-reviewed-cases")]
-    [InlineData("return-wire", "play.return-hazard")]
     public async Task AnEntryNoReviewedCaseCoversIsRefusedWithoutNamingWhatIsHidden(string change, string reason)
     {
         // Several concealed units and a lone concealed SMC are resolved in step 9; a hidden SMC, and known units mixed
@@ -215,9 +214,8 @@ public sealed class ConcealedEntryTests : IDisposable
             "hidden-leader" => await GameInMph(Placement("r1", "defender-leader", "russian", "bd01:E4:0", hidden: true)),
             "hidden-leader-with-squad" => await GameInMph(Placement("r1", "defender-leader", "russian", "bd01:E4:0", hidden: true),
                 Placement("r2", "defender-squad", "russian", "bd01:E4:0", concealed: true)),
-            "known-and-concealed" => await GameInMph(Placement("r1", "defender-squad", "russian", "bd01:E4:0"),
+            _ => await GameInMph(Placement("r1", "defender-squad", "russian", "bd01:E4:0"),
                 Placement("r2", "defender-squad", "russian", "bd01:E4:0", concealed: true)),
-            _ => await GameInMph(Placement("r1", "defender-squad", "russian", "bd01:E4:0", hidden: true), Entity("w1", "asl:wire", "russian", "bd01:D4:0")),
         };
         var start = Revision;
         var proposed = await play.ProposeAsync(GameActions.EnterBuilding, Entry("enter-1"), Player);
@@ -227,6 +225,32 @@ public sealed class ConcealedEntryTests : IDisposable
         Assert.Equal([EntryDisclosure.CannotResolve], confirmed.Plan!.Disclosure!.ReasonsForMover(confirmed.Plan, confirmed: true));
         Assert.Contains(confirmed.Plan.Reasons, item => item.StartsWith(reason, StringComparison.Ordinal));
         Assert.Equal(start, Revision);
+    }
+
+    [Fact]
+    public async Task AGameThatWouldPlaceAFortificationCounterIsNotSetUp()
+    {
+        // Pass 35, task 35.15: wire has no rules yet (B26; pass 115), so the setup is refused. Until pass 35 the game played as if the wire were absent,
+        // but for the forced back of an entry, which was refused for it (play.return-hazard).
+        var play = Play();
+        var result = await play.ProposeAsync(GameActions.Setup, Args(new
+        {
+            gameId = Scope.Game,
+            attemptId = "setup-1",
+            expectedRevision = 0,
+            start = new
+            {
+                label = "Village test",
+                catalog = "asl-scenario-a1@1.13.0",
+                boards = Bd01,
+                firstSide = "german",
+                sides = new[] { new { id = "german", nationality = "german" }, new { id = "russian", nationality = "russian" } },
+            },
+            placements = new[] { Placement("g1", "attacker-squad", "german", "bd01:D4:0"), Entity("w1", "asl:wire", "russian", "bd01:D4:0") },
+        }), Player);
+        Assert.Equal(PlayOutcome.Denied, result.Outcome);
+        Assert.Contains(result.Plan!.Reasons, reason => reason.StartsWith("play.unbuilt-counters", StringComparison.Ordinal) && reason.Contains("wire", StringComparison.Ordinal));
+        Assert.Equal(0, Revision);
     }
 
     [Fact]

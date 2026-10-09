@@ -276,6 +276,19 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return Refused(scope, label, expected, overrunFirst);
         }
 
+        // Pass 35, task 35.15: fortification, rubble, and Flame counters have no rules yet; a game with them is refused, not played wrongly.
+        var settingUp = action.Id.Value == "asl.game.setup";
+        if (ScenarioA1SequenceCalculator.UnbuiltCounterBar(settingUp, UnbuiltKinds(settingUp
+            ? arguments.TryGetProperty("placements", out var placing) && placing.ValueKind == JsonValueKind.Array
+                ? placing.EnumerateArray().Select(item => item.ValueKind == JsonValueKind.Object && item.TryGetProperty("kind", out var kind) ? kind.GetString() : null)
+                : []
+            : existing.Count > 0 && Replay(existing).Current is { } held
+                ? held.Entities.Where(entity => entity.Status == InstanceStatus.Active).Select(entity => (string?)entity.Kind)
+                : [])) is { } unbuilt)
+        {
+            return Refused(scope, label, expected, unbuilt);
+        }
+
         var plan = action.Id.Value switch
         {
             "asl.game.setup" => PlanSetup(scope, arguments, existing, attemptId, expected, ref label, actor ?? "unknown"),
