@@ -806,3 +806,11 @@ The upstairs rout fix (2026-10-08, its own branch after pass 32.f): a broken uni
 |---|---|---|---|---|
 | The stairwell symbol drawn on the map, and the hex inspector saying whether a hex's levels connect | The user's Studio test, 2026-10-08 | B23.22, B23.23 | A map layer for the hex's stairway flag (the map reader sets it: inherent for a one-level building, where VASL draws the symbol for a two-level one) | Nothing is drawn or said; a player sees a multi-story building and cannot tell its stairwell hex, so a refused level change (play.move-stairwell) looks like a fault. |
 | A voluntary rout by a broken unit that need not rout and is not under DM | The user's Studio test, 2026-10-08 (G3 in [H5] level 1 of cd-guards-5) | A10.5 (ruling R13.1) | The referee's reading of A10.5 with the PDF | Such a unit is not offered a rout: "need not rout and is not under DM, so it may not rout". |
+
+## 53. Added by passes 32.h and 32.i
+
+The block of 2026-10-08 (the design's section 23) moved S9 and S2 into Rules. What it left in place:
+
+| Item | Deferred by | Rules | Depends on | What happens now |
+|---|---|---|---|---|
+| `GameProjector.CheckInvariants`: the model invariants checked after every event (a contained object's container is an active fortification or vehicle and not a cycle, UNIT-STATE-011; held equipment's holder is an active unit of the right kind in the same Location, UNIT-STATE-012; a prisoner's custodian is an active enemy unit in its Location, UNIT-STATE-014, citing A20.5) | Pass 32.i, 2026-10-08 | A20.5 for the custodian's Location; the rest are the model's own consistency | Pass 45 or pass 48 deciding whether these are rules or plumbing; a verdict record over the object graph's facts if they move | They run in Units as diagnostics (errors, not refusals) over the whole object graph; A20.5's Guard rules themselves are in `ScenarioA1PrisonerCalculator.cs` and `ScenarioA1CloseCombatProjection.cs` since 32.g. The Appendix counted the member among the projector's rows; the design's eighteen could not be reconstructed, and this one was kept as the invariant it is. |
