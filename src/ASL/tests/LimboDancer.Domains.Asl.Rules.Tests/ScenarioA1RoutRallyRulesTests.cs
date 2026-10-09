@@ -396,6 +396,16 @@ public sealed class ScenarioA1RoutRallyRulesTests
         Assert.Equal(7, ScenarioA1RoutCalculator.BrokenMorale(true, 8, 7, true));
         Assert.Equal(7, ScenarioA1RoutCalculator.BrokenMorale(true, null, 7, false));
         Assert.Null(ScenarioA1RoutCalculator.BrokenMorale(false, 8, 7, false));
+
+        // Pass 35, task 35.4 (A10.8, A.18): a Fanatic unit's broken Morale Level is one higher, never above 10.
+        Assert.Equal(8, ScenarioA1RoutCalculator.BrokenMorale(true, 7, 7, false, fanatic: true));
+        Assert.Equal(10, ScenarioA1RoutCalculator.BrokenMorale(true, 10, 10, false, fanatic: true));
+
+        // A20.21, A25.22: a Commissar never surrenders by the RtPh method.
+        Assert.True(ScenarioA1RoutCalculator.SurrenderCandidate(false, false, false));
+        Assert.False(ScenarioA1RoutCalculator.SurrenderCandidate(false, false, false, commissar: true));
+        Assert.True(ScenarioA1RoutCalculator.SurrendersInstead(false, false, false));
+        Assert.False(ScenarioA1RoutCalculator.SurrendersInstead(false, false, false, commissar: true));
     }
 
     [Fact]

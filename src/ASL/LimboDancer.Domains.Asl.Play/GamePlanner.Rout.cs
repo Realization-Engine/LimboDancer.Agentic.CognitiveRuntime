@@ -44,7 +44,7 @@ public sealed partial class GamePlanner
     /// trap are read here, the trap last.
     /// </summary>
     private (string Cause, IReadOnlyList<string> Captors)? RoutSurrender(GameState state, UnitInstance unit, BoardLocation start) =>
-        ScenarioA1RoutCalculator.SurrenderCandidate(state.Night, Is(unit, Conditions.Fanatic), state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal))
+        ScenarioA1RoutCalculator.SurrenderCandidate(state.Night, Is(unit, Conditions.Fanatic), state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal), IsCommissar(unit))
             && Captors(state, unit) is { Count: > 0 } captors
             && ScenarioA1RoutCalculator.SurrenderCause(Is(unit, Conditions.Disrupted), state.Encircled(unit), () => TrappedByInterdiction(state, unit, start), captors) is { } cause
             ? (cause, captors) : null;
@@ -313,6 +313,9 @@ public sealed partial class GamePlanner
             state.ScenarioMonth, avoidInterdiction: true);
         return ScenarioA1RoutCalculator.TrappedByInterdiction(scan, scan.Enemies(unit.Side), scan.Index(start), reach);
     }
+
+    /// <summary>A25.22: whether a unit is a Commissar, by its catalog definition.</summary>
+    private static bool IsCommissar(UnitInstance unit) => unit.Definition is { } reference && ScenarioA1FireReference.IsCommissar(reference.Definition);
 
     /// <summary>A10.5: the half MF a broken unit has in the RtPh, six MF, a wounded SMC three.</summary>
     private int RoutHalfMf(UnitInstance unit) => ScenarioA1RoutCalculator.RoutHalfMfAsPlanned(vocabulary.IsA(unit.Kind, "asl:smc"), Is(unit, Conditions.Wounded));
@@ -587,7 +590,7 @@ public sealed partial class GamePlanner
     private static int? BrokenMorale(UnitInstance unit)
     {
         var definition = unit.Definition is { } reference ? FireReference.Value.Definitions.GetValueOrDefault(reference.Definition) : null;
-        return ScenarioA1RoutCalculator.BrokenMorale(definition is not null, definition?.BrokenMorale, definition?.Morale, Is(unit, Conditions.Wounded));
+        return ScenarioA1RoutCalculator.BrokenMorale(definition is not null, definition?.BrokenMorale, definition?.Morale, Is(unit, Conditions.Wounded), Is(unit, Conditions.Fanatic));
     }
 
     /// <summary>Casualty Reduction (A7.302): a squad becomes its HS, a SMC is wounded, or eliminated if already wounded, and anything else is eliminated.</summary>
@@ -753,7 +756,7 @@ public sealed partial class GamePlanner
                 continue;
             }
 
-            var surrenders = ScenarioA1RoutCalculator.SurrendersInstead(Is(unit, Conditions.Fanatic), state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal), rejected.Contains(unit.Id))
+            var surrenders = ScenarioA1RoutCalculator.SurrendersInstead(Is(unit, Conditions.Fanatic), state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal), rejected.Contains(unit.Id), IsCommissar(unit))
                 && Captors(state, unit) is { Count: > 0 } captors ? captors : null;
             failed.Add((unit, why, surrenders));
         }

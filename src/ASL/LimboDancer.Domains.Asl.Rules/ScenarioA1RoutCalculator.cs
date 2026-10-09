@@ -235,9 +235,12 @@ public static class ScenarioA1RoutCalculator
     /// <summary>A10.5, as the planner has it: the half MF a broken unit has in the RtPh, six MF, a wounded SMC three.</summary>
     public static int RoutHalfMfAsPlanned(bool smc, bool wounded) => smc && wounded ? 6 : 12;
 
-    /// <summary>The broken Morale Level (A10.4), one lower for a wounded SMC (A17.3), from the catalog; null for a unit the catalog does not know.</summary>
-    public static int? BrokenMorale(bool fromCatalog, int? brokenMorale, int? morale, bool wounded) =>
-        fromCatalog ? (brokenMorale ?? morale) - (wounded ? 1 : 0) : null;
+    /// <summary>
+    /// The broken Morale Level (A10.4), one lower for a wounded SMC (A17.3) and one higher for a Fanatic unit (A10.8; pass 35, task 35.4), never above
+    /// 10 (A.18), from the catalog; null for a unit the catalog does not know.
+    /// </summary>
+    public static int? BrokenMorale(bool fromCatalog, int? brokenMorale, int? morale, bool wounded, bool fanatic = false) =>
+        fromCatalog && (brokenMorale ?? morale) is { } level ? Math.Min(10, level - (wounded ? 1 : 0) + (fanatic ? 1 : 0)) : null;
 
     /// <summary>Casualty Reduction (A7.302): a squad with a HS becomes it, a SMC is wounded, or eliminated if already wounded, and anything else is eliminated.</summary>
     public static CasualtyOutcome CasualtyReduction(bool squadWithHalfSquad, bool leaderOrHero, bool wounded) =>
@@ -499,8 +502,11 @@ public static class ScenarioA1RoutCalculator
     public static string? NightRoutBar(string unitId, bool night, bool lowCrawl) =>
         night && !lowCrawl ? $"play.night-rout: at night {unitId} does not rout normally but Low Crawls (lowCrawl) (E1.54)" : null;
 
-    /// <summary>A20.21: a unit surrenders to ADJACENT captors by day, unless Fanatic or under No Quarter.</summary>
-    public static bool SurrenderCandidate(bool night, bool fanatic, bool noQuarter) => !night && !fanatic && !noQuarter;
+    /// <summary>
+    /// A20.21: a unit surrenders to ADJACENT captors by day, unless Fanatic, under No Quarter, or a Commissar (A25.22; pass 35, task 35.4), who never
+    /// surrenders by the RtPh method. The other kinds the rule names (Partisans, Gurkhas, SS facing Russians, Japanese) have no counters.
+    /// </summary>
+    public static bool SurrenderCandidate(bool night, bool fanatic, bool noQuarter, bool commissar = false) => !night && !fanatic && !noQuarter && !commissar;
 
     /// <summary>A20.21: why a unit ADJACENT to its captors surrenders instead of routing: Disrupted, Encircled, or trapped (read last), or null.</summary>
     public static string? SurrenderCause(bool disrupted, bool encircled, Func<bool> trappedByInterdiction, IReadOnlyList<string> captors)
@@ -716,8 +722,11 @@ public static class ScenarioA1RoutCalculator
             : !routedThisPhase && !pinned && ExposedInOpenGround(reader, enemies, at, scenarioMonth) is { } seen
                 ? $"it did not rout from Open Ground in the LOS and Normal Range of {seen}" : null;
 
-    /// <summary>A20.21: a unit with captors surrenders instead of failing to rout, unless Fanatic, under No Quarter, or already rejected this phase.</summary>
-    public static bool SurrendersInstead(bool fanatic, bool noQuarter, bool rejected) => !fanatic && !noQuarter && !rejected;
+    /// <summary>
+    /// A20.21: a unit with captors surrenders instead of failing to rout, unless Fanatic, under No Quarter, already rejected this phase, or a Commissar
+    /// (A25.22; pass 35, task 35.4), who is eliminated rather than surrender.
+    /// </summary>
+    public static bool SurrendersInstead(bool fanatic, bool noQuarter, bool rejected, bool commissar = false) => !fanatic && !noQuarter && !rejected && !commissar;
 
     /// <summary>A20.551 (ruling R31.8): a SMC that is free (no Custodian, not captured) and still Unarmed is Armed again.</summary>
     public static bool FreedUnarmedSmc(bool active, bool noCustodian, bool smc, bool unarmed, bool captured) => active && noCustodian && smc && unarmed && !captured;

@@ -350,7 +350,24 @@ So the frame's reading holds: Interdiction and the must-rout test are to read th
 
 **The rout's destination, read at the user's word and found right.** R3's rout to [P2] at 3 MF was accepted though [N2] is 2 MF away. A10.51 (p. 66) makes the nearest building or woods hex in MF the destination, and the exception printed with A10.532 (p. 67) lets a routing unit ignore a building or woods hex that is no farther from a Known enemy unit than its starting hex. When R3 routed, the two repulses before it had made German units Known in [F5] and [O10]; [N2] is nearer to [F5] than [O3] is, so [N2] could be ignored and [P2] was the nearest that could not. `RoutTargets` does this. Before those units were Known the panel offered [N2] alone, and a rout to [P2] would have been refused. No change. The test game's Dummy is moved to [N2] so the case does not depend on the order of play.
 
-**Still to build in 35.4:** the Commissar's exemption (question 3); the reading of Fanaticism for the Interdiction NMC (question 5); a wreck or AFV case and an Interdiction case in a test game.
+**The Commissar and the Fanatic, built 2026-10-09 (uncommitted).** A20.21 and A25.22 (p. 94): `SurrenderCandidate` and `SurrendersInstead` take whether the unit is a Commissar, known by its catalog definition as the rally rules know it. A Commissar bound to surrender by any other unit's reckoning routs through the Interdiction, and one that ends the RtPh ADJACENT to its enemy is eliminated, not taken. A10.8 (p. 69), read: a Fanatic unit has its normal and its broken Morale Level raised by one. `BrokenMorale` takes the Fanatic condition, so the Interdiction NMC is against one more, never above 10 (A.18). Tests: Rules, in the broken morale test; Play, three more in `BacklogPass35Tests` (a Commissar routs through two Interdictions; a Commissar that does not rout is eliminated with no surrender pending; a Fanatic squad's NMC is against 8). With passes 13 and 15: 80 of 80.
+
+**The Interdiction test games,** six variants of one position on board 3, each checked in the Studio: a broken Russian unit in the Open Ground of [D10], seen from [F10] two hexes away, whose rout to the woods of [D8] goes by the Open Ground of [D9].
+
+| Game | What differs | What the Studio showed |
+|---|---|---|
+| `p35-interdict-squad` | A German squad in [F10] | "Interdicted as it enters [D9] by 4-6-7 squad G1, a NMC each (A10.53)" |
+| `p35-interdict-leader` | A leader alone with a LMG in [F10] | The squad must rout ("in the LOS and Normal Range of 8-1 leader G1"), and "no step enters Open Ground an enemy unit could Interdict" |
+| `p35-interdict-wreck` | A tank wreck in [D9] | "no step enters Open Ground an enemy unit could Interdict" |
+| `p35-interdict-fanatic` | The Russian squad is Fanatic | The rout made: "NMC DR 7 against broken morale 8: passed" |
+| `p35-interdict-trap` | A second German squad beside it in [E10] | "does not rout: it can get away ... only by Interdiction or Low Crawl, so it surrenders" |
+| `p35-interdict-commissar` | The same, and the Russian unit is a 9-0 Commissar | "must rout", with a route offered; the phase's end, proposed and not confirmed: "is eliminated for Failure to Rout", no surrender |
+| `p35-interdict-between` | A tank wreck in [E10], between [F10] and the Open Ground (D9.4) | The squad "may rout, since it is under DM" (it need not), and no Interdiction in [D9] |
+| `p35-interdict-smoke` | The same wreck burning, its SMOKE along the LOS (B25.2, A24.2) | The same: need not rout, no Interdiction in [D9] |
+
+The last two were added at the user's word, "six variants" above being eight with them. A SMOKE grenade's counter leaves as its MPh ends (A24.11; ruling R9.5), so in the Rout Phase the only SMOKE the game can hold is a burning wreck's.
+
+Task 35.4 is built in full. What it leaves: ruling R13.3's new text, written with the pass's documents.
 
 ### 7.5 Questions of increment 2a
 

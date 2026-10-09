@@ -108,7 +108,7 @@ public sealed class BacklogPass35Tests : IDisposable
             conditions[state] = true;
         }
 
-        var kind = definition.Contains("half-squad", StringComparison.Ordinal) ? "asl:half-squad" : definition.Contains("leader", StringComparison.Ordinal) ? "asl:leader" : "asl:squad";
+        var kind = definition.Contains("half-squad", StringComparison.Ordinal) ? "asl:half-squad" : definition.Contains("leader", StringComparison.Ordinal) || definition.Contains("commissar", StringComparison.Ordinal) ? "asl:leader" : "asl:squad";
         return new()
         {
             ["id"] = id,
@@ -321,6 +321,43 @@ public sealed class BacklogPass35Tests : IDisposable
         Committed(await Rout("r1", ["E6", "E7"], Once(3, 3)));
         Assert.Contains(Since(before), item => item.Payload is InstanceEliminated { Id: "gd" });
         Assert.DoesNotContain(Since(before), item => item.Payload is RoutStepped { Attempted: not null });
+        Assert.Equal(L("E7"), Current.Location("r1")!.Location.ToString());
+    }
+
+    [Fact]
+    public async Task ACommissarRoutsThroughInterdictionRatherThanSurrender()
+    {
+        // Task 35.4 (A20.21, A25.22). The broken Commissar rc in E3 is ADJACENT to g1 and can get away only through Open Ground g1 Interdicts. Another
+        // unit would surrender instead; a Commissar never does, and risks the Interdiction: two NMC, each passed.
+        await SetupAt(5, "german", Unit("g1", "attacker-squad", "E2", "german"), Unit("rc", "defender-commissar-9-0", "E3", "russian", "asl:broken"));
+        Assert.Equal("rtph", Current.Phase);
+        var before = Revision;
+        Committed(await Rout("rc", ["E4", "E5"], Once(1, 1, 1, 1)));
+        Assert.Equal(2, Since(before).Select(item => item.Payload).OfType<RoutInterdicted>().Count());
+        Assert.Equal(L("E5"), Current.Location("rc")!.Location.ToString());
+    }
+
+    [Fact]
+    public async Task ACommissarThatFailsToRoutIsEliminatedAndDoesNotSurrender()
+    {
+        // A20.21: "If unable to do any of these, they are eliminated rather than surrender."
+        await SetupAt(5, "german", Unit("g1", "attacker-squad", "E2", "german"), Unit("rc", "defender-commissar-9-0", "E3", "russian", "asl:broken"));
+        var before = Revision;
+        await Advance();
+        Assert.Contains(Since(before), item => item.Payload is InstanceEliminated { Id: "rc" });
+        Assert.Empty(Current.PendingSurrenders);
+    }
+
+    [Fact]
+    public async Task AFanaticUnitTakesItsInterdictionCheckAgainstOneMore()
+    {
+        // Task 35.4 (A10.8): a Fanatic unit's broken Morale Level is one higher. r1's is 7, so its Interdiction NMC is against 8: a DR of 7 passes, where against 7 it would pin (A7.8).
+        terrain["E7"] = "Woods";
+        await SetupAt(5, "german", Unit("g1", "attacker-squad", "E2", "german"), Unit("r1", "defender-squad", "E5", "russian", "asl:broken", "asl:fanatic"));
+        var before = Revision;
+        Committed(await Rout("r1", ["E6", "E7"], Once(4, 3)));
+        var interdicted = Assert.Single(Since(before).Select(item => item.Payload).OfType<RoutInterdicted>());
+        Assert.Equal((8, RoutInterdicted.Passed), (interdicted.Morale, interdicted.Result));
         Assert.Equal(L("E7"), Current.Location("r1")!.Location.ToString());
     }
 }
