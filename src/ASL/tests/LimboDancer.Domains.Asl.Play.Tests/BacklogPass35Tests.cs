@@ -360,4 +360,30 @@ public sealed class BacklogPass35Tests : IDisposable
         Assert.Equal((8, RoutInterdicted.Passed), (interdicted.Morale, interdicted.Result));
         Assert.Equal(L("E7"), Current.Location("r1")!.Location.ToString());
     }
+
+    [Theory]
+    [InlineData(false, 3, true, true)]
+    [InlineData(false, 5, false, false)]
+    [InlineData(true, 3, true, true)]
+    [InlineData(true, 4, false, false)]
+    public async Task ALeadersCasualtyReductionInARoutIsAWoundWithItsSeverityDr(bool alreadyWounded, int severityDr, bool survives, bool routsOn)
+    {
+        // Task 35.1 (A17.11). The broken leader rl fails its Interdiction NMC in E6 (DR 11): Casualty Reduction, which for a SMC is a wound. Its Wound
+        // Severity dr is made at once: 5 or 6 is mortal, with +1 for a man already wounded, who on a minor wound stays wounded and is not eliminated.
+        terrain["E7"] = "Woods";
+        string[] states = alreadyWounded ? ["asl:broken", "asl:wounded"] : ["asl:broken"];
+        await SetupAt(5, "german", Unit("g1", "attacker-squad", "E2", "german"), Unit("rl", "defender-leader", "E5", "russian", states));
+        var before = Revision;
+        Committed(await Rout("rl", ["E6", "E7"], Once(6, 5, severityDr)));
+        var severity = Assert.Single(Since(before).Select(item => item.Payload).OfType<DiceRolled>(), roll => roll.Purpose == "wound-severity");
+        Assert.Equal([severityDr], severity.Values);
+        var leader = Current.Unit("rl")!;
+        Assert.Equal(survives, leader.Status == InstanceStatus.Active);
+        if (survives)
+        {
+            Assert.True(Is(leader, Conditions.Wounded));
+        }
+
+        Assert.Equal(routsOn ? L("E7") : L("E6"), (Current.Location("rl")?.Location ?? BoardLocation.Parse(L("E6"))).ToString());
+    }
 }

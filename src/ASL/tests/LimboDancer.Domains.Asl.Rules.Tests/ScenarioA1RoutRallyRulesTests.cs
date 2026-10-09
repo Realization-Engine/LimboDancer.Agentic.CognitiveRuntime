@@ -389,10 +389,23 @@ public sealed class ScenarioA1RoutRallyRulesTests
     [Fact]
     public void CasualtyReductionAndTheBrokenMorale()
     {
-        Assert.Equal(CasualtyOutcome.Reduced, ScenarioA1RoutCalculator.CasualtyReduction(true, false, false));
-        Assert.Equal(CasualtyOutcome.Wounded, ScenarioA1RoutCalculator.CasualtyReduction(false, true, false));
-        Assert.Equal(CasualtyOutcome.Eliminated, ScenarioA1RoutCalculator.CasualtyReduction(false, true, true));
-        Assert.Equal(CasualtyOutcome.Eliminated, ScenarioA1RoutCalculator.CasualtyReduction(false, false, false));
+        Assert.Equal(CasualtyOutcome.Reduced, ScenarioA1RoutCalculator.CasualtyReduction(true, false, false, null));
+        Assert.Equal(CasualtyOutcome.Wounded, ScenarioA1RoutCalculator.CasualtyReduction(false, true, false, 4));
+        Assert.Equal(CasualtyOutcome.Eliminated, ScenarioA1RoutCalculator.CasualtyReduction(false, true, false, 5));
+        Assert.Equal(CasualtyOutcome.Wounded, ScenarioA1RoutCalculator.CasualtyReduction(false, true, true, 3));
+        Assert.Equal(CasualtyOutcome.Eliminated, ScenarioA1RoutCalculator.CasualtyReduction(false, true, true, 4));
+        Assert.Equal(CasualtyOutcome.Eliminated, ScenarioA1RoutCalculator.CasualtyReduction(false, false, false, null));
+        Assert.Throws<ArgumentNullException>(() => ScenarioA1RoutCalculator.CasualtyReduction(false, true, false, null));
+
+        // Pass 35, task 35.1 (A17.11): the one wound procedure, and the PF firer's Casualty Reduction by it.
+        Assert.False(ScenarioA1Wounds.Mortal(4, false));
+        Assert.True(ScenarioA1Wounds.Mortal(5, false));
+        Assert.True(ScenarioA1Wounds.Mortal(4, true));
+        Assert.Equal(ScenarioA1Wounds.Mortal(4, true), ScenarioA1Sniper.Mortal(4, true));
+        Assert.Equal(FirerCasualty.Wounded, ScenarioA1OrdnanceEventRules.Casualty("asl:leader", () => false, true, 3));
+        Assert.Equal(FirerCasualty.Eliminated, ScenarioA1OrdnanceEventRules.Casualty("asl:leader", () => false, false, 6));
+        Assert.Equal(FirerCasualty.HalfSquad, ScenarioA1OrdnanceEventRules.Casualty("asl:squad", () => true, false, null));
+        Assert.Equal(FirerCasualty.Eliminated, ScenarioA1OrdnanceEventRules.Casualty("asl:half-squad", () => false, false, null));
         Assert.Equal(7, ScenarioA1RoutCalculator.BrokenMorale(true, 8, 7, true));
         Assert.Equal(7, ScenarioA1RoutCalculator.BrokenMorale(true, null, 7, false));
         Assert.Null(ScenarioA1RoutCalculator.BrokenMorale(false, 8, 7, false));

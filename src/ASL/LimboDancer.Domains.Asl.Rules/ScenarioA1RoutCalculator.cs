@@ -242,9 +242,15 @@ public static class ScenarioA1RoutCalculator
     public static int? BrokenMorale(bool fromCatalog, int? brokenMorale, int? morale, bool wounded, bool fanatic = false) =>
         fromCatalog && (brokenMorale ?? morale) is { } level ? Math.Min(10, level - (wounded ? 1 : 0) + (fanatic ? 1 : 0)) : null;
 
-    /// <summary>Casualty Reduction (A7.302): a squad with a HS becomes it, a SMC is wounded, or eliminated if already wounded, and anything else is eliminated.</summary>
-    public static CasualtyOutcome CasualtyReduction(bool squadWithHalfSquad, bool leaderOrHero, bool wounded) =>
-        squadWithHalfSquad ? CasualtyOutcome.Reduced : leaderOrHero && !wounded ? CasualtyOutcome.Wounded : CasualtyOutcome.Eliminated;
+    /// <summary>
+    /// Casualty Reduction (A7.302, A17.11; pass 35, task 35.1): a squad with a HS becomes it; a SMC is wounded, and its Wound Severity dr says whether the
+    /// wound is mortal (<see cref="ScenarioA1Wounds.Mortal"/>), a man already wounded staying wounded on a minor one; anything else is eliminated.
+    /// </summary>
+    public static CasualtyOutcome CasualtyReduction(bool squadWithHalfSquad, bool leaderOrHero, bool wounded, int? severityDr) =>
+        squadWithHalfSquad ? CasualtyOutcome.Reduced
+            : !ScenarioA1Wounds.SeverityDue(leaderOrHero) ? CasualtyOutcome.Eliminated
+            : severityDr is { } dr ? ScenarioA1Wounds.Mortal(dr, wounded) ? CasualtyOutcome.Eliminated : CasualtyOutcome.Wounded
+            : throw new ArgumentNullException(nameof(severityDr), "A SMC's Casualty Reduction needs its Wound Severity dr (A17.11).");
 
     /// <summary>A10.62 (ruling R13.1): a broken unit not under DM and not a prisoner can come under DM.</summary>
     public static bool DmCandidate(bool active, bool broken, bool desperationMorale, bool captured) => active && broken && !desperationMorale && !captured;

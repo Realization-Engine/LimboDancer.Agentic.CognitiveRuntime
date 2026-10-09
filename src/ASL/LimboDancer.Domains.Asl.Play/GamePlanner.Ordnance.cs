@@ -624,7 +624,18 @@ public sealed partial class GamePlanner
         if (resolution.FirerEffect is { } firerEffect && state.Unit(facts.Crew.UnitId!) is { } shooter)
         {
             var phaseMarker = ConditionName(ScenarioA1OrdnanceEventRules.FirerPhaseMarker(facts.Phase));
-            foreach (var (type, payload) in FirerEffectEvents(shooter, firerEffect, attemptId, phaseMarker))
+            // A17.11 (pass 35, task 35.1): a SMC firer's Casualty Reduction is a wound, and its Wound Severity dr is made at once.
+            int? severity = null;
+            if (firerEffect != OrdnancePanzerfaustCheck.Pinned && firerEffect != OrdnancePanzerfaustCheck.Broken && WoundSeverityDue(shooter))
+            {
+                var wound = draw(new RollRequest(1, 6));
+                severity = wound.Values[0];
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled",
+                    new DiceRolled($"{attemptId}-roll-{(events.Count(item => item.Payload is DiceRolled) + 1).ToString(CultureInfo.InvariantCulture)}", ScenarioA1Wounds.SeverityPurpose, 1, 6,
+                        wound.Values, DiceRolled.SystemSource, actor), package, null, [recordId]));
+            }
+
+            foreach (var (type, payload) in FirerEffectEvents(shooter, firerEffect, attemptId, phaseMarker, severity))
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, type, payload, package, null, [recordId]));
             }
@@ -851,7 +862,7 @@ public sealed partial class GamePlanner
     /// What a PF does to its own firer (C13.31, C13.36; ruling R9.7): pinned; broken; or Casualty Reduction: a squad becomes its HS, a HS or crew
     /// is eliminated, a SMC is wounded, or eliminated if already wounded (A7.302, A17.2).
     /// </summary>
-    private static IEnumerable<(string Type, EventPayload Payload)> FirerEffectEvents(UnitInstance unit, string effect, string attemptId, string marker)
+    private static IEnumerable<(string Type, EventPayload Payload)> FirerEffectEvents(UnitInstance unit, string effect, string attemptId, string marker, int? severityDr)
     {
         if (effect == OrdnancePanzerfaustCheck.Pinned)
         {
@@ -872,7 +883,7 @@ public sealed partial class GamePlanner
 
         string? half = null;
         var casualty = ScenarioA1OrdnanceEventRules.Casualty(unit.Kind, () => unit.Definition is { } squad && (half = ScenarioA1FireReference.HalfSquadOf(squad.Definition)) is not null,
-            GameState.Condition(unit, Conditions.Wounded) == ConditionState.True);
+            GameState.Condition(unit, Conditions.Wounded) == ConditionState.True, severityDr);
         if (casualty == FirerCasualty.HalfSquad)
         {
             // Table player, pass 9: the HS has fired, as its squad had.

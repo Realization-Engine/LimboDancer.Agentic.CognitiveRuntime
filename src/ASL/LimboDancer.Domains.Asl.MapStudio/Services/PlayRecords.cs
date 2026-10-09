@@ -595,6 +595,11 @@ public sealed class PlayRecords
                         records.Add((item.EventId, "rout", $"{routed.Unit} routs{From(before, routed.Unit)} to {routed.To} for {mf} MF{(routed.LowCrawl ? " by Low Crawl (A10.52)" : " (A10.5)")}"));
                     }
                 }
+                else if (item.Payload is DiceRolled { Purpose: ScenarioA1Wounds.SeverityPurpose } severity)
+                {
+                    // Pass 35 (task 35.1; A17.11): the Wound Severity dr of a SMC's Casualty Reduction, said where it is made.
+                    records.Add((item.EventId, "wound", ScenarioA1Wounds.SeverityText(severity.Values[0])));
+                }
                 else if (item.Payload is RoutInterdicted interdicted)
                 {
                     var dr = rolls.TryGetValue(interdicted.Roll, out var roll) ? roll.Values.Sum().ToString(CultureInfo.InvariantCulture) : "?";

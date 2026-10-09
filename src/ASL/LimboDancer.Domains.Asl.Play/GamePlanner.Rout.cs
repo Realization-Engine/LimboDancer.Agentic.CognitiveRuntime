@@ -560,7 +560,18 @@ public sealed partial class GamePlanner
                     break;
                 }
 
-                var (type, payload) = outcome == InterdictionOutcome.Reduced ? CasualtyReduction(current, attemptId) : ("instance-eliminated", new InstanceEliminated(routing.Id));
+                // A17.11 (pass 35, task 35.1): a SMC's Casualty Reduction is a wound, and its Wound Severity dr is made at once.
+                int? severity = null;
+                if (outcome == InterdictionOutcome.Reduced && WoundSeverityDue(current))
+                {
+                    var wound = draw(new RollRequest(1, 6));
+                    rolls++;
+                    severity = wound.Values[0];
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, "dice-rolled", new DiceRolled($"{attemptId}-roll-{rolls.ToString(CultureInfo.InvariantCulture)}",
+                        ScenarioA1Wounds.SeverityPurpose, 1, 6, wound.Values, DiceRolled.SystemSource, actor), package, null, [record]));
+                }
+
+                var (type, payload) = outcome == InterdictionOutcome.Reduced ? CasualtyReduction(current, attemptId, severity) : ("instance-eliminated", new InstanceEliminated(routing.Id));
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, type, payload, package, null, [record]));
 
                 // A10.53: a HS left by Casualty Reduction, or a wounded SMC, routs on; an eliminated unit does not.
@@ -593,11 +604,16 @@ public sealed partial class GamePlanner
         return ScenarioA1RoutCalculator.BrokenMorale(definition is not null, definition?.BrokenMorale, definition?.Morale, Is(unit, Conditions.Wounded), Is(unit, Conditions.Fanatic));
     }
 
-    /// <summary>Casualty Reduction (A7.302): a squad becomes its HS, a SMC is wounded, or eliminated if already wounded, and anything else is eliminated.</summary>
-    private static (string Type, EventPayload Payload) CasualtyReduction(UnitInstance unit, string attemptId)
+    /// <summary>A17.1, A17.11 (pass 35, task 35.1): whether a unit's Casualty Reduction is a wound that needs its Wound Severity dr: a leader or a hero.</summary>
+    private static bool WoundSeverityDue(UnitInstance unit) => ScenarioA1Wounds.SeverityDue(unit.Kind is "asl:leader" or "asl:hero");
+
+    /// <summary>
+    /// Casualty Reduction (A7.302, A17.11): a squad becomes its HS; a SMC is wounded, mortally or not by its Wound Severity dr; anything else is eliminated.
+    /// </summary>
+    private static (string Type, EventPayload Payload) CasualtyReduction(UnitInstance unit, string attemptId, int? severityDr)
     {
         var half = unit.Kind == "asl:squad" && unit.Definition is { } squad ? ScenarioA1FireReference.HalfSquadOf(squad.Definition) : null;
-        return ScenarioA1RoutCalculator.CasualtyReduction(half is not null, unit.Kind is "asl:leader" or "asl:hero", Is(unit, Conditions.Wounded)) switch
+        return ScenarioA1RoutCalculator.CasualtyReduction(half is not null, unit.Kind is "asl:leader" or "asl:hero", Is(unit, Conditions.Wounded), severityDr) switch
         {
             CasualtyOutcome.Reduced => ("lineage", new LineageRecorded(LineageAction.Reduced, [unit.Id],
                 [new NewInstance($"{attemptId}-{unit.Id}", "asl:half-squad", half!, unit.Side, unit.Position, null,
