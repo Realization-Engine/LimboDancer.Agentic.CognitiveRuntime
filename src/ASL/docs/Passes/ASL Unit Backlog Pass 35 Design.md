@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 35 Design
 
-**Status:** In preparation and being built at once, at the user's word of 2026-10-09: each increment is designed, built on the branch feature/asl-backlog-pass-35, given a small test game in the Studio and Play tests, and committed at the user's word. Increment 1 (the frame) answered: yes to F1 to F6. Increment 2a (the Rout Phase: 35.17, 35.2, 35.4, with ADJACENT taken from pass 40) built and committed (section 7). Increment 2b (Infantry: 35.1, 35.3, 35.8) built and committed (section 8). Increments 2c to 2f (terrain, ordnance, vehicles, night and weather) built and committed (sections 9 to 12). **Increment 2g (35.15, 35.16, the vehicle Close Combat panel, the two owed tests) built and committed (section 13).** Still to come: the cross-cutting sections 14 to 18, the documents, and the gate.
+**Status:** In preparation and being built at once, at the user's word of 2026-10-09: each increment is designed, built on the branch feature/asl-backlog-pass-35, given a small test game in the Studio and Play tests, and committed at the user's word. Increment 1 (the frame) answered: yes to F1 to F6. Increment 2a (the Rout Phase: 35.17, 35.2, 35.4, with ADJACENT taken from pass 40) built and committed (section 7). Increment 2b (Infantry: 35.1, 35.3, 35.8) built and committed (section 8). Increments 2c to 2f (terrain, ordnance, vehicles, night and weather) built and committed (sections 9 to 12). **Increment 2g (35.15, 35.16, the vehicle Close Combat panel, the two owed tests) built and committed (section 13).** The cross-cutting sections 14 to 18 written. Still to come: the documents, the reviews, the Studio check, and the gate.
 
 **Date:** 2026-10-09
 
@@ -605,3 +605,134 @@ No rule is stated here either. The backlog's sections 50 and 51 each carried a r
 - The page offers a pass in a second Location holding a vehicle while another Location's Close Combat is open, and the planner refuses it ("one Location at a time", A11.12).
 - A shot with no LOS still draws its IFT DR, and its card reads "Total 0 FP: the no column".
 - No page test stages a draft counter of a game set up by hand: setup mode needs a card with an order of battle.
+
+## 14. Recorded games and versions
+
+Written 2026-10-09, in the third session, after two replays run for it with the build of 9448658 (bin/p31b; the proof tool's copies dated with that build).
+
+### 14.1 What the pass changes in a record, and in its replay
+
+| Change | Where | A game recorded before the pass |
+|---|---|---|
+| A rout step may name the Location it was repulsed from (`attempted`; task 35.4, A10.533) | `RoutStepped`, the event reader and writer | Has no such field, and reads as before: the field is written only for a repulsed step |
+| An Acquisition is lost when its firer leaves its Location, or turns without having fired on its target this phase (task 35.11, C6.5) | The projector's `KeepAcquisitions`, by the Rules verdict `AcquisitionLostByMoveOrTurn` | May drop a counter earlier than it did when played; a later recorded shot that used the counter's DRM would then fail its record check |
+| A vehicle that is TI after hooking up a Gun may not start a move (task 35.13; C10.11) | The projector's bar on a vehicle's first step | A recorded move by such a vehicle would be refused in replay |
+| A bogged vehicle may make the expenditures `BoggedMaySpend` allows, the unload among them (task 35.13, D8.5) | The projector's bar on a bogged vehicle's steps | Reads as before: the bar is narrower, never wider |
+| New facts in a fire, ordnance, Overrun, or Close Combat record (the target's Bypass, Stun recovery, the own-hex Hindrance, the mover's Hazardous fact, and others of sections 10 to 12) | Rules' fact records | Each is a trailing parameter with a default, or an `init` property left out when null, so an older record keeps its shape |
+| The facts a record check builds now differ where a repair changed a fact (Non-Stopped from the move in hand, Good Order, ADJACENT, Open Ground for Interdiction) | The record verifiers, through the same Rules calculators | A recorded attack whose facts the repair reads differently fails its check at that event, and the replay says so (`UNIT-STATE-033`) |
+
+The catalog is not changed: no definition was added or corrected, and the format of a game file is the same.
+
+### 14.2 The replay over the proof store
+
+The store holds 309 game files in 158 families (a cut repeats its base game's states): 88,419 states. Among the families, 54 hold a fire, 28 a rout step, 27 a Close Combat, 8 a vehicle's step, and 5 a Gun's shot; the store holds two `acquisition-changed` events in all.
+
+**The baseline** is the replay digest of pass 32.j's gate (`after-j-gate`), which is main's: main's Rules, Play, and Units differ from that build by four comment lines.
+
+**The result: identical.** Every state's digest and every game's diagnostics line are equal, byte for byte (567 seconds). No game recorded before the pass replays differently, and none that replayed whole now stops.
+
+**What that proves, and what it does not.** It proves that none of the repairs of section 14.1 meets a stored game: no stored Acquisition is lost earlier, no stored rout, fire, or Close Combat record fails its check under the repaired facts. It does not prove the repairs themselves, since the store was copied before the pass and holds none of its games: no repulse, no towing, no Bog, no Recall, no night or Mud cost. Those rest on their Rules and Play tests and on the test games read in the Studio (sections 7 to 13).
+
+### 14.3 The live games as they stand
+
+The live folder holds 210 games now, 52 of them this pass's test games, 17,554 states. Replayed with the same build (47 seconds): 209 replay whole. One does not.
+
+**`p35-acquire` stops at revision 9 of 14** (`UNIT-STATE-033`: the ordnance record's facts do not match the game state). It is this pass's own game for task 35.11, recorded with that task's build. Its shot at the tank in [D9], taken as the tank turned, was recorded with `nonStopped: false`. Corrections b and h of task 35.13, built later that day, read Non-Stopped from the move in hand as well as from the Motion counter (D2.4), and the record check now builds `nonStopped: true` for the same shot. The record is right about what was rolled and wrong, by the later repair, about one fact; the replay refuses it at that event and says so. This is the last row of the table above, met inside the pass. The game is kept as it is, as the example of its class; it is not a fixture and nothing reads it.
+
+### 14.4 How a difference is read at the gate
+
+Three classes, and a difference is named as one of them or it is a fault:
+
+1. **An Acquisition lost earlier** (35.11). The first differing state follows a move or a turn of an acquiring Gun or tank; the difference is the counter's absence and whatever later shot read it. Intended. None in the store.
+2. **A record whose facts a repair reads differently.** The game stops at an attack's record with `UNIT-STATE-033`, and the differing fact is one a task of this pass repaired. Intended, and the game is listed with its fact and its task. One so far, `p35-acquire`.
+3. **Anything else:** a state that differs with no repaired rule at its event, a game that stops at an event no repair reads, a diagnostics line of another code. A fault, traced before the merge.
+
+**Carried to the gate.**
+
+- The baseline of main is built then, and the store is brought up to date with the live folder first, so the pass's own games and the user's games since the store was copied are compared too. A game the pass's own repair made has no "before" and is listed, not compared.
+- The refusal of 35.15 stops the planner, never the replay: `a1-village-synthetic`, which holds a foxhole, replays as it did (it is in the store, and equal). The live games and the 14 cards were searched in the second session and hold no fortification, rubble, or Flame counter.
+- A tank freed by its Bog Removal is treated as Non-Stopped from then on (section 11): a reading with no sentence of its own, and the same fact the `p35-acquire` record turned on. If the referee's review reads the rules otherwise, records made under this build would fail their checks the same way.
+
+## 15. The proofs, and how a difference is read
+
+Pass 32's proofs had to come out equal. This pass changes results on purpose, so the three proofs are run for another reason: to find every change, and to name each as one task's intended change or as a fault.
+
+**The baseline** is main at f3b7c47, built from its own sources (`git archive` into the tools folder, built into its own folder, a second copy of the proof tool bound to it), and checked before its proofs run by a grep of the archived source: it must hold `ScenarioA1SequenceCalculator` (pass 32's) and must not hold `UnbuiltCounterBar` (this pass's). Main's Rules, Play, and Units differ from the pass 32.j gate's build by four comment lines, so the replay digest of that gate (`after-j-gate`) stands for main's until the baseline is built; section 14 uses it so.
+
+**The after side** is the gate's build (`bin/gate`), with the proof tool bound to it and its copies' dates checked against the build.
+
+| Proof | What it is | How a difference is read |
+|---|---|---|
+| The replay digest | Every state of every game of the proof store, as a digest, and each game's diagnostics | By game family (a cut repeats its base game's states): the first state that differs, the event there, and the task whose repair reads that event. Section 14 has the classes found. A game that replayed and now does not is a fault unless section 14 names its class |
+| The planner sweep | One request of each kind for each unit, at the last state of the swept games and at every phase entry of `p31c-tw` | By request kind and refusal text. A request refused that was accepted, or accepted that was refused, is named with its task; a changed sentence is named with its task or with the text list |
+| The text list | Every literal of Rules and Play, with holes normalized | By file. Every added, changed, or dropped literal belongs to a task's repair or refusal; a dropped literal with no task is a fault |
+
+**The swept games.** The sweep proves only the actions its games hold, and this pass repairs rules the four swept games of pass 32 never meet: Interdiction with a wreck, a repulse, towing, Bypass, Bog, Recall, night and Mud costs, an Acquisition's loss. The test games of sections 7 to 13 are the guard for those, each read in the Studio when its repair was built. For the gate the sweep takes the four games of pass 32 and, from this pass's games, one of each increment that was left unplayed or was copied before play; the gate's report says which. A swept game that the pass's own repair made (it did not exist on main) has no "before" and is listed, not compared.
+
+**What is not proved by these.** The page: the Studio check at the five widths is its proof. A rule with no game and no Rules test: the design's tables say which rest on a Rules test alone (the Mud road rows of section 12, the marsh rows of section 9).
+
+## 16. The reviews, the Studio check, and the commit order
+
+**The commits** are one a task, in the order built: sections 7 to 13 name each. The branch is local, 31 commits past main as section 13 is committed, and is not pushed before the merge.
+
+**The reviews**, read-only and in parallel in the main checkout, once the documents are written and before the gate's tests:
+
+| Review | Reads | Asked for |
+|---|---|---|
+| The referee | Every repair of sections 7 to 12 against its rule on its page of the PDF, and every new or changed refusal | A repair that reaches a case its rule does not, or stops short of one; what a side may learn from a new record or refusal. In pass 35 the games found a repair that reached one case too many (Case L against a bogged tank); the referee is asked for others |
+| The table player | The test games of the pass, as played, and the records they wrote | A record a player could not follow, a step the page did not offer, a refusal with no way forward |
+| The Rules boundary | Every member the pass added to Rules and every read it added to Play | A decision left in Play; a fact reader that decides; a Rules member that reads the state. The plan's section 19, decision 7 |
+| The UI and Blazor review | The four Studio files the pass changed, and the page tests of section 13 | A draft that outlives its view or its Location; a control enabled on a stale choice |
+
+A review writes its findings in its closing message; the session keeps a digest. Each finding is fixed, or given a backlog row with its reason.
+
+**The Studio check of the whole pass**, at 1920 by 1080, 1366 by 768, 1024 by 768, 683 by 384, and 320 pixels, by keyboard and mouse, in each side's view and the adjudicator's. The pass changed four files of the Studio: `Play.razor` and `VehicleCloseCombatPanel.razor` (the unload offered from a bogged vehicle, the vehicle Close Combat draft, and what the earlier increments' games asked of the page), and `PlayRecords.cs` and `ReplaySteps.cs` (records of the new events). The check walks the vehicle panels and the records at every width, and one full Player Turn of a game with vehicles at the largest and the smallest; the rest of the page is as pass 32 left it.
+
+**The gate**, at the user's word: the whole Rules and Play projects, MapStudio's page tests, the solution build with warnings as errors, the Node viewport test, the chart supplement, Docker, and the three proofs against the baseline with every difference read and named.
+
+## 17. The estimate against the plan
+
+The plan's section 22.1 gave the sixteen tasks 6:25, and 6:45 with 35.17. The time log's rows for the pass, by the clock:
+
+| Part | Rows | By the clock |
+|---|---:|---:|
+| The frame (increment 1) and the plan's 35.17 | 2 | 0:07 |
+| Increment 2a, the Rout Phase, with ADJACENT taken from pass 40 and the two Interdiction games | 7 | 2:31 |
+| Increment 2b, Infantry | 1 | 0:25 |
+| Increment 2c, terrain, with the three Infantry commits | 1 | 0:23 |
+| Increment 2d, ordnance | 4 | 0:57 |
+| Increment 2e, vehicles | 7 | 1:11 |
+| Increment 2f, night and weather | 1 | 0:14 |
+| Increment 2g: 35.15 and the whole-rulebook scan, the panel fix, 35.16, the owed tests, section 13 | 6 | 1:05 |
+| **Through section 13** | **29** | **6:53** |
+
+Three things about the figure. A row often holds the last task's commit and the next task's build, so the split by increment is near, not exact. Several rows note that the clock gives a floor (a six-minute row that held two builds and three test runs). And the 6:45 was for the build of seventeen tasks; the 6:53 also holds ADJACENT (a row of pass 40), the in-hex Hindrance of Case E, the ESB table by nationality, the panel fix, and the whole-rulebook scan, none of which the plan counted.
+
+Still to come, not in the 6:53: sections 14 to 18 and the documents (rulings, inventory rows, coverage, the plan's status, backlog rows), the reviews and their fixes, the Studio check, and the gate. By pass 32.j's gate (the suite, Docker, and the proofs with a baseline of 36 minutes) that is two to three hours more.
+
+## 18. The questions together, and the user's answers
+
+Every question the design put, in the order asked. All are answered; none is open as this section is written.
+
+| # | Question | Answer |
+|---|---|---|
+| F1 to F6 | The frame's six (section 6): the order of the increments; 35.17 as a task; the three disagreements of 5.2; nine of the sixteen differing copies taken here; movement's read of who sees a concealed mover into 35.3; items 2 to 4 of 5.4 read in increment 2a | Yes to each, 2026-10-09 |
+| 7.5 (1) | When the surrender happens | Keep ruling R13.3 (as the RtPh ends); a unit bound to surrender owes no rout. Yes |
+| 7.5 (2) | Either side may end the RtPh while the other's unit is bound to surrender or has no legal step | Yes |
+| 7.5 (3) | The Commissar's exemption from surrender | Yes, built with 35.4 |
+| 7.5 (4) | A voluntary rout by a broken unit not under DM | The refusal stands; a ruling, and the backlog row of section 52 closed. Yes |
+| 7.5 (5) | Fanaticism in the Interdiction NMC (A10.8) | Read with 35.4's code and built: the game `p35-interdict-fanatic` shows the NMC against the raised Morale Level |
+| 7.5 (6) | A repulsed unit that ends ADJACENT to the concealed unit may surrender | Keep it as built. Yes |
+| 8.4 (1) | The SW and Deployment actions keep their bar on a TI unit | Keep the bar; a row for the pass that reads the TI rules. Yes |
+| 8.4 (2) | Ruling R30.3's berserk Fanatic at 11 withdrawn for A.18 | Yes |
+| 8.4 (3) | A25.211 to the backlog | Yes |
+| 8.4 (4) | No LLMC from a mortal wound in a rout | Backlog, for pass 70. Yes |
+| 9 (1) | The orchard's season in the LOS (B14.2) moves to pass 135 | Yes |
+| 9 (2) | A test each for out-of-season grain on a LOS and HE into a marsh | Yes; written in the third session, with two games for the grain |
+| 10 | The in-hex Hindrance of Case E: defer it? | No: the proposal named a pass that does not exist, was withdrawn, and the Hindrance was built in 35.10 |
+| 11 | "Touches the Bypassed hexside" (D9.4) | The hexes the LOS passes through. Yes; a ruling |
+| 12 | Is the weather's cost multiplied when a vehicle reverses (E3.9, D2.21, E1.52)? | No: added after the multiplier. Yes; a ruling |
+| 13 | The refusal of 35.15: the whole game, or the one action a counter bears on? | The whole game, as a stopgap, with its kinds named |
+| 13 | The Studio games of corrections c and d of 35.13, first proposed as not worth their cost | Played: a fix is shown in the Studio whatever its size, and an exception is the user's to give |
+
+**Carried to the gate, not questions.** The three of section 14; and one reading with no sentence of its own, that a tank freed by its Bog Removal is Non-Stopped from then on (section 11).
