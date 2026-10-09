@@ -1,8 +1,8 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
-using System.Text.RegularExpressions;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
+using LimboDancer.Domains.Asl.Rules;
 using LimboDancer.Domains.Asl.Units.Catalog;
 using LimboDancer.Domains.Asl.Units.State;
 
@@ -133,7 +133,7 @@ public sealed record ScenarioCardRead(string Name, ScenarioCard? Card, IReadOnly
 /// The scenario cards embedded from <c>src/ASL/units/scenarios</c> (backlog pass 17), their reader, and their validation
 /// against a catalog (rulings R17.2 to R17.11).
 /// </summary>
-public static partial class ScenarioCards
+public static class ScenarioCards
 {
     public const string Format = "asl-scenario-card/1";
 
@@ -363,88 +363,48 @@ public static partial class ScenarioCards
             "card.date: the date is a real day of 1936 to 1945; a minimal card may give only a month and a year, or neither, as 0 (ruling R22.3)");
 
         // A2.1 (ruling R17.3): the boards, each in its own slot.
-        Check(card.Boards.Count > 0, "card.boards: a card names its boards (A2.1)");
-        foreach (var board in card.Boards)
-        {
-            Check(BoardRef.TryParse(board.Board, out _) && board.Column >= 0 && board.Row >= 0, $"card.boards: '{board.Board}' is not a board in a slot");
-        }
-
-        Check(card.Boards.Select(board => (board.Column, board.Row)).Distinct().Count() == card.Boards.Count, "card.boards: two boards share a slot");
-        Check(card.Boards.Select(board => board.Board).Distinct(StringComparer.Ordinal).Count() == card.Boards.Count, "card.boards: a board is named twice");
-        Check(SideState.Edges.Contains(card.North, StringComparer.Ordinal), "card.north: North is the map's top, bottom, left, or right");
+        found.AddRange(ScenarioA1SetupCalculator.BoardDiagnostics([.. card.Boards.Select(board => new CardBoardFacts(board.Board, BoardRef.TryParse(board.Board, out _), board.Column, board.Row))],
+            card.North, SideState.Edges));
 
         // A2.1 (ruling R20.6): an enforced playable area names its hexrows on a board of the card.
-        if (card.PlayableArea is { } playable)
+        if (card.PlayableArea is { } playable && ScenarioA1SetupCalculator.PlayableAreaDiagnostic(playable.Enforced, playable.Hexrows is not null, playable.Hexrows?.From, playable.Hexrows?.To,
+            playable.Hexrows?.Board is not null, card.Boards.Count, card.Boards.Any(board => board.Board == playable.Hexrows?.Board)) is { } playableRefused)
         {
-            Check(!playable.Enforced || (playable.Hexrows is { } rows && HexrowIndex(rows.From) is { } from && HexrowIndex(rows.To) is { } to && from <= to
-                && (rows.Board is null ? card.Boards.Count == 1 : card.Boards.Any(board => board.Board == rows.Board))),
-                "card.playable: an enforced playable area names its hexrows from and to, A to GG, on a board of the card (A2.1; ruling R20.6)");
+            found.Add(playableRefused);
         }
 
-        // A3.9 (ruling R17.4): the Turn Record Chart.
+        // A3.9 (ruling R17.4): the Turn Record Chart; ruling R17.12: the sequential setup's order.
         var sides = card.Sides.Select(side => side.Side).ToArray();
-        Check(card.Sides.Count == 2 && sides.Distinct(StringComparer.Ordinal).Count() == 2, "card.sides: a card has two sides");
-        Check(card.Turns.Count is >= 1 and <= 30, "card.turns: a card has 1 to 30 Game Turns (A3.9)");
-        Check(sides.Contains(card.Turns.SetsUpFirst, StringComparer.Ordinal)
-            && (card.Turns.MovesFirst is null ? !string.IsNullOrWhiteSpace(card.Turns.MovesFirstNote) : sides.Contains(card.Turns.MovesFirst, StringComparer.Ordinal)),
-            "card.turns: the side that sets up first and the side that moves first are the card's sides, or a note says how the first move is decided (A3.9)");
-
-        // Ruling R17.12: a sequential setup numbers every group from 1, the first of them the side that sets up first.
-        var groups = card.Sides.SelectMany(side => side.Groups.Select(group => (side.Side, Group: group))).ToArray();
-        if (groups.Any(item => item.Group.SetupOrder is not null))
-        {
-            var orders = groups.Select(item => item.Group.SetupOrder ?? 0).ToArray();
-            Check(orders.All(order => order >= 1) && orders.Max() == orders.Distinct().Count() && orders.Distinct().Count() <= orders.Length
-                && groups.Where(item => item.Group.SetupOrder == 1).All(item => item.Side == card.Turns.SetsUpFirst),
-                "card.setup: a sequential setup numbers the groups from 1, without gaps, beginning with the side that sets up first (A12.12)");
-        }
-
-        Check(groups.All(item => item.Group.Dummies is null or >= 0), "card.ob: a group's \"?\" are a count of 0 or more (A12.11)");
+        found.AddRange(ScenarioA1SetupCalculator.TurnDiagnostics(sides, card.Turns.Count, card.Turns.SetsUpFirst, card.Turns.MovesFirst, card.Turns.MovesFirstNote,
+            [.. card.Sides.SelectMany(side => side.Groups.Select(group => (side.Side, group.SetupOrder, group.Dummies)))]));
 
         foreach (var side in card.Sides)
         {
-            Side(card, side, catalog, Check);
+            found.AddRange(ScenarioA1SetupCalculator.SideDiagnostics(SideFacts(card, side, catalog), card.Minimal, SideState.Edges, EdgeBases, card.Boards.Count, card.Turns.Count));
         }
 
         // A16 and A16.1 (ruling R17.4): the bracketed Battlefield Integrity totals.
         var equivalents = card.Sides.Select(side => SquadEquivalents(card, side, catalog)).ToArray();
         foreach (var side in card.Sides.Where(side => side.IntegrityBpv is not null))
         {
-            Check(Starting(side, catalog).Where(item => Mmc(item.Definition)).All(item => item.Definition.Printed("broken", "asl:bpv")?.Value?.Number is not null),
-                $"card.integrity: {side.Side} prints a Battlefield Integrity total, and one of its starting MMC has no BPV in the catalog (A16.1)");
-            Check(equivalents.All(count => count >= 10),
-                $"card.integrity: {side.Side} prints a Battlefield Integrity total, and a side starts with fewer than ten squad-equivalents (A16)");
-            Check(side.IntegrityBpv == IntegrityBpv(card, side, catalog),
-                $"card.integrity: {side.Side} prints [{side.IntegrityBpv}], and the BPV of its starting MMC is {IntegrityBpv(card, side, catalog)} (A16.1)");
+            found.AddRange(ScenarioA1SetupCalculator.IntegrityDiagnostics(side.Side, side.IntegrityBpv!.Value,
+                Starting(side, catalog).Where(item => ScenarioA1SetupCalculator.Mmc(item.Definition.Kind)).All(item => item.Definition.Printed("broken", "asl:bpv")?.Value?.Number is not null),
+                equivalents, IntegrityBpv(card, side, catalog)));
         }
 
         // Index, Scenario Attacker/Defender (ruling R17.6): a Defender faces a side that enters wholly from offboard.
         if (card.ScenarioDefender is { } defender)
         {
             var attacker = card.Sides.FirstOrDefault(side => side.Side != defender);
-            Check(sides.Contains(defender, StringComparer.Ordinal), $"card.defender: '{defender}' is not a side of the card");
-            Check(card.Minimal || (card.Sides.FirstOrDefault(side => side.Side == defender) is { } own && own.Groups.SelectMany(group => group.Areas).Any(area => area.Kind != "entry")),
-                "card.defender: a Scenario Defender sets up wholly or partly on board (Index, Scenario Attacker/Defender)");
-            Check(card.Minimal || (attacker is not null && attacker.Groups.SelectMany(group => group.Areas).All(area => area.Kind == "entry")),
-                "card.defender: a Scenario Defender faces a side that enters wholly from offboard (Index, Scenario Attacker/Defender)");
+            found.AddRange(ScenarioA1SetupCalculator.DefenderDiagnostics(defender, sides, card.Minimal,
+                card.Sides.FirstOrDefault(side => side.Side == defender) is { } own && own.Groups.SelectMany(group => group.Areas).Any(area => area.Kind != "entry"),
+                attacker is not null && attacker.Groups.SelectMany(group => group.Areas).All(area => area.Kind == "entry")));
         }
 
         // Ruling R17.10: the SSRs, numbered in order, and their tokens checked as a new game checks them.
-        Check(card.SpecialRules.Select(rule => rule.Number).SequenceEqual(Enumerable.Range(1, card.SpecialRules.Count)), "card.ssr: the SSRs are numbered 1 onward");
-        foreach (var rule in card.SpecialRules)
-        {
-            Check(RuleStatuses.Contains(rule.Status, StringComparer.Ordinal), $"card.ssr: SSR {rule.Number} has no status {string.Join(", ", RuleStatuses)}");
-            Check(rule.Status == "token" ? rule.Tokens.Count > 0 : rule.Tokens.Count == 0, $"card.ssr: SSR {rule.Number} has tokens exactly when the game reads it");
-            Check(rule.Status != "not-enforced" || !string.IsNullOrWhiteSpace(rule.Note), $"card.ssr: SSR {rule.Number} is not enforced and says why");
-            Check(!string.IsNullOrWhiteSpace(rule.Text), $"card.ssr: SSR {rule.Number} has its text");
-            Cited(rule.Rules, $"SSR {rule.Number}", Check);
-
-            // Ruling R23.5 (referee, pass 23): a HIP token names a side of the card.
-            foreach (var token in rule.Tokens.Where(token => token.StartsWith("hip:", StringComparison.Ordinal)))
-            {
-                Check(token.Split(':') is [_, var named, _] && card.Sides.Any(side => side.Side == named), $"card.ssr: SSR {rule.Number}'s '{token}' names no side of the card");
-            }
-        }
+        found.AddRange(ScenarioA1SetupCalculator.RuleDiagnostics([.. card.SpecialRules.Select(rule => new CardRuleFacts(rule.Number, rule.Status, rule.Tokens.Count, rule.Note, rule.Text, rule.Rules,
+            [.. rule.Tokens.Where(token => token.StartsWith("hip:", StringComparison.Ordinal))
+                .Select(token => (token, token.Split(':') is [_, var named, _] && card.Sides.Any(side => side.Side == named) ? named : null))]))], RuleStatuses, CitableRules));
 
         var start = new JsonObject
         {
@@ -466,113 +426,46 @@ public static partial class ScenarioCards
             Check(refused is null, $"card.ssr: {refused}");
         }
 
-        // A26 (ruling R17.11): the Victory Conditions as text, with their kind and the rules they rest on.
-        Check(VictoryKinds.Contains(card.VictoryConditions.Kind, StringComparer.Ordinal) && !string.IsNullOrWhiteSpace(card.VictoryConditions.Text)
-            && (card.VictoryConditions.Rules.Count > 0 || card.Minimal), "card.victory: the Victory Conditions have a kind, their text, and the A26 rules they rest on");
-        Cited(card.VictoryConditions.Rules, "the Victory Conditions", Check);
-        Check(!card.Minimal || card.VictoryConditions.Outcomes is null,
-            "card.victory: a minimal card names no outcomes; the players judge the result (ruling R22.3)");
-
-        // Ruling R21.3: the structured Victory Conditions name the card's sides and buildings.
-        if (card.VictoryConditions.Outcomes is { } outcomes)
-        {
-            bool SideOrDraw(string? winner) => winner == "draw" || sides.Contains(winner, StringComparer.Ordinal);
-            Check(outcomes.Count > 0 && SideOrDraw(card.VictoryConditions.Otherwise),
-                "card.victory: structured Victory Conditions list their outcomes and the result when none holds at game end, a side or a draw (A26.3; ruling R21.3)");
-            foreach (var outcome in outcomes)
-            {
-                Check(SideOrDraw(outcome.Winner) && outcome.Any is { Count: > 0 }, $"card.victory: an outcome names a side of the card or a draw, and its conditions (ruling R21.3)");
-                foreach (var condition in outcome.Any ?? [])
-                {
-                    Check(ConditionValid(card, condition, sides), $"card.victory: the '{condition.Type}' condition of {condition.Side} is not complete, or names a building or hex the card lacks (ruling R21.3)");
-                }
-            }
-        }
+        // A26 (ruling R17.11): the Victory Conditions as text, with their kind and the rules they rest on; ruling R21.3: the structured ones name the card's sides and buildings.
+        found.AddRange(ScenarioA1SetupCalculator.VictoryDiagnostics(card.VictoryConditions.Kind, card.VictoryConditions.Text, card.VictoryConditions.Rules, card.Minimal, VictoryKinds, CitableRules,
+            card.VictoryConditions.Otherwise,
+            card.VictoryConditions.Outcomes is { } outcomes
+                ? [.. outcomes.Select(outcome => (outcome.Winner, (IReadOnlyList<CardConditionFacts>?)(outcome.Any is null ? null : [.. outcome.Any.Select(ConditionFacts)])))]
+                : null,
+            sides, SideState.Edges, id => BuildingHexes(card, id)?.Count,
+            hex => BoardLocation.TryParse(hex + ":0", out var at) && card.Boards.Any(item => item.Board == at.Board.Value)));
 
         return found;
     }
 
-    private static void Side(ScenarioCard card, ScenarioCardSide side, UnitCatalog catalog, Action<bool, string> check)
-    {
-        check(side.San is >= 0 and <= 7, $"card.san: {side.Side}'s SAN is 0 to 7 (A14.1)");
-        check(side.Side == "axis-minor" ? SideState.AxisMinorNations.Contains(side.Nation ?? "", StringComparer.Ordinal) : side.Nation is null,
-            $"card.nation: an Axis Minor side names its nation ({string.Join(", ", SideState.AxisMinorNations)}), and no other side names one (A25.8; ruling R27.1)");
-        check((card.Minimal && side.FriendlyEdge is { Edge.Length: 0, Basis: "none" })
-            || (SideState.Edges.Contains(side.FriendlyEdge.Edge, StringComparer.Ordinal) && EdgeBases.Contains(side.FriendlyEdge.Basis, StringComparer.Ordinal) && side.FriendlyEdge.Basis != "none"),
-            $"card.edge: {side.Side}'s Friendly Board Edge is the map's top, bottom, left, or right, from an SSR, entry, setup, or R0.3 (A20.53); a minimal card may leave it unnamed (ruling R22.3)");
-        check(side.Elr is null || (card.Minimal && side.Elr is >= 0 and <= 5), $"card.elr: only a minimal card gives {side.Side} an ELR of its own, 0 to 5 (A19.1; ruling R22.3)");
-        check(side.FriendlyEdge.Basis != "entry" || side.Groups.SelectMany(group => group.Areas).Any(area => area.Kind == "entry" && area.Edge == side.FriendlyEdge.Edge),
-            $"card.edge: {side.Side}'s Friendly Board Edge rests on its entry, and it enters along no such edge (A20.53)");
-        check(card.Minimal || !string.IsNullOrWhiteSpace(side.Balance), $"card.balance: {side.Side} has its Balance provision (A26.4)");
-        foreach (var unit in side.BalanceUnits ?? [])
-        {
-            var definition = catalog.Definition(unit.Definition);
-            check(definition is not null && definition.Nationality == side.Side && unit.Count >= 1 && unit.Area is null,
-                $"card.balance: the Balance counter '{unit.Definition}' is a {side.Side} definition of the catalog, at least one, with no area of its own (ruling R20.4)");
-        }
-        check(side.Groups.Count > 0 || card.Minimal, $"card.ob: {side.Side} has an OB, unless the card is a minimal card, whose sides have none (ruling R22.3)");
-        foreach (var group in side.Groups)
-        {
-            check(group.Elr is >= 0 and <= 5, $"card.elr: '{group.Name}' has an ELR of 0 to 5 (A19.1)");
-            check(group.Areas.Count > 0 && group.Areas.Select(area => area.Id).Distinct(StringComparer.Ordinal).Count() == group.Areas.Count,
-                $"card.setup: '{group.Name}' names its setup areas once each");
-            foreach (var area in group.Areas)
-            {
-                check(Area(card, area), $"card.setup: '{group.Name}' area '{area.Id}' is not a valid {area.Kind} area (ruling R17.8)");
-            }
+    // The card's records as the facts Rules asks for (the design's D11).
+    private static CardSideFacts SideFacts(ScenarioCard card, ScenarioCardSide side, UnitCatalog catalog) => new(side.Side, side.San, side.Nation, side.FriendlyEdge.Edge, side.FriendlyEdge.Basis,
+        side.Groups.SelectMany(group => group.Areas).Any(area => area.Kind == "entry" && area.Edge == side.FriendlyEdge.Edge), side.Elr, side.Balance,
+        [.. (side.BalanceUnits ?? []).Select(unit => LineFacts(side, unit, null, catalog))],
+        [.. side.Groups.Select(group => new CardGroupFacts(group.Name, group.Elr, [.. group.Areas.Select(area => AreaFacts(card, area))], [.. group.Units.Select(unit => LineFacts(side, unit, group, catalog))]))]);
 
-            foreach (var unit in group.Units)
-            {
-                var definition = catalog.Definition(unit.Definition);
-                check(definition is not null, $"card.ob: '{unit.Definition}' is not in the catalog");
-                check(definition is null || definition.Nationality == side.Side, $"card.ob: '{unit.Definition}' is not {side.Side}");
-                check(unit.Count >= 1, $"card.ob: '{unit.Definition}' has a count of at least 1");
-                check(unit.Area is null || group.Areas.Any(area => area.Id == unit.Area), $"card.ob: '{unit.Definition}' names the unknown area '{unit.Area}'");
-            }
-        }
+    private static CardLineFacts LineFacts(ScenarioCardSide side, ScenarioCardUnit unit, ScenarioCardGroup? group, UnitCatalog catalog)
+    {
+        var definition = catalog.Definition(unit.Definition);
+        return new CardLineFacts(unit.Definition, definition is not null, definition?.Nationality == side.Side, unit.Count, unit.Area,
+            unit.Area is null || group?.Areas.Any(area => area.Id == unit.Area) == true);
     }
 
-    private static bool Area(ScenarioCard card, ScenarioCardSetup area) => area.Kind switch
-    {
-        "building" => area.Hexes is { Count: > 0 } hexes && hexes.All(hex => HexPattern().IsMatch(hex)) && hexes.Contains(area.Id, StringComparer.Ordinal)
-            && (area.Board is null ? card.Boards.Count == 1 : card.Boards.Any(board => board.Board == area.Board)),
-        "hex-numbers" => card.Boards.Any(board => board.Board == area.Board) && area.From is >= 0 and <= 10 && area.To is >= 0 and <= 10 && area.From <= area.To,
-        // A2.5 (ruling R25.2): an entry may name its entry hexes, each on its board.
-        "entry" => area.Turn is { } turn && turn >= 1 && turn <= card.Turns.Count && SideState.Edges.Contains(area.Edge ?? string.Empty, StringComparer.Ordinal)
-            && (area.Hexes is null || (area.Hexes.Count > 0 && area.Hexes.All(hex => HexPattern().IsMatch(hex))
-                && (area.Board is null ? card.Boards.Count == 1 : card.Boards.Any(board => board.Board == area.Board)))),
-        _ => false,
-    } && (area.Counters is null || (area.Kind != "entry" && area.Counters >= 1)) && (area.MinMmc is null || (area.Counters is { } counters && area.MinMmc >= 0 && area.MinMmc <= counters));
+    private static CardAreaFacts AreaFacts(ScenarioCard card, ScenarioCardSetup area) => new(area.Id, area.Kind, area.Hexes, area.Board is not null,
+        card.Boards.Any(board => board.Board == area.Board), area.From, area.To, area.Turn, area.Edge, area.Counters, area.MinMmc);
 
-    private static bool ConditionValid(ScenarioCard card, ScenarioCardCondition condition, string[] sides)
+    /// <summary>A Victory Condition as Rules reads it (pass 32.j).</summary>
+    public static CardConditionFacts ConditionFacts(ScenarioCardCondition condition)
     {
-        bool Buildings(IReadOnlyList<string>? ids) => ids is { Count: > 0 } && ids.All(id => BuildingHexes(card, id) is not null);
-        return sides.Contains(condition.Side, StringComparer.Ordinal) && condition.Type switch
-        {
-            "control-margin" => Buildings(condition.Buildings) && Buildings(condition.Versus) && condition.Margin is >= 1,
-            "control-count" => condition.Building is { } building && BuildingHexes(card, building) is { } hexes && condition.AtLeast is { } least && least >= 1 && least <= hexes.Count,
-            "squad-ratio" => condition.Ratio is > 0,
-            "sole-unbroken" => condition.Building is { } only && BuildingHexes(card, only) is not null,
-            "exit-vp" => condition.AtLeast is >= 1 && SideState.Edges.Contains(condition.Edge ?? string.Empty, StringComparer.Ordinal)
-                && condition.Near is { Count: > 0 } near && near.All(hex => BoardLocation.TryParse(hex + ":0", out var at) && card.Boards.Any(item => item.Board == at.Board.Value)),
-            "cvp" => condition.AtLeast is >= 1,
-            _ => false,
-        };
-    }
-
-    private static void Cited(IReadOnlyList<string> rules, string where, Action<bool, string> check)
-    {
-        foreach (var rule in rules)
-        {
-            check(CitableRules.Contains(rule, StringComparer.Ordinal) || RulingPattern().IsMatch(rule),
-                $"card.rules: {where} cites '{rule}', which is neither a compared rule fragment nor a ruling (ruling R17.2)");
-        }
+        ArgumentNullException.ThrowIfNull(condition);
+        return new(condition.Type, condition.Side, condition.Buildings, condition.Versus, condition.Margin, condition.Building, condition.AtLeast, condition.Ratio, condition.Edge, condition.Near,
+            condition.MeleeUncontrolled);
     }
 
     /// <summary>The units a side starts with: everything but what enters after Turn 1 (A16.1).</summary>
     private static IEnumerable<(UnitDefinition Definition, int Count)> Starting(ScenarioCardSide side, UnitCatalog catalog) =>
         side.Groups.SelectMany(group => group.Units
-            .Where(unit => group.Areas.FirstOrDefault(area => area.Id == unit.Area) is not { Kind: "entry", Turn: > 1 })
+            .Where(unit => group.Areas.FirstOrDefault(area => area.Id == unit.Area) is var area && ScenarioA1SetupCalculator.StartsOnTurnOne(area?.Kind, area?.Turn))
             .Select(unit => (Definition: catalog.Definition(unit.Definition), unit.Count)))
             .Where(item => item.Definition is not null)
             .Select(item => (item.Definition!, item.Count));
@@ -581,24 +474,15 @@ public static partial class ScenarioCards
     public static double SquadEquivalents(ScenarioCard card, ScenarioCardSide side, UnitCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(side);
-        return Starting(side, catalog).Sum(item => item.Definition.Kind switch
-        {
-            "asl:squad" => 1.0,
-            "asl:half-squad" or "asl:crew" => 0.5,
-            _ => 0.0,
-        } * item.Count);
+        return Starting(side, catalog).Sum(item => ScenarioA1SetupCalculator.SquadEquivalent(item.Definition.Kind) * item.Count);
     }
 
     /// <summary>A side's Battlefield Integrity total: the BPV of its starting MMC (A16.1), from the catalog.</summary>
     public static int IntegrityBpv(ScenarioCard card, ScenarioCardSide side, UnitCatalog catalog)
     {
         ArgumentNullException.ThrowIfNull(side);
-        return Starting(side, catalog)
-            .Where(item => Mmc(item.Definition))
-            .Sum(item => (item.Definition.Printed("broken", "asl:bpv")?.Value?.Number ?? 0) * item.Count);
+        return ScenarioA1SetupCalculator.IntegrityBpv(Starting(side, catalog).Select(item => (item.Definition.Kind, item.Definition.Printed("broken", "asl:bpv")?.Value?.Number, item.Count)));
     }
-
-    private static bool Mmc(UnitDefinition definition) => definition.Kind is "asl:squad" or "asl:half-squad" or "asl:crew";
 
     /// <summary>Whether a card's counter is manufactured under R0.3 (sheet MFG).</summary>
     public static bool Manufactured(UnitDefinition definition)
@@ -679,12 +563,7 @@ public static partial class ScenarioCards
     }
 
     /// <summary>A lettered hexrow's place from west to east (A2.2): A is 0, Z 25, AA 26, and GG 32; null for anything else.</summary>
-    public static int? HexrowIndex(string? row) => row switch
-    {
-        { Length: 1 } when row[0] is >= 'A' and <= 'Z' => row[0] - 'A',
-        { Length: 2 } when row[0] == row[1] && row[0] is >= 'A' and <= 'G' => 26 + (row[0] - 'A'),
-        _ => null,
-    };
+    public static int? HexrowIndex(string? row) => ScenarioA1SetupCalculator.HexrowIndex(row);
 
     /// <summary>
     /// Whether a Location lies in the card's playable area (A2.1; ruling R20.6): always, when the card enforces none; otherwise on its board, in its
@@ -694,25 +573,7 @@ public static partial class ScenarioCards
     {
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(at);
-        if (card.PlayableArea is not { Enforced: true, Hexrows: { } rows })
-        {
-            return true;
-        }
-
-        // The hexrows limit their own board; the card's other boards play whole (referee, pass 20).
-        var board = rows.Board ?? (card.Boards.Count == 1 ? card.Boards[0].Board : null);
-        if (board is not null && board != at.Board.Value)
-        {
-            return true;
-        }
-
-        var letters = new string(at.Hex.ToString().TakeWhile(char.IsLetter).ToArray());
-        return HexrowIndex(letters) is { } index && index >= HexrowIndex(rows.From) && index <= HexrowIndex(rows.To);
+        return card.PlayableArea is not { Enforced: true, Hexrows: { } rows }
+            || ScenarioA1SetupCalculator.Playable(true, rows.From, rows.To, rows.Board, card.Boards.Count, card.Boards.Count == 1 ? card.Boards[0].Board : null, at.Board.Value, at.Hex.ToString());
     }
-
-    [GeneratedRegex("^([A-Z]|AA|BB|CC|DD|EE|FF|GG)(10|[0-9])$")]
-    private static partial Regex HexPattern();
-
-    [GeneratedRegex(@"^R\d+\.\d+$")]
-    private static partial Regex RulingPattern();
 }

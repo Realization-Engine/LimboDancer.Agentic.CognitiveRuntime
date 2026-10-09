@@ -611,6 +611,8 @@ public static class GameProjector
             Rules.UnitCondition.Recalled => Conditions.Recalled,
             Rules.UnitCondition.CcReaction => Conditions.CcReaction,
             Rules.UnitCondition.Ti => "asl:ti",
+            Rules.UnitCondition.Concealed => Conditions.Concealed,
+            Rules.UnitCondition.Hidden => Conditions.Hidden,
             _ => throw new ArgumentOutOfRangeException(nameof(condition), condition, "The projector maps no such condition."),
         };
 
@@ -3184,14 +3186,16 @@ public static class GameProjector
         }
 
         /// <summary>A non-OB "?" placed at the end of setup (A12.12; ruling R23.6): the unit is concealed, and recorded as such.</summary>
-        private GameState? SetupConceal(GameState state, SetupConcealed concealed) =>
-            ChangeConditions(state, new ConditionsChanged(concealed.Id,
-                new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [Conditions.Concealed] = ConditionState.True })) is { } gained
+        private GameState? SetupConceal(GameState state, SetupConcealed concealed)
+        {
+            var verdict = Rules.ScenarioA1Concealment.SetupConceal();
+            return ChangeConditions(state, new ConditionsChanged(concealed.Id, WithChanges(new Dictionary<string, ConditionState>(StringComparer.Ordinal), verdict.Conditions))) is { } gained
                 ? gained with
                 {
-                    NonObConcealed = [.. state.NonObConcealed, concealed.Id]
+                    NonObConcealed = verdict.RecordNonOb ? [.. state.NonObConcealed, concealed.Id] : state.NonObConcealed
                 }
                 : null;
+        }
 
         private GameState? ChangeConditions(GameState state, ConditionsChanged change)
         {

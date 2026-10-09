@@ -42,12 +42,7 @@ public static class SetupPlanMatch
     {
         ArgumentNullException.ThrowIfNull(plan);
         ArgumentNullException.ThrowIfNull(catalog);
-        return string.Join(';', Standing(plan, catalog).GroupBy(item => item.At.ToString(), StringComparer.Ordinal).OrderBy(stack => stack.Key, StringComparer.Ordinal).Select(stack =>
-        {
-            var open = stack.Where(item => !item.Placement.Concealed && !item.Placement.Dummy).Select(item => item.Placement).ToArray();
-            var top = open.Length > 0 ? $"{open[0].Definition}/{open[0].Facing}+{open.Length - 1}" : string.Empty;
-            return $"{stack.Key}={stack.Count() - open.Length}?{top}";
-        }));
+        return Rules.ScenarioA1Concealment.PlanLook(Standing(plan, catalog).Select(item => (item.At.ToString(), item.Placement.Concealed, item.Placement.Dummy, item.Placement.Definition, item.Placement.Facing)));
     }
 
     /// <summary>The counters of a plan that a view would hold on the map, in the plan's order, each with its Location.</summary>
