@@ -451,8 +451,8 @@ Written and built 2026-10-09. Uncommitted as this section is written. At the use
 | 35.5 | B.2 (p. 112): the COT is the hex's cost plus that of the Artificial Terrain in it, so a level climbed doubles SMOKE's MF too: "2 x 2 = 4 MF, not 2 x 1 = 2 + 1 = 3 MF", Abrupt Elevation Changes excepted. | `GroundStep` doubled the terrain's cost and then added SMOKE's. | `ScenarioA1TerrainCosts.GroundStep` doubles the two together one level up; across an Abrupt Elevation Change SMOKE's MF is added once, as before. A burning wreck's extra MF is charged the same way. | Rules; the Studio game `p35-smoke-hill`: a squad climbing from [F5] into [E5], level 1 with a burning wreck, "for 4 MF" |
 | 35.5 | B.10 (p. 113): any combination of SMOKE, weather, and terrain Hindrance of +6 or more blocks the LOS. | The map's own total blocked at six; the terrain's count with vehicles', wrecks', and SMOKE's was never tested, and such an attack was made at +6 or more. | `ScenarioA1FireMapRules.HindranceBlocks`, read in `LocationLos`, where the total is formed. | Rules |
 | 35.6 | B14.4 (p. 129): an orchard costs what Open Ground does. | A vehicle was refused an orchard ("is not allowed"). | Three rows in the vehicle terrain table, equal to Open Ground's. | Rules |
-| 35.6 | B15.2, B15.6 (p. 129): grain is a Hindrance in its season, June to September, and Open Ground outside it. | A LOS through grain out of season was refused as an unattributed Hindrance, in fire and in ordnance. | Only a game with no scenario month leaves grain on a LOS undecided (three conditions). | The existing fire and ordnance tests; no test of its own |
-| 35.7 | C3.53 (p. 170), B16.31 (p. 130): ordnance HE is halved into a marsh, beside any halving of the Area Target Type. | Full FP. | The hit's FP is halved for a marsh target in `ScenarioA1FireCalculator`. Ruling R10.1's leave-out ends. | No test of its own |
+| 35.6 | B15.2, B15.6 (p. 129): grain is a Hindrance in its season, June to September, and Open Ground outside it. | A LOS through grain out of season was refused as an unattributed Hindrance, in fire and in ordnance. | Only a game with no scenario month leaves grain on a LOS undecided (three conditions). | Rules, written in the third session (`GrainOutOfSeasonOnALosIsOpenGround`, `GrainOnAGunsLosIsDecidedOnceTheGameNamesItsMonth`); the Studio games `p35-grain-nov` and `p35-grain-jul`: a squad in [FF7] fires at [FF10] through the grain of [FF8] and [FF9], with no Hindrance in November and +2 in July |
+| 35.7 | C3.53 (p. 170), B16.31 (p. 130): ordnance HE is halved into a marsh, beside any halving of the Area Target Type. | Full FP. | The hit's FP is halved for a marsh target in `ScenarioA1FireCalculator`. Ruling R10.1's leave-out ends. | Rules, written in the third session (`HeIsHalvedIntoAMarsh`: the 75mm's 12 FP is 6, and a Critical Hit's 24 is 12) |
 | 35.7 | B16.43 (p. 130): a ground level or level -1 hex adjacent to a marsh is a Bog hex for a vehicle entering by a non-road hexside. | No Bog Check. | `EntryCost` takes "beside a marsh" as a fact, read in Play from the hex's neighbours, and adds a Bog Check. | Rules |
 | 35.9 | B25.14 (p. 143): a Wreck Blaze is a Blaze counter on the wreck; a CC attack DR of half the DR needed or less makes one. | The wreck was recorded as burning with no Blaze entity, so it gave cover and no smoke. | No rule changed: Play writes the Blaze entity after the wreck, as fire and ordnance do. | Play (`AWreckBurnedInCloseCombatCarriesItsBlaze`) |
 
@@ -460,14 +460,14 @@ Written and built 2026-10-09. Uncommitted as this section is written. At the use
 
 **The pass 32 design's section 12, item 3** (grain in season April to September for a cost, June to September elsewhere): not a fault. B15.6 says plowed fields in April and May keep grain's movement cost and are Open Ground for everything else. The two copies stay.
 
-**What has no Studio game.** Board 3 has no orchard and no marsh, and a Hindrance total of six, HE into a marsh, and a vehicle's Close Combat are long to stage. Those are tested in Rules or Play as the table says. Two repairs have no test of their own: out-of-season grain on a LOS, and the halved HE.
+**What has no Studio game.** Board 3 has no orchard and no marsh, and a Hindrance total of six, HE into a marsh, and a vehicle's Close Combat are long to stage. Those are tested in Rules or Play as the table says. The two repairs that had no test of their own, out-of-season grain on a LOS and the halved HE, got theirs in the third session. Board 3 does have grain (the board viewer's legend lists it, with hedge and a dirt road), so the grain repair has its two games; the halved HE has none, for want of a marsh.
 
 **Questions of increment 2c**
 
 | # | Question | Proposal |
 |---|---|---|
 | 1 | The orchard's season in the LOS (B14.2) moves to pass 135. | Yes, for the reasons above. |
-| 2 | Write a test each for out-of-season grain on a LOS and HE into a marsh? Both need the fire calculator's test harness. | Yes, at the gate, with the pass's other tests; about 0:10 each. |
+| 2 | Write a test each for out-of-season grain on a LOS and HE into a marsh? Both need the fire calculator's test harness. | Yes, at the gate, with the pass's other tests; about 0:10 each. Written in the third session, before the gate. |
 
 ## 10. Ordnance: 35.12, 35.10, 35.11 (increment 2d)
 
