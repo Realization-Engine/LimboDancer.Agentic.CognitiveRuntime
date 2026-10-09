@@ -121,13 +121,8 @@ public static class ScenarioSetup
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(area);
         ArgumentNullException.ThrowIfNull(at);
-        var board = area.Board ?? (card.Boards.Count == 1 ? card.Boards[0].Board : null);
-        return board == at.Board.Value && area.Kind switch
-        {
-            "building" => area.Hexes?.Contains(at.Hex.ToString(), StringComparer.Ordinal) == true,
-            "hex-numbers" => at.Hex.RowNumber >= area.From && at.Hex.RowNumber <= area.To,
-            _ => false,
-        };
+        return ScenarioA1SetupCalculator.Within(area.Kind, area.Hexes, area.Board, area.From, area.To, card.Boards.Count, card.Boards.Count == 1 ? card.Boards[0].Board : null,
+            at.Board.Value, at.Hex.ToString(), at.Hex.RowNumber);
     }
 
     /// <summary>
