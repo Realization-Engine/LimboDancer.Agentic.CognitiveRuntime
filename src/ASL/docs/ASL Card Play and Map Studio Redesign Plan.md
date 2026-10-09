@@ -1686,7 +1686,7 @@ Passes 90, 125, 140, and 165 lose part of their titles: 90 is night alone, 125 i
 
 | Pass | Package | Rows | Counters it needs | Needs first | Build | Total | Likely |
 |---|---|---:|---|---|---|---|---|
-| 35 | Repairs: wrong results in rules already built | 45 | none | nothing; it comes first | 6:25 | 7:40 | 3:50 |
+| 35 | Repairs: wrong results in rules already built | 45 | none | nothing; it comes first | 6:45 | 8:00 | 4:00 |
 | 40 | Infantry I: movement, stacking, and Locations | 49 | none | 35 | 5:20 | 6:35 | 3:18 |
 | 45 | Infantry II: fire, MGs, and SW | 38 | none (the German HMG's and the mortars' dm values are manufactured, R0.3) | 40 (ADJACENT) | 5:40 | 6:55 | 3:28 |
 | 60 | Armored combat III: other attacks on vehicles and Guns | 37 | none | 50; 45 (Residual FP from ordnance) | 4:40 | 5:55 | 2:58 |
@@ -1706,7 +1706,7 @@ Passes 90, 125, 140, and 165 lose part of their titles: 90 is night alone, 125 i
 | 170 | Airborne and waterborne | 61 | boats and rafts; gliders; parachute counters | 125 (water), 160 (Light AA), 85 (wind) | 4:00 | 5:15 | 2:38 |
 | 175 | Transport and unusual vehicles | 107 | a wagon; motorcycles in three sizes and bicycles; an amphibian and a DD tank; an Aerosan; a trailer and a portee vehicle; an Ammo Supply counter | 125 (water) for D16; 105 (Impulse Movement) for E11; 95 (snow terrain) for D17; 65 (Riders) for D15 and D17 | 7:20 | 8:35 | 4:18 |
 | 180 | Nationalities II: new formations and nations | 54 | SS, Volksgrenadier, and Assault Engineer MMC; U.S. paratroops and British Airborne; Partisans; Free French and Vichy; Allied Minor and Ethiopian sets; crews, SW, and a Gun for the nations that lack them | 105 (Impulse Movement) for Human Wave; 115 (entrenching); 85 (WP); 110 (PF and PSK for other nations) | 7:00 | 8:15 | 4:08 |
-| | **20 new passes** | **1030** | | | **109:15** | **134:15** | **67:08** |
+| | **20 new passes** | **1030** | | | **109:35** | **134:35** | **67:18** |
 
 **(c) Each pass's tasks.** In the order of (f). The rules are cited with the physical page of the PDF each is printed on; a task names its leading rules, and the inventory lists every row the pass takes. Counters and dependencies for the planned passes are given here; for the new passes they are in (b).
 
@@ -1730,8 +1730,9 @@ Passes 90, 125, 140, and 165 lose part of their titles: 90 is night alone, 125 i
 | 35.14 Night and weather costs charged in Bypass and VBM and on an unpaved road in Mud | E1.52 (p. 224), E3.64 (p. 230), E3.65 (p. 230), E3.9 (p. 231) | 0:20 |
 | 35.15 A refusal for any game that places a fortification counter, until passes 115 and 120 land |  | 0:20 |
 | 35.16 Not rules, from the week review: the seven tests not written, and a sweep test of Play for what a side may not read |  | 0:40 |
+| 35.17 A unit that surrenders instead of routing no longer holds up the rout order: the DEFENDER's units do not wait for it, the phase can end, and the Rout panel says it surrenders and offers it no routes (added 2026-10-09, from the user's game `cd-guards-5`, where a Rout Phase could not end) | A10.5 (p. 66), A20.21 (p. 86) | 0:20 |
 | Overhead | | 1:15 |
-| **Pass 35 total** (build 6:25) | | **7:40** |
+| **Pass 35 total** (build 6:45) | | **8:00** |
 
 **Pass 40: Infantry I: movement, stacking, and Locations** (new; 49 rows of the inventory). Counters: none. Needs first: 35.
 
@@ -2158,8 +2159,8 @@ The 212 rows marked not applicable in the inventory need no ruling: they are hea
 |---|---:|---|---|---|
 | The eleven planned passes, as first planned (section 22) | 11 | 42:25 | 56:10 | |
 | The eleven, from their task lists (a) | 11 | 47:45 | 61:30 | 30:45 |
-| The new passes (b) | 20 | 109:15 | 134:15 | 67:08 |
-| **Complete coverage of A to E** | **31** | **157:00** | **195:45** | **97:52** |
+| The new passes (b) | 20 | 109:35 | 134:35 | 67:18 |
+| **Complete coverage of A to E** | **31** | **157:20** | **196:05** | **98:02** |
 
 The first version of this section gave 107:50 for 19 passes. The difference is what the reading found: the planned passes held more than their figures (pass 55 alone held three passes' work), the faults in rules already built make a pass of their own, and terrain is five passes, not three. The likely figure, about 98 hours on the clock, is half of the total and no better than the week's pace is as a guide; armored combat and offboard artillery are still the areas least touched, and 22 of the 31 passes need counters or data the catalog lacks.
 
@@ -2167,7 +2168,7 @@ The first version of this section gave 107:50 for 19 passes. The difference is w
 
 | Block | Passes | Total | Likely | Why here |
 |---|---|---|---|---|
-| 1. Repairs and the ground under everything | 35, 40, 45 | 21:10 | 10:35 | Pass 35 ends the wrong results. Pass 40 gives ADJACENT, the road state, and entry into enemy Locations; pass 45 gives fire between levels and Residual FP as the rule has it. Rout, armor, and artillery all read these. |
+| 1. Repairs and the ground under everything | 35, 40, 45 | 21:30 | 10:45 | Pass 35 ends the wrong results. Pass 40 gives ADJACENT, the road state, and entry into enemy Locations; pass 45 gives fire between levels and Residual FP as the rule has it. Rout, armor, and artillery all read these. |
 | 2. Armor | 50, 55, 60, 65 | 25:20 | 12:40 | As the user moved it forward. Each builds on the last. |
 | 3. The rest of Chapter A | 70, 75, 80 | 18:50 | 9:25 | No counters. These could change places with block 2 for the shortest road to a complete Chapter A. |
 | 4. SMOKE, night, and weather | 85, 90, 95 | 16:05 | 8:02 | Wind and EC come first: SMOKE, Fog, Drifts, gliders, and Fire all read them. |
@@ -2246,10 +2247,10 @@ The rule passes run in this order, one pass at a time on the user's go-ahead. **
 
 | Block | Pass | Title | Rows | Needs first | Build | Total | Likely |
 |---|---|---|---:|---|---|---|---|
-| 1 | 35 | Repairs: wrong results in rules already built | 45 | nothing | 6:25 | 7:40 | 3:50 |
+| 1 | 35 | Repairs: wrong results in rules already built | 45 | nothing | 6:45 | 8:00 | 4:00 |
 | 1 | 40 | Infantry I: movement, stacking, and Locations | 49 | 35 | 5:20 | 6:35 | 3:18 |
 | 1 | 45 | Infantry II: fire, MGs, and SW | 38 | 40 | 5:40 | 6:55 | 3:28 |
-| | **1. Repairs and the ground under everything** | | **132** | | **17:25** | **21:10** | **10:35** |
+| | **1. Repairs and the ground under everything** | | **132** | | **17:45** | **21:30** | **10:45** |
 | 2 | 50 | Armored combat I | 33 | 35 | 5:00 | 6:15 | 3:08 |
 | 2 | 55 | Armored combat II | 20 | 50 | 3:40 | 4:55 | 2:28 |
 | 2 | 60 | Armored combat III: other attacks on vehicles and Guns | 37 | 50, 45 | 4:40 | 5:55 | 2:58 |
@@ -2287,7 +2288,7 @@ The rule passes run in this order, one pass at a time on the user's go-ahead. **
 | | **9. Units and vehicles** | | **258** | | **21:20** | **26:20** | **13:10** |
 | 10 | 185 | Fire | 32 | 85, 140, 75 | 3:40 | 4:55 | 2:28 |
 | | **10. Fire** | | **32** | | **3:40** | **4:55** | **2:28** |
-| | **The rule passes (31)** | | **1484** | | **157:00** | **195:45** | **97:52** |
+| | **The rule passes (31)** | | **1484** | | **157:20** | **196:05** | **98:02** |
 
 The card track is deferred (2026-10-05; section 19, decision 5), and its batches are listed here as they were planned:
 
@@ -2315,7 +2316,7 @@ The card track is deferred (2026-10-05; section 19, decision 5), and its batches
 | | **Making the cards playable, deferred** (it left the rule passes on 2026-10-05) | | **14:50** | **14:50** | |
 | | **The card track, deferred** | | **63:19** | **85:49** | |
 
-The rule passes total 195:45 (build 157:00), about 98 hours likely: the eleven planned passes at 61:30 from their task lists (56:10 as first planned) and the twenty new passes at 134:15 (section 22.1 (e)). Deferred: the DYO passes 190 and 195 (8:15, in section 4's total) and the card track (85:49: the display batches' 70:59 and the 14:50 of making the cards playable, to be replanned when the track is taken up). With the passes of section 4 (138:05, pass 31d's 9:30 included) the whole plan is 419:39, of which 94:04 is deferred; pass 32 stands outside that figure, as it did before. The [week review of 2026-10-05](<ASL Week Review 2026-09-28 to 2026-10-04.md>) has the pace of the actuals.
+The rule passes total 196:05 (build 157:20), about 98 hours likely: the eleven planned passes at 61:30 from their task lists (56:10 as first planned) and the twenty new passes at 134:35 (section 22.1 (e)). Deferred: the DYO passes 190 and 195 (8:15, in section 4's total) and the card track (85:49: the display batches' 70:59 and the 14:50 of making the cards playable, to be replanned when the track is taken up). With the passes of section 4 (138:05, pass 31d's 9:30 included) the whole plan is 419:59, of which 94:04 is deferred; pass 32 stands outside that figure, as it did before. The [week review of 2026-10-05](<ASL Week Review 2026-09-28 to 2026-10-04.md>) has the pace of the actuals.
 
 **Order.** The rule passes come first and build rules only (the user, 2026-10-05); the card track waits. Pass 35 comes first of all: it ends the wrong results in rules already built, and passes 40, 50, 80, 85, 90, 110, 115, 125, and 135 read what it repairs. Passes 40 and 45 give ADJACENT, the road state, entry into enemy Locations, fire between levels, and Residual FP as the rule has it, which rout, armor, and artillery all read. Armor is the second block, as the user moved it forward; block 3 could change places with it for the shortest road to a complete Chapter A. Section 22.1 (f) gives the reason for each block's place.
 
