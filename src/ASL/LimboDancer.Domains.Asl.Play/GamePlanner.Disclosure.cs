@@ -34,14 +34,13 @@ public sealed partial class GamePlanner
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(side);
-        if (NonObConcealmentBar(state) is not null)
-        {
-            return [];
-        }
-
-        return [.. state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && state.Location(unit.Id) is not null)
-            .Select(unit => state.Location(unit.Id)!.Location).Distinct().Where(at => NonObLocationBar(state, side, at) is null)
-            .OrderBy(at => at.ToString(), StringComparer.Ordinal)];
+        IReadOnlyList<BoardLocation> own = [];
+        var texts = ScenarioA1Concealment.NonObConcealment(() => NonObConcealmentBar(state) is not null,
+            () => [.. (own = [.. state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && state.Location(unit.Id) is not null)
+                .Select(unit => state.Location(unit.Id)!.Location).Distinct()]).Select(at => at.ToString())],
+            at => NonObLocationBar(state, side, own[at]) is not null);
+        var byText = own.ToDictionary(at => at.ToString(), at => at, StringComparer.Ordinal);
+        return [.. texts.Select(text => byText[text])];
     }
 
     /// <summary>Why no non-OB "?" may be placed now (ruling R23.6); null when they may.</summary>
@@ -52,41 +51,52 @@ public sealed partial class GamePlanner
     private string? NonObLocationBar(GameState state, string side, BoardLocation at)
     {
         var mine = state.At(at).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side).ToArray();
-        if (mine.Length == 0)
-        {
-            return $"play.non-ob-concealment: {side} has no unit at {at} (A12.12; ruling R23.6)";
-        }
+        return ScenarioA1Concealment.NonObLocationBar([.. mine.Select(unit => (Is(unit, Conditions.Broken), Is(unit, Conditions.Berserk), unit.Kind == UnitKinds.Dummy,
+            Is(unit, Conditions.Concealed), Is(unit, Conditions.Hidden)))], side, at.ToString(), new NonObReader(this, state, side, at));
+    }
 
-        if (mine.Any(unit => Is(unit, Conditions.Broken) || Is(unit, Conditions.Berserk)))
-        {
-            return $"play.non-ob-concealment: a unit of {side} at {at} is broken or berserk, and such a unit never gains \"?\" (A12.12; ruling R23.6)";
-        }
+    /// <summary>The non-OB "?" scan's reads (pass 32.j): the units with their Locations as indexes into a table, the distance and the LOS read as Rules asks.</summary>
+    private sealed class NonObReader : INonObConcealmentReader
+    {
+        private readonly GamePlanner planner;
+        private readonly GameState state;
+        private readonly BoardLocation at;
+        private readonly List<BoardLocation> locations = [];
 
-        if (mine.Any(unit => unit.Kind == UnitKinds.Dummy || Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden)))
+        public NonObReader(GamePlanner planner, GameState state, string side, BoardLocation at)
         {
-            return $"play.non-ob-concealment: {at} already holds a \"?\" or a hidden unit of {side}; one non-OB \"?\" per stack, never on top of another \"?\" (A12.12; ruling R23.6)";
-        }
-
-        foreach (var enemyAt in state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side != side && unit.Kind != UnitKinds.Dummy
-                && !Is(unit, Conditions.Broken) && !Is(unit, Conditions.Hidden) && !Is(unit, Conditions.Captured))
-            .Select(unit => state.Location(unit.Id)?.Location).OfType<BoardLocation>().Distinct())
-        {
-            // 17 hexes or more from the enemy unit needs no LOS read.
-            if (HexDistance(state, enemyAt, at) is >= 17)
+            this.planner = planner;
+            this.state = state;
+            this.at = at;
+            var indexes = new Dictionary<BoardLocation, int>();
+            Units = [.. state.Units.Select(unit =>
             {
-                continue;
-            }
+                int? location = null;
+                if (state.Location(unit.Id)?.Location is { } here)
+                {
+                    if (!indexes.TryGetValue(here, out var index))
+                    {
+                        index = locations.Count;
+                        indexes[here] = index;
+                        locations.Add(here);
+                    }
 
-            var los = Los(state, enemyAt, at);
-            if (los is null || (los.Status != LosStatus.Blocked && los.Range <= 16))
-            {
-                return los is { Status: LosStatus.Clear }
-                    ? $"play.non-ob-concealment: {at} is in the LOS of an unbroken enemy ground unit within 16 hexes (A12.12; ruling R23.6)"
-                    : $"play.non-ob-concealment: the LOS of an enemy unit within 16 hexes to {at} is not decided (A12.12; ruling R23.6)";
-            }
+                    location = index;
+                }
+
+                return new NonObUnitFacts(unit.Status == InstanceStatus.Active, unit.Side != side, unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Broken), Is(unit, Conditions.Hidden),
+                    Is(unit, Conditions.Captured), location);
+            })];
         }
 
-        return null;
+        public IReadOnlyList<NonObUnitFacts> Units
+        {
+            get;
+        }
+
+        public int? Distance(int location) => planner.HexDistance(state, locations[location], at);
+
+        public NonObLosFacts? Los(int location) => planner.Los(state, locations[location], at) is { } los ? new NonObLosFacts(los.Status == LosStatus.Blocked, los.Status == LosStatus.Clear, los.Range) : null;
     }
 
     /// <summary>
@@ -100,24 +110,23 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.no-game");
         }
 
-        if (existing.All(item => GameState.IsSetupEvent(item.Payload)))
+        if (ScenarioA1Concealment.PlaceHiddenSetupBar(existing.All(item => GameState.IsSetupEvent(item.Payload))) is { } setupBar)
         {
-            return Refused(scope, label, expected, "play.place-hidden: during setup a unit is set up hidden or not; placing it beneath \"?\" comes with play (A12.32; ruling R23.5)");
+            return Refused(scope, label, expected, setupBar);
         }
 
         var ids = Strings(arguments, "unitIds").Distinct(StringComparer.Ordinal).ToArray();
         var units = ids.Select(state.Unit).ToArray();
-        if (ids.Length == 0 || units.Any(unit => unit is not { Status: InstanceStatus.Active } || !Is(unit, Conditions.Hidden) || state.Location(unit.Id) is null)
-            || units.Select(unit => unit!.Side).Distinct().Count() != 1)
+        if (ScenarioA1Concealment.PlaceHiddenUnitsBar(ids.Length, units.Any(unit => unit is not { Status: InstanceStatus.Active } || !Is(unit, Conditions.Hidden) || state.Location(unit.Id) is null),
+            ids.Length == 0 ? 0 : units.Select(unit => unit?.Side).Distinct().Count()) is { } unitsBar)
         {
-            return Refused(scope, label, expected, "play.place-hidden: the units are hidden units of one side, on the map (A12.32; ruling R23.5)");
+            return Refused(scope, label, expected, unitsBar);
         }
 
         var side = units[0]!.Side;
         GameEvent[] events = [.. units.Select((unit, index) => Event(scope, attemptId, index + 1, expected, "hidden-placed", new ConditionsChanged(unit!.Id,
-            new Dictionary<string, ConditionState> { [Conditions.Hidden] = ConditionState.False, [Conditions.Concealed] = ConditionState.True }), null, [side]))];
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events,
-            [$"play.place-hidden: {string.Join(", ", ids)} placed beneath \"?\" (A12.32; ruling R23.5)"]);
+            ConditionChanges(ScenarioA1Concealment.PlaceHiddenConditions())), null, [side]))];
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [ScenarioA1Concealment.PlaceHiddenText(ids)]);
     }
 
     /// <summary>
@@ -126,10 +135,13 @@ public sealed partial class GamePlanner
     /// </summary>
     private GamePlan PlanNonObConcealment(GameScope scope, JsonElement conceal, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label)
     {
-        if (existing.Count == 0 || Replay(existing).Current is not { } state)
+        var replayed = existing.Count == 0 ? null : Replay(existing).Current;
+        if (ScenarioA1Concealment.NonObGameBar(existing.Count > 0, replayed is not null) is { } gameBar)
         {
-            return Refused(scope, label, expected, "play.non-ob-concealment: a non-OB \"?\" goes on a game already set up (A12.12; ruling R23.6)");
+            return Refused(scope, label, expected, gameBar);
         }
+
+        var state = replayed!;
 
         if (conceal.ValueKind != JsonValueKind.Object || !conceal.TryGetProperty("side", out var sideElement) || sideElement.ValueKind != JsonValueKind.String
             || state.Side(sideElement.GetString()!) is null || !conceal.TryGetProperty("locations", out var list) || list.ValueKind != JsonValueKind.Array
@@ -168,7 +180,6 @@ public sealed partial class GamePlanner
 
         return reasons.Count > 0
             ? Refused(scope, label, expected, [.. reasons])
-            : new GamePlan(GamePlanStatus.Ready, scope, label, expected, events,
-                [$"play.non-ob-concealment: the {side} side places {events.Count} {(events.Count == 1 ? "unit" : "units")} under \"?\" (A12.12; ruling R23.6)"]);
+            : new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [ScenarioA1Concealment.NonObConcealmentText(side, [.. events.Select(item => item.EventId)])]);
     }
 }
