@@ -194,6 +194,22 @@ public sealed class ScenarioA1VehicleMovementRulesTests
     }
 
     [Fact]
+    public void TheEsbDrmFollowsTheManufacturersNationality()
+    {
+        // D2.5 (p. 198; pass 35, task 35.13): the ESB DRM Table. Until pass 35 every nationality but German and Russian took +3.
+        Assert.Equal(0, ScenarioA1VehicleMovementCalculator.EsbNationalDrm("american"));
+        Assert.Equal(0, ScenarioA1VehicleMovementCalculator.EsbNationalDrm("czech"));
+        Assert.Equal(1, ScenarioA1VehicleMovementCalculator.EsbNationalDrm("russian"));
+        Assert.Equal(1, ScenarioA1VehicleMovementCalculator.EsbNationalDrm("chinese"));
+        Assert.Equal(2, ScenarioA1VehicleMovementCalculator.EsbNationalDrm("british"));
+        Assert.Equal(2, ScenarioA1VehicleMovementCalculator.EsbNationalDrm("german"));
+        foreach (var other in new[] { "french", "italian", "finnish", "axis-minor", null })
+        {
+            Assert.Equal(3, ScenarioA1VehicleMovementCalculator.EsbNationalDrm(other));
+        }
+    }
+
+    [Fact]
     public void BypassReadsTheWreckPenaltyOnlyForANewHex()
     {
         Assert.Equal(4, ScenarioA1VehicleTerrainCosts.BypassHalfMp(2, 0, false, false, Never<int>("wrecks"), false, "fully-tracked"));

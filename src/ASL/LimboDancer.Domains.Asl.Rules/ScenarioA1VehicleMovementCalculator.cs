@@ -481,11 +481,16 @@ public static class ScenarioA1VehicleMovementCalculator
         return null;
     }
 
-    /// <summary>D2.5: the ESB DR's manufacturer DRM, +2 German, +1 Russian, otherwise +3.</summary>
+    /// <summary>
+    /// D2.5 (p. 198; pass 35, task 35.13): the ESB DRM Table, by the nationality of the vehicle's manufacturer: U.S. and Czech 0; Russian and all
+    /// Chinese +1; British and German +2; French, Italian, and all others +3. The definition's nationality stands for the manufacturer: the catalog
+    /// holds no vehicle in another nation's service.
+    /// </summary>
     public static int EsbNationalDrm(string? nationality) => nationality switch
     {
-        "german" => 2,
-        "russian" => 1,
+        "american" or "czech" => 0,
+        "russian" or "chinese" => 1,
+        "british" or "german" => 2,
         _ => 3,
     };
 
