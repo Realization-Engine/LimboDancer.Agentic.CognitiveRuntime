@@ -2,9 +2,23 @@ namespace LimboDancer.Domains.Asl.Rules;
 
 /// <summary>
 /// A Known enemy unit as the rout reads it (A10.51, A10.533; pass 32.f), in the order the state lists them: its Location as an index into the
-/// caller's table, whether it is armed (A10.5, A10.62), its conditions, and its Normal Range (A10.532).
+/// caller's table, whether it is armed (A10.5, A10.62), its conditions, its Normal Range (A10.532), and the range within which it may Interdict
+/// (pass 35, task 35.4), its Normal Range when none is given.
 /// </summary>
-public sealed record RoutEnemyFacts(string Id, int Location, bool Armed, bool Broken, bool Melee, bool Vehicle, bool Cx, bool Pinned, bool Encircled, int NormalRange);
+public sealed record RoutEnemyFacts(string Id, int Location, bool Armed, bool Broken, bool Melee, bool Vehicle, bool Cx, bool Pinned, bool Encircled, int NormalRange,
+    int? InterdictionRange = null);
+
+/// <summary>
+/// What keeps one enemy unit from applying the FFMO DRM to a Location (A10.531; pass 35, task 35.4), beyond the LOS itself: the map Hindrance along
+/// the LOS as fire counts it by terrain and season, or null when fire cannot attribute it and the map's own total stands; the Hindrance of vehicles,
+/// wrecks, and SMOKE along the LOS (D9.4, A24.2, B25.2); the wall or hedge TEM of the hexside the LOS crosses (B9.3); Height Advantage over that
+/// enemy (B10.31); and the cover of a wreck or AFV in the Location (D9.3).
+/// </summary>
+public sealed record RoutCoverFacts(int? MapHindrance, int OtherHindrance, bool HexsideTem, bool HeightAdvantage, bool InHexCover)
+{
+    /// <summary>No cover read: the map's own Hindrance total decides alone, as before pass 35.</summary>
+    public static RoutCoverFacts None { get; } = new(null, 0, false, false, false);
+}
 
 /// <summary>A Location as the rout reads it: the terrain key the map gives it, and whether SMOKE is there.</summary>
 public sealed record RoutLocationFacts(string? TerrainKey, bool Smoke);
@@ -57,6 +71,12 @@ public interface IRoutFactReader
 
     /// <summary>The LOS from one Location to another, or null when the map cannot give it.</summary>
     public RoutLosFacts? Los(int fromLocation, int toLocation);
+
+    /// <summary>
+    /// What keeps the enemy unit in one Location from applying the FFMO DRM to another (A10.531; pass 35, task 35.4), read only for a clear LOS
+    /// within range. A reader that does not give it leaves the map's own Hindrance to decide.
+    /// </summary>
+    public RoutCoverFacts Cover(int enemyLocation, int location) => RoutCoverFacts.None;
 
     /// <summary>The distance in hexes between two Locations, or null when the map cannot give it.</summary>
     public int? Distance(int one, int two);

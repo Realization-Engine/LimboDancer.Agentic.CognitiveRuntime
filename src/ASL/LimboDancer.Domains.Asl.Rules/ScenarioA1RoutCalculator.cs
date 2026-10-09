@@ -72,6 +72,37 @@ public static class ScenarioA1RoutCalculator
             && (location.TerrainKey == "open-ground" || (location.TerrainKey == "grain" && scenarioMonth is < 6 or > 9));
 
     /// <summary>
+    /// The cover facts of one LOS (A10.531; pass 35, task 35.4): fire's count of the map Hindrance stands when fire can attribute every Hindrance on
+    /// the LOS to its terrain; otherwise, or when the read of the vehicles on the LOS was refused, the map's own total does.
+    /// </summary>
+    public static RoutCoverFacts CoverFacts(bool hindranceRead, bool attributed, int fireHindrance, int vehiclesAndSmoke, bool hexsideTem, bool heightAdvantage, bool inHexCover) =>
+        new(hindranceRead && attributed ? fireHindrance - vehiclesAndSmoke : null, hindranceRead ? vehiclesAndSmoke : 0, hexsideTem, heightAdvantage, inHexCover);
+
+    /// <summary>
+    /// Whether the enemy unit in a Location could apply the FFMO DRM to a unit in an Open Ground Location (A10.531, A10.53; pass 35, task 35.4): a clear
+    /// LOS within the range given, no Hindrance of any kind along it (the map's, a vehicle's or wreck's, SMOKE), and no TEM the unit could claim against
+    /// that enemy: a wall or hedge on the hexside crossed, Height Advantage, or a wreck or AFV in the Location. The cover is read only for a clear LOS in range.
+    /// </summary>
+    public static bool CouldApplyFfmo(IRoutFactReader reader, int enemyLocation, int at, int range)
+    {
+        ArgumentNullException.ThrowIfNull(reader);
+        if (reader.Los(enemyLocation, at) is not { Clear: true } los || los.Range > range)
+        {
+            return false;
+        }
+
+        var cover = reader.Cover(enemyLocation, at);
+        return (cover.MapHindrance ?? los.Hindrance) + cover.OtherHindrance == 0 && !cover.HexsideTem && !cover.HeightAdvantage && !cover.InHexCover;
+    }
+
+    /// <summary>
+    /// The range within which a unit may Interdict (A10.532; pass 35, task 35.4): its Normal Range, but for a SMC with no other SMC to man a weapon with
+    /// him, whose SW fires at half FP and so does not Interdict: he has his own range alone, which for a leader is none.
+    /// </summary>
+    public static int InterdictionRange(bool smc, bool anotherSmcThere, int own, IEnumerable<int> weaponRanges) =>
+        smc && !anotherSmcThere ? Math.Min(16, own) : NormalRange(own, weaponRanges);
+
+    /// <summary>
     /// A Known unbroken enemy unit not in Melee in whose LOS and Normal Range a Location in Open Ground lies, with no Hindrance between (A10.5, A10.531), or null.
     /// </summary>
     public static string? ExposedInOpenGround(IRoutFactReader reader, IReadOnlyList<RoutEnemyFacts> enemies, int at, int? scenarioMonth)
@@ -86,7 +117,7 @@ public static class ScenarioA1RoutCalculator
         // A10.531 (table player, pass 13): only an enemy unit that could fire applies FFMO, so broken ones do not count.
         foreach (var enemy in enemies.Where(item => !item.Melee && !item.Broken).OrderBy(item => item.Id, StringComparer.Ordinal))
         {
-            if (enemy.NormalRange is > 0 and var range && reader.Los(enemy.Location, at) is { Clear: true, Hindrance: 0 } los && los.Range <= range)
+            if (enemy.NormalRange is > 0 and var range && CouldApplyFfmo(reader, enemy.Location, at, range))
             {
                 return enemy.Id;
             }
@@ -97,8 +128,8 @@ public static class ScenarioA1RoutCalculator
 
     /// <summary>
     /// The enemy unit able to Interdict a routing unit entering an Open Ground Location (A10.53, A10.532, A10.533; ruling R13.3), or null: Known unbroken
-    /// Infantry not CX, pinned, Encircled, in Melee, or a prisoner, with the Location in its LOS and Normal Range and no Hindrance between. Vehicles, and
-    /// units whose FP is halved for other reasons, are not read (backlog).
+    /// Infantry not CX, pinned, Encircled, in Melee, or a prisoner, that could apply the FFMO DRM there (<see cref="CouldApplyFfmo"/>) within the range
+    /// it may Interdict at (<see cref="InterdictionRange"/>). Vehicles, and units whose FP is halved for other reasons, are not read (backlog).
     /// </summary>
     public static string? Interdictor(IRoutFactReader reader, IReadOnlyList<RoutEnemyFacts> enemies, int at, int? scenarioMonth)
     {
@@ -112,7 +143,7 @@ public static class ScenarioA1RoutCalculator
         foreach (var enemy in enemies.Where(item => !item.Vehicle && !item.Broken && !item.Cx && !item.Pinned && !item.Melee && !item.Encircled)
             .OrderBy(item => item.Id, StringComparer.Ordinal))
         {
-            if (enemy.NormalRange is > 0 and var range && reader.Los(enemy.Location, at) is { Clear: true, Hindrance: 0 } los && los.Range <= range)
+            if ((enemy.InterdictionRange ?? enemy.NormalRange) is > 0 and var range && CouldApplyFfmo(reader, enemy.Location, at, range))
             {
                 return enemy.Id;
             }

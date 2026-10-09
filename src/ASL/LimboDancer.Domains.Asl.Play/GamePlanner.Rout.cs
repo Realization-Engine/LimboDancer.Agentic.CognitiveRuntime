@@ -77,6 +77,10 @@ public sealed partial class GamePlanner
         private readonly List<BoardLocation> locations = [];
         private readonly Dictionary<BoardLocation, int> indexes = [];
         private readonly Dictionary<string, IReadOnlyList<RoutEnemyFacts>> enemies = new(StringComparer.Ordinal);
+        private readonly Dictionary<(int, int), RoutCoverFacts> covers = [];
+
+        // The side whose units rout: the side last asked for its enemies. Every scan and search asks for them before it reads a cover.
+        private string? routingSide;
 
         public RoutScan(GamePlanner planner, GameState state)
         {
@@ -103,11 +107,12 @@ public sealed partial class GamePlanner
         /// <summary>The Known enemy units of a side (A10.51, A10.533) as the rout reads them, in the state's order, read once a side.</summary>
         public IReadOnlyList<RoutEnemyFacts> Enemies(string side)
         {
+            routingSide = side;
             if (!enemies.TryGetValue(side, out var known))
             {
                 enemies[side] = known = [.. KnownEnemies(state, side).Select(item => new RoutEnemyFacts(item.Unit.Id, Index(item.At), Armed(item.Unit),
                     Is(item.Unit, Conditions.Broken), Is(item.Unit, Conditions.Melee), LiveFire.IsVehicle(item.Unit), Is(item.Unit, Conditions.Cx),
-                    Is(item.Unit, Conditions.Pinned), state.Encircled(item.Unit), NormalRange(state, item.Unit)))];
+                    Is(item.Unit, Conditions.Pinned), state.Encircled(item.Unit), NormalRange(state, item.Unit), planner.InterdictionRange(state, item.Unit, item.At)))];
             }
 
             return known;
@@ -128,6 +133,10 @@ public sealed partial class GamePlanner
 
         public RoutLosFacts? Los(int fromLocation, int toLocation) =>
             planner.Los(state, locations[fromLocation], locations[toLocation]) is { } los ? new RoutLosFacts(los.Status == LosStatus.Clear, los.Hindrance, los.Range) : null;
+
+        public RoutCoverFacts Cover(int enemyLocation, int location) =>
+            covers.TryGetValue((enemyLocation, location), out var cover) ? cover
+                : covers[(enemyLocation, location)] = planner.InterdictionCover(state, locations[enemyLocation], locations[location], routingSide);
 
         public int? Distance(int one, int two) => planner.HexDistance(state, locations[one], locations[two]);
 
@@ -159,13 +168,62 @@ public sealed partial class GamePlanner
     /// </summary>
     private static int NormalRange(GameState state, UnitInstance unit)
     {
+        var (own, weapons) = FireRanges(state, unit);
+        return ScenarioA1RoutCalculator.NormalRange(own, weapons);
+    }
+
+    /// <summary>A unit's own printed range as the rout counts it (a leader's is none), and the ranges of the functioning SW it possesses (A10.532).</summary>
+    private static (int Own, int[] Weapons) FireRanges(GameState state, UnitInstance unit)
+    {
         var definitions = FireReference.Value.Definitions;
         var definition = unit.Definition is { } reference ? definitions.GetValueOrDefault(reference.Definition) : null;
         var own = ScenarioA1RoutCalculator.OwnRange(definition is not null, definition?.Kind == "asl:leader", definition?.Range);
-        var weapons = state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding
+        return (own, [.. state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding
                 && holding.Holder == unit.Id && !Is(item, Conditions.Malfunctioned) && !Is(item, Conditions.Dismantled))
-            .Select(item => item.Definition is { } weapon ? definitions.GetValueOrDefault(weapon.Definition)?.Range ?? 0 : 0);
-        return ScenarioA1RoutCalculator.NormalRange(own, weapons);
+            .Select(item => item.Definition is { } weapon ? definitions.GetValueOrDefault(weapon.Definition)?.Range ?? 0 : 0)]);
+    }
+
+    /// <summary>
+    /// The range within which a unit may Interdict (A10.532; pass 35, task 35.4): Rules decides, over the unit's ranges and whether another unbroken SMC
+    /// of its side is in its Location to man a weapon with it.
+    /// </summary>
+    private int InterdictionRange(GameState state, UnitInstance unit, BoardLocation at)
+    {
+        var (own, weapons) = FireRanges(state, unit);
+        return ScenarioA1RoutCalculator.InterdictionRange(vocabulary.IsA(unit.Kind, "asl:smc"),
+            state.At(at).OfType<UnitInstance>().Any(other => other.Id != unit.Id && other.Status == InstanceStatus.Active && other.Side == unit.Side
+                && vocabulary.IsA(other.Kind, "asl:smc") && !Is(other, Conditions.Broken) && !Is(other, Conditions.Captured)), own, weapons);
+    }
+
+    /// <summary>
+    /// What keeps the enemy unit in one Location from applying the FFMO DRM to another (A10.531; pass 35, task 35.4), read as fire reads it: the
+    /// Hindrances along the LOS by terrain and season with the vehicles, wrecks, and SMOKE on it (A6.7, D9.4, B25.2), the wall or hedge TEM of the hexside
+    /// crossed (B9.3), Height Advantage (B10.31), and a wreck's or AFV's cover in the Location (D9.3). Rules decides what the reads come to. A wall
+    /// whose TEM fire cannot decide gives none here, as before the pass.
+    /// </summary>
+    private RoutCoverFacts InterdictionCover(GameState state, BoardLocation from, BoardLocation at, string? routingSide)
+    {
+        if (from == at || ReadLocation(state, from) is not { } fromRead || ReadLocation(state, at) is not { } atRead || Los(state, from, at) is not { } los)
+        {
+            return RoutCoverFacts.None;
+        }
+
+        var height = fromRead.Hex.BaseLevel + from.Level;
+        var sameLevel = height == atRead.Hex.BaseLevel + at.Level;
+        var vehiclesAndSmoke = 0;
+        var (refusal, fireLos) = ScenarioA1FireMapRules.LocationLos(
+            new LosReadFacts(los.Status is LosStatus.Clear or LosStatus.Blocked, los.Status.ToString(), los.Reason, los.IsBlocked == true, los.Range,
+                [.. los.Hindrances.Select(entry => new LosHindranceFacts(entry.Range, entry.Value, entry.Terrains))]),
+            state.ScenarioMonth, sameLevel, mapRanges =>
+            {
+                var read = VehicleHindrance(state, from, at, los, sameLevel, mapRanges);
+                vehiclesAndSmoke = read.Drm;
+                return read;
+            });
+        var firingSide = state.Sides.FirstOrDefault(side => side.Id != routingSide)?.Id;
+        var wall = firingSide is null ? null : HexsideTemAt(state, at, [(from, los.Range)], firingSide, null) is (var tem, null) ? tem : null;
+        return ScenarioA1RoutCalculator.CoverFacts(refusal is null, fireLos?.HindranceAttributed == true, fireLos?.HindranceDrm ?? 0, vehiclesAndSmoke,
+            wall?.Tem > 0, HeightAdvantageAt(state, at, atRead, [(from, height)], false), CoverAt(state, at, routingSide) is not null);
     }
 
     /// <summary>

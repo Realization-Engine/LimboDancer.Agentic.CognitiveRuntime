@@ -20,6 +20,7 @@ public sealed class ScenarioA1RoutRallyRulesTests
         private static readonly string[] Terrain = ["open-ground", "grain", "open-ground", "woods", "stone-building"];
         private readonly HashSet<(int, int)> blocked = [];
         private readonly HashSet<int> unplayable = [];
+        private readonly Dictionary<(int, int), RoutCoverFacts> covers = [];
         private readonly List<string> reads = [];
 
         public IReadOnlyList<string> Reads => reads;
@@ -54,6 +55,18 @@ public sealed class ScenarioA1RoutRallyRulesTests
         }
 
         public bool Playable(int location) => !unplayable.Contains(location);
+
+        public Row Covered(int enemyLocation, int location, RoutCoverFacts cover)
+        {
+            covers[(enemyLocation, location)] = cover;
+            return this;
+        }
+
+        public RoutCoverFacts Cover(int enemyLocation, int location)
+        {
+            reads.Add($"cover {enemyLocation}-{location}");
+            return covers.GetValueOrDefault((enemyLocation, location), RoutCoverFacts.None);
+        }
 
         public RoutLocationFacts? Location(int location) => new(Terrain[location], false);
 
@@ -122,6 +135,84 @@ public sealed class ScenarioA1RoutRallyRulesTests
         var row = new Row();
         Assert.Equal("c", ScenarioA1RoutCalculator.Interdictor(row, [Enemy("a", 4, cx: true), Enemy("b", 4, vehicle: true), Enemy("c", 4), Enemy("d", 3, pinned: true)], 2, 7));
         Assert.Null(ScenarioA1RoutCalculator.Interdictor(row, [Enemy("a", 4, encircled: true), Enemy("b", 4, melee: true)], 2, 7));
+    }
+
+    [Fact]
+    public void NoEnemyAppliesFfmoThroughAHindranceOrAgainstATemTheUnitCouldClaim()
+    {
+        // Pass 35, task 35.4 (A10.531, A10.53): each kind of cover alone frees the Location of that enemy, for Interdiction and for the must-rout test.
+        RoutCoverFacts[] covered =
+        [
+            new(null, 1, false, false, false), new(1, 0, false, false, false), new(null, 0, true, false, false), new(null, 0, false, true, false),
+            new(null, 0, false, false, true),
+        ];
+        foreach (var cover in covered)
+        {
+            var row = new Row().Covered(4, 2, cover);
+            Assert.False(ScenarioA1RoutCalculator.CouldApplyFfmo(row, 4, 2, 6));
+            Assert.Null(ScenarioA1RoutCalculator.Interdictor(row, [Enemy("a", 4)], 2, 7));
+            Assert.Null(ScenarioA1RoutCalculator.ExposedInOpenGround(row, [Enemy("a", 4)], 2, 7));
+            Assert.Equal("b", ScenarioA1RoutCalculator.Interdictor(row, [Enemy("a", 4), Enemy("b", 0)], 2, 7));
+        }
+
+        // Fire's count of the map Hindrance, where fire can attribute it, replaces the map's own total: none in fire's count means Open Ground.
+        Assert.True(ScenarioA1RoutCalculator.CouldApplyFfmo(new Row().Covered(4, 2, new(0, 0, false, false, false)), 4, 2, 6));
+        Assert.True(ScenarioA1RoutCalculator.CouldApplyFfmo(new Row(), 4, 2, 6));
+
+        // The cover is read only for a clear LOS within range.
+        var blocked = new Row().Block(4, 2);
+        Assert.False(ScenarioA1RoutCalculator.CouldApplyFfmo(blocked, 4, 2, 6));
+        var far = new Row();
+        Assert.False(ScenarioA1RoutCalculator.CouldApplyFfmo(far, 4, 2, 1));
+        Assert.DoesNotContain(blocked.Reads.Concat(far.Reads), read => read.StartsWith("cover", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void TheCoverFactsTakeFiresHindranceCountOnlyWhereFireCanAttributeIt()
+    {
+        Assert.Equal(new RoutCoverFacts(2, 1, true, false, true), ScenarioA1RoutCalculator.CoverFacts(true, true, 3, 1, true, false, true));
+        Assert.Equal(new RoutCoverFacts(null, 1, false, true, false), ScenarioA1RoutCalculator.CoverFacts(true, false, 3, 1, false, true, false));
+        Assert.Equal(new RoutCoverFacts(null, 0, false, false, false), ScenarioA1RoutCalculator.CoverFacts(false, true, 3, 1, false, false, false));
+    }
+
+    [Fact]
+    public void ALoneSmcDoesNotInterdictWithASupportWeapon()
+    {
+        // A10.532: a leader alone with a MG has no range to Interdict at; with another SMC he has the MG's; a squad has the longest it holds.
+        Assert.Equal(0, ScenarioA1RoutCalculator.InterdictionRange(true, false, 0, [12]));
+        Assert.Equal(1, ScenarioA1RoutCalculator.InterdictionRange(true, false, 1, [12]));
+        Assert.Equal(12, ScenarioA1RoutCalculator.InterdictionRange(true, true, 0, [12]));
+        Assert.Equal(16, ScenarioA1RoutCalculator.InterdictionRange(false, false, 6, [20]));
+        var row = new Row();
+        Assert.Null(ScenarioA1RoutCalculator.Interdictor(row, [Enemy("a", 4) with { InterdictionRange = 0 }], 2, 7));
+        Assert.Equal("a", ScenarioA1RoutCalculator.ExposedInOpenGround(row, [Enemy("a", 4) with { InterdictionRange = 0 }], 2, 7));
+    }
+
+    [Fact]
+    public void AUnitBoundToSurrenderOwesNoRout()
+    {
+        // Pass 35, task 35.17 (A10.5, A20.21): the facts are read in order, each only when the one before leaves the question open.
+        Assert.True(ScenarioA1RoutCalculator.RoutStillOwed(false, false, () => true, () => true, () => false));
+        Assert.False(ScenarioA1RoutCalculator.RoutStillOwed(false, false, () => true, () => true, () => true));
+        Assert.False(ScenarioA1RoutCalculator.RoutStillOwed(true, false, Never("must rout"), Never("can rout"), Never("the surrender")));
+        Assert.False(ScenarioA1RoutCalculator.RoutStillOwed(false, true, Never("must rout"), Never("can rout"), Never("the surrender")));
+        Assert.False(ScenarioA1RoutCalculator.RoutStillOwed(false, false, () => true, () => false, Never("the surrender")));
+        Assert.False(ScenarioA1RoutCalculator.AttackerMustRoutFirst(false, false, false, Never("must rout"), Never("can rout"), Never("the surrender")));
+        Assert.True(ScenarioA1RoutCalculator.AttackerMustRoutFirst(true, false, false, () => true, () => true, () => false));
+        Assert.False(ScenarioA1RoutCalculator.AttackerMustRoutFirst(true, false, false, () => true, () => true, () => true));
+    }
+
+    [Fact]
+    public void ADisruptedUnitRoutsOnlyWhenItMustAndNeverByLowCrawl()
+    {
+        // Pass 35, task 35.2 (A19.12).
+        Assert.True(ScenarioA1RoutCalculator.MayRout(null, true, true, true, false, false, false));
+        Assert.False(ScenarioA1RoutCalculator.MayRout(null, true, true, true, false, false, true));
+        Assert.True(ScenarioA1RoutCalculator.MayRout("it must", true, true, true, false, false, true));
+        Assert.Equal("play.rout-low-crawl: u is Disrupted and may not use Low Crawl (A19.12)", ScenarioA1RoutCalculator.DisruptedLowCrawlBar("u", true, true, false));
+        Assert.Null(ScenarioA1RoutCalculator.DisruptedLowCrawlBar("u", true, true, true));
+        Assert.Null(ScenarioA1RoutCalculator.DisruptedLowCrawlBar("u", true, false, false));
+        Assert.Null(ScenarioA1RoutCalculator.DisruptedLowCrawlBar("u", false, true, false));
     }
 
     [Fact]
