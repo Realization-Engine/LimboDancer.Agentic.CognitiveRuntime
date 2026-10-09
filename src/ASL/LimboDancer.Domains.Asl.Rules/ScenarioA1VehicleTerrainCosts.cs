@@ -55,7 +55,7 @@ public static class ScenarioA1VehicleTerrainCosts
     public static (VehicleTerrainEntry? Entry, string? Reason) EntryCost(string? type, string to, int toLevel, bool cliffOrSlope, string? terrainKey,
         string? terrainName, string? wall, string? hexsideName, bool roadHexside, int rise, int? month, bool mud, bool pavedRoad, bool plowedRule,
         int printedHalfMp, bool buttonedAfv, bool groundSnow, bool deepSnow, Func<bool, int> wreckHalfMp, Func<bool> smoke, bool towing,
-        Func<string, bool, bool, bool, int> weatherHalfMp, bool reverse, bool allMp, List<(string Cause, int Drm)> own)
+        Func<string, bool, bool, bool, int> weatherHalfMp, bool reverse, bool allMp, List<(string Cause, int Drm)> own, bool besideMarsh = false)
     {
         if (type is null)
         {
@@ -205,6 +205,12 @@ public static class ScenarioA1VehicleTerrainCosts
         if (reverse && !all)
         {
             cost *= ReverseMultiplier(type);
+        }
+
+        // B16.43 (p. 130; pass 35, task 35.7): a ground level or level -1 hex adjacent to a marsh is a Bog hex for a vehicle entering by a non-road hexside.
+        if (besideMarsh && !road)
+        {
+            bog.Add(("beside-marsh", 0));
         }
 
         int? bogDrm = null;

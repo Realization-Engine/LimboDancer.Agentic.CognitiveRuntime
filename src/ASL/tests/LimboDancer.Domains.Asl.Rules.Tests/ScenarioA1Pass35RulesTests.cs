@@ -75,4 +75,56 @@ public sealed class ScenarioA1Pass35RulesTests
         Assert.Equal("defender-line-half-squad", ScenarioA1FireReference.HardenedOf("defender-conscript-half-squad"));
         Assert.Equal("defender-guards-half-squad", ScenarioA1FireReference.HardenedOf("defender-line-half-squad"));
     }
+
+    private static InfantryEntry Step(int rise, int smokeHalfMf, string terrain = "open-ground") =>
+        ScenarioA1TerrainCosts.GroundStep(new CrossedHexsideFacts(false, false, null, false, null), terrain, rise, 7, () => smokeHalfMf, (_, _, _) => (0, false)).Entry!;
+
+    [Fact]
+    public void SmokesMfIsDoubledWithTheRestOneLevelUp()
+    {
+        // B.2 (p. 112; task 35.5): "2 x 2 = 4 MF, not 2 x 1 = 2 + 1 = 3 MF", except across an Abrupt Elevation Change.
+        Assert.Equal(8, Step(1, 2).HalfMf);
+        Assert.Equal(4, Step(1, 0).HalfMf);
+        Assert.Equal(4, Step(0, 2).HalfMf);
+        Assert.Equal(12, Step(1, 2, "woods").HalfMf);
+        Assert.Equal(10, Step(2, 2).HalfMf);
+    }
+
+    [Fact]
+    public void AHindranceTotalOfSixBlocksWhateverItsSources()
+    {
+        // B.10 (p. 113; task 35.5): three brush hexes on the LOS and +3 from vehicles and SMOKE make six.
+        Assert.False(ScenarioA1FireMapRules.HindranceBlocks(5));
+        Assert.True(ScenarioA1FireMapRules.HindranceBlocks(6));
+        LosReadFacts los = new(true, "Clear", string.Empty, false, 5, [new(1, 1, ["Brush"]), new(2, 1, ["Brush"]), new(3, 1, ["Brush"])]);
+        Assert.True(ScenarioA1FireMapRules.LocationLos(los, 7, true, _ => (3, null)).Los!.Blocked);
+        var five = ScenarioA1FireMapRules.LocationLos(los, 7, true, _ => (2, null)).Los!;
+        Assert.Equal((false, 5), (five.Blocked, five.HindranceDrm));
+    }
+
+    private static (VehicleTerrainEntry? Entry, string? Reason) Vehicle(string type, string terrain, bool road = false, bool besideMarsh = false) =>
+        ScenarioA1VehicleTerrainCosts.EntryCost(type, "G5", 0, false, terrain, "that terrain", null, null, road, 0, 7, false, false, false,
+            24, false, false, false, _ => 0, () => false, false, (_, _, _, _) => 0, false, false, [], besideMarsh);
+
+    [Fact]
+    public void AnOrchardCostsAVehicleWhatOpenGroundDoes()
+    {
+        // B14.4 (p. 129; task 35.6). Until pass 35 a vehicle was refused an orchard.
+        foreach (var type in new[] { "fully-tracked", "half-tracked", "truck" })
+        {
+            Assert.Equal(Vehicle(type, "open-ground").Entry!.HalfMp, Vehicle(type, "orchard").Entry!.HalfMp);
+            Assert.Null(Vehicle(type, "orchard").Entry!.BogDrm);
+        }
+    }
+
+    [Fact]
+    public void AHexBesideAMarshIsABogHexOffTheRoad()
+    {
+        // B16.43 (p. 130; task 35.7).
+        var bog = Vehicle("fully-tracked", "open-ground", besideMarsh: true).Entry!;
+        Assert.NotNull(bog.BogDrm);
+        Assert.Contains("beside-marsh", bog.BogCauses);
+        Assert.Null(Vehicle("fully-tracked", "open-ground", road: true, besideMarsh: true).Entry!.BogDrm);
+        Assert.Null(Vehicle("fully-tracked", "open-ground").Entry!.BogDrm);
+    }
 }

@@ -78,7 +78,7 @@ public sealed partial class GamePlanner
             : (null, $"the cost of crossing the map edge at {to} is not decided (ruling R26.1)");
 
     /// <summary>The cost of a vehicle's outright entry of a Location over the hexside it crosses (rulings R11.6 to R11.9), as <see cref="VehicleOutright"/> reads it.</summary>
-    private static (VehicleEntry? Entry, string? Reason) VehicleCost(GameState state, UnitInstance vehicle, LocationRead fromRead, LocationRead toRead, HexsideFacts crossed, BoardLocation to,
+    private (VehicleEntry? Entry, string? Reason) VehicleCost(GameState state, UnitInstance vehicle, LocationRead fromRead, LocationRead toRead, HexsideFacts crossed, BoardLocation to,
         bool reverse, bool allMp)
     {
         var type = MovementTypeOf(vehicle);
@@ -88,7 +88,8 @@ public sealed partial class GamePlanner
             state.SpecialRules.Contains("plowed-roads", StringComparer.Ordinal), PrintedHalfMp(vehicle), IsAfv(vehicle) && Is(vehicle, Conditions.ButtonedUp),
             state.Weather("ground-snow"), state.Weather("deep-snow"), road => WreckEntryHalfMp(state, to, road), () => HasSmoke(state, to), Towing(state, vehicle),
             (terrain, road, paved, plowed) => VehicleWeatherHalfMp(state, type!, terrain, road, paved, plowed, toRead.Hex.BaseLevel - fromRead.Hex.BaseLevel),
-            reverse, allMp, VehicleBogDrm(state, vehicle));
+            reverse, allMp, VehicleBogDrm(state, vehicle),
+            toRead.Hex.BaseLevel <= 0 && Neighbors(state, to).Any(near => ReadLocation(state, near) is { } nearRead && TerrainKey(nearRead) == "marsh"));
         return entry is null
             ? (null, reason)
             : (new VehicleEntry(entry.HalfMp, entry.All, entry.BogDrm, entry.BogCauses, to, null, entry.Terrain, entry.Road, reverse, entry.HedgeBogDrm), null);

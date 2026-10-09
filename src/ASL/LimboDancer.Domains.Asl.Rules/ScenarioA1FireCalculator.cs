@@ -1714,7 +1714,8 @@ public static class ScenarioA1FireCalculator
             else if (hit is not null)
             {
                 // C.6: the Gun's HE FP column; C3.53, C.4: never halved for a concealed target; C3.71: doubled by a Critical Hit.
-                known = vsConcealed = hit.Firepower!.Value * (hit.CriticalHit == true ? 2 : 1);
+                // C3.53, B16.31 (pp. 170, 130; pass 35, task 35.7): halved into a marsh, beside any halving of the Area Target Type.
+                known = vsConcealed = hit.Firepower!.Value * (hit.CriticalHit == true ? 2 : 1) / (attack.TargetTerrain == "marsh" ? 2m : 1m);
             }
             else if (attack.Overrun is { } overrun)
             {
