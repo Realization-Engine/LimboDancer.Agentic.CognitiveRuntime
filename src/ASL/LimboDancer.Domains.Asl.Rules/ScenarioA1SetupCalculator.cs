@@ -1023,7 +1023,7 @@ public sealed record SetupCounterFacts(string Id, string Side, string? Group, st
     bool Equipment, bool New, bool OffBoard, bool Broken, bool NonOb, string? Entry, string? Aboard, bool Manning, bool Towed);
 
 /// <summary>A setup area of a card as the setup reads it (rulings R17.8, R19.4): its id, kind, hexes, board, hex numbers, entry turn, and SSR counts.</summary>
-public sealed record SetupAreaFacts(string Id, string Kind, IReadOnlyList<string>? Hexes, string? Board, int? From, int? To, int? Turn, int? Counters, int? MinMmc, bool? Concealed);
+public sealed record SetupAreaFacts(string Id, string Kind, IReadOnlyList<string>? Hexes, string? Board, int? From, int? To, int? Turn, string? Edge, int? Counters, int? MinMmc, bool? Concealed);
 
 /// <summary>An OB line as the setup reads it: its definition, count, and area.</summary>
 public sealed record SetupLineFacts(string Definition, int Count, string? Area);

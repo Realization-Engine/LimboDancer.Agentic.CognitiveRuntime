@@ -137,7 +137,7 @@ public static class ScenarioSetup
             [.. card.Sides.Select(side => new SetupSideFacts(side.Side, side.Nation, side.Side == card.Turns.SetsUpFirst,
                 [.. (side.BalanceUnits ?? []).Select(unit => new SetupLineFacts(unit.Definition, unit.Count, unit.Area))],
                 [.. side.Groups.Select((group, index) => new SetupGroupFacts(ScenarioCards.GroupId(side.Side, index), group.Name, group.SetupOrder, group.Dummies,
-                    [.. group.Areas.Select(area => new SetupAreaFacts(area.Id, area.Kind, area.Hexes, area.Board, area.From, area.To, area.Turn, area.Counters, area.MinMmc, area.Concealed))],
+                    [.. group.Areas.Select(area => new SetupAreaFacts(area.Id, area.Kind, area.Hexes, area.Board, area.From, area.To, area.Turn, area.Edge, area.Counters, area.MinMmc, area.Concealed))],
                     [.. group.Units.Select(unit => new SetupLineFacts(unit.Definition, unit.Count, unit.Area))]))]))],
             card.Boards.Count, card.Boards.Count == 1 ? card.Boards[0].Board : null,
             card.PlayableArea is { Enforced: true, Hexrows: not null }, card.PlayableArea?.Hexrows?.From, card.PlayableArea?.Hexrows?.To, card.PlayableArea?.Hexrows?.Board,
