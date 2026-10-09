@@ -159,10 +159,40 @@ def build():
     if len(set(ids))!=len(ids):raise ValueError('Duplicate package ID')
     registered={s['sourcePackageId'] for c in registry['campaigns'] for s in c['situations']}
     if registered!=set(ids):raise ValueError('Campaign registry/package mismatch')
-    initial=next(d for d in packages if d['situation']['number']==4)
-    payload='window.PANZER_SITUATION_DATA='+json.dumps(initial,separators=(',',':'))+';\n'
-    payload+='window.PANZER_SITUATION_LIBRARY='+json.dumps(packages,separators=(',',':'))+';\n'
-    payload+='window.CAMPAIGN_REGISTRY='+json.dumps(registry,separators=(',',':'))+';\n'
-    (ROOT/'panzer-situation-data.js').write_text(payload,encoding='utf-8',newline='\n')
-    print('Validated and built',len(packages),'Situation packages')
+    # Keep scenario-specific topology intact: equal board letters do not imply
+    # equal seams, route references, or deployment geography across Situations.
+    output=ROOT/'situation-data'
+    output.mkdir(exist_ok=True)
+    def emit(name,value,target):
+        (ROOT/name).write_text(target+'='+json.dumps(value,separators=(',',':'))+';\n',encoding='utf-8',newline='\n')
+    (ROOT/'panzer-situation-data.js').write_text(
+        '// Generated initializer. Load scripts in situation-data/scripts.json order.\n'
+        'window.PANZER_SITUATION_LIBRARY=[];\n'
+        'window.PANZER_SITUATION_DATA=null;\n',encoding='utf-8',newline='\n')
+    scripts=['panzer-situation-data.js','situation-data/campaign-registry.js']
+    emit(scripts[-1],registry,'window.CAMPAIGN_REGISTRY')
+    for index,(source,data) in enumerate(zip(files,packages)):
+        stem='situation-data/'+source.stem
+        definition={k:v for k,v in data.items() if k not in ('boards','mapModel','illustration')}
+        geography={k:data[k] for k in ('boards','mapModel','illustration')}
+        # Register the definition first; geography enriches that same object.
+        definition_path=stem+'.js'
+        emit(definition_path,definition,'window.PANZER_SITUATION_LIBRARY['+str(index)+']')
+        geography_path=stem+'-geography.js'
+        (ROOT/geography_path).write_text(
+            'Object.assign(window.PANZER_SITUATION_LIBRARY['+str(index)+'],'+
+            json.dumps(geography,separators=(',',':'))+');\n'+
+            ('window.PANZER_SITUATION_DATA=window.PANZER_SITUATION_LIBRARY['+str(index)+'];\n' if data['situation']['number']==4 else ''),
+            encoding='utf-8',newline='\n')
+        scripts.extend([definition_path,geography_path])
+    (output/'scripts.json').write_text(json.dumps(scripts,indent=2)+'\n',encoding='utf-8')
+    # Explicit classic scripts preserve synchronous startup and file:// support.
+    import re
+    tags='<!-- situation-data:start -->\n'+'\n'.join('<script src="'+name+'"></script>' for name in scripts)+'\n<!-- situation-data:end -->'
+    for name in ['viewer.html','index.html','counter-color-test.html','terrain-colors.html']:
+        page=ROOT/name
+        html=page.read_text(encoding='utf-8')
+        html=re.sub(r'<!-- situation-data:start -->.*?<!-- situation-data:end -->|<script src="panzer-situation-data.js"></script>',lambda m:tags,html,flags=re.S)
+        page.write_text(html,encoding='utf-8',newline='\n')
+    print('Validated and built',len(packages),'Situation packages in',len(scripts),'scripts')
 if __name__=='__main__':build()

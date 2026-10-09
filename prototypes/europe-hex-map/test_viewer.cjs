@@ -7,7 +7,7 @@ assert.ok(!html.includes("application/json"));
 assert.ok(html.includes('<option value="">Whole Map</option>'));
 assert.ok(!html.includes('id="enterTheater"'));assert.ok(!html.includes('id="returnEurope"'));
 assert.ok(!/<details[^>]*\sopen(?:\s|>)/.test(html));
-assert.ok(Buffer.byteLength(html)<20000);
+assert.ok(Buffer.byteLength(html.replace(/<!-- situation-data:start -->[\s\S]*?<!-- situation-data:end -->/, ""))<20000);
 assert.ok(html.includes('<script src="app.js"></script>'));
 assert.ok(html.includes('<link rel="stylesheet" href="site.css">'));
 assert.ok(!html.includes('<script>'));
@@ -329,7 +329,7 @@ vm.runInContext(fs.readFileSync(__dirname+"/workflow-view.js","utf8"),context);
  assert.equal(ids.get("stage-review").disabled,true);
  // Load the source-card campaign after the workflow, as the real page does.
  document.body=new Element();Element.prototype.showModal=function(){this.open=true;};Element.prototype.close=function(){this.open=false;};
- for(const file of ["panzer-situation-data.js","panzer-situation-state.js","panzer-map-art.js","panzer-situation-view.js"])vm.runInContext(fs.readFileSync(__dirname+"/"+file,"utf8"),context);
+ for(const file of [...JSON.parse(fs.readFileSync(__dirname+"/situation-data/scripts.json","utf8")),"panzer-situation-state.js","panzer-map-art.js","panzer-situation-view.js"])vm.runInContext(fs.readFileSync(__dirname+"/"+file,"utf8"),context);
  assert.ok(!ids.get("workflowChoose").children.some(e=>e.textContent?.includes("St. Lo")));
  context.window.CampaignSituationWorkflow.choose();assert.equal(context.window.CampaignSituationWorkflow.active,false);
  ids.get("workflowStart").onclick();assert.equal(vm.runInContext("workflowStage",context),"brief");

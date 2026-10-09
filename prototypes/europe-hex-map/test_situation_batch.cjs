@@ -1,6 +1,6 @@
 const fs=require("node:fs"),vm=require("node:vm"),assert=require("node:assert/strict"),path=require("node:path");
 const read=f=>fs.readFileSync(path.join(__dirname,f),"utf8");
-const ctx=vm.createContext({window:{}});for(const f of ["panzer-situation-data.js","panzer-situation-state.js"])vm.runInContext(read(f),ctx);
+const ctx=vm.createContext({window:{}});for(const f of [...JSON.parse(fs.readFileSync(__dirname+"/situation-data/scripts.json","utf8")),"panzer-situation-state.js"])vm.runInContext(read(f),ctx);
 const model=vm.runInContext("PanzerSituationModel",ctx),packages=ctx.window.PANZER_SITUATION_LIBRARY;
 assert.equal(packages.length,17);
 const expected={5:[68,54,25,3],6:[44,19,17,1],7:[41,23,17,2],12:[41,51,26,3],9:[36,37,19,2],10:[16,31,15,1],11:[65,53,27,3],4:[42,34,21,2],8:[30,15,10,2],14:[24,46,18,2],16:[27,24,13,1],13:[88,90,39,2],15:[46,70,26,2],17:[80,72,39,3],18:[63,56,32,3],19:[113,79,39,3],20:[14,11,14,1]};

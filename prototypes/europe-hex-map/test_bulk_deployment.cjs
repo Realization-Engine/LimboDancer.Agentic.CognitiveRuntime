@@ -1,5 +1,5 @@
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict'),path=require('node:path');
-const ctx=vm.createContext({window:{}});for(const f of ['panzer-situation-data.js','panzer-situation-state.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,f),'utf8'),ctx);
+const ctx=vm.createContext({window:{}});for(const f of [...JSON.parse(fs.readFileSync(__dirname+"/situation-data/scripts.json","utf8")),'panzer-situation-state.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,f),'utf8'),ctx);
 const M=vm.runInContext('PanzerSituationModel',ctx),d=ctx.window.PANZER_SITUATION_LIBRARY.find(d=>d.situation.number===14),s=M.create(d);
 const type=d.counters.find(c=>c.label==='Armored infantry'&&c.side===s.stage),units=d.instances.filter(i=>i.counterTypeId===type.id),b=d.boards.find(b=>M.boards(d,units[0].id).includes(b.id)),h=b.hexes.find(h=>units.every(i=>M.allowed(d,i.id,b.id,h.id,s)));
 assert.ok(h);M.place(s,d,units[0].id,b.id,h.imageCenter.u,h.imageCenter.v);const before=JSON.stringify(s.placements[units[0].id]);

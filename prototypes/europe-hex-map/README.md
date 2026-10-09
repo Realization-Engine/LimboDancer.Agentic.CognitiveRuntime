@@ -338,12 +338,12 @@ The package includes 21 verified counter types, 76 individual counter identities
 
 After setup, select participants from both sides, enter a local objective and create an ASL engagement draft. Counter identities are held against duplicate draft allocation. These blocked drafts require dated squad/crew/vehicle decomposition, contact and time boundaries, compiled terrain, completed Scenario Cards and engine admission. A Panzer counter is not automatically one ASL squad. There is no campaign reconciliation yet.
 
-Files: `panzer-situation-data.js` is the offline package; `panzer-situation-state.js` owns validated setup and engagement draft state; `panzer-situation-view.js` supplies the UI; `assets/panzer-leader-04/` holds the manifest, counter images, boards and original card excerpt. Keep these files with the viewer. Artwork attribution: Imaginative Strategist; original Situation Card: Avalon Hill Panzer Leader. Archive source paths and hashes are retained in the manifest. The game card's date and unit attribution are not independent historical verification.
+Files: `panzer-situation-data.js` initializes the offline library; `situation-data/` contains its generated components; `panzer-situation-state.js` owns validated setup and engagement draft state; `panzer-situation-view.js` supplies the UI; `assets/panzer-leader-04/` holds the manifest, counter images, boards and original card excerpt. Keep these files with the viewer. Artwork attribution: Imaginative Strategist; original Situation Card: Avalon Hill Panzer Leader. Archive source paths and hashes are retained in the manifest. The game card's date and unit attribution are not independent historical verification.
 
 
 ## Authoritative Situation contract
 
-`schemas/situation.schema.json` is the JSON Schema 2020-12 contract. `sources/situations/panzer-leader-04.json` is the canonical St. Lo instance. Edit that instance, then run `python build_situation.py`. The regular `build.py` invokes the same validator. The offline `panzer-situation-data.js` and asset manifest are generated outputs. The Atlas renderer and Situation exports consume that generated package; neither the images nor a hand-edited JavaScript roster are the source of truth. Runtime planning saves remain separate from the immutable Situation definition.
+`schemas/situation.schema.json` is the JSON Schema 2020-12 contract. `sources/situations/panzer-leader-04.json` is the canonical St. Lo instance. Edit that instance, then run `python build_situation.py`. The regular `build.py` invokes the same validator. The offline `panzer-situation-data.js`, `situation-data/` components and asset manifest are generated outputs. The Atlas renderer and Situation exports consume that generated package; neither the images nor a hand-edited JavaScript roster are the source of truth. Runtime planning saves remain separate from the immutable Situation definition.
 
 The contract includes:
 
@@ -491,7 +491,7 @@ The source victory clauses and special rules are preserved. Turn execution, comb
 ### Rebuilding and validating Situation packages
 
 - `import_situation_batch.py` reproduces the three new packages and shared assets from the local archive. Requires Pillow and pypdfium2; the archive root is declared at the top of the script. Run it only when regenerating the reviewed imports, because it replaces those source packages and their campaign registrations.
-- `build_situation.py` validates all numbered `sources/situations/panzer-leader-*.json` packages and the campaign registry, then emits `panzer-situation-data.js`. Requires jsonschema and existing builder dependencies. `PANZER_SITUATION_DATA` remains the St. Lo compatibility entry; `PANZER_SITUATION_LIBRARY` contains the seventeen packages.
+- `build_situation.py` validates all numbered `sources/situations/panzer-leader-*.json` packages and the campaign registry, then emits the initializer and `situation-data/` components. Requires jsonschema and existing builder dependencies. `PANZER_SITUATION_DATA` remains the St. Lo compatibility entry; `PANZER_SITUATION_LIBRARY` contains the seventeen packages.
 - `test_situation_batch.cjs` covers all rosters, assets, restricted setup, loaded mortars, launch, dated handoff drafts, separate saves and shared UI handlers. `test_panzer_situation.cjs` retains St. Lo regression coverage. These use a DOM test double and do not replace browser visual checks.
 - `test_situation_schema.py` and `test_ui_encoding.py` validate package structure and reject UI text encoding corruption.
 
@@ -573,3 +573,17 @@ During embedded Situation setup the timeline is automatically collapsed and its 
 Each active unit type has Deploy All and Clear All icon controls with tooltips. Deploy All highlights a suggested origin, then waits for a legal hex click. Only unplaced units of that type are allocated, in increasing hex-distance rings on that board, skipping unavailable hexes. Placement is atomic if space is insufficient. Clear All removes only that type. Mandatory loaded transport pairs use individual carrier placement. Counters can be dragged between legal hexes during their side's setup; Space+left drag and middle drag still pan.
 
 Board orientation audit: reviewed the original card diagrams for imported Situations 05-20. The recorded board order, layout axis and rotations agree with the diagrams. Board headings and setup paragraphs have been removed from the joined geometry so vertical joins are edge-to-edge as well as horizontal joins. Board order and setup instructions are available in the toolbar legend tooltip and Situation Card.
+
+### Situation data components
+
+The former 51.91 MiB aggregate is split by Situation and responsibility:
+
+- `panzer-situation-data.js`: small library initializer.
+- `situation-data/campaign-registry.js`: campaign membership and numbering.
+- `situation-data/panzer-leader-NN.js`: one Situation definition, including counters, instances, rules, deployment constraints and provenance.
+- `situation-data/panzer-leader-NN-geography.js`: that Situation's boards, hex terrain, topology, places, routes, seams and illustration layout.
+- `situation-data/scripts.json`: ordered script manifest used by tests. The builder writes the corresponding explicit script tags into all four consuming HTML pages.
+
+Definitions and geography assemble into the existing `PANZER_SITUATION_LIBRARY` interface. `PANZER_SITUATION_DATA` references the same St. Lo object rather than embedding a second copy. Geography remains scoped to each Situation because board assemblies, seams and feature references can differ even for the same printed board letter. Loading uses synchronous classic scripts, preserving offline file access and startup order. This is a packaging change, not lazy loading; the complete library still loads at startup.
+
+Edit canonical JSON under `sources/situations/`, then run `python build_situation.py`. Do not edit generated components directly. Run `node test_situation_data.cjs` to verify exact reconstruction of every canonical source, registry, compatibility alias and all consuming pages' script order.
