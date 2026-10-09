@@ -145,11 +145,15 @@ public static class ScenarioA1TerrainCosts
 
         // A4.133, B10.4, B10.51 (ruling R10.3): one level up doubles the cost; each intermediate level of an Abrupt Elevation Change costs two MF up
         // or one down, and the last level its own cost, doubled up.
+        // B.2 (p. 112; pass 35, task 35.5): the COT is the hex's cost plus that of the Artificial Terrain in it, so SMOKE's MF is doubled with the rest
+        // one level up (2 x 2 = 4 MF, not 3), but not across an Abrupt Elevation Change, which B.2 excepts.
+        var smoke = smokeHalfMf();
         cost = rise switch
         {
-            >= 1 => (4 * (rise - 1)) + (2 * cost),
-            <= -2 => (2 * (-rise - 1)) + cost,
-            _ => cost,
+            1 => 2 * (cost + smoke),
+            >= 2 => (4 * (rise - 1)) + (2 * cost) + smoke,
+            <= -2 => (2 * (-rise - 1)) + cost + smoke,
+            _ => cost + smoke,
         };
 
         // B9.4 (ruling R10.1): one MF more across a wall or hedge, not across a road gap in it.
@@ -158,9 +162,8 @@ public static class ScenarioA1TerrainCosts
             cost += 2;
         }
 
-        var smoke = smokeHalfMf();
         var (extra, roadRate) = allMf ? (0, road) : weather(terrain, road, rise);
-        return (new InfantryEntry(cost + smoke + extra, terrain, roadRate && smoke == 0, allMf, minimumOnly, rise != 0), null);
+        return (new InfantryEntry(cost + extra, terrain, roadRate && smoke == 0, allMf, minimumOnly, rise != 0), null);
     }
 
     /// <summary>

@@ -221,8 +221,14 @@ public static class ScenarioA1FireMapRules
             .Select(entry => entry.Range).ToHashSet();
         var grain = los.Hindrances.Any(entry => entry.Terrains.Contains("Grain"));
         var (vehicleDrm, vehicleReason) = vehicleHindrance(mapRanges);
-        return vehicleReason is not null ? (vehicleReason, null) : (null, new FireLos(los.Blocked, mapRanges.Count + vehicleDrm, attributed, grain));
+        // B.10 (p. 113; pass 35, task 35.5): any combination of SMOKE, weather, and terrain Hindrance of +6 or more blocks the LOS, so the terrain's count
+        // with the vehicles', wrecks', and SMOKE's is tested here; the map's own total was tested alone until now.
+        var total = mapRanges.Count + vehicleDrm;
+        return vehicleReason is not null ? (vehicleReason, null) : (null, new FireLos(los.Blocked || HindranceBlocks(total), total, attributed, grain));
     }
+
+    /// <summary>B.10: a LOS Hindrance DRM of +6 or more blocks the LOS completely.</summary>
+    public static bool HindranceBlocks(int hindranceDrm) => hindranceDrm >= 6;
 
     /// <summary>
     /// The group's map facts from its Locations (A7.5): the first Location's range, level, and LOS for the group; each firer's own when the group spans
