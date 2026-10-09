@@ -454,8 +454,12 @@ public static class ScenarioCards
     private static CardAreaFacts AreaFacts(ScenarioCard card, ScenarioCardSetup area) => new(area.Id, area.Kind, area.Hexes, area.Board is not null,
         card.Boards.Any(board => board.Board == area.Board), area.From, area.To, area.Turn, area.Edge, area.Counters, area.MinMmc);
 
-    private static CardConditionFacts ConditionFacts(ScenarioCardCondition condition) =>
-        new(condition.Type, condition.Side, condition.Buildings, condition.Versus, condition.Margin, condition.Building, condition.AtLeast, condition.Ratio, condition.Edge, condition.Near);
+    /// <summary>A Victory Condition as Rules reads it (pass 32.j).</summary>
+    public static CardConditionFacts ConditionFacts(ScenarioCardCondition condition)
+    {
+        ArgumentNullException.ThrowIfNull(condition);
+        return new(condition.Type, condition.Side, condition.Buildings, condition.Versus, condition.Margin, condition.Building, condition.AtLeast, condition.Ratio, condition.Edge, condition.Near);
+    }
 
     /// <summary>The units a side starts with: everything but what enters after Turn 1 (A16.1).</summary>
     private static IEnumerable<(UnitDefinition Definition, int Count)> Starting(ScenarioCardSide side, UnitCatalog catalog) =>
