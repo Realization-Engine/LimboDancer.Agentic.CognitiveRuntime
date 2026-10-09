@@ -1712,6 +1712,8 @@ Passes 90, 125, 140, and 165 lose part of their titles: 90 is night alone, 125 i
 
 **Pass 35: Repairs: wrong results in rules already built** (new; 45 rows of the inventory). Counters: none. Needs first: nothing; it comes first.
 
+**Status, 2026-10-09:** built on the branch `feature/asl-backlog-pass-35`, one commit a task, with the [design](<Passes/ASL Unit Backlog Pass 35 Design.md>) written as it went; not merged. The seventeen tasks are built, with ADJACENT (A.8) taken from pass 40 at the user's word and the orchard's season in the LOS (B14.2, part of 35.6) moved to pass 135. Rulings R35.1 to R35.10; the backlog's section 55; 59 rows of the inventory changed, of which 19 are now built. By the clock the build stands at 6:53 through the design's section 13, against the 6:45 below. The reviews, the Studio check, and the gate are still to come. **The row counts of the table above are the plan's, as approved.** The inventory's pass column now differs from them by the rows this pass finished or moved on: pass 35 holds none; pass 40 one fewer (A.8, built); and the remainders of 26 rows, with B14.2, went to passes 45 (+1), 60 (+1), 65 (+2), 70 (+1), 75 (+1), 80 (+1), 95 (+1), 100 (+4), 105 (+5), 110 (+6), 115 (+1), 125 (+1), 135 (+1, B14.2), and 185 (+1). Each is a part of a rule those passes already hold, so no estimate is changed here; a pass's own design sizes what it finds.
+
 | Task | Rules | Estimate |
 |---|---|---|
 | 35.1 One wound procedure: the Wound Severity dr in a rout's Interdiction, a Mopping Up casualty, and a PF firer's Casualty Reduction, and a second wound's dr with +1 | A17.11 (p. 85) | 0:20 |
