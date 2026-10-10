@@ -4,7 +4,7 @@ The review of pass 35, written on 2026-10-10 after the five reviews of 2026-10-0
 
 ## Status
 
-Built on branch `feature/asl-backlog-pass-35`, local and not pushed: the seventeen tasks of the design in three sessions (to 5dd9934), then in the fourth session the five reviews, their fixes in seven commits (d27713d2 to 39d5045c), the Studio check, and these documents. **The gate was run on 2026-10-10 at the user's word, at c22b70ce, and passed** (the section "The gate" below). Not merged as this is written.
+Built on branch `feature/asl-backlog-pass-35`: the seventeen tasks of the design in three sessions (to 5dd9934), then in the fourth session the five reviews, their fixes in seven commits (d27713d2 to 39d5045c), the Studio check, and these documents. **The gate was run on 2026-10-10 at the user's word, at c22b70ce, and passed** (the section "The gate" below). **Merged into main as 5355b7f6 on 2026-10-10 at the user's word and pushed; the CI run of the merge passed.** Main had moved six commits past the branch point, to 4b30d429 (the europe-hex-map prototype and eight documents); no file was changed on both sides, the merge had no conflict, and CI on the merged tree is the test of the two together.
 
 Run in the fourth session, and no wider: MapStudio built with warnings as errors after every fix, and the Rules, Play, and page test classes each fix touches. At the last run 127 Rules tests, 105 Play tests, and 39 page tests passed in those classes.
 
