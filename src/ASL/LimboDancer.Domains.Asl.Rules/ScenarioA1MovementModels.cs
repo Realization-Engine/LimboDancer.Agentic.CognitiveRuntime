@@ -138,7 +138,7 @@ public sealed record WallAdvantageFacts(WallAdvantageLocationFacts One, WallAdva
 
 /// <summary>
 /// The facts of Height Advantage (B10.31; ruling R10.4): the target hex's base level and Location level, each firer's level, whether the moving stack is in
-/// the target Location in the MPh with the base level of the hex it left and the target's hexside toward it (null when unread or not adjacent), and the
+/// the target Location in the MPh (or a routing unit is entering it, B1.14) with the base level of the hex it left and the target's hexside toward it (null when unread or not adjacent), and the
 /// hexsides each firer's LOS crosses into the target hex, read by index only when the rule asks.
 /// </summary>
 public sealed record HeightAdvantageFacts(
@@ -172,12 +172,6 @@ public sealed record MovingUnitFacts(
     int MfSpent,
     bool HalfMfSpent,
     IReadOnlyList<string>? MovedWith);
-
-/// <summary>
-/// The facts of ADJACENT (A.8, p. 43) for two Locations: whether their hexes are adjacent and both read, each Location's elevation (its hex's base
-/// level plus its level), and the hexside between them (null when the map cannot give it).
-/// </summary>
-public sealed record AdjacencyFacts(bool Adjacent, bool FromRead, bool ToRead, int FromElevation, int ToElevation, CrossedHexsideFacts? Crossed);
 
 /// <summary>
 /// One unit of the game as the scans for a seeing enemy read it (A12.14, A12.34): active, its side, a Dummy, aboard a vehicle, Broken as a

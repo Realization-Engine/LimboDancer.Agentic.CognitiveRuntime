@@ -167,6 +167,30 @@ public sealed class SetupPlansPageTests : IDisposable
         Assert.Equal(["g-1", "g-2"], state.Units.Where(unit => unit.Side == "german").Select(unit => unit.Id).Order(StringComparer.Ordinal));
     }
 
+    // Pass 35, task 35.16 (pass 31d's row; design D12, ruling R31c.6): the setup map's overlay is built again from the draft, and each draft
+    // counter's tooltip and accessible name are led by its hex and by the counter as it reads, since a draft has no tag until it is in the game.
+    [Fact]
+    public void TheSetupMapLeadsEachDraftCounterWithItsHexAndItsCounter()
+    {
+        SaveTwoPlans(SaveCard());
+        var page = Start();
+        page.Find("#play-handover-confirm").Click();
+        page.Find("#use-plan-apart").Click();
+        page.WaitForAssertion(() => Assert.Contains("data-unit-id=\"draft:g-2\"", context.MapLayer("setUnits"), StringComparison.Ordinal));
+
+        var counters = System.Text.RegularExpressions.Regex.Matches(context.MapLayer("setUnits"), "<g data-unit-id=\"(draft:[^\"]+)\"[^>]*aria-label=\"([^\"]*)\"[^>]*>\\s*<title>([^<]*)</title>");
+        Assert.Equal(["draft:g-1", "draft:g-2"], counters.Select(match => match.Groups[1].Value).Order(StringComparer.Ordinal));
+        foreach (System.Text.RegularExpressions.Match counter in counters)
+        {
+            var hex = counter.Groups[1].Value == "draft:g-1" ? "A1" : "B1";
+            Assert.StartsWith($"{DisplayText.Place(1, $"{Board}:{hex}:0")}: 4-6-7 squad. ", counter.Groups[2].Value, StringComparison.Ordinal);
+            Assert.Equal(counter.Groups[2].Value, counter.Groups[3].Value);
+            Assert.DoesNotContain(counter.Groups[1].Value["draft:".Length..], counter.Groups[2].Value, StringComparison.Ordinal);
+        }
+
+        Assert.Contains("drawn paler", Text(page, "#setup-draft-note"), StringComparison.Ordinal);
+    }
+
     [Fact]
     public void ACounterWithNoHexIsSaidBeforeTheGateIsAsked()
     {

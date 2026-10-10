@@ -441,6 +441,35 @@ public sealed class ScenarioA1FirePackageTests
     }
 
     [Fact]
+    public void GrainOutOfSeasonOnALosIsOpenGround()
+    {
+        // B15.2, B15.6 (p. 129; pass 35, task 35.6): the map read counts grain as a Hindrance from June to September only, and says grain is on
+        // the LOS whatever the month; a LOS through grain alone is attributed in every month.
+        var los = new LosReadFacts(true, "Clear", string.Empty, false, 3, [new LosHindranceFacts(1, 1, ["Grain"]), new LosHindranceFacts(2, 1, ["Grain"])]);
+        FireLos Read(int? month) => ScenarioA1FireMapRules.LocationLos(los, month, true, _ => (0, null)).Los!;
+        Assert.Equal(new FireLos(false, 2, true, true), Read(6));
+        Assert.Equal(new FireLos(false, 2, true, true), Read(9));
+        Assert.Equal(new FireLos(false, 0, true, true), Read(5));
+        Assert.Equal(new FireLos(false, 0, true, true), Read(10));
+        Assert.Equal(new FireLos(false, 0, true, true), Read(null));
+
+        // The attack through it in November is decided, with no Hindrance DRM; before the pass it was refused as an unattributed Hindrance.
+        var rolls = Rolls([3, 4], checks: new()
+        {
+            ["de-squad"] = [2, 3],
+            ["de-hs"] = [2, 3]
+        });
+        var result = ScenarioA1FireCalculator.Resolve(U18(rolls) with
+        {
+            Los = Read(11),
+            ScenarioMonth = 11
+        }, Reference);
+        Assert.Equal(FireResolution.Resolved, result.Disposition);
+        Assert.DoesNotContain(result.Arithmetic!.Drm, item => item.Name == "los-hindrance");
+        Assert.Equal(9, result.Arithmetic.FinalDr);
+    }
+
+    [Fact]
     public async Task TheResolverConcludesDefinitiveAndRefusesExtraOrStaleFacts()
     {
         var descriptor = (await new ScenarioA1FirePackage().ResolveAsync(ScenarioA1FirePackage.Identity)).Package!;

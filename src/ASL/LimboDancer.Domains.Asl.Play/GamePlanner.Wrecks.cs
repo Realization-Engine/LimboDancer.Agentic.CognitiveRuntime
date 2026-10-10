@@ -78,6 +78,9 @@ public sealed partial class GamePlanner
             var hindering = state.Units.Where(unit => (unit.Status == InstanceStatus.Active ? IsAfv(unit)
                     : unit.Status == InstanceStatus.Wrecked && !IsBurning(state, unit))
                 && state.Location(unit.Id)?.Location is { } at && at.Board == board && at.Hex == hex && Standing(state, unit)
+                && ScenarioA1VehicleSightRules.BypassHinders(unit.Straddling is not null, () => unit.Straddling is { } lane
+                    && (los.Crossed.Any(item => item.Board == lane.Board && item.Hex == lane.Hex) || (from.Board == lane.Board && from.Hex == lane.Hex)
+                        || (target.Board == lane.Board && target.Hex == lane.Hex)))
                 && ReadLocation(state, at) is { } atRead && atRead.Hex.BaseLevel + atRead.Level.Level == fromElevation)
                 .Select(unit => state.Location(unit.Id)!.Location).FirstOrDefault();
             if (hindering is null)

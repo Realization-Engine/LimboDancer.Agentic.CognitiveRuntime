@@ -912,8 +912,9 @@ public static class ScenarioA1FireCalculator
                 weapons.Add((FireOverrunEffect.MainArmament, aamg));
             }
         }
-        else if (definition.Caliber is not null && overrun.MainArmamentMalfunctioned != true)
+        else if (definition.Caliber is not null && overrun.MainArmamentMalfunctioned != true && !definition.TurretBarredWhileCe(overrun.CrewExposed))
         {
+            // D1.321, D1.322 (pass 35, task 35.13 c): a CE RST or 1MT AFV fires neither its MA nor its CMG.
             weapons.Add((FireOverrunEffect.MainArmament, 0));
         }
 
@@ -922,7 +923,7 @@ public static class ScenarioA1FireCalculator
             weapons.Add((FireOverrunEffect.BowMg, bmg));
         }
 
-        if (definition.CoaxialMg is { } cmg && overrun.CmgMalfunctioned != true)
+        if (definition.CoaxialMg is { } cmg && overrun.CmgMalfunctioned != true && !definition.TurretBarredWhileCe(overrun.CrewExposed))
         {
             weapons.Add((FireOverrunEffect.CoaxialMg, cmg));
         }
@@ -1017,7 +1018,7 @@ public static class ScenarioA1FireCalculator
             }
 
             if (attack.Los is { } los && (los.HindranceAttributed != true || los.HindranceDrm < 0
-                || (los.GrainInLos == true && attack.ScenarioMonth is not (>= 6 and <= 9))))
+                || (los.GrainInLos == true && attack.ScenarioMonth is null)))
             {
                 undecided.Add("asl.a1.fire.hindrance-unattributed");
             }
@@ -1037,7 +1038,7 @@ public static class ScenarioA1FireCalculator
             // Ruling R10.4 (backlog pass 10): Infantry fire at another level is decided with the map read's LOS and Hindrance.
             var firers = attack.Firers!;
             if (firers.Select(item => LosOf(attack, item)!).Any(los => los.HindranceAttributed != true || los.HindranceDrm < 0
-                || (los.GrainInLos == true && attack.ScenarioMonth is not (>= 6 and <= 9))))
+                || (los.GrainInLos == true && attack.ScenarioMonth is null)))
             {
                 undecided.Add("asl.a1.fire.hindrance-unattributed");
             }
@@ -1714,7 +1715,8 @@ public static class ScenarioA1FireCalculator
             else if (hit is not null)
             {
                 // C.6: the Gun's HE FP column; C3.53, C.4: never halved for a concealed target; C3.71: doubled by a Critical Hit.
-                known = vsConcealed = hit.Firepower!.Value * (hit.CriticalHit == true ? 2 : 1);
+                // C3.53, B16.31 (pp. 170, 130; pass 35, task 35.7): halved into a marsh, beside any halving of the Area Target Type.
+                known = vsConcealed = hit.Firepower!.Value * (hit.CriticalHit == true ? 2 : 1) / (attack.TargetTerrain == "marsh" ? 2m : 1m);
             }
             else if (attack.Overrun is { } overrun)
             {
@@ -1980,6 +1982,12 @@ public static class ScenarioA1FireCalculator
             if (attack.VehicleFire is { StunRecovery: true } recovering)
             {
                 drm.Add(new FireModifier("stun-recovery:" + recovering.VehicleId, 1m, "D5.34"));
+            }
+
+            // D5.34 (p. 203; pass 35, task 35.13 d): and to its OVR DR.
+            if (attack.Overrun is { StunRecovery: true } overrunning)
+            {
+                drm.Add(new FireModifier("stun-recovery:" + overrunning.VehicleId, 1m, "D5.34"));
             }
 
             // A7.531: the leadership of the directing leader, the worst of them for a group spanning Locations; A17.3: one
@@ -3278,7 +3286,8 @@ public static class ScenarioA1FireCalculator
         {
             if (berserk)
             {
-                return 10 + (fanatic ? 1 : 0);
+                // A15.42: a berserk unit's Morale Level is 10. A.18 (pass 35, task 35.3): Fanaticism does not raise it to 11, as ruling R30.3 had it.
+                return ScenarioA1Definitions.MoraleCeiling(10 + (fanatic ? 1 : 0));
             }
 
             int? level = definition.IsHero ? (wounded ? definition.WoundedMorale : definition.Morale)
@@ -3290,7 +3299,8 @@ public static class ScenarioA1FireCalculator
                 return Math.Min(value, wounded ? 9 : 10);
             }
 
-            return level;
+            // A.18 (pass 35, task 35.3): never beyond 10.
+            return level is { } raised ? ScenarioA1Definitions.MoraleCeiling(raised) : level;
         }
 
         /// <summary>The leadership modifier, one worse when wounded (A17.3).</summary>

@@ -276,6 +276,19 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             return Refused(scope, label, expected, overrunFirst);
         }
 
+        // Pass 35, task 35.15: fortification, rubble, and Flame counters have no rules yet; a game with them is refused, not played wrongly.
+        var settingUp = action.Id.Value == "asl.game.setup";
+        if (ScenarioA1SequenceCalculator.UnbuiltCounterBar(settingUp, UnbuiltKinds(settingUp
+            ? arguments.TryGetProperty("placements", out var placing) && placing.ValueKind == JsonValueKind.Array
+                ? placing.EnumerateArray().Select(item => item.ValueKind == JsonValueKind.Object && item.TryGetProperty("kind", out var kind) ? kind.GetString() : null)
+                : []
+            : existing.Count > 0 && Replay(existing).Current is { } held
+                ? held.Entities.Where(entity => entity.Status == InstanceStatus.Active).Select(entity => (string?)entity.Kind)
+                : [])) is { } unbuilt)
+        {
+            return Refused(scope, label, expected, unbuilt);
+        }
+
         var plan = action.Id.Value switch
         {
             "asl.game.setup" => PlanSetup(scope, arguments, existing, attemptId, expected, ref label, actor ?? "unknown"),
@@ -856,14 +869,14 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
 
             // D5.341, D5.41 (ruling R5.18): at the end of the Player Turn of its Recall, an immobilized Recalled AFV is Abandoned.
             foreach (var vehicle in state.Units.Where(unit => ScenarioA1SequenceCalculator.RecallAbandoned(phasing != state.PhasingSide, unit.Status == InstanceStatus.Active, LiveFire.IsVehicle(unit),
-                Is(unit, Conditions.Recalled), Is(unit, Conditions.Immobilized), Is(unit, Conditions.Abandoned))).OrderBy(unit => unit.Id, StringComparer.Ordinal))
+                Is(unit, Conditions.Recalled), Is(unit, Conditions.Immobilized), Is(unit, Conditions.Abandoned), Is(unit, Conditions.Bogged))).OrderBy(unit => unit.Id, StringComparer.Ordinal))
             {
                 foreach (var (type, abandon) in AbandonEvents(vehicle, attemptId))
                 {
                     events.Add(Event(scope, attemptId, events.Count + 1, expected, type, abandon, null, null, [changed]));
                 }
 
-                reasons.Add(ScenarioA1SequenceCalculator.RecallAbandonedText(vehicle.Id));
+                reasons.Add(ScenarioA1SequenceCalculator.RecallAbandonedText(vehicle.Id, Is(vehicle, Conditions.Bogged) && !Is(vehicle, Conditions.Immobilized)));
             }
         }
     }

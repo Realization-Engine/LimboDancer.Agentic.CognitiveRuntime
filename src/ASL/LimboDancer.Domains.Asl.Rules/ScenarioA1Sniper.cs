@@ -172,7 +172,7 @@ public static class ScenarioA1Sniper
         : SniperEffect.None;
 
     /// <summary>A17.11: a Wound Severity dr of 5 or more (+1 for a unit already wounded) is mortal.</summary>
-    public static bool Mortal(int severityDr, bool alreadyWounded) => severityDr + (alreadyWounded ? 1 : 0) >= 5;
+    public static bool Mortal(int severityDr, bool alreadyWounded) => ScenarioA1Wounds.Mortal(severityDr, alreadyWounded);
 
     /// <summary>A7.302: a squad with a HS definition is Reduced to it; any other unit is eliminated.</summary>
     public static string ReductionResult(bool squadWithHalfSquad) => squadWithHalfSquad ? CasualtyReduced : Eliminated;

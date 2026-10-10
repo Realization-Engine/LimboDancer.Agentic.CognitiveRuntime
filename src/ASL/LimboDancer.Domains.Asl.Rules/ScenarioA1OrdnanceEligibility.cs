@@ -60,7 +60,9 @@ public static class ScenarioA1OrdnanceEligibility
     {
         ArgumentNullException.ThrowIfNull(facts);
         return new OrdnanceVehicleTarget(facts.Id, facts.Definition, null, null,
-            facts.Motion || facts.MovedThisPlayerTurn, facts.Motion,
+            // C6.3, D2.13 (pass 35, task 35.13): Non-Stopped is under a Motion counter, or started in its MPh and not stopped since; never while
+            // bogged or immobilized, whose Bog Removal is its Start MP (D8.3).
+            facts.Motion || facts.MovedThisPlayerTurn, facts.Motion || (facts.MovingUnstopped && !facts.Bogged && !facts.Immobilized),
             facts.Concealed || facts.Hidden,
             facts.Stunned || facts.Shocked || facts.UnconfirmedKill || facts.Recalled,
             // D5.5: a Stunned or Shocked crew takes no Immobilization TC, nor does an absent crew or one already immobilized.
@@ -68,6 +70,7 @@ public static class ScenarioA1OrdnanceEligibility
         {
             Abandoned = facts.Abandoned ? true : null,
             StunRecovery = facts.StunRecovery ? true : null,
+            Bypass = facts.Bypass ? true : null,
         };
     }
 
@@ -288,6 +291,9 @@ public static class ScenarioA1OrdnanceEligibility
             MpClaimed = vehicleTarget && mpHere is > 0 ? mpHere : null,
         };
 
+    /// <summary>A7.25 (p. 55; pass 35, task 35.10): ordnance uses Opportunity Fire only if fired by Infantry, in the AFPh, from beneath its Bounding Fire counter.</summary>
+    public static bool? OpportunityFirer(string? phase, bool infantry, bool boundingFire) => phase == "afph" && infantry && boundingFire ? true : null;
+
     /// <summary>A firing vehicle's facts (D5.2, D5.34, C7.42, D5.341, D2.4; rulings R7.10, R7.11): a CT AFV is BU unless its crew is exposed.</summary>
     public static OrdnanceVehicleFirer VehicleFirer(bool crewExposed, bool motion, bool stunned, bool shocked, bool unconfirmedKill, bool recalled, bool stunRecovery,
         bool moved) =>
@@ -369,6 +375,8 @@ public static class ScenarioA1OrdnanceEligibility
             {
                 MpInLos = recorded.Movement?.MpInLos,
                 OpenGround = recorded.Movement?.OpenGround,
+                Hazardous = recorded.Movement?.Hazardous,
+                InBogHex = recorded.Movement?.InBogHex,
             },
             SameHex = recorded.SameHex,
             CrewSeen = recorded.CrewSeen,

@@ -440,4 +440,46 @@ public sealed class ScenarioA1OrdnanceTests
         Assert.Contains(covered.Drm, item => item.Name == "case-q:afv-cover:de-wreck" && item.Value == 1 && item.Rule == "D9.3");
         Assert.Equal(plain.FinalDr + 1, covered.FinalDr);
     }
+
+    [Fact]
+    public void HeIsHalvedIntoAMarsh()
+    {
+        // C3.53, B16.31 (pp. 170, 130; pass 35, task 35.7): the 75mm's 12 FP is 6 into a marsh, which has no TEM (B16.3), so the To Hit DR is
+        // the same; in Open Ground the same hit attacks on the 12 column.
+        var open = Complete(With(German(), [2, 3]));
+        var marsh = Complete(With(German(terrain: "marsh"), [2, 3]));
+        Assert.Equal(OrdnanceResolution.Resolved, marsh.Disposition);
+        Assert.Equal(open.ToHit!.FinalDr, marsh.ToHit!.FinalDr);
+        Assert.Equal((12, 6), ((int)open.Hit!.Arithmetic!.ColumnFp!.Value, (int)marsh.Hit!.Arithmetic!.ColumnFp!.Value));
+
+        // C3.71: a Critical Hit doubles the FP before the marsh halves it: 24, then 12.
+        var critical = Complete(With(German(range: 1, terrain: "marsh"), [1, 2]));
+        Assert.True(critical.ToHit!.CriticalHit);
+        Assert.Equal(12, (int)critical.CriticalHit!.Arithmetic!.ColumnFp!.Value);
+    }
+
+    [Fact]
+    public void GrainOnAGunsLosIsDecidedOnceTheGameNamesItsMonth()
+    {
+        // B15.2, B15.6 (p. 129; pass 35, task 35.6): grain on the LOS outside June to September is Open Ground, so the map read counts no
+        // Hindrance for it and the shot is decided; only a game with no month leaves it undecided.
+        OrdnanceShot Shot(int? month, int hindrance) => With(German() with
+        {
+            Hit = German().Hit! with
+            {
+                Los = new FireLos(false, hindrance, true, true),
+                ScenarioMonth = month,
+            },
+        }, [2, 3]);
+
+        var winter = Complete(Shot(11, 0));
+        Assert.Equal(OrdnanceResolution.Resolved, winter.Disposition);
+        Assert.DoesNotContain(winter.ToHit!.Drm, item => item.Name.Contains("hindrance", StringComparison.Ordinal));
+        var summer = Complete(Shot(7, 1));
+        Assert.Equal(OrdnanceResolution.Resolved, summer.Disposition);
+        Assert.Equal(winter.ToHit.FinalDr + 1, summer.ToHit!.FinalDr);
+        var undated = Complete(Shot(null, 0));
+        Assert.NotEqual(OrdnanceResolution.Resolved, undated.Disposition);
+        Assert.Contains("asl.a1.ordnance.hindrance-unattributed", undated.Reasons);
+    }
 }

@@ -18,7 +18,15 @@ public sealed record VehicleCloseCombatVehicle(
     bool? Abandoned,
     bool? MainArmamentMalfunctioned,
     bool? BmgMalfunctioned,
-    bool? CmgMalfunctioned);
+    bool? CmgMalfunctioned)
+{
+    /// <summary>Whether the vehicle is under a Stun "+1" counter (D5.34, p. 203; pass 35, task 35.13 d): one more on its CC DR; null is false.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public bool? StunRecovery
+    {
+        get; init;
+    }
+}
 
 /// <summary>The rolls of one CC attack with a vehicle: its DR, the Unlikely Kill dr after an Original 2, and the Random Selection and Wound Severity drs of its effects.</summary>
 public sealed record VehicleCloseCombatRolls(IReadOnlyList<int>? Attack)
@@ -418,7 +426,8 @@ public static class ScenarioA1VehicleCloseCombat
         var vehicle = facts.Vehicle!;
         var definition = reference.Definitions[vehicle.DefinitionId!];
         decimal fp = 0;
-        if (definition.CoaxialMg is { } cmg && vehicle.CmgMalfunctioned != true)
+        // D1.321, D1.322 (pass 35, task 35.13 c): a CE RST or 1MT AFV does not fire its CMG.
+        if (definition.CoaxialMg is { } cmg && vehicle.CmgMalfunctioned != true && !definition.TurretBarredWhileCe(vehicle.CrewExposed))
         {
             fp += cmg;
         }
@@ -459,6 +468,12 @@ public static class ScenarioA1VehicleCloseCombat
             if (defender.Cx == true)
             {
                 own.Add(new FireModifier("vs-cx", -1m, "A4.51"));
+            }
+
+            // D5.34 (p. 203; pass 35, task 35.13 d): a vehicle under a Stun "+1" counter adds one to its CC DR.
+            if (facts.Vehicle!.StunRecovery == true)
+            {
+                own.Add(new FireModifier("stun-recovery", 1m, "D5.34"));
             }
 
             var final = original + (int)own.Sum(item => item.Value);

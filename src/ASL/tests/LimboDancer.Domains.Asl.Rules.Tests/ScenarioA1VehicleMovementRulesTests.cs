@@ -194,11 +194,27 @@ public sealed class ScenarioA1VehicleMovementRulesTests
     }
 
     [Fact]
+    public void TheEsbDrmFollowsTheManufacturersNationality()
+    {
+        // D2.5 (p. 198; pass 35, task 35.13): the ESB DRM Table. Until pass 35 every nationality but German and Russian took +3.
+        Assert.Equal(0, ScenarioA1VehicleMovementCalculator.EsbNationalDrm("american"));
+        Assert.Equal(0, ScenarioA1VehicleMovementCalculator.EsbNationalDrm("czech"));
+        Assert.Equal(1, ScenarioA1VehicleMovementCalculator.EsbNationalDrm("russian"));
+        Assert.Equal(1, ScenarioA1VehicleMovementCalculator.EsbNationalDrm("chinese"));
+        Assert.Equal(2, ScenarioA1VehicleMovementCalculator.EsbNationalDrm("british"));
+        Assert.Equal(2, ScenarioA1VehicleMovementCalculator.EsbNationalDrm("german"));
+        foreach (var other in new[] { "french", "italian", "finnish", "axis-minor", null })
+        {
+            Assert.Equal(3, ScenarioA1VehicleMovementCalculator.EsbNationalDrm(other));
+        }
+    }
+
+    [Fact]
     public void BypassReadsTheWreckPenaltyOnlyForANewHex()
     {
-        Assert.Equal(4, ScenarioA1VehicleTerrainCosts.BypassHalfMp(2, 0, false, false, Never<int>("wrecks"), false, false, "fully-tracked"));
-        Assert.Equal(8, ScenarioA1VehicleTerrainCosts.BypassHalfMp(2, 0, false, true, () => 2, true, false, "fully-tracked"));
-        Assert.Equal(12, ScenarioA1VehicleTerrainCosts.BypassHalfMp(2, 0, false, false, Never<int>("wrecks"), false, true, "truck"));
+        Assert.Equal(4, ScenarioA1VehicleTerrainCosts.BypassHalfMp(2, 0, false, false, Never<int>("wrecks"), false, "fully-tracked"));
+        Assert.Equal(6, ScenarioA1VehicleTerrainCosts.BypassHalfMp(2, 0, false, true, () => 2, false, "fully-tracked"));
+        Assert.Equal(12, ScenarioA1VehicleTerrainCosts.BypassHalfMp(2, 0, false, false, Never<int>("wrecks"), true, "truck"));
     }
 
     [Fact]
@@ -261,6 +277,26 @@ public sealed class ScenarioA1VehicleMovementRulesTests
         Assert.Equal(1, ScenarioA1RecallCalculator.ExitHalfMp(8, true, false));
         Assert.Equal(2, ScenarioA1RecallCalculator.ExitHalfMp(8, true, true));
         Assert.Equal(8, ScenarioA1RecallCalculator.ExitHalfMp(8, false, true));
+
+        // E3.724, E3.7331 (pass 35, task 35.13 a): in Ground or Deep Snow an exit by road costs a full MP, as an entry by road does.
+        Assert.Equal(2, ScenarioA1RecallCalculator.ExitHalfMp(8, true, false, snow: true));
+        Assert.Equal(8, ScenarioA1RecallCalculator.ExitHalfMp(8, false, false, snow: true));
+
+        // E1.52, E3.9 (pass 35, task 35.14): the night's and the weather's MP are added to an exit as to an entry.
+        Assert.Equal(3, ScenarioA1RecallCalculator.ExitHalfMp(8, true, false, weatherHalfMp: 2));
+        Assert.Equal(10, ScenarioA1RecallCalculator.ExitHalfMp(8, false, false, weatherHalfMp: 2));
+
+        // E3.6 (p. 229 to 230; the Rules boundary review): on an unpaved road in Mud "the road bonus ... is NA and Open Ground movement COT applies",
+        // for the exit as for an entry; a paved road is not affected. The road rate itself is one member for both.
+        Assert.True(ScenarioA1VehicleTerrainCosts.MudTurnsRoadOff(road: true, mud: true, pavedRoad: false));
+        Assert.False(ScenarioA1VehicleTerrainCosts.MudTurnsRoadOff(road: true, mud: true, pavedRoad: true));
+        Assert.False(ScenarioA1VehicleTerrainCosts.MudTurnsRoadOff(road: true, mud: false, pavedRoad: false));
+        Assert.False(ScenarioA1VehicleTerrainCosts.MudTurnsRoadOff(road: false, mud: true, pavedRoad: false));
+        Assert.Equal("open-ground", ScenarioA1RecallCalculator.ExitTerrain("woods", null, roadInMud: true));
+        Assert.Equal("woods", ScenarioA1RecallCalculator.ExitTerrain("woods", null, roadInMud: false));
+        Assert.Equal(1, ScenarioA1VehicleTerrainCosts.RoadHalfMp(false, false));
+        Assert.Equal(2, ScenarioA1VehicleTerrainCosts.RoadHalfMp(true, false));
+        Assert.Equal(2, ScenarioA1VehicleTerrainCosts.RoadHalfMp(false, true));
     }
 
     private static IEnumerable<(string Move, int HalfMp, int To)> Moves(int node, bool lowerBound) => node switch

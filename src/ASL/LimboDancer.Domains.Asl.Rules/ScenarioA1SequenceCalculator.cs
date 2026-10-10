@@ -87,7 +87,9 @@ public static class ScenarioA1SequenceCalculator
 
     /// <summary>
     /// Table player, pass 31: either side ends the Rout Phase, but not while the other side still has a unit that must rout: the end would eliminate it, or
-    /// make it surrender, on its opponent's word (A10.5, A20.21). <paramref name="owedSide"/> reads the side of such a unit, only for the RtPh's end.
+    /// make it surrender, on its opponent's word (A10.5, A20.21). <paramref name="owedSide"/> reads the side of such a unit, only for the RtPh's end: a
+    /// unit that still owes a rout (<see cref="ScenarioA1RoutCalculator.RoutStillOwed"/>; pass 35, task 35.17), since one that has routed, is pinned, has
+    /// no legal step, or surrenders instead can do nothing more, and waiting for it would keep the phase from ever ending.
     /// </summary>
     public static string? RoutPhaseEndBar(string action, string? phase, Func<string?> owedSide)
     {
@@ -135,6 +137,24 @@ public static class ScenarioA1SequenceCalculator
         return action is not ("asl.game.close-combat" or "asl.game.choose" or "asl.game.take-prisoner") && anyEvents && overrunAt() is { } at
             ? $"play.cc-overrun-first: the berserk Infantry OVR in {at} has its CC at once, before anything else happens (A4.152, A15.432)"
             : null;
+    }
+
+    /// <summary>
+    /// Whether a counter is one whose rules are not built (pass 35, task 35.15): a fortification (wire, foxhole, trench, minefield, roadblock, pillbox,
+    /// Fortified Building Location; B23.9, B26 to B30), a rubble counter (B24), or a Flame (B25.15). Passes 115 and 120 build them.
+    /// </summary>
+    public static bool UnbuiltCounter(string kind, bool fortification) => fortification || kind is "asl:rubble" or "asl:flame";
+
+    /// <summary>
+    /// Pass 35, task 35.15: a game that places or holds a counter whose rules are not built is refused, where until now it played as if the counter
+    /// were absent. <paramref name="kinds"/> are the unbuilt kinds as the vocabulary names them, read when the game has events or is being set up.
+    /// </summary>
+    public static string? UnbuiltCounterBar(bool setup, IReadOnlyList<string> kinds)
+    {
+        ArgumentNullException.ThrowIfNull(kinds);
+        return kinds.Count == 0 ? null
+            : $"play.unbuilt-counters: this game {(setup ? "would place" : "holds")} {string.Join(", ", kinds)} counters, whose rules are not built yet, so "
+                + $"{(setup ? "it is not set up with them" : "it cannot be played")} (B23.9, B24, B25.15, B26 to B30)";
     }
 
     /// <summary>Ruling R5.8: a pending choice is answered before anything else happens in the game; <paramref name="pendingChoice"/> reads its side and its words.</summary>
@@ -374,12 +394,16 @@ public static class ScenarioA1SequenceCalculator
     public static string CcVehicleCaptureText(string vehicleId) =>
         $"play.cc-vehicle-capture: {vehicleId} is unarmed and alone with enemy Infantry, so it is captured; the use of captured vehicles is not built (A11.52, A21.2)";
 
-    /// <summary>D5.341, D5.41 (ruling R5.18): at the end of the Player Turn of its Recall, an immobilized Recalled AFV not yet Abandoned is Abandoned by its crew.</summary>
-    public static bool RecallAbandoned(bool newPlayerTurn, bool active, bool vehicle, bool recalled, bool immobilized, bool abandoned) =>
-        newPlayerTurn && active && vehicle && recalled && immobilized && !abandoned;
+    /// <summary>
+    /// D5.341, D5.41 (ruling R5.18): at the end of a Player Turn, a Recalled AFV that is immobilized, or bogged (p. 203; pass 35, task 35.13 g), and not yet
+    /// Abandoned is Abandoned by its crew.
+    /// </summary>
+    public static bool RecallAbandoned(bool newPlayerTurn, bool active, bool vehicle, bool recalled, bool immobilized, bool abandoned, bool bogged = false) =>
+        newPlayerTurn && active && vehicle && recalled && (immobilized || bogged) && !abandoned;
 
     /// <summary>D5.341, D5.41, in words.</summary>
-    public static string RecallAbandonedText(string vehicleId) => $"play.recall-abandoned: {vehicleId} is Recalled and immobilized, so its crew Abandons it (D5.341, D5.41)";
+    public static string RecallAbandonedText(string vehicleId, bool bogged = false) =>
+        $"play.recall-abandoned: {vehicleId} is Recalled and {(bogged ? "bogged" : "immobilized")}, so its crew Abandons it (D5.341, D5.41)";
 
     // The owners' options (ruling R5.8) and the Massacre (A20.4; ruling R5.7).
 

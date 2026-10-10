@@ -214,4 +214,40 @@ public sealed class ScenarioA1Pass11Tests
                 Vehicle = Vehicle("attacker-halftrack")
             }, CloseCombat).Reasons);
     }
+
+    [Fact]
+    public void ACeRstTankFiresNeitherMaNorCmgInAnOvrOrInCcAndAStunPlusOneAddsToBothDrs()
+    {
+        // D1.321 (p. 194; pass 35, task 35.13 c): the T-34 M41 is RST: CE, it adds neither its MA's base nor its CMG to an OVR, and no CMG to CC. The
+        // PzKpfw IIIH, a T type, loses nothing by being CE.
+        static string[] Weapons(string definition, bool crewExposed) =>
+            [.. ScenarioA1FireCalculator.OverrunWeapons(new FireOverrun("v", definition, At, crewExposed, false, false, false, false), Fire.Definitions[definition]).Select(item => item.Weapon)];
+        Assert.Equal(["ma", "bmg", "cmg"], Weapons("defender-tank", false));
+        Assert.Equal(["bmg"], Weapons("defender-tank", true));
+        Assert.Equal(["ma", "bmg", "cmg"], Weapons("attacker-tank", true));
+        var units = new[] { Unit("de-s", "attacker-squad", "german") };
+        VehicleCloseCombatVehicle Russian(bool crewExposed, bool stunRecovery = false) =>
+            new("ru-v", "defender-tank", "russian", crewExposed, false, false, false, false, false, false, false, false)
+            {
+                StunRecovery = stunRecovery ? true : null
+            };
+        VehicleCloseCombatResolution ByTank(VehicleCloseCombatVehicle tank) =>
+            ScenarioA1VehicleCloseCombat.Resolve(new VehicleCloseCombatFacts("CCPh", At, tank, units, [], ["de-s"], true, false, new VehicleCloseCombatRolls([3, 3])), CloseCombat);
+        Assert.Equal(4m, ByTank(Russian(false)).AttackFirepower);
+        Assert.Contains("asl.a1.cc-vehicle.no-cc-armament", ByTank(Russian(true)).Reasons);
+
+        // D5.34 (p. 203; pass 35, task 35.13 d): under a Stun +1 counter the vehicle adds one to its OVR DR and to its CC DR.
+        var overrun = Overrun("attacker-tank", [3, 4]);
+        var stunned = Complete(overrun with
+        {
+            Overrun = overrun.Overrun! with
+            {
+                StunRecovery = true
+            }
+        });
+        Assert.Contains(stunned.Arithmetic!.Drm, item => item.Name == "stun-recovery:de-v" && item.Value == 1m);
+        Assert.DoesNotContain(Complete(overrun).Arithmetic!.Drm, item => item.Name.StartsWith("stun-recovery", StringComparison.Ordinal));
+        Assert.Equal(6, ByTank(Russian(false)).Defending!.Single().FinalDr);
+        Assert.Equal(7, ByTank(Russian(false, stunRecovery: true)).Defending!.Single().FinalDr);
+    }
 }

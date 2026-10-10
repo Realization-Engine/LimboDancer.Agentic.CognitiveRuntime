@@ -71,8 +71,11 @@ public static class ScenarioA1Definitions
     } =
         ["NMC", "1MC", "2MC", "3MC", "4MC", "K/1", "K/2", "K/3", "K/4", "1KIA", "2KIA", "3KIA", "4KIA", "5KIA", "6KIA", "7KIA"];
 
-    /// <summary>The terrain names that count as woods or building for the firer's CA change case (C5.11).</summary>
-    public static IReadOnlyList<string> WoodsOrBuilding { get; } = ["woods", "wooden-building", "stone-building"];
+    /// <summary>
+    /// The terrain names that count as woods, building, or rubble for a firing Gun: Case A and Case E doubled, Case B at +3, and the CA fixed after
+    /// its first shot (C5.11, C5.2, C5.5; p. 172). Rubble joined the list in pass 35 (task 35.10); the fact keeps its recorded name.
+    /// </summary>
+    public static IReadOnlyList<string> WoodsOrBuilding { get; } = ["woods", "wooden-building", "stone-building", "wooden-rubble", "stone-rubble"];
 
     /// <summary>
     /// The terrain of an ordinary wooden or stone building (B23; the reviewed B. Terrain Chart supplement): the reviewed case covers its ground
@@ -157,7 +160,8 @@ public static class ScenarioA1Definitions
     /// <summary>
     /// Good Order (Index, p. 23): a Personnel unit neither broken, berserk, captured, nor held in Melee. Unknown while any of those is not known;
     /// inapplicable to other kinds, since vehicular crews' stun and shock are not yet modelled. The state's own definition (pass 32.a, slice S11);
-    /// the planner's and the Close Combat calculator's differ and are listed for pass 35.
+    /// <see cref="GoodOrderOf"/> is the planner's since pass 35, with a vehicle's stun and shock, and the Close Combat calculator keeps its own
+    /// (the pass 35 design, section 8.2).
     /// </summary>
     public static RuleState GoodOrder(bool personnel, RuleState broken, RuleState berserk, RuleState captured, RuleState melee)
     {
@@ -173,12 +177,21 @@ public static class ScenarioA1Definitions
     }
 
     /// <summary>
-    /// Good Order as the planner reads it (A10.6, A1.31): an active unit not broken, Disrupted, in Melee, a prisoner, or TI. The planner's own
-    /// definition (pass 32.b, from the planner's SupportWeapons file, a step ahead of its slice): it differs from the state's
-    /// <see cref="GoodOrder"/> and from the Close Combat calculator's, and the three are listed for pass 35 (the pass 32 design, section 12).
+    /// Good Order (A.7, p. 43; pass 35, task 35.3), for a unit whose conditions are known: an active Personnel unit or inherent crew that is not broken,
+    /// berserk, captured, stunned, shocked, or held in Melee. A pinned, CX, TI, or unarmed unit is still in Good Order. Until pass 35 the planner's
+    /// reading left a TI unit out and let a berserk one in, both against the rule. A Disrupted unit is broken, so it needs no clause of its own.
     /// </summary>
-    public static bool GoodOrderAsPlanned(bool active, bool broken, bool disrupted, bool melee, bool captured, bool ti) =>
-        active && !broken && !disrupted && !melee && !captured && !ti;
+    public static bool GoodOrderOf(bool active, bool broken, bool berserk, bool melee, bool captured, bool stunned, bool shocked) =>
+        active && !broken && !berserk && !melee && !captured && !stunned && !shocked;
+
+    /// <summary>
+    /// Whether a unit may take one of the planner's SW and Deployment actions (Deploy, Recombine, Transfer, Recover, Drop): in Good Order, and not TI.
+    /// The TI bar is the planner's as it stood, kept apart from Good Order since A.7 says a TI unit is in Good Order.
+    /// </summary>
+    public static bool FreeToActAsPlanned(bool goodOrder, bool ti) => goodOrder && !ti;
+
+    /// <summary>A.18 (p. 44; pass 35, task 35.3): a Morale Level is never raised beyond 10, though the unit be Fanatic, heroic, with a Commissar, or in a Human Wave.</summary>
+    public static int MoraleCeiling(int level) => Math.Min(10, level);
 
     /// <summary>
     /// Whether a unit in a Location is Encircled (A7.7; ruling R12.11): of the Encircled side there (<paramref name="encircledForSide"/>), or in Melee

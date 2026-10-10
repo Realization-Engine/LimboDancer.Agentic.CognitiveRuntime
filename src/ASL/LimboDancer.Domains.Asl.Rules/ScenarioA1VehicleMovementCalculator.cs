@@ -249,7 +249,8 @@ public static class ScenarioA1VehicleMovementCalculator
             return $"play.move-vehicle: {id} has ended its move this MPh (A4.2)";
         }
 
-        if (kind != "stop" && nightBuBlind())
+        // E1.52 (p. 224; pass 35, task 35.14): "Passengers/Riders may unload as if the AFV had fired in the PFPh".
+        if (kind is not ("stop" or "unload") && nightBuBlind())
         {
             return $"play.night-bu: {id} is BU with an NVR of 0 and spends no MP but to Stop (E1.52)";
         }
@@ -291,9 +292,9 @@ public static class ScenarioA1VehicleMovementCalculator
             return $"play.berserk-first: {charging} is berserk and charges before any other unit moves (A15.43)";
         }
 
-        if (has("asl:bogged") && (kind != "start" || started))
+        if (has("asl:bogged") && !ScenarioA1VehicleProjection.BoggedMaySpend(kind, !started))
         {
-            return $"play.move-vehicle-bog: {id} is bogged; it may only attempt Bog Removal as its first expenditure of its MPh (D8.2, D8.3)";
+            return $"play.move-vehicle-bog: {id} is bogged; it may only attempt Bog Removal as its first expenditure of its MPh, or load or unload (D8.2, D8.3, D8.5)";
         }
 
         return null;
@@ -353,12 +354,15 @@ public static class ScenarioA1VehicleMovementCalculator
         all || minimumMove ? $"play.move-vehicle-ovr: an ALL entry or a Minimum Move spends {id}'s whole allotment, leaving no MP for an OVR (D2.7, D7.1)" : null;
 
     /// <summary>D5.341, D2.6, D2.33: why a vehicle may not Stop, or null: a leaving AFV goes on in Motion; one that may move on may not Stop in an enemy AFV's Location or after a VCA change at its CAFP.</summary>
-    public static string? StopBar(string id, bool leaving, Func<string?> enemyAfvBar, Func<bool> mayMoveOn, bool straddling, Func<bool> turnedAtCafp)
+    public static string? StopBar(string id, bool leaving, Func<string?> enemyAfvBar, Func<bool> mayMoveOn, bool straddling, Func<bool> turnedAtCafp,
+        bool carrying = false)
     {
         ArgumentNullException.ThrowIfNull(enemyAfvBar);
         ArgumentNullException.ThrowIfNull(mayMoveOn);
         ArgumentNullException.ThrowIfNull(turnedAtCafp);
-        if (leaving)
+
+        // D5.341 (p. 203; pass 35, task 35.13 g): a Recalled AFV carrying Passengers or Riders may Stop long enough to unload them.
+        if (leaving && !carrying)
         {
             return $"play.recall-motion: {id} is Recalled and leaves in Motion, so it does not Stop (D5.341)";
         }
@@ -434,13 +438,20 @@ public static class ScenarioA1VehicleMovementCalculator
     /// D2.5, D2.6, D2.7 (ruling R11.3): why a vehicle may not attempt ESB, or null. Tracked, moving, once per MPh, not after an ALL entry, not in an
     /// enemy AFV's Location it could not remain in, and for 1 to a quarter of its printed MP (FRD).
     /// </summary>
-    public static string? EsbBar(string id, bool tracked, bool moving, Func<bool> attempted, bool afterAll, Func<string?> enemyAfvBar, int? mp, int maximum)
+    public static string? EsbBar(string id, bool tracked, bool moving, Func<bool> attempted, bool afterAll, Func<string?> enemyAfvBar, int? mp, int maximum,
+        bool recalled = false)
     {
         ArgumentNullException.ThrowIfNull(attempted);
         ArgumentNullException.ThrowIfNull(enemyAfvBar);
         if (!tracked)
         {
             return $"play.move-vehicle-esb: only a tracked vehicle attempts ESB; {id} is a truck (D2.5)";
+        }
+
+        // D5.341 (p. 203; pass 35, task 35.13 g): "ESB attempts are NA" to a Recalled AFV.
+        if (recalled)
+        {
+            return $"play.move-vehicle-esb: {id} is Recalled, and a Recalled AFV attempts no ESB (D5.341)";
         }
 
         if (!moving)
@@ -471,11 +482,16 @@ public static class ScenarioA1VehicleMovementCalculator
         return null;
     }
 
-    /// <summary>D2.5: the ESB DR's manufacturer DRM, +2 German, +1 Russian, otherwise +3.</summary>
+    /// <summary>
+    /// D2.5 (p. 198; pass 35, task 35.13): the ESB DRM Table, by the nationality of the vehicle's manufacturer: U.S. and Czech 0; Russian and all
+    /// Chinese +1; British and German +2; French, Italian, and all others +3. The definition's nationality stands for the manufacturer: the catalog
+    /// holds no vehicle in another nation's service.
+    /// </summary>
     public static int EsbNationalDrm(string? nationality) => nationality switch
     {
-        "german" => 2,
-        "russian" => 1,
+        "american" or "czech" => 0,
+        "russian" or "chinese" => 1,
+        "british" or "german" => 2,
         _ => 3,
     };
 
@@ -561,7 +577,7 @@ public static class ScenarioA1VehicleMovementCalculator
     /// not Stunned or Recalled, not after Prep Fire in the MPh, not while the DEFENDER may fire at its MP, a change, and once per phase.
     /// </summary>
     public static string? ButtonUpBar(string id, bool activeAfv, bool ownPhase, bool stunned, bool prepFiredInMph, bool windowOpen, bool already,
-        bool buttonedUp, Func<bool> changedThisPhase)
+        bool buttonedUp, Func<bool> changedThisPhase, bool boundingFiredInMph = false)
     {
         ArgumentNullException.ThrowIfNull(changedThisPhase);
         if (!activeAfv)
@@ -582,6 +598,12 @@ public static class ScenarioA1VehicleMovementCalculator
         if (prepFiredInMph)
         {
             return $"play.button-up: {id} Prep Fired, so it may not change its CE status this MPh (D5.33)";
+        }
+
+        // D5.33 (p. 203; pass 35, task 35.13 i): nor in a MPh after its own Bounding First Fire, an OVR among it.
+        if (boundingFiredInMph)
+        {
+            return $"play.button-up: {id} made Bounding First Fire, so it may not change its CE status this MPh (D5.33)";
         }
 
         if (windowOpen)

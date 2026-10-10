@@ -61,8 +61,22 @@ public static class ScenarioA1OrdnanceMapRules
     /// <summary>Whether a terrain is a building Location.</summary>
     public static bool IsBuilding(string terrain) => terrain is "wooden-building" or "stone-building";
 
+    /// <summary>C5.34, C13.8 (pp. 172, 185; pass 35, task 35.10): a PF or PSK fired from a building or from rubble has its Backblast to answer for.</summary>
+    public static bool IsBackblastLocation(string terrain) => IsBuilding(terrain) || ScenarioA1Definitions.IsRubbleTerrain(terrain);
+
     /// <summary>C6.14: Infantry moving into Open Ground with no Hindrance.</summary>
     public static bool OpenGround(string? terrain, int? hindranceDrm) => terrain == "open-ground" && hindranceDrm == 0;
+
+    /// <summary>
+    /// D8.4 (p. 209; pass 35, task 35.13 j): whether a vehicle began its MPh bogged and has not left its Bog hex: it has entered no hex this MPh,
+    /// and it is still bogged or has made a Bog Removal attempt. Its MP may have gone on anything else first, such as unloading (C.8, p. 162; D8.5).
+    /// The steps are this MPh's, oldest first.
+    /// </summary>
+    public static bool? InBogHex(IReadOnlyList<(string Kind, bool BogRemoval)> steps, bool bogged = false)
+    {
+        ArgumentNullException.ThrowIfNull(steps);
+        return steps.Count > 0 && (bogged || steps.Any(step => step is ("start", true))) && !steps.Any(step => step.Kind is "enter" or "exit" or "overrun") ? true : null;
+    }
 
     /// <summary>
     /// C6.11, C6.12, C6.15 (search): the MP spent in the firer's continuous LOS, counted back over the steps (oldest first) to the last one out of

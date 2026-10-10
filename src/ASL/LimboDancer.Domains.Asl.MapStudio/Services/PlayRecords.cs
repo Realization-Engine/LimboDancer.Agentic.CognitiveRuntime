@@ -572,6 +572,11 @@ public sealed class PlayRecords
                 {
                     records.Add((item.EventId, "rally", RallyText(rally, arithmetic, resolution.Effect, In(before, rally.Unit))));
                 }
+                else if (item.Payload is RoutStepped { Attempted: { } repulsedFrom } repulsed)
+                {
+                    // Pass 35 (task 35.4; A10.533): a repulsed step is a sentence of its own, after whatever steps the rout made before it.
+                    records.Add((item.EventId, "rout", $"{repulsed.Unit} is repulsed from {repulsedFrom} by a concealed unit there and ends its rout in {repulsed.To} (A10.533)"));
+                }
                 else if (item.Payload is RoutStepped routed)
                 {
                     // Pass 31d (design D11): the steps of one rout are one sentence, "routs from [Y5] by [Z5] to [AA5] for 3 MF", and name the unit once.
@@ -589,6 +594,20 @@ public sealed class PlayRecords
                         routs[key] = (records.Count, From(before, routed.Unit), [routed.To.ToString()], routed.HalfMf);
                         records.Add((item.EventId, "rout", $"{routed.Unit} routs{From(before, routed.Unit)} to {routed.To} for {mf} MF{(routed.LowCrawl ? " by Low Crawl (A10.52)" : " (A10.5)")}"));
                     }
+                }
+                else if (item.Payload is DiceRolled { Purpose: ScenarioA1Wounds.SeverityPurpose } severity)
+                {
+                    // Pass 35 (task 35.1; A17.11): the Wound Severity dr of a SMC's Casualty Reduction, said where it is made.
+                    // The table player, pass 35: the man and the outcome are read from what the same action did next, a wound or an elimination.
+                    var later = attempts[attempt].SkipWhile(other => other.EventId != item.EventId).Skip(1).Select(other => other.Payload);
+                    var man = later.Select(payload => payload switch
+                    {
+                        InstanceEliminated gone => gone.Id,
+                        ConditionsChanged changed when changed.Conditions.ContainsKey(Conditions.Wounded) => changed.Id,
+                        _ => null,
+                    }).FirstOrDefault(id => id is not null);
+                    records.Add((item.EventId, "wound", ScenarioA1Wounds.SeverityText(severity.Values[0], man,
+                        man is not null && before?.Unit(man) is { } hurt && GameState.Condition(hurt, Conditions.Wounded) == ConditionState.True)));
                 }
                 else if (item.Payload is RoutInterdicted interdicted)
                 {

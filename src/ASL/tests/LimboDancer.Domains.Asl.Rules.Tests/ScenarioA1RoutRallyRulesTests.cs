@@ -20,6 +20,8 @@ public sealed class ScenarioA1RoutRallyRulesTests
         private static readonly string[] Terrain = ["open-ground", "grain", "open-ground", "woods", "stone-building"];
         private readonly HashSet<(int, int)> blocked = [];
         private readonly HashSet<int> unplayable = [];
+        private readonly Dictionary<(int, int), RoutCoverFacts> covers = [];
+        private readonly Dictionary<(int, int, int), RoutCoverFacts> stepCovers = [];
         private readonly List<string> reads = [];
 
         public IReadOnlyList<string> Reads => reads;
@@ -54,6 +56,25 @@ public sealed class ScenarioA1RoutRallyRulesTests
         }
 
         public bool Playable(int location) => !unplayable.Contains(location);
+
+        public Row Covered(int enemyLocation, int location, RoutCoverFacts cover)
+        {
+            covers[(enemyLocation, location)] = cover;
+            return this;
+        }
+
+        public Row CoveredFrom(int enemyLocation, int location, int steppedFrom, RoutCoverFacts cover)
+        {
+            stepCovers[(enemyLocation, location, steppedFrom)] = cover;
+            return this;
+        }
+
+        public RoutCoverFacts Cover(int enemyLocation, int location, int? steppedFrom = null)
+        {
+            reads.Add($"cover {enemyLocation}-{location}");
+            return steppedFrom is { } left && stepCovers.TryGetValue((enemyLocation, location, left), out var stepped) ? stepped
+                : covers.GetValueOrDefault((enemyLocation, location), RoutCoverFacts.None);
+        }
 
         public RoutLocationFacts? Location(int location) => new(Terrain[location], false);
 
@@ -122,6 +143,126 @@ public sealed class ScenarioA1RoutRallyRulesTests
         var row = new Row();
         Assert.Equal("c", ScenarioA1RoutCalculator.Interdictor(row, [Enemy("a", 4, cx: true), Enemy("b", 4, vehicle: true), Enemy("c", 4), Enemy("d", 3, pinned: true)], 2, 7));
         Assert.Null(ScenarioA1RoutCalculator.Interdictor(row, [Enemy("a", 4, encircled: true), Enemy("b", 4, melee: true)], 2, 7));
+    }
+
+    [Fact]
+    public void NoEnemyAppliesFfmoThroughAHindranceOrAgainstATemTheUnitCouldClaim()
+    {
+        // Pass 35, task 35.4 (A10.531, A10.53): each kind of cover alone frees the Location of that enemy, for Interdiction and for the must-rout test.
+        RoutCoverFacts[] covered =
+        [
+            new(null, 1, false, false, false), new(1, 0, false, false, false), new(null, 0, true, false, false), new(null, 0, false, true, false),
+            new(null, 0, false, false, true),
+        ];
+        foreach (var cover in covered)
+        {
+            var row = new Row().Covered(4, 2, cover);
+            Assert.False(ScenarioA1RoutCalculator.CouldApplyFfmo(row, 4, 2, 6));
+            Assert.Null(ScenarioA1RoutCalculator.Interdictor(row, [Enemy("a", 4)], 2, 7));
+            Assert.Null(ScenarioA1RoutCalculator.ExposedInOpenGround(row, [Enemy("a", 4)], 2, 7));
+            Assert.Equal("b", ScenarioA1RoutCalculator.Interdictor(row, [Enemy("a", 4), Enemy("b", 0)], 2, 7));
+        }
+
+        // Fire's count of the map Hindrance, where fire can attribute it, replaces the map's own total: none in fire's count means Open Ground.
+        Assert.True(ScenarioA1RoutCalculator.CouldApplyFfmo(new Row().Covered(4, 2, new(0, 0, false, false, false)), 4, 2, 6));
+        Assert.True(ScenarioA1RoutCalculator.CouldApplyFfmo(new Row(), 4, 2, 6));
+
+        // B1.14 (p. 113), B10.31: Height Advantage keeps a unit standing on the hill from Interdiction, but not one that enters it across the Crest
+        // Line hexside the enemy's LOS crosses. The reader is asked with the Location the step comes from, and the search reads each step so.
+        var hill = new Row().Covered(4, 2, new(null, 0, false, true, false)).CoveredFrom(4, 2, 3, RoutCoverFacts.None);
+        Assert.Null(ScenarioA1RoutCalculator.Interdictor(hill, [Enemy("a", 4)], 2, 7));
+        Assert.Null(ScenarioA1RoutCalculator.Interdictor(hill, [Enemy("a", 4)], 2, 7, steppedFrom: 1));
+        Assert.Equal("a", ScenarioA1RoutCalculator.Interdictor(hill, [Enemy("a", 4)], 2, 7, steppedFrom: 3));
+
+        // The cover is read only for a clear LOS within range.
+        var blocked = new Row().Block(4, 2);
+        Assert.False(ScenarioA1RoutCalculator.CouldApplyFfmo(blocked, 4, 2, 6));
+        var far = new Row();
+        Assert.False(ScenarioA1RoutCalculator.CouldApplyFfmo(far, 4, 2, 1));
+        Assert.DoesNotContain(blocked.Reads.Concat(far.Reads), read => read.StartsWith("cover", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void TheCoverFactsTakeFiresHindranceCountOnlyWhereFireCanAttributeIt()
+    {
+        Assert.Equal(new RoutCoverFacts(2, 1, true, false, true), ScenarioA1RoutCalculator.CoverFacts(true, true, 3, 1, true, false, true));
+        Assert.Equal(new RoutCoverFacts(null, 1, false, true, false), ScenarioA1RoutCalculator.CoverFacts(true, false, 3, 1, false, true, false));
+        Assert.Equal(new RoutCoverFacts(null, 0, false, false, false), ScenarioA1RoutCalculator.CoverFacts(false, true, 3, 1, false, false, false));
+    }
+
+    [Fact]
+    public void ALoneSmcDoesNotInterdictWithASupportWeapon()
+    {
+        // A10.532: a leader alone with a MG has no range to Interdict at; with another SMC he has the MG's; a squad has the longest it holds.
+        Assert.Equal(0, ScenarioA1RoutCalculator.InterdictionRange(true, false, 0, [12]));
+        Assert.Equal(1, ScenarioA1RoutCalculator.InterdictionRange(true, false, 1, [12]));
+        Assert.Equal(12, ScenarioA1RoutCalculator.InterdictionRange(true, true, 0, [12]));
+        Assert.Equal(16, ScenarioA1RoutCalculator.InterdictionRange(false, false, 6, [20]));
+
+        // A15.23 (p. 83): a hero "uses a MG (at full FP)" alone, so its FP is not halved and he Interdicts at the MG's range.
+        Assert.Equal(12, ScenarioA1RoutCalculator.InterdictionRange(true, false, 4, [12], hero: true));
+        Assert.Equal(4, ScenarioA1RoutCalculator.InterdictionRange(true, false, 4, [], hero: true));
+        var row = new Row();
+        Assert.Null(ScenarioA1RoutCalculator.Interdictor(row, [Enemy("a", 4) with { InterdictionRange = 0 }], 2, 7));
+        Assert.Equal("a", ScenarioA1RoutCalculator.ExposedInOpenGround(row, [Enemy("a", 4) with { InterdictionRange = 0 }], 2, 7));
+    }
+
+    [Fact]
+    public void AUnitBoundToSurrenderOwesNoRout()
+    {
+        // Pass 35, task 35.17 (A10.5, A20.21): the facts are read in order, each only when the one before leaves the question open.
+        Assert.True(ScenarioA1RoutCalculator.RoutStillOwed(false, false, () => true, () => true, () => false));
+        Assert.False(ScenarioA1RoutCalculator.RoutStillOwed(false, false, () => true, () => true, () => true));
+        Assert.False(ScenarioA1RoutCalculator.RoutStillOwed(true, false, Never("must rout"), Never("can rout"), Never("the surrender")));
+        Assert.False(ScenarioA1RoutCalculator.RoutStillOwed(false, true, Never("must rout"), Never("can rout"), Never("the surrender")));
+        Assert.False(ScenarioA1RoutCalculator.RoutStillOwed(false, false, () => true, () => false, Never("the surrender")));
+        Assert.False(ScenarioA1RoutCalculator.AttackerMustRoutFirst(false, false, false, Never("must rout"), Never("can rout"), Never("the surrender")));
+        Assert.True(ScenarioA1RoutCalculator.AttackerMustRoutFirst(true, false, false, () => true, () => true, () => false));
+        Assert.False(ScenarioA1RoutCalculator.AttackerMustRoutFirst(true, false, false, () => true, () => true, () => true));
+    }
+
+    [Fact]
+    public void ADisruptedUnitRoutsOnlyWhenItMustAndNeverByLowCrawl()
+    {
+        // Pass 35, task 35.2 (A19.12).
+        Assert.True(ScenarioA1RoutCalculator.MayRout(null, true, true, true, false, false, false));
+        Assert.False(ScenarioA1RoutCalculator.MayRout(null, true, true, true, false, false, true));
+        Assert.True(ScenarioA1RoutCalculator.MayRout("it must", true, true, true, false, false, true));
+        Assert.Equal("play.rout-low-crawl: u is Disrupted and may not use Low Crawl; it routs normally if it must rout, and otherwise stays (A19.12)", ScenarioA1RoutCalculator.DisruptedLowCrawlBar("u", true, true, false));
+        Assert.Null(ScenarioA1RoutCalculator.DisruptedLowCrawlBar("u", true, true, true));
+        Assert.Null(ScenarioA1RoutCalculator.DisruptedLowCrawlBar("u", true, false, false));
+        Assert.Null(ScenarioA1RoutCalculator.DisruptedLowCrawlBar("u", false, true, false));
+    }
+
+    [Fact]
+    public void ARoutIsRepulsedByARealConcealedUnitAndDummiesAloneAreRemoved()
+    {
+        // Pass 35, task 35.4 (A10.533, A.9).
+        var one = ScenarioA1RoutCalculator.RoutRepulse([new("d", true, false), new("b", false, true), new("a", false, false)]);
+        Assert.True(one.Repulsed);
+        Assert.Equal(["b"], one.ToConceal);
+        Assert.Equal(["a", "b"], one.Pool);
+        Assert.True(one.NeedsSelection);
+        Assert.Empty(one.Dummies);
+        var single = ScenarioA1RoutCalculator.RoutRepulse([new("a", false, false), new("d", true, false)]);
+        Assert.Equal((true, false), (single.Repulsed, single.NeedsSelection));
+        var dummies = ScenarioA1RoutCalculator.RoutRepulse([new("d", true, false), new("e", true, false)]);
+        Assert.False(dummies.Repulsed);
+        Assert.Equal(["d", "e"], dummies.Dummies);
+        Assert.Equal(["a"], ScenarioA1RoutCalculator.RoutRepulseShown(["a"], null));
+        Assert.Equal(["b"], ScenarioA1RoutCalculator.RoutRepulseShown(["a", "b"], [2, 5]));
+        Assert.Equal(["a", "b"], ScenarioA1RoutCalculator.RoutRepulseShown(["a", "b"], [4, 4]));
+    }
+
+    [Fact]
+    public void AdjacentIsAnAdvanceInfantryCouldMakeAndThenALos()
+    {
+        // A.8 (p. 43; pass 35): the LOS is read only when a step exists, and the two levels a stairwell joins have theirs by it (B23.25).
+        Assert.True(ScenarioA1MovementCalculator.IsAdjacent(false, () => true, () => true));
+        Assert.False(ScenarioA1MovementCalculator.IsAdjacent(false, () => true, () => false));
+        Assert.False(ScenarioA1MovementCalculator.IsAdjacent(false, () => false, Never("the LOS")));
+        Assert.True(ScenarioA1MovementCalculator.IsAdjacent(true, () => true, Never("the LOS")));
+        Assert.False(ScenarioA1MovementCalculator.IsAdjacent(true, () => false, Never("the LOS")));
     }
 
     [Fact]
@@ -246,7 +387,7 @@ public sealed class ScenarioA1RoutRallyRulesTests
     public void TheBarsReadTheirLazyFactsOnlyWhenTheyMatter()
     {
         Assert.Null(ScenarioA1RoutCalculator.RoutOrderBar(false, Never("the DEFENDER's routs")));
-        Assert.False(ScenarioA1RoutCalculator.AttackerMustRoutFirst(true, false, false, () => false, Never("can rout")));
+        Assert.False(ScenarioA1RoutCalculator.AttackerMustRoutFirst(true, false, false, () => false, Never("can rout"), Never("the surrender")));
         Assert.Equal("is Disrupted", ScenarioA1RoutCalculator.SurrenderCause(true, false, Never("the trap"), ["c"]));
         Assert.Null(ScenarioA1RoutCalculator.LowCrawlOccupiedBar(false, false, Never("the occupants")));
         Assert.Null(ScenarioA1RoutCalculator.InterdictionDue(true, true, () => throw new InvalidOperationException("the Interdictor was read.")));
@@ -256,24 +397,61 @@ public sealed class ScenarioA1RoutRallyRulesTests
     }
 
     [Fact]
-    public void TheRoutMfOfAWoundedSmcDiffersBetweenThePlannerAndTheProjector()
+    public void TheRoutMfOfAWoundedSmcIsOneMemberForThePlannerAndTheProjector()
     {
-        Assert.Equal(6, ScenarioA1RoutCalculator.RoutHalfMfAsPlanned(true, true));
-        Assert.Equal(12, ScenarioA1RoutCalculator.RoutHalfMfAsPlanned(true, false));
-        Assert.Equal(6, ScenarioA1RoutRallyProjection.RoutHalfMfAsRecorded(true, true));
-        Assert.Equal(12, ScenarioA1RoutRallyProjection.RoutHalfMfAsRecorded(false, true));
+        Assert.Equal(6, ScenarioA1RoutCalculator.RoutHalfMf(true, true));
+        Assert.Equal(12, ScenarioA1RoutCalculator.RoutHalfMf(true, false));
+        Assert.Equal(12, ScenarioA1RoutCalculator.RoutHalfMf(false, true));
+    }
+
+    [Fact]
+    public void AUnitThatHasSurrenderedBeforeTheOtherSideRoutsIsNoEnemyToItsRoutes()
+    {
+        // A19.12 (p. 86) and the Comprehensive Rout Example (p. 69): a Disrupted unit surrenders at the start of the RtPh, and an ATTACKER's unit
+        // among the ATTACKER's routs, so both are prisoners when the other side routs; a DEFENDER's unit that is not Disrupted still stands
+        // while the ATTACKER routs. Whether the unit is bound to surrender is read last.
+        Assert.True(ScenarioA1RoutCalculator.SurrenderedBeforeTheOtherSideRouts(disrupted: true, attacker: false, () => true));
+        Assert.True(ScenarioA1RoutCalculator.SurrenderedBeforeTheOtherSideRouts(disrupted: false, attacker: true, () => true));
+        Assert.False(ScenarioA1RoutCalculator.SurrenderedBeforeTheOtherSideRouts(disrupted: true, attacker: true, () => false));
+        Assert.False(ScenarioA1RoutCalculator.SurrenderedBeforeTheOtherSideRouts(disrupted: false, attacker: false, () => throw new InvalidOperationException("not read")));
     }
 
     [Fact]
     public void CasualtyReductionAndTheBrokenMorale()
     {
-        Assert.Equal(CasualtyOutcome.Reduced, ScenarioA1RoutCalculator.CasualtyReduction(true, false, false));
-        Assert.Equal(CasualtyOutcome.Wounded, ScenarioA1RoutCalculator.CasualtyReduction(false, true, false));
-        Assert.Equal(CasualtyOutcome.Eliminated, ScenarioA1RoutCalculator.CasualtyReduction(false, true, true));
-        Assert.Equal(CasualtyOutcome.Eliminated, ScenarioA1RoutCalculator.CasualtyReduction(false, false, false));
+        Assert.Equal(CasualtyOutcome.Reduced, ScenarioA1RoutCalculator.CasualtyReduction(true, false, false, null));
+        Assert.Equal(CasualtyOutcome.Wounded, ScenarioA1RoutCalculator.CasualtyReduction(false, true, false, 4));
+        Assert.Equal(CasualtyOutcome.Eliminated, ScenarioA1RoutCalculator.CasualtyReduction(false, true, false, 5));
+        Assert.Equal(CasualtyOutcome.Wounded, ScenarioA1RoutCalculator.CasualtyReduction(false, true, true, 3));
+        Assert.Equal(CasualtyOutcome.Eliminated, ScenarioA1RoutCalculator.CasualtyReduction(false, true, true, 4));
+        Assert.Equal(CasualtyOutcome.Eliminated, ScenarioA1RoutCalculator.CasualtyReduction(false, false, false, null));
+        Assert.Throws<ArgumentNullException>(() => ScenarioA1RoutCalculator.CasualtyReduction(false, true, false, null));
+
+        // Pass 35, task 35.1 (A17.11): the one wound procedure, and the PF firer's Casualty Reduction by it.
+        Assert.False(ScenarioA1Wounds.Mortal(4, false));
+        Assert.True(ScenarioA1Wounds.Mortal(5, false));
+        Assert.True(ScenarioA1Wounds.Mortal(4, true));
+        Assert.Equal(ScenarioA1Wounds.Mortal(4, true), ScenarioA1Sniper.Mortal(4, true));
+        Assert.Equal(FirerCasualty.Wounded, ScenarioA1OrdnanceEventRules.Casualty("asl:leader", () => false, true, 3));
+        Assert.Equal(FirerCasualty.Eliminated, ScenarioA1OrdnanceEventRules.Casualty("asl:leader", () => false, false, 6));
+        Assert.Equal(FirerCasualty.HalfSquad, ScenarioA1OrdnanceEventRules.Casualty("asl:squad", () => true, false, null));
+        Assert.Equal(FirerCasualty.Eliminated, ScenarioA1OrdnanceEventRules.Casualty("asl:half-squad", () => false, false, null));
         Assert.Equal(7, ScenarioA1RoutCalculator.BrokenMorale(true, 8, 7, true));
         Assert.Equal(7, ScenarioA1RoutCalculator.BrokenMorale(true, null, 7, false));
         Assert.Null(ScenarioA1RoutCalculator.BrokenMorale(false, 8, 7, false));
+
+        // Pass 35, task 35.4 (A10.8, A.18): a Fanatic unit's broken Morale Level is one higher, never above 10.
+        Assert.Equal(8, ScenarioA1RoutCalculator.BrokenMorale(true, 7, 7, false, fanatic: true));
+        Assert.Equal(10, ScenarioA1RoutCalculator.BrokenMorale(true, 10, 10, false, fanatic: true));
+
+        // A20.21, A25.22: a Commissar never surrenders by the RtPh method.
+        Assert.True(ScenarioA1RoutCalculator.SurrenderCandidate(false, false, false));
+        Assert.False(ScenarioA1RoutCalculator.SurrenderCandidate(false, false, false, commissar: true));
+        Assert.True(ScenarioA1RoutCalculator.SurrendersInstead(false, false, false));
+        Assert.False(ScenarioA1RoutCalculator.SurrendersInstead(false, false, false, commissar: true));
+
+        // A10.533 (p. 68): a unit repulsed from a concealed unit's Location is eliminated, not taken prisoner.
+        Assert.False(ScenarioA1RoutCalculator.SurrendersInstead(false, false, false, repulsed: true));
     }
 
     [Fact]

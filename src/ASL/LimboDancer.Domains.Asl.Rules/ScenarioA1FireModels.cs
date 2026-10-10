@@ -366,7 +366,15 @@ public sealed record FireOverrun(
     bool? Immobile,
     bool? MainArmamentMalfunctioned,
     bool? BmgMalfunctioned,
-    bool? CmgMalfunctioned);
+    bool? CmgMalfunctioned)
+{
+    /// <summary>Whether the vehicle is under a Stun "+1" counter (D5.34, p. 203; pass 35, task 35.13 d): one more on its OVR DR; null is false.</summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public bool? StunRecovery
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// What an OVR's Original IFT DR of 12 did (D7.17; ruling R11.11): the weapon it malfunctioned (<c>ma</c>, <c>bmg</c>, or <c>cmg</c>; the halftrack's MA

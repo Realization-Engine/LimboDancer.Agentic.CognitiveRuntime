@@ -420,13 +420,13 @@ public sealed class ScenarioA1FireExtensionTests
     [Fact]
     public void ABattleHardenedUnitIsUnbrokenAndNoLongerDisrupted()
     {
-        // A15.3: a broken, Disrupted Russian Conscript that Battle Hardens is exchanged for an unbroken NKVD squad (A25.25):
+        // A15.3: a broken, Disrupted Russian Conscript that Battle Hardens is exchanged for an unbroken 5-2-7 (A25.2; pass 35, task 35.8):
         // 1+2 = 3, +2 Russian, +1 broken, +1 Inexperienced: 7.
         FireTarget[] russian = [Target("ru-c", "defender-conscript-squad") with { Broken = true, Disrupted = true }];
         FireFirer[] germans = [Firer("de-1", "attacker-squad"), Firer("de-2", "attacker-squad")];
         var conscript = Complete(Attack(Rolls(DiceFor("1MC", dice => Attack(Rolls(dice), firers: germans, targets: russian))), firers: germans, targets: russian),
             checks: [1, 1]).Effects.Single();
-        Assert.Equal(("defender-nkvd-squad", false, false), (conscript.FinalDefinitionId, conscript.Broken, conscript.Disrupted));
+        Assert.Equal(("defender-line-squad", false, false), (conscript.FinalDefinitionId, conscript.Broken, conscript.Disrupted));
 
         // Ruling R28.7: a broken elite squad with no better class becomes Fanatic and is unbroken too: 4+4 = 8, -1 elite, +1 broken.
         var elite = HeatOfBattle([4, 4], Target("de-s", "attacker-elite-squad") with
@@ -458,6 +458,6 @@ public sealed class ScenarioA1FireExtensionTests
         var fanatic = ScenarioA1HeatOfBattle.Resolve(Reference.Definitions["defender-nkvd-squad"], true, null, true, [6, 6], Reference.Definitions, true, []);
         Assert.Equal(HeatOfBattleOutcome.Berserk, fanatic.Outcome!.Result);
         var conscript = ScenarioA1HeatOfBattle.Resolve(Reference.Definitions["defender-conscript-squad"], false, false, false, [2, 3], Reference.Definitions);
-        Assert.Equal("defender-nkvd-squad", conscript.Outcome!.HardenedDefinitionId);
+        Assert.Equal("defender-line-squad", conscript.Outcome!.HardenedDefinitionId);
     }
 }

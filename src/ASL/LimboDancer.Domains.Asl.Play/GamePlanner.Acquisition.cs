@@ -44,12 +44,13 @@ public sealed partial class GamePlanner
 
         var verdicts = ScenarioA1FireFollowUps.AcquisitionFollowUp(after.Acquisitions.Select(acquisition =>
         {
-            var gun = after.Find(acquisition.Gun) as EquipmentInstance;
-            var gunAt = gun?.Position as MapPosition;
+            // A Gun where it lies; a tank, whose MA holds the Acquisition, where it stands (pass 35, task 35.11).
+            var gun = after.Find(acquisition.Gun);
+            var gunAt = gun is EquipmentInstance { Position: MapPosition lying } ? lying.Location : gun is UnitInstance tank ? after.Location(tank.Id)?.Location : null;
             var previous = before.Acquisitions.FirstOrDefault(item => item.Gun == acquisition.Gun);
             return new AcquisitionFacts(acquisition.Gun, gun?.Side, gunAt is not null, previous is not null, Text(previous?.Location), Text(acquisition.Location)!,
                 [.. acquisition.Units.Select(id => new AcquiredUnitFacts(id, Text(before.Location(id)?.Location), Text(after.Location(id)?.Location),
-                    () => Los(after, gunAt!.Location, after.Location(id)!.Location) is { Status: LosStatus.Clear },
+                    () => Los(after, gunAt!, after.Location(id)!.Location) is { Status: LosStatus.Clear },
                     before.Unit(id)?.MovementEnded == true, after.Unit(id) is { MovementEnded: true }))]);
         }), after.Phase, after.Choice is not null);
 
@@ -63,13 +64,21 @@ public sealed partial class GamePlanner
 
             if (verdict.ChoiceLocations is { } options)
             {
-                events.Add(("choice-pending", new ChoicePending($"acquisition:{verdict.Gun}", ChoicePending.Acquisition, (after.Find(verdict.Gun) as EquipmentInstance)?.Side ?? after.PhasingSide,
+                events.Add(("choice-pending", new ChoicePending($"acquisition:{verdict.Gun}", ChoicePending.Acquisition, after.Find(verdict.Gun)?.Side ?? after.PhasingSide,
                     options, JsonSerializer.SerializeToElement(new JsonObject { ["gun"] = verdict.Gun }))));
             }
         }
 
         return events;
     }
+
+    /// <summary>
+    /// The kinds among <paramref name="kinds"/> whose rules are not built (pass 35, task 35.15), each once, in order, by the vocabulary's own
+    /// label ("Wire", "Fortified Building Location"); Rules says which.
+    /// </summary>
+    private IReadOnlyList<string> UnbuiltKinds(IEnumerable<string?> kinds) =>
+        [.. kinds.OfType<string>().Where(kind => ScenarioA1SequenceCalculator.UnbuiltCounter(kind, vocabulary.IsA(kind, "asl:fortification")))
+            .Select(kind => vocabulary.TryGetKind(kind, out var known) ? known.Label : kind).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)];
 
     /// <summary>A plan with the Acquisition events its events call for appended (ruling R5.13); the plan itself when it moves no acquired unit.</summary>
     private GamePlan WithAcquisitions(GamePlan plan, GameScope scope, IReadOnlyList<GameEvent> existing, string attemptId, long expected)

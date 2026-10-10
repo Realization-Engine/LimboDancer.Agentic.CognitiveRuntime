@@ -140,18 +140,18 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
-    /// ADJACENT (A.8, p. 43): the Locations share a hexside at the same level, with a clear LOS and no hexside terrain or
-    /// cliff between them, so Infantry could advance from one to the other. The review reads it this way for the
-    /// terrain it admits.
+    /// ADJACENT (A.8, p. 43; pass 35): a LOS between the two Locations, and an Infantry step from one into the other that the movement rules allow, in
+    /// either direction. The step and the LOS are read here when Rules asks, and Rules decides. The step is one an advance may make: a marsh
+    /// hex is never entered in the APh (B16.4, p. 130; the referee's review), which Rules answers for the entry read.
     /// </summary>
-    private bool IsAdjacent(GameState state, BoardLocation one, BoardLocation two)
-    {
-        // Pass 32.b: the step is read here, the LOS when Rules asks, and Rules decides.
-        var (from, to, adjacent, crossed) = Step(state, one, two);
-        var facts = new AdjacencyFacts(adjacent, from is not null, to is not null, from is null ? 0 : from.Hex.BaseLevel + from.Level.Level,
-            to is null ? 0 : to.Hex.BaseLevel + to.Level.Level, crossed is null ? null : CrossedFacts(crossed));
-        return ScenarioA1MovementCalculator.IsAdjacent(facts, () => Los(state, one, two) is { Status: LosStatus.Clear });
-    }
+    private bool IsAdjacent(GameState state, BoardLocation one, BoardLocation two) =>
+        one != two && ScenarioA1MovementCalculator.IsAdjacent(one.Board == two.Board && one.Hex == two.Hex,
+            () => AdvanceStep(state, one, two) || AdvanceStep(state, two, one),
+            () => Los(state, one, two) is { Status: LosStatus.Clear });
+
+    /// <summary>Whether Infantry could advance from one Location into the other (A.8, A4.7, B16.4), enemy presence ignored.</summary>
+    private bool AdvanceStep(GameState state, BoardLocation from, BoardLocation to) =>
+        InfantryStep(state, from, to).Entry is { } entry && ScenarioA1AdvanceCalculator.MarshBar(entry.AllMf) is null;
 
     /// <summary>
     /// The units of the game as the scans for a seeing enemy read them (pass 32.b), with a table of their Locations by index, and the LOS between two

@@ -201,10 +201,20 @@ public sealed partial class GamePlanner
             foreach (var id in struck)
             {
                 var unit = state.Unit(id)!;
+
+                // A17.11 (pass 35, task 35.1): a SMC's Casualty Reduction is a wound, and its Wound Severity dr is made at once.
+                int? severity = null;
+                if (WoundSeverityDue(unit))
+                {
+                    var wound = draw(new RollRequest(1, 6));
+                    severity = wound.Values[0];
+                    Push("dice-rolled", new DiceRolled($"{attemptId}-wound-{id}", ScenarioA1Wounds.SeverityPurpose, 1, 6, wound.Values, DiceRolled.SystemSource, actor));
+                }
+
                 var (type, payload) = CasualtyReduction(unit with
                 {
                     Conditions = new Dictionary<string, ConditionState>(unit.Conditions, StringComparer.Ordinal) { ["asl:ti"] = ConditionState.True }
-                }, attemptId);
+                }, attemptId, severity);
                 Push(type, payload);
             }
 

@@ -48,6 +48,12 @@ public sealed partial class GamePlanner
     private static List<(string Cause, int Drm)> VehicleBogDrm(GameState state, UnitInstance vehicle) =>
         ScenarioA1VehicleTerrainCosts.VehicleBogDrm(VehicleDefinition(vehicle)?.GroundPressure, Towing(state, vehicle), VehicleDefinition(vehicle)?.MovementType);
 
+    /// <summary>
+    /// Whether a vehicle is a BU AFV (D5.2, p. 203; ruling R7.11; pass 35, task 35.13 a): an AFV whose crew is not CE, as Rules decides it. A CT AFV
+    /// is BU with no counter recorded, so the recorded condition alone does not say.
+    /// </summary>
+    private static bool ButtonedUpAfv(UnitInstance vehicle) => IsAfv(vehicle) && !LiveFire.CrewExposed(vehicle);
+
     private static bool Towing(GameState state, UnitInstance vehicle) =>
         state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Towed } tow && tow.Holder == vehicle.Id);
 
@@ -78,17 +84,18 @@ public sealed partial class GamePlanner
             : (null, $"the cost of crossing the map edge at {to} is not decided (ruling R26.1)");
 
     /// <summary>The cost of a vehicle's outright entry of a Location over the hexside it crosses (rulings R11.6 to R11.9), as <see cref="VehicleOutright"/> reads it.</summary>
-    private static (VehicleEntry? Entry, string? Reason) VehicleCost(GameState state, UnitInstance vehicle, LocationRead fromRead, LocationRead toRead, HexsideFacts crossed, BoardLocation to,
+    private (VehicleEntry? Entry, string? Reason) VehicleCost(GameState state, UnitInstance vehicle, LocationRead fromRead, LocationRead toRead, HexsideFacts crossed, BoardLocation to,
         bool reverse, bool allMp)
     {
         var type = MovementTypeOf(vehicle);
         var (entry, reason) = ScenarioA1VehicleTerrainCosts.EntryCost(type, to.ToString(), to.Level, crossed.Cliff || crossed.Slope, TerrainKey(toRead),
             (toRead.Level.Terrain ?? toRead.Hex.Center.Terrain)?.Name, WallOn(crossed), crossed.HexsideTerrain?.Name, crossed.Terrain?.IsRoad == true,
             toRead.Hex.BaseLevel - fromRead.Hex.BaseLevel, state.ScenarioMonth, state.Weather("mud"), crossed.Terrain?.Name == "Paved Road",
-            state.SpecialRules.Contains("plowed-roads", StringComparer.Ordinal), PrintedHalfMp(vehicle), IsAfv(vehicle) && Is(vehicle, Conditions.ButtonedUp),
+            state.SpecialRules.Contains("plowed-roads", StringComparer.Ordinal), PrintedHalfMp(vehicle), ButtonedUpAfv(vehicle),
             state.Weather("ground-snow"), state.Weather("deep-snow"), road => WreckEntryHalfMp(state, to, road), () => HasSmoke(state, to), Towing(state, vehicle),
             (terrain, road, paved, plowed) => VehicleWeatherHalfMp(state, type!, terrain, road, paved, plowed, toRead.Hex.BaseLevel - fromRead.Hex.BaseLevel),
-            reverse, allMp, VehicleBogDrm(state, vehicle));
+            reverse, allMp, VehicleBogDrm(state, vehicle),
+            toRead.Hex.BaseLevel <= 0 && Neighbors(state, to).Any(near => ReadLocation(state, near) is { } nearRead && TerrainKey(nearRead) == "marsh"));
         return entry is null
             ? (null, reason)
             : (new VehicleEntry(entry.HalfMp, entry.All, entry.BogDrm, entry.BogCauses, to, null, entry.Terrain, entry.Road, reverse, entry.HedgeBogDrm), null);
@@ -136,6 +143,11 @@ public sealed partial class GamePlanner
     private (VehicleEntry? Entry, string? Reason) VehicleBypass(GameState state, UnitInstance vehicle, BoardLocation from, BoardLocation obstacle,
         BoardLocation other, bool reverse)
     {
+        if (ScenarioA1VehicleTerrainCosts.TowingBypassBar(Towing(state, vehicle)) is { } towingBar)
+        {
+            return (null, towingBar);
+        }
+
         if (!Bypassable(state, obstacle))
         {
             return (null, $"{obstacle} holds no woods or building a vehicle may Bypass, or it holds rubble or a Blaze (D2.3, D2.31)");
@@ -172,7 +184,8 @@ public sealed partial class GamePlanner
         }
 
         var cost = ScenarioA1VehicleTerrainCosts.BypassHalfMp(open, rise, HasSmoke(state, obstacle), state.Location(vehicle.Id)?.Location is { } now && now != obstacle,
-            () => WreckEntryHalfMp(state, obstacle, false), Towing(state, vehicle), reverse, MovementTypeOf(vehicle));
+            () => WreckEntryHalfMp(state, obstacle, false), reverse, MovementTypeOf(vehicle),
+            VehicleWeatherHalfMp(state, type, "open-ground", false, false, false, rise));
 
         return (new VehicleEntry(cost, false, null, [], obstacle, other, "open-ground", false, reverse, null), null);
     }

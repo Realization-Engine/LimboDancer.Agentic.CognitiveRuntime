@@ -700,7 +700,9 @@ public sealed class BacklogPass9Tests : IDisposable
         await Setup("russian", 7, 1942, Squad("r1", "bd01:B9:0", "russian"), Latw("ru-atr", "defender-atr", "r1", "russian"),
             Vehicle("de-tank", "attacker-tank", "bd01:B7:0", "german", "east"), Squad("g1", "bd01:B6:0", "german"));
         await Advance();
-        Committed(await FireAt("ru-atr", "bd01:B7:0", "de-tank", null, 6, 5));
+
+        // C6.3 (pass 35, task 35.10): at two hexes the ATR takes Case L, so the 11 is a Final 10 and a hit; the To Kill DR of 12 does nothing.
+        Committed(await FireAt("ru-atr", "bd01:B7:0", "de-tank", null, 6, 5, 6, 6));
         Assert.False(LiveFire.FireSpent(Current, Current.Unit("r1")!));
         Refused(await FireAt("ru-atr", "bd01:B7:0", "de-tank", null, 6, 5), "play.latw-fired");
         Committed(await Fire(R1, "bd01:B6:0", 6, 6));

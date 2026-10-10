@@ -86,18 +86,17 @@ public static class ScenarioA1MovementCalculator
     }
 
     /// <summary>
-    /// ADJACENT (A.8, p. 43): the Locations share a hexside at the same level, with a clear LOS and no hexside terrain or
-    /// cliff between them, so Infantry could advance from one to the other. The review reads it this way for the
-    /// terrain it admits. <paramref name="losClear"/> is read once the geometry allows it, as the planner read it.
+    /// ADJACENT (A.8, p. 43; pass 35): two Locations are ADJACENT when there is a LOS between them and a hypothetical Infantry unit could move from one
+    /// into the other in the APh, enemy presence ignored. So a hex one level up a hill, a hex across a wall or hedge, and the next level of a stairwell
+    /// hex are ADJACENT; a hex across a cliff, and the upper level of the next hex from the ground, are not. The advance is read as the Infantry step the
+    /// movement rules allow, in either direction, and the LOS only when a step exists; the two levels of one hex that a stairwell joins have their LOS by it.
+    /// Until pass 35 the game asked for the same level and no hexside terrain, which was narrower than the rule.
     /// </summary>
-    public static bool IsAdjacent(AdjacencyFacts facts, Func<bool> losClear)
+    public static bool IsAdjacent(bool sameHex, Func<bool> couldAdvanceEitherWay, Func<bool> losClear)
     {
-        ArgumentNullException.ThrowIfNull(facts);
+        ArgumentNullException.ThrowIfNull(couldAdvanceEitherWay);
         ArgumentNullException.ThrowIfNull(losClear);
-        return facts.Adjacent && facts.FromRead && facts.ToRead && facts.Crossed is { } crossed
-            && facts.FromElevation == facts.ToElevation
-            && crossed.HexsideTerrain is null && !crossed.Cliff
-            && losClear();
+        return couldAdvanceEitherWay() && (sameHex || losClear());
     }
 
     /// <summary>
@@ -108,7 +107,8 @@ public static class ScenarioA1MovementCalculator
     {
         ArgumentNullException.ThrowIfNull(units);
         ArgumentNullException.ThrowIfNull(los);
-        return units.Where(unit => unit.Active && unit.Side != side && !unit.Dummy && !unit.Aboard && unit.Broken != true)
+        // Pass 35 (task 35.3; A.7): Good Order, not merely unbroken, as the two other scans read it.
+        return units.Where(unit => unit.Active && unit.Side != side && !unit.Dummy && !unit.Aboard && unit.GoodOrder)
             .Select(unit => unit.Location).OfType<int>().Distinct()
             .Select(location => los.Los(location, at) is { Clear: true } result ? result.Range : (int?)null).Where(range => range is not null).Min();
     }
@@ -1053,7 +1053,9 @@ public static class ScenarioA1MovementCalculator
     {
         ArgumentNullException.ThrowIfNull(units);
         ArgumentNullException.ThrowIfNull(los);
-        return units.Where(unit => unit.Active && unit.Side != side && !unit.Dummy && unit.Broken != true)
+        // Pass 35 (task 35.3; A.7, A12.14; backlog section 51, the user's word of 2026-10-04): Good Order, not merely unbroken, and as fire reads it
+        // (WithSeen): not a hidden unit, which would have to show itself to force the loss, nor a Passenger, whose vehicle is counted.
+        return units.Where(unit => unit.Active && unit.Side != side && !unit.Dummy && unit.GoodOrder && !unit.Hidden && !unit.Aboard)
             .Select(unit => unit.Location).OfType<int>().Distinct()
             .Any(location => los.Los(location, at) is { Clear: true, Range: <= 16 });
     }

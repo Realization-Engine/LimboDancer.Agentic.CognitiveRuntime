@@ -566,10 +566,13 @@ else if (state is not null)
                     @if (state.Movement is { Vehicle: true, WindowOpen: true, Members: [{ } reacting] } && state.Location(reacting)?.Location is { } reactionAt
                         && (Viewer.IsAdjudicator || viewAs != state.PhasingSide) && SeenOnly(ReactionUnits(reactionAt, reacting)).ToArray() is { Length: > 0 } reactors)
                     {
+                        // The UI review, pass 35: a choice made in the hex the vehicle left names no unit here, so it is not shown and not sent.
+                        var reactAs = reactors.Any(unit => unit.Id == reactionAttacker) ? reactionAttacker : string.Empty;
+                        var reactWith = reactionLeader != reactAs && reactors.Any(unit => unit.Id == reactionLeader && unit.Kind is "asl:leader" or "asl:hero") ? reactionLeader : string.Empty;
                         <ReactionFireAction Vehicle="@reacting" Attackers="@(reactors.Select(unit => unit.Id).ToArray())"
                             Leaders='@(reactors.Where(unit => unit.Kind is "asl:leader" or "asl:hero").Select(unit => unit.Id).ToArray())'
-                            Attacker="@reactionAttacker" Leader="@reactionLeader" OnAttacker="@(id => reactionAttacker = id)" OnLeader="@(id => reactionLeader = id)"
-                            OnPropose="@(() => ProposeVehicleCc(reactionAt.ToString(), [reactionAttacker, .. (reactionLeader.Length > 0 ? new[] { reactionLeader } : [])], null, [], false))" />
+                            Attacker="@reactAs" Leader="@reactWith" OnAttacker="@(id => reactionAttacker = id)" OnLeader="@(id => reactionLeader = id)"
+                            OnPropose="@(() => ProposeVehicleCc(reactionAt.ToString(), [reactAs, .. (reactWith.Length > 0 ? new[] { reactWith } : [])], null, [], false))" />
                     }
                     @if (VehicleCandidates.Any() && (Viewer.IsAdjudicator || viewAs == state.PhasingSide))
                     {
@@ -623,8 +626,8 @@ else if (state is not null)
                     <VehicleCloseCombatPanel Locations="@vehicleCc" Attacker="@vehicleCcAttacker" Leader="@vehicleCcLeader" Vehicle="@vehicleCcVehicle" Defenders="@vehicleCcDefenders"
                         OnAttacker="@(id => vehicleCcAttacker = id)" OnLeader="@(id => vehicleCcLeader = id)" OnVehicle="@(id => vehicleCcVehicle = id)"
                         OnDefender="@(pick => Toggle(vehicleCcDefenders, pick.Id, pick.On))"
-                        OnProposeAttack="@(at => ProposeVehicleCc(at, [vehicleCcAttacker, .. (vehicleCcLeader.Length > 0 ? new[] { vehicleCcLeader } : [])], vehicleCcVehicle, [], false))"
-                        OnProposeVehicle="@(at => ProposeVehicleCc(at, [], vehicleCcVehicle, [.. vehicleCcDefenders], false))" OnPass="@(at => ProposeVehicleCc(at, [], null, [], true))" />
+                        OnProposeAttack="@(at => ProposeVehicleCcAt(vehicleCc, at, byVehicle: false))"
+                        OnProposeVehicle="@(at => ProposeVehicleCcAt(vehicleCc, at, byVehicle: true))" OnPass="@(at => ProposeVehicleCc(at, [], null, [], true))" />
                 }
                 @if (state.Phase == "ccph")
                 {
@@ -2823,8 +2826,8 @@ else if (state is not null)
         && GameState.Condition(vehicle, Conditions.Bogged) != ConditionState.True;
 
     /// <summary>Whether the vehicle may hook up or unhook a Gun now (C10.11, C10.12): Stopped in its own movement, or not yet moved, not in Motion or bogged.</summary>
-    private bool VehicleStopped(UnitInstance vehicle) => vehicle.Position is MapPosition && GameState.Condition(vehicle, Conditions.Motion) != ConditionState.True
-        && GameState.Condition(vehicle, Conditions.Bogged) != ConditionState.True
+    private bool VehicleStopped(UnitInstance vehicle, bool boggedToo = false) => vehicle.Position is MapPosition && GameState.Condition(vehicle, Conditions.Motion) != ConditionState.True
+        && (boggedToo || GameState.Condition(vehicle, Conditions.Bogged) != ConditionState.True)
         && (state!.Movement is null || (state.Movement is { Vehicle: true, Stopped: true, Overrun: null } own && own.Movers.Contains(vehicle.Id, StringComparer.Ordinal)));
 
     /// <summary>The chosen vehicle's status (plan A18): its VCA, MP, Motion, Reverse, Bypass, ESB, bog, Passengers, and towed Gun.</summary>
@@ -2994,7 +2997,8 @@ else if (state is not null)
 
     /// <summary>The Passengers that may unload (D6.5): the vehicle's, while it is on the map and stopped.</summary>
     private IReadOnlyList<string> UnloadableUnits(UnitInstance vehicle) =>
-        state is null || !VehicleStopped(vehicle) ? [] : [.. state.Passengers(vehicle.Id).Select(unit => unit.Id).Order(StringComparer.Ordinal)];
+        state is null || !VehicleStopped(vehicle, boggedToo: ScenarioA1VehicleProjection.BoggedMaySpend("unload", false)) ? []
+            : [.. state.Passengers(vehicle.Id).Select(unit => unit.Id).Order(StringComparer.Ordinal)];
 
     /// <summary>The Guns in a stopped vehicle's hex it may hook up or unhook (C10.11, C10.12).</summary>
     private IReadOnlyList<VehicleTowingActions.TowChoice> TowChoices(UnitInstance vehicle) =>
@@ -3262,6 +3266,31 @@ else if (state is not null)
             [.. here.Where(LiveFire.IsVehicle).Select(unit => new VehicleCloseCombatPanel.VehicleChoice(unit.Id, unit.Side))],
             [.. here.Where(unit => !LiveFire.IsVehicle(unit) && unit.Side != nextSide).Select(unit => unit.Id)]);
     })];
+
+    /// <summary>
+    /// Pass 35: the Locations share one attack draft, so an attack proposed in a Location names only that Location's own units; what was chosen or
+    /// checked in another Location stays out of it.
+    /// </summary>
+    private Task ProposeVehicleCcAt(IReadOnlyList<VehicleCloseCombatPanel.CcLocation> rows, string at, bool byVehicle)
+    {
+        if (rows.FirstOrDefault(row => row.Location == at) is not { } row || !row.Vehicles.Any(vehicle => vehicle.Id == vehicleCcVehicle))
+        {
+            return Task.CompletedTask;
+        }
+
+        string[] attackers = byVehicle || !row.Attackers.Contains(vehicleCcAttacker, StringComparer.Ordinal) ? []
+            : [vehicleCcAttacker, .. (row.Leaders.Contains(vehicleCcLeader, StringComparer.Ordinal) && vehicleCcLeader != vehicleCcAttacker ? new[] { vehicleCcLeader } : [])];
+        string[] defenders = byVehicle ? [.. row.Defenders.Where(vehicleCcDefenders.Contains)] : [];
+        return attackers.Length == 0 && defenders.Length == 0 ? Task.CompletedTask : ProposeVehicleCc(at, attackers, vehicleCcVehicle, defenders, false);
+    }
+
+    /// <summary>Pass 35: the vehicle CC and CC Reaction Fire drafts, cleared with the other panel choices and after a committed attack or pass.</summary>
+    private void ClearVehicleCc()
+    {
+        vehicleCcAttacker = vehicleCcLeader = vehicleCcVehicle = string.Empty;
+        vehicleCcDefenders.Clear();
+        reactionAttacker = reactionLeader = string.Empty;
+    }
 
     private Task ProposeVehicleCc(string location, IReadOnlyList<string> attackers, string? vehicle, IReadOnlyList<string> defenders, bool pass)
     {
@@ -3985,6 +4014,7 @@ else if (state is not null)
         placeLocation = placeId = placeBore = placeGroup = string.Empty;
         placeHidden = false;
         placeConcealed = false;
+        placeBroken = placeOffBoard = false;
         placeHolder = string.Empty;
         placeEntry = string.Empty;
         nonObChosen.Clear();
@@ -4447,6 +4477,7 @@ else if (state is not null)
 
     private void ClearFire()
     {
+        throwDc = throwDcAt = string.Empty;
         fireAlso.Clear();
         fireFrom = string.Empty;
         fireFirers.Clear();
@@ -5093,6 +5124,9 @@ else if (state is not null)
         smokeBy = smokeAt = placeDc = placeDcAt = string.Empty;
         ccLocation = string.Empty;
         ClearCloseCombat();
+
+        // The UI review, pass 35: another game starts with no draft of the last one (Opportunity Fire boxes, a vehicle's step, an exit edge).
+        ResetDrafts(keepCloseCombat: false);
         ResetPanelChoices();
         status = string.Empty;
         Refresh();
@@ -5176,7 +5210,7 @@ else if (state is not null)
             ClearCloseCombat();
         }
 
-        moveTo = string.Empty;
+        moveTo = moveExit = moveKeep = string.Empty;
         moveAssault = false;
         moveDoubleTime = false;
         moveMinimum = false;
@@ -5217,6 +5251,7 @@ else if (state is not null)
         ordnanceSpotter = ordnanceDirector = string.Empty;
         ordnanceIntensive = false;
         ordnanceAmmunition = "ap";
+        ClearVehicleCc();
     }
 
     private void Refresh()
@@ -5539,10 +5574,8 @@ else if (state is not null)
             targets = [.. targets.Where(routes.ContainsKey)];
         }
 
-        return (!canRout
-            ? must ? ". It has no legal rout step, so it is eliminated for Failure to Rout, or surrenders, when the RtPh ends (A10.5)." : ". It has no legal rout step, so it stays where it is."
-            : targets.Count > 0 ? $". Its route must end in {string.Join(" or ", targets.Select(Place))}."
-            : ". No woods or building is within its reach, so any legal route will do.",
+        // Pass 35 (A.8, A10.51): every place within reach may lie where the rout may not end. Rules words which case it is.
+        return (ScenarioA1RoutCalculator.RoutEndAdvice(canRout, must, [.. targets.Select(Place)], targets.Any(routes.ContainsKey)),
             [.. targets.Where(routes.ContainsKey).Select(target => new RoutActionPanel.Way(target.ToString(), string.Join(", ", routes[target])))]);
     }
 
@@ -5642,6 +5675,12 @@ else if (state is not null)
             .OrderBy(unit => unit.Id, StringComparer.Ordinal)
             .Select(unit =>
             {
+                // Pass 35 (task 35.17; A20.21): a unit that surrenders instead of routing is said to, and is offered no route.
+                if (!state.RoutedThisPhase.Contains(unit.Id) && Live.Planner.RoutSurrenderAdvice(state, unit) is { } surrenders)
+                {
+                    return new RoutActionPanel.Obligation(unit.Id, surrenders);
+                }
+
                 var owes = unit.Id + (Live.Planner.MustRout(state, unit) is { } why ? $" must rout: {why}" : " may rout, since it is under DM");
                 if (state.RoutedThisPhase.Contains(unit.Id))
                 {
@@ -5654,7 +5693,7 @@ else if (state is not null)
 
     private IReadOnlyList<PlayChoice> ReadRoutChoices => state is null ? []
         : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && GameState.Condition(unit, Conditions.Broken) == ConditionState.True
-            && !state.RoutedThisPhase.Contains(unit.Id) && Live.Planner.MayRout(state, unit)).Select(Labelled)];
+            && !state.RoutedThisPhase.Contains(unit.Id) && Live.Planner.MayRout(state, unit) && Live.Planner.RoutSurrenderAdvice(state, unit) is null).Select(Labelled)];
 
     private IReadOnlyList<PlayChoice> RallyChoices =>
         [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && Mine(unit) && GameState.Condition(unit, Conditions.Broken) == ConditionState.True).Select(Labelled)];
@@ -5978,9 +6017,34 @@ else if (state is not null)
             {
                 ClearFire();
             }
+            else if (proposal.Action == GameActions.ThrowDc)
+            {
+                // The UI review, pass 35: the DC is spent, so its draft goes with it.
+                throwDc = throwDcAt = string.Empty;
+            }
+            else if (proposal.Action == GameActions.FireOrdnance)
+            {
+                // The UI review, pass 35: a shot may wreck its target or break its Spotter, and Intensive Fire is declared for one shot. The weapon
+                // and the Location stay for a weapon that keeps its ROF.
+                ordnanceIntensive = false;
+                if (state?.Unit(ordnanceVehicle) is not { Status: InstanceStatus.Active })
+                {
+                    ordnanceVehicle = string.Empty;
+                }
+
+                if (state?.Unit(ordnanceSpotter) is not { Status: InstanceStatus.Active } spotter || GameState.Condition(spotter, Conditions.Broken) == ConditionState.True)
+                {
+                    ordnanceSpotter = string.Empty;
+                }
+
+                if (state?.Unit(ordnanceDirector) is not { Status: InstanceStatus.Active } director || GameState.Condition(director, Conditions.Broken) == ConditionState.True)
+                {
+                    ordnanceDirector = string.Empty;
+                }
+            }
             else if (proposal.Action == GameActions.EndMove)
             {
-                moveTo = string.Empty;
+                moveTo = moveExit = moveKeep = string.Empty;
                 moveAssault = false;
                 moveDoubleTime = false;
                 moveMinimum = false;
@@ -6010,6 +6074,10 @@ else if (state is not null)
             else if (proposal.Action == GameActions.HookGun)
             {
                 hookBoards = false;
+            }
+            else if (proposal.Action == GameActions.VehicleCloseCombat)
+            {
+                ClearVehicleCc();
             }
             else if (proposal.Action == GameActions.Rally)
             {

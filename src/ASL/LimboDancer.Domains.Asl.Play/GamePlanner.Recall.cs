@@ -95,13 +95,19 @@ public sealed partial class GamePlanner
             return null;
         }
 
-        if (ScenarioA1RecallCalculator.ExitTerrain(terrain, state.ScenarioMonth) is not { } paid || !VehicleTerrainHalfMp.TryGetValue((type, paid), out var halfMp))
+        // E3.6 (the Rules boundary review): an unpaved road in Mud gives no road rate, and the exit pays the Open Ground cost, as an entry does.
+        var crossed = read.Hex.Hexsides.FirstOrDefault(item => item.Side == side)?.Terrain;
+        var paved = crossed?.Name == "Paved Road";
+        var roadOff = ScenarioA1VehicleTerrainCosts.MudTurnsRoadOff(crossed?.IsRoad == true, state.Weather("mud"), paved);
+        if (ScenarioA1RecallCalculator.ExitTerrain(terrain, state.ScenarioMonth, roadOff) is not { } paid || !VehicleTerrainHalfMp.TryGetValue((type, paid), out var halfMp))
         {
             return null;
         }
 
-        return ScenarioA1RecallCalculator.ExitHalfMp(halfMp, read.Hex.Hexsides.FirstOrDefault(item => item.Side == side)?.Terrain?.IsRoad == true,
-            IsAfv(vehicle) && Is(vehicle, Conditions.ButtonedUp));
+        // E1.52, E3.9 (pass 35, task 35.14; the pass 32 design's section 12, item 15): the night's and the weather's MP of the hexside crossed.
+        var road = crossed?.IsRoad == true && !roadOff;
+        return ScenarioA1RecallCalculator.ExitHalfMp(halfMp, road, ButtonedUpAfv(vehicle), state.Weather("ground-snow") || state.Weather("deep-snow"),
+            VehicleWeatherHalfMp(state, type, paid, road, road && paved, road && state.SpecialRules.Contains("plowed-roads", StringComparer.Ordinal), 0));
     }
 
     /// <summary>
@@ -130,11 +136,15 @@ public sealed partial class GamePlanner
         return state.Location(vehicle.Id) is { } at ? EdgeSides(state, at.Location).FirstOrDefault(item => item.Side == exit.Direction).Edge : null;
     }
 
-    /// <summary>The exits a vehicle may make from its Location (A2.6): an edge direction within its VCA (D2.11) whose exit cost is reviewed.</summary>
+    /// <summary>
+    /// The exits a vehicle may make from its Location (A2.6): an edge direction within its VCA (D2.11) whose exit cost is reviewed. A Recalled AFV
+    /// that must leave has only its Friendly Board Edge (D5.341), so the page offers it no other (found in the Studio, pass 35).
+    /// </summary>
     public IReadOnlyList<VehicleMove> VehicleExits(GameState state, UnitInstance vehicle, string? edge = null)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(vehicle);
+        edge ??= MustLeave(vehicle) ? state.Side(vehicle.Side)?.FriendlyEdge : null;
         if (state.Location(vehicle.Id) is not { } at || vehicle.Position is not MapPosition { Facing: { } facing })
         {
             return [];

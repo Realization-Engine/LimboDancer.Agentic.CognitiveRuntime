@@ -161,6 +161,12 @@ public static class ScenarioA1FireMapRules
                 return new FirerLocationVerdict("play.fire-reaction: a DEFENDER unit fires at a moving vehicle in its own Location only as Reaction Fire after the vehicle's OVR there (D7.22); CC Reaction Fire is the vehicle CC action (D7.21)", false);
             }
 
+            // D7.21 (p. 207; pass 35, task 35.13 e): the CC counter a DEFENDER carries after its CC Reaction Fire prohibits Non-CC Reaction Fire.
+            if (facts.Phase == "mph" && facts.CcMarkedFirerAtVehicle?.Invoke() == true)
+            {
+                return new FirerLocationVerdict("play.fire-reaction: a unit under a CC counter after its CC Reaction Fire makes no Non-CC Reaction Fire at the vehicle (D7.21)", false);
+            }
+
             return new FirerLocationVerdict(null, true);
         }
 
@@ -221,8 +227,14 @@ public static class ScenarioA1FireMapRules
             .Select(entry => entry.Range).ToHashSet();
         var grain = los.Hindrances.Any(entry => entry.Terrains.Contains("Grain"));
         var (vehicleDrm, vehicleReason) = vehicleHindrance(mapRanges);
-        return vehicleReason is not null ? (vehicleReason, null) : (null, new FireLos(los.Blocked, mapRanges.Count + vehicleDrm, attributed, grain));
+        // B.10 (p. 113; pass 35, task 35.5): any combination of SMOKE, weather, and terrain Hindrance of +6 or more blocks the LOS, so the terrain's count
+        // with the vehicles', wrecks', and SMOKE's is tested here; the map's own total was tested alone until now.
+        var total = mapRanges.Count + vehicleDrm;
+        return vehicleReason is not null ? (vehicleReason, null) : (null, new FireLos(los.Blocked || HindranceBlocks(total), total, attributed, grain));
     }
+
+    /// <summary>B.10: a LOS Hindrance DRM of +6 or more blocks the LOS completely.</summary>
+    public static bool HindranceBlocks(int hindranceDrm) => hindranceDrm >= 6;
 
     /// <summary>
     /// The group's map facts from its Locations (A7.5): the first Location's range, level, and LOS for the group; each firer's own when the group spans

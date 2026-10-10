@@ -85,9 +85,6 @@ public static class ScenarioA1RoutRallyProjection
         return (spent / 2, spent % 2 == 1);
     }
 
-    /// <summary>A10.5, as the projector has it: a broken unit has six MF in the RtPh, a wounded leader or hero three; the planner counts any wounded SMC (section 12).</summary>
-    public static int RoutHalfMfAsRecorded(bool leaderOrHero, bool wounded) => leaderOrHero && wounded ? 6 : 12;
-
     /// <summary>A10.53 (ruling R13.3; UNIT-STATE-041): an Interdiction NMC is taken by a unit that routed this phase.</summary>
     public static bool InterdictionByRoutingUnit(bool routedThisPhase) => routedThisPhase;
 

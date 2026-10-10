@@ -49,13 +49,25 @@ public static class ScenarioA1VehicleTerrainCosts
     }
 
     /// <summary>
+    /// E3.6 (p. 229 to 230): in Mud an unpaved road gives no road rate, "and Open Ground movement COT applies"; a paved road is not affected. One
+    /// answer for an entry and for a Recall exit.
+    /// </summary>
+    public static bool MudTurnsRoadOff(bool road, bool mud, bool pavedRoad) => road && mud && !pavedRoad;
+
+    /// <summary>
+    /// D2.16, B3.4: the road rate in half MP, for an entry and for a Recall exit: half a MP, or a full MP for a BU AFV and in Ground or Deep Snow
+    /// (E3.724, E3.7331).
+    /// </summary>
+    public static int RoadHalfMp(bool buttonedUpAfv, bool snow) => buttonedUpAfv || snow ? 2 : 1;
+
+    /// <summary>
     /// The cost of a vehicle's outright entry of a Location over the hexside it crosses (rulings R11.6 to R11.9), from the facts Play reads: the
     /// wreck and vehicle penalty, SMOKE, and the weather cost cross as delegates read where the old body read them.
     /// </summary>
     public static (VehicleTerrainEntry? Entry, string? Reason) EntryCost(string? type, string to, int toLevel, bool cliffOrSlope, string? terrainKey,
         string? terrainName, string? wall, string? hexsideName, bool roadHexside, int rise, int? month, bool mud, bool pavedRoad, bool plowedRule,
         int printedHalfMp, bool buttonedAfv, bool groundSnow, bool deepSnow, Func<bool, int> wreckHalfMp, Func<bool> smoke, bool towing,
-        Func<string, bool, bool, bool, int> weatherHalfMp, bool reverse, bool allMp, List<(string Cause, int Drm)> own)
+        Func<string, bool, bool, bool, int> weatherHalfMp, bool reverse, bool allMp, List<(string Cause, int Drm)> own, bool besideMarsh = false)
     {
         if (type is null)
         {
@@ -84,6 +96,17 @@ public static class ScenarioA1VehicleTerrainCosts
 
         var road = roadHexside && !ScenarioA1Definitions.IsRubbleTerrain(terrain);
 
+        // C10.1 (p. 180; pass 35, task 35.12): no vehicle tows a Gun over a wall or hedge, or into rubble. A road crosses a wall or hedge by its gap.
+        if (towing && wall is not null && !road)
+        {
+            return (null, $"a vehicle towing a Gun may not cross a {wall} (C10.1)");
+        }
+
+        if (towing && ScenarioA1Definitions.IsRubbleTerrain(terrain))
+        {
+            return (null, "a vehicle towing a Gun may not enter rubble (C10.1)");
+        }
+
         // B10.52 (ruling R11.7): on a board whose elevations are hills, an Abrupt Elevation Change crosses two hillside Crest Lines, a Double-Crest
         // hexside, which a vehicle crosses only by road.
         if (Math.Abs(rise) >= 2 && !road)
@@ -102,10 +125,13 @@ public static class ScenarioA1VehicleTerrainCosts
             terrain = scenarioMonth is >= 4 and <= 9 ? "grain" : "open-ground";
         }
 
+        // B9.4 (pass 35, task 35.14): a road crosses a wall or hedge by its gap, in Mud as in the dry.
+        var gap = road;
+
         // E3.6 (backlog pass 16, ruling R16.12; referee, pass 16): in Mud a vehicle using an unpaved road pays the Open Ground COT, whatever the hex holds.
         var paved = road && pavedRoad;
         var plowed = road && plowedRule;
-        if (road && mud && !paved)
+        if (MudTurnsRoadOff(road, mud, pavedRoad))
         {
             road = false;
             terrain = "open-ground";
@@ -120,7 +146,7 @@ public static class ScenarioA1VehicleTerrainCosts
         if (road)
         {
             // E3.724, E3.7331 (referee, pass 16): in Ground or Deep Snow a road entry costs at least one MP.
-            cost = buttonedAfv || groundSnow || deepSnow ? 2 : 1;
+            cost = RoadHalfMp(buttonedAfv, groundSnow || deepSnow);
         }
         else if (woods)
         {
@@ -176,7 +202,7 @@ public static class ScenarioA1VehicleTerrainCosts
         // B9.4: a wall or hedge hexside, not crossed by the road through a gap in it: fully-tracked 1 + COT; a halftrack a hedge only, 2 + COT with a
         // Bog DR in the hex it leaves; a truck neither.
         var bogInLeft = false;
-        if (wall is not null && !road)
+        if (wall is not null && !gap)
         {
             switch (type, wall)
             {
@@ -201,10 +227,23 @@ public static class ScenarioA1VehicleTerrainCosts
         }
 
         var towingHalfMp = towing ? 2 : 0;
-        cost = all ? cost : cost + penalty + towingHalfMp + weatherHalfMp(terrain, road, paved, plowed);
+        // D2.21, E3.9, E1.52 (pp. 196, 224, 231; pass 35, task 35.14): the Reverse multiplier is on the cost of entry; the weather's MP are added
+        // "after calculating total cost", and the night's "as if towing a Gun" (C10.1: after all other modifications), so neither is multiplied.
+        cost = all ? cost : cost + penalty + towingHalfMp;
         if (reverse && !all)
         {
             cost *= ReverseMultiplier(type);
+        }
+
+        if (!all)
+        {
+            cost += weatherHalfMp(terrain, road, paved, plowed);
+        }
+
+        // B16.43 (p. 130; pass 35, task 35.7): a ground level or level -1 hex adjacent to a marsh is a Bog hex for a vehicle entering by a non-road hexside.
+        if (besideMarsh && !road)
+        {
+            bog.Add(("beside-marsh", 0));
         }
 
         int? bogDrm = null;
@@ -237,11 +276,14 @@ public static class ScenarioA1VehicleTerrainCosts
         return (new VehicleTerrainEntry(cost, all, bogDrm, causes, terrain, road, hedgeDrm), null);
     }
 
+    /// <summary>C10.1 (p. 180; pass 35, task 35.12): a vehicle towing a Gun may not use Bypass Movement. The Narrow Streets exception (B31.124) is not built.</summary>
+    public static string? TowingBypassBar(bool towing) => towing ? "a vehicle towing a Gun may not use Bypass Movement (C10.1)" : null;
+
     /// <summary>
     /// A VBM step's cost in half MP (D2.3, D2.31; ruling R11.2): twice the Open Ground cost with a level climbed and SMOKE, the wreck and vehicle penalty
-    /// when the obstacle is a new hex, towing, and the Reverse multiplier.
+    /// when the obstacle is a new hex, and the Reverse multiplier.
     /// </summary>
-    public static int BypassHalfMp(int open, int rise, bool smoke, bool newHex, Func<int> wreckHalfMp, bool towing, bool reverse, string? movementType)
+    public static int BypassHalfMp(int open, int rise, bool smoke, bool newHex, Func<int> wreckHalfMp, bool reverse, string? movementType, int weatherHalfMp = 0)
     {
         var smokeHalfMp = smoke ? 2 : 0;
         var cost = 2 * (open + (rise > 0 ? rise * 8 : 0) + smokeHalfMp);
@@ -250,17 +292,13 @@ public static class ScenarioA1VehicleTerrainCosts
             cost += wreckHalfMp() - smokeHalfMp;
         }
 
-        if (towing)
-        {
-            cost += 2;
-        }
-
         if (reverse)
         {
             cost *= ReverseMultiplier(movementType);
         }
 
-        return cost;
+        // E1.52, E3.9 (pp. 224, 231; pass 35, task 35.14): the night's and the weather's MP per hexside "transited via VBM", after the total.
+        return cost + weatherHalfMp;
     }
 
     /// <summary>

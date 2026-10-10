@@ -78,9 +78,13 @@ public static class ScenarioA1OrdnanceEventRules
     /// <summary>D5.5: an Abandoned vehicle's conditions.</summary>
     public static IReadOnlyList<(UnitCondition Condition, bool Value)> AbandonedConditions { get; } = [(UnitCondition.Abandoned, true), (UnitCondition.Motion, false)];
 
-    /// <summary>A7.302, A17.2: a Casualty Reduction's result; the HS is read lazily for a squad alone.</summary>
-    public static FirerCasualty Casualty(string kind, Func<bool> hasHalfSquad, bool wounded) =>
+    /// <summary>
+    /// A7.302, A17.11 (pass 35, task 35.1): a Casualty Reduction's result; the HS is read lazily for a squad alone, and a SMC's Wound Severity dr says
+    /// whether its wound is mortal.
+    /// </summary>
+    public static FirerCasualty Casualty(string kind, Func<bool> hasHalfSquad, bool wounded, int? severityDr) =>
         kind == "asl:squad" && hasHalfSquad() ? FirerCasualty.HalfSquad
-            : kind is "asl:leader" or "asl:hero" && !wounded ? FirerCasualty.Wounded
-            : FirerCasualty.Eliminated;
+            : !ScenarioA1Wounds.SeverityDue(kind is "asl:leader" or "asl:hero") ? FirerCasualty.Eliminated
+            : severityDr is { } dr ? ScenarioA1Wounds.Mortal(dr, wounded) ? FirerCasualty.Eliminated : FirerCasualty.Wounded
+            : throw new ArgumentNullException(nameof(severityDr), "A SMC's Casualty Reduction needs its Wound Severity dr (A17.11).");
 }

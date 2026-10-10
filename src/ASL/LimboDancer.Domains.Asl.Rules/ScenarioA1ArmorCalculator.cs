@@ -165,18 +165,19 @@ internal static class ScenarioA1ArmorCalculator
 
         if (latw)
         {
-            // C13.1, C13.8 (ruling R9.8): Case C3 instead of Case B, for the AFPh and for the Backblast of a shot from a ground-level building.
-            if (shot.Phase == "AFPh")
+            // C13.1, C13.8 (ruling R9.8): Case C3 instead of Case B, for the AFPh and for the Backblast of a shot from a ground-level building
+            // or rubble; C5.34 (p. 172; pass 35, task 35.10): neither for an Opportunity Firer.
+            if (ScenarioA1OrdnanceCalculator.AfphFire(shot))
             {
                 drm.Add(new FireModifier("case-c3:afph", 2, "C13.1"));
             }
 
-            if (shot.Panzerfaust?.FromBuilding == true && gun.LatwType is "pf" or "psk")
+            if (shot.Panzerfaust?.FromBuilding == true && gun.LatwType is "pf" or "psk" && !ScenarioA1OrdnanceCalculator.OpportunityFire(shot))
             {
                 drm.Add(new FireModifier("case-c3:backblast", 2, "C13.8"));
             }
         }
-        else if (shot.Phase == "AFPh")
+        else if (ScenarioA1OrdnanceCalculator.AfphFire(shot))
         {
             drm.Add(new FireModifier("case-b", woods ? 3 : 2, "C5.2"));
         }
@@ -207,12 +208,13 @@ internal static class ScenarioA1ArmorCalculator
 
         // C6.11, C6.12 (ruling R8.1): Defensive First Fire at a vehicle that has spent at most one MP in the firer's continuous LOS takes Case J2,
         // at most three Case J1, else Case J; a moving target in a fire phase takes Case J.
-        if (shot.FireKind is not null && shot.Movement?.MpInLos is { } seen)
+        // D8.4 (p. 209; pass 35, task 35.13 j): none against a vehicle that began its MPh bogged and spends its MP in its Bog hex.
+        if (shot.Movement?.InBogHex != true && shot.FireKind is not null && shot.Movement?.MpInLos is { } seen)
         {
             var mpInLos = seen - (shot.Movement.MpClaimed ?? 0);
             drm.Add(mpInLos <= 1 ? new FireModifier("case-j2", 4, "C6.12") : mpInLos <= 3 ? new FireModifier("case-j1", 3, "C6.11") : new FireModifier("case-j", 2, "C6.1"));
         }
-        else if (target.Moving == true)
+        else if (shot.Movement?.InBogHex != true && target.Moving == true)
         {
             drm.Add(new FireModifier("case-j", 2, "C6.1"));
         }
@@ -222,8 +224,9 @@ internal static class ScenarioA1ArmorCalculator
             drm.Add(new FireModifier("case-k", 2, "C6.2"));
         }
 
-        // C6.3: no Point Blank Range against a Non-Stopped or Motion target, nor by a Motion firer. Cases L, M, and N are not LATW DRM.
-        if (!latw && range <= 2 && target.NonStopped != true && shot.Vehicle?.InMotion != true)
+        // C6.3: no Point Blank Range against a Non-Stopped or Motion target, nor by a Motion firer. Cases M and N are not LATW DRM; Case L is
+        // the ATR's, which reads no To Hit Table of its own (p. 174; pass 35, task 35.10).
+        if ((!latw || gun.LatwType == "atr") && range <= 2 && target.NonStopped != true && shot.Vehicle?.InMotion != true)
         {
             drm.Add(new FireModifier("case-l", range == 1 ? -2 : -1, "C6.3"));
         }
@@ -251,8 +254,10 @@ internal static class ScenarioA1ArmorCalculator
             drm.Add(new FireModifier("case-p:" + armor.TargetSize, size, "C6.7"));
         }
 
+        // D2.38 (p. 198; pass 35, task 35.13 b): a vehicle in Bypass is in the Open Ground of its hex and takes no beneficial TEM of the woods or
+        // building it Bypasses. A building Bypassed inside a woods hex (2I9, 3I1) is not told apart.
         var tem = ScenarioA1FireReference.Tem.GetValueOrDefault(hit.TargetTerrain!);
-        if (tem != 0)
+        if (tem != 0 && !(target.Bypass == true && tem > 0))
         {
             drm.Add(new FireModifier("case-q:" + hit.TargetTerrain, tem, "C6.8"));
         }

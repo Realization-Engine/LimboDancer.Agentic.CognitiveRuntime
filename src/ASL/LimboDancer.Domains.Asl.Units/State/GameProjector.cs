@@ -249,7 +249,7 @@ public static class GameProjector
             next = KeepPlacedCharges(next, gameEvent.Payload);
             next = KeepMelee(next);
             next = KeepCx(next);
-            next = KeepAcquisitions(next, gameEvent.Payload);
+            next = KeepAcquisitions(previous, next, gameEvent.Payload);
             next = KeepPassengers(next);
             next = next with
             {
@@ -1456,16 +1456,36 @@ public static class GameProjector
         /// into their successors (A7.302, A19.13), drops those no longer active or taken prisoner, and follows them while they share one
         /// Location. The planner moves it back to the last Location in the Gun's LOS when they leave it.
         /// </summary>
-        private GameState KeepAcquisitions(GameState next, EventPayload payload)
+        private GameState KeepAcquisitions(GameState? previous, GameState next, EventPayload payload)
         {
             if (next.Acquisitions.Count == 0)
             {
                 return next;
             }
 
+            // Where an Acquisition's firer is: a Gun or SW with the unit that mans, possesses, or tows it, else where it lies; a tank where it stands.
+            static string? FirerAt(GameState? state, string id) => state?.Find(id) switch
+            {
+                EquipmentInstance { Holding: { } holding } => state!.Location(holding.Holder)?.Location.ToString(),
+                EquipmentInstance { Position: MapPosition lying } => lying.Location.ToString(),
+                UnitInstance unit => state!.Location(unit.Id)?.Location.ToString(),
+                _ => null,
+            };
+
             var kept = new List<GunAcquisition>();
             foreach (var acquisition in next.Acquisitions)
             {
+                // C6.5 (pass 35, task 35.11): lost when its firer leaves its Location, or turns without having fired on its target this phase. A
+                // vehicle's VCA change turns its MA with it unless its TCA is kept apart (the referee's review).
+                if (Rules.ScenarioA1FireFollowUps.AcquisitionLostByMoveOrTurn(FirerAt(previous, acquisition.Gun), FirerAt(next, acquisition.Gun),
+                    Rules.ScenarioA1FireFollowUps.AcquiringCaChanged(payload is GunTurned turned && turned.Gun == acquisition.Gun,
+                        payload is VehicleStepped { Kind: VehicleStepped.Turn } hull && hull.Vehicle == acquisition.Gun,
+                        previous?.TurretFacings.Any(item => item.Vehicle == acquisition.Gun) == true),
+                    previous?.OrdnanceShots.FirstOrDefault(item => item.Gun == acquisition.Gun)?.Shots ?? 0))
+                {
+                    continue;
+                }
+
                 // A Gun keeps it while its Good Order crew mans it; a light mortar while its Good Order possessor holds it (C9.2; table player, pass 9); a
                 // tank while it is active and not Abandoned (C6.5, D1.3). Rules decides it (pass 32.c) from the holder's facts.
                 var holder = next.Find(acquisition.Gun);
@@ -2040,7 +2060,8 @@ public static class GameProjector
             // D8.3 (ruling R11.10): a bogged vehicle's only expenditure is its Bog Removal Start MP.
             var bogged = GameState.Condition(vehicle, Conditions.Bogged) == ConditionState.True;
             // D6.5, D6.1 (ruling R26.2): Passengers leave a vehicle that Prep Fired, is immobilized, or is Abandoned.
-            if (new[] { Conditions.PrepFire, Conditions.Immobilized, Conditions.Stunned, Conditions.Shocked, Conditions.UnconfirmedKill, Conditions.Abandoned }
+            // C10.11 (pass 35, task 35.13; the pass 32 design's section 12, item 5): nor does a vehicle TI after hooking up a Gun, as the planner has it.
+            if (new[] { Conditions.PrepFire, Conditions.Immobilized, Conditions.Stunned, Conditions.Shocked, Conditions.UnconfirmedKill, Conditions.Abandoned, "asl:ti" }
                 .Where(name => step.Kind != VehicleStepped.Unload || name is not (Conditions.PrepFire or Conditions.Immobilized or Conditions.Abandoned))
                 .FirstOrDefault(name => GameState.Condition(vehicle, name) == ConditionState.True) is { } barred)
             {
@@ -2068,7 +2089,7 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-034", "A vehicle resolves its declared OVR before it spends any more MP (D7.1).");
             }
 
-            if (bogged && !(step.Kind == VehicleStepped.Start && step.BogRemoval) && step.Kind != VehicleStepped.Remain)
+            if (bogged && !(step.Kind == VehicleStepped.Start ? step.BogRemoval : Rules.ScenarioA1VehicleProjection.BoggedMaySpend(step.Kind, true)))
             {
                 return Fail<GameState>("UNIT-STATE-034", $"'{vehicle.Id}' is bogged: it spends MP only on its Bog Removal (D8.2, D8.3).");
             }
@@ -2376,7 +2397,7 @@ public static class GameProjector
 
         /// <summary>A10.5: a broken unit has six MF in the RtPh, a wounded SMC three.</summary>
         private static int RoutHalfMf(UnitInstance unit) =>
-            Rules.ScenarioA1RoutRallyProjection.RoutHalfMfAsRecorded(unit.Kind is "asl:leader" or "asl:hero", GameState.Condition(unit, Conditions.Wounded) == ConditionState.True);
+            Rules.ScenarioA1RoutCalculator.RoutHalfMf(unit.Kind is "asl:leader" or "asl:hero", GameState.Condition(unit, Conditions.Wounded) == ConditionState.True);
 
         /// <summary>A Repair outcome of Rules as the record names it.</summary>
         private static string RepairResult(Rules.RepairOutcome outcome) => outcome switch

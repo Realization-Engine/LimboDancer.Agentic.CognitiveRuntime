@@ -34,9 +34,12 @@ public static class ScenarioA1RoutCalculator
             : ExposedInOpenGround(reader, enemies, at, scenarioMonth) is { } seen ? $"it is in Open Ground in the LOS and Normal Range of {seen}"
             : null;
 
-    /// <summary>Whether a broken unit may rout (A10.5): it must, or it is under DM.</summary>
-    public static bool MayRout(string? mustRout, bool active, bool broken, bool desperationMorale, bool melee, bool captured) =>
-        mustRout is not null || (active && broken && desperationMorale && !melee && !captured);
+    /// <summary>
+    /// Whether a broken unit may rout (A10.5): it must, or it is under DM. A Disrupted unit stays put unless it must rout (A19.12; pass 35, task 35.2):
+    /// its DM alone gives it no rout.
+    /// </summary>
+    public static bool MayRout(string? mustRout, bool active, bool broken, bool desperationMorale, bool melee, bool captured, bool disrupted) =>
+        mustRout is not null || (active && broken && desperationMorale && !melee && !captured && !disrupted);
 
     /// <summary>Two Locations are the same or ADJACENT.</summary>
     public static bool AdjacentOrSame(IRoutFactReader reader, int one, int two)
@@ -69,6 +72,39 @@ public static class ScenarioA1RoutCalculator
             && (location.TerrainKey == "open-ground" || (location.TerrainKey == "grain" && scenarioMonth is < 6 or > 9));
 
     /// <summary>
+    /// The cover facts of one LOS (A10.531; pass 35, task 35.4): fire's count of the map Hindrance stands when fire can attribute every Hindrance on
+    /// the LOS to its terrain; otherwise, or when the read of the vehicles on the LOS was refused, the map's own total does.
+    /// </summary>
+    public static RoutCoverFacts CoverFacts(bool hindranceRead, bool attributed, int fireHindrance, int vehiclesAndSmoke, bool hexsideTem, bool heightAdvantage, bool inHexCover) =>
+        new(hindranceRead && attributed ? fireHindrance - vehiclesAndSmoke : null, hindranceRead ? vehiclesAndSmoke : 0, hexsideTem, heightAdvantage, inHexCover);
+
+    /// <summary>
+    /// Whether the enemy unit in a Location could apply the FFMO DRM to a unit in an Open Ground Location (A10.531, A10.53; pass 35, task 35.4): a clear
+    /// LOS within the range given, no Hindrance of any kind along it (the map's, a vehicle's or wreck's, SMOKE), and no TEM the unit could claim against
+    /// that enemy: a wall or hedge on the hexside crossed, Height Advantage, or a wreck or AFV in the Location. The cover is read only for a clear LOS in range.
+    /// A unit entering from <paramref name="steppedFrom"/> has no Height Advantage against a LOS that crosses the Crest Line hexside it climbs (B1.14, p. 113).
+    /// </summary>
+    public static bool CouldApplyFfmo(IRoutFactReader reader, int enemyLocation, int at, int range, int? steppedFrom = null)
+    {
+        ArgumentNullException.ThrowIfNull(reader);
+        if (reader.Los(enemyLocation, at) is not { Clear: true } los || los.Range > range)
+        {
+            return false;
+        }
+
+        var cover = reader.Cover(enemyLocation, at, steppedFrom);
+        return (cover.MapHindrance ?? los.Hindrance) + cover.OtherHindrance == 0 && !cover.HexsideTem && !cover.HeightAdvantage && !cover.InHexCover;
+    }
+
+    /// <summary>
+    /// The range within which a unit may Interdict (A10.532; pass 35, task 35.4): its Normal Range, but for a SMC with no other SMC to man a weapon with
+    /// him, whose SW fires at half FP and so does not Interdict: he has his own range alone, which for a leader is none. A hero is not such a SMC:
+    /// he "uses a MG (at full FP)" alone (A15.23, p. 83), so he Interdicts at his weapons' range.
+    /// </summary>
+    public static int InterdictionRange(bool smc, bool anotherSmcThere, int own, IEnumerable<int> weaponRanges, bool hero = false) =>
+        smc && !anotherSmcThere && !hero ? Math.Min(16, own) : NormalRange(own, weaponRanges);
+
+    /// <summary>
     /// A Known unbroken enemy unit not in Melee in whose LOS and Normal Range a Location in Open Ground lies, with no Hindrance between (A10.5, A10.531), or null.
     /// </summary>
     public static string? ExposedInOpenGround(IRoutFactReader reader, IReadOnlyList<RoutEnemyFacts> enemies, int at, int? scenarioMonth)
@@ -83,7 +119,7 @@ public static class ScenarioA1RoutCalculator
         // A10.531 (table player, pass 13): only an enemy unit that could fire applies FFMO, so broken ones do not count.
         foreach (var enemy in enemies.Where(item => !item.Melee && !item.Broken).OrderBy(item => item.Id, StringComparer.Ordinal))
         {
-            if (enemy.NormalRange is > 0 and var range && reader.Los(enemy.Location, at) is { Clear: true, Hindrance: 0 } los && los.Range <= range)
+            if (enemy.NormalRange is > 0 and var range && CouldApplyFfmo(reader, enemy.Location, at, range))
             {
                 return enemy.Id;
             }
@@ -94,10 +130,10 @@ public static class ScenarioA1RoutCalculator
 
     /// <summary>
     /// The enemy unit able to Interdict a routing unit entering an Open Ground Location (A10.53, A10.532, A10.533; ruling R13.3), or null: Known unbroken
-    /// Infantry not CX, pinned, Encircled, in Melee, or a prisoner, with the Location in its LOS and Normal Range and no Hindrance between. Vehicles, and
-    /// units whose FP is halved for other reasons, are not read (backlog).
+    /// Infantry not CX, pinned, Encircled, in Melee, or a prisoner, that could apply the FFMO DRM there (<see cref="CouldApplyFfmo"/>) within the range
+    /// it may Interdict at (<see cref="InterdictionRange"/>). Vehicles, and units whose FP is halved for other reasons, are not read (backlog).
     /// </summary>
-    public static string? Interdictor(IRoutFactReader reader, IReadOnlyList<RoutEnemyFacts> enemies, int at, int? scenarioMonth)
+    public static string? Interdictor(IRoutFactReader reader, IReadOnlyList<RoutEnemyFacts> enemies, int at, int? scenarioMonth, int? steppedFrom = null)
     {
         ArgumentNullException.ThrowIfNull(reader);
         ArgumentNullException.ThrowIfNull(enemies);
@@ -109,7 +145,7 @@ public static class ScenarioA1RoutCalculator
         foreach (var enemy in enemies.Where(item => !item.Vehicle && !item.Broken && !item.Cx && !item.Pinned && !item.Melee && !item.Encircled)
             .OrderBy(item => item.Id, StringComparer.Ordinal))
         {
-            if (enemy.NormalRange is > 0 and var range && reader.Los(enemy.Location, at) is { Clear: true, Hindrance: 0 } los && los.Range <= range)
+            if ((enemy.InterdictionRange ?? enemy.NormalRange) is > 0 and var range && CouldApplyFfmo(reader, enemy.Location, at, range, steppedFrom))
             {
                 return enemy.Id;
             }
@@ -149,6 +185,27 @@ public static class ScenarioA1RoutCalculator
         return null;
     }
 
+    /// <summary>
+    /// A10.533 (pass 35, task 35.4): a rout step into a Location holding concealed or hidden enemy units. With a real unit among them the routing unit
+    /// is repulsed to the Location it came from, where its rout ends: the hidden units first go beneath a "?", and one real unit loses its "?", by
+    /// Random Selection when there are several (A.9, as an ordinary entry draws: ruling R10.11). With Dummies alone, they are removed and the rout goes on.
+    /// </summary>
+    public static RoutRepulseVerdict RoutRepulse(IReadOnlyList<MoveRevealUnitFacts> unknownThere)
+    {
+        ArgumentNullException.ThrowIfNull(unknownThere);
+        string[] real = [.. unknownThere.Where(unit => !unit.Dummy).OrderBy(unit => unit.Id, StringComparer.Ordinal).Select(unit => unit.Id)];
+        return real.Length > 0
+            ? new RoutRepulseVerdict(true, [.. unknownThere.Where(unit => unit.Hidden).Select(unit => unit.Id)], real, real.Length > 1, [])
+            : new RoutRepulseVerdict(false, [], [], false, [.. unknownThere.Select(unit => unit.Id)]);
+    }
+
+    /// <summary>A10.533, A.9: the units that lose their "?" in repulsing a rout: the only real unit, or with dice the highest dr, ties all.</summary>
+    public static IReadOnlyList<string> RoutRepulseShown(IReadOnlyList<string> pool, IReadOnlyList<int>? dice)
+    {
+        ArgumentNullException.ThrowIfNull(pool);
+        return dice is null ? [.. pool.Take(1)] : [.. pool.Where((_, index) => dice[index] == dice.Take(pool.Count).Max())];
+    }
+
     /// <summary>The Known armed enemy units with a clear LOS to a Location (A10.51), read as they are enumerated.</summary>
     public static IEnumerable<string> SeenBy(IRoutFactReader reader, IReadOnlyList<RoutEnemyFacts> enemies, int at)
     {
@@ -177,16 +234,28 @@ public static class ScenarioA1RoutCalculator
     /// <summary>A10.51: a woods or building Location is a rout destination.</summary>
     public static bool RoutCover(RoutLocationFacts? read) => read is { } location && location.TerrainKey is "woods" or "wooden-building" or "stone-building";
 
-    /// <summary>A10.5, as the planner has it: the half MF a broken unit has in the RtPh, six MF, a wounded SMC three.</summary>
-    public static int RoutHalfMfAsPlanned(bool smc, bool wounded) => smc && wounded ? 6 : 12;
+    /// <summary>
+    /// A10.5, A17.2: the half MF a broken unit has in the RtPh, six MF, a wounded SMC three. One member for the planner and the projector (pass 35, the
+    /// Rules boundary review; the pass 32 design's section 12, item 7); each hands over whether the unit is a SMC as it reads kinds.
+    /// </summary>
+    public static int RoutHalfMf(bool smc, bool wounded) => smc && wounded ? 6 : 12;
 
-    /// <summary>The broken Morale Level (A10.4), one lower for a wounded SMC (A17.3), from the catalog; null for a unit the catalog does not know.</summary>
-    public static int? BrokenMorale(bool fromCatalog, int? brokenMorale, int? morale, bool wounded) =>
-        fromCatalog ? (brokenMorale ?? morale) - (wounded ? 1 : 0) : null;
+    /// <summary>
+    /// The broken Morale Level (A10.4), one lower for a wounded SMC (A17.3) and one higher for a Fanatic unit (A10.8; pass 35, task 35.4), never above
+    /// 10 (A.18), from the catalog; null for a unit the catalog does not know.
+    /// </summary>
+    public static int? BrokenMorale(bool fromCatalog, int? brokenMorale, int? morale, bool wounded, bool fanatic = false) =>
+        fromCatalog && (brokenMorale ?? morale) is { } level ? ScenarioA1Definitions.MoraleCeiling(level - (wounded ? 1 : 0) + (fanatic ? 1 : 0)) : null;
 
-    /// <summary>Casualty Reduction (A7.302): a squad with a HS becomes it, a SMC is wounded, or eliminated if already wounded, and anything else is eliminated.</summary>
-    public static CasualtyOutcome CasualtyReduction(bool squadWithHalfSquad, bool leaderOrHero, bool wounded) =>
-        squadWithHalfSquad ? CasualtyOutcome.Reduced : leaderOrHero && !wounded ? CasualtyOutcome.Wounded : CasualtyOutcome.Eliminated;
+    /// <summary>
+    /// Casualty Reduction (A7.302, A17.11; pass 35, task 35.1): a squad with a HS becomes it; a SMC is wounded, and its Wound Severity dr says whether the
+    /// wound is mortal (<see cref="ScenarioA1Wounds.Mortal"/>), a man already wounded staying wounded on a minor one; anything else is eliminated.
+    /// </summary>
+    public static CasualtyOutcome CasualtyReduction(bool squadWithHalfSquad, bool leaderOrHero, bool wounded, int? severityDr) =>
+        squadWithHalfSquad ? CasualtyOutcome.Reduced
+            : !ScenarioA1Wounds.SeverityDue(leaderOrHero) ? CasualtyOutcome.Eliminated
+            : severityDr is { } dr ? ScenarioA1Wounds.Mortal(dr, wounded) ? CasualtyOutcome.Eliminated : CasualtyOutcome.Wounded
+            : throw new ArgumentNullException(nameof(severityDr), "A SMC's Casualty Reduction needs its Wound Severity dr (A17.11).");
 
     /// <summary>A10.62 (ruling R13.1): a broken unit not under DM and not a prisoner can come under DM.</summary>
     public static bool DmCandidate(bool active, bool broken, bool desperationMorale, bool captured) => active && broken && !desperationMorale && !captured;
@@ -240,7 +309,7 @@ public static class ScenarioA1RoutCalculator
         string[] Seen(long mask) => [.. armed.Where((_, index) => index < 63 && (mask & (1L << index)) != 0)];
 
         var bars = new Dictionary<(int, int, long), bool>();
-        var interdicted = new Dictionary<int, bool>();
+        var interdicted = new Dictionary<(int, int), bool>();
         var entries = new Dictionary<(int, int, bool), RoutStepCost>();
         var best = new Dictionary<(int, long), int>();
         var reach = new Dictionary<int, int> { [start] = spent };
@@ -269,7 +338,8 @@ public static class ScenarioA1RoutCalculator
                     continue;
                 }
 
-                if (avoidInterdiction && (interdicted.TryGetValue(next, out var open) ? open : interdicted[next] = Interdictor(reader, enemies, next, scenarioMonth) is not null))
+                if (avoidInterdiction && (interdicted.TryGetValue((node.At, next), out var open) ? open
+                    : interdicted[(node.At, next)] = Interdictor(reader, enemies, next, scenarioMonth, node.At) is not null))
                 {
                     continue;
                 }
@@ -420,13 +490,22 @@ public static class ScenarioA1RoutCalculator
         return attackerUnit && defenderBegan() ? "play.rout-order: the DEFENDER's units have begun to rout, so the ATTACKER's may not (A10.5)" : null;
     }
 
-    /// <summary>A10.5: an ATTACKER's unit that has not routed, is not pinned, must rout, and can, routs before the DEFENDER's; the last two are read lazily.</summary>
-    public static bool AttackerMustRoutFirst(bool ofAttacker, bool routedThisPhase, bool pinned, Func<bool> mustRout, Func<bool> canRout)
+    /// <summary>
+    /// A10.5, A20.21 (pass 35, task 35.17): whether a broken unit still has a rout to make this RtPh: it has not routed, is not pinned, must rout, has a
+    /// legal step, and does not surrender instead of routing. A unit bound to surrender (A20.21: it "will surrender ... instead") owes no rout, so it
+    /// holds up neither the rout order nor the phase's end. The last three are read lazily, in that order.
+    /// </summary>
+    public static bool RoutStillOwed(bool routedThisPhase, bool pinned, Func<bool> mustRout, Func<bool> canRout, Func<bool> surrendersInstead)
     {
         ArgumentNullException.ThrowIfNull(mustRout);
         ArgumentNullException.ThrowIfNull(canRout);
-        return ofAttacker && !routedThisPhase && !pinned && mustRout() && canRout();
+        ArgumentNullException.ThrowIfNull(surrendersInstead);
+        return !routedThisPhase && !pinned && mustRout() && canRout() && !surrendersInstead();
     }
+
+    /// <summary>A10.5: an ATTACKER's unit that still owes a rout (<see cref="RoutStillOwed"/>) routs before the DEFENDER's.</summary>
+    public static bool AttackerMustRoutFirst(bool ofAttacker, bool routedThisPhase, bool pinned, Func<bool> mustRout, Func<bool> canRout, Func<bool> surrendersInstead) =>
+        ofAttacker && RoutStillOwed(routedThisPhase, pinned, mustRout, canRout, surrendersInstead);
 
     /// <summary>A10.5: the DEFENDER's unit waits for the ATTACKER's.</summary>
     public static string AttackerFirstText(string firstId) => $"play.rout-order: the ATTACKER's {firstId} must rout first (A10.5)";
@@ -435,8 +514,11 @@ public static class ScenarioA1RoutCalculator
     public static string? NightRoutBar(string unitId, bool night, bool lowCrawl) =>
         night && !lowCrawl ? $"play.night-rout: at night {unitId} does not rout normally but Low Crawls (lowCrawl) (E1.54)" : null;
 
-    /// <summary>A20.21: a unit surrenders to ADJACENT captors by day, unless Fanatic or under No Quarter.</summary>
-    public static bool SurrenderCandidate(bool night, bool fanatic, bool noQuarter) => !night && !fanatic && !noQuarter;
+    /// <summary>
+    /// A20.21: a unit surrenders to ADJACENT captors by day, unless Fanatic, under No Quarter, or a Commissar (A25.22; pass 35, task 35.4), who never
+    /// surrenders by the RtPh method. The other kinds the rule names (Partisans, Gurkhas, SS facing Russians, Japanese) have no counters.
+    /// </summary>
+    public static bool SurrenderCandidate(bool night, bool fanatic, bool noQuarter, bool commissar = false) => !night && !fanatic && !noQuarter && !commissar;
 
     /// <summary>A20.21: why a unit ADJACENT to its captors surrenders instead of routing: Disrupted, Encircled, or trapped (read last), or null.</summary>
     public static string? SurrenderCause(bool disrupted, bool encircled, Func<bool> trappedByInterdiction, IReadOnlyList<string> captors)
@@ -446,9 +528,46 @@ public static class ScenarioA1RoutCalculator
             : trappedByInterdiction() ? $"can get away from {string.Join(" or ", captors)} only by Interdiction or Low Crawl" : null;
     }
 
+    /// <summary>
+    /// A19.12 (p. 86), A20.21, and the Comprehensive Rout Example (p. 69): whether a unit bound to surrender has done so before the other side's units
+    /// rout. A Disrupted unit surrenders "at the start of any RtPh", before any rout; an ATTACKER's unit surrenders in its own turn among the
+    /// ATTACKER's routs, which all come before the DEFENDER's. A DEFENDER's unit that is not Disrupted still stands while the ATTACKER routs. The
+    /// surrender is recorded as the phase ends (ruling R35.2); for the other side's routes the unit is a prisoner from the moment the page has it
+    /// surrender. Whether it is bound to surrender is read last.
+    /// </summary>
+    public static bool SurrenderedBeforeTheOtherSideRouts(bool disrupted, bool attacker, Func<bool> boundToSurrender)
+    {
+        ArgumentNullException.ThrowIfNull(boundToSurrender);
+        return (disrupted || attacker) && boundToSurrender();
+    }
+
+    /// <summary>
+    /// What the Rout panel says of where a broken unit's rout may end (A10.5, A10.51; pass 35, the Rules boundary review): no legal step; places
+    /// within reach that all lie where it may not end, so that the route passes through them; the places it must end in; or none within reach.
+    /// The places come worded, each with the way to it.
+    /// </summary>
+    public static string RoutEndAdvice(bool canRout, bool must, IReadOnlyList<string> places, bool anyPlaceMayEndTheRout)
+    {
+        ArgumentNullException.ThrowIfNull(places);
+        return !canRout
+            ? must ? ". It has no legal rout step, so it is eliminated for Failure to Rout, or surrenders, when the RtPh ends (A10.5)." : ". It has no legal rout step, so it stays where it is."
+            : places.Count > 0 && !anyPlaceMayEndTheRout
+                ? $". It may not end its rout in or ADJACENT to the Location of the enemy unit it began with or beside (A10.5, A10.51): its route passes through {string.Join(" or ", places)} and ends in woods or a building beyond."
+            : places.Count > 0 ? $". Its route must end in {string.Join(" or ", places)}."
+            : ". No woods or building is within its reach, so any legal route will do.";
+    }
+
     /// <summary>A20.21: the refusal of a rout by a unit that surrenders instead.</summary>
     public static string RoutSurrenderText(string unitId, string cause, IReadOnlyList<string> captors) =>
         $"play.rout-surrender: {unitId} {cause}, so it surrenders to {string.Join(" or ", captors)} as the RtPh ends instead of routing (A20.21)";
+
+    /// <summary>A20.21 (pass 35, task 35.17): what the Rout panel says of a unit that surrenders instead of routing; it is offered no route.</summary>
+    public static string RoutSurrenderAdvice(string unitId, string cause, IReadOnlyList<string> captors) =>
+        $"{unitId} does not rout: it {cause}, so it surrenders to {string.Join(" or ", captors)} as the RtPh ends ({(cause == "is Disrupted" ? "A19.12, " : string.Empty)}A20.21).";
+
+    /// <summary>A19.12 (pass 35, task 35.2): a Disrupted unit may not use Low Crawl, but at night (E1.54).</summary>
+    public static string? DisruptedLowCrawlBar(string unitId, bool disrupted, bool lowCrawl, bool night) =>
+        disrupted && lowCrawl && !night ? $"play.rout-low-crawl: {unitId} is Disrupted and may not use Low Crawl; it routs normally if it must rout, and otherwise stays (A19.12)" : null;
 
     /// <summary>
     /// A10.4 (ruling R31d.1): the load a laden unit routs with: the one named, among the best loads; or the only choice when none is named; or null.
@@ -644,8 +763,13 @@ public static class ScenarioA1RoutCalculator
             : !routedThisPhase && !pinned && ExposedInOpenGround(reader, enemies, at, scenarioMonth) is { } seen
                 ? $"it did not rout from Open Ground in the LOS and Normal Range of {seen}" : null;
 
-    /// <summary>A20.21: a unit with captors surrenders instead of failing to rout, unless Fanatic, under No Quarter, or already rejected this phase.</summary>
-    public static bool SurrendersInstead(bool fanatic, bool noQuarter, bool rejected) => !fanatic && !noQuarter && !rejected;
+    /// <summary>
+    /// A20.21: a unit with captors surrenders instead of failing to rout, unless Fanatic, under No Quarter, already rejected this phase, or a Commissar
+    /// (A25.22; pass 35, task 35.4), who is eliminated rather than surrender. A unit repulsed this RtPh from a concealed unit's Location (A10.533,
+    /// p. 68) is eliminated too: its enemy takes it prisoner only by giving up its "?" before the rout enters.
+    /// </summary>
+    public static bool SurrendersInstead(bool fanatic, bool noQuarter, bool rejected, bool commissar = false, bool repulsed = false) =>
+        !fanatic && !noQuarter && !rejected && !commissar && !repulsed;
 
     /// <summary>A20.551 (ruling R31.8): a SMC that is free (no Custodian, not captured) and still Unarmed is Armed again.</summary>
     public static bool FreedUnarmedSmc(bool active, bool noCustodian, bool smc, bool unarmed, bool captured) => active && noCustodian && smc && unarmed && !captured;

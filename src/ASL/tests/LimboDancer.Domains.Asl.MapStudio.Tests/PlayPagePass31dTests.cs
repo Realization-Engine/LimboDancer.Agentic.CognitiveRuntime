@@ -17,12 +17,18 @@ namespace LimboDancer.Domains.Asl.MapStudio.Tests;
 
 /// <summary>
 /// A page-test board with room (pass 31d, design D13): 12 by 6 hexes of Open Ground painted in code as the synthetic board is, with woods in one
-/// hex. The 3 by 2 board has three hexes that take units, so a range beyond a squad's reach, a rout, and a route could not be set on it.
+/// hex and, since pass 35, a level 2 hill in another. The 3 by 2 board has three hexes that take units, so a range beyond a squad's reach, a rout, and a route could not be set on it.
 /// </summary>
 internal sealed class WideBoards(MapService maps) : IBoardProvider
 {
     /// <summary>The hex of the woods, in the board's fourth row.</summary>
     public static readonly HexIndex Woods = new(7, 3);
+
+    /// <summary>
+    /// The hex of the level 2 hill, in the board's second row and far from the fourth (pass 35): the synthetic catalog's woods and buildings
+    /// have no height for a LOS, so the hill is the board's one LOS obstacle, between the hexes on either side of it in its row.
+    /// </summary>
+    public static readonly HexIndex Hill = new(9, 1);
 
     public static readonly StudioBoard Board = FakeBoardProvider.Board with
     {
@@ -47,11 +53,16 @@ internal sealed class WideBoards(MapService maps) : IBoardProvider
     /// <summary>A hex of the board's fourth row, as a ground-level Location.</summary>
     public static string At(int column) => GameMaps.LocationOf(Board, new HexIndex(column, 3))!.ToString();
 
+    /// <summary>A hex of the hill's row, as a ground-level Location.</summary>
+    public static string BesideHill(int column) => GameMaps.LocationOf(Board, new HexIndex(column, 1))!.ToString();
+
     private static BoardRenderInput Input()
     {
         var geometry = BoardGeometry.Standard(12, 6);
         var codes = new byte[geometry.GridWidth * geometry.GridHeight];
         var center = geometry.CenterPoint(Woods);
+        var hill = geometry.CenterPoint(Hill);
+        var elevations = new sbyte[codes.Length];
         for (var x = 0; x < geometry.GridWidth; x++)
         {
             for (var y = 0; y < geometry.GridHeight; y++)
@@ -60,10 +71,14 @@ internal sealed class WideBoards(MapService maps) : IBoardProvider
                 {
                     codes[(x * geometry.GridHeight) + y] = 60;
                 }
+                else if (((x - hill.X) * (x - hill.X)) + ((y - hill.Y) * (y - hill.Y)) < 400)
+                {
+                    elevations[(x * geometry.GridHeight) + y] = 2;
+                }
             }
         }
 
-        var grid = new TerrainGrid(geometry, codes, new sbyte[codes.Length], new bool[geometry.HexCount]);
+        var grid = new TerrainGrid(geometry, codes, elevations, new bool[geometry.HexCount]);
         var facts = VaslCompatibleHexFactDerivation.Derive(grid, SyntheticBoard.Catalog, HexsideAnnotations.None);
         return BoardRenderInput.Create(BoardRef.Parse("ab-wide"), "Synthetic 12 by 6 board", grid, SyntheticBoard.Catalog, facts);
     }

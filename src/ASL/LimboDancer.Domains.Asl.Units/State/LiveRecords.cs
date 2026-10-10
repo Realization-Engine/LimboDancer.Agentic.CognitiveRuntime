@@ -302,9 +302,17 @@ public sealed record PaatcTaken(IReadOnlyList<string> Units, string Vehicle, str
 
 /// <summary>
 /// <c>rout-stepped</c>: one Location of a broken unit's rout in the RtPh (A10.5; backlog pass 13, ruling R13.3): the Location entered, its cost in
-/// half MF, and whether it is Low Crawl (A10.52), which uses all the unit's MF.
+/// half MF, and whether it is Low Crawl (A10.52), which uses all the unit's MF. A step repulsed by a concealed unit (A10.533; pass 35, task 35.4)
+/// names in <see cref="Attempted"/> the Location it tried to enter, and its Location is the one the unit stays in, where its rout ends.
 /// </summary>
-public sealed record RoutStepped(string Unit, BoardLocation To, int HalfMf, bool LowCrawl) : EventPayload;
+public sealed record RoutStepped(string Unit, BoardLocation To, int HalfMf, bool LowCrawl) : EventPayload
+{
+    /// <summary>The Location a repulsed step tried to enter (A10.533), or null for a step that was made.</summary>
+    public BoardLocation? Attempted
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// <c>rout-interdicted</c>: the NMC of Interdiction as a routing unit enters Open Ground (A10.53; ruling R13.3): the roll, the unit's Morale Level, the

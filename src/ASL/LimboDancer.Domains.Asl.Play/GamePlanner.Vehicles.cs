@@ -277,7 +277,7 @@ public sealed partial class GamePlanner
         var leaving = MustLeave(vehicle);
         var current = state.Movement;
         if (ScenarioA1VehicleMovementCalculator.MoveBar(id, kind, vehicle.MovementEnded,
-            () => IsAfv(vehicle) && Is(vehicle, Conditions.ButtonedUp) && NvrOf(state, vehicle) == 0, condition => Is(vehicle, condition), leaving,
+            () => ButtonedUpAfv(vehicle) && NvrOf(state, vehicle) == 0, condition => Is(vehicle, condition), leaving,
             current is not null && (!current.Vehicle || !current.Members.SequenceEqual([vehicle.Id], StringComparer.Ordinal)) ? current.Members : null,
             current is { WindowOpen: true }, current?.Reaction == true, current?.Overrun?.ToString(),
             () => current is null && MustCharge(state) is [{ } charging, ..] ? charging.Id : null, current is not null) is { } moveBar)
@@ -409,7 +409,8 @@ public sealed partial class GamePlanner
                 break;
             case VehicleStepped.Stop:
                 if (ScenarioA1VehicleMovementCalculator.StopBar(id, leaving, () => EnemyAfvBar(state, vehicle, existing), () => MayMoveOn(state, vehicle),
-                    vehicle.Straddling is not null, () => TurnedAtCafp(state, vehicle)) is { } stopBar)
+                    vehicle.Straddling is not null, () => TurnedAtCafp(state, vehicle),
+                    state.Passengers(id).Count > 0) is { } stopBar)
                 {
                     return Refused(scope, label, expected, stopBar);
                 }
@@ -443,7 +444,7 @@ public sealed partial class GamePlanner
         }
 
         // D5.341 (ruling R5.17): a leaving AFV keeps to a shortest route in MP to its Friendly Board Edge.
-        if (leaving)
+        if (leaving && !ScenarioA1RecallCalculator.StopsToUnload(kind, state.Passengers(id).Count > 0))
         {
             var (moves, _, undecided) = RecallRoute(state, vehicle);
             if (undecided is not null)
@@ -647,7 +648,7 @@ public sealed partial class GamePlanner
         int? requested = arguments.TryGetProperty("mp", out var mpValue) && mpValue.TryGetInt32(out var parsedMp) ? parsedMp : null;
         if (ScenarioA1VehicleMovementCalculator.EsbBar(id, Tracked(vehicle), moving,
             () => ThisPhase(existing).Select(item => item.Payload).OfType<VehicleCheckRolled>().Any(check => check.Vehicle == id && check.Check == VehicleCheckRolled.Esb),
-            afterAll, () => EnemyAfvBar(state, vehicle, existing), requested, maximum) is { } esbBar)
+            afterAll, () => EnemyAfvBar(state, vehicle, existing), requested, maximum, Is(vehicle, Conditions.Recalled)) is { } esbBar)
         {
             return Refused(scope, label, expected, esbBar);
         }
@@ -796,12 +797,12 @@ public sealed partial class GamePlanner
             vehicle is not null && (Is(vehicle, Conditions.Stunned) || Is(vehicle, Conditions.Recalled) || Is(vehicle, Conditions.Shocked) || Is(vehicle, Conditions.UnconfirmedKill)),
             vehicle is not null && state.Phase == "mph" && Is(vehicle, Conditions.PrepFire),
             state.Movement is { WindowOpen: true } window && window.Movers.Contains(id, StringComparer.Ordinal),
-            vehicle is not null && Is(vehicle, Conditions.ButtonedUp) == buttonedUp, buttonedUp,
+            vehicle is not null && ButtonedUpAfv(vehicle) == buttonedUp, buttonedUp,
             () =>
             {
                 var since = existing.Select((item, index) => (item, index)).LastOrDefault(pair => pair.item.Payload is PhaseChanged or GameStarted).index;
                 return existing.Skip(since).Any(item => item.Type == "crew-exposure-changed" && item.Payload is ConditionsChanged changed && changed.Id == id);
-            }) is { } buttonBar)
+            }, vehicle is not null && state.Phase == "mph" && Is(vehicle, Conditions.BoundingFire)) is { } buttonBar)
         {
             return Refused(scope, label, expected, buttonBar);
         }
