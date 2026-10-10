@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 35 Design
 
-**Status:** In preparation and being built at once, at the user's word of 2026-10-09: each increment is designed, built on the branch feature/asl-backlog-pass-35, given a small test game in the Studio and Play tests, and committed at the user's word. Increment 1 (the frame) answered: yes to F1 to F6. Increment 2a (the Rout Phase: 35.17, 35.2, 35.4, with ADJACENT taken from pass 40) built and committed (section 7). Increment 2b (Infantry: 35.1, 35.3, 35.8) built and committed (section 8). Increments 2c to 2f (terrain, ordnance, vehicles, night and weather) built and committed (sections 9 to 12). **Increment 2g (35.15, 35.16, the vehicle Close Combat panel, the two owed tests) built and committed (section 13).** The cross-cutting sections 14 to 18 written. Still to come: the documents, the reviews, the Studio check, and the gate.
+**Status:** In preparation and being built at once, at the user's word of 2026-10-09: each increment is designed, built on the branch feature/asl-backlog-pass-35, given a small test game in the Studio and Play tests, and committed at the user's word. Increment 1 (the frame) answered: yes to F1 to F6. Increment 2a (the Rout Phase: 35.17, 35.2, 35.4, with ADJACENT taken from pass 40) built and committed (section 7). Increment 2b (Infantry: 35.1, 35.3, 35.8) built and committed (section 8). Increments 2c to 2f (terrain, ordnance, vehicles, night and weather) built and committed (sections 9 to 12). **Increment 2g (35.15, 35.16, the vehicle Close Combat panel, the two owed tests) built and committed (section 13).** The cross-cutting sections 14 to 18 written. Still to come: the documents, the reviews, the Studio check, and the gate. **Fourth session (2026-10-09 and 10):** the five reviews, their fixes in seven commits (d27713d2 to 39d5045c), the Studio check of the whole pass, and the documents; section 19 is the pass as built. The gate is the user's to start.
 
 **Date:** 2026-10-09
 
@@ -736,3 +736,47 @@ Every question the design put, in the order asked. All are answered; none is ope
 | 13 | The Studio games of corrections c and d of 35.13, first proposed as not worth their cost | Played: a fix is shown in the Studio whatever its size, and an exception is the user's to give |
 
 **Carried to the gate, not questions.** The three of section 14; and one reading with no sentence of its own, that a tank freed by its Bog Removal is Non-Stopped from then on (section 11).
+
+## 19. As built
+
+Written on 2026-10-10, after the reviews, their fixes, and the Studio check. The [review](<Scenario A1 Backlog Pass 35 Review 2026-10-09.md>) has each finding and what was done with it; this section says where the pass as built differs from sections 7 to 13 as designed.
+
+### 19.1 What the reviews changed in the design
+
+| Section | As designed | As built |
+|---|---|---|
+| 7.2, 7.5 (question 1) | The surrender is taken as the RtPh ends, "the result is the same either way" | The event is still recorded as the phase ends. But a unit that has surrendered by the page before the other side routs (a Disrupted unit, A19.12; an ATTACKER's unit, the example on p. 69) is no longer a Known enemy unit to the other side's rout routes. The result was not the same either way for those routes. Ruling R35.2 |
+| 7.4 | A repulsed unit left ADJACENT to its enemy surrenders when a captor can take it | It is eliminated and never surrenders (A10.533's example). Ruling R35.3 |
+| 7.4 | Height Advantage keeps a unit on a hill from Interdiction | Not when the unit enters the hill hex across the Crest Line hexside the enemy's LOS crosses (B1.14, B10.31). The cover read takes the Location the step comes from; a unit whose only way out is such a climb is trapped and surrenders |
+| 7.4 | A lone SMC has his own range alone to Interdict at | A lone leader does; a lone hero has his weapons' range (A15.23) |
+| 7.4 (ADJACENT) | "No step the game admits is one-way" | A marsh hex is never entered in the APh (B16.4), so the step read for ADJACENT is an advance: two marsh hexes are not ADJACENT. A marsh hex and dry ground are, by the step out; that is still the "either direction" reading |
+| 9 (35.5) | SMOKE doubled with the COT one level up, in an entry | In a Bypass too (B.2) |
+| 10 (35.11) | An Acquisition is lost when its firer leaves its Location or its Gun turns in place without firing | Also when a vehicle changes its VCA with its TCA not kept apart from it (C6.5). A TCA kept apart is not yet read |
+| 11 (35.13 a) | The exit pays the road rate "as an entry does" | It now does in Mud as well: an unpaved road in Mud pays the Open Ground cost and the Mud MP (E3.6). The road rate and the Mud test are one Rules member each |
+| 11 (35.13 j) | No Case J against a vehicle whose first MP of the MPh was its Bog Removal | No Case J against one that began its MPh bogged and has entered no hex since, whatever its MP went on, such as the unloading 35.13 f allows (D8.4, C.8) |
+| 11 (Non-Stopped) | A reading with no sentence of its own | Ruling R35.9 cites C.8 and records it as a reading |
+| 5.3, item 7 | The rout's MF allotment merged | It was not merged in the build; it is now one Rules member, `RoutHalfMf` |
+| 5.3, item 15 | The road rate of an exit merged with an entry's | It was copied, not merged; it is now one member, `RoadHalfMp`, with `MudTurnsRoadOff` |
+| 13.1 (35.15) | The refusal names the kinds | By the vocabulary's labels ("Wire", "Fortified Building Location"), and it no longer cites pass numbers |
+
+Found in the Studio during the fixes and repaired: a Recalled AFV was offered an exit by an edge that is not its Friendly Board Edge, and the gate refused it; it is now offered only that edge (D5.341).
+
+### 19.2 What the reviews changed in the Studio
+
+`Play.razor`: the thrown DC's draft is cleared with the fire drafts and by its own commit; a committed shot drops a target vehicle that is gone, a Spotter or leader that broke, and Intensive Fire; CC Reaction Fire names only units of the hex the vehicle is in; the exit edge and the berserk "keep" text are cleared with the move; another game clears every draft; a change of view clears the editor's "broken" and "off board" boxes; whether a bogged vehicle may unload is Rules' answer; where a rout may end is Rules' sentence. `PlayRecords.cs`: the Wound Severity record reads the man and the outcome from what the same action did next. `ReplaySteps.cs`: a rout's title prefers its repulsed step. `DisplayText.cs`: "Stun +1" for the vehicle Close Combat's DRM.
+
+### 19.3 The Studio games, as their files stand
+
+The table player found that sections 7 to 12 cite a Studio game for repairs whose file holds only its setup. That is so, and for two reasons the sections did not give: a game was often proposed and read without being confirmed, and a played game was sometimes reset to its setup so that it could be shown again (a played copy of `p35-repulse` was kept in the tools folder). A proposal's review shows the rule at work, but it leaves nothing in the file. Of the 69 `p35-*` games in the live folder on 2026-10-10, 41 hold played events and 28 hold their setup alone.
+
+**Hold played events:** p35-acquire, p35-bff-bog, p35-bog-mired, p35-bog-unload, p35-bog2, p35-bypass, p35-cc-counter, p35-cc-panel, p35-cc-panel2, p35-check-narrow, p35-check-wide, p35-crest, p35-dry-exit, p35-grain-jul, p35-grain-nov, p35-harden, p35-hidden-viewer, p35-interdict-fanatic, p35-interdict-hero, p35-interdict-leader2, p35-mud-exit, p35-night, p35-ord-draft, p35-ordnance, p35-rally-decline, p35-rally-fanatic, p35-rally-plain, p35-rally-take, p35-recall-stop, p35-recombine, p35-repulse, p35-rout, p35-rst-cc, p35-rst-ovr, p35-seen-viewer, p35-smoke-bypass-up, p35-surrender-first, p35-vca-acquire, p35-vca-keep, p35-wound-again, p35-wound.
+
+**Hold their setup alone** (read through proposals, or controls that were proposed and cancelled): p35-berserk-deploy, p35-bog-recall, p35-bog, p35-bu-road, p35-crest2, p35-day, p35-dry, p35-esb-german, p35-esb-russian, p35-interdict-between, p35-interdict-commissar, p35-interdict-leader, p35-interdict-smoke, p35-interdict-squad, p35-interdict-trap, p35-interdict-wreck, p35-levels, p35-mud, p35-night0, p35-own-hex2, p35-own-hex3, p35-rally-enemy-turn, p35-recall-edge, p35-smoke-bypass, p35-surrender-later, p35-smoke-hill, p35-tow2, p35-wire.
+
+So these repairs have no recorded event in any stored game, beyond those the sections already name as having no game: 35.17 in the p35 games, ADJACENT, the Commissar, the lone leader and the wreck and SMOKE variants of Interdiction, the uphill SMOKE of an entry, the towing bars, the ATR's Case L, the own-hex Hindrance, the road rate in snow, the Non-Stopped fact under a shot, the CE and Bounding First Fire bars, the ESB table, the Recall's ESB bar, and the night and weather MP of 35.14. Each was seen in a proposal in the session that built it. Six labels promise a shot or a step their events do not hold (p35-ordnance, p35-own-hex2, p35-night, p35-bypass, p35-bff-bog, p35-bog-mired); they are left as written, and this section is the correction. No game was played again for this.
+
+The games of the fourth session, each written by a script kept in `pass32-tools/pass35/session3/`: p35-crest and p35-crest2 (fix 2), p35-bog-unload (fix 3), p35-dry-exit and p35-mud-exit (fix 4), p35-vca-acquire and p35-vca-keep (fix 5), p35-interdict-hero and p35-interdict-leader2 (fix 6), p35-surrender-first and p35-surrender-later (fix 7), p35-smoke-bypass and p35-smoke-bypass-up (fix 10), p35-recall-edge, p35-ord-draft, and p35-check-wide and p35-check-narrow (the Studio check). Fix 1 was played in p35-repulse.
+
+### 19.4 The estimate
+
+Section 17 gave 6:53 by the clock through section 13. The fourth session's rows in the time log come to 1:34 by the clock: 0:13 for the five reviews and their report, 0:47 for fixes 1 to 6 with a stop before each commit, 0:23 for fixes 7 to 26 in one run, and 0:11 for the Studio check. The clock is a floor throughout.
