@@ -198,6 +198,10 @@ public sealed class ScenarioA1RoutRallyRulesTests
         Assert.Equal(1, ScenarioA1RoutCalculator.InterdictionRange(true, false, 1, [12]));
         Assert.Equal(12, ScenarioA1RoutCalculator.InterdictionRange(true, true, 0, [12]));
         Assert.Equal(16, ScenarioA1RoutCalculator.InterdictionRange(false, false, 6, [20]));
+
+        // A15.23 (p. 83): a hero "uses a MG (at full FP)" alone, so its FP is not halved and he Interdicts at the MG's range.
+        Assert.Equal(12, ScenarioA1RoutCalculator.InterdictionRange(true, false, 4, [12], hero: true));
+        Assert.Equal(4, ScenarioA1RoutCalculator.InterdictionRange(true, false, 4, [], hero: true));
         var row = new Row();
         Assert.Null(ScenarioA1RoutCalculator.Interdictor(row, [Enemy("a", 4) with { InterdictionRange = 0 }], 2, 7));
         Assert.Equal("a", ScenarioA1RoutCalculator.ExposedInOpenGround(row, [Enemy("a", 4) with { InterdictionRange = 0 }], 2, 7));

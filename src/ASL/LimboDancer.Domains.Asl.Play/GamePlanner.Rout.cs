@@ -193,7 +193,8 @@ public sealed partial class GamePlanner
         var (own, weapons) = FireRanges(state, unit);
         return ScenarioA1RoutCalculator.InterdictionRange(vocabulary.IsA(unit.Kind, "asl:smc"),
             state.At(at).OfType<UnitInstance>().Any(other => other.Id != unit.Id && other.Status == InstanceStatus.Active && other.Side == unit.Side
-                && vocabulary.IsA(other.Kind, "asl:smc") && !Is(other, Conditions.Broken) && !Is(other, Conditions.Captured)), own, weapons);
+                && vocabulary.IsA(other.Kind, "asl:smc") && !Is(other, Conditions.Broken) && !Is(other, Conditions.Captured)), own, weapons,
+            unit.Kind == "asl:hero");
     }
 
     /// <summary>

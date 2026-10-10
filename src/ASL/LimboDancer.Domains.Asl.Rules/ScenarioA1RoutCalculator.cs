@@ -98,10 +98,11 @@ public static class ScenarioA1RoutCalculator
 
     /// <summary>
     /// The range within which a unit may Interdict (A10.532; pass 35, task 35.4): its Normal Range, but for a SMC with no other SMC to man a weapon with
-    /// him, whose SW fires at half FP and so does not Interdict: he has his own range alone, which for a leader is none.
+    /// him, whose SW fires at half FP and so does not Interdict: he has his own range alone, which for a leader is none. A hero is not such a SMC:
+    /// he "uses a MG (at full FP)" alone (A15.23, p. 83), so he Interdicts at his weapons' range.
     /// </summary>
-    public static int InterdictionRange(bool smc, bool anotherSmcThere, int own, IEnumerable<int> weaponRanges) =>
-        smc && !anotherSmcThere ? Math.Min(16, own) : NormalRange(own, weaponRanges);
+    public static int InterdictionRange(bool smc, bool anotherSmcThere, int own, IEnumerable<int> weaponRanges, bool hero = false) =>
+        smc && !anotherSmcThere && !hero ? Math.Min(16, own) : NormalRange(own, weaponRanges);
 
     /// <summary>
     /// A Known unbroken enemy unit not in Melee in whose LOS and Normal Range a Location in Open Ground lies, with no Hindrance between (A10.5, A10.531), or null.
