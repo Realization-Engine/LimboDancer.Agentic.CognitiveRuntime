@@ -15,9 +15,12 @@ public static class ScenarioA1RecallCalculator
     public static bool ExitWithinVca(double directionDegrees, double facingDegrees) =>
         Math.Abs(Math.Abs(((directionDegrees - facingDegrees + 540) % 360) - 180) - 30) < 1;
 
-    /// <summary>A2.6, B15.6: the terrain an exit pays for: grain is Open Ground outside April to September; null when the month is not known.</summary>
-    public static string? ExitTerrain(string terrain, int? month) =>
-        terrain != "grain" ? terrain : month is not { } known ? null : known is >= 4 and <= 9 ? "grain" : "open-ground";
+    /// <summary>
+    /// A2.6, B15.6: the terrain an exit pays for: grain is Open Ground outside April to September; null when the month is not known. An exit by an
+    /// unpaved road in Mud pays the Open Ground cost whatever the hex holds (E3.6), as an entry does.
+    /// </summary>
+    public static string? ExitTerrain(string terrain, int? month, bool roadInMud = false) =>
+        roadInMud ? "open-ground" : terrain != "grain" ? terrain : month is not { } known ? null : known is >= 4 and <= 9 ? "grain" : "open-ground";
 
     /// <summary>
     /// D5.341 (p. 203; pass 35, task 35.13 g): whether a leaving AFV may make an expenditure that is not on its shortest route: only a Stop, and only
@@ -26,11 +29,12 @@ public static class ScenarioA1RecallCalculator
     public static bool StopsToUnload(string kind, bool carrying) => kind == "stop" && carrying;
 
     /// <summary>
-    /// A2.6, D2.16: the half MP of an exit: its hex's own terrain cost, or the road rate when a road crosses the hexside: a full MP for a BU AFV, and
-    /// in Ground or Deep Snow (E3.724, E3.7331), as an entry by road pays (pass 35, task 35.13 a; the pass 32 design's section 12, item 15).
+    /// A2.6, D2.16: the half MP of an exit: its hex's own terrain cost, or the road rate when a road crosses the hexside, the same rate an entry by
+    /// road pays (<see cref="ScenarioA1VehicleTerrainCosts.RoadHalfMp"/>; pass 35, task 35.13 a; the pass 32 design's section 12, item 15). The
+    /// caller hands over <paramref name="road"/> as false, and the Open Ground cost, for an unpaved road in Mud (<see cref="ExitTerrain"/>).
     /// </summary>
     public static int ExitHalfMp(int terrainHalfMp, bool road, bool buttonedUpAfv, bool snow = false, int weatherHalfMp = 0) =>
-        (road ? (buttonedUpAfv || snow ? 2 : 1) : terrainHalfMp) + weatherHalfMp;
+        (road ? ScenarioA1VehicleTerrainCosts.RoadHalfMp(buttonedUpAfv, snow) : terrainHalfMp) + weatherHalfMp;
 
     /// <summary>
     /// D5.341 (ruling R5.17): the first moves of a shortest route in half MP from <paramref name="origin"/> off the map, or why it is undecided: an exact

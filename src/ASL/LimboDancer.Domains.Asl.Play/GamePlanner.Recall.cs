@@ -95,16 +95,19 @@ public sealed partial class GamePlanner
             return null;
         }
 
-        if (ScenarioA1RecallCalculator.ExitTerrain(terrain, state.ScenarioMonth) is not { } paid || !VehicleTerrainHalfMp.TryGetValue((type, paid), out var halfMp))
+        // E3.6 (the Rules boundary review): an unpaved road in Mud gives no road rate, and the exit pays the Open Ground cost, as an entry does.
+        var crossed = read.Hex.Hexsides.FirstOrDefault(item => item.Side == side)?.Terrain;
+        var paved = crossed?.Name == "Paved Road";
+        var roadOff = ScenarioA1VehicleTerrainCosts.MudTurnsRoadOff(crossed?.IsRoad == true, state.Weather("mud"), paved);
+        if (ScenarioA1RecallCalculator.ExitTerrain(terrain, state.ScenarioMonth, roadOff) is not { } paid || !VehicleTerrainHalfMp.TryGetValue((type, paid), out var halfMp))
         {
             return null;
         }
 
         // E1.52, E3.9 (pass 35, task 35.14; the pass 32 design's section 12, item 15): the night's and the weather's MP of the hexside crossed.
-        var crossed = read.Hex.Hexsides.FirstOrDefault(item => item.Side == side)?.Terrain;
-        var road = crossed?.IsRoad == true;
+        var road = crossed?.IsRoad == true && !roadOff;
         return ScenarioA1RecallCalculator.ExitHalfMp(halfMp, road, ButtonedUpAfv(vehicle), state.Weather("ground-snow") || state.Weather("deep-snow"),
-            VehicleWeatherHalfMp(state, type, paid, road, road && crossed?.Name == "Paved Road", road && state.SpecialRules.Contains("plowed-roads", StringComparer.Ordinal), 0));
+            VehicleWeatherHalfMp(state, type, paid, road, road && paved, road && state.SpecialRules.Contains("plowed-roads", StringComparer.Ordinal), 0));
     }
 
     /// <summary>

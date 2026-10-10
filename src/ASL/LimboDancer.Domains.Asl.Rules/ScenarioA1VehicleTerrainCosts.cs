@@ -49,6 +49,18 @@ public static class ScenarioA1VehicleTerrainCosts
     }
 
     /// <summary>
+    /// E3.6 (p. 229 to 230): in Mud an unpaved road gives no road rate, "and Open Ground movement COT applies"; a paved road is not affected. One
+    /// answer for an entry and for a Recall exit.
+    /// </summary>
+    public static bool MudTurnsRoadOff(bool road, bool mud, bool pavedRoad) => road && mud && !pavedRoad;
+
+    /// <summary>
+    /// D2.16, B3.4: the road rate in half MP, for an entry and for a Recall exit: half a MP, or a full MP for a BU AFV and in Ground or Deep Snow
+    /// (E3.724, E3.7331).
+    /// </summary>
+    public static int RoadHalfMp(bool buttonedUpAfv, bool snow) => buttonedUpAfv || snow ? 2 : 1;
+
+    /// <summary>
     /// The cost of a vehicle's outright entry of a Location over the hexside it crosses (rulings R11.6 to R11.9), from the facts Play reads: the
     /// wreck and vehicle penalty, SMOKE, and the weather cost cross as delegates read where the old body read them.
     /// </summary>
@@ -119,7 +131,7 @@ public static class ScenarioA1VehicleTerrainCosts
         // E3.6 (backlog pass 16, ruling R16.12; referee, pass 16): in Mud a vehicle using an unpaved road pays the Open Ground COT, whatever the hex holds.
         var paved = road && pavedRoad;
         var plowed = road && plowedRule;
-        if (road && mud && !paved)
+        if (MudTurnsRoadOff(road, mud, pavedRoad))
         {
             road = false;
             terrain = "open-ground";
@@ -134,7 +146,7 @@ public static class ScenarioA1VehicleTerrainCosts
         if (road)
         {
             // E3.724, E3.7331 (referee, pass 16): in Ground or Deep Snow a road entry costs at least one MP.
-            cost = buttonedAfv || groundSnow || deepSnow ? 2 : 1;
+            cost = RoadHalfMp(buttonedAfv, groundSnow || deepSnow);
         }
         else if (woods)
         {
