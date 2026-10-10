@@ -1475,9 +1475,13 @@ public static class GameProjector
             var kept = new List<GunAcquisition>();
             foreach (var acquisition in next.Acquisitions)
             {
-                // C6.5 (pass 35, task 35.11): lost when its firer leaves its Location, or turns without having fired on its target this phase.
+                // C6.5 (pass 35, task 35.11): lost when its firer leaves its Location, or turns without having fired on its target this phase. A
+                // vehicle's VCA change turns its MA with it unless its TCA is kept apart (the referee's review).
                 if (Rules.ScenarioA1FireFollowUps.AcquisitionLostByMoveOrTurn(FirerAt(previous, acquisition.Gun), FirerAt(next, acquisition.Gun),
-                    payload is GunTurned turned && turned.Gun == acquisition.Gun, previous?.OrdnanceShots.FirstOrDefault(item => item.Gun == acquisition.Gun)?.Shots ?? 0))
+                    Rules.ScenarioA1FireFollowUps.AcquiringCaChanged(payload is GunTurned turned && turned.Gun == acquisition.Gun,
+                        payload is VehicleStepped { Kind: VehicleStepped.Turn } hull && hull.Vehicle == acquisition.Gun,
+                        previous?.TurretFacings.Any(item => item.Vehicle == acquisition.Gun) == true),
+                    previous?.OrdnanceShots.FirstOrDefault(item => item.Gun == acquisition.Gun)?.Shots ?? 0))
                 {
                     continue;
                 }

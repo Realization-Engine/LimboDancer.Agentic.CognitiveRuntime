@@ -256,6 +256,12 @@ public sealed class ScenarioA1Pass35RulesTests
         Assert.False(ScenarioA1FireFollowUps.AcquisitionLostByMoveOrTurn("bd01:A8:0", "bd01:A8:0", true, 1));
         Assert.False(ScenarioA1FireFollowUps.AcquisitionLostByMoveOrTurn(null, "bd01:A8:0", false, 0));
 
+        // The CA changes when a Gun turns in place, and when a vehicle changes its VCA with its TCA not kept apart from it (D3.12).
+        Assert.True(ScenarioA1FireFollowUps.AcquiringCaChanged(gunTurned: true, vcaChanged: false, tcaApart: false));
+        Assert.True(ScenarioA1FireFollowUps.AcquiringCaChanged(gunTurned: false, vcaChanged: true, tcaApart: false));
+        Assert.False(ScenarioA1FireFollowUps.AcquiringCaChanged(gunTurned: false, vcaChanged: true, tcaApart: true));
+        Assert.False(ScenarioA1FireFollowUps.AcquiringCaChanged(gunTurned: false, vcaChanged: false, tcaApart: false));
+
         // C6.51: a Known vehicle that the shot does not wreck carries the counter; a concealed one only once a hit has revealed it.
         Assert.Equal("tank", ScenarioA1ResultTables.AcquiredVehicle("tank", false, false, false));
         Assert.Equal("tank", ScenarioA1ResultTables.AcquiredVehicle("tank", true, true, false));

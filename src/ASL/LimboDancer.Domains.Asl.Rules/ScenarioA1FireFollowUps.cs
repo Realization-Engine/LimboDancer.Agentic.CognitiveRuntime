@@ -667,6 +667,13 @@ public static class ScenarioA1FireFollowUps
         (firerWas is not null && firerNow != firerWas) || (turnedWithoutFiring && shotsThisPhase == 0);
 
     /// <summary>
+    /// C6.5 (p. 174), D3.12: whether the acquiring weapon's CA changed: a Gun turned in place (C3.22), or a vehicle changed its VCA while its
+    /// TCA is not kept apart from it, so that its MA turned with the hull. A vehicle whose TCA is recorded apart from its VCA keeps its MA's CA
+    /// through a VCA change.
+    /// </summary>
+    public static bool AcquiringCaChanged(bool gunTurned, bool vcaChanged, bool tcaApart) => gunTurned || (vcaChanged && !tcaApart);
+
+    /// <summary>
     /// C6.5, C6.51 (ruling R5.13): an Acquisition follows its units into their successors (A7.302, A19.13), drops those no longer active or taken
     /// prisoner, and follows them while they share one Location (their texts); else it keeps its Location.
     /// </summary>
