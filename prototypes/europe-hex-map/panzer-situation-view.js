@@ -43,6 +43,14 @@
   if(d.airSupport){const support=el("details"),head=el("summary","Air support | "+d.airSupport.groups.reduce((n,g)=>n+g.instanceIds.length,0)+" aircraft");support.className="panzer-air-support";support.append(head,el("p",d.airSupport.instructions),el("p","Support roster only. Aircraft stay off the ground setup map; arrival, flight activation and air attacks are not implemented."));for(const g of d.airSupport.groups){const row=el("section");row.append(el("h4",g.id+" | "+g.role+" | "+g.instanceIds.length+" aircraft | earliest turn "+g.availableFromTurn));const i=d.instances.find(i=>i.id===g.instanceIds[0]),type=d.counters.find(c=>c.id===i.counterTypeId);const art=CampaignAppearance.counterImage(base+type.artwork,type.side,type.label,type.nationality);art.style.width="64px";art.style.height="64px";row.append(art,el("p",type.label+": "+g.instanceIds.join(", ")));support.append(row);}dialog.append(support);}
   if(!game&&s.stage!=="ready"){const next=button("Complete "+s.stage+" setup",()=>act(()=>{PanzerSituationModel.next(s,d);PanzerSituationModel.autoDeploySide(s,d);selected=null;board=d.setupBoards[s.stage]||d.boards[0].id;}));next.disabled=!PanzerSituationModel.complete(s,d,s.stage);controls.prepend(next);}
   const detailLabel=el("label"),detailToggle=el("input");detailToggle.type="checkbox";detailToggle.checked=hexDetails;detailToggle.disabled=!(game||terrainView);detailToggle.onchange=()=>{hexDetails=detailToggle.checked;render();};detailLabel.append(detailToggle,el("span","Show hex details"));controls.append(detailLabel);dialog.append(controls);
+  if(game&&d.situation.number===4&&window.SquadWorkspace){
+   const choice=el("select");choice.setAttribute("aria-label","Formation for squad map");
+   for(const i of d.instances.filter(i=>s.placements[i.id]&&window.SquadProfiles.types[i.counterTypeId])){
+    const option=el("option",i.id);option.value=i.id;choice.append(option);
+   }
+   if(selected&&[...choice.options].some(o=>o.value===selected))choice.value=selected;
+   controls.append(choice,button("Open squad map",()=>window.SquadWorkspace.open(d,s,choice.value)));
+  }
   const sourceControl=document.getElementById("situationSourceArtwork");if(sourceControl){sourceControl.hidden=game;sourceControl.textContent=terrainView?"Show source artwork":"Show generated terrain";sourceControl.setAttribute("aria-pressed",String(!terrainView));}
   if(bulkType){const hint=el("span","Choose a starting hex for remaining "+d.counters.find(c=>c.id===bulkType).label+" units.");controls.append(hint,button("Cancel",()=>{bulkType=null;bulkHint=null;selected=null;render();}));}
   const inspected=d.boards.find(b=>b.id===board).hexes.find(h=>h.id===inspectedHex);

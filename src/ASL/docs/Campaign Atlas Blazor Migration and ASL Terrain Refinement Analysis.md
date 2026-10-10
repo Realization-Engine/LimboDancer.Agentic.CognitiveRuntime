@@ -4,9 +4,9 @@ Status: proposed architecture and implementation sequence. 8 October 2026.
 
 ## Recommendation
 
-Move the Campaign Atlas into a separate Blazor application, LimboDancer.Campaign, before extending it into executable ASL engagements. This separate-host decision supersedes the initial suggestion to host campaign pages in MapStudio. Put campaign identities, mission state, deployment validation, deterministic terrain refinement and tactical handoff in C#. Retain SVG as the map representation and use a small JavaScript layer for browser gestures and rendering operations.
+Continue bounded map refinement and force-decomposition work in the HTML/JS prototype, then migrate validated behavior into the separate Blazor application LimboDancer.Campaign. Executable ASL rules remain owned by the existing ASL engine. This separate-host decision supersedes the initial suggestion to host campaign pages in MapStudio. Put campaign identities, mission state, deployment validation, deterministic terrain refinement and tactical handoff in C#. Retain SVG as the map representation and use a small JavaScript layer for browser gestures and rendering operations.
 
-The HTML/JavaScript prototype has reached a useful architectural handoff point, not a technical limit of JavaScript. It has established navigation, campaign/situation relationships, setup and game-map workflows, board composition, palette utilities and interaction conventions. Continuing to build an independent tactical integration in it would duplicate contracts and validation already owned by the ASL system.
+The HTML/JavaScript prototype has reached a useful architectural handoff point, not a technical limit of JavaScript. It has established navigation, campaign/situation relationships, setup and game-map workflows, board composition, palette utilities and interaction conventions. Further prototype work must reuse or adapt existing ASL contracts and avoid duplicating the ASL rules engine.
 
 Migrate incrementally. Preserve the prototype as a comparison fixture until the corresponding Blazor workflow passes acceptance checks. Do not rewrite the ASL combat engine or port the entire geographic research pipeline before delivering a useful integrated slice.
 
@@ -186,7 +186,7 @@ Determinism tests must include adjacent tiles, overlapping footprints, reversed 
 
 Before implementation, resolve the exact integration revision, current durable storage conventions, whether initial generated scenes require one board or composed packages, the first supported terrain profile, dated force decomposition and the operational/tactical time policy. These are bounded design tasks, not reasons to delay the C# definition importer and Blazor St. Lo workflow.
 
-The immediate next step is independent campaign contracts and the Blazor host, following C01-C07 in the implementation plan. RCL extraction and host regression checks follow at C08 before tactical integration at C09. Keep further tactical refinement work in the integrated architecture rather than expanding the independent browser prototype.
+The immediate next step is the bounded HTML/JS formation-to-squad planning slice described in the companion analysis below. Capture its contracts and acceptance fixtures for C01-C07. RCL extraction and host regression checks remain C08, with ASL integration at C09. Prototype work does not replace ASL execution admission.
 
 ## Related documents
 
@@ -197,3 +197,38 @@ The immediate next step is independent campaign contracts and the Blazor host, f
 - [ASL Rule Coverage](<ASL Rule Coverage.md>)
 - [ASL Rule Inventory A to E](<ASL Rule Inventory A to E.md>)
 - [Campaign prototype README](<../../../prototypes/europe-hex-map/README.md>)
+
+## Formation to squad development update 10 October 2026
+
+The approved direction is continued HTML/JS development while migration plans remain synchronized. See [Formation to Squad Maps and Counter Decomposition Analysis](<Campaign Atlas Formation to Squad Maps and Counter Decomposition Analysis.md>) for spatial calibration, persistent child assets, modular JavaScript boundaries and S01-S06 acceptance gates. These phases are proposed, not completed. Preserve campaign-to-ASL dependency direction.
+
+## First squad setup implementation, 10 October 2026
+
+Implemented a bounded St. Lo formation-to-squad setup in the HTML/JS prototype. From the completed St. Lo game map, select a supported parent and choose Open squad map. The workspace uses the existing rotated and joined source artwork with a stable 40 m center-spacing grid. Roads, streams, buildings and source feature identities retain their coordinates. This is a fine-grid setup view, not a completed terrain refinement engine or geographically located ASL battle.
+
+Seven small JavaScript modules under prototypes/europe-hex-map/tactical separate organization profiles, spatial transforms, terrain sampling, deployment state, repository, viewport interaction and workspace UI. The largest module is the workspace, under 100 lines. Existing panzer-situation-view.js only supplies the entry control.
+
+Provisional defaults: US rifle 3 squads; German rifle 4 squads; German engineers 4 squads; US M4/75 5 vehicles. No separate leaders, crews or support weapons are generated in this slice. These are playable defaults, not claims of an exact historical establishment. Historical research is not a release gate.
+
+Each parent has a stable center and a four-hex radius (61 possible hexes before terrain exclusions). A radius-14 local footprint supports adding nearby parents whose whole deployment area fits. Areas may overlap. At most two friendly subordinate counters share a hex; opposing sides may not share one. Water blocks deployment; woods and marsh block vehicles as provisional setup rules. Initial placement is deterministic and adding a parent is atomic. Drag and click placement use the same validator.
+
+State preserves parent and child identities and positions in a separate versioned local save. One squad setup per Situation is supported. Reopening resumes it; changing the parent plan invalidates it visibly instead of silently regenerating troops. Parent counters already held by legacy engagement drafts cannot be added. Multiple simultaneous engagements, campaign casualty reconciliation and formal ASL Scenario Card admission remain future work.
+
+Validation: test_squad_deployment.cjs covers deterministic rosters, rotation round trips, axial grid, radius boundary and rejection beyond it, overlapping groups, stacking, atomic capacity failure, duplicate IDs, stale parent plans and save/reload. Existing test_panzer_situation.cjs passes. Live localhost UI testing traversed both St. Lo setup sides, launched the formation game map, opened the squad map, zoomed, dragged legally, rejected an illegal drag, added a second parent, and verified retained positions and eight counters after return and reopen. This testing is in the in-app browser, not standalone Chrome.
+
+Port these contracts to LimboDancer.Campaign without making ASL reference Campaign. Keep gameplay validation separate from Razor rendering and use JS interop for pointer/viewport handling where necessary.
+
+
+### Full St. Lo squad deployment and ASL counter values, 10 October 2026
+
+The first local implementation is now extended to the entire joined St. Lo battlefield. `Deploy full Situation` expands all 76 deployed formation counters into 335 subordinate counters, covering all 21 source counter types. Existing squad placements are preserved. Expansion is atomic and repeatable without duplicates. Both boards retain their original rotations and shared artwork coordinates beneath the 40 m grid.
+
+Each parent retains a fixed four-hex deployment radius. Regions may overlap. Two friendly counters can share a hex; opposing counters cannot. Open water blocks deployment; vehicles cannot deploy in marsh. Woods permit initial placement, including armored groups already deployed there at formation scale. These are setup constraints, not a claim that tactical movement rules have been implemented. Gun and mortar counters include their crews; separate crew deployment and leaders remain future work.
+
+`asl-counter-definitions.js` snapshots values from the ASL codebase with source paths, catalog version, source hash, definition IDs and explicit provenance. Direct matches include US 6-6-6 rifle squads, German 4-6-7 rifle squads and German 8-3-8 engineer squads. Where exact definitions are absent, comparable ASL catalog or synthetic example definitions supply clearly labeled provisional estimates. No Panzer strength, movement, attack, defense or range factors are transferred. ASL morale, firepower, range, armor, caliber and movement remain distinct concepts.
+
+`squad-counter-art.js` crops the central Panzer illustration and renders new ASL values around it. The selected-unit inspector exposes the complete value set and its provenance. Full deployment, artwork reuse, selection, zoom, legal repositioning and persistence are supported; combat execution and adjudication are not implemented.
+
+Terrain geometry is shared with the source boards. Fine terrain classification is still inherited from source hexes, with recorded water/bridge polygons overlaid. This is not yet a full ASL terrain rules model or geographically continuous campaign refinement. The implementation is split into spatial, terrain, organization, ASL definitions, state, persistence, counter rendering, viewport and workspace components. Port these responsibilities to LimboDancer.Campaign while preserving the dependency direction toward consumable ASL libraries.
+
+Validation: model regression covers all 76 parents and 335 children, fixed deployment radii, stacking, persistence, atomic failure, duplicate prevention and catalog-value fidelity. The browser displays the full joined board with both forces and supports switching between the full-map and selected-unit views.
