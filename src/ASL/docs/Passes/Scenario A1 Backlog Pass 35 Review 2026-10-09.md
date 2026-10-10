@@ -4,7 +4,7 @@ The review of pass 35, written on 2026-10-10 after the five reviews of 2026-10-0
 
 ## Status
 
-Built on branch `feature/asl-backlog-pass-35`, local and not pushed: the seventeen tasks of the design in three sessions (to 5dd9934), then in the fourth session the five reviews, their fixes in seven commits (d27713d2 to 39d5045c), the Studio check, and these documents. **Not merged. The gate has not been run:** the whole Rules and Play projects, MapStudio's page tests, the solution build with warnings as errors, the Node viewport test, the chart supplement, Docker, and the three proofs against a baseline of main are the user's to start (the design's sections 14.4 and 15).
+Built on branch `feature/asl-backlog-pass-35`, local and not pushed: the seventeen tasks of the design in three sessions (to 5dd9934), then in the fourth session the five reviews, their fixes in seven commits (d27713d2 to 39d5045c), the Studio check, and these documents. **The gate was run on 2026-10-10 at the user's word, at c22b70ce, and passed** (the section "The gate" below). Not merged as this is written.
 
 Run in the fourth session, and no wider: MapStudio built with warnings as errors after every fix, and the Rules, Play, and page test classes each fix touches. At the last run 127 Rules tests, 105 Play tests, and 39 page tests passed in those classes.
 
@@ -99,6 +99,32 @@ On 2026-10-10, in my Studio on port 6671, from the build of 39d5045c.
 Added or changed in the fourth session: in Rules, assertions in `ScenarioA1RoutRallyRulesTests`, `ScenarioA1Pass35RulesTests`, and `ScenarioA1VehicleMovementRulesTests` for each fix's verdict; in Play, five cases in `BacklogPass35Tests` (the repulsed unit's elimination, the Crest Line in three cases, the surrendered unit in two, marsh in two) and one changed assertion in `ConcealedEntryTests`; in the page tests, `PlayPageVehicleTests`, `SetupPlansPageTests`, and `CloseCombatComponentTests`. Fixes 3 to 6 have no Play test: their Studio games' records stand for the planner's side.
 
 The marsh test's marsh-to-marsh case may pass for a weak reason if the test board does not know "Marsh" as terrain; its dry-ground control does pass as ADJACENT.
+
+## The gate
+
+Run on 2026-10-10 from 08:28 to 09:38, at c22b70ce, by two scripts kept in the tools folder (`gate35-baseline.sh`, `gate35-gate.sh`) and the Docker check.
+
+| Step | Result |
+|---|---|
+| The solution build with warnings as errors, into `bin/gate` | 0 warnings, 0 errors |
+| The whole local suite, one project at a time | All pass: Rules 737, Play 722, MapStudio 390, Units 409, Authoring 167, Maps 244, Units Rendering 352, Maps Vasl 121 (28 skipped), Maps Rendering 34 (2 skipped), Counter Sheets 19, Dice 24 |
+| CI's Node viewport test | exit 0 |
+| The chart supplement | EQUAL |
+| Docker, Linux, the committed branch | restore, build, test, and both regenerations exit 0; every project passes with the local counts |
+
+**The three proofs,** against a baseline of main at f3b7c47 built from its own sources (checked: it holds `ScenarioA1SequenceCalculator` and no `UnbuiltCounterBar`), over the proof store brought up to date with the live folder first (309 to 380 games). Every difference was read and named; none is a fault.
+
+- **The text list:** 15 differing lines, each a task's sentence: the Low Crawl bar (35.2), the bogged vehicle's expenditures (35.13 f), the Recall's Abandonment and ESB bar (35.13 g), the CE bar after Bounding First Fire (35.13 i), the CC counter's bar, the unbuilt-counter refusal (35.15), the Recombine review (35.16), and one more Random Selection roll (the repulse). No literal was dropped without a task.
+- **The replay digest:** 380 games, 91,587 states on main and 91,623 on the gate build. 370 games are identical, among them every game that is not the pass's own. Ten differ, all `p35-*` games:
+  - nine that main cannot replay to their end and the gate build can, since their records hold a fact or a result only the pass gives (p35-bog-unload, p35-bog2, p35-ord-draft: a bogged vehicle's unloading; p35-grain-nov: grain out of season; p35-harden: the 4-2-6; p35-ordnance: the Opportunity Fire fact; p35-rst-cc and p35-rst-ovr: the Stun +1; p35-vca-acquire: the Acquisition lost by a VCA change). They have no "before" and are listed, not compared;
+  - `p35-acquire`, which stops at its shot's record on the gate build (`UNIT-STATE-033`, revision 9): the Non-Stopped fact of 35.13 b and h, as the design's section 14.3 gives. Class 2 of section 14.4.
+
+  No review fix made any other recorded game fail its check.
+- **The planner sweep:** ten games (the four of pass 32, and p35-interdict-trap, p35-rally-enemy-turn, p35-smoke-hill, p35-tow2, p35-bog, p35-mud), 515,010 lines a side, 401 lines differing on each, in four classes:
+  - **ADJACENT** (A.8): 22 pairs of Locations read False on main and True now, across eight games (p35-bog-recall was swept with p35-bog); none the other way.
+  - **The rout step's record** has one more optional property (the Location a repulsed step attempted), so the digest of a state's view differs in Tractor Works from its first rout on (115 states in three views, exactly the cuts at or after revision 278), and the digest of 12 rout plans with it; their summaries and event counts are the same.
+  - **A concealed mover's "?"** (35.3; A12.14): 15 move plans into [Y7] of Tractor Works plan one event fewer, the loss of concealment, since the unit that sees a mover must now be Good Order, not hidden, and not a Passenger. Read by a copy of the proof tool that prints a plan's events (`proof-dump`).
+  - **The pass's own swept games:** a Recalled halftrack with Passengers may Stop (35.13 g); a Recalled vehicle is offered no exit but by its Friendly Board Edge; the bog refusal's words (35.13 f); a CT AFV that is BU by default is refused "button up" as already BU (35.13 a).
 
 ## Left out
 
