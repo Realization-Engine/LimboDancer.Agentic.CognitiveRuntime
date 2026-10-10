@@ -345,6 +345,14 @@ public sealed class ScenarioA1Pass35RulesTests
         Assert.Null(ScenarioA1OrdnanceMapRules.InBogHex([("start", true), ("enter", false)]));
         Assert.Null(ScenarioA1OrdnanceMapRules.InBogHex([("start", false)]));
         Assert.Null(ScenarioA1OrdnanceMapRules.InBogHex([]));
+
+        // The same when its first MP went on unloading (D8.5) and it is still bogged, or it unloaded and then made its Bog Removal attempt (C.8,
+        // p. 162): neither makes it a moving target. One that bogged on entering a hex this MPh is a moving target.
+        Assert.True(ScenarioA1OrdnanceMapRules.InBogHex([("unload", false)], bogged: true));
+        Assert.True(ScenarioA1OrdnanceMapRules.InBogHex([("unload", false), ("start", true)]));
+        Assert.Null(ScenarioA1OrdnanceMapRules.InBogHex([("unload", false)]));
+        Assert.Null(ScenarioA1OrdnanceMapRules.InBogHex([("start", false), ("enter", false)], bogged: true));
+        Assert.Null(ScenarioA1OrdnanceMapRules.InBogHex([], bogged: true));
         OrdnanceVehicleTargetStateFacts stuck = new("tank", "attacker-tank", false, false, false, false, false, false, false, false, false, false, false, MovingUnstopped: true);
         Assert.True(ScenarioA1OrdnanceEligibility.VehicleTarget(stuck).NonStopped);
         Assert.False(ScenarioA1OrdnanceEligibility.VehicleTarget(stuck with

@@ -408,7 +408,8 @@ public sealed partial class GamePlanner
                     {
                         MpInLos = MpInLos(state, from, moving),
                         InBogHex = ScenarioA1OrdnanceMapRules.InBogHex([.. ThisPhase(store.Read(state.Scope)?.Events ?? []).Select(item => item.Payload).OfType<VehicleStepped>()
-                            .Where(step => step.Vehicle == moving).Select(step => (step.Kind, step.BogRemoval))]),
+                            .Where(step => step.Vehicle == moving).Select(step => (step.Kind, step.BogRemoval))],
+                            state.Find(moving) is UnitInstance bogged && Is(bogged, Conditions.Bogged)),
                     }
                     : movement with
                     {

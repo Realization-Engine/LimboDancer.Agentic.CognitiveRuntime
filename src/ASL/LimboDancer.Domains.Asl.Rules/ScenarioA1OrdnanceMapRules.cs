@@ -68,13 +68,14 @@ public static class ScenarioA1OrdnanceMapRules
     public static bool OpenGround(string? terrain, int? hindranceDrm) => terrain == "open-ground" && hindranceDrm == 0;
 
     /// <summary>
-    /// D8.4 (p. 209; pass 35, task 35.13 j): whether a vehicle began its MPh bogged and has not left its Bog hex: its first MP expenditure of the MPh
-    /// was Bog Removal and it has entered no hex since. The steps are this MPh's, oldest first.
+    /// D8.4 (p. 209; pass 35, task 35.13 j): whether a vehicle began its MPh bogged and has not left its Bog hex: it has entered no hex this MPh,
+    /// and it is still bogged or has made a Bog Removal attempt. Its MP may have gone on anything else first, such as unloading (C.8, p. 162; D8.5).
+    /// The steps are this MPh's, oldest first.
     /// </summary>
-    public static bool? InBogHex(IReadOnlyList<(string Kind, bool BogRemoval)> steps)
+    public static bool? InBogHex(IReadOnlyList<(string Kind, bool BogRemoval)> steps, bool bogged = false)
     {
         ArgumentNullException.ThrowIfNull(steps);
-        return steps.Count > 0 && steps[0] is ("start", true) && !steps.Any(step => step.Kind is "enter" or "exit") ? true : null;
+        return steps.Count > 0 && (bogged || steps.Any(step => step is ("start", true))) && !steps.Any(step => step.Kind is "enter" or "exit" or "overrun") ? true : null;
     }
 
     /// <summary>

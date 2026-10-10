@@ -209,15 +209,12 @@ internal static class ScenarioA1ArmorCalculator
         // C6.11, C6.12 (ruling R8.1): Defensive First Fire at a vehicle that has spent at most one MP in the firer's continuous LOS takes Case J2,
         // at most three Case J1, else Case J; a moving target in a fire phase takes Case J.
         // D8.4 (p. 209; pass 35, task 35.13 j): none against a vehicle that began its MPh bogged and spends its MP in its Bog hex.
-        if (shot.Movement?.InBogHex == true)
-        {
-        }
-        else if (shot.FireKind is not null && shot.Movement?.MpInLos is { } seen)
+        if (shot.Movement?.InBogHex != true && shot.FireKind is not null && shot.Movement?.MpInLos is { } seen)
         {
             var mpInLos = seen - (shot.Movement.MpClaimed ?? 0);
             drm.Add(mpInLos <= 1 ? new FireModifier("case-j2", 4, "C6.12") : mpInLos <= 3 ? new FireModifier("case-j1", 3, "C6.11") : new FireModifier("case-j", 2, "C6.1"));
         }
-        else if (target.Moving == true)
+        else if (shot.Movement?.InBogHex != true && target.Moving == true)
         {
             drm.Add(new FireModifier("case-j", 2, "C6.1"));
         }
