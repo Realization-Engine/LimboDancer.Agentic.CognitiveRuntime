@@ -147,14 +147,14 @@ public static class ScenarioA1SequenceCalculator
 
     /// <summary>
     /// Pass 35, task 35.15: a game that places or holds a counter whose rules are not built is refused, where until now it played as if the counter
-    /// were absent. <paramref name="kinds"/> are the labels of the unbuilt kinds, read when the game has events or is being set up.
+    /// were absent. <paramref name="kinds"/> are the unbuilt kinds as the vocabulary names them, read when the game has events or is being set up.
     /// </summary>
     public static string? UnbuiltCounterBar(bool setup, IReadOnlyList<string> kinds)
     {
         ArgumentNullException.ThrowIfNull(kinds);
         return kinds.Count == 0 ? null
-            : $"play.unbuilt-counters: this game {(setup ? "would place" : "holds")} {string.Join(", ", kinds)} counters, whose rules are not built, so "
-                + $"{(setup ? "it is not set up with them" : "it is not played")} (B23.9, B24, B25.15, B26 to B30; passes 115 and 120)";
+            : $"play.unbuilt-counters: this game {(setup ? "would place" : "holds")} {string.Join(", ", kinds)} counters, whose rules are not built yet, so "
+                + $"{(setup ? "it is not set up with them" : "it cannot be played")} (B23.9, B24, B25.15, B26 to B30)";
     }
 
     /// <summary>Ruling R5.8: a pending choice is answered before anything else happens in the game; <paramref name="pendingChoice"/> reads its side and its words.</summary>

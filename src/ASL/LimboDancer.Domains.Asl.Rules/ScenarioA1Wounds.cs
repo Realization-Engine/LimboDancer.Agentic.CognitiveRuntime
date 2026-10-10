@@ -16,6 +16,11 @@ public static class ScenarioA1Wounds
     /// <summary>A17.11: a Wound Severity dr of 5 or more, with +1 for a man already wounded, is mortal.</summary>
     public static bool Mortal(int severityDr, bool alreadyWounded) => severityDr + (alreadyWounded ? 1 : 0) >= 5;
 
-    /// <summary>What a record says of a Wound Severity dr.</summary>
-    public static string SeverityText(int severityDr) => $"Wound Severity dr {severityDr}: a 5 or more is mortal, with +1 for a man already wounded (A17.11)";
+    /// <summary>
+    /// What a record says of a Wound Severity dr (A17.11): the man when the record knows him, the dr with the +1 of a man already wounded, the
+    /// Final dr, and what it comes to.
+    /// </summary>
+    public static string SeverityText(int severityDr, string? unitId = null, bool alreadyWounded = false) =>
+        $"Wound Severity dr {severityDr}{(alreadyWounded ? $" + 1 (already wounded) = {severityDr + 1}" : string.Empty)}{(unitId is null ? string.Empty : $" for {unitId}")}: "
+            + $"{(Mortal(severityDr, alreadyWounded) ? "a mortal wound, eliminated" : "a wound, not mortal")}; a Final dr of 5 or more is mortal (A17.11)";
 }

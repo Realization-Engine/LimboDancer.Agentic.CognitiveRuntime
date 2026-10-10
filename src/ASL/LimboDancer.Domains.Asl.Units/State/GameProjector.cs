@@ -2397,7 +2397,7 @@ public static class GameProjector
 
         /// <summary>A10.5: a broken unit has six MF in the RtPh, a wounded SMC three.</summary>
         private static int RoutHalfMf(UnitInstance unit) =>
-            Rules.ScenarioA1RoutRallyProjection.RoutHalfMfAsRecorded(unit.Kind is "asl:leader" or "asl:hero", GameState.Condition(unit, Conditions.Wounded) == ConditionState.True);
+            Rules.ScenarioA1RoutCalculator.RoutHalfMf(unit.Kind is "asl:leader" or "asl:hero", GameState.Condition(unit, Conditions.Wounded) == ConditionState.True);
 
         /// <summary>A Repair outcome of Rules as the record names it.</summary>
         private static string RepairResult(Rules.RepairOutcome outcome) => outcome switch

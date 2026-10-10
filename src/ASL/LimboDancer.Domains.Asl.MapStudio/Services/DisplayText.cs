@@ -293,6 +293,7 @@ public static class DisplayText
         ["self-rally"] = "Self-Rally",
         ["ift-mc"] = "IFT MC",
         ["crew-exposed"] = "CE",
+        ["stun-recovery"] = "Stun +1",
         ["odds-below-1-1"] = "odds below 1-1",
     };
 

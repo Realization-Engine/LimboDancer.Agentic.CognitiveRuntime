@@ -160,7 +160,8 @@ public static class ScenarioA1Definitions
     /// <summary>
     /// Good Order (Index, p. 23): a Personnel unit neither broken, berserk, captured, nor held in Melee. Unknown while any of those is not known;
     /// inapplicable to other kinds, since vehicular crews' stun and shock are not yet modelled. The state's own definition (pass 32.a, slice S11);
-    /// the planner's and the Close Combat calculator's differ and are listed for pass 35.
+    /// <see cref="GoodOrderOf"/> is the planner's since pass 35, with a vehicle's stun and shock, and the Close Combat calculator keeps its own
+    /// (the pass 35 design, section 8.2).
     /// </summary>
     public static RuleState GoodOrder(bool personnel, RuleState broken, RuleState berserk, RuleState captured, RuleState melee)
     {

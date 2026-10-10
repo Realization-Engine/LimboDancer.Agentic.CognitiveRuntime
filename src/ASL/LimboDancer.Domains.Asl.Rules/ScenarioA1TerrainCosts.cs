@@ -342,7 +342,9 @@ public static class ScenarioA1TerrainCosts
         // E3.9 (p. 231; pass 35, task 35.14): the weather's MF are added per hexside Bypassed, after the total; a level's own cost once.
         var perHexside = weather?.Invoke(laneTerrain, false, 0).HalfMf ?? 0;
         var extra = (weather?.Invoke(laneTerrain, false, rise).HalfMf ?? 0) + ((bypass.Count - 1) * perHexside);
-        var halfMf = (rise == 1 ? 2 * laneCost : laneCost) + (facts.EntryWall is not null ? 2 : 0) + smokeHalfMf() + extra;
+        // B.2 (p. 112; the referees' review): SMOKE's MF is part of the COT doubled one level up, in Bypass as in an entry.
+        var smoke = smokeHalfMf();
+        var halfMf = (rise == 1 ? 2 * (laneCost + smoke) : laneCost + smoke) + (facts.EntryWall is not null ? 2 : 0) + extra;
         return (new InfantryEntry(halfMf, laneTerrain, false, false, false, rise != 0), null);
     }
 

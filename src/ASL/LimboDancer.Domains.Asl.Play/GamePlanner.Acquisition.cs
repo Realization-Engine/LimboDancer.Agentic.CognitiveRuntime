@@ -72,10 +72,13 @@ public sealed partial class GamePlanner
         return events;
     }
 
-    /// <summary>The labels of the kinds among <paramref name="kinds"/> whose rules are not built (pass 35, task 35.15), each once, in order; Rules says which.</summary>
+    /// <summary>
+    /// The kinds among <paramref name="kinds"/> whose rules are not built (pass 35, task 35.15), each once, in order, by the vocabulary's own
+    /// label ("Wire", "Fortified Building Location"); Rules says which.
+    /// </summary>
     private IReadOnlyList<string> UnbuiltKinds(IEnumerable<string?> kinds) =>
         [.. kinds.OfType<string>().Where(kind => ScenarioA1SequenceCalculator.UnbuiltCounter(kind, vocabulary.IsA(kind, "asl:fortification")))
-            .Select(kind => kind.Replace("asl:", string.Empty, StringComparison.Ordinal)).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)];
+            .Select(kind => vocabulary.TryGetKind(kind, out var known) ? known.Label : kind).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)];
 
     /// <summary>A plan with the Acquisition events its events call for appended (ruling R5.13); the plan itself when it moves no acquired unit.</summary>
     private GamePlan WithAcquisitions(GamePlan plan, GameScope scope, IReadOnlyList<GameEvent> existing, string attemptId, long expected)

@@ -49,6 +49,34 @@ public sealed partial class GamePlanner
             && ScenarioA1RoutCalculator.SurrenderCause(Is(unit, Conditions.Disrupted), state.Encircled(unit), () => TrappedByInterdiction(state, unit, start), captors) is { } cause
             ? (cause, captors) : null;
 
+    // Kept once a state: the read asks for each broken unit's routes, which read the enemy list in turn.
+    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<GameState, HashSet<string>> surrenderedFirst = [];
+
+    /// <summary>
+    /// The units of a state that have surrendered before the other side's units rout (A19.12, A20.21, the example on p. 69): Rules decides, from
+    /// whether each is Disrupted or the ATTACKER's and bound to surrender. While the set is being read it is empty, so the routes read for it see
+    /// every unit standing, as the page has it at the moment each surrender is decided.
+    /// </summary>
+    private HashSet<string> SurrenderedBeforeRouts(GameState state)
+    {
+        if (surrenderedFirst.TryGetValue(state, out var known))
+        {
+            return known;
+        }
+
+        var found = surrenderedFirst.GetValue(state, static _ => new HashSet<string>(StringComparer.Ordinal));
+        if (state.Phase != "rtph")
+        {
+            return found;
+        }
+
+        string[] units = [.. state.Units.Where(unit => unit.Status == InstanceStatus.Active && Is(unit, Conditions.Broken) && !Is(unit, Conditions.Captured)
+            && ScenarioA1RoutCalculator.SurrenderedBeforeTheOtherSideRouts(Is(unit, Conditions.Disrupted), unit.Side == state.PhasingSide,
+                () => state.Location(unit.Id)?.Location is { } at && RoutSurrender(state, unit, at) is not null)).Select(unit => unit.Id)];
+        found.UnionWith(units);
+        return found;
+    }
+
     /// <summary>A20.21 (pass 35, task 35.17): what the Rout panel says of a unit that surrenders instead of routing, or null when it routs as any other.</summary>
     public string? RoutSurrenderAdvice(GameState state, UnitInstance unit)
     {
@@ -110,7 +138,9 @@ public sealed partial class GamePlanner
             routingSide = side;
             if (!enemies.TryGetValue(side, out var known))
             {
-                enemies[side] = known = [.. KnownEnemies(state, side).Select(item => new RoutEnemyFacts(item.Unit.Id, Index(item.At), Armed(item.Unit),
+                // A19.12, A20.21 (the referee's review): a unit that has surrendered before this side routs is a prisoner to its routes.
+                var prisoners = planner.SurrenderedBeforeRouts(state);
+                enemies[side] = known = [.. KnownEnemies(state, side).Where(item => !prisoners.Contains(item.Unit.Id)).Select(item => new RoutEnemyFacts(item.Unit.Id, Index(item.At), Armed(item.Unit),
                     Is(item.Unit, Conditions.Broken), Is(item.Unit, Conditions.Melee), LiveFire.IsVehicle(item.Unit), Is(item.Unit, Conditions.Cx),
                     Is(item.Unit, Conditions.Pinned), state.Encircled(item.Unit), NormalRange(state, item.Unit), planner.InterdictionRange(state, item.Unit, item.At)))];
             }
@@ -321,7 +351,7 @@ public sealed partial class GamePlanner
     private static bool IsCommissar(UnitInstance unit) => unit.Definition is { } reference && ScenarioA1FireReference.IsCommissar(reference.Definition);
 
     /// <summary>A10.5: the half MF a broken unit has in the RtPh, six MF, a wounded SMC three.</summary>
-    private int RoutHalfMf(UnitInstance unit) => ScenarioA1RoutCalculator.RoutHalfMfAsPlanned(vocabulary.IsA(unit.Kind, "asl:smc"), Is(unit, Conditions.Wounded));
+    private int RoutHalfMf(UnitInstance unit) => ScenarioA1RoutCalculator.RoutHalfMf(vocabulary.IsA(unit.Kind, "asl:smc"), Is(unit, Conditions.Wounded));
 
     private GamePlan PlanRout(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, string actor)
     {

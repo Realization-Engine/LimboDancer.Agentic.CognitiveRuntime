@@ -315,6 +315,51 @@ public sealed class BacklogPass35Tests : IDisposable
         Assert.Equal(L("E4"), Current.Location("r1")!.Location.ToString());
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task AUnitThatHasSurrenderedBeforeTheAttackerRoutsDoesNotBarItsRoutes(bool disrupted)
+    {
+        // A19.12 (p. 86) and the example on p. 69: the Disrupted rx in E4, beside g1, surrenders at the start of the RtPh, so the ATTACKER's gb may
+        // rout into the woods of E5 beside it. Not Disrupted, rx is the DEFENDER's and still stands while the ATTACKER routs: E5 is barred (A10.51).
+        // gb must rout: it is in Open Ground in the LOS and Normal Range of r9.
+        terrain["E5"] = "Woods";
+        string[] states = disrupted ? ["asl:broken", "asl:disrupted"] : ["asl:broken"];
+        await SetupAt(5, "german", Unit("g1", "attacker-squad", "E3", "german"), Unit("gb", "attacker-squad", "E6", "german", "asl:broken"),
+            Unit("rx", "defender-squad", "E4", "russian", states), Unit("r9", "defender-squad", "E10", "russian"));
+        if (disrupted)
+        {
+            Committed(await Rout("gb", ["E5"]));
+            Assert.Equal(L("E5"), Current.Location("gb")!.Location.ToString());
+        }
+        else
+        {
+            Refused(await Rout("gb", ["E5"]), "play.rout-step");
+        }
+    }
+
+    [Theory]
+    [InlineData("Marsh", false)]
+    [InlineData("Open Ground", true)]
+    public async Task TwoMarshHexesAreNotAdjacentSinceNoAdvanceEntersAMarsh(string enemyTerrain, bool adjacent)
+    {
+        // A.8 (p. 43), B16.4 (p. 130): "a marsh hex cannot be entered during the APh", so units in two marsh hexes are not ADJACENT, and the broken
+        // r1 owes no rout for g1 beside it. With g1 on dry ground an advance out of the marsh joins them, and r1 must rout.
+        terrain["E5"] = "Marsh";
+        terrain["E6"] = enemyTerrain;
+        terrain["E3"] = "Woods";
+        await SetupAt(5, "german", Unit("g1", "attacker-squad", "E6", "german"), Unit("r1", "defender-squad", "E5", "russian", "asl:broken"));
+        var result = await Rout("r1", ["E4", "E3"], adjacent ? Once(3, 3) : null);
+        if (adjacent)
+        {
+            Assert.DoesNotContain(result.Reasons, reason => reason.StartsWith("play.rout-not-allowed", StringComparison.Ordinal));
+        }
+        else
+        {
+            Refused(result, "play.rout-not-allowed");
+        }
+    }
+
     [Fact]
     public async Task AUnitWhoseOnlyWayOutClimbsAcrossTheLosSurrenders()
     {

@@ -76,6 +76,17 @@ public sealed class ScenarioA1Pass35RulesTests
         Assert.Equal("defender-guards-half-squad", ScenarioA1FireReference.HardenedOf("defender-line-half-squad"));
     }
 
+    [Fact]
+    public void SmokeIsDoubledWithTheCotOneLevelUpInBypassToo()
+    {
+        // B.2 (p. 112; the referees' review): "2 x 2 = 4 MF, not 2 x 1 = 2 + 1 = 3 MF" holds for a Bypass into a higher hex as for an entry.
+        static InfantryEntry Bypass(int targetBaseLevel) => ScenarioA1TerrainCosts.BypassStep(
+            new BypassStepFacts([new BypassedHexsideFacts(1, "north-east", true, "Open Ground", null, false)], 0, 0, "bd01:E5:0", true, "woods", targetBaseLevel,
+                [null, null, null, null, null, null], false, false, 0, null, 7), () => 2).Entry!;
+        Assert.Equal(4, Bypass(0).HalfMf);
+        Assert.Equal(8, Bypass(1).HalfMf);
+    }
+
     private static InfantryEntry Step(int rise, int smokeHalfMf, string terrain = "open-ground") =>
         ScenarioA1TerrainCosts.GroundStep(new CrossedHexsideFacts(false, false, null, false, null), terrain, rise, 7, () => smokeHalfMf, (_, _, _) => (0, false)).Entry!;
 
@@ -421,5 +432,16 @@ public sealed class ScenarioA1Pass35RulesTests
         Assert.Null(ScenarioA1SequenceCalculator.UnbuiltCounterBar(false, []));
         Assert.Contains("holds foxhole, wire counters", ScenarioA1SequenceCalculator.UnbuiltCounterBar(false, ["foxhole", "wire"]));
         Assert.Contains("would place wire counters", ScenarioA1SequenceCalculator.UnbuiltCounterBar(true, ["wire"]));
+        Assert.DoesNotContain("passes", ScenarioA1SequenceCalculator.UnbuiltCounterBar(false, ["Wire"]));
+
+        // The table player's review: the Wound Severity record names the man, the +1 of a man already wounded, and what the dr comes to.
+        Assert.Equal("Wound Severity dr 3 for r1: a wound, not mortal; a Final dr of 5 or more is mortal (A17.11)", ScenarioA1Wounds.SeverityText(3, "r1"));
+        Assert.Equal("Wound Severity dr 4 + 1 (already wounded) = 5 for r1: a mortal wound, eliminated; a Final dr of 5 or more is mortal (A17.11)",
+            ScenarioA1Wounds.SeverityText(4, "r1", alreadyWounded: true));
+
+        // The Rules boundary review: Rules words where a rout may end, and cites A10.5 with A10.51 for a rout that only passes through.
+        Assert.Contains("(A10.5, A10.51): its route passes through [C9]", ScenarioA1RoutCalculator.RoutEndAdvice(true, true, ["[C9]"], false));
+        Assert.Equal(". Its route must end in [C9] or [D8].", ScenarioA1RoutCalculator.RoutEndAdvice(true, true, ["[C9]", "[D8]"], true));
+        Assert.Contains("(A19.12, A20.21)", ScenarioA1RoutCalculator.RoutSurrenderAdvice("r1", "is Disrupted", ["g1"]));
     }
 }

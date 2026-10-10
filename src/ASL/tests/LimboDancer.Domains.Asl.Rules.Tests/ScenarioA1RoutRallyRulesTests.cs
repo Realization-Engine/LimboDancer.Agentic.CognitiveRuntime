@@ -228,7 +228,7 @@ public sealed class ScenarioA1RoutRallyRulesTests
         Assert.True(ScenarioA1RoutCalculator.MayRout(null, true, true, true, false, false, false));
         Assert.False(ScenarioA1RoutCalculator.MayRout(null, true, true, true, false, false, true));
         Assert.True(ScenarioA1RoutCalculator.MayRout("it must", true, true, true, false, false, true));
-        Assert.Equal("play.rout-low-crawl: u is Disrupted and may not use Low Crawl (A19.12)", ScenarioA1RoutCalculator.DisruptedLowCrawlBar("u", true, true, false));
+        Assert.Equal("play.rout-low-crawl: u is Disrupted and may not use Low Crawl; it routs normally if it must rout, and otherwise stays (A19.12)", ScenarioA1RoutCalculator.DisruptedLowCrawlBar("u", true, true, false));
         Assert.Null(ScenarioA1RoutCalculator.DisruptedLowCrawlBar("u", true, true, true));
         Assert.Null(ScenarioA1RoutCalculator.DisruptedLowCrawlBar("u", true, false, false));
         Assert.Null(ScenarioA1RoutCalculator.DisruptedLowCrawlBar("u", false, true, false));
@@ -397,12 +397,23 @@ public sealed class ScenarioA1RoutRallyRulesTests
     }
 
     [Fact]
-    public void TheRoutMfOfAWoundedSmcDiffersBetweenThePlannerAndTheProjector()
+    public void TheRoutMfOfAWoundedSmcIsOneMemberForThePlannerAndTheProjector()
     {
-        Assert.Equal(6, ScenarioA1RoutCalculator.RoutHalfMfAsPlanned(true, true));
-        Assert.Equal(12, ScenarioA1RoutCalculator.RoutHalfMfAsPlanned(true, false));
-        Assert.Equal(6, ScenarioA1RoutRallyProjection.RoutHalfMfAsRecorded(true, true));
-        Assert.Equal(12, ScenarioA1RoutRallyProjection.RoutHalfMfAsRecorded(false, true));
+        Assert.Equal(6, ScenarioA1RoutCalculator.RoutHalfMf(true, true));
+        Assert.Equal(12, ScenarioA1RoutCalculator.RoutHalfMf(true, false));
+        Assert.Equal(12, ScenarioA1RoutCalculator.RoutHalfMf(false, true));
+    }
+
+    [Fact]
+    public void AUnitThatHasSurrenderedBeforeTheOtherSideRoutsIsNoEnemyToItsRoutes()
+    {
+        // A19.12 (p. 86) and the Comprehensive Rout Example (p. 69): a Disrupted unit surrenders at the start of the RtPh, and an ATTACKER's unit
+        // among the ATTACKER's routs, so both are prisoners when the other side routs; a DEFENDER's unit that is not Disrupted still stands
+        // while the ATTACKER routs. Whether the unit is bound to surrender is read last.
+        Assert.True(ScenarioA1RoutCalculator.SurrenderedBeforeTheOtherSideRouts(disrupted: true, attacker: false, () => true));
+        Assert.True(ScenarioA1RoutCalculator.SurrenderedBeforeTheOtherSideRouts(disrupted: false, attacker: true, () => true));
+        Assert.False(ScenarioA1RoutCalculator.SurrenderedBeforeTheOtherSideRouts(disrupted: true, attacker: true, () => false));
+        Assert.False(ScenarioA1RoutCalculator.SurrenderedBeforeTheOtherSideRouts(disrupted: false, attacker: false, () => throw new InvalidOperationException("not read")));
     }
 
     [Fact]

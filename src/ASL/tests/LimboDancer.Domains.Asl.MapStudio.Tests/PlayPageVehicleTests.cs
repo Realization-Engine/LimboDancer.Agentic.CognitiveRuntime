@@ -294,6 +294,16 @@ public sealed class PlayPageVehicleTests : IDisposable
         Assert.False(page.Find(At(one, ".propose-vehicle-cc-vehicle")).HasAttribute("disabled"));
         Assert.Equal(string.Empty, page.Find(At(two, ".vehicle-cc-vehicle")).GetAttribute("value") ?? string.Empty);
         Assert.True(page.Find(At(two, ".propose-vehicle-cc-vehicle")).HasAttribute("disabled"));
+
+        // The UI review, pass 35: a draft made and not proposed does not outlive its view. After another view and back, nothing is chosen or
+        // checked in the first Location and its attack waits; this fails if the view's reset no longer clears the draft.
+        page.ViewAs("german");
+        page.ViewAs(Perspective.AdjudicatorName);
+        Assert.Equal(string.Empty, page.Find(At(one, ".vehicle-cc-vehicle")).GetAttribute("value") ?? string.Empty);
+        Assert.False(page.Find(At(one, ".vehicle-cc-defender")).HasAttribute("checked"));
+        Assert.True(page.Find(At(one, ".propose-vehicle-cc-vehicle")).HasAttribute("disabled"));
+        page.Find(At(one, ".vehicle-cc-vehicle")).Change("t1");
+        page.Find(At(one, ".vehicle-cc-defender")).Change(true);
         dice.Enqueue([6, 6]);
         Commit(page, At(one, ".propose-vehicle-cc-vehicle"));
         Assert.Equal(["g1"], VehicleAttacks(scope).Last().Defenders);

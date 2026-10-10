@@ -234,8 +234,11 @@ public static class ScenarioA1RoutCalculator
     /// <summary>A10.51: a woods or building Location is a rout destination.</summary>
     public static bool RoutCover(RoutLocationFacts? read) => read is { } location && location.TerrainKey is "woods" or "wooden-building" or "stone-building";
 
-    /// <summary>A10.5, as the planner has it: the half MF a broken unit has in the RtPh, six MF, a wounded SMC three.</summary>
-    public static int RoutHalfMfAsPlanned(bool smc, bool wounded) => smc && wounded ? 6 : 12;
+    /// <summary>
+    /// A10.5, A17.2: the half MF a broken unit has in the RtPh, six MF, a wounded SMC three. One member for the planner and the projector (pass 35, the
+    /// Rules boundary review; the pass 32 design's section 12, item 7); each hands over whether the unit is a SMC as it reads kinds.
+    /// </summary>
+    public static int RoutHalfMf(bool smc, bool wounded) => smc && wounded ? 6 : 12;
 
     /// <summary>
     /// The broken Morale Level (A10.4), one lower for a wounded SMC (A17.3) and one higher for a Fanatic unit (A10.8; pass 35, task 35.4), never above
@@ -525,17 +528,46 @@ public static class ScenarioA1RoutCalculator
             : trappedByInterdiction() ? $"can get away from {string.Join(" or ", captors)} only by Interdiction or Low Crawl" : null;
     }
 
+    /// <summary>
+    /// A19.12 (p. 86), A20.21, and the Comprehensive Rout Example (p. 69): whether a unit bound to surrender has done so before the other side's units
+    /// rout. A Disrupted unit surrenders "at the start of any RtPh", before any rout; an ATTACKER's unit surrenders in its own turn among the
+    /// ATTACKER's routs, which all come before the DEFENDER's. A DEFENDER's unit that is not Disrupted still stands while the ATTACKER routs. The
+    /// surrender is recorded as the phase ends (ruling R35.2); for the other side's routes the unit is a prisoner from the moment the page has it
+    /// surrender. Whether it is bound to surrender is read last.
+    /// </summary>
+    public static bool SurrenderedBeforeTheOtherSideRouts(bool disrupted, bool attacker, Func<bool> boundToSurrender)
+    {
+        ArgumentNullException.ThrowIfNull(boundToSurrender);
+        return (disrupted || attacker) && boundToSurrender();
+    }
+
+    /// <summary>
+    /// What the Rout panel says of where a broken unit's rout may end (A10.5, A10.51; pass 35, the Rules boundary review): no legal step; places
+    /// within reach that all lie where it may not end, so that the route passes through them; the places it must end in; or none within reach.
+    /// The places come worded, each with the way to it.
+    /// </summary>
+    public static string RoutEndAdvice(bool canRout, bool must, IReadOnlyList<string> places, bool anyPlaceMayEndTheRout)
+    {
+        ArgumentNullException.ThrowIfNull(places);
+        return !canRout
+            ? must ? ". It has no legal rout step, so it is eliminated for Failure to Rout, or surrenders, when the RtPh ends (A10.5)." : ". It has no legal rout step, so it stays where it is."
+            : places.Count > 0 && !anyPlaceMayEndTheRout
+                ? $". It may not end its rout in or ADJACENT to the Location of the enemy unit it began with or beside (A10.5, A10.51): its route passes through {string.Join(" or ", places)} and ends in woods or a building beyond."
+            : places.Count > 0 ? $". Its route must end in {string.Join(" or ", places)}."
+            : ". No woods or building is within its reach, so any legal route will do.";
+    }
+
     /// <summary>A20.21: the refusal of a rout by a unit that surrenders instead.</summary>
     public static string RoutSurrenderText(string unitId, string cause, IReadOnlyList<string> captors) =>
         $"play.rout-surrender: {unitId} {cause}, so it surrenders to {string.Join(" or ", captors)} as the RtPh ends instead of routing (A20.21)";
 
     /// <summary>A20.21 (pass 35, task 35.17): what the Rout panel says of a unit that surrenders instead of routing; it is offered no route.</summary>
     public static string RoutSurrenderAdvice(string unitId, string cause, IReadOnlyList<string> captors) =>
-        $"{unitId} does not rout: it {cause}, so it surrenders to {string.Join(" or ", captors)} as the RtPh ends (A20.21).";
+        $"{unitId} does not rout: it {cause}, so it surrenders to {string.Join(" or ", captors)} as the RtPh ends ({(cause == "is Disrupted" ? "A19.12, " : string.Empty)}A20.21).";
 
     /// <summary>A19.12 (pass 35, task 35.2): a Disrupted unit may not use Low Crawl, but at night (E1.54).</summary>
     public static string? DisruptedLowCrawlBar(string unitId, bool disrupted, bool lowCrawl, bool night) =>
-        disrupted && lowCrawl && !night ? $"play.rout-low-crawl: {unitId} is Disrupted and may not use Low Crawl (A19.12)" : null;
+        disrupted && lowCrawl && !night ? $"play.rout-low-crawl: {unitId} is Disrupted and may not use Low Crawl; it routs normally if it must rout, and otherwise stays (A19.12)" : null;
 
     /// <summary>
     /// A10.4 (ruling R31d.1): the load a laden unit routs with: the one named, among the best loads; or the only choice when none is named; or null.

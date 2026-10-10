@@ -136,11 +136,15 @@ public sealed partial class GamePlanner
         return state.Location(vehicle.Id) is { } at ? EdgeSides(state, at.Location).FirstOrDefault(item => item.Side == exit.Direction).Edge : null;
     }
 
-    /// <summary>The exits a vehicle may make from its Location (A2.6): an edge direction within its VCA (D2.11) whose exit cost is reviewed.</summary>
+    /// <summary>
+    /// The exits a vehicle may make from its Location (A2.6): an edge direction within its VCA (D2.11) whose exit cost is reviewed. A Recalled AFV
+    /// that must leave has only its Friendly Board Edge (D5.341), so the page offers it no other (found in the Studio, pass 35).
+    /// </summary>
     public IReadOnlyList<VehicleMove> VehicleExits(GameState state, UnitInstance vehicle, string? edge = null)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(vehicle);
+        edge ??= MustLeave(vehicle) ? state.Side(vehicle.Side)?.FriendlyEdge : null;
         if (state.Location(vehicle.Id) is not { } at || vehicle.Position is not MapPosition { Facing: { } facing })
         {
             return [];

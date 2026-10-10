@@ -185,7 +185,7 @@ public sealed class SetupPlansPageTests : IDisposable
             var hex = counter.Groups[1].Value == "draft:g-1" ? "A1" : "B1";
             Assert.StartsWith($"{DisplayText.Place(1, $"{Board}:{hex}:0")}: 4-6-7 squad. ", counter.Groups[2].Value, StringComparison.Ordinal);
             Assert.Equal(counter.Groups[2].Value, counter.Groups[3].Value);
-            Assert.DoesNotContain("g-1", counter.Groups[2].Value, StringComparison.Ordinal);
+            Assert.DoesNotContain(counter.Groups[1].Value["draft:".Length..], counter.Groups[2].Value, StringComparison.Ordinal);
         }
 
         Assert.Contains("drawn paler", Text(page, "#setup-draft-note"), StringComparison.Ordinal);

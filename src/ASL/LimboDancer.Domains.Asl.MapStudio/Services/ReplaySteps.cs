@@ -292,7 +292,8 @@ public static class ReplaySteps
             return ("advance", side, $"{A(side, advanced.Units.Count == 1 ? "unit advances" : "stack advances")} into {Place(before, advanced.To)}{end}", false);
         }
 
-        if (First<RoutStepped>(payloads) is { } routed)
+        // The table player, pass 35: a rout repulsed after a step it made is titled by the repulse, not by its first step.
+        if ((payloads.OfType<RoutStepped>().FirstOrDefault(step => step.Attempted is not null) ?? First<RoutStepped>(payloads)) is { } routed)
         {
             var side = SideOf(routed.Unit);
             return ("rout", side, routed.Attempted is { } repulsedFrom

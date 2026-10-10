@@ -249,7 +249,7 @@ public sealed class ConcealedEntryTests : IDisposable
             placements = new[] { Placement("g1", "attacker-squad", "german", "bd01:D4:0"), Entity("w1", "asl:wire", "russian", "bd01:D4:0") },
         }), Player);
         Assert.Equal(PlayOutcome.Denied, result.Outcome);
-        Assert.Contains(result.Plan!.Reasons, reason => reason.StartsWith("play.unbuilt-counters", StringComparison.Ordinal) && reason.Contains("wire", StringComparison.Ordinal));
+        Assert.Contains(result.Plan!.Reasons, reason => reason.StartsWith("play.unbuilt-counters", StringComparison.Ordinal) && reason.Contains("Wire", StringComparison.Ordinal));
         Assert.Equal(0, Revision);
     }
 

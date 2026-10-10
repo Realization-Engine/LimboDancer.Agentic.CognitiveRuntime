@@ -598,7 +598,16 @@ public sealed class PlayRecords
                 else if (item.Payload is DiceRolled { Purpose: ScenarioA1Wounds.SeverityPurpose } severity)
                 {
                     // Pass 35 (task 35.1; A17.11): the Wound Severity dr of a SMC's Casualty Reduction, said where it is made.
-                    records.Add((item.EventId, "wound", ScenarioA1Wounds.SeverityText(severity.Values[0])));
+                    // The table player, pass 35: the man and the outcome are read from what the same action did next, a wound or an elimination.
+                    var later = attempts[attempt].SkipWhile(other => other.EventId != item.EventId).Skip(1).Select(other => other.Payload);
+                    var man = later.Select(payload => payload switch
+                    {
+                        InstanceEliminated gone => gone.Id,
+                        ConditionsChanged changed when changed.Conditions.ContainsKey(Conditions.Wounded) => changed.Id,
+                        _ => null,
+                    }).FirstOrDefault(id => id is not null);
+                    records.Add((item.EventId, "wound", ScenarioA1Wounds.SeverityText(severity.Values[0], man,
+                        man is not null && before?.Unit(man) is { } hurt && GameState.Condition(hurt, Conditions.Wounded) == ConditionState.True)));
                 }
                 else if (item.Payload is RoutInterdicted interdicted)
                 {

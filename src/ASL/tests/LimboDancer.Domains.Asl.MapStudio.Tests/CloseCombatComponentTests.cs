@@ -57,6 +57,7 @@ public sealed class CloseCombatComponentTests : IDisposable
         Assert.Equal(string.Empty, panel.Find(".vehicle-cc[data-location='bd04:F5:0'] .vehicle-cc-vehicle").GetAttribute("value") ?? string.Empty);
         panel.Render(parameters => parameters.Add(item => item.Vehicle, "gt2"));
         Assert.True(panel.Find(".vehicle-cc[data-location='bd04:E5:0'] .propose-vehicle-cc-attack").HasAttribute("disabled"));
+        Assert.False(panel.Find(".vehicle-cc[data-location='bd04:F5:0'] .propose-vehicle-cc-vehicle").HasAttribute("disabled"));
         panel.Find(".vehicle-cc[data-location='bd04:F5:0'] .propose-vehicle-cc-vehicle").Click();
         Assert.Equal("bd04:F5:0", byVehicle);
     }
