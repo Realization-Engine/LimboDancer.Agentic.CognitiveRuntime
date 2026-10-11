@@ -13,19 +13,19 @@ window.SquadCounterArt = (()=>{
  }
  const node=(tag,attrs,text)=>{const n=document.createElementNS(ns,tag);for(const [k,v] of Object.entries(attrs))n.setAttribute(k,v);if(text)n.textContent=text;return n;};
  function draw(g,d,type,u,selected){
-  const definition=SquadAslDefinitions.types[type.id],v=definition.values;
-  const color=window.COUNTER_PALETTE_DEFAULTS.palettes.find(p=>p.id===(type.nationality||(type.side==="German"?"de":"us")))?.css||"#a9bb80";
-  g.append(node("rect",{x:-7,y:-7,width:14,height:14,rx:.6,fill:color,stroke:selected?"#b25400":"#18221a","stroke-width":selected?1.2:.5}));
-  const art=CampaignAppearance.counterImage((d.assetBase||"assets/panzer-leader-04/")+type.artwork,type.side,u.label,type.nationality);
+  const definition=window.ScenarioTroopQuality?.definition(d,type.id,u)||SquadAslDefinitions.types[type.id],v=definition.values;
+  const ss=window.ScenarioAffiliation?.resolve(d,u).affiliation==="SS",ink=ss?"#fff":"#101810";
+  const color=window.COUNTER_PALETTE_DEFAULTS.palettes.find(p=>p.id===((type.nationality==="ca"?"uk":type.nationality)||(type.side==="German"?"de":"us")))?.css||"#a9bb80";
+  g.append(node("rect",{x:-7,y:-7,width:14,height:14,rx:.6,fill:ss?"#101010":color,stroke:selected?"#b25400":"#18221a","stroke-width":selected?1.2:.5}));
+  const art=CampaignAppearance.counterImage((d.assetBase||"assets/panzer-leader-04/")+type.artwork,type.side,u.label,type.nationality,ss?"SS":undefined);
   const box=fit(u.kind);
   art.setAttribute("viewBox",box.source.join(" "));art.setAttribute("preserveAspectRatio","xMidYMid meet");
   for(const key of ["x","y","width","height"])art.setAttribute(key,box[key]);
   art.style.width=box.width+"px";art.style.height=box.height+"px";art.style.pointerEvents="none";g.append(art);
-  const factors=v.firepower!==undefined?[v.firepower,v.range,v.morale].filter(x=>x!==undefined).join("-"):v.caliber?v.caliber+(v['caliber-suffix']==='l'?'L':''):"MP "+v['movement-points'];
-  g.append(node("text",{x:0,y:6,"text-anchor":"middle","font-size":2.7,fill:"#101810"},factors));
+  const factors=v.firepower!==undefined?[v.firepower,v.range,v.morale].filter(x=>x!==undefined).join("-"):v.caliber?v.caliber+(v['caliber-suffix']==='l'?'L':v['caliber-suffix']==='ll'?'LL':v['caliber-suffix']==='star'?'*':''):v['movement-points']!==undefined?"MP "+v['movement-points']:"EQ";
+  g.append(node("text",{x:0,y:6,"text-anchor":"middle","font-size":2.7,fill:ink},factors));
   const top=v['af-front']!==undefined?"AF "+v['af-front']+"/"+v['af-side']:v['rate-of-fire']!==undefined?"ROF "+v['rate-of-fire']:"";
-  g.append(node("text",{x:-6,y:-4,"font-size":2.1,fill:"#101810"},top),node("text",{x:6,y:-4,"text-anchor":"end","font-size":2.3,fill:"#101810"},u.id.split("-").at(-1)));
-  g.append(node("title",{},u.parentId+" | "+u.label+" | "+definition.status+" | "+Object.entries(v).map(([k,v])=>k+": "+v).join("; ")));
+  g.append(node("text",{x:-6,y:-4,"font-size":2.1,fill:ink},top),node("text",{x:6,y:-4,"text-anchor":"end","font-size":2.3,fill:ink},u.id.split("-").at(-1)));
  }
  return {draw,fit};
 })();

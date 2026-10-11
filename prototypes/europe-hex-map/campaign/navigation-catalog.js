@@ -1,0 +1,8 @@
+"use strict";
+// Regional anchors are authored navigation aids, never printed-board footprints.
+window.CampaignNavigation=(()=>{
+ const targets={4:[-1.09,49.12],5:[-.25,49.18],6:[6.03,51.74],7:[6.18,48.69],8:[6.1,49],9:[5.86,51.84],10:[5.9,51.98],11:[5.75,51.5],12:[6.75,49.2],13:[6.25,50.33],14:[5.93,50.39],15:[6.2,50.46],16:[5.72,50],17:[5.01,50.23],18:[5.72,50],19:[5.7,49.9],20:[7.23,50.58]};
+ function build(library,cells){return library.map(d=>{const n=d.situation.number,t=targets[n];if(!t)throw Error('Missing navigation anchor for '+n);const cell=cells.reduce((best,c)=>!best||Math.hypot((c.lon-t[0])*.65,c.lat-t[1])<Math.hypot((best.lon-t[0])*.65,best.lat-t[1])?c:best,null);return {id:d.id,campaignId:d.campaignAssignment.campaignId,campaign:d.parentCampaign.title,number:d.campaignAssignment.number,title:d.situation.title,date:d.situation.printedDate,sourceNumber:n,anchor:d.parentMapLocation?{x:d.parentMapLocation.x,y:d.parentMapLocation.y}:{x:cell.x,y:cell.y},precision:'Approximate regional navigation anchor; source boards use local coordinates',mode:[4,14,15].includes(n)?'Tailored command operation':'Authored source-card preparation',route:n===4?'index.html?exercise=normandy':[14,15].includes(n)?'index.html?exercise=ardennes&commandMission=M'+n:'index.html?exercise=source&source='+n};});}
+ const entries=build(window.PANZER_SITUATION_LIBRARY,window.CAMPAIGN_MAP_DATA.cells);
+ return {build,entries,find:n=>entries.find(e=>e.sourceNumber===Number(n)),open(n){const e=this.find(n);if(!e)throw Error('Unknown Situation');location.href=e.route;}};
+})();

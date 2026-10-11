@@ -213,3 +213,98 @@ The [Ardennes Command Decision Contract Specification](<Ardennes Command Decisio
 ## Implemented command exercise, 9 October 2026
 
 PL14 and PL15 now feed an authored two-mission command/supply smoke test. Parent allocation changes readiness and creates separately saved baseline, supplied or reinforced deployments without changing imported source cards. See [prototype acceptance](<Ardennes Command Prototype Acceptance.md>) for the tested workflow and limits. This does not add historical evidence for the shared HQ or supply pool.
+
+
+## St. Lo campaign integration, 10 October 2026
+
+Situation 04 is now Campaign Situation 01 in a dated 29 June operation within Normandy inland operations. The player enters through Campaign > Open / resume Normandy: St. Lo, allocates supply and reserve at the operation HQ, then commits the mission at St. Lo Regiment HQ. Commitment opens the right-pane card; left-pane continuation opens formation setup and subsequently squad deployment. Supplied uses the original 76 formations / 335 subordinate counters; baseline withholds one gun (75 / 331); reinforced adds two authored Shermans (78 / 345). The archived source card is unchanged. Original standalone player entry points redirect to command; developmentReferences retains explicit source-reference access. Live UI testing verified a fresh supplied operation through full deployment and reload/resume.
+
+
+## Campaign navigation coverage audit, 10 October 2026
+
+The 17 imported source cards are not all connected to command navigation. St. Lo (04), Bulge: Thrust (14), and Elsenborn Ridge (15) have command adapters. The remaining 14 have formation and squad deployment support but still need command-operation bindings. Only St. Lo currently has an overview anchor, and the marker renderer supports one selected marker. Consequently the overview's 01 marker is not a complete campaign Situation index.
+
+Next work is a shared navigation catalog and multi-marker renderer, followed by explicit command adapters for additional cards. Preserve source-card numbers separately from campaign-local numbers and stable IDs. Reconcile Elsenborn's catalog designation 04 with the exercise's displayed 02. Geographic anchors must state their precision; they do not establish continuous terrain or board footprints. See the Campaign implementation plan's overview-marker task for scope and acceptance criteria.
+
+
+## All-card navigation integration, 10 October 2026
+
+All 17 imported cards now have overview markers and campaign-owned command routes. Source 04 retains its Normandy operation; 14/15 retain the tailored Ardennes exercise. Sources 05-13 and 16-20 use a shared authored order/preparation/supply-delivery contract. Their forces and setup rules remain unchanged. Source number and campaign-local designation are distinct; Elsenborn is 04 throughout the player workflow. The earlier navigation gap audit is superseded by this implementation.
+
+The map is the entry point, with grouped markers, close-zoom labels and an on-map Situation chooser. Regional anchors are approximate and do not transform source boards into continuous campaign geography. All 17 marker workflows were tested live through squad entry. All 14 new routes passed fresh command preparation, setup gates, game launch and reload. Model tests cover 56 preparation combinations and unchanged source deployment. Priority delivery currently changes arrival time only; tailored costs, competition, outcomes and geographic refinement remain future work. See the implementation plan for module boundaries and full validation scope.
+
+
+## SS infantry affiliation research, 11 October 2026
+
+Research finding: absence of a dedicated SS infantry row in the Panzer Leader Unit Function Table does not imply absence of SS infantry in its Situations. Infantry role and organizational affiliation are independent. The existing type-level SS tank flag is also insufficient: cards use those printed tank types in forces attributed to Heer formations. This section supersedes any inference that a table designation alone proves the historical affiliation of every instance.
+
+Reviewed the supplied Wikipedia research leads and the archived German Infantry Gruppe reference. They describe squad structure, not a dated scenario order of battle, and cannot determine affiliation. Inspected the original card images for PL05, PL09, PL10, PL14, PL15 and PL18, imported briefings for all seventeen cards, and the archived Osprey Waffen-SS Soldier chronology (printed p.5). The latter corroborates Western deployment broadly, not individual counter allocations. Consulted Wikipedia battle/order-of-battle articles, the National Army Museum Arnhem photographic record, and U.S. Army official histories for scenario context.
+
+### Specific corrections supported by the evidence
+
+| Situation | Evidence and proposed treatment | Confidence / limit |
+|---|---|---|
+| PL05 Goodwood | Printed card names 1st SS and 21st Panzer Divisions. Goodwood OOB lists 1st and 2nd SS Panzergrenadier Regiments within 1st SS. Add an SS infantry contingent alongside Heer infantry. | SS participation certain; the card pools 15 Rifle counters and does not give their divisional split. An explicit authored allocation is required, not an invented historical count. |
+| PL08 Marieulles | Card says officer trainees. Cole's Lorraine Campaign, chapter III, printed pp.166-167 and footnote 45, identifies the defenders as probably elements of I and II/37th SS Panzergrenadier Regiment. | Strong candidate for a historically annotated variant; retain Cole's qualification and the conflict with the card attribution/date. Do not silently overwrite the source card. |
+| PL09 Nijmegen | Card explicitly attributes the German force, including 9 Rifle counters, to 9th SS Panzer Division. Apply SS affiliation in source-card mode. | Card evidence clear; historical division attribution needs a separate correction note because accounts describe 10th SS forces sent to Nijmegen. Affiliation can be established without pretending the division number is settled. |
+| PL10 Arnhem | Card names Kampfgruppe Harzer and has 12 Rifle counters. Harzer commanded 9th SS; museum evidence confirms Waffen-SS panzergrenadiers at Arnhem. Model its represented core infantry as SS. | High-confidence core affiliation; attachments in the wider battle were mixed. Do not automatically label every attached gun or vehicle SS. |
+| PL14 Bulge: Thrust | Card names Kampfgruppe Peiper, from 1st SS. Proposed SS infantry/pioneer core includes the card's 9 Rifle and 3 Engineer formation counters. | Strong scenario attribution; exact subordinate companies remain an abstraction. Affiliation does not establish additional strength. |
+| PL15 Elsenborn Ridge | Card explicitly labels Group A 12 SS Panzer: 6 Rifle, 3 Submachinegun, 1 Engineer. Group B is separately labelled 276 VG. Existing instance setupGroup fields preserve the exact split. | Direct card evidence. Tag de-rifle-01..06, de-smg-01..03 and de-engineer-01 SS. Group B remains Heer. Historical account names 277th VG at the twin villages, rather than the card's 276th; preserve this discrepancy separately. |
+
+For PL04 St. Lo (Fallschirmjaeger and assault guns), PL06 Reichswald (84th Infantry, with existing date issues), PL07 Nancy (553rd VG), PL12 Saar (Panzer Lehr), PL13 Goose Egg (18th VG/Fuehrer Begleit), PL16 Bastogne Prelude (Panzer Lehr), PL17 Celles (2nd Panzer), PL18 Bastogne Siege (Panzer Lehr/326th VG as printed), and PL19 Patton (26th VG/Panzer Lehr), their imported attributions do not justify assigning SS infantry. This is a conclusion about the represented card forces, not a claim that no SS troops fought anywhere nearby. PL11 Anticlimax has mixed named formations and a changing Kampfgruppe Walther; dated component evidence is needed. PL20 Remagen has a mixed garrison, with no SS infantry assignment established in this pass.
+
+### Required architecture correction
+
+Store affiliation per scenario formation or per counter instance, with inherited affiliation for its decomposed children. Keep nationality, service affiliation, troop role, tactical quality, printed counter type and nominal equipment count separate. A source table's Pz IV (SS) five-tank composition can remain the source-game quantity when the scenario uses that counter for a Heer formation; its table label must remain visible as source metadata rather than dictate an incorrect black palette. Panzer Lehr examples make this conflict concrete, including the currently open PL18.
+
+Evidence classification should distinguish explicit card group, historical corroboration, authored allocation and unresolved conflict. Card mode preserves original attributions; historical amendments are separate metadata or variants. Tool-tip cards should show formation, affiliation and why it was assigned. Black/white rendering follows affiliation. Do not automatically increase firepower, morale, squad counts or add special rules merely because a unit is SS.
+
+Recommended first implementation: exact PL15 group mapping; source-card SS core mappings for PL09, PL10 and PL14; an explicitly labelled playable split for PL05; an optional researched PL08 variant. Correct type-level tank affiliation conflicts at the same time. This research pass changes documentation only, not live rosters or saved deployments.
+
+### Sources consulted
+
+- Original Panzer Leader manual and Situation Cards, local archive: `E:/Archive/WWII-Docs/1-PanzerBlitz-PanzerLeader/Original-Rules-and-Situations/PanzerLeader/Situations/1025016933-Avalon-Hill-Panzer-Leader.pdf`. Card images are in `prototypes/europe-hex-map/assets/panzer-shared/`.
+- User research leads and `German-Infantry-Gruppe-WWII.md`, under `E:/Archive/WWII-Docs/1-PanzerBlitz-PanzerLeader/Squad-Organization-References/`; Wikipedia [Squad](https://en.wikipedia.org/wiki/Squad). Structural context only.
+- Archived `263657199-Osprey-Waffen-SS-Soldier-1940-45.pdf`, printed p.5, under `E:/Archive/WWII-Docs/4-Armies-Units-and-Soldiers/German/`. Broad Western deployment chronology only.
+- [Wikipedia: Goodwood order of battle](https://en.wikipedia.org/wiki/Operation_Goodwood_order_of_battle), named SS panzergrenadier regiments alongside Army formations.
+- [Wikipedia: Battle of Arnhem](https://en.wikipedia.org/wiki/Battle_of_Arnhem), Harzer, 9th/10th SS and mixed attachments; [Operation Market Garden](https://en.wikipedia.org/wiki/Operation_Market_Garden), Nijmegen deployment context.
+- [National Army Museum: captured Waffen SS Panzer Grenadiers, Arnhem, 18 September 1944](https://collection.nam.ac.uk/detail.php?acc=2005-12-38-64), accession 2005-12-38-64.
+- Hugh M. Cole, [The Ardennes, chapter V](https://www.ibiblio.org/hyperwar/USA/USA-E-Ardennes/USA-E-Ardennes-5.html), Peiper/1st SS; [chapter VI](https://webdoc.sub.gwdg.de/ebook/p/2005/CMH_2/www.army.mil/cmh-pg/books/wwii/7-8/7-8_6.htm), printed pp.114-115 and 12th SS panzergrenadiers at the twin villages. Official U.S. Army history, mirrored online.
+- Hugh M. Cole, [The Lorraine Campaign, chapter III](https://www.ibiblio.org/hyperwar/USA/USA-E-Lorraine/USA-E-Lorraine-3.html), printed pp.166-167 and footnote 45, probable 37th SS defenders at Marieulles. Official U.S. Army history, mirrored online.
+- [Wikipedia: Panzer Lehr Division](https://en.wikipedia.org/wiki/Panzer_Lehr_Division), Army formation context.
+
+
+## Implemented scenario affiliation, 11 October 2026
+
+`tactical/scenario-affiliation.js` now resolves identity per Situation and counter instance; squad children inherit their parent identity at display/export time. This updates existing deployed saves without rebuilding or moving units. The source table SS designation is retained separately from affiliation. Formation map artwork, roster labels, squad colors, information cards and squad exports use the scenario resolver.
+
+Implemented: Elsenborn Group A SS / Group B Heer; Peiper and source-card Nijmegen forces SS; Arnhem core Rifle counters SS with unresolved supporting attachments neutral; Goodwood Rifle counters 01-08 SS and 09-15 Heer as an explicitly authored split; Marieulles infantry uses probable 37th SS attribution with the conflicting card description displayed. Known Army scenarios, including Panzer Lehr, no longer inherit SS color from the printed tank type. Unresolved mixed formations remain neutral German. Squad exports include resolver version and per-parent/per-child identity evidence.
+
+Affiliation is not troop quality. No automatic SS firepower, morale, count or special-rule bonus has been introduced. Future quality profiles should distinguish experience, equipment and current readiness, applicable to both Army and SS. The official Lorraine history reports the replacement-heavy 17th SS rated fit only for defense in November 1944: https://www.ibiblio.org/hyperwar/USA/USA-E-Lorraine/USA-E-Lorraine-9.html . Thus SS identity alone is insufficient evidence for an elite rating.
+
+Validation: affiliation tests cover all 17 rosters, exact Elsenborn split, Goodwood allocation, inherited identity, source immutability and removal of false SS labels from Army forces. Full squad-library tests still produce 7,158 objects. Live UI verified Bastogne Siege resumes its 496 existing counters with no black SS counters, and Elsenborn resumes 513 counters with Group A infantry black, Group B infantry blue, and formation evidence visible in the counter card.
+
+
+### Scenario-specific SS infantry quality, 11 October 2026
+
+Implemented `tactical/scenario-troop-quality.js`, separate from affiliation, source composition and deployment geometry. A historical unit identity does not automatically grant elite values.
+
+| Printed Situation | Rating decision | Affected formation parents |
+|---|---|---|
+| 09 Nijmegen | Rifle 4-6-7 to catalog 4-6-8 | 9 SS rifle parents |
+| 10 Arnhem | Rifle 4-6-7 to catalog 4-6-8 | 12 SS rifle parents |
+| 14 Bulge: Thrust | Rifle 4-6-7 to catalog 4-6-8 | 9 SS rifle parents |
+| 05 Goodwood | Retain current ratings | The mixed SS/Army split is authored, insufficient evidence for a specific quality allocation |
+| 08 Marieulles | Retain current ratings | Probable SS attribution conflicts with printed trainees; determined defense alone does not prove elite status |
+| 15 Elsenborn | Retain current ratings | Training and combined-arms problems argue against a blanket upgrade |
+| Other imported Situations | Retain current ratings | No additional confirmed SS infantry quality assignment |
+
+The complete existing ASL `attacker-elite-squad` profile is used: firepower 4, range 6, morale 8, elite class, smoke exponent 2 (previously 1). These are authored scenario assignments using catalog values, not historical numerical measurements or official ASL scenario conversions. No 6-5-8 firepower increase is inferred. Engineer and SMG specialist profiles, vehicles, guns, printed Panzer factors, unit counts, positions and radius settings remain unchanged.
+
+Evidence: [Cole, Ardennes chapter V](https://www.ibiblio.org/hyperwar/USA/USA-E-Ardennes/USA-E-Ardennes-5.html), especially comparative training and replacements, supports Peiper's rifle rating. [MacDonald, Siegfried Line chapter VII](https://www.ibiblio.org/hyperwar/USA/USA-E-Siegfried/USA-E-Siegfried-7.html) describes SS reinforcement at Nijmegen and successful blocking actions at Arnhem. [RAF Arnhem study](https://www.raf.mod.uk/what-we-do/our-history/air-historical-branch/second-world-war-thematic-studies/arnhem-the-air-reconnaissance-story/) identifies an experienced 9th SS nucleus. Nijmegen is a lower-confidence gameplay inference: the source card names 9th SS, while the historical narrative includes 10th SS. Applying the profile to every represented rifle parent is explicit game abstraction.
+
+[Cole, Ardennes chapter VI](https://www.ibiblio.org/hyperwar/USA/USA-E-Ardennes/USA-E-Ardennes-6.html) records training problems around Elsenborn. [Cole, Lorraine chapter III](https://www.ibiblio.org/hyperwar/USA/USA-E-Lorraine/USA-E-Lorraine-3.html) qualifies the Marieulles unit identification. Neither supports automatically upgrading these entire rosters.
+
+The resolver applies current ratings when existing deployments are opened, without rebuilding saved units. Map artwork, information cards and selected-unit details resolve the same values. Export includes the quality policy version and each unit's effective definition, base values and rationale. Cards link evidence and preserve printed source information. Combat remains unimplemented; these are deployment/display/export ratings.
+
+Migration contract: retain separate affiliation, source profile and dated scenario-quality policy in C#. Persist effective profile provenance in exported engagement snapshots. Never derive troop quality solely from SS palette or formation tank-table designation.

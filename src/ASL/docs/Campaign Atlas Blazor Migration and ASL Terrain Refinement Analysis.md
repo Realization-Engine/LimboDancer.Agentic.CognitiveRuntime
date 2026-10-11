@@ -232,3 +232,96 @@ Each parent retains a fixed four-hex deployment radius. Regions may overlap. Two
 Terrain geometry is shared with the source boards. Fine terrain classification is still inherited from source hexes, with recorded water/bridge polygons overlaid. This is not yet a full ASL terrain rules model or geographically continuous campaign refinement. The implementation is split into spatial, terrain, organization, ASL definitions, state, persistence, counter rendering, viewport and workspace components. Port these responsibilities to LimboDancer.Campaign while preserving the dependency direction toward consumable ASL libraries.
 
 Validation: model regression covers all 76 parents and 335 children, fixed deployment radii, stacking, persistence, atomic failure, duplicate prevention and catalog-value fidelity. The browser displays the full joined board with both forces and supports switching between the full-map and selected-unit views.
+
+
+## HTML/JS squad integration update, 10 October 2026
+
+Squad deployment is now available from every imported Situation game map, including campaign-linked Ardennes variants. It occupies the central map pane and preserves the surrounding command and Situation Card panes. Returning to formation scale retains deployment. Campaign-linked squad saves belong to the campaign and mission; standalone Situations retain their own saves.
+
+The playable library now covers all imported ground counter types. Aircraft remain off-map, equipment retains its original anchor, and loaded weapons remain with their assigned transport. ASL catalog matches and provisional estimates are identified explicitly. This remains deployment and inspection, not combat execution or admission to the ASL engine. Source boards retain their local coordinates rather than becoming georeferenced campaign terrain.
+
+Deployment radius is a saved setting, not a fixed four-hex rule. New setups use 6 tactical hexes, offering 127 candidate hexes compared with 61 at radius 4, before terrain and authored setup exclusions. The UI accepts whole-number radii from 0 to 50 as a prototype input guard. Equipment retains radius zero. Existing saves retain their prior profile radius until the player explicitly applies a change. Applying a radius revises the setup definition and validates existing positions atomically. An invalid reduction is rejected without moving counters. If the chosen area exceeds the local preview, the view expands to the full board footprint. No automatic placement silently increases the radius. Source setup zones, terrain, stacking and transport constraints still take precedence. Crowded parent placement can therefore still require adjustment even with a larger radius.
+
+Validation: the full 17-Situation library deployed 6,909 subordinate counters from legal, evenly distributed formation fixtures at radius 6. All six Ardennes baseline/supplied/reinforced variants passed, including reserve decomposition and campaign-scoped save round trips. Boundary, invalid reduction, radius increase, revision, legacy-save compatibility and atomic failure tests passed. Existing Situation, command/card transition, command mechanics and campaign world tests passed. Live browser verification reopened the saved reinforced Crossing Defense map with 324 subordinate counters and applied radius 6 without relocating them.
+
+For Blazor migration, preserve separate profile/catalog, spatial refinement, deployment validation, persistence and workspace components. Port deployment radius, setup revision, transport relationships and mission-scoped storage as domain data. Campaign continues to reference consumable ASL libraries, with no reverse dependency required.
+
+
+## Normandy St. Lo command integration, 10 October 2026
+
+The existing Normandy inland campaign now owns a distinct 29 June St. Lo operation. Its operation identity, seed, command log, supplies, mission binding, formation deployment and squad setup persist together. A separate Normandy active-operation key preserves Ardennes saves and avoids treating the 8 June command snapshot as the 29 June force state. Existing standalone St. Lo saves are retained, not silently imported into a newly committed command variant.
+
+Player route: Campaign > Open / resume Normandy: St. Lo > Start Normandy operation > Commit operation allocation > Continue to St. Lo Regiment HQ > advance scheduled events > Commit St. Lo mission > Continue to Situation setup > complete both setup sides > Launch situation game map > Open squad map. Committing the mission opens its card on the right; the left command pane retains the next action. The central map shows headquarters, supply route, transport and reserve before displaying the joined source boards and then squad deployment.
+
+Finite choices govern supply shipment and reserve assignment. Essentials assigns support automatically; Operational exposes both choices. Staff preparation is 10 or 20 simulated minutes. Baseline withholds one gun, supplied retains all 76 source formation counters, and reinforced adds two Sherman formation counters. These yield 331, 335 and 345 subordinate counters respectively. Source identities, board rotations and original objectives are preserved. The command organization, support timings and extra reserve are explicitly authored game assumptions. Historical timeline inspection is read-only. Commitment consumes the chosen allowances once.
+
+Implementation is split across normandy/command-state.js, situation.js, repository.js, map-view.js and workspace.js. Shared CampaignWorld validation/terrain, the Situation screen, squad modules and viewport interactions are reused. During Blazor migration, extract operation configuration and reusable command services before adding more theaters; do not extend one monolithic workspace. Dependency direction remains Campaign consuming ASL libraries.
+
+Normal St. Lo reference entries now lead to its command operation rather than independent setup. The raw source workflow remains available only with the explicit developmentReferences query parameter for regression and artwork reference work. Existing tests opt into that reference path and also check the player redirect.
+
+Validation: model tests cover all three variants at both staff timings, source immutability, full formation/squad deployment, replay, retained-supply gating, campaign storage isolation, stale writes and retained previous saves. Live browser testing started a new operation, verified preparation and ammunition gates, inspected history, committed the supplied plan, completed both setup sides, launched the map, expanded all 335 subordinate counters and reloaded/resumed them successfully. A duplicate card heading found during this run was corrected.
+
+Limitations: deployment and inspection only. Combat resolution, outcome reconciliation and a surveyed connection between the campaign diagram and printed boards remain outside this implementation. Source boards retain local battlefield coordinates; the command route is illustrative.
+
+
+## Implemented map-led Situation navigation, 10 October 2026
+
+The overview now renders all 17 imported Situations from a shared campaign/navigation-catalog.js. Nearby anchors form clickable groups at wide zoom; individual labels appear only at close zoom. Mouse or keyboard selection opens a chooser on the central map, then the corresponding command operation. Campaign-local numbers remain separate from source-card numbers. Elsenborn is consistently 04 within Ardennes, including its tailored command card.
+
+St. Lo and Ardennes Thrust/Elsenborn retain their tailored command rules. The other 14 cards now use reusable source-command.js, source-repository.js and source-workspace.js components. This is a deliberately limited authored preparation contract: choose 10 or 20 simulated minutes of staff preparation and standard (30-minute) or priority (20-minute) delivery. The mission unlocks only after order receipt, preparation and supply arrival. Priority currently changes timing only; resource competition, costs and tailored scenario consequences are future work. No source units, transports, board rotations, aircraft handling, or setup restrictions are changed by this generic contract.
+
+The central map displays operation/mission headquarters, depot, supply point and transport progress, and offers the next workflow action above the map. The side panes follow the selected mission and present supporting detail. Mission commitment opens the card, continuation opens the joined source boards in the center, and game launch exposes squad deployment. Saves are keyed by campaign plus source Situation and retain the operation, source hash, formation plan and squad plan together. Existing Normandy and Ardennes saves remain in their original namespaces. A new operation retains its previous stored save, but the new source-operation workspace does not yet provide an archive browser.
+
+Anchors are explicitly approximate regional navigation aids, chosen on the existing atlas grid. They do not georeference source boards. The printed source date, including the disputed Reichswald date, is retained without asserting historical accuracy. Command terrain remains illustrative. These adapters support deployment and inspection, not combat or outcome reconciliation.
+
+Validation: test_campaign_navigation.cjs verifies 17 unique campaign-local routes and 56 preparation paths, readiness gates, replay, source immutability, original setup/launch, save isolation and stale writes. Live browser testing followed every marker through its workflow to squad entry. Each of the 14 new routes was started, gated, committed, deployed on both sides, launched, reloaded and reopened. Goodwood expanded its full 114 ground formations into 530 subordinate counters. The tailored routes were checked with existing saves: St. Lo retained 335 counters, Thrust retained 324; Elsenborn committed its supplied plan and reached squad entry with designation 04. Cluster mouse selection, keyboard selection, wheel zoom separation, and map HQ clicks were checked. Browser testing found and fixed the shared grid-column mismatch, command marker hit area/pointer capture, and stale asset URLs.
+
+For Blazor migration, port the navigation catalog, finite preparation contract, repository and workspace as separate responsibilities. Do not replicate a bespoke command page per card. This implementation supersedes the earlier audit's statement that the 14 source cards lack command bindings; their bindings are now generic preparation adapters, not scenario-specific supply models.
+
+
+## 11 October 2026: source composition audit and counter information cards
+
+The HTML/JS deployment now loads `tactical/source-composition.js` after the original profiles. It records nominal principal equipment counts and personnel/support inventories from the original Panzer Leader Unit Function Table, printed pages 19-22 (PDF pages 20-23 of the archived original manual). All imported ground types have an evidence record; infantry squad grouping remains a deliberate playable abstraction. Canadian/Belgian equivalents use Commonwealth or Allied rows; German MG teams lack a direct row and remain an explicit assumption. Printed discrepancies (25-pounder and Daimler caliber) are retained rather than silently erased.
+
+Corrected counts apply throughout all 17 Situations and campaign variants. Mixed members are supported: British Sherman formations produce three Sherman 75 vehicles plus one Firefly; the M3 scout formation produces four M3 cars and one Daimler scout car. Each child has a validated definition ID. W Panzer IV/Panther formations contain four vehicles; SS versions contain five, with black backgrounds and white artwork/text. Source-tagged SS colors apply to formation artwork too; no blanket assumption is made that all German forces are SS.
+
+`tactical/tactical-estimates.js` supplies explicit role-based values instead of copying all fields from a tank or mortar template. Exact catalog infantry/halftrack definitions remain usable. Unmatched combat values are provisional, not official ASL transcriptions: there is no new combat engine. Source crew and supporting weapon totals remain information, not independently spawned combatants. Transport capacity and support-weapon allocation still require gameplay design beyond setup.
+
+`tactical/counter-info-card.js` replaces squad counter native tooltips with a keyboard-accessible, hoverable card that can be pinned or closed. It separates tactical values, composition/counts, original printed factors, page evidence, setup constraints, artwork IDs and original notes. Export includes the source counters, rules and composition profiles.
+
+Profile version `source-composition-2` rejects earlier saved decompositions. The UI provides an export of the old setup and an explicit rebuild that retains a local backup before replacing the active squad save. Formation deployment is retained. Rebuild may reposition tactical counters within the existing setup constraints; failure leaves the previous save active. New radius remains six and is adjustable.
+
+Blazor migration contract: port source composition evidence, mixed member identities, tactical estimates, affiliation palette, counter-card presentation and versioned save handling as separate components. Keep the archived source inventory independent of engine-admitted tactical rules.
+
+Validation: all 17 full Situation deployments passed, totaling 7,158 tactical objects; six Ardennes and six Normandy command variants passed. Independent regressions verify the source counts, mixed Firefly membership, invalid member rejection, SS affiliation and role corrections. Browser checks verified Goodwood backup/rebuild, reload persistence, mixed Sherman rendering, four-versus-five W/SS counts, black/white SS artwork, and card pin/close/Escape/I-key behavior. Original table-page images are included as evidence links.
+
+
+Live UI validation, 11 October 2026: completed the other 16 Situation deployments in addition to Goodwood, covering marker navigation, existing campaign variants, versioned rebuild, all rendered child-group counts, mixed Sherman membership, explicit SS tank styling and source information cards. Full per-Situation results are recorded in the Formation to Squad analysis. Scenario-derived SS infantry affiliation remains a separate pending data task; the source infantry table has no dedicated SS row. Preserve affiliation separately from strength and from the generic counter-type definition.
+
+
+11 October 2026 affiliation implementation: Campaign Atlas now resolves organizational identity per scenario instance in tactical/scenario-affiliation.js, inherited by squad children and included in export. Port this separately from source equipment profiles and troop quality. Existing deployment positions are unaffected. Mixed Goodwood allocation and probable Marieulles attribution are explicitly labelled; Elsenborn groups follow the card. See the Situation Catalog for evidence and validation. SS affiliation does not automatically confer elite tactical values.
+
+
+### Scenario-specific SS infantry quality, 11 October 2026
+
+Implemented `tactical/scenario-troop-quality.js`, separate from affiliation, source composition and deployment geometry. A historical unit identity does not automatically grant elite values.
+
+| Printed Situation | Rating decision | Affected formation parents |
+|---|---|---|
+| 09 Nijmegen | Rifle 4-6-7 to catalog 4-6-8 | 9 SS rifle parents |
+| 10 Arnhem | Rifle 4-6-7 to catalog 4-6-8 | 12 SS rifle parents |
+| 14 Bulge: Thrust | Rifle 4-6-7 to catalog 4-6-8 | 9 SS rifle parents |
+| 05 Goodwood | Retain current ratings | The mixed SS/Army split is authored, insufficient evidence for a specific quality allocation |
+| 08 Marieulles | Retain current ratings | Probable SS attribution conflicts with printed trainees; determined defense alone does not prove elite status |
+| 15 Elsenborn | Retain current ratings | Training and combined-arms problems argue against a blanket upgrade |
+| Other imported Situations | Retain current ratings | No additional confirmed SS infantry quality assignment |
+
+The complete existing ASL `attacker-elite-squad` profile is used: firepower 4, range 6, morale 8, elite class, smoke exponent 2 (previously 1). These are authored scenario assignments using catalog values, not historical numerical measurements or official ASL scenario conversions. No 6-5-8 firepower increase is inferred. Engineer and SMG specialist profiles, vehicles, guns, printed Panzer factors, unit counts, positions and radius settings remain unchanged.
+
+Evidence: [Cole, Ardennes chapter V](https://www.ibiblio.org/hyperwar/USA/USA-E-Ardennes/USA-E-Ardennes-5.html), especially comparative training and replacements, supports Peiper's rifle rating. [MacDonald, Siegfried Line chapter VII](https://www.ibiblio.org/hyperwar/USA/USA-E-Siegfried/USA-E-Siegfried-7.html) describes SS reinforcement at Nijmegen and successful blocking actions at Arnhem. [RAF Arnhem study](https://www.raf.mod.uk/what-we-do/our-history/air-historical-branch/second-world-war-thematic-studies/arnhem-the-air-reconnaissance-story/) identifies an experienced 9th SS nucleus. Nijmegen is a lower-confidence gameplay inference: the source card names 9th SS, while the historical narrative includes 10th SS. Applying the profile to every represented rifle parent is explicit game abstraction.
+
+[Cole, Ardennes chapter VI](https://www.ibiblio.org/hyperwar/USA/USA-E-Ardennes/USA-E-Ardennes-6.html) records training problems around Elsenborn. [Cole, Lorraine chapter III](https://www.ibiblio.org/hyperwar/USA/USA-E-Lorraine/USA-E-Lorraine-3.html) qualifies the Marieulles unit identification. Neither supports automatically upgrading these entire rosters.
+
+The resolver applies current ratings when existing deployments are opened, without rebuilding saved units. Map artwork, information cards and selected-unit details resolve the same values. Export includes the quality policy version and each unit's effective definition, base values and rationale. Cards link evidence and preserve printed source information. Combat remains unimplemented; these are deployment/display/export ratings.
+
+Migration contract: retain separate affiliation, source profile and dated scenario-quality policy in C#. Persist effective profile provenance in exported engagement snapshots. Never derive troop quality solely from SS palette or formation tank-table designation.

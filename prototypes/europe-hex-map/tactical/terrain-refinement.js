@@ -22,7 +22,7 @@ window.SquadTerrain = (() => {
    const water=features.some(f=>f.kind==="water")||parent.terrain.base==="water";
    cells.set(space.id(h),{...h,boardId:board.id,parentHexId:parent.id,terrain:water&&!bridge?"water":parent.terrain.base,bridge});
   }
-  const result={cells,layout,center,radius,seed:d.illustration.seed,version:"source-grid-1"};
+  const result={definition:d,cells,layout,center,radius,seed:d.illustration.seed,version:"source-grid-1"};
   if(!cache.has(d))cache.set(d,new Map());cache.get(d).set(key,result);return result;
  }
  function draw(svg,d,terrain){

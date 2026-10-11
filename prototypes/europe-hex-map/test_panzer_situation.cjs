@@ -1,5 +1,5 @@
 const fs=require("node:fs"),vm=require("node:vm"),assert=require("node:assert/strict"),path=require("node:path");
-const ctx=vm.createContext({window:{}});for(const f of [...JSON.parse(fs.readFileSync(__dirname+"/situation-data/scripts.json","utf8")),"panzer-situation-state.js"])vm.runInContext(fs.readFileSync(path.join(__dirname,f),"utf8"),ctx);
+const ctx=vm.createContext({window:{},URLSearchParams,location:{search:"?developmentReferences=1",href:""}});for(const f of [...JSON.parse(fs.readFileSync(__dirname+"/situation-data/scripts.json","utf8")),"panzer-situation-state.js"])vm.runInContext(fs.readFileSync(path.join(__dirname,f),"utf8"),ctx);
 const d=ctx.window.PANZER_SITUATION_DATA,m=vm.runInContext("PanzerSituationModel",ctx),s=m.create(d);
 assert.equal(d.instances.length,76);assert.equal(d.counters.length,21);assert.equal(d.turnLimit,15);assert.equal(d.situation.printedDate,"1944-06-29");
 for(const side of ["Allied","German"])assert.equal(d.instances.filter(i=>d.counters.find(c=>c.id===i.counterTypeId).side===side).length,d.totals[side]);
@@ -20,6 +20,8 @@ const descendants=e=>[e,...e.children.flatMap(descendants)];
 assert.equal(nodes.workflowChoose.children.filter(e=>e.id==="legacyCampaignLibrary").length,1);
 assert.equal(nodes.gameControls.children.length,0);
 const flow=ctx.window.CampaignSituationWorkflow;
+for(const f of ["map-data.js","campaign/navigation-catalog.js"])vm.runInContext(fs.readFileSync(path.join(__dirname,f),"utf8"),ctx);
+ctx.location.search="";flow.choose();assert.equal(ctx.location.href,"index.html?exercise=normandy");ctx.location.search="?developmentReferences=1";
 flow.choose();assert.equal(flow.active,false); // Cannot open a child outside its parent.
 ctx.activeRegion={id:d.parentCampaign.commandSnapshotId};ctx.regionalState={situations:[]};flow.renderParent();
 const parentPanel=nodes.workflowInspector.children.find(e=>e.id==="campaignSituations");

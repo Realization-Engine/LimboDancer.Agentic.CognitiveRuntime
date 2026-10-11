@@ -1,0 +1,15 @@
+"use strict";
+window.NormandyMap={draw(svg,world,state,select,options={}){
+ const n=(tag,attrs,text)=>{const e=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const[k,v]of Object.entries(attrs||{}))e.setAttribute(k,v);if(text)e.textContent=text;return e;};
+ svg.replaceChildren();if(!world)return;
+ for(const c of CampaignWorld.cells(world,world.bounds,1000,state.time)){svg.append(n('polygon',{points:Array.from({length:6},(_,i)=>{const a=i*Math.PI/3+Math.PI/6;return[(c.x+c.r*Math.cos(a))/40,(c.y+c.r*Math.sin(a))/40].join(',');}).join(' '),fill:c.terrain==='woods'?'#afbf86':'#e8e4bf',stroke:'#b4b895','stroke-width':.4}));}
+ const path=world.routes.M04.points.map(p=>p.map(x=>x/40));svg.append(n('polyline',{points:path.map(p=>p.join(',')).join(' '),fill:'none',stroke:'#977135','stroke-width':5}));
+ svg.append(n('path',{d:'M160 150 L700 220',fill:'none',stroke:'#546948','stroke-width':2,'stroke-dasharray':'8 6'}));
+ function marker(id,x,y,label,symbol){const g=n('g',{transform:`translate(${x} ${y})`,role:'button',tabindex:0,'aria-label':label,'data-command-node':id});g.append(n('rect',{x:-150,y:-50,width:300,height:75,fill:'transparent'}),n('rect',{x:-25,y:-18,width:50,height:36,rx:3,fill:id===options.selected?'#b77725':id==='depot'?'#9d772f':'#4a6326',stroke:'#fffdf6','stroke-width':2}),n('text',{'text-anchor':'middle',y:5,fill:'white','font-size':13},symbol),n('text',{y:-29,'text-anchor':'middle','font-size':15,class:'operation-label'},label));g.onclick=()=>select(id);g.onkeydown=e=>{if(e.key==='Enter')select(id);};svg.append(g);}
+ for(const [id,node]of Object.entries(world.nodes))marker(id,node.position[0]/40,node.position[1]/40,node.name,id==='HQ'?'XX':id==='M04'?'III':'DEP');
+ marker('supply',700,285,options.supplyLabel||'St. Lo supply point','SUP');
+ let p=path[0];if(state.transport){const ratio=Math.min(1,Math.max(0,(state.time-state.transport.depart)/(state.transport.arrival-state.transport.depart)));p=[path[0][0]+(path.at(-1)[0]-path[0][0])*ratio,path[0][1]+(path.at(-1)[1]-path[0][1])*ratio];const lengths=path.slice(1).map((q,i)=>Math.hypot(q[0]-path[i][0],q[1]-path[i][1]));let distance=ratio*lengths.reduce((a,b)=>a+b,0);for(let i=0;i<lengths.length;i++){if(distance<=lengths[i]){const t=distance/lengths[i];p=[path[i][0]+t*(path[i+1][0]-path[i][0]),path[i][1]+t*(path[i+1][1]-path[i][1])];break;}distance-=lengths[i];}}
+ marker('transport',p[0],p[1]+45,state.transport?.status==='delivered'?'Transport: delivered':'Supply transport','TRK');
+ const assigned=['M04','committed'].includes(state.reserve);if(options.reserve!==false)marker('reserve',assigned?820:310,assigned?210:110,'Reserve: two Shermans','R1');
+ svg.append(n('text',{x:500,y:385,'font-size':15,class:'operation-label'},'Ammunition: '+({M04:'available at mission HQ',depot:'at depot',transit:'in transit',issued:'issued to mission'}[state.stock.ammunition]||state.stock.ammunition)+' | Fuel: '+({M04:'available at mission HQ',depot:'at depot',transit:'in transit',issued:'issued to mission'}[state.stock.fuel]||state.stock.fuel)));
+ }};

@@ -7,12 +7,13 @@ assert.ok(!html.includes("application/json"));
 assert.ok(html.includes('<option value="">Whole Map</option>'));
 assert.ok(!html.includes('id="enterTheater"'));assert.ok(!html.includes('id="returnEurope"'));
 assert.ok(!/<details[^>]*\sopen(?:\s|>)/.test(html));
-assert.ok(Buffer.byteLength(html.replace(/<!-- situation-data:start -->[\s\S]*?<!-- situation-data:end -->/, ""))<20000);
+// Keep the shell small while allowing separately maintained component imports.
+assert.ok(Buffer.byteLength(html.replace(/<script src="[^"]+"><\/script>/g, "").replace(/<!-- situation-data:start -->[\s\S]*?<!-- situation-data:end -->/, ""))<20000);
 assert.ok(html.includes('<script src="app.js"></script>'));
 assert.match(html, /<link rel="stylesheet" href="site\.css(?:\?[^" ]+)?">/);
 const inlineScripts=[...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m=>m[1]);
 assert.equal(inlineScripts.length,1);
-for(const exercise of ["ardennes","other"]){let loading=false;vm.runInNewContext(inlineScripts[0],{URLSearchParams,location:{search:"?exercise="+exercise},document:{documentElement:{classList:{add(name){assert.equal(name,"ardennes-loading");loading=true;}}}}});assert.equal(loading,exercise==="ardennes");}
+for(const exercise of ["ardennes","normandy","source","other"]){let loading=false;vm.runInNewContext(inlineScripts[0],{URLSearchParams,location:{search:"?exercise="+exercise},document:{documentElement:{classList:{add(name){assert.equal(name,"ardennes-loading");loading=true;}}}}});assert.equal(loading,exercise!=="other");}
 assert.equal(script.replace(/\r\n/g,"\n"),fs.readFileSync(__dirname+"/app.template.js","utf8").replace("__WESTERN_SCRIPT__",fs.readFileSync(__dirname+"/theater-view.js","utf8").replace(/^\uFEFF/,"" )).replace("__REGIONAL_SCRIPT__",fs.readFileSync(__dirname+"/regional-view.js","utf8")).replace(/\r\n/g,"\n"));
 
 const ids=new Map(), polygons=[], saved=new Map(), blobs=[];
@@ -23,7 +24,7 @@ class Element{
 }
 const document={getElementById(id){if(!ids.has(id))ids.set(id,new Element());return ids.get(id);},createElement(){return new Element();},
 createElementNS(ns,tag){const e=new Element();if(tag==="polygon")polygons.push(e);return e;}};
-const context=vm.createContext({document,window:{addEventListener(){}},crypto:webcrypto,TextEncoder,Uint8Array,Uint32Array,Blob,
+const context=vm.createContext({document,URLSearchParams,location:{search:"?developmentReferences=1",href:""},window:{addEventListener(){}},crypto:webcrypto,TextEncoder,Uint8Array,Uint32Array,Blob,
  localStorage:{getItem:k=>saved.get(k),setItem:(k,v)=>saved.set(k,v),removeItem:k=>saved.delete(k),key:i=>[...saved.keys()][i],get length(){return saved.size;}},URL:{createObjectURL(b){blobs.push(b);return"blob:test";},revokeObjectURL(){}},setTimeout:f=>f(),console});
 vm.runInContext(mapData,context);
 vm.runInContext(fs.readFileSync(__dirname+"/regional-state.js","utf8"),context);

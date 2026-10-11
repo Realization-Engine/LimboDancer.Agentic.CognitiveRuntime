@@ -22,7 +22,7 @@ const ArdennesWorkspace=(()=>{
   const m=state.missions[id],card=e('section');card.className='operation-situation-card';
   card.setAttribute('aria-label',M.names[id]);
   if(id===(C.mission||selected))card.classList.add('selected');
-  card.append(e('h3',String(i+1).padStart(2,'0')+' | '+M.names[id]),e('p','Regiment: '+P.nodes[id].name),e('p','Status: '+(m?.state||'Awaiting orders')));
+  card.append(e('h3',String(id==='M14'?1:4).padStart(2,'0')+' | '+M.names[id]),e('p','Regiment: '+P.nodes[id].name),e('p','Status: '+(m?.state||'Awaiting orders')));
   const source=window.PANZER_SITUATION_LIBRARY?.find(d=>d.situation.number===(id==='M14'?14:15));
   if(source)card.append(e('p','Reference: Panzer Leader Situation '+source.situation.number));
   if(time!==null){card.append(e('p','Timeline inspection only. Return to current time to open setup.'));}

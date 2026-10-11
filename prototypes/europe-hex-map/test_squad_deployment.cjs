@@ -1,7 +1,7 @@
 const fs=require("node:fs"),vm=require("node:vm"),assert=require("node:assert/strict"),path=require("node:path");
 const ctx=vm.createContext({window:{},Map,Set,console}),root=__dirname;
 for(const f of [...JSON.parse(fs.readFileSync(path.join(root,"situation-data/scripts.json"))),"panzer-situation-state.js"])vm.runInContext(fs.readFileSync(path.join(root,f),"utf8"),ctx);
-for(const f of ["organization-profiles","spatial-frame","terrain-refinement","deployment-state","engagement-repository"]){
+for(const f of ["asl-counter-definitions","organization-profiles","library-profiles","source-composition","tactical-estimates","spatial-frame","terrain-refinement","deployment-state","engagement-repository"]){
  vm.runInContext(fs.readFileSync(path.join(root,"tactical",f+".js"),"utf8"),ctx);
  Object.assign(ctx,ctx.window);
 }
@@ -20,9 +20,15 @@ assert.deepEqual(M.create(d,plan,"de-rifle-01"),state);
 state=M.add(state,terrain,d,plan,"de-engineer-01");assert.equal(state.units.length,8);
 assert.equal(M.add(state,terrain,d,plan,"de-engineer-01").units.length,8);
 const u=state.units[0],anchor=state.parents[0].anchor,before=JSON.stringify(u.hex);
-assert.throws(()=>M.move(state,terrain,u.id,{q:anchor.q+5,r:anchor.r}),/Outside/);assert.equal(JSON.stringify(u.hex),before);
-const boundary=S.disk(anchor,4).find(h=>S.distance(h,anchor)===4&&M.legal(state,terrain,u,h));
+assert.throws(()=>M.move(state,terrain,u.id,{q:anchor.q+state.parents[0].radius+1,r:anchor.r}),/Outside/);assert.equal(JSON.stringify(u.hex),before);
+const boundary=S.disk(anchor,state.parents[0].radius).find(h=>S.distance(h,anchor)===state.parents[0].radius&&M.legal(state,terrain,u,h));
 assert.ok(boundary);M.move(state,terrain,u.id,boundary);
+const unchanged=JSON.stringify(state);
+assert.throws(()=>M.setRadius(state,d,plan,2),/Radius change rejected/);assert.equal(JSON.stringify(state),unchanged);
+state=M.setRadius(state,d,plan,8);assert.equal(state.settings.deploymentRadius,8);assert.equal(state.setupRevision,1);assert.equal(state.parents[0].radius,8);
+assert.throws(()=>M.setRadius(state,d,plan,2.5),/whole number/);
+assert.throws(()=>M.setRadius(state,d,plan,-1),/whole number/);
+const legacy=M.create(d,plan,"de-rifle-01");delete legacy.settings;delete legacy.setupRevision;legacy.parents.forEach(p=>p.radius=4);M.validate(legacy,d,plan);
 const target=state.units[1].hex;M.move(state,terrain,u.id,target);
 assert.throws(()=>M.move(state,terrain,state.units[2].id,target),/stacking/);
 M.validate(JSON.parse(JSON.stringify(state)),d,plan);
@@ -41,7 +47,7 @@ assert.deepEqual(M.expandAll(full,d,fullPlan),full);
 assert.deepEqual(full.units.find(u=>u.id===initial.units[0].id).hex,initial.units[0].hex);
 assert.equal(initial.parents.length,1);
 M.validate(full,d,fullPlan);ctx.SquadRepository.save(d,fullPlan,full);assert.deepEqual(ctx.SquadRepository.load(d,fullPlan),full);
-for(const u of full.units){const p=full.parents.find(p=>p.id===u.parentId);assert.ok(S.distance(p.anchor,u.hex)<=4);}
+for(const u of full.units){const p=full.parents.find(p=>p.id===u.parentId);assert.ok(S.distance(p.anchor,u.hex)<=p.radius);}
 vm.runInContext(fs.readFileSync(path.join(root,"tactical/asl-counter-definitions.js"),"utf8"),ctx);
 const definitions=ctx.window.SquadAslDefinitions.types;
 const catalog=JSON.parse(fs.readFileSync(path.join(root,"../../src/ASL/units/catalog/scenario-a1.catalog.json")));

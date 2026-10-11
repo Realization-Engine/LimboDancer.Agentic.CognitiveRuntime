@@ -16,6 +16,7 @@ window.SquadViewport = {
    set([p.x+(b[0]-p.x)*ratio,p.y+(b[1]-p.y)*ratio,w,b[3]*ratio]);
   };
   svg.onpointerdown=e=>{
+   if(e.button===0&&!space&&e.target.closest("[data-command-node]"))return;
    const unit=e.target.closest("[data-squad-unit]")?.getAttribute("data-squad-unit");
    if(e.button!==0&&e.button!==1)return;
    gesture={start:point(e),box:box(),pan:e.button===1||space,unit,x:e.clientX,y:e.clientY};

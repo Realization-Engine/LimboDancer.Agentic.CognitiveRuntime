@@ -14,7 +14,11 @@
    const pkg=M.variant(world.operation,id,source);ArdennesWorkspace.selectMission(id);active=id;
    const cards=document.getElementById('operationSituations');cards.replaceChildren();
    const plan=world.situationPlans?.[id];
-   screen.mount(pkg,{host,cards,plan,exit:restore,save(plan){const current=R.get();R.save({...current,situationPlans:{...current.situationPlans,[id]:plan}});}});
+   screen.mount(pkg,{host,cards,plan,exit:restore,squadStorage:{
+    load(){return R.get().squadPlans?.[id]||null;},
+    save(squad){const current=R.get();if(current.id!==world.id)throw Error('Campaign changed. Reopen this Situation.');R.save({...current,squadPlans:{...current.squadPlans,[id]:squad}});},
+    clear(){const current=R.get();if(current.id!==world.id)throw Error('Campaign changed. Reopen this Situation.');const plans={...current.squadPlans};delete plans[id];R.save({...current,squadPlans:plans});}
+   },save(plan){const current=R.get();R.save({...current,situationPlans:{...current.situationPlans,[id]:plan}});}});
    main.classList.add('showing-situation');cards.scrollTop=0;for(const control of document.querySelectorAll('#operationTime button:not(#timelineToggle),#operationTime input,#operationTime select')){control.disabled=true;control.title='Return to campaign command to change timeline view.';}
    const context=document.createElement('p');context.className='campaign-board-context';context.textContent='Campaign-linked Situation | '+M.clock(world.operation.missions[id].committedAt)+' | '+world.operation.missions[id].choice+' defense. Original source boards: local battlefield coordinates, not a georeferenced campaign terrain refinement.';cards.prepend(context);return true;
   }catch(e){active=null;const warning=document.createElement('p');warning.setAttribute('role','alert');warning.textContent=e.message;document.getElementById('operationSituations').prepend(warning);return false;}

@@ -5,7 +5,7 @@
  if(!root)return;
  const hash=async d=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(d))))).map(b=>b.toString(16).padStart(2,'0')).join('');
  const hashes=Object.fromEntries(await Promise.all(Object.entries(sources).map(async([id,d])=>[id,await hash(d)])));
- let s=null,selected=null,error='',draft={main:'M14',reserve:'M14',delivery:'M14'},choice='supplied';
+ let s=null,selected=['M14','M15'].includes(new URLSearchParams(location.search).get('commandMission'))?new URLSearchParams(location.search).get('commandMission'):null,error='',draft={main:'M14',reserve:'M14',delivery:'M14'},choice='supplied';
  try{const campaign=R.load();if(campaign)s=campaign.operation;}catch(e){error='Saved exercise could not be replayed: '+e.message;}
  const el=(tag,text)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;return n;};
  const button=(text,fn,disabled=false)=>{const b=el('button',text);b.disabled=disabled;b.onclick=fn;return b;};

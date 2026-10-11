@@ -19,7 +19,7 @@ const CampaignAppearance=(()=>{
    for(const child of n.children||[])visit(child);
   };visit(root);
  }
- function counterImage(href,side,label,nationality){
+ function counterImage(href,side,label,nationality,affiliation){
   const id=nationality||(side==="German"?"de":"us"),p=window.COUNTER_PALETTE_DEFAULTS.palettes.find(p=>p.id===(id==="ca"?"uk":id));
   const [h,s,l]=p.hsl.map((v,i)=>i?v/100:v/30);
   const a=s*Math.min(l,1-l),channel=n=>{const k=(n+h)%12;return l-a*Math.max(-1,Math.min(k-3,9-k,1));};
@@ -29,9 +29,9 @@ const CampaignAppearance=(()=>{
   filter.append(node("feColorMatrix",{type:"saturate",values:0}));
   const transfer=node("feComponentTransfer");
   // Preserve dark printed detail while replacing the lighter paper/background.
-  for(const [i,c]of ["R","G","B"].entries())transfer.append(node("feFunc"+c,{type:"table",tableValues:[0,rgb[i]*.5,rgb[i],rgb[i],rgb[i]].join(" ")}));
+  for(const [i,c]of ["R","G","B"].entries())transfer.append(node("feFunc"+c,{type:"table",tableValues:(affiliation==="SS"?[1,.5,0,0,0]:[0,rgb[i]*.5,rgb[i],rgb[i],rgb[i]]).join(" ")}));
   filter.append(transfer);defs.append(filter);
-  svg.append(defs,node("rect",{width:128,height:128,fill:p.css}),node("image",{href,x:0,y:0,width:128,height:128,filter:"url(#"+filterId+")"}));
+  svg.append(defs,node("rect",{width:128,height:128,fill:affiliation==="SS"?"#101010":p.css}),node("image",{href,x:0,y:0,width:128,height:128,filter:"url(#"+filterId+")"}));
   return svg;
  }
  return {terrain,counterImage};
