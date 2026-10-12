@@ -546,6 +546,30 @@ public sealed class BacklogPass8Tests : IDisposable
         Refused(await Fire(["de-crew"], "bd01:B8:0", 6, 5), "fire");
     }
 
+    private static readonly string[] FpfGroup = ["g1", "de-crew"];
+
+    [Fact]
+    public async Task ACrewThatFiredItsGunAddsItsOwnFpToFpf()
+    {
+        // Pass 40, task 40.5 (A8.311, p. 61; ruling R40.18): "Infantry manning ordnance cannot fire it during FPF ... but must add their inherent
+        // FP to the FPF attack". The squad beside the crew is marked Final Fire; the Gun fires at the Russian squad as it comes ADJACENT, and the
+        // crew then joins the squad's FPF at it. Outside FPF the crew has no FP left (ruling R8.4).
+        await Setup("russian", 7, 1942, Crew("de-crew", "bd01:B10:0", "german"), Gun("de-gun", "attacker-inf-gun", "bd01:B10:0", "north-east", "de-crew", "german"),
+            Unit("g1", "asl:squad", "attacker-squad", "bd01:B10:0", "german", "asl:final-fire"), Squad("r1", "bd01:B8:0", "russian"));
+        await Advance(2);
+        Assert.Equal(("mph", "russian"), (Current.Phase, Current.PhasingSide));
+        Committed(await Move(R1, "bd01:B9:0"));
+        Committed(await FireAt("de-gun", "bd01:B9:0", null, null, 5, 6, 6, 6, 6, 6));
+        Assert.False(Is(Current.Unit("r1")!, Conditions.Broken));
+        Refused(await Fire(CrewIds, "bd01:B9:0", 6, 5), "fire");
+        var before = Revision;
+        // DR 7: the FPF's NMC on its firers passes (morale 7), so no firer is replaced or broken.
+        Committed(await Fire(FpfGroup, "bd01:B9:0", 3, 4, 3, 3, 3, 3));
+        var record = Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
+        Assert.Equal(FpfGroup, record.Firers);
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
     private static readonly string[] CrewIds = ["de-crew"];
 
     private Task<PlayResult> Push(string crew, string to, string gun, params int[] dice) => Do(GameActions.Move, Once(dice), new Dictionary<string, object>

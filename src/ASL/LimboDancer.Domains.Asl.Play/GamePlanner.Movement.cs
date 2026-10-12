@@ -604,6 +604,12 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.no-game: the game has no state yet");
         }
 
+        // Pass 40 (A8.312): no pass while the DEFENDER owes its attack on the units that entered its Location.
+        if (MandatoryFire(state, existing) is { } owed && ScenarioA1MandatoryFire.PassBar(owed.Firers, owed.At.ToString()) is { } mandatoryBar)
+        {
+            return Refused(scope, label, expected, mandatoryBar);
+        }
+
         // Pass 32.b: the moving stack is read here, and Rules decides.
         var movement = state.Movement;
         var (refusal, gone, summary) = ScenarioA1MovementCalculator.PassFire(movement is null ? null

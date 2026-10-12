@@ -581,8 +581,10 @@ public static class ScenarioA1FireCalculator
             || firers.Zip(firerDefinitions).Any(pair => pair.Second is null || (!LeaderMg(pair.First, pair.Second)
                 && (!(pair.Second.IsMmc || pair.Second.IsHero || pair.Second.Kind == "asl:crew") || pair.Second.Firepower is null || pair.Second.Range is null)))
             || firers.Any(item => item.Partner is not null && !LeaderMg(item, reference.Definitions.GetValueOrDefault(item.DefinitionId!)))
-            // A7.352 (ruling R8.4): a crew that fired its Gun this Player Turn has no inherent FP.
-            || firers.Any(item => item.GunFired == true && item.UsesInherentFp != false))
+            // A7.352 (ruling R8.4): a crew that fired its Gun this Player Turn has no inherent FP, but in FPF, where it "must add" it (A8.311; pass 40,
+            // ruling R40.18).
+            || firers.Any(item => item.UsesInherentFp != false
+                && !ScenarioA1MandatoryFire.CrewAddsInherentFp(item.GunFired == true, attack.FireKind == FinalProtectiveFire)))
         {
             outside.Add("asl.a1.fire.firer-outside");
         }

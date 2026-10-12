@@ -196,7 +196,6 @@ public sealed partial class GamePlanner
             this.planner = planner;
             this.state = state;
             Units = [.. state.Units.Select(unit => new EnemyUnitFacts(unit.Status == InstanceStatus.Active, unit.Side, unit.Kind == UnitKinds.Dummy, state.Aboard(unit.Id) is not null,
-                GameState.Condition(unit, Conditions.Broken) switch { ConditionState.True => true, ConditionState.False => false, _ => null },
                 Is(unit, Conditions.Hidden), GoodOrder(unit), state.Location(unit.Id)?.Location is { } at ? Index(at) : null))];
         }
 

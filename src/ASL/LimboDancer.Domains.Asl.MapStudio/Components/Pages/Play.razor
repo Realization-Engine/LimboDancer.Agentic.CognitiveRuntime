@@ -700,12 +700,31 @@ else if (state is not null)
                             {
                                 <span class="toolbar-note" id="dff-note">No member of the moving stack at @PlaceOf(movingAt) can move on: each is broken, pinned, or eliminated. Fire at it again below, or pass, which ends its move (A8.1, A4.2).</span>
                             }
-                            else
+                            else if (Live.Planner.MandatoryFire(state, history!.Events) is null)
                             {
                                 <span class="toolbar-note" id="dff-note">The moving stack is at @PlaceOf(movingAt): fire at it below, or pass (A8.1).</span>
                             }
                             <button type="button" id="dff-show" @onclick="@(() => LocateHex(movingAt))">Show it on the map</button>
-                            <button id="propose-pass" @onclick='@(() => ProposeSimple(GameActions.PassFire, "pass"))'>Propose: the DEFENDER passes</button>
+                            @if (Live.Planner.MandatoryFire(state, history!.Events) is { } mandatory)
+                            {
+                                @* Pass 40 (A8.312): the attack owed in the DEFENDER's own Location comes before a pass. *@
+                                <span class="toolbar-note" id="mandatory-fire-note">@ScenarioA1MandatoryFire.Note([.. mandatory.Firers.Select(id => Words(id))], mandatory.Group, PlaceOf(mandatory.At))</span>
+                                @if (mandatory.Group)
+                                {
+                                    <button id="propose-mandatory-fire" title="Each unit fires its inherent FP, and a unit with none its MG. To add a MG or a leader's direction, name the same units in the fire panel below." @onclick="@(() => ProposeMandatoryFire(mandatory))">Propose: the Mandatory FG attacks</button>
+                                }
+                                else
+                                {
+                                    @foreach (var owing in mandatory.Firers)
+                                    {
+                                        <button class="propose-mandatory-fire-one" data-unit="@owing" @onclick="@(() => ProposeMandatoryFire(mandatory, owing))">Propose: @Words(owing) attacks</button>
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                <button id="propose-pass" @onclick='@(() => ProposeSimple(GameActions.PassFire, "pass"))'>Propose: the DEFENDER passes</button>
+                            }
                         </div>
                         </ActionSection>
                     }
@@ -4970,6 +4989,16 @@ else if (state is not null)
         ["gameId"] = gameId, ["attemptId"] = Attempt("ovr-ntc"), ["expectedRevision"] = (long)history!.Events.Count,
         ["unitIds"] = moveUnits.Order(StringComparer.Ordinal).ToArray(), ["to"] = moveTo.Trim(),
     }));
+
+    /// <summary>The attack the DEFENDER owes on the units that entered its Location (A8.312; pass 40), as its plainest Mandatory FG.</summary>
+    private Task ProposeMandatoryFire(GamePlanner.MandatoryFireOwed owed, string? only = null)
+    {
+        var arguments = Live.Planner.MandatoryFireArguments(state!, owed, only);
+        arguments["gameId"] = gameId;
+        arguments["attemptId"] = Attempt("fire");
+        arguments["expectedRevision"] = (long)history!.Events.Count;
+        return Propose(GameActions.Fire, JsonSerializer.SerializeToElement(arguments));
+    }
 
     /// <summary>The DEFENDER's SMC moves away from an Infantry OVR (A4.151; pass 40); the ATTACKER is then asked where.</summary>
     private Task ProposeOverrunEvade(string unitId) => Propose(GameActions.OverrunEvade, JsonSerializer.SerializeToElement(new Dictionary<string, object>

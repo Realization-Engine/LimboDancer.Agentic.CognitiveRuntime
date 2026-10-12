@@ -4,7 +4,7 @@ using Xunit;
 namespace LimboDancer.Domains.Asl.Rules.Tests;
 
 /// <summary>
-/// Pass 40, read directly in Rules. Task 40.4: Infantry OVR and the recapture of Unarmed units by entry (A4.15 to A4.152, A20.54; pp. 49, 88). Task 40.7: the portage and movement corrections (A4.4, A4.41, A4.42, A4.44, A4.61; pp. 48 to 51). Task 40.3: Dash (A4.63, C6.1, pp. 51 to 52, 173). Task 40.2: a woods-road hex, the mover's choice across a road hexside, and the terrain a firer reads for a mover at
+/// Pass 40, read directly in Rules. Task 40.5: the attack owed in the DEFENDER's own Location, and a crew's FP in FPF (A8.311, A8.312; p. 61). Task 40.4: Infantry OVR and the recapture of Unarmed units by entry (A4.15 to A4.152, A20.54; pp. 49, 88). Task 40.7: the portage and movement corrections (A4.4, A4.41, A4.42, A4.44, A4.61; pp. 48 to 51). Task 40.3: Dash (A4.63, C6.1, pp. 51 to 52, 173). Task 40.2: a woods-road hex, the mover's choice across a road hexside, and the terrain a firer reads for a mover at
 /// the road rate (A4.132, B3.3, B13.31, pp. 48, 113, 128). Task 40.6: the one count of a stack (A5.1, A5.2, A5.5, pp. 52 to 53), which the MPh, the APh, the IFT, the To Hit
 /// DR, Close Combat, and setup all read, and the MF and MP an overstacked Location costs (A5.11). The IFT DRM is tested with the Fire package's
 /// helpers in ScenarioA1Pass10Tests.
@@ -404,5 +404,57 @@ public sealed class ScenarioA1Pass40RulesTests
         Assert.Equal(["woods"], ScenarioA1InfantryOverrun.EvadeDestinations([("open", true), ("woods", false)]));
         Assert.Equal(["open", "open2"], ScenarioA1InfantryOverrun.EvadeDestinations([("open", true), ("open2", true)]));
         Assert.Empty(ScenarioA1InfantryOverrun.EvadeDestinations([]));
+    }
+
+    private static MandatoryDefenderFacts Owing(string id, bool infantry = true, bool smc = false, bool inherent = true, int weapons = 0, bool unarmed = false, bool broken = false,
+        bool melee = false, bool captured = false, bool marked = false, bool attacked = false, bool mayAttack = true) =>
+        new(id, infantry, smc, inherent, weapons, unarmed, broken, melee, captured, marked, attacked, mayAttack);
+
+    [Fact]
+    public void AnArmedUnbrokenInfantryDefenderNotInMeleeOwesItsAttackOnAnMmcThatEntersItsLocation()
+    {
+        // A8.312 (p. 61).
+        MandatoryDefenderFacts[] there = [Owing("s1"), Owing("s2", marked: true), Owing("b", broken: true), Owing("m", melee: true), Owing("u", unarmed: true),
+            Owing("p", captured: true), Owing("l", smc: true, inherent: false), Owing("lm", smc: true, inherent: false, weapons: 1),
+            Owing("lmf", smc: true, inherent: false, weapons: 1, marked: true), Owing("done", attacked: true), Owing("cannot", mayAttack: false), Owing("v", infantry: false)];
+        Assert.Equal(["s1", "s2", "lm"], ScenarioA1MandatoryFire.Owed(true, true, true, true, there));
+
+        // Only in the MPh, with the DEFENDER's window open, on the step that entered, and for an Infantry or Cavalry MMC.
+        Assert.Empty(ScenarioA1MandatoryFire.Owed(false, true, true, true, there));
+        Assert.Empty(ScenarioA1MandatoryFire.Owed(true, false, true, true, there));
+        Assert.Empty(ScenarioA1MandatoryFire.Owed(true, true, false, true, there));
+        Assert.Empty(ScenarioA1MandatoryFire.Owed(true, true, true, false, there));
+    }
+
+    [Fact]
+    public void WhileTheAttackIsOwedThePassIsRefusedAndTheDefendersFireIsTheMandatoryFgs()
+    {
+        // A8.312, A7.55 (pp. 61, 57).
+        string[] owed = ["s1", "s2"];
+        Assert.Null(ScenarioA1MandatoryFire.PassBar([], "x"));
+        Assert.StartsWith("play.pass-mandatory:", ScenarioA1MandatoryFire.PassBar(owed, "x"), StringComparison.Ordinal);
+
+        Assert.Null(ScenarioA1MandatoryFire.FireBar([], true, ["other"], "y", "x"));
+        Assert.Null(ScenarioA1MandatoryFire.FireBar(owed, true, ["s1", "s2"], "x", "x"));
+        Assert.Null(ScenarioA1MandatoryFire.FireBar(owed, true, ["s1", "s2", "leader"], "x", "x"));
+        Assert.Contains("s2 must join", ScenarioA1MandatoryFire.FireBar(owed, true, ["s1"], "x", "x"), StringComparison.Ordinal);
+        Assert.StartsWith("play.fire-mandatory:", ScenarioA1MandatoryFire.FireBar(owed, true, ["s1", "s2"], "y", "x"), StringComparison.Ordinal);
+
+        // Where the fire rules form no group of them (a unit with no counter beside one marked First Fire), one of them attacks, and no one else with it.
+        Assert.Null(ScenarioA1MandatoryFire.FireBar(owed, false, ["s1"], "x", "x"));
+        Assert.StartsWith("play.fire-mandatory:", ScenarioA1MandatoryFire.FireBar(owed, false, ["other"], "x", "x"), StringComparison.Ordinal);
+        Assert.StartsWith("play.fire-mandatory:", ScenarioA1MandatoryFire.FireBar(owed, false, ["s1", "other"], "x", "x"), StringComparison.Ordinal);
+
+        Assert.Contains("as one Mandatory FG", ScenarioA1MandatoryFire.Note(owed, true, "[C9]"), StringComparison.Ordinal);
+        Assert.Contains("one of s1, s2", ScenarioA1MandatoryFire.Note(owed, false, "[C9]"), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ACrewThatFiredItsGunAddsItsInherentFpToFpfOnly()
+    {
+        // A8.311 (p. 61) beside A7.352 (p. 56; ruling R8.4).
+        Assert.True(ScenarioA1MandatoryFire.CrewAddsInherentFp(false, false));
+        Assert.False(ScenarioA1MandatoryFire.CrewAddsInherentFp(true, false));
+        Assert.True(ScenarioA1MandatoryFire.CrewAddsInherentFp(true, true));
     }
 }

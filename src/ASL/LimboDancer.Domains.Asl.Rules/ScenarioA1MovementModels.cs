@@ -190,7 +190,7 @@ public sealed record MovingUnitFacts(
 /// three-valued fact, Hidden, Good Order as the planner reads it, and its Location as an index into the caller's table of Locations (null off
 /// the map).
 /// </summary>
-public sealed record EnemyUnitFacts(bool Active, string? Side, bool Dummy, bool Aboard, bool? Broken, bool Hidden, bool GoodOrder, int? Location);
+public sealed record EnemyUnitFacts(bool Active, string? Side, bool Dummy, bool Aboard, bool Hidden, bool GoodOrder, int? Location);
 
 /// <summary>The LOS between two Locations as the map gives it: whether it is clear, and its range.</summary>
 public sealed record LosFacts(bool Clear, int Range);

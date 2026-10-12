@@ -356,6 +356,31 @@ public sealed class CloseCombatStepsTests : IDisposable
             unitIds = G2,
             to = "bd01:A1:0"
         }));
+
+        // Pass 40, task 40.5 (A8.312, p. 61): the two squads owe their attack on the MMC that entered their Location, as one Mandatory FG, before
+        // the DEFENDER may pass or fire anything else.
+        var owed = Planner().MandatoryFire(Current, store.Read(Scope)!.Events)!;
+        Assert.Equal((BoardLocation.Parse("bd01:A1:0"), true), (owed.At, owed.Group));
+        Assert.Equal(R4R5, owed.Firers);
+        Assert.Contains((await Do(GameActions.PassFire, NoRoll(), new
+        {
+        })).Reasons, reason => reason.StartsWith("play.pass-mandatory", StringComparison.Ordinal));
+        Assert.Contains((await Do(GameActions.Fire, NoRoll(), new
+        {
+            firers = R4,
+            target = "bd01:A1:0"
+        })).Reasons, reason => reason.StartsWith("play.fire-mandatory", StringComparison.Ordinal));
+        Assert.Contains((await Do(GameActions.Fire, NoRoll(), new
+        {
+            firers = R4R5,
+            target = "bd01:B3:0"
+        })).Reasons, reason => reason.StartsWith("play.fire-mandatory", StringComparison.Ordinal));
+        Committed(await Do(GameActions.Fire, Once(6, 5, 3, 3, 3, 3), new
+        {
+            firers = R4R5,
+            target = "bd01:A1:0"
+        }));
+        Assert.Null(Planner().MandatoryFire(Current, store.Read(Scope)!.Events));
         Committed(await Do(GameActions.PassFire, NoRoll(), new
         {
         }));
