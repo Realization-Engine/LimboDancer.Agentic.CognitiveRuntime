@@ -75,14 +75,62 @@ public static class ScenarioA1MovementCalculator
     /// leader's own IPC is then spent. Nulls when there is none, or more than one. <paramref name="laden"/> is read by a mover's index for the movers
     /// with the bonus, as the planner read it.
     /// </summary>
-    public static (string? Recipient, string? Leader) LeaderIpcRecipient(IReadOnlyList<MovingUnitFacts> movers, Func<int, bool> laden)
+    public static (string? Recipient, string? Leader) LeaderIpcRecipient(IReadOnlyList<MovingUnitFacts> movers, Func<int, bool> laden, string? chosen = null)
     {
         ArgumentNullException.ThrowIfNull(movers);
         ArgumentNullException.ThrowIfNull(laden);
         var heavy = movers.Select((unit, index) => (Unit: unit, Index: index)).Where(item => LeaderBonus(item.Unit, movers) && laden(item.Index)).Select(item => item.Unit).ToArray();
-        var leader = heavy.Length != 1 ? null : movers.FirstOrDefault(item => item.Leader && !item.Broken && !item.Wounded
-            && item.Nationality == heavy[0].Nationality);
-        return leader is not null ? (heavy[0].Id, leader.Id) : (null, null);
+
+        // A4.42 (p. 50; pass 40, ruling R40.11): "one SMC can add its IPC to that of any one Good Order Infantry unit": the mover names which of
+        // several laden MMC takes it; with one laden MMC it goes there unasked.
+        var recipient = chosen is not null ? heavy.FirstOrDefault(unit => unit.Id == chosen) : heavy.Length == 1 ? heavy[0] : null;
+        var leader = recipient is null ? null : movers.FirstOrDefault(item => item.Leader && !item.Broken && !item.Wounded
+            && item.Nationality == recipient.Nationality);
+        return leader is not null ? (recipient!.Id, leader.Id) : (null, null);
+    }
+
+    /// <summary>
+    /// A4.42 (ruling R40.11): the leader's IPC goes to one unit for the whole move ("start the phase together and move together as a stack"). Null
+    /// when the choice stands: none named, or the unit named is the one the move's earlier steps gave it to and it is a laden MMC with the leader.
+    /// </summary>
+    public static string? IpcChoiceBar(string? chosen, string? pending, string? recipient)
+    {
+        if (chosen is null)
+        {
+            return null;
+        }
+
+        return pending is not null && pending != chosen
+            ? $"play.move-ipc: the leader's IPC went to {pending} with this move's earlier step and stays with it (A4.42)"
+            : recipient != chosen ? $"play.move-ipc: {chosen} is not a MMC carrying more than its IPC that moves with a leader of its nationality (A4.42)" : null;
+    }
+
+    /// <summary>
+    /// A4.4 (p. 50; pass 40): "No item can be portaged more than once per phase". Null unless a mover holds an item another unit already portaged
+    /// in this phase.
+    /// </summary>
+    public static string? PortagedTwiceBar(IEnumerable<(string Weapon, string Holder, string? PortagedBy)> held)
+    {
+        ArgumentNullException.ThrowIfNull(held);
+        return held.Where(item => item.PortagedBy is not null && item.PortagedBy != item.Holder).Select(item =>
+            $"play.move-portage: {item.Weapon} was portaged by {item.PortagedBy} in this phase, and no item is portaged more than once a phase (A4.4)").FirstOrDefault();
+    }
+
+    /// <summary>
+    /// A4.4 (p. 50; pass 40): the items portaged in this phase, after a step: "even if a unit carries a SW during only one MF expenditure before
+    /// dropping it, that unit may not recoup the portage cost". Each item is kept with the unit that first spent MF holding it.
+    /// </summary>
+    public static IReadOnlyList<(string Unit, string Weapon)> Portaged(IReadOnlyList<(string Unit, string Weapon)> already, IEnumerable<(string Unit, string Weapon)> heldByMovers)
+    {
+        ArgumentNullException.ThrowIfNull(already);
+        ArgumentNullException.ThrowIfNull(heldByMovers);
+        var all = already.ToList();
+        foreach (var item in heldByMovers.Where(item => !all.Any(known => known.Weapon == item.Weapon)))
+        {
+            all.Add(item);
+        }
+
+        return all;
     }
 
     /// <summary>
@@ -384,12 +432,14 @@ public static class ScenarioA1MovementCalculator
     }
 
     /// <summary>Assault Movement, Double Time, and a SMC's portage (A4.61, A4.5, A4.51, A4.42, E1.51; rulings R5.1, R16.5), in their order; null when none refuses.</summary>
-    public static string? MoveTiming(bool currentExists, bool currentAssault, bool assault, bool doubleTime, int? nvr, IReadOnlyList<MoveTimingUnitFacts> movers)
+    public static string? MoveTiming(bool currentExists, bool currentAssault, bool assault, bool doubleTime, int? nvr, IReadOnlyList<MoveTimingUnitFacts> movers,
+        bool currentChangedLocation = true, bool stepChangesLocation = true)
     {
         ArgumentNullException.ThrowIfNull(movers);
 
-        // A4.61: Assault Movement is declared before the stack moves, and moves it no more than one Location.
-        if (currentExists && (currentAssault || assault))
+        // A4.61: Assault Movement is declared before the stack moves, and moves it no more than one Location. Its EXC (p. 51; pass 40): MF spent
+        // within a Location, before or after the one change of Location, do not prevent it; the step's own check keeps it short of all its MF.
+        if (currentExists && (currentAssault || assault) && (!currentAssault || !assault || (currentChangedLocation && stepChangesLocation)))
         {
             return "play.move-assault: Assault Movement is declared at the start of the move and enters one Location (A4.61)";
         }

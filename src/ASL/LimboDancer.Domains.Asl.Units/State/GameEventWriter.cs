@@ -505,6 +505,11 @@ public static class GameEventWriter
                     writer.WriteString("dash", dashTo.ToString());
                 }
 
+                if (moving.IpcTo is { } ipcTo)
+                {
+                    writer.WriteString("ipcTo", ipcTo);
+                }
+
                 if (moving.MinimumMove)
                 {
                     writer.WriteBoolean("minimumMove", true);

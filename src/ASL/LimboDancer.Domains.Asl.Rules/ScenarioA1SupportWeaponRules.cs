@@ -15,6 +15,10 @@ public static class ScenarioA1SupportWeaponRules
     /// <summary>A1.32: the squad is Fanatic only when both HS are.</summary>
     public static bool RecombinedFanatic(bool one, bool two) => one && two;
 
+    /// <summary>A4.44 (p. 50; pass 40): "a Recovery attempt is allowed only by an unpinned, Good Order non-Bypassing unit".</summary>
+    public static string? RecoveryBypassBar(string unitId, bool bypassing) =>
+        bypassing ? $"play.recover-bypass: {unitId} is in Bypass, and a Bypassing unit Recovers nothing (A4.44)" : null;
+
     /// <summary>A4.44: a Recovery in the MPh costs one MF, refused when it would pass the unit's allotment.</summary>
     public static bool RecoveryMfShort(int allotment, int mfSpent, bool halfMfSpent) => (2 * mfSpent) + (halfMfSpent ? 1 : 0) + 2 > 2 * allotment;
 

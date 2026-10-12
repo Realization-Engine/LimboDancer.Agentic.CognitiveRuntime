@@ -23,10 +23,10 @@ public sealed partial class GamePlanner
     /// carries beyond its IPC (three for a MMC, one for a SMC, none for a wounded SMC; one less while CX). A berserk unit counts only its 1PP SW,
     /// since it abandons the others before it charges (A15.431). Null when the catalog does not decide it.
     /// </summary>
-    private int? MfAllotment(GameState state, UnitInstance unit, int doubleTimeMf, bool cx, int bonusMf = 0, int ipcBonus = 0) =>
+    private int? MfAllotment(GameState state, UnitInstance unit, int doubleTimeMf, bool cx, int bonusMf = 0, int ipcBonus = 0, int? allowance = null) =>
         ScenarioA1MovementCalculator.MfAllotment(
             new MfAllotmentFacts(unit.Kind == UnitKinds.Dummy, DefinitionOf(unit)?.Class, vocabulary.IsA(unit.Kind, "asl:smc"), Is(unit, Conditions.Wounded), Is(unit, Conditions.Berserk)),
-            doubleTimeMf, cx, bonusMf, ipcBonus, () => Experience.MoveAllowance(state, unit, catalogs, vocabulary), () => Portage(state, unit));
+            doubleTimeMf, cx, bonusMf, ipcBonus, () => allowance ?? Experience.MoveAllowance(state, unit, catalogs, vocabulary), () => Portage(state, unit));
 
     /// <summary>One unit of a moving stack as Rules reads it for the leader bonus (pass 32.b).</summary>
     private MovingUnitFacts MovingUnit(UnitInstance unit) =>
@@ -36,8 +36,10 @@ public sealed partial class GamePlanner
     /// <summary>The PP of each SW a unit possesses (A4.4), from the catalog; null when one is not recorded.</summary>
     private int[]? Portage(GameState state, UnitInstance unit)
     {
-        var values = state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id)
-            .Select(PortageOf).ToArray();
+        // A4.4 (pass 40): with what it holds, what it portaged earlier in this phase and dropped: that portage cost is not recouped.
+        EquipmentInstance[] held = [.. state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id)];
+        var values = held.Concat(state.PortagedThisPhase.Where(item => item.Unit == unit.Id && !held.Any(now => now.Id == item.Weapon))
+            .Select(item => state.Find(item.Weapon)).OfType<EquipmentInstance>()).Select(PortageOf).ToArray();
         return values.Any(value => value is null) ? null : [.. values.Select(value => value!.Value)];
     }
 
@@ -204,9 +206,17 @@ public sealed partial class GamePlanner
             abandoned.AddRange(abandonedIds.Select(id => items[id]));
         }
 
+        // A4.4 (pass 40): no item is portaged more than once a phase.
+        if (ScenarioA1MovementCalculator.PortagedTwiceBar(state.Equipment.Where(item => item.Status == InstanceStatus.Active
+                && item.Holding is { Role: HoldingRole.Possessed } carrier && movers.Any(unit => unit.Id == carrier.Holder))
+            .Select(item => (item.Id, item.Holding!.Holder, state.PortagedThisPhase.Where(known => known.Weapon == item.Id).Select(known => known.Unit).FirstOrDefault()))) is { } twice)
+        {
+            return Refused(scope, label, expected, twice);
+        }
+
         if (ScenarioA1MovementCalculator.MoveTiming(current is not null, current?.Assault == true, assault, doubleTime, state.Nvr,
             [.. movers.Select(unit => new MoveTimingUnitFacts(unit.Id, Is(unit, Conditions.Wounded), Is(unit, Conditions.Berserk), Is(unit, Conditions.Cx), state.NoDoubleTime.Contains(unit.Id),
-                vocabulary.IsA(unit.Kind, "asl:smc"), Portage(state, unit)?.Sum()))]) is { } badTiming)
+                vocabulary.IsA(unit.Kind, "asl:smc"), Portage(state, unit)?.Sum()))], current?.ChangedLocation == true, to != from) is { } badTiming)
         {
             return Refused(scope, label, expected, badTiming);
         }
@@ -322,7 +332,14 @@ public sealed partial class GamePlanner
         UnitInstance[] hiddenEnemies = [.. enemies.HiddenEnemies.Select(id => byId[id])];
 
         // A4.11, A4.42, A4.5, A4.12, B3.4, A4.61, A4.134, B16.4: the MF each mover has left, decided by Rules from each mover's facts and allotment.
-        var leaderIpcTo = LeaderIpcRecipient(state, movers);
+        // A4.42 (pass 40, ruling R40.11): the laden MMC the mover names for the leader's IPC, kept for the whole move.
+        var ipcChosen = Text(arguments, "ipcTo", out var ipcText) ? ipcText : null;
+        var leaderIpcTo = LeaderIpcRecipient(state, movers, ipcChosen ?? current?.IpcTo);
+        if (ScenarioA1MovementCalculator.IpcChoiceBar(ipcChosen, current?.IpcTo, leaderIpcTo.Recipient) is { } ipcBar)
+        {
+            return Refused(scope, label, expected, ipcBar);
+        }
+
         if (ScenarioA1MovementCalculator.MfLeft(
             [.. movers.Select(unit => new MfLeftMoverFacts(unit.Id, unit.MfSpent == 0 && !unit.HalfMfSpent, unit.DoubleTimeMf, Is(unit, Conditions.Cx), unit.OffRoad, LeaderBonus(state, unit, movers),
                 (unit.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0)))],
@@ -350,6 +367,7 @@ public sealed partial class GamePlanner
             Road = verdict.RoadBonus,
             RoadRate = entry.OnRoad && !forcedBack,
             Dash = forcedBack ? null : dashTo,
+            IpcTo = ipcChosen,
             MinimumMove = minimumMove,
             Attempted = forcedBack ? to : null,
             Bypass = bypassing,

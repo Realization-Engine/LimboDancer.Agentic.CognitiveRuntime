@@ -450,6 +450,12 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.recover-unit: '{unitId}' is not unpinned Good Order Infantry on the map (A4.44)");
         }
 
+        // A4.44 (pass 40): never by a Bypassing unit.
+        if (ScenarioA1SupportWeaponRules.RecoveryBypassBar(unit.Id, state.Movement is { Bypass.Count: > 0 } lane && lane.Members.Contains(unit.Id, StringComparer.Ordinal)) is { } bypassBar)
+        {
+            return Refused(scope, label, expected, bypassBar);
+        }
+
         // A20.5 (ruling R14.5; table player, pass 14): an Unarmed unit uses no SW, so it Recovers none.
         if (Is(unit, Conditions.Unarmed))
         {

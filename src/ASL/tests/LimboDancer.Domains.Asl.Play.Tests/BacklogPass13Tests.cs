@@ -25,6 +25,7 @@ public sealed class BacklogPass13Tests : IDisposable
     private static readonly UnitCatalog Catalog = UnitCatalogs.Read(UnitCatalogs.ScenarioA1, Vocabulary)!.Catalog!;
     private static readonly string[] Bd01 = ["bd01"];
     private static readonly string[] G1 = ["g1"];
+    private static readonly string[] G2 = ["g2"];
     private static readonly string[] R1 = ["r1"];
     private static readonly string[] R2 = ["r2"];
     private static readonly string[] Gm = ["gm"];
@@ -545,6 +546,63 @@ public sealed class BacklogPass13Tests : IDisposable
             equipmentId = "gm"
         }));
         Assert.Equal("g2", ((EquipmentInstance)Current.Find("gm")!).Holding!.Holder);
+    }
+
+    [Fact]
+    public async Task PortageIsNotRecoupedByADropAndNoItemIsPortagedTwiceInAPhase()
+    {
+        // Pass 40, task 40.7 (A4.4, A4.42 and its example, p. 50): a squad with a MMG (4 PP) has three MF. It carries the MMG one hex and drops
+        // it; the MF do not come back, so after two more MF it has none. The squad that Recovers the MMG may not carry it on in this phase.
+        await SetupAt(2, "german", Unit("g1", "attacker-squad", "C3", "german"), Mg("gm", "attacker-mmg", "g1", "german"), Unit("g2", "attacker-squad", "C4", "german"));
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G1,
+            to = L("C4")
+        }));
+        Assert.Equal([("g1", "gm")], Current.PortagedThisPhase);
+        Committed(await Do(GameActions.Drop, NoRoll(), new
+        {
+            unitId = "g1",
+            equipmentId = "gm"
+        }));
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }));
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G1,
+            to = L("C5")
+        }));
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }));
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G1,
+            to = L("C6")
+        }));
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }));
+        Refused(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G1,
+            to = L("C7")
+        }), "0 MF left");
+        Committed(await Do(GameActions.EndMove, NoRoll(), new
+        {
+        }));
+        Committed(await Do(GameActions.Recover, Once(2), new
+        {
+            unitId = "g2",
+            equipmentId = "gm"
+        }));
+        Refused(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G2,
+            to = L("C5")
+        }), "play.move-portage");
+        Assert.Contains("gm", Current.MovedWeapons);
     }
 
     [Fact]

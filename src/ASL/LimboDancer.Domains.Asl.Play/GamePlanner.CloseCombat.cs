@@ -149,6 +149,10 @@ public sealed partial class GamePlanner
         // A7.7 (ruling R12.11): the first Location an Encircled unit enters costs twice its MF.
         var halfMf = ScenarioA1AdvanceCalculator.AdvanceHalfMf(entry.HalfMf, units.Any(unit => state.Encircled(unit!)), excess);
 
+        // A4.72 (p. 52; pass 40): Difficult Terrain is judged by the hex's MF cost "excluding SMOKE".
+        var drySmoke = entering is null && BlazeEntryHalfMf(state, to) > 0 ? InfantryStep(state, from, to, false, true).Entry : null;
+        var difficultHalfMf = drySmoke is null ? halfMf : ScenarioA1AdvanceCalculator.AdvanceHalfMf(drySmoke.HalfMf, units.Any(unit => state.Encircled(unit!)), excess);
+
         // A4.72 EX, A4.12, A4.42 (ruling R10.8): a Good Order leader of its nationality advancing with a MMC adds two MF and one IPC to it.
         var unitList = units.Select(unit => unit!).ToArray();
         // Table player, pass 10: as in the MPh, the leader's IPC goes to the one laden MMC, and his two MF to every MMC of his nationality.
@@ -160,7 +164,7 @@ public sealed partial class GamePlanner
         var tiring = new List<string>();
         foreach (var unit in units)
         {
-            if (DifficultAdvance(state, unit!, halfMf, Aided(unit!), unit!.Id == ipcTo) is not { } difficult)
+            if (DifficultAdvance(state, unit!, difficultHalfMf, Aided(unit!), unit!.Id == ipcTo) is not { } difficult)
             {
                 return Refused(scope, label, expected, ScenarioA1AdvanceCalculator.NoMfText(unit!.Id));
             }

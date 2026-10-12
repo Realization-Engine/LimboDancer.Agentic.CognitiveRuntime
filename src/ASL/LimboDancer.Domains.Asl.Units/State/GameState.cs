@@ -185,6 +185,12 @@ public sealed record GameState(
     public IReadOnlyList<string> HazardousMovers { get; init; } = [];
 
     /// <summary>
+    /// The items portaged in this phase, each with the unit that first spent MF holding it (A4.4; pass 40): the unit does not recoup their PP by
+    /// dropping them, and no other unit portages them. Emptied at every phase change.
+    /// </summary>
+    public IReadOnlyList<(string Unit, string Weapon)> PortagedThisPhase { get; init; } = [];
+
+    /// <summary>
     /// The leader directing each SW's To Hit DR this phase (A7.53; referee, pass 9), who may go on directing its further ROF shots; cleared at every
     /// phase change.
     /// </summary>

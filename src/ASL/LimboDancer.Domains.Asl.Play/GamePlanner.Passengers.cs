@@ -222,7 +222,13 @@ public sealed partial class GamePlanner
                 return Refused(scope, label, expected, $"play.load: {unitId} is marked {barred.Replace("asl:", string.Empty, StringComparison.Ordinal)} and may not board (D6.4)");
             }
 
-            if (MfAllotment(state, unit, 0, Is(unit, Conditions.Cx)) is not { } allotment)
+            // A4.5, A4.11 (pass 40): no boarding after Double Time, and four MF for a unit that mounts.
+            if (ScenarioA1PassengerCalculator.BoardingDoubleTimeBar(unitId, unit.DoubleTimeMf) is { } tiredBar)
+            {
+                return Refused(scope, label, expected, tiredBar);
+            }
+
+            if (MfAllotment(state, unit, 0, Is(unit, Conditions.Cx), 0, 0, ScenarioA1PassengerCalculator.ConveyanceAllowance) is not { } allotment)
             {
                 return Refused(scope, label, expected, $"play.load: {unitId}'s MF are not decided by the catalog (A4.1)");
             }

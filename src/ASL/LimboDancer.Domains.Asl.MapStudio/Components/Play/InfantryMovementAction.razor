@@ -7,6 +7,18 @@
 <label title="A4.3, A4.31: enter the woods or building hex along one or two of its hexsides the obstacle does not touch, in order, such as southeast, northeast; the stack then leaves through the far vertex or pays to occupy the obstacle (move To its own Location).">Bypass <input id="move-bypass" value="@Draft.Bypass" @onchange="@(args => Changed(Draft with { Bypass = args.Value as string ?? string.Empty }))" size="18" placeholder="southeast, northeast" /></label>
 <label title="A4.132: across a road hexside into a hex that has other terrain (a woods-road hex, a building beside its road) the unit pays the road's cost and is on the road, with no TEM of that terrain and FFMO where the firer sees the road; check this to pay the other terrain's cost and be in it."><input id="move-terrain-rate" type="checkbox" checked="@Draft.TerrainRate" @onchange="@(args => Changed(Draft with { TerrainRate = args.Value is true }))" /> pay the other terrain's cost, not the road's</label>
 <LocationField Id="move-dash" Label="Dash to" Value="@Draft.Dash" Title="A4.63: declared before the unit moves, with its first step into a road Location; the Location named is on the other side of the road, and the unit's only further step is into it, where its MPh ends. In the road Location the DEFENDER's small arms fire at it is Area Fire for firers to whom both sides of the road are not Open Ground." OnChange="@(value => Changed(Draft with { Dash = value }))" />
+@if (Selected.Count > 1)
+{
+    <label title="A4.42: one leader adds his IPC to one laden MMC that starts the phase with him and moves with him. With one laden MMC it goes there by itself; with several, name the one. The choice holds for the whole move.">Leader's IPC to
+        <select id="move-ipc" value="@Draft.IpcTo" @onchange="@(args => Changed(Draft with { IpcTo = args.Value as string ?? string.Empty }))">
+            <option value="">the only laden MMC</option>
+            @foreach (var row in Movers.Where(row => Selected.Contains(row.Id)))
+            {
+                <option value="@row.Id">@row.Label</option>
+            }
+        </select>
+    </label>
+}
 <label><input id="move-assault" type="checkbox" checked="@Draft.Assault" @onchange="@(args => Changed(Draft with { Assault = args.Value is true }))" /> Assault Movement</label>
 <label title="Double Time adds 2 MF (1 after the unit has spent MF) and makes the unit CX (A4.5); not for a unit that is CX, or whose CX counter came off at the start of this MPh (A4.51), nor with Assault Movement (A4.61)."><input id="move-double-time" type="checkbox" checked="@Draft.DoubleTime" @onchange="@(args => Changed(Draft with { DoubleTime = args.Value is true }))" /> Double Time</label>
 @if (PushGun is { } gun)
@@ -24,7 +36,7 @@
     /// The step drafted: the Location typed, Minimum Move, the Bypass hexsides typed, Assault Movement, Double Time, the Gun pushed, whether the
     /// other terrain's cost is paid across a road hexside (A4.132), and the Location a Dash is declared to (A4.63).
     /// </summary>
-    public sealed record MoveDraft(string To, bool Minimum, string Bypass, bool Assault, bool DoubleTime, bool Push, bool TerrainRate = false, string Dash = "");
+    public sealed record MoveDraft(string To, bool Minimum, string Bypass, bool Assault, bool DoubleTime, bool Push, bool TerrainRate = false, string Dash = "", string IpcTo = "");
 
     [Parameter, EditorRequired]
     public IReadOnlyList<UnitSelectionList.Row> Movers { get; set; } = [];

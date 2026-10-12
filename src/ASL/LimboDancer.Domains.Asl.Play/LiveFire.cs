@@ -15,6 +15,10 @@ public static class LiveFire
 {
     private static readonly Lazy<ScenarioA1FireReference> CatalogReference = new(() => new ScenarioA1FirePackage().Reference);
 
+    /// <summary>The moving stack's Assault Movement as fire reads it (A4.61; pass 40): declared, and no mover broken or berserk since.</summary>
+    private static bool AssaultOf(GameState state) => state.Movement is { } moving && ScenarioA1FireEligibility.AssaultHolds(moving.Assault,
+        moving.Movers.Select(id => state.Unit(id)).OfType<UnitInstance>().Select(unit => (Is(unit, Conditions.Broken), Is(unit, Conditions.Berserk))));
+
     /// <summary>A21.1 (ruling R13.7): a weapon of another nationality than its possessor's is captured (Rules decides it, pass 32.c).</summary>
     public static bool? CapturedBy(string? weaponDefinition, UnitInstance unit) =>
         ScenarioA1FireEligibility.CapturedBy(
@@ -145,6 +149,14 @@ public static class LiveFire
                 }
 
                 used = [.. named.Select(id => Weapon(id) is var weapon && CapturedBy(weapon.DefinitionId, unit) is { } captured ? weapon with { Captured = captured } : weapon)];
+
+                // A4.41 (pass 40): a MMG or HMG carried into a new Location in the MPh does not fire in the AFPh.
+                if (ScenarioA1FireEligibility.MovedWeaponBar(state.Phase, used.Select(weapon => (weapon.EquipmentId ?? string.Empty,
+                    weapon.EquipmentId is { } carried && state.MovedWeapons.Contains(carried, StringComparer.Ordinal),
+                    weapon.DefinitionId is { } definition ? CatalogReference.Value.Definitions.GetValueOrDefault(definition)?.Size : null))) is { } movedBar)
+                {
+                    return (null, movedBar);
+                }
             }
 
             // A3.3, A7.1, A7.351: the phase's limits on a firer; the Prep Fire scan and the count of its other fired weapons are read when asked.
@@ -195,7 +207,7 @@ public static class LiveFire
             firerFacts, [.. directors.Select(Director)], state.ScenarioMonth,
             [.. selection.Targets.Select(UnitAt).Select(unit => ScenarioA1FireEligibility.AttackTarget(new AttackTargetFacts(Target(state, unit, target), unit.Side == side,
                 Is(unit, Conditions.Captured), unit.Custodian, state.Encircled(unit))))],
-            targetSide is null ? null : state.Side(targetSide)?.Elr, kind, state.Movement?.Assault ?? false, () => state.Side(side)?.Elr, friendlyTargets,
+            targetSide is null ? null : state.Side(targetSide)?.Elr, kind, AssaultOf(state), () => state.Side(side)?.Elr, friendlyTargets,
             [.. selection.Vehicles.Select(id => Vehicle(UnitAt(id), target))], vehicleFirers.Length > 0 ? VehicleFire(state, vehicleFirers[0], firers[0].At) : null,
             targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal), state.NoQuarter.Contains(side, StringComparer.Ordinal),
             Allies(state, side), [.. selection.Companions.Select(id => Target(state, UnitAt(id), target))])), null);
@@ -281,7 +293,7 @@ public static class LiveFire
             placement?.Unit, placement?.Cx, placement?.TargetsConcealed, possessor, user is { Definition: not null }, user?.Definition?.Definition, side,
             user is not null && Is(user, Conditions.Cx), user is not null && Is(user, Conditions.BoundingFire), ok ? GreenInexperienced(state, user!) : null,
             ok ? CapturedBy(charge!.Definition!.Definition, user!) : null, ok ? state.Location(userId!)?.Location.ToString() : null, side == state.PhasingSide, state.Phase,
-            target.ToString(), here, movement?.Assault ?? false,
+            target.ToString(), here, AssaultOf(state),
             [.. units.Select(unit => new LocationUnitFacts(unit.Id, unit.Status == InstanceStatus.Active, unit.Side, IsVehicle(unit), unit.Definition is not null,
                 Is(unit, Conditions.Captured), here && movement!.Movers.Contains(unit.Id)))],
             targetSide, targetSide is null ? null : state.Side(targetSide)?.Elr, targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal),
@@ -352,7 +364,7 @@ public static class LiveFire
         var movement = state.Movement;
         var here = movement is not null && movement.Location == target;
         UnitInstance[] units = here ? [.. state.At(target).OfType<UnitInstance>()] : [];
-        return ScenarioA1FireEligibility.Residual(new ResidualFacts(here, movement?.Assault ?? false,
+        return ScenarioA1FireEligibility.Residual(new ResidualFacts(here, AssaultOf(state),
             [.. units.Select(unit => new LocationUnitFacts(unit.Id, unit.Status == InstanceStatus.Active, unit.Side, IsVehicle(unit), unit.Definition is not null,
                 Is(unit, Conditions.Captured), movement!.Movers.Contains(unit.Id)))],
             state.PhasingSide, here ? state.Side(state.PhasingSide)?.Elr : null, here && state.NoQuarter.Contains(state.PhasingSide, StringComparer.Ordinal),

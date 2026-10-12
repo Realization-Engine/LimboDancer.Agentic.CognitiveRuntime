@@ -134,6 +134,12 @@ public sealed record MovementStepped(IReadOnlyList<string> Movers, BoardLocation
         get; init;
     }
 
+    /// <summary>The laden MMC the stack's leader lends his IPC to for this move, when the mover named it (A4.42; pass 40, ruling R40.11); null otherwise.</summary>
+    public string? IpcTo
+    {
+        get; init;
+    }
+
     /// <summary>
     /// Whether the step is a Minimum Move (A4.134; ruling R10.9): the movers' only hex this MPh; when the DEFENDER's window closes their move ends and
     /// the unbroken ones become pinned and CX.
@@ -459,6 +465,18 @@ public sealed record MovementState(IReadOnlyList<string> Movers, BoardLocation L
 
     /// <summary>The Location the stack Dashes to from the road Location it is in (A4.63; pass 40); null when it is not Dashing.</summary>
     public BoardLocation? Dash
+    {
+        get; init;
+    }
+
+    /// <summary>The laden MMC the leader's IPC went to with an earlier step of this move, when the mover named it (A4.42; pass 40).</summary>
+    public string? IpcTo
+    {
+        get; init;
+    }
+
+    /// <summary>Whether a step of this move has changed the stack's Location: Assault Movement allows one such step (A4.61; pass 40).</summary>
+    public bool ChangedLocation
     {
         get; init;
     }

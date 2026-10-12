@@ -3082,6 +3082,7 @@ else if (state is not null)
     private bool moveDoubleTime;
     private bool moveTerrainRate;
     private string moveDash = string.Empty;
+    private string moveIpcTo = string.Empty;
 
     private bool moveMinimum;
 
@@ -4879,11 +4880,11 @@ else if (state is not null)
         PruneMoveDrafts();
     }
 
-    private InfantryMovementAction.MoveDraft MoveDraft => new(moveTo, moveMinimum, moveBypass, moveAssault, moveDoubleTime, movePush, moveTerrainRate, moveDash);
+    private InfantryMovementAction.MoveDraft MoveDraft => new(moveTo, moveMinimum, moveBypass, moveAssault, moveDoubleTime, movePush, moveTerrainRate, moveDash, moveIpcTo);
 
     private void SetMoveDraft(InfantryMovementAction.MoveDraft draft) =>
-        (moveTo, moveMinimum, moveBypass, moveAssault, moveDoubleTime, movePush, moveTerrainRate, moveDash) =
-            (draft.To, draft.Minimum, draft.Bypass, draft.Assault, draft.DoubleTime, draft.Push, draft.TerrainRate, draft.Dash);
+        (moveTo, moveMinimum, moveBypass, moveAssault, moveDoubleTime, movePush, moveTerrainRate, moveDash, moveIpcTo) =
+            (draft.To, draft.Minimum, draft.Bypass, draft.Assault, draft.DoubleTime, draft.Push, draft.TerrainRate, draft.Dash, draft.IpcTo);
 
     private Task ProposeSmoke()
     {
@@ -4920,6 +4921,12 @@ else if (state is not null)
         if (moveDash.Trim().Length > 0)
         {
             arguments["dash"] = moveDash.Trim();
+        }
+
+        // A4.42 (pass 40): the laden MMC named for the leader's IPC.
+        if (moveIpcTo.Length > 0 && moveUnits.Contains(moveIpcTo))
+        {
+            arguments["ipcTo"] = moveIpcTo;
         }
 
         // A4.134, A4.3 (rulings R10.7, R10.9): a Minimum Move, or the hexsides of a Bypass.

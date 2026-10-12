@@ -4,7 +4,7 @@ using Xunit;
 namespace LimboDancer.Domains.Asl.Rules.Tests;
 
 /// <summary>
-/// Pass 40, read directly in Rules. Task 40.3: Dash (A4.63, C6.1, pp. 51 to 52, 173). Task 40.2: a woods-road hex, the mover's choice across a road hexside, and the terrain a firer reads for a mover at
+/// Pass 40, read directly in Rules. Task 40.7: the portage and movement corrections (A4.4, A4.41, A4.42, A4.44, A4.61; pp. 48 to 51). Task 40.3: Dash (A4.63, C6.1, pp. 51 to 52, 173). Task 40.2: a woods-road hex, the mover's choice across a road hexside, and the terrain a firer reads for a mover at
 /// the road rate (A4.132, B3.3, B13.31, pp. 48, 113, 128). Task 40.6: the one count of a stack (A5.1, A5.2, A5.5, pp. 52 to 53), which the MPh, the APh, the IFT, the To Hit
 /// DR, Close Combat, and setup all read, and the MF and MP an overstacked Location costs (A5.11). The IFT DRM is tested with the Fire package's
 /// helpers in ScenarioA1Pass10Tests.
@@ -237,5 +237,79 @@ public sealed class ScenarioA1Pass40RulesTests
         Assert.Contains("for 2 MF, Dashing to bd04:AA7:0", verdict.Summary, StringComparison.Ordinal);
         Assert.Equal(["g1"], ScenarioA1MovementCalculator.EndingMembers(false, false, ["g1"], null, null, dashArrived: true));
         Assert.Empty(ScenarioA1MovementCalculator.EndingMembers(false, false, ["g1"], null, null));
+    }
+
+    private static MovingUnitFacts Mover(string id, bool leader = false) =>
+        new(id, "german", false, !leader, leader, false, false, false, "german", 0, false, null);
+
+    [Fact]
+    public void TheLeadersIpcGoesToTheLadenMmcTheMoverNames()
+    {
+        // A4.42 (p. 50; ruling R40.11): "one SMC can add its IPC to that of any one Good Order Infantry unit".
+        MovingUnitFacts[] stack = [Mover("s1"), Mover("s2"), Mover("l", leader: true)];
+        Assert.Null(ScenarioA1MovementCalculator.LeaderIpcRecipient(stack, _ => true).Recipient);
+        Assert.Equal(("s2", "l"), ScenarioA1MovementCalculator.LeaderIpcRecipient(stack, _ => true, "s2"));
+        Assert.Equal(("s1", "l"), ScenarioA1MovementCalculator.LeaderIpcRecipient(stack, index => index == 0));
+        Assert.Null(ScenarioA1MovementCalculator.LeaderIpcRecipient(stack, index => index == 0, "s2").Recipient);
+
+        // The choice holds for the whole move, and names a laden MMC with the leader.
+        Assert.Null(ScenarioA1MovementCalculator.IpcChoiceBar(null, "s1", "s1"));
+        Assert.Null(ScenarioA1MovementCalculator.IpcChoiceBar("s1", "s1", "s1"));
+        Assert.Null(ScenarioA1MovementCalculator.IpcChoiceBar("s1", null, "s1"));
+        Assert.StartsWith("play.move-ipc:", ScenarioA1MovementCalculator.IpcChoiceBar("s2", "s1", "s1"), StringComparison.Ordinal);
+        Assert.StartsWith("play.move-ipc:", ScenarioA1MovementCalculator.IpcChoiceBar("s2", null, null), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AnItemIsPortagedOnceAPhaseAndItsCostIsNotRecouped()
+    {
+        // A4.4 (p. 50).
+        var after = ScenarioA1MovementCalculator.Portaged([("g1", "mmg")], [("g1", "mmg"), ("g2", "lmg")]);
+        Assert.Equal([("g1", "mmg"), ("g2", "lmg")], after);
+        Assert.Equal([("g1", "mmg")], ScenarioA1MovementCalculator.Portaged([("g1", "mmg")], [("g2", "mmg")]));
+        Assert.Null(ScenarioA1MovementCalculator.PortagedTwiceBar([("mmg", "g1", "g1"), ("lmg", "g2", null)]));
+        Assert.StartsWith("play.move-portage:", ScenarioA1MovementCalculator.PortagedTwiceBar([("mmg", "g2", "g1")]), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AssaultMovementAllowsMfSpentInsideALocationBesideItsOneChangeOfLocation()
+    {
+        // A4.61 and its EXC (p. 51): one change of Location; MF spent within a Location, before or after it, do not prevent Assault Movement.
+        Assert.Null(ScenarioA1MovementCalculator.MoveTiming(true, true, true, false, null, [], currentChangedLocation: false, stepChangesLocation: true));
+        Assert.Null(ScenarioA1MovementCalculator.MoveTiming(true, true, true, false, null, [], currentChangedLocation: true, stepChangesLocation: false));
+        Assert.StartsWith("play.move-assault:", ScenarioA1MovementCalculator.MoveTiming(true, true, true, false, null, [], currentChangedLocation: true, stepChangesLocation: true),
+            StringComparison.Ordinal);
+        Assert.StartsWith("play.move-assault:", ScenarioA1MovementCalculator.MoveTiming(true, true, false, false, null, [], currentChangedLocation: false, stepChangesLocation: true),
+            StringComparison.Ordinal);
+        Assert.StartsWith("play.move-assault:", ScenarioA1MovementCalculator.MoveTiming(true, false, true, false, null, [], currentChangedLocation: false, stepChangesLocation: true),
+            StringComparison.Ordinal);
+
+        // "Which breaks, or becomes berserk ... is no longer considered using Assault Movement."
+        Assert.True(ScenarioA1FireEligibility.AssaultHolds(true, [(false, false)]));
+        Assert.False(ScenarioA1FireEligibility.AssaultHolds(true, [(true, false)]));
+        Assert.False(ScenarioA1FireEligibility.AssaultHolds(true, [(false, false), (false, true)]));
+        Assert.False(ScenarioA1FireEligibility.AssaultHolds(false, [(false, false)]));
+    }
+
+    [Fact]
+    public void AMovedMmgOrHmgDoesNotFireInTheAfph()
+    {
+        // A4.41 (p. 50): a LMG may; the phase is the AFPh alone.
+        Assert.Equal("medium", new ScenarioA1FirePackage().Reference.Definitions["attacker-mmg"].Size);
+        Assert.StartsWith("play.fire-weapon-moved:", ScenarioA1FireEligibility.MovedWeaponBar("afph", [("mmg", true, "medium")]), StringComparison.Ordinal);
+        Assert.StartsWith("play.fire-weapon-moved:", ScenarioA1FireEligibility.MovedWeaponBar("afph", [("lmg", true, "light"), ("hmg", true, "heavy")]), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1FireEligibility.MovedWeaponBar("afph", [("lmg", true, "light"), ("mmg", false, "medium")]));
+        Assert.Null(ScenarioA1FireEligibility.MovedWeaponBar("dfph", [("mmg", true, "medium")]));
+    }
+
+    [Fact]
+    public void ABypassingUnitRecoversNothingAndAUnitThatMountsHasFourMf()
+    {
+        // A4.44 (p. 50); A4.11 (p. 48) and A4.5 (p. 51).
+        Assert.StartsWith("play.recover-bypass:", ScenarioA1SupportWeaponRules.RecoveryBypassBar("g1", true), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1SupportWeaponRules.RecoveryBypassBar("g1", false));
+        Assert.Equal(4, ScenarioA1PassengerCalculator.ConveyanceAllowance);
+        Assert.StartsWith("play.load:", ScenarioA1PassengerCalculator.BoardingDoubleTimeBar("g1", 2), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1PassengerCalculator.BoardingDoubleTimeBar("g1", 0));
     }
 }

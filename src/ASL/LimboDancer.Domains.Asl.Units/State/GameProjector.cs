@@ -502,6 +502,7 @@ public static class GameProjector
                     OrdnanceShotsHere = [],
                     GunsTurnedThisPhase = [],
                     SmokeAttempts = [],
+                    PortagedThisPhase = [],
                     SupportWeaponUses = [],
                     SupportWeaponDirectors = [],
                     PhaseFirers = [],
@@ -2012,16 +2013,21 @@ public static class GameProjector
                     Dash = moving.Dash,
                     MinimumMove = moving.MinimumMove,
                     RoadRate = moving.RoadRate,
+                    IpcTo = moving.IpcTo ?? current?.IpcTo,
+                    ChangedLocation = current?.ChangedLocation == true || (movers[0]!.Position is MapPosition stoodAt && stoodAt.Location != moving.To),
                     Bypass = moving.Bypass,
                     From = movers[0]!.Position is MapPosition left && left.Location != moving.To ? left.Location : null,
                     PushedGun = moving.PushedGun,
                 },
                 SmokeAttempts = moving.Smoke is { } attempt ? [.. next.SmokeAttempts, attempt.Unit] : next.SmokeAttempts,
                 HazardousMovers = Rules.ScenarioA1MovementCalculator.HazardousMovers(next.HazardousMovers, moving.PushedGun is not null, moving.Movers),
+                PortagedThisPhase = Rules.ScenarioA1MovementCalculator.Portaged(next.PortagedThisPhase,
+                    next.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } carrier && moving.Movers.Contains(carrier.Holder, StringComparer.Ordinal))
+                        .Select(item => (item.Holding!.Holder, item.Id))),
                 SmokePending = moving.Smoke is { Placed: true } placing ? placing.Target : null,
                 MovedWeapons = [.. next.MovedWeapons, .. Rules.ScenarioA1MovementCalculator.MovedLightMortars(
                     [.. next.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && moving.Movers.Contains(holding.Holder, StringComparer.Ordinal))
-                        .Select(item => new Rules.CarriedWeaponFacts(item.Id, vocabulary.IsA(item.Kind, "asl:light-mortar"), next.MovedWeapons.Contains(item.Id, StringComparer.Ordinal)))],
+                        .Select(item => new Rules.CarriedWeaponFacts(item.Id, vocabulary.IsA(item.Kind, "asl:light-mortar") || vocabulary.IsA(item.Kind, "asl:mg"), next.MovedWeapons.Contains(item.Id, StringComparer.Ordinal)))],
                     locationChanged)],
             };
         }

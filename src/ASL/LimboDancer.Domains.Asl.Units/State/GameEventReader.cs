@@ -446,6 +446,7 @@ public static class GameEventReader
                         Road = fields.OptionalBoolean(payload, "road", path),
                         RoadRate = fields.OptionalBoolean(payload, "roadRate", path),
                         Dash = dash,
+                        IpcTo = fields.OptionalString(payload, "ipcTo", path),
                         MinimumMove = fields.OptionalBoolean(payload, "minimumMove", path),
                         Attempted = attempted,
                         Bypass = bypass,

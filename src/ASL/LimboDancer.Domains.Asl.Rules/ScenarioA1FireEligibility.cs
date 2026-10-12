@@ -300,6 +300,28 @@ public static class ScenarioA1FireEligibility
     /// A unit whose SW fired alone in the PFPh has Prep Fired and does not fire in the AFPh (A3.3, A7.1); a squad fires no more than two SW in a
     /// phase, and no inherent FP with two (A7.351).
     /// </summary>
+    /// <summary>
+    /// A4.41 (p. 50; pass 40): "No MMG, HMG, mortar ... which moved [other than being Recovered] during the MPh may fire during the ensuing AFPh".
+    /// Null unless a weapon named is a MMG or HMG carried into a new Location this Player Turn. The light mortar's bar is the ordnance's.
+    /// </summary>
+    public static string? MovedWeaponBar(string? phase, IEnumerable<(string Id, bool Moved, string? Size)> weapons)
+    {
+        ArgumentNullException.ThrowIfNull(weapons);
+        return phase != "afph" ? null
+            : weapons.Where(weapon => weapon.Moved && weapon.Size is "medium" or "heavy").Select(weapon =>
+                $"play.fire-weapon-moved: {weapon.Id} moved in the MPh, and a MMG or HMG that moved does not fire in the AFPh (A4.41)").FirstOrDefault();
+    }
+
+    /// <summary>
+    /// A4.61 (p. 51; pass 40): a unit using Assault Movement that breaks or becomes berserk "is no longer considered using Assault Movement and is
+    /// subject to the -1 FFNAM DRM for the remainder of its MPh". The stack's fire reads one status, so one such mover ends it for the attack.
+    /// </summary>
+    public static bool AssaultHolds(bool declared, IEnumerable<(bool Broken, bool Berserk)> movers)
+    {
+        ArgumentNullException.ThrowIfNull(movers);
+        return declared && movers.All(unit => !unit.Broken && !unit.Berserk);
+    }
+
     public static string? FirerLimitBar(FirerLimitFacts facts)
     {
         ArgumentNullException.ThrowIfNull(facts);

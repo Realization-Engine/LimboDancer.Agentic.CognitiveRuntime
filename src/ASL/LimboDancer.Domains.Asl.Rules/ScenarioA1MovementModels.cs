@@ -431,6 +431,7 @@ public sealed record StepRecordVerdict(RecordRefusal? Refusal, bool OffBoardForc
 public sealed record StepMoverUpdate(int MfSpent, bool HalfMfSpent, bool SetCx, int DoubleTimeMf, bool OffRoad, IReadOnlyList<string> MovedWith);
 
 /// <summary>A SW possessed by a mover as the AFPh bar reads it (A4.41): its id, a light mortar, and whether it is already marked moved.</summary>
+/// <summary>A SW a mover carries: its id, whether it is one A4.41 names (a light mortar, or a MG, whose size the fire reads), and whether it is already marked moved.</summary>
 public sealed record CarriedWeaponFacts(string Id, bool LightMortar, bool AlreadyMoved);
 
 /// <summary>The moving stack as the DEFENDER's window closes (A4.134, A24.1, D2.15, D7.1; rulings R5.15, R9.5, R10.9, R11.11): the record's step against the state's, its ending members, and its state.</summary>
