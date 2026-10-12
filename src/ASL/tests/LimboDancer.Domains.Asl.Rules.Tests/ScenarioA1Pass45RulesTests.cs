@@ -233,9 +233,18 @@ public sealed class ScenarioA1Pass45RulesTests
         Assert.Contains(Complete(sighted).Arithmetic!.Drm, item => item.Name == "bore-sighting" && item.Value == -2m && item.Rule == "C6.44");
 
         // Not in Prep Fire against Infantry, not as a Snap Shot, and not without the sighting.
-        Assert.DoesNotContain(Complete(Attack([6, 5], firers: [gunner]) with { MgBoreSighted = true }).Arithmetic!.Drm, item => item.Name == "bore-sighting");
-        Assert.DoesNotContain(Complete(sighted with { SnapShot = true }).Arithmetic!.Drm, item => item.Name == "bore-sighting");
-        Assert.DoesNotContain(Complete(sighted with { MgBoreSighted = null }).Arithmetic!.Drm, item => item.Name == "bore-sighting");
+        Assert.DoesNotContain(Complete(Attack([6, 5], firers: [gunner]) with
+        {
+            MgBoreSighted = true
+        }).Arithmetic!.Drm, item => item.Name == "bore-sighting");
+        Assert.DoesNotContain(Complete(sighted with
+        {
+            SnapShot = true
+        }).Arithmetic!.Drm, item => item.Name == "bore-sighting");
+        Assert.DoesNotContain(Complete(sighted with
+        {
+            MgBoreSighted = null
+        }).Arithmetic!.Drm, item => item.Name == "bore-sighting");
     }
 
     [Fact]
@@ -303,7 +312,10 @@ public sealed class ScenarioA1Pass45RulesTests
         Assert.All(result.Arithmetic.Firers, firer => Assert.Contains(firer.Multipliers, item => item.Name == "point-blank-fire"));
 
         // Two levels apart there is no attack.
-        Assert.Contains("asl.a1.fire.out-of-range", ScenarioA1FireCalculator.Resolve(down with { TargetLevelAbove = -2 }, Reference).Reasons);
+        Assert.Contains("asl.a1.fire.out-of-range", ScenarioA1FireCalculator.Resolve(down with
+        {
+            TargetLevelAbove = -2
+        }, Reference).Reasons);
 
         // The planner's read: the next level, and a stairwell between them.
         Assert.Null(ScenarioA1FireMapRules.SameHexLevelBar("a", "b", 1, () => true));
@@ -372,7 +384,10 @@ public sealed class ScenarioA1Pass45RulesTests
         Assert.Equal(["ru-1", "ru-2"], Complete(group).CoweredUnitIds);
         FireResolution With(int one, int two) => Complete(group with
         {
-            Rolls = group.Rolls! with { CowerSelection = new Dictionary<string, int> { ["ru-1"] = one, ["ru-2"] = two } },
+            Rolls = group.Rolls! with
+            {
+                CowerSelection = new Dictionary<string, int> { ["ru-1"] = one, ["ru-2"] = two }
+            },
         });
         var second = With(2, 5);
         Assert.Equal(["ru-2"], second.CoweredUnitIds);
@@ -497,7 +512,10 @@ public sealed class ScenarioA1Pass45RulesTests
             Range = 2,
         };
         Assert.Contains("asl.a1.fire.spraying-fire-outside", ScenarioA1FireCalculator.Resolve(Spray(Gunner("ru-1")), Reference).Reasons);
-        Assert.Equal(FireResolution.Resolved, Complete(Spray(Gunner("ru-1") with { UsesInherentFp = false })).Disposition);
+        Assert.Equal(FireResolution.Resolved, Complete(Spray(Gunner("ru-1") with
+        {
+            UsesInherentFp = false
+        })).Disposition);
 
         // A squad with the option adds its FP to its MG's, and fires beside a MG fired alone.
         var guards = Firer("ru-2", "defender-guards-squad") with
@@ -505,10 +523,16 @@ public sealed class ScenarioA1Pass45RulesTests
             Weapons = [Mg("ru-2-mg", "defender-lmg")],
             UsesSupportWeapon = true,
         };
-        Assert.Equal(FireResolution.Resolved, Complete(Spray(guards, Gunner("ru-1") with { UsesInherentFp = false })).Disposition);
+        Assert.Equal(FireResolution.Resolved, Complete(Spray(guards, Gunner("ru-1") with
+        {
+            UsesInherentFp = false
+        })).Disposition);
 
         // An attack recorded before the pass keeps ruling R12.6: the MG's holder adds its FP.
-        Assert.Equal(FireResolution.Resolved, Complete(Spray(Gunner("ru-1")) with { CoweringMarksAndWeaponResidual = null }).Disposition);
+        Assert.Equal(FireResolution.Resolved, Complete(Spray(Gunner("ru-1")) with
+        {
+            CoweringMarksAndWeaponResidual = null
+        }).Disposition);
 
         // A9.5: two Locations that share a hexside at one level, or two levels of one hex one level apart.
         Assert.Null(ScenarioA1FireEligibility.SprayTargetBar(true, false, true, true));
@@ -558,7 +582,10 @@ public sealed class ScenarioA1Pass45RulesTests
         Assert.Contains(MultipliersOf(directed, "de-hmg"), item => item.Name == "mandatory-fire-direction" && item.Value == 0.5m);
 
         // At 16 hexes it needs no leader and is not halved.
-        var near = Complete(far with { Range = 16 });
+        var near = Complete(far with
+        {
+            Range = 16
+        });
         Assert.DoesNotContain(MultipliersOf(near, "de-hmg"), item => item.Name == "mandatory-fire-direction");
     }
 
@@ -568,9 +595,15 @@ public sealed class ScenarioA1Pass45RulesTests
         // A7.53 (p. 57): "a leader can direct the fire of a MG as many times as the MG can fire, even if he also directed other units as part of a
         // FG in the MG's previous attack."
         var leader = new FireDirector("ru-l", "defender-leader", From, false, false, false, true, false);
-        var mgAlone = Gunner("ru-1") with { UsesInherentFp = false };
+        var mgAlone = Gunner("ru-1") with
+        {
+            UsesInherentFp = false
+        };
         Assert.Contains("asl.a1.fire.director-outside", ScenarioA1FireCalculator.Resolve(Attack([6, 5], firers: [mgAlone], director: leader), Reference).Reasons);
-        var again = leader with { DirectedTheseMgs = true };
+        var again = leader with
+        {
+            DirectedTheseMgs = true
+        };
         Assert.Equal(FireResolution.Resolved, Complete(Attack([6, 5], firers: [mgAlone], director: again)).Disposition);
 
         // Not when the squad's own FP fires with it: that is a second unit directed in the phase.
@@ -584,7 +617,10 @@ public sealed class ScenarioA1Pass45RulesTests
         var withLane = Moving(Attack([6, 5], firers: [Gunner("ru-1")]), ScenarioA1FireCalculator.SubsequentFirstFire);
         (string Weapon, string Operator)[] lanes = [("ru-1-mg", "ru-1")];
         Assert.StartsWith("play.fire-lane-mg", ScenarioA1FireEligibility.FireLaneInUseBar(lanes, withLane));
-        Assert.Null(ScenarioA1FireEligibility.FireLaneInUseBar(lanes, withLane with { TargetLocationId = From }));
+        Assert.Null(ScenarioA1FireEligibility.FireLaneInUseBar(lanes, withLane with
+        {
+            TargetLocationId = From
+        }));
         Assert.True(ScenarioA1FireEligibility.FireLaneCancelledBy(true, true));
         Assert.False(ScenarioA1FireEligibility.FireLaneCancelledBy(false, true));
         Assert.False(ScenarioA1FireEligibility.FireLaneCancelledBy(true, false));
@@ -679,21 +715,35 @@ public sealed class ScenarioA1Pass45RulesTests
             ScenarioA1FireEligibility.MphFireKind("mph", new FireKindFacts(false, false, () => false, () => alone, false, true, EveryFirstFireMarkedFiresAlone: true)).Kind);
 
         // A8.3 binds "a unit [that] uses Subsequent First Fire" to every MG it possesses; a unit with no counter beside it is free.
-        var marked = Firer("ru-1") with { FirstFireMarked = true, FiredThisPlayerTurn = true };
+        var marked = Firer("ru-1") with
+        {
+            FirstFireMarked = true,
+            FiredThisPlayerTurn = true
+        };
         var mixed = Moving(Attack([6, 5], firers: [marked, Firer("ru-2")]), ScenarioA1FireCalculator.SubsequentFirstFire);
         Assert.Null(ScenarioA1FireEligibility.EveryMgBar(mixed, id => id == "ru-2" ? ["ru-2-mg"] : []));
         Assert.StartsWith("play.fire-weapons", ScenarioA1FireEligibility.EveryMgBar(mixed, id => id == "ru-1" ? ["ru-1-mg"] : []));
 
         // A7.53: a leader who has directed does not direct a group that holds a unit with no counter (the example: "leader direction is NA").
         var leader = new FireDirector("ru-l", "defender-leader", From, false, false, false, true, false);
-        Assert.Contains("asl.a1.fire.director-outside", ScenarioA1FireCalculator.Resolve(mixed with { Director = leader }, Reference).Reasons);
+        Assert.Contains("asl.a1.fire.director-outside", ScenarioA1FireCalculator.Resolve(mixed with
+        {
+            Director = leader
+        }, Reference).Reasons);
         var allMarked = Moving(Attack([6, 5], firers: [marked, Firer("ru-2") with { FirstFireMarked = true, FiredThisPlayerTurn = true }], director: leader),
             ScenarioA1FireCalculator.SubsequentFirstFire);
         Assert.Equal(FireResolution.Resolved, Complete(allMarked).Disposition);
 
         // A7.353: a crew with no counter whose Gun fired has no FP in the group's First Fire; marked Final Fire it uses FPF.
-        var crew = Firer("ru-c", "defender-crew") with { GunFired = true };
-        var squad = Firer("ru-1") with { FinalFireMarked = true, FiredThisPlayerTurn = true };
+        var crew = Firer("ru-c", "defender-crew") with
+        {
+            GunFired = true
+        };
+        var squad = Firer("ru-1") with
+        {
+            FinalFireMarked = true,
+            FiredThisPlayerTurn = true
+        };
         Assert.Contains("asl.a1.fire.firer-outside",
             ScenarioA1FireCalculator.Resolve(Moving(Attack([3, 4], firers: [squad, crew]), ScenarioA1FireCalculator.FinalProtectiveFire), Reference).Reasons);
         Assert.Equal(FireResolution.Resolved, Complete(Moving(Attack([3, 4], firers: [squad, crew with { FinalFireMarked = true, FiredThisPlayerTurn = true }]),
@@ -705,7 +755,10 @@ public sealed class ScenarioA1Pass45RulesTests
     {
         // A.11 lists the causes that make an X#; Extreme Winter lowers the B# and the X# alike (E3.741) and makes none.
         var winter = Assert.Single(Complete(Moving(Attack([6, 6], firers: [Gunner("ru-1", "defender-lmg"), Firer("ru-2") with { Fanatic = true }]),
-            ScenarioA1FireCalculator.FirstFire) with { BreakdownReduction = 1 }).WeaponEffects!);
+            ScenarioA1FireCalculator.FirstFire) with
+        {
+            BreakdownReduction = 1
+        }).WeaponEffects!);
         Assert.Equal((true, null), (winter.Malfunctioned, winter.Removed));
 
         // A9.3: a lone hero, as a lone leader, uses no Sustained Fire.
@@ -725,11 +778,21 @@ public sealed class ScenarioA1Pass45RulesTests
             Weapons = [Mg("ru-mg")],
             UsesSupportWeapon = true,
         };
-        Assert.Equal(FireResolution.Resolved, Complete(Attack([6, 5], firers: [halfSquad]) with { SprayingFire = true, Range = 2 }).Disposition);
+        Assert.Equal(FireResolution.Resolved, Complete(Attack([6, 5], firers: [halfSquad]) with
+        {
+            SprayingFire = true,
+            Range = 2
+        }).Disposition);
 
         // C6.44: a "?" stack of Dummies is Infantry to the firer, so Prep Fire at it takes no Bore Sighting DRM either.
-        var gunner = Gunner("ru-1") with { UsesInherentFp = false };
-        var dummies = Complete(Attack([6, 5], firers: [gunner], targets: [new FireTarget("de-q", null, At, false, false, true, false, true, false, false)]) with { MgBoreSighted = true });
+        var gunner = Gunner("ru-1") with
+        {
+            UsesInherentFp = false
+        };
+        var dummies = Complete(Attack([6, 5], firers: [gunner], targets: [new FireTarget("de-q", null, At, false, false, true, false, true, false, false)]) with
+        {
+            MgBoreSighted = true
+        });
         Assert.DoesNotContain(dummies.Arithmetic!.Drm, item => item.Name == "bore-sighting");
 
         // The ROF is given up only for a larger counter than the one that stands there (A8.21), and a Sniper Check written with the attack leaves
@@ -800,15 +863,36 @@ public sealed class ScenarioA1Pass45RulesTests
         Assert.True(ScenarioA1UpperLevelEncirclement.Encircled(Upstairs, 0, new Building(steps, [2, 4], [1])));
 
         // From level 1, the enemy at ground level of its own hex leaves the way through the next hex; held too, there is none.
-        Assert.False(ScenarioA1UpperLevelEncirclement.Encircled(Upstairs with { Level = 1 }, 1, new Building(steps, [2, 4], [2])));
-        Assert.True(ScenarioA1UpperLevelEncirclement.Encircled(Upstairs with { Level = 1 }, 1, new Building(steps, [2, 4], [2, 4])));
+        Assert.False(ScenarioA1UpperLevelEncirclement.Encircled(Upstairs with
+        {
+            Level = 1
+        }, 1, new Building(steps, [2, 4], [2])));
+        Assert.True(ScenarioA1UpperLevelEncirclement.Encircled(Upstairs with
+        {
+            Level = 1
+        }, 1, new Building(steps, [2, 4], [2, 4])));
 
         // Never a berserk or heroic unit, a vehicle, a unit aboard one or in Bypass, or a unit that is not upstairs in a building.
-        Assert.False(ScenarioA1UpperLevelEncirclement.Encircled(Upstairs with { Berserk = true }, 0, new Building(steps, [2, 4], [1])));
-        Assert.False(ScenarioA1UpperLevelEncirclement.Encircled(Upstairs with { Heroic = true }, 0, new Building(steps, [2, 4], [1])));
-        Assert.False(ScenarioA1UpperLevelEncirclement.Encircled(Upstairs with { Building = false }, 0, new Building(steps, [2, 4], [1])));
-        Assert.False(ScenarioA1UpperLevelEncirclement.Encircled(Upstairs with { Level = 0 }, 0, new Building(steps, [2, 4], [1])));
-        Assert.False(ScenarioA1UpperLevelEncirclement.Encircled(Upstairs with { Aboard = true }, 0, new Building(steps, [2, 4], [1])));
+        Assert.False(ScenarioA1UpperLevelEncirclement.Encircled(Upstairs with
+        {
+            Berserk = true
+        }, 0, new Building(steps, [2, 4], [1])));
+        Assert.False(ScenarioA1UpperLevelEncirclement.Encircled(Upstairs with
+        {
+            Heroic = true
+        }, 0, new Building(steps, [2, 4], [1])));
+        Assert.False(ScenarioA1UpperLevelEncirclement.Encircled(Upstairs with
+        {
+            Building = false
+        }, 0, new Building(steps, [2, 4], [1])));
+        Assert.False(ScenarioA1UpperLevelEncirclement.Encircled(Upstairs with
+        {
+            Level = 0
+        }, 0, new Building(steps, [2, 4], [1])));
+        Assert.False(ScenarioA1UpperLevelEncirclement.Encircled(Upstairs with
+        {
+            Aboard = true
+        }, 0, new Building(steps, [2, 4], [1])));
 
         // Only "an unbroken, armed, unconcealed enemy unit" holds a Location.
         Assert.True(ScenarioA1UpperLevelEncirclement.Holds(Enemy));

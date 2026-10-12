@@ -27,6 +27,7 @@ public sealed class CloseCombatStepsTests : IDisposable
     private static readonly string[] G2 = ["g2"];
     private static readonly string[] G3 = ["g3"];
     private static readonly string[] R4 = ["r4"];
+    private static readonly string[] Rl = ["rl"];
     private static readonly string[] R4R5 = ["r4", "r5"];
     private static readonly string[] R5 = ["r5"];
     private static readonly string[] G1G2 = ["g1", "g2"];
@@ -620,14 +621,14 @@ public sealed class CloseCombatStepsTests : IDisposable
         Committed(await Do(GameActions.Fire, Once(1, 6, 6, 6, 6, 6), new
         {
             firers = R4,
-            directors = new[] { "rl" },
+            directors = Rl,
             weapons = new Dictionary<string, string[]> { ["r4"] = ["rlmg"] },
             target = "bd01:A2:0"
         }));
         var again = await Do(GameActions.Fire, Once(6, 5, 6, 6, 6, 6), new
         {
             firers = R4,
-            directors = new[] { "rl" },
+            directors = Rl,
             weapons = new Dictionary<string, string[]> { ["r4"] = ["rlmg"] },
             withoutInherent = R4,
             target = "bd01:A2:0"

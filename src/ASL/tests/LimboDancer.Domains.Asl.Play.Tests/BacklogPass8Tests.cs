@@ -741,9 +741,9 @@ public sealed class BacklogPass8Tests : IDisposable
         var before = Revision;
         Committed(await Do(GameActions.Fire, Once(6, 5, 6, 6, 6, 6), new Dictionary<string, object>
         {
-            ["firers"] = new[] { "r1" },
+            ["firers"] = R1,
             ["weapons"] = new Dictionary<string, string[]> { ["r1"] = ["ru-mmg"] },
-            ["withoutInherent"] = new[] { "r1" },
+            ["withoutInherent"] = R1,
             ["target"] = "bd01:B8:0",
         }));
         Assert.True(HasDrm(LastFire(before), "bore-sighting", -2m), Drm(LastFire(before)).ToString());
