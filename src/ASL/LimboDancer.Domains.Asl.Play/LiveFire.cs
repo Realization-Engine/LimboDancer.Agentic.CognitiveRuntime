@@ -83,9 +83,17 @@ public static class LiveFire
 
         // D1.83, D3.4 (ruling R25.7): a vehicle's MG fires alone, with no leader and no Infantry in its group. Rules decides each block (pass 32.c).
         var vehicleFirers = firerIds.Select(state.Unit).OfType<UnitInstance>().Where(IsVehicle).ToArray();
-        if (ScenarioA1FireEligibility.VehicleFiresAlone(vehicleFirers.Length, firerIds.Count, directorIds.Count, weapons is { Count: > 0 }) is { } grouped)
+        // D3.5 (pass 50): the weapons named under the vehicle's own id are its BMG and CMG, not a SW of its group.
+        if (ScenarioA1FireEligibility.VehicleFiresAlone(vehicleFirers.Length, firerIds.Count, directorIds.Count,
+            weapons?.Keys.Any(key => vehicleFirers.All(vehicle => vehicle.Id != key)) == true) is { } grouped)
         {
             return (null, grouped);
+        }
+
+        if (vehicleFirers.Length > 0 && ScenarioA1FireEligibility.VehicleWeaponsNamedBar(vehicleFirers[0].Id, !LiveOrdnance.IsTank(vehicleFirers[0]),
+            weapons?.GetValueOrDefault(vehicleFirers[0].Id)?.Count ?? 0) is { } unnamed)
+        {
+            return (null, unnamed);
         }
 
         var firers = new List<(UnitInstance Unit, BoardLocation At)>();
@@ -240,7 +248,8 @@ public static class LiveFire
             [.. selection.Targets.Select(UnitAt).Select(unit => ScenarioA1FireEligibility.AttackTarget(new AttackTargetFacts(Target(state, unit, target), unit.Side == side,
                 Is(unit, Conditions.Captured), unit.Custodian, state.Encircled(unit))))],
             targetSide is null ? null : state.Side(targetSide)?.Elr, kind, AssaultOf(state), () => state.Side(side)?.Elr, friendlyTargets,
-            [.. selection.Vehicles.Select(id => Vehicle(UnitAt(id), target))], vehicleFirers.Length > 0 ? VehicleFire(state, vehicleFirers[0], firers[0].At) : null,
+            [.. selection.Vehicles.Select(id => Vehicle(UnitAt(id), target))], vehicleFirers.Length > 0
+                ? VehicleFire(state, vehicleFirers[0], firers[0].At, weapons?.GetValueOrDefault(vehicleFirers[0].Id)) : null,
             targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal), state.NoQuarter.Contains(side, StringComparer.Ordinal),
             Allies(state, side), [.. selection.Companions.Select(id => Target(state, UnitAt(id), target))])) with
         {
@@ -351,6 +360,9 @@ public static class LiveFire
             state.Movement?.Movers.Contains(vehicleId) == true, vehicle?.MovementEnded == true));
     }
 
+    /// <summary>A vehicle definition's turret type (D1.3), as the catalog prints it; null when it prints none.</summary>
+    internal static string? MaTypeOf(string? definition) => definition is null ? null : CatalogReference.Value.Definitions.GetValueOrDefault(definition)?.MaType;
+
     /// <summary>Whether a unit is a vehicle (D1).</summary>
     public static bool IsVehicle(UnitInstance unit) => unit.Kind == "asl:vehicle";
 
@@ -379,7 +391,46 @@ public static class LiveFire
     /// A vehicle's MA MG attack (ruling R25.7): its crew's state, Motion (D2.42), a pin (A7.82), its MG's malfunction (D3.7), whether it
     /// fired this Player Turn, and whether its last shot this phase kept its Multiple ROF (C2.24), which the state records.
     /// </summary>
-    private static FireVehicleFire VehicleFire(GameState state, UnitInstance vehicle, BoardLocation at) =>
+    private static FireVehicleFire VehicleFire(GameState state, UnitInstance vehicle, BoardLocation at, IReadOnlyList<string>? named = null)
+    {
+        var fire = MainArmamentFire(state, vehicle, at);
+
+        // D3.5, D3.51, D3.7 (pass 50): the BMG and CMG the attack names, against the vehicle's shots of this Player Turn.
+        return named is not { Count: > 0 } ? fire : ScenarioA1FireEligibility.WithVehicleWeapons(fire, new VehicleWeaponsFacts(named,
+            Is(vehicle, Conditions.BmgMalfunctioned), Is(vehicle, Conditions.CmgMalfunctioned),
+            ScenarioA1FireEligibility.FirePhase(state.Phase, vehicle.Side == state.PhasingSide), VehicleShots(state, vehicle.Id),
+            vehicle.Definition is { } definition ? CatalogReference.Value.Definitions.GetValueOrDefault(definition.Definition)?.MaType : null));
+    }
+
+    /// <summary>
+    /// The BMG and CMG a vehicle's counter prints, each with its FP and the reason it may not fire now, or null when it may (D1.8, D3.5, D3.7;
+    /// pass 50). Empty for a vehicle that prints neither.
+    /// </summary>
+    public static IReadOnlyList<(string Weapon, int Fp, string? Bar)> VehicleMgs(GameState state, UnitInstance vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(vehicle);
+        if (!IsVehicle(vehicle) || vehicle.Definition is not { } named || CatalogReference.Value.Definitions.GetValueOrDefault(named.Definition) is not { } definition)
+        {
+            return [];
+        }
+
+        var shots = VehicleShots(state, vehicle.Id);
+        var otherPhase = shots.Any(item => item.FirePhase != ScenarioA1FireEligibility.FirePhase(state.Phase, vehicle.Side == state.PhasingSide));
+        return [.. new[] { FireVehicleWeapon.BowMg, FireVehicleWeapon.CoaxialMg }
+            .Where(weapon => ScenarioA1FireCalculator.VehicleWeaponFp(definition, weapon) is not null)
+            .Select(weapon => (weapon, ScenarioA1FireCalculator.VehicleWeaponFp(definition, weapon)!.Value, ScenarioA1FireEligibility.VehicleMgBar(
+                Is(vehicle, weapon == FireVehicleWeapon.BowMg ? Conditions.BmgMalfunctioned : Conditions.CmgMalfunctioned),
+                Is(vehicle, weapon == FireVehicleWeapon.BowMg ? Conditions.BmgDisabled : Conditions.CmgDisabled),
+                shots.Any(item => item.Weapon == weapon), otherPhase,
+                weapon == FireVehicleWeapon.CoaxialMg && definition.TurretBarredWhileCe(CrewExposed(vehicle)))))];
+    }
+
+    /// <summary>A vehicle's weapon shots of this Player Turn, as Rules reads them (D3.5, D3.51; pass 50).</summary>
+    internal static IReadOnlyList<VehicleWeaponShotFacts> VehicleShots(GameState state, string vehicleId) =>
+        [.. state.VehicleWeaponShots.Where(item => item.Vehicle == vehicleId).Select(item => new VehicleWeaponShotFacts(item.Weapon, item.FirePhase, item.Turn, item.Doubled))];
+
+    private static FireVehicleFire MainArmamentFire(GameState state, UnitInstance vehicle, BoardLocation at) =>
         ScenarioA1FireEligibility.VehicleFirer(new VehicleFirerFacts(vehicle.Id, vehicle.Definition?.Definition, at.ToString(), CrewExposed(vehicle),
             Is(vehicle, Conditions.Motion), state.Movement is { Vehicle: true, Started: true, Stopped: false } moving && moving.Movers.Contains(vehicle.Id),
             Is(vehicle, Conditions.Pinned),
@@ -606,7 +657,10 @@ public static class LiveFire
             () => state.SupportWeaponUses.Any(item => item.Unit == unit.Id),
             () => state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding
                 && holding.Holder == unit.Id && (item.Kind is "asl:mg" or "asl:ft" || (item.Definition is { } weapon && LiveOrdnance.LatwType(weapon.Definition) == "atr"))
-                && !Fired(item) && !Is(item, Conditions.Malfunctioned))));
+                && !Fired(item) && !Is(item, Conditions.Malfunctioned)))
+        {
+            VehicleMgUnfired = () => VehicleMgs(state, unit).Any(item => item.Bar is null),
+        });
     }
 }
 
@@ -668,6 +722,13 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
             var alone = recorded.Firers?.Where(item => item.UsesInherentFp == false && state.Unit(item.UnitId!)?.Kind != "asl:leader").Select(item => item.UnitId!).ToArray();
             var partners = recorded.Firers?.Where(item => item.Partner is not null).ToDictionary(item => item.UnitId!, item => item.Partner!, StringComparer.Ordinal);
             var mol = recorded.Firers?.FirstOrDefault(item => item.Mol == true)?.UnitId;
+
+            // D3.5 (pass 50): the BMG and CMG a vehicle's record names.
+            if (recorded.VehicleFire is { VehicleId: { } armed, Weapons: { Count: > 0 } vehicleWeapons })
+            {
+                weapons = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal) { [armed] = [.. vehicleWeapons.Select(item => item.Weapon ?? string.Empty)] };
+            }
+
             (expected, reason) = LiveFire.FromState(state, fire.Firers, directors, target, weapons, alone, partners is { Count: > 0 } ? partners : null, mol);
         }
 
@@ -711,6 +772,15 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
                     Captors = record.Captors,
                     Encircled = fact.Encircled ?? record.Encircled,
                 })],
+            // D3.52, C5.11 (pass 50): the hexspines a vehicle's MG must turn its CA, and its hex's terrain, are map reads recorded with the attack.
+            VehicleFire = expected.VehicleFire is { Weapons: { } stateWeapons } armedVehicle && recorded.VehicleFire is { Weapons: { } recordedWeapons } recordedVehicle
+                && stateWeapons.Count == recordedWeapons.Count
+                ? armedVehicle with
+                {
+                    InWoodsOrBuilding = recordedVehicle.InWoodsOrBuilding,
+                    Weapons = [.. stateWeapons.Zip(recordedWeapons, (fact, record) => fact with { Turn = record.Turn })],
+                }
+                : expected.VehicleFire,
             FirerLocationsAdjacent = recorded.FirerLocationsAdjacent,
             WithinSubsequentFirstFireRange = recorded.WithinSubsequentFirstFireRange,
             Companions = recorded.Companions is null ? null : expected.Companions,
@@ -792,6 +862,14 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
         if (JsonSerializer.Serialize(merged, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json))
         {
             return "The fire record's facts do not match the game state.";
+        }
+
+        // D3.52, D3.12 (pass 50): the record turns the turret exactly the hexspines its CMG's facts say, and no other record turns one.
+        var cmgTurn = recorded.VehicleFire?.Weapons?.FirstOrDefault(item => item.Weapon == FireVehicleWeapon.CoaxialMg)?.Turn ?? 0;
+        var tcaNow = recorded.VehicleFire?.VehicleId is { } turning && state.Unit(turning) is { } turningVehicle ? LiveOrdnance.TurretFacing(state, turningVehicle) : null;
+        if ((cmgTurn > 0) != fire.TurretFacing.HasValue || ScenarioA1OrdnanceEligibility.HexspinesTurned((int?)fire.TurretFacing, (int?)tcaNow) != cmgTurn)
+        {
+            return "The fire record turns the turret exactly the hexspines its CMG's facts say the shot changes its TCA by.";
         }
 
         if (LiveFire.Rolls(fire, recorded, rolls) is not { } dice)

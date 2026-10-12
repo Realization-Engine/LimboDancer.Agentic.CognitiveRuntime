@@ -318,6 +318,73 @@ public static class ScenarioA1RallyRules
     public static (UnitCondition Condition, bool Value) VehicleRepairChange(RepairOutcome outcome) =>
         outcome == RepairOutcome.Repaired ? (UnitCondition.Malfunctioned, false) : (UnitCondition.Disabled, true);
 
+    /// <summary>The name a vehicle's weapon is repaired under (D3.7; pass 50): <c>ma</c>, <c>bmg</c>, or <c>cmg</c>.</summary>
+    public static bool IsVehicleWeapon(string? weapon) => weapon is "ma" or FireVehicleWeapon.BowMg or FireVehicleWeapon.CoaxialMg;
+
+    /// <summary>The weapon's name in a sentence.</summary>
+    public static string VehicleWeaponName(string weapon) => weapon switch
+    {
+        FireVehicleWeapon.BowMg => "BMG",
+        FireVehicleWeapon.CoaxialMg => "CMG",
+        _ => "MA",
+    };
+
+    /// <summary>The condition that says a vehicle's weapon has malfunctioned (D3.7).</summary>
+    public static UnitCondition VehicleWeaponMalfunction(string weapon) => weapon switch
+    {
+        FireVehicleWeapon.BowMg => UnitCondition.BmgMalfunctioned,
+        FireVehicleWeapon.CoaxialMg => UnitCondition.CmgMalfunctioned,
+        _ => UnitCondition.Malfunctioned,
+    };
+
+    /// <summary>The condition that says a vehicle's weapon is disabled for good (D3.7).</summary>
+    public static UnitCondition VehicleWeaponDisabled(string weapon) => weapon switch
+    {
+        FireVehicleWeapon.BowMg => UnitCondition.BmgDisabled,
+        FireVehicleWeapon.CoaxialMg => UnitCondition.CmgDisabled,
+        _ => UnitCondition.Disabled,
+    };
+
+    /// <summary>
+    /// Whether a vehicle's crew is shocked or stunned (D3.7, D5.34, D5.341, C7.42; pass 50): under a Stun, a Shock, or an Unconfirmed Kill, or
+    /// Recalled before its counter is flipped ("Recall is treated the same as a Stun" until that Player Turn ends).
+    /// </summary>
+    public static bool VehicleCrewImpaired(bool stunned, bool shocked, bool unconfirmedKill, bool recalled, bool stunRecovery) =>
+        stunned || shocked || unconfirmedKill || (recalled && !stunRecovery);
+
+    /// <summary>
+    /// D3.7 (p. 201; pass 50), for a Gun MA, a BMG, or a CMG; one member for the planner and the projector: the weapon is malfunctioned and not
+    /// disabled; "repair of each malfunctioned weapon can be attempted once per RPh with a separate dr for each malfunctioned weapon by any
+    /// inherent crew that is not shocked or stunned". Only an AAMG asks for a CE crew.
+    /// </summary>
+    public static string? VehicleWeaponRepairBar(string vehicleId, string weapon, bool malfunctioned, bool disabled, bool crewImpaired, bool repairedThisPhase) =>
+        !malfunctioned || disabled ? $"play.repair-weapon: {vehicleId}'s {VehicleWeaponName(weapon)} is not malfunctioned, or is disabled (D3.7)"
+        : crewImpaired || repairedThisPhase
+            ? $"play.repair-unit: {vehicleId}'s {VehicleWeaponName(weapon)} is repaired once per RPh by a crew that is not shocked or stunned (D3.7)"
+        : null;
+
+    /// <summary>
+    /// What a repair dr does to a vehicle's Gun MA, BMG, or CMG (D3.7, D5.341, pp. 201 and 203; pass 50): a 1 removes the Malfunction counter; a 6
+    /// disables the weapon, which stays malfunctioned; and "any vehicle whose MA and all Secondary Armament ... are all disabled is immediately
+    /// Recalled (5.341) unless that vehicle has Passenger/Towing capability": the Recall of D5.341, a Stun until the Player Turn ends.
+    /// </summary>
+    public static IReadOnlyList<(UnitCondition Condition, bool Value)> VehicleWeaponRepairChanges(string weapon, RepairOutcome outcome, bool passengerOrTowing) => outcome switch
+    {
+        RepairOutcome.Repaired => [(VehicleWeaponMalfunction(weapon), false)],
+        RepairOutcome.Eliminated when weapon == "ma" && !passengerOrTowing =>
+        [
+            (UnitCondition.Disabled, true), (UnitCondition.Recalled, true), (UnitCondition.Stunned, false), (UnitCondition.StunRecovery, false),
+            (UnitCondition.ButtonedUp, true), (UnitCondition.Motion, false),
+        ],
+        RepairOutcome.Eliminated => [(VehicleWeaponDisabled(weapon), true)],
+        _ => [],
+    };
+
+    /// <summary>The plan's words for the repair of a vehicle's Gun MA, BMG, or CMG.</summary>
+    public static string VehicleWeaponRepairSummary(string vehicleId, string weapon, bool recallsIfDisabled) =>
+        $"play.repair: {vehicleId}'s crew attempts to repair its {VehicleWeaponName(weapon)} (a dr of 1 repairs it, a 6 disables it"
+        + (recallsIfDisabled ? " and Recalls the vehicle" : string.Empty) + "; D3.7)";
+
     /// <summary>The plan's words for a vehicle MG repair.</summary>
     public static string VehicleRepairSummary(string vehicleId) => $"play.repair: {vehicleId}'s crew attempts to repair its AAMG (a dr of 1 repairs it, a 6 disables it; D3.7)";
 

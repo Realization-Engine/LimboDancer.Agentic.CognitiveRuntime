@@ -210,7 +210,13 @@ public static class ScenarioA1FireFollowUps
         var conditions = new List<(UnitCondition, bool)>();
         if (weapon.Malfunctioned)
         {
-            conditions.Add((UnitCondition.Malfunctioned, true));
+            // D3.7 (pass 50): a vehicle's BMG or CMG has its own Malfunction counter.
+            conditions.Add((weapon.VehicleWeapon switch
+            {
+                FireVehicleWeapon.BowMg => UnitCondition.BmgMalfunctioned,
+                FireVehicleWeapon.CoaxialMg => UnitCondition.CmgMalfunctioned,
+                _ => UnitCondition.Malfunctioned,
+            }, true));
         }
 
         if (weapon.FireCounter is { } counter)

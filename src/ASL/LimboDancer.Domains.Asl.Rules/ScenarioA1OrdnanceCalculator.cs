@@ -348,15 +348,20 @@ public static class ScenarioA1OrdnanceCalculator
         // C2.241, C5.6 (ruling R8.2): a Gun that has used its normal ROF (a Prep, First, or Final Fire counter) may Intensive Fire once, never
         // in the AFPh and never a vehicle's; a Gun marked First Fire fires once more only so.
         // C13.31, A7.351 (ruling R9.7): a unit not yet marked as having fired makes a PF Check, a squad twice in a phase, any other once.
+        // D3.5 (p. 201; pass 50): a vehicle's fire counter placed by its BMG or CMG alone, in this fire phase, is not the MA's ("it makes no
+        // difference which weapon fires first"); a weapon fired in another fire phase forfeits the MA's shot.
+        var othersOnly = shot.Vehicle?.Weapons?.MarkedByOthers == true;
+        var firedBefore = !othersOnly && gunShot.FiredThisPlayerTurn == true;
+        var firstFired = !othersOnly && gunShot.FirstFire == true;
         var mayFire = pf
             ? gunShot.FiredThisPlayerTurn != true && gunShot.ShotsThisPhase < (reference.Fire.Definitions.GetValueOrDefault(crew.DefinitionId!)?.Kind == "asl:squad" ? 2 : 1)
             : shot.IntensiveFire == true
             ? shot.Vehicle is null && phase != "AFPh" && gunShot.IntensiveFired != true && gunShot.FinalFire != true && crew.Pinned != true
                 && (gunShot.FiredThisPlayerTurn == true || gunShot.FirstFire == true) && gunShot.RateOfFireKept != true
-            : gunShot.IntensiveFired != true && gunShot.FirstFire != true && (phase == "AFPh" && !OpportunityFire(shot)
-                ? gunShot.FiredThisPlayerTurn != true && gunShot.ShotsThisPhase == 0
-                : gunShot.ShotsThisPhase == 0 ? gunShot.FiredThisPlayerTurn != true : gunShot.RateOfFireKept == true);
-        if (!mayFire || crew.FiredInherentFp == true)
+            : gunShot.IntensiveFired != true && !firstFired && (phase == "AFPh" && !OpportunityFire(shot)
+                ? !firedBefore && gunShot.ShotsThisPhase == 0
+                : gunShot.ShotsThisPhase == 0 ? !firedBefore : gunShot.RateOfFireKept == true);
+        if (!mayFire || crew.FiredInherentFp == true || shot.Vehicle?.Weapons?.OtherPhase == true)
         {
             outside.Add(Prefix + "gun-already-fired");
         }
@@ -647,6 +652,11 @@ public static class ScenarioA1OrdnanceCalculator
             // woods or a building.
             var caseA = ScenarioA1ArmorCalculator.CaseA(gun.MaType, turned) * (woods ? 2 : 1);
             drm.Add(new FireModifier("case-a:" + turned.ToString(System.Globalization.CultureInfo.InvariantCulture), caseA, "C5.1"));
+        }
+        else if (shot.Vehicle?.Weapons?.MaintainedCaseA is > 0 and var maintained)
+        {
+            // D3.51 (p. 201; pass 50): the MA fired within a TCA its CMG changed in this fire phase pays what the CMG paid.
+            drm.Add(new FireModifier("case-a:maintained", maintained, "D3.51"));
         }
 
         if (AfphFire(shot))

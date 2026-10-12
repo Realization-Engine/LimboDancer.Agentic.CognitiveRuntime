@@ -162,6 +162,11 @@ internal static class ScenarioA1ArmorCalculator
         {
             drm.Add(new FireModifier("case-a:" + turned.ToString(CultureInfo.InvariantCulture), CaseA(gun.MaType, turned) * (woods ? 2 : 1), "C5.1"));
         }
+        else if (shot.Vehicle?.Weapons?.MaintainedCaseA is > 0 and var maintained)
+        {
+            // D3.51 (p. 201; pass 50): the MA fired within a TCA its CMG changed in this fire phase pays what the CMG paid.
+            drm.Add(new FireModifier("case-a:maintained", maintained, "D3.51"));
+        }
 
         if (latw)
         {

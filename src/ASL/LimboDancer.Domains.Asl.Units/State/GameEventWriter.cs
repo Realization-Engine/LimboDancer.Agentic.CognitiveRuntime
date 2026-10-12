@@ -359,6 +359,11 @@ public static class GameEventWriter
                     writer.WriteNumber("movementStep", movementStep);
                 }
 
+                if (fire.TurretFacing is { } turretFacing)
+                {
+                    writer.WriteString("turretFacing", Documents.UnitFacings.Name(turretFacing));
+                }
+
                 break;
             case RallyAttempted rally:
                 writer.WriteString("unit", rally.Unit);
@@ -390,6 +395,10 @@ public static class GameEventWriter
                 writer.WriteString("roll", repair.Roll);
                 writer.WriteNumber("repairNumber", repair.RepairNumber);
                 writer.WriteString("result", repair.Result);
+                if (repair.Weapon is { } repairedWeapon)
+                {
+                    writer.WriteString("weapon", repairedWeapon);
+                }
                 break;
             case VehicleCloseCombatResolved vehicleCombat:
                 writer.WriteString("location", vehicleCombat.Location.ToString());

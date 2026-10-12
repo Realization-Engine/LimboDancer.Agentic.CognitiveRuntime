@@ -494,7 +494,10 @@ public sealed class PlayRecords
     {
         if (attack.VehicleFire is { } byVehicle)
         {
-            return $"{byVehicle.VehicleId}'s AAMG in {byVehicle.LocationId}";
+            // D3.5 (pass 50): a tank's BMG and CMG by name; a vehicle whose MA is its MG as before.
+            return byVehicle.Weapons is { Count: > 0 } mgs
+                ? $"{byVehicle.VehicleId}'s {string.Join(" and ", mgs.Select(item => (item.Weapon ?? string.Empty).ToUpperInvariant()))} in {byVehicle.LocationId}"
+                : $"{byVehicle.VehicleId}'s AAMG in {byVehicle.LocationId}";
         }
 
         // D7.1 (visual check, pass 11): an OVR's firer is its vehicle.
@@ -688,7 +691,11 @@ public sealed class PlayRecords
                         RepairAttempted.Eliminated => "eliminated (a 6)",
                         _ => "still malfunctioned",
                     };
-                    records.Add((item.EventId, "repair", $"{repair.Unit}{In(before, repair.Unit)} repairs {repair.Equipment}: dr {dr} against R{repair.RepairNumber}: {result}"));
+                    // D3.7 (pass 50): a vehicle's weapon by its name; a 6 disables it, and a tank whose MA is disabled is Recalled.
+                    records.Add((item.EventId, "repair", repair.Weapon is { } repairedWeapon
+                        ? $"{repair.Unit}{In(before, repair.Unit)} tries to repair its {repairedWeapon.ToUpperInvariant()}: dr {dr}: "
+                            + (repair.Result == RepairAttempted.Eliminated ? "disabled (a 6; D3.7)" + (repairedWeapon == "ma" ? ", and the vehicle is Recalled if it carries no Passengers and tows nothing" : "") : result)
+                        : $"{repair.Unit}{In(before, repair.Unit)} repairs {repair.Equipment}: dr {dr} against R{repair.RepairNumber}: {result}"));
                 }
                 else if (item.Payload is ManhandlingRolled push)
                 {

@@ -93,6 +93,71 @@ public static class ScenarioA1FireEligibility
     }
 
     /// <summary>
+    /// The fire phase a vehicle's weapon fires in (D3.5, p. 201; A.15, p. 44; pass 50): the phase, but Defensive First Fire in the MPh and Final
+    /// Fire in the DFPh are one for the side that is not phasing ("an AFV firing its CMG as Defensive First Fire may still fire its MA in its DFPh").
+    /// </summary>
+    public static string FirePhase(string? phase, bool phasing) => !phasing && phase is "mph" or "dfph" ? "defensive" : phase ?? string.Empty;
+
+    /// <summary>
+    /// The Case A DRM a turret-mounted weapon pays when it fires within the current TCA (D3.51, p. 201; pass 50): "any of its other turret-mounted
+    /// weapons which fire within the current respective CA must pay the same CA Change penalty as the first weapon which fired". The first shot of
+    /// this fire phase by the MA or the CMG that turned the turret gives it; null when none did.
+    /// </summary>
+    public static int? MaintainedCaseA(IEnumerable<VehicleWeaponShotFacts> shots, string firePhase, string? maType)
+    {
+        ArgumentNullException.ThrowIfNull(shots);
+        return shots.Where(item => item.FirePhase == firePhase && item.Weapon is "ma" or FireVehicleWeapon.CoaxialMg && item.Turn > 0)
+            .Select(item => (int?)(ScenarioA1ArmorCalculator.CaseA(maType, item.Turn) * (item.Doubled ? 2 : 1))).FirstOrDefault();
+    }
+
+    /// <summary>
+    /// A vehicle's attack with the BMG and CMG it names (D3.5, D3.51, D3.7; pass 50): each MG's malfunction, whether it has fired this Player Turn
+    /// (one attack each), the Case A a CMG maintains, and whether a weapon of the vehicle fired in another fire phase.
+    /// </summary>
+    public static FireVehicleFire WithVehicleWeapons(FireVehicleFire fire, VehicleWeaponsFacts facts)
+    {
+        ArgumentNullException.ThrowIfNull(fire);
+        ArgumentNullException.ThrowIfNull(facts);
+        var maintained = MaintainedCaseA(facts.Shots, facts.FirePhase, facts.MaType);
+        return fire with
+        {
+            Weapons = [.. facts.Named.Select(name => new FireVehicleWeapon(name,
+                name == FireVehicleWeapon.BowMg ? facts.BmgMalfunctioned : name == FireVehicleWeapon.CoaxialMg && facts.CmgMalfunctioned,
+                facts.Shots.Any(item => item.Weapon == name))
+            {
+                MaintainedCaseA = name == FireVehicleWeapon.CoaxialMg ? maintained : null,
+            })],
+            OtherPhase = facts.Shots.Any(item => item.FirePhase != facts.FirePhase) ? true : null,
+        };
+    }
+
+    /// <summary>
+    /// Why a vehicle's BMG or CMG may not be chosen to fire now, in a few words, or null when it may (D3.5, D3.7, D1.321; pass 50): it has
+    /// malfunctioned or is disabled, it has fired this Player Turn, a weapon of the vehicle fired in another fire phase, or it is the CMG of a
+    /// CE tank whose turret is a RST or 1MT.
+    /// </summary>
+    public static string? VehicleMgBar(bool malfunctioned, bool disabled, bool fired, bool otherPhase, bool turretBarred) =>
+        disabled ? "is disabled" : malfunctioned ? "has malfunctioned" : fired ? "has fired"
+        : otherPhase ? "the vehicle fired in another phase (D3.5)" : turretBarred ? "a CE crew does not fire this turret's weapons (D1.321)" : null;
+
+    /// <summary>D3.5 (pass 50): a tank that fires on the IFT names the BMG or CMG that fires; its MA fires as ordnance.</summary>
+    public static string? VehicleWeaponsNamedBar(string vehicleId, bool mainArmamentIsMg, int named) =>
+        mainArmamentIsMg || named > 0 ? null
+            : $"play.fire-vehicle-weapons: name the BMG or the CMG of {vehicleId} that fires (D3.5); its MA fires as ordnance";
+
+    /// <summary>
+    /// Why a vehicle's MG may not fire at a target its CA does not cover (D1.81, D3.52, C5.13; pass 50), or null: a BMG fires only inside the VCA
+    /// (the pivot of the hull for a shot is not built), and no CA changes for Bounding First Fire.
+    /// </summary>
+    public static string? VehicleWeaponArcBar(string vehicleId, string weapon, int turn, bool boundingFirstFire) =>
+        turn <= 0 ? null
+        : weapon == FireVehicleWeapon.BowMg
+            ? $"play.fire-vehicle-vca: {vehicleId}'s BMG fires only at a target inside its VCA (D1.81); turning the hull for a shot is not built"
+        : boundingFirstFire
+            ? $"play.fire-vehicle-tca: {vehicleId}'s CMG fires within its current TCA in Bounding First Fire; the turret turns with an MP expenditure (C5.13, D3.12)"
+        : null;
+
+    /// <summary>
     /// A unit in the target Location, with the Fanatic (A10.8) and heroic (A15.21) states the Fire package reads, its Inexperience (A19.2; ruling
     /// R15.10), and the FT it possesses (A22.4; ruling R15.1). A unit of an OB group takes its group's ELR (ruling R18.3).
     /// </summary>
@@ -135,7 +200,8 @@ public static class ScenarioA1FireEligibility
 
         if (facts.Vehicle)
         {
-            return !facts.RateOfFireKept();
+            // D3.5 (pass 50): nor while one of its other weapons may still fire in this fire phase.
+            return !facts.RateOfFireKept() && facts.VehicleMgUnfired?.Invoke() != true;
         }
 
         return !facts.SupportWeaponUsed() && !facts.UnfiredWeaponHeld();

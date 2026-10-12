@@ -150,7 +150,7 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
         ? state.RallyAttemptsThisPlayerTurn.Contains(rally.Unit)
         : plan.Events.Select(item => item.Payload).OfType<RepairAttempted>().FirstOrDefault() is { } repair
         // A Repair attempt: the unit's attempt is kept for the phase.
-        ? state.RepairsThisPhase.Contains(repair.Unit)
+        ? state.RepairsThisPhase.Contains(repair.Weapon is { } repairedWeapon ? repair.Unit + ":" + repairedWeapon : repair.Unit)
         : plan.Events.Select(item => item.Payload).OfType<GunTurned>().FirstOrDefault() is { } turned
         // A CA change without fire (C3.22): the Gun faces its new hexspine.
         ? state.Find(turned.Gun) is EquipmentInstance { Position: MapPosition { Facing: { } facing } } && facing == turned.Facing

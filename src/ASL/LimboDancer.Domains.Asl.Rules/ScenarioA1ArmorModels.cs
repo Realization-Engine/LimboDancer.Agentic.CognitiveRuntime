@@ -21,7 +21,25 @@ public sealed record OrdnanceVehicleFirer(bool? ButtonedUp, bool? InMotion, bool
     {
         get; init;
     }
+
+    /// <summary>
+    /// The vehicle's other weapons against this shot (D3.5, D3.51, pp. 200 and 201; pass 50). Null in a record made before pass 50, which then
+    /// resolves as it was recorded.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrdnanceVehicleWeapons? Weapons
+    {
+        get; init;
+    }
 }
+
+/// <summary>
+/// A tank's MA beside its other weapons (D3.5, D3.51, pp. 200 and 201; pass 50): whether a weapon of the vehicle fired in another fire phase of
+/// this Player Turn, so that the MA has forfeited its shot; whether the vehicle's fire counter was placed by its other weapons alone, in this
+/// fire phase, so that the MA has not fired; and the Case A DRM the first turret-mounted weapon to fire in this fire phase paid, which the MA's
+/// first shot within the current TCA pays too.
+/// </summary>
+public sealed record OrdnanceVehicleWeapons(bool OtherPhase, bool MarkedByOthers, int? MaintainedCaseA);
 
 /// <summary>
 /// The vehicle a Vehicle Target Type shot fires at (C3.31; rulings R7.2 to R7.9): its Target Facing to the firer for a hull hit (VCA) and a

@@ -366,6 +366,8 @@ public static class GameEventReader
                         facts.Clone(), resolution.Clone())
                     {
                         MovementStep = fields.OptionalInteger(payload, "movementStep", path),
+                        TurretFacing = fields.OptionalString(payload, "turretFacing", path) is { } turretText && UnitFacings.TryParse(turretText, out var turretFacing)
+                            ? turretFacing : null,
                     };
             case "rally-attempted":
                 var rallyUnit = fields.RequiredString(payload, "unit", path);
@@ -390,7 +392,10 @@ public static class GameEventReader
                 var repairResult = fields.RequiredString(payload, "result", path);
                 return repairUnit is null || repaired is null || repairRoll is null || repairNumber is null || repairResult is null
                     ? Missing(diagnostics, "A Repair record names its unit, SW, roll, Repair Number, and result.", path)
-                    : new RepairAttempted(repairUnit, repaired, repairRoll, repairNumber.Value, repairResult);
+                    : new RepairAttempted(repairUnit, repaired, repairRoll, repairNumber.Value, repairResult)
+                    {
+                        Weapon = fields.OptionalString(payload, "weapon", path),
+                    };
             case "shock-recovery-rolled":
                 var shocked = fields.RequiredString(payload, "vehicle", path);
                 var shockRoll = fields.RequiredString(payload, "roll", path);

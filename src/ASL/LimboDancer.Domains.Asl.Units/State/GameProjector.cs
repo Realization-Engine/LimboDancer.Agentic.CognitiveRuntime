@@ -493,6 +493,7 @@ public static class GameProjector
                     OrdnanceShots = [],
                     Advances = newPlayerTurn ? [] : state.Advances,
                     MovedVehicles = newPlayerTurn ? [] : state.MovedVehicles,
+                    VehicleWeaponShots = newPlayerTurn ? [] : state.VehicleWeaponShots,
                     GunCrewsFired = newPlayerTurn ? [] : state.GunCrewsFired,
                     // A3.3 (table player, pass 12): a unit that fired only a SW in the PFPh has Prep Fired and does not move.
                     NoMoveThisPlayerTurn = newPlayerTurn ? [] : Rules.ScenarioA1SequenceProjection.NoMoveListGrows(state.Phase, newPlayerTurn)
@@ -1125,6 +1126,12 @@ public static class GameProjector
             state = SupportWeapons(state, fired, shooter, mortar, panzerfaust);
             return state with
             {
+                // D3.5, D3.51 (pass 50): a tank's MA shot is one of its weapons' shots of the fire phase, with the turn its turret made.
+                VehicleWeaponShots = tank
+                    ? [.. state.VehicleWeaponShots, new VehicleWeaponShot(fired.Gun, "ma", Rules.ScenarioA1FireEligibility.FirePhase(state.Phase, shooter.Side == state.PhasingSide),
+                        fired.Facts.TryGetProperty("hexspinesToTurn", out var maTurn) && maTurn.ValueKind == JsonValueKind.Number ? maTurn.GetInt32() : 0,
+                        fired.Facts.TryGetProperty("firerInWoodsOrBuilding", out var maWoods) && maWoods.ValueKind == JsonValueKind.True)]
+                    : state.VehicleWeaponShots,
                 OrdnanceShots = [.. state.OrdnanceShots.Where(item => item.Gun != fired.Gun), new OrdnanceShotRecord(fired.Gun, (shots?.Shots ?? 0) + 1, fired.RateOfFireKept)],
                 Acquisitions = [.. state.Acquisitions.Where(item => item.Gun != fired.Gun),
                     .. fired.Acquired is { } acquired && fired.Acquisition < 0 ? new[] { new GunAcquisition(fired.Gun, acquired, fired.Acquisition) } : []],
@@ -1597,9 +1604,29 @@ public static class GameProjector
 
             // C2.24, D3.5 (unit step 25): a vehicle's MG shot keeps its Multiple ROF for this phase when its record says so, as a Gun's does.
             var shots = state.OrdnanceShots;
+            var weaponShots = state.VehicleWeaponShots;
+            var turrets = state.TurretFacings;
             if (fire.Facts.TryGetProperty("vehicleFire", out var vehicleFire) && vehicleFire.ValueKind == JsonValueKind.Object
-                && vehicleFire.TryGetProperty("vehicleId", out var vehicleId) && vehicleId.GetString() is { } vehicle)
+                && vehicleFire.TryGetProperty("vehicleId", out var vehicleId) && vehicleId.GetString() is { } armed
+                && vehicleFire.TryGetProperty("weapons", out var namedWeapons) && namedWeapons.ValueKind == JsonValueKind.Array)
             {
+                // D3.5, D3.51, D3.52 (pass 50): a BMG and a CMG fire once a Player Turn; the state keeps which fired, in which fire phase, and the
+                // CA change each made. A CMG fired outside the TCA turns the turret. The MA's own ROF record is left as it is.
+                var firePhase = Rules.ScenarioA1FireEligibility.FirePhase(state.Phase, state.Unit(armed)?.Side == state.PhasingSide);
+                var doubled = vehicleFire.TryGetProperty("inWoodsOrBuilding", out var inWoods) && inWoods.ValueKind == JsonValueKind.True;
+                weaponShots = [.. weaponShots, .. namedWeapons.EnumerateArray().Select(item => new VehicleWeaponShot(armed,
+                    item.TryGetProperty("weapon", out var weaponName) ? weaponName.GetString() ?? string.Empty : string.Empty, firePhase,
+                    item.TryGetProperty("turn", out var turned) && turned.ValueKind == JsonValueKind.Number ? turned.GetInt32() : 0, doubled))];
+                if (fire.TurretFacing is { } turret)
+                {
+                    turrets = [.. turrets.Where(item => item.Vehicle != armed), new TurretFacing(armed, turret)];
+                }
+            }
+            else if (fire.Facts.TryGetProperty("vehicleFire", out vehicleFire) && vehicleFire.ValueKind == JsonValueKind.Object
+                && vehicleFire.TryGetProperty("vehicleId", out vehicleId) && vehicleId.GetString() is { } vehicle)
+            {
+                weaponShots = [.. weaponShots, new VehicleWeaponShot(vehicle, "ma",
+                    Rules.ScenarioA1FireEligibility.FirePhase(state.Phase, state.Unit(vehicle)?.Side == state.PhasingSide), 0, false)];
                 // Rules decides the kept ROF and the count (pass 32.c).
                 var effects = fire.Resolution.TryGetProperty("weaponEffects", out var weaponEffects) && weaponEffects.ValueKind == JsonValueKind.Array ? weaponEffects : (JsonElement?)null;
                 var kept = Rules.ScenarioA1FireFollowUps.VehicleShotKeepsRof(effects?.GetArrayLength() ?? 0,
@@ -1615,6 +1642,8 @@ public static class GameProjector
             {
                 FiresThisPhase = [.. state.FiresThisPhase, new FireRecord(eventId, fire.FirerLocation, fire.TargetLocation) { Step = fire.MovementStep, Vehicle = byVehicle }],
                 OrdnanceShots = shots,
+                VehicleWeaponShots = weaponShots,
+                TurretFacings = turrets,
                 FireLanes = state.FireLanes.Count == 0 ? state.FireLanes
                     : [.. state.FireLanes.Where(lane => !Rules.ScenarioA1FireEligibility.FireLaneCancelledBy(fire.FirerLocation == fire.TargetLocation,
                         fire.Firers.Contains(lane.Operator, StringComparer.Ordinal) || weaponsFired.Contains(lane.Weapon)))],
@@ -1850,7 +1879,27 @@ public static class GameProjector
             // disables it.
             if (repair.Unit == repair.Equipment && Active(state, repair.Unit) is UnitInstance vehicle && vocabulary.IsA(vehicle.Kind, "asl:vehicle"))
             {
-                if (!Rules.ScenarioA1RoutRallyProjection.VehicleRepairAllowedAsRecorded(state.Phase, GameState.Condition(vehicle, Conditions.Malfunctioned) == ConditionState.True,
+                // D3.7 (p. 201; pass 50): a Gun MA, a BMG, or a CMG, each by its own dr once a RPh, by a crew that is not shocked or stunned.
+                var repairKey = repair.Weapon is { } weaponKey ? vehicle.Id + ":" + weaponKey : vehicle.Id;
+                if (repair.Weapon is { } repairedWeapon
+                    ? state.Phase != "rph" || Rules.ScenarioA1RallyRules.VehicleWeaponRepairBar(vehicle.Id, repairedWeapon,
+                        GameState.Condition(vehicle, Rules.ScenarioA1RallyRules.VehicleWeaponMalfunction(repairedWeapon) switch
+                        {
+                            Rules.UnitCondition.BmgMalfunctioned => Conditions.BmgMalfunctioned,
+                            Rules.UnitCondition.CmgMalfunctioned => Conditions.CmgMalfunctioned,
+                            _ => Conditions.Malfunctioned,
+                        }) == ConditionState.True,
+                        GameState.Condition(vehicle, Rules.ScenarioA1RallyRules.VehicleWeaponDisabled(repairedWeapon) switch
+                        {
+                            Rules.UnitCondition.BmgDisabled => Conditions.BmgDisabled,
+                            Rules.UnitCondition.CmgDisabled => Conditions.CmgDisabled,
+                            _ => Conditions.Disabled,
+                        }) == ConditionState.True,
+                        Rules.ScenarioA1RallyRules.VehicleCrewImpaired(GameState.Condition(vehicle, Conditions.Stunned) == ConditionState.True,
+                            GameState.Condition(vehicle, Conditions.Shocked) == ConditionState.True, GameState.Condition(vehicle, Conditions.UnconfirmedKill) == ConditionState.True,
+                            GameState.Condition(vehicle, Conditions.Recalled) == ConditionState.True, GameState.Condition(vehicle, Conditions.StunRecovery) == ConditionState.True),
+                        state.RepairsThisPhase.Contains(repairKey)) is not null
+                    : !Rules.ScenarioA1RoutRallyProjection.VehicleRepairAllowedAsRecorded(state.Phase, GameState.Condition(vehicle, Conditions.Malfunctioned) == ConditionState.True,
                     GameState.Condition(vehicle, Conditions.Disabled) == ConditionState.True, GameState.Condition(vehicle, Conditions.ButtonedUp) == ConditionState.True,
                     GameState.Condition(vehicle, Conditions.Stunned) == ConditionState.True, GameState.Condition(vehicle, Conditions.Recalled) == ConditionState.True,
                     GameState.Condition(vehicle, Conditions.Shocked) == ConditionState.True, GameState.Condition(vehicle, Conditions.UnconfirmedKill) == ConditionState.True,
@@ -1875,7 +1924,7 @@ public static class GameProjector
 
                 return state with
                 {
-                    RepairsThisPhase = [.. state.RepairsThisPhase, vehicle.Id]
+                    RepairsThisPhase = [.. state.RepairsThisPhase, repairKey]
                 };
             }
 

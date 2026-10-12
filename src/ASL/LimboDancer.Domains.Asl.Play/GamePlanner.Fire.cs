@@ -164,6 +164,18 @@ public sealed partial class GamePlanner
 
         attack = WithSeen(state, attack);
 
+        // D1.81, D1.82, D3.52, C5.11, C5.13 (pass 50): the hexspines each of a vehicle's MGs must turn its CA to cover the target.
+        if (attack.VehicleFire is { Weapons.Count: > 0 })
+        {
+            var (armed, arcBar) = VehicleArcFacts(state, attack, target);
+            if (armed is null)
+            {
+                return Refused(scope, label, expected, arcBar!);
+            }
+
+            attack = armed;
+        }
+
         // A22.611 (ruling R15.4): no MOL through a woods or orchard hexside, one both of whose hexes are woods, or both orchard; Rules decides it from the
         // two terrains (pass 32.c).
         if (mol is not null && state.Location(mol)?.Location is { } molAt && molAt != target
@@ -852,6 +864,7 @@ public sealed partial class GamePlanner
                 JsonSerializer.SerializeToElement(facts, LiveFire.Json), JsonSerializer.SerializeToElement(resolution, LiveFire.Json))
             {
                 MovementStep = step,
+                TurretFacing = VehicleTurretTurn(state, facts),
             }, package, hidesIdentity ? [targetSide] : null));
         if (hidesIdentity)
         {
@@ -1075,6 +1088,58 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>A condition of the Rules verdicts under Units' name.</summary>
+    /// <summary>
+    /// The map's part of a vehicle's MG attack (D1.81, D1.82, D3.52, C5.11, C5.13; pass 50): the hexspines the VCA would turn for a BMG and the TCA
+    /// for a CMG, and whether the vehicle is in woods, a building, or rubble. Rules says which turn is allowed.
+    /// </summary>
+    private (FireAttack? Attack, string? Reason) VehicleArcFacts(GameState state, FireAttack attack, BoardLocation target)
+    {
+        var fire = attack.VehicleFire!;
+        if (state.Unit(fire.VehicleId!) is not { Position: MapPosition { Facing: { } hull } } vehicle || !BoardLocation.TryParse(fire.LocationId, out var from)
+            || Bearing(state, from!, target) is not { } bearing || ReadLocation(state, from!) is not { } read || TerrainKey(read) is not { } terrain)
+        {
+            return (null, $"play.fire-vehicle-arc: the Covered Arcs of '{fire.VehicleId}' cannot be read toward this target on this map (D3.1)");
+        }
+
+        var turret = LiveOrdnance.TurretFacing(state, vehicle) ?? hull;
+        var weapons = new List<FireVehicleWeapon>();
+        foreach (var weapon in fire.Weapons!)
+        {
+            var turn = ScenarioA1OrdnanceMapRules.CoveredArcTurn((int)(weapon.Weapon == FireVehicleWeapon.CoaxialMg ? turret : hull), bearing).Steps;
+            if (ScenarioA1FireEligibility.VehicleWeaponArcBar(vehicle.Id, weapon.Weapon ?? string.Empty, turn, attack.FireKind == ScenarioA1FireCalculator.BoundingFirstFire) is { } bar)
+            {
+                return (null, bar);
+            }
+
+            weapons.Add(weapon with
+            {
+                Turn = turn
+            });
+        }
+
+        return (attack with
+        {
+            VehicleFire = fire with
+            {
+                Weapons = weapons,
+                InWoodsOrBuilding = WoodsOrBuilding.Contains(terrain) ? true : null,
+            },
+        }, null);
+    }
+
+    /// <summary>The TCA a vehicle's CMG turns its turret to for its attack (D3.52, D3.12; pass 50); null when it fires within the TCA.</summary>
+    private Units.Documents.UnitFacing? VehicleTurretTurn(GameState state, FireAttack facts)
+    {
+        if (facts.VehicleFire is not { Weapons: { } weapons } fire || !weapons.Any(item => item.Weapon == FireVehicleWeapon.CoaxialMg && item.Turn > 0)
+            || state.Unit(fire.VehicleId!) is not { Position: MapPosition { Facing: { } hull } } vehicle || !BoardLocation.TryParse(fire.LocationId, out var from)
+            || !BoardLocation.TryParse(facts.TargetLocationId, out var target) || Bearing(state, from!, target!) is not { } bearing)
+        {
+            return null;
+        }
+
+        return (Units.Documents.UnitFacing)ScenarioA1OrdnanceMapRules.CoveredArcTurn((int)(LiveOrdnance.TurretFacing(state, vehicle) ?? hull), bearing).Facing;
+    }
+
     private static string ConditionName(UnitCondition condition) => condition switch
     {
         UnitCondition.Broken => Conditions.Broken,
@@ -1106,6 +1171,11 @@ public sealed partial class GamePlanner
         UnitCondition.Melee => Conditions.Melee,
         UnitCondition.Unarmed => Conditions.Unarmed,
         UnitCondition.CcReaction => Conditions.CcReaction,
+        UnitCondition.Recalled => Conditions.Recalled,
+        UnitCondition.Stunned => Conditions.Stunned,
+        UnitCondition.StunRecovery => Conditions.StunRecovery,
+        UnitCondition.BmgDisabled => Conditions.BmgDisabled,
+        UnitCondition.CmgDisabled => Conditions.CmgDisabled,
         _ => Conditions.CmgMalfunctioned,
     };
 

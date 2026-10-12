@@ -260,7 +260,13 @@ public static class LiveOrdnance
             {
                 Vehicle = ScenarioA1OrdnanceEligibility.VehicleFirer(LiveFire.CrewExposed(firer), Is(firer, Conditions.Motion), Is(firer, Conditions.Stunned),
                     Is(firer, Conditions.Shocked), Is(firer, Conditions.UnconfirmedKill), Is(firer, Conditions.Recalled), Is(firer, Conditions.StunRecovery),
-                    state.MovedVehicles.Contains(firer.Id, StringComparer.Ordinal)),
+                    state.MovedVehicles.Contains(firer.Id, StringComparer.Ordinal)) with
+                {
+                    // D3.5, D3.51 (pass 50): the MA beside the vehicle's other weapons.
+                    Weapons = ScenarioA1OrdnanceEligibility.VehicleWeapons(LiveFire.VehicleShots(state, firer.Id),
+                        ScenarioA1FireEligibility.FirePhase(state.Phase, firer.Side == state.PhasingSide),
+                        LiveFire.MaTypeOf(definition)),
+                },
             };
         }
 
@@ -571,6 +577,19 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
         // The map facts are taken as recorded; the state reads of pass 8 are recomputed (table player, pass 8): Bore Sighting (C6.43), overstacking
         // (A5.12, A5.131), and Emplacement. A SW is where its possessor is; a PF where its firer is.
         var merged = ScenarioA1OrdnanceEligibility.WithRecordedMapFacts(expected, recorded);
+
+        // Pass 50 (ruling R45.4's rule for a new fact): a record made before the pass says nothing of the vehicle's other weapons, and is compared without.
+        if (merged.Vehicle is { Weapons: not null } withWeapons && recorded.Vehicle is { Weapons: null })
+        {
+            merged = merged with
+            {
+                Vehicle = withWeapons with
+                {
+                    Weapons = null
+                }
+            };
+        }
+
         var gunAt = state.Location(fired.Gun)?.Location ?? state.Location(fired.Crew)?.Location ?? fired.Target;
         var firingSide = state.Unit(fired.Crew)?.Side ?? string.Empty;
         var enemy = state.Sides.FirstOrDefault(item => item.Id != firingSide)?.Id ?? string.Empty;

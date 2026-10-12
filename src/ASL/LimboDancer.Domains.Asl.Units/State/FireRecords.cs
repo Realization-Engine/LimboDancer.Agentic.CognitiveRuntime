@@ -1,4 +1,5 @@
 using System.Text.Json;
+using LimboDancer.Domains.Asl.Units.Documents;
 
 namespace LimboDancer.Domains.Asl.Units.State;
 
@@ -20,6 +21,12 @@ public sealed record FireResolved(
 {
     /// <summary>The movement step a Defensive fire record answers (A8.1, unit step 22); null in the fire phases.</summary>
     public int? MovementStep
+    {
+        get; init;
+    }
+
+    /// <summary>The TCA a vehicle's CMG turned its turret to for this attack (D3.52, D3.12, pp. 199 and 201; pass 50); null when it did not turn.</summary>
+    public UnitFacing? TurretFacing
     {
         get; init;
     }

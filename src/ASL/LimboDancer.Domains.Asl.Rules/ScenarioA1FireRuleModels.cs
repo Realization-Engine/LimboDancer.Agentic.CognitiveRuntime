@@ -69,7 +69,14 @@ public sealed record TargetUnitFacts(
     int? Flamethrowers);
 
 /// <summary>A unit against the spending of its fire for the phase (A7.1, A8.4, A9.2, C2.24, D3.5, A7.351, A22.3): the phase, its fire and First Fire counters, whether it is a vehicle; and three reads made only when asked, as the planner made them: whether its last shot kept its Multiple ROF, whether it has used a SW this phase, and whether it holds an unfired, working MG, FT, or ATR.</summary>
-public sealed record FireSpentFacts(string? Phase, bool Fired, bool FirstFire, bool Vehicle, Func<bool> RateOfFireKept, Func<bool> SupportWeaponUsed, Func<bool> UnfiredWeaponHeld);
+public sealed record FireSpentFacts(string? Phase, bool Fired, bool FirstFire, bool Vehicle, Func<bool> RateOfFireKept, Func<bool> SupportWeaponUsed, Func<bool> UnfiredWeaponHeld)
+{
+    /// <summary>Whether the vehicle has a BMG or CMG that may still fire in this fire phase (D3.5; pass 50), read only when asked; null for none.</summary>
+    public Func<bool>? VehicleMgUnfired
+    {
+        get; init;
+    }
+}
 
 /// <summary>A firer of a proposed attack as the state finds it (A4.8, C10.3): its id, whether it is an active unit from the catalog with a Location, and whether it is TI.</summary>
 public sealed record FirerStateFacts(string Id, bool ActiveWithDefinition, bool OnMap, bool Ti);
@@ -394,7 +401,15 @@ public enum UnitCondition
     Recalled,
     Stunned,
     StunRecovery,
+    BmgDisabled,
+    CmgDisabled,
 }
+
+/// <summary>A weapon of a vehicle that fired this Player Turn, as the state has it (D3.5, D3.51; pass 50): the weapon, its fire phase, the hexspines its CA changed, and whether woods, a building, or rubble doubled that.</summary>
+public sealed record VehicleWeaponShotFacts(string Weapon, string FirePhase, int Turn, bool Doubled);
+
+/// <summary>The BMG and CMG a vehicle's attack names, against the state (D3.5, D3.51, D3.7; pass 50): the names, whether each MG has malfunctioned, the fire phase now, the vehicle's shots of this Player Turn, and its turret's type.</summary>
+public sealed record VehicleWeaponsFacts(IReadOnlyList<string> Named, bool BmgMalfunctioned, bool CmgMalfunctioned, string FirePhase, IReadOnlyList<VehicleWeaponShotFacts> Shots, string? MaType);
 
 /// <summary>What the Fire package asks for next (ruling R5.8): the attack is resolved; or an option its owner answers (the choice's key); or a roll (its key, the dice count, the roll's purpose); or the package left the attack undecided (its reasons joined).</summary>
 public sealed record FireNextStep(bool Resolved, string? ChoiceKey, string? RollKey, int Count, string? Purpose, string? Undecided);

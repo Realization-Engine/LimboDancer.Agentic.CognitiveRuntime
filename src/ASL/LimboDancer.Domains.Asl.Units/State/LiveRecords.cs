@@ -50,6 +50,15 @@ public sealed record RepairAttempted(string Unit, string Equipment, string Roll,
     public const string Repaired = "repaired";
     public const string NoChange = "no-change";
     public const string Eliminated = "eliminated";
+
+    /// <summary>
+    /// Which weapon of a vehicle the attempt is for (D3.7, p. 201; pass 50): <c>ma</c> for a Gun MA, <c>bmg</c>, or <c>cmg</c>, with the vehicle as
+    /// unit and equipment. Null for a SW and for a vehicle's MA AAMG, which is every record made before pass 50.
+    /// </summary>
+    public string? Weapon
+    {
+        get; init;
+    }
 }
 
 /// <summary>

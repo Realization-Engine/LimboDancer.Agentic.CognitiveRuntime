@@ -26,6 +26,13 @@ public interface IOrdnanceRecordVerifier
 /// </summary>
 public sealed record TurretFacing(string Vehicle, UnitFacing Facing);
 
+/// <summary>
+/// A weapon of a vehicle that fired this Player Turn (D3.5, D3.51, pp. 200 and 201; pass 50): the vehicle, the weapon (<c>ma</c>, <c>bmg</c>, or
+/// <c>cmg</c>), the fire phase (Defensive First Fire and Final Fire are one, A.15), the hexspines its CA changed for the shot, and whether that
+/// change was doubled by woods, a building, or rubble (C5.11). Kept until the Player Turn ends.
+/// </summary>
+public sealed record VehicleWeaponShot(string Vehicle, string Weapon, string FirePhase, int Turn, bool Doubled);
+
 /// <summary>A Special Ammunition a Gun or an AFV has run out of for the rest of the scenario (C8.9; ruling R7.6).</summary>
 public sealed record DepletedAmmunition(string Gun, string Ammunition);
 

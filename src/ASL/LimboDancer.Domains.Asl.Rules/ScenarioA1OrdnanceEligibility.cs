@@ -284,6 +284,19 @@ public static class ScenarioA1OrdnanceEligibility
     /// <summary>A7.25 (p. 55; pass 35, task 35.10): ordnance uses Opportunity Fire only if fired by Infantry, in the AFPh, from beneath its Bounding Fire counter.</summary>
     public static bool? OpportunityFirer(string? phase, bool infantry, bool boundingFire) => phase == "afph" && infantry && boundingFire ? true : null;
 
+    /// <summary>
+    /// A tank's MA beside its other weapons, from the vehicle's shots of this Player Turn (D3.5, D3.51; pass 50): a shot in another fire phase
+    /// forfeits the MA's; a fire counter is the other weapons' alone when the MA has no shot yet; and the MA's first shot of the fire phase pays
+    /// the Case A the CMG paid before it.
+    /// </summary>
+    public static OrdnanceVehicleWeapons VehicleWeapons(IReadOnlyList<VehicleWeaponShotFacts> shots, string firePhase, string? maType)
+    {
+        ArgumentNullException.ThrowIfNull(shots);
+        return new OrdnanceVehicleWeapons(shots.Any(item => item.FirePhase != firePhase), shots.Count > 0 && shots.All(item => item.Weapon != "ma"),
+            shots.Any(item => item.Weapon == "ma" && item.FirePhase == firePhase) ? null
+                : ScenarioA1FireEligibility.MaintainedCaseA(shots.Where(item => item.Weapon != "ma"), firePhase, maType));
+    }
+
     /// <summary>A firing vehicle's facts (D5.2, D5.34, C7.42, D5.341, D2.4; rulings R7.10, R7.11): a CT AFV is BU unless its crew is exposed.</summary>
     public static OrdnanceVehicleFirer VehicleFirer(bool crewExposed, bool motion, bool stunned, bool shocked, bool unconfirmedKill, bool recalled, bool stunRecovery,
         bool moved) =>

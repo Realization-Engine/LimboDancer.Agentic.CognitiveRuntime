@@ -298,7 +298,10 @@ public sealed partial class GamePlanner
 
         if (unitId == equipmentId && state.Unit(unitId) is { } named && LiveFire.IsVehicle(named))
         {
-            return PlanVehicleRepair(scope, attemptId, expected, label, actor, state, named);
+            // D3.7 (pass 50): a Gun MA, a BMG, or a CMG is repaired by its name; with none, the vehicle's MA AAMG as before.
+            return Text(arguments, "weapon", out var weaponName) || LiveOrdnance.IsTank(named)
+                ? PlanVehicleWeaponRepair(scope, attemptId, expected, label, actor, state, named, weaponName ?? "ma")
+                : PlanVehicleRepair(scope, attemptId, expected, label, actor, state, named);
         }
 
         if (ScenarioA1RallyRules.SwRepairPhaseBar(state.Phase) is { } phaseBar)
@@ -422,6 +425,65 @@ public sealed partial class GamePlanner
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
             [ScenarioA1RallyRules.VehicleRepairSummary(vehicle.Id)])
+        {
+            Roll = new PlannedRoll("repair", Build),
+            FirstEventId = EventId(attemptId, 1),
+        };
+    }
+
+    /// <summary>
+    /// D3.7 (p. 201; pass 50): in the RPh a crew that is not shocked or stunned tries once, by a dr of its own, to repair its vehicle's Gun MA, BMG,
+    /// or CMG: a 1 repairs it, a 6 disables it, and a vehicle with no Passenger or Towing capability whose MA is disabled is Recalled (D5.341).
+    /// </summary>
+    private GamePlan PlanVehicleWeaponRepair(GameScope scope, string attemptId, long expected, string label, string actor, GameState state, UnitInstance vehicle, string weapon)
+    {
+        if (ScenarioA1RallyRules.VehicleRepairPhaseBar(state.Phase, vehicle.Status == InstanceStatus.Active) is { } phaseBar)
+        {
+            return Refused(scope, label, expected, phaseBar);
+        }
+
+        var definition = vehicle.Definition is { } named ? FireReference.Value.Definitions.GetValueOrDefault(named.Definition) : null;
+        if (!ScenarioA1RallyRules.IsVehicleWeapon(weapon) || definition is null
+            || (weapon == "ma" ? !LiveOrdnance.IsTank(vehicle) : ScenarioA1FireCalculator.VehicleWeaponFp(definition, weapon) is null))
+        {
+            return Refused(scope, label, expected, $"play.repair-weapon: {vehicle.Id} has no such weapon to repair (D3.7)");
+        }
+
+        if (ScenarioA1RallyRules.VehicleWeaponRepairBar(vehicle.Id, weapon, Is(vehicle, ConditionName(ScenarioA1RallyRules.VehicleWeaponMalfunction(weapon))),
+            Is(vehicle, ConditionName(ScenarioA1RallyRules.VehicleWeaponDisabled(weapon))),
+            ScenarioA1RallyRules.VehicleCrewImpaired(Is(vehicle, Conditions.Stunned), Is(vehicle, Conditions.Shocked), Is(vehicle, Conditions.UnconfirmedKill),
+                Is(vehicle, Conditions.Recalled), Is(vehicle, Conditions.StunRecovery)),
+            state.RepairsThisPhase.Contains(vehicle.Id + ":" + weapon)) is { } bar)
+        {
+            return Refused(scope, label, expected, bar);
+        }
+
+        var carries = VehicleDefinition(vehicle) is { } printed && (printed.PassengerCapacity is > 0 || printed.Towing is > 0);
+        var package = ScenarioA1FirePackage.Identity.ToString();
+        IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
+        {
+            var drawn = draw(new RollRequest(1, 6));
+            var rollId = $"{attemptId}-roll-1";
+            var outcome = ScenarioA1RallyRules.VehicleMgRepairResult(drawn.Values[0]);
+            var events = new List<GameEvent>
+            {
+                Event(scope, attemptId, 1, expected, "dice-rolled", new DiceRolled(rollId, "repair", 1, 6, drawn.Values, DiceRolled.SystemSource, actor), package, null),
+                Event(scope, attemptId, 2, expected, "repair-attempted", new RepairAttempted(vehicle.Id, vehicle.Id, rollId, 1, RepairResult(outcome)) { Weapon = weapon },
+                    package, null),
+            };
+            var changes = ScenarioA1RallyRules.VehicleWeaponRepairChanges(weapon, outcome, carries);
+            if (changes.Count > 0)
+            {
+                events.Add(Event(scope, attemptId, 3, expected, "conditions-changed", new ConditionsChanged(vehicle.Id,
+                    changes.ToDictionary(item => ConditionName(item.Condition), item => item.Value ? ConditionState.True : ConditionState.False, StringComparer.Ordinal)),
+                    package, null, [EventId(attemptId, 2)]));
+            }
+
+            return events;
+        }
+
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
+            [ScenarioA1RallyRules.VehicleWeaponRepairSummary(vehicle.Id, weapon, weapon == "ma" && !carries)])
         {
             Roll = new PlannedRoll("repair", Build),
             FirstEventId = EventId(attemptId, 1),
