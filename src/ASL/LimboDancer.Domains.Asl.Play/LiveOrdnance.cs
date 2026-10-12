@@ -433,14 +433,6 @@ public static class LiveOrdnance
         return (shot, null);
     }
 
-    /// <summary>The squad equivalents (FRU) by which a side's Personnel overstack a Location, a crew or HS counting half (A5.1, A5.12).</summary>
-    public static int Excess(GameState state, BoardLocation at, string side)
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        var units = state.At(at).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && !Is(unit, Conditions.Captured)).ToArray();
-        return ScenarioA1OrdnanceEligibility.OverstackExcessForOrdnance(units.Count(unit => unit.Kind == "asl:squad"), units.Count(unit => unit.Kind is "asl:half-squad" or "asl:crew"));
-    }
-
     /// <summary>Whether a Gun fires at its Bore Sighted Location with its original crew from its setup Location (C6.43).</summary>
     public static bool BoreSighted(GameState state, string gun, string crew, BoardLocation from, BoardLocation target)
     {
@@ -583,7 +575,7 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
         var firingSide = state.Unit(fired.Crew)?.Side ?? string.Empty;
         var enemy = state.Sides.FirstOrDefault(item => item.Id != firingSide)?.Id ?? string.Empty;
         merged = ScenarioA1OrdnanceEligibility.WithRecomputedStateFacts(merged, recorded, LiveOrdnance.BoreSighted(state, fired.Gun, fired.Crew, gunAt, fired.Target),
-            LiveOrdnance.Excess(state, gunAt, firingSide), () => LiveOrdnance.Excess(state, fired.Target, enemy),
+            LiveStacking.Of(state, gunAt, firingSide).AttackPenalty, () => LiveStacking.Of(state, fired.Target, enemy).DefensePenalty,
             gunId => state.Find(gunId ?? string.Empty) is EquipmentInstance targetGun ? LiveOrdnance.Emplaced(state, targetGun) : null);
         if (JsonSerializer.Serialize(merged, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json)
             || fired.Crew != recorded.Crew?.UnitId || fired.Target.ToString() != recorded.TargetLocationId)

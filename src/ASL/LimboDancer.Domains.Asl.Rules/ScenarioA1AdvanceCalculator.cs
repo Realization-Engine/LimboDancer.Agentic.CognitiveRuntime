@@ -59,15 +59,9 @@ public static class ScenarioA1AdvanceCalculator
     public static string? MarshBar(bool allMf) => allMf ? "play.advance-marsh: a marsh hex cannot be entered in the APh (B16.4)" : null;
 
     /// <summary>
-    /// A5.1, A5.5 (ruling R14.10): the squad-equivalents of one side's units above three, rounded up, a HS or crew half and five SMC a HS (four or fewer none).
+    /// A7.7 (ruling R12.11), A5.11 (ruling R14.10): the entry's half MF, doubled for an Encircled unit's first Location, plus one MF per excess
+    /// squad-equivalent (<see cref="StackCount.PersonnelExcess"/>).
     /// </summary>
-    public static int OverstackExcess(int squads, int halfSquadsAndCrews, int smc)
-    {
-        var equivalents = squads + (halfSquadsAndCrews / 2m) + (Math.Floor(smc / 5m) / 2m);
-        return equivalents > 3 ? (int)Math.Ceiling(equivalents - 3) : 0;
-    }
-
-    /// <summary>A7.7 (ruling R12.11), A5.11 (ruling R14.10): the entry's half MF, doubled for an Encircled unit's first Location, plus one MF per excess squad-equivalent.</summary>
     public static int AdvanceHalfMf(int entryHalfMf, bool anyEncircled, int excess) => (entryHalfMf * (anyEncircled ? 2 : 1)) + (2 * excess);
 
     /// <summary>

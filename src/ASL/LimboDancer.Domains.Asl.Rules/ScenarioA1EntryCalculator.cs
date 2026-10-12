@@ -161,7 +161,7 @@ public static class ScenarioA1EntryCalculator
         // A5.1, A2.51 (referee, pass 25): an entering stack keeps to the stacking limits, which offboard setup never exceeds.
         if (ScenarioA1SetupCalculator.EntryStackOverstacked(movers.Sum(unit => unit.SquadEquivalent), movers.Count(unit => unit.Smc)))
         {
-            return (null, default, "play.entry-stacking: an entering stack holds at most three squad-equivalents and four SMC, the stacking limits offboard setup never exceeds (A5.1, A2.51)");
+            return (null, default, "play.entry-stacking: an entering stack holds at most three squad-equivalents, five SMC counting as a half-squad, the stacking limit offboard setup never exceeds (A5.1, A5.5, A2.51)");
         }
 
         if (movers.FirstOrDefault(item => item.Entry is null) is { } lost)

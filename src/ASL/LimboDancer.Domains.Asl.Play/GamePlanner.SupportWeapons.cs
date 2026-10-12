@@ -25,12 +25,12 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// Pass 31 (ruling R31.4, correcting R13.4; play test R-01): the "Guards" that A1.31 and A1.32 free from the leader are the Guards of prisoners
-    /// (A20.5), not the Russian Guards squads, so no squad Deploys or Recombines without a leader for being of a Guards formation. A Guard of
-    /// prisoners Deploying at will (A20.5) is not built.
+    /// (A20.5), not the Russian Guards squads, so no squad Deploys or Recombines without a leader for being of a Guards formation. Pass 40: a Guard
+    /// of prisoners and an Unarmed unit need no leader, and a Guard squad Deploys at will (A20.5).
     /// </summary>
     private const string LeaderNeeded = "A1.31, A1.32";
 
-    /// <summary>A25.2 (ruling R31.4): Russian squads may not Deploy [EXC: a Guard of prisoners, A20.5, and a temporary crew, A21.22, neither built].</summary>
+    /// <summary>A25.2 (ruling R31.4): Russian squads may not Deploy [EXC: a Guard of prisoners, A20.5 (pass 40), and a temporary crew, A21.22, not built].</summary>
     private static bool MayNotDeploy(UnitInstance squad) => !ScenarioSetup.MayDeploy(DefinitionOf(squad)?.Nationality);
 
     /// <summary>Whether the game dismantles a weapon now for its possessor (A9.8; ruling R13.6): the German MMG, in its side's PFPh or DFPh.</summary>
@@ -100,6 +100,32 @@ public sealed partial class GamePlanner
             && !actions.OfType<DeploymentAttempted>().Any(item => item.Leader == leader);
     }
 
+    /// <summary>
+    /// Whether a unit of a side has taken a RPh action other than Recombining since the RPh began (A1.32, "at the start of any RPh"; pass 40):
+    /// a Rally, Repair, Deployment, or Recovery attempt, or a Transfer.
+    /// </summary>
+    private static bool SideActedThisRph(GameState state, IReadOnlyList<GameEvent> existing, string side)
+    {
+        var start = existing.Select((item, index) => (item, index)).LastOrDefault(pair => pair.item.Payload is PhaseChanged).index;
+        return existing.Skip(start).Select(item => item.Payload).SelectMany(payload => payload switch
+        {
+            RallyPhaseActionTaken taken when taken.Action is not ("recombine" or "recombined") => taken.Units,
+            DeploymentAttempted attempt => attempt.Leader is { } directing ? [attempt.Squad, directing] : [attempt.Squad],
+            RallyAttempted rally => [rally.Unit],
+            RepairAttempted repair => [repair.Unit],
+            RecoveryAttempted recovery => [recovery.Unit],
+            _ => (IEnumerable<string>)[],
+        }).Any(id => state.Unit(id)?.Side == side);
+    }
+
+    /// <summary>The squads of a side (every side when null) that may Deploy at will now, as Guards of prisoners (A20.5; pass 40), for the Play page.</summary>
+    public IReadOnlyList<string> GuardSquadsAtWill(GameState state, string? side)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return [.. state.Units.Where(unit => unit.Status == InstanceStatus.Active && (side is null || unit.Side == side) && state.Location(unit.Id) is not null
+            && ScenarioA1SupportWeaponRules.GuardDeploysAtWill(vocabulary.IsA(unit.Kind, "asl:squad"), IsGuard(state, unit), Is(unit, Conditions.Broken))).Select(unit => unit.Id)];
+    }
+
     /// <summary>The SW a unit possesses, in id order.</summary>
     private static EquipmentInstance[] Held(GameState state, string unitId) =>
         [.. state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unitId)
@@ -121,24 +147,27 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.invalid-arguments: a Deployment names the squad");
         }
 
-        if (state.Phase != "rph")
+        // Pass 40 (A20.5, p. 88): an unbroken Guard squad Deploys at will: in any phase, of any nationality, with no leader and no NTC.
+        var atWill = state.Unit(squadId) is { Status: InstanceStatus.Active } named && state.Location(named.Id) is not null
+            && ScenarioA1SupportWeaponRules.GuardDeploysAtWill(vocabulary.IsA(named.Kind, "asl:squad"), IsGuard(state, named), Is(named, Conditions.Broken));
+        if (state.Phase != "rph" && !atWill)
         {
             return Refused(scope, label, expected, "play.deploy-phase: squads Deploy in the RPh (A1.31)");
         }
 
-        if (state.Unit(squadId) is not { } squad || !vocabulary.IsA(squad.Kind, "asl:squad") || !FreeToAct(squad)
+        if (state.Unit(squadId) is not { } squad || !vocabulary.IsA(squad.Kind, "asl:squad") || (!atWill && !FreeToAct(squad))
             || (state.Location(squad.Id) is null && squad.Position is not OffMapPosition))
         {
             return Refused(scope, label, expected, $"play.deploy-unit: '{squadId}' is not a Good Order squad on the map or waiting off board to enter (A1.31, A2.52)");
         }
 
-        if (squad.Side != state.PhasingSide)
+        if (squad.Side != state.PhasingSide && !atWill)
         {
             return Refused(scope, label, expected, $"play.deploy-phase: {squad.Id} Deploys in its own side's RPh (A1.31)");
         }
 
         // A25.2 (ruling R31.4; play test R-01): Russian squads may not Deploy.
-        if (MayNotDeploy(squad))
+        if (MayNotDeploy(squad) && !atWill)
         {
             return Refused(scope, label, expected, $"play.deploy-russian: {squad.Id} is a Russian squad, and Russian squads may not Deploy; they still take HS losses and Recombine (A25.2)");
         }
@@ -154,7 +183,7 @@ public sealed partial class GamePlanner
                 : $"play.deploy-offboard: {squad.Id} is set up off board at the start of the RPh of Game Turn {waiting.Value.Turn}, its entry turn, and may attempt to Deploy from then on (A2.51, A2.52; ruling R25.4)");
         }
 
-        if (RallyPhaseActionBar(state, squad.Id) is { } squadBar)
+        if (!atWill && RallyPhaseActionBar(state, squad.Id) is { } squadBar)
         {
             return Refused(scope, label, expected, $"play.rph-action: {squadBar} (A1.31)");
         }
@@ -164,7 +193,10 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.deploy-unit: the catalog has no Morale Level or HS for {squad.Id}");
         }
 
-        var (leader, leaderReason) = DirectingLeader(state, existing, squad, at, Text(arguments, "leader", out var named) ? named : null, edge: waiting?.Edge);
+        // Pass 40 (A1.31): a Guard and an Unarmed squad need no leader's direction; one named directs all the same.
+        var leaderId = Text(arguments, "leader", out var directing) ? directing : null;
+        var noLeader = atWill || (leaderId is null && ScenarioA1SupportWeaponRules.NeedsNoLeader(IsGuard(state, squad), Is(squad, Conditions.Unarmed)));
+        var (leader, leaderReason) = noLeader ? (null, null) : DirectingLeader(state, existing, squad, at, leaderId, edge: waiting?.Edge);
         if (leaderReason is not null)
         {
             return Refused(scope, label, expected, leaderReason);
@@ -182,7 +214,7 @@ public sealed partial class GamePlanner
         var package = ScenarioA1FirePackage.Identity.ToString();
         var first = $"{attemptId}-{squad.Id}-1";
         var other = $"{attemptId}-{squad.Id}-2";
-        void AddDeployed(List<GameEvent> events, string? cause)
+        void AddDeployed(List<GameEvent> events, string? cause, bool rphAction = true)
         {
             var conditions = new Dictionary<string, ConditionState>(squad.Conditions, StringComparer.Ordinal);
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "lineage", new LineageRecorded(LineageAction.Deployed, [squad.Id],
@@ -194,7 +226,18 @@ public sealed partial class GamePlanner
                     new EquipmentTransferred(weapon.Id, new Holding(second.Contains(weapon.Id) ? other : first, HoldingRole.Possessed), null), package, null));
             }
 
-            events.Add(Event(scope, attemptId, events.Count + 1, expected, "rph-action-taken", new RallyPhaseActionTaken([first, other], "deployed"), package, null));
+            if (rphAction)
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "rph-action-taken", new RallyPhaseActionTaken([first, other], "deployed"), package, null));
+            }
+        }
+
+        if (atWill)
+        {
+            var deployed = new List<GameEvent>();
+            AddDeployed(deployed, null, rphAction: false);
+            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, deployed,
+                [$"play.deploy: {squad.Id}, a Guard, Deploys into two HS, with no leader and no NTC (A20.5)"]);
         }
 
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
@@ -216,7 +259,7 @@ public sealed partial class GamePlanner
         }
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-            [$"play.deploy: {squad.Id} takes a NTC (Morale Level {morale}, DRM {drm:+0;-0;0}{(leader is null ? ", a Guards squad with no leader" : $" for {leader.Id}")}) to Deploy into two HS (A1.31)"])
+            [$"play.deploy: {squad.Id} takes a NTC (Morale Level {morale}, DRM {drm:+0;-0;0}{(leader is null ? ", with no leader's direction" : $" for {leader.Id}")}) to Deploy into two HS (A1.31)"])
         {
             Roll = new PlannedRoll("deployment", Build),
             FirstEventId = EventId(attemptId, 1),
@@ -262,7 +305,16 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.recombine-unit: the catalog has no squad for {one.Definition.Definition}");
         }
 
-        var (leader, leaderReason) = DirectingLeader(state, existing, one, at, Text(arguments, "leader", out var named) ? named : null, recombining: true);
+        // Pass 40 (A1.32): "at the start of any RPh"; and Guards and Unarmed HS "do not need leader presence".
+        if (ScenarioA1SupportWeaponRules.RecombineStartBar(SideActedThisRph(state, existing, one.Side)) is { } startBar)
+        {
+            return Refused(scope, label, expected, startBar);
+        }
+
+        var leaderId = Text(arguments, "leader", out var directing) ? directing : null;
+        var noLeader = leaderId is null && ScenarioA1SupportWeaponRules.NeedsNoLeader(IsGuard(state, one), Is(one, Conditions.Unarmed))
+            && ScenarioA1SupportWeaponRules.NeedsNoLeader(IsGuard(state, two), Is(two, Conditions.Unarmed));
+        var (leader, leaderReason) = noLeader ? (null, null) : DirectingLeader(state, existing, one, at, leaderId, recombining: true);
         if (leaderReason is not null)
         {
             return Refused(scope, label, expected, leaderReason);
@@ -448,6 +500,12 @@ public sealed partial class GamePlanner
         if (state.Unit(unitId) is not { } unit || !FreeToAct(unit) || Is(unit, Conditions.Pinned) || LiveFire.IsVehicle(unit) || state.Location(unit.Id)?.Location is not { } at)
         {
             return Refused(scope, label, expected, $"play.recover-unit: '{unitId}' is not unpinned Good Order Infantry on the map (A4.44)");
+        }
+
+        // A4.44 (pass 40): never by a Bypassing unit.
+        if (ScenarioA1SupportWeaponRules.RecoveryBypassBar(unit.Id, state.Movement is { Bypass.Count: > 0 } lane && lane.Members.Contains(unit.Id, StringComparer.Ordinal)) is { } bypassBar)
+        {
+            return Refused(scope, label, expected, bypassBar);
         }
 
         // A20.5 (ruling R14.5; table player, pass 14): an Unarmed unit uses no SW, so it Recovers none.

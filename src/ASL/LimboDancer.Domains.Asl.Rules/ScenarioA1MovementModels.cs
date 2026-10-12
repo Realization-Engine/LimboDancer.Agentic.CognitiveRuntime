@@ -5,7 +5,18 @@ namespace LimboDancer.Domains.Asl.Rules;
 /// the road rate into a hex with no SMOKE, burning wreck, or rubble (the Road Bonus, B3.4), whether it costs the unit's whole MF allotment (marsh,
 /// B16.4), and whether only a Minimum Move may make it (marsh from a lower elevation, B16.4).
 /// </summary>
-public sealed record InfantryEntry(int HalfMf, string Terrain, bool RoadRate, bool AllMf, bool MinimumMoveOnly, bool LevelChange);
+public sealed record InfantryEntry(int HalfMf, string Terrain, bool RoadRate, bool AllMf, bool MinimumMoveOnly, bool LevelChange)
+{
+    /// <summary>
+    /// A4.132 (p. 48; pass 40): whether the step crossed a road hexside paying the road's cost into a hex that has other terrain, so the mover is
+    /// on the road and not in that terrain while the DEFENDER First Fires. SMOKE in the hex does not change it; <see cref="RoadRate"/> is the
+    /// Road Bonus's read, which SMOKE ends (B3.4).
+    /// </summary>
+    public bool OnRoad
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// The hexside an Infantry step crosses, as the map reads it: a cliff or Continuous Slope, the hexside terrain's name (a wall, a hedge, or another),
@@ -35,7 +46,8 @@ public sealed record InfantryStepFacts(
     bool Adjacent,
     CrossedHexsideFacts? Crossed,
     bool Night,
-    int? Month);
+    int? Month,
+    bool TerrainRate = false);
 
 /// <summary>One hexside a Bypass runs along, as the map reads the target hex's hexside: its direction as an int and its lower-case name, whether it was read, and the names of its terrain and hexside terrain and whether it carries a road.</summary>
 public sealed record BypassedHexsideFacts(int Side, string SideText, bool Read, string? Terrain, string? HexsideTerrain, bool Road);
@@ -178,7 +190,7 @@ public sealed record MovingUnitFacts(
 /// three-valued fact, Hidden, Good Order as the planner reads it, and its Location as an index into the caller's table of Locations (null off
 /// the map).
 /// </summary>
-public sealed record EnemyUnitFacts(bool Active, string? Side, bool Dummy, bool Aboard, bool? Broken, bool Hidden, bool GoodOrder, int? Location);
+public sealed record EnemyUnitFacts(bool Active, string? Side, bool Dummy, bool Aboard, bool Hidden, bool GoodOrder, int? Location);
 
 /// <summary>The LOS between two Locations as the map gives it: whether it is clear, and its range.</summary>
 public sealed record LosFacts(bool Clear, int Range);
@@ -281,7 +293,8 @@ public sealed record EntryCostFacts(
     int Berserk,
     bool CurrentExists,
     bool DoubleTime,
-    IReadOnlyList<EntryMoverFacts> Movers);
+    IReadOnlyList<EntryMoverFacts> Movers,
+    int OverstackExcess = 0);
 
 /// <summary>One unit in the target Location as the entry reads it (A4.14, A12.15): active, its side, captured, Known, a Dummy.</summary>
 public sealed record UnitAtTargetFacts(string Id, bool Active, string? Side, bool Captured, bool Known, bool Dummy);
@@ -334,7 +347,12 @@ public sealed record MoveStepFacts(
     bool Night,
     bool AllDummies,
     IReadOnlyList<MoveRevealUnitFacts> EnemiesThere,
-    IReadOnlyList<MoveRevealUnitFacts> HiddenEnemies);
+    IReadOnlyList<MoveRevealUnitFacts> HiddenEnemies,
+    int OverstackExcess = 0,
+    bool OnRoad = false,
+    string? DashText = null,
+    bool InfantryOverrun = false,
+    bool Recapture = false);
 
 /// <summary>
 /// The verdict on a step's reveal and record (A12.15, A.9, A12.11, A2.51): the units revealed, the real ones among them by id, whether the stack is
@@ -415,6 +433,7 @@ public sealed record StepRecordVerdict(RecordRefusal? Refusal, bool OffBoardForc
 public sealed record StepMoverUpdate(int MfSpent, bool HalfMfSpent, bool SetCx, int DoubleTimeMf, bool OffRoad, IReadOnlyList<string> MovedWith);
 
 /// <summary>A SW possessed by a mover as the AFPh bar reads it (A4.41): its id, a light mortar, and whether it is already marked moved.</summary>
+/// <summary>A SW a mover carries: its id, whether it is one A4.41 names (a light mortar, or a MG, whose size the fire reads), and whether it is already marked moved.</summary>
 public sealed record CarriedWeaponFacts(string Id, bool LightMortar, bool AlreadyMoved);
 
 /// <summary>The moving stack as the DEFENDER's window closes (A4.134, A24.1, D2.15, D7.1; rulings R5.15, R9.5, R10.9, R11.11): the record's step against the state's, its ending members, and its state.</summary>

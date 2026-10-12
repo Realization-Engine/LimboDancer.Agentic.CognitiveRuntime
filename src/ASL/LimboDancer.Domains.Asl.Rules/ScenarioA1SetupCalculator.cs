@@ -560,7 +560,7 @@ public static class ScenarioA1SetupCalculator
                 // R19.3: each counter within one of its group's setup areas; R20.6: and within the playable area.
                 foreach (var counter in mine.Where(counter => counter.At is not null))
                 {
-                    if (!group.Areas.Any(area => area.Kind != "entry" && In(card, area, counter.At!)))
+                    if (!InAreas(card, group.Areas, counter.At!))
                     {
                         reasons.Add($"play.setup-area: {counter.Id} sets up at {counter.At}, outside the setup areas of {group.Name} (ruling R19.3)");
                     }
@@ -742,10 +742,10 @@ public static class ScenarioA1SetupCalculator
         // Ruling R26.2: Passengers are not stacked in their vehicle's Location.
         foreach (var stack in placed.Where(counter => counter.At is not null && !counter.Equipment && !counter.Dummy && counter.Aboard is null).GroupBy(counter => (counter.Side, counter.At!.Text)))
         {
-            var smc = stack.Count(counter => ScenarioA1Definitions.SmcKinds.Contains(counter.Kind));
-            // A5.5 (referee, pass 19): four SMC count nothing; beyond that, five SMC equal a HS; a crew or HS manning a Gun counts as a squad (ruling R26.3).
-            var squads = SetupStackSquadEquivalents(stack, smc);
-            if (squads > 3)
+            // A5.5 (referee, pass 19; ruling R40.2): four SMC count nothing and five equal a HS; a crew or HS manning a Gun counts as a squad.
+            var count = SetupStack(stack);
+            var squads = count.SquadEquivalents;
+            if (ScenarioA1Stacking.Overstacked(count))
             {
                 reasons.Add($"play.setup-stacking: {stack.Key.Side} sets up {squads:0.#} squad-equivalents at {stack.Key.Text}, and the limit is 3 (A5.1; ruling R19.3)");
             }
@@ -778,20 +778,21 @@ public static class ScenarioA1SetupCalculator
     }
 
     /// <summary>
-    /// A5.5 (referee, pass 19): a setup stack's squad-equivalents: a squad one, a crew or HS manning a Gun one (ruling R26.3), other HS and crews a half,
-    /// SMC nothing up to four and a tenth each beyond. The design's section 12 keeps this count apart from the entering stack's (<see cref="EntryStackOverstacked"/>).
+    /// A5.5 (referee, pass 19; ruling R40.2): a setup stack as the stacking limits count it (<see cref="ScenarioA1Stacking"/>). Vehicles are left out:
+    /// setup is held to the Personnel limit alone (A2.9; ruling R19.3).
     /// </summary>
-    public static decimal SetupStackSquadEquivalents(IEnumerable<SetupCounterFacts> stack, int smc)
+    public static StackCount SetupStack(IEnumerable<SetupCounterFacts> stack)
     {
         ArgumentNullException.ThrowIfNull(stack);
-        var counters = stack.ToArray();
-        return counters.Count(counter => counter.Kind == "asl:squad" || (counter.Kind is "asl:half-squad" or "asl:crew" && counter.Manning))
-            + (counters.Count(counter => counter.Kind is "asl:half-squad" or "asl:crew" && !counter.Manning) / 2m)
-            + (smc > 4 ? smc / 10m : 0m);
+        return ScenarioA1Stacking.Count(stack.Select(counter => new StackUnitFacts(ScenarioA1Stacking.KindOf(counter.Kind), counter.Manning))
+            .Where(unit => unit.Kind != StackUnitKind.Vehicle));
     }
 
-    /// <summary>A5.1, A2.51 (referee, pass 25): an entering stack holds at most three squad-equivalents (a HS or crew a half) and four SMC.</summary>
-    public static bool EntryStackOverstacked(double squadEquivalents, int smc) => squadEquivalents > 3 || smc > 4;
+    /// <summary>
+    /// A5.1, A5.5, A2.51 (referee, pass 25; ruling R40.2): an entering stack is within the Personnel limit, which offboard setup never exceeds: its
+    /// squads, HS, and crews (a HS or crew a half), and five SMC a HS.
+    /// </summary>
+    public static bool EntryStackOverstacked(double squadEquivalents, int smc) => squadEquivalents + (smc / 5 * 0.5) > ScenarioA1Stacking.PersonnelLimit;
 
     // The planner's reading of a setup (rulings R19.1 to R19.6, R20.6, R22.3, R23.3, R26.2, R26.5).
 
@@ -865,6 +866,20 @@ public static class ScenarioA1SetupCalculator
         return report.Groups.Where(group => group.SetsUp && group.Order == now && group.Side != viewer).Select(group => group.Id);
     }
 
+    /// <summary>
+    /// Whether a counter may set up at a Location by its group's areas (A2.3, p. 45; pass 40): "Units allowed to set up/enter anywhere on a given
+    /// board may set up/enter on that board's half-hexes only if the half-hex is either part of another board on which it is also allowed to set
+    /// up/enter or is not butted against another half-hex". So a butted half-hex is in the areas under both boards' names, or it is not.
+    /// </summary>
+    public static bool InAreas(SetupCardFacts card, IReadOnlyList<SetupAreaFacts> areas, SetupLocationFacts at)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        ArgumentNullException.ThrowIfNull(areas);
+        ArgumentNullException.ThrowIfNull(at);
+        return areas.Any(area => area.Kind != "entry" && In(card, area, at))
+            && (at.OtherHalf is not { } other || areas.Any(area => area.Kind != "entry" && In(card, area, other)));
+    }
+
     private static bool In(SetupCardFacts card, SetupAreaFacts area, SetupLocationFacts at) =>
         Within(area.Kind, area.Hexes, area.Board, area.From, area.To, card.BoardCount, card.FirstBoard, at.Board, at.Hex, at.RowNumber);
 
@@ -915,7 +930,7 @@ public static class ScenarioA1SetupCalculator
                 : unit.Area is null ? EntryOf(group, unit) is null || group.Areas.Any(area => area.Counters is not null)
                 : group.Areas.FirstOrDefault(area => area.Id == unit.Area) is { Kind: not "entry" } area && In(card, area, counter.At!);
             // A counter outside all its group's areas takes only the area reason (table player, pass 19).
-            if (!counter.OffBoard && !group.Areas.Any(area => area.Kind != "entry" && In(card, area, counter.At!)))
+            if (!counter.OffBoard && !InAreas(card, group.Areas, counter.At!))
             {
                 continue;
             }
@@ -1011,6 +1026,15 @@ public static class ScenarioA1SetupCalculator
 /// <summary>A Location of a setup counter as facts: its text as the game writes it, its board, its hex name, and the hex's row number.</summary>
 public sealed record SetupLocationFacts(string Text, string Board, string Hex, int RowNumber)
 {
+    /// <summary>
+    /// For a half-hex butted against another board's (A2.3, p. 45; pass 40): the same hex as that other board names it. The Location's own name is
+    /// the owning board's, the one placed later (ruling R40.23). Null for a full hex and for a half-hex on the map's edge.
+    /// </summary>
+    public SetupLocationFacts? OtherHalf
+    {
+        get; init;
+    }
+
     public override string ToString() => Text;
 }
 

@@ -24,6 +24,12 @@ public sealed record FireDefinition(
         get; init;
     }
 
+    /// <summary>A MG's size as its counter has it (A9.1): light, medium, or heavy; null for other definitions.</summary>
+    public string? Size
+    {
+        get; init;
+    }
+
     /// <summary>The Assault Fire bonus: an underlined FP (A1.21, A7.36).</summary>
     public bool? AssaultFire
     {
@@ -646,6 +652,7 @@ public sealed class ScenarioA1FireReference
         {
             SelfRally = Trait("broken", "asl:self-rally"),
             AssaultFire = Trait("front", "asl:assault-fire"),
+            Size = Text("front", "size"),
             Breakdown = Value("front", "breakdown"),
             RateOfFire = Value("front", "rate-of-fire"),
             Repair = Value("malfunctioned", "repair"),

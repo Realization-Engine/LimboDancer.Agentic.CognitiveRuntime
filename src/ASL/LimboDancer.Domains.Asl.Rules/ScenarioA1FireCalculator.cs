@@ -467,8 +467,7 @@ public static class ScenarioA1FireCalculator
         var direct = kind != ResidualFire && attack.OrdnanceHit is null && attack.VehicleFire is null;
         if ((attack.HexsideTem is { } wall && (!direct || wall.Terrain is not ("wall" or "hedge") || wall.Tem < 0 || wall.Tem > (wall.Terrain == "wall" ? 2 : 1)))
             || (attack.HeightAdvantage == true && (!direct || attack.Overrun is not null))
-            || (attack.SnapShot == true && (!direct || attack.Overrun is not null || phase != "MPh" || kind is not (FirstFire or SubsequentFirstFire) || attack.HexsideTem is not null))
-            || (attack.HazardousMovement == true && phase != "MPh"))
+            || (attack.SnapShot == true && (!direct || attack.Overrun is not null || phase != "MPh" || kind is not (FirstFire or SubsequentFirstFire) || attack.HexsideTem is not null)))
         {
             outside.Add("asl.a1.fire.terrain-fact-outside");
         }
@@ -582,8 +581,10 @@ public static class ScenarioA1FireCalculator
             || firers.Zip(firerDefinitions).Any(pair => pair.Second is null || (!LeaderMg(pair.First, pair.Second)
                 && (!(pair.Second.IsMmc || pair.Second.IsHero || pair.Second.Kind == "asl:crew") || pair.Second.Firepower is null || pair.Second.Range is null)))
             || firers.Any(item => item.Partner is not null && !LeaderMg(item, reference.Definitions.GetValueOrDefault(item.DefinitionId!)))
-            // A7.352 (ruling R8.4): a crew that fired its Gun this Player Turn has no inherent FP.
-            || firers.Any(item => item.GunFired == true && item.UsesInherentFp != false))
+            // A7.352 (ruling R8.4): a crew that fired its Gun this Player Turn has no inherent FP, but in FPF, where it "must add" it (A8.311; pass 40,
+            // ruling R40.18).
+            || firers.Any(item => item.UsesInherentFp != false
+                && !ScenarioA1MandatoryFire.CrewAddsInherentFp(item.GunFired == true, attack.FireKind == FinalProtectiveFire)))
         {
             outside.Add("asl.a1.fire.firer-outside");
         }
@@ -2037,6 +2038,21 @@ public static class ScenarioA1FireCalculator
                 }
             }
 
+            // A5.12, A5.131 (p. 52; pass 40): overstacking on the IFT DR, from the firers' side and against the targets'. An ordnance hit took both
+            // on its To Hit DR, and they are not taken again when the hit is resolved.
+            if (attack.OrdnanceHit is null)
+            {
+                if (attack.FirerOverstack is { } over and > 0)
+                {
+                    drm.Add(new FireModifier("overstacked", over, "A5.12"));
+                }
+
+                if (attack.TargetOverstack is { } crowded and > 0)
+                {
+                    drm.Add(new FireModifier("vs-overstacked", -crowded, "A5.131"));
+                }
+            }
+
             var final = original + (int)drm.Sum(item => item.Value);
             var main = hasKnown ? known : vsConcealed;
             var (column, shifted, result) = Column(main, shift, final);
@@ -2341,6 +2357,12 @@ public static class ScenarioA1FireCalculator
             if (attack.SprayingFire == true)
             {
                 multipliers.Add(new FireModifier("spraying-fire", 0.5m, "A9.5"));
+            }
+
+            // A4.63 (pp. 51 to 52; pass 40): Defensive First Fire at a Dashing unit in the road Location is Area Fire, but for a Fire Lane.
+            if (attack.Dash == true && attack.FireLane != true && attack.OrdnanceHit is null && attack.FireKind is FirstFire or SubsequentFirstFire or FinalProtectiveFire)
+            {
+                multipliers.Add(new FireModifier("dash", 0.5m, "A4.63"));
             }
 
             // A7.24, A7.25 (ruling R12.1): AFPh fire is halved, unless it is Opportunity Fire.

@@ -272,6 +272,13 @@ public static class ScenarioA1OrdnanceCalculator
     {
         var outside = new List<string>();
         var phase = shot.Phase!;
+
+        // A4.63 (p. 52; pass 40): "a weapon with a specified CA may not fire on a Dashing unit in the road Location if it must change its CA to do so".
+        if (shot.Movement?.Dashing == true && shot.HexspinesToTurn is > 0)
+        {
+            outside.Add(Prefix + "dash-covered-arc");
+        }
+
         // Ruling R8.1: Defensive First Fire in the MPh by the non-phasing side.
         if (shot.FireKind is null
             ? (phase, shot.FiringSide) is not (("PFPh", "phasing") or ("AFPh", "phasing") or ("DFPh", "non-phasing"))
@@ -515,6 +522,13 @@ public static class ScenarioA1OrdnanceCalculator
             yield break;
         }
 
+        // A4.63, C6.1 (pp. 52, 173; pass 40): ordnance "must use the Case J To Hit DRM (Cases J3 and J4 do not apply in the road Location)".
+        if (movement.Dashing == true)
+        {
+            yield return new FireModifier("case-j", 2, "C6.1");
+            yield break;
+        }
+
         if (movement.NonAssault == true)
         {
             yield return new FireModifier("case-j3", -1, "C6.13");
@@ -667,6 +681,11 @@ public static class ScenarioA1OrdnanceCalculator
         else if (shot.FireKind is not null && shot.Movement is { } movement)
         {
             drm.AddRange(MoverDrm(movement));
+        }
+        else if (shot.HazardousTarget == true)
+        {
+            // C6.6, A4.62 (pp. 175, 51; pass 40): Case O in any fire phase.
+            drm.Add(new FireModifier("case-o", -2, "C6.6"));
         }
 
         var concealedTarget = hit.Targets!.All(Concealed);

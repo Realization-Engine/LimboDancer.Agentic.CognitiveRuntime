@@ -135,7 +135,7 @@ public static class ScenarioA1SequenceCalculator
     {
         ArgumentNullException.ThrowIfNull(overrunAt);
         return action is not ("asl.game.close-combat" or "asl.game.choose" or "asl.game.take-prisoner") && anyEvents && overrunAt() is { } at
-            ? $"play.cc-overrun-first: the berserk Infantry OVR in {at} has its CC at once, before anything else happens (A4.152, A15.432)"
+            ? ScenarioA1InfantryOverrun.CloseCombatFirstText(at)
             : null;
     }
 

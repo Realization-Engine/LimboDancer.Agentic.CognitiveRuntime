@@ -24,16 +24,6 @@ public static class ScenarioA1OrdnanceEligibility
         _ => halfSquads / 2,
     };
 
-    /// <summary>
-    /// The squad equivalents (FRU) by which a side's Personnel overstack a Location for a shot, a crew or HS counting half (A5.1, A5.12). The
-    /// Ordnance copy: no SMC term (the pass 32 design, section 12; it stays its own function).
-    /// </summary>
-    public static int OverstackExcessForOrdnance(int squads, int halfSquadsAndCrews)
-    {
-        var equivalents = squads + (halfSquadsAndCrews / 2m);
-        return equivalents > 3 ? (int)Math.Ceiling(equivalents - 3) : 0;
-    }
-
     /// <summary>Whether a Gun fires at its Bore Sighted Location with its original crew from its setup Location (C6.43); Locations compare by their own equality.</summary>
     public static bool BoreSighted<TLocation>(IEnumerable<(string Gun, TLocation Location, string Crew, TLocation SetupLocation)> sightings, string gun, string crew, TLocation from, TLocation target)
     {
@@ -376,10 +366,12 @@ public static class ScenarioA1OrdnanceEligibility
                 MpInLos = recorded.Movement?.MpInLos,
                 OpenGround = recorded.Movement?.OpenGround,
                 Hazardous = recorded.Movement?.Hazardous,
+                Dashing = recorded.Movement?.Dashing,
                 InBogHex = recorded.Movement?.InBogHex,
             },
             SameHex = recorded.SameHex,
             CrewSeen = recorded.CrewSeen,
+            HazardousTarget = recorded.HazardousTarget,
 
             // The map read of pass 9: a PF fired from a ground-level building (C13.8).
             Panzerfaust = expected.Panzerfaust is null ? null : expected.Panzerfaust with

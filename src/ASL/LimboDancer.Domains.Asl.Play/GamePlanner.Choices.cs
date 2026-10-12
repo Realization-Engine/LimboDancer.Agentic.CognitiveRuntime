@@ -65,6 +65,11 @@ public sealed partial class GamePlanner
     {
         ArgumentNullException.ThrowIfNull(choice);
         var subject = choice.Key[(choice.Key.IndexOf(':', StringComparison.Ordinal) + 1)..];
+        if (choice.Kind == ChoicePending.OverrunEvade)
+        {
+            return ScenarioA1InfantryOverrun.EvadeChoiceText(subject.Split(':')[0]);
+        }
+
         return ScenarioA1SequenceCalculator.DescribeChoice(ChoiceKindOf(choice.Kind), subject, choice.Options);
     }
 
@@ -99,6 +104,16 @@ public sealed partial class GamePlanner
         if (pending.Kind == ChoicePending.Acquisition)
         {
             return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [made], [summary]);
+        }
+
+        // A4.151 (pass 40): the SMC that moves away from an Infantry OVR enters the Location the ATTACKER names.
+        if (pending.Kind == ChoicePending.OverrunEvade)
+        {
+            var evaded = PlanOverrunEvadeAnswer(scope, attemptId, expected, label, state, pending, made, option);
+            return evaded with
+            {
+                Reasons = [summary, .. evaded.Reasons]
+            };
         }
 
         // A12.41 (ruling R11.12): the concealed units a vehicle entered are revealed or take their combined PAATC.

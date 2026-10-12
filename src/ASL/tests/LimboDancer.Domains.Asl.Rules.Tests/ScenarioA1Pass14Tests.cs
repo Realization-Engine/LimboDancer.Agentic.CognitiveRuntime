@@ -268,8 +268,8 @@ public sealed class ScenarioA1Pass14Tests
         var result = ScenarioA1CloseCombatCalculator.Resolve(Facts(units, [Attack(["g1"], ["r1"]), Attack(["r2"], ["g1"])], Rolls([6, 6], [6, 6])), Reference);
         Assert.Contains(result.Attacks[0].Defending[0].Drm, item => item.Name == "vs-overstacked" && item.Value == -1);
         Assert.Contains(result.Attacks[1].Drm, item => item.Name == "overstacked" && item.Value == 1);
-        Assert.Equal(1, ScenarioA1CloseCombatCalculator.Overstack(units, "russian", Reference));
-        Assert.Equal(0, ScenarioA1CloseCombatCalculator.Overstack(units, "german", Reference));
+        Assert.Equal(1, ScenarioA1CloseCombatCalculator.Overstack(units, "russian", Reference).PersonnelExcess);
+        Assert.Equal(0, ScenarioA1CloseCombatCalculator.Overstack(units, "german", Reference).PersonnelExcess);
     }
 
     [Fact]
@@ -318,7 +318,7 @@ public sealed class ScenarioA1Pass14Tests
         // Item 11 (A5.5): six SMC are one HS, so two squads, a HS, and six leaders are three squad-equivalents, not overstacked.
         CloseCombatUnit[] crowd = [Unit("g1", "attacker-squad", "german"), Unit("g2", "attacker-squad", "german"), Unit("g3", "attacker-half-squad", "german"),
             .. Enumerable.Range(1, 6).Select(index => Unit("gl" + index, "attacker-leader-8-1", "german"))];
-        Assert.Equal(0, ScenarioA1CloseCombatCalculator.Overstack(crowd, "german", Reference));
+        Assert.Equal(0, ScenarioA1CloseCombatCalculator.Overstack(crowd, "german", Reference).PersonnelExcess);
     }
 
     [Fact]

@@ -122,6 +122,12 @@ public sealed class BacklogPass10Tests : IDisposable
     {
         public HashSet<string> Blocked { get; } = new(StringComparer.Ordinal);
 
+        /// <summary>By the firer's hex: whether its line to a target point of a hex entered at the road rate crosses the hex's other terrain (A4.132).</summary>
+        public Dictionary<string, bool> CrossesTerrain { get; } = new(StringComparer.Ordinal);
+
+        public bool? CrossesTerrainInTargetHex(GameState state, BoardLocation from, BoardLocation target, HexsideDirection? enteredAcross) =>
+            CrossesTerrain.TryGetValue(from.Hex.ToString(), out var crosses) ? crosses : null;
+
         public LosResult? Read(GameState state, BoardLocation from, BoardLocation target)
         {
             var range = Board01Fixture.Handle().Distance(from.Hex, target.Hex) ?? 1;
@@ -338,6 +344,104 @@ public sealed class BacklogPass10Tests : IDisposable
         Assert.Contains("ADJACENT", planner.MustRout(Current, Current.Unit("r1")!));
         var (targets, canRout, routes) = planner.RoutAdvice(Current, Current.Unit("r1")!);
         Assert.Equal((0, false, 0), (targets.Count, canRout, routes.Count));
+    }
+
+    [Fact]
+    public async Task AnEntryInTheMphThatOverstacksCostsOneMoreMfAndTheStackTakesTheFireDrm()
+    {
+        // Pass 40, task 40.6 (A5.11, A5.131, A5.12, p. 52): a fourth squad enters a Location of three for the Open Ground's MF and one more, and the
+        // First Fire at it takes -1 for the squad-equivalent above the limit. In the control hex nothing is added.
+        await Setup(Squad("g1", L("C5"), "german"), Squad("g2", L("D5"), "german"), Squad("g3", L("C4"), "german"), Squad("g4", L("C4"), "german"),
+            Squad("g5", L("C4"), "german"), Squad("r1", L("C2"), "russian"));
+        var before = Revision;
+        Committed(await Move(G1, L("C4")));
+        Assert.Equal(4, LastStep(before).HalfMf);
+        before = Revision;
+        Committed(await Fire(R1, L("C4"), false, 6, 6, 6, 6, 6, 6));
+        Assert.Contains(("vs-overstacked", -1m), Drm(LastFire(before)));
+        Assert.DoesNotContain(Drm(LastFire(before)), item => item.Name == "overstacked");
+        await Pass();
+        Committed(await EndMove());
+        before = Revision;
+        Committed(await Move(G2, L("D4")));
+        Assert.Equal(2, LastStep(before).HalfMf);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AMoverAtTheRoadRateIsOnTheRoadForAFirerThatSeesItAndInTheWoodsForOneThatDoesNot()
+    {
+        // Pass 40, task 40.2 (A4.132 and its example, p. 48; B13.31): D4 and E4 are woods entered across a road hexside. At the road rate the squad
+        // pays one MF and is on the road: FFMO and no woods TEM for the firer whose LOS reaches a target point clear, the woods TEM for the one
+        // whose LOS crosses the woods. Paying the woods' cost it is in the woods for both, and the Road Bonus is not its.
+        board.Terrain["D4"] = "Woods";
+        board.Terrain["E4"] = "Woods";
+        board.Side("D5", HexsideDirection.North, terrain: "Dirt Road");
+        board.Side("E5", HexsideDirection.North, terrain: "Dirt Road");
+        los.CrossesTerrain["D2"] = false;
+        los.CrossesTerrain["C3"] = true;
+        await Setup(Squad("g1", L("D5"), "german"), Squad("g2", L("E5"), "german"), Squad("r1", L("D2"), "russian"), Squad("r2", L("C3"), "russian"));
+        var before = Revision;
+        Committed(await Move(G1, L("D4")));
+        Assert.Equal(2, LastStep(before).HalfMf);
+        Assert.True(LastStep(before).RoadRate);
+        before = Revision;
+        Committed(await Fire(R1, L("D4"), false, 6, 6, 6, 6, 6, 6));
+        Assert.Contains(Drm(LastFire(before)), item => item.Name == "ffmo");
+        Assert.DoesNotContain(Drm(LastFire(before)), item => item.Name == "tem:woods");
+        before = Revision;
+        Committed(await Fire(R2, L("D4"), false, 6, 6, 6, 6, 6, 6));
+        Assert.Contains(("tem:woods", 1m), Drm(LastFire(before)));
+        Assert.DoesNotContain(Drm(LastFire(before)), item => item.Name == "ffmo");
+        await Pass();
+        Committed(await EndMove());
+
+        before = Revision;
+        Committed(await Do(GameActions.Move, NoRoll(), new Dictionary<string, object> { ["unitIds"] = G2, ["to"] = L("E4"), ["terrainRate"] = true }));
+        Assert.Equal(4, LastStep(before).HalfMf);
+        Assert.False(LastStep(before).RoadRate);
+        Assert.False(LastStep(before).Road);
+        before = Revision;
+        Committed(await Fire(R1, L("E4"), false, 6, 6, 6, 6, 6, 6));
+        Assert.Contains(("tem:woods", 1m), Drm(LastFire(before)));
+        Assert.DoesNotContain(Drm(LastFire(before)), item => item.Name == "ffmo");
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ADashIsAreaFireInTheRoadLocationAndEndsWhereItWasDeclaredTo()
+    {
+        // Pass 40, task 40.3 (A4.63 and its example, pp. 51 to 52): from the woods of D5 through the road of D4 to the woods of D3. Neither side of
+        // the road is Open Ground to the firer, so its First Fire at the squad in D4 is Area Fire. Once declared, the only step is into D3, and the
+        // move ends there. In the control hex, with no Dash declared, the same fire is not halved.
+        board.Terrain["D5"] = "Woods";
+        board.Terrain["D4"] = "Dirt Road";
+        board.Terrain["D3"] = "Woods";
+        board.Terrain["E4"] = "Dirt Road";
+        await Setup(Squad("g1", L("D5"), "german"), Squad("g2", L("E5"), "german"), Squad("r1", L("B3"), "russian"), Squad("r2", L("G3"), "russian"));
+        var before = Revision;
+        Committed(await Do(GameActions.Move, NoRoll(), new Dictionary<string, object> { ["unitIds"] = G1, ["to"] = L("D4"), ["dash"] = L("D3") }));
+        Assert.Equal(At("D3"), LastStep(before).Dash);
+        Assert.Equal(At("D3"), Current.Movement!.Dash);
+        before = Revision;
+        Committed(await Fire(R1, L("D4"), false, 6, 6, 6, 6, 6, 6));
+        Assert.Contains("dash", Multipliers(LastFire(before)));
+        await Pass();
+        Refused(await EndMove(), "play.end-move-dash");
+        Refused(await Move(G1, L("C4")), "play.move-dash");
+        Committed(await Move(G1, L("D3")));
+        Assert.Null(Current.Movement!.Dash);
+        await Pass();
+        Assert.True(Current.Unit("g1")!.MovementEnded);
+
+        // A Dash is declared with the first step, through a road Location, to the far side of it.
+        Refused(await Do(GameActions.Move, NoRoll(), new Dictionary<string, object> { ["unitIds"] = G2, ["to"] = L("E4"), ["dash"] = L("E5") }), "play.move-dash");
+        Refused(await Do(GameActions.Move, NoRoll(), new Dictionary<string, object> { ["unitIds"] = G2, ["to"] = L("F4"), ["dash"] = L("F3") }), "play.move-dash");
+        Committed(await Move(G2, L("E4")));
+        before = Revision;
+        Committed(await Fire(R2, L("E4"), false, 6, 6, 6, 6, 6, 6));
+        Assert.DoesNotContain("dash", Multipliers(LastFire(before)));
+        NoReplayErrors();
     }
 
     [Fact]

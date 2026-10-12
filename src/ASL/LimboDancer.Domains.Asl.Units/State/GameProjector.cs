@@ -141,6 +141,7 @@ public static class GameProjector
                 VehicleCheckRolled check => CheckVehicle(previous, check),
                 OverrunResolved overrun => ResolveOverrun(previous, overrun),
                 PaatcTaken paatc => TakePaatc(previous, paatc),
+                InfantryOverrunNtc ntc => TakeOverrunNtc(previous, ntc),
                 OpportunityFireDeclared opportunity => DeclareOpportunityFire(previous, opportunity),
                 RoutStepped routed => Rout(previous, routed),
                 RoutInterdicted interdicted => Interdict(previous, interdicted),
@@ -502,11 +503,14 @@ public static class GameProjector
                     OrdnanceShotsHere = [],
                     GunsTurnedThisPhase = [],
                     SmokeAttempts = [],
+                    PortagedThisPhase = [],
+                    InfantryOverrunNtcs = [],
                     SupportWeaponUses = [],
                     SupportWeaponDirectors = [],
                     PhaseFirers = [],
                     SpottedThisPhase = [],
                     MovedWeapons = newPlayerTurn ? [] : state.MovedWeapons,
+                    HazardousMovers = newPlayerTurn ? [] : state.HazardousMovers,
                     // A23.3 (ruling R15.2): a DC Placement lasts its Player Turn.
                     PlacedCharges = newPlayerTurn ? [] : state.PlacedCharges,
                     AssaultWeaponUsers = newPlayerTurn ? [] : state.AssaultWeaponUsers,
@@ -1231,7 +1235,8 @@ public static class GameProjector
         private GameState? PendChoice(GameState state, ChoicePending pending, string eventId)
         {
             if (Rules.ScenarioA1SequenceProjection.PendChoiceRefusal(state.Choice is not null, state.Side(pending.Side) is not null, pending.Options.Count,
-                pending.Kind is ChoicePending.LeaderCreation or ChoicePending.BattleHardening or ChoicePending.UnlikelyKill or ChoicePending.Acquisition or ChoicePending.Paatc,
+                pending.Kind is ChoicePending.LeaderCreation or ChoicePending.BattleHardening or ChoicePending.UnlikelyKill or ChoicePending.Acquisition or ChoicePending.Paatc
+                    or ChoicePending.OverrunEvade,
                 state.ChoicesMade.ContainsKey(pending.Key)) is { } refusal)
             {
                 return Fail<GameState>(refusal.Code, refusal.Text);
@@ -1718,13 +1723,19 @@ public static class GameProjector
         private GameState? Manhandle(GameState state, ManhandlingRolled manhandling)
         {
             // C10.3 (ruling R8.6): the Manhandling DR against the Gun's M#.
-            if (state.Phase != "mph" || Active(state, manhandling.Gun) is not EquipmentInstance || !rolls.TryGetValue(manhandling.Roll, out var roll) || roll.Count != 2
+            if (state.Phase != "mph" || Active(state, manhandling.Gun) is not EquipmentInstance pushed || !rolls.TryGetValue(manhandling.Roll, out var roll) || roll.Count != 2
                 || manhandling.Result != ManhandlingRolled.For(roll.Values.Sum() + manhandling.Drm, manhandling.Manhandling))
             {
                 return Fail<GameState>("UNIT-STATE-039", "A Manhandling DR is made in the MPh for an active Gun, and its result follows from its Final DR and the M# (C10.3).");
             }
 
-            return state;
+            // Pass 40 (C10.3, p. 181): the attempt is Hazardous Movement whether or not the Gun moves, so a failed push counts too.
+            return pushed.Holding is { Role: HoldingRole.Manned } manned
+                ? state with
+                {
+                    HazardousMovers = Rules.ScenarioA1MovementCalculator.HazardousMovers(state.HazardousMovers, true, [manned.Holder])
+                }
+                : state;
         }
 
         private GameState? HookGun(GameState state, GunHooked hooked)
@@ -2006,17 +2017,27 @@ public static class GameProjector
                 {
                     Members = current?.Members ?? moving.Movers,
                     Charge = moving.Charge,
-                    EndingMembers = Rules.ScenarioA1MovementCalculator.EndingMembers(moving.MinimumMove, moving.Attempted is not null, moving.Movers, moving.Smoke?.Unit, moving.Smoke?.Dr),
+                    EndingMembers = Rules.ScenarioA1MovementCalculator.EndingMembers(moving.MinimumMove, moving.Attempted is not null, moving.Movers, moving.Smoke?.Unit, moving.Smoke?.Dr,
+                        current?.Dash is { } dashedTo && dashedTo == moving.To && moving.Attempted is null),
+                    Dash = moving.Dash,
                     MinimumMove = moving.MinimumMove,
+                    RoadRate = moving.RoadRate,
+                    IpcTo = moving.IpcTo ?? current?.IpcTo,
+                    InfantryOverrun = moving.InfantryOverrun ? moving.To : null,
+                    ChangedLocation = current?.ChangedLocation == true || (movers[0]!.Position is MapPosition stoodAt && stoodAt.Location != moving.To),
                     Bypass = moving.Bypass,
                     From = movers[0]!.Position is MapPosition left && left.Location != moving.To ? left.Location : null,
                     PushedGun = moving.PushedGun,
                 },
                 SmokeAttempts = moving.Smoke is { } attempt ? [.. next.SmokeAttempts, attempt.Unit] : next.SmokeAttempts,
+                HazardousMovers = Rules.ScenarioA1MovementCalculator.HazardousMovers(next.HazardousMovers, moving.PushedGun is not null, moving.Movers),
+                PortagedThisPhase = Rules.ScenarioA1MovementCalculator.Portaged(next.PortagedThisPhase,
+                    next.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } carrier && moving.Movers.Contains(carrier.Holder, StringComparer.Ordinal))
+                        .Select(item => (item.Holding!.Holder, item.Id))),
                 SmokePending = moving.Smoke is { Placed: true } placing ? placing.Target : null,
                 MovedWeapons = [.. next.MovedWeapons, .. Rules.ScenarioA1MovementCalculator.MovedLightMortars(
                     [.. next.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && moving.Movers.Contains(holding.Holder, StringComparer.Ordinal))
-                        .Select(item => new Rules.CarriedWeaponFacts(item.Id, vocabulary.IsA(item.Kind, "asl:light-mortar"), next.MovedWeapons.Contains(item.Id, StringComparer.Ordinal)))],
+                        .Select(item => new Rules.CarriedWeaponFacts(item.Id, vocabulary.IsA(item.Kind, "asl:light-mortar") || vocabulary.IsA(item.Kind, "asl:mg"), next.MovedWeapons.Contains(item.Id, StringComparer.Ordinal)))],
                     locationChanged)],
             };
         }
@@ -2559,6 +2580,42 @@ public static class GameProjector
                     PaatcPassed = [.. state.PaatcPassed, .. paatc.Units.Select(id => id + "|" + paatc.Vehicle)]
                 }
                 : state;
+        }
+
+        /// <summary>
+        /// The NTC of an Infantry OVR (A4.15; pass 40): the record against its roll; the state keeps it for the phase, and a leader's failure ends
+        /// his stack's MPh.
+        /// </summary>
+        private GameState? TakeOverrunNtc(GameState state, InfantryOverrunNtc ntc)
+        {
+            var taker = Active(state, ntc.Taker) as UnitInstance;
+            if (ntc.Units.Count == 0 || ntc.Units.Any(id => Active(state, id) is not UnitInstance) || !ntc.Units.Contains(ntc.Taker, StringComparer.Ordinal) || taker is null)
+            {
+                return Fail<GameState>("UNIT-STATE-039", "An Infantry OVR's NTC names active units and one of them as its taker (A4.15).");
+            }
+
+            if (!rolls.TryGetValue(ntc.Roll, out var roll) || roll.Count != 2 || roll.Sides != 6
+                || Rules.ScenarioA1InfantryOverrun.NtcPassed(roll.Values[0], roll.Values[1], ntc.Drm, ntc.Morale) != ntc.Passed)
+            {
+                return Fail<GameState>("UNIT-STATE-039", "The NTC's result disagrees with its DR (A4.15).");
+            }
+
+            GameState? next = state with
+            {
+                InfantryOverrunNtcs = [.. state.InfantryOverrunNtcs, new InfantryOverrunNtcTaken(ntc.Units, ntc.Target.ToString(), ntc.Passed, ntc.Taker)]
+            };
+            if (Rules.ScenarioA1InfantryOverrun.EndsStackMove(vocabulary.IsA(taker.Kind, "asl:leader"), ntc.Passed))
+            {
+                foreach (var id in ntc.Units)
+                {
+                    next = next is not null && Active(next, id) is UnitInstance unit ? Replace(next, unit with
+                    {
+                        MovementEnded = true
+                    }) : next;
+                }
+            }
+
+            return next;
         }
 
         private GameState? CloseWindow(GameState state, MovementWindowClosed closed)
@@ -3753,7 +3810,7 @@ public static class GameProjector
         /// </summary>
         private GameState KeepGuards(GameState next)
         {
-            static int Size(UnitInstance unit) => Rules.ScenarioA1PrisonerCalculator.UnitSize(unit.Kind == "asl:squad", unit.Kind is "asl:half-squad" or "asl:crew");
+            static int Size(UnitInstance unit) => Rules.ScenarioA1Definitions.UnitSize(unit.Kind);
             foreach (var prisoner in next.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Custodian is not null).ToArray())
             {
                 var at = next.Location(prisoner.Id)?.Location;

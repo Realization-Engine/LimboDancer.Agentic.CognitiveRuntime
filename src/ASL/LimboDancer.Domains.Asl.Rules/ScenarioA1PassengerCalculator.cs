@@ -55,6 +55,16 @@ public static class ScenarioA1PassengerCalculator
     public static string? EntryAllotmentBar(string id, string at, int halfMp, bool all, int printed) =>
         !all && halfMp > printed ? $"entering {at} costs {ScenarioA1VehicleMovementCalculator.Mp(halfMp)} MP, more than {id}'s allotment" : null;
 
+    /// <summary>
+    /// A4.11 (p. 48; pass 40): a unit that mounts a conveyance has four MF that Player Turn: a SMC four in place of six, and a wounded SMC or
+    /// Inexperienced Infantry four in place of three.
+    /// </summary>
+    public const int ConveyanceAllowance = 4;
+
+    /// <summary>A4.5 (p. 51; pass 40): Double Time "may not be used by a unit that will mount, ride, or dismount any form of conveyance during that Player Turn".</summary>
+    public static string? BoardingDoubleTimeBar(string unitId, int doubleTimeMf) =>
+        doubleTimeMf > 0 ? $"play.load: {unitId} has Double Timed this MPh, and a unit that Double Times does not board (A4.5)" : null;
+
     /// <summary>D6.4: the half MF a unit has left after the one MF boarding costs; negative when it cannot board.</summary>
     public static int BoardingHalfMfLeft(int allotment, int mfSpent, bool halfMfSpent) => (allotment * 2) - ((mfSpent * 2) + (halfMfSpent ? 1 : 0)) - 2;
 

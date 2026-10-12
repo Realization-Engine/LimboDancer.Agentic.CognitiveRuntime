@@ -383,6 +383,77 @@ public sealed class BacklogPass27Tests : IDisposable
     }
 
     [Fact]
+    public async Task AnInfantryOvrOfALoneSmcNeedsItsNtcCostsDoubleAndHasItsCcAtOnce()
+    {
+        // Pass 40, task 40.4 (A4.15, A4.152, p. 49): the squad passes its NTC, enters the lone leader's Location at double the MF, and after the
+        // DEFENDER's window the CC comes before anything else. The leader falls, so nothing is held in Melee and the move may end.
+        await Setup(Squad("g1", L("C5"), "german"), Unit("rl", "asl:leader", "defender-leader-7-0", L("C4"), "russian"));
+        Refused(await Do(GameActions.Move, NoRoll(), new Dictionary<string, object> { ["unitIds"] = G1, ["to"] = L("C4"), ["overrun"] = true }), "play.move-overrun");
+        Refused(await Move(G1, L("C4")), "play.move-occupied");
+        Committed(await Do(GameActions.InfantryOverrunNtc, Once(1, 1), new Dictionary<string, object> { ["unitIds"] = G1, ["to"] = L("C4") }));
+        Assert.True(Assert.Single(Current.InfantryOverrunNtcs).Passed);
+        Refused(await Do(GameActions.InfantryOverrunNtc, Once(1, 1), new Dictionary<string, object> { ["unitIds"] = G1, ["to"] = L("C4") }), "play.overrun-ntc");
+        Committed(await Do(GameActions.Move, NoRoll(), new Dictionary<string, object> { ["unitIds"] = G1, ["to"] = L("C4"), ["overrun"] = true }));
+        Assert.Equal(At("C4"), Current.Movement!.InfantryOverrun);
+        Assert.Equal(2, Current.Unit("g1")!.MfSpent);
+        await Pass();
+        Assert.Equal(At("C4"), Planner().BerserkOverrunPending(Current));
+        Refused(await EndMove(), "play.cc-overrun-first");
+        Committed(await Do(GameActions.CloseCombat, Once(1, 2, 6, 6), new
+        {
+            location = L("C4"),
+            attacks = new[] { new { attackers = G1, defenders = Rl }, new { attackers = Rl, defenders = G1 } },
+        }));
+        Assert.Null(Planner().BerserkOverrunPending(Current));
+        Assert.False(Is(Current.Unit("g1")!, Conditions.Melee));
+        Committed(await EndMove());
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task TheSmcMovesAwayFromAnInfantryOvrIntoALocationTheAttackerChooses()
+    {
+        // Pass 40, task 40.4 (A4.151, p. 49): before any Defensive First Fire the leader moves away; the ATTACKER names where; no CC is owed.
+        await Setup(Squad("g1", L("C5"), "german"), Unit("rl", "asl:leader", "defender-leader-7-0", L("C4"), "russian"));
+        Committed(await Do(GameActions.InfantryOverrunNtc, Once(1, 1), new Dictionary<string, object> { ["unitIds"] = G1, ["to"] = L("C4") }));
+        Committed(await Do(GameActions.Move, NoRoll(), new Dictionary<string, object> { ["unitIds"] = G1, ["to"] = L("C4"), ["overrun"] = true }));
+        Assert.Equal("rl", Planner().OverrunEvader(Current, store.Read(Scope)!.Events));
+        Committed(await Do(GameActions.OverrunEvade, NoRoll(), new Dictionary<string, object> { ["unitId"] = "rl" }));
+        var choice = Current.Choice!;
+        Assert.Equal(ChoicePending.OverrunEvade, choice.Kind);
+        Assert.Equal("german", choice.Side);
+        Assert.NotEmpty(choice.Options);
+        Assert.DoesNotContain(L("C4"), choice.Options);
+        Assert.Contains(L("C5"), choice.Options);
+        Refused(await EndMove(), "play.end-move");
+        Committed(await Do(GameActions.Choose, NoRoll(), new Dictionary<string, object> { ["key"] = choice.Key, ["option"] = choice.Options[0] }));
+        Assert.Equal(BoardLocation.Parse(choice.Options[0]), Current.Location("rl")!.Location);
+        Assert.Null(Planner().OverrunEvader(Current, store.Read(Scope)!.Events));
+        await Pass();
+        Assert.Null(Planner().BerserkOverrunPending(Current));
+        Committed(await EndMove());
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ALeadersFailedNtcEndsHisStacksMphAndAMmcsOwnOnlyBarsItsOvr()
+    {
+        // Pass 40, task 40.4 (A4.15, p. 49): "if he fails, no unit in his stack may ... move or take any other action during that phase".
+        await Setup(Squad("g1", L("C5"), "german"), Unit("l1", "asl:leader", "attacker-leader-8-0", L("C5"), "german"), Squad("g2", L("D4"), "german"),
+            Unit("rl", "asl:leader", "defender-leader-7-0", L("C4"), "russian"));
+        Committed(await Do(GameActions.InfantryOverrunNtc, Once(6, 6), new Dictionary<string, object> { ["unitIds"] = G1L1, ["to"] = L("C4") }));
+        Assert.True(Current.Unit("g1")!.MovementEnded);
+        Assert.True(Current.Unit("l1")!.MovementEnded);
+
+        // The squad alone fails its own: no OVR there for it, and it may still move.
+        Committed(await Do(GameActions.InfantryOverrunNtc, Once(6, 6), new Dictionary<string, object> { ["unitIds"] = G2, ["to"] = L("C4") }));
+        Assert.False(Current.Unit("g2")!.MovementEnded);
+        Refused(await Do(GameActions.Move, NoRoll(), new Dictionary<string, object> { ["unitIds"] = G2, ["to"] = L("C4"), ["overrun"] = true }), "play.move-overrun");
+        Committed(await Move(G2, L("D5")));
+        NoReplayErrors();
+    }
+
+    [Fact]
     public async Task ALoneBerserkLeaderEntersAnSmcsLocationWithoutAnOverrunCc()
     {
         // A15.432, A4.15 (referee and table player, pass 27): only a berserk MMC overruns; a lone berserk leader enters, and CC waits for the CCPh.

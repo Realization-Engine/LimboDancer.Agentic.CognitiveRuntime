@@ -455,6 +455,19 @@ else if (state is not null)
                         Units="@([.. SupportWeaponUnits.Select(Labelled)])" Weapon="@swWeapon" Unit="@swUnit" Held="@(SupportWeaponHolder is not null)" Dismantles="@(swWeapon.Length > 0 && GamePlanner.MayDismantle(state, swWeapon))"
                         OnWeapon="@(id => { swWeapon = id; swUnit = string.Empty; })" OnUnit="@(id => swUnit = id)" OnPropose="@ProposeSupportWeaponKind" />
                 }
+                @* Pass 40 (A20.5, p. 88): an unbroken Guard squad Deploys at will, in any phase; in the RPh the Deploy panel takes it. *@
+                @if (state.Phase != "rph" && GuardSquads is { Count: > 0 } guardSquads)
+                {
+                    <ActionSection Title="A Guard's Deployment" Key="guard-deploy">
+                    <div class="toolbar" id="guard-deploy">
+                        <span class="toolbar-note">An unbroken Guard squad Deploys into two HS at any time, with no leader and no NTC; its SW stay with the first HS (A20.5).</span>
+                        @foreach (var guard in guardSquads)
+                        {
+                            <button class="propose-guard-deploy" data-unit="@guard" @onclick="@(() => ProposeGuardDeploy(guard))">Propose: @WordsAt(guard) Deploys</button>
+                        }
+                    </div>
+                    </ActionSection>
+                }
                 @if (state.Phase == "rph")
                 {
                     <ActionSection Title="Rally" Key="rally">
@@ -537,7 +550,7 @@ else if (state is not null)
                         }
                         <div class="toolbar">
                             <InfantryMovementAction Movers="@MoveRows" Selected="@moveUnits" Draft="@MoveDraft" PushGun="@MovingGun?.Id"
-                                OnToggle="@ToggleMover" OnDraftChanged="@SetMoveDraft" OnPropose="@ProposeMove" />
+                                OnToggle="@ToggleMover" OnDraftChanged="@SetMoveDraft" OnPropose="@ProposeMove" OnOverrunNtc="@ProposeOverrunNtc" />
                             <MapExitAction SelectId="move-exit" ButtonId="propose-exit" Edges="@ExitEdges" Edge="@moveExit" Ready="@(moveUnits.Count > 0)"
                                 OnEdge="@(edge => moveExit = edge)" OnPropose="@ProposeExit" />
                             @if (SmokePlacers.Any())
@@ -554,7 +567,7 @@ else if (state is not null)
                             {
                                 <BerserkRetainedWeaponsField Value="@moveKeep" OnChange="@(keep => moveKeep = keep)" />
                             }
-                            <MovementWindowActions WindowOpen="@state.Movement?.WindowOpen" EndingSome="@EndingSome" MayPass="@Viewer.IsAdjudicator"
+                            <MovementWindowActions WindowOpen="@state.Movement?.WindowOpen" EndingSome="@EndingSome" MayPass="@(Viewer.IsAdjudicator && MandatoryNow is null)"
                                 OnPass='@(() => ProposeSimple(GameActions.PassFire, "pass"))' OnEnd="@ProposeEndMove" />
                         </div>
                     }
@@ -683,12 +696,26 @@ else if (state is not null)
                 }
                 else if (FiringSide is { } firing)
                 {
-                    @* Pass 28c (A8.1, A8.11): after each step the DEFENDER, from its own view, sees where the stack is and fires at it or passes. *@
-                    @if (state.Phase == "mph" && !Viewer.IsAdjudicator && viewAs != state.PhasingSide && MovingAt is { } movingAt)
+                    @* Pass 40 (A4.151): the SMC an Infantry OVR has just entered upon may move away before any fire; the DEFENDER's to declare. *@
+                    @if (state.Phase == "mph" && (Viewer.IsAdjudicator || viewAs != state.PhasingSide) && Live.Planner.OverrunEvader(state, history!.Events) is { } evader)
                     {
+                        <div class="toolbar" id="overrun-evade">
+                            <span class="toolbar-note">An Infantry OVR has entered the SMC's Location: it may attack if it has FP (a leader with no SW has none), move away before any fire into an adjacent Location the ATTACKER names, or stay for the CC (A4.151, A4.152).</span>
+                            <button id="propose-overrun-evade" @onclick="@(() => ProposeOverrunEvade(evader))">Propose: the SMC moves away from the OVR</button>
+                        </div>
+                    }
+                    @* Pass 28c (A8.1, A8.11): after each step the DEFENDER, from its own view, sees where the stack is and fires at it or passes.
+                       Pass 40 (A8.312): the attack owed in the DEFENDER's own Location comes before a pass; the adjudicator has the same block. *@
+                    @if (state.Phase == "mph" && MovingAt is { } movingAt && (Viewer.IsAdjudicator ? MandatoryNow is not null : viewAs != state.PhasingSide))
+                    {
+                        var mandatory = MandatoryNow;
                         <ActionSection Title="Defensive First Fire" Key="defensive-first-fire">
                         <div class="toolbar" id="dff-window">
-                            @if (MoveStopped)
+                            @if (mandatory is not null)
+                            {
+                                <span class="toolbar-note" id="mandatory-fire-note">@ScenarioA1MandatoryFire.Note([.. mandatory.Firers.Select(id => Words(id))], mandatory.Group, PlaceOf(mandatory.At))</span>
+                            }
+                            else if (MoveStopped)
                             {
                                 <span class="toolbar-note" id="dff-note">No member of the moving stack at @PlaceOf(movingAt) can move on: each is broken, pinned, or eliminated. Fire at it again below, or pass, which ends its move (A8.1, A4.2).</span>
                             }
@@ -697,7 +724,21 @@ else if (state is not null)
                                 <span class="toolbar-note" id="dff-note">The moving stack is at @PlaceOf(movingAt): fire at it below, or pass (A8.1).</span>
                             }
                             <button type="button" id="dff-show" @onclick="@(() => LocateHex(movingAt))">Show it on the map</button>
-                            <button id="propose-pass" @onclick='@(() => ProposeSimple(GameActions.PassFire, "pass"))'>Propose: the DEFENDER passes</button>
+                            @if (mandatory is not null && mandatory.Group)
+                            {
+                                <button id="propose-mandatory-fire" title="Each unit fires its inherent FP; one already marked fires its MG with it, and a unit with no FP of its own its MG. To add a MG or a leader's direction, name the same units in the fire panel below." @onclick="@(() => ProposeMandatoryFire(mandatory))">Propose: the Mandatory FG attacks</button>
+                            }
+                            else if (mandatory is not null)
+                            {
+                                @foreach (var owing in mandatory.Firers)
+                                {
+                                    <button class="propose-mandatory-fire-one" data-unit="@owing" @onclick="@(() => ProposeMandatoryFire(mandatory, owing))">Propose: @Words(owing) attacks</button>
+                                }
+                            }
+                            else if (!Viewer.IsAdjudicator)
+                            {
+                                <button id="propose-pass" @onclick='@(() => ProposeSimple(GameActions.PassFire, "pass"))'>Propose: the DEFENDER passes</button>
+                            }
                         </div>
                         </ActionSection>
                     }
@@ -3080,6 +3121,10 @@ else if (state is not null)
     private string firstEdge = string.Empty;
     private string secondEdge = string.Empty;
     private bool moveDoubleTime;
+    private bool moveTerrainRate;
+    private string moveDash = string.Empty;
+    private string moveIpcTo = string.Empty;
+    private bool moveOverrun;
 
     private bool moveMinimum;
 
@@ -3890,7 +3935,8 @@ else if (state is not null)
 
     /// <summary>A pending choice's options in words (plan C08), given only to a view that may answer.</summary>
     private IReadOnlyList<PendingChoicePanel.Option> ChoiceOptions(PendingChoice choice) => MayAnswer(choice.Side)
-        ? [.. choice.Options.Select(option => new PendingChoicePanel.Option(option, ChoiceOptionText(choice, option)))]
+        ? [.. choice.Options.Select(option => new PendingChoicePanel.Option(option,
+            choice.Kind == ChoicePending.OverrunEvade ? $"into {PlaceOf(option)}" : ChoiceOptionText(choice, option)))]
         : [];
 
     /// <summary>
@@ -4868,6 +4914,11 @@ else if (state is not null)
     private void ToggleMover(UnitSelectionList.Toggle toggle)
     {
         Toggle(moveUnits, toggle.Id, toggle.On);
+        if (!moveUnits.Contains(moveIpcTo))
+        {
+            moveIpcTo = string.Empty;
+        }
+
         PruneMoveDrafts();
     }
 
@@ -4877,10 +4928,11 @@ else if (state is not null)
         PruneMoveDrafts();
     }
 
-    private InfantryMovementAction.MoveDraft MoveDraft => new(moveTo, moveMinimum, moveBypass, moveAssault, moveDoubleTime, movePush);
+    private InfantryMovementAction.MoveDraft MoveDraft => new(moveTo, moveMinimum, moveBypass, moveAssault, moveDoubleTime, movePush, moveTerrainRate, moveDash, moveIpcTo, moveOverrun);
 
     private void SetMoveDraft(InfantryMovementAction.MoveDraft draft) =>
-        (moveTo, moveMinimum, moveBypass, moveAssault, moveDoubleTime, movePush) = (draft.To, draft.Minimum, draft.Bypass, draft.Assault, draft.DoubleTime, draft.Push);
+        (moveTo, moveMinimum, moveBypass, moveAssault, moveDoubleTime, movePush, moveTerrainRate, moveDash, moveIpcTo, moveOverrun) =
+            (draft.To, draft.Minimum, draft.Bypass, draft.Assault, draft.DoubleTime, draft.Push, draft.TerrainRate, draft.Dash, draft.IpcTo, draft.Overrun);
 
     private Task ProposeSmoke()
     {
@@ -4907,6 +4959,30 @@ else if (state is not null)
             arguments["keep"] = keep;
         }
 
+        // A4.132 (pass 40): the other terrain's cost across a road hexside, in place of the road's.
+        if (moveTerrainRate)
+        {
+            arguments["terrainRate"] = true;
+        }
+
+        // A4.63 (pass 40): the Location a Dash is declared to.
+        if (moveDash.Trim().Length > 0)
+        {
+            arguments["dash"] = moveDash.Trim();
+        }
+
+        // A4.15 (pass 40): the step is an Infantry OVR.
+        if (moveOverrun)
+        {
+            arguments["overrun"] = true;
+        }
+
+        // A4.42 (pass 40): the laden MMC named for the leader's IPC.
+        if (moveIpcTo.Length > 0 && moveUnits.Count > 1 && moveUnits.Contains(moveIpcTo))
+        {
+            arguments["ipcTo"] = moveIpcTo;
+        }
+
         // A4.134, A4.3 (rulings R10.7, R10.9): a Minimum Move, or the hexsides of a Bypass.
         if (moveMinimum)
         {
@@ -4925,6 +5001,50 @@ else if (state is not null)
 
         return Propose(GameActions.Move, JsonSerializer.SerializeToElement(arguments));
     }
+
+    /// <summary>The NTC of an Infantry OVR (A4.15; pass 40), for the movers checked and the Location typed.</summary>
+    private Task ProposeOverrunNtc() => Propose(GameActions.InfantryOverrunNtc, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+    {
+        ["gameId"] = gameId, ["attemptId"] = Attempt("ovr-ntc"), ["expectedRevision"] = (long)history!.Events.Count,
+        ["unitIds"] = moveUnits.Order(StringComparer.Ordinal).ToArray(), ["to"] = moveTo.Trim(),
+    }));
+
+    /// <summary>The attack the DEFENDER owes on the units that entered its Location (A8.312; pass 40), as its plainest Mandatory FG.</summary>
+    private (long Revision, GamePlanner.MandatoryFireOwed? Owed)? mandatoryCache;
+
+    /// <summary>The attack the DEFENDER owes now (A8.312; pass 40), read once for a revision: the planner asks the fire plan of each unit.</summary>
+    private GamePlanner.MandatoryFireOwed? MandatoryNow
+    {
+        get
+        {
+            if (state is null || history is null)
+            {
+                return null;
+            }
+
+            if (mandatoryCache is not { } kept || kept.Revision != history.Events.Count)
+            {
+                mandatoryCache = (history.Events.Count, Live.Planner.MandatoryFire(state, history.Events));
+            }
+
+            return mandatoryCache.Value.Owed;
+        }
+    }
+
+    private Task ProposeMandatoryFire(GamePlanner.MandatoryFireOwed owed, string? only = null)
+    {
+        var arguments = Live.Planner.MandatoryFireArguments(state!, owed, only);
+        arguments["gameId"] = gameId;
+        arguments["attemptId"] = Attempt("fire");
+        arguments["expectedRevision"] = (long)history!.Events.Count;
+        return Propose(GameActions.Fire, JsonSerializer.SerializeToElement(arguments));
+    }
+
+    /// <summary>The DEFENDER's SMC moves away from an Infantry OVR (A4.151; pass 40); the ATTACKER is then asked where.</summary>
+    private Task ProposeOverrunEvade(string unitId) => Propose(GameActions.OverrunEvade, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+    {
+        ["gameId"] = gameId, ["attemptId"] = Attempt("ovr-evade"), ["expectedRevision"] = (long)history!.Events.Count, ["unitId"] = unitId,
+    }));
 
     /// <summary>An action that names only the game: the DEFENDER's pass, or the end of the moving stack's move.</summary>
     private Task ProposeSimple(ActionDescriptor action, string kind) => Propose(action,
@@ -5117,6 +5237,10 @@ else if (state is not null)
         moveAssault = false;
         moveDoubleTime = false;
         moveMinimum = false;
+        moveTerrainRate = false;
+        moveDash = string.Empty;
+        moveOverrun = false;
+        moveIpcTo = string.Empty;
         moveBypass = string.Empty;
         advanceUnits.Clear();
         advanceTo = string.Empty;
@@ -5214,6 +5338,10 @@ else if (state is not null)
         moveAssault = false;
         moveDoubleTime = false;
         moveMinimum = false;
+        moveTerrainRate = false;
+        moveDash = string.Empty;
+        moveOverrun = false;
+        moveIpcTo = string.Empty;
         moveBypass = string.Empty;
         vehicleIntended = string.Empty;
         vehicleOverrun = false;
@@ -5825,6 +5953,15 @@ else if (state is not null)
             && other.Definition?.Definition == one.Definition?.Definition)
         : []);
 
+    /// <summary>The viewer's unbroken squads that guard prisoners (A20.5; pass 40): each may Deploy at will.</summary>
+    private IReadOnlyList<string> GuardSquads => state is null ? []
+        : [.. Live.Planner.GuardSquadsAtWill(state, Viewer.IsAdjudicator ? null : viewAs).Where(id => ActingUnits.Any(unit => unit.Id == id))];
+
+    private Task ProposeGuardDeploy(string squad) => Propose(GameActions.Deploy, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+    {
+        ["gameId"] = gameId, ["attemptId"] = Attempt("deploy"), ["expectedRevision"] = (long)history!.Events.Count, ["squadId"] = squad,
+    }));
+
     private Task ProposeDeploy()
     {
         var arguments = new Dictionary<string, object> { ["gameId"] = gameId, ["attemptId"] = Attempt("deploy"), ["expectedRevision"] = (long)history!.Events.Count, ["squadId"] = deploySquad };
@@ -6048,6 +6185,10 @@ else if (state is not null)
                 moveAssault = false;
                 moveDoubleTime = false;
                 moveMinimum = false;
+                moveTerrainRate = false;
+                moveDash = string.Empty;
+                moveOverrun = false;
+                moveIpcTo = string.Empty;
                 moveBypass = string.Empty;
             }
             else if (proposal.Action == GameActions.Move)
@@ -6055,6 +6196,10 @@ else if (state is not null)
                 // A4.5: Double Time is declared for one step, not kept for the next; so are a Minimum Move and a Bypass.
                 moveDoubleTime = false;
                 moveMinimum = false;
+                moveTerrainRate = false;
+                moveDash = string.Empty;
+                moveOverrun = false;
+                moveIpcTo = string.Empty;
                 moveBypass = string.Empty;
             }
             else if (proposal.Action == GameActions.MoveVehicle)
@@ -6407,7 +6552,7 @@ else if (state is not null)
         : SetupOpen ? "A side sets up out of the other's sight."
         : !HandOverAwaited ? "The game does not wait on this side now; its view is opened to look."
         : state.Phase == "mph" && state.Movement is { WindowOpen: true } moving
-            ? $"A {DisplayText.Side(state.PhasingSide)} stack {(moving.Members.Count == 0 ? "was stopped by fire" : "spent MF")} in {PlaceOf(moving.Location)}. The {DisplayText.Side(handOver)} side, as the DEFENDER, may fire at it or pass (A8.1)."
+            ? $"A {DisplayText.Side(state.PhasingSide)} stack {(moving.Members.Count == 0 ? "was stopped by fire" : "spent MF")} in {PlaceOf(moving.Location)}. The {DisplayText.Side(handOver)} side, as the DEFENDER, {(MandatoryNow is null ? "may fire at it or pass (A8.1)" : "must attack it from the Location it entered (A8.312)")}."
         : Awaiting(state).Note;
 
     private IReadOnlyList<string> HandOverTasks
@@ -6430,7 +6575,8 @@ else if (state is not null)
             return state.Choice is not null ? ["Answer the choice the game waits on; nothing else is proposed until it is answered."]
                 : state.PendingSurrenders.Count > 0 ? ["Take the surrendering unit prisoner, refuse it, or free it (A20.21)."]
                 : state.Phase == "mph" && state.Movement is { WindowOpen: true } moving
-                    ? [$"Fire at the moving stack in {PlaceOf(moving.Location)} with your units that see it, or pass.", "Hand the screen back once you have passed."]
+                    ? [MandatoryNow is null ? $"Fire at the moving stack in {PlaceOf(moving.Location)} with your units that see it, or pass." : ScenarioA1MandatoryFire.HandOverText(PlaceOf(moving.Location)),
+                        "Hand the screen back once you have passed."]
                 : state.Phase switch
                 {
                     "rph" => ["Rally your broken units, repair weapons, and transfer or recover SW.", "End the Rally Phase when both sides are done, or hand the screen back."],

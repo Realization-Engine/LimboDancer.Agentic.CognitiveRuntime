@@ -414,11 +414,20 @@ public sealed partial class GamePlanner
                     : movement with
                     {
                         OpenGround = ScenarioA1OrdnanceMapRules.OpenGround(shot.Hit!.TargetTerrain, shot.Hit.Los?.HindranceDrm),
-                        // C6.6, A4.62 (ruling R10.8): a crew pushing its Gun into the target Location is under Hazardous Movement.
-                        Hazardous = state.Movement is { PushedGun: { } pushed } pushing && pushing.Location == target
-                            ? ScenarioA1FireMapRules.HazardousMovement(state.Phase, true, state.Find(pushed) is EquipmentInstance { Holding: { } manning } ? manning.Holder : null, shot.Hit)
-                            : null,
+                        // C6.6, A4.62 (rulings R10.8, R40.10): a crew that pushed its Gun this Player Turn is under Hazardous Movement.
+                        Hazardous = ScenarioA1FireMapRules.HazardousMovement(state.HazardousMovers, shot.Hit),
+
+                        // A4.63, C6.1 (pass 40): a Dashing stack in its road Location, to this firer.
+                        Dashing = DashAgainst(state, [from], target),
                     },
+            };
+        }
+        else if (shot.VehicleTarget is null && shot.Hit is { } aimed && ScenarioA1FireMapRules.HazardousMovement(state.HazardousMovers, aimed) == true)
+        {
+            // C6.6, A4.62 (pass 40, ruling R40.10): Case O outside the MPh too, "regardless of fire phase".
+            shot = shot with
+            {
+                HazardousTarget = true,
             };
         }
 
@@ -439,8 +448,8 @@ public sealed partial class GamePlanner
         {
             BoreSighted = boreSighted ? true : null,
             CrewSeen = shot.Crew!.Concealed == true && shot.Vehicle is null ? EnemyGoodOrderInLosWithin16(state, side, from) : null,
-            FirerOverstack = LiveOrdnance.Excess(state, from, side) is var over and > 0 ? over : (int?)null,
-            TargetOverstack = shot.VehicleTarget is null && state.Sides.FirstOrDefault(item => item.Id != side)?.Id is { } enemy && LiveOrdnance.Excess(state, target, enemy) is var crowded and > 0
+            FirerOverstack = LiveStacking.Of(state, from, side).AttackPenalty is var over and > 0 ? over : (int?)null,
+            TargetOverstack = shot.VehicleTarget is null && state.Sides.FirstOrDefault(item => item.Id != side)?.Id is { } enemy && LiveStacking.Of(state, target, enemy, knownOnly: true).DefensePenalty is var crowded and > 0
                 ? crowded : (int?)null,
         };
     }

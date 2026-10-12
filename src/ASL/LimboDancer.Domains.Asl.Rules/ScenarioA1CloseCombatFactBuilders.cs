@@ -25,11 +25,12 @@ public static class ScenarioA1CloseCombatFactBuilders
     /// </summary>
     public static CloseCombatUnit Unit(string id, string definition, string side, bool broken, bool pinned, bool wounded, bool disrupted, bool berserk, bool fanatic, bool heroic,
         bool concealed, bool hidden, bool captured, bool advanced, bool melee, string? stackedWith, string? withdrawingTo, bool cx, bool ti, bool unarmed, string? custodian,
-        string? infiltrateTo, IReadOnlyList<string> weapons)
+        string? infiltrateTo, IReadOnlyList<string> weapons, bool manning = false)
     {
         ArgumentNullException.ThrowIfNull(weapons);
         return new CloseCombatUnit(id, definition, side, broken, pinned, wounded, disrupted, berserk, fanatic, heroic, concealed || hidden, captured, advanced, melee)
         {
+            Manning = manning ? true : null,
             StackedWith = stackedWith,
             WithdrawingTo = withdrawingTo,
             Cx = cx ? true : null,

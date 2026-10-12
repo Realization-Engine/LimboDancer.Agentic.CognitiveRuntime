@@ -27,9 +27,36 @@ public sealed partial class GamePlanner
             : null;
     }
 
+    /// <summary>Whether a ground-level Location is a woods-road hex (B13.31): the map's facts handed to Rules.</summary>
+    private static bool IsWoodsRoad(LocationRead read) =>
+        ScenarioA1Definitions.IsWoodsRoadHex((read.Level.Terrain ?? read.Hex.Center.Terrain)?.IsRoad == true, read.Hex.Hexsides.Select(side => side.Terrain?.Name));
+
+    /// <summary>
+    /// A4.132: whether the line from a firing Location to a target point of a hex crosses the hex's other terrain; the point is the center dot, or
+    /// the hexside the mover crossed at the road rate. Null when the map has no LOS data to read, or on a map of several boards (not built).
+    /// </summary>
+    private bool? CrossesTerrainInTargetHex(GameState state, BoardLocation from, BoardLocation target, HexsideDirection? enteredAcross)
+    {
+        if (fireLos is not null)
+        {
+            return fireLos.CrossesTerrainInTargetHex(state, from, target, enteredAcross);
+        }
+
+        return !state.Map.IsPlaced && state.Map.Boards is [{ } placed] && boards.TryGetBoard(placed.Board, placed.Version).Board is { } handle
+            && BoardLosMaps.GetValue(handle, board => new LosMapHolder(LosMap.ForBoard(board).Map)).Map is { } map
+            ? LosTargetPoints.CrossesTerrainInTargetHex(map, from, target, enteredAcross)
+            : null;
+    }
+
     /// <summary>The terrain of a Location as the Scenario A1 packages name it, or null when it is none they admit.</summary>
     private static string? TerrainKey(LocationRead read)
     {
+        // B13.31 (pass 40, ruling R40.4): a woods-road hex is woods, though its center dot is on the road.
+        if (IsWoodsRoad(read))
+        {
+            return "woods";
+        }
+
         var name = (read.Level.Terrain ?? read.Hex.Center.Terrain)?.Name;
         return name is null ? null
             : FireTerrain.GetValueOrDefault(name)
@@ -169,7 +196,6 @@ public sealed partial class GamePlanner
             this.planner = planner;
             this.state = state;
             Units = [.. state.Units.Select(unit => new EnemyUnitFacts(unit.Status == InstanceStatus.Active, unit.Side, unit.Kind == UnitKinds.Dummy, state.Aboard(unit.Id) is not null,
-                GameState.Condition(unit, Conditions.Broken) switch { ConditionState.True => true, ConditionState.False => false, _ => null },
                 Is(unit, Conditions.Hidden), GoodOrder(unit), state.Location(unit.Id)?.Location is { } at ? Index(at) : null))];
         }
 

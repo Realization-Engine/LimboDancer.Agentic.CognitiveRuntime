@@ -144,12 +144,14 @@ public sealed partial class GamePlanner
         var terrain = entry.Terrain;
 
         // A5.11 (ruling R14.10): entering a Location the advance overstacks costs one more MF per excess squad-equivalent.
-        var arriving = state.At(to).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && !Is(unit, Conditions.Captured))
-            .Concat(units.Select(unit => unit!)).Distinct().ToArray();
-        var excess = OverstackExcess(arriving);
+        var excess = LiveStacking.Of(state, to, state.PhasingSide, units.Select(unit => unit!)).PersonnelExcess;
 
         // A7.7 (ruling R12.11): the first Location an Encircled unit enters costs twice its MF.
         var halfMf = ScenarioA1AdvanceCalculator.AdvanceHalfMf(entry.HalfMf, units.Any(unit => state.Encircled(unit!)), excess);
+
+        // A4.72 (p. 52; pass 40): Difficult Terrain is judged by the hex's MF cost "excluding SMOKE".
+        var drySmoke = entering is null && BlazeEntryHalfMf(state, to) > 0 ? InfantryStep(state, from, to, false, true).Entry : null;
+        var difficultHalfMf = drySmoke is null ? halfMf : ScenarioA1AdvanceCalculator.AdvanceHalfMf(drySmoke.HalfMf, units.Any(unit => state.Encircled(unit!)), excess);
 
         // A4.72 EX, A4.12, A4.42 (ruling R10.8): a Good Order leader of its nationality advancing with a MMC adds two MF and one IPC to it.
         var unitList = units.Select(unit => unit!).ToArray();
@@ -162,7 +164,7 @@ public sealed partial class GamePlanner
         var tiring = new List<string>();
         foreach (var unit in units)
         {
-            if (DifficultAdvance(state, unit!, halfMf, Aided(unit!), unit!.Id == ipcTo) is not { } difficult)
+            if (DifficultAdvance(state, unit!, difficultHalfMf, Aided(unit!), unit!.Id == ipcTo) is not { } difficult)
             {
                 return Refused(scope, label, expected, ScenarioA1AdvanceCalculator.NoMfText(unit!.Id));
             }
@@ -291,17 +293,6 @@ public sealed partial class GamePlanner
     /// </summary>
     private bool? DifficultAdvance(GameState state, UnitInstance unit, int halfMf, bool aided = false, bool lent = false) =>
         ScenarioA1AdvanceCalculator.DifficultAdvance(MfAllotment(state, unit, 0, Is(unit, Conditions.Cx), aided ? 2 : 0, lent ? 1 : 0), halfMf);
-
-    /// <summary>
-    /// A5.1, A5.5 (ruling R14.10): the squad-equivalents of one side's units above three, rounded up, a HS or crew half and five SMC a HS (four or fewer
-    /// none).
-    /// </summary>
-    private int OverstackExcess(IEnumerable<UnitInstance> units)
-    {
-        var list = units.ToArray();
-        return ScenarioA1AdvanceCalculator.OverstackExcess(list.Count(unit => vocabulary.IsA(unit.Kind, "asl:squad")),
-            list.Count(unit => vocabulary.IsA(unit.Kind, "asl:half-squad") || vocabulary.IsA(unit.Kind, "asl:crew")), list.Count(unit => vocabulary.IsA(unit.Kind, "asl:smc")));
-    }
 
     /// <summary>The Ambush drs of a CC Location (A11.4): one dr for each side, the ATTACKER's first, resolved by the Close Combat package.</summary>
     private GamePlan PlanAmbush(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, string actor)
@@ -449,8 +440,9 @@ public sealed partial class GamePlanner
             });
         }
 
-        // A15.432 (ruling R27.3): every berserk unit of the OVR attacks the SMC; the SMC may attack them back; nothing else happens in that CC.
-        if (overrun)
+        // A15.432 (ruling R27.3): every berserk unit of the OVR attacks the SMC; the SMC may attack them back; nothing else happens in that CC. A
+        // declared Infantry OVR's CC is "normal CC" (A4.152; pass 40): its attacks are the ATTACKER's to declare.
+        if (overrun && state.Movement?.Charge is not null)
         {
             var berserkHere = state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide
                 && Is(unit, Conditions.Berserk)).Select(unit => unit.Id).ToHashSet(StringComparer.Ordinal);
@@ -1178,7 +1170,8 @@ public sealed partial class GamePlanner
         state.Units.Where(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == guard.Id).Sum(UnitSize);
 
     /// <summary>A unit's US# (A1.6, p. 45; A20.51): a squad 3, a HS or crew 2, a SMC 1.</summary>
-    private int UnitSize(UnitInstance unit) => ScenarioA1PrisonerCalculator.UnitSize(vocabulary.IsA(unit.Kind, "asl:squad"), vocabulary.IsA(unit.Kind, "asl:half-squad") || vocabulary.IsA(unit.Kind, "asl:crew"));
+    private int UnitSize(UnitInstance unit) => ScenarioA1Definitions.UnitSize(vocabulary.IsA(unit.Kind, "asl:squad"),
+        vocabulary.IsA(unit.Kind, "asl:half-squad") || vocabulary.IsA(unit.Kind, "asl:crew"));
 
     /// <summary>The ADJACENT Location across each hexside of a Location's hex, at ground level, on one board or across a seam.</summary>
     private IEnumerable<BoardLocation> Neighbors(GameState state, BoardLocation at)

@@ -67,7 +67,8 @@ public static class ScenarioA1VehicleTerrainCosts
     public static (VehicleTerrainEntry? Entry, string? Reason) EntryCost(string? type, string to, int toLevel, bool cliffOrSlope, string? terrainKey,
         string? terrainName, string? wall, string? hexsideName, bool roadHexside, int rise, int? month, bool mud, bool pavedRoad, bool plowedRule,
         int printedHalfMp, bool buttonedAfv, bool groundSnow, bool deepSnow, Func<bool, int> wreckHalfMp, Func<bool> smoke, bool towing,
-        Func<string, bool, bool, bool, int> weatherHalfMp, bool reverse, bool allMp, List<(string Cause, int Drm)> own, bool besideMarsh = false)
+        Func<string, bool, bool, bool, int> weatherHalfMp, bool reverse, bool allMp, List<(string Cause, int Drm)> own, bool besideMarsh = false,
+        int overstackHalfMp = 0)
     {
         if (type is null)
         {
@@ -229,7 +230,8 @@ public static class ScenarioA1VehicleTerrainCosts
         var towingHalfMp = towing ? 2 : 0;
         // D2.21, E3.9, E1.52 (pp. 196, 224, 231; pass 35, task 35.14): the Reverse multiplier is on the cost of entry; the weather's MP are added
         // "after calculating total cost", and the night's "as if towing a Gun" (C10.1: after all other modifications), so neither is multiplied.
-        cost = all ? cost : cost + penalty + towingHalfMp;
+        // A5.11 (p. 52; pass 40): one MP for each squad-equivalent by which the vehicle's side overstacks the Location with Personnel, beside D2.14's.
+        cost = all ? cost : cost + penalty + towingHalfMp + overstackHalfMp;
         if (reverse && !all)
         {
             cost *= ReverseMultiplier(type);
@@ -283,13 +285,15 @@ public static class ScenarioA1VehicleTerrainCosts
     /// A VBM step's cost in half MP (D2.3, D2.31; ruling R11.2): twice the Open Ground cost with a level climbed and SMOKE, the wreck and vehicle penalty
     /// when the obstacle is a new hex, and the Reverse multiplier.
     /// </summary>
-    public static int BypassHalfMp(int open, int rise, bool smoke, bool newHex, Func<int> wreckHalfMp, bool reverse, string? movementType, int weatherHalfMp = 0)
+    public static int BypassHalfMp(int open, int rise, bool smoke, bool newHex, Func<int> wreckHalfMp, bool reverse, string? movementType, int weatherHalfMp = 0,
+        int overstackHalfMp = 0)
     {
         var smokeHalfMp = smoke ? 2 : 0;
         var cost = 2 * (open + (rise > 0 ? rise * 8 : 0) + smokeHalfMp);
         if (newHex)
         {
-            cost += wreckHalfMp() - smokeHalfMp;
+            // A5.11 (p. 52; pass 40): with D2.14's MP, one MP for each squad-equivalent of the side's Personnel above the limit in the hex entered.
+            cost += wreckHalfMp() - smokeHalfMp + overstackHalfMp;
         }
 
         if (reverse)

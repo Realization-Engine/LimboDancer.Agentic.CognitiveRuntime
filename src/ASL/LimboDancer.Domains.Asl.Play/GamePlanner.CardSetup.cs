@@ -94,7 +94,22 @@ public sealed partial class GamePlanner
 
         return ScenarioSetup.Check(card, counters, at => ReadLocation(state, at) is { } read ? TerrainKey(read) : null,
             key => ScenarioA1SetupCalculator.InfantryCouldEnter(key, terrain => InfantryEntryHalfMf(state, terrain) is not null), ScenarioA1FireReference.HalfSquadOf, state.ScenarioMonth,
-            state.Scenario?.Balance);
+            state.Scenario?.Balance, at => OtherHalf(state, at));
+    }
+
+    /// <summary>
+    /// The same hex as the other board names it, for a half-hex butted against another board's on a placed map (A2.3, p. 45; pass 40); null for a
+    /// full hex, a half-hex on the map's edge, and a map that is not placed.
+    /// </summary>
+    internal BoardLocation? OtherHalf(GameState state, BoardLocation at)
+    {
+        if (!state.Map.IsPlaced || Composed(state)?.Layout is not { } layout || layout.Locate(at.Board, at.Hex) is not { } index)
+        {
+            return null;
+        }
+
+        var other = layout.Names(index).Where(name => name != (at.Board, at.Hex)).Select(name => ((BoardRef Board, HexName Hex)?)name).FirstOrDefault();
+        return other is { } half ? new BoardLocation(half.Board, half.Hex, at.Level) : null;
     }
 
     /// <summary>Why a Location is refused as outside the card's playable area (A2.1; ruling R20.6); null when it is inside, or the game has no card.</summary>

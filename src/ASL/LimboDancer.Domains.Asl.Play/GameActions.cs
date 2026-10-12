@@ -284,7 +284,7 @@ public static class GameActions
             "unitIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
             "to": { "type": "string" }, "exit": { "type": "string", "enum": ["top", "bottom", "left", "right"] },
             "assault": { "type": "boolean" }, "doubleTime": { "type": "boolean" }, "pushGun": { "type": "string" },
-            "smoke": { "type": "string" }, "smokeBy": { "type": "string" }, "minimumMove": { "type": "boolean" },
+            "smoke": { "type": "string" }, "smokeBy": { "type": "string" }, "minimumMove": { "type": "boolean" }, "terrainRate": { "type": "boolean" }, "dash": { "type": "string" }, "ipcTo": { "type": "string" }, "overrun": { "type": "boolean" },
             "placeDc": { "type": "string" }, "placeDcAt": { "type": "string" },
             "keep": { "type": "array", "items": { "type": "string" } },
             "bypass": { "type": "array", "items": { "type": "string", "enum": ["north", "northeast", "southeast", "south", "southwest", "northwest"] }, "minItems": 1, "maxItems": 2 }
@@ -304,6 +304,35 @@ public static class GameActions
           "properties": {
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 }
+          }
+        }
+        """);
+
+    public static readonly ActionDescriptor InfantryOverrunNtc = Descriptor("asl.game.infantry-overrun-ntc", "Take an Infantry OVR's NTC",
+        "The ATTACKER's stack takes the NTC that lets it enter the Location of a lone Known enemy SMC in its MPh: by its leader for the stack, or by its one MMC, against the TEM there (A4.15).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitIds", "to"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+            "to": { "type": "string" }
+          }
+        }
+        """);
+
+    public static readonly ActionDescriptor OverrunEvade = Descriptor("asl.game.overrun-evade", "Move away from an Infantry OVR",
+        "The DEFENDER's SMC, before any Defensive First Fire at the units that entered its Location by an Infantry OVR, moves away into an adjacent Location of the ATTACKER's choice (A4.151).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "unitId"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "unitId": { "type": "string" }
           }
         }
         """);
@@ -675,7 +704,8 @@ public static class GameActions
     } =
         [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
             FireOrdnance, RecoverShock, TurnGun, HookGun, MoveVehicle, Overrun, VehicleCloseCombat, ButtonUp, Choose, Massacre, OpportunityFire,
-            Rout, Deploy, Recombine, Transfer, Drop, Recover, Dismantle, AmbushWithdraw, GuardPrisoners, ThrowDc, DetonateDc, FireStarshell, PlaceHidden, MopUp];
+            Rout, Deploy, Recombine, Transfer, Drop, Recover, Dismantle, AmbushWithdraw, GuardPrisoners, ThrowDc, DetonateDc, FireStarshell, PlaceHidden, MopUp,
+            InfantryOverrunNtc, OverrunEvade];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

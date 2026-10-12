@@ -120,6 +120,16 @@ public sealed record OrdnanceShot(
     }
 
     /// <summary>
+    /// Whether every target of a shot outside the MPh is under Hazardous Movement (C6.6, A4.62; pass 40, ruling R40.10): Case O. In the MPh the
+    /// shot's movement facts carry it. Null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? HazardousTarget
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// Whether a Good Order enemy ground unit within 16 hexes sees the firing Gun's Location, so a concealed crew and Gun lose their "?" by
     /// firing (A12.14; ruling R8.5); null leaves it to the target Location, as before.
     /// </summary>
@@ -202,6 +212,16 @@ public sealed record OrdnanceMovement(int? MpInLos, bool? NonAssault, bool? Open
     /// <summary>Whether the moving target is engaged in Hazardous Movement (C6.6, A4.62; pass 35, task 35.10): Case O in place of Case J's subcases; null is false.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Hazardous
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the moving target is a Dashing stack in its road Location, to a firer for whom the Dash qualifies (A4.63, C6.1; pass 40): Case J in
+    /// place of Cases J3 and J4, and no shot that must change its CA. Null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Dashing
     {
         get; init;
     }

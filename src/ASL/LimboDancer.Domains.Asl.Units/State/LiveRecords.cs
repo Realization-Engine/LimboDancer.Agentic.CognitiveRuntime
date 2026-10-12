@@ -117,6 +117,39 @@ public sealed record MovementStepped(IReadOnlyList<string> Movers, BoardLocation
     }
 
     /// <summary>
+    /// Whether the movers entered <see cref="To"/> across a road hexside paying the road's cost, into a hex that has other terrain (A4.132; pass 40):
+    /// they are on the road, not in that terrain, while the DEFENDER First Fires at them there.
+    /// </summary>
+    public bool RoadRate
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The Location a Dash declared with this step leads to (A4.63; pass 40): the step is into the road Location, and the stack's only further step
+    /// is into that Location, where its MPh ends. Null for other steps.
+    /// </summary>
+    public BoardLocation? Dash
+    {
+        get; init;
+    }
+
+    /// <summary>The laden MMC the stack's leader lends his IPC to for this move, when the mover named it (A4.42; pass 40, ruling R40.11); null otherwise.</summary>
+    public string? IpcTo
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the step enters a Location of enemy units in the MPh as an Infantry OVR onto a lone Known SMC, or onto Unarmed units to recapture
+    /// them (A4.15, A20.54; pass 40): its CC follows at once when the DEFENDER's window closes.
+    /// </summary>
+    public bool InfantryOverrun
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// Whether the step is a Minimum Move (A4.134; ruling R10.9): the movers' only hex this MPh; when the DEFENDER's window closes their move ends and
     /// the unbroken ones become pinned and CX.
     /// </summary>
@@ -301,6 +334,15 @@ public sealed record OverrunResolved(string Vehicle, BoardLocation At, string Fi
 public sealed record PaatcTaken(IReadOnlyList<string> Units, string Vehicle, string Roll, int Morale, int Drm, bool Passed) : EventPayload;
 
 /// <summary>
+/// <c>infantry-overrun-ntc</c>: the NTC of an Infantry OVR (A4.15, p. 49; pass 40): the stack it is taken for, the unit that takes it (the stack's
+/// leader, or the one MMC), the Location the stack would enter, the roll, the Morale Level, the DRM (the TEM there), and the result.
+/// </summary>
+public sealed record InfantryOverrunNtc(IReadOnlyList<string> Units, string Taker, BoardLocation Target, string Roll, int Morale, int Drm, bool Passed) : EventPayload;
+
+/// <summary>A NTC of an Infantry OVR taken in this phase, as the state keeps it: the stack, the Location, and the result (A4.15; pass 40).</summary>
+public sealed record InfantryOverrunNtcTaken(IReadOnlyList<string> Units, string Target, bool Passed, string? Taker = null);
+
+/// <summary>
 /// <c>rout-stepped</c>: one Location of a broken unit's rout in the RtPh (A10.5; backlog pass 13, ruling R13.3): the Location entered, its cost in
 /// half MF, and whether it is Low Crawl (A10.52), which uses all the unit's MF. A step repulsed by a concealed unit (A10.533; pass 35, task 35.4)
 /// names in <see cref="Attempted"/> the Location it tried to enter, and its Location is the one the unit stays in, where its rout ends.
@@ -429,6 +471,36 @@ public sealed record MovementState(IReadOnlyList<string> Movers, BoardLocation L
 
     /// <summary>Whether the latest step was a Minimum Move (A4.134; ruling R10.9).</summary>
     public bool MinimumMove
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the latest step entered the Location at the road rate, into a hex that has other terrain (A4.132; pass 40).</summary>
+    public bool RoadRate
+    {
+        get; init;
+    }
+
+    /// <summary>The Location the stack Dashes to from the road Location it is in (A4.63; pass 40); null when it is not Dashing.</summary>
+    public BoardLocation? Dash
+    {
+        get; init;
+    }
+
+    /// <summary>The laden MMC the leader's IPC went to with an earlier step of this move, when the mover named it (A4.42; pass 40).</summary>
+    public string? IpcTo
+    {
+        get; init;
+    }
+
+    /// <summary>Whether a step of this move has changed the stack's Location: Assault Movement allows one such step (A4.61; pass 40).</summary>
+    public bool ChangedLocation
+    {
+        get; init;
+    }
+
+    /// <summary>The Location the stack's latest step entered as an Infantry OVR or to recapture Unarmed units (A4.15, A20.54; pass 40); null otherwise.</summary>
+    public BoardLocation? InfantryOverrun
     {
         get; init;
     }

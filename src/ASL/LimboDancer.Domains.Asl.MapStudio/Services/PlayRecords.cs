@@ -618,7 +618,9 @@ public sealed class PlayRecords
                 else if (item.Payload is LineageRecorded { Action: LineageAction.Deployed or LineageAction.Recombined } lineage && lineage.Consumed.All(id => Open(before, id)))
                 {
                     records.Add((item.EventId, "lineage", lineage.Action == LineageAction.Deployed
-                        ? $"{lineage.Consumed[0]}{In(before, lineage.Consumed[0])} becomes the HS {string.Join(" and ", lineage.Produced.Select(unit => unit.Id))} (A1.31){DeploySplit(attempts[attempt], lineage)}"
+                        ? $"{lineage.Consumed[0]}{In(before, lineage.Consumed[0])} becomes the HS {string.Join(" and ", lineage.Produced.Select(unit => unit.Id))} "
+                            + (attempts[attempt].Any(other => other.Payload is DeploymentAttempted) ? "(A1.31)" : "with no NTC, as a Guard of prisoners (A20.5)")
+                            + DeploySplit(attempts[attempt], lineage)
                         : $"{string.Join(" and ", lineage.Consumed)}{In(before, lineage.Consumed[0])} Recombine into {lineage.Produced[0].Id} (A1.32)"));
                 }
                 else if (item.Payload is ConditionsChanged dismantled && dismantled.Conditions.TryGetValue(Conditions.Dismantled, out var taken)
@@ -667,6 +669,15 @@ public sealed class PlayRecords
                     var dr = rolls.TryGetValue(recovery.Roll, out var roll) ? roll.Values[0].ToString(CultureInfo.InvariantCulture) : "?";
                     records.Add((item.EventId, "recovery", $"{recovery.Unit}{In(before, recovery.Unit)} tries to Recover {recovery.Weapon}: dr {dr} {recovery.Drm:+0;-0;+0}, needing below 6: "
                         + $"{(recovery.Recovered ? "recovered" : "not recovered")} (A4.44)"));
+                }
+                else if (item.Payload is InfantryOverrunNtc ntc && Open(before, ntc.Taker))
+                {
+                    // Pass 40 (A4.15): the NTC of an Infantry OVR, with its DR and result.
+                    var dr = rolls.TryGetValue(ntc.Roll, out var roll) ? roll.Values.Sum().ToString(CultureInfo.InvariantCulture) : "?";
+                    string[] others = [.. ntc.Units.Where(id => id != ntc.Taker)];
+                    records.Add((item.EventId, "overrun-ntc", $"{ntc.Taker}{In(before, ntc.Taker)} takes the NTC{(others.Length > 0 ? $" for {string.Join(", ", others)}" : "")} "
+                        + $"for an Infantry OVR into {ntc.Target}: DR {dr} {ntc.Drm:+0;-0;+0} against morale {ntc.Morale}: "
+                        + (ntc.Passed ? "passed" : others.Length > 0 ? "failed; none of them moves or acts again this MPh" : "failed; it makes no OVR there") + " (A4.15)"));
                 }
                 else if (item.Payload is RepairAttempted repair)
                 {

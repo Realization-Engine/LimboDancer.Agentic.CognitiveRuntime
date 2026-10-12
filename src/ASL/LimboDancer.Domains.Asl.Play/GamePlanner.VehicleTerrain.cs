@@ -95,7 +95,8 @@ public sealed partial class GamePlanner
             state.Weather("ground-snow"), state.Weather("deep-snow"), road => WreckEntryHalfMp(state, to, road), () => HasSmoke(state, to), Towing(state, vehicle),
             (terrain, road, paved, plowed) => VehicleWeatherHalfMp(state, type!, terrain, road, paved, plowed, toRead.Hex.BaseLevel - fromRead.Hex.BaseLevel),
             reverse, allMp, VehicleBogDrm(state, vehicle),
-            toRead.Hex.BaseLevel <= 0 && Neighbors(state, to).Any(near => ReadLocation(state, near) is { } nearRead && TerrainKey(nearRead) == "marsh"));
+            toRead.Hex.BaseLevel <= 0 && Neighbors(state, to).Any(near => ReadLocation(state, near) is { } nearRead && TerrainKey(nearRead) == "marsh"),
+            2 * LiveStacking.Of(state, to, vehicle.Side).PersonnelExcess);
         return entry is null
             ? (null, reason)
             : (new VehicleEntry(entry.HalfMp, entry.All, entry.BogDrm, entry.BogCauses, to, null, entry.Terrain, entry.Road, reverse, entry.HedgeBogDrm), null);
@@ -185,7 +186,7 @@ public sealed partial class GamePlanner
 
         var cost = ScenarioA1VehicleTerrainCosts.BypassHalfMp(open, rise, HasSmoke(state, obstacle), state.Location(vehicle.Id)?.Location is { } now && now != obstacle,
             () => WreckEntryHalfMp(state, obstacle, false), reverse, MovementTypeOf(vehicle),
-            VehicleWeatherHalfMp(state, type, "open-ground", false, false, false, rise));
+            VehicleWeatherHalfMp(state, type, "open-ground", false, false, false, rise), 2 * LiveStacking.Of(state, obstacle, vehicle.Side).PersonnelExcess);
 
         return (new VehicleEntry(cost, false, null, [], obstacle, other, "open-ground", false, reverse, null), null);
     }

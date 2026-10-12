@@ -356,6 +356,31 @@ public sealed class CloseCombatStepsTests : IDisposable
             unitIds = G2,
             to = "bd01:A1:0"
         }));
+
+        // Pass 40, task 40.5 (A8.312, p. 61): the two squads owe their attack on the MMC that entered their Location, as one Mandatory FG, before
+        // the DEFENDER may pass or fire anything else.
+        var owed = Planner().MandatoryFire(Current, store.Read(Scope)!.Events)!;
+        Assert.Equal((BoardLocation.Parse("bd01:A1:0"), true), (owed.At, owed.Group));
+        Assert.Equal(R4R5, owed.Firers);
+        Assert.Contains((await Do(GameActions.PassFire, NoRoll(), new
+        {
+        })).Reasons, reason => reason.StartsWith("play.pass-mandatory", StringComparison.Ordinal));
+        Assert.Contains((await Do(GameActions.Fire, NoRoll(), new
+        {
+            firers = R4,
+            target = "bd01:A1:0"
+        })).Reasons, reason => reason.StartsWith("play.fire-mandatory", StringComparison.Ordinal));
+        Assert.Contains((await Do(GameActions.Fire, NoRoll(), new
+        {
+            firers = R4R5,
+            target = "bd01:B3:0"
+        })).Reasons, reason => reason.StartsWith("play.fire-mandatory", StringComparison.Ordinal));
+        Committed(await Do(GameActions.Fire, Once(6, 5, 3, 3, 3, 3), new
+        {
+            firers = R4R5,
+            target = "bd01:A1:0"
+        }));
+        Assert.Null(Planner().MandatoryFire(Current, store.Read(Scope)!.Events));
         Committed(await Do(GameActions.PassFire, NoRoll(), new
         {
         }));
@@ -460,6 +485,42 @@ public sealed class CloseCombatStepsTests : IDisposable
         },
         ["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false },
     };
+
+    [Fact]
+    public async Task ASquadAlreadyMarkedFirstFireStillOwesTheAttackWithItsMg()
+    {
+        // Pass 40, task 40.5 (A8.312 with A8.3, p. 61; the referee's review): a squad marked First Fire attacks by Subsequent First Fire, which
+        // fires every MG it possesses. The attack is still owed, and its plainest form names the MG.
+        await Setup("german", Unit("g2", "asl:squad", "attacker-squad", "bd01:A3:0", "german", "asl:berserk"),
+            Unit("r4", "asl:squad", "defender-squad", "bd01:A1:0", "russian", "asl:first-fire"), Weapon("rlmg", "defender-lmg", "r4", "russian"));
+        await Advance(2);
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G2,
+            to = "bd01:A2:0"
+        }));
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }));
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G2,
+            to = "bd01:A1:0"
+        }));
+        var owed = Planner().MandatoryFire(Current, store.Read(Scope)!.Events)!;
+        Assert.Equal(R4, owed.Firers);
+        Assert.Contains((await Do(GameActions.PassFire, NoRoll(), new
+        {
+        })).Reasons, reason => reason.StartsWith("play.pass-mandatory", StringComparison.Ordinal));
+        var arguments = Planner().MandatoryFireArguments(Current, owed);
+        Assert.Equal("rlmg", Assert.Single(((Dictionary<string, string[]>)arguments["weapons"])["r4"]));
+        Committed(await Do(GameActions.Fire, Once(6, 5, 3, 3, 3, 3), arguments));
+        Assert.Null(Planner().MandatoryFire(Current, store.Read(Scope)!.Events));
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }));
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
 
     [Fact]
     public async Task ABerserkUnitAbandonsItsMmgBeforeChargingAndChargesIntoPrisoners()

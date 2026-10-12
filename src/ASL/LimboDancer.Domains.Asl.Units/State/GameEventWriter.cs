@@ -495,6 +495,26 @@ public static class GameEventWriter
                     writer.WriteBoolean("road", true);
                 }
 
+                if (moving.RoadRate)
+                {
+                    writer.WriteBoolean("roadRate", true);
+                }
+
+                if (moving.Dash is { } dashTo)
+                {
+                    writer.WriteString("dash", dashTo.ToString());
+                }
+
+                if (moving.IpcTo is { } ipcTo)
+                {
+                    writer.WriteString("ipcTo", ipcTo);
+                }
+
+                if (moving.InfantryOverrun)
+                {
+                    writer.WriteBoolean("infantryOverrun", true);
+                }
+
                 if (moving.MinimumMove)
                 {
                     writer.WriteBoolean("minimumMove", true);
@@ -713,6 +733,15 @@ public static class GameEventWriter
                 writer.WriteNumber("morale", paatc.Morale);
                 writer.WriteNumber("drm", paatc.Drm);
                 writer.WriteBoolean("passed", paatc.Passed);
+                break;
+            case InfantryOverrunNtc ntc:
+                Strings(writer, "units", ntc.Units);
+                writer.WriteString("taker", ntc.Taker);
+                writer.WriteString("target", ntc.Target.ToString());
+                writer.WriteString("roll", ntc.Roll);
+                writer.WriteNumber("morale", ntc.Morale);
+                writer.WriteNumber("drm", ntc.Drm);
+                writer.WriteBoolean("passed", ntc.Passed);
                 break;
             case MovementWindowClosed closed:
                 writer.WriteNumber("step", closed.Step);

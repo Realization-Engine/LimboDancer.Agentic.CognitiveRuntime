@@ -39,7 +39,7 @@ public static class LiveCloseCombat
             Is(unit, Conditions.Melee), stacking?.GetValueOrDefault(unit.Id), withdrawals?.GetValueOrDefault(unit.Id), Is(unit, Conditions.Cx), Is(unit, "asl:ti"),
             Is(unit, Conditions.Unarmed), unit.Custodian, infiltrations?.GetValueOrDefault(unit.Id),
             [.. state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id)
-                .Select(item => item.Id).Order(StringComparer.Ordinal)]))], null);
+                .Select(item => item.Id).Order(StringComparer.Ordinal)], LiveStacking.Manning(state, unit.Id)))], null);
     }
 
     /// <summary>The Ambush facts of a Location, before the drs; <paramref name="terrain"/> is the planner's read.</summary>
@@ -422,6 +422,12 @@ public sealed class CloseCombatRecordVerifier(ScenarioA1CloseCombatReference ref
             return reason;
         }
 
+        // Pass 40: whether a crew mans its Gun (A5.5) is taken as recorded, so a record made before the pass, which lacks the fact, replays.
+        var manning = recorded.Units.Where(unit => unit.UnitId is not null).ToDictionary(unit => unit.UnitId!, unit => unit.Manning, StringComparer.Ordinal);
+        expected = expected with
+        {
+            Units = expected.Units is null ? null : [.. expected.Units.Select(unit => unit with { Manning = unit.UnitId is { } id ? manning.GetValueOrDefault(id) : null })]
+        };
         if (JsonSerializer.Serialize(expected, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json))
         {
             return "The CC record's facts do not match the game state.";

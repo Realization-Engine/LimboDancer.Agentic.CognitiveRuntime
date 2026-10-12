@@ -218,6 +218,55 @@ public sealed class ScenarioA1Pass10Tests
     }
 
     [Fact]
+    public void OverstackingIsOnTheIftDrFromTheFirersSideAndAgainstTheTargets()
+    {
+        // A5.12, A5.131 (p. 52; pass 40, task 40.6): kept here for this class's attack helpers; the count is tested in ScenarioA1Pass40RulesTests.
+        var crowded = Complete(Moving(Attack([5, 5])) with
+        {
+            FirerOverstack = 2,
+            TargetOverstack = 1,
+        });
+        Assert.Contains(("overstacked", 2m), Drm(crowded));
+        Assert.Contains(("vs-overstacked", -1m), Drm(crowded));
+        Assert.Contains(Drm(crowded), item => item.Name == "ffnam");
+        Assert.DoesNotContain(Drm(Complete(Moving(Attack([5, 5])))), item => item.Name is "overstacked" or "vs-overstacked");
+    }
+
+    [Fact]
+    public void FireAtADashIsAreaFireButNotAlongAFireLane()
+    {
+        // A4.63 (p. 52; pass 40, task 40.3): kept here for this class's attack helpers.
+        var dash = Complete(Moving(Attack([5, 5])) with
+        {
+            Dash = true,
+        });
+        Assert.Contains("dash", Multipliers(dash));
+        Assert.DoesNotContain("dash", Multipliers(Complete(Moving(Attack([5, 5])))));
+    }
+
+    [Fact]
+    public void HazardousMovementIsReadInEveryFirePhaseForTheUnitsThatPushed()
+    {
+        // A4.62 (p. 51; pass 40, task 40.8, ruling R40.10): "regardless of fire phase until they are pinned".
+        var prep = Attack([5, 5]);
+        Assert.True(ScenarioA1FireMapRules.HazardousMovement(["de-s"], prep));
+        Assert.Null(ScenarioA1FireMapRules.HazardousMovement([], prep));
+        Assert.Null(ScenarioA1FireMapRules.HazardousMovement(["other"], prep));
+        Assert.Null(ScenarioA1FireMapRules.HazardousMovement(["de-s"], prep with
+        {
+            Targets = [Target("de-s") with { Broken = true }],
+        }));
+        var fired = Complete(prep with
+        {
+            HazardousMovement = true,
+        });
+        Assert.Contains(("hazardous-movement", -2m), Drm(fired));
+        Assert.DoesNotContain(fired.Reasons ?? [], reason => reason.Contains("terrain-fact-outside", StringComparison.Ordinal));
+        Assert.Equal(["a", "b"], ScenarioA1MovementCalculator.HazardousMovers(["a"], true, ["b"]));
+        Assert.Equal(["a"], ScenarioA1MovementCalculator.HazardousMovers(["a"], false, ["b"]));
+    }
+
+    [Fact]
     public void MarshHasNoTemButNoFfmoAndRubbleHasItsBuildingsTem()
     {
         // B16.3, B24.3 (ruling R10.1).

@@ -64,6 +64,29 @@ public static class ScenarioA1Definitions
         ["Stone Rubble"] = "stone-rubble",
     };
 
+    /// <summary>
+    /// B13.3, B13.31 (p. 128; pass 40, ruling R40.4): a woods-road hex, whose "normal woods TEM is in effect" but for a mover at the road rate. The
+    /// map names such a hex as VASL does (<c>VASLBoard.fillWoodsRoadHexes</c>): a road at its center dot and Woods on one of its hexside Locations.
+    /// </summary>
+    public static bool IsWoodsRoadHex(bool centerIsRoad, IEnumerable<string?> hexsideLocationTerrains)
+    {
+        ArgumentNullException.ThrowIfNull(hexsideLocationTerrains);
+        return centerIsRoad && hexsideLocationTerrains.Any(name => name == "Woods");
+    }
+
+    /// <summary>
+    /// A4.132, B3.3 (pp. 48, 113; pass 40): the terrain a fire attack reads for a mover that entered its Location at the road rate, from each
+    /// firing Location's two target points: Open Ground (no TEM of the other terrain, and FFMO as Open Ground has it) when every firing Location
+    /// reaches the hex center dot or the road's hexside without crossing the hex's other terrain; the Location's own terrain otherwise, and when
+    /// the map cannot say. A7.52: the worst case of a Fire Group's Locations applies to all of it.
+    /// </summary>
+    public static string RoadRateTargetTerrain(string locationTerrain, IEnumerable<(bool? CenterCrossesTerrain, bool? HexsideCrossesTerrain)> firingLocations)
+    {
+        ArgumentNullException.ThrowIfNull(firingLocations);
+        var read = firingLocations.ToArray();
+        return read.Length > 0 && read.All(item => item.CenterCrossesTerrain == false || item.HexsideCrossesTerrain == false) ? "open-ground" : locationTerrain;
+    }
+
     /// <summary>The IFT results that are at least a NMC (A10.62).</summary>
     public static IReadOnlyList<string> AtLeastNmc
     {
@@ -181,6 +204,17 @@ public static class ScenarioA1Definitions
     /// berserk, captured, stunned, shocked, or held in Melee. A pinned, CX, TI, or unarmed unit is still in Good Order. Until pass 35 the planner's
     /// reading left a TI unit out and let a berserk one in, both against the rule. A Disrupted unit is broken, so it needs no clause of its own.
     /// </summary>
+    /// <summary>
+    /// A1.6 (p. 45; pass 40): the Unit Size Number. "Personnel units have a US# equal to the number of silhouettes on their counter (SMC: 1;
+    /// Crew/HS: 2; Squad: 3). Horses and all other 5/8\" counters have a US# of 4 ... [EXC: Any vehicle or Gun classified as large or very large
+    /// (red H, AF, or M#) has a US# of 5]". The one member for it: Concealment (A12.12), Guarding prisoners (A20.5), and CC read it here.
+    /// </summary>
+    public static int UnitSize(bool squad, bool halfSquadOrCrew, bool fiveEighths = false, bool large = false) =>
+        fiveEighths ? (large ? 5 : 4) : squad ? 3 : halfSquadOrCrew ? 2 : 1;
+
+    /// <summary>The US# of a Personnel unit by its kind (A1.6).</summary>
+    public static int UnitSize(string? kind) => UnitSize(kind == "asl:squad", kind is "asl:half-squad" or "asl:crew");
+
     public static bool GoodOrderOf(bool active, bool broken, bool berserk, bool melee, bool captured, bool stunned, bool shocked) =>
         active && !broken && !berserk && !melee && !captured && !stunned && !shocked;
 

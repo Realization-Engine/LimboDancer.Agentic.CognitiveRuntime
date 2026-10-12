@@ -12,8 +12,31 @@ public static class ScenarioA1SupportWeaponRules
     /// <summary>A1.31, A10.7: the directing leader's modifier, one worse when wounded (A17.3).</summary>
     public static int LeaderDrm(int? leadership, bool wounded) => (leadership ?? 0) + (wounded ? 1 : 0);
 
+    /// <summary>
+    /// A1.31, A1.32 (p. 45; pass 40): "Guards ... [and] unarmed units (20.5) ... do not require leader direction to Deploy", nor "leader presence to
+    /// Recombine". The Guards are the Guards of prisoners (ruling R31.4). Finns, Carrier HS, and U.S.M.C. 7-6-8s are not in the catalog.
+    /// </summary>
+    public static bool NeedsNoLeader(bool guard, bool unarmed) => guard || unarmed;
+
+    /// <summary>
+    /// A20.5 (p. 88; pass 40): "An unbroken Guard squad can Deploy into HS automatically at any time, regardless of nationality or leader
+    /// requirements": in any phase, with no NTC.
+    /// </summary>
+    public static bool GuardDeploysAtWill(bool squad, bool guard, bool broken) => squad && guard && !broken;
+
+    /// <summary>
+    /// A1.32 (p. 45; pass 40): HS Recombine "at the start of any RPh", so not once a unit of their side has attempted a Rally, a Repair, a
+    /// Deployment, a Recovery, or a Transfer in it. Null when they may.
+    /// </summary>
+    public static string? RecombineStartBar(bool sideHasActed) => sideHasActed
+        ? "play.recombine-start: HS Recombine at the start of the RPh, before any other RPh action of their side (A1.32)" : null;
+
     /// <summary>A1.32: the squad is Fanatic only when both HS are.</summary>
     public static bool RecombinedFanatic(bool one, bool two) => one && two;
+
+    /// <summary>A4.44 (p. 50; pass 40): "a Recovery attempt is allowed only by an unpinned, Good Order non-Bypassing unit".</summary>
+    public static string? RecoveryBypassBar(string unitId, bool bypassing) =>
+        bypassing ? $"play.recover-bypass: {unitId} is in Bypass, and a Bypassing unit Recovers nothing (A4.44)" : null;
 
     /// <summary>A4.44: a Recovery in the MPh costs one MF, refused when it would pass the unit's allotment.</summary>
     public static bool RecoveryMfShort(int allotment, int mfSpent, bool halfMfSpent) => (2 * mfSpent) + (halfMfSpent ? 1 : 0) + 2 > 2 * allotment;

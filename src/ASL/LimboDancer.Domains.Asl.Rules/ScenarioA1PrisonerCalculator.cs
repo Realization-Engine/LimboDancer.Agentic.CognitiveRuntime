@@ -45,9 +45,6 @@ public static class ScenarioA1PrisonerCalculator
         return unknown ? null : false;
     }
 
-    /// <summary>A1.6 (p. 45), A20.51: a unit's US#: a squad 3, a HS or crew 2, a SMC 1.</summary>
-    public static int UnitSize(bool squad, bool halfSquadOrCrew) => squad ? 3 : halfSquadOrCrew ? 2 : 1;
-
     /// <summary>A20.51: a Guard may hold prisoners whose US# total at most five times its own.</summary>
     public static bool CanGuard(int load, int prisonerSize, int captorSize) => load + prisonerSize <= 5 * captorSize;
 

@@ -23,10 +23,10 @@ public sealed partial class GamePlanner
     /// carries beyond its IPC (three for a MMC, one for a SMC, none for a wounded SMC; one less while CX). A berserk unit counts only its 1PP SW,
     /// since it abandons the others before it charges (A15.431). Null when the catalog does not decide it.
     /// </summary>
-    private int? MfAllotment(GameState state, UnitInstance unit, int doubleTimeMf, bool cx, int bonusMf = 0, int ipcBonus = 0) =>
+    private int? MfAllotment(GameState state, UnitInstance unit, int doubleTimeMf, bool cx, int bonusMf = 0, int ipcBonus = 0, int? allowance = null) =>
         ScenarioA1MovementCalculator.MfAllotment(
             new MfAllotmentFacts(unit.Kind == UnitKinds.Dummy, DefinitionOf(unit)?.Class, vocabulary.IsA(unit.Kind, "asl:smc"), Is(unit, Conditions.Wounded), Is(unit, Conditions.Berserk)),
-            doubleTimeMf, cx, bonusMf, ipcBonus, () => Experience.MoveAllowance(state, unit, catalogs, vocabulary), () => Portage(state, unit));
+            doubleTimeMf, cx, bonusMf, ipcBonus, () => allowance ?? Experience.MoveAllowance(state, unit, catalogs, vocabulary), () => Portage(state, unit));
 
     /// <summary>One unit of a moving stack as Rules reads it for the leader bonus (pass 32.b).</summary>
     private MovingUnitFacts MovingUnit(UnitInstance unit) =>
@@ -36,8 +36,10 @@ public sealed partial class GamePlanner
     /// <summary>The PP of each SW a unit possesses (A4.4), from the catalog; null when one is not recorded.</summary>
     private int[]? Portage(GameState state, UnitInstance unit)
     {
-        var values = state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id)
-            .Select(PortageOf).ToArray();
+        // A4.4 (pass 40): with what it holds, what it portaged earlier in this phase and dropped: that portage cost is not recouped.
+        EquipmentInstance[] held = [.. state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unit.Id)];
+        var values = held.Concat(state.PortagedThisPhase.Where(item => item.Unit == unit.Id && !held.Any(now => now.Id == item.Weapon))
+            .Select(item => state.Find(item.Weapon)).OfType<EquipmentInstance>()).Select(PortageOf).ToArray();
         return values.Any(value => value is null) ? null : [.. values.Select(value => value!.Value)];
     }
 
@@ -71,6 +73,19 @@ public sealed partial class GamePlanner
 
         var assault = arguments.TryGetProperty("assault", out var flag) && flag.ValueKind == JsonValueKind.True;
         var doubleTime = arguments.TryGetProperty("doubleTime", out var timed) && timed.ValueKind == JsonValueKind.True;
+
+        // A4.132 (pass 40): across a road hexside the mover may pay the cost of the hex's other terrain and be in it.
+        var terrainRate = arguments.TryGetProperty("terrainRate", out var rated) && rated.ValueKind == JsonValueKind.True;
+
+        // A4.15 (pass 40): the step is declared an Infantry OVR onto a lone Known SMC.
+        var overrunDeclared = arguments.TryGetProperty("overrun", out var overrunning) && overrunning.ValueKind == JsonValueKind.True;
+
+        // A4.63 (pass 40): the Location a Dash is declared to, with the stack's first step.
+        BoardLocation? dashTo = null;
+        if (Text(arguments, "dash", out var dashText) && !BoardLocation.TryParse(dashText, out dashTo))
+        {
+            return Refused(scope, label, expected, "play.invalid-arguments: a Dash names the Location Dashed to, such as bd01:E4:0");
+        }
 
         // Pass 32.b: the planner reads the state, the map, and the catalog block by block, in the order the old body read them, and Rules decides each
         // block (ScenarioA1MovementCalculator); the arguments' parsing and the reads that belong to other slices (the entry edge, the playable area,
@@ -194,11 +209,26 @@ public sealed partial class GamePlanner
             abandoned.AddRange(abandonedIds.Select(id => items[id]));
         }
 
+        // A4.4 (pass 40): no item is portaged more than once a phase.
+        if (ScenarioA1MovementCalculator.PortagedTwiceBar(state.Equipment.Where(item => item.Status == InstanceStatus.Active
+                && item.Holding is { Role: HoldingRole.Possessed } carrier && movers.Any(unit => unit.Id == carrier.Holder))
+            .Select(item => (item.Id, item.Holding!.Holder, state.PortagedThisPhase.Where(known => known.Weapon == item.Id).Select(known => known.Unit).FirstOrDefault()))) is { } twice)
+        {
+            return Refused(scope, label, expected, twice);
+        }
+
         if (ScenarioA1MovementCalculator.MoveTiming(current is not null, current?.Assault == true, assault, doubleTime, state.Nvr,
             [.. movers.Select(unit => new MoveTimingUnitFacts(unit.Id, Is(unit, Conditions.Wounded), Is(unit, Conditions.Berserk), Is(unit, Conditions.Cx), state.NoDoubleTime.Contains(unit.Id),
-                vocabulary.IsA(unit.Kind, "asl:smc"), Portage(state, unit)?.Sum()))]) is { } badTiming)
+                vocabulary.IsA(unit.Kind, "asl:smc"), Portage(state, unit)?.Sum()))], current?.ChangedLocation == true, to != from) is { } badTiming)
         {
             return Refused(scope, label, expected, badTiming);
+        }
+
+        // A4.63 (pass 40): once a Dash is declared no SMOKE grenade or DC is placed with the MF of the road Location.
+        if (current?.Dash is { } pendingDash && (Text(arguments, "placeDc", out _) || Text(arguments, "smoke", out _)))
+        {
+            return Refused(scope, label, expected, ScenarioA1Dash.StepBar(new DashStepFacts(pendingDash.ToString(), null, to.ToString(), false, true, false, false, false, false, false, false,
+                false, false, true, false, false, false, false, false))!);
         }
 
         var action = ScenarioA1MovementCalculator.SpecialAction(Text(arguments, "placeDc", out var chargeId), Text(arguments, "placeDcAt", out var placeAt),
@@ -236,27 +266,83 @@ public sealed partial class GamePlanner
 
         var (entry, stepReason, bypassing, occupy) = entering is { } edgeSide
             ? EntryStep(state, movers, to, edgeSide, bypass)
-            : MoveEntry(state, movers, from, to, current, bypass);
+            : MoveEntry(state, movers, from, to, current, bypass, terrainRate);
         if (entry is null)
         {
             return Refused(scope, label, expected, stepReason!);
         }
 
+        // A4.132 (pass 40): the choice is a step's across a road hexside; an entry from off board, a Bypass, and an obstacle occupied have none.
+        if (terrainRate && (entering is not null || bypassing is not null || occupy))
+        {
+            return Refused(scope, label, expected, "play.move-terrain-rate: the cost of the hex's other terrain is chosen only for a step across a road hexside, not for an entry from off board, a Bypass, or a step from Bypass into the obstacle of the same hex (A4.132)");
+        }
+
+        // A4.15, A20.54 (pass 40): an Infantry OVR onto a lone Known SMC needs its passed NTC; Unarmed units are entered with none. Rules decides
+        // from the Location's enemy units as the moving side knows them and from the NTCs the state keeps.
+        var defenders = OverrunDefenders(state, to, movers[0].Side);
+        var recapture = !overrunDeclared && berserk == 0 && entering is null && bypassing is null && !occupy && !minimumMove && to != from && ScenarioA1InfantryOverrun.OnlyUnarmed(defenders)
+            && ScenarioA1InfantryOverrun.MayRecapture(movers.Any(unit => Is(unit, Conditions.Unarmed)), movers.All(unit => unit.Kind == UnitKinds.Dummy));
+        if (overrunDeclared)
+        {
+            string[] mmcIds = [.. movers.Where(unit => vocabulary.IsA(unit.Kind, "asl:mmc")).Select(unit => unit.Id)];
+            var taken = state.InfantryOverrunNtcs.Where(ntc => ntc.Target == to.ToString()).ToArray();
+            if ((ScenarioA1InfantryOverrun.TargetBar(defenders, to.ToString())
+                ?? ScenarioA1InfantryOverrun.EntryBar(ScenarioA1InfantryOverrun.NtcCovers(mmcIds, ids, [.. taken.Select(ntc => (ntc.Units, ntc.Taker, ntc.Passed))]),
+                    taken.Any(ntc => !ntc.Passed && ntc.Units.Any(id => ids.Contains(id, StringComparer.Ordinal))), minimumMove, bypassing is not null, entering is not null, berserk > 0,
+                    to.ToString())) is { } overrunBar)
+            {
+                return Refused(scope, label, expected, overrunBar);
+            }
+        }
+
+        // A4.63 (pass 40): a Dash declared with this step, or pending from the last; Rules decides from the step's facts and the map's.
+        if (ScenarioA1Dash.StepBar(new DashStepFacts(current?.Dash?.ToString(), dashTo?.ToString(), to.ToString(), current is null,
+            movers.Any(unit => unit.MfSpent != 0 || unit.HalfMfSpent), assault, minimumMove, bypassing is not null, occupy, pushed is not null, entering is not null, berserk > 0,
+            terrainRate, false, ReadLocation(state, to)?.Hex.Center.Terrain?.IsRoad == true, dashTo is { Level: 0, Side: null },
+            dashTo is not null && SideToward(state, to, dashTo) is not null, dashTo == from, dashTo is not null && SideToward(state, from, dashTo) is not null)) is { } dashBar)
+        {
+            return Refused(scope, label, expected, dashBar);
+        }
+
+        // "Provided the normal MF expenditure for this two-hex move is <= the unit's available MF": the step on, at its cost of entry.
+        var dashHalfMf = 0;
+        if (dashTo is not null)
+        {
+            var (onward, onwardReason) = InfantryStep(state, to, dashTo);
+            if (onward is null)
+            {
+                return Refused(scope, label, expected, onwardReason!);
+            }
+
+            dashHalfMf = onward.HalfMf;
+        }
+
         var terrain = entry.Terrain;
+
+        // A5.11: the stack the entry makes there; a stack that occupies the obstacle it Bypasses is already in the Location, and marsh takes all the MF.
+        var overstack = occupy || entry.AllMf ? 0 : LiveStacking.Of(state, to, movers[0].Side, movers).PersonnelExcess;
         var (noCost, halfMf) = ScenarioA1MovementCalculator.EntryCost(
             new EntryCostFacts(entry, movers.Any(state.Encircled), pushed is not null, bypassing is not null, occupy, minimumMove, assault, berserk, current is not null, doubleTime,
-                [.. movers.Select(unit => new EntryMoverFacts(unit.MfSpent != 0 || unit.HalfMfSpent, unit.DoubleTimeMf, Is(unit, Conditions.Cx)))]),
+                [.. movers.Select(unit => new EntryMoverFacts(unit.MfSpent != 0 || unit.HalfMfSpent, unit.DoubleTimeMf, Is(unit, Conditions.Cx)))], overstack),
             (index, doubleTimeMf, cx) => MfAllotment(state, movers[index], doubleTimeMf, cx));
         if (noCost is not null)
         {
             return Refused(scope, label, expected, noCost);
         }
 
+        // A4.15 (pass 40): an Infantry OVR enters "at double the total MF cost of entry".
+        if (overrunDeclared)
+        {
+            halfMf = ScenarioA1InfantryOverrun.EntryHalfMf(halfMf);
+        }
+
         // A4.14, A12.15 (rulings R10.11, R10.15): the units of the target Location are read here, and Rules decides who is revealed and who is barred.
         var there = state.At(to).OfType<UnitInstance>().ToArray();
         var enemies = ScenarioA1MovementCalculator.EnemiesAtTarget(
             [.. there.Select(unit => new UnitAtTargetFacts(unit.Id, unit.Status == InstanceStatus.Active, unit.Side, Is(unit, Conditions.Captured), KnownEnemy(unit), unit.Kind == UnitKinds.Dummy))],
-            state.PhasingSide, charge is not null, occupy, bypassing is not null, movers.All(unit => unit.Kind == UnitKinds.Dummy), minimumMove, string.Join(", ", ids), to.ToString());
+            state.PhasingSide, charge is not null, occupy, bypassing is not null, movers.All(unit => unit.Kind == UnitKinds.Dummy), minimumMove, string.Join(", ", ids), to.ToString(),
+            overrunDeclared || recapture);
         if (enemies.Refusal is { } occupied)
         {
             return Refused(scope, label, expected, occupied);
@@ -274,11 +360,18 @@ public sealed partial class GamePlanner
         UnitInstance[] hiddenEnemies = [.. enemies.HiddenEnemies.Select(id => byId[id])];
 
         // A4.11, A4.42, A4.5, A4.12, B3.4, A4.61, A4.134, B16.4: the MF each mover has left, decided by Rules from each mover's facts and allotment.
-        var leaderIpcTo = LeaderIpcRecipient(state, movers);
+        // A4.42 (pass 40, ruling R40.11): the laden MMC the mover names for the leader's IPC, kept for the whole move.
+        var ipcChosen = Text(arguments, "ipcTo", out var ipcText) ? ipcText : null;
+        var leaderIpcTo = LeaderIpcRecipient(state, movers, ipcChosen ?? current?.IpcTo);
+        if (ScenarioA1MovementCalculator.IpcChoiceBar(ipcChosen, current?.IpcTo, leaderIpcTo.Recipient) is { } ipcBar)
+        {
+            return Refused(scope, label, expected, ipcBar);
+        }
+
         if (ScenarioA1MovementCalculator.MfLeft(
             [.. movers.Select(unit => new MfLeftMoverFacts(unit.Id, unit.MfSpent == 0 && !unit.HalfMfSpent, unit.DoubleTimeMf, Is(unit, Conditions.Cx), unit.OffRoad, LeaderBonus(state, unit, movers),
                 (unit.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0)))],
-            minimumMove, entry.AllMf, doubleTime, entry.RoadRate, pushed is not null, state.Nvr, assault, halfMf, leaderIpcTo,
+            minimumMove, entry.AllMf, doubleTime, entry.RoadRate, pushed is not null, state.Nvr, assault, halfMf + dashHalfMf, leaderIpcTo,
             (index, doubleTimeMf, cx, bonusMf, ipcBonus) => MfAllotment(state, movers[index], doubleTimeMf, cx, bonusMf, ipcBonus)) is { } noMf)
         {
             return Refused(scope, label, expected, noMf);
@@ -293,13 +386,17 @@ public sealed partial class GamePlanner
             bypassing is null ? null : [.. bypassing.Select(side => side.ToString().ToLowerInvariant())], halfMf, assault, doubleTime, minimumMove,
             [.. abandoned.Select(item => item.Id)], entry.RoadRate, pushed is not null, state.Night, movers.Length > 0 && movers.All(unit => unit.Kind == UnitKinds.Dummy),
             [.. enemiesThere.Select(unit => new MoveRevealUnitFacts(unit.Id, unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Hidden)))],
-            [.. hiddenEnemies.Select(unit => new MoveRevealUnitFacts(unit.Id, unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Hidden)))]));
+            [.. hiddenEnemies.Select(unit => new MoveRevealUnitFacts(unit.Id, unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Hidden)))], overstack, entry.OnRoad, dashTo?.ToString(), overrunDeclared, recapture));
         var forcedBack = verdict.ForcedBack;
         var moved = new MovementStepped(ids, forcedBack ? from : to, halfMf, assault, step)
         {
             Charge = charge,
             DoubleTime = doubleTime,
             Road = verdict.RoadBonus,
+            RoadRate = entry.OnRoad && !forcedBack,
+            Dash = forcedBack ? null : dashTo,
+            IpcTo = ipcChosen,
+            InfantryOverrun = (overrunDeclared || recapture) && !forcedBack,
             MinimumMove = minimumMove,
             Attempted = forcedBack ? to : null,
             Bypass = bypassing,
@@ -508,6 +605,12 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.no-game: the game has no state yet");
         }
 
+        // Pass 40 (A8.312): no pass while the DEFENDER owes its attack on the units that entered its Location.
+        if (MandatoryFire(state, existing) is { } owed && ScenarioA1MandatoryFire.PassBar(owed.Firers, owed.Group, owed.At.ToString()) is { } mandatoryBar)
+        {
+            return Refused(scope, label, expected, mandatoryBar);
+        }
+
         // Pass 32.b: the moving stack is read here, and Rules decides.
         var movement = state.Movement;
         var (refusal, gone, summary) = ScenarioA1MovementCalculator.PassFire(movement is null ? null
@@ -553,6 +656,19 @@ public sealed partial class GamePlanner
             var (steps, _, undecided) = ChargeSteps(state, [unit], at.Location, movement);
             var left = ScenarioA1ChargeCalculator.HalfMfLeft(MfAllotment(state, unit, unit.DoubleTimeMf, Is(unit, Conditions.Cx)), unit.MfSpent, unit.HalfMfSpent);
             return new EndMoveBerserkFacts([.. steps.Values.Select(step => step.HalfMf)], undecided, left);
+        }
+
+        // A4.63 (pass 40): a Dashing stack ends its MPh in the Location it Dashed to, unless its Dash has ceased.
+        // "... or otherwise unable to enter": the step into the Location Dashed to is asked of the move's own plan, which draws no dice.
+        var dashBlocked = movement?.Dash is { } dashTo && movement.Members.Count > 0 && PlanMove(scope, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+        {
+            ["unitIds"] = movement.Members,
+            ["to"] = dashTo.ToString(),
+        }), existing, "dash-read", expected, label, actor).Status != GamePlanStatus.Ready;
+        if (ScenarioA1Dash.EndBar(movement?.Dash?.ToString(), movement is not null && ScenarioA1Dash.BenefitsHold(movement.Movers.Select(id => state.Unit(id)).OfType<UnitInstance>()
+            .Select(unit => (Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned), Is(unit, Conditions.Berserk)))), dashBlocked) is { } dashEnd)
+        {
+            return Refused(scope, label, expected, dashEnd);
         }
 
         var verdict = ScenarioA1MovementCalculator.EndMove(movement is null ? null

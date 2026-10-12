@@ -60,6 +60,13 @@ public sealed record CloseCombatUnit(
         get; init;
     }
 
+    /// <summary>Whether the unit is a crew or HS manning a Gun, which is a squad for the stacking limits (A5.5; ruling R40.2); null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Manning
+    {
+        get; init;
+    }
+
     /// <summary>Whether the unit is Unarmed (A20.5; ruling R14.5): a CC FP of one; null is false.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Unarmed

@@ -14,8 +14,8 @@ public sealed class ScenarioA1Pass35RulesTests
         public LosFacts? Los(int fromLocation, int toLocation) => new(true, Math.Abs(fromLocation - toLocation));
     }
 
-    private static EnemyUnitFacts Enemy(int at, bool goodOrder = true, bool hidden = false, bool aboard = false, bool? broken = false, bool dummy = false) =>
-        new(true, "german", dummy, aboard, broken, hidden, goodOrder, at);
+    private static EnemyUnitFacts Enemy(int at, bool goodOrder = true, bool hidden = false, bool aboard = false, bool dummy = false) =>
+        new(true, "german", dummy, aboard, hidden, goodOrder, at);
 
     [Fact]
     public void GoodOrderIsNotBrokenBerserkCapturedStunnedShockedOrInMelee()

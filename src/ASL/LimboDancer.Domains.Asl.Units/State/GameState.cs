@@ -181,6 +181,18 @@ public sealed record GameState(
     /// <summary>The light mortars carried to a new Location in this Player Turn's MPh, which do not fire in its AFPh (A4.41; referee, pass 9).</summary>
     public IReadOnlyList<string> MovedWeapons { get; init; } = [];
 
+    /// <summary>The units that pushed a Gun in this Player Turn's MPh, under Hazardous Movement in every fire phase of it (A4.62; pass 40, ruling R40.10).</summary>
+    public IReadOnlyList<string> HazardousMovers { get; init; } = [];
+
+    /// <summary>
+    /// The items portaged in this phase, each with the unit that first spent MF holding it (A4.4; pass 40): the unit does not recoup their PP by
+    /// dropping them, and no other unit portages them. Emptied at every phase change.
+    /// </summary>
+    public IReadOnlyList<(string Unit, string Weapon)> PortagedThisPhase { get; init; } = [];
+
+    /// <summary>The NTCs of Infantry OVRs taken in this phase (A4.15; pass 40): a stack enters as an OVR only on a passed one, and takes one a Location.</summary>
+    public IReadOnlyList<InfantryOverrunNtcTaken> InfantryOverrunNtcs { get; init; } = [];
+
     /// <summary>
     /// The leader directing each SW's To Hit DR this phase (A7.53; referee, pass 9), who may go on directing its further ROF shots; cleared at every
     /// phase change.

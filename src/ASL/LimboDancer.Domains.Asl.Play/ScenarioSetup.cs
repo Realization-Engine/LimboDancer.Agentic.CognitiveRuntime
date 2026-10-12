@@ -110,6 +110,13 @@ public static class ScenarioSetup
             group.Areas.All(area => area.Kind == "entry")) is { } index ? entries[index] : null;
     }
 
+    /// <summary>A Location as the setup's facts, with the other board's name for a butted half-hex (A2.3; pass 40).</summary>
+    private static SetupLocationFacts LocationFacts(BoardLocation at, Func<BoardLocation, BoardLocation?>? otherHalf) =>
+        new(at.ToString(), at.Board.Value, at.Hex.ToString(), at.Hex.RowNumber)
+        {
+            OtherHalf = otherHalf?.Invoke(at) is { } other ? new SetupLocationFacts(other.ToString(), other.Board.Value, other.Hex.ToString(), other.Hex.RowNumber) : null,
+        };
+
     /// <summary>Whether a Location lies in a setup area of the card (R17.8, R19.3): a building's hexes, or a board's hex numbers.</summary>
     public static bool Within(ScenarioCard card, ScenarioCardSetup area, BoardLocation at)
     {
@@ -125,7 +132,7 @@ public static class ScenarioSetup
     /// <paramref name="enterable"/> whether Infantry could enter that terrain in play; <paramref name="halfSquadOf"/> names a squad's HS.
     /// </summary>
     public static SetupReport Check(ScenarioCard card, IReadOnlyList<SetupCounter> counters, Func<BoardLocation, string?> terrain, Func<string?, bool> enterable,
-        Func<string, string?> halfSquadOf, int? month, string? balance = null)
+        Func<string, string?> halfSquadOf, int? month, string? balance = null, Func<BoardLocation, BoardLocation?>? otherHalf = null)
     {
         ArgumentNullException.ThrowIfNull(card);
         ArgumentNullException.ThrowIfNull(counters);
@@ -143,7 +150,7 @@ public static class ScenarioSetup
             card.PlayableArea is { Enforced: true, Hexrows: not null }, card.PlayableArea?.Hexrows?.From, card.PlayableArea?.Hexrows?.To, card.PlayableArea?.Hexrows?.Board,
             card.PlayableArea?.Text, card.Tokens);
         var verdict = ScenarioA1SetupCalculator.Check(facts, [.. counters.Select(counter => new SetupCounterFacts(counter.Id, counter.Side, counter.Group, counter.Definition, counter.Kind,
-                counter.At is { } at ? new SetupLocationFacts(at.ToString(), at.Board.Value, at.Hex.ToString(), at.Hex.RowNumber) : null, counter.Concealed, counter.Hidden, counter.Dummy,
+                counter.At is { } at ? LocationFacts(at, otherHalf) : null, counter.Concealed, counter.Hidden, counter.Dummy,
                 counter.Equipment, counter.New, counter.OffBoard, counter.Broken, counter.NonOb, counter.Entry, counter.Aboard, counter.Manning, counter.Towed))],
             text => terrain(located[text]), enterable, halfSquadOf, month, balance);
         var areas = card.Sides.SelectMany(side => side.Groups.Select((group, index) => (side.Side, Id: ScenarioCards.GroupId(side.Side, index), group.Areas)))

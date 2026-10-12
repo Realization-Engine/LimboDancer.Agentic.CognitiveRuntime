@@ -5,6 +5,22 @@
 <LocationField Id="move-to" Label="To" Value="@Draft.To" DescribedBy="move-help-summary" Title="A Location such as bd01:D5:0; the level after the hex moves up or down a stairwell or along an upper level of a building (B23.4, B23.421); units waiting off board enter a hex of their entry edge (A2.51)" OnChange="@(value => Changed(Draft with { To = value }))" />
 <label title="A4.134: the unit's only hex this MPh, whatever it costs, even if CX; once the DEFENDER's fire is done it is pinned and CX."><input id="move-minimum" type="checkbox" checked="@Draft.Minimum" @onchange="@(args => Changed(Draft with { Minimum = args.Value is true }))" /> Minimum Move</label>
 <label title="A4.3, A4.31: enter the woods or building hex along one or two of its hexsides the obstacle does not touch, in order, such as southeast, northeast; the stack then leaves through the far vertex or pays to occupy the obstacle (move To its own Location).">Bypass <input id="move-bypass" value="@Draft.Bypass" @onchange="@(args => Changed(Draft with { Bypass = args.Value as string ?? string.Empty }))" size="18" placeholder="southeast, northeast" /></label>
+<label title="A4.132: across a road hexside into a hex that has other terrain (a woods-road hex, a building beside its road) the unit pays the road's cost and is on the road, with no TEM of that terrain and FFMO where the firer sees the road; check this to pay the other terrain's cost and be in it."><input id="move-terrain-rate" type="checkbox" checked="@Draft.TerrainRate" @onchange="@(args => Changed(Draft with { TerrainRate = args.Value is true }))" /> pay the other terrain's cost, not the road's</label>
+<LocationField Id="move-dash" Label="Dash to" Value="@Draft.Dash" Title="A4.63: declared before the unit moves, with its first step into a road Location; the Location named is on the other side of the road, and the unit's only further step is into it, where its MPh ends. In the road Location the DEFENDER's non-ordnance Defensive First Fire at it is Area Fire for a firer to whom neither side of the road is Open Ground." OnChange="@(value => Changed(Draft with { Dash = value }))" />
+@if (Selected.Count > 1)
+{
+    <label title="A4.42: one leader adds his IPC to one laden MMC that starts the phase with him and moves with him. With one laden MMC it goes there by itself; with several, name the one. The choice holds for the whole move.">Leader's IPC to
+        <select id="move-ipc" value="@Draft.IpcTo" @onchange="@(args => Changed(Draft with { IpcTo = args.Value as string ?? string.Empty }))">
+            <option value="">the only laden MMC</option>
+            @foreach (var row in Movers.Where(row => Selected.Contains(row.Id)))
+            {
+                <option value="@row.Id">@row.Label</option>
+            }
+        </select>
+    </label>
+}
+<label title="A4.15: a MMC enters the Location of a lone Known enemy SMC at double the MF of entry, once the stack has passed its NTC (its leader's for all of it, or the one MMC's). Take the NTC first; then check this and propose the move."><input id="move-overrun" type="checkbox" checked="@Draft.Overrun" @onchange="@(args => Changed(Draft with { Overrun = args.Value is true }))" /> Infantry OVR</label>
+<button type="button" id="propose-overrun-ntc" disabled="@(Selected.Count == 0 || Draft.To.Trim().Length == 0)" title="A4.15: the NTC for an Infantry OVR of the Location typed, by the units checked." @onclick="@(() => OnOverrunNtc.InvokeAsync())">Propose: the OVR's NTC</button>
 <label><input id="move-assault" type="checkbox" checked="@Draft.Assault" @onchange="@(args => Changed(Draft with { Assault = args.Value is true }))" /> Assault Movement</label>
 <label title="Double Time adds 2 MF (1 after the unit has spent MF) and makes the unit CX (A4.5); not for a unit that is CX, or whose CX counter came off at the start of this MPh (A4.51), nor with Assault Movement (A4.61)."><input id="move-double-time" type="checkbox" checked="@Draft.DoubleTime" @onchange="@(args => Changed(Draft with { DoubleTime = args.Value is true }))" /> Double Time</label>
 @if (PushGun is { } gun)
@@ -18,8 +34,11 @@
 }
 
 @code {
-    /// <summary>The step drafted: the Location typed, Minimum Move, the Bypass hexsides typed, Assault Movement, Double Time, and the Gun pushed.</summary>
-    public sealed record MoveDraft(string To, bool Minimum, string Bypass, bool Assault, bool DoubleTime, bool Push);
+    /// <summary>
+    /// The step drafted: the Location typed, Minimum Move, the Bypass hexsides typed, Assault Movement, Double Time, the Gun pushed, whether the
+    /// other terrain's cost is paid across a road hexside (A4.132), and the Location a Dash is declared to (A4.63).
+    /// </summary>
+    public sealed record MoveDraft(string To, bool Minimum, string Bypass, bool Assault, bool DoubleTime, bool Push, bool TerrainRate = false, string Dash = "", string IpcTo = "", bool Overrun = false);
 
     [Parameter, EditorRequired]
     public IReadOnlyList<UnitSelectionList.Row> Movers { get; set; } = [];
@@ -42,6 +61,10 @@
 
     [Parameter]
     public EventCallback OnPropose { get; set; }
+
+    /// <summary>Proposes the NTC of an Infantry OVR for the units checked and the Location typed (A4.15).</summary>
+    [Parameter]
+    public EventCallback OnOverrunNtc { get; set; }
 
     private Task Changed(MoveDraft draft) => OnDraftChanged.InvokeAsync(draft);
 }

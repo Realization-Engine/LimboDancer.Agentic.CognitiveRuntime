@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using LimboDancer.Dice;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
+using LimboDancer.Domains.Asl.Maps.Geometry;
 using LimboDancer.Domains.Asl.Maps.Los;
 using LimboDancer.Domains.Asl.Rules;
 using LimboDancer.Domains.Asl.Units.State;
@@ -23,6 +24,12 @@ public interface IFireLosReader
     /// hexside Location itself.
     /// </summary>
     public LosResult? ReadAuxiliary(GameState state, BoardLocation from, BoardLocation hexside) => Read(state, from, hexside);
+
+    /// <summary>
+    /// Whether the line to a target point of a hex entered at the road rate crosses the hex's other terrain (A4.132; pass 40): the center dot, or
+    /// the hexside named. By default the reader cannot say.
+    /// </summary>
+    public bool? CrossesTerrainInTargetHex(GameState state, BoardLocation from, BoardLocation target, HexsideDirection? enteredAcross) => null;
 }
 
 /// <summary>
@@ -76,7 +83,7 @@ public sealed partial class GamePlanner
             Is(unit, Conditions.Melee), Is(unit, Conditions.Captured), Is(unit, Conditions.Unarmed), LiveFire.IsVehicle(unit), state.Phase, state.PhasingSide,
             [.. state.Units.Where(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == unit.Id).Select(prisoner => prisoner.Kind)]);
 
-    private GamePlan PlanFire(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label,
+    private GamePlan PlanFireOf(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label,
         string actor)
     {
         if (Replay(existing).Current is not { } state)
@@ -1281,6 +1288,27 @@ public sealed partial class GamePlanner
             perLocation[location] = (range, sameLevel, fireLos!, height);
         }
 
+        // A4.132, B3.3, B13.31 (pp. 48, 113, 128; pass 40): a mover that entered the Location at the road rate is on the road, not in the hex's other
+        // terrain, for a firer whose LOS reaches the hex center dot or the road's hexside without crossing that terrain; Rules decides from each
+        // firing Location's two reads. A Bypassing stack and a Snap Shot have their own target points.
+        if (direct && lane is null && attack.SnapShot != true && state.Phase == "mph"
+            && state.Movement is { RoadRate: true, From: { } cameFrom } onRoad && onRoad.Location == target)
+        {
+            var across = SideToward(state, target, cameFrom);
+            terrain = ScenarioA1Definitions.RoadRateTargetTerrain(terrain, [.. perLocation.Keys.Select(location =>
+            {
+                var from = BoardLocation.Parse(location);
+                return (CrossesTerrainInTargetHex(state, from, target, null), across is { } side ? CrossesTerrainInTargetHex(state, from, target, side) : null);
+            })]);
+        }
+        else if (IsWoodsRoad(targetRead) && (attack.Targets is { Count: > 0 } aimedAt
+            ? aimedAt.All(item => item.UnitId is { } id && state.Unit(id) is { } aimed && LiveFire.IsVehicle(aimed))
+            : state.At(target).OfType<UnitInstance>().Any(LiveFire.IsVehicle)))
+        {
+            // B13.31 EXC: "a vehicle(s) in a woods-road hex is always considered on the road".
+            terrain = "open-ground";
+        }
+
         // A7.5: the group's facts from its Locations, each ADJACENT to another of them when the group spans Locations.
         var facts = ScenarioA1FireMapRules.GroupMapFacts(attack, terrain, targetHeight, perLocation,
             (one, two) => IsAdjacent(state, BoardLocation.Parse(one), BoardLocation.Parse(two)));
@@ -1304,14 +1332,12 @@ public sealed partial class GamePlanner
                 };
             }
 
-            // B10.31 (ruling R10.4): Height Advantage over every firer; A4.62 (ruling R10.8): a crew pushing its Gun is under Hazardous Movement.
-            var pushedGun = state.Phase == "mph" && state.Movement is { PushedGun: { } pushed } pushing && pushing.Location == target ? pushed : null;
+            // B10.31 (ruling R10.4): Height Advantage over every firer; A4.62 (rulings R10.8, R40.10): a crew that pushed its Gun this Player Turn
+            // is under Hazardous Movement in every fire phase of it.
             facts = facts with
             {
                 HeightAdvantage = ScenarioA1FireMapRules.HeightAdvantage(sources.Length, perLocation.Count,
                     () => HeightAdvantageAt(state, target, targetRead, [.. sources.Select(item => (item.From, item.Height))], attack.SnapShot == true)),
-                HazardousMovement = ScenarioA1FireMapRules.HazardousMovement(state.Phase, pushedGun is not null,
-                    pushedGun is not null && state.Find(pushedGun) is EquipmentInstance { Holding: { } manning } ? manning.Holder : null, attack),
             };
         }
 
@@ -1331,8 +1357,59 @@ public sealed partial class GamePlanner
             };
         }
 
+        // A5.12, A5.131 (p. 52; pass 40): each side's stack, in the Locations fired from and in the target Location; Rules counts them. Residual FP
+        // has no firers; a Dummy alone has no side's stack to read.
+        var firerSide = (attack.VehicleFire?.VehicleId ?? (attack.Firers is { Count: > 0 } firing ? firing[0].UnitId : null)) is { } firerId ? state.Unit(firerId)?.Side : null;
+        var targetSide = attack.Targets?.Select(item => item.UnitId is { } targetId ? state.Unit(targetId)?.Side : null).FirstOrDefault(side => side is not null);
+        facts = facts with
+        {
+            FirerOverstack = firerSide is null ? null
+                : ScenarioA1Stacking.GroupAttackPenalty(perLocation.Keys.Select(location => LiveStacking.Of(state, BoardLocation.Parse(location), firerSide))),
+            TargetOverstack = targetSide is not null && ScenarioA1Stacking.TargetPenaltyApplies(state.Phase == "mph", targetSide == state.PhasingSide,
+                    (attack.Targets ?? []).Any(item => item.UnitId is { } id && state.Unit(id) is { } aimed && vocabulary.IsA(aimed.Kind, "asl:personnel") && !LiveFire.IsVehicle(aimed)))
+                && LiveStacking.Of(state, target, targetSide, knownOnly: true).DefensePenalty is var crowded and > 0 ? crowded : null,
+
+            // A4.62 (p. 51; pass 40): Hazardous Movement holds against any attack, a vehicle's and Residual FP's too.
+            HazardousMovement = ScenarioA1FireMapRules.HazardousMovement(state.HazardousMovers, attack),
+
+            // A4.63 (pass 40): non-ordnance Defensive First Fire at a Dashing stack in its road Location; a Fire Lane and Residual FP are excepted.
+            Dash = attack.OrdnanceHit is null && attack.FireLane != true
+                && attack.FireKind is ScenarioA1FireCalculator.FirstFire or ScenarioA1FireCalculator.SubsequentFirstFire or ScenarioA1FireCalculator.FinalProtectiveFire
+                ? DashAgainst(state, [.. perLocation.Keys.Select(BoardLocation.Parse)], target) : null,
+        };
+
         // Backlog pass 16 (rulings R16.2, R16.3, R16.11 to R16.14): night and weather.
         return NightAndWeatherFacts(state, facts, target, targetRead.Hex.BaseLevel + (targetRead.Hex.Center.Terrain?.Height ?? 0), perLocation);
+    }
+
+    /// <summary>
+    /// A4.63 (pass 40): whether fire from these Locations at a Location is at a Dashing stack in its road Location, for firers to whom neither side
+    /// of the road is Open Ground; null when it is not. Rules decides from each firing Location's two reads.
+    /// </summary>
+    private bool? DashAgainst(GameState state, IReadOnlyList<BoardLocation> firingLocations, BoardLocation target)
+    {
+        if (state.Phase != "mph" || state.Movement is not { Dash: { } dashTo, From: { } dashFrom } dashing || dashing.Location != target)
+        {
+            return null;
+        }
+
+        UnitInstance[] movers = [.. dashing.Members.Select(id => state.Unit(id)).OfType<UnitInstance>()];
+        if (movers.Length == 0 || !ScenarioA1Dash.BenefitsHold(movers.Select(unit => (Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned), Is(unit, Conditions.Berserk)))))
+        {
+            return null;
+        }
+
+        var side = movers[0].Side;
+        return ScenarioA1Dash.QualifiesAgainst(firingLocations.Select(firer => (OpenGroundTo(state, firer, dashFrom, side), OpenGroundTo(state, firer, dashTo, side)))) ? true : null;
+    }
+
+    /// <summary>Whether a Location is Open Ground to a firing Location, as Interdiction reads it (A10.531; ruling R35.1): the reads handed to Rules.</summary>
+    private bool OpenGroundTo(GameState state, BoardLocation firer, BoardLocation at, string side)
+    {
+        var open = ReadLocation(state, at) is { } read && TerrainKey(read) == "open-ground";
+        var los = firer == at ? null : Los(state, firer, at);
+        var seen = firer == at || los is { IsBlocked: false };
+        return ScenarioA1Dash.OpenGroundTo(open, seen, los?.Hindrance ?? 0, open && seen && firer != at ? InterdictionCover(state, firer, at, side) : RoutCoverFacts.None);
     }
 
     /// <summary>A table of Locations by index, with the LOS between two of them as Rules asks for it (the pass 32 design, D4; pass 32.c).</summary>
