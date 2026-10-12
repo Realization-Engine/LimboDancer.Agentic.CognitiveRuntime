@@ -449,7 +449,7 @@ public sealed partial class GamePlanner
             BoreSighted = boreSighted ? true : null,
             CrewSeen = shot.Crew!.Concealed == true && shot.Vehicle is null ? EnemyGoodOrderInLosWithin16(state, side, from) : null,
             FirerOverstack = LiveStacking.Of(state, from, side).AttackPenalty is var over and > 0 ? over : (int?)null,
-            TargetOverstack = shot.VehicleTarget is null && state.Sides.FirstOrDefault(item => item.Id != side)?.Id is { } enemy && LiveStacking.Of(state, target, enemy).DefensePenalty is var crowded and > 0
+            TargetOverstack = shot.VehicleTarget is null && state.Sides.FirstOrDefault(item => item.Id != side)?.Id is { } enemy && LiveStacking.Of(state, target, enemy, knownOnly: true).DefensePenalty is var crowded and > 0
                 ? crowded : (int?)null,
         };
     }

@@ -2360,7 +2360,7 @@ public static class ScenarioA1FireCalculator
             }
 
             // A4.63 (pp. 51 to 52; pass 40): Defensive First Fire at a Dashing unit in the road Location is Area Fire, but for a Fire Lane.
-            if (attack.Dash == true && attack.FireLane != true)
+            if (attack.Dash == true && attack.FireLane != true && attack.OrdnanceHit is null && attack.FireKind is FirstFire or SubsequentFirstFire or FinalProtectiveFire)
             {
                 multipliers.Add(new FireModifier("dash", 0.5m, "A4.63"));
             }

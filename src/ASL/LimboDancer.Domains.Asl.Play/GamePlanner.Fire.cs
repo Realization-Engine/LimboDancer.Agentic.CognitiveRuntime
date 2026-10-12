@@ -1338,7 +1338,6 @@ public sealed partial class GamePlanner
             {
                 HeightAdvantage = ScenarioA1FireMapRules.HeightAdvantage(sources.Length, perLocation.Count,
                     () => HeightAdvantageAt(state, target, targetRead, [.. sources.Select(item => (item.From, item.Height))], attack.SnapShot == true)),
-                HazardousMovement = ScenarioA1FireMapRules.HazardousMovement(state.HazardousMovers, attack),
             };
         }
 
@@ -1366,7 +1365,12 @@ public sealed partial class GamePlanner
         {
             FirerOverstack = firerSide is null ? null
                 : ScenarioA1Stacking.GroupAttackPenalty(perLocation.Keys.Select(location => LiveStacking.Of(state, BoardLocation.Parse(location), firerSide))),
-            TargetOverstack = targetSide is not null && LiveStacking.Of(state, target, targetSide).DefensePenalty is var crowded and > 0 ? crowded : null,
+            TargetOverstack = targetSide is not null && ScenarioA1Stacking.TargetPenaltyApplies(state.Phase == "mph", targetSide == state.PhasingSide,
+                    (attack.Targets ?? []).Any(item => item.UnitId is { } id && state.Unit(id) is { } aimed && vocabulary.IsA(aimed.Kind, "asl:personnel") && !LiveFire.IsVehicle(aimed)))
+                && LiveStacking.Of(state, target, targetSide, knownOnly: true).DefensePenalty is var crowded and > 0 ? crowded : null,
+
+            // A4.62 (p. 51; pass 40): Hazardous Movement holds against any attack, a vehicle's and Residual FP's too.
+            HazardousMovement = ScenarioA1FireMapRules.HazardousMovement(state.HazardousMovers, attack),
 
             // A4.63 (pass 40): non-ordnance Defensive First Fire at a Dashing stack in its road Location; a Fire Lane and Residual FP are excepted.
             Dash = attack.OrdnanceHit is null && attack.FireLane != true
@@ -1389,7 +1393,7 @@ public sealed partial class GamePlanner
             return null;
         }
 
-        UnitInstance[] movers = [.. dashing.Movers.Select(id => state.Unit(id)).OfType<UnitInstance>()];
+        UnitInstance[] movers = [.. dashing.Members.Select(id => state.Unit(id)).OfType<UnitInstance>()];
         if (movers.Length == 0 || !ScenarioA1Dash.BenefitsHold(movers.Select(unit => (Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned), Is(unit, Conditions.Berserk)))))
         {
             return null;

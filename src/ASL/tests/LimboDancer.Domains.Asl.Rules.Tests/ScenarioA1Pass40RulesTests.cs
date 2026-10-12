@@ -173,9 +173,9 @@ public sealed class ScenarioA1Pass40RulesTests
         Assert.Contains("has no road", ScenarioA1Dash.StepBar(DashStep(road: false)), StringComparison.Ordinal);
 
         // "Directly into the road and then directly into a ... Location on the other side of the road" (ruling R40.7).
-        Assert.Contains("not on the other side of the road", ScenarioA1Dash.StepBar(DashStep(adjacentToRoad: false)), StringComparison.Ordinal);
-        Assert.Contains("not on the other side of the road", ScenarioA1Dash.StepBar(DashStep(isOrigin: true)), StringComparison.Ordinal);
-        Assert.Contains("not on the other side of the road", ScenarioA1Dash.StepBar(DashStep(adjacentToOrigin: true)), StringComparison.Ordinal);
+        Assert.Contains("is not across the road", ScenarioA1Dash.StepBar(DashStep(adjacentToRoad: false)), StringComparison.Ordinal);
+        Assert.Contains("is not across the road", ScenarioA1Dash.StepBar(DashStep(isOrigin: true)), StringComparison.Ordinal);
+        Assert.Contains("is not across the road", ScenarioA1Dash.StepBar(DashStep(adjacentToOrigin: true)), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -331,7 +331,18 @@ public sealed class ScenarioA1Pass40RulesTests
         Assert.NotNull(ScenarioA1InfantryOverrun.NtcTaker([OvrMover("s1", goodOrder: false)]).Refusal);
 
         // The DRM is the TEM of the enemy's Location, and a hexside's when the LOS crosses it; the check passes at or below the Morale Level.
-        Assert.Equal(3, ScenarioA1InfantryOverrun.NtcDrm(2, 1));
+        Assert.Equal(2, ScenarioA1InfantryOverrun.NtcDrm(2, 1));
+        Assert.Equal(2, ScenarioA1InfantryOverrun.NtcDrm(1, 2));
+        Assert.Equal(0, ScenarioA1InfantryOverrun.NtcDrm(-1, 0));
+
+        // Each MMC under a passed NTC whose taker enters with it: a leader left behind covers no one, and MMC that each passed their own go together.
+        (IReadOnlyList<string> Units, string? Taker, bool Passed)[] byLeader = [(new[] { "s1", "s2", "l" }, "l", true)];
+        Assert.True(ScenarioA1InfantryOverrun.NtcCovers(["s1", "s2"], ["s1", "s2", "l"], byLeader));
+        Assert.False(ScenarioA1InfantryOverrun.NtcCovers(["s1", "s2"], ["s1", "s2"], byLeader));
+        (IReadOnlyList<string> Units, string? Taker, bool Passed)[] each = [(new[] { "s1" }, "s1", true), (new[] { "s2" }, "s2", true), (new[] { "s3" }, "s3", false)];
+        Assert.True(ScenarioA1InfantryOverrun.NtcCovers(["s1", "s2"], ["s1", "s2"], each));
+        Assert.False(ScenarioA1InfantryOverrun.NtcCovers(["s1", "s3"], ["s1", "s3"], each));
+        Assert.False(ScenarioA1InfantryOverrun.NtcCovers([], ["l"], byLeader));
         Assert.Equal(1, ScenarioA1InfantryOverrun.NtcDrm(1, 0));
         Assert.True(ScenarioA1InfantryOverrun.NtcPassed(3, 3, 1, 7));
         Assert.False(ScenarioA1InfantryOverrun.NtcPassed(3, 4, 1, 7));
@@ -352,6 +363,8 @@ public sealed class ScenarioA1Pass40RulesTests
         Assert.StartsWith("play.overrun-target:", ScenarioA1InfantryOverrun.TargetBar([OvrDefender("l"), OvrDefender("l2")], "x"), StringComparison.Ordinal);
         Assert.StartsWith("play.overrun-target:", ScenarioA1InfantryOverrun.TargetBar([OvrDefender("l", melee: true)], "x"), StringComparison.Ordinal);
         Assert.StartsWith("play.overrun-target:", ScenarioA1InfantryOverrun.TargetBar([], "x"), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1InfantryOverrun.TargetBar([OvrDefender("l"), OvrDefender("tank", known: false, smc: false, vehicle: true)], "x"));
+        Assert.StartsWith("play.overrun-target:", ScenarioA1InfantryOverrun.TargetBar([OvrDefender("l", vehicle: true)], "x"), StringComparison.Ordinal);
 
         Assert.Null(ScenarioA1InfantryOverrun.EntryBar(true, false, false, false, false, false, "x"));
         Assert.Contains("first passes its NTC", ScenarioA1InfantryOverrun.EntryBar(false, false, false, false, false, false, "x"), StringComparison.Ordinal);
@@ -376,6 +389,11 @@ public sealed class ScenarioA1Pass40RulesTests
         Assert.True(ScenarioA1InfantryOverrun.OnlyUnarmed([OvrDefender("u", smc: false, unarmed: true)]));
         Assert.False(ScenarioA1InfantryOverrun.OnlyUnarmed([OvrDefender("u", smc: false, unarmed: true), OvrDefender("s", smc: false)]));
         Assert.False(ScenarioA1InfantryOverrun.OnlyUnarmed([]));
+
+        // A20.54: an unarmed unit "may not enter a Known enemy-occupied Location", and Dummies enter none.
+        Assert.True(ScenarioA1InfantryOverrun.MayRecapture(false, false));
+        Assert.False(ScenarioA1InfantryOverrun.MayRecapture(true, false));
+        Assert.False(ScenarioA1InfantryOverrun.MayRecapture(false, true));
         Assert.True(ScenarioA1InfantryOverrun.CloseCombatOwed(true, [OvrDefender("l")]));
         Assert.True(ScenarioA1InfantryOverrun.CloseCombatOwed(true, [OvrDefender("u", smc: false, unarmed: true), OvrDefender("u2", smc: false, unarmed: true)]));
         Assert.False(ScenarioA1InfantryOverrun.CloseCombatOwed(false, [OvrDefender("l")]));
@@ -401,14 +419,19 @@ public sealed class ScenarioA1Pass40RulesTests
         Assert.Contains("is not a SMC", ScenarioA1InfantryOverrun.EvadeBar("l", false, true, false, true, true, false, false, false, 2), StringComparison.Ordinal);
 
         // "The ATTACKER may not force the SMC into ... [an] Open Ground hex if an alternate choice is available."
-        Assert.Equal(["woods"], ScenarioA1InfantryOverrun.EvadeDestinations([("open", true), ("woods", false)]));
-        Assert.Equal(["open", "open2"], ScenarioA1InfantryOverrun.EvadeDestinations([("open", true), ("open2", true)]));
+        Assert.Equal(["woods"], ScenarioA1InfantryOverrun.EvadeDestinations([("open", true, true, false, true), ("woods", true, true, false, false)]));
+        Assert.Equal(["open", "open2"], ScenarioA1InfantryOverrun.EvadeDestinations([("open", true, true, false, true), ("open2", true, true, false, true)]));
+
+        // "Accessible ... not occupied by an enemy unit": a Location it could not enter, one off the playable area, and one an enemy unit holds are left out.
+        Assert.Equal(["open"], ScenarioA1InfantryOverrun.EvadeDestinations([("open", true, true, false, true), ("cliff", false, true, false, false),
+            ("off", true, false, false, false), ("held", true, true, true, false)]));
+        Assert.DoesNotContain("[", ScenarioA1InfantryOverrun.EvadeText("l", ["[C8]"]), StringComparison.Ordinal);
         Assert.Empty(ScenarioA1InfantryOverrun.EvadeDestinations([]));
     }
 
     private static MandatoryDefenderFacts Owing(string id, bool infantry = true, bool smc = false, bool inherent = true, int weapons = 0, bool unarmed = false, bool broken = false,
-        bool melee = false, bool captured = false, bool marked = false, bool attacked = false, bool mayAttack = true) =>
-        new(id, infantry, smc, inherent, weapons, unarmed, broken, melee, captured, marked, attacked, mayAttack);
+        bool melee = false, bool captured = false, bool marked = false, bool attacked = false) =>
+        new(id, infantry, smc, inherent, weapons, unarmed, broken, melee, captured, marked, attacked);
 
     [Fact]
     public void AnArmedUnbrokenInfantryDefenderNotInMeleeOwesItsAttackOnAnMmcThatEntersItsLocation()
@@ -416,14 +439,31 @@ public sealed class ScenarioA1Pass40RulesTests
         // A8.312 (p. 61).
         MandatoryDefenderFacts[] there = [Owing("s1"), Owing("s2", marked: true), Owing("b", broken: true), Owing("m", melee: true), Owing("u", unarmed: true),
             Owing("p", captured: true), Owing("l", smc: true, inherent: false), Owing("lm", smc: true, inherent: false, weapons: 1),
-            Owing("lmf", smc: true, inherent: false, weapons: 1, marked: true), Owing("done", attacked: true), Owing("cannot", mayAttack: false), Owing("v", infantry: false)];
-        Assert.Equal(["s1", "s2", "lm"], ScenarioA1MandatoryFire.Owed(true, true, true, true, there));
+            Owing("lmf", smc: true, inherent: false, weapons: 1, marked: true), Owing("done", attacked: true), Owing("cannot"), Owing("v", infantry: false), Owing("sm", weapons: 1, marked: true)];
+        var asked = new List<string>();
+        bool MayAttack(string id)
+        {
+            asked.Add(id);
+            return id != "cannot";
+        }
+
+        Assert.Equal(["s1", "s2", "lm", "sm"], ScenarioA1MandatoryFire.Owed(true, true, true, true, there, MayAttack));
+
+        // The fire plan is asked only of a unit that would otherwise owe the attack.
+        Assert.Equal(["s1", "s2", "lm", "cannot", "sm"], asked);
+
+        // A unit already marked fires every MG its size operates with its own FP (A8.3, A8.31); one with no FP of its own, one MG; else none.
+        Assert.Equal(2, ScenarioA1MandatoryFire.WeaponsFired(true, true, true, 3));
+        Assert.Equal(1, ScenarioA1MandatoryFire.WeaponsFired(false, true, true, 2));
+        Assert.Equal(0, ScenarioA1MandatoryFire.WeaponsFired(true, true, false, 2));
+        Assert.Equal(1, ScenarioA1MandatoryFire.WeaponsFired(false, false, false, 2));
+        Assert.Equal(0, ScenarioA1MandatoryFire.WeaponsFired(true, true, true, 0));
 
         // Only in the MPh, with the DEFENDER's window open, on the step that entered, and for an Infantry or Cavalry MMC.
-        Assert.Empty(ScenarioA1MandatoryFire.Owed(false, true, true, true, there));
-        Assert.Empty(ScenarioA1MandatoryFire.Owed(true, false, true, true, there));
-        Assert.Empty(ScenarioA1MandatoryFire.Owed(true, true, false, true, there));
-        Assert.Empty(ScenarioA1MandatoryFire.Owed(true, true, true, false, there));
+        Assert.Empty(ScenarioA1MandatoryFire.Owed(false, true, true, true, there, MayAttack));
+        Assert.Empty(ScenarioA1MandatoryFire.Owed(true, false, true, true, there, MayAttack));
+        Assert.Empty(ScenarioA1MandatoryFire.Owed(true, true, false, true, there, MayAttack));
+        Assert.Empty(ScenarioA1MandatoryFire.Owed(true, true, true, false, there, MayAttack));
     }
 
     [Fact]
@@ -431,22 +471,33 @@ public sealed class ScenarioA1Pass40RulesTests
     {
         // A8.312, A7.55 (pp. 61, 57).
         string[] owed = ["s1", "s2"];
-        Assert.Null(ScenarioA1MandatoryFire.PassBar([], "x"));
-        Assert.StartsWith("play.pass-mandatory:", ScenarioA1MandatoryFire.PassBar(owed, "x"), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1MandatoryFire.PassBar([], true, "x"));
+        Assert.Contains("as one Mandatory FG", ScenarioA1MandatoryFire.PassBar(owed, true, "x"), StringComparison.Ordinal);
+        Assert.Contains("ruling R40.17", ScenarioA1MandatoryFire.PassBar(owed, false, "x"), StringComparison.Ordinal);
 
-        Assert.Null(ScenarioA1MandatoryFire.FireBar([], true, ["other"], "y", "x"));
-        Assert.Null(ScenarioA1MandatoryFire.FireBar(owed, true, ["s1", "s2"], "x", "x"));
-        Assert.Null(ScenarioA1MandatoryFire.FireBar(owed, true, ["s1", "s2", "leader"], "x", "x"));
-        Assert.Contains("s2 must join", ScenarioA1MandatoryFire.FireBar(owed, true, ["s1"], "x", "x"), StringComparison.Ordinal);
-        Assert.StartsWith("play.fire-mandatory:", ScenarioA1MandatoryFire.FireBar(owed, true, ["s1", "s2"], "y", "x"), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1MandatoryFire.FireBar([], true, ["other"], "y", "x", []));
+        Assert.Null(ScenarioA1MandatoryFire.FireBar(owed, true, ["s1", "s2"], "x", "x", []));
+        Assert.Null(ScenarioA1MandatoryFire.FireBar(owed, true, ["s1", "s2", "leader"], "x", "x", []));
+        Assert.Contains("s2 must join", ScenarioA1MandatoryFire.FireBar(owed, true, ["s1"], "x", "x", []), StringComparison.Ordinal);
+        Assert.StartsWith("play.fire-mandatory:", ScenarioA1MandatoryFire.FireBar(owed, true, ["s1", "s2"], "y", "x", []), StringComparison.Ordinal);
 
         // Where the fire rules form no group of them (a unit with no counter beside one marked First Fire), one of them attacks, and no one else with it.
-        Assert.Null(ScenarioA1MandatoryFire.FireBar(owed, false, ["s1"], "x", "x"));
-        Assert.StartsWith("play.fire-mandatory:", ScenarioA1MandatoryFire.FireBar(owed, false, ["other"], "x", "x"), StringComparison.Ordinal);
-        Assert.StartsWith("play.fire-mandatory:", ScenarioA1MandatoryFire.FireBar(owed, false, ["s1", "other"], "x", "x"), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1MandatoryFire.FireBar(owed, false, ["s1"], "x", "x", []));
+        Assert.StartsWith("play.fire-mandatory:", ScenarioA1MandatoryFire.FireBar(owed, false, ["other"], "x", "x", []), StringComparison.Ordinal);
+        Assert.StartsWith("play.fire-mandatory:", ScenarioA1MandatoryFire.FireBar(owed, false, ["s1", "other"], "x", "x", []), StringComparison.Ordinal);
+
+        // Ruling R40.17: a unit that could have fired in one group with those named must join them.
+        Assert.Contains("s3 can fire in one group", ScenarioA1MandatoryFire.FireBar(["s1", "s2", "s3"], false, ["s1"], "x", "x", ["s3"]), StringComparison.Ordinal);
 
         Assert.Contains("as one Mandatory FG", ScenarioA1MandatoryFire.Note(owed, true, "[C9]"), StringComparison.Ordinal);
-        Assert.Contains("one of s1, s2", ScenarioA1MandatoryFire.Note(owed, false, "[C9]"), StringComparison.Ordinal);
+        Assert.Contains("ruling R40.17", ScenarioA1MandatoryFire.Note(owed, false, "[C9]"), StringComparison.Ordinal);
+        Assert.Contains("(A8.312)", ScenarioA1MandatoryFire.HandOverText("[C9]"), StringComparison.Ordinal);
+
+        // A5.13 to A5.132 (p. 52): the target's overstacking penalty is the movers' in the MPh, and Personnel's.
+        Assert.True(ScenarioA1Stacking.TargetPenaltyApplies(false, false, true));
+        Assert.True(ScenarioA1Stacking.TargetPenaltyApplies(true, true, true));
+        Assert.False(ScenarioA1Stacking.TargetPenaltyApplies(true, false, true));
+        Assert.False(ScenarioA1Stacking.TargetPenaltyApplies(false, false, false));
     }
 
     [Fact]

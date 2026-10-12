@@ -118,6 +118,14 @@ public sealed partial class GamePlanner
         }).Any(id => state.Unit(id)?.Side == side);
     }
 
+    /// <summary>The squads of a side (every side when null) that may Deploy at will now, as Guards of prisoners (A20.5; pass 40), for the Play page.</summary>
+    public IReadOnlyList<string> GuardSquadsAtWill(GameState state, string? side)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        return [.. state.Units.Where(unit => unit.Status == InstanceStatus.Active && (side is null || unit.Side == side) && state.Location(unit.Id) is not null
+            && ScenarioA1SupportWeaponRules.GuardDeploysAtWill(vocabulary.IsA(unit.Kind, "asl:squad"), IsGuard(state, unit), Is(unit, Conditions.Broken))).Select(unit => unit.Id)];
+    }
+
     /// <summary>The SW a unit possesses, in id order.</summary>
     private static EquipmentInstance[] Held(GameState state, string unitId) =>
         [.. state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unitId)
@@ -227,7 +235,7 @@ public sealed partial class GamePlanner
         if (atWill)
         {
             var deployed = new List<GameEvent>();
-            AddDeployed(deployed, null, rphAction: state.Phase == "rph");
+            AddDeployed(deployed, null, rphAction: false);
             return new GamePlan(GamePlanStatus.Ready, scope, label, expected, deployed,
                 [$"play.deploy: {squad.Id}, a Guard, Deploys into two HS, with no leader and no NTC (A20.5)"]);
         }

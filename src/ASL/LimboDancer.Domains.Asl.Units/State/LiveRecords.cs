@@ -340,7 +340,7 @@ public sealed record PaatcTaken(IReadOnlyList<string> Units, string Vehicle, str
 public sealed record InfantryOverrunNtc(IReadOnlyList<string> Units, string Taker, BoardLocation Target, string Roll, int Morale, int Drm, bool Passed) : EventPayload;
 
 /// <summary>A NTC of an Infantry OVR taken in this phase, as the state keeps it: the stack, the Location, and the result (A4.15; pass 40).</summary>
-public sealed record InfantryOverrunNtcTaken(IReadOnlyList<string> Units, string Target, bool Passed);
+public sealed record InfantryOverrunNtcTaken(IReadOnlyList<string> Units, string Target, bool Passed, string? Taker = null);
 
 /// <summary>
 /// <c>rout-stepped</c>: one Location of a broken unit's rout in the RtPh (A10.5; backlog pass 13, ruling R13.3): the Location entered, its cost in

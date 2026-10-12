@@ -422,6 +422,12 @@ public sealed class CloseCombatRecordVerifier(ScenarioA1CloseCombatReference ref
             return reason;
         }
 
+        // Pass 40: whether a crew mans its Gun (A5.5) is taken as recorded, so a record made before the pass, which lacks the fact, replays.
+        var manning = recorded.Units.Where(unit => unit.UnitId is not null).ToDictionary(unit => unit.UnitId!, unit => unit.Manning, StringComparer.Ordinal);
+        expected = expected with
+        {
+            Units = expected.Units is null ? null : [.. expected.Units.Select(unit => unit with { Manning = unit.UnitId is { } id ? manning.GetValueOrDefault(id) : null })]
+        };
         if (JsonSerializer.Serialize(expected, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json))
         {
             return "The CC record's facts do not match the game state.";

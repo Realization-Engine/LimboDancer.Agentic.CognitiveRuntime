@@ -47,6 +47,12 @@ public sealed record StackCount(int Squads, int HalfSquadsAndCrews, int Manning,
 /// </summary>
 public static class ScenarioA1Stacking
 {
+    /// <summary>
+    /// A5.13, A5.131, A5.132 (p. 52; pass 40): whether the target's overstacking penalty is read for an attack. "During the MPh, this penalty
+    /// applies only to moving units", so not to the DEFENDER's stack under the ATTACKER's own fire then; and it is Personnel's, never a vehicle's.
+    /// </summary>
+    public static bool TargetPenaltyApplies(bool mph, bool targetsOfPhasingSide, bool anyPersonnelTarget) => (!mph || targetsOfPhasingSide) && anyPersonnelTarget;
+
     public const int PersonnelLimit = 3;
 
     public const int VehicleLimit = 1;

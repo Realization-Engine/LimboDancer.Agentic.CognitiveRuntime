@@ -57,7 +57,7 @@ public static class ScenarioA1InfantryOverrun
     {
         ArgumentNullException.ThrowIfNull(enemies);
         var known = enemies.Where(unit => unit.Known).ToArray();
-        return known is [{ Smc: true, Melee: false, Vehicle: false }] && !enemies.Any(unit => unit.Vehicle)
+        return known is [{ Smc: true, Melee: false, Vehicle: false }]
             ? null
             : $"play.overrun-target: an Infantry OVR enters a Location whose only Known enemy unit is one SMC, not in an AFV and not held in Melee; {toText} is not one (A4.15, A4.152)";
     }
@@ -74,8 +74,31 @@ public static class ScenarioA1InfantryOverrun
     public static string? AlreadyTakenBar(bool taken, string toText) =>
         taken ? $"play.overrun-ntc: this stack has taken its NTC for an Infantry OVR of {toText} this MPh (A4.15)" : null;
 
-    /// <summary>A4.15: the NTC's DRM is the TEM of the enemy's Location, and a hexside's TEM when the LOS crosses it.</summary>
-    public static int NtcDrm(int tem, int hexsideTem) => Math.Max(tem, 0) + Math.Max(hexsideTem, 0);
+    /// <summary>
+    /// A4.15: the NTC's DRM is the TEM of the enemy's Location: the hex's, or a hexside's when the stack would cross it and it is the larger. The
+    /// two are not added: a wall's or hedge's TEM is "not cumulative with positive TEM of other terrain in that hex" (B9.31, p. 119).
+    /// </summary>
+    public static int NtcDrm(int tem, int hexsideTem) => Math.Max(Math.Max(tem, 0), Math.Max(hexsideTem, 0));
+
+    /// <summary>
+    /// A4.15: whether the stack's MMC are covered by passed NTCs for this Location: each MMC is among the units of a passed NTC whose taker enters
+    /// with it. A leader's NTC exempts the MMC "he is stacked with and moves with", so it covers them only while he moves with them; MMC that
+    /// each passed their own are covered together.
+    /// </summary>
+    public static bool NtcCovers(IReadOnlyList<string> mmcIds, IReadOnlyList<string> moverIds, IReadOnlyList<(IReadOnlyList<string> Units, string? Taker, bool Passed)> taken)
+    {
+        ArgumentNullException.ThrowIfNull(mmcIds);
+        ArgumentNullException.ThrowIfNull(moverIds);
+        ArgumentNullException.ThrowIfNull(taken);
+        return mmcIds.Count > 0 && mmcIds.All(id => taken.Any(ntc => ntc.Passed && ntc.Units.Contains(id, StringComparer.Ordinal)
+            && (ntc.Taker is null || moverIds.Contains(ntc.Taker, StringComparer.Ordinal))));
+    }
+
+    /// <summary>
+    /// A20.54 (p. 88): who may enter Unarmed enemy units to recapture them. A "non-prisoner, unarmed Infantry unit may not enter a Known
+    /// enemy-occupied Location", and a stack of Dummies enters no enemy unit's Location (A12.11).
+    /// </summary>
+    public static bool MayRecapture(bool anyMoverUnarmed, bool allMoversDummies) => !anyMoverUnarmed && !allMoversDummies;
 
     /// <summary>A10.1: the check passes at or below the Morale Level.</summary>
     public static bool NtcPassed(int die1, int die2, int drm, int morale) => die1 + die2 + drm <= morale;
@@ -161,9 +184,10 @@ public static class ScenarioA1InfantryOverrun
     /// A4.151: the Locations the ATTACKER may send the SMC to. "The ATTACKER may not force the SMC into a minefield, FFE, Wire, or Open Ground hex if
     /// an alternate choice is available": minefields, FFE, and Wire have no counters here, so Open Ground is left out when anything else is open.
     /// </summary>
-    public static IReadOnlyList<string> EvadeDestinations(IReadOnlyList<(string Location, bool OpenGround)> accessible)
+    public static IReadOnlyList<string> EvadeDestinations(IReadOnlyList<(string Location, bool Enterable, bool Playable, bool EnemyOccupied, bool OpenGround)> adjacent)
     {
-        ArgumentNullException.ThrowIfNull(accessible);
+        ArgumentNullException.ThrowIfNull(adjacent);
+        var accessible = adjacent.Where(item => item.Enterable && item.Playable && !item.EnemyOccupied).ToArray();
         var covered = accessible.Where(item => !item.OpenGround).Select(item => item.Location).ToArray();
         return covered.Length > 0 ? covered : [.. accessible.Select(item => item.Location)];
     }
@@ -176,7 +200,7 @@ public static class ScenarioA1InfantryOverrun
     public static string EvadeText(string unitId, IReadOnlyList<string> options)
     {
         ArgumentNullException.ThrowIfNull(options);
-        return $"play.overrun-evade: {unitId} moves away from the Infantry OVR before any fire; the ATTACKER chooses among {string.Join(", ", options)} (A4.151)";
+        return $"play.overrun-evade: {unitId} moves away from the Infantry OVR before any fire; the ATTACKER names the adjacent Location it enters (A4.151)";
     }
 
     /// <summary>The move away, in words.</summary>

@@ -1723,13 +1723,19 @@ public static class GameProjector
         private GameState? Manhandle(GameState state, ManhandlingRolled manhandling)
         {
             // C10.3 (ruling R8.6): the Manhandling DR against the Gun's M#.
-            if (state.Phase != "mph" || Active(state, manhandling.Gun) is not EquipmentInstance || !rolls.TryGetValue(manhandling.Roll, out var roll) || roll.Count != 2
+            if (state.Phase != "mph" || Active(state, manhandling.Gun) is not EquipmentInstance pushed || !rolls.TryGetValue(manhandling.Roll, out var roll) || roll.Count != 2
                 || manhandling.Result != ManhandlingRolled.For(roll.Values.Sum() + manhandling.Drm, manhandling.Manhandling))
             {
                 return Fail<GameState>("UNIT-STATE-039", "A Manhandling DR is made in the MPh for an active Gun, and its result follows from its Final DR and the M# (C10.3).");
             }
 
-            return state;
+            // Pass 40 (C10.3, p. 181): the attempt is Hazardous Movement whether or not the Gun moves, so a failed push counts too.
+            return pushed.Holding is { Role: HoldingRole.Manned } manned
+                ? state with
+                {
+                    HazardousMovers = Rules.ScenarioA1MovementCalculator.HazardousMovers(state.HazardousMovers, true, [manned.Holder])
+                }
+                : state;
         }
 
         private GameState? HookGun(GameState state, GunHooked hooked)
@@ -2596,7 +2602,7 @@ public static class GameProjector
 
             GameState? next = state with
             {
-                InfantryOverrunNtcs = [.. state.InfantryOverrunNtcs, new InfantryOverrunNtcTaken(ntc.Units, ntc.Target.ToString(), ntc.Passed)]
+                InfantryOverrunNtcs = [.. state.InfantryOverrunNtcs, new InfantryOverrunNtcTaken(ntc.Units, ntc.Target.ToString(), ntc.Passed, ntc.Taker)]
             };
             if (Rules.ScenarioA1InfantryOverrun.EndsStackMove(vocabulary.IsA(taker.Kind, "asl:leader"), ntc.Passed))
             {

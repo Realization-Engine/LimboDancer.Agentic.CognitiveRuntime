@@ -1738,6 +1738,8 @@ Passes 90, 125, 140, and 165 lose part of their titles: 90 is night alone, 125 i
 
 **Pass 40: Infantry I: movement, stacking, and Locations** (new; 49 rows of the inventory). Counters: none. Needs first: 35.
 
+**Status, 2026-10-11:** built on the branch `feature/asl-backlog-pass-40`, cut from main at 3c660afc, one commit a task, with the [design](<Passes/ASL Unit Backlog Pass 40 Design.md>) written as it went: tasks 40.2 to 40.9 (40.1 was taken by pass 35), the five reviews with their fixes, the Studio check, and the [review](<Passes/Scenario A1 Backlog Pass 40 Review 2026-10-11.md>). Rulings R40.1 to R40.26. Moved on: A5.132 to pass 50, a SMC's immediate Recovery to pass 45, the removal of SW to passes 125 and 185, a CE or BU choice at setup to pass 65. The gate's result and the merge are in the time log.
+
 | Task | Rules | Estimate |
 |---|---|---|
 | 40.1 ADJACENT as the rule has it: across a level, a wall or hedge, and a stairwell. **Taken by pass 35 and built there** (merged as 5355b7f6); nothing of it is left to build here but the backlog's question of a marsh hex and dry ground | A.8 (p. 43) | 0:40 |

@@ -67,19 +67,19 @@ public static class ScenarioA1Dash
         }
 
         return !facts.DeclaredAtGroundLevel || !facts.DeclaredAdjacentToRoad || facts.DeclaredIsOrigin || facts.DeclaredAdjacentToOrigin
-            ? $"play.move-dash: {declared} is not on the other side of the road: a Dash goes directly into the road Location and directly on into a ground-level Location beside it that is neither the Location left nor beside it (A4.63)"
+            ? $"play.move-dash: {declared} is not across the road: the Location Dashed to is at ground level, adjacent to the road Location, and neither the Location left nor adjacent to the Location left (A4.63)"
             : null;
     }
 
     /// <summary>The summary's clause for a step that declares a Dash.</summary>
     public static string DeclaredText(string dashText) =>
-        $", Dashing to {dashText}: the DEFENDER's small arms fire at it in the road Location is Area Fire where both sides of the road are not Open Ground to the firer, and its move ends in {dashText} (A4.63)";
+        $", Dashing to {dashText}: the DEFENDER's non-ordnance Defensive First Fire at it in the road Location (but a Fire Lane and Residual FP already there) is Area Fire for a firer to whom neither side of the road is Open Ground, and its move ends in {dashText} (A4.63)";
 
     /// <summary>
     /// A4.63: a Dashing unit "must end its MPh in the non-Open Ground Location it Dashed to", unless it "becomes berserk, pinned, broken or wounded in
     /// the road Location, or otherwise unable to enter". Null when the move may end where it stands.
     /// </summary>
-    public static string? EndBar(string? pendingText, bool benefitsHold) => pendingText is { } pending && benefitsHold
+    public static string? EndBar(string? pendingText, bool benefitsHold, bool unableToEnter = false) => pendingText is { } pending && benefitsHold && !unableToEnter
         ? $"play.end-move-dash: the stack Dashes to {pending} and ends its MPh there, not in the road Location (A4.63)"
         : null;
 

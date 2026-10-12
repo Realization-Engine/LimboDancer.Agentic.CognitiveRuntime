@@ -47,9 +47,14 @@ public sealed partial class GamePlanner
 
         UnitInstance[] movers = [.. found.Select(unit => unit!)];
         var origins = movers.Select(unit => state.Location(unit.Id)?.Location).Distinct().ToArray();
-        if (origins is not [{ } from] || (state.Movement is { } moving && !ids.All(id => moving.Members.Contains(id, StringComparer.Ordinal))))
+        if (origins is not [{ } from])
         {
-            return Refused(scope, label, expected, "play.overrun-ntc: the stack stands in one Location, and no other stack's move is open (A4.15, A4.2)");
+            return Refused(scope, label, expected, "play.overrun-ntc: the units named are not all in one Location (A4.15)");
+        }
+
+        if (state.Movement is { } moving && !ids.All(id => moving.Members.Contains(id, StringComparer.Ordinal)))
+        {
+            return Refused(scope, label, expected, "play.overrun-ntc: another stack's move is still open; end it first (A4.2)");
         }
 
         if (InfantryStep(state, from, to!).Entry is null)
@@ -144,9 +149,9 @@ public sealed partial class GamePlanner
     /// </summary>
     private IReadOnlyList<string> EvadeDestinations(GameState state, BoardLocation from, string side) =>
         ScenarioA1InfantryOverrun.EvadeDestinations([.. Neighbors(state, from)
-            .Where(near => InfantryStep(state, from, near).Entry is not null && PlayableBar(state, near) is null
-                && !state.At(near).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != side && !Is(other, Conditions.Captured)))
-            .Select(near => (near.ToString(), ReadLocation(state, near) is { } read && TerrainKey(read) == "open-ground"))]);
+            .Select(near => (near.ToString(), InfantryStep(state, from, near).Entry is not null, PlayableBar(state, near) is null,
+                state.At(near).OfType<UnitInstance>().Any(other => other.Status == InstanceStatus.Active && other.Side != side && !Is(other, Conditions.Captured)),
+                ReadLocation(state, near) is { } read && TerrainKey(read) == "open-ground"))]);
 
     /// <summary>The DEFENDER's declaration that its SMC moves away from an Infantry OVR (A4.151): the ATTACKER is then asked where.</summary>
     private GamePlan PlanOverrunEvade(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label)

@@ -460,7 +460,7 @@ else if (state is not null)
                 {
                     <ActionSection Title="A Guard's Deployment" Key="guard-deploy">
                     <div class="toolbar" id="guard-deploy">
-                        <span class="toolbar-note">An unbroken Guard squad Deploys into two HS at any time, with no leader and no NTC (A20.5).</span>
+                        <span class="toolbar-note">An unbroken Guard squad Deploys into two HS at any time, with no leader and no NTC; its SW stay with the first HS (A20.5).</span>
                         @foreach (var guard in guardSquads)
                         {
                             <button class="propose-guard-deploy" data-unit="@guard" @onclick="@(() => ProposeGuardDeploy(guard))">Propose: @WordsAt(guard) Deploys</button>
@@ -567,7 +567,7 @@ else if (state is not null)
                             {
                                 <BerserkRetainedWeaponsField Value="@moveKeep" OnChange="@(keep => moveKeep = keep)" />
                             }
-                            <MovementWindowActions WindowOpen="@state.Movement?.WindowOpen" EndingSome="@EndingSome" MayPass="@Viewer.IsAdjudicator"
+                            <MovementWindowActions WindowOpen="@state.Movement?.WindowOpen" EndingSome="@EndingSome" MayPass="@(Viewer.IsAdjudicator && MandatoryNow is null)"
                                 OnPass='@(() => ProposeSimple(GameActions.PassFire, "pass"))' OnEnd="@ProposeEndMove" />
                         </div>
                     }
@@ -700,41 +700,42 @@ else if (state is not null)
                     @if (state.Phase == "mph" && (Viewer.IsAdjudicator || viewAs != state.PhasingSide) && Live.Planner.OverrunEvader(state, history!.Events) is { } evader)
                     {
                         <div class="toolbar" id="overrun-evade">
-                            <span class="toolbar-note">An Infantry OVR has entered the SMC's Location: it fires, or moves away before any fire into an adjacent Location the ATTACKER names (A4.151).</span>
+                            <span class="toolbar-note">An Infantry OVR has entered the SMC's Location: it may attack if it has FP (a leader with no SW has none), move away before any fire into an adjacent Location the ATTACKER names, or stay for the CC (A4.151, A4.152).</span>
                             <button id="propose-overrun-evade" @onclick="@(() => ProposeOverrunEvade(evader))">Propose: the SMC moves away from the OVR</button>
                         </div>
                     }
-                    @* Pass 28c (A8.1, A8.11): after each step the DEFENDER, from its own view, sees where the stack is and fires at it or passes. *@
-                    @if (state.Phase == "mph" && !Viewer.IsAdjudicator && viewAs != state.PhasingSide && MovingAt is { } movingAt)
+                    @* Pass 28c (A8.1, A8.11): after each step the DEFENDER, from its own view, sees where the stack is and fires at it or passes.
+                       Pass 40 (A8.312): the attack owed in the DEFENDER's own Location comes before a pass; the adjudicator has the same block. *@
+                    @if (state.Phase == "mph" && MovingAt is { } movingAt && (Viewer.IsAdjudicator ? MandatoryNow is not null : viewAs != state.PhasingSide))
                     {
+                        var mandatory = MandatoryNow;
                         <ActionSection Title="Defensive First Fire" Key="defensive-first-fire">
                         <div class="toolbar" id="dff-window">
-                            @if (MoveStopped)
+                            @if (mandatory is not null)
+                            {
+                                <span class="toolbar-note" id="mandatory-fire-note">@ScenarioA1MandatoryFire.Note([.. mandatory.Firers.Select(id => Words(id))], mandatory.Group, PlaceOf(mandatory.At))</span>
+                            }
+                            else if (MoveStopped)
                             {
                                 <span class="toolbar-note" id="dff-note">No member of the moving stack at @PlaceOf(movingAt) can move on: each is broken, pinned, or eliminated. Fire at it again below, or pass, which ends its move (A8.1, A4.2).</span>
                             }
-                            else if (Live.Planner.MandatoryFire(state, history!.Events) is null)
+                            else
                             {
                                 <span class="toolbar-note" id="dff-note">The moving stack is at @PlaceOf(movingAt): fire at it below, or pass (A8.1).</span>
                             }
                             <button type="button" id="dff-show" @onclick="@(() => LocateHex(movingAt))">Show it on the map</button>
-                            @if (Live.Planner.MandatoryFire(state, history!.Events) is { } mandatory)
+                            @if (mandatory is not null && mandatory.Group)
                             {
-                                @* Pass 40 (A8.312): the attack owed in the DEFENDER's own Location comes before a pass. *@
-                                <span class="toolbar-note" id="mandatory-fire-note">@ScenarioA1MandatoryFire.Note([.. mandatory.Firers.Select(id => Words(id))], mandatory.Group, PlaceOf(mandatory.At))</span>
-                                @if (mandatory.Group)
+                                <button id="propose-mandatory-fire" title="Each unit fires its inherent FP; one already marked fires its MG with it, and a unit with no FP of its own its MG. To add a MG or a leader's direction, name the same units in the fire panel below." @onclick="@(() => ProposeMandatoryFire(mandatory))">Propose: the Mandatory FG attacks</button>
+                            }
+                            else if (mandatory is not null)
+                            {
+                                @foreach (var owing in mandatory.Firers)
                                 {
-                                    <button id="propose-mandatory-fire" title="Each unit fires its inherent FP, and a unit with none its MG. To add a MG or a leader's direction, name the same units in the fire panel below." @onclick="@(() => ProposeMandatoryFire(mandatory))">Propose: the Mandatory FG attacks</button>
-                                }
-                                else
-                                {
-                                    @foreach (var owing in mandatory.Firers)
-                                    {
-                                        <button class="propose-mandatory-fire-one" data-unit="@owing" @onclick="@(() => ProposeMandatoryFire(mandatory, owing))">Propose: @Words(owing) attacks</button>
-                                    }
+                                    <button class="propose-mandatory-fire-one" data-unit="@owing" @onclick="@(() => ProposeMandatoryFire(mandatory, owing))">Propose: @Words(owing) attacks</button>
                                 }
                             }
-                            else
+                            else if (!Viewer.IsAdjudicator)
                             {
                                 <button id="propose-pass" @onclick='@(() => ProposeSimple(GameActions.PassFire, "pass"))'>Propose: the DEFENDER passes</button>
                             }
@@ -4913,6 +4914,11 @@ else if (state is not null)
     private void ToggleMover(UnitSelectionList.Toggle toggle)
     {
         Toggle(moveUnits, toggle.Id, toggle.On);
+        if (!moveUnits.Contains(moveIpcTo))
+        {
+            moveIpcTo = string.Empty;
+        }
+
         PruneMoveDrafts();
     }
 
@@ -4972,7 +4978,7 @@ else if (state is not null)
         }
 
         // A4.42 (pass 40): the laden MMC named for the leader's IPC.
-        if (moveIpcTo.Length > 0 && moveUnits.Contains(moveIpcTo))
+        if (moveIpcTo.Length > 0 && moveUnits.Count > 1 && moveUnits.Contains(moveIpcTo))
         {
             arguments["ipcTo"] = moveIpcTo;
         }
@@ -5004,6 +5010,27 @@ else if (state is not null)
     }));
 
     /// <summary>The attack the DEFENDER owes on the units that entered its Location (A8.312; pass 40), as its plainest Mandatory FG.</summary>
+    private (long Revision, GamePlanner.MandatoryFireOwed? Owed)? mandatoryCache;
+
+    /// <summary>The attack the DEFENDER owes now (A8.312; pass 40), read once for a revision: the planner asks the fire plan of each unit.</summary>
+    private GamePlanner.MandatoryFireOwed? MandatoryNow
+    {
+        get
+        {
+            if (state is null || history is null)
+            {
+                return null;
+            }
+
+            if (mandatoryCache is not { } kept || kept.Revision != history.Events.Count)
+            {
+                mandatoryCache = (history.Events.Count, Live.Planner.MandatoryFire(state, history.Events));
+            }
+
+            return mandatoryCache.Value.Owed;
+        }
+    }
+
     private Task ProposeMandatoryFire(GamePlanner.MandatoryFireOwed owed, string? only = null)
     {
         var arguments = Live.Planner.MandatoryFireArguments(state!, owed, only);
@@ -5213,6 +5240,7 @@ else if (state is not null)
         moveTerrainRate = false;
         moveDash = string.Empty;
         moveOverrun = false;
+        moveIpcTo = string.Empty;
         moveBypass = string.Empty;
         advanceUnits.Clear();
         advanceTo = string.Empty;
@@ -5313,6 +5341,7 @@ else if (state is not null)
         moveTerrainRate = false;
         moveDash = string.Empty;
         moveOverrun = false;
+        moveIpcTo = string.Empty;
         moveBypass = string.Empty;
         vehicleIntended = string.Empty;
         vehicleOverrun = false;
@@ -5926,10 +5955,7 @@ else if (state is not null)
 
     /// <summary>The viewer's unbroken squads that guard prisoners (A20.5; pass 40): each may Deploy at will.</summary>
     private IReadOnlyList<string> GuardSquads => state is null ? []
-        : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && unit.Kind == "asl:squad" && state.Location(unit.Id) is not null
-                && (Viewer.IsAdjudicator || unit.Side == viewAs) && GameState.Condition(unit, Conditions.Broken) != ConditionState.True
-                && state.Units.Any(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == unit.Id))
-            .Select(unit => unit.Id)];
+        : [.. Live.Planner.GuardSquadsAtWill(state, Viewer.IsAdjudicator ? null : viewAs).Where(id => ActingUnits.Any(unit => unit.Id == id))];
 
     private Task ProposeGuardDeploy(string squad) => Propose(GameActions.Deploy, JsonSerializer.SerializeToElement(new Dictionary<string, object>
     {
@@ -6162,6 +6188,7 @@ else if (state is not null)
                 moveTerrainRate = false;
                 moveDash = string.Empty;
                 moveOverrun = false;
+                moveIpcTo = string.Empty;
                 moveBypass = string.Empty;
             }
             else if (proposal.Action == GameActions.Move)
@@ -6172,6 +6199,7 @@ else if (state is not null)
                 moveTerrainRate = false;
                 moveDash = string.Empty;
                 moveOverrun = false;
+                moveIpcTo = string.Empty;
                 moveBypass = string.Empty;
             }
             else if (proposal.Action == GameActions.MoveVehicle)
@@ -6524,7 +6552,7 @@ else if (state is not null)
         : SetupOpen ? "A side sets up out of the other's sight."
         : !HandOverAwaited ? "The game does not wait on this side now; its view is opened to look."
         : state.Phase == "mph" && state.Movement is { WindowOpen: true } moving
-            ? $"A {DisplayText.Side(state.PhasingSide)} stack {(moving.Members.Count == 0 ? "was stopped by fire" : "spent MF")} in {PlaceOf(moving.Location)}. The {DisplayText.Side(handOver)} side, as the DEFENDER, may fire at it or pass (A8.1)."
+            ? $"A {DisplayText.Side(state.PhasingSide)} stack {(moving.Members.Count == 0 ? "was stopped by fire" : "spent MF")} in {PlaceOf(moving.Location)}. The {DisplayText.Side(handOver)} side, as the DEFENDER, {(MandatoryNow is null ? "may fire at it or pass (A8.1)" : "must attack it from the Location it entered (A8.312)")}."
         : Awaiting(state).Note;
 
     private IReadOnlyList<string> HandOverTasks
@@ -6547,7 +6575,8 @@ else if (state is not null)
             return state.Choice is not null ? ["Answer the choice the game waits on; nothing else is proposed until it is answered."]
                 : state.PendingSurrenders.Count > 0 ? ["Take the surrendering unit prisoner, refuse it, or free it (A20.21)."]
                 : state.Phase == "mph" && state.Movement is { WindowOpen: true } moving
-                    ? [$"Fire at the moving stack in {PlaceOf(moving.Location)} with your units that see it, or pass.", "Hand the screen back once you have passed."]
+                    ? [MandatoryNow is null ? $"Fire at the moving stack in {PlaceOf(moving.Location)} with your units that see it, or pass." : ScenarioA1MandatoryFire.HandOverText(PlaceOf(moving.Location)),
+                        "Hand the screen back once you have passed."]
                 : state.Phase switch
                 {
                     "rph" => ["Rally your broken units, repair weapons, and transfer or recover SW.", "End the Rally Phase when both sides are done, or hand the screen back."],

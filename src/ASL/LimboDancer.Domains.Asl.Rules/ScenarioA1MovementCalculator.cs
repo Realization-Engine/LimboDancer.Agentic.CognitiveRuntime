@@ -580,7 +580,7 @@ public static class ScenarioA1MovementCalculator
         var known = there.Where(unit => enemiesThere.Contains(unit.Id, StringComparer.Ordinal)).Any(unit => unit.Known);
         if (known)
         {
-            return new MoveEnemiesVerdict("play.move-occupied: Infantry may not enter a Location holding a Known enemy unit in the MPh, but by an Infantry OVR of a lone SMC or to recapture Unarmed units (A4.14, A4.15, A20.54; ruling R10.11)", false, null, enemiesThere, hiddenEnemies);
+            return new MoveEnemiesVerdict("play.move-occupied: Infantry may not enter a Location holding a Known enemy unit in the MPh, except by a berserk charge, an Infantry OVR of a lone Known SMC (take its NTC first), or to recapture Unarmed units (A4.14, A4.15, A20.54)", false, null, enemiesThere, hiddenEnemies);
         }
 
         if (enemiesThere.Length > 0 && allDummies)

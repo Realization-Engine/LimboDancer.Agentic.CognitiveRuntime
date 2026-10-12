@@ -615,7 +615,7 @@ Built on 2026-10-11 under the user's word of that evening: "Complete Pass 40 wit
 
 **Rulings, decided under the user's word of 2026-10-11.**
 
-- **R40.12:** the NTC is an act of its own, taken before the step it allows, for one stack against one Location; it is taken once in a phase by those units against that Location. Its DRM is the TEM of the Location and of a hexside the stack would cross (the page says "the TEM of the enemy's Location"; a wall between the two is that Location's TEM to this stack). Hindrance within the Location is not counted.
+- **R40.12:** the NTC is an act of its own, taken before the step it allows, for one stack against one Location; it is taken once in a phase by those units against that Location. Its DRM is the TEM of the Location: the hex's, or that of a wall or hedge the stack would cross when it is the larger, never both (B9.31). Hindrance within the Location is not counted. A passed NTC covers a MMC only while its taker enters with it.
 - **R40.13:** a MMC that fails its own NTC loses only the OVR; it may still move elsewhere. The page gives the heavier penalty to the leader's stack alone.
 - **R40.14:** the SMC's destinations are the adjacent ground-level Locations it could enter by an ordinary step, in the playable area, that hold no unit of the other side. Minefields, FFE, and Wire are not read. The hex the stack came from is among them when it stands empty.
 - **R40.15:** the prefilled CC attack of an Infantry OVR is by the stack's MMC; a leader who came with them is not joined to it by the page (the player may add him). The recapture's prefilled attack is a plain CC attack, not a capture attempt.
@@ -671,7 +671,7 @@ Built on 2026-10-11 under the user's word of that evening: "Complete Pass 40 wit
 
 **Rulings, decided under the user's word of 2026-10-11.**
 
-- **R40.17:** the units that owe the attack fire as one group where the fire rules form one. The fire package forms no group of a unit with no counter and a unit marked First Fire (ruling R12.3: one kind of Defensive fire to an attack), and it lets a Location fire once at a MF expenditure (A7.55). In that case one of the units that owe the attack makes it, alone or with others that owe it, and the rest are released; the page says so. A group of mixed kinds is a backlog row.
+- **R40.17:** the units that owe the attack fire as one group where the fire rules form one. The fire package forms no group of a unit with no counter and a unit marked First Fire (ruling R12.3: one kind of Defensive fire to an attack), and it lets a Location fire once at a MF expenditure (A7.55). In that case the units that owe it and can fire as one group with those named must all be named, no one else fires with them, and the rest are released; the page says so and cites this ruling. A group of mixed kinds is a backlog row.
 - **R40.18 (amends R8.4):** a crew that fired its Gun this Player Turn has no inherent FP, but in an attack of the kind FPF, where it adds it, whatever its own counter. A7.353's halved FP in Subsequent First Fire and Final Fire stays a backlog row (pass 45).
 - **R40.19:** the bar is on the DEFENDER's small-arms and MG fire (`asl.game.fire`). A Gun's shot, a thrown DC, and a Starshell are not held behind the attack owed.
 - **R40.20:** the step that owes the attack is one that changed the stack's Location. Cavalry is not in the catalog. Residual FP, minefield, and OBA attacks, which the rule puts first, are resolved with the step as before.
@@ -715,7 +715,7 @@ Built on 2026-10-11 under the user's word of that evening, as section 10 has it.
 ### 11.2 What is built
 
 - **No leader for a Guard and an Unarmed unit.** Rules: `ScenarioA1SupportWeaponRules.NeedsNoLeader`. A squad that guards prisoners, or is Unarmed, Deploys in its RPh on a NTC with no modifier when no leader is named; two HS Recombine with none when each is a Guard or Unarmed. A leader named directs all the same. The branch that was dead code (no leader named was always refused) is gone.
-- **A Guard squad's Deployment at will.** Rules: `GuardDeploysAtWill`. An unbroken squad that guards prisoners Deploys in any phase, on either side's Player Turn, of any nationality (a Russian Guard too), with no leader and no NTC. One of its HS keeps the prisoners, by the projector's rule for a Guard that leaves play. Outside the RPh the page has a block for it.
+- **A Guard squad's Deployment at will.** Rules: `GuardDeploysAtWill`. An unbroken squad that guards prisoners Deploys in any phase, on either side's Player Turn, of any nationality (a Russian Guard too), with no leader and no NTC. The prisoners pass by the projector's rule for a Guard that leaves play: to the first armed unit of its side in the Location, by id, with the capacity, which is one of the two HS unless a third unit stands there. Outside the RPh the page has a block for it.
 - **Recombining at the start of the RPh.** Rules: `RecombineStartBar`. It is refused once a unit of the HS's side has attempted a Rally, a Repair, a Deployment, or a Recovery, or made a Transfer, in that RPh. Other Recombinations do not count.
 - **One US# member:** `ScenarioA1Definitions.UnitSize`, with the 4 and the 5. The four copies (prisoners, CC, a Guard's fire, the Concealment dr) and the projector's read it.
 - **A butted half-hex at setup.** Rules: `ScenarioA1SetupCalculator.InAreas`; the setup's Location facts carry the hex's name on the other board (`OtherHalf`), which Play reads from the placed map's layout. A counter sets up in a butted half-hex only if its group's areas hold the hex under both boards' names.
@@ -761,3 +761,92 @@ On board 3, written by `make_409.py`, with no leader on the map.
 A record replays as it was played. A record in which HS Recombined after their side's Rally attempt would be refused if proposed today and is not re-judged on replay. The US# reads the same numbers for every Personnel unit.
 
 **Not run:** the replay digest, the sweep, the text list.
+
+## 12. The five reviews and the Studio check
+
+Run on 2026-10-11 under the user's word of that evening: five read-only agents in one message (the referee in two halves, the table player, the Rules boundary, the UI and Blazor review), their briefs in `Prompts/Pass 40 Review Briefs.md`. They found one BLOCKER and about forty-five findings in all. Each was judged against the code and its page; those with a contained fix were fixed, and the rest have a row in the backlog's section 56. Nothing was put to the user first, which the user's word allowed; every fix below is open to a veto.
+
+### 12.1 Fixed
+
+| Review | What was wrong | What was done |
+|---|---|---|
+| Referee, enemy Locations, 1 (BLOCKER) | A squad already marked First Fire that holds a MG dropped out of the attack owed: its plainest attack named no MG, which Subsequent First Fire refuses. | Rules says how many MG a unit fires in the attack it owes (`WeaponsFired`): a marked unit fires them with its own FP. Play test `ASquadAlreadyMarkedFirstFireStillOwesTheAttackWithItsMg`. |
+| Referee, enemy Locations, 2 and 5 | Two MMC with no leader could never make an OVR together; a leader's passed NTC let his squads enter without him. | `NtcCovers`: each MMC under a passed NTC whose taker enters with it. The state's record keeps the taker. |
+| Referee, enemy Locations, 3 | The NTC's DRM added a wall or hedge to the hex's TEM (B9.31, p. 119). | `NtcDrm` takes the larger. Ruling R40.12 reworded. |
+| Referee, enemy Locations, 4 | An Unarmed mover and a stack of Dummies could enter Unarmed enemy units (A20.54). | `MayRecapture` over the movers. |
+| Referee, enemy Locations, 6 | Where the units form no one group, any one of them satisfied the bar, though others could have fired with it. | `FireBar` refuses while a unit that could fire in one group with those named is left out; Play asks the fire plan. Ruling R40.17 reworded. |
+| Referee, enemy Locations, 7 | The bars named the DEFENDER's units to an ATTACKER who proposed fire. | The fire bar is read only for a proposal whose firers are of the non-phasing side. |
+| Referee, enemy Locations, 8; UI 5 | A concealed or hidden vehicle beside the SMC turned the NTC away; the DEFENDER's summary listed the Locations open to its SMC, so one left out told of a hidden ATTACKER unit. | The vehicle clause is gone from `TargetBar`; `EvadeText` names no Location. |
+| Referee, enemy Locations, 10 | A Guard's Deployment at will in the RPh was written as a RPh action and then barred its side's Recombinations. | It is no RPh action in any phase. The design's words on which unit inherits the prisoners are corrected (11.2). |
+| Rules boundary, 1 | A CC record made before the pass, with a crew at its Gun, would fail its check: the rebuilt facts hold `Manning` and the record does not. | The verifier takes `Manning` as recorded. |
+| Rules boundary, 2, 3, 4, 7 | Play decided A8.312's preconditions, had its own usable-MG rule (which counted a dismantled MG), filtered the SMC's Locations, and the page decided A20.5. | `Owed` takes the four facts and asks the fire plan last through a reader; the fire package's `UsableMgs` is the one rule; `EvadeDestinations` filters from each neighbour's facts; the page reads `GuardSquadsAtWill`. |
+| Rules boundary, 6 | The kinds of fire a Dash halves were tested by the caller alone. | The multiplier in Rules tests the kind and the ordnance hit. |
+| Referee, movement, 1 | A Dash declared to a Location the stack cannot enter left it unable to step or to end. | `EndBar` is lifted when the move's own plan refuses the step into that Location. |
+| Referee, movement, 2 | One mover's break or pin ended the Dash for the whole stack. | The fire's Dash fact is read over the members still moving. |
+| Referee, movement, 4 and 5 | The target's overstacking DRM was read for a vehicle's fire at a stationary stack in the MPh and for vehicle targets, and it counted hidden and concealed units, so a proposal's DRM told of them. | `TargetPenaltyApplies` (the movers in the MPh; Personnel), and the count is over the units the firer knows. Ruling R40.26. |
+| Referee, movement, 7 | A failed push and attacks other than direct fire took no Hazardous Movement. | The projector lists the crew on the Manhandling DR; the fact is set for every attack. |
+| UI 1 | The leader's IPC name was never cleared and could be sent from a hidden select. | Cleared with the other move drafts and when its unit is unchecked; sent only when a stack moves. |
+| UI 2, 3, 4 | The adjudicator had no path to the attack owed and an enabled pass; the attack owed was computed twice a render; a stopped stack's note still offered a pass. | One read a revision (`MandatoryNow`); the block serves the adjudicator; the note gives way to the attack owed. |
+| UI 7 | The Guard's block did not say where the SW go. | It says they stay with the first HS. |
+| Table player, 1 and 2 | The note for units with different fire counters gave a ruling as the rule, and the pass refusal contradicted it. | Both cite ruling R40.17 and say what the game does. |
+| Table player, 3, 7, 8, 9; 6 in part | "Small arms" for the Dash's halving; "beside it" twice; `play.move-occupied` stale; the SMC's block promising fire a leader has not; two refusals that did not say what was wrong. | Reworded as the reviewer proposed. |
+| Table player, 4 and 5 | A Guard's Deployment recorded under A1.31; a leader's NTC record without his stack or the cost of failing. | The record cites A20.5, and names the stack and the consequence. |
+| The Studio check | The hand-over prompt told the DEFENDER "fire at it or pass" while the attack was owed. | It says the attack is owed (A8.312). |
+
+### 12.2 One more ruling
+
+- **R40.26 (A5.13, A5.131, A5.132):** the target's overstacking penalty is read for Personnel targets only, in the MPh for the moving side's units only, and over the units the firing side knows (neither hidden nor concealed), so that a proposal's DRM tells the firer of no unit it may not know. The firer's own penalty counts all its units.
+
+### 12.3 Not fixed: a row each in the backlog's section 56
+
+| Review | What |
+|---|---|
+| Referee, enemy Locations, 9 | A lone SMC that enters Unarmed units has no CC in the MPh (A20.54, p. 88) |
+| Referee, enemy Locations, 10 | A crew at its Gun has a US# of 2, where A1.6 gives an attendant crew 4 (A1.6, p. 45) |
+| Rules boundary, 5; referee, movement, 12 | The woods-road exception for vehicles, the Dash's SMOKE and DC bar, the bar on the other terrain's cost, and the two exceptions to A5.11 are decided in Play (B13.31, A4.63, A4.132, A5.11) |
+| Rules boundary, 8 and 9 | What a Guard's Deployment at will waives, which acts end the start of the RPh, the two-HS test, and the recapture's exceptions are decided in Play (A20.5, A1.32, A20.54) |
+| Referee, movement, 3 | One mover's break ends Assault Movement for the whole stack (A4.61, p. 51) |
+| Referee, movement, 6 | The road's second target point is tested only inside the target hex (A4.132, p. 48) |
+| Referee, movement, 8 | A CX leader still lends his IPC (older than the pass) (A4.42, A4.52, pp. 50 to 51) |
+| Referee, movement, 9 | Ruling R40.9 halves a whole Fire Group against a Dash (A4.63, A7.52) |
+| Referee, movement, 10 | The leader's IPC: only a laden MMC of his nationality is helped, and the unasked default is not kept in the record (A4.42, p. 50) |
+| Referee, movement, 11 | The overstack MF is added after an Encircled unit's doubling (A7.7, A5.11) |
+| Referee, movement, 1 (rest) | The overstack MF and the lost Road Bonus of the Location Dashed to are not in the Dash's MF check (A4.63) |
+| UI 6 | The "Leader's IPC to" list offers units that cannot be helped, and shows hexes without brackets (A4.42) |
+| Table player, 6 (rest) | The Dash's refusal lists eight causes in one sentence (A4.63) |
+| Table player, 10 | Eight games share three labels, and four that are not fixtures do not say so ((games)) |
+| Table player, 11 | The overstacking clause shows the rounded figure as the overstack (A5.11, p. 52) |
+| Table player (not checked) | Whether a squad that takes its own NTC beside a leader should take his leadership DRM (A10.7, p. 68) |
+| Replay | A Guard's Deployment is filed as a "rally" step on the Replay page ((page)) |
+
+### 12.4 The Studio check
+
+In my Studio on port 6671, built into `bin/p31b`, with scripted dice.
+
+- **The five widths** (1920 by 1080, 1366 by 768, 1024 by 768, 683 by 384, 320): the move panel with its new inputs, measured for anything past the right edge. Nothing at four widths. At 320 the inspector's tab row is 11 pixels wider than the page on the Map tab (`play-inspector-tab-evidence`); the pass did not touch it, and it has a backlog row. The Actions tab, where the pass's controls are, fits.
+- **A full Player Turn at 320:** a move, the DEFENDER's pass, the end of the move, and every phase to the next Player Turn's PFPh, switching views as the game asked; then the berserk charge with the attack owed, its note and button within the page.
+- **A full step at 1920 by keyboard:** the OVR's NTC proposed and confirmed with the Enter key; the entry at double the MF; the adjudicator's view (the SMC's block shown); the DEFENDER's view; the SMC's move away.
+- **After the fixes:** the mixed-counter game again, with the hand-over prompt's new words, the note that cites ruling R40.17, the adjudicator's block with no pass, one unit's attack, and the pass.
+- **The three small things of section 5.2:** the phasing side's view in the DFPh shows a sentence ("The Russian side ends the Defensive Fire Phase."), not a disabled button; the hand-over prompt at 320 lies in the page's flow and covers nothing; the "Latest" line still did not follow a phase change. The first two are closed; the third keeps its row.
+- **Not walked:** each width in each of the three views for every control (the views were walked at 1920 and 320); the turn at 1920 beyond the MPh; the Replay page.
+
+## 13. As built
+
+Eight tasks, each a commit, then the reviews' fixes in one.
+
+| Task | Rules | Play and Units | What a player meets |
+|---|---|---|---|
+| 40.6 | `ScenarioA1Stacking` | `LiveStacking`, the IFT's two overstack facts | One count of a stack in every phase; the MF and the DRM of overstacking in the MPh and on the IFT. |
+| 40.2 | `IsWoodsRoadHex`, `RoadRateTargetTerrain`; `LosTargetPoints` in Maps | the move's `terrainRate`, the step's `RoadRate` | The road's rate by choice; a mover at the road rate fired on at one of two points. |
+| 40.3 | `ScenarioA1Dash` | the move's `dash`, the fire's and ordnance's Dash facts | Dash. |
+| 40.8 | `HazardousMovers` | the state's list, the ordnance fact | Hazardous Movement in every fire phase. |
+| 40.7 | `PortagedTwiceBar`, `MoveTiming`, `AssaultHolds`, `RecoveryBypassBar` | the phase's portage list, the move's `ipcTo` | Seven corrections to portage, Assault Movement, Recovery, and boarding. |
+| 40.4 | `ScenarioA1InfantryOverrun` | two actions, the move's `overrun`, the event `infantry-overrun-ntc` | Infantry OVR; recapture by entry. |
+| 40.5 | `ScenarioA1MandatoryFire` | the pass and the fire refused while the attack is owed | The attack owed under A8.312; a crew's FP in FPF. |
+| 40.9 | `NeedsNoLeader`, `GuardDeploysAtWill`, `RecombineStartBar`, `UnitSize`, `InAreas` | the Guard's Deployment, the setup's other half | Deployment and Recombining with no leader; Recombining at the RPh's start; the butted half-hex. |
+
+**New in a game's record:** the event `infantry-overrun-ntc`; the choice kind `overrun-evade`; on a step, `roadRate`, `dash`, `ipcTo`, `infantryOverrun`; on a fire record, `firerOverstack`, `targetOverstack`, `dash`; on an ordnance record, the Dash and Hazardous Movement facts. Each is absent from an older record and reads as it did. A game that holds the new event cannot be read by a build before the pass.
+
+**Rulings:** R40.1 to R40.11 approved by the user; R40.12 to R40.26 decided under the user's word of 2026-10-11 and open to a veto. All 26 are in the Passes Plan.
+
+**Not built, against the answer to question F10:** a CE or BU choice at setup, and the half-hex rule for entry and occupation (section 11.4).

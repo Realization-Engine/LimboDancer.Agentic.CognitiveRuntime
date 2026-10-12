@@ -14,10 +14,11 @@ public static class LiveStacking
     /// One side's stack in a Location: its active counters there, and any units about to arrive. Passengers are not in the Location's
     /// stack (<see cref="GameState.At"/> leaves them out; A5.3), and a wreck is not active.
     /// </summary>
-    public static StackCount Of(GameState state, BoardLocation at, string side, IEnumerable<UnitInstance>? arriving = null)
+    public static StackCount Of(GameState state, BoardLocation at, string side, IEnumerable<UnitInstance>? arriving = null, bool knownOnly = false)
     {
         ArgumentNullException.ThrowIfNull(state);
-        var units = state.At(at).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side)
+        var units = state.At(at).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side
+                && (!knownOnly || (GameState.Condition(unit, Conditions.Hidden) != ConditionState.True && GameState.Condition(unit, Conditions.Concealed) != ConditionState.True)))
             .Concat(arriving ?? []).DistinctBy(unit => unit.Id).ToArray();
         return ScenarioA1Stacking.Count(units.Select(unit => Facts(state, unit)));
     }

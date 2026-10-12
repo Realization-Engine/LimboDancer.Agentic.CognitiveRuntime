@@ -275,19 +275,20 @@ public sealed partial class GamePlanner
         // A4.132 (pass 40): the choice is a step's across a road hexside; an entry from off board, a Bypass, and an obstacle occupied have none.
         if (terrainRate && (entering is not null || bypassing is not null || occupy))
         {
-            return Refused(scope, label, expected, "play.move-terrain-rate: the cost of the hex's other terrain is chosen only for a step across a road hexside, not for an entry from off board, a Bypass, or an obstacle occupied (A4.132)");
+            return Refused(scope, label, expected, "play.move-terrain-rate: the cost of the hex's other terrain is chosen only for a step across a road hexside, not for an entry from off board, a Bypass, or a step from Bypass into the obstacle of the same hex (A4.132)");
         }
 
         // A4.15, A20.54 (pass 40): an Infantry OVR onto a lone Known SMC needs its passed NTC; Unarmed units are entered with none. Rules decides
         // from the Location's enemy units as the moving side knows them and from the NTCs the state keeps.
         var defenders = OverrunDefenders(state, to, movers[0].Side);
-        var recapture = !overrunDeclared && berserk == 0 && entering is null && bypassing is null && !occupy && !minimumMove && to != from && ScenarioA1InfantryOverrun.OnlyUnarmed(defenders);
+        var recapture = !overrunDeclared && berserk == 0 && entering is null && bypassing is null && !occupy && !minimumMove && to != from && ScenarioA1InfantryOverrun.OnlyUnarmed(defenders)
+            && ScenarioA1InfantryOverrun.MayRecapture(movers.Any(unit => Is(unit, Conditions.Unarmed)), movers.All(unit => unit.Kind == UnitKinds.Dummy));
         if (overrunDeclared)
         {
             string[] mmcIds = [.. movers.Where(unit => vocabulary.IsA(unit.Kind, "asl:mmc")).Select(unit => unit.Id)];
             var taken = state.InfantryOverrunNtcs.Where(ntc => ntc.Target == to.ToString()).ToArray();
             if ((ScenarioA1InfantryOverrun.TargetBar(defenders, to.ToString())
-                ?? ScenarioA1InfantryOverrun.EntryBar(mmcIds.Length > 0 && taken.Any(ntc => ntc.Passed && mmcIds.All(id => ntc.Units.Contains(id, StringComparer.Ordinal))),
+                ?? ScenarioA1InfantryOverrun.EntryBar(ScenarioA1InfantryOverrun.NtcCovers(mmcIds, ids, [.. taken.Select(ntc => (ntc.Units, ntc.Taker, ntc.Passed))]),
                     taken.Any(ntc => !ntc.Passed && ntc.Units.Any(id => ids.Contains(id, StringComparer.Ordinal))), minimumMove, bypassing is not null, entering is not null, berserk > 0,
                     to.ToString())) is { } overrunBar)
             {
@@ -605,7 +606,7 @@ public sealed partial class GamePlanner
         }
 
         // Pass 40 (A8.312): no pass while the DEFENDER owes its attack on the units that entered its Location.
-        if (MandatoryFire(state, existing) is { } owed && ScenarioA1MandatoryFire.PassBar(owed.Firers, owed.At.ToString()) is { } mandatoryBar)
+        if (MandatoryFire(state, existing) is { } owed && ScenarioA1MandatoryFire.PassBar(owed.Firers, owed.Group, owed.At.ToString()) is { } mandatoryBar)
         {
             return Refused(scope, label, expected, mandatoryBar);
         }
@@ -658,8 +659,14 @@ public sealed partial class GamePlanner
         }
 
         // A4.63 (pass 40): a Dashing stack ends its MPh in the Location it Dashed to, unless its Dash has ceased.
+        // "... or otherwise unable to enter": the step into the Location Dashed to is asked of the move's own plan, which draws no dice.
+        var dashBlocked = movement?.Dash is { } dashTo && movement.Members.Count > 0 && PlanMove(scope, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+        {
+            ["unitIds"] = movement.Members,
+            ["to"] = dashTo.ToString(),
+        }), existing, "dash-read", expected, label, actor).Status != GamePlanStatus.Ready;
         if (ScenarioA1Dash.EndBar(movement?.Dash?.ToString(), movement is not null && ScenarioA1Dash.BenefitsHold(movement.Movers.Select(id => state.Unit(id)).OfType<UnitInstance>()
-            .Select(unit => (Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned), Is(unit, Conditions.Berserk))))) is { } dashEnd)
+            .Select(unit => (Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned), Is(unit, Conditions.Berserk)))), dashBlocked) is { } dashEnd)
         {
             return Refused(scope, label, expected, dashEnd);
         }
