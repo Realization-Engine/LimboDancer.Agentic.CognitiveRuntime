@@ -120,6 +120,16 @@ public sealed record OrdnanceShot(
     }
 
     /// <summary>
+    /// Whether every target of a shot outside the MPh is under Hazardous Movement (C6.6, A4.62; pass 40, ruling R40.10): Case O. In the MPh the
+    /// shot's movement facts carry it. Null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? HazardousTarget
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// Whether a Good Order enemy ground unit within 16 hexes sees the firing Gun's Location, so a concealed crew and Gun lose their "?" by
     /// firing (A12.14; ruling R8.5); null leaves it to the target Location, as before.
     /// </summary>

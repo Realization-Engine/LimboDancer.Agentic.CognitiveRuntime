@@ -507,6 +507,7 @@ public static class GameProjector
                     PhaseFirers = [],
                     SpottedThisPhase = [],
                     MovedWeapons = newPlayerTurn ? [] : state.MovedWeapons,
+                    HazardousMovers = newPlayerTurn ? [] : state.HazardousMovers,
                     // A23.3 (ruling R15.2): a DC Placement lasts its Player Turn.
                     PlacedCharges = newPlayerTurn ? [] : state.PlacedCharges,
                     AssaultWeaponUsers = newPlayerTurn ? [] : state.AssaultWeaponUsers,
@@ -2016,6 +2017,7 @@ public static class GameProjector
                     PushedGun = moving.PushedGun,
                 },
                 SmokeAttempts = moving.Smoke is { } attempt ? [.. next.SmokeAttempts, attempt.Unit] : next.SmokeAttempts,
+                HazardousMovers = Rules.ScenarioA1MovementCalculator.HazardousMovers(next.HazardousMovers, moving.PushedGun is not null, moving.Movers),
                 SmokePending = moving.Smoke is { Placed: true } placing ? placing.Target : null,
                 MovedWeapons = [.. next.MovedWeapons, .. Rules.ScenarioA1MovementCalculator.MovedLightMortars(
                     [.. next.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && moving.Movers.Contains(holding.Holder, StringComparer.Ordinal))

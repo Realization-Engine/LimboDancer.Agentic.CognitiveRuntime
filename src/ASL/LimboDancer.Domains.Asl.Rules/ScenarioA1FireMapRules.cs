@@ -286,11 +286,16 @@ public static class ScenarioA1FireMapRules
         return sources == locations && read() ? true : null;
     }
 
-    /// <summary>A4.62 (ruling R10.8; referee, pass 10): only the crew pushing its Gun into the target Location this MPh is under Hazardous Movement, when it is every target.</summary>
-    public static bool? HazardousMovement(string? phase, bool pushedGunAtTarget, string? gunHolder, FireAttack attack)
+    /// <summary>
+    /// A4.62 (p. 51; rulings R10.8 and R40.10; referee, pass 10): an attack is against Hazardous Movement "regardless of fire phase" when every
+    /// target is a unit that pushed a Gun this Player Turn and none of them is broken. The pinned among them are left out by the package, which
+    /// reads each target's own state. Null when it is not.
+    /// </summary>
+    public static bool? HazardousMovement(IReadOnlyCollection<string> hazardousMovers, FireAttack attack)
     {
+        ArgumentNullException.ThrowIfNull(hazardousMovers);
         ArgumentNullException.ThrowIfNull(attack);
-        return phase == "mph" && pushedGunAtTarget && gunHolder is not null && attack.Targets!.Count > 0 && attack.Targets.All(item => item.UnitId == gunHolder) ? true : null;
+        return attack.Targets is { Count: > 0 } targets && targets.All(item => item.UnitId is { } id && hazardousMovers.Contains(id) && item.Broken != true) ? true : null;
     }
 
     /// <summary>A8.3: Subsequent First Fire, and FPF by a firer not yet marked Final Fire, reach no farther than the closest armed, Known enemy unit from each firer's Location.</summary>

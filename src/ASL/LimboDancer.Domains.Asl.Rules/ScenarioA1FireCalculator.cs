@@ -467,8 +467,7 @@ public static class ScenarioA1FireCalculator
         var direct = kind != ResidualFire && attack.OrdnanceHit is null && attack.VehicleFire is null;
         if ((attack.HexsideTem is { } wall && (!direct || wall.Terrain is not ("wall" or "hedge") || wall.Tem < 0 || wall.Tem > (wall.Terrain == "wall" ? 2 : 1)))
             || (attack.HeightAdvantage == true && (!direct || attack.Overrun is not null))
-            || (attack.SnapShot == true && (!direct || attack.Overrun is not null || phase != "MPh" || kind is not (FirstFire or SubsequentFirstFire) || attack.HexsideTem is not null))
-            || (attack.HazardousMovement == true && phase != "MPh"))
+            || (attack.SnapShot == true && (!direct || attack.Overrun is not null || phase != "MPh" || kind is not (FirstFire or SubsequentFirstFire) || attack.HexsideTem is not null)))
         {
             outside.Add("asl.a1.fire.terrain-fact-outside");
         }

@@ -1332,14 +1332,13 @@ public sealed partial class GamePlanner
                 };
             }
 
-            // B10.31 (ruling R10.4): Height Advantage over every firer; A4.62 (ruling R10.8): a crew pushing its Gun is under Hazardous Movement.
-            var pushedGun = state.Phase == "mph" && state.Movement is { PushedGun: { } pushed } pushing && pushing.Location == target ? pushed : null;
+            // B10.31 (ruling R10.4): Height Advantage over every firer; A4.62 (rulings R10.8, R40.10): a crew that pushed its Gun this Player Turn
+            // is under Hazardous Movement in every fire phase of it.
             facts = facts with
             {
                 HeightAdvantage = ScenarioA1FireMapRules.HeightAdvantage(sources.Length, perLocation.Count,
                     () => HeightAdvantageAt(state, target, targetRead, [.. sources.Select(item => (item.From, item.Height))], attack.SnapShot == true)),
-                HazardousMovement = ScenarioA1FireMapRules.HazardousMovement(state.Phase, pushedGun is not null,
-                    pushedGun is not null && state.Find(pushedGun) is EquipmentInstance { Holding: { } manning } ? manning.Holder : null, attack),
+                HazardousMovement = ScenarioA1FireMapRules.HazardousMovement(state.HazardousMovers, attack),
             };
         }
 

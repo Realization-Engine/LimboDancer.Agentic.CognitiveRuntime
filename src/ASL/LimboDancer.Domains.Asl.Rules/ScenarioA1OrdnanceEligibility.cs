@@ -371,6 +371,7 @@ public static class ScenarioA1OrdnanceEligibility
             },
             SameHex = recorded.SameHex,
             CrewSeen = recorded.CrewSeen,
+            HazardousTarget = recorded.HazardousTarget,
 
             // The map read of pass 9: a PF fired from a ground-level building (C13.8).
             Panzerfaust = expected.Panzerfaust is null ? null : expected.Panzerfaust with

@@ -245,6 +245,28 @@ public sealed class ScenarioA1Pass10Tests
     }
 
     [Fact]
+    public void HazardousMovementIsReadInEveryFirePhaseForTheUnitsThatPushed()
+    {
+        // A4.62 (p. 51; pass 40, task 40.8, ruling R40.10): "regardless of fire phase until they are pinned".
+        var prep = Attack([5, 5]);
+        Assert.True(ScenarioA1FireMapRules.HazardousMovement(["de-s"], prep));
+        Assert.Null(ScenarioA1FireMapRules.HazardousMovement([], prep));
+        Assert.Null(ScenarioA1FireMapRules.HazardousMovement(["other"], prep));
+        Assert.Null(ScenarioA1FireMapRules.HazardousMovement(["de-s"], prep with
+        {
+            Targets = [Target("de-s") with { Broken = true }],
+        }));
+        var fired = Complete(prep with
+        {
+            HazardousMovement = true,
+        });
+        Assert.Contains(("hazardous-movement", -2m), Drm(fired));
+        Assert.DoesNotContain(fired.Reasons ?? [], reason => reason.Contains("terrain-fact-outside", StringComparison.Ordinal));
+        Assert.Equal(["a", "b"], ScenarioA1MovementCalculator.HazardousMovers(["a"], true, ["b"]));
+        Assert.Equal(["a"], ScenarioA1MovementCalculator.HazardousMovers(["a"], false, ["b"]));
+    }
+
+    [Fact]
     public void MarshHasNoTemButNoFfmoAndRubbleHasItsBuildingsTem()
     {
         // B16.3, B24.3 (ruling R10.1).

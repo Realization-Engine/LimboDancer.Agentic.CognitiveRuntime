@@ -738,6 +738,33 @@ public sealed class BacklogPass8Tests : IDisposable
     }
 
     [Fact]
+    public async Task ACrewThatPushedItsGunIsUnderHazardousMovementInTheDfphToo()
+    {
+        // Pass 40, task 40.8 (A4.62, p. 51; ruling R40.10): "regardless of fire phase until they are pinned". The crew pushed in its MPh; the
+        // DEFENDER's Final Fire at it takes the -2. A squad that pushed nothing takes none.
+        await SetupDefended("german", Crew("de-crew", "bd01:A8:0", "german"), Gun("de-gun", "attacker-inf-gun", "bd01:A8:0", "east", "de-crew", "german"),
+            Squad("g1", "bd01:A6:0", "german"), Squad("r1", "bd01:D8:0", "russian"), Squad("r2", "bd01:D6:0", "russian"));
+        await Advance(2);
+        Committed(await Push("de-crew", "bd01:B8:0", "de-gun", 1, 1));
+        Assert.Equal(CrewIds, Current.HazardousMovers);
+        await Pass();
+        await EndMove();
+        await Advance();
+        Assert.Equal("dfph", Current.Phase);
+        var before = Revision;
+        Committed(await Fire(R1, "bd01:B8:0", 6, 6, 6, 6, 6, 6));
+        Assert.True(HasDrm(LastFire(before), "hazardous-movement", -2));
+        before = Revision;
+        Committed(await Fire(R2, "bd01:A6:0", 6, 6, 6, 6, 6, 6));
+        Assert.False(HasDrm(LastFire(before), "hazardous-movement", -2));
+
+        // The list is the Player Turn's: it is empty once the next one begins.
+        await Advance(5);
+        Assert.Empty(Current.HazardousMovers);
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
     public async Task AHookedUpTruckIsTiAndAnAbandonedGunCanBeHookedUp()
     {
         // C10.11 (table player, pass 8): the truck that hooked up is TI and does not start; a Gun its crew abandoned is hooked up by a crew on

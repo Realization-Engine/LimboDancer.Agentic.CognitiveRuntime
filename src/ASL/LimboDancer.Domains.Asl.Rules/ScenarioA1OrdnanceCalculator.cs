@@ -682,6 +682,11 @@ public static class ScenarioA1OrdnanceCalculator
         {
             drm.AddRange(MoverDrm(movement));
         }
+        else if (shot.HazardousTarget == true)
+        {
+            // C6.6, A4.62 (pp. 175, 51; pass 40): Case O in any fire phase.
+            drm.Add(new FireModifier("case-o", -2, "C6.6"));
+        }
 
         var concealedTarget = hit.Targets!.All(Concealed);
         if (concealedTarget)

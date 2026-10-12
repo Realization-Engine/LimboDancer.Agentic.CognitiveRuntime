@@ -181,6 +181,9 @@ public sealed record GameState(
     /// <summary>The light mortars carried to a new Location in this Player Turn's MPh, which do not fire in its AFPh (A4.41; referee, pass 9).</summary>
     public IReadOnlyList<string> MovedWeapons { get; init; } = [];
 
+    /// <summary>The units that pushed a Gun in this Player Turn's MPh, under Hazardous Movement in every fire phase of it (A4.62; pass 40, ruling R40.10).</summary>
+    public IReadOnlyList<string> HazardousMovers { get; init; } = [];
+
     /// <summary>
     /// The leader directing each SW's To Hit DR this phase (A7.53; referee, pass 9), who may go on directing its further ROF shots; cleared at every
     /// phase change.

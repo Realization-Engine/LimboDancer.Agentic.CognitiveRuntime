@@ -929,6 +929,17 @@ public static class ScenarioA1MovementCalculator
         return minimumMove || forcedBack || dashArrived ? movers : smokeUnit is { } sixed && smokeDr == 6 ? [sixed] : [];
     }
 
+    /// <summary>
+    /// A4.62 (p. 51; ruling R40.10): the units under Hazardous Movement this Player Turn, after a step: those already there and the movers of a
+    /// step that pushes a Gun. The list is emptied as a new Player Turn begins.
+    /// </summary>
+    public static IReadOnlyList<string> HazardousMovers(IReadOnlyList<string> already, bool pushesGun, IReadOnlyList<string> movers)
+    {
+        ArgumentNullException.ThrowIfNull(already);
+        ArgumentNullException.ThrowIfNull(movers);
+        return pushesGun ? [.. already.Union(movers, StringComparer.Ordinal)] : already;
+    }
+
     /// <summary>A4.41 (referee, pass 9): a light mortar carried into a new Location does not fire in the AFPh; the ones newly marked moved, in the state's order.</summary>
     public static IReadOnlyList<string> MovedLightMortars(IReadOnlyList<CarriedWeaponFacts> carried, bool locationChanged)
     {
