@@ -207,6 +207,16 @@ public sealed record FireAttack(
     }
 
     /// <summary>
+    /// Whether every MG of the attack fires alone at its Bore Sighted Location (C6.44; pass 45): minus 2 on the IFT DR, against Infantry only in
+    /// Defensive First Fire, and never with Spraying Fire, a Snap Shot, or Residual FP. Null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? MgBoreSighted
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// The Low Visibility Hindrance DRM of night and weather (E1.7, E3.1, E3.32; rulings R16.3, R16.11), which the game supplies for each attack it
     /// applies to: cumulative with every other Hindrance, never negating FFMO, never lowering Residual FP. Null is 0.
     /// </summary>
@@ -232,6 +242,17 @@ public sealed record FireAttack(
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? CushionedOpenGround
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Pass 45 (A7.9, A8.2, A8.221, A8.23, A8.26; ruling R45.4): the attack marks the units that cower, shifts two columns for Inexperienced Personnel
+    /// by their fact, and leaves the Residual FP its weapons' fates give, held to 12 after its reduction. The planner records it with every attack
+    /// from the pass on; an attack recorded before it has none, and replays as it was resolved.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? CoweringMarksAndWeaponResidual
     {
         get; init;
     }
@@ -597,6 +618,13 @@ public sealed record FireFirer(
         get; init;
     }
 
+    /// <summary>Whether the firer is berserk (A7.54, A7.9; pass 45): it joins no multi-Location group and never cowers; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Berserk
+    {
+        get; init;
+    }
+
     /// <summary>
     /// Whether a Green or Conscript firer is Inexperienced (A19.2), for the Heat of Battle DRM of an FPF NMC, and for its FT's removal number, one lower
     /// (A19.32; referee, pass 15); required for those classes in FPF.
@@ -675,6 +703,17 @@ public sealed record FireDirector(
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? SeenByGoodOrderEnemy
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the leader directed, earlier this phase, every MG this attack fires (A7.53, p. 57; pass 45): "a leader can direct the fire of a MG as
+    /// many times as the MG can fire, even if he also directed other units as part of a FG in the MG's previous attack". The planner's read of the
+    /// phase's records, recorded with the attack; null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? DirectedTheseMgs
     {
         get; init;
     }
@@ -805,6 +844,13 @@ public sealed record FireRolls(
         get; init;
     }
 
+    /// <summary>One dr per firer that can cower, when a fire group of two or more of them cowers (A7.9; pass 45): the highest is marked, ties with it.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<string, int>? CowerSelection
+    {
+        get; init;
+    }
+
     /// <summary>One dr per FPF firer, when a Casualty MC falls on two or more of them (A8.31).</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyDictionary<string, int>? FirerSelection
@@ -900,6 +946,17 @@ public sealed record FireArithmetic(
         get; init;
     }
 
+    /// <summary>
+    /// The Residual FP the attack would leave if the weapons that kept their Multiple ROF gave it up (A8.23, p. 60; pass 45): "The decision to
+    /// forfeit possible remaining First Fire capability in order to leave Residual FP must be made immediately after resolving its attack." Given
+    /// only when it is more than <see cref="ResidualFp"/>, which counts the other firers alone.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? ResidualFpIfForfeited
+    {
+        get; init;
+    }
+
     /// <summary>The Final DR of the pinned movers of a stack that also holds unpinned ones: the same DR without FFNAM, FFMO, or Hazardous Movement (A7.83; ruling R12.3); null otherwise.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? PinnedFinalDr
@@ -927,7 +984,18 @@ public sealed record FireColumn(decimal TotalFirepower, int? UnshiftedColumnFp, 
 
 /// <summary>What the attack did to a MG: malfunction (A9.7, A9.71), Multiple ROF kept (A9.2), Sustained Fire (A9.3), and its fire counter.</summary>
 public sealed record FireWeaponEffect(string EquipmentId, int BreakdownNumber, bool Malfunctioned, bool RateOfFireRetained, bool SustainedFire,
-    string? FireCounter, int? SelectionDr);
+    string? FireCounter, int? SelectionDr)
+{
+    /// <summary>
+    /// Whether the weapon is removed for good (A.11, p. 43; A9.7, p. 65; pass 45): a fire that lowers the B# "also transforms the weapon's Original
+    /// B# to an X# during that use", and a DR at least the X# removes it. Null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Removed
+    {
+        get; init;
+    }
+}
 
 /// <summary>A MC, NTC, LLMC, or LLTC taken by a target unit.</summary>
 public sealed record FireCheck(
@@ -1001,6 +1069,12 @@ public sealed record FireUnitEffect(
     }
 }
 
+/// <summary>
+/// One MG of an attack against its Bore Sighting (C6.42, C6.43; pass 45): whether it has one, whether its firer is the unit that set up with it,
+/// whether it stands in its setup Location, whether the sighting is on the target Location, and whether it is dismantled.
+/// </summary>
+public sealed record MgSightingFacts(bool Sighted, bool ByItsPossessor, bool AtItsSetupLocation, bool OnTheTarget, bool Dismantled);
+
 /// <summary>The MOL Check of an attack (A22.611, A22.6111; ruling R15.4): its dr, drm, and pass, and whether the MOL user broke on a colored dr of 6.</summary>
 public sealed record FireMolCheck(string UnitId, int Dr, IReadOnlyList<FireModifier> Drm, int Final, bool Passed, bool UserBroken);
 
@@ -1014,6 +1088,26 @@ public sealed record FireResolution(
     string? FireCounter,
     IReadOnlyList<string> FirerConcealmentLost)
 {
+    /// <summary>
+    /// The firers whose own counter differs from <see cref="FireCounter"/> (A8.31; pass 45, ruling R45.1): a unit with no counter that fires First
+    /// Fire in one group with Subsequent First Fire or FPF firers. Null when every firer takes the attack's counter.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<string, string>? FirerCounters
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The units that cowered (A7.9, p. 58; pass 45): "any unit that cowers (as well as all of its SW regardless of whether it was using its inherent
+    /// FP) is automatically marked with a Final or Prep Fire counter", one or more of a fire group by Random Selection. Null when none did.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? CoweredUnitIds
+    {
+        get; init;
+    }
+
     /// <summary>What the attack did to each MG used in it; null when none was.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<FireWeaponEffect>? WeaponEffects

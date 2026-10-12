@@ -224,6 +224,14 @@ public static class ScenarioA1Definitions
     /// </summary>
     public static bool FreeToActAsPlanned(bool goodOrder, bool ti) => goodOrder && !ti;
 
+    /// <summary>
+    /// Whether a TI unit may take a SW or Deployment action (A.7, p. 43; A4.8, p. 52; pass 45, ruling R45.6): "A unit can be pinned, CX, TI, and/or
+    /// unarmed and still be considered in 'Good Order'", and "A TI unit may not move, advance, fire, or perform other labor tasks". Deployment,
+    /// Recombining, a Transfer, a Drop, and Recovery in the RPh spend no MF and are no labor task, so Good Order is enough; Recovery in the MPh
+    /// costs a MF, which a TI unit may not spend (<paramref name="spendsMf"/>).
+    /// </summary>
+    public static bool FreeToAct(bool goodOrder, bool ti, bool spendsMf) => goodOrder && !(ti && spendsMf);
+
     /// <summary>A.18 (p. 44; pass 35, task 35.3): a Morale Level is never raised beyond 10, though the unit be Fanatic, heroic, with a Commissar, or in a Human Wave.</summary>
     public static int MoraleCeiling(int level) => Math.Min(10, level);
 

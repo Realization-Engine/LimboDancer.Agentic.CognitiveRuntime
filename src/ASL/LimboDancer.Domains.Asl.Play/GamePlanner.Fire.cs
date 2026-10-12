@@ -180,6 +180,50 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, laneInUse);
         }
 
+        // A9.21 (p. 62; pass 45): a MMG or HMG that has fired this phase from woods, rubble, or a building fires again only inside that shot's CA.
+        // The phase's records give its earlier shots; Rules decides from their bearings.
+        foreach (var firer in attack.Firers!.Where(item => item.Weapons is { Count: > 0 } && item.LocationId is not null && item.LocationId != target.ToString()))
+        {
+            if (!BoardLocation.TryParse(firer.LocationId!, out var mgAt) || ReadLocation(state, mgAt!) is not { } mgRead)
+            {
+                continue;
+            }
+
+            // A shot within the MG's own hex (its own Location, or up or down its stairwell) has no bearing: the CA "includes the MG's own Location".
+            double? BearingFrom(BoardLocation to) => to.Board == mgAt!.Board && to.Hex == mgAt.Hex ? null : Bearing(state, mgAt, to);
+            foreach (var weapon in firer.Weapons!)
+            {
+                double[] earlier = [.. ThisPhase(existing).Select(item => item.Payload).OfType<FireResolved>()
+                    .Where(record => record.Resolution.TryGetProperty("weaponEffects", out var effects) && effects.ValueKind == JsonValueKind.Array
+                        && effects.EnumerateArray().Any(effect => effect.TryGetProperty("equipmentId", out var id) && id.GetString() == weapon.EquipmentId))
+                    .Select(record => BoardLocation.TryParse(record.TargetLocation, out var was) ? BearingFrom(was!) : null).OfType<double>()];
+                if (ScenarioA1FireEligibility.FieldOfFireBar(weapon.DefinitionId is { } mgNamed ? FireReference.Value.Definitions.GetValueOrDefault(mgNamed)?.Size : null,
+                    TerrainKey(mgRead), earlier, BearingFrom(target), weapon.EquipmentId!) is { } fieldBar)
+                {
+                    return Refused(scope, label, expected, fieldBar);
+                }
+            }
+        }
+
+        // A7.53 (p. 57; pass 45): a leader who directed a MG this phase directs its later shots; the phase's records say whether he did.
+        if (attack.Director is { UnitId: { } mgDirector } && attack.Firers!.All(item => item.UsesInherentFp == false && item.Weapons is { Count: > 0 }))
+        {
+            string[] fired = [.. attack.Firers!.SelectMany(item => item.Weapons!).Select(weapon => weapon.EquipmentId!)];
+            var directedThem = fired.All(id => ThisPhase(existing).Select(item => item.Payload).OfType<FireResolved>().Any(record => record.Director == mgDirector
+                && record.Resolution.TryGetProperty("weaponEffects", out var effects) && effects.ValueKind == JsonValueKind.Array
+                && effects.EnumerateArray().Any(effect => effect.TryGetProperty("equipmentId", out var was) && was.GetString() == id)));
+            if (directedThem)
+            {
+                attack = attack with
+                {
+                    Director = attack.Director with
+                    {
+                        DirectedTheseMgs = true
+                    },
+                };
+            }
+        }
+
         // A9.12 (referee, pass 12): a leader who directed fire this phase gives up leadership by firing a MG, so fires none; he fires one MG a phase.
         // Rules decides it (pass 32.c); the record scan and the two state scans are read when asked.
         if (ScenarioA1FireEligibility.LeaderMgBar(attack.Firers!.Select(leader => new LeaderMgFacts(leader.UnitId!, state.Unit(leader.UnitId!)?.Kind == "asl:leader",
@@ -346,7 +390,8 @@ public sealed partial class GamePlanner
         {
             var parsed = BoardLocation.TryParse(sprayText, out var second);
             if (ScenarioA1FireEligibility.SprayTargetBar(parsed, parsed && second! == target, parsed && second!.Level == target.Level,
-                parsed && SideToward(state, target, second!) is not null) is { } sprayTarget)
+                parsed && SideToward(state, target, second!) is not null,
+                parsed && second!.Board == target.Board && second.Hex == target.Hex && Math.Abs(second.Level - target.Level) == 1) is { } sprayTarget)
             {
                 return Refused(scope, label, expected, sprayTarget);
             }
@@ -585,7 +630,7 @@ public sealed partial class GamePlanner
         ScenarioA1FireEligibility.UsableMgs(state.Equipment.Where(equipment => equipment.Status == InstanceStatus.Active
                 && equipment.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unitId)
             .Select(equipment => new PossessedWeaponFacts(equipment.Id, GameState.Condition(equipment, Conditions.Malfunctioned) == ConditionState.True,
-                GameState.Condition(equipment, Conditions.Dismantled) == ConditionState.True, equipment.Kind,
+                GameState.Condition(equipment, Conditions.Dismantled) == ConditionState.True && !LiveFire.FiresAsLmg(equipment), equipment.Kind,
                 () => equipment.Definition is { } weapon ? LiveOrdnance.LatwType(weapon.Definition) : null)));
 
     /// <summary>
@@ -876,8 +921,14 @@ public sealed partial class GamePlanner
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(outOfFuel), package, null, [fireId]));
         }
 
+        // A.11, A9.7 (pass 45): a weapon whose lowered B# became an X# is removed on that DR.
+        foreach (var gone in (resolution.WeaponEffects ?? []).Where(item => item.Removed == true))
+        {
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(gone.EquipmentId), package, null, [fireId]));
+        }
+
         // The MGs: a malfunction (A9.7), and the fire counter of a MG that lost its Multiple ROF (A9.2).
-        foreach (var weapon in (resolution.WeaponEffects ?? []).Where(item => item.EquipmentId != resolution.FlamethrowerRemoved))
+        foreach (var weapon in (resolution.WeaponEffects ?? []).Where(item => item.EquipmentId != resolution.FlamethrowerRemoved && item.Removed != true))
         {
             var conditions = ConditionChanges(ScenarioA1FireFollowUps.WeaponEffectConditions(weapon,
                 () => state.Find(weapon.EquipmentId) is { } equipment && GameState.Condition(equipment, Conditions.FirstFire) == ConditionState.True));
@@ -902,7 +953,32 @@ public sealed partial class GamePlanner
             var conditions = ConditionChanges(ScenarioA1FireFollowUps.FireMarkerConditions(id, facts, resolution,
                 marked is not null && GameState.Condition(marked, Conditions.FirstFire) == ConditionState.True,
                 marked is not null && (Is(marked, Conditions.Concealed) || Is(marked, Conditions.Hidden))));
+
+            // Pass 45 (A7.53): a leader who directs a MG's later shot already carries the phase's counter; an event that changes nothing is not written.
+            if (marked is not null && conditions.All(pair => GameState.Condition(marked, pair.Key) == pair.Value))
+            {
+                continue;
+            }
+
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(id, conditions), package, null, [fireId]));
+        }
+
+        // A7.9 (p. 58; pass 45): a unit that cowers is marked "as well as all of its SW regardless of whether it was using its inherent FP": the
+        // SW it possesses that the attack did not fire take its counter too.
+        foreach (var id in resolution.CoweredUnitIds ?? [])
+        {
+            if ((resolution.FirerCounters?.GetValueOrDefault(id) ?? resolution.FireCounter) is not { } cowerCounter)
+            {
+                continue;
+            }
+
+            foreach (var held in state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == id
+                && !(resolution.WeaponEffects ?? []).Any(effect => effect.EquipmentId == item.Id)))
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(held.Id,
+                    ConditionChanges(ScenarioA1FireFollowUps.CoweredWeaponConditions(cowerCounter, GameState.Condition(held, Conditions.FirstFire) == ConditionState.True))),
+                    package, null, [fireId]));
+            }
         }
 
         // A8.2, A8.21: Residual FP, unless a counter at least as large is already there.
@@ -1187,7 +1263,7 @@ public sealed partial class GamePlanner
         if (attack.FireKind == ScenarioA1FireCalculator.ResidualFire)
         {
             // A8.2 (rulings R6.6, R9.6): Residual FP has no LOS Hindrance, but the SMOKE of its Location applies.
-            return (ScenarioA1FireMapRules.ResidualMapFacts(attack, terrain, SmokeSources(state).Count(place => place == target)), null);
+            return UpperLevelEncircled(state, (ScenarioA1FireMapRules.ResidualMapFacts(attack, terrain, SmokeSources(state).Count(place => place == target)), null));
         }
 
         var firingSide = attack.VehicleFire is { } vehicleFire ? state.Unit(vehicleFire.VehicleId!)?.Side : state.Unit(attack.Firers![0].UnitId!)?.Side;
@@ -1230,7 +1306,8 @@ public sealed partial class GamePlanner
                         && FireReference.Value.Definitions.GetValueOrDefault(vehicleDefinition.Definition)?.Unarmored == true)),
                 () => state.Movement is { Vehicle: true, Reaction: false } moving && moving.Movers.Any(id => state.Location(id)?.Location == from),
                 () => state.Movement is { Vehicle: true } reactedTo && reactedTo.Movers.Any(id => state.Location(id)?.Location == from)
-                    && (attack.Firers ?? []).Any(item => item.LocationId == location && state.Unit(item.UnitId!) is { } firer && Is(firer, Conditions.CcReaction))));
+                    && (attack.Firers ?? []).Any(item => item.LocationId == location && state.Unit(item.UnitId!) is { } firer && Is(firer, Conditions.CcReaction)),
+                attack.OrdnanceHit is not null));
             if (verdict.Refusal is { } locationBar)
             {
                 return (null, locationBar);
@@ -1240,6 +1317,18 @@ public sealed partial class GamePlanner
             if (verdict.OwnLocation)
             {
                 perLocation[location] = (0, true, ScenarioA1FireMapRules.OwnLocationLos, height);
+                continue;
+            }
+
+            // A7.21, B23.25, B23.26 (pass 45): another level of the firer's own hex is fired at as the next level a stairwell joins, at range 0.
+            if (direct && from.Board == target.Board && from.Hex == target.Hex)
+            {
+                if (ScenarioA1FireMapRules.SameHexLevelBar(from.ToString(), target.ToString(), Math.Abs(from.Level - target.Level), () => IsAdjacent(state, from, target)) is { } levelBar)
+                {
+                    return (null, levelBar);
+                }
+
+                perLocation[location] = (0, false, ScenarioA1FireMapRules.OwnLocationLos, height);
                 continue;
             }
 
@@ -1379,7 +1468,27 @@ public sealed partial class GamePlanner
         };
 
         // Backlog pass 16 (rulings R16.2, R16.3, R16.11 to R16.14): night and weather.
-        return NightAndWeatherFacts(state, facts, target, targetRead.Hex.BaseLevel + (targetRead.Hex.Center.Terrain?.Height ?? 0), perLocation);
+        return UpperLevelEncircled(state, NightAndWeatherFacts(state, facts, target, targetRead.Hex.BaseLevel + (targetRead.Hex.Center.Terrain?.Height ?? 0), perLocation));
+    }
+
+    /// <summary>
+    /// A7.72 (p. 58; pass 45): the firers and targets in an upper building level with no path to ground level are Encircled, as a read of the map
+    /// recorded with the attack; a unit Encircled by a counter is so already.
+    /// </summary>
+    private (FireAttack? Facts, string? Reason) UpperLevelEncircled(GameState state, (FireAttack? Facts, string? Reason) read)
+    {
+        if (read.Facts is not { } facts)
+        {
+            return read;
+        }
+
+        bool CutOff(string? id) => id is not null && state.Unit(id) is { } unit && UpperLevelEncircled(state, unit);
+        return (facts with
+        {
+            Firers = facts.Firers is null ? null : [.. facts.Firers.Select(firer => firer.Encircled != true && CutOff(firer.UnitId) ? firer with { Encircled = true } : firer)],
+            Targets = facts.Targets is null ? null : [.. facts.Targets.Select(target => target.Encircled != true && target.Dummy != true && CutOff(target.UnitId)
+                ? target with { Encircled = true } : target)],
+        }, read.Reason);
     }
 
     /// <summary>

@@ -132,8 +132,8 @@ public static class GameActions
         }
         """);
 
-    public static readonly ActionDescriptor Dismantle = Descriptor("asl.game.dismantle", "Dismantle or assemble a MG",
-        "Its possessor dismantles or assembles the German MMG in its side's PFPh or DFPh, if the MG has not fired in it; this counts as the MG's use. A dismantled MG is not fired and portages at half its PP (A9.8; ruling R13.6).",
+    public static readonly ActionDescriptor Dismantle = Descriptor("asl.game.dismantle", "Dismantle or assemble a SW",
+        "Its possessor dismantles or assembles a non-Russian MMG or HMG, or a light mortar of four PP or more, in its side's PFPh or DFPh, if the weapon has not fired in it; this counts as the weapon's use. A dismantled weapon portages at half its PP and is not fired, except a German MMG or HMG, which fires as a LMG (A9.8).",
         PlayPermission, "asl.game.sequence-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -297,6 +297,19 @@ public static class GameActions
 
     public static readonly ActionDescriptor PassFire = Descriptor("asl.game.pass-fire", "Pass on the moving stack",
         "The DEFENDER passes on the moving stack's latest MF expenditure, so the ATTACKER may continue or end its move (A8.11).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 }
+          }
+        }
+        """);
+
+    public static readonly ActionDescriptor ForfeitRof = Descriptor("asl.game.forfeit-rof", "Give up a weapon's ROF for Residual FP",
+        "The DEFENDER, at once after a Defensive First Fire attack in which a weapon kept its Multiple ROF, gives the ROF up so that the weapon's FP counts toward the Residual FP left (A8.23).",
         PlayPermission, "asl.game.sequence-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -705,7 +718,7 @@ public static class GameActions
         [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
             FireOrdnance, RecoverShock, TurnGun, HookGun, MoveVehicle, Overrun, VehicleCloseCombat, ButtonUp, Choose, Massacre, OpportunityFire,
             Rout, Deploy, Recombine, Transfer, Drop, Recover, Dismantle, AmbushWithdraw, GuardPrisoners, ThrowDc, DetonateDc, FireStarshell, PlaceHidden, MopUp,
-            InfantryOverrunNtc, OverrunEvade];
+            InfantryOverrunNtc, OverrunEvade, ForfeitRof];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

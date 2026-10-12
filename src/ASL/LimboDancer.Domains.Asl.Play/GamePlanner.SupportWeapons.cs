@@ -17,8 +17,10 @@ public sealed partial class GamePlanner
     private static bool GoodOrder(UnitInstance unit) => ScenarioA1Definitions.GoodOrderOf(unit.Status == InstanceStatus.Active, Is(unit, Conditions.Broken),
         Is(unit, Conditions.Berserk), Is(unit, Conditions.Melee), Is(unit, Conditions.Captured), Is(unit, Conditions.Stunned), Is(unit, Conditions.Shocked));
 
-    /// <summary>Whether a unit may take a SW or Deployment action: in Good Order and not TI, as the planner had it before A.7 was read into Good Order.</summary>
-    private static bool FreeToAct(UnitInstance unit) => ScenarioA1Definitions.FreeToActAsPlanned(GoodOrder(unit), Is(unit, "asl:ti"));
+    /// <summary>
+    /// Whether a unit may take a SW or Deployment action (pass 45, ruling R45.6): in Good Order; a TI unit only when the action spends no MF.
+    /// </summary>
+    private static bool FreeToAct(UnitInstance unit, bool spendsMf = false) => ScenarioA1Definitions.FreeToAct(GoodOrder(unit), Is(unit, "asl:ti"), spendsMf);
 
     private static FireDefinition? DefinitionOf(UnitInstance unit) =>
         unit.Definition is { } reference ? FireReference.Value.Definitions.GetValueOrDefault(reference.Definition) : null;
@@ -33,8 +35,8 @@ public sealed partial class GamePlanner
     /// <summary>A25.2 (ruling R31.4): Russian squads may not Deploy [EXC: a Guard of prisoners, A20.5 (pass 40), and a temporary crew, A21.22, not built].</summary>
     private static bool MayNotDeploy(UnitInstance squad) => !ScenarioSetup.MayDeploy(DefinitionOf(squad)?.Nationality);
 
-    /// <summary>Whether the game dismantles a weapon now for its possessor (A9.8; ruling R13.6): the German MMG, in its side's PFPh or DFPh.</summary>
-    public static bool MayDismantle(GameState state, string weaponId)
+    /// <summary>Whether the game dismantles a weapon now for its possessor (A9.8; pass 45): a weapon the rule names, in its side's PFPh or DFPh.</summary>
+    public bool MayDismantle(GameState state, string weaponId)
     {
         ArgumentNullException.ThrowIfNull(state);
         return state.Find(weaponId) is EquipmentInstance { Holding: { } holding } weapon && Dismantlable(weapon) && state.Unit(holding.Holder) is { } unit
@@ -497,9 +499,12 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.invalid-arguments: a Recovery names the unit and the SW");
         }
 
-        if (state.Unit(unitId) is not { } unit || !FreeToAct(unit) || Is(unit, Conditions.Pinned) || LiveFire.IsVehicle(unit) || state.Location(unit.Id)?.Location is not { } at)
+        if (state.Unit(unitId) is not { } unit || !FreeToAct(unit, spendsMf: state.Phase == "mph") || Is(unit, Conditions.Pinned) || LiveFire.IsVehicle(unit)
+            || state.Location(unit.Id)?.Location is not { } at)
         {
-            return Refused(scope, label, expected, $"play.recover-unit: '{unitId}' is not unpinned Good Order Infantry on the map (A4.44)");
+            return Refused(scope, label, expected, state.Unit(unitId) is { } tied && Is(tied, "asl:ti") && GoodOrder(tied)
+                ? $"play.recover-unit: '{unitId}' is TI and may not Recover a SW in the MPh, which costs a MF (A4.8)"
+                : $"play.recover-unit: '{unitId}' is not unpinned Good Order Infantry on the map (A4.44)");
         }
 
         // A4.44 (pass 40): never by a Bypassing unit.
@@ -581,10 +586,14 @@ public sealed partial class GamePlanner
         };
     }
 
-    /// <summary>The German MMG, the one catalog weapon A9.8 lets its possessor dismantle and assemble (ruling R13.6).</summary>
-    private static bool Dismantlable(EquipmentInstance weapon) =>
-        weapon.Definition is { } reference && FireReference.Value.Definitions.GetValueOrDefault(reference.Definition) is { Nationality: "german" } definition
-            && definition.Id.Contains("mmg", StringComparison.Ordinal);
+    /// <summary>The weapons A9.8 lets their possessor dismantle and assemble; Rules decides from the catalog's values (pass 45).</summary>
+    private bool Dismantlable(EquipmentInstance weapon)
+    {
+        var definition = weapon.Definition is { } reference ? FireReference.Value.Definitions.GetValueOrDefault(reference.Definition) : null;
+        var printed = weapon.Definition is { } named ? catalogs.FirstOrDefault(item => item.Identity == named.Catalog)?.Definition(named.Definition) : null;
+        return ScenarioA1FireEligibility.Dismantlable(weapon.Kind, definition?.Nationality ?? printed?.Nationality, definition?.Size,
+            (int?)printed?.Printed("front", "asl:portage")?.Value?.Number);
+    }
 
     /// <summary>
     /// Dismantling or assembling the German MMG (A9.8; ruling R13.6): its possessor does it in a PFPh or DFPh of its side in which the MG has not fired;
@@ -602,14 +611,16 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.invalid-arguments: dismantling names the possessing unit and the SW");
         }
 
-        if (state.Unit(unitId) is not { } unit || !FreeToAct(unit) || Held(state, unit.Id).FirstOrDefault(item => item.Id == equipmentId) is not { } weapon)
+        if (state.Unit(unitId) is not { } unit || !FreeToAct(unit, spendsMf: true) || Held(state, unit.Id).FirstOrDefault(item => item.Id == equipmentId) is not { } weapon)
         {
-            return Refused(scope, label, expected, $"play.dismantle-weapon: '{unitId}' is not a Good Order unit possessing '{equipmentId}' (A9.8)");
+            return Refused(scope, label, expected, state.Unit(unitId) is { } tied && Is(tied, "asl:ti") && GoodOrder(tied)
+                ? $"play.dismantle-weapon: '{unitId}' is TI and may not dismantle or assemble a SW, which counts as its use (A4.8, A9.8)"
+                : $"play.dismantle-weapon: '{unitId}' is not a Good Order unit possessing '{equipmentId}' (A9.8)");
         }
 
         if (!Dismantlable(weapon))
         {
-            return Refused(scope, label, expected, $"play.dismantle-weapon: {weapon.Id} is not a weapon the game dismantles; only the German MMG is (A9.8; ruling R13.6)");
+            return Refused(scope, label, expected, $"play.dismantle-weapon: {weapon.Id} is not a weapon that is dismantled or assembled: only a light mortar of four PP or more and a non-Russian MMG or HMG are (A9.8)");
         }
 
         var marker = state.Phase switch

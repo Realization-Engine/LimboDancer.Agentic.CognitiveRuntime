@@ -31,7 +31,8 @@ public sealed partial class GamePlanner
     /// <summary>One unit of a moving stack as Rules reads it for the leader bonus (pass 32.b).</summary>
     private MovingUnitFacts MovingUnit(UnitInstance unit) =>
         new(unit.Id, unit.Side, unit.Kind == UnitKinds.Dummy, vocabulary.IsA(unit.Kind, "asl:mmc"), vocabulary.IsA(unit.Kind, "asl:leader"),
-            Is(unit, Conditions.Berserk), Is(unit, Conditions.Broken), Is(unit, Conditions.Wounded), Nationality(unit), unit.MfSpent, unit.HalfMfSpent, unit.MovedWith);
+            Is(unit, Conditions.Berserk), Is(unit, Conditions.Broken), Is(unit, Conditions.Wounded), Nationality(unit), unit.MfSpent, unit.HalfMfSpent, unit.MovedWith,
+            Is(unit, Conditions.Cx) || unit.DoubleTimeMf > 0);
 
     /// <summary>The PP of each SW a unit possesses (A4.4), from the catalog; null when one is not recorded.</summary>
     private int[]? Portage(GameState state, UnitInstance unit)
@@ -323,7 +324,7 @@ public sealed partial class GamePlanner
         // A5.11: the stack the entry makes there; a stack that occupies the obstacle it Bypasses is already in the Location, and marsh takes all the MF.
         var overstack = occupy || entry.AllMf ? 0 : LiveStacking.Of(state, to, movers[0].Side, movers).PersonnelExcess;
         var (noCost, halfMf) = ScenarioA1MovementCalculator.EntryCost(
-            new EntryCostFacts(entry, movers.Any(state.Encircled), pushed is not null, bypassing is not null, occupy, minimumMove, assault, berserk, current is not null, doubleTime,
+            new EntryCostFacts(entry, movers.Any(mover => Encircled(state, mover)), pushed is not null, bypassing is not null, occupy, minimumMove, assault, berserk, current is not null, doubleTime,
                 [.. movers.Select(unit => new EntryMoverFacts(unit.MfSpent != 0 || unit.HalfMfSpent, unit.DoubleTimeMf, Is(unit, Conditions.Cx)))], overstack),
             (index, doubleTimeMf, cx) => MfAllotment(state, movers[index], doubleTimeMf, cx));
         if (noCost is not null)
@@ -362,7 +363,7 @@ public sealed partial class GamePlanner
         // A4.11, A4.42, A4.5, A4.12, B3.4, A4.61, A4.134, B16.4: the MF each mover has left, decided by Rules from each mover's facts and allotment.
         // A4.42 (pass 40, ruling R40.11): the laden MMC the mover names for the leader's IPC, kept for the whole move.
         var ipcChosen = Text(arguments, "ipcTo", out var ipcText) ? ipcText : null;
-        var leaderIpcTo = LeaderIpcRecipient(state, movers, ipcChosen ?? current?.IpcTo);
+        var leaderIpcTo = LeaderIpcRecipient(state, movers, ipcChosen ?? current?.IpcTo, doubleTime);
         if (ScenarioA1MovementCalculator.IpcChoiceBar(ipcChosen, current?.IpcTo, leaderIpcTo.Recipient) is { } ipcBar)
         {
             return Refused(scope, label, expected, ipcBar);

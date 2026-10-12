@@ -183,7 +183,8 @@ public sealed record MovingUnitFacts(
     string? Nationality,
     int MfSpent,
     bool HalfMfSpent,
-    IReadOnlyList<string>? MovedWith);
+    IReadOnlyList<string>? MovedWith,
+    bool Cx = false);
 
 /// <summary>
 /// One unit of the game as the scans for a seeing enemy read it (A12.14, A12.34): active, its side, a Dummy, aboard a vehicle, Broken as a

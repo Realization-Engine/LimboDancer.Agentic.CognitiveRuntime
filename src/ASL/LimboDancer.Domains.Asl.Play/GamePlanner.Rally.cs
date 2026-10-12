@@ -327,6 +327,11 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, ScenarioA1RallyRules.SwRepairWeaponText(equipmentId, unitId));
         }
 
+        if (ScenarioA1RallyRules.SwRepairCapturedBar(equipmentId, LiveFire.CapturedBy(equipment.Definition?.Definition, unit) == true) is { } capturedBar)
+        {
+            return Refused(scope, label, expected, capturedBar);
+        }
+
         var printed = equipment.Definition is null ? null : FireReference.Value.Definitions.GetValueOrDefault(equipment.Definition.Definition)?.Repair;
         if (ScenarioA1RallyRules.SwRepairNumberBar(equipmentId, printed) is { } numberBar)
         {

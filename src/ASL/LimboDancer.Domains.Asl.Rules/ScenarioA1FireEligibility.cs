@@ -234,16 +234,15 @@ public static class ScenarioA1FireEligibility
             return (null, null);
         }
 
+        // A8.31, A8.312 (pp. 61 to 62; pass 45, ruling R45.1): "A unit using FPF may form a FG with units not using FPF", and the page's example
+        // fires a squad in FPF with a crew in First Fire. The attack takes the heaviest kind among its firers; each firer fires by its own counter.
         var marks = facts.Marks().Select(item => item.FinalFire ? 2 : item.FirstFire ? 1 : 0).Distinct().ToArray();
-        if (marks.Length != 1 && !(marks.Contains(2) && !marks.Contains(0)) && facts.NoneFiresAlone)
-        {
-            return ("play.fire-kind: a group mixes firers marked for different kinds of Defensive fire (A8.3, A8.31)", null);
-        }
-
         return (null, marks.Max() switch
         {
             0 => ScenarioA1FireCalculator.FirstFire,
-            1 => facts.AnyFiresAlone ? ScenarioA1FireCalculator.FirstFire : ScenarioA1FireCalculator.SubsequentFirstFire,
+            // A9.2: a MG fired again alone on its Multiple ROF by a unit marked First Fire is First Fire still. Review of pass 45: only when every
+            // unit marked First Fire fires so; one that fires its own FP uses Subsequent First Fire, whoever else fires a MG alone beside it.
+            1 => facts.AnyFiresAlone && facts.EveryFirstFireMarkedFiresAlone ? ScenarioA1FireCalculator.FirstFire : ScenarioA1FireCalculator.SubsequentFirstFire,
             _ => ScenarioA1FireCalculator.FinalProtectiveFire,
         });
     }
@@ -369,6 +368,7 @@ public static class ScenarioA1FireEligibility
             Partner = facts.Partner,
             Mol = facts.Mol ? true : null,
             Inexperienced = facts.Inexperienced,
+            Berserk = facts.Berserk ? true : null,
         };
     }
 
@@ -400,6 +400,36 @@ public static class ScenarioA1FireEligibility
     {
         ArgumentNullException.ThrowIfNull(targetSides);
         return targetSides.FirstOrDefault(side => side != firingSide) ?? firstVehicleSide ?? otherSide;
+    }
+
+    /// <summary>
+    /// C6.44 (p. 174; pass 45): "A MG/IFE non-ordnance attack ... vs a unit in the firing weapon's Bore Sighted Location may deduct two from its IFT
+    /// DR", and "may be used by a FG making such an attack only if all elements of that FG have Bore Sighted that same Location". A squad's own FP
+    /// has Bore Sighted nothing, so every firer fires its MG alone, and each MG fired has its sighting on the target Location (C6.43: by the unit
+    /// that set up with it, from its setup Location).
+    /// </summary>
+    public static bool MgBoreSighted(IEnumerable<(bool FiresAlone, IReadOnlyList<MgSightingFacts> Weapons)> firers)
+    {
+        ArgumentNullException.ThrowIfNull(firers);
+        var all = firers.ToArray();
+
+        // C6.43 (p. 174): not "fired by other than its original ... manning-Infantry", and lost if the weapon "leaves the setup Location" or "is dm".
+        return all.Length > 0 && all.All(firer => firer.FiresAlone && firer.Weapons.Count > 0
+            && firer.Weapons.All(weapon => weapon.Sighted && weapon.ByItsPossessor && weapon.AtItsSetupLocation && weapon.OnTheTarget && !weapon.Dismantled));
+    }
+
+    /// <summary>A9.8 (p. 65; pass 45): "A dm SW may not be fired until reassembled": the refusal of a dismantled mortar's shot, or null.</summary>
+    public static string? DismantledShotBar(bool dismantled, string weapon) =>
+        dismantled ? $"play.ordnance-dismantled: {weapon} is dismantled and is not fired until it is assembled (A9.8)" : null;
+
+    /// <summary>
+    /// The definition a dismantled German MMG or HMG fires as (A9.8): its side's LMG, the first by id where the catalog holds more than one; null
+    /// when it holds none.
+    /// </summary>
+    public static string? LmgDefinition(IEnumerable<FireDefinition> definitions, string? nationality)
+    {
+        ArgumentNullException.ThrowIfNull(definitions);
+        return definitions.Where(item => item.IsMg && item.Size == "light" && item.Nationality == nationality).OrderBy(item => item.Id, StringComparer.Ordinal).FirstOrDefault()?.Id;
     }
 
     /// <summary>
@@ -624,11 +654,60 @@ public static class ScenarioA1FireEligibility
     {
         ArgumentNullException.ThrowIfNull(lanes);
         ArgumentNullException.ThrowIfNull(attack);
+
+        // A9.223 (p. 63; pass 45): "A MG may cancel its Fire Lane in order to gain freedom to fire elsewhere (/its manning Infantry may use
+        // Subsequent-First-Fire/FPF after establishing the Fire Lane) only if a TPBF ... situation occurs (8.312 ...) in which case the Fire Lane
+        // must be cancelled". Fire at the firers' own Location is that situation; the lane goes with the attack's record.
+        if (attack.FirerLocationId is not null && attack.FirerLocationId == attack.TargetLocationId)
+        {
+            return null;
+        }
+
         return lanes.FirstOrDefault(lane => attack.Firers!.Any(item => item.Weapons?.Any(weapon => weapon.EquipmentId == lane.Weapon) == true
             || (item.UnitId == lane.Operator && attack.FireKind is ScenarioA1FireCalculator.SubsequentFirstFire or ScenarioA1FireCalculator.FinalProtectiveFire))) is { Weapon: { } inUse }
             ? $"play.fire-lane-mg: {inUse} has a Fire Lane and fires again only in the DFPh (A9.22, A9.223)"
             : null;
     }
+
+    /// <summary>
+    /// A9.223 (pass 45): whether a fire record cancels a Fire Lane: an attack at its firers' own Location by the lane's MG or its manning Infantry.
+    /// </summary>
+    public static bool FireLaneCancelledBy(bool atOwnLocation, bool laneWeaponOrOperatorFired) => atOwnLocation && laneWeaponOrOperatorFired;
+
+    /// <summary>
+    /// The Field of Fire (A9.21, p. 62; pass 45): "if a SW MMG/HMG in a woods/rubble/building hex fires and is entitled to another shot, it may
+    /// continue to fire during that phase only inside the CA of the prior shot (which ... includes the MG's own Location ...)". A CA is the
+    /// 60-degree wedge on a hexspine (C3.2), so the shots of a phase must lie in one such wedge. <paramref name="earlierBearings"/> are the MG's
+    /// earlier shots of the phase at other Locations; <paramref name="bearing"/> is null for its own hex. The refusal, or null.
+    /// </summary>
+    public static string? FieldOfFireBar(string? size, string? terrain, IReadOnlyList<double> earlierBearings, double? bearing, string weapon)
+    {
+        ArgumentNullException.ThrowIfNull(earlierBearings);
+        if (size is not ("medium" or "heavy") || !(terrain is "woods" or "rubble" || terrain?.EndsWith("building", StringComparison.Ordinal) == true)
+            || earlierBearings.Count == 0 || bearing is null)
+        {
+            return null;
+        }
+
+        double[] shots = [.. earlierBearings, bearing.Value];
+        return Enumerable.Range(0, 6).Any(facing => shots.All(shot => ScenarioA1Geometry.AngleBetween(shot, ScenarioA1Geometry.FacingDegrees(facing)) <= 30.0001))
+            ? null
+            : $"play.fire-field: {weapon} has fired this phase from woods, rubble, or a building, and fires again only inside the CA of that shot: the 60-degree wedge that holds its earlier target, and its own Location (A9.21)";
+    }
+
+    /// <summary>
+    /// The weapons a unit may dismantle and assemble (A9.8, p. 65; pass 45): "Any light mortar of >= four PP, 76-82mm mortar, or non-Russian
+    /// HMG/MMG". The catalog holds no 76-82mm mortar as a SW.
+    /// </summary>
+    public static bool Dismantlable(string? kind, string? nationality, string? size, int? portage) =>
+        (kind == "asl:mg" && size is "medium" or "heavy" && nationality is not (null or "russian")) || (kind == "asl:light-mortar" && portage >= 4);
+
+    /// <summary>
+    /// Whether a dismantled MG fires as its side's LMG (A9.8, p. 65; pass 45): "A dm SW may not be fired until reassembled [EXC: a German dm
+    /// HMG/MMG may be fired as a German LMG]".
+    /// </summary>
+    public static bool DismantledFiresAsLmg(bool dismantled, string? nationality, string? size) =>
+        dismantled && nationality == "german" && size is "medium" or "heavy";
 
     /// <summary>A9.12 (referee, pass 12): a leader who directed fire this phase gives up leadership by firing a MG, so fires none; he fires one MG a phase.</summary>
     public static string? LeaderMgBar(IEnumerable<LeaderMgFacts> firers)
@@ -675,8 +754,11 @@ public static class ScenarioA1FireEligibility
         ArgumentNullException.ThrowIfNull(attack);
         ArgumentNullException.ThrowIfNull(possessed);
         return attack.FireKind is ScenarioA1FireCalculator.SubsequentFirstFire or ScenarioA1FireCalculator.FinalProtectiveFire
-            && attack.Firers!.Any(item => !(item.Weapons?.Select(weapon => weapon.EquipmentId!).Order(StringComparer.Ordinal).ToArray() ?? [])
-                .SequenceEqual(possessed(item.UnitId!)))
+            // Review of pass 45 (ruling R45.1): the rule binds "a unit [that] uses Subsequent First Fire"; a unit with no counter that fires First
+            // Fire in the group "could use either its inherent FP or the LMG" (the example of p. 62).
+            && attack.Firers!.Any(item => (item.FirstFireMarked == true || item.FinalFireMarked == true || (item.Weapons ?? []).Any(weapon => weapon.FirstFireMarked == true))
+                && !(item.Weapons?.Select(weapon => weapon.EquipmentId!).Order(StringComparer.Ordinal).ToArray() ?? [])
+                    .SequenceEqual(possessed(item.UnitId!)))
             ? "play.fire-weapons: Subsequent First Fire and FPF use every MG the firer possesses (A8.3, A8.31)"
             : null;
     }
@@ -773,9 +855,13 @@ public static class ScenarioA1FireEligibility
         return [.. directors.Where(item => item.Location is { } at && blockedLocations.Contains(at) == blockedPart).Select(item => item.Id)];
     }
 
-    /// <summary>A9.5 (ruling R12.6): Spraying Fire attacks two Locations that share a hexside, at the same level.</summary>
-    public static string? SprayTargetBar(bool parsed, bool sameAsTarget, bool sameLevel, bool sharesHexside) =>
-        !parsed || sameAsTarget || !sameLevel || !sharesHexside ? "play.fire-spray: Spraying Fire attacks two Locations that share a hexside (A9.5)" : null;
+    /// <summary>
+    /// A9.5 (p. 64; ruling R12.6): Spraying Fire attacks two Locations that share a hexside, at the same level. Pass 45: "The target Locations can be
+    /// 'adjacent' vertically in the case of building upper levels, but each must be within one level of the other and in the same hex."
+    /// </summary>
+    public static string? SprayTargetBar(bool parsed, bool sameAsTarget, bool sameLevel, bool sharesHexside, bool nextLevelOfTheHex = false) =>
+        !parsed || sameAsTarget || !((sameLevel && sharesHexside) || nextLevelOfTheHex)
+            ? "play.fire-spray: Spraying Fire attacks two Locations that share a hexside, or two levels of one building hex that are one level apart (A9.5)" : null;
 
     /// <summary>A9.5 (ruling R12.6): Spraying Fire is made in the PFPh, AFPh, or DFPh, by a group that can see both Locations.</summary>
     public static string? SprayPhaseBar(string? phase, bool blockedFirst) =>

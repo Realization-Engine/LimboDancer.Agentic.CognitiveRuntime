@@ -386,11 +386,11 @@ public sealed class BacklogPass10Tests : IDisposable
         Assert.Equal(2, LastStep(before).HalfMf);
         Assert.True(LastStep(before).RoadRate);
         before = Revision;
-        Committed(await Fire(R1, L("D4"), false, 6, 6, 6, 6, 6, 6));
+        Committed(await Fire(R1, L("D4"), false, 6, 5, 6, 6, 6, 6));
         Assert.Contains(Drm(LastFire(before)), item => item.Name == "ffmo");
         Assert.DoesNotContain(Drm(LastFire(before)), item => item.Name == "tem:woods");
         before = Revision;
-        Committed(await Fire(R2, L("D4"), false, 6, 6, 6, 6, 6, 6));
+        Committed(await Fire(R2, L("D4"), false, 6, 5, 6, 6, 6, 6));
         Assert.Contains(("tem:woods", 1m), Drm(LastFire(before)));
         Assert.DoesNotContain(Drm(LastFire(before)), item => item.Name == "ffmo");
         await Pass();

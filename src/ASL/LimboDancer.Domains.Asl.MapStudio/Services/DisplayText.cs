@@ -260,6 +260,8 @@ public static class DisplayText
     {
         ["ffnam"] = "FFNAM",
         ["ffmo"] = "FFMO",
+        ["bore-sighting"] = "Bore Sighting",
+        ["mandatory-fire-direction"] = "a MG's target at 17 hexes or more is treated as concealed",
         ["area-fire"] = "Area Fire",
         ["area-fire-concealed-target"] = "Area Fire, concealed target",
         ["area-fire-gunflash"] = "Area Fire at a Gunflash",
@@ -305,6 +307,7 @@ public static class DisplayText
     private static readonly Dictionary<string, string> RollWords = new(StringComparer.Ordinal)
     {
         ["fire-ift"] = "IFT DR",
+        ["fire-cower-selection"] = "Random Selection dr for Cowering",
         ["fire-check"] = "MC or TC DR",
         ["fire-heat-of-battle"] = "Heat of Battle DR",
         ["fire-leader-loss"] = "Leader Loss DR",

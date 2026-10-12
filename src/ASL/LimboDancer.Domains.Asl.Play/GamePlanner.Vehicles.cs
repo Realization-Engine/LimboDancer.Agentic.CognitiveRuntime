@@ -134,6 +134,38 @@ public sealed partial class GamePlanner
     private static UnitInstance? EnemyVehicleAt(GameState state, string side, BoardLocation at) =>
         state.At(at).OfType<UnitInstance>().FirstOrDefault(unit => unit.Status == InstanceStatus.Active && unit.Side != side && LiveFire.IsVehicle(unit));
 
+    /// <summary>The DRM a Residual FP attack would take, read before its roll.</summary>
+    private static int ResidualDrm(FireAttack attack) =>
+        ScenarioA1FireFollowUps.TotalDrm(ScenarioA1FireCalculator.Preview(attack, FireReference.Value)?.Drm.Select(item => item.Value) ?? []);
+
+    /// <summary>
+    /// The Residual FP attacks this MPh, in a Location, on every unit and vehicle the attack now planned would hit (A8.22): each one's counter FP and
+    /// DRM, from its record.
+    /// </summary>
+    private static List<IReadOnlyList<(int Fp, int Drm)>> EarlierResidualAttacks(IReadOnlyList<GameEvent> existing, BoardLocation at, FireAttack planned)
+    {
+        string[] hit = [.. (planned.Targets ?? []).Select(item => item.UnitId!), .. (planned.Vehicles ?? []).Select(item => item.VehicleId!)];
+        var earlier = hit.ToDictionary(id => id, _ => new List<(int Fp, int Drm)>(), StringComparer.Ordinal);
+        foreach (var record in ThisPhase(existing).Select(item => item.Payload).OfType<FireResolved>().Where(record => record.TargetLocation == at.ToString()))
+        {
+            if (record.Facts.Deserialize<FireAttack>(LiveFire.Json) is not { FireKind: ScenarioA1FireCalculator.ResidualFire, ResidualFp: { } fp } recorded)
+            {
+                continue;
+            }
+
+            string[] then = [.. (recorded.Targets ?? []).Select(item => item.UnitId!), .. (recorded.Vehicles ?? []).Select(item => item.VehicleId!)];
+            var drm = ScenarioA1FireFollowUps.TotalDrm(record.Resolution.TryGetProperty("arithmetic", out var arithmetic) && arithmetic.TryGetProperty("drm", out var list)
+                && list.ValueKind == JsonValueKind.Array ? list.EnumerateArray().Select(item => item.TryGetProperty("value", out var value) ? value.GetDecimal() : 0m) : []);
+            foreach (var id in hit.Where(id => then.Contains(id, StringComparer.Ordinal)))
+            {
+                earlier[id].Add((fp, drm));
+            }
+        }
+
+        // A8.22 speaks of "a unit": each one's own earlier attacks, for Rules to judge.
+        return [.. hit.Select(id => (IReadOnlyList<(int Fp, int Drm)>)earlier[id])];
+    }
+
     /// <summary>
     /// The plan of a vehicle's MP expenditure (rulings R6.6, R11.9 to R11.12): its events, built with the rolls they need (Bog, Bog Removal, Mechanical
     /// Reliability), and the Residual FP attack on it where it spends the MP (A8.2, A8.222): an unarmored vehicle on the Vehicle line, an AFV's
@@ -164,6 +196,12 @@ public sealed partial class GamePlanner
                 if (precheck.Count != 0)
                 {
                     return Refused(scope, label, expected, ["play.move-vehicle-residual: the Fire package does not decide the Residual FP attack this MP expenditure would suffer", .. precheck]);
+                }
+
+                // A8.22 (pass 45): once a Location, and again only when the Residual FP grew or the DRM fell since.
+                if (!ScenarioA1FireFollowUps.ResidualAttacksAgain(residual.Fp, ResidualDrm(residualFacts), EarlierResidualAttacks(existing, at, residualFacts)))
+                {
+                    residualFacts = null;
                 }
             }
         }

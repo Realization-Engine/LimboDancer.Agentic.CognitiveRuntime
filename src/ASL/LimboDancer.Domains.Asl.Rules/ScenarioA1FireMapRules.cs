@@ -138,12 +138,14 @@ public static class ScenarioA1FireMapRules
             {
                 return new FirerLocationVerdict("play.fire-marsh: fire from a marsh hex is limited to some weapons and resolved as Area Fire, which is not built (B16.32; ruling R10.1)", false);
             }
+        }
 
-            // A7.212 (ruling R10.14): a unit whose Location holds a Known enemy unit fires at nothing else.
-            if (!facts.IsTarget && facts.KnownArmedEnemyThere())
-            {
-                return new FirerLocationVerdict($"play.fire-target-limit: {facts.Location} holds a Known enemy unit, so its units fire only at their own Location (A7.212)", false);
-            }
+        // A7.212 (p. 55; ruling R10.14): "A unit does not have the freedom to attack units in other Locations while its own Location is occupied by a
+        // Known enemy unit", and "Spotters (C9.3) are similarly limited". Pass 45: a Gun, a mortar, and a LATW with the rest, read at the Location
+        // the shot is seen from.
+        if ((facts.Direct || facts.Ordnance) && !facts.IsTarget && facts.KnownArmedEnemyThere())
+        {
+            return new FirerLocationVerdict($"play.fire-target-limit: {facts.Location} holds a Known enemy unit, so its units fire only at their own Location (A7.212)", false);
         }
 
         // A7.21 (ruling R10.14): TPBF at the enemy units of the firer's own Location.
@@ -233,6 +235,25 @@ public static class ScenarioA1FireMapRules
         return vehicleReason is not null ? (vehicleReason, null) : (null, new FireLos(los.Blocked || HindranceBlocks(total), total, attributed, grain));
     }
 
+    /// <summary>
+    /// Fire from one level of a hex at another level of it (A7.21, B23.25, B23.26, pp. 54 and 136; pass 45): "A unit in a building is ADJACENT to an
+    /// adjacent building level of the same building only if both are ... vertically connected by a stairwell", "LOS to a unit in a building Location
+    /// ... can exist only if drawn to an ADJACENT unit", and such attacks "are limited to the next higher or lower level". The refusal, or null.
+    /// </summary>
+    public static string? SameHexLevelBar(string from, string target, int levelsApart, Func<bool> adjacent)
+    {
+        ArgumentNullException.ThrowIfNull(adjacent);
+        return levelsApart != 1 || !adjacent()
+            ? $"play.fire-level: from {from}, {target} is another level of the same hex, fired at only when it is the next level up or down and a stairwell joins them (B23.25, B23.26)"
+            : null;
+    }
+
+    /// <summary>The Encirclement position of a LOF from the Location directly above (A7.7); below is <see cref="FromBelow"/>.</summary>
+    public const int FromAbove = 12;
+
+    /// <summary>The Encirclement position of a LOF from the Location directly below (A7.7).</summary>
+    public const int FromBelow = 13;
+
     /// <summary>B.10: a LOS Hindrance DRM of +6 or more blocks the LOS completely.</summary>
     public static bool HindranceBlocks(int hindranceDrm) => hindranceDrm >= 6;
 
@@ -257,8 +278,19 @@ public static class ScenarioA1FireMapRules
         };
         if (perLocation.Count > 1)
         {
-            // A7.5: every Location of the group ADJACENT to another of them.
+            // A7.5 (p. 57; pass 45): the group is one "string of ADJACENT Locations", so every Location is reached from the first through
+            // Locations of the group; two pairs apart are two groups.
             var locations = perLocation.Keys.ToArray();
+            var chain = new HashSet<string>(StringComparer.Ordinal) { locations[0] };
+            for (var grew = true; grew;)
+            {
+                grew = false;
+                foreach (var next in locations.Where(one => !chain.Contains(one) && chain.Any(linked => adjacent(linked, one))).ToArray())
+                {
+                    grew |= chain.Add(next);
+                }
+            }
+
             facts = facts with
             {
                 Firers = [.. attack.Firers!.Select(firer => firer with
@@ -268,7 +300,7 @@ public static class ScenarioA1FireMapRules
                     TargetLevelAbove = perLocation[firer.LocationId!].SameLevel ? null : targetHeight - perLocation[firer.LocationId!].Height,
                     Los = perLocation[firer.LocationId!].Los,
                 })],
-                FirerLocationsAdjacent = locations.All(one => locations.Any(two => two != one && adjacent(one, two))),
+                FirerLocationsAdjacent = chain.Count == locations.Length,
             };
         }
 
@@ -368,6 +400,15 @@ public static class ScenarioA1FireMapRules
             var weaponRanges = (firer.Weapons ?? []).Select(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty)?.Range).OfType<int>();
             int? normal = firer.UsesInherentFp == false ? weaponRanges.DefaultIfEmpty(0).Max() : definition?.Range;
             var range = firer.Range ?? facts.Range;
+            // A7.7 (p. 57; pass 45): "An Encirclement can also be created by a LOF from both the Location directly above and below it in a building hex."
+            if (range == 0 && normal is not null && firer.LocationId != facts.TargetLocationId && (firer.TargetLevelAbove ?? facts.TargetLevelAbove) is { } levelAbove
+                && Math.Abs(levelAbove) == 1 && firers[index].LocationKnown)
+            {
+                units++;
+                entries.Add(levelAbove > 0 ? FromBelow : FromAbove);
+                continue;
+            }
+
             if (normal is not { } limit || range is not { } distance || distance < 1 || distance > limit || !firers[index].LocationKnown)
             {
                 continue;
@@ -396,7 +437,8 @@ public static class ScenarioA1FireMapRules
         ArgumentNullException.ThrowIfNull(unitSide);
         ArgumentNullException.ThrowIfNull(encirclementExists);
         ArgumentNullException.ThrowIfNull(earlier);
-        if (phase is not ("pfph" or "dfph" or "afph") || facts.SprayingFire == true || !targetKnown)
+        // Pass 45 (A7.7): Spraying Fire is fire by inherent FP or a SW as any other, and counts when its FP could inflict a NMC.
+        if (phase is not ("pfph" or "dfph" or "afph") || !targetKnown)
         {
             return null;
         }
@@ -436,7 +478,7 @@ public static class ScenarioA1FireMapRules
                 break;
             }
 
-            if (attack.Read() is not { } record || record.Blocked || record.Recorded.SprayingFire == true)
+            if (attack.Read() is not { } record || record.Blocked)
             {
                 continue;
             }

@@ -1570,7 +1570,11 @@ public static class GameProjector
             var byVehicle = (fire.Facts.TryGetProperty("vehicleFire", out var firing) && firing.ValueKind == JsonValueKind.Object)
                 || (fire.Facts.TryGetProperty("overrun", out var overrunning) && overrunning.ValueKind == JsonValueKind.Object);
             if (Rules.ScenarioA1FireFollowUps.VerifyFireRecord(fire.MovementStep, state.Movement is { WindowOpen: true }, state.Movement?.Step, fire.Firers.Count, byVehicle,
-                state.FiresThisPhase.Select(item => new Rules.PhaseFireFacts(item.FirerLocation, item.TargetLocation, item.Step, item.Vehicle)), fire.FirerLocation, fire.TargetLocation) is { } refused)
+                state.FiresThisPhase.Select(item => new Rules.PhaseFireFacts(item.FirerLocation, item.TargetLocation, item.Step, item.Vehicle)), fire.FirerLocation, fire.TargetLocation,
+                fire.Facts.TryGetProperty("firers", out var firingUnits) && firingUnits.ValueKind == JsonValueKind.Array && firingUnits.GetArrayLength() > 0
+                    && firingUnits.EnumerateArray().All(item => item.TryGetProperty("usesInherentFp", out var own) && own.ValueKind == JsonValueKind.False
+                        && item.TryGetProperty("weapons", out var used) && used.ValueKind == JsonValueKind.Array && used.GetArrayLength() > 0
+                        && used.EnumerateArray().All(weapon => weapon.TryGetProperty("equipmentId", out var usedId) && KeptRofThisPhase(state, usedId.GetString())))) is { } refused)
             {
                 return Fail<GameState>(refused.Code, refused.Text);
             }
@@ -1604,12 +1608,24 @@ public static class GameProjector
                 shots = [.. shots.Where(item => item.Gun != vehicle), new OrdnanceShotRecord(vehicle, Rules.ScenarioA1FireFollowUps.VehicleShotCount(previous?.Shots), kept)];
             }
 
+            // A9.223 (pass 45): an attack at its firers' own Location by a lane's MG or its manning Infantry cancels that Fire Lane.
+            var weaponsFired = fire.Resolution.TryGetProperty("weaponEffects", out var fired) && fired.ValueKind == JsonValueKind.Array
+                ? fired.EnumerateArray().Select(item => item.TryGetProperty("equipmentId", out var id) ? id.GetString() : null).ToArray() : [];
             return state with
             {
                 FiresThisPhase = [.. state.FiresThisPhase, new FireRecord(eventId, fire.FirerLocation, fire.TargetLocation) { Step = fire.MovementStep, Vehicle = byVehicle }],
                 OrdnanceShots = shots,
+                FireLanes = state.FireLanes.Count == 0 ? state.FireLanes
+                    : [.. state.FireLanes.Where(lane => !Rules.ScenarioA1FireEligibility.FireLaneCancelledBy(fire.FirerLocation == fire.TargetLocation,
+                        fire.Firers.Contains(lane.Operator, StringComparer.Ordinal) || weaponsFired.Contains(lane.Weapon)))],
             };
         }
+
+        /// <summary>Whether an earlier fire record of this phase says the weapon kept its Multiple ROF (A9.2), so that this is one of its later shots.</summary>
+        private bool KeptRofThisPhase(GameState state, string? weapon) => weapon is not null && state.FiresThisPhase.Any(item => fires.TryGetValue(item.EventId, out var earlier)
+            && earlier.Fire.Resolution.TryGetProperty("weaponEffects", out var effects) && effects.ValueKind == JsonValueKind.Array
+            && effects.EnumerateArray().Any(effect => effect.TryGetProperty("equipmentId", out var id) && id.GetString() == weapon
+                && effect.TryGetProperty("rateOfFireRetained", out var kept) && kept.ValueKind == JsonValueKind.True));
 
         /// <summary>Residual FP a fire record left (A8.2, A8.21): the record's own value, in its target Location, in the MPh.</summary>
         private GameState? PlaceResidual(GameState state, ResidualFirePlaced residual)
@@ -1618,8 +1634,14 @@ public static class GameProjector
             var recorded = fires.TryGetValue(residual.Fire, out var found) ? found.Fire : null;
             var recordedFp = recorded is not null && recorded.Resolution.TryGetProperty("arithmetic", out var arithmetic) && arithmetic.TryGetProperty("residualFp", out var value)
                 ? value.GetInt32() : (int?)null;
+            var givenUp = recorded is not null && recorded.Resolution.TryGetProperty("weaponEffects", out var kept) && kept.ValueKind == JsonValueKind.Array
+                && kept.EnumerateArray().Where(effect => effect.TryGetProperty("rateOfFireRetained", out var retained) && retained.ValueKind == JsonValueKind.True)
+                    .All(effect => effect.TryGetProperty("equipmentId", out var id) && Active(state, id.GetString()!) is { } weapon
+                        && (GameState.Condition(weapon, Conditions.FirstFire) == ConditionState.True || GameState.Condition(weapon, Conditions.FinalFire) == ConditionState.True));
+            var forfeitedFp = givenUp && recorded!.Resolution.TryGetProperty("arithmetic", out var withRof) && withRof.TryGetProperty("residualFpIfForfeited", out var forfeit)
+                ? forfeit.GetInt32() : (int?)null;
             if (Rules.ScenarioA1FireFollowUps.VerifyResidualFp(state.Phase, recorded is not null, recorded?.TargetLocation == residual.Location.ToString(), recordedFp, residual.Fp,
-                residual.Fire, state.ResidualFire.FirstOrDefault(item => item.Location == residual.Location)?.Fp) is { } refused)
+                residual.Fire, state.ResidualFire.FirstOrDefault(item => item.Location == residual.Location)?.Fp, forfeitedFp) is { } refused)
             {
                 return Fail<GameState>(refused.Code, refused.Text);
             }
@@ -1681,8 +1703,11 @@ public static class GameProjector
         private GameState? BoreSight(GameState state, BoreSighted sighted)
         {
             // C6.41, C6.42 (ruling R8.8): one Location per Gun of the Scenario Defender, recorded at setup with the Gun's crew and setup Location.
+            // C6.41 (pass 45): or a MMG or HMG, recorded with its possessor and the Location they set up in; the planner checks its size.
             var manned = Active(state, sighted.Gun) is EquipmentInstance { Holding: { Role: HoldingRole.Manned } manning, Position: MapPosition at }
-                ? (Holder: manning.Holder, At: at.Location) : ((string Holder, BoardLocation At)?)null;
+                ? (Holder: manning.Holder, At: at.Location)
+                : Active(state, sighted.Gun) is EquipmentInstance { Kind: "asl:mg", Holding: { Role: HoldingRole.Possessed } possession }
+                    && state.Location(possession.Holder)?.Location is { } heldAt ? (Holder: possession.Holder, At: heldAt) : ((string Holder, BoardLocation At)?)null;
             if (Rules.ScenarioA1SequenceProjection.BoreSightRefusal(manned is not null, manned?.Holder == sighted.Crew, manned is not null && manned.Value.At == sighted.SetupLocation,
                 manned is not null && sighted.Location == manned.Value.At, state.Unit(sighted.Crew)?.Side is { } side && side == state.ScenarioDefender,
                 state.BoreSights.Any(item => item.Gun == sighted.Gun)) is { } refusal)

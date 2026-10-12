@@ -514,7 +514,8 @@ public sealed class BacklogPass13Tests : IDisposable
         var mmg = (EquipmentInstance)Current.Find("gm")!;
         Assert.True(Is(mmg, Conditions.Dismantled) && Is(mmg, Conditions.PrepFire));
 
-        // Dismantling was the MG's use this phase, and a dismantled MG is not fired (A9.8).
+        // Dismantling was the MG's use this phase (A9.8). Pass 45: a German dm MMG fires as a LMG, so the refusal is now for that use, not for
+        // being dismantled.
         Refused(await Do(GameActions.Dismantle, NoRoll(), new
         {
             unitId = "g1",
@@ -526,7 +527,7 @@ public sealed class BacklogPass13Tests : IDisposable
             weapons = new Dictionary<string, string[]> { ["g1"] = ["gm"] },
             target = L("C5")
         }),
-            "play.fire-weapon");
+            "play.fire-sw-limit");
     }
 
     [Fact]

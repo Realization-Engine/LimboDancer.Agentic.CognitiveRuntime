@@ -78,7 +78,8 @@ public sealed record FirerStateFacts(string Id, bool ActiveWithDefinition, bool 
 public sealed record DirectorStateFacts(string Id, bool ActiveWithDefinition, bool? InGroupLocation);
 
 /// <summary>The MPh kind of a fire group (D3.3, A8.1, A8.3, A8.31; rulings R6.9, R12.3): whether a vehicle fires and whether it is the phasing side's, whether it may Bounding First Fire (read only for a phasing vehicle), each firer's Final Fire and First Fire marks (read only for Infantry in the MPh), whether no firer fires a MG alone, and whether any does.</summary>
-public sealed record FireKindFacts(bool VehicleFires, bool VehicleIsPhasing, Func<bool> MayBoundingFire, Func<IReadOnlyList<(bool FinalFire, bool FirstFire)>> Marks, bool NoneFiresAlone, bool AnyFiresAlone);
+public sealed record FireKindFacts(bool VehicleFires, bool VehicleIsPhasing, Func<bool> MayBoundingFire, Func<IReadOnlyList<(bool FinalFire, bool FirstFire)>> Marks, bool NoneFiresAlone, bool AnyFiresAlone,
+    bool EveryFirstFireMarkedFiresAlone = true);
 
 /// <summary>A unit in the target Location as the state finds it (A8.1, A7.308, A15.41): its id, whether it is active, its side, whether it is a vehicle, a Dummy, has a catalog definition, and is among the moving stack (null when no stack moves there).</summary>
 public sealed record TargetUnitStateFacts(string Id, bool Active, string? Side, bool Vehicle, bool Dummy, bool HasDefinition, bool? Mover);
@@ -125,7 +126,8 @@ public sealed record FirerRecordFacts(
     bool Encircled,
     string? Partner,
     bool Mol,
-    bool? Inexperienced);
+    bool? Inexperienced,
+    bool Berserk = false);
 
 /// <summary>A directing leader's facts for the record (A7.531): its conditions and whether it directed a SW use this phase.</summary>
 public sealed record DirectorRecordFacts(string Id, string Definition, string At, bool Broken, bool Pinned, bool Concealed, bool Fired, bool FirstFire, bool DirectedSupportWeapon, bool Wounded, bool Cx);
@@ -256,7 +258,7 @@ public sealed record BypassHexsideFacts(string? TerrainName, bool Road);
 
 /// <summary>A firer's Location against the limits on firing from it (B16.32, A7.212, A7.21, D7.22; rulings R10.1, R10.14): its text, whether it was read, its terrain key, whether the fire is direct, whether it is the target Location, a Snap Shot, the phase, and two reads made when asked: whether a Known armed enemy unit is there, and whether a moving vehicle not yet in Reaction Fire is there.</summary>
 public sealed record FirerLocationFacts(string Location, bool Read, string? TerrainKey, bool Direct, bool IsTarget, bool SnapShot, string? Phase, Func<bool> KnownArmedEnemyThere, Func<bool> MovingVehicleThereBeforeOverrun,
-    Func<bool>? CcMarkedFirerAtVehicle = null);
+    Func<bool>? CcMarkedFirerAtVehicle = null, bool Ordnance = false);
 
 /// <summary>The verdict on a firer's Location: the refusal, or whether the firers there fire at their own Location (range 0, no LOS read).</summary>
 public sealed record FirerLocationVerdict(string? Refusal, bool OwnLocation);

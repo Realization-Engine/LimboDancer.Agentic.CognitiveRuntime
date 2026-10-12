@@ -98,6 +98,40 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
+    /// The refusal of another act of the DEFENDER while the Mandatory FG's attack is owed (A8.312; pass 45, ruling R45.2), or null. Like the fire
+    /// action's bar it is on the DEFENDER's proposal alone: one that names a unit or a weapon of the side that is not moving.
+    /// </summary>
+    private GamePlan? HeldBehindMandatoryFire(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, long expected, string label, string act)
+    {
+        if (existing.Count == 0 || arguments.ValueKind != JsonValueKind.Object || Replay(existing).Current is not { Phase: "mph" } state)
+        {
+            return null;
+        }
+
+        bool Defenders(string id) => state.Unit(id) is { } unit ? unit.Side != state.PhasingSide
+            : state.Find(id) is EquipmentInstance { Holding.Holder: { } holder } && state.Unit(holder) is { } possessor && possessor.Side != state.PhasingSide;
+
+        // Review of pass 45: the acting units and weapons, never a target: an ATTACKER's shot at a DEFENDER's vehicle must not be told who owes.
+        var named = arguments.EnumerateObject().Where(property => !property.Name.StartsWith("target", StringComparison.Ordinal)).SelectMany(property => property.Value.ValueKind switch
+        {
+            JsonValueKind.String => [property.Value.GetString()!],
+            JsonValueKind.Array => property.Value.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!),
+            _ => Enumerable.Empty<string>(),
+        });
+        return ScenarioA1MandatoryFire.OtherActBar(true, named.Any(Defenders),
+            () => MandatoryFire(state, existing) is { } owed ? (owed.Firers, owed.At.ToString()) : null, act) is { } bar
+            ? Refused(scope, label, expected, bar)
+            : null;
+    }
+
+    /// <summary>A9.8 (p. 65; pass 45): "A dm SW may not be fired until reassembled": the refusal of a dismantled mortar's shot, or null.</summary>
+    private GamePlan? DismantledOrdnance(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, long expected, string label) =>
+        existing.Count > 0 && Text(arguments, "gunId", out var gunId) && Replay(existing).Current?.Find(gunId) is EquipmentInstance weapon
+            && ScenarioA1FireEligibility.DismantledShotBar(Is(weapon, Conditions.Dismantled), gunId) is { } bar
+            ? Refused(scope, label, expected, bar)
+            : null;
+
+    /// <summary>
     /// The fire action, with the Mandatory FG's bar before it (A8.312). The bar is on the DEFENDER's proposal alone: a proposal by the phasing side
     /// goes to the fire plan as before, so no refusal tells the ATTACKER which of the DEFENDER's units owe the attack.
     /// </summary>

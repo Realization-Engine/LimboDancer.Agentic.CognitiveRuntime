@@ -304,11 +304,14 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             "asl.game.hook-gun" => PlanHookGun(scope, arguments, existing, attemptId, expected, label),
             "asl.game.move" => await PlanMoveOrEntryAsync(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown", cancellationToken),
             "asl.game.pass-fire" => PlanPassFire(scope, existing, attemptId, expected, label),
+            "asl.game.forfeit-rof" => PlanForfeitRof(scope, existing, attemptId, expected, label),
             "asl.game.end-move" => PlanEndMove(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.advance" => PlanAdvanceUnits(scope, arguments, existing, attemptId, expected, label),
             "asl.game.ambush" => PlanAmbush(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.close-combat" => PlanCloseCombat(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
-            "asl.game.fire-ordnance" => PlanFireOrdnance(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.fire-ordnance" => DismantledOrdnance(scope, arguments, existing, expected, label)
+                ?? HeldBehindMandatoryFire(scope, arguments, existing, expected, label, "Gun's shot")
+                ?? PlanFireOrdnance(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.take-prisoner" => PlanTakePrisoner(scope, arguments, existing, attemptId, expected, label),
             "asl.game.move-vehicle" => PlanMoveVehicle(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.overrun" => PlanOverrun(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
@@ -328,8 +331,10 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             "asl.game.dismantle" => PlanDismantle(scope, arguments, existing, attemptId, expected, label),
             "asl.game.ambush-withdraw" => PlanAmbushWithdrawal(scope, arguments, existing, attemptId, expected, label),
             "asl.game.guard-prisoners" => PlanGuardPrisoners(scope, arguments, existing, attemptId, expected, label),
-            "asl.game.throw-dc" => PlanThrowDc(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
-            "asl.game.fire-starshell" => PlanStarshell(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.throw-dc" => HeldBehindMandatoryFire(scope, arguments, existing, expected, label, "thrown DC")
+                ?? PlanThrowDc(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
+            "asl.game.fire-starshell" => HeldBehindMandatoryFire(scope, arguments, existing, expected, label, "Starshell")
+                ?? PlanStarshell(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.detonate-dc" => PlanDetonateDc(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.place-hidden" => PlanPlaceHidden(scope, arguments, existing, attemptId, expected, label),
             "asl.game.mop-up" => PlanMopUp(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
@@ -544,6 +549,23 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             foreach (var (boreGun, boreAt) in boreSights)
             {
                 var found = sightState.Find(boreGun) as EquipmentInstance;
+
+                // C6.41 (pass 45): a MMG or HMG the Scenario Defender possesses Bore Sights too; its record names its possessor and where it set up.
+                if (found is { Kind: "asl:mg", Holding: { Role: HoldingRole.Possessed } possession } && sightState.Location(possession.Holder)?.Location is { } mgAt)
+                {
+                    var mg = found.Definition is { } named ? FireReference.Value.Definitions.GetValueOrDefault(named.Definition) : null;
+                    if (ScenarioA1GameStart.MgBoreSightBar(mg?.Size, sightState.Unit(possession.Holder)?.Side == sightState.ScenarioDefender,
+                        boreAt.Board == mgAt.Board && boreAt.Hex == mgAt.Hex, mg?.Range,
+                        () => Los(sightState, mgAt, boreAt) is { } sightLos ? (sightLos.Status == LosStatus.Clear, sightLos.Range) : null, boreGun) is { } mgBar)
+                    {
+                        return Refused(scope, label, expected, mgBar);
+                    }
+
+                    sightEvents.Add(Event(scope, attemptId, setUp.Count + sightEvents.Count + 1, expected, "bore-sighted",
+                        new BoreSighted(boreGun, boreAt, possession.Holder, mgAt), ScenarioA1OrdnancePackage.Identity.ToString(), [sightState.ScenarioDefender!]));
+                    continue;
+                }
+
                 var manning = found is { Holding: { Role: HoldingRole.Manned } holding, Position: MapPosition } ? holding : null;
                 var gunAt = manning is not null && found!.Position is MapPosition position ? position : null;
                 if (ScenarioA1GameStart.BoreSightBar(gunAt is not null, gunAt is not null && sightState.Unit(manning!.Holder)?.Side == sightState.ScenarioDefender,

@@ -131,12 +131,12 @@ public sealed class ScenarioA1Pass12Tests
         Assert.Contains(result.Arithmetic!.Firers.Single(item => item.UnitId == "ru-1").Multipliers, item => item.Name == "area-fire" && item.Rule == "A8.31");
         Assert.Contains(result.Arithmetic.Firers.Single(item => item.UnitId == "ru-2").Multipliers, item => item.Name == "area-fire" && item.Rule == "A8.3");
 
-        // Referee, pass 12: an unmarked unit does not join FPF, since its First Fire counter would differ.
+        // Pass 45 (ruling R45.1, replacing the referee's reading of pass 12): a unit with no counter joins FPF and is marked First Fire by itself.
         var unmarked = Complete(attack with
         {
             Firers = [attack.Firers![0], Firer("ru-2")]
         });
-        Assert.Contains("asl.a1.fire.firer-already-fired", unmarked.Reasons);
+        Assert.Equal("first-fire", unmarked.FirerCounters!["ru-2"]);
         Assert.Equal(["ru-1", "ru-l"], result.FirerEffects!.Select(item => item.UnitId).Order(StringComparer.Ordinal));
     }
 

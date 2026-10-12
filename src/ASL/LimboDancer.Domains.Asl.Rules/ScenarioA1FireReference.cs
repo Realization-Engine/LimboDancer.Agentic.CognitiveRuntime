@@ -36,6 +36,12 @@ public sealed record FireDefinition(
         get; init;
     }
 
+    /// <summary>The Spraying Fire option: an underscored Range (A7.34; pass 45).</summary>
+    public bool? SprayingFire
+    {
+        get; init;
+    }
+
     /// <summary>A SW's Breakdown Number (A9.7).</summary>
     public int? Breakdown
     {
@@ -652,6 +658,7 @@ public sealed class ScenarioA1FireReference
         {
             SelfRally = Trait("broken", "asl:self-rally"),
             AssaultFire = Trait("front", "asl:assault-fire"),
+            SprayingFire = Trait("front", "asl:spraying-fire"),
             Size = Text("front", "size"),
             Breakdown = Value("front", "breakdown"),
             RateOfFire = Value("front", "rate-of-fire"),

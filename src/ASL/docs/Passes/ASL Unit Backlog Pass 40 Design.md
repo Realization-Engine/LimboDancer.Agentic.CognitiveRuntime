@@ -764,7 +764,7 @@ A record replays as it was played. A record in which HS Recombined after their s
 
 ## 12. The five reviews and the Studio check
 
-Run on 2026-10-11 under the user's word of that evening: five read-only agents in one message (the referee in two halves, the table player, the Rules boundary, the UI and Blazor review), their briefs in `Prompts/Pass 40 Review Briefs.md`. They found one BLOCKER and about forty-five findings in all. Each was judged against the code and its page; those with a contained fix were fixed, and the rest have a row in the backlog's section 56. Nothing was put to the user first, which the user's word allowed; every fix below is open to a veto.
+Run on 2026-10-11 under the user's word of that evening: five read-only agents in one message (the referee in two halves, the table player, the Rules boundary, the UI and Blazor review), their briefs in `Prompts/Pass 40 Review Briefs.md`. They found one BLOCKER and about forty-five findings in all. Each was judged against the code and its page; those with a contained fix were fixed, and the rest have a row in the backlog's section 56. Nothing was put to the user first, which the user's word allowed; every fix below is approved by the user on 2026-10-12.
 
 ### 12.1 Fixed
 
@@ -847,6 +847,6 @@ Eight tasks, each a commit, then the reviews' fixes in one.
 
 **New in a game's record:** the event `infantry-overrun-ntc`; the choice kind `overrun-evade`; on a step, `roadRate`, `dash`, `ipcTo`, `infantryOverrun`; on a fire record, `firerOverstack`, `targetOverstack`, `dash`; on an ordnance record, the Dash and Hazardous Movement facts. Each is absent from an older record and reads as it did. A game that holds the new event cannot be read by a build before the pass.
 
-**Rulings:** R40.1 to R40.11 approved by the user; R40.12 to R40.26 decided under the user's word of 2026-10-11 and open to a veto. All 26 are in the Passes Plan.
+**Rulings:** R40.1 to R40.11 approved by the user; R40.12 to R40.26 decided under the user's word of 2026-10-11 and approved by the user on 2026-10-12. All 26 are in the Passes Plan. On 2026-10-12, with the pass's report before them, the user said: "I accept all of your judgments from the latest pass."
 
 **Not built, against the answer to question F10:** a CE or BU choice at setup, and the half-hex rule for entry and occupation (section 11.4).

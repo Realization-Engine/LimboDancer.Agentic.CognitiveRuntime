@@ -143,13 +143,14 @@ public static class ScenarioA1FireFollowUps
         var key = missing["asl.a1.fire.roll-missing:".Length..];
         var split = key.IndexOf(':', StringComparison.Ordinal);
         var (kind, unit) = split < 0 ? (key, string.Empty) : (key[..split], key[(split + 1)..]);
-        var selected = kind is "randomSelection" or "weaponSelection" or "firerSelection" ? unit.Split(',') : [];
+        var selected = kind is "randomSelection" or "weaponSelection" or "firerSelection" or "cowerSelection" ? unit.Split(',') : [];
         var (count, purpose) = kind switch
         {
             "attack" => (2, "fire-ift"),
             "randomSelection" => (selected.Length, "fire-random-selection"),
             "weaponSelection" => (selected.Length, "fire-weapon-selection"),
             "firerSelection" => (selected.Length, "fire-firer-selection"),
+            "cowerSelection" => (selected.Length, "fire-cower-selection"),
             "checks" => (2, "fire-check"),
             "leaderLoss" => (2, "fire-leader-loss"),
             "heatOfBattle" => (2, "fire-heat-of-battle"),
@@ -256,7 +257,12 @@ public static class ScenarioA1FireFollowUps
         ArgumentNullException.ThrowIfNull(inactive);
         var alone = (facts.Firers ?? []).Where(item => item.UsesInherentFp == false && !resolution.FireCounterUnitIds.Contains(item.UnitId!))
             .Select(item => item.UnitId!).ToHashSet(StringComparer.Ordinal);
-        return resolution.FireCounterUnitIds.Where(id => !alone.Contains(id) && !inactive(id));
+
+        // A8.31, A19.13 (pass 45): an FPF firer its own NMC eliminated, Reduced, or Replaced is no longer the unit that fired; the unit that takes its
+        // place keeps the Final Fire counter it already had.
+        var gone = (resolution.FirerEffects ?? []).Where(effect => effect.Eliminated || effect.FinalDefinitionId != effect.DefinitionId)
+            .Select(effect => effect.UnitId).ToHashSet(StringComparer.Ordinal);
+        return resolution.FireCounterUnitIds.Where(id => !alone.Contains(id) && !gone.Contains(id) && !inactive(id));
     }
 
     /// <summary>A unit's fire marker: the counter, a Final Fire counter replacing a First Fire one, and the "?" a concealed firer or firing vehicle loses (A12.2; ruling R6.7).</summary>
@@ -264,8 +270,10 @@ public static class ScenarioA1FireFollowUps
     {
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(resolution);
-        var conditions = new List<(UnitCondition, bool)> { (Marker(resolution.FireCounter!), true) };
-        if (resolution.FireCounter == "final-fire" && firstFireMarked)
+        // A8.31 (pass 45, ruling R45.1): a firer with a counter of its own takes that one.
+        var counter = resolution.FirerCounters?.GetValueOrDefault(id) ?? resolution.FireCounter!;
+        var conditions = new List<(UnitCondition, bool)> { (Marker(counter), true) };
+        if (counter == "final-fire" && firstFireMarked)
         {
             conditions.Add((UnitCondition.FirstFire, false));
         }
@@ -276,6 +284,83 @@ public static class ScenarioA1FireFollowUps
         }
 
         return conditions;
+    }
+
+    /// <summary>
+    /// A7.9 (p. 58; pass 45): a unit that cowers is marked "as well as all of its SW regardless of whether it was using its inherent FP". The
+    /// conditions of a SW it possesses that the attack did not fire: the unit's counter, a Final Fire counter replacing a First Fire one.
+    /// </summary>
+    public static IReadOnlyList<(UnitCondition Condition, bool Value)> CoweredWeaponConditions(string counter, bool firstFireMarked)
+    {
+        var conditions = new List<(UnitCondition, bool)> { (Marker(counter), true) };
+        if (counter == "final-fire" && firstFireMarked)
+        {
+            conditions.Add((UnitCondition.FirstFire, false));
+        }
+
+        return conditions;
+    }
+
+    /// <summary>
+    /// Whether the Residual FP of a Location attacks a unit that spends MF or MP there (A8.22, p. 60; pass 45): "A unit can be attacked by Residual FP
+    /// only once per Location [EXC: if, since that first Residual FP attack, the Residual FP has increased in strength or the unit is subject to
+    /// more-negative-DRM/less-positive-DRM, it will be attacked again by that Residual FP upon further MF/MP expenditure]". <paramref name="earlier"/>
+    /// is each Residual FP attack it has taken in that Location this MPh: the counter's FP and the attack's DRM.
+    /// </summary>
+    public static bool ResidualAttacksAgain(int fp, int drm, IEnumerable<(int Fp, int Drm)> earlier)
+    {
+        ArgumentNullException.ThrowIfNull(earlier);
+        return earlier.All(attack => fp > attack.Fp || drm < attack.Drm);
+    }
+
+    /// <summary>
+    /// The same for the units an attack would hit together (A8.22 speaks of "a unit"): the Residual FP attacks when any one of them has not yet
+    /// taken it at this strength and DRM. <paramref name="earlierByUnit"/> has each unit's earlier attacks in the Location.
+    /// </summary>
+    public static bool ResidualAttacksAgain(int fp, int drm, IEnumerable<IReadOnlyList<(int Fp, int Drm)>> earlierByUnit)
+    {
+        ArgumentNullException.ThrowIfNull(earlierByUnit);
+        return earlierByUnit.Any(earlier => ResidualAttacksAgain(fp, drm, earlier));
+    }
+
+    /// <summary>The DRM of an attack, summed as A8.22 compares it.</summary>
+    public static int TotalDrm(IEnumerable<decimal> drm)
+    {
+        ArgumentNullException.ThrowIfNull(drm);
+        return (int)drm.Sum();
+    }
+
+    /// <summary>
+    /// Whether a weapon's Multiple ROF may be given up for Residual FP now (A8.23, p. 60; pass 45): in the MPh, "immediately after resolving its
+    /// attack" (nothing has happened since but what the attack caused), when giving it up would leave more Residual FP, and a weapon still keeps it.
+    /// </summary>
+    // A8.21 (review of pass 45): and only when the counter it would leave is larger than the one that stands in the Location.
+    public static bool RofForfeitOpen(bool mph, bool nothingSince, int? forfeitedFp, int weaponsStillKeeping, int? standingFp = null) =>
+        mph && nothingSince && forfeitedFp is { } more && more > (standingFp ?? 0) && weaponsStillKeeping > 0;
+
+    /// <summary>Whether a weapon the attack's record says kept its Multiple ROF keeps it still: in play, with no fire counter, and working.</summary>
+    public static bool StillKeepsRof(bool active, bool firstFire, bool finalFire, bool malfunctioned) => active && !firstFire && !finalFire && !malfunctioned;
+
+    /// <summary>
+    /// Whether an event after an attack leaves the choice open (A8.23: "immediately after resolving its attack"): one the attack caused, or one
+    /// written with it in the same act (a Sniper Check on its DR).
+    /// </summary>
+    public static bool PartOfTheAttack(bool causedByIt, bool ofItsAct) => causedByIt || ofItsAct;
+
+    /// <summary>The counter a weapon takes that gives its Multiple ROF up in the MPh: First Fire, as if it had lost it on the DR (A9.2).</summary>
+    public static UnitCondition RofForfeitCounter => UnitCondition.FirstFire;
+
+    /// <summary>Why the ROF may not be given up.</summary>
+    public static string RofForfeitClosedText() =>
+        "play.forfeit-rof: a weapon's Multiple ROF is given up for Residual FP only immediately after its Defensive First Fire attack, before anything else is done, and only when that leaves more Residual FP than stands in the Location (A8.23, A8.21)";
+
+    /// <summary>The choice in words.</summary>
+    public static string RofForfeitText(IReadOnlyList<string> weapons, int fp, string location)
+    {
+        ArgumentNullException.ThrowIfNull(weapons);
+        return weapons.Count == 1
+            ? $"play.forfeit-rof: {weapons[0]} gives up its Multiple ROF and is marked First Fire; {fp} Residual FP stands in {location} (A8.23)"
+            : $"play.forfeit-rof: {string.Join(", ", weapons)} give up their Multiple ROF and are marked First Fire; {fp} Residual FP stands in {location} (A8.23)";
     }
 
     /// <summary>A8.2, A8.21: Residual FP is placed, at the attack's value, unless a counter at least as large is already in the Location (<paramref name="counterAtLeast"/> is read for the value).</summary>
@@ -538,7 +623,7 @@ public static class ScenarioA1FireFollowUps
     /// no firers and never forms one; a vehicle's MG shot and an OVR are the vehicle's own attacks.
     /// </summary>
     public static RecordRefusal? VerifyFireRecord(int? movementStep, bool windowOpen, int? windowStep, int firers, bool byVehicle, IEnumerable<PhaseFireFacts> fires,
-        string firerLocation, string targetLocation)
+        string firerLocation, string targetLocation, bool firesAloneOnRof = false)
     {
         ArgumentNullException.ThrowIfNull(fires);
         if (movementStep is { } answered && (!windowOpen || windowStep != answered))
@@ -546,7 +631,10 @@ public static class ScenarioA1FireFollowUps
             return new RecordRefusal("UNIT-STATE-024", $"Defensive First Fire answers the open window on the moving stack's step {answered} (A8.1).");
         }
 
-        return firers > 0 && fires.Any(item => !(byVehicle && item.Vehicle) && item.FirerLocation == firerLocation && item.TargetLocation == targetLocation && item.Step == movementStep)
+        // A7.55 (p. 57; pass 45): "they may not attack separately except with ... the subsequent shots of multiple ROF weapons (9.2)". A record in
+        // which every firer fires its MG without its own FP is such a shot, as the planner's check has it; the projector had refused it at the commit.
+        return firers > 0 && !firesAloneOnRof
+            && fires.Any(item => !(byVehicle && item.Vehicle) && item.FirerLocation == firerLocation && item.TargetLocation == targetLocation && item.Step == movementStep)
             ? new RecordRefusal("UNIT-STATE-024", $"{firerLocation} has already fired at {targetLocation} this phase (A7.55).")
             : null;
     }
@@ -558,9 +646,10 @@ public static class ScenarioA1FireFollowUps
     public static int VehicleShotCount(int? previousShots) => (previousShots ?? 0) + 1;
 
     /// <summary>Residual FP a fire record left (A8.2, A8.21): placed in the MPh, in its record's target Location, at the record's own value; only a larger counter replaces one there.</summary>
-    public static RecordRefusal? VerifyResidualFp(string? phase, bool recordKnown, bool sameTarget, int? recordedFp, int fp, string fireId, int? existingFp)
+    public static RecordRefusal? VerifyResidualFp(string? phase, bool recordKnown, bool sameTarget, int? recordedFp, int fp, string fireId, int? existingFp, int? forfeitedFp = null)
     {
-        if (phase != "mph" || !recordKnown || !sameTarget || recordedFp != fp)
+        // A8.23 (pass 45): or the value the record gives for its weapons' ROF given up.
+        if (phase != "mph" || !recordKnown || !sameTarget || (recordedFp != fp && forfeitedFp != fp))
         {
             return new RecordRefusal("UNIT-STATE-026", $"Residual FP must be the value its fire record '{fireId}' leaves in its target Location (A8.2).");
         }

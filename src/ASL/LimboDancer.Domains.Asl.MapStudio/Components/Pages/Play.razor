@@ -452,7 +452,7 @@ else if (state is not null)
                 @if (state.Phase is "rph" or "pfph" or "mph" or "dfph" or "aph" or "ccph" or "rtph" && SupportWeapons.Any())
                 {
                     <SupportWeaponActionPanel Weapons="@([.. SupportWeapons.Select(weapon => new PlayChoice(weapon.Id, SupportWeaponText(weapon)))])"
-                        Units="@([.. SupportWeaponUnits.Select(Labelled)])" Weapon="@swWeapon" Unit="@swUnit" Held="@(SupportWeaponHolder is not null)" Dismantles="@(swWeapon.Length > 0 && GamePlanner.MayDismantle(state, swWeapon))"
+                        Units="@([.. SupportWeaponUnits.Select(Labelled)])" Weapon="@swWeapon" Unit="@swUnit" Held="@(SupportWeaponHolder is not null)" Dismantles="@(swWeapon.Length > 0 && Live.Planner.MayDismantle(state, swWeapon))"
                         OnWeapon="@(id => { swWeapon = id; swUnit = string.Empty; })" OnUnit="@(id => swUnit = id)" OnPropose="@ProposeSupportWeaponKind" />
                 }
                 @* Pass 40 (A20.5, p. 88): an unbroken Guard squad Deploys at will, in any phase; in the RPh the Deploy panel takes it. *@
@@ -702,6 +702,14 @@ else if (state is not null)
                         <div class="toolbar" id="overrun-evade">
                             <span class="toolbar-note">An Infantry OVR has entered the SMC's Location: it may attack if it has FP (a leader with no SW has none), move away before any fire into an adjacent Location the ATTACKER names, or stay for the CC (A4.151, A4.152).</span>
                             <button id="propose-overrun-evade" @onclick="@(() => ProposeOverrunEvade(evader))">Propose: the SMC moves away from the OVR</button>
+                        </div>
+                    }
+                    @* Pass 45 (A8.23): at once after a Defensive First Fire attack in which a weapon kept its Multiple ROF, the DEFENDER may give it up. *@
+                    @if (state.Phase == "mph" && (Viewer.IsAdjudicator || viewAs != state.PhasingSide) && GamePlanner.RateOfFireForfeit(state, history!.Events) is { } forfeit)
+                    {
+                        <div class="toolbar" id="forfeit-rof">
+                            <span class="toolbar-note" id="forfeit-rof-note" role="status">@string.Join(", ", forfeit.Weapons.Select(id => Words(id))) @(forfeit.Weapons.Count == 1 ? "kept its Multiple ROF, so its FP" : "each kept their Multiple ROF, so their FP") left no Residual FP. Give the ROF up now, before anything else, and @forfeit.Fp Residual FP stands in @PlaceOf(forfeit.At); or go on, and @(forfeit.Weapons.Count == 1 ? "it" : "they") may fire again (A8.23).</span>
+                            <button id="propose-forfeit-rof" aria-describedby="forfeit-rof-note" @onclick='@(() => ProposeSimple(GameActions.ForfeitRof, "forfeit-rof"))'>Propose: give up the ROF for @forfeit.Fp Residual FP</button>
                         </div>
                     }
                     @* Pass 28c (A8.1, A8.11): after each step the DEFENDER, from its own view, sees where the stack is and fires at it or passes.
@@ -1047,7 +1055,7 @@ else if (state is not null)
         (unit.Status == InstanceStatus.Wrecked ? "wreck" : LiveFire.IsVehicle(unit) ? $"{HalfMpText(GamePlanner.VehicleHalfMp(unit).Spent)} of {HalfMpText(GamePlanner.VehicleHalfMp(unit).Allotment)} MP"
             : unit.MfSpent.ToString(CultureInfo.InvariantCulture)) + (unit.MovementEnded ? ", movement ended" : ""),
         string.Join(", ", unit.Conditions.Where(pair => pair.Value == ConditionState.True).Select(pair => ConditionText(pair.Key)).Concat(Custody(unit)).Concat(VehicleNotes(unit)).Concat(CargoNotes(unit))
-            .Concat(state.Encircled(unit) ? ["Encircled (A7.7)"] : [])
+            .Concat(state.Encircled(unit) ? ["Encircled (A7.7)"] : CutOffUpstairs.Contains(unit.Id) ? ["Encircled: no path to ground level (A7.72)"] : [])
             .Concat(unit.Status == InstanceStatus.Wrecked && GamePlanner.IsBurning(state, unit) ? ["burning (Blaze)"] : []))))];
 
     private string DefinitionLabel(string id) => PublishedCatalog?.Definition(id) is { } definition ? ScenarioCards.Describe(definition) : id;
@@ -1237,7 +1245,7 @@ else if (state is not null)
             $"{placement.Id}: {placement.Definition ?? "a Dummy"}{(placement.Group is { } inGroup ? $" ({inGroup})" : string.Empty)}"
             + (placement.OffBoard ? $", off board, to enter{(placement.Entry is { } entry ? $" by {entry}" : string.Empty)}" : string.Empty)
             + (placement.Hidden ? ", hidden" : string.Empty) + (placement.Broken ? ", broken" : string.Empty)
-            + (placement.BoreSighted is { } sighted ? $", Bore Sighted on {sighted}" : string.Empty))
+            + (placement.BoreSighted is { } sighted ? $", Bore Sighted on {PlaceOf(sighted)}" : string.Empty))
         {
             Label = placement.Id,
             Location = onMap ? placement.Location : null,
@@ -4352,8 +4360,9 @@ else if (state is not null)
     // range for the units a view holds by name. No LOS is read here (A6.11: no LOS check before an attack is declared).
     private static string Hexes(int range) => range == 1 ? "1 hex" : string.Create(CultureInfo.InvariantCulture, $"{range} hexes");
 
-    private int LevelAbove(BoardLocation from, BoardLocation to) => MapLayers?.Board is { } board && GameMaps.FactsAt(board, from) is { } one && GameMaps.FactsAt(board, to) is { } two
-        ? two.BaseLevel + to.Level - (one.BaseLevel + from.Level) : 0;
+    private int LevelAbove(BoardLocation from, BoardLocation to) => from.Board == to.Board && from.Hex == to.Hex ? to.Level - from.Level
+        : MapLayers?.Board is { } board && GameMaps.FactsAt(board, from) is { } one && GameMaps.FactsAt(board, to) is { } two
+            ? two.BaseLevel + to.Level - (one.BaseLevel + from.Level) : 0;
 
     /// <summary>
     /// A row for each unit's own FP and each weapon it fires, read from its own Location to a target (A7.21, A7.22). <paramref name="fireKinds"/>
@@ -4391,13 +4400,14 @@ else if (state is not null)
                     : state.Phase == "mph" && GameState.Condition(unit, Conditions.FirstFire) == ConditionState.True && range > own.NormalRange
                         ? "Subsequent First Fire is within Normal Range (A8.3)"
                     : null;
-                rows.Add(new RangeRow(unit.Id, Words(unit.Id), at.ToString(), own.NormalRange, own.Limit, kind ?? FireRange.Words(own), own.Band, kind is not null || own.Band is FireRangeBand.Out or FireRangeBand.SameHexOtherLevel));
+                rows.Add(new RangeRow(unit.Id, Words(unit.Id), at.ToString(), own.NormalRange, own.Limit, kind ?? FireRange.Words(own), own.Band, kind is not null || own.Band is FireRangeBand.Out or FireRangeBand.SameHexFartherLevel));
             }
             else if (definition is { IsVehicle: true, AntiAircraftMg: not null })
             {
                 // D1.83: a MA AAMG's Normal Range is eight hexes.
                 var mg = FireRange.Band(range, same, 8, level);
-                rows.Add(new RangeRow(unit.Id, $"the AAMG of {Words(unit.Id)}", at.ToString(), mg.NormalRange, mg.Limit, FireRange.Words(mg), mg.Band, mg.Band is FireRangeBand.Out or FireRangeBand.SameHexOtherLevel));
+                rows.Add(new RangeRow(unit.Id, $"the AAMG of {Words(unit.Id)}", at.ToString(), mg.NormalRange, mg.Limit,
+                    mg.Band == FireRangeBand.SameHexOtherLevel ? "no attack at another level of its hex" : FireRange.Words(mg), mg.Band, mg.Band is FireRangeBand.Out or FireRangeBand.SameHexOtherLevel or FireRangeBand.SameHexFartherLevel));
             }
 
             foreach (var weapon in weapons.Where(item => item.Holding?.Holder == unit.Id))
@@ -4406,7 +4416,7 @@ else if (state is not null)
                     && (weaponDefinition.IsMg || weaponDefinition.IsFt || weaponDefinition.IsAtr) && FireRange.Band(weaponDefinition, range, same, level) is { } reading)
                 {
                     rows.Add(new RangeRow(weapon.Id, $"{Words(weapon.Id)} of {Words(unit.Id)}", at.ToString(), reading.NormalRange, reading.Limit, FireRange.Words(reading), reading.Band,
-                        reading.Band is FireRangeBand.Out or FireRangeBand.SameHexOtherLevel));
+                        reading.Band is FireRangeBand.Out or FireRangeBand.SameHexFartherLevel));
                 }
             }
         }
@@ -4425,10 +4435,10 @@ else if (state is not null)
     {
         var outs = rows.Where(row => row.Out).ToArray();
         var longs = rows.Where(row => row.Band == FireRangeBand.LongRange).ToArray();
-        var pointBlank = rows.Where(row => row.Band == FireRangeBand.PointBlank).ToArray();
+        var pointBlank = rows.Where(row => row.Band is FireRangeBand.PointBlank or FireRangeBand.SameHexOtherLevel && !row.Out).ToArray();
 
         // A unit kept from a target by its own kind of fire (A8.3, A8.31, A8.4) is not out of range; the words say so.
-        var barred = outs.Any(row => row.Band is not (FireRangeBand.Out or FireRangeBand.SameHexOtherLevel)) ? "no fire there" : "out of range";
+        var barred = outs.Any(row => row.Band is not (FireRangeBand.Out or FireRangeBand.SameHexOtherLevel or FireRangeBand.SameHexFartherLevel)) ? "no fire there" : "out of range";
         var band = rows.Count == 0 ? null
             : outs.Length == rows.Count ? barred
             : outs.Length == 1 ? $"{barred} for {outs[0].Name}"
@@ -5047,6 +5057,31 @@ else if (state is not null)
     }));
 
     /// <summary>An action that names only the game: the DEFENDER's pass, or the end of the moving stack's move.</summary>
+    private (long Revision, string View, HashSet<string> Ids)? cutOffCache;
+
+    /// <summary>
+    /// The visible units Encircled by A7.72, read once for a revision and a view: the search walks the map for each unit upstairs. Not read while
+    /// setup is open, when a view does not yet hold every unconcealed enemy unit the rule counts.
+    /// </summary>
+    private HashSet<string> CutOffUpstairs
+    {
+        get
+        {
+            if (state is null || history is null || !state.SetupClosed)
+            {
+                return [];
+            }
+
+            if (cutOffCache is not { } kept || kept.Revision != history.Events.Count || kept.View != viewAs)
+            {
+                cutOffCache = (history.Events.Count, viewAs, [.. VisibleUnits.Where(unit => state.Location(unit.Id)?.Location is { Level: > 0 }
+                    && Live.Planner.UpperLevelEncircled(state, unit)).Select(unit => unit.Id)]);
+            }
+
+            return cutOffCache.Value.Ids;
+        }
+    }
+
     private Task ProposeSimple(ActionDescriptor action, string kind) => Propose(action,
         JsonSerializer.SerializeToElement(new { gameId, attemptId = Attempt(kind), expectedRevision = (long)history!.Events.Count }));
 
@@ -5488,7 +5523,7 @@ else if (state is not null)
         var groupTaken = placeGroup.Length == 0 || GroupChoices.Any(choice => choice.Side == side && choice.Group.Id == placeGroup);
         placeNote = groupTaken ? null : $"{placeGroup} is not an OB group of {side}, so {id} is placed without a group.";
         placements.Add(new Placement(id, definition.Id, definition.Kind, side, placeLocation.Trim(), placeConcealed, placeHidden, holder,
-            placeBroken && holder is null, gun ? placeFacing : null, definition.Kind == "asl:gun" && placeBore.Trim().Length > 0 ? placeBore.Trim() : null,
+            placeBroken && holder is null, gun ? placeFacing : null, definition.Kind is "asl:gun" or "asl:mg" && placeBore.Trim().Length > 0 ? placeBore.Trim() : null,
             placeGroup.Length > 0 && GroupChoices.Any(choice => choice.Side == side && choice.Group.Id == placeGroup) ? placeGroup : null,
             placeOffBoard && holder is null && definition.Kind != "asl:gun", role,
             placeOffBoard && holder is null && EntryChoices.Any(choice => choice.Value == placeEntry) ? placeEntry : null) { Key = Guid.NewGuid().ToString("N") });
@@ -5602,6 +5637,13 @@ else if (state is not null)
         {
             placement["holding"] = new { holder, role = "possessed" };
             placement["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false };
+
+            // C6.41, C6.42 (pass 45): a MMG's or HMG's Bore Sighted Location goes with it, as a Gun's does.
+            if (item.BoreSighted is { } mgSighted)
+            {
+                placement["boreSighted"] = mgSighted;
+            }
+
             return placement;
         }
 

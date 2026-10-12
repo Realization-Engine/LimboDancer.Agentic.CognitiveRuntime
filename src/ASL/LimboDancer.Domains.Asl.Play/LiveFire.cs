@@ -25,6 +25,27 @@ public static class LiveFire
             weaponDefinition is null ? null : CatalogReference.Value.Definitions.GetValueOrDefault(weaponDefinition)?.Nationality,
             unit.Definition is { } holder ? CatalogReference.Value.Definitions.GetValueOrDefault(holder.Definition)?.Nationality : null);
 
+    /// <summary>Whether a dismantled MG fires as its side's LMG (A9.8; pass 45).</summary>
+    public static bool FiresAsLmg(EquipmentInstance weapon)
+    {
+        ArgumentNullException.ThrowIfNull(weapon);
+        var definition = weapon.Definition is { } reference ? CatalogReference.Value.Definitions.GetValueOrDefault(reference.Definition) : null;
+        return ScenarioA1FireEligibility.DismantledFiresAsLmg(Is(weapon, Conditions.Dismantled), definition?.Nationality, definition?.Size);
+    }
+
+    /// <summary>The definition a weapon fires as: its own, or its side's LMG for a dismantled German MMG or HMG (A9.8; pass 45).</summary>
+    public static string? FiredAs(EquipmentInstance weapon)
+    {
+        ArgumentNullException.ThrowIfNull(weapon);
+        var own = weapon.Definition?.Definition;
+        if (!FiresAsLmg(weapon) || own is null)
+        {
+            return own;
+        }
+
+        return ScenarioA1FireEligibility.LmgDefinition(CatalogReference.Value.Definitions.Values, CatalogReference.Value.Definitions[own].Nationality) ?? own;
+    }
+
     public const string Catalog = "asl-scenario-a1";
     public const string CatalogVersion = "1.13.0";
 
@@ -101,8 +122,12 @@ public static class LiveFire
         // D3.3, A8.1, A8.3, A8.31 (rulings R6.9, R12.3): the kind of MPh fire; the Bounding Fire read and the firers' marks are read when asked.
         var (kindRefusal, kind) = ScenarioA1FireEligibility.MphFireKind(state.Phase, new FireKindFacts(vehicleFirers.Length > 0,
             vehicleFirers.Length > 0 && vehicleFirers[0].Side == state.PhasingSide, () => MayBoundingFire(state, vehicleFirers[0].Id),
-            () => [.. firers.Select(item => (Is(item.Unit, Conditions.FinalFire), Is(item.Unit, Conditions.FirstFire)))],
-            firers.All(item => withoutInherent?.Contains(item.Unit.Id) != true), withoutInherent is { Count: > 0 }));
+            // A8.3 (pass 45): a unit with no counter that fires a MG marked First Fire uses Subsequent First Fire with it.
+            () => [.. firers.Select(item => (Is(item.Unit, Conditions.FinalFire), Is(item.Unit, Conditions.FirstFire)
+                || (weapons?.TryGetValue(item.Unit.Id, out var fired) == true
+                    && fired.Any(id => state.Find(id) is EquipmentInstance weapon && Is(weapon, Conditions.FirstFire)))))],
+            firers.All(item => withoutInherent?.Contains(item.Unit.Id) != true), withoutInherent is { Count: > 0 },
+            firers.Where(item => Is(item.Unit, Conditions.FirstFire)).All(item => withoutInherent?.Contains(item.Unit.Id) == true)));
         if (kindRefusal is not null)
         {
             return (null, kindRefusal);
@@ -123,8 +148,9 @@ public static class LiveFire
             selection.Vehicles.Count > 0 ? UnitAt(selection.Vehicles[0]).Side : null, state.Sides.FirstOrDefault(item => item.Id != side)?.Id);
         var friendlyTargets = selection.Targets.Any(id => UnitAt(id).Side == side);
 
+        // A9.8 (pass 45): a German dm MMG or HMG fires as a German LMG, so its facts name that definition.
         FireWeapon Weapon(string id) => state.Find(id) is EquipmentInstance equipment
-            ? new FireWeapon(equipment.Id, equipment.Definition?.Definition, Is(equipment, Conditions.Malfunctioned), Fired(equipment),
+            ? new FireWeapon(equipment.Id, FiredAs(equipment), Is(equipment, Conditions.Malfunctioned), Fired(equipment),
                 Is(equipment, Conditions.FirstFire))
             : new FireWeapon(id, null, null, null, null);
 
@@ -138,7 +164,7 @@ public static class LiveFire
                 if (ScenarioA1FireEligibility.NamedWeaponsBar(new NamedWeaponsFacts(unit.Id,
                     [.. named.Select(id => new NamedWeaponFacts(id,
                         state.Find(id) is EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Possessed } holding } && holding.Holder == unit.Id,
-                        state.Find(id) is EquipmentInstance held && Is(held, Conditions.Dismantled),
+                        state.Find(id) is EquipmentInstance held && Is(held, Conditions.Dismantled) && !FiresAsLmg(held),
                         state.Find(id) is EquipmentInstance { Kind: "asl:ft" }))],
                     state.AssaultWeaponUsers.Contains(unit.Id, StringComparer.Ordinal), withoutInherent?.Contains(unit.Id) == true,
                     () => state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } other && other.Holder == unit.Id
@@ -194,7 +220,7 @@ public static class LiveFire
                 unit.Group is not null ? state.ElrOf(unit) : null, Is(unit, Conditions.FirstFire), Is(unit, Conditions.FinalFire), state.Phase, swOnly,
                 state.GunCrewsFired.Contains(unit.Id, StringComparer.Ordinal), unit.Kind == "asl:squad", leader, withoutInherent?.Contains(unit.Id) == true, used,
                 Is(unit, Conditions.Fanatic), Is(unit, Conditions.Wounded), Is(unit, Conditions.Cx), Is(unit, Conditions.BoundingFire), state.Encircled(unit), partner,
-                molUser == unit.Id, GreenInexperienced(state, unit))));
+                molUser == unit.Id, GreenInexperienced(state, unit), Is(unit, Conditions.Berserk))));
         }
 
         FireDirector Director((UnitInstance Unit, BoardLocation At) item) =>
@@ -203,6 +229,12 @@ public static class LiveFire
                 state.SupportWeaponDirectors.Any(directed => directed.Leader == item.Unit.Id), Is(item.Unit, Conditions.Wounded), Is(item.Unit, Conditions.Cx)));
 
         // Rulings R12.8, R12.9, R12.11: the firing side's units in a Melee or as prisoners, a prisoner's Guard, and Encirclement; Rules assembles the attack.
+        // C6.43, C6.44 (pass 45): a MG fired alone by the unit that set up with it, from its setup Location, at its Bore Sighted Location.
+        var boreSighted = state.BoreSights.Count > 0 && ScenarioA1FireEligibility.MgBoreSighted(firerFacts.Select(firer => (firer.UsesInherentFp == false,
+            (IReadOnlyList<MgSightingFacts>)[.. (firer.Weapons ?? []).Select(weapon => state.BoreSights.FirstOrDefault(sight => sight.Gun == weapon.EquipmentId) is { } sight
+                ? new MgSightingFacts(true, sight.Crew == firer.UnitId, state.Location(firer.UnitId!)?.Location == sight.SetupLocation, sight.Location == target,
+                    state.Find(weapon.EquipmentId!) is EquipmentInstance sighted && Is(sighted, Conditions.Dismantled))
+                : new MgSightingFacts(false, false, false, false, false))])));
         return (ScenarioA1FireEligibility.Assemble(new AttackAssemblyFacts(state.Phase, side == state.PhasingSide, firers[0].At.ToString(), target.ToString(),
             firerFacts, [.. directors.Select(Director)], state.ScenarioMonth,
             [.. selection.Targets.Select(UnitAt).Select(unit => ScenarioA1FireEligibility.AttackTarget(new AttackTargetFacts(Target(state, unit, target), unit.Side == side,
@@ -210,7 +242,10 @@ public static class LiveFire
             targetSide is null ? null : state.Side(targetSide)?.Elr, kind, AssaultOf(state), () => state.Side(side)?.Elr, friendlyTargets,
             [.. selection.Vehicles.Select(id => Vehicle(UnitAt(id), target))], vehicleFirers.Length > 0 ? VehicleFire(state, vehicleFirers[0], firers[0].At) : null,
             targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal), state.NoQuarter.Contains(side, StringComparer.Ordinal),
-            Allies(state, side), [.. selection.Companions.Select(id => Target(state, UnitAt(id), target))])), null);
+            Allies(state, side), [.. selection.Companions.Select(id => Target(state, UnitAt(id), target))])) with
+        {
+            MgBoreSighted = boreSighted ? true : null,
+        }, null);
     }
 
     /// <summary>
@@ -408,6 +443,7 @@ public static class LiveFire
         Dictionary<string, int>? selection = null;
         Dictionary<string, int>? weaponSelection = null;
         Dictionary<string, int>? firerSelection = null;
+        Dictionary<string, int>? cowerSelection = null;
         Dictionary<string, IReadOnlyList<int>>? checks = null;
         Dictionary<string, IReadOnlyList<int>>? leaderLoss = null;
         Dictionary<string, int>? wounds = null;
@@ -474,6 +510,13 @@ public static class LiveFire
                     }
 
                     break;
+                case "cowerSelection":
+                    if (!Select(ref cowerSelection, unit, roll))
+                    {
+                        return null;
+                    }
+
+                    break;
                 case "checks" when roll.Count == 2:
                     (checks ??= new(StringComparer.Ordinal))[unit] = roll.Values;
                     break;
@@ -507,6 +550,7 @@ public static class LiveFire
         {
             WeaponSelection = weaponSelection,
             FirerSelection = firerSelection,
+            CowerSelection = cowerSelection,
             HeatOfBattle = heat,
             BerserkChecks = berserk,
             CrewChecks = crewChecks,
@@ -652,6 +696,12 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
 
                     // Pass 31d (ruling R31d.2): who sees a concealed firer is the planner's read of the map, recorded with the attack.
                     SeenByGoodOrderEnemy = record.SeenByGoodOrderEnemy,
+
+                    // A7.72 (pass 45): a firer cut off in an upper building level is Encircled by a read of the map, recorded with the attack.
+                    Encircled = fact.Encircled ?? record.Encircled,
+
+                    // Pass 45 (ruling R45.4): a firer's berserk state is a fact of attacks planned from the pass on; an older record has none.
+                    Berserk = recorded.CoweringMarksAndWeaponResidual == true ? fact.Berserk : record.Berserk,
                 })],
             // A7.7 (ruling R12.11): the Encirclement an attack completes is read before the attack, and recorded with it.
             Targets = recorded.Targets is null || expected.Targets is null ? expected.Targets
@@ -664,6 +714,12 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
             FirerLocationsAdjacent = recorded.FirerLocationsAdjacent,
             WithinSubsequentFirstFireRange = recorded.WithinSubsequentFirstFireRange,
             Companions = recorded.Companions is null ? null : expected.Companions,
+
+            // A7.53 (pass 45): whether the leader directed these MGs earlier in the phase is the planner's read of the records, recorded with the attack.
+            Director = expected.Director is null || recorded.Director?.DirectedTheseMgs != true ? expected.Director : expected.Director with
+            {
+                DirectedTheseMgs = true
+            },
 
             // The owners' answers are declared, and the projector checks them against the choices made (ruling R5.8).
             Choices = recorded.Choices,
@@ -696,6 +752,9 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
 
             // Pass 31 (ruling R31.3): how a pinned firer's MG fires is recorded with the attack, so an older record replays as it was resolved.
             PinnedMgAreaFire = recorded.PinnedMgAreaFire,
+
+            // Pass 45 (ruling R45.4): so are the Cowering marks and the Residual FP by weapon.
+            CoweringMarksAndWeaponResidual = recorded.CoweringMarksAndWeaponResidual,
             TargetsInMelee = recorded.TargetsInMelee,
 
             // Backlog pass 12 (rulings R12.6, R12.7): Spraying Fire is the firer's declaration; a Fire Lane's Residual FP is the lane's in the state.

@@ -6,8 +6,11 @@ public enum FireRangeBand
     /// <summary>The firer's own Location: TPBF (A7.21).</summary>
     TriplePointBlank,
 
-    /// <summary>Another level of the firer's own hex, which the Fire package does not resolve.</summary>
+    /// <summary>Another level of the firer's own hex: PBF at the next level up or down a stairwell (A7.21, B23.26; pass 45).</summary>
     SameHexOtherLevel,
+
+    /// <summary>A level of the firer's own hex that is not the next one up or down: no attack (B23.26; pass 45).</summary>
+    SameHexFartherLevel,
 
     /// <summary>An adjacent target at most one level above: PBF (A7.21).</summary>
     PointBlank,
@@ -27,7 +30,7 @@ public sealed record FireRangeReading(FireRangeBand Band, int Range, int NormalR
     public decimal? Multiplier => Band switch
     {
         FireRangeBand.TriplePointBlank => 3m,
-        FireRangeBand.PointBlank => 2m,
+        FireRangeBand.PointBlank or FireRangeBand.SameHexOtherLevel => 2m,
         FireRangeBand.Normal => 1m,
         FireRangeBand.LongRange => 0.5m,
         _ => null,
@@ -51,7 +54,8 @@ public static class FireRange
     {
         var limit = noLongRange ? normalRange : 2 * normalRange;
         var band = sameLocation ? noPointBlank ? FireRangeBand.Normal : FireRangeBand.TriplePointBlank
-            : range < 1 ? FireRangeBand.SameHexOtherLevel
+            // A FT, which is never raised for PBF, fires at the next level at its own FP.
+            : range < 1 ? Math.Abs(levelAbove) != 1 ? FireRangeBand.SameHexFartherLevel : noPointBlank ? FireRangeBand.Normal : FireRangeBand.SameHexOtherLevel
             : range > limit ? FireRangeBand.Out
             : range > normalRange ? FireRangeBand.LongRange
             : range == 1 && levelAbove <= 1 && !noPointBlank ? FireRangeBand.PointBlank
@@ -74,7 +78,8 @@ public static class FireRange
         return reading.Band switch
         {
             FireRangeBand.TriplePointBlank => "TPBF, FP x3 (A7.21)",
-            FireRangeBand.SameHexOtherLevel => "the same hex, another level: not built",
+            FireRangeBand.SameHexOtherLevel => "PBF, FP x2, at the next level of its hex by a stairwell (A7.21, B23.26)",
+            FireRangeBand.SameHexFartherLevel => "no attack: not the next level of its hex (B23.26)",
             FireRangeBand.PointBlank => "PBF, FP x2 (A7.21)",
             FireRangeBand.Normal => "Normal Range",
             FireRangeBand.LongRange => "Long Range, FP x1/2 (A7.22)",

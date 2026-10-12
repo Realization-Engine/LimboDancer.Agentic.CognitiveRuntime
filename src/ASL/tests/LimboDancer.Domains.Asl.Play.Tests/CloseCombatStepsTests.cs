@@ -27,6 +27,7 @@ public sealed class CloseCombatStepsTests : IDisposable
     private static readonly string[] G2 = ["g2"];
     private static readonly string[] G3 = ["g3"];
     private static readonly string[] R4 = ["r4"];
+    private static readonly string[] Rl = ["rl"];
     private static readonly string[] R4R5 = ["r4", "r5"];
     private static readonly string[] R5 = ["r5"];
     private static readonly string[] G1G2 = ["g1", "g2"];
@@ -519,6 +520,147 @@ public sealed class CloseCombatStepsTests : IDisposable
         Committed(await Do(GameActions.PassFire, NoRoll(), new
         {
         }));
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task UnitsWhoseFireCountersDifferMakeOneMandatoryFireGroup()
+    {
+        // Pass 45, task 45.8 (A8.312, A8.31, pp. 61 to 62; ruling R45.1, which closes R40.17): r4 is marked First Fire and r5 has no counter. They
+        // owe one Mandatory FG: r4 by Subsequent First Fire, r5 by First Fire, each then marked by its own fire.
+        await Setup("german", Unit("g2", "asl:squad", "attacker-squad", "bd01:A3:0", "german", "asl:berserk"),
+            Unit("r4", "asl:squad", "defender-squad", "bd01:A1:0", "russian", "asl:first-fire"), Unit("r5", "asl:squad", "defender-squad", "bd01:A1:0", "russian"));
+        await Advance(2);
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G2,
+            to = "bd01:A2:0"
+        }));
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }));
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G2,
+            to = "bd01:A1:0"
+        }));
+        var owed = Planner().MandatoryFire(Current, store.Read(Scope)!.Events)!;
+        Assert.Equal(R4R5, owed.Firers);
+        Assert.True(owed.Group);
+
+        // Ruling R45.2 (replacing R40.19): every other act of the DEFENDER waits for that attack, a Gun's shot among them.
+        Assert.Contains((await Do(GameActions.FireOrdnance, NoRoll(), new
+        {
+            gun = "none",
+            crew = "r5",
+            target = "bd01:A1:0"
+        })).Reasons, reason => reason.StartsWith("play.act-mandatory", StringComparison.Ordinal));
+        Assert.Contains((await Do(GameActions.Fire, NoRoll(), new
+        {
+            firers = R4,
+            target = "bd01:A1:0"
+        })).Reasons, reason => reason.StartsWith("play.fire-mandatory", StringComparison.Ordinal));
+
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Once(6, 5, 3, 3, 3, 3), Planner().MandatoryFireArguments(Current, owed)));
+        var record = Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
+        Assert.Equal(ScenarioA1FireCalculator.SubsequentFirstFire, record.Facts.GetProperty("fireKind").GetString());
+        Assert.True(Is(Current.Unit("r4")!, Conditions.FinalFire) && !Is(Current.Unit("r4")!, Conditions.FirstFire));
+        Assert.True(Is(Current.Unit("r5")!, Conditions.FirstFire) && !Is(Current.Unit("r5")!, Conditions.FinalFire));
+        Assert.Null(Planner().MandatoryFire(Current, store.Read(Scope)!.Events));
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task TheDefenderGivesUpAMgsRofForResidualFpAtOnceAfterTheAttack()
+    {
+        // Pass 45, task 45.2 (A8.23, p. 60): the LMG keeps its Multiple ROF on a colored dr of 1, so the attack leaves the squad's Residual FP alone;
+        // "The decision to forfeit possible remaining First Fire capability in order to leave Residual FP must be made immediately after resolving
+        // its attack."
+        await Setup("german", Unit("g2", "asl:squad", "attacker-squad", "bd01:A3:0", "german"),
+            Unit("r4", "asl:squad", "defender-squad", "bd01:A1:0", "russian"), Weapon("rlmg", "defender-lmg", "r4", "russian"));
+        await Advance(2);
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G2,
+            to = "bd01:A2:0"
+        }));
+        Committed(await Do(GameActions.Fire, Once(1, 6, 6, 6, 6, 6), new
+        {
+            firers = R4,
+            weapons = new Dictionary<string, string[]> { ["r4"] = ["rlmg"] },
+            target = "bd01:A2:0"
+        }));
+        var placed = Assert.Single(Current.ResidualFire);
+        var open = GamePlanner.RateOfFireForfeit(Current, store.Read(Scope)!.Events)!;
+        Assert.Equal(["rlmg"], open.Weapons);
+        Assert.True(open.Fp > placed.Fp);
+        Assert.False(Is(Current.Find("rlmg")!, Conditions.FirstFire));
+
+        Committed(await Do(GameActions.ForfeitRof, NoRoll(), new
+        {
+        }));
+        Assert.True(Is(Current.Find("rlmg")!, Conditions.FirstFire));
+        Assert.Equal(open.Fp, Assert.Single(Current.ResidualFire).Fp);
+        Assert.Null(GamePlanner.RateOfFireForfeit(Current, store.Read(Scope)!.Events));
+        Assert.Contains((await Do(GameActions.ForfeitRof, NoRoll(), new
+        {
+        })).Reasons, reason => reason.StartsWith("play.forfeit-rof", StringComparison.Ordinal));
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task ALeaderDirectsTheLaterShotOfAMgHeDirected()
+    {
+        // Pass 45, task 45.6 (A7.53, p. 57): "a leader can direct the fire of a MG as many times as the MG can fire, even if he also directed other
+        // units as part of a FG in the MG's previous attack." The LMG keeps its ROF on a colored dr of 1 and fires again alone, directed again.
+        await Setup("russian", Unit("r4", "asl:squad", "defender-squad", "bd01:A1:0", "russian"), Unit("rl", "asl:leader", "defender-leader", "bd01:A1:0", "russian"),
+            Weapon("rlmg", "defender-lmg", "r4", "russian"), Unit("g2", "asl:squad", "attacker-squad", "bd01:A2:0", "german"));
+        await Advance();
+        Assert.Equal(("pfph", "russian"), (Current.Phase, Current.PhasingSide));
+        Committed(await Do(GameActions.Fire, Once(1, 6, 6, 6, 6, 6), new
+        {
+            firers = R4,
+            directors = Rl,
+            weapons = new Dictionary<string, string[]> { ["r4"] = ["rlmg"] },
+            target = "bd01:A2:0"
+        }));
+        var again = await Do(GameActions.Fire, Once(6, 5, 6, 6, 6, 6), new
+        {
+            firers = R4,
+            directors = Rl,
+            weapons = new Dictionary<string, string[]> { ["r4"] = ["rlmg"] },
+            withoutInherent = R4,
+            target = "bd01:A2:0"
+        });
+        Assert.True(again.Outcome == PlayOutcome.Committed, string.Join(" | ", again.Reasons));
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task AnFpfFirerReplacedByItsOwnNmcCommits()
+    {
+        // Pass 45 (found by pass 40 and not followed, backlog 56.1): an FPF whose NMC replaces its firer by ELR. The Original DR 11 fails r4's NMC
+        // by more than its ELR, so it is Replaced; the attack commits and the game replays.
+        await Setup("german", Unit("g2", "asl:squad", "attacker-squad", "bd01:A3:0", "german", "asl:berserk"),
+            Unit("r4", "asl:squad", "defender-squad", "bd01:A1:0", "russian", "asl:final-fire"));
+        await Advance(2);
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G2,
+            to = "bd01:A2:0"
+        }));
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }));
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G2,
+            to = "bd01:A1:0"
+        }));
+        var owed = Planner().MandatoryFire(Current, store.Read(Scope)!.Events)!;
+        var result = await Do(GameActions.Fire, Once(6, 5, 3, 3, 3, 3), Planner().MandatoryFireArguments(Current, owed));
+        Assert.True(result.Outcome == PlayOutcome.Committed, string.Join(" | ", result.Reasons));
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
     }
 

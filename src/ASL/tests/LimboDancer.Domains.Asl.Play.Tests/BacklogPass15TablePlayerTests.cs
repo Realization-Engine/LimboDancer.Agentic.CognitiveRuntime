@@ -318,7 +318,8 @@ public sealed class BacklogPass15TablePlayerTests : IDisposable
     {
         await SetupAt(1, "german", Unit("g1", "attacker-squad", "E3", "german"), Weapon("ft", "asl:ft", "attacker-ft", "g1", "german"),
             Unit("r1", "defender-squad", "E4", "russian"), Unit("r2", "defender-squad", "E2", "russian"));
-        var inherent = await Try("inherent", GameActions.Fire, Then(6), new
+        // Pass 45 (A7.9): doubles would mark the squad and its FT; a DR of 11.
+        var inherent = await Try("inherent", GameActions.Fire, Then(6, 6, 5), new
         {
             firers = G1,
             target = L("E4")
@@ -524,7 +525,8 @@ public sealed class BacklogPass15TablePlayerTests : IDisposable
             to = L("E4")
         }));
         var before = Revision;
-        var dff = await Try("mol dff", GameActions.Fire, Then(5, 2), new
+        // Pass 45 (A7.9): the MOL Check dr of 2, then an IFT DR of 9 that is not doubles, which would mark the squad Final Fire.
+        var dff = await Try("mol dff", GameActions.Fire, Then(5, 2, 4), new
         {
             firers = R1,
             target = L("E4"),

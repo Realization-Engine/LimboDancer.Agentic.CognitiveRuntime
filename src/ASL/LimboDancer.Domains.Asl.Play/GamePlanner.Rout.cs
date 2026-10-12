@@ -46,7 +46,7 @@ public sealed partial class GamePlanner
     private (string Cause, IReadOnlyList<string> Captors)? RoutSurrender(GameState state, UnitInstance unit, BoardLocation start) =>
         ScenarioA1RoutCalculator.SurrenderCandidate(state.Night, Is(unit, Conditions.Fanatic), state.NoQuarter.Contains(unit.Side, StringComparer.Ordinal), IsCommissar(unit))
             && Captors(state, unit) is { Count: > 0 } captors
-            && ScenarioA1RoutCalculator.SurrenderCause(Is(unit, Conditions.Disrupted), state.Encircled(unit), () => TrappedByInterdiction(state, unit, start), captors) is { } cause
+            && ScenarioA1RoutCalculator.SurrenderCause(Is(unit, Conditions.Disrupted), Encircled(state, unit), () => TrappedByInterdiction(state, unit, start), captors) is { } cause
             ? (cause, captors) : null;
 
     // Kept once a state: the read asks for each broken unit's routes, which read the enemy list in turn.
@@ -142,7 +142,7 @@ public sealed partial class GamePlanner
                 var prisoners = planner.SurrenderedBeforeRouts(state);
                 enemies[side] = known = [.. KnownEnemies(state, side).Where(item => !prisoners.Contains(item.Unit.Id)).Select(item => new RoutEnemyFacts(item.Unit.Id, Index(item.At), Armed(item.Unit),
                     Is(item.Unit, Conditions.Broken), Is(item.Unit, Conditions.Melee), LiveFire.IsVehicle(item.Unit), Is(item.Unit, Conditions.Cx),
-                    Is(item.Unit, Conditions.Pinned), state.Encircled(item.Unit), NormalRange(state, item.Unit), planner.InterdictionRange(state, item.Unit, item.At)))];
+                    Is(item.Unit, Conditions.Pinned), planner.Encircled(state, item.Unit), NormalRange(state, item.Unit), planner.InterdictionRange(state, item.Unit, item.At)))];
             }
 
             return known;
@@ -313,7 +313,7 @@ public sealed partial class GamePlanner
     {
         var scan = new RoutScan(this, state);
         var found = routes is null ? null : new Dictionary<int, int[]>();
-        var reach = ScenarioA1RoutCalculator.RoutReach(scan, scan.Enemies(unit.Side), scan.Index(start), seen, spent, limit, state.Encircled(unit), state.ScenarioMonth,
+        var reach = ScenarioA1RoutCalculator.RoutReach(scan, scan.Enemies(unit.Side), scan.Index(start), seen, spent, limit, Encircled(state, unit), state.ScenarioMonth,
             avoidInterdiction, found);
         if (routes is not null)
         {
@@ -342,7 +342,7 @@ public sealed partial class GamePlanner
     private bool TrappedByInterdiction(GameState state, UnitInstance unit, BoardLocation start)
     {
         var scan = new RoutScan(this, state);
-        var reach = ScenarioA1RoutCalculator.RoutReach(scan, scan.Enemies(unit.Side), scan.Index(start), SeenBy(state, unit.Side, start), 0, RoutHalfMf(unit), state.Encircled(unit),
+        var reach = ScenarioA1RoutCalculator.RoutReach(scan, scan.Enemies(unit.Side), scan.Index(start), SeenBy(state, unit.Side, start), 0, RoutHalfMf(unit), Encircled(state, unit),
             state.ScenarioMonth, avoidInterdiction: true);
         return ScenarioA1RoutCalculator.TrappedByInterdiction(scan, scan.Enemies(unit.Side), scan.Index(start), reach);
     }
@@ -474,7 +474,7 @@ public sealed partial class GamePlanner
 
         // A10.51: each step, its cost, and the Known armed enemy units that have had the unit in their LOS; Rules walks the route over the scan (pass 32.f).
         var limit = RoutHalfMf(unit);
-        var encircled = state.Encircled(unit);
+        var encircled = Encircled(state, unit);
         var scan = new RoutScan(this, state);
         var enemies = scan.Enemies(unit.Side);
         var seenBy = ScenarioA1RoutCalculator.SeenBy(scan, enemies, scan.Index(start)).ToHashSet(StringComparer.Ordinal);
@@ -758,7 +758,7 @@ public sealed partial class GamePlanner
         // units alone (A10.533), so a route tells the routing side nothing it does not hold. Rules decides which places are offered (pass 32.f).
         var scan = new RoutScan(this, state);
         var found = new Dictionary<int, int[]>();
-        var reach = ScenarioA1RoutCalculator.RoutReach(scan, scan.Enemies(unit.Side), scan.Index(at), SeenBy(state, unit.Side, at), 0, RoutHalfMf(unit), state.Encircled(unit),
+        var reach = ScenarioA1RoutCalculator.RoutReach(scan, scan.Enemies(unit.Side), scan.Index(at), SeenBy(state, unit.Side, at), 0, RoutHalfMf(unit), Encircled(state, unit),
             state.ScenarioMonth, routes: found);
         var (targets, canRout, routes) = ScenarioA1RoutCalculator.RoutAdvice(scan, scan.Enemies(unit.Side), scan.Index(at), reach, found);
         return ([.. targets.Select(scan.At)], canRout, routes.ToDictionary(item => scan.At(item.Key), item => (IReadOnlyList<BoardLocation>)[.. item.Value.Select(scan.At)]));

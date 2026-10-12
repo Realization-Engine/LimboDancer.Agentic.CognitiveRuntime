@@ -120,7 +120,9 @@ public static class FireText
     public static string? WeaponText(FireWeaponEffect weapon)
     {
         ArgumentNullException.ThrowIfNull(weapon);
-        return weapon.Malfunctioned ? $"{weapon.EquipmentId} malfunctioned (A9.7)"
+        // A.11, A9.7 (pass 45): a weapon whose lowered B# became an X# is removed, not malfunctioned.
+        return weapon.Removed == true ? $"{weapon.EquipmentId} is removed: the DR reached its X# (A.11, A9.7)"
+            : weapon.Malfunctioned ? $"{weapon.EquipmentId} malfunctioned (A9.7)"
             : weapon.RateOfFireRetained ? $"{weapon.EquipmentId} kept its rate of fire and may fire again this phase (A9.2)"
             : null;
     }

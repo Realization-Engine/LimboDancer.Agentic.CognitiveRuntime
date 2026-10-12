@@ -91,6 +91,20 @@ public static class ScenarioA1MandatoryFire
             : null;
     }
 
+    /// <summary>
+    /// Why another act of the DEFENDER waits while the attack is owed (A8.312, p. 61; pass 45, ruling R45.2): the DEFENDER "must ... then immediately
+    /// attack", so a Gun's shot, a thrown DC, and a Starshell come after it.
+    /// </summary>
+    public static string? OtherActBar(bool mph, bool namesDefender, Func<(IReadOnlyList<string> Owed, string Location)?> owing, string act)
+    {
+        ArgumentNullException.ThrowIfNull(owing);
+
+        // The bar is on the DEFENDER's proposal alone, so the attack owed is read only for one.
+        return mph && namesDefender && owing() is { Owed.Count: > 0 } owed
+            ? $"play.act-mandatory: {string.Join(", ", owed.Owed)} must first attack the units that entered {owed.Location}; the {act} waits for that attack (A8.312)"
+            : null;
+    }
+
     /// <summary>The page's note for the DEFENDER; where the fire rules form no one group of the units, it says so and cites the ruling.</summary>
     public static string Note(IReadOnlyList<string> owed, bool groupPossible, string place)
     {
@@ -106,7 +120,8 @@ public static class ScenarioA1MandatoryFire
 
     /// <summary>
     /// Whether a crew that fired its Gun this Player Turn still adds its inherent FP (A8.311, p. 61): "Infantry manning ordnance cannot fire it during
-    /// FPF ... but must add their inherent FP to the FPF attack". Outside FPF it has none (A7.352; ruling R8.4).
+    /// FPF ... but must add their inherent FP to the FPF attack"; and A7.353 (p. 56) keeps it in Subsequent First Fire and in Final Fire against an
+    /// adjacent unit (<paramref name="areaFireAgain"/>). In any other fire it has none (A7.352; ruling R8.4).
     /// </summary>
-    public static bool CrewAddsInherentFp(bool gunFired, bool finalProtectiveFire) => !gunFired || finalProtectiveFire;
+    public static bool CrewAddsInherentFp(bool gunFired, bool areaFireAgain) => !gunFired || areaFireAgain;
 }

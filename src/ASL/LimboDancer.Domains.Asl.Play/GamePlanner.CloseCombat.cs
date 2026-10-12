@@ -147,11 +147,11 @@ public sealed partial class GamePlanner
         var excess = LiveStacking.Of(state, to, state.PhasingSide, units.Select(unit => unit!)).PersonnelExcess;
 
         // A7.7 (ruling R12.11): the first Location an Encircled unit enters costs twice its MF.
-        var halfMf = ScenarioA1AdvanceCalculator.AdvanceHalfMf(entry.HalfMf, units.Any(unit => state.Encircled(unit!)), excess);
+        var halfMf = ScenarioA1AdvanceCalculator.AdvanceHalfMf(entry.HalfMf, units.Any(unit => Encircled(state, unit!)), excess);
 
         // A4.72 (p. 52; pass 40): Difficult Terrain is judged by the hex's MF cost "excluding SMOKE".
         var drySmoke = entering is null && BlazeEntryHalfMf(state, to) > 0 ? InfantryStep(state, from, to, false, true).Entry : null;
-        var difficultHalfMf = drySmoke is null ? halfMf : ScenarioA1AdvanceCalculator.AdvanceHalfMf(drySmoke.HalfMf, units.Any(unit => state.Encircled(unit!)), excess);
+        var difficultHalfMf = drySmoke is null ? halfMf : ScenarioA1AdvanceCalculator.AdvanceHalfMf(drySmoke.HalfMf, units.Any(unit => Encircled(state, unit!)), excess);
 
         // A4.72 EX, A4.12, A4.42 (ruling R10.8): a Good Order leader of its nationality advancing with a MMC adds two MF and one IPC to it.
         var unitList = units.Select(unit => unit!).ToArray();
