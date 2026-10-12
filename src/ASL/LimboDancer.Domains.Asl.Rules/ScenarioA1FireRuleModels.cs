@@ -406,7 +406,7 @@ public enum UnitCondition
 }
 
 /// <summary>A weapon of a vehicle that fired this Player Turn, as the state has it (D3.5, D3.51; pass 50): the weapon, its fire phase, the hexspines its CA changed, and whether woods, a building, or rubble doubled that.</summary>
-public sealed record VehicleWeaponShotFacts(string Weapon, string FirePhase, int Turn, bool Doubled);
+public sealed record VehicleWeaponShotFacts(string Weapon, string FirePhase, int Turn, bool Doubled, int? Step = null);
 
 /// <summary>The BMG and CMG a vehicle's attack names, against the state (D3.5, D3.51, D3.7; pass 50): the names, whether each MG has malfunctioned, the fire phase now, the vehicle's shots of this Player Turn, and its turret's type.</summary>
 public sealed record VehicleWeaponsFacts(IReadOnlyList<string> Named, bool BmgMalfunctioned, bool CmgMalfunctioned, string FirePhase, IReadOnlyList<VehicleWeaponShotFacts> Shots, string? MaType);

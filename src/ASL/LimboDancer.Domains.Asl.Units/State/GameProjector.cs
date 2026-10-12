@@ -1130,7 +1130,11 @@ public static class GameProjector
                 VehicleWeaponShots = tank
                     ? [.. state.VehicleWeaponShots, new VehicleWeaponShot(fired.Gun, "ma", Rules.ScenarioA1FireEligibility.FirePhase(state.Phase, shooter.Side == state.PhasingSide),
                         fired.Facts.TryGetProperty("hexspinesToTurn", out var maTurn) && maTurn.ValueKind == JsonValueKind.Number ? maTurn.GetInt32() : 0,
-                        fired.Facts.TryGetProperty("firerInWoodsOrBuilding", out var maWoods) && maWoods.ValueKind == JsonValueKind.True)]
+                        fired.Facts.TryGetProperty("firerInWoodsOrBuilding", out var maWoods) && maWoods.ValueKind == JsonValueKind.True)
+                    {
+                        // C5.3 (pass 50): the movement step a Bounding First Fire shot followed; none yet at the outset of the move.
+                        Step = state.Phase == "mph" && shooter.Side == state.PhasingSide ? state.Movement?.Step ?? 0 : null,
+                    }]
                     : state.VehicleWeaponShots,
                 OrdnanceShots = [.. state.OrdnanceShots.Where(item => item.Gun != fired.Gun), new OrdnanceShotRecord(fired.Gun, (shots?.Shots ?? 0) + 1, fired.RateOfFireKept)],
                 Acquisitions = [.. state.Acquisitions.Where(item => item.Gun != fired.Gun),
@@ -2212,6 +2216,9 @@ public static class GameProjector
                     && leaving.All(id => Active(state, id) is UnitInstance { Position: ContainedPosition { Role: ContainmentRole.Passenger } contained } && contained.Container == vehicle.Id),
                 VehicleStepped.Stop => moving && step.At == at.Location && step.Facing is null && step.HalfMp == 2,
 
+                // D2.17 (pass 50): a Delay MP, one MP in place by a vehicle that is stopped or has not started.
+                VehicleStepped.Delay => !moving && !bogged && step.At == at.Location && step.Facing is null && step.HalfMp == 2,
+
                 // D2.1 (ruling R5.15): the MP left at the end of its move, spent in its hex, moving or stopped; A2.6: an exit from its edge hex.
                 VehicleStepped.Remain => current is not null && step.At == at.Location && step.Facing is null,
                 VehicleStepped.Exit => moving && step.At == at.Location && step.Facing is null && !reverse,
@@ -2224,6 +2231,12 @@ public static class GameProjector
             {
                 return Fail<GameState>("UNIT-STATE-034",
                     "A vehicle starts when not moving; turns one hexspine, enters a Location, stops, or exits only while moving; turns, starts, and stops for one MP; and spends its MP left in its hex only to end its move (D2.1, D2.11 to D2.13).");
+            }
+
+            // D3.12 (pass 50): the TCA changes with a Delay, a stop, a VCA change, or an entry, not with any other expenditure.
+            if (step.Turret is not null && !Rules.ScenarioA1VehicleMovementCalculator.TurretTurnsWith(step.Kind))
+            {
+                return Fail<GameState>("UNIT-STATE-034", "A vehicle's turret turns with a Delay MP, a stop, a VCA change, or an entry (D3.12).");
             }
 
             if (step.Kind == VehicleStepped.Exit)
@@ -2322,14 +2335,24 @@ public static class GameProjector
                     }
                     : item)],
             };
+            if (step.Turret is { } turretTurned)
+            {
+                next = next with
+                {
+                    TurretFacings = [.. next.TurretFacings.Where(item => item.Vehicle != vehicle.Id), new TurretFacing(vehicle.Id, turretTurned)],
+                };
+            }
+
+            // D2.17 (pass 50): a Delay MP is spent by a vehicle that is stopped or has not started, and leaves it stopped: it does not end its
+            // move in Motion (D2.4).
             return next with
             {
                 Movement = new MovementState([vehicle.Id], step.At, step.Kind == VehicleStepped.Enter ? step.HalfMp : (current?.HalfMfInLocation ?? 0) + step.HalfMp,
                     step.Step, false, WindowOpen: true)
                 {
                     Vehicle = true,
-                    Started = step.Kind == VehicleStepped.Remain ? current!.Started : step.Kind != VehicleStepped.Stop,
-                    Stopped = step.Kind == VehicleStepped.Remain ? current!.Stopped : step.Kind == VehicleStepped.Stop,
+                    Started = step.Kind == VehicleStepped.Remain ? current!.Started : step.Kind is not (VehicleStepped.Stop or VehicleStepped.Delay),
+                    Stopped = step.Kind == VehicleStepped.Remain ? current!.Stopped : step.Kind is VehicleStepped.Stop or VehicleStepped.Delay,
 
                     // D2.15 (ruling R11.5): a Minimum Move ends the vehicle's move in Motion once the DEFENDER passes.
                     Ending = step.Kind == VehicleStepped.Remain || step.MinimumMove,

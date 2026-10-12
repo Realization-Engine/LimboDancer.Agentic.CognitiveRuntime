@@ -14,6 +14,24 @@
         }
     </select>
 </label>
+@if (MainArmament)
+{
+    @if (Vehicles.Count > 0)
+    {
+        <label title="C3.31: the MA fires at one vehicle of the Location on the Vehicle Target Type; with none chosen, at its Infantry with HE.">
+            MA at the vehicle
+            <select id="vehicle-bff-vehicle" value="@Vehicle" @onchange="@(args => OnVehicle.InvokeAsync(args.Value as string ?? string.Empty))">
+                <option value="">none: the Location's Infantry</option>
+                @foreach (var vehicle in Vehicles)
+                {
+                    <option value="@vehicle.Id">@Say(vehicle.Label)</option>
+                }
+            </select>
+        </label>
+    }
+    <button id="vehicle-bff-ma" disabled="@(Target.Length == 0)" title="D3.3, C5.3 to C5.35: the MA fires within its TCA with Case C (2 and the mount's 2 or 3), C1 or C2 for a LOS of three MP or less, and the lower dr doubled while not stopped; another MP is spent before it fires again."
+            @onclick="@(() => OnProposeMa.InvokeAsync())">Propose: MA Bounding First Fire</button>
+}
 <button id="vehicle-bff" disabled="@(Target.Length == 0 || (Weapons.Count > 0 && !Weapons.Any(weapon => weapon.Bar is null && SelectedWeapons.Contains(weapon.Id))))" @onclick="@(() => OnPropose.InvokeAsync())">Propose: Bounding First Fire</button>
 
 @code {
@@ -35,6 +53,23 @@
 
     [Parameter]
     public EventCallback<UnitSelectionList.Toggle> OnWeapon { get; set; }
+
+    /// <summary>Whether the vehicle's MA is a Gun that fires as ordnance (D3.3, C5.3; pass 50).</summary>
+    [Parameter]
+    public bool MainArmament { get; set; }
+
+    /// <summary>The enemy vehicles the view sees in the target Location.</summary>
+    [Parameter]
+    public IReadOnlyList<PlayChoice> Vehicles { get; set; } = [];
+
+    [Parameter]
+    public string Vehicle { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnVehicle { get; set; }
+
+    [Parameter]
+    public EventCallback OnProposeMa { get; set; }
 
     [Parameter]
     public string Target { get; set; } = string.Empty;

@@ -285,6 +285,25 @@ public sealed partial class GamePlanner
 
     private static bool Flag(JsonElement arguments, string name) => arguments.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.True;
 
+    /// <summary>
+    /// The TCA a vehicle's step turns its turret to (D3.12, p. 199; pass 50), from the step's <c>turret</c> argument: null with no refusal when
+    /// the step names none. Rules decides from the facts: a turret, the kind of expenditure, and a woods, building, or rubble obstacle the
+    /// vehicle is in (not in Bypass, nor on a road).
+    /// </summary>
+    private (UnitFacing? Turret, string? Bar) TurretWithStep(GameState state, UnitInstance vehicle, JsonElement arguments, string kind, BoardLocation at, bool bypass, bool road = false)
+    {
+        if (!Text(arguments, "turret", out var named))
+        {
+            return (null, null);
+        }
+
+        var read = UnitFacings.TryParse(named, out var parsed);
+        var terrain = ReadLocation(state, at) is { } here ? TerrainKey(here) : null;
+        var bar = ScenarioA1VehicleMovementCalculator.TurretStepBar(vehicle.Id, kind, LiveFire.MaTypeOf(vehicle.Definition?.Definition) is "t" or "st" or "rst" or "1mt", read,
+            terrain is not null && (WoodsOrBuilding.Contains(terrain) || IsRubbleTerrain(terrain)) && !bypass && !road);
+        return bar is null ? (parsed, null) : (null, bar);
+    }
+
     private GamePlan PlanMoveVehicle(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label,
         string actor)
     {
@@ -323,6 +342,13 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, moveBar);
         }
 
+        // D3.12 (pass 50): a turret named with an expenditure it does not turn with is refused, not dropped.
+        if (!ScenarioA1VehicleMovementCalculator.TurretTurnsWith(kind)
+            && TurretWithStep(state, vehicle, arguments, kind, at.Location, vehicle.Straddling is not null).Bar is { } noTurret)
+        {
+            return Refused(scope, label, expected, noTurret);
+        }
+
         var bogged = Is(vehicle, Conditions.Bogged);
 
         var moving = current is not null ? current.Started && !current.Stopped : Is(vehicle, Conditions.Motion);
@@ -342,6 +368,23 @@ public sealed partial class GamePlanner
                 return PlanLoad(scope, arguments, existing, attemptId, expected, label, actor, state, vehicle, at.Location);
             case VehicleStepped.Unload:
                 return PlanUnload(scope, arguments, existing, attemptId, expected, label, actor, state, vehicle, at.Location, step);
+            case VehicleStepped.Delay:
+                // D2.17, D3.3 (pass 50): a Delay MP, one at a time, while stopped or before starting.
+                if (ScenarioA1VehicleMovementCalculator.DelayBar(id, moving, spent, allotment) is { } delayBar)
+                {
+                    return Refused(scope, label, expected, delayBar);
+                }
+
+                var (delayTurret, delayTurretBar) = TurretWithStep(state, vehicle, arguments, kind, at.Location, vehicle.Straddling is not null);
+                if (delayTurretBar is not null)
+                {
+                    return Refused(scope, label, expected, delayTurretBar);
+                }
+
+                return new GamePlan(GamePlanStatus.Ready, scope, label, expected,
+                    [Event(scope, attemptId, 1, expected, "vehicle-step", new VehicleStepped(id, kind, at.Location, null, 2, step) { Turret = delayTurret }, null, null)],
+                    [$"play.move-vehicle: {id} spends a Delay MP in {at.Location} (D2.17)" + (delayTurret is { } delayed ? $", turning its turret to {UnitFacings.Name(delayed)} (D3.12)" : string.Empty)
+                        + $"; {Mp(Math.Max(0, allotment - spent - 2))} MP left"]);
         }
 
         if (ScenarioA1VehicleMovementCalculator.MovingBar(id, kind, moving, afterAll) is { } movingBar)
@@ -481,6 +524,18 @@ public sealed partial class GamePlanner
                 return Refused(scope, label, expected, "play.invalid-arguments: a vehicle's MP expenditure is start, turn, enter, stop, exit, esb, overrun, load, or unload");
         }
 
+        // D3.12 (pass 50): the TCA may change with this MP expenditure.
+        var (turret, turretBar) = TurretWithStep(state, vehicle, arguments, kind, to, entry?.Bypass ?? vehicle.Straddling is not null, entry?.Road == true);
+        if (turretBar is not null)
+        {
+            return Refused(scope, label, expected, turretBar);
+        }
+
+        if (turret is { } turretTo)
+        {
+            summary += $", turning its turret to {UnitFacings.Name(turretTo)} (D3.12)";
+        }
+
         // D5.341 (ruling R5.17): a leaving AFV keeps to a shortest route in MP to its Friendly Board Edge.
         if (leaving && !ScenarioA1RecallCalculator.StopsToUnload(kind, state.Passengers(id).Count > 0))
         {
@@ -537,6 +592,7 @@ public sealed partial class GamePlanner
                 Overrunning = overrun,
                 MinimumMove = minimumMove,
                 All = entry?.All == true,
+                Turret = stepKind == kind ? turret : null,
             };
 
             // B9.4: a halftrack failing its hedge Bog DR bogs in the hex it attempted to leave, having spent the MP there; one passing it takes the Bog

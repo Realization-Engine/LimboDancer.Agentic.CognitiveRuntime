@@ -361,7 +361,7 @@ public static class LiveFire
     }
 
     /// <summary>A vehicle definition's turret type (D1.3), as the catalog prints it; null when it prints none.</summary>
-    internal static string? MaTypeOf(string? definition) => definition is null ? null : CatalogReference.Value.Definitions.GetValueOrDefault(definition)?.MaType;
+    public static string? MaTypeOf(string? definition) => definition is null ? null : CatalogReference.Value.Definitions.GetValueOrDefault(definition)?.MaType;
 
     /// <summary>Whether a unit is a vehicle (D1).</summary>
     public static bool IsVehicle(UnitInstance unit) => unit.Kind == "asl:vehicle";
@@ -428,7 +428,7 @@ public static class LiveFire
 
     /// <summary>A vehicle's weapon shots of this Player Turn, as Rules reads them (D3.5, D3.51; pass 50).</summary>
     internal static IReadOnlyList<VehicleWeaponShotFacts> VehicleShots(GameState state, string vehicleId) =>
-        [.. state.VehicleWeaponShots.Where(item => item.Vehicle == vehicleId).Select(item => new VehicleWeaponShotFacts(item.Weapon, item.FirePhase, item.Turn, item.Doubled))];
+        [.. state.VehicleWeaponShots.Where(item => item.Vehicle == vehicleId).Select(item => new VehicleWeaponShotFacts(item.Weapon, item.FirePhase, item.Turn, item.Doubled, item.Step))];
 
     private static FireVehicleFire MainArmamentFire(GameState state, UnitInstance vehicle, BoardLocation at) =>
         ScenarioA1FireEligibility.VehicleFirer(new VehicleFirerFacts(vehicle.Id, vehicle.Definition?.Definition, at.ToString(), CrewExposed(vehicle),

@@ -591,6 +591,11 @@ public static class GameEventWriter
 
                 writer.WriteNumber("halfMp", vehicle.HalfMp);
                 writer.WriteNumber("step", vehicle.Step);
+                if (vehicle.Turret is { } vehicleTurret)
+                {
+                    writer.WriteString("turret", Documents.UnitFacings.Name(vehicleTurret));
+                }
+
                 if (vehicle.Reverse)
                 {
                     writer.WriteBoolean("reverse", true);

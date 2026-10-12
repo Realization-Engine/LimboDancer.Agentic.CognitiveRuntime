@@ -238,6 +238,18 @@ public sealed record VehicleStepped(string Vehicle, string Kind, BoardLocation A
     /// <summary>Passengers disembark beneath the Stopped vehicle (D6.5; ruling R26.2): <see cref="Units"/> name them.</summary>
     public const string Unload = "unload";
 
+    /// <summary>A Delay MP (D2.17, p. 196; pass 50): one MP spent without moving, by a vehicle that is stopped or has not yet started.</summary>
+    public const string Delay = "delay";
+
+    /// <summary>
+    /// The TCA the turret is turned to with this MP expenditure (D3.12, p. 199; pass 50): "the TCA may also change freely with each MP expended
+    /// during the MPh"; null when it does not change.
+    /// </summary>
+    public UnitFacing? Turret
+    {
+        get; init;
+    }
+
     /// <summary>For an entry from off board (A2.52, D2.4; ruling R26.1): the map edge the vehicle crosses into <see cref="At"/>, its VCA in <see cref="Facing"/>.</summary>
     public string? Entry
     {

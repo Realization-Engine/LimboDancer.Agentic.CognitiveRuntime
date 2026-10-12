@@ -132,7 +132,9 @@ public sealed partial class GamePlanner
             Rolls = new OrdnanceRolls([6, 6], null, null, null, null) { PanzerfaustCheck = 1 }
         }, reference).ToHit;
         var toHit = preview is null ? string.Empty
-            : $"; Modified TH# {preview.ModifiedToHit} ({preview.Color}), DRM {(preview.Drm.Count == 0 ? "none" : string.Join(", ", preview.Drm.Select(item => $"{item.Name} {item.Value:+0;-0}")))}";
+            : $"; Modified TH# {preview.ModifiedToHit} ({preview.Color}), DRM {(preview.Drm.Count == 0 ? "none" : string.Join(", ", preview.Drm.Select(item =>
+                // C5.35 (pass 50): the lower dr is not known before the roll.
+                item.Name == "case-c4:lower-dr" ? "case-c4: the lower dr of the roll doubled" : $"{item.Name} {item.Value:+0;-0}")))}";
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
         {
             var events = new List<GameEvent>();
@@ -239,6 +241,12 @@ public sealed partial class GamePlanner
         if (ScenarioA1OrdnanceMapRules.VcaRefusal(tank?.Id, turreted, turns.Steps) is { } vca)
         {
             return (null, vca);
+        }
+
+        // C5.13 (pass 50): a Bounding First Firer fires within its current CA; its turret turns with an MP expenditure (D3.12).
+        if (ScenarioA1OrdnanceMapRules.BoundingArcRefusal(tank?.Id, shot.FireKind == ScenarioA1FireCalculator.BoundingFirstFire, turns.Steps) is { } boundingArc)
+        {
+            return (null, boundingArc);
         }
 
         // D3.2 (ruling R7.4): the Target Facing is read from the hexside of the target hex the firer's LOS crosses: within 60 degrees of the
@@ -439,6 +447,18 @@ public sealed partial class GamePlanner
                 {
                     GunTarget = gunTarget
                 }
+            };
+        }
+
+        // C5.31 to C5.33 (pass 50): the MP a Bounding First Firer has spent in a continuous LOS to its target; a LOS is the same both ways.
+        if (shot.FireKind == ScenarioA1FireCalculator.BoundingFirstFire && shot.Vehicle is { } boundingFirer)
+        {
+            shot = shot with
+            {
+                Vehicle = boundingFirer with
+                {
+                    MpInLos = MpInLos(state, target, shot.Gun.GunId!)
+                },
             };
         }
 

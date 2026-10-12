@@ -23,6 +23,26 @@ public sealed record OrdnanceVehicleFirer(bool? ButtonedUp, bool? InMotion, bool
     }
 
     /// <summary>
+    /// The MP the vehicle has spent in a continuous LOS to its target in this MPh, rounded up (C5.31 to C5.33, p. 172; pass 50): at most two is
+    /// Case C2, up to three Case C1, more Case C; 99 for a LOS held since before the MPh. A map read, recorded with a Bounding First Fire shot.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? MpInLos
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the vehicle fired its MA in this Player Turn's MPh as Bounding First Fire (D3.32, p. 200; pass 50): its AFPh shot on the ROF it kept
+    /// uses Case C though it entered no new hex. Null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? BoundingFirer
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// The vehicle's other weapons against this shot (D3.5, D3.51, pp. 200 and 201; pass 50). Null in a record made before pass 50, which then
     /// resolves as it was recorded.
     /// </summary>

@@ -182,6 +182,10 @@ internal static class ScenarioA1ArmorCalculator
                 drm.Add(new FireModifier("case-c3:backblast", 2, "C13.8"));
             }
         }
+        else if (ScenarioA1OrdnanceCalculator.CaseC(shot, gun) is { } caseC)
+        {
+            drm.Add(caseC);
+        }
         else if (ScenarioA1OrdnanceCalculator.AfphFire(shot))
         {
             drm.Add(new FireModifier("case-b", woods ? 3 : 2, "C5.2"));
@@ -279,8 +283,16 @@ internal static class ScenarioA1ArmorCalculator
 
         var total = (int)drm.Sum(item => item.Value);
         var original = dice[0] + dice[1];
-        var final = original + total;
-        var lowest = 2 + total;
+
+        // C5.35 (p. 172; pass 50): a Motion firer with no Gyrostabilizer doubles the lower dr of its TH DR; the lowest Final DR is then one more.
+        var motion = ScenarioA1OrdnanceCalculator.MotionFirer(shot) ? Math.Min(dice[0], dice[1]) : 0;
+        if (motion > 0)
+        {
+            drm.Add(new FireModifier("case-c4:lower-dr", motion, "C5.35"));
+        }
+
+        var final = original + total + motion;
+        var lowest = 2 + total + (motion > 0 ? 1 : 0);
         var improbable = lowest > modified;
         bool isHit, critical;
         int? subsequent = null;

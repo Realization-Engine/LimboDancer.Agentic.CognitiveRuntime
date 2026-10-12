@@ -473,6 +473,9 @@ public static class ScenarioA1FireCalculator
             // Table player, pass 15 (ruling R15.3): a DC Thrown as Defensive First Fire also attacks its thrower's Location, whose units are not moving.
             ("MPh", "non-phasing", null) => attack.OrdnanceHit is not null || attack.DemolitionCharge is { Mode: FireDemolitionCharge.Thrower },
             ("MPh", "phasing", BoundingFirstFire) => attack.VehicleFire is not null,
+
+            // D3.3, C5.3 (pass 50): the hit of a vehicle's MA fired in its own MPh as Bounding First Fire.
+            ("MPh", "phasing", null) => attack.OrdnanceHit is not null,
             ("MPh", "phasing", OverrunFire) => attack.Overrun is not null,
             _ => false,
         };

@@ -539,6 +539,7 @@ public static class GameEventReader
                         Edge = fields.OptionalString(payload, "edge", path),
                         Units = payload.TryGetProperty("units", out _) ? fields.StringList(payload, "units", path) : null,
                         UnitMf = fields.OptionalInteger(payload, "unitMf", path) ?? 0,
+                        Turret = fields.OptionalString(payload, "turret", path) is { } turretName && UnitFacings.TryParse(turretName, out var stepTurret) ? stepTurret : null,
                     };
             case "vehicle-check-rolled":
                 var checkedVehicle = fields.RequiredString(payload, "vehicle", path);

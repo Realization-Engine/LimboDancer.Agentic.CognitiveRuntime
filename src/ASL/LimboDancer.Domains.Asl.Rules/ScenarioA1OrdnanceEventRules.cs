@@ -27,7 +27,8 @@ public static class ScenarioA1OrdnanceEventRules
     public static UnitCondition? ShotMarker(string? phase, string? fireCounter) => phase switch
     {
         "DFPh" => UnitCondition.FinalFire,
-        "MPh" => fireCounter is "first-fire" or "intensive-fire" ? UnitCondition.FirstFire : null,
+        // D3.3 (pass 50): a Bounding Fire counter once a Bounding First Firer's ROF is spent.
+        "MPh" => fireCounter is "first-fire" or "intensive-fire" ? UnitCondition.FirstFire : fireCounter == "bounding-fire" ? UnitCondition.BoundingFire : null,
         _ => UnitCondition.PrepFire,
     };
 

@@ -78,6 +78,12 @@ public static class ScenarioA1OrdnanceMapRules
         return steps.Count > 0 && (bogged || steps.Any(step => step is ("start", true))) && !steps.Any(step => step.Kind is "enter" or "exit" or "overrun") ? true : null;
     }
 
+    /// <summary>C5.13 (p. 172; pass 50): "a Bounding First Firer must always fire within its current CA; it may change that CA only via MP expenditure".</summary>
+    public static string? BoundingArcRefusal(string? vehicleId, bool boundingFirstFire, int steps) =>
+        boundingFirstFire && steps > 0
+            ? $"play.ordnance-bounding-arc: {vehicleId} fires its MA within its current TCA in Bounding First Fire; turn the turret with an MP expenditure first (C5.13, D3.12)"
+            : null;
+
     /// <summary>
     /// C6.11, C6.12, C6.15 (search): the MP spent in the firer's continuous LOS, counted back over the steps (oldest first) to the last one out of
     /// LOS; when every step is seen, all of it if the vehicle began out of LOS, else 99. The LOS reads are lazy and taken latest first.

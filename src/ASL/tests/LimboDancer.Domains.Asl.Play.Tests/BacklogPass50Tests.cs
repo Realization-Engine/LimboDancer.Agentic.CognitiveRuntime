@@ -153,6 +153,23 @@ public sealed class BacklogPass50Tests : IDisposable
         target = Target,
     });
 
+    private Task<PlayResult> Step(string kind, string? turret = null)
+    {
+        var arguments = new Dictionary<string, string> { ["vehicleId"] = "de-tank", ["kind"] = kind };
+        if (turret is not null)
+        {
+            arguments["turret"] = turret;
+        }
+
+        return Do(GameActions.MoveVehicle, NoRoll(), arguments);
+    }
+
+    private async Task Pass() => Committed(await Do(GameActions.PassFire, NoRoll(), new
+    {
+    }));
+
+    private OrdnanceFired LastShot(long before) => Since(before).Select(item => item.Payload).OfType<OrdnanceFired>().Single();
+
     private Task<PlayResult> Repair(string weapon, int dr) => Do(GameActions.Repair, Once(dr), new
     {
         unitId = "de-tank",
@@ -268,5 +285,88 @@ public sealed class BacklogPass50Tests : IDisposable
         Assert.True(Is(tank, Conditions.Disabled));
         Assert.True(Is(tank, Conditions.Malfunctioned));
         Assert.True(Is(tank, Conditions.Recalled));
+    }
+
+    [Fact]
+    public async Task ATanksMaFiresAtTheOutsetOfItsMphSpendsADelayMpAndFiresAgain()
+    {
+        // D3.3, C5.33: at the outset of its MPh the MA fires with Case C (+4 for a T turret). A colored dr of 2 keeps the ROF of 2: no counter.
+        await Setup(Tank("north-east"), Squad("r1", Target));
+        await Advance();
+        await Advance();
+        Assert.Equal("mph", Current.Phase);
+        var before = Revision;
+        Committed(await FireMa(2, 6));
+        var first = LastShot(before);
+        Assert.Equal(4, DrmOf(first.Resolution.GetProperty("toHit").GetProperty("drm"), "case-c"));
+        Assert.Equal("bounding-first-fire", first.Facts.GetProperty("fireKind").GetString());
+        var state = Current;
+        Assert.False(Is(state.Unit("de-tank")!, Conditions.BoundingFire));
+        Assert.Equal(0, Assert.Single(state.VehicleWeaponShots).Step);
+
+        // C5.3: another MP before the next shot; D2.17: a Delay MP will do, and the DEFENDER may answer it.
+        Refused(await FireMa(2, 6), "play.ordnance-bounding-mp");
+        Committed(await Step("delay"));
+        Refused(await FireMa(2, 6), "play.ordnance-bounding");
+        await Pass();
+
+        // The second shot loses the ROF on a colored 5: a Bounding Fire counter (D3.3), and no shot after it.
+        Committed(await FireMa(5, 6));
+        state = Current;
+        Assert.True(Is(state.Unit("de-tank")!, Conditions.BoundingFire));
+        Assert.NotEqual(PlayOutcome.Committed, (await FireMa(2, 6)).Outcome);
+
+        // A tank that only spent Delay MP ends its move stopped, not in Motion (D2.4), and does not fire in the AFPh (D3.3).
+        Committed(await Do(GameActions.EndMove, NoRoll(), new
+        {
+        }));
+        if (Current.Movement is { WindowOpen: true })
+        {
+            await Pass();
+        }
+
+        Assert.False(Is(Current.Unit("de-tank")!, Conditions.Motion));
+        await Advance();
+        await Advance();
+        Assert.Equal("afph", Current.Phase);
+        Assert.NotEqual(PlayOutcome.Committed, (await FireMa(2, 6)).Outcome);
+    }
+
+    [Fact]
+    public async Task TheMaThatKeptItsRofInTheMphFiresOnceInTheAfphWithCaseC()
+    {
+        // D3.32: the MA kept its ROF in Bounding First Fire and no other weapon fired: one shot in the AFPh, with Case C and not Case B.
+        await Setup(Tank("north-east"), Squad("r1", Target));
+        await Advance();
+        await Advance();
+        Committed(await FireMa(2, 6));
+        await Advance();
+        await Advance();
+        Assert.Equal("afph", Current.Phase);
+        var before = Revision;
+        Committed(await FireMa(2, 6));
+        var drm = LastShot(before).Resolution.GetProperty("toHit").GetProperty("drm");
+        Assert.Equal(4, DrmOf(drm, "case-c"));
+        Assert.Equal(0, DrmOf(drm, "case-b"));
+        Assert.NotEqual(PlayOutcome.Committed, (await FireMa(2, 6)).Outcome);
+    }
+
+    [Fact]
+    public async Task TheTurretTurnsWithADelayMpAndNotWithAStart()
+    {
+        // D3.12: "the TCA may also change freely with each MP expended during the MPh".
+        await Setup(Tank("north-east"), Squad("r1", Target));
+        await Advance();
+        await Advance();
+        Refused(await Step("start", "east"), "play.move-vehicle-turret");
+        Committed(await Step("delay", "east"));
+        var state = Current;
+        Assert.Equal(UnitFacing.East, state.TurretFacings.Single(item => item.Vehicle == "de-tank").Facing);
+        Assert.Equal(UnitFacing.NorthEast, ((MapPosition)state.Unit("de-tank")!.Position!).Facing);
+        Assert.True(state.Movement is { WindowOpen: true, Stopped: true, Started: false });
+
+        // C5.13: the MA now fires only within the TCA it was turned to: the squad in B8 lies outside it.
+        await Pass();
+        Refused(await FireMa(2, 6), "play.ordnance-bounding-arc");
     }
 }

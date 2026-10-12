@@ -300,6 +300,30 @@ public static class ScenarioA1VehicleMovementCalculator
         return null;
     }
 
+    /// <summary>D3.12 (p. 199; pass 50): the expenditures a TCA change may coincide with: "movement, stop, start, or Delay"; with a Start it is not built.</summary>
+    public static bool TurretTurnsWith(string? kind) => kind is "delay" or "stop" or "turn" or "enter";
+
+    /// <summary>
+    /// D2.17 (p. 196; pass 50): why a vehicle may not spend a Delay MP, or null: "the expenditure of MP without moving ... can be used only while
+    /// the vehicle is stopped", which D3.3 has "including at the outset of its MPh prior to movement"; and it costs one MP of those left.
+    /// </summary>
+    public static string? DelayBar(string id, bool moving, int spent, int allotment) =>
+        moving ? $"play.move-vehicle-delay: {id} spends a Delay MP only while it is stopped, or before it starts (D2.17, D3.3)"
+        : spent + 2 > allotment ? $"play.move-vehicle-mp: {id} has {Mp(Math.Max(0, allotment - spent))} of its {Mp(allotment)} MP left, and a Delay MP costs 1 (D2.1, D2.17)"
+        : null;
+
+    /// <summary>
+    /// D3.12 (p. 199; pass 50): why the turret may not turn with this MP expenditure, or null: the vehicle has a turret; the expenditure is a Delay,
+    /// a stop, a VCA change, or an entry; and it is not in a woods, building, or rubble obstacle, where "the MP expenditure required for a TCA
+    /// change ... is doubled", which is not built.
+    /// </summary>
+    public static string? TurretStepBar(string id, string kind, bool turreted, bool facingRead, bool inObstacle) =>
+        !turreted ? $"play.move-vehicle-turret: {id} has no turret to turn (D3.12)"
+        : !facingRead ? "play.move-vehicle-turret: the TCA is named by a hexspine (D3.12)"
+        : !TurretTurnsWith(kind) ? $"play.move-vehicle-turret: {id}'s turret turns with a Delay MP, a stop, a VCA change, or an entry (D3.12)"
+        : inObstacle ? $"play.move-vehicle-turret: {id} is in woods, a building, or rubble, where a TCA change doubles the MP expenditure; that is not built (D3.12, C5.11)"
+        : null;
+
     /// <summary>D2.12, D2.7: why a vehicle may not spend a moving MP, or null: it must be moving, and after an ALL entry it may only Stop.</summary>
     public static string? MovingBar(string id, string kind, bool moving, bool afterAll) =>
         !moving ? $"play.move-vehicle: {id} is not moving; it must start first (D2.12)"
