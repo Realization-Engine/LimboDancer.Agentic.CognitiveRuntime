@@ -373,4 +373,35 @@ public sealed class ScenarioA1Pass50RulesTests
         Assert.Contains("Delay MP, a stop", ScenarioA1VehicleMovementCalculator.TurretStepBar("de-tank", "start", true, true, false), StringComparison.Ordinal);
         Assert.Contains("doubles", ScenarioA1VehicleMovementCalculator.TurretStepBar("de-tank", "stop", true, true, true), StringComparison.Ordinal);
     }
+
+    [Theory]
+    [InlineData(1, "rear")]
+    [InlineData(2, "rear")]
+    [InlineData(3, "side")]
+    [InlineData(4, "side")]
+    [InlineData(5, "front")]
+    [InlineData(6, "front")]
+    public void FromInsideTheTargetsHexTheColoredDrGivesTheTargetFacing(int colored, string facing)
+    {
+        // D3.2: "the colored dr of the To Hit DR determines the Target Facing: 1-2 Rear, 3-4 Side, 5-6 Front".
+        var shot = MaShot(phase: "PFPh", kind: null) with
+        {
+            Range = 0,
+            SameHex = true,
+            VehicleTarget = new OrdnanceVehicleTarget("target-1", "defender-tank", null, null, false, false, false, false, true),
+            Rolls = new OrdnanceRolls([colored, 1], null, null, null, null),
+        };
+        var result = Shoot(shot);
+        Assert.Equal(OrdnanceResolution.Resolved, result.Disposition);
+        Assert.Equal(facing, result.Kill!.TargetFacing);
+
+        // C5.5: Case E, +2, doubled in woods, a building, or rubble; Case L does not apply to it.
+        Assert.Equal(2m, Assert.Single(result.ToHit!.Drm, item => item.Name == "case-e").Value);
+        Assert.Equal(4m, Assert.Single(Shoot(shot with { FirerInWoodsOrBuilding = true }).ToHit!.Drm, item => item.Name == "case-e").Value);
+        Assert.DoesNotContain(result.ToHit.Drm, item => item.Name == "case-l");
+
+        // A shot from inside the hex names no facing of its own, and one from outside it must.
+        Assert.Contains("asl.a1.ordnance.vehicle-target-outside", Shoot(shot with { VehicleTarget = shot.VehicleTarget! with { HullFacing = "front" } }).Reasons);
+        Assert.NotEqual(OrdnanceResolution.Resolved, Shoot(shot with { SameHex = null, Range = 1 }).Disposition);
+    }
 }

@@ -363,8 +363,10 @@ public sealed class PlayRecords
                 var modifications = string.Concat(hit.Modifications.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({DisplayText.Modifier(item.Name)}, {item.Rule})"));
                 var outcome = hit.CriticalHit ? "Critical Hit" : hit.Hit ? "hit" : "miss";
                 var shot = fired.Facts.Deserialize<OrdnanceShot>(LiveFire.Json);
-                var aim = shot?.VehicleTarget is { } aimed ? $"{(shot.Ammunition ?? "ap").ToUpperInvariant()} at {aimed.VehicleId} in {fired.Target} (hull {aimed.HullFacing}"
-                    + (aimed.TurretFacing is { } turretFacing ? $", turret {turretFacing}" : "") + " toward the firer)"
+                // D3.2 (pass 50): from inside the target's hex the colored dr gives the Target Facing.
+                var aim = shot?.VehicleTarget is { } aimed ? $"{(shot.Ammunition ?? "ap").ToUpperInvariant()} at {aimed.VehicleId} in {fired.Target} ("
+                    + (shot.SameHex == true ? "in its own hex: the Target Facing by the colored dr, D3.2)"
+                        : $"hull {aimed.HullFacing}" + (aimed.TurretFacing is { } turretFacing ? $", turret {turretFacing}" : "") + " toward the firer)")
                     : shot?.TargetType == OrdnanceTargetTypes.Area ? $"HE at {fired.Target} on the Area Target Type" + (shot.Spotter is { } spotter ? $", spotted by {spotter.UnitId}" : "")
                     : $"HE at {fired.Target}";
                 var check = resolution.PanzerfaustCheck is { } pf ? $"PF Check dr {pf.Dr}{ModifierText(pf.Drm)} = {pf.FinalDr}: a shot; " : "";

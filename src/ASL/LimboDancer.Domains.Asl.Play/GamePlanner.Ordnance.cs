@@ -147,8 +147,9 @@ public sealed partial class GamePlanner
             : facts.TargetType == OrdnanceTargetTypes.Area
             ? $"HE at {facts.TargetLocationId} (Area Target Type" + (facts.Spotter is { } spotted ? $", spotted by {spotted.UnitId}" : string.Empty) + ")"
             : facts.VehicleTarget is { } aimed
-            ? $"{(facts.Ammunition ?? "ap").ToUpperInvariant()} at {aimed.VehicleId} in {facts.TargetLocationId} (Vehicle Target Type; hull {aimed.HullFacing}"
-                + (aimed.TurretFacing is { } turretFacing ? $", turret {turretFacing}" : string.Empty) + " facing the firer)"
+            ? $"{(facts.Ammunition ?? "ap").ToUpperInvariant()} at {aimed.VehicleId} in {facts.TargetLocationId} (Vehicle Target Type; "
+                + (facts.SameHex == true ? "in its own hex, so the colored dr gives the Target Facing: 1-2 rear, 3-4 side, 5-6 front, D3.2)"
+                    : $"hull {aimed.HullFacing}" + (aimed.TurretFacing is { } turretFacing ? $", turret {turretFacing}" : string.Empty) + " facing the firer)")
             : $"HE at {facts.TargetLocationId}";
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
             [$"play.ordnance: {facts.Gun!.GunId} fires {aim} in the {facts.Phase}; range {facts.Range}, {facts.Hit!.TargetTerrain}"
@@ -180,15 +181,17 @@ public sealed partial class GamePlanner
         // C5.5 (ruling R8.8): a shot at enemy Infantry in the Gun's own Location, at range 0, without a CA change, the LOS clear.
         if (target == from)
         {
-            if (firer is not EquipmentInstance || shot.VehicleTarget is not null || ReadLocation(state, target) is not { } ownRead || TerrainKey(ownRead) is not { } ownTerrain)
+            // D3.2, C5.5 (pass 50): a Gun, or a tank's MA, also fires at a vehicle in its own Location; Infantry there is still a Gun's target alone.
+            if ((firer is not EquipmentInstance && shot.VehicleTarget is null) || ReadLocation(state, target) is not { } ownRead || TerrainKey(ownRead) is not { } ownTerrain)
             {
-                return (null, "play.ordnance-own-hex: only a Gun fires within its own Location, at Infantry (C5.5)");
+                return (null, "play.ordnance-own-hex: within its own Location a Gun fires at Infantry or a vehicle, and a tank's MA at a vehicle (C5.5, D3.2)");
             }
 
-            // C5.5: a wreck, SMOKE, or an AFV in the hex adds its Hindrance (Case R); the firer is a Gun and the target Infantry, so every one counts.
+            // C5.5: a wreck, SMOKE, or an AFV in the hex adds its Hindrance (Case R), "other than the target or firer".
             var ownHindrance = ScenarioA1VehicleSightRules.OwnHexHindrance(
                 SmokeSources(state).Count(place => place.Board == target.Board && place.Hex == target.Hex),
-                state.Units.Any(unit => (unit.Status == InstanceStatus.Active ? IsAfv(unit) : unit.Status == InstanceStatus.Wrecked && !IsBurning(state, unit))
+                state.Units.Any(unit => unit.Id != shot.VehicleTarget?.VehicleId && unit.Id != firer.Id
+                    && (unit.Status == InstanceStatus.Active ? IsAfv(unit) : unit.Status == InstanceStatus.Wrecked && !IsBurning(state, unit))
                     && state.Location(unit.Id)?.Location == target && Standing(state, unit)));
             return ((shot with
             {

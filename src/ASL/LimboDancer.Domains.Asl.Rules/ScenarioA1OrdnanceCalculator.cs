@@ -387,7 +387,8 @@ public static class ScenarioA1OrdnanceCalculator
         // C5.5 (ruling R8.8): a shot within the Gun's own Location, at Infantry, without changing its CA.
         var sameHex = shot.SameHex == true;
         // C5.51's Defensive First Fire in the Gun's own hex, turning its CA with Case A, is not built (ruling R8.8).
-        if ((sameHex ? shot.Range != 0 || shot.VehicleTarget is not null || shot.HexspinesToTurn != 0 || shot.FireKind is not null || mortar || latw : shot.Range < 1)
+        // D3.2, C5.5 (pass 50): a vehicle in the firer's own Location is fired on with Case E, its Target Facing by the colored dr.
+        if ((sameHex ? shot.Range != 0 || shot.HexspinesToTurn != 0 || shot.FireKind is not null || mortar || latw : shot.Range < 1)
             || (gun.RangeMaximum is { } maximum && shot.Range > maximum) || shot.ElevationAllowed != true
             // C9.4: never nearer than a mortar's minimum range; C13.32: a PF's range by the scenario date.
             || (gun.RangeMinimum is { } minimum && shot.Range < minimum) || (pf && shot.Range > PanzerfaustRange(shot.ScenarioYear, shot.Hit!.ScenarioMonth))
