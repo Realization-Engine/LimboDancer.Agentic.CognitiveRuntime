@@ -762,7 +762,10 @@ public static class ScenarioA1FireCalculator
             // C13.24 (pass 9b): an ATR has no Long Range.
             var weaponOut = (firer.Weapons ?? []).Any(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId!) is { Range: { } mgRange } weaponDefinition
                 && range > (weaponDefinition.IsAtr ? 1 : 2) * mgRange);
-            if (range < (tpbf ? 0 : 1) || (tpbf && range != 0) || inherentOut || weaponOut)
+            // A7.21, B23.26 (pp. 54, 136; pass 45): "Attacks up or down a stairwell hex to other vertical levels of the same building hex are limited
+            // to the next higher or lower level." Range 0 from another Location is the next level of the target's hex, whose LOS the planner read.
+            var nextLevel = !tpbf && range == 0 && firer.LocationId != attack.TargetLocationId && Math.Abs(LevelAboveOf(attack, firer)) == 1;
+            if ((range < (tpbf ? 0 : 1) && !nextLevel) || (tpbf && range != 0) || inherentOut || weaponOut)
             {
                 outside.Add("asl.a1.fire.out-of-range");
             }
@@ -2364,7 +2367,9 @@ public static class ScenarioA1FireCalculator
             var multipliers = new List<FireModifier>();
 
             // A7.21 (rulings R10.4, R10.14): PBF at an adjacent target at most one level above the firer; TPBF in the firer's own Location.
-            if (range == 1 && levelAbove <= 1)
+            // Pass 45: PBF, not TPBF, at the next level of the firer's own hex ("doubled while ... ADJACENT to its target"; TPBF is for "units in
+            // the same Location as the attacker").
+            if ((range == 1 && levelAbove <= 1) || (range == 0 && firer.LocationId != attack.TargetLocationId))
             {
                 multipliers.Add(new FireModifier("point-blank-fire", 2m, "A7.21"));
             }

@@ -1244,6 +1244,18 @@ public sealed partial class GamePlanner
                 continue;
             }
 
+            // A7.21, B23.25, B23.26 (pass 45): another level of the firer's own hex is fired at as the next level a stairwell joins, at range 0.
+            if (direct && from.Board == target.Board && from.Hex == target.Hex)
+            {
+                if (ScenarioA1FireMapRules.SameHexLevelBar(from.ToString(), target.ToString(), Math.Abs(from.Level - target.Level), () => IsAdjacent(state, from, target)) is { } levelBar)
+                {
+                    return (null, levelBar);
+                }
+
+                perLocation[location] = (0, false, ScenarioA1FireMapRules.OwnLocationLos, height);
+                continue;
+            }
+
             LosResult los;
             int range;
             if (snapHexside is { } hexside)

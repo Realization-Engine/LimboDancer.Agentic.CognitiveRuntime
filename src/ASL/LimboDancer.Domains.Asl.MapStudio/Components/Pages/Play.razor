@@ -4391,13 +4391,13 @@ else if (state is not null)
                     : state.Phase == "mph" && GameState.Condition(unit, Conditions.FirstFire) == ConditionState.True && range > own.NormalRange
                         ? "Subsequent First Fire is within Normal Range (A8.3)"
                     : null;
-                rows.Add(new RangeRow(unit.Id, Words(unit.Id), at.ToString(), own.NormalRange, own.Limit, kind ?? FireRange.Words(own), own.Band, kind is not null || own.Band is FireRangeBand.Out or FireRangeBand.SameHexOtherLevel));
+                rows.Add(new RangeRow(unit.Id, Words(unit.Id), at.ToString(), own.NormalRange, own.Limit, kind ?? FireRange.Words(own), own.Band, kind is not null || own.Band is FireRangeBand.Out or FireRangeBand.SameHexFartherLevel));
             }
             else if (definition is { IsVehicle: true, AntiAircraftMg: not null })
             {
                 // D1.83: a MA AAMG's Normal Range is eight hexes.
                 var mg = FireRange.Band(range, same, 8, level);
-                rows.Add(new RangeRow(unit.Id, $"the AAMG of {Words(unit.Id)}", at.ToString(), mg.NormalRange, mg.Limit, FireRange.Words(mg), mg.Band, mg.Band is FireRangeBand.Out or FireRangeBand.SameHexOtherLevel));
+                rows.Add(new RangeRow(unit.Id, $"the AAMG of {Words(unit.Id)}", at.ToString(), mg.NormalRange, mg.Limit, FireRange.Words(mg), mg.Band, mg.Band is FireRangeBand.Out or FireRangeBand.SameHexOtherLevel or FireRangeBand.SameHexFartherLevel));
             }
 
             foreach (var weapon in weapons.Where(item => item.Holding?.Holder == unit.Id))
@@ -4406,7 +4406,7 @@ else if (state is not null)
                     && (weaponDefinition.IsMg || weaponDefinition.IsFt || weaponDefinition.IsAtr) && FireRange.Band(weaponDefinition, range, same, level) is { } reading)
                 {
                     rows.Add(new RangeRow(weapon.Id, $"{Words(weapon.Id)} of {Words(unit.Id)}", at.ToString(), reading.NormalRange, reading.Limit, FireRange.Words(reading), reading.Band,
-                        reading.Band is FireRangeBand.Out or FireRangeBand.SameHexOtherLevel));
+                        reading.Band is FireRangeBand.Out or FireRangeBand.SameHexFartherLevel));
                 }
             }
         }
@@ -4425,10 +4425,10 @@ else if (state is not null)
     {
         var outs = rows.Where(row => row.Out).ToArray();
         var longs = rows.Where(row => row.Band == FireRangeBand.LongRange).ToArray();
-        var pointBlank = rows.Where(row => row.Band == FireRangeBand.PointBlank).ToArray();
+        var pointBlank = rows.Where(row => row.Band is FireRangeBand.PointBlank or FireRangeBand.SameHexOtherLevel && !row.Out).ToArray();
 
         // A unit kept from a target by its own kind of fire (A8.3, A8.31, A8.4) is not out of range; the words say so.
-        var barred = outs.Any(row => row.Band is not (FireRangeBand.Out or FireRangeBand.SameHexOtherLevel)) ? "no fire there" : "out of range";
+        var barred = outs.Any(row => row.Band is not (FireRangeBand.Out or FireRangeBand.SameHexOtherLevel or FireRangeBand.SameHexFartherLevel)) ? "no fire there" : "out of range";
         var band = rows.Count == 0 ? null
             : outs.Length == rows.Count ? barred
             : outs.Length == 1 ? $"{barred} for {outs[0].Name}"

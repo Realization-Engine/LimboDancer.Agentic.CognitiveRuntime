@@ -270,9 +270,9 @@ public static class ScenarioA1ResultTables
                     named.Add($"{code}: {who} in {at} is {range} {(range == 1 ? "hex" : "hexes")} from {target}; its Normal Range is {reading.NormalRange}, so it fires to {reading.Limit} "
                         + (reading.Limit == reading.NormalRange ? "(C13.24: an ATR has no Long Range)" : "(A7.22)"));
                 }
-                else if (reading.Band == FireRangeBand.SameHexOtherLevel)
+                else if (reading.Band is FireRangeBand.SameHexOtherLevel or FireRangeBand.SameHexFartherLevel)
                 {
-                    named.Add($"{code}: {who} in {at} fires at {target}, another level of its own hex, which is not built (A7.21)");
+                    named.Add($"{code}: {who} in {at} fires at {target}, another level of its own hex, which is not the next level up or down (B23.26)");
                 }
             }
 

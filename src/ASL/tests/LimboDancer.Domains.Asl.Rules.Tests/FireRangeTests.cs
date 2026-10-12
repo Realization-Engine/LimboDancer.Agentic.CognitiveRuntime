@@ -63,10 +63,13 @@ public sealed class FireRangeTests
         Assert.DoesNotContain("asl.a1.fire.out-of-range", ScenarioA1FireCalculator.Precheck(tpbf, Reference));
         Assert.Contains("triple-point-blank-fire", ScenarioA1FireCalculator.Preview(tpbf, Reference)!.Firers.Single().Multipliers.Select(item => item.Name));
 
-        // Range 0 at another Location of the hex: the package refuses it, and the band says it is not built.
-        var level = FireRange.Band(definition, 0, sameLocation: false)!;
+        // Range 0 at another Location of the hex (pass 45; A7.21, B23.26): PBF at the next level; the package refuses it at the same level.
+        var level = FireRange.Band(definition, 0, sameLocation: false, levelAbove: 1)!;
         Assert.Equal(FireRangeBand.SameHexOtherLevel, level.Band);
-        Assert.Null(level.Multiplier);
+        Assert.Equal(2m, level.Multiplier);
+        var farther = FireRange.Band(definition, 0, sameLocation: false, levelAbove: 2)!;
+        Assert.Equal(FireRangeBand.SameHexFartherLevel, farther.Band);
+        Assert.Null(farther.Multiplier);
         Assert.Contains("asl.a1.fire.out-of-range", ScenarioA1FireCalculator.Precheck(Attack("defender-squad", 0), Reference));
     }
 
@@ -111,7 +114,7 @@ public sealed class FireRangeTests
     [InlineData(FireRangeBand.Normal, "Normal Range")]
     [InlineData(FireRangeBand.LongRange, "Long Range, FP x1/2 (A7.22)")]
     [InlineData(FireRangeBand.Out, "out of range: it fires to 12")]
-    [InlineData(FireRangeBand.SameHexOtherLevel, "the same hex, another level: not built")]
+    [InlineData(FireRangeBand.SameHexOtherLevel, "PBF, FP x2, at the next level of its hex by a stairwell (A7.21, B23.26)")]
     public void ABandIsSaidInAPlayersWords(FireRangeBand band, string words) =>
         Assert.Equal(words, FireRange.Words(new FireRangeReading(band, 7, 6, 12)));
 }

@@ -263,6 +263,48 @@ public sealed class ScenarioA1Pass45RulesTests
     }
 
     [Fact]
+    public void FireAtTheNextLevelOfTheFirersHexIsPointBlankFire()
+    {
+        // A7.21, B23.26 (pp. 54, 136): "doubled while ... ADJACENT to its target"; "Attacks up or down a stairwell hex ... are limited to the next
+        // higher or lower level." Two 4-4-7 at level 1 fire at ground level of their hex: 8 FP each, not the 12 of TPBF.
+        const string upstairs = "bd01:G5:1";
+        FireFirer Up(string id) => new(id, "defender-squad", upstairs, false, false, false, false, false);
+        var down = Attack([6, 5], firers: [Up("ru-1"), Up("ru-2")]) with
+        {
+            FirerLocationId = upstairs,
+            Range = 0,
+            SameLevel = false,
+            TargetLevelAbove = -1,
+        };
+        var result = Complete(down);
+        Assert.Equal(FireResolution.Resolved, result.Disposition);
+        Assert.Equal(16m, result.Arithmetic!.TotalFirepower);
+        Assert.All(result.Arithmetic.Firers, firer => Assert.Contains(firer.Multipliers, item => item.Name == "point-blank-fire"));
+
+        // Two levels apart there is no attack.
+        Assert.Contains("asl.a1.fire.out-of-range", ScenarioA1FireCalculator.Resolve(down with { TargetLevelAbove = -2 }, Reference).Reasons);
+
+        // The planner's read: the next level, and a stairwell between them.
+        Assert.Null(ScenarioA1FireMapRules.SameHexLevelBar("a", "b", 1, () => true));
+        Assert.StartsWith("play.fire-level", ScenarioA1FireMapRules.SameHexLevelBar("a", "b", 1, () => false));
+        Assert.StartsWith("play.fire-level", ScenarioA1FireMapRules.SameHexLevelBar("a", "b", 2, () => true));
+    }
+
+    [Fact]
+    public void FireFromAboveAndFromBelowEncircles()
+    {
+        // A7.7 (p. 57): "An Encirclement can also be created by a LOF from both the Location directly above and below it in a building hex."
+        Assert.True(ScenarioA1Geometry.Encircles([ScenarioA1FireMapRules.FromAbove, ScenarioA1FireMapRules.FromBelow]));
+        Assert.False(ScenarioA1Geometry.Encircles([ScenarioA1FireMapRules.FromAbove]));
+        Assert.False(ScenarioA1Geometry.Encircles([ScenarioA1FireMapRules.FromAbove, 1]));
+        Assert.False(ScenarioA1Geometry.Encircles([ScenarioA1FireMapRules.FromBelow, 7]));
+
+        // The hexside cases stand as they were: opposite hexsides, and opposite hexspines.
+        Assert.True(ScenarioA1Geometry.Encircles([1, 7]));
+        Assert.True(ScenarioA1Geometry.Encircles([0, 6]));
+    }
+
+    [Fact]
     public void CasualtyReductionEliminatesACrew()
     {
         // A7.302 (p. 55): "Casualty Reduction eliminates any HS or crew". Two 4-4-7 at PBF, 16 FP; DR 4 is a K/3, and the crew is alone at its Gun

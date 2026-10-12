@@ -235,6 +235,25 @@ public static class ScenarioA1FireMapRules
         return vehicleReason is not null ? (vehicleReason, null) : (null, new FireLos(los.Blocked || HindranceBlocks(total), total, attributed, grain));
     }
 
+    /// <summary>
+    /// Fire from one level of a hex at another level of it (A7.21, B23.25, B23.26, pp. 54 and 136; pass 45): "A unit in a building is ADJACENT to an
+    /// adjacent building level of the same building only if both are ... vertically connected by a stairwell", "LOS to a unit in a building Location
+    /// ... can exist only if drawn to an ADJACENT unit", and such attacks "are limited to the next higher or lower level". The refusal, or null.
+    /// </summary>
+    public static string? SameHexLevelBar(string from, string target, int levelsApart, Func<bool> adjacent)
+    {
+        ArgumentNullException.ThrowIfNull(adjacent);
+        return levelsApart != 1 || !adjacent()
+            ? $"play.fire-level: from {from}, {target} is another level of the same hex, fired at only when it is the next level up or down and a stairwell joins them (B23.25, B23.26)"
+            : null;
+    }
+
+    /// <summary>The Encirclement position of a LOF from the Location directly above (A7.7); below is <see cref="FromBelow"/>.</summary>
+    public const int FromAbove = 12;
+
+    /// <summary>The Encirclement position of a LOF from the Location directly below (A7.7).</summary>
+    public const int FromBelow = 13;
+
     /// <summary>B.10: a LOS Hindrance DRM of +6 or more blocks the LOS completely.</summary>
     public static bool HindranceBlocks(int hindranceDrm) => hindranceDrm >= 6;
 
@@ -381,6 +400,15 @@ public static class ScenarioA1FireMapRules
             var weaponRanges = (firer.Weapons ?? []).Select(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty)?.Range).OfType<int>();
             int? normal = firer.UsesInherentFp == false ? weaponRanges.DefaultIfEmpty(0).Max() : definition?.Range;
             var range = firer.Range ?? facts.Range;
+            // A7.7 (p. 57; pass 45): "An Encirclement can also be created by a LOF from both the Location directly above and below it in a building hex."
+            if (range == 0 && normal is not null && firer.LocationId != facts.TargetLocationId && (firer.TargetLevelAbove ?? facts.TargetLevelAbove) is { } levelAbove
+                && Math.Abs(levelAbove) == 1 && firers[index].LocationKnown)
+            {
+                units++;
+                entries.Add(levelAbove > 0 ? FromBelow : FromAbove);
+                continue;
+            }
+
             if (normal is not { } limit || range is not { } distance || distance < 1 || distance > limit || !firers[index].LocationKnown)
             {
                 continue;

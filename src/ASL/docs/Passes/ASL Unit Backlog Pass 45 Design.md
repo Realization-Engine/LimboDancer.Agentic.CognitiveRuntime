@@ -231,3 +231,39 @@ The games are written by `pass45/make_458.py` in the tools folder. The setup edi
 | `p45-cr-free` | The control: no enemy in [D10]; the shot at [F10] is proposed and committed. | yes |
 
 **The tests.** Rules: `ScenarioA1Pass45RulesTests` gains the crew's elimination and the limit's four cases (ordnance held, IFT fire held, free, its own Location). No Play test of its own: the planner writes no new event, and the refusal is the Rules member's. Classes run: `ScenarioA1Pass45RulesTests`, `ScenarioA1Pass19bTests`, and in Play `OrdnanceStepsTests`, `BacklogPass8Tests`, `BacklogPass9Tests`, `BacklogPass10Tests`, `BacklogPass35Tests`.
+
+## 8. Levels of one hex: 45.1, 45.1b (increment 2b)
+
+### 8.1 Task 45.1
+
+**The rule (A7.21, p. 54; B23.25 and B23.26, p. 136; A8.4, p. 61).** FP "is doubled while either ADJACENT to its target or adjacent to and either within one level of or higher than its target"; TPBF is for "units in the same Location as the attacker". "A unit in a building is ADJACENT to an adjacent building level of the same building only if both are ... vertically connected by a stairwell", "LOS to a unit in a building Location ... can exist only if drawn to an ADJACENT unit", and "Attacks up or down a stairwell hex to other vertical levels of the same building hex are limited to the next higher or lower level. A ground level and second (or higher) level of the same building hex are never ADJACENT."
+
+**As built.** Fire from one level of a hex at another level of it was refused as out of range. Now:
+
+- The planner reads no LOS line for it. It asks Rules (`SameHexLevelBar`) with the levels' distance and the pass 35 ADJACENT read: the next level, and a stairwell between them, or the refusal `play.fire-level`.
+- The attack is at range 0 with the target one level above or below, and its FP is doubled as PBF, not tripled. The target's TEM is its Location's (a building's); a hexside TEM, Height Advantage, and Hindrance have nothing to read.
+- A8.4, A8.3, and A8.31 ask for an adjacent or same-hex target; range 0 satisfies each, so Final Fire by a First Fire unit, Subsequent First Fire, and FPF reach the next level.
+- The range band reads "PBF, FP x2, at the next level of its hex by a stairwell" and a farther level "no attack". The page's Target list said "out of range" for the next level until the game showed it; it now says PBF.
+
+**Encirclement from above and below (A7.7, p. 57).** "An Encirclement can also be created by a LOF from both the Location directly above and below it in a building hex." An attack from the next level counts toward Encirclement as one from above or from below, and the two together Encircle.
+
+**The frame's point 5.6 is withdrawn.** The PBF test "range 1 and the target at most one level above the firer" is the page's rule as it stands: a firer higher by any amount has PBF, and one lower by two has not.
+
+**Left out, each with a backlog row:**
+
+- The Target list offers the next level of a hex that no stairwell joins, as PBF; the proposal is refused with the reason. The list reads levels, not stairwells.
+- A group whose firers stand in the target's own Location and at the next level of its hex is refused, as any group that mixes TPBF with other fire was before.
+- A vehicle's MG at another level of its hex (pass 50), and IFE (no counter in the catalog).
+- The "Latest" line does not say that an attack Encircled its target; the Encirclement counter is in the record and on the map. Older than the pass.
+
+**The games,** on board 3, in the adjudicator's view. Stairwells were read from the oracle's hex facts (`pass45/board3_buildings.py`): [L4], [M2], [M5], [R3], [R5], [R6], [S3], [T6], and [U6] have one; [N1] and [N2] have none.
+
+| Game | What it shows | Recorded |
+|---|---|---|
+| `p45-lv-up` | A German squad at ground level of [M5] fires up at a Russian squad at level 1: "4 FP x 2 (Point Blank Fire, A7.21) = 8", DRM +2 wooden building. | yes |
+| `p45-lv-up2` | The same position after the page's fix: the Target list reads "[M5], level 1: PBF". | no: read only |
+| `p45-lv-far` | The control, on [M2]: ground level at level 2 is refused, "fired at only when it is the next level up or down and a stairwell joins them (B23.25, B23.26)". | no: a refusal |
+| `p45-lv-two`, `p45-lv-encircle` | On [N2], which has no stairwell: both the next level and level 2 are refused. Kept as the control for "no stairwell". | no: refusals |
+| `p45-lv-enc` | On [M2]: a Russian squad at level 1, fired at from ground level and then from level 2, 8 FP each with +3 stone building. The second attack writes `encirclement-placed`. | yes |
+
+**The tests.** Rules: `ScenarioA1Pass45RulesTests` gains PBF at the next level with its two refusals, and Encirclement from above and below; `FireRangeTests` has the band's two cases and its words. No Play test: board 01's fixture has no stairwell building the test boards can reach, and the planner's part is one call to the Rules member; the games stand for it. Classes run: those two, `ScenarioA1Pass12Tests`, the pass 10 Rules classes; in Play `BacklogPass10Tests`, `BacklogPass12Tests`, `BacklogPass31Tests`, `FireTests`; the page's `Pass31cRangeTests`.

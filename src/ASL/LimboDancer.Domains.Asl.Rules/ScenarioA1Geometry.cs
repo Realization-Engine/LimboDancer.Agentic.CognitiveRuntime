@@ -40,12 +40,19 @@ public static class ScenarioA1Geometry
     {
         ArgumentNullException.ThrowIfNull(positions);
         var set = positions.ToHashSet();
-        if (set.Any(position => set.Contains((position + 6) % 12)))
+
+        // A7.7 (pass 45): a LOF from both the Location directly above (12) and the one directly below (13).
+        if (set.Contains(12) && set.Contains(13))
         {
             return true;
         }
 
-        var sides = set.Where(position => position % 2 == 1).Select(position => (position - 1) / 2).ToHashSet();
+        if (set.Any(position => position < 12 && set.Contains((position + 6) % 12)))
+        {
+            return true;
+        }
+
+        var sides = set.Where(position => position < 12 && position % 2 == 1).Select(position => (position - 1) / 2).ToHashSet();
         return sides.Any(side => sides.Contains((side + 2) % 6) && sides.Contains((side + 4) % 6));
     }
 }
