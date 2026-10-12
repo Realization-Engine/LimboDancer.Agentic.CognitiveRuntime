@@ -17,8 +17,10 @@ public sealed partial class GamePlanner
     private static bool GoodOrder(UnitInstance unit) => ScenarioA1Definitions.GoodOrderOf(unit.Status == InstanceStatus.Active, Is(unit, Conditions.Broken),
         Is(unit, Conditions.Berserk), Is(unit, Conditions.Melee), Is(unit, Conditions.Captured), Is(unit, Conditions.Stunned), Is(unit, Conditions.Shocked));
 
-    /// <summary>Whether a unit may take a SW or Deployment action: in Good Order and not TI, as the planner had it before A.7 was read into Good Order.</summary>
-    private static bool FreeToAct(UnitInstance unit) => ScenarioA1Definitions.FreeToActAsPlanned(GoodOrder(unit), Is(unit, "asl:ti"));
+    /// <summary>
+    /// Whether a unit may take a SW or Deployment action (pass 45, ruling R45.6): in Good Order; a TI unit only when the action spends no MF.
+    /// </summary>
+    private static bool FreeToAct(UnitInstance unit, bool spendsMf = false) => ScenarioA1Definitions.FreeToAct(GoodOrder(unit), Is(unit, "asl:ti"), spendsMf);
 
     private static FireDefinition? DefinitionOf(UnitInstance unit) =>
         unit.Definition is { } reference ? FireReference.Value.Definitions.GetValueOrDefault(reference.Definition) : null;
@@ -497,7 +499,8 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.invalid-arguments: a Recovery names the unit and the SW");
         }
 
-        if (state.Unit(unitId) is not { } unit || !FreeToAct(unit) || Is(unit, Conditions.Pinned) || LiveFire.IsVehicle(unit) || state.Location(unit.Id)?.Location is not { } at)
+        if (state.Unit(unitId) is not { } unit || !FreeToAct(unit, spendsMf: state.Phase == "mph") || Is(unit, Conditions.Pinned) || LiveFire.IsVehicle(unit)
+            || state.Location(unit.Id)?.Location is not { } at)
         {
             return Refused(scope, label, expected, $"play.recover-unit: '{unitId}' is not unpinned Good Order Infantry on the map (A4.44)");
         }
@@ -606,7 +609,7 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.invalid-arguments: dismantling names the possessing unit and the SW");
         }
 
-        if (state.Unit(unitId) is not { } unit || !FreeToAct(unit) || Held(state, unit.Id).FirstOrDefault(item => item.Id == equipmentId) is not { } weapon)
+        if (state.Unit(unitId) is not { } unit || !FreeToAct(unit, spendsMf: true) || Held(state, unit.Id).FirstOrDefault(item => item.Id == equipmentId) is not { } weapon)
         {
             return Refused(scope, label, expected, $"play.dismantle-weapon: '{unitId}' is not a Good Order unit possessing '{equipmentId}' (A9.8)");
         }

@@ -362,7 +362,7 @@ public sealed partial class GamePlanner
         // A4.11, A4.42, A4.5, A4.12, B3.4, A4.61, A4.134, B16.4: the MF each mover has left, decided by Rules from each mover's facts and allotment.
         // A4.42 (pass 40, ruling R40.11): the laden MMC the mover names for the leader's IPC, kept for the whole move.
         var ipcChosen = Text(arguments, "ipcTo", out var ipcText) ? ipcText : null;
-        var leaderIpcTo = LeaderIpcRecipient(state, movers, ipcChosen ?? current?.IpcTo);
+        var leaderIpcTo = LeaderIpcRecipient(state, movers, ipcChosen ?? current?.IpcTo, doubleTime);
         if (ScenarioA1MovementCalculator.IpcChoiceBar(ipcChosen, current?.IpcTo, leaderIpcTo.Recipient) is { } ipcBar)
         {
             return Refused(scope, label, expected, ipcBar);

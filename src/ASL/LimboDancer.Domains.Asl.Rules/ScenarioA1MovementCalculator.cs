@@ -75,10 +75,19 @@ public static class ScenarioA1MovementCalculator
     /// leader's own IPC is then spent. Nulls when there is none, or more than one. <paramref name="laden"/> is read by a mover's index for the movers
     /// with the bonus, as the planner read it.
     /// </summary>
-    public static (string? Recipient, string? Leader) LeaderIpcRecipient(IReadOnlyList<MovingUnitFacts> movers, Func<int, bool> laden, string? chosen = null)
+    public static (string? Recipient, string? Leader) LeaderIpcRecipient(IReadOnlyList<MovingUnitFacts> movers, Func<int, bool> laden, string? chosen = null,
+        bool doubleTime = false)
     {
         ArgumentNullException.ThrowIfNull(movers);
         ArgumentNullException.ThrowIfNull(laden);
+
+        // A4.52 (p. 51; pass 45): "CX Infantry have an IPC one < normal." A leader's IPC is one, so a leader who Double Times with his stack has
+        // none to lend; the page's example gives a leader's squad five MF, not six, when the leader's own IPC is used up.
+        if (doubleTime)
+        {
+            return (null, null);
+        }
+
         var heavy = movers.Select((unit, index) => (Unit: unit, Index: index)).Where(item => LeaderBonus(item.Unit, movers) && laden(item.Index)).Select(item => item.Unit).ToArray();
 
         // A4.42 (p. 50; pass 40, ruling R40.11): "one SMC can add its IPC to that of any one Good Order Infantry unit": the mover names which of

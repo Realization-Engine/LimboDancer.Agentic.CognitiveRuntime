@@ -630,6 +630,25 @@ public sealed class ScenarioA1Pass45RulesTests
     }
 
     [Fact]
+    public void ACxLeaderLendsNoIpcAndATiUnitActsWhereNoMfIsSpent()
+    {
+        // A4.52 (p. 51): "CX Infantry have an IPC one < normal." A leader's IPC is one, so in Double Time he has none to lend (A4.42).
+        MovingUnitFacts[] stack =
+        [
+            new("s1", "russian", false, true, false, false, false, false, "russian", 0, false, null),
+            new("l", "russian", false, false, true, false, false, false, "russian", 0, false, null),
+        ];
+        Assert.Equal(("s1", "l"), ScenarioA1MovementCalculator.LeaderIpcRecipient(stack, index => index == 0));
+        Assert.Equal((null, null), ScenarioA1MovementCalculator.LeaderIpcRecipient(stack, index => index == 0, doubleTime: true));
+
+        // A.7, A4.8 (ruling R45.6): a TI unit is in Good Order; it "may not move, advance, fire, or perform other labor tasks".
+        Assert.True(ScenarioA1Definitions.FreeToAct(true, true, spendsMf: false));
+        Assert.False(ScenarioA1Definitions.FreeToAct(true, true, spendsMf: true));
+        Assert.True(ScenarioA1Definitions.FreeToAct(true, false, spendsMf: true));
+        Assert.False(ScenarioA1Definitions.FreeToAct(false, false, spendsMf: false));
+    }
+
+    [Fact]
     public void ResidualFpAttacksAUnitOnceALocationUnlessItGrewOrTheDrmFell()
     {
         // A8.22 (p. 60): "A unit can be attacked by Residual FP only once per Location [EXC: if, since that first Residual FP attack, the Residual
