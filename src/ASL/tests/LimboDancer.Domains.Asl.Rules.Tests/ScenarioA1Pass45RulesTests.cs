@@ -263,6 +263,36 @@ public sealed class ScenarioA1Pass45RulesTests
     }
 
     [Fact]
+    public void CasualtyReductionEliminatesACrew()
+    {
+        // A7.302 (p. 55): "Casualty Reduction eliminates any HS or crew". Two 4-4-7 at PBF, 16 FP; DR 4 is a K/3, and the crew is alone at its Gun
+        // (ruling R8.3 reviews a crew as a target only so).
+        var result = Complete(Attack([1, 3], targets: [Target("de-c", "attacker-crew")]) with
+        {
+            GunTarget = new FireGunTarget("de-gun", "attacker-inf-gun", "de-c", false, false),
+        });
+        Assert.True(result.Disposition == FireResolution.Resolved, string.Join(" | ", result.Reasons));
+        Assert.Equal((FireResolution.Resolved, "K/3"), (result.Disposition, result.Arithmetic!.Result));
+        Assert.True(Assert.Single(result.Effects).Eliminated);
+    }
+
+    [Fact]
+    public void OrdnanceIsHeldToItsOwnLocationByAKnownEnemyThere()
+    {
+        // A7.212 (p. 55): "A unit does not have the freedom to attack units in other Locations while its own Location is occupied by a Known enemy
+        // unit". A Gun's, a mortar's, or a LATW's shot is read as IFT fire is.
+        FirerLocationFacts Facts(bool direct, bool ordnance, bool isTarget, bool enemy) =>
+            new("bd01:F5:0", true, "open-ground", direct, isTarget, false, "PFPh", () => enemy, () => false, null, ordnance);
+        Assert.StartsWith("play.fire-target-limit", ScenarioA1FireMapRules.FirerLocation(Facts(false, true, false, true)).Refusal);
+        Assert.StartsWith("play.fire-target-limit", ScenarioA1FireMapRules.FirerLocation(Facts(true, false, false, true)).Refusal);
+        Assert.Null(ScenarioA1FireMapRules.FirerLocation(Facts(false, true, false, false)).Refusal);
+        Assert.DoesNotContain("fire-target-limit", ScenarioA1FireMapRules.FirerLocation(Facts(false, true, true, true)).Refusal ?? string.Empty, StringComparison.Ordinal);
+
+        // Residual FP has no firer's Location to hold it.
+        Assert.Null(ScenarioA1FireMapRules.FirerLocation(Facts(false, false, false, true)).Refusal);
+    }
+
+    [Fact]
     public void ACrewThatFiredItsGunKeepsItsFpInSubsequentFirstFireAndFinalFireAgain()
     {
         // A7.353 (p. 56): "Subsequent First Fire (8.3), FPF (8.31), and Final Fire (8.4) vs adjacent units retain halved inherent FP".

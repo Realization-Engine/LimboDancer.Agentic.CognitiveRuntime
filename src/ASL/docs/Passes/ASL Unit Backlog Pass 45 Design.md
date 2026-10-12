@@ -211,3 +211,23 @@ The resolution carries the firers whose counter differs from the attack's (`Fire
 The games are written by `pass45/make_458.py` in the tools folder. The setup editor's field for a MG is checked with the whole pass's Studio check, in a game set up by hand.
 
 **The tests.** Rules: `ScenarioA1Pass45RulesTests` (ten tests of the kinds, the chain, the berserk bar, the crew, Bore Sighting, and the held acts); `ScenarioA1Pass12Tests` has one assertion turned, from "an unmarked unit does not join FPF" to its First Fire counter. Play: `CloseCombatStepsTests` gains the mixed Mandatory FG with the held Gun's shot, and the FPF whose firer is Replaced; `BacklogPass8Tests` gains the crew's Subsequent First Fire. Classes run: those three, and `ScenarioA1Pass40RulesTests`, `BacklogPass12Tests`, `BacklogPass30Tests`, `FireTests`, `RallyAndFireStepsTests`, `RefusalReasonsTests`, `FireOwnReasonsTests`. No record of the state changed, so the Units project was not run.
+
+### 7.2 Task 45.9
+
+**A crew's Casualty Reduction (A7.302, p. 55).** "Casualty Reduction eliminates any HS or crew". The reduction had no branch for a crew and ended undecided ("reduction counter missing"); a crew is now eliminated as a HS is. The same member serves a prisoner that fails a MC (A20.54, p. 88: "A prisoner/unarmed unit which fails a MC is not broken; it suffers Casualty Reduction instead"), so a prisoner crew is covered by it. The Recall exception is a vehicle's Inherent crew's (D5.341), which is no unit of its own here.
+
+**The A7.212 limit on ordnance (p. 55).** "A unit does not have the freedom to attack units in other Locations while its own Location is occupied by a Known enemy unit ... Spotters (C9.3) are similarly limited". The limit was read for IFT fire only. It is now read for a Gun's, a mortar's, and a LATW's shot too, at the Location the shot is seen from, which for a spotted mortar is its Spotter's. The frame had sent Spotters to pass 110; the page gives them the same limit in the same sentence and the same read serves both, so they are built here. The exception for an unarmed, unarmored vehicle is the one the IFT read already has.
+
+**What the frame did not know:** a crew is a target the Fire package reviews only alone at its Gun (ruling R8.3); a crew with other units, or with no Gun, is refused whole (`crew-target-unreviewed`). That is older than the pass; the pass's documents give it a backlog row if it has none. The Casualty Reduction is shown on a crew at its Gun.
+
+**Left out, with a backlog row:** the Gun's target list still offers a Location that A7.212 refuses (the row of section 55.2 about that list, pass 110).
+
+**The games,** on board 3, in the adjudicator's view:
+
+| Game | What it shows | Recorded |
+|---|---|---|
+| `p45-cr-crew` | Two German squads in [D9], directed by a 9-1, fire at a Russian crew alone at its AT Gun in [D10]: 16 FP, DRM +2 emplacement and -1 leadership, DR 3: K/3, "2-2-8 crew R1: eliminated". Before the task the attack ended undecided. | yes |
+| `p45-cr-held` | A German squad stands in the Gun's own Location [D10]. The Gun's shot at [F10] is refused: "[D10] holds a Known enemy unit, so its units fire only at their own Location (A7.212)". | no: a refusal writes nothing |
+| `p45-cr-free` | The control: no enemy in [D10]; the shot at [F10] is proposed and committed. | yes |
+
+**The tests.** Rules: `ScenarioA1Pass45RulesTests` gains the crew's elimination and the limit's four cases (ordnance held, IFT fire held, free, its own Location). No Play test of its own: the planner writes no new event, and the refusal is the Rules member's. Classes run: `ScenarioA1Pass45RulesTests`, `ScenarioA1Pass19bTests`, and in Play `OrdnanceStepsTests`, `BacklogPass8Tests`, `BacklogPass9Tests`, `BacklogPass10Tests`, `BacklogPass35Tests`.

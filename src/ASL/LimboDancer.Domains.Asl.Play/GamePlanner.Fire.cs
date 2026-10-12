@@ -1230,7 +1230,8 @@ public sealed partial class GamePlanner
                         && FireReference.Value.Definitions.GetValueOrDefault(vehicleDefinition.Definition)?.Unarmored == true)),
                 () => state.Movement is { Vehicle: true, Reaction: false } moving && moving.Movers.Any(id => state.Location(id)?.Location == from),
                 () => state.Movement is { Vehicle: true } reactedTo && reactedTo.Movers.Any(id => state.Location(id)?.Location == from)
-                    && (attack.Firers ?? []).Any(item => item.LocationId == location && state.Unit(item.UnitId!) is { } firer && Is(firer, Conditions.CcReaction))));
+                    && (attack.Firers ?? []).Any(item => item.LocationId == location && state.Unit(item.UnitId!) is { } firer && Is(firer, Conditions.CcReaction)),
+                attack.OrdnanceHit is not null));
             if (verdict.Refusal is { } locationBar)
             {
                 return (null, locationBar);

@@ -3162,7 +3162,8 @@ public static class ScenarioA1FireCalculator
                 return Wound(unit);
             }
 
-            if (unit.Definition.Kind == "asl:half-squad")
+            // A7.302 (p. 55; pass 45): "Casualty Reduction eliminates any HS or crew". The Recall exception is a vehicle's Inherent crew's (D5.341).
+            if (unit.Definition.Kind is "asl:half-squad" or "asl:crew")
             {
                 unit.Eliminate(reason);
                 return true;

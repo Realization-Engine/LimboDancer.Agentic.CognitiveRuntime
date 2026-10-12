@@ -138,12 +138,14 @@ public static class ScenarioA1FireMapRules
             {
                 return new FirerLocationVerdict("play.fire-marsh: fire from a marsh hex is limited to some weapons and resolved as Area Fire, which is not built (B16.32; ruling R10.1)", false);
             }
+        }
 
-            // A7.212 (ruling R10.14): a unit whose Location holds a Known enemy unit fires at nothing else.
-            if (!facts.IsTarget && facts.KnownArmedEnemyThere())
-            {
-                return new FirerLocationVerdict($"play.fire-target-limit: {facts.Location} holds a Known enemy unit, so its units fire only at their own Location (A7.212)", false);
-            }
+        // A7.212 (p. 55; ruling R10.14): "A unit does not have the freedom to attack units in other Locations while its own Location is occupied by a
+        // Known enemy unit", and "Spotters (C9.3) are similarly limited". Pass 45: a Gun, a mortar, and a LATW with the rest, read at the Location
+        // the shot is seen from.
+        if ((facts.Direct || facts.Ordnance) && !facts.IsTarget && facts.KnownArmedEnemyThere())
+        {
+            return new FirerLocationVerdict($"play.fire-target-limit: {facts.Location} holds a Known enemy unit, so its units fire only at their own Location (A7.212)", false);
         }
 
         // A7.21 (ruling R10.14): TPBF at the enemy units of the firer's own Location.
