@@ -240,7 +240,9 @@ public static class ScenarioA1FireEligibility
         return (null, marks.Max() switch
         {
             0 => ScenarioA1FireCalculator.FirstFire,
-            1 => facts.AnyFiresAlone ? ScenarioA1FireCalculator.FirstFire : ScenarioA1FireCalculator.SubsequentFirstFire,
+            // A9.2: a MG fired again alone on its Multiple ROF by a unit marked First Fire is First Fire still. Review of pass 45: only when every
+            // unit marked First Fire fires so; one that fires its own FP uses Subsequent First Fire, whoever else fires a MG alone beside it.
+            1 => facts.AnyFiresAlone && facts.EveryFirstFireMarkedFiresAlone ? ScenarioA1FireCalculator.FirstFire : ScenarioA1FireCalculator.SubsequentFirstFire,
             _ => ScenarioA1FireCalculator.FinalProtectiveFire,
         });
     }
@@ -406,11 +408,28 @@ public static class ScenarioA1FireEligibility
     /// has Bore Sighted nothing, so every firer fires its MG alone, and each MG fired has its sighting on the target Location (C6.43: by the unit
     /// that set up with it, from its setup Location).
     /// </summary>
-    public static bool MgBoreSighted(IEnumerable<(bool FiresAlone, IReadOnlyList<bool> WeaponsSighted)> firers)
+    public static bool MgBoreSighted(IEnumerable<(bool FiresAlone, IReadOnlyList<MgSightingFacts> Weapons)> firers)
     {
         ArgumentNullException.ThrowIfNull(firers);
         var all = firers.ToArray();
-        return all.Length > 0 && all.All(firer => firer.FiresAlone && firer.WeaponsSighted.Count > 0 && firer.WeaponsSighted.All(sighted => sighted));
+
+        // C6.43 (p. 174): not "fired by other than its original ... manning-Infantry", and lost if the weapon "leaves the setup Location" or "is dm".
+        return all.Length > 0 && all.All(firer => firer.FiresAlone && firer.Weapons.Count > 0
+            && firer.Weapons.All(weapon => weapon.Sighted && weapon.ByItsPossessor && weapon.AtItsSetupLocation && weapon.OnTheTarget && !weapon.Dismantled));
+    }
+
+    /// <summary>A9.8 (p. 65; pass 45): "A dm SW may not be fired until reassembled": the refusal of a dismantled mortar's shot, or null.</summary>
+    public static string? DismantledShotBar(bool dismantled, string weapon) =>
+        dismantled ? $"play.ordnance-dismantled: {weapon} is dismantled and is not fired until it is assembled (A9.8)" : null;
+
+    /// <summary>
+    /// The definition a dismantled German MMG or HMG fires as (A9.8): its side's LMG, the first by id where the catalog holds more than one; null
+    /// when it holds none.
+    /// </summary>
+    public static string? LmgDefinition(IEnumerable<FireDefinition> definitions, string? nationality)
+    {
+        ArgumentNullException.ThrowIfNull(definitions);
+        return definitions.Where(item => item.IsMg && item.Size == "light" && item.Nationality == nationality).OrderBy(item => item.Id, StringComparer.Ordinal).FirstOrDefault()?.Id;
     }
 
     /// <summary>
@@ -673,7 +692,7 @@ public static class ScenarioA1FireEligibility
         double[] shots = [.. earlierBearings, bearing.Value];
         return Enumerable.Range(0, 6).Any(facing => shots.All(shot => ScenarioA1Geometry.AngleBetween(shot, ScenarioA1Geometry.FacingDegrees(facing)) <= 30.0001))
             ? null
-            : $"play.fire-field: {weapon} has fired this phase from woods, rubble, or a building, and fires again only inside the CA of that shot (A9.21)";
+            : $"play.fire-field: {weapon} has fired this phase from woods, rubble, or a building, and fires again only inside the CA of that shot: the 60-degree wedge that holds its earlier target, and its own Location (A9.21)";
     }
 
     /// <summary>
@@ -735,8 +754,11 @@ public static class ScenarioA1FireEligibility
         ArgumentNullException.ThrowIfNull(attack);
         ArgumentNullException.ThrowIfNull(possessed);
         return attack.FireKind is ScenarioA1FireCalculator.SubsequentFirstFire or ScenarioA1FireCalculator.FinalProtectiveFire
-            && attack.Firers!.Any(item => !(item.Weapons?.Select(weapon => weapon.EquipmentId!).Order(StringComparer.Ordinal).ToArray() ?? [])
-                .SequenceEqual(possessed(item.UnitId!)))
+            // Review of pass 45 (ruling R45.1): the rule binds "a unit [that] uses Subsequent First Fire"; a unit with no counter that fires First
+            // Fire in the group "could use either its inherent FP or the LMG" (the example of p. 62).
+            && attack.Firers!.Any(item => (item.FirstFireMarked == true || item.FinalFireMarked == true || (item.Weapons ?? []).Any(weapon => weapon.FirstFireMarked == true))
+                && !(item.Weapons?.Select(weapon => weapon.EquipmentId!).Order(StringComparer.Ordinal).ToArray() ?? [])
+                    .SequenceEqual(possessed(item.UnitId!)))
             ? "play.fire-weapons: Subsequent First Fire and FPF use every MG the firer possesses (A8.3, A8.31)"
             : null;
     }

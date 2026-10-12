@@ -110,21 +110,25 @@ public sealed partial class GamePlanner
 
         bool Defenders(string id) => state.Unit(id) is { } unit ? unit.Side != state.PhasingSide
             : state.Find(id) is EquipmentInstance { Holding.Holder: { } holder } && state.Unit(holder) is { } possessor && possessor.Side != state.PhasingSide;
-        var named = arguments.EnumerateObject().SelectMany(property => property.Value.ValueKind switch
+
+        // Review of pass 45: the acting units and weapons, never a target: an ATTACKER's shot at a DEFENDER's vehicle must not be told who owes.
+        var named = arguments.EnumerateObject().Where(property => !property.Name.StartsWith("target", StringComparison.Ordinal)).SelectMany(property => property.Value.ValueKind switch
         {
             JsonValueKind.String => [property.Value.GetString()!],
             JsonValueKind.Array => property.Value.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!),
             _ => Enumerable.Empty<string>(),
         });
-        return named.Any(Defenders) && MandatoryFire(state, existing) is { } owed
-            ? Refused(scope, label, expected, ScenarioA1MandatoryFire.OtherActBar(owed.Firers, owed.At.ToString(), act))
+        return ScenarioA1MandatoryFire.OtherActBar(true, named.Any(Defenders),
+            () => MandatoryFire(state, existing) is { } owed ? (owed.Firers, owed.At.ToString()) : null, act) is { } bar
+            ? Refused(scope, label, expected, bar)
             : null;
     }
 
     /// <summary>A9.8 (p. 65; pass 45): "A dm SW may not be fired until reassembled": the refusal of a dismantled mortar's shot, or null.</summary>
     private GamePlan? DismantledOrdnance(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, long expected, string label) =>
-        existing.Count > 0 && Text(arguments, "gunId", out var gunId) && Replay(existing).Current?.Find(gunId) is EquipmentInstance weapon && Is(weapon, Conditions.Dismantled)
-            ? Refused(scope, label, expected, $"play.ordnance-dismantled: {gunId} is dismantled and is not fired until it is assembled (A9.8)")
+        existing.Count > 0 && Text(arguments, "gunId", out var gunId) && Replay(existing).Current?.Find(gunId) is EquipmentInstance weapon
+            && ScenarioA1FireEligibility.DismantledShotBar(Is(weapon, Conditions.Dismantled), gunId) is { } bar
+            ? Refused(scope, label, expected, bar)
             : null;
 
     /// <summary>

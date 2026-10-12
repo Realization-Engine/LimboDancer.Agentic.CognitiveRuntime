@@ -133,7 +133,7 @@ public static class GameActions
         """);
 
     public static readonly ActionDescriptor Dismantle = Descriptor("asl.game.dismantle", "Dismantle or assemble a SW",
-        "Its possessor dismantles or assembles a non-Russian MMG or HMG, or a light mortar of four PP or more, in its side's PFPh or DFPh, if the weapon has not fired in it; this counts as the weapon's use. A dismantled weapon portages at half its PP and is not fired, but a German MMG or HMG, which fires as a LMG (A9.8).",
+        "Its possessor dismantles or assembles a non-Russian MMG or HMG, or a light mortar of four PP or more, in its side's PFPh or DFPh, if the weapon has not fired in it; this counts as the weapon's use. A dismantled weapon portages at half its PP and is not fired, except a German MMG or HMG, which fires as a LMG (A9.8).",
         PlayPermission, "asl.game.sequence-v1", """
         {
           "type": "object", "additionalProperties": false,

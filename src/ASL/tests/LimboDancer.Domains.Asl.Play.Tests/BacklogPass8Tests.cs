@@ -719,6 +719,38 @@ public sealed class BacklogPass8Tests : IDisposable
         })));
 
     [Fact]
+    public async Task TheScenarioDefendersMmgBoreSightsALocationAndDeductsTwoFiredAloneAtIt()
+    {
+        // Pass 45, task 45.8 (C6.41, C6.42, C6.44, p. 174; ruling R45.3): the Russian MMG Bore Sights B8 at setup, possessed by r1; fired alone at the
+        // German squad entering B8 in Defensive First Fire it deducts 2.
+        var mmg = new Dictionary<string, object>
+        {
+            ["id"] = "ru-mmg",
+            ["kind"] = "asl:mg",
+            ["definition"] = "defender-mmg",
+            ["side"] = "russian",
+            ["holding"] = new { holder = "r1", role = "possessed" },
+            ["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false },
+            ["boreSighted"] = "bd01:B8:0",
+        };
+        await SetupDefended("russian", Squad("g1", "bd01:A8:0", "german"), Squad("r1", "bd01:B10:0", "russian"), mmg);
+        var sighting = Assert.Single(Current.BoreSights);
+        Assert.Equal(("ru-mmg", "r1", BoardLocation.Parse("bd01:B10:0")), (sighting.Gun, sighting.Crew, sighting.SetupLocation));
+        await Advance(2);
+        Committed(await Move(["g1"], "bd01:B8:0"));
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Once(6, 5, 6, 6, 6, 6), new Dictionary<string, object>
+        {
+            ["firers"] = new[] { "r1" },
+            ["weapons"] = new Dictionary<string, string[]> { ["r1"] = ["ru-mmg"] },
+            ["withoutInherent"] = new[] { "r1" },
+            ["target"] = "bd01:B8:0",
+        }));
+        Assert.True(HasDrm(LastFire(before), "bore-sighting", -2m), Drm(LastFire(before)).ToString());
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
     public async Task TheScenarioDefendersBoreSightedLocationTakesCaseM()
     {
         // C6.4, C6.42 (R8.8): the Russian 45mm Bore Sights B8 at setup; its Defensive First Fire at the German squad entering B8 takes -2.

@@ -31,7 +31,8 @@ public sealed partial class GamePlanner
     /// <summary>One unit of a moving stack as Rules reads it for the leader bonus (pass 32.b).</summary>
     private MovingUnitFacts MovingUnit(UnitInstance unit) =>
         new(unit.Id, unit.Side, unit.Kind == UnitKinds.Dummy, vocabulary.IsA(unit.Kind, "asl:mmc"), vocabulary.IsA(unit.Kind, "asl:leader"),
-            Is(unit, Conditions.Berserk), Is(unit, Conditions.Broken), Is(unit, Conditions.Wounded), Nationality(unit), unit.MfSpent, unit.HalfMfSpent, unit.MovedWith);
+            Is(unit, Conditions.Berserk), Is(unit, Conditions.Broken), Is(unit, Conditions.Wounded), Nationality(unit), unit.MfSpent, unit.HalfMfSpent, unit.MovedWith,
+            Is(unit, Conditions.Cx) || unit.DoubleTimeMf > 0);
 
     /// <summary>The PP of each SW a unit possesses (A4.4), from the catalog; null when one is not recorded.</summary>
     private int[]? Portage(GameState state, UnitInstance unit)

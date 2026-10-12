@@ -555,8 +555,8 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
                 {
                     var mg = found.Definition is { } named ? FireReference.Value.Definitions.GetValueOrDefault(named.Definition) : null;
                     if (ScenarioA1GameStart.MgBoreSightBar(mg?.Size, sightState.Unit(possession.Holder)?.Side == sightState.ScenarioDefender,
-                        boreAt.Board == mgAt.Board && boreAt.Hex == mgAt.Hex,
-                        () => Los(sightState, mgAt, boreAt) is { Status: LosStatus.Clear, Range: var range } && range <= Math.Min(16, mg?.Range ?? 0), boreGun) is { } mgBar)
+                        boreAt.Board == mgAt.Board && boreAt.Hex == mgAt.Hex, mg?.Range,
+                        () => Los(sightState, mgAt, boreAt) is { } sightLos ? (sightLos.Status == LosStatus.Clear, sightLos.Range) : null, boreGun) is { } mgBar)
                     {
                         return Refused(scope, label, expected, mgBar);
                     }

@@ -44,10 +44,13 @@ public sealed partial class GamePlanner
             : [];
 
         // Nothing has happened since the attack but what it caused; and each weapon is as the attack left it.
-        var latest = existing.Skip(index + 1).All(later => later.Causes.Contains(fire, StringComparer.Ordinal));
-        string[] still = [.. kept.Where(id => state.Find(id) is EquipmentInstance { Status: InstanceStatus.Active } weapon && !Is(weapon, Conditions.FirstFire)
-            && !Is(weapon, Conditions.FinalFire) && !Is(weapon, Conditions.Malfunctioned))];
-        return ScenarioA1FireFollowUps.RofForfeitOpen(state.Phase == "mph", latest, forfeited, still.Length) ? new RofForfeit(fire, target!, forfeited!.Value, still) : null;
+        var act = fire[..(fire.LastIndexOf('-') + 1)];
+        var latest = existing.Skip(index + 1).All(later => ScenarioA1FireFollowUps.PartOfTheAttack(later.Causes.Contains(fire, StringComparer.Ordinal),
+            later.EventId.StartsWith(act, StringComparison.Ordinal)));
+        string[] still = [.. kept.Where(id => state.Find(id) is EquipmentInstance weapon && ScenarioA1FireFollowUps.StillKeepsRof(weapon.Status == InstanceStatus.Active,
+            Is(weapon, Conditions.FirstFire), Is(weapon, Conditions.FinalFire), Is(weapon, Conditions.Malfunctioned)))];
+        return ScenarioA1FireFollowUps.RofForfeitOpen(state.Phase == "mph", latest, forfeited, still.Length, state.ResidualFire.FirstOrDefault(item => item.Location == target)?.Fp)
+            ? new RofForfeit(fire, target!, forfeited!.Value, still) : null;
     }
 
     private GamePlan PlanForfeitRof(GameScope scope, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label)
@@ -66,15 +69,12 @@ public sealed partial class GamePlanner
         foreach (var weapon in forfeit.Weapons)
         {
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed",
-                new ConditionsChanged(weapon, ConditionChanges([(UnitCondition.FirstFire, true)])), ScenarioA1FirePackage.Identity.ToString(), null, [forfeit.Fire]));
+                new ConditionsChanged(weapon, ConditionChanges([(ScenarioA1FireFollowUps.RofForfeitCounter, true)])), ScenarioA1FirePackage.Identity.ToString(), null, [forfeit.Fire]));
         }
 
-        // A8.21: only a larger counter replaces one in the Location.
-        if (!state.ResidualFire.Any(item => item.Location == forfeit.At && item.Fp >= forfeit.Fp))
-        {
-            events.Add(Event(scope, attemptId, events.Count + 1, expected, "residual-fp-placed", new ResidualFirePlaced(forfeit.Fire, forfeit.At, forfeit.Fp),
-                ScenarioA1FirePackage.Identity.ToString(), null, [forfeit.Fire]));
-        }
+        // A8.21: the offer is open only when this counter is larger than the one that stands there, so it is always placed.
+        events.Add(Event(scope, attemptId, events.Count + 1, expected, "residual-fp-placed", new ResidualFirePlaced(forfeit.Fire, forfeit.At, forfeit.Fp),
+            ScenarioA1FirePackage.Identity.ToString(), null, [forfeit.Fire]));
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, events, [ScenarioA1FireFollowUps.RofForfeitText(forfeit.Weapons, forfeit.Fp, forfeit.At.ToString())]);
     }

@@ -78,7 +78,8 @@ public sealed record FirerStateFacts(string Id, bool ActiveWithDefinition, bool 
 public sealed record DirectorStateFacts(string Id, bool ActiveWithDefinition, bool? InGroupLocation);
 
 /// <summary>The MPh kind of a fire group (D3.3, A8.1, A8.3, A8.31; rulings R6.9, R12.3): whether a vehicle fires and whether it is the phasing side's, whether it may Bounding First Fire (read only for a phasing vehicle), each firer's Final Fire and First Fire marks (read only for Infantry in the MPh), whether no firer fires a MG alone, and whether any does.</summary>
-public sealed record FireKindFacts(bool VehicleFires, bool VehicleIsPhasing, Func<bool> MayBoundingFire, Func<IReadOnlyList<(bool FinalFire, bool FirstFire)>> Marks, bool NoneFiresAlone, bool AnyFiresAlone);
+public sealed record FireKindFacts(bool VehicleFires, bool VehicleIsPhasing, Func<bool> MayBoundingFire, Func<IReadOnlyList<(bool FinalFire, bool FirstFire)>> Marks, bool NoneFiresAlone, bool AnyFiresAlone,
+    bool EveryFirstFireMarkedFiresAlone = true);
 
 /// <summary>A unit in the target Location as the state finds it (A8.1, A7.308, A15.41): its id, whether it is active, its side, whether it is a vehicle, a Dummy, has a catalog definition, and is among the moving stack (null when no stack moves there).</summary>
 public sealed record TargetUnitStateFacts(string Id, bool Active, string? Side, bool Vehicle, bool Dummy, bool HasDefinition, bool? Mover);

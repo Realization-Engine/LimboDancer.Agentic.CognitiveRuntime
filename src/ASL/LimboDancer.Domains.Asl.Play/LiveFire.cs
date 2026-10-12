@@ -43,9 +43,7 @@ public static class LiveFire
             return own;
         }
 
-        var nationality = CatalogReference.Value.Definitions[own].Nationality;
-        return CatalogReference.Value.Definitions.Values.Where(item => item.IsMg && item.Size == "light" && item.Nationality == nationality)
-            .OrderBy(item => item.Id, StringComparer.Ordinal).FirstOrDefault()?.Id ?? own;
+        return ScenarioA1FireEligibility.LmgDefinition(CatalogReference.Value.Definitions.Values, CatalogReference.Value.Definitions[own].Nationality) ?? own;
     }
 
     public const string Catalog = "asl-scenario-a1";
@@ -128,7 +126,8 @@ public static class LiveFire
             () => [.. firers.Select(item => (Is(item.Unit, Conditions.FinalFire), Is(item.Unit, Conditions.FirstFire)
                 || (weapons?.TryGetValue(item.Unit.Id, out var fired) == true
                     && fired.Any(id => state.Find(id) is EquipmentInstance weapon && Is(weapon, Conditions.FirstFire)))))],
-            firers.All(item => withoutInherent?.Contains(item.Unit.Id) != true), withoutInherent is { Count: > 0 }));
+            firers.All(item => withoutInherent?.Contains(item.Unit.Id) != true), withoutInherent is { Count: > 0 },
+            firers.Where(item => Is(item.Unit, Conditions.FirstFire)).All(item => withoutInherent?.Contains(item.Unit.Id) == true)));
         if (kindRefusal is not null)
         {
             return (null, kindRefusal);
@@ -232,8 +231,10 @@ public static class LiveFire
         // Rulings R12.8, R12.9, R12.11: the firing side's units in a Melee or as prisoners, a prisoner's Guard, and Encirclement; Rules assembles the attack.
         // C6.43, C6.44 (pass 45): a MG fired alone by the unit that set up with it, from its setup Location, at its Bore Sighted Location.
         var boreSighted = state.BoreSights.Count > 0 && ScenarioA1FireEligibility.MgBoreSighted(firerFacts.Select(firer => (firer.UsesInherentFp == false,
-            (IReadOnlyList<bool>)[.. (firer.Weapons ?? []).Select(weapon => state.BoreSights.Any(sight => sight.Gun == weapon.EquipmentId && sight.Crew == firer.UnitId
-                && sight.Location == target && state.Location(firer.UnitId!)?.Location == sight.SetupLocation))])));
+            (IReadOnlyList<MgSightingFacts>)[.. (firer.Weapons ?? []).Select(weapon => state.BoreSights.FirstOrDefault(sight => sight.Gun == weapon.EquipmentId) is { } sight
+                ? new MgSightingFacts(true, sight.Crew == firer.UnitId, state.Location(firer.UnitId!)?.Location == sight.SetupLocation, sight.Location == target,
+                    state.Find(weapon.EquipmentId!) is EquipmentInstance sighted && Is(sighted, Conditions.Dismantled))
+                : new MgSightingFacts(false, false, false, false, false))])));
         return (ScenarioA1FireEligibility.Assemble(new AttackAssemblyFacts(state.Phase, side == state.PhasingSide, firers[0].At.ToString(), target.ToString(),
             firerFacts, [.. directors.Select(Director)], state.ScenarioMonth,
             [.. selection.Targets.Select(UnitAt).Select(unit => ScenarioA1FireEligibility.AttackTarget(new AttackTargetFacts(Target(state, unit, target), unit.Side == side,

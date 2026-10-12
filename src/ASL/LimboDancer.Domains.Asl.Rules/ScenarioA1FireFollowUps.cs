@@ -314,21 +314,53 @@ public static class ScenarioA1FireFollowUps
     }
 
     /// <summary>
+    /// The same for the units an attack would hit together (A8.22 speaks of "a unit"): the Residual FP attacks when any one of them has not yet
+    /// taken it at this strength and DRM. <paramref name="earlierByUnit"/> has each unit's earlier attacks in the Location.
+    /// </summary>
+    public static bool ResidualAttacksAgain(int fp, int drm, IEnumerable<IReadOnlyList<(int Fp, int Drm)>> earlierByUnit)
+    {
+        ArgumentNullException.ThrowIfNull(earlierByUnit);
+        return earlierByUnit.Any(earlier => ResidualAttacksAgain(fp, drm, earlier));
+    }
+
+    /// <summary>The DRM of an attack, summed as A8.22 compares it.</summary>
+    public static int TotalDrm(IEnumerable<decimal> drm)
+    {
+        ArgumentNullException.ThrowIfNull(drm);
+        return (int)drm.Sum();
+    }
+
+    /// <summary>
     /// Whether a weapon's Multiple ROF may be given up for Residual FP now (A8.23, p. 60; pass 45): in the MPh, "immediately after resolving its
     /// attack" (nothing has happened since but what the attack caused), when giving it up would leave more Residual FP, and a weapon still keeps it.
     /// </summary>
-    public static bool RofForfeitOpen(bool mph, bool nothingSince, int? forfeitedFp, int weaponsStillKeeping) =>
-        mph && nothingSince && forfeitedFp is > 0 && weaponsStillKeeping > 0;
+    // A8.21 (review of pass 45): and only when the counter it would leave is larger than the one that stands in the Location.
+    public static bool RofForfeitOpen(bool mph, bool nothingSince, int? forfeitedFp, int weaponsStillKeeping, int? standingFp = null) =>
+        mph && nothingSince && forfeitedFp is { } more && more > (standingFp ?? 0) && weaponsStillKeeping > 0;
+
+    /// <summary>Whether a weapon the attack's record says kept its Multiple ROF keeps it still: in play, with no fire counter, and working.</summary>
+    public static bool StillKeepsRof(bool active, bool firstFire, bool finalFire, bool malfunctioned) => active && !firstFire && !finalFire && !malfunctioned;
+
+    /// <summary>
+    /// Whether an event after an attack leaves the choice open (A8.23: "immediately after resolving its attack"): one the attack caused, or one
+    /// written with it in the same act (a Sniper Check on its DR).
+    /// </summary>
+    public static bool PartOfTheAttack(bool causedByIt, bool ofItsAct) => causedByIt || ofItsAct;
+
+    /// <summary>The counter a weapon takes that gives its Multiple ROF up in the MPh: First Fire, as if it had lost it on the DR (A9.2).</summary>
+    public static UnitCondition RofForfeitCounter => UnitCondition.FirstFire;
 
     /// <summary>Why the ROF may not be given up.</summary>
     public static string RofForfeitClosedText() =>
-        "play.forfeit-rof: a weapon's Multiple ROF is given up for Residual FP only at once after its Defensive First Fire attack, when that leaves more Residual FP (A8.23)";
+        "play.forfeit-rof: a weapon's Multiple ROF is given up for Residual FP only immediately after its Defensive First Fire attack, before anything else is done, and only when that leaves more Residual FP than stands in the Location (A8.23, A8.21)";
 
     /// <summary>The choice in words.</summary>
     public static string RofForfeitText(IReadOnlyList<string> weapons, int fp, string location)
     {
         ArgumentNullException.ThrowIfNull(weapons);
-        return $"play.forfeit-rof: {string.Join(", ", weapons)} gives up its Multiple ROF and is marked First Fire; {fp} Residual FP stands in {location} (A8.23)";
+        return weapons.Count == 1
+            ? $"play.forfeit-rof: {weapons[0]} gives up its Multiple ROF and is marked First Fire; {fp} Residual FP stands in {location} (A8.23)"
+            : $"play.forfeit-rof: {string.Join(", ", weapons)} give up their Multiple ROF and are marked First Fire; {fp} Residual FP stands in {location} (A8.23)";
     }
 
     /// <summary>A8.2, A8.21: Residual FP is placed, at the attack's value, unless a counter at least as large is already in the Location (<paramref name="counterAtLeast"/> is read for the value).</summary>

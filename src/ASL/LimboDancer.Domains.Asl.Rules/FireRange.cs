@@ -54,7 +54,8 @@ public static class FireRange
     {
         var limit = noLongRange ? normalRange : 2 * normalRange;
         var band = sameLocation ? noPointBlank ? FireRangeBand.Normal : FireRangeBand.TriplePointBlank
-            : range < 1 ? Math.Abs(levelAbove) == 1 && !noPointBlank ? FireRangeBand.SameHexOtherLevel : FireRangeBand.SameHexFartherLevel
+            // A FT, which is never raised for PBF, fires at the next level at its own FP.
+            : range < 1 ? Math.Abs(levelAbove) != 1 ? FireRangeBand.SameHexFartherLevel : noPointBlank ? FireRangeBand.Normal : FireRangeBand.SameHexOtherLevel
             : range > limit ? FireRangeBand.Out
             : range > normalRange ? FireRangeBand.LongRange
             : range == 1 && levelAbove <= 1 && !noPointBlank ? FireRangeBand.PointBlank

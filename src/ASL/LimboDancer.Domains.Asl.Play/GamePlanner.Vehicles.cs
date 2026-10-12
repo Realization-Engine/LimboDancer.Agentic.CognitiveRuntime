@@ -136,16 +136,16 @@ public sealed partial class GamePlanner
 
     /// <summary>The DRM a Residual FP attack would take, read before its roll.</summary>
     private static int ResidualDrm(FireAttack attack) =>
-        (int)(ScenarioA1FireCalculator.Preview(attack, FireReference.Value)?.Drm.Sum(item => item.Value) ?? 0m);
+        ScenarioA1FireFollowUps.TotalDrm(ScenarioA1FireCalculator.Preview(attack, FireReference.Value)?.Drm.Select(item => item.Value) ?? []);
 
     /// <summary>
     /// The Residual FP attacks this MPh, in a Location, on every unit and vehicle the attack now planned would hit (A8.22): each one's counter FP and
     /// DRM, from its record.
     /// </summary>
-    private static List<(int Fp, int Drm)> EarlierResidualAttacks(IReadOnlyList<GameEvent> existing, BoardLocation at, FireAttack planned)
+    private static List<IReadOnlyList<(int Fp, int Drm)>> EarlierResidualAttacks(IReadOnlyList<GameEvent> existing, BoardLocation at, FireAttack planned)
     {
         string[] hit = [.. (planned.Targets ?? []).Select(item => item.UnitId!), .. (planned.Vehicles ?? []).Select(item => item.VehicleId!)];
-        var earlier = new List<(int, int)>();
+        var earlier = hit.ToDictionary(id => id, _ => new List<(int Fp, int Drm)>(), StringComparer.Ordinal);
         foreach (var record in ThisPhase(existing).Select(item => item.Payload).OfType<FireResolved>().Where(record => record.TargetLocation == at.ToString()))
         {
             if (record.Facts.Deserialize<FireAttack>(LiveFire.Json) is not { FireKind: ScenarioA1FireCalculator.ResidualFire, ResidualFp: { } fp } recorded)
@@ -154,15 +154,16 @@ public sealed partial class GamePlanner
             }
 
             string[] then = [.. (recorded.Targets ?? []).Select(item => item.UnitId!), .. (recorded.Vehicles ?? []).Select(item => item.VehicleId!)];
-            if (hit.Length > 0 && hit.All(id => then.Contains(id, StringComparer.Ordinal)))
+            var drm = ScenarioA1FireFollowUps.TotalDrm(record.Resolution.TryGetProperty("arithmetic", out var arithmetic) && arithmetic.TryGetProperty("drm", out var list)
+                && list.ValueKind == JsonValueKind.Array ? list.EnumerateArray().Select(item => item.TryGetProperty("value", out var value) ? value.GetDecimal() : 0m) : []);
+            foreach (var id in hit.Where(id => then.Contains(id, StringComparer.Ordinal)))
             {
-                var drm = record.Resolution.TryGetProperty("arithmetic", out var arithmetic) && arithmetic.TryGetProperty("drm", out var list) && list.ValueKind == JsonValueKind.Array
-                    ? (int)list.EnumerateArray().Sum(item => item.TryGetProperty("value", out var value) ? value.GetDecimal() : 0m) : 0;
-                earlier.Add((fp, drm));
+                earlier[id].Add((fp, drm));
             }
         }
 
-        return earlier;
+        // A8.22 speaks of "a unit": each one's own earlier attacks, for Rules to judge.
+        return [.. hit.Select(id => (IReadOnlyList<(int Fp, int Drm)>)earlier[id])];
     }
 
     /// <summary>

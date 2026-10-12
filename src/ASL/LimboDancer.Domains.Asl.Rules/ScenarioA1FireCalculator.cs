@@ -603,7 +603,7 @@ public static class ScenarioA1FireCalculator
             // A7.352, A7.353 (p. 56; ruling R8.4): a crew that fired its Gun this Player Turn has no inherent FP, but "Subsequent First Fire (8.3),
             // FPF (8.31), and Final Fire (8.4) vs adjacent units retain halved inherent FP": its own fire of those kinds, which is Area Fire.
             || firers.Any(item => item.UsesInherentFp != false && !ScenarioA1MandatoryFire.CrewAddsInherentFp(item.GunFired == true,
-                attack.FireKind == FinalProtectiveFire || OwnKind(attack, item) == SubsequentFirstFire || IsFinalFireAgain(attack, item))))
+                OwnKind(attack, item) is FinalProtectiveFire or SubsequentFirstFire || IsFinalFireAgain(attack, item))))
         {
             outside.Add("asl.a1.fire.firer-outside");
         }
@@ -689,7 +689,7 @@ public static class ScenarioA1FireCalculator
 
         // A9.3 (p. 63; pass 45): "Sustained Fire cannot be used ... by a MG fired by a lone SMC." A leader with no partner fires no MG in Sustained
         // Fire; an attack recorded before the pass stands.
-        if (attack.CoweringMarksAndWeaponResidual == true && firers.Zip(firerDefinitions).Any(pair => pair.Second is { IsLeader: true } && pair.First.Partner is null
+        if (attack.CoweringMarksAndWeaponResidual == true && firers.Zip(firerDefinitions).Any(pair => (pair.Second is { IsLeader: true } || pair.Second is { IsHero: true }) && pair.First.Partner is null
             && (pair.First.Weapons ?? []).Any(weapon => IsSustained(attack, weapon, reference))))
         {
             outside.Add("asl.a1.fire.weapon-outside");
@@ -711,6 +711,9 @@ public static class ScenarioA1FireCalculator
             if (definition is null || !definition.IsLeader || definition.Leadership is null || !sides.Contains(definition.Nationality)
                 || !locations.Contains(director.LocationId) || director.Broken == true || director.Pinned == true
                 // A7.53 (pass 45): he directs the later shots of a MG he has directed this phase, when nothing but those MGs fires.
+                // A7.53 (review of pass 45; the example of p. 62: "leader direction is NA; 7.53"): his later direction "can only include firers he
+                // directed during First Fire", which a unit with no counter in a mixed group is not.
+                || (director.DirectedThisPlayerTurn == true && kind is SubsequentFirstFire or FinalProtectiveFire && firers.Any(item => !UsesSubsequentFire(attack, item)))
                 || (director.DirectedThisPlayerTurn == true && !redirect
                     && !(director.DirectedTheseMgs == true && firers.All(item => item.UsesInherentFp == false && item.Weapons is { Count: > 0 }))))
             {
@@ -748,9 +751,12 @@ public static class ScenarioA1FireCalculator
         // Pass 45 (A7.34, A9.52, pp. 56 and 64; ruling R45.5): "Spraying Fire cannot be used in a FG attack unless all members of the FG are capable
         // of Spraying Fire". A MG is; a squad's own FP is when its Range is underscored, to "a maximum range of three hexes"; no other unit's FP is.
         // An attack recorded before the pass keeps ruling R12.6's test: every firer fires a MG, and its holder's FP goes with it.
+        // A7.351, A7.352: a squad firing two SW, and a HS or hero firing one, add no FP of their own, as in any attack.
+        bool AddsOwnFp(FireFirer item, FireDefinition? definition) => item.UsesInherentFp != false
+            && !(definition?.Kind == "asl:squad" && item.Weapons!.Count >= 2) && !((definition?.Kind == "asl:half-squad" || definition?.IsHero == true) && item.Weapons!.Count >= 1);
         bool Sprays(FireFirer item, FireDefinition? definition) => item.Weapons is { } used
             && used.All(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty) is { IsMg: true })
-            && (item.UsesInherentFp == false ? used.Count > 0
+            && (!AddsOwnFp(item, definition) ? used.Count > 0
                 : definition is { Kind: "asl:squad", SprayingFire: true } && RangeOf(attack, item) <= 3);
         var capable = attack.CoweringMarksAndWeaponResidual == true
             ? firers.Zip(firerDefinitions).All(pair => Sprays(pair.First with { Weapons = pair.First.Weapons ?? [] }, pair.Second))
@@ -1823,7 +1829,11 @@ public static class ScenarioA1FireCalculator
                 return arithmetic;
             }
 
-            decimal Fp(Func<FireWeaponEffect, bool> which) => arithmetic.Firers.Where(item => item.VsConcealed != true && weapons.Any(weapon => weapon.EquipmentId == item.UnitId && which(weapon)))
+            // An ATR leaves no Residual FP in any case (C13.24), and Residual sets it apart itself.
+            bool Atr(string id) => (attack.Firers ?? []).SelectMany(firer => firer.Weapons ?? [])
+                .Any(weapon => weapon.EquipmentId == id && reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty)?.IsAtr == true);
+            decimal Fp(Func<FireWeaponEffect, bool> which) => arithmetic.Firers.Where(item => item.VsConcealed != true && !Atr(item.UnitId)
+                    && weapons.Any(weapon => weapon.EquipmentId == item.UnitId && which(weapon)))
                 .Sum(item => item.Firepower);
             var broken = Fp(weapon => weapon.Malfunctioned);
             var kept = Fp(weapon => !weapon.Malfunctioned && weapon.RateOfFireRetained);
@@ -2201,7 +2211,7 @@ public static class ScenarioA1FireCalculator
             // C6.44 (p. 174; pass 45): a MG's attack on its Bore Sighted Location deducts two, "unless using Spraying Fire or taking a Snap Shot
             // [EXC: vs Infantry, only such an attack conducted as Defensive First Fire (A8.1) qualifies]"; never Residual FP of any form.
             if (attack.MgBoreSighted == true && !residual && attack.FireLane != true && attack.SprayingFire != true && attack.SnapShot != true
-                && (attack.FireKind == FirstFire || !state.Values.Any(unit => !unit.IsDummy)))
+                && (attack.FireKind == FirstFire || state.Count == 0))
             {
                 drm.Add(new FireModifier("bore-sighting", -2m, "C6.44"));
             }
@@ -2325,7 +2335,8 @@ public static class ScenarioA1FireCalculator
             // lowered by the attack's Cowering shift as the attack's own column was (A8.224).
             var apart = atr + withheld;
             var columns = ScenarioA1FireReference.ColumnFp;
-            var rest = Array.FindLastIndex(columns, fp => fp <= arithmetic.TotalFirepower - apart) - (withheld == 0 ? 0 : arithmetic.ColumnShift);
+            var rest = Array.FindLastIndex(columns, fp => fp <= arithmetic.TotalFirepower - apart)
+                - (withheld != 0 || (atr != 0 && attack.CoweringMarksAndWeaponResidual == true) ? arithmetic.ColumnShift : 0);
             var highest = apart == 0 ? Math.Max(arithmetic.ColumnFp ?? 0, arithmetic.Concealed?.ColumnFp ?? 0) : rest < 0 ? 0 : columns[rest];
 
             // A8.2 (p. 60; pass 45): "half (up to a maximum of 12 after adjustment as per 8.26; FRD) of the highest IFT FP column used". The half
@@ -2501,7 +2512,7 @@ public static class ScenarioA1FireCalculator
                     }
 
                     // A9.4 (p. 64; pass 45): "MG attacks vs unconcealed Infantry at a range >= 17 hexes treat those Infantry as concealed".
-                    if (attack.CoweringMarksAndWeaponResidual == true && mg.IsMg && range >= 17 && !vsConcealed)
+                    if (attack.CoweringMarksAndWeaponResidual == true && mg.IsMg && range >= 17 && !vsConcealed && attack.BeyondNvr != true && state.Count > 0)
                     {
                         multipliers.Add(new FireModifier("mandatory-fire-direction", 0.5m, "A9.4"));
                     }
@@ -2664,7 +2675,9 @@ public static class ScenarioA1FireCalculator
                 // removed on a DR at least its printed B# (the page's LMG in Sustained Fire: B10, X12). A FT's own removal is ruling R15.1's.
                 var definition = reference.Definitions[weapon.DefinitionId!];
                 var printed = definition.Breakdown ?? 12;
-                var removed = attack.CoweringMarksAndWeaponResidual == true && !definition.IsFt && malfunctioned.Contains(id) && breakdown[id] < printed && original >= printed;
+                var lowered = sustained || weapon.Captured == true || AtrInexperience(weapon) > 0;
+                var removed = attack.CoweringMarksAndWeaponResidual == true && !definition.IsFt && malfunctioned.Contains(id) && lowered
+                    && original >= printed - (attack.BreakdownReduction ?? 0);
                 return new FireWeaponEffect(id, breakdown[id], malfunctioned.Contains(id), retained, sustained,
                     retained ? null : sustained ? "final-fire" : operatorUnit is null ? counter : OwnCounter(operatorUnit), selection.TryGetValue(id, out var dr) ? dr : null)
                 {

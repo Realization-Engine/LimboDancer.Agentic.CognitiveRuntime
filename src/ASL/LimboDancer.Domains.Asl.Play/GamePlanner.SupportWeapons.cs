@@ -502,7 +502,9 @@ public sealed partial class GamePlanner
         if (state.Unit(unitId) is not { } unit || !FreeToAct(unit, spendsMf: state.Phase == "mph") || Is(unit, Conditions.Pinned) || LiveFire.IsVehicle(unit)
             || state.Location(unit.Id)?.Location is not { } at)
         {
-            return Refused(scope, label, expected, $"play.recover-unit: '{unitId}' is not unpinned Good Order Infantry on the map (A4.44)");
+            return Refused(scope, label, expected, state.Unit(unitId) is { } tied && Is(tied, "asl:ti") && GoodOrder(tied)
+                ? $"play.recover-unit: '{unitId}' is TI and may not Recover a SW in the MPh, which costs a MF (A4.8)"
+                : $"play.recover-unit: '{unitId}' is not unpinned Good Order Infantry on the map (A4.44)");
         }
 
         // A4.44 (pass 40): never by a Bypassing unit.
@@ -611,12 +613,14 @@ public sealed partial class GamePlanner
 
         if (state.Unit(unitId) is not { } unit || !FreeToAct(unit, spendsMf: true) || Held(state, unit.Id).FirstOrDefault(item => item.Id == equipmentId) is not { } weapon)
         {
-            return Refused(scope, label, expected, $"play.dismantle-weapon: '{unitId}' is not a Good Order unit possessing '{equipmentId}' (A9.8)");
+            return Refused(scope, label, expected, state.Unit(unitId) is { } tied && Is(tied, "asl:ti") && GoodOrder(tied)
+                ? $"play.dismantle-weapon: '{unitId}' is TI and may not dismantle or assemble a SW, which counts as its use (A4.8, A9.8)"
+                : $"play.dismantle-weapon: '{unitId}' is not a Good Order unit possessing '{equipmentId}' (A9.8)");
         }
 
         if (!Dismantlable(weapon))
         {
-            return Refused(scope, label, expected, $"play.dismantle-weapon: {weapon.Id} is not dismantled: only a light mortar of four PP or more and a non-Russian MMG or HMG are (A9.8)");
+            return Refused(scope, label, expected, $"play.dismantle-weapon: {weapon.Id} is not a weapon that is dismantled or assembled: only a light mortar of four PP or more and a non-Russian MMG or HMG are (A9.8)");
         }
 
         var marker = state.Phase switch

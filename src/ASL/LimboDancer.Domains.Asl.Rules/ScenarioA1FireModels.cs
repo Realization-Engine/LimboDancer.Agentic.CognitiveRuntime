@@ -1069,6 +1069,12 @@ public sealed record FireUnitEffect(
     }
 }
 
+/// <summary>
+/// One MG of an attack against its Bore Sighting (C6.42, C6.43; pass 45): whether it has one, whether its firer is the unit that set up with it,
+/// whether it stands in its setup Location, whether the sighting is on the target Location, and whether it is dismantled.
+/// </summary>
+public sealed record MgSightingFacts(bool Sighted, bool ByItsPossessor, bool AtItsSetupLocation, bool OnTheTarget, bool Dismantled);
+
 /// <summary>The MOL Check of an attack (A22.611, A22.6111; ruling R15.4): its dr, drm, and pass, and whether the MOL user broke on a colored dr of 6.</summary>
 public sealed record FireMolCheck(string UnitId, int Dr, IReadOnlyList<FireModifier> Drm, int Final, bool Passed, bool UserBroken);
 

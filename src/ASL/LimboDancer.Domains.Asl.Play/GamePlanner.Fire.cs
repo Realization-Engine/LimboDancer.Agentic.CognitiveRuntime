@@ -189,15 +189,16 @@ public sealed partial class GamePlanner
                 continue;
             }
 
+            // A shot within the MG's own hex (its own Location, or up or down its stairwell) has no bearing: the CA "includes the MG's own Location".
+            double? BearingFrom(BoardLocation to) => to.Board == mgAt!.Board && to.Hex == mgAt.Hex ? null : Bearing(state, mgAt, to);
             foreach (var weapon in firer.Weapons!)
             {
                 double[] earlier = [.. ThisPhase(existing).Select(item => item.Payload).OfType<FireResolved>()
-                    .Where(record => record.FirerLocation == firer.LocationId && record.TargetLocation != firer.LocationId
-                        && record.Resolution.TryGetProperty("weaponEffects", out var effects) && effects.ValueKind == JsonValueKind.Array
+                    .Where(record => record.Resolution.TryGetProperty("weaponEffects", out var effects) && effects.ValueKind == JsonValueKind.Array
                         && effects.EnumerateArray().Any(effect => effect.TryGetProperty("equipmentId", out var id) && id.GetString() == weapon.EquipmentId))
-                    .Select(record => BoardLocation.TryParse(record.TargetLocation, out var was) ? Bearing(state, mgAt!, was!) : null).OfType<double>()];
+                    .Select(record => BoardLocation.TryParse(record.TargetLocation, out var was) ? BearingFrom(was!) : null).OfType<double>()];
                 if (ScenarioA1FireEligibility.FieldOfFireBar(weapon.DefinitionId is { } mgNamed ? FireReference.Value.Definitions.GetValueOrDefault(mgNamed)?.Size : null,
-                    TerrainKey(mgRead), earlier, Bearing(state, mgAt!, target), weapon.EquipmentId!) is { } fieldBar)
+                    TerrainKey(mgRead), earlier, BearingFrom(target), weapon.EquipmentId!) is { } fieldBar)
                 {
                     return Refused(scope, label, expected, fieldBar);
                 }
@@ -1262,7 +1263,7 @@ public sealed partial class GamePlanner
         if (attack.FireKind == ScenarioA1FireCalculator.ResidualFire)
         {
             // A8.2 (rulings R6.6, R9.6): Residual FP has no LOS Hindrance, but the SMOKE of its Location applies.
-            return (ScenarioA1FireMapRules.ResidualMapFacts(attack, terrain, SmokeSources(state).Count(place => place == target)), null);
+            return UpperLevelEncircled(state, (ScenarioA1FireMapRules.ResidualMapFacts(attack, terrain, SmokeSources(state).Count(place => place == target)), null));
         }
 
         var firingSide = attack.VehicleFire is { } vehicleFire ? state.Unit(vehicleFire.VehicleId!)?.Side : state.Unit(attack.Firers![0].UnitId!)?.Side;

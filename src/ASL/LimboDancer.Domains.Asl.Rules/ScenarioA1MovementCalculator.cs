@@ -93,7 +93,8 @@ public static class ScenarioA1MovementCalculator
         // A4.42 (p. 50; pass 40, ruling R40.11): "one SMC can add its IPC to that of any one Good Order Infantry unit": the mover names which of
         // several laden MMC takes it; with one laden MMC it goes there unasked.
         var recipient = chosen is not null ? heavy.FirstOrDefault(unit => unit.Id == chosen) : heavy.Length == 1 ? heavy[0] : null;
-        var leader = recipient is null ? null : movers.FirstOrDefault(item => item.Leader && !item.Broken && !item.Wounded
+        // A4.52 (review of pass 45): the leader that lends is one that is not CX; another leader of the stack that is fresh still lends.
+        var leader = recipient is null ? null : movers.FirstOrDefault(item => item.Leader && !item.Broken && !item.Wounded && !item.Cx
             && item.Nationality == recipient.Nationality);
         return leader is not null ? (recipient!.Id, leader.Id) : (null, null);
     }

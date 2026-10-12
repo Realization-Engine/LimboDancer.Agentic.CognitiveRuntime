@@ -224,7 +224,9 @@ public sealed class ScenarioA1FireExtensionTests
             {
                 WithinSubsequentFirstFireRange = false
             }).Reasons);
-        Assert.Contains("asl.a1.fire.firer-already-fired",
+        // Pass 45: a unit with no counter may fire in a Subsequent First Fire group beside a marked one (the example of p. 62), so an attack
+        // with no firer that uses Subsequent First Fire is refused as not being one.
+        Assert.Contains("asl.a1.fire.subsequent-first-fire-outside",
             Complete(attack with
             {
                 Firers = [Firer("ru-1")]

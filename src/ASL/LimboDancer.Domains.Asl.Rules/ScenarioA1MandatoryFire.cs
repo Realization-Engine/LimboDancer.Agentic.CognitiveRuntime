@@ -95,10 +95,14 @@ public static class ScenarioA1MandatoryFire
     /// Why another act of the DEFENDER waits while the attack is owed (A8.312, p. 61; pass 45, ruling R45.2): the DEFENDER "must ... then immediately
     /// attack", so a Gun's shot, a thrown DC, and a Starshell come after it.
     /// </summary>
-    public static string OtherActBar(IReadOnlyList<string> owed, string location, string act)
+    public static string? OtherActBar(bool mph, bool namesDefender, Func<(IReadOnlyList<string> Owed, string Location)?> owing, string act)
     {
-        ArgumentNullException.ThrowIfNull(owed);
-        return $"play.act-mandatory: {string.Join(", ", owed)} must first attack the units that entered {location}; the {act} waits for that attack (A8.312)";
+        ArgumentNullException.ThrowIfNull(owing);
+
+        // The bar is on the DEFENDER's proposal alone, so the attack owed is read only for one.
+        return mph && namesDefender && owing() is { Owed.Count: > 0 } owed
+            ? $"play.act-mandatory: {string.Join(", ", owed.Owed)} must first attack the units that entered {owed.Location}; the {act} waits for that attack (A8.312)"
+            : null;
     }
 
     /// <summary>The page's note for the DEFENDER; where the fire rules form no one group of the units, it says so and cites the ruling.</summary>

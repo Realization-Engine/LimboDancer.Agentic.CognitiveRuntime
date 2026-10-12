@@ -1572,7 +1572,9 @@ public static class GameProjector
             if (Rules.ScenarioA1FireFollowUps.VerifyFireRecord(fire.MovementStep, state.Movement is { WindowOpen: true }, state.Movement?.Step, fire.Firers.Count, byVehicle,
                 state.FiresThisPhase.Select(item => new Rules.PhaseFireFacts(item.FirerLocation, item.TargetLocation, item.Step, item.Vehicle)), fire.FirerLocation, fire.TargetLocation,
                 fire.Facts.TryGetProperty("firers", out var firingUnits) && firingUnits.ValueKind == JsonValueKind.Array && firingUnits.GetArrayLength() > 0
-                    && firingUnits.EnumerateArray().All(item => item.TryGetProperty("usesInherentFp", out var own) && own.ValueKind == JsonValueKind.False)) is { } refused)
+                    && firingUnits.EnumerateArray().All(item => item.TryGetProperty("usesInherentFp", out var own) && own.ValueKind == JsonValueKind.False
+                        && item.TryGetProperty("weapons", out var used) && used.ValueKind == JsonValueKind.Array && used.GetArrayLength() > 0
+                        && used.EnumerateArray().All(weapon => weapon.TryGetProperty("equipmentId", out var usedId) && KeptRofThisPhase(state, usedId.GetString())))) is { } refused)
             {
                 return Fail<GameState>(refused.Code, refused.Text);
             }
@@ -1619,6 +1621,12 @@ public static class GameProjector
             };
         }
 
+        /// <summary>Whether an earlier fire record of this phase says the weapon kept its Multiple ROF (A9.2), so that this is one of its later shots.</summary>
+        private bool KeptRofThisPhase(GameState state, string? weapon) => weapon is not null && state.FiresThisPhase.Any(item => fires.TryGetValue(item.EventId, out var earlier)
+            && earlier.Fire.Resolution.TryGetProperty("weaponEffects", out var effects) && effects.ValueKind == JsonValueKind.Array
+            && effects.EnumerateArray().Any(effect => effect.TryGetProperty("equipmentId", out var id) && id.GetString() == weapon
+                && effect.TryGetProperty("rateOfFireRetained", out var kept) && kept.ValueKind == JsonValueKind.True));
+
         /// <summary>Residual FP a fire record left (A8.2, A8.21): the record's own value, in its target Location, in the MPh.</summary>
         private GameState? PlaceResidual(GameState state, ResidualFirePlaced residual)
         {
@@ -1626,7 +1634,11 @@ public static class GameProjector
             var recorded = fires.TryGetValue(residual.Fire, out var found) ? found.Fire : null;
             var recordedFp = recorded is not null && recorded.Resolution.TryGetProperty("arithmetic", out var arithmetic) && arithmetic.TryGetProperty("residualFp", out var value)
                 ? value.GetInt32() : (int?)null;
-            var forfeitedFp = recorded is not null && recorded.Resolution.TryGetProperty("arithmetic", out var withRof) && withRof.TryGetProperty("residualFpIfForfeited", out var forfeit)
+            var givenUp = recorded is not null && recorded.Resolution.TryGetProperty("weaponEffects", out var kept) && kept.ValueKind == JsonValueKind.Array
+                && kept.EnumerateArray().Where(effect => effect.TryGetProperty("rateOfFireRetained", out var retained) && retained.ValueKind == JsonValueKind.True)
+                    .All(effect => effect.TryGetProperty("equipmentId", out var id) && Active(state, id.GetString()!) is { } weapon
+                        && (GameState.Condition(weapon, Conditions.FirstFire) == ConditionState.True || GameState.Condition(weapon, Conditions.FinalFire) == ConditionState.True));
+            var forfeitedFp = givenUp && recorded!.Resolution.TryGetProperty("arithmetic", out var withRof) && withRof.TryGetProperty("residualFpIfForfeited", out var forfeit)
                 ? forfeit.GetInt32() : (int?)null;
             if (Rules.ScenarioA1FireFollowUps.VerifyResidualFp(state.Phase, recorded is not null, recorded?.TargetLocation == residual.Location.ToString(), recordedFp, residual.Fp,
                 residual.Fire, state.ResidualFire.FirstOrDefault(item => item.Location == residual.Location)?.Fp, forfeitedFp) is { } refused)

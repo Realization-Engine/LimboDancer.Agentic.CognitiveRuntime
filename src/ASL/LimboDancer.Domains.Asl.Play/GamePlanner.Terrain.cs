@@ -343,8 +343,7 @@ public sealed partial class GamePlanner
     /// leader's own IPC is then spent. Nulls when there is none, or more than one.
     /// </summary>
     private (string? Recipient, string? Leader) LeaderIpcRecipient(GameState state, UnitInstance[] movers, string? chosen = null, bool doubleTime = false) =>
-        ScenarioA1MovementCalculator.LeaderIpcRecipient([.. movers.Select(MovingUnit)], index => Laden(state, movers[index]), chosen,
-            doubleTime || movers.Any(unit => vocabulary.IsA(unit.Kind, "asl:leader") && (unit.DoubleTimeMf > 0 || Is(unit, Conditions.Cx))));
+        ScenarioA1MovementCalculator.LeaderIpcRecipient([.. movers.Select(MovingUnit)], index => Laden(state, movers[index]), chosen, doubleTime);
 
     /// <summary>A unit's nationality from the reviewed catalog; null when the catalog does not name it.</summary>
     private static string? Nationality(UnitInstance unit) =>
