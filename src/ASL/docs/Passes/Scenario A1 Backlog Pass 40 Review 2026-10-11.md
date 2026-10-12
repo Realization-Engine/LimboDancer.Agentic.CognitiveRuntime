@@ -4,7 +4,7 @@ The review of pass 40, written on 2026-10-11 after the five reviews, their fixes
 
 ## Status
 
-Built on branch `feature/asl-backlog-pass-40`, cut from main at 3c660afc: the frame, eight tasks in eight commits, then the five reviews, their fixes, the Studio check, and these documents. The first five tasks were each committed at the user's word. The last three, the reviews' fixes, and rulings R40.12 to R40.26 were made under the user's word of 2026-10-11, "Complete Pass 40 without my intervention", and are open to a veto.
+Merged into main as 14dca517 on 2026-10-12, with the gate passed and CI green. Built on branch `feature/asl-backlog-pass-40`, cut from main at 3c660afc: the frame, eight tasks in eight commits, then the five reviews, their fixes, the Studio check, and these documents. The first five tasks were each committed at the user's word. The last three, the reviews' fixes, and rulings R40.12 to R40.26 were made under the user's word of 2026-10-11, "Complete Pass 40 without my intervention", and are open to a veto.
 
 Two things the user's answer to question F10 named as built are not: a CE or BU choice at setup, and the half-hex rule for entry and occupation (design 11.4).
 
