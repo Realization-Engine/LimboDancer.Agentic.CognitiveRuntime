@@ -89,7 +89,7 @@ public static class ScenarioA1TerrainCosts
                 : (null, "play.move-upper-level: from an upper level a unit moves only into the same level of an ADJACENT hex of the same building (B23.421, B23.422)");
         }
 
-        return GroundStep(crossed, terrain, toRead.BaseLevel - fromRead.BaseLevel, facts.Month, smokeHalfMf, weather);
+        return GroundStep(crossed, terrain, toRead.BaseLevel - fromRead.BaseLevel, facts.Month, smokeHalfMf, weather, facts.TerrainRate);
     }
 
     /// <summary>
@@ -98,7 +98,8 @@ public static class ScenarioA1TerrainCosts
     /// level (A2.51, A2.6; ruling R25.3). <paramref name="smokeHalfMf"/> and <paramref name="weather"/> are read where the planner read them, after
     /// the refusals.
     /// </summary>
-    public static (InfantryEntry? Entry, string? Reason) GroundStep(CrossedHexsideFacts crossed, string terrain, int rise, int? month, Func<int> smokeHalfMf, InfantryWeatherRead weather)
+    public static (InfantryEntry? Entry, string? Reason) GroundStep(CrossedHexsideFacts crossed, string terrain, int rise, int? month, Func<int> smokeHalfMf, InfantryWeatherRead weather,
+        bool terrainRate = false)
     {
         ArgumentNullException.ThrowIfNull(crossed);
         ArgumentNullException.ThrowIfNull(smokeHalfMf);
@@ -119,7 +120,15 @@ public static class ScenarioA1TerrainCosts
             return (null, $"play.move-hexside: {crossed.HexsideTerrain!} hexsides are not reviewed (ruling R10.1)");
         }
 
-        var road = crossed.Road && !ScenarioA1Definitions.IsRubbleTerrain(terrain);
+        // A4.132 (p. 48; pass 40, ruling R40.5): across a road hexside the mover pays the road's cost or the cost of the hex's other terrain, and
+        // is then in that terrain. The choice exists only where there is other terrain to pay for.
+        var roadHexside = crossed.Road && !ScenarioA1Definitions.IsRubbleTerrain(terrain);
+        if (terrainRate && (!roadHexside || terrain is "open-ground" or "marsh"))
+        {
+            return (null, "play.move-terrain-rate: the cost of the hex's other terrain is chosen only across a road hexside into a hex that has other terrain (A4.132)");
+        }
+
+        var road = roadHexside && !terrainRate;
         int cost;
         var allMf = false;
         var minimumOnly = false;
@@ -163,7 +172,10 @@ public static class ScenarioA1TerrainCosts
         }
 
         var (extra, roadRate) = allMf ? (0, road) : weather(terrain, road, rise);
-        return (new InfantryEntry(cost + extra, terrain, roadRate && smoke == 0, allMf, minimumOnly, rise != 0), null);
+        return (new InfantryEntry(cost + extra, terrain, roadRate && smoke == 0, allMf, minimumOnly, rise != 0)
+        {
+            OnRoad = road && roadRate && !allMf && terrain != "open-ground",
+        }, null);
     }
 
     /// <summary>

@@ -2008,6 +2008,7 @@ public static class GameProjector
                     Charge = moving.Charge,
                     EndingMembers = Rules.ScenarioA1MovementCalculator.EndingMembers(moving.MinimumMove, moving.Attempted is not null, moving.Movers, moving.Smoke?.Unit, moving.Smoke?.Dr),
                     MinimumMove = moving.MinimumMove,
+                    RoadRate = moving.RoadRate,
                     Bypass = moving.Bypass,
                     From = movers[0]!.Position is MapPosition left && left.Location != moving.To ? left.Location : null,
                     PushedGun = moving.PushedGun,

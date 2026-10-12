@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using LimboDancer.Dice;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
+using LimboDancer.Domains.Asl.Maps.Geometry;
 using LimboDancer.Domains.Asl.Maps.Los;
 using LimboDancer.Domains.Asl.Rules;
 using LimboDancer.Domains.Asl.Units.State;
@@ -23,6 +24,12 @@ public interface IFireLosReader
     /// hexside Location itself.
     /// </summary>
     public LosResult? ReadAuxiliary(GameState state, BoardLocation from, BoardLocation hexside) => Read(state, from, hexside);
+
+    /// <summary>
+    /// Whether the line to a target point of a hex entered at the road rate crosses the hex's other terrain (A4.132; pass 40): the center dot, or
+    /// the hexside named. By default the reader cannot say.
+    /// </summary>
+    public bool? CrossesTerrainInTargetHex(GameState state, BoardLocation from, BoardLocation target, HexsideDirection? enteredAcross) => null;
 }
 
 /// <summary>
@@ -1279,6 +1286,27 @@ public sealed partial class GamePlanner
             }
 
             perLocation[location] = (range, sameLevel, fireLos!, height);
+        }
+
+        // A4.132, B3.3, B13.31 (pp. 48, 113, 128; pass 40): a mover that entered the Location at the road rate is on the road, not in the hex's other
+        // terrain, for a firer whose LOS reaches the hex center dot or the road's hexside without crossing that terrain; Rules decides from each
+        // firing Location's two reads. A Bypassing stack and a Snap Shot have their own target points.
+        if (direct && lane is null && attack.SnapShot != true && state.Phase == "mph"
+            && state.Movement is { RoadRate: true, From: { } cameFrom } onRoad && onRoad.Location == target)
+        {
+            var across = SideToward(state, target, cameFrom);
+            terrain = ScenarioA1Definitions.RoadRateTargetTerrain(terrain, [.. perLocation.Keys.Select(location =>
+            {
+                var from = BoardLocation.Parse(location);
+                return (CrossesTerrainInTargetHex(state, from, target, null), across is { } side ? CrossesTerrainInTargetHex(state, from, target, side) : null);
+            })]);
+        }
+        else if (IsWoodsRoad(targetRead) && (attack.Targets is { Count: > 0 } aimedAt
+            ? aimedAt.All(item => item.UnitId is { } id && state.Unit(id) is { } aimed && LiveFire.IsVehicle(aimed))
+            : state.At(target).OfType<UnitInstance>().Any(LiveFire.IsVehicle)))
+        {
+            // B13.31 EXC: "a vehicle(s) in a woods-road hex is always considered on the road".
+            terrain = "open-ground";
         }
 
         // A7.5: the group's facts from its Locations, each ADJACENT to another of them when the group spans Locations.

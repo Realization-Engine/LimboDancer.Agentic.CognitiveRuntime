@@ -3080,6 +3080,7 @@ else if (state is not null)
     private string firstEdge = string.Empty;
     private string secondEdge = string.Empty;
     private bool moveDoubleTime;
+    private bool moveTerrainRate;
 
     private bool moveMinimum;
 
@@ -4877,10 +4878,11 @@ else if (state is not null)
         PruneMoveDrafts();
     }
 
-    private InfantryMovementAction.MoveDraft MoveDraft => new(moveTo, moveMinimum, moveBypass, moveAssault, moveDoubleTime, movePush);
+    private InfantryMovementAction.MoveDraft MoveDraft => new(moveTo, moveMinimum, moveBypass, moveAssault, moveDoubleTime, movePush, moveTerrainRate);
 
     private void SetMoveDraft(InfantryMovementAction.MoveDraft draft) =>
-        (moveTo, moveMinimum, moveBypass, moveAssault, moveDoubleTime, movePush) = (draft.To, draft.Minimum, draft.Bypass, draft.Assault, draft.DoubleTime, draft.Push);
+        (moveTo, moveMinimum, moveBypass, moveAssault, moveDoubleTime, movePush, moveTerrainRate) =
+            (draft.To, draft.Minimum, draft.Bypass, draft.Assault, draft.DoubleTime, draft.Push, draft.TerrainRate);
 
     private Task ProposeSmoke()
     {
@@ -4905,6 +4907,12 @@ else if (state is not null)
         if (moveKeep.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) is { Length: > 0 } keep)
         {
             arguments["keep"] = keep;
+        }
+
+        // A4.132 (pass 40): the other terrain's cost across a road hexside, in place of the road's.
+        if (moveTerrainRate)
+        {
+            arguments["terrainRate"] = true;
         }
 
         // A4.134, A4.3 (rulings R10.7, R10.9): a Minimum Move, or the hexsides of a Bypass.
@@ -5117,6 +5125,7 @@ else if (state is not null)
         moveAssault = false;
         moveDoubleTime = false;
         moveMinimum = false;
+        moveTerrainRate = false;
         moveBypass = string.Empty;
         advanceUnits.Clear();
         advanceTo = string.Empty;
@@ -5214,6 +5223,7 @@ else if (state is not null)
         moveAssault = false;
         moveDoubleTime = false;
         moveMinimum = false;
+        moveTerrainRate = false;
         moveBypass = string.Empty;
         vehicleIntended = string.Empty;
         vehicleOverrun = false;
@@ -6048,6 +6058,7 @@ else if (state is not null)
                 moveAssault = false;
                 moveDoubleTime = false;
                 moveMinimum = false;
+                moveTerrainRate = false;
                 moveBypass = string.Empty;
             }
             else if (proposal.Action == GameActions.Move)
@@ -6055,6 +6066,7 @@ else if (state is not null)
                 // A4.5: Double Time is declared for one step, not kept for the next; so are a Minimum Move and a Bypass.
                 moveDoubleTime = false;
                 moveMinimum = false;
+                moveTerrainRate = false;
                 moveBypass = string.Empty;
             }
             else if (proposal.Action == GameActions.MoveVehicle)

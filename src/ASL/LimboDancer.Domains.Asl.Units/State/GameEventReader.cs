@@ -443,6 +443,7 @@ public static class GameEventReader
                         Exit = fields.OptionalString(payload, "exit", path),
                         PushedGun = fields.OptionalString(payload, "pushedGun", path),
                         Road = fields.OptionalBoolean(payload, "road", path),
+                        RoadRate = fields.OptionalBoolean(payload, "roadRate", path),
                         MinimumMove = fields.OptionalBoolean(payload, "minimumMove", path),
                         Attempted = attempted,
                         Bypass = bypass,

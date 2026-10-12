@@ -64,6 +64,29 @@ public static class ScenarioA1Definitions
         ["Stone Rubble"] = "stone-rubble",
     };
 
+    /// <summary>
+    /// B13.3, B13.31 (p. 128; pass 40, ruling R40.4): a woods-road hex, whose "normal woods TEM is in effect" but for a mover at the road rate. The
+    /// map names such a hex as VASL does (<c>VASLBoard.fillWoodsRoadHexes</c>): a road at its center dot and Woods on one of its hexside Locations.
+    /// </summary>
+    public static bool IsWoodsRoadHex(bool centerIsRoad, IEnumerable<string?> hexsideLocationTerrains)
+    {
+        ArgumentNullException.ThrowIfNull(hexsideLocationTerrains);
+        return centerIsRoad && hexsideLocationTerrains.Any(name => name == "Woods");
+    }
+
+    /// <summary>
+    /// A4.132, B3.3 (pp. 48, 113; pass 40): the terrain a fire attack reads for a mover that entered its Location at the road rate, from each
+    /// firing Location's two target points: Open Ground (no TEM of the other terrain, and FFMO as Open Ground has it) when every firing Location
+    /// reaches the hex center dot or the road's hexside without crossing the hex's other terrain; the Location's own terrain otherwise, and when
+    /// the map cannot say. A7.52: the worst case of a Fire Group's Locations applies to all of it.
+    /// </summary>
+    public static string RoadRateTargetTerrain(string locationTerrain, IEnumerable<(bool? CenterCrossesTerrain, bool? HexsideCrossesTerrain)> firingLocations)
+    {
+        ArgumentNullException.ThrowIfNull(firingLocations);
+        var read = firingLocations.ToArray();
+        return read.Length > 0 && read.All(item => item.CenterCrossesTerrain == false || item.HexsideCrossesTerrain == false) ? "open-ground" : locationTerrain;
+    }
+
     /// <summary>The IFT results that are at least a NMC (A10.62).</summary>
     public static IReadOnlyList<string> AtLeastNmc
     {

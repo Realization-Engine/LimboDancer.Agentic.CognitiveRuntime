@@ -284,7 +284,7 @@ public static class GameActions
             "unitIds": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
             "to": { "type": "string" }, "exit": { "type": "string", "enum": ["top", "bottom", "left", "right"] },
             "assault": { "type": "boolean" }, "doubleTime": { "type": "boolean" }, "pushGun": { "type": "string" },
-            "smoke": { "type": "string" }, "smokeBy": { "type": "string" }, "minimumMove": { "type": "boolean" },
+            "smoke": { "type": "string" }, "smokeBy": { "type": "string" }, "minimumMove": { "type": "boolean" }, "terrainRate": { "type": "boolean" },
             "placeDc": { "type": "string" }, "placeDcAt": { "type": "string" },
             "keep": { "type": "array", "items": { "type": "string" } },
             "bypass": { "type": "array", "items": { "type": "string", "enum": ["north", "northeast", "southeast", "south", "southwest", "northwest"] }, "minItems": 1, "maxItems": 2 }

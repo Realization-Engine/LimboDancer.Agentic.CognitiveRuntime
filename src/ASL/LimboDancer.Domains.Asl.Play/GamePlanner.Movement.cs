@@ -72,6 +72,9 @@ public sealed partial class GamePlanner
         var assault = arguments.TryGetProperty("assault", out var flag) && flag.ValueKind == JsonValueKind.True;
         var doubleTime = arguments.TryGetProperty("doubleTime", out var timed) && timed.ValueKind == JsonValueKind.True;
 
+        // A4.132 (pass 40): across a road hexside the mover may pay the cost of the hex's other terrain and be in it.
+        var terrainRate = arguments.TryGetProperty("terrainRate", out var rated) && rated.ValueKind == JsonValueKind.True;
+
         // Pass 32.b: the planner reads the state, the map, and the catalog block by block, in the order the old body read them, and Rules decides each
         // block (ScenarioA1MovementCalculator); the arguments' parsing and the reads that belong to other slices (the entry edge, the playable area,
         // the charge route) stay here.
@@ -236,10 +239,16 @@ public sealed partial class GamePlanner
 
         var (entry, stepReason, bypassing, occupy) = entering is { } edgeSide
             ? EntryStep(state, movers, to, edgeSide, bypass)
-            : MoveEntry(state, movers, from, to, current, bypass);
+            : MoveEntry(state, movers, from, to, current, bypass, terrainRate);
         if (entry is null)
         {
             return Refused(scope, label, expected, stepReason!);
+        }
+
+        // A4.132 (pass 40): the choice is a step's across a road hexside; an entry from off board, a Bypass, and an obstacle occupied have none.
+        if (terrainRate && (entering is not null || bypassing is not null || occupy))
+        {
+            return Refused(scope, label, expected, "play.move-terrain-rate: the cost of the hex's other terrain is chosen only for a step across a road hexside, not for an entry from off board, a Bypass, or an obstacle occupied (A4.132)");
         }
 
         var terrain = entry.Terrain;
@@ -296,13 +305,14 @@ public sealed partial class GamePlanner
             bypassing is null ? null : [.. bypassing.Select(side => side.ToString().ToLowerInvariant())], halfMf, assault, doubleTime, minimumMove,
             [.. abandoned.Select(item => item.Id)], entry.RoadRate, pushed is not null, state.Night, movers.Length > 0 && movers.All(unit => unit.Kind == UnitKinds.Dummy),
             [.. enemiesThere.Select(unit => new MoveRevealUnitFacts(unit.Id, unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Hidden)))],
-            [.. hiddenEnemies.Select(unit => new MoveRevealUnitFacts(unit.Id, unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Hidden)))], overstack));
+            [.. hiddenEnemies.Select(unit => new MoveRevealUnitFacts(unit.Id, unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Hidden)))], overstack, entry.OnRoad));
         var forcedBack = verdict.ForcedBack;
         var moved = new MovementStepped(ids, forcedBack ? from : to, halfMf, assault, step)
         {
             Charge = charge,
             DoubleTime = doubleTime,
             Road = verdict.RoadBonus,
+            RoadRate = entry.OnRoad && !forcedBack,
             MinimumMove = minimumMove,
             Attempted = forcedBack ? to : null,
             Bypass = bypassing,

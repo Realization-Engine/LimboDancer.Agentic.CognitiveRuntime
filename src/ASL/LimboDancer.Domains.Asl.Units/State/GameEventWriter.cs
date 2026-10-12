@@ -495,6 +495,11 @@ public static class GameEventWriter
                     writer.WriteBoolean("road", true);
                 }
 
+                if (moving.RoadRate)
+                {
+                    writer.WriteBoolean("roadRate", true);
+                }
+
                 if (moving.MinimumMove)
                 {
                     writer.WriteBoolean("minimumMove", true);

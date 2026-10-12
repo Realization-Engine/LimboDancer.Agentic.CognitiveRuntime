@@ -122,6 +122,12 @@ public sealed class BacklogPass10Tests : IDisposable
     {
         public HashSet<string> Blocked { get; } = new(StringComparer.Ordinal);
 
+        /// <summary>By the firer's hex: whether its line to a target point of a hex entered at the road rate crosses the hex's other terrain (A4.132).</summary>
+        public Dictionary<string, bool> CrossesTerrain { get; } = new(StringComparer.Ordinal);
+
+        public bool? CrossesTerrainInTargetHex(GameState state, BoardLocation from, BoardLocation target, HexsideDirection? enteredAcross) =>
+            CrossesTerrain.TryGetValue(from.Hex.ToString(), out var crosses) ? crosses : null;
+
         public LosResult? Read(GameState state, BoardLocation from, BoardLocation target)
         {
             var range = Board01Fixture.Handle().Distance(from.Hex, target.Hex) ?? 1;
@@ -359,6 +365,46 @@ public sealed class BacklogPass10Tests : IDisposable
         before = Revision;
         Committed(await Move(G2, L("D4")));
         Assert.Equal(2, LastStep(before).HalfMf);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AMoverAtTheRoadRateIsOnTheRoadForAFirerThatSeesItAndInTheWoodsForOneThatDoesNot()
+    {
+        // Pass 40, task 40.2 (A4.132 and its example, p. 48; B13.31): D4 and E4 are woods entered across a road hexside. At the road rate the squad
+        // pays one MF and is on the road: FFMO and no woods TEM for the firer whose LOS reaches a target point clear, the woods TEM for the one
+        // whose LOS crosses the woods. Paying the woods' cost it is in the woods for both, and the Road Bonus is not its.
+        board.Terrain["D4"] = "Woods";
+        board.Terrain["E4"] = "Woods";
+        board.Side("D5", HexsideDirection.North, terrain: "Dirt Road");
+        board.Side("E5", HexsideDirection.North, terrain: "Dirt Road");
+        los.CrossesTerrain["D2"] = false;
+        los.CrossesTerrain["C3"] = true;
+        await Setup(Squad("g1", L("D5"), "german"), Squad("g2", L("E5"), "german"), Squad("r1", L("D2"), "russian"), Squad("r2", L("C3"), "russian"));
+        var before = Revision;
+        Committed(await Move(G1, L("D4")));
+        Assert.Equal(2, LastStep(before).HalfMf);
+        Assert.True(LastStep(before).RoadRate);
+        before = Revision;
+        Committed(await Fire(R1, L("D4"), false, 6, 6, 6, 6, 6, 6));
+        Assert.Contains(Drm(LastFire(before)), item => item.Name == "ffmo");
+        Assert.DoesNotContain(Drm(LastFire(before)), item => item.Name == "tem:woods");
+        before = Revision;
+        Committed(await Fire(R2, L("D4"), false, 6, 6, 6, 6, 6, 6));
+        Assert.Contains(("tem:woods", 1m), Drm(LastFire(before)));
+        Assert.DoesNotContain(Drm(LastFire(before)), item => item.Name == "ffmo");
+        await Pass();
+        Committed(await EndMove());
+
+        before = Revision;
+        Committed(await Do(GameActions.Move, NoRoll(), new Dictionary<string, object> { ["unitIds"] = G2, ["to"] = L("E4"), ["terrainRate"] = true }));
+        Assert.Equal(4, LastStep(before).HalfMf);
+        Assert.False(LastStep(before).RoadRate);
+        Assert.False(LastStep(before).Road);
+        before = Revision;
+        Committed(await Fire(R1, L("E4"), false, 6, 6, 6, 6, 6, 6));
+        Assert.Contains(("tem:woods", 1m), Drm(LastFire(before)));
+        Assert.DoesNotContain(Drm(LastFire(before)), item => item.Name == "ffmo");
         NoReplayErrors();
     }
 

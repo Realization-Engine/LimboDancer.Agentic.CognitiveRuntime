@@ -40,7 +40,7 @@ public sealed partial class GamePlanner
     /// (B10.51), one MF more across a wall or hedge (B9.4), and one more into SMOKE or a burning wreck (A24.7, B25.141). Null with the reason
     /// when the step is not allowed or not reviewed.
     /// </summary>
-    private (InfantryEntry? Entry, string? Reason) InfantryStep(GameState state, BoardLocation from, BoardLocation to)
+    private (InfantryEntry? Entry, string? Reason) InfantryStep(GameState state, BoardLocation from, BoardLocation to, bool terrainRate = false)
     {
         // Pass 32.b: the map is read here as the step read it (both Locations within one hex, the step between two), and Rules decides.
         var hexsides = from.Side is not null || to.Side is not null;
@@ -48,7 +48,7 @@ public sealed partial class GamePlanner
         var (fromRead, toRead, adjacent, crossed) = hexsides ? (null, null, false, null)
             : sameHex ? (ReadLocation(state, from), ReadLocation(state, to), false, null) : Step(state, from, to);
         var facts = new InfantryStepFacts(from.Side is not null, to.Side is not null, sameHex, from.Level, to.Level, from.ToString(), to.ToString(), from.Hex.ToString(),
-            StepLocation(fromRead), StepLocation(toRead), adjacent, crossed is null ? null : CrossedFacts(crossed), state.Night, state.ScenarioMonth);
+            StepLocation(fromRead), StepLocation(toRead), adjacent, crossed is null ? null : CrossedFacts(crossed), state.Night, state.ScenarioMonth, terrainRate);
         return ScenarioA1TerrainCosts.InfantryStep(facts, () => BlazeEntryHalfMf(state, to), (terrain, road, rise) => InfantryWeatherHalfMf(state, crossed!, terrain, road, rise));
     }
 
@@ -246,7 +246,7 @@ public sealed partial class GamePlanner
     /// Bypass step, and whether the stack occupies the obstacle it Bypassed; or the reason it is refused.
     /// </summary>
     private (InfantryEntry? Entry, string? Reason, IReadOnlyList<HexsideDirection>? Bypass, bool Occupy) MoveEntry(GameState state, UnitInstance[] movers,
-        BoardLocation from, BoardLocation to, MovementState? current, List<HexsideDirection>? bypass)
+        BoardLocation from, BoardLocation to, MovementState? current, List<HexsideDirection>? bypass, bool terrainRate = false)
     {
         // Pass 32.b: the state and the map are read here, and Rules decides which step the stack takes and reads it.
         var lane = current?.Bypass ?? [];
@@ -284,7 +284,7 @@ public sealed partial class GamePlanner
 
         if (verdict.OrdinaryStep)
         {
-            var (exit, exitReason) = InfantryStep(state, from, to);
+            var (exit, exitReason) = InfantryStep(state, from, to, terrainRate);
             return (exit, exitReason, null, false);
         }
 

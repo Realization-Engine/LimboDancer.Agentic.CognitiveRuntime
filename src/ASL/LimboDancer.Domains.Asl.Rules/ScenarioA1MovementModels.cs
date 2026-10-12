@@ -5,7 +5,18 @@ namespace LimboDancer.Domains.Asl.Rules;
 /// the road rate into a hex with no SMOKE, burning wreck, or rubble (the Road Bonus, B3.4), whether it costs the unit's whole MF allotment (marsh,
 /// B16.4), and whether only a Minimum Move may make it (marsh from a lower elevation, B16.4).
 /// </summary>
-public sealed record InfantryEntry(int HalfMf, string Terrain, bool RoadRate, bool AllMf, bool MinimumMoveOnly, bool LevelChange);
+public sealed record InfantryEntry(int HalfMf, string Terrain, bool RoadRate, bool AllMf, bool MinimumMoveOnly, bool LevelChange)
+{
+    /// <summary>
+    /// A4.132 (p. 48; pass 40): whether the step crossed a road hexside paying the road's cost into a hex that has other terrain, so the mover is
+    /// on the road and not in that terrain while the DEFENDER First Fires. SMOKE in the hex does not change it; <see cref="RoadRate"/> is the
+    /// Road Bonus's read, which SMOKE ends (B3.4).
+    /// </summary>
+    public bool OnRoad
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// The hexside an Infantry step crosses, as the map reads it: a cliff or Continuous Slope, the hexside terrain's name (a wall, a hedge, or another),
@@ -35,7 +46,8 @@ public sealed record InfantryStepFacts(
     bool Adjacent,
     CrossedHexsideFacts? Crossed,
     bool Night,
-    int? Month);
+    int? Month,
+    bool TerrainRate = false);
 
 /// <summary>One hexside a Bypass runs along, as the map reads the target hex's hexside: its direction as an int and its lower-case name, whether it was read, and the names of its terrain and hexside terrain and whether it carries a road.</summary>
 public sealed record BypassedHexsideFacts(int Side, string SideText, bool Read, string? Terrain, string? HexsideTerrain, bool Road);
@@ -336,7 +348,8 @@ public sealed record MoveStepFacts(
     bool AllDummies,
     IReadOnlyList<MoveRevealUnitFacts> EnemiesThere,
     IReadOnlyList<MoveRevealUnitFacts> HiddenEnemies,
-    int OverstackExcess = 0);
+    int OverstackExcess = 0,
+    bool OnRoad = false);
 
 /// <summary>
 /// The verdict on a step's reveal and record (A12.15, A.9, A12.11, A2.51): the units revealed, the real ones among them by id, whether the stack is

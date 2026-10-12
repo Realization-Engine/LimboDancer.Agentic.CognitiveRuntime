@@ -117,6 +117,15 @@ public sealed record MovementStepped(IReadOnlyList<string> Movers, BoardLocation
     }
 
     /// <summary>
+    /// Whether the movers entered <see cref="To"/> across a road hexside paying the road's cost, into a hex that has other terrain (A4.132; pass 40):
+    /// they are on the road, not in that terrain, while the DEFENDER First Fires at them there.
+    /// </summary>
+    public bool RoadRate
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// Whether the step is a Minimum Move (A4.134; ruling R10.9): the movers' only hex this MPh; when the DEFENDER's window closes their move ends and
     /// the unbroken ones become pinned and CX.
     /// </summary>
@@ -429,6 +438,12 @@ public sealed record MovementState(IReadOnlyList<string> Movers, BoardLocation L
 
     /// <summary>Whether the latest step was a Minimum Move (A4.134; ruling R10.9).</summary>
     public bool MinimumMove
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the latest step entered the Location at the road rate, into a hex that has other terrain (A4.132; pass 40).</summary>
+    public bool RoadRate
     {
         get; init;
     }

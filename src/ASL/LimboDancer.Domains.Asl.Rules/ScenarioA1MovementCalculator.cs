@@ -684,6 +684,7 @@ public static class ScenarioA1MovementCalculator
         var charge = facts.ChargeText is not null;
         var summary = $"{(facts.Entering ? "play.enter" : "play.move")}: {string.Join(", ", ids)} " + (forcedBack ? $"{(ids.Count == 1 ? "attempts" : "attempt")} {facts.ToText}" : facts.Occupy ? $"{(ids.Count == 1 ? "occupies" : "occupy")} the obstacle of {facts.ToText}" : $"{(ids.Count == 1 ? "enters" : "enter")} {facts.ToText}")
             + $" ({facts.Terrain}{(facts.BypassTexts is not null ? " in Bypass along " + string.Join(", ", facts.BypassTexts) : string.Empty)}) for {facts.HalfMf / 2m} MF"
+            + (facts.OnRoad ? ", at the road rate: on the road, not in the hex's other terrain (A4.132)" : string.Empty)
             + (facts.OverstackExcess > 0 ? $", {facts.OverstackExcess} of them for a Location overstacked by {facts.OverstackExcess} squad-equivalent(s) (A5.11)" : string.Empty)
             + (facts.Assault ? ", by Assault Movement" : string.Empty)
             + (facts.DoubleTime ? ", Double Timing and now CX (A4.5)" : string.Empty)
