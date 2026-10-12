@@ -1047,7 +1047,7 @@ else if (state is not null)
         (unit.Status == InstanceStatus.Wrecked ? "wreck" : LiveFire.IsVehicle(unit) ? $"{HalfMpText(GamePlanner.VehicleHalfMp(unit).Spent)} of {HalfMpText(GamePlanner.VehicleHalfMp(unit).Allotment)} MP"
             : unit.MfSpent.ToString(CultureInfo.InvariantCulture)) + (unit.MovementEnded ? ", movement ended" : ""),
         string.Join(", ", unit.Conditions.Where(pair => pair.Value == ConditionState.True).Select(pair => ConditionText(pair.Key)).Concat(Custody(unit)).Concat(VehicleNotes(unit)).Concat(CargoNotes(unit))
-            .Concat(state.Encircled(unit) ? ["Encircled (A7.7)"] : [])
+            .Concat(state.Encircled(unit) ? ["Encircled (A7.7)"] : Live.Planner.UpperLevelEncircled(state, unit) ? ["Encircled: no path to ground level (A7.72)"] : [])
             .Concat(unit.Status == InstanceStatus.Wrecked && GamePlanner.IsBurning(state, unit) ? ["burning (Blaze)"] : []))))];
 
     private string DefinitionLabel(string id) => PublishedCatalog?.Definition(id) is { } definition ? ScenarioCards.Describe(definition) : id;

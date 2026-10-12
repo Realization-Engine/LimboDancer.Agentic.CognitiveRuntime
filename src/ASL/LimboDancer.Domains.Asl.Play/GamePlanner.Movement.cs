@@ -323,7 +323,7 @@ public sealed partial class GamePlanner
         // A5.11: the stack the entry makes there; a stack that occupies the obstacle it Bypasses is already in the Location, and marsh takes all the MF.
         var overstack = occupy || entry.AllMf ? 0 : LiveStacking.Of(state, to, movers[0].Side, movers).PersonnelExcess;
         var (noCost, halfMf) = ScenarioA1MovementCalculator.EntryCost(
-            new EntryCostFacts(entry, movers.Any(state.Encircled), pushed is not null, bypassing is not null, occupy, minimumMove, assault, berserk, current is not null, doubleTime,
+            new EntryCostFacts(entry, movers.Any(mover => Encircled(state, mover)), pushed is not null, bypassing is not null, occupy, minimumMove, assault, berserk, current is not null, doubleTime,
                 [.. movers.Select(unit => new EntryMoverFacts(unit.MfSpent != 0 || unit.HalfMfSpent, unit.DoubleTimeMf, Is(unit, Conditions.Cx)))], overstack),
             (index, doubleTimeMf, cx) => MfAllotment(state, movers[index], doubleTimeMf, cx));
         if (noCost is not null)

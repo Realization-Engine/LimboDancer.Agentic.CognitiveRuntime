@@ -662,6 +662,9 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
 
                     // Pass 31d (ruling R31d.2): who sees a concealed firer is the planner's read of the map, recorded with the attack.
                     SeenByGoodOrderEnemy = record.SeenByGoodOrderEnemy,
+
+                    // A7.72 (pass 45): a firer cut off in an upper building level is Encircled by a read of the map, recorded with the attack.
+                    Encircled = fact.Encircled ?? record.Encircled,
                 })],
             // A7.7 (ruling R12.11): the Encirclement an attack completes is read before the attack, and recorded with it.
             Targets = recorded.Targets is null || expected.Targets is null ? expected.Targets

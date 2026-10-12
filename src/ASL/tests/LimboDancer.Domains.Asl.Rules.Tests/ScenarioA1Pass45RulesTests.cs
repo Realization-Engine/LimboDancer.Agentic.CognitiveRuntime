@@ -304,6 +304,37 @@ public sealed class ScenarioA1Pass45RulesTests
         Assert.True(ScenarioA1Geometry.Encircles([0, 6]));
     }
 
+    /// <summary>A building for the A7.72 search: steps between numbered Locations, which of them are at ground level, and which the enemy holds.</summary>
+    private sealed class Building(Dictionary<int, int[]> steps, int[] ground, int[] held) : IUpperLevelPathReader
+    {
+        public IReadOnlyList<int> StepsFrom(int location) => steps.GetValueOrDefault(location, []);
+
+        public bool GroundLevel(int location) => ground.Contains(location);
+
+        public bool Held(int location) => held.Contains(location);
+    }
+
+    [Fact]
+    public void AUnitUpstairsWithNoPathToGroundLevelIsEncircled()
+    {
+        // A7.72 (p. 58): a unit in an upper level that "cannot trace a path free of an unbroken, armed, unconcealed enemy unit ... to ground level".
+        // Location 0 is level 2, 1 is level 1, 2 is ground level, all of one stairwell hex; 3 is level 1 of the next hex and 4 its ground level.
+        var steps = new Dictionary<int, int[]> { [0] = [1], [1] = [0, 2, 3], [3] = [1, 4] };
+        Assert.False(ScenarioA1UpperLevelEncirclement.Encircled(true, false, false, 0, new Building(steps, [2, 4], [])));
+
+        // The enemy at level 1 cuts the unit at level 2 off.
+        Assert.True(ScenarioA1UpperLevelEncirclement.Encircled(true, false, false, 0, new Building(steps, [2, 4], [1])));
+
+        // From level 1, the enemy at ground level of its own hex leaves the way through the next hex; held too, there is none.
+        Assert.False(ScenarioA1UpperLevelEncirclement.Encircled(true, false, false, 1, new Building(steps, [2, 4], [2])));
+        Assert.True(ScenarioA1UpperLevelEncirclement.Encircled(true, false, false, 1, new Building(steps, [2, 4], [2, 4])));
+
+        // Never a berserk or heroic unit, and never a unit that is not upstairs in a building.
+        Assert.False(ScenarioA1UpperLevelEncirclement.Encircled(true, true, false, 0, new Building(steps, [2, 4], [1])));
+        Assert.False(ScenarioA1UpperLevelEncirclement.Encircled(true, false, true, 0, new Building(steps, [2, 4], [1])));
+        Assert.False(ScenarioA1UpperLevelEncirclement.Encircled(false, false, false, 0, new Building(steps, [2, 4], [1])));
+    }
+
     [Fact]
     public void CasualtyReductionEliminatesACrew()
     {
