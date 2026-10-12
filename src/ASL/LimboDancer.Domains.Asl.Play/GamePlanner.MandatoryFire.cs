@@ -121,6 +121,12 @@ public sealed partial class GamePlanner
             : null;
     }
 
+    /// <summary>A9.8 (p. 65; pass 45): "A dm SW may not be fired until reassembled": the refusal of a dismantled mortar's shot, or null.</summary>
+    private GamePlan? DismantledOrdnance(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, long expected, string label) =>
+        existing.Count > 0 && Text(arguments, "gunId", out var gunId) && Replay(existing).Current?.Find(gunId) is EquipmentInstance weapon && Is(weapon, Conditions.Dismantled)
+            ? Refused(scope, label, expected, $"play.ordnance-dismantled: {gunId} is dismantled and is not fired until it is assembled (A9.8)")
+            : null;
+
     /// <summary>
     /// The fire action, with the Mandatory FG's bar before it (A8.312). The bar is on the DEFENDER's proposal alone: a proposal by the phasing side
     /// goes to the fire plan as before, so no refusal tells the ATTACKER which of the DEFENDER's units owe the attack.

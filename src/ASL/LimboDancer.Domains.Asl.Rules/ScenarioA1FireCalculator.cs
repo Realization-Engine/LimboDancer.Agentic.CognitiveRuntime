@@ -687,6 +687,14 @@ public static class ScenarioA1FireCalculator
             outside.Add("asl.a1.fire.subsequent-first-fire-outside");
         }
 
+        // A9.3 (p. 63; pass 45): "Sustained Fire cannot be used ... by a MG fired by a lone SMC." A leader with no partner fires no MG in Sustained
+        // Fire; an attack recorded before the pass stands.
+        if (attack.CoweringMarksAndWeaponResidual == true && firers.Zip(firerDefinitions).Any(pair => pair.Second is { IsLeader: true } && pair.First.Partner is null
+            && (pair.First.Weapons ?? []).Any(weapon => IsSustained(attack, weapon, reference))))
+        {
+            outside.Add("asl.a1.fire.weapon-outside");
+        }
+
         // A8.4: a First-Fire-marked unit fires again in the DFPh only at an adjacent or same-hex target.
         if (firers.Any(item => IsFinalFireAgain(attack, item) && RangeOf(attack, item) > 1))
         {
@@ -2652,8 +2660,16 @@ public static class ScenarioA1FireCalculator
                     && !(attack.FireKind == FinalProtectiveFire && operatorUnit?.FinalFireMarked == true)
                     && (attack.Phase != "AFPh" || operatorUnit?.OpportunityFire == true)
                     && reference.Definitions[weapon.DefinitionId!].RateOfFire is { } rof && colored <= rof - (weapon.Captured == true ? 1 : 0);
+                // A.11 (p. 43; pass 45): "it also transforms the weapon's Original B# to an X# during that use": a weapon whose B# this fire lowered is
+                // removed on a DR at least its printed B# (the page's LMG in Sustained Fire: B10, X12). A FT's own removal is ruling R15.1's.
+                var definition = reference.Definitions[weapon.DefinitionId!];
+                var printed = definition.Breakdown ?? 12;
+                var removed = attack.CoweringMarksAndWeaponResidual == true && !definition.IsFt && malfunctioned.Contains(id) && breakdown[id] < printed && original >= printed;
                 return new FireWeaponEffect(id, breakdown[id], malfunctioned.Contains(id), retained, sustained,
-                    retained ? null : sustained ? "final-fire" : operatorUnit is null ? counter : OwnCounter(operatorUnit), selection.TryGetValue(id, out var dr) ? dr : null);
+                    retained ? null : sustained ? "final-fire" : operatorUnit is null ? counter : OwnCounter(operatorUnit), selection.TryGetValue(id, out var dr) ? dr : null)
+                {
+                    Removed = removed ? true : null,
+                };
             }).ToList();
         }
 

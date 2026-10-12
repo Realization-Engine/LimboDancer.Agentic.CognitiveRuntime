@@ -984,7 +984,18 @@ public sealed record FireColumn(decimal TotalFirepower, int? UnshiftedColumnFp, 
 
 /// <summary>What the attack did to a MG: malfunction (A9.7, A9.71), Multiple ROF kept (A9.2), Sustained Fire (A9.3), and its fire counter.</summary>
 public sealed record FireWeaponEffect(string EquipmentId, int BreakdownNumber, bool Malfunctioned, bool RateOfFireRetained, bool SustainedFire,
-    string? FireCounter, int? SelectionDr);
+    string? FireCounter, int? SelectionDr)
+{
+    /// <summary>
+    /// Whether the weapon is removed for good (A.11, p. 43; A9.7, p. 65; pass 45): a fire that lowers the B# "also transforms the weapon's Original
+    /// B# to an X# during that use", and a DR at least the X# removes it. Null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Removed
+    {
+        get; init;
+    }
+}
 
 /// <summary>A MC, NTC, LLMC, or LLTC taken by a target unit.</summary>
 public sealed record FireCheck(

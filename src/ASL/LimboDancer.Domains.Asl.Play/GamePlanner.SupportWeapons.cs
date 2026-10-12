@@ -33,8 +33,8 @@ public sealed partial class GamePlanner
     /// <summary>A25.2 (ruling R31.4): Russian squads may not Deploy [EXC: a Guard of prisoners, A20.5 (pass 40), and a temporary crew, A21.22, not built].</summary>
     private static bool MayNotDeploy(UnitInstance squad) => !ScenarioSetup.MayDeploy(DefinitionOf(squad)?.Nationality);
 
-    /// <summary>Whether the game dismantles a weapon now for its possessor (A9.8; ruling R13.6): the German MMG, in its side's PFPh or DFPh.</summary>
-    public static bool MayDismantle(GameState state, string weaponId)
+    /// <summary>Whether the game dismantles a weapon now for its possessor (A9.8; pass 45): a weapon the rule names, in its side's PFPh or DFPh.</summary>
+    public bool MayDismantle(GameState state, string weaponId)
     {
         ArgumentNullException.ThrowIfNull(state);
         return state.Find(weaponId) is EquipmentInstance { Holding: { } holding } weapon && Dismantlable(weapon) && state.Unit(holding.Holder) is { } unit
@@ -581,10 +581,14 @@ public sealed partial class GamePlanner
         };
     }
 
-    /// <summary>The German MMG, the one catalog weapon A9.8 lets its possessor dismantle and assemble (ruling R13.6).</summary>
-    private static bool Dismantlable(EquipmentInstance weapon) =>
-        weapon.Definition is { } reference && FireReference.Value.Definitions.GetValueOrDefault(reference.Definition) is { Nationality: "german" } definition
-            && definition.Id.Contains("mmg", StringComparison.Ordinal);
+    /// <summary>The weapons A9.8 lets their possessor dismantle and assemble; Rules decides from the catalog's values (pass 45).</summary>
+    private bool Dismantlable(EquipmentInstance weapon)
+    {
+        var definition = weapon.Definition is { } reference ? FireReference.Value.Definitions.GetValueOrDefault(reference.Definition) : null;
+        var printed = weapon.Definition is { } named ? catalogs.FirstOrDefault(item => item.Identity == named.Catalog)?.Definition(named.Definition) : null;
+        return ScenarioA1FireEligibility.Dismantlable(weapon.Kind, definition?.Nationality ?? printed?.Nationality, definition?.Size,
+            (int?)printed?.Printed("front", "asl:portage")?.Value?.Number);
+    }
 
     /// <summary>
     /// Dismantling or assembling the German MMG (A9.8; ruling R13.6): its possessor does it in a PFPh or DFPh of its side in which the MG has not fired;
@@ -609,7 +613,7 @@ public sealed partial class GamePlanner
 
         if (!Dismantlable(weapon))
         {
-            return Refused(scope, label, expected, $"play.dismantle-weapon: {weapon.Id} is not a weapon the game dismantles; only the German MMG is (A9.8; ruling R13.6)");
+            return Refused(scope, label, expected, $"play.dismantle-weapon: {weapon.Id} is not dismantled: only a light mortar of four PP or more and a non-Russian MMG or HMG are (A9.8)");
         }
 
         var marker = state.Phase switch

@@ -402,3 +402,34 @@ A9.223 (p. 63): "A MG may cancel its Fire Lane in order to gain freedom to fire 
 For `p45-fl-lane3` I could not read from the page that a lane had been listed before the attack and was gone after it; the page lists Residual FP there. The projector's removal has its Rules test.
 
 **The tests.** Rules, in `ScenarioA1Pass45RulesTests`: the squad's spray at two and three hexes with its two refusals; the group's capability with the older record's leave; the Field of Fire's wedge; the 16-hex limit and the halving; the leader's later direction; the lane's bar and its cancellation. Play: `CloseCombatStepsTests` gains the leader's later direction through the gate, which is the fixture of the projector's fault. Classes run: Rules pass 45, pass 12, the Fire package's; **the Units project whole (409 of 409), since the projector changed**; Play `BacklogPass10Tests`, `BacklogPass12Tests`, `BacklogPass15` (both), `BacklogPass31`, `CloseCombatStepsTests`, `FireTests`, `OlderGamesTests`, `RallyAndFireStepsTests`, `RefusalReasonsTests`.
+
+## 11. Upkeep and leftovers: 45.7, 45.10 (increment 2e)
+
+### 11.1 Departures from the frame, first
+
+Decided under the user's word of 2026-10-12; each has a backlog row and is in the pass's report.
+
+- **The mortars' Repair number is not manufactured, so a mortar is still not repaired (A9.72; question F9).** The answer to F9 was to manufacture it under R0.3 if no source prints it. The Repair number is a catalog value, and a value added to the catalog is a catalog version: its manifest, its counter transcription, and the tests that name the version. That is a job of its own that the pass, which the plan gives no counters, does not open. I did not run the rulebook scan either; it belongs with that job.
+- **SW Self-Destruction (A9.73) is not built.** It is an action of its own (a deliberate malfunction or destruction in the PFPh or DFPh, counting as the weapon's use), with its registration and its place on the page.
+- **The SW sense of Good Order (A.7)** is left as it is: the Fire Lane's declaration and the fire package already ask for an unbroken, unpinned possessor and a weapon that is not malfunctioned, which is the rule's content.
+
+### 11.2 Task 45.7
+
+- **The X# (A.11, p. 43; A9.7, p. 65).** A fire that lowers the B# "also transforms the weapon's Original B# to an X# during that use": a weapon whose B# this attack lowered (Sustained Fire, capture, Inexperience) is removed on a DR at least its printed B#. The weapon effect says so and the planner eliminates it. Under the fact of ruling R45.4. A9.71's Random Selection among several weapons is the malfunction's own, already built: a weapon it selects whose printed B# was reached is removed.
+- **A lone SMC's MG (A9.3, p. 63).** "Sustained Fire cannot be used ... by a MG fired by a lone SMC": a leader with no partner fires no MG in Subsequent First Fire, FPF, or Final Fire by a First Fire weapon.
+- **Repair of a captured SW (A9.72).** "A captured SW/Gun may never be repaired unless recaptured by its original side": refused.
+- **Dismantling (A9.8, p. 65).** "Any light mortar of >= four PP, 76-82mm mortar, or non-Russian HMG/MMG". The test was the German MMG by its id, decided in Play. It is now a Rules member over the catalog's kind, nationality, size, and portage: the German HMG and the three light mortars are dismantled too, and the Russian MGs are not. A dismantled mortar's shot is refused.
+- **A German dm MMG or HMG fires as a LMG (A9.8, A4.41).** "A dm SW may not be fired until reassembled [EXC: a German dm HMG/MMG may be fired as a German LMG]". Its fire facts name the German LMG's definition, so it has that weapon's FP, range, ROF, and B#, and, being a LMG, it fires in the AFPh after moving.
+
+**Left out, each with a backlog row:** the departures of 11.1; starting a scenario dismantled, and a captor dismantling; a dm weapon repaired with its assembled Repair number (the planner repairs a dm MG as any other already); a malfunctioned dm German MG keeps the one malfunction condition; the fire panel's weapon label does not say that a HMG is dismantled and fires as a LMG, and the "Latest" line does not say that a weapon was removed on its X#.
+
+**The games,** on board 3, in the adjudicator's view:
+
+| Game | What it shows | Recorded |
+|---|---|---|
+| `p45-sw-dm` | A German squad's dismantled HMG fires at an adjacent squad: "the HMG ...: 3 FP x 2 (Point Blank Fire) = 6". | yes |
+| `p45-sw-whole` | The control: assembled, "7 FP x 2 = 14". | yes |
+| `p45-sw-xnumber` | A Russian squad and its LMG, both marked First Fire, fire again at a squad entering [E10]: the LMG's B# is 9 in Sustained Fire, the DR is 11, its printed B#: the record has it removed and the game eliminates it. The squad's FP alone leaves the Residual FP (2). | yes |
+| `p45-sw-mortar` | A Russian squad dismantles its 50mm mortar in the PFPh: the SW list reads "dismantled, 2 PP". Its shot is then refused: "is dismantled and is not fired until it is assembled (A9.8)". | yes (the dismantling) |
+
+**The tests.** Rules, in `ScenarioA1Pass45RulesTests`: the X# at three DRs and a normal shot's malfunction; the lone SMC's refusal; the dismantle table, the LMG rule, and the captured SW's repair. No new Play test: `BacklogPass13Tests` has the dismantling and the repair through the gate, and one of its assertions is turned (a German dm MMG fired in the phase it was dismantled is refused for that use, no longer for being dismantled). Classes run: Rules pass 45, 12, 13, the Fire package's; Play `BacklogPass9Tests`, `BacklogPass12Tests`, `BacklogPass13Tests`, `OlderGamesTests`, `PlayTests`, `RallyAndFireStepsTests`.

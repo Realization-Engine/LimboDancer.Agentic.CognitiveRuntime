@@ -25,6 +25,29 @@ public static class LiveFire
             weaponDefinition is null ? null : CatalogReference.Value.Definitions.GetValueOrDefault(weaponDefinition)?.Nationality,
             unit.Definition is { } holder ? CatalogReference.Value.Definitions.GetValueOrDefault(holder.Definition)?.Nationality : null);
 
+    /// <summary>Whether a dismantled MG fires as its side's LMG (A9.8; pass 45).</summary>
+    public static bool FiresAsLmg(EquipmentInstance weapon)
+    {
+        ArgumentNullException.ThrowIfNull(weapon);
+        var definition = weapon.Definition is { } reference ? CatalogReference.Value.Definitions.GetValueOrDefault(reference.Definition) : null;
+        return ScenarioA1FireEligibility.DismantledFiresAsLmg(Is(weapon, Conditions.Dismantled), definition?.Nationality, definition?.Size);
+    }
+
+    /// <summary>The definition a weapon fires as: its own, or its side's LMG for a dismantled German MMG or HMG (A9.8; pass 45).</summary>
+    public static string? FiredAs(EquipmentInstance weapon)
+    {
+        ArgumentNullException.ThrowIfNull(weapon);
+        var own = weapon.Definition?.Definition;
+        if (!FiresAsLmg(weapon) || own is null)
+        {
+            return own;
+        }
+
+        var nationality = CatalogReference.Value.Definitions[own].Nationality;
+        return CatalogReference.Value.Definitions.Values.Where(item => item.IsMg && item.Size == "light" && item.Nationality == nationality)
+            .OrderBy(item => item.Id, StringComparer.Ordinal).FirstOrDefault()?.Id ?? own;
+    }
+
     public const string Catalog = "asl-scenario-a1";
     public const string CatalogVersion = "1.13.0";
 
@@ -126,8 +149,9 @@ public static class LiveFire
             selection.Vehicles.Count > 0 ? UnitAt(selection.Vehicles[0]).Side : null, state.Sides.FirstOrDefault(item => item.Id != side)?.Id);
         var friendlyTargets = selection.Targets.Any(id => UnitAt(id).Side == side);
 
+        // A9.8 (pass 45): a German dm MMG or HMG fires as a German LMG, so its facts name that definition.
         FireWeapon Weapon(string id) => state.Find(id) is EquipmentInstance equipment
-            ? new FireWeapon(equipment.Id, equipment.Definition?.Definition, Is(equipment, Conditions.Malfunctioned), Fired(equipment),
+            ? new FireWeapon(equipment.Id, FiredAs(equipment), Is(equipment, Conditions.Malfunctioned), Fired(equipment),
                 Is(equipment, Conditions.FirstFire))
             : new FireWeapon(id, null, null, null, null);
 
@@ -141,7 +165,7 @@ public static class LiveFire
                 if (ScenarioA1FireEligibility.NamedWeaponsBar(new NamedWeaponsFacts(unit.Id,
                     [.. named.Select(id => new NamedWeaponFacts(id,
                         state.Find(id) is EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Possessed } holding } && holding.Holder == unit.Id,
-                        state.Find(id) is EquipmentInstance held && Is(held, Conditions.Dismantled),
+                        state.Find(id) is EquipmentInstance held && Is(held, Conditions.Dismantled) && !FiresAsLmg(held),
                         state.Find(id) is EquipmentInstance { Kind: "asl:ft" }))],
                     state.AssaultWeaponUsers.Contains(unit.Id, StringComparer.Ordinal), withoutInherent?.Contains(unit.Id) == true,
                     () => state.Equipment.Any(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } other && other.Holder == unit.Id

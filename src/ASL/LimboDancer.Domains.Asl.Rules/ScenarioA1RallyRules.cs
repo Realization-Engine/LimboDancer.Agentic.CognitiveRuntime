@@ -283,6 +283,10 @@ public static class ScenarioA1RallyRules
     /// <summary>A9.72: the SW is not a malfunctioned one the unit possesses.</summary>
     public static string SwRepairWeaponText(string equipmentId, string unitId) => $"play.repair-weapon: '{equipmentId}' is not a malfunctioned SW '{unitId}' possesses";
 
+    /// <summary>A9.72 (p. 65; pass 45): "A captured SW/Gun may never be repaired unless recaptured by its original side."</summary>
+    public static string? SwRepairCapturedBar(string equipmentId, bool captured) =>
+        captured ? $"play.repair-weapon: '{equipmentId}' is a captured SW, which only its original side repairs (A9.72)" : null;
+
     /// <summary>A9.72: the SW has a Repair Number in the catalog.</summary>
     public static string? SwRepairNumberBar(string equipmentId, int? repairNumber) =>
         repairNumber is null ? $"play.repair-weapon: '{equipmentId}' has no Repair Number in the catalog" : null;

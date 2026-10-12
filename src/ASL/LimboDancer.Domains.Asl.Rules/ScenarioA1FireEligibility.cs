@@ -676,6 +676,20 @@ public static class ScenarioA1FireEligibility
             : $"play.fire-field: {weapon} has fired this phase from woods, rubble, or a building, and fires again only inside the CA of that shot (A9.21)";
     }
 
+    /// <summary>
+    /// The weapons a unit may dismantle and assemble (A9.8, p. 65; pass 45): "Any light mortar of >= four PP, 76-82mm mortar, or non-Russian
+    /// HMG/MMG". The catalog holds no 76-82mm mortar as a SW.
+    /// </summary>
+    public static bool Dismantlable(string? kind, string? nationality, string? size, int? portage) =>
+        (kind == "asl:mg" && size is "medium" or "heavy" && nationality is not (null or "russian")) || (kind == "asl:light-mortar" && portage >= 4);
+
+    /// <summary>
+    /// Whether a dismantled MG fires as its side's LMG (A9.8, p. 65; pass 45): "A dm SW may not be fired until reassembled [EXC: a German dm
+    /// HMG/MMG may be fired as a German LMG]".
+    /// </summary>
+    public static bool DismantledFiresAsLmg(bool dismantled, string? nationality, string? size) =>
+        dismantled && nationality == "german" && size is "medium" or "heavy";
+
     /// <summary>A9.12 (referee, pass 12): a leader who directed fire this phase gives up leadership by firing a MG, so fires none; he fires one MG a phase.</summary>
     public static string? LeaderMgBar(IEnumerable<LeaderMgFacts> firers)
     {

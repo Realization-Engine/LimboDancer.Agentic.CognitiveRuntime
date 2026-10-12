@@ -309,7 +309,8 @@ public sealed partial class GamePlanner(IGameStore store, IBoardCatalog boards, 
             "asl.game.advance" => PlanAdvanceUnits(scope, arguments, existing, attemptId, expected, label),
             "asl.game.ambush" => PlanAmbush(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.close-combat" => PlanCloseCombat(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
-            "asl.game.fire-ordnance" => HeldBehindMandatoryFire(scope, arguments, existing, expected, label, "Gun's shot")
+            "asl.game.fire-ordnance" => DismantledOrdnance(scope, arguments, existing, expected, label)
+                ?? HeldBehindMandatoryFire(scope, arguments, existing, expected, label, "Gun's shot")
                 ?? PlanFireOrdnance(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),
             "asl.game.take-prisoner" => PlanTakePrisoner(scope, arguments, existing, attemptId, expected, label),
             "asl.game.move-vehicle" => PlanMoveVehicle(scope, arguments, existing, attemptId, expected, label, actor ?? "unknown"),

@@ -575,6 +575,61 @@ public sealed class ScenarioA1Pass45RulesTests
     }
 
     [Fact]
+    public void ALoweredBreakdownNumberMakesThePrintedOneAnXNumber()
+    {
+        // A.11 (p. 43), the page's example: "A German LMG with a malfunction rating of B12 uses Sustained Fire. During that attack it has a
+        // malfunction rating of B10 and X12. If its Original IFT DR is 10 or 11 the weapon malfunctions; if it is a 12 the weapon is permanently
+        // removed." The Russian LMG is B11: in Sustained Fire B9 and X11.
+        var squad = Firer("ru-1") with
+        {
+            Weapons = [Mg("ru-mg") with { FirstFireMarked = true }],
+            UsesSupportWeapon = true,
+        };
+        FireWeaponEffect On(int one, int two) => Assert.Single(Complete(Moving(Attack([one, two], firers: [squad]), ScenarioA1FireCalculator.SubsequentFirstFire)).WeaponEffects!);
+        Assert.Equal((true, null), (On(6, 4).Malfunctioned, On(6, 4).Removed));
+        Assert.Equal((true, true), (On(6, 5).Malfunctioned, On(6, 5).Removed));
+        Assert.Equal((false, null), (On(5, 3).Malfunctioned, On(5, 3).Removed));
+
+        // Fired normally its B# is not lowered, so a DR of 11 malfunctions it and removes nothing.
+        var plain = Assert.Single(Complete(Moving(Attack([6, 5], firers: [Gunner("ru-1", "defender-lmg")]), ScenarioA1FireCalculator.FirstFire)).WeaponEffects!);
+        Assert.Equal((true, null), (plain.Malfunctioned, plain.Removed));
+    }
+
+    [Fact]
+    public void ALoneSmcsMgUsesNoSustainedFire()
+    {
+        // A9.3 (p. 63): "Sustained Fire cannot be used ... by a MG fired by a lone SMC."
+        var leader = Firer("ru-l", "defender-leader") with
+        {
+            UsesInherentFp = false,
+            Weapons = [Mg("ru-mg") with { FirstFireMarked = true }],
+            UsesSupportWeapon = true,
+        };
+        var alone = ScenarioA1FireCalculator.Resolve(Moving(Attack([6, 4], firers: [leader]), ScenarioA1FireCalculator.SubsequentFirstFire), Reference);
+        Assert.Contains("asl.a1.fire.weapon-outside", alone.Reasons);
+    }
+
+    [Fact]
+    public void TheWeaponsTheRuleNamesAreDismantledAndAGermanOneFiresAsALmg()
+    {
+        // A9.8 (p. 65): "Any light mortar of >= four PP, 76-82mm mortar, or non-Russian HMG/MMG ... may have its PP halved (FRU) if in a dismantled
+        // state"; "A dm SW may not be fired until reassembled [EXC: a German dm HMG/MMG may be fired as a German LMG]".
+        Assert.True(ScenarioA1FireEligibility.Dismantlable("asl:mg", "german", "medium", 4));
+        Assert.True(ScenarioA1FireEligibility.Dismantlable("asl:mg", "german", "heavy", 5));
+        Assert.False(ScenarioA1FireEligibility.Dismantlable("asl:mg", "russian", "heavy", 5));
+        Assert.False(ScenarioA1FireEligibility.Dismantlable("asl:mg", "german", "light", 1));
+        Assert.True(ScenarioA1FireEligibility.Dismantlable("asl:light-mortar", "russian", null, 4));
+        Assert.False(ScenarioA1FireEligibility.Dismantlable("asl:light-mortar", "german", null, 3));
+        Assert.True(ScenarioA1FireEligibility.DismantledFiresAsLmg(true, "german", "heavy"));
+        Assert.False(ScenarioA1FireEligibility.DismantledFiresAsLmg(false, "german", "heavy"));
+        Assert.False(ScenarioA1FireEligibility.DismantledFiresAsLmg(true, "british", "medium"));
+
+        // A9.72: "A captured SW/Gun may never be repaired unless recaptured by its original side."
+        Assert.StartsWith("play.repair-weapon", ScenarioA1RallyRules.SwRepairCapturedBar("mg", true));
+        Assert.Null(ScenarioA1RallyRules.SwRepairCapturedBar("mg", false));
+    }
+
+    [Fact]
     public void ResidualFpAttacksAUnitOnceALocationUnlessItGrewOrTheDrmFell()
     {
         // A8.22 (p. 60): "A unit can be attacked by Residual FP only once per Location [EXC: if, since that first Residual FP attack, the Residual

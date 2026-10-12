@@ -629,7 +629,7 @@ public sealed partial class GamePlanner
         ScenarioA1FireEligibility.UsableMgs(state.Equipment.Where(equipment => equipment.Status == InstanceStatus.Active
                 && equipment.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == unitId)
             .Select(equipment => new PossessedWeaponFacts(equipment.Id, GameState.Condition(equipment, Conditions.Malfunctioned) == ConditionState.True,
-                GameState.Condition(equipment, Conditions.Dismantled) == ConditionState.True, equipment.Kind,
+                GameState.Condition(equipment, Conditions.Dismantled) == ConditionState.True && !LiveFire.FiresAsLmg(equipment), equipment.Kind,
                 () => equipment.Definition is { } weapon ? LiveOrdnance.LatwType(weapon.Definition) : null)));
 
     /// <summary>
@@ -920,8 +920,14 @@ public sealed partial class GamePlanner
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(outOfFuel), package, null, [fireId]));
         }
 
+        // A.11, A9.7 (pass 45): a weapon whose lowered B# became an X# is removed on that DR.
+        foreach (var gone in (resolution.WeaponEffects ?? []).Where(item => item.Removed == true))
+        {
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, "instance-eliminated", new InstanceEliminated(gone.EquipmentId), package, null, [fireId]));
+        }
+
         // The MGs: a malfunction (A9.7), and the fire counter of a MG that lost its Multiple ROF (A9.2).
-        foreach (var weapon in (resolution.WeaponEffects ?? []).Where(item => item.EquipmentId != resolution.FlamethrowerRemoved))
+        foreach (var weapon in (resolution.WeaponEffects ?? []).Where(item => item.EquipmentId != resolution.FlamethrowerRemoved && item.Removed != true))
         {
             var conditions = ConditionChanges(ScenarioA1FireFollowUps.WeaponEffectConditions(weapon,
                 () => state.Find(weapon.EquipmentId) is { } equipment && GameState.Condition(equipment, Conditions.FirstFire) == ConditionState.True));

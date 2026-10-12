@@ -452,7 +452,7 @@ else if (state is not null)
                 @if (state.Phase is "rph" or "pfph" or "mph" or "dfph" or "aph" or "ccph" or "rtph" && SupportWeapons.Any())
                 {
                     <SupportWeaponActionPanel Weapons="@([.. SupportWeapons.Select(weapon => new PlayChoice(weapon.Id, SupportWeaponText(weapon)))])"
-                        Units="@([.. SupportWeaponUnits.Select(Labelled)])" Weapon="@swWeapon" Unit="@swUnit" Held="@(SupportWeaponHolder is not null)" Dismantles="@(swWeapon.Length > 0 && GamePlanner.MayDismantle(state, swWeapon))"
+                        Units="@([.. SupportWeaponUnits.Select(Labelled)])" Weapon="@swWeapon" Unit="@swUnit" Held="@(SupportWeaponHolder is not null)" Dismantles="@(swWeapon.Length > 0 && Live.Planner.MayDismantle(state, swWeapon))"
                         OnWeapon="@(id => { swWeapon = id; swUnit = string.Empty; })" OnUnit="@(id => swUnit = id)" OnPropose="@ProposeSupportWeaponKind" />
                 }
                 @* Pass 40 (A20.5, p. 88): an unbroken Guard squad Deploys at will, in any phase; in the RPh the Deploy panel takes it. *@
