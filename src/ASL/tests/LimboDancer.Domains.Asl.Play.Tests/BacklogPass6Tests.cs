@@ -453,6 +453,30 @@ public sealed class BacklogPass6Tests : IDisposable
     }
 
     [Fact]
+    public async Task ResidualFpAttacksATruckOnceInItsLocation()
+    {
+        // Pass 45, task 45.3 (A8.22, p. 60): "A unit can be attacked by Residual FP only once per Location" unless the Residual FP grew or its DRM
+        // fell. The truck's Stop in B8 is attacked; its Start there, a second MP expenditure in the same Location, is not.
+        await Setup("german", 7, Vehicle("de-t", "attacker-truck", "bd01:A8:0", "german"), Squad("r1", "bd01:B10:0", "russian"));
+        await Advance(2);
+        Committed(await Step("de-t", "start"));
+        await Pass();
+        Committed(await Step("de-t", "enter", to: "bd01:B8:0"));
+        Committed(await Fire(R1, "bd01:B8:0", 5, 6));
+        await Pass();
+        var before = Revision;
+        Committed(await Do(GameActions.MoveVehicle, Once(5, 6), new Dictionary<string, string> { ["vehicleId"] = "de-t", ["kind"] = "stop" }));
+        Assert.Equal(ScenarioA1FireCalculator.ResidualFire, LastFire(before).Facts.GetProperty("fireKind").GetString());
+        Assert.Equal(InstanceStatus.Active, Current.Unit("de-t")!.Status);
+        await Pass();
+        before = Revision;
+        Committed(await Step("de-t", "start"));
+        Assert.DoesNotContain(Since(before), item => item.Payload is FireResolved);
+
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
     public async Task AVehicleSetsUpConcealedOnlyInGrainAndLosesItsQuestionMarkWhenItMovesInView()
     {
         // A12.2, A12.12 (R6.7): concealed in grain in season, not in Open Ground or out-of-season grain.

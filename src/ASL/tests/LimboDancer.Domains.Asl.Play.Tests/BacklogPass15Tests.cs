@@ -228,7 +228,8 @@ public sealed class BacklogPass15Tests : IDisposable
         await SetupAt(1, "german", Unit("g1", "attacker-squad", "E3", "german"), Weapon("ft", "asl:ft", "attacker-ft", "g1", "german"),
             Unit("r1", "defender-squad", "E4", "russian"), Unit("r2", "defender-squad", "E2", "russian"));
         var before = Revision;
-        Committed(await Do(GameActions.Fire, Then(3), new
+        // Pass 45 (A7.9, A22.1): a FT's doubles cower, and the squad that cowers is marked with all its SW; a DR of 7 here, not doubles.
+        Committed(await Do(GameActions.Fire, Then(3, 3, 4), new
         {
             firers = G1,
             weapons = new Dictionary<string, string[]> { ["g1"] = ["ft"] },

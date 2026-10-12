@@ -289,3 +289,65 @@ In a fire attack the fact is a read of the map, so it is recorded with the attac
 | `p45-up-free` | The control: both German squads broken. No Encirclement. | no: read only |
 
 **The tests.** Rules: `ScenarioA1Pass45RulesTests` gains the search over a small building: a free path, the stairwell held, the way through the next hex, both ways held, and the three exemptions. No Play test: the test boards have no stairwell building, as for 45.1. Classes run: that one; in Play `RallyAndFireStepsTests`, `CloseCombatStepsTests`, `BacklogPass10Tests`, `BacklogPass12Tests`, `BacklogPass14Tests`, `FireTests`, `OlderGamesTests`. No record of the state changed.
+
+## 9. What an attack leaves: 45.2, 45.3 (increment 2c)
+
+The two tasks share one member, the Residual FP an attack leaves, and are committed together, each listed in the commit.
+
+### 9.1 A departure from the frame, first
+
+**Ordnance HE's Residual FP (A8.25) is not built; it goes to pass 110.** The frame's section 3 placed it in 45.3. An ordnance hit is resolved inside the ordnance shot's own record, not as a fire record: to leave Residual FP the hit's facts would need a fact that survives the ordnance record's replay, and the projector's Residual FP check, which reads fire records, would need to read ordnance records too. Both belong to the ordnance package. Decided under the user's word of 2026-10-12; it has a backlog row and is first in the pass's report.
+
+**Spraying Fire's Residual FP in the MPh (A8.24) moves to task 45.4,** which builds Spraying Fire in the MPh; the plan had it in 45.3, before the thing it rests on.
+
+### 9.2 Task 45.2: Cowering's marks, and ROF or Residual FP
+
+**Cowering marks the unit (A7.9, p. 58).** "any unit that cowers (as well as all of its SW regardless of whether it was using its inherent FP) is automatically marked with a Final or Prep Fire counter as appropriate ... If a FG cowers, Random Selection is used to determine the unit(s) (and its SW) that becomes marked".
+
+- A lone firer that can cower is the unit marked. Of a fire group, each firer that can cower rolls a dr (a roll of its own, `cowerSelection`); the highest is marked, ties with it.
+- The marked unit takes a Prep Fire counter in the PFPh and AFPh and a Final Fire counter in the MPh and DFPh, whatever counter the attack gives the others. A squad that fired only its MG is marked too.
+- Its SW take the counter: those it fired keep no Multiple ROF, and those it did not fire are marked by the planner.
+- A berserk firer never cowers (the firer facts carry the state since 45.8).
+- The shift is doubled "for an attack by Inexperienced (19.33) Personnel": a Conscript always; a Green unit by its Inexperience fact (A19.3), not by its class.
+
+A22.1 (p. 89) says a FT's FP "is reduced by cowering", so a FT attack marks its squad as any other; two older tests that rolled doubles with a FT and then fired again were given other dice.
+
+**ROF or Residual FP (A8.23, p. 60; question F3).** "A weapon does not automatically leave Residual FP if it retains a Multiple ROF ... The decision to forfeit possible remaining First Fire capability in order to leave Residual FP must be made immediately after resolving its attack."
+
+The run the frame asked for: the page draws the dice at the confirmation, not at the proposal, so a proposal cannot be "made again on its own dice". The choice after the roll is therefore an action of its own, **which is F3's way (b), built:**
+
+- The attack leaves the Residual FP of the firers other than the weapons that kept their ROF, as the page's example has it (a squad and a MMG: "the squad still leaves two Residual FP"). Its record also gives the figure with the ROF given up, when that is more.
+- `asl.game.forfeit-rof` ("Give up a weapon's ROF for Residual FP") is open to the DEFENDER while nothing has happened since the attack but what the attack caused. It marks each such weapon First Fire and raises the Residual FP in the Location to the record's second figure. Any other act closes it: the DEFENDER's next fire, its pass, the ATTACKER's next step.
+- The Play page shows it in a block of its own, to the DEFENDER's view and the adjudicator's, never to the ATTACKER's. It says what would stand: "the MMG kept its Multiple ROF, so its FP left no Residual FP. Give the ROF up now, before anything else, and 4 Residual FP stands in [D10]".
+- The projector accepts a Residual FP counter at the record's own figure or at its figure with the ROF given up.
+
+### 9.3 Task 45.3: Residual FP completed
+
+- **The cap (A8.2).** "half (up to a maximum of 12 after adjustment as per 8.26; FRD) of the highest IFT FP column used". The half is taken down to an IFT column, lowered one column for each +1, and then held to 12. A 36 FP attack with one +1 leaves 12; it left 8. Every lower column gives what it gave.
+- **The DRM that lower it (A8.26).** LOS Hindrance, a positive leadership modifier, and a hexside TEM lowered it already. Now also the firers' own: CX, an Encircled firer's +1, a hero's, a Stun, and the firer-overstack DRM pass 40 added. Height Advantage and LV stay out, as the page says.
+- **A malfunction (A8.221).** "Residual FP is not gained for an attack by a malfunctioning weapon": the weapon's FP is left out.
+- **Once a Location (A8.22).** "A unit can be attacked by Residual FP only once per Location [EXC: if ... the Residual FP has increased in strength or the unit is subject to more-negative-DRM/less-positive-DRM ...]". A vehicle was attacked at each MP expenditure in the Location. The planner now reads this MPh's Residual FP attacks on it there and asks Rules (`ResidualAttacksAgain`) with the counter's FP and the attack's DRM, then and now.
+
+**Ruling R45.4, decided under the user's word of 2026-10-12:** the Cowering marks, the Inexperience read, and the Residual FP figures of this increment apply to attacks planned from pass 45 on. Each such attack records the fact `coweringMarksAndWeaponResidual`; an attack recorded before the pass has none and resolves as it was recorded, so no recorded game changes. This is the pattern of pass 31's ruling R31.3. Without it two recorded games of the test fixtures no longer replayed.
+
+**Left out, each with a backlog row:**
+
+- Ordnance HE's Residual FP, and Air Bursts raising it (A8.25, A8.26): pass 110.
+- A Residual FP attack on an Infantry MF expenditure inside the Location (SMOKE grenades, Recovery, a DC): each such act would need the attack; SMOKE placement there is still refused (ruling R9.5).
+- "Residual FP does not attack until any activity that a MF/MP expenditure allowed is completed": nothing to order yet.
+- The "Latest" line does not say that a ROF was given up; the Records tab has the events.
+- Ammunition Shortage (pass 75); pillboxes, OBA, minefields (passes 115, 120, 150).
+
+**The games,** on board 3, in the adjudicator's view unless said:
+
+| Game | What it shows | Recorded |
+|---|---|---|
+| `p45-cw-doubles` | A Russian squad with a MMG and a LMG fires squad and MMG at a squad entering [D10], DR 2 and 2. The 8 column shifts to 6; the squad, the MMG, and the LMG it did not fire are all marked Final Fire; Residual FP 2. | yes |
+| `p45-cw-rof` | The same with DR 2 and 3: the MMG keeps its ROF and the attack leaves 2. The page offers 4; the action marks the MMG First Fire and places 4. The ATTACKER's view does not see the offer. | yes |
+| `p45-cw-keep` | The same, the ROF kept. The MMG's second shot at the same stack is refused for the one MF spent (A9.2), which leaves the offer open; the DEFENDER's pass, from the Russian view, closes it. | yes |
+| `p45-rs-cx` | A CX squad's attack: DRM "cx" +1, Residual FP 1. | yes |
+| `p45-rs-fresh` | The control: Residual FP 2. | yes |
+
+No game for the vehicle's one attack a Location: it needs a truck driven through three MP expenditures in a Residual Location, and the Play test does exactly that through the gate. Said plainly: I did not run that test against the code before the change to see it fail.
+
+**The tests.** Rules, in `ScenarioA1Pass45RulesTests`: the cowering unit's counters and its MG's ROF in three phases; the Random Selection of a fire group; the berserk exemption and the Inexperience read; the cap; CX; the MG's ROF kept, lost, and malfunctioned; the offer's conditions with the projector's check; the once-a-Location rule. Play: `CloseCombatStepsTests` (the ROF given up through the gate, and refused the second time), `BacklogPass6Tests` (the truck attacked once), `PlayTests` (the new action registered). Four older Play tests were given dice that are not doubles (pass 10's road test, pass 15's two FT tests and its MOL test), with a comment each. **The whole Play project was run once, since Cowering is read all over fire: 738 of 738.** Rules classes run: pass 45, 9, 10, 12, 15, 16, and the Fire package's.

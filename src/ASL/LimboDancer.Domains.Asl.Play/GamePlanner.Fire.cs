@@ -905,6 +905,24 @@ public sealed partial class GamePlanner
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(id, conditions), package, null, [fireId]));
         }
 
+        // A7.9 (p. 58; pass 45): a unit that cowers is marked "as well as all of its SW regardless of whether it was using its inherent FP": the
+        // SW it possesses that the attack did not fire take its counter too.
+        foreach (var id in resolution.CoweredUnitIds ?? [])
+        {
+            if ((resolution.FirerCounters?.GetValueOrDefault(id) ?? resolution.FireCounter) is not { } cowerCounter)
+            {
+                continue;
+            }
+
+            foreach (var held in state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed } holding && holding.Holder == id
+                && !(resolution.WeaponEffects ?? []).Any(effect => effect.EquipmentId == item.Id)))
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(held.Id,
+                    ConditionChanges(ScenarioA1FireFollowUps.CoweredWeaponConditions(cowerCounter, GameState.Condition(held, Conditions.FirstFire) == ConditionState.True))),
+                    package, null, [fireId]));
+            }
+        }
+
         // A8.2, A8.21: Residual FP, unless a counter at least as large is already there.
         var targetKnown = BoardLocation.TryParse(facts.TargetLocationId!, out var location);
         if (ScenarioA1FireFollowUps.ResidualFpPlaced(arithmetic, targetKnown, residual => state.ResidualFire.Any(item => item.Location == location && item.Fp >= residual)) is { } residualFp)

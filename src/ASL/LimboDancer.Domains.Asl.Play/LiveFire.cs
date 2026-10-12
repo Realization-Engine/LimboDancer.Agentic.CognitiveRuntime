@@ -418,6 +418,7 @@ public static class LiveFire
         Dictionary<string, int>? selection = null;
         Dictionary<string, int>? weaponSelection = null;
         Dictionary<string, int>? firerSelection = null;
+        Dictionary<string, int>? cowerSelection = null;
         Dictionary<string, IReadOnlyList<int>>? checks = null;
         Dictionary<string, IReadOnlyList<int>>? leaderLoss = null;
         Dictionary<string, int>? wounds = null;
@@ -484,6 +485,13 @@ public static class LiveFire
                     }
 
                     break;
+                case "cowerSelection":
+                    if (!Select(ref cowerSelection, unit, roll))
+                    {
+                        return null;
+                    }
+
+                    break;
                 case "checks" when roll.Count == 2:
                     (checks ??= new(StringComparer.Ordinal))[unit] = roll.Values;
                     break;
@@ -517,6 +525,7 @@ public static class LiveFire
         {
             WeaponSelection = weaponSelection,
             FirerSelection = firerSelection,
+            CowerSelection = cowerSelection,
             HeatOfBattle = heat,
             BerserkChecks = berserk,
             CrewChecks = crewChecks,
@@ -709,6 +718,9 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
 
             // Pass 31 (ruling R31.3): how a pinned firer's MG fires is recorded with the attack, so an older record replays as it was resolved.
             PinnedMgAreaFire = recorded.PinnedMgAreaFire,
+
+            // Pass 45 (ruling R45.4): so are the Cowering marks and the Residual FP by weapon.
+            CoweringMarksAndWeaponResidual = recorded.CoweringMarksAndWeaponResidual,
             TargetsInMelee = recorded.TargetsInMelee,
 
             // Backlog pass 12 (rulings R12.6, R12.7): Spraying Fire is the firer's declaration; a Fire Lane's Residual FP is the lane's in the state.

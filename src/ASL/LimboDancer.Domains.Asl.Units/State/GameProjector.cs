@@ -1618,8 +1618,10 @@ public static class GameProjector
             var recorded = fires.TryGetValue(residual.Fire, out var found) ? found.Fire : null;
             var recordedFp = recorded is not null && recorded.Resolution.TryGetProperty("arithmetic", out var arithmetic) && arithmetic.TryGetProperty("residualFp", out var value)
                 ? value.GetInt32() : (int?)null;
+            var forfeitedFp = recorded is not null && recorded.Resolution.TryGetProperty("arithmetic", out var withRof) && withRof.TryGetProperty("residualFpIfForfeited", out var forfeit)
+                ? forfeit.GetInt32() : (int?)null;
             if (Rules.ScenarioA1FireFollowUps.VerifyResidualFp(state.Phase, recorded is not null, recorded?.TargetLocation == residual.Location.ToString(), recordedFp, residual.Fp,
-                residual.Fire, state.ResidualFire.FirstOrDefault(item => item.Location == residual.Location)?.Fp) is { } refused)
+                residual.Fire, state.ResidualFire.FirstOrDefault(item => item.Location == residual.Location)?.Fp, forfeitedFp) is { } refused)
             {
                 return Fail<GameState>(refused.Code, refused.Text);
             }

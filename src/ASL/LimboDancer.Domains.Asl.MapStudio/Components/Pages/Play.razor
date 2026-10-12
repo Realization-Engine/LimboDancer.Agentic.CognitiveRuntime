@@ -704,6 +704,14 @@ else if (state is not null)
                             <button id="propose-overrun-evade" @onclick="@(() => ProposeOverrunEvade(evader))">Propose: the SMC moves away from the OVR</button>
                         </div>
                     }
+                    @* Pass 45 (A8.23): at once after a Defensive First Fire attack in which a weapon kept its Multiple ROF, the DEFENDER may give it up. *@
+                    @if (state.Phase == "mph" && (Viewer.IsAdjudicator || viewAs != state.PhasingSide) && GamePlanner.RateOfFireForfeit(state, history!.Events) is { } forfeit)
+                    {
+                        <div class="toolbar" id="forfeit-rof">
+                            <span class="toolbar-note">@string.Join(", ", forfeit.Weapons.Select(id => Words(id))) kept its Multiple ROF, so its FP left no Residual FP. Give the ROF up now, before anything else, and @forfeit.Fp Residual FP stands in @PlaceOf(forfeit.At); or go on, and it may fire again (A8.23).</span>
+                            <button id="propose-forfeit-rof" @onclick='@(() => ProposeSimple(GameActions.ForfeitRof, "forfeit-rof"))'>Propose: give up the ROF for @forfeit.Fp Residual FP</button>
+                        </div>
+                    }
                     @* Pass 28c (A8.1, A8.11): after each step the DEFENDER, from its own view, sees where the stack is and fires at it or passes.
                        Pass 40 (A8.312): the attack owed in the DEFENDER's own Location comes before a pass; the adjudicator has the same block. *@
                     @if (state.Phase == "mph" && MovingAt is { } movingAt && (Viewer.IsAdjudicator ? MandatoryNow is not null : viewAs != state.PhasingSide))

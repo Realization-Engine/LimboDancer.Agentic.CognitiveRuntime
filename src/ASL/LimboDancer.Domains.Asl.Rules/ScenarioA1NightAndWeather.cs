@@ -293,6 +293,9 @@ public static class ScenarioA1NightAndWeather
             // Pass 31 (ruling R31.3; A7.81): every attack planned from the pass on fires a pinned unit's MG as Area Fire.
             PinnedMgAreaFire = true,
 
+            // Pass 45 (ruling R45.4): every attack planned from the pass on marks its cowering units and leaves its weapons' own Residual FP.
+            CoweringMarksAndWeaponResidual = true,
+
             // Referee, pass 31 (A11.141): units in Melee take and cause no Leader Loss check.
             TargetsInMelee = targetsInMelee ? true : null,
             CushionedOpenGround = facts.OrdnanceHit is not null && (mud || deepSnow) ? true : null,

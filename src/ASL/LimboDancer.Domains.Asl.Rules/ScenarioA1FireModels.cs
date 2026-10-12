@@ -247,6 +247,17 @@ public sealed record FireAttack(
     }
 
     /// <summary>
+    /// Pass 45 (A7.9, A8.2, A8.221, A8.23, A8.26; ruling R45.4): the attack marks the units that cower, shifts two columns for Inexperienced Personnel
+    /// by their fact, and leaves the Residual FP its weapons' fates give, held to 12 after its reduction. The planner records it with every attack
+    /// from the pass on; an attack recorded before it has none, and replays as it was resolved.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? CoweringMarksAndWeaponResidual
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// Pass 31 (ruling R31.3; A7.81): pinned Infantry fires its MG as Area Fire and keeps no Multiple ROF. The planner records it with every attack
     /// from the pass on; an attack recorded before it has none, and replays as it was resolved.
     /// </summary>
@@ -822,6 +833,13 @@ public sealed record FireRolls(
         get; init;
     }
 
+    /// <summary>One dr per firer that can cower, when a fire group of two or more of them cowers (A7.9; pass 45): the highest is marked, ties with it.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<string, int>? CowerSelection
+    {
+        get; init;
+    }
+
     /// <summary>One dr per FPF firer, when a Casualty MC falls on two or more of them (A8.31).</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyDictionary<string, int>? FirerSelection
@@ -913,6 +931,17 @@ public sealed record FireArithmetic(
     /// <summary>The Residual FP the attack leaves in the target Location (A8.2, A8.26, A7.372); null when it leaves none.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? ResidualFp
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The Residual FP the attack would leave if the weapons that kept their Multiple ROF gave it up (A8.23, p. 60; pass 45): "The decision to
+    /// forfeit possible remaining First Fire capability in order to leave Residual FP must be made immediately after resolving its attack." Given
+    /// only when it is more than <see cref="ResidualFp"/>, which counts the other firers alone.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? ResidualFpIfForfeited
     {
         get; init;
     }
@@ -1037,6 +1066,16 @@ public sealed record FireResolution(
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyDictionary<string, string>? FirerCounters
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The units that cowered (A7.9, p. 58; pass 45): "any unit that cowers (as well as all of its SW regardless of whether it was using its inherent
+    /// FP) is automatically marked with a Final or Prep Fire counter", one or more of a fire group by Random Selection. Null when none did.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<string>? CoweredUnitIds
     {
         get; init;
     }

@@ -571,6 +571,44 @@ public sealed class CloseCombatStepsTests : IDisposable
     }
 
     [Fact]
+    public async Task TheDefenderGivesUpAMgsRofForResidualFpAtOnceAfterTheAttack()
+    {
+        // Pass 45, task 45.2 (A8.23, p. 60): the LMG keeps its Multiple ROF on a colored dr of 1, so the attack leaves the squad's Residual FP alone;
+        // "The decision to forfeit possible remaining First Fire capability in order to leave Residual FP must be made immediately after resolving
+        // its attack."
+        await Setup("german", Unit("g2", "asl:squad", "attacker-squad", "bd01:A3:0", "german"),
+            Unit("r4", "asl:squad", "defender-squad", "bd01:A1:0", "russian"), Weapon("rlmg", "defender-lmg", "r4", "russian"));
+        await Advance(2);
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G2,
+            to = "bd01:A2:0"
+        }));
+        Committed(await Do(GameActions.Fire, Once(1, 6, 6, 6, 6, 6), new
+        {
+            firers = R4,
+            weapons = new Dictionary<string, string[]> { ["r4"] = ["rlmg"] },
+            target = "bd01:A2:0"
+        }));
+        var placed = Assert.Single(Current.ResidualFire);
+        var open = GamePlanner.RateOfFireForfeit(Current, store.Read(Scope)!.Events)!;
+        Assert.Equal(["rlmg"], open.Weapons);
+        Assert.True(open.Fp > placed.Fp);
+        Assert.False(Is(Current.Find("rlmg")!, Conditions.FirstFire));
+
+        Committed(await Do(GameActions.ForfeitRof, NoRoll(), new
+        {
+        }));
+        Assert.True(Is(Current.Find("rlmg")!, Conditions.FirstFire));
+        Assert.Equal(open.Fp, Assert.Single(Current.ResidualFire).Fp);
+        Assert.Null(GamePlanner.RateOfFireForfeit(Current, store.Read(Scope)!.Events));
+        Assert.Contains((await Do(GameActions.ForfeitRof, NoRoll(), new
+        {
+        })).Reasons, reason => reason.StartsWith("play.forfeit-rof", StringComparison.Ordinal));
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
     public async Task AnFpfFirerReplacedByItsOwnNmcCommits()
     {
         // Pass 45 (found by pass 40 and not followed, backlog 56.1): an FPF whose NMC replaces its firer by ELR. The Original DR 11 fails r4's NMC
