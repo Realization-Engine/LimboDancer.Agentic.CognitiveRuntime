@@ -101,7 +101,10 @@ public static class LiveFire
         // D3.3, A8.1, A8.3, A8.31 (rulings R6.9, R12.3): the kind of MPh fire; the Bounding Fire read and the firers' marks are read when asked.
         var (kindRefusal, kind) = ScenarioA1FireEligibility.MphFireKind(state.Phase, new FireKindFacts(vehicleFirers.Length > 0,
             vehicleFirers.Length > 0 && vehicleFirers[0].Side == state.PhasingSide, () => MayBoundingFire(state, vehicleFirers[0].Id),
-            () => [.. firers.Select(item => (Is(item.Unit, Conditions.FinalFire), Is(item.Unit, Conditions.FirstFire)))],
+            // A8.3 (pass 45): a unit with no counter that fires a MG marked First Fire uses Subsequent First Fire with it.
+            () => [.. firers.Select(item => (Is(item.Unit, Conditions.FinalFire), Is(item.Unit, Conditions.FirstFire)
+                || (weapons?.TryGetValue(item.Unit.Id, out var fired) == true
+                    && fired.Any(id => state.Find(id) is EquipmentInstance weapon && Is(weapon, Conditions.FirstFire)))))],
             firers.All(item => withoutInherent?.Contains(item.Unit.Id) != true), withoutInherent is { Count: > 0 }));
         if (kindRefusal is not null)
         {
@@ -194,7 +197,7 @@ public static class LiveFire
                 unit.Group is not null ? state.ElrOf(unit) : null, Is(unit, Conditions.FirstFire), Is(unit, Conditions.FinalFire), state.Phase, swOnly,
                 state.GunCrewsFired.Contains(unit.Id, StringComparer.Ordinal), unit.Kind == "asl:squad", leader, withoutInherent?.Contains(unit.Id) == true, used,
                 Is(unit, Conditions.Fanatic), Is(unit, Conditions.Wounded), Is(unit, Conditions.Cx), Is(unit, Conditions.BoundingFire), state.Encircled(unit), partner,
-                molUser == unit.Id, GreenInexperienced(state, unit))));
+                molUser == unit.Id, GreenInexperienced(state, unit), Is(unit, Conditions.Berserk))));
         }
 
         FireDirector Director((UnitInstance Unit, BoardLocation At) item) =>
@@ -203,6 +206,10 @@ public static class LiveFire
                 state.SupportWeaponDirectors.Any(directed => directed.Leader == item.Unit.Id), Is(item.Unit, Conditions.Wounded), Is(item.Unit, Conditions.Cx)));
 
         // Rulings R12.8, R12.9, R12.11: the firing side's units in a Melee or as prisoners, a prisoner's Guard, and Encirclement; Rules assembles the attack.
+        // C6.43, C6.44 (pass 45): a MG fired alone by the unit that set up with it, from its setup Location, at its Bore Sighted Location.
+        var boreSighted = state.BoreSights.Count > 0 && ScenarioA1FireEligibility.MgBoreSighted(firerFacts.Select(firer => (firer.UsesInherentFp == false,
+            (IReadOnlyList<bool>)[.. (firer.Weapons ?? []).Select(weapon => state.BoreSights.Any(sight => sight.Gun == weapon.EquipmentId && sight.Crew == firer.UnitId
+                && sight.Location == target && state.Location(firer.UnitId!)?.Location == sight.SetupLocation))])));
         return (ScenarioA1FireEligibility.Assemble(new AttackAssemblyFacts(state.Phase, side == state.PhasingSide, firers[0].At.ToString(), target.ToString(),
             firerFacts, [.. directors.Select(Director)], state.ScenarioMonth,
             [.. selection.Targets.Select(UnitAt).Select(unit => ScenarioA1FireEligibility.AttackTarget(new AttackTargetFacts(Target(state, unit, target), unit.Side == side,
@@ -210,7 +217,10 @@ public static class LiveFire
             targetSide is null ? null : state.Side(targetSide)?.Elr, kind, AssaultOf(state), () => state.Side(side)?.Elr, friendlyTargets,
             [.. selection.Vehicles.Select(id => Vehicle(UnitAt(id), target))], vehicleFirers.Length > 0 ? VehicleFire(state, vehicleFirers[0], firers[0].At) : null,
             targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal), state.NoQuarter.Contains(side, StringComparer.Ordinal),
-            Allies(state, side), [.. selection.Companions.Select(id => Target(state, UnitAt(id), target))])), null);
+            Allies(state, side), [.. selection.Companions.Select(id => Target(state, UnitAt(id), target))])) with
+        {
+            MgBoreSighted = boreSighted ? true : null,
+        }, null);
     }
 
     /// <summary>

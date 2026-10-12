@@ -207,6 +207,16 @@ public sealed record FireAttack(
     }
 
     /// <summary>
+    /// Whether every MG of the attack fires alone at its Bore Sighted Location (C6.44; pass 45): minus 2 on the IFT DR, against Infantry only in
+    /// Defensive First Fire, and never with Spraying Fire, a Snap Shot, or Residual FP. Null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? MgBoreSighted
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// The Low Visibility Hindrance DRM of night and weather (E1.7, E3.1, E3.32; rulings R16.3, R16.11), which the game supplies for each attack it
     /// applies to: cumulative with every other Hindrance, never negating FFMO, never lowering Residual FP. Null is 0.
     /// </summary>
@@ -593,6 +603,13 @@ public sealed record FireFirer(
     /// <summary>Whether a hero firer is wounded (A15.2: 1-3-8); null is false.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Wounded
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the firer is berserk (A7.54, A7.9; pass 45): it joins no multi-Location group and never cowers; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Berserk
     {
         get; init;
     }
@@ -1014,6 +1031,16 @@ public sealed record FireResolution(
     string? FireCounter,
     IReadOnlyList<string> FirerConcealmentLost)
 {
+    /// <summary>
+    /// The firers whose own counter differs from <see cref="FireCounter"/> (A8.31; pass 45, ruling R45.1): a unit with no counter that fires First
+    /// Fire in one group with Subsequent First Fire or FPF firers. Null when every firer takes the attack's counter.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<string, string>? FirerCounters
+    {
+        get; init;
+    }
+
     /// <summary>What the attack did to each MG used in it; null when none was.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<FireWeaponEffect>? WeaponEffects

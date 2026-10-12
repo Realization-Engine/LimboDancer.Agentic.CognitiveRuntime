@@ -256,7 +256,12 @@ public static class ScenarioA1FireFollowUps
         ArgumentNullException.ThrowIfNull(inactive);
         var alone = (facts.Firers ?? []).Where(item => item.UsesInherentFp == false && !resolution.FireCounterUnitIds.Contains(item.UnitId!))
             .Select(item => item.UnitId!).ToHashSet(StringComparer.Ordinal);
-        return resolution.FireCounterUnitIds.Where(id => !alone.Contains(id) && !inactive(id));
+
+        // A8.31, A19.13 (pass 45): an FPF firer its own NMC eliminated, Reduced, or Replaced is no longer the unit that fired; the unit that takes its
+        // place keeps the Final Fire counter it already had.
+        var gone = (resolution.FirerEffects ?? []).Where(effect => effect.Eliminated || effect.FinalDefinitionId != effect.DefinitionId)
+            .Select(effect => effect.UnitId).ToHashSet(StringComparer.Ordinal);
+        return resolution.FireCounterUnitIds.Where(id => !alone.Contains(id) && !gone.Contains(id) && !inactive(id));
     }
 
     /// <summary>A unit's fire marker: the counter, a Final Fire counter replacing a First Fire one, and the "?" a concealed firer or firing vehicle loses (A12.2; ruling R6.7).</summary>
@@ -264,8 +269,10 @@ public static class ScenarioA1FireFollowUps
     {
         ArgumentNullException.ThrowIfNull(facts);
         ArgumentNullException.ThrowIfNull(resolution);
-        var conditions = new List<(UnitCondition, bool)> { (Marker(resolution.FireCounter!), true) };
-        if (resolution.FireCounter == "final-fire" && firstFireMarked)
+        // A8.31 (pass 45, ruling R45.1): a firer with a counter of its own takes that one.
+        var counter = resolution.FirerCounters?.GetValueOrDefault(id) ?? resolution.FireCounter!;
+        var conditions = new List<(UnitCondition, bool)> { (Marker(counter), true) };
+        if (counter == "final-fire" && firstFireMarked)
         {
             conditions.Add((UnitCondition.FirstFire, false));
         }

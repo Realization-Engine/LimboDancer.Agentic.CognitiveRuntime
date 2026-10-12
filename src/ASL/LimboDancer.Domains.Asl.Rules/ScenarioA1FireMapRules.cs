@@ -257,8 +257,19 @@ public static class ScenarioA1FireMapRules
         };
         if (perLocation.Count > 1)
         {
-            // A7.5: every Location of the group ADJACENT to another of them.
+            // A7.5 (p. 57; pass 45): the group is one "string of ADJACENT Locations", so every Location is reached from the first through
+            // Locations of the group; two pairs apart are two groups.
             var locations = perLocation.Keys.ToArray();
+            var chain = new HashSet<string>(StringComparer.Ordinal) { locations[0] };
+            for (var grew = true; grew;)
+            {
+                grew = false;
+                foreach (var next in locations.Where(one => !chain.Contains(one) && chain.Any(linked => adjacent(linked, one))).ToArray())
+                {
+                    grew |= chain.Add(next);
+                }
+            }
+
             facts = facts with
             {
                 Firers = [.. attack.Firers!.Select(firer => firer with
@@ -268,7 +279,7 @@ public static class ScenarioA1FireMapRules
                     TargetLevelAbove = perLocation[firer.LocationId!].SameLevel ? null : targetHeight - perLocation[firer.LocationId!].Height,
                     Los = perLocation[firer.LocationId!].Los,
                 })],
-                FirerLocationsAdjacent = locations.All(one => locations.Any(two => two != one && adjacent(one, two))),
+                FirerLocationsAdjacent = chain.Count == locations.Length,
             };
         }
 

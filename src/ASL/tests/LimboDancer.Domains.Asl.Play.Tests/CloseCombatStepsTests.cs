@@ -523,6 +523,81 @@ public sealed class CloseCombatStepsTests : IDisposable
     }
 
     [Fact]
+    public async Task UnitsWhoseFireCountersDifferMakeOneMandatoryFireGroup()
+    {
+        // Pass 45, task 45.8 (A8.312, A8.31, pp. 61 to 62; ruling R45.1, which closes R40.17): r4 is marked First Fire and r5 has no counter. They
+        // owe one Mandatory FG: r4 by Subsequent First Fire, r5 by First Fire, each then marked by its own fire.
+        await Setup("german", Unit("g2", "asl:squad", "attacker-squad", "bd01:A3:0", "german", "asl:berserk"),
+            Unit("r4", "asl:squad", "defender-squad", "bd01:A1:0", "russian", "asl:first-fire"), Unit("r5", "asl:squad", "defender-squad", "bd01:A1:0", "russian"));
+        await Advance(2);
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G2,
+            to = "bd01:A2:0"
+        }));
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }));
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G2,
+            to = "bd01:A1:0"
+        }));
+        var owed = Planner().MandatoryFire(Current, store.Read(Scope)!.Events)!;
+        Assert.Equal(R4R5, owed.Firers);
+        Assert.True(owed.Group);
+
+        // Ruling R45.2 (replacing R40.19): every other act of the DEFENDER waits for that attack, a Gun's shot among them.
+        Assert.Contains((await Do(GameActions.FireOrdnance, NoRoll(), new
+        {
+            gun = "none",
+            crew = "r5",
+            target = "bd01:A1:0"
+        })).Reasons, reason => reason.StartsWith("play.act-mandatory", StringComparison.Ordinal));
+        Assert.Contains((await Do(GameActions.Fire, NoRoll(), new
+        {
+            firers = R4,
+            target = "bd01:A1:0"
+        })).Reasons, reason => reason.StartsWith("play.fire-mandatory", StringComparison.Ordinal));
+
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Once(6, 5, 3, 3, 3, 3), Planner().MandatoryFireArguments(Current, owed)));
+        var record = Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
+        Assert.Equal(ScenarioA1FireCalculator.SubsequentFirstFire, record.Facts.GetProperty("fireKind").GetString());
+        Assert.True(Is(Current.Unit("r4")!, Conditions.FinalFire) && !Is(Current.Unit("r4")!, Conditions.FirstFire));
+        Assert.True(Is(Current.Unit("r5")!, Conditions.FirstFire) && !Is(Current.Unit("r5")!, Conditions.FinalFire));
+        Assert.Null(Planner().MandatoryFire(Current, store.Read(Scope)!.Events));
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task AnFpfFirerReplacedByItsOwnNmcCommits()
+    {
+        // Pass 45 (found by pass 40 and not followed, backlog 56.1): an FPF whose NMC replaces its firer by ELR. The Original DR 11 fails r4's NMC
+        // by more than its ELR, so it is Replaced; the attack commits and the game replays.
+        await Setup("german", Unit("g2", "asl:squad", "attacker-squad", "bd01:A3:0", "german", "asl:berserk"),
+            Unit("r4", "asl:squad", "defender-squad", "bd01:A1:0", "russian", "asl:final-fire"));
+        await Advance(2);
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G2,
+            to = "bd01:A2:0"
+        }));
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }));
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G2,
+            to = "bd01:A1:0"
+        }));
+        var owed = Planner().MandatoryFire(Current, store.Read(Scope)!.Events)!;
+        var result = await Do(GameActions.Fire, Once(6, 5, 3, 3, 3, 3), Planner().MandatoryFireArguments(Current, owed));
+        Assert.True(result.Outcome == PlayOutcome.Committed, string.Join(" | ", result.Reasons));
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
     public async Task ABerserkUnitAbandonsItsMmgBeforeChargingAndChargesIntoPrisoners()
     {
         // A15.431: a berserk squad abandons its 4PP MMG before charging; ruling R10.15 (backlog pass 10): the charge enters the Location that

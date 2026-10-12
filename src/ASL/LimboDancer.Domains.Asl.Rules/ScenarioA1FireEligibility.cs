@@ -234,12 +234,9 @@ public static class ScenarioA1FireEligibility
             return (null, null);
         }
 
+        // A8.31, A8.312 (pp. 61 to 62; pass 45, ruling R45.1): "A unit using FPF may form a FG with units not using FPF", and the page's example
+        // fires a squad in FPF with a crew in First Fire. The attack takes the heaviest kind among its firers; each firer fires by its own counter.
         var marks = facts.Marks().Select(item => item.FinalFire ? 2 : item.FirstFire ? 1 : 0).Distinct().ToArray();
-        if (marks.Length != 1 && !(marks.Contains(2) && !marks.Contains(0)) && facts.NoneFiresAlone)
-        {
-            return ("play.fire-kind: a group mixes firers marked for different kinds of Defensive fire (A8.3, A8.31)", null);
-        }
-
         return (null, marks.Max() switch
         {
             0 => ScenarioA1FireCalculator.FirstFire,
@@ -369,6 +366,7 @@ public static class ScenarioA1FireEligibility
             Partner = facts.Partner,
             Mol = facts.Mol ? true : null,
             Inexperienced = facts.Inexperienced,
+            Berserk = facts.Berserk ? true : null,
         };
     }
 
@@ -400,6 +398,19 @@ public static class ScenarioA1FireEligibility
     {
         ArgumentNullException.ThrowIfNull(targetSides);
         return targetSides.FirstOrDefault(side => side != firingSide) ?? firstVehicleSide ?? otherSide;
+    }
+
+    /// <summary>
+    /// C6.44 (p. 174; pass 45): "A MG/IFE non-ordnance attack ... vs a unit in the firing weapon's Bore Sighted Location may deduct two from its IFT
+    /// DR", and "may be used by a FG making such an attack only if all elements of that FG have Bore Sighted that same Location". A squad's own FP
+    /// has Bore Sighted nothing, so every firer fires its MG alone, and each MG fired has its sighting on the target Location (C6.43: by the unit
+    /// that set up with it, from its setup Location).
+    /// </summary>
+    public static bool MgBoreSighted(IEnumerable<(bool FiresAlone, IReadOnlyList<bool> WeaponsSighted)> firers)
+    {
+        ArgumentNullException.ThrowIfNull(firers);
+        var all = firers.ToArray();
+        return all.Length > 0 && all.All(firer => firer.FiresAlone && firer.WeaponsSighted.Count > 0 && firer.WeaponsSighted.All(sighted => sighted));
     }
 
     /// <summary>

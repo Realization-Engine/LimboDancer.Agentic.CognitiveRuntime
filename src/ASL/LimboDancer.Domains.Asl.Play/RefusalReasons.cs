@@ -23,6 +23,7 @@ public static class RefusalReasons
         ["fire.crew-target-unreviewed"] = "crews and the Guns they man as targets are not reviewed (C11; ruling R24.3)",
         ["fire.unit-listed-twice"] = "a unit or weapon is named twice in the attack",
         ["fire.firer-outside"] = "a firer is broken, is not a squad, half-squad, or hero, or the group's Locations are not each ADJACENT to another (A7.5)",
+        ["fire.berserk-group-outside"] = "a berserk unit fires only with units of its own Location (A7.54)",
         ["fire.firers-of-two-sides"] = "the firers belong to two sides",
         ["fire.weapon-outside"] = "a MG, ATR, or FT is malfunctioned, not its firer's side's, already fired, or more than the firer may use; a hero fires one MG or FT (A7.35, A9.1, A15.23)",
         ["fire.flamethrower-outside"] = "a FT attacks alone, with no other firer, weapon, inherent FP, or leader, from an unpinned unit; at Long Range only through a LOS with no Hindrance, and never at a target more than two levels away (A22.31 to A22.33; ruling R15.1)",

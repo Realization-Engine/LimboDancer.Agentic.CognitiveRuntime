@@ -46,6 +46,19 @@ public static class ScenarioA1GameStart
             : null;
     }
 
+    /// <summary>
+    /// C6.41, C6.42 (p. 174; pass 45): "the only SW that can be are MMG, HMG, and light mortars"; the Location "must be outside the weapon's own hex,
+    /// and within both the LOS of the weapon ... and its Normal Range (16 hexes maximum)". A possessed MMG or HMG of the Scenario Defender; the LOS
+    /// and range are read last. A light mortar's Bore Sighting is a To Hit case and is not built here.
+    /// </summary>
+    public static string? MgBoreSightBar(string? size, bool scenarioDefenders, bool ownHex, Func<bool> losClearWithinNormalRange, string mg)
+    {
+        ArgumentNullException.ThrowIfNull(losClearWithinNormalRange);
+        return size is not ("medium" or "heavy") || !scenarioDefenders || ownHex || !losClearWithinNormalRange()
+            ? $"play.bore-sight: {mg} may Bore Sight only as a MMG or HMG the Scenario Defender possesses, a Location outside its hex, in its LOS, within its Normal Range and 16 hexes (C6.41, C6.42)"
+            : null;
+    }
+
     /// <summary>The setup in words.</summary>
     public static string SetupText(int eventCount) => $"play.setup: {eventCount} event(s)";
 

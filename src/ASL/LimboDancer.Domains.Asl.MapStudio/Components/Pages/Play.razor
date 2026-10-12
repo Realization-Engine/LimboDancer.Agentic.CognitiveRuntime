@@ -5488,7 +5488,7 @@ else if (state is not null)
         var groupTaken = placeGroup.Length == 0 || GroupChoices.Any(choice => choice.Side == side && choice.Group.Id == placeGroup);
         placeNote = groupTaken ? null : $"{placeGroup} is not an OB group of {side}, so {id} is placed without a group.";
         placements.Add(new Placement(id, definition.Id, definition.Kind, side, placeLocation.Trim(), placeConcealed, placeHidden, holder,
-            placeBroken && holder is null, gun ? placeFacing : null, definition.Kind == "asl:gun" && placeBore.Trim().Length > 0 ? placeBore.Trim() : null,
+            placeBroken && holder is null, gun ? placeFacing : null, definition.Kind is "asl:gun" or "asl:mg" && placeBore.Trim().Length > 0 ? placeBore.Trim() : null,
             placeGroup.Length > 0 && GroupChoices.Any(choice => choice.Side == side && choice.Group.Id == placeGroup) ? placeGroup : null,
             placeOffBoard && holder is null && definition.Kind != "asl:gun", role,
             placeOffBoard && holder is null && EntryChoices.Any(choice => choice.Value == placeEntry) ? placeEntry : null) { Key = Guid.NewGuid().ToString("N") });

@@ -1681,8 +1681,11 @@ public static class GameProjector
         private GameState? BoreSight(GameState state, BoreSighted sighted)
         {
             // C6.41, C6.42 (ruling R8.8): one Location per Gun of the Scenario Defender, recorded at setup with the Gun's crew and setup Location.
+            // C6.41 (pass 45): or a MMG or HMG, recorded with its possessor and the Location they set up in; the planner checks its size.
             var manned = Active(state, sighted.Gun) is EquipmentInstance { Holding: { Role: HoldingRole.Manned } manning, Position: MapPosition at }
-                ? (Holder: manning.Holder, At: at.Location) : ((string Holder, BoardLocation At)?)null;
+                ? (Holder: manning.Holder, At: at.Location)
+                : Active(state, sighted.Gun) is EquipmentInstance { Kind: "asl:mg", Holding: { Role: HoldingRole.Possessed } possession }
+                    && state.Location(possession.Holder)?.Location is { } heldAt ? (Holder: possession.Holder, At: heldAt) : ((string Holder, BoardLocation At)?)null;
             if (Rules.ScenarioA1SequenceProjection.BoreSightRefusal(manned is not null, manned?.Holder == sighted.Crew, manned is not null && manned.Value.At == sighted.SetupLocation,
                 manned is not null && sighted.Location == manned.Value.At, state.Unit(sighted.Crew)?.Side is { } side && side == state.ScenarioDefender,
                 state.BoreSights.Any(item => item.Gun == sighted.Gun)) is { } refusal)

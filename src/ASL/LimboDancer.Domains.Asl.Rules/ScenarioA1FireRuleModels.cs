@@ -125,7 +125,8 @@ public sealed record FirerRecordFacts(
     bool Encircled,
     string? Partner,
     bool Mol,
-    bool? Inexperienced);
+    bool? Inexperienced,
+    bool Berserk = false);
 
 /// <summary>A directing leader's facts for the record (A7.531): its conditions and whether it directed a SW use this phase.</summary>
 public sealed record DirectorRecordFacts(string Id, string Definition, string At, bool Broken, bool Pinned, bool Concealed, bool Fired, bool FirstFire, bool DirectedSupportWeapon, bool Wounded, bool Cx);

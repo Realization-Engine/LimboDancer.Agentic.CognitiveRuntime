@@ -561,12 +561,31 @@ public sealed class BacklogPass8Tests : IDisposable
         Committed(await Move(R1, "bd01:B9:0"));
         Committed(await FireAt("de-gun", "bd01:B9:0", null, null, 5, 6, 6, 6, 6, 6));
         Assert.False(Is(Current.Unit("r1")!, Conditions.Broken));
-        Refused(await Fire(CrewIds, "bd01:B9:0", 6, 5), "fire");
+        // Pass 45, task 45.8 (A7.353, p. 56): the crew would also keep its FP in Subsequent First Fire by itself, which pass 40 refused; that is
+        // tested in ACrewThatFiredItsGunKeepsItsFpInSubsequentFirstFire, since here it must fire with the squad in one group (A7.55).
         var before = Revision;
         // DR 7: the FPF's NMC on its firers passes (morale 7), so no firer is replaced or broken.
         Committed(await Fire(FpfGroup, "bd01:B9:0", 3, 4, 3, 3, 3, 3));
         var record = Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
         Assert.Equal(FpfGroup, record.Firers);
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task ACrewThatFiredItsGunKeepsItsFpInSubsequentFirstFire()
+    {
+        // Pass 45, task 45.8 (A7.353, p. 56): "Subsequent First Fire (8.3), FPF (8.31), and Final Fire (8.4) vs adjacent units retain halved inherent
+        // FP". Marked First Fire by its Gun's shot, the crew fires its own FP at the squad that came ADJACENT, as Area Fire, and is marked Final Fire.
+        await Setup("russian", 7, 1942, Crew("de-crew", "bd01:B10:0", "german"), Gun("de-gun", "attacker-inf-gun", "bd01:B10:0", "north-east", "de-crew", "german"),
+            Squad("r1", "bd01:B8:0", "russian"));
+        await Advance(2);
+        Committed(await Move(R1, "bd01:B9:0"));
+        Committed(await FireAt("de-gun", "bd01:B9:0", null, null, 5, 6, 6, 6, 6, 6));
+        var before = Revision;
+        Committed(await Fire(CrewIds, "bd01:B9:0", 6, 5));
+        var record = Since(before).Select(item => item.Payload).OfType<FireResolved>().Single();
+        Assert.Equal(ScenarioA1FireCalculator.SubsequentFirstFire, record.Facts.GetProperty("fireKind").GetString());
+        Assert.True(Is(Current.Unit("de-crew")!, Conditions.FinalFire));
         Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
     }
 

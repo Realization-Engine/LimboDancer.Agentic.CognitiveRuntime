@@ -98,6 +98,30 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
+    /// The refusal of another act of the DEFENDER while the Mandatory FG's attack is owed (A8.312; pass 45, ruling R45.2), or null. Like the fire
+    /// action's bar it is on the DEFENDER's proposal alone: one that names a unit or a weapon of the side that is not moving.
+    /// </summary>
+    private GamePlan? HeldBehindMandatoryFire(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, long expected, string label, string act)
+    {
+        if (existing.Count == 0 || arguments.ValueKind != JsonValueKind.Object || Replay(existing).Current is not { Phase: "mph" } state)
+        {
+            return null;
+        }
+
+        bool Defenders(string id) => state.Unit(id) is { } unit ? unit.Side != state.PhasingSide
+            : state.Find(id) is EquipmentInstance { Holding.Holder: { } holder } && state.Unit(holder) is { } possessor && possessor.Side != state.PhasingSide;
+        var named = arguments.EnumerateObject().SelectMany(property => property.Value.ValueKind switch
+        {
+            JsonValueKind.String => [property.Value.GetString()!],
+            JsonValueKind.Array => property.Value.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!),
+            _ => Enumerable.Empty<string>(),
+        });
+        return named.Any(Defenders) && MandatoryFire(state, existing) is { } owed
+            ? Refused(scope, label, expected, ScenarioA1MandatoryFire.OtherActBar(owed.Firers, owed.At.ToString(), act))
+            : null;
+    }
+
+    /// <summary>
     /// The fire action, with the Mandatory FG's bar before it (A8.312). The bar is on the DEFENDER's proposal alone: a proposal by the phasing side
     /// goes to the fire plan as before, so no refusal tells the ATTACKER which of the DEFENDER's units owe the attack.
     /// </summary>

@@ -204,10 +204,29 @@ public static class ScenarioA1FireCalculator
 
     // A9.3: a MG firing as Subsequent First Fire or FPF, or in the DFPh while marked First Fire, uses Sustained Fire.
     private static bool IsSustained(FireAttack attack, FireWeapon weapon, ScenarioA1FireReference reference) =>
-        (attack.FireKind is SubsequentFirstFire or FinalProtectiveFire || (attack.Phase == "DFPh" && weapon.FirstFireMarked == true))
+        ((attack.FireKind is SubsequentFirstFire or FinalProtectiveFire
+            && ((attack.Firers ?? []).FirstOrDefault(firer => firer.Weapons?.Contains(weapon) == true) is not { } user || UsesSubsequentFire(attack, user)))
+            || (attack.Phase == "DFPh" && weapon.FirstFireMarked == true))
 
         // A9.3 (referee, pass 9b): only a MG uses Sustained Fire.
         && reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty)?.IsMg != false;
+
+    /// <summary>
+    /// A firer's own kind in an attack of Subsequent First Fire or FPF, by its own counter (A8.3, A8.31, pp. 61 to 62; pass 45, ruling R45.1): "A unit
+    /// using FPF may form a FG with units not using FPF, but only those units using FPF are affected by its adverse affects". In any other attack
+    /// it is the attack's kind.
+    /// </summary>
+    private static string? OwnKind(FireAttack attack, FireFirer firer) => attack.FireKind is SubsequentFirstFire or FinalProtectiveFire
+        ? firer.FinalFireMarked == true ? FinalProtectiveFire : firer.FirstFireMarked == true ? SubsequentFirstFire : FirstFire
+        : attack.FireKind;
+
+    /// <summary>
+    /// Whether a firer of a Subsequent First Fire or FPF attack uses that fire itself (A8.3): it is marked, or a MG it fires is marked First Fire.
+    /// "Whenever a unit uses Subsequent First Fire, it must use all MG/IFE in its possession ... as Subsequent First Fire", and "that unit and all
+    /// its SW/Guns are marked with a Final Fire counter"; a unit with no counter beside it fires and is marked as in First Fire.
+    /// </summary>
+    private static bool UsesSubsequentFire(FireAttack attack, FireFirer firer) => attack.FireKind is SubsequentFirstFire or FinalProtectiveFire
+        && (firer.FirstFireMarked == true || firer.FinalFireMarked == true || (firer.Weapons ?? []).Any(weapon => weapon.FirstFireMarked == true));
 
     private static List<string> Missing(FireAttack attack)
     {
@@ -581,12 +600,18 @@ public static class ScenarioA1FireCalculator
             || firers.Zip(firerDefinitions).Any(pair => pair.Second is null || (!LeaderMg(pair.First, pair.Second)
                 && (!(pair.Second.IsMmc || pair.Second.IsHero || pair.Second.Kind == "asl:crew") || pair.Second.Firepower is null || pair.Second.Range is null)))
             || firers.Any(item => item.Partner is not null && !LeaderMg(item, reference.Definitions.GetValueOrDefault(item.DefinitionId!)))
-            // A7.352 (ruling R8.4): a crew that fired its Gun this Player Turn has no inherent FP, but in FPF, where it "must add" it (A8.311; pass 40,
-            // ruling R40.18).
-            || firers.Any(item => item.UsesInherentFp != false
-                && !ScenarioA1MandatoryFire.CrewAddsInherentFp(item.GunFired == true, attack.FireKind == FinalProtectiveFire)))
+            // A7.352, A7.353 (p. 56; ruling R8.4): a crew that fired its Gun this Player Turn has no inherent FP, but "Subsequent First Fire (8.3),
+            // FPF (8.31), and Final Fire (8.4) vs adjacent units retain halved inherent FP": its own fire of those kinds, which is Area Fire.
+            || firers.Any(item => item.UsesInherentFp != false && !ScenarioA1MandatoryFire.CrewAddsInherentFp(item.GunFired == true,
+                attack.FireKind == FinalProtectiveFire || OwnKind(attack, item) == SubsequentFirstFire || IsFinalFireAgain(attack, item))))
         {
             outside.Add("asl.a1.fire.firer-outside");
+        }
+
+        // A7.54 (p. 57; pass 45): "A berserk unit may never be part of a multi-Location FG."
+        if (multi && firers.Any(item => item.Berserk == true))
+        {
+            outside.Add("asl.a1.fire.berserk-group-outside");
         }
 
         if (firerDefinitions.Any(item => item is not null && !sides.Contains(item.Nationality)))
@@ -647,8 +672,15 @@ public static class ScenarioA1FireCalculator
 
         // A8.3: Subsequent First Fire within Normal Range and no farther than the closest armed Known enemy unit; in a mixed FPF group, for its
         // Subsequent First Fire members (referee, pass 12).
-        var subsequentMembers = kind == SubsequentFirstFire ? firers.Zip(firerDefinitions).ToArray()
-            : kind == FinalProtectiveFire ? firers.Zip(firerDefinitions).Where(pair => pair.First.FinalFireMarked != true).ToArray() : [];
+        var subsequentMembers = kind is SubsequentFirstFire or FinalProtectiveFire
+            ? firers.Zip(firerDefinitions).Where(pair => pair.First.FinalFireMarked != true && UsesSubsequentFire(attack, pair.First)).ToArray() : [];
+
+        // A8.3 (pass 45): an attack of Subsequent First Fire has a firer that uses it.
+        if (kind == SubsequentFirstFire && subsequentMembers.Length == 0)
+        {
+            outside.Add("asl.a1.fire.subsequent-first-fire-outside");
+        }
+
         if (subsequentMembers.Length > 0 && (attack.WithinSubsequentFirstFireRange != true
             || subsequentMembers.Any(pair => pair.Second is { Range: { } range } && RangeOf(attack, pair.First) > range)))
         {
@@ -981,9 +1013,9 @@ public static class ScenarioA1FireCalculator
         return attack.FireKind switch
         {
             FirstFire => rateOfFireShot || (!firstFire && !finalFire && firer.FiredThisPlayerTurn != true),
-            SubsequentFirstFire => firstFire && !finalFire,
-            // A8.31 (ruling R12.3; referee, pass 12): FPF firers with Subsequent First Fire firers in one group, all then marked Final Fire.
-            FinalProtectiveFire => finalFire || firstFire,
+            // A8.31, A8.312 (pass 45, ruling R45.1): a unit with no counter fires First Fire in one group with Subsequent First Fire and FPF firers.
+            SubsequentFirstFire => !finalFire && (firstFire || firer.FiredThisPlayerTurn != true),
+            FinalProtectiveFire => finalFire || firstFire || firer.FiredThisPlayerTurn != true,
             _ when attack.Phase == "DFPh" => rateOfFireShot || (!finalFire && (firstFire || firer.FiredThisPlayerTurn != true)),
             _ => rateOfFireShot || firer.FiredThisPlayerTurn != true,
         };
@@ -1278,6 +1310,7 @@ public static class ScenarioA1FireCalculator
             return new FireResolution(FireResolution.Resolved, [], arithmetic,
                 attack.Targets!.Select(item => state[item.UnitId!].Effect()).ToArray(), Marked(), FireCounter(), firerConcealment)
             {
+                FirerCounters = FirerCounters(),
                 WeaponEffects = weapons,
                 FirerEffects = firerEffects,
                 CompanionEffects = companions,
@@ -1653,6 +1686,21 @@ public static class ScenarioA1FireCalculator
         }
 
         /// <summary>The fire counter the attack places (A3.2, A3.4, A3.5, A8.1, A8.3, A8.31, A8.4); none for Residual FP.</summary>
+        /// <summary>
+        /// A firer's own counter (A8.3, A8.31; pass 45, ruling R45.1): in an attack of Subsequent First Fire or FPF a unit that uses neither is marked
+        /// First Fire; every other firer takes the attack's counter.
+        /// </summary>
+        private string? OwnCounter(FireFirer firer) =>
+            attack.FireKind is SubsequentFirstFire or FinalProtectiveFire && !UsesSubsequentFire(attack, firer) ? "first-fire" : FireCounter();
+
+        /// <summary>The firers whose counter differs from the attack's, by id; null when none does.</summary>
+        private Dictionary<string, string>? FirerCounters()
+        {
+            var own = (attack.Firers ?? []).Where(firer => OwnCounter(firer) is { } counter && counter != FireCounter())
+                .ToDictionary(firer => firer.UnitId!, firer => OwnCounter(firer)!, StringComparer.Ordinal);
+            return own.Count == 0 || attack.SprayShare == true ? null : own;
+        }
+
         private string? FireCounter() => attack.FireKind switch
         {
             _ when attack.OrdnanceHit is not null => null,
@@ -2016,6 +2064,14 @@ public static class ScenarioA1FireCalculator
             // First Fire only; A7.83: a pinned mover takes neither.
             // A4.62 (ruling R10.8): Hazardous Movement is -2 to any attack on the unpinned movers, with no FFMO or FFNAM; A8.15 (ruling R10.13):
             // a Snap Shot has neither.
+            // C6.44 (p. 174; pass 45): a MG's attack on its Bore Sighted Location deducts two, "unless using Spraying Fire or taking a Snap Shot
+            // [EXC: vs Infantry, only such an attack conducted as Defensive First Fire (A8.1) qualifies]"; never Residual FP of any form.
+            if (attack.MgBoreSighted == true && !residual && attack.FireLane != true && attack.SprayingFire != true && attack.SnapShot != true
+                && (attack.FireKind == FirstFire || !state.Values.Any(unit => !unit.IsDummy)))
+            {
+                drm.Add(new FireModifier("bore-sighting", -2m, "C6.44"));
+            }
+
             if (attack.HazardousMovement == true && state.Values.Any(unit => !unit.IsDummy && !unit.Pinned))
             {
                 drm.Add(new FireModifier("hazardous-movement", -2m, "A4.62"));
@@ -2340,9 +2396,7 @@ public static class ScenarioA1FireCalculator
 
             // A8.3, A8.31, A8.4, A9.3: Subsequent First Fire, FPF, a First-Fire-marked unit's Final Fire, and Sustained Fire
             // are Area Fire; in a group mixing FPF with other fire, each firer's own kind decides (ruling R12.3).
-            var ownKind = attack.FireKind == FinalProtectiveFire
-                ? firer.FinalFireMarked == true ? FinalProtectiveFire : firer.FirstFireMarked == true ? SubsequentFirstFire : FirstFire
-                : attack.FireKind;
+            var ownKind = OwnKind(attack, firer);
             if (ownKind is SubsequentFirstFire or FinalProtectiveFire || finalFireAgain || sustained)
             {
                 multipliers.Add(new FireModifier("area-fire", 0.5m, ownKind switch
@@ -2440,7 +2494,7 @@ public static class ScenarioA1FireCalculator
                     && (attack.Phase != "AFPh" || operatorUnit?.OpportunityFire == true)
                     && reference.Definitions[weapon.DefinitionId!].RateOfFire is { } rof && colored <= rof - (weapon.Captured == true ? 1 : 0);
                 return new FireWeaponEffect(id, breakdown[id], malfunctioned.Contains(id), retained, sustained,
-                    retained ? null : sustained ? "final-fire" : counter, selection.TryGetValue(id, out var dr) ? dr : null);
+                    retained ? null : sustained ? "final-fire" : operatorUnit is null ? counter : OwnCounter(operatorUnit), selection.TryGetValue(id, out var dr) ? dr : null);
             }).ToList();
         }
 
