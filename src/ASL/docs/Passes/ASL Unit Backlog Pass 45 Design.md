@@ -566,4 +566,25 @@ Ten tasks and 45.1b in eight commits, then the reviews' fixes in one.
 
 **Not built, against the frame:** section 12.1.
 
-**Tests after the reviews' fixes:** Rules 818 of 818, Units 409 of 409, Play 742 of 742, MapStudio 390 of 390, each project whole. The gate's sweep and digest, Docker, and the Node viewport test are the gate's and were not run.
+**Tests after the reviews' fixes:** Rules 818 of 818, Units 409 of 409, Play 742 of 742, MapStudio 390 of 390, each project whole. The gate is section 14.
+
+## 14. The gate
+
+Run on 2026-10-12 at the user's word ("Run the gate", then "Continue without my intervention, but stop before the merge"). The baseline is main at 5982767e, built from its own sources; the proof store holds 461 games, 50 of them new.
+
+| Step | Result |
+|---|---|
+| The solution build with warnings as errors | Failed the first time on style alone: IDE0055 in the pass's Rules test file and CA1861 in two Play test files. Fixed in 98d3dfca, no product code. Then 0 warnings, 0 errors, and again after the fix below. |
+| The whole local suite, from `bin/gate` | Dice 24, Rules 818, Units 409, Maps 244, Maps.Vasl 121 (30 skipped), Maps.Rendering 34 (2 skipped), Units.Rendering 352, CounterSheets 19, MapStudio 390, Play 742, Authoring 167: none failed. Play and MapStudio were run again after the fix below: 742 and 390. |
+| CI's Node viewport test | 5 of 5. |
+| The chart supplement | Equal. |
+| The text list | 1,298 texts on main, 1,312 on the branch; 28 lines differ, each a text the pass added or reworded. |
+| The replay digest | Every game made before the pass replays to the same digest, line for line, after the fix below. The 50 new games differ, as they must: main does not know their facts. |
+| The planner sweep, 11 games, 515,179 lines | 2,021 lines differ, all of the dismantle action and its read: the refusal reworded (1,876), a MG that may now be dismantled refused for the phase instead (113), and the German HMG of `p31c-tw` dismantled where main refused it (16 plans, 16 reads). Every fire plan is equal once the fact of ruling R45.4 is left out of the record's JSON. |
+| Docker, Linux | Passed on 98d3dfca: eleven projects, 3,320 tests. On df8005f9 the second run failed one MapStudio page test, `AWeaponThatHasMalfunctionedIsListedAndCannotBeTicked`, which named a weapon by its id; the third run, on the same commit and with nothing else running, passed all eleven projects. |
+
+**What the gate found, and the fix (df8005f9).** The recorded game `guards-06-dlandi` stopped replaying at revision 563 (UNIT-STATE-024). One firer of that attack is berserk; the fact the pass added to a firer (`berserk`, for A7.54 and A7.9) was rebuilt from the state, while the record, made before the pass, has none. The fire record's check now takes the fact from the state for an attack planned from the pass on and from the record for an older one, as ruling R45.4 has the pass's other new facts. No test of its own: the recorded game is the fixture and the replay digest is the check. The pass's own tests and four whole test projects had passed with this fault in place; only the replay of a recorded game with a berserk firer could show it.
+
+**What went wrong in the gate itself.** The first run's digest and sweep on the branch's side were void: the proof tool did not compile against the new build (`MayDismantle` is no longer static) and ran on the copies of the day before, so it reported no difference at all. The script printed the copies' dates and I did not stop it on them. The tool is corrected, and the script now stops unless the copy is the gate's build, byte for byte.
+
+**The Docker failure** is a race between test classes, not the pass: `UnitNames.For` keeps the page's names in a static cache keyed by the game's id, its first event's id, and the viewer, and test classes that run side by side start games with the same id and the same first event id. The pass did not touch that code or that test. It has a backlog row (57.2).

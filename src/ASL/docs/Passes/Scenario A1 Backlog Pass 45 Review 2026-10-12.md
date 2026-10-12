@@ -4,7 +4,7 @@ The review of pass 45, written on 2026-10-12 after the five reviews, their fixes
 
 ## Status
 
-Built on branch `feature/asl-backlog-pass-45`, cut from main at 5982767e: the frame, ten tasks and 45.1b in eight commits, then the five reviews, their fixes, the Studio check, and these documents. The frame's questions F1 to F10 were answered yes by the user on 2026-10-12. Everything after the frame was done under the user's word of that day, "Implement all parts of Pass 45 with out my intervention", and is open to a veto. **The gate has not been run, and nothing is merged or pushed:** the user said to stop before the gate.
+Built on branch `feature/asl-backlog-pass-45`, cut from main at 5982767e: the frame, ten tasks and 45.1b in eight commits, then the five reviews, their fixes, the Studio check, and these documents. The frame's questions F1 to F10 were answered yes by the user on 2026-10-12. Everything after the frame was done under the user's word of that day, "Implement all parts of Pass 45 with out my intervention", and is open to a veto. The gate was run on 2026-10-12 at the user's word and passed after two fixes (design 14): style errors of the strict build in three test files (98d3dfca), and an older fire record with a berserk firer that no longer replayed (df8005f9). **Nothing is merged or pushed:** the user said to stop before the merge.
 
 ## What departs from the frame
 
@@ -99,6 +99,6 @@ In my Studio on port 6671, built into `bin/p31b` after the reviews' fixes, with 
 
 ## What was not done
 
-- The gate, the merge, and the push: each is the user's to start.
+- The merge and the push: each is the user's to start.
 - A Studio game for Mandatory Fire Direction, and Play tests for the two levels of a hex and for A7.72: the test boards have no stairwell building, so the games and the Rules tests stand for them.
 - Each control at each width in each view, and the Replay page.

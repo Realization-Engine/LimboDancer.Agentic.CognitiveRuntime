@@ -1756,7 +1756,7 @@ Passes 90, 125, 140, and 165 lose part of their titles: 90 is night alone, 125 i
 
 **Pass 45: Infantry II: fire, MGs, and SW** (new; 38 rows of the inventory). Counters: none (the German HMG's and the mortars' dm values are manufactured, R0.3). Needs first: 40 (ADJACENT).
 
-**Status, 2026-10-12:** built on the branch `feature/asl-backlog-pass-45`, cut from main at 5982767e, with the [design](<Passes/ASL Unit Backlog Pass 45 Design.md>) written as it went: tasks 45.1 to 45.10 and 45.1b, the five reviews with their fixes, the Studio check, and the [review](<Passes/Scenario A1 Backlog Pass 45 Review 2026-10-12.md>). Rulings R45.1 to R45.6. Not built, against the frame: ordnance HE's Residual FP (pass 110), Spraying Fire in the MPh, five of six Fire Lane points, the mortars' Repair number, SW Self-Destruction, and most of pass 40's movement rows (pass 75). **Stopped before the gate at the user's word; not merged.**
+**Status, 2026-10-12:** built on the branch `feature/asl-backlog-pass-45`, cut from main at 5982767e, with the [design](<Passes/ASL Unit Backlog Pass 45 Design.md>) written as it went: tasks 45.1 to 45.10 and 45.1b, the five reviews with their fixes, the Studio check, and the [review](<Passes/Scenario A1 Backlog Pass 45 Review 2026-10-12.md>). Rulings R45.1 to R45.6. Not built, against the frame: ordnance HE's Residual FP (pass 110), Spraying Fire in the MPh, five of six Fire Lane points, the mortars' Repair number, SW Self-Destruction, and most of pass 40's movement rows (pass 75). The gate passed on 2026-10-12 after two fixes (design 14). **Stopped before the merge at the user's word.**
 
 | Task | Rules | Estimate |
 |---|---|---|
