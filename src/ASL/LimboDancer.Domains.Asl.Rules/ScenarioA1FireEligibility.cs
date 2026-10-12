@@ -142,7 +142,7 @@ public static class ScenarioA1FireEligibility
     }
 
     /// <summary>The US# of a unit for a Guard's fire (A20.52): a squad three, a HS or crew two, any other unit one.</summary>
-    public static int GuardSize(string kind) => kind == "asl:squad" ? 3 : kind is "asl:half-squad" or "asl:crew" ? 2 : 1;
+    public static int GuardSize(string kind) => ScenarioA1Definitions.UnitSize(kind);
 
     /// <summary>
     /// Why a unit may not fire or direct fire now, or null: a berserk unit never fires in its PFPh and directs no fire (A15.432, A15.42; ruling

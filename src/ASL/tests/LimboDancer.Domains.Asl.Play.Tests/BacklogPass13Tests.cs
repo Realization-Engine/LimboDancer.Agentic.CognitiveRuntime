@@ -396,6 +396,51 @@ public sealed class BacklogPass13Tests : IDisposable
     }
 
     [Fact]
+    public async Task AnUnarmedSquadDeploysAndUnarmedHalfSquadsRecombineWithNoLeader()
+    {
+        // Pass 40, task 40.9 (A1.31, A1.32, p. 45): "unarmed units (20.5) ... do not require leader direction to Deploy", and "unarmed HS do not
+        // need leader presence to Recombine". The armed squad beside them still needs its leader.
+        await SetupAt(0, "german", Unit("gu", "attacker-squad", "C3", "german", "asl:unarmed"), Unit("g1", "attacker-squad", "C3", "german"),
+            Unit("h1", "attacker-half-squad", "D3", "german", "asl:unarmed"), Unit("h2", "attacker-half-squad", "D3", "german", "asl:unarmed"));
+        Committed(await Do(GameActions.Recombine, NoRoll(), new
+        {
+            halfSquads = H1H2,
+            attemptId = "rec"
+        }));
+        Assert.Equal("asl:squad", Current.Unit("rec-h1")!.Kind);
+        Refused(await Do(GameActions.Deploy, NoRoll(), new
+        {
+            squadId = "g1"
+        }), "play.deploy-leader");
+        Committed(await Do(GameActions.Deploy, Once(1, 2), new
+        {
+            squadId = "gu",
+            attemptId = "dep"
+        }));
+        Assert.Equal("asl:half-squad", Current.Unit("dep-gu-1")!.Kind);
+        Assert.True(Is(Current.Unit("dep-gu-1")!, Conditions.Unarmed));
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
+    public async Task HalfSquadsRecombineOnlyAtTheStartOfTheirSidesRph()
+    {
+        // Pass 40, task 40.9 (A1.32, p. 45): "at the start of any RPh": not once a unit of their side has attempted a Deployment in it.
+        await SetupAt(0, "german", Unit("h1", "attacker-half-squad", "C3", "german"), Unit("h2", "attacker-half-squad", "C3", "german"),
+            Unit("gl", "attacker-leader-8-1", "C3", "german"), Unit("g2", "attacker-squad", "D3", "german"), Unit("gl2", "attacker-leader-8-1", "D3", "german"));
+        Committed(await Do(GameActions.Deploy, Once(6, 6), new
+        {
+            squadId = "g2",
+            leader = "gl2"
+        }));
+        Refused(await Do(GameActions.Recombine, NoRoll(), new
+        {
+            halfSquads = H1H2,
+            leader = "gl"
+        }), "play.recombine-start");
+    }
+
+    [Fact]
     public async Task TwoHalfSquadsRecombineWithTheirLeader()
     {
         await SetupAt(0, "german", Unit("h1", "attacker-half-squad", "C3", "german"), Unit("h2", "attacker-half-squad", "C3", "german"),

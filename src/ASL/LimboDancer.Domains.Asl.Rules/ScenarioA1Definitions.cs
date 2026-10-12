@@ -204,6 +204,17 @@ public static class ScenarioA1Definitions
     /// berserk, captured, stunned, shocked, or held in Melee. A pinned, CX, TI, or unarmed unit is still in Good Order. Until pass 35 the planner's
     /// reading left a TI unit out and let a berserk one in, both against the rule. A Disrupted unit is broken, so it needs no clause of its own.
     /// </summary>
+    /// <summary>
+    /// A1.6 (p. 45; pass 40): the Unit Size Number. "Personnel units have a US# equal to the number of silhouettes on their counter (SMC: 1;
+    /// Crew/HS: 2; Squad: 3). Horses and all other 5/8\" counters have a US# of 4 ... [EXC: Any vehicle or Gun classified as large or very large
+    /// (red H, AF, or M#) has a US# of 5]". The one member for it: Concealment (A12.12), Guarding prisoners (A20.5), and CC read it here.
+    /// </summary>
+    public static int UnitSize(bool squad, bool halfSquadOrCrew, bool fiveEighths = false, bool large = false) =>
+        fiveEighths ? (large ? 5 : 4) : squad ? 3 : halfSquadOrCrew ? 2 : 1;
+
+    /// <summary>The US# of a Personnel unit by its kind (A1.6).</summary>
+    public static int UnitSize(string? kind) => UnitSize(kind == "asl:squad", kind is "asl:half-squad" or "asl:crew");
+
     public static bool GoodOrderOf(bool active, bool broken, bool berserk, bool melee, bool captured, bool stunned, bool shocked) =>
         active && !broken && !berserk && !melee && !captured && !stunned && !shocked;
 

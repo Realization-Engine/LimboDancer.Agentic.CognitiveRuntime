@@ -3804,7 +3804,7 @@ public static class GameProjector
         /// </summary>
         private GameState KeepGuards(GameState next)
         {
-            static int Size(UnitInstance unit) => Rules.ScenarioA1PrisonerCalculator.UnitSize(unit.Kind == "asl:squad", unit.Kind is "asl:half-squad" or "asl:crew");
+            static int Size(UnitInstance unit) => Rules.ScenarioA1Definitions.UnitSize(unit.Kind);
             foreach (var prisoner in next.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Custodian is not null).ToArray())
             {
                 var at = next.Location(prisoner.Id)?.Location;

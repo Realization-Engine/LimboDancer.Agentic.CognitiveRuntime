@@ -4,7 +4,7 @@ using Xunit;
 namespace LimboDancer.Domains.Asl.Rules.Tests;
 
 /// <summary>
-/// Pass 40, read directly in Rules. Task 40.5: the attack owed in the DEFENDER's own Location, and a crew's FP in FPF (A8.311, A8.312; p. 61). Task 40.4: Infantry OVR and the recapture of Unarmed units by entry (A4.15 to A4.152, A20.54; pp. 49, 88). Task 40.7: the portage and movement corrections (A4.4, A4.41, A4.42, A4.44, A4.61; pp. 48 to 51). Task 40.3: Dash (A4.63, C6.1, pp. 51 to 52, 173). Task 40.2: a woods-road hex, the mover's choice across a road hexside, and the terrain a firer reads for a mover at
+/// Pass 40, read directly in Rules. Task 40.9: Deployment and Recombining without a leader, the US#, and a butted half-hex (A1.31, A1.32, A1.6, A2.3; p. 45). Task 40.5: the attack owed in the DEFENDER's own Location, and a crew's FP in FPF (A8.311, A8.312; p. 61). Task 40.4: Infantry OVR and the recapture of Unarmed units by entry (A4.15 to A4.152, A20.54; pp. 49, 88). Task 40.7: the portage and movement corrections (A4.4, A4.41, A4.42, A4.44, A4.61; pp. 48 to 51). Task 40.3: Dash (A4.63, C6.1, pp. 51 to 52, 173). Task 40.2: a woods-road hex, the mover's choice across a road hexside, and the terrain a firer reads for a mover at
 /// the road rate (A4.132, B3.3, B13.31, pp. 48, 113, 128). Task 40.6: the one count of a stack (A5.1, A5.2, A5.5, pp. 52 to 53), which the MPh, the APh, the IFT, the To Hit
 /// DR, Close Combat, and setup all read, and the MF and MP an overstacked Location costs (A5.11). The IFT DRM is tested with the Fire package's
 /// helpers in ScenarioA1Pass10Tests.
@@ -456,5 +456,62 @@ public sealed class ScenarioA1Pass40RulesTests
         Assert.True(ScenarioA1MandatoryFire.CrewAddsInherentFp(false, false));
         Assert.False(ScenarioA1MandatoryFire.CrewAddsInherentFp(true, false));
         Assert.True(ScenarioA1MandatoryFire.CrewAddsInherentFp(true, true));
+    }
+
+    [Fact]
+    public void GuardsAndUnarmedUnitsNeedNoLeaderAndAGuardSquadDeploysAtWill()
+    {
+        // A1.31, A1.32 (p. 45); A20.5 (p. 88).
+        Assert.True(ScenarioA1SupportWeaponRules.NeedsNoLeader(true, false));
+        Assert.True(ScenarioA1SupportWeaponRules.NeedsNoLeader(false, true));
+        Assert.False(ScenarioA1SupportWeaponRules.NeedsNoLeader(false, false));
+        Assert.True(ScenarioA1SupportWeaponRules.GuardDeploysAtWill(true, true, false));
+        Assert.False(ScenarioA1SupportWeaponRules.GuardDeploysAtWill(true, true, true));
+        Assert.False(ScenarioA1SupportWeaponRules.GuardDeploysAtWill(false, true, false));
+        Assert.False(ScenarioA1SupportWeaponRules.GuardDeploysAtWill(true, false, false));
+
+        // A1.32: "at the start of any RPh".
+        Assert.Null(ScenarioA1SupportWeaponRules.RecombineStartBar(false));
+        Assert.StartsWith("play.recombine-start:", ScenarioA1SupportWeaponRules.RecombineStartBar(true), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheUnitSizeNumberIsOneMemberWithItsFourAndItsFive()
+    {
+        // A1.6 (p. 45).
+        Assert.Equal(1, ScenarioA1Definitions.UnitSize(false, false));
+        Assert.Equal(2, ScenarioA1Definitions.UnitSize(false, true));
+        Assert.Equal(3, ScenarioA1Definitions.UnitSize(true, false));
+        Assert.Equal(4, ScenarioA1Definitions.UnitSize(false, false, fiveEighths: true));
+        Assert.Equal(5, ScenarioA1Definitions.UnitSize(false, false, fiveEighths: true, large: true));
+        Assert.Equal(3, ScenarioA1Definitions.UnitSize("asl:squad"));
+        Assert.Equal(2, ScenarioA1Definitions.UnitSize("asl:half-squad"));
+        Assert.Equal(2, ScenarioA1Definitions.UnitSize("asl:crew"));
+        Assert.Equal(1, ScenarioA1Definitions.UnitSize("asl:leader"));
+        Assert.Equal(3, ScenarioA1FireEligibility.GuardSize("asl:squad"));
+    }
+
+    [Fact]
+    public void AButtedHalfHexIsInASetupAreaOnlyUnderBothBoardsNames()
+    {
+        // A2.3 (p. 45): two boards; the half-hex bd02:A1 is butted against bd04:GG10, and the later board, bd02, owns it.
+        var card = new SetupCardFacts([], 2, null, false, null, null, null, null, []);
+        SetupAreaFacts[] onFirst = [new("a", "hex-numbers", null, "bd04", 8, 10, null, null, null, null, null)];
+        SetupAreaFacts[] onSecond = [new("b", "hex-numbers", null, "bd02", 1, 3, null, null, null, null, null)];
+        SetupAreaFacts[] onBoth = [.. onFirst, .. onSecond];
+        var full = new SetupLocationFacts("bd04:B9:0", "bd04", "B9", 9);
+        var seam = new SetupLocationFacts("bd02:A1:0", "bd02", "A1", 1) { OtherHalf = new SetupLocationFacts("bd04:GG10:0", "bd04", "GG10", 10) };
+        var edge = new SetupLocationFacts("bd02:A1:0", "bd02", "A1", 1);
+
+        Assert.True(ScenarioA1SetupCalculator.InAreas(card, onFirst, full));
+        Assert.False(ScenarioA1SetupCalculator.InAreas(card, onSecond, full));
+
+        // A unit limited to either board alone may not set up in the butted half-hex; one allowed on both may.
+        Assert.False(ScenarioA1SetupCalculator.InAreas(card, onFirst, seam));
+        Assert.False(ScenarioA1SetupCalculator.InAreas(card, onSecond, seam));
+        Assert.True(ScenarioA1SetupCalculator.InAreas(card, onBoth, seam));
+
+        // "... or is not butted against another half-hex".
+        Assert.True(ScenarioA1SetupCalculator.InAreas(card, onSecond, edge));
     }
 }

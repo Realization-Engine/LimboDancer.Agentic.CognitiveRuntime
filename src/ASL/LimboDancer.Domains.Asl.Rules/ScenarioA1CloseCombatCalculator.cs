@@ -557,7 +557,7 @@ public static class ScenarioA1CloseCombatCalculator
             && item.Kind == (unit.Kind == "asl:squad" ? "asl:squad" : "asl:half-squad")).Select(item => item.Id).Order(StringComparer.Ordinal).FirstOrDefault();
 
     /// <summary>A unit's US# (A1.6, A20.51): a squad 3, a HS or crew 2, a SMC 1.</summary>
-    private static int Size(FireDefinition definition) => definition.Kind == "asl:squad" ? 3 : definition.Kind is "asl:half-squad" or "asl:crew" ? 2 : 1;
+    private static int Size(FireDefinition definition) => ScenarioA1Definitions.UnitSize(definition.Kind);
 
     /// <summary>The Morale Level of a MMC as Leader Creation reads it (A18.2): berserk 10 (A15.42), one higher when Fanatic (A10.8), never beyond 10 (A.18).</summary>
     private static int BaseMorale(CloseCombatUnit unit, ScenarioA1CloseCombatReference reference) =>

@@ -455,6 +455,19 @@ else if (state is not null)
                         Units="@([.. SupportWeaponUnits.Select(Labelled)])" Weapon="@swWeapon" Unit="@swUnit" Held="@(SupportWeaponHolder is not null)" Dismantles="@(swWeapon.Length > 0 && GamePlanner.MayDismantle(state, swWeapon))"
                         OnWeapon="@(id => { swWeapon = id; swUnit = string.Empty; })" OnUnit="@(id => swUnit = id)" OnPropose="@ProposeSupportWeaponKind" />
                 }
+                @* Pass 40 (A20.5, p. 88): an unbroken Guard squad Deploys at will, in any phase; in the RPh the Deploy panel takes it. *@
+                @if (state.Phase != "rph" && GuardSquads is { Count: > 0 } guardSquads)
+                {
+                    <ActionSection Title="A Guard's Deployment" Key="guard-deploy">
+                    <div class="toolbar" id="guard-deploy">
+                        <span class="toolbar-note">An unbroken Guard squad Deploys into two HS at any time, with no leader and no NTC (A20.5).</span>
+                        @foreach (var guard in guardSquads)
+                        {
+                            <button class="propose-guard-deploy" data-unit="@guard" @onclick="@(() => ProposeGuardDeploy(guard))">Propose: @WordsAt(guard) Deploys</button>
+                        }
+                    </div>
+                    </ActionSection>
+                }
                 @if (state.Phase == "rph")
                 {
                     <ActionSection Title="Rally" Key="rally">
@@ -5910,6 +5923,18 @@ else if (state is not null)
         ? state.At(at).OfType<UnitInstance>().Where(other => other.Status == InstanceStatus.Active && other.Id != one.Id && other.Kind == "asl:half-squad"
             && other.Definition?.Definition == one.Definition?.Definition)
         : []);
+
+    /// <summary>The viewer's unbroken squads that guard prisoners (A20.5; pass 40): each may Deploy at will.</summary>
+    private IReadOnlyList<string> GuardSquads => state is null ? []
+        : [.. ActingUnits.Where(unit => unit.Status == InstanceStatus.Active && unit.Kind == "asl:squad" && state.Location(unit.Id) is not null
+                && (Viewer.IsAdjudicator || unit.Side == viewAs) && GameState.Condition(unit, Conditions.Broken) != ConditionState.True
+                && state.Units.Any(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == unit.Id))
+            .Select(unit => unit.Id)];
+
+    private Task ProposeGuardDeploy(string squad) => Propose(GameActions.Deploy, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+    {
+        ["gameId"] = gameId, ["attemptId"] = Attempt("deploy"), ["expectedRevision"] = (long)history!.Events.Count, ["squadId"] = squad,
+    }));
 
     private Task ProposeDeploy()
     {

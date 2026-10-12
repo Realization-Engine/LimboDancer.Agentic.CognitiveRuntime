@@ -1170,7 +1170,8 @@ public sealed partial class GamePlanner
         state.Units.Where(prisoner => prisoner.Status == InstanceStatus.Active && prisoner.Custodian == guard.Id).Sum(UnitSize);
 
     /// <summary>A unit's US# (A1.6, p. 45; A20.51): a squad 3, a HS or crew 2, a SMC 1.</summary>
-    private int UnitSize(UnitInstance unit) => ScenarioA1PrisonerCalculator.UnitSize(vocabulary.IsA(unit.Kind, "asl:squad"), vocabulary.IsA(unit.Kind, "asl:half-squad") || vocabulary.IsA(unit.Kind, "asl:crew"));
+    private int UnitSize(UnitInstance unit) => ScenarioA1Definitions.UnitSize(vocabulary.IsA(unit.Kind, "asl:squad"),
+        vocabulary.IsA(unit.Kind, "asl:half-squad") || vocabulary.IsA(unit.Kind, "asl:crew"));
 
     /// <summary>The ADJACENT Location across each hexside of a Location's hex, at ground level, on one board or across a seam.</summary>
     private IEnumerable<BoardLocation> Neighbors(GameState state, BoardLocation at)
