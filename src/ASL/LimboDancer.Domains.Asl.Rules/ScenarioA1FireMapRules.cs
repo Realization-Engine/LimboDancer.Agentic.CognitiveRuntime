@@ -437,7 +437,8 @@ public static class ScenarioA1FireMapRules
         ArgumentNullException.ThrowIfNull(unitSide);
         ArgumentNullException.ThrowIfNull(encirclementExists);
         ArgumentNullException.ThrowIfNull(earlier);
-        if (phase is not ("pfph" or "dfph" or "afph") || facts.SprayingFire == true || !targetKnown)
+        // Pass 45 (A7.7): Spraying Fire is fire by inherent FP or a SW as any other, and counts when its FP could inflict a NMC.
+        if (phase is not ("pfph" or "dfph" or "afph") || !targetKnown)
         {
             return null;
         }
@@ -477,7 +478,7 @@ public static class ScenarioA1FireMapRules
                 break;
             }
 
-            if (attack.Read() is not { } record || record.Blocked || record.Recorded.SprayingFire == true)
+            if (attack.Read() is not { } record || record.Blocked)
             {
                 continue;
             }

@@ -1570,7 +1570,9 @@ public static class GameProjector
             var byVehicle = (fire.Facts.TryGetProperty("vehicleFire", out var firing) && firing.ValueKind == JsonValueKind.Object)
                 || (fire.Facts.TryGetProperty("overrun", out var overrunning) && overrunning.ValueKind == JsonValueKind.Object);
             if (Rules.ScenarioA1FireFollowUps.VerifyFireRecord(fire.MovementStep, state.Movement is { WindowOpen: true }, state.Movement?.Step, fire.Firers.Count, byVehicle,
-                state.FiresThisPhase.Select(item => new Rules.PhaseFireFacts(item.FirerLocation, item.TargetLocation, item.Step, item.Vehicle)), fire.FirerLocation, fire.TargetLocation) is { } refused)
+                state.FiresThisPhase.Select(item => new Rules.PhaseFireFacts(item.FirerLocation, item.TargetLocation, item.Step, item.Vehicle)), fire.FirerLocation, fire.TargetLocation,
+                fire.Facts.TryGetProperty("firers", out var firingUnits) && firingUnits.ValueKind == JsonValueKind.Array && firingUnits.GetArrayLength() > 0
+                    && firingUnits.EnumerateArray().All(item => item.TryGetProperty("usesInherentFp", out var own) && own.ValueKind == JsonValueKind.False)) is { } refused)
             {
                 return Fail<GameState>(refused.Code, refused.Text);
             }
@@ -1604,10 +1606,16 @@ public static class GameProjector
                 shots = [.. shots.Where(item => item.Gun != vehicle), new OrdnanceShotRecord(vehicle, Rules.ScenarioA1FireFollowUps.VehicleShotCount(previous?.Shots), kept)];
             }
 
+            // A9.223 (pass 45): an attack at its firers' own Location by a lane's MG or its manning Infantry cancels that Fire Lane.
+            var weaponsFired = fire.Resolution.TryGetProperty("weaponEffects", out var fired) && fired.ValueKind == JsonValueKind.Array
+                ? fired.EnumerateArray().Select(item => item.TryGetProperty("equipmentId", out var id) ? id.GetString() : null).ToArray() : [];
             return state with
             {
                 FiresThisPhase = [.. state.FiresThisPhase, new FireRecord(eventId, fire.FirerLocation, fire.TargetLocation) { Step = fire.MovementStep, Vehicle = byVehicle }],
                 OrdnanceShots = shots,
+                FireLanes = state.FireLanes.Count == 0 ? state.FireLanes
+                    : [.. state.FireLanes.Where(lane => !Rules.ScenarioA1FireEligibility.FireLaneCancelledBy(fire.FirerLocation == fire.TargetLocation,
+                        fire.Firers.Contains(lane.Operator, StringComparer.Ordinal) || weaponsFired.Contains(lane.Weapon)))],
             };
         }
 

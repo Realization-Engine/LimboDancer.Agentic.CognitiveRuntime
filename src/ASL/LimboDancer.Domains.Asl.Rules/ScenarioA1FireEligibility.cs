@@ -635,10 +635,45 @@ public static class ScenarioA1FireEligibility
     {
         ArgumentNullException.ThrowIfNull(lanes);
         ArgumentNullException.ThrowIfNull(attack);
+
+        // A9.223 (p. 63; pass 45): "A MG may cancel its Fire Lane in order to gain freedom to fire elsewhere (/its manning Infantry may use
+        // Subsequent-First-Fire/FPF after establishing the Fire Lane) only if a TPBF ... situation occurs (8.312 ...) in which case the Fire Lane
+        // must be cancelled". Fire at the firers' own Location is that situation; the lane goes with the attack's record.
+        if (attack.FirerLocationId is not null && attack.FirerLocationId == attack.TargetLocationId)
+        {
+            return null;
+        }
+
         return lanes.FirstOrDefault(lane => attack.Firers!.Any(item => item.Weapons?.Any(weapon => weapon.EquipmentId == lane.Weapon) == true
             || (item.UnitId == lane.Operator && attack.FireKind is ScenarioA1FireCalculator.SubsequentFirstFire or ScenarioA1FireCalculator.FinalProtectiveFire))) is { Weapon: { } inUse }
             ? $"play.fire-lane-mg: {inUse} has a Fire Lane and fires again only in the DFPh (A9.22, A9.223)"
             : null;
+    }
+
+    /// <summary>
+    /// A9.223 (pass 45): whether a fire record cancels a Fire Lane: an attack at its firers' own Location by the lane's MG or its manning Infantry.
+    /// </summary>
+    public static bool FireLaneCancelledBy(bool atOwnLocation, bool laneWeaponOrOperatorFired) => atOwnLocation && laneWeaponOrOperatorFired;
+
+    /// <summary>
+    /// The Field of Fire (A9.21, p. 62; pass 45): "if a SW MMG/HMG in a woods/rubble/building hex fires and is entitled to another shot, it may
+    /// continue to fire during that phase only inside the CA of the prior shot (which ... includes the MG's own Location ...)". A CA is the
+    /// 60-degree wedge on a hexspine (C3.2), so the shots of a phase must lie in one such wedge. <paramref name="earlierBearings"/> are the MG's
+    /// earlier shots of the phase at other Locations; <paramref name="bearing"/> is null for its own hex. The refusal, or null.
+    /// </summary>
+    public static string? FieldOfFireBar(string? size, string? terrain, IReadOnlyList<double> earlierBearings, double? bearing, string weapon)
+    {
+        ArgumentNullException.ThrowIfNull(earlierBearings);
+        if (size is not ("medium" or "heavy") || !(terrain is "woods" or "rubble" || terrain?.EndsWith("building", StringComparison.Ordinal) == true)
+            || earlierBearings.Count == 0 || bearing is null)
+        {
+            return null;
+        }
+
+        double[] shots = [.. earlierBearings, bearing.Value];
+        return Enumerable.Range(0, 6).Any(facing => shots.All(shot => ScenarioA1Geometry.AngleBetween(shot, ScenarioA1Geometry.FacingDegrees(facing)) <= 30.0001))
+            ? null
+            : $"play.fire-field: {weapon} has fired this phase from woods, rubble, or a building, and fires again only inside the CA of that shot (A9.21)";
     }
 
     /// <summary>A9.12 (referee, pass 12): a leader who directed fire this phase gives up leadership by firing a MG, so fires none; he fires one MG a phase.</summary>
@@ -784,9 +819,13 @@ public static class ScenarioA1FireEligibility
         return [.. directors.Where(item => item.Location is { } at && blockedLocations.Contains(at) == blockedPart).Select(item => item.Id)];
     }
 
-    /// <summary>A9.5 (ruling R12.6): Spraying Fire attacks two Locations that share a hexside, at the same level.</summary>
-    public static string? SprayTargetBar(bool parsed, bool sameAsTarget, bool sameLevel, bool sharesHexside) =>
-        !parsed || sameAsTarget || !sameLevel || !sharesHexside ? "play.fire-spray: Spraying Fire attacks two Locations that share a hexside (A9.5)" : null;
+    /// <summary>
+    /// A9.5 (p. 64; ruling R12.6): Spraying Fire attacks two Locations that share a hexside, at the same level. Pass 45: "The target Locations can be
+    /// 'adjacent' vertically in the case of building upper levels, but each must be within one level of the other and in the same hex."
+    /// </summary>
+    public static string? SprayTargetBar(bool parsed, bool sameAsTarget, bool sameLevel, bool sharesHexside, bool nextLevelOfTheHex = false) =>
+        !parsed || sameAsTarget || !((sameLevel && sharesHexside) || nextLevelOfTheHex)
+            ? "play.fire-spray: Spraying Fire attacks two Locations that share a hexside, or two levels of one building hex that are one level apart (A9.5)" : null;
 
     /// <summary>A9.5 (ruling R12.6): Spraying Fire is made in the PFPh, AFPh, or DFPh, by a group that can see both Locations.</summary>
     public static string? SprayPhaseBar(string? phase, bool blockedFirst) =>

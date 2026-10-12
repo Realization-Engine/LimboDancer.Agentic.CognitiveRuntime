@@ -180,6 +180,49 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, laneInUse);
         }
 
+        // A9.21 (p. 62; pass 45): a MMG or HMG that has fired this phase from woods, rubble, or a building fires again only inside that shot's CA.
+        // The phase's records give its earlier shots; Rules decides from their bearings.
+        foreach (var firer in attack.Firers!.Where(item => item.Weapons is { Count: > 0 } && item.LocationId is not null && item.LocationId != target.ToString()))
+        {
+            if (!BoardLocation.TryParse(firer.LocationId!, out var mgAt) || ReadLocation(state, mgAt!) is not { } mgRead)
+            {
+                continue;
+            }
+
+            foreach (var weapon in firer.Weapons!)
+            {
+                double[] earlier = [.. ThisPhase(existing).Select(item => item.Payload).OfType<FireResolved>()
+                    .Where(record => record.FirerLocation == firer.LocationId && record.TargetLocation != firer.LocationId
+                        && record.Resolution.TryGetProperty("weaponEffects", out var effects) && effects.ValueKind == JsonValueKind.Array
+                        && effects.EnumerateArray().Any(effect => effect.TryGetProperty("equipmentId", out var id) && id.GetString() == weapon.EquipmentId))
+                    .Select(record => BoardLocation.TryParse(record.TargetLocation, out var was) ? Bearing(state, mgAt!, was!) : null).OfType<double>()];
+                if (ScenarioA1FireEligibility.FieldOfFireBar(weapon.DefinitionId is { } mgNamed ? FireReference.Value.Definitions.GetValueOrDefault(mgNamed)?.Size : null,
+                    TerrainKey(mgRead), earlier, Bearing(state, mgAt!, target), weapon.EquipmentId!) is { } fieldBar)
+                {
+                    return Refused(scope, label, expected, fieldBar);
+                }
+            }
+        }
+
+        // A7.53 (p. 57; pass 45): a leader who directed a MG this phase directs its later shots; the phase's records say whether he did.
+        if (attack.Director is { UnitId: { } mgDirector } && attack.Firers!.All(item => item.UsesInherentFp == false && item.Weapons is { Count: > 0 }))
+        {
+            string[] fired = [.. attack.Firers!.SelectMany(item => item.Weapons!).Select(weapon => weapon.EquipmentId!)];
+            var directedThem = fired.All(id => ThisPhase(existing).Select(item => item.Payload).OfType<FireResolved>().Any(record => record.Director == mgDirector
+                && record.Resolution.TryGetProperty("weaponEffects", out var effects) && effects.ValueKind == JsonValueKind.Array
+                && effects.EnumerateArray().Any(effect => effect.TryGetProperty("equipmentId", out var was) && was.GetString() == id)));
+            if (directedThem)
+            {
+                attack = attack with
+                {
+                    Director = attack.Director with
+                    {
+                        DirectedTheseMgs = true
+                    },
+                };
+            }
+        }
+
         // A9.12 (referee, pass 12): a leader who directed fire this phase gives up leadership by firing a MG, so fires none; he fires one MG a phase.
         // Rules decides it (pass 32.c); the record scan and the two state scans are read when asked.
         if (ScenarioA1FireEligibility.LeaderMgBar(attack.Firers!.Select(leader => new LeaderMgFacts(leader.UnitId!, state.Unit(leader.UnitId!)?.Kind == "asl:leader",
@@ -346,7 +389,8 @@ public sealed partial class GamePlanner
         {
             var parsed = BoardLocation.TryParse(sprayText, out var second);
             if (ScenarioA1FireEligibility.SprayTargetBar(parsed, parsed && second! == target, parsed && second!.Level == target.Level,
-                parsed && SideToward(state, target, second!) is not null) is { } sprayTarget)
+                parsed && SideToward(state, target, second!) is not null,
+                parsed && second!.Board == target.Board && second.Hex == target.Hex && Math.Abs(second.Level - target.Level) == 1) is { } sprayTarget)
             {
                 return Refused(scope, label, expected, sprayTarget);
             }
@@ -902,6 +946,13 @@ public sealed partial class GamePlanner
             var conditions = ConditionChanges(ScenarioA1FireFollowUps.FireMarkerConditions(id, facts, resolution,
                 marked is not null && GameState.Condition(marked, Conditions.FirstFire) == ConditionState.True,
                 marked is not null && (Is(marked, Conditions.Concealed) || Is(marked, Conditions.Hidden))));
+
+            // Pass 45 (A7.53): a leader who directs a MG's later shot already carries the phase's counter; an event that changes nothing is not written.
+            if (marked is not null && conditions.All(pair => GameState.Condition(marked, pair.Key) == pair.Value))
+            {
+                continue;
+            }
+
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(id, conditions), package, null, [fireId]));
         }
 

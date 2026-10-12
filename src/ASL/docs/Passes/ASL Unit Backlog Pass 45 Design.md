@@ -351,3 +351,54 @@ The run the frame asked for: the page draws the dice at the confirmation, not at
 No game for the vehicle's one attack a Location: it needs a truck driven through three MP expenditures in a Residual Location, and the Play test does exactly that through the gate. Said plainly: I did not run that test against the code before the change to see it fail.
 
 **The tests.** Rules, in `ScenarioA1Pass45RulesTests`: the cowering unit's counters and its MG's ROF in three phases; the Random Selection of a fire group; the berserk exemption and the Inexperience read; the cap; CX; the MG's ROF kept, lost, and malfunctioned; the offer's conditions with the projector's check; the once-a-Location rule. Play: `CloseCombatStepsTests` (the ROF given up through the gate, and refused the second time), `BacklogPass6Tests` (the truck attacked once), `PlayTests` (the new action registered). Four older Play tests were given dice that are not doubles (pass 10's road test, pass 15's two FT tests and its MOL test), with a comment each. **The whole Play project was run once, since Cowering is read all over fire: 738 of 738.** Rules classes run: pass 45, 9, 10, 12, 15, 16, and the Fire package's.
+
+## 10. The MG's own rules: 45.4, 45.5, 45.6 (increment 2d)
+
+The three tasks are committed together, each listed in the commit. They share no member; I built them in one working tree to spare Studio builds, and say so.
+
+### 10.1 Departures from the frame, first
+
+Decided under the user's word of 2026-10-12; each has a backlog row and is in the pass's report.
+
+- **Spraying Fire in the MPh is not built (A9.52, A8.24).** The frame placed it in 45.4. In the MPh the second Location usually holds no moving unit, so its attack is "halved again" and only leaves Residual FP; each Location's Residual FP then has to follow the ROF-or-Residual choice of 45.2, and the offer reads one record where a spray writes two. That is a design of its own, not a line in this task.
+- **Fire Lanes are completed in one point only: the forced cancellation (A9.223).** The frame placed five more in 45.5: lanes against vehicles, attacks on later MF expenditures in a lane Location, the Alternate Hex Grain, the Fire Lane Snap Shot, and hexside TEM and hard Hindrances as DRM. The last three need a LOS to a hexside or along a hexspine, which is pass 135's ground; the first two need the record of who a lane has attacked, which this pass built for vehicles and Residual FP counters only.
+- **No game for Mandatory Fire Direction (A9.4).** It needs a clear LOS of 17 hexes on a board the Studio loads; I did not look for one. The Rules test stands for it.
+
+### 10.2 Task 45.4: Spraying Fire
+
+- **Squad Spraying Fire (A7.34, p. 56).** The fire reference reads the catalog's trait (an underscored Range; 13 of the 37 squads carry it, no HS and no crew). A squad with the option sprays with its own FP "limited to a maximum range of three hexes"; a target beyond its Normal Range is halved again as Long Range Fire, which the page's example gives (a 6-2-8: 3 FP at two hexes, 1 1/2 at three).
+- **The capability test (A9.52, p. 64).** "Spraying Fire cannot be used in a FG attack unless all members of the FG are capable of Spraying Fire". A MG is capable; a squad's own FP is with the option; no other unit's FP is.
+- **Ruling R45.5, decided under the user's word of 2026-10-12** (replaces the leave ruling R12.6 gave): a squad with no option may not add its own FP to its MG's Spraying Fire; its MG sprays alone. An attack recorded before the pass keeps R12.6 (the same fact as ruling R45.4).
+- **Two levels of one hex (A9.5).** "The target Locations can be 'adjacent' vertically in the case of building upper levels, but each must be within one level of the other and in the same hex."
+- **Encirclement (A7.7).** Spraying Fire counts toward Encirclement as any fire by inherent FP or a SW does, when its FP could inflict a NMC.
+
+### 10.3 Task 45.5: the Fire Lane's cancellation
+
+A9.223 (p. 63): "A MG may cancel its Fire Lane in order to gain freedom to fire elsewhere (/its manning Infantry may use Subsequent-First-Fire/FPF after establishing the Fire Lane) only if a TPBF ... situation occurs (8.312 ...) in which case the Fire Lane must be cancelled". The lane's bar on its MG and its manning Infantry no longer holds against an attack at their own Location, and the projector removes the lane with that attack's record. Before, a squad with a Fire Lane whose Location was entered could not make the attack A8.312 forces on it, and pass 40's read then found it owed none.
+
+### 10.4 Task 45.6: Field of Fire, Mandatory Fire Direction, and direction of a MG's later shots
+
+- **Field of Fire (A9.21, p. 62).** "if a SW MMG/HMG in a woods/rubble/building hex fires and is entitled to another shot, it may continue to fire during that phase only inside the CA of the prior shot (which ... includes the MG's own Location ...)". No CA is stored. The planner reads the MG's earlier shots of the phase from the records and asks Rules whether they and the new target lie in one 60-degree wedge on a hexspine (C3.2). The refusal is `play.fire-field`.
+- **Mandatory Fire Direction (A9.4, p. 64).** A MG fires beyond 16 hexes only when a leader directs it (`mg-direction-outside`), and at 17 or more its FP is halved as against a concealed target. Under the fact of ruling R45.4, so recorded attacks stand.
+- **A leader directs a MG's later shots (A7.53, p. 57).** "a leader can direct the fire of a MG as many times as the MG can fire, even if he also directed other units as part of a FG in the MG's previous attack." The planner reads from the phase's records whether he directed every MG the attack fires, and records it with the attack; the package then admits him when nothing but those MGs fires.
+
+**An older fault the game found.** With the leader's second direction the proposal passed and the commit was refused. The cause was not the direction: the projector's A7.55 check ("a Location fires at a target once a phase") refused any Infantry MG's later shot on its Multiple ROF at the same Location, where the planner's check lets it stand and the rule excepts "the subsequent shots of multiple ROF weapons". A MG that kept its ROF in the PFPh, AFPh, or DFPh could not fire again at the Location it had just fired at. Fixed in the Rules member both read.
+
+**Left out, each with a backlog row:** the departures of 10.1; the pinned operator's CA carried to the DFPh, a stairwell CA, and the INF, RCL, and 20L ATR types (A9.21); the exception for broken, berserk, or overstacked Infantry at 17 hexes and more, and "no effect vs armored targets" (A9.4); "only firers he directed in First Fire" for a leader's Subsequent First Fire, FPF, and Final Fire direction (A7.53), which is as it was; the Mandatory FG's plainest attack names no MG that is marked First Fire with a Fire Lane, so the squad fires alone and the MG's fire is forfeit for the turn, as A8.3 allows.
+
+**The games,** on board 3, in the adjudicator's view:
+
+| Game | What it shows | Recorded |
+|---|---|---|
+| `p45-sp-spray` | A 4-6-7 in [F10] sprays [D10] and [D9]: "4 FP x 0.5 (Spraying Fire, A9.5) = 2", two records on one DR. | yes |
+| `p45-sp-nospray` | The control: a 4-4-7 is refused with the sentence for Spraying Fire. | no: a refusal |
+| `p45-ff-field` | A MMG in the woods of [C9] fires at [D9] and keeps its ROF. [C8] is then refused ("fires again only inside the CA of that shot (A9.21)"); [C10] is allowed. | yes (the first shot) |
+| `p45-ff-open` | The control: the MMG in the Open Ground of [D9] fires at [D10], and then [C9] and [E10] are both allowed. | yes (the first shot) |
+| `p45-ff-leader` | The fault: the leader's second direction proposed, and the commit refused. Kept as the fixture of the repair. | yes (the first attack) |
+| `p45-ff-leader2` | After the fix: the 8-0 directs the squad and its MMG, the MMG keeps its ROF, and he directs its second shot alone. | yes |
+| `p45-fl-lane3` | A berserk squad enters [E10]; the squad and MMG in [F10] fire and lay a Fire Lane in [E10]. The squad then enters [F10]: the page says the squad must attack, and its Subsequent First Fire at its own Location commits (6 FP, TPBF and Area Fire). | yes |
+| `p45-fl-lane`, `p45-fl-lane2` | False starts of mine: a berserk unit must charge before another moves, and a 12 on its MC eliminated it. Not fixtures. | partly |
+
+For `p45-fl-lane3` I could not read from the page that a lane had been listed before the attack and was gone after it; the page lists Residual FP there. The projector's removal has its Rules test.
+
+**The tests.** Rules, in `ScenarioA1Pass45RulesTests`: the squad's spray at two and three hexes with its two refusals; the group's capability with the older record's leave; the Field of Fire's wedge; the 16-hex limit and the halving; the leader's later direction; the lane's bar and its cancellation. Play: `CloseCombatStepsTests` gains the leader's later direction through the gate, which is the fixture of the projector's fault. Classes run: Rules pass 45, pass 12, the Fire package's; **the Units project whole (409 of 409), since the projector changed**; Play `BacklogPass10Tests`, `BacklogPass12Tests`, `BacklogPass15` (both), `BacklogPass31`, `CloseCombatStepsTests`, `FireTests`, `OlderGamesTests`, `RallyAndFireStepsTests`, `RefusalReasonsTests`.

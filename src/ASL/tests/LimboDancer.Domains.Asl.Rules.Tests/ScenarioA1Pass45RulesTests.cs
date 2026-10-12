@@ -451,6 +451,130 @@ public sealed class ScenarioA1Pass45RulesTests
     }
 
     [Fact]
+    public void ASquadWithTheOptionSpraysToThreeHexesAndHalvesAgainAtLongRange()
+    {
+        // A7.34 (p. 56), the page's example: "The 6-2-8 squad ... attacks both hexes with Area Fire. Note, however, that C5 is attacked with three FP
+        // while C4 is at Long Range so the FP must be halved again and attacks with only 1 1/2 FP".
+        FireAttack Spray(string definition, int range) => Attack([6, 5], firers: [Firer("ru-1", definition)]) with
+        {
+            SprayingFire = true,
+            Range = range,
+        };
+        Assert.Equal(3m, Complete(Spray("defender-guards-squad", 2)).Arithmetic!.TotalFirepower);
+        var far = Complete(Spray("defender-guards-squad", 3)).Arithmetic!;
+        Assert.Equal(1.5m, far.TotalFirepower);
+        Assert.Contains(far.Firers.Single().Multipliers, item => item.Name == "long-range-fire");
+
+        // "limited to a maximum range of three hexes"; and a squad with no underscore has no Spraying Fire of its own.
+        Assert.Contains("asl.a1.fire.spraying-fire-outside", ScenarioA1FireCalculator.Resolve(Spray("defender-guards-squad", 4), Reference).Reasons);
+        Assert.Contains("asl.a1.fire.spraying-fire-outside", ScenarioA1FireCalculator.Resolve(Spray("defender-squad", 2), Reference).Reasons);
+    }
+
+    [Fact]
+    public void AGroupSpraysOnlyWhenEveryMemberCan()
+    {
+        // A9.52 (p. 64): "Spraying Fire cannot be used in a FG attack unless all members of the FG are capable of Spraying Fire". A 4-4-7 has no
+        // option: with its MG it may not add its own FP (ruling R45.5, replacing R12.6's leave), but its MG sprays alone.
+        FireAttack Spray(params FireFirer[] firers) => Attack([6, 5], firers: firers) with
+        {
+            SprayingFire = true,
+            Range = 2,
+        };
+        Assert.Contains("asl.a1.fire.spraying-fire-outside", ScenarioA1FireCalculator.Resolve(Spray(Gunner("ru-1")), Reference).Reasons);
+        Assert.Equal(FireResolution.Resolved, Complete(Spray(Gunner("ru-1") with { UsesInherentFp = false })).Disposition);
+
+        // A squad with the option adds its FP to its MG's, and fires beside a MG fired alone.
+        var guards = Firer("ru-2", "defender-guards-squad") with
+        {
+            Weapons = [Mg("ru-2-mg", "defender-lmg")],
+            UsesSupportWeapon = true,
+        };
+        Assert.Equal(FireResolution.Resolved, Complete(Spray(guards, Gunner("ru-1") with { UsesInherentFp = false })).Disposition);
+
+        // An attack recorded before the pass keeps ruling R12.6: the MG's holder adds its FP.
+        Assert.Equal(FireResolution.Resolved, Complete(Spray(Gunner("ru-1")) with { CoweringMarksAndWeaponResidual = null }).Disposition);
+
+        // A9.5: two Locations that share a hexside at one level, or two levels of one hex one level apart.
+        Assert.Null(ScenarioA1FireEligibility.SprayTargetBar(true, false, true, true));
+        Assert.Null(ScenarioA1FireEligibility.SprayTargetBar(true, false, false, false, true));
+        Assert.NotNull(ScenarioA1FireEligibility.SprayTargetBar(true, false, false, true));
+        Assert.NotNull(ScenarioA1FireEligibility.SprayTargetBar(true, true, true, true));
+    }
+
+    [Fact]
+    public void AMmgInWoodsFiresAgainOnlyInsideTheCaOfItsFirstShot()
+    {
+        // A9.21 (p. 62): "if a SW MMG/HMG in a woods/rubble/building hex fires and is entitled to another shot, it may continue to fire during that
+        // phase only inside the CA of the prior shot (which ... includes the MG's own Location ...)".
+        Assert.Null(ScenarioA1FireEligibility.FieldOfFireBar("medium", "woods", [0], 20, "mmg"));
+        Assert.StartsWith("play.fire-field", ScenarioA1FireEligibility.FieldOfFireBar("medium", "woods", [0], 90, "mmg"));
+        Assert.StartsWith("play.fire-field", ScenarioA1FireEligibility.FieldOfFireBar("heavy", "stone-building", [10, 25], 310, "hmg"));
+        Assert.Null(ScenarioA1FireEligibility.FieldOfFireBar("heavy", "stone-building", [10, 25], 30, "hmg"));
+
+        // Not a LMG, not in other terrain, not a first shot, and always its own hex.
+        Assert.Null(ScenarioA1FireEligibility.FieldOfFireBar("light", "woods", [0], 90, "lmg"));
+        Assert.Null(ScenarioA1FireEligibility.FieldOfFireBar("medium", "open-ground", [0], 90, "mmg"));
+        Assert.Null(ScenarioA1FireEligibility.FieldOfFireBar("medium", "woods", [], 90, "mmg"));
+        Assert.Null(ScenarioA1FireEligibility.FieldOfFireBar("medium", "woods", [0], null, "mmg"));
+    }
+
+    [Fact]
+    public void AMgFiresBeyondSixteenHexesOnlyWhenALeaderDirectsIt()
+    {
+        // A9.4 (p. 64): "MG fire is limited to a 16 hex maximum range unless an Infantry leader ... is directing that fire; moreover, MG attacks vs
+        // unconcealed Infantry at a range >= 17 hexes treat those Infantry as concealed". The German HMG (7-16) at 20 hexes.
+        var gunner = Firer("de-1", "attacker-squad") with
+        {
+            UsesInherentFp = false,
+            Weapons = [Mg("de-hmg", "attacker-hmg")],
+            UsesSupportWeapon = true,
+        };
+        var far = Attack([6, 5], firers: [gunner], targets: [Target("ru-s", "defender-squad")]) with
+        {
+            Range = 20,
+        };
+        Assert.Contains("asl.a1.fire.mg-direction-outside", ScenarioA1FireCalculator.Resolve(far, Reference).Reasons);
+        var directed = Complete(far with
+        {
+            Director = new FireDirector("de-l", "attacker-leader-9-1", From, false, false, false, false, false),
+        });
+        Assert.Equal(FireResolution.Resolved, directed.Disposition);
+        Assert.Contains(MultipliersOf(directed, "de-hmg"), item => item.Name == "mandatory-fire-direction" && item.Value == 0.5m);
+
+        // At 16 hexes it needs no leader and is not halved.
+        var near = Complete(far with { Range = 16 });
+        Assert.DoesNotContain(MultipliersOf(near, "de-hmg"), item => item.Name == "mandatory-fire-direction");
+    }
+
+    [Fact]
+    public void ALeaderDirectsTheLaterShotsOfAMgHeDirected()
+    {
+        // A7.53 (p. 57): "a leader can direct the fire of a MG as many times as the MG can fire, even if he also directed other units as part of a
+        // FG in the MG's previous attack."
+        var leader = new FireDirector("ru-l", "defender-leader", From, false, false, false, true, false);
+        var mgAlone = Gunner("ru-1") with { UsesInherentFp = false };
+        Assert.Contains("asl.a1.fire.director-outside", ScenarioA1FireCalculator.Resolve(Attack([6, 5], firers: [mgAlone], director: leader), Reference).Reasons);
+        var again = leader with { DirectedTheseMgs = true };
+        Assert.Equal(FireResolution.Resolved, Complete(Attack([6, 5], firers: [mgAlone], director: again)).Disposition);
+
+        // Not when the squad's own FP fires with it: that is a second unit directed in the phase.
+        Assert.Contains("asl.a1.fire.director-outside", ScenarioA1FireCalculator.Resolve(Attack([6, 5], firers: [Gunner("ru-1")], director: again), Reference).Reasons);
+    }
+
+    [Fact]
+    public void AnAttackAtItsOwnLocationCancelsTheMgsFireLane()
+    {
+        // A9.223 (p. 63): the lane is cancelled "only if a TPBF ... situation occurs (8.312 ...) in which case the Fire Lane must be cancelled".
+        var withLane = Moving(Attack([6, 5], firers: [Gunner("ru-1")]), ScenarioA1FireCalculator.SubsequentFirstFire);
+        (string Weapon, string Operator)[] lanes = [("ru-1-mg", "ru-1")];
+        Assert.StartsWith("play.fire-lane-mg", ScenarioA1FireEligibility.FireLaneInUseBar(lanes, withLane));
+        Assert.Null(ScenarioA1FireEligibility.FireLaneInUseBar(lanes, withLane with { TargetLocationId = From }));
+        Assert.True(ScenarioA1FireEligibility.FireLaneCancelledBy(true, true));
+        Assert.False(ScenarioA1FireEligibility.FireLaneCancelledBy(false, true));
+        Assert.False(ScenarioA1FireEligibility.FireLaneCancelledBy(true, false));
+    }
+
+    [Fact]
     public void ResidualFpAttacksAUnitOnceALocationUnlessItGrewOrTheDrmFell()
     {
         // A8.22 (p. 60): "A unit can be attacked by Residual FP only once per Location [EXC: if, since that first Residual FP attack, the Residual

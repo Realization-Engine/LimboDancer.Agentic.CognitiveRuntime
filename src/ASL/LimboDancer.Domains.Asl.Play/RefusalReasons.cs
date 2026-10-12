@@ -24,6 +24,8 @@ public static class RefusalReasons
         ["fire.unit-listed-twice"] = "a unit or weapon is named twice in the attack",
         ["fire.firer-outside"] = "a firer is broken, is not a squad, half-squad, or hero, or the group's Locations are not each ADJACENT to another (A7.5)",
         ["fire.berserk-group-outside"] = "a berserk unit fires only with units of its own Location (A7.54)",
+        ["fire.spraying-fire-outside"] = "Spraying Fire is by MGs, and by squads whose Range is underscored at three hexes or less; every member of the group must be capable of it, in a fire phase and never at its own Location (A7.34, A9.5, A9.52)",
+        ["fire.mg-direction-outside"] = "a MG fires beyond 16 hexes only when an Infantry leader directs it (A9.4)",
         ["fire.firers-of-two-sides"] = "the firers belong to two sides",
         ["fire.weapon-outside"] = "a MG, ATR, or FT is malfunctioned, not its firer's side's, already fired, or more than the firer may use; a hero fires one MG or FT (A7.35, A9.1, A15.23)",
         ["fire.flamethrower-outside"] = "a FT attacks alone, with no other firer, weapon, inherent FP, or leader, from an unpinned unit; at Long Range only through a LOS with no Hindrance, and never at a target more than two levels away (A22.31 to A22.33; ruling R15.1)",

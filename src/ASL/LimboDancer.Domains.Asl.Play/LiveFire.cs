@@ -687,6 +687,12 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
             WithinSubsequentFirstFireRange = recorded.WithinSubsequentFirstFireRange,
             Companions = recorded.Companions is null ? null : expected.Companions,
 
+            // A7.53 (pass 45): whether the leader directed these MGs earlier in the phase is the planner's read of the records, recorded with the attack.
+            Director = expected.Director is null || recorded.Director?.DirectedTheseMgs != true ? expected.Director : expected.Director with
+            {
+                DirectedTheseMgs = true
+            },
+
             // The owners' answers are declared, and the projector checks them against the choices made (ruling R5.8).
             Choices = recorded.Choices,
             AfvCover = GamePlanner.CoverAt(state, target, expected.Targets?.Select(item => state.Unit(item.UnitId!)?.Side).FirstOrDefault(side => side is not null)),

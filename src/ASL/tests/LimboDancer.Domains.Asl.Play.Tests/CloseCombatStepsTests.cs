@@ -609,6 +609,34 @@ public sealed class CloseCombatStepsTests : IDisposable
     }
 
     [Fact]
+    public async Task ALeaderDirectsTheLaterShotOfAMgHeDirected()
+    {
+        // Pass 45, task 45.6 (A7.53, p. 57): "a leader can direct the fire of a MG as many times as the MG can fire, even if he also directed other
+        // units as part of a FG in the MG's previous attack." The LMG keeps its ROF on a colored dr of 1 and fires again alone, directed again.
+        await Setup("russian", Unit("r4", "asl:squad", "defender-squad", "bd01:A1:0", "russian"), Unit("rl", "asl:leader", "defender-leader", "bd01:A1:0", "russian"),
+            Weapon("rlmg", "defender-lmg", "r4", "russian"), Unit("g2", "asl:squad", "attacker-squad", "bd01:A2:0", "german"));
+        await Advance();
+        Assert.Equal(("pfph", "russian"), (Current.Phase, Current.PhasingSide));
+        Committed(await Do(GameActions.Fire, Once(1, 6, 6, 6, 6, 6), new
+        {
+            firers = R4,
+            directors = new[] { "rl" },
+            weapons = new Dictionary<string, string[]> { ["r4"] = ["rlmg"] },
+            target = "bd01:A2:0"
+        }));
+        var again = await Do(GameActions.Fire, Once(6, 5, 6, 6, 6, 6), new
+        {
+            firers = R4,
+            directors = new[] { "rl" },
+            weapons = new Dictionary<string, string[]> { ["r4"] = ["rlmg"] },
+            withoutInherent = R4,
+            target = "bd01:A2:0"
+        });
+        Assert.True(again.Outcome == PlayOutcome.Committed, string.Join(" | ", again.Reasons));
+        Assert.False(Planner().Replay(store.Read(Scope)!.Events).HasErrors);
+    }
+
+    [Fact]
     public async Task AnFpfFirerReplacedByItsOwnNmcCommits()
     {
         // Pass 45 (found by pass 40 and not followed, backlog 56.1): an FPF whose NMC replaces its firer by ELR. The Original DR 11 fails r4's NMC

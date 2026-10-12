@@ -707,6 +707,17 @@ public sealed record FireDirector(
         get; init;
     }
 
+    /// <summary>
+    /// Whether the leader directed, earlier this phase, every MG this attack fires (A7.53, p. 57; pass 45): "a leader can direct the fire of a MG as
+    /// many times as the MG can fire, even if he also directed other units as part of a FG in the MG's previous attack". The planner's read of the
+    /// phase's records, recorded with the attack; null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? DirectedTheseMgs
+    {
+        get; init;
+    }
+
     /// <summary>Whether the directing leader is CX (A4.51): +1 to the attack's IFT DR; null is false.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Cx

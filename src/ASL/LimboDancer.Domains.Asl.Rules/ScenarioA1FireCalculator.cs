@@ -702,7 +702,9 @@ public static class ScenarioA1FireCalculator
             var definition = reference.Definitions.GetValueOrDefault(director.DefinitionId!);
             if (definition is null || !definition.IsLeader || definition.Leadership is null || !sides.Contains(definition.Nationality)
                 || !locations.Contains(director.LocationId) || director.Broken == true || director.Pinned == true
-                || (director.DirectedThisPlayerTurn == true && !redirect))
+                // A7.53 (pass 45): he directs the later shots of a MG he has directed this phase, when nothing but those MGs fires.
+                || (director.DirectedThisPlayerTurn == true && !redirect
+                    && !(director.DirectedTheseMgs == true && firers.All(item => item.UsesInherentFp == false && item.Weapons is { Count: > 0 }))))
             {
                 outside.Add("asl.a1.fire.director-outside");
             }
@@ -735,8 +737,18 @@ public static class ScenarioA1FireCalculator
         }
 
         // A9.5, A9.52 (ruling R12.6): Spraying Fire by a group whose every firer fires a MG, in a fire phase, never at its own Location.
-        if (attack.SprayingFire == true && (phase is not ("PFPh" or "AFPh" or "DFPh") || tpbf || firers.Any(item => item.Weapons is not { Count: > 0 } weapons
-            || weapons.Any(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty) is not { IsMg: true }))))
+        // Pass 45 (A7.34, A9.52, pp. 56 and 64; ruling R45.5): "Spraying Fire cannot be used in a FG attack unless all members of the FG are capable
+        // of Spraying Fire". A MG is; a squad's own FP is when its Range is underscored, to "a maximum range of three hexes"; no other unit's FP is.
+        // An attack recorded before the pass keeps ruling R12.6's test: every firer fires a MG, and its holder's FP goes with it.
+        bool Sprays(FireFirer item, FireDefinition? definition) => item.Weapons is { } used
+            && used.All(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty) is { IsMg: true })
+            && (item.UsesInherentFp == false ? used.Count > 0
+                : definition is { Kind: "asl:squad", SprayingFire: true } && RangeOf(attack, item) <= 3);
+        var capable = attack.CoweringMarksAndWeaponResidual == true
+            ? firers.Zip(firerDefinitions).All(pair => Sprays(pair.First with { Weapons = pair.First.Weapons ?? [] }, pair.Second))
+            : firers.All(item => item.Weapons is { Count: > 0 } weapons
+                && weapons.All(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty) is { IsMg: true }));
+        if (attack.SprayingFire == true && (phase is not ("PFPh" or "AFPh" or "DFPh") || tpbf || !capable))
         {
             outside.Add("asl.a1.fire.spraying-fire-outside");
         }
@@ -765,6 +777,14 @@ public static class ScenarioA1FireCalculator
             // A7.21, B23.26 (pp. 54, 136; pass 45): "Attacks up or down a stairwell hex to other vertical levels of the same building hex are limited
             // to the next higher or lower level." Range 0 from another Location is the next level of the target's hex, whose LOS the planner read.
             var nextLevel = !tpbf && range == 0 && firer.LocationId != attack.TargetLocationId && Math.Abs(LevelAboveOf(attack, firer)) == 1;
+
+            // A9.4 (p. 64; pass 45): "MG fire is limited to a 16 hex maximum range unless an Infantry leader (even a 0 or + DRM leader) is directing
+            // that fire". An attack recorded before the pass has no such limit.
+            if (attack.CoweringMarksAndWeaponResidual == true && range > 16 && directors.Length == 0
+                && (firer.Weapons ?? []).Any(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId!) is { IsMg: true }))
+            {
+                outside.Add("asl.a1.fire.mg-direction-outside");
+            }
             if ((range < (tpbf ? 0 : 1) && !nextLevel) || (tpbf && range != 0) || inherentOut || weaponOut)
             {
                 outside.Add("asl.a1.fire.out-of-range");
@@ -2470,6 +2490,12 @@ public static class ScenarioA1FireCalculator
                     if (attack.PinnedMgAreaFire == true && firer.Pinned == true && !mg.IsFt)
                     {
                         multipliers.Add(new FireModifier("pinned-firer", 0.5m, "A7.81"));
+                    }
+
+                    // A9.4 (p. 64; pass 45): "MG attacks vs unconcealed Infantry at a range >= 17 hexes treat those Infantry as concealed".
+                    if (attack.CoweringMarksAndWeaponResidual == true && mg.IsMg && range >= 17 && !vsConcealed)
+                    {
+                        multipliers.Add(new FireModifier("mandatory-fire-direction", 0.5m, "A9.4"));
                     }
 
                     // A9.12 (ruling R12.4): a leader fires a MG alone as Area Fire; two SMC together fire it at full FP.

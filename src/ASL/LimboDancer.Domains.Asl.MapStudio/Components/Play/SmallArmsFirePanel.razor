@@ -110,7 +110,7 @@
     }
     @if (Phase is "pfph" or "afph" or "dfph")
     {
-        <label title="A9.5: a group whose every firer fires a MG attacks a second Location sharing a hexside with the target, as Area Fire on the same DR."></label> <LocationField Id="fire-spray" Label="Spray also" Name="the Location sprayed" Value="@Spray" OnChange="@OnSpray" />
+        <label title="A7.34, A9.5: MGs, and squads whose Range is underscored (to three hexes), attack a second Location that shares a hexside with the target, or the next level of its building hex, as Area Fire on the same DR. Every member of the group must be capable of it."></label> <LocationField Id="fire-spray" Label="Spray also" Name="the Location sprayed" Value="@Spray" OnChange="@OnSpray" />
     }
     @if (Phase == "mph")
     {
