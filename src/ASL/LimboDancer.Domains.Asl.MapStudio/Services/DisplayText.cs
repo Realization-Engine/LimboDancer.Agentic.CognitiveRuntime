@@ -271,6 +271,7 @@ public static class DisplayText
         ["advancing-fire"] = "Advancing Fire",
         ["assault-fire"] = "Assault Fire",
         ["spraying-fire"] = "Spraying Fire",
+        ["dash"] = "Area Fire at a Dash",
         ["bounding-fire"] = "Bounding Fire",
         ["motion-fire"] = "Motion Fire",
         ["snap-shot"] = "Snap Shot",

@@ -685,6 +685,7 @@ public static class ScenarioA1MovementCalculator
         var summary = $"{(facts.Entering ? "play.enter" : "play.move")}: {string.Join(", ", ids)} " + (forcedBack ? $"{(ids.Count == 1 ? "attempts" : "attempt")} {facts.ToText}" : facts.Occupy ? $"{(ids.Count == 1 ? "occupies" : "occupy")} the obstacle of {facts.ToText}" : $"{(ids.Count == 1 ? "enters" : "enter")} {facts.ToText}")
             + $" ({facts.Terrain}{(facts.BypassTexts is not null ? " in Bypass along " + string.Join(", ", facts.BypassTexts) : string.Empty)}) for {facts.HalfMf / 2m} MF"
             + (facts.OnRoad ? ", at the road rate: on the road, not in the hex's other terrain (A4.132)" : string.Empty)
+            + (facts.DashText is { } dashed && !forcedBack ? ScenarioA1Dash.DeclaredText(dashed) : string.Empty)
             + (facts.OverstackExcess > 0 ? $", {facts.OverstackExcess} of them for a Location overstacked by {facts.OverstackExcess} squad-equivalent(s) (A5.11)" : string.Empty)
             + (facts.Assault ? ", by Assault Movement" : string.Empty)
             + (facts.DoubleTime ? ", Double Timing and now CX (A4.5)" : string.Empty)
@@ -920,10 +921,12 @@ public static class ScenarioA1MovementCalculator
     /// The members whose move ends once the DEFENDER's window closes (A4.134, A12.15, A24.1; rulings R9.5, R10.9): every mover after a Minimum Move
     /// or a forced back; the squad whose SMOKE dr was a 6; else none.
     /// </summary>
-    public static IReadOnlyList<string> EndingMembers(bool minimumMove, bool forcedBack, IReadOnlyList<string> movers, string? smokeUnit, int? smokeDr)
+    public static IReadOnlyList<string> EndingMembers(bool minimumMove, bool forcedBack, IReadOnlyList<string> movers, string? smokeUnit, int? smokeDr, bool dashArrived = false)
     {
         ArgumentNullException.ThrowIfNull(movers);
-        return minimumMove || forcedBack ? movers : smokeUnit is { } sixed && smokeDr == 6 ? [sixed] : [];
+
+        // A4.63 (pass 40): a Dashing stack ends its MPh in the Location it Dashed to.
+        return minimumMove || forcedBack || dashArrived ? movers : smokeUnit is { } sixed && smokeDr == 6 ? [sixed] : [];
     }
 
     /// <summary>A4.41 (referee, pass 9): a light mortar carried into a new Location does not fire in the AFPh; the ones newly marked moved, in the state's order.</summary>

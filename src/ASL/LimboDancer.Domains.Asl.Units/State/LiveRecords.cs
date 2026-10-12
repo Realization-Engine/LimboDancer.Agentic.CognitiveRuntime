@@ -126,6 +126,15 @@ public sealed record MovementStepped(IReadOnlyList<string> Movers, BoardLocation
     }
 
     /// <summary>
+    /// The Location a Dash declared with this step leads to (A4.63; pass 40): the step is into the road Location, and the stack's only further step
+    /// is into that Location, where its MPh ends. Null for other steps.
+    /// </summary>
+    public BoardLocation? Dash
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// Whether the step is a Minimum Move (A4.134; ruling R10.9): the movers' only hex this MPh; when the DEFENDER's window closes their move ends and
     /// the unbroken ones become pinned and CX.
     /// </summary>
@@ -444,6 +453,12 @@ public sealed record MovementState(IReadOnlyList<string> Movers, BoardLocation L
 
     /// <summary>Whether the latest step entered the Location at the road rate, into a hex that has other terrain (A4.132; pass 40).</summary>
     public bool RoadRate
+    {
+        get; init;
+    }
+
+    /// <summary>The Location the stack Dashes to from the road Location it is in (A4.63; pass 40); null when it is not Dashing.</summary>
+    public BoardLocation? Dash
     {
         get; init;
     }

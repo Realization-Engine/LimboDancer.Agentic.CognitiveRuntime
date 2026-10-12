@@ -233,6 +233,18 @@ public sealed class ScenarioA1Pass10Tests
     }
 
     [Fact]
+    public void FireAtADashIsAreaFireButNotAlongAFireLane()
+    {
+        // A4.63 (p. 52; pass 40, task 40.3): kept here for this class's attack helpers.
+        var dash = Complete(Moving(Attack([5, 5])) with
+        {
+            Dash = true,
+        });
+        Assert.Contains("dash", Multipliers(dash));
+        Assert.DoesNotContain("dash", Multipliers(Complete(Moving(Attack([5, 5])))));
+    }
+
+    [Fact]
     public void MarshHasNoTemButNoFfmoAndRubbleHasItsBuildingsTem()
     {
         // B16.3, B24.3 (ruling R10.1).

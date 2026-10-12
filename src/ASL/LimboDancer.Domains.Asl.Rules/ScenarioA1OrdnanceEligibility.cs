@@ -366,6 +366,7 @@ public static class ScenarioA1OrdnanceEligibility
                 MpInLos = recorded.Movement?.MpInLos,
                 OpenGround = recorded.Movement?.OpenGround,
                 Hazardous = recorded.Movement?.Hazardous,
+                Dashing = recorded.Movement?.Dashing,
                 InBogHex = recorded.Movement?.InBogHex,
             },
             SameHex = recorded.SameHex,

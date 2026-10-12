@@ -673,6 +673,9 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
             FirerOverstack = recorded.FirerOverstack,
             TargetOverstack = recorded.TargetOverstack,
 
+            // Pass 40 (A4.63): whether the fire is at a Dash is the planner's read of the two sides of the road, recorded with the attack.
+            Dash = recorded.Dash,
+
             // Backlog pass 16 (rulings R16.2, R16.3, R16.11 to R16.14): the night and weather facts are the planner's reading of the map and the SSRs.
             LowVisibilityDrm = recorded.LowVisibilityDrm,
             BeyondNvr = recorded.BeyondNvr,

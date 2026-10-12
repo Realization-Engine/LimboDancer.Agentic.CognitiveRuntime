@@ -2006,7 +2006,9 @@ public static class GameProjector
                 {
                     Members = current?.Members ?? moving.Movers,
                     Charge = moving.Charge,
-                    EndingMembers = Rules.ScenarioA1MovementCalculator.EndingMembers(moving.MinimumMove, moving.Attempted is not null, moving.Movers, moving.Smoke?.Unit, moving.Smoke?.Dr),
+                    EndingMembers = Rules.ScenarioA1MovementCalculator.EndingMembers(moving.MinimumMove, moving.Attempted is not null, moving.Movers, moving.Smoke?.Unit, moving.Smoke?.Dr,
+                        current?.Dash is { } dashedTo && dashedTo == moving.To && moving.Attempted is null),
+                    Dash = moving.Dash,
                     MinimumMove = moving.MinimumMove,
                     RoadRate = moving.RoadRate,
                     Bypass = moving.Bypass,

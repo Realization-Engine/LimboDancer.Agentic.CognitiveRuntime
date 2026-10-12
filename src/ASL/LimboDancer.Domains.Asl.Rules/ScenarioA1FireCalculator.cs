@@ -2358,6 +2358,12 @@ public static class ScenarioA1FireCalculator
                 multipliers.Add(new FireModifier("spraying-fire", 0.5m, "A9.5"));
             }
 
+            // A4.63 (pp. 51 to 52; pass 40): Defensive First Fire at a Dashing unit in the road Location is Area Fire, but for a Fire Lane.
+            if (attack.Dash == true && attack.FireLane != true)
+            {
+                multipliers.Add(new FireModifier("dash", 0.5m, "A4.63"));
+            }
+
             // A7.24, A7.25 (ruling R12.1): AFPh fire is halved, unless it is Opportunity Fire.
             if (attack.Phase == "AFPh" && firer.OpportunityFire != true)
             {

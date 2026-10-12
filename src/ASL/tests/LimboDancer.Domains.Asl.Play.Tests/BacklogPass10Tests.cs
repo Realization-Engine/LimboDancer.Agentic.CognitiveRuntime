@@ -409,6 +409,42 @@ public sealed class BacklogPass10Tests : IDisposable
     }
 
     [Fact]
+    public async Task ADashIsAreaFireInTheRoadLocationAndEndsWhereItWasDeclaredTo()
+    {
+        // Pass 40, task 40.3 (A4.63 and its example, pp. 51 to 52): from the woods of D5 through the road of D4 to the woods of D3. Neither side of
+        // the road is Open Ground to the firer, so its First Fire at the squad in D4 is Area Fire. Once declared, the only step is into D3, and the
+        // move ends there. In the control hex, with no Dash declared, the same fire is not halved.
+        board.Terrain["D5"] = "Woods";
+        board.Terrain["D4"] = "Dirt Road";
+        board.Terrain["D3"] = "Woods";
+        board.Terrain["E4"] = "Dirt Road";
+        await Setup(Squad("g1", L("D5"), "german"), Squad("g2", L("E5"), "german"), Squad("r1", L("B3"), "russian"), Squad("r2", L("G3"), "russian"));
+        var before = Revision;
+        Committed(await Do(GameActions.Move, NoRoll(), new Dictionary<string, object> { ["unitIds"] = G1, ["to"] = L("D4"), ["dash"] = L("D3") }));
+        Assert.Equal(At("D3"), LastStep(before).Dash);
+        Assert.Equal(At("D3"), Current.Movement!.Dash);
+        before = Revision;
+        Committed(await Fire(R1, L("D4"), false, 6, 6, 6, 6, 6, 6));
+        Assert.Contains("dash", Multipliers(LastFire(before)));
+        await Pass();
+        Refused(await EndMove(), "play.end-move-dash");
+        Refused(await Move(G1, L("C4")), "play.move-dash");
+        Committed(await Move(G1, L("D3")));
+        Assert.Null(Current.Movement!.Dash);
+        await Pass();
+        Assert.True(Current.Unit("g1")!.MovementEnded);
+
+        // A Dash is declared with the first step, through a road Location, to the far side of it.
+        Refused(await Do(GameActions.Move, NoRoll(), new Dictionary<string, object> { ["unitIds"] = G2, ["to"] = L("E4"), ["dash"] = L("E5") }), "play.move-dash");
+        Refused(await Do(GameActions.Move, NoRoll(), new Dictionary<string, object> { ["unitIds"] = G2, ["to"] = L("F4"), ["dash"] = L("F3") }), "play.move-dash");
+        Committed(await Move(G2, L("E4")));
+        before = Revision;
+        Committed(await Fire(R2, L("E4"), false, 6, 6, 6, 6, 6, 6));
+        Assert.DoesNotContain("dash", Multipliers(LastFire(before)));
+        NoReplayErrors();
+    }
+
+    [Fact]
     public async Task AWallOrHedgeCostsOneMoreMfButNotThroughARoadGap()
     {
         // B9.4 (R10.1): C5 to C4 across a wall costs 1 + 1 MF; D5 to D4 across a wall with a road through it costs the road's 1 MF.

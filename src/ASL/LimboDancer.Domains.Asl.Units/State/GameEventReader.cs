@@ -403,6 +403,7 @@ public static class GameEventReader
                 var halfMf = fields.OptionalInteger(payload, "halfMf", path);
                 var step = fields.OptionalInteger(payload, "step", path);
                 var charge = payload.TryGetProperty("charge", out _) ? ReadLocation(payload, "charge", path, fields, diagnostics) : null;
+                var dash = payload.TryGetProperty("dash", out _) ? ReadLocation(payload, "dash", path, fields, diagnostics) : null;
                 var smokeBy = fields.OptionalString(payload, "smokeBy", path);
                 var smokeAt = smokeBy is null ? null : ReadLocation(payload, "smokeAt", path, fields, diagnostics);
                 var smokeRoll = fields.OptionalString(payload, "smokeRoll", path);
@@ -444,6 +445,7 @@ public static class GameEventReader
                         PushedGun = fields.OptionalString(payload, "pushedGun", path),
                         Road = fields.OptionalBoolean(payload, "road", path),
                         RoadRate = fields.OptionalBoolean(payload, "roadRate", path),
+                        Dash = dash,
                         MinimumMove = fields.OptionalBoolean(payload, "minimumMove", path),
                         Attempted = attempted,
                         Bypass = bypass,

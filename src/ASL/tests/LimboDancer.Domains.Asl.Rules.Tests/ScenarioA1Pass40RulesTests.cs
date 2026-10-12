@@ -4,7 +4,7 @@ using Xunit;
 namespace LimboDancer.Domains.Asl.Rules.Tests;
 
 /// <summary>
-/// Pass 40, read directly in Rules. Task 40.2: a woods-road hex, the mover's choice across a road hexside, and the terrain a firer reads for a mover at
+/// Pass 40, read directly in Rules. Task 40.3: Dash (A4.63, C6.1, pp. 51 to 52, 173). Task 40.2: a woods-road hex, the mover's choice across a road hexside, and the terrain a firer reads for a mover at
 /// the road rate (A4.132, B3.3, B13.31, pp. 48, 113, 128). Task 40.6: the one count of a stack (A5.1, A5.2, A5.5, pp. 52 to 53), which the MPh, the APh, the IFT, the To Hit
 /// DR, Close Combat, and setup all read, and the MF and MP an overstacked Location costs (A5.11). The IFT DRM is tested with the Fire package's
 /// helpers in ScenarioA1Pass10Tests.
@@ -155,5 +155,87 @@ public sealed class ScenarioA1Pass40RulesTests
         var verdict = ScenarioA1MovementCalculator.MoveStep(new MoveStepFacts(["g1"], "bd05:H3:0", "bd05:I4:0", false, null, false, "woods", null, 2, false, false,
             false, [], true, false, false, false, [], [], 0, true));
         Assert.Contains("for 1 MF, at the road rate: on the road, not in the hex's other terrain (A4.132)", verdict.Summary, StringComparison.Ordinal);
+    }
+
+    private static DashStepFacts DashStep(string? pending = null, string? declared = "bd04:AA7:0", string to = "bd04:BB7:0", bool firstStep = true, bool spent = false,
+        bool assault = false, bool special = false, bool road = true, bool adjacentToRoad = true, bool isOrigin = false, bool adjacentToOrigin = false) =>
+        new(pending, declared, to, firstStep, spent, assault, false, false, false, false, false, false, false, special, road, true, adjacentToRoad, isOrigin, adjacentToOrigin);
+
+    [Fact]
+    public void ADashIsDeclaredWithTheFirstStepThroughARoadToItsFarSide()
+    {
+        // A4.63 (p. 51): "declares a Dash move to a particular Location prior to moving"; "may not have expended any MF prior to the Dash".
+        Assert.Null(ScenarioA1Dash.StepBar(DashStep()));
+        Assert.Null(ScenarioA1Dash.StepBar(DashStep(declared: null)));
+        Assert.StartsWith("play.move-dash:", ScenarioA1Dash.StepBar(DashStep(firstStep: false)), StringComparison.Ordinal);
+        Assert.StartsWith("play.move-dash:", ScenarioA1Dash.StepBar(DashStep(spent: true)), StringComparison.Ordinal);
+        Assert.StartsWith("play.move-dash:", ScenarioA1Dash.StepBar(DashStep(assault: true)), StringComparison.Ordinal);
+        Assert.Contains("has no road", ScenarioA1Dash.StepBar(DashStep(road: false)), StringComparison.Ordinal);
+
+        // "Directly into the road and then directly into a ... Location on the other side of the road" (ruling R40.7).
+        Assert.Contains("not on the other side of the road", ScenarioA1Dash.StepBar(DashStep(adjacentToRoad: false)), StringComparison.Ordinal);
+        Assert.Contains("not on the other side of the road", ScenarioA1Dash.StepBar(DashStep(isOrigin: true)), StringComparison.Ordinal);
+        Assert.Contains("not on the other side of the road", ScenarioA1Dash.StepBar(DashStep(adjacentToOrigin: true)), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void OnceADashIsDeclaredItsOnlyStepIsIntoTheLocationDashedTo()
+    {
+        // A4.63 (p. 52): "Once a Dash is declared, no other movement/MF-expenditure options are available"; it "must end its MPh" there.
+        Assert.Null(ScenarioA1Dash.StepBar(DashStep(pending: "bd04:AA7:0", declared: null, to: "bd04:AA7:0", firstStep: false, spent: true)));
+        Assert.StartsWith("play.move-dash:", ScenarioA1Dash.StepBar(DashStep(pending: "bd04:AA7:0", declared: null, to: "bd04:BB6:0", firstStep: false, spent: true)), StringComparison.Ordinal);
+        Assert.StartsWith("play.move-dash:", ScenarioA1Dash.StepBar(DashStep(pending: "bd04:AA7:0", declared: null, to: "bd04:AA7:0", firstStep: false, spent: true, assault: true)),
+            StringComparison.Ordinal);
+        Assert.StartsWith("play.move-dash:", ScenarioA1Dash.StepBar(DashStep(pending: "bd04:AA7:0", declared: null, to: "bd04:BB7:0", firstStep: false, spent: true, special: true)),
+            StringComparison.Ordinal);
+        Assert.StartsWith("play.end-move-dash:", ScenarioA1Dash.EndBar("bd04:AA7:0", true), StringComparison.Ordinal);
+
+        // "Unless it becomes berserk, pinned, broken or wounded in the road Location ... in which case Dash benefits immediately cease."
+        Assert.Null(ScenarioA1Dash.EndBar("bd04:AA7:0", false));
+        Assert.Null(ScenarioA1Dash.EndBar(null, true));
+        Assert.True(ScenarioA1Dash.BenefitsHold([(false, false, false)]));
+        Assert.False(ScenarioA1Dash.BenefitsHold([(false, false, false), (false, true, false)]));
+        Assert.False(ScenarioA1Dash.BenefitsHold([(true, false, false)]));
+        Assert.False(ScenarioA1Dash.BenefitsHold([(false, false, true)]));
+    }
+
+    [Fact]
+    public void ADashQualifiesAgainstAFirerToWhomNeitherSideOfTheRoadIsOpenGround()
+    {
+        // The example of A4.63 (p. 51): halved for the 4-4-7 in Y9, behind hedges from both AA7 and CC8; not for the 6-2-8 in CC6, "because AA7 is
+        // Open Ground to it". A7.52: one qualifying Location of a Fire Group makes the group's fire Area Fire.
+        Assert.True(ScenarioA1Dash.QualifiesAgainst([(false, false)]));
+        Assert.False(ScenarioA1Dash.QualifiesAgainst([(false, true)]));
+        Assert.False(ScenarioA1Dash.QualifiesAgainst([(true, false)]));
+        Assert.True(ScenarioA1Dash.QualifiesAgainst([(false, true), (false, false)]));
+        Assert.False(ScenarioA1Dash.QualifiesAgainst([]));
+
+        // Open Ground to a firer: the terrain, a clear LOS with no Hindrance, and no TEM against that firer. "Any Location out of the LOS of a
+        // firer is also considered a non-Open Ground Location."
+        Assert.True(ScenarioA1Dash.OpenGroundTo(true, true, 0, RoutCoverFacts.None));
+        Assert.False(ScenarioA1Dash.OpenGroundTo(false, true, 0, RoutCoverFacts.None));
+        Assert.False(ScenarioA1Dash.OpenGroundTo(true, false, 0, RoutCoverFacts.None));
+        Assert.False(ScenarioA1Dash.OpenGroundTo(true, true, 1, RoutCoverFacts.None));
+        Assert.False(ScenarioA1Dash.OpenGroundTo(true, true, 0, new RoutCoverFacts(null, 0, true, false, false)));
+    }
+
+    [Fact]
+    public void OrdnanceTakesCaseJAgainstADashingTargetAndNoCaseJ3OrJ4()
+    {
+        // A4.63 (p. 52), C6.1 (p. 173).
+        var dashing = new OrdnanceMovement(null, true, true, 1, 0) { Dashing = true };
+        Assert.Equal([("case-j", 2m)], [.. ScenarioA1OrdnanceCalculator.MoverDrm(dashing).Select(item => (item.Name, item.Value))]);
+        var walking = new OrdnanceMovement(null, true, true, 1, 0);
+        Assert.Equal(["case-j3", "case-j4"], [.. ScenarioA1OrdnanceCalculator.MoverDrm(walking).Select(item => item.Name)]);
+    }
+
+    [Fact]
+    public void AMoveSaysItIsADash()
+    {
+        var verdict = ScenarioA1MovementCalculator.MoveStep(new MoveStepFacts(["g1"], "bd04:CC8:0", "bd04:BB7:0", false, null, false, "open-ground", null, 4, false, false,
+            false, [], false, false, false, false, [], [], 0, false, "bd04:AA7:0"));
+        Assert.Contains("for 2 MF, Dashing to bd04:AA7:0", verdict.Summary, StringComparison.Ordinal);
+        Assert.Equal(["g1"], ScenarioA1MovementCalculator.EndingMembers(false, false, ["g1"], null, null, dashArrived: true));
+        Assert.Empty(ScenarioA1MovementCalculator.EndingMembers(false, false, ["g1"], null, null));
     }
 }

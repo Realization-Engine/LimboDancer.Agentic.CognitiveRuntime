@@ -500,6 +500,11 @@ public static class GameEventWriter
                     writer.WriteBoolean("roadRate", true);
                 }
 
+                if (moving.Dash is { } dashTo)
+                {
+                    writer.WriteString("dash", dashTo.ToString());
+                }
+
                 if (moving.MinimumMove)
                 {
                     writer.WriteBoolean("minimumMove", true);

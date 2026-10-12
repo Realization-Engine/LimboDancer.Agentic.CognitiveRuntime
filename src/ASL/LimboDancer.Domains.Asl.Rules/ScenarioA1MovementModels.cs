@@ -349,7 +349,8 @@ public sealed record MoveStepFacts(
     IReadOnlyList<MoveRevealUnitFacts> EnemiesThere,
     IReadOnlyList<MoveRevealUnitFacts> HiddenEnemies,
     int OverstackExcess = 0,
-    bool OnRoad = false);
+    bool OnRoad = false,
+    string? DashText = null);
 
 /// <summary>
 /// The verdict on a step's reveal and record (A12.15, A.9, A12.11, A2.51): the units revealed, the real ones among them by id, whether the stack is

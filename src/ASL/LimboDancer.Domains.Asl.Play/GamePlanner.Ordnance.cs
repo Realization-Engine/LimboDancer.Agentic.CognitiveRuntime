@@ -418,6 +418,9 @@ public sealed partial class GamePlanner
                         Hazardous = state.Movement is { PushedGun: { } pushed } pushing && pushing.Location == target
                             ? ScenarioA1FireMapRules.HazardousMovement(state.Phase, true, state.Find(pushed) is EquipmentInstance { Holding: { } manning } ? manning.Holder : null, shot.Hit)
                             : null,
+
+                        // A4.63, C6.1 (pass 40): a Dashing stack in its road Location, to this firer.
+                        Dashing = DashAgainst(state, [from], target),
                     },
             };
         }

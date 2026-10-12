@@ -205,6 +205,16 @@ public sealed record OrdnanceMovement(int? MpInLos, bool? NonAssault, bool? Open
     {
         get; init;
     }
+
+    /// <summary>
+    /// Whether the moving target is a Dashing stack in its road Location, to a firer for whom the Dash qualifies (A4.63, C6.1; pass 40): Case J in
+    /// place of Cases J3 and J4, and no shot that must change its CA. Null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Dashing
+    {
+        get; init;
+    }
 }
 
 /// <summary>

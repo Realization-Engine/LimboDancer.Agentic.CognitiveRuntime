@@ -75,6 +75,13 @@ public sealed partial class GamePlanner
         // A4.132 (pass 40): across a road hexside the mover may pay the cost of the hex's other terrain and be in it.
         var terrainRate = arguments.TryGetProperty("terrainRate", out var rated) && rated.ValueKind == JsonValueKind.True;
 
+        // A4.63 (pass 40): the Location a Dash is declared to, with the stack's first step.
+        BoardLocation? dashTo = null;
+        if (Text(arguments, "dash", out var dashText) && !BoardLocation.TryParse(dashText, out dashTo))
+        {
+            return Refused(scope, label, expected, "play.invalid-arguments: a Dash names the Location Dashed to, such as bd01:E4:0");
+        }
+
         // Pass 32.b: the planner reads the state, the map, and the catalog block by block, in the order the old body read them, and Rules decides each
         // block (ScenarioA1MovementCalculator); the arguments' parsing and the reads that belong to other slices (the entry edge, the playable area,
         // the charge route) stay here.
@@ -204,6 +211,13 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, badTiming);
         }
 
+        // A4.63 (pass 40): once a Dash is declared no SMOKE grenade or DC is placed with the MF of the road Location.
+        if (current?.Dash is { } pendingDash && (Text(arguments, "placeDc", out _) || Text(arguments, "smoke", out _)))
+        {
+            return Refused(scope, label, expected, ScenarioA1Dash.StepBar(new DashStepFacts(pendingDash.ToString(), null, to.ToString(), false, true, false, false, false, false, false, false,
+                false, false, true, false, false, false, false, false))!);
+        }
+
         var action = ScenarioA1MovementCalculator.SpecialAction(Text(arguments, "placeDc", out var chargeId), Text(arguments, "placeDcAt", out var placeAt),
             Text(arguments, "smoke", out var smokeAt), Text(arguments, "smokeBy", out var placerId), berserk, current is { Bypass.Count: > 0 }, to == from);
         if (action.Refusal is { } noAction)
@@ -251,6 +265,28 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.move-terrain-rate: the cost of the hex's other terrain is chosen only for a step across a road hexside, not for an entry from off board, a Bypass, or an obstacle occupied (A4.132)");
         }
 
+        // A4.63 (pass 40): a Dash declared with this step, or pending from the last; Rules decides from the step's facts and the map's.
+        if (ScenarioA1Dash.StepBar(new DashStepFacts(current?.Dash?.ToString(), dashTo?.ToString(), to.ToString(), current is null,
+            movers.Any(unit => unit.MfSpent != 0 || unit.HalfMfSpent), assault, minimumMove, bypassing is not null, occupy, pushed is not null, entering is not null, berserk > 0,
+            terrainRate, false, ReadLocation(state, to)?.Hex.Center.Terrain?.IsRoad == true, dashTo is { Level: 0, Side: null },
+            dashTo is not null && SideToward(state, to, dashTo) is not null, dashTo == from, dashTo is not null && SideToward(state, from, dashTo) is not null)) is { } dashBar)
+        {
+            return Refused(scope, label, expected, dashBar);
+        }
+
+        // "Provided the normal MF expenditure for this two-hex move is <= the unit's available MF": the step on, at its cost of entry.
+        var dashHalfMf = 0;
+        if (dashTo is not null)
+        {
+            var (onward, onwardReason) = InfantryStep(state, to, dashTo);
+            if (onward is null)
+            {
+                return Refused(scope, label, expected, onwardReason!);
+            }
+
+            dashHalfMf = onward.HalfMf;
+        }
+
         var terrain = entry.Terrain;
 
         // A5.11: the stack the entry makes there; a stack that occupies the obstacle it Bypasses is already in the Location, and marsh takes all the MF.
@@ -290,7 +326,7 @@ public sealed partial class GamePlanner
         if (ScenarioA1MovementCalculator.MfLeft(
             [.. movers.Select(unit => new MfLeftMoverFacts(unit.Id, unit.MfSpent == 0 && !unit.HalfMfSpent, unit.DoubleTimeMf, Is(unit, Conditions.Cx), unit.OffRoad, LeaderBonus(state, unit, movers),
                 (unit.MfSpent * 2) + (unit.HalfMfSpent ? 1 : 0)))],
-            minimumMove, entry.AllMf, doubleTime, entry.RoadRate, pushed is not null, state.Nvr, assault, halfMf, leaderIpcTo,
+            minimumMove, entry.AllMf, doubleTime, entry.RoadRate, pushed is not null, state.Nvr, assault, halfMf + dashHalfMf, leaderIpcTo,
             (index, doubleTimeMf, cx, bonusMf, ipcBonus) => MfAllotment(state, movers[index], doubleTimeMf, cx, bonusMf, ipcBonus)) is { } noMf)
         {
             return Refused(scope, label, expected, noMf);
@@ -305,7 +341,7 @@ public sealed partial class GamePlanner
             bypassing is null ? null : [.. bypassing.Select(side => side.ToString().ToLowerInvariant())], halfMf, assault, doubleTime, minimumMove,
             [.. abandoned.Select(item => item.Id)], entry.RoadRate, pushed is not null, state.Night, movers.Length > 0 && movers.All(unit => unit.Kind == UnitKinds.Dummy),
             [.. enemiesThere.Select(unit => new MoveRevealUnitFacts(unit.Id, unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Hidden)))],
-            [.. hiddenEnemies.Select(unit => new MoveRevealUnitFacts(unit.Id, unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Hidden)))], overstack, entry.OnRoad));
+            [.. hiddenEnemies.Select(unit => new MoveRevealUnitFacts(unit.Id, unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Hidden)))], overstack, entry.OnRoad, dashTo?.ToString()));
         var forcedBack = verdict.ForcedBack;
         var moved = new MovementStepped(ids, forcedBack ? from : to, halfMf, assault, step)
         {
@@ -313,6 +349,7 @@ public sealed partial class GamePlanner
             DoubleTime = doubleTime,
             Road = verdict.RoadBonus,
             RoadRate = entry.OnRoad && !forcedBack,
+            Dash = forcedBack ? null : dashTo,
             MinimumMove = minimumMove,
             Attempted = forcedBack ? to : null,
             Bypass = bypassing,
@@ -566,6 +603,13 @@ public sealed partial class GamePlanner
             var (steps, _, undecided) = ChargeSteps(state, [unit], at.Location, movement);
             var left = ScenarioA1ChargeCalculator.HalfMfLeft(MfAllotment(state, unit, unit.DoubleTimeMf, Is(unit, Conditions.Cx)), unit.MfSpent, unit.HalfMfSpent);
             return new EndMoveBerserkFacts([.. steps.Values.Select(step => step.HalfMf)], undecided, left);
+        }
+
+        // A4.63 (pass 40): a Dashing stack ends its MPh in the Location it Dashed to, unless its Dash has ceased.
+        if (ScenarioA1Dash.EndBar(movement?.Dash?.ToString(), movement is not null && ScenarioA1Dash.BenefitsHold(movement.Movers.Select(id => state.Unit(id)).OfType<UnitInstance>()
+            .Select(unit => (Is(unit, Conditions.Broken), Is(unit, Conditions.Pinned), Is(unit, Conditions.Berserk))))) is { } dashEnd)
+        {
+            return Refused(scope, label, expected, dashEnd);
         }
 
         var verdict = ScenarioA1MovementCalculator.EndMove(movement is null ? null
