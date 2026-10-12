@@ -134,7 +134,7 @@ public sealed partial class GamePlanner
         var toHit = preview is null ? string.Empty
             : $"; Modified TH# {preview.ModifiedToHit} ({preview.Color}), DRM {(preview.Drm.Count == 0 ? "none" : string.Join(", ", preview.Drm.Select(item =>
                 // C5.35 (pass 50): the lower dr is not known before the roll.
-                item.Name == "case-c4:lower-dr" ? "case-c4: the lower dr of the roll doubled" : $"{item.Name} {item.Value:+0;-0}")))}";
+                item.Name == "case-c4:lower-dr" ? "Case C4: the lower dr of the roll doubled (C5.35)" : $"{ScenarioA1OrdnanceEligibility.CaseWords(item.Name)} {item.Value:+0;-0}")))}";
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
         {
             var events = new List<GameEvent>();
@@ -185,6 +185,12 @@ public sealed partial class GamePlanner
             if ((firer is not EquipmentInstance && shot.VehicleTarget is null) || ReadLocation(state, target) is not { } ownRead || TerrainKey(ownRead) is not { } ownTerrain)
             {
                 return (null, "play.ordnance-own-hex: within its own Location a Gun fires at Infantry or a vehicle, and a tank's MA at a vehicle (C5.5, D3.2)");
+            }
+
+            if (ScenarioA1OrdnanceMapRules.SameHexBypassRefusal(firer is UnitInstance { Straddling: not null },
+                shot.VehicleTarget is { VehicleId: { } aimedAt } && state.Unit(aimedAt) is { Straddling: not null }) is { } bypassBar)
+            {
+                return (null, bypassBar);
             }
 
             // C5.5: a wreck, SMOKE, or an AFV in the hex adds its Hindrance (Case R), "other than the target or firer".

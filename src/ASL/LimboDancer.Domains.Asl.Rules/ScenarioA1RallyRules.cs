@@ -349,8 +349,8 @@ public static class ScenarioA1RallyRules
     /// Whether a vehicle's crew is shocked or stunned (D3.7, D5.34, D5.341, C7.42; pass 50): under a Stun, a Shock, or an Unconfirmed Kill, or
     /// Recalled before its counter is flipped ("Recall is treated the same as a Stun" until that Player Turn ends).
     /// </summary>
-    public static bool VehicleCrewImpaired(bool stunned, bool shocked, bool unconfirmedKill, bool recalled, bool stunRecovery) =>
-        stunned || shocked || unconfirmedKill || (recalled && !stunRecovery);
+    public static bool VehicleCrewImpaired(bool stunned, bool shocked, bool unconfirmedKill, bool recalled, bool stunRecovery, bool abandoned = false) =>
+        stunned || shocked || unconfirmedKill || (recalled && !stunRecovery) || abandoned;
 
     /// <summary>
     /// D3.7 (p. 201; pass 50), for a Gun MA, a BMG, or a CMG; one member for the planner and the projector: the weapon is malfunctioned and not
@@ -358,9 +358,12 @@ public static class ScenarioA1RallyRules
     /// inherent crew that is not shocked or stunned". Only an AAMG asks for a CE crew.
     /// </summary>
     public static string? VehicleWeaponRepairBar(string vehicleId, string weapon, bool malfunctioned, bool disabled, bool crewImpaired, bool repairedThisPhase) =>
-        !malfunctioned || disabled ? $"play.repair-weapon: {vehicleId}'s {VehicleWeaponName(weapon)} is not malfunctioned, or is disabled (D3.7)"
-        : crewImpaired || repairedThisPhase
-            ? $"play.repair-unit: {vehicleId}'s {VehicleWeaponName(weapon)} is repaired once per RPh by a crew that is not shocked or stunned (D3.7)"
+        !IsVehicleWeapon(weapon) ? $"play.repair-weapon: {vehicleId} has no weapon named '{weapon}' to repair (D3.7)"
+        : disabled ? $"play.repair-weapon: {vehicleId}'s {VehicleWeaponName(weapon)} is disabled for good (D3.7)"
+        : !malfunctioned ? $"play.repair-weapon: {vehicleId}'s {VehicleWeaponName(weapon)} is not malfunctioned (D3.7)"
+        : repairedThisPhase ? $"play.repair-unit: {vehicleId}'s {VehicleWeaponName(weapon)} has had its repair attempt this RPh (D3.7)"
+        : crewImpaired
+            ? $"play.repair-unit: {vehicleId}'s crew repairs nothing while it is shocked, stunned, or Recalled in this Player Turn, which is treated as a Stun, or while the vehicle is Abandoned (D3.7, D5.341)"
         : null;
 
     /// <summary>

@@ -2,7 +2,7 @@
    target Locations its side sees. *@
 @foreach (var weapon in Weapons)
 {
-    <label class="@(weapon.Bar is null ? null : "muted")" title="D3.5: a tank's BMG and CMG fire once a Player Turn each, added together or apart; in Bounding First Fire within the current CA (C5.13)."><input class="vehicle-bff-weapon" type="checkbox" data-weapon="@weapon.Id" disabled="@(weapon.Bar is not null)" checked="@(weapon.Bar is null && SelectedWeapons.Contains(weapon.Id))" @onchange="@(args => OnWeapon.InvokeAsync(new UnitSelectionList.Toggle(weapon.Id, args.Value is true)))" /> @weapon.Label@(weapon.Bar is { } bar ? $": {bar}" : "")</label>
+    <label class="@(weapon.Bar is null ? null : "muted")" title="D3.5: a tank's BMG and CMG fire once a Player Turn each, added together or apart; in Bounding First Fire within the current CA (C5.13)."><input class="vehicle-bff-weapon" type="checkbox" data-weapon="@weapon.Id" disabled="@(weapon.Bar is not null)" checked="@(weapon.Bar is null && SelectedWeapons.Contains(weapon.Id))" @onchange="@(args => OnWeapon.InvokeAsync(new UnitSelectionList.Toggle(weapon.Id, args.Value is true)))" /> @weapon.Label@(weapon.Bar is { } bar ? $": {bar}" : ", halved in Bounding First Fire (D3.31)")</label>
 }
 <label title="The vehicle's MG fires at the outset of its MPh or once the DEFENDER has passed on its last MP, at half FP, halved again while Non-Stopped (D3.3, D3.31, D2.42).">
     Bounding First Fire at
@@ -29,10 +29,15 @@
             </select>
         </label>
     }
-    <button id="vehicle-bff-ma" disabled="@(Target.Length == 0)" title="D3.3, C5.3 to C5.35: the MA fires within its TCA with Case C (2 and the mount's 2 or 3), C1 or C2 for a LOS of three MP or less, and the lower dr doubled while not stopped; another MP is spent before it fires again."
+    <button id="vehicle-bff-ma" disabled="@(Target.Length == 0)" aria-describedby="@(Target.Length == 0 ? "vehicle-bff-reason" : null)" title="D3.3, C5.3 to C5.35: the MA fires within its TCA with Case C (2 and the mount's 2 or 3), C1 or C2 for a LOS of three MP or less, and the lower dr doubled while not stopped; another MP is spent before it fires again."
             @onclick="@(() => OnProposeMa.InvokeAsync())">Propose: MA Bounding First Fire</button>
 }
-<button id="vehicle-bff" disabled="@(Target.Length == 0 || (Weapons.Count > 0 && !Weapons.Any(weapon => weapon.Bar is null && SelectedWeapons.Contains(weapon.Id))))" @onclick="@(() => OnPropose.InvokeAsync())">Propose: Bounding First Fire</button>
+<button id="vehicle-bff" disabled="@(MgReason is not null)" title="@(MgReason ?? "D3.3, D3.31: the MG fires at half FP, halved again while not stopped.")" aria-describedby="@(MgReason is not null ? "vehicle-bff-reason" : null)"
+        @onclick="@(() => OnPropose.InvokeAsync())">@(Weapons.Count > 0 ? "Propose: MG Bounding First Fire" : "Propose: Bounding First Fire")</button>
+@if (MgReason is { } waits)
+{
+    <span id="vehicle-bff-reason" class="toolbar-note">@waits</span>
+}
 
 @code {
     /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id, a Location in words.</summary>
@@ -53,6 +58,10 @@
 
     [Parameter]
     public EventCallback<UnitSelectionList.Toggle> OnWeapon { get; set; }
+
+    /// <summary>Why the MGs' button waits, or null: no target chosen, or a tank with neither MG ticked.</summary>
+    private string? MgReason => Target.Length == 0 ? "Choose the target Location."
+        : Weapons.Count > 0 && !Weapons.Any(weapon => weapon.Bar is null && SelectedWeapons.Contains(weapon.Id)) ? "Tick the BMG or the CMG that fires." : null;
 
     /// <summary>Whether the vehicle's MA is a Gun that fires as ordnance (D3.3, C5.3; pass 50).</summary>
     [Parameter]

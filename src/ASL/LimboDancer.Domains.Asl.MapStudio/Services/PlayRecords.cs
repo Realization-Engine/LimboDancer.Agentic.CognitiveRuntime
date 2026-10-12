@@ -248,6 +248,7 @@ public sealed class PlayRecords
             {
                 MovementStepped step => Many(step.Movers, "moves", "move") + $"{From(before, step.Movers.Count > 0 ? step.Movers[0] : null)} to {step.To}{(step.Assault ? " by Assault Movement" : string.Empty)}",
                 // D2.17, D3.12 (pass 50): a Delay MP, and a turret turned with an MP expenditure.
+                VehicleStepped { Kind: VehicleStepped.Turn, Turret: { } turnTurret } turnedBoth => $"{turnedBoth.Vehicle} turns its turret to {UnitFacings.Name(turnTurret)} with its VCA change (D3.12)",
                 VehicleStepped { Kind: VehicleStepped.Delay } delay => $"{delay.Vehicle} spends a Delay MP in {delay.At} (D2.17)"
                     + (delay.Turret is { } delayTurret ? $", turning its turret to {UnitFacings.Name(delayTurret)} (D3.12)" : string.Empty),
                 VehicleStepped { Kind: not VehicleStepped.Turn } drive => $"{drive.Vehicle} moves{From(before, drive.Vehicle)} to {drive.At}"
@@ -372,7 +373,7 @@ public sealed class PlayRecords
                 var check = resolution.PanzerfaustCheck is { } pf ? $"PF Check dr {pf.Dr}{ModifierText(pf.Drm)} = {pf.FinalDr}: a shot; " : "";
                 var parts = new List<string>
                 {
-                    check + $"{fired.Gun}{In(history.At(item.Revision - 1), fired.Gun)} fires {aim}"
+                    check + $"{fired.Gun}{In(history.At(item.Revision - 1), fired.Gun)} fires {aim}" + (shot?.FireKind == ScenarioA1FireCalculator.BoundingFirstFire ? " as Bounding First Fire (D3.3)" : "")
                         + (fired.Facing is { } facing ? $", turning to {UnitFacings.Name(facing)}" : "")
                         + $": Basic TH# {hit.BasicToHit} ({hit.Color}){modifications} = {hit.ModifiedToHit}; DR {dice} = {hit.OriginalDr}{ModifierText(hit.Drm)} = Final DR {hit.FinalDr}"
                         + (hit.SubsequentDr is { } dr ? $", subsequent dr {dr}" : "") + (hit.Improbable ? " (Improbable Hit, C3.6)" : "") + $": {outcome}",
@@ -426,7 +427,10 @@ public sealed class PlayRecords
                     parts.Add($"{kill.HitLocation} hit, {kill.TargetFacing} Target Facing, {kill.Ammunition.ToUpperInvariant()}: {tk}; TK DR {string.Join(", ", kill.Dice)} = {kill.OriginalDr}: {fate}{checks}");
                 }
 
-                parts.Add((gun.Malfunctioned ? "the Gun malfunctions (C2.28)" : gun.RateOfFireKept ? "it may fire again this phase (C2.24)" : "no more fire this phase")
+                var boundingShot = shot?.FireKind == ScenarioA1FireCalculator.BoundingFirstFire;
+                parts.Add((gun.Malfunctioned ? "the Gun malfunctions (C2.28)"
+                    : gun.RateOfFireKept ? boundingShot ? "it may fire again after another MP, and a Delay MP will do (C2.24, C5.3)" : "it may fire again this phase (C2.24)"
+                    : boundingShot ? "a Bounding Fire counter: no more fire this Player Turn (D3.3)" : "no more fire this phase")
                     + (gun.Acquisition < 0 ? $"; Acquisition {gun.Acquisition} on {gun.AcquiredLocationId} (C6.5)" : ""));
                 records.Add((item.EventId, string.Join("; ", parts)));
             }
@@ -700,7 +704,11 @@ public sealed class PlayRecords
                     // D3.7 (pass 50): a vehicle's weapon by its name; a 6 disables it, and a tank whose MA is disabled is Recalled.
                     records.Add((item.EventId, "repair", repair.Weapon is { } repairedWeapon
                         ? $"{repair.Unit}{In(before, repair.Unit)} tries to repair its {repairedWeapon.ToUpperInvariant()}: dr {dr}: "
-                            + (repair.Result == RepairAttempted.Eliminated ? "disabled (a 6; D3.7)" + (repairedWeapon == "ma" ? ", and the vehicle is Recalled if it carries no Passengers and tows nothing" : "") : result)
+                            + (repair.Result == RepairAttempted.Eliminated
+                                ? "disabled (a 6; D3.7)" + (attempts[attempt].Any(other => other.Payload is ConditionsChanged changed
+                                    && changed.Conditions.TryGetValue(Conditions.Recalled, out var recalled) && recalled == ConditionState.True)
+                                    ? ", and the vehicle is Recalled: buttoned up and treated as stunned until the Player Turn ends, then it must leave (D3.7, D5.341)" : "")
+                                : result)
                         : $"{repair.Unit}{In(before, repair.Unit)} repairs {repair.Equipment}: dr {dr} against R{repair.RepairNumber}: {result}"));
                 }
                 else if (item.Payload is ManhandlingRolled push)

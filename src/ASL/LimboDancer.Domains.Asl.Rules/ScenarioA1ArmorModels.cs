@@ -59,7 +59,18 @@ public sealed record OrdnanceVehicleFirer(bool? ButtonedUp, bool? InMotion, bool
 /// fire phase, so that the MA has not fired; and the Case A DRM the first turret-mounted weapon to fire in this fire phase paid, which the MA's
 /// first shot within the current TCA pays too.
 /// </summary>
-public sealed record OrdnanceVehicleWeapons(bool OtherPhase, bool MarkedByOthers, int? MaintainedCaseA);
+public sealed record OrdnanceVehicleWeapons(bool OtherPhase, bool MarkedByOthers, int? MaintainedCaseA)
+{
+    /// <summary>
+    /// Whether the vehicle's Bounding Fire counter stands beside a shot of its MA in this MPh, an OVR among them (D3.3, D7.1; review of pass 50):
+    /// the MA then fires again only on a ROF it kept. Null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? BoundingFireSpent
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// The vehicle a Vehicle Target Type shot fires at (C3.31; rulings R7.2 to R7.9): its Target Facing to the firer for a hull hit (VCA) and a

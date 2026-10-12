@@ -300,7 +300,7 @@ public sealed partial class GamePlanner
         var read = UnitFacings.TryParse(named, out var parsed);
         var terrain = ReadLocation(state, at) is { } here ? TerrainKey(here) : null;
         var bar = ScenarioA1VehicleMovementCalculator.TurretStepBar(vehicle.Id, kind, LiveFire.MaTypeOf(vehicle.Definition?.Definition) is "t" or "st" or "rst" or "1mt", read,
-            terrain is not null && (WoodsOrBuilding.Contains(terrain) || IsRubbleTerrain(terrain)) && !bypass && !road);
+            terrain is not null && (WoodsOrBuilding.Contains(terrain) || IsRubbleTerrain(terrain)) && !bypass && !road, bypass);
         return bar is null ? (parsed, null) : (null, bar);
     }
 

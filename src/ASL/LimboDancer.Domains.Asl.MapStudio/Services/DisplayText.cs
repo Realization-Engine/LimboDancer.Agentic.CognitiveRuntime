@@ -258,6 +258,8 @@ public static class DisplayText
 
     private static readonly Dictionary<string, string> ModifierWords = new(StringComparer.Ordinal)
     {
+        ["case-c4:lower-dr"] = "Case C4, the lower dr doubled",
+        ["case-a:maintained"] = "Case A, the CA change its turret already made",
         ["ffnam"] = "FFNAM",
         ["ffmo"] = "FFMO",
         ["bore-sighting"] = "Bore Sighting",

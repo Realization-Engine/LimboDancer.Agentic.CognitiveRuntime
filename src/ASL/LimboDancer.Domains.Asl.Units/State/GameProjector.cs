@@ -1494,7 +1494,8 @@ public static class GameProjector
                 // C6.5 (pass 35, task 35.11): lost when its firer leaves its Location, or turns without having fired on its target this phase. A
                 // vehicle's VCA change turns its MA with it unless its TCA is kept apart (the referee's review).
                 if (Rules.ScenarioA1FireFollowUps.AcquisitionLostByMoveOrTurn(FirerAt(previous, acquisition.Gun), FirerAt(next, acquisition.Gun),
-                    Rules.ScenarioA1FireFollowUps.AcquiringCaChanged(payload is GunTurned turned && turned.Gun == acquisition.Gun,
+                    Rules.ScenarioA1FireFollowUps.AcquiringCaChanged((payload is GunTurned turned && turned.Gun == acquisition.Gun)
+                            || (payload is VehicleStepped { Turret: not null } turretStep && turretStep.Vehicle == acquisition.Gun),
                         payload is VehicleStepped { Kind: VehicleStepped.Turn } hull && hull.Vehicle == acquisition.Gun,
                         previous?.TurretFacings.Any(item => item.Vehicle == acquisition.Gun) == true),
                     previous?.OrdnanceShots.FirstOrDefault(item => item.Gun == acquisition.Gun)?.Shots ?? 0))
@@ -1901,7 +1902,8 @@ public static class GameProjector
                         }) == ConditionState.True,
                         Rules.ScenarioA1RallyRules.VehicleCrewImpaired(GameState.Condition(vehicle, Conditions.Stunned) == ConditionState.True,
                             GameState.Condition(vehicle, Conditions.Shocked) == ConditionState.True, GameState.Condition(vehicle, Conditions.UnconfirmedKill) == ConditionState.True,
-                            GameState.Condition(vehicle, Conditions.Recalled) == ConditionState.True, GameState.Condition(vehicle, Conditions.StunRecovery) == ConditionState.True),
+                            GameState.Condition(vehicle, Conditions.Recalled) == ConditionState.True, GameState.Condition(vehicle, Conditions.StunRecovery) == ConditionState.True,
+                            GameState.Condition(vehicle, Conditions.Abandoned) == ConditionState.True),
                         state.RepairsThisPhase.Contains(repairKey)) is not null
                     : !Rules.ScenarioA1RoutRallyProjection.VehicleRepairAllowedAsRecorded(state.Phase, GameState.Condition(vehicle, Conditions.Malfunctioned) == ConditionState.True,
                     GameState.Condition(vehicle, Conditions.Disabled) == ConditionState.True, GameState.Condition(vehicle, Conditions.ButtonedUp) == ConditionState.True,
@@ -2441,8 +2443,17 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-039", "An OVR is resolved by its vehicle's fire record after the DEFENDER's window on its declaration closes (D7.1).");
             }
 
+            // D7.1, D3.3, D3.5 (review of pass 50): an OVR is fire by the vehicle's MA and MGs in its MPh, so none of them fires apart from it
+            // in that Player Turn but in another OVR.
             return state with
             {
+                VehicleWeaponShots =
+                [
+                    .. state.VehicleWeaponShots,
+                    new VehicleWeaponShot(overrun.Vehicle, "ma", "mph", 0, false) { Step = movement.Step },
+                    new VehicleWeaponShot(overrun.Vehicle, "bmg", "mph", 0, false) { Step = movement.Step },
+                    new VehicleWeaponShot(overrun.Vehicle, "cmg", "mph", 0, false) { Step = movement.Step },
+                ],
                 Movement = movement with
                 {
                     Overrun = null,

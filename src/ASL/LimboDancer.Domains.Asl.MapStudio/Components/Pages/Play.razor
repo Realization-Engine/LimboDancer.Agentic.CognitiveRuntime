@@ -607,8 +607,7 @@ else if (state is not null)
                                     <VehicleTowingActions Guns="@guns" Facing="@unhookFacing" Boards="@hookBoards" OnFacing="@(facing => unhookFacing = facing)"
                                         OnBoards="@(boards => hookBoards = boards)" OnHook="@(hook => ProposeHook(chosen.Id, hook.Gun, hook.Hooked))" />
                                 }
-                                @if (chosen.Position is MapPosition && LiveOrdnance.IsTank(chosen) && LiveFire.MaTypeOf(chosen.Definition?.Definition) is "t" or "st" or "rst" or "1mt"
-                                    && state.Movement is not { WindowOpen: true } && !chosen.MovementEnded)
+                                @if (TurretChoiceShown(chosen))
                                 {
                                     <label title="D3.12: the TCA may change with each MP expended. The turret turns with the next Delay MP, stop, VCA change, or entry proposed; not in woods, a building, or rubble.">
                                         Turret with the next MP
@@ -627,7 +626,7 @@ else if (state is not null)
                                 {
                                     <BoundingFireAction Targets="@([.. FireTargets(state.PhasingSide)])" Target="@boundingTarget" OnTarget="@(target => { boundingTarget = target; boundingVehicle = string.Empty; })"
                                         Weapons="@VehicleMgChoices(chosen)" SelectedWeapons="@boundingWeapons" OnWeapon="@(pick => Toggle(boundingWeapons, pick.Id, pick.On))"
-                                        MainArmament="@(LiveOrdnance.IsTank(chosen) && GameState.Condition(chosen, Conditions.BoundingFire) != ConditionState.True)" Vehicles="@BoundingVehicleChoices(chosen.Side)" Vehicle="@boundingVehicle"
+                                        MainArmament="@(LiveOrdnance.IsTank(chosen) && new[] { Conditions.BoundingFire, Conditions.Malfunctioned, Conditions.Disabled, Conditions.Recalled, Conditions.Stunned, Conditions.Shocked, Conditions.UnconfirmedKill }.All(name => GameState.Condition(chosen, name) != ConditionState.True))" Vehicles="@BoundingVehicleChoices(chosen.Side)" Vehicle="@boundingVehicle"
                                         OnVehicle="@(id => boundingVehicle = id)" OnProposeMa="@ProposeBoundingMa" OnPropose="@ProposeBoundingFire" />
                                 }
                             }
@@ -2865,9 +2864,16 @@ else if (state is not null)
             $"{vehicle.Id} ({(state!.Location(vehicle.Id)?.Location is { } at ? at.ToString() : "off board, to enter")})"))];
 
     /// <summary>A new vehicle chosen: the drafts for the last one do not carry over (plan section 15.3).</summary>
+    /// <summary>Whether the "Turret with the next MP" choice is shown for a vehicle (D3.12; pass 50): a turreted tank on the map that may still spend MP.</summary>
+    private bool TurretChoiceShown(UnitInstance vehicle) => state is not null && vehicle.Position is MapPosition && LiveOrdnance.IsTank(vehicle)
+        && LiveFire.MaTypeOf(vehicle.Definition?.Definition) is "t" or "st" or "rst" or "1mt" && state.Movement is not { WindowOpen: true } && !vehicle.MovementEnded;
+
     private void ChooseVehicle(string id)
     {
         vehicleUnit = id;
+        vehicleTurret = string.Empty;
+        boundingVehicle = string.Empty;
+        boundingWeapons.Clear();
         vehicleLoad.Clear();
         vehicleUnload.Clear();
         vehicleIntended = string.Empty;
@@ -3419,10 +3425,9 @@ else if (state is not null)
         };
 
         // D3.12 (pass 50): the turret turns with a Delay MP, a stop, a VCA change, or an entry.
-        if (vehicleTurret.Length > 0 && kind is "delay" or "stop" or "turn" or "enter")
+        if (vehicleTurret.Length > 0 && ScenarioA1VehicleMovementCalculator.TurretTurnsWith(kind) && state?.Unit(vehicleUnit) is { } turning && TurretChoiceShown(turning))
         {
             arguments["turret"] = vehicleTurret;
-            vehicleTurret = string.Empty;
         }
 
         if (reverse)
@@ -3965,7 +3970,7 @@ else if (state is not null)
         {
             ["gameId"] = gameId, ["attemptId"] = Attempt("bffma"), ["expectedRevision"] = (long)history!.Events.Count, ["gunId"] = vehicleUnit, ["target"] = boundingTarget,
         };
-        if (boundingVehicle.Length > 0)
+        if (boundingVehicle.Length > 0 && state?.Unit(vehicleUnit) is { } firer && BoundingVehicleChoices(firer.Side).Any(choice => choice.Id == boundingVehicle))
         {
             arguments["targetVehicle"] = boundingVehicle;
         }
@@ -4270,13 +4275,16 @@ else if (state is not null)
         var acquired = state?.Acquisitions.FirstOrDefault(item => item.Gun == tank.Id);
         var depleted = state?.DepletedAmmunition.Where(item => item.Gun == tank.Id).Select(item => item.Ammunition.ToUpperInvariant()).ToArray() ?? [];
         var flags = string.Concat(new[] { (Conditions.Shocked, "Shocked"), (Conditions.UnconfirmedKill, "Unconfirmed Kill"), (Conditions.Stunned, "Stunned"),
-            (Conditions.Recalled, "Recalled"), (Conditions.Motion, "in Motion"), (Conditions.Immobilized, "immobilized"), (Conditions.Malfunctioned, "MA malfunctioned") }
+            (Conditions.Recalled, "Recalled"), (Conditions.Motion, "in Motion"), (Conditions.Immobilized, "immobilized"), (Conditions.Malfunctioned, "MA malfunctioned"),
+            (Conditions.Disabled, "MA disabled"), (Conditions.BmgMalfunctioned, "BMG malfunctioned"), (Conditions.BmgDisabled, "BMG disabled"),
+            (Conditions.CmgMalfunctioned, "CMG malfunctioned"), (Conditions.CmgDisabled, "CMG disabled") }
             .Where(item => Marked(item.Item1)).Select(item => ", " + item.Item2));
         return $"{tank.Id} ({tank.Definition?.Definition} MA, VCA {hull}, TCA {turret}, {(LiveFire.CrewExposed(tank) ? "CE" : "BU")}"
             // D3.5 (pass 50): a fire counter its BMG or CMG placed is not the MA's.
             + (shots is null ? Marked(Conditions.PrepFire) || Marked(Conditions.FinalFire)
                     ? state is not null && state.VehicleWeaponShots.Any(item => item.Vehicle == tank.Id) && state.VehicleWeaponShots.Where(item => item.Vehicle == tank.Id).All(item => item.Weapon != "ma")
-                        ? ", its MGs have fired" : ", fired this Player Turn"
+                        ? ", " + string.Join(" and ", state.VehicleWeaponShots.Where(item => item.Vehicle == tank.Id).Select(item => item.Weapon.ToUpperInvariant()).Distinct()) + " fired; the MA has not"
+                        : ", fired this Player Turn"
                     : ""
                 : shots.RateOfFireKept ? $", {shots.Shots} shot(s), may fire again" : ", fired")
             + (acquired is null ? "" : $", Acquisition {acquired.Level} on {acquired.Location}")
@@ -5451,6 +5459,9 @@ else if (state is not null)
     private void ResetDrafts(bool keepCloseCombat)
     {
         (Picking.Armed, Picking.ArmedLabel) = (null, null);
+        vehicleTurret = string.Empty;
+        boundingVehicle = string.Empty;
+        boundingWeapons.Clear();
         ClearFire();
         opportunityUnits.Clear();
         advanceUnits.Clear();
@@ -6289,6 +6300,12 @@ else if (state is not null)
         if (result.Outcome is PlayOutcome.Committed or PlayOutcome.Replay)
         {
             // A committed action's choices are spent: the next one starts from nothing.
+            // D3.12 (review of pass 50): the turret choice is spent with the step that carried it, and kept through a refusal or a cancel.
+            if (proposal.Action == GameActions.MoveVehicle)
+            {
+                vehicleTurret = string.Empty;
+            }
+
             if (proposal.Action == GameActions.Setup)
             {
                 if (PlacesCounters(proposal))

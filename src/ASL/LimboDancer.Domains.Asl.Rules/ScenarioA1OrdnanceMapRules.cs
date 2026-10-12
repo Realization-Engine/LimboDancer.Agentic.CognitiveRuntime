@@ -78,6 +78,12 @@ public static class ScenarioA1OrdnanceMapRules
         return steps.Count > 0 && (bogged || steps.Any(step => step is ("start", true))) && !steps.Any(step => step.Kind is "enter" or "exit" or "overrun") ? true : null;
     }
 
+    /// <summary>D3.2, D2.32, C5.5 (review of pass 50): a shot within the firer's own Location at or by a vehicle in Bypass has its own Target Facing and LOS; not built.</summary>
+    public static string? SameHexBypassRefusal(bool firerInBypass, bool targetInBypass) =>
+        firerInBypass || targetInBypass
+            ? "play.ordnance-own-hex: a shot within its own hex by or at a vehicle in Bypass is not built: its Target Facing and LOS are read from the CAFP (D2.32, C5.5)"
+            : null;
+
     /// <summary>C5.13 (p. 172; pass 50): "a Bounding First Firer must always fire within its current CA; it may change that CA only via MP expenditure".</summary>
     public static string? BoundingArcRefusal(string? vehicleId, bool boundingFirstFire, int steps) =>
         boundingFirstFire && steps > 0

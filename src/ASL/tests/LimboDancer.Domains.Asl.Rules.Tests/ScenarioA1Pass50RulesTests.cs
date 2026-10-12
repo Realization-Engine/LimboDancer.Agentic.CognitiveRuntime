@@ -137,7 +137,10 @@ public sealed class ScenarioA1Pass50RulesTests
 
         // The condition each sets is its own Malfunction counter.
         Assert.Contains((UnitCondition.CmgMalfunctioned, true), ScenarioA1FireFollowUps.WeaponEffectConditions(chosen.WeaponEffects![1], () => false));
-        Assert.Contains((UnitCondition.BmgMalfunctioned, true), ScenarioA1FireFollowUps.WeaponEffectConditions(chosen.WeaponEffects[0] with { Malfunctioned = true }, () => false));
+        Assert.Contains((UnitCondition.BmgMalfunctioned, true), ScenarioA1FireFollowUps.WeaponEffectConditions(chosen.WeaponEffects[0] with
+        {
+            Malfunctioned = true
+        }, () => false));
     }
 
     [Fact]
@@ -169,13 +172,11 @@ public sealed class ScenarioA1Pass50RulesTests
         Assert.Equal(new OrdnanceVehicleWeapons(false, false, null), ScenarioA1OrdnanceEligibility.VehicleWeapons([], "pfph", "t"));
 
         // The words the page lists a MG under.
-        Assert.Equal(["is disabled", "has malfunctioned", "has fired", "the vehicle fired in another phase (D3.5)", null],
-            new[]
-            {
-                ScenarioA1FireEligibility.VehicleMgBar(true, true, false, false, false), ScenarioA1FireEligibility.VehicleMgBar(true, false, false, false, false),
-                ScenarioA1FireEligibility.VehicleMgBar(false, false, true, false, false), ScenarioA1FireEligibility.VehicleMgBar(false, false, false, true, false),
-                ScenarioA1FireEligibility.VehicleMgBar(false, false, false, false, false),
-            });
+        Assert.Equal("is disabled", ScenarioA1FireEligibility.VehicleMgBar(true, true, false, false, false));
+        Assert.Equal("has malfunctioned", ScenarioA1FireEligibility.VehicleMgBar(true, false, false, false, false));
+        Assert.Equal("has fired this Player Turn (D3.5)", ScenarioA1FireEligibility.VehicleMgBar(false, false, true, false, false));
+        Assert.Equal("the vehicle fired in another phase (D3.5)", ScenarioA1FireEligibility.VehicleMgBar(false, false, false, true, false));
+        Assert.Null(ScenarioA1FireEligibility.VehicleMgBar(false, false, false, false, false));
         Assert.NotNull(ScenarioA1FireEligibility.VehicleWeaponsNamedBar("de-tank", false, 0));
         Assert.Null(ScenarioA1FireEligibility.VehicleWeaponsNamedBar("de-ht", true, 0));
         Assert.StartsWith("play.fire-vehicle-vca", ScenarioA1FireEligibility.VehicleWeaponArcBar("de-tank", FireVehicleWeapon.BowMg, 1, false), StringComparison.Ordinal);
@@ -197,7 +198,13 @@ public sealed class ScenarioA1Pass50RulesTests
                 Ammunition = "ap",
                 ScenarioYear = 1942,
             };
-        OrdnanceResolution Fire(OrdnanceShot shot) => ScenarioA1OrdnanceCalculator.Resolve(shot with { Rolls = shot.Rolls! with { ToKill = [6, 6] } }, Ordnance);
+        OrdnanceResolution Fire(OrdnanceShot shot) => ScenarioA1OrdnanceCalculator.Resolve(shot with
+        {
+            Rolls = shot.Rolls! with
+            {
+                ToKill = [6, 6]
+            }
+        }, Ordnance);
 
         // D3.5: "it makes no difference which weapon fires first": a counter the MGs placed in this fire phase does not bar the MA.
         Assert.Contains("asl.a1.ordnance.gun-already-fired", Fire(Shot(null, marked: true)).Reasons);
@@ -374,6 +381,69 @@ public sealed class ScenarioA1Pass50RulesTests
         Assert.Contains("doubles", ScenarioA1VehicleMovementCalculator.TurretStepBar("de-tank", "stop", true, true, true), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void TheReviewsFixes()
+    {
+        // C6.55 (p. 175): "only a Stabilized Gun (D11.1) may claim/retain its Acquisition DRM for Motion/Bounding-First Fire TH attempts".
+        OrdnanceShot Acquired(OrdnanceShot shot) => shot with
+        {
+            Acquisition = -2
+        };
+        Assert.Contains(Shoot(Acquired(MaShot(phase: "PFPh", kind: null))).ToHit!.Drm, item => item is { Name: "case-n", Value: -2 });
+        Assert.DoesNotContain(Shoot(Acquired(MaShot())).ToHit!.Drm, item => item.Name == "case-n");
+        Assert.DoesNotContain(Shoot(Acquired(MaShot(phase: "AFPh", kind: null, inMotion: true))).ToHit!.Drm, item => item.Name == "case-n");
+        Assert.Equal(-1, Shoot(Acquired(MaShot(dice: [2, 3]))).Gun!.Acquisition);
+        Assert.Equal(-2, Shoot(Acquired(MaShot(phase: "PFPh", kind: null, dice: [2, 3]))).Gun!.Acquisition);
+
+        // D3.3, D7.1: a Bounding Fire counter beside a shot of the MA in the MPh, an OVR among them, is the MA's: it fires again only on a kept ROF.
+        VehicleWeaponShotFacts[] ovr = [new("ma", "mph", 0, false, 3), new("bmg", "mph", 0, false, 3), new("cmg", "mph", 0, false, 3)];
+        Assert.True(ScenarioA1OrdnanceEligibility.VehicleWeapons(ovr, "mph", "t", boundingFireMarked: true).BoundingFireSpent);
+        Assert.Null(ScenarioA1OrdnanceEligibility.VehicleWeapons([new(FireVehicleWeapon.CoaxialMg, "mph", 0, false)], "mph", "t", boundingFireMarked: true).BoundingFireSpent);
+        var spent = MaShot() with
+        {
+            Vehicle = MaShot().Vehicle! with
+            {
+                Weapons = new OrdnanceVehicleWeapons(false, false, null) { BoundingFireSpent = true }
+            }
+        };
+        Assert.Contains("asl.a1.ordnance.gun-already-fired", Shoot(spent).Reasons);
+        Assert.DoesNotContain("asl.a1.ordnance.gun-already-fired", Shoot(spent with
+        {
+            Gun = spent.Gun! with
+            {
+                ShotsThisPhase = 1,
+                RateOfFireKept = true
+            }
+        }).Reasons);
+
+        // D3.51: the MA pays the CMG's Case A on its first shot after the CMG turned the turret, though it fired before the turn.
+        VehicleWeaponShotFacts[] maThenCmg = [new("ma", "pfph", 0, false), new(FireVehicleWeapon.CoaxialMg, "pfph", 2, false)];
+        Assert.Equal(2, ScenarioA1OrdnanceEligibility.VehicleWeapons(maThenCmg, "pfph", "t").MaintainedCaseA);
+        Assert.Null(ScenarioA1OrdnanceEligibility.VehicleWeapons([.. maThenCmg, new("ma", "pfph", 0, false)], "pfph", "t").MaintainedCaseA);
+
+        // D3.31, D3.3: the MGs fire in the AFPh when only the MA fired in the MPh and left no counter; not after a MG fired there.
+        Assert.False(ScenarioA1FireEligibility.OtherFirePhase([new("ma", "mph", 0, false, 0)], "afph", false));
+        Assert.True(ScenarioA1FireEligibility.OtherFirePhase([new("ma", "mph", 0, false, 0)], "afph", true));
+        Assert.True(ScenarioA1FireEligibility.OtherFirePhase([new(FireVehicleWeapon.BowMg, "mph", 0, false)], "afph", false));
+
+        // D5.41: an Abandoned vehicle fires and repairs nothing; D2.32: nothing of Bypass is read for a turret or a same-hex shot.
+        Assert.StartsWith("play.fire-vehicle-abandoned", ScenarioA1FireEligibility.AbandonedVehicleBar("de-tank", true), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1FireEligibility.AbandonedVehicleBar("de-tank", false));
+        Assert.True(ScenarioA1RallyRules.VehicleCrewImpaired(false, false, false, false, false, abandoned: true));
+        Assert.Contains("Bypass", ScenarioA1VehicleMovementCalculator.TurretStepBar("de-tank", "stop", true, true, false, bypass: true), StringComparison.Ordinal);
+        Assert.NotNull(ScenarioA1OrdnanceMapRules.SameHexBypassRefusal(false, true));
+        Assert.Null(ScenarioA1OrdnanceMapRules.SameHexBypassRefusal(false, false));
+
+        // The repair's bars each say their own cause, and an unknown weapon name is refused.
+        Assert.Contains("no weapon named", ScenarioA1RallyRules.VehicleWeaponRepairBar("de-ht", "aamg", true, false, false, false), StringComparison.Ordinal);
+        Assert.Contains("has had its repair attempt", ScenarioA1RallyRules.VehicleWeaponRepairBar("de-tank", "cmg", true, false, false, true), StringComparison.Ordinal);
+        Assert.Contains("Recalled", ScenarioA1RallyRules.VehicleWeaponRepairBar("de-tank", "cmg", true, false, true, false), StringComparison.Ordinal);
+
+        // A proposal's words for the To Hit cases.
+        Assert.Equal(("Case C2", "Case Q (woods)", "Case A (the CA change its turret already made)", "cx"), (ScenarioA1OrdnanceEligibility.CaseWords("case-c2"),
+            ScenarioA1OrdnanceEligibility.CaseWords("case-q:woods"), ScenarioA1OrdnanceEligibility.CaseWords("case-a:maintained"), ScenarioA1OrdnanceEligibility.CaseWords("cx")));
+    }
+
     [Theory]
     [InlineData(1, "rear")]
     [InlineData(2, "rear")]
@@ -397,11 +467,24 @@ public sealed class ScenarioA1Pass50RulesTests
 
         // C5.5: Case E, +2, doubled in woods, a building, or rubble; Case L does not apply to it.
         Assert.Equal(2m, Assert.Single(result.ToHit!.Drm, item => item.Name == "case-e").Value);
-        Assert.Equal(4m, Assert.Single(Shoot(shot with { FirerInWoodsOrBuilding = true }).ToHit!.Drm, item => item.Name == "case-e").Value);
+        Assert.Equal(4m, Assert.Single(Shoot(shot with
+        {
+            FirerInWoodsOrBuilding = true
+        }).ToHit!.Drm, item => item.Name == "case-e").Value);
         Assert.DoesNotContain(result.ToHit.Drm, item => item.Name == "case-l");
 
         // A shot from inside the hex names no facing of its own, and one from outside it must.
-        Assert.Contains("asl.a1.ordnance.vehicle-target-outside", Shoot(shot with { VehicleTarget = shot.VehicleTarget! with { HullFacing = "front" } }).Reasons);
-        Assert.NotEqual(OrdnanceResolution.Resolved, Shoot(shot with { SameHex = null, Range = 1 }).Disposition);
+        Assert.Contains("asl.a1.ordnance.vehicle-target-outside", Shoot(shot with
+        {
+            VehicleTarget = shot.VehicleTarget! with
+            {
+                HullFacing = "front"
+            }
+        }).Reasons);
+        Assert.NotEqual(OrdnanceResolution.Resolved, Shoot(shot with
+        {
+            SameHex = null,
+            Range = 1
+        }).Disposition);
     }
 }

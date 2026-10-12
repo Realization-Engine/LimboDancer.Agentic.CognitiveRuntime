@@ -142,7 +142,11 @@
     {
         <span id="fire-ft-alone" class="toolbar-note" role="status">A FT fires alone: untick the other units and weapons, and choose no director (A22.31).</span>
     }
-    <button id="propose-fire" disabled="@(SelectedFirers.Count == 0 || FtWithOthers || (FreeTarget.Trim().Length == 0 && Target.Length == 0))" aria-describedby="@(FtWithOthers ? "fire-ft-alone" : null)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: fire</button>
+    @if (TankWithoutMg)
+    {
+        <span id="fire-tank-mg" class="toolbar-note" role="status">Tick the BMG or the CMG that fires: a tank's MA fires as ordnance (D3.5).</span>
+    }
+    <button id="propose-fire" disabled="@(SelectedFirers.Count == 0 || FtWithOthers || TankWithoutMg || (FreeTarget.Trim().Length == 0 && Target.Length == 0))" aria-describedby="@(FtWithOthers ? "fire-ft-alone" : TankWithoutMg ? "fire-tank-mg" : null)" @onclick="@(() => OnPropose.InvokeAsync())">Propose: fire</button>
     <button id="fire-clear" class="link" @onclick="@(() => OnClear.InvokeAsync())">clear</button>
 </div>
 </ActionSection>
@@ -160,6 +164,10 @@
     /// <summary>Whether a FT is ticked with anything but its one holder (A22.31): the Fire package refuses the group, so Propose waits.</summary>
     private bool FtWithOthers => Weapons.Any(weapon => weapon.Ft && weapon.Bar is null && SelectedWeapons.Contains(weapon.Id))
         && (SelectedFirers.Count != 1 || Weapons.Count(weapon => weapon.Bar is null && SelectedWeapons.Contains(weapon.Id)) != 1 || Director.Length > 0);
+
+    /// <summary>Whether a ticked tank has neither of its MGs ticked (D3.5; pass 50): the gate refuses it, so Propose waits.</summary>
+    private bool TankWithoutMg => SelectedFirers.Any(id => Weapons.Any(weapon => weapon.Holder == id && weapon.Label is not null)
+        && !Weapons.Any(weapon => weapon.Holder == id && weapon.Label is not null && weapon.Bar is null && SelectedWeapons.Contains(weapon.Id)));
 
     /// <summary>The firing side.</summary>
     [Parameter, EditorRequired]

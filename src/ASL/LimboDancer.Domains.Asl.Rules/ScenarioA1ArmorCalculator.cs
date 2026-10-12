@@ -173,7 +173,7 @@ internal static class ScenarioA1ArmorCalculator
         {
             drm.Add(new FireModifier("case-a:" + turned.ToString(CultureInfo.InvariantCulture), CaseA(gun.MaType, turned) * (woods ? 2 : 1), "C5.1"));
         }
-        else if (shot.Vehicle?.Weapons?.MaintainedCaseA is > 0 and var maintained)
+        else if (shot.Vehicle?.Weapons?.MaintainedCaseA is > 0 and var maintained && shot.SameHex != true)
         {
             // D3.51 (p. 201; pass 50): the MA fired within a TCA its CMG changed in this fire phase pays what the CMG paid.
             drm.Add(new FireModifier("case-a:maintained", maintained, "D3.51"));
@@ -263,7 +263,7 @@ internal static class ScenarioA1ArmorCalculator
         {
             drm.Add(new FireModifier("case-m", -2, "C6.4"));
         }
-        else if (!latw && shot.Acquisition is int acquired && acquired < 0 && target.Concealed != true)
+        else if (!latw && shot.Acquisition is int acquired && acquired < 0 && target.Concealed != true && !ScenarioA1OrdnanceCalculator.AcquisitionDenied(shot))
         {
             drm.Add(new FireModifier("case-n", acquired, "C6.5"));
         }
@@ -415,7 +415,7 @@ internal static class ScenarioA1ArmorCalculator
         // is acquired only when the shot costs it its "?" (the game decides that, R6.7).
         // C6.5 (the chart's G): a non-mortar SW acquires nothing.
         var acquires = !malfunctioned && target.Concealed != true && !latw;
-        var acquisition = !acquires ? 0 : Math.Max(shot.Acquisition!.Value - 1, -2);
+        var acquisition = !acquires ? 0 : Math.Max((ScenarioA1OrdnanceCalculator.AcquisitionDenied(shot) ? 0 : shot.Acquisition!.Value) - 1, -2);
         var gunEffect = new OrdnanceGunEffect(ScenarioA1OrdnanceCalculator.Breakdown(shot, gun, reference), malfunctioned, Math.Max(rof, 0), kept, counter, acquisition,
             acquires ? shot.TargetLocationId : null);
         return new OrdnanceResolution(OrdnanceResolution.Resolved, [], toHit, gunEffect)

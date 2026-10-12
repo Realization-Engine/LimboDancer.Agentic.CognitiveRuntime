@@ -147,7 +147,7 @@ public static class LiveOrdnance
                 // C5.3: another MP between its shots.
                 if (ScenarioA1OrdnanceEligibility.BoundingShotBar(gun.Id,
                     state.VehicleWeaponShots.LastOrDefault(item => item.Vehicle == gun.Id && item.Weapon == "ma" && item.FirePhase == "mph")?.Step, state.Movement?.Step ?? 0,
-                    Is(gun, Conditions.BoundingFire)) is { } mpBar)
+                    state.OrdnanceShots.FirstOrDefault(item => item.Gun == gun.Id) is { Shots: > 0, RateOfFireKept: false }) is { } mpBar)
                 {
                     return (null, mpBar);
                 }
@@ -607,7 +607,8 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
         var merged = ScenarioA1OrdnanceEligibility.WithRecordedMapFacts(expected, recorded);
 
         // Pass 50 (ruling R45.4's rule for a new fact): a record made before the pass says nothing of the vehicle's other weapons, and is compared without.
-        if (merged.Vehicle is { Weapons: not null } withWeapons && recorded.Vehicle is { Weapons: null })
+        if (merged.Vehicle is { Weapons: not null } withWeapons && recorded.Vehicle is { Weapons: null }
+            && recorded.FireKind != ScenarioA1FireCalculator.BoundingFirstFire && !(recorded.SameHex == true && recorded.VehicleTarget is not null))
         {
             merged = merged with
             {

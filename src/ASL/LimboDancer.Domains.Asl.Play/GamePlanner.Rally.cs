@@ -452,7 +452,7 @@ public sealed partial class GamePlanner
         if (ScenarioA1RallyRules.VehicleWeaponRepairBar(vehicle.Id, weapon, Is(vehicle, ConditionName(ScenarioA1RallyRules.VehicleWeaponMalfunction(weapon))),
             Is(vehicle, ConditionName(ScenarioA1RallyRules.VehicleWeaponDisabled(weapon))),
             ScenarioA1RallyRules.VehicleCrewImpaired(Is(vehicle, Conditions.Stunned), Is(vehicle, Conditions.Shocked), Is(vehicle, Conditions.UnconfirmedKill),
-                Is(vehicle, Conditions.Recalled), Is(vehicle, Conditions.StunRecovery)),
+                Is(vehicle, Conditions.Recalled), Is(vehicle, Conditions.StunRecovery), Is(vehicle, Conditions.Abandoned)),
             state.RepairsThisPhase.Contains(vehicle.Id + ":" + weapon)) is { } bar)
         {
             return Refused(scope, label, expected, bar);

@@ -566,7 +566,7 @@ public sealed partial class GamePlanner
 
         var directing = new[] { facts.Director?.UnitId }.Concat(facts.OtherDirectors?.Select(item => item.UnitId) ?? []).OfType<string>().ToArray();
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-            [$"play.fire: {string.Join(", ", facts.VehicleFire is { } byVehicle ? [byVehicle.VehicleId] : facts.Firers!.Select(item => item.UnitId))} fire at {facts.TargetLocationId} in the {facts.Phase}"
+            [$"play.fire: {string.Join(", ", facts.VehicleFire is { } byVehicle ? [byVehicle.Weapons is { Count: > 0 } mgs ? $"{byVehicle.VehicleId}'s {string.Join(" and ", mgs.Select(item => (item.Weapon ?? string.Empty).ToUpperInvariant()))}" : byVehicle.VehicleId] : facts.Firers!.Select(item => item.UnitId))} fire at {facts.TargetLocationId} in the {facts.Phase}"
                 + (facts.FireKind is { } kind ? $" ({kind})" : string.Empty)
                 + (directing.Length > 0 ? $", directed by {string.Join(", ", directing)}" : string.Empty)
                 + $"; range {facts.Range}, {facts.TargetTerrain}, Hindrance {facts.Los!.HindranceDrm}"

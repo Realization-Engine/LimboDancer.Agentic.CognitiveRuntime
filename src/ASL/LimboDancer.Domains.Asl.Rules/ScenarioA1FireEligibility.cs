@@ -127,9 +127,25 @@ public static class ScenarioA1FireEligibility
             {
                 MaintainedCaseA = name == FireVehicleWeapon.CoaxialMg ? maintained : null,
             })],
-            OtherPhase = facts.Shots.Any(item => item.FirePhase != facts.FirePhase) ? true : null,
+            OtherPhase = OtherFirePhase(facts.Shots, facts.FirePhase, facts.BoundingFireMarked) ? true : null,
         };
     }
+
+    /// <summary>
+    /// Whether a weapon of the vehicle fired in another fire phase of this Player Turn, so that the rest have forfeited theirs (D3.5, p. 201).
+    /// D3.31, D3.3 (review of pass 50): not in the AFPh when only the MA fired in the MPh and left no Bounding Fire counter: "if a vehicle fires any
+    /// weapon other than its MA during the MPh it may not fire its other weapons/PRC during the AFPh".
+    /// </summary>
+    public static bool OtherFirePhase(IReadOnlyList<VehicleWeaponShotFacts> shots, string firePhase, bool boundingFireMarked)
+    {
+        ArgumentNullException.ThrowIfNull(shots);
+        var afterBounding = firePhase == "afph" && !boundingFireMarked && shots.Count > 0 && shots.All(item => item.Weapon == "ma" && item.FirePhase == "mph");
+        return !afterBounding && shots.Any(item => item.FirePhase != firePhase);
+    }
+
+    /// <summary>D5.41 (review of pass 50): an Abandoned vehicle has no crew to fire its MGs.</summary>
+    public static string? AbandonedVehicleBar(string vehicleId, bool abandoned) =>
+        abandoned ? $"play.fire-vehicle-abandoned: {vehicleId} is Abandoned and has no crew to fire its weapons (D5.41)" : null;
 
     /// <summary>
     /// Why a vehicle's BMG or CMG may not be chosen to fire now, in a few words, or null when it may (D3.5, D3.7, D1.321; pass 50): it has
@@ -137,8 +153,8 @@ public static class ScenarioA1FireEligibility
     /// CE tank whose turret is a RST or 1MT.
     /// </summary>
     public static string? VehicleMgBar(bool malfunctioned, bool disabled, bool fired, bool otherPhase, bool turretBarred) =>
-        disabled ? "is disabled" : malfunctioned ? "has malfunctioned" : fired ? "has fired"
-        : otherPhase ? "the vehicle fired in another phase (D3.5)" : turretBarred ? "a CE crew does not fire this turret's weapons (D1.321)" : null;
+        disabled ? "is disabled" : malfunctioned ? "has malfunctioned" : fired ? "has fired this Player Turn (D3.5)"
+        : otherPhase ? "the vehicle fired in another phase (D3.5)" : turretBarred ? "a RST or 1MT turret's CMG does not fire while the crew is CE (D1.321, D1.322)" : null;
 
     /// <summary>D3.5 (pass 50): a tank that fires on the IFT names the BMG or CMG that fires; its MA fires as ordnance.</summary>
     public static string? VehicleWeaponsNamedBar(string vehicleId, bool mainArmamentIsMg, int named) =>

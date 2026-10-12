@@ -90,6 +90,11 @@ public static class LiveFire
             return (null, grouped);
         }
 
+        if (vehicleFirers.Length > 0 && ScenarioA1FireEligibility.AbandonedVehicleBar(vehicleFirers[0].Id, Is(vehicleFirers[0], Conditions.Abandoned)) is { } abandoned)
+        {
+            return (null, abandoned);
+        }
+
         if (vehicleFirers.Length > 0 && ScenarioA1FireEligibility.VehicleWeaponsNamedBar(vehicleFirers[0].Id, !LiveOrdnance.IsTank(vehicleFirers[0]),
             weapons?.GetValueOrDefault(vehicleFirers[0].Id)?.Count ?? 0) is { } unnamed)
         {
@@ -399,7 +404,8 @@ public static class LiveFire
         return named is not { Count: > 0 } ? fire : ScenarioA1FireEligibility.WithVehicleWeapons(fire, new VehicleWeaponsFacts(named,
             Is(vehicle, Conditions.BmgMalfunctioned), Is(vehicle, Conditions.CmgMalfunctioned),
             ScenarioA1FireEligibility.FirePhase(state.Phase, vehicle.Side == state.PhasingSide), VehicleShots(state, vehicle.Id),
-            vehicle.Definition is { } definition ? CatalogReference.Value.Definitions.GetValueOrDefault(definition.Definition)?.MaType : null));
+            vehicle.Definition is { } definition ? CatalogReference.Value.Definitions.GetValueOrDefault(definition.Definition)?.MaType : null,
+            Is(vehicle, Conditions.BoundingFire)));
     }
 
     /// <summary>
@@ -416,7 +422,8 @@ public static class LiveFire
         }
 
         var shots = VehicleShots(state, vehicle.Id);
-        var otherPhase = shots.Any(item => item.FirePhase != ScenarioA1FireEligibility.FirePhase(state.Phase, vehicle.Side == state.PhasingSide));
+        var otherPhase = ScenarioA1FireEligibility.OtherFirePhase(shots, ScenarioA1FireEligibility.FirePhase(state.Phase, vehicle.Side == state.PhasingSide),
+            Is(vehicle, Conditions.BoundingFire));
         return [.. new[] { FireVehicleWeapon.BowMg, FireVehicleWeapon.CoaxialMg }
             .Where(weapon => ScenarioA1FireCalculator.VehicleWeaponFp(definition, weapon) is not null)
             .Select(weapon => (weapon, ScenarioA1FireCalculator.VehicleWeaponFp(definition, weapon)!.Value, ScenarioA1FireEligibility.VehicleMgBar(
@@ -869,7 +876,7 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
         var tcaNow = recorded.VehicleFire?.VehicleId is { } turning && state.Unit(turning) is { } turningVehicle ? LiveOrdnance.TurretFacing(state, turningVehicle) : null;
         if ((cmgTurn > 0) != fire.TurretFacing.HasValue || ScenarioA1OrdnanceEligibility.HexspinesTurned((int?)fire.TurretFacing, (int?)tcaNow) != cmgTurn)
         {
-            return "The fire record turns the turret exactly the hexspines its CMG's facts say the shot changes its TCA by.";
+            return "The fire record does not turn the turret by the hexspines its CMG's facts give.";
         }
 
         if (LiveFire.Rolls(fire, recorded, rolls) is not { } dice)

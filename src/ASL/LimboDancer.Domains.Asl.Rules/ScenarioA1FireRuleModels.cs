@@ -409,7 +409,8 @@ public enum UnitCondition
 public sealed record VehicleWeaponShotFacts(string Weapon, string FirePhase, int Turn, bool Doubled, int? Step = null);
 
 /// <summary>The BMG and CMG a vehicle's attack names, against the state (D3.5, D3.51, D3.7; pass 50): the names, whether each MG has malfunctioned, the fire phase now, the vehicle's shots of this Player Turn, and its turret's type.</summary>
-public sealed record VehicleWeaponsFacts(IReadOnlyList<string> Named, bool BmgMalfunctioned, bool CmgMalfunctioned, string FirePhase, IReadOnlyList<VehicleWeaponShotFacts> Shots, string? MaType);
+public sealed record VehicleWeaponsFacts(IReadOnlyList<string> Named, bool BmgMalfunctioned, bool CmgMalfunctioned, string FirePhase, IReadOnlyList<VehicleWeaponShotFacts> Shots, string? MaType,
+    bool BoundingFireMarked = false);
 
 /// <summary>What the Fire package asks for next (ruling R5.8): the attack is resolved; or an option its owner answers (the choice's key); or a roll (its key, the dice count, the roll's purpose); or the package left the attack undecided (its reasons joined).</summary>
 public sealed record FireNextStep(bool Resolved, string? ChoiceKey, string? RollKey, int Count, string? Purpose, string? Undecided);

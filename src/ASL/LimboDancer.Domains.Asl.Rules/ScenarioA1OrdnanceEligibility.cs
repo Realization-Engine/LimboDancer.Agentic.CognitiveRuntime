@@ -296,9 +296,14 @@ public static class ScenarioA1OrdnanceEligibility
         // D3.32 (p. 200; pass 50): "if the vehicle did not exhaust its Multiple ROF during its MPh, and did not fire any other weapons ... during its
         // MPh, it may fire that Multiple ROF weapon (only) again once during its AFPh". A Bounding Fire counter says the ROF is spent (D3.3).
         var afterBounding = firePhase == "afph" && !boundingFireMarked && shots.Count > 0 && shots.All(item => item.Weapon == "ma" && item.FirePhase == "mph");
+        // D3.51 (review of pass 50): the MA pays the CMG's Case A on its first shot after the CMG turned the turret, whether or not it fired before.
+        var lastTurn = shots.Select((item, index) => (item, index)).LastOrDefault(pair => pair.item.FirePhase == firePhase && pair.item.Weapon != "ma" && pair.item.Turn > 0);
+        var paid = lastTurn.item is null || shots.Skip(lastTurn.index + 1).Any(item => item.Weapon == "ma" && item.FirePhase == firePhase);
         return new OrdnanceVehicleWeapons(!afterBounding && shots.Any(item => item.FirePhase != firePhase), shots.Count > 0 && shots.All(item => item.Weapon != "ma"),
-            shots.Any(item => item.Weapon == "ma" && item.FirePhase == firePhase) ? null
-                : ScenarioA1FireEligibility.MaintainedCaseA(shots.Where(item => item.Weapon != "ma"), firePhase, maType));
+            paid ? null : ScenarioA1FireEligibility.MaintainedCaseA([lastTurn.item!], firePhase, maType))
+        {
+            BoundingFireSpent = boundingFireMarked && shots.Any(item => item.Weapon == "ma" && item.FirePhase == "mph") ? true : null,
+        };
     }
 
     /// <summary>
@@ -458,6 +463,24 @@ public static class ScenarioA1OrdnanceEligibility
                     : recorded.Hit.GunTarget,
             },
         };
+    }
+
+    /// <summary>
+    /// A To Hit DRM's recorded name in a proposal's words (review of pass 50): "case-c2" reads "Case C2", "case-q:woods" reads "Case Q (woods)",
+    /// and "case-a:maintained" reads "Case A (the CA change its turret already made)"; any other name is left as it is.
+    /// </summary>
+    public static string CaseWords(string name)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        if (!name.StartsWith("case-", StringComparison.Ordinal))
+        {
+            return name;
+        }
+
+        var colon = name.IndexOf(':', StringComparison.Ordinal);
+        var head = "Case " + (colon < 0 ? name["case-".Length..] : name["case-".Length..colon]).ToUpperInvariant();
+        var rest = colon < 0 ? string.Empty : name[(colon + 1)..];
+        return rest.Length == 0 ? head : rest == "maintained" ? head + " (the CA change its turret already made)" : $"{head} ({rest.Replace('-', ' ')})";
     }
 
     /// <summary>The hexspines between a Gun's facing now and the facing it is turned to (C3.21, C5.1, D3.12), facings as ints; zero when either is unknown.</summary>
