@@ -1331,6 +1331,17 @@ public sealed partial class GamePlanner
             };
         }
 
+        // A5.12, A5.131 (p. 52; pass 40): each side's stack, in the Locations fired from and in the target Location; Rules counts them. Residual FP
+        // has no firers; a Dummy alone has no side's stack to read.
+        var firerSide = (attack.VehicleFire?.VehicleId ?? (attack.Firers is { Count: > 0 } firing ? firing[0].UnitId : null)) is { } firerId ? state.Unit(firerId)?.Side : null;
+        var targetSide = attack.Targets?.Select(item => item.UnitId is { } targetId ? state.Unit(targetId)?.Side : null).FirstOrDefault(side => side is not null);
+        facts = facts with
+        {
+            FirerOverstack = firerSide is null ? null
+                : ScenarioA1Stacking.GroupAttackPenalty(perLocation.Keys.Select(location => LiveStacking.Of(state, BoardLocation.Parse(location), firerSide))),
+            TargetOverstack = targetSide is not null && LiveStacking.Of(state, target, targetSide).DefensePenalty is var crowded and > 0 ? crowded : null,
+        };
+
         // Backlog pass 16 (rulings R16.2, R16.3, R16.11 to R16.14): night and weather.
         return NightAndWeatherFacts(state, facts, target, targetRead.Hex.BaseLevel + (targetRead.Hex.Center.Terrain?.Height ?? 0), perLocation);
     }

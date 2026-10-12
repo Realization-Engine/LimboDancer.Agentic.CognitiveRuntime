@@ -144,9 +144,7 @@ public sealed partial class GamePlanner
         var terrain = entry.Terrain;
 
         // A5.11 (ruling R14.10): entering a Location the advance overstacks costs one more MF per excess squad-equivalent.
-        var arriving = state.At(to).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide && !Is(unit, Conditions.Captured))
-            .Concat(units.Select(unit => unit!)).Distinct().ToArray();
-        var excess = OverstackExcess(arriving);
+        var excess = LiveStacking.Of(state, to, state.PhasingSide, units.Select(unit => unit!)).PersonnelExcess;
 
         // A7.7 (ruling R12.11): the first Location an Encircled unit enters costs twice its MF.
         var halfMf = ScenarioA1AdvanceCalculator.AdvanceHalfMf(entry.HalfMf, units.Any(unit => state.Encircled(unit!)), excess);
@@ -291,17 +289,6 @@ public sealed partial class GamePlanner
     /// </summary>
     private bool? DifficultAdvance(GameState state, UnitInstance unit, int halfMf, bool aided = false, bool lent = false) =>
         ScenarioA1AdvanceCalculator.DifficultAdvance(MfAllotment(state, unit, 0, Is(unit, Conditions.Cx), aided ? 2 : 0, lent ? 1 : 0), halfMf);
-
-    /// <summary>
-    /// A5.1, A5.5 (ruling R14.10): the squad-equivalents of one side's units above three, rounded up, a HS or crew half and five SMC a HS (four or fewer
-    /// none).
-    /// </summary>
-    private int OverstackExcess(IEnumerable<UnitInstance> units)
-    {
-        var list = units.ToArray();
-        return ScenarioA1AdvanceCalculator.OverstackExcess(list.Count(unit => vocabulary.IsA(unit.Kind, "asl:squad")),
-            list.Count(unit => vocabulary.IsA(unit.Kind, "asl:half-squad") || vocabulary.IsA(unit.Kind, "asl:crew")), list.Count(unit => vocabulary.IsA(unit.Kind, "asl:smc")));
-    }
 
     /// <summary>The Ambush drs of a CC Location (A11.4): one dr for each side, the ATTACKER's first, resolved by the Close Combat package.</summary>
     private GamePlan PlanAmbush(GameScope scope, JsonElement arguments, IReadOnlyList<GameEvent> existing, string attemptId, long expected, string label, string actor)

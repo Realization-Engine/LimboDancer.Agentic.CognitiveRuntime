@@ -2037,6 +2037,21 @@ public static class ScenarioA1FireCalculator
                 }
             }
 
+            // A5.12, A5.131 (p. 52; pass 40): overstacking on the IFT DR, from the firers' side and against the targets'. An ordnance hit took both
+            // on its To Hit DR, and they are not taken again when the hit is resolved.
+            if (attack.OrdnanceHit is null)
+            {
+                if (attack.FirerOverstack is { } over and > 0)
+                {
+                    drm.Add(new FireModifier("overstacked", over, "A5.12"));
+                }
+
+                if (attack.TargetOverstack is { } crowded and > 0)
+                {
+                    drm.Add(new FireModifier("vs-overstacked", -crowded, "A5.131"));
+                }
+            }
+
             var final = original + (int)drm.Sum(item => item.Value);
             var main = hasKnown ? known : vsConcealed;
             var (column, shifted, result) = Column(main, shift, final);

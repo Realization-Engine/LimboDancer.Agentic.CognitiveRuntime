@@ -470,6 +470,10 @@ public static class ScenarioA1MovementCalculator
             halfMf *= 2;
         }
 
+        // A5.11 (p. 52; pass 40): entering a Location the entry leaves overstacked costs one more MF for each squad-equivalent (FRU) above the
+        // Personnel limit, as the advance pays (ruling R14.10). Marsh takes the whole allotment below, whatever is added here.
+        halfMf += 2 * facts.OverstackExcess;
+
         // A4.134 (ruling R10.9): a Minimum Move is the stack's first and only step, by units with at least one MF after portage.
         if (facts.MinimumMove && (facts.CurrentExists || facts.Assault || facts.Berserk > 0 || facts.Occupy || facts.Bypassing
             || facts.Movers.Select((unit, index) => (Unit: unit, Index: index)).Any(item => item.Unit.Spent || allotment(item.Index, 0, item.Unit.Cx) is not >= 1)))
@@ -680,6 +684,7 @@ public static class ScenarioA1MovementCalculator
         var charge = facts.ChargeText is not null;
         var summary = $"{(facts.Entering ? "play.enter" : "play.move")}: {string.Join(", ", ids)} " + (forcedBack ? $"{(ids.Count == 1 ? "attempts" : "attempt")} {facts.ToText}" : facts.Occupy ? $"{(ids.Count == 1 ? "occupies" : "occupy")} the obstacle of {facts.ToText}" : $"{(ids.Count == 1 ? "enters" : "enter")} {facts.ToText}")
             + $" ({facts.Terrain}{(facts.BypassTexts is not null ? " in Bypass along " + string.Join(", ", facts.BypassTexts) : string.Empty)}) for {facts.HalfMf / 2m} MF"
+            + (facts.OverstackExcess > 0 ? $", {facts.OverstackExcess} of them for a Location overstacked by {facts.OverstackExcess} squad-equivalent(s) (A5.11)" : string.Empty)
             + (facts.Assault ? ", by Assault Movement" : string.Empty)
             + (facts.DoubleTime ? ", Double Timing and now CX (A4.5)" : string.Empty)
             + (facts.MinimumMove ? ", a Minimum Move: pinned and CX once the DEFENDER's fire is done (A4.134)" : string.Empty)

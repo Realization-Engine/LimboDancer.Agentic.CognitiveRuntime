@@ -668,6 +668,11 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
             HazardousMovement = recorded.HazardousMovement,
             SnapShot = recorded.SnapShot,
 
+            // Pass 40 (A5.12, A5.131): the stacks' penalties are the planner's read of the Locations, recorded with the attack, so a record made
+            // before the IFT took them replays as it was resolved.
+            FirerOverstack = recorded.FirerOverstack,
+            TargetOverstack = recorded.TargetOverstack,
+
             // Backlog pass 16 (rulings R16.2, R16.3, R16.11 to R16.14): the night and weather facts are the planner's reading of the map and the SSRs.
             LowVisibilityDrm = recorded.LowVisibilityDrm,
             BeyondNvr = recorded.BeyondNvr,

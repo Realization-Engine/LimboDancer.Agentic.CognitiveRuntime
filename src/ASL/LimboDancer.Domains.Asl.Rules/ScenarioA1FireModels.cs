@@ -274,6 +274,26 @@ public sealed record FireAttack(
     }
 
     /// <summary>
+    /// The attack penalty of the firers' side for overstacking (A5.12, p. 52; pass 40): +1 to the IFT DR for each vehicle and squad-equivalent (FRU)
+    /// above the limits in the Location fired from, the largest of a group's Locations (A7.52). Null when none.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? FirerOverstack
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The defense penalty of the targets' side for overstacking (A5.131, p. 52; pass 40): -1 to the IFT DR for each squad-equivalent (FRU) above the
+    /// Personnel limit in the target Location. Null when none.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? TargetOverstack
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// A vehicle's OVR of the Location it entered (D7.1 to D7.17; backlog pass 11, ruling R11.11): no Infantry firers or leader; the package
     /// computes its FP from the vehicle's definition. Null for other fire.
     /// </summary>

@@ -218,6 +218,21 @@ public sealed class ScenarioA1Pass10Tests
     }
 
     [Fact]
+    public void OverstackingIsOnTheIftDrFromTheFirersSideAndAgainstTheTargets()
+    {
+        // A5.12, A5.131 (p. 52; pass 40, task 40.6): kept here for this class's attack helpers; the count is tested in ScenarioA1Pass40RulesTests.
+        var crowded = Complete(Moving(Attack([5, 5])) with
+        {
+            FirerOverstack = 2,
+            TargetOverstack = 1,
+        });
+        Assert.Contains(("overstacked", 2m), Drm(crowded));
+        Assert.Contains(("vs-overstacked", -1m), Drm(crowded));
+        Assert.Contains(Drm(crowded), item => item.Name == "ffnam");
+        Assert.DoesNotContain(Drm(Complete(Moving(Attack([5, 5])))), item => item.Name is "overstacked" or "vs-overstacked");
+    }
+
+    [Fact]
     public void MarshHasNoTemButNoFfmoAndRubbleHasItsBuildingsTem()
     {
         // B16.3, B24.3 (ruling R10.1).

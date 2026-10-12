@@ -341,6 +341,28 @@ public sealed class BacklogPass10Tests : IDisposable
     }
 
     [Fact]
+    public async Task AnEntryInTheMphThatOverstacksCostsOneMoreMfAndTheStackTakesTheFireDrm()
+    {
+        // Pass 40, task 40.6 (A5.11, A5.131, A5.12, p. 52): a fourth squad enters a Location of three for the Open Ground's MF and one more, and the
+        // First Fire at it takes -1 for the squad-equivalent above the limit. In the control hex nothing is added.
+        await Setup(Squad("g1", L("C5"), "german"), Squad("g2", L("D5"), "german"), Squad("g3", L("C4"), "german"), Squad("g4", L("C4"), "german"),
+            Squad("g5", L("C4"), "german"), Squad("r1", L("C2"), "russian"));
+        var before = Revision;
+        Committed(await Move(G1, L("C4")));
+        Assert.Equal(4, LastStep(before).HalfMf);
+        before = Revision;
+        Committed(await Fire(R1, L("C4"), false, 6, 6, 6, 6, 6, 6));
+        Assert.Contains(("vs-overstacked", -1m), Drm(LastFire(before)));
+        Assert.DoesNotContain(Drm(LastFire(before)), item => item.Name == "overstacked");
+        await Pass();
+        Committed(await EndMove());
+        before = Revision;
+        Committed(await Move(G2, L("D4")));
+        Assert.Equal(2, LastStep(before).HalfMf);
+        NoReplayErrors();
+    }
+
+    [Fact]
     public async Task AWallOrHedgeCostsOneMoreMfButNotThroughARoadGap()
     {
         // B9.4 (R10.1): C5 to C4 across a wall costs 1 + 1 MF; D5 to D4 across a wall with a road through it costs the road's 1 MF.

@@ -742,10 +742,10 @@ public static class ScenarioA1SetupCalculator
         // Ruling R26.2: Passengers are not stacked in their vehicle's Location.
         foreach (var stack in placed.Where(counter => counter.At is not null && !counter.Equipment && !counter.Dummy && counter.Aboard is null).GroupBy(counter => (counter.Side, counter.At!.Text)))
         {
-            var smc = stack.Count(counter => ScenarioA1Definitions.SmcKinds.Contains(counter.Kind));
-            // A5.5 (referee, pass 19): four SMC count nothing; beyond that, five SMC equal a HS; a crew or HS manning a Gun counts as a squad (ruling R26.3).
-            var squads = SetupStackSquadEquivalents(stack, smc);
-            if (squads > 3)
+            // A5.5 (referee, pass 19; ruling R40.2): four SMC count nothing and five equal a HS; a crew or HS manning a Gun counts as a squad.
+            var count = SetupStack(stack);
+            var squads = count.SquadEquivalents;
+            if (ScenarioA1Stacking.Overstacked(count))
             {
                 reasons.Add($"play.setup-stacking: {stack.Key.Side} sets up {squads:0.#} squad-equivalents at {stack.Key.Text}, and the limit is 3 (A5.1; ruling R19.3)");
             }
@@ -778,20 +778,21 @@ public static class ScenarioA1SetupCalculator
     }
 
     /// <summary>
-    /// A5.5 (referee, pass 19): a setup stack's squad-equivalents: a squad one, a crew or HS manning a Gun one (ruling R26.3), other HS and crews a half,
-    /// SMC nothing up to four and a tenth each beyond. The design's section 12 keeps this count apart from the entering stack's (<see cref="EntryStackOverstacked"/>).
+    /// A5.5 (referee, pass 19; ruling R40.2): a setup stack as the stacking limits count it (<see cref="ScenarioA1Stacking"/>). Vehicles are left out:
+    /// setup is held to the Personnel limit alone (A2.9; ruling R19.3).
     /// </summary>
-    public static decimal SetupStackSquadEquivalents(IEnumerable<SetupCounterFacts> stack, int smc)
+    public static StackCount SetupStack(IEnumerable<SetupCounterFacts> stack)
     {
         ArgumentNullException.ThrowIfNull(stack);
-        var counters = stack.ToArray();
-        return counters.Count(counter => counter.Kind == "asl:squad" || (counter.Kind is "asl:half-squad" or "asl:crew" && counter.Manning))
-            + (counters.Count(counter => counter.Kind is "asl:half-squad" or "asl:crew" && !counter.Manning) / 2m)
-            + (smc > 4 ? smc / 10m : 0m);
+        return ScenarioA1Stacking.Count(stack.Select(counter => new StackUnitFacts(ScenarioA1Stacking.KindOf(counter.Kind), counter.Manning))
+            .Where(unit => unit.Kind != StackUnitKind.Vehicle));
     }
 
-    /// <summary>A5.1, A2.51 (referee, pass 25): an entering stack holds at most three squad-equivalents (a HS or crew a half) and four SMC.</summary>
-    public static bool EntryStackOverstacked(double squadEquivalents, int smc) => squadEquivalents > 3 || smc > 4;
+    /// <summary>
+    /// A5.1, A5.5, A2.51 (referee, pass 25; ruling R40.2): an entering stack is within the Personnel limit, which offboard setup never exceeds: its
+    /// squads, HS, and crews (a HS or crew a half), and five SMC a HS.
+    /// </summary>
+    public static bool EntryStackOverstacked(double squadEquivalents, int smc) => squadEquivalents + (smc / 5 * 0.5) > ScenarioA1Stacking.PersonnelLimit;
 
     // The planner's reading of a setup (rulings R19.1 to R19.6, R20.6, R22.3, R23.3, R26.2, R26.5).
 

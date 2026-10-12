@@ -88,7 +88,7 @@ public sealed class ScenarioA1CloseCombatRulesTests
     [InlineData(2, 2, 5, 1)]
     [InlineData(0, 0, 5, 0)]
     public void OverstackingCountsSquadEquivalentsAboveThree(int squads, int halfSquads, int smc, int excess) =>
-        Assert.Equal(excess, ScenarioA1AdvanceCalculator.OverstackExcess(squads, halfSquads, smc));
+        Assert.Equal(excess, new StackCount(squads, halfSquads, 0, smc, 0).PersonnelExcess);
 
     [Fact]
     public void TheAdvanceMfDoublesWhenEncircledAndAddsTwoPerExcess()

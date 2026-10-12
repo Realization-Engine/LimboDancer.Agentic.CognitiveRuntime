@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 40 Design
 
-**Status:** The frame (increment 1), written 2026-10-11. **Answered by the user the same day: yes to F1 to F12 as proposed, and F13 done (section 5.5).** Increment 2a (stacking, 40.6) is next; nothing is built yet. The pass runs as pass 35 did, at the user's word: each increment is designed, built on the branch `feature/asl-backlog-pass-40` (cut from main at 3c660afc), given a small test game in the Studio and its tests, and committed at the user's word.
+**Status:** The frame (increment 1), written 2026-10-11. **Answered by the user the same day: yes to F1 to F12 as proposed, and F13 done (section 5.5).** Increment 2a (stacking, 40.6) is built and committed (section 7). Increment 2b (roads, Dash, Hazardous Movement) is next. The pass runs as pass 35 did, at the user's word: each increment is designed, built on the branch `feature/asl-backlog-pass-40` (cut from main at 3c660afc), given a small test game in the Studio and its tests, and committed at the user's word.
 
 **Date:** 2026-10-11
 
@@ -268,3 +268,85 @@ Each carries its proposal; the answer asked for is a veto or a change. **The use
 | F11 | The backlog's rows of section 5.2: Case J's target half taken in 40.3; the DFPh sentence and the 320 pixel prompt taken in 2e; the Gun's target list left to pass 45; `EnemyUnitFacts.Broken` removed in 2d. | Yes. |
 | F12 | The estimate: the frame's first guess is eight hours of building against the plan's 4:40 for the eight tasks. Is the plan's figure changed now? | No. Each increment sizes itself before it is built; the plan is changed once, with the pass's documents, to what the clock showed, as pass 35's was. |
 | F13 | The games on boards 5 and 4, where the rule's own examples stand, in place of board 3? | **Answered by the user on 2026-10-11: yes, and done** (section 5.5). Both boards play in the Studio, and the games `p40-bd05-road` and `p40-bd04-dash` stand on the examples' hexes. |
+
+## 7. Stacking: 40.6 (increment 2a)
+
+Built on 2026-10-11 and committed at the user's word of the same day, with yes to the two rulings, to the reading of A5.13, and to moving A5.132 to pass 50.
+
+### 7.1 The rules, as read on their pages
+
+- **A5.1 (p. 52):** each side may stack three squads or their equivalents and four SMC in a Location without penalty, each level of a hex its own Location; never exceeded at setup or offboard setup.
+- **A5.11 (p. 52), with its example:** entering a Location overstacked by Personnel, "even if overstacked only due to the moving unit's entry", costs one more MF for each squad-equivalent (FRU) above the limit. A vehicle pays one MP for each, beside D2.14's. Personnel entering a Location overstacked by vehicles pay nothing. The example: two squads and a crew in a building; a squad enters for three MF; a second squad advances in for four and becomes CX; a HS or crew after that pays two for the overstacking.
+- **A5.12 (p. 52):** all units attacking from or within a Location their side overstacks add one to their IFT or CC DR, or to their To Hit DR, "for each vehicle and squad equivalent (FRU)" above the limits.
+- **A5.13 (p. 52):** in the MPh the penalties apply to the moving units alone, though the units that did not move decide whether the mover is overstacked at the instant of attack.
+- **A5.131 (p. 52):** Personnel attacked in a Location their side overstacks take -1 on the To Hit DR, or on the IFT or CC DR, for each squad-equivalent above the Personnel limit. PRC are excepted.
+- **A5.132 (p. 52), with its example:** a Vehicle Target Type shot that misses a vehicle in a vehicle-overstacked hex by less than the number of vehicles there may hit another of them on a dr.
+- **A5.2, A5.3, A5.4 (pp. 52 to 53):** one vehicle a side; wrecks do not count; PRC are not in the Location's count; vehicles do not change the Personnel limit; no limit for SW or ordnance.
+- **A5.5 (p. 53):** five SMC equal a HS and four or fewer count nothing; two HS or crews equal a squad; a crew or HS manning a Gun is a squad.
+- **A7.52 (p. 57),** read for a Fire Group: a detrimental DRM of any member applies to the whole FG.
+
+### 7.2 What the code did
+
+Five counts, as section 3.1 has them, each read by me on its lines before the change: `ScenarioA1AdvanceCalculator.OverstackExcess` (the advance), `ScenarioA1CloseCombatCalculator.Overstack` (CC), `ScenarioA1OrdnanceEligibility.OverstackExcessForOrdnance` with `LiveOrdnance.Excess` (the To Hit DR, and the ordnance record's verifier), `ScenarioA1SetupCalculator.SetupStackSquadEquivalents` (setup), and `EntryStackOverstacked` (an entering stack). A MPh entry paid nothing, a vehicle paid nothing for Personnel, the IFT DR took nothing, and no count held a vehicle.
+
+### 7.3 The change
+
+**One count in Rules, `ScenarioA1Stacking`** (a new file): `StackUnitFacts` (a counter's kind, whether it mans a Gun, whether it is a prisoner), `StackCount` (squads, other HS and crews, manning HS and crews, SMC, vehicles), and from it the squad-equivalents, the Personnel excess rounded up, the vehicles above one, the attack penalty (both), and the defense penalty (Personnel alone). `GroupAttackPenalty` takes the largest of a Fire Group's Locations (A7.52). **Play hands over the facts in one place,** `LiveStacking.Of`: a side's active counters in a Location, with any units about to arrive.
+
+Its readers:
+
+| Reader | What it reads | What changed for it |
+|---|---|---|
+| The MPh entry (`EntryCost`, a new fact `OverstackExcess`) | The Personnel excess of the stack the entry makes | New: one MF for each. Not for a stack occupying the obstacle it Bypasses (it is in the Location already), and not in marsh (all MF). The move's summary says how many MF are for the overstacking. |
+| A vehicle's entry and its Bypass of a new hex | The Personnel excess of its side there | New: one MP for each, beside D2.14's and outside the woods doubling. |
+| The advance | The same member | The count is the shared one; a manning crew is now a squad. |
+| The IFT DR (two new facts of the attack, `FirerOverstack` and `TargetOverstack`) | The attack penalty of the firers' side, the defense penalty of the targets' | New: "overstacked" +n (A5.12) and "vs-overstacked" -n (A5.131), for every attack on the IFT but the resolution of an ordnance hit, which took them on its To Hit DR. The record's verifier takes both as recorded, like the other map reads. |
+| The To Hit DR | The same two penalties | Five SMC now count as a HS, a manning crew as a squad, and the firer's side's vehicles above one count (ruling R11.6 said they do; the code did not). |
+| Close Combat | The shared count over the CC's units | A manning crew is a squad (a new optional fact `Manning` of a CC unit). |
+| Setup | The shared count, vehicles left out | Five SMC are a HS and four nothing; the old count took a tenth of a squad for each SMC once there were five. |
+| An entering stack | The shared formula | Five SMC are a HS; the old test refused a fifth SMC outright. The refusal's text says so. |
+
+**A5.13** needs no code of its own: in the MPh a First Fire attack reaches only the movers, and the count at their Location holds the units that did not move, which is what the rule says decides it.
+
+**Not changed:** the Passenger capacity (in PP, A5.3) and `IsReviewedThreeMfEntry`, the fixed check of one reviewed case that the semantic candidate reads.
+
+### 7.4 Rulings
+
+- **R40.2 (approved 2026-10-11; amends R26.3 and R8.10):** a stack is counted one way in every phase, by A5.5 as the page has it. A crew or HS manning a Gun is a squad in play as at setup. Five SMC are a HS for the To Hit DR too.
+- **R40.3 (approved 2026-10-11; carries out R11.6):** a side's vehicles above one in a Location add to its attack penalty on the IFT, To Hit, and CC DR. The MP cost of D2.14 is unchanged, and no entry is refused for vehicles.
+- **A5.13, as read (approved 2026-10-11):** the title is "Defense Penalties" and its subsections are the two defense penalties, so it is read as limiting those to the movers. It is not read as freeing a DEFENDER's own overstacked Location from the +1 of A5.12 when it fires in the MPh. Said here because the sentence alone could be read the wider way.
+
+### 7.5 A5.132: moved to pass 50 (the user, 2026-10-11)
+
+Question F7 was answered "build it, last in the increment". Reading it against the code changes that, so it is put back to the user and not built:
+
+- The diverted hit lands on **another vehicle**, so the shot needs the To Kill facts of every other vehicle in the hex (its armor, its facing to the firer, its size for the Random Selection's drm) and a second resolution in the same record. Today an ordnance shot's record holds one vehicle target.
+- That is the armor pipeline's record, which pass 50 (Armored combat I) reworks.
+
+**Proposal:** A5.132's row moves to pass 50, with a backlog row. Rulings R8.10 and R11.6 keep their sentence that it is not built.
+
+### 7.6 The games
+
+Written by `pass32-tools/pass40/make_stack.py` on board 1, the example's own building [F5] (the page's crew is a HS here; they count the same). Both are **recorded**: the lines below are from the game files.
+
+| Game | What it holds |
+|---|---|
+| `p40-stack` | Two German squads and a HS in [F5]. A third squad enters from [F4]: `movement-step`, 6 half MF (three MF). The Russian squad in [E6] First Fires at it: DRM stone building +3, FFNAM -1, vs-overstacked -1. In the AFPh a squad in [F5] fires at [E6]: DRM overstacked +1. In the APh a fourth squad advances in from [G5]: "becomes CX advancing into Difficult Terrain (A4.72); the Location is overstacked by 2 squad-equivalent(s), which costs 2 more MF (A5.11)", as the example has it. |
+| `p40-stack-control` | A squad and a HS in [F5]. The squad enters for 4 half MF (two MF), and the same shot takes +3 and -1 and no overstacking DRM. |
+
+**A fault the game's first run hid and the Play test found.** In the first run both overstacked shots were proposed with the right DRM, and my script took the click on Confirm for a commit. The gate had refused both: the fire record's verifier did not carry the two new facts, so the record did not match. The Play test failed on exactly that, the game file showed no `fire-resolved` event, the verifier was repaired (`LiveFire.cs`), and both games were written again and played with each commit read back.
+
+**Not staged:** a vehicle paying MP for overstacked Personnel, two vehicles of one side firing, a manning crew in a stack, five SMC, a Fire Group from two Locations, Close Combat in an overstacked Location, and setup. Each rests on its Rules test or on a test that was already there.
+
+### 7.7 Tests
+
+- **Rules, new:** `ScenarioA1Pass40RulesTests` (seven tests: the count by the example and by A5.5, vehicles in the attack penalty only, prisoners and uncounted kinds, the Fire Group's largest penalty, the MPh entry's MF, a vehicle's MP in Bypass, the move's summary) and `ScenarioA1Pass10Tests.OverstackingIsOnTheIftDrFromTheFirersSideAndAgainstTheTargets` (kept with that class's attack helpers).
+- **Rules, changed with the rule:** `TheSetupStackingCountsFiveSmcAsAHalfSquad` (was `...CountsSmcInTenthsBeyondFour`: a stack of two squad-equivalents and five SMC is no longer refused entry); three assertions of `ScenarioA1Pass14Tests` and one of `ScenarioA1CloseCombatRulesTests` read the new member.
+- **Play, new:** `BacklogPass10Tests.AnEntryInTheMphThatOverstacksCostsOneMoreMfAndTheStackTakesTheFireDrm`, with a control step in the same game.
+- **Run:** 149 Rules tests in seven classes, passed. 109 Play tests in six classes (movement, the advance and CC, entry, ordnance, setup, vehicles): 108 passed and the new one failed as told above; after the repair its class of 21 passed. The other five Play classes were not run again after the repair, which touched only the fire record's verifier.
+
+### 7.8 Recorded games
+
+- A record made before this pass keeps replaying where the planner's read is recorded with it: a fire attack (the two penalties are taken as recorded), a move and an advance (their MF are in the event).
+- **An ordnance shot's overstacking is recomputed at replay,** as before the pass. A recorded shot fired from or into a Location with five or more SMC, a manning crew or HS beside two and a half squad-equivalents or more, or two vehicles of the firing side, will no longer match its record. None is known; the gate's replay of the live games will say.
+- Not run in this increment: the replay digest, the sweep, and the text list. Three texts changed or were added on purpose (the entry stack's refusal, the move's overstacking clause, four display names of the DRM).

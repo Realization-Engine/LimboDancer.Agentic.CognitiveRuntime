@@ -281,7 +281,8 @@ public sealed record EntryCostFacts(
     int Berserk,
     bool CurrentExists,
     bool DoubleTime,
-    IReadOnlyList<EntryMoverFacts> Movers);
+    IReadOnlyList<EntryMoverFacts> Movers,
+    int OverstackExcess = 0);
 
 /// <summary>One unit in the target Location as the entry reads it (A4.14, A12.15): active, its side, captured, Known, a Dummy.</summary>
 public sealed record UnitAtTargetFacts(string Id, bool Active, string? Side, bool Captured, bool Known, bool Dummy);
@@ -334,7 +335,8 @@ public sealed record MoveStepFacts(
     bool Night,
     bool AllDummies,
     IReadOnlyList<MoveRevealUnitFacts> EnemiesThere,
-    IReadOnlyList<MoveRevealUnitFacts> HiddenEnemies);
+    IReadOnlyList<MoveRevealUnitFacts> HiddenEnemies,
+    int OverstackExcess = 0);
 
 /// <summary>
 /// The verdict on a step's reveal and record (A12.15, A.9, A12.11, A2.51): the units revealed, the real ones among them by id, whether the stack is

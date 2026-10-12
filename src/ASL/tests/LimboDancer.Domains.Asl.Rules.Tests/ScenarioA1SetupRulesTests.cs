@@ -122,12 +122,14 @@ public sealed class ScenarioA1SetupRulesTests
     }
 
     [Fact]
-    public void TheSetupStackingCountsSmcInTenthsBeyondFour()
+    public void TheSetupStackingCountsFiveSmcAsAHalfSquad()
     {
+        // A5.5 (p. 53; pass 40, ruling R40.2): five SMC equal a HS and four or fewer nothing, at setup and for an entering stack as in play.
         SetupCounterFacts[] stack = [.. Enumerable.Range(0, 5).Select(index => Counter($"l{index}", "russian", "russian-1", "leader", "asl:leader", "A1")),
             Counter("s", "russian", "russian-1", "squad", "asl:squad", "A1"), Counter("h", "russian", "russian-1", "hs", "asl:half-squad", "A1")];
-        Assert.Equal(2.0m, ScenarioA1SetupCalculator.SetupStackSquadEquivalents(stack, 5));
-        Assert.True(ScenarioA1SetupCalculator.EntryStackOverstacked(2.0, 5));
+        Assert.Equal(2.0m, ScenarioA1SetupCalculator.SetupStack(stack).SquadEquivalents);
+        Assert.False(ScenarioA1SetupCalculator.EntryStackOverstacked(2.0, 5));
+        Assert.True(ScenarioA1SetupCalculator.EntryStackOverstacked(3.0, 5));
         Assert.False(ScenarioA1SetupCalculator.EntryStackOverstacked(3.0, 4));
     }
 

@@ -286,18 +286,18 @@ public static class ScenarioA1CloseCombatCalculator
     }
 
     /// <summary>
-    /// A side's overstacking excess in the Location (A5.1, A5.5; ruling R14.10): its squad-equivalents above three, rounded up, a HS or crew half,
-    /// each five SMC a HS and four or fewer none; prisoners never count (A20.51). Unarmed MMC are Inexperienced (A19.3; referee, pass 14).
+    /// A side's stack in the CC Location, counted by <see cref="ScenarioA1Stacking"/> (A5.1, A5.5; rulings R14.10, R40.2, R40.3): prisoners never count
+    /// (A20.51) and a crew or HS manning a Gun is a squad. A leader or a hero is a SMC whatever kind its definition carries.
     /// </summary>
-    public static int Overstack(IEnumerable<CloseCombatUnit> units, string side, ScenarioA1CloseCombatReference reference)
+    public static StackCount Overstack(IEnumerable<CloseCombatUnit> units, string side, ScenarioA1CloseCombatReference reference)
     {
         ArgumentNullException.ThrowIfNull(units);
         ArgumentNullException.ThrowIfNull(reference);
-        var definitions = units.Where(unit => unit.Side == side && unit.Captured != true).Select(unit => reference.Definitions[unit.DefinitionId!]).ToArray();
-        var smc = definitions.Count(item => item.IsLeader || item.IsHero);
-        var squads = definitions.Count(item => item.Kind == "asl:squad") + (definitions.Count(item => item.Kind is "asl:half-squad" or "asl:crew") / 2m)
-            + (Math.Floor(smc / 5m) / 2m);
-        return squads > 3 ? (int)Math.Ceiling(squads - 3) : 0;
+        return ScenarioA1Stacking.Count(units.Where(unit => unit.Side == side).Select(unit =>
+        {
+            var definition = reference.Definitions[unit.DefinitionId!];
+            return new StackUnitFacts(definition.IsLeader || definition.IsHero ? StackUnitKind.Smc : ScenarioA1Stacking.KindOf(definition.Kind), unit.Manning == true, unit.Captured == true);
+        }));
     }
 
     private static List<string> Outside(CloseCombatFacts facts, ScenarioA1CloseCombatReference reference)
@@ -979,7 +979,7 @@ public static class ScenarioA1CloseCombatCalculator
                 }
 
                 // A5.131 (ruling R14.10): -1 per squad-equivalent by which the defender's side overstacks the Location.
-                if (Overstack(facts.Units!, defender.Facts.Side!, reference) is var excess and > 0)
+                if (Overstack(facts.Units!, defender.Facts.Side!, reference).DefensePenalty is var excess and > 0)
                 {
                     own.Add(new FireModifier("vs-overstacked", -excess, "A5.131"));
                 }
@@ -1105,7 +1105,7 @@ public static class ScenarioA1CloseCombatCalculator
                 drm.Add(new FireModifier("ti:" + busy.Id, 1m, "A4.8"));
             }
 
-            if (Overstack(facts.Units!, side!, reference) is var excess and > 0)
+            if (Overstack(facts.Units!, side!, reference).AttackPenalty is var excess and > 0)
             {
                 drm.Add(new FireModifier("overstacked", excess, "A5.12"));
             }
