@@ -190,6 +190,9 @@ public sealed record GameState(
     /// </summary>
     public IReadOnlyList<(string Unit, string Weapon)> PortagedThisPhase { get; init; } = [];
 
+    /// <summary>The NTCs of Infantry OVRs taken in this phase (A4.15; pass 40): a stack enters as an OVR only on a passed one, and takes one a Location.</summary>
+    public IReadOnlyList<InfantryOverrunNtcTaken> InfantryOverrunNtcs { get; init; } = [];
+
     /// <summary>
     /// The leader directing each SW's To Hit DR this phase (A7.53; referee, pass 9), who may go on directing its further ROF shots; cleared at every
     /// phase change.

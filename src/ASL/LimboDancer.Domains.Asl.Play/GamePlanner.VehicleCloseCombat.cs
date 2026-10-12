@@ -81,9 +81,10 @@ public sealed partial class GamePlanner
     public BoardLocation? BerserkOverrunPending(GameState state)
     {
         ArgumentNullException.ThrowIfNull(state);
+        // A4.152, A20.54 (pass 40): the same holds for the entry of a declared Infantry OVR and of a recapture of Unarmed units.
         var movement = state.Movement;
-        if (movement?.Charge is not { } charged || !ScenarioA1VehicleCloseCombatRules.OverrunPendingPossible(state.Phase, movement.WindowOpen, true, movement.Location == charged,
-            state.CloseCombats.Any(item => item.Location == charged)))
+        if ((movement?.Charge ?? movement?.InfantryOverrun) is not { } charged || !ScenarioA1VehicleCloseCombatRules.OverrunPendingPossible(state.Phase, movement!.WindowOpen, true,
+            movement.Location == charged, state.CloseCombats.Any(item => item.Location == charged)))
         {
             return null;
         }
@@ -91,8 +92,12 @@ public sealed partial class GamePlanner
         var here = state.At(charged).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && !Is(unit, Conditions.Captured)).ToArray();
         var enemies = here.Where(unit => unit.Side != state.PhasingSide).ToArray();
         var smc = enemies.Length > 0 ? enemies[0] : null;
-        if (smc is null || !ScenarioA1VehicleCloseCombatRules.OverrunSmc(here.Any(unit => unit.Side == state.PhasingSide && movement.Members.Contains(unit.Id, StringComparer.Ordinal) && Is(unit, Conditions.Berserk)
-            && vocabulary.IsA(unit.Kind, "asl:mmc")), enemies.Length, vocabulary.IsA(smc.Kind, "asl:smc"), KnownEnemy(smc), Is(smc, Conditions.Melee)))
+        var owed = smc is not null && (movement.Charge is not null
+            ? ScenarioA1VehicleCloseCombatRules.OverrunSmc(here.Any(unit => unit.Side == state.PhasingSide && movement.Members.Contains(unit.Id, StringComparer.Ordinal) && Is(unit, Conditions.Berserk)
+                && vocabulary.IsA(unit.Kind, "asl:mmc")), enemies.Length, vocabulary.IsA(smc.Kind, "asl:smc"), KnownEnemy(smc), Is(smc, Conditions.Melee))
+            : ScenarioA1InfantryOverrun.CloseCombatOwed(here.Any(unit => unit.Side == state.PhasingSide && movement.Members.Contains(unit.Id, StringComparer.Ordinal)
+                && vocabulary.IsA(unit.Kind, "asl:mmc")), OverrunDefenders(state, charged, state.PhasingSide!)));
+        if (smc is null || !owed)
         {
             return null;
         }
@@ -110,6 +115,18 @@ public sealed partial class GamePlanner
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(smc);
+        // A4.152, A20.54 (pass 40): for a declared OVR or a recapture, the stack's units there attack the enemy units there.
+        if (state.Movement is { Charge: null, InfantryOverrun: not null } entered)
+        {
+            UnitInstance[] present = [.. state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && !Is(unit, Conditions.Captured))];
+            return ScenarioA1VehicleCloseCombatRules.EntryAttacks(
+                // The stack's MMC make the attack the page first offers; a leader with them joins it only as the CC's stacking is declared (A11.14).
+                [.. present.Where(unit => unit.Side == state.PhasingSide && entered.Members.Contains(unit.Id, StringComparer.Ordinal) && vocabulary.IsA(unit.Kind, "asl:mmc"))
+                    .Select(unit => unit.Id).Order(StringComparer.Ordinal)],
+                [.. present.Where(unit => unit.Side != state.PhasingSide).Select(unit => unit.Id).Order(StringComparer.Ordinal)],
+                [.. present.Where(unit => unit.Side != state.PhasingSide && CcAttacker(unit)).Select(unit => unit.Id).Order(StringComparer.Ordinal)]);
+        }
+
         string[] berserk = [.. state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide
             && Is(unit, Conditions.Berserk)).Select(unit => unit.Id).Order(StringComparer.Ordinal)];
         return ScenarioA1VehicleCloseCombatRules.OverrunAttacks(berserk, smc.Id, CcAttacker(smc));

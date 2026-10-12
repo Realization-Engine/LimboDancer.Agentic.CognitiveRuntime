@@ -92,6 +92,16 @@ public static class ScenarioA1VehicleCloseCombatRules
     public static IReadOnlyList<CloseCombatDeclaration> OverrunAttacks(IReadOnlyList<string> berserk, string smcId, bool smcAttacks) =>
         smcAttacks ? [new CloseCombatDeclaration(berserk, [smcId]), new CloseCombatDeclaration([smcId], berserk)] : [new CloseCombatDeclaration(berserk, [smcId])];
 
+    /// <summary>
+    /// The attacks of an Infantry OVR's CC that is not a berserk charge's (A4.152, A20.54; pass 40), as the page first offers them: the entering
+    /// units attack the enemy units there together, and each of those that may attack in CC attacks them back. The ATTACKER may declare others.
+    /// </summary>
+    public static IReadOnlyList<CloseCombatDeclaration> EntryAttacks(IReadOnlyList<string> attackers, IReadOnlyList<string> defenders, IReadOnlyList<string> defendersThatAttack)
+    {
+        ArgumentNullException.ThrowIfNull(defendersThatAttack);
+        return [new CloseCombatDeclaration(attackers, defenders), .. defendersThatAttack.Select(id => new CloseCombatDeclaration([id], attackers))];
+    }
+
     /// <summary>Ruling R11.16: a vehicle's CC Location waits for a side in the CCPh, while its CC is not closed and a vehicle is there.</summary>
     public static bool TurnOpen(string? phase, bool closed, bool vehicleThere) => !(phase != "ccph" || closed || !vehicleThere);
 

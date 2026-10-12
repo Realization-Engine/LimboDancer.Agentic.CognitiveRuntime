@@ -537,7 +537,7 @@ else if (state is not null)
                         }
                         <div class="toolbar">
                             <InfantryMovementAction Movers="@MoveRows" Selected="@moveUnits" Draft="@MoveDraft" PushGun="@MovingGun?.Id"
-                                OnToggle="@ToggleMover" OnDraftChanged="@SetMoveDraft" OnPropose="@ProposeMove" />
+                                OnToggle="@ToggleMover" OnDraftChanged="@SetMoveDraft" OnPropose="@ProposeMove" OnOverrunNtc="@ProposeOverrunNtc" />
                             <MapExitAction SelectId="move-exit" ButtonId="propose-exit" Edges="@ExitEdges" Edge="@moveExit" Ready="@(moveUnits.Count > 0)"
                                 OnEdge="@(edge => moveExit = edge)" OnPropose="@ProposeExit" />
                             @if (SmokePlacers.Any())
@@ -683,6 +683,14 @@ else if (state is not null)
                 }
                 else if (FiringSide is { } firing)
                 {
+                    @* Pass 40 (A4.151): the SMC an Infantry OVR has just entered upon may move away before any fire; the DEFENDER's to declare. *@
+                    @if (state.Phase == "mph" && (Viewer.IsAdjudicator || viewAs != state.PhasingSide) && Live.Planner.OverrunEvader(state, history!.Events) is { } evader)
+                    {
+                        <div class="toolbar" id="overrun-evade">
+                            <span class="toolbar-note">An Infantry OVR has entered the SMC's Location: it fires, or moves away before any fire into an adjacent Location the ATTACKER names (A4.151).</span>
+                            <button id="propose-overrun-evade" @onclick="@(() => ProposeOverrunEvade(evader))">Propose: the SMC moves away from the OVR</button>
+                        </div>
+                    }
                     @* Pass 28c (A8.1, A8.11): after each step the DEFENDER, from its own view, sees where the stack is and fires at it or passes. *@
                     @if (state.Phase == "mph" && !Viewer.IsAdjudicator && viewAs != state.PhasingSide && MovingAt is { } movingAt)
                     {
@@ -3083,6 +3091,7 @@ else if (state is not null)
     private bool moveTerrainRate;
     private string moveDash = string.Empty;
     private string moveIpcTo = string.Empty;
+    private bool moveOverrun;
 
     private bool moveMinimum;
 
@@ -3893,7 +3902,8 @@ else if (state is not null)
 
     /// <summary>A pending choice's options in words (plan C08), given only to a view that may answer.</summary>
     private IReadOnlyList<PendingChoicePanel.Option> ChoiceOptions(PendingChoice choice) => MayAnswer(choice.Side)
-        ? [.. choice.Options.Select(option => new PendingChoicePanel.Option(option, ChoiceOptionText(choice, option)))]
+        ? [.. choice.Options.Select(option => new PendingChoicePanel.Option(option,
+            choice.Kind == ChoicePending.OverrunEvade ? $"into {PlaceOf(option)}" : ChoiceOptionText(choice, option)))]
         : [];
 
     /// <summary>
@@ -4880,11 +4890,11 @@ else if (state is not null)
         PruneMoveDrafts();
     }
 
-    private InfantryMovementAction.MoveDraft MoveDraft => new(moveTo, moveMinimum, moveBypass, moveAssault, moveDoubleTime, movePush, moveTerrainRate, moveDash, moveIpcTo);
+    private InfantryMovementAction.MoveDraft MoveDraft => new(moveTo, moveMinimum, moveBypass, moveAssault, moveDoubleTime, movePush, moveTerrainRate, moveDash, moveIpcTo, moveOverrun);
 
     private void SetMoveDraft(InfantryMovementAction.MoveDraft draft) =>
-        (moveTo, moveMinimum, moveBypass, moveAssault, moveDoubleTime, movePush, moveTerrainRate, moveDash, moveIpcTo) =
-            (draft.To, draft.Minimum, draft.Bypass, draft.Assault, draft.DoubleTime, draft.Push, draft.TerrainRate, draft.Dash, draft.IpcTo);
+        (moveTo, moveMinimum, moveBypass, moveAssault, moveDoubleTime, movePush, moveTerrainRate, moveDash, moveIpcTo, moveOverrun) =
+            (draft.To, draft.Minimum, draft.Bypass, draft.Assault, draft.DoubleTime, draft.Push, draft.TerrainRate, draft.Dash, draft.IpcTo, draft.Overrun);
 
     private Task ProposeSmoke()
     {
@@ -4923,6 +4933,12 @@ else if (state is not null)
             arguments["dash"] = moveDash.Trim();
         }
 
+        // A4.15 (pass 40): the step is an Infantry OVR.
+        if (moveOverrun)
+        {
+            arguments["overrun"] = true;
+        }
+
         // A4.42 (pass 40): the laden MMC named for the leader's IPC.
         if (moveIpcTo.Length > 0 && moveUnits.Contains(moveIpcTo))
         {
@@ -4947,6 +4963,19 @@ else if (state is not null)
 
         return Propose(GameActions.Move, JsonSerializer.SerializeToElement(arguments));
     }
+
+    /// <summary>The NTC of an Infantry OVR (A4.15; pass 40), for the movers checked and the Location typed.</summary>
+    private Task ProposeOverrunNtc() => Propose(GameActions.InfantryOverrunNtc, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+    {
+        ["gameId"] = gameId, ["attemptId"] = Attempt("ovr-ntc"), ["expectedRevision"] = (long)history!.Events.Count,
+        ["unitIds"] = moveUnits.Order(StringComparer.Ordinal).ToArray(), ["to"] = moveTo.Trim(),
+    }));
+
+    /// <summary>The DEFENDER's SMC moves away from an Infantry OVR (A4.151; pass 40); the ATTACKER is then asked where.</summary>
+    private Task ProposeOverrunEvade(string unitId) => Propose(GameActions.OverrunEvade, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+    {
+        ["gameId"] = gameId, ["attemptId"] = Attempt("ovr-evade"), ["expectedRevision"] = (long)history!.Events.Count, ["unitId"] = unitId,
+    }));
 
     /// <summary>An action that names only the game: the DEFENDER's pass, or the end of the moving stack's move.</summary>
     private Task ProposeSimple(ActionDescriptor action, string kind) => Propose(action,
@@ -5141,6 +5170,7 @@ else if (state is not null)
         moveMinimum = false;
         moveTerrainRate = false;
         moveDash = string.Empty;
+        moveOverrun = false;
         moveBypass = string.Empty;
         advanceUnits.Clear();
         advanceTo = string.Empty;
@@ -5240,6 +5270,7 @@ else if (state is not null)
         moveMinimum = false;
         moveTerrainRate = false;
         moveDash = string.Empty;
+        moveOverrun = false;
         moveBypass = string.Empty;
         vehicleIntended = string.Empty;
         vehicleOverrun = false;
@@ -6076,6 +6107,7 @@ else if (state is not null)
                 moveMinimum = false;
                 moveTerrainRate = false;
                 moveDash = string.Empty;
+                moveOverrun = false;
                 moveBypass = string.Empty;
             }
             else if (proposal.Action == GameActions.Move)
@@ -6085,6 +6117,7 @@ else if (state is not null)
                 moveMinimum = false;
                 moveTerrainRate = false;
                 moveDash = string.Empty;
+                moveOverrun = false;
                 moveBypass = string.Empty;
             }
             else if (proposal.Action == GameActions.MoveVehicle)

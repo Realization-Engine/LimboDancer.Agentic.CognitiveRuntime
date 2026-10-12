@@ -440,8 +440,9 @@ public sealed partial class GamePlanner
             });
         }
 
-        // A15.432 (ruling R27.3): every berserk unit of the OVR attacks the SMC; the SMC may attack them back; nothing else happens in that CC.
-        if (overrun)
+        // A15.432 (ruling R27.3): every berserk unit of the OVR attacks the SMC; the SMC may attack them back; nothing else happens in that CC. A
+        // declared Infantry OVR's CC is "normal CC" (A4.152; pass 40): its attacks are the ATTACKER's to declare.
+        if (overrun && state.Movement?.Charge is not null)
         {
             var berserkHere = state.At(location).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side == state.PhasingSide
                 && Is(unit, Conditions.Berserk)).Select(unit => unit.Id).ToHashSet(StringComparer.Ordinal);

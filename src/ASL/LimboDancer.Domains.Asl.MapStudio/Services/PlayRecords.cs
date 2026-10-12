@@ -668,6 +668,13 @@ public sealed class PlayRecords
                     records.Add((item.EventId, "recovery", $"{recovery.Unit}{In(before, recovery.Unit)} tries to Recover {recovery.Weapon}: dr {dr} {recovery.Drm:+0;-0;+0}, needing below 6: "
                         + $"{(recovery.Recovered ? "recovered" : "not recovered")} (A4.44)"));
                 }
+                else if (item.Payload is InfantryOverrunNtc ntc && Open(before, ntc.Taker))
+                {
+                    // Pass 40 (A4.15): the NTC of an Infantry OVR, with its DR and result.
+                    var dr = rolls.TryGetValue(ntc.Roll, out var roll) ? roll.Values.Sum().ToString(CultureInfo.InvariantCulture) : "?";
+                    records.Add((item.EventId, "overrun-ntc", $"{ntc.Taker}{In(before, ntc.Taker)} takes the NTC for an Infantry OVR of {ntc.Target}: DR {dr} "
+                        + $"{ntc.Drm:+0;-0;+0} against morale {ntc.Morale}: {(ntc.Passed ? "passed" : "failed")} (A4.15)"));
+                }
                 else if (item.Payload is RepairAttempted repair)
                 {
                     var dr = rolls.TryGetValue(repair.Roll, out var roll) ? roll.Values[0].ToString(CultureInfo.InvariantCulture) : "?";

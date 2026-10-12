@@ -447,6 +447,7 @@ public static class GameEventReader
                         RoadRate = fields.OptionalBoolean(payload, "roadRate", path),
                         Dash = dash,
                         IpcTo = fields.OptionalString(payload, "ipcTo", path),
+                        InfantryOverrun = fields.OptionalBoolean(payload, "infantryOverrun", path),
                         MinimumMove = fields.OptionalBoolean(payload, "minimumMove", path),
                         Attempted = attempted,
                         Bypass = bypass,
@@ -638,6 +639,16 @@ public static class GameEventReader
                 return paatcVehicle is null || paatcRoll is null || paatcMorale is null || paatcDrm is null
                     ? Missing(diagnostics, "A PAATC names its units, vehicle, roll, Morale Level, and DRM.", path)
                     : new PaatcTaken(fields.StringList(payload, "units", path), paatcVehicle, paatcRoll, paatcMorale.Value, paatcDrm.Value,
+                        fields.OptionalBoolean(payload, "passed", path));
+            case "infantry-overrun-ntc":
+                var ntcTaker = fields.RequiredString(payload, "taker", path);
+                var ntcTarget = ReadLocation(payload, "target", path, fields, diagnostics);
+                var ntcRoll = fields.RequiredString(payload, "roll", path);
+                var ntcMorale = fields.OptionalInteger(payload, "morale", path);
+                var ntcDrm = fields.OptionalInteger(payload, "drm", path);
+                return ntcTaker is null || ntcTarget is null || ntcRoll is null || ntcMorale is null || ntcDrm is null
+                    ? Missing(diagnostics, "An Infantry OVR's NTC names its units, taker, target, roll, Morale Level, and DRM.", path)
+                    : new InfantryOverrunNtc(fields.StringList(payload, "units", path), ntcTaker, ntcTarget, ntcRoll, ntcMorale.Value, ntcDrm.Value,
                         fields.OptionalBoolean(payload, "passed", path));
             case "movement-window-closed":
                 var closedStep = fields.OptionalInteger(payload, "step", path);

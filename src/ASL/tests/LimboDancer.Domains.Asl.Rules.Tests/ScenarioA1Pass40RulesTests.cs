@@ -4,7 +4,7 @@ using Xunit;
 namespace LimboDancer.Domains.Asl.Rules.Tests;
 
 /// <summary>
-/// Pass 40, read directly in Rules. Task 40.7: the portage and movement corrections (A4.4, A4.41, A4.42, A4.44, A4.61; pp. 48 to 51). Task 40.3: Dash (A4.63, C6.1, pp. 51 to 52, 173). Task 40.2: a woods-road hex, the mover's choice across a road hexside, and the terrain a firer reads for a mover at
+/// Pass 40, read directly in Rules. Task 40.4: Infantry OVR and the recapture of Unarmed units by entry (A4.15 to A4.152, A20.54; pp. 49, 88). Task 40.7: the portage and movement corrections (A4.4, A4.41, A4.42, A4.44, A4.61; pp. 48 to 51). Task 40.3: Dash (A4.63, C6.1, pp. 51 to 52, 173). Task 40.2: a woods-road hex, the mover's choice across a road hexside, and the terrain a firer reads for a mover at
 /// the road rate (A4.132, B3.3, B13.31, pp. 48, 113, 128). Task 40.6: the one count of a stack (A5.1, A5.2, A5.5, pp. 52 to 53), which the MPh, the APh, the IFT, the To Hit
 /// DR, Close Combat, and setup all read, and the MF and MP an overstacked Location costs (A5.11). The IFT DRM is tested with the Fire package's
 /// helpers in ScenarioA1Pass10Tests.
@@ -311,5 +311,98 @@ public sealed class ScenarioA1Pass40RulesTests
         Assert.Equal(4, ScenarioA1PassengerCalculator.ConveyanceAllowance);
         Assert.StartsWith("play.load:", ScenarioA1PassengerCalculator.BoardingDoubleTimeBar("g1", 2), StringComparison.Ordinal);
         Assert.Null(ScenarioA1PassengerCalculator.BoardingDoubleTimeBar("g1", 0));
+    }
+
+    private static InfantryOverrunMoverFacts OvrMover(string id, bool mmc = true, bool leader = false, bool goodOrder = true, bool berserk = false) =>
+        new(id, mmc, leader, goodOrder, berserk, false, false);
+
+    private static InfantryOverrunDefenderFacts OvrDefender(string id, bool known = true, bool smc = true, bool melee = false, bool unarmed = false, bool vehicle = false) =>
+        new(id, known, smc, melee, unarmed, vehicle);
+
+    [Fact]
+    public void AnInfantryOvrsNtcIsItsLeadersForTheStackOrItsOneMmcs()
+    {
+        // A4.15 (p. 49).
+        Assert.Equal("s1", ScenarioA1InfantryOverrun.NtcTaker([OvrMover("s1")]).Taker);
+        Assert.Equal("l", ScenarioA1InfantryOverrun.NtcTaker([OvrMover("s1"), OvrMover("s2"), OvrMover("l", mmc: false, leader: true)]).Taker);
+        Assert.Contains("name one MMC at a time", ScenarioA1InfantryOverrun.NtcTaker([OvrMover("s1"), OvrMover("s2")]).Refusal, StringComparison.Ordinal);
+        Assert.Contains("a SMC alone makes none", ScenarioA1InfantryOverrun.NtcTaker([OvrMover("l", mmc: false, leader: true)]).Refusal, StringComparison.Ordinal);
+        Assert.Contains("berserk", ScenarioA1InfantryOverrun.NtcTaker([OvrMover("s1", berserk: true)]).Refusal, StringComparison.Ordinal);
+        Assert.NotNull(ScenarioA1InfantryOverrun.NtcTaker([OvrMover("s1", goodOrder: false)]).Refusal);
+
+        // The DRM is the TEM of the enemy's Location, and a hexside's when the LOS crosses it; the check passes at or below the Morale Level.
+        Assert.Equal(3, ScenarioA1InfantryOverrun.NtcDrm(2, 1));
+        Assert.Equal(1, ScenarioA1InfantryOverrun.NtcDrm(1, 0));
+        Assert.True(ScenarioA1InfantryOverrun.NtcPassed(3, 3, 1, 7));
+        Assert.False(ScenarioA1InfantryOverrun.NtcPassed(3, 4, 1, 7));
+        Assert.True(ScenarioA1InfantryOverrun.EndsStackMove(true, false));
+        Assert.False(ScenarioA1InfantryOverrun.EndsStackMove(false, false));
+        Assert.False(ScenarioA1InfantryOverrun.EndsStackMove(true, true));
+        Assert.StartsWith("play.overrun-ntc:", ScenarioA1InfantryOverrun.AlreadyTakenBar(true, "x"), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1InfantryOverrun.AlreadyTakenBar(false, "x"));
+    }
+
+    [Fact]
+    public void AnInfantryOvrEntersOnlyALoneKnownSmcsLocationOnAPassedNtcAtDoubleTheMf()
+    {
+        // A4.15 (p. 49): "a Location containing only one Known enemy SMC (unless that SMC occupies an AFV)".
+        Assert.Null(ScenarioA1InfantryOverrun.TargetBar([OvrDefender("l")], "x"));
+        Assert.Null(ScenarioA1InfantryOverrun.TargetBar([OvrDefender("l"), OvrDefender("hidden", known: false, smc: false)], "x"));
+        Assert.StartsWith("play.overrun-target:", ScenarioA1InfantryOverrun.TargetBar([OvrDefender("s", smc: false)], "x"), StringComparison.Ordinal);
+        Assert.StartsWith("play.overrun-target:", ScenarioA1InfantryOverrun.TargetBar([OvrDefender("l"), OvrDefender("l2")], "x"), StringComparison.Ordinal);
+        Assert.StartsWith("play.overrun-target:", ScenarioA1InfantryOverrun.TargetBar([OvrDefender("l", melee: true)], "x"), StringComparison.Ordinal);
+        Assert.StartsWith("play.overrun-target:", ScenarioA1InfantryOverrun.TargetBar([], "x"), StringComparison.Ordinal);
+
+        Assert.Null(ScenarioA1InfantryOverrun.EntryBar(true, false, false, false, false, false, "x"));
+        Assert.Contains("first passes its NTC", ScenarioA1InfantryOverrun.EntryBar(false, false, false, false, false, false, "x"), StringComparison.Ordinal);
+        Assert.Contains("was failed", ScenarioA1InfantryOverrun.EntryBar(false, true, false, false, false, false, "x"), StringComparison.Ordinal);
+        Assert.Contains("Minimum Move", ScenarioA1InfantryOverrun.EntryBar(true, false, true, false, false, false, "x"), StringComparison.Ordinal);
+        Assert.Contains("berserk", ScenarioA1InfantryOverrun.EntryBar(true, false, false, false, false, true, "x"), StringComparison.Ordinal);
+        Assert.Equal(8, ScenarioA1InfantryOverrun.EntryHalfMf(4));
+
+        // A4.14 with the OVR: the Known SMC is no bar and is not drawn for a reveal; a concealed unit there still is (A12.15).
+        UnitAtTargetFacts[] there = [new("l", true, "russian", false, true, false), new("q", true, "russian", false, false, false)];
+        var barred = ScenarioA1MovementCalculator.EnemiesAtTarget(there, "german", false, false, false, false, false, "g1", "x");
+        Assert.StartsWith("play.move-occupied:", barred.Refusal, StringComparison.Ordinal);
+        var entered = ScenarioA1MovementCalculator.EnemiesAtTarget(there, "german", false, false, false, false, false, "g1", "x", knownEntered: true);
+        Assert.Null(entered.Refusal);
+        Assert.Equal(["q"], entered.EnemiesThere);
+    }
+
+    [Fact]
+    public void UnarmedUnitsAreEnteredAndTheCcOfAnEntryIsOwedAtOnce()
+    {
+        // A20.54 (p. 88): "Unarmed units are not an obstacle to movement". A4.152, A20.54: the CC at once.
+        Assert.True(ScenarioA1InfantryOverrun.OnlyUnarmed([OvrDefender("u", smc: false, unarmed: true)]));
+        Assert.False(ScenarioA1InfantryOverrun.OnlyUnarmed([OvrDefender("u", smc: false, unarmed: true), OvrDefender("s", smc: false)]));
+        Assert.False(ScenarioA1InfantryOverrun.OnlyUnarmed([]));
+        Assert.True(ScenarioA1InfantryOverrun.CloseCombatOwed(true, [OvrDefender("l")]));
+        Assert.True(ScenarioA1InfantryOverrun.CloseCombatOwed(true, [OvrDefender("u", smc: false, unarmed: true), OvrDefender("u2", smc: false, unarmed: true)]));
+        Assert.False(ScenarioA1InfantryOverrun.CloseCombatOwed(false, [OvrDefender("l")]));
+        Assert.False(ScenarioA1InfantryOverrun.CloseCombatOwed(true, [OvrDefender("l", melee: true)]));
+        Assert.False(ScenarioA1InfantryOverrun.CloseCombatOwed(true, [OvrDefender("l"), OvrDefender("q", known: false)]));
+        Assert.False(ScenarioA1InfantryOverrun.CloseCombatOwed(true, []));
+        var attacks = ScenarioA1VehicleCloseCombatRules.EntryAttacks(["g1", "g2"], ["l"], ["l"]);
+        Assert.Equal(2, attacks.Count);
+        Assert.Equal(["g1", "g2"], attacks[0].Attackers);
+        Assert.Equal(["l"], attacks[1].Attackers);
+    }
+
+    [Fact]
+    public void TheSmcMayMoveAwayBeforeAnyFireIntoALocationTheAttackerNames()
+    {
+        // A4.151 (p. 49).
+        Assert.Null(ScenarioA1InfantryOverrun.EvadeBar("l", true, true, false, true, true, false, false, false, 2));
+        Assert.Contains("before any Defensive First Fire", ScenarioA1InfantryOverrun.EvadeBar("l", true, true, true, true, true, false, false, false, 2), StringComparison.Ordinal);
+        Assert.Contains("broken, pinned", ScenarioA1InfantryOverrun.EvadeBar("l", true, true, false, true, true, true, false, false, 2), StringComparison.Ordinal);
+        Assert.Contains("broken, pinned", ScenarioA1InfantryOverrun.EvadeBar("l", true, true, false, true, false, false, false, false, 2), StringComparison.Ordinal);
+        Assert.Contains("no adjacent Accessible Location", ScenarioA1InfantryOverrun.EvadeBar("l", true, true, false, true, true, false, false, false, 0), StringComparison.Ordinal);
+        Assert.Contains("is not a SMC", ScenarioA1InfantryOverrun.EvadeBar("s", true, true, false, false, true, false, false, false, 2), StringComparison.Ordinal);
+        Assert.Contains("is not a SMC", ScenarioA1InfantryOverrun.EvadeBar("l", false, true, false, true, true, false, false, false, 2), StringComparison.Ordinal);
+
+        // "The ATTACKER may not force the SMC into ... [an] Open Ground hex if an alternate choice is available."
+        Assert.Equal(["woods"], ScenarioA1InfantryOverrun.EvadeDestinations([("open", true), ("woods", false)]));
+        Assert.Equal(["open", "open2"], ScenarioA1InfantryOverrun.EvadeDestinations([("open", true), ("open2", true)]));
+        Assert.Empty(ScenarioA1InfantryOverrun.EvadeDestinations([]));
     }
 }

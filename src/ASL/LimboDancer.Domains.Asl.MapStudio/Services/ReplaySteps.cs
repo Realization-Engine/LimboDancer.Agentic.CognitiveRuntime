@@ -332,6 +332,11 @@ public static class ReplaySteps
             return ("rally", SideOf(repair.Unit), $"{A(SideOf(repair.Unit), "unit")} tries to repair a weapon: {result}", false);
         }
 
+        if (First<InfantryOverrunNtc>(payloads) is { } ntc)
+        {
+            return ("move", SideOf(ntc.Taker), $"{A(SideOf(ntc.Taker), "unit")} takes the NTC for an Infantry OVR: {(ntc.Passed ? "passed" : "failed")}", false);
+        }
+
         if (First<RecoveryAttempted>(payloads) is { } recovery)
         {
             return ("rally", SideOf(recovery.Unit), $"{A(SideOf(recovery.Unit), "unit")} tries to Recover a weapon: {(recovery.Recovered ? "recovered" : "not recovered")}", false);

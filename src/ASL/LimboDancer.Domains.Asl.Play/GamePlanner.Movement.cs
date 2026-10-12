@@ -77,6 +77,9 @@ public sealed partial class GamePlanner
         // A4.132 (pass 40): across a road hexside the mover may pay the cost of the hex's other terrain and be in it.
         var terrainRate = arguments.TryGetProperty("terrainRate", out var rated) && rated.ValueKind == JsonValueKind.True;
 
+        // A4.15 (pass 40): the step is declared an Infantry OVR onto a lone Known SMC.
+        var overrunDeclared = arguments.TryGetProperty("overrun", out var overrunning) && overrunning.ValueKind == JsonValueKind.True;
+
         // A4.63 (pass 40): the Location a Dash is declared to, with the stack's first step.
         BoardLocation? dashTo = null;
         if (Text(arguments, "dash", out var dashText) && !BoardLocation.TryParse(dashText, out dashTo))
@@ -275,6 +278,23 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.move-terrain-rate: the cost of the hex's other terrain is chosen only for a step across a road hexside, not for an entry from off board, a Bypass, or an obstacle occupied (A4.132)");
         }
 
+        // A4.15, A20.54 (pass 40): an Infantry OVR onto a lone Known SMC needs its passed NTC; Unarmed units are entered with none. Rules decides
+        // from the Location's enemy units as the moving side knows them and from the NTCs the state keeps.
+        var defenders = OverrunDefenders(state, to, movers[0].Side);
+        var recapture = !overrunDeclared && berserk == 0 && entering is null && bypassing is null && !occupy && !minimumMove && to != from && ScenarioA1InfantryOverrun.OnlyUnarmed(defenders);
+        if (overrunDeclared)
+        {
+            string[] mmcIds = [.. movers.Where(unit => vocabulary.IsA(unit.Kind, "asl:mmc")).Select(unit => unit.Id)];
+            var taken = state.InfantryOverrunNtcs.Where(ntc => ntc.Target == to.ToString()).ToArray();
+            if ((ScenarioA1InfantryOverrun.TargetBar(defenders, to.ToString())
+                ?? ScenarioA1InfantryOverrun.EntryBar(mmcIds.Length > 0 && taken.Any(ntc => ntc.Passed && mmcIds.All(id => ntc.Units.Contains(id, StringComparer.Ordinal))),
+                    taken.Any(ntc => !ntc.Passed && ntc.Units.Any(id => ids.Contains(id, StringComparer.Ordinal))), minimumMove, bypassing is not null, entering is not null, berserk > 0,
+                    to.ToString())) is { } overrunBar)
+            {
+                return Refused(scope, label, expected, overrunBar);
+            }
+        }
+
         // A4.63 (pass 40): a Dash declared with this step, or pending from the last; Rules decides from the step's facts and the map's.
         if (ScenarioA1Dash.StepBar(new DashStepFacts(current?.Dash?.ToString(), dashTo?.ToString(), to.ToString(), current is null,
             movers.Any(unit => unit.MfSpent != 0 || unit.HalfMfSpent), assault, minimumMove, bypassing is not null, occupy, pushed is not null, entering is not null, berserk > 0,
@@ -310,11 +330,18 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, noCost);
         }
 
+        // A4.15 (pass 40): an Infantry OVR enters "at double the total MF cost of entry".
+        if (overrunDeclared)
+        {
+            halfMf = ScenarioA1InfantryOverrun.EntryHalfMf(halfMf);
+        }
+
         // A4.14, A12.15 (rulings R10.11, R10.15): the units of the target Location are read here, and Rules decides who is revealed and who is barred.
         var there = state.At(to).OfType<UnitInstance>().ToArray();
         var enemies = ScenarioA1MovementCalculator.EnemiesAtTarget(
             [.. there.Select(unit => new UnitAtTargetFacts(unit.Id, unit.Status == InstanceStatus.Active, unit.Side, Is(unit, Conditions.Captured), KnownEnemy(unit), unit.Kind == UnitKinds.Dummy))],
-            state.PhasingSide, charge is not null, occupy, bypassing is not null, movers.All(unit => unit.Kind == UnitKinds.Dummy), minimumMove, string.Join(", ", ids), to.ToString());
+            state.PhasingSide, charge is not null, occupy, bypassing is not null, movers.All(unit => unit.Kind == UnitKinds.Dummy), minimumMove, string.Join(", ", ids), to.ToString(),
+            overrunDeclared || recapture);
         if (enemies.Refusal is { } occupied)
         {
             return Refused(scope, label, expected, occupied);
@@ -358,7 +385,7 @@ public sealed partial class GamePlanner
             bypassing is null ? null : [.. bypassing.Select(side => side.ToString().ToLowerInvariant())], halfMf, assault, doubleTime, minimumMove,
             [.. abandoned.Select(item => item.Id)], entry.RoadRate, pushed is not null, state.Night, movers.Length > 0 && movers.All(unit => unit.Kind == UnitKinds.Dummy),
             [.. enemiesThere.Select(unit => new MoveRevealUnitFacts(unit.Id, unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Hidden)))],
-            [.. hiddenEnemies.Select(unit => new MoveRevealUnitFacts(unit.Id, unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Hidden)))], overstack, entry.OnRoad, dashTo?.ToString()));
+            [.. hiddenEnemies.Select(unit => new MoveRevealUnitFacts(unit.Id, unit.Kind == UnitKinds.Dummy, Is(unit, Conditions.Hidden)))], overstack, entry.OnRoad, dashTo?.ToString(), overrunDeclared, recapture));
         var forcedBack = verdict.ForcedBack;
         var moved = new MovementStepped(ids, forcedBack ? from : to, halfMf, assault, step)
         {
@@ -368,6 +395,7 @@ public sealed partial class GamePlanner
             RoadRate = entry.OnRoad && !forcedBack,
             Dash = forcedBack ? null : dashTo,
             IpcTo = ipcChosen,
+            InfantryOverrun = (overrunDeclared || recapture) && !forcedBack,
             MinimumMove = minimumMove,
             Attempted = forcedBack ? to : null,
             Bypass = bypassing,

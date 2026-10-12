@@ -567,17 +567,20 @@ public static class ScenarioA1MovementCalculator
     /// pass 10): a moving stack of Dummies that tries to enter concealed enemy units is asked to show a real unit, and is removed.
     /// </summary>
     public static MoveEnemiesVerdict EnemiesAtTarget(IReadOnlyList<UnitAtTargetFacts> there, string? phasingSide, bool charge, bool occupy, bool bypassing, bool allDummies, bool minimumMove,
-        string idsText, string toText)
+        string idsText, string toText, bool knownEntered = false)
     {
         ArgumentNullException.ThrowIfNull(there);
+
+        // A4.15, A20.54 (pass 40): an Infantry OVR enters the Location of its lone Known SMC, and any Infantry that of Unarmed units; the Known
+        // units are then no bar and are not drawn for a reveal, while concealed units there still are (A12.15).
         string[] enemiesThere = charge || occupy || bypassing ? []
-            : [.. there.Where(unit => unit.Active && unit.Side != phasingSide && !unit.Captured).Select(unit => unit.Id)];
+            : [.. there.Where(unit => unit.Active && unit.Side != phasingSide && !unit.Captured && (!knownEntered || !unit.Known)).Select(unit => unit.Id)];
         string[] hiddenEnemies = !charge || occupy ? []
             : [.. there.Where(unit => unit.Active && unit.Side != phasingSide && !unit.Captured && !unit.Known).Select(unit => unit.Id)];
         var known = there.Where(unit => enemiesThere.Contains(unit.Id, StringComparer.Ordinal)).Any(unit => unit.Known);
         if (known)
         {
-            return new MoveEnemiesVerdict("play.move-occupied: Infantry may not enter a Location holding a Known enemy unit in the MPh; Infantry OVR outside the reviewed building case is not built (A4.14, A4.15; ruling R10.11)", false, null, enemiesThere, hiddenEnemies);
+            return new MoveEnemiesVerdict("play.move-occupied: Infantry may not enter a Location holding a Known enemy unit in the MPh, but by an Infantry OVR of a lone SMC or to recapture Unarmed units (A4.14, A4.15, A20.54; ruling R10.11)", false, null, enemiesThere, hiddenEnemies);
         }
 
         if (enemiesThere.Length > 0 && allDummies)
@@ -736,6 +739,7 @@ public static class ScenarioA1MovementCalculator
             + $" ({facts.Terrain}{(facts.BypassTexts is not null ? " in Bypass along " + string.Join(", ", facts.BypassTexts) : string.Empty)}) for {facts.HalfMf / 2m} MF"
             + (facts.OnRoad ? ", at the road rate: on the road, not in the hex's other terrain (A4.132)" : string.Empty)
             + (facts.DashText is { } dashed && !forcedBack ? ScenarioA1Dash.DeclaredText(dashed) : string.Empty)
+            + ((facts.InfantryOverrun || facts.Recapture) && !forcedBack ? ScenarioA1InfantryOverrun.EntryText(facts.Recapture) : string.Empty)
             + (facts.OverstackExcess > 0 ? $", {facts.OverstackExcess} of them for a Location overstacked by {facts.OverstackExcess} squad-equivalent(s) (A5.11)" : string.Empty)
             + (facts.Assault ? ", by Assault Movement" : string.Empty)
             + (facts.DoubleTime ? ", Double Timing and now CX (A4.5)" : string.Empty)

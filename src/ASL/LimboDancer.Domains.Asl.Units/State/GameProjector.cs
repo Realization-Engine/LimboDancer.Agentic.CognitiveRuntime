@@ -141,6 +141,7 @@ public static class GameProjector
                 VehicleCheckRolled check => CheckVehicle(previous, check),
                 OverrunResolved overrun => ResolveOverrun(previous, overrun),
                 PaatcTaken paatc => TakePaatc(previous, paatc),
+                InfantryOverrunNtc ntc => TakeOverrunNtc(previous, ntc),
                 OpportunityFireDeclared opportunity => DeclareOpportunityFire(previous, opportunity),
                 RoutStepped routed => Rout(previous, routed),
                 RoutInterdicted interdicted => Interdict(previous, interdicted),
@@ -503,6 +504,7 @@ public static class GameProjector
                     GunsTurnedThisPhase = [],
                     SmokeAttempts = [],
                     PortagedThisPhase = [],
+                    InfantryOverrunNtcs = [],
                     SupportWeaponUses = [],
                     SupportWeaponDirectors = [],
                     PhaseFirers = [],
@@ -1233,7 +1235,8 @@ public static class GameProjector
         private GameState? PendChoice(GameState state, ChoicePending pending, string eventId)
         {
             if (Rules.ScenarioA1SequenceProjection.PendChoiceRefusal(state.Choice is not null, state.Side(pending.Side) is not null, pending.Options.Count,
-                pending.Kind is ChoicePending.LeaderCreation or ChoicePending.BattleHardening or ChoicePending.UnlikelyKill or ChoicePending.Acquisition or ChoicePending.Paatc,
+                pending.Kind is ChoicePending.LeaderCreation or ChoicePending.BattleHardening or ChoicePending.UnlikelyKill or ChoicePending.Acquisition or ChoicePending.Paatc
+                    or ChoicePending.OverrunEvade,
                 state.ChoicesMade.ContainsKey(pending.Key)) is { } refusal)
             {
                 return Fail<GameState>(refusal.Code, refusal.Text);
@@ -2014,6 +2017,7 @@ public static class GameProjector
                     MinimumMove = moving.MinimumMove,
                     RoadRate = moving.RoadRate,
                     IpcTo = moving.IpcTo ?? current?.IpcTo,
+                    InfantryOverrun = moving.InfantryOverrun ? moving.To : null,
                     ChangedLocation = current?.ChangedLocation == true || (movers[0]!.Position is MapPosition stoodAt && stoodAt.Location != moving.To),
                     Bypass = moving.Bypass,
                     From = movers[0]!.Position is MapPosition left && left.Location != moving.To ? left.Location : null,
@@ -2570,6 +2574,42 @@ public static class GameProjector
                     PaatcPassed = [.. state.PaatcPassed, .. paatc.Units.Select(id => id + "|" + paatc.Vehicle)]
                 }
                 : state;
+        }
+
+        /// <summary>
+        /// The NTC of an Infantry OVR (A4.15; pass 40): the record against its roll; the state keeps it for the phase, and a leader's failure ends
+        /// his stack's MPh.
+        /// </summary>
+        private GameState? TakeOverrunNtc(GameState state, InfantryOverrunNtc ntc)
+        {
+            var taker = Active(state, ntc.Taker) as UnitInstance;
+            if (ntc.Units.Count == 0 || ntc.Units.Any(id => Active(state, id) is not UnitInstance) || !ntc.Units.Contains(ntc.Taker, StringComparer.Ordinal) || taker is null)
+            {
+                return Fail<GameState>("UNIT-STATE-039", "An Infantry OVR's NTC names active units and one of them as its taker (A4.15).");
+            }
+
+            if (!rolls.TryGetValue(ntc.Roll, out var roll) || roll.Count != 2 || roll.Sides != 6
+                || Rules.ScenarioA1InfantryOverrun.NtcPassed(roll.Values[0], roll.Values[1], ntc.Drm, ntc.Morale) != ntc.Passed)
+            {
+                return Fail<GameState>("UNIT-STATE-039", "The NTC's result disagrees with its DR (A4.15).");
+            }
+
+            GameState? next = state with
+            {
+                InfantryOverrunNtcs = [.. state.InfantryOverrunNtcs, new InfantryOverrunNtcTaken(ntc.Units, ntc.Target.ToString(), ntc.Passed)]
+            };
+            if (Rules.ScenarioA1InfantryOverrun.EndsStackMove(vocabulary.IsA(taker.Kind, "asl:leader"), ntc.Passed))
+            {
+                foreach (var id in ntc.Units)
+                {
+                    next = next is not null && Active(next, id) is UnitInstance unit ? Replace(next, unit with
+                    {
+                        MovementEnded = true
+                    }) : next;
+                }
+            }
+
+            return next;
         }
 
         private GameState? CloseWindow(GameState state, MovementWindowClosed closed)

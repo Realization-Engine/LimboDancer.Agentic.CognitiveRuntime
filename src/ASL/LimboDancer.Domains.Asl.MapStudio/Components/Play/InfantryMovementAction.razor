@@ -19,6 +19,8 @@
         </select>
     </label>
 }
+<label title="A4.15: a MMC enters the Location of a lone Known enemy SMC at double the MF of entry, once the stack has passed its NTC (its leader's for all of it, or the one MMC's). Take the NTC first; then check this and propose the move."><input id="move-overrun" type="checkbox" checked="@Draft.Overrun" @onchange="@(args => Changed(Draft with { Overrun = args.Value is true }))" /> Infantry OVR</label>
+<button type="button" id="propose-overrun-ntc" disabled="@(Selected.Count == 0 || Draft.To.Trim().Length == 0)" title="A4.15: the NTC for an Infantry OVR of the Location typed, by the units checked." @onclick="@(() => OnOverrunNtc.InvokeAsync())">Propose: the OVR's NTC</button>
 <label><input id="move-assault" type="checkbox" checked="@Draft.Assault" @onchange="@(args => Changed(Draft with { Assault = args.Value is true }))" /> Assault Movement</label>
 <label title="Double Time adds 2 MF (1 after the unit has spent MF) and makes the unit CX (A4.5); not for a unit that is CX, or whose CX counter came off at the start of this MPh (A4.51), nor with Assault Movement (A4.61)."><input id="move-double-time" type="checkbox" checked="@Draft.DoubleTime" @onchange="@(args => Changed(Draft with { DoubleTime = args.Value is true }))" /> Double Time</label>
 @if (PushGun is { } gun)
@@ -36,7 +38,7 @@
     /// The step drafted: the Location typed, Minimum Move, the Bypass hexsides typed, Assault Movement, Double Time, the Gun pushed, whether the
     /// other terrain's cost is paid across a road hexside (A4.132), and the Location a Dash is declared to (A4.63).
     /// </summary>
-    public sealed record MoveDraft(string To, bool Minimum, string Bypass, bool Assault, bool DoubleTime, bool Push, bool TerrainRate = false, string Dash = "", string IpcTo = "");
+    public sealed record MoveDraft(string To, bool Minimum, string Bypass, bool Assault, bool DoubleTime, bool Push, bool TerrainRate = false, string Dash = "", string IpcTo = "", bool Overrun = false);
 
     [Parameter, EditorRequired]
     public IReadOnlyList<UnitSelectionList.Row> Movers { get; set; } = [];
@@ -59,6 +61,10 @@
 
     [Parameter]
     public EventCallback OnPropose { get; set; }
+
+    /// <summary>Proposes the NTC of an Infantry OVR for the units checked and the Location typed (A4.15).</summary>
+    [Parameter]
+    public EventCallback OnOverrunNtc { get; set; }
 
     private Task Changed(MoveDraft draft) => OnDraftChanged.InvokeAsync(draft);
 }

@@ -22,6 +22,11 @@ public sealed record ChoicePending(string Key, string Kind, string Side, IReadOn
     /// choice; the options are <see cref="Reveal"/> and <see cref="Check"/>.
     /// </summary>
     public const string Paatc = "paatc";
+
+    /// <summary>
+    /// A4.151 (pass 40): a SMC moves away from an Infantry OVR into an adjacent Location "of the ATTACKER's choice"; the options are the Locations.
+    /// </summary>
+    public const string OverrunEvade = "overrun-evade";
     public const string Reveal = "reveal";
     public const string Check = "paatc";
 
