@@ -699,6 +699,9 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
 
                     // A7.72 (pass 45): a firer cut off in an upper building level is Encircled by a read of the map, recorded with the attack.
                     Encircled = fact.Encircled ?? record.Encircled,
+
+                    // Pass 45 (ruling R45.4): a firer's berserk state is a fact of attacks planned from the pass on; an older record has none.
+                    Berserk = recorded.CoweringMarksAndWeaponResidual == true ? fact.Berserk : record.Berserk,
                 })],
             // A7.7 (ruling R12.11): the Encirclement an attack completes is read before the attack, and recorded with it.
             Targets = recorded.Targets is null || expected.Targets is null ? expected.Targets
