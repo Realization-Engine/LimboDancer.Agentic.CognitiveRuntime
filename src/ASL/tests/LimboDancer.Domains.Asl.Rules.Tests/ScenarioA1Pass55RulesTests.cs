@@ -209,17 +209,14 @@ public sealed class ScenarioA1Pass55RulesTests
     }
 
     [Fact]
-    public void ApdsCanisterAndTheSixPoundersHeAreNotYetFired()
+    public void CanisterIsNotYetFired()
     {
-        // A later task of the pass opens them: until then the shot is outside, as any ammunition the package does not resolve.
-        Assert.Contains(AmmunitionOutside, Resolve(Gun("british", 1944, "apds", vehicle: true, toHit: [3, 1])).Reasons);
+        // A later task of the pass opens it: until then the shot is outside, as any ammunition the package does not resolve. C8.4: Canister "is
+        // ineffective vs armored targets", so it stays outside the Vehicle Target Type.
         Assert.Contains(AmmunitionOutside, Resolve(Gun("american", 1944, "canister", vehicle: true, toHit: [3, 1])).Reasons);
-        Assert.Contains(AmmunitionOutside, Resolve(Gun("british", 1944, "he", vehicle: true, toHit: [3, 1])).Reasons);
         Assert.Contains(GunOutside, Resolve(Gun("american", 1944, "canister", toHit: [3, 1])).Reasons);
-
-        // C2.21: the underscored 6-Pounder fires no HE at Infantry, named or not.
-        Assert.Contains(GunOutside, Resolve(Gun("british", 1944, toHit: [3, 1])).Reasons);
-        Assert.Contains(GunOutside, Resolve(Gun("british", 1944, "he", toHit: [3, 1])).Reasons);
+        Assert.DoesNotContain(ScenarioA1Definitions.AmmunitionChoices("american-at-gun", true, 1944, 6, false, []), item => item.Ammunition == "canister");
+        Assert.Empty(ScenarioA1Definitions.AmmunitionChoices("american-at-gun", false, 1944, 6, false, []));
 
         // The American 37mm fires its AP at a tank (C7.31: 37LL is 11) and its HE at Infantry.
         var ap = Resolve(Gun("american", 1944, "ap", vehicle: true, toHit: [5, 6]));
@@ -435,6 +432,340 @@ public sealed class ScenarioA1Pass55RulesTests
         // An attack at the firer's level, as every record before the pass was, is what it was.
         Assert.Equal(5m, Shoot(Cmg(2, 0)).Arithmetic!.TotalFirepower);
         Assert.Empty(Shoot(Cmg(2, 0)).Arithmetic!.Drm);
+    }
+
+    // Task 55.1, the rest (increment 2c): APDS (C4.3, C7.32, C8.11), C8.9's three outcomes for every ammunition with a Depletion Number on the
+    // Infantry and Vehicle Target Types (ruling R55.7), HE that must be named (C2.21, C8.8), Elite (C8.2; ruling R55.6), and the Supply Chart as
+    // a test's data (C8.12; ruling R55.5).
+
+    private const string HeNotNamed = "asl.a1.ordnance.he-not-named";
+    private const string HeUnavailable = "asl.a1.ordnance.he-unavailable";
+    private const string Unavailable = "asl.a1.ordnance.ammunition-unavailable";
+
+    /// <summary>The shot in another month of its year.</summary>
+    private static OrdnanceShot InMonth(OrdnanceShot shot, int month) => shot with
+    {
+        Hit = shot.Hit! with
+        {
+            ScenarioMonth = month
+        }
+    };
+
+    /// <summary>The 6-Pounder's APDS at the PzKpfw IIIH's front in July 1944 (D6), a To Kill DR ready that is a dud.</summary>
+    private static OrdnanceShot Apds(int[] toHit, int range = 12, int year = 1944)
+    {
+        var shot = Gun("british", year, "apds", vehicle: true, toHit) with
+        {
+            Range = range,
+        };
+        return shot with
+        {
+            Rolls = shot.Rolls! with
+            {
+                ToKill = [6, 6]
+            }
+        };
+    }
+
+    /// <summary>The 6-Pounder's HE, named, at the German squad in July 1944 (HE8), an IFT DR ready that does nothing.</summary>
+    private static OrdnanceShot He(int[] toHit, int year = 1944, string? ammunition = "he")
+    {
+        var shot = Gun("british", year, ammunition, toHit: toHit);
+        return shot with
+        {
+            Rolls = shot.Rolls! with
+            {
+                Hit = new FireRolls([6, 6], null, null, null),
+                CriticalHit = new FireRolls([6, 6], null, null, null),
+            }
+        };
+    }
+
+    [Fact]
+    public void ApdsLessensTheBasicToHitNumberBeyondTwelveHexes()
+    {
+        // C4.3 (p. 171): "the Basic TH# of any shot using APCR/APDS is lessened by one for every 12 hexes (or fraction thereof) beyond 12 hex range";
+        // the chart's APDS/APCR row (p. 189): 0 to 12 hexes, -1 at 13 to 24, -2 at 25 to 36. A DR above the Depletion Number shows the To Hit line.
+        var gun = Ordnance.Guns["british-at-gun"];
+        decimal? Modification(int range) => Resolve(Apds([5, 6], range)).ToHit!.Modifications.Where(item => item.Name == "apds").Select(item => (decimal?)item.Value).SingleOrDefault();
+        Assert.Equal((null, -1m, -1m, -2m), (Modification(12), Modification(13), Modification(24), Modification(25)));
+        Assert.Contains(Resolve(Apds([5, 6], 13)).ToHit!.Modifications, item => item is { Name: "apds", Rule: "C4.3" });
+        foreach (var range in new[] { 12, 13, 25 })
+        {
+            Assert.Equal(Ordnance.Armor.BasicToHit("black", Ordnance.Column(range)) + (int)Ordnance.Modifications(gun, range).Sum(item => item.Value) + (int)(Modification(range) ?? 0),
+                Resolve(Apds([5, 6], range)).ToHit!.ModifiedToHit);
+        }
+
+        // AP at the same ranges takes no such modification.
+        Assert.DoesNotContain(Resolve(Gun("british", 1944, "ap", vehicle: true, toHit: [5, 6]) with { Range = 25 }).ToHit!.Modifications, item => item.Name is "apds" or "apcr");
+    }
+
+    [Fact]
+    public void ApdsReadsItsOwnListingsOfTheToKillTable()
+    {
+        // C7.32 (the table of p. 190): D57L 18, D76LL 25; the APDS (D) Case D row: +1 at 0 to 1 hexes, 0 from 2 to 24, -1 at 25 to 30, -2 at 31
+        // to 36, -3 at 37 to 42, -4 at 43 to 48, NA from 49.
+        var gun = Ordnance.Guns["british-at-gun"];
+        Assert.Equal(18, Ordnance.Armor.BasicTk("apds", gun));
+        Assert.Equal(25, Ordnance.Armor.BasicTk("apds", gun with { Caliber = 76, Suffix = "ll" }));
+        Assert.Equal((1, 0, 0, 0, -1, -2, -3, -4, null), (Ordnance.Armor.CaseD("apds", gun, 1), Ordnance.Armor.CaseD("apds", gun, 2), Ordnance.Armor.CaseD("apds", gun, 12),
+            Ordnance.Armor.CaseD("apds", gun, 24), Ordnance.Armor.CaseD("apds", gun, 25), Ordnance.Armor.CaseD("apds", gun, 31), Ordnance.Armor.CaseD("apds", gun, 37),
+            Ordnance.Armor.CaseD("apds", gun, 48), Ordnance.Armor.CaseD("apds", gun, 49)));
+
+        // The 6-Pounder has no APCR listing, and a Gun with no D listing has no APDS: the 57LL's 18 is APCR's.
+        Assert.Null(Ordnance.Armor.BasicTk("apcr", gun));
+        Assert.Null(Ordnance.Armor.BasicTk("apds", gun with { Suffix = "ll" }));
+        Assert.Null(Ordnance.Armor.BasicTk("apds", Ordnance.Guns["defender-at-gun"]));
+
+        // C7.321: "The Final TK# for an unarmored vehicle hit by APCR/APDS is equal to that listed on the AP To Kill Table": 8 for 37 to 57mm.
+        Assert.Equal((8, 8), (Ordnance.Armor.UnarmoredTk("apds", gun), Ordnance.Armor.UnarmoredTk("ap", gun)));
+
+        // A hull hit on the PzKpfw IIIH's front (AF 6) at 12 hexes: 18, no Case D, Final TK# 12; at one hex Case D +1: 19, Final TK# 13.
+        var far = Resolve(Apds([2, 1])).Kill!;
+        Assert.Equal(("apds", "hull", 18, 18, 6, 12), (far.Ammunition, far.HitLocation, far.BasicTk, far.ModifiedTk, far.ArmorFactor, far.FinalTk));
+        Assert.DoesNotContain(far.Modifications, item => item.Name == "case-d");
+        var near = Resolve(Apds([2, 1], 1)).Kill!;
+        Assert.Equal((18, 19, 13), (near.BasicTk, near.ModifiedTk, near.FinalTk));
+        Assert.Contains(near.Modifications, item => item is { Name: "case-d", Value: 1 });
+
+        // C7.35, C7.7: an Original 12 is a dud; an 11 is below the Final TK# of 13 and above half of it: eliminated.
+        var struck = Apds([2, 1], 1);
+        Assert.Equal(OrdnanceKill.Dud, Resolve(struck).Kill!.Result);
+        Assert.Equal(OrdnanceKill.Eliminated, Resolve(struck with { Rolls = struck.Rolls! with { ToKill = [5, 6], CrewSurvival = [6, 6] } }).Kill!.Result);
+    }
+
+    [Fact]
+    public void ApdsFollowsItsDepletionNumber()
+    {
+        // C8.9 (p. 179), the 6-Pounder's D6 from June 1944: an Original DR below 6 uses it; a 6 uses it and it runs out; above 6 "the firer had no
+        // such ammunition and is considered not to have fired yet for any purpose unless Gun Malfunction ... occurs".
+        var used = Resolve(Apds([2, 1]));
+        Assert.Equal(("used", true), (used.AmmunitionUse, used.ToHit!.Hit));
+        Assert.NotNull(used.Kill);
+        var last = Resolve(Apds([4, 2]));
+        Assert.Equal(("depleted", true), (last.AmmunitionUse, last.ToHit!.Hit));
+        Assert.NotNull(last.Kill);
+        var none = Resolve(Apds([4, 3]) with { Acquisition = -1 });
+        Assert.Equal(OrdnanceResolution.Resolved, none.Disposition);
+        Assert.Equal(("none", false, true, null, false, -1, null), (none.AmmunitionUse, none.ToHit!.Hit, none.Gun!.RateOfFireKept, none.Gun.FireCounter, none.Gun.Malfunctioned,
+            none.Gun.Acquisition, none.Gun.AcquiredLocationId));
+        Assert.Null(none.Kill);
+
+        // The 6-Pounder's B# is 12: an Original 12 found no APDS, and the Gun malfunctioned, so it has fired.
+        var broke = Resolve(Apds([6, 6]));
+        Assert.Equal(("none", true, false, "prep-fire", false), (broke.AmmunitionUse, broke.Gun!.Malfunctioned, broke.Gun.RateOfFireKept, broke.Gun.FireCounter, broke.ToHit!.Hit));
+        Assert.Null(broke.Kill);
+
+        // C8.92: "Intensive Fire does not change Depletion Numbers": a 6 is still its last round. A Gun that has fired Intensive Fires.
+        var intensive = Apds([4, 2]);
+        Assert.Equal("depleted", Resolve(intensive with { IntensiveFire = true, Gun = intensive.Gun! with { ShotsThisPhase = 1, FiredThisPlayerTurn = true } }).AmmunitionUse);
+
+        // C8.11, the listing's "(J4+E)": none in May 1944, D6 from June, D7 in 1945; none once it has run out.
+        Assert.Contains(Unavailable, Resolve(InMonth(Apds([2, 1]), 5)).Reasons);
+        Assert.Equal("used", Resolve(InMonth(Apds([2, 1]), 6)).AmmunitionUse);
+        Assert.Contains(Unavailable, Resolve(Apds([2, 1], year: 1943)).Reasons);
+        Assert.Equal("used", Resolve(InMonth(Apds([4, 2], year: 1945), 1)).AmmunitionUse);
+        Assert.Contains("asl.a1.ordnance.ammunition-depleted", Resolve(Apds([2, 1]).WithDepleted("apds")).Reasons);
+
+        // No other Gun of the catalog lists APDS.
+        Assert.Contains(AmmunitionOutside, Resolve(Gun("american", 1944, "apds", vehicle: true, toHit: [2, 1])).Reasons);
+    }
+
+    [Fact]
+    public void HeWithADepletionNumberFollowsItOnTheInfantryTargetType()
+    {
+        // C8.8, C8.9: the 6-Pounder's HE8 in 1944. Below 8 the round is used; an 8 is its last.
+        var used = Resolve(He([3, 3]));
+        Assert.True(used.Disposition == OrdnanceResolution.Resolved, string.Join("; ", used.Reasons));
+        Assert.Equal("used", used.AmmunitionUse);
+        Assert.True(used.ToHit!.Hit);
+        Assert.NotNull(used.Hit ?? used.CriticalHit);
+        Assert.Equal("depleted", Resolve(He([4, 4])).AmmunitionUse);
+
+        // Above 8 there was no round: at one hex the 9 would hit, yet no IFT DR is asked for, the ROF is kept, no fire counter is placed, and
+        // the Acquisition stands.
+        var shot = Gun("british", 1944, "he", toHit: [5, 4]) with { Range = 1, Acquisition = -1 };
+        var none = Resolve(shot);
+        Assert.Equal(OrdnanceResolution.Resolved, none.Disposition);
+        Assert.Equal(("none", false, true, null, -1, null), (none.AmmunitionUse, none.ToHit!.Hit, none.Gun!.RateOfFireKept, none.Gun.FireCounter, none.Gun.Acquisition,
+            none.Gun.AcquiredLocationId));
+        Assert.Null(none.Hit);
+        Assert.Null(none.CrewConcealmentLost);
+
+        // The control: the same DR under an Elite force's HE9 is the last round, it hits, and the IFT DR is asked for.
+        Assert.StartsWith("asl.a1.ordnance.roll-missing:hit:", Assert.Single(Resolve(shot with { Elite = true }).Reasons), StringComparison.Ordinal);
+
+        // A malfunction on that DR still counts: the Gun has fired, and hit nothing.
+        var broke = Resolve(Gun("british", 1944, "he", toHit: [6, 6]) with { Range = 1 });
+        Assert.Equal(("none", true, false, "prep-fire", false), (broke.AmmunitionUse, broke.Gun!.Malfunctioned, broke.Gun.RateOfFireKept, broke.Gun.FireCounter, broke.ToHit!.Hit));
+        Assert.Null(broke.Hit);
+
+        // British Ordnance Note 6 (p. 426): HE7 from February 1943.
+        Assert.Contains(HeUnavailable, Resolve(InMonth(He([2, 1], 1943), 1)).Reasons);
+        Assert.Equal("used", Resolve(InMonth(He([2, 1], 1943), 2)).AmmunitionUse);
+        Assert.Equal("depleted", Resolve(InMonth(He([4, 3], 1943), 2)).AmmunitionUse);
+        Assert.Equal("none", Resolve(InMonth(He([4, 4], 1943), 2)).AmmunitionUse);
+    }
+
+    [Fact]
+    public void AGunWhoseHeHasADepletionNumberNeverFiresItUndeclared()
+    {
+        // C2.21 (p. 167): a Gun "is otherwise always assumed to be firing HE vs unarmored targets ... provided that ammunition type is available,
+        // is not Special Ammunition (i.e., has no Depletion #; 8.8)".
+        Assert.Equal([HeNotNamed], Resolve(He([2, 1], ammunition: null)).Reasons);
+        Assert.Equal([HeNotNamed], Resolve(He([2, 1], ammunition: "ap")).Reasons);
+        Assert.Equal([HeNotNamed], Resolve(He([2, 1], ammunition: "apds")).Reasons);
+
+        // Named, it needs the number's date (none in 1942, none with no year) and a round left.
+        Assert.Equal([HeUnavailable], Resolve(He([2, 1], 1942)).Reasons);
+        Assert.Equal([HeUnavailable], Resolve(He([2, 1]) with { ScenarioYear = null }).Reasons);
+        Assert.Equal([HeUnavailable], Resolve(He([2, 1]).WithDepleted("he")).Reasons);
+        Assert.Equal(OrdnanceResolution.Abstained, Resolve(He([2, 1], 1942)).Disposition);
+
+        // Every other Gun fires HE at Infantry as it did, named or not, with no Depletion Number in play.
+        var plain = Resolve(Gun("american", 1944, toHit: [5, 6]));
+        Assert.Equal((OrdnanceResolution.Resolved, null), (plain.Disposition, plain.AmmunitionUse));
+        Assert.Null(Resolve(Gun("american", 1944, "he", toHit: [5, 6])).AmmunitionUse);
+
+        // What the player chooses from: at Infantry the 6-Pounder's HE alone, with its number; nothing for a Gun whose HE is assumed.
+        var choice = Assert.Single(ScenarioA1Definitions.AmmunitionChoices("british-at-gun", false, 1944, 6, false, []));
+        Assert.Equal(("he", "HE (Depletion Number 8)", 8, null), (choice.Ammunition, choice.Label, choice.DepletionNumber, choice.Unavailable));
+        Assert.NotNull(Assert.Single(ScenarioA1Definitions.AmmunitionChoices("british-at-gun", false, 1942, 6, false, [])).Unavailable);
+        Assert.Contains("C8.9", Assert.Single(ScenarioA1Definitions.AmmunitionChoices("british-at-gun", false, 1944, 6, false, ["he"])).Unavailable, StringComparison.Ordinal);
+        Assert.Empty(ScenarioA1Definitions.AmmunitionChoices("attacker-inf-gun", false, 1944, 6, false, []));
+
+        // At a vehicle: AP, APDS from June 1944, and HE by its number.
+        Assert.Equal(["AP", "APDS (Depletion Number 6)", "HE (Depletion Number 8)"],
+            ScenarioA1Definitions.AmmunitionChoices("british-at-gun", true, 1944, 6, false, []).Select(item => item.Label));
+        Assert.Equal([null, "none at the scenario's date (C8.9)", null],
+            ScenarioA1Definitions.AmmunitionChoices("british-at-gun", true, 1944, 5, false, []).Select(item => item.Unavailable));
+        Assert.Equal(["AP", "APCR (Depletion Number 5)", "HE"], ScenarioA1Definitions.AmmunitionChoices("attacker-tank", true, 1942, 7, false, []).Select(item => item.Label));
+    }
+
+    [Fact]
+    public void HeWithADepletionNumberFollowsItAtAVehicle()
+    {
+        // C8.8, C8.9: the 6-Pounder's HE at the PzKpfw IIIH, which its underscored caliber alone would deny (C2.21).
+        OrdnanceShot AtTank(int[] toHit, int year = 1944)
+        {
+            var shot = Gun("british", year, "he", vehicle: true, toHit);
+            return shot with { Rolls = shot.Rolls! with { ToKill = [6, 6] } };
+        }
+
+        Assert.Equal("used", Resolve(AtTank([4, 3])).AmmunitionUse);
+        Assert.Equal("depleted", Resolve(AtTank([4, 4])).AmmunitionUse);
+        var none = Resolve(AtTank([5, 4]));
+        Assert.Equal(("none", false, true), (none.AmmunitionUse, none.ToHit!.Hit, none.Gun!.RateOfFireKept));
+        Assert.Contains(Unavailable, Resolve(AtTank([4, 3], 1942)).Reasons);
+
+        // AP has no number on this counter, and a Gun with no HE listing fires its HE at a vehicle with none.
+        Assert.Null(Resolve(Gun("british", 1944, "ap", vehicle: true, toHit: [5, 6])).AmmunitionUse);
+        Assert.Null(Resolve(Gun("american", 1944, "he", vehicle: true, toHit: [5, 6])).AmmunitionUse);
+    }
+
+    [Fact]
+    public void AnEliteForceHasOneMoreOnEveryDepletionNumber()
+    {
+        // C8.2 (p. 178; ruling R55.6): an Original 7 is above the 6-Pounder's D6, and is the last round of an Elite force's D7.
+        Assert.Equal("none", Resolve(Apds([4, 3])).AmmunitionUse);
+        Assert.Equal("depleted", Resolve(Apds([4, 3]) with { Elite = true }).AmmunitionUse);
+        Assert.Equal("used", Resolve(Apds([4, 2]) with { Elite = true }).AmmunitionUse);
+        Assert.Equal("none", Resolve(Apds([4, 4]) with { Elite = true }).AmmunitionUse);
+
+        // HE8 is HE9, on the Infantry Target Type; APCR's number too.
+        Assert.Equal(("depleted", "none"), (Resolve(He([5, 4]) with { Elite = true }).AmmunitionUse, Resolve(He([5, 4])).AmmunitionUse));
+
+        // The game's special rule names the side.
+        Assert.True(ScenarioA1Definitions.EliteAmmunition(["night:2", "elite-ammunition:british"], "british"));
+        Assert.False(ScenarioA1Definitions.EliteAmmunition(["elite-ammunition:british"], "german"));
+        Assert.False(ScenarioA1Definitions.EliteAmmunition([], "british"));
+
+        // The words of the proposal and the record, and of the list a player chooses from.
+        Assert.Equal("Depletion Number 6", ScenarioA1Definitions.DepletionWords(Apds([4, 3])));
+        Assert.Equal("Depletion Number 7 (6, and 1 for Elite, C8.2)", ScenarioA1Definitions.DepletionWords(Apds([4, 3]) with { Elite = true }));
+        Assert.Null(ScenarioA1Definitions.DepletionWords(Gun("british", 1944, "ap", vehicle: true)));
+        Assert.Null(ScenarioA1Definitions.DepletionWords(Gun("american", 1944)));
+        Assert.Equal("APDS (Depletion Number 7: 6, and 1 for Elite, C8.2)",
+            ScenarioA1Definitions.AmmunitionChoices("british-at-gun", true, 1944, 6, true, []).Single(item => item.Ammunition == "apds").Label);
+    }
+
+    [Fact]
+    public void ApWithADepletionNumberFollowsIt()
+    {
+        // C8.8: "Such AFV types have a Depletion Number (in the form "AP#" or "HE#")". No counter of the catalog prints AP#, so a made-up 57L
+        // Gun lists AP5, with no year: it holds in a game that names none.
+        var reference = Ordnance.WithGun(MadeUp("AP5"));
+        OrdnanceResolution Ap(int[] toHit, int? year = 1944)
+        {
+            var shot = Gun("british", year, "ap", vehicle: true, toHit);
+            return ScenarioA1OrdnanceCalculator.Resolve(shot with { Gun = shot.Gun! with { DefinitionId = "made-up" }, Rolls = shot.Rolls! with { ToKill = [6, 6] } }, reference);
+        }
+
+        Assert.Equal(("used", "depleted", "none"), (Ap([2, 2]).AmmunitionUse, Ap([3, 2]).AmmunitionUse, Ap([3, 3]).AmmunitionUse));
+        Assert.True(Ap([3, 3]).Gun!.RateOfFireKept);
+        Assert.Null(Ap([3, 3]).Kill);
+        Assert.Equal("depleted", Ap([3, 2], year: null).AmmunitionUse);
+
+        // The catalog's own Guns are what they were in the package's reference.
+        Assert.False(Ordnance.Guns.ContainsKey("made-up"));
+        Assert.Same(Ordnance.Guns["british-at-gun"], reference.Guns["british-at-gun"]);
+    }
+
+    // C8.12 (pp. 177 and 178), the Ammunition Supply Chart for APCR/APDS, by year from 1941 to 1945; a parenthesized month is "the start of
+    // availability in that year". Ruling R55.5: the game reads the counter, never this chart.
+    private static readonly (string Nationality, string[] Sizes, string Type, (int Number, int? Month)?[] Years)[] SupplyChart =
+    [
+        ("german", ["50L"], "apcr", [(5, null), (6, null), (5, null), (4, null), null]),
+        ("german", ["37L", "47L", "50", "88L"], "apcr", [(4, null), (5, null), (4, null), (3, null), null]),
+        ("german", ["75L", "76L"], "apcr", [null, (5, null), (4, null), (3, null), null]),
+        ("american", ["76L"], "apcr", [null, null, null, (4, 8), (5, null)]),
+        ("american", ["90L"], "apcr", [null, null, null, null, (5, null)]),
+        ("russian", ["45L", "45LL", "76L", "76LL"], "apcr", [null, (4, null), (5, null), (6, null), (7, null)]),
+        ("russian", ["57LL", "85L"], "apcr", [null, null, (4, null), (5, null), (6, null)]),
+        ("british", ["57L"], "apds", [null, null, null, (6, 6), (7, null)]),
+        ("british", ["76LL"], "apds", [null, null, null, (5, 9), (6, null)]),
+    ];
+
+    // C8.12: "Some Guns/AFV have a different Depletion Number printed on their counter, which applies to that Gun/AFV." The catalog's counters
+    // that differ from the chart, and the years they differ in.
+    private static readonly Dictionary<string, int[]> DiffersFromTheSupplyChart = new()
+    {
+        // The PzKpfw IIIH's counter prints A4 for 1941 and A5 for 1942 and nothing later, so its A5 holds on (C8.91); the chart's 50 falls to
+        // A4 in 1943 and A3 in 1944, and has none in 1945.
+        ["attacker-tank"] = [1943, 1944, 1945],
+
+        // The T-34 M41's counter ends with A6 for 1944, which holds in 1945; the chart's Russian 76L has A7 then.
+        ["defender-tank"] = [1945],
+    };
+
+    [Fact]
+    public void TheCatalogsCountersAgreeWithTheSupplyChartOrAreNamed()
+    {
+        var listed = Ordnance.Guns.Values.Where(gun => gun.SpecialAmmo.Any(item => (item.StartsWith('A') && !item.StartsWith("AP", StringComparison.Ordinal)) || item.StartsWith('D')))
+            .OrderBy(gun => gun.Id, StringComparer.Ordinal).ToArray();
+        Assert.Equal(["attacker-tank", "british-at-gun", "defender-at-gun", "defender-tank"], listed.Select(gun => gun.Id));
+        foreach (var gun in listed)
+        {
+            var size = ScenarioA1ArmorReference.GunSize(gun);
+            var row = Assert.Single(SupplyChart, item => item.Nationality == gun.Nationality && item.Sizes.Contains(size));
+            var differs = new List<int>();
+            for (var year = 1941; year <= 1945; year++)
+            {
+                var chart = row.Years[year - 1941];
+                var agrees = chart?.Number == Number(gun, row.Type, year, 12)
+                    && (chart?.Month is not { } month || (Number(gun, row.Type, year, month - 1) is null && Number(gun, row.Type, year, month) == chart.Value.Number));
+                if (!agrees)
+                {
+                    differs.Add(year);
+                }
+            }
+
+            Assert.True(differs.SequenceEqual(DiffersFromTheSupplyChart.GetValueOrDefault(gun.Id) ?? []), $"{gun.Id} ({size}) differs from the chart in {string.Join(", ", differs)}");
+        }
+
+        // The 6-Pounder's "(J4+E)" is the chart's "D6(Jun)", and its D7 the chart's 1945; the Russian 45L AT Gun is the chart's row year by year.
+        Assert.DoesNotContain("british-at-gun", DiffersFromTheSupplyChart.Keys);
+        Assert.DoesNotContain("defender-at-gun", DiffersFromTheSupplyChart.Keys);
     }
 
     [Fact]

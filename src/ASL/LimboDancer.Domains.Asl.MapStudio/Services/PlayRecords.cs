@@ -397,13 +397,20 @@ public sealed class PlayRecords
                     }
                 }
 
+                // C8.9, C8.2 (pass 55): the number the shot was fired under, with the one an Elite force adds.
+                var depletion = (shot is null ? null : ScenarioA1Definitions.DepletionWords(shot)) ?? "Depletion Number";
                 if (resolution.AmmunitionUse == "none")
                 {
-                    parts.Add($"the Original DR is above the Depletion Number: it had no {shot?.Ammunition?.ToUpperInvariant()}, has not fired, and has none for the rest of the scenario (C8.9)");
+                    parts.Add($"the Original DR is above the {depletion}: it had no {shot?.Ammunition?.ToUpperInvariant()}, "
+                        + (gun.Malfunctioned ? "and has none for the rest of the scenario (C8.9)" : "has not fired, and has none for the rest of the scenario (C8.9)"));
                 }
                 else if (resolution.AmmunitionUse == "depleted")
                 {
-                    parts.Add($"the Original DR equals the Depletion Number: its last {shot?.Ammunition?.ToUpperInvariant()} (C8.9)");
+                    parts.Add($"the Original DR equals the {depletion}: its last {shot?.Ammunition?.ToUpperInvariant()} (C8.9)");
+                }
+                else if (resolution.AmmunitionUse == "used")
+                {
+                    parts.Add($"the Original DR is below the {depletion}: {shot?.Ammunition?.ToUpperInvariant()} fired (C8.9)");
                 }
 
                 if (resolution.Kill is { } kill)

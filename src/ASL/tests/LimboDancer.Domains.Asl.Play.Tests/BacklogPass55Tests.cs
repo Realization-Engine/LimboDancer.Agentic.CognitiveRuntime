@@ -351,4 +351,235 @@ public sealed class BacklogPass55Tests : IDisposable
         await Setup(Tank(), Squad(Target));
         Refused(await FireCmg(), "asl.a1.fire.elevation-outside", "C2.6");
     }
+
+    // Task 55.1, the rest (increment 2c): the British 6-Pounder's APDS (D6 from June 1944) and its HE (HE8 in 1944), each by its Depletion Number
+    // (C8.9; ruling R55.7), HE named or refused (C2.21, C8.8), and an Elite force's one more (C8.2; ruling R55.6).
+
+    private static readonly string[] EliteBritish = ["elite-ammunition:british"];
+
+    /// <summary>A game of the British against the Germans at a date, with the game's special rules, gone on to the British PFPh.</summary>
+    private async Task SetupBritish(int year, int month, string[] specialRules, params Dictionary<string, object>[] placements)
+    {
+        Committed(await Commit(Play(), GameActions.Setup, JsonSerializer.SerializeToElement(new
+        {
+            gameId = Scope.Game,
+            attemptId = "setup-1",
+            expectedRevision = 0,
+            start = new Dictionary<string, object>
+            {
+                ["label"] = "Pass 55",
+                ["catalog"] = "asl-scenario-a1@1.13.0",
+                ["boards"] = Bd01,
+                ["firstSide"] = "british",
+                ["scenarioMonth"] = month,
+                ["scenarioYear"] = year,
+                ["specialRules"] = specialRules,
+                ["sides"] = new object[]
+                {
+                    new { id = "british", nationality = "british", elr = 3, friendlyEdge = "left" },
+                    new { id = "german", nationality = "german", elr = 3, friendlyEdge = "right" },
+                },
+            },
+            placements,
+        })));
+        Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
+        {
+        }));
+    }
+
+    /// <summary>The OQF 6-Pounder and its crew in B10, its barrel to the north-east: B8 lies in its CA at two hexes.</summary>
+    private static Dictionary<string, object>[] SixPounder() =>
+    [
+        Unit("uk-crew", "asl:crew", "british-crew", Firer, "british"),
+        new()
+        {
+            ["id"] = "uk-gun",
+            ["kind"] = "asl:gun",
+            ["definition"] = "british-at-gun",
+            ["side"] = "british",
+            ["position"] = new Dictionary<string, string> { ["at"] = Firer, ["facing"] = "north-east" },
+            ["holding"] = new
+            {
+                holder = "uk-crew",
+                role = "manned"
+            },
+            ["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false },
+        },
+    ];
+
+    /// <summary>The PzKpfw IIIH in B8.</summary>
+    private static Dictionary<string, object> GermanTank() => new()
+    {
+        ["id"] = "de-tank",
+        ["kind"] = "asl:vehicle",
+        ["definition"] = "attacker-tank",
+        ["side"] = "german",
+        ["position"] = new Dictionary<string, string> { ["at"] = Target, ["facing"] = "north-east" },
+        ["conditions"] = new Dictionary<string, bool>(),
+    };
+
+    private static Dictionary<string, object> GermanSquad() => Unit("de-s", "asl:squad", "attacker-squad", Target, "german");
+
+    /// <summary>The 6-Pounder at the tank with the named ammunition; the dice are the To Hit DR and then whatever the hit asks for.</summary>
+    private Task<PlayResult> FireAtTank(string ammunition, params int[] dice) => Do(GameActions.FireOrdnance, Once(dice), new
+    {
+        gunId = "uk-gun",
+        target = Target,
+        targetVehicle = "de-tank",
+        ammunition,
+    });
+
+    /// <summary>The 6-Pounder at the squad's Location, naming an ammunition or none.</summary>
+    private Task<PlayResult> FireAtSquad(string? ammunition, params int[] dice)
+    {
+        var arguments = new Dictionary<string, object> { ["gunId"] = "uk-gun", ["target"] = Target };
+        if (ammunition is not null)
+        {
+            arguments["ammunition"] = ammunition;
+        }
+
+        return Do(GameActions.FireOrdnance, Once(dice), arguments);
+    }
+
+    private GameState Current => Planner().Replay(store.Read(Scope)!.Events).Current!;
+
+    private static string? Use(OrdnanceFired shot) => shot.Resolution.TryGetProperty("ammunitionUse", out var use) ? use.GetString() : null;
+
+    private bool RanOut(string ammunition) => Current.DepletedAmmunition.Any(item => item.Gun == "uk-gun" && item.Ammunition == ammunition);
+
+    [Fact]
+    public async Task ApdsBelowItsDepletionNumberIsUsed()
+    {
+        // C8.9: the 6-Pounder's D6 in June 1944; an Original 3 uses the round. C7.32: D57L is 18; the To Kill DR of 12 is a dud (C7.35).
+        await SetupBritish(1944, 6, [], [.. SixPounder(), GermanTank()]);
+        var before = Revision;
+        var result = await FireAtTank("apds", 2, 1, 6, 6);
+        Committed(result);
+        var shot = LastShot(before);
+        Assert.Equal("used", Use(shot));
+        Assert.Equal(("apds", 18), (shot.Resolution.GetProperty("kill").GetProperty("ammunition").GetString(), shot.Resolution.GetProperty("kill").GetProperty("basicTk").GetInt32()));
+        Assert.Equal("apds", shot.Facts.GetProperty("ammunition").GetString());
+        Assert.False(shot.Facts.TryGetProperty("elite", out _));
+        Assert.False(RanOut("apds"));
+
+        // The proposal says the number and what a DR above it means.
+        Assert.Contains(result.Plan!.Reasons, reason => reason.Contains("APDS by its Depletion Number 6: on an Original To Hit DR above it the Gun had none", StringComparison.Ordinal));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ApdsAtItsDepletionNumberIsItsLastRound()
+    {
+        // C8.9: an Original 6 "uses that ammunition ... but the firer runs out of that Special Ammunition in the process".
+        await SetupBritish(1944, 6, [], [.. SixPounder(), GermanTank()]);
+        var before = Revision;
+        Committed(await FireAtTank("apds", 4, 2, 6, 6));
+        var shot = LastShot(before);
+        Assert.Equal("depleted", Use(shot));
+        Assert.True(shot.Resolution.TryGetProperty("kill", out _));
+        Assert.True(RanOut("apds"));
+        Refused(await FireAtTank("apds", 2, 1), "asl.a1.ordnance.ammunition-depleted", "C8.9");
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ApdsAboveItsDepletionNumberWasNeverThereAndTheGunHasNotFired()
+    {
+        // C8.9: an Original 7: "the firer had no such ammunition and is considered not to have fired yet for any purpose": no To Kill DR, no fire
+        // counter, and the Gun fires its AP at once; "The Gun may not use that special ammunition again in that scenario."
+        await SetupBritish(1944, 6, [], [.. SixPounder(), GermanTank()]);
+        var before = Revision;
+        Committed(await FireAtTank("apds", 4, 3));
+        var shot = LastShot(before);
+        Assert.Equal("none", Use(shot));
+        Assert.False(shot.Resolution.TryGetProperty("kill", out _));
+        Assert.True(shot.RateOfFireKept);
+        Assert.DoesNotContain(Since(before), item => item.Payload is ConditionsChanged);
+        Assert.Empty(Current.OrdnanceShots);
+        Assert.True(RanOut("apds"));
+        Refused(await FireAtTank("apds", 2, 1), "asl.a1.ordnance.ammunition-depleted");
+
+        // The colored dr of 4 is above its ROF of 3, yet the Gun fires: AP, with no Depletion Number, and a To Kill DR that is a dud.
+        var again = Revision;
+        Committed(await FireAtTank("ap", 5, 6, 6, 6));
+        Assert.Null(Use(LastShot(again)));
+        Assert.Single(Current.OrdnanceShots);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ApdsIsNotThereBeforeJune1944()
+    {
+        // British Ordnance Note 6 (p. 426): APDS from June 1944 (C8.11).
+        await SetupBritish(1944, 5, [], [.. SixPounder(), GermanTank()]);
+        Refused(await FireAtTank("apds", 2, 1), "asl.a1.ordnance.ammunition-unavailable", "C8.11");
+    }
+
+    [Fact]
+    public async Task AnEliteForcesSevenIsItsLastApdsRound()
+    {
+        // C8.2 (ruling R55.6): the game's special rule elite-ammunition:british makes the D6 a D7; the shot records it.
+        await SetupBritish(1944, 6, EliteBritish, [.. SixPounder(), GermanTank()]);
+        var before = Revision;
+        var result = await FireAtTank("apds", 4, 3, 6, 6);
+        Committed(result);
+        var shot = LastShot(before);
+        Assert.Equal("depleted", Use(shot));
+        Assert.True(shot.Facts.GetProperty("elite").GetBoolean());
+        Assert.True(RanOut("apds"));
+        Assert.Contains(result.Plan!.Reasons, reason => reason.Contains("Depletion Number 7 (6, and 1 for Elite, C8.2)", StringComparison.Ordinal));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task TheSixPoundersHeIsFiredAtInfantryWhenItIsNamed()
+    {
+        // C8.8, C8.9: HE8 in 1944; an Original 6 uses a round, and the hit is resolved on the IFT.
+        await SetupBritish(1944, 6, [], [.. SixPounder(), GermanSquad()]);
+        var before = Revision;
+        var result = await FireAtSquad("he", 3, 3, 6, 6);
+        Committed(result);
+        var shot = LastShot(before);
+        Assert.Equal("used", Use(shot));
+        Assert.Equal("he", shot.Facts.GetProperty("ammunition").GetString());
+        Assert.True(shot.Resolution.TryGetProperty("hit", out _) || shot.Resolution.TryGetProperty("criticalHit", out _));
+        Assert.Contains(result.Plan!.Reasons, reason => reason.Contains("HE by its Depletion Number 8", StringComparison.Ordinal));
+        Assert.False(RanOut("he"));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task TheSixPoundersHeIsNeverFiredUndeclared()
+    {
+        // C2.21: HE is assumed against an unarmored target only when it "is not Special Ammunition (i.e., has no Depletion #; 8.8)".
+        await SetupBritish(1944, 6, [], [.. SixPounder(), GermanSquad()]);
+        Refused(await FireAtSquad(null, 3, 3), "asl.a1.ordnance.he-not-named", "name HE for the shot (C2.21, C8.8)", "C8.31");
+        Refused(await FireAtSquad("ap", 3, 3), "asl.a1.ordnance.he-not-named");
+    }
+
+    [Fact]
+    public async Task TheSixPounderHasNoHeIn1942()
+    {
+        // British Ordnance Note 6 (p. 426): HE from February 1943. Before it the Gun fires nothing at Infantry: AP there is C8.31's.
+        await SetupBritish(1942, 6, [], [.. SixPounder(), GermanSquad()]);
+        Refused(await FireAtSquad("he", 3, 3), "asl.a1.ordnance.he-unavailable", "Special Ammunition (C8.8) and it has none now", "C8.31, HE Equivalency");
+        Refused(await FireAtSquad(null, 3, 3), "asl.a1.ordnance.he-not-named");
+    }
+
+    [Fact]
+    public async Task HeAboveItsDepletionNumberAsksForNoIftDrAndIsGone()
+    {
+        // C8.9 on the Infantry Target Type: an Original 9 is above HE8: two dice only, no fire counter, and no HE again.
+        await SetupBritish(1944, 6, [], [.. SixPounder(), GermanSquad()]);
+        var before = Revision;
+        Committed(await FireAtSquad("he", 5, 4));
+        var shot = LastShot(before);
+        Assert.Equal("none", Use(shot));
+        Assert.False(shot.Resolution.TryGetProperty("hit", out _));
+        Assert.Single(Since(before), item => item.Payload is DiceRolled);
+        Assert.DoesNotContain(Since(before), item => item.Payload is ConditionsChanged);
+        Assert.True(RanOut("he"));
+        Refused(await FireAtSquad("he", 3, 3), "asl.a1.ordnance.he-unavailable");
+        NoReplayErrors();
+    }
 }

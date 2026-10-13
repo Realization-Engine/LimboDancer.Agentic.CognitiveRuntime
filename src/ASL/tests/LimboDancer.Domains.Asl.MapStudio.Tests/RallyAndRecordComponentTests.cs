@@ -74,7 +74,8 @@ public sealed class RallyAndRecordComponentTests : IDisposable
     {
         IRenderedComponent<OrdnanceTargetFields> Fields(OrdnanceTargetFields.AmmunitionKind kind) => context.Render<OrdnanceTargetFields>(parameters => parameters
             .Add(item => item.Targets, ["bd01:E6:0"]).Add(item => item.Vehicles, [new PlayChoice("ge-tank", "ge-tank (attacker-tank)")]).Add(item => item.Ammunition, kind)
-            .Add(item => item.Fixed, "HEAT (C13.34, C13.43)").Add(item => item.Ammunitions, ["ap", "he"]).Add(item => item.Target, "bd01:E6:0"));
+            .Add(item => item.Fixed, "HEAT (C13.34, C13.43)").Add(item => item.Ammunitions, [new("ap", "AP", null, null), new("apds", "APDS (Depletion Number 6)", 6, null),
+                new("he", "HE (Depletion Number 8)", 8, "it has run out (C8.9)")]).Add(item => item.Target, "bd01:E6:0"));
 
         var mortar = Fields(OrdnanceTargetFields.AmmunitionKind.None);
         Assert.Empty(mortar.FindAll("#ordnance-vehicle"));
@@ -86,8 +87,12 @@ public sealed class RallyAndRecordComponentTests : IDisposable
         Assert.Empty(latw.FindAll("#ordnance-ammunition"));
 
         var gun = Fields(OrdnanceTargetFields.AmmunitionKind.Selectable);
-        Assert.Equal(["ap", "he"], gun.FindAll("#ordnance-ammunition option").Select(item => item.GetAttribute("value")));
+        // Pass 55 (C8.9): a Special Ammunition shows its Depletion Number; one the Gun has run out of is not offered, and the note says why.
+        Assert.Equal(["ap", "apds"], gun.FindAll("#ordnance-ammunition option").Select(item => item.GetAttribute("value")));
+        Assert.Equal(["AP", "APDS (Depletion Number 6)"], gun.FindAll("#ordnance-ammunition option").Select(item => item.TextContent));
+        Assert.Equal("HE: it has run out (C8.9)", gun.Find("#ordnance-ammunition-note").TextContent);
         Assert.Empty(gun.FindAll("#ordnance-pf-heat"));
+        Assert.Empty(latw.FindAll("#ordnance-ammunition-note"));
     }
 
     // R05: each record keeps its kind as its class and its event as data-event; an empty list renders no heading.

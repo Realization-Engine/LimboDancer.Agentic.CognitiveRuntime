@@ -23,6 +23,24 @@ public static class LiveOrdnance
     /// </summary>
     public static IReadOnlyList<string> Ammunitions(string definition) => ScenarioA1Definitions.Ammunitions(definition);
 
+    /// <summary>
+    /// The ammunition a Gun or tank may be asked to fire now, at a vehicle or at Infantry (C8.1, C2.21; pass 55): Rules says which, with each
+    /// one's Depletion Number at the game's date, one more under the side's Elite rule (C8.2), and why one it has run out of is not offered.
+    /// </summary>
+    public static IReadOnlyList<AmmunitionChoice> AmmunitionChoices(GameState state, string gunId, bool vehicleTarget)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        var (definition, side) = state.Find(gunId) switch
+        {
+            UnitInstance { Definition: { } tank } vehicle => (tank.Definition, vehicle.Side),
+            EquipmentInstance { Definition: { } gun, Holding: { } holding } => (gun.Definition, state.Unit(holding.Holder)?.Side),
+            _ => ((string?)null, (string?)null),
+        };
+        return definition is null ? []
+            : ScenarioA1Definitions.AmmunitionChoices(definition, vehicleTarget, state.ScenarioYear, state.ScenarioMonth, ScenarioA1Definitions.EliteAmmunition(state.SpecialRules, side),
+                [.. state.DepletedAmmunition.Where(item => item.Gun == gunId).Select(item => item.Ammunition)]);
+    }
+
     /// <summary>A LATW definition's type (C13.1): <c>pf</c>, <c>psk</c>, or <c>atr</c>; null for any other.</summary>
     public static string? LatwType(string definition) => Reference.Value.Guns.GetValueOrDefault(definition)?.LatwType;
 
@@ -213,6 +231,9 @@ public static class LiveOrdnance
             target.ToString(), null, null, null, null, acquisition, hit, null)
         {
             Ammunition = ammunition ?? (vehicleTarget is not null ? "ap" : null),
+
+            // C8.2 (pass 55, ruling R55.6): the game's special rule makes the side's force Elite for its Depletion Numbers.
+            Elite = ScenarioA1Definitions.EliteAmmunition(state.SpecialRules, side) ? true : null,
             ScenarioYear = ScenarioA1OrdnanceEligibility.RecordsYear(vehicleTarget is not null, ammunition is not null, state.Side(side)?.Nationality) ? state.ScenarioYear : null,
             IntensiveFire = intensive ? true : null,
             // C5.8 (ruling R8.8): a squad or HS manning a Gun is non-qualified.

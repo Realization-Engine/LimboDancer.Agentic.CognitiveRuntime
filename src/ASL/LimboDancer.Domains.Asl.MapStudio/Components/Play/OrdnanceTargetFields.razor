@@ -1,6 +1,6 @@
 @* Plan C17 (pass 28b): an ordnance shot's target. The page gives the target Locations, the enemy vehicles the view sees in the chosen one (ruling R23.1),
    and how the shot's ammunition is set: none (a light mortar fires on the Area Target Type), fixed (a Panzerfaust or Panzerschreck HEAT, an ATR AP), or
-   chosen from what the Gun carries. The two vehicle selects of the old page are one here. Choosing another Location clears the vehicle, which the
+   chosen from what the Gun may fire at the target. The two vehicle selects of the old page are one here. Choosing another Location clears the vehicle, which the
    page does in its OnTarget handler (section 15.3). *@
 <label>
     Target
@@ -29,17 +29,26 @@
     {
         <span class="muted" id="ordnance-pf-heat">@Fixed</span>
     }
-    else
+}
+@* Pass 55 (C8.1, C8.9, C2.21): what the Gun may fire at the chosen target, each Special Ammunition with its Depletion Number at the game's date;
+   one it has none of now is not offered, and the note says why. At Infantry the list is empty unless the Gun's HE must be named. *@
+@if (Ammunition == AmmunitionKind.Selectable && Ammunitions.Count > 0)
+{
+    @if (Ammunitions.Any(item => item.Unavailable is null))
     {
         <label>
             Ammunition
             <select id="ordnance-ammunition" value="@Chosen" @onchange="@(args => OnAmmunition.InvokeAsync(args.Value as string ?? "ap"))">
-                @foreach (var ammunition in Ammunitions)
+                @foreach (var ammunition in Ammunitions.Where(item => item.Unavailable is null))
                 {
-                    <option value="@ammunition">@ammunition.ToUpperInvariant()</option>
+                    <option value="@ammunition.Ammunition">@ammunition.Label</option>
                 }
             </select>
         </label>
+    }
+    @if (Ammunitions.Any(item => item.Unavailable is not null))
+    {
+        <span class="muted" id="ordnance-ammunition-note">@string.Join("; ", Ammunitions.Where(item => item.Unavailable is not null).Select(item => $"{item.Ammunition.ToUpperInvariant()}: {item.Unavailable}"))</span>
     }
 }
 
@@ -59,7 +68,7 @@
         /// <summary>The weapon fires one kind only, named by <see cref="Fixed"/>.</summary>
         Fixed,
 
-        /// <summary>The Gun or MA fires one of <see cref="Ammunitions"/> (C8.1).</summary>
+        /// <summary>The Gun or MA fires one of <see cref="Ammunitions"/> (C8.1), at a vehicle or, when its HE must be named, at Infantry (C2.21).</summary>
         Selectable,
     }
 
@@ -77,8 +86,9 @@
     [Parameter]
     public string Fixed { get; set; } = string.Empty;
 
+    /// <summary>The ammunition the Gun may be asked to fire at the chosen target, as Rules lists it (pass 55); a later kind is one more entry.</summary>
     [Parameter]
-    public IReadOnlyList<string> Ammunitions { get; set; } = [];
+    public IReadOnlyList<LimboDancer.Domains.Asl.Rules.AmmunitionChoice> Ammunitions { get; set; } = [];
 
     [Parameter]
     public string Target { get; set; } = string.Empty;

@@ -151,10 +151,15 @@ public sealed partial class GamePlanner
                 + (facts.SameHex == true ? "in its own hex, so the colored dr gives the Target Facing: 1-2 rear, 3-4 side, 5-6 front, D3.2)"
                     : $"hull {aimed.HullFacing}" + (aimed.TurretFacing is { } turretFacing ? $", turret {turretFacing}" : string.Empty) + " facing the firer)")
             : $"HE at {facts.TargetLocationId}";
+
+        // C8.9 (pass 55, ruling R55.7): the Depletion Number the declared ammunition is fired under, and what an Original DR above it means.
+        var depletion = ScenarioA1Definitions.DepletionWords(facts) is { } depletionWords
+            ? $"; {facts.Ammunition!.ToUpperInvariant()} by its {depletionWords}: on an Original To Hit DR above it the Gun had none, has not fired, and has none for the rest of the scenario (C8.9)"
+            : string.Empty;
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
             [$"play.ordnance: {facts.Gun!.GunId} fires {aim} in the {facts.Phase}; range {facts.Range}, {facts.Hit!.TargetTerrain}"
                 + (facts.HexspinesToTurn > 0 ? $", turning {(facts.Vehicle is null ? string.Empty : "its turret ")}{facts.HexspinesToTurn} hexspine(s) to {facing!.Value.Name()}" : string.Empty)
-                + toHit])
+                + toHit + depletion])
         {
             Roll = new PlannedRoll("ordnance", Build),
             FirstEventId = EventId(attemptId, 1),

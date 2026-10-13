@@ -51,6 +51,17 @@ public sealed class ScenarioA1OrdnanceReference
         get;
     }
 
+    /// <summary>
+    /// The same charts with one more Gun, or one of the catalog's replaced (pass 55): for a listing no counter of the catalog prints, such as the
+    /// AP# of C8.8, which only the 155mm Guns carry. The package itself reads the catalog alone.
+    /// </summary>
+    public ScenarioA1OrdnanceReference WithGun(GunDefinition gun)
+    {
+        ArgumentNullException.ThrowIfNull(gun);
+        var guns = new Dictionary<string, GunDefinition>(Guns, StringComparer.Ordinal) { [gun.Id] = gun };
+        return new ScenarioA1OrdnanceReference(ranges, infantry, modifications, heColumns, area, guns, Fire, Armor);
+    }
+
     /// <summary>The Fire package's reference, which resolves a hit on the IFT and holds the crews' and targets' definitions.</summary>
     public ScenarioA1FireReference Fire
     {

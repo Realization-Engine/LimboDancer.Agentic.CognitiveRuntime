@@ -36,9 +36,22 @@ public sealed record OrdnanceShot(
         get; init;
     }
 
-    /// <summary>The ammunition declared (C8.1; ruling R7.6): <c>ap</c>, <c>apcr</c>, <c>heat</c>, or <c>he</c>; null is HE.</summary>
+    /// <summary>
+    /// The ammunition declared (C8.1; ruling R7.6): <c>ap</c>, <c>apcr</c>, <c>apds</c>, <c>heat</c>, or <c>he</c>; null is HE that is not Special
+    /// Ammunition (C2.21): a Gun whose HE has a Depletion Number fires it only when it is named (C8.8; pass 55, ruling R55.7).
+    /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Ammunition
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the firer's force is Elite for its Depletion Numbers (C8.2, p. 178; pass 55, ruling R55.6), which are then one higher: the game's
+    /// special rule <c>elite-ammunition:&lt;side&gt;</c>. Null is false: a shot recorded before the pass was not Elite.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Elite
     {
         get; init;
     }
@@ -244,7 +257,7 @@ public sealed record OrdnanceMovement(int? MpInLos, bool? NonAssault, bool? Open
 /// </summary>
 public sealed record OrdnanceGun(string? GunId, string? DefinitionId, bool? Malfunctioned, int? ShotsThisPhase, bool? RateOfFireKept, bool? FiredThisPlayerTurn)
 {
-    /// <summary>The special ammunition the Gun has run out of this scenario (C8.9): <c>apcr</c> or <c>heat</c>; null is none.</summary>
+    /// <summary>The special ammunition the Gun has run out of this scenario (C8.9), such as <c>apcr</c>, <c>apds</c>, <c>heat</c>, or <c>he</c>; null is none.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<string>? Depleted
     {
@@ -396,7 +409,7 @@ public sealed record OrdnanceResolution(
 
     /// <summary>
     /// The special ammunition's use (C8.9): <c>used</c>, <c>depleted</c> (used and run out), or <c>none</c> (there was none, so the Gun did
-    /// not fire); null for AP and HE.
+    /// not fire); null for AP and HE that have no Depletion Number.
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? AmmunitionUse
@@ -449,6 +462,12 @@ public sealed record OrdnanceResolution(
     public const string Abstained = "abstained";
     public const string Indeterminate = "indeterminate";
 }
+
+/// <summary>
+/// One ammunition a Gun may be asked to fire at a kind of target (C8.1; pass 55), for the list a player chooses from: its words with the
+/// Depletion Number it has at the game's date (C8.9), one more for an Elite force (C8.2), and, when the Gun cannot fire it now, why.
+/// </summary>
+public sealed record AmmunitionChoice(string Ammunition, string Label, int? DepletionNumber, string? Unavailable);
 
 /// <summary>A Gun as the Ordnance package reads its reviewed catalog definition (C2.21 to C2.3).</summary>
 public sealed record GunDefinition(

@@ -4,6 +4,7 @@ using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Geometry;
 using LimboDancer.Domains.Asl.MapStudio.Services;
 using LimboDancer.Domains.Asl.Play;
+using LimboDancer.Domains.Asl.Units.State;
 using Microsoft.Extensions.DependencyInjection;
 using PlayPage = LimboDancer.Domains.Asl.MapStudio.Components.Pages.Play;
 
@@ -111,5 +112,59 @@ public sealed class PlayPageOrdnanceTests : IDisposable
         Assert.Contains("Basic TH# 8 (black) = 8; DR 6 (colored), 5 = 11", record, StringComparison.Ordinal);
         Assert.Contains("miss", record, StringComparison.Ordinal);
         Assert.False(live.History("village")!.HasErrors);
+    }
+
+    [Fact]
+    public void AGunWhoseHeHasADepletionNumberNamesItAtInfantryAndShowsTheNumber()
+    {
+        // Pass 55 (C2.21, C8.8, C8.9): the British 6-Pounder's HE is Special Ammunition, HE8 in June 1944. At Infantry the panel offers it with
+        // its number and the shot names it; an Original 9 finds none, asks for no IFT DR, and the panel then says it has run out.
+        var hexes = Hexes();
+        var page = context.Render<PlayPage>();
+        MinimalCards.Choose(page, new Dictionary<string, string>
+        {
+            ["board"] = Board, ["first"] = "british", ["second"] = "german", ["first-elr"] = "3", ["second-elr"] = "3", ["year"] = "1944", ["month"] = "6",
+        });
+        Place(page, "uk-crew", "british-crew", hexes.One);
+        page.Find("#place-definition").Change("british-at-gun");
+        page.Find("#place-facing").Change("east");
+        page.Find("#place-holder").Change("uk-crew");
+        Place(page, "uk-gun", "british-at-gun", hexes.One);
+        Place(page, "g1", "attacker-squad", hexes.Two);
+        Commit(page, "#propose-setup");
+        page.EndPhase(Commit);
+
+        page.Find("#ordnance-gun").Change("uk-gun");
+        page.Find("#ordnance-target").Change(hexes.Two);
+        Assert.Empty(page.FindAll("#ordnance-vehicle"));
+        var option = Assert.Single(page.FindAll("#ordnance-ammunition option"));
+        Assert.Equal(("he", "HE (Depletion Number 8)"), (option.GetAttribute("value"), option.TextContent));
+        Assert.Empty(page.FindAll("#ordnance-ammunition-note"));
+        dice.Enqueue(5);
+        dice.Enqueue(4);
+        Commit(page, "#propose-ordnance");
+        Assert.Empty(dice);
+
+        // What the page sent, read from the committed game.
+        var history = live.History("village")!;
+        Assert.False(history.HasErrors);
+        var fired = history.Events.Select(item => item.Payload).OfType<OrdnanceFired>().Single();
+        Assert.Equal("he", fired.Facts.GetProperty("ammunition").GetString());
+        Assert.Equal(1944, fired.Facts.GetProperty("scenarioYear").GetInt32());
+        Assert.Equal("none", fired.Resolution.GetProperty("ammunitionUse").GetString());
+        Assert.False(fired.Resolution.TryGetProperty("hit", out _));
+        Assert.Contains("the Original DR is above the Depletion Number 8: it had no HE, has not fired", page.Find("#play-ordnance .ordnance-record").TextContent, StringComparison.Ordinal);
+
+        // The Gun has not fired and is still offered, with no HE left to name.
+        page.Find("#ordnance-gun").Change("uk-gun");
+        page.Find("#ordnance-target").Change(hexes.Two);
+        Assert.Empty(page.FindAll("#ordnance-ammunition"));
+        Assert.Equal("HE: it has run out (C8.9)", page.Find("#ordnance-ammunition-note").TextContent);
+
+        // The shot still names HE, so the refusal is that the Gun has none, not that it was left unnamed.
+        page.Find("#propose-ordnance").Click();
+        page.WaitForAssertion(() => Assert.Contains("Refused", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        Assert.True(page.Find("#play-proposal").TextContent.Contains("it has none now", StringComparison.Ordinal), page.Find("#play-proposal").TextContent);
+        Assert.DoesNotContain("name HE for the shot", page.Find("#play-proposal").TextContent, StringComparison.Ordinal);
     }
 }

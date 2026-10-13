@@ -300,10 +300,26 @@ public static class ScenarioA1OrdnanceCalculator
         var gunShot = shot.Gun!;
         if (!reference.Guns.TryGetValue(gunShot.DefinitionId!, out var gun) || gun.Nationality != shot.FiringNationality || gun.Mount360
             || !(shot.Vehicle is null ? AdmittedGunTypes.Contains(gun.GunType) : gun.GunType == "vehicle")
-            || (shot.VehicleTarget is null && (gun.NoHe || shot.Ammunition is not (null or "he"))))
+            || (shot.VehicleTarget is null && !ScenarioA1ArmorCalculator.Lists(gun, "he") && (gun.NoHe || shot.Ammunition is not (null or "he"))))
         {
             outside.Add(Prefix + "gun-outside");
             return outside;
+        }
+
+        // C2.21, C8.8 (pp. 167, 179; pass 55, ruling R55.7): a Gun is "always assumed to be firing HE vs unarmored targets" only when that
+        // ammunition "is not Special Ammunition (i.e., has no Depletion #; 8.8)": one whose counter lists an HE Depletion Number fires HE only
+        // when the shot names it, and not at all before the number's date or once it has run out (C8.9). Its AP at Infantry is C8.31's HE
+        // Equivalency, which is not built.
+        if (shot.VehicleTarget is null && ScenarioA1ArmorCalculator.Lists(gun, "he"))
+        {
+            if (shot.Ammunition != "he")
+            {
+                outside.Add(Prefix + "he-not-named");
+            }
+            else if (ScenarioA1ArmorCalculator.ShotDepletion(shot, gun) is null || gunShot.Depleted?.Contains("he", StringComparer.Ordinal) == true)
+            {
+                outside.Add(Prefix + "he-unavailable");
+            }
         }
 
         // C9.1, C3.33 (rulings R9.2, R9.3): a mortar always fires on the Area Target Type; other Guns' Area Target Type fire is not built. C13.1,
@@ -851,6 +867,29 @@ public static class ScenarioA1OrdnanceCalculator
         // C2.28: an Original To Hit DR at or above the B# malfunctions the Gun; C5.62: two lower while Intensive Firing.
         var malfunctioned = original >= Breakdown(shot, gun, reference);
 
+        // C8.9, C8.8 (p. 179; pass 55, ruling R55.7): HE with a Depletion Number is used below it, used and run out at it, and above it "the firer
+        // had no such ammunition and is considered not to have fired yet for any purpose unless Gun Malfunction ... occurs": no ROF check, no hit,
+        // and no IFT DR for a round that was not there. A shot that names no ammunition, as every one before the pass, has no such number.
+        string? use = null;
+        if (ScenarioA1ArmorCalculator.ShotDepletion(shot, gun) is { } depletion)
+        {
+            use = ScenarioA1ArmorCalculator.Use(original, depletion);
+            if (use == "none")
+            {
+                if (!malfunctioned)
+                {
+                    return ScenarioA1ArmorCalculator.Unused(shot, gun, toHit);
+                }
+
+                isHit = critical = false;
+                toHit = toHit with
+                {
+                    Hit = false,
+                    CriticalHit = false
+                };
+            }
+        }
+
         // C2.24: an Original colored dr at most the ROF keeps the Multiple ROF; C2.5: a non-vehicular NT Gun's ROF is one lower after a
         // CA change; C5.4: a pinned crew forfeits it; C5.2: none in the AFPh.
         var rof = gun.RateOfFire ?? 0;
@@ -943,6 +982,7 @@ public static class ScenarioA1OrdnanceCalculator
             CriticalHit = criticalHit,
             CriticalTarget = criticalTarget,
             GunTargetFate = fate,
+            AmmunitionUse = use,
         };
     }
 

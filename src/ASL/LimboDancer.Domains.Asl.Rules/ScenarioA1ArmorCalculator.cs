@@ -100,16 +100,7 @@ internal static class ScenarioA1ArmorCalculator
     public static int? Depletion(GunDefinition gun, string ammunition, int? year, int? month, bool elite = false)
     {
         ArgumentNullException.ThrowIfNull(gun);
-        var type = ammunition switch
-        {
-            "apcr" => "A",
-            "apds" => "D",
-            "heat" => "H",
-            "he" => "HE",
-            "ap" => "AP",
-            "canister" => "C",
-            _ => null,
-        };
+        var type = TypeOf(ammunition);
         var entries = gun.SpecialAmmo.Select(ParseAmmunition).OfType<SpecialAmmunition>().Where(entry => entry.Type == type).ToArray();
         if (entries.Length == 0)
         {
@@ -130,6 +121,53 @@ internal static class ScenarioA1ArmorCalculator
                 || entry.Year < year || (entry.Year == year && (entry.Month is not { } first || (month ?? 0) >= first)))
             .OrderBy(entry => entry.Year ?? 0).ToArray();
         return held.Length > 0 ? Elite(held[^1].Number) : null;
+    }
+
+    private static string? TypeOf(string ammunition) => ammunition switch
+    {
+        "apcr" => "A",
+        "apds" => "D",
+        "heat" => "H",
+        "he" => "HE",
+        "ap" => "AP",
+        "canister" => "C",
+        _ => null,
+    };
+
+    /// <summary>Whether the counter lists a Depletion Number for the ammunition at any date (C8.9): its HE or AP is then Special Ammunition (C8.8, C2.21).</summary>
+    internal static bool Lists(GunDefinition gun, string ammunition) =>
+        TypeOf(ammunition) is { } type && gun.SpecialAmmo.Any(item => ParseAmmunition(item)?.Type == type);
+
+    /// <summary>
+    /// The Depletion Number a shot's ammunition is fired under (C8.9, p. 179; pass 55, ruling R55.7), one more for an Elite force (C8.2), or null
+    /// when it has none: a LATW's (C8.3), AP or HE the counter gives no number, and a shot that names no ammunition, which is HE that is not
+    /// Special Ammunition (C2.21). Intensive Fire does not change it (C8.92).
+    /// </summary>
+    internal static int? ShotDepletion(OrdnanceShot shot, GunDefinition gun) =>
+        gun.GunType == "latw" || shot.Ammunition is not { } ammunition ? null
+            : Depletion(gun, ammunition, shot.ScenarioYear, shot.Hit?.ScenarioMonth, shot.Elite == true);
+
+    /// <summary>
+    /// C8.9: an Original To Hit DR below the Depletion Number uses the ammunition; one equal to it uses it and the firer "runs out of that Special
+    /// Ammunition in the process"; above it "the firer had no such ammunition".
+    /// </summary>
+    internal static string Use(int original, int depletion) => original < depletion ? "used" : original == depletion ? "depleted" : "none";
+
+    /// <summary>
+    /// C8.9: the shot of a Gun that had no such ammunition and did not malfunction: it "is considered not to have fired yet for any purpose", so it
+    /// keeps its fire, takes no fire counter, and its Acquisition stands.
+    /// </summary>
+    internal static OrdnanceResolution Unused(OrdnanceShot shot, GunDefinition gun, OrdnanceToHit toHit)
+    {
+        var missed = toHit with
+        {
+            Hit = false,
+            CriticalHit = false
+        };
+        return new OrdnanceResolution(OrdnanceResolution.Resolved, [], missed, new OrdnanceGunEffect(gun.Breakdown, false, gun.RateOfFire ?? 0, true, null, shot.Acquisition!.Value, null))
+        {
+            AmmunitionUse = "none"
+        };
     }
 
     /// <summary>D3.2 (p. 199; pass 50): the Target Facing of a vehicle fired on from inside its own hex, by the colored dr of the To Hit DR: 1-2 rear, 3-4 side, 5-6 front.</summary>
@@ -188,12 +226,17 @@ internal static class ScenarioA1ArmorCalculator
         }
 
         var tk = armored ? reference.Armor.BasicTk(ammunition, gun) : reference.Armor.UnarmoredTk(ammunition, gun);
-        if (ammunition is not ("ap" or "apcr" or "heat" or "he") || (ammunition == "ap" && gun.NoAp) || (ammunition == "he" && gun.NoHe) || tk is null)
+        // C8.8 (p. 179; pass 55): a Gun whose caliber is underscored fires HE all the same when its counter lists an HE Depletion Number. Canister
+        // "is ineffective vs armored targets" (C8.4) and is not fired on the Vehicle Target Type.
+        if (ammunition is not ("ap" or "apcr" or "apds" or "heat" or "he") || (ammunition == "ap" && gun.NoAp) || (ammunition == "he" && gun.NoHe && !Lists(gun, "he"))
+            || tk is null)
         {
             outside.Add(Prefix + "ammunition-outside");
         }
 
-        if (!latw && ammunition is "apcr" or "heat" && Depletion(gun, ammunition, shot.ScenarioYear, shot.Hit!.ScenarioMonth) is null)
+        // C8.11, C8.3, C8.8 (pass 55, ruling R55.7): APCR, APDS, and HEAT always have a Depletion Number, AP and HE where the counter lists one;
+        // none at the scenario's date is no such ammunition.
+        if (!latw && (ammunition is "apcr" or "apds" or "heat" || Lists(gun, ammunition)) && ShotDepletion(shot, gun) is null)
         {
             outside.Add(Prefix + "ammunition-unavailable");
         }
@@ -203,7 +246,7 @@ internal static class ScenarioA1ArmorCalculator
             outside.Add(Prefix + "ammunition-depleted");
         }
 
-        // C7.24: AP and APCR need a Case D value at the range (NA is out of reach).
+        // C7.24: AP, APCR, and APDS need a Case D value at the range (NA is out of reach).
         if (armored && tk is not null && reference.Armor.CaseD(ammunition, gun, shot.Range!.Value) is null)
         {
             outside.Add(Prefix + "out-of-range");
@@ -234,9 +277,10 @@ internal static class ScenarioA1ArmorCalculator
 
         var basic = pf ? 10 : gun.ToHitTable.Count > 0 ? gun.ToHitTable[range - 1] : reference.Armor.BasicToHit(color, column);
         var modifications = pf ? [new FireModifier("pf-range", -2 * range, "C13.33")] : gun.ToHitTable.Count > 0 ? [] : reference.Modifications(gun, range).ToList();
-        if (ammunition == "apcr" && reference.Armor.ApcrToHit(column) is var apcr && apcr != 0)
+        // C4.3 (p. 171): "the Basic TH# of any shot using APCR/APDS is lessened by one for every 12 hexes (or fraction thereof) beyond 12 hex range".
+        if (ammunition is "apcr" or "apds" && reference.Armor.ApcrToHit(column) is var apcr && apcr != 0)
         {
-            modifications.Add(new FireModifier("apcr", apcr, "C4.3"));
+            modifications.Add(new FireModifier(ammunition, apcr, "C4.3"));
         }
 
         var modified = basic + (int)modifications.Sum(item => item.Value);
@@ -454,16 +498,27 @@ internal static class ScenarioA1ArmorCalculator
         }
 
         // C8.9: special ammunition is used below its Depletion Number, used and run out at it, and was never there above it, when the Gun
-        // did not fire at all unless it malfunctioned.
+        // did not fire at all unless it malfunctioned. Pass 55 (ruling R55.7): every ammunition with a Depletion Number, APDS, and AP or HE the
+        // counter gives one (C8.8), beside APCR and HEAT.
         string? use = null;
-        if (!latw && ammunition is "apcr" or "heat")
+        if (ShotDepletion(shot, gun) is { } depletion)
         {
-            var depletion = Depletion(gun, ammunition, shot.ScenarioYear, hit.ScenarioMonth)!.Value;
-            use = original < depletion ? "used" : original == depletion ? "depleted" : "none";
+            use = Use(original, depletion);
             if (use == "none" && !malfunctioned)
             {
-                var unused = new OrdnanceGunEffect(gun.Breakdown, false, gun.RateOfFire ?? 0, true, null, shot.Acquisition!.Value, null);
-                return new OrdnanceResolution(OrdnanceResolution.Resolved, [], toHit with { Hit = false, CriticalHit = false }, unused) { AmmunitionUse = use };
+                return Unused(shot, gun, toHit);
+            }
+
+            // A round that was not there hits nothing, though the Gun malfunctioned on the DR. An APCR or HEAT record made before pass 55 keeps
+            // the To Hit result it shows; no To Kill DR follows it either way.
+            if (use == "none" && ammunition is not ("apcr" or "heat"))
+            {
+                isHit = critical = false;
+                toHit = toHit with
+                {
+                    Hit = false,
+                    CriticalHit = false
+                };
             }
         }
 

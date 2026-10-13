@@ -808,7 +808,8 @@ else if (state is not null)
                             OnDirector="@(id => ordnanceDirector = id)" OnIntensive="@(on => ordnanceIntensive = on)" OnPropose="@ProposeOrdnance">
                             <Target>
                                 <OrdnanceTargetFields Targets="@([.. FireTargets(firing)])" Vehicles="@OrdnanceVehicleChoices(firing)" Ammunition="@OrdnanceAmmunitionKind"
-                                    Fixed="@OrdnanceFixedAmmunition" Ammunitions="@OrdnanceAmmunitions" Target="@ordnanceTarget" Vehicle="@ordnanceVehicle" Chosen="@ordnanceAmmunition"
+                                    Fixed="@OrdnanceFixedAmmunition" Ammunitions="@OrdnanceAmmunitionChoices(OrdnanceVehicleChoices(firing).Count > 0)" Target="@ordnanceTarget" Vehicle="@ordnanceVehicle"
+                                    Chosen="@(OrdnanceAmmunitionFor(OrdnanceVehicleChoices(firing).Count > 0) ?? ordnanceAmmunition)"
                                     OnTarget="@(at => { ordnanceTarget = at; ordnanceVehicle = string.Empty; })" OnVehicle="@(id => ordnanceVehicle = id)"
                                     OnAmmunition="@(ammunition => ordnanceAmmunition = ammunition)" />
                             </Target>
@@ -4259,6 +4260,19 @@ else if (state is not null)
         _ => ["ap", "apcr", "heat", "he"],
     };
 
+    /// <summary>
+    /// What the chosen Gun or tank may fire at a vehicle or at Infantry now (C8.1, C2.21; pass 55), as Rules lists it: each Special Ammunition with
+    /// its Depletion Number at the game's date, and why one is not offered. The panel is its owner's, so the numbers are its own Gun's.
+    /// </summary>
+    private IReadOnlyList<AmmunitionChoice> OrdnanceAmmunitionChoices(bool vehicleTarget) => state is null ? [] : LiveOrdnance.AmmunitionChoices(state, ordnanceGun, vehicleTarget);
+
+    /// <summary>The ammunition the shot names at such a target: the one chosen while the Gun may fire it, else the first it may; null when it may fire none of the list.</summary>
+    private string? OrdnanceAmmunitionFor(bool vehicleTarget)
+    {
+        var offered = OrdnanceAmmunitionChoices(vehicleTarget).Where(item => item.Unavailable is null).Select(item => item.Ammunition).ToArray();
+        return offered.Contains(ordnanceAmmunition) ? ordnanceAmmunition : offered.FirstOrDefault();
+    }
+
     /// <summary>The Shocked AFVs and Unconfirmed Kills that owe their RPh dr (C7.42).</summary>
     private IEnumerable<UnitInstance> ShockedVehicles => SeenOnly(state is null ? []
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit) && !state.ShockRollsThisPhase.Contains(unit.Id)
@@ -4396,7 +4410,15 @@ else if (state is not null)
         if (ordnanceVehicle.Length > 0 && OrdnanceAmmunitionKind != OrdnanceTargetFields.AmmunitionKind.None)
         {
             arguments["targetVehicle"] = ordnanceVehicle;
-            arguments["ammunition"] = ordnanceGun.EndsWith(":pf", StringComparison.Ordinal) ? "heat" : ordnanceAmmunition;
+            arguments["ammunition"] = ordnanceGun.EndsWith(":pf", StringComparison.Ordinal) ? "heat"
+                : OrdnanceAmmunitionKind == OrdnanceTargetFields.AmmunitionKind.Selectable ? OrdnanceAmmunitionFor(true) ?? ordnanceAmmunition : ordnanceAmmunition;
+        }
+        else if (OrdnanceAmmunitionKind == OrdnanceTargetFields.AmmunitionKind.Selectable
+            && (OrdnanceAmmunitionFor(false) ?? OrdnanceAmmunitionChoices(false).FirstOrDefault()?.Ammunition) is { } named)
+        {
+            // C2.21, C8.8 (pass 55): a Gun whose HE has a Depletion Number fires it at Infantry only when the shot names it. It is named also when
+            // the Gun has none now, so that the refusal says that and not that the HE was left unnamed.
+            arguments["ammunition"] = named;
         }
 
         return Propose(GameActions.FireOrdnance, JsonSerializer.SerializeToElement(arguments));

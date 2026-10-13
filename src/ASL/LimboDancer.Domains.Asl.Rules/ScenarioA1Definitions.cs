@@ -189,6 +189,62 @@ public static class ScenarioA1Definitions
     public static int? DepletionNumber(GunDefinition gun, string ammunition, int? year, int? month, bool elite = false) =>
         ScenarioA1ArmorCalculator.Depletion(gun, ammunition, year, month, elite);
 
+    /// <summary>The start of the game's special rule that makes a side's force Elite for its Depletion Numbers (C8.2; pass 55, ruling R55.6); the side's id follows.</summary>
+    public const string EliteAmmunitionRule = "elite-ammunition:";
+
+    /// <summary>
+    /// C8.2 (p. 178; pass 55, ruling R55.6): "An armed-vehicle/weapon in a printed scenario is Elite for this purpose if so specified by an SSR":
+    /// whether the game's special rules name the side.
+    /// </summary>
+    public static bool EliteAmmunition(IReadOnlyList<string> specialRules, string? side)
+    {
+        ArgumentNullException.ThrowIfNull(specialRules);
+        return side is not null && specialRules.Contains(EliteAmmunitionRule + side, StringComparer.Ordinal);
+    }
+
+    /// <summary>A Depletion Number in words, with the one an Elite force adds (C8.2): "Depletion Number 7 (6, and 1 for Elite, C8.2)".</summary>
+    private static string DepletionWords(int number, bool elite, string open = " (", string close = ")") =>
+        "Depletion Number " + number.ToString(System.Globalization.CultureInfo.InvariantCulture)
+            + (elite ? open + (number - 1).ToString(System.Globalization.CultureInfo.InvariantCulture) + ", and 1 for Elite, C8.2" + close : string.Empty);
+
+    /// <summary>
+    /// The Depletion Number a shot's declared ammunition is fired under, in words (C8.9; pass 55, ruling R55.7), or null when it has none: what
+    /// the proposal and the record of the shot say.
+    /// </summary>
+    public static string? DepletionWords(OrdnanceShot shot)
+    {
+        ArgumentNullException.ThrowIfNull(shot);
+        return OrdnanceReference.Value.Guns.TryGetValue(shot.Gun?.DefinitionId ?? string.Empty, out var gun) && ScenarioA1ArmorCalculator.ShotDepletion(shot, gun) is { } number
+            ? DepletionWords(number, shot.Elite == true) : null;
+    }
+
+    /// <summary>
+    /// The ammunition a player may choose for a Gun or MA of this definition at a vehicle or at Infantry (C8.1, C2.21; pass 55), each with its
+    /// Depletion Number at the game's date and, when the Gun has none then or has run out, the reason. At a vehicle: what the definition may
+    /// carry but Canister, which "is ineffective vs armored targets" (C8.4). At Infantry: nothing to choose, HE being assumed, unless the Gun's
+    /// HE is Special Ammunition, which is fired only when named (C2.21, C8.8).
+    /// </summary>
+    public static IReadOnlyList<AmmunitionChoice> AmmunitionChoices(string definition, bool vehicleTarget, int? year, int? month, bool elite, IReadOnlyList<string> depleted)
+    {
+        ArgumentNullException.ThrowIfNull(depleted);
+        if (!OrdnanceReference.Value.Guns.TryGetValue(definition, out var gun) || gun.GunType == "latw")
+        {
+            return [];
+        }
+
+        string[] offered = vehicleTarget ? [.. Ammunitions(definition).Where(item => item != "canister")]
+            : ScenarioA1ArmorCalculator.Lists(gun, "he") ? ["he"] : [];
+        return [.. offered.Select(ammunition =>
+        {
+            var special = ammunition is "apcr" or "apds" or "heat" || ScenarioA1ArmorCalculator.Lists(gun, ammunition);
+            var number = special ? ScenarioA1ArmorCalculator.Depletion(gun, ammunition, year, month, elite) : null;
+            var name = ammunition.ToUpperInvariant();
+            return new AmmunitionChoice(ammunition, number is { } held ? $"{name} ({DepletionWords(held, elite, ": ", string.Empty)})" : name, number,
+                depleted.Contains(ammunition, StringComparer.Ordinal) ? "it has run out (C8.9)"
+                    : special && number is null ? "none at the scenario's date (C8.9)" : null);
+        })];
+    }
+
     /// <summary>
     /// Good Order (Index, p. 23): a Personnel unit neither broken, berserk, captured, nor held in Melee. Unknown while any of those is not known;
     /// inapplicable to other kinds, since vehicular crews' stun and shock are not yet modelled. The state's own definition (pass 32.a, slice S11);
