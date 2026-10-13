@@ -46,12 +46,14 @@ public static class ScenarioA1FireEligibility
     /// <summary>
     /// Whether a phasing vehicle may fire as Bounding First Fire now (D3.3; ruling R6.9): in the MPh, while it moves as the moving vehicle once the
     /// DEFENDER has passed on its last MP expenditure, or at the outset of its MPh while no other move is under way and it has not ended its move.
+    /// C2.2401 (p. 167; pass 55, ruling R55.19): a Gun Duel's first shot is made by the moving vehicle "first", before the declared Defensive
+    /// First Fire shot it answers, so while the window is still open; nothing else of the rule is waived for it.
     /// </summary>
     public static bool MayBoundingFire(BoundingFireFacts facts)
     {
         ArgumentNullException.ThrowIfNull(facts);
         return facts.Phase == "mph" && facts.ActiveVehicleOfPhasingSide
-            && (facts.MovementExists && facts.MovementVehicle && !facts.WindowOpen ? facts.AmongMovers : !facts.MovementExists && !facts.MovementEnded);
+            && (facts.MovementExists && facts.MovementVehicle && (!facts.WindowOpen || facts.GunDuel) ? facts.AmongMovers : !facts.MovementExists && !facts.MovementEnded);
     }
 
     /// <summary>
@@ -72,6 +74,7 @@ public static class ScenarioA1FireEligibility
         return new FireVehicle(facts.Id, facts.Definition, facts.At, facts.CrewExposed, facts.Stunned || facts.Recalled, facts.StunRecovery, facts.Immobilized)
         {
             Concealed = facts.Concealed || facts.Hidden ? true : null,
+            CrewMorale = facts.CrewMorale,
         };
     }
 
@@ -89,7 +92,11 @@ public static class ScenarioA1FireEligibility
             facts.Stunned || facts.Recalled || facts.Shocked || facts.UnconfirmedKill,
             facts.StunRecovery, facts.Malfunctioned,
             facts.Fired || facts.FirstFire || facts.BoundingFire,
-            facts.RateOfFireKept);
+            facts.RateOfFireKept)
+        {
+            // D3.44 (p. 200; pass 55, ruling R55.16): an Armor Leader modifies the IFT DR of a MA that is a MG.
+            ArmorLeadership = facts.ArmorLeadership,
+        };
     }
 
     /// <summary>
@@ -128,6 +135,9 @@ public static class ScenarioA1FireEligibility
                 MaintainedCaseA = name == FireVehicleWeapon.CoaxialMg ? maintained : null,
             })],
             OtherPhase = OtherFirePhase(facts.Shots, facts.FirePhase, facts.BoundingFireMarked) ? true : null,
+
+            // D3.44 (p. 200; pass 55): "an Armor Leader cannot modify non-OVR MG/FT (unless MA) attacks", so a BMG's or CMG's attack carries none.
+            ArmorLeadership = null,
         };
     }
 
@@ -582,6 +592,25 @@ public static class ScenarioA1FireEligibility
     }
 
     /// <summary>
+    /// The state's part of a Canister shot's attack on one Location (C8.4, A7.4, pp. 178 and 57; pass 55, ruling R55.9): no firers; "all the
+    /// Personnel-units/unarmored-vehicles/Vulnerable-PRC in the same Location" of the enemy side, Infantry as targets and vehicles on the Vehicle
+    /// line, where an AFV is unharmed and its CE crew takes the Collateral Attack. The firing side's own units are not attacked. The map facts
+    /// and the Canister fact are the planner's.
+    /// </summary>
+    public static FireAttack Canister(CanisterLocationFacts facts)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        var enemies = facts.Units.Where(unit => unit.Active && unit.Side != facts.FiringSide && !unit.Captured).OrderBy(unit => unit.Id, StringComparer.Ordinal).ToArray();
+        var vehicles = enemies.Where(unit => unit.Vehicle).ToArray();
+        return new FireAttack(PhaseName(facts.Phase), facts.Phasing ? "phasing" : "non-phasing", null, facts.GunLocation, facts.Target, [], null, null, null, null,
+            facts.ScenarioMonth, null, [.. enemies.Where(unit => !unit.Vehicle).Select(unit => facts.TargetOf(unit.Id))], facts.TargetSideElr, null)
+        {
+            Vehicles = vehicles.Length > 0 ? [.. vehicles.Select(unit => facts.VehicleOf(unit.Id))] : null,
+            TargetSideNoQuarter = facts.TargetSideNoQuarter ? true : null,
+        };
+    }
+
+    /// <summary>
     /// A vehicle's OVR of its Location (D7.1, D7.11; ruling R11.11): by an active or wrecked vehicle on the map (a vehicle destroyed before its
     /// declared OVR resolves still makes it, at half FP); every non-captured enemy unit there is attacked, Infantry as targets and vehicles on the
     /// Vehicle line; the vehicle is Immobile when Immobilized, Bogged, or Wrecked.
@@ -606,6 +635,7 @@ public static class ScenarioA1FireEligibility
                 facts.MainMalfunctioned || facts.Disabled, facts.BmgMalfunctioned, facts.CmgMalfunctioned)
             {
                 StunRecovery = facts.StunRecovery ? true : null,
+                ArmorLeadership = facts.ArmorLeadership,
             },
             Vehicles = vehicles.Length > 0 ? [.. vehicles.Select(unit => facts.VehicleOf(unit.Id))] : null,
             TargetSideNoQuarter = facts.TargetSideNoQuarter ? true : null,
@@ -874,7 +904,7 @@ public static class ScenarioA1FireEligibility
         ArgumentNullException.ThrowIfNull(fires);
         ArgumentNullException.ThrowIfNull(attack);
         ArgumentNullException.ThrowIfNull(fromLocations);
-        return !firesAlone && fires.Any(record => !(attack.VehicleFire is not null && record.Vehicle)
+        return !firesAlone && fires.Any(record => !record.Ordnance && !(attack.VehicleFire is not null && record.Vehicle)
             && (fromLocations.Contains(record.FirerLocation) || record.FirerLocation == attack.FirerLocationId)
             && record.TargetLocation == attack.TargetLocationId && record.Step == step)
             ? $"play.fire-group: a Location of the group has already fired at {attack.TargetLocationId}{(step is null ? " this phase" : " at this MF expenditure")}, and its units fire as one fire group (A7.55, p. 57)"
@@ -959,7 +989,7 @@ public static class ScenarioA1FireEligibility
     {
         ArgumentNullException.ThrowIfNull(fires);
         ArgumentNullException.ThrowIfNull(fromLocations);
-        return fires.Any(record => fromLocations.Contains(record.FirerLocation) && record.TargetLocation == second && record.Step is null)
+        return fires.Any(record => !record.Ordnance && fromLocations.Contains(record.FirerLocation) && record.TargetLocation == second && record.Step is null)
             ? $"play.fire-group: a Location of the group has already fired at {second} this phase (A7.55, A9.52)"
             : null;
     }

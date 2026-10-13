@@ -202,7 +202,9 @@ public static class LiveCloseCombat
                 Is(vehicle, Conditions.Immobilized), Is(vehicle, Conditions.Bogged), Is(vehicle, Conditions.Stunned), Is(vehicle, Conditions.Recalled),
                 Is(vehicle, Conditions.Shocked), Is(vehicle, Conditions.UnconfirmedKill), Is(vehicle, Conditions.Abandoned),
                 Is(vehicle, Conditions.Malfunctioned), Is(vehicle, Conditions.Disabled), Is(vehicle, Conditions.BmgMalfunctioned), Is(vehicle, Conditions.CmgMalfunctioned),
-                Is(vehicle, Conditions.StunRecovery)),
+                Is(vehicle, Conditions.StunRecovery),
+                // D3.44 (pass 55, ruling R55.16): the Armor Leader modifies the vehicle's own CC attack; Rules gives none to an attack on it.
+                ScenarioA1ArmorLeaders.CloseCombatLeadership(LiveFire.ArmorLeadership(vehicle), byVehicle)),
             [.. units.Where(unit => state.Unit(unit.UnitId!) is { } found && !LiveFire.IsVehicle(found))], attackers, defenders, byVehicle, reaction,
             ScenarioA1CloseCombatFactBuilders.FireMarked(reaction, [.. attackers.Where(id => state.Unit(id) is { } unit && (Is(unit, Conditions.FirstFire) || Is(unit, Conditions.FinalFire)))]));
         return (facts, null);

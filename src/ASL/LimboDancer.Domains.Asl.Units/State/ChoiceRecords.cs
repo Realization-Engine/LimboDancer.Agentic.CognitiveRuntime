@@ -27,6 +27,14 @@ public sealed record ChoicePending(string Key, string Kind, string Side, IReadOn
     /// A4.151 (pass 40): a SMC moves away from an Infantry OVR into an adjacent Location "of the ATTACKER's choice"; the options are the Locations.
     /// </summary>
     public const string OverrunEvade = "overrun-evade";
+
+    /// <summary>
+    /// C2.2401 (pass 55, ruling R55.19): the DEFENDER has declared a Defensive First Fire ordnance shot at a moving vehicle, which may fire its MA
+    /// at that firer first; the ATTACKER's options are <see cref="Duel"/> and <see cref="Decline"/>. Its <see cref="Resume"/> holds the declared
+    /// shot's arguments and no roll.
+    /// </summary>
+    public const string GunDuel = Rules.ScenarioA1GunDuels.ChoiceKind;
+    public const string Duel = Rules.ScenarioA1GunDuels.Duel;
     public const string Reveal = "reveal";
     public const string Check = "paatc";
 

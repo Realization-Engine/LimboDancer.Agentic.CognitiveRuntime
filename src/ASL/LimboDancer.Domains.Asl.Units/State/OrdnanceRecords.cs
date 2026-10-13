@@ -40,6 +40,29 @@ public sealed record VehicleWeaponShot(string Vehicle, string Weapon, string Fir
     }
 }
 
+/// <summary>
+/// A Gun Duel under way (C2.2401, p. 167; pass 55, ruling R55.19): the moving vehicle that answered <c>duel</c>, the DEFENDER's Gun or vehicle
+/// whose declared shot it answers, the movement step the duel belongs to, and whether the vehicle's first shot is recorded. The declared shot's
+/// record, or the record that it is void, ends it.
+/// </summary>
+public sealed record GunDuelState(string Vehicle, string Firer, int Step, bool Fired);
+
+/// <summary>
+/// <c>gun-duel-voided</c>: the declared shot of <paramref name="Firer"/> is not made after the first shot of a Gun Duel by
+/// <paramref name="Vehicle"/> (C2.2401; pass 55, ruling R55.19): that shot "voids the opponent's return shot by eliminating, breaking, stunning
+/// or shocking it". <paramref name="Cause"/> names which (<c>eliminated</c>, <c>broken</c>, <c>stunned</c>, <c>shocked</c>, <c>gun</c> for a Gun
+/// destroyed or malfunctioned, or <c>other</c>: a shot the first shot left none of those causes for, which the checks of every shot refused;
+/// <see cref="Reason"/> then says why).
+/// </summary>
+public sealed record GunDuelVoided(string Firer, string Vehicle, string Cause) : EventPayload
+{
+    /// <summary>Why the declared shot is not fired when its cause is <c>other</c>, in the refusal's words; null otherwise, and in a record made before the review of pass 55.</summary>
+    public string? Reason
+    {
+        get; init;
+    }
+}
+
 /// <summary>A Special Ammunition a Gun or an AFV has run out of for the rest of the scenario (C8.9; ruling R7.6).</summary>
 public sealed record DepletedAmmunition(string Gun, string Ammunition);
 

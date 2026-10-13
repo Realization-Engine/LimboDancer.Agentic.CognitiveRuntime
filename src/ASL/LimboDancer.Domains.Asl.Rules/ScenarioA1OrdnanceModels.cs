@@ -36,9 +36,22 @@ public sealed record OrdnanceShot(
         get; init;
     }
 
-    /// <summary>The ammunition declared (C8.1; ruling R7.6): <c>ap</c>, <c>apcr</c>, <c>heat</c>, or <c>he</c>; null is HE.</summary>
+    /// <summary>
+    /// The ammunition declared (C8.1; ruling R7.6): <c>ap</c>, <c>apcr</c>, <c>apds</c>, <c>heat</c>, or <c>he</c>; null is HE that is not Special
+    /// Ammunition (C2.21): a Gun whose HE has a Depletion Number fires it only when it is named (C8.8; pass 55, ruling R55.7).
+    /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Ammunition
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the firer's force is Elite for its Depletion Numbers (C8.2, p. 178; pass 55, ruling R55.6), which are then one higher: the game's
+    /// special rule <c>elite-ammunition:&lt;side&gt;</c>. Null is false: a shot recorded before the pass was not Elite.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Elite
     {
         get; init;
     }
@@ -57,6 +70,17 @@ public sealed record OrdnanceShot(
         get; init;
     }
 
+    /// <summary>
+    /// Whether the shot is the first shot of a Gun Duel (C2.2401, p. 167; pass 55, ruling R55.19): a vehicle's MA fired as Bounding First Fire
+    /// while the DEFENDER's window on its MP expenditure is open, before the declared shot it answers. Null is false: no shot recorded before the
+    /// pass was one.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? GunDuel
+    {
+        get; init;
+    }
+
     /// <summary>Whether the shot is Intensive Fire (C5.6; ruling R8.2).</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? IntensiveFire
@@ -70,6 +94,17 @@ public sealed record OrdnanceShot(
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? CushionedOpenGround
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the target is at a higher elevation than the firer and may claim Height Advantage (B10.31, C6.8, D4.22; pass 55): Case Q, +1 on the
+    /// TH DR of the Infantry and Vehicle Target Types when the target has no other positive TEM, and then no Case J4. Null is false: a shot
+    /// recorded before the pass was at the firer's level.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? HeightAdvantage
     {
         get; init;
     }
@@ -180,7 +215,49 @@ public sealed record OrdnanceShot(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The aim of a Canister shot and the Locations it attacks (C8.4, C8.41, p. 178; pass 55, rulings R55.8, R55.9); required when the ammunition
+    /// is <c>canister</c>, and null for every other shot, as in every record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrdnanceCanister? Canister
+    {
+        get; init;
+    }
 }
+
+/// <summary>
+/// A Canister shot's aim (C8.4, C8.41, p. 178; pass 55, ruling R55.8): which of the five vertices of the Covered Arc it is fired at, the facing
+/// whose Covered Arc that is (the Gun's, after any turn the shot makes), and the Locations the planner read as attacked: those of the cluster and
+/// of the adjacent hex or hexes on the LOS that are at the firer's elevation and in its LOS.
+/// </summary>
+public sealed record OrdnanceCanister(int? Aim, string? Facing, IReadOnlyList<OrdnanceCanisterLocation>? Locations);
+
+/// <summary>
+/// A Location a Canister shot attacks (C8.4, C8.41): a hex of the cluster, or, with <see cref="AdjacentHexes"/> 1, the hex adjacent to the firer
+/// along the LOS (Area Fire, halved), or, with 2, one of the two adjacent hexes whose common hexside the LOS runs along (quartered).
+/// </summary>
+public sealed record OrdnanceCanisterLocation(string? LocationId)
+{
+    /// <summary>1 for the adjacent hex on the LOS, 2 for one of two adjacent hexes the LOS runs between (C8.41); null for a hex of the cluster.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? AdjacentHexes
+    {
+        get; init;
+    }
+}
+
+/// <summary>
+/// What a Canister shot's IFT DR decided for the shot itself (C8.4, p. 178; pass 55, ruling R55.9): the aim and the facing, the FP of the Gun
+/// Size, the DR that is also the Depletion, malfunction, and ROF check, the Case A DRM of a CA change (D3.52), the Depletion Number, and the FP
+/// each Location is attacked with; no Location when the Gun had no Canister (C8.9). Each attack is a fire record of its own on the same DR.
+/// </summary>
+public sealed record OrdnanceCanisterResolution(int Aim, string Facing, int Firepower, IReadOnlyList<int> Dice, int OriginalDr, int CaseA, int DepletionNumber,
+    IReadOnlyList<OrdnanceCanisterAttack> Attacks);
+
+/// <summary>A Location a Canister shot attacks, with what halves its FP there and the FP it is left (C8.4, C8.41; a concealed target halves it again on the IFT).</summary>
+public sealed record OrdnanceCanisterAttack(string LocationId, IReadOnlyList<FireModifier> Multipliers, decimal Firepower);
 
 /// <summary>
 /// A moving target of Defensive First Fire (C6.1 to C6.17; ruling R8.1): a vehicle's MP spent in the firer's continuous LOS; Infantry's
@@ -233,7 +310,7 @@ public sealed record OrdnanceMovement(int? MpInLos, bool? NonAssault, bool? Open
 /// </summary>
 public sealed record OrdnanceGun(string? GunId, string? DefinitionId, bool? Malfunctioned, int? ShotsThisPhase, bool? RateOfFireKept, bool? FiredThisPlayerTurn)
 {
-    /// <summary>The special ammunition the Gun has run out of this scenario (C8.9): <c>apcr</c> or <c>heat</c>; null is none.</summary>
+    /// <summary>The special ammunition the Gun has run out of this scenario (C8.9), such as <c>apcr</c>, <c>apds</c>, <c>heat</c>, or <c>he</c>; null is none.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<string>? Depleted
     {
@@ -327,6 +404,16 @@ public sealed record OrdnanceRolls(IReadOnlyList<int>? ToHit, int? Subsequent, I
     {
         get; init;
     }
+
+    /// <summary>
+    /// The IFT DR of a Canister shot (C8.4, p. 178; pass 55), colored die first: it "also serves as the Ammo Depletion, armament breakdown, and
+    /// ROF checks usually resolved with the To Hit DR", which such a shot does not make.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<int>? Canister
+    {
+        get; init;
+    }
 }
 
 /// <summary>The To Hit arithmetic (C3.3, C4, C5, C6): Basic and Modified TH#, the DRM, the Final DR, and what it achieved.</summary>
@@ -385,10 +472,21 @@ public sealed record OrdnanceResolution(
 
     /// <summary>
     /// The special ammunition's use (C8.9): <c>used</c>, <c>depleted</c> (used and run out), or <c>none</c> (there was none, so the Gun did
-    /// not fire); null for AP and HE.
+    /// not fire); null for AP and HE that have no Depletion Number.
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? AmmunitionUse
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The Depletion Number <see cref="AmmunitionUse"/> was decided under (C8.9, C8.2), an Elite force's one more included; null when the shot
+    /// had none, in a Canister resolution, whose own block names it, and in a record made before the reviews of pass 55, which is compared
+    /// without it.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? DepletionNumber
     {
         get; init;
     }
@@ -434,10 +532,23 @@ public sealed record OrdnanceResolution(
         get; init;
     }
 
+    /// <summary>A Canister shot's own part of its resolution (C8.4; pass 55, ruling R55.9); null for every other shot.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrdnanceCanisterResolution? Canister
+    {
+        get; init;
+    }
+
     public const string Resolved = "resolved";
     public const string Abstained = "abstained";
     public const string Indeterminate = "indeterminate";
 }
+
+/// <summary>
+/// One ammunition a Gun may be asked to fire at a kind of target (C8.1; pass 55), for the list a player chooses from: its words with the
+/// Depletion Number it has at the game's date (C8.9), one more for an Elite force (C8.2), and, when the Gun cannot fire it now, why.
+/// </summary>
+public sealed record AmmunitionChoice(string Ammunition, string Label, int? DepletionNumber, string? Unavailable);
 
 /// <summary>A Gun as the Ordnance package reads its reviewed catalog definition (C2.21 to C2.3).</summary>
 public sealed record GunDefinition(
@@ -458,7 +569,7 @@ public sealed record GunDefinition(
         get; init;
     }
 
-    /// <summary>Its special ammunition as the counter lists it (C8.9): items such as <c>H7</c> or <c>A4/1941</c>.</summary>
+    /// <summary>Its special ammunition as the counter lists it (C8.9): items such as <c>H7</c>, <c>A4^1</c> (from 1941), or <c>HE7^3m2</c> (from February 1943).</summary>
     public IReadOnlyList<string> SpecialAmmo
     {
         get; init;

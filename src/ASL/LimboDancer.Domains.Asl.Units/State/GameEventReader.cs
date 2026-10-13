@@ -552,6 +552,20 @@ public static class GameEventReader
                     : new VehicleCheckRolled(checkedVehicle, checkKind, vehicleCheckRoll, checkDrm.Value, checkResult)
                     {
                         Mp = fields.OptionalInteger(payload, "mp", path) ?? 0,
+                        ArmorLeadership = fields.OptionalInteger(payload, "armorLeadership", path),
+                    };
+            case "motion-attempted":
+                var motionVehicle = fields.RequiredString(payload, "vehicle", path);
+                var motionRoll = fields.RequiredString(payload, "roll", path);
+                var motionHalfPoints = fields.OptionalInteger(payload, "halfPoints", path);
+                var motionResult = fields.RequiredString(payload, "result", path);
+                return motionVehicle is null || motionRoll is null || motionHalfPoints is null || motionResult is null
+                    ? Missing(diagnostics, "A Motion attempt names its vehicle, roll, half points in LOS, and result.", path)
+                    : new MotionAttempted(motionVehicle, motionRoll, motionHalfPoints.Value, motionResult)
+                    {
+                        Mover = fields.OptionalString(payload, "mover", path),
+                        Facing = fields.OptionalString(payload, "facing", path) is { } motionFacing && UnitFacings.TryParse(motionFacing, out var motionVca) ? motionVca : null,
+                        Turret = fields.OptionalString(payload, "turret", path) is { } motionTurret && UnitFacings.TryParse(motionTurret, out var motionTca) ? motionTca : null,
                     };
             case "overrun-resolved":
                 var overrunVehicle = fields.RequiredString(payload, "vehicle", path);
@@ -769,6 +783,16 @@ public static class GameEventReader
                 var madeKey = fields.RequiredString(payload, "key", path);
                 var option = fields.RequiredString(payload, "option", path);
                 return madeKey is null || option is null ? Missing(diagnostics, "A choice names its key and the option chosen.", path) : new ChoiceMade(madeKey, option);
+            case "gun-duel-voided":
+                var voidedFirer = fields.RequiredString(payload, "firer", path);
+                var voidedBy = fields.RequiredString(payload, "vehicle", path);
+                var voidedCause = fields.RequiredString(payload, "cause", path);
+                return voidedFirer is null || voidedBy is null || voidedCause is null
+                    ? Missing(diagnostics, "A void return shot names its firer, the vehicle that fired first, and the cause.", path)
+                    : new GunDuelVoided(voidedFirer, voidedBy, voidedCause)
+                    {
+                        Reason = fields.OptionalString(payload, "reason", path),
+                    };
             case "vehicle-wrecked":
                 return fields.RequiredString(payload, "id", path) is { } wreck ? new VehicleWrecked(wreck, fields.OptionalBoolean(payload, "burning", path)) : null;
             case "surrender-rejected":
@@ -866,12 +890,28 @@ public static class GameEventReader
         var id = fields.RequiredString(item, "id", path);
         var kind = fields.RequiredString(item, "kind", path);
         var position = item.TryGetProperty("position", out _) ? ReadPosition(item, "position", path, fields, diagnostics) : null;
+
+        // Pass 55 (ruling R55.15): a vehicle's Armor Leader, his Morale Level and his leadership modifier.
+        ArmorLeader? armorLeader = null;
+        if (item.TryGetProperty("armorLeader", out var leader) && leader.ValueKind != JsonValueKind.Null)
+        {
+            if (leader.ValueKind != JsonValueKind.Object || fields.OptionalInteger(leader, "morale", path + ".armorLeader") is not { } morale
+                || fields.OptionalInteger(leader, "leadership", path + ".armorLeader") is not { } leadership)
+            {
+                diagnostics.Add(UnitDiagnostic.Error("UNIT-STATE-047", "An Armor Leader names his morale and his leadership, as in {\"morale\": 9, \"leadership\": -1} (D3.4).", path));
+                return null;
+            }
+
+            armorLeader = new ArmorLeader(morale, leadership);
+        }
+
         return id is null || kind is null
             ? null
             : new NewInstance(id, kind, fields.OptionalString(item, "definition", path), fields.OptionalString(item, "side", path), position,
                 ReadHolding(item, path, fields, diagnostics), ReadConditions(item, path, diagnostics))
             {
                 Group = fields.OptionalString(item, "group", path),
+                ArmorLeader = armorLeader,
             };
     }
 

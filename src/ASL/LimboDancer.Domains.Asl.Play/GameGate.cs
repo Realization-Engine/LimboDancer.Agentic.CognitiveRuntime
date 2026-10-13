@@ -202,6 +202,10 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
             // A10.62 (ruling R13.1): the DM an action gives broken units follows its own effect.
             && !(item.Payload is ConditionsChanged dm && dm.Conditions.Keys.All(key => key == Conditions.DesperationMorale)))?.Payload switch
         {
+            // A shot declared against a moving vehicle that may answer with a Gun Duel (C2.2401; pass 55): the game waits for the ATTACKER's answer to it.
+            null when plan.Events.Any(item => item.Payload is ChoicePending { Kind: ChoicePending.GunDuel }) =>
+                state.Choice is { Kind: ChoicePending.GunDuel } declared && plan.Events.Any(item => item.EventId == declared.Event),
+
             // A Starshell attempt (E1.92; ruling R16.8): its hex has made its attempt this phase.
             StarshellFired starshell => state.StarshellAttempts.Contains(starshell.From.ToString(), StringComparer.Ordinal),
 
@@ -222,6 +226,9 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
             VehicleStepped { Kind: VehicleStepped.Exit } exit => state.Unit(exit.Vehicle) is { Status: InstanceStatus.Exited },
             VehicleStepped stepped => state.Movement is { WindowOpen: true, Vehicle: true } movement && movement.Step == stepped.Step
                 && state.Location(stepped.Vehicle)?.Location == stepped.At,
+
+            // A Motion attempt (D2.401; pass 55): the vehicle's one attempt of this enemy MPh is kept.
+            MotionAttempted motion => state.MotionAttempts.Contains(motion.Vehicle, StringComparer.Ordinal),
 
             // The window closed; a vehicle that spent its MP left in its hex has ended its move with it (ruling R5.15).
             MovementWindowClosed => state.Movement is null or { WindowOpen: false },

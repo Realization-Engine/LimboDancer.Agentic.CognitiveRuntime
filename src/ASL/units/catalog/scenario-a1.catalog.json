@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "catalog": "asl-scenario-a1",
-  "version": "1.13.0",
+  "version": "1.14.0",
   "label": "Scenario A1 catalog: Infantry Personnel, heroes, leaders, crews, MGs, light mortars, LATW, FT, DC, Guns, vehicles, and tanks, with Commissars and six more nationalities, for the reviewed Scenario A1 cases and the scenario cards",
   "publication": "published",
   "vocabulary": [
@@ -12,9 +12,9 @@
       "id": "asl-counter-sheets:scenario-a1",
       "status": "reviewed",
       "record": "docs/ASL/SourceRegistry/CounterSheets/asl-counter-sheets.scenario-a1.source-record.json",
-      "recordSha256": "a17426eed23585d5f1226ce96ed0f3d09a167df1d6b0f210808bc3651b981347",
+      "recordSha256": "c39d54816ad21acf34c83e10dec4781c5223f90f849ff8bef604674e409e5942",
       "transcription": "docs/ASL/SourceRegistry/CounterSheets/scenario-a1.counter-transcription.csv",
-      "transcriptionSha256": "60be211b08196e234e2e41f2e034943c1d3f73d226fecf5c2cf0966771ceb6a7",
+      "transcriptionSha256": "3d48d26d05137238ddfef6be80da0ab6a8a73edf80cc140f3b8acd8773a84d50",
       "transcriber": "Claude (claude-opus-5-5)",
       "reviewer": "Dennis Landi"
     }
@@ -15757,6 +15757,548 @@
           "attribute": "bpv",
           "recorded": false,
           "row": 2369
+        }
+      ]
+    },
+    {
+      "id": "british-at-gun",
+      "kind": "asl:gun",
+      "kindRow": 2370,
+      "nationality": "british",
+      "nationalityRow": 2371,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "OLB",
+        "counter": "british-at-gun"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2372
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "OQF 6-Pounder 7-cwt",
+          "row": 2373
+        },
+        {
+          "face": "front",
+          "attribute": "gun-type",
+          "value": "at",
+          "row": 2374
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 57,
+          "row": 2375
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "value": "l",
+          "row": 2376
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 3,
+          "row": 2377
+        },
+        {
+          "face": "front",
+          "attribute": "ife",
+          "printed": false,
+          "row": 2378
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 2379
+        },
+        {
+          "face": "front",
+          "attribute": "range-minimum",
+          "printed": false,
+          "row": 2380
+        },
+        {
+          "face": "front",
+          "attribute": "range-maximum",
+          "value": 225,
+          "row": 2381
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "value": [
+            "HE7^3m2 HE8^4+ D6^4m6E D7^5"
+          ],
+          "row": 2382
+        },
+        {
+          "face": "front",
+          "attribute": "manhandling",
+          "value": 10,
+          "row": 2383
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "value": "small",
+          "row": 2384
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": false,
+          "row": 2385
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": true,
+          "row": 2386
+        },
+        {
+          "face": "front",
+          "trait": "asl:mount-360",
+          "present": false,
+          "row": 2387
+        },
+        {
+          "face": "front",
+          "trait": "asl:qsu",
+          "present": true,
+          "row": 2388
+        },
+        {
+          "face": "front",
+          "trait": "asl:nm",
+          "present": false,
+          "row": 2389
+        },
+        {
+          "face": "front",
+          "trait": "asl:rfnm",
+          "present": false,
+          "row": 2390
+        },
+        {
+          "face": "front",
+          "attribute": "bpv",
+          "value": 34,
+          "row": 2391
+        },
+        {
+          "face": "front",
+          "attribute": "dates",
+          "value": "5/42-45",
+          "row": 2392
+        },
+        {
+          "face": "front",
+          "trait": "asl:animal-pack",
+          "present": false,
+          "row": 2393
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "recorded": false,
+          "row": 2394
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "removal",
+          "recorded": false,
+          "row": 2395
+        }
+      ]
+    },
+    {
+      "id": "american-at-gun",
+      "kind": "asl:gun",
+      "kindRow": 2396,
+      "nationality": "american",
+      "nationalityRow": 2397,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "OLA",
+        "counter": "american-at-gun"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2398
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "M3A1 37mm AT Gun",
+          "row": 2399
+        },
+        {
+          "face": "front",
+          "attribute": "gun-type",
+          "value": "at",
+          "row": 2400
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 37,
+          "row": 2401
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "value": "ll",
+          "row": 2402
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 2,
+          "row": 2403
+        },
+        {
+          "face": "front",
+          "attribute": "ife",
+          "printed": false,
+          "row": 2404
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 2405
+        },
+        {
+          "face": "front",
+          "attribute": "range-minimum",
+          "printed": false,
+          "row": 2406
+        },
+        {
+          "face": "front",
+          "attribute": "range-maximum",
+          "value": 292,
+          "row": 2407
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "value": [
+            "C7^2m8+"
+          ],
+          "row": 2408
+        },
+        {
+          "face": "front",
+          "attribute": "manhandling",
+          "value": 12,
+          "row": 2409
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "value": "small",
+          "row": 2410
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": false,
+          "row": 2411
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 2412
+        },
+        {
+          "face": "front",
+          "trait": "asl:mount-360",
+          "present": false,
+          "row": 2413
+        },
+        {
+          "face": "front",
+          "trait": "asl:qsu",
+          "present": true,
+          "row": 2414
+        },
+        {
+          "face": "front",
+          "trait": "asl:nm",
+          "present": false,
+          "row": 2415
+        },
+        {
+          "face": "front",
+          "trait": "asl:rfnm",
+          "present": false,
+          "row": 2416
+        },
+        {
+          "face": "front",
+          "attribute": "bpv",
+          "value": 30,
+          "row": 2417
+        },
+        {
+          "face": "front",
+          "attribute": "dates",
+          "value": "39-45",
+          "row": 2418
+        },
+        {
+          "face": "front",
+          "trait": "asl:animal-pack",
+          "present": false,
+          "row": 2419
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "recorded": false,
+          "row": 2420
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "removal",
+          "recorded": false,
+          "row": 2421
+        }
+      ]
+    },
+    {
+      "id": "british-crew",
+      "kind": "asl:crew",
+      "kindRow": 2422,
+      "nationality": "british",
+      "nationalityRow": 2423,
+      "class": "elite",
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "NCC",
+        "counter": "british-crew"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 2,
+          "row": 2424
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 2,
+          "row": 2425
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 8,
+          "row": 2426
+        },
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2427
+        },
+        {
+          "face": "front",
+          "attribute": "class",
+          "value": "elite",
+          "row": 2428
+        },
+        {
+          "face": "front",
+          "attribute": "class-variant",
+          "printed": false,
+          "row": 2429
+        },
+        {
+          "face": "front",
+          "attribute": "smoke-exponent",
+          "printed": false,
+          "row": 2430
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-fire",
+          "present": false,
+          "row": 2431
+        },
+        {
+          "face": "front",
+          "trait": "asl:spraying-fire",
+          "present": false,
+          "row": 2432
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "present": false,
+          "row": 2433
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-engineer",
+          "present": false,
+          "row": 2434
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 8,
+          "row": 2435
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "value": 8,
+          "row": 2436
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "present": true,
+          "row": 2437
+        }
+      ]
+    },
+    {
+      "id": "american-crew",
+      "kind": "asl:crew",
+      "kindRow": 2438,
+      "nationality": "american",
+      "nationalityRow": 2439,
+      "class": "elite",
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "NCC",
+        "counter": "american-crew"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "firepower",
+          "value": 2,
+          "row": 2440
+        },
+        {
+          "face": "front",
+          "attribute": "range",
+          "value": 2,
+          "row": 2441
+        },
+        {
+          "face": "front",
+          "attribute": "morale",
+          "value": 7,
+          "row": 2442
+        },
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2443
+        },
+        {
+          "face": "front",
+          "attribute": "class",
+          "value": "elite",
+          "row": 2444
+        },
+        {
+          "face": "front",
+          "attribute": "class-variant",
+          "printed": false,
+          "row": 2445
+        },
+        {
+          "face": "front",
+          "attribute": "smoke-exponent",
+          "printed": false,
+          "row": 2446
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-fire",
+          "present": false,
+          "row": 2447
+        },
+        {
+          "face": "front",
+          "trait": "asl:spraying-fire",
+          "present": false,
+          "row": 2448
+        },
+        {
+          "face": "front",
+          "trait": "asl:elr-5",
+          "present": false,
+          "row": 2449
+        },
+        {
+          "face": "front",
+          "trait": "asl:assault-engineer",
+          "present": false,
+          "row": 2450
+        },
+        {
+          "face": "broken",
+          "attribute": "broken-morale",
+          "value": 8,
+          "row": 2451
+        },
+        {
+          "face": "broken",
+          "attribute": "bpv",
+          "value": 7,
+          "row": 2452
+        },
+        {
+          "face": "broken",
+          "trait": "asl:self-rally",
+          "present": true,
+          "row": 2453
         }
       ]
     }

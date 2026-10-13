@@ -23,6 +23,27 @@ public static class LiveOrdnance
     /// </summary>
     public static IReadOnlyList<string> Ammunitions(string definition) => ScenarioA1Definitions.Ammunitions(definition);
 
+    /// <summary>
+    /// The ammunition a Gun or tank may be asked to fire now, at a vehicle or at Infantry (C8.1, C2.21; pass 55): Rules says which, with each
+    /// one's Depletion Number at the game's date, one more under the side's Elite rule (C8.2), and why one it has run out of is not offered.
+    /// </summary>
+    public static IReadOnlyList<AmmunitionChoice> AmmunitionChoices(GameState state, string gunId, bool vehicleTarget)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        var (definition, side) = state.Find(gunId) switch
+        {
+            UnitInstance { Definition: { } tank } vehicle => (tank.Definition, vehicle.Side),
+            EquipmentInstance { Definition: { } gun, Holding: { } holding } => (gun.Definition, state.Unit(holding.Holder)?.Side),
+            _ => ((string?)null, (string?)null),
+        };
+        return definition is null ? []
+            : ScenarioA1Definitions.AmmunitionChoices(definition, vehicleTarget, state.ScenarioYear, state.ScenarioMonth, ScenarioA1Definitions.EliteAmmunition(state.SpecialRules, side),
+                [.. state.DepletedAmmunition.Where(item => item.Gun == gunId).Select(item => item.Ammunition)]);
+    }
+
+    /// <summary>A Gun's or MA's caliber in millimeters, its Gun Size (C2.2); null for a definition that is no ordnance.</summary>
+    public static int? CaliberOf(string definition) => Reference.Value.Guns.GetValueOrDefault(definition)?.Caliber;
+
     /// <summary>A LATW definition's type (C13.1): <c>pf</c>, <c>psk</c>, or <c>atr</c>; null for any other.</summary>
     public static string? LatwType(string definition) => Reference.Value.Guns.GetValueOrDefault(definition)?.LatwType;
 
@@ -47,9 +68,12 @@ public static class LiveOrdnance
         return ScenarioA1OrdnanceEligibility.PanzerfaustAllowance(state.SetupHalfSquads.GetValueOrDefault(side), state.ScenarioYear);
     }
 
-    /// <summary>The state's part of a shot, or the reason the Gun cannot fire from this state.</summary>
+    /// <summary>
+    /// The state's part of a shot, or the reason the Gun cannot fire from this state. <paramref name="gunDuel"/> asks for the moving vehicle's
+    /// MA shot as a Gun Duel's first shot (C2.2401; pass 55, ruling R55.19): Bounding First Fire made while the DEFENDER's window is open.
+    /// </summary>
     public static (OrdnanceShot? Shot, string? Reason) FromState(GameState state, string gunId, BoardLocation target, string? targetVehicle = null,
-        string? ammunition = null, bool intensive = false, string? spotter = null, string? director = null)
+        string? ammunition = null, bool intensive = false, string? spotter = null, string? director = null, bool gunDuel = false)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(target);
@@ -127,6 +151,14 @@ public static class LiveOrdnance
 
         var side = crew.Side;
 
+        // C8.4 (pass 55, ruling R55.9): Canister is fired at an aim, not at a Location's units; each Location it attacks is a fire attack of its own,
+        // read with the planner's map facts. Named at a vehicle it is a Vehicle Target Type shot, which that Target Type refuses.
+        var canister = ammunition == ScenarioA1CanisterCalculator.Ammunition && targetVehicle is null;
+        if (canister && phase == "MPh")
+        {
+            return (null, ScenarioA1OrdnanceEligibility.CanisterMphRefusal);
+        }
+
         // A8.1, C6.1 (ruling R8.1): in the MPh, Defensive First Fire by the non-phasing side at the moving stack in its Location, while the
         // DEFENDER's window on its MF or MP expenditure is open; only the moving units are its targets.
         IReadOnlyList<string>? movers = null;
@@ -134,8 +166,8 @@ public static class LiveOrdnance
         if (phase == "MPh")
         {
             // D3.3, C5.3 (pass 50): the phasing side's vehicle fires its MA as Bounding First Fire; Rules says which kind the shot is.
-            var (mphKind, mphRefusal) = ScenarioA1OrdnanceEligibility.MphShotKind(side == state.PhasingSide, gun is UnitInstance, () => LiveFire.MayBoundingFire(state, gun.Id),
-                state.Movement is { WindowOpen: true }, () => state.Movement!.Location == target);
+            var (mphKind, mphRefusal) = ScenarioA1OrdnanceEligibility.MphShotKind(side == state.PhasingSide, gun is UnitInstance,
+                () => LiveFire.MayBoundingFire(state, gun.Id, gunDuel), state.Movement is { WindowOpen: true }, () => state.Movement!.Location == target);
             if (mphRefusal is not null)
             {
                 return (null, mphRefusal);
@@ -169,7 +201,7 @@ public static class LiveOrdnance
         // there, friendly ones too; C3.4: in the MPh only the moving units.
         var mortar = gun.Kind == "asl:light-mortar";
         var sw = mortar || gun.Kind == "asl:latw";
-        UnitInstance[] targets = vehicleTarget is not null ? [] : [.. state.At(target).OfType<UnitInstance>()
+        UnitInstance[] targets = vehicleTarget is not null || canister ? [] : [.. state.At(target).OfType<UnitInstance>()
             .Where(unit => ScenarioA1OrdnanceEligibility.AreaTarget(unit.Status == InstanceStatus.Active, unit.Side != side, mortar, () => LiveFire.IsVehicle(unit),
                 () => Is(unit, Conditions.Captured), movers is null ? null : () => movers.Contains(unit.Id)))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal)];
@@ -182,7 +214,8 @@ public static class LiveOrdnance
         var targetSide = vehicleTarget?.Side ?? targets.FirstOrDefault()?.Side ?? state.Sides.FirstOrDefault(item => item.Id != side)?.Id;
         var shots = state.OrdnanceShots.FirstOrDefault(item => item.Gun == gun.Id);
         // C6.5, C6.51 (ruling R5.13): the Acquisition applies at its Location, or, while its units are apart, at any Location holding one of them.
-        var acquisition = state.Acquisitions.FirstOrDefault(item => item.Gun == gun.Id
+        // C6.5 (pass 55): Canister claims no Acquisition; the Gun loses the one it has by firing it.
+        var acquisition = canister ? 0 : state.Acquisitions.FirstOrDefault(item => item.Gun == gun.Id
             && (item.Location == target || item.Units.Any(id => state.Location(id)?.Location == target)))?.Level ?? 0;
         var hit = new FireAttack(phase, firingSide, null, null, target.ToString(), [], null, null, null, null, state.ScenarioMonth, null,
             [.. targets.Select(unit => LiveFire.Target(state, unit, target))], targetSide is null ? null : state.Side(targetSide)?.Elr, null)
@@ -213,7 +246,10 @@ public static class LiveOrdnance
             target.ToString(), null, null, null, null, acquisition, hit, null)
         {
             Ammunition = ammunition ?? (vehicleTarget is not null ? "ap" : null),
-            ScenarioYear = vehicleTarget is not null || ammunition is not null ? state.ScenarioYear : null,
+
+            // C8.2 (pass 55, ruling R55.6): the game's special rule makes the side's force Elite for its Depletion Numbers.
+            Elite = ScenarioA1Definitions.EliteAmmunition(state.SpecialRules, side) ? true : null,
+            ScenarioYear = ScenarioA1OrdnanceEligibility.RecordsYear(vehicleTarget is not null, ammunition is not null, state.Side(side)?.Nationality) ? state.ScenarioYear : null,
             IntensiveFire = intensive ? true : null,
             // C5.8 (ruling R8.8): a squad or HS manning a Gun is non-qualified.
             NonQualified = ScenarioA1OrdnanceEligibility.NonQualified(gun is EquipmentInstance, crew.Kind, sw),
@@ -259,6 +295,9 @@ public static class LiveOrdnance
             shot = shot with
             {
                 FireKind = ScenarioA1FireCalculator.BoundingFirstFire,
+
+                // C2.2401 (pass 55, ruling R55.19): recorded with the shot, and held to the answered choice by the projector.
+                GunDuel = gunDuel ? true : null,
             };
         }
         else if (phase == "MPh")
@@ -288,7 +327,9 @@ public static class LiveOrdnance
                     state.MovedVehicles.Contains(firer.Id, StringComparer.Ordinal),
                     // D2.42, D3.32 (pass 50): the moving vehicle that has not stopped is a Motion firer; one that fired its MA in this MPh is a Bounding Firer.
                     state.Movement is { Vehicle: true, Started: true, Stopped: false } moving && moving.Movers.Contains(firer.Id),
-                    state.VehicleWeaponShots.Any(item => item.Vehicle == firer.Id && item.Weapon == "ma" && item.FirePhase == "mph")) with
+                    state.VehicleWeaponShots.Any(item => item.Vehicle == firer.Id && item.Weapon == "ma" && item.FirePhase == "mph"),
+                    // D3.44, D3.45 (pass 55, rulings R55.16, R55.18): its Armor Leader's modifier, or an Inexperienced Crew's +1.
+                    LiveFire.ArmorLeadership(firer)) with
                 {
                     // D3.5, D3.51 (pass 50): the MA beside the vehicle's other weapons.
                     Weapons = ScenarioA1OrdnanceEligibility.VehicleWeapons(LiveFire.VehicleShots(state, firer.Id),
@@ -321,7 +362,11 @@ public static class LiveOrdnance
             Is(vehicleTarget, Conditions.UnconfirmedKill), Is(vehicleTarget, Conditions.Recalled), Is(vehicleTarget, Conditions.Abandoned),
             Is(vehicleTarget, Conditions.Immobilized), Is(vehicleTarget, Conditions.StunRecovery), vehicleTarget.Straddling is not null,
             state.Movement is { Vehicle: true, Started: true, Stopped: false } moving && moving.Members.Contains(vehicleTarget.Id, StringComparer.Ordinal),
-            Is(vehicleTarget, Conditions.Bogged)));
+            Is(vehicleTarget, Conditions.Bogged))
+        {
+            // D3.42, D3.45 (pass 55, rulings R55.17, R55.18): the Morale Level its crew checks at, when it is not its nationality's.
+            CrewMorale = LiveFire.CrewMorale(vehicleTarget),
+        });
     }
 
     /// <summary>
@@ -527,7 +572,7 @@ public static class LiveOrdnance
             {
                 selection = ids.Select((id, index) => (id, index)).ToDictionary(item => item.id, item => roll.Values[item.index], StringComparer.Ordinal);
             }
-            else if (key is "toKill" or "shockCheck" or "crewCheck" or "crewSurvival" && roll.Count == 2)
+            else if (key is "toKill" or "shockCheck" or "crewCheck" or "crewSurvival" or "canister" && roll.Count == 2)
             {
                 extra[key] = roll.Values;
             }
@@ -558,6 +603,9 @@ public static class LiveOrdnance
                 CrewCheck = extra.GetValueOrDefault("crewCheck"),
                 CrewSurvival = extra.GetValueOrDefault("crewSurvival"),
                 PanzerfaustCheck = panzerfaustCheck,
+
+                // C8.4 (pass 55): a Canister shot's IFT DR.
+                Canister = extra.GetValueOrDefault("canister"),
             };
     }
 
@@ -595,8 +643,9 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
             return "The ordnance record's facts are incomplete.";
         }
 
+        // C2.2401 (pass 55): a record that names itself a Gun Duel's first shot is read as one; the projector holds the fact to the answered choice.
         var (expected, reason) = LiveOrdnance.FromState(state, fired.Gun, fired.Target, recorded.VehicleTarget?.VehicleId, recorded.Ammunition, recorded.IntensiveFire == true,
-            recorded.Spotter?.UnitId, recorded.Director?.UnitId);
+            recorded.Spotter?.UnitId, recorded.Director?.UnitId, recorded.GunDuel == true);
         if (expected is null)
         {
             return reason;
@@ -638,6 +687,18 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
         merged = ScenarioA1OrdnanceEligibility.WithRecomputedStateFacts(merged, recorded, LiveOrdnance.BoreSighted(state, fired.Gun, fired.Crew, gunAt, fired.Target),
             LiveStacking.Of(state, gunAt, firingSide).AttackPenalty, () => LiveStacking.Of(state, fired.Target, enemy).DefensePenalty,
             gunId => state.Find(gunId ?? string.Empty) is EquipmentInstance targetGun ? LiveOrdnance.Emplaced(state, targetGun) : null);
+
+        // D3.41, D3.42 (pass 55, rulings R55.15, R55.17): a record keeps a target crew's Morale Level only when the shot made that crew check, so
+        // one it leaves out is left out of the comparison; the checks it holds are held to the state's below.
+        var fromState = merged;
+        merged = merged with
+        {
+            VehicleTarget = ScenarioA1ArmorLeaders.AsRecorded(merged.VehicleTarget, recorded.VehicleTarget),
+            Hit = merged.Hit! with
+            {
+                Vehicles = ScenarioA1ArmorLeaders.AsRecorded(merged.Hit.Vehicles, recorded.Hit.Vehicles),
+            },
+        };
         if (JsonSerializer.Serialize(merged, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json)
             || fired.Crew != recorded.Crew?.UnitId || fired.Target.ToString() != recorded.TargetLocationId)
         {
@@ -657,6 +718,13 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
             return turnRefusal;
         }
 
+        // C8.4 (pass 55, ruling R55.9): a Canister record's aim is one of the Covered Arc the Gun fires in: the facing it turns to, or its own.
+        if (recorded.Canister is { } canister && ScenarioA1OrdnanceEligibility.CanisterFacingRefusal(canister.Facing,
+            (fired.Facing ?? current) is { } firedIn ? Units.Documents.UnitFacings.Name(firedIn) : null) is { } canisterRefusal)
+        {
+            return canisterRefusal;
+        }
+
         if (LiveOrdnance.Rolls(fired, recorded, rolls) is not { } dice)
         {
             return "The ordnance record names a roll of the wrong shape.";
@@ -671,9 +739,22 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
             return "The ordnance record's facts and rolls do not resolve: " + string.Join("; ", resolution.Reasons);
         }
 
-        if (!JsonElement.DeepEquals(JsonSerializer.SerializeToElement(resolution, LiveFire.Json), fired.Resolution))
+        // C8.9 (the UI review of pass 55): a resolution names the Depletion Number its ammunition's use was decided under. A record made before
+        // that names none and is compared without it; one that names it is held to it.
+        var compared = resolution.DepletionNumber is not null && !fired.Resolution.TryGetProperty("depletionNumber", out _)
+            ? resolution with
+            {
+                DepletionNumber = null
+            }
+            : resolution;
+        if (!JsonElement.DeepEquals(JsonSerializer.SerializeToElement(compared, LiveFire.Json), fired.Resolution))
         {
             return "The ordnance record's resolution differs from what its facts and rolls give.";
+        }
+
+        if (ScenarioA1ArmorLeaders.RecordRefusal(fromState, recorded, resolution) is { } moraleRefusal)
+        {
+            return moraleRefusal;
         }
 
         // C13.31 (ruling R9.7): a PF Check that gave no shot keeps no ROF and acquires nothing.

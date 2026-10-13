@@ -51,6 +51,16 @@ public sealed record OrdnanceVehicleFirer(bool? ButtonedUp, bool? InMotion, bool
     {
         get; init;
     }
+
+    /// <summary>
+    /// The leadership modifier of the vehicle's Armor Leader on its MA's To Hit DR (D3.44, p. 200; pass 55, ruling R55.16), or the +1 of an
+    /// Inexperienced Crew (D3.45; ruling R55.18). Null is none, which is every record made before pass 55.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? ArmorLeadership
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -106,6 +116,17 @@ public sealed record OrdnanceVehicleTarget(
     /// <summary>Whether the target is under a "+1" counter after a Stun (D5.34): +1 to its crew's NTC, TC, and Crew Survival DR.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? StunRecovery
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The Morale Level of the target's crew when it is its Armor Leader's (D3.42, p. 200; pass 55, ruling R55.17) or an Inexperienced Crew's 6
+    /// (D3.45; ruling R55.18). Null is its nationality's (D5.1), which is every record made before pass 55; a record keeps it only when the
+    /// hit made the crew check against it (D3.41).
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? CrewMorale
     {
         get; init;
     }

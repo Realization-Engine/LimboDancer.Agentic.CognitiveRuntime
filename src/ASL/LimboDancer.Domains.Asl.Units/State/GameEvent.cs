@@ -44,6 +44,15 @@ public sealed record NewInstance(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The Armor Leader a vehicle sets up with (D3.4, D3.41; pass 55, ruling R55.15), written as <c>"armorLeader": {"morale": 9, "leadership": -1}</c>;
+    /// null for none, which is every record made before pass 55.
+    /// </summary>
+    public ArmorLeader? ArmorLeader
+    {
+        get; init;
+    }
 }
 
 /// <summary>

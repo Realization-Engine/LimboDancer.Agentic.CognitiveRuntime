@@ -289,8 +289,14 @@ public static class Conditions
     /// </summary>
     public const string Unarmed = "asl:unarmed";
 
+    /// <summary>
+    /// An armed vehicle's Inexperienced Crew (D3.45, p. 200; pass 55, ruling R55.18), given at setup by a SSR and never lost: "treated as if it
+    /// contains an inherent 6+1 Armor Leader". It is not the Inexperience of Infantry (A19).
+    /// </summary>
+    public const string InexperiencedCrew = "asl:inexperienced-crew";
+
     /// <summary>Conditions the state model adds to the vocabulary's states; they have no drawn form.</summary>
-    public static IReadOnlyList<string> Undrawn { get; } = [Captured, Melee, Abandoned, Bogged, Mired, BmgMalfunctioned, CmgMalfunctioned, CcReaction, Dismantled, Unarmed, BmgDisabled, CmgDisabled];
+    public static IReadOnlyList<string> Undrawn { get; } = [Captured, Melee, Abandoned, Bogged, Mired, BmgMalfunctioned, CmgMalfunctioned, CcReaction, Dismantled, Unarmed, BmgDisabled, CmgDisabled, InexperiencedCrew];
 
     public static bool IsDeclared(string name, Vocabulary.UnitVocabulary vocabulary) =>
         Undrawn.Contains(name, StringComparer.Ordinal) || vocabulary.TryGetState(name, out _);
@@ -498,7 +504,22 @@ public sealed record UnitInstance(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The Armor Leader of a vehicle (D3.4, D3.41, p. 200; pass 55, ruling R55.15): no counter of his is in play, so the vehicle carries him.
+    /// Null for none, and once he is lost to a Recall (D5.341), a wreck, or a crew that takes counter form (D3.43).
+    /// </summary>
+    public ArmorLeader? ArmorLeader
+    {
+        get; init;
+    }
 }
+
+/// <summary>
+/// An Armor Leader as his vehicle carries him (D3.4, D3.41; pass 55, ruling R55.15): his Morale Level and his leadership modifier, of the grades
+/// 8-1, 9-1, 9-2, and 10-2, and whether a record has carried either: until then the enemy's view does not show him.
+/// </summary>
+public sealed record ArmorLeader(int Morale, int Leadership, bool Revealed = false);
 
 /// <summary>Unit kinds the state model treats specially.</summary>
 public static class UnitKinds

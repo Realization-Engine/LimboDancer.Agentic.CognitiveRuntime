@@ -106,11 +106,14 @@ public static class ScenarioA1CloseCombatFactBuilders
     /// </summary>
     public static VehicleCloseCombatVehicle Vehicle(string id, string definition, string side, bool crewExposed, bool motion, bool moving, bool immobilized, bool bogged, bool stunned,
         bool recalled, bool shocked, bool unconfirmedKill, bool abandoned, bool malfunctioned, bool disabled, bool bmgMalfunctioned, bool cmgMalfunctioned,
-        bool stunRecovery = false) =>
+        bool stunRecovery = false, int? armorLeadership = null) =>
         new(id, definition, side, crewExposed, motion || moving, immobilized || bogged, stunned || recalled, shocked || unconfirmedKill, abandoned, malfunctioned || disabled,
             bmgMalfunctioned, cmgMalfunctioned)
         {
             StunRecovery = stunRecovery ? true : null,
+
+            // D3.44 (p. 200; pass 55, ruling R55.16): the Armor Leader's modifier on the vehicle's own CC DR; the caller gives none for an attack on it.
+            ArmorLeadership = armorLeadership,
         };
 
     /// <summary>D7.213: in CC Reaction Fire, the attackers already marked First or Final Fire are named; none otherwise.</summary>

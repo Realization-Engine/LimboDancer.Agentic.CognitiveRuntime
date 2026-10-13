@@ -47,7 +47,7 @@ public static class LiveFire
     }
 
     public const string Catalog = "asl-scenario-a1";
-    public const string CatalogVersion = "1.13.0";
+    public const string CatalogVersion = "1.14.0";
 
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 
@@ -355,14 +355,18 @@ public static class LiveFire
     /// Whether a phasing vehicle may fire as Bounding First Fire now (D3.3; ruling R6.9): while it moves, once the DEFENDER has passed on
     /// its last MP expenditure, or at the outset of its MPh while no other move is under way and it has not ended its move.
     /// </summary>
-    public static bool MayBoundingFire(GameState state, string vehicleId)
+    public static bool MayBoundingFire(GameState state, string vehicleId, bool gunDuel = false)
     {
         ArgumentNullException.ThrowIfNull(state);
         var vehicle = state.Unit(vehicleId);
         return ScenarioA1FireEligibility.MayBoundingFire(new BoundingFireFacts(state.Phase,
             vehicle is { Status: InstanceStatus.Active } && IsVehicle(vehicle) && vehicle.Side == state.PhasingSide,
             state.Movement is not null, state.Movement?.Vehicle == true, state.Movement?.WindowOpen == true,
-            state.Movement?.Movers.Contains(vehicleId) == true, vehicle?.MovementEnded == true));
+            state.Movement?.Movers.Contains(vehicleId) == true, vehicle?.MovementEnded == true)
+        {
+            // C2.2401 (pass 55): a Gun Duel's first shot is made while the DEFENDER's window is open.
+            GunDuel = gunDuel,
+        });
     }
 
     /// <summary>A vehicle definition's turret type (D1.3), as the catalog prints it; null when it prints none.</summary>
@@ -390,7 +394,30 @@ public static class LiveFire
     internal static FireVehicle Vehicle(UnitInstance vehicle, BoardLocation at) =>
         ScenarioA1FireEligibility.VehicleTarget(new VehicleTargetFacts(vehicle.Id, vehicle.Definition?.Definition, at.ToString(), CrewExposed(vehicle),
             Is(vehicle, Conditions.Stunned), Is(vehicle, Conditions.Recalled), Is(vehicle, Conditions.StunRecovery), Is(vehicle, Conditions.Immobilized),
-            Is(vehicle, Conditions.Concealed), Is(vehicle, Conditions.Hidden)));
+            Is(vehicle, Conditions.Concealed), Is(vehicle, Conditions.Hidden))
+        {
+            CrewMorale = CrewMorale(vehicle),
+        });
+
+    /// <summary>
+    /// The leadership modifier a vehicle's crew brings to its attacks (D3.44, D3.45; pass 55, rulings R55.16, R55.18): its Armor Leader's, or an
+    /// Inexperienced Crew's +1; null with neither. Rules decides which.
+    /// </summary>
+    public static int? ArmorLeadership(UnitInstance vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(vehicle);
+        return ScenarioA1ArmorLeaders.Leadership(vehicle.ArmorLeader?.Leadership, Is(vehicle, Conditions.InexperiencedCrew));
+    }
+
+    /// <summary>
+    /// The Morale Level a vehicle's crew checks at when it is not its nationality's (D3.42, D3.45; pass 55, rulings R55.17, R55.18): its Armor
+    /// Leader's, or an Inexperienced Crew's 6; null with neither.
+    /// </summary>
+    public static int? CrewMorale(UnitInstance vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(vehicle);
+        return ScenarioA1ArmorLeaders.CrewMorale(vehicle.ArmorLeader?.Morale, Is(vehicle, Conditions.InexperiencedCrew));
+    }
 
     /// <summary>
     /// A vehicle's MA MG attack (ruling R25.7): its crew's state, Motion (D2.42), a pin (A7.82), its MG's malfunction (D3.7), whether it
@@ -444,7 +471,10 @@ public static class LiveFire
             Is(vehicle, Conditions.Stunned), Is(vehicle, Conditions.Recalled), Is(vehicle, Conditions.Shocked), Is(vehicle, Conditions.UnconfirmedKill),
             Is(vehicle, Conditions.StunRecovery), Is(vehicle, Conditions.Malfunctioned),
             Fired(vehicle), Is(vehicle, Conditions.FirstFire), Is(vehicle, Conditions.BoundingFire),
-            state.OrdnanceShots.Any(item => item.Gun == vehicle.Id && item.RateOfFireKept)));
+            state.OrdnanceShots.Any(item => item.Gun == vehicle.Id && item.RateOfFireKept))
+        {
+            ArmorLeadership = ArmorLeadership(vehicle),
+        });
 
     /// <summary>
     /// The state's part of a Residual FP attack on the moving stack as it enters a Location (A8.2, A8.22): no firers, the
@@ -463,6 +493,39 @@ public static class LiveFire
             state.PhasingSide, here ? state.Side(state.PhasingSide)?.Elr : null, here && state.NoQuarter.Contains(state.PhasingSide, StringComparer.Ordinal),
             state.ScenarioMonth, fp, target.ToString(),
             id => Target(state, units.First(unit => unit.Id == id), target), id => Vehicle(units.First(unit => unit.Id == id), target)));
+    }
+
+    /// <summary>
+    /// The state's part of a Canister shot's attack on one Location (C8.4, A7.4; pass 55, ruling R55.9), read from the state: no firers, the enemy
+    /// units there as targets and its vehicles on the Vehicle line; the map facts and the Canister fact are the planner's.
+    /// </summary>
+    public static (FireAttack? Attack, string? Reason) CanisterFromState(GameState state, string gunId, BoardLocation target)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(target);
+        var side = state.Find(gunId) switch
+        {
+            UnitInstance { Status: InstanceStatus.Active } vehicle => vehicle.Side,
+            EquipmentInstance { Status: InstanceStatus.Active, Holding: { } holding } => state.Unit(holding.Holder)?.Side,
+            _ => null,
+        };
+        if (side is null || state.Location(gunId)?.Location is not { } from)
+        {
+            return (null, ScenarioA1OrdnanceEligibility.GunRefusal(gunId));
+        }
+
+        UnitInstance[] units = [.. state.At(target).OfType<UnitInstance>()];
+        if (units.Any(unit => unit.Status == InstanceStatus.Active && unit.Side != side && unit.Definition is null && unit.Kind != UnitKinds.Dummy))
+        {
+            return (null, ScenarioA1OrdnanceEligibility.TargetOutsideCatalogRefusal);
+        }
+
+        var targetSide = state.Sides.FirstOrDefault(item => item.Id != side)?.Id;
+        return (ScenarioA1FireEligibility.Canister(new CanisterLocationFacts(state.Phase, side == state.PhasingSide, from.ToString(), target.ToString(), side,
+            [.. units.Select(unit => new LocationUnitFacts(unit.Id, unit.Status == InstanceStatus.Active, unit.Side, IsVehicle(unit), unit.Definition is not null,
+                Is(unit, Conditions.Captured), false))],
+            targetSide is null ? null : state.Side(targetSide)?.Elr, targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal), state.ScenarioMonth,
+            id => Target(state, units.First(unit => unit.Id == id), target), id => Vehicle(units.First(unit => unit.Id == id), target))), null);
     }
 
     /// <summary>
@@ -488,7 +551,11 @@ public static class LiveFire
                 Is(unit, Conditions.Captured), false))],
             targetSide is null ? null : state.Side(targetSide)?.Elr, targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal), state.ScenarioMonth,
             id => Target(state, units.First(unit => unit.Id == id), at!), id => Vehicle(units.First(unit => unit.Id == id), at!),
-            ok && Is(vehicle!, Conditions.StunRecovery)));
+            ok && Is(vehicle!, Conditions.StunRecovery))
+        {
+            // D7.16 (p. 207; pass 55, ruling R55.16): the OVRing vehicle's Armor Leader modifies its OVR DR.
+            ArmorLeadership = ok ? ArmorLeadership(vehicle!) : null,
+        });
     }
 
     /// <summary>The rolls of a record, rebuilt from its roll ids and the recorded dice, in the calculator's shape.</summary>
@@ -718,6 +785,25 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
             // D7.1 (ruling R11.11): an OVR is read from its vehicle's state; its crew's CE status is recorded as the OVR saw it.
             (expected, reason) = LiveFire.OverrunFromState(state, recorded.Overrun?.VehicleId ?? string.Empty);
         }
+        else if (recorded.Canister is { } canister)
+        {
+            // C8.4 (pass 55, ruling R55.9): a Canister shot's attack on one Location is read from the Gun and the Location's units. What halves
+            // its FP and its Case A are the shot's own facts, recorded with the attack; the FP is the Gun Size's.
+            (expected, reason) = LiveFire.CanisterFromState(state, canister.GunId ?? string.Empty, target);
+            var caliber = state.Find(canister.GunId ?? string.Empty) switch
+            {
+                UnitInstance { Definition: { } tank } => LiveOrdnance.CaliberOf(tank.Definition),
+                EquipmentInstance { Definition: { } gun } => LiveOrdnance.CaliberOf(gun.Definition),
+                _ => null,
+            };
+            expected = expected is null ? null : expected with
+            {
+                Canister = canister with
+                {
+                    Firepower = caliber is { } size ? ScenarioA1CanisterCalculator.Firepower(size) : null,
+                },
+            };
+        }
         else
         {
             // The recorded choices (directors, weapons, a Multiple ROF shot) select what the state is read for; the state's
@@ -866,6 +952,13 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
                     SeenByGoodOrderEnemy = record.SeenByGoodOrderEnemy
                 })],
         };
+        // D3.41, D3.42 (pass 55, rulings R55.15, R55.17): a record keeps a crew's Morale Level only when the attack made that crew check, so one
+        // it leaves out is left out of the comparison; the checks it holds are held to the state's below.
+        var stateVehicles = merged.Vehicles;
+        merged = merged with
+        {
+            Vehicles = ScenarioA1ArmorLeaders.AsRecorded(merged.Vehicles, recorded.Vehicles),
+        };
         if (JsonSerializer.Serialize(merged, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json))
         {
             return "The fire record's facts do not match the game state.";
@@ -892,6 +985,6 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
             ? "The fire record's facts and rolls do not resolve: " + string.Join("; ", resolution.Reasons)
             : !JsonElement.DeepEquals(JsonSerializer.SerializeToElement(resolution, LiveFire.Json), fire.Resolution)
                 ? "The fire record's resolution differs from what its facts and rolls give."
-                : null;
+                : ScenarioA1ArmorLeaders.RecordRefusal(stateVehicles, recorded.Vehicles, ScenarioA1ArmorLeaders.Checked(resolution));
     }
 }

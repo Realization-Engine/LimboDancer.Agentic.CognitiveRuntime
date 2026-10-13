@@ -166,8 +166,9 @@ public static class ScenarioA1Definitions
     private static readonly Lazy<ScenarioA1OrdnanceReference> OrdnanceReference = new(() => new ScenarioA1OrdnancePackage().Reference);
 
     /// <summary>
-    /// The ammunition a Gun or MA of this definition may carry (C8.1): AP and HE unless its listing denies them, APCR and HEAT where it lists a
-    /// Depletion Number. The year and depletion still decide each shot.
+    /// The ammunition a Gun or MA of this definition may carry (C8.1): AP and HE unless its listing denies them, APCR, APDS, HEAT, and Canister
+    /// where it lists a Depletion Number, and HE by its Depletion Number though the caliber is underscored (C8.8, p. 179; pass 55). The year and
+    /// depletion still decide each shot.
     /// </summary>
     public static IReadOnlyList<string> Ammunitions(string definition)
     {
@@ -176,8 +177,111 @@ public static class ScenarioA1Definitions
             return [];
         }
 
-        bool Lists(char letter) => gun.SpecialAmmo.Any(item => item.Length > 1 && item[0] == letter && char.IsDigit(item[1]));
-        return [.. new[] { ("ap", !gun.NoAp), ("apcr", Lists('A')), ("heat", Lists('H')), ("he", !gun.NoHe) }.Where(item => item.Item2).Select(item => item.Item1)];
+        bool Lists(string type) => gun.SpecialAmmo.Any(item => ScenarioA1ArmorCalculator.ParseAmmunition(item)?.Type == type);
+        return [.. new[] { ("ap", !gun.NoAp), ("apcr", Lists("A")), ("apds", Lists("D")), ("heat", Lists("H")), ("he", !gun.NoHe || Lists("HE")), ("canister", Lists("C")) }
+            .Where(item => item.Item2).Select(item => item.Item1)];
+    }
+
+    /// <summary>
+    /// The Depletion Number of an ammunition (<c>apcr</c>, <c>apds</c>, <c>heat</c>, <c>he</c>, <c>ap</c>, <c>canister</c>) for a Gun at a date
+    /// (C8.9, C8.91, C8.3, C8.8; pp. 178 and 179), one more for Elite forces (C8.2); null when the Gun has none then.
+    /// </summary>
+    public static int? DepletionNumber(GunDefinition gun, string ammunition, int? year, int? month, bool elite = false) =>
+        ScenarioA1ArmorCalculator.Depletion(gun, ammunition, year, month, elite);
+
+    /// <summary>The start of the game's special rule that makes a side's force Elite for its Depletion Numbers (C8.2; pass 55, ruling R55.6); the side's id follows.</summary>
+    public const string EliteAmmunitionRule = "elite-ammunition:";
+
+    /// <summary>
+    /// C8.2 (p. 178; pass 55, ruling R55.6): "An armed-vehicle/weapon in a printed scenario is Elite for this purpose if so specified by an SSR":
+    /// whether the game's special rules name the side.
+    /// </summary>
+    public static bool EliteAmmunition(IReadOnlyList<string> specialRules, string? side)
+    {
+        ArgumentNullException.ThrowIfNull(specialRules);
+        return side is not null && specialRules.Contains(EliteAmmunitionRule + side, StringComparer.Ordinal);
+    }
+
+    /// <summary>A Depletion Number in words, with the one an Elite force adds (C8.2): "Depletion Number 7 (6, and 1 for Elite, C8.2)".</summary>
+    private static string DepletionWords(int number, bool elite, string open = " (", string close = ")") =>
+        "Depletion Number " + number.ToString(System.Globalization.CultureInfo.InvariantCulture)
+            + (elite ? open + (number - 1).ToString(System.Globalization.CultureInfo.InvariantCulture) + ", and 1 for Elite, C8.2" + close : string.Empty);
+
+    /// <summary>A recorded Depletion Number in a record's words, with the one an Elite force added (C8.2): what a record says of the number it names.</summary>
+    public static string DepletionNumberWords(int number, bool elite) => DepletionWords(number, elite);
+
+    /// <summary>
+    /// The Depletion Number a shot's declared ammunition is fired under, in words (C8.9; pass 55, ruling R55.7), or null when it has none: what
+    /// the proposal and the record of the shot say.
+    /// </summary>
+    public static string? DepletionWords(OrdnanceShot shot)
+    {
+        ArgumentNullException.ThrowIfNull(shot);
+        return OrdnanceReference.Value.Guns.TryGetValue(shot.Gun?.DefinitionId ?? string.Empty, out var gun) && ScenarioA1ArmorCalculator.ShotDepletion(shot, gun) is { } number
+            ? DepletionWords(number, shot.Elite == true) : null;
+    }
+
+    /// <summary>
+    /// The ammunition a player may choose for a Gun or MA of this definition at a vehicle or at Infantry (C8.1, C2.21; pass 55), each with its
+    /// Depletion Number at the game's date and, when the Gun has none then or has run out, the reason. At a vehicle: what the definition may
+    /// carry but Canister, which "is ineffective vs armored targets" (C8.4). At Infantry: nothing to choose, HE being assumed, unless the Gun's
+    /// HE is Special Ammunition, which is fired only when named (C2.21, C8.8), or the Gun lists Canister (C8.4), which is then chosen beside the
+    /// HE it fires.
+    /// </summary>
+    public static IReadOnlyList<AmmunitionChoice> AmmunitionChoices(string definition, bool vehicleTarget, int? year, int? month, bool elite, IReadOnlyList<string> depleted)
+    {
+        ArgumentNullException.ThrowIfNull(depleted);
+        if (!OrdnanceReference.Value.Guns.TryGetValue(definition, out var gun) || gun.GunType == "latw")
+        {
+            return [];
+        }
+
+        var canister = ScenarioA1ArmorCalculator.Lists(gun, ScenarioA1CanisterCalculator.Ammunition) && ScenarioA1CanisterCalculator.Firepower(gun.Caliber) is not null;
+        var namedHe = ScenarioA1ArmorCalculator.Lists(gun, "he");
+        string[] offered = vehicleTarget ? [.. Ammunitions(definition).Where(item => item != ScenarioA1CanisterCalculator.Ammunition)]
+            : [.. new[] { ("he", namedHe || (canister && !gun.NoHe)), (ScenarioA1CanisterCalculator.Ammunition, canister) }.Where(item => item.Item2).Select(item => item.Item1)];
+        return [.. offered.Select(ammunition =>
+        {
+            var special = ammunition is "apcr" or "apds" or "heat" || ScenarioA1ArmorCalculator.Lists(gun, ammunition);
+            var number = special ? ScenarioA1ArmorCalculator.Depletion(gun, ammunition, year, month, elite) : null;
+            var name = AmmunitionName(ammunition);
+            return new AmmunitionChoice(ammunition, number is { } held ? $"{name} ({DepletionWords(held, elite, ": ", string.Empty)})" : name, number,
+                depleted.Contains(ammunition, StringComparer.Ordinal) ? "it has run out (C8.9)"
+                    : special && number is null ? NoneAtTheDate(ammunition, ScenarioA1ArmorCalculator.StartMonthUnknown(gun, ammunition, year, month)) : null);
+        })];
+    }
+
+    /// <summary>
+    /// The start of the detail a refusal's code carries when the ammunition starts in a month of the game's year and the game gives no month
+    /// (ruling R55.31): <c>asl.a1.ordnance.ammunition-unavailable:from-month-5</c>.
+    /// </summary>
+    public const string StartMonthMark = ScenarioA1ArmorCalculator.StartMonthMark;
+
+    /// <summary>An ammunition as a choice names it: "Canister", "APDS", "HE".</summary>
+    public static string AmmunitionName(string ammunition)
+    {
+        ArgumentNullException.ThrowIfNull(ammunition);
+        return ammunition == ScenarioA1CanisterCalculator.Ammunition ? "Canister" : ammunition.ToUpperInvariant();
+    }
+
+    /// <summary>
+    /// Why a Gun has no such ammunition at the game's date, with the rule that dates it: C8.3 for HEAT, C8.8 for HE or AP by number, C8.11 for
+    /// the others, and all three when the ammunition is not named. <paramref name="startMonth"/> is the month it starts in when a game with a
+    /// year and no month is the cause (ruling R55.31).
+    /// </summary>
+    public static string NoneAtTheDate(string? ammunition, int? startMonth)
+    {
+        var rule = ammunition switch
+        {
+            null => "C8.11, C8.3, C8.8",
+            "heat" => "C8.3",
+            "he" or "ap" => "C8.8",
+            _ => "C8.11",
+        };
+        return startMonth is { } first and >= 1 and <= 12
+            ? "none known at the scenario's date: the game gives a year and no month, and this ammunition starts in "
+                + $"{System.Globalization.CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(first)} of that year ({rule})"
+            : $"none at the scenario's date ({rule})";
     }
 
     /// <summary>

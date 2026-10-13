@@ -256,10 +256,15 @@ public static class DisplayText
     /// <summary>A recorded name with no words of its own: its hyphens as spaces, and the game's abbreviations in capitals ("thrown dc afph" reads "thrown DC AFPh").</summary>
     private static string Plain(string name) => string.Join(' ', name.Split('-').Select(word => Abbreviations.TryGetValue(word, out var known) ? known : word));
 
+    /// <summary>The name a Canister shot's Case A is shown under (C8.4, D3.52; pass 55): its record names it by the Gun's id, which reads as the Gun's name.</summary>
+    public const string CanisterCaseA = "case-a:ca-change";
+
     private static readonly Dictionary<string, string> ModifierWords = new(StringComparer.Ordinal)
     {
         ["case-c4:lower-dr"] = "Case C4, the lower dr doubled",
         ["case-a:maintained"] = "Case A, the CA change its turret already made",
+        [CanisterCaseA] = "Case A, the CA change",
+        ["case-q:height-advantage"] = "Case Q, Height Advantage",
         ["ffnam"] = "FFNAM",
         ["ffmo"] = "FFMO",
         ["bore-sighting"] = "Bore Sighting",
@@ -278,6 +283,10 @@ public static class DisplayText
         ["dash"] = "Area Fire at a Dash",
         ["bounding-fire"] = "Bounding Fire",
         ["motion-fire"] = "Motion Fire",
+        ["canister-adjacent-hex"] = "Area Fire in the adjacent hex",
+        ["canister-adjacent-hexside"] = "a quarter in each of the two adjacent hexes",
+        ["intensive-fire"] = "Intensive Fire",
+        ["pinned-crew"] = "pinned crew",
         ["snap-shot"] = "Snap Shot",
         ["los-hindrance"] = "LOS Hindrance",
         ["lv-hindrance"] = "LV Hindrance",
@@ -303,12 +312,15 @@ public static class DisplayText
         ["ift-mc"] = "IFT MC",
         ["crew-exposed"] = "CE",
         ["stun-recovery"] = "Stun +1",
+        ["armor-leader"] = "Armor Leader",
+        ["inexperienced-crew"] = "Inexperienced Crew",
         ["odds-below-1-1"] = "odds below 1-1",
     };
 
     private static readonly Dictionary<string, string> RollWords = new(StringComparer.Ordinal)
     {
         ["fire-ift"] = "IFT DR",
+        ["ordnance-canister"] = "Canister IFT DR",
         ["fire-cower-selection"] = "Random Selection dr for Cowering",
         ["fire-check"] = "MC or TC DR",
         ["fire-heat-of-battle"] = "Heat of Battle DR",
@@ -317,6 +329,7 @@ public static class DisplayText
         ["random-selection"] = "Random Selection dr",
         ["deployment"] = "Deployment NTC DR",
         ["shock-recovery"] = "Shock recovery dr",
+        ["motion-attempt"] = "Motion attempt dr",
         ["starshell-usage"] = "Starshell Usage dr",
         ["cc-attack"] = "CC DR",
         ["cc-leader-creation"] = "Leader Creation dr",

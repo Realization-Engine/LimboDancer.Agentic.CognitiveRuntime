@@ -54,6 +54,16 @@ public sealed record FireRecord(string EventId, string FirerLocation, string Tar
     {
         get; init;
     }
+
+    /// <summary>
+    /// Whether the attack is a Canister shot's on one of its Locations (C8.4; pass 55): ordnance is no part of its Location's fire group (A7.51,
+    /// A7.55), so the record binds no other attack. False, and unwritten, for every other record.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingDefault)]
+    public bool Ordnance
+    {
+        get; init;
+    }
 }
 
 /// <summary>Recomputes a fire record from its facts and rolls; supplied to replay by the project that owns the package.</summary>

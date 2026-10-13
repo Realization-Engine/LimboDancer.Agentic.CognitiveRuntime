@@ -53,6 +53,7 @@ public sealed class OlderGamesTests : IDisposable
     [Theory]
     [InlineData("asl-scenario-a1@1.1.0")]
     [InlineData("asl-scenario-a1@1.12.0")]
+    [InlineData("asl-scenario-a1@1.13.0")]
     public void AGameSetUpUnderAnEarlierCatalogVersionReplaysWithEveryRecordChecked(string recorded)
     {
         var history = Replayed(recorded);

@@ -31,6 +31,23 @@ public sealed partial class GamePlanner
         return node;
     }
 
+    /// <summary>The vehicles whose Armor Leader no record has revealed (D3.41): a pending choice's resume data, which both sides read, leaves their crews' Morale Level out.</summary>
+    private static HashSet<string> UnrevealedLeaders(GameState state) =>
+        new(state.Units.Where(unit => unit.ArmorLeader is { Revealed: false }).Select(unit => unit.Id), StringComparer.Ordinal);
+
+    /// <summary>A vehicle's crew's Morale Level as the state gives it, for a resolution that resumes (D3.42, D3.45).</summary>
+    private static Func<string, int?> CrewMoraleIn(GameState state) => id => state.Unit(id) is { } vehicle ? LiveFire.CrewMorale(vehicle) : null;
+
+    /// <summary>
+    /// An attack's follow-ups as a pending choice's resume data keeps them, or, with <paramref name="morale"/>, as the resumed resolution reads
+    /// them again (D3.41): the attacks they hold on other Locations name vehicles too.
+    /// </summary>
+    private static FireFollowUps PendingFollowUps(FireFollowUps followUps, HashSet<string> unrevealed, Func<string, int?>? morale = null) => followUps with
+    {
+        Spray = followUps.Spray is { } spray ? ScenarioA1ArmorLeaders.Pending(spray, unrevealed, morale) : null,
+        Canister = followUps.Canister is { } rest ? [.. rest.Select(item => ScenarioA1ArmorLeaders.Pending(item, unrevealed, morale))] : null,
+    };
+
     /// <summary>The pending choice for an option a package asks for (ruling R5.8); Rules decides whose it is (pass 32.i).</summary>
     private static ChoicePending Pending(GameState state, string key, JsonObject resume)
     {
@@ -68,6 +85,12 @@ public sealed partial class GamePlanner
         if (choice.Kind == ChoicePending.OverrunEvade)
         {
             return ScenarioA1InfantryOverrun.EvadeChoiceText(subject.Split(':')[0]);
+        }
+
+        // C2.2401 (pass 55): the declared shot, both Gun Duel DRM, and the vehicle's option.
+        if (choice.Kind == ChoicePending.GunDuel)
+        {
+            return DescribeGunDuel(choice.Resume);
         }
 
         return ScenarioA1SequenceCalculator.DescribeChoice(ChoiceKindOf(choice.Kind), subject, choice.Options);
@@ -126,6 +149,12 @@ public sealed partial class GamePlanner
             };
         }
 
+        // C2.2401 (pass 55, ruling R55.19): the declared shot resolves, or the vehicle's MA fires first.
+        if (pending.Kind == ChoicePending.GunDuel)
+        {
+            return PlanGunDuelAnswer(scope, existing, attemptId, expected, label, actor, pending, made, option, summary);
+        }
+
         var resume = pending.Resume;
         var rollIds = resume.TryGetProperty("rolls", out var rollMap) && rollMap.ValueKind == JsonValueKind.Object
             ? rollMap.EnumerateObject().ToDictionary(item => item.Name, item => item.Value.GetString()!, StringComparer.Ordinal)
@@ -156,9 +185,12 @@ public sealed partial class GamePlanner
             switch (record)
             {
                 case "fire":
-                    var fire = resume.GetProperty("facts").Deserialize<FireAttack>(LiveFire.Json)!;
+                    // D3.41 (pass 55): the resume data left out the Morale Level of a crew whose Armor Leader is not revealed; the state gives it again.
+                    var unrevealed = UnrevealedLeaders(answered);
+                    var fire = ScenarioA1ArmorLeaders.Pending(resume.GetProperty("facts").Deserialize<FireAttack>(LiveFire.Json)!, unrevealed, CrewMoraleIn(answered));
                     int? step = resume.TryGetProperty("step", out var stepValue) ? stepValue.GetInt32() : null;
-                    var followUps = resume.TryGetProperty("followUps", out var followNode) ? followNode.Deserialize<FireFollowUps>(LiveFire.Json) : null;
+                    var followUps = resume.TryGetProperty("followUps", out var followNode) && followNode.Deserialize<FireFollowUps>(LiveFire.Json) is { } follow
+                        ? PendingFollowUps(follow, unrevealed, CrewMoraleIn(answered)) : null;
                     AddFireEvents(scope, attemptId, expected, actor, answered, fire with
                     {
                         Choices = With(fire.Choices)
@@ -173,7 +205,8 @@ public sealed partial class GamePlanner
                         AddFireFollowUps(scope, attemptId, expected, actor, existing, answered, resume.GetProperty("targetSide").GetString()!, step, events, draw, followUps);
                     }
 
-                    if (followUps?.DcCharge is null)
+                    // Ruling R55.30: a Canister shot follows ordnance, which calls no Sniper; its resumed Locations call none either.
+                    if (followUps?.DcCharge is null && fire.Canister is null && followUps?.Canister is null)
                     {
                         AddSniperAttacks(scope, attemptId, expected, actor, existing, events, draw);
                     }
@@ -190,8 +223,12 @@ public sealed partial class GamePlanner
                         resume.TryGetProperty("withheld", out var withheld) && withheld.GetBoolean(), events, draw, resumed);
                     break;
                 default:
-                    var shot = resume.GetProperty("facts").Deserialize<OrdnanceShot>(LiveFire.Json)!;
+                    var shot = ScenarioA1ArmorLeaders.Pending(resume.GetProperty("facts").Deserialize<OrdnanceShot>(LiveFire.Json)!, UnrevealedLeaders(answered),
+                        CrewMoraleIn(answered));
                     UnitFacing? facing = resume.TryGetProperty("facing", out var facingValue) && UnitFacings.TryParse(facingValue.GetString(), out var parsed) ? parsed : null;
+
+                    // C2.2401 (pass 55): a Gun Duel's first shot that stopped here still owes the DEFENDER its declared shot.
+                    JsonElement? owed = resume.TryGetProperty(GunDuelOwed, out var owedShot) && owedShot.ValueKind == JsonValueKind.Object ? owedShot : null;
                     AddOrdnanceEvents(scope, attemptId, expected, actor, answered, shot with
                     {
                         Hit = shot.Hit! with
@@ -199,7 +236,12 @@ public sealed partial class GamePlanner
                             Choices = With(shot.Hit.Choices)
                         }
                     }, facing, events, draw,
-                        resumed);
+                        resumed, owed);
+                    if (owed is { } declaredShot)
+                    {
+                        AddGunDuelReturnShot(scope, attemptId, expected, actor, existing, events, draw, declaredShot);
+                    }
+
                     break;
             }
 

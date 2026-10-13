@@ -664,6 +664,32 @@ public static class GameEventWriter
                     writer.WriteNumber("mp", check.Mp);
                 }
 
+                if (check.ArmorLeadership is { } checkLeadership)
+                {
+                    writer.WriteNumber("armorLeadership", checkLeadership);
+                }
+
+                break;
+            case MotionAttempted motion:
+                writer.WriteString("vehicle", motion.Vehicle);
+                writer.WriteString("roll", motion.Roll);
+                writer.WriteNumber("halfPoints", motion.HalfPoints);
+                writer.WriteString("result", motion.Result);
+                if (motion.Mover is { } motionMover)
+                {
+                    writer.WriteString("mover", motionMover);
+                }
+
+                if (motion.Facing is { } motionFacing)
+                {
+                    writer.WriteString("facing", Documents.UnitFacings.Name(motionFacing));
+                }
+
+                if (motion.Turret is { } motionTurret)
+                {
+                    writer.WriteString("turret", Documents.UnitFacings.Name(motionTurret));
+                }
+
                 break;
             case OverrunResolved overrun:
                 writer.WriteString("vehicle", overrun.Vehicle);
@@ -863,6 +889,16 @@ public static class GameEventWriter
                 writer.WriteString("key", made.Key);
                 writer.WriteString("option", made.Option);
                 break;
+            case GunDuelVoided voided:
+                writer.WriteString("firer", voided.Firer);
+                writer.WriteString("vehicle", voided.Vehicle);
+                writer.WriteString("cause", voided.Cause);
+                if (voided.Reason is { } notFired)
+                {
+                    writer.WriteString("reason", notFired);
+                }
+
+                break;
             case VehicleWrecked wreck:
                 writer.WriteString("id", wreck.Id);
                 if (wreck.Burning)
@@ -999,6 +1035,16 @@ public static class GameEventWriter
 
         WriteHolding(writer, instance.Holding);
         WriteConditions(writer, instance.Conditions);
+
+        // Pass 55 (ruling R55.15): a vehicle's Armor Leader; whether he is revealed is the state's, never the record's.
+        if (instance.ArmorLeader is { } armorLeader)
+        {
+            writer.WriteStartObject("armorLeader");
+            writer.WriteNumber("morale", armorLeader.Morale);
+            writer.WriteNumber("leadership", armorLeader.Leadership);
+            writer.WriteEndObject();
+        }
+
         writer.WriteEndObject();
     }
 

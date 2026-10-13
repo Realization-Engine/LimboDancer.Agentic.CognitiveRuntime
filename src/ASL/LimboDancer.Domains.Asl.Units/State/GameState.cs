@@ -130,6 +130,9 @@ public sealed record GameState(
     /// <summary>The Guns that changed their CA without firing this phase, and fire no more in it (C3.22); cleared at every phase change.</summary>
     public IReadOnlyList<string> GunsTurnedThisPhase { get; init; } = [];
 
+    /// <summary>The vehicles that have made their Motion attempt in this enemy MPh (D2.401; pass 55, ruling R55.13); cleared at every phase change.</summary>
+    public IReadOnlyList<string> MotionAttempts { get; init; } = [];
+
     /// <summary>The Guns and crews that may not move this Player Turn after a CA change in the PFPh (C3.22; ruling R8.9).</summary>
     public IReadOnlyList<string> NoMoveThisPlayerTurn { get; init; } = [];
 
@@ -327,6 +330,12 @@ public sealed record GameState(
     /// declare exactly these, and clears them.
     /// </summary>
     public IReadOnlyDictionary<string, string> ChoicesMade { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
+
+    /// <summary>The Gun Duel the ATTACKER declared and that is not yet fully resolved (C2.2401; pass 55, ruling R55.19); cleared at every phase change.</summary>
+    public GunDuelState? GunDuel
+    {
+        get; init;
+    }
 
     /// <summary>The sides faced with No Quarter (A20.3, A20.4; rulings R5.6 and R5.7): their units never surrender.</summary>
     public IReadOnlyList<string> NoQuarter { get; init; } = [];

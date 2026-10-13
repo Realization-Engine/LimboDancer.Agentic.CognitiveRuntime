@@ -20,43 +20,186 @@ internal static class ScenarioA1ArmorCalculator
         _ => 3 + hexspines - 1,
     };
 
-    /// <summary>The Depletion Number of an ammunition in a year (C8.9, C8.91, C8.3), or null when the Gun has none then.</summary>
-    public static int? Depletion(GunDefinition gun, string ammunition, int? year, int? month)
+    /// <summary>
+    /// One item of a counter's special ammunition (C8.9, C8.91; ruling R55.4), written <c>&lt;type&gt;&lt;number&gt;[^&lt;year digit&gt;[m&lt;month&gt;][+][E]]</c>:
+    /// the type (A for APCR, D for APDS, H for HEAT, HE, AP, C for Canister), its Depletion Number, the first year it holds in, the first month of
+    /// that year, whether the counter prints "from that year on", and whether it prints the ETO alone. The last two are kept and not read: the last
+    /// listed number holds after its year with or without the "+", and the game has no theater.
+    /// </summary>
+    internal readonly record struct SpecialAmmunition(string Type, int Number, int? Year, int? Month, bool Onward, bool EtoOnly);
+
+    // The two-letter types first, so that HE7 is not read as HEAT and AP5 not as APCR.
+    private static readonly string[] AmmunitionTypes = ["HE", "AP", "A", "D", "H", "C"];
+
+    /// <summary>Reads one item of a counter's special ammunition (ruling R55.4); null for anything else the counter lists, such as <c>s7</c>.</summary>
+    internal static SpecialAmmunition? ParseAmmunition(string item)
     {
-        ArgumentNullException.ThrowIfNull(gun);
-        var letter = ammunition switch
-        {
-            "apcr" => "A",
-            "heat" => "H",
-            _ => null,
-        };
-        if (letter is null || year is not { } scenarioYear)
+        if (AmmunitionTypes.FirstOrDefault(name => item.StartsWith(name, StringComparison.Ordinal)) is not { } type)
         {
             return null;
         }
 
-        var entries = gun.SpecialAmmo.Where(item => item.StartsWith(letter, StringComparison.Ordinal) && item.Length > 1 && char.IsDigit(item[1]))
-            .Select(item =>
+        var at = type.Length;
+        int? Digits()
+        {
+            var start = at;
+            while (at < item.Length && char.IsAsciiDigit(item[at]))
             {
-                var parts = item[1..].Split('^');
-                var number = int.Parse(parts[0], CultureInfo.InvariantCulture);
-                int? first = parts.Length > 1 ? 1940 + int.Parse(parts[1], CultureInfo.InvariantCulture) : null;
-                return (Number: number, Year: first);
-            }).ToArray();
+                at++;
+            }
+
+            return at > start ? int.Parse(item.AsSpan(start, at - start), CultureInfo.InvariantCulture) : null;
+        }
+
+        bool Mark(char mark)
+        {
+            if (at < item.Length && item[at] == mark)
+            {
+                at++;
+                return true;
+            }
+
+            return false;
+        }
+
+        if (Digits() is not { } number)
+        {
+            return null;
+        }
+
+        int? year = null;
+        int? month = null;
+        var onward = false;
+        var eto = false;
+        if (Mark('^'))
+        {
+            // C8.91: the exponent is the last digit of the year; the game's years run from 1936 to 1945.
+            if (at >= item.Length || !char.IsAsciiDigit(item[at]))
+            {
+                return null;
+            }
+
+            var digit = item[at++] - '0';
+            year = digit >= 6 ? 1930 + digit : 1940 + digit;
+            if (Mark('m') && (month = Digits()) is not (>= 1 and <= 12))
+            {
+                return null;
+            }
+
+            onward = Mark('+');
+            eto = Mark('E');
+        }
+
+        return at == item.Length ? new SpecialAmmunition(type, number, year, month, onward, eto) : null;
+    }
+
+    /// <summary>
+    /// The Depletion Number of an ammunition at a date (C8.9, C8.91, C8.3, C8.8), one more for Elite forces (C8.2, p. 178), or null when the Gun
+    /// has none then. A number holds from its year, and from its month when the counter gives one, until the next listed one.
+    /// </summary>
+    public static int? Depletion(GunDefinition gun, string ammunition, int? year, int? month, bool elite = false)
+    {
+        ArgumentNullException.ThrowIfNull(gun);
+        var type = TypeOf(ammunition);
+        var entries = gun.SpecialAmmo.Select(ParseAmmunition).OfType<SpecialAmmunition>().Where(entry => entry.Type == type).ToArray();
         if (entries.Length == 0)
         {
             return null;
         }
 
+        int? Elite(int number) => elite ? number + 1 : number;
+
         // C8.3: HEAT is available to the Germans from May 1942, to the U.S., Britain, and Russia from 1943.
-        if (letter == "H" && entries.All(entry => entry.Year is null))
+        if (type == "H" && entries.All(entry => entry.Year is null))
         {
             var from = gun.Nationality == "german" ? (Year: 1942, Month: 5) : (Year: 1943, Month: 1);
-            return scenarioYear > from.Year || (scenarioYear == from.Year && (month ?? 0) >= from.Month) ? entries[0].Number : null;
+            return year > from.Year || (year == from.Year && (month ?? 0) >= from.Month) ? Elite(entries[0].Number) : null;
         }
 
-        var dated = entries.Where(entry => entry.Year is not null).OrderBy(entry => entry.Year).ToArray();
-        return dated.LastOrDefault(entry => entry.Year <= scenarioYear) is { Year: not null } found ? found.Number : null;
+        // A number with no year holds whatever the date (C8.8's AP# and HE#); a dated one needs the scenario's year, and its month where it names one.
+        var held = entries.Where(entry => entry.Year is null
+                || entry.Year < year || (entry.Year == year && (entry.Month is not { } first || (month ?? 0) >= first)))
+            .OrderBy(entry => entry.Year ?? 0).ToArray();
+        return held.Length > 0 ? Elite(held[^1].Number) : null;
+    }
+
+    /// <summary>
+    /// The month an ammunition starts in, when that alone keeps it from a game that gives a year and no month (ruling R55.31): the counter, or
+    /// C8.3 for undated HEAT, starts it in a month of that very year, and with no month the game cannot say that month has come, so it has
+    /// none. Null in every other case, also when the Gun has the ammunition.
+    /// </summary>
+    public static int? StartMonthUnknown(GunDefinition gun, string ammunition, int? year, int? month)
+    {
+        ArgumentNullException.ThrowIfNull(gun);
+        if (month is not null || year is null || Depletion(gun, ammunition, year, null) is not null)
+        {
+            return null;
+        }
+
+        var type = TypeOf(ammunition);
+        var entries = gun.SpecialAmmo.Select(ParseAmmunition).OfType<SpecialAmmunition>().Where(entry => entry.Type == type).ToArray();
+        if (type == "H" && entries.Length > 0 && entries.All(entry => entry.Year is null))
+        {
+            var from = gun.Nationality == "german" ? (Year: 1942, Month: 5) : (Year: 1943, Month: 1);
+            return year == from.Year ? from.Month : null;
+        }
+
+        return entries.Where(entry => entry.Year == year && entry.Month is not null).Select(entry => entry.Month).Min();
+    }
+
+    /// <summary>The detail a refusal's code carries when <see cref="StartMonthUnknown"/> is its cause: <c>:from-month-5</c>; empty otherwise.</summary>
+    internal static string StartMonthDetail(OrdnanceShot shot, GunDefinition gun) =>
+        shot.Ammunition is { } ammunition && StartMonthUnknown(gun, ammunition, shot.ScenarioYear, shot.Hit?.ScenarioMonth) is { } from
+            ? ":" + StartMonthMark + from.ToString(CultureInfo.InvariantCulture) : string.Empty;
+
+    /// <summary>The start of that detail.</summary>
+    public const string StartMonthMark = "from-month-";
+
+    private static string? TypeOf(string ammunition) => ammunition switch
+    {
+        "apcr" => "A",
+        "apds" => "D",
+        "heat" => "H",
+        "he" => "HE",
+        "ap" => "AP",
+        "canister" => "C",
+        _ => null,
+    };
+
+    /// <summary>Whether the counter lists a Depletion Number for the ammunition at any date (C8.9): its HE or AP is then Special Ammunition (C8.8, C2.21).</summary>
+    internal static bool Lists(GunDefinition gun, string ammunition) =>
+        TypeOf(ammunition) is { } type && gun.SpecialAmmo.Any(item => ParseAmmunition(item)?.Type == type);
+
+    /// <summary>
+    /// The Depletion Number a shot's ammunition is fired under (C8.9, p. 179; pass 55, ruling R55.7), one more for an Elite force (C8.2), or null
+    /// when it has none: a LATW's (C8.3), AP or HE the counter gives no number, and a shot that names no ammunition, which is HE that is not
+    /// Special Ammunition (C2.21). Intensive Fire does not change it (C8.92).
+    /// </summary>
+    internal static int? ShotDepletion(OrdnanceShot shot, GunDefinition gun) =>
+        gun.GunType == "latw" || shot.Ammunition is not { } ammunition ? null
+            : Depletion(gun, ammunition, shot.ScenarioYear, shot.Hit?.ScenarioMonth, shot.Elite == true);
+
+    /// <summary>
+    /// C8.9: an Original To Hit DR below the Depletion Number uses the ammunition; one equal to it uses it and the firer "runs out of that Special
+    /// Ammunition in the process"; above it "the firer had no such ammunition".
+    /// </summary>
+    internal static string Use(int original, int depletion) => original < depletion ? "used" : original == depletion ? "depleted" : "none";
+
+    /// <summary>
+    /// C8.9: the shot of a Gun that had no such ammunition and did not malfunction: it "is considered not to have fired yet for any purpose", so it
+    /// keeps its fire, takes no fire counter, and its Acquisition stands.
+    /// </summary>
+    internal static OrdnanceResolution Unused(OrdnanceShot shot, GunDefinition gun, OrdnanceToHit toHit)
+    {
+        var missed = toHit with
+        {
+            Hit = false,
+            CriticalHit = false
+        };
+        return new OrdnanceResolution(OrdnanceResolution.Resolved, [], missed, new OrdnanceGunEffect(gun.Breakdown, false, gun.RateOfFire ?? 0, true, null, shot.Acquisition!.Value, null))
+        {
+            AmmunitionUse = "none"
+        };
     }
 
     /// <summary>D3.2 (p. 199; pass 50): the Target Facing of a vehicle fired on from inside its own hex, by the colored dr of the To Hit DR: 1-2 rear, 3-4 side, 5-6 front.</summary>
@@ -115,14 +258,19 @@ internal static class ScenarioA1ArmorCalculator
         }
 
         var tk = armored ? reference.Armor.BasicTk(ammunition, gun) : reference.Armor.UnarmoredTk(ammunition, gun);
-        if (ammunition is not ("ap" or "apcr" or "heat" or "he") || (ammunition == "ap" && gun.NoAp) || (ammunition == "he" && gun.NoHe) || tk is null)
+        // C8.8 (p. 179; pass 55): a Gun whose caliber is underscored fires HE all the same when its counter lists an HE Depletion Number. Canister
+        // "is ineffective vs armored targets" (C8.4) and is not fired on the Vehicle Target Type.
+        if (ammunition is not ("ap" or "apcr" or "apds" or "heat" or "he") || (ammunition == "ap" && gun.NoAp) || (ammunition == "he" && gun.NoHe && !Lists(gun, "he"))
+            || tk is null)
         {
             outside.Add(Prefix + "ammunition-outside");
         }
 
-        if (!latw && ammunition is "apcr" or "heat" && Depletion(gun, ammunition, shot.ScenarioYear, shot.Hit!.ScenarioMonth) is null)
+        // C8.11, C8.3, C8.8 (pass 55, ruling R55.7): APCR, APDS, and HEAT always have a Depletion Number, AP and HE where the counter lists one;
+        // none at the scenario's date is no such ammunition.
+        if (!latw && (ammunition is "apcr" or "apds" or "heat" || Lists(gun, ammunition)) && ShotDepletion(shot, gun) is null)
         {
-            outside.Add(Prefix + "ammunition-unavailable");
+            outside.Add(Prefix + "ammunition-unavailable" + StartMonthDetail(shot, gun));
         }
 
         if (shot.Gun!.Depleted?.Contains(ammunition, StringComparer.Ordinal) == true)
@@ -130,7 +278,7 @@ internal static class ScenarioA1ArmorCalculator
             outside.Add(Prefix + "ammunition-depleted");
         }
 
-        // C7.24: AP and APCR need a Case D value at the range (NA is out of reach).
+        // C7.24: AP, APCR, and APDS need a Case D value at the range (NA is out of reach).
         if (armored && tk is not null && reference.Armor.CaseD(ammunition, gun, shot.Range!.Value) is null)
         {
             outside.Add(Prefix + "out-of-range");
@@ -146,7 +294,7 @@ internal static class ScenarioA1ArmorCalculator
         var ammunition = shot.Ammunition!;
         var range = shot.Range!.Value;
         var column = reference.Column(range);
-        var color = ScenarioA1OrdnanceReference.Color(shot.FiringNationality!);
+        var color = ScenarioA1OrdnanceReference.Color(gun, shot.ScenarioYear);
 
         // C3.31, C4: the Vehicle row's Basic TH#, the Gun's modifications, and APCR's (C4.3). C13.33 (ruling R9.8): a PF's Basic TH# is 10, less
         // two for each hex of range, with no C4 modification.
@@ -161,9 +309,10 @@ internal static class ScenarioA1ArmorCalculator
 
         var basic = pf ? 10 : gun.ToHitTable.Count > 0 ? gun.ToHitTable[range - 1] : reference.Armor.BasicToHit(color, column);
         var modifications = pf ? [new FireModifier("pf-range", -2 * range, "C13.33")] : gun.ToHitTable.Count > 0 ? [] : reference.Modifications(gun, range).ToList();
-        if (ammunition == "apcr" && reference.Armor.ApcrToHit(column) is var apcr && apcr != 0)
+        // C4.3 (p. 171): "the Basic TH# of any shot using APCR/APDS is lessened by one for every 12 hexes (or fraction thereof) beyond 12 hex range".
+        if (ammunition is "apcr" or "apds" && reference.Armor.ApcrToHit(column) is var apcr && apcr != 0)
         {
-            modifications.Add(new FireModifier("apcr", apcr, "C4.3"));
+            modifications.Add(new FireModifier(ammunition, apcr, "C4.3"));
         }
 
         var modified = basic + (int)modifications.Sum(item => item.Value);
@@ -225,6 +374,13 @@ internal static class ScenarioA1ArmorCalculator
 
         drm.AddRange(ScenarioA1OrdnanceCalculator.PassEightFirerDrm(shot));
         drm.AddRange(ScenarioA1OrdnanceCalculator.Leadership(shot, reference));
+
+        // D3.44, D3.45 (p. 200; pass 55, rulings R55.16, R55.18): the vehicle's Armor Leader modifies its MA's To Hit DR, BU or not; an
+        // Inexperienced Crew adds one.
+        if (ScenarioA1ArmorLeaders.Modifier(shot.Vehicle?.ArmorLeadership) is { } armorLeader)
+        {
+            drm.Add(armorLeader);
+        }
 
         // C6.11, C6.12 (ruling R8.1): Defensive First Fire at a vehicle that has spent at most one MP in the firer's continuous LOS takes Case J2,
         // at most three Case J1, else Case J; a moving target in a fire phase takes Case J.
@@ -288,6 +444,13 @@ internal static class ScenarioA1ArmorCalculator
         if (tem != 0 && !(target.Bypass == true && tem > 0))
         {
             drm.Add(new FireModifier("case-q:" + hit.TargetTerrain, tem, "C6.8"));
+        }
+
+        // D4.22, B10.31 (pp. 202, 125; pass 55): "The +1 Height Advantage TEM vs Direct Fire also applies to vehicles, but only if they are not HD
+        // to the firer"; no vehicle is HD (D4.2 is not built). A vehicle in Bypass took no TEM above, so it may take this one.
+        if (ScenarioA1OrdnanceCalculator.HeightAdvantageApplies(shot, drm))
+        {
+            drm.Add(new FireModifier("case-q:height-advantage", 1, "B10.31"));
         }
 
         if (hit.Los!.HindranceDrm is int hindrance && hindrance > 0)
@@ -374,16 +537,27 @@ internal static class ScenarioA1ArmorCalculator
         }
 
         // C8.9: special ammunition is used below its Depletion Number, used and run out at it, and was never there above it, when the Gun
-        // did not fire at all unless it malfunctioned.
+        // did not fire at all unless it malfunctioned. Pass 55 (ruling R55.7): every ammunition with a Depletion Number, APDS, and AP or HE the
+        // counter gives one (C8.8), beside APCR and HEAT.
         string? use = null;
-        if (!latw && ammunition is "apcr" or "heat")
+        if (ShotDepletion(shot, gun) is { } depletion)
         {
-            var depletion = Depletion(gun, ammunition, shot.ScenarioYear, hit.ScenarioMonth)!.Value;
-            use = original < depletion ? "used" : original == depletion ? "depleted" : "none";
+            use = Use(original, depletion);
             if (use == "none" && !malfunctioned)
             {
-                var unused = new OrdnanceGunEffect(gun.Breakdown, false, gun.RateOfFire ?? 0, true, null, shot.Acquisition!.Value, null);
-                return new OrdnanceResolution(OrdnanceResolution.Resolved, [], toHit with { Hit = false, CriticalHit = false }, unused) { AmmunitionUse = use };
+                return Unused(shot, gun, toHit);
+            }
+
+            // A round that was not there hits nothing, though the Gun malfunctioned on the DR. An APCR or HEAT record made before pass 55 keeps
+            // the To Hit result it shows; no To Kill DR follows it either way.
+            if (use == "none" && ammunition is not ("apcr" or "heat"))
+            {
+                isHit = critical = false;
+                toHit = toHit with
+                {
+                    Hit = false,
+                    CriticalHit = false
+                };
             }
         }
 
@@ -504,7 +678,9 @@ internal static class ScenarioA1ArmorCalculator
         var made = Made(result);
 
         // D5.1: an AFV's crew has Elite morale, an unarmored vehicle's the 1st Line morale of its nationality.
-        var morale = reference.Fire.Definitions.Values.Where(item => item.IsMmc && item.Nationality == armor.Nationality && item.Class == (armored ? "elite" : "1st-line"))
+        // D3.42, D3.45 (p. 200; pass 55, rulings R55.17, R55.18): "[EXC: Armor Leaders (3.42) & Inexperienced Crews (3.45)]": the crew "always has
+        // the same Morale Level as any Armor Leader in that vehicle", 6 when Inexperienced. His leadership modifier is not added: he takes the check.
+        var morale = target.CrewMorale ?? reference.Fire.Definitions.Values.Where(item => item.IsMmc && item.Nationality == armor.Nationality && item.Class == (armored ? "elite" : "1st-line"))
             .Max(item => item.Morale);
         if (morale is null && (result == OrdnanceKill.PossibleShock || (result == OrdnanceKill.Immobilized && target.CrewMayTakeTc == true)))
         {
@@ -530,7 +706,10 @@ internal static class ScenarioA1ArmorCalculator
             var passed = total + plusOne <= shockMorale;
             made = made with
             {
-                ShockCheck = new FireCheck("NTC", [.. check], total, checkDrm, total + plusOne, shockMorale, passed, passed ? "none" : OrdnanceKill.Shock),
+                ShockCheck = new FireCheck("NTC", [.. check], total, checkDrm, total + plusOne, shockMorale, passed, passed ? "none" : OrdnanceKill.Shock)
+                {
+                    MoraleSource = ScenarioA1ArmorLeaders.MoraleSource(target.CrewMorale),
+                },
                 Shocked = passed ? null : true,
             };
         }
@@ -546,7 +725,10 @@ internal static class ScenarioA1ArmorCalculator
             var passed = total + plusOne <= tcMorale;
             made = made with
             {
-                CrewCheck = new FireCheck("TC", [.. check], total, checkDrm, total + plusOne, tcMorale, passed, passed ? "none" : "abandoned"),
+                CrewCheck = new FireCheck("TC", [.. check], total, checkDrm, total + plusOne, tcMorale, passed, passed ? "none" : "abandoned")
+                {
+                    MoraleSource = ScenarioA1ArmorLeaders.MoraleSource(target.CrewMorale),
+                },
                 Abandoned = passed ? null : true,
             };
         }

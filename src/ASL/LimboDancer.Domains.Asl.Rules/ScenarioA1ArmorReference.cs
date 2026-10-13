@@ -85,9 +85,9 @@ public sealed class ScenarioA1ArmorReference
         };
     }
 
-    private static int? Lookup((int Tk, string Gun, string? Note)[] table, GunDefinition gun)
+    private static int? Lookup((int Tk, string Gun, string? Note)[] table, GunDefinition gun, string prefix = "")
     {
-        var size = GunSize(gun);
+        var size = prefix + GunSize(gun);
         return table.Where(item => item.Gun == size && item.Note is { } note && Notes.TryGetValue(note, out var nations) && nations.Contains(gun.Nationality))
                 .Select(item => (int?)item.Tk).FirstOrDefault()
             ?? table.Where(item => item.Gun == size && item.Note is null).Select(item => (int?)item.Tk).FirstOrDefault();
@@ -101,6 +101,9 @@ public sealed class ScenarioA1ArmorReference
         {
             "ap" => Lookup(ap, gun),
             "apcr" => Lookup(apcr, gun),
+
+            // C7.32 (p. 190; pass 55): the APCR/APDS To Kill Table prints an APDS listing with a "D" before the gun size (D57L 18, D76LL 25).
+            "apds" => Lookup(apcr, gun, "D"),
             "heat" => heat.Where(item => item.Gun == (gun.HeatRow ?? gun.Caliber.ToString(CultureInfo.InvariantCulture))).Select(item => (int?)item.Tk).FirstOrDefault(),
             "he" => he.Where(item => gun.Caliber >= item.Minimum).Select(item => (int?)item.Armored).LastOrDefault(),
             _ => null,
@@ -108,8 +111,8 @@ public sealed class ScenarioA1ArmorReference
     }
 
     /// <summary>
-    /// The Case D change of AP and APCR against an armored Target Facing at a range (C7.24); zero for HEAT and HE, and null where the table
-    /// gives none (NA) or has no row for the caliber.
+    /// The Case D change of AP, APCR, and APDS against an armored Target Facing at a range (C7.24); zero for HEAT and HE, and null where the
+    /// table gives none (NA) or has no row for the caliber. APDS has one row of its own for every caliber (C7.32, p. 190; pass 55).
     /// </summary>
     public int? CaseD(string ammunition, GunDefinition gun, int range)
     {
@@ -118,6 +121,7 @@ public sealed class ScenarioA1ArmorReference
         {
             "ap" => (apCaseD, apRanges, gun.Caliber <= 25 ? "atMost25mm" : gun.Caliber is >= 37 and <= 57 ? "37to57mm" : gun.Caliber >= 65 ? "atLeast65mm" : null),
             "apcr" => (apcrCaseD, apcrRanges, gun.Caliber <= 57 ? "apcrAtMost57mm" : gun.Caliber >= 75 ? "apcrAtLeast75mm" : null),
+            "apds" => (apcrCaseD, apcrRanges, "apds"),
             _ => (apCaseD, apRanges, null),
         };
         if (ammunition is "heat" or "he")
@@ -143,7 +147,8 @@ public sealed class ScenarioA1ArmorReference
         ArgumentNullException.ThrowIfNull(gun);
         return ammunition switch
         {
-            "ap" or "apcr" => gun.Caliber switch
+            // C7.321: "The Final TK# for an unarmored vehicle hit by APCR/APDS is equal to that listed on the AP To Kill Table".
+            "ap" or "apcr" or "apds" => gun.Caliber switch
             {
                 <= 28 => 7,
                 >= 37 and <= 57 => 8,

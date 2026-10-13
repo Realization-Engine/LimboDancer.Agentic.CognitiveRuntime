@@ -61,8 +61,21 @@ public static class ScenarioA1OrdnanceCalculator
             } : fired;
         }
 
-        return shot.TargetType == OrdnanceTargetTypes.Area ? ScenarioA1AreaCalculator.Run(shot, gun, reference)
+        // C8.4 (pass 55, ruling R55.9): Canister makes no To Hit DR; its IFT DR decides the shot.
+        if (IsCanister(shot))
+        {
+            return ScenarioA1CanisterCalculator.Run(shot, gun, reference);
+        }
+
+        var resolution = shot.TargetType == OrdnanceTargetTypes.Area ? ScenarioA1AreaCalculator.Run(shot, gun, reference)
             : shot.VehicleTarget is not null ? ScenarioA1ArmorCalculator.Run(shot, gun, reference) : Run(shot, reference);
+
+        // C8.9 (the UI review of pass 55): a resolution that says how its ammunition was used says under which Depletion Number, so that its
+        // record is worded from itself and not from the catalog of a later day.
+        return resolution.AmmunitionUse is null ? resolution : resolution with
+        {
+            DepletionNumber = ScenarioA1ArmorCalculator.ShotDepletion(shot, gun)
+        };
     }
 
     /// <summary>
@@ -136,13 +149,15 @@ public static class ScenarioA1OrdnanceCalculator
         {
             Rolls = new OrdnanceRolls(null, null, null, null, null)
         }, reference);
-        if (first.Disposition != OrdnanceResolution.Indeterminate || first.Reasons is not ([Prefix + "roll-missing:toHit"] or [Prefix + "roll-missing:panzerfaustCheck"]))
+        if (first.Disposition != OrdnanceResolution.Indeterminate
+            || first.Reasons is not ([Prefix + "roll-missing:toHit"] or [Prefix + "roll-missing:panzerfaustCheck"] or [Prefix + "roll-missing:canister"]))
         {
             return first.Reasons;
         }
 
-        // A Vehicle Target Type shot has no IFT attack to precheck (C3.31).
-        if (shot.VehicleTarget is not null)
+        // A Vehicle Target Type shot has no IFT attack to precheck (C3.31). A Canister shot's attacks are fire attacks of their own, one a
+        // Location, which the Fire package prechecks (C8.4; pass 55).
+        if (shot.VehicleTarget is not null || IsCanister(shot))
         {
             return [];
         }
@@ -159,6 +174,16 @@ public static class ScenarioA1OrdnanceCalculator
     }
 
     private static OrdnanceResolution Refused(string disposition, IReadOnlyList<string> reasons) => new(disposition, reasons, null, null);
+
+    /// <summary>
+    /// Whether the shot is a Canister shot (C8.4, p. 178; pass 55, ruling R55.9): it names the ammunition and no vehicle. Named at a vehicle it is
+    /// a Vehicle Target Type shot, which that Target Type refuses ("ineffective vs armored targets").
+    /// </summary>
+    public static bool IsCanister(OrdnanceShot shot)
+    {
+        ArgumentNullException.ThrowIfNull(shot);
+        return shot.Ammunition == ScenarioA1CanisterCalculator.Ammunition && shot.VehicleTarget is null;
+    }
 
     private static List<string> Missing(OrdnanceShot shot)
     {
@@ -198,13 +223,22 @@ public static class ScenarioA1OrdnanceCalculator
         Need(shot.Crew?.FiredInherentFp, "crew.firedInherentFp");
         Need(shot.Hit, "hit");
         Need(shot.Hit?.Targets, "hit.targets");
-        Need(shot.Hit?.TargetTerrain, "hit.targetTerrain");
-        Need(shot.Hit?.Los, "hit.los");
-        Need(shot.Hit?.Los?.Blocked, "hit.los.blocked");
-        Need(shot.Hit?.Los?.HindranceDrm, "hit.los.hindranceDrm");
-        Need(shot.Hit?.Los?.HindranceAttributed, "hit.los.hindranceAttributed");
-        Need(shot.Hit?.Los?.GrainInLos, "hit.los.grainInLos");
-        Need(shot.Hit?.SameLevel, "hit.sameLevel");
+        if (IsCanister(shot))
+        {
+            // C8.4 (pass 55): a Canister shot has no one target Location; each Location it attacks carries its own terrain and LOS in its fire attack.
+            ScenarioA1CanisterCalculator.Missing(shot, Need);
+        }
+        else
+        {
+            Need(shot.Hit?.TargetTerrain, "hit.targetTerrain");
+            Need(shot.Hit?.Los, "hit.los");
+            Need(shot.Hit?.Los?.Blocked, "hit.los.blocked");
+            Need(shot.Hit?.Los?.HindranceDrm, "hit.los.hindranceDrm");
+            Need(shot.Hit?.Los?.HindranceAttributed, "hit.los.hindranceAttributed");
+            Need(shot.Hit?.Los?.GrainInLos, "hit.los.grainInLos");
+            Need(shot.Hit?.SameLevel, "hit.sameLevel");
+        }
+
         if (shot.VehicleTarget is not null)
         {
             ScenarioA1ArmorCalculator.Missing(shot, Need);
@@ -298,12 +332,41 @@ public static class ScenarioA1OrdnanceCalculator
         // C2.21, C2.22, C2.3, C3.33: a Gun of the firing side that can fire HE; mortars (the Area Target Type), RCL, and 360-degree
         // mounts are not reviewed.
         var gunShot = shot.Gun!;
+        var canister = IsCanister(shot);
         if (!reference.Guns.TryGetValue(gunShot.DefinitionId!, out var gun) || gun.Nationality != shot.FiringNationality || gun.Mount360
             || !(shot.Vehicle is null ? AdmittedGunTypes.Contains(gun.GunType) : gun.GunType == "vehicle")
-            || (shot.VehicleTarget is null && (gun.NoHe || shot.Ammunition is not (null or "he"))))
+            || (shot.VehicleTarget is null && !canister && !ScenarioA1ArmorCalculator.Lists(gun, "he") && (gun.NoHe || shot.Ammunition is not (null or "he"))))
         {
             outside.Add(Prefix + "gun-outside");
             return outside;
+        }
+
+        // C8.4 (pass 55): the Canister facts belong to a Canister shot alone.
+        if (shot.Canister is not null && !canister)
+        {
+            outside.Add(Prefix + "canister-outside");
+            return outside;
+        }
+
+        // C2.21, C8.8 (pp. 167, 179; pass 55, ruling R55.7): a Gun is "always assumed to be firing HE vs unarmored targets" only when that
+        // ammunition "is not Special Ammunition (i.e., has no Depletion #; 8.8)": one whose counter lists an HE Depletion Number fires HE only
+        // when the shot names it, and not at all before the number's date or once it has run out (C8.9). Its AP at Infantry is C8.31's HE
+        // Equivalency, which is not built.
+        if (shot.VehicleTarget is null && !canister && ScenarioA1ArmorCalculator.Lists(gun, "he"))
+        {
+            if (shot.Ammunition is null)
+            {
+                outside.Add(Prefix + "he-not-named");
+            }
+            else if (shot.Ammunition != "he")
+            {
+                // C8.31: another ammunition named at Infantry is HE Equivalency, which is not built; the reason says so, not that HE was not named.
+                outside.Add(Prefix + "he-equivalency-not-built");
+            }
+            else if (ScenarioA1ArmorCalculator.ShotDepletion(shot, gun) is null || gunShot.Depleted?.Contains("he", StringComparer.Ordinal) == true)
+            {
+                outside.Add(Prefix + "he-unavailable" + (gunShot.Depleted?.Contains("he", StringComparer.Ordinal) == true ? string.Empty : ScenarioA1ArmorCalculator.StartMonthDetail(shot, gun)));
+            }
         }
 
         // C9.1, C3.33 (rulings R9.2, R9.3): a mortar always fires on the Area Target Type; other Guns' Area Target Type fire is not built. C13.1,
@@ -321,10 +384,11 @@ public static class ScenarioA1OrdnanceCalculator
         }
 
         // D5.34, C7.42, D5.341 (ruling R7.10): a Stunned, Shocked, or Recalled AFV does not fire; D1.321, D1.322: an RST or 1MT MA fires only BU.
-        // D2.42, C5.35 (pass 50): a firer in Motion fires with Case C4 in its own MPh and AFPh; D2.4: never in the PFPh; the DEFENDER's vehicle in
-        // Motion is not built. C5.3 (pass 50): one that entered a new hex in its MPh fires in the AFPh with Case C.
+        // D2.42, C5.35 (pass 50): a firer in Motion fires with Case C4 in its own MPh and AFPh; D2.4: never in the PFPh. D2.401 (pass 55, ruling
+        // R55.14): the DEFENDER's vehicle in Motion "may still use Motion Fire (Case C4)", as Defensive First Fire and in the DFPh.
+        // C5.3 (pass 50): one that entered a new hex in its MPh fires in the AFPh with Case C.
         if (shot.Vehicle is { } firing && (firing.Stunned == true || firing.Shocked == true || firing.Recalled == true
-            || (firing.InMotion == true && !bounding && !(phase == "AFPh" && shot.FiringSide == "phasing"))
+            || (firing.InMotion == true && !bounding && !(phase == "AFPh" && shot.FiringSide == "phasing") && !DefenderMotionFirer(shot))
             || (gun.MaType is "rst" or "1mt" && firing.ButtonedUp != true)))
         {
             outside.Add(Prefix + "vehicle-fire-outside");
@@ -391,12 +455,19 @@ public static class ScenarioA1OrdnanceCalculator
         // D3.2, C5.5 (pass 50): a vehicle in the firer's own Location is fired on with Case E, its Target Facing by the colored dr.
         if ((sameHex ? shot.Range != 0 || shot.HexspinesToTurn != 0 || shot.FireKind is not null || mortar || latw || (shot.Vehicle is not null && shot.VehicleTarget is null)
                 : shot.Range < 1)
-            || (gun.RangeMaximum is { } maximum && shot.Range > maximum) || shot.ElevationAllowed != true
+            || (gun.RangeMaximum is { } maximum && shot.Range > maximum)
             // C9.4: never nearer than a mortar's minimum range; C13.32: a PF's range by the scenario date.
             || (gun.RangeMinimum is { } minimum && shot.Range < minimum) || (pf && shot.Range > PanzerfaustRange(shot.ScenarioYear, shot.Hit!.ScenarioMonth))
             || (gun.ToHitTable.Count > 0 && shot.Range > gun.ToHitTable.Count))
         {
             outside.Add(Prefix + "out-of-range");
+        }
+
+        // C2.6 (p. 168): a target at another level at a range less than the elevation difference; a reason of its own (the table player's
+        // review of pass 55), so that it is not read as a matter of the Gun's range.
+        if (shot.ElevationAllowed != true)
+        {
+            outside.Add(Prefix + "elevation-outside");
         }
 
         if (shot.FirerOverstack is < 0 || shot.TargetOverstack is < 0)
@@ -415,6 +486,13 @@ public static class ScenarioA1OrdnanceCalculator
         if (shot.HexspinesToTurn > 0 && (bounding || crew.Pinned == true || (shot.FirerInWoodsOrBuilding == true && gunShot.ShotsThisPhase > 0)))
         {
             outside.Add(Prefix + "covered-arc-fixed");
+        }
+
+        // C8.4 (pass 55, ruling R55.9): a Canister shot has no one target Location and no LOS of its own to it; its own facts decide the rest.
+        if (canister)
+        {
+            ScenarioA1CanisterCalculator.Outside(shot, gun, outside);
+            return outside.Distinct(StringComparer.Ordinal).ToList();
         }
 
         var hit = shot.Hit!;
@@ -558,6 +636,13 @@ public static class ScenarioA1OrdnanceCalculator
         }
     }
 
+    /// <summary>
+    /// B10.31 (p. 125; pass 55): whether the Height Advantage the shot carries is its target's TEM: no other Case Q of the To Hit DRM so far is a
+    /// positive TEM. A shot recorded before the pass carries none.
+    /// </summary>
+    internal static bool HeightAdvantageApplies(OrdnanceShot shot, IEnumerable<FireModifier> drm) =>
+        shot.HeightAdvantage == true && shot.SameHex != true && !drm.Any(item => item.Value > 0 && item.Name.StartsWith("case-q:", StringComparison.Ordinal));
+
     /// <summary>A PF's range (C13.32): one hex before June 1944, two from June to December 1944, three from 1945.</summary>
     public static int PanzerfaustRange(int? year, int? month) => year >= 1945 ? 3 : year == 1944 && month >= 6 ? 2 : 1;
 
@@ -573,12 +658,20 @@ public static class ScenarioA1OrdnanceCalculator
         var undecided = new List<string>();
         var hit = shot.Hit!;
 
-        // Levels and an unattributed Hindrance are not reviewed, as for Infantry fire.
-        if (hit.SameLevel != true)
+        // C8.4 (pass 55): each Location a Canister shot attacks is decided in its own fire attack; the shot itself only needs the read of who
+        // sees a concealed crew fire (A12.14).
+        if (IsCanister(shot))
         {
-            undecided.Add(Prefix + "levels-differ");
+            if (shot.Crew!.Concealed == true && shot.Vehicle is null && shot.CrewSeen is null)
+            {
+                undecided.Add(Prefix + "concealment-unreviewed:crew");
+            }
+
+            return undecided;
         }
 
+        // An unattributed Hindrance is not reviewed, as for Infantry fire. C2.6 (pass 55): a target at another level is fired at when the range
+        // allows it, which the shot's elevation fact says.
         var los = hit.Los!;
         if (los.HindranceAttributed != true || los.HindranceDrm < 0 || (los.GrainInLos == true && hit.ScenarioMonth is null))
         {
@@ -650,7 +743,7 @@ public static class ScenarioA1OrdnanceCalculator
         var rolls = shot.Rolls!;
         var hit = shot.Hit!;
         var range = shot.Range!.Value;
-        var color = ScenarioA1OrdnanceReference.Color(shot.FiringNationality!);
+        var color = ScenarioA1OrdnanceReference.Color(gun, shot.ScenarioYear);
 
         // C3.3, C4: the Basic TH# of the Infantry Target Type by range and color, and the Gun and Ammo modifications.
         var basic = reference.BasicToHit(color, range);
@@ -696,6 +789,13 @@ public static class ScenarioA1OrdnanceCalculator
         if (shot.Vehicle?.ButtonedUp == true)
         {
             drm.Add(new FireModifier("case-i", 1, "C5.9"));
+        }
+
+        // D3.44, D3.45 (p. 200; pass 55, rulings R55.16, R55.18): the vehicle's Armor Leader modifies its MA's To Hit DR, BU or not; an
+        // Inexperienced Crew adds one.
+        if (ScenarioA1ArmorLeaders.Modifier(shot.Vehicle?.ArmorLeadership) is { } armorLeader)
+        {
+            drm.Add(armorLeader);
         }
 
         drm.AddRange(PassEightFirerDrm(shot));
@@ -765,6 +865,15 @@ public static class ScenarioA1OrdnanceCalculator
         if (ScenarioA1FireCalculator.Cover(hit) is { } cover)
         {
             drm.Add(new FireModifier("case-q:afv-cover:" + cover, 1, "D9.3"));
+        }
+
+        // B10.31, C6.8 (pp. 125, 175; pass 55): "Any unit in a hex receiving Direct Fire from a lower elevation is entitled to a +1 TEM, provided
+        // that unit is not eligible to receive any other positive TEM", and is then "not subject to Interdiction/FFMO by an attack to which that
+        // +1 TEM applies": no Case J4.
+        if (HeightAdvantageApplies(shot, drm))
+        {
+            drm.Add(new FireModifier("case-q:height-advantage", 1, "B10.31"));
+            drm.RemoveAll(item => item.Name == "case-j4");
         }
 
         // E1.7, E3.1 (referee, pass 16): the Low Visibility DRM is a Hindrance of its own on the TH DR.
@@ -838,6 +947,29 @@ public static class ScenarioA1OrdnanceCalculator
 
         // C2.28: an Original To Hit DR at or above the B# malfunctions the Gun; C5.62: two lower while Intensive Firing.
         var malfunctioned = original >= Breakdown(shot, gun, reference);
+
+        // C8.9, C8.8 (p. 179; pass 55, ruling R55.7): HE with a Depletion Number is used below it, used and run out at it, and above it "the firer
+        // had no such ammunition and is considered not to have fired yet for any purpose unless Gun Malfunction ... occurs": no ROF check, no hit,
+        // and no IFT DR for a round that was not there. A shot that names no ammunition, as every one before the pass, has no such number.
+        string? use = null;
+        if (ScenarioA1ArmorCalculator.ShotDepletion(shot, gun) is { } depletion)
+        {
+            use = ScenarioA1ArmorCalculator.Use(original, depletion);
+            if (use == "none")
+            {
+                if (!malfunctioned)
+                {
+                    return ScenarioA1ArmorCalculator.Unused(shot, gun, toHit);
+                }
+
+                isHit = critical = false;
+                toHit = toHit with
+                {
+                    Hit = false,
+                    CriticalHit = false
+                };
+            }
+        }
 
         // C2.24: an Original colored dr at most the ROF keeps the Multiple ROF; C2.5: a non-vehicular NT Gun's ROF is one lower after a
         // CA change; C5.4: a pinned crew forfeits it; C5.2: none in the AFPh.
@@ -931,6 +1063,7 @@ public static class ScenarioA1OrdnanceCalculator
             CriticalHit = criticalHit,
             CriticalTarget = criticalTarget,
             GunTargetFate = fate,
+            AmmunitionUse = use,
         };
     }
 
@@ -969,7 +1102,9 @@ public static class ScenarioA1OrdnanceCalculator
     /// "must add the +2 DRM of Case B to the applicable Gun Type DRM of Case C": 2 for a T or ST turret, 3 for a NT mount (the C5.3 EX: +4 and
     /// +5). Case C1 adds one for a continuous LOS of two and a half to three MP, Case C2 two for at most two MP, and more than three MP, or a LOS
     /// held since before the MPh, is Case C alone. In the AFPh a vehicle that entered a new hex in its MPh, is in Motion, or fires on the ROF its
-    /// Bounding First Fire kept uses Case C; the subcases "do not apply in the AFPh". Case B is part of it and is not added again.
+    /// Bounding First Fire kept uses Case C; the subcases "do not apply in the AFPh". Case B is part of it and is not added again. A DEFENDER's
+    /// vehicle in Motion uses Case C alone (C5.35; pass 55, ruling R55.14): C5.31 and C5.32 give C1 and C2 only to "a vehicle First Firing during
+    /// its own MPh".
     /// </summary>
     internal static FireModifier? CaseC(OrdnanceShot shot, GunDefinition gun)
     {
@@ -979,7 +1114,8 @@ public static class ScenarioA1OrdnanceCalculator
         }
 
         var bounding = shot.FireKind == ScenarioA1FireCalculator.BoundingFirstFire;
-        if (!bounding && !(shot.Phase == "AFPh" && shot.FiringSide == "phasing" && (vehicle.Moved == true || vehicle.InMotion == true || vehicle.BoundingFirer == true)))
+        if (!bounding && !DefenderMotionFirer(shot)
+            && !(shot.Phase == "AFPh" && shot.FiringSide == "phasing" && (vehicle.Moved == true || vehicle.InMotion == true || vehicle.BoundingFirer == true)))
         {
             return null;
         }
@@ -998,10 +1134,19 @@ public static class ScenarioA1OrdnanceCalculator
 
     /// <summary>
     /// Whether the shot is a Motion firer's (C5.35, D2.42, pp. 172 and 198; pass 50): a vehicle in Motion, or moving and not stopped, that fires in
-    /// its own MPh or AFPh. It uses Case C, C1, or C2 as applicable and "must double the lower dr of its TH DR".
+    /// its own MPh or AFPh, or a DEFENDER's vehicle in Motion. It uses Case C, C1, or C2 as applicable and "must double the lower dr of its TH DR".
     /// </summary>
     internal static bool MotionFirer(OrdnanceShot shot) =>
-        shot.Vehicle?.InMotion == true && (shot.FireKind == ScenarioA1FireCalculator.BoundingFirstFire || (shot.Phase == "AFPh" && shot.FiringSide == "phasing"));
+        shot.Vehicle?.InMotion == true
+            && (shot.FireKind == ScenarioA1FireCalculator.BoundingFirstFire || (shot.Phase == "AFPh" && shot.FiringSide == "phasing") || DefenderMotionFirer(shot));
+
+    /// <summary>
+    /// D2.401, D2.42, C5.35 (pp. 172, 198; pass 55, ruling R55.14): a vehicle in Motion of the side that is not phasing, which keeps its Motion
+    /// counter until its own next MPh or gained it by a Motion attempt, and "may still use Motion Fire (Case C4)": Defensive First Fire in the
+    /// enemy MPh and Final Fire in the DFPh, with Case C alone and the lower dr of its TH DR doubled.
+    /// </summary>
+    internal static bool DefenderMotionFirer(OrdnanceShot shot) =>
+        shot.Vehicle?.InMotion == true && shot.FiringSide == "non-phasing" && shot.Phase is "MPh" or "DFPh";
 
     /// <summary>
     /// The firer-based DRM of the backlog pass 8 (rulings R8.2, R8.8, R8.10): Case F for Intensive Fire (C5.61), Case H for a non-qualified

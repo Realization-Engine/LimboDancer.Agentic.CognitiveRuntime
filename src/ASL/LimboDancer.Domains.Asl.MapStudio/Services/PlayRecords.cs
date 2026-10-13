@@ -257,6 +257,9 @@ public sealed class PlayRecords
                 MovementWindowClosed => $"The {DisplayText.Side(before?.Sides.FirstOrDefault(side => side.Id != before.PhasingSide)?.Id)} side, the DEFENDER, declines First Fire",
                 MovementEnded ended => Many(ended.Movers, "ends its move", "end their move") + In(before, ended.Movers.Count > 0 ? ended.Movers[0] : null),
                 OpportunityFireDeclared held => string.Join(", ", held.Units.Select(id => id + In(before, id))) + (held.Units.Count == 1 ? " is" : " are") + " held for Opportunity Fire (A7.25)",
+                // C2.2401 (pass 55): the ATTACKER's answer to a declared shot; the declaration and a void return shot are among the ordnance records.
+                ChoiceMade answered when before?.Choice is { Kind: ChoicePending.GunDuel } duel && GunDuelParties(duel.Resume) is (var answeredFirer, var answeredVehicle) =>
+                    ScenarioA1GunDuels.AnswerText(answered.Option, answeredVehicle, answeredFirer),
                 ChoiceMade => "A choice the game waited for was answered",
                 SurrenderPending surrender => $"{surrender.Unit}{In(before, surrender.Unit)} surrenders, and its captor is to be chosen (A20.21)",
                 SurrenderRejected refused => $"The surrender of {refused.Unit} is refused (A20.3)",
@@ -276,6 +279,11 @@ public sealed class PlayRecords
         // The order it happened in; lines of one event keep the order they were read in.
         return [.. read.Select((line, index) => (line, index)).OrderBy(pair => pair.line.Revision).ThenBy(pair => pair.index).Select(pair => pair.line)];
     }
+
+    /// <summary>The firer and the moving vehicle of a pending Gun Duel (C2.2401; pass 55), from its resume data; null when it names neither.</summary>
+    private static (string Firer, string Vehicle)? GunDuelParties(JsonElement resume) =>
+        resume.ValueKind == JsonValueKind.Object && resume.TryGetProperty("firer", out var firer) && firer.GetString() is { } firerId
+            && resume.TryGetProperty("vehicle", out var vehicle) && vehicle.GetString() is { } vehicleId ? (firerId, vehicleId) : null;
 
     /// <summary>A fire in one line (play test P-15): who fired at what, the result, and what it did to each unit the view may read of.</summary>
     private static string FireLine(FireView fire)
@@ -297,6 +305,12 @@ public sealed class PlayRecords
                     .Select(effect => (effect.UnitId, Text: EffectText(effect, fire.BrokenBefore.Contains(effect.UnitId), fire.PinnedBefore.Contains(effect.UnitId))))
                     .Where(effect => effect.Text is not ("unaffected" or "already broken" or "already pinned")).Select(effect => fire.Say($"{effect.UnitId}: {effect.Text}")),
                 "the Dummies there are removed (A12.14)"];
+        }
+
+        // The table player's review of pass 55: a Canister attack on a Location where the view knows of no unit.
+        if (fire.NoKnownTarget)
+        {
+            return $"{fire.Group} {(fire.Several ? "fire" : "fires")} at {fire.Target}: {FireText.NoKnownTargetText(fire.Target)}";
         }
 
         // Pass 31d (design D7; A6.11, p. 53): a blocked LOS is said as what it was, and not as an attack that missed.
@@ -347,11 +361,58 @@ public sealed class PlayRecords
             var records = new List<(string, string)>();
             foreach (var item in events.Where(item => item.IsVisibleTo(viewer)))
             {
+                // C2.2401 (pass 55): a shot declared at a moving vehicle that may fire its MA first, and a declared shot that first shot voided.
+                if (item.Payload is ChoicePending { Kind: ChoicePending.GunDuel } declared && GunDuelParties(declared.Resume) is (var duelFirer, var duelVehicle))
+                {
+                    records.Add((item.EventId, ScenarioA1GunDuels.DeclarationText(duelFirer, In(history.At(item.Revision - 1), duelFirer), duelVehicle)));
+                    continue;
+                }
+
+                if (item.Payload is GunDuelVoided voided)
+                {
+                    records.Add((item.EventId, ScenarioA1GunDuels.VoidText(voided.Firer, voided.Cause, voided.Reason)));
+                    continue;
+                }
+
                 if (item.Payload is OrdnanceFired { } checking && checking.Resolution.Deserialize<OrdnanceResolution>(LiveFire.Json) is { ToHit: null, PanzerfaustCheck: { } failed })
                 {
                     // C13.31 (ruling R9.7): a PF Check that gave no shot.
                     records.Add((item.EventId, $"{checking.Crew}{In(history.At(item.Revision - 1), checking.Crew)} makes a PF Check: dr {failed.Dr}{ModifierText(failed.Drm)} = {failed.FinalDr}: "
                         + (failed.Outcome == OrdnancePanzerfaustCheck.NoShot ? "no shot (C13.31)" : $"no PF in position, and {failed.Outcome} (C13.31)")));
+                    continue;
+                }
+
+                // C8.4 (pass 55, ruling R55.9): a Canister shot makes no To Hit DR; its IFT DR decides the round, the Gun, and each Location's attack,
+                // which is a fire record of its own.
+                if (item.Payload is OrdnanceFired canisterShot
+                    && canisterShot.Resolution.Deserialize<OrdnanceResolution>(LiveFire.Json) is { Canister: { } canister, Gun: { } canisterGun } canisterResolution)
+                {
+                    // The UI review of pass 55: the number is the record's own, never the catalog's of a later day.
+                    var fact = canisterShot.Facts.Deserialize<OrdnanceShot>(LiveFire.Json);
+                    var number = ScenarioA1Definitions.DepletionNumberWords(canister.DepletionNumber, fact?.Elite == true);
+                    var round = canisterResolution.AmmunitionUse switch
+                    {
+                        "none" => $"the DR is above the {number}: it had no Canister, attacks nothing, "
+                            + (canisterGun.Malfunctioned ? "and has none for the rest of the scenario (C8.9)" : "has not fired, and has none for the rest of the scenario (C8.9)"),
+                        "depleted" => $"the DR equals the {number}: its last Canister (C8.9)",
+                        _ => $"the DR is below the {number}: Canister fired (C8.9)",
+                    };
+                    var attacked = canister.Attacks.Count == 0 ? null : "it attacks " + string.Join(", ", canister.Attacks.Select(attack => $"{attack.LocationId} with {Number(attack.Firepower)} FP"
+                        + (attack.Multipliers.Count > 0 ? $" ({string.Join(", ", attack.Multipliers.Select(multiplier => ScenarioA1CanisterCalculator.HalvingWords(multiplier.Name)))})" : "")))
+                        + ", each with its own TEM and Hindrance, and at half FP again against concealed units (C8.4)";
+                    string?[] canisterParts =
+                    [
+                        $"{canisterShot.Gun}{In(history.At(item.Revision - 1), canisterShot.Gun)} fires Canister at {ScenarioA1CanisterCalculator.AimWords(canister.Aim, canister.Facing)}"
+                            + (canisterShot.Facing is { } turned ? $", turning to {UnitFacings.Name(turned)}: Case A +{canister.CaseA} on the IFT DR (D3.52)" : "")
+                            + $": no To Hit DR; IFT DR {string.Join(", ", canister.Dice.Select((die, index) => index == 0 ? $"{die} (colored)" : $"{die}"))} = {canister.OriginalDr}, "
+                            + "which is also its Depletion, malfunction, and ROF check (C8.4)",
+                        round,
+                        attacked,
+                        canisterGun.Malfunctioned ? $"the Gun malfunctions on {canisterGun.BreakdownNumber} or more (C2.28)"
+                            : canisterGun.RateOfFireKept ? "it may fire again this phase (C2.24)" : "no more fire this phase",
+                        canisterResolution.AmmunitionUse == "none" && !canisterGun.Malfunctioned ? null : "it holds no Acquisition (C6.5)",
+                    ];
+                    records.Add((item.EventId, string.Join("; ", canisterParts.OfType<string>())));
                     continue;
                 }
 
@@ -362,8 +423,16 @@ public sealed class PlayRecords
 
                 var dice = string.Join(", ", hit.Dice.Select((die, index) => index == 0 ? $"{die} (colored)" : $"{die}"));
                 var modifications = string.Concat(hit.Modifications.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({DisplayText.Modifier(item.Name)}, {item.Rule})"));
-                var outcome = hit.CriticalHit ? "Critical Hit" : hit.Hit ? "hit" : "miss";
                 var shot = fired.Facts.Deserialize<OrdnanceShot>(LiveFire.Json);
+
+                // C8.9 (the table player's and the UI review of pass 55): a record whose resolution names its Depletion Number, or whose
+                // ammunition has had one only since the pass (APDS, HE or AP by number), is worded as the rule has it: a round that was not
+                // there is no miss, and the Gun "is considered not to have fired yet for any purpose". An APCR or HEAT record made before
+                // the pass names no number and keeps the words it was shown with.
+                var worded = resolution.AmmunitionUse is not null && (resolution.DepletionNumber is not null || shot?.Ammunition is "apds" or "he" or "ap");
+                var roundName = ScenarioA1Definitions.AmmunitionName(shot?.Ammunition ?? string.Empty);
+                var noRound = worded && resolution.AmmunitionUse == "none";
+                var outcome = noRound ? $"no shot: it had no {roundName}" : hit.CriticalHit ? "Critical Hit" : hit.Hit ? "hit" : "miss";
                 // D3.2 (pass 50): from inside the target's hex the colored dr gives the Target Facing.
                 var aim = shot?.VehicleTarget is { } aimed ? $"{(shot.Ammunition ?? "ap").ToUpperInvariant()} at {aimed.VehicleId} in {fired.Target} ("
                     + (shot.SameHex == true ? "in its own hex: the Target Facing by the colored dr, D3.2)"
@@ -374,6 +443,7 @@ public sealed class PlayRecords
                 var parts = new List<string>
                 {
                     check + $"{fired.Gun}{In(history.At(item.Revision - 1), fired.Gun)} fires {aim}" + (shot?.FireKind == ScenarioA1FireCalculator.BoundingFirstFire ? " as Bounding First Fire (D3.3)" : "")
+                        + (shot?.GunDuel == true ? ", first in a Gun Duel (C2.2401)" : "")
                         + (fired.Facing is { } facing ? $", turning to {UnitFacings.Name(facing)}" : "")
                         + $": Basic TH# {hit.BasicToHit} ({hit.Color}){modifications} = {hit.ModifiedToHit}; DR {dice} = {hit.OriginalDr}{ModifierText(hit.Drm)} = Final DR {hit.FinalDr}"
                         + (hit.SubsequentDr is { } dr ? $", subsequent dr {dr}" : "") + (hit.Improbable ? " (Improbable Hit, C3.6)" : "") + $": {outcome}",
@@ -397,13 +467,21 @@ public sealed class PlayRecords
                     }
                 }
 
+                // C8.9, C8.2 (pass 55): the number the shot was fired under, with the one an Elite force adds, as the record itself names it.
+                var depletion = resolution.DepletionNumber is { } recordedNumber ? ScenarioA1Definitions.DepletionNumberWords(recordedNumber, shot?.Elite == true)
+                    : "Depletion Number";
                 if (resolution.AmmunitionUse == "none")
                 {
-                    parts.Add($"the Original DR is above the Depletion Number: it had no {shot?.Ammunition?.ToUpperInvariant()}, has not fired, and has none for the rest of the scenario (C8.9)");
+                    parts.Add(worded ? $"the Original DR is above the {depletion}: it has none for the rest of the scenario (C8.9)"
+                        : $"the Original DR is above the Depletion Number: it had no {shot?.Ammunition?.ToUpperInvariant()}, has not fired, and has none for the rest of the scenario (C8.9)");
                 }
                 else if (resolution.AmmunitionUse == "depleted")
                 {
-                    parts.Add($"the Original DR equals the Depletion Number: its last {shot?.Ammunition?.ToUpperInvariant()} (C8.9)");
+                    parts.Add($"the Original DR equals the {depletion}: its last {(worded ? roundName : shot?.Ammunition?.ToUpperInvariant())} (C8.9)");
+                }
+                else if (resolution.AmmunitionUse == "used" && worded)
+                {
+                    parts.Add($"the Original DR is below the {depletion}: {roundName} fired (C8.9)");
                 }
 
                 if (resolution.Kill is { } kill)
@@ -421,14 +499,18 @@ public sealed class PlayRecords
                         OrdnanceKill.Dud => "a dud (Original 12)",
                         _ => "no effect",
                     };
-                    var checks = (kill.ShockCheck is { } ntc ? $"; NTC DR {ntc.FinalDr} against {ntc.MoraleLevel}: {(ntc.Passed ? "passed" : "Shocked")}" : "")
-                        + (kill.CrewCheck is { } tc ? $"; crew TC DR {tc.FinalDr} against {tc.MoraleLevel}: {(tc.Passed ? "passed" : "Abandoned")}" : "")
+                    // D3.42, D3.45 (pass 55): a check at an Armor Leader's Morale Level, or an Inexperienced Crew's, says whose it is.
+                    // The table player's review: "against crew morale 10, its Armor Leader's (D3.42)", with no parenthesis inside another.
+                    static string Against(FireCheck made) => FireText.MoraleWords(made);
+                    var checks = (kill.ShockCheck is { } ntc ? $"; NTC DR {ntc.FinalDr} against {Against(ntc)}: {(ntc.Passed ? "passed" : "Shocked")}" : "")
+                        + (kill.CrewCheck is { } tc ? $"; crew TC DR {tc.FinalDr} against {Against(tc)}: {(tc.Passed ? "passed" : "Abandoned")}" : "")
                         + (kill.CrewSurvival is { } cs ? $"; Crew Survival DR {cs.FinalDr} against CS# {cs.CrewSurvival}: {(cs.Survived ? "the crew survives" : "no survivors")}" : "");
                     parts.Add($"{kill.HitLocation} hit, {kill.TargetFacing} Target Facing, {kill.Ammunition.ToUpperInvariant()}: {tk}; TK DR {string.Join(", ", kill.Dice)} = {kill.OriginalDr}: {fate}{checks}");
                 }
 
                 var boundingShot = shot?.FireKind == ScenarioA1FireCalculator.BoundingFirstFire;
                 parts.Add((gun.Malfunctioned ? "the Gun malfunctions (C2.28)"
+                    : noRound ? "it has not fired and may fire other ammunition (C8.9)"
                     : gun.RateOfFireKept ? boundingShot ? "it may fire again after another MP, and a Delay MP will do (C2.24, C5.3)" : "it may fire again this phase (C2.24)"
                     : boundingShot ? "a Bounding Fire counter: no more fire this Player Turn (D3.3)" : "no more fire this phase")
                     + (gun.Acquisition < 0 ? $"; Acquisition {gun.Acquisition} on {gun.AcquiredLocationId} (C6.5)" : ""));
@@ -454,9 +536,22 @@ public sealed class PlayRecords
                 if (item.Payload is FireResolved fire && fire.Resolution.Deserialize<FireResolution>(LiveFire.Json) is { Arithmetic: { } arithmetic } resolution)
                 {
                     // Pass 31 (play test P-16): what the targets already were, read from the record's own facts.
-                    var before = fire.Facts.Deserialize<FireAttack>(LiveFire.Json)?.Targets ?? [];
+                    var facts = fire.Facts.Deserialize<FireAttack>(LiveFire.Json);
+                    var before = facts?.Targets ?? [];
+
+                    // C8.4, D3.52 (the table player's review of pass 55): a Canister shot's Case A is its CA change, not its Gun's name.
+                    if (facts?.Canister is { GunId: { } canisterGun })
+                    {
+                        arithmetic = arithmetic with
+                        {
+                            Drm = [.. arithmetic.Drm.Select(modifier => modifier.Name == "case-a:" + canisterGun ? modifier with { Name = DisplayText.CanisterCaseA } : modifier)]
+                        };
+                    }
+
                     views.Add(new FireView(item.EventId, Say(item.EventId, GroupOf(fire)), Say(item.EventId, fire.TargetLocation), null, arithmetic, resolution.Effects)
                     {
+                        // A Canister attack on a Location where the view knows of no unit reads as that, and not as fire at a concealed target.
+                        NoKnownTarget = facts is { Canister: not null, Targets: null or { Count: 0 }, Vehicles: null or { Count: 0 } },
                         Say = text => Say(item.EventId, text),
                         Several = fire.Firers.Count > 1,
                         LosBlocked = resolution.LosBlocked == true,
@@ -473,6 +568,12 @@ public sealed class PlayRecords
                         Say(item.EventId, report.TargetLocation), withheld.Visibility is [{ } only] ? only : null, reported, null)
                     {
                         Say = text => Say(item.EventId, text),
+
+                        // The firing side reads a Canister attack that left units it does not see unaffected as it reads one on an empty Location.
+                        NoKnownTarget = withheld.Payload is FireResolved canisterAttack && canisterAttack.Facts.ValueKind == JsonValueKind.Object
+                            && canisterAttack.Facts.TryGetProperty("canister", out var canisterFact) && canisterFact.ValueKind == JsonValueKind.Object
+                            && LimboDancer.Domains.Asl.Maps.Coordinates.BoardLocation.TryParse(report.TargetLocation, out var canisterAt) && history.At(item.Revision - 1) is { } then
+                            && !then.At(canisterAt).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && unit.Side != viewer.Name && Open(then, unit.Id)),
                         Several = withheld.Payload is FireResolved { Firers.Count: > 1 },
 
                         // The LOS is the map's, and both sides see that the shot went nowhere (A6.11).
@@ -525,6 +626,12 @@ public sealed class PlayRecords
                 FireDemolitionCharge.Thrown => $"The DC Thrown by {charge.UserId}",
                 _ => $"The DC Thrown by {charge.UserId} at its own Location",
             };
+        }
+
+        // C8.4 (pass 55): a Canister shot's attack on one of its Locations names the Gun.
+        if (attack.Canister is { } canister)
+        {
+            return $"{canister.GunId}'s Canister in {attack.FirerLocationId}";
         }
 
         if (attack.Firers is not { Count: > 0 } firers)
@@ -734,6 +841,20 @@ public sealed class PlayRecords
                         _ => "is wrecked",
                     };
                     records.Add((item.EventId, "shock", $"{shock.Vehicle}'s Shock or Unconfirmed Kill dr {dr}: it {result} (C7.42)"));
+                }
+                else if (item.Payload is MotionAttempted motion)
+                {
+                    // D2.401 (pass 55): the MF or MP the mover spent in the vehicle's LOS, the dr, and what it brought.
+                    var dr = rolls.TryGetValue(motion.Roll, out var roll) ? roll.Values[0].ToString(CultureInfo.InvariantCulture) : "?";
+                    var vehicleMover = motion.Mover is { } moverId && before?.Unit(moverId) is { } moving && LiveFire.IsVehicle(moving);
+                    // The UI review: the vehicle's hex only where the view may know it; the table player's: who spent the MF or MP.
+                    var where = Open(before, motion.Vehicle) ? In(before, motion.Vehicle) : string.Empty;
+                    var spent = ScenarioA1MotionAttempts.Points(motion.HalfPoints, vehicleMover);
+                    records.Add((item.EventId, "motion", (motion.Mover is { } spender
+                            ? $"{motion.Vehicle}{where} attempts Motion as {spender} moves: {spender} has spent {spent} in its LOS, dr {dr}: "
+                            : $"{motion.Vehicle}{where} attempts Motion: {spent} spent in its LOS, dr {dr}: ")
+                        + ScenarioA1MotionAttempts.ResultText(motion.Result, motion.Facing is { } vca ? UnitFacings.Name(vca) : null, motion.Turret is { } tca ? UnitFacings.Name(tca) : null)
+                        + " (D2.401)"));
                 }
             }
 

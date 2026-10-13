@@ -97,6 +97,17 @@ public sealed record FireAttack(
     }
 
     /// <summary>
+    /// A Canister shot's attack on one of its Locations (C8.4, C8.41, p. 178; pass 55, ruling R55.9): no firers or leader, the FP of the Gun Size
+    /// with its halvings, and, unlike an ordnance hit, the Location's own TEM and LOS Hindrance on the IFT DR. Null for other fire, as in every
+    /// record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FireCanister? Canister
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// The vehicles in the target Location (unit step 25): an unarmored one is attacked on the Vehicle line with the attack's IFT DR
     /// (A7.308), and an armored one is unharmed but its Vulnerable CE crew takes a General Collateral Attack (A7.307, D.8B). Null when
     /// there are none.
@@ -425,6 +436,16 @@ public sealed record FireOverrun(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The leadership modifier of the vehicle's Armor Leader on its OVR DR (D7.16, D3.44, pp. 207 and 200; pass 55, ruling R55.16), or the +1
+    /// of an Inexperienced Crew (D3.45); null is none.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? ArmorLeadership
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -454,6 +475,16 @@ public sealed record FireVehicle(
     /// <summary>Whether the vehicle is concealed (A12.2; ruling R6.7): it is attacked on the column of the halved FP (A12.13); null is false.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Concealed
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The Morale Level of the vehicle's crew when it is its Armor Leader's (D3.42, p. 200; pass 55, ruling R55.17) or an Inexperienced Crew's 6
+    /// (D3.45). Null is its nationality's (D5.1); a record keeps it only when the attack made the crew check against it (D3.41).
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? CrewMorale
     {
         get; init;
     }
@@ -503,6 +534,17 @@ public sealed record FireVehicleFire(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The leadership modifier of the vehicle's Armor Leader on the IFT DR of a MA that is a MG (D3.44, p. 200; pass 55, ruling R55.16), or the
+    /// +1 of an Inexperienced Crew (D3.45). Never with <see cref="Weapons"/>: "an Armor Leader cannot modify non-OVR MG/FT (unless MA) attacks".
+    /// Null is none.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? ArmorLeadership
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -544,6 +586,61 @@ public sealed record FireOrdnanceHit(string? GunId, int? Firepower, bool? Critic
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Area
+    {
+        get; init;
+    }
+}
+
+/// <summary>
+/// A Canister shot's attack on one Location (C8.4, C8.41, p. 178; pass 55, ruling R55.9): the Gun and the FP of its Gun Size (12, 20, or 24). Each
+/// of the facts below halves the FP, and they multiply, as C8.4's "halved again" has it; a concealed target halves it once more on the IFT.
+/// </summary>
+public sealed record FireCanister(string? GunId, int? Firepower)
+{
+    /// <summary>
+    /// C8.41: 1 when the Location is the hex adjacent to the firer along the LOS, attacked "as Area Fire with no doubling for PBF"; 2 when the LOS
+    /// runs exactly along the hexside of two adjacent hexes, each of which is "quartered instead of halved". Null for a hex of the cluster.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? AdjacentHexes
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the firer uses Bounding (First) Fire (C8.4, D3.31, p. 200): halved. Null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? BoundingFirstFire
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the firer is in Motion or not stopped (C8.4, D2.42, p. 198): halved, and quartered with Bounding First Fire. Null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Motion
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the shot is Intensive Fire (C8.4, C5.6): halved. Null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? IntensiveFire
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the crew is pinned (A7.81, p. 58): "Pinned Infantry fires MG/IFE/Canister as Area Fire". Null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? PinnedCrew
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The To Hit DRM of Case A for the hexspines the CA changed for the shot (C3.21, D3.52, C5.11), added to the IFT DR: "hexspine changes in
+    /// the CA" (C8.4). Null is none.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? CaseA
     {
         get; init;
     }
@@ -1075,7 +1172,18 @@ public sealed record FireCheck(
     int FinalDr,
     int MoraleLevel,
     bool Passed,
-    string Consequence);
+    string Consequence)
+{
+    /// <summary>
+    /// Whose Morale Level a vehicle crew checked at when it is not its nationality's (D3.42, D3.45, p. 200; pass 55, rulings R55.17, R55.18):
+    /// <c>armor-leader</c> or <c>inexperienced-crew</c>. Null for every other check, and in every record made before pass 55.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? MoraleSource
+    {
+        get; init;
+    }
+}
 
 /// <summary>What the attack did to one target unit.</summary>
 public sealed record FireUnitEffect(

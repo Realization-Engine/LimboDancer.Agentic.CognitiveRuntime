@@ -139,6 +139,7 @@ public static class GameProjector
                 MovementStepped moving => StepMovement(previous, moving),
                 VehicleStepped vehicle => StepVehicle(previous, vehicle),
                 VehicleCheckRolled check => CheckVehicle(previous, check),
+                MotionAttempted motion => AttemptMotion(previous, motion),
                 OverrunResolved overrun => ResolveOverrun(previous, overrun),
                 PaatcTaken paatc => TakePaatc(previous, paatc),
                 InfantryOverrunNtc ntc => TakeOverrunNtc(previous, ntc),
@@ -168,6 +169,7 @@ public static class GameProjector
                 PrisonersMassacred massacre => Massacre(previous, massacre),
                 ChoicePending pending => PendChoice(previous, pending, gameEvent.EventId),
                 ChoiceMade made => MakeChoice(previous, made),
+                GunDuelVoided voided => VoidReturnShot(previous, voided),
                 AcquisitionChanged acquisition => ChangeAcquisition(previous, acquisition),
                 BuildingMoppedUp mopped => MopUp(previous, mopped),
                 _ => Fail<GameState>("UNIT-STATE-001", $"'{gameEvent.Type}' has no projection."),
@@ -252,6 +254,7 @@ public static class GameProjector
             next = KeepCx(next);
             next = KeepAcquisitions(previous, next, gameEvent.Payload);
             next = KeepPassengers(next);
+            next = KeepArmorLeaders(next, gameEvent.Payload);
             next = next with
             {
                 Revision = gameEvent.Revision,
@@ -260,6 +263,99 @@ public static class GameProjector
             CheckInvariants(next);
             eventIds.Add(gameEvent.EventId);
             return next;
+        }
+
+        /// <summary>
+        /// Armor Leaders after an event (D3.41, D3.43, D5.341, pp. 200 and 204; pass 55, rulings R55.15, R55.17). A record that carries a leader's
+        /// modifier or his crew's Morale Level reveals him: the firer of an ordnance shot or of an IFT attack by its MA, the vehicle of an OVR or of
+        /// its own CC attack, a Bog Removal, and a target whose crew checked. A Recall, a wreck, an elimination, and an Abandoned vehicle lose him;
+        /// Rules decides both.
+        /// </summary>
+        private static GameState KeepArmorLeaders(GameState state, EventPayload payload)
+        {
+            if (!state.Units.Any(unit => unit.ArmorLeader is not null))
+            {
+                return state;
+            }
+
+            var used = new HashSet<string>(StringComparer.Ordinal);
+            static JsonElement? Child(JsonElement element, string name) =>
+                element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) && value.ValueKind is not JsonValueKind.Null ? value : null;
+            static string? Text(JsonElement? element, string name) => element is { } item && Child(item, name) is { ValueKind: JsonValueKind.String } value ? value.GetString() : null;
+            void Firer(JsonElement? vehicle, string? id)
+            {
+                if (vehicle is { } item && Child(item, "armorLeadership") is not null && id is not null)
+                {
+                    used.Add(id);
+                }
+            }
+
+            void Checked(JsonElement? vehicle)
+            {
+                if (vehicle is { } item && Child(item, "crewMorale") is not null && Text(item, "vehicleId") is { } id)
+                {
+                    used.Add(id);
+                }
+            }
+
+            void CheckedIn(JsonElement? attack)
+            {
+                if (attack is { } facts && Child(facts, "vehicles") is { ValueKind: JsonValueKind.Array } vehicles)
+                {
+                    foreach (var vehicle in vehicles.EnumerateArray())
+                    {
+                        Checked(vehicle);
+                    }
+                }
+            }
+
+            switch (payload)
+            {
+                case OrdnanceFired fired:
+                    Firer(Child(fired.Facts, "vehicle"), fired.Gun);
+                    Checked(Child(fired.Facts, "vehicleTarget"));
+                    CheckedIn(Child(fired.Facts, "hit"));
+                    break;
+                case FireResolved fire:
+                    Firer(Child(fire.Facts, "vehicleFire"), Text(Child(fire.Facts, "vehicleFire"), "vehicleId"));
+                    Firer(Child(fire.Facts, "overrun"), Text(Child(fire.Facts, "overrun"), "vehicleId"));
+                    CheckedIn(fire.Facts);
+                    break;
+                case VehicleCloseCombatResolved combat:
+                    Firer(Child(combat.Facts, "vehicle"), combat.Vehicle);
+                    break;
+                case VehicleCheckRolled { ArmorLeadership: not null } check:
+                    used.Add(check.Vehicle);
+                    break;
+            }
+
+            UnitInstance Kept(UnitInstance unit)
+            {
+                if (unit.ArmorLeader is not { } leader)
+                {
+                    return unit;
+                }
+
+                if (Rules.ScenarioA1ArmorLeaders.Lost(unit.Status == InstanceStatus.Active, GameState.Condition(unit, Conditions.Recalled) == ConditionState.True,
+                    GameState.Condition(unit, Conditions.Abandoned) == ConditionState.True))
+                {
+                    return unit with
+                    {
+                        ArmorLeader = null
+                    };
+                }
+
+                return leader.Revealed || !used.Contains(unit.Id) ? unit : unit with
+                {
+                    ArmorLeader = new ArmorLeader(leader.Morale, leader.Leadership, true)
+                };
+            }
+
+            UnitInstance[] units = [.. state.Units.Select(Kept)];
+            return units.Zip(state.Units).All(pair => ReferenceEquals(pair.First, pair.Second)) ? state : state with
+            {
+                Units = units
+            };
         }
 
         private bool CheckEnvelope(GameEvent gameEvent, GameState? previous)
@@ -503,6 +599,8 @@ public static class GameProjector
                         : state.NoMoveThisPlayerTurn,
                     OrdnanceShotsHere = [],
                     GunsTurnedThisPhase = [],
+                    MotionAttempts = [],
+                    GunDuel = null,
                     SmokeAttempts = [],
                     PortagedThisPhase = [],
                     InfantryOverrunNtcs = [],
@@ -1049,6 +1147,15 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-033", "A Gun fires in a fire phase, manned by its crew, and again only on a kept Multiple ROF (C2.24).");
             }
 
+            // C2.2401 (pass 55, ruling R55.19): a record that names itself a Gun Duel's first shot is the answer to the choice made for its vehicle
+            // at this MP expenditure. A record made before the pass names none.
+            var duelShot = fired.Facts.TryGetProperty("gunDuel", out var duelFact) && duelFact.ValueKind == JsonValueKind.True;
+            if (Rules.ScenarioA1GunDuels.ShotRecordRefusal(duelShot,
+                state.GunDuel is { Fired: false } owed && owed.Vehicle == fired.Gun && owed.Step == (state.Movement?.Step ?? 0)) is { } duelRefusal)
+            {
+                return Fail<GameState>(duelRefusal.Code, duelRefusal.Text);
+            }
+
             if (ordnanceVerifier.Verify(state, fired, rolls) is { } reason)
             {
                 return Fail<GameState>("UNIT-STATE-033", reason);
@@ -1059,9 +1166,17 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-035", choiceReason);
             }
 
+            // C2.2401: the duel's first shot is made; the declared shot's own record ends the duel.
+            var firstShot = duelShot && state.GunDuel is { } duel
+                ? duel with
+                {
+                    Fired = true
+                }
+                : null;
             state = state with
             {
-                ChoicesMade = new Dictionary<string, string>(StringComparer.Ordinal)
+                ChoicesMade = new Dictionary<string, string>(StringComparer.Ordinal),
+                GunDuel = firstShot ?? (state.GunDuel is { Fired: true } resolved && resolved.Firer == fired.Gun ? null : state.GunDuel),
             };
 
             // C8.9 (ruling R7.6): Special Ammunition used at its Depletion Number runs out; above it the Gun had none, may not use it again,
@@ -1247,7 +1362,7 @@ public static class GameProjector
         {
             if (Rules.ScenarioA1SequenceProjection.PendChoiceRefusal(state.Choice is not null, state.Side(pending.Side) is not null, pending.Options.Count,
                 pending.Kind is ChoicePending.LeaderCreation or ChoicePending.BattleHardening or ChoicePending.UnlikelyKill or ChoicePending.Acquisition or ChoicePending.Paatc
-                    or ChoicePending.OverrunEvade,
+                    or ChoicePending.OverrunEvade or ChoicePending.GunDuel,
                 state.ChoicesMade.ContainsKey(pending.Key)) is { } refusal)
             {
                 return Fail<GameState>(refusal.Code, refusal.Text);
@@ -1284,6 +1399,19 @@ public static class GameProjector
                 return next;
             }
 
+            // C2.2401 (pass 55, ruling R55.19): the vehicle's first shot and the declared shot follow the answer as records of their own; the
+            // answer "duel" is what lets the vehicle's MA fire while the DEFENDER's window is open.
+            if (pending.Kind == ChoicePending.GunDuel)
+            {
+                return made.Option == ChoicePending.Duel && pending.Resume.TryGetProperty("vehicle", out var duelVehicle) && duelVehicle.GetString() is { } dueling
+                    && pending.Resume.TryGetProperty("firer", out var duelFirer) && duelFirer.GetString() is { } dueled
+                    ? next with
+                    {
+                        GunDuel = new GunDuelState(dueling, dueled, state.Movement?.Step ?? 0, false)
+                    }
+                    : next;
+            }
+
             if (pending.Kind != ChoicePending.Acquisition)
             {
                 return next with
@@ -1308,6 +1436,35 @@ public static class GameProjector
                     Location = kept,
                     Units = [.. acquisition.Units.Where(id => state.Location(id)?.Location == kept)],
                 })],
+            };
+        }
+
+        /// <summary>
+        /// C2.2401 (pass 55, ruling R55.19): the declared shot a Gun Duel's first shot voided is not made; the record ends the duel. Rules says
+        /// when it may be written.
+        /// </summary>
+        private GameState? VoidReturnShot(GameState state, GunDuelVoided voided)
+        {
+            // The firer as the first shot left it: a Gun's crew is the unit that holds it, a vehicle is its own. Rules decides the cause.
+            var gun = state.Find(voided.Firer);
+            var crew = gun switch
+            {
+                UnitInstance tank => tank,
+                EquipmentInstance { Holding: { } holding } => state.Unit(holding.Holder),
+                _ => null,
+            };
+            bool Crew(string condition) => crew is not null && GameState.Condition(crew, condition) == ConditionState.True;
+            var firer = new Rules.GunDuelReturnFirer(crew is not { Status: InstanceStatus.Active }, Crew(Conditions.Broken), Crew(Conditions.Stunned),
+                Crew(Conditions.Shocked) || Crew(Conditions.UnconfirmedKill),
+                gun is not { Status: InstanceStatus.Active } || GameState.Condition(gun, Conditions.Malfunctioned) == ConditionState.True);
+            if (Rules.ScenarioA1GunDuels.VoidRecordRefusal(state.GunDuel is { Fired: true }, state.GunDuel?.Firer == voided.Firer, voided.Cause, firer) is { } refusal)
+            {
+                return Fail<GameState>(refusal.Code, refusal.Text);
+            }
+
+            return state with
+            {
+                GunDuel = null
             };
         }
 
@@ -1494,8 +1651,16 @@ public static class GameProjector
                 // C6.5 (pass 35, task 35.11): lost when its firer leaves its Location, or turns without having fired on its target this phase. A
                 // vehicle's VCA change turns its MA with it unless its TCA is kept apart (the referee's review).
                 if (Rules.ScenarioA1FireFollowUps.AcquisitionLostByMoveOrTurn(FirerAt(previous, acquisition.Gun), FirerAt(next, acquisition.Gun),
+                    // D2.401 (pass 55): the free change of VCA or TCA a passed Motion attempt brings turns the MA as an MP expenditure does.
+                    // Rules compares the MA's CA before and after it: a turret named where it already points has not turned (C6.5: "the Gun
+                    // changes its CA"), and one kept in place through a change of VCA has not either.
                     Rules.ScenarioA1FireFollowUps.AcquiringCaChanged((payload is GunTurned turned && turned.Gun == acquisition.Gun)
-                            || (payload is VehicleStepped { Turret: not null } turretStep && turretStep.Vehicle == acquisition.Gun),
+                            || (payload is VehicleStepped { Turret: not null } turretStep && turretStep.Vehicle == acquisition.Gun)
+                            || (payload is MotionAttempted { Result: MotionAttempted.Passed } motion && motion.Vehicle == acquisition.Gun
+                                && previous?.Find(motion.Vehicle) is UnitInstance { Position: MapPosition { Facing: { } vca } }
+                                && Rules.ScenarioA1MotionAttempts.TurnsMainArmament((int)vca,
+                                    previous.TurretFacings.FirstOrDefault(item => item.Vehicle == motion.Vehicle) is { } apart ? (int)apart.Facing : null,
+                                    motion.Facing is { } hullTo ? (int)hullTo : null, motion.Turret is { } turretTo ? (int)turretTo : null)),
                         payload is VehicleStepped { Kind: VehicleStepped.Turn } hull && hull.Vehicle == acquisition.Gun,
                         previous?.TurretFacings.Any(item => item.Vehicle == acquisition.Gun) == true),
                     previous?.OrdnanceShots.FirstOrDefault(item => item.Gun == acquisition.Gun)?.Shots ?? 0))
@@ -1581,8 +1746,11 @@ public static class GameProjector
             // Multiple ROF fires again. D7.14 (ruling R11.11): each OVR is its vehicle's own attack, as a vehicle's MG shot is. Rules decides both (pass 32.c).
             var byVehicle = (fire.Facts.TryGetProperty("vehicleFire", out var firing) && firing.ValueKind == JsonValueKind.Object)
                 || (fire.Facts.TryGetProperty("overrun", out var overrunning) && overrunning.ValueKind == JsonValueKind.Object);
+            // C8.4, A7.51 (pass 55): a Canister shot's attack is ordnance, which forms no fire group and binds none.
+            var byCanister = fire.Facts.TryGetProperty("canister", out var canisterFact) && canisterFact.ValueKind == JsonValueKind.Object;
             if (Rules.ScenarioA1FireFollowUps.VerifyFireRecord(fire.MovementStep, state.Movement is { WindowOpen: true }, state.Movement?.Step, fire.Firers.Count, byVehicle,
-                state.FiresThisPhase.Select(item => new Rules.PhaseFireFacts(item.FirerLocation, item.TargetLocation, item.Step, item.Vehicle)), fire.FirerLocation, fire.TargetLocation,
+                state.FiresThisPhase.Select(item => new Rules.PhaseFireFacts(item.FirerLocation, item.TargetLocation, item.Step, item.Vehicle) { Ordnance = item.Ordnance }),
+                fire.FirerLocation, fire.TargetLocation,
                 fire.Facts.TryGetProperty("firers", out var firingUnits) && firingUnits.ValueKind == JsonValueKind.Array && firingUnits.GetArrayLength() > 0
                     && firingUnits.EnumerateArray().All(item => item.TryGetProperty("usesInherentFp", out var own) && own.ValueKind == JsonValueKind.False
                         && item.TryGetProperty("weapons", out var used) && used.ValueKind == JsonValueKind.Array && used.GetArrayLength() > 0
@@ -1645,7 +1813,7 @@ public static class GameProjector
                 ? fired.EnumerateArray().Select(item => item.TryGetProperty("equipmentId", out var id) ? id.GetString() : null).ToArray() : [];
             return state with
             {
-                FiresThisPhase = [.. state.FiresThisPhase, new FireRecord(eventId, fire.FirerLocation, fire.TargetLocation) { Step = fire.MovementStep, Vehicle = byVehicle }],
+                FiresThisPhase = [.. state.FiresThisPhase, new FireRecord(eventId, fire.FirerLocation, fire.TargetLocation) { Step = fire.MovementStep, Vehicle = byVehicle, Ordnance = byCanister }],
                 OrdnanceShots = shots,
                 VehicleWeaponShots = weaponShots,
                 TurretFacings = turrets,
@@ -2373,10 +2541,13 @@ public static class GameProjector
         /// </summary>
         private GameState? CheckVehicle(GameState state, VehicleCheckRolled check)
         {
+            // D2.401, D2.51, D2.11 (pass 55, ruling R55.13): a DEFENDER's vehicle makes its Mechanical Reliability DR and the Bog Check of its VCA
+            // change in the enemy MPh, after its Motion attempt's dr and before that attempt's record; Rules decides which checks those are.
             if (state.Phase != "mph" || Active(state, check.Vehicle) is not UnitInstance vehicle || !vocabulary.IsA(vehicle.Kind, "asl:vehicle")
-                || vehicle.Side != state.PhasingSide)
+                || (vehicle.Side != state.PhasingSide && !Rules.ScenarioA1MotionAttempts.CheckInEnemyMph(check.Check, state.Movement is { WindowOpen: true },
+                    state.MotionAttempts.Contains(vehicle.Id, StringComparer.Ordinal))))
             {
-                return Fail<GameState>("UNIT-STATE-039", "A vehicle check is made in its own MPh (D2.5, D2.51, D8.2, D8.3).");
+                return Fail<GameState>("UNIT-STATE-039", "A vehicle check is made in its own MPh, or after its Motion attempt in the enemy's (D2.5, D2.51, D8.2, D8.3, D2.401).");
             }
 
             if (!rolls.TryGetValue(check.Roll, out var roll) || roll.Count != 2 || roll.Sides != 6)
@@ -2389,6 +2560,13 @@ public static class GameProjector
             if (check.Result != VehicleCheckRolled.For(check.Check, final) || (check.Check == VehicleCheckRolled.Esb) != (check.Mp > 0))
             {
                 return Fail<GameState>("UNIT-STATE-039", "The vehicle check's result disagrees with its DR.");
+            }
+
+            // D8.3, D3.44 (pass 55, ruling R55.16): the Armor Leader's part of a Bog Removal's drm is the one the vehicle has; Rules decides.
+            if (Rules.ScenarioA1ArmorLeaders.CheckRefusal(check.Check == VehicleCheckRolled.BogRemoval, check.ArmorLeadership,
+                Rules.ScenarioA1ArmorLeaders.Leadership(vehicle.ArmorLeader?.Leadership, GameState.Condition(vehicle, Conditions.InexperiencedCrew) == ConditionState.True)) is { } leaderRefusal)
+            {
+                return Fail<GameState>(leaderRefusal.Code, leaderRefusal.Text);
             }
 
             var conditions = new Dictionary<string, ConditionState>(vehicle.Conditions, StringComparer.Ordinal);
@@ -2430,6 +2608,70 @@ public static class GameProjector
                     {
                         Ending = true
                     }
+                }
+                : next;
+        }
+
+        /// <summary>
+        /// A Motion attempt (D2.401, p. 198; pass 55, rulings R55.11 to R55.13): a DEFENDER's vehicle's dr in the enemy MPh against the MF or MP the
+        /// record says the moving unit spent in its LOS; Rules checks the record. It marks the vehicle's one attempt of this MPh, and a pass places
+        /// the Motion counter and gives the VCA and TCA named. A Mechanical Reliability DR or a Bog Check that undid a passed dr was recorded
+        /// before it, and has made the vehicle Immobile.
+        /// </summary>
+        private GameState? AttemptMotion(GameState state, MotionAttempted motion)
+        {
+            var vehicle = Active(state, motion.Vehicle) as UnitInstance;
+            static bool Is(UnitInstance unit, string condition) => GameState.Condition(unit, condition) == ConditionState.True;
+
+            // The vehicle's counters as the attempt's bar reads them (D2.401, A12.32; rulings R55.13, R55.32): Rules applies to the record the
+            // clauses it applies to the attempt.
+            var facts = vehicle is null ? null
+                : new Rules.MotionAttemptVehicle(vehicle.Id, vehicle.Position is MapPosition && vocabulary.IsA(vehicle.Kind, "asl:vehicle"), vehicle.Side != state.PhasingSide)
+                {
+                    Immobilized = Is(vehicle, Conditions.Immobilized),
+                    Bogged = Is(vehicle, Conditions.Bogged),
+                    Mired = Is(vehicle, Conditions.Mired),
+                    Stunned = Is(vehicle, Conditions.Stunned),
+                    StunRecovery = Is(vehicle, Conditions.StunRecovery),
+                    Recalled = Is(vehicle, Conditions.Recalled),
+                    Shocked = Is(vehicle, Conditions.Shocked),
+                    UnconfirmedKill = Is(vehicle, Conditions.UnconfirmedKill),
+                    Abandoned = Is(vehicle, Conditions.Abandoned),
+                    FireCounter = Is(vehicle, Conditions.FirstFire) ? "First Fire" : Is(vehicle, Conditions.FinalFire) ? "Final Fire"
+                        : Is(vehicle, Conditions.IntensiveFire) ? "Intensive Fire" : null,
+                    Attempted = state.MotionAttempts.Contains(vehicle.Id, StringComparer.Ordinal),
+                    Hidden = Is(vehicle, Conditions.Hidden),
+                };
+            if (Rules.ScenarioA1MotionAttempts.RecordRefusal(state.Phase, state.Movement is { WindowOpen: true }, facts,
+                rolls.TryGetValue(motion.Roll, out var roll) && roll is { Count: 1, Sides: 6 } ? roll.Values[0] : null, motion.HalfPoints, motion.Result,
+                motion.Facing is not null || motion.Turret is not null) is { } refusal)
+            {
+                return Fail<GameState>(refusal.Code, refusal.Text);
+            }
+
+            var next = state with
+            {
+                MotionAttempts = [.. state.MotionAttempts, motion.Vehicle]
+            };
+            if (motion.Result != MotionAttempted.Passed)
+            {
+                return next;
+            }
+
+            var position = (MapPosition)vehicle!.Position;
+            var turned = position with
+            {
+                Facing = motion.Facing ?? position.Facing
+            };
+            next = Replace(next, vehicle with
+            {
+                Position = turned,
+                Conditions = new Dictionary<string, ConditionState>(vehicle.Conditions, StringComparer.Ordinal) { [Conditions.Motion] = ConditionState.True },
+            })!;
+            return motion.Turret is { } turret
+                ? next with
+                {
+                    TurretFacings = [.. next.TurretFacings.Where(item => item.Vehicle != vehicle.Id), new TurretFacing(vehicle.Id, turret)]
                 }
                 : next;
         }
@@ -2949,6 +3191,15 @@ public static class GameProjector
                 return null;
             }
 
+            // D3.4, D3.41, D3.45 (pass 55, rulings R55.15, R55.18): a vehicle, and nothing else, may set up with an Armor Leader of a listed grade;
+            // Rules decides.
+            if (instance.ArmorLeader is { } armorLeader
+                && Rules.ScenarioA1ArmorLeaders.AssignmentRefusal(instance.Id, vocabulary.IsA(instance.Kind, "asl:vehicle"), armorLeader.Morale, armorLeader.Leadership,
+                    instance.Conditions.TryGetValue(Conditions.InexperiencedCrew, out var inexperiencedCrew) && inexperiencedCrew == ConditionState.True) is { } leaderRefusal)
+            {
+                return Fail<GameState>(leaderRefusal.Code, leaderRefusal.Text);
+            }
+
             var position = instance.Position;
             if (vocabulary.IsA(instance.Kind, "asl:equipment"))
             {
@@ -3056,6 +3307,9 @@ public static class GameProjector
                 InstanceStatus.Active, from)
             {
                 Group = group,
+
+                // The record never says he is revealed: a record that carries his modifier or his morale does that (D3.41).
+                ArmorLeader = instance.ArmorLeader is { } assigned ? new ArmorLeader(assigned.Morale, assigned.Leadership) : null,
             };
             return state with
             {

@@ -1,7 +1,34 @@
 @* Plan C17 (pass 28b): an ordnance shot's target. The page gives the target Locations, the enemy vehicles the view sees in the chosen one (ruling R23.1),
    and how the shot's ammunition is set: none (a light mortar fires on the Area Target Type), fixed (a Panzerfaust or Panzerschreck HEAT, an ATR AP), or
-   chosen from what the Gun carries. The two vehicle selects of the old page are one here. Choosing another Location clears the vehicle, which the
+   chosen from what the Gun may fire at the target. The two vehicle selects of the old page are one here. Choosing another Location clears the vehicle, which the
    page does in its OnTarget handler (section 15.3). *@
+@* Pass 55 (C8.4, C8.41; rulings R55.8, R55.9): Canister is fired at an aim, not at a Location. When it is the ammunition chosen, the target
+   gives way to the facing whose Covered Arc the aim is of (the Gun's own first; another turns it first, with Case A on the IFT DR) and that
+   arc's five aims, each with the hexes it attacks and the enemy units the view sees there. *@
+@if (CanisterAims is not null)
+{
+    <label title="C8.4, D3.52: Canister is fired within the Covered Arc; another facing turns the Gun first, which adds Case A to the IFT DR of every Location.">
+        Covered Arc
+        <select id="ordnance-canister-facing" value="@CanisterFacing" @onchange="@(args => OnCanisterFacing.InvokeAsync(args.Value as string ?? string.Empty))">
+            @foreach (var facing in CanisterFacings)
+            {
+                <option value="@facing.Id">@facing.Label</option>
+            }
+        </select>
+    </label>
+    <label title="C8.4: one of the five vertices of the Covered Arc; every hex that shares it, and the adjacent hex on the LOS at half FP (C8.41), is attacked on one IFT DR.">
+        Aim
+        <select id="ordnance-canister-aim" value="@CanisterAim" @onchange="@(args => OnCanisterAim.InvokeAsync(args.Value as string ?? string.Empty))">
+            <option value="">choose</option>
+            @foreach (var aim in CanisterAims)
+            {
+                <option value="@aim.Id">@Say(aim.Label)</option>
+            }
+        </select>
+    </label>
+}
+else
+{
 <label>
     Target
     <select id="ordnance-target" value="@Target" @onchange="@(args => OnTarget.InvokeAsync(args.Value as string ?? string.Empty))">
@@ -13,7 +40,8 @@
     </select>
 </label>
 <PickedOption For="ordnance-target" Options="@Targets" Value="@Target" OnChange="@OnTarget" />
-@if (Ammunition != AmmunitionKind.None && Vehicles.Count > 0)
+}
+@if (CanisterAims is null && Ammunition != AmmunitionKind.None && Vehicles.Count > 0)
 {
     <label>
         Vehicle
@@ -29,17 +57,27 @@
     {
         <span class="muted" id="ordnance-pf-heat">@Fixed</span>
     }
-    else
+}
+@* Pass 55 (C8.1, C8.9, C2.21): what the Gun may fire at the chosen target, each Special Ammunition with its Depletion Number at the game's date;
+   one it has none of now is not offered, and the note says why. At Infantry the list is empty unless the Gun's HE must be named or the Gun
+   lists Canister, which is then chosen here, before any target. *@
+@if (Ammunition == AmmunitionKind.Selectable && Ammunitions.Count > 0)
+{
+    @if (Ammunitions.Any(item => item.Unavailable is null))
     {
         <label>
             Ammunition
             <select id="ordnance-ammunition" value="@Chosen" @onchange="@(args => OnAmmunition.InvokeAsync(args.Value as string ?? "ap"))">
-                @foreach (var ammunition in Ammunitions)
+                @foreach (var ammunition in Ammunitions.Where(item => item.Unavailable is null))
                 {
-                    <option value="@ammunition">@ammunition.ToUpperInvariant()</option>
+                    <option value="@ammunition.Ammunition">@ammunition.Label</option>
                 }
             </select>
         </label>
+    }
+    @if (Ammunitions.Any(item => item.Unavailable is not null))
+    {
+        <span class="muted" id="ordnance-ammunition-note">@string.Join("; ", Ammunitions.Where(item => item.Unavailable is not null).Select(item => $"{LimboDancer.Domains.Asl.Rules.ScenarioA1Definitions.AmmunitionName(item.Ammunition)}: {item.Unavailable}"))</span>
     }
 }
 
@@ -59,7 +97,7 @@
         /// <summary>The weapon fires one kind only, named by <see cref="Fixed"/>.</summary>
         Fixed,
 
-        /// <summary>The Gun or MA fires one of <see cref="Ammunitions"/> (C8.1).</summary>
+        /// <summary>The Gun or MA fires one of <see cref="Ammunitions"/> (C8.1), at a vehicle or, when its HE must be named, at Infantry (C2.21).</summary>
         Selectable,
     }
 
@@ -77,8 +115,9 @@
     [Parameter]
     public string Fixed { get; set; } = string.Empty;
 
+    /// <summary>The ammunition the Gun may be asked to fire at the chosen target, as Rules lists it (pass 55); a later kind is one more entry.</summary>
     [Parameter]
-    public IReadOnlyList<string> Ammunitions { get; set; } = [];
+    public IReadOnlyList<LimboDancer.Domains.Asl.Rules.AmmunitionChoice> Ammunitions { get; set; } = [];
 
     [Parameter]
     public string Target { get; set; } = string.Empty;
@@ -97,4 +136,24 @@
 
     [Parameter]
     public EventCallback<string> OnAmmunition { get; set; }
+
+    /// <summary>The aims of the chosen Covered Arc when Canister is the ammunition chosen (C8.4; pass 55): each one's number and its hexes in words; null otherwise.</summary>
+    [Parameter]
+    public IReadOnlyList<PlayChoice>? CanisterAims { get; set; }
+
+    [Parameter]
+    public string CanisterAim { get; set; } = string.Empty;
+
+    /// <summary>The six facings a Canister shot may be fired in, the Gun's own first.</summary>
+    [Parameter]
+    public IReadOnlyList<PlayChoice> CanisterFacings { get; set; } = [];
+
+    [Parameter]
+    public string CanisterFacing { get; set; } = string.Empty;
+
+    [Parameter]
+    public EventCallback<string> OnCanisterAim { get; set; }
+
+    [Parameter]
+    public EventCallback<string> OnCanisterFacing { get; set; }
 }

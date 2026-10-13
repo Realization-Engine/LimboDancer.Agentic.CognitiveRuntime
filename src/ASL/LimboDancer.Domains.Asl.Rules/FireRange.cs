@@ -71,6 +71,13 @@ public static class FireRange
         return normal is { } printed ? Band(range, sameLocation, printed, levelAbove, definition.IsAtr, definition.IsFt) : null;
     }
 
+    /// <summary>
+    /// C2.6 (p. 168; pass 55): why a vehicle's MG does not fire at a target in another hex at another level, in a player's words: the range is less
+    /// than the elevation difference. Null when it may, and for its own hex, which has its own words.
+    /// </summary>
+    public static string? VehicleElevationWords(int range, int levelAbove) =>
+        range >= 1 && range < Math.Abs(levelAbove) ? "no attack: the range is less than the elevation difference (C2.6)" : null;
+
     /// <summary>A reading in words: "Long Range, FP x1/2 (A7.22)", "out of range: it fires to 12".</summary>
     public static string Words(FireRangeReading reading)
     {

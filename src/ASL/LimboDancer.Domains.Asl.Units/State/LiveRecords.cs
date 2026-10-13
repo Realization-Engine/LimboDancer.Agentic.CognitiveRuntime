@@ -338,8 +338,50 @@ public sealed record VehicleCheckRolled(string Vehicle, string Check, string Rol
         get; init;
     }
 
+    /// <summary>
+    /// The part of <see cref="Drm"/> that is the vehicle's Armor Leader's modifier on the colored dr of a Bog Removal (D8.3, D3.44; pass 55,
+    /// ruling R55.16), or an Inexperienced Crew's +1 (D3.45); null for none, which is every record made before pass 55.
+    /// </summary>
+    public int? ArmorLeadership
+    {
+        get; init;
+    }
+
     /// <summary>The result a check's Final DR or dr gives (D2.5, D2.51, D8.21, D8.3).</summary>
     public static string For(string check, int final) => Rules.ScenarioA1ResultTables.VehicleCheck(check, final);
+}
+
+/// <summary>
+/// <c>motion-attempted</c>: a DEFENDER's vehicle attempts Motion status in the enemy MPh (D2.401, p. 198; pass 55, rulings R55.11 to R55.13): its
+/// dr's roll, the half MF or MP the moving unit <see cref="Mover"/> has spent in its LOS in this MPh, and the result: <c>passed</c> (it gains
+/// Motion, with the VCA in <see cref="Facing"/> and the TCA in <see cref="Turret"/> when it changes them), <c>failed</c>, or, after a passed dr,
+/// <c>immobilized</c> by its Mechanical Reliability DR (D2.51) or <c>bogged</c> by the Bog Check of its VCA change (D2.11, D8.2), whose
+/// <c>vehicle-check-rolled</c> records come before this one. The vehicle attempts no more in this MPh.
+/// </summary>
+public sealed record MotionAttempted(string Vehicle, string Roll, int HalfPoints, string Result) : EventPayload
+{
+    public const string Passed = Rules.ScenarioA1MotionAttempts.Passed;
+    public const string Failed = Rules.ScenarioA1MotionAttempts.Failed;
+    public const string Immobilized = Rules.ScenarioA1MotionAttempts.Immobilized;
+    public const string Bogged = Rules.ScenarioA1MotionAttempts.Bogged;
+
+    /// <summary>The moving unit whose MF or MP in the vehicle's LOS the dr is made against.</summary>
+    public string? Mover
+    {
+        get; init;
+    }
+
+    /// <summary>The VCA the vehicle takes with a passed attempt ("allowed to freely change its VCA/TCA"); null when it keeps its VCA.</summary>
+    public UnitFacing? Facing
+    {
+        get; init;
+    }
+
+    /// <summary>The TCA the vehicle takes with a passed attempt; null when its turret is not turned apart from the hull.</summary>
+    public UnitFacing? Turret
+    {
+        get; init;
+    }
 }
 
 /// <summary>

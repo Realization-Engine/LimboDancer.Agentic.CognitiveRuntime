@@ -20,7 +20,14 @@ public sealed record OrdnanceVehicleTargetStateFacts(
     bool StunRecovery,
     bool Bypass = false,
     bool MovingUnstopped = false,
-    bool Bogged = false);
+    bool Bogged = false)
+{
+    /// <summary>The crew's Morale Level when it is its Armor Leader's or an Inexperienced Crew's (D3.42, D3.45; pass 55); null for its nationality's.</summary>
+    public int? CrewMorale
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// A squad against the use of a SW (A7.351, C13.31): whether it is a squad, its id, its First Fire mark and whether it has fired (a Prep or Final

@@ -21,13 +21,27 @@ public sealed record FireBarFacts(
 public sealed record PossessedWeaponFacts(string Id, bool Malfunctioned, bool Dismantled, string Kind, Func<string?> LatwType);
 
 /// <summary>A phasing vehicle against Bounding First Fire (D3.3): the phase, whether it is an active vehicle of the phasing side, the moving stack (a vehicle's, its window open, the vehicle among its movers), and whether the vehicle's move has ended.</summary>
-public sealed record BoundingFireFacts(string? Phase, bool ActiveVehicleOfPhasingSide, bool MovementExists, bool MovementVehicle, bool WindowOpen, bool AmongMovers, bool MovementEnded);
+public sealed record BoundingFireFacts(string? Phase, bool ActiveVehicleOfPhasingSide, bool MovementExists, bool MovementVehicle, bool WindowOpen, bool AmongMovers, bool MovementEnded)
+{
+    /// <summary>Whether the shot asked about is a Gun Duel's first shot (C2.2401; pass 55, ruling R55.19), which the moving vehicle makes while the window is open.</summary>
+    public bool GunDuel
+    {
+        get; init;
+    }
+}
 
 /// <summary>A vehicle's crew state (D5.3, D5.34, D5.2, C7.42): its BU condition as three values, its Stun, Recall, Shock, and Unconfirmed Kill, and whether it is closed-topped.</summary>
 public sealed record CrewExposedFacts(RuleState ButtonedUp, bool Stunned, bool Recalled, bool Shocked, bool UnconfirmedKill, bool ClosedTopped);
 
 /// <summary>A vehicle in a target Location as the state has it (A7.307, A7.308, D.8B): its id, definition, Location text, crew exposure, and conditions.</summary>
-public sealed record VehicleTargetFacts(string Id, string? Definition, string At, bool CrewExposed, bool Stunned, bool Recalled, bool StunRecovery, bool Immobilized, bool Concealed, bool Hidden);
+public sealed record VehicleTargetFacts(string Id, string? Definition, string At, bool CrewExposed, bool Stunned, bool Recalled, bool StunRecovery, bool Immobilized, bool Concealed, bool Hidden)
+{
+    /// <summary>The crew's Morale Level when it is its Armor Leader's or an Inexperienced Crew's (D3.42, D3.45; pass 55); null for its nationality's.</summary>
+    public int? CrewMorale
+    {
+        get; init;
+    }
+}
 
 /// <summary>A firing vehicle as the state has it (D2.42, A7.82, D3.7, C2.24): its id, definition, Location text, crew exposure, Motion counter, whether it moves unstopped as the moving vehicle, its conditions, its fire counters, and whether its last shot this phase kept its Multiple ROF.</summary>
 public sealed record VehicleFirerFacts(
@@ -47,7 +61,14 @@ public sealed record VehicleFirerFacts(
     bool Fired,
     bool FirstFire,
     bool BoundingFire,
-    bool RateOfFireKept);
+    bool RateOfFireKept)
+{
+    /// <summary>The leadership modifier of the vehicle's Armor Leader, or an Inexperienced Crew's +1 (D3.44, D3.45; pass 55); null for none.</summary>
+    public int? ArmorLeadership
+    {
+        get; init;
+    }
+}
 
 /// <summary>A unit in a target Location as the state has it (A10.8, A15.21, A19.2, A22.4): its id, definition, Location text, conditions, Dummy, its group's ELR (null outside a group), its Green Inexperience, and the FT it possesses.</summary>
 public sealed record TargetUnitFacts(
@@ -170,6 +191,14 @@ public sealed record LocationUnitFacts(string Id, bool Active, string? Side, boo
 /// <summary>A Residual FP attack as the state has it (A8.2, A8.22, A8.222; ruling R6.6): whether the moving stack is in the target Location and moved by Assault Movement, the units there, the phasing side, its ELR and No Quarter, the month, the counter's FP, and the reads of a target and a vehicle, made for the units the attack takes.</summary>
 public sealed record ResidualFacts(bool MovementAtTarget, bool Assault, IReadOnlyList<LocationUnitFacts> Units, string? PhasingSide, int? PhasingSideElr, bool PhasingSideNoQuarter, int? ScenarioMonth, int Fp, string Target, Func<string, FireTarget> TargetOf, Func<string, FireVehicle> VehicleOf);
 
+/// <summary>
+/// A Location a Canister shot attacks, as the state has it (C8.4, A7.4; pass 55, ruling R55.9): the fire phase and whether the firing side is
+/// phasing, the Gun's Location, the target Location, the firing side, the units there, the enemy side's ELR and No Quarter, the month, and the
+/// reads of a target and a vehicle, made for the units the attack takes.
+/// </summary>
+public sealed record CanisterLocationFacts(string? Phase, bool Phasing, string GunLocation, string Target, string? FiringSide, IReadOnlyList<LocationUnitFacts> Units,
+    int? TargetSideElr, bool TargetSideNoQuarter, int? ScenarioMonth, Func<string, FireTarget> TargetOf, Func<string, FireVehicle> VehicleOf);
+
 /// <summary>An OVR as the state has it (D7.1, D7.11; ruling R11.11): the vehicle (found active or wrecked, a vehicle, on the map, with a definition), its id, definition, Location text, side, crew exposure, whether it is Immobilized, Bogged, or Wrecked, its weapons' malfunctions, the units in its Location, the enemy side's ELR and No Quarter, the month, and the reads of a target and a vehicle.</summary>
 public sealed record OverrunFacts(
     bool VehicleFound,
@@ -194,7 +223,14 @@ public sealed record OverrunFacts(
     int? ScenarioMonth,
     Func<string, FireTarget> TargetOf,
     Func<string, FireVehicle> VehicleOf,
-    bool StunRecovery = false);
+    bool StunRecovery = false)
+{
+    /// <summary>The leadership modifier of the vehicle's Armor Leader, or an Inexperienced Crew's +1 (D7.16, D3.44, D3.45; pass 55); null for none.</summary>
+    public int? ArmorLeadership
+    {
+        get; init;
+    }
+}
 
 /// <summary>A DC's attack as the state has it (A23; rulings R15.2, R15.3): the charge, its placement, its user, the mode, the units in the target Location, the sides, and the reads of a target and a vehicle.</summary>
 public sealed record DemolitionChargeFacts(
@@ -246,7 +282,17 @@ public sealed record MolEventFacts(bool RallyPhase, bool MolCheckByUnit);
 public sealed record LeaderMgFacts(string Id, bool Leader, Func<bool> DirectedThisPhase, Func<bool> DirectedSupportWeapon, Func<bool> FiredAnotherMg);
 
 /// <summary>A fire record of the phase as the state keeps it (A7.55): the firing Location, the target Location, the step it answered, and whether a vehicle fired.</summary>
-public sealed record PhaseFireFacts(string FirerLocation, string TargetLocation, int? Step, bool Vehicle);
+public sealed record PhaseFireFacts(string FirerLocation, string TargetLocation, int? Step, bool Vehicle)
+{
+    /// <summary>
+    /// Whether the record is an ordnance shot's attack, a Canister shot's on one of its Locations (C8.4, A7.51, p. 57; pass 55): ordnance forms
+    /// no fire group and binds none, so the A7.55 checks pass it over.
+    /// </summary>
+    public bool Ordnance
+    {
+        get; init;
+    }
+}
 
 /// <summary>A target unit of the Encirclement marking as the state has it (A7.7): whether it is found, its kind and side, and whether it is held in Melee.</summary>
 public sealed record EncircledUnitFacts(bool Found, string? Kind, string? Side, bool Melee);

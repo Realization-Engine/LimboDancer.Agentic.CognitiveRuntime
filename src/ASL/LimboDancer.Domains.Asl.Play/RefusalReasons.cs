@@ -10,7 +10,7 @@ public static class RefusalReasons
 {
     // Codes whose name says the package cannot decide an outcome, rather than that the action is outside its reviewed cases.
     private static readonly string[] UndecidedMarks =
-        ["undecided", "unreviewed", "missing", "incomplete", "unattributed", "unrecorded", "differs", "interact", "levels-differ", "concealment-mixed"];
+        ["undecided", "unreviewed", "missing", "incomplete", "unattributed", "unrecorded", "differs", "interact", "concealment-mixed"];
 
     private static readonly Dictionary<string, string> Sentences = new(StringComparer.Ordinal)
     {
@@ -19,6 +19,7 @@ public static class RefusalReasons
         ["fire.weather-outside"] = "the Low Visibility DRM must be 0 to 5 and the Extreme Winter B# reduction 0 to 2 (E1.7, E3.32, E3.741)",
         ["fire.residual-outside"] = "Residual FP attacks alone, at a printed counter value (A8.2, A8.22)",
         ["fire.target-outside"] = "the target Location holds no enemy unit the package reviews, is the firers' own Location, or has terrain it does not review",
+        ["fire.canister-outside"] = "Canister is fired by its Gun alone, with no other firer or leader, at Locations at the Gun's elevation and in its LOS: propose it as the Gun's shot, with Canister as the ammunition and one of the five aims (C8.4, A7.51)",
         ["fire.ordnance-hit-outside"] = "an ordnance hit attacks on its Gun's HE FP column, with no firers of its own (C.6, C3.32)",
         ["fire.crew-target-unreviewed"] = "crews and the Guns they man as targets are not reviewed (C11; ruling R24.3)",
         ["fire.unit-listed-twice"] = "a unit or weapon is named twice in the attack",
@@ -38,7 +39,7 @@ public static class RefusalReasons
         ["fire.director-outside"] = "the director is not a Good Order, unpinned leader of the group in its Location, or has directed already (A7.53, A7.531)",
         ["fire.out-of-range"] = "a firer or MG is beyond twice its Normal Range, or fires into its own hex",
         ["fire.los-blocked"] = "a firer has no LOS to the target (A6)",
-        ["fire.levels-differ"] = "firer and target at different levels are not reviewed",
+        ["fire.elevation-outside"] = "a vehicle's MG fires at a target at another level only at a range of at least the elevation difference between them (C2.6)",
         ["fire.hindrance-unattributed"] = "the LOS Hindrance is not attributed to brush or in-season grain, which the package reviews",
         ["fire.leaders-interact"] = "a broken leader among the targets has no Morale Level recorded in the catalog, so his loss cannot be decided",
         ["fire.elr-undecided"] = "a side's ELR is not declared, or a MMC's underscored Morale Factor is not recorded (A19.1, A19.13)",
@@ -85,14 +86,23 @@ public static class RefusalReasons
         ["ordnance.phase-outside"] = "a Gun fires only in its side's PFPh, AFPh, or DFPh here (ruling R24.2)",
         ["ordnance.gun-outside"] = "the Gun is not one the package reviews",
         ["ordnance.gun-malfunctioned"] = "the Gun is malfunctioned (C2.28)",
+        ["ordnance.he-not-named"] = "this Gun's HE is Special Ammunition with a Depletion Number, which is never fired undeclared: name HE for the shot (C2.21, C8.8); its AP against Infantry is not built (C8.31, HE Equivalency)",
+        ["ordnance.he-equivalency-not-built"] = "AP, APCR, or APDS fired at Infantry attacks by its HE Equivalency, which is not built (C8.31); name HE for a shot at Infantry",
+        ["ordnance.he-unavailable"] = "this Gun's HE is Special Ammunition (C8.8) and it has none now: none at the scenario's date, or it has run out (C8.9); its AP against Infantry is not built (C8.31, HE Equivalency)",
+        ["ordnance.ammunition-outside"] = "the Gun does not fire this ammunition at this target (C8.1)",
+        ["ordnance.ammunition-unavailable"] = "the Gun has no such ammunition at the scenario's date (C8.11, C8.3, C8.8)",
+        ["ordnance.ammunition-depleted"] = "the Gun has run out of this ammunition for the rest of the scenario (C8.9)",
+        ["ordnance.canister-gun-outside"] = "this Gun has no Canister: its counter lists none, or its Gun Size has no Canister FP (37mm 12, 75mm 20, 105mm 24; C8.4)",
+        ["ordnance.canister-outside"] = "a fact of the Canister shot is outside the reviewed cases: it names one of the five aims of its Covered Arc and no vehicle (C8.4)",
+        ["ordnance.canister-movement-phase"] = "Canister as Defensive First Fire in the MPh is not built; fire it in the PFPh, AFPh, or DFPh (C8.4)",
         ["ordnance.crew-outside"] = "the Gun is not manned by a crew of its side able to fire it (A21.13)",
         ["ordnance.gun-already-fired"] = "the Gun has fired and did not keep its Multiple ROF (C2.24)",
-        ["ordnance.out-of-range"] = "the target is beyond the Gun's range or in its own hex (C2.25, C5.5)",
+        ["ordnance.out-of-range"] = "the target is beyond the Gun's range, nearer than its minimum range, or in its own hex (C2.25, C5.5)",
+        ["ordnance.elevation-outside"] = "the target is at another level at a range less than the elevation difference between them: a Gun fires at another level only at a range of at least that difference (C2.6)",
         ["ordnance.fact-outside"] = "a fact of the shot is outside the reviewed cases",
         ["ordnance.covered-arc-fixed"] = "the Gun may not turn to bring the target into its Covered Arc (C5.11)",
         ["ordnance.los-blocked"] = "the Gun has no LOS to the target (A6)",
         ["ordnance.target-outside"] = "the target Location holds no in-LOS enemy unit on the Infantry Target Type (C3.32)",
-        ["ordnance.levels-differ"] = "Gun and target at different levels are not reviewed (C2.6)",
         ["ordnance.hindrance-unattributed"] = "the LOS Hindrance is not attributed to terrain the package reviews",
         ["ordnance.concealment-mixed"] = "concealed and unconcealed targets together are not reviewed",
         ["ordnance.concealment-unreviewed"] = "fire by or at concealed units is decided only when a Good Order unit of the firing side is in range",
@@ -139,6 +149,16 @@ public static class RefusalReasons
     {
         ArgumentNullException.ThrowIfNull(code);
         var name = Name(code);
+
+        // Ruling R55.31: an ammunition that starts in a month of the game's year, in a game that gives a year and no month. Rules tells the
+        // case apart and names the month in the code's detail.
+        var detail = code.Split(':', 2) is [_, var rest] ? rest : string.Empty;
+        if (detail.StartsWith(Rules.ScenarioA1Definitions.StartMonthMark, StringComparison.Ordinal)
+            && int.TryParse(detail[Rules.ScenarioA1Definitions.StartMonthMark.Length..], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var month))
+        {
+            return $"{code}: the Gun has {Rules.ScenarioA1Definitions.NoneAtTheDate(name.EndsWith("he-unavailable", StringComparison.Ordinal) ? "he" : null, month)}";
+        }
+
         if (Sentences.TryGetValue(name, out var sentence))
         {
             return $"{code}: {sentence}";

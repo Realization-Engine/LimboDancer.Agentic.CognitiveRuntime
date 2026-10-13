@@ -298,8 +298,9 @@ public sealed partial class GamePlanner
         // group, so it fires once; a MG firing again alone on its Multiple ROF is not a new group. Rules decides it (pass 32.c).
         var step = ScenarioA1FireEligibility.MphStep(state.Phase, bounding, state.Movement?.Step);
         var fromLocations = attack.Firers!.Select(item => item.LocationId!).Distinct(StringComparer.Ordinal).ToArray();
+        // C8.4, A7.51 (pass 55): a Canister shot's attack is ordnance, in no fire group; its record binds no other attack.
         if (ScenarioA1FireEligibility.FireGroupBar(alone.Length > 0,
-            state.FiresThisPhase.Select(record => new PhaseFireFacts(record.FirerLocation, record.TargetLocation, record.Step, record.Vehicle)), attack, fromLocations, step) is { } group)
+            state.FiresThisPhase.Select(PhaseFire), attack, fromLocations, step) is { } group)
         {
             return Refused(scope, label, expected, group) with
             {
@@ -433,7 +434,7 @@ public sealed partial class GamePlanner
                 return Refused(scope, label, expected, sprayMapReason!);
             }
 
-            if (ScenarioA1FireEligibility.SprayGroupBar(state.FiresThisPhase.Select(record => new PhaseFireFacts(record.FirerLocation, record.TargetLocation, record.Step, record.Vehicle)),
+            if (ScenarioA1FireEligibility.SprayGroupBar(state.FiresThisPhase.Select(PhaseFire),
                 fromLocations, second!.ToString()) is { } sprayGroup)
             {
                 return Refused(scope, label, expected, sprayGroup);
@@ -637,6 +638,12 @@ public sealed partial class GamePlanner
             ? list.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!)
             : [];
 
+    /// <summary>A fire record of the phase as the A7.55 checks read it: every record, with whether it is ordnance's (C8.4, A7.51), which Rules passes over.</summary>
+    private static PhaseFireFacts PhaseFire(FireRecord record) => new(record.FirerLocation, record.TargetLocation, record.Step, record.Vehicle)
+    {
+        Ordnance = record.Ordnance,
+    };
+
     /// <summary>The usable MGs and ATR a unit possesses, in id order (table player, pass 9b: a mortar or PSK takes no part in its fire groups).</summary>
     private static string[] Possessed(GameState state, string unitId) =>
         ScenarioA1FireEligibility.UsableMgs(state.Equipment.Where(equipment => equipment.Status == InstanceStatus.Active
@@ -689,6 +696,12 @@ public sealed partial class GamePlanner
             get; init;
         }
 
+        /// <summary>The Locations a Canister shot has still to attack, in their order, on the same DR (C8.4; pass 55, ruling R55.9); null for other fire.</summary>
+        public IReadOnlyList<FireAttack>? Canister
+        {
+            get; init;
+        }
+
         public sealed record LaneEntry(string Location, int Fp, int HindranceDrm);
     }
 
@@ -703,6 +716,19 @@ public sealed partial class GamePlanner
 
         var target = BoardLocation.Parse(followUps.Target);
         var record = events.LastOrDefault(item => item.Payload is FireResolved);
+
+        // C8.4 (pass 55, ruling R55.9): the Locations a Canister shot has still to attack take the DR of the one just resolved; nothing else follows it.
+        if (followUps.Canister is { Count: > 0 } canisterRest)
+        {
+            if (record?.Payload is FireResolved canisterFirst && canisterFirst.Rolls.TryGetValue("attack", out var canisterRoll)
+                && existing.Concat(events).Select(item => item.Payload).OfType<DiceRolled>().FirstOrDefault(item => item.Roll == canisterRoll) is { } canisterDice)
+            {
+                AddCanisterAttacks(scope, attemptId, expected, actor, existing, targetSide, events, draw, canisterRoll, canisterDice.Values, canisterRest);
+            }
+
+            return;
+        }
+
         if (followUps.Spray is { } spray && record?.Payload is FireResolved first && first.Rolls.TryGetValue("attack", out var attackRoll)
             && existing.Concat(events).Select(item => item.Payload).OfType<DiceRolled>().FirstOrDefault(item => item.Roll == attackRoll) is { } dice)
         {
@@ -816,10 +842,13 @@ public sealed partial class GamePlanner
             // An option the attack reaches stops it until its owner answers (ruling R5.8).
             if (next.ChoiceKey is { } choiceKey)
             {
+                // D3.41 (pass 55, the referee's review): the resume data is read by both sides, so it leaves out the Morale Level of a crew whose
+                // Armor Leader no record has revealed; the answer reads it from the state again.
+                var unrevealed = UnrevealedLeaders(state);
                 var resume = new JsonObject
                 {
                     ["record"] = "fire",
-                    ["facts"] = JsonNode.Parse(JsonSerializer.Serialize(facts, LiveFire.Json)),
+                    ["facts"] = JsonNode.Parse(JsonSerializer.Serialize(ScenarioA1ArmorLeaders.Pending(facts, unrevealed), LiveFire.Json)),
                     ["rolls"] = RollNode(rollIds),
                     ["targetSide"] = targetSide,
                 };
@@ -831,7 +860,7 @@ public sealed partial class GamePlanner
                 // Ruling R27.4: what follows the attack (Spraying Fire's second Location, Encirclement, a Fire Lane, a DC's thrower and removal) resumes too.
                 if (followUps is not null)
                 {
-                    resume["followUps"] = JsonNode.Parse(JsonSerializer.Serialize(followUps, LiveFire.Json));
+                    resume["followUps"] = JsonNode.Parse(JsonSerializer.Serialize(PendingFollowUps(followUps, unrevealed), LiveFire.Json));
                 }
 
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "choice-pending", Pending(state, choiceKey, resume), package, null));
@@ -861,7 +890,8 @@ public sealed partial class GamePlanner
             new FireResolved(facts.VehicleFire is { } byVehicle ? [byVehicle.VehicleId!] : facts.Overrun is { } overrunning ? [overrunning.VehicleId!]
                     : [.. (facts.Firers ?? []).Select(item => item.UnitId!)],
                 facts.Director?.UnitId, firerLocation, facts.TargetLocationId!, rollIds,
-                JsonSerializer.SerializeToElement(facts, LiveFire.Json), JsonSerializer.SerializeToElement(resolution, LiveFire.Json))
+                // D3.41 (pass 55, ruling R55.15): the record keeps a crew's Morale Level only when the attack made that crew check against it.
+                JsonSerializer.SerializeToElement(ScenarioA1ArmorLeaders.Recorded(facts, resolution), LiveFire.Json), JsonSerializer.SerializeToElement(resolution, LiveFire.Json))
             {
                 MovementStep = step,
                 TurretFacing = VehicleTurretTurn(state, facts),
@@ -1402,6 +1432,13 @@ public sealed partial class GamePlanner
                 continue;
             }
 
+            // C2.6 (pass 55): a vehicle's MG fires at no other level of its own hex.
+            if (ScenarioA1FireMapRules.VehicleOwnHexLevelBar(attack.VehicleFire is not null, from.Board == target.Board && from.Hex == target.Hex, from == target,
+                from.ToString(), target.ToString()) is { } vehicleLevelBar)
+            {
+                return (null, vehicleLevelBar);
+            }
+
             LosResult los;
             int range;
             if (snapHexside is { } hexside)
@@ -1472,10 +1509,9 @@ public sealed partial class GamePlanner
         var facts = ScenarioA1FireMapRules.GroupMapFacts(attack, terrain, targetHeight, perLocation,
             (one, two) => IsAdjacent(state, BoardLocation.Parse(one), BoardLocation.Parse(two)));
 
+        var sources = perLocation.Where(pair => pair.Value.Range > 0).Select(pair => (From: BoardLocation.Parse(pair.Key), pair.Value.Range, pair.Value.Height)).ToArray();
         if (direct)
         {
-            var sources = perLocation.Where(pair => pair.Value.Range > 0).Select(pair => (From: BoardLocation.Parse(pair.Key), pair.Value.Range, pair.Value.Height)).ToArray();
-
             // B9.3 to B9.41 (rulings R10.5, R10.6): the wall or hedge TEM; a Snap Shot, TPBF, and a Bypassing stack take none.
             if (ScenarioA1FireMapRules.WantsWallTem(direct, attack.SnapShot == true, lane is not null, sources.Length, perLocation.Count))
             {
@@ -1490,9 +1526,12 @@ public sealed partial class GamePlanner
                     HexsideTem = wall
                 };
             }
+        }
 
+        if (ScenarioA1FireMapRules.ReadsHeightAdvantage(attack))
+        {
             // B10.31 (ruling R10.4): Height Advantage over every firer; A4.62 (rulings R10.8, R40.10): a crew that pushed its Gun this Player Turn
-            // is under Hazardous Movement in every fire phase of it.
+            // is under Hazardous Movement in every fire phase of it. Pass 55: a vehicle's MG fire reads Height Advantage too.
             facts = facts with
             {
                 HeightAdvantage = ScenarioA1FireMapRules.HeightAdvantage(sources.Length, perLocation.Count,

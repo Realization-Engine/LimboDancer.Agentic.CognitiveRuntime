@@ -181,7 +181,7 @@ public static class ReplaySteps
                 kind == "fire" && readable.Length != all.Length ? ReplayRead.Part : ReplayRead.Full)
             {
                 Fires = [.. FiresOf(readable)],
-                Locations = [.. LocationsOf(readable, at).Distinct()],
+                Locations = [.. LocationsOf(readable, at, view.Perspective).Distinct()],
                 EndsGame = readable.Any(item => item.Payload is GameEnded),
             });
         }
@@ -232,6 +232,15 @@ public static class ReplaySteps
             return ("start", null, started.Scenario is { } card ? $"The game starts: {card.Title}" : "The game starts", false);
         }
 
+        // C8.4 (pass 55): a Canister shot is one ordnance record and a fire record a Location on its DR; the step is the shot's.
+        if (First<OrdnanceFired>(payloads) is { } canisterShot && canisterShot.Resolution.Deserialize<OrdnanceResolution>(LiveFire.Json) is { Canister: { } canister } canisterFired)
+        {
+            var owner = SideOf(canisterShot.Crew);
+            var attacked = canister.Attacks.Count > 0 ? $" at {string.Join(", ", canister.Attacks.Select(item => Place(before, item.LocationId)))}"
+                : canisterFired.Gun is { Malfunctioned: true } ? ": the Gun malfunctions" : ": it had none (C8.9)";
+            return ("fire", owner, $"{(owner is null ? "Ordnance" : $"{DisplayText.Side(owner)} ordnance")} fires Canister{attacked}{end}", false);
+        }
+
         if (First<FireResolved>(payloads) is { } fire)
         {
             var attack = fire.Facts.Deserialize<FireAttack>(LiveFire.Json);
@@ -252,10 +261,30 @@ public static class ReplaySteps
 
         if (First<OrdnanceFired>(payloads) is { } ordnance)
         {
-            var hit = ordnance.Resolution.Deserialize<OrdnanceResolution>(LiveFire.Json)?.ToHit;
-            var outcome = hit is null ? string.Empty : hit.CriticalHit ? ": Critical Hit" : hit.Hit ? ": hit" : ": miss";
+            // C8.9 (the table player's review of pass 55): a round that was not there is no miss. An APCR or HEAT record made before the pass
+            // keeps the word it had.
+            static string Outcome(OrdnanceFired shot)
+            {
+                var resolution = shot.Resolution.Deserialize<OrdnanceResolution>(LiveFire.Json);
+                var ammunition = shot.Facts.ValueKind == JsonValueKind.Object && shot.Facts.TryGetProperty("ammunition", out var named) ? named.GetString() : null;
+                var hit = resolution?.ToHit;
+                return hit is null ? string.Empty
+                    : resolution is { AmmunitionUse: "none" } && (resolution.DepletionNumber is not null || ammunition is "apds" or "he" or "ap")
+                        ? resolution.Gun is { Malfunctioned: true } ? "it had none, and the Gun malfunctions (C8.9)" : "it had none (C8.9)"
+                    : hit.CriticalHit ? "Critical Hit" : hit.Hit ? "hit" : "miss";
+            }
+
+            var first = Outcome(ordnance);
+            var outcome = first.Length == 0 ? string.Empty : $": {first}";
             var owner = SideOf(ordnance.Crew);
-            return ("fire", owner, $"{(owner is null ? "Ordnance" : $"{DisplayText.Side(owner)} ordnance")} fires at {Place(before, ordnance.Target)}{outcome}{end}", false);
+
+            // C2.2401 (pass 55): a Gun Duel's first shot, and the declared shot it answered: its result when it was made in the same commit
+            // (the UI review), or that the first shot voided it.
+            var duel = ordnance.Facts.ValueKind == JsonValueKind.Object && ordnance.Facts.TryGetProperty("gunDuel", out var duelFact) && duelFact.ValueKind == JsonValueKind.True;
+            var returned = duel && payloads.OfType<OrdnanceFired>().Skip(1).FirstOrDefault() is { } second && Outcome(second) is { Length: > 0 } result
+                ? $"; the return shot: {result}" : string.Empty;
+            var voided = First<GunDuelVoided>(payloads) is { } none ? none.Cause == ScenarioA1GunDuels.Other ? "; the return shot is not fired" : "; the return shot is void" : string.Empty;
+            return ("fire", owner, $"{(owner is null ? "Ordnance" : $"{DisplayText.Side(owner)} ordnance")} fires{(duel ? " first in a Gun Duel" : string.Empty)} at {Place(before, ordnance.Target)}{outcome}{returned}{voided}{end}", false);
         }
 
         if (First<CloseCombatResolved>(payloads) is { } combat)
@@ -284,6 +313,20 @@ public static class ReplaySteps
         {
             var side = SideOf(drove.Vehicle);
             return ("move", side, $"{A(side, "vehicle")} {(drove.Kind == VehicleStepped.Delay ? "spends a Delay MP" : "moves")} in {Place(before, drove.At)}{end}", false);
+        }
+
+        if (First<MotionAttempted>(payloads) is { } motion)
+        {
+            // D2.401 (pass 55): the DEFENDER's vehicle attempts Motion status in the enemy MPh.
+            var side = SideOf(motion.Vehicle);
+            var outcome = motion.Result switch
+            {
+                MotionAttempted.Passed => "it gains Motion",
+                MotionAttempted.Failed => "it fails",
+                MotionAttempted.Immobilized => "it is immobilized",
+                _ => "it bogs",
+            };
+            return ("move", side, $"{A(side, "vehicle")} attempts Motion: {outcome}{end}", false);
         }
 
         if (First<AdvanceMoved>(payloads) is { } advanced)
@@ -391,6 +434,12 @@ public static class ReplaySteps
 
         if (First<ChoicePending>(payloads) is { } waiting)
         {
+            // C2.2401 (pass 55): the DEFENDER's shot is declared and not yet rolled.
+            if (waiting.Kind == ChoicePending.GunDuel)
+            {
+                return ("fire", defender, $"A shot is declared, and the {DisplayText.Side(waiting.Side)} side may answer with a Gun Duel", false);
+            }
+
             return ("other", null, $"A choice waits for the {DisplayText.Side(waiting.Side)} side", false);
         }
 
@@ -495,6 +544,13 @@ public static class ReplaySteps
     private static string FireName(FireResolved fire, FireAttack? attack, GameState before, string? acting)
     {
         var kind = attack?.FireKind;
+
+        // C8.4 (pass 55): a Canister shot's attack has no firers either; it is the Gun's.
+        if (attack?.Canister is not null)
+        {
+            return acting is null ? "Canister" : $"{DisplayText.Side(acting)} Canister";
+        }
+
         if (fire.Firers.Count == 0 || kind == ScenarioA1FireCalculator.ResidualFire)
         {
             return attack?.FireLane == true ? "A Fire Lane's Residual FP attacks" : "Residual FP attacks";
@@ -539,7 +595,14 @@ public static class ReplaySteps
         }
     }
 
-    private static IEnumerable<BoardLocation> LocationsOf(GameEvent[] readable, GameState before)
+    /// <summary>
+    /// Whether a step may give a unit's hex to the view (the UI review of pass 55), as a record may name it: the adjudicator, the unit's own
+    /// side, or a unit then neither concealed nor hidden.
+    /// </summary>
+    private static bool Open(GameState before, string id, Perspective viewer) => viewer.IsAdjudicator || (before.Unit(id) is { } unit && (unit.Side == viewer.Name
+        || (GameState.Condition(unit, Conditions.Concealed) != ConditionState.True && GameState.Condition(unit, Conditions.Hidden) != ConditionState.True)));
+
+    private static IEnumerable<BoardLocation> LocationsOf(GameEvent[] readable, GameState before, Perspective viewer)
     {
         foreach (var fire in FiresOf(readable))
         {
@@ -553,6 +616,7 @@ public static class ReplaySteps
             {
                 MovementStepped moved => moved.To,
                 VehicleStepped drove => drove.At,
+                MotionAttempted motion => Open(before, motion.Vehicle, viewer) ? before.Location(motion.Vehicle)?.Location : null,
                 AdvanceMoved advanced => advanced.To,
                 RoutStepped routed => routed.To,
                 CloseCombatResolved combat => combat.Location,
