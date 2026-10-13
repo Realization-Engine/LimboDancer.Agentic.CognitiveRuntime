@@ -103,7 +103,13 @@ window.SquadWorkspace = (() => {
   ]);
   info.append(detailCard);controls.append(info);
   const alert=el('p');alert.className='squad-action-alert';alert.setAttribute('role','alert');alert.hidden=true;dialog.insertBefore(alert,main);
-  function reportError(message){status.textContent=message;alert.textContent=message;alert.hidden=false;}
+  let warningTimer=null,statusBeforeWarning='';
+  function clearWarning(){clearTimeout(warningTimer);warningTimer=null;alert.hidden=true;alert.textContent='';}
+  function reportError(message){
+   if(alert.hidden)statusBeforeWarning=status.textContent;
+   clearTimeout(warningTimer);status.textContent=message;alert.textContent=message;alert.hidden=false;
+   warningTimer=setTimeout(()=>{clearWarning();status.textContent=statusBeforeWarning;},5000);
+  }
   const more=el('details');more.className='squad-details squad-more';more.append(el('summary','More'));
   const extra=el('div');extra.className='squad-details-card';
   for(const child of [...controls.children])if(child===radiusLabel||['Export squad setup','Clear squad setup','Apply radius'].includes(child.textContent))extra.append(child);
@@ -128,7 +134,7 @@ window.SquadWorkspace = (() => {
   if(deployButton)controls.prepend(deployButton);
   function fit(){if(state.scope==="full"){svg.setAttribute("viewBox",[0,0,Math.max(...terrain.layout.map(p=>p.x+p.w)),Math.max(...terrain.layout.map(p=>p.y+p.h))].join(" "));return;}const c=SquadSpace.xy(state.center),extent=SquadSpace.step*(state.radius+1);svg.setAttribute("viewBox",[c.x-extent,c.y-extent,extent*2,extent*2].join(" "));}
   function focus(){const u=state.units.find(u=>u.id===selected),p=state.parents.find(p=>p.id===u.parentId),c=SquadSpace.xy(p.anchor),extent=SquadSpace.step*Math.max(8,p.radius+2);svg.setAttribute("viewBox",[c.x-extent,c.y-extent,extent*2,extent*2].join(" "));}
-  function attempt(fn){try{fn();alert.hidden=true;status.textContent=state.units.length+" counters from "+state.parents.length+" formations saved. Select a counter and click a hex, or drag it. Wheel: zoom. Space + drag or middle drag: pan.";}catch(e){reportError(e.message);}}
+  function attempt(fn){try{fn();clearWarning();status.textContent=state.units.length+" counters from "+state.parents.length+" formations saved. Select a counter and click a hex, or drag it. Wheel: zoom. Space + drag or middle drag: pan.";}catch(e){reportError(e.message);}}
   function render(){
    counts.textContent=state.units.length+' counters / '+state.parents.length+' formations';radiusStatus.textContent='Current deployment radius: '+state.settings.deploymentRadius+' hexes';
    stageButton.disabled=!game&&!SquadLifecycle.ready(state,d);
@@ -156,8 +162,9 @@ window.SquadWorkspace = (() => {
    const next=JSON.parse(JSON.stringify(state));SquadDeployment.move(next,terrain,id||selected,h);
    repository.save(d,plan,next);state=next;selected=id||selected;render();
   });},id=>{selected=id;render();});
-  cleanup=()=>{unbind();cards.close();picker.destroy();document.removeEventListener('pointerdown',dismissDetails);};
+  cleanup=()=>{clearWarning();unbind();cards.close();picker.destroy();document.removeEventListener('pointerdown',dismissDetails);};
   (state.scope==="full"?fit:focus)();render();status.textContent=game?'Deployment locked. Inspect counters and supply.':'Deployment editable. Select a counter to see its legal hexes.';
+  window.CampaignMapToolbar?.mount(header);
   if(requestedGame&&!game)reportError('Deploy the full Situation, then complete squad setup to open the game map.');
  }
  return {open,close(notify=true){active?.close(notify);}};

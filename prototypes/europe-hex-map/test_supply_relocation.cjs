@@ -23,3 +23,22 @@ console.log('PASS HQ move, save/reload, invalid target, connected SUP route and 
 // The visible road from the German rear connects to Wiln, beyond the initial SUP.
 for(const hexId of ['J-7','K-6','K-7']){const h=board.hexes.find(h=>h.id===hexId);const changes=c.CampaignSupplyRelocation.move(d,saved,'German','supply',c.SquadSpace.project(frame,h.imageCenter.u,h.imageCenter.v));assert.equal(changes.German.supply.hexId,hexId);}
 console.log('PASS receiving-point extension along the connected road into Wiln');
+
+// Repeated validation/render reads reuse the route; changed saves must invalidate it.
+const routeTo=c.CampaignRouteNetwork.to;let routeCalls=0;
+c.CampaignRouteNetwork.to=(...args)=>{routeCalls++;return routeTo(...args);};
+const start=performance.now(),first=c.CampaignSupplySpatial.build(d),initialCalls=routeCalls;
+for(let i=0;i<100;i++)assert.equal(c.CampaignSupplySpatial.build(d),first);
+assert.equal(routeCalls,initialCalls,'unchanged reads must not rebuild roads');
+const copy=JSON.parse(JSON.stringify(saved));c.CampaignSupplyRelocation.bind(d,copy);
+assert.equal(c.CampaignSupplySpatial.build(d),first,'equivalent imported save reuses result');
+copy.supplyAdjustments.German.hq={boardId:board.id,hexId:net.nodes.find(n=>n.kind==='hq').hexId};
+const changed=c.CampaignSupplySpatial.build(d);
+assert.notEqual(changed,first,'in-place adjustment edit invalidates result');
+assert.equal(changed.sides.German.nodes.find(n=>n.kind==='hq').hexId,net.nodes.find(n=>n.kind==='hq').hexId);
+const baseCopy=JSON.parse(JSON.stringify(original));
+assert.notEqual(c.CampaignSupplyRelocation.apply(d,baseCopy),changed,'new base binding invalidates result');
+c.CampaignSupplyRelocation.bind(d,{...saved,supplyAdjustments:null});
+assert.equal(c.CampaignSupplyRelocation.apply(d,original),original,'cleared adjustments restore base');
+c.CampaignRouteNetwork.to=routeTo;
+console.log('PASS route reuse and changed-save/base/reset invalidation; 100 cached reads verified');

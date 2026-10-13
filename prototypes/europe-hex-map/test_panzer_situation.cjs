@@ -12,7 +12,7 @@ const draft=m.draft(s,d,["us-rifle-01","de-rifle-01"],"Take crossing");assert.eq
 const bad=JSON.parse(JSON.stringify(s));bad.placements["de-rifle-01"].board="C";assert.throws(()=>m.validate(bad,d),/placement/);
 const twice=JSON.parse(JSON.stringify(s));twice.engagements.push(twice.engagements[0]);assert.throws(()=>m.validate(twice,d),/duplicate/);
 // Minimal UI double checks entry points, opening and return. Not browser rendering.
-class E{constructor(tag){this.tag=tag;this.children=[];this.style={};this.attrs={};this.classList={add(){}};}addEventListener(name,fn,options){this["on"+name]=fn;this["options"+name]=options;}append(...x){this.children.push(...x);}prepend(...x){this.children.unshift(...x);}setAttribute(k,v){this.attrs[k]=v;}replaceChildren(){this.children=[];}showModal(){this.open=true;}close(){this.open=false;}}
+class E{constructor(tag){this.tag=tag;this.children=[];this.style={};this.attrs={};this.classList={add(){}};}addEventListener(name,fn,options){this["on"+name]=fn;this["options"+name]=options;}detach(n){if(n.parentNode)n.parentNode.children=n.parentNode.children.filter(c=>c!==n);Object.defineProperty(n,"parentNode",{value:this,writable:true,configurable:true});}append(...x){for(const n of x){this.detach(n);this.children.push(n);}}prepend(...x){for(const n of x)this.detach(n);this.children.unshift(...x);}insertBefore(n,ref){this.detach(n);this.children.splice(this.children.indexOf(ref),0,n);}setAttribute(k,v){this.attrs[k]=v;}replaceChildren(){this.children=[];}showModal(){this.open=true;}close(){this.open=false;}}
 const nodes={gameControls:new E("section"),workflowChoose:new E("section")},body=new E("body"),doc={body,createElement:t=>new E(t),createElementNS:(ns,t)=>new E(t),getElementById:id=>nodes[id]||(nodes[id]=new E("section"))};ctx.document=doc;ctx.localStorage={getItem:()=>null,setItem(){}};
 vm.runInContext(fs.readFileSync(path.join(__dirname,"panzer-map-art.js"),"utf8"),ctx);
 for(const f of ["counter-palette-defaults.js","terrain-palette-defaults.js","campaign-appearance.js","panzer-situation-view.js"])vm.runInContext(fs.readFileSync(path.join(__dirname,f),"utf8"),ctx);
@@ -29,7 +29,7 @@ const choose={onclick(){parentPanel.children.find(e=>e.attrs["data-situation-id"
 const launcher={onclick(){choose.onclick();flow.openMap();}};
 choose.onclick();assert.equal(flow.stage,"prepare");assert.equal(nodes["stage-maneuver"].disabled,true);flow.showStage("maneuver");assert.ok(!body.children[0].open);
 flow.openMap();assert.equal(body.children[0].open,true);assert.equal(nodes["stage-maneuver"].disabled,false);
-assert.ok(descendants(body.children[0]).some(e=>e.tag==="path"&&e.attrs["data-route-id"]));body.children[0].children[0].children.find(e=>e.textContent==="Return to Normandy campaign").onclick();assert.equal(body.children[0].open,false);assert.equal(flow.active,false);assert.equal(parentPanel.hidden,false);
+assert.ok(descendants(body.children[0]).some(e=>e.tag==="path"&&e.attrs["data-route-id"]));descendants(body.children[0].children[0]).find(e=>e.textContent==="Return to Normandy campaign").onclick();assert.equal(body.children[0].open,false);assert.equal(flow.active,false);assert.equal(parentPanel.hidden,false);
 console.log("Panzer Situation checks passed: roster, assets, setup order, saves, draft holds and UI entry/return.");
 
 launcher.onclick();

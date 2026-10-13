@@ -1,15 +1,18 @@
 "use strict";
 // Setup-only edits belong to the saved Situation plan, shared by formation and squad views.
 window.CampaignSupplyRelocation=(()=>{
+ const resolved=new WeakMap();
  const plans=new WeakMap(),distance=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
  const bind=(d,plan)=>plans.set(d,plan);
  function apply(d,base){
   const changes=plans.get(d)?.supplyAdjustments;if(!changes)return base;
+  const revision=JSON.stringify(changes),cached=resolved.get(d);
+  if(cached?.base===base&&cached.revision===revision)return cached.binding;
   const b=JSON.parse(JSON.stringify(base));
   for(const side of ['Allied','German']){const edit=changes[side];if(!edit)continue;const n=b.sides[side];n.provenance='Player-adjusted campaign setup. Original troop setup restrictions are retained, with receiving-area additions. Roads do not establish territorial control.';
    for(const kind of ['hq','supply'])if(edit[kind]){const r=edit[kind],h=d.boards.find(x=>x.id===r.boardId)?.hexes.find(x=>x.id===r.hexId);if(!h||!h.setupAllowed||['water','marsh'].includes(h.terrain.base)||r.boardId!==n.boardId)throw Error('Invalid saved supply position.');const node=n.nodes.find(x=>x.kind===kind);node.position=SquadSpace.project(b.layout.find(x=>x.boardId===r.boardId),h.imageCenter.u,h.imageCenter.v);node.hexId=h.id;}
    if(edit.supply){const route=CampaignRouteNetwork.to(d,b,side,n.nodes.find(x=>x.kind==='supply').position);if(!route)throw Error('No connected road to receiving point.');n.points=route.points;n.km=CampaignSupplySpatial.length(n.points)*b.metresPerUnit/1000;n.minutes=Math.max(5,Math.ceil(n.km/12*60/5)*5);n.receivingArea=edit.area;n.coverage='Player-adjusted supply corridor. Deployment coverage is assessed separately.';}
-  }return b;
+  }resolved.set(d,{base,revision,binding:b});return b;
  }
  function move(d,plan,side,kind,position,units=[]){
   if(!['supply','hq'].includes(kind))throw Error('Only receiving points and mission HQs can be repositioned.');

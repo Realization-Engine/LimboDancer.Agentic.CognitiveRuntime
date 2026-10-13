@@ -15,9 +15,9 @@ window.CampaignSupplyView=(()=>{
  function overlay(svg,d,{operation=d.supplyContext?.operation,mission=d.supplyContext?.mission||'M04',side='Allied',boardId=null,size=65,host=svg.parentElement,onSelect=null,placements=null,units=[],onRelocate=null}={}){
   host?.querySelector('.supply-map-card')?.remove();
   const report=CampaignSupplyState.inspect(d,operation,mission,side),b=report.binding,net=report.network;
+  if(boardId&&net.boardId!==boardId)return;
   report.conflicts=CampaignSupplyPlacement.conflicts(d,b,side,placements,units);if(report.conflicts.length){report.closed=true;report.routeStatus='blocked by opposing deployed units';}
   report.security=window.CampaignSupplyDeployment?.security(d,b,side,placements,units);if(!report.closed&&report.security?.status.startsWith('exposed'))report.routeStatus=report.security.status;
-  if(boardId&&net.boardId!==boardId)return;
   const p=b.layout.find(p=>p.boardId===net.boardId),position=x=>boardId?{x:x.x-p.x,y:x.y-p.y}:x;
   const layer=node('g',{'data-supply-layer':side,'data-supply-version':b.version,'data-supply-status':report.routeStatus});
   const area=net.receivingArea,board=d.boards.find(b=>b.id===area?.center.boardId),frame=b.layout.find(f=>f.boardId===board?.id);
@@ -38,11 +38,12 @@ window.CampaignSupplyView=(()=>{
  }
  function terrain(svg,d){for(const p of SquadSpace.layout(d)){const g=node('g',{transform:'translate('+p.x+' '+p.y+')'}),inner=node('g',{transform:p.clockwiseDegrees===90?'translate(3138 0) rotate(90)':p.clockwiseDegrees===180?'translate(1130 3138) rotate(180)':p.clockwiseDegrees===270?'translate(0 1130) rotate(-90)':''});PanzerMapArt.draw(inner,d,d.boards.find(b=>b.id===p.boardId),null,false,true);CampaignAppearance.terrain(inner);g.append(inner);svg.append(g);}}
  function command(svg,d,operation,select,options={}){
-  svg.parentElement?.querySelector(".supply-map-card")?.remove();svg.replaceChildren();const b=CampaignSupplySpatial.resolve(d,operation?.supplyProfile?.routes[d.situation.number]?.binding),scale=Math.min(900/b.width,345/b.height),x=(1000-b.width*scale)/2,y=48;
+  svg.parentElement?.querySelector(".supply-map-card")?.remove();svg.replaceChildren();const b=CampaignSupplySpatial.resolve(d,operation?.supplyProfile?.routes[d.situation.number]?.binding),scale=Math.min(900/b.width,382/b.height),x=(1000-b.width*scale-36)/2,y=(420-b.height*scale)/2;
   const group=node('g',{transform:'translate('+x+' '+y+') scale('+scale+')','data-integrated-source':b.sourceNumber});terrain(group,d);
   overlay(group,d,{operation,mission:options.mission||'M04',size:24/scale,host:svg.parentElement,onSelect:item=>{if(item.kind==='hq')select(options.mission||'M04');if(item.kind==='command')select('HQ');}});svg.append(group);
-  const title=node('text',{x:18,y:24,'font-size':17,fill:'#1e2719'},d.situation.title+' | Same boards as formation deployment');svg.append(title);
-  svg.append(node('text',{x:175,y:390,'font-size':13},'Select DEP, SUP or HQ for supplies and readiness. Authored placement.'));
+  svg.classList.add('integrated-command-map');
+  svg.append(node('text',{transform:'translate('+(x+b.width*scale+22)+' 210) rotate(90)','text-anchor':'middle','dominant-baseline':'middle','font-size':14,'font-weight':700,'letter-spacing':1.6,fill:'#4a6326','pointer-events':'none'},d.situation.title.toUpperCase()));
+  svg.append(node('desc',{},'Select DEP, SUP or HQ to inspect supplies and readiness. Command and supply use the joined formation boards. Positions are authored.'));
  }
  return{overlay,command,terrain,card};
 })();

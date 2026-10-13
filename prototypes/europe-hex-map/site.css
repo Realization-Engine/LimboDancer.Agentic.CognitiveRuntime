@@ -308,3 +308,14 @@ aside{padding:18px;overscroll-behavior:contain}
 #panzerSituation.campaign-embedded{position:relative}
 .campaign-air-support-card{position:absolute;z-index:30;top:90px;right:12px;width:min(420px,calc(100% - 24px));max-height:calc(100% - 108px);overflow:auto;box-sizing:border-box;padding:16px;background:#fffdf5;border:1px solid #697a4b;border-radius:6px;box-shadow:0 6px 22px #0004}
 .campaign-air-support-card>button{float:right}.campaign-air-support-card h3{margin:0 0 12px}.campaign-air-support-card section{border-top:1px solid #d8dccf;padding-top:8px}
+
+/* Formation controls share one header; board names belong to their map. */
+#panzerSituation>.panzer-toolbar:first-child{gap:6px;padding:4px 0;margin:0}
+#panzerSituation>.panzer-toolbar:first-child h2{flex:0 1 auto;margin:0;font-size:1.05rem}
+#panzerSituation .panzer-setup-controls{flex:1 1 auto;gap:6px;margin:0}
+.panzer-header-actions{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-left:auto}
+#panzerSituation>.panzer-toolbar:first-child button,#panzerSituation>.panzer-toolbar:first-child select{font-size:.8rem;padding:6px;min-height:32px;margin:0}
+#panzerSituation .panzer-setup-controls label{font-size:.85rem;white-space:nowrap}
+.panzer-board-label{position:absolute;top:8px;left:8px;z-index:3;padding:4px 8px;border-radius:3px;background:rgba(255,255,255,.75);color:#1e2719;font-size:13px;font-weight:600;pointer-events:none}
+.panzer-board-label[data-with-compass="true"]{left:80px;top:20px}
+.panzer-joined[data-detail="false"] .panzer-board-label[data-with-compass="true"]{left:54px;top:10px}
