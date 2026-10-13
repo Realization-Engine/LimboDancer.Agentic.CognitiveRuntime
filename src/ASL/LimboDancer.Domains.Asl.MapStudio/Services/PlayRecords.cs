@@ -355,6 +355,39 @@ public sealed class PlayRecords
                     continue;
                 }
 
+                // C8.4 (pass 55, ruling R55.9): a Canister shot makes no To Hit DR; its IFT DR decides the round, the Gun, and each Location's attack,
+                // which is a fire record of its own.
+                if (item.Payload is OrdnanceFired canisterShot
+                    && canisterShot.Resolution.Deserialize<OrdnanceResolution>(LiveFire.Json) is { Canister: { } canister, Gun: { } canisterGun } canisterResolution)
+                {
+                    var fact = canisterShot.Facts.Deserialize<OrdnanceShot>(LiveFire.Json);
+                    var number = (fact is null ? null : ScenarioA1Definitions.DepletionWords(fact)) ?? $"Depletion Number {canister.DepletionNumber}";
+                    var round = canisterResolution.AmmunitionUse switch
+                    {
+                        "none" => $"the DR is above the {number}: it had no Canister, attacks nothing, "
+                            + (canisterGun.Malfunctioned ? "and has none for the rest of the scenario (C8.9)" : "has not fired, and has none for the rest of the scenario (C8.9)"),
+                        "depleted" => $"the DR equals the {number}: its last Canister (C8.9)",
+                        _ => $"the DR is below the {number}: Canister fired (C8.9)",
+                    };
+                    var attacked = canister.Attacks.Count == 0 ? null : "it attacks " + string.Join(", ", canister.Attacks.Select(attack => $"{attack.LocationId} with {Number(attack.Firepower)} FP"
+                        + (attack.Multipliers.Count > 0 ? $" ({string.Join(", ", attack.Multipliers.Select(multiplier => ScenarioA1CanisterCalculator.HalvingWords(multiplier.Name)))})" : "")))
+                        + ", each with its own TEM and Hindrance, and at half FP again against concealed units (C8.4)";
+                    string?[] canisterParts =
+                    [
+                        $"{canisterShot.Gun}{In(history.At(item.Revision - 1), canisterShot.Gun)} fires Canister at {ScenarioA1CanisterCalculator.AimWords(canister.Aim, canister.Facing)}"
+                            + (canisterShot.Facing is { } turned ? $", turning to {UnitFacings.Name(turned)}: Case A +{canister.CaseA} on the IFT DR (D3.52)" : "")
+                            + $": no To Hit DR; IFT DR {string.Join(", ", canister.Dice.Select((die, index) => index == 0 ? $"{die} (colored)" : $"{die}"))} = {canister.OriginalDr}, "
+                            + "which is also its Depletion, malfunction, and ROF check (C8.4)",
+                        round,
+                        attacked,
+                        canisterGun.Malfunctioned ? $"the Gun malfunctions on {canisterGun.BreakdownNumber} or more (C2.28)"
+                            : canisterGun.RateOfFireKept ? "it may fire again this phase (C2.24)" : "no more fire this phase",
+                        canisterResolution.AmmunitionUse == "none" && !canisterGun.Malfunctioned ? null : "it holds no Acquisition (C6.5)",
+                    ];
+                    records.Add((item.EventId, string.Join("; ", canisterParts.OfType<string>())));
+                    continue;
+                }
+
                 if (item.Payload is not OrdnanceFired fired || fired.Resolution.Deserialize<OrdnanceResolution>(LiveFire.Json) is not { ToHit: { } hit, Gun: { } gun } resolution)
                 {
                     continue;
@@ -532,6 +565,12 @@ public sealed class PlayRecords
                 FireDemolitionCharge.Thrown => $"The DC Thrown by {charge.UserId}",
                 _ => $"The DC Thrown by {charge.UserId} at its own Location",
             };
+        }
+
+        // C8.4 (pass 55): a Canister shot's attack on one of its Locations names the Gun.
+        if (attack.Canister is { } canister)
+        {
+            return $"{canister.GunId}'s Canister in {attack.FirerLocationId}";
         }
 
         if (attack.Firers is not { Count: > 0 } firers)

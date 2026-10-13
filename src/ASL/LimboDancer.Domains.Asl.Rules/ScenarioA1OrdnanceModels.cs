@@ -204,7 +204,49 @@ public sealed record OrdnanceShot(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The aim of a Canister shot and the Locations it attacks (C8.4, C8.41, p. 178; pass 55, rulings R55.8, R55.9); required when the ammunition
+    /// is <c>canister</c>, and null for every other shot, as in every record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrdnanceCanister? Canister
+    {
+        get; init;
+    }
 }
+
+/// <summary>
+/// A Canister shot's aim (C8.4, C8.41, p. 178; pass 55, ruling R55.8): which of the five vertices of the Covered Arc it is fired at, the facing
+/// whose Covered Arc that is (the Gun's, after any turn the shot makes), and the Locations the planner read as attacked: those of the cluster and
+/// of the adjacent hex or hexes on the LOS that are at the firer's elevation and in its LOS.
+/// </summary>
+public sealed record OrdnanceCanister(int? Aim, string? Facing, IReadOnlyList<OrdnanceCanisterLocation>? Locations);
+
+/// <summary>
+/// A Location a Canister shot attacks (C8.4, C8.41): a hex of the cluster, or, with <see cref="AdjacentHexes"/> 1, the hex adjacent to the firer
+/// along the LOS (Area Fire, halved), or, with 2, one of the two adjacent hexes whose common hexside the LOS runs along (quartered).
+/// </summary>
+public sealed record OrdnanceCanisterLocation(string? LocationId)
+{
+    /// <summary>1 for the adjacent hex on the LOS, 2 for one of two adjacent hexes the LOS runs between (C8.41); null for a hex of the cluster.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? AdjacentHexes
+    {
+        get; init;
+    }
+}
+
+/// <summary>
+/// What a Canister shot's IFT DR decided for the shot itself (C8.4, p. 178; pass 55, ruling R55.9): the aim and the facing, the FP of the Gun
+/// Size, the DR that is also the Depletion, malfunction, and ROF check, the Case A DRM of a CA change (D3.52), the Depletion Number, and the FP
+/// each Location is attacked with; no Location when the Gun had no Canister (C8.9). Each attack is a fire record of its own on the same DR.
+/// </summary>
+public sealed record OrdnanceCanisterResolution(int Aim, string Facing, int Firepower, IReadOnlyList<int> Dice, int OriginalDr, int CaseA, int DepletionNumber,
+    IReadOnlyList<OrdnanceCanisterAttack> Attacks);
+
+/// <summary>A Location a Canister shot attacks, with what halves its FP there and the FP it is left (C8.4, C8.41; a concealed target halves it again on the IFT).</summary>
+public sealed record OrdnanceCanisterAttack(string LocationId, IReadOnlyList<FireModifier> Multipliers, decimal Firepower);
 
 /// <summary>
 /// A moving target of Defensive First Fire (C6.1 to C6.17; ruling R8.1): a vehicle's MP spent in the firer's continuous LOS; Infantry's
@@ -351,6 +393,16 @@ public sealed record OrdnanceRolls(IReadOnlyList<int>? ToHit, int? Subsequent, I
     {
         get; init;
     }
+
+    /// <summary>
+    /// The IFT DR of a Canister shot (C8.4, p. 178; pass 55), colored die first: it "also serves as the Ammo Depletion, armament breakdown, and
+    /// ROF checks usually resolved with the To Hit DR", which such a shot does not make.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<int>? Canister
+    {
+        get; init;
+    }
 }
 
 /// <summary>The To Hit arithmetic (C3.3, C4, C5, C6): Basic and Modified TH#, the DRM, the Final DR, and what it achieved.</summary>
@@ -454,6 +506,13 @@ public sealed record OrdnanceResolution(
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? FirerEffect
+    {
+        get; init;
+    }
+
+    /// <summary>A Canister shot's own part of its resolution (C8.4; pass 55, ruling R55.9); null for every other shot.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrdnanceCanisterResolution? Canister
     {
         get; init;
     }

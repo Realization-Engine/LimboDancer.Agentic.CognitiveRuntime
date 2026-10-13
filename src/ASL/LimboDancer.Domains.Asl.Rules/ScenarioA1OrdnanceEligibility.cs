@@ -229,6 +229,31 @@ public static class ScenarioA1OrdnanceEligibility
     public const string MphWindowRefusal =
         "play.ordnance-window: in the MPh a Gun or tank of the DEFENDER fires at the moving stack in its Location, while the window on its MF or MP expenditure is open (A8.1, C6.1)";
 
+    /// <summary>The refusal of Canister in the MPh (C8.4; pass 55): Defensive First Fire with Canister is not built; the fire phases are.</summary>
+    public const string CanisterMphRefusal =
+        "play.canister-movement-phase: Canister as Defensive First Fire in the MPh is not built; fire it in the PFPh, AFPh, or DFPh, or fire HE at the moving stack (C8.4)";
+
+    /// <summary>The refusal of a Canister shot that names no aim of 1 to 5 (C8.4 and its EX; ruling R55.8).</summary>
+    public const string CanisterAimRefusal =
+        "play.canister-aim: a Canister shot names one of the five aims of the Gun's Covered Arc, 1 to 5 from left to right (C8.4)";
+
+    /// <summary>The refusal of a Canister shot none of whose Locations can be attacked (C8.4, C8.41).</summary>
+    public static string CanisterEmptyRefusal(int aim, string facing) =>
+        $"play.canister-aim: no Location of {ScenarioA1CanisterCalculator.AimWords(aim, facing)} is on the map, at the Gun's elevation, and in its LOS, so Canister attacks nothing there (C8.4)";
+
+    /// <summary>
+    /// Whether a ground-level Location of a hex is at the elevation a Canister shot is fired at (C8.4: "a common vertex and elevation shared by
+    /// three hexes", attacking "all occupants of all hexes ... at that elevation"; ruling R55.9): the hex's Base Level is the firer's elevation.
+    /// </summary>
+    public static bool CanisterElevation(int firerElevation, int hexBaseLevel) => firerElevation == hexBaseLevel;
+
+    /// <summary>
+    /// Why a Canister record's aim does not fit the Gun (C8.4; ruling R55.9): its facing is the one the record turns the Gun to, or the Gun's own
+    /// when it turns none. Null when it does.
+    /// </summary>
+    public static string? CanisterFacingRefusal(string? recordedFacing, string? facingAfterShot) =>
+        recordedFacing is not null && recordedFacing != facingAfterShot ? "The Canister record's aim is not in the Covered Arc the Gun fires in." : null;
+
     /// <summary>Whether an MPh shot is outside the DEFENDER's open window on the target Location (A8.1, C6.1); the window's Location is read only when open.</summary>
     public static bool OutsideMphWindow(bool phasing, bool windowOpen, Func<bool> windowAtTarget)
     {
@@ -433,6 +458,9 @@ public static class ScenarioA1OrdnanceEligibility
                 InBogHex = recorded.Movement?.InBogHex,
             },
             SameHex = recorded.SameHex,
+
+            // C8.4 (pass 55): a Canister shot's aim and the Locations it attacks are the planner's reads of the map.
+            Canister = recorded.Canister,
             CrewSeen = recorded.CrewSeen,
             HazardousTarget = recorded.HazardousTarget,
 

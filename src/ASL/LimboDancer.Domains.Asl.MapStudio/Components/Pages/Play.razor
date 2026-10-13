@@ -804,14 +804,17 @@ else if (state is not null)
                         <OrdnanceFirePanel Guns="@OrdnanceChoices(firing)" Gun="@ordnanceGun" Spotters="@OrdnanceSpotters(firing)" Spotter="@ordnanceSpotter"
                             Directors="@OrdnanceDirectors(firing)" Director="@ordnanceDirector" IntensiveAllowed="@OrdnanceIntensiveAllowed" Intensive="@ordnanceIntensive"
                             PanzerfaustUsage="@(PanzerfaustFirers(firing).Any() ? $"PF shots taken {state.PanzerfaustShots.GetValueOrDefault(firing)} of {LiveOrdnance.PanzerfaustAllowance(state, firing)} (C13.31)" : null)"
-                            Ready="@(ordnanceGun.Length > 0 && ordnanceTarget.Length > 0)" OnGun="@ChooseOrdnanceGun" OnSpotter="@(id => ordnanceSpotter = id)"
+                            Ready="@(ordnanceGun.Length > 0 && (OrdnanceCanister(firing) ? ordnanceCanisterAim.Length > 0 : ordnanceTarget.Length > 0))" OnGun="@ChooseOrdnanceGun" OnSpotter="@(id => ordnanceSpotter = id)"
                             OnDirector="@(id => ordnanceDirector = id)" OnIntensive="@(on => ordnanceIntensive = on)" OnPropose="@ProposeOrdnance">
                             <Target>
                                 <OrdnanceTargetFields Targets="@([.. FireTargets(firing)])" Vehicles="@OrdnanceVehicleChoices(firing)" Ammunition="@OrdnanceAmmunitionKind"
                                     Fixed="@OrdnanceFixedAmmunition" Ammunitions="@OrdnanceAmmunitionChoices(OrdnanceVehicleChoices(firing).Count > 0)" Target="@ordnanceTarget" Vehicle="@ordnanceVehicle"
                                     Chosen="@(OrdnanceAmmunitionFor(OrdnanceVehicleChoices(firing).Count > 0) ?? ordnanceAmmunition)"
                                     OnTarget="@(at => { ordnanceTarget = at; ordnanceVehicle = string.Empty; })" OnVehicle="@(id => ordnanceVehicle = id)"
-                                    OnAmmunition="@(ammunition => ordnanceAmmunition = ammunition)" />
+                                    OnAmmunition="@(ammunition => ordnanceAmmunition = ammunition)"
+                                    CanisterAims="@(OrdnanceCanister(firing) ? OrdnanceCanisterAims(firing) : null)" CanisterAim="@ordnanceCanisterAim"
+                                    CanisterFacings="@OrdnanceCanisterFacings" CanisterFacing="@OrdnanceCanisterFacing"
+                                    OnCanisterAim="@(aim => ordnanceCanisterAim = aim)" OnCanisterFacing="@(facing => { ordnanceCanisterFacing = facing; ordnanceCanisterAim = string.Empty; })" />
                             </Target>
                         </OrdnanceFirePanel>
                         @if (state.Phase != "mph" && state.Find(ordnanceGun) is EquipmentInstance { Kind: "asl:gun" } chosenGun)
@@ -4273,6 +4276,54 @@ else if (state is not null)
         return offered.Contains(ordnanceAmmunition) ? ordnanceAmmunition : offered.FirstOrDefault();
     }
 
+    private string ordnanceCanisterAim = string.Empty;
+    private string ordnanceCanisterFacing = string.Empty;
+
+    /// <summary>
+    /// Whether the shot being set up is Canister (C8.4; pass 55): the Gun may fire it now, no vehicle is the target, and it is the ammunition
+    /// chosen. The target then gives way to an aim.
+    /// </summary>
+    private bool OrdnanceCanister(string firing) => OrdnanceAmmunitionKind == OrdnanceTargetFields.AmmunitionKind.Selectable && OrdnanceVehicleChoices(firing).Count == 0
+        && OrdnanceAmmunitionFor(false) == ScenarioA1CanisterCalculator.Ammunition;
+
+    /// <summary>The chosen Gun's Covered Arc now, by its facing's name; null when it has none.</summary>
+    private string? OrdnanceGunFacing => state?.Find(ordnanceGun) switch
+    {
+        EquipmentInstance { Position: MapPosition { Facing: { } facing } } => UnitFacings.Name(facing),
+        UnitInstance tank when state is not null && LiveOrdnance.TurretFacing(state, tank) is { } turret => UnitFacings.Name(turret),
+        _ => null,
+    };
+
+    /// <summary>The facing a Canister shot is fired in: the one chosen, or the Gun's own.</summary>
+    private string OrdnanceCanisterFacing => ordnanceCanisterFacing.Length > 0 ? ordnanceCanisterFacing : OrdnanceGunFacing ?? string.Empty;
+
+    /// <summary>The six facings for a Canister shot, the Gun's own first (C8.4, D3.52): another turns it first, with Case A on the IFT DR.</summary>
+    private IReadOnlyList<PlayChoice> OrdnanceCanisterFacings => OrdnanceGunFacing is not { } own ? []
+        : [new PlayChoice(own, $"{own} (its Covered Arc now)"),
+            .. Enum.GetValues<UnitFacing>().Select(UnitFacings.Name).Where(name => name != own).Select(name => new PlayChoice(name, $"{name} (turn first: Case A on the IFT DR)"))];
+
+    /// <summary>
+    /// The five aims of the chosen Covered Arc (C8.4, C8.41; ruling R55.8), each with the hexes it attacks and the enemy units the view sees in
+    /// them: the hexes are the map's, and a unit the view does not see is not counted.
+    /// </summary>
+    private IReadOnlyList<PlayChoice> OrdnanceCanisterAims(string firing)
+    {
+        if (state is not { } game || !UnitFacings.TryParse(OrdnanceCanisterFacing, out var facing))
+        {
+            return [];
+        }
+
+        return [.. Live.Planner.CanisterAims(game, ordnanceGun, facing).Select(aim =>
+        {
+            var hexes = aim.Cluster.Concat(aim.Adjacent).ToHashSet();
+            var seen = VisibleUnits.Count(unit => unit.Status == InstanceStatus.Active && unit.Side != firing && game.Location(unit.Id)?.Location is { } at && hexes.Contains(at));
+            var adjacent = aim.Adjacent.Count == 0 ? string.Empty
+                : $"{(aim.Cluster.Count > 0 ? ", and " : "no hex of its cluster on the map, and ")}{string.Join(" ", aim.Adjacent.Select(at => at.ToString()))} at {(aim.Quartered ? "a quarter of the" : "half")} FP";
+            return new PlayChoice(aim.Aim.ToString(CultureInfo.InvariantCulture),
+                $"aim {aim.Aim.ToString(CultureInfo.InvariantCulture)}: {string.Join(" ", aim.Cluster.Select(at => at.ToString()))}{adjacent}: {seen.ToString(CultureInfo.InvariantCulture)} unit{(seen == 1 ? string.Empty : "s")}");
+        })];
+    }
+
     /// <summary>The Shocked AFVs and Unconfirmed Kills that owe their RPh dr (C7.42).</summary>
     private IEnumerable<UnitInstance> ShockedVehicles => SeenOnly(state is null ? []
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit) && !state.ShockRollsThisPhase.Contains(unit.Id)
@@ -4390,6 +4441,27 @@ else if (state is not null)
 
     private Task ProposeOrdnance()
     {
+        // C8.4 (pass 55, ruling R55.9): a Canister shot names its aim, and a facing only when the Gun turns first; it names no target.
+        if (FiringSide is { } firing && OrdnanceCanister(firing) && int.TryParse(ordnanceCanisterAim, NumberStyles.None, CultureInfo.InvariantCulture, out var aim))
+        {
+            var canister = new Dictionary<string, object>
+            {
+                ["gameId"] = gameId, ["attemptId"] = Attempt("gun"), ["expectedRevision"] = (long)history!.Events.Count, ["gunId"] = ordnanceGun,
+                ["ammunition"] = ScenarioA1CanisterCalculator.Ammunition, ["aim"] = aim,
+            };
+            if (OrdnanceCanisterFacing != OrdnanceGunFacing)
+            {
+                canister["aimFacing"] = OrdnanceCanisterFacing;
+            }
+
+            if (ordnanceIntensive && OrdnanceIntensiveAllowed)
+            {
+                canister["intensive"] = true;
+            }
+
+            return Propose(GameActions.FireOrdnance, JsonSerializer.SerializeToElement(canister));
+        }
+
         var arguments = new Dictionary<string, object>
         {
             ["gameId"] = gameId, ["attemptId"] = Attempt("gun"), ["expectedRevision"] = (long)history!.Events.Count, ["gunId"] = ordnanceGun, ["target"] = ordnanceTarget,
@@ -6049,6 +6121,8 @@ else if (state is not null)
         ordnanceVehicle = string.Empty;
         ordnanceIntensive = false;
         ordnanceTurn = "east";
+        ordnanceCanisterAim = string.Empty;
+        ordnanceCanisterFacing = string.Empty;
     }
 
     private bool OrdnancePanzerfaust => ordnanceGun.EndsWith(":pf", StringComparison.Ordinal);

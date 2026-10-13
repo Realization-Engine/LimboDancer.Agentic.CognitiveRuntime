@@ -170,6 +170,14 @@ public sealed record LocationUnitFacts(string Id, bool Active, string? Side, boo
 /// <summary>A Residual FP attack as the state has it (A8.2, A8.22, A8.222; ruling R6.6): whether the moving stack is in the target Location and moved by Assault Movement, the units there, the phasing side, its ELR and No Quarter, the month, the counter's FP, and the reads of a target and a vehicle, made for the units the attack takes.</summary>
 public sealed record ResidualFacts(bool MovementAtTarget, bool Assault, IReadOnlyList<LocationUnitFacts> Units, string? PhasingSide, int? PhasingSideElr, bool PhasingSideNoQuarter, int? ScenarioMonth, int Fp, string Target, Func<string, FireTarget> TargetOf, Func<string, FireVehicle> VehicleOf);
 
+/// <summary>
+/// A Location a Canister shot attacks, as the state has it (C8.4, A7.4; pass 55, ruling R55.9): the fire phase and whether the firing side is
+/// phasing, the Gun's Location, the target Location, the firing side, the units there, the enemy side's ELR and No Quarter, the month, and the
+/// reads of a target and a vehicle, made for the units the attack takes.
+/// </summary>
+public sealed record CanisterLocationFacts(string? Phase, bool Phasing, string GunLocation, string Target, string? FiringSide, IReadOnlyList<LocationUnitFacts> Units,
+    int? TargetSideElr, bool TargetSideNoQuarter, int? ScenarioMonth, Func<string, FireTarget> TargetOf, Func<string, FireVehicle> VehicleOf);
+
 /// <summary>An OVR as the state has it (D7.1, D7.11; ruling R11.11): the vehicle (found active or wrecked, a vehicle, on the map, with a definition), its id, definition, Location text, side, crew exposure, whether it is Immobilized, Bogged, or Wrecked, its weapons' malfunctions, the units in its Location, the enemy side's ELR and No Quarter, the month, and the reads of a target and a vehicle.</summary>
 public sealed record OverrunFacts(
     bool VehicleFound,

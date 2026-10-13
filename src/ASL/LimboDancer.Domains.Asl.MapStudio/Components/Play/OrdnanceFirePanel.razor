@@ -7,7 +7,10 @@
     A Gun manned by its crew, or a tank's MA, fires HE at the enemy units of a Location on the Infantry Target Type (C3.3, C3.32), or at
     one enemy vehicle there on the Vehicle Target Type with AP, APCR, APDS, HEAT, or HE (C3.31, C8.1). Special Ammunition is listed with its
     Depletion Number at the game's date: an Original To Hit DR equal to it is the last such round, and above it the Gun had none and has not
-    fired (C8.9); a Gun whose HE has such a number names it at Infantry too (C2.21, C8.8). It turns its barrel or turret to bring the
+    fired (C8.9); a Gun whose HE has such a number names it at Infantry too (C2.21, C8.8). A Gun that lists Canister fires it at one of the
+    five vertices of its Covered Arc with no To Hit DR: one IFT DR attacks every hex that shares the vertex at the Gun's elevation and in its
+    LOS, and the adjacent hex on the LOS at half FP, each with its own TEM and Hindrance, and is also the Depletion, malfunction, and ROF
+    check (C8.4, C8.41). It turns its barrel or turret to bring the
     target into its Covered Arc if it must, with the Case A DRM (C5.1). An Original colored dr at most its ROF lets it fire again this
     phase (C2.24), and each shot acquires the Location for the next (C6.5). A hit on Infantry attacks every enemy unit there on the IFT
     column of the HE FP (C.6); a hit on a vehicle strikes its turret or hull, and the To Kill DR decides its fate (C3.9, C7). A light
@@ -66,7 +69,7 @@
     <button id="propose-ordnance" disabled="@(!Ready)" aria-describedby="propose-ordnance-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: fire</button>
     @if (!Ready)
     {
-        <span id="propose-ordnance-ready" class="toolbar-note">Choose the weapon and its target.</span>
+        <span id="propose-ordnance-ready" class="toolbar-note">Choose the weapon and its target, or its aim for Canister.</span>
     }
 </div>
 </ActionSection>

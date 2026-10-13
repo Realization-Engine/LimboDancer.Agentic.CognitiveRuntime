@@ -61,6 +61,12 @@ public static class ScenarioA1OrdnanceCalculator
             } : fired;
         }
 
+        // C8.4 (pass 55, ruling R55.9): Canister makes no To Hit DR; its IFT DR decides the shot.
+        if (IsCanister(shot))
+        {
+            return ScenarioA1CanisterCalculator.Run(shot, gun, reference);
+        }
+
         return shot.TargetType == OrdnanceTargetTypes.Area ? ScenarioA1AreaCalculator.Run(shot, gun, reference)
             : shot.VehicleTarget is not null ? ScenarioA1ArmorCalculator.Run(shot, gun, reference) : Run(shot, reference);
     }
@@ -136,13 +142,15 @@ public static class ScenarioA1OrdnanceCalculator
         {
             Rolls = new OrdnanceRolls(null, null, null, null, null)
         }, reference);
-        if (first.Disposition != OrdnanceResolution.Indeterminate || first.Reasons is not ([Prefix + "roll-missing:toHit"] or [Prefix + "roll-missing:panzerfaustCheck"]))
+        if (first.Disposition != OrdnanceResolution.Indeterminate
+            || first.Reasons is not ([Prefix + "roll-missing:toHit"] or [Prefix + "roll-missing:panzerfaustCheck"] or [Prefix + "roll-missing:canister"]))
         {
             return first.Reasons;
         }
 
-        // A Vehicle Target Type shot has no IFT attack to precheck (C3.31).
-        if (shot.VehicleTarget is not null)
+        // A Vehicle Target Type shot has no IFT attack to precheck (C3.31). A Canister shot's attacks are fire attacks of their own, one a
+        // Location, which the Fire package prechecks (C8.4; pass 55).
+        if (shot.VehicleTarget is not null || IsCanister(shot))
         {
             return [];
         }
@@ -159,6 +167,16 @@ public static class ScenarioA1OrdnanceCalculator
     }
 
     private static OrdnanceResolution Refused(string disposition, IReadOnlyList<string> reasons) => new(disposition, reasons, null, null);
+
+    /// <summary>
+    /// Whether the shot is a Canister shot (C8.4, p. 178; pass 55, ruling R55.9): it names the ammunition and no vehicle. Named at a vehicle it is
+    /// a Vehicle Target Type shot, which that Target Type refuses ("ineffective vs armored targets").
+    /// </summary>
+    public static bool IsCanister(OrdnanceShot shot)
+    {
+        ArgumentNullException.ThrowIfNull(shot);
+        return shot.Ammunition == ScenarioA1CanisterCalculator.Ammunition && shot.VehicleTarget is null;
+    }
 
     private static List<string> Missing(OrdnanceShot shot)
     {
@@ -198,13 +216,22 @@ public static class ScenarioA1OrdnanceCalculator
         Need(shot.Crew?.FiredInherentFp, "crew.firedInherentFp");
         Need(shot.Hit, "hit");
         Need(shot.Hit?.Targets, "hit.targets");
-        Need(shot.Hit?.TargetTerrain, "hit.targetTerrain");
-        Need(shot.Hit?.Los, "hit.los");
-        Need(shot.Hit?.Los?.Blocked, "hit.los.blocked");
-        Need(shot.Hit?.Los?.HindranceDrm, "hit.los.hindranceDrm");
-        Need(shot.Hit?.Los?.HindranceAttributed, "hit.los.hindranceAttributed");
-        Need(shot.Hit?.Los?.GrainInLos, "hit.los.grainInLos");
-        Need(shot.Hit?.SameLevel, "hit.sameLevel");
+        if (IsCanister(shot))
+        {
+            // C8.4 (pass 55): a Canister shot has no one target Location; each Location it attacks carries its own terrain and LOS in its fire attack.
+            ScenarioA1CanisterCalculator.Missing(shot, Need);
+        }
+        else
+        {
+            Need(shot.Hit?.TargetTerrain, "hit.targetTerrain");
+            Need(shot.Hit?.Los, "hit.los");
+            Need(shot.Hit?.Los?.Blocked, "hit.los.blocked");
+            Need(shot.Hit?.Los?.HindranceDrm, "hit.los.hindranceDrm");
+            Need(shot.Hit?.Los?.HindranceAttributed, "hit.los.hindranceAttributed");
+            Need(shot.Hit?.Los?.GrainInLos, "hit.los.grainInLos");
+            Need(shot.Hit?.SameLevel, "hit.sameLevel");
+        }
+
         if (shot.VehicleTarget is not null)
         {
             ScenarioA1ArmorCalculator.Missing(shot, Need);
@@ -298,11 +325,19 @@ public static class ScenarioA1OrdnanceCalculator
         // C2.21, C2.22, C2.3, C3.33: a Gun of the firing side that can fire HE; mortars (the Area Target Type), RCL, and 360-degree
         // mounts are not reviewed.
         var gunShot = shot.Gun!;
+        var canister = IsCanister(shot);
         if (!reference.Guns.TryGetValue(gunShot.DefinitionId!, out var gun) || gun.Nationality != shot.FiringNationality || gun.Mount360
             || !(shot.Vehicle is null ? AdmittedGunTypes.Contains(gun.GunType) : gun.GunType == "vehicle")
-            || (shot.VehicleTarget is null && !ScenarioA1ArmorCalculator.Lists(gun, "he") && (gun.NoHe || shot.Ammunition is not (null or "he"))))
+            || (shot.VehicleTarget is null && !canister && !ScenarioA1ArmorCalculator.Lists(gun, "he") && (gun.NoHe || shot.Ammunition is not (null or "he"))))
         {
             outside.Add(Prefix + "gun-outside");
+            return outside;
+        }
+
+        // C8.4 (pass 55): the Canister facts belong to a Canister shot alone.
+        if (shot.Canister is not null && !canister)
+        {
+            outside.Add(Prefix + "canister-outside");
             return outside;
         }
 
@@ -310,7 +345,7 @@ public static class ScenarioA1OrdnanceCalculator
         // ammunition "is not Special Ammunition (i.e., has no Depletion #; 8.8)": one whose counter lists an HE Depletion Number fires HE only
         // when the shot names it, and not at all before the number's date or once it has run out (C8.9). Its AP at Infantry is C8.31's HE
         // Equivalency, which is not built.
-        if (shot.VehicleTarget is null && ScenarioA1ArmorCalculator.Lists(gun, "he"))
+        if (shot.VehicleTarget is null && !canister && ScenarioA1ArmorCalculator.Lists(gun, "he"))
         {
             if (shot.Ammunition != "he")
             {
@@ -431,6 +466,13 @@ public static class ScenarioA1OrdnanceCalculator
         if (shot.HexspinesToTurn > 0 && (bounding || crew.Pinned == true || (shot.FirerInWoodsOrBuilding == true && gunShot.ShotsThisPhase > 0)))
         {
             outside.Add(Prefix + "covered-arc-fixed");
+        }
+
+        // C8.4 (pass 55, ruling R55.9): a Canister shot has no one target Location and no LOS of its own to it; its own facts decide the rest.
+        if (canister)
+        {
+            ScenarioA1CanisterCalculator.Outside(shot, gun, outside);
+            return outside.Distinct(StringComparer.Ordinal).ToList();
         }
 
         var hit = shot.Hit!;
@@ -595,6 +637,18 @@ public static class ScenarioA1OrdnanceCalculator
     {
         var undecided = new List<string>();
         var hit = shot.Hit!;
+
+        // C8.4 (pass 55): each Location a Canister shot attacks is decided in its own fire attack; the shot itself only needs the read of who
+        // sees a concealed crew fire (A12.14).
+        if (IsCanister(shot))
+        {
+            if (shot.Crew!.Concealed == true && shot.Vehicle is null && shot.CrewSeen is null)
+            {
+                undecided.Add(Prefix + "concealment-unreviewed:crew");
+            }
+
+            return undecided;
+        }
 
         // An unattributed Hindrance is not reviewed, as for Infantry fire. C2.6 (pass 55): a target at another level is fired at when the range
         // allows it, which the shot's elevation fact says.

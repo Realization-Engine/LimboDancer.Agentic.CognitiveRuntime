@@ -466,6 +466,39 @@ public static class LiveFire
     }
 
     /// <summary>
+    /// The state's part of a Canister shot's attack on one Location (C8.4, A7.4; pass 55, ruling R55.9), read from the state: no firers, the enemy
+    /// units there as targets and its vehicles on the Vehicle line; the map facts and the Canister fact are the planner's.
+    /// </summary>
+    public static (FireAttack? Attack, string? Reason) CanisterFromState(GameState state, string gunId, BoardLocation target)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(target);
+        var side = state.Find(gunId) switch
+        {
+            UnitInstance { Status: InstanceStatus.Active } vehicle => vehicle.Side,
+            EquipmentInstance { Status: InstanceStatus.Active, Holding: { } holding } => state.Unit(holding.Holder)?.Side,
+            _ => null,
+        };
+        if (side is null || state.Location(gunId)?.Location is not { } from)
+        {
+            return (null, ScenarioA1OrdnanceEligibility.GunRefusal(gunId));
+        }
+
+        UnitInstance[] units = [.. state.At(target).OfType<UnitInstance>()];
+        if (units.Any(unit => unit.Status == InstanceStatus.Active && unit.Side != side && unit.Definition is null && unit.Kind != UnitKinds.Dummy))
+        {
+            return (null, ScenarioA1OrdnanceEligibility.TargetOutsideCatalogRefusal);
+        }
+
+        var targetSide = state.Sides.FirstOrDefault(item => item.Id != side)?.Id;
+        return (ScenarioA1FireEligibility.Canister(new CanisterLocationFacts(state.Phase, side == state.PhasingSide, from.ToString(), target.ToString(), side,
+            [.. units.Select(unit => new LocationUnitFacts(unit.Id, unit.Status == InstanceStatus.Active, unit.Side, IsVehicle(unit), unit.Definition is not null,
+                Is(unit, Conditions.Captured), false))],
+            targetSide is null ? null : state.Side(targetSide)?.Elr, targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal), state.ScenarioMonth,
+            id => Target(state, units.First(unit => unit.Id == id), target), id => Vehicle(units.First(unit => unit.Id == id), target))), null);
+    }
+
+    /// <summary>
     /// A vehicle's OVR of its Location (D7.1, D7.11; ruling R11.11), read from the state: every non-captured enemy unit there is attacked, Infantry as
     /// targets and vehicles on the Vehicle line or through their Vulnerable crews; the map facts (terrain, SMOKE, a wall crossed) are the planner's.
     /// </summary>
@@ -717,6 +750,25 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
         {
             // D7.1 (ruling R11.11): an OVR is read from its vehicle's state; its crew's CE status is recorded as the OVR saw it.
             (expected, reason) = LiveFire.OverrunFromState(state, recorded.Overrun?.VehicleId ?? string.Empty);
+        }
+        else if (recorded.Canister is { } canister)
+        {
+            // C8.4 (pass 55, ruling R55.9): a Canister shot's attack on one Location is read from the Gun and the Location's units. What halves
+            // its FP and its Case A are the shot's own facts, recorded with the attack; the FP is the Gun Size's.
+            (expected, reason) = LiveFire.CanisterFromState(state, canister.GunId ?? string.Empty, target);
+            var caliber = state.Find(canister.GunId ?? string.Empty) switch
+            {
+                UnitInstance { Definition: { } tank } => LiveOrdnance.CaliberOf(tank.Definition),
+                EquipmentInstance { Definition: { } gun } => LiveOrdnance.CaliberOf(gun.Definition),
+                _ => null,
+            };
+            expected = expected is null ? null : expected with
+            {
+                Canister = canister with
+                {
+                    Firepower = caliber is { } size ? ScenarioA1CanisterCalculator.Firepower(size) : null,
+                },
+            };
         }
         else
         {

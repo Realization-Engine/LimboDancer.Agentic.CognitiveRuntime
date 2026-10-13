@@ -328,6 +328,16 @@ public static class ScenarioA1FireCalculator
             Need(attack.SameLevel, "sameLevel");
             NeedLos(attack.Los, string.Empty);
         }
+        else if (attack.Canister is { } canister)
+        {
+            // C8.4 (pass 55): a Canister shot's attack on one Location, from the Gun's Location along its LOS.
+            Need(canister.GunId, "canister.gunId");
+            Need(canister.Firepower, "canister.firepower");
+            Need(attack.FirerLocationId, "firerLocationId");
+            Need(attack.Range, "range");
+            Need(attack.SameLevel, "sameLevel");
+            NeedLos(attack.Los, string.Empty);
+        }
         else
         {
             Need(attack.FireGroupComplete, "fireGroupComplete");
@@ -409,7 +419,7 @@ public static class ScenarioA1FireCalculator
         }
 
         // Ruling R10.4: a target at another level names how many levels above the firer it is, for PBF (A7.21).
-        if (attack.VehicleFire is null && attack.OrdnanceHit is null && attack.Overrun is null && attack.DemolitionCharge is null && !residual)
+        if (attack.VehicleFire is null && attack.OrdnanceHit is null && attack.Overrun is null && attack.DemolitionCharge is null && attack.Canister is null && !residual)
         {
             if (attack.SameLevel == false)
             {
@@ -526,6 +536,34 @@ public static class ScenarioA1FireCalculator
                 || reference.Definitions.GetValueOrDefault(item.DefinitionId!) is not { IsVehicle: true }))
         {
             outside.Add("asl.a1.fire.vehicle-outside");
+        }
+
+        // C8.4, C8.41 (p. 178; pass 55, ruling R55.9): a Canister shot's attack on one Location has no firers, leader, or fire group (A7.51), the
+        // FP of a Gun Size, and a Location at the firer's elevation and in its LOS; it attacks no unit of its own side (A7.4) and is no Snap
+        // Shot (A8.15), Spraying Fire, or Fire Lane. In the MPh it is not built.
+        if (attack.Canister is { } canister)
+        {
+            if (attack.Firers is { Count: > 0 } || attack.Director is not null || attack.OtherDirectors is { Count: > 0 } || kind is not null
+                || attack.OrdnanceHit is not null || attack.VehicleFire is not null || attack.Overrun is not null || attack.DemolitionCharge is not null
+                || canister.Firepower is not (12 or 20 or 24) || canister.AdjacentHexes is not (null or 1 or 2) || canister.CaseA is < 0
+                || attack.SameLevel != true || attack.Los!.Blocked == true || attack.SnapShot == true || attack.SprayingFire == true || attack.SprayShare == true
+                || attack.FireLane == true || attack.HeightAdvantage == true || attack.MgBoreSighted == true)
+            {
+                outside.Add("asl.a1.fire.canister-outside");
+            }
+
+            if (targets.Any(item => item.LocationId != attack.TargetLocationId || item.Friendly == true) || targetDefinitions.Any(item => item is null)
+                || !ScenarioA1FireReference.Tem.ContainsKey(attack.TargetTerrain!))
+            {
+                outside.Add("asl.a1.fire.target-outside");
+            }
+
+            if (attack.Rolls is { } canisterRolls && Malformed(canisterRolls))
+            {
+                outside.Add("asl.a1.fire.roll-malformed");
+            }
+
+            return outside.Distinct(StringComparer.Ordinal).ToList();
         }
 
         if (attack.VehicleFire is { } vehicleFire)
@@ -1148,9 +1186,10 @@ public static class ScenarioA1FireCalculator
     {
         var undecided = new List<string>();
         var targets = attack.Targets!;
-        if (attack.VehicleFire is not null)
+        if (attack.VehicleFire is not null || attack.Canister is not null)
         {
             // C2.6 (pass 55): a vehicle's MG fires at another level when the range allows it; the attack is then decided as at its own level.
+            // C8.4 (pass 55): a Canister attack takes its Location's LOS Hindrance, which must be attributed as any other.
             if (attack.Los is { } los && (los.HindranceAttributed != true || los.HindranceDrm < 0
                 || (los.GrainInLos == true && attack.ScenarioMonth is null)))
             {
@@ -1167,7 +1206,8 @@ public static class ScenarioA1FireCalculator
             }
         }
 
-        if (attack.FireKind != ResidualFire && attack.OrdnanceHit is null && attack.VehicleFire is null && attack.Overrun is null && attack.DemolitionCharge is null)
+        if (attack.FireKind != ResidualFire && attack.OrdnanceHit is null && attack.VehicleFire is null && attack.Overrun is null && attack.DemolitionCharge is null
+            && attack.Canister is null)
         {
             // Ruling R10.4 (backlog pass 10): Infantry fire at another level is decided with the map read's LOS and Hindrance.
             var firers = attack.Firers!;
@@ -1869,6 +1909,9 @@ public static class ScenarioA1FireCalculator
         private string? FireCounter() => attack.FireKind switch
         {
             _ when attack.OrdnanceHit is not null => null,
+
+            // C8.4 (pass 55): the Gun's and its crew's counters are the ordnance shot's own.
+            _ when attack.Canister is not null => null,
             ResidualFire => null,
             FirstFire => "first-fire",
             BoundingFirstFire or OverrunFire => "bounding-fire",
@@ -2056,6 +2099,38 @@ public static class ScenarioA1FireCalculator
                     vsConcealed = concealedFp.Firepower;
                 }
             }
+            else if (attack.Canister is { } canister)
+            {
+                // C8.4, C8.41 (p. 178; pass 55, ruling R55.9): the FP of the Gun Size, halved by each of the shot's own facts and, as Area Fire,
+                // against "HIP/\"?\" units": once, since a concealed target is halved here and nowhere else.
+                FirerFirepower Canister(bool concealedTargets)
+                {
+                    List<FireModifier> multipliers = [.. ScenarioA1CanisterCalculator.Multipliers(canister)];
+                    if (concealedTargets)
+                    {
+                        multipliers.Add(new FireModifier("area-fire-concealed-target", 0.5m, "C8.4"));
+                    }
+
+                    return new FirerFirepower(canister.GunId!, canister.Firepower!.Value, multipliers,
+                        multipliers.Aggregate((decimal)canister.Firepower.Value, (value, item) => value * item.Value));
+                }
+
+                if (hasKnown)
+                {
+                    firers.Add(Canister(false));
+                    known = firers[^1].Firepower;
+                }
+
+                if (hasConcealed)
+                {
+                    var concealedFp = Canister(true);
+                    firers.Add(hasKnown ? concealedFp with
+                    {
+                        VsConcealed = true
+                    } : concealedFp);
+                    vsConcealed = concealedFp.Firepower;
+                }
+            }
             else if (attack.VehicleFire is { } vehicle)
             {
                 // D3.5 (pass 50): the FP of the MGs that fire are added together for the one attack.
@@ -2121,7 +2196,9 @@ public static class ScenarioA1FireCalculator
             // heroes and Fanatic units are not subject to it, but a group with any other member Cowers (A15.2, A15.24, A10.8).
             // A7.9: no form of vehicular fire Cowers.
             // A7.9: Cowering never affects a DC (ruling R15.2).
-            var cowered = !residual && hit is null && attack.VehicleFire is null && attack.Overrun is null && attack.DemolitionCharge is null && dice[0] == dice[1] && !directed
+            // A7.9 (p. 58; pass 55): "Cowering affects all fire except that from ... Canister".
+            var cowered = !residual && hit is null && attack.VehicleFire is null && attack.Overrun is null && attack.DemolitionCharge is null && attack.Canister is null
+                && dice[0] == dice[1] && !directed
                 && attack.Firers!.Any(CanCower)
                 && attack.FireLane != true;
 
@@ -2229,7 +2306,8 @@ public static class ScenarioA1FireCalculator
             // TH DR (C.3, C6.9).
             var hindrance = residual ? attack.Los?.HindranceDrm ?? 0
                 : hit is not null ? 0
-                : attack.VehicleFire is not null || attack.Overrun is not null ? attack.Los!.HindranceDrm!.Value
+                // C8.4 (pass 55): "LOS Hindrances and the individual TEM of each Location may vary the results in each hex".
+                : attack.VehicleFire is not null || attack.Overrun is not null || attack.Canister is not null ? attack.Los!.HindranceDrm!.Value
                 // A23.1 (ruling R15.2): a DC takes no LOS Hindrance.
                 : attack.DemolitionCharge is not null ? 0
                 : attack.Firers!.Max(item => LosOf(attack, item)!.HindranceDrm!.Value);
@@ -2288,6 +2366,12 @@ public static class ScenarioA1FireCalculator
             if (attack.VehicleFire is { Weapons.Count: > 0 } turning && VehicleCaseA(turning, reference.Definitions[turning.DefinitionId!]) is > 0 and var caseA)
             {
                 drm.Add(new FireModifier("case-a:" + turning.VehicleId, caseA, "D3.52"));
+            }
+
+            // C8.4, C3.21, D3.52 (pp. 178, 169, 201; pass 55): a Canister shot adds the Case A of the hexspines its CA changed to the IFT DR.
+            if (attack.Canister is { CaseA: > 0 and var canisterCaseA } turned)
+            {
+                drm.Add(new FireModifier("case-a:" + turned.GunId, canisterCaseA, "D3.52"));
             }
 
             // D5.34 (p. 203; pass 35, task 35.13 d): and to its OVR DR.

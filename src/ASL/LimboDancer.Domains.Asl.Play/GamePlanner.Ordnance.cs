@@ -30,6 +30,14 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, "play.no-game: the game has no state yet");
         }
 
+        // C8.4 (pass 55, ruling R55.9): Canister is fired at an aim of the Covered Arc, not at a Location: its shot names no target, and one it
+        // names is not read. Named with a vehicle it stays a Vehicle Target Type shot, which that Target Type refuses.
+        if (Text(arguments, "gunId", out var canisterGun) && Text(arguments, "ammunition", out var canisterNamed) && canisterNamed == ScenarioA1CanisterCalculator.Ammunition
+            && !Text(arguments, "targetVehicle", out _))
+        {
+            return PlanFireCanister(scope, arguments, existing, state, canisterGun, attemptId, expected, label, actor);
+        }
+
         if (!Text(arguments, "gunId", out var gunId) || !Text(arguments, "target", out var targetText) || !BoardLocation.TryParse(targetText, out var target))
         {
             return Refused(scope, label, expected, "play.invalid-arguments: a Gun's shot names the Gun and a target Location");
@@ -690,6 +698,9 @@ public sealed partial class GamePlanner
                 "shockCheck" => (2, "ordnance-shock-check"),
                 "crewCheck" => (2, "ordnance-crew-check"),
                 "crewSurvival" => (2, "ordnance-crew-survival"),
+
+                // C8.4 (pass 55): a Canister shot's one DR, on the IFT.
+                "canister" => (2, "ordnance-canister"),
                 _ when selected.Length > 0 => (selected.Length, "ordnance-random-selection"),
                 _ => FireRollShape(inner!),
             };
@@ -817,7 +828,8 @@ public sealed partial class GamePlanner
         Dictionary<string, ConditionState>? emplacedReveal = null;
         if (facts.Vehicle is null && state.Find(facts.Gun.GunId!) is EquipmentInstance firingGun && LiveOrdnance.Emplaced(state, firingGun) && state.Unit(facts.Crew.UnitId!) is { } gunCrew
             && new[] { (IGameObject)firingGun, gunCrew }.Any(item => GameState.Condition(item, Conditions.Concealed) == ConditionState.True || GameState.Condition(item, Conditions.Hidden) == ConditionState.True)
-            && rolls.ToHit is [var colored, ..] && state.Location(firingGun.Id) is { } firingAt)
+            // C8.4 (pass 55): a Canister shot's IFT DR stands in for the To Hit DR it does not make.
+            && (rolls.ToHit ?? rolls.Canister) is [var colored, ..] && state.Location(firingGun.Id) is { } firingAt)
         {
             var nearest = NearestGoodOrderEnemyInLos(state, gunCrew.Side, firingAt.Location);
             emplacedReveal = ConditionChanges(ScenarioA1OrdnanceEventRules.EmplacedReveal(nearest, colored));
@@ -1029,6 +1041,7 @@ public sealed partial class GamePlanner
             "shockCheck" => rolls with { ShockCheck = values },
             "crewCheck" => rolls with { CrewCheck = values },
             "crewSurvival" => rolls with { CrewSurvival = values },
+            "canister" => rolls with { Canister = values },
             _ when selected.Length > 0 => rolls with
             {
                 CriticalSelection = selected.Select((id, index) => (id, index)).ToDictionary(item => item.id, item => values[item.index], StringComparer.Ordinal)

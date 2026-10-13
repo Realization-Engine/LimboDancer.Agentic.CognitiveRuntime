@@ -298,8 +298,9 @@ public sealed partial class GamePlanner
         // group, so it fires once; a MG firing again alone on its Multiple ROF is not a new group. Rules decides it (pass 32.c).
         var step = ScenarioA1FireEligibility.MphStep(state.Phase, bounding, state.Movement?.Step);
         var fromLocations = attack.Firers!.Select(item => item.LocationId!).Distinct(StringComparer.Ordinal).ToArray();
+        // C8.4, A7.51 (pass 55): a Canister shot's attack is ordnance, in no fire group; its record binds no other attack.
         if (ScenarioA1FireEligibility.FireGroupBar(alone.Length > 0,
-            state.FiresThisPhase.Select(record => new PhaseFireFacts(record.FirerLocation, record.TargetLocation, record.Step, record.Vehicle)), attack, fromLocations, step) is { } group)
+            state.FiresThisPhase.Where(record => !record.Ordnance).Select(record => new PhaseFireFacts(record.FirerLocation, record.TargetLocation, record.Step, record.Vehicle)), attack, fromLocations, step) is { } group)
         {
             return Refused(scope, label, expected, group) with
             {
@@ -433,7 +434,7 @@ public sealed partial class GamePlanner
                 return Refused(scope, label, expected, sprayMapReason!);
             }
 
-            if (ScenarioA1FireEligibility.SprayGroupBar(state.FiresThisPhase.Select(record => new PhaseFireFacts(record.FirerLocation, record.TargetLocation, record.Step, record.Vehicle)),
+            if (ScenarioA1FireEligibility.SprayGroupBar(state.FiresThisPhase.Where(record => !record.Ordnance).Select(record => new PhaseFireFacts(record.FirerLocation, record.TargetLocation, record.Step, record.Vehicle)),
                 fromLocations, second!.ToString()) is { } sprayGroup)
             {
                 return Refused(scope, label, expected, sprayGroup);
@@ -689,6 +690,12 @@ public sealed partial class GamePlanner
             get; init;
         }
 
+        /// <summary>The Locations a Canister shot has still to attack, in their order, on the same DR (C8.4; pass 55, ruling R55.9); null for other fire.</summary>
+        public IReadOnlyList<FireAttack>? Canister
+        {
+            get; init;
+        }
+
         public sealed record LaneEntry(string Location, int Fp, int HindranceDrm);
     }
 
@@ -703,6 +710,19 @@ public sealed partial class GamePlanner
 
         var target = BoardLocation.Parse(followUps.Target);
         var record = events.LastOrDefault(item => item.Payload is FireResolved);
+
+        // C8.4 (pass 55, ruling R55.9): the Locations a Canister shot has still to attack take the DR of the one just resolved; nothing else follows it.
+        if (followUps.Canister is { Count: > 0 } canisterRest)
+        {
+            if (record?.Payload is FireResolved canisterFirst && canisterFirst.Rolls.TryGetValue("attack", out var canisterRoll)
+                && existing.Concat(events).Select(item => item.Payload).OfType<DiceRolled>().FirstOrDefault(item => item.Roll == canisterRoll) is { } canisterDice)
+            {
+                AddCanisterAttacks(scope, attemptId, expected, actor, existing, targetSide, events, draw, canisterRoll, canisterDice.Values, canisterRest);
+            }
+
+            return;
+        }
+
         if (followUps.Spray is { } spray && record?.Payload is FireResolved first && first.Rolls.TryGetValue("attack", out var attackRoll)
             && existing.Concat(events).Select(item => item.Payload).OfType<DiceRolled>().FirstOrDefault(item => item.Roll == attackRoll) is { } dice)
         {

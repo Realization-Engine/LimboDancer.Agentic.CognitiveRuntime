@@ -209,14 +209,14 @@ public sealed class ScenarioA1Pass55RulesTests
     }
 
     [Fact]
-    public void CanisterIsNotYetFired()
+    public void CanisterStaysOutsideTheVehicleTargetType()
     {
-        // A later task of the pass opens it: until then the shot is outside, as any ammunition the package does not resolve. C8.4: Canister "is
-        // ineffective vs armored targets", so it stays outside the Vehicle Target Type.
+        // C8.4: Canister "is ineffective vs armored targets", so it stays outside the Vehicle Target Type; task 55.2 fires it at an aim (below).
+        // A shot that names it with a target Location's facts and no aim is missing its Canister facts.
         Assert.Contains(AmmunitionOutside, Resolve(Gun("american", 1944, "canister", vehicle: true, toHit: [3, 1])).Reasons);
-        Assert.Contains(GunOutside, Resolve(Gun("american", 1944, "canister", toHit: [3, 1])).Reasons);
+        Assert.Contains("asl.a1.ordnance.fact-missing:canister", Resolve(Gun("american", 1944, "canister", toHit: [3, 1])).Reasons);
         Assert.DoesNotContain(ScenarioA1Definitions.AmmunitionChoices("american-at-gun", true, 1944, 6, false, []), item => item.Ammunition == "canister");
-        Assert.Empty(ScenarioA1Definitions.AmmunitionChoices("american-at-gun", false, 1944, 6, false, []));
+        Assert.Empty(ScenarioA1Definitions.AmmunitionChoices("attacker-inf-gun", false, 1944, 6, false, []));
 
         // The American 37mm fires its AP at a tank (C7.31: 37LL is 11) and its HE at Infantry.
         var ap = Resolve(Gun("american", 1944, "ap", vehicle: true, toHit: [5, 6]));
@@ -793,5 +793,354 @@ public sealed class ScenarioA1Pass55RulesTests
                 }
             }
         }
+    }
+
+    // Task 55.2 (increment 2d): Canister (C8.4 to C8.42, p. 178; rulings R55.8 to R55.10).
+
+    private const string GunAt = "bd01:F5:0";
+    private const string CanisterOutside = "asl.a1.ordnance.canister-outside";
+
+    private static readonly string[] Cluster = ["bd01:D4:0", "bd01:D5:0", "bd01:C5:0"];
+
+    /// <summary>
+    /// The American 37mm (C7 from August 1942, ROF 2, B12, NT) firing Canister in the PFPh of July 1943 at aim 4 of its CA: three hexes of the
+    /// cluster and the adjacent hex on the LOS, unless other Locations are given.
+    /// </summary>
+    private static OrdnanceShot Canister(int[]? dice, int aim = 4, int turn = 0, int year = 1943, bool woods = false, bool intensive = false, bool pinned = false,
+        OrdnanceCanisterLocation[]? locations = null)
+    {
+        var hit = new FireAttack("PFPh", "phasing", null, null, Cluster[0], [], null, null, null, null, 7, null, [], 3, null);
+        return new OrdnanceShot("PFPh", "phasing", "american", new OrdnanceGun("gun", "american-at-gun", false, intensive ? 1 : 0, false, intensive),
+            new OrdnanceCrew("crew", "american-crew", false, pinned, false, false, false), Cluster[0], 2, turn, woods, true, 0, hit,
+            new OrdnanceRolls(null, null, null, null, null) { Canister = dice })
+        {
+            Ammunition = "canister",
+            ScenarioYear = year,
+            IntensiveFire = intensive ? true : null,
+            Canister = new OrdnanceCanister(aim, "west", locations ?? [.. Cluster.Select(at => new OrdnanceCanisterLocation(at)), new OrdnanceCanisterLocation("bd01:E5:0") { AdjacentHexes = 1 }]),
+        };
+    }
+
+    /// <summary>A Canister attack on a German squad in a Location at range 2, with the IFT DR.</summary>
+    private static FireAttack CanisterAttack(FireCanister canister, int[] dice, string terrain = "open-ground", int hindrance = 0, bool concealed = false,
+        IReadOnlyList<FireVehicle>? vehicles = null, bool empty = false) =>
+        new FireAttack("PFPh", "phasing", null, GunAt, At, [], null, 2, true, new FireLos(false, hindrance, true, false), 7, terrain,
+            empty ? [] : [new FireTarget("de-s", "attacker-squad", At, false, false, concealed, false, false, false, false) { KnownEnemyInLos = true, Captors = [] }], 3,
+            new FireRolls(dice, null, null, null))
+        {
+            Canister = canister,
+            Vehicles = vehicles,
+        };
+
+    // The test's own hex grid, as the map has it: flat-topped hexes in columns, odd columns half a hex higher; a hexside is numbered from north clockwise.
+    private static (int Column, int Row) Neighbor((int Column, int Row) hex, int side)
+    {
+        var even = hex.Column % 2 == 0;
+        return side switch
+        {
+            0 => (hex.Column, hex.Row - 1),
+            1 => (hex.Column + 1, hex.Row + (even ? 0 : -1)),
+            2 => (hex.Column + 1, hex.Row + (even ? 1 : 0)),
+            3 => (hex.Column, hex.Row + 1),
+            4 => (hex.Column - 1, hex.Row + (even ? 1 : 0)),
+            _ => (hex.Column - 1, hex.Row + (even ? 0 : -1)),
+        };
+    }
+
+    private static (int Column, int Row) Walk((int Column, int Row) firer, int facing, CanisterOffset offset)
+    {
+        var (left, right) = ScenarioA1CanisterCalculator.ArcSides(facing);
+        var hex = firer;
+        for (var step = 0; step < offset.Left; step++)
+        {
+            hex = Neighbor(hex, left);
+        }
+
+        for (var step = 0; step < offset.Right; step++)
+        {
+            hex = Neighbor(hex, right);
+        }
+
+        return hex;
+    }
+
+    private static int Distance((int Column, int Row) one, (int Column, int Row) two)
+    {
+        static (int Q, int R) Axial((int Column, int Row) hex) => (hex.Column, hex.Row - ((hex.Column + (hex.Column & 1)) / 2));
+        var (a, b) = (Axial(one), Axial(two));
+        return (Math.Abs(a.Q - b.Q) + Math.Abs(a.R - b.R) + Math.Abs(a.Q + a.R - b.Q - b.R)) / 2;
+    }
+
+    /// <summary>A hex as the boards name it: column A is 0; an odd column's rows are numbered from 0, an even column's from 1.</summary>
+    private static string Name((int Column, int Row) hex)
+    {
+        var letter = (char)('A' + (hex.Column % 26));
+        return new string(letter, (hex.Column / 26) + 1) + (hex.Row + (hex.Column % 2 == 0 ? 1 : 0)).ToString(System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    [Fact]
+    public void ACoveredArcHasFiveCanisterAims()
+    {
+        // The EX of C8.4 and its figure (p. 178): "only five possible vertex aiming points (and corresponding three-hex target clusters) exist in
+        // each CA as illustrated": a firer in Z6 whose CA holds Z5 and AA6, and the clusters Z3/Z4/AA4, Z4/AA4/AA5, AA4/AA5/BB4, AA5/BB4/BB5,
+        // BB4/BB5/CC5. Z is column 25; that CA is the hexspine to the north-east.
+        Assert.Equal(5, ScenarioA1CanisterCalculator.Aims.Count);
+        var z6 = (Column: 25, Row: 6);
+        Assert.Equal("Z6", Name(z6));
+        Assert.Equal((0, 1), ScenarioA1CanisterCalculator.ArcSides(1));
+        string[][] figure = [["Z3", "Z4", "AA4"], ["Z4", "AA4", "AA5"], ["AA4", "AA5", "BB4"], ["AA5", "BB4", "BB5"], ["BB4", "BB5", "CC5"]];
+        string[][] adjacent = [["Z5"], ["Z5"], ["Z5", "AA6"], ["AA6"], ["AA6"]];
+        foreach (var aim in ScenarioA1CanisterCalculator.Aims)
+        {
+            Assert.Equal(figure[aim.Aim - 1].Order(StringComparer.Ordinal), aim.Cluster.Select(offset => Name(Walk(z6, 1, offset))).Order(StringComparer.Ordinal));
+            Assert.Equal(adjacent[aim.Aim - 1], aim.Adjacent.Select(offset => Name(Walk(z6, 1, offset))));
+            Assert.Same(aim, ScenarioA1CanisterCalculator.Aim(aim.Aim));
+        }
+
+        Assert.Null(ScenarioA1CanisterCalculator.Aim(0));
+        Assert.Null(ScenarioA1CanisterCalculator.Aim(6));
+
+        // Ruling R55.8: for every facing and both column parities, each cluster is three hexes that share a vertex (each adjacent to the other
+        // two) at range 2 or 3, the nearest at 2, and the adjacent hexes are the two of the CA. East faces the north-east and south-east hexes.
+        Assert.Equal((1, 2), ScenarioA1CanisterCalculator.ArcSides(0));
+        Assert.Equal((4, 5), ScenarioA1CanisterCalculator.ArcSides(3));
+        foreach (var firer in new[] { (Column: 10, Row: 10), (Column: 11, Row: 10) })
+        {
+            var all = new HashSet<string>(StringComparer.Ordinal);
+            for (var facing = 0; facing < 6; facing++)
+            {
+                var (left, right) = ScenarioA1CanisterCalculator.ArcSides(facing);
+                Assert.Equal((left + 1) % 6, right);
+                foreach (var aim in ScenarioA1CanisterCalculator.Aims)
+                {
+                    var hexes = aim.Cluster.Select(offset => Walk(firer, facing, offset)).ToArray();
+                    Assert.Equal(3, hexes.Distinct().Count());
+                    Assert.All(hexes, one => Assert.All(hexes.Where(other => other != one), other => Assert.Equal(1, Distance(one, other))));
+                    int[] ranges = [.. hexes.Select(hex => Distance(firer, hex)).Order()];
+                    Assert.True(ranges is [2, 3, 3] or [2, 2, 3], $"{firer} facing {facing} aim {aim.Aim}: {string.Join(",", ranges)}");
+                    Assert.All(aim.Adjacent, offset => Assert.Equal(1, Distance(firer, Walk(firer, facing, offset))));
+                    Assert.True(all.Add(string.Join("/", hexes.Select(Name).Order(StringComparer.Ordinal))));
+                }
+            }
+
+            Assert.Equal(30, all.Count);
+        }
+    }
+
+    [Fact]
+    public void CanisterHasTheFirepowerOfItsGunSizeAndItsHalvings()
+    {
+        // The Canister FP IFT Equivalency Table (C8.4).
+        Assert.Equal((12, 20, 24), (ScenarioA1CanisterCalculator.Firepower(37), ScenarioA1CanisterCalculator.Firepower(75), ScenarioA1CanisterCalculator.Firepower(105)));
+        Assert.Null(ScenarioA1CanisterCalculator.Firepower(57));
+        Assert.Null(ScenarioA1CanisterCalculator.Firepower(76));
+
+        static decimal Factor(int? adjacent = null, bool bounding = false, bool motion = false, bool intensive = false, bool pinned = false) =>
+            ScenarioA1CanisterCalculator.Multipliers(adjacent, bounding, motion, intensive, pinned).Aggregate(1m, (value, item) => value * item.Value);
+
+        // C8.4, C8.41, D3.31, D2.42, A7.81: each halves, and they multiply; "quartered if both Motion and Bounding Fire penalties apply"; the two
+        // adjacent hexes of a LOS along their hexside are "quartered instead of halved". Ruling R55.10: nothing for the AFPh.
+        Assert.Equal(1m, Factor());
+        Assert.Equal(0.5m, Factor(adjacent: 1));
+        Assert.Equal(0.25m, Factor(adjacent: 2));
+        Assert.Equal(0.5m, Factor(bounding: true));
+        Assert.Equal(0.5m, Factor(motion: true));
+        Assert.Equal(0.25m, Factor(bounding: true, motion: true));
+        Assert.Equal(0.5m, Factor(intensive: true));
+        Assert.Equal(0.5m, Factor(pinned: true));
+        Assert.Equal(0.125m, Factor(adjacent: 1, intensive: true, pinned: true));
+
+        // On the IFT: 12 FP, 6 in the adjacent hex, 3 with Bounding First Fire and Motion (the 2 column), and half again against a concealed unit.
+        var full = Shoot(CanisterAttack(new FireCanister("gun", 12), [5, 6])).Arithmetic!;
+        Assert.Equal((12m, 12), (full.TotalFirepower, full.ColumnFp));
+        Assert.Empty(full.Drm);
+        var adjacentHex = Shoot(CanisterAttack(new FireCanister("gun", 12) { AdjacentHexes = 1 }, [5, 6])).Arithmetic!;
+        Assert.Equal((6m, 6), (adjacentHex.TotalFirepower, adjacentHex.ColumnFp));
+        Assert.Equal("C8.41", Assert.Single(Assert.Single(adjacentHex.Firers).Multipliers).Rule);
+        var quartered = Shoot(CanisterAttack(new FireCanister("gun", 12) { BoundingFirstFire = true, Motion = true }, [5, 6])).Arithmetic!;
+        Assert.Equal((3m, 2), (quartered.TotalFirepower, quartered.ColumnFp));
+        Assert.Equal(["D3.31", "D2.42"], Assert.Single(quartered.Firers).Multipliers.Select(item => item.Rule));
+        var hexside = Shoot(CanisterAttack(new FireCanister("gun", 20) { AdjacentHexes = 2 }, [5, 6])).Arithmetic!;
+        Assert.Equal((5m, 4), (hexside.TotalFirepower, hexside.ColumnFp));
+        var concealed = Shoot(CanisterAttack(new FireCanister("gun", 12) { IntensiveFire = true }, [5, 6], concealed: true)).Arithmetic!;
+        Assert.Equal(3m, concealed.TotalFirepower);
+        Assert.Equal(["C8.4", "C8.4"], Assert.Single(concealed.Firers).Multipliers.Select(item => item.Rule));
+
+        // A Location the firing side sees nothing in is attacked as a hidden unit's would be: on the halved FP.
+        Assert.Equal(6m, Shoot(CanisterAttack(new FireCanister("gun", 12), [5, 6], empty: true)).Arithmetic!.TotalFirepower);
+    }
+
+    [Fact]
+    public void ACanisterAttackTakesItsLocationsTemAndHindranceAndItsCaseA()
+    {
+        // C8.4: "resolved on the IFT using its FP and adding any applicable DRM for TEM, LOS Hindrance, and/or hexspine changes in the CA";
+        // "LOS Hindrances and the individual TEM of each Location may vary the results in each hex".
+        var woods = Shoot(CanisterAttack(new FireCanister("gun", 12), [5, 6], "woods", hindrance: 1)).Arithmetic!;
+        Assert.Equal([("tem:woods", 1m), ("los-hindrance", 1m)], woods.Drm.Select(item => (item.Name, item.Value)));
+        Assert.Equal(13, woods.FinalDr);
+        var building = Shoot(CanisterAttack(new FireCanister("gun", 12) { CaseA = 3 }, [5, 6], "stone-building")).Arithmetic!;
+        Assert.Equal([("tem:stone-building", 3m), ("case-a:gun", 3m)], building.Drm.Select(item => (item.Name, item.Value)));
+        Assert.Equal("D3.52", building.Drm[^1].Rule);
+
+        // C3.21, D3.52, C5.1, C5.11: the NT Gun's Case A, 3 for the first hexspine and 1 for each more, doubled in woods or a building.
+        Assert.Equal((3, 4, 5), (ScenarioA1CanisterCalculator.CaseA(null, 1, false), ScenarioA1CanisterCalculator.CaseA(null, 2, false), ScenarioA1CanisterCalculator.CaseA(null, 3, false)));
+        Assert.Equal(6, ScenarioA1CanisterCalculator.CaseA(null, 1, true));
+        Assert.Equal(1, ScenarioA1CanisterCalculator.CaseA("t", 1, false));
+        Assert.Equal(0, ScenarioA1CanisterCalculator.CaseA(null, 0, true));
+        var gun = Ordnance.Guns["american-at-gun"];
+        var fact = ScenarioA1CanisterCalculator.AttackFact(Canister(null, turn: 2, woods: true, intensive: true), gun, new OrdnanceCanisterLocation(At) { AdjacentHexes = 1 });
+        Assert.Equal(new FireCanister("gun", 12) { AdjacentHexes = 1, IntensiveFire = true, CaseA = 8 }, fact);
+        Assert.Equal(new FireCanister("gun", 12), ScenarioA1CanisterCalculator.AttackFact(Canister(null), gun, new OrdnanceCanisterLocation(At)));
+        Assert.Equal(new FireCanister("gun", 12) { PinnedCrew = true }, ScenarioA1CanisterCalculator.AttackFact(Canister(null, pinned: true), gun, new OrdnanceCanisterLocation(At)));
+
+        // A7.9: "Cowering affects all fire except that from ... Canister": doubles shift no column. No fire counter and no firer comes of the
+        // attack: the Gun's are the shot's own.
+        var doubles = Shoot(CanisterAttack(new FireCanister("gun", 12), [6, 6]));
+        Assert.Equal(FireResolution.Resolved, doubles.Disposition);
+        Assert.False(doubles.Arithmetic!.Cowered);
+        Assert.Equal((0, 12), (doubles.Arithmetic.ColumnShift, doubles.Arithmetic.ColumnFp));
+        Assert.Null(doubles.FireCounter);
+        Assert.Empty(doubles.FireCounterUnitIds);
+        Assert.Null(doubles.Arithmetic.ResidualFp);
+
+        // C8.4: "ineffective vs armored targets (but not their Vulnerable PRC)": a BU AFV in the Location is unharmed.
+        var armored = Shoot(CanisterAttack(new FireCanister("gun", 12), [5, 6], vehicles: [new FireVehicle("de-tank", "attacker-tank", At, false, false, false, false)]));
+        Assert.Equal(FireResolution.Resolved, armored.Disposition);
+        var afv = Assert.Single(armored.VehicleEffects!);
+        Assert.Equal((FireVehicleEffect.None, FireVehicleEffect.NotVulnerable), (afv.Result, afv.CrewResult));
+
+        // A7.51, A7.4, A8.15: no leader, no firers, no unit of its own side, no Snap Shot, and a Location at the firer's own elevation.
+        const string outside = "asl.a1.fire.canister-outside";
+        var plain = CanisterAttack(new FireCanister("gun", 12), [5, 6]);
+        Assert.Contains(outside, Shoot(plain with { SameLevel = false, TargetLevelAbove = 1 }).Reasons);
+        Assert.Contains(outside, Shoot(plain with { SnapShot = true }).Reasons);
+        Assert.Contains(outside, Shoot(plain with { Los = new FireLos(true, 0, true, false) }).Reasons);
+        Assert.Contains(outside, Shoot(plain with { Canister = new FireCanister("gun", 16) }).Reasons);
+        Assert.Contains(outside, Shoot(plain with { Canister = new FireCanister("gun", 12) { AdjacentHexes = 3 } }).Reasons);
+        Assert.Contains("asl.a1.fire.target-outside", Shoot(plain with { Targets = [plain.Targets![0] with { Friendly = true }] }).Reasons);
+        Assert.Contains("asl.a1.fire.phase-outside", Shoot(plain with { Phase = "MPh", FiringSide = "non-phasing" }).Reasons);
+    }
+
+    [Fact]
+    public void TheCanisterDrIsTheDepletionMalfunctionAndRofCheck()
+    {
+        // C8.4: "A To Hit DR is not required for Canister ... The IFT DR also serves as the Ammo Depletion, armament breakdown, and ROF checks".
+        Assert.Equal(["asl.a1.ordnance.roll-missing:canister"], Resolve(Canister(null)).Reasons);
+        Assert.Empty(ScenarioA1OrdnanceCalculator.Precheck(Canister(null), Ordnance));
+
+        // C8.9: below the Depletion Number 7 the round is used; the colored dr of 2 keeps the ROF of 2 (C2.24).
+        var used = Resolve(Canister([2, 4]));
+        Assert.Equal(OrdnanceResolution.Resolved, used.Disposition);
+        Assert.Null(used.ToHit);
+        Assert.Equal("used", used.AmmunitionUse);
+        Assert.Equal(new OrdnanceGunEffect(12, false, 2, true, null, 0, null), used.Gun);
+        var block = used.Canister!;
+        Assert.Equal((4, "west", 12, 6, 0, 7), (block.Aim, block.Facing, block.Firepower, block.OriginalDr, block.CaseA, block.DepletionNumber));
+        Assert.Equal([2, 4], block.Dice);
+        Assert.Equal([(Cluster[0], 12m), (Cluster[1], 12m), (Cluster[2], 12m), ("bd01:E5:0", 6m)], block.Attacks.Select(item => (item.LocationId, item.Firepower)));
+
+        // At the number it is the last round; a colored dr of 3 loses the ROF and leaves the Prep Fire counter.
+        var last = Resolve(Canister([3, 4]));
+        Assert.Equal("depleted", last.AmmunitionUse);
+        Assert.Equal(new OrdnanceGunEffect(12, false, 2, false, "prep-fire", 0, null), last.Gun);
+        Assert.Equal(4, last.Canister!.Attacks.Count);
+
+        // Above it "the firer had no such ammunition and is considered not to have fired yet for any purpose": nothing is attacked, no counter,
+        // the ROF kept whatever the colored dr.
+        var none = Resolve(Canister([6, 2]));
+        Assert.Equal(OrdnanceResolution.Resolved, none.Disposition);
+        Assert.Equal("none", none.AmmunitionUse);
+        Assert.Empty(none.Canister!.Attacks);
+        Assert.Equal(new OrdnanceGunEffect(12, false, 2, true, null, 0, null), none.Gun);
+
+        // "unless Gun Malfunction ... occurs": an Original 12 malfunctions the Gun (C2.28), which then has fired.
+        var broken = Resolve(Canister([6, 6]));
+        Assert.Equal("none", broken.AmmunitionUse);
+        Assert.Empty(broken.Canister!.Attacks);
+        Assert.Equal(new OrdnanceGunEffect(12, true, 2, false, "prep-fire", 0, null), broken.Gun);
+
+        // C8.2: an Elite force's number is 8. C5.62, C8.92: Intensive Fire lowers the B# to 10 and not the Depletion Number; its FP is halved.
+        Assert.Equal("depleted", Resolve(Canister([4, 4]) with { Elite = true }).AmmunitionUse);
+        var intensive = Resolve(Canister([1, 3], intensive: true));
+        Assert.Equal(new OrdnanceGunEffect(10, false, 0, false, "intensive-fire", 0, null), intensive.Gun);
+        Assert.Equal([6m, 6m, 6m, 3m], intensive.Canister!.Attacks.Select(item => item.Firepower));
+        Assert.Equal(["C8.41", "C8.4"], intensive.Canister.Attacks[^1].Multipliers.Select(item => item.Rule));
+        Assert.True(Resolve(Canister([5, 5], intensive: true) with { Elite = true }).Gun!.Malfunctioned);
+
+        // C2.5: an NT Gun's ROF is one lower after a CA change; D3.52, C5.11: Case A on the IFT DR, doubled in woods.
+        var turned = Resolve(Canister([2, 1], turn: 1));
+        Assert.Equal((false, 3), (turned.Gun!.RateOfFireKept, turned.Canister!.CaseA));
+        Assert.True(Resolve(Canister([1, 2], turn: 1)).Gun!.RateOfFireKept);
+        Assert.Equal(8, Resolve(Canister([1, 2], turn: 2, woods: true)).Canister!.CaseA);
+
+        // A7.81: a pinned crew fires it as Area Fire, keeps no ROF, and changes no CA; C5.2: no ROF in the AFPh, and no halving there (R55.10).
+        var pinned = Resolve(Canister([1, 2], pinned: true));
+        Assert.Equal((false, 6m), (pinned.Gun!.RateOfFireKept, pinned.Canister!.Attacks[0].Firepower));
+        Assert.Contains("asl.a1.ordnance.covered-arc-fixed", Resolve(Canister([1, 2], turn: 1, pinned: true)).Reasons);
+        var afph = Canister([1, 2]);
+        var advancing = Resolve(afph with { Phase = "AFPh", Hit = afph.Hit! with { Phase = "AFPh" } });
+        Assert.Equal((false, 12m), (advancing.Gun!.RateOfFireKept, advancing.Canister!.Attacks[0].Firepower));
+
+        // C6.5: the Gun loses its Acquisition and gains none.
+        Assert.Equal(0, used.Gun!.Acquisition);
+        Assert.Null(used.Gun.AcquiredLocationId);
+    }
+
+    [Fact]
+    public void ACanisterShotIsOutsideWithoutItsRoundItsGunOrItsAim()
+    {
+        // U.S. Ordnance Note C: Canister from August 1942; C8.9: none once it has run out.
+        Assert.Contains("asl.a1.ordnance.ammunition-unavailable", Resolve(InMonth(Canister([1, 2], year: 1942), 7)).Reasons);
+        Assert.Equal(OrdnanceResolution.Resolved, Resolve(InMonth(Canister([1, 2], year: 1942), 8)).Disposition);
+        var spent = Canister([1, 2]);
+        Assert.Contains("asl.a1.ordnance.ammunition-depleted", Resolve(spent with { Gun = spent.Gun! with { Depleted = ["canister"] } }).Reasons);
+
+        // C8.4's table gives no FP to a 57mm Gun, and the 6-Pounder's counter lists no Canister.
+        var british = Canister([1, 2]) with { FiringNationality = "british", Gun = new OrdnanceGun("gun", "british-at-gun", false, 0, false, false),
+            Crew = new OrdnanceCrew("crew", "british-crew", false, false, false, false, false) };
+        Assert.Contains("asl.a1.ordnance.canister-gun-outside", Resolve(british).Reasons);
+
+        // Ruling R55.8: an aim is 1 to 5; aim 3 alone has two adjacent hexes; a Location is attacked once.
+        Assert.Contains(CanisterOutside, Resolve(Canister([1, 2], aim: 6)).Reasons);
+        Assert.Contains(CanisterOutside, Resolve(Canister([1, 2], aim: 3)).Reasons);
+        Assert.Equal(OrdnanceResolution.Resolved, Resolve(Canister([1, 2], aim: 3, locations: [new OrdnanceCanisterLocation(Cluster[0]),
+            new OrdnanceCanisterLocation("bd01:E5:0") { AdjacentHexes = 2 }, new OrdnanceCanisterLocation("bd01:E6:0") { AdjacentHexes = 2 }])).Disposition);
+        Assert.Contains(CanisterOutside, Resolve(Canister([1, 2], locations: [new OrdnanceCanisterLocation(Cluster[0]), new OrdnanceCanisterLocation(Cluster[0])])).Reasons);
+        Assert.Contains("asl.a1.ordnance.roll-malformed", Resolve(Canister([1, 7])).Reasons);
+
+        // The Canister facts belong to a Canister shot; the MPh is not built.
+        Assert.Contains(CanisterOutside, Resolve(Gun("american", 1944, toHit: [5, 6]) with { Canister = Canister(null).Canister }).Reasons);
+        var first = Canister([1, 2]);
+        Assert.Contains("asl.a1.ordnance.canister-movement-phase", Resolve(first with { Phase = "MPh", FiringSide = "non-phasing", FireKind = "first-fire",
+            Movement = new OrdnanceMovement(null, true, true, 1, 0), Hit = first.Hit! with { Phase = "MPh", FiringSide = "non-phasing" } }).Reasons);
+
+        // A concealed crew's shot is decided with the planner's read of who sees it fire (A12.14).
+        var hidden = Canister([1, 2]) with { Crew = new OrdnanceCrew("crew", "american-crew", false, false, false, true, false) };
+        Assert.Contains("asl.a1.ordnance.concealment-unreviewed:crew", Resolve(hidden).Reasons);
+        Assert.True(Resolve(hidden with { CrewSeen = true }).CrewConcealmentLost);
+        Assert.Null(Resolve(hidden with { CrewSeen = false }).CrewConcealmentLost);
+    }
+
+    [Fact]
+    public void AGunThatListsCanisterOffersItBesideItsHe()
+    {
+        // C8.4, C2.21 (pass 55): at Infantry the 37mm chooses between the HE it fires and its Canister, with the number at the game's date.
+        Assert.Equal([("he", "HE", null), ("canister", "Canister (Depletion Number 7)", 7)],
+            ScenarioA1Definitions.AmmunitionChoices("american-at-gun", false, 1944, 6, false, []).Select(item => (item.Ammunition, item.Label, item.DepletionNumber)));
+        Assert.All(ScenarioA1Definitions.AmmunitionChoices("american-at-gun", false, 1944, 6, false, []), item => Assert.Null(item.Unavailable));
+        Assert.Equal("Canister (Depletion Number 8: 7, and 1 for Elite, C8.2)",
+            ScenarioA1Definitions.AmmunitionChoices("american-at-gun", false, 1944, 6, true, []).Single(item => item.Ammunition == "canister").Label);
+        Assert.Equal("none at the scenario's date (C8.9)",
+            ScenarioA1Definitions.AmmunitionChoices("american-at-gun", false, 1942, 7, false, []).Single(item => item.Ammunition == "canister").Unavailable);
+        Assert.Equal("it has run out (C8.9)",
+            ScenarioA1Definitions.AmmunitionChoices("american-at-gun", false, 1944, 6, false, ["canister"]).Single(item => item.Ammunition == "canister").Unavailable);
+        Assert.Equal("Depletion Number 7", ScenarioA1Definitions.DepletionWords(Canister(null)));
+        Assert.Equal("aim 4 of the CA facing west", ScenarioA1CanisterCalculator.AimWords(4, "west"));
+        Assert.True(ScenarioA1OrdnanceCalculator.IsCanister(Canister(null)));
+        Assert.False(ScenarioA1OrdnanceCalculator.IsCanister(Gun("american", 1944, "canister", vehicle: true)));
+        Assert.True(ScenarioA1OrdnanceEligibility.CanisterElevation(1, 1));
+        Assert.False(ScenarioA1OrdnanceEligibility.CanisterElevation(0, 1));
+        Assert.Null(ScenarioA1OrdnanceEligibility.CanisterFacingRefusal("west", "west"));
+        Assert.NotNull(ScenarioA1OrdnanceEligibility.CanisterFacingRefusal("west", "east"));
     }
 }

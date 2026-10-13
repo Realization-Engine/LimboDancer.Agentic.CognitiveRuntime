@@ -167,4 +167,109 @@ public sealed class PlayPageOrdnanceTests : IDisposable
         Assert.True(page.Find("#play-proposal").TextContent.Contains("it has none now", StringComparison.Ordinal), page.Find("#play-proposal").TextContent);
         Assert.DoesNotContain("name HE for the shot", page.Find("#play-proposal").TextContent, StringComparison.Ordinal);
     }
+
+    /// <summary>
+    /// A hex and a facing of the small test board from which Canister's aim 4 has its adjacent hex, the right-hand one of the Covered Arc, in
+    /// Open Ground at the firing hex's level with no hexside terrain, and whatever hex of its cluster the board holds in Open Ground too.
+    /// </summary>
+    private (string Gun, string Facing, string Adjacent) CanisterSpot()
+    {
+        var handle = new StudioBoardCatalog(boards).TryGetBoard(FakeBoardProvider.Board.Ref).Board!;
+        bool Open(HexName? hex) => hex is { } name && handle.HexFacts(name) is { Center.Terrain.Name: "Open Ground" } facts
+            && facts.Hexsides.All(item => item.HexsideTerrain is null && !item.Cliff);
+        foreach (var index in handle.Geometry.Hexes())
+        {
+            var gun = handle.Geometry.NameOf(index);
+            var level = handle.HexFacts(gun)!.BaseLevel;
+            if (!Open(gun))
+            {
+                continue;
+            }
+
+            foreach (var facing in Enum.GetValues<LimboDancer.Domains.Asl.Units.Documents.UnitFacing>())
+            {
+                var (left, right) = LimboDancer.Domains.Asl.Rules.ScenarioA1CanisterCalculator.ArcSides((int)facing);
+                HexName? Walk(params int[] sides) => sides.Aggregate((HexName?)gun, (at, side) => at is { } hex ? handle.Neighbor(hex, (HexsideDirection)side) : null);
+                HexName?[] cluster = [Walk(right, right), Walk(left, right) ?? Walk(right, left), Walk(left, right, right) ?? Walk(right, left, right) ?? Walk(right, right, left)];
+                if (Walk(right) is { } adjacent && Open(adjacent) && handle.HexFacts(adjacent)!.BaseLevel == level && cluster.All(hex => hex is null || Open(hex)))
+                {
+                    return ($"{Board}:{gun}:0", LimboDancer.Domains.Asl.Units.Documents.UnitFacings.Name(facing), $"{Board}:{adjacent}:0");
+                }
+            }
+        }
+
+        throw new InvalidOperationException("The test board has no open spot for a Canister aim.");
+    }
+
+    [Fact]
+    public void AGunThatListsCanisterAimsItAtAVertexOfItsCoveredArc()
+    {
+        // Pass 55 (C8.4, C8.41; rulings R55.8, R55.9): the American 37mm lists Canister, C7 in July 1943. The ammunition is chosen before any
+        // target; choosing Canister puts the five aims of the Covered Arc in the target's place, and the shot names its aim.
+        var spot = CanisterSpot();
+        var page = context.Render<PlayPage>();
+        MinimalCards.Choose(page, new Dictionary<string, string>
+        {
+            ["board"] = Board, ["first"] = "american", ["second"] = "german", ["first-elr"] = "3", ["second-elr"] = "3", ["year"] = "1943", ["month"] = "7",
+        });
+        Place(page, "us-crew", "american-crew", spot.Gun);
+        page.Find("#place-definition").Change("american-at-gun");
+        page.Find("#place-facing").Change(spot.Facing);
+        page.Find("#place-holder").Change("us-crew");
+        Place(page, "us-gun", "american-at-gun", spot.Gun);
+        Place(page, "g1", "attacker-squad", spot.Adjacent);
+        Commit(page, "#propose-setup");
+        page.EndPhase(Commit);
+
+        page.Find("#ordnance-gun").Change("us-gun");
+        Assert.Equal([("he", "HE"), ("canister", "Canister (Depletion Number 7)")], page.FindAll("#ordnance-ammunition option").Select(option => (option.GetAttribute("value"), option.TextContent)));
+        Assert.Single(page.FindAll("#ordnance-target"));
+        Assert.Empty(page.FindAll("#ordnance-canister-aim"));
+
+        page.Find("#ordnance-ammunition").Change("canister");
+        Assert.Empty(page.FindAll("#ordnance-target"));
+        Assert.True(page.Find("#propose-ordnance").HasAttribute("disabled"));
+        var facings = page.FindAll("#ordnance-canister-facing option");
+        Assert.Equal(6, facings.Count);
+        Assert.Equal((spot.Facing, $"{spot.Facing} (its Covered Arc now)"), (facings[0].GetAttribute("value"), facings[0].TextContent));
+        var aim = Assert.Single(page.FindAll("#ordnance-canister-aim option"), option => option.GetAttribute("value") == "4");
+        Assert.StartsWith("aim 4: ", aim.TextContent, StringComparison.Ordinal);
+        Assert.EndsWith($"and {DisplayText.Place(1, spot.Adjacent)} at half FP: 1 unit", aim.TextContent, StringComparison.Ordinal);
+        Assert.DoesNotContain(Board, aim.TextContent, StringComparison.Ordinal);
+
+        // A 2 and a 4: below the Depletion Number, the ROF kept; the squad in the adjacent hex passes whatever check the 6 FP attack gives it.
+        page.Find("#ordnance-canister-aim").Change("4");
+        Assert.False(page.Find("#propose-ordnance").HasAttribute("disabled"));
+        foreach (var die in new[] { 2, 4, 1, 2, 1, 2 })
+        {
+            dice.Enqueue(die);
+        }
+
+        page.Find("#propose-ordnance").Click();
+        page.WaitForAssertion(() => Assert.Contains("Confirm to commit", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        var proposal = page.Find("#play-proposal").TextContent;
+        Assert.Contains("fires Canister at aim 4 of the CA facing " + spot.Facing, proposal, StringComparison.Ordinal);
+        Assert.Contains("he same DR is the check of the Depletion Number 7", proposal, StringComparison.Ordinal);
+        page.Find("#play-confirm").Click();
+        page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+
+        // What the page sent, read from the committed game.
+        var history = live.History("village")!;
+        Assert.False(history.HasErrors);
+        var fired = history.Events.Select(item => item.Payload).OfType<OrdnanceFired>().Single();
+        Assert.Equal(("canister", 4, spot.Facing), (fired.Facts.GetProperty("ammunition").GetString(), fired.Facts.GetProperty("canister").GetProperty("aim").GetInt32(),
+            fired.Facts.GetProperty("canister").GetProperty("facing").GetString()));
+        Assert.Null(fired.Facing);
+        Assert.Equal("used", fired.Resolution.GetProperty("ammunitionUse").GetString());
+        var fires = history.Events.Select(item => item.Payload).OfType<FireResolved>().ToArray();
+        var near = Assert.Single(fires, fire => fire.TargetLocation == spot.Adjacent);
+        Assert.Equal((fired.Rolls["canister"], 1, 6m), (near.Rolls["attack"], near.Facts.GetProperty("canister").GetProperty("adjacentHexes").GetInt32(),
+            near.Resolution.GetProperty("arithmetic").GetProperty("totalFirepower").GetDecimal()));
+        Assert.All(fires, fire => Assert.Equal(fired.Rolls["canister"], fire.Rolls["attack"]));
+
+        var record = page.Find("#play-ordnance .ordnance-record").TextContent;
+        Assert.Contains($"fires Canister at aim 4 of the CA facing {spot.Facing}: no To Hit DR; IFT DR 2 (colored), 4 = 6", record, StringComparison.Ordinal);
+        Assert.Contains("the DR is below the Depletion Number 7: Canister fired (C8.9)", record, StringComparison.Ordinal);
+        Assert.Contains("it may fire again this phase (C2.24)", record, StringComparison.Ordinal);
+    }
 }

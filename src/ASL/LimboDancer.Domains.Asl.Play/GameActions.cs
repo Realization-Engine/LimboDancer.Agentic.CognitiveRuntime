@@ -465,17 +465,19 @@ public static class GameActions
         """);
 
     public static readonly ActionDescriptor FireOrdnance = Descriptor("asl.game.fire-ordnance", "Fire a Gun",
-        "In the PFPh, AFPh, or DFPh, a Gun manned by its crew, or a tank's MA, fires HE at the enemy units of a Location on the Infantry Target Type, or AP, APCR, APDS, HEAT, or HE at one named enemy vehicle on the Vehicle Target Type, turning its barrel or turret to bring the target into its Covered Arc if it must; a light mortar fires HE on the Area Target Type, optionally spotted or directed by a leader; and a unit names '<unit>:pf' to make a PF Check and fire a Panzerfaust at an enemy AFV. The reviewed Ordnance package resolves the To Hit DR, the hit's IFT attack or To Kill DR, ROF, breakdown, and Acquisition, only when every outcome the dice can reach is decided (C3.3, C3.31, C3.32, C3.33, C7, C9, C13.3, D1.3).",
+        "In the PFPh, AFPh, or DFPh, a Gun manned by its crew, or a tank's MA, fires HE at the enemy units of a Location on the Infantry Target Type, or AP, APCR, APDS, HEAT, or HE at one named enemy vehicle on the Vehicle Target Type, turning its barrel or turret to bring the target into its Covered Arc if it must; a light mortar fires HE on the Area Target Type, optionally spotted or directed by a leader; and a unit names '<unit>:pf' to make a PF Check and fire a Panzerfaust at an enemy AFV. A Gun that lists Canister fires it with ammunition 'canister', an aim of 1 to 5 among the five vertices of its Covered Arc, and an aimFacing when it turns first; it names no target, makes no To Hit DR, and attacks each Location of the aim on one IFT DR (C8.4). The reviewed Ordnance package resolves the To Hit DR, the hit's IFT attack or To Kill DR, ROF, breakdown, and Acquisition, only when every outcome the dice can reach is decided (C3.3, C3.31, C3.32, C3.33, C7, C9, C13.3, D1.3).",
         PlayPermission, "asl.game.reviewed-ordnance-v1", """
         {
           "type": "object", "additionalProperties": false,
-          "required": ["gameId", "attemptId", "expectedRevision", "gunId", "target"],
+          "required": ["gameId", "attemptId", "expectedRevision", "gunId"],
           "properties": {
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 },
             "gunId": { "type": "string" }, "target": { "type": "string" },
             "targetVehicle": { "type": "string" },
-            "ammunition": { "type": "string", "enum": ["ap", "apcr", "apds", "heat", "he"] },
+            "ammunition": { "type": "string", "enum": ["ap", "apcr", "apds", "heat", "he", "canister"] },
+            "aim": { "type": "integer", "minimum": 1, "maximum": 5 },
+            "aimFacing": { "type": "string", "enum": ["east", "north-east", "north-west", "west", "south-west", "south-east"] },
             "intensive": { "type": "boolean" },
             "spotter": { "type": "string" }, "director": { "type": "string" }
           }

@@ -41,6 +41,9 @@ public static class LiveOrdnance
                 [.. state.DepletedAmmunition.Where(item => item.Gun == gunId).Select(item => item.Ammunition)]);
     }
 
+    /// <summary>A Gun's or MA's caliber in millimeters, its Gun Size (C2.2); null for a definition that is no ordnance.</summary>
+    public static int? CaliberOf(string definition) => Reference.Value.Guns.GetValueOrDefault(definition)?.Caliber;
+
     /// <summary>A LATW definition's type (C13.1): <c>pf</c>, <c>psk</c>, or <c>atr</c>; null for any other.</summary>
     public static string? LatwType(string definition) => Reference.Value.Guns.GetValueOrDefault(definition)?.LatwType;
 
@@ -145,6 +148,14 @@ public static class LiveOrdnance
 
         var side = crew.Side;
 
+        // C8.4 (pass 55, ruling R55.9): Canister is fired at an aim, not at a Location's units; each Location it attacks is a fire attack of its own,
+        // read with the planner's map facts. Named at a vehicle it is a Vehicle Target Type shot, which that Target Type refuses.
+        var canister = ammunition == ScenarioA1CanisterCalculator.Ammunition && targetVehicle is null;
+        if (canister && phase == "MPh")
+        {
+            return (null, ScenarioA1OrdnanceEligibility.CanisterMphRefusal);
+        }
+
         // A8.1, C6.1 (ruling R8.1): in the MPh, Defensive First Fire by the non-phasing side at the moving stack in its Location, while the
         // DEFENDER's window on its MF or MP expenditure is open; only the moving units are its targets.
         IReadOnlyList<string>? movers = null;
@@ -187,7 +198,7 @@ public static class LiveOrdnance
         // there, friendly ones too; C3.4: in the MPh only the moving units.
         var mortar = gun.Kind == "asl:light-mortar";
         var sw = mortar || gun.Kind == "asl:latw";
-        UnitInstance[] targets = vehicleTarget is not null ? [] : [.. state.At(target).OfType<UnitInstance>()
+        UnitInstance[] targets = vehicleTarget is not null || canister ? [] : [.. state.At(target).OfType<UnitInstance>()
             .Where(unit => ScenarioA1OrdnanceEligibility.AreaTarget(unit.Status == InstanceStatus.Active, unit.Side != side, mortar, () => LiveFire.IsVehicle(unit),
                 () => Is(unit, Conditions.Captured), movers is null ? null : () => movers.Contains(unit.Id)))
             .OrderBy(unit => unit.Id, StringComparer.Ordinal)];
@@ -200,7 +211,8 @@ public static class LiveOrdnance
         var targetSide = vehicleTarget?.Side ?? targets.FirstOrDefault()?.Side ?? state.Sides.FirstOrDefault(item => item.Id != side)?.Id;
         var shots = state.OrdnanceShots.FirstOrDefault(item => item.Gun == gun.Id);
         // C6.5, C6.51 (ruling R5.13): the Acquisition applies at its Location, or, while its units are apart, at any Location holding one of them.
-        var acquisition = state.Acquisitions.FirstOrDefault(item => item.Gun == gun.Id
+        // C6.5 (pass 55): Canister claims no Acquisition; the Gun loses the one it has by firing it.
+        var acquisition = canister ? 0 : state.Acquisitions.FirstOrDefault(item => item.Gun == gun.Id
             && (item.Location == target || item.Units.Any(id => state.Location(id)?.Location == target)))?.Level ?? 0;
         var hit = new FireAttack(phase, firingSide, null, null, target.ToString(), [], null, null, null, null, state.ScenarioMonth, null,
             [.. targets.Select(unit => LiveFire.Target(state, unit, target))], targetSide is null ? null : state.Side(targetSide)?.Elr, null)
@@ -548,7 +560,7 @@ public static class LiveOrdnance
             {
                 selection = ids.Select((id, index) => (id, index)).ToDictionary(item => item.id, item => roll.Values[item.index], StringComparer.Ordinal);
             }
-            else if (key is "toKill" or "shockCheck" or "crewCheck" or "crewSurvival" && roll.Count == 2)
+            else if (key is "toKill" or "shockCheck" or "crewCheck" or "crewSurvival" or "canister" && roll.Count == 2)
             {
                 extra[key] = roll.Values;
             }
@@ -579,6 +591,9 @@ public static class LiveOrdnance
                 CrewCheck = extra.GetValueOrDefault("crewCheck"),
                 CrewSurvival = extra.GetValueOrDefault("crewSurvival"),
                 PanzerfaustCheck = panzerfaustCheck,
+
+                // C8.4 (pass 55): a Canister shot's IFT DR.
+                Canister = extra.GetValueOrDefault("canister"),
             };
     }
 
@@ -676,6 +691,13 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
         if (ScenarioA1OrdnanceEligibility.TurnRefusal(recorded.HexspinesToTurn, fired.Facing.HasValue, steps) is { } turnRefusal)
         {
             return turnRefusal;
+        }
+
+        // C8.4 (pass 55, ruling R55.9): a Canister record's aim is one of the Covered Arc the Gun fires in: the facing it turns to, or its own.
+        if (recorded.Canister is { } canister && ScenarioA1OrdnanceEligibility.CanisterFacingRefusal(canister.Facing,
+            (fired.Facing ?? current) is { } firedIn ? Units.Documents.UnitFacings.Name(firedIn) : null) is { } canisterRefusal)
+        {
+            return canisterRefusal;
         }
 
         if (LiveOrdnance.Rolls(fired, recorded, rolls) is not { } dice)

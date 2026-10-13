@@ -582,6 +582,25 @@ public static class ScenarioA1FireEligibility
     }
 
     /// <summary>
+    /// The state's part of a Canister shot's attack on one Location (C8.4, A7.4, pp. 178 and 57; pass 55, ruling R55.9): no firers; "all the
+    /// Personnel-units/unarmored-vehicles/Vulnerable-PRC in the same Location" of the enemy side, Infantry as targets and vehicles on the Vehicle
+    /// line, where an AFV is unharmed and its CE crew takes the Collateral Attack. The firing side's own units are not attacked. The map facts
+    /// and the Canister fact are the planner's.
+    /// </summary>
+    public static FireAttack Canister(CanisterLocationFacts facts)
+    {
+        ArgumentNullException.ThrowIfNull(facts);
+        var enemies = facts.Units.Where(unit => unit.Active && unit.Side != facts.FiringSide && !unit.Captured).OrderBy(unit => unit.Id, StringComparer.Ordinal).ToArray();
+        var vehicles = enemies.Where(unit => unit.Vehicle).ToArray();
+        return new FireAttack(PhaseName(facts.Phase), facts.Phasing ? "phasing" : "non-phasing", null, facts.GunLocation, facts.Target, [], null, null, null, null,
+            facts.ScenarioMonth, null, [.. enemies.Where(unit => !unit.Vehicle).Select(unit => facts.TargetOf(unit.Id))], facts.TargetSideElr, null)
+        {
+            Vehicles = vehicles.Length > 0 ? [.. vehicles.Select(unit => facts.VehicleOf(unit.Id))] : null,
+            TargetSideNoQuarter = facts.TargetSideNoQuarter ? true : null,
+        };
+    }
+
+    /// <summary>
     /// A vehicle's OVR of its Location (D7.1, D7.11; ruling R11.11): by an active or wrecked vehicle on the map (a vehicle destroyed before its
     /// declared OVR resolves still makes it, at half FP); every non-captured enemy unit there is attacked, Infantry as targets and vehicles on the
     /// Vehicle line; the vehicle is Immobile when Immobilized, Bogged, or Wrecked.

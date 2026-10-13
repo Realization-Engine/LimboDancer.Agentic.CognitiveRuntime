@@ -222,7 +222,8 @@ public static class ScenarioA1Definitions
     /// The ammunition a player may choose for a Gun or MA of this definition at a vehicle or at Infantry (C8.1, C2.21; pass 55), each with its
     /// Depletion Number at the game's date and, when the Gun has none then or has run out, the reason. At a vehicle: what the definition may
     /// carry but Canister, which "is ineffective vs armored targets" (C8.4). At Infantry: nothing to choose, HE being assumed, unless the Gun's
-    /// HE is Special Ammunition, which is fired only when named (C2.21, C8.8).
+    /// HE is Special Ammunition, which is fired only when named (C2.21, C8.8), or the Gun lists Canister (C8.4), which is then chosen beside the
+    /// HE it fires.
     /// </summary>
     public static IReadOnlyList<AmmunitionChoice> AmmunitionChoices(string definition, bool vehicleTarget, int? year, int? month, bool elite, IReadOnlyList<string> depleted)
     {
@@ -232,13 +233,15 @@ public static class ScenarioA1Definitions
             return [];
         }
 
-        string[] offered = vehicleTarget ? [.. Ammunitions(definition).Where(item => item != "canister")]
-            : ScenarioA1ArmorCalculator.Lists(gun, "he") ? ["he"] : [];
+        var canister = ScenarioA1ArmorCalculator.Lists(gun, ScenarioA1CanisterCalculator.Ammunition) && ScenarioA1CanisterCalculator.Firepower(gun.Caliber) is not null;
+        var namedHe = ScenarioA1ArmorCalculator.Lists(gun, "he");
+        string[] offered = vehicleTarget ? [.. Ammunitions(definition).Where(item => item != ScenarioA1CanisterCalculator.Ammunition)]
+            : [.. new[] { ("he", namedHe || (canister && !gun.NoHe)), (ScenarioA1CanisterCalculator.Ammunition, canister) }.Where(item => item.Item2).Select(item => item.Item1)];
         return [.. offered.Select(ammunition =>
         {
             var special = ammunition is "apcr" or "apds" or "heat" || ScenarioA1ArmorCalculator.Lists(gun, ammunition);
             var number = special ? ScenarioA1ArmorCalculator.Depletion(gun, ammunition, year, month, elite) : null;
-            var name = ammunition.ToUpperInvariant();
+            var name = ammunition == ScenarioA1CanisterCalculator.Ammunition ? "Canister" : ammunition.ToUpperInvariant();
             return new AmmunitionChoice(ammunition, number is { } held ? $"{name} ({DepletionWords(held, elite, ": ", string.Empty)})" : name, number,
                 depleted.Contains(ammunition, StringComparer.Ordinal) ? "it has run out (C8.9)"
                     : special && number is null ? "none at the scenario's date (C8.9)" : null);

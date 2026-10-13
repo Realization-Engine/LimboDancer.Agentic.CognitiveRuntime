@@ -278,6 +278,10 @@ public static class DisplayText
         ["dash"] = "Area Fire at a Dash",
         ["bounding-fire"] = "Bounding Fire",
         ["motion-fire"] = "Motion Fire",
+        ["canister-adjacent-hex"] = "Area Fire in the adjacent hex",
+        ["canister-adjacent-hexside"] = "a quarter in each of the two adjacent hexes",
+        ["intensive-fire"] = "Intensive Fire",
+        ["pinned-crew"] = "pinned crew",
         ["snap-shot"] = "Snap Shot",
         ["los-hindrance"] = "LOS Hindrance",
         ["lv-hindrance"] = "LV Hindrance",
@@ -309,6 +313,7 @@ public static class DisplayText
     private static readonly Dictionary<string, string> RollWords = new(StringComparer.Ordinal)
     {
         ["fire-ift"] = "IFT DR",
+        ["ordnance-canister"] = "Canister IFT DR",
         ["fire-cower-selection"] = "Random Selection dr for Cowering",
         ["fire-check"] = "MC or TC DR",
         ["fire-heat-of-battle"] = "Heat of Battle DR",

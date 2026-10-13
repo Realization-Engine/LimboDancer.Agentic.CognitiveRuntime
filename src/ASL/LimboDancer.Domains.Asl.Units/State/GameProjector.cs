@@ -1581,8 +1581,10 @@ public static class GameProjector
             // Multiple ROF fires again. D7.14 (ruling R11.11): each OVR is its vehicle's own attack, as a vehicle's MG shot is. Rules decides both (pass 32.c).
             var byVehicle = (fire.Facts.TryGetProperty("vehicleFire", out var firing) && firing.ValueKind == JsonValueKind.Object)
                 || (fire.Facts.TryGetProperty("overrun", out var overrunning) && overrunning.ValueKind == JsonValueKind.Object);
+            // C8.4, A7.51 (pass 55): a Canister shot's attack is ordnance, which forms no fire group and binds none.
+            var byCanister = fire.Facts.TryGetProperty("canister", out var canisterFact) && canisterFact.ValueKind == JsonValueKind.Object;
             if (Rules.ScenarioA1FireFollowUps.VerifyFireRecord(fire.MovementStep, state.Movement is { WindowOpen: true }, state.Movement?.Step, fire.Firers.Count, byVehicle,
-                state.FiresThisPhase.Select(item => new Rules.PhaseFireFacts(item.FirerLocation, item.TargetLocation, item.Step, item.Vehicle)), fire.FirerLocation, fire.TargetLocation,
+                state.FiresThisPhase.Where(item => !item.Ordnance).Select(item => new Rules.PhaseFireFacts(item.FirerLocation, item.TargetLocation, item.Step, item.Vehicle)), fire.FirerLocation, fire.TargetLocation,
                 fire.Facts.TryGetProperty("firers", out var firingUnits) && firingUnits.ValueKind == JsonValueKind.Array && firingUnits.GetArrayLength() > 0
                     && firingUnits.EnumerateArray().All(item => item.TryGetProperty("usesInherentFp", out var own) && own.ValueKind == JsonValueKind.False
                         && item.TryGetProperty("weapons", out var used) && used.ValueKind == JsonValueKind.Array && used.GetArrayLength() > 0
@@ -1645,7 +1647,7 @@ public static class GameProjector
                 ? fired.EnumerateArray().Select(item => item.TryGetProperty("equipmentId", out var id) ? id.GetString() : null).ToArray() : [];
             return state with
             {
-                FiresThisPhase = [.. state.FiresThisPhase, new FireRecord(eventId, fire.FirerLocation, fire.TargetLocation) { Step = fire.MovementStep, Vehicle = byVehicle }],
+                FiresThisPhase = [.. state.FiresThisPhase, new FireRecord(eventId, fire.FirerLocation, fire.TargetLocation) { Step = fire.MovementStep, Vehicle = byVehicle, Ordnance = byCanister }],
                 OrdnanceShots = shots,
                 VehicleWeaponShots = weaponShots,
                 TurretFacings = turrets,

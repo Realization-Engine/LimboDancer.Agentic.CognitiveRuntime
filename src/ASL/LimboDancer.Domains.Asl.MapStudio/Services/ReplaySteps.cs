@@ -232,6 +232,15 @@ public static class ReplaySteps
             return ("start", null, started.Scenario is { } card ? $"The game starts: {card.Title}" : "The game starts", false);
         }
 
+        // C8.4 (pass 55): a Canister shot is one ordnance record and a fire record a Location on its DR; the step is the shot's.
+        if (First<OrdnanceFired>(payloads) is { } canisterShot && canisterShot.Resolution.Deserialize<OrdnanceResolution>(LiveFire.Json) is { Canister: { } canister } canisterFired)
+        {
+            var owner = SideOf(canisterShot.Crew);
+            var attacked = canister.Attacks.Count > 0 ? $" at {string.Join(", ", canister.Attacks.Select(item => Place(before, item.LocationId)))}"
+                : canisterFired.Gun is { Malfunctioned: true } ? ": the Gun malfunctions" : ": it had none (C8.9)";
+            return ("fire", owner, $"{(owner is null ? "Ordnance" : $"{DisplayText.Side(owner)} ordnance")} fires Canister{attacked}{end}", false);
+        }
+
         if (First<FireResolved>(payloads) is { } fire)
         {
             var attack = fire.Facts.Deserialize<FireAttack>(LiveFire.Json);
@@ -495,6 +504,13 @@ public static class ReplaySteps
     private static string FireName(FireResolved fire, FireAttack? attack, GameState before, string? acting)
     {
         var kind = attack?.FireKind;
+
+        // C8.4 (pass 55): a Canister shot's attack has no firers either; it is the Gun's.
+        if (attack?.Canister is not null)
+        {
+            return acting is null ? "Canister" : $"{DisplayText.Side(acting)} Canister";
+        }
+
         if (fire.Firers.Count == 0 || kind == ScenarioA1FireCalculator.ResidualFire)
         {
             return attack?.FireLane == true ? "A Fire Lane's Residual FP attacks" : "Residual FP attacks";

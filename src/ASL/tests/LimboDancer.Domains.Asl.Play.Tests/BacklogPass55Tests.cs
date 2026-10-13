@@ -8,6 +8,7 @@ using LimboDancer.Domains.Asl.Maps.Los;
 using LimboDancer.Domains.Asl.Maps.Read;
 using LimboDancer.Domains.Asl.Maps.Terrain;
 using LimboDancer.Domains.Asl.Units.Catalog;
+using LimboDancer.Domains.Asl.Units.Documents;
 using LimboDancer.Domains.Asl.Units.State;
 using LimboDancer.Domains.Asl.Units.Vocabulary;
 
@@ -581,5 +582,282 @@ public sealed class BacklogPass55Tests : IDisposable
         Assert.True(RanOut("he"));
         Refused(await FireAtSquad("he", 3, 3), "asl.a1.ordnance.he-unavailable");
         NoReplayErrors();
+    }
+
+    // Task 55.2 (increment 2d): Canister (C8.4 to C8.42, p. 178; rulings R55.8 to R55.10). The American M3A1 37mm AT Gun (C7 from August 1942,
+    // ROF 2, B12, NT) in F5: facing west, aim 4 of its CA is the vertex of D4, D5, and C5, with E5 the adjacent hex on the LOS.
+
+    private const string GunHex = "bd01:F5:0";
+    private static readonly string[] Aim4 = ["bd01:D4:0", "bd01:D5:0", "bd01:C5:0", "bd01:E5:0"];
+
+    /// <summary>A game of the Americans against the Germans at a date, gone on to the American PFPh.</summary>
+    private async Task SetupAmerican(int year, int month, params Dictionary<string, object>[] placements)
+    {
+        Committed(await Commit(Play(), GameActions.Setup, JsonSerializer.SerializeToElement(new
+        {
+            gameId = Scope.Game,
+            attemptId = "setup-1",
+            expectedRevision = 0,
+            start = new Dictionary<string, object>
+            {
+                ["label"] = "Pass 55",
+                ["catalog"] = "asl-scenario-a1@1.13.0",
+                ["boards"] = Bd01,
+                ["firstSide"] = "american",
+                ["scenarioMonth"] = month,
+                ["scenarioYear"] = year,
+                ["sides"] = new object[]
+                {
+                    new { id = "american", nationality = "american", elr = 3, friendlyEdge = "left" },
+                    new { id = "german", nationality = "german", elr = 3, friendlyEdge = "right" },
+                },
+            },
+            placements,
+        })));
+        Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
+        {
+        }));
+    }
+
+    /// <summary>The M3A1 37mm AT Gun and its crew in F5 with its barrel to the given hexspine.</summary>
+    private static Dictionary<string, object>[] AmericanGun(string facing = "west") =>
+    [
+        Unit("us-crew", "asl:crew", "american-crew", GunHex, "american"),
+        new()
+        {
+            ["id"] = "us-gun",
+            ["kind"] = "asl:gun",
+            ["definition"] = "american-at-gun",
+            ["side"] = "american",
+            ["position"] = new Dictionary<string, string> { ["at"] = GunHex, ["facing"] = facing },
+            ["holding"] = new
+            {
+                holder = "us-crew",
+                role = "manned"
+            },
+            ["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false },
+        },
+    ];
+
+    /// <summary>German squads in two hexes of aim 4's cluster and in the adjacent hex on its LOS; C5 holds none.</summary>
+    private static Dictionary<string, object>[] Squads() =>
+    [
+        Unit("de-s1", "asl:squad", "attacker-squad", Aim4[0], "german"),
+        Unit("de-s2", "asl:squad", "attacker-squad", Aim4[1], "german"),
+        Unit("de-s3", "asl:squad", "attacker-squad", Aim4[3], "german"),
+    ];
+
+    /// <summary>The Gun's Canister at an aim, turning first when a facing is given; the dice are the IFT DR and then whatever the attacks ask for.</summary>
+    private Task<PlayResult> FireCanister(int aim, string? aimFacing, params int[] dice)
+    {
+        var arguments = new Dictionary<string, object> { ["gunId"] = "us-gun", ["ammunition"] = "canister", ["aim"] = aim };
+        if (aimFacing is not null)
+        {
+            arguments["aimFacing"] = aimFacing;
+        }
+
+        return Do(GameActions.FireOrdnance, Once(dice), arguments);
+    }
+
+    private FireResolved[] Fires(long before) => [.. Since(before).Select(item => item.Payload).OfType<FireResolved>()];
+
+    private static decimal Fp(FireResolved fire) => fire.Resolution.GetProperty("arithmetic").GetProperty("totalFirepower").GetDecimal();
+
+    private static UnitFacing? GunFacing(GameState state) => (state.Find("us-gun") as EquipmentInstance)?.Position is MapPosition { Facing: { } facing } ? facing : null;
+
+    [Fact]
+    public async Task TheFiveAimsOfAGunAreHexesOfTheMap()
+    {
+        // Ruling R55.8, in the board's own geometry: from F5 facing west the CA's adjacent hexes are E6 (left) and E5 (right).
+        await SetupAmerican(1943, 7, [.. AmericanGun()]);
+        var planner = Planner();
+        var state = Current;
+        string[] Names(IEnumerable<BoardLocation> hexes) => [.. hexes.Select(at => at.Hex.ToString())];
+        var west = planner.CanisterAims(state, "us-gun");
+        Assert.Equal([1, 2, 3, 4, 5], west.Select(aim => aim.Aim));
+        Assert.Equal([["D6", "C7", "C6"], ["D6", "D5", "C6"], ["D5", "C6", "C5"], ["D4", "D5", "C5"], ["D4", "C4", "C5"]], west.Select(aim => Names(aim.Cluster)));
+        Assert.Equal([["E6"], ["E6"], ["E6", "E5"], ["E5"], ["E5"]], west.Select(aim => Names(aim.Adjacent)));
+        Assert.Equal([false, false, true, false, false], west.Select(aim => aim.Quartered));
+
+        // The aims of the facing it would turn to; a hex off the map is left out, and an aim with none on it too.
+        var east = planner.CanisterAims(state, "us-gun", UnitFacing.East);
+        Assert.Equal(["H6", "H5", "I6"], Names(east[3].Cluster));
+        Assert.Equal(["G6"], Names(east[3].Adjacent));
+        Assert.Empty(planner.CanisterAims(state, "no-gun"));
+    }
+
+    [Fact]
+    public async Task CanisterAttacksEveryLocationOfItsAimOnOneDr()
+    {
+        // C8.4: no To Hit DR; one IFT DR of 6, below the Depletion Number 7, attacks the three hexes of the cluster at 12 FP and the adjacent hex
+        // on the LOS at 6 (C8.41). C5, where the Gun's side sees nothing, is attacked as a hidden unit's Location would be. Each squad passes its MC.
+        await SetupAmerican(1943, 7, [.. AmericanGun(), .. Squads()]);
+        var before = Revision;
+        var result = await FireCanister(4, null, 2, 4, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2);
+        Committed(result);
+        var shot = LastShot(before);
+        Assert.Equal("used", Use(shot));
+        Assert.Equal(JsonValueKind.Null, shot.Resolution.GetProperty("toHit").ValueKind);
+        Assert.Equal(["canister"], shot.Rolls.Keys);
+        Assert.Equal((Aim4[0], true, 0), (shot.Target.ToString(), shot.RateOfFireKept, shot.Acquisition));
+        Assert.Null(shot.Facing);
+        Assert.Null(shot.Acquired);
+        var block = shot.Resolution.GetProperty("canister");
+        Assert.Equal((4, "west", 12, 6, 0, 7), (block.GetProperty("aim").GetInt32(), block.GetProperty("facing").GetString(), block.GetProperty("firepower").GetInt32(),
+            block.GetProperty("originalDr").GetInt32(), block.GetProperty("caseA").GetInt32(), block.GetProperty("depletionNumber").GetInt32()));
+        Assert.Equal(Aim4, block.GetProperty("attacks").EnumerateArray().Select(item => item.GetProperty("locationId").GetString()));
+        Assert.Equal(Aim4, shot.Facts.GetProperty("canister").GetProperty("locations").EnumerateArray().Select(item => item.GetProperty("locationId").GetString()));
+        Assert.Equal("canister", shot.Facts.GetProperty("ammunition").GetString());
+
+        // A fire record a Location, each on the shot's own DR, with its own FP.
+        var fires = Fires(before);
+        Assert.Equal(Aim4, fires.Select(fire => fire.TargetLocation));
+        Assert.All(fires, fire => Assert.Equal((GunHex, shot.Rolls["canister"]), (fire.FirerLocation, fire.Rolls["attack"])));
+        Assert.All(fires, fire => Assert.Empty(fire.Firers));
+        Assert.Equal([12m, 12m, 6m, 6m], fires.Select(Fp));
+        Assert.Equal(["de-s1", "de-s2", null, "de-s3"], fires.Select(fire => fire.Facts.GetProperty("targets").EnumerateArray().Select(item => item.GetProperty("unitId").GetString()).SingleOrDefault()));
+        Assert.Equal(1, fires[3].Facts.GetProperty("canister").GetProperty("adjacentHexes").GetInt32());
+        Assert.False(fires[0].Facts.GetProperty("canister").TryGetProperty("adjacentHexes", out _));
+        Assert.Single(Since(before), item => item.Payload is DiceRolled { Purpose: "ordnance-canister" });
+
+        // The Gun kept its ROF on the colored dr of 2, and its records bind no other attack of its Location (A7.51).
+        Assert.NotEqual(ConditionState.True, GameState.Condition(Current.Find("us-gun")!, Conditions.Malfunctioned));
+        Assert.All(Current.FiresThisPhase, record => Assert.True(record.Ordnance));
+        Assert.Equal((1, true), (Current.OrdnanceShots.Single().Shots, Current.OrdnanceShots.Single().RateOfFireKept));
+
+        // The proposal says what is attacked and what else the DR decides.
+        Assert.Contains(result.Plan!.Reasons, reason => reason.StartsWith("play.canister: us-gun fires Canister at aim 4 of the CA facing west in the PFPh; no To Hit DR", StringComparison.Ordinal)
+            && reason.Contains("bd01:D4:0 with 12 FP, open-ground", StringComparison.Ordinal) && reason.Contains("bd01:E5:0 with 6 FP (half in the adjacent hex, C8.41)", StringComparison.Ordinal));
+        Assert.Contains(result.Plan.Reasons, reason => reason.Contains("check of the Depletion Number 7", StringComparison.Ordinal) && reason.Contains("malfunction on 12 or more", StringComparison.Ordinal));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task CanisterDoesNotAttackTheFiringSidesOwnUnits()
+    {
+        // A7.4: the outcome affects "all those enemy ... units in the target Location": an American squad in C5 is no target.
+        await SetupAmerican(1943, 7, [.. AmericanGun(), .. Squads(), Unit("us-s", "asl:squad", "american-squad", Aim4[2], "american")]);
+        var before = Revision;
+        Committed(await FireCanister(4, null, 2, 4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1));
+        Assert.Empty(Fires(before)[2].Facts.GetProperty("targets").EnumerateArray());
+        Assert.DoesNotContain(Since(before), item => item.Payload is ConditionsChanged { Id: "us-s" });
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ACanisterShotBindsNoFireGroupOfItsLocation()
+    {
+        // A7.51, A7.55: ordnance forms no fire group, so a squad beside the Gun still fires at a Location the Canister attacked this phase.
+        string[] firers = ["us-s"];
+        await SetupAmerican(1943, 7, [.. AmericanGun(), .. Squads(), Unit("us-s", "asl:squad", "american-squad", GunHex, "american")]);
+        Committed(await FireCanister(4, null, 2, 4, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2));
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Once(6, 5), new
+        {
+            firers,
+            target = Aim4[0],
+        }));
+        Assert.Equal(firers, Fires(before).Single().Firers);
+        Assert.Single(Current.FiresThisPhase, record => !record.Ordnance);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ACanisterShotThatTurnsTheGunAddsCaseAToEachAttack()
+    {
+        // C3.21, D3.52, C5.1: one hexspine by an NT Gun is +3 on the IFT DR of every Location; C2.5: its ROF is then 1, so the colored dr of 2
+        // loses it and the Gun and its crew take the Prep Fire counter.
+        await SetupAmerican(1943, 7, [.. AmericanGun("north-west"), .. Squads()]);
+        var before = Revision;
+        var result = await FireCanister(4, "west", 2, 3, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2, 1, 2);
+        Committed(result);
+        var shot = LastShot(before);
+        Assert.Equal((UnitFacing.West, false, 1), (shot.Facing, shot.RateOfFireKept, shot.Facts.GetProperty("hexspinesToTurn").GetInt32()));
+        Assert.Equal(3, shot.Resolution.GetProperty("canister").GetProperty("caseA").GetInt32());
+        var fires = Fires(before);
+        Assert.Equal(Aim4, fires.Select(fire => fire.TargetLocation));
+        Assert.All(fires, fire => Assert.Equal(3m, DrmOf(IftDrm(fire), "case-a:us-gun")));
+        Assert.All(fires, fire => Assert.Equal(3, fire.Facts.GetProperty("canister").GetProperty("caseA").GetInt32()));
+        Assert.Equal(UnitFacing.West, GunFacing(Current));
+        Assert.Equal(ConditionState.True, GameState.Condition(Current.Find("us-gun")!, Conditions.PrepFire));
+        Assert.Equal(ConditionState.True, GameState.Condition(Current.Unit("us-crew")!, Conditions.PrepFire));
+        Assert.Contains(result.Plan!.Reasons, reason => reason.Contains("turning 1 hexspine(s) to west: Case A +3 on the IFT DR (D3.52)", StringComparison.Ordinal));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ADrAboveTheDepletionNumberAttacksNothingAndTheGunHasNotFired()
+    {
+        // C8.9: an Original 8 is above C7: "the firer had no such ammunition and is considered not to have fired yet for any purpose": two dice,
+        // no Location attacked, no counter, the ROF kept though the colored dr is 4; no Canister again, and the Gun fires HE at once.
+        await SetupAmerican(1943, 7, [.. AmericanGun(), .. Squads()]);
+        var before = Revision;
+        Committed(await FireCanister(4, null, 4, 4));
+        var shot = LastShot(before);
+        Assert.Equal("none", Use(shot));
+        Assert.True(shot.RateOfFireKept);
+        Assert.Empty(shot.Resolution.GetProperty("canister").GetProperty("attacks").EnumerateArray());
+        Assert.Empty(Fires(before));
+        Assert.Single(Since(before), item => item.Payload is DiceRolled);
+        Assert.DoesNotContain(Since(before), item => item.Payload is ConditionsChanged);
+        Assert.Empty(Current.OrdnanceShots);
+        Assert.Contains(Current.DepletedAmmunition, item => item.Gun == "us-gun" && item.Ammunition == "canister");
+        Refused(await FireCanister(4, null, 1, 1), "asl.a1.ordnance.ammunition-depleted", "C8.9");
+
+        var again = Revision;
+        Committed(await Do(GameActions.FireOrdnance, Once(5, 6), new
+        {
+            gunId = "us-gun",
+            target = Aim4[0],
+        }));
+        Assert.Single(Current.OrdnanceShots);
+        Assert.NotEqual(JsonValueKind.Null, LastShot(again).Resolution.GetProperty("toHit").ValueKind);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AnOriginalTwelveMalfunctionsTheGunThatHadNoCanister()
+    {
+        // C8.9, C2.28: "unless Gun Malfunction ... occurs": the Gun malfunctions, has fired, and attacked nothing.
+        await SetupAmerican(1943, 7, [.. AmericanGun(), .. Squads()]);
+        var before = Revision;
+        Committed(await FireCanister(4, null, 6, 6));
+        var shot = LastShot(before);
+        Assert.Equal("none", Use(shot));
+        Assert.False(shot.RateOfFireKept);
+        Assert.Empty(Fires(before));
+        Assert.Equal(ConditionState.True, GameState.Condition(Current.Find("us-gun")!, Conditions.Malfunctioned));
+        Assert.Equal(ConditionState.True, GameState.Condition(Current.Find("us-gun")!, Conditions.PrepFire));
+        Assert.Single(Current.OrdnanceShots);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task CanisterCostsTheGunItsAcquisition()
+    {
+        // C6.5: an Acquisition is lost when the Gun "fires SMOKE, canister or IFE". An HE shot at D4 first: a 1 and a 6, the ROF kept and the
+        // Location acquired, its hit's IFT DR a 12; the Canister shot then removes the counter.
+        await SetupAmerican(1943, 7, [.. AmericanGun(), .. Squads()]);
+        Committed(await Do(GameActions.FireOrdnance, Once(1, 6, 6, 6, 1, 2, 1, 2), new
+        {
+            gunId = "us-gun",
+            target = Aim4[0],
+        }));
+        Assert.Equal(-1, Assert.Single(Current.Acquisitions).Level);
+        var before = Revision;
+        Committed(await FireCanister(4, null, 1, 5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1));
+        Assert.Equal(0, LastShot(before).Acquisition);
+        Assert.Null(LastShot(before).Acquired);
+        Assert.Empty(Current.Acquisitions);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ACanisterShotNamesAnAimAndIsNotThereBeforeAugust1942()
+    {
+        // Ruling R55.8: an aim of 1 to 5; U.S. Ordnance Note C: Canister from August 1942; and no Location of an aim off the map.
+        await SetupAmerican(1942, 7, [.. AmericanGun(), .. Squads()]);
+        Refused(await Do(GameActions.FireOrdnance, NoRoll(), new { gunId = "us-gun", ammunition = "canister" }), "play.canister-aim");
+        Refused(await FireCanister(4, null, 1, 1), "asl.a1.ordnance.ammunition-unavailable");
     }
 }
