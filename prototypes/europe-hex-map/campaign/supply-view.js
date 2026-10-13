@@ -28,7 +28,7 @@ window.CampaignSupplyView=(()=>{
   if(side==='Allied'&&operation?.reserve&&operation.reserve!=='none'){const assigned=String(operation.reserve).includes(mission)||operation.reserve==='committed',base=net.nodes.find(n=>n.kind===(assigned?'hq':'command'));entries.push({id:net.routeId+':reserve',kind:'reserve',label:'Mobile reserve | '+operation.reserve,position:{x:base.position.x+60,y:base.position.y+100}});}
   if(report.transport)entries.push({id:net.routeId+':transport',kind:'transport',label:side+' supply transport',position:CampaignSupplySpatial.point(report.transport.detourPoints||net.points,report.transport.progress)});
   const symbols={depot:'DEP',supply:'SUP',hq:'HQ',transport:'TRK',command:'CMD',reserve:'R1'};
-  const occupied=[];
+  const occupied=units.filter(u=>u.hex).map(u=>position(SquadSpace.xy(u.hex)));
   for(const item of entries){const anchor=position(item.position);let loc={...anchor};for(let i=0;i<30&&occupied.some(p=>Math.abs(p.x-loc.x)<size*1.12&&Math.abs(p.y-loc.y)<size*.85);i++){const angle=i*Math.PI/3,radius=size*(1+Math.floor(i/6));loc={x:anchor.x+Math.cos(angle)*radius,y:anchor.y+Math.sin(angle)*radius};}occupied.push(loc);if(loc.x!==anchor.x||loc.y!==anchor.y)layer.append(node('line',{x1:anchor.x,y1:anchor.y,x2:loc.x,y2:loc.y,stroke:'#314c39','stroke-width':size*.045,'pointer-events':'none'}),node('circle',{cx:anchor.x,cy:anchor.y,r:size*.06,fill:'#314c39','pointer-events':'none'}));const g=node('g',{transform:'translate('+loc.x+' '+loc.y+')',role:'button',tabindex:0,'aria-label':item.label+' | Board '+net.boardId,'data-supply-id':item.id,'data-supply-x':item.position.x,'data-supply-y':item.position.y});
    // Offset only the label, never the geographical anchor.
    g.append(node('rect',{x:-size/2,y:-size/3,width:size,height:size*.66,rx:size*.08,fill:side==='Allied'?'#146252':'#273c64',stroke:'#fffdf5','stroke-width':size*.045}),node('text',{'text-anchor':'middle',y:size*.09,fill:'white','font-size':size*.25,'font-weight':700},symbols[item.kind]));
@@ -40,7 +40,7 @@ window.CampaignSupplyView=(()=>{
  function command(svg,d,operation,select,options={}){
   svg.parentElement?.querySelector(".supply-map-card")?.remove();svg.replaceChildren();const b=CampaignSupplySpatial.resolve(d,operation?.supplyProfile?.routes[d.situation.number]?.binding),scale=Math.min(900/b.width,382/b.height),x=(1000-b.width*scale-36)/2,y=(420-b.height*scale)/2;
   const group=node('g',{transform:'translate('+x+' '+y+') scale('+scale+')','data-integrated-source':b.sourceNumber});terrain(group,d);
-  overlay(group,d,{operation,mission:options.mission||'M04',size:24/scale,host:svg.parentElement,onSelect:item=>{if(item.kind==='hq')select(options.mission||'M04');if(item.kind==='command')select('HQ');}});svg.append(group);
+  overlay(group,d,{operation,mission:options.mission||'M04',size:18/scale,host:svg.parentElement,onSelect:item=>{if(item.kind==='hq')select(options.mission||'M04');if(item.kind==='command')select('HQ');}});svg.append(group);
   svg.classList.add('integrated-command-map');
   svg.append(node('text',{transform:'translate('+(x+b.width*scale+22)+' 210) rotate(90)','text-anchor':'middle','dominant-baseline':'middle','font-size':14,'font-weight':700,'letter-spacing':1.6,fill:'#4a6326','pointer-events':'none'},d.situation.title.toUpperCase()));
   svg.append(node('desc',{},'Select DEP, SUP or HQ to inspect supplies and readiness. Command and supply use the joined formation boards. Positions are authored.'));

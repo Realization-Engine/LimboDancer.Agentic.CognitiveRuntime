@@ -55,7 +55,7 @@ window.SquadWorkspace = (() => {
    if(!options.onSupplyChange)throw Error('Open this setup through its Situation to save supply changes.');
    options.onSupplyChange(changes);plan.supplyAdjustments=changes;CampaignSupplyRelocation.bind(d,plan);render();
   };
-  const supplySide=el('select');supplySide.setAttribute('aria-label','Supply side');for(const side of ['Allied','German']){const o=el('option',side+' supply');o.value=side;supplySide.append(o);}supplySide.onchange=()=>{svg.querySelector('[data-supply-layer]')?.remove();CampaignSupplyView.overlay(svg,d,{side:supplySide.value,size:100,host:dialog,placements:plan.placements,units:state.units,onRelocate:relocate});};controls.append(supplySide);
+  const supplyLabel=el('label'),supplyToggle=el('input');supplyToggle.type='checkbox';supplyToggle.checked=true;supplyToggle.onchange=()=>render();supplyLabel.append(supplyToggle,el('span','Supply'));controls.append(supplyLabel);
   controls.append(button("Deploy full Situation",()=>attempt(()=>{
    const next=SquadDeployment.expandAll(state,d,plan);repository.save(d,plan,next);state=next;terrain=SquadTerrain.create(d,state.center,null);drawGrid();render();fit();
   })),button("Fit map",()=>fit()),button("Focus selected",()=>focus()),button("Export squad setup",()=>{
@@ -122,7 +122,7 @@ window.SquadWorkspace = (() => {
   const grid=node("path",{fill:"none",stroke:"#536349","stroke-width":.25,"pointer-events":"none"});svg.append(grid);
   function drawGrid(){grid.setAttribute("d",[...terrain.cells.values()].map(h=>"M"+SquadSpace.polygon(h).map(p=>p.join(",")).join("L")+"Z").join(""));}
   drawGrid();
-  const supplyLayer=node("g",{});svg.append(supplyLayer);if(window.CampaignSupplyView)CampaignSupplyView.overlay(supplyLayer,d,{size:100,host:dialog,placements:plan.placements,units:state.units,onRelocate:relocate});
+  const supplyLayer=node("g",{});svg.append(supplyLayer);
   const overlay=node("g",{});svg.append(overlay);
   let selected=state.units[0].id;
   const picker=SquadUnitPicker.create(controls,d,id=>{
@@ -138,7 +138,7 @@ window.SquadWorkspace = (() => {
   function render(){
    counts.textContent=state.units.length+' counters / '+state.parents.length+' formations';radiusStatus.textContent='Current deployment radius: '+state.settings.deploymentRadius+' hexes';
    stageButton.disabled=!game&&!SquadLifecycle.ready(state,d);
-   picker.update(state,selected);overlay.replaceChildren();svg.querySelector('[data-supply-layer]')?.remove();CampaignSupplyView.overlay(supplyLayer,d,{side:supplySide.value,size:100,host:dialog,placements:plan.placements,units:state.units,onRelocate:relocate});
+   picker.update(state,selected);overlay.replaceChildren();supplyLayer.replaceChildren();if(supplyToggle.checked&&window.CampaignSupplyView)for(const side of ['Allied','German'])CampaignSupplyView.overlay(supplyLayer,d,{side,size:SquadSpace.step,host:dialog,placements:plan.placements,units:state.units,onRelocate:relocate});
    const unit=state.units.find(u=>u.id===selected),parent=state.parents.find(p=>p.id===unit?.parentId);
    for(const h of !game&&parent?SquadSpace.disk(parent.anchor,parent.radius).map(h=>terrain.cells.get(SquadSpace.id(h))).filter(Boolean):[]){
     const allowed=unit&&SquadDeployment.legal(state,terrain,unit,h);

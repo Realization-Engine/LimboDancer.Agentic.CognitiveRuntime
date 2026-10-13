@@ -10,7 +10,7 @@ window.CampaignContinentalView=(()=>{
    if(focus!==number||scale>.08)continue;
    const g=node('g',{transform:'matrix('+matrix(b).join(' ')+')','data-continental-source':number});
    if(!cache.has(number)){const terrain=node('g');CampaignSupplyView.terrain(terrain,d);cache.set(number,terrain);}g.append(cache.get(number).cloneNode(true));
-   const mission=[14,15].includes(number)?'M'+number:'M04';CampaignSupplyView.overlay(g,d,{operation:saved?.operation,mission,size:Math.max(65,scale*1000/b.metresPerUnit*22),host:map.parentElement,onSelect:item=>{if(['hq','command'].includes(item.kind))CampaignNavigation.open(number);}});layer.append(g);
+   const mission=[14,15].includes(number)?'M'+number:'M04';CampaignSupplyView.overlay(g,d,{operation:saved?.operation,mission,size:Math.max(45,scale*1000/b.metresPerUnit*16),host:map.parentElement,onSelect:item=>{if(['hq','command'].includes(item.kind))CampaignNavigation.open(number);}});layer.append(g);
   }
   CampaignRearView.draw(map,layer,scale,focus);
  }
