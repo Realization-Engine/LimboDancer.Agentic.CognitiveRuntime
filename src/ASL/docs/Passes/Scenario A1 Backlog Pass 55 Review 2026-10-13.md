@@ -1,10 +1,10 @@
 # Scenario A1 Backlog Pass 55: Armored combat II
 
-The review of pass 55, written on 2026-10-13 after the five reviews and their fixes. The Studio check of the whole pass is in its own section below. The gate is not run: it is the user's to start. The design is [ASL Unit Backlog Pass 55 Design](<ASL Unit Backlog Pass 55 Design.md>); its section 15 says what was built.
+The review of pass 55, written on 2026-10-13 after the five reviews and their fixes. The Studio check of the whole pass is in its own section below. The gate was run later that day and passed: the last section. The design is [ASL Unit Backlog Pass 55 Design](<ASL Unit Backlog Pass 55 Design.md>); its section 15 says what was built.
 
 ## Status
 
-Built to the merge gate on branch `feature/asl-backlog-pass-55`, cut from main at 846eb5a3: the frame, seven tasks in seven commits, then the five reviews, their fixes, and these documents. Everything was done under the user's word of 2026-10-12 for this pass, "I want you to run without my intervention up to the Gate", and is open to a veto. **The gate is not run, and nothing is merged:** the gate, the merge, and the push are the user's to start.
+Built to the merge gate on branch `feature/asl-backlog-pass-55`, cut from main at 846eb5a3: the frame, seven tasks in seven commits, then the five reviews, their fixes, and these documents. Everything was done under the user's word of 2026-10-12 for this pass, "I want you to run without my intervention up to the Gate", and is open to a veto. **The gate passed on 2026-10-13 (the last section), and nothing is merged:** the merge and the push are the user's to start.
 
 ## What departs from the plan's entry and the frame
 
@@ -96,7 +96,7 @@ The table player found three games' labels promising what their files do not hol
 
 ## The tests
 
-After the reviews' fixes, the fixing agent's runs: Rules 220 in nine classes; Play 184 in eleven; Units 416 whole; MapStudio 75; none failed. The four test projects build with warnings as errors, 0 warnings. The pass's own classes are `ScenarioA1Pass55RulesTests` (60 test methods as this is written) and `BacklogPass55Tests` (69). The Rules and Play projects were not run whole.
+After the reviews' fixes, the fixing agent's runs: Rules 220 in nine classes; Play 184 in eleven; Units 416 whole; MapStudio 75; none failed. (A sentence here said that the four test projects build with warnings as errors; it was false, and the gate's section says why.) The pass's own classes are `ScenarioA1Pass55RulesTests` (60 test methods as this is written) and `BacklogPass55Tests` (69). The Rules and Play projects were not run whole.
 
 Lacking: a Play test and a game for a vehicle's MG at another level of its own hex; a board with a cliff; a Studio game of an OVR or of the vehicle's Close Combat attack with an Armor Leader; page tests for the UI review's fixes 1, 2, 3, 5, and 6.
 
@@ -114,7 +114,7 @@ Over the proof store, 473 games and 93,266 lines, after each of the seven increm
 
 - **The gate is one script now, and this is its first full run** (`pass32-tools/gate/gate.sh`). Its skip list from the diff, its `trial` stage, and the refusal of `proofs` without a passed trial were tested on pass 50's data; its `baseline`, `build`, `suite`, and `docker` stages and the long runs of `proofs` have had a syntax check only (`Prompts/Pass 55 Prompt I.md`). A stage may fail for a reason of the script's own.
 - **`BOTH_SKIP`.** The catalog's identity differs in every state between main and the branch. The script has a list of properties left out on the baseline's side as well; it is in the script and has had a syntax check only. Without it every line differs and the run is void, as the pass's first trial showed.
-- **`gate/pass55.conf` was not there when this was written:** the pass's recorded games, its extra sweep and trial games, and the JSON keys it added.
+- **`gate/pass55.conf` was written after this section:** the pass's recorded games, its extra sweep and trial games, and the JSON keys it added.
 - **The sweep proves little of what the pass built.** It asks one request of each kind for each unit and names no new argument, so a Canister aim, a named ammunition, a Motion attempt, and a duel's answer are reached only in the pass's own games, where main has no answer to compare with. For those the proof is the pass's tests and Studio games.
 - **The whole suite.** Rules and Play run whole for the first time on this branch; so do the Node viewport test, the chart supplement, the text list, and Docker.
 - **The store** holds none of the pass's games. Those labelled SUPERSEDED are not to be taken.
@@ -135,3 +135,15 @@ In my Studio on port 6671, built into `bin/p31b` after the reviews' fixes, with 
 - **The reviews' fixes, seen:** a shot with no round reads "no shot: it had no APDS ... it has not fired and may fire other ammunition (C8.9)" (`p55-w-apds`); a Canister aim reads "2 units in view, 1 concealed stack" and no longer counts the tank; the Motion record reads "attempts Motion as vehicle G1 moves: vehicle G1 has spent 1 MP in its LOS"; the Gun Duel's choice is one sentence with both totals; the placement form shows the Armor Leader for a tank only, and a chosen leader disables the Inexperienced Crew box with "an Inexperienced Crew is its own 6+1 Armor Leader (D3.45)".
 - **All 48 `p55-*` games of the live folder** were replayed on the build with the fixes: each to its end, none with a diagnostic.
 - **Not done:** `p55-fix-hidden` does not stage its case: the engine reveals a hidden vehicle when an enemy moves into its LOS, so the T-34 was no longer hidden when the attempt was offered; ruling R55.32's bar rests on its Rules and Play tests. No Studio game holds an OVR or a vehicle's Close Combat attack with an Armor Leader, a vehicle's MG at another level of its own hex, a cliff, or a PF or PSK fired at another level. The Replay page was not opened, though its new steps are in its code and its tests. The 683 and 320 widths were measured for overflow and not looked at one by one beyond one screenshot at 320.
+
+## The gate
+
+Run on 2026-10-13 at the user's word ("start the gate and stop before the merge"). **It passed;** the design's section 16 has the table, the differing lines, and what went wrong. In short:
+
+- **The strict solution build failed at its first try** on 450 style errors in four of the pass's test files, fixed in 8862d209 (test files only). The sentence above that the four test projects build with warnings as errors was false when written: the pass's test script builds them with warnings not as errors, and no strict build of them had been run.
+- The whole suite (eleven projects, none failed; Rules 897, Play 819), the Node viewport test, the chart supplement, and Docker on 8862d209 (3,488 tests) passed at their first run.
+- The text list differs in 70 lines, each the pass's own. The replay digest differs only in 28 of the pass's 31 games; no game made before the pass replays differently.
+- The sweep has 758 new lines, all in the pass's four games, and 2,511 lines of older games with the same text and another hash: the rule packages' digests, which changed with the catalog and are carried by every planned event. With that reference left out on both sides, no line of 515,357 differs.
+- The baseline's sweep was lost once, after 53 minutes, to a game main cannot read; the gate took 2:45.
+
+The user approved all that was open to a veto on 2026-10-13: the departures, rulings R55.1 to R55.33, and pass 50's R50.1 to R50.14. Nothing is merged; the merge and the push are the user's to start.

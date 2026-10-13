@@ -1418,3 +1418,12 @@ full Rules 596 tests pass; textlist equal; no production code changed | 17:12 | 
 | The Studio check of the whole pass at five widths in three views, a Player Turn at 320, real Enter keys on a proposal and its commit; the documents: an agent wrote the design's sections 14 and 15, the review, rulings R55.1 to R55.33 in the Passes Plan, the backlog's section 59, the inventory's 58 rows and its count tables, the coverage; the session added the Studio check, the two late fixes, eight lessons in the standing rules, the gate's pass55.conf and BOTH_SKIP, and the next session's prompt; the last replay digest | 13:25 | 14:04 | 39 min | The documents' commit is the branch's head. The plan's overhead for the reviews, the Studio check, and the documents was 1:15. |
 
 The pass by the clock on 2026-10-13: 06:43 to 14:04, 7:21 in all, with no stop for the user. The replay digest over the proof store ran nine times beside the work (the base once, then after each of the seven increments and after the reviews' fixes; ten to twelve minutes each): no line of 93,266 differed in any. The gate is not run; ask before starting it.
+
+## Pass 55: the gate
+
+| Sub-task | Start | End | Duration | Notes |
+|---|---|---|---|---|
+| Second session, 2026-10-13: the standing rules, the design's sections 14 and 15, and the review read; the state checked (the fetch, origin/main at 846eb5a3, local main only behind) | not read | 14:47 | about 15 min | Stopped for the user's word. The start's clock was not read. |
+| The gate, at the user's word ("start the gate and stop before the merge"): the baseline in the background; the strict build, failed on 450 style errors in four test files, fixed (8862d209), passed; the trial; the suite, the proofs, and Docker side by side | 14:47 | 17:07 | 2:20 | The baseline's sweep lost after 53 minutes to a game main cannot read, and run again (2,065 s). Suite, Docker, text list, and replay digest clean. |
+| The sweep's 2,511 lines of same text and other hash: one game's events dumped from both sides, the rule packages' digests named, the sweep run again on both sides with the reference left out (eleven games, then all 17: no line differs) | 17:07 | 17:32 | 25 min | Both sides alone and together: 1,066 s each. |
+| The gate's result in the documents | 17:32 | 17:38 | 6 min | Stopped before the merge. Eleven tool repairs approved by the user, to be made after the merge and the push. |
