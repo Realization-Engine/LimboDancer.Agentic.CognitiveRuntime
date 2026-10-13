@@ -4,7 +4,7 @@ The review of pass 55, written on 2026-10-13 after the five reviews and their fi
 
 ## Status
 
-Built to the merge gate on branch `feature/asl-backlog-pass-55`, cut from main at 846eb5a3: the frame, seven tasks in seven commits, then the five reviews, their fixes, and these documents. Everything was done under the user's word of 2026-10-12 for this pass, "I want you to run without my intervention up to the Gate", and is open to a veto. **The gate passed on 2026-10-13 (the last section), and nothing is merged:** the merge and the push are the user's to start.
+Built to the merge gate on branch `feature/asl-backlog-pass-55`, cut from main at 846eb5a3: the frame, seven tasks in seven commits, then the five reviews, their fixes, and these documents. Everything was done under the user's word of 2026-10-12 for this pass, "I want you to run without my intervention up to the Gate", and is open to a veto. **The gate passed on 2026-10-13 (the last section). Merged into main as 50987ff3 and pushed that day** at the user's word.
 
 ## What departs from the plan's entry and the frame
 
@@ -146,4 +146,4 @@ Run on 2026-10-13 at the user's word ("start the gate and stop before the merge"
 - The sweep has 758 new lines, all in the pass's four games, and 2,511 lines of older games with the same text and another hash: the rule packages' digests, which changed with the catalog and are carried by every planned event. With that reference left out on both sides, no line of 515,357 differs.
 - The baseline's sweep was lost once, after 53 minutes, to a game main cannot read; the gate took 2:45.
 
-The user approved all that was open to a veto on 2026-10-13: the departures, rulings R55.1 to R55.33, and pass 50's R50.1 to R50.14. Nothing is merged; the merge and the push are the user's to start.
+The user approved all that was open to a veto on 2026-10-13: the departures, rulings R55.1 to R55.33, and pass 50's R50.1 to R50.14. Merged into main as 50987ff3 and pushed on 2026-10-13 at the user's word ("merge and push"). The CI run of the merge failed at its locked restore for a reason outside the pass, a .NET SDK patch published that day; the design's section 16 has it, and 53a22fcf moved the lock file.

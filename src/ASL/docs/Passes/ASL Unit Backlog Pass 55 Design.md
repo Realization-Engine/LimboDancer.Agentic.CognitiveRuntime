@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 55 Design
 
-**Status:** Built to the merge gate on 2026-10-13 under the user's word of 2026-10-12 for this pass ("I want you to run without my intervention up to the Gate"): the frame, seven tasks in seven commits (the plan's 55.1 to 55.6, and 55.7, Gun Duels, carried in from pass 50 and built as a slice), then the five reviews and their fixes. Sections 14 and 15 say how it ended; section 14.1 lists what departs from the plan's entry and the frame. The frame's questions were put to three read-only agents, as that word asks; their answers were judged against the pages and the code, and each decision below is a ruling decided under that word and open to a veto. **The gate is not run:** it is the user's to start (section 16).
+**Status:** Merged into main as 50987ff3 and pushed on 2026-10-13, after the gate passed (section 16); the user approved the departures and the rulings that day. Built to the merge gate on 2026-10-13 under the user's word of 2026-10-12 for this pass ("I want you to run without my intervention up to the Gate"): the frame, seven tasks in seven commits (the plan's 55.1 to 55.6, and 55.7, Gun Duels, carried in from pass 50 and built as a slice), then the five reviews and their fixes. Sections 14 and 15 say how it ended; section 14.1 lists what departs from the plan's entry and the frame. The frame's questions were put to three read-only agents, as that word asks; their answers were judged against the pages and the code, and each decision below is a ruling decided under that word and open to a veto. The gate was run later that day (section 16).
 
 **Date:** 2026-10-13
 
@@ -628,7 +628,7 @@ Seven tasks, in seven commits after the frame's, then the reviews' fixes. The pl
 
 ## 16. The gate
 
-Run on 2026-10-13 at the user's word ("start the gate and stop before the merge"), by `gate.sh` in its first full run. The baseline is main at 846eb5a3, built from its own sources; the proof store went from 473 to 504 games with the pass's 31 recorded games. **The gate passed.** Nothing is merged: the merge and the push are the user's to start. `origin/main` moved during the gate to 681e8bdb by one commit, 14 files, all under `prototypes/europe-hex-map`: nothing of the ASL solution and no file of the branch.
+Run on 2026-10-13 at the user's word ("start the gate and stop before the merge"), by `gate.sh` in its first full run. The baseline is main at 846eb5a3, built from its own sources; the proof store went from 473 to 504 games with the pass's 31 recorded games. **The gate passed.** `origin/main` moved during the gate to 681e8bdb by one commit, 14 files, all under `prototypes/europe-hex-map`: nothing of the ASL solution and no file of the branch.
 
 In the same message the user answered the pass's report: "All open proposals are approved." The departures of section 14.1, rulings R55.1 to R55.33, and pass 50's rulings R50.1 to R50.14 with its design's section 10.1 are no longer open to a veto.
 
@@ -658,4 +658,28 @@ In the same message the user answered the pass's report: "All open proposals are
 - **The proof tool was changed in the gate:** the sweep's guard above; `PROOF_DUMP_EVENTS`; and `GameEvent.RulePackage` as a name `PROOF_SKIP` may hold, since the events' digest wrote the reference outside the property walk. The replay digest and the stage's own sweep were made before the last two changes, which alter nothing unless asked for.
 - **The gate by the clock:** 14:47 to 17:32, 2:45. About 13 minutes went to the failed build, 53 minutes of machine time to the lost sweep, and 25 minutes to the last comparison.
 
-**Approved by the user during the gate, to be made after the merge and the push** (the user's word: "Make these changes after we have merged and pushed Pass-55"): the trial covers every game the long runs touch; the tool writes as it goes and turns a game's exception into a line; no DONE marker without the files; the baseline is made once and reused; proofs and Docker together, then the suite; the replay passes over cut files, which are 78% of its lines and repeat the games they are cut from; a rule pass sweeps `p31c-tw` at each of its eight phases at four points of the game, about 32 cuts of 127; a strict build script beside `test.sh`, which the documents' checklist requires; and a line in the standing rules that an agent's report is not evidence of a build or a test.
+**After the gate.** Merged into main as 50987ff3 with `--no-ff` in a temporary worktree and pushed on 2026-10-13 at the user's word ("merge and push"); the merge's tree under `src/ASL` is the gated branch's. **The CI run of the merge failed, for a reason outside the pass:** it stopped at the locked restore, before any build or test, with NU1004. The workflow asks for .NET `10.0.x`; the October servicing release came out between two pushes, the run installed SDK 10.0.402, whose `Microsoft.AspNetCore.App.Internal.Assets` is 10.0.13, and MapStudio's lock file held 10.0.12 from SDK 10.0.401, which the green run of 20 hours before had found on the runner. The user chose to move to 10.0.402 rather than pin the workflow: the SDK was installed on this machine, the one lock entry regenerated, a locked restore of the solution run with it, and the file pushed as 53a22fcf. That run's restore passed; the rest of it was left for the user to read. The Docker check's image, `mcr.microsoft.com/dotnet/sdk:10.0`, was still at 10.0.401 that evening and fails its locked restore until its next image is out (backlog 59.2).
+
+**The repairs, made after the merge** at the user's word, in the tools folder (`pass32-tools/gate`, `proof/Program.cs`):
+
+- The proof tool writes its output a game at a time and turns a game's exception into an ERROR line; the replay passes over cut files; a name with a leading `=` matches one game; `PROOF_EXCLUDE` leaves games out by name.
+- `gate.sh` has a `base` stage, which makes the baseline of the games made before the pass once and keeps it under a key (the base commit, the older games, `BOTH_SKIP`, the sweep list, the tool), and a `baseline` stage that reuses it and adds only the pass's own games. A stage stops unless the tool exited 0, wrote its file, and no game ended in an ERROR line.
+- The trial holds the pass's own games and its extra sweep games on both sides, and two cuts of `p31c-tw`.
+- A rule pass sweeps `p31c-tw` at each of its eight phases at four points of the game, 32 cuts of 127 (`pick_cuts.py`); `CODE_MOVE=1` in a pass's `.conf` sweeps them all.
+- A `strict` stage formats the pass's changed test files and builds the solution with warnings as errors, and `strict-check` says whether that passed for the tree as it stands.
+- The order of the stages: the baseline, the build, the trial, the proofs and Docker side by side, then the suite. It is to be timed at one gate before it is called settled.
+
+**The repaired gate, run on this pass's own data** the same evening as its first test, with `GameEvent.RulePackage` added to the pass's `BOTH_SKIP`:
+
+| Stage | At the gate | After the repairs |
+|---|---|---|
+| The baseline's replay digest | 682 s alone during the build, 1,855 s beside the suite; 93,401 lines | 76 s; 20,226 lines, the cuts passed over |
+| The baseline's sweep | 2,065 s beside the suite, 1,066 s alone; 515,357 lines | 344 s; 135,940 lines, 32 cuts of `p31c-tw` |
+| The baseline, whole | about 90 minutes, with the lost sweep | 11 minutes with main's sources built again; reused after that |
+| The trial | passed, and met neither the unreadable game nor the packages' digests | about 90 seconds, with the pass's 31 games and its four sweep games on both sides |
+| The proofs | 49 minutes, and 25 more for the packages' digests | 7 minutes: replay 66 s, sweep 323 s |
+| The strict stage | (none) | 4 minutes: 19 changed test files formatted with no change, 0 warnings, 0 errors |
+
+The result is the gate's own: 70 lines of the text list, the same 28 of the pass's games in the digest, no line of a game made before the pass in the sweep, and 758 new lines. The suite and Docker were not run again, and no whole gate has been timed in the new order. The CI run of 53a22fcf passed in 13:55, the first CI run of the pass's code. Main moved once more that evening, to d5c81e8d, by four files under `prototypes/europe-hex-map`.
+
+**What the user approved during the gate, as it was put, to be made after the merge and the push** (the user's word: "Make these changes after we have merged and pushed Pass-55"): the trial covers every game the long runs touch; the tool writes as it goes and turns a game's exception into a line; no DONE marker without the files; the baseline is made once and reused; proofs and Docker together, then the suite; the replay passes over cut files, which are 78% of its lines and repeat the games they are cut from; a rule pass sweeps `p31c-tw` at each of its eight phases at four points of the game, about 32 cuts of 127; a strict build script beside `test.sh`, which the documents' checklist requires; and a line in the standing rules that an agent's report is not evidence of a build or a test.

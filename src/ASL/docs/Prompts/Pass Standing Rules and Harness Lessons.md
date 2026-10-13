@@ -10,7 +10,7 @@
 
 Added on 2026-10-12 at the user's word, after two passes in which lessons already written below were broken again. These are the ones that cost time. Section 4 is the history they come from; this list is what is read before each step.
 
-1. **Before a long run, a short one.** Nothing that runs more than five minutes starts until the same command has passed on a few games. For the gate that is the trial stage of `gate.sh`, which the proofs stage enforces.
+1. **Before a long run, a short one.** Nothing that runs more than five minutes starts until the same command has passed on a few games. For the gate that is the trial stage of `gate.sh`, which the proofs stage enforces; it holds the pass's own games and its extra sweep games on both sides.
 2. **The gate is one script:** `bash E:/Archive/GitHub/dlandi/pass32-tools/gate/gate.sh <pass> <base commit> <stage>`, with the pass's games and JSON keys in `gate/pass<pass>.conf`. Never copy a past pass's gate script or its skip list. `PROOF_SKIP` is computed from the diff between the baseline and the head.
 3. **A digest and a sweep that differ in nothing, or in every line, are a void run,** not a result. Stop and find out why before reading anything else.
 4. **After changing a tool, build it and run it small at once,** not when its long run is due.
@@ -22,6 +22,7 @@ Added on 2026-10-12 at the user's word, after two passes in which lessons alread
 10. **Read the clock before writing a time.**
 11. **What the frame placed in a task and the build left out goes first** in the design's section, the review, and the report.
 12. **When a step fails, say what it cost and what stops it next time,** and put the stop into a script or the hook, not only into section 4.
+13. **A sentence about a build or a test names the log it was read from.** An agent's report is not evidence of either. The strict build of the test projects is `gate.sh <pass> <base> strict`, run before the documents commit, and `strict-check` says whether it passed for the tree as it stands: the pass's test script builds with warnings not as errors, and pass 55's review said the opposite on an agent's word.
 
 **The hook.** In this repository a PreToolUse hook (`.claude/settings.local.json`, script `C:/Users/dland/.claude/hooks/asl_bash_guard.py`, with its test beside it) refuses a Bash call that holds a heredoc, `sed -i`, a multi-line `python -c`, a bare `python -`, a `cd` into a folder of the repository, a `git add` of everything, or a force push. It cannot see point 5. When a slip of a new kind costs time, add a rule and a test case to it.
 
@@ -32,11 +33,11 @@ A prompt written for the next session (the user, 2026-10-12) holds what only tha
 ## 1. How a pass runs
 
 1. **Preparation, read-only.** Read the plan's section for the pass, the designs and reviews it builds on, the backlog sections it draws from, and the code it names. Write the design with its decisions and its questions. Stop for the user's answers.
-2. **Build**, one commit a task, on the pass's own branch. Check each task in the Studio.
+2. **Build**, one commit a task, on the pass's own branch. Start `gate.sh <pass> <base> base` when the branch is cut: it makes the baseline of the games made before the pass once, and the gate reuses it. Check each task in the Studio.
 3. **Reviews**, read-only and in parallel: a referee (the rules and what a side may know), a table player, and for a page a UI and Blazor review. Fix what they find.
 4. **The Studio check of the whole pass**, at 1920x1080, 1366x768, 1024x768, 683x384, and 320 pixels, by keyboard and mouse, in each side's view and the adjudicator's.
-5. **The documents:** the review, the design's "as built" section, the rulings, the backlog section, the plan's status, and the rows the pass changes in the [rule inventory](<../ASL Rule Inventory A to E.md>) (one row a numbered rule) and the [rule coverage](<../ASL Rule Coverage.md>) (one row a section, its status computed from the inventory).
-6. **The merge gate**, only once step 4 passes, by `gate.sh` (section 0, point 2), in this order: `baseline` in the background; `build`; `trial`, which must pass; `suite` in the background; `proofs`; `docker` on the committed branch. Every differing line of the text list, the replay digest, and the sweep is named as one task's intended change or it is a fault.
+5. **The documents,** once `gate.sh <pass> <base> strict` has passed for the tree (section 0, point 13): the review, the design's "as built" section, the rulings, the backlog section, the plan's status, and the rows the pass changes in the [rule inventory](<../ASL Rule Inventory A to E.md>) (one row a numbered rule) and the [rule coverage](<../ASL Rule Coverage.md>) (one row a section, its status computed from the inventory).
+6. **The merge gate**, only once step 4 passes, by `gate.sh` (section 0, point 2), in this order: `baseline`, which reuses what `base` made; `build`; `trial`, which must pass; `proofs` and `docker` on the committed branch, side by side; then `suite`. (Pass 55's gate ran the stages side by side and each took two to three times as long. This order is to be timed at one gate before it is called settled.) Every differing line of the text list, the replay digest, and the sweep is named as one task's intended change or it is a fault.
 7. **Stop before the merge** for the user's word. Merge with `--no-ff`, push, read the CI run. Stop after the merge and ask before starting anything else.
 
 ## 2. Standing rules
@@ -244,4 +245,6 @@ A prompt written for the next session (the user, 2026-10-12) holds what only tha
 - **Sweep the pass's own games on the baseline's side before the long run (pass 55's gate).** Main cannot read a game with a new event type; the sweep ended in a null reference after 53 minutes and wrote nothing, and the script still marked the baseline done. Four games on main's side take six seconds.
 - **`test.sh` builds the test projects with warnings not as errors,** and the Studio's strict build leaves them out: nothing strict compiles a test file before the gate. The gate's first build met 450 style errors, and the review said the opposite on an agent's word. A sentence about a build or a test names the log it was read from.
 - **The gate's stages side by side run two to three times as long** (pass 55: the replay 1,855 s against 682 s, Rules 32 minutes against ten). Two sweeps alone and together took 1,066 s each, against 2,065 s and 1,448 s beside the suite.
-- **The replay digest replays the cuts, which repeat their games:** 73,175 of 93,401 lines. The repairs the user approved on 2026-10-13 (the design of pass 55, section 16) are to be made after pass 55's merge and are not yet in `gate.sh` or the tool.
+- **The replay digest replays the cuts, which repeat their games:** 73,175 of 93,401 lines. Since the repairs of 2026-10-13 the replay passes over them (`PROOF_REPLAY_CUTS=1` replays them as before).
+- **CI takes the newest .NET 10 patch, and a locked restore fails on the day one comes out (pass 55's merge).** The run before had found SDK 10.0.401 on the runner; the merge's run downloaded 10.0.402 and stopped with NU1004 on MapStudio's lock file. Compare the "Set up .NET" step of the last green run with the failed one before reading anything else. `dotnet restore --force-evaluate` rewrites every lock file with CRLF and no final newline: commit the changed entry alone, with LF. The Docker check's image lags the SDK by a day or more; `gate.sh docker` prints the image's SDK beside the machine's.
+- **The gate after its repairs (2026-10-13).** `base` when the branch is cut; `strict` before the documents commit; at the gate `baseline`, `build`, `trial`, `proofs` beside `docker`, then `suite`. `gate/tool_selftest.sh` checks the proof tool after a change to it in a minute. A pass that pins the packages again names `GameEvent.RulePackage` in `BOTH_SKIP`; the trial now meets it, since it sweeps two cuts of `p31c-tw` that plan moves and fire.
