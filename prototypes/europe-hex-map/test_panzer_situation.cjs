@@ -47,6 +47,14 @@ console.log("Map illustration checks passed: buildings, optional annotations, de
 
 
 const art=vm.runInContext("PanzerMapArt",ctx);
+for(const angle of [0,90,180,270]){
+ const rotated=JSON.parse(JSON.stringify(d)),board=rotated.boards[0];rotated.illustration.joinedLayout.find(p=>p.boardId===board.id).clockwiseDegrees=angle;
+ const svg=new E("svg");art.draw(svg,rotated,board,null,true,true);
+ const labels=descendants(svg).filter(e=>e.attrs["data-hex-details"]);assert.equal(labels.length,board.hexes.length);
+ for(const label of labels){assert.ok(label.attrs.transform.endsWith(`rotate(${-angle})`));assert.equal(label.children[0].attrs.y,"0");assert.equal(label.children[1].attrs.y,"20");}
+}
+console.log("Hex IDs and terrain details stay upright together at all four board rotations.");
+
 for(const angle of [90,270])for(const [u,v] of [[0,0],[1,1],[.25,.75]]){const out=art.project(angle,u,v),back=art.unproject(angle,out.x,out.y);assert.equal(back.u,u);assert.equal(back.v,v);}
 assert.equal(descendants(body).filter(e=>e.attrs.class==="panzer-north-rose").length,1);
 assert.ok(descendants(body).some(e=>e.attrs.transform==="translate(3138 0) rotate(90)"));
@@ -89,8 +97,8 @@ wheelMap.children[0].getBoundingClientRect=()=>({left:100,top:200,width:parseFlo
 let prevented=0;const wheel=delta=>wheelMap.onwheel({clientX:350,clientY:290,deltaY:delta,deltaMode:0,preventDefault(){prevented++;},stopPropagation(){}});
 wheel(-100);const factor=parseFloat(zoomContent.style.width)/100;assert.ok(factor>1);assert.ok(Math.abs(zoomViewport.scrollLeft-250*(factor-1))<1e-7);assert.ok(Math.abs(zoomViewport.scrollTop-90*(factor-1))<1e-7);assert.equal(wheelMap.optionswheel.passive,false);
 for(let i=0;i<30;i++)wheel(-300);assert.equal(parseFloat(zoomContent.style.width),600);
-for(let i=0;i<30;i++)wheel(300);assert.equal(parseFloat(zoomContent.style.width),100);assert.ok(prevented>0);
-assert.ok(!descendants(body).some(e=>["Fit both boards","Enlarge boards"].includes(e.textContent)));assert.equal(descendants(body).find(e=>e.className==="panzer-joined").style.width,"100%");assert.ok(stored.placements["us-rifle-01"]);
+for(let i=0;i<30;i++)wheel(300);assert.equal(parseFloat(zoomContent.style.width),10);assert.ok(prevented>0);
+assert.ok(!descendants(body).some(e=>["Fit both boards","Enlarge boards"].includes(e.textContent)));assert.equal(descendants(body).find(e=>e.className==="panzer-joined").style.width,"10%");assert.ok(stored.placements["us-rifle-01"]);
 console.log("Wheel zoom checks passed: pointer anchor, limits, removed size buttons and retained placements.");
 
 const panViewport=descendants(body).find(e=>e.className==="panzer-joined-scroll"),panDialog=body.children[0];

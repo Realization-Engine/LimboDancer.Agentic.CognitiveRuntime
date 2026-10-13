@@ -110,7 +110,7 @@
     const before=svg.getBoundingClientRect();if(!before.width||!before.height)return;
     const u=(e.clientX-before.left)/before.width,v=(e.clientY-before.top)/before.height;
     const delta=e.deltaY*(e.deltaMode===1?16:e.deltaMode===2?viewport.clientHeight:1);
-    const next=Math.max(1,Math.min(6,boardZoom*Math.exp(-Math.max(-300,Math.min(300,delta))*.002)));
+    const next=Math.max(.1,Math.min(6,boardZoom*Math.exp(-Math.max(-300,Math.min(300,delta))*.002)));
     if(next===boardZoom)return;boardZoom=next;
     joined.style.width=(boardZoom*100)+"%";joined.setAttribute("data-detail",String(boardZoom>1.4));
     const after=svg.getBoundingClientRect();

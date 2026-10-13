@@ -48,7 +48,14 @@ const PanzerMapArt=(()=>{
   for(const f of features.filter(f=>f.kind==="bridge")){svg.append(node("polygon",{points:points(f.polygon),fill:f.color,"data-illustration":"bridge"}));for(const [i,j] of [[0,1],[2,3]])svg.append(node("path",{d:`M${f.polygon[i][0]*W},${f.polygon[i][1]*H} L${f.polygon[j][0]*W},${f.polygon[j][1]*H}`,stroke:"#625e50","stroke-width":2}));}
   // The grid stays legible without overpowering the terrain drawing.
   for(const h of bd.hexes){const poly=node("polygon",{points:points(h.imagePolygon.map(p=>[p.u,p.v])),fill:"none",stroke:h.id===selected?"#b77725":"#746f52","stroke-opacity":h.id===selected?1:.27,"stroke-width":h.id===selected?4:.8});poly.append(node("title",{},h.label+": "+h.terrain.base));svg.append(poly);
-   if(details||h.id===selected){svg.append(node("text",{x:Math.max(20,Math.min(1105,h.imageCenter.u*W)),y:Math.max(18,Math.min(3125,h.imageCenter.v*H)),"text-anchor":"middle","font-size":17,"paint-order":"stroke",stroke:"#fffbe8","stroke-width":3,"data-hex-label":h.id},h.id));if(details)svg.append(node("text",{x:h.imageCenter.u*W,y:h.imageCenter.v*H+20,"text-anchor":"middle","font-size":11},h.terrain.features.join(" / ")));}
+   if(details||h.id===selected){
+    const x=Math.max(20,Math.min(1105,h.imageCenter.u*W)),y=Math.max(18,Math.min(3125,h.imageCenter.v*H));
+    const rotation=joined?(d.illustration.joinedLayout.find(p=>p.boardId===bd.id)?.clockwiseDegrees||0):0;
+    const labels=node("g",{transform:`translate(${x} ${y}) rotate(${-rotation})`,"data-hex-details":h.id,"pointer-events":"none"});
+    labels.append(node("text",{x:0,y:0,"text-anchor":"middle","font-size":17,"paint-order":"stroke",stroke:"#fffbe8","stroke-width":3,"data-hex-label":h.id},h.id));
+    if(details)labels.append(node("text",{x:0,y:20,"text-anchor":"middle","font-size":11},h.terrain.features.join(" / ")));
+    svg.append(labels);
+   }
   }
   if(!details)for(const label of d.illustration.labels.filter(l=>l.boardId===bd.id))svg.append(node("text",{x:label.position[0]*W,y:label.position[1]*H,"text-anchor":"middle","font-family":"Barlow Condensed, sans-serif","font-weight":700,"font-size":28.75,"transform":joined?`rotate(${-(d.illustration.joinedLayout.find(p=>p.boardId===bd.id)?.clockwiseDegrees===270?-90:d.illustration.joinedLayout.find(p=>p.boardId===bd.id)?.clockwiseDegrees||0)} ${label.position[0]*W} ${label.position[1]*H})`:"rotate(0)","data-place-label":label.text,"letter-spacing":1,"paint-order":"stroke",stroke:"#eee8bd","stroke-width":5},label.text));
  }
