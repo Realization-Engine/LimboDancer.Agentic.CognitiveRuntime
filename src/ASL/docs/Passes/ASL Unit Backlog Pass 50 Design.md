@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 50 Design
 
-**Status:** Built to the merge gate on 2026-10-12 under the user's word of that day for this pass ("work independently as much as possible up to merge gate and then pause"): the frame, tasks 50.1, 50.2, 50.3, and 50.6, the five reviews and their fixes, the Studio check, and the documents. Tasks 50.4 (Gun Duels) and 50.5 (MG fire against armor) are not built. Sections 10 and 11 say how it ended; section 10.1 lists what departs from the plan's entry and the frame. Every answer and ruling is open to a veto. **The gate was run on 2026-10-12 at the user's word and passed (section 12); nothing is merged.**
+**Status:** Built to the merge gate on 2026-10-12 under the user's word of that day for this pass ("work independently as much as possible up to merge gate and then pause"): the frame, tasks 50.1, 50.2, 50.3, and 50.6, the five reviews and their fixes, the Studio check, and the documents. Tasks 50.4 (Gun Duels) and 50.5 (MG fire against armor) are not built. Sections 10 and 11 say how it ended; section 10.1 lists what departs from the plan's entry and the frame. Every answer and ruling is open to a veto. **The gate was run on 2026-10-12 at the user's word and passed (section 12).** Merged into main as 85d628bd and pushed on 2026-10-12 at the user's word ("Proceed with the merge, push, and close the commit"); the CI run of the merge was left for the user to read.
 
 **Date:** 2026-10-12
 
@@ -400,7 +400,7 @@ Six tasks planned; four built, in three commits, then the reviews' fixes in one.
 
 ## 12. The gate
 
-Run on 2026-10-12 at the user's word ("Proceed with the gate"), which is the word for the gate and for nothing after it. The baseline is main at b4ce31ef, which had not moved, built from its own sources; the proof store holds 473 games, 12 of them the pass's own recorded games. **The gate passed. Nothing is merged or pushed.**
+Run on 2026-10-12 at the user's word ("Proceed with the gate"), which is the word for the gate and for nothing after it. The baseline is main at b4ce31ef, which had not moved, built from its own sources; the proof store holds 473 games, 12 of them the pass's own recorded games. **The gate passed.** Merged into main as 85d628bd and pushed on 2026-10-12 at the user's word ("Proceed with the merge, push, and close the commit"); the CI run of the merge was left for the user to read. Main had moved to cb5935b6 after the gate, by one commit in `prototypes/europe-hex-map` and three Campaign documents: nothing of the ASL solution and no file of the branch, so the gate's results stand for the merge, whose tree under `src/ASL` is the branch's with those three documents.
 
 | Step | Result |
 |---|---|
