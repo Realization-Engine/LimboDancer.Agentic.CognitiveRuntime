@@ -295,6 +295,20 @@ public static class ReplaySteps
             return ("move", side, $"{A(side, "vehicle")} {(drove.Kind == VehicleStepped.Delay ? "spends a Delay MP" : "moves")} in {Place(before, drove.At)}{end}", false);
         }
 
+        if (First<MotionAttempted>(payloads) is { } motion)
+        {
+            // D2.401 (pass 55): the DEFENDER's vehicle attempts Motion status in the enemy MPh.
+            var side = SideOf(motion.Vehicle);
+            var outcome = motion.Result switch
+            {
+                MotionAttempted.Passed => "it gains Motion",
+                MotionAttempted.Failed => "it fails",
+                MotionAttempted.Immobilized => "it is immobilized",
+                _ => "it bogs",
+            };
+            return ("move", side, $"{A(side, "vehicle")} attempts Motion: {outcome}{end}", false);
+        }
+
         if (First<AdvanceMoved>(payloads) is { } advanced)
         {
             var side = SideOf(Head(advanced.Units));
@@ -569,6 +583,7 @@ public static class ReplaySteps
             {
                 MovementStepped moved => moved.To,
                 VehicleStepped drove => drove.At,
+                MotionAttempted motion => before.Location(motion.Vehicle)?.Location,
                 AdvanceMoved advanced => advanced.To,
                 RoutStepped routed => routed.To,
                 CloseCombatResolved combat => combat.Location,

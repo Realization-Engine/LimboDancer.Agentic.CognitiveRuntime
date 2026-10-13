@@ -372,10 +372,11 @@ public static class ScenarioA1OrdnanceCalculator
         }
 
         // D5.34, C7.42, D5.341 (ruling R7.10): a Stunned, Shocked, or Recalled AFV does not fire; D1.321, D1.322: an RST or 1MT MA fires only BU.
-        // D2.42, C5.35 (pass 50): a firer in Motion fires with Case C4 in its own MPh and AFPh; D2.4: never in the PFPh; the DEFENDER's vehicle in
-        // Motion is not built. C5.3 (pass 50): one that entered a new hex in its MPh fires in the AFPh with Case C.
+        // D2.42, C5.35 (pass 50): a firer in Motion fires with Case C4 in its own MPh and AFPh; D2.4: never in the PFPh. D2.401 (pass 55, ruling
+        // R55.14): the DEFENDER's vehicle in Motion "may still use Motion Fire (Case C4)", as Defensive First Fire and in the DFPh.
+        // C5.3 (pass 50): one that entered a new hex in its MPh fires in the AFPh with Case C.
         if (shot.Vehicle is { } firing && (firing.Stunned == true || firing.Shocked == true || firing.Recalled == true
-            || (firing.InMotion == true && !bounding && !(phase == "AFPh" && shot.FiringSide == "phasing"))
+            || (firing.InMotion == true && !bounding && !(phase == "AFPh" && shot.FiringSide == "phasing") && !DefenderMotionFirer(shot))
             || (gun.MaType is "rst" or "1mt" && firing.ButtonedUp != true)))
         {
             outside.Add(Prefix + "vehicle-fire-outside");
@@ -1082,7 +1083,9 @@ public static class ScenarioA1OrdnanceCalculator
     /// "must add the +2 DRM of Case B to the applicable Gun Type DRM of Case C": 2 for a T or ST turret, 3 for a NT mount (the C5.3 EX: +4 and
     /// +5). Case C1 adds one for a continuous LOS of two and a half to three MP, Case C2 two for at most two MP, and more than three MP, or a LOS
     /// held since before the MPh, is Case C alone. In the AFPh a vehicle that entered a new hex in its MPh, is in Motion, or fires on the ROF its
-    /// Bounding First Fire kept uses Case C; the subcases "do not apply in the AFPh". Case B is part of it and is not added again.
+    /// Bounding First Fire kept uses Case C; the subcases "do not apply in the AFPh". Case B is part of it and is not added again. A DEFENDER's
+    /// vehicle in Motion uses Case C alone (C5.35; pass 55, ruling R55.14): C5.31 and C5.32 give C1 and C2 only to "a vehicle First Firing during
+    /// its own MPh".
     /// </summary>
     internal static FireModifier? CaseC(OrdnanceShot shot, GunDefinition gun)
     {
@@ -1092,7 +1095,8 @@ public static class ScenarioA1OrdnanceCalculator
         }
 
         var bounding = shot.FireKind == ScenarioA1FireCalculator.BoundingFirstFire;
-        if (!bounding && !(shot.Phase == "AFPh" && shot.FiringSide == "phasing" && (vehicle.Moved == true || vehicle.InMotion == true || vehicle.BoundingFirer == true)))
+        if (!bounding && !DefenderMotionFirer(shot)
+            && !(shot.Phase == "AFPh" && shot.FiringSide == "phasing" && (vehicle.Moved == true || vehicle.InMotion == true || vehicle.BoundingFirer == true)))
         {
             return null;
         }
@@ -1111,10 +1115,19 @@ public static class ScenarioA1OrdnanceCalculator
 
     /// <summary>
     /// Whether the shot is a Motion firer's (C5.35, D2.42, pp. 172 and 198; pass 50): a vehicle in Motion, or moving and not stopped, that fires in
-    /// its own MPh or AFPh. It uses Case C, C1, or C2 as applicable and "must double the lower dr of its TH DR".
+    /// its own MPh or AFPh, or a DEFENDER's vehicle in Motion. It uses Case C, C1, or C2 as applicable and "must double the lower dr of its TH DR".
     /// </summary>
     internal static bool MotionFirer(OrdnanceShot shot) =>
-        shot.Vehicle?.InMotion == true && (shot.FireKind == ScenarioA1FireCalculator.BoundingFirstFire || (shot.Phase == "AFPh" && shot.FiringSide == "phasing"));
+        shot.Vehicle?.InMotion == true
+            && (shot.FireKind == ScenarioA1FireCalculator.BoundingFirstFire || (shot.Phase == "AFPh" && shot.FiringSide == "phasing") || DefenderMotionFirer(shot));
+
+    /// <summary>
+    /// D2.401, D2.42, C5.35 (pp. 172, 198; pass 55, ruling R55.14): a vehicle in Motion of the side that is not phasing, which keeps its Motion
+    /// counter until its own next MPh or gained it by a Motion attempt, and "may still use Motion Fire (Case C4)": Defensive First Fire in the
+    /// enemy MPh and Final Fire in the DFPh, with Case C alone and the lower dr of its TH DR doubled.
+    /// </summary>
+    internal static bool DefenderMotionFirer(OrdnanceShot shot) =>
+        shot.Vehicle?.InMotion == true && shot.FiringSide == "non-phasing" && shot.Phase is "MPh" or "DFPh";
 
     /// <summary>
     /// The firer-based DRM of the backlog pass 8 (rulings R8.2, R8.8, R8.10): Case F for Intensive Fire (C5.61), Case H for a non-qualified

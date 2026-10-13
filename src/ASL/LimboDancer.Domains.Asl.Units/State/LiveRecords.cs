@@ -352,6 +352,39 @@ public sealed record VehicleCheckRolled(string Vehicle, string Check, string Rol
 }
 
 /// <summary>
+/// <c>motion-attempted</c>: a DEFENDER's vehicle attempts Motion status in the enemy MPh (D2.401, p. 198; pass 55, rulings R55.11 to R55.13): its
+/// dr's roll, the half MF or MP the moving unit <see cref="Mover"/> has spent in its LOS in this MPh, and the result: <c>passed</c> (it gains
+/// Motion, with the VCA in <see cref="Facing"/> and the TCA in <see cref="Turret"/> when it changes them), <c>failed</c>, or, after a passed dr,
+/// <c>immobilized</c> by its Mechanical Reliability DR (D2.51) or <c>bogged</c> by the Bog Check of its VCA change (D2.11, D8.2), whose
+/// <c>vehicle-check-rolled</c> records come before this one. The vehicle attempts no more in this MPh.
+/// </summary>
+public sealed record MotionAttempted(string Vehicle, string Roll, int HalfPoints, string Result) : EventPayload
+{
+    public const string Passed = Rules.ScenarioA1MotionAttempts.Passed;
+    public const string Failed = Rules.ScenarioA1MotionAttempts.Failed;
+    public const string Immobilized = Rules.ScenarioA1MotionAttempts.Immobilized;
+    public const string Bogged = Rules.ScenarioA1MotionAttempts.Bogged;
+
+    /// <summary>The moving unit whose MF or MP in the vehicle's LOS the dr is made against.</summary>
+    public string? Mover
+    {
+        get; init;
+    }
+
+    /// <summary>The VCA the vehicle takes with a passed attempt ("allowed to freely change its VCA/TCA"); null when it keeps its VCA.</summary>
+    public UnitFacing? Facing
+    {
+        get; init;
+    }
+
+    /// <summary>The TCA the vehicle takes with a passed attempt; null when its turret is not turned apart from the hull.</summary>
+    public UnitFacing? Turret
+    {
+        get; init;
+    }
+}
+
+/// <summary>
 /// <c>overrun-resolved</c>: a vehicle's OVR of its Location was resolved by the fire record named (D7.1; ruling R11.11); the DEFENDER's Reaction Fire
 /// window follows (D7.2).
 /// </summary>

@@ -783,6 +783,15 @@ public sealed class PlayRecords
                     };
                     records.Add((item.EventId, "shock", $"{shock.Vehicle}'s Shock or Unconfirmed Kill dr {dr}: it {result} (C7.42)"));
                 }
+                else if (item.Payload is MotionAttempted motion)
+                {
+                    // D2.401 (pass 55): the MF or MP the mover spent in the vehicle's LOS, the dr, and what it brought.
+                    var dr = rolls.TryGetValue(motion.Roll, out var roll) ? roll.Values[0].ToString(CultureInfo.InvariantCulture) : "?";
+                    var vehicleMover = motion.Mover is { } moverId && before?.Unit(moverId) is { } moving && LiveFire.IsVehicle(moving);
+                    records.Add((item.EventId, "motion", $"{motion.Vehicle}{In(before, motion.Vehicle)} attempts Motion: {ScenarioA1MotionAttempts.Points(motion.HalfPoints, vehicleMover)} spent in its LOS, dr {dr}: "
+                        + ScenarioA1MotionAttempts.ResultText(motion.Result, motion.Facing is { } vca ? UnitFacings.Name(vca) : null, motion.Turret is { } tca ? UnitFacings.Name(tca) : null)
+                        + " (D2.401)"));
+                }
             }
 
             // Table player, pass 28b: the latest attempt first, and each attempt's records in the order they happened, so a cause reads before its effect.

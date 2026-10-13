@@ -223,6 +223,9 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
             VehicleStepped stepped => state.Movement is { WindowOpen: true, Vehicle: true } movement && movement.Step == stepped.Step
                 && state.Location(stepped.Vehicle)?.Location == stepped.At,
 
+            // A Motion attempt (D2.401; pass 55): the vehicle's one attempt of this enemy MPh is kept.
+            MotionAttempted motion => state.MotionAttempts.Contains(motion.Vehicle, StringComparer.Ordinal),
+
             // The window closed; a vehicle that spent its MP left in its hex has ended its move with it (ruling R5.15).
             MovementWindowClosed => state.Movement is null or { WindowOpen: false },
             MovementEnded ended => ended.Movers.All(id => state.Unit(id) is not { Status: InstanceStatus.Active } unit || unit.MovementEnded),

@@ -130,6 +130,9 @@ public sealed record GameState(
     /// <summary>The Guns that changed their CA without firing this phase, and fire no more in it (C3.22); cleared at every phase change.</summary>
     public IReadOnlyList<string> GunsTurnedThisPhase { get; init; } = [];
 
+    /// <summary>The vehicles that have made their Motion attempt in this enemy MPh (D2.401; pass 55, ruling R55.13); cleared at every phase change.</summary>
+    public IReadOnlyList<string> MotionAttempts { get; init; } = [];
+
     /// <summary>The Guns and crews that may not move this Player Turn after a CA change in the PFPh (C3.22; ruling R8.9).</summary>
     public IReadOnlyList<string> NoMoveThisPlayerTurn { get; init; } = [];
 

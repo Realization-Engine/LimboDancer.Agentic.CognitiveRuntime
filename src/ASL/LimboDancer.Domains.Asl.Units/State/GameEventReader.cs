@@ -554,6 +554,19 @@ public static class GameEventReader
                         Mp = fields.OptionalInteger(payload, "mp", path) ?? 0,
                         ArmorLeadership = fields.OptionalInteger(payload, "armorLeadership", path),
                     };
+            case "motion-attempted":
+                var motionVehicle = fields.RequiredString(payload, "vehicle", path);
+                var motionRoll = fields.RequiredString(payload, "roll", path);
+                var motionHalfPoints = fields.OptionalInteger(payload, "halfPoints", path);
+                var motionResult = fields.RequiredString(payload, "result", path);
+                return motionVehicle is null || motionRoll is null || motionHalfPoints is null || motionResult is null
+                    ? Missing(diagnostics, "A Motion attempt names its vehicle, roll, half points in LOS, and result.", path)
+                    : new MotionAttempted(motionVehicle, motionRoll, motionHalfPoints.Value, motionResult)
+                    {
+                        Mover = fields.OptionalString(payload, "mover", path),
+                        Facing = fields.OptionalString(payload, "facing", path) is { } motionFacing && UnitFacings.TryParse(motionFacing, out var motionVca) ? motionVca : null,
+                        Turret = fields.OptionalString(payload, "turret", path) is { } motionTurret && UnitFacings.TryParse(motionTurret, out var motionTca) ? motionTca : null,
+                    };
             case "overrun-resolved":
                 var overrunVehicle = fields.RequiredString(payload, "vehicle", path);
                 var overrunAt = ReadLocation(payload, "at", path, fields, diagnostics);

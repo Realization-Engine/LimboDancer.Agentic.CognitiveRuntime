@@ -1449,4 +1449,204 @@ public sealed class ScenarioA1Pass55RulesTests
         Assert.False(ScenarioA1ArmorLeaders.Shown(enemy: true, revealed: false));
         Assert.True(ScenarioA1ArmorLeaders.Shown(enemy: true, revealed: true));
     }
+
+    // Task 55.3 (increment 2f): Motion attempts (D2.401, p. 198; rulings R55.11 to R55.13) and the DEFENDER's Motion firer (C5.35; ruling R55.14).
+
+    private static readonly MotionAttemptVehicle Mobile = new("r1", true, true);
+
+    private static string? MotionBar(MotionAttemptVehicle? vehicle, string phase = "mph", bool windowOpen = true) => ScenarioA1MotionAttempts.Bar("r1", phase, windowOpen, vehicle);
+
+    [Fact]
+    public void AMobileDefendingVehicleAttemptsMotionOnceInTheEnemyMphsWindow()
+    {
+        // D2.401: "declared during the MPh of an enemy ground unit by any DEFENDING Mobile vehicle".
+        Assert.Null(MotionBar(Mobile));
+        Assert.Contains("enemy MPh", MotionBar(Mobile, phase: "dfph"), StringComparison.Ordinal);
+        Assert.Contains("enemy MPh", MotionBar(Mobile, windowOpen: false), StringComparison.Ordinal);
+        Assert.Contains("not a vehicle of the DEFENDER", MotionBar(null), StringComparison.Ordinal);
+        Assert.Contains("not a vehicle of the DEFENDER", MotionBar(new MotionAttemptVehicle("r1", true, false)), StringComparison.Ordinal);
+        Assert.Contains("not a vehicle of the DEFENDER", MotionBar(new MotionAttemptVehicle("r1", false, true)), StringComparison.Ordinal);
+
+        // Mobile: not immobilized, bogged, or Mired (D8.2: a bogged vehicle "is Immobile").
+        Assert.Contains("immobilized", MotionBar(Mobile with { Immobilized = true }), StringComparison.Ordinal);
+        Assert.Contains("bogged", MotionBar(Mobile with { Bogged = true }), StringComparison.Ordinal);
+        Assert.Contains("bogged", MotionBar(Mobile with { Mired = true }), StringComparison.Ordinal);
+
+        // D5.34: a stunned crew may not "move (inclusive of CA changes)"; the "+1" counter says it "is no longer Stunned". D5.341: a Recall
+        // "is treated the same as a Stun" until the Player Turn ends, and then the AFV leaves "using Motion status". C7.42, D5.41.
+        Assert.Contains("D5.34", MotionBar(Mobile with { Stunned = true }), StringComparison.Ordinal);
+        Assert.Null(MotionBar(Mobile with { StunRecovery = true }));
+        Assert.Contains("D5.341", MotionBar(Mobile with { Recalled = true }), StringComparison.Ordinal);
+        Assert.Null(MotionBar(Mobile with { Recalled = true, StunRecovery = true }));
+        Assert.Contains("C7.42", MotionBar(Mobile with { Shocked = true }), StringComparison.Ordinal);
+        Assert.Contains("C7.42", MotionBar(Mobile with { UnconfirmedKill = true }), StringComparison.Ordinal);
+        Assert.Contains("D5.41", MotionBar(Mobile with { Abandoned = true }), StringComparison.Ordinal);
+
+        // "may not attempt it at all if already marked with a First Fire (or Final/Intensive Fire) counter"; "only once per enemy MPh".
+        Assert.All(new[] { "First Fire", "Final Fire", "Intensive Fire" }, counter => Assert.Contains($"a {counter} counter", MotionBar(Mobile with { FireCounter = counter }), StringComparison.Ordinal));
+        Assert.Contains("only once", MotionBar(Mobile with { Attempted = true }), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheNumberIsTheSumOfWhatTheMoverSpentInLos()
+    {
+        // Ruling R55.11: every expenditure made in a Location in the vehicle's LOS counts, with a gap out of LOS between them: 1 + 2 MP, not
+        // the 2 MP of the unbroken LOS that Cases C1 and J1 count.
+        (bool, int)[] steps = [(false, 2), (true, 2), (false, 4), (true, 4)];
+        Assert.Equal(6, ScenarioA1MotionAttempts.HalfPointsInLos(steps));
+        Assert.Equal(2, ScenarioA1OrdnanceMapRules.MpInLos([.. steps.Select(step => (step.Item2, (Func<bool>)(() => step.Item1)))], () => true));
+        Assert.Equal(0, ScenarioA1MotionAttempts.HalfPointsInLos([(false, 2), (false, 6)]));
+
+        // A dr is a whole number: 1½ MF or MP is passed by a dr of 1 alone; a die shows no more than 6.
+        Assert.Equal([0, 0, 1, 1, 2, 6, 6], new[] { 0, 1, 2, 3, 4, 12, 40 }.Select(ScenarioA1MotionAttempts.Number));
+        Assert.True(ScenarioA1MotionAttempts.Succeeds(1, 3));
+        Assert.False(ScenarioA1MotionAttempts.Succeeds(2, 3));
+
+        // "a Motion attempt dr <= the number of MF/MP expended in its LOS": at, below, and above 3 MP.
+        Assert.True(ScenarioA1MotionAttempts.Succeeds(3, 6));
+        Assert.True(ScenarioA1MotionAttempts.Succeeds(2, 6));
+        Assert.False(ScenarioA1MotionAttempts.Succeeds(4, 6));
+        Assert.Equal("3 MP in its LOS: succeeds on a dr of 3 or less", ScenarioA1MotionAttempts.Chance(6, true));
+        Assert.Equal("1½ MF in its LOS: succeeds on a dr of 1 or less", ScenarioA1MotionAttempts.Chance(3, false));
+    }
+
+    [Fact]
+    public void TheMoverIsOneThatBeganItsMoveOutOfTheVehiclesLos()
+    {
+        // Ruling R55.12: the LOS to the Location the unit began its move in decides "had not been in the vehicle's LOS during that Player Turn";
+        // a unit seen there is refused before any roll, and costs no attempt.
+        var unseen = new MotionAttemptMover("g1", false, [(false, 2), (true, 4)]);
+        var seen = new MotionAttemptMover("g2", true, [(true, 2), (true, 8)]);
+        var (mover, halfPoints, refusal) = ScenarioA1MotionAttempts.Mover("r1", true, [seen, unseen]);
+        Assert.Equal(("g1", 4, null), (mover!.Id, halfPoints, refusal));
+
+        var refused = ScenarioA1MotionAttempts.Mover("r1", true, [seen]);
+        Assert.Null(refused.Mover);
+        Assert.Contains("play.motion-attempt-seen", refused.Refusal, StringComparison.Ordinal);
+        Assert.Contains("no attempt is spent", refused.Refusal, StringComparison.Ordinal);
+
+        // Less than 1 MF or MP in LOS: no dr could pass, and none is rolled.
+        var early = ScenarioA1MotionAttempts.Mover("r1", false, [new MotionAttemptMover("g1", false, [(false, 2), (true, 1)])]);
+        Assert.Null(early.Mover);
+        Assert.Contains("½ MF", early.Refusal, StringComparison.Ordinal);
+        Assert.Contains("no enemy unit is moving", ScenarioA1MotionAttempts.Mover("r1", false, []).Refusal, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void APassedAttemptFreelyChangesTheVcaAndTheTcaUnlessADrUndoesIt()
+    {
+        // "allowed to freely change its VCA/TCA": any hexspine; D8.2: "one Bog DR per hexspine", counted the shorter way round.
+        Assert.Equal([0, 1, 2, 3, 2, 1], Enumerable.Range(0, 6).Select(next => ScenarioA1MotionAttempts.Hexspines(0, next)));
+        Assert.Equal(2, ScenarioA1MotionAttempts.Hexspines(5, 1));
+        Assert.Null(ScenarioA1MotionAttempts.ChangeBar("r1", true, true, true, true, turreted: true, bypass: false));
+        Assert.Null(ScenarioA1MotionAttempts.ChangeBar("r1", false, false, false, false, turreted: false, bypass: true));
+        Assert.Contains("no turret", ScenarioA1MotionAttempts.ChangeBar("r1", false, false, true, true, turreted: false, bypass: false), StringComparison.Ordinal);
+        Assert.Contains("name the hexspine", ScenarioA1MotionAttempts.ChangeBar("r1", true, false, false, false, turreted: true, bypass: false), StringComparison.Ordinal);
+        Assert.Contains("Bypass", ScenarioA1MotionAttempts.ChangeBar("r1", true, true, false, false, turreted: true, bypass: true), StringComparison.Ordinal);
+
+        // D2.401, D2.51: "neither Motion nor VCA change if any mechanical reliability DR results in Immobilization"; ruling R55.13 for a bog.
+        Assert.Equal(ScenarioA1MotionAttempts.Failed, ScenarioA1MotionAttempts.Result(false, false, false));
+        Assert.Equal(ScenarioA1MotionAttempts.Passed, ScenarioA1MotionAttempts.Result(true, false, false));
+        Assert.Equal(ScenarioA1MotionAttempts.Immobilized, ScenarioA1MotionAttempts.Result(true, true, false));
+        Assert.Equal(ScenarioA1MotionAttempts.Bogged, ScenarioA1MotionAttempts.Result(true, false, true));
+
+        var summary = ScenarioA1MotionAttempts.Summary("r1", "g1", 6, true, "north-east", null, unreliable: true, bogDrm: 1, hexspines: 2);
+        Assert.Contains("3 MP spent in its LOS: it gains Motion on a dr of 3 or less, and turns its VCA to north-east (D2.401)", summary, StringComparison.Ordinal);
+        Assert.Contains("D2.51", summary, StringComparison.Ordinal);
+        Assert.Contains("a Bog DR at +1 for each of its 2 hexspines", summary, StringComparison.Ordinal);
+        Assert.Equal("it gains Motion and turns its VCA to west and its TCA to north-west", ScenarioA1MotionAttempts.ResultText(ScenarioA1MotionAttempts.Passed, "west", "north-west"));
+    }
+
+    [Fact]
+    public void ARecordedMotionAttemptIsHeldToItsDrAndItsChecks()
+    {
+        static RecordRefusal? Record(string result, int? dr = 2, int halfPoints = 6, bool attempted = false, bool immobilized = false, bool bogged = false, bool changesCa = false,
+            string phase = "mph", bool windowOpen = true, bool defending = true) =>
+            ScenarioA1MotionAttempts.RecordRefusal(phase, windowOpen, defending, attempted, dr, halfPoints, result, immobilized, bogged, changesCa);
+
+        Assert.Null(Record(ScenarioA1MotionAttempts.Passed, changesCa: true));
+        Assert.Null(Record(ScenarioA1MotionAttempts.Failed, dr: 4));
+        Assert.Null(Record(ScenarioA1MotionAttempts.Immobilized, immobilized: true));
+        Assert.Null(Record(ScenarioA1MotionAttempts.Bogged, bogged: true));
+        Assert.All(new[]
+        {
+            Record(ScenarioA1MotionAttempts.Passed, dr: 4), Record(ScenarioA1MotionAttempts.Failed), Record(ScenarioA1MotionAttempts.Passed, immobilized: true),
+            Record(ScenarioA1MotionAttempts.Immobilized), Record(ScenarioA1MotionAttempts.Failed, dr: 4, changesCa: true), Record(ScenarioA1MotionAttempts.Passed, dr: null),
+            Record(ScenarioA1MotionAttempts.Passed, attempted: true), Record(ScenarioA1MotionAttempts.Passed, phase: "dfph"), Record(ScenarioA1MotionAttempts.Passed, windowOpen: false),
+            Record(ScenarioA1MotionAttempts.Passed, defending: false),
+        }, refusal => Assert.Equal("UNIT-STATE-048", refusal!.Code));
+
+        // The checks a DEFENDER's vehicle makes in the enemy MPh: the Mechanical Reliability DR and a Bog Check, before its attempt is marked.
+        Assert.True(ScenarioA1MotionAttempts.CheckInEnemyMph(ScenarioA1ResultTables.MechanicalCheck, true, false));
+        Assert.True(ScenarioA1MotionAttempts.CheckInEnemyMph(ScenarioA1ResultTables.BogCheck, true, false));
+        Assert.False(ScenarioA1MotionAttempts.CheckInEnemyMph(ScenarioA1ResultTables.EsbCheck, true, false));
+        Assert.False(ScenarioA1MotionAttempts.CheckInEnemyMph(ScenarioA1ResultTables.BogRemovalCheck, true, false));
+        Assert.False(ScenarioA1MotionAttempts.CheckInEnemyMph(ScenarioA1ResultTables.BogCheck, false, false));
+        Assert.False(ScenarioA1MotionAttempts.CheckInEnemyMph(ScenarioA1ResultTables.BogCheck, true, true));
+    }
+
+    /// <summary>The T-34 M41 (a RST turret) of the side that is not phasing, in Motion, firing AP at the PzKpfw IIIH at 3 hexes.</summary>
+    private static OrdnanceShot DefenderInMotion(string phase, int[] toHit, bool inMotion = true, int acquisition = 0, int range = 3)
+    {
+        var shot = TankShot(toHit: toHit, toKill: [6, 6]);
+        return shot with
+        {
+            Phase = phase,
+            FiringSide = "non-phasing",
+            Range = range,
+            Acquisition = acquisition,
+            Hit = shot.Hit! with { Phase = phase, FiringSide = "non-phasing" },
+            Vehicle = new OrdnanceVehicleFirer(true, inMotion, false, false, false),
+            FireKind = phase == "MPh" ? "first-fire" : null,
+            Movement = phase == "MPh" ? new OrdnanceMovement(5, null, null, 1, 0) : null,
+        };
+    }
+
+    [Fact]
+    public void ADefendersVehicleInMotionFiresItsMaWithCaseCAndTheLowerDrDoubled()
+    {
+        // D2.401: "may still use Motion Fire (Case C4)"; C5.35: "must use the Case C, or C1, or C2 DRM as applicable and must double the lower
+        // dr of its TH DR". Ruling R55.14: Case C alone, +4 for a turret (the +2 of Case B and the mount's 2), in the enemy MPh and in the DFPh.
+        foreach (var phase in new[] { "MPh", "DFPh" })
+        {
+            var result = Resolve(DefenderInMotion(phase, [2, 4]));
+            Assert.DoesNotContain("asl.a1.ordnance.vehicle-fire-outside", result.Reasons);
+            Assert.Equal(4m, Drm(result, "case-c"));
+            Assert.Equal(2m, Drm(result, "case-c4:lower-dr"));
+            Assert.Null(Drm(result, "case-c1"));
+            Assert.Null(Drm(result, "case-c2"));
+            Assert.Null(Drm(result, "case-b"));
+            Assert.Equal(6 + (int)result.ToHit!.Drm.Sum(item => item.Value), result.ToHit.FinalDr);
+            Assert.Equal(phase == "MPh" ? "first-fire" : "final-fire", result.Gun!.FireCounter);
+
+            // C6.55 (ruling R50.13): no Acquisition DRM, and none carried on; C6.3: no Case L for a firer in Motion.
+            var acquired = Resolve(DefenderInMotion(phase, [2, 4], acquisition: -1, range: 1));
+            Assert.Null(Drm(acquired, "case-n"));
+            Assert.Null(Drm(acquired, "case-l"));
+            Assert.Equal(-1, acquired.Gun!.Acquisition);
+
+            // The same vehicle not in Motion fires as it did: no Case C, its Acquisition, and Case L.
+            var still = Resolve(DefenderInMotion(phase, [2, 4], inMotion: false, acquisition: -1, range: 1));
+            Assert.Null(Drm(still, "case-c"));
+            Assert.Null(Drm(still, "case-c4:lower-dr"));
+            Assert.Equal(-1m, Drm(still, "case-n"));
+            Assert.Equal(-2m, Drm(still, "case-l"));
+        }
+
+        // D2.4: a vehicle in Motion still fires nothing in its own PFPh.
+        Assert.Contains("asl.a1.ordnance.vehicle-fire-outside", Resolve(TankShot() with { Vehicle = new OrdnanceVehicleFirer(true, true, false, false, false) }).Reasons);
+    }
+
+    [Fact]
+    public void ADefendersVehicleInMotionFiresItsMgsHalved()
+    {
+        // D2.42: "All other types of FP from such a vehicle ... are halved as Motion Fire". The PzKpfw IIIH's CMG (5 FP) in the DFPh.
+        var attack = Cmg(2, null) with { Phase = "DFPh", FiringSide = "non-phasing" };
+        var moving = attack with { VehicleFire = attack.VehicleFire! with { InMotion = true } };
+        Assert.Equal(5m, Shoot(attack).Arithmetic!.TotalFirepower);
+        var halved = Shoot(moving);
+        Assert.Equal(FireResolution.Resolved, halved.Disposition);
+        Assert.Equal(2.5m, halved.Arithmetic!.TotalFirepower);
+        Assert.Contains(halved.Arithmetic.Firers.SelectMany(item => item.Multipliers), item => item.Name == "motion-fire" && item.Rule == "D2.42");
+    }
 }

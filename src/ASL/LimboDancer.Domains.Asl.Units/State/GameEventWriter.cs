@@ -670,6 +670,27 @@ public static class GameEventWriter
                 }
 
                 break;
+            case MotionAttempted motion:
+                writer.WriteString("vehicle", motion.Vehicle);
+                writer.WriteString("roll", motion.Roll);
+                writer.WriteNumber("halfPoints", motion.HalfPoints);
+                writer.WriteString("result", motion.Result);
+                if (motion.Mover is { } motionMover)
+                {
+                    writer.WriteString("mover", motionMover);
+                }
+
+                if (motion.Facing is { } motionFacing)
+                {
+                    writer.WriteString("facing", Documents.UnitFacings.Name(motionFacing));
+                }
+
+                if (motion.Turret is { } motionTurret)
+                {
+                    writer.WriteString("turret", Documents.UnitFacings.Name(motionTurret));
+                }
+
+                break;
             case OverrunResolved overrun:
                 writer.WriteString("vehicle", overrun.Vehicle);
                 writer.WriteString("at", overrun.At.ToString());

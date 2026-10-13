@@ -139,6 +139,7 @@ public static class GameProjector
                 MovementStepped moving => StepMovement(previous, moving),
                 VehicleStepped vehicle => StepVehicle(previous, vehicle),
                 VehicleCheckRolled check => CheckVehicle(previous, check),
+                MotionAttempted motion => AttemptMotion(previous, motion),
                 OverrunResolved overrun => ResolveOverrun(previous, overrun),
                 PaatcTaken paatc => TakePaatc(previous, paatc),
                 InfantryOverrunNtc ntc => TakeOverrunNtc(previous, ntc),
@@ -597,6 +598,7 @@ public static class GameProjector
                         : state.NoMoveThisPlayerTurn,
                     OrdnanceShotsHere = [],
                     GunsTurnedThisPhase = [],
+                    MotionAttempts = [],
                     SmokeAttempts = [],
                     PortagedThisPhase = [],
                     InfantryOverrunNtcs = [],
@@ -1588,9 +1590,12 @@ public static class GameProjector
                 // C6.5 (pass 35, task 35.11): lost when its firer leaves its Location, or turns without having fired on its target this phase. A
                 // vehicle's VCA change turns its MA with it unless its TCA is kept apart (the referee's review).
                 if (Rules.ScenarioA1FireFollowUps.AcquisitionLostByMoveOrTurn(FirerAt(previous, acquisition.Gun), FirerAt(next, acquisition.Gun),
+                    // D2.401 (pass 55): the free change of VCA or TCA a passed Motion attempt brings turns the MA as an MP expenditure does.
                     Rules.ScenarioA1FireFollowUps.AcquiringCaChanged((payload is GunTurned turned && turned.Gun == acquisition.Gun)
-                            || (payload is VehicleStepped { Turret: not null } turretStep && turretStep.Vehicle == acquisition.Gun),
-                        payload is VehicleStepped { Kind: VehicleStepped.Turn } hull && hull.Vehicle == acquisition.Gun,
+                            || (payload is VehicleStepped { Turret: not null } turretStep && turretStep.Vehicle == acquisition.Gun)
+                            || (payload is MotionAttempted { Result: MotionAttempted.Passed, Turret: not null } turretMotion && turretMotion.Vehicle == acquisition.Gun),
+                        (payload is VehicleStepped { Kind: VehicleStepped.Turn } hull && hull.Vehicle == acquisition.Gun)
+                            || (payload is MotionAttempted { Result: MotionAttempted.Passed, Facing: not null } hullMotion && hullMotion.Vehicle == acquisition.Gun),
                         previous?.TurretFacings.Any(item => item.Vehicle == acquisition.Gun) == true),
                     previous?.OrdnanceShots.FirstOrDefault(item => item.Gun == acquisition.Gun)?.Shots ?? 0))
                 {
@@ -2469,10 +2474,13 @@ public static class GameProjector
         /// </summary>
         private GameState? CheckVehicle(GameState state, VehicleCheckRolled check)
         {
+            // D2.401, D2.51, D2.11 (pass 55, ruling R55.13): a DEFENDER's vehicle makes its Mechanical Reliability DR and the Bog Check of its VCA
+            // change in the enemy MPh, after its Motion attempt's dr and before that attempt's record; Rules decides which checks those are.
             if (state.Phase != "mph" || Active(state, check.Vehicle) is not UnitInstance vehicle || !vocabulary.IsA(vehicle.Kind, "asl:vehicle")
-                || vehicle.Side != state.PhasingSide)
+                || (vehicle.Side != state.PhasingSide && !Rules.ScenarioA1MotionAttempts.CheckInEnemyMph(check.Check, state.Movement is { WindowOpen: true },
+                    state.MotionAttempts.Contains(vehicle.Id, StringComparer.Ordinal))))
             {
-                return Fail<GameState>("UNIT-STATE-039", "A vehicle check is made in its own MPh (D2.5, D2.51, D8.2, D8.3).");
+                return Fail<GameState>("UNIT-STATE-039", "A vehicle check is made in its own MPh, or after its Motion attempt in the enemy's (D2.5, D2.51, D8.2, D8.3, D2.401).");
             }
 
             if (!rolls.TryGetValue(check.Roll, out var roll) || roll.Count != 2 || roll.Sides != 6)
@@ -2533,6 +2541,53 @@ public static class GameProjector
                     {
                         Ending = true
                     }
+                }
+                : next;
+        }
+
+        /// <summary>
+        /// A Motion attempt (D2.401, p. 198; pass 55, rulings R55.11 to R55.13): a DEFENDER's vehicle's dr in the enemy MPh against the MF or MP the
+        /// record says the moving unit spent in its LOS; Rules checks the record. It marks the vehicle's one attempt of this MPh, and a pass places
+        /// the Motion counter and gives the VCA and TCA named. A Mechanical Reliability DR or a Bog Check that undid a passed dr was recorded
+        /// before it, and has made the vehicle Immobile.
+        /// </summary>
+        private GameState? AttemptMotion(GameState state, MotionAttempted motion)
+        {
+            var vehicle = Active(state, motion.Vehicle) as UnitInstance;
+            var defending = vehicle is { Position: MapPosition } && vocabulary.IsA(vehicle.Kind, "asl:vehicle") && vehicle.Side != state.PhasingSide;
+            if (Rules.ScenarioA1MotionAttempts.RecordRefusal(state.Phase, state.Movement is { WindowOpen: true }, defending,
+                state.MotionAttempts.Contains(motion.Vehicle, StringComparer.Ordinal),
+                rolls.TryGetValue(motion.Roll, out var roll) && roll is { Count: 1, Sides: 6 } ? roll.Values[0] : null, motion.HalfPoints, motion.Result,
+                vehicle is not null && GameState.Condition(vehicle, Conditions.Immobilized) == ConditionState.True,
+                vehicle is not null && GameState.Condition(vehicle, Conditions.Bogged) == ConditionState.True,
+                motion.Facing is not null || motion.Turret is not null) is { } refusal)
+            {
+                return Fail<GameState>(refusal.Code, refusal.Text);
+            }
+
+            var next = state with
+            {
+                MotionAttempts = [.. state.MotionAttempts, motion.Vehicle]
+            };
+            if (motion.Result != MotionAttempted.Passed)
+            {
+                return next;
+            }
+
+            var position = (MapPosition)vehicle!.Position;
+            var turned = position with
+            {
+                Facing = motion.Facing ?? position.Facing
+            };
+            next = Replace(next, vehicle with
+            {
+                Position = turned,
+                Conditions = new Dictionary<string, ConditionState>(vehicle.Conditions, StringComparer.Ordinal) { [Conditions.Motion] = ConditionState.True },
+            })!;
+            return motion.Turret is { } turret
+                ? next with
+                {
+                    TurretFacings = [.. next.TurretFacings.Where(item => item.Vehicle != vehicle.Id), new TurretFacing(vehicle.Id, turret)]
                 }
                 : next;
         }

@@ -321,6 +321,20 @@ public static class GameActions
         }
         """);
 
+    public static readonly ActionDescriptor MotionAttempt = Descriptor("asl.game.motion-attempt", "Attempt Motion status",
+        "In the enemy MPh, while the DEFENDER may still answer a moving unit's expenditure, a Mobile vehicle of the DEFENDER makes a dr against the MF or MP that unit has spent in its LOS in this MPh, having begun its move out of it: at or below, the vehicle gains Motion and may freely change its VCA and TCA; once per enemy MPh, and not under a First, Final, or Intensive Fire counter (D2.401).",
+        PlayPermission, "asl.game.sequence-v1", """
+        {
+          "type": "object", "additionalProperties": false,
+          "required": ["gameId", "attemptId", "expectedRevision", "vehicleId"],
+          "properties": {
+            "gameId": { "type": "string" }, "attemptId": { "type": "string" },
+            "expectedRevision": { "type": "integer", "minimum": 0 },
+            "vehicleId": { "type": "string" }, "facing": { "type": "string" }, "turret": { "type": "string" }
+          }
+        }
+        """);
+
     public static readonly ActionDescriptor InfantryOverrunNtc = Descriptor("asl.game.infantry-overrun-ntc", "Take an Infantry OVR's NTC",
         "The ATTACKER's stack takes the NTC that lets it enter the Location of a lone Known enemy SMC in its MPh: by its leader for the stack, or by its one MMC, against the TEM there (A4.15).",
         PlayPermission, "asl.game.sequence-v1", """
@@ -720,7 +734,7 @@ public static class GameActions
         [Setup, AdvancePhase, EnterEmptyBuilding, EnterBuilding, DeclareOverrun, Fire, Rally, Repair, Move, PassFire, EndMove, Advance, Ambush, CloseCombat, TakePrisoner,
             FireOrdnance, RecoverShock, TurnGun, HookGun, MoveVehicle, Overrun, VehicleCloseCombat, ButtonUp, Choose, Massacre, OpportunityFire,
             Rout, Deploy, Recombine, Transfer, Drop, Recover, Dismantle, AmbushWithdraw, GuardPrisoners, ThrowDc, DetonateDc, FireStarshell, PlaceHidden, MopUp,
-            InfantryOverrunNtc, OverrunEvade, ForfeitRof];
+            InfantryOverrunNtc, OverrunEvade, ForfeitRof, MotionAttempt];
 
     public static string VersionKey(Guid tenant, string game) => $"asl.game:{tenant:N}:{game}";
 

@@ -324,6 +324,7 @@ public static class DisplayText
         ["random-selection"] = "Random Selection dr",
         ["deployment"] = "Deployment NTC DR",
         ["shock-recovery"] = "Shock recovery dr",
+        ["motion-attempt"] = "Motion attempt dr",
         ["starshell-usage"] = "Starshell Usage dr",
         ["cc-attack"] = "CC DR",
         ["cc-leader-creation"] = "Leader Creation dr",

@@ -728,6 +728,60 @@ else if (state is not null)
                             <button id="propose-forfeit-rof" aria-describedby="forfeit-rof-note" @onclick='@(() => ProposeSimple(GameActions.ForfeitRof, "forfeit-rof"))'>Propose: give up the ROF for @forfeit.Fp Residual FP</button>
                         </div>
                     }
+                    @* Pass 55 (D2.401): while the window on an enemy unit's expenditure is open, a DEFENDER's vehicle may attempt Motion status; each
+                       vehicle is listed with what the mover has spent in its own LOS, or with why it may not attempt. *@
+                    @if (state.Phase == "mph" && (Viewer.IsAdjudicator || viewAs != state.PhasingSide) && MotionOptions is { Count: > 0 } motionOptions)
+                    {
+                        var motionChosen = motionOptions.FirstOrDefault(option => option.Vehicle == motionVehicle && option.Bar is null) ?? motionOptions.FirstOrDefault(option => option.Bar is null);
+                        <ActionSection Title="Motion attempt (D2.401)" Key="motion-attempt">
+                        <div class="toolbar" id="motion-attempt">
+                            <span class="toolbar-note" id="motion-note">A vehicle gains Motion on a dr at or below the MF or MP the moving unit has spent in its LOS in this MPh, if that unit began its move out of that LOS; once in an enemy MPh, and it may still fire or pass afterwards (D2.401).</span>
+                            <label>
+                                Vehicle
+                                <select id="motion-vehicle" value="@(motionChosen?.Vehicle ?? string.Empty)" @onchange="@(args => motionVehicle = args.Value as string ?? string.Empty)">
+                                    @foreach (var option in motionOptions)
+                                    {
+                                        <option value="@option.Vehicle" disabled="@(option.Bar is not null)">@Words(option.Vehicle): @(option.Bar is null ? ScenarioA1MotionAttempts.Chance(option.HalfPoints, option.VehicleMover) : Said(option.Bar))</option>
+                                    }
+                                </select>
+                            </label>
+                            @if (motionChosen is not null)
+                            {
+                                @if (!motionChosen.Bypass)
+                                {
+                                    <label title="D2.401: a vehicle that gains Motion may freely change its VCA; in woods, a building, or rubble each hexspine takes a Bog Check.">
+                                        VCA on success
+                                        <select id="motion-facing" value="@motionFacing" @onchange="@(args => motionFacing = args.Value as string ?? string.Empty)">
+                                            <option value="">as it is</option>
+                                            @foreach (var spine in Enum.GetValues<UnitFacing>())
+                                            {
+                                                <option value="@UnitFacings.Name(spine)">@UnitFacings.Name(spine)</option>
+                                            }
+                                        </select>
+                                    </label>
+                                    @if (motionChosen.Turreted)
+                                    {
+                                        <label title="D2.401: a vehicle that gains Motion may freely change its TCA.">
+                                            TCA on success
+                                            <select id="motion-turret" value="@motionTurret" @onchange="@(args => motionTurret = args.Value as string ?? string.Empty)">
+                                                <option value="">as it is</option>
+                                                @foreach (var spine in Enum.GetValues<UnitFacing>())
+                                                {
+                                                    <option value="@UnitFacings.Name(spine)">@UnitFacings.Name(spine)</option>
+                                                }
+                                            </select>
+                                        </label>
+                                    }
+                                }
+                                <button id="propose-motion-attempt" aria-describedby="motion-note" @onclick="@(() => ProposeMotionAttempt(motionChosen))">Propose: @Words(motionChosen.Vehicle) attempts Motion</button>
+                            }
+                            else
+                            {
+                                <span class="toolbar-note" id="motion-none">No vehicle may attempt Motion now.</span>
+                            }
+                        </div>
+                        </ActionSection>
+                    }
                     @* Pass 28c (A8.1, A8.11): after each step the DEFENDER, from its own view, sees where the stack is and fires at it or passes.
                        Pass 40 (A8.312): the attack owed in the DEFENDER's own Location comes before a pass; the adjudicator has the same block. *@
                     @if (state.Phase == "mph" && MovingAt is { } movingAt && (Viewer.IsAdjudicator ? MandatoryNow is not null : viewAs != state.PhasingSide))
@@ -3191,6 +3245,9 @@ else if (state is not null)
     private string boundingTarget = string.Empty;
     private string boundingVehicle = string.Empty;
     private string vehicleTurret = string.Empty;
+    private string motionVehicle = string.Empty;
+    private string motionFacing = string.Empty;
+    private string motionTurret = string.Empty;
     private string vehicleIntended = string.Empty;
     private string secondElr = string.Empty;
     private string newDefender = string.Empty;
@@ -5308,6 +5365,50 @@ else if (state is not null)
         }
     }
 
+    private (long Revision, string View, IReadOnlyList<GamePlanner.MotionAttemptOption> Options)? motionCache;
+
+    /// <summary>
+    /// The Motion attempts the viewing side's vehicles may make now (D2.401; pass 55), read once for a revision and a view: a side's view lists
+    /// its own vehicles, with what the mover has spent in each one's LOS; the adjudicator's lists the DEFENDER's.
+    /// </summary>
+    private IReadOnlyList<GamePlanner.MotionAttemptOption> MotionOptions
+    {
+        get
+        {
+            if (state is null || history is null)
+            {
+                return [];
+            }
+
+            if (motionCache is not { } kept || kept.Revision != history.Events.Count || kept.View != viewAs)
+            {
+                motionCache = (history.Events.Count, viewAs, Live.Planner.MotionAttemptOptions(state, history.Events, Viewer.IsAdjudicator ? null : viewAs));
+            }
+
+            return motionCache.Value.Options;
+        }
+    }
+
+    /// <summary>A DEFENDER's vehicle attempts Motion status (D2.401; pass 55), with the VCA and TCA it takes on success when the page names them.</summary>
+    private Task ProposeMotionAttempt(GamePlanner.MotionAttemptOption option)
+    {
+        var arguments = new Dictionary<string, object>
+        {
+            ["gameId"] = gameId, ["attemptId"] = Attempt("motion"), ["expectedRevision"] = (long)history!.Events.Count, ["vehicleId"] = option.Vehicle,
+        };
+        if (!option.Bypass && motionFacing.Length > 0)
+        {
+            arguments["facing"] = motionFacing;
+        }
+
+        if (!option.Bypass && option.Turreted && motionTurret.Length > 0)
+        {
+            arguments["turret"] = motionTurret;
+        }
+
+        return Propose(GameActions.MotionAttempt, JsonSerializer.SerializeToElement(arguments));
+    }
+
     private Task ProposeSimple(ActionDescriptor action, string kind) => Propose(action,
         JsonSerializer.SerializeToElement(new { gameId, attemptId = Attempt(kind), expectedRevision = (long)history!.Events.Count }));
 
@@ -7341,7 +7442,7 @@ else if (state is not null)
     {
         "rph" => new HashSet<string>(StringComparer.Ordinal) { "rally" },
         "pfph" or "dfph" or "afph" => new HashSet<string>(StringComparer.Ordinal) { "fire", "ordnance" },
-        "mph" => new HashSet<string>(StringComparer.Ordinal) { "movement", "defensive-first-fire", "fire", "vehicle-movement", "cc-reaction-fire" },
+        "mph" => new HashSet<string>(StringComparer.Ordinal) { "movement", "defensive-first-fire", "motion-attempt", "fire", "vehicle-movement", "cc-reaction-fire" },
         "rtph" => new HashSet<string>(StringComparer.Ordinal) { "rout" },
         "aph" => new HashSet<string>(StringComparer.Ordinal) { "advance" },
         "ccph" => new HashSet<string>(StringComparer.Ordinal) { "close-combat", "close-combat-with-vehicles" },

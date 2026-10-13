@@ -93,8 +93,12 @@ public sealed class BacklogPass55Tests : IDisposable
     {
         private static readonly BoardHandle Board = Board01Fixture.Handle();
 
+        /// <summary>The hexes no LOS reaches or leaves, such as "E5" (the Motion attempt's tests).</summary>
+        public HashSet<string> Blind { get; } = new(StringComparer.Ordinal);
+
         public LosResult? Read(GameState state, BoardLocation from, BoardLocation target) =>
-            new(LosStatus.Clear, false, Board.Distance(from.Hex, target.Hex) ?? 1, 0, null, string.Empty);
+            new(Blind.Contains(from.Hex.ToString()) || Blind.Contains(target.Hex.ToString()) ? LosStatus.Blocked : LosStatus.Clear, false,
+                Board.Distance(from.Hex, target.Hex) ?? 1, 0, null, string.Empty);
     }
 
     private GamePlanner Planner() => new(store, new InMemoryBoardCatalog([board.Handle()]), Vocabulary, [Catalog], fireLos: los);
@@ -1164,6 +1168,250 @@ public sealed class BacklogPass55Tests : IDisposable
         Committed(await FireMa("ru-t1", Firer, "de-tank", 2, 4, 1, 1, 6, 6));
         Assert.Equal(InstanceStatus.Wrecked, Current.Unit("de-tank")!.Status);
         Assert.Null(LeaderOf("de-tank"));
+        NoReplayErrors();
+    }
+
+    // Task 55.3 (increment 2f): Motion attempts (D2.401, p. 198; rulings R55.11 to R55.13) and the DEFENDER's Motion firer (C5.35; ruling R55.14).
+    // The German mover begins in E5, which the stub LOS hides from every Location, and enters a hex of column F in the LOS of the T-34 M41 in J5
+    // (a red MP allotment: the Mechanical Reliability DR of D2.51).
+
+    private const string Start = "bd01:E5:0";
+    private const string Watcher = "bd01:J5:0";
+    private static readonly string[] G1 = ["g1"];
+
+    private Task<PlayResult> Drive(string kind, string? to = null) => Do(GameActions.MoveVehicle, NoRoll(), to is null
+        ? new Dictionary<string, object> { ["vehicleId"] = "de-tank", ["kind"] = kind }
+        : new Dictionary<string, object> { ["vehicleId"] = "de-tank", ["kind"] = kind, ["to"] = to });
+
+    private Task<PlayResult> AttemptMotion(DiceRoller roller, string? facing = null, string? turret = null, string vehicle = "ru-tank")
+    {
+        var arguments = new Dictionary<string, object> { ["vehicleId"] = vehicle };
+        if (facing is not null)
+        {
+            arguments["facing"] = facing;
+        }
+
+        if (turret is not null)
+        {
+            arguments["turret"] = turret;
+        }
+
+        return Do(GameActions.MotionAttempt, roller, arguments);
+    }
+
+    /// <summary>The German tank starts in E5 and enters a hex of column F, where the DEFENDER's window is open; returns that hex.</summary>
+    private async Task<string> TankEntersTheLos(bool hidden = true, string watcherFacing = "north-east")
+    {
+        if (hidden)
+        {
+            los.Blind.Add("E5");
+        }
+
+        var entered = Beside("E5", 'F');
+        await Setup(Afv("de-tank", "attacker-tank", Start, "german", "east"), Afv("ru-tank", "defender-tank", Watcher, "russian", watcherFacing));
+        await Advance();
+        Committed(await Drive("start"));
+        if (hidden)
+        {
+            // The Start MP was spent out of the T-34's LOS: nothing in it yet, and a refusal spends no attempt.
+            Refused(await AttemptMotion(Once(1)), "play.motion-attempt-los", "no attempt is spent");
+        }
+
+        await PassFire();
+        Committed(await Drive("enter", entered));
+        return entered;
+    }
+
+    private MotionAttempted LastAttempt(long before) => Since(before).Select(item => item.Payload).OfType<MotionAttempted>().Single();
+
+    private static decimal? ExactDrm(JsonElement drm, string name) => drm.EnumerateArray().Where(item => item.GetProperty("name").GetString() == name)
+        .Select(item => (decimal?)item.GetProperty("value").GetDecimal()).SingleOrDefault();
+
+    private UnitFacing? FacingOf(string vehicle) => (Current.Unit(vehicle)!.Position as MapPosition)?.Facing;
+
+    private bool Has(string vehicle, string condition) => GameState.Condition(Current.Unit(vehicle)!, condition) == ConditionState.True;
+
+    [Fact]
+    public async Task ADefendersTankGainsMotionTurnsItsVcaAndFiresAsAMotionFirer()
+    {
+        // D2.401: the PzKpfw IIIH has spent 1 MP in the T-34's LOS, so a dr of 1 passes; D2.51: the T-34's red MP then make it roll, and a 7
+        // is no breakdown; "allowed to freely change its VCA/TCA": from north-east to west, toward the mover.
+        var entered = await TankEntersTheLos();
+        var option = Assert.Single(Planner().MotionAttemptOptions(Current, store.Read(Scope)!.Events, "russian"));
+        Assert.Equal(("ru-tank", null, "de-tank", 2, true, true, false), (option.Vehicle, option.Bar, option.Mover, option.HalfPoints, option.VehicleMover, option.Turreted, option.Bypass));
+        Assert.Empty(Planner().MotionAttemptOptions(Current, store.Read(Scope)!.Events, "german"));
+
+        var before = Revision;
+        Committed(await AttemptMotion(Once(1, 3, 4), facing: "west"));
+        Assert.Equal(["dice-rolled", "dice-rolled", "vehicle-check-rolled", "motion-attempted"], Since(before).Select(item => item.Type));
+        var attempt = LastAttempt(before);
+        Assert.Equal(("ru-tank", 2, MotionAttempted.Passed, "de-tank", (UnitFacing?)UnitFacing.West, null),
+            (attempt.Vehicle, attempt.HalfPoints, attempt.Result, attempt.Mover, attempt.Facing, attempt.Turret));
+        var reliability = Since(before).Select(item => item.Payload).OfType<VehicleCheckRolled>().Single();
+        Assert.Equal((VehicleCheckRolled.Mechanical, VehicleCheckRolled.Passed), (reliability.Check, reliability.Result));
+        Assert.True(Has("ru-tank", Conditions.Motion));
+        Assert.Equal(UnitFacing.West, FacingOf("ru-tank"));
+        Assert.Equal(["ru-tank"], Current.MotionAttempts);
+
+        // The attempt is no fire action: the window stays open, and the T-34 fires its MA as Defensive First Fire. C5.35 (ruling R55.14): Case C
+        // alone, +4 for its turret, and the lower dr of the TH DR doubled; the target lies in the VCA it turned to, so no Case A.
+        Assert.True(Current.Movement is { WindowOpen: true });
+        before = Revision;
+        Committed(await FireMa("ru-tank", entered, "de-tank", 5, 6));
+        var shot = LastShot(before);
+        Assert.Equal("first-fire", shot.Facts.GetProperty("fireKind").GetString());
+        Assert.True(shot.Facts.GetProperty("vehicle").GetProperty("inMotion").GetBoolean());
+        Assert.Equal(4m, ExactDrm(ToHitDrm(shot), "case-c"));
+        Assert.Equal(5m, ExactDrm(ToHitDrm(shot), "case-c4:lower-dr"));
+        Assert.Equal(0m, DrmOf(ToHitDrm(shot), "case-a"));
+        Assert.Null(ExactDrm(ToHitDrm(shot), "case-c1"));
+        Assert.Null(ExactDrm(ToHitDrm(shot), "case-c2"));
+
+        // "only once per enemy MPh", and never under a First Fire counter.
+        Assert.True(Has("ru-tank", Conditions.FirstFire));
+        Refused(await AttemptMotion(Once(1)), "First Fire counter");
+        await PassFire();
+
+        // The phase's end clears the mark; the Motion counter stays until the T-34's own next MPh (D2.4).
+        Committed(await Drive("stop"));
+        await PassFire();
+        await Advance();
+        Assert.Equal("dfph", Current.Phase);
+        Assert.Empty(Current.MotionAttempts);
+        Assert.True(Has("ru-tank", Conditions.Motion));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AFailedMotionAttemptHasNoPenaltyButBarsASecond()
+    {
+        // D2.401: a dr of 2 against 1 MP fails: no Mechanical Reliability DR, no Motion, no change of VCA; "a vehicle may attempt Motion status
+        // only once per enemy MPh".
+        await TankEntersTheLos();
+        var before = Revision;
+        Committed(await AttemptMotion(Once(2), facing: "west"));
+        Assert.Equal(["dice-rolled", "motion-attempted"], Since(before).Select(item => item.Type));
+        var attempt = LastAttempt(before);
+        Assert.Equal((MotionAttempted.Failed, null), (attempt.Result, attempt.Facing));
+        Assert.False(Has("ru-tank", Conditions.Motion));
+        Assert.Equal(UnitFacing.NorthEast, FacingOf("ru-tank"));
+        Refused(await AttemptMotion(Once(1)), "only once");
+        Assert.Equal("ru-tank", Assert.Single(Planner().MotionAttemptOptions(Current, store.Read(Scope)!.Events, "russian"), option => option.Bar is not null).Vehicle);
+
+        // The DEFENDER may still fire or pass.
+        Assert.True(Current.Movement is { WindowOpen: true });
+        await PassFire();
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AnAttemptAgainstAMoverSeenSinceItsStartIsRefusedAndSpendsNoAttempt()
+    {
+        // Ruling R55.12: the tank began its move in the T-34's LOS; the game makes the rule's LOS Check first and refuses.
+        await TankEntersTheLos(hidden: false);
+        var before = Revision;
+        Refused(await AttemptMotion(Once(1)), "play.motion-attempt-seen", "no attempt is spent");
+        Assert.Equal(before, Revision);
+        Assert.Empty(Current.MotionAttempts);
+
+        // Nor does the side that moves attempt, nor a vehicle that is not there.
+        Refused(await AttemptMotion(Once(1), vehicle: "de-tank"), "not a vehicle of the DEFENDER");
+        Refused(await AttemptMotion(Once(1), vehicle: "nobody"), "not a vehicle of the DEFENDER");
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AVehicleUnderAFirstFireCounterAttemptsNoMotion()
+    {
+        // D2.401: "may not attempt it at all if already marked with a First Fire (or Final/Intensive Fire) counter". An Original 11 misses and
+        // keeps no ROF.
+        var entered = await TankEntersTheLos(watcherFacing: "west");
+        Committed(await FireMa("ru-tank", entered, "de-tank", 5, 6));
+        Assert.True(Has("ru-tank", Conditions.FirstFire));
+        Refused(await AttemptMotion(Once(1)), "First Fire counter");
+        Assert.Empty(Current.MotionAttempts);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task TheMechanicalReliabilityDrMayUndoAPassedAttempt()
+    {
+        // D2.401, D2.51: "a successful Motion Attempt results in neither Motion nor VCA change if any mechanical reliability DR results in
+        // Immobilization": a 12.
+        await TankEntersTheLos();
+        var before = Revision;
+        Committed(await AttemptMotion(Once(1, 6, 6), facing: "west", turret: "south-west"));
+        var attempt = LastAttempt(before);
+        Assert.Equal((MotionAttempted.Immobilized, null, null), (attempt.Result, attempt.Facing, attempt.Turret));
+        Assert.True(Has("ru-tank", Conditions.Immobilized));
+        Assert.False(Has("ru-tank", Conditions.Motion));
+        Assert.Equal(UnitFacing.NorthEast, FacingOf("ru-tank"));
+        Assert.Empty(Current.TurretFacings);
+        Refused(await AttemptMotion(Once(1)), "immobilized");
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AVcaChangeInWoodsTakesABogCheckForEachHexspine()
+    {
+        // D2.11, C5.11, D8.2: "one Bog DR per hexspine" of a VCA change in woods; from north-east to west is two. Both pass.
+        board.Terrain["J5"] = "Woods";
+        await TankEntersTheLos();
+        var before = Revision;
+        Committed(await AttemptMotion(Once(1, 3, 4, 1, 1, 1, 2), facing: "west"));
+        var checks = Since(before).Select(item => item.Payload).OfType<VehicleCheckRolled>().ToArray();
+        Assert.Equal([VehicleCheckRolled.Mechanical, VehicleCheckRolled.Bog, VehicleCheckRolled.Bog], checks.Select(item => item.Check));
+        Assert.All(checks, item => Assert.Equal(VehicleCheckRolled.Passed, item.Result));
+        Assert.Equal(MotionAttempted.Passed, LastAttempt(before).Result);
+        Assert.Equal(UnitFacing.West, FacingOf("ru-tank"));
+        Assert.True(Has("ru-tank", Conditions.Motion));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AVehicleThatBogsOnItsVcaChangeGainsNeitherMotionNorTheChange()
+    {
+        // Ruling R55.13: the first hexspine's Bog DR of 12 bogs the T-34: no second check, no Motion, its VCA as it was. A TCA alone takes none.
+        board.Terrain["J5"] = "Woods";
+        await TankEntersTheLos();
+        var before = Revision;
+        Committed(await AttemptMotion(Once(1, 3, 4, 6, 6), facing: "west"));
+        var checks = Since(before).Select(item => item.Payload).OfType<VehicleCheckRolled>().ToArray();
+        Assert.Equal([(VehicleCheckRolled.Mechanical, VehicleCheckRolled.Passed), (VehicleCheckRolled.Bog, VehicleCheckRolled.Bogged)], checks.Select(item => (item.Check, item.Result)));
+        var attempt = LastAttempt(before);
+        Assert.Equal((MotionAttempted.Bogged, null), (attempt.Result, attempt.Facing));
+        Assert.True(Has("ru-tank", Conditions.Bogged));
+        Assert.False(Has("ru-tank", Conditions.Motion));
+        Assert.Equal(UnitFacing.NorthEast, FacingOf("ru-tank"));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AnInfantryMoversMfInLosAreSummedAndATcaAloneIsTurned()
+    {
+        // D2.401: "the number of MF/MP expended in its LOS": a squad that began in E5, out of LOS, has spent 1 MF in each of two Open Ground
+        // hexes in the T-34's LOS: a dr of 2 passes. The TCA named is taken with no Bog Check, and the VCA stays.
+        los.Blind.Add("E5");
+        var first = Beside("E5", 'F');
+        var second = Beside(first.Split(':')[1], 'G');
+        await Setup(Unit("g1", "asl:squad", "attacker-squad", Start, "german"), Afv("ru-tank", "defender-tank", Watcher, "russian", "north-east"));
+        await Advance();
+        Committed(await Do(GameActions.Move, NoRoll(), new { unitIds = G1, to = first }));
+        var early = Assert.Single(Planner().MotionAttemptOptions(Current, store.Read(Scope)!.Events, "russian"));
+        Assert.Equal((null, 2, false), (early.Bar, early.HalfPoints, early.VehicleMover));
+        await PassFire();
+        Committed(await Do(GameActions.Move, NoRoll(), new { unitIds = G1, to = second }));
+        var before = Revision;
+        Committed(await AttemptMotion(Once(2, 3, 4), turret: "south-west"));
+        var attempt = LastAttempt(before);
+        Assert.Equal((4, MotionAttempted.Passed, "g1", null, (UnitFacing?)UnitFacing.SouthWest), (attempt.HalfPoints, attempt.Result, attempt.Mover, attempt.Facing, attempt.Turret));
+        Assert.DoesNotContain(Since(before).Select(item => item.Payload).OfType<VehicleCheckRolled>(), check => check.Check == VehicleCheckRolled.Bog);
+        Assert.True(Has("ru-tank", Conditions.Motion));
+        Assert.Equal(UnitFacing.NorthEast, FacingOf("ru-tank"));
+        Assert.Equal(UnitFacing.SouthWest, Assert.Single(Current.TurretFacings, item => item.Vehicle == "ru-tank").Facing);
+
+        // A vehicle already in Motion may attempt again for the change of CA, but not in the same enemy MPh.
+        Refused(await AttemptMotion(Once(1), facing: "west"), "only once");
         NoReplayErrors();
     }
 }

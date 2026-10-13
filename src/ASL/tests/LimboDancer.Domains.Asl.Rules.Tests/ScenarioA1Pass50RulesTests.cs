@@ -320,12 +320,16 @@ public sealed class ScenarioA1Pass50RulesTests
         Assert.Equal(2m, Assert.Single(Shoot(MaShot(inMotion: true, dice: [2, 2])).ToHit!.Drm, item => item.Name == "case-c4:lower-dr").Value);
         Assert.DoesNotContain(Shoot(MaShot(dice: [1, 4])).ToHit!.Drm, item => item.Name == "case-c4:lower-dr");
 
-        // D2.42: in its AFPh too, with Case C; D2.4: never in the PFPh; the DEFENDER's vehicle in Motion is not built.
+        // D2.42: in its AFPh too, with Case C; D2.4: never in the PFPh. The DEFENDER's vehicle in Motion fires since pass 55 (ruling R55.14),
+        // with Case C alone and the lower dr doubled.
         var afph = Shoot(MaShot(phase: "AFPh", kind: null, inMotion: true, dice: [3, 4]));
         Assert.Equal(("case-c", 4m), CaseOf(afph));
         Assert.Equal(3m, Assert.Single(afph.ToHit!.Drm, item => item.Name == "case-c4:lower-dr").Value);
         Assert.Contains("asl.a1.ordnance.vehicle-fire-outside", Shoot(MaShot(phase: "PFPh", kind: null, inMotion: true)).Reasons);
-        Assert.Contains("asl.a1.ordnance.vehicle-fire-outside", Shoot(MaShot(phase: "DFPh", kind: null, inMotion: true, side: "non-phasing")).Reasons);
+        var dfph = Shoot(MaShot(phase: "DFPh", kind: null, inMotion: true, side: "non-phasing", dice: [3, 4]));
+        Assert.DoesNotContain("asl.a1.ordnance.vehicle-fire-outside", dfph.Reasons);
+        Assert.Equal(("case-c", 4m), CaseOf(dfph));
+        Assert.Equal(3m, Assert.Single(dfph.ToHit!.Drm, item => item.Name == "case-c4:lower-dr").Value);
     }
 
     [Fact]
