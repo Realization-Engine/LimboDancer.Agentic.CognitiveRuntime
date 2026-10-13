@@ -1785,7 +1785,7 @@ Passes 90, 125, 140, and 165 lose part of their titles: 90 is night alone, 125 i
 | Overhead | | 1:15 |
 | **Pass 50 total** (build 5:00) | | **6:15** |
 
-**Pass 55: Armored combat II** (planned at 5:25 of build; 20 rows of the inventory). Counters: a Gun or AFV with APDS; one with Canister; Armor Leaders 8-1 to 10-2. Needs first: 50.
+**Pass 55: Armored combat II** (planned at 5:25 of build; 20 rows of the inventory). Counters: a Gun or AFV with APDS; one with Canister; Armor Leaders 8-1 to 10-2. Needs first: 50. **Status, 2026-10-13: built to the merge gate on `feature/asl-backlog-pass-55`; the gate, the merge, and the push are the user's to start.** Tasks 55.1 to 55.6 are built, and a seventh was added: 55.7, Gun Duels, carried in from pass 50 and built as a slice (the frame's estimate 1:30). The inventory named 35 rows, not 20. The frame's estimates, made from the code, with the plan's in brackets: 55.1 with 55.6, 2:30 (1:00); 55.2, 2:15 (0:40); 55.3, 1:10 (0:40); 55.4, 1:10 (0:40); 55.5, 1:15 (0:40); 55.7, 1:30 (not in the plan). That is 9:50 of building against 3:40, and 11:05 in all against 4:55. What the pass left out went to pass 60 (A5.132; AP against Infantry, C8.31), pass 65 (the halftrack's FG and a Passenger leader), pass 105 (the rest of a vehicle's handling of its weapons and arcs; an AFV with Canister; a stall), pass 110 (the Gun Duel's equal case and its remainder; Canister as Defensive First Fire), and the DYO passes (an Armor Leader's counter and purchase), each with its reason in the [design](<Passes/ASL Unit Backlog Pass 55 Design.md>), sections 3 and 14.1, and the backlog's section 59.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -1795,8 +1795,9 @@ Passes 90, 125, 140, and 165 lose part of their titles: 90 is night alone, 125 i
 | 55.4 Ordnance and vehicle fire at another level, with Height Advantage | C2.6 (p. 168), B10.3 (p. 125), B10.31 (p. 125) | 0:40 |
 | 55.5 Armor Leaders, in fire, OVR, Close Combat, and Bog Removal; Inexperienced Crews | D3.4 (p. 200), D3.41 (p. 200), D3.42 (p. 200), D3.43 (p. 200), D3.44 (p. 200), D3.45 (p. 200), D7.16 (p. 207) | 0:40 |
 | 55.6 The counters |  | 0:20 |
+| 55.7 Gun Duels, the slice | C2.2401 (p. 167) | 1:30 |
 | Overhead | | 1:15 |
-| **Pass 55 total** (build 3:40) | | **4:55** |
+| **Pass 55 total** (build 3:40 as planned, without 55.7; 9:50 by the frame's estimates, with it) | | **4:55** as planned; **11:05** by the frame's estimates |
 
 **Pass 60: Armored combat III: other attacks on vehicles and Guns** (new; 37 rows of the inventory). Counters: none. Needs first: 50; 45 (Residual FP from ordnance).
 
@@ -1810,6 +1811,8 @@ Passes 90, 125, 140, and 165 lose part of their titles: 90 is night alone, 125 i
 | 60.6 The rest of the To Kill tables: upper-superstructure hits, the table's notes; Area Acquisition by hex | C3.9 (p. 171), C7.21 (p. 176), C7.7 (p. 177), C6.52 (p. 174), C6.521 (p. 174) | 0:20 |
 | Overhead | | 1:15 |
 | **Pass 60 total** (build 4:40) | | **5:55** |
+
+Moved here by pass 55 (2026-10-13), with no task renumbered: a hit on another vehicle of an overstacked hex (A5.132, with 60.6); AP against Infantry by a Gun whose HE is by a Depletion Number (C8.31, with 60.4); a Critical Hit's reversal of the Height Advantage TEM (C3.71); a Canister KIA and a SW (C8.42, with 60.5).
 
 **Pass 65: Passengers, Riders, and crews** (new; 63 rows of the inventory). Counters: vehicle-crew counters; a Carrier with its HS crew; Rider capacity by vehicle class. Needs first: 50, 60 (Collateral Attacks).
 
@@ -1826,6 +1829,8 @@ Passes 90, 125, 140, and 165 lose part of their titles: 90 is night alone, 125 i
 | 65.9 Wrecks: attacked as their vehicle; Scrounging | D10.1 (p. 210), D10.5 (p. 211), D10.51 (p. 211), D10.52 (p. 211) | 0:40 |
 | Overhead | | 1:15 |
 | **Pass 65 total** (build 7:00) | | **8:15** |
+
+Moved here by pass 55 (2026-10-13), with no task renumbered: the FG of a CE halftrack with its Passengers under an Armor or a Passenger leader (D3.4, D6.64, D6.65, with 65.2); a Passenger leader in an OVR (D7.16); an Armor Leader's return when his crew re-crews (D3.43, with 65.6); the CE DRM beside Height Advantage under Infantry fire (D5.31, with 65.1).
 
 **Pass 70: Infantry III: morale, Close Combat, and concealment** (new; 35 rows of the inventory). Counters: none. Needs first: 40 (Infantry OVR, ADJACENT).
 
@@ -1937,6 +1942,8 @@ Passes 90, 125, 140, and 165 lose part of their titles: 90 is night alone, 125 i
 | Overhead | | 1:15 |
 | **Pass 105 total** (build 7:00) | | **8:15** |
 
+Moved here by pass 55 (2026-10-13), with no task renumbered. Whole rows: a tank's turret or VCA changed without fire (C3.22); Case J against a vehicle that has paid only its Start MP, and VBM as a cause (C6.1); a BMG fired by a pivot of the hull (D1.81); a declared higher MP expenditure (D2.18); the TCA in Bypass (D2.35); the VCA changed for a shot (D3.11); the Known-target condition and the BMG's NT penalty (D3.51, D3.52). Remainders: the AA weapons' leave to fire up (C2.6); a Gyrostabilizer for a Motion firer (C5.35); a stall and the platoon's drm in a Motion attempt (D2.401); the other changes of VCA and TCA (D2.11, D3.12); an AFV with Canister (D3.31); the HD Maneuver dr and an assisting AFV for an Armor Leader (D3.44).
+
 **Pass 110: Guns and anti-tank weapons II** (new; 77 rows of the inventory). Counters: R# and X# on the Guns; a Gun that is not QSU, with LF or RFNM; a medium mortar with its dm side; a bazooka; a PIAT; a MOL-Projector; an RCL; a Gun of 100mm or more (many values manufactured, R0.3). Needs first: 35; 60 (HE Equivalency for C13.4x).
 
 | Task | Rules | Estimate |
@@ -1953,6 +1960,8 @@ Passes 90, 125, 140, and 165 lose part of their titles: 90 is night alone, 125 i
 | 110.10 The counters |  | 0:40 |
 | Overhead | | 1:15 |
 | **Pass 110 total** (build 7:20) | | **8:35** |
+
+Moved here by pass 55 (2026-10-13), with no task renumbered: the Gun Duel's equal case, fire that is not ordnance, the second duel, and a duel declared by the DEFENDER (C2.2401, C5.33); the 28LL and 40LL (C4.3, C7.32); Canister as Defensive First Fire and its other clauses (C8.4). Of 110.1's To Hit colors (C3.3), pass 55 built a Gun's and a vehicle's MA's; a light mortar's and a LATW's are left.
 
 **Pass 115: Fortifications I** (planned at 3:35 of build; 74 rows of the inventory). Counters: foxholes 1S, 2S, 3S; trenches; roadblocks; pillboxes by strength (the vocabulary has the kinds, the catalog no definitions). Needs first: 35.
 
