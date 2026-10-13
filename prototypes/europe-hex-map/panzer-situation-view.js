@@ -8,7 +8,7 @@
  const dateLabel=()=>d.situation.printedDate+(d.situation.printedEndDate?" to "+d.situation.printedEndDate:"");
  const returnLabel=()=>d.situation.number===4?"Return to Normandy campaign":"Return to "+d.parentCampaign.title;
  const setupSummary=()=>d.rules.setup.map(x=>x.side+": "+x.instructions).join(" ");
- let libraryContext=false,embedded=null;
+ let libraryContext=false,embedded=null,supplySide='Allied',showSupply=true;
  const el=(tag,text)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;return n;};
  const dialog=el("dialog");dialog.id="panzerSituation";dialog.setAttribute("aria-labelledby","panzerTitle");document.body.append(dialog);
  let s=PanzerSituationModel.create(d),selected=null,board="A",error="",selectedEngagement=new Set(),openTypes=new Set(),openSides=new Set(["German","Allied"]),terrainView=true,inspectedHex=null,hexDetails=false,boardZoom=1,resetMapScroll=false,spaceDown=false,suppressPanClick=false,activePan=null,mapMode="setup",rosterCollapsed=false,notesExpanded=false,handoffExpanded=false,bulkType=null,bulkHint=null;
@@ -27,11 +27,27 @@
  const act=fn=>{try{error="";fn();save();}catch(e){error=e.message;}render();};
  const button=(label,fn)=>{const b=el("button",label);b.type="button";b.onclick=fn;return b;};
  const download=(obj,name)=>{const u=URL.createObjectURL(new Blob([JSON.stringify(obj,null,2)],{type:"application/json"})),a=el("a");a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);};
+ function workflowNavigation(view){
+  if(!embedded||!window.SituationNavigation)return;
+  const host=document.querySelector('#ardennesWorkspace .operation-command');if(!host)return;
+  SituationNavigation.render({host,title:d.situation.title,view,stage:s.stage,launched:!!s.gameLaunched,complete:PanzerSituationModel.complete(s,d,s.stage),navigate,advance:()=>{navigate('setup');act(()=>{PanzerSituationModel.next(s,d);PanzerSituationModel.autoDeploySide(s,d);board=d.setupBoards[s.stage]||d.boards[0].id;});}});
+ }
+ function openSquads(id,mode='game'){window.SquadWorkspace.open(d,s,id,{mode,onModeChange:workflowNavigation,host:dialog,onClose:()=>{mapMode='game';render();},onSupplyChange:changes=>{s.supplyAdjustments=changes;save();},storage:embedded?.squadStorage});}
+ function navigate(target){
+  if(target==='card'){window.SquadWorkspace?.close(false);campaignFlow.showStage('prepare');return;}
+  campaignFlow.reviewed=true;campaignFlow.stage='maneuver';campaignFlow.render();
+  if(embedded){embedded.host.hidden=false;dialog.setAttribute('open','');}
+  if(target==='setup'){mapMode='setup';render();return;}
+  if(s.stage!=='ready'){mapMode='setup';render();return;}
+  act(()=>{PanzerSituationModel.launch(s,d);mapMode='game';});
+  if(target==='squad'||target==='squad-game'){const id=Object.keys(s.placements).find(id=>window.SquadProfiles.types[d.instances.find(i=>i.id===id)?.counterTypeId]);if(id)openSquads(id,target==='squad-game'?'game':'setup');}
+ }
  function render(){
+  window.CampaignSupplyRelocation?.bind(d,s);
   window.SquadWorkspace?.close(false);
   const resetView=resetMapScroll;resetMapScroll=false;
   if(embedded)window.ArdennesWorkspaceHandle?.lockSetupTimeline?.(true);
-  const game=mapMode==="game"&&s.stage==="ready";dialog.setAttribute("data-map-mode",game?"game":"setup");
+  const game=mapMode==="game"&&s.stage==="ready";workflowNavigation(game?"game":"setup");dialog.setAttribute("data-map-mode",game?"game":"setup");
   const oldY=dialog.scrollTop||0,oldTray=dialog.querySelector?.(".panzer-tray")?.scrollTop||0,oldX=dialog.querySelector?.(".panzer-joined-scroll")?.scrollLeft||0,oldMapY=dialog.querySelector?.(".panzer-joined-scroll")?.scrollTop||0;
   dialog.replaceChildren();const top=el("div");top.className="panzer-toolbar";const title=el("h2",d.situation.title+(game?" | Game map":" | Campaign Map Setup"));title.id="panzerTitle";top.append(title,button(returnLabel(),()=>campaignFlow.returnParent()),button("Clear this Situation",()=>{if(confirm("Clear all "+d.situation.title+" setup placements, notes and engagement drafts? Other Situations are unaffected.")){s=PanzerSituationModel.create(d);mapMode="setup";selected=null;selectedEngagement.clear();board=d.setupBoards[d.setupOrder[0]];error="";save();render();}}),button("Export Situation plan",()=>download({package:d,plan:s},d.id+"-plan.json")));if(game){top.children[2].hidden=true;top.append(button("Review deployment",()=>{mapMode="setup";render();}));}dialog.append(top);
   if(!game)dialog.append(el("p",dateLabel()+" (printed game date) | "+d.turnLimit+" turns | "+d.firstSide+" moves first. "+setupSummary()));
@@ -41,16 +57,13 @@
   const notice=el("p",error);notice.setAttribute("role","alert");notice.hidden=!error;dialog.append(notice);
   const controls=el("div");controls.className="panzer-toolbar panzer-setup-controls";
   if(!game){const launch=button(s.gameLaunched?"Resume game map":"Launch situation game map",()=>act(()=>{PanzerSituationModel.launch(s,d);mapMode="game";selected=null;boardZoom=1;stopPan();}));launch.disabled=s.stage!=="ready";launch.className="primary";controls.append(launch);}
-  if(d.airSupport){const support=el("details"),head=el("summary","Air support | "+d.airSupport.groups.reduce((n,g)=>n+g.instanceIds.length,0)+" aircraft");support.className="panzer-air-support";support.append(head,el("p",d.airSupport.instructions),el("p","Support roster only. Aircraft stay off the ground setup map; arrival, flight activation and air attacks are not implemented."));for(const g of d.airSupport.groups){const row=el("section");row.append(el("h4",g.id+" | "+g.role+" | "+g.instanceIds.length+" aircraft | earliest turn "+g.availableFromTurn));const i=d.instances.find(i=>i.id===g.instanceIds[0]),type=d.counters.find(c=>c.id===i.counterTypeId);const art=CampaignAppearance.counterImage(base+type.artwork,type.side,type.label,type.nationality,window.ScenarioAffiliation?.group(d,type.id));art.style.width="64px";art.style.height="64px";row.append(art,el("p",type.label+": "+g.instanceIds.join(", ")));support.append(row);}dialog.append(support);}
   if(!game&&s.stage!=="ready"){const next=button("Complete "+s.stage+" setup",()=>act(()=>{PanzerSituationModel.next(s,d);PanzerSituationModel.autoDeploySide(s,d);selected=null;board=d.setupBoards[s.stage]||d.boards[0].id;}));next.disabled=!PanzerSituationModel.complete(s,d,s.stage);controls.prepend(next);}
-  const detailLabel=el("label"),detailToggle=el("input");detailToggle.type="checkbox";detailToggle.checked=hexDetails;detailToggle.disabled=!(game||terrainView);detailToggle.onchange=()=>{hexDetails=detailToggle.checked;render();};detailLabel.append(detailToggle,el("span","Show hex details"));controls.append(detailLabel);dialog.append(controls);
+  const detailLabel=el("label"),detailToggle=el("input");detailToggle.type="checkbox";detailToggle.checked=hexDetails;detailToggle.disabled=!(game||terrainView);detailToggle.onchange=()=>{hexDetails=detailToggle.checked;render();};detailLabel.append(detailToggle,el("span","Show hex details"));controls.append(detailLabel);if(window.CampaignSupplyView){const supplyLabel=el('label'),supplyToggle=el('input');supplyToggle.type='checkbox';supplyToggle.checked=showSupply;supplyToggle.onchange=()=>{showSupply=supplyToggle.checked;render();};supplyLabel.append(supplyToggle,el('span','Supply'));const sideChoice=el('select');sideChoice.setAttribute('aria-label','Supply side');for(const side of ['Allied','German']){const o=el('option',sideLabel(side)+' supply');o.value=side;sideChoice.append(o);}sideChoice.value=supplySide;sideChoice.onchange=()=>{supplySide=sideChoice.value;render();};controls.append(supplyLabel,sideChoice);}dialog.append(controls);
+  if(d.airSupport&&window.CampaignAirSupportCard)controls.append(CampaignAirSupportCard.button(d,base,dialog));
   if(game&&window.SquadWorkspace){
-   const choice=el("select");choice.setAttribute("aria-label","Formation for squad map");
-   for(const i of d.instances.filter(i=>s.placements[i.id]&&window.SquadProfiles.types[i.counterTypeId])){
-    const option=el("option",i.id);option.value=i.id;choice.append(option);
-   }
-   if(selected&&[...choice.options].some(o=>o.value===selected))choice.value=selected;
-   controls.append(choice,button("Open squad map",()=>window.SquadWorkspace.open(d,s,choice.value,{host:dialog,onClose:render,storage:embedded?.squadStorage})));
+   const parents=d.instances.filter(i=>s.placements[i.id]&&window.SquadProfiles.types[i.counterTypeId]);
+   const openSquad=button("Open squad game map",()=>openSquads(parents.find(i=>i.id===selected)?.id||parents[0]?.id));
+   openSquad.disabled=!parents.length;controls.prepend(openSquad);
   }
   const sourceControl=document.getElementById("situationSourceArtwork");if(sourceControl){sourceControl.hidden=game;sourceControl.textContent=terrainView?"Show source artwork":"Show generated terrain";sourceControl.setAttribute("aria-pressed",String(!terrainView));}
   if(bulkType){const hint=el("span","Choose a starting hex for remaining "+d.counters.find(c=>c.id===bulkType).label+" units.");controls.append(hint,button("Cancel",()=>{bulkType=null;bulkHint=null;selected=null;render();}));}
@@ -91,7 +104,7 @@
    else{const img=document.createElementNS("http://www.w3.org/2000/svg","image");img.setAttribute("href",base+"board-"+boardId+".png");img.setAttribute("width","1130");img.setAttribute("height","3138");drawing.append(img);}
    if(!game&&selected&&s.stage!=="ready"&&d.deployment){for(const h of bd.hexes.filter(h=>PanzerSituationModel.allowed(d,selected,boardId,h.id,s))){const zone=document.createElementNS("http://www.w3.org/2000/svg","polygon");zone.setAttribute("points",h.imagePolygon.map(p=>[p.u*1130,p.v*3138].join(",")).join(" "));zone.setAttribute("fill","#b77725");zone.setAttribute("fill-opacity","0.14");zone.setAttribute("stroke","#b77725");zone.setAttribute("stroke-width","2");zone.setAttribute("pointer-events","none");zone.setAttribute("data-setup-zone",selected);drawing.append(zone);}}
    if(bulkHint?.board===boardId){const h=bd.hexes.find(h=>h.id===bulkHint.hexId);if(h){const hint=document.createElementNS("http://www.w3.org/2000/svg","polygon");hint.setAttribute("points",h.imagePolygon.map(p=>[p.u*1130,p.v*3138].join(" ")).join(" "));hint.setAttribute("fill","#b77725");hint.setAttribute("fill-opacity",".55");hint.setAttribute("stroke","#8a3b2a");hint.setAttribute("stroke-width","8");hint.setAttribute("pointer-events","none");hint.setAttribute("data-bulk-origin",h.id);drawing.append(hint);}}
-   svg.append(drawing);map.append(svg);const rose=boardId===d.illustration.joinedLayout[0].boardId?PanzerMapArt.northRose(d,boardId,true):null;if(rose)map.append(rose);
+   svg.append(drawing);if(showSupply&&window.CampaignSupplyView)CampaignSupplyView.overlay(svg,d,{boardId,side:supplySide,host:dialog,placements:s.placements,onRelocate:game?null:(side,kind,point)=>{const changes=CampaignSupplyRelocation.move(d,s,side,kind,point);s.supplyAdjustments=changes;save();render();}});map.append(svg);const rose=boardId===d.illustration.joinedLayout[0].boardId?PanzerMapArt.northRose(d,boardId,true):null;if(rose)map.append(rose);
    map.addEventListener("wheel",e=>{
     e.preventDefault();e.stopPropagation();
     const before=svg.getBoundingClientRect();if(!before.width||!before.height)return;
@@ -194,7 +207,7 @@
    for(const card of ((typeof activeRegion!=="undefined"&&activeRegion?.id===parent.commandSnapshotId&&typeof regionalState!=="undefined"&&regionalState?.situations)||[])){const start=card.campaignInterval?.start||"8 June 1944";parentPanel.append(button(card.title+" | "+start+" | Review card",()=>{if(typeof formationOpen!=="undefined"&&formationOpen)closeFormation();regionalHQ=card.parentFormationId;regionalMission=card.parentMissionId;renderRegional();showWorkflowStage("prepare");}));}
    parentPanel.append(el("p","Each Situation retains its own dated forces and saved deployment. Selecting a card does not advance another command snapshot or transfer its troops."));
   },
-  returnParent(){if(embedded){const exit=embedded.exit;campaignFlow.active=false;dialog.removeAttribute("open");dialog.hidden=true;cardPanel.hidden=true;embedded=null;exit();return;}if(window.ARDENNES_COMMAND_PACKAGE_ID===d.id){location.href="index.html?exercise=ardennes";return;}this.active=false;dialog.close();this.hide();if(typeof workflowIdentity!=="undefined")workflowIdentity=null;if(typeof renderWorkflow==="function"){renderWorkflow();showWorkflowStage("command");}this.renderParent();},
+  returnParent(){window.SituationNavigation?.clear();window.SquadWorkspace?.close(false);if(embedded){const exit=embedded.exit;campaignFlow.active=false;dialog.removeAttribute("open");dialog.hidden=true;cardPanel.hidden=true;embedded=null;exit();return;}if(window.ARDENNES_COMMAND_PACKAGE_ID===d.id){location.href="index.html?exercise=ardennes";return;}this.active=false;dialog.close();this.hide();if(typeof workflowIdentity!=="undefined")workflowIdentity=null;if(typeof renderWorkflow==="function"){renderWorkflow();showWorkflowStage("command");}this.renderParent();},
   hide(){cardPanel.hidden=true;},
   choose(){
    if(window.CampaignNavigation&&!embedded&&!new URLSearchParams(location.search).has("developmentReferences")){window.CampaignNavigation.open(d.situation.number);return;}
@@ -208,9 +221,9 @@
    if(stage==="maneuver"&&!this.reviewed)return;
    if(stage!=="maneuver"){if(embedded){window.ArdennesWorkspaceHandle?.lockSetupTimeline?.(false);dialog.removeAttribute("open");embedded.host.hidden=true;}else dialog.close();}this.stage=stage;this.render();if(stage==="maneuver")open();
   },
-  openMap(){if(!this.active||this.stage!=="prepare")return;this.reviewed=true;this.showStage("maneuver");},
+  openMap(){if(!this.active)return;this.reviewed=true;this.showStage("maneuver");},
   render(){
-   if(!this.active)return;if(embedded){embedded.cards.append(cardPanel);embedded.host.hidden=this.stage!=="maneuver";}updateMarker();if(typeof workflowStage!=="undefined")workflowStage=this.stage;
+   if(!this.active)return;if(this.stage!=="maneuver")workflowNavigation("card");if(embedded){embedded.cards.append(cardPanel);embedded.host.hidden=this.stage!=="maneuver";}updateMarker();if(typeof workflowStage!=="undefined")workflowStage=this.stage;
    node("shell").setAttribute("data-workflow-stage",this.stage);
    for(const id of ["workflowChoose","workflowBrief","preparationPanel"])node(id).hidden=true;
    for(const id of ["regionalWorkspace","formationControls","commandNavigation"])node(id).style.display="none";
@@ -251,6 +264,7 @@
  node("workflowChoose").append(catalog);
  window.CampaignSituationWorkflow=campaignFlow;
  window.CampaignSituationScreen={
+  navigate,
   mount(pkg,options){if(!library.some(x=>x.id===pkg.id))library.push(pkg);let record=window.CAMPAIGN_REGISTRY.campaigns.find(c=>c.id===pkg.campaignAssignment.campaignId);if(!record){record={...pkg.parentCampaign,situations:[]};window.CAMPAIGN_REGISTRY.campaigns.push(record);}if(!record.situations.some(x=>x.sourcePackageId===pkg.id))record.situations.push({id:pkg.campaignAssignment.situationId,number:pkg.campaignAssignment.number,sourcePackageId:pkg.id,title:pkg.situation.title});selectPackage(pkg.id);embedded=options;if(options.plan)s=PanzerSituationModel.validate(JSON.parse(JSON.stringify(options.plan)),d);dialog.classList.add('campaign-embedded');dialog.hidden=false;options.host.append(dialog);campaignFlow.choose();},
   refreshCard(host){if(embedded){embedded.cards=host;campaignFlow.render();}},
   close(){window.SquadWorkspace?.close(false);if(embedded)campaignFlow.returnParent();}

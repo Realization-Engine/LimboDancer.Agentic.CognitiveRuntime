@@ -19,7 +19,7 @@ window.SquadDeployment = (() => {
   if(cell.terrain==="water"||unit.kind==="vehicle"&&cell.terrain==="marsh")return false;
   const d=terrain.definition;
   if(d){
-   const refs=d.deployment?.allowedHexes?.[unit.parentId];
+   const refs=window.CampaignSupplyDeployment?CampaignSupplyDeployment.refs(d,unit.parentId):d.deployment?.allowedHexes?.[unit.parentId];
    if(refs&&!refs.some(r=>r.boardId===cell.boardId&&r.hexId===cell.parentHexId))return false;
    if(!refs&&d.setupBoards[unit.side]!==cell.boardId)return false;
   }

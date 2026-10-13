@@ -2,6 +2,7 @@
 const PanzerSituationModel={
  create(data){return {version:2,situationId:data.id,stage:data.setupOrder[0],placements:{},selectedIds:[],notes:"",engagements:[]};},
  validate(s,d){
+  window.CampaignSupplyRelocation?.bind(d,s);
   if(s.version!==2||s.situationId!==d.id||!["German","Allied","ready"].includes(s.stage)||!s.placements||!Array.isArray(s.engagements)||typeof s.notes!=="string")throw Error("Invalid saved Situation plan.");
   for(const [id,p] of Object.entries(s.placements)){const instance=d.instances.find(i=>i.id===id),type=d.counters.find(c=>c.id===instance?.counterTypeId);if(!type||!this.boards(d,id).includes(p.board)||!Number.isFinite(p.x)||!Number.isFinite(p.y)||p.x<0||p.x>1||p.y<0||p.y>1)throw Error("Invalid counter placement.");const hex=d.boards.find(b=>b.id===p.board)?.hexes.find(h=>h.id===p.hexId);if(!hex||!this.allowed(d,id,p.board,hex.id,s)||Math.abs(p.x-hex.imageCenter.u)>1e-7||Math.abs(p.y-hex.imageCenter.v)>1e-7)throw Error("Invalid setup hex or unsnapped placement.");}
   if((s.stage!==d.setupOrder[0]&&!this.complete(s,d,d.setupOrder[0]))||(s.stage==="ready"&&!this.complete(s,d,d.setupOrder[1])))throw Error("Saved setup is incomplete.");
@@ -17,8 +18,8 @@ const PanzerSituationModel={
  },
  ground(d){return d.instances.filter(i=>d.counters.find(c=>c.id===i.counterTypeId)?.kind!=="aircraft");},
  complete(s,d,side){return this.ground(d).filter(i=>d.counters.find(c=>c.id===i.counterTypeId).side===side).every(i=>s.placements[i.id]);},
- boards(d,id){const i=d.instances.find(i=>i.id===id),c=d.counters.find(c=>c.id===i?.counterTypeId);return [...new Set(d.deployment?.allowedHexes[id]?.map(r=>r.boardId)||[d.setupBoards[c?.side]])];},
- allowed(d,id,board,hexId,s){const h=d.boards.find(b=>b.id===board)?.hexes.find(h=>h.id===hexId);if(!h?.setupAllowed)return false;const refs=d.deployment?.allowedHexes[id];if(refs&&!refs.some(r=>r.boardId===board&&r.hexId===hexId))return false;
+ boards(d,id){const i=d.instances.find(i=>i.id===id),c=d.counters.find(c=>c.id===i?.counterTypeId);return [...new Set((window.CampaignSupplyDeployment?CampaignSupplyDeployment.refs(d,id):d.deployment?.allowedHexes[id])?.map(r=>r.boardId)||[d.setupBoards[c?.side]])];},
+ allowed(d,id,board,hexId,s){const h=d.boards.find(b=>b.id===board)?.hexes.find(h=>h.id===hexId);if(!h?.setupAllowed)return false;const refs=window.CampaignSupplyDeployment?CampaignSupplyDeployment.refs(d,id):d.deployment?.allowedHexes[id];if(refs&&!refs.some(r=>r.boardId===board&&r.hexId===hexId))return false;
   const instance=d.instances.find(i=>i.id===id),side=d.counters.find(c=>c.id===instance?.counterTypeId)?.side;
   for(const rule of d.deployment?.minimumSeparation||[]){if(rule.side!==side)continue;if(!s)return true;for(const [other,p]of Object.entries(s.placements)){const oi=d.instances.find(i=>i.id===other),oc=d.counters.find(c=>c.id===oi?.counterTypeId);if(oc?.side!==rule.fromSide||p.board!==board)continue;const oh=d.boards.find(b=>b.id===board).hexes.find(h=>h.id===p.hexId);if(oh&&Math.max(Math.abs(h.q-oh.q),Math.abs(h.r-oh.r),Math.abs(h.q+h.r-oh.q-oh.r))<rule.hexes)return false;}}
   return true;},
@@ -34,7 +35,7 @@ const PanzerSituationModel={
   for(const l of d.deployment?.loads||[])if(l.carrierId===id)s.placements[l.passengerId]={...s.placements[id]};
  },
  autoDeploy(s,d,typeId=null){
-  const trial=JSON.parse(JSON.stringify(s));const pending=this.ground(d).filter(i=>!trial.placements[i.id]&&(!typeId||i.counterTypeId===typeId)&&d.counters.find(c=>c.id===i.counterTypeId).side===s.stage&&d.deployment?.allowedHexes[i.id]?.length);
+  const trial=JSON.parse(JSON.stringify(s));window.CampaignSupplyDeployment?.seed(trial,d,typeId);const pending=this.ground(d).filter(i=>!trial.placements[i.id]&&(!typeId||i.counterTypeId===typeId)&&d.counters.find(c=>c.id===i.counterTypeId).side===s.stage&&d.deployment?.allowedHexes[i.id]?.length);
   for(const unit of pending){if(trial.placements[unit.id])continue;const load=(d.deployment.loads||[]).find(l=>l.passengerId===unit.id);if(load)continue;
    const refs=d.deployment.allowedHexes[unit.id],occupied=new Set(Object.values(trial.placements).map(p=>p.board+":"+p.hexId));
    const legal=refs.filter(r=>this.boards(d,unit.id).includes(r.boardId)&&this.allowed(d,unit.id,r.boardId,r.hexId,trial));

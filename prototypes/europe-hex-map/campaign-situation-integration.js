@@ -11,7 +11,7 @@
    const source=window.PANZER_SITUATION_LIBRARY.find(d=>d.situation.number===(id==='M14'?14:15));
    const hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode(JSON.stringify(source))))).map(b=>b.toString(16).padStart(2,'0')).join('');
    if(hash!==world.operation.sourceHashes[id])throw Error('Source card changed since allocation. Start a new campaign before using it.');
-   const pkg=M.variant(world.operation,id,source);ArdennesWorkspace.selectMission(id);active=id;
+   const pkg=CampaignSupplyState.attach(M.variant(world.operation,id,source),world.operation,id,world.id);ArdennesWorkspace.selectMission(id);active=id;
    const cards=document.getElementById('operationSituations');cards.replaceChildren();
    const plan=world.situationPlans?.[id];
    screen.mount(pkg,{host,cards,plan,exit:restore,squadStorage:{
@@ -20,7 +20,7 @@
     clear(){const current=R.get();if(current.id!==world.id)throw Error('Campaign changed. Reopen this Situation.');const plans={...current.squadPlans};delete plans[id];R.save({...current,squadPlans:plans});}
    },save(plan){const current=R.get();R.save({...current,situationPlans:{...current.situationPlans,[id]:plan}});}});
    main.classList.add('showing-situation');cards.scrollTop=0;for(const control of document.querySelectorAll('#operationTime button:not(#timelineToggle),#operationTime input,#operationTime select')){control.disabled=true;control.title='Return to campaign command to change timeline view.';}
-   const context=document.createElement('p');context.className='campaign-board-context';context.textContent='Campaign-linked Situation | '+M.clock(world.operation.missions[id].committedAt)+' | '+world.operation.missions[id].choice+' defense. Original source boards: local battlefield coordinates, not a georeferenced campaign terrain refinement.';cards.prepend(context);return true;
+   const context=document.createElement('p');context.className='campaign-board-context';context.textContent='Campaign-linked Situation | '+M.clock(world.operation.missions[id].committedAt)+' | '+world.operation.missions[id].choice+' defense. Command and supply share the joined source boards. Authored placement, not historical georeferencing.';cards.prepend(context);return true;
   }catch(e){active=null;const warning=document.createElement('p');warning.setAttribute('role','alert');warning.textContent=e.message;document.getElementById('operationSituations').prepend(warning);return false;}
  }};window.CampaignSituationIntegration=api;
  // Old generated-setup links now enter the same campaign workspace and established card flow.

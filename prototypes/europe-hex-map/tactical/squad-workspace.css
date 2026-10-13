@@ -20,3 +20,54 @@
 .squad-counter-card[hidden]{display:none}.squad-counter-card h3{font-size:18px;margin:8px 0}.squad-counter-card h4{margin:12px 0 6px}.squad-counter-card p{margin:8px 0}.squad-counter-card details{max-height:none;overflow:visible;border-top:1px solid #d1d4c6;margin-top:12px;padding-top:8px}.squad-counter-card summary{cursor:pointer;font-weight:600}.counter-card-toolbar{display:flex;justify-content:space-between;gap:12px}.counter-card-toolbar button{padding:5px 10px;font-size:13px}.counter-card-subtitle{color:#596450;overflow-wrap:anywhere}.counter-card-badge{background:#e9eddf;padding:6px;border-radius:4px}.counter-card-values{display:grid;grid-template-columns:1fr 1fr;margin:10px 0;font-variant-numeric:tabular-nums}.counter-card-values dt,.counter-card-values dd{margin:0;padding:5px 8px;border-bottom:1px solid #e1e3d8;overflow-wrap:anywhere}.counter-card-values dd{font-weight:600;text-align:right}.counter-card-values dt{background:#f1f3e9}
 
 .counter-card-toolbar{position:sticky;top:-14px;background:#fffdf6;padding:6px 0;z-index:1}
+
+/* Unit navigation overlays the full-width map. */
+.squad-workspace .squad-main{grid-template-columns:minmax(0,1fr);gap:0;min-height:0}
+.squad-unit-picker{position:relative;flex:0 0 auto}
+.squad-unit-picker>button{max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.squad-unit-options{position:absolute;top:100%;left:0;z-index:100;width:min(420px,70vw);max-height:50vh;overflow:auto;padding:10px;background:#fffdf6;border:1px solid #697a4b;border-radius:6px;box-shadow:0 6px 22px #0004}
+.squad-unit-options[hidden]{display:none}
+.squad-workspace .squad-unit-options details{max-height:none;overflow:visible;margin:0 0 6px}
+.squad-unit-options summary{padding:8px;cursor:pointer;font-weight:bold}
+.squad-unit-options h4{margin:8px}
+.squad-unit-options button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;margin:4px 0}
+.squad-unit-options button[aria-pressed=true]{outline:2px solid #ad6d11}
+.squad-unit-options button>svg{width:44px;height:44px;flex:0 0 44px}
+.squad-unit-options small{display:block;overflow-wrap:anywhere;font-size:.8rem}
+.squad-workspace header{padding:4px 8px}
+.squad-workspace header h2{font-size:1rem}
+
+.squad-workspace .squad-details{position:relative;overflow:visible;max-height:none}
+.squad-details>summary{padding:7px 12px;border:1px solid #d6ceba;border-radius:4px;background:#fffdf6;cursor:pointer}
+.squad-details[open]{z-index:110}
+.squad-details[open]>.squad-details-card{position:absolute;right:0;top:100%;width:min(460px,65vw);box-sizing:border-box;padding:14px;background:#fffdf6;border:1px solid #697a4b;box-shadow:0 6px 22px #0004;max-height:50vh;overflow:auto}
+
+.squad-unit-search{position:sticky;top:-10px;z-index:2;background:#fffdf6;padding:4px 0 10px}
+.squad-unit-search input{box-sizing:border-box;width:100%;margin:0;padding:8px}
+.squad-unit-options [hidden]{display:none!important}
+
+/* A single compact header leaves the remaining workspace to the map. */
+.squad-workspace.squad-inline{padding:0;gap:4px}
+.squad-workspace>header{display:flex;flex-wrap:wrap;gap:6px;padding:6px 8px;margin:0;min-height:0;align-items:center}
+.squad-workspace>header h2{flex:1 1 180px;max-width:300px;font-size:.95rem;line-height:1.2}
+.squad-workspace>header .squad-controls{display:flex;flex:1 1 auto;gap:6px;align-items:center;margin:0}
+.squad-workspace>header button,.squad-workspace>header select,.squad-workspace>header summary{font-size:.85rem;padding:6px 8px;margin:0;min-height:32px;box-sizing:border-box}
+.squad-workspace>header select{min-width:0;width:130px}
+.squad-workspace .squad-details-card{color:#1e2719;text-align:left;font:14px/1.5 system-ui,sans-serif;border-radius:6px;max-height:min(65vh,580px)}
+.squad-details-card section+section{border-top:1px solid #d7dbcd;margin-top:12px;padding-top:10px}
+.squad-details-card h3{font-size:14px;margin:0 0 6px;color:#354b20}
+.squad-details-card ul{margin:0;padding-left:19px}
+.squad-details-card li+li{margin-top:6px}
+.squad-details-card .squad-detail-counts{font-weight:600;margin:0 0 6px}
+.squad-more .squad-details-card{width:290px}
+.squad-more .squad-details-card>button{display:block;width:100%;margin:5px 0}
+.squad-more .squad-details-card>[hidden]{display:none}
+.squad-more input{width:65px}
+.squad-action-alert{background:#fff1d3;color:#6c3500;padding:6px 10px;border:1px solid #b8751e}
+.squad-action-alert[hidden]{display:none}
+
+.squad-workspace>header .squad-controls>*{margin:0}
+.squad-workspace>header .squad-details>summary{color:#1e2719}
+.squad-workspace>header .squad-controls>[hidden]{display:none}
+
+.squad-workspace>header{height:auto;flex:0 0 auto}

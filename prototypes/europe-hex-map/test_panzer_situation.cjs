@@ -149,3 +149,8 @@ for(const [side,id]of [["German","de"],["Allied","us"]]){
  assert.equal(image.children[2].attrs.href,"original.png");
 }
 console.log("Approved St. Lo terrain and nationality palette checks passed.");
+
+// Returning from review or repeatedly opening the map must not silently do nothing.
+flow.choose();flow.showStage("review");assert.equal(flow.stage,"review");flow.openMap();assert.equal(flow.stage,"maneuver");assert.equal(body.children[0].attrs["data-map-mode"],"game");
+flow.openMap();assert.equal(flow.stage,"maneuver");assert.equal(JSON.stringify(stored.placements),deployment);
+console.log("Map navigation is repeatable from review and maneuver, retaining saved deployment.");

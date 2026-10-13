@@ -474,3 +474,64 @@ Evidence: [Cole, Ardennes chapter V](https://www.ibiblio.org/hyperwar/USA/USA-E-
 The resolver applies current ratings when existing deployments are opened, without rebuilding saved units. Map artwork, information cards and selected-unit details resolve the same values. Export includes the quality policy version and each unit's effective definition, base values and rationale. Cards link evidence and preserve printed source information. Combat remains unimplemented; these are deployment/display/export ratings.
 
 Migration contract: retain separate affiliation, source profile and dated scenario-quality policy in C#. Persist effective profile provenance in exported engagement snapshots. Never derive troop quality solely from SS palette or formation tank-table designation.
+
+
+## Integrated supply baseline status, 11 October 2026
+
+Implemented and tested in the HTML/JS prototype: basic supply bindings for all 17 Situations, shared board geometry in command/formation/squad views, selectable depot/HQ/receiving/transport markers, route-based scheduling for new operations, saved spatial manifests and legacy schedule preservation. Existing command engines remain authoritative for stock and mission readiness. The fresh reinforced St. Lo workflow reaches 345 squad counters from 78 formations.
+
+During migration, extract independent Campaign services for spatial bindings, supply custody/scheduling and map presentation. Keep reinforcement assignment, arrival and readiness separate; fuel-dependent reserve transfer is a scenario policy. Do not move these ownership responsibilities into ASL libraries.
+
+Next spatial work: register board footprints and external supply entries into the campaign geography, replacing legacy generated-world references through an explicit migration. Next advanced logistics work: validated closures/rerouting, capacities, selected supply-crisis Situations and idempotent tactical-result reconciliation. See [Supply analysis](<Campaign Atlas Supply and Shared Map Integration Analysis.md>) for exact implementation limits.
+
+
+## Prototype synchronization: advanced logistics and geography, 11 October 2026
+
+The HTML/JS prototype now includes optional route blockage/escort decisions, finite repair and escort resources, held cargo, recall/redispatch, connected-road detour support, transport return and deterministic replay. All 17 imported Situations have reversible EPSG:3035 registrations. Atlas detail uses the same joined source boards and supply identities as command, formation and squad views. Geographic placements are authored approximations; continuous intervening terrain and continent-wide rear-area transport networks are still pending.
+
+The migration boundary should preserve the command ledger as authority and treat continental snapshots as a derived view index. Port logistics rules and coordinate transforms into separate C# services, with Razor components for map logistics decisions and supply cards. Preserve source board orientation, registration version, immutable source data, campaign identity, package custody and read-only replay. Do not reintroduce a separate abstract command diagram or duplicate inventories by scale.
+
+See [Campaign Atlas Supply and Shared Map Integration Analysis](<Campaign Atlas Supply and Shared Map Integration Analysis.md>) for the implemented scope, module boundaries, verification and remaining combat/network work. This is prototype validation, not completion of the Blazor migration.
+
+
+### Rear supply and continental refinement synchronization, 11 October 2026
+
+The prototype now supports optional finite rear-base transport for all 17 Situations, depot receipt and handover, separate local transport, vehicle return, multi-day timestamps, and atlas-based event advancement through the same campaign repositories. Stable continental hex refinement fills terrain between source footprints using existing land/lake/forest geometry and a versioned world seed. Authored corridors connect to existing source-road depots; they are not a historical continent-wide road graph.
+
+Port rear route profiles, custody transitions and terrain sampling as separate C# services. Preserve route/version snapshots, shared depot IDs, optimistic revisions, replay and optional complexity. A save compression adapter preserves existing large prototype campaigns. See the supply analysis for current test evidence and remaining recurring-replenishment, fine-terrain and combat-interdiction scope.
+
+
+### Situation-aware logistics placement, 11 October 2026
+
+The HTML/JS prototype now derives supply corridors from source deployment constraints, rotated board geometry and opposing setup areas. Port the placement policy as a separate service; preserve shared facilities and distinguish local distribution from established rear access. Saved event timing remains immutable when correcting display geometry. The Supply and Shared Map Integration Analysis records the rules, validation and remaining multi-branch/control work.
+
+
+### Receiving-area setup policy, 12 October 2026
+
+The HTML/JS prototype now shares a two-formation-hex receiving-area policy across all 17 Situations and both deployment scales. Port this as a separate effective-setup policy service alongside supply placement, not as edits to printed Situation rules. Preserve source allowances, shared polygon identities, parent squad-radius enforcement, loaded pairs, existing player positions and event history. New automatic setups assign existing infantry to SUP. Render the receiving footprint and distinguish exposed receiving points, exposed approaches and direct opposing-unit blockage. Board-edge clipping must be explicit. Deployment coverage is not territorial control. See the receiving-area section in Campaign Atlas Supply and Shared Map Integration Analysis for the implemented scope and remaining combat/bridge-control work.
+
+
+### Situation workflow navigation correction, 12 October 2026
+
+Use one state-aware navigation component for mounted campaign Situations: Situation Card, Formation setup, Launch/Open formation game map, and Squad deployment. The command pane must identify the current surface. Map entry must be repeatable from card, review or an already open map; no action may silently stop because the card is no longer the active stage. Completion remains gated by both sides' deployment, and squad entry remains gated by formation launch. Returning from squads restores the formation game map without resetting saved placements. The prototype implements this in campaign/situation-navigation.js and the shared Situation screen. Squad deployment is explicitly identified as deployment, without implying implemented squad combat.
+
+Verified the saved Fortified Goose Egg campaign through card, setup, formation game map, squad deployment and return, including repeated map entry. Existing setup/game UI regressions and all 56 source-command preparation paths pass; an additional regression covers repeated map entry from review and maneuver.
+
+
+### Separate squad setup and game views, 12 October 2026
+
+Formation game-map entry now requests the Squad game map explicitly. A complete saved full-Situation squad deployment opens in game mode; an incomplete deployment opens setup with an explicit completion message. Setup provides Complete squad setup and open game map, gated by all ground formations and placement validation. Game mode retains inspection, supply, pan and zoom, but disables placement gestures and hides deployment, radius and clearing controls. Review squad deployment returns to editing without changing units. Both modes use the same saved deployment; squad combat remains unimplemented. Port the lifecycle gate separately from map rendering (prototype: tactical/squad-lifecycle.js). Command-pane navigation distinguishes squad deployment from squad game map.
+
+
+### Setup relocation of supply markers (2026-10-12)
+
+Formation and squad setup permit moving mission HQ and SUP from their information cards: choose Move, then a destination hex. Game maps display saved positions without offering relocation. These campaign markers can extend beyond source-card troop setup boundaries. Destinations remain on land on the existing network board, clear of opposing deployed units. SUP requires a connected source road (final connector at most one formation-hex spacing) and a two-hex receiving margin clear of opposing troops; edge clipping is recorded.
+
+Overrides live in the Situation plan and apply at both map scales. SUP relocation updates its route, distance and receiving area. Previous receiving-area deployment permissions are retained to preserve existing troop placements. No troops are automatically moved. This is setup editing, not timed logistics movement; existing stock and event ledgers are unchanged. New network generation prefers a farther-forward eligible road position; saved operational bindings remain unchanged until edited. Propagating these setup overrides into the command/continental operational ledger and timed relocation are follow-up integration work.
+
+Verified: all 17 formation/squad deployment checks, logistics regressions, relocation save/reload and invalid-target tests, and live Goodwood formation/squad consistency.
+
+
+### Portable campaign saves (2026-10-12)
+
+The HTML/JS Campaign menu now provides Save campaign to file and Load campaign from file for source Situations, Normandy, and Ardennes. The versioned JSON envelope contains the complete operation world, including command progress, board supply bindings, formation plans, squad plans, and player supply adjustments. Loading validates the campaign model before writing, preserves unrelated saves, backs up an existing same-identity save, and rolls back failed writes. Browser viewport and map camera settings are not transferred. The Blazor port should preserve this file contract and add explicit migrations when the schema changes.

@@ -1,0 +1,9 @@
+"use strict";
+(()=>{const choice=document.getElementById('situation'),host=document.getElementById('review');for(const d of PANZER_SITUATION_LIBRARY){const o=document.createElement('option');o.value=d.situation.number;o.textContent=d.situation.number+' | '+d.situation.title;choice.append(o);}
+ document.getElementById('open').onclick=()=>{document.getElementById('result').textContent='Building selected review...';setTimeout(()=>{try{const d=PANZER_SITUATION_LIBRARY.find(d=>d.situation.number===Number(choice.value)),P=PanzerSituationModel,plan=P.create(d);for(const side of d.setupOrder){P.autoDeploySide(plan,d);if(!P.complete(plan,d,side))for(const i of P.ground(d).filter(i=>d.counters.find(t=>t.id===i.counterTypeId).side===side&&!plan.placements[i.id])){const b=d.boards.find(b=>b.id===d.setupBoards[side]),h=b.hexes.find(h=>h.setupAllowed&&!Object.values(plan.placements).some(p=>p.board===b.id&&p.hexId===h.id)&&P.allowed(d,i.id,b.id,h.id,plan));P.place(plan,d,i.id,b.id,h.imageCenter.u,h.imageCenter.v);}P.next(plan,d);}P.validate(plan,d);
+ let state=SquadDeployment.expandAll(SquadDeployment.create(d,plan,Object.keys(plan.placements)[0]),d,plan);
+ document.getElementById('rules').textContent=d.rules.setup.map(r=>r.side+': '+r.instructions).join(' | ');
+ const b=CampaignSupplySpatial.build(d),conflicts=['Allied','German'].flatMap(side=>CampaignSupplyPlacement.conflicts(d,b,side,plan.placements,state.units));document.getElementById('result').textContent=d.situation.number+' | '+d.situation.title+' | '+state.units.length+' squad counters | '+conflicts.length+' route conflicts | '+b.version;
+ SquadWorkspace.open(d,plan,Object.keys(plan.placements)[0],{host,storage:{load:()=>state,save:s=>state=s,clear:()=>state=null}});
+ }catch(e){document.getElementById('result').textContent='FAIL: '+e.message;throw e;}},100);};
+})();

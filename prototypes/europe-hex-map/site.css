@@ -299,3 +299,12 @@ aside{padding:18px;overscroll-behavior:contain}
 
 /* Boards meet edge-to-edge; labels belong to the toolbar, never at a seam. */
 .panzer-joined{gap:0;align-items:stretch}.panzer-sheet{margin:0;padding:0;border:0;line-height:0}.panzer-sheet>.panzer-board{margin:0;border:0;box-sizing:border-box}.panzer-board-legend{margin-left:auto;color:#5b6152;font-size:.8rem}
+
+/* Compact map toolbar: keep controls at their natural width and give remaining height to the board. */
+#panzerSituation .panzer-setup-controls{display:flex;flex-wrap:wrap;gap:6px 12px;margin:4px 0 8px}
+#panzerSituation .panzer-setup-controls>select{flex:0 0 auto;width:auto;max-width:180px;margin:0;padding:6px 26px 6px 8px}
+#panzerSituation .panzer-setup-controls>button{flex:0 0 auto;width:auto;margin:0}
+#panzerSituation[data-map-mode="game"]>.panzer-toolbar:first-child h2{margin:0;font-size:1.05rem}
+#panzerSituation.campaign-embedded{position:relative}
+.campaign-air-support-card{position:absolute;z-index:30;top:90px;right:12px;width:min(420px,calc(100% - 24px));max-height:calc(100% - 108px);overflow:auto;box-sizing:border-box;padding:16px;background:#fffdf5;border:1px solid #697a4b;border-radius:6px;box-shadow:0 6px 22px #0004}
+.campaign-air-support-card>button{float:right}.campaign-air-support-card h3{margin:0 0 12px}.campaign-air-support-card section{border-top:1px solid #d8dccf;padding-top:8px}
