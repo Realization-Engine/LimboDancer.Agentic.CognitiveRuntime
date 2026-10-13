@@ -1699,7 +1699,9 @@ public static class ScenarioA1FireCalculator
                 List<FireModifier> crewDrm = [.. drm, new FireModifier("crew-exposed", 2m, "D5.31")];
                 var crewFinal = arithmetic.OriginalDr + (int)crewDrm.Sum(item => item.Value);
                 var outcome = column < 0 ? "none" : reference.Result(crewFinal, column);
-                var morale = reference.AfvCrewMorale(definition.Nationality)!.Value;
+                // D3.42, D3.45 (p. 200; pass 55, rulings R55.17, R55.18): the crew checks at its Armor Leader's Morale Level, or an Inexperienced
+                // Crew's 6; his leadership modifier is not added, since he takes the check himself.
+                var morale = vehicle.CrewMorale ?? reference.AfvCrewMorale(definition.Nationality)!.Value;
                 var kia = Regex.IsMatch(outcome, "^([1-7])KIA$") || Regex.IsMatch(outcome, "^K/([1-4])$");
                 var mc = Regex.Match(outcome, "^([1-4])MC$");
                 FireCheck? check = null;
@@ -1739,7 +1741,10 @@ public static class ScenarioA1FireCalculator
                         : pin ? FireVehicleEffect.Pinned
                         : vehicle.StunRecovery == true ? FireVehicleEffect.Recalled
                         : FireVehicleEffect.Stunned;
-                    check = new FireCheck(pin ? "NTC" : mc.Success ? outcome : "NMC", dice.ToArray(), original, checkDrm, checkFinal, morale, passed, crewResult);
+                    check = new FireCheck(pin ? "NTC" : mc.Success ? outcome : "NMC", dice.ToArray(), original, checkDrm, checkFinal, morale, passed, crewResult)
+                    {
+                        MoraleSource = ScenarioA1ArmorLeaders.MoraleSource(vehicle.CrewMorale),
+                    };
                 }
 
                 effects.Add(new FireVehicleEffect(id, definition.Id, FireVehicleEffect.None, null, crewDrm, crewFinal, null, check, crewResult));
@@ -2380,6 +2385,14 @@ public static class ScenarioA1FireCalculator
                 drm.Add(new FireModifier("stun-recovery:" + overrunning.VehicleId, 1m, "D5.34"));
             }
 
+            // D3.44, D7.16, D3.45 (pp. 200, 207; pass 55, rulings R55.16, R55.18): a vehicle's Armor Leader modifies the IFT DR of a MA that is a
+            // MG, and its OVR DR whatever the weapons; "an Armor Leader cannot modify non-OVR MG/FT (unless MA) attacks", so a BMG or CMG takes none.
+            if (ScenarioA1ArmorLeaders.Modifier(attack.Overrun is { } leading ? leading.ArmorLeadership
+                : attack.VehicleFire is { Weapons: null or { Count: 0 } } mainArmament ? mainArmament.ArmorLeadership : null) is { } armorLeader)
+            {
+                drm.Add(armorLeader);
+            }
+
             // A7.531: the leadership of the directing leader, the worst of them for a group spanning Locations; A17.3: one
             // worse when wounded.
             // A10.7 (ruling R15.8): one worse when the group holds Allied Troops of another nationality than his.
@@ -2553,7 +2566,9 @@ public static class ScenarioA1FireCalculator
             // attack lowers it as a Hindrance does. Pass 45 adds the firers' own DRM: CX, an Encircled firer, a hero's, a Stun, and overstacking.
             var firers = (int)arithmetic.Drm.Where(item => item.Value > 0 && (item.Name.StartsWith("cx:", StringComparison.Ordinal)
                 || item.Name.StartsWith("encircled:", StringComparison.Ordinal) || item.Name.StartsWith("hero-mg:", StringComparison.Ordinal)
-                || item.Name.StartsWith("stun-recovery:", StringComparison.Ordinal) || item.Name == "overstacked")).Sum(item => item.Value);
+                || item.Name.StartsWith("stun-recovery:", StringComparison.Ordinal) || item.Name == "overstacked"
+                // Pass 55 (D3.45): an Inexperienced Crew's +1 is a leadership modifier of the firer's.
+                || item.Name == ScenarioA1ArmorLeaders.InexperiencedModifier)).Sum(item => item.Value);
             index -= hindrance + Math.Max(leadership, 0) + (attack.HexsideTem?.Tem ?? 0) + firers
                 // E3.62, E3.731 (rulings R16.12, R16.13): an HE attack cushioned by Mud or Deep Snow in Open Ground leaves one counter less.
                 + (attack.OrdnanceHit is not null && attack.CushionedOpenGround == true && attack.TargetTerrain == "open-ground" ? 1 : 0);

@@ -27,7 +27,14 @@ public sealed record BoundingFireFacts(string? Phase, bool ActiveVehicleOfPhasin
 public sealed record CrewExposedFacts(RuleState ButtonedUp, bool Stunned, bool Recalled, bool Shocked, bool UnconfirmedKill, bool ClosedTopped);
 
 /// <summary>A vehicle in a target Location as the state has it (A7.307, A7.308, D.8B): its id, definition, Location text, crew exposure, and conditions.</summary>
-public sealed record VehicleTargetFacts(string Id, string? Definition, string At, bool CrewExposed, bool Stunned, bool Recalled, bool StunRecovery, bool Immobilized, bool Concealed, bool Hidden);
+public sealed record VehicleTargetFacts(string Id, string? Definition, string At, bool CrewExposed, bool Stunned, bool Recalled, bool StunRecovery, bool Immobilized, bool Concealed, bool Hidden)
+{
+    /// <summary>The crew's Morale Level when it is its Armor Leader's or an Inexperienced Crew's (D3.42, D3.45; pass 55); null for its nationality's.</summary>
+    public int? CrewMorale
+    {
+        get; init;
+    }
+}
 
 /// <summary>A firing vehicle as the state has it (D2.42, A7.82, D3.7, C2.24): its id, definition, Location text, crew exposure, Motion counter, whether it moves unstopped as the moving vehicle, its conditions, its fire counters, and whether its last shot this phase kept its Multiple ROF.</summary>
 public sealed record VehicleFirerFacts(
@@ -47,7 +54,14 @@ public sealed record VehicleFirerFacts(
     bool Fired,
     bool FirstFire,
     bool BoundingFire,
-    bool RateOfFireKept);
+    bool RateOfFireKept)
+{
+    /// <summary>The leadership modifier of the vehicle's Armor Leader, or an Inexperienced Crew's +1 (D3.44, D3.45; pass 55); null for none.</summary>
+    public int? ArmorLeadership
+    {
+        get; init;
+    }
+}
 
 /// <summary>A unit in a target Location as the state has it (A10.8, A15.21, A19.2, A22.4): its id, definition, Location text, conditions, Dummy, its group's ELR (null outside a group), its Green Inexperience, and the FT it possesses.</summary>
 public sealed record TargetUnitFacts(
@@ -202,7 +216,14 @@ public sealed record OverrunFacts(
     int? ScenarioMonth,
     Func<string, FireTarget> TargetOf,
     Func<string, FireVehicle> VehicleOf,
-    bool StunRecovery = false);
+    bool StunRecovery = false)
+{
+    /// <summary>The leadership modifier of the vehicle's Armor Leader, or an Inexperienced Crew's +1 (D7.16, D3.44, D3.45; pass 55); null for none.</summary>
+    public int? ArmorLeadership
+    {
+        get; init;
+    }
+}
 
 /// <summary>A DC's attack as the state has it (A23; rulings R15.2, R15.3): the charge, its placement, its user, the mode, the units in the target Location, the sides, and the reads of a target and a vehicle.</summary>
 public sealed record DemolitionChargeFacts(

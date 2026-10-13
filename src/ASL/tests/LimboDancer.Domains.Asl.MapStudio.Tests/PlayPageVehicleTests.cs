@@ -126,6 +126,44 @@ public sealed class PlayPageVehicleTests : IDisposable
     }
 
     [Fact]
+    public void AnArmedAfvSetsUpWithAnArmorLeaderOrAnInexperiencedCrew()
+    {
+        // Pass 55 (D3.4, D3.41, D3.45; rulings R55.15, R55.18): the setup offers both for an armed AFV alone, and the committed game carries them.
+        var (one, two) = Hexes();
+        var page = context.Render<PlayPage>();
+        MinimalCards.Choose(page, new Dictionary<string, string> { ["board"] = Board, ["first"] = "german", ["second"] = "russian", ["first-elr"] = "3", ["second-elr"] = "3" });
+        foreach (var unarmed in new[] { "attacker-squad", "attacker-truck" })
+        {
+            page.Find("#place-definition").Change(unarmed);
+            Assert.Empty(page.FindAll("#place-armor-leader"));
+            Assert.Empty(page.FindAll("#place-inexperienced-crew"));
+        }
+
+        page.Find("#place-definition").Change("attacker-tank");
+        Assert.Equal(["", "8-1", "9-1", "9-2", "10-2"], page.FindAll("#place-armor-leader option").Select(item => item.GetAttribute("value")));
+        page.Find("#place-armor-leader").Change("9-1");
+        Place(page, "de-tank", "attacker-tank", one, "east");
+        page.Find("#place-definition").Change("defender-tank");
+        page.Find("#place-inexperienced-crew").Change(true);
+        Place(page, "ru-tank", "defender-tank", two, "west");
+        Commit(page, "#propose-setup");
+
+        // What the page sent, read from the committed game.
+        var history = live.History("village")!;
+        Assert.False(history.HasErrors);
+        var created = history.Events.Select(item => item.Payload).OfType<InstanceCreated>().ToDictionary(item => item.Instance.Id, item => item.Instance, StringComparer.Ordinal);
+        Assert.Equal(new ArmorLeader(9, -1), created["de-tank"].ArmorLeader);
+        Assert.False(created["de-tank"].Conditions.ContainsKey(Conditions.InexperiencedCrew));
+        Assert.Null(created["ru-tank"].ArmorLeader);
+        Assert.Equal(ConditionState.True, created["ru-tank"].Conditions[Conditions.InexperiencedCrew]);
+        Assert.Equal(new ArmorLeader(9, -1), history.Current!.Unit("de-tank")!.ArmorLeader);
+
+        // The units table names him, and the Inexperienced Crew, which is no secret.
+        Assert.Contains("with Armor Leader 9-1", page.Find("tr[data-unit='de-tank']").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Inexperienced Crew (D3.45)", page.Find("tr[data-unit='ru-tank']").TextContent, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void TheMovingHalftrackOffersBoundingFirstFireOnceTheDefenderPasses()
     {
         // D3.3 (ruling R6.9): after the DEFENDER passes on its Start, the halftrack's panel offers Bounding First Fire at a Location the

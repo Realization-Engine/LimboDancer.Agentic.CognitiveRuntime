@@ -196,7 +196,7 @@ else
                     <details id="setup-by-hand">
                         <summary>Add a counter by hand</summary>
                         <SetupPlacementEditor Draft="@PlaceDraft" Definitions="@DefinitionChoices" Groups="@GroupChoiceList" Entries="@EntryChoices"
-                            Kind="@(Definitions.FirstOrDefault(definition => definition.Id == placeDefinition)?.Kind)" OnDraft="@ApplyPlaceDraft" OnAdd="@AddPlacement" />
+                            Kind="@(Definitions.FirstOrDefault(definition => definition.Id == placeDefinition)?.Kind)" ArmedAfv="@GamePlanner.IsArmedAfv(placeDefinition)" OnDraft="@ApplyPlaceDraft" OnAdd="@AddPlacement" />
                     </details>
                 }
             </InspectorTabs>
@@ -230,14 +230,14 @@ else
                 <details id="setup-before-start">
                     <summary>Or type the first counters here</summary>
                     <SetupPlacementEditor Draft="@PlaceDraft" Definitions="@DefinitionChoices" Groups="@GroupChoiceList" Entries="@EntryChoices"
-                        Kind="@(Definitions.FirstOrDefault(definition => definition.Id == placeDefinition)?.Kind)" Note="@placeNote" OnDraft="@ApplyPlaceDraft" OnAdd="@AddPlacement" />
+                        Kind="@(Definitions.FirstOrDefault(definition => definition.Id == placeDefinition)?.Kind)" ArmedAfv="@GamePlanner.IsArmedAfv(placeDefinition)" Note="@placeNote" OnDraft="@ApplyPlaceDraft" OnAdd="@AddPlacement" />
                     <SetupPlacementList Items="@PlacementItems" Ready="@CardChosen" OnRemove="@RemovePlacement" OnChange="@ChangePlacement" OnClear="@ClearPlacements" OnPropose="@ProposeSetup" />
                 </details>
             }
             else
             {
                 <SetupPlacementEditor Draft="@PlaceDraft" Definitions="@DefinitionChoices" Groups="@GroupChoiceList" Entries="@EntryChoices"
-                    Kind="@(Definitions.FirstOrDefault(definition => definition.Id == placeDefinition)?.Kind)" Note="@placeNote" OnDraft="@ApplyPlaceDraft" OnAdd="@AddPlacement" />
+                    Kind="@(Definitions.FirstOrDefault(definition => definition.Id == placeDefinition)?.Kind)" ArmedAfv="@GamePlanner.IsArmedAfv(placeDefinition)" Note="@placeNote" OnDraft="@ApplyPlaceDraft" OnAdd="@AddPlacement" />
                 <SetupPlacementList Items="@PlacementItems" Ready="@(history is not null || CardChosen)" OnRemove="@RemovePlacement"
                     OnChange="@ChangePlacement" OnClear="@ClearPlacements" OnPropose="@ProposeSetup" CanPick="@(history?.Current is not null && MapLayers?.Board is not null)"
                     OnPick="@(key => pickingKey = pickingKey == key ? null : key)" />
@@ -1053,6 +1053,18 @@ else if (state is not null)
 
         /// <summary>The placement's own key, so one of two placements with the same id is removed alone (plan section 15.3).</summary>
         public string Key { get; init; } = Guid.NewGuid().ToString("N");
+
+        /// <summary>An armed AFV's Armor Leader by his grade, such as "9-1" (D3.4, D3.41; pass 55, ruling R55.15); null for none.</summary>
+        public string? ArmorLeader
+        {
+            get; init;
+        }
+
+        /// <summary>Whether an armed AFV sets up with an Inexperienced Crew (D3.45; pass 55, ruling R55.18).</summary>
+        public bool InexperiencedCrew
+        {
+            get; init;
+        }
     }
 
     private string? scenarioCard;
@@ -1207,7 +1219,11 @@ else if (state is not null)
 
     /// <summary>The setup placement being drafted (plan P08), as the form shows it.</summary>
     private SetupPlacementEditor.SetupDraft PlaceDraft => new(placeDefinition, placeId, placeGroup, placeLocation, placeHolder, placeFacing, placeBore, placeConcealed,
-        placeHidden, placeBroken, placeOffBoard, placeEntry);
+        placeHidden, placeBroken, placeOffBoard, placeEntry, placeArmorLeader, placeInexperiencedCrew);
+
+    // D3.4, D3.45 (pass 55, rulings R55.15, R55.18): an armed AFV's Armor Leader ("9-1", empty for none) and its Inexperienced Crew, as the form holds them.
+    private string placeArmorLeader = string.Empty;
+    private bool placeInexperiencedCrew;
 
     /// <summary>A change to the drafted placement; the entry area is cleared when the group changes or the counter no longer waits off board.</summary>
     private void ApplyPlaceDraft(SetupPlacementEditor.SetupDraft draft)
@@ -1216,6 +1232,10 @@ else if (state is not null)
         (placeDefinition, placeId, placeGroup, placeLocation, placeHolder, placeFacing, placeBore) =
             (draft.Definition, draft.Id, draft.Group, draft.Location, draft.Holder, draft.Facing, draft.Bore);
         (placeConcealed, placeHidden, placeBroken, placeOffBoard) = (draft.Concealed, draft.Hidden, draft.Broken, draft.OffBoard);
+
+        // Pass 55: neither stays with a counter that is no armed AFV.
+        var armed = GamePlanner.IsArmedAfv(draft.Definition);
+        (placeArmorLeader, placeInexperiencedCrew) = (armed ? draft.ArmorLeader : string.Empty, armed && draft.InexperiencedCrew);
     }
 
     /// <summary>The counters the setup form offers: the catalog's, then a Dummy and the Sniper counter per side.</summary>
@@ -3519,7 +3539,20 @@ else if (state is not null)
         {
             yield return $"in Bypass beside {lane}";
         }
+
+        // D3.41 (pass 55, ruling R55.15): the view's unit carries its Armor Leader for his owner, and for the enemy once a record has used him.
+        if (unit.ArmorLeader is { } leader)
+        {
+            yield return $"with Armor Leader {ScenarioA1ArmorLeaders.Grade(leader.Morale, leader.Leadership)}";
+        }
     }
+
+    /// <summary>
+    /// A vehicle's Armor Leader as the viewer may read him (D3.41; pass 55, ruling R55.15): read from the view's units, never from the whole state,
+    /// so the enemy's is named only once a record has used him. Empty with none.
+    /// </summary>
+    private string ArmorLeaderNote(string vehicleId) => VisibleUnits.FirstOrDefault(unit => unit.Id == vehicleId)?.ArmorLeader is { } leader
+        ? $", with Armor Leader {ScenarioA1ArmorLeaders.Grade(leader.Morale, leader.Leadership)}" : string.Empty;
 
     private string moveTo = string.Empty;
     private string moveExit = string.Empty;
@@ -3583,7 +3616,8 @@ else if (state is not null)
             ? $" ({string.Join(", ", held)})" : string.Empty);
 
     /// <summary>A condition as the Units table names it: the flipped STUN counter is "Stun +1" (D5.34).</summary>
-    private static string ConditionText(string condition) => condition == Conditions.StunRecovery ? "Stun +1" : condition.Replace("asl:", string.Empty, StringComparison.Ordinal);
+    private static string ConditionText(string condition) => condition == Conditions.StunRecovery ? "Stun +1"
+        : condition == Conditions.InexperiencedCrew ? "Inexperienced Crew (D3.45)" : condition.Replace("asl:", string.Empty, StringComparison.Ordinal);
 
     /// <summary>
     /// A personnel counter's printed values, as players name it: a MMC or hero by FP, range, and morale ("4-6-7"), a leader by morale and
@@ -4342,8 +4376,8 @@ else if (state is not null)
         var flags = string.Concat(new[] { (Conditions.Shocked, "Shocked"), (Conditions.UnconfirmedKill, "Unconfirmed Kill"), (Conditions.Stunned, "Stunned"),
             (Conditions.Recalled, "Recalled"), (Conditions.Motion, "in Motion"), (Conditions.Immobilized, "immobilized"), (Conditions.Malfunctioned, "MA malfunctioned"),
             (Conditions.Disabled, "MA disabled"), (Conditions.BmgMalfunctioned, "BMG malfunctioned"), (Conditions.BmgDisabled, "BMG disabled"),
-            (Conditions.CmgMalfunctioned, "CMG malfunctioned"), (Conditions.CmgDisabled, "CMG disabled") }
-            .Where(item => Marked(item.Item1)).Select(item => ", " + item.Item2));
+            (Conditions.CmgMalfunctioned, "CMG malfunctioned"), (Conditions.CmgDisabled, "CMG disabled"), (Conditions.InexperiencedCrew, "Inexperienced Crew") }
+            .Where(item => Marked(item.Item1)).Select(item => ", " + item.Item2)) + ArmorLeaderNote(tank.Id);
         return $"{tank.Id} ({tank.Definition?.Definition} MA, VCA {hull}, TCA {turret}, {(LiveFire.CrewExposed(tank) ? "CE" : "BU")}"
             // D3.5 (pass 50): a fire counter its BMG or CMG placed is not the MA's.
             + (shots is null ? Marked(Conditions.PrepFire) || Marked(Conditions.FinalFire)
@@ -5728,10 +5762,18 @@ else if (state is not null)
             placeBroken && holder is null, gun ? placeFacing : null, definition.Kind is "asl:gun" or "asl:mg" && placeBore.Trim().Length > 0 ? placeBore.Trim() : null,
             placeGroup.Length > 0 && GroupChoices.Any(choice => choice.Side == side && choice.Group.Id == placeGroup) ? placeGroup : null,
             placeOffBoard && holder is null && definition.Kind != "asl:gun", role,
-            placeOffBoard && holder is null && EntryChoices.Any(choice => choice.Value == placeEntry) ? placeEntry : null) { Key = Guid.NewGuid().ToString("N") });
+            placeOffBoard && holder is null && EntryChoices.Any(choice => choice.Value == placeEntry) ? placeEntry : null)
+        {
+            Key = Guid.NewGuid().ToString("N"),
+
+            // D3.41, D3.45 (pass 55): an armed AFV's Armor Leader and Inexperienced Crew; the gate refuses the two together.
+            ArmorLeader = GamePlanner.IsArmedAfv(definition.Id) && placeArmorLeader.Length > 0 ? placeArmorLeader : null,
+            InexperiencedCrew = GamePlanner.IsArmedAfv(definition.Id) && placeInexperiencedCrew,
+        });
         placeId = string.Empty;
         placeHolder = string.Empty;
         placeBore = string.Empty;
+        (placeArmorLeader, placeInexperiencedCrew) = (string.Empty, false);
         ListChanged();
     }
 
@@ -5805,7 +5847,21 @@ else if (state is not null)
         {
             // A2.52 (ruling R26.1): a vehicle waiting off board is in Motion and takes its VCA as it enters.
             placement["position"] = item.OffBoard ? OffBoardPosition(item) : new { at = item.Location, facing = item.Facing ?? "east" };
-            placement["conditions"] = new Dictionary<string, bool> { ["asl:concealed"] = item.Concealed, ["asl:hidden"] = item.Hidden };
+            var conditions = new Dictionary<string, bool> { ["asl:concealed"] = item.Concealed, ["asl:hidden"] = item.Hidden };
+
+            // D3.45, D3.4 (pass 55, rulings R55.15, R55.18): an Inexperienced Crew is a condition; an Armor Leader his morale and his modifier.
+            if (item.InexperiencedCrew)
+            {
+                conditions[Conditions.InexperiencedCrew] = true;
+            }
+
+            placement["conditions"] = conditions;
+            if (item.ArmorLeader is { } grade && grade.LastIndexOf('-') is > 0 and var dash
+                && int.TryParse(grade[..dash], CultureInfo.InvariantCulture, out var morale) && int.TryParse(grade[dash..], CultureInfo.InvariantCulture, out var leadership))
+            {
+                placement["armorLeader"] = new { morale, leadership };
+            }
+
             return placement;
         }
 

@@ -664,6 +664,11 @@ public static class GameEventWriter
                     writer.WriteNumber("mp", check.Mp);
                 }
 
+                if (check.ArmorLeadership is { } checkLeadership)
+                {
+                    writer.WriteNumber("armorLeadership", checkLeadership);
+                }
+
                 break;
             case OverrunResolved overrun:
                 writer.WriteString("vehicle", overrun.Vehicle);
@@ -999,6 +1004,16 @@ public static class GameEventWriter
 
         WriteHolding(writer, instance.Holding);
         WriteConditions(writer, instance.Conditions);
+
+        // Pass 55 (ruling R55.15): a vehicle's Armor Leader; whether he is revealed is the state's, never the record's.
+        if (instance.ArmorLeader is { } armorLeader)
+        {
+            writer.WriteStartObject("armorLeader");
+            writer.WriteNumber("morale", armorLeader.Morale);
+            writer.WriteNumber("leadership", armorLeader.Leadership);
+            writer.WriteEndObject();
+        }
+
         writer.WriteEndObject();
     }
 

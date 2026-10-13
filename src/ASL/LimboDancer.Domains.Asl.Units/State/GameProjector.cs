@@ -252,6 +252,7 @@ public static class GameProjector
             next = KeepCx(next);
             next = KeepAcquisitions(previous, next, gameEvent.Payload);
             next = KeepPassengers(next);
+            next = KeepArmorLeaders(next, gameEvent.Payload);
             next = next with
             {
                 Revision = gameEvent.Revision,
@@ -260,6 +261,99 @@ public static class GameProjector
             CheckInvariants(next);
             eventIds.Add(gameEvent.EventId);
             return next;
+        }
+
+        /// <summary>
+        /// Armor Leaders after an event (D3.41, D3.43, D5.341, pp. 200 and 204; pass 55, rulings R55.15, R55.17). A record that carries a leader's
+        /// modifier or his crew's Morale Level reveals him: the firer of an ordnance shot or of an IFT attack by its MA, the vehicle of an OVR or of
+        /// its own CC attack, a Bog Removal, and a target whose crew checked. A Recall, a wreck, an elimination, and an Abandoned vehicle lose him;
+        /// Rules decides both.
+        /// </summary>
+        private static GameState KeepArmorLeaders(GameState state, EventPayload payload)
+        {
+            if (!state.Units.Any(unit => unit.ArmorLeader is not null))
+            {
+                return state;
+            }
+
+            var used = new HashSet<string>(StringComparer.Ordinal);
+            static JsonElement? Child(JsonElement element, string name) =>
+                element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) && value.ValueKind is not JsonValueKind.Null ? value : null;
+            static string? Text(JsonElement? element, string name) => element is { } item && Child(item, name) is { ValueKind: JsonValueKind.String } value ? value.GetString() : null;
+            void Firer(JsonElement? vehicle, string? id)
+            {
+                if (vehicle is { } item && Child(item, "armorLeadership") is not null && id is not null)
+                {
+                    used.Add(id);
+                }
+            }
+
+            void Checked(JsonElement? vehicle)
+            {
+                if (vehicle is { } item && Child(item, "crewMorale") is not null && Text(item, "vehicleId") is { } id)
+                {
+                    used.Add(id);
+                }
+            }
+
+            void CheckedIn(JsonElement? attack)
+            {
+                if (attack is { } facts && Child(facts, "vehicles") is { ValueKind: JsonValueKind.Array } vehicles)
+                {
+                    foreach (var vehicle in vehicles.EnumerateArray())
+                    {
+                        Checked(vehicle);
+                    }
+                }
+            }
+
+            switch (payload)
+            {
+                case OrdnanceFired fired:
+                    Firer(Child(fired.Facts, "vehicle"), fired.Gun);
+                    Checked(Child(fired.Facts, "vehicleTarget"));
+                    CheckedIn(Child(fired.Facts, "hit"));
+                    break;
+                case FireResolved fire:
+                    Firer(Child(fire.Facts, "vehicleFire"), Text(Child(fire.Facts, "vehicleFire"), "vehicleId"));
+                    Firer(Child(fire.Facts, "overrun"), Text(Child(fire.Facts, "overrun"), "vehicleId"));
+                    CheckedIn(fire.Facts);
+                    break;
+                case VehicleCloseCombatResolved combat:
+                    Firer(Child(combat.Facts, "vehicle"), combat.Vehicle);
+                    break;
+                case VehicleCheckRolled { ArmorLeadership: not null } check:
+                    used.Add(check.Vehicle);
+                    break;
+            }
+
+            UnitInstance Kept(UnitInstance unit)
+            {
+                if (unit.ArmorLeader is not { } leader)
+                {
+                    return unit;
+                }
+
+                if (Rules.ScenarioA1ArmorLeaders.Lost(unit.Status == InstanceStatus.Active, GameState.Condition(unit, Conditions.Recalled) == ConditionState.True,
+                    GameState.Condition(unit, Conditions.Abandoned) == ConditionState.True))
+                {
+                    return unit with
+                    {
+                        ArmorLeader = null
+                    };
+                }
+
+                return leader.Revealed || !used.Contains(unit.Id) ? unit : unit with
+                {
+                    ArmorLeader = new ArmorLeader(leader.Morale, leader.Leadership, true)
+                };
+            }
+
+            UnitInstance[] units = [.. state.Units.Select(Kept)];
+            return units.Zip(state.Units).All(pair => ReferenceEquals(pair.First, pair.Second)) ? state : state with
+            {
+                Units = units
+            };
         }
 
         private bool CheckEnvelope(GameEvent gameEvent, GameState? previous)
@@ -2393,6 +2487,13 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-039", "The vehicle check's result disagrees with its DR.");
             }
 
+            // D8.3, D3.44 (pass 55, ruling R55.16): the Armor Leader's part of a Bog Removal's drm is the one the vehicle has; Rules decides.
+            if (Rules.ScenarioA1ArmorLeaders.CheckRefusal(check.Check == VehicleCheckRolled.BogRemoval, check.ArmorLeadership,
+                Rules.ScenarioA1ArmorLeaders.Leadership(vehicle.ArmorLeader?.Leadership, GameState.Condition(vehicle, Conditions.InexperiencedCrew) == ConditionState.True)) is { } leaderRefusal)
+            {
+                return Fail<GameState>(leaderRefusal.Code, leaderRefusal.Text);
+            }
+
             var conditions = new Dictionary<string, ConditionState>(vehicle.Conditions, StringComparer.Ordinal);
             var esb = vehicle.EsbMp;
             switch (check.Result)
@@ -2951,6 +3052,15 @@ public static class GameProjector
                 return null;
             }
 
+            // D3.4, D3.41, D3.45 (pass 55, rulings R55.15, R55.18): a vehicle, and nothing else, may set up with an Armor Leader of a listed grade;
+            // Rules decides.
+            if (instance.ArmorLeader is { } armorLeader
+                && Rules.ScenarioA1ArmorLeaders.AssignmentRefusal(instance.Id, vocabulary.IsA(instance.Kind, "asl:vehicle"), armorLeader.Morale, armorLeader.Leadership,
+                    instance.Conditions.TryGetValue(Conditions.InexperiencedCrew, out var inexperiencedCrew) && inexperiencedCrew == ConditionState.True) is { } leaderRefusal)
+            {
+                return Fail<GameState>(leaderRefusal.Code, leaderRefusal.Text);
+            }
+
             var position = instance.Position;
             if (vocabulary.IsA(instance.Kind, "asl:equipment"))
             {
@@ -3058,6 +3168,9 @@ public static class GameProjector
                 InstanceStatus.Active, from)
             {
                 Group = group,
+
+                // The record never says he is revealed: a record that carries his modifier or his morale does that (D3.41).
+                ArmorLeader = instance.ArmorLeader is { } assigned ? new ArmorLeader(assigned.Morale, assigned.Leadership) : null,
             };
             return state with
             {

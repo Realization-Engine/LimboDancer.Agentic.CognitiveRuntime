@@ -187,7 +187,9 @@ public static class FireText
     {
         ArgumentNullException.ThrowIfNull(check);
         return $"{check.Kind} {string.Join(", ", check.Dice)}{string.Concat(check.Drm.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({DisplayText.Modifier(item.Name)})"))}"
-            + $" = {check.FinalDr} against {check.MoraleLevel}: {(check.Passed ? "passed" : "failed")}";
+            // D3.42, D3.45 (pass 55): a vehicle crew's check at its Armor Leader's Morale Level, or an Inexperienced Crew's, says whose it is.
+            + $" = {check.FinalDr} against {check.MoraleLevel}{(ScenarioA1ArmorLeaders.MoraleText(check.MoraleSource, check.MoraleLevel) is { Length: > 0 } source ? $" ({source})" : "")}"
+            + $": {(check.Passed ? "passed" : "failed")}";
     }
 
     /// <summary>A vehicle's Vehicle line result (A7.308, A7.309): the Kill Number, its Final DR, and any Unlikely Kill dr.</summary>

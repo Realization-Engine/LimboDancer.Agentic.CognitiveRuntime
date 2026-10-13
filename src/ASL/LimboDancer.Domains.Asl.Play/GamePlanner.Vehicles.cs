@@ -27,6 +27,15 @@ public sealed partial class GamePlanner
     private static bool IsAfv(UnitInstance vehicle) =>
         ScenarioA1VehicleMovementCalculator.IsAfv(LiveFire.IsVehicle(vehicle), LiveFire.IsVehicle(vehicle) ? VehicleDefinition(vehicle)?.Unarmored : null);
 
+    /// <summary>
+    /// Whether a catalog definition is an armed AFV (D3.41, D3.45; pass 55, rulings R55.15, R55.18), which may set up with an Armor Leader or an
+    /// Inexperienced Crew: an armored vehicle with a MA. Rules decides it.
+    /// </summary>
+    public static bool IsArmedAfv(string? definitionId) =>
+        definitionId is not null && FireReference.Value.Definitions.GetValueOrDefault(definitionId) is { } definition
+        && ScenarioA1ArmorLeaders.ArmedAfv(ScenarioA1VehicleMovementCalculator.IsAfv(definition.IsVehicle, definition.IsVehicle ? definition.Unarmored : null),
+            definition.MainArmament, definition.Caliber);
+
     /// <summary>Whether a vehicle is a closed-topped AFV (D1.23; ruling R7.11): armored and not open-topped.</summary>
     public static bool IsClosedTopped(UnitInstance vehicle) =>
         ScenarioA1VehicleMovementCalculator.IsClosedTopped(IsAfv(vehicle), IsAfv(vehicle) ? VehicleDefinition(vehicle)?.OpenTopped : null);
@@ -63,6 +72,16 @@ public sealed partial class GamePlanner
     /// </summary>
     private string? VehicleSetupBar(GameState state)
     {
+        // D3.41, D3.45 (pass 55, rulings R55.15, R55.18): an Armor Leader and an Inexperienced Crew belong to an armed AFV; Rules decides.
+        foreach (var item in state.Objects.Where(item => item.Status == InstanceStatus.Active))
+        {
+            if (ScenarioA1ArmorLeaders.SetupBar(item.Id, item is UnitInstance { ArmorLeader: not null }, Is(item, Conditions.InexperiencedCrew),
+                item is UnitInstance unit && IsArmedAfv(unit.Definition?.Definition)) is { } crewBar)
+            {
+                return crewBar;
+            }
+        }
+
         foreach (var vehicle in state.Units.Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)))
         {
             // A2.52 (ruling R26.1): a vehicle may wait off board to enter, in Motion, loaded up to its capacity, its Gun in tow.
@@ -676,7 +695,9 @@ public sealed partial class GamePlanner
         {
             // D8.3 (ruling R11.10): the Bog Removal is the Start MP of its MPh; the vehicle must not have Prep Fired (barred above).
             var truck = MovementTypeOf(vehicle) == "truck";
-            var drm = Is(vehicle, Conditions.Mired) ? 1 : 0;
+            // D8.3, D3.44, D3.45 (pass 55, rulings R55.16, R55.18): "one armor leader in either AFV also modifies the colored dr"; Rules sums the drm.
+            var leadership = LiveFire.ArmorLeadership(vehicle);
+            var drm = ScenarioA1ArmorLeaders.BogRemovalDrm(Is(vehicle, Conditions.Mired), leadership);
             List<GameEvent> Removal(Func<RollRequest, RollResult>? draw)
             {
                 var events = new List<GameEvent>();
@@ -692,7 +713,8 @@ public sealed partial class GamePlanner
                 var result = VehicleCheckRolled.For(VehicleCheckRolled.BogRemoval, dice.Values[0] + drm);
                 events.Add(Event(scope, attemptId, 1, expected, "dice-rolled", new DiceRolled(rollId, "vehicle-bog-removal", 2, 6, dice.Values, DiceRolled.SystemSource, actor), null, null));
                 events.Add(Event(scope, attemptId, 2, expected, "vehicle-step", new VehicleStepped(id, VehicleStepped.Start, at, null, halfMp, step) { BogRemoval = true }, null, null));
-                events.Add(Event(scope, attemptId, 3, expected, "vehicle-check-rolled", new VehicleCheckRolled(id, VehicleCheckRolled.BogRemoval, rollId, drm, result), null, null,
+                events.Add(Event(scope, attemptId, 3, expected, "vehicle-check-rolled",
+                    new VehicleCheckRolled(id, VehicleCheckRolled.BogRemoval, rollId, drm, result) { ArmorLeadership = leadership }, null, null,
                     [EventId(attemptId, 1)]));
 
                 // D2.51 (referee, pass 11): the Bog Removal is a Start MP, so a red MP AFV rolls for Mechanical Reliability too.
@@ -705,7 +727,7 @@ public sealed partial class GamePlanner
             }
 
             return VehicleStepPlan(scope, label, attemptId, expected, actor, existing, Removal, true, at, step,
-                $"play.move-vehicle-bog: {id} attempts Bog Removal as its Start MP: it spends its colored dr times its white dr in MP{(truck ? ", doubled for a truck," : string.Empty)} and is freed on a colored dr of 1 to 4{(drm > 0 ? " (+1 Mired)" : string.Empty)}, Mired on 5, immobilized on 6 or more (D8.3, D8.31)");
+                $"play.move-vehicle-bog: {id} attempts Bog Removal as its Start MP: it spends its colored dr times its white dr in MP{(truck ? ", doubled for a truck," : string.Empty)} and is freed on a colored dr of 1 to 4{(Is(vehicle, Conditions.Mired) ? " (+1 Mired)" : string.Empty)}{(leadership is null ? string.Empty : $" ({ScenarioA1ArmorLeaders.ModifierText(leadership)})")}, Mired on 5, immobilized on 6 or more (D8.3, D8.31)");
         }
 
         var unreliable = IsAfv(vehicle) && VehicleDefinition(vehicle)?.MechanicallyUnreliable == true;

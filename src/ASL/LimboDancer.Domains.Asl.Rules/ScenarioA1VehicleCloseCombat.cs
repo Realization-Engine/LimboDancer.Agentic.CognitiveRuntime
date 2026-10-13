@@ -26,6 +26,16 @@ public sealed record VehicleCloseCombatVehicle(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The leadership modifier of the vehicle's Armor Leader on the DR of its own CC attack (D3.44, A11.62; pass 55, ruling R55.16), or the +1
+    /// of an Inexperienced Crew (D3.45); null is none, and it is never given for an attack made against the vehicle.
+    /// </summary>
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public int? ArmorLeadership
+    {
+        get; init;
+    }
 }
 
 /// <summary>The rolls of one CC attack with a vehicle: its DR, the Unlikely Kill dr after an Original 2, and the Random Selection and Wound Severity drs of its effects.</summary>
@@ -474,6 +484,12 @@ public static class ScenarioA1VehicleCloseCombat
             if (facts.Vehicle!.StunRecovery == true)
             {
                 own.Add(new FireModifier("stun-recovery", 1m, "D5.34"));
+            }
+
+            // D3.44, D3.45 (p. 200; pass 55, rulings R55.16, R55.18): the vehicle's Armor Leader modifies its CC DR; an Inexperienced Crew adds one.
+            if (ScenarioA1ArmorLeaders.Modifier(facts.Vehicle.ArmorLeadership) is { } armorLeader)
+            {
+                own.Add(armorLeader);
             }
 
             var final = original + (int)own.Sum(item => item.Value);

@@ -343,6 +343,13 @@ internal static class ScenarioA1ArmorCalculator
         drm.AddRange(ScenarioA1OrdnanceCalculator.PassEightFirerDrm(shot));
         drm.AddRange(ScenarioA1OrdnanceCalculator.Leadership(shot, reference));
 
+        // D3.44, D3.45 (p. 200; pass 55, rulings R55.16, R55.18): the vehicle's Armor Leader modifies its MA's To Hit DR, BU or not; an
+        // Inexperienced Crew adds one.
+        if (ScenarioA1ArmorLeaders.Modifier(shot.Vehicle?.ArmorLeadership) is { } armorLeader)
+        {
+            drm.Add(armorLeader);
+        }
+
         // C6.11, C6.12 (ruling R8.1): Defensive First Fire at a vehicle that has spent at most one MP in the firer's continuous LOS takes Case J2,
         // at most three Case J1, else Case J; a moving target in a fire phase takes Case J.
         // D8.4 (p. 209; pass 35, task 35.13 j): none against a vehicle that began its MPh bogged and spends its MP in its Bog hex.
@@ -639,7 +646,9 @@ internal static class ScenarioA1ArmorCalculator
         var made = Made(result);
 
         // D5.1: an AFV's crew has Elite morale, an unarmored vehicle's the 1st Line morale of its nationality.
-        var morale = reference.Fire.Definitions.Values.Where(item => item.IsMmc && item.Nationality == armor.Nationality && item.Class == (armored ? "elite" : "1st-line"))
+        // D3.42, D3.45 (p. 200; pass 55, rulings R55.17, R55.18): "[EXC: Armor Leaders (3.42) & Inexperienced Crews (3.45)]": the crew "always has
+        // the same Morale Level as any Armor Leader in that vehicle", 6 when Inexperienced. His leadership modifier is not added: he takes the check.
+        var morale = target.CrewMorale ?? reference.Fire.Definitions.Values.Where(item => item.IsMmc && item.Nationality == armor.Nationality && item.Class == (armored ? "elite" : "1st-line"))
             .Max(item => item.Morale);
         if (morale is null && (result == OrdnanceKill.PossibleShock || (result == OrdnanceKill.Immobilized && target.CrewMayTakeTc == true)))
         {
@@ -665,7 +674,10 @@ internal static class ScenarioA1ArmorCalculator
             var passed = total + plusOne <= shockMorale;
             made = made with
             {
-                ShockCheck = new FireCheck("NTC", [.. check], total, checkDrm, total + plusOne, shockMorale, passed, passed ? "none" : OrdnanceKill.Shock),
+                ShockCheck = new FireCheck("NTC", [.. check], total, checkDrm, total + plusOne, shockMorale, passed, passed ? "none" : OrdnanceKill.Shock)
+                {
+                    MoraleSource = ScenarioA1ArmorLeaders.MoraleSource(target.CrewMorale),
+                },
                 Shocked = passed ? null : true,
             };
         }
@@ -681,7 +693,10 @@ internal static class ScenarioA1ArmorCalculator
             var passed = total + plusOne <= tcMorale;
             made = made with
             {
-                CrewCheck = new FireCheck("TC", [.. check], total, checkDrm, total + plusOne, tcMorale, passed, passed ? "none" : "abandoned"),
+                CrewCheck = new FireCheck("TC", [.. check], total, checkDrm, total + plusOne, tcMorale, passed, passed ? "none" : "abandoned")
+                {
+                    MoraleSource = ScenarioA1ArmorLeaders.MoraleSource(target.CrewMorale),
+                },
                 Abandoned = passed ? null : true,
             };
         }

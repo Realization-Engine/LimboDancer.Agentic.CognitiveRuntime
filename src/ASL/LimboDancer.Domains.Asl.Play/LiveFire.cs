@@ -390,7 +390,30 @@ public static class LiveFire
     internal static FireVehicle Vehicle(UnitInstance vehicle, BoardLocation at) =>
         ScenarioA1FireEligibility.VehicleTarget(new VehicleTargetFacts(vehicle.Id, vehicle.Definition?.Definition, at.ToString(), CrewExposed(vehicle),
             Is(vehicle, Conditions.Stunned), Is(vehicle, Conditions.Recalled), Is(vehicle, Conditions.StunRecovery), Is(vehicle, Conditions.Immobilized),
-            Is(vehicle, Conditions.Concealed), Is(vehicle, Conditions.Hidden)));
+            Is(vehicle, Conditions.Concealed), Is(vehicle, Conditions.Hidden))
+        {
+            CrewMorale = CrewMorale(vehicle),
+        });
+
+    /// <summary>
+    /// The leadership modifier a vehicle's crew brings to its attacks (D3.44, D3.45; pass 55, rulings R55.16, R55.18): its Armor Leader's, or an
+    /// Inexperienced Crew's +1; null with neither. Rules decides which.
+    /// </summary>
+    public static int? ArmorLeadership(UnitInstance vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(vehicle);
+        return ScenarioA1ArmorLeaders.Leadership(vehicle.ArmorLeader?.Leadership, Is(vehicle, Conditions.InexperiencedCrew));
+    }
+
+    /// <summary>
+    /// The Morale Level a vehicle's crew checks at when it is not its nationality's (D3.42, D3.45; pass 55, rulings R55.17, R55.18): its Armor
+    /// Leader's, or an Inexperienced Crew's 6; null with neither.
+    /// </summary>
+    public static int? CrewMorale(UnitInstance vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(vehicle);
+        return ScenarioA1ArmorLeaders.CrewMorale(vehicle.ArmorLeader?.Morale, Is(vehicle, Conditions.InexperiencedCrew));
+    }
 
     /// <summary>
     /// A vehicle's MA MG attack (ruling R25.7): its crew's state, Motion (D2.42), a pin (A7.82), its MG's malfunction (D3.7), whether it
@@ -444,7 +467,10 @@ public static class LiveFire
             Is(vehicle, Conditions.Stunned), Is(vehicle, Conditions.Recalled), Is(vehicle, Conditions.Shocked), Is(vehicle, Conditions.UnconfirmedKill),
             Is(vehicle, Conditions.StunRecovery), Is(vehicle, Conditions.Malfunctioned),
             Fired(vehicle), Is(vehicle, Conditions.FirstFire), Is(vehicle, Conditions.BoundingFire),
-            state.OrdnanceShots.Any(item => item.Gun == vehicle.Id && item.RateOfFireKept)));
+            state.OrdnanceShots.Any(item => item.Gun == vehicle.Id && item.RateOfFireKept))
+        {
+            ArmorLeadership = ArmorLeadership(vehicle),
+        });
 
     /// <summary>
     /// The state's part of a Residual FP attack on the moving stack as it enters a Location (A8.2, A8.22): no firers, the
@@ -521,7 +547,11 @@ public static class LiveFire
                 Is(unit, Conditions.Captured), false))],
             targetSide is null ? null : state.Side(targetSide)?.Elr, targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal), state.ScenarioMonth,
             id => Target(state, units.First(unit => unit.Id == id), at!), id => Vehicle(units.First(unit => unit.Id == id), at!),
-            ok && Is(vehicle!, Conditions.StunRecovery)));
+            ok && Is(vehicle!, Conditions.StunRecovery))
+        {
+            // D7.16 (p. 207; pass 55, ruling R55.16): the OVRing vehicle's Armor Leader modifies its OVR DR.
+            ArmorLeadership = ok ? ArmorLeadership(vehicle!) : null,
+        });
     }
 
     /// <summary>The rolls of a record, rebuilt from its roll ids and the recorded dice, in the calculator's shape.</summary>
@@ -918,6 +948,13 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
                     SeenByGoodOrderEnemy = record.SeenByGoodOrderEnemy
                 })],
         };
+        // D3.41, D3.42 (pass 55, rulings R55.15, R55.17): a record keeps a crew's Morale Level only when the attack made that crew check, so one
+        // it leaves out is left out of the comparison; the checks it holds are held to the state's below.
+        var stateVehicles = merged.Vehicles;
+        merged = merged with
+        {
+            Vehicles = ScenarioA1ArmorLeaders.AsRecorded(merged.Vehicles, recorded.Vehicles),
+        };
         if (JsonSerializer.Serialize(merged, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json))
         {
             return "The fire record's facts do not match the game state.";
@@ -944,6 +981,6 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
             ? "The fire record's facts and rolls do not resolve: " + string.Join("; ", resolution.Reasons)
             : !JsonElement.DeepEquals(JsonSerializer.SerializeToElement(resolution, LiveFire.Json), fire.Resolution)
                 ? "The fire record's resolution differs from what its facts and rolls give."
-                : null;
+                : ScenarioA1ArmorLeaders.RecordRefusal(stateVehicles, recorded.Vehicles, ScenarioA1ArmorLeaders.Checked(resolution));
     }
 }

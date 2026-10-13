@@ -147,7 +147,8 @@ public sealed record GameView(
                 continue;
             }
 
-            units.Add(unit);
+            // D3.41 (pass 55, ruling R55.15): an enemy vehicle's Armor Leader is on its owner's side record until a record has used him; Rules decides.
+            units.Add(unit.ArmorLeader is { } leader && !Rules.ScenarioA1ArmorLeaders.Shown(Enemy(unit), leader.Revealed) ? WithoutLeader(unit) : unit);
         }
 
         var sealedPresences = sealedUnits
@@ -161,10 +162,38 @@ public sealed record GameView(
         // instances no longer in play; the creation of a counter it may not see stays out of its list.
         var shown = units.Select(unit => unit.Id).Concat(equipment.Select(item => item.Id)).Concat(entities.Select(item => item.Id)).ToHashSet(StringComparer.Ordinal);
         var activeIds = active.Select(item => item.Id).ToHashSet(StringComparer.Ordinal);
+        // D3.41 (pass 55, ruling R55.15): the creation of an enemy vehicle names its Armor Leader only once a record has used him and while he lives.
+        GameEvent Entitled(GameEvent item) => item.Payload is InstanceCreated { Instance: { ArmorLeader: not null, Side: var owner } instance } creation
+            && !Rules.ScenarioA1ArmorLeaders.Shown(owner is not null && owner != perspective.Name, state.Unit(instance.Id)?.ArmorLeader is { Revealed: true })
+                ? WithoutLeaderIn(item, creation)
+                : item;
         GameEvent[] entitled = [.. events.Where(item => item.Payload is not InstanceCreated { Instance: var created }
-            || Rules.ScenarioA1Visibility.CreationShown(created.Side == perspective.Name, shown.Contains(created.Id), activeIds.Contains(created.Id)))];
+            || Rules.ScenarioA1Visibility.CreationShown(created.Side == perspective.Name, shown.Contains(created.Id), activeIds.Contains(created.Id))).Select(Entitled)];
         return new GameView(perspective, state.Stamp, state.Synthetic, state.Sides, state.Map, state.Turn, state.Phase, state.PhasingSide, units,
             sealedPresences, equipment, entities, entitled, LocationsOf(state, [.. units, .. equipment, .. entities]));
+    }
+
+    /// <summary>A unit as a side that may not know its Armor Leader sees it (D3.41; pass 55, ruling R55.15).</summary>
+    private static UnitInstance WithoutLeader(UnitInstance unit) => unit with
+    {
+        ArmorLeader = null
+    };
+
+    /// <summary>A creation event as a side that may not know the new vehicle's Armor Leader reads it (D3.41; pass 55, ruling R55.15).</summary>
+    private static GameEvent WithoutLeaderIn(GameEvent item, InstanceCreated creation)
+    {
+        var instance = creation.Instance with
+        {
+            ArmorLeader = null
+        };
+        var payload = creation with
+        {
+            Instance = instance
+        };
+        return item with
+        {
+            Payload = payload
+        };
     }
 
     /// <summary>Where each visible instance is on the map; instances off map or not entered have no entry.</summary>

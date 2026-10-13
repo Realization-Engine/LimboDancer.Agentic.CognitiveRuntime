@@ -307,6 +307,8 @@ public static class DisplayText
         ["ift-mc"] = "IFT MC",
         ["crew-exposed"] = "CE",
         ["stun-recovery"] = "Stun +1",
+        ["armor-leader"] = "Armor Leader",
+        ["inexperienced-crew"] = "Inexperienced Crew",
         ["odds-below-1-1"] = "odds below 1-1",
     };
 

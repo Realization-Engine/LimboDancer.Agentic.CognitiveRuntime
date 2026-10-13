@@ -771,6 +771,13 @@ public static class ScenarioA1OrdnanceCalculator
             drm.Add(new FireModifier("case-i", 1, "C5.9"));
         }
 
+        // D3.44, D3.45 (p. 200; pass 55, rulings R55.16, R55.18): the vehicle's Armor Leader modifies its MA's To Hit DR, BU or not; an
+        // Inexperienced Crew adds one.
+        if (ScenarioA1ArmorLeaders.Modifier(shot.Vehicle?.ArmorLeadership) is { } armorLeader)
+        {
+            drm.Add(armorLeader);
+        }
+
         drm.AddRange(PassEightFirerDrm(shot));
         var sameHex = shot.SameHex == true;
         if (sameHex)

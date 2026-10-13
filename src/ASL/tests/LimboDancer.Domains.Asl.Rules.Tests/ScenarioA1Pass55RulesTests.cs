@@ -1143,4 +1143,310 @@ public sealed class ScenarioA1Pass55RulesTests
         Assert.Null(ScenarioA1OrdnanceEligibility.CanisterFacingRefusal("west", "west"));
         Assert.NotNull(ScenarioA1OrdnanceEligibility.CanisterFacingRefusal("west", "east"));
     }
+
+    // Task 55.5 (increment 2e): Armor Leaders and Inexperienced Crews (D3.4 to D3.45, p. 200; rulings R55.15 to R55.18).
+
+    private static readonly ScenarioA1CloseCombatReference CloseCombat = new ScenarioA1CloseCombatPackage().Reference;
+
+    /// <summary>The four cases of the modifier: none, an 8-1 or 9-1, a 9-2 or 10-2, and an Inexperienced Crew.</summary>
+    private static readonly (int? Leadership, string? Name, string? Rule)[] Leaderships =
+        [(null, null, null), (-1, "armor-leader", "D3.44"), (-2, "armor-leader", "D3.44"), (1, "inexperienced-crew", "D3.45")];
+
+    private static void AssertLeadership(IEnumerable<FireModifier> drm, (int? Leadership, string? Name, string? Rule) given)
+    {
+        if (given.Name is null)
+        {
+            Assert.DoesNotContain(drm, item => ScenarioA1ArmorLeaders.IsModifier(item.Name));
+        }
+        else
+        {
+            Assert.Contains(drm, item => item.Name == given.Name && item.Value == given.Leadership && item.Rule == given.Rule);
+        }
+    }
+
+    /// <summary>The T-34 M41 firing AP at the PzKpfw IIIH at 3 hexes in 1942, as pass 7's tests have it, with the firer's modifier and the target crew's morale.</summary>
+    private static OrdnanceShot TankShot(int? leadership = null, int? crewMorale = null, bool buttonedUp = true, int[]? toHit = null, int[]? toKill = null,
+        int[]? shock = null, int[]? crew = null) =>
+        new OrdnanceShot("PFPh", "phasing", "russian", new OrdnanceGun("defender-tank-1", "defender-tank", false, 0, false, false),
+            new OrdnanceCrew("defender-tank-1", "defender-tank", false, false, false, false, false), At, 3, 0, false, true, 0,
+            new FireAttack("PFPh", "phasing", null, null, At, [], null, null, true, new FireLos(false, 0, true, false), 7, "open-ground", [], 2, null),
+            new OrdnanceRolls(toHit ?? [2, 4], null, null, null, null) { ToKill = toKill, ShockCheck = shock, CrewCheck = crew })
+        {
+            Vehicle = new OrdnanceVehicleFirer(buttonedUp, false, false, false, false) { ArmorLeadership = leadership },
+            VehicleTarget = new OrdnanceVehicleTarget("attacker-tank-1", "attacker-tank", "front", "front", false, false, false, false, true) { CrewMorale = crewMorale },
+            Ammunition = "ap",
+            ScenarioYear = 1942,
+        };
+
+    private static FireResolution Finish(FireAttack attack)
+    {
+        var rolls = attack.Rolls!;
+        for (var step = 0; step < 20; step++)
+        {
+            var result = ScenarioA1FireCalculator.Resolve(attack with { Rolls = rolls }, Fire);
+            if (result.Reasons is not [{ } reason] || !reason.StartsWith("asl.a1.fire.roll-missing:checks:", StringComparison.Ordinal))
+            {
+                return result;
+            }
+
+            rolls = rolls with { Checks = reason["asl.a1.fire.roll-missing:checks:".Length..].Split(',').ToDictionary(id => id, _ => (IReadOnlyList<int>)[2, 2]) };
+        }
+
+        throw new InvalidOperationException("The attack asked for too many rolls.");
+    }
+
+    [Fact]
+    public void AnArmorLeaderIsOfOneOfFourGrades()
+    {
+        // D3.4, H1.43: "a Strength Factor ranging from 8-1 to 10-2"; the Availability Table lists 8-1, 9-1, 9-2, and 10-2.
+        Assert.All(new[] { (8, -1), (9, -1), (9, -2), (10, -2) }, grade => Assert.True(ScenarioA1ArmorLeaders.IsGrade(grade.Item1, grade.Item2)));
+        Assert.All(new[] { (8, 0), (8, -2), (10, -1), (10, -3), (7, -1), (6, 1), (9, 1) }, grade => Assert.False(ScenarioA1ArmorLeaders.IsGrade(grade.Item1, grade.Item2)));
+        Assert.Null(ScenarioA1ArmorLeaders.AssignmentRefusal("t1", true, 9, -1, false));
+        Assert.Contains("8-1, 9-1, 9-2, and 10-2", ScenarioA1ArmorLeaders.AssignmentRefusal("t1", true, 10, -1, false)!.Text, StringComparison.Ordinal);
+        Assert.Contains("not a vehicle", ScenarioA1ArmorLeaders.AssignmentRefusal("s1", false, 9, -1, false)!.Text, StringComparison.Ordinal);
+
+        // D3.45: the Inexperienced Crew's 6+1 is its leader, so it takes no other.
+        Assert.Contains("D3.45", ScenarioA1ArmorLeaders.AssignmentRefusal("t1", true, 9, -1, true)!.Text, StringComparison.Ordinal);
+
+        // D3.41, D3.45: either belongs to an armed AFV; a truck and a squad are refused at setup.
+        Assert.True(ScenarioA1ArmorLeaders.ArmedAfv(true, null, 50));
+        Assert.True(ScenarioA1ArmorLeaders.ArmedAfv(true, "aamg", null));
+        Assert.False(ScenarioA1ArmorLeaders.ArmedAfv(false, "aamg", 50));
+        Assert.False(ScenarioA1ArmorLeaders.ArmedAfv(true, null, null));
+        Assert.Null(ScenarioA1ArmorLeaders.SetupBar("t1", true, false, true));
+        Assert.Null(ScenarioA1ArmorLeaders.SetupBar("s1", false, false, false));
+        Assert.StartsWith("play.setup-armor-leader", ScenarioA1ArmorLeaders.SetupBar("truck", true, false, false), StringComparison.Ordinal);
+        Assert.StartsWith("play.setup-inexperienced-crew", ScenarioA1ArmorLeaders.SetupBar("truck", false, true, false), StringComparison.Ordinal);
+
+        // The facts a vehicle's crew gives: the Inexperienced Crew's 6+1 before anything else.
+        Assert.Equal((-2, 10), (ScenarioA1ArmorLeaders.Leadership(-2, false), ScenarioA1ArmorLeaders.CrewMorale(10, false)));
+        Assert.Equal((1, 6), (ScenarioA1ArmorLeaders.Leadership(null, true), ScenarioA1ArmorLeaders.CrewMorale(null, true)));
+        Assert.Equal(((int?)null, (int?)null), (ScenarioA1ArmorLeaders.Leadership(null, false), ScenarioA1ArmorLeaders.CrewMorale(null, false)));
+        Assert.Equal(("Armor Leader -1 (D3.44)", "Inexperienced Crew +1 (D3.45)", string.Empty),
+            (ScenarioA1ArmorLeaders.ModifierText(-1), ScenarioA1ArmorLeaders.ModifierText(1), ScenarioA1ArmorLeaders.ModifierText(null)));
+        Assert.Equal(("crew morale 9, its Armor Leader's (D3.42)", "crew morale 6, an Inexperienced Crew's (D3.45)", string.Empty),
+            (ScenarioA1ArmorLeaders.MoraleText("armor-leader", 9), ScenarioA1ArmorLeaders.MoraleText("inexperienced-crew", 6), ScenarioA1ArmorLeaders.MoraleText(null, 8)));
+        Assert.Equal("9-1", ScenarioA1ArmorLeaders.Grade(9, -1));
+    }
+
+    [Fact]
+    public void AnArmorLeaderModifiesHisVehiclesMaToHitDr()
+    {
+        // D3.44: "can be used only to modify a vehicle's MA DR (To Hit if ordnance; IFT otherwise)"; D3.45: an Inexperienced Crew adds one.
+        var plain = Resolve(TankShot(toKill: [6, 6])).ToHit!;
+        foreach (var given in Leaderships)
+        {
+            // The Vehicle Target Type; "being BU does not void an Armor Leader's effects, although BU penalties (Case I To Hit DRM) still apply".
+            var atVehicle = Resolve(TankShot(given.Leadership, toKill: [6, 6])).ToHit!;
+            Assert.Equal(plain.FinalDr + (given.Leadership ?? 0), atVehicle.FinalDr);
+            AssertLeadership(atVehicle.Drm, given);
+            Assert.Contains(atVehicle.Drm, item => item.Name == "case-i" && item.Value == 1);
+
+            // The Infantry Target Type: the same tank's HE at a German squad; an Original 12 misses and asks for no IFT DR.
+            var shot = TankShot(given.Leadership, toHit: [6, 6]);
+            var atInfantry = Resolve(shot with
+            {
+                VehicleTarget = null,
+                Ammunition = null,
+                Hit = shot.Hit! with
+                {
+                    Targets = [new FireTarget("de-s", "attacker-squad", At, false, false, false, false, false, false, false) { KnownEnemyInLos = true, Captors = [] }],
+                },
+            });
+            Assert.Equal(OrdnanceResolution.Resolved, atInfantry.Disposition);
+            AssertLeadership(atInfantry.ToHit!.Drm, given);
+            Assert.Contains(atInfantry.ToHit.Drm, item => item.Name == "case-i");
+        }
+
+        // The state's fact reaches the shot through the firer's facts.
+        Assert.Equal(-2, ScenarioA1OrdnanceEligibility.VehicleFirer(false, false, false, false, false, false, false, false, armorLeadership: -2).ArmorLeadership);
+        Assert.Null(ScenarioA1OrdnanceEligibility.VehicleFirer(false, false, false, false, false, false, false, false).ArmorLeadership);
+    }
+
+    [Fact]
+    public void AnArmorLeaderModifiesTheIftDrOfAMaThatIsAMgAndNoOtherMg()
+    {
+        // D3.44: "IFT otherwise": the SPW 251/1's MA is its AAMG. "An Armor Leader cannot modify non-OVR MG/FT (unless MA) attacks."
+        foreach (var given in Leaderships)
+        {
+            var halftrack = new FireAttack("PFPh", "phasing", true, TankAt, At, [], null, 3, true, new FireLos(false, 0, true, false), null, "open-ground",
+                [new FireTarget("ru-s", "defender-squad", At, false, false, false, false, false, false, false)], 3, new FireRolls([6, 5], null, null, null))
+            {
+                VehicleFire = new FireVehicleFire("de-ht", "attacker-halftrack", TankAt, true, false, false, false, false, false, false, false) { ArmorLeadership = given.Leadership },
+            };
+            var result = Shoot(halftrack);
+            Assert.Equal(FireResolution.Resolved, result.Disposition);
+            AssertLeadership(result.Arithmetic!.Drm, given);
+
+            // A tank's BMG or CMG takes none, whatever the fact says.
+            foreach (var weapon in new[] { FireVehicleWeapon.BowMg, FireVehicleWeapon.CoaxialMg })
+            {
+                var mg = Cmg(2, null, weapon: weapon);
+                var fired = Shoot(mg with { VehicleFire = mg.VehicleFire! with { ArmorLeadership = given.Leadership } });
+                Assert.Equal(FireResolution.Resolved, fired.Disposition);
+                Assert.DoesNotContain(fired.Arithmetic!.Drm, item => ScenarioA1ArmorLeaders.IsModifier(item.Name));
+            }
+        }
+
+        // The state's fact reaches a MA MG's attack and is dropped from a BMG's or CMG's.
+        var firer = ScenarioA1FireEligibility.VehicleFirer(new VehicleFirerFacts("de-ht", "attacker-halftrack", TankAt, true, false, false, false, false, false, false, false, false, false,
+            false, false, false, false)
+        {
+            ArmorLeadership = -1,
+        });
+        Assert.Equal(-1, firer.ArmorLeadership);
+        Assert.Null(ScenarioA1FireEligibility.WithVehicleWeapons(firer, new VehicleWeaponsFacts([FireVehicleWeapon.CoaxialMg], false, false, "pfph", [], "t")).ArmorLeadership);
+    }
+
+    [Fact]
+    public void AnArmorLeaderModifiesHisVehiclesOvrDr()
+    {
+        // D7.16: "Leadership modification of an OVR is limited to an Armor Leader"; the PzKpfw IIIH's OVR of a Russian squad in Open Ground.
+        FireAttack Overrun(int? leadership) => new("MPh", "phasing", null, At, At, null, null, 0, true, new FireLos(false, 0, true, false), 7, "open-ground",
+            [new FireTarget("ru-s", "defender-squad", At, false, false, false, false, false, false, false)], 3, new FireRolls([6, 5], null, null, null))
+        {
+            FireKind = ScenarioA1FireCalculator.OverrunFire,
+            Overrun = new FireOverrun("de-v", "attacker-tank", At, false, false, false, false, false) { ArmorLeadership = leadership },
+        };
+        var plain = Finish(Overrun(null));
+        Assert.Equal(FireResolution.Resolved, plain.Disposition);
+        foreach (var given in Leaderships)
+        {
+            var result = Finish(Overrun(given.Leadership));
+            Assert.Equal(FireResolution.Resolved, result.Disposition);
+            AssertLeadership(result.Arithmetic!.Drm, given);
+            Assert.Equal(plain.Arithmetic!.FinalDr + (given.Leadership ?? 0), result.Arithmetic.FinalDr);
+        }
+    }
+
+    [Fact]
+    public void AnArmorLeaderModifiesHisVehiclesOwnCcAttack()
+    {
+        // D3.44, A11.62: "CC DR": the tank's CMG against a Russian squad; an attack made on the vehicle carries no such fact.
+        var units = new[] { new CloseCombatUnit("ru-s", "defender-squad", "russian", false, false, false, false, false, false, false, false, false, false, false) { Inexperienced = false } };
+        VehicleCloseCombatResolution ByTank(int? leadership) => ScenarioA1VehicleCloseCombat.Resolve(new VehicleCloseCombatFacts("CCPh", At,
+            new VehicleCloseCombatVehicle("de-v", "attacker-tank", "german", false, false, false, false, false, false, false, false, false) { ArmorLeadership = leadership },
+            units, [], ["ru-s"], true, false, new VehicleCloseCombatRolls([6, 5])), CloseCombat);
+        var plain = Assert.Single(ByTank(null).Defending!);
+        foreach (var given in Leaderships)
+        {
+            var defender = Assert.Single(ByTank(given.Leadership).Defending!);
+            AssertLeadership(defender.Drm, given);
+            Assert.Equal(plain.FinalDr + (given.Leadership ?? 0), defender.FinalDr);
+        }
+
+        Assert.Equal(-1, ScenarioA1ArmorLeaders.CloseCombatLeadership(-1, byVehicle: true));
+        Assert.Null(ScenarioA1ArmorLeaders.CloseCombatLeadership(-1, byVehicle: false));
+        Assert.Equal(1, ScenarioA1CloseCombatFactBuilders.Vehicle("de-v", "attacker-tank", "german", false, false, false, false, false, false, false, false, false, false, false, false,
+            false, false, armorLeadership: 1).ArmorLeadership);
+    }
+
+    [Fact]
+    public void AnArmorLeaderModifiesTheColoredDrOfABogRemoval()
+    {
+        // D8.3: "One armor leader in either AFV also modifies the colored dr"; D8.31: +1 when Mired. The MP cost is the Original colored dr's.
+        Assert.Equal((0, 1, -1, -2, 0, 2), (ScenarioA1ArmorLeaders.BogRemovalDrm(false, null), ScenarioA1ArmorLeaders.BogRemovalDrm(true, null),
+            ScenarioA1ArmorLeaders.BogRemovalDrm(false, -1), ScenarioA1ArmorLeaders.BogRemovalDrm(false, -2), ScenarioA1ArmorLeaders.BogRemovalDrm(true, -1),
+            ScenarioA1ArmorLeaders.BogRemovalDrm(true, 1)));
+
+        // A colored 5 is Mired; with a 9-1 it is a Final 4 and frees the vehicle; an Inexperienced Crew's colored 4 is a Final 5.
+        Assert.Equal(("mired", "freed", "mired"), (ScenarioA1ResultTables.VehicleCheck("bog-removal", ScenarioA1VehicleProjection.CheckFinal(true, 5, 3, 0)),
+            ScenarioA1ResultTables.VehicleCheck("bog-removal", ScenarioA1VehicleProjection.CheckFinal(true, 5, 3, ScenarioA1ArmorLeaders.BogRemovalDrm(false, -1))),
+            ScenarioA1ResultTables.VehicleCheck("bog-removal", ScenarioA1VehicleProjection.CheckFinal(true, 4, 3, ScenarioA1ArmorLeaders.BogRemovalDrm(false, 1)))));
+        Assert.Equal(30, ScenarioA1VehicleMovementCalculator.BogRemovalHalfMp(5, 3, false));
+
+        // The record names the modifier its vehicle has, on a Bog Removal alone.
+        Assert.Null(ScenarioA1ArmorLeaders.CheckRefusal(true, -1, -1));
+        Assert.Null(ScenarioA1ArmorLeaders.CheckRefusal(true, null, null));
+        Assert.Null(ScenarioA1ArmorLeaders.CheckRefusal(false, null, -1));
+        Assert.NotNull(ScenarioA1ArmorLeaders.CheckRefusal(true, null, -1));
+        Assert.NotNull(ScenarioA1ArmorLeaders.CheckRefusal(true, -2, -1));
+        Assert.NotNull(ScenarioA1ArmorLeaders.CheckRefusal(false, -1, -1));
+    }
+
+    [Fact]
+    public void TheCrewChecksAtItsArmorLeadersMoraleLevel()
+    {
+        // D3.42: "The inherent crew of a vehicle always has the same Morale Level as any Armor Leader in that vehicle." C7.41: a TK DR one above
+        // the Final TK# of 9 asks the German crew's NTC, at 8 by its nationality (D5.1), at 10 with a 10-2, at 6 when Inexperienced (D3.45).
+        var national = Resolve(TankShot(toKill: [5, 5], shock: [5, 4])).Kill!;
+        Assert.Equal((8, false, (bool?)true, (string?)null), (national.ShockCheck!.MoraleLevel, national.ShockCheck.Passed, national.Shocked, national.ShockCheck.MoraleSource));
+        var led = Resolve(TankShot(crewMorale: 10, toKill: [5, 5], shock: [5, 4])).Kill!;
+        Assert.Equal((10, true, (bool?)null, "armor-leader"), (led.ShockCheck!.MoraleLevel, led.ShockCheck.Passed, led.Shocked, led.ShockCheck.MoraleSource));
+
+        // His leadership modifier is not added to the check: he takes it himself.
+        Assert.Equal((9, 9), (led.ShockCheck.OriginalDr, led.ShockCheck.FinalDr));
+        Assert.Empty(led.ShockCheck.Drm);
+        var green = Resolve(TankShot(crewMorale: 6, toKill: [5, 5], shock: [4, 3])).Kill!;
+        Assert.Equal((6, false, "inexperienced-crew"), (green.ShockCheck!.MoraleLevel, green.ShockCheck.Passed, green.ShockCheck.MoraleSource));
+
+        // D5.5: the Immobilization TC of a hull hit equal to the Final TK# of 7.
+        var kept = Resolve(TankShot(crewMorale: 9, toHit: [4, 2], toKill: [3, 4], crew: [5, 4])).Kill!;
+        Assert.Equal((OrdnanceKill.Immobilized, 9, true, "armor-leader"), (kept.Result, kept.CrewCheck!.MoraleLevel, kept.CrewCheck.Passed, kept.CrewCheck.MoraleSource));
+        var left = Resolve(TankShot(toHit: [4, 2], toKill: [3, 4], crew: [5, 4])).Kill!;
+        Assert.Equal((8, false, (bool?)true), (left.CrewCheck!.MoraleLevel, left.CrewCheck.Passed, left.Abandoned));
+
+        // D5.34: the CE crew's MC under IFT fire. Two Russian squads fire at a CE halftrack; the first DR that asks the crew a check is taken.
+        FireResolution Fired(int[] dice, int? morale) => ScenarioA1FireCalculator.Resolve(new FireAttack("PFPh", "phasing", true, TankAt, At,
+            [new FireFirer("ru-1", "defender-squad", TankAt, false, false, false, false, false), new FireFirer("ru-2", "defender-squad", TankAt, false, false, false, false, false)],
+            null, 1, true, new FireLos(false, 0, true, false), null, "open-ground", [], 3,
+            new FireRolls(dice, null, null, null) { CrewChecks = new Dictionary<string, IReadOnlyList<int>> { ["de-ht"] = [5, 4] } })
+        {
+            Vehicles = [new FireVehicle("de-ht", "attacker-halftrack", At, true, false, false, false) { CrewMorale = morale }],
+        }, Fire);
+        var asking = Enumerable.Range(1, 6).SelectMany(one => Enumerable.Range(1, 6).Select(two => new[] { one, two }))
+            .First(dice => Fired(dice, null) is { Disposition: FireResolution.Resolved, VehicleEffects: [{ CrewCheck: not null }] });
+        var plain = Assert.Single(Fired(asking, null).VehicleEffects!).CrewCheck!;
+        Assert.Equal((8, (string?)null), (plain.MoraleLevel, plain.MoraleSource));
+        var withLeader = Assert.Single(Fired(asking, 10).VehicleEffects!).CrewCheck!;
+        Assert.Equal((10, "armor-leader", plain.FinalDr), (withLeader.MoraleLevel, withLeader.MoraleSource, withLeader.FinalDr));
+        Assert.Equal(withLeader.FinalDr <= 10, withLeader.Passed);
+        var inexperienced = Assert.Single(Fired(asking, 6).VehicleEffects!).CrewCheck!;
+        Assert.Equal((6, "inexperienced-crew", false), (inexperienced.MoraleLevel, inexperienced.MoraleSource, inexperienced.Passed));
+    }
+
+    [Fact]
+    public void ARecordKeepsACrewsMoraleOnlyWhenTheCrewChecked()
+    {
+        // D3.41: the Armor Leader "remains out of play until the owner needs to use his morale/leadership factor": a shot that asks no check
+        // of the target's crew records no morale, and one that asks it records the morale it was made at.
+        var miss = TankShot(crewMorale: 10, toKill: [6, 6]);
+        Assert.Null(ScenarioA1ArmorLeaders.Recorded(miss, Resolve(miss)).VehicleTarget!.CrewMorale);
+        var asked = TankShot(crewMorale: 10, toKill: [5, 5], shock: [5, 4]);
+        Assert.Equal(10, ScenarioA1ArmorLeaders.Recorded(asked, Resolve(asked)).VehicleTarget!.CrewMorale);
+        var plain = TankShot(toKill: [6, 6]);
+        Assert.Same(plain, ScenarioA1ArmorLeaders.Recorded(plain, Resolve(plain)));
+
+        // The record's check: a morale it leaves out is not compared; a check made without the state's morale is refused.
+        Assert.Null(ScenarioA1ArmorLeaders.AsRecorded(miss.VehicleTarget, plain.VehicleTarget)!.CrewMorale);
+        Assert.Equal(10, ScenarioA1ArmorLeaders.AsRecorded(miss.VehicleTarget, asked.VehicleTarget)!.CrewMorale);
+        Assert.Null(ScenarioA1ArmorLeaders.RecordRefusal(miss, plain, Resolve(plain)));
+        var dodged = TankShot(toKill: [5, 5], shock: [5, 4]);
+        Assert.Contains("D3.42", ScenarioA1ArmorLeaders.RecordRefusal(asked, dodged, Resolve(dodged)), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1ArmorLeaders.RecordRefusal(asked, asked, Resolve(asked)));
+        Assert.Null(ScenarioA1ArmorLeaders.RecordRefusal(dodged, dodged, Resolve(dodged)));
+
+        // The vehicles of an IFT attack, by the crews that checked.
+        FireVehicle[] vehicles = [new FireVehicle("a", "attacker-halftrack", At, true, false, false, false) { CrewMorale = 9 }, new FireVehicle("b", "attacker-halftrack", At, true, false, false, false)];
+        Assert.Equal(new int?[] { null, null }, ScenarioA1ArmorLeaders.Recorded(vehicles, [])!.Select(item => item.CrewMorale));
+        Assert.Equal(new int?[] { 9, null }, ScenarioA1ArmorLeaders.Recorded(vehicles, ["a"])!.Select(item => item.CrewMorale));
+        Assert.Contains("D3.42", ScenarioA1ArmorLeaders.RecordRefusal(vehicles, ScenarioA1ArmorLeaders.Recorded(vehicles, []), ["a"]), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1ArmorLeaders.RecordRefusal(vehicles, ScenarioA1ArmorLeaders.Recorded(vehicles, []), ["b"]));
+        Assert.Null(ScenarioA1ArmorLeaders.RecordRefusal(vehicles, vehicles, ["a", "b"]));
+    }
+
+    [Fact]
+    public void AnArmorLeaderIsLostAndShownByRule()
+    {
+        // D5.341: "Recall eliminates any Armor Leader present in that AFV"; D3.43: he "ceases to exist once the crew takes counter form".
+        Assert.False(ScenarioA1ArmorLeaders.Lost(active: true, recalled: false, abandoned: false));
+        Assert.True(ScenarioA1ArmorLeaders.Lost(active: true, recalled: true, abandoned: false));
+        Assert.True(ScenarioA1ArmorLeaders.Lost(active: true, recalled: false, abandoned: true));
+        Assert.True(ScenarioA1ArmorLeaders.Lost(active: false, recalled: false, abandoned: false));
+
+        // D3.41: his owner always reads him; the enemy once a record has used him.
+        Assert.True(ScenarioA1ArmorLeaders.Shown(enemy: false, revealed: false));
+        Assert.False(ScenarioA1ArmorLeaders.Shown(enemy: true, revealed: false));
+        Assert.True(ScenarioA1ArmorLeaders.Shown(enemy: true, revealed: true));
+    }
 }

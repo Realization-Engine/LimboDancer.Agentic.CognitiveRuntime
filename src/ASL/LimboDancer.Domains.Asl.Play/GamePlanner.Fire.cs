@@ -881,7 +881,8 @@ public sealed partial class GamePlanner
             new FireResolved(facts.VehicleFire is { } byVehicle ? [byVehicle.VehicleId!] : facts.Overrun is { } overrunning ? [overrunning.VehicleId!]
                     : [.. (facts.Firers ?? []).Select(item => item.UnitId!)],
                 facts.Director?.UnitId, firerLocation, facts.TargetLocationId!, rollIds,
-                JsonSerializer.SerializeToElement(facts, LiveFire.Json), JsonSerializer.SerializeToElement(resolution, LiveFire.Json))
+                // D3.41 (pass 55, ruling R55.15): the record keeps a crew's Morale Level only when the attack made that crew check against it.
+                JsonSerializer.SerializeToElement(ScenarioA1ArmorLeaders.Recorded(facts, resolution), LiveFire.Json), JsonSerializer.SerializeToElement(resolution, LiveFire.Json))
             {
                 MovementStep = step,
                 TurretFacing = VehicleTurretTurn(state, facts),

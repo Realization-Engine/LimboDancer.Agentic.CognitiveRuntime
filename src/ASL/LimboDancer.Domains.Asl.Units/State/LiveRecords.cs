@@ -338,6 +338,15 @@ public sealed record VehicleCheckRolled(string Vehicle, string Check, string Rol
         get; init;
     }
 
+    /// <summary>
+    /// The part of <see cref="Drm"/> that is the vehicle's Armor Leader's modifier on the colored dr of a Bog Removal (D8.3, D3.44; pass 55,
+    /// ruling R55.16), or an Inexperienced Crew's +1 (D3.45); null for none, which is every record made before pass 55.
+    /// </summary>
+    public int? ArmorLeadership
+    {
+        get; init;
+    }
+
     /// <summary>The result a check's Final DR or dr gives (D2.5, D2.51, D8.21, D8.3).</summary>
     public static string For(string check, int final) => Rules.ScenarioA1ResultTables.VehicleCheck(check, final);
 }

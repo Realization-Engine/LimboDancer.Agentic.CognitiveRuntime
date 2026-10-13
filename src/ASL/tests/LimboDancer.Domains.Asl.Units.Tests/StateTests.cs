@@ -425,6 +425,108 @@ public sealed class StateTests
         Assert.Contains(history.Diagnostics, diagnostic => diagnostic.Code == "UNIT-STATE-008" && diagnostic.Severity == UnitDiagnosticSeverity.Warning);
     }
 
+    // Pass 55 (D3.4 to D3.45, p. 200; rulings R55.15 to R55.18): a vehicle's Armor Leader and its Inexperienced Crew.
+
+    private static NewInstance Tank(string id, ArmorLeader? leader, bool inexperiencedCrew = false, string kind = "asl:vehicle", string definition = "attacker-tank") =>
+        new(id, kind, definition, "german", new MapPosition(BoardLocation.Parse("bd01:G6:0"), Facing: kind == "asl:vehicle" ? Documents.UnitFacing.East : null), null,
+            inexperiencedCrew ? new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [Conditions.InexperiencedCrew] = ConditionState.True } : Clear())
+        {
+            ArmorLeader = leader,
+        };
+
+    private static List<GameEvent> After(List<GameEvent> events, EventPayload next)
+    {
+        events.Add(events[^1] with
+        {
+            EventId = "x" + events.Count,
+            Revision = events.Count + 1,
+            Payload = next,
+        });
+        return events;
+    }
+
+    [Fact]
+    public void AVehicleSetsUpWithAnArmorLeaderOfAListedGrade()
+    {
+        var history = Project(Then(23, new InstanceCreated(Tank("t1", new ArmorLeader(9, -1, Revealed: true)))));
+        Assert.False(history.HasErrors);
+
+        // D3.41: the record never says he is revealed; a record that uses him does.
+        Assert.Equal(new ArmorLeader(9, -1), history.Current!.Unit("t1")!.ArmorLeader);
+        Assert.Null(history.Current.Unit("g1")!.ArmorLeader);
+
+        // D3.4, H1.43: the four grades; D3.41: a vehicle; D3.45: not beside an Inexperienced Crew, which stands alone.
+        AssertRefused(Then(23, new InstanceCreated(Tank("t1", new ArmorLeader(10, -1)))), "UNIT-STATE-047");
+        AssertRefused(Then(23, new InstanceCreated(Tank("s9", new ArmorLeader(9, -1), kind: "asl:squad", definition: "attacker-squad"))), "UNIT-STATE-047");
+        AssertRefused(Then(23, new InstanceCreated(Tank("t1", new ArmorLeader(9, -1), inexperiencedCrew: true))), "UNIT-STATE-047");
+        var green = Project(Then(23, new InstanceCreated(Tank("t1", null, inexperiencedCrew: true))));
+        Assert.False(green.HasErrors);
+        Assert.Equal(ConditionState.True, GameState.Condition(green.Current!.Unit("t1")!, Conditions.InexperiencedCrew));
+    }
+
+    [Fact]
+    public void AnArmorLeaderIsWrittenAndReadWithHisVehicle()
+    {
+        var events = Then(23, new InstanceCreated(Tank("t1", new ArmorLeader(10, -2))), "instance-created");
+        var text = GameEventWriter.Write(events[0].Scope, new GameRecord("armor leader", true, events));
+        Assert.Contains("\"armorLeader\"", text, StringComparison.Ordinal);
+        var read = GameEventReader.Read(Encoding.UTF8.GetBytes(text));
+        Assert.Empty(read.Diagnostics);
+        Assert.Equal(new ArmorLeader(10, -2), Assert.IsType<InstanceCreated>(read.Record!.Events[^1].Payload).Instance.ArmorLeader);
+        Assert.Equal(text, GameEventWriter.Write(events[0].Scope, read.Record));
+
+        // A record made before the pass names none, and is written as it was read.
+        var plain = GameEventWriter.Write(events[0].Scope, new GameRecord("plain", true, Then(23, new InstanceCreated(Tank("t1", null)), "instance-created")));
+        Assert.DoesNotContain("armorLeader", plain, StringComparison.Ordinal);
+        Assert.DoesNotContain("armorLeader", GameEventWriter.Write(events[0].Scope, new GameRecord("fixture", true, Fixture())), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void TheEnemysViewDoesNotShowAnArmorLeaderNoRecordHasUsed()
+    {
+        // D3.41: "his presence is noted on a side record. The Armor Leader counter remains out of play until the owner needs to use his
+        // morale/leadership factor".
+        var history = Project(Then(23, new InstanceCreated(Tank("t1", new ArmorLeader(9, -2)))));
+        Assert.False(history.HasErrors);
+        var russian = GameView.Of(history, 24, Perspective.Side("russian"));
+        Assert.Null(Assert.Single(russian.Units, unit => unit.Id == "t1").ArmorLeader);
+        Assert.Null(Assert.IsType<InstanceCreated>(Assert.Single(russian.Events, item => item.Payload is InstanceCreated { Instance.Id: "t1" }).Payload).Instance.ArmorLeader);
+        foreach (var perspective in new[] { Perspective.Side("german"), Perspective.Adjudicator })
+        {
+            var view = GameView.Of(history, 24, perspective);
+            Assert.Equal(new ArmorLeader(9, -2), Assert.Single(view.Units, unit => unit.Id == "t1").ArmorLeader);
+            Assert.NotNull(Assert.IsType<InstanceCreated>(Assert.Single(view.Events, item => item.Payload is InstanceCreated { Instance.Id: "t1" }).Payload).Instance.ArmorLeader);
+        }
+
+        // The state and the record themselves are untouched by a view.
+        Assert.NotNull(Assert.IsType<InstanceCreated>(history.Events[^1].Payload).Instance.ArmorLeader);
+    }
+
+    [Theory]
+    [InlineData(Conditions.Recalled)]
+    [InlineData(Conditions.Abandoned)]
+    [InlineData("eliminated")]
+    [InlineData("wrecked")]
+    public void AnArmorLeaderIsLostWithARecallAWreckOrACrewThatLeaves(string loss)
+    {
+        // D5.341: "Recall eliminates any Armor Leader present in that AFV"; D3.43: he "ceases to exist once the crew takes counter form".
+        var events = Then(23, new InstanceCreated(Tank("t1", new ArmorLeader(9, -1))));
+        var history = Project(After(events, loss switch
+        {
+            "eliminated" => new InstanceEliminated("t1"),
+            "wrecked" => new VehicleWrecked("t1", false),
+            _ => new ConditionsChanged("t1", new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [loss] = ConditionState.True }),
+        }));
+        Assert.False(history.HasErrors, string.Join("; ", history.Diagnostics));
+        Assert.NotNull(history.At(24)!.Unit("t1")!.ArmorLeader);
+        Assert.Null(history.Current!.Unit("t1")!.ArmorLeader);
+
+        // D3.45: "the quasi-Armor Leader can never be eliminated or removed from its crew": the condition stays.
+        var green = Then(23, new InstanceCreated(Tank("t1", null, inexperiencedCrew: true)));
+        var kept = Project(After(green, new ConditionsChanged("t1", new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [Conditions.Recalled] = ConditionState.True })));
+        Assert.Equal(ConditionState.True, GameState.Condition(kept.Current!.Unit("t1")!, Conditions.InexperiencedCrew));
+    }
+
     [Theory]
     [InlineData("{")]
     [InlineData("""{ "schemaVersion": 1, "tenant": "not-a-guid", "game": "g", "label": "x", "events": [] }""")]

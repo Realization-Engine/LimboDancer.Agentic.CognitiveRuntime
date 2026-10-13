@@ -436,6 +436,16 @@ public sealed record FireOverrun(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The leadership modifier of the vehicle's Armor Leader on its OVR DR (D7.16, D3.44, pp. 207 and 200; pass 55, ruling R55.16), or the +1
+    /// of an Inexperienced Crew (D3.45); null is none.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? ArmorLeadership
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -465,6 +475,16 @@ public sealed record FireVehicle(
     /// <summary>Whether the vehicle is concealed (A12.2; ruling R6.7): it is attacked on the column of the halved FP (A12.13); null is false.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Concealed
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The Morale Level of the vehicle's crew when it is its Armor Leader's (D3.42, p. 200; pass 55, ruling R55.17) or an Inexperienced Crew's 6
+    /// (D3.45). Null is its nationality's (D5.1); a record keeps it only when the attack made the crew check against it (D3.41).
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? CrewMorale
     {
         get; init;
     }
@@ -511,6 +531,17 @@ public sealed record FireVehicleFire(
     /// <summary>Whether the vehicle is in woods, a building, or rubble (C5.11, p. 172; pass 50): the Case A DRM is doubled. A map read, recorded with the attack; null is false.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? InWoodsOrBuilding
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The leadership modifier of the vehicle's Armor Leader on the IFT DR of a MA that is a MG (D3.44, p. 200; pass 55, ruling R55.16), or the
+    /// +1 of an Inexperienced Crew (D3.45). Never with <see cref="Weapons"/>: "an Armor Leader cannot modify non-OVR MG/FT (unless MA) attacks".
+    /// Null is none.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? ArmorLeadership
     {
         get; init;
     }
@@ -1141,7 +1172,18 @@ public sealed record FireCheck(
     int FinalDr,
     int MoraleLevel,
     bool Passed,
-    string Consequence);
+    string Consequence)
+{
+    /// <summary>
+    /// Whose Morale Level a vehicle crew checked at when it is not its nationality's (D3.42, D3.45, p. 200; pass 55, rulings R55.17, R55.18):
+    /// <c>armor-leader</c> or <c>inexperienced-crew</c>. Null for every other check, and in every record made before pass 55.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? MoraleSource
+    {
+        get; init;
+    }
+}
 
 /// <summary>What the attack did to one target unit.</summary>
 public sealed record FireUnitEffect(

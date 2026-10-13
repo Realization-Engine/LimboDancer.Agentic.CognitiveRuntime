@@ -860,4 +860,310 @@ public sealed class BacklogPass55Tests : IDisposable
         Refused(await Do(GameActions.FireOrdnance, NoRoll(), new { gunId = "us-gun", ammunition = "canister" }), "play.canister-aim");
         Refused(await FireCanister(4, null, 1, 1), "asl.a1.ordnance.ammunition-unavailable");
     }
+
+    // Task 55.5 (increment 2e): Armor Leaders and Inexperienced Crews (D3.4 to D3.45, p. 200; rulings R55.15 to R55.18).
+
+    private static readonly Perspective German = Perspective.Side("german");
+    private static readonly Perspective Russian = Perspective.Side("russian");
+    private static readonly string[] R1 = ["r1"];
+    private static readonly string[] Halftrack = ["de-ht"];
+    private const string North3 = "bd01:B7:0";
+
+    /// <summary>A vehicle with an Armor Leader of the grade ("9-1"), an Inexperienced Crew, or other conditions.</summary>
+    private static Dictionary<string, object> Afv(string id, string definition, string at, string side, string facing, string? leader = null, params string[] conditions)
+    {
+        var vehicle = new Dictionary<string, object>
+        {
+            ["id"] = id,
+            ["kind"] = "asl:vehicle",
+            ["definition"] = definition,
+            ["side"] = side,
+            ["position"] = new Dictionary<string, string> { ["at"] = at, ["facing"] = facing },
+            ["conditions"] = conditions.ToDictionary(name => name, _ => true, StringComparer.Ordinal),
+        };
+        if (leader is not null)
+        {
+            var dash = leader.LastIndexOf('-');
+            vehicle["armorLeader"] = new { morale = int.Parse(leader[..dash], System.Globalization.CultureInfo.InvariantCulture), leadership = int.Parse(leader[dash..], System.Globalization.CultureInfo.InvariantCulture) };
+        }
+
+        return vehicle;
+    }
+
+    private static Dictionary<string, object> LedTank(string? leader, params string[] conditions) => Afv("de-tank", "attacker-tank", Firer, "german", "north-east", leader, conditions);
+
+    private GameView ViewAs(Perspective perspective)
+    {
+        var history = Planner().Replay(store.Read(Scope)!.Events);
+        return GameView.Of(history, history.Current!.Revision, perspective);
+    }
+
+    private ArmorLeader? LeaderOf(string vehicle) => Current.Unit(vehicle)!.ArmorLeader;
+
+    private async Task Advance(int times = 1)
+    {
+        for (var index = 0; index < times; index++)
+        {
+            Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
+            {
+            }));
+        }
+    }
+
+    private async Task PassFire() => Committed(await Do(GameActions.PassFire, NoRoll(), new
+    {
+    }));
+
+    private Task<PlayResult> FireMa(string tank, string target, string? targetVehicle, params int[] dice)
+    {
+        var arguments = new Dictionary<string, object> { ["gunId"] = tank, ["target"] = target };
+        if (targetVehicle is not null)
+        {
+            arguments["targetVehicle"] = targetVehicle;
+            arguments["ammunition"] = "ap";
+        }
+
+        return Do(GameActions.FireOrdnance, Once(dice), arguments);
+    }
+
+    /// <summary>A hex of the given column next to another: one of the two a vehicle facing that way has in its VCA.</summary>
+    private static string Beside(string hex, char column)
+    {
+        var handle = Board01Fixture.Handle();
+        return "bd01:" + Board01Fixture.Hexes().Where(text => text[0] == column && char.IsDigit(text[1]) && handle.Distance(HexName.Parse(hex), HexName.Parse(text)) == 1)
+            .Order(StringComparer.Ordinal).First() + ":0";
+    }
+
+    [Fact]
+    public async Task ATankWithAnArmorLeaderFiresItsMaWithHisModifierWhichRevealsHim()
+    {
+        // D3.41: noted on a side record until used. D3.44: his modifier on the MA's To Hit DR, BU or not.
+        await Setup(LedTank("9-1"), Squad(Target));
+        Assert.Equal(new ArmorLeader(9, -1), LeaderOf("de-tank"));
+        Assert.Null(Assert.Single(ViewAs(Russian).Units, unit => unit.Id == "de-tank").ArmorLeader);
+        Assert.All(ViewAs(Russian).Events.Select(item => item.Payload).OfType<InstanceCreated>(), created => Assert.Null(created.Instance.ArmorLeader));
+        Assert.Equal(new ArmorLeader(9, -1), Assert.Single(ViewAs(German).Units, unit => unit.Id == "de-tank").ArmorLeader);
+        Assert.NotNull(Assert.Single(ViewAs(Perspective.Adjudicator).Units, unit => unit.Id == "de-tank").ArmorLeader);
+
+        // An Original 11 misses: no IFT DR. The record's DRM names him, and from then on both sides read him.
+        var before = Revision;
+        Committed(await FireMa("de-tank", Target, null, 5, 6));
+        var shot = LastShot(before);
+        Assert.Equal(-1m, DrmOf(ToHitDrm(shot), "armor-leader"));
+        Assert.Equal(1m, DrmOf(ToHitDrm(shot), "case-i"));
+        Assert.Equal(-1, shot.Facts.GetProperty("vehicle").GetProperty("armorLeadership").GetInt32());
+        Assert.Equal(new ArmorLeader(9, -1, true), LeaderOf("de-tank"));
+        Assert.Equal(new ArmorLeader(9, -1, true), Assert.Single(ViewAs(Russian).Units, unit => unit.Id == "de-tank").ArmorLeader);
+        Assert.Contains(ViewAs(Russian).Events.Select(item => item.Payload).OfType<InstanceCreated>(), created => created.Instance.ArmorLeader is not null);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ATankWithoutAnArmorLeaderFiresAsBefore()
+    {
+        // The control: no fact in the record, and the same Final DR but for his modifier.
+        await Setup(LedTank(null), Squad(Target));
+        var before = Revision;
+        Committed(await FireMa("de-tank", Target, null, 5, 6));
+        var shot = LastShot(before);
+        Assert.Equal(0m, DrmOf(ToHitDrm(shot), "armor-leader"));
+        Assert.False(shot.Facts.GetProperty("vehicle").TryGetProperty("armorLeadership", out _));
+        Assert.Null(LeaderOf("de-tank"));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AnInexperiencedCrewAddsOneAndIsPublic()
+    {
+        // D3.45: "treated as if it contains an inherent 6+1 Armor Leader", which is no secret: the condition is the vehicle's, in both views.
+        await Setup(LedTank(null, Conditions.InexperiencedCrew), Squad(Target));
+        Assert.Contains(ViewAs(Russian).Units, unit => unit.Id == "de-tank" && GameState.Condition(unit, Conditions.InexperiencedCrew) == ConditionState.True);
+        var before = Revision;
+        Committed(await FireMa("de-tank", Target, null, 5, 6));
+        Assert.Equal(1m, DrmOf(ToHitDrm(LastShot(before)), "inexperienced-crew"));
+        Assert.Equal(1, LastShot(before).Facts.GetProperty("vehicle").GetProperty("armorLeadership").GetInt32());
+        Assert.Null(LeaderOf("de-tank"));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AnArmorLeaderOrAnInexperiencedCrewIsRefusedOffAnArmedAfvAndInABadGrade()
+    {
+        async Task<PlayResult> Start(params Dictionary<string, object>[] placements) => await Commit(Play(), GameActions.Setup, JsonSerializer.SerializeToElement(new
+        {
+            gameId = Scope.Game,
+            attemptId = "setup-1",
+            expectedRevision = 0,
+            start = new Dictionary<string, object>
+            {
+                ["label"] = "Pass 55",
+                ["catalog"] = "asl-scenario-a1@1.13.0",
+                ["boards"] = Bd01,
+                ["firstSide"] = "german",
+                ["sides"] = new object[]
+                {
+                    new { id = "german", nationality = "german", elr = 3, friendlyEdge = "left" },
+                    new { id = "russian", nationality = "russian", elr = 2, friendlyEdge = "right" },
+                },
+            },
+            placements,
+        }));
+
+        // D3.4, H1.43: a 10-1 is no grade. D3.41, D3.45: a truck is no armed AFV. D3.45: the 6+1 is the Inexperienced Crew's leader.
+        Refused(await Start(LedTank("10-1"), Squad(Target)), "8-1, 9-1, 9-2, and 10-2");
+        Refused(await Start(Afv("de-truck", "attacker-truck", Firer, "german", "north-east", "9-1"), Squad(Target)), "play.setup-armor-leader");
+        Refused(await Start(Afv("de-truck", "attacker-truck", Firer, "german", "north-east", null, Conditions.InexperiencedCrew), Squad(Target)), "play.setup-inexperienced-crew");
+        Refused(await Start(LedTank("9-1", Conditions.InexperiencedCrew), Squad(Target)), "D3.45");
+        var squad = Squad(Target);
+        squad["armorLeader"] = new { morale = 9, leadership = -1 };
+        Refused(await Start(LedTank(null), squad), "not a vehicle");
+        Committed(await Start(Afv("de-ht", "attacker-halftrack", Firer, "german", "north-east", "8-1"), Squad(Target)));
+    }
+
+    [Fact]
+    public async Task AHalftracksArmorLeaderModifiesItsMaAamgAndATanksDoesNotModifyItsCmg()
+    {
+        // D3.44: "IFT otherwise": the SPW 251/1's MA is its AAMG; "an Armor Leader cannot modify non-OVR MG/FT (unless MA) attacks".
+        await Setup(Afv("de-ht", "attacker-halftrack", Firer, "german", "north-east", "8-1"), Afv("de-tank", "attacker-tank", "bd01:C10:0", "german", "north-east", "9-2"), Squad(Target));
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Once(5, 6), new { firers = Halftrack, target = Target }));
+        var fire = LastFire(before);
+        Assert.Equal(-1m, DrmOf(IftDrm(fire), "armor-leader"));
+        Assert.Equal(-1, fire.Facts.GetProperty("vehicleFire").GetProperty("armorLeadership").GetInt32());
+        Assert.True(LeaderOf("de-ht")!.Revealed);
+
+        before = Revision;
+        Committed(await FireCmg());
+        fire = LastFire(before);
+        Assert.Equal(0m, DrmOf(IftDrm(fire), "armor-leader"));
+        Assert.False(fire.Facts.GetProperty("vehicleFire").TryGetProperty("armorLeadership", out _));
+        Assert.False(LeaderOf("de-tank")!.Revealed);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AnArmorLeaderModifiesHisVehiclesOvr()
+    {
+        // D7.16: the PzKpfw IIIH with a 9-2 enters the Russian squad's hex with an OVR; an Original 11, FFMO -1 and his -2.
+        var entered = Beside("E5", 'F');
+        await Setup(Afv("de-tank", "attacker-tank", "bd01:E5:0", "german", "east", "9-2"), Squad(entered), Unit("r2", "asl:squad", "defender-squad", "bd01:J9:0", "russian"));
+        await Advance();
+        Committed(await Do(GameActions.MoveVehicle, NoRoll(), new { vehicleId = "de-tank", kind = "start" }));
+        await PassFire();
+        Committed(await Do(GameActions.MoveVehicle, NoRoll(), new { vehicleId = "de-tank", kind = "enter", to = entered, overrun = true }));
+        await PassFire();
+        Assert.False(LeaderOf("de-tank")!.Revealed);
+        var before = Revision;
+        Committed(await Do(GameActions.Overrun, Once(6, 5, 2, 2, 1, 1, 1, 1), new
+        {
+        }));
+        var fire = LastFire(before);
+        Assert.Equal(-2m, DrmOf(IftDrm(fire), "armor-leader"));
+        Assert.Equal(-2, fire.Facts.GetProperty("overrun").GetProperty("armorLeadership").GetInt32());
+        Assert.True(LeaderOf("de-tank")!.Revealed);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AnArmorLeaderModifiesHisVehiclesOwnCcAttackAndNotTheAttackOnIt()
+    {
+        // A11.6, A11.31, A11.62: in the Russian APh the squad passes its PAATC (DR 7 against 7) and advances into the tank's hex; in the CCPh it
+        // attacks first, and the tank then attacks with its CMG, its 9-1 modifying the CC DR (D3.44).
+        var beside = Beside("E5", 'F');
+        await Setup(Afv("de-tank", "attacker-tank", "bd01:E5:0", "german", "east", "9-1"), Squad(beside), Unit("g1", "asl:squad", "attacker-squad", "bd01:J9:0", "german"));
+        await Advance(13);
+        Assert.Equal(("aph", "russian"), (Current.Phase, Current.PhasingSide));
+        Committed(await Do(GameActions.Advance, Once(3, 4), new { unitIds = R1, to = "bd01:E5:0" }));
+        await Advance();
+        Assert.Equal("ccph", Current.Phase);
+        var before = Revision;
+        Committed(await Do(GameActions.VehicleCloseCombat, Once(6, 5), new { location = "bd01:E5:0", vehicleId = "de-tank", attackers = R1 }));
+        var against = Since(before).Select(item => item.Payload).OfType<VehicleCloseCombatResolved>().Single();
+        Assert.False(against.Facts.GetProperty("vehicle").TryGetProperty("armorLeadership", out _));
+        Assert.False(LeaderOf("de-tank")!.Revealed);
+
+        before = Revision;
+        Committed(await Do(GameActions.VehicleCloseCombat, Once(6, 5, 1, 1), new { location = "bd01:E5:0", vehicleId = "de-tank", defenders = R1 }));
+        var own = Since(before).Select(item => item.Payload).OfType<VehicleCloseCombatResolved>().Single();
+        Assert.Equal(-1, own.Facts.GetProperty("vehicle").GetProperty("armorLeadership").GetInt32());
+        Assert.Equal(-1m, DrmOf(own.Resolution.GetProperty("defending")[0].GetProperty("drm"), "armor-leader"));
+        Assert.True(LeaderOf("de-tank")!.Revealed);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AnArmorLeaderModifiesTheColoredDrOfHisVehiclesBogRemoval()
+    {
+        // D8.3: a colored 5 would Mire the tank; "one armor leader in either AFV also modifies the colored dr": a Final 4 frees it. The Start MP is
+        // the Original colored dr times the white dr: 5 x 2 = 10 MP.
+        await Setup(LedTank("9-1", Conditions.Bogged), Squad("bd01:J9:0"));
+        await Advance();
+        var before = Revision;
+        Committed(await Do(GameActions.MoveVehicle, Once(5, 2), new { vehicleId = "de-tank", kind = "start" }));
+        var check = Since(before).Select(item => item.Payload).OfType<VehicleCheckRolled>().Single();
+        Assert.Equal((VehicleCheckRolled.BogRemoval, -1, (int?)-1, VehicleCheckRolled.Freed), (check.Check, check.Drm, check.ArmorLeadership, check.Result));
+        Assert.Equal(20, Since(before).Select(item => item.Payload).OfType<VehicleStepped>().Single().HalfMp);
+        Assert.NotEqual(ConditionState.True, GameState.Condition(Current.Unit("de-tank")!, Conditions.Bogged));
+        Assert.True(LeaderOf("de-tank")!.Revealed);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ACrewChecksAtItsArmorLeadersMoraleAndOnlyThenIsHeRevealed()
+    {
+        // Two T-34 M41 in B7 fire AP at the PzKpfw IIIH with a 10-2, three hexes off, in the DFPh. The first misses: its record names no crew
+        // morale and he stays unseen. The second strikes the turret, and a TK DR one above the Final TK# asks the crew's NTC (C7.41), taken at his
+        // Morale Level of 10 (D3.42): a 9 passes where the crew's own 8 would not.
+        await Setup(LedTank("10-2"), Afv("ru-t1", "defender-tank", North3, "russian", "south-west"), Afv("ru-t2", "defender-tank", North3, "russian", "south-west"));
+        await Advance(2);
+        Assert.Equal("dfph", Current.Phase);
+        var before = Revision;
+        Committed(await FireMa("ru-t1", Firer, "de-tank", 6, 5));
+        Assert.False(LastShot(before).Facts.GetProperty("vehicleTarget").TryGetProperty("crewMorale", out _));
+        Assert.False(LeaderOf("de-tank")!.Revealed);
+        Assert.Null(Assert.Single(ViewAs(Russian).Units, unit => unit.Id == "de-tank").ArmorLeader);
+
+        before = Revision;
+        var kill = (await Probe("ru-t2")).GetProperty("finalTk").GetInt32();
+        Committed(await FireMa("ru-t2", Firer, "de-tank", 2, 4, kill - 5, 6, 5, 4));
+        var shot = LastShot(before);
+        var check = shot.Resolution.GetProperty("kill").GetProperty("shockCheck");
+        Assert.Equal((10, true, "armor-leader"), (check.GetProperty("moraleLevel").GetInt32(), check.GetProperty("passed").GetBoolean(), check.GetProperty("moraleSource").GetString()));
+        Assert.Equal(10, shot.Facts.GetProperty("vehicleTarget").GetProperty("crewMorale").GetInt32());
+        Assert.NotEqual(ConditionState.True, GameState.Condition(Current.Unit("de-tank")!, Conditions.Shocked));
+        Assert.Equal(new ArmorLeader(10, -2, true), LeaderOf("de-tank"));
+        Assert.NotNull(Assert.Single(ViewAs(Russian).Units, unit => unit.Id == "de-tank").ArmorLeader);
+        NoReplayErrors();
+    }
+
+    /// <summary>The Final TK# a T-34's AP turret hit on the German tank meets, read from a game played aside to a dud (an Original TK DR of 12).</summary>
+    private async Task<JsonElement> Probe(string tank)
+    {
+        var aside = new BacklogPass55Tests();
+        try
+        {
+            aside.board.Base.Clear();
+            await aside.Setup(LedTank(null), Afv(tank, "defender-tank", North3, "russian", "south-west"));
+            await aside.Advance(2);
+            var before = aside.Revision;
+            Committed(await aside.FireMa(tank, Firer, "de-tank", 2, 4, 6, 6));
+            return aside.LastShot(before).Resolution.GetProperty("kill").Clone();
+        }
+        finally
+        {
+            aside.Dispose();
+        }
+    }
+
+    [Fact]
+    public async Task AWreckLosesItsArmorLeader()
+    {
+        // D3.43: he "ceases to exist once the crew takes counter form": a TK DR of 2 burns the tank.
+        await Setup(LedTank("9-1"), Afv("ru-t1", "defender-tank", North3, "russian", "south-west"));
+        await Advance(2);
+        Committed(await FireMa("ru-t1", Firer, "de-tank", 2, 4, 1, 1, 6, 6));
+        Assert.Equal(InstanceStatus.Wrecked, Current.Unit("de-tank")!.Status);
+        Assert.Null(LeaderOf("de-tank"));
+        NoReplayErrors();
+    }
 }

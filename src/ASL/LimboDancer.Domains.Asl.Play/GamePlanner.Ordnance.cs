@@ -142,7 +142,10 @@ public sealed partial class GamePlanner
         var toHit = preview is null ? string.Empty
             : $"; Modified TH# {preview.ModifiedToHit} ({preview.Color}), DRM {(preview.Drm.Count == 0 ? "none" : string.Join(", ", preview.Drm.Select(item =>
                 // C5.35 (pass 50): the lower dr is not known before the roll.
-                item.Name == "case-c4:lower-dr" ? "Case C4: the lower dr of the roll doubled (C5.35)" : $"{ScenarioA1OrdnanceEligibility.CaseWords(item.Name)} {item.Value:+0;-0}")))}";
+                item.Name == "case-c4:lower-dr" ? "Case C4: the lower dr of the roll doubled (C5.35)"
+                // D3.44, D3.45 (pass 55): the Armor Leader's line, or the Inexperienced Crew's, with its rule.
+                : ScenarioA1ArmorLeaders.IsModifier(item.Name) ? ScenarioA1ArmorLeaders.ModifierText((int)item.Value)
+                : $"{ScenarioA1OrdnanceEligibility.CaseWords(item.Name)} {item.Value:+0;-0}")))}";
         IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
         {
             var events = new List<GameEvent>();
@@ -716,9 +719,11 @@ public sealed partial class GamePlanner
         var gunResult = resolution.Gun ?? new OrdnanceGunEffect(0, false, 0, false, facts.Phase == "MPh" ? "first-fire" : null, 0, null);
         var recordId = EventId(attemptId, events.Count + 1);
         BoardLocation? acquired = gunResult.AcquiredLocationId is { } acquiredAt ? BoardLocation.Parse(acquiredAt) : null;
+        // D3.41 (pass 55, ruling R55.15): the record keeps a target crew's Morale Level only when the shot made that crew check against it.
         events.Add(Event(scope, attemptId, events.Count + 1, expected, "ordnance-fired",
             new OrdnanceFired(facts.Gun!.GunId!, facts.Crew!.UnitId!, BoardLocation.Parse(facts.TargetLocationId!), facing, gunResult.RateOfFireKept,
-                gunResult.Acquisition, acquired, rollIds, JsonSerializer.SerializeToElement(facts, LiveFire.Json), JsonSerializer.SerializeToElement(resolution, LiveFire.Json)),
+                gunResult.Acquisition, acquired, rollIds, JsonSerializer.SerializeToElement(ScenarioA1ArmorLeaders.Recorded(facts, resolution), LiveFire.Json),
+                JsonSerializer.SerializeToElement(resolution, LiveFire.Json)),
             package, null));
 
         // C13.31, C13.36 (ruling R9.7): a PF Check's Original 6 pins or breaks its firer, or gives Casualty Reduction; so does an Original 12 To Hit DR.

@@ -461,8 +461,10 @@ public sealed class PlayRecords
                         OrdnanceKill.Dud => "a dud (Original 12)",
                         _ => "no effect",
                     };
-                    var checks = (kill.ShockCheck is { } ntc ? $"; NTC DR {ntc.FinalDr} against {ntc.MoraleLevel}: {(ntc.Passed ? "passed" : "Shocked")}" : "")
-                        + (kill.CrewCheck is { } tc ? $"; crew TC DR {tc.FinalDr} against {tc.MoraleLevel}: {(tc.Passed ? "passed" : "Abandoned")}" : "")
+                    // D3.42, D3.45 (pass 55): a check at an Armor Leader's Morale Level, or an Inexperienced Crew's, says whose it is.
+                    static string Whose(FireCheck made) => ScenarioA1ArmorLeaders.MoraleText(made.MoraleSource, made.MoraleLevel) is { Length: > 0 } source ? $" ({source})" : "";
+                    var checks = (kill.ShockCheck is { } ntc ? $"; NTC DR {ntc.FinalDr} against {ntc.MoraleLevel}{Whose(ntc)}: {(ntc.Passed ? "passed" : "Shocked")}" : "")
+                        + (kill.CrewCheck is { } tc ? $"; crew TC DR {tc.FinalDr} against {tc.MoraleLevel}{Whose(tc)}: {(tc.Passed ? "passed" : "Abandoned")}" : "")
                         + (kill.CrewSurvival is { } cs ? $"; Crew Survival DR {cs.FinalDr} against CS# {cs.CrewSurvival}: {(cs.Survived ? "the crew survives" : "no survivors")}" : "");
                     parts.Add($"{kill.HitLocation} hit, {kill.TargetFacing} Target Facing, {kill.Ammunition.ToUpperInvariant()}: {tk}; TK DR {string.Join(", ", kill.Dice)} = {kill.OriginalDr}: {fate}{checks}");
                 }

@@ -51,6 +51,22 @@
     }
     <label><input id="place-concealed" type="checkbox" checked="@Draft.Concealed" @onchange="@(args => Change(Draft with { Concealed = args.Value is true }))" /> concealed</label>
     <label title="HIP by an SSR for Infantry (A12.3); an Emplaced Gun and its crew in Concealment Terrain with no SSR (A12.34; ruling R26.5)."><input id="place-hidden" type="checkbox" checked="@Draft.Hidden" @onchange="@(args => Change(Draft with { Hidden = args.Value is true }))" /> hidden</label>
+    @if (ArmedAfv)
+    {
+        <label title="D3.4, D3.41: an Armor Leader is noted on his owner's side record and is not shown to the enemy until his modifier or his morale is used.">
+            Armor Leader
+            <select id="place-armor-leader" value="@Draft.ArmorLeader" @onchange="@(args => Change(Draft with { ArmorLeader = args.Value as string ?? string.Empty }))">
+                <option value="">none</option>
+                @foreach (var grade in ArmorLeaderGrades)
+                {
+                    <option value="@grade">@grade</option>
+                }
+            </select>
+        </label>
+        <label title="D3.45: by SSR, an armed vehicle's crew is Inexperienced: +1 where an Armor Leader would modify, and a crew morale of 6. It takes no Armor Leader.">
+            <input id="place-inexperienced-crew" type="checkbox" checked="@Draft.InexperiencedCrew" @onchange="@(args => Change(Draft with { InexperiencedCrew = args.Value is true }))" /> Inexperienced Crew
+        </label>
+    }
     <label><input id="place-broken" type="checkbox" checked="@Draft.Broken" @onchange="@(args => Change(Draft with { Broken = args.Value is true }))" /> broken</label>
     <label title="A2.51, A2.52 (rulings R20.5, R26.1): a counter of an OB line that enters waits off board until it enters along its edge, a vehicle in Motion."><input id="place-offboard" type="checkbox" checked="@Draft.OffBoard" @onchange="@(args => Change(Draft with { OffBoard = args.Value is true }))" /> off board (enters)</label>
     @if (Draft.OffBoard && Entries.Count > 1)
@@ -76,7 +92,14 @@
 @code {
     /// <summary>The placement being drafted; the page keeps it.</summary>
     public sealed record SetupDraft(string Definition, string Id, string Group, string Location, string Holder, string Facing, string Bore, bool Concealed, bool Hidden,
-        bool Broken, bool OffBoard, string Entry);
+        bool Broken, bool OffBoard, string Entry, string ArmorLeader = "", bool InexperiencedCrew = false);
+
+    /// <summary>The grades of an Armor Leader (D3.4; the Availability Table of H1.43).</summary>
+    private static readonly string[] ArmorLeaderGrades = ["8-1", "9-1", "9-2", "10-2"];
+
+    /// <summary>Whether the chosen counter is an armed AFV, which may take an Armor Leader or an Inexperienced Crew (D3.41, D3.45; pass 55).</summary>
+    [Parameter]
+    public bool ArmedAfv { get; set; }
 
     /// <summary>A choice of a select: its value and how it reads.</summary>
     public sealed record Choice(string Value, string Label);

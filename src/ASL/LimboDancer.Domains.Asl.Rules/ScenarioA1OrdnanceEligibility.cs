@@ -61,6 +61,7 @@ public static class ScenarioA1OrdnanceEligibility
             Abandoned = facts.Abandoned ? true : null,
             StunRecovery = facts.StunRecovery ? true : null,
             Bypass = facts.Bypass ? true : null,
+            CrewMorale = facts.CrewMorale,
         };
     }
 
@@ -344,12 +345,15 @@ public static class ScenarioA1OrdnanceEligibility
     /// D3.32): the moving vehicle that has not stopped is a Motion firer too, and one that fired its MA in this MPh is a Bounding Firer in the AFPh.
     /// </summary>
     public static OrdnanceVehicleFirer VehicleFirer(bool crewExposed, bool motion, bool stunned, bool shocked, bool unconfirmedKill, bool recalled, bool stunRecovery,
-        bool moved, bool movingUnstopped = false, bool boundingFirer = false) =>
+        bool moved, bool movingUnstopped = false, bool boundingFirer = false, int? armorLeadership = null) =>
         new(!crewExposed, motion || movingUnstopped, stunned, shocked || unconfirmedKill, recalled)
         {
             StunRecovery = stunRecovery ? true : null,
             Moved = moved ? true : null,
             BoundingFirer = boundingFirer ? true : null,
+
+            // D3.44, D3.45 (p. 200; pass 55, rulings R55.16, R55.18): the Armor Leader's modifier on the MA's To Hit DR, or an Inexperienced Crew's +1.
+            ArmorLeadership = armorLeadership,
         };
 
     /// <summary>

@@ -552,6 +552,7 @@ public static class GameEventReader
                     : new VehicleCheckRolled(checkedVehicle, checkKind, vehicleCheckRoll, checkDrm.Value, checkResult)
                     {
                         Mp = fields.OptionalInteger(payload, "mp", path) ?? 0,
+                        ArmorLeadership = fields.OptionalInteger(payload, "armorLeadership", path),
                     };
             case "overrun-resolved":
                 var overrunVehicle = fields.RequiredString(payload, "vehicle", path);
@@ -866,12 +867,28 @@ public static class GameEventReader
         var id = fields.RequiredString(item, "id", path);
         var kind = fields.RequiredString(item, "kind", path);
         var position = item.TryGetProperty("position", out _) ? ReadPosition(item, "position", path, fields, diagnostics) : null;
+
+        // Pass 55 (ruling R55.15): a vehicle's Armor Leader, his Morale Level and his leadership modifier.
+        ArmorLeader? armorLeader = null;
+        if (item.TryGetProperty("armorLeader", out var leader) && leader.ValueKind != JsonValueKind.Null)
+        {
+            if (leader.ValueKind != JsonValueKind.Object || fields.OptionalInteger(leader, "morale", path + ".armorLeader") is not { } morale
+                || fields.OptionalInteger(leader, "leadership", path + ".armorLeader") is not { } leadership)
+            {
+                diagnostics.Add(UnitDiagnostic.Error("UNIT-STATE-047", "An Armor Leader names his morale and his leadership, as in {\"morale\": 9, \"leadership\": -1} (D3.4).", path));
+                return null;
+            }
+
+            armorLeader = new ArmorLeader(morale, leadership);
+        }
+
         return id is null || kind is null
             ? null
             : new NewInstance(id, kind, fields.OptionalString(item, "definition", path), fields.OptionalString(item, "side", path), position,
                 ReadHolding(item, path, fields, diagnostics), ReadConditions(item, path, diagnostics))
             {
                 Group = fields.OptionalString(item, "group", path),
+                ArmorLeader = armorLeader,
             };
     }
 

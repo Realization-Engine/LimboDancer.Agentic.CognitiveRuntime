@@ -72,6 +72,7 @@ public static class ScenarioA1FireEligibility
         return new FireVehicle(facts.Id, facts.Definition, facts.At, facts.CrewExposed, facts.Stunned || facts.Recalled, facts.StunRecovery, facts.Immobilized)
         {
             Concealed = facts.Concealed || facts.Hidden ? true : null,
+            CrewMorale = facts.CrewMorale,
         };
     }
 
@@ -89,7 +90,11 @@ public static class ScenarioA1FireEligibility
             facts.Stunned || facts.Recalled || facts.Shocked || facts.UnconfirmedKill,
             facts.StunRecovery, facts.Malfunctioned,
             facts.Fired || facts.FirstFire || facts.BoundingFire,
-            facts.RateOfFireKept);
+            facts.RateOfFireKept)
+        {
+            // D3.44 (p. 200; pass 55, ruling R55.16): an Armor Leader modifies the IFT DR of a MA that is a MG.
+            ArmorLeadership = facts.ArmorLeadership,
+        };
     }
 
     /// <summary>
@@ -128,6 +133,9 @@ public static class ScenarioA1FireEligibility
                 MaintainedCaseA = name == FireVehicleWeapon.CoaxialMg ? maintained : null,
             })],
             OtherPhase = OtherFirePhase(facts.Shots, facts.FirePhase, facts.BoundingFireMarked) ? true : null,
+
+            // D3.44 (p. 200; pass 55): "an Armor Leader cannot modify non-OVR MG/FT (unless MA) attacks", so a BMG's or CMG's attack carries none.
+            ArmorLeadership = null,
         };
     }
 
@@ -625,6 +633,7 @@ public static class ScenarioA1FireEligibility
                 facts.MainMalfunctioned || facts.Disabled, facts.BmgMalfunctioned, facts.CmgMalfunctioned)
             {
                 StunRecovery = facts.StunRecovery ? true : null,
+                ArmorLeadership = facts.ArmorLeadership,
             },
             Vehicles = vehicles.Length > 0 ? [.. vehicles.Select(unit => facts.VehicleOf(unit.Id))] : null,
             TargetSideNoQuarter = facts.TargetSideNoQuarter ? true : null,

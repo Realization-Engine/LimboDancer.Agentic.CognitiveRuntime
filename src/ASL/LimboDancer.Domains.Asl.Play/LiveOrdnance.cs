@@ -321,7 +321,9 @@ public static class LiveOrdnance
                     state.MovedVehicles.Contains(firer.Id, StringComparer.Ordinal),
                     // D2.42, D3.32 (pass 50): the moving vehicle that has not stopped is a Motion firer; one that fired its MA in this MPh is a Bounding Firer.
                     state.Movement is { Vehicle: true, Started: true, Stopped: false } moving && moving.Movers.Contains(firer.Id),
-                    state.VehicleWeaponShots.Any(item => item.Vehicle == firer.Id && item.Weapon == "ma" && item.FirePhase == "mph")) with
+                    state.VehicleWeaponShots.Any(item => item.Vehicle == firer.Id && item.Weapon == "ma" && item.FirePhase == "mph"),
+                    // D3.44, D3.45 (pass 55, rulings R55.16, R55.18): its Armor Leader's modifier, or an Inexperienced Crew's +1.
+                    LiveFire.ArmorLeadership(firer)) with
                 {
                     // D3.5, D3.51 (pass 50): the MA beside the vehicle's other weapons.
                     Weapons = ScenarioA1OrdnanceEligibility.VehicleWeapons(LiveFire.VehicleShots(state, firer.Id),
@@ -354,7 +356,11 @@ public static class LiveOrdnance
             Is(vehicleTarget, Conditions.UnconfirmedKill), Is(vehicleTarget, Conditions.Recalled), Is(vehicleTarget, Conditions.Abandoned),
             Is(vehicleTarget, Conditions.Immobilized), Is(vehicleTarget, Conditions.StunRecovery), vehicleTarget.Straddling is not null,
             state.Movement is { Vehicle: true, Started: true, Stopped: false } moving && moving.Members.Contains(vehicleTarget.Id, StringComparer.Ordinal),
-            Is(vehicleTarget, Conditions.Bogged)));
+            Is(vehicleTarget, Conditions.Bogged))
+        {
+            // D3.42, D3.45 (pass 55, rulings R55.17, R55.18): the Morale Level its crew checks at, when it is not its nationality's.
+            CrewMorale = LiveFire.CrewMorale(vehicleTarget),
+        });
     }
 
     /// <summary>
@@ -674,6 +680,18 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
         merged = ScenarioA1OrdnanceEligibility.WithRecomputedStateFacts(merged, recorded, LiveOrdnance.BoreSighted(state, fired.Gun, fired.Crew, gunAt, fired.Target),
             LiveStacking.Of(state, gunAt, firingSide).AttackPenalty, () => LiveStacking.Of(state, fired.Target, enemy).DefensePenalty,
             gunId => state.Find(gunId ?? string.Empty) is EquipmentInstance targetGun ? LiveOrdnance.Emplaced(state, targetGun) : null);
+
+        // D3.41, D3.42 (pass 55, rulings R55.15, R55.17): a record keeps a target crew's Morale Level only when the shot made that crew check, so
+        // one it leaves out is left out of the comparison; the checks it holds are held to the state's below.
+        var fromState = merged;
+        merged = merged with
+        {
+            VehicleTarget = ScenarioA1ArmorLeaders.AsRecorded(merged.VehicleTarget, recorded.VehicleTarget),
+            Hit = merged.Hit! with
+            {
+                Vehicles = ScenarioA1ArmorLeaders.AsRecorded(merged.Hit.Vehicles, recorded.Hit.Vehicles),
+            },
+        };
         if (JsonSerializer.Serialize(merged, LiveFire.Json) != JsonSerializer.Serialize(recorded, LiveFire.Json)
             || fired.Crew != recorded.Crew?.UnitId || fired.Target.ToString() != recorded.TargetLocationId)
         {
@@ -717,6 +735,11 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
         if (!JsonElement.DeepEquals(JsonSerializer.SerializeToElement(resolution, LiveFire.Json), fired.Resolution))
         {
             return "The ordnance record's resolution differs from what its facts and rolls give.";
+        }
+
+        if (ScenarioA1ArmorLeaders.RecordRefusal(fromState, recorded, resolution) is { } moraleRefusal)
+        {
+            return moraleRefusal;
         }
 
         // C13.31 (ruling R9.7): a PF Check that gave no shot keeps no ROF and acquires nothing.
