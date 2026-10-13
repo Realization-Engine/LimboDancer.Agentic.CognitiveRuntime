@@ -4107,6 +4107,9 @@ else if (state is not null)
     /// <summary>An option of a pending choice in words: take or decline, or the Location that keeps an Acquisition.</summary>
     private static string ChoiceOptionText(PendingChoice choice, string option) => (choice.Kind, option) switch
     {
+        // C2.2401 (pass 55): the moving vehicle's MA fires first, or the declared shot resolves.
+        (ChoicePending.GunDuel, ChoicePending.Duel) => "fire first (Gun Duel)",
+        (ChoicePending.GunDuel, _) => "decline: the declared shot resolves",
         (_, ChoicePending.Take) => "take it",
         (_, ChoicePending.Decline) => "decline it",
         (ChoicePending.Acquisition, _) => $"keep it on {option}",

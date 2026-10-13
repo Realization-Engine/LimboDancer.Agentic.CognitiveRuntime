@@ -21,7 +21,14 @@ public sealed record FireBarFacts(
 public sealed record PossessedWeaponFacts(string Id, bool Malfunctioned, bool Dismantled, string Kind, Func<string?> LatwType);
 
 /// <summary>A phasing vehicle against Bounding First Fire (D3.3): the phase, whether it is an active vehicle of the phasing side, the moving stack (a vehicle's, its window open, the vehicle among its movers), and whether the vehicle's move has ended.</summary>
-public sealed record BoundingFireFacts(string? Phase, bool ActiveVehicleOfPhasingSide, bool MovementExists, bool MovementVehicle, bool WindowOpen, bool AmongMovers, bool MovementEnded);
+public sealed record BoundingFireFacts(string? Phase, bool ActiveVehicleOfPhasingSide, bool MovementExists, bool MovementVehicle, bool WindowOpen, bool AmongMovers, bool MovementEnded)
+{
+    /// <summary>Whether the shot asked about is a Gun Duel's first shot (C2.2401; pass 55, ruling R55.19), which the moving vehicle makes while the window is open.</summary>
+    public bool GunDuel
+    {
+        get; init;
+    }
+}
 
 /// <summary>A vehicle's crew state (D5.3, D5.34, D5.2, C7.42): its BU condition as three values, its Stun, Recall, Shock, and Unconfirmed Kill, and whether it is closed-topped.</summary>
 public sealed record CrewExposedFacts(RuleState ButtonedUp, bool Stunned, bool Recalled, bool Shocked, bool UnconfirmedKill, bool ClosedTopped);

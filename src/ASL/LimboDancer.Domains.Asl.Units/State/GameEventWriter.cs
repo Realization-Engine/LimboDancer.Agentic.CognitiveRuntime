@@ -889,6 +889,11 @@ public static class GameEventWriter
                 writer.WriteString("key", made.Key);
                 writer.WriteString("option", made.Option);
                 break;
+            case GunDuelVoided voided:
+                writer.WriteString("firer", voided.Firer);
+                writer.WriteString("vehicle", voided.Vehicle);
+                writer.WriteString("cause", voided.Cause);
+                break;
             case VehicleWrecked wreck:
                 writer.WriteString("id", wreck.Id);
                 if (wreck.Burning)

@@ -70,6 +70,17 @@ public sealed record OrdnanceShot(
         get; init;
     }
 
+    /// <summary>
+    /// Whether the shot is the first shot of a Gun Duel (C2.2401, p. 167; pass 55, ruling R55.19): a vehicle's MA fired as Bounding First Fire
+    /// while the DEFENDER's window on its MP expenditure is open, before the declared shot it answers. Null is false: no shot recorded before the
+    /// pass was one.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? GunDuel
+    {
+        get; init;
+    }
+
     /// <summary>Whether the shot is Intensive Fire (C5.6; ruling R8.2).</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? IntensiveFire

@@ -46,12 +46,14 @@ public static class ScenarioA1FireEligibility
     /// <summary>
     /// Whether a phasing vehicle may fire as Bounding First Fire now (D3.3; ruling R6.9): in the MPh, while it moves as the moving vehicle once the
     /// DEFENDER has passed on its last MP expenditure, or at the outset of its MPh while no other move is under way and it has not ended its move.
+    /// C2.2401 (p. 167; pass 55, ruling R55.19): a Gun Duel's first shot is made by the moving vehicle "first", before the declared Defensive
+    /// First Fire shot it answers, so while the window is still open; nothing else of the rule is waived for it.
     /// </summary>
     public static bool MayBoundingFire(BoundingFireFacts facts)
     {
         ArgumentNullException.ThrowIfNull(facts);
         return facts.Phase == "mph" && facts.ActiveVehicleOfPhasingSide
-            && (facts.MovementExists && facts.MovementVehicle && !facts.WindowOpen ? facts.AmongMovers : !facts.MovementExists && !facts.MovementEnded);
+            && (facts.MovementExists && facts.MovementVehicle && (!facts.WindowOpen || facts.GunDuel) ? facts.AmongMovers : !facts.MovementExists && !facts.MovementEnded);
     }
 
     /// <summary>

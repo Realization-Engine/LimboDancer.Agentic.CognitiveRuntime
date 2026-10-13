@@ -783,6 +783,13 @@ public static class GameEventReader
                 var madeKey = fields.RequiredString(payload, "key", path);
                 var option = fields.RequiredString(payload, "option", path);
                 return madeKey is null || option is null ? Missing(diagnostics, "A choice names its key and the option chosen.", path) : new ChoiceMade(madeKey, option);
+            case "gun-duel-voided":
+                var voidedFirer = fields.RequiredString(payload, "firer", path);
+                var voidedBy = fields.RequiredString(payload, "vehicle", path);
+                var voidedCause = fields.RequiredString(payload, "cause", path);
+                return voidedFirer is null || voidedBy is null || voidedCause is null
+                    ? Missing(diagnostics, "A void return shot names its firer, the vehicle that fired first, and the cause.", path)
+                    : new GunDuelVoided(voidedFirer, voidedBy, voidedCause);
             case "vehicle-wrecked":
                 return fields.RequiredString(payload, "id", path) is { } wreck ? new VehicleWrecked(wreck, fields.OptionalBoolean(payload, "burning", path)) : null;
             case "surrender-rejected":

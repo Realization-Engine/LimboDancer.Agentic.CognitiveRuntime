@@ -68,9 +68,12 @@ public static class LiveOrdnance
         return ScenarioA1OrdnanceEligibility.PanzerfaustAllowance(state.SetupHalfSquads.GetValueOrDefault(side), state.ScenarioYear);
     }
 
-    /// <summary>The state's part of a shot, or the reason the Gun cannot fire from this state.</summary>
+    /// <summary>
+    /// The state's part of a shot, or the reason the Gun cannot fire from this state. <paramref name="gunDuel"/> asks for the moving vehicle's
+    /// MA shot as a Gun Duel's first shot (C2.2401; pass 55, ruling R55.19): Bounding First Fire made while the DEFENDER's window is open.
+    /// </summary>
     public static (OrdnanceShot? Shot, string? Reason) FromState(GameState state, string gunId, BoardLocation target, string? targetVehicle = null,
-        string? ammunition = null, bool intensive = false, string? spotter = null, string? director = null)
+        string? ammunition = null, bool intensive = false, string? spotter = null, string? director = null, bool gunDuel = false)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(target);
@@ -163,8 +166,8 @@ public static class LiveOrdnance
         if (phase == "MPh")
         {
             // D3.3, C5.3 (pass 50): the phasing side's vehicle fires its MA as Bounding First Fire; Rules says which kind the shot is.
-            var (mphKind, mphRefusal) = ScenarioA1OrdnanceEligibility.MphShotKind(side == state.PhasingSide, gun is UnitInstance, () => LiveFire.MayBoundingFire(state, gun.Id),
-                state.Movement is { WindowOpen: true }, () => state.Movement!.Location == target);
+            var (mphKind, mphRefusal) = ScenarioA1OrdnanceEligibility.MphShotKind(side == state.PhasingSide, gun is UnitInstance,
+                () => LiveFire.MayBoundingFire(state, gun.Id, gunDuel), state.Movement is { WindowOpen: true }, () => state.Movement!.Location == target);
             if (mphRefusal is not null)
             {
                 return (null, mphRefusal);
@@ -292,6 +295,9 @@ public static class LiveOrdnance
             shot = shot with
             {
                 FireKind = ScenarioA1FireCalculator.BoundingFirstFire,
+
+                // C2.2401 (pass 55, ruling R55.19): recorded with the shot, and held to the answered choice by the projector.
+                GunDuel = gunDuel ? true : null,
             };
         }
         else if (phase == "MPh")
@@ -637,8 +643,9 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
             return "The ordnance record's facts are incomplete.";
         }
 
+        // C2.2401 (pass 55): a record that names itself a Gun Duel's first shot is read as one; the projector holds the fact to the answered choice.
         var (expected, reason) = LiveOrdnance.FromState(state, fired.Gun, fired.Target, recorded.VehicleTarget?.VehicleId, recorded.Ammunition, recorded.IntensiveFire == true,
-            recorded.Spotter?.UnitId, recorded.Director?.UnitId);
+            recorded.Spotter?.UnitId, recorded.Director?.UnitId, recorded.GunDuel == true);
         if (expected is null)
         {
             return reason;

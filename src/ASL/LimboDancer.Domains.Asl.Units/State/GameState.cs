@@ -331,6 +331,12 @@ public sealed record GameState(
     /// </summary>
     public IReadOnlyDictionary<string, string> ChoicesMade { get; init; } = new Dictionary<string, string>(StringComparer.Ordinal);
 
+    /// <summary>The Gun Duel the ATTACKER declared and that is not yet fully resolved (C2.2401; pass 55, ruling R55.19); cleared at every phase change.</summary>
+    public GunDuelState? GunDuel
+    {
+        get; init;
+    }
+
     /// <summary>The sides faced with No Quarter (A20.3, A20.4; rulings R5.6 and R5.7): their units never surrender.</summary>
     public IReadOnlyList<string> NoQuarter { get; init; } = [];
 

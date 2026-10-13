@@ -38,9 +38,45 @@ public sealed partial class GamePlanner
             return PlanFireCanister(scope, arguments, existing, state, canisterGun, attemptId, expected, label, actor);
         }
 
+        var (planned, refusal) = OrdnanceShotFacts(state, arguments);
+        if (planned is null)
+        {
+            return Refused(scope, label, expected, refusal!);
+        }
+
+        var (facts, facing) = planned.Value;
+
+        // C2.2401 (pass 55, ruling R55.19): a Defensive First Fire shot at the moving vehicle that it may answer with a Gun Duel is declared, not
+        // rolled: the commit is the pending choice, and the shot resolves with the ATTACKER's answer.
+        if (GunDuelDeclaration(scope, state, arguments, facts, facing, attemptId, expected, label) is { } declaration)
+        {
+            return declaration;
+        }
+
+        IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
+        {
+            var events = new List<GameEvent>();
+            AddOrdnanceEvents(scope, attemptId, expected, actor, state, facts, facing, events, draw);
+            return events;
+        }
+
+        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [OrdnanceSummary(facts, facing)])
+        {
+            Roll = new PlannedRoll("ordnance", Build),
+            FirstEventId = EventId(attemptId, 1),
+        };
+    }
+
+    /// <summary>
+    /// The facts of an ordnance shot its request names, accepted by every check made before a roll, with the facing its Gun turns to; or the reason
+    /// it is refused. The state's facts, the planner's map reads, and the Ordnance package's pre-check, in that order. <paramref name="gunDuel"/>
+    /// plans the moving vehicle's MA shot as a Gun Duel's first shot (C2.2401; pass 55, ruling R55.19), which waives the closed window and nothing else.
+    /// </summary>
+    private ((OrdnanceShot Facts, UnitFacing? Facing)? Shot, string[]? Reasons) OrdnanceShotFacts(GameState state, JsonElement arguments, bool gunDuel = false)
+    {
         if (!Text(arguments, "gunId", out var gunId) || !Text(arguments, "target", out var targetText) || !BoardLocation.TryParse(targetText, out var target))
         {
-            return Refused(scope, label, expected, "play.invalid-arguments: a Gun's shot names the Gun and a target Location");
+            return (null, ["play.invalid-arguments: a Gun's shot names the Gun and a target Location"]);
         }
 
         string? targetVehicle = Text(arguments, "targetVehicle", out var named) ? named : null;
@@ -48,10 +84,10 @@ public sealed partial class GamePlanner
         var intensive = arguments.TryGetProperty("intensive", out var intensiveArgument) && intensiveArgument.ValueKind == JsonValueKind.True;
         string? spotter = Text(arguments, "spotter", out var spotterId) ? spotterId : null;
         string? director = Text(arguments, "director", out var directorId) ? directorId : null;
-        var (shot, reason) = LiveOrdnance.FromState(state, gunId, target, targetVehicle, ammunition, intensive, spotter, director);
+        var (shot, reason) = LiveOrdnance.FromState(state, gunId, target, targetVehicle, ammunition, intensive, spotter, director, gunDuel);
         if (shot is null)
         {
-            return Refused(scope, label, expected, reason!);
+            return (null, [reason!]);
         }
 
         // A7.25, A15.432 (table player, pass 12): an Opportunity Firer or a berserk unit fires no ordnance or LATW in its PFPh.
@@ -59,7 +95,7 @@ public sealed partial class GamePlanner
             : state.Find(gunId) is EquipmentInstance { Holding: { } holding } ? state.Unit(holding.Holder) : null;
         if (state.Phase == "pfph" && shooter is not null && !LiveFire.IsVehicle(shooter) && (Is(shooter, Conditions.BoundingFire) || Is(shooter, Conditions.Berserk)))
         {
-            return Refused(scope, label, expected, $"play.fire-barred: {shooter.Id} {GamePlanner.FireBar(state, shooter)}");
+            return (null, [$"play.fire-barred: {shooter.Id} {GamePlanner.FireBar(state, shooter)}"]);
         }
 
         // C3.33, C3.332 (ruling R9.3): a mortar's Area Target Type shot at a hex holding a vehicle, or units in another Location of the hex, is not built.
@@ -68,13 +104,13 @@ public sealed partial class GamePlanner
             if (state.Units.FirstOrDefault(unit => unit.Status is InstanceStatus.Active && LiveFire.IsVehicle(unit) && state.Location(unit.Id)?.Location is { } at
                 && at.Board == target.Board && at.Hex == target.Hex) is { } inHex)
             {
-                return Refused(scope, label, expected, $"play.ordnance-area-vehicle: {inHex.Id} is in the target hex; a mortar's hit on a vehicle is not built (C3.332, C1.55; ruling R9.3)");
+                return (null, [$"play.ordnance-area-vehicle: {inHex.Id} is in the target hex; a mortar's hit on a vehicle is not built (C3.332, C1.55; ruling R9.3)"]);
             }
 
             if (state.Units.Any(unit => unit.Status == InstanceStatus.Active && state.Location(unit.Id)?.Location is { } other && other.Board == target.Board
                 && other.Hex == target.Hex && other != target))
             {
-                return Refused(scope, label, expected, "play.ordnance-area-levels: the target hex holds units in more than one Location, which the Area Target Type is not built for (C3.33; ruling R9.3)");
+                return (null, ["play.ordnance-area-levels: the target hex holds units in more than one Location, which the Area Target Type is not built for (C3.33; ruling R9.3)"]);
             }
         }
 
@@ -84,19 +120,19 @@ public sealed partial class GamePlanner
             && state.At(target).OfType<UnitInstance>().FirstOrDefault(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)
                 && (state.Phase != "mph" || state.Movement?.Movers.Contains(unit.Id) == true)) is { } vehicle)
         {
-            return Refused(scope, label, expected, $"play.ordnance-vehicle: {vehicle.Id} is in {target}; fire at it on the Vehicle Target Type by naming it, "
-                + "since a hit's attack on the Location's Infantry and vehicles together is not reviewed (C3.31; rulings R25.10, R7.2)");
+            return (null, [$"play.ordnance-vehicle: {vehicle.Id} is in {target}; fire at it on the Vehicle Target Type by naming it, "
+                + "since a hit's attack on the Location's Infantry and vehicles together is not reviewed (C3.31; rulings R25.10, R7.2)"]);
         }
 
         if (state.At(target).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && (Is(unit, Conditions.Melee) || Is(unit, Conditions.Captured))))
         {
-            return Refused(scope, label, expected, "play.fire-melee: fire at a Location holding units in Melee or prisoners is not reviewed (A11.15, A20.54)");
+            return (null, ["play.fire-melee: fire at a Location holding units in Melee or prisoners is not reviewed (A11.15, A20.54)"]);
         }
 
         var (map, mapReason) = OrdnanceMapFacts(state, shot, target);
         if (map is null)
         {
-            return Refused(scope, label, expected, mapReason!);
+            return (null, [mapReason!]);
         }
 
         // Backlog pass 16 (rulings R16.2, R16.3, R16.11 to R16.14): ordnance at a Gunflash beyond NVR is not built; the Low Visibility DRM is a Hindrance
@@ -104,7 +140,7 @@ public sealed partial class GamePlanner
         // Extreme Winter lowers the Gun's B#.
         if (map.Value.Shot.Hit is { BeyondNvr: true })
         {
-            return Refused(scope, label, expected, "play.night-ordnance: ordnance fire at a Gunflash beyond the firer's NVR is not built (E1.81; ruling R16.2)");
+            return (null, ["play.night-ordnance: ordnance fire at a Gunflash beyond the firer's NVR is not built (E1.81; ruling R16.2)"]);
         }
 
         if (map.Value.Shot.Hit is { } mapped)
@@ -128,17 +164,20 @@ public sealed partial class GamePlanner
         var precheck = ScenarioA1OrdnanceCalculator.Precheck(shot, reference);
         if (precheck.Count != 0)
         {
-            return Refused(scope, label, expected, RefusalReasons.Refusal("play.ordnance-refused", "Ordnance", "shot", precheck));
+            return (null, RefusalReasons.Refusal("play.ordnance-refused", "Ordnance", "shot", precheck));
         }
 
-        var facts = shot;
-        var facing = map.Value.Facing;
+        return ((shot, map.Value.Facing), null);
+    }
 
+    /// <summary>A shot's proposal in words: what fires at what, the range and terrain, any turn, and the To Hit number and DRM before any roll.</summary>
+    private static string OrdnanceSummary(OrdnanceShot facts, UnitFacing? facing)
+    {
         // The To Hit number and DRM before any roll, read from the package with dice that decide nothing else (a miss).
         var preview = ScenarioA1OrdnanceCalculator.Resolve(facts with
         {
             Rolls = new OrdnanceRolls([6, 6], null, null, null, null) { PanzerfaustCheck = 1 }
-        }, reference).ToHit;
+        }, OrdnanceReference.Value).ToHit;
         var toHit = preview is null ? string.Empty
             : $"; Modified TH# {preview.ModifiedToHit} ({preview.Color}), DRM {(preview.Drm.Count == 0 ? "none" : string.Join(", ", preview.Drm.Select(item =>
                 // C5.35 (pass 50): the lower dr is not known before the roll.
@@ -146,13 +185,6 @@ public sealed partial class GamePlanner
                 // D3.44, D3.45 (pass 55): the Armor Leader's line, or the Inexperienced Crew's, with its rule.
                 : ScenarioA1ArmorLeaders.IsModifier(item.Name) ? ScenarioA1ArmorLeaders.ModifierText((int)item.Value)
                 : $"{ScenarioA1OrdnanceEligibility.CaseWords(item.Name)} {item.Value:+0;-0}")))}";
-        IReadOnlyList<GameEvent> Build(Func<RollRequest, RollResult> draw)
-        {
-            var events = new List<GameEvent>();
-            AddOrdnanceEvents(scope, attemptId, expected, actor, state, facts, facing, events, draw);
-            return events;
-        }
-
         var aim = facts.Gun!.DefinitionId == OrdnanceTargetTypes.Panzerfaust && facts.VehicleTarget is { } faust
             ? $"a PF (after a PF Check) at {faust.VehicleId} in {facts.TargetLocationId} (hull {faust.HullFacing} facing the firer)"
             : facts.TargetType == OrdnanceTargetTypes.Area
@@ -167,14 +199,9 @@ public sealed partial class GamePlanner
         var depletion = ScenarioA1Definitions.DepletionWords(facts) is { } depletionWords
             ? $"; {facts.Ammunition!.ToUpperInvariant()} by its {depletionWords}: on an Original To Hit DR above it the Gun had none, has not fired, and has none for the rest of the scenario (C8.9)"
             : string.Empty;
-        return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-            [$"play.ordnance: {facts.Gun!.GunId} fires {aim} in the {facts.Phase}; range {facts.Range}, {facts.Hit!.TargetTerrain}"
-                + (facts.HexspinesToTurn > 0 ? $", turning {(facts.Vehicle is null ? string.Empty : "its turret ")}{facts.HexspinesToTurn} hexspine(s) to {facing!.Value.Name()}" : string.Empty)
-                + toHit + depletion])
-        {
-            Roll = new PlannedRoll("ordnance", Build),
-            FirstEventId = EventId(attemptId, 1),
-        };
+        return $"play.ordnance: {facts.Gun!.GunId} fires {aim} in the {facts.Phase}; range {facts.Range}, {facts.Hit!.TargetTerrain}"
+            + (facts.HexspinesToTurn > 0 ? $", turning {(facts.Vehicle is null ? string.Empty : "its turret ")}{facts.HexspinesToTurn} hexspine(s) to {facing!.Value.Name()}" : string.Empty)
+            + toHit + depletion;
     }
 
     /// <summary>
@@ -637,9 +664,11 @@ public sealed partial class GamePlanner
     /// <summary>
     /// Draws the rolls the package asks for, one at a time, and adds the shot's events: the dice, the ordnance record, the hit's effects
     /// on the target units, the Gun's malfunction, the fire markers of the Gun and its crew, and any surrender that follows.
+    /// <paramref name="owedShot"/> is the declared shot a Gun Duel's first shot owes its DEFENDER (C2.2401; pass 55): a shot that stops at a
+    /// choice carries it in its resume data, so the answer resolves the declared shot after it.
     /// </summary>
     private void AddOrdnanceEvents(GameScope scope, string attemptId, long expected, string actor, GameState state, OrdnanceShot facts, UnitFacing? facing,
-        List<GameEvent> events, Func<RollRequest, RollResult> draw, ResumedRolls? resumed = null)
+        List<GameEvent> events, Func<RollRequest, RollResult> draw, ResumedRolls? resumed = null, JsonElement? owedShot = null)
     {
         var reference = OrdnanceReference.Value;
         var package = ScenarioA1OrdnancePackage.Identity.ToString();
@@ -676,6 +705,11 @@ public sealed partial class GamePlanner
                 if (facing is { } turned)
                 {
                     resume["facing"] = UnitFacings.Name(turned);
+                }
+
+                if (owedShot is { } owed)
+                {
+                    resume[GunDuelOwed] = JsonNode.Parse(owed.GetRawText());
                 }
 
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "choice-pending", Pending(state, option["asl.a1.ordnance.choice-missing:".Length..], resume),

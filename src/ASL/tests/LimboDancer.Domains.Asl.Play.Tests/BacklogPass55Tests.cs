@@ -1414,4 +1414,387 @@ public sealed class BacklogPass55Tests : IDisposable
         Refused(await AttemptMotion(Once(1), facing: "west"), "only once");
         NoReplayErrors();
     }
+
+    // Task 55.7 (increment 2g): Gun Duels (C2.2401, pp. 167 and 168; rulings R55.19, R55.20).
+
+    private const string DuelHex = "bd01:J5:0";
+    private const string SecondDuelHex = "bd01:J6:0";
+
+    /// <summary>A Russian 45L AT Gun and its crew; from J5 or J6 a barrel to the south-west must turn one hexspine to cover column F.</summary>
+    private static Dictionary<string, object>[] RussianGun(string gun = "ru-gun", string crew = "ru-crew", string at = DuelHex, string facing = "south-west", bool concealed = false) =>
+    [
+        new()
+        {
+            ["id"] = crew,
+            ["kind"] = "asl:crew",
+            ["definition"] = "defender-crew",
+            ["side"] = "russian",
+            ["position"] = new
+            {
+                at
+            },
+            ["conditions"] = new Dictionary<string, bool> { ["asl:broken"] = false, ["asl:concealed"] = concealed, ["asl:hidden"] = false },
+        },
+        new()
+        {
+            ["id"] = gun,
+            ["kind"] = "asl:gun",
+            ["definition"] = "defender-at-gun",
+            ["side"] = "russian",
+            ["position"] = new Dictionary<string, string> { ["at"] = at, ["facing"] = facing },
+            ["holding"] = new
+            {
+                holder = crew,
+                role = "manned"
+            },
+            ["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false, ["asl:concealed"] = concealed },
+        },
+    ];
+
+    /// <summary>
+    /// The PzKpfw IIIH, BU, starts in E5 and enters a hex of column F, where the DEFENDER's window is open; returns that hex. Seen from its
+    /// start it fires with Case C (+4) and Case I (+1); begun out of LOS, with Case C2 (+6) and Case I.
+    /// </summary>
+    private async Task<string> TankComesOn(bool woods = true, bool seen = true, string? leader = null, bool fireFirst = false, params Dictionary<string, object>[] guns)
+    {
+        if (woods)
+        {
+            board.Terrain["J5"] = "Woods";
+            board.Terrain["J6"] = "Woods";
+        }
+
+        if (!seen)
+        {
+            los.Blind.Add("E5");
+        }
+
+        var entered = Beside("E5", 'F');
+        await Setup([Afv("de-tank", "attacker-tank", Start, "german", "east", leader), .. guns]);
+        await Advance();
+        Committed(await Drive("start"));
+        await PassFire();
+        if (fireFirst)
+        {
+            // A Bounding First Fire shot at the Gun that keeps its ROF (a colored dr of 1) and misses: the record uses, and reveals, an Armor Leader.
+            Committed(await FireMa("de-tank", DuelHex, null, 1, 6));
+        }
+
+        Committed(await Drive("enter", entered));
+        return entered;
+    }
+
+    private Task<PlayResult> DeclareShot(string entered, DiceRoller roller, string gun = "ru-gun") => Do(GameActions.FireOrdnance, roller,
+        new Dictionary<string, object> { ["gunId"] = gun, ["target"] = entered, ["targetVehicle"] = "de-tank", ["ammunition"] = "ap" });
+
+    private Task<PlayResult> Answer(string option, DiceRoller roller) => Do(GameActions.Choose, roller, new Dictionary<string, object> { ["key"] = Current.Choice!.Key, ["option"] = option });
+
+    private OrdnanceFired[] Shots(long before) => [.. Since(before).Select(item => item.Payload).OfType<OrdnanceFired>()];
+
+    private static bool IsDuelShot(OrdnanceFired shot) => shot.Facts.TryGetProperty("gunDuel", out var duel) && duel.ValueKind == JsonValueKind.True;
+
+    [Fact]
+    public async Task AShotDeclaredAtAMovingTankWithTheLowerGunDuelDrmWaitsForItsAnswer()
+    {
+        // C2.2401: the AT Gun in woods must turn one hexspine, Case A +3 doubled: +6. The tank, seen since its MPh began, would fire with Case C
+        // +4 and Case I +1: +5, the doubled lower dr of its Motion not counted. 5 < 6: the shot is declared, and no dice are rolled.
+        var entered = await TankComesOn(guns: RussianGun());
+        var before = Revision;
+        var declared = await DeclareShot(entered, NoRoll());
+        Committed(declared);
+        Assert.Contains(declared.Reasons, reason => reason.Contains("answer with a Gun Duel (C2.2401)", StringComparison.Ordinal) && reason.Contains("no dice are rolled", StringComparison.Ordinal));
+        Assert.Equal(["choice-pending"], Since(before).Select(item => item.Type));
+        var choice = Current.Choice!;
+        Assert.Equal((ChoicePending.GunDuel, "german"), (choice.Kind, choice.Side));
+        Assert.Equal([ChoicePending.Duel, ChoicePending.Decline], choice.Options);
+        Assert.Equal(5, choice.Resume.GetProperty("attacker").GetProperty("total").GetInt32());
+        Assert.Equal(6, choice.Resume.GetProperty("defender").GetProperty("total").GetInt32());
+        Assert.Equal(["case-c", "case-i"], choice.Resume.GetProperty("attacker").GetProperty("lines").EnumerateArray().Select(item => item.GetProperty("name").GetString()));
+        Assert.Equal(["case-a:1"], choice.Resume.GetProperty("defender").GetProperty("lines").EnumerateArray().Select(item => item.GetProperty("name").GetString()));
+        var shot = choice.Resume.GetProperty("shot");
+        Assert.Equal(("ru-gun", entered, "de-tank"), (shot.GetProperty("gunId").GetString(), shot.GetProperty("target").GetString(), shot.GetProperty("targetVehicle").GetString()));
+        Assert.False(shot.TryGetProperty("attemptId", out _));
+        Assert.False(choice.Resume.TryGetProperty("rolls", out _));
+        var asked = GamePlanner.DescribeChoice(choice);
+        Assert.Contains($"ru-gun in {DuelHex} has declared a shot at de-tank", asked, StringComparison.Ordinal);
+        Assert.Contains("de-tank +5 (Case C +4, Case I +1); ru-gun +6 (Case A +6)", asked, StringComparison.Ordinal);
+
+        // Nothing else happens until the ATTACKER answers; the Gun has not fired and has not turned.
+        Refused(await Do(GameActions.PassFire, NoRoll(), new { }), "play.choice-pending");
+        Assert.Empty(Current.OrdnanceShots);
+        Assert.Equal(UnitFacing.SouthWest, ((MapPosition)Current.Find("ru-gun")!.Position).Facing);
+        Assert.Null(Current.GunDuel);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ADeclinedGunDuelResolvesTheDeclaredShot()
+    {
+        var entered = await TankComesOn(guns: RussianGun());
+        Committed(await DeclareShot(entered, NoRoll()));
+        var before = Revision;
+        var answered = await Answer(ChoicePending.Decline, Once(5, 6));
+        Committed(answered);
+        Assert.Contains(answered.Reasons, reason => reason.Contains("declines the Gun Duel", StringComparison.Ordinal));
+        Assert.Equal("choice-made", Since(before)[0].Type);
+        var shot = Assert.Single(Shots(before));
+        Assert.Equal("ru-gun", shot.Gun);
+        Assert.Equal("first-fire", shot.Facts.GetProperty("fireKind").GetString());
+        Assert.False(IsDuelShot(shot));
+        Assert.Equal(6m, DrmOf(ToHitDrm(shot), "case-a"));
+        Assert.Null(Current.Choice);
+        Assert.Null(Current.GunDuel);
+        Assert.DoesNotContain(Current.VehicleWeaponShots, item => item.Vehicle == "de-tank");
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task InAGunDuelTheTankFiresFirstAndTheDeclaredShotFollows()
+    {
+        // The tank's MA misses (an Original 11), as Bounding First Fire while the window is open; the Gun then turns and fires its declared shot.
+        var entered = await TankComesOn(guns: RussianGun());
+        Committed(await DeclareShot(entered, NoRoll()));
+        var step = Current.Movement!.Step;
+        var before = Revision;
+        var answered = await Answer(ChoicePending.Duel, Once(5, 6, 5, 6));
+        Committed(answered);
+        Assert.Contains(answered.Reasons, reason => reason.Contains("declares a Gun Duel and fires its MA first", StringComparison.Ordinal));
+        var shots = Shots(before);
+        Assert.Equal(["de-tank", "ru-gun"], shots.Select(item => item.Gun));
+        Assert.True(IsDuelShot(shots[0]));
+        Assert.Equal("bounding-first-fire", shots[0].Facts.GetProperty("fireKind").GetString());
+        Assert.Equal(DuelHex, shots[0].Target.ToString());
+        Assert.Equal(4m, ExactDrm(ToHitDrm(shots[0]), "case-c"));
+        Assert.Equal(5m, ExactDrm(ToHitDrm(shots[0]), "case-c4:lower-dr"));
+        Assert.False(IsDuelShot(shots[1]));
+        Assert.Equal(6m, DrmOf(ToHitDrm(shots[1]), "case-a"));
+        Assert.DoesNotContain(Since(before), item => item.Payload is GunDuelVoided);
+
+        // The duel's shot is a Bounding First Fire shot for every later purpose: kept with this MP expenditure, under a Bounding Fire counter.
+        Assert.True(Current.Movement is { WindowOpen: true });
+        Assert.Contains(Current.VehicleWeaponShots, item => item.Vehicle == "de-tank" && item.Weapon == "ma" && item.Step == step);
+        Assert.True(Has("de-tank", Conditions.BoundingFire));
+        Assert.Equal(UnitFacing.West, ((MapPosition)Current.Find("ru-gun")!.Position).Facing);
+        Assert.Null(Current.Choice);
+        Assert.Null(Current.GunDuel);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AGunDuelsFirstShotThatBreaksTheCrewVoidsTheDeclaredShot()
+    {
+        // "voids the opponent's return shot by eliminating, breaking, stunning or shocking it": an Original 2 hits on a subsequent dr of 2
+        // (C3.6), and the hit's IFT DR gives the 2-2-7 crew a MC it fails. The Gun's shot is not made, and the Gun does not turn.
+        var entered = await TankComesOn(guns: RussianGun());
+        Committed(await DeclareShot(entered, NoRoll()));
+        var before = Revision;
+        Committed(await Answer(ChoicePending.Duel, Once(1, 1, 2, 3, 3, 5, 5)));
+        var shot = Assert.Single(Shots(before));
+        Assert.Equal("de-tank", shot.Gun);
+        Assert.True(IsDuelShot(shot));
+        Assert.True(shot.Resolution.GetProperty("toHit").GetProperty("hit").GetBoolean(), shot.Resolution.GetRawText());
+        Assert.True(Has("ru-crew", Conditions.Broken));
+        var voided = Assert.Single(Since(before).Select(item => item.Payload).OfType<GunDuelVoided>());
+        Assert.Equal(("ru-gun", "de-tank", "broken"), (voided.Firer, voided.Vehicle, voided.Cause));
+        Assert.Equal("gun-duel-voided", Since(before)[^1].Type);
+        Assert.Equal(UnitFacing.SouthWest, ((MapPosition)Current.Find("ru-gun")!.Position).Facing);
+        Assert.DoesNotContain(Current.OrdnanceShots, item => item.Gun == "ru-gun");
+        Assert.Null(Current.GunDuel);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AGunStackedWithInfantryIsOfferedNoDuelWhileTheTanksShotAtThemIsNotReviewed()
+    {
+        // The vehicle's potential shot is planned as the shot itself would be: a hit's attack on a Gun's crew stacked with other Infantry is
+        // not reviewed, so its MA cannot fire at that Location, and the declared shot resolves at once.
+        var entered = await TankComesOn(guns: [.. RussianGun(), Squad(DuelHex)]);
+        var before = Revision;
+        Committed(await DeclareShot(entered, Once(5, 6)));
+        Assert.Equal("ru-gun", Assert.Single(Shots(before)).Gun);
+        Assert.Null(Current.Choice);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AGunDuelsFirstShotThatStopsAtAChoiceStillOwesTheDeclaredShot()
+    {
+        // A squad mans the Gun (Case H +2 beside Case A +6). The hit's MC is passed on an Original 2, and Heat of Battle offers the squad's
+        // owner an option (ruling R5.8): the tank's shot waits for the Russian answer and carries the declared shot, which resolves in the
+        // answer's commit.
+        var gun = RussianGun();
+        gun[0]["kind"] = "asl:squad";
+        gun[0]["definition"] = "defender-squad";
+        var entered = await TankComesOn(guns: gun);
+        Committed(await DeclareShot(entered, NoRoll()));
+        Assert.Equal(8, Current.Choice!.Resume.GetProperty("defender").GetProperty("total").GetInt32());
+        var before = Revision;
+        Committed(await Answer(ChoicePending.Duel, Once(1, 1, 2, 3, 3, 1, 1, 3, 3)));
+        Assert.True(Current.Choice is not null, string.Join(" | ", Since(before).Select(item => item.Payload is DiceRolled dice ? $"{dice.Purpose} {string.Join(",", dice.Values)}" : item.Type)));
+        var waiting = Current.Choice!;
+        Assert.Equal((ChoicePending.BattleHardening, "russian"), (waiting.Kind, waiting.Side));
+        Assert.True(waiting.Resume.TryGetProperty("gunDuelOwed", out var owed));
+        Assert.Equal("ru-gun", owed.GetProperty("shot").GetProperty("gunId").GetString());
+        Assert.Empty(Shots(before));
+        Assert.True(Current.GunDuel is { Vehicle: "de-tank", Firer: "ru-gun", Fired: false });
+
+        Committed(await Do(GameActions.Choose, Once(5, 6), new Dictionary<string, object> { ["key"] = waiting.Key, ["option"] = ChoicePending.Decline }));
+        var shots = Shots(before);
+        Assert.Equal(["de-tank", "ru-gun"], shots.Select(item => item.Gun));
+        Assert.True(IsDuelShot(shots[0]));
+        Assert.Null(Current.Choice);
+        Assert.Null(Current.GunDuel);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ARecordThatNamesItselfADuelsFirstShotWithNoDuelDeclaredIsRefused()
+    {
+        // Once the DEFENDER has passed, the tank fires as Bounding First Fire; the same record with the Gun Duel fact answers no choice, and the
+        // projector refuses it. A record without the fact, as every record made before the pass, replays.
+        await TankComesOn(guns: RussianGun());
+        await PassFire();
+        Committed(await FireMa("de-tank", DuelHex, null, 5, 6));
+        var events = store.Read(Scope)!.Events;
+        Assert.False(Planner().Replay(events).HasErrors);
+        Assert.False(IsDuelShot(events.Select(item => item.Payload).OfType<OrdnanceFired>().Single()));
+        GameEvent[] forged = [.. events.Select(item =>
+        {
+            if (item.Payload is not OrdnanceFired fired)
+            {
+                return item;
+            }
+
+            var facts = System.Text.Json.Nodes.JsonNode.Parse(fired.Facts.GetRawText())!.AsObject();
+            facts["gunDuel"] = true;
+            return item with { Payload = fired with { Facts = JsonSerializer.SerializeToElement(facts) } };
+        })];
+        var replayed = Planner().Replay(forged);
+        Assert.True(replayed.HasErrors);
+        Assert.Contains(replayed.Diagnostics, diagnostic => diagnostic.Code == "UNIT-STATE-049");
+    }
+
+    [Fact]
+    public async Task AConcealedGunsShotIsNotDueled()
+    {
+        // "Vs a non-concealed ... DEFENDER's declared Defensive First Fire attack": the shot resolves at once, and nothing of the Gun is told.
+        var entered = await TankComesOn(guns: RussianGun(concealed: true));
+        var before = Revision;
+        Committed(await DeclareShot(entered, Once(5, 6)));
+        Assert.Equal("ru-gun", Assert.Single(Shots(before)).Gun);
+        Assert.Null(Current.Choice);
+        Assert.DoesNotContain(Since(before), item => item.Payload is ChoicePending);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task EqualOrHigherGunDuelDrmOfferNoDuel()
+    {
+        // Ruling R55.20: with equal totals the rule lets the Final DRs decide; that is not built, so the shot resolves. In the open the Gun
+        // turns three hexspines for Case A +5, against the tank's +5.
+        var entered = await TankComesOn(woods: false, guns: RussianGun(facing: "east"));
+        var before = Revision;
+        Committed(await DeclareShot(entered, Once(5, 6)));
+        var shot = Assert.Single(Shots(before));
+        Assert.Equal(5m, DrmOf(ToHitDrm(shot), "case-a"));
+        Assert.Null(Current.Choice);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AnUnrevealedArmorLeaderIsNotCountedAtTheDeclarationAndIsToldNowhere()
+    {
+        // D3.41, ruling R55.29: in the open the Gun turns three hexspines, Case A +5, against the tank's Case C +4 and Case I +1. Its 9-2 would
+        // make that +3, but no record has used him: the totals are equal, no duel is offered, and the shot resolves with no word of him.
+        var entered = await TankComesOn(woods: false, leader: "9-2", guns: RussianGun(facing: "east"));
+        Assert.False(LeaderOf("de-tank")!.Revealed);
+        var before = Revision;
+        var declared = await DeclareShot(entered, Once(5, 6));
+        Committed(declared);
+        Assert.Equal("ru-gun", Assert.Single(Shots(before)).Gun);
+        Assert.Null(Current.Choice);
+        Assert.DoesNotContain(Since(before), item => item.Payload is ChoicePending);
+        Assert.DoesNotContain(declared.Reasons, reason => reason.Contains("Armor Leader", StringComparison.OrdinalIgnoreCase) || reason.Contains("armor-leader", StringComparison.Ordinal)
+            || reason.Contains("Gun Duel", StringComparison.Ordinal));
+        Assert.All(Shots(before), shot => Assert.DoesNotContain("armor", shot.Facts.GetRawText() + shot.Resolution.GetRawText(), StringComparison.OrdinalIgnoreCase));
+        Assert.False(LeaderOf("de-tank")!.Revealed);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ARevealedArmorLeaderIsCountedInTheGunDuelDrm()
+    {
+        // The same game after the tank's own MA shot has used and revealed its 9-2 (D3.41): +3 against the Gun's +5, and the duel is offered.
+        var entered = await TankComesOn(woods: false, leader: "9-2", fireFirst: true, guns: RussianGun(facing: "east"));
+        Assert.True(LeaderOf("de-tank")!.Revealed);
+        Committed(await DeclareShot(entered, NoRoll()));
+        var choice = Current.Choice!;
+        Assert.Equal(ChoicePending.GunDuel, choice.Kind);
+        Assert.Equal(3, choice.Resume.GetProperty("attacker").GetProperty("total").GetInt32());
+        Assert.Equal(5, choice.Resume.GetProperty("defender").GetProperty("total").GetInt32());
+        Assert.Contains("armor-leader", choice.Resume.GetProperty("attacker").GetProperty("lines").EnumerateArray().Select(item => item.GetProperty("name").GetString()));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ATankWithTheHigherGunDuelDrmIsOfferedNoDuel()
+    {
+        // The tank began out of the Gun's LOS: Case C2 +6 and Case I +1 against the Gun's +6.
+        var entered = await TankComesOn(seen: false, guns: RussianGun());
+        var before = Revision;
+        Committed(await DeclareShot(entered, Once(5, 6)));
+        Assert.Equal("ru-gun", Assert.Single(Shots(before)).Gun);
+        Assert.Null(Current.Choice);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task NoSecondGunDuelIsOfferedAtTheSameMpExpenditure()
+    {
+        // Ruling R55.20: the tank keeps its ROF (a colored dr of 1), and a second Gun that must turn in woods declares its shot at the same MP
+        // expenditure: the tank's MA has fired at it (C5.3), so the shot resolves at once.
+        var entered = await TankComesOn(guns: [.. RussianGun(), .. RussianGun("ru-gun2", "ru-crew2", SecondDuelHex)]);
+        Committed(await DeclareShot(entered, NoRoll()));
+        Committed(await Answer(ChoicePending.Duel, Once(1, 6, 5, 6)));
+        Assert.Contains(Current.OrdnanceShots, item => item.Gun == "de-tank" && item.RateOfFireKept);
+        var before = Revision;
+        Committed(await DeclareShot(entered, Once(5, 6), "ru-gun2"));
+        Assert.Equal("ru-gun2", Assert.Single(Shots(before)).Gun);
+        Assert.Null(Current.Choice);
+
+        // After another MP expenditure a duel may be declared again: the first Gun is under its First Fire counter, the second turned.
+        await PassFire();
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AVehiclesDeclaredShotIsDueledOnTheVehicleTargetType()
+    {
+        // The DEFENDER's T-34 in woods turns its slow turret two hexspines: Case A +3 doubled, +6, and Case I +1: +7. The PzKpfw IIIH has an
+        // Armor Leader 9-2 no record has revealed, who is not counted (ruling R55.29): Case C +4, Case I +1: +5. It answers with AP at the T-34
+        // on the Vehicle Target Type, and that shot uses and reveals him.
+        board.Terrain["J5"] = "Woods";
+        var entered = Beside("E5", 'F');
+        await Setup(Afv("de-tank", "attacker-tank", Start, "german", "east", "9-2"), Afv("ru-tank", "defender-tank", DuelHex, "russian", "south-east"));
+        await Advance();
+        Committed(await Drive("start"));
+        await PassFire();
+        Committed(await Drive("enter", entered));
+        Committed(await Do(GameActions.FireOrdnance, NoRoll(), new Dictionary<string, object> { ["gunId"] = "ru-tank", ["target"] = entered, ["targetVehicle"] = "de-tank", ["ammunition"] = "ap" }));
+        var choice = Current.Choice!;
+        Assert.Equal(ChoicePending.GunDuel, choice.Kind);
+        Assert.Equal(5, choice.Resume.GetProperty("attacker").GetProperty("total").GetInt32());
+        Assert.Equal(7, choice.Resume.GetProperty("defender").GetProperty("total").GetInt32());
+        Assert.DoesNotContain("armor", choice.Resume.GetRawText(), StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Armor Leader", GamePlanner.DescribeChoice(choice), StringComparison.Ordinal);
+        var before = Revision;
+        Committed(await Answer(ChoicePending.Duel, Once(5, 6, 5, 6)));
+        Assert.Equal(-2m, ExactDrm(ToHitDrm(Shots(before)[0]), "armor-leader"));
+        Assert.True(LeaderOf("de-tank")!.Revealed);
+        var shots = Shots(before);
+        Assert.Equal(["de-tank", "ru-tank"], shots.Select(item => item.Gun));
+        Assert.Equal("ru-tank", shots[0].Facts.GetProperty("vehicleTarget").GetProperty("vehicleId").GetString());
+        Assert.Equal("ap", shots[0].Facts.GetProperty("ammunition").GetString());
+        Assert.True(IsDuelShot(shots[0]));
+        NoReplayErrors();
+    }
 }

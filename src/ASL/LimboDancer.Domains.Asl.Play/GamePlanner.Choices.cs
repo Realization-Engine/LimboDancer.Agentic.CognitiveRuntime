@@ -70,6 +70,12 @@ public sealed partial class GamePlanner
             return ScenarioA1InfantryOverrun.EvadeChoiceText(subject.Split(':')[0]);
         }
 
+        // C2.2401 (pass 55): the declared shot, both Gun Duel DRM, and the vehicle's option.
+        if (choice.Kind == ChoicePending.GunDuel)
+        {
+            return DescribeGunDuel(choice.Resume);
+        }
+
         return ScenarioA1SequenceCalculator.DescribeChoice(ChoiceKindOf(choice.Kind), subject, choice.Options);
     }
 
@@ -124,6 +130,12 @@ public sealed partial class GamePlanner
             {
                 Reasons = [summary, .. answer.Reasons]
             };
+        }
+
+        // C2.2401 (pass 55, ruling R55.19): the declared shot resolves, or the vehicle's MA fires first.
+        if (pending.Kind == ChoicePending.GunDuel)
+        {
+            return PlanGunDuelAnswer(scope, existing, attemptId, expected, label, actor, pending, made, option, summary);
         }
 
         var resume = pending.Resume;
@@ -192,6 +204,9 @@ public sealed partial class GamePlanner
                 default:
                     var shot = resume.GetProperty("facts").Deserialize<OrdnanceShot>(LiveFire.Json)!;
                     UnitFacing? facing = resume.TryGetProperty("facing", out var facingValue) && UnitFacings.TryParse(facingValue.GetString(), out var parsed) ? parsed : null;
+
+                    // C2.2401 (pass 55): a Gun Duel's first shot that stopped here still owes the DEFENDER its declared shot.
+                    JsonElement? owed = resume.TryGetProperty(GunDuelOwed, out var owedShot) && owedShot.ValueKind == JsonValueKind.Object ? owedShot : null;
                     AddOrdnanceEvents(scope, attemptId, expected, actor, answered, shot with
                     {
                         Hit = shot.Hit! with
@@ -199,7 +214,12 @@ public sealed partial class GamePlanner
                             Choices = With(shot.Hit.Choices)
                         }
                     }, facing, events, draw,
-                        resumed);
+                        resumed, owed);
+                    if (owed is { } declaredShot)
+                    {
+                        AddGunDuelReturnShot(scope, attemptId, expected, actor, existing, events, draw, declaredShot);
+                    }
+
                     break;
             }
 

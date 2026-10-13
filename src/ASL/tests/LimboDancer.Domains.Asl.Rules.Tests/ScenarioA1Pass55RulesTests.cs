@@ -1649,4 +1649,251 @@ public sealed class ScenarioA1Pass55RulesTests
         Assert.Equal(2.5m, halved.Arithmetic!.TotalFirepower);
         Assert.Contains(halved.Arithmetic.Firers.SelectMany(item => item.Multipliers), item => item.Name == "motion-fire" && item.Rule == "D2.42");
     }
+
+    // Task 55.7 (increment 2g): Gun Duels (C2.2401, pp. 167 and 168; rulings R55.19, R55.20).
+
+    /// <summary>
+    /// Every To Hit DRM name the Ordnance calculators give, with its class on the C5 and C6 charts (p. 189; C5.9's closing note, p. 173). A name
+    /// with a colon stands for every name of that head.
+    /// </summary>
+    private static readonly (string Name, ToHitDrmClass Class)[] ToHitDrmNames =
+    [
+        ("case-a:", ToHitDrmClass.FirerBased), ("case-a:maintained", ToHitDrmClass.FirerBased), ("case-b", ToHitDrmClass.FirerBased), ("case-c", ToHitDrmClass.FirerBased),
+        ("case-c1", ToHitDrmClass.FirerBased), ("case-c2", ToHitDrmClass.FirerBased), ("case-c3:afph", ToHitDrmClass.FirerBased),
+        ("case-c3:backblast", ToHitDrmClass.FirerBased), ("case-c4:lower-dr", ToHitDrmClass.LowerDrDoubled), ("case-d", ToHitDrmClass.FirerBased),
+        ("case-e", ToHitDrmClass.FirerBased), ("case-f", ToHitDrmClass.FirerBased), ("case-h", ToHitDrmClass.FirerBased), ("case-i", ToHitDrmClass.FirerBased),
+        ("cx", ToHitDrmClass.FirerBased), ("stun", ToHitDrmClass.FirerBased), ("spotted", ToHitDrmClass.FirerBased), ("overstack-firer", ToHitDrmClass.FirerBased),
+        ("leadership:", ToHitDrmClass.FirerBased), (ScenarioA1ArmorLeaders.LeaderModifier, ToHitDrmClass.FirerBased),
+        (ScenarioA1ArmorLeaders.InexperiencedModifier, ToHitDrmClass.FirerBased), ("case-n", ToHitDrmClass.Acquisition), ("case-j", ToHitDrmClass.TargetBased),
+        ("case-j1", ToHitDrmClass.TargetBased), ("case-j2", ToHitDrmClass.TargetBased), ("case-j3", ToHitDrmClass.TargetBased), ("case-j4", ToHitDrmClass.TargetBased),
+        ("case-k", ToHitDrmClass.TargetBased), ("case-l", ToHitDrmClass.TargetBased), ("case-m", ToHitDrmClass.TargetBased), ("case-o", ToHitDrmClass.TargetBased),
+        ("case-p:", ToHitDrmClass.TargetBased), ("case-q:", ToHitDrmClass.TargetBased), ("case-q:emplacement", ToHitDrmClass.TargetBased),
+        ("case-q:weather-cushion", ToHitDrmClass.TargetBased), ("case-q:afv-cover:", ToHitDrmClass.TargetBased), ("case-q:height-advantage", ToHitDrmClass.TargetBased),
+        ("case-r", ToHitDrmClass.TargetBased), ("case-r:lv", ToHitDrmClass.TargetBased), ("overstack-target", ToHitDrmClass.TargetBased),
+    ];
+
+    /// <summary>
+    /// The names the same calculators give to what is no To Hit DRM: the PF Check's drm (C13.31), a PF's range on its TH# (C13.33), and the To
+    /// Kill number's Case A for a rear hit (C7.21); its Cases C and D share their names with To Hit cases.
+    /// </summary>
+    private static readonly string[] NotToHitDrm = ["1945", "hs-or-crew", "smc", "pf-range", "case-a"];
+
+    /// <summary>The names a calculator's source gives its modifiers as literals: the text after <c>new FireModifier("</c>.</summary>
+    private static IEnumerable<string> ModifierNames(string file)
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "LimboDancer.Domains.Asl.Rules", file)))
+        {
+            directory = directory.Parent;
+        }
+
+        Assert.True(directory is not null, $"The Rules source '{file}' was not found above {AppContext.BaseDirectory}.");
+        const string Opening = "new FireModifier(\"";
+        var text = File.ReadAllText(Path.Combine(directory!.FullName, "LimboDancer.Domains.Asl.Rules", file));
+        for (var at = text.IndexOf(Opening, StringComparison.Ordinal); at >= 0; at = text.IndexOf(Opening, at + 1, StringComparison.Ordinal))
+        {
+            var start = at + Opening.Length;
+            yield return text[start..text.IndexOf('"', start)];
+        }
+    }
+
+    [Fact]
+    public void EveryToHitDrmNameIsFirerBasedAcquisitionOrTargetBased()
+    {
+        // C2.2401: "its total Firer-Based [5.] and Acquisition [6.5] TH DRM"; the doubled lower dr of Case C4 is left out by name.
+        foreach (var (name, expected) in ToHitDrmNames)
+        {
+            Assert.True(ScenarioA1GunDuels.Classify(name) == expected, name);
+            Assert.True(ScenarioA1GunDuels.Classify(name.EndsWith(':') ? name + "anything" : name) == expected, name);
+        }
+
+        Assert.Null(ScenarioA1GunDuels.Classify("a-new-drm"));
+
+        // A name a calculator gains later fails here until it is classified above (or named as no To Hit DRM).
+        var listed = ToHitDrmNames.Select(item => item.Name).ToHashSet(StringComparer.Ordinal);
+        var given = new[] { "ScenarioA1OrdnanceCalculator.cs", "ScenarioA1ArmorCalculator.cs", "ScenarioA1AreaCalculator.cs" }.SelectMany(ModifierNames)
+            .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
+        Assert.True(given.Length >= 30, string.Join(", ", given));
+        Assert.Empty(given.Where(name => !listed.Contains(name) && !NotToHitDrm.Contains(name)));
+        Assert.All(given.Except(NotToHitDrm), name => Assert.NotNull(ScenarioA1GunDuels.Classify(name)));
+    }
+
+    /// <summary>The Russian 45L AT Gun's Defensive First Fire shot, AP at the moving PzKpfw IIIH at 4 hexes: the declared shot.</summary>
+    private static OrdnanceShot DeclaredShot(int turn = 1, bool woods = true, bool concealed = false, int acquisition = 0) =>
+        new OrdnanceShot("MPh", "non-phasing", "russian", new OrdnanceGun("ru-gun", "defender-at-gun", false, 0, false, false),
+            new OrdnanceCrew("ru-crew", "defender-crew", false, false, false, concealed, false), At, 4, turn, woods, true, acquisition,
+            new FireAttack("MPh", "non-phasing", null, null, At, [], null, null, true, new FireLos(false, 0, true, false), 7, "open-ground", [], 3, null),
+            new OrdnanceRolls(null, null, null, null, null))
+        {
+            VehicleTarget = new OrdnanceVehicleTarget("de-tank", "attacker-tank", "front", "front", false, false, false, false, true),
+            Ammunition = "ap",
+            ScenarioYear = 1942,
+            FireKind = "first-fire",
+            Movement = new OrdnanceMovement(5, null, null, 1, 0),
+        };
+
+    /// <summary>The PzKpfw IIIH's potential answer: its MA's Bounding First Fire, HE at the Gun's crew in woods at 4 hexes.</summary>
+    private static OrdnanceShot AnswerShot(int mpInLos = 99, int turn = 0, bool buttonedUp = true, bool inMotion = true, int? leadership = null, string? ammunition = null) =>
+        new OrdnanceShot("MPh", "phasing", "german", new OrdnanceGun("de-tank", "attacker-tank", false, 0, false, false),
+            new OrdnanceCrew("de-tank", "attacker-tank", false, false, false, false, false), "bd01:H3:0", 4, turn, false, true, 0,
+            new FireAttack("MPh", "phasing", null, null, "bd01:H3:0", [], null, null, true, new FireLos(false, 0, true, false), 7, "woods",
+                [new FireTarget("ru-crew", "defender-crew", "bd01:H3:0", false, false, false, false, false, false, false) { KnownEnemyInLos = true, Captors = [] }], 2, null),
+            new OrdnanceRolls(null, null, null, null, null))
+        {
+            Vehicle = new OrdnanceVehicleFirer(buttonedUp, inMotion, false, false, false) { MpInLos = mpInLos, ArmorLeadership = leadership },
+            FireKind = ScenarioA1FireCalculator.BoundingFirstFire,
+            Ammunition = ammunition,
+            GunDuel = true,
+        };
+
+    private static readonly GunDuelFacts Duelable = new(true, false, false, false, false);
+
+    private static GunDuelVerdict Duel(GunDuelFacts? facts = null, OrdnanceShot? declared = null, OrdnanceShot? answer = null, bool noAnswer = false) =>
+        ScenarioA1GunDuels.Verdict(facts ?? Duelable, declared ?? DeclaredShot(), () => noAnswer ? null : answer ?? AnswerShot(), Ordnance);
+
+    [Fact]
+    public void TheGunDuelDrmIsTheFirerBasedAndAcquisitionDrmOfTheShotItself()
+    {
+        // The declared shot is accepted and resolves with Case A +6 and Case J +2: the firer's line alone is its Gun Duel DRM.
+        var declared = DeclaredShot();
+        Assert.Equal(["asl.a1.ordnance.roll-missing:toHit"], Resolve(declared).Reasons);
+        var rolled = Resolve(declared with { Rolls = new OrdnanceRolls([6, 6], null, null, null, null) }).ToHit!;
+        Assert.Equal(["case-a:1", "case-j"], rolled.Drm.Select(item => item.Name));
+        var gun = ScenarioA1GunDuels.Drm(declared, Ordnance)!;
+        Assert.Equal((6, "case-a:1"), (gun.Total, Assert.Single(gun.Lines).Name));
+
+        // C6.5: the Acquisition counts; nothing of the target does.
+        var acquired = ScenarioA1GunDuels.Drm(DeclaredShot(turn: 0, acquisition: -2), Ordnance)!;
+        Assert.Equal((-2, "case-n"), (acquired.Total, Assert.Single(acquired.Lines).Name));
+        Assert.Equal(0, ScenarioA1GunDuels.Drm(DeclaredShot(turn: 0), Ordnance)!.Total);
+
+        // C2.2401: "nor the doubling of the lower dr ... in TH Case C4 (5.35) is included": the Motion firer's shot resolves with it, and its
+        // Gun Duel DRM is Case C and Case I alone.
+        var answer = AnswerShot();
+        Assert.Equal(["asl.a1.ordnance.roll-missing:toHit"], Resolve(answer).Reasons);
+        Assert.Contains(Resolve(answer with { Rolls = new OrdnanceRolls([6, 6], null, null, null, null) }).ToHit!.Drm, item => item.Name == "case-c4:lower-dr" && item.Value == 6);
+        var tank = ScenarioA1GunDuels.Drm(answer, Ordnance)!;
+        Assert.Equal(5, tank.Total);
+        Assert.Equal(["case-c", "case-i"], tank.Lines.Select(item => item.Name));
+        Assert.Equal(tank.Total, ScenarioA1GunDuels.Drm(AnswerShot(inMotion: false), Ordnance)!.Total);
+
+        // D3.44: an Armor Leader's modifier is the firer's; C5.31, C5.32: so are Case C1 and Case C2.
+        Assert.Equal(4, ScenarioA1GunDuels.Drm(AnswerShot(leadership: -1), Ordnance)!.Total);
+        Assert.Equal(6, ScenarioA1GunDuels.Drm(AnswerShot(leadership: 1), Ordnance)!.Total);
+        Assert.Equal(6, ScenarioA1GunDuels.Drm(AnswerShot(mpInLos: 3), Ordnance)!.Total);
+        Assert.Equal(7, ScenarioA1GunDuels.Drm(AnswerShot(mpInLos: 1), Ordnance)!.Total);
+        Assert.Equal("+5 (Case C +4, Case I +1)", ScenarioA1GunDuels.DrmText(tank));
+        Assert.Equal("+4 (Case C +4, Case I +1, Armor Leader -1)", ScenarioA1GunDuels.DrmText(ScenarioA1GunDuels.Drm(AnswerShot(leadership: -1), Ordnance)!));
+        Assert.Equal("+0", ScenarioA1GunDuels.DrmText(new GunDuelDrm(0, [])));
+    }
+
+    [Fact]
+    public void TheRulesOwnGunDuelIsEqualAndIsNotOfferedInTheSlice()
+    {
+        // The C2.2401 EX (p. 168): the CE PSW 234/2 has spent 1/2 MP in the AT Gun's LOS and "must use TH Case C4 (+6) for a total Firer-Based
+        // TH DRM of +6" (Case C2 for its turret, the doubled lower dr not counted); the AT Gun "must use Case A for a +6 Firer-Based TH DRM
+        // (+3 [NT Gun] x 2 [firer in woods] = +6)". Equal: ruling R55.20 leaves that case out, so no duel is offered and both totals are told.
+        var equal = Duel(answer: AnswerShot(mpInLos: 0, buttonedUp: false));
+        Assert.Equal((ScenarioA1GunDuels.NotLower, 6, 6, false), (equal.Bar, equal.Attacker!.Total, equal.Defender!.Total, equal.Offered));
+        Assert.Equal("case-c2", Assert.Single(equal.Attacker.Lines).Name);
+
+        // A Gun that turns two hexspines in its woods pays (3 + 1) x 2 = +8: the PSW's +6 is lower, and it may fire first.
+        var offered = Duel(declared: DeclaredShot(turn: 2), answer: AnswerShot(mpInLos: 0, buttonedUp: false));
+        Assert.Equal((null, 6, 8, true), (offered.Bar, offered.Attacker!.Total, offered.Defender!.Total, offered.Offered));
+
+        // A vehicle with the higher total is offered none.
+        Assert.Equal(ScenarioA1GunDuels.NotLower, Duel(answer: AnswerShot(mpInLos: 1)).Bar);
+    }
+
+    [Fact]
+    public void AGunDuelIsBarredByEachConditionOfTheRule()
+    {
+        var offered = Duel();
+        Assert.Equal((null, 5, 6), (offered.Bar, offered.Attacker!.Total, offered.Defender!.Total));
+
+        // "Vs a non-concealed ... DEFENDER's declared Defensive First Fire attack on it": the Gun, its crew, or the shot's kind and target.
+        Assert.Equal(ScenarioA1GunDuels.Concealed, Duel(Duelable with { FirerConcealed = true }).Bar);
+        Assert.Equal(ScenarioA1GunDuels.Concealed, Duel(declared: DeclaredShot(concealed: true)).Bar);
+        Assert.Equal(ScenarioA1GunDuels.NotDefensiveFirstFire, Duel(Duelable with { AtTheMovingVehicle = false }).Bar);
+        Assert.Equal(ScenarioA1GunDuels.NotDefensiveFirstFire, Duel(declared: DeclaredShot() with { FireKind = null, Phase = "DFPh" }).Bar);
+        Assert.Equal(ScenarioA1GunDuels.NotDefensiveFirstFire, Duel(declared: DeclaredShot() with { VehicleTarget = null }).Bar);
+
+        // "is not conducting an OVR (D7.1) ... and the DEFENDER's attack is not Reaction Fire (D7.2)".
+        Assert.Equal(ScenarioA1GunDuels.Overrunning, Duel(Duelable with { Overrun = true }).Bar);
+        Assert.Equal(ScenarioA1GunDuels.Reaction, Duel(Duelable with { ReactionFire = true }).Bar);
+
+        // Ruling R55.20: ordnance that is a Gun's or a vehicle's MA; no second duel at an MP expenditure (C5.3).
+        Assert.Equal(ScenarioA1GunDuels.NotOrdnance, Duel(declared: DeclaredShot() with { Gun = DeclaredShot().Gun! with { DefinitionId = "british-atr" } }).Bar);
+        Assert.Equal(ScenarioA1GunDuels.NotOrdnance, Duel(declared: DeclaredShot() with { Gun = DeclaredShot().Gun! with { DefinitionId = OrdnanceTargetTypes.Panzerfaust } }).Bar);
+        Assert.Equal(ScenarioA1GunDuels.AlreadyFired, Duel(Duelable with { Dueled = true }).Bar);
+
+        // "may attempt to Bounding First Fire (D3.3) its MA ... provided the vehicle need not change CA": a MA that cannot fire, a shot that is
+        // no Bounding First Fire, a turret to turn, and (ruling R55.20) an ammunition other than the default.
+        Assert.Equal(ScenarioA1GunDuels.NoShot, Duel(noAnswer: true).Bar);
+        Assert.Equal(ScenarioA1GunDuels.NoShot, Duel(answer: AnswerShot() with { FireKind = null }).Bar);
+        Assert.Equal(ScenarioA1GunDuels.NoShot, Duel(answer: AnswerShot() with { Vehicle = null }).Bar);
+        Assert.Equal(ScenarioA1GunDuels.CaChange, Duel(answer: AnswerShot(turn: 1)).Bar);
+        Assert.Equal(ScenarioA1GunDuels.SpecialAmmunition, Duel(answer: AnswerShot(ammunition: "he")).Bar);
+
+        // D3.41, ruling R55.29: an Armor Leader no record has revealed is not counted at the declaration, and his line is in neither total; a
+        // revealed one counts, and so does an Inexperienced Crew's +1, which is public. With 3 MP in LOS the tank pays Case C1 +5 and Case I +1.
+        var led = AnswerShot(mpInLos: 3, leadership: -2);
+        var revealed = Duel(answer: led);
+        Assert.Equal((null, 4, 6), (revealed.Bar, revealed.Attacker!.Total, revealed.Defender!.Total));
+        Assert.Contains(revealed.Attacker.Lines, line => line.Name == ScenarioA1ArmorLeaders.LeaderModifier);
+        var hidden = Duel(Duelable with { UnrevealedArmorLeader = true }, answer: led);
+        Assert.Equal((ScenarioA1GunDuels.NotLower, 6, 6), (hidden.Bar, hidden.Attacker!.Total, hidden.Defender!.Total));
+        Assert.DoesNotContain(hidden.Attacker.Lines, line => ScenarioA1ArmorLeaders.IsModifier(line.Name));
+        Assert.DoesNotContain("Armor Leader", ScenarioA1GunDuels.DrmText(hidden.Attacker), StringComparison.Ordinal);
+        var inexperienced = Duel(Duelable with { UnrevealedArmorLeader = true }, declared: DeclaredShot(turn: 3), answer: AnswerShot(leadership: 1));
+        Assert.Equal((null, 6, 10), (inexperienced.Bar, inexperienced.Attacker!.Total, inexperienced.Defender!.Total));
+        Assert.Contains(inexperienced.Attacker.Lines, line => line.Name == ScenarioA1ArmorLeaders.InexperiencedModifier);
+
+        // The vehicle's potential shot is read only for a shot that can be dueled.
+        var asked = 0;
+        Assert.Equal(ScenarioA1GunDuels.Concealed, ScenarioA1GunDuels.Verdict(Duelable with { FirerConcealed = true }, DeclaredShot(), () =>
+        {
+            asked++;
+            return AnswerShot();
+        }, Ordnance).Bar);
+        Assert.Equal(0, asked);
+    }
+
+    [Fact]
+    public void AGunDuelIsWordedAndItsRecordsAreHeldToTheChoice()
+    {
+        var verdict = Duel();
+        Assert.Equal("r1 in bd03:H10:0 has declared a shot at g1. Gun Duel DRM: g1 +5 (Case C +4, Case I +1); r1 +6 (Case A +6). g1 may fire its MA first (C2.2401)",
+            ScenarioA1GunDuels.ChoiceText("r1", "bd03:H10:0", "g1", verdict.Attacker!, verdict.Defender!));
+        Assert.Equal("play.gun-duel: declaring this shot lets g1 answer with a Gun Duel (C2.2401): its Gun Duel DRM +5 (Case C +4, Case I +1) is lower than r1's +6 (Case A +6); "
+            + "no dice are rolled until it answers", ScenarioA1GunDuels.ProposalText("g1", "r1", verdict.Attacker!, verdict.Defender!));
+        Assert.Contains("fires its MA first at r1", ScenarioA1GunDuels.AnswerText(ScenarioA1GunDuels.Duel, "g1", "r1"), StringComparison.Ordinal);
+        Assert.Contains("declines the Gun Duel", ScenarioA1GunDuels.AnswerText(ScenarioA1GunDuels.Decline, "g1", "r1"), StringComparison.Ordinal);
+        Assert.Equal("r1 in bd03:H10:0 declares a shot at g1, which may fire its MA first in a Gun Duel (C2.2401)", ScenarioA1GunDuels.DeclarationText("r1", " in bd03:H10:0", "g1"));
+
+        // "voids the opponent's return shot by eliminating, breaking, stunning or shocking it", in that order of telling.
+        Assert.Equal(ScenarioA1GunDuels.Eliminated, ScenarioA1GunDuels.VoidCause(true, true, false, false, true));
+        Assert.Equal(ScenarioA1GunDuels.Broken, ScenarioA1GunDuels.VoidCause(false, true, false, false, false));
+        Assert.Equal(ScenarioA1GunDuels.Stunned, ScenarioA1GunDuels.VoidCause(false, false, true, true, false));
+        Assert.Equal(ScenarioA1GunDuels.Shocked, ScenarioA1GunDuels.VoidCause(false, false, false, true, false));
+        Assert.Equal(ScenarioA1GunDuels.GunOut, ScenarioA1GunDuels.VoidCause(false, false, false, false, true));
+        Assert.Equal(ScenarioA1GunDuels.Other, ScenarioA1GunDuels.VoidCause(false, false, false, false, false));
+        Assert.Equal("the return shot of r1 is void: its crew is broken (C2.2401)", ScenarioA1GunDuels.VoidText("r1", ScenarioA1GunDuels.Broken));
+
+        // A record that names itself a duel's first shot answers the choice; a record made before the pass names none and is never refused.
+        Assert.Null(ScenarioA1GunDuels.ShotRecordRefusal(false, false));
+        Assert.Null(ScenarioA1GunDuels.ShotRecordRefusal(false, true));
+        Assert.Null(ScenarioA1GunDuels.ShotRecordRefusal(true, true));
+        Assert.Equal("UNIT-STATE-049", ScenarioA1GunDuels.ShotRecordRefusal(true, false)!.Code);
+        Assert.Null(ScenarioA1GunDuels.VoidRecordRefusal(true, true));
+        Assert.NotNull(ScenarioA1GunDuels.VoidRecordRefusal(false, true));
+        Assert.NotNull(ScenarioA1GunDuels.VoidRecordRefusal(true, false));
+
+        // D3.3, C2.2401: the duel's shot alone is made while the DEFENDER's window is open.
+        var open = new BoundingFireFacts("mph", true, true, true, true, true, false);
+        Assert.False(ScenarioA1FireEligibility.MayBoundingFire(open));
+        Assert.True(ScenarioA1FireEligibility.MayBoundingFire(open with { GunDuel = true }));
+        Assert.False(ScenarioA1FireEligibility.MayBoundingFire(open with { GunDuel = true, AmongMovers = false }));
+        Assert.False(ScenarioA1FireEligibility.MayBoundingFire(open with { GunDuel = true, Phase = "afph" }));
+    }
 }

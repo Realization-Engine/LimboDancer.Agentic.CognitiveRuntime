@@ -202,6 +202,10 @@ public sealed class GameActionExecutor(ActionDescriptor descriptor, GamePlanner 
             // A10.62 (ruling R13.1): the DM an action gives broken units follows its own effect.
             && !(item.Payload is ConditionsChanged dm && dm.Conditions.Keys.All(key => key == Conditions.DesperationMorale)))?.Payload switch
         {
+            // A shot declared against a moving vehicle that may answer with a Gun Duel (C2.2401; pass 55): the game waits for the ATTACKER's answer to it.
+            null when plan.Events.Any(item => item.Payload is ChoicePending { Kind: ChoicePending.GunDuel }) =>
+                state.Choice is { Kind: ChoicePending.GunDuel } declared && plan.Events.Any(item => item.EventId == declared.Event),
+
             // A Starshell attempt (E1.92; ruling R16.8): its hex has made its attempt this phase.
             StarshellFired starshell => state.StarshellAttempts.Contains(starshell.From.ToString(), StringComparer.Ordinal),
 

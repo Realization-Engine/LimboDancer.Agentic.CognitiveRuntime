@@ -243,6 +243,115 @@ public sealed class PlayPageVehicleTests : IDisposable
         Assert.Single(page.FindAll("#propose-pass"));
     }
 
+    /// <summary>
+    /// The facing, one hexspine clockwise of the bearing from one ADJACENT hex to the other, whose Covered Arc has the second hex on its edge
+    /// (C3.2), read from the grid as the planner reads a bearing: flat-topped hexes in columns, the odd columns half a hex higher.
+    /// </summary>
+    private string FacingToward(string from, string to)
+    {
+        var handle = new StudioBoardCatalog(boards).TryGetBoard(FakeBoardProvider.Board.Ref).Board!;
+        (double X, double Y) Center(string location)
+        {
+            Assert.True(handle.Geometry.TryGetIndex(BoardLocation.Parse(location).Hex, out var hex));
+            return (1.5 * hex.Column, Math.Sqrt(3) * (hex.Row - (0.5 * (hex.Column % 2))));
+        }
+
+        var (one, two) = (Center(from), Center(to));
+        var bearing = Math.Atan2(-(two.Y - one.Y), two.X - one.X) * 180 / Math.PI;
+        var hexspine = ((((int)Math.Round((bearing - 30) / 60) * 60) % 360) + 360) % 360;
+        return hexspine switch
+        {
+            0 => "east",
+            60 => "north-east",
+            120 => "north-west",
+            180 => "west",
+            240 => "south-west",
+            _ => "south-east",
+        };
+    }
+
+    [Fact]
+    public void AShotDeclaredAtAMovingTankOffersItsSideAGunDuel()
+    {
+        // Pass 55 (C2.2401; rulings R55.19, R55.20, R55.29): the AT Gun in the open, manned by a squad and turned away from the ADJACENT tank,
+        // must turn two hexspines: Case A +4 and Case H +2. The PzKpfw IIIH that has just spent its Start MP would fire with Case C +4 and
+        // Case I +1; its Armor Leader 9-2 is not yet revealed (D3.41), so he is not counted and his line is shown nowhere. The Russian shot is
+        // declared and not rolled; the German view is offered the duel, and its answer resolves both shots in order.
+        var (west, east) = Hexes();
+        var facing = FacingToward(west, east);
+        var page = context.Render<PlayPage>();
+        MinimalCards.Choose(page, new Dictionary<string, string> { ["board"] = Board, ["first"] = "german", ["second"] = "russian", ["first-elr"] = "3", ["second-elr"] = "3", ["year"] = "1942" });
+        page.Find("#place-definition").Change("attacker-tank");
+        page.Find("#place-armor-leader").Change("9-2");
+        Place(page, "de-tank", "attacker-tank", west, facing);
+        page.Find("#place-definition").Change("defender-squad");
+        page.Find("#place-id").Change("ru-crew");
+        page.Find("#place-location").Change(east);
+        page.Find("#place-add").Click();
+        page.Find("#place-definition").Change("defender-at-gun");
+        page.Find("#place-id").Change("ru-gun");
+        page.Find("#place-location").Change(east);
+        page.Find("#place-holder").Change("ru-crew");
+        page.Find("#place-facing").Change(facing);
+        page.Find("#place-add").Click();
+        Commit(page, "#propose-setup");
+        page.EndPhase(Commit);
+        page.EndPhase(Commit);
+        page.Find("#vehicle-unit").Change("de-tank");
+        Commit(page, "#vehicle-start");
+
+        // The DEFENDER declares: the proposal says what the commit will be, and no dice are drawn.
+        page.ViewAs("russian");
+        page.Find("#ordnance-gun").Change("ru-gun");
+        page.Find("#ordnance-target").Change(west);
+        page.Find("#ordnance-vehicle").Change("de-tank");
+        page.Find("#propose-ordnance").Click();
+        page.WaitForAssertion(() => Assert.True(page.Find("#play-outcome").TextContent.Contains("Confirm to commit", StringComparison.Ordinal), page.Find("#play-proposal").TextContent));
+        Assert.Contains("answer with a Gun Duel (C2.2401)", page.Find("#play-proposal").TextContent, StringComparison.Ordinal);
+        Assert.Contains("no dice are rolled until it answers", page.Find("#play-proposal").TextContent, StringComparison.Ordinal);
+        Assert.DoesNotContain("Armor Leader", page.Find("#play-proposal").TextContent, StringComparison.Ordinal);
+        page.Find("#play-confirm").Click();
+        page.WaitForAssertion(() => Assert.Contains("Committed", page.Find("#play-outcome").TextContent, StringComparison.Ordinal));
+        var history = live.History("village")!;
+        Assert.False(history.HasErrors);
+        Assert.Empty(history.Events.Select(item => item.Payload).OfType<OrdnanceFired>());
+        Assert.Equal(ChoicePending.GunDuel, history.Current!.Choice!.Kind);
+
+        // The Russian view reads that its shot waits for the German answer, with both Gun Duel DRM.
+        var waiting = page.Find("#play-choice");
+        Assert.StartsWith("gun-duel:ru-gun:de-tank:", waiting.GetAttribute("data-key"), StringComparison.Ordinal);
+        Assert.Contains("has declared a shot at", waiting.TextContent, StringComparison.Ordinal);
+        Assert.Contains("+5 (Case C +4, Case I +1)", waiting.TextContent, StringComparison.Ordinal);
+        Assert.Contains("+6 (Case A +4, Case H +2)", waiting.TextContent, StringComparison.Ordinal);
+        Assert.DoesNotContain("Armor Leader", waiting.TextContent, StringComparison.Ordinal);
+        Assert.Contains("may fire its MA first (C2.2401)", waiting.TextContent, StringComparison.Ordinal);
+        Assert.Empty(page.FindAll("#play-choice .choose"));
+        Assert.Contains("Waiting for the German side", waiting.TextContent, StringComparison.Ordinal);
+
+        // The German view answers.
+        page.ViewAs("german");
+        Assert.Contains("which may fire its MA first in a Gun Duel (C2.2401)", page.Markup, StringComparison.Ordinal);
+        var options = page.FindAll("#play-choice .choose");
+        Assert.Equal(["duel", "decline"], options.Select(item => item.GetAttribute("data-option")));
+        Assert.Equal(["Propose: fire first (Gun Duel)", "Propose: decline: the declared shot resolves"], options.Select(item => item.TextContent.Trim()));
+        dice.Enqueue([5, 6, 5, 6]);
+        Commit(page, "#play-choice .choose[data-option='duel']");
+        Assert.Empty(page.FindAll("#play-choice"));
+
+        // What the page sent, read from the committed game: the tank's shot, named a Gun Duel's first, then the Gun's.
+        history = live.History("village")!;
+        Assert.False(history.HasErrors);
+        var shots = history.Events.Select(item => item.Payload).OfType<OrdnanceFired>().ToArray();
+        Assert.Equal(["de-tank", "ru-gun"], shots.Select(item => item.Gun));
+        Assert.True(shots[0].Facts.GetProperty("gunDuel").GetBoolean());
+        Assert.False(shots[1].Facts.TryGetProperty("gunDuel", out _));
+        Assert.Null(history.Current!.GunDuel);
+        page.ViewAs(Perspective.AdjudicatorName);
+        var records = page.FindAll("#play-ordnance .ordnance-record").Select(item => item.TextContent).ToArray();
+        Assert.Contains(records, record => record.Contains(", first in a Gun Duel (C2.2401)", StringComparison.Ordinal));
+        Assert.Contains(records, record => record.Contains("which may fire its MA first in a Gun Duel (C2.2401)", StringComparison.Ordinal));
+    }
+
     [Fact]
     public void TheMovingHalftrackOffersBoundingFirstFireOnceTheDefenderPasses()
     {

@@ -264,7 +264,11 @@ public static class ReplaySteps
             var hit = ordnance.Resolution.Deserialize<OrdnanceResolution>(LiveFire.Json)?.ToHit;
             var outcome = hit is null ? string.Empty : hit.CriticalHit ? ": Critical Hit" : hit.Hit ? ": hit" : ": miss";
             var owner = SideOf(ordnance.Crew);
-            return ("fire", owner, $"{(owner is null ? "Ordnance" : $"{DisplayText.Side(owner)} ordnance")} fires at {Place(before, ordnance.Target)}{outcome}{end}", false);
+
+            // C2.2401 (pass 55): a Gun Duel's first shot, and whether it voided the declared shot it answered.
+            var duel = ordnance.Facts.ValueKind == JsonValueKind.Object && ordnance.Facts.TryGetProperty("gunDuel", out var duelFact) && duelFact.ValueKind == JsonValueKind.True;
+            var voided = First<GunDuelVoided>(payloads) is not null ? "; the return shot is void" : string.Empty;
+            return ("fire", owner, $"{(owner is null ? "Ordnance" : $"{DisplayText.Side(owner)} ordnance")} fires{(duel ? " first in a Gun Duel" : string.Empty)} at {Place(before, ordnance.Target)}{outcome}{voided}{end}", false);
         }
 
         if (First<CloseCombatResolved>(payloads) is { } combat)
@@ -414,6 +418,12 @@ public static class ReplaySteps
 
         if (First<ChoicePending>(payloads) is { } waiting)
         {
+            // C2.2401 (pass 55): the DEFENDER's shot is declared and not yet rolled.
+            if (waiting.Kind == ChoicePending.GunDuel)
+            {
+                return ("fire", defender, $"A shot is declared, and the {DisplayText.Side(waiting.Side)} side may answer with a Gun Duel", false);
+            }
+
             return ("other", null, $"A choice waits for the {DisplayText.Side(waiting.Side)} side", false);
         }
 

@@ -169,6 +169,7 @@ public static class GameProjector
                 PrisonersMassacred massacre => Massacre(previous, massacre),
                 ChoicePending pending => PendChoice(previous, pending, gameEvent.EventId),
                 ChoiceMade made => MakeChoice(previous, made),
+                GunDuelVoided voided => VoidReturnShot(previous, voided),
                 AcquisitionChanged acquisition => ChangeAcquisition(previous, acquisition),
                 BuildingMoppedUp mopped => MopUp(previous, mopped),
                 _ => Fail<GameState>("UNIT-STATE-001", $"'{gameEvent.Type}' has no projection."),
@@ -599,6 +600,7 @@ public static class GameProjector
                     OrdnanceShotsHere = [],
                     GunsTurnedThisPhase = [],
                     MotionAttempts = [],
+                    GunDuel = null,
                     SmokeAttempts = [],
                     PortagedThisPhase = [],
                     InfantryOverrunNtcs = [],
@@ -1145,6 +1147,15 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-033", "A Gun fires in a fire phase, manned by its crew, and again only on a kept Multiple ROF (C2.24).");
             }
 
+            // C2.2401 (pass 55, ruling R55.19): a record that names itself a Gun Duel's first shot is the answer to the choice made for its vehicle
+            // at this MP expenditure. A record made before the pass names none.
+            var duelShot = fired.Facts.TryGetProperty("gunDuel", out var duelFact) && duelFact.ValueKind == JsonValueKind.True;
+            if (Rules.ScenarioA1GunDuels.ShotRecordRefusal(duelShot,
+                state.GunDuel is { Fired: false } owed && owed.Vehicle == fired.Gun && owed.Step == (state.Movement?.Step ?? 0)) is { } duelRefusal)
+            {
+                return Fail<GameState>(duelRefusal.Code, duelRefusal.Text);
+            }
+
             if (ordnanceVerifier.Verify(state, fired, rolls) is { } reason)
             {
                 return Fail<GameState>("UNIT-STATE-033", reason);
@@ -1155,9 +1166,17 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-035", choiceReason);
             }
 
+            // C2.2401: the duel's first shot is made; the declared shot's own record ends the duel.
+            var firstShot = duelShot && state.GunDuel is { } duel
+                ? duel with
+                {
+                    Fired = true
+                }
+                : null;
             state = state with
             {
-                ChoicesMade = new Dictionary<string, string>(StringComparer.Ordinal)
+                ChoicesMade = new Dictionary<string, string>(StringComparer.Ordinal),
+                GunDuel = firstShot ?? (state.GunDuel is { Fired: true } resolved && resolved.Firer == fired.Gun ? null : state.GunDuel),
             };
 
             // C8.9 (ruling R7.6): Special Ammunition used at its Depletion Number runs out; above it the Gun had none, may not use it again,
@@ -1343,7 +1362,7 @@ public static class GameProjector
         {
             if (Rules.ScenarioA1SequenceProjection.PendChoiceRefusal(state.Choice is not null, state.Side(pending.Side) is not null, pending.Options.Count,
                 pending.Kind is ChoicePending.LeaderCreation or ChoicePending.BattleHardening or ChoicePending.UnlikelyKill or ChoicePending.Acquisition or ChoicePending.Paatc
-                    or ChoicePending.OverrunEvade,
+                    or ChoicePending.OverrunEvade or ChoicePending.GunDuel,
                 state.ChoicesMade.ContainsKey(pending.Key)) is { } refusal)
             {
                 return Fail<GameState>(refusal.Code, refusal.Text);
@@ -1380,6 +1399,19 @@ public static class GameProjector
                 return next;
             }
 
+            // C2.2401 (pass 55, ruling R55.19): the vehicle's first shot and the declared shot follow the answer as records of their own; the
+            // answer "duel" is what lets the vehicle's MA fire while the DEFENDER's window is open.
+            if (pending.Kind == ChoicePending.GunDuel)
+            {
+                return made.Option == ChoicePending.Duel && pending.Resume.TryGetProperty("vehicle", out var duelVehicle) && duelVehicle.GetString() is { } dueling
+                    && pending.Resume.TryGetProperty("firer", out var duelFirer) && duelFirer.GetString() is { } dueled
+                    ? next with
+                    {
+                        GunDuel = new GunDuelState(dueling, dueled, state.Movement?.Step ?? 0, false)
+                    }
+                    : next;
+            }
+
             if (pending.Kind != ChoicePending.Acquisition)
             {
                 return next with
@@ -1404,6 +1436,23 @@ public static class GameProjector
                     Location = kept,
                     Units = [.. acquisition.Units.Where(id => state.Location(id)?.Location == kept)],
                 })],
+            };
+        }
+
+        /// <summary>
+        /// C2.2401 (pass 55, ruling R55.19): the declared shot a Gun Duel's first shot voided is not made; the record ends the duel. Rules says
+        /// when it may be written.
+        /// </summary>
+        private GameState? VoidReturnShot(GameState state, GunDuelVoided voided)
+        {
+            if (Rules.ScenarioA1GunDuels.VoidRecordRefusal(state.GunDuel is { Fired: true }, state.GunDuel?.Firer == voided.Firer) is { } refusal)
+            {
+                return Fail<GameState>(refusal.Code, refusal.Text);
+            }
+
+            return state with
+            {
+                GunDuel = null
             };
         }
 

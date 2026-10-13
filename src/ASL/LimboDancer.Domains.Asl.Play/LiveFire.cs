@@ -355,14 +355,18 @@ public static class LiveFire
     /// Whether a phasing vehicle may fire as Bounding First Fire now (D3.3; ruling R6.9): while it moves, once the DEFENDER has passed on
     /// its last MP expenditure, or at the outset of its MPh while no other move is under way and it has not ended its move.
     /// </summary>
-    public static bool MayBoundingFire(GameState state, string vehicleId)
+    public static bool MayBoundingFire(GameState state, string vehicleId, bool gunDuel = false)
     {
         ArgumentNullException.ThrowIfNull(state);
         var vehicle = state.Unit(vehicleId);
         return ScenarioA1FireEligibility.MayBoundingFire(new BoundingFireFacts(state.Phase,
             vehicle is { Status: InstanceStatus.Active } && IsVehicle(vehicle) && vehicle.Side == state.PhasingSide,
             state.Movement is not null, state.Movement?.Vehicle == true, state.Movement?.WindowOpen == true,
-            state.Movement?.Movers.Contains(vehicleId) == true, vehicle?.MovementEnded == true));
+            state.Movement?.Movers.Contains(vehicleId) == true, vehicle?.MovementEnded == true)
+        {
+            // C2.2401 (pass 55): a Gun Duel's first shot is made while the DEFENDER's window is open.
+            GunDuel = gunDuel,
+        });
     }
 
     /// <summary>A vehicle definition's turret type (D1.3), as the catalog prints it; null when it prints none.</summary>

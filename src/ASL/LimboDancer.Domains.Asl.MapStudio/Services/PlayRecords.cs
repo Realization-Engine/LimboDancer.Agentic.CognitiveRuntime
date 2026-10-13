@@ -257,6 +257,9 @@ public sealed class PlayRecords
                 MovementWindowClosed => $"The {DisplayText.Side(before?.Sides.FirstOrDefault(side => side.Id != before.PhasingSide)?.Id)} side, the DEFENDER, declines First Fire",
                 MovementEnded ended => Many(ended.Movers, "ends its move", "end their move") + In(before, ended.Movers.Count > 0 ? ended.Movers[0] : null),
                 OpportunityFireDeclared held => string.Join(", ", held.Units.Select(id => id + In(before, id))) + (held.Units.Count == 1 ? " is" : " are") + " held for Opportunity Fire (A7.25)",
+                // C2.2401 (pass 55): the ATTACKER's answer to a declared shot; the declaration and a void return shot are among the ordnance records.
+                ChoiceMade answered when before?.Choice is { Kind: ChoicePending.GunDuel } duel && GunDuelParties(duel.Resume) is (var answeredFirer, var answeredVehicle) =>
+                    ScenarioA1GunDuels.AnswerText(answered.Option, answeredVehicle, answeredFirer),
                 ChoiceMade => "A choice the game waited for was answered",
                 SurrenderPending surrender => $"{surrender.Unit}{In(before, surrender.Unit)} surrenders, and its captor is to be chosen (A20.21)",
                 SurrenderRejected refused => $"The surrender of {refused.Unit} is refused (A20.3)",
@@ -276,6 +279,11 @@ public sealed class PlayRecords
         // The order it happened in; lines of one event keep the order they were read in.
         return [.. read.Select((line, index) => (line, index)).OrderBy(pair => pair.line.Revision).ThenBy(pair => pair.index).Select(pair => pair.line)];
     }
+
+    /// <summary>The firer and the moving vehicle of a pending Gun Duel (C2.2401; pass 55), from its resume data; null when it names neither.</summary>
+    private static (string Firer, string Vehicle)? GunDuelParties(JsonElement resume) =>
+        resume.ValueKind == JsonValueKind.Object && resume.TryGetProperty("firer", out var firer) && firer.GetString() is { } firerId
+            && resume.TryGetProperty("vehicle", out var vehicle) && vehicle.GetString() is { } vehicleId ? (firerId, vehicleId) : null;
 
     /// <summary>A fire in one line (play test P-15): who fired at what, the result, and what it did to each unit the view may read of.</summary>
     private static string FireLine(FireView fire)
@@ -347,6 +355,19 @@ public sealed class PlayRecords
             var records = new List<(string, string)>();
             foreach (var item in events.Where(item => item.IsVisibleTo(viewer)))
             {
+                // C2.2401 (pass 55): a shot declared at a moving vehicle that may fire its MA first, and a declared shot that first shot voided.
+                if (item.Payload is ChoicePending { Kind: ChoicePending.GunDuel } declared && GunDuelParties(declared.Resume) is (var duelFirer, var duelVehicle))
+                {
+                    records.Add((item.EventId, ScenarioA1GunDuels.DeclarationText(duelFirer, In(history.At(item.Revision - 1), duelFirer), duelVehicle)));
+                    continue;
+                }
+
+                if (item.Payload is GunDuelVoided voided)
+                {
+                    records.Add((item.EventId, ScenarioA1GunDuels.VoidText(voided.Firer, voided.Cause)));
+                    continue;
+                }
+
                 if (item.Payload is OrdnanceFired { } checking && checking.Resolution.Deserialize<OrdnanceResolution>(LiveFire.Json) is { ToHit: null, PanzerfaustCheck: { } failed })
                 {
                     // C13.31 (ruling R9.7): a PF Check that gave no shot.
@@ -407,6 +428,7 @@ public sealed class PlayRecords
                 var parts = new List<string>
                 {
                     check + $"{fired.Gun}{In(history.At(item.Revision - 1), fired.Gun)} fires {aim}" + (shot?.FireKind == ScenarioA1FireCalculator.BoundingFirstFire ? " as Bounding First Fire (D3.3)" : "")
+                        + (shot?.GunDuel == true ? ", first in a Gun Duel (C2.2401)" : "")
                         + (fired.Facing is { } facing ? $", turning to {UnitFacings.Name(facing)}" : "")
                         + $": Basic TH# {hit.BasicToHit} ({hit.Color}){modifications} = {hit.ModifiedToHit}; DR {dice} = {hit.OriginalDr}{ModifierText(hit.Drm)} = Final DR {hit.FinalDr}"
                         + (hit.SubsequentDr is { } dr ? $", subsequent dr {dr}" : "") + (hit.Improbable ? " (Improbable Hit, C3.6)" : "") + $": {outcome}",
