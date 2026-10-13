@@ -216,6 +216,12 @@ public sealed partial class GamePlanner
             }, null), null);
         }
 
+        // C2.6 (pass 55): a Gun, or a vehicle's MA, fires at no other level of its own hex.
+        if (ScenarioA1OrdnanceMapRules.OwnHexLevelRefusal(firer.Id, target.Board == from.Board && target.Hex == from.Hex, false) is { } ownHexLevel)
+        {
+            return (null, ownHexLevel);
+        }
+
         var tank = firer as UnitInstance;
         var turreted = tank is not null && OrdnanceReference.Value.Guns.GetValueOrDefault(shot.Gun.DefinitionId!)?.MaType is "t" or "st" or "rst" or "1mt";
         if ((tank is null ? ((MapPosition)((EquipmentInstance)firer).Position).Facing : LiveOrdnance.TurretFacing(state, tank)) is not { } facing)
@@ -280,6 +286,16 @@ public sealed partial class GamePlanner
             };
         }
 
+        // C2.6, B11.31, B11.32 (pass 55): the target's elevation less the Gun's, for the range a shot at another level needs, and the cliff
+        // hexside no ordnance fires through to an adjacent Location.
+        var definition = OrdnanceReference.Value.Guns.GetValueOrDefault(shot.Gun.DefinitionId!);
+        var targetAbove = ReadLocation(state, target) is { } targetRead ? targetRead.Hex.BaseLevel + targetRead.Level.Level - (gunRead.Hex.BaseLevel + gunRead.Level.Level) : 0;
+        if (ScenarioA1OrdnanceMapRules.CliffRefusal(CliffBetween(state, from, target), read.Range, targetAbove, definition?.GunType, definition?.LatwType,
+            definition?.RangeMinimum) is { } cliff)
+        {
+            return (null, cliff);
+        }
+
         // A12.14, A15.44: a concealed crew
         var revealing = HeatOfBattleFacts(state, read);
         var hit = shot.Hit! with
@@ -297,10 +313,11 @@ public sealed partial class GamePlanner
             Range = read.Range,
             HexspinesToTurn = turns.Steps,
             FirerInWoodsOrBuilding = WoodsOrBuilding.Contains(gunTerrain),
-            // C2.6 (ruling R8.7): a Gun fires at another level only if the range is at least the elevation difference; other levels are then
-            // undecided in the package until levels come to fire.
-            ElevationAllowed = ReadLocation(state, target) is not { } targetRead
-                || ScenarioA1OrdnanceMapRules.ElevationAllowed(Math.Abs(gunRead.Hex.BaseLevel + gunRead.Level.Level - (targetRead.Hex.BaseLevel + targetRead.Level.Level)), read.Range),
+            // C2.6 (ruling R8.7; pass 55): a Gun fires at another level, up or down, only if the range is at least the elevation difference.
+            ElevationAllowed = ScenarioA1OrdnanceMapRules.ElevationAllowed(targetAbove, read.Range, definition?.GunType),
+
+            // B10.31 (pass 55): the Height Advantage the probe read, for Case Q.
+            HeightAdvantage = ScenarioA1OrdnanceMapRules.HeightAdvantage(read.HeightAdvantage, read.HexsideTem?.Tem),
             Hit = hit,
             VehicleTarget = aimed ?? shot.VehicleTarget,
         };
@@ -382,13 +399,26 @@ public sealed partial class GamePlanner
             };
         }
 
+        // C2.6, B11.31, B11.32 (pass 55): a LATW is free of the elevation limit and a mortar is held to it firing down; Rules says which, and
+        // which of them fires through a cliff hexside to an adjacent Location.
+        var definition = OrdnanceReference.Value.Guns.GetValueOrDefault(shot.Gun!.DefinitionId ?? string.Empty);
+        var targetAbove = ReadLocation(state, target) is { } targetRead ? targetRead.Hex.BaseLevel + targetRead.Level.Level - (firerRead.Hex.BaseLevel + firerRead.Level.Level) : 0;
+        if (ScenarioA1OrdnanceMapRules.CliffRefusal(CliffBetween(state, from, target), ranged.Range, targetAbove, definition?.GunType, definition?.LatwType,
+            definition?.RangeMinimum) is { } cliff)
+        {
+            return (null, cliff);
+        }
+
         var revealing = HeatOfBattleFacts(state, read);
         return ((shot with
         {
             Range = ranged.Range,
             HexspinesToTurn = 0,
             FirerInWoodsOrBuilding = WoodsOrBuilding.Contains(firerTerrain),
-            ElevationAllowed = true,
+            ElevationAllowed = ScenarioA1OrdnanceMapRules.ElevationAllowed(targetAbove, ranged.Range, definition?.GunType),
+
+            // B10.31, C6.8 (pass 55): Height Advantage is Case Q on a LATW's To Hit DR; the Area Target Type takes no Case Q.
+            HeightAdvantage = ScenarioA1OrdnanceMapRules.HeightAdvantage(read.HeightAdvantage, read.HexsideTem?.Tem, shot.TargetType == OrdnanceTargetTypes.Area),
             Hit = shot.Hit! with
             {
                 Range = null,
@@ -550,6 +580,11 @@ public sealed partial class GamePlanner
                 ? Math.Abs(gunRead.Hex.BaseLevel + gunRead.Level.Level - (targetRead.Hex.BaseLevel + targetRead.Level.Level)) : null,
             () => Bearing(state, at.Location, target), (int)facing);
     }
+
+    /// <summary>Whether the hexside two adjacent hexes share is a cliff (B11.1), read from either hex; false when they are not adjacent.</summary>
+    private bool CliffBetween(GameState state, BoardLocation one, BoardLocation two) =>
+        (SideToward(state, one, two) is { } side && HexsideAt(state, one, side)?.Cliff == true)
+        || (SideToward(state, two, one) is { } back && HexsideAt(state, two, back)?.Cliff == true);
 
     /// <summary>Where a Gun, a tank, a SW's possessor, or a PF's firer is.</summary>
     private static BoardLocation FirerLocation(GameState state, string id) =>

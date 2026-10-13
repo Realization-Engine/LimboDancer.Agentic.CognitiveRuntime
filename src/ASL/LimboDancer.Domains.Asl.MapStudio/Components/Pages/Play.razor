@@ -4494,9 +4494,12 @@ else if (state is not null)
             else if (definition is { IsVehicle: true, AntiAircraftMg: not null })
             {
                 // D1.83: a MA AAMG's Normal Range is eight hexes.
+                // C2.6 (pass 55): at another level a vehicle's MG fires only at a range of at least the elevation difference.
                 var mg = FireRange.Band(range, same, 8, level);
+                var elevation = same ? null : FireRange.VehicleElevationWords(range, level);
                 rows.Add(new RangeRow(unit.Id, $"the AAMG of {Words(unit.Id)}", at.ToString(), mg.NormalRange, mg.Limit,
-                    mg.Band == FireRangeBand.SameHexOtherLevel ? "no attack at another level of its hex" : FireRange.Words(mg), mg.Band, mg.Band is FireRangeBand.Out or FireRangeBand.SameHexOtherLevel or FireRangeBand.SameHexFartherLevel));
+                    elevation ?? (mg.Band == FireRangeBand.SameHexOtherLevel ? "no attack at another level of its hex" : FireRange.Words(mg)), mg.Band,
+                    elevation is not null || mg.Band is FireRangeBand.Out or FireRangeBand.SameHexOtherLevel or FireRangeBand.SameHexFartherLevel));
             }
 
             foreach (var weapon in weapons.Where(item => item.Holding?.Holder == unit.Id))

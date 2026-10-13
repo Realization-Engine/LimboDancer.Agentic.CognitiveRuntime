@@ -10,7 +10,7 @@ public static class RefusalReasons
 {
     // Codes whose name says the package cannot decide an outcome, rather than that the action is outside its reviewed cases.
     private static readonly string[] UndecidedMarks =
-        ["undecided", "unreviewed", "missing", "incomplete", "unattributed", "unrecorded", "differs", "interact", "levels-differ", "concealment-mixed"];
+        ["undecided", "unreviewed", "missing", "incomplete", "unattributed", "unrecorded", "differs", "interact", "concealment-mixed"];
 
     private static readonly Dictionary<string, string> Sentences = new(StringComparer.Ordinal)
     {
@@ -38,7 +38,7 @@ public static class RefusalReasons
         ["fire.director-outside"] = "the director is not a Good Order, unpinned leader of the group in its Location, or has directed already (A7.53, A7.531)",
         ["fire.out-of-range"] = "a firer or MG is beyond twice its Normal Range, or fires into its own hex",
         ["fire.los-blocked"] = "a firer has no LOS to the target (A6)",
-        ["fire.levels-differ"] = "firer and target at different levels are not reviewed",
+        ["fire.elevation-outside"] = "a vehicle's MG fires at a target at another level only at a range of at least the elevation difference between them (C2.6)",
         ["fire.hindrance-unattributed"] = "the LOS Hindrance is not attributed to brush or in-season grain, which the package reviews",
         ["fire.leaders-interact"] = "a broken leader among the targets has no Morale Level recorded in the catalog, so his loss cannot be decided",
         ["fire.elr-undecided"] = "a side's ELR is not declared, or a MMC's underscored Morale Factor is not recorded (A19.1, A19.13)",
@@ -87,12 +87,11 @@ public static class RefusalReasons
         ["ordnance.gun-malfunctioned"] = "the Gun is malfunctioned (C2.28)",
         ["ordnance.crew-outside"] = "the Gun is not manned by a crew of its side able to fire it (A21.13)",
         ["ordnance.gun-already-fired"] = "the Gun has fired and did not keep its Multiple ROF (C2.24)",
-        ["ordnance.out-of-range"] = "the target is beyond the Gun's range or in its own hex (C2.25, C5.5)",
+        ["ordnance.out-of-range"] = "the target is beyond the Gun's range, in its own hex, or at another level at a range less than the elevation difference: a Gun fires at another level only at a range of at least that difference (C2.25, C5.5, C2.6)",
         ["ordnance.fact-outside"] = "a fact of the shot is outside the reviewed cases",
         ["ordnance.covered-arc-fixed"] = "the Gun may not turn to bring the target into its Covered Arc (C5.11)",
         ["ordnance.los-blocked"] = "the Gun has no LOS to the target (A6)",
         ["ordnance.target-outside"] = "the target Location holds no in-LOS enemy unit on the Infantry Target Type (C3.32)",
-        ["ordnance.levels-differ"] = "Gun and target at different levels are not reviewed (C2.6)",
         ["ordnance.hindrance-unattributed"] = "the LOS Hindrance is not attributed to terrain the package reviews",
         ["ordnance.concealment-mixed"] = "concealed and unconcealed targets together are not reviewed",
         ["ordnance.concealment-unreviewed"] = "fire by or at concealed units is decided only when a Good Order unit of the firing side is in range",

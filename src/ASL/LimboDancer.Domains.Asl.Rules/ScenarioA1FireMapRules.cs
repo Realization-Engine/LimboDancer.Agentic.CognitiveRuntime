@@ -311,6 +311,26 @@ public static class ScenarioA1FireMapRules
     public static bool WantsWallTem(bool direct, bool snapShot, bool lane, int sources, int locations) =>
         direct && !snapShot && !lane && sources == locations && sources > 0;
 
+    /// <summary>
+    /// B10.31 (p. 125; ruling R10.4; pass 55): whose fire reads Height Advantage: Infantry fire, and a vehicle's MG fire that is not an OVR
+    /// (D7.15), both Direct Fire. An ordnance hit takes it on its To Hit DR, and Residual FP is fired from nowhere.
+    /// </summary>
+    public static bool ReadsHeightAdvantage(FireAttack attack)
+    {
+        ArgumentNullException.ThrowIfNull(attack);
+        return IsDirectFire(attack) || (attack.VehicleFire is not null && attack.Overrun is null && attack.OrdnanceHit is null && attack.FireKind != ScenarioA1FireCalculator.ResidualFire);
+    }
+
+    /// <summary>
+    /// C2.6 (p. 168; pass 55): "A Gun in a building hex may not fire at a lower-level target in its own hex, and may fire at an higher-level target
+    /// in its hex only if it is an AA Gun ... These restrictions also apply to non-AA vehicular MG": a vehicle's MG fires at no other level of its
+    /// own hex. The refusal, or null.
+    /// </summary>
+    public static string? VehicleOwnHexLevelBar(bool vehicleFire, bool sameHex, bool sameLocation, string from, string target) =>
+        vehicleFire && sameHex && !sameLocation
+            ? $"play.fire-level: from {from}, {target} is another level of the vehicle's own hex, which a vehicle's MG does not fire at (C2.6)"
+            : null;
+
     /// <summary>B10.31 (ruling R10.4): Height Advantage over every firer, read when every Location is at range; null otherwise and when the read says no.</summary>
     public static bool? HeightAdvantage(int sources, int locations, Func<bool> read)
     {

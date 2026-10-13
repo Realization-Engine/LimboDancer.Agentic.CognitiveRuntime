@@ -436,6 +436,9 @@ public static class ScenarioA1OrdnanceEligibility
             CrewSeen = recorded.CrewSeen,
             HazardousTarget = recorded.HazardousTarget,
 
+            // The map read of pass 55: Height Advantage (B10.31); a record made before it has none.
+            HeightAdvantage = recorded.HeightAdvantage,
+
             // The map read of pass 9: a PF fired from a ground-level building (C13.8).
             Panzerfaust = expected.Panzerfaust is null ? null : expected.Panzerfaust with
             {
@@ -488,7 +491,8 @@ public static class ScenarioA1OrdnanceEligibility
         var colon = name.IndexOf(':', StringComparison.Ordinal);
         var head = "Case " + (colon < 0 ? name["case-".Length..] : name["case-".Length..colon]).ToUpperInvariant();
         var rest = colon < 0 ? string.Empty : name[(colon + 1)..];
-        return rest.Length == 0 ? head : rest == "maintained" ? head + " (the CA change its turret already made)" : $"{head} ({rest.Replace('-', ' ')})";
+        return rest.Length == 0 ? head : rest == "maintained" ? head + " (the CA change its turret already made)"
+            : rest == "height-advantage" ? head + " (Height Advantage, B10.31)" : $"{head} ({rest.Replace('-', ' ')})";
     }
 
     /// <summary>The hexspines between a Gun's facing now and the facing it is turned to (C3.21, C5.1, D3.12), facings as ints; zero when either is unknown.</summary>

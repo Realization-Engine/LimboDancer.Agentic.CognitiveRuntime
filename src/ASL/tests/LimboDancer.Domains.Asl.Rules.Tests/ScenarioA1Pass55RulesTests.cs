@@ -227,6 +227,216 @@ public sealed class ScenarioA1Pass55RulesTests
         Assert.Equal(OrdnanceResolution.Resolved, Resolve(Gun("american", 1944, toHit: [5, 6])).Disposition);
     }
 
+    // Task 55.4 (increment 2b): ordnance and a vehicle's MGs at another level (C2.6, p. 168), with Height Advantage (B10.31, p. 125; D4.22, p. 202).
+
+    private static readonly ScenarioA1FireReference Fire = new ScenarioA1FirePackage().Reference;
+    private const string TankAt = "bd01:F5:0";
+    private const string OutOfRange = "asl.a1.ordnance.out-of-range";
+    private const string ElevationOutside = "asl.a1.fire.elevation-outside";
+
+    private static decimal? Drm(OrdnanceResolution result, string name) => result.ToHit!.Drm.Where(item => item.Name == name).Select(item => (decimal?)item.Value).SingleOrDefault();
+
+    /// <summary>The American 37mm at German Infantry uphill at 12 hexes, or with AP at the PzKpfw IIIH there.</summary>
+    private static OrdnanceShot Uphill(bool vehicle = false, string terrain = "open-ground", bool heightAdvantage = true)
+    {
+        var shot = Gun("american", 1944, vehicle ? "ap" : null, vehicle, [5, 6]);
+        return shot with
+        {
+            HeightAdvantage = heightAdvantage ? true : null,
+            Hit = shot.Hit! with
+            {
+                SameLevel = false,
+                TargetTerrain = terrain,
+            },
+        };
+    }
+
+    /// <summary>The same shot as Defensive First Fire at Infantry moving in the open without Assault Movement.</summary>
+    private static OrdnanceShot AtAMover(bool heightAdvantage)
+    {
+        var shot = Uphill(heightAdvantage: heightAdvantage);
+        return shot with
+        {
+            Phase = "MPh",
+            FiringSide = "non-phasing",
+            FireKind = "first-fire",
+            Movement = new OrdnanceMovement(null, true, true, 1, 0),
+            Hit = shot.Hit! with
+            {
+                Phase = "MPh",
+                FiringSide = "non-phasing",
+            },
+        };
+    }
+
+    /// <summary>The PzKpfw IIIH's CMG (5 FP) in the PFPh at a Russian squad, by the range and the levels the target is above the tank.</summary>
+    private static FireAttack Cmg(int range, int? levelAbove, string terrain = "open-ground", bool heightAdvantage = false, string weapon = FireVehicleWeapon.CoaxialMg) =>
+        new FireAttack("PFPh", "phasing", true, TankAt, At, [], null, range, levelAbove is null or 0, new FireLos(false, 0, true, false), null, terrain,
+            [new FireTarget("ru-s", "defender-squad", At, false, false, false, false, false, false, false)], 3, new FireRolls([5, 6], null, null, null))
+        {
+            VehicleFire = new FireVehicleFire("de-tank", "attacker-tank", TankAt, false, false, false, false, false, false, false, false)
+            {
+                Weapons = [new FireVehicleWeapon(weapon, false, false) { Turn = 0 }],
+            },
+            TargetLevelAbove = levelAbove is null or 0 ? null : levelAbove,
+            HeightAdvantage = heightAdvantage ? true : null,
+        };
+
+    private static FireResolution Shoot(FireAttack attack) => ScenarioA1FireCalculator.Resolve(attack, Fire);
+
+    [Fact]
+    public void AGunFiresAtAnotherLevelWhenTheRangeIsAtLeastTheElevationDifference()
+    {
+        // C2.6: "a Gun may fire-at/affect a different-level target only if the range is >= the elevation difference between them", up or down.
+        Assert.True(ScenarioA1OrdnanceMapRules.ElevationAllowed(0, 0, "at"));
+        Assert.True(ScenarioA1OrdnanceMapRules.ElevationAllowed(1, 1, "at"));
+        Assert.True(ScenarioA1OrdnanceMapRules.ElevationAllowed(-2, 2, "vehicle"));
+        Assert.False(ScenarioA1OrdnanceMapRules.ElevationAllowed(2, 1, "at"));
+        Assert.False(ScenarioA1OrdnanceMapRules.ElevationAllowed(-2, 1, "inf"));
+        Assert.False(ScenarioA1OrdnanceMapRules.ElevationAllowed(1, 0, "at"));
+        Assert.False(ScenarioA1OrdnanceMapRules.ElevationAllowed(3, 2));
+
+        // "Only mortars ... may fire-at/affect a higher-level target if the range to that target is < the elevation difference"; firing down a
+        // mortar is held to the limit ("they do apply to MTR/INF/RCL ordnance SW"), and a LATW is free of it ("but not to SW").
+        Assert.True(ScenarioA1OrdnanceMapRules.ElevationAllowed(3, 2, "mortar"));
+        Assert.False(ScenarioA1OrdnanceMapRules.ElevationAllowed(-3, 2, "mortar"));
+        Assert.True(ScenarioA1OrdnanceMapRules.ElevationAllowed(-3, 3, "mortar"));
+        Assert.True(ScenarioA1OrdnanceMapRules.ElevationAllowed(-3, 1, "latw"));
+        Assert.True(ScenarioA1OrdnanceMapRules.ElevationAllowed(3, 1, "latw"));
+
+        // The shot at another level resolves on both Target Types; one the range does not allow is refused.
+        Assert.Equal(OrdnanceResolution.Resolved, Resolve(Uphill(heightAdvantage: false)).Disposition);
+        Assert.Equal(OrdnanceResolution.Resolved, Resolve(Uphill(vehicle: true, heightAdvantage: false)).Disposition);
+        Assert.Contains(OutOfRange, Resolve(Uphill() with { ElevationAllowed = false }).Reasons);
+        Assert.Contains(OutOfRange, Resolve(Uphill(vehicle: true) with { ElevationAllowed = false }).Reasons);
+
+        // "A Gun in a building hex may not fire at a lower-level target in its own hex", nor at a higher one unless it is an AA Gun.
+        Assert.Contains("C2.6", ScenarioA1OrdnanceMapRules.OwnHexLevelRefusal("de-gun", true, false), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1OrdnanceMapRules.OwnHexLevelRefusal("de-gun", true, true));
+        Assert.Null(ScenarioA1OrdnanceMapRules.OwnHexLevelRefusal("de-gun", false, false));
+        Assert.Contains("C2.6", ScenarioA1OrdnanceMapRules.GunTargetStatus(1, 100, () => 2, () => 0, 0), StringComparison.Ordinal);
+        Assert.Equal("range 2, in its CA", ScenarioA1OrdnanceMapRules.GunTargetStatus(2, 100, () => 2, () => 0, 0));
+    }
+
+    [Fact]
+    public void NoOrdnanceFiresThroughACliffHexsideToAnAdjacentLocation()
+    {
+        // B11.31: down, "[EXC: LATW other than PIAT or MTR with minimum range of 1 hex]"; B11.32: up, "Only an AA weapon, MG counter, SW ATR, PIAT,
+        // MTR with minimum range of 1 hex".
+        Assert.Contains("B11.31", ScenarioA1OrdnanceMapRules.CliffRefusal(true, 1, -1, "at", null, null), StringComparison.Ordinal);
+        Assert.Contains("B11.32", ScenarioA1OrdnanceMapRules.CliffRefusal(true, 1, 1, "vehicle", null, null), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1OrdnanceMapRules.CliffRefusal(true, 1, -1, "latw", "psk", null));
+        Assert.NotNull(ScenarioA1OrdnanceMapRules.CliffRefusal(true, 1, -1, "latw", "piat", null));
+        Assert.NotNull(ScenarioA1OrdnanceMapRules.CliffRefusal(true, 1, 1, "latw", "psk", null));
+        Assert.Null(ScenarioA1OrdnanceMapRules.CliffRefusal(true, 1, 1, "latw", "atr", null));
+        Assert.Null(ScenarioA1OrdnanceMapRules.CliffRefusal(true, 1, 1, "mortar", null, 1));
+        Assert.NotNull(ScenarioA1OrdnanceMapRules.CliffRefusal(true, 1, 1, "mortar", null, 2));
+
+        // Only to an adjacent Location at another level, and only through a cliff.
+        Assert.Null(ScenarioA1OrdnanceMapRules.CliffRefusal(true, 2, -1, "at", null, null));
+        Assert.Null(ScenarioA1OrdnanceMapRules.CliffRefusal(true, 1, 0, "at", null, null));
+        Assert.Null(ScenarioA1OrdnanceMapRules.CliffRefusal(false, 1, -1, "at", null, null));
+    }
+
+    [Fact]
+    public void HeightAdvantageIsCaseQOnTheInfantryAndVehicleTargetTypes()
+    {
+        // B10.31, C6.8: "Any unit in a hex receiving Direct Fire from a lower elevation is entitled to a +1 TEM".
+        Assert.Equal(1m, Drm(Resolve(Uphill()), "case-q:height-advantage"));
+        Assert.Null(Drm(Resolve(Uphill(heightAdvantage: false)), "case-q:height-advantage"));
+        Assert.Equal("Case Q (Height Advantage, B10.31)", ScenarioA1OrdnanceEligibility.CaseWords("case-q:height-advantage"));
+
+        // "provided that unit is not eligible to receive any other positive TEM": woods give their own and no more.
+        var woods = Resolve(Uphill(terrain: "woods"));
+        Assert.Equal((1m, null), (Drm(woods, "case-q:woods"), Drm(woods, "case-q:height-advantage")));
+
+        // D4.22: "also applies to vehicles"; a vehicle in Bypass takes no TEM of its woods (D2.38), so it takes this one.
+        Assert.Equal(1m, Drm(Resolve(Uphill(vehicle: true)), "case-q:height-advantage"));
+        var tankInWoods = Resolve(Uphill(vehicle: true, terrain: "woods"));
+        Assert.Equal((1m, null), (Drm(tankInWoods, "case-q:woods"), Drm(tankInWoods, "case-q:height-advantage")));
+        var bypassing = Uphill(vehicle: true, terrain: "woods");
+        var inBypass = Resolve(bypassing with { VehicleTarget = bypassing.VehicleTarget! with { Bypass = true } });
+        Assert.Equal((null, 1m), (Drm(inBypass, "case-q:woods"), Drm(inBypass, "case-q:height-advantage")));
+
+        // The final DR is one more for it.
+        Assert.Equal(Resolve(Uphill(heightAdvantage: false)).ToHit!.FinalDr + 1, Resolve(Uphill()).ToHit!.FinalDr);
+
+        // The map read: none behind a wall or hedge the LOS crosses, and none on the Area Target Type (C6.8; a mortar's fire is Indirect, C.1).
+        Assert.True(ScenarioA1OrdnanceMapRules.HeightAdvantage(true, null));
+        Assert.True(ScenarioA1OrdnanceMapRules.HeightAdvantage(true, 0));
+        Assert.Null(ScenarioA1OrdnanceMapRules.HeightAdvantage(true, 2));
+        Assert.Null(ScenarioA1OrdnanceMapRules.HeightAdvantage(true, null, areaTargetType: true));
+        Assert.Null(ScenarioA1OrdnanceMapRules.HeightAdvantage(null, null));
+
+        // A record made before the pass carries no such fact, and reads none from the recorded map facts.
+        Assert.Null(ScenarioA1OrdnanceEligibility.WithRecordedMapFacts(Uphill(), Uphill(heightAdvantage: false)).HeightAdvantage);
+        Assert.True(ScenarioA1OrdnanceEligibility.WithRecordedMapFacts(Uphill(heightAdvantage: false), Uphill()).HeightAdvantage);
+    }
+
+    [Fact]
+    public void HeightAdvantageBarsCaseJ4()
+    {
+        // B10.31: "A unit eligible for the +1 TEM for Height Advantage is not subject to Interdiction/FFMO by an attack to which that +1 TEM applies."
+        var level = Resolve(AtAMover(heightAdvantage: false));
+        Assert.Equal((-1m, -1m, null), (Drm(level, "case-j3"), Drm(level, "case-j4"), Drm(level, "case-q:height-advantage")));
+        var uphill = Resolve(AtAMover(heightAdvantage: true));
+        Assert.Equal((-1m, null, 1m), (Drm(uphill, "case-j3"), Drm(uphill, "case-j4"), Drm(uphill, "case-q:height-advantage")));
+    }
+
+    [Fact]
+    public void AVehiclesMgFiresAtAnotherLevelByTheSameLimit()
+    {
+        // C2.6: "These restrictions also apply to non-AA vehicular MG": range at least the elevation difference, up and down.
+        Assert.Equal(FireResolution.Resolved, Shoot(Cmg(2, 1)).Disposition);
+        Assert.Equal(FireResolution.Resolved, Shoot(Cmg(2, -2)).Disposition);
+        Assert.Equal(FireResolution.Resolved, Shoot(Cmg(3, 2, weapon: FireVehicleWeapon.BowMg)).Disposition);
+        Assert.Contains(ElevationOutside, Shoot(Cmg(2, 3)).Reasons);
+        Assert.Contains(ElevationOutside, Shoot(Cmg(2, -3)).Reasons);
+        Assert.Contains(ElevationOutside, Shoot(Cmg(1, 2, weapon: FireVehicleWeapon.BowMg)).Reasons);
+
+        // The Range tab says so before any proposal.
+        Assert.Contains("C2.6", FireRange.VehicleElevationWords(2, -3), StringComparison.Ordinal);
+        Assert.Null(FireRange.VehicleElevationWords(3, 3));
+        Assert.Null(FireRange.VehicleElevationWords(0, 1));
+
+        // The levels are a fact the attack needs once it is not at the firer's level.
+        Assert.Contains("asl.a1.fire.fact-missing:targetLevelAbove", Shoot(Cmg(2, 1) with { TargetLevelAbove = null }).Reasons);
+
+        // Another level of the vehicle's own hex is never fired at.
+        Assert.Contains("C2.6", ScenarioA1FireMapRules.VehicleOwnHexLevelBar(true, true, false, TankAt, "bd01:F5:1"), StringComparison.Ordinal);
+        Assert.Null(ScenarioA1FireMapRules.VehicleOwnHexLevelBar(false, true, false, TankAt, "bd01:F5:1"));
+        Assert.Null(ScenarioA1FireMapRules.VehicleOwnHexLevelBar(true, false, false, TankAt, At));
+
+        // A7.21: PBF at an adjacent target one level above or below, as for Infantry.
+        static bool PointBlank(FireResolution result) => result.Arithmetic!.Firers.Single().Multipliers.Any(item => item.Name == "point-blank-fire");
+        Assert.True(PointBlank(Shoot(Cmg(1, 0))));
+        Assert.True(PointBlank(Shoot(Cmg(1, 1))));
+        Assert.True(PointBlank(Shoot(Cmg(1, -1))));
+        Assert.False(PointBlank(Shoot(Cmg(2, 1))));
+    }
+
+    [Fact]
+    public void AVehiclesMgGivesItsTargetHeightAdvantage()
+    {
+        // B10.31: a vehicle's MG fire is Direct Fire; +1 for a target above it with no other positive TEM.
+        static decimal? Tem(FireResolution result, string name) => result.Arithmetic!.Drm.Where(item => item.Name == name).Select(item => (decimal?)item.Value).SingleOrDefault();
+        var uphill = Shoot(Cmg(2, 1, heightAdvantage: true));
+        Assert.Equal(FireResolution.Resolved, uphill.Disposition);
+        Assert.Equal(1m, Tem(uphill, "height-advantage"));
+        var woods = Shoot(Cmg(2, 1, terrain: "woods", heightAdvantage: true));
+        Assert.Equal((1m, null), (Tem(woods, "tem:woods"), Tem(woods, "height-advantage")));
+        Assert.Null(Tem(Shoot(Cmg(2, 1)), "height-advantage"));
+
+        // The map reads it for Infantry fire and for a vehicle's MGs, not for an ordnance hit or Residual FP.
+        Assert.True(ScenarioA1FireMapRules.ReadsHeightAdvantage(Cmg(2, 1)));
+        Assert.False(ScenarioA1FireMapRules.ReadsHeightAdvantage(Cmg(2, 1) with { OrdnanceHit = new FireOrdnanceHit("gun", 6, false) }));
+        Assert.False(ScenarioA1FireMapRules.ReadsHeightAdvantage(Cmg(2, 1) with { VehicleFire = null, FireKind = ScenarioA1FireCalculator.ResidualFire }));
+
+        // An attack at the firer's level, as every record before the pass was, is what it was.
+        Assert.Equal(5m, Shoot(Cmg(2, 0)).Arithmetic!.TotalFirepower);
+        Assert.Empty(Shoot(Cmg(2, 0)).Arithmetic!.Drm);
+    }
+
     [Fact]
     public void TheDepletionNumbersOfTheEarlierCountersDoNotMove()
     {

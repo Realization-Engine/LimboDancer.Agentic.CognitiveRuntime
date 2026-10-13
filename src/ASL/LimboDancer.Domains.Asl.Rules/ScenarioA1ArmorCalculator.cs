@@ -363,6 +363,13 @@ internal static class ScenarioA1ArmorCalculator
             drm.Add(new FireModifier("case-q:" + hit.TargetTerrain, tem, "C6.8"));
         }
 
+        // D4.22, B10.31 (pp. 202, 125; pass 55): "The +1 Height Advantage TEM vs Direct Fire also applies to vehicles, but only if they are not HD
+        // to the firer"; no vehicle is HD (D4.2 is not built). A vehicle in Bypass took no TEM above, so it may take this one.
+        if (ScenarioA1OrdnanceCalculator.HeightAdvantageApplies(shot, drm))
+        {
+            drm.Add(new FireModifier("case-q:height-advantage", 1, "B10.31"));
+        }
+
         if (hit.Los!.HindranceDrm is int hindrance && hindrance > 0)
         {
             drm.Add(new FireModifier("case-r", hindrance, "C6.9"));

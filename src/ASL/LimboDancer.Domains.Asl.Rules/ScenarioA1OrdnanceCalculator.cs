@@ -558,6 +558,13 @@ public static class ScenarioA1OrdnanceCalculator
         }
     }
 
+    /// <summary>
+    /// B10.31 (p. 125; pass 55): whether the Height Advantage the shot carries is its target's TEM: no other Case Q of the To Hit DRM so far is a
+    /// positive TEM. A shot recorded before the pass carries none.
+    /// </summary>
+    internal static bool HeightAdvantageApplies(OrdnanceShot shot, IEnumerable<FireModifier> drm) =>
+        shot.HeightAdvantage == true && shot.SameHex != true && !drm.Any(item => item.Value > 0 && item.Name.StartsWith("case-q:", StringComparison.Ordinal));
+
     /// <summary>A PF's range (C13.32): one hex before June 1944, two from June to December 1944, three from 1945.</summary>
     public static int PanzerfaustRange(int? year, int? month) => year >= 1945 ? 3 : year == 1944 && month >= 6 ? 2 : 1;
 
@@ -573,12 +580,8 @@ public static class ScenarioA1OrdnanceCalculator
         var undecided = new List<string>();
         var hit = shot.Hit!;
 
-        // Levels and an unattributed Hindrance are not reviewed, as for Infantry fire.
-        if (hit.SameLevel != true)
-        {
-            undecided.Add(Prefix + "levels-differ");
-        }
-
+        // An unattributed Hindrance is not reviewed, as for Infantry fire. C2.6 (pass 55): a target at another level is fired at when the range
+        // allows it, which the shot's elevation fact says.
         var los = hit.Los!;
         if (los.HindranceAttributed != true || los.HindranceDrm < 0 || (los.GrainInLos == true && hit.ScenarioMonth is null))
         {
@@ -765,6 +768,15 @@ public static class ScenarioA1OrdnanceCalculator
         if (ScenarioA1FireCalculator.Cover(hit) is { } cover)
         {
             drm.Add(new FireModifier("case-q:afv-cover:" + cover, 1, "D9.3"));
+        }
+
+        // B10.31, C6.8 (pp. 125, 175; pass 55): "Any unit in a hex receiving Direct Fire from a lower elevation is entitled to a +1 TEM, provided
+        // that unit is not eligible to receive any other positive TEM", and is then "not subject to Interdiction/FFMO by an attack to which that
+        // +1 TEM applies": no Case J4.
+        if (HeightAdvantageApplies(shot, drm))
+        {
+            drm.Add(new FireModifier("case-q:height-advantage", 1, "B10.31"));
+            drm.RemoveAll(item => item.Name == "case-j4");
         }
 
         // E1.7, E3.1 (referee, pass 16): the Low Visibility DRM is a Hindrance of its own on the TH DR.

@@ -75,6 +75,17 @@ public sealed record OrdnanceShot(
     }
 
     /// <summary>
+    /// Whether the target is at a higher elevation than the firer and may claim Height Advantage (B10.31, C6.8, D4.22; pass 55): Case Q, +1 on the
+    /// TH DR of the Infantry and Vehicle Target Types when the target has no other positive TEM, and then no Case J4. Null is false: a shot
+    /// recorded before the pass was at the firer's level.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? HeightAdvantage
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// The Low Visibility DRM of night and weather on the TH DR (E1.7, E3.1; referee, pass 16): a Case R Hindrance of its own, which cancels neither FFMO
     /// nor the Open Ground cases. Null is 0.
     /// </summary>

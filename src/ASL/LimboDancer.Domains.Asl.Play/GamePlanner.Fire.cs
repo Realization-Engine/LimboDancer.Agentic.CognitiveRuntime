@@ -1402,6 +1402,13 @@ public sealed partial class GamePlanner
                 continue;
             }
 
+            // C2.6 (pass 55): a vehicle's MG fires at no other level of its own hex.
+            if (ScenarioA1FireMapRules.VehicleOwnHexLevelBar(attack.VehicleFire is not null, from.Board == target.Board && from.Hex == target.Hex, from == target,
+                from.ToString(), target.ToString()) is { } vehicleLevelBar)
+            {
+                return (null, vehicleLevelBar);
+            }
+
             LosResult los;
             int range;
             if (snapHexside is { } hexside)
@@ -1472,10 +1479,9 @@ public sealed partial class GamePlanner
         var facts = ScenarioA1FireMapRules.GroupMapFacts(attack, terrain, targetHeight, perLocation,
             (one, two) => IsAdjacent(state, BoardLocation.Parse(one), BoardLocation.Parse(two)));
 
+        var sources = perLocation.Where(pair => pair.Value.Range > 0).Select(pair => (From: BoardLocation.Parse(pair.Key), pair.Value.Range, pair.Value.Height)).ToArray();
         if (direct)
         {
-            var sources = perLocation.Where(pair => pair.Value.Range > 0).Select(pair => (From: BoardLocation.Parse(pair.Key), pair.Value.Range, pair.Value.Height)).ToArray();
-
             // B9.3 to B9.41 (rulings R10.5, R10.6): the wall or hedge TEM; a Snap Shot, TPBF, and a Bypassing stack take none.
             if (ScenarioA1FireMapRules.WantsWallTem(direct, attack.SnapShot == true, lane is not null, sources.Length, perLocation.Count))
             {
@@ -1490,9 +1496,12 @@ public sealed partial class GamePlanner
                     HexsideTem = wall
                 };
             }
+        }
 
+        if (ScenarioA1FireMapRules.ReadsHeightAdvantage(attack))
+        {
             // B10.31 (ruling R10.4): Height Advantage over every firer; A4.62 (rulings R10.8, R40.10): a crew that pushed its Gun this Player Turn
-            // is under Hazardous Movement in every fire phase of it.
+            // is under Hazardous Movement in every fire phase of it. Pass 55: a vehicle's MG fire reads Height Advantage too.
             facts = facts with
             {
                 HeightAdvantage = ScenarioA1FireMapRules.HeightAdvantage(sources.Length, perLocation.Count,

@@ -422,6 +422,12 @@ public static class ScenarioA1FireCalculator
             }
         }
 
+        // C2.6, A7.21 (pass 55): a vehicle's MG at a target at another level names the levels too, for the range it needs and for PBF.
+        if (attack.VehicleFire is not null && attack.Overrun is null && attack.SameLevel == false)
+        {
+            Need(attack.TargetLevelAbove, "targetLevelAbove");
+        }
+
         if (attack.HexsideTem is { } hexside)
         {
             Need(hexside.Terrain, "hexsideTem.terrain");
@@ -494,9 +500,10 @@ public static class ScenarioA1FireCalculator
         // Direct Fire by Infantry, not Residual FP or an ordnance hit; a Snap Shot as Infantry Defensive First Fire with no wall crossed;
         // Hazardous Movement in the MPh.
         // D7.15 (ruling R11.11): an OVR takes the wall or hedge TEM of the hexside its vehicle entered across, never Height Advantage or a Snap Shot.
+        // B10.31 (pass 55): a vehicle's MG fire is Direct Fire too, and its target above it claims Height Advantage.
         var direct = kind != ResidualFire && attack.OrdnanceHit is null && attack.VehicleFire is null;
         if ((attack.HexsideTem is { } wall && (!direct || wall.Terrain is not ("wall" or "hedge") || wall.Tem < 0 || wall.Tem > (wall.Terrain == "wall" ? 2 : 1)))
-            || (attack.HeightAdvantage == true && (!direct || attack.Overrun is not null))
+            || (attack.HeightAdvantage == true && ((!direct && attack.VehicleFire is null) || attack.Overrun is not null))
             || (attack.SnapShot == true && (!direct || attack.Overrun is not null || phase != "MPh" || kind is not (FirstFire or SubsequentFirstFire) || attack.HexsideTem is not null)))
         {
             outside.Add("asl.a1.fire.terrain-fact-outside");
@@ -936,6 +943,14 @@ public static class ScenarioA1FireCalculator
             outside.Add("asl.a1.fire.out-of-range");
         }
 
+        // C2.6 (p. 168; pass 55): "a Gun may fire-at/affect a different-level target only if the range is >= the elevation difference between
+        // them", and "These restrictions also apply to non-AA vehicular MG". The MA AAMG is held to it as well: what an AA weapon may do at a
+        // higher target is not built.
+        if (attack.SameLevel == false && attack.Range < Math.Abs(attack.TargetLevelAbove ?? 0))
+        {
+            outside.Add("asl.a1.fire.elevation-outside");
+        }
+
         if (attack.Los!.Blocked == true)
         {
             outside.Add("asl.a1.fire.los-blocked");
@@ -1135,11 +1150,7 @@ public static class ScenarioA1FireCalculator
         var targets = attack.Targets!;
         if (attack.VehicleFire is not null)
         {
-            if (attack.SameLevel != true)
-            {
-                undecided.Add("asl.a1.fire.levels-differ");
-            }
-
+            // C2.6 (pass 55): a vehicle's MG fires at another level when the range allows it; the attack is then decided as at its own level.
             if (attack.Los is { } los && (los.HindranceAttributed != true || los.HindranceDrm < 0
                 || (los.GrainInLos == true && attack.ScenarioMonth is null)))
             {
@@ -2505,7 +2516,10 @@ public static class ScenarioA1FireCalculator
             var definition = reference.Definitions[vehicle.DefinitionId!];
             var range = attack.Range!.Value;
             var multipliers = new List<FireModifier>();
-            if (range == 1)
+
+            // A7.21 (ruling R10.4; pass 55): PBF at an adjacent target at most one level above the firer, as for Infantry. A record made before
+            // the pass is at the firer's level.
+            if (range == 1 && (attack.SameLevel == true ? 0 : attack.TargetLevelAbove ?? 0) <= 1)
             {
                 multipliers.Add(new FireModifier("point-blank-fire", 2m, "A7.21"));
             }

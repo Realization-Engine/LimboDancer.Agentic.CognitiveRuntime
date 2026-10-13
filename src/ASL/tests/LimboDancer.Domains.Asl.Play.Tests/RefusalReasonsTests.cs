@@ -9,12 +9,12 @@ public sealed class RefusalReasonsTests
     [Fact]
     public void ARefusedAttackIsExplainedCodeByCodeUnderARefusalHeadline()
     {
-        var reasons = RefusalReasons.Refusal("play.fire-refused", "Fire", "attack", ["asl.a1.fire.firer-already-fired", "asl.a1.fire.levels-differ"]);
+        var reasons = RefusalReasons.Refusal("play.fire-refused", "Fire", "attack", ["asl.a1.fire.firer-already-fired", "asl.a1.fire.elevation-outside"]);
 
         Assert.Equal([
             "play.fire-refused: the Fire package refuses this attack as proposed",
             "asl.a1.fire.firer-already-fired: a firer has already fired this phase or Player Turn (A7.1, A8.1, A8.4)",
-            "asl.a1.fire.levels-differ: firer and target at different levels are not reviewed",
+            "asl.a1.fire.elevation-outside: a vehicle's MG fires at a target at another level only at a range of at least the elevation difference between them (C2.6)",
         ], reasons);
     }
 
