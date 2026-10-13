@@ -121,6 +121,14 @@ public static class FireText
     {
         ArgumentNullException.ThrowIfNull(weapon);
         // A.11, A9.7 (pass 45): a weapon whose lowered B# became an X# is removed, not malfunctioned.
+        // D3.7, A9.71 (pass 50): a vehicle's BMG or CMG by its name, with the Random Selection dr when two fired together.
+        if (weapon.VehicleWeapon is { } mg)
+        {
+            var selection = weapon.SelectionDr is { } dr ? $"; Random Selection dr {dr} (A9.71)" : string.Empty;
+            return weapon.Malfunctioned ? $"{weapon.EquipmentId}'s {mg.ToUpperInvariant()} malfunctioned (D3.7){selection}"
+                : selection.Length > 0 ? $"{weapon.EquipmentId}'s {mg.ToUpperInvariant()} did not malfunction{selection}" : null;
+        }
+
         return weapon.Removed == true ? $"{weapon.EquipmentId} is removed: the DR reached its X# (A.11, A9.7)"
             : weapon.Malfunctioned ? $"{weapon.EquipmentId} malfunctioned (A9.7)"
             : weapon.RateOfFireRetained ? $"{weapon.EquipmentId} kept its rate of fire and may fire again this phase (A9.2)"

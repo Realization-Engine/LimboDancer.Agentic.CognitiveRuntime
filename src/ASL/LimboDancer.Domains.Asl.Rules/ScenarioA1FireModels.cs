@@ -474,7 +474,66 @@ public sealed record FireVehicleFire(
     bool? StunRecovery,
     bool? Malfunctioned,
     bool? FiredThisPlayerTurn,
-    bool? RateOfFireShot);
+    bool? RateOfFireShot)
+{
+    /// <summary>
+    /// The BMG and CMG this attack fires (D1.81, D1.82, D3.5, pp. 195 and 200; pass 50), each once a Player Turn, added together for one attack
+    /// or fired apart. Null for an attack by the vehicle's MA MG, which is every record made before pass 50.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<FireVehicleWeapon>? Weapons
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether a weapon of the vehicle fired in another fire phase of this Player Turn (D3.5, p. 201; pass 50): "the remaining weapons must fire
+    /// in the same phase or forfeit their non-CC fire attack opportunity for that Player Turn". Defensive First Fire and Final Fire are one
+    /// (A.15, p. 44). Null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? OtherPhase
+    {
+        get; init;
+    }
+
+    /// <summary>Whether the vehicle is in woods, a building, or rubble (C5.11, p. 172; pass 50): the Case A DRM is doubled. A map read, recorded with the attack; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? InWoodsOrBuilding
+    {
+        get; init;
+    }
+}
+
+/// <summary>
+/// A BMG or CMG of a firing vehicle (D1.81, D1.82, D3.5, D3.7; pass 50): which one, whether it has malfunctioned, and whether it has fired
+/// this Player Turn.
+/// </summary>
+public sealed record FireVehicleWeapon(string? Weapon, bool? Malfunctioned, bool? Fired)
+{
+    public const string BowMg = "bmg";
+    public const string CoaxialMg = "cmg";
+
+    /// <summary>
+    /// The hexspines its CA must change to cover the target (D3.52, C5.1; a map read, recorded with the attack): the turret turns for a CMG
+    /// and the DRM of Case A is added to the IFT DR; a BMG fires only inside the VCA, so more than none puts its attack outside.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? Turn
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The Case A DRM the first turret-mounted weapon to fire in this fire phase paid (D3.51, p. 201): a CMG that fires within the current
+    /// TCA pays the same. Null is none.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? MaintainedCaseA
+    {
+        get; init;
+    }
+}
 
 /// <summary>An ordnance hit's IFT attack (C.6, C3.71): the Gun, its HE FP column, and whether the hit is Critical.</summary>
 public sealed record FireOrdnanceHit(string? GunId, int? Firepower, bool? CriticalHit)
@@ -992,6 +1051,16 @@ public sealed record FireWeaponEffect(string EquipmentId, int BreakdownNumber, b
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? Removed
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Which of a vehicle's MGs this is (D3.7, p. 201; pass 50): <c>bmg</c> or <c>cmg</c>, with the vehicle's id as the equipment. Null for an
+    /// Infantry weapon and for a vehicle's MA MG.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? VehicleWeapon
     {
         get; init;
     }

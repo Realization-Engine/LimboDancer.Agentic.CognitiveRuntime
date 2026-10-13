@@ -21,6 +21,55 @@ public sealed record OrdnanceVehicleFirer(bool? ButtonedUp, bool? InMotion, bool
     {
         get; init;
     }
+
+    /// <summary>
+    /// The MP the vehicle has spent in a continuous LOS to its target in this MPh, rounded up (C5.31 to C5.33, p. 172; pass 50): at most two is
+    /// Case C2, up to three Case C1, more Case C; 99 for a LOS held since before the MPh. A map read, recorded with a Bounding First Fire shot.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? MpInLos
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the vehicle fired its MA in this Player Turn's MPh as Bounding First Fire (D3.32, p. 200; pass 50): its AFPh shot on the ROF it kept
+    /// uses Case C though it entered no new hex. Null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? BoundingFirer
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The vehicle's other weapons against this shot (D3.5, D3.51, pp. 200 and 201; pass 50). Null in a record made before pass 50, which then
+    /// resolves as it was recorded.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrdnanceVehicleWeapons? Weapons
+    {
+        get; init;
+    }
+}
+
+/// <summary>
+/// A tank's MA beside its other weapons (D3.5, D3.51, pp. 200 and 201; pass 50): whether a weapon of the vehicle fired in another fire phase of
+/// this Player Turn, so that the MA has forfeited its shot; whether the vehicle's fire counter was placed by its other weapons alone, in this
+/// fire phase, so that the MA has not fired; and the Case A DRM the first turret-mounted weapon to fire in this fire phase paid, which the MA's
+/// first shot within the current TCA pays too.
+/// </summary>
+public sealed record OrdnanceVehicleWeapons(bool OtherPhase, bool MarkedByOthers, int? MaintainedCaseA)
+{
+    /// <summary>
+    /// Whether the vehicle's Bounding Fire counter stands beside a shot of its MA in this MPh, an OVR among them (D3.3, D7.1; review of pass 50):
+    /// the MA then fires again only on a ROF it kept. Null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? BoundingFireSpent
+    {
+        get; init;
+    }
 }
 
 /// <summary>

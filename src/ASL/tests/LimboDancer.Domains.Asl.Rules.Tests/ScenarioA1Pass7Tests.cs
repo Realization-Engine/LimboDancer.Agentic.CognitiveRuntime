@@ -290,18 +290,23 @@ public sealed class ScenarioA1Pass7Tests
     }
 
     [Fact]
-    public void AMovingFirerIsOutside()
+    public void AMovingFirerTakesCaseCInTheAfphAndAMotionFirerIsOutsideInThePfph()
     {
-        // D2.42, C5.35: Case C4 for a Motion firer is not built; C5.3: Case C for an AFPh shot after entering a new hex is not built.
+        // Pass 50 (C5.3, C5.35, D2.42): an AFPh shot after entering a new hex takes Case C, and a Motion firer Case C4, where both were outside
+        // before. D2.4: a vehicle in Motion still does not fire in the PFPh.
         var shot = Tank("german", phase: "AFPh", toHit: [4, 2]);
-        Assert.Contains("asl.a1.ordnance.vehicle-fire-outside", Resolve(shot with
+        var moved = Resolve(shot with
         {
             Vehicle = shot.Vehicle! with
             {
                 Moved = true
             }
-        }).Reasons);
-        Assert.Contains("asl.a1.ordnance.vehicle-fire-outside", Resolve(Tank("german", phase: "AFPh", inMotion: true, toHit: [4, 2])).Reasons);
+        }, toKill: [6, 6]);
+        Assert.DoesNotContain("asl.a1.ordnance.vehicle-fire-outside", moved.Reasons);
+        Assert.Contains(moved.ToHit!.Drm, item => item is { Name: "case-c", Value: 4 });
+        var motion = Resolve(Tank("german", phase: "AFPh", inMotion: true, toHit: [4, 2]), toKill: [6, 6]);
+        Assert.Contains(motion.ToHit!.Drm, item => item is { Name: "case-c4:lower-dr", Value: 2 });
+        Assert.Contains("asl.a1.ordnance.vehicle-fire-outside", Resolve(Tank("german", phase: "PFPh", inMotion: true, toHit: [4, 2])).Reasons);
         Assert.DoesNotContain("asl.a1.ordnance.vehicle-fire-outside", Resolve(shot, toKill: [6, 6]).Reasons);
     }
 

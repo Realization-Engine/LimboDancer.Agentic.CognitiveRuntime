@@ -268,6 +268,12 @@ public static class Conditions
     /// <summary>A malfunctioned CMG (D1.8; ruling R11.11): it adds no FP to an OVR and makes no CC attack.</summary>
     public const string CmgMalfunctioned = "asl:cmg-malfunctioned";
 
+    /// <summary>A BMG disabled for good by a repair dr of 6 (D3.7, p. 201; pass 50); it stays malfunctioned.</summary>
+    public const string BmgDisabled = "asl:bmg-disabled";
+
+    /// <summary>A CMG disabled for good by a repair dr of 6 (D3.7, p. 201; pass 50); it stays malfunctioned.</summary>
+    public const string CmgDisabled = "asl:cmg-disabled";
+
     /// <summary>
     /// The CC counter of a unit that made a CC Reaction Fire attack on a vehicle that survived (D7.21; ruling R11.13): no Non-CC Reaction Fire
     /// at it; removed at the end of the phase.
@@ -284,7 +290,7 @@ public static class Conditions
     public const string Unarmed = "asl:unarmed";
 
     /// <summary>Conditions the state model adds to the vocabulary's states; they have no drawn form.</summary>
-    public static IReadOnlyList<string> Undrawn { get; } = [Captured, Melee, Abandoned, Bogged, Mired, BmgMalfunctioned, CmgMalfunctioned, CcReaction, Dismantled, Unarmed];
+    public static IReadOnlyList<string> Undrawn { get; } = [Captured, Melee, Abandoned, Bogged, Mired, BmgMalfunctioned, CmgMalfunctioned, CcReaction, Dismantled, Unarmed, BmgDisabled, CmgDisabled];
 
     public static bool IsDeclared(string name, Vocabulary.UnitVocabulary vocabulary) =>
         Undrawn.Contains(name, StringComparer.Ordinal) || vocabulary.TryGetState(name, out _);

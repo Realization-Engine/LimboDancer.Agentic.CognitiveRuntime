@@ -59,13 +59,22 @@ internal static class ScenarioA1ArmorCalculator
         return dated.LastOrDefault(entry => entry.Year <= scenarioYear) is { Year: not null } found ? found.Number : null;
     }
 
+    /// <summary>D3.2 (p. 199; pass 50): the Target Facing of a vehicle fired on from inside its own hex, by the colored dr of the To Hit DR: 1-2 rear, 3-4 side, 5-6 front.</summary>
+    public static string SameHexFacing(int coloredDr) => coloredDr <= 2 ? "rear" : coloredDr <= 4 ? "side" : "front";
+
     /// <summary>The facts a Vehicle Target Type shot needs beyond an Infantry Target Type shot's.</summary>
     public static void Missing(OrdnanceShot shot, Action<object?, string> need)
     {
         var target = shot.VehicleTarget!;
         need(target.VehicleId, "vehicleTarget.vehicleId");
         need(target.DefinitionId, "vehicleTarget.definitionId");
-        need(target.HullFacing, "vehicleTarget.hullFacing");
+
+        // D3.2 (pass 50): from inside the target's hex the colored dr of the To Hit DR gives the Target Facing, so none is read from the map.
+        if (shot.SameHex != true)
+        {
+            need(target.HullFacing, "vehicleTarget.hullFacing");
+        }
+
         need(target.Moving, "vehicleTarget.moving");
         need(target.NonStopped, "vehicleTarget.nonStopped");
         need(target.Concealed, "vehicleTarget.concealed");
@@ -78,8 +87,10 @@ internal static class ScenarioA1ArmorCalculator
     public static void Outside(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference, List<string> outside)
     {
         var target = shot.VehicleTarget!;
+        // D3.2 (pass 50): a shot from inside the target's hex names no Target Facing, and one from outside it names the hull's, and the turret's too.
         if (!reference.Armor.Vehicles.TryGetValue(target.DefinitionId!, out var armor) || armor.Nationality == gun.Nationality
-            || target.HullFacing is not ("front" or "side" or "rear") || (armor.Turreted && target.TurretFacing is not ("front" or "side" or "rear"))
+            || (shot.SameHex == true ? target.HullFacing is not null || target.TurretFacing is not null
+                : target.HullFacing is not ("front" or "side" or "rear") || (armor.Turreted && target.TurretFacing is not ("front" or "side" or "rear")))
             || shot.Hit!.Targets is { Count: > 0 })
         {
             outside.Add(Prefix + "vehicle-target-outside");
@@ -162,6 +173,11 @@ internal static class ScenarioA1ArmorCalculator
         {
             drm.Add(new FireModifier("case-a:" + turned.ToString(CultureInfo.InvariantCulture), CaseA(gun.MaType, turned) * (woods ? 2 : 1), "C5.1"));
         }
+        else if (shot.Vehicle?.Weapons?.MaintainedCaseA is > 0 and var maintained && shot.SameHex != true)
+        {
+            // D3.51 (p. 201; pass 50): the MA fired within a TCA its CMG changed in this fire phase pays what the CMG paid.
+            drm.Add(new FireModifier("case-a:maintained", maintained, "D3.51"));
+        }
 
         if (latw)
         {
@@ -176,6 +192,10 @@ internal static class ScenarioA1ArmorCalculator
             {
                 drm.Add(new FireModifier("case-c3:backblast", 2, "C13.8"));
             }
+        }
+        else if (ScenarioA1OrdnanceCalculator.CaseC(shot, gun) is { } caseC)
+        {
+            drm.Add(caseC);
         }
         else if (ScenarioA1OrdnanceCalculator.AfphFire(shot))
         {
@@ -219,6 +239,14 @@ internal static class ScenarioA1ArmorCalculator
             drm.Add(new FireModifier("case-j", 2, "C6.1"));
         }
 
+        // C5.5 (p. 172; pass 50): "any Gun firing at a target within its own hex must add the +2 DRM of Case E", doubled in woods, a building, or
+        // rubble; "Cases J3, J4, L, and M are not applicable".
+        var sameHex = shot.SameHex == true;
+        if (sameHex)
+        {
+            drm.Add(new FireModifier("case-e", woods ? 4 : 2, "C5.5"));
+        }
+
         if (target.Concealed == true)
         {
             drm.Add(new FireModifier("case-k", 2, "C6.2"));
@@ -226,16 +254,16 @@ internal static class ScenarioA1ArmorCalculator
 
         // C6.3: no Point Blank Range against a Non-Stopped or Motion target, nor by a Motion firer. Cases M and N are not LATW DRM; Case L is
         // the ATR's, which reads no To Hit Table of its own (p. 174; pass 35, task 35.10).
-        if ((!latw || gun.LatwType == "atr") && range <= 2 && target.NonStopped != true && shot.Vehicle?.InMotion != true)
+        if (!sameHex && (!latw || gun.LatwType == "atr") && range <= 2 && target.NonStopped != true && shot.Vehicle?.InMotion != true)
         {
             drm.Add(new FireModifier("case-l", range == 1 ? -2 : -1, "C6.3"));
         }
 
-        if (!latw && shot.BoreSighted == true)
+        if (!latw && shot.BoreSighted == true && !sameHex)
         {
             drm.Add(new FireModifier("case-m", -2, "C6.4"));
         }
-        else if (!latw && shot.Acquisition is int acquired && acquired < 0 && target.Concealed != true)
+        else if (!latw && shot.Acquisition is int acquired && acquired < 0 && target.Concealed != true && !ScenarioA1OrdnanceCalculator.AcquisitionDenied(shot))
         {
             drm.Add(new FireModifier("case-n", acquired, "C6.5"));
         }
@@ -274,8 +302,16 @@ internal static class ScenarioA1ArmorCalculator
 
         var total = (int)drm.Sum(item => item.Value);
         var original = dice[0] + dice[1];
-        var final = original + total;
-        var lowest = 2 + total;
+
+        // C5.35 (p. 172; pass 50): a Motion firer with no Gyrostabilizer doubles the lower dr of its TH DR; the lowest Final DR is then one more.
+        var motion = ScenarioA1OrdnanceCalculator.MotionFirer(shot) ? Math.Min(dice[0], dice[1]) : 0;
+        if (motion > 0)
+        {
+            drm.Add(new FireModifier("case-c4:lower-dr", motion, "C5.35"));
+        }
+
+        var final = original + total + motion;
+        var lowest = 2 + total + (motion > 0 ? 1 : 0);
         var improbable = lowest > modified;
         bool isHit, critical;
         int? subsequent = null;
@@ -379,7 +415,7 @@ internal static class ScenarioA1ArmorCalculator
         // is acquired only when the shot costs it its "?" (the game decides that, R6.7).
         // C6.5 (the chart's G): a non-mortar SW acquires nothing.
         var acquires = !malfunctioned && target.Concealed != true && !latw;
-        var acquisition = !acquires ? 0 : Math.Max(shot.Acquisition!.Value - 1, -2);
+        var acquisition = !acquires ? 0 : Math.Max((ScenarioA1OrdnanceCalculator.AcquisitionDenied(shot) ? 0 : shot.Acquisition!.Value) - 1, -2);
         var gunEffect = new OrdnanceGunEffect(ScenarioA1OrdnanceCalculator.Breakdown(shot, gun, reference), malfunctioned, Math.Max(rof, 0), kept, counter, acquisition,
             acquires ? shot.TargetLocationId : null);
         return new OrdnanceResolution(OrdnanceResolution.Resolved, [], toHit, gunEffect)
@@ -401,7 +437,10 @@ internal static class ScenarioA1ArmorCalculator
         // instead: 2 strikes the turret, 3 the hull (1, the Critical Hit, strikes as its Original 2, the hull). The turret's Target Facing
         // follows its TCA (D3.12).
         var location = armor.Turreted && (improbable is { } subsequent ? subsequent == 2 : dice[0] < dice[1]) ? "turret" : "hull";
-        var facing = location == "turret" ? target.TurretFacing ?? target.HullFacing! : target.HullFacing!;
+
+        // D3.2 (p. 199; pass 50): "if the fire originates from within the target hex (Case E To Hit DRM; C5.5) the colored dr of the To Hit DR
+        // determines the Target Facing: 1-2 Rear, 3-4 Side, 5-6 Front", for the hull and the turret alike.
+        var facing = shot.SameHex == true ? SameHexFacing(dice[0]) : location == "turret" ? target.TurretFacing ?? target.HullFacing! : target.HullFacing!;
         var armored = !armor.Unarmored && armor.FrontAf is not null;
         int finalTk;
         int? basicTk = null, modifiedTk = null, af = null;

@@ -91,7 +91,9 @@ internal sealed class WideBoards(MapService maps) : IBoardProvider
 /// </summary>
 public sealed class PlayPagePass31dTests : IDisposable
 {
-    private const string Game = "wide";
+    // Its own id: `UnitNames.For` keeps names by the game's id and first event id, and `PlayPagePass35Tests`, which runs beside this class,
+    // starts games named "wide" with the same event ids (backlog 57.2; pass 50's gate).
+    private const string Game = "wide-31d";
     private readonly string root = Path.Combine(Path.GetTempPath(), "asl-play-31d-" + Guid.NewGuid().ToString("N"));
     private readonly ScriptedDice dice = new();
     private readonly LivePlay live;

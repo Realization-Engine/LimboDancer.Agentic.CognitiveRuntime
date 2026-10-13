@@ -210,7 +210,12 @@ public static class ScenarioA1OrdnanceCalculator
             ScenarioA1ArmorCalculator.Missing(shot, Need);
         }
 
-        if (shot.FireKind is not null)
+        if (shot.FireKind == ScenarioA1FireCalculator.BoundingFirstFire)
+        {
+            // C5.31 to C5.33 (pass 50): a Bounding First Firer's MP in a continuous LOS to its target.
+            Need(shot.Vehicle?.MpInLos, "vehicle.mpInLos");
+        }
+        else if (shot.FireKind is not null)
         {
             Need(shot.Movement, "movement");
             Need(shot.Movement?.SpentHere, "movement.spentHere");
@@ -280,8 +285,11 @@ public static class ScenarioA1OrdnanceCalculator
         }
 
         // Ruling R8.1: Defensive First Fire in the MPh by the non-phasing side.
+        // D3.3, C5.3 (pp. 172, 199; pass 50): a vehicle's MA fires in its own MPh as Bounding First Fire.
+        var bounding = shot.FireKind == ScenarioA1FireCalculator.BoundingFirstFire;
         if (shot.FireKind is null
             ? (phase, shot.FiringSide) is not (("PFPh", "phasing") or ("AFPh", "phasing") or ("DFPh", "non-phasing"))
+            : bounding ? shot.Vehicle is null || (phase, shot.FiringSide) is not ("MPh", "phasing")
             : shot.FireKind != "first-fire" || (phase, shot.FiringSide) is not ("MPh", "non-phasing"))
         {
             outside.Add(Prefix + "phase-outside");
@@ -312,10 +320,11 @@ public static class ScenarioA1OrdnanceCalculator
             return outside;
         }
 
-        // D5.34, C7.42, D5.341 (ruling R7.10): a Stunned, Shocked, or Recalled AFV does not fire; D2.42, C5.35: a firer in Motion needs Case C4,
-        // and C5.3: one that entered a new hex in its MPh needs Case C in the AFPh, neither built; D1.321, D1.322: an RST or 1MT MA fires only BU.
-        if (shot.Vehicle is { } firing && (firing.Stunned == true || firing.Shocked == true || firing.Recalled == true || firing.InMotion == true
-            || (phase == "AFPh" && firing.Moved == true)
+        // D5.34, C7.42, D5.341 (ruling R7.10): a Stunned, Shocked, or Recalled AFV does not fire; D1.321, D1.322: an RST or 1MT MA fires only BU.
+        // D2.42, C5.35 (pass 50): a firer in Motion fires with Case C4 in its own MPh and AFPh; D2.4: never in the PFPh; the DEFENDER's vehicle in
+        // Motion is not built. C5.3 (pass 50): one that entered a new hex in its MPh fires in the AFPh with Case C.
+        if (shot.Vehicle is { } firing && (firing.Stunned == true || firing.Shocked == true || firing.Recalled == true
+            || (firing.InMotion == true && !bounding && !(phase == "AFPh" && shot.FiringSide == "phasing"))
             || (gun.MaType is "rst" or "1mt" && firing.ButtonedUp != true)))
         {
             outside.Add(Prefix + "vehicle-fire-outside");
@@ -348,15 +357,21 @@ public static class ScenarioA1OrdnanceCalculator
         // C2.241, C5.6 (ruling R8.2): a Gun that has used its normal ROF (a Prep, First, or Final Fire counter) may Intensive Fire once, never
         // in the AFPh and never a vehicle's; a Gun marked First Fire fires once more only so.
         // C13.31, A7.351 (ruling R9.7): a unit not yet marked as having fired makes a PF Check, a squad twice in a phase, any other once.
+        // D3.5 (p. 201; pass 50): a vehicle's fire counter placed by its BMG or CMG alone, in this fire phase, is not the MA's ("it makes no
+        // difference which weapon fires first"); a weapon fired in another fire phase forfeits the MA's shot.
+        var othersOnly = shot.Vehicle?.Weapons?.MarkedByOthers == true;
+        var firedBefore = !othersOnly && gunShot.FiredThisPlayerTurn == true;
+        var firstFired = !othersOnly && gunShot.FirstFire == true && !(shot.Vehicle is not null && gunShot.ShotsThisPhase > 0 && gunShot.RateOfFireKept == true);
         var mayFire = pf
             ? gunShot.FiredThisPlayerTurn != true && gunShot.ShotsThisPhase < (reference.Fire.Definitions.GetValueOrDefault(crew.DefinitionId!)?.Kind == "asl:squad" ? 2 : 1)
             : shot.IntensiveFire == true
             ? shot.Vehicle is null && phase != "AFPh" && gunShot.IntensiveFired != true && gunShot.FinalFire != true && crew.Pinned != true
                 && (gunShot.FiredThisPlayerTurn == true || gunShot.FirstFire == true) && gunShot.RateOfFireKept != true
-            : gunShot.IntensiveFired != true && gunShot.FirstFire != true && (phase == "AFPh" && !OpportunityFire(shot)
-                ? gunShot.FiredThisPlayerTurn != true && gunShot.ShotsThisPhase == 0
-                : gunShot.ShotsThisPhase == 0 ? gunShot.FiredThisPlayerTurn != true : gunShot.RateOfFireKept == true);
-        if (!mayFire || crew.FiredInherentFp == true)
+            : gunShot.IntensiveFired != true && !firstFired && (phase == "AFPh" && !OpportunityFire(shot)
+                ? !firedBefore && gunShot.ShotsThisPhase == 0
+                : gunShot.ShotsThisPhase == 0 ? !firedBefore : gunShot.RateOfFireKept == true);
+        if (!mayFire || crew.FiredInherentFp == true || shot.Vehicle?.Weapons?.OtherPhase == true
+            || (shot.Vehicle?.Weapons?.BoundingFireSpent == true && gunShot.RateOfFireKept != true))
         {
             outside.Add(Prefix + "gun-already-fired");
         }
@@ -373,7 +388,9 @@ public static class ScenarioA1OrdnanceCalculator
         // C5.5 (ruling R8.8): a shot within the Gun's own Location, at Infantry, without changing its CA.
         var sameHex = shot.SameHex == true;
         // C5.51's Defensive First Fire in the Gun's own hex, turning its CA with Case A, is not built (ruling R8.8).
-        if ((sameHex ? shot.Range != 0 || shot.VehicleTarget is not null || shot.HexspinesToTurn != 0 || shot.FireKind is not null || mortar || latw : shot.Range < 1)
+        // D3.2, C5.5 (pass 50): a vehicle in the firer's own Location is fired on with Case E, its Target Facing by the colored dr.
+        if ((sameHex ? shot.Range != 0 || shot.HexspinesToTurn != 0 || shot.FireKind is not null || mortar || latw || (shot.Vehicle is not null && shot.VehicleTarget is null)
+                : shot.Range < 1)
             || (gun.RangeMaximum is { } maximum && shot.Range > maximum) || shot.ElevationAllowed != true
             // C9.4: never nearer than a mortar's minimum range; C13.32: a PF's range by the scenario date.
             || (gun.RangeMinimum is { } minimum && shot.Range < minimum) || (pf && shot.Range > PanzerfaustRange(shot.ScenarioYear, shot.Hit!.ScenarioMonth))
@@ -394,7 +411,8 @@ public static class ScenarioA1OrdnanceCalculator
 
         // A7.81, C5.11: a pinned crew cannot change its Gun's CA; a Gun that has fired from woods or a building fires again that phase
         // only inside its current CA (C5.11).
-        if (shot.HexspinesToTurn > 0 && (crew.Pinned == true || (shot.FirerInWoodsOrBuilding == true && gunShot.ShotsThisPhase > 0)))
+        // C5.13 (p. 172; pass 50): "a Bounding First Firer must always fire within its current CA".
+        if (shot.HexspinesToTurn > 0 && (bounding || crew.Pinned == true || (shot.FirerInWoodsOrBuilding == true && gunShot.ShotsThisPhase > 0)))
         {
             outside.Add(Prefix + "covered-arc-fixed");
         }
@@ -648,8 +666,17 @@ public static class ScenarioA1OrdnanceCalculator
             var caseA = ScenarioA1ArmorCalculator.CaseA(gun.MaType, turned) * (woods ? 2 : 1);
             drm.Add(new FireModifier("case-a:" + turned.ToString(System.Globalization.CultureInfo.InvariantCulture), caseA, "C5.1"));
         }
+        else if (shot.Vehicle?.Weapons?.MaintainedCaseA is > 0 and var maintained && shot.SameHex != true)
+        {
+            // D3.51 (p. 201; pass 50): the MA fired within a TCA its CMG changed in this fire phase pays what the CMG paid.
+            drm.Add(new FireModifier("case-a:maintained", maintained, "D3.51"));
+        }
 
-        if (AfphFire(shot))
+        if (CaseC(shot, gun) is { } caseC)
+        {
+            drm.Add(caseC);
+        }
+        else if (AfphFire(shot))
         {
             drm.Add(new FireModifier("case-b", woods ? 3 : 2, "C5.2"));
         }
@@ -694,7 +721,8 @@ public static class ScenarioA1OrdnanceCalculator
             drm.Add(new FireModifier("case-k", 2, "C6.2"));
         }
 
-        if (range is >= 1 and <= 2 && !sameHex)
+        // C6.3 (p. 174; review of pass 50): "Case L is not applicable if ... the firer is in-Motion/Non-Stopped".
+        if (range is >= 1 and <= 2 && !sameHex && shot.Vehicle?.InMotion != true)
         {
             drm.Add(new FireModifier("case-l", range == 1 ? -2 : -1, "C6.3"));
         }
@@ -704,7 +732,7 @@ public static class ScenarioA1OrdnanceCalculator
         {
             drm.Add(new FireModifier("case-m", -2, "C6.4"));
         }
-        else if (shot.Acquisition is int acquired && acquired < 0 && !concealedTarget)
+        else if (shot.Acquisition is int acquired && acquired < 0 && !concealedTarget && !AcquisitionDenied(shot))
         {
             // C6.51, C6.57: the Acquisition applies only to Known units, and a shot at a concealed target loses it.
             drm.Add(new FireModifier("case-n", acquired, "C6.5"));
@@ -757,8 +785,15 @@ public static class ScenarioA1OrdnanceCalculator
 
         var total = (int)drm.Sum(item => item.Value);
         var original = dice[0] + dice[1];
-        var final = original + total;
-        var lowest = 2 + total;
+        // C5.35 (p. 172; pass 50): a Motion firer with no Gyrostabilizer doubles the lower dr of its TH DR; the lowest Final DR is then one more.
+        var motion = MotionFirer(shot) ? Math.Min(dice[0], dice[1]) : 0;
+        if (motion > 0)
+        {
+            drm.Add(new FireModifier("case-c4:lower-dr", motion, "C5.35"));
+        }
+
+        var final = original + total + motion;
+        var lowest = 2 + total + (motion > 0 ? 1 : 0);
 
         // C3.6: when no Final DR can hit, an Original 2 still may, on a subsequent dr of 1 (a Critical Hit) to 3.
         var improbable = lowest > modified;
@@ -872,7 +907,7 @@ public static class ScenarioA1OrdnanceCalculator
         // concealed target is acquired only when the shot costs it its concealment.
         var effects = (normal?.Effects ?? []).Concat(criticalHit?.Effects ?? []).ToArray();
         var acquires = !malfunctioned && (!concealedTarget || effects.Any(item => item.ConcealmentLost));
-        var acquisition = !acquires ? 0 : concealedTarget ? -1 : Math.Max(shot.Acquisition!.Value - 1, -2);
+        var acquisition = !acquires ? 0 : concealedTarget ? -1 : Math.Max((AcquisitionDenied(shot) ? 0 : shot.Acquisition!.Value) - 1, -2);
         var gunEffect = new OrdnanceGunEffect(Breakdown(shot, gun, reference), malfunctioned, kept ? Math.Max(rof, 0) : shot.IntensiveFire == true ? 0 : Math.Max(rof, 0), kept, counter,
             acquisition, acquires ? shot.TargetLocationId : null);
 
@@ -922,10 +957,51 @@ public static class ScenarioA1OrdnanceCalculator
         return (kept, kept ? null : shot.Phase switch
         {
             "PFPh" or "AFPh" => "prep-fire",
-            "MPh" => "first-fire",
+
+            // D3.3 (p. 199; pass 50): "is marked with a Bounding Fire counter [EXC: if the only weapon fired did not exhaust its Multiple ROF]".
+            "MPh" => shot.FireKind == ScenarioA1FireCalculator.BoundingFirstFire ? "bounding-fire" : "first-fire",
             _ => "final-fire",
         });
     }
+
+    /// <summary>
+    /// Case C and its subcases (C5.3 to C5.33, D3.32, pp. 172 and 200; pass 50), or null when none applies. A vehicle's MA fired in its own MPh
+    /// "must add the +2 DRM of Case B to the applicable Gun Type DRM of Case C": 2 for a T or ST turret, 3 for a NT mount (the C5.3 EX: +4 and
+    /// +5). Case C1 adds one for a continuous LOS of two and a half to three MP, Case C2 two for at most two MP, and more than three MP, or a LOS
+    /// held since before the MPh, is Case C alone. In the AFPh a vehicle that entered a new hex in its MPh, is in Motion, or fires on the ROF its
+    /// Bounding First Fire kept uses Case C; the subcases "do not apply in the AFPh". Case B is part of it and is not added again.
+    /// </summary>
+    internal static FireModifier? CaseC(OrdnanceShot shot, GunDefinition gun)
+    {
+        if (shot.Vehicle is not { } vehicle)
+        {
+            return null;
+        }
+
+        var bounding = shot.FireKind == ScenarioA1FireCalculator.BoundingFirstFire;
+        if (!bounding && !(shot.Phase == "AFPh" && shot.FiringSide == "phasing" && (vehicle.Moved == true || vehicle.InMotion == true || vehicle.BoundingFirer == true)))
+        {
+            return null;
+        }
+
+        var mount = 2 + (gun.MaType is "t" or "st" or "rst" or "1mt" ? 2 : 3);
+        return !bounding || vehicle.MpInLos is null or > 3 ? new FireModifier("case-c", mount, "C5.3")
+            : vehicle.MpInLos > 2 ? new FireModifier("case-c1", mount + 1, "C5.31")
+            : new FireModifier("case-c2", mount + 2, "C5.32");
+    }
+
+    /// <summary>
+    /// C6.55 (p. 175; review of pass 50): "only a Stabilized Gun (D11.1) may claim/retain its Acquisition DRM for Motion/Bounding-First Fire TH
+    /// attempts". No vehicle of the catalog is Stabilized: such a shot takes no Case N, and what it acquires starts from nothing (ruling R50.13).
+    /// </summary>
+    internal static bool AcquisitionDenied(OrdnanceShot shot) => shot.FireKind == ScenarioA1FireCalculator.BoundingFirstFire || MotionFirer(shot);
+
+    /// <summary>
+    /// Whether the shot is a Motion firer's (C5.35, D2.42, pp. 172 and 198; pass 50): a vehicle in Motion, or moving and not stopped, that fires in
+    /// its own MPh or AFPh. It uses Case C, C1, or C2 as applicable and "must double the lower dr of its TH DR".
+    /// </summary>
+    internal static bool MotionFirer(OrdnanceShot shot) =>
+        shot.Vehicle?.InMotion == true && (shot.FireKind == ScenarioA1FireCalculator.BoundingFirstFire || (shot.Phase == "AFPh" && shot.FiringSide == "phasing"));
 
     /// <summary>
     /// The firer-based DRM of the backlog pass 8 (rulings R8.2, R8.8, R8.10): Case F for Intensive Fire (C5.61), Case H for a non-qualified

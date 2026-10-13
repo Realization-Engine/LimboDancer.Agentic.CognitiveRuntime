@@ -100,6 +100,9 @@ public sealed record GameState(
     /// <summary>The Location each Gun has acquired and its Acquisition DRM (C6.5).</summary>
     public IReadOnlyList<GunAcquisition> Acquisitions { get; init; } = [];
 
+    /// <summary>The weapons each vehicle has fired this Player Turn, with the CA change each made (D3.5, D3.51; pass 50); cleared as the Player Turn ends.</summary>
+    public IReadOnlyList<VehicleWeaponShot> VehicleWeaponShots { get; init; } = [];
+
     /// <summary>The Turret Covered Arcs that differ from their VCA (D3.12; ruling R7.10).</summary>
     public IReadOnlyList<TurretFacing> TurretFacings { get; init; } = [];
 

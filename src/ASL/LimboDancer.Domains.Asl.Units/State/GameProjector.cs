@@ -493,6 +493,7 @@ public static class GameProjector
                     OrdnanceShots = [],
                     Advances = newPlayerTurn ? [] : state.Advances,
                     MovedVehicles = newPlayerTurn ? [] : state.MovedVehicles,
+                    VehicleWeaponShots = newPlayerTurn ? [] : state.VehicleWeaponShots,
                     GunCrewsFired = newPlayerTurn ? [] : state.GunCrewsFired,
                     // A3.3 (table player, pass 12): a unit that fired only a SW in the PFPh has Prep Fired and does not move.
                     NoMoveThisPlayerTurn = newPlayerTurn ? [] : Rules.ScenarioA1SequenceProjection.NoMoveListGrows(state.Phase, newPlayerTurn)
@@ -1125,6 +1126,16 @@ public static class GameProjector
             state = SupportWeapons(state, fired, shooter, mortar, panzerfaust);
             return state with
             {
+                // D3.5, D3.51 (pass 50): a tank's MA shot is one of its weapons' shots of the fire phase, with the turn its turret made.
+                VehicleWeaponShots = tank
+                    ? [.. state.VehicleWeaponShots, new VehicleWeaponShot(fired.Gun, "ma", Rules.ScenarioA1FireEligibility.FirePhase(state.Phase, shooter.Side == state.PhasingSide),
+                        fired.Facts.TryGetProperty("hexspinesToTurn", out var maTurn) && maTurn.ValueKind == JsonValueKind.Number ? maTurn.GetInt32() : 0,
+                        fired.Facts.TryGetProperty("firerInWoodsOrBuilding", out var maWoods) && maWoods.ValueKind == JsonValueKind.True)
+                    {
+                        // C5.3 (pass 50): the movement step a Bounding First Fire shot followed; none yet at the outset of the move.
+                        Step = state.Phase == "mph" && shooter.Side == state.PhasingSide ? state.Movement?.Step ?? 0 : null,
+                    }]
+                    : state.VehicleWeaponShots,
                 OrdnanceShots = [.. state.OrdnanceShots.Where(item => item.Gun != fired.Gun), new OrdnanceShotRecord(fired.Gun, (shots?.Shots ?? 0) + 1, fired.RateOfFireKept)],
                 Acquisitions = [.. state.Acquisitions.Where(item => item.Gun != fired.Gun),
                     .. fired.Acquired is { } acquired && fired.Acquisition < 0 ? new[] { new GunAcquisition(fired.Gun, acquired, fired.Acquisition) } : []],
@@ -1483,7 +1494,8 @@ public static class GameProjector
                 // C6.5 (pass 35, task 35.11): lost when its firer leaves its Location, or turns without having fired on its target this phase. A
                 // vehicle's VCA change turns its MA with it unless its TCA is kept apart (the referee's review).
                 if (Rules.ScenarioA1FireFollowUps.AcquisitionLostByMoveOrTurn(FirerAt(previous, acquisition.Gun), FirerAt(next, acquisition.Gun),
-                    Rules.ScenarioA1FireFollowUps.AcquiringCaChanged(payload is GunTurned turned && turned.Gun == acquisition.Gun,
+                    Rules.ScenarioA1FireFollowUps.AcquiringCaChanged((payload is GunTurned turned && turned.Gun == acquisition.Gun)
+                            || (payload is VehicleStepped { Turret: not null } turretStep && turretStep.Vehicle == acquisition.Gun),
                         payload is VehicleStepped { Kind: VehicleStepped.Turn } hull && hull.Vehicle == acquisition.Gun,
                         previous?.TurretFacings.Any(item => item.Vehicle == acquisition.Gun) == true),
                     previous?.OrdnanceShots.FirstOrDefault(item => item.Gun == acquisition.Gun)?.Shots ?? 0))
@@ -1597,9 +1609,29 @@ public static class GameProjector
 
             // C2.24, D3.5 (unit step 25): a vehicle's MG shot keeps its Multiple ROF for this phase when its record says so, as a Gun's does.
             var shots = state.OrdnanceShots;
+            var weaponShots = state.VehicleWeaponShots;
+            var turrets = state.TurretFacings;
             if (fire.Facts.TryGetProperty("vehicleFire", out var vehicleFire) && vehicleFire.ValueKind == JsonValueKind.Object
-                && vehicleFire.TryGetProperty("vehicleId", out var vehicleId) && vehicleId.GetString() is { } vehicle)
+                && vehicleFire.TryGetProperty("vehicleId", out var vehicleId) && vehicleId.GetString() is { } armed
+                && vehicleFire.TryGetProperty("weapons", out var namedWeapons) && namedWeapons.ValueKind == JsonValueKind.Array)
             {
+                // D3.5, D3.51, D3.52 (pass 50): a BMG and a CMG fire once a Player Turn; the state keeps which fired, in which fire phase, and the
+                // CA change each made. A CMG fired outside the TCA turns the turret. The MA's own ROF record is left as it is.
+                var firePhase = Rules.ScenarioA1FireEligibility.FirePhase(state.Phase, state.Unit(armed)?.Side == state.PhasingSide);
+                var doubled = vehicleFire.TryGetProperty("inWoodsOrBuilding", out var inWoods) && inWoods.ValueKind == JsonValueKind.True;
+                weaponShots = [.. weaponShots, .. namedWeapons.EnumerateArray().Select(item => new VehicleWeaponShot(armed,
+                    item.TryGetProperty("weapon", out var weaponName) ? weaponName.GetString() ?? string.Empty : string.Empty, firePhase,
+                    item.TryGetProperty("turn", out var turned) && turned.ValueKind == JsonValueKind.Number ? turned.GetInt32() : 0, doubled))];
+                if (fire.TurretFacing is { } turret)
+                {
+                    turrets = [.. turrets.Where(item => item.Vehicle != armed), new TurretFacing(armed, turret)];
+                }
+            }
+            else if (fire.Facts.TryGetProperty("vehicleFire", out vehicleFire) && vehicleFire.ValueKind == JsonValueKind.Object
+                && vehicleFire.TryGetProperty("vehicleId", out vehicleId) && vehicleId.GetString() is { } vehicle)
+            {
+                weaponShots = [.. weaponShots, new VehicleWeaponShot(vehicle, "ma",
+                    Rules.ScenarioA1FireEligibility.FirePhase(state.Phase, state.Unit(vehicle)?.Side == state.PhasingSide), 0, false)];
                 // Rules decides the kept ROF and the count (pass 32.c).
                 var effects = fire.Resolution.TryGetProperty("weaponEffects", out var weaponEffects) && weaponEffects.ValueKind == JsonValueKind.Array ? weaponEffects : (JsonElement?)null;
                 var kept = Rules.ScenarioA1FireFollowUps.VehicleShotKeepsRof(effects?.GetArrayLength() ?? 0,
@@ -1615,6 +1647,8 @@ public static class GameProjector
             {
                 FiresThisPhase = [.. state.FiresThisPhase, new FireRecord(eventId, fire.FirerLocation, fire.TargetLocation) { Step = fire.MovementStep, Vehicle = byVehicle }],
                 OrdnanceShots = shots,
+                VehicleWeaponShots = weaponShots,
+                TurretFacings = turrets,
                 FireLanes = state.FireLanes.Count == 0 ? state.FireLanes
                     : [.. state.FireLanes.Where(lane => !Rules.ScenarioA1FireEligibility.FireLaneCancelledBy(fire.FirerLocation == fire.TargetLocation,
                         fire.Firers.Contains(lane.Operator, StringComparer.Ordinal) || weaponsFired.Contains(lane.Weapon)))],
@@ -1850,7 +1884,28 @@ public static class GameProjector
             // disables it.
             if (repair.Unit == repair.Equipment && Active(state, repair.Unit) is UnitInstance vehicle && vocabulary.IsA(vehicle.Kind, "asl:vehicle"))
             {
-                if (!Rules.ScenarioA1RoutRallyProjection.VehicleRepairAllowedAsRecorded(state.Phase, GameState.Condition(vehicle, Conditions.Malfunctioned) == ConditionState.True,
+                // D3.7 (p. 201; pass 50): a Gun MA, a BMG, or a CMG, each by its own dr once a RPh, by a crew that is not shocked or stunned.
+                var repairKey = repair.Weapon is { } weaponKey ? vehicle.Id + ":" + weaponKey : vehicle.Id;
+                if (repair.Weapon is { } repairedWeapon
+                    ? state.Phase != "rph" || Rules.ScenarioA1RallyRules.VehicleWeaponRepairBar(vehicle.Id, repairedWeapon,
+                        GameState.Condition(vehicle, Rules.ScenarioA1RallyRules.VehicleWeaponMalfunction(repairedWeapon) switch
+                        {
+                            Rules.UnitCondition.BmgMalfunctioned => Conditions.BmgMalfunctioned,
+                            Rules.UnitCondition.CmgMalfunctioned => Conditions.CmgMalfunctioned,
+                            _ => Conditions.Malfunctioned,
+                        }) == ConditionState.True,
+                        GameState.Condition(vehicle, Rules.ScenarioA1RallyRules.VehicleWeaponDisabled(repairedWeapon) switch
+                        {
+                            Rules.UnitCondition.BmgDisabled => Conditions.BmgDisabled,
+                            Rules.UnitCondition.CmgDisabled => Conditions.CmgDisabled,
+                            _ => Conditions.Disabled,
+                        }) == ConditionState.True,
+                        Rules.ScenarioA1RallyRules.VehicleCrewImpaired(GameState.Condition(vehicle, Conditions.Stunned) == ConditionState.True,
+                            GameState.Condition(vehicle, Conditions.Shocked) == ConditionState.True, GameState.Condition(vehicle, Conditions.UnconfirmedKill) == ConditionState.True,
+                            GameState.Condition(vehicle, Conditions.Recalled) == ConditionState.True, GameState.Condition(vehicle, Conditions.StunRecovery) == ConditionState.True,
+                            GameState.Condition(vehicle, Conditions.Abandoned) == ConditionState.True),
+                        state.RepairsThisPhase.Contains(repairKey)) is not null
+                    : !Rules.ScenarioA1RoutRallyProjection.VehicleRepairAllowedAsRecorded(state.Phase, GameState.Condition(vehicle, Conditions.Malfunctioned) == ConditionState.True,
                     GameState.Condition(vehicle, Conditions.Disabled) == ConditionState.True, GameState.Condition(vehicle, Conditions.ButtonedUp) == ConditionState.True,
                     GameState.Condition(vehicle, Conditions.Stunned) == ConditionState.True, GameState.Condition(vehicle, Conditions.Recalled) == ConditionState.True,
                     GameState.Condition(vehicle, Conditions.Shocked) == ConditionState.True, GameState.Condition(vehicle, Conditions.UnconfirmedKill) == ConditionState.True,
@@ -1875,7 +1930,7 @@ public static class GameProjector
 
                 return state with
                 {
-                    RepairsThisPhase = [.. state.RepairsThisPhase, vehicle.Id]
+                    RepairsThisPhase = [.. state.RepairsThisPhase, repairKey]
                 };
             }
 
@@ -2163,6 +2218,9 @@ public static class GameProjector
                     && leaving.All(id => Active(state, id) is UnitInstance { Position: ContainedPosition { Role: ContainmentRole.Passenger } contained } && contained.Container == vehicle.Id),
                 VehicleStepped.Stop => moving && step.At == at.Location && step.Facing is null && step.HalfMp == 2,
 
+                // D2.17 (pass 50): a Delay MP, one MP in place by a vehicle that is stopped or has not started.
+                VehicleStepped.Delay => !moving && !bogged && step.At == at.Location && step.Facing is null && step.HalfMp == 2,
+
                 // D2.1 (ruling R5.15): the MP left at the end of its move, spent in its hex, moving or stopped; A2.6: an exit from its edge hex.
                 VehicleStepped.Remain => current is not null && step.At == at.Location && step.Facing is null,
                 VehicleStepped.Exit => moving && step.At == at.Location && step.Facing is null && !reverse,
@@ -2175,6 +2233,12 @@ public static class GameProjector
             {
                 return Fail<GameState>("UNIT-STATE-034",
                     "A vehicle starts when not moving; turns one hexspine, enters a Location, stops, or exits only while moving; turns, starts, and stops for one MP; and spends its MP left in its hex only to end its move (D2.1, D2.11 to D2.13).");
+            }
+
+            // D3.12 (pass 50): the TCA changes with a Delay, a stop, a VCA change, or an entry, not with any other expenditure.
+            if (step.Turret is not null && !Rules.ScenarioA1VehicleMovementCalculator.TurretTurnsWith(step.Kind))
+            {
+                return Fail<GameState>("UNIT-STATE-034", "A vehicle's turret turns with a Delay MP, a stop, a VCA change, or an entry (D3.12).");
             }
 
             if (step.Kind == VehicleStepped.Exit)
@@ -2273,14 +2337,24 @@ public static class GameProjector
                     }
                     : item)],
             };
+            if (step.Turret is { } turretTurned)
+            {
+                next = next with
+                {
+                    TurretFacings = [.. next.TurretFacings.Where(item => item.Vehicle != vehicle.Id), new TurretFacing(vehicle.Id, turretTurned)],
+                };
+            }
+
+            // D2.17 (pass 50): a Delay MP is spent by a vehicle that is stopped or has not started, and leaves it stopped: it does not end its
+            // move in Motion (D2.4).
             return next with
             {
                 Movement = new MovementState([vehicle.Id], step.At, step.Kind == VehicleStepped.Enter ? step.HalfMp : (current?.HalfMfInLocation ?? 0) + step.HalfMp,
                     step.Step, false, WindowOpen: true)
                 {
                     Vehicle = true,
-                    Started = step.Kind == VehicleStepped.Remain ? current!.Started : step.Kind != VehicleStepped.Stop,
-                    Stopped = step.Kind == VehicleStepped.Remain ? current!.Stopped : step.Kind == VehicleStepped.Stop,
+                    Started = step.Kind == VehicleStepped.Remain ? current!.Started : step.Kind is not (VehicleStepped.Stop or VehicleStepped.Delay),
+                    Stopped = step.Kind == VehicleStepped.Remain ? current!.Stopped : step.Kind is VehicleStepped.Stop or VehicleStepped.Delay,
 
                     // D2.15 (ruling R11.5): a Minimum Move ends the vehicle's move in Motion once the DEFENDER passes.
                     Ending = step.Kind == VehicleStepped.Remain || step.MinimumMove,
@@ -2369,8 +2443,17 @@ public static class GameProjector
                 return Fail<GameState>("UNIT-STATE-039", "An OVR is resolved by its vehicle's fire record after the DEFENDER's window on its declaration closes (D7.1).");
             }
 
+            // D7.1, D3.3, D3.5 (review of pass 50): an OVR is fire by the vehicle's MA and MGs in its MPh, so none of them fires apart from it
+            // in that Player Turn but in another OVR.
             return state with
             {
+                VehicleWeaponShots =
+                [
+                    .. state.VehicleWeaponShots,
+                    new VehicleWeaponShot(overrun.Vehicle, "ma", "mph", 0, false) { Step = movement.Step },
+                    new VehicleWeaponShot(overrun.Vehicle, "bmg", "mph", 0, false) { Step = movement.Step },
+                    new VehicleWeaponShot(overrun.Vehicle, "cmg", "mph", 0, false) { Step = movement.Step },
+                ],
                 Movement = movement with
                 {
                     Overrun = null,

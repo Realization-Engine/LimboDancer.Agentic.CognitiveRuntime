@@ -315,6 +315,14 @@ public static class ScenarioA1FireCalculator
             Need(vehicle.Malfunctioned, "vehicleFire.malfunctioned");
             Need(vehicle.FiredThisPlayerTurn, "vehicleFire.firedThisPlayerTurn");
             Need(vehicle.RateOfFireShot, "vehicleFire.rateOfFireShot");
+            foreach (var (weapon, index) in (vehicle.Weapons ?? []).Select((item, index) => (item, index)))
+            {
+                Need(weapon.Weapon, $"vehicleFire.weapons[{index}].weapon");
+                Need(weapon.Malfunctioned, $"vehicleFire.weapons[{index}].malfunctioned");
+                Need(weapon.Fired, $"vehicleFire.weapons[{index}].fired");
+                Need(weapon.Turn, $"vehicleFire.weapons[{index}].turn");
+            }
+
             Need(attack.FirerLocationId, "firerLocationId");
             Need(attack.Range, "range");
             Need(attack.SameLevel, "sameLevel");
@@ -465,6 +473,9 @@ public static class ScenarioA1FireCalculator
             // Table player, pass 15 (ruling R15.3): a DC Thrown as Defensive First Fire also attacks its thrower's Location, whose units are not moving.
             ("MPh", "non-phasing", null) => attack.OrdnanceHit is not null || attack.DemolitionCharge is { Mode: FireDemolitionCharge.Thrower },
             ("MPh", "phasing", BoundingFirstFire) => attack.VehicleFire is not null,
+
+            // D3.3, C5.3 (pass 50): the hit of a vehicle's MA fired in its own MPh as Bounding First Fire.
+            ("MPh", "phasing", null) => attack.OrdnanceHit is not null,
             ("MPh", "phasing", OverrunFire) => attack.Overrun is not null,
             _ => false,
         };
@@ -881,8 +892,18 @@ public static class ScenarioA1FireCalculator
         IReadOnlyList<FireDefinition?> targetDefinitions, List<string> outside)
     {
         var definition = reference.Definitions.GetValueOrDefault(vehicle.DefinitionId!);
-        if (definition is not { IsVehicle: true, MainArmament: "aamg", AntiAircraftMg: not null } || attack.Firers is { Count: > 0 } || Directors(attack).Any()
-            || vehicle.LocationId != attack.FirerLocationId || vehicle.CrewExposed != true || vehicle.Stunned == true || vehicle.Malfunctioned == true
+
+        // D1.81, D1.82, D3.5 (pp. 195, 200; pass 50): the BMG and CMG it names, each printed on the counter, working, and named once. A BMG fires
+        // only inside the VCA; a CMG's turret turns for the shot (D3.52), but never in Bounding First Fire (C5.13: "must always fire within its
+        // current CA"); the CMG of a CE tank with a RST or 1MT turret does not fire (D1.321, D1.322). Neither needs a CE crew (D1.83).
+        var named = vehicle.Weapons is { Count: > 0 } list ? list : null;
+        var weaponsOutside = named is null
+            ? definition is not { IsVehicle: true, MainArmament: "aamg", AntiAircraftMg: not null } || vehicle.CrewExposed != true || vehicle.Malfunctioned == true
+            : definition is not { IsVehicle: true } || named.Select(item => item.Weapon).Distinct(StringComparer.Ordinal).Count() != named.Count
+                || named.Any(item => VehicleWeaponFp(definition, item.Weapon) is null || item.Malfunctioned == true
+                    || (item.Weapon == FireVehicleWeapon.CoaxialMg && definition.TurretBarredWhileCe(vehicle.CrewExposed))
+                    || (item.Turn > 0 && (item.Weapon != FireVehicleWeapon.CoaxialMg || attack.FireKind == BoundingFirstFire)));
+        if (weaponsOutside || attack.Firers is { Count: > 0 } || Directors(attack).Any() || vehicle.LocationId != attack.FirerLocationId || vehicle.Stunned == true
             || (attack.Phase == "PFPh" && vehicle.InMotion == true))
         {
             outside.Add("asl.a1.fire.vehicle-fire-outside");
@@ -895,7 +916,8 @@ public static class ScenarioA1FireCalculator
             outside.Add("asl.a1.fire.phase-outside");
         }
 
-        if (vehicle.FiredThisPlayerTurn == true && vehicle.RateOfFireShot != true)
+        // D3.5 (pass 50): a BMG or CMG makes one fire attack a Player Turn, in the fire phase the vehicle's other weapons fire in.
+        if (named is null ? vehicle.FiredThisPlayerTurn == true && vehicle.RateOfFireShot != true : vehicle.OtherPhase == true || named.Any(item => item.Fired == true))
         {
             outside.Add("asl.a1.fire.firer-already-fired");
         }
@@ -908,7 +930,8 @@ public static class ScenarioA1FireCalculator
             outside.Add("asl.a1.fire.target-outside");
         }
 
-        if (attack.Range is < 1 or > 16)
+        // A7.22: within twice the Normal Range of each MG that fires: eight hexes for a BMG and an AAMG, twelve for a CMG (D1.81 to D1.83).
+        if (attack.Range is < 1 || attack.Range > (named is null ? 16 : named.Min(item => 2 * VehicleWeaponRange(item.Weapon))))
         {
             outside.Add("asl.a1.fire.out-of-range");
         }
@@ -922,6 +945,35 @@ public static class ScenarioA1FireCalculator
         {
             outside.Add("asl.a1.fire.roll-malformed");
         }
+    }
+
+    /// <summary>The printed FP of a vehicle's BMG or CMG (D1.8, p. 195; pass 50); null when the counter prints none or the name is neither.</summary>
+    public static int? VehicleWeaponFp(FireDefinition definition, string? weapon)
+    {
+        ArgumentNullException.ThrowIfNull(definition);
+        return weapon switch
+        {
+            FireVehicleWeapon.BowMg => definition.BowMg,
+            FireVehicleWeapon.CoaxialMg => definition.CoaxialMg,
+            _ => null,
+        };
+    }
+
+    /// <summary>The Normal Range of a vehicle's MG (D1.81 to D1.83, p. 195; pass 50): twelve hexes for a CMG, eight for a BMG and an AAMG.</summary>
+    public static int VehicleWeaponRange(string? weapon) => weapon == FireVehicleWeapon.CoaxialMg ? 12 : 8;
+
+    /// <summary>
+    /// The Case A DRM a vehicle's MG attack adds to its IFT DR (D3.52, D3.51, C5.11, pp. 172 and 201; pass 50): for a CMG whose turret turns, the
+    /// To Hit DRM of Case A for the turret's type, doubled in woods, a building, or rubble; for one that fires within the current TCA after
+    /// another turret weapon turned it in this fire phase, what that weapon paid; the worst of the weapons that fire together.
+    /// </summary>
+    public static int VehicleCaseA(FireVehicleFire vehicle, FireDefinition definition)
+    {
+        ArgumentNullException.ThrowIfNull(vehicle);
+        ArgumentNullException.ThrowIfNull(definition);
+        return (vehicle.Weapons ?? []).Select(item => item.Turn is > 0 and var turn
+            ? ScenarioA1ArmorCalculator.CaseA(definition.MaType, turn) * (vehicle.InWoodsOrBuilding == true ? 2 : 1)
+            : item.MaintainedCaseA ?? 0).DefaultIfEmpty(0).Max();
     }
 
     /// <summary>
@@ -1332,7 +1384,7 @@ public static class ScenarioA1FireCalculator
                 return Refused(FireResolution.Indeterminate, undecided.Distinct().ToArray());
             }
 
-            var weapons = attack.VehicleFire is { } vehicleFire ? [VehicleWeaponEffect(vehicleFire, arithmetic)] : attack.SprayShare == true ? null : WeaponEffects(arithmetic);
+            var weapons = attack.VehicleFire is { } vehicleFire ? VehicleWeaponEffects(vehicleFire, arithmetic) : attack.SprayShare == true ? null : WeaponEffects(arithmetic);
             if (attack.VehicleFire is null && weapons is not null)
             {
                 arithmetic = WithWeaponResidual(arithmetic, weapons);
@@ -1669,6 +1721,47 @@ public static class ScenarioA1FireCalculator
         }
 
         /// <summary>
+        /// A vehicle's weapons after its attack (D3.7, A9.71, pp. 65 and 201; pass 50). Its MA MG as before. A BMG and a CMG have no B# of their
+        /// own ("a printed B# &lt; 12 applies only to the MA") and no ROF: each malfunctions on an Original 12, and of two that fired together
+        /// Random Selection finds the one, or both on a tie (A9.71: "this rule also applies to multiple MG ... attacks by the same AFV"). The
+        /// vehicle's fire counter is carried by the first.
+        /// </summary>
+        private List<FireWeaponEffect> VehicleWeaponEffects(FireVehicleFire vehicle, FireArithmetic arithmetic)
+        {
+            if (vehicle.Weapons is not { Count: > 0 } named)
+            {
+                return [VehicleWeaponEffect(vehicle, arithmetic)];
+            }
+
+            var id = vehicle.VehicleId!;
+            var breakdown = 12 - (attack.BreakdownReduction ?? 0);
+            var selection = new Dictionary<string, int>(StringComparer.Ordinal);
+            if (arithmetic.OriginalDr >= breakdown && named.Count > 1)
+            {
+                var keys = named.Select(item => id + ":" + item.Weapon).ToArray();
+                foreach (var key in keys)
+                {
+                    if (attack.Rolls!.WeaponSelection?.TryGetValue(key, out var dr) != true)
+                    {
+                        undecided.Add("asl.a1.fire.roll-missing:weaponSelection:" + string.Join(",", keys));
+                        return [];
+                    }
+
+                    selection[key] = dr;
+                    usedRolls.Add("weaponSelection:" + key);
+                }
+            }
+
+            var highest = selection.Count == 0 ? 0 : selection.Values.Max();
+            return [.. named.Select((item, index) => new FireWeaponEffect(id, breakdown,
+                arithmetic.OriginalDr >= breakdown && (selection.Count == 0 || selection[id + ":" + item.Weapon] == highest), false, false,
+                index == 0 ? FireCounter() : null, selection.Count == 0 ? null : selection[id + ":" + item.Weapon])
+            {
+                VehicleWeapon = item.Weapon,
+            })];
+        }
+
+        /// <summary>
         /// A15.41: after the attack, a leader who went berserk tries to take every other friendly unit in his Location subject to
         /// Heat of Battle with him: each takes a NTC with his leadership DRM, and on a pass goes berserk too, rallying if broken.
         /// Units the attack did not attack are its companions; the effects of those that took the NTC are returned.
@@ -1954,20 +2047,22 @@ public static class ScenarioA1FireCalculator
             }
             else if (attack.VehicleFire is { } vehicle)
             {
+                // D3.5 (pass 50): the FP of the MGs that fire are added together for the one attack.
+                string?[] mgs = vehicle.Weapons is { Count: > 0 } named ? [.. named.Select(item => item.Weapon)] : [null];
                 if (hasKnown)
                 {
-                    firers.Add(VehicleFirepower(vehicle, false));
-                    known = firers[^1].Firepower;
+                    firers.AddRange(mgs.Select(mg => VehicleFirepower(vehicle, false, mg)));
+                    known = firers.Sum(item => item.Firepower);
                 }
 
                 if (hasConcealed)
                 {
-                    var concealedFp = VehicleFirepower(vehicle, true);
-                    firers.Add(hasKnown ? concealedFp with
+                    FirerFirepower[] concealedFp = [.. mgs.Select(mg => VehicleFirepower(vehicle, true, mg))];
+                    firers.AddRange(concealedFp.Select(item => hasKnown ? item with
                     {
                         VsConcealed = true
-                    } : concealedFp);
-                    vsConcealed = concealedFp.Firepower;
+                    } : item));
+                    vsConcealed = concealedFp.Sum(item => item.Firepower);
                 }
             }
             else
@@ -2175,6 +2270,13 @@ public static class ScenarioA1FireCalculator
             if (attack.VehicleFire is { StunRecovery: true } recovering)
             {
                 drm.Add(new FireModifier("stun-recovery:" + recovering.VehicleId, 1m, "D5.34"));
+            }
+
+            // D3.52, D3.51 (p. 201; pass 50): a CMG fired outside its TCA adds the To Hit DRM of Case A to the IFT DR, and one fired within a TCA
+            // another turret weapon changed in this fire phase pays what that one paid.
+            if (attack.VehicleFire is { Weapons.Count: > 0 } turning && VehicleCaseA(turning, reference.Definitions[turning.DefinitionId!]) is > 0 and var caseA)
+            {
+                drm.Add(new FireModifier("case-a:" + turning.VehicleId, caseA, "D3.52"));
             }
 
             // D5.34 (p. 203; pass 35, task 35.13 d): and to its OVR DR.
@@ -2398,7 +2500,7 @@ public static class ScenarioA1FireCalculator
         /// A vehicle's MA AAMG FP (D1.83: Normal Range eight hexes): doubled at Point Blank Range (A7.21), halved beyond its Normal Range
         /// (A7.22), against concealed targets (A7.23), in the AFPh (D3.53), in Motion (D2.42), and when its crew is pinned (A7.82).
         /// </summary>
-        private FirerFirepower VehicleFirepower(FireVehicleFire vehicle, bool vsConcealed)
+        private FirerFirepower VehicleFirepower(FireVehicleFire vehicle, bool vsConcealed, string? mg = null)
         {
             var definition = reference.Definitions[vehicle.DefinitionId!];
             var range = attack.Range!.Value;
@@ -2408,7 +2510,7 @@ public static class ScenarioA1FireCalculator
                 multipliers.Add(new FireModifier("point-blank-fire", 2m, "A7.21"));
             }
 
-            if (range > 8)
+            if (range > VehicleWeaponRange(mg))
             {
                 multipliers.Add(new FireModifier("long-range-fire", 0.5m, "A7.22"));
             }
@@ -2444,8 +2546,10 @@ public static class ScenarioA1FireCalculator
                 multipliers.Add(new FireModifier("pinned-crew", 0.5m, "A7.82"));
             }
 
-            var printed = definition.AntiAircraftMg!.Value;
-            return new FirerFirepower(vehicle.VehicleId!, printed, multipliers, multipliers.Aggregate((decimal)printed, (value, item) => value * item.Value));
+            // D1.8 (pass 50): the BMG's or the CMG's own FP when the attack names it, under the vehicle's id and the weapon's name ("de-tank BMG").
+            var printed = mg is null ? definition.AntiAircraftMg!.Value : VehicleWeaponFp(definition, mg)!.Value;
+            return new FirerFirepower(mg is null ? vehicle.VehicleId! : vehicle.VehicleId + " " + mg.ToUpperInvariant(), printed, multipliers,
+                multipliers.Aggregate((decimal)printed, (value, item) => value * item.Value));
         }
 
         private IEnumerable<FirerFirepower> Firepower(bool vsConcealed)

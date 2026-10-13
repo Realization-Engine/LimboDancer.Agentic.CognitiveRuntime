@@ -283,7 +283,7 @@ public static class ReplaySteps
         if (First<VehicleStepped>(payloads) is { } drove)
         {
             var side = SideOf(drove.Vehicle);
-            return ("move", side, $"{A(side, "vehicle")} moves in {Place(before, drove.At)}{end}", false);
+            return ("move", side, $"{A(side, "vehicle")} {(drove.Kind == VehicleStepped.Delay ? "spends a Delay MP" : "moves")} in {Place(before, drove.At)}{end}", false);
         }
 
         if (First<AdvanceMoved>(payloads) is { } advanced)
@@ -326,7 +326,7 @@ public static class ReplaySteps
             var result = repair.Result switch
             {
                 RepairAttempted.Repaired => "repaired",
-                RepairAttempted.Eliminated => "the weapon is eliminated",
+                RepairAttempted.Eliminated => repair.Weapon is null ? "the weapon is eliminated" : "the weapon is disabled",
                 _ => "still malfunctioned",
             };
             return ("rally", SideOf(repair.Unit), $"{A(SideOf(repair.Unit), "unit")} tries to repair a weapon: {result}", false);

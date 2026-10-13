@@ -130,14 +130,32 @@ public static class LiveOrdnance
         // A8.1, C6.1 (ruling R8.1): in the MPh, Defensive First Fire by the non-phasing side at the moving stack in its Location, while the
         // DEFENDER's window on its MF or MP expenditure is open; only the moving units are its targets.
         IReadOnlyList<string>? movers = null;
+        var bounding = false;
         if (phase == "MPh")
         {
-            if (ScenarioA1OrdnanceEligibility.OutsideMphWindow(side == state.PhasingSide, state.Movement is { WindowOpen: true }, () => state.Movement!.Location == target))
+            // D3.3, C5.3 (pass 50): the phasing side's vehicle fires its MA as Bounding First Fire; Rules says which kind the shot is.
+            var (mphKind, mphRefusal) = ScenarioA1OrdnanceEligibility.MphShotKind(side == state.PhasingSide, gun is UnitInstance, () => LiveFire.MayBoundingFire(state, gun.Id),
+                state.Movement is { WindowOpen: true }, () => state.Movement!.Location == target);
+            if (mphRefusal is not null)
             {
-                return (null, ScenarioA1OrdnanceEligibility.MphWindowRefusal);
+                return (null, mphRefusal);
             }
 
-            movers = state.Movement!.Movers;
+            bounding = mphKind == ScenarioA1FireCalculator.BoundingFirstFire;
+            if (bounding)
+            {
+                // C5.3: another MP between its shots.
+                if (ScenarioA1OrdnanceEligibility.BoundingShotBar(gun.Id,
+                    state.VehicleWeaponShots.LastOrDefault(item => item.Vehicle == gun.Id && item.Weapon == "ma" && item.FirePhase == "mph")?.Step, state.Movement?.Step ?? 0,
+                    state.OrdnanceShots.FirstOrDefault(item => item.Gun == gun.Id) is { Shots: > 0, RateOfFireKept: false }) is { } mpBar)
+                {
+                    return (null, mpBar);
+                }
+            }
+            else
+            {
+                movers = state.Movement!.Movers;
+            }
         }
 
         UnitInstance? vehicleTarget = null;
@@ -236,7 +254,14 @@ public static class LiveOrdnance
         {
             return (null, ScenarioA1OrdnanceEligibility.SupportRefusal);
         }
-        if (phase == "MPh")
+        if (bounding)
+        {
+            shot = shot with
+            {
+                FireKind = ScenarioA1FireCalculator.BoundingFirstFire,
+            };
+        }
+        else if (phase == "MPh")
         {
             // C6.13, C6.16, C6.17: non-Assault Movement and the MF or MP spent in the Location (FRD); the Gun's shots there so far; the MP in the
             // firer's continuous LOS and a move into Open Ground are the planner's map reads.
@@ -260,7 +285,16 @@ public static class LiveOrdnance
             {
                 Vehicle = ScenarioA1OrdnanceEligibility.VehicleFirer(LiveFire.CrewExposed(firer), Is(firer, Conditions.Motion), Is(firer, Conditions.Stunned),
                     Is(firer, Conditions.Shocked), Is(firer, Conditions.UnconfirmedKill), Is(firer, Conditions.Recalled), Is(firer, Conditions.StunRecovery),
-                    state.MovedVehicles.Contains(firer.Id, StringComparer.Ordinal)),
+                    state.MovedVehicles.Contains(firer.Id, StringComparer.Ordinal),
+                    // D2.42, D3.32 (pass 50): the moving vehicle that has not stopped is a Motion firer; one that fired its MA in this MPh is a Bounding Firer.
+                    state.Movement is { Vehicle: true, Started: true, Stopped: false } moving && moving.Movers.Contains(firer.Id),
+                    state.VehicleWeaponShots.Any(item => item.Vehicle == firer.Id && item.Weapon == "ma" && item.FirePhase == "mph")) with
+                {
+                    // D3.5, D3.51 (pass 50): the MA beside the vehicle's other weapons.
+                    Weapons = ScenarioA1OrdnanceEligibility.VehicleWeapons(LiveFire.VehicleShots(state, firer.Id),
+                        ScenarioA1FireEligibility.FirePhase(state.Phase, firer.Side == state.PhasingSide),
+                        LiveFire.MaTypeOf(definition), Is(firer, Conditions.BoundingFire)),
+                },
             };
         }
 
@@ -571,6 +605,33 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
         // The map facts are taken as recorded; the state reads of pass 8 are recomputed (table player, pass 8): Bore Sighting (C6.43), overstacking
         // (A5.12, A5.131), and Emplacement. A SW is where its possessor is; a PF where its firer is.
         var merged = ScenarioA1OrdnanceEligibility.WithRecordedMapFacts(expected, recorded);
+
+        // Pass 50 (ruling R45.4's rule for a new fact): a record made before the pass says nothing of the vehicle's other weapons, and is compared without.
+        if (merged.Vehicle is { Weapons: not null } withWeapons && recorded.Vehicle is { Weapons: null }
+            && recorded.FireKind != ScenarioA1FireCalculator.BoundingFirstFire && !(recorded.SameHex == true && recorded.VehicleTarget is not null))
+        {
+            merged = merged with
+            {
+                Vehicle = withWeapons with
+                {
+                    Weapons = null,
+                    BoundingFirer = null,
+                }
+            };
+        }
+
+        // C5.31 to C5.33 (pass 50): the MP in a continuous LOS are the planner's read of the map, recorded with a Bounding First Fire shot.
+        if (merged.Vehicle is { } firingVehicle && recorded.Vehicle is { MpInLos: { } mpInLos })
+        {
+            merged = merged with
+            {
+                Vehicle = firingVehicle with
+                {
+                    MpInLos = mpInLos
+                }
+            };
+        }
+
         var gunAt = state.Location(fired.Gun)?.Location ?? state.Location(fired.Crew)?.Location ?? fired.Target;
         var firingSide = state.Unit(fired.Crew)?.Side ?? string.Empty;
         var enemy = state.Sides.FirstOrDefault(item => item.Id != firingSide)?.Id ?? string.Empty;

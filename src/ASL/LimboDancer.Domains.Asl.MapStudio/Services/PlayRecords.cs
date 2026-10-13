@@ -247,7 +247,12 @@ public sealed class PlayRecords
             var text = item.Payload switch
             {
                 MovementStepped step => Many(step.Movers, "moves", "move") + $"{From(before, step.Movers.Count > 0 ? step.Movers[0] : null)} to {step.To}{(step.Assault ? " by Assault Movement" : string.Empty)}",
-                VehicleStepped { Kind: not VehicleStepped.Turn } drive => $"{drive.Vehicle} moves{From(before, drive.Vehicle)} to {drive.At}",
+                // D2.17, D3.12 (pass 50): a Delay MP, and a turret turned with an MP expenditure.
+                VehicleStepped { Kind: VehicleStepped.Turn, Turret: { } turnTurret } turnedBoth => $"{turnedBoth.Vehicle} turns its turret to {UnitFacings.Name(turnTurret)} with its VCA change (D3.12)",
+                VehicleStepped { Kind: VehicleStepped.Delay } delay => $"{delay.Vehicle} spends a Delay MP in {delay.At} (D2.17)"
+                    + (delay.Turret is { } delayTurret ? $", turning its turret to {UnitFacings.Name(delayTurret)} (D3.12)" : string.Empty),
+                VehicleStepped { Kind: not VehicleStepped.Turn } drive => $"{drive.Vehicle} moves{From(before, drive.Vehicle)} to {drive.At}"
+                    + (drive.Turret is { } driveTurret ? $", turning its turret to {UnitFacings.Name(driveTurret)} (D3.12)" : string.Empty),
                 AdvanceMoved advance => Many(advance.Units, "advances", "advance") + (advance.Exit is { } edge ? $" off the {edge} edge from {advance.To}" : $"{From(before, advance.Units.Count > 0 ? advance.Units[0] : null)} to {advance.To}"),
                 MovementWindowClosed => $"The {DisplayText.Side(before?.Sides.FirstOrDefault(side => side.Id != before.PhasingSide)?.Id)} side, the DEFENDER, declines First Fire",
                 MovementEnded ended => Many(ended.Movers, "ends its move", "end their move") + In(before, ended.Movers.Count > 0 ? ended.Movers[0] : null),
@@ -359,14 +364,16 @@ public sealed class PlayRecords
                 var modifications = string.Concat(hit.Modifications.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({DisplayText.Modifier(item.Name)}, {item.Rule})"));
                 var outcome = hit.CriticalHit ? "Critical Hit" : hit.Hit ? "hit" : "miss";
                 var shot = fired.Facts.Deserialize<OrdnanceShot>(LiveFire.Json);
-                var aim = shot?.VehicleTarget is { } aimed ? $"{(shot.Ammunition ?? "ap").ToUpperInvariant()} at {aimed.VehicleId} in {fired.Target} (hull {aimed.HullFacing}"
-                    + (aimed.TurretFacing is { } turretFacing ? $", turret {turretFacing}" : "") + " toward the firer)"
+                // D3.2 (pass 50): from inside the target's hex the colored dr gives the Target Facing.
+                var aim = shot?.VehicleTarget is { } aimed ? $"{(shot.Ammunition ?? "ap").ToUpperInvariant()} at {aimed.VehicleId} in {fired.Target} ("
+                    + (shot.SameHex == true ? "in its own hex: the Target Facing by the colored dr, D3.2)"
+                        : $"hull {aimed.HullFacing}" + (aimed.TurretFacing is { } turretFacing ? $", turret {turretFacing}" : "") + " toward the firer)")
                     : shot?.TargetType == OrdnanceTargetTypes.Area ? $"HE at {fired.Target} on the Area Target Type" + (shot.Spotter is { } spotter ? $", spotted by {spotter.UnitId}" : "")
                     : $"HE at {fired.Target}";
                 var check = resolution.PanzerfaustCheck is { } pf ? $"PF Check dr {pf.Dr}{ModifierText(pf.Drm)} = {pf.FinalDr}: a shot; " : "";
                 var parts = new List<string>
                 {
-                    check + $"{fired.Gun}{In(history.At(item.Revision - 1), fired.Gun)} fires {aim}"
+                    check + $"{fired.Gun}{In(history.At(item.Revision - 1), fired.Gun)} fires {aim}" + (shot?.FireKind == ScenarioA1FireCalculator.BoundingFirstFire ? " as Bounding First Fire (D3.3)" : "")
                         + (fired.Facing is { } facing ? $", turning to {UnitFacings.Name(facing)}" : "")
                         + $": Basic TH# {hit.BasicToHit} ({hit.Color}){modifications} = {hit.ModifiedToHit}; DR {dice} = {hit.OriginalDr}{ModifierText(hit.Drm)} = Final DR {hit.FinalDr}"
                         + (hit.SubsequentDr is { } dr ? $", subsequent dr {dr}" : "") + (hit.Improbable ? " (Improbable Hit, C3.6)" : "") + $": {outcome}",
@@ -420,7 +427,10 @@ public sealed class PlayRecords
                     parts.Add($"{kill.HitLocation} hit, {kill.TargetFacing} Target Facing, {kill.Ammunition.ToUpperInvariant()}: {tk}; TK DR {string.Join(", ", kill.Dice)} = {kill.OriginalDr}: {fate}{checks}");
                 }
 
-                parts.Add((gun.Malfunctioned ? "the Gun malfunctions (C2.28)" : gun.RateOfFireKept ? "it may fire again this phase (C2.24)" : "no more fire this phase")
+                var boundingShot = shot?.FireKind == ScenarioA1FireCalculator.BoundingFirstFire;
+                parts.Add((gun.Malfunctioned ? "the Gun malfunctions (C2.28)"
+                    : gun.RateOfFireKept ? boundingShot ? "it may fire again after another MP, and a Delay MP will do (C2.24, C5.3)" : "it may fire again this phase (C2.24)"
+                    : boundingShot ? "a Bounding Fire counter: no more fire this Player Turn (D3.3)" : "no more fire this phase")
                     + (gun.Acquisition < 0 ? $"; Acquisition {gun.Acquisition} on {gun.AcquiredLocationId} (C6.5)" : ""));
                 records.Add((item.EventId, string.Join("; ", parts)));
             }
@@ -494,7 +504,10 @@ public sealed class PlayRecords
     {
         if (attack.VehicleFire is { } byVehicle)
         {
-            return $"{byVehicle.VehicleId}'s AAMG in {byVehicle.LocationId}";
+            // D3.5 (pass 50): a tank's BMG and CMG by name; a vehicle whose MA is its MG as before.
+            return byVehicle.Weapons is { Count: > 0 } mgs
+                ? $"{byVehicle.VehicleId}'s {string.Join(" and ", mgs.Select(item => (item.Weapon ?? string.Empty).ToUpperInvariant()))} in {byVehicle.LocationId}"
+                : $"{byVehicle.VehicleId}'s AAMG in {byVehicle.LocationId}";
         }
 
         // D7.1 (visual check, pass 11): an OVR's firer is its vehicle.
@@ -688,7 +701,15 @@ public sealed class PlayRecords
                         RepairAttempted.Eliminated => "eliminated (a 6)",
                         _ => "still malfunctioned",
                     };
-                    records.Add((item.EventId, "repair", $"{repair.Unit}{In(before, repair.Unit)} repairs {repair.Equipment}: dr {dr} against R{repair.RepairNumber}: {result}"));
+                    // D3.7 (pass 50): a vehicle's weapon by its name; a 6 disables it, and a tank whose MA is disabled is Recalled.
+                    records.Add((item.EventId, "repair", repair.Weapon is { } repairedWeapon
+                        ? $"{repair.Unit}{In(before, repair.Unit)} tries to repair its {repairedWeapon.ToUpperInvariant()}: dr {dr}: "
+                            + (repair.Result == RepairAttempted.Eliminated
+                                ? "disabled (a 6; D3.7)" + (attempts[attempt].Any(other => other.Payload is ConditionsChanged changed
+                                    && changed.Conditions.TryGetValue(Conditions.Recalled, out var recalled) && recalled == ConditionState.True)
+                                    ? ", and the vehicle is Recalled: buttoned up and treated as stunned until the Player Turn ends, then it must leave (D3.7, D5.341)" : "")
+                                : result)
+                        : $"{repair.Unit}{In(before, repair.Unit)} repairs {repair.Equipment}: dr {dr} against R{repair.RepairNumber}: {result}"));
                 }
                 else if (item.Payload is ManhandlingRolled push)
                 {

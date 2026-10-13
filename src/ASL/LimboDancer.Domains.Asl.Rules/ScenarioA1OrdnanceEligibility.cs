@@ -284,14 +284,69 @@ public static class ScenarioA1OrdnanceEligibility
     /// <summary>A7.25 (p. 55; pass 35, task 35.10): ordnance uses Opportunity Fire only if fired by Infantry, in the AFPh, from beneath its Bounding Fire counter.</summary>
     public static bool? OpportunityFirer(string? phase, bool infantry, bool boundingFire) => phase == "afph" && infantry && boundingFire ? true : null;
 
-    /// <summary>A firing vehicle's facts (D5.2, D5.34, C7.42, D5.341, D2.4; rulings R7.10, R7.11): a CT AFV is BU unless its crew is exposed.</summary>
+    /// <summary>
+    /// A tank's MA beside its other weapons, from the vehicle's shots of this Player Turn (D3.5, D3.51; pass 50): a shot in another fire phase
+    /// forfeits the MA's; a fire counter is the other weapons' alone when the MA has no shot yet; and the MA's first shot of the fire phase pays
+    /// the Case A the CMG paid before it.
+    /// </summary>
+    public static OrdnanceVehicleWeapons VehicleWeapons(IReadOnlyList<VehicleWeaponShotFacts> shots, string firePhase, string? maType, bool boundingFireMarked = false)
+    {
+        ArgumentNullException.ThrowIfNull(shots);
+
+        // D3.32 (p. 200; pass 50): "if the vehicle did not exhaust its Multiple ROF during its MPh, and did not fire any other weapons ... during its
+        // MPh, it may fire that Multiple ROF weapon (only) again once during its AFPh". A Bounding Fire counter says the ROF is spent (D3.3).
+        var afterBounding = firePhase == "afph" && !boundingFireMarked && shots.Count > 0 && shots.All(item => item.Weapon == "ma" && item.FirePhase == "mph");
+        // D3.51 (review of pass 50): the MA pays the CMG's Case A on its first shot after the CMG turned the turret, whether or not it fired before.
+        var lastTurn = shots.Select((item, index) => (item, index)).LastOrDefault(pair => pair.item.FirePhase == firePhase && pair.item.Weapon != "ma" && pair.item.Turn > 0);
+        var paid = lastTurn.item is null || shots.Skip(lastTurn.index + 1).Any(item => item.Weapon == "ma" && item.FirePhase == firePhase);
+        return new OrdnanceVehicleWeapons(!afterBounding && shots.Any(item => item.FirePhase != firePhase), shots.Count > 0 && shots.All(item => item.Weapon != "ma"),
+            paid ? null : ScenarioA1FireEligibility.MaintainedCaseA([lastTurn.item!], firePhase, maType))
+        {
+            BoundingFireSpent = boundingFireMarked && shots.Any(item => item.Weapon == "ma" && item.FirePhase == "mph") ? true : null,
+        };
+    }
+
+    /// <summary>
+    /// A firing vehicle's facts (D5.2, D5.34, C7.42, D5.341, D2.4; rulings R7.10, R7.11): a CT AFV is BU unless its crew is exposed. Pass 50 (D2.42,
+    /// D3.32): the moving vehicle that has not stopped is a Motion firer too, and one that fired its MA in this MPh is a Bounding Firer in the AFPh.
+    /// </summary>
     public static OrdnanceVehicleFirer VehicleFirer(bool crewExposed, bool motion, bool stunned, bool shocked, bool unconfirmedKill, bool recalled, bool stunRecovery,
-        bool moved) =>
-        new(!crewExposed, motion, stunned, shocked || unconfirmedKill, recalled)
+        bool moved, bool movingUnstopped = false, bool boundingFirer = false) =>
+        new(!crewExposed, motion || movingUnstopped, stunned, shocked || unconfirmedKill, recalled)
         {
             StunRecovery = stunRecovery ? true : null,
             Moved = moved ? true : null,
+            BoundingFirer = boundingFirer ? true : null,
         };
+
+    /// <summary>
+    /// The kind of a shot in the MPh (D3.3, A8.1, C6.1; pass 50, ruling R8.1): the phasing side's vehicle fires its MA as Bounding First Fire when it
+    /// may (at the outset of its MPh, or once the DEFENDER has passed on its last MP expenditure); the other side fires as Defensive First Fire at
+    /// the moving stack while its window is open. The refusal otherwise.
+    /// </summary>
+    public static (string? Kind, string? Refusal) MphShotKind(bool phasing, bool vehicle, Func<bool> mayBoundingFire, bool windowOpen, Func<bool> windowAtTarget)
+    {
+        ArgumentNullException.ThrowIfNull(mayBoundingFire);
+        ArgumentNullException.ThrowIfNull(windowAtTarget);
+        if (phasing)
+        {
+            return vehicle && mayBoundingFire() ? (ScenarioA1FireCalculator.BoundingFirstFire, null)
+                : (null, vehicle ? "play.ordnance-bounding: in its own MPh a vehicle's MA fires as Bounding First Fire, at the outset of its move or once the DEFENDER has passed on its last MP expenditure (D3.3)"
+                    : MphWindowRefusal);
+        }
+
+        return OutsideMphWindow(false, windowOpen, windowAtTarget) ? (null, MphWindowRefusal) : ("first-fire", null);
+    }
+
+    /// <summary>
+    /// C5.3 (p. 172; pass 50): "a vehicle with a Multiple ROF may not fire again until it has expended another MP (even if only a Delay MP)". The
+    /// movement step of its last Bounding First Fire shot against the step now; null when it has made none.
+    /// </summary>
+    public static string? BoundingShotBar(string vehicleId, int? lastShotStep, int stepNow, bool rofSpent = false) =>
+        // A vehicle under a Bounding Fire counter has spent its ROF: the calculator says so, in its own words.
+        !rofSpent && lastShotStep is { } last && stepNow <= last
+            ? $"play.ordnance-bounding-mp: {vehicleId} spends another MP, a Delay MP will do, before its MA fires again in Bounding First Fire (C5.3)"
+            : null;
 
     /// <summary>The refusal of a PF fired by what is not an active unit on the map in a fire phase or the MPh (C13.31).</summary>
     public const string PanzerfaustFirerRefusal = "play.panzerfaust-firer: a PF is fired by an active unit on the map in a fire phase or the MPh (C13.31)";
@@ -408,6 +463,24 @@ public static class ScenarioA1OrdnanceEligibility
                     : recorded.Hit.GunTarget,
             },
         };
+    }
+
+    /// <summary>
+    /// A To Hit DRM's recorded name in a proposal's words (review of pass 50): "case-c2" reads "Case C2", "case-q:woods" reads "Case Q (woods)",
+    /// and "case-a:maintained" reads "Case A (the CA change its turret already made)"; any other name is left as it is.
+    /// </summary>
+    public static string CaseWords(string name)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        if (!name.StartsWith("case-", StringComparison.Ordinal))
+        {
+            return name;
+        }
+
+        var colon = name.IndexOf(':', StringComparison.Ordinal);
+        var head = "Case " + (colon < 0 ? name["case-".Length..] : name["case-".Length..colon]).ToUpperInvariant();
+        var rest = colon < 0 ? string.Empty : name[(colon + 1)..];
+        return rest.Length == 0 ? head : rest == "maintained" ? head + " (the CA change its turret already made)" : $"{head} ({rest.Replace('-', ' ')})";
     }
 
     /// <summary>The hexspines between a Gun's facing now and the facing it is turned to (C3.21, C5.1, D3.12), facings as ints; zero when either is unknown.</summary>

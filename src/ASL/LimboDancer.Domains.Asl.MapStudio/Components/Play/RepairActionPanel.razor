@@ -2,7 +2,7 @@
    their holder or vehicle in the label (ruling R23.1); the planner decides who repairs. *@
 <div class="toolbar">
     <label>
-        Malfunctioned SW or AAMG
+        Malfunctioned SW or vehicle weapon
         <select id="repair-weapon" value="@Weapon" @onchange="@(args => OnWeapon.InvokeAsync(args.Value as string ?? string.Empty))">
             <option value="">choose</option>
             @foreach (var weapon in Weapons)
@@ -14,7 +14,7 @@
     <button id="propose-repair" disabled="@(!Weapons.Any(weapon => weapon.Id == Weapon))" aria-describedby="propose-repair-ready" @onclick="@(() => OnPropose.InvokeAsync())">Propose: repair</button>
     @if (!Weapons.Any(weapon => weapon.Id == Weapon))
     {
-        <span id="propose-repair-ready" class="toolbar-note">Choose the malfunctioned SW or AAMG.</span>
+        <span id="propose-repair-ready" class="toolbar-note">Choose the malfunctioned SW or vehicle weapon.</span>
     }
 </div>
 
