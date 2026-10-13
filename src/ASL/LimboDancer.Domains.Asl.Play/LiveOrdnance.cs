@@ -213,7 +213,7 @@ public static class LiveOrdnance
             target.ToString(), null, null, null, null, acquisition, hit, null)
         {
             Ammunition = ammunition ?? (vehicleTarget is not null ? "ap" : null),
-            ScenarioYear = vehicleTarget is not null || ammunition is not null ? state.ScenarioYear : null,
+            ScenarioYear = ScenarioA1OrdnanceEligibility.RecordsYear(vehicleTarget is not null, ammunition is not null, state.Side(side)?.Nationality) ? state.ScenarioYear : null,
             IntensiveFire = intensive ? true : null,
             // C5.8 (ruling R8.8): a squad or HS manning a Gun is non-qualified.
             NonQualified = ScenarioA1OrdnanceEligibility.NonQualified(gun is EquipmentInstance, crew.Kind, sw),

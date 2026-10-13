@@ -2367,3 +2367,87 @@ sheet,counter,face,attribute,value,transcriber,reviewer,note
 ,axis-minor-hero,wounded,morale,,,,whole number on the wounded side (A15.2)
 ,axis-minor-hero,broken,broken-morale,,,,a hero never breaks (A15.2)
 ,axis-minor-hero,broken,bpv,,,,whole number
+,british-at-gun,counter,kind,,,,expected asl:gun
+,british-at-gun,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,british-at-gun,front,identity,,,,"identity as printed, or not-printed"
+,british-at-gun,front,designation,,,,designation as printed
+,british-at-gun,front,gun-type,,,,"mtr, at, inf, art, rcl, or aa (C2.22)"
+,british-at-gun,front,caliber,,,,whole number in mm (C2.21)
+,british-at-gun,front,caliber-suffix,,,,"star, l, ll, or not-printed"
+,british-at-gun,front,rate-of-fire,,,,"whole number, or not-printed"
+,british-at-gun,front,ife,,,,"whole number, or not-printed"
+,british-at-gun,front,breakdown,,,,whole number (C2.28)
+,british-at-gun,front,range-minimum,,,,"whole number, or not-printed"
+,british-at-gun,front,range-maximum,,,,"whole number, or not-printed"
+,british-at-gun,front,special-ammo,,,,"codes as printed, space-separated"
+,british-at-gun,front,manhandling,,,,whole number (C2.27)
+,british-at-gun,front,target-size,,,,"very-small, small, large, very-large, or not-printed"
+,british-at-gun,front,asl:no-ap,,,,yes or no
+,british-at-gun,front,asl:no-he,,,,yes or no
+,british-at-gun,front,asl:mount-360,,,,yes or no
+,british-at-gun,front,asl:qsu,,,,yes or no
+,british-at-gun,front,asl:nm,,,,yes or no
+,british-at-gun,front,asl:rfnm,,,,yes or no
+,british-at-gun,front,bpv,,,,whole number (Listings Key)
+,british-at-gun,front,dates,,,,"years as printed, yy-yy"
+,british-at-gun,front,asl:animal-pack,,,,yes or no
+,british-at-gun,malfunctioned,repair,,,,"whole number, or not-printed"
+,british-at-gun,malfunctioned,removal,,,,"whole number, or not-printed"
+,american-at-gun,counter,kind,,,,expected asl:gun
+,american-at-gun,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,american-at-gun,front,identity,,,,"identity as printed, or not-printed"
+,american-at-gun,front,designation,,,,designation as printed
+,american-at-gun,front,gun-type,,,,"mtr, at, inf, art, rcl, or aa (C2.22)"
+,american-at-gun,front,caliber,,,,whole number in mm (C2.21)
+,american-at-gun,front,caliber-suffix,,,,"star, l, ll, or not-printed"
+,american-at-gun,front,rate-of-fire,,,,"whole number, or not-printed"
+,american-at-gun,front,ife,,,,"whole number, or not-printed"
+,american-at-gun,front,breakdown,,,,whole number (C2.28)
+,american-at-gun,front,range-minimum,,,,"whole number, or not-printed"
+,american-at-gun,front,range-maximum,,,,"whole number, or not-printed"
+,american-at-gun,front,special-ammo,,,,"codes as printed, space-separated"
+,american-at-gun,front,manhandling,,,,whole number (C2.27)
+,american-at-gun,front,target-size,,,,"very-small, small, large, very-large, or not-printed"
+,american-at-gun,front,asl:no-ap,,,,yes or no
+,american-at-gun,front,asl:no-he,,,,yes or no
+,american-at-gun,front,asl:mount-360,,,,yes or no
+,american-at-gun,front,asl:qsu,,,,yes or no
+,american-at-gun,front,asl:nm,,,,yes or no
+,american-at-gun,front,asl:rfnm,,,,yes or no
+,american-at-gun,front,bpv,,,,whole number (Listings Key)
+,american-at-gun,front,dates,,,,"years as printed, yy-yy"
+,american-at-gun,front,asl:animal-pack,,,,yes or no
+,american-at-gun,malfunctioned,repair,,,,"whole number, or not-printed"
+,american-at-gun,malfunctioned,removal,,,,"whole number, or not-printed"
+,british-crew,counter,kind,,,,expected asl:crew
+,british-crew,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,british-crew,front,firepower,,,,whole number (A1.21)
+,british-crew,front,range,,,,whole number (A1.22)
+,british-crew,front,morale,,,,whole number (A1.23)
+,british-crew,front,identity,,,,"identity as printed, or not-printed"
+,british-crew,front,class,,,,"elite, 1st-line, 2nd-line, green, or conscript"
+,british-crew,front,class-variant,,,,"circle or square, or not-printed"
+,british-crew,front,smoke-exponent,,,,"whole number, or not-printed"
+,british-crew,front,asl:assault-fire,,,,yes or no
+,british-crew,front,asl:spraying-fire,,,,yes or no
+,british-crew,front,asl:elr-5,,,,yes or no
+,british-crew,front,asl:assault-engineer,,,,yes or no
+,british-crew,broken,broken-morale,,,,whole number (A1.23)
+,british-crew,broken,bpv,,,,whole number
+,british-crew,broken,asl:self-rally,,,,yes or no
+,american-crew,counter,kind,,,,expected asl:crew
+,american-crew,counter,nationality,,,,"american, british, finnish, french, german, italian, japanese, or russian"
+,american-crew,front,firepower,,,,whole number (A1.21)
+,american-crew,front,range,,,,whole number (A1.22)
+,american-crew,front,morale,,,,whole number (A1.23)
+,american-crew,front,identity,,,,"identity as printed, or not-printed"
+,american-crew,front,class,,,,"elite, 1st-line, 2nd-line, green, or conscript"
+,american-crew,front,class-variant,,,,"circle or square, or not-printed"
+,american-crew,front,smoke-exponent,,,,"whole number, or not-printed"
+,american-crew,front,asl:assault-fire,,,,yes or no
+,american-crew,front,asl:spraying-fire,,,,yes or no
+,american-crew,front,asl:elr-5,,,,yes or no
+,american-crew,front,asl:assault-engineer,,,,yes or no
+,american-crew,broken,broken-morale,,,,whole number (A1.23)
+,american-crew,broken,bpv,,,,whole number
+,american-crew,broken,asl:self-rally,,,,yes or no

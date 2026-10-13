@@ -244,7 +244,7 @@ public sealed class PlayPageStepsTests : IDisposable
         Commit(page, "#propose-setup");
 
         var file = Directory.GetFiles(live.Root, "village.game.json", SearchOption.AllDirectories).Single();
-        File.WriteAllText(file, File.ReadAllText(file).Replace("asl-scenario-a1@1.13.0", "asl-scenario-a1@1.12.0", StringComparison.Ordinal));
+        File.WriteAllText(file, File.ReadAllText(file).Replace("asl-scenario-a1@1.14.0", "asl-scenario-a1@1.12.0", StringComparison.Ordinal));
         var original = File.ReadAllBytes(file);
         var reopened = context.Render<PlayPage>();
         reopened.OpenGame("village");
@@ -266,7 +266,7 @@ public sealed class PlayPageStepsTests : IDisposable
         // The game is rewritten to name a catalog the Studio does not carry. An earlier version of a catalog it carries would replay
         // (the version locks nothing), so the name is of another catalog.
         var file = Directory.GetFiles(live.Root, "village.game.json", SearchOption.AllDirectories).Single();
-        File.WriteAllText(file, File.ReadAllText(file).Replace("asl-scenario-a1@1.13.0", "asl-no-such-catalog@1.0.0", StringComparison.Ordinal));
+        File.WriteAllText(file, File.ReadAllText(file).Replace("asl-scenario-a1@1.14.0", "asl-no-such-catalog@1.0.0", StringComparison.Ordinal));
         var reopened = context.Render<PlayPage>();
         reopened.OpenGame("village");
         Assert.Contains("does not replay", reopened.Find("#play-replay-failed").TextContent, StringComparison.Ordinal);

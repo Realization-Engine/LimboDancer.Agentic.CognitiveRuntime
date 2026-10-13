@@ -60,6 +60,22 @@ public sealed class ScenarioA1OrdnanceReference
     /// <summary>The Ordnance TH# color of a nationality (C3.3, A25): black or red.</summary>
     public static string Color(string nationality) => Colors.GetValueOrDefault(nationality) ?? "red";
 
+    /// <summary>
+    /// The Ordnance TH# color of a Gun's shot (C3.3, p. 169; the National Capabilities Chart, p. 695; pass 55): British black, American red before
+    /// 1944 and black from 1944, as the chart has them, for a Gun or a vehicle's MA. A light mortar and a LATW keep the color they had before pass 55
+    /// (red for every nationality but the German), so that no recorded shot changes; the chart's black for the British 2-in. mortar is not read.
+    /// </summary>
+    public static string Color(GunDefinition gun, int? year)
+    {
+        ArgumentNullException.ThrowIfNull(gun);
+        return gun.GunType is "mortar" or "latw" ? Color(gun.Nationality) : gun.Nationality switch
+        {
+            "british" => "black",
+            "american" => year >= 1944 ? "black" : "red",
+            _ => Color(gun.Nationality),
+        };
+    }
+
     private int RangeColumn(int range) => Array.FindIndex(ranges, item => range >= item.Minimum && (item.Maximum is null || range <= item.Maximum));
 
     /// <summary>The Basic TH# of the Infantry Target Type at a range, in a color (C3.3).</summary>
@@ -208,8 +224,8 @@ public sealed class ScenarioA1OrdnanceReference
 /// </summary>
 public sealed class ScenarioA1OrdnancePackage : IDomainPackageResolver
 {
-    public const string ManifestSha256 = "fa5f5e0951fdd7e4623db40aa8474cac08b642c8cb153e9b019febd4f09d2716";
-    public const string MatrixSha256 = "9e6320228336addb7b6ba6b4701a7c80cd130a87cd0b9de86a917c9636cd6a24";
+    public const string ManifestSha256 = "11aca8573321dc45e5fdedca9211c25835ad474cb6dffd3d0611e6977ef3733c";
+    public const string MatrixSha256 = "c0185c01b4bf4ca5af032728ce6718da18a1b0daa42ffaa77c1858900cf55972";
     /// <summary>
     /// The package as revised at backlog pass 15 (catalog 1.10.0), before its backlog pass 16 revision (the weather cushion and Extreme Winter B#).
     /// Earlier: backlog pass 9b, 120b1df9; backlog pass 9, 58030546.

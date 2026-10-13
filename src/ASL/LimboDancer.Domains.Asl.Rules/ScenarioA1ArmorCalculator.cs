@@ -20,43 +20,116 @@ internal static class ScenarioA1ArmorCalculator
         _ => 3 + hexspines - 1,
     };
 
-    /// <summary>The Depletion Number of an ammunition in a year (C8.9, C8.91, C8.3), or null when the Gun has none then.</summary>
-    public static int? Depletion(GunDefinition gun, string ammunition, int? year, int? month)
+    /// <summary>
+    /// One item of a counter's special ammunition (C8.9, C8.91; ruling R55.4), written <c>&lt;type&gt;&lt;number&gt;[^&lt;year digit&gt;[m&lt;month&gt;][+][E]]</c>:
+    /// the type (A for APCR, D for APDS, H for HEAT, HE, AP, C for Canister), its Depletion Number, the first year it holds in, the first month of
+    /// that year, whether the counter prints "from that year on", and whether it prints the ETO alone. The last two are kept and not read: the last
+    /// listed number holds after its year with or without the "+", and the game has no theater.
+    /// </summary>
+    internal readonly record struct SpecialAmmunition(string Type, int Number, int? Year, int? Month, bool Onward, bool EtoOnly);
+
+    // The two-letter types first, so that HE7 is not read as HEAT and AP5 not as APCR.
+    private static readonly string[] AmmunitionTypes = ["HE", "AP", "A", "D", "H", "C"];
+
+    /// <summary>Reads one item of a counter's special ammunition (ruling R55.4); null for anything else the counter lists, such as <c>s7</c>.</summary>
+    internal static SpecialAmmunition? ParseAmmunition(string item)
     {
-        ArgumentNullException.ThrowIfNull(gun);
-        var letter = ammunition switch
-        {
-            "apcr" => "A",
-            "heat" => "H",
-            _ => null,
-        };
-        if (letter is null || year is not { } scenarioYear)
+        if (AmmunitionTypes.FirstOrDefault(name => item.StartsWith(name, StringComparison.Ordinal)) is not { } type)
         {
             return null;
         }
 
-        var entries = gun.SpecialAmmo.Where(item => item.StartsWith(letter, StringComparison.Ordinal) && item.Length > 1 && char.IsDigit(item[1]))
-            .Select(item =>
+        var at = type.Length;
+        int? Digits()
+        {
+            var start = at;
+            while (at < item.Length && char.IsAsciiDigit(item[at]))
             {
-                var parts = item[1..].Split('^');
-                var number = int.Parse(parts[0], CultureInfo.InvariantCulture);
-                int? first = parts.Length > 1 ? 1940 + int.Parse(parts[1], CultureInfo.InvariantCulture) : null;
-                return (Number: number, Year: first);
-            }).ToArray();
+                at++;
+            }
+
+            return at > start ? int.Parse(item.AsSpan(start, at - start), CultureInfo.InvariantCulture) : null;
+        }
+
+        bool Mark(char mark)
+        {
+            if (at < item.Length && item[at] == mark)
+            {
+                at++;
+                return true;
+            }
+
+            return false;
+        }
+
+        if (Digits() is not { } number)
+        {
+            return null;
+        }
+
+        int? year = null;
+        int? month = null;
+        var onward = false;
+        var eto = false;
+        if (Mark('^'))
+        {
+            // C8.91: the exponent is the last digit of the year; the game's years run from 1936 to 1945.
+            if (at >= item.Length || !char.IsAsciiDigit(item[at]))
+            {
+                return null;
+            }
+
+            var digit = item[at++] - '0';
+            year = digit >= 6 ? 1930 + digit : 1940 + digit;
+            if (Mark('m') && (month = Digits()) is not (>= 1 and <= 12))
+            {
+                return null;
+            }
+
+            onward = Mark('+');
+            eto = Mark('E');
+        }
+
+        return at == item.Length ? new SpecialAmmunition(type, number, year, month, onward, eto) : null;
+    }
+
+    /// <summary>
+    /// The Depletion Number of an ammunition at a date (C8.9, C8.91, C8.3, C8.8), one more for Elite forces (C8.2, p. 178), or null when the Gun
+    /// has none then. A number holds from its year, and from its month when the counter gives one, until the next listed one.
+    /// </summary>
+    public static int? Depletion(GunDefinition gun, string ammunition, int? year, int? month, bool elite = false)
+    {
+        ArgumentNullException.ThrowIfNull(gun);
+        var type = ammunition switch
+        {
+            "apcr" => "A",
+            "apds" => "D",
+            "heat" => "H",
+            "he" => "HE",
+            "ap" => "AP",
+            "canister" => "C",
+            _ => null,
+        };
+        var entries = gun.SpecialAmmo.Select(ParseAmmunition).OfType<SpecialAmmunition>().Where(entry => entry.Type == type).ToArray();
         if (entries.Length == 0)
         {
             return null;
         }
 
+        int? Elite(int number) => elite ? number + 1 : number;
+
         // C8.3: HEAT is available to the Germans from May 1942, to the U.S., Britain, and Russia from 1943.
-        if (letter == "H" && entries.All(entry => entry.Year is null))
+        if (type == "H" && entries.All(entry => entry.Year is null))
         {
             var from = gun.Nationality == "german" ? (Year: 1942, Month: 5) : (Year: 1943, Month: 1);
-            return scenarioYear > from.Year || (scenarioYear == from.Year && (month ?? 0) >= from.Month) ? entries[0].Number : null;
+            return year > from.Year || (year == from.Year && (month ?? 0) >= from.Month) ? Elite(entries[0].Number) : null;
         }
 
-        var dated = entries.Where(entry => entry.Year is not null).OrderBy(entry => entry.Year).ToArray();
-        return dated.LastOrDefault(entry => entry.Year <= scenarioYear) is { Year: not null } found ? found.Number : null;
+        // A number with no year holds whatever the date (C8.8's AP# and HE#); a dated one needs the scenario's year, and its month where it names one.
+        var held = entries.Where(entry => entry.Year is null
+                || entry.Year < year || (entry.Year == year && (entry.Month is not { } first || (month ?? 0) >= first)))
+            .OrderBy(entry => entry.Year ?? 0).ToArray();
+        return held.Length > 0 ? Elite(held[^1].Number) : null;
     }
 
     /// <summary>D3.2 (p. 199; pass 50): the Target Facing of a vehicle fired on from inside its own hex, by the colored dr of the To Hit DR: 1-2 rear, 3-4 side, 5-6 front.</summary>
@@ -146,7 +219,7 @@ internal static class ScenarioA1ArmorCalculator
         var ammunition = shot.Ammunition!;
         var range = shot.Range!.Value;
         var column = reference.Column(range);
-        var color = ScenarioA1OrdnanceReference.Color(shot.FiringNationality!);
+        var color = ScenarioA1OrdnanceReference.Color(gun, shot.ScenarioYear);
 
         // C3.31, C4: the Vehicle row's Basic TH#, the Gun's modifications, and APCR's (C4.3). C13.33 (ruling R9.8): a PF's Basic TH# is 10, less
         // two for each hex of range, with no C4 modification.

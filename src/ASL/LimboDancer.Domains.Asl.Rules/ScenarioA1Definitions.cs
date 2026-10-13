@@ -166,8 +166,9 @@ public static class ScenarioA1Definitions
     private static readonly Lazy<ScenarioA1OrdnanceReference> OrdnanceReference = new(() => new ScenarioA1OrdnancePackage().Reference);
 
     /// <summary>
-    /// The ammunition a Gun or MA of this definition may carry (C8.1): AP and HE unless its listing denies them, APCR and HEAT where it lists a
-    /// Depletion Number. The year and depletion still decide each shot.
+    /// The ammunition a Gun or MA of this definition may carry (C8.1): AP and HE unless its listing denies them, APCR, APDS, HEAT, and Canister
+    /// where it lists a Depletion Number, and HE by its Depletion Number though the caliber is underscored (C8.8, p. 179; pass 55). The year and
+    /// depletion still decide each shot.
     /// </summary>
     public static IReadOnlyList<string> Ammunitions(string definition)
     {
@@ -176,9 +177,17 @@ public static class ScenarioA1Definitions
             return [];
         }
 
-        bool Lists(char letter) => gun.SpecialAmmo.Any(item => item.Length > 1 && item[0] == letter && char.IsDigit(item[1]));
-        return [.. new[] { ("ap", !gun.NoAp), ("apcr", Lists('A')), ("heat", Lists('H')), ("he", !gun.NoHe) }.Where(item => item.Item2).Select(item => item.Item1)];
+        bool Lists(string type) => gun.SpecialAmmo.Any(item => ScenarioA1ArmorCalculator.ParseAmmunition(item)?.Type == type);
+        return [.. new[] { ("ap", !gun.NoAp), ("apcr", Lists("A")), ("apds", Lists("D")), ("heat", Lists("H")), ("he", !gun.NoHe || Lists("HE")), ("canister", Lists("C")) }
+            .Where(item => item.Item2).Select(item => item.Item1)];
     }
+
+    /// <summary>
+    /// The Depletion Number of an ammunition (<c>apcr</c>, <c>apds</c>, <c>heat</c>, <c>he</c>, <c>ap</c>, <c>canister</c>) for a Gun at a date
+    /// (C8.9, C8.91, C8.3, C8.8; pp. 178 and 179), one more for Elite forces (C8.2); null when the Gun has none then.
+    /// </summary>
+    public static int? DepletionNumber(GunDefinition gun, string ammunition, int? year, int? month, bool elite = false) =>
+        ScenarioA1ArmorCalculator.Depletion(gun, ammunition, year, month, elite);
 
     /// <summary>
     /// Good Order (Index, p. 23): a Personnel unit neither broken, berserk, captured, nor held in Melee. Unknown while any of those is not known;

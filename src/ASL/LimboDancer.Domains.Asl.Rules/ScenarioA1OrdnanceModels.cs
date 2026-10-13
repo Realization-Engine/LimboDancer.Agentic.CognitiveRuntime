@@ -458,7 +458,7 @@ public sealed record GunDefinition(
         get; init;
     }
 
-    /// <summary>Its special ammunition as the counter lists it (C8.9): items such as <c>H7</c> or <c>A4/1941</c>.</summary>
+    /// <summary>Its special ammunition as the counter lists it (C8.9): items such as <c>H7</c>, <c>A4^1</c> (from 1941), or <c>HE7^3m2</c> (from February 1943).</summary>
     public IReadOnlyList<string> SpecialAmmo
     {
         get; init;

@@ -650,7 +650,7 @@ public static class ScenarioA1OrdnanceCalculator
         var rolls = shot.Rolls!;
         var hit = shot.Hit!;
         var range = shot.Range!.Value;
-        var color = ScenarioA1OrdnanceReference.Color(shot.FiringNationality!);
+        var color = ScenarioA1OrdnanceReference.Color(gun, shot.ScenarioYear);
 
         // C3.3, C4: the Basic TH# of the Infantry Target Type by range and color, and the Gun and Ammo modifications.
         var basic = reference.BasicToHit(color, range);

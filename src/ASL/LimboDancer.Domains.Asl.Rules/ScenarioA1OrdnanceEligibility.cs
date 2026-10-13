@@ -265,6 +265,14 @@ public static class ScenarioA1OrdnanceEligibility
         return equipment && firedOrFirstFire() && !firedItsGun() && !(sw && squad);
     }
 
+    /// <summary>
+    /// Whether a shot records the scenario year (pass 55): a shot at a vehicle or with a named ammunition always did, for the Depletion Number
+    /// (C8.9); a shot of a nationality whose Ordnance TH# color turns with the year (the American, red before 1944 and black from 1944; the
+    /// National Capabilities Chart, p. 695) does too. No other shot gains the fact, so a record made before the pass reads as it did.
+    /// </summary>
+    public static bool RecordsYear(bool vehicleTarget, bool ammunitionNamed, string? firingNationality) =>
+        vehicleTarget || ammunitionNamed || firingNationality == "american";
+
     /// <summary>Whether the Gun's crew is non-qualified (C5.8; ruling R8.8): a squad or HS manning a Gun, not a SW.</summary>
     public static bool? NonQualified(bool equipment, string? crewKind, bool sw) => equipment && crewKind is not "asl:crew" && !sw ? true : null;
 
