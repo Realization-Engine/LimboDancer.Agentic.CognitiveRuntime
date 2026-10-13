@@ -12,6 +12,11 @@ public sealed class ScenarioA1Pass55RulesTests
 {
     private static readonly ScenarioA1OrdnanceReference Ordnance = new ScenarioA1OrdnancePackage().Reference;
     private static readonly string[] Types = ["ap", "apcr", "apds", "heat", "he", "canister"];
+    private static readonly string[] FireCounterNames = ["First Fire", "Final Fire", "Intensive Fire"];
+    private static readonly int[] HalfPointCases = [0, 1, 2, 3, 4, 12, 40];
+    private static readonly string[] DrmCalculatorFiles = ["ScenarioA1OrdnanceCalculator.cs", "ScenarioA1ArmorCalculator.cs", "ScenarioA1AreaCalculator.cs"];
+    private static readonly string[] ArmorPiercingKinds = ["ap", "apds"];
+    private static readonly string[] BackblastWeapons = ["pf", "psk"];
     private static readonly int?[] Months = [null, 1, 4, 5, 6, 12];
 
     /// <summary>The definitions that came with pass 55: the pin below is of the counters that were there before it.</summary>
@@ -306,10 +311,22 @@ public sealed class ScenarioA1Pass55RulesTests
         Assert.Equal(OrdnanceResolution.Resolved, Resolve(Uphill(vehicle: true, heightAdvantage: false)).Disposition);
         // The table player's review: the elevation has a reason of its own, apart from the Gun's range, and the planner's refusal the numbers.
         const string elevation = "asl.a1.ordnance.elevation-outside";
-        Assert.Equal([elevation], Resolve(Uphill() with { ElevationAllowed = false }).Reasons);
-        Assert.Contains(elevation, Resolve(Uphill(vehicle: true) with { ElevationAllowed = false }).Reasons);
-        Assert.DoesNotContain(OutOfRange, Resolve(Uphill() with { ElevationAllowed = false }).Reasons);
-        Assert.Contains(OutOfRange, Resolve(Uphill(heightAdvantage: false) with { Range = 0 }).Reasons);
+        Assert.Equal([elevation], Resolve(Uphill() with
+        {
+            ElevationAllowed = false
+        }).Reasons);
+        Assert.Contains(elevation, Resolve(Uphill(vehicle: true) with
+        {
+            ElevationAllowed = false
+        }).Reasons);
+        Assert.DoesNotContain(OutOfRange, Resolve(Uphill() with
+        {
+            ElevationAllowed = false
+        }).Reasons);
+        Assert.Contains(OutOfRange, Resolve(Uphill(heightAdvantage: false) with
+        {
+            Range = 0
+        }).Reasons);
         Assert.Contains("de-gun and its target are 3 levels apart at range 2", ScenarioA1OrdnanceMapRules.ElevationRefusal("de-gun", 3, 2, "at"), StringComparison.Ordinal);
         Assert.Contains("1 level apart at range 0", ScenarioA1OrdnanceMapRules.ElevationRefusal("de-gun", -1, 0), StringComparison.Ordinal);
         Assert.Null(ScenarioA1OrdnanceMapRules.ElevationRefusal("de-gun", 2, 2, "at"));
@@ -360,7 +377,13 @@ public sealed class ScenarioA1Pass55RulesTests
         var tankInWoods = Resolve(Uphill(vehicle: true, terrain: "woods"));
         Assert.Equal((1m, null), (Drm(tankInWoods, "case-q:woods"), Drm(tankInWoods, "case-q:height-advantage")));
         var bypassing = Uphill(vehicle: true, terrain: "woods");
-        var inBypass = Resolve(bypassing with { VehicleTarget = bypassing.VehicleTarget! with { Bypass = true } });
+        var inBypass = Resolve(bypassing with
+        {
+            VehicleTarget = bypassing.VehicleTarget! with
+            {
+                Bypass = true
+            }
+        });
         Assert.Equal((null, 1m), (Drm(inBypass, "case-q:woods"), Drm(inBypass, "case-q:height-advantage")));
 
         // The final DR is one more for it.
@@ -405,7 +428,10 @@ public sealed class ScenarioA1Pass55RulesTests
         Assert.Null(FireRange.VehicleElevationWords(0, 1));
 
         // The levels are a fact the attack needs once it is not at the firer's level.
-        Assert.Contains("asl.a1.fire.fact-missing:targetLevelAbove", Shoot(Cmg(2, 1) with { TargetLevelAbove = null }).Reasons);
+        Assert.Contains("asl.a1.fire.fact-missing:targetLevelAbove", Shoot(Cmg(2, 1) with
+        {
+            TargetLevelAbove = null
+        }).Reasons);
 
         // Another level of the vehicle's own hex is never fired at.
         Assert.Contains("C2.6", ScenarioA1FireMapRules.VehicleOwnHexLevelBar(true, true, false, TankAt, "bd01:F5:1"), StringComparison.Ordinal);
@@ -434,8 +460,15 @@ public sealed class ScenarioA1Pass55RulesTests
 
         // The map reads it for Infantry fire and for a vehicle's MGs, not for an ordnance hit or Residual FP.
         Assert.True(ScenarioA1FireMapRules.ReadsHeightAdvantage(Cmg(2, 1)));
-        Assert.False(ScenarioA1FireMapRules.ReadsHeightAdvantage(Cmg(2, 1) with { OrdnanceHit = new FireOrdnanceHit("gun", 6, false) }));
-        Assert.False(ScenarioA1FireMapRules.ReadsHeightAdvantage(Cmg(2, 1) with { VehicleFire = null, FireKind = ScenarioA1FireCalculator.ResidualFire }));
+        Assert.False(ScenarioA1FireMapRules.ReadsHeightAdvantage(Cmg(2, 1) with
+        {
+            OrdnanceHit = new FireOrdnanceHit("gun", 6, false)
+        }));
+        Assert.False(ScenarioA1FireMapRules.ReadsHeightAdvantage(Cmg(2, 1) with
+        {
+            VehicleFire = null,
+            FireKind = ScenarioA1FireCalculator.ResidualFire
+        }));
 
         // An attack at the firer's level, as every record before the pass was, is what it was.
         Assert.Equal(5m, Shoot(Cmg(2, 0)).Arithmetic!.TotalFirepower);
@@ -505,7 +538,10 @@ public sealed class ScenarioA1Pass55RulesTests
         }
 
         // AP at the same ranges takes no such modification.
-        Assert.DoesNotContain(Resolve(Gun("british", 1944, "ap", vehicle: true, toHit: [5, 6]) with { Range = 25 }).ToHit!.Modifications, item => item.Name is "apds" or "apcr");
+        Assert.DoesNotContain(Resolve(Gun("british", 1944, "ap", vehicle: true, toHit: [5, 6]) with
+        {
+            Range = 25
+        }).ToHit!.Modifications, item => item.Name is "apds" or "apcr");
     }
 
     [Fact]
@@ -515,14 +551,21 @@ public sealed class ScenarioA1Pass55RulesTests
         // to 36, -3 at 37 to 42, -4 at 43 to 48, NA from 49.
         var gun = Ordnance.Guns["british-at-gun"];
         Assert.Equal(18, Ordnance.Armor.BasicTk("apds", gun));
-        Assert.Equal(25, Ordnance.Armor.BasicTk("apds", gun with { Caliber = 76, Suffix = "ll" }));
+        Assert.Equal(25, Ordnance.Armor.BasicTk("apds", gun with
+        {
+            Caliber = 76,
+            Suffix = "ll"
+        }));
         Assert.Equal((1, 0, 0, 0, -1, -2, -3, -4, null), (Ordnance.Armor.CaseD("apds", gun, 1), Ordnance.Armor.CaseD("apds", gun, 2), Ordnance.Armor.CaseD("apds", gun, 12),
             Ordnance.Armor.CaseD("apds", gun, 24), Ordnance.Armor.CaseD("apds", gun, 25), Ordnance.Armor.CaseD("apds", gun, 31), Ordnance.Armor.CaseD("apds", gun, 37),
             Ordnance.Armor.CaseD("apds", gun, 48), Ordnance.Armor.CaseD("apds", gun, 49)));
 
         // The 6-Pounder has no APCR listing, and a Gun with no D listing has no APDS: the 57LL's 18 is APCR's.
         Assert.Null(Ordnance.Armor.BasicTk("apcr", gun));
-        Assert.Null(Ordnance.Armor.BasicTk("apds", gun with { Suffix = "ll" }));
+        Assert.Null(Ordnance.Armor.BasicTk("apds", gun with
+        {
+            Suffix = "ll"
+        }));
         Assert.Null(Ordnance.Armor.BasicTk("apds", Ordnance.Guns["defender-at-gun"]));
 
         // C7.321: "The Final TK# for an unarmored vehicle hit by APCR/APDS is equal to that listed on the AP To Kill Table": 8 for 37 to 57mm.
@@ -539,7 +582,14 @@ public sealed class ScenarioA1Pass55RulesTests
         // C7.35, C7.7: an Original 12 is a dud; an 11 is below the Final TK# of 13 and above half of it: eliminated.
         var struck = Apds([2, 1], 1);
         Assert.Equal(OrdnanceKill.Dud, Resolve(struck).Kill!.Result);
-        Assert.Equal(OrdnanceKill.Eliminated, Resolve(struck with { Rolls = struck.Rolls! with { ToKill = [5, 6], CrewSurvival = [6, 6] } }).Kill!.Result);
+        Assert.Equal(OrdnanceKill.Eliminated, Resolve(struck with
+        {
+            Rolls = struck.Rolls! with
+            {
+                ToKill = [5, 6],
+                CrewSurvival = [6, 6]
+            }
+        }).Kill!.Result);
     }
 
     [Fact]
@@ -553,7 +603,10 @@ public sealed class ScenarioA1Pass55RulesTests
         var last = Resolve(Apds([4, 2]));
         Assert.Equal(("depleted", true), (last.AmmunitionUse, last.ToHit!.Hit));
         Assert.NotNull(last.Kill);
-        var none = Resolve(Apds([4, 3]) with { Acquisition = -1 });
+        var none = Resolve(Apds([4, 3]) with
+        {
+            Acquisition = -1
+        });
         Assert.Equal(OrdnanceResolution.Resolved, none.Disposition);
         Assert.Equal(("none", false, true, null, false, -1, null), (none.AmmunitionUse, none.ToHit!.Hit, none.Gun!.RateOfFireKept, none.Gun.FireCounter, none.Gun.Malfunctioned,
             none.Gun.Acquisition, none.Gun.AcquiredLocationId));
@@ -566,7 +619,15 @@ public sealed class ScenarioA1Pass55RulesTests
 
         // C8.92: "Intensive Fire does not change Depletion Numbers": a 6 is still its last round. A Gun that has fired Intensive Fires.
         var intensive = Apds([4, 2]);
-        Assert.Equal("depleted", Resolve(intensive with { IntensiveFire = true, Gun = intensive.Gun! with { ShotsThisPhase = 1, FiredThisPlayerTurn = true } }).AmmunitionUse);
+        Assert.Equal("depleted", Resolve(intensive with
+        {
+            IntensiveFire = true,
+            Gun = intensive.Gun! with
+            {
+                ShotsThisPhase = 1,
+                FiredThisPlayerTurn = true
+            }
+        }).AmmunitionUse);
 
         // C8.11, the listing's "(J4+E)": none in May 1944, D6 from June, D7 in 1945; none once it has run out.
         Assert.Contains(Unavailable, Resolve(InMonth(Apds([2, 1]), 5)).Reasons);
@@ -592,7 +653,11 @@ public sealed class ScenarioA1Pass55RulesTests
 
         // Above 8 there was no round: at one hex the 9 would hit, yet no IFT DR is asked for, the ROF is kept, no fire counter is placed, and
         // the Acquisition stands.
-        var shot = Gun("british", 1944, "he", toHit: [5, 4]) with { Range = 1, Acquisition = -1 };
+        var shot = Gun("british", 1944, "he", toHit: [5, 4]) with
+        {
+            Range = 1,
+            Acquisition = -1
+        };
         var none = Resolve(shot);
         Assert.Equal(OrdnanceResolution.Resolved, none.Disposition);
         Assert.Equal(("none", false, true, null, -1, null), (none.AmmunitionUse, none.ToHit!.Hit, none.Gun!.RateOfFireKept, none.Gun.FireCounter, none.Gun.Acquisition,
@@ -601,10 +666,16 @@ public sealed class ScenarioA1Pass55RulesTests
         Assert.Null(none.CrewConcealmentLost);
 
         // The control: the same DR under an Elite force's HE9 is the last round, it hits, and the IFT DR is asked for.
-        Assert.StartsWith("asl.a1.ordnance.roll-missing:hit:", Assert.Single(Resolve(shot with { Elite = true }).Reasons), StringComparison.Ordinal);
+        Assert.StartsWith("asl.a1.ordnance.roll-missing:hit:", Assert.Single(Resolve(shot with
+        {
+            Elite = true
+        }).Reasons), StringComparison.Ordinal);
 
         // A malfunction on that DR still counts: the Gun has fired, and hit nothing.
-        var broke = Resolve(Gun("british", 1944, "he", toHit: [6, 6]) with { Range = 1 });
+        var broke = Resolve(Gun("british", 1944, "he", toHit: [6, 6]) with
+        {
+            Range = 1
+        });
         Assert.Equal(("none", true, false, "prep-fire", false), (broke.AmmunitionUse, broke.Gun!.Malfunctioned, broke.Gun.RateOfFireKept, broke.Gun.FireCounter, broke.ToHit!.Hit));
         Assert.Null(broke.Hit);
 
@@ -626,7 +697,10 @@ public sealed class ScenarioA1Pass55RulesTests
 
         // Named, it needs the number's date (none in 1942, none with no year) and a round left.
         Assert.Equal([HeUnavailable], Resolve(He([2, 1], 1942)).Reasons);
-        Assert.Equal([HeUnavailable], Resolve(He([2, 1]) with { ScenarioYear = null }).Reasons);
+        Assert.Equal([HeUnavailable], Resolve(He([2, 1]) with
+        {
+            ScenarioYear = null
+        }).Reasons);
         Assert.Equal([HeUnavailable], Resolve(He([2, 1]).WithDepleted("he")).Reasons);
         Assert.Equal(OrdnanceResolution.Abstained, Resolve(He([2, 1], 1942)).Disposition);
 
@@ -657,7 +731,13 @@ public sealed class ScenarioA1Pass55RulesTests
         OrdnanceShot AtTank(int[] toHit, int year = 1944)
         {
             var shot = Gun("british", year, "he", vehicle: true, toHit);
-            return shot with { Rolls = shot.Rolls! with { ToKill = [6, 6] } };
+            return shot with
+            {
+                Rolls = shot.Rolls! with
+                {
+                    ToKill = [6, 6]
+                }
+            };
         }
 
         Assert.Equal("used", Resolve(AtTank([4, 3])).AmmunitionUse);
@@ -676,12 +756,24 @@ public sealed class ScenarioA1Pass55RulesTests
     {
         // C8.2 (p. 178; ruling R55.6): an Original 7 is above the 6-Pounder's D6, and is the last round of an Elite force's D7.
         Assert.Equal("none", Resolve(Apds([4, 3])).AmmunitionUse);
-        Assert.Equal("depleted", Resolve(Apds([4, 3]) with { Elite = true }).AmmunitionUse);
-        Assert.Equal("used", Resolve(Apds([4, 2]) with { Elite = true }).AmmunitionUse);
-        Assert.Equal("none", Resolve(Apds([4, 4]) with { Elite = true }).AmmunitionUse);
+        Assert.Equal("depleted", Resolve(Apds([4, 3]) with
+        {
+            Elite = true
+        }).AmmunitionUse);
+        Assert.Equal("used", Resolve(Apds([4, 2]) with
+        {
+            Elite = true
+        }).AmmunitionUse);
+        Assert.Equal("none", Resolve(Apds([4, 4]) with
+        {
+            Elite = true
+        }).AmmunitionUse);
 
         // HE8 is HE9, on the Infantry Target Type; APCR's number too.
-        Assert.Equal(("depleted", "none"), (Resolve(He([5, 4]) with { Elite = true }).AmmunitionUse, Resolve(He([5, 4])).AmmunitionUse));
+        Assert.Equal(("depleted", "none"), (Resolve(He([5, 4]) with
+        {
+            Elite = true
+        }).AmmunitionUse, Resolve(He([5, 4])).AmmunitionUse));
 
         // The game's special rule names the side.
         Assert.True(ScenarioA1Definitions.EliteAmmunition(["night:2", "elite-ammunition:british"], "british"));
@@ -690,7 +782,10 @@ public sealed class ScenarioA1Pass55RulesTests
 
         // The words of the proposal and the record, and of the list a player chooses from.
         Assert.Equal("Depletion Number 6", ScenarioA1Definitions.DepletionWords(Apds([4, 3])));
-        Assert.Equal("Depletion Number 7 (6, and 1 for Elite, C8.2)", ScenarioA1Definitions.DepletionWords(Apds([4, 3]) with { Elite = true }));
+        Assert.Equal("Depletion Number 7 (6, and 1 for Elite, C8.2)", ScenarioA1Definitions.DepletionWords(Apds([4, 3]) with
+        {
+            Elite = true
+        }));
         Assert.Null(ScenarioA1Definitions.DepletionWords(Gun("british", 1944, "ap", vehicle: true)));
         Assert.Null(ScenarioA1Definitions.DepletionWords(Gun("american", 1944)));
         Assert.Equal("APDS (Depletion Number 7: 6, and 1 for Elite, C8.2)",
@@ -706,7 +801,17 @@ public sealed class ScenarioA1Pass55RulesTests
         OrdnanceResolution Ap(int[] toHit, int? year = 1944)
         {
             var shot = Gun("british", year, "ap", vehicle: true, toHit);
-            return ScenarioA1OrdnanceCalculator.Resolve(shot with { Gun = shot.Gun! with { DefinitionId = "made-up" }, Rolls = shot.Rolls! with { ToKill = [6, 6] } }, reference);
+            return ScenarioA1OrdnanceCalculator.Resolve(shot with
+            {
+                Gun = shot.Gun! with
+                {
+                    DefinitionId = "made-up"
+                },
+                Rolls = shot.Rolls! with
+                {
+                    ToKill = [6, 6]
+                }
+            }, reference);
         }
 
         Assert.Equal(("used", "depleted", "none"), (Ap([2, 2]).AmmunitionUse, Ap([3, 2]).AmmunitionUse, Ap([3, 3]).AmmunitionUse));
@@ -1020,13 +1125,36 @@ public sealed class ScenarioA1Pass55RulesTests
         // A7.51, A7.4, A8.15: no leader, no firers, no unit of its own side, no Snap Shot, and a Location at the firer's own elevation.
         const string outside = "asl.a1.fire.canister-outside";
         var plain = CanisterAttack(new FireCanister("gun", 12), [5, 6]);
-        Assert.Contains(outside, Shoot(plain with { SameLevel = false, TargetLevelAbove = 1 }).Reasons);
-        Assert.Contains(outside, Shoot(plain with { SnapShot = true }).Reasons);
-        Assert.Contains(outside, Shoot(plain with { Los = new FireLos(true, 0, true, false) }).Reasons);
-        Assert.Contains(outside, Shoot(plain with { Canister = new FireCanister("gun", 16) }).Reasons);
-        Assert.Contains(outside, Shoot(plain with { Canister = new FireCanister("gun", 12) { AdjacentHexes = 3 } }).Reasons);
-        Assert.Contains("asl.a1.fire.target-outside", Shoot(plain with { Targets = [plain.Targets![0] with { Friendly = true }] }).Reasons);
-        Assert.Contains("asl.a1.fire.phase-outside", Shoot(plain with { Phase = "MPh", FiringSide = "non-phasing" }).Reasons);
+        Assert.Contains(outside, Shoot(plain with
+        {
+            SameLevel = false,
+            TargetLevelAbove = 1
+        }).Reasons);
+        Assert.Contains(outside, Shoot(plain with
+        {
+            SnapShot = true
+        }).Reasons);
+        Assert.Contains(outside, Shoot(plain with
+        {
+            Los = new FireLos(true, 0, true, false)
+        }).Reasons);
+        Assert.Contains(outside, Shoot(plain with
+        {
+            Canister = new FireCanister("gun", 16)
+        }).Reasons);
+        Assert.Contains(outside, Shoot(plain with
+        {
+            Canister = new FireCanister("gun", 12) { AdjacentHexes = 3 }
+        }).Reasons);
+        Assert.Contains("asl.a1.fire.target-outside", Shoot(plain with
+        {
+            Targets = [plain.Targets![0] with { Friendly = true }]
+        }).Reasons);
+        Assert.Contains("asl.a1.fire.phase-outside", Shoot(plain with
+        {
+            Phase = "MPh",
+            FiringSide = "non-phasing"
+        }).Reasons);
     }
 
     [Fact]
@@ -1068,12 +1196,18 @@ public sealed class ScenarioA1Pass55RulesTests
         Assert.Equal(new OrdnanceGunEffect(12, true, 2, false, "prep-fire", 0, null), broken.Gun);
 
         // C8.2: an Elite force's number is 8. C5.62, C8.92: Intensive Fire lowers the B# to 10 and not the Depletion Number; its FP is halved.
-        Assert.Equal("depleted", Resolve(Canister([4, 4]) with { Elite = true }).AmmunitionUse);
+        Assert.Equal("depleted", Resolve(Canister([4, 4]) with
+        {
+            Elite = true
+        }).AmmunitionUse);
         var intensive = Resolve(Canister([1, 3], intensive: true));
         Assert.Equal(new OrdnanceGunEffect(10, false, 0, false, "intensive-fire", 0, null), intensive.Gun);
         Assert.Equal([6m, 6m, 6m, 3m], intensive.Canister!.Attacks.Select(item => item.Firepower));
         Assert.Equal(["C8.41", "C8.4"], intensive.Canister.Attacks[^1].Multipliers.Select(item => item.Rule));
-        Assert.True(Resolve(Canister([5, 5], intensive: true) with { Elite = true }).Gun!.Malfunctioned);
+        Assert.True(Resolve(Canister([5, 5], intensive: true) with
+        {
+            Elite = true
+        }).Gun!.Malfunctioned);
 
         // C2.5: an NT Gun's ROF is one lower after a CA change; D3.52, C5.11: Case A on the IFT DR, doubled in woods.
         var turned = Resolve(Canister([2, 1], turn: 1));
@@ -1086,7 +1220,14 @@ public sealed class ScenarioA1Pass55RulesTests
         Assert.Equal((false, 6m), (pinned.Gun!.RateOfFireKept, pinned.Canister!.Attacks[0].Firepower));
         Assert.Contains("asl.a1.ordnance.covered-arc-fixed", Resolve(Canister([1, 2], turn: 1, pinned: true)).Reasons);
         var afph = Canister([1, 2]);
-        var advancing = Resolve(afph with { Phase = "AFPh", Hit = afph.Hit! with { Phase = "AFPh" } });
+        var advancing = Resolve(afph with
+        {
+            Phase = "AFPh",
+            Hit = afph.Hit! with
+            {
+                Phase = "AFPh"
+            }
+        });
         Assert.Equal((false, 12m), (advancing.Gun!.RateOfFireKept, advancing.Canister!.Attacks[0].Firepower));
 
         // C6.5: the Gun loses its Acquisition and gains none.
@@ -1101,11 +1242,21 @@ public sealed class ScenarioA1Pass55RulesTests
         Assert.Contains("asl.a1.ordnance.ammunition-unavailable", Resolve(InMonth(Canister([1, 2], year: 1942), 7)).Reasons);
         Assert.Equal(OrdnanceResolution.Resolved, Resolve(InMonth(Canister([1, 2], year: 1942), 8)).Disposition);
         var spent = Canister([1, 2]);
-        Assert.Contains("asl.a1.ordnance.ammunition-depleted", Resolve(spent with { Gun = spent.Gun! with { Depleted = ["canister"] } }).Reasons);
+        Assert.Contains("asl.a1.ordnance.ammunition-depleted", Resolve(spent with
+        {
+            Gun = spent.Gun! with
+            {
+                Depleted = ["canister"]
+            }
+        }).Reasons);
 
         // C8.4's table gives no FP to a 57mm Gun, and the 6-Pounder's counter lists no Canister.
-        var british = Canister([1, 2]) with { FiringNationality = "british", Gun = new OrdnanceGun("gun", "british-at-gun", false, 0, false, false),
-            Crew = new OrdnanceCrew("crew", "british-crew", false, false, false, false, false) };
+        var british = Canister([1, 2]) with
+        {
+            FiringNationality = "british",
+            Gun = new OrdnanceGun("gun", "british-at-gun", false, 0, false, false),
+            Crew = new OrdnanceCrew("crew", "british-crew", false, false, false, false, false)
+        };
         Assert.Contains("asl.a1.ordnance.canister-gun-outside", Resolve(british).Reasons);
 
         // Ruling R55.8: an aim is 1 to 5; aim 3 alone has two adjacent hexes; a Location is attacked once.
@@ -1117,16 +1268,38 @@ public sealed class ScenarioA1Pass55RulesTests
         Assert.Contains("asl.a1.ordnance.roll-malformed", Resolve(Canister([1, 7])).Reasons);
 
         // The Canister facts belong to a Canister shot; the MPh is not built.
-        Assert.Contains(CanisterOutside, Resolve(Gun("american", 1944, toHit: [5, 6]) with { Canister = Canister(null).Canister }).Reasons);
+        Assert.Contains(CanisterOutside, Resolve(Gun("american", 1944, toHit: [5, 6]) with
+        {
+            Canister = Canister(null).Canister
+        }).Reasons);
         var first = Canister([1, 2]);
-        Assert.Contains("asl.a1.ordnance.canister-movement-phase", Resolve(first with { Phase = "MPh", FiringSide = "non-phasing", FireKind = "first-fire",
-            Movement = new OrdnanceMovement(null, true, true, 1, 0), Hit = first.Hit! with { Phase = "MPh", FiringSide = "non-phasing" } }).Reasons);
+        Assert.Contains("asl.a1.ordnance.canister-movement-phase", Resolve(first with
+        {
+            Phase = "MPh",
+            FiringSide = "non-phasing",
+            FireKind = "first-fire",
+            Movement = new OrdnanceMovement(null, true, true, 1, 0),
+            Hit = first.Hit! with
+            {
+                Phase = "MPh",
+                FiringSide = "non-phasing"
+            }
+        }).Reasons);
 
         // A concealed crew's shot is decided with the planner's read of who sees it fire (A12.14).
-        var hidden = Canister([1, 2]) with { Crew = new OrdnanceCrew("crew", "american-crew", false, false, false, true, false) };
+        var hidden = Canister([1, 2]) with
+        {
+            Crew = new OrdnanceCrew("crew", "american-crew", false, false, false, true, false)
+        };
         Assert.Contains("asl.a1.ordnance.concealment-unreviewed:crew", Resolve(hidden).Reasons);
-        Assert.True(Resolve(hidden with { CrewSeen = true }).CrewConcealmentLost);
-        Assert.Null(Resolve(hidden with { CrewSeen = false }).CrewConcealmentLost);
+        Assert.True(Resolve(hidden with
+        {
+            CrewSeen = true
+        }).CrewConcealmentLost);
+        Assert.Null(Resolve(hidden with
+        {
+            CrewSeen = false
+        }).CrewConcealmentLost);
     }
 
     [Fact]
@@ -1191,13 +1364,19 @@ public sealed class ScenarioA1Pass55RulesTests
         var rolls = attack.Rolls!;
         for (var step = 0; step < 20; step++)
         {
-            var result = ScenarioA1FireCalculator.Resolve(attack with { Rolls = rolls }, Fire);
+            var result = ScenarioA1FireCalculator.Resolve(attack with
+            {
+                Rolls = rolls
+            }, Fire);
             if (result.Reasons is not [{ } reason] || !reason.StartsWith("asl.a1.fire.roll-missing:checks:", StringComparison.Ordinal))
             {
                 return result;
             }
 
-            rolls = rolls with { Checks = reason["asl.a1.fire.roll-missing:checks:".Length..].Split(',').ToDictionary(id => id, _ => (IReadOnlyList<int>)[2, 2]) };
+            rolls = rolls with
+            {
+                Checks = reason["asl.a1.fire.roll-missing:checks:".Length..].Split(',').ToDictionary(id => id, _ => (IReadOnlyList<int>)[2, 2])
+            };
         }
 
         throw new InvalidOperationException("The attack asked for too many rolls.");
@@ -1290,7 +1469,13 @@ public sealed class ScenarioA1Pass55RulesTests
             foreach (var weapon in new[] { FireVehicleWeapon.BowMg, FireVehicleWeapon.CoaxialMg })
             {
                 var mg = Cmg(2, null, weapon: weapon);
-                var fired = Shoot(mg with { VehicleFire = mg.VehicleFire! with { ArmorLeadership = given.Leadership } });
+                var fired = Shoot(mg with
+                {
+                    VehicleFire = mg.VehicleFire! with
+                    {
+                        ArmorLeadership = given.Leadership
+                    }
+                });
                 Assert.Equal(FireResolution.Resolved, fired.Disposition);
                 Assert.DoesNotContain(fired.Arithmetic!.Drm, item => ScenarioA1ArmorLeaders.IsModifier(item.Name));
             }
@@ -1476,23 +1661,57 @@ public sealed class ScenarioA1Pass55RulesTests
         Assert.Contains("not a vehicle of the DEFENDER", MotionBar(new MotionAttemptVehicle("r1", false, true)), StringComparison.Ordinal);
 
         // Mobile: not immobilized, bogged, or Mired (D8.2: a bogged vehicle "is Immobile").
-        Assert.Contains("immobilized", MotionBar(Mobile with { Immobilized = true }), StringComparison.Ordinal);
-        Assert.Contains("bogged", MotionBar(Mobile with { Bogged = true }), StringComparison.Ordinal);
-        Assert.Contains("bogged", MotionBar(Mobile with { Mired = true }), StringComparison.Ordinal);
+        Assert.Contains("immobilized", MotionBar(Mobile with
+        {
+            Immobilized = true
+        }), StringComparison.Ordinal);
+        Assert.Contains("bogged", MotionBar(Mobile with
+        {
+            Bogged = true
+        }), StringComparison.Ordinal);
+        Assert.Contains("bogged", MotionBar(Mobile with
+        {
+            Mired = true
+        }), StringComparison.Ordinal);
 
         // D5.34: a stunned crew may not "move (inclusive of CA changes)"; the "+1" counter says it "is no longer Stunned". D5.341: a Recall
         // "is treated the same as a Stun" until the Player Turn ends, and then the AFV leaves "using Motion status". C7.42, D5.41.
-        Assert.Contains("D5.34", MotionBar(Mobile with { Stunned = true }), StringComparison.Ordinal);
-        Assert.Null(MotionBar(Mobile with { StunRecovery = true }));
-        Assert.Contains("D5.341", MotionBar(Mobile with { Recalled = true }), StringComparison.Ordinal);
-        Assert.Null(MotionBar(Mobile with { Recalled = true, StunRecovery = true }));
-        Assert.Contains("C7.42", MotionBar(Mobile with { Shocked = true }), StringComparison.Ordinal);
-        Assert.Contains("C7.42", MotionBar(Mobile with { UnconfirmedKill = true }), StringComparison.Ordinal);
-        Assert.Contains("D5.41", MotionBar(Mobile with { Abandoned = true }), StringComparison.Ordinal);
+        Assert.Contains("D5.34", MotionBar(Mobile with
+        {
+            Stunned = true
+        }), StringComparison.Ordinal);
+        Assert.Null(MotionBar(Mobile with
+        {
+            StunRecovery = true
+        }));
+        Assert.Contains("D5.341", MotionBar(Mobile with
+        {
+            Recalled = true
+        }), StringComparison.Ordinal);
+        Assert.Null(MotionBar(Mobile with
+        {
+            Recalled = true,
+            StunRecovery = true
+        }));
+        Assert.Contains("C7.42", MotionBar(Mobile with
+        {
+            Shocked = true
+        }), StringComparison.Ordinal);
+        Assert.Contains("C7.42", MotionBar(Mobile with
+        {
+            UnconfirmedKill = true
+        }), StringComparison.Ordinal);
+        Assert.Contains("D5.41", MotionBar(Mobile with
+        {
+            Abandoned = true
+        }), StringComparison.Ordinal);
 
         // "may not attempt it at all if already marked with a First Fire (or Final/Intensive Fire) counter"; "only once per enemy MPh".
-        Assert.All(new[] { "First Fire", "Final Fire", "Intensive Fire" }, counter => Assert.Contains($"a {counter} counter", MotionBar(Mobile with { FireCounter = counter }), StringComparison.Ordinal));
-        Assert.Contains("only once", MotionBar(Mobile with { Attempted = true }), StringComparison.Ordinal);
+        Assert.All(FireCounterNames, counter => Assert.Contains($"a {counter} counter", MotionBar(Mobile with { FireCounter = counter }), StringComparison.Ordinal));
+        Assert.Contains("only once", MotionBar(Mobile with
+        {
+            Attempted = true
+        }), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -1506,7 +1725,7 @@ public sealed class ScenarioA1Pass55RulesTests
         Assert.Equal(0, ScenarioA1MotionAttempts.HalfPointsInLos([(false, 2), (false, 6)]));
 
         // A dr is a whole number: 1½ MF or MP is passed by a dr of 1 alone; a die shows no more than 6.
-        Assert.Equal([0, 0, 1, 1, 2, 6, 6], new[] { 0, 1, 2, 3, 4, 12, 40 }.Select(ScenarioA1MotionAttempts.Number));
+        Assert.Equal([0, 0, 1, 1, 2, 6, 6], HalfPointCases.Select(ScenarioA1MotionAttempts.Number));
         Assert.True(ScenarioA1MotionAttempts.Succeeds(1, 3));
         Assert.False(ScenarioA1MotionAttempts.Succeeds(2, 3));
 
@@ -1562,18 +1781,43 @@ public sealed class ScenarioA1Pass55RulesTests
     {
         // A12.32 (p. 80; ruling R55.32): "Hidden units may not move (even within their hex or to change a CA)". The bar comes before any other
         // of the vehicle's counters, and a recorded attempt by a hidden vehicle is refused at replay.
-        Assert.Contains("A12.32", MotionBar(Mobile with { Hidden = true }), StringComparison.Ordinal);
-        Assert.Contains("A12.32", MotionBar(Mobile with { Hidden = true, Immobilized = true }), StringComparison.Ordinal);
-        Assert.Equal("hidden", ScenarioA1MotionAttempts.BarShort("r1", "mph", true, Mobile with { Hidden = true }));
-        var refusal = ScenarioA1MotionAttempts.RecordRefusal("mph", true, Mobile with { Hidden = true }, 2, 6, ScenarioA1MotionAttempts.Passed, false);
+        Assert.Contains("A12.32", MotionBar(Mobile with
+        {
+            Hidden = true
+        }), StringComparison.Ordinal);
+        Assert.Contains("A12.32", MotionBar(Mobile with
+        {
+            Hidden = true,
+            Immobilized = true
+        }), StringComparison.Ordinal);
+        Assert.Equal("hidden", ScenarioA1MotionAttempts.BarShort("r1", "mph", true, Mobile with
+        {
+            Hidden = true
+        }));
+        var refusal = ScenarioA1MotionAttempts.RecordRefusal("mph", true, Mobile with
+        {
+            Hidden = true
+        }, 2, 6, ScenarioA1MotionAttempts.Passed, false);
         Assert.Equal("UNIT-STATE-048", refusal!.Code);
         Assert.Contains("A12.32", refusal.Text, StringComparison.Ordinal);
 
         // The list's option says each bar in a few words, without the vehicle's name; the refusal keeps the sentence.
-        Assert.Equal("under a First Fire counter", ScenarioA1MotionAttempts.BarShort("r1", "mph", true, Mobile with { FireCounter = "First Fire" }));
-        Assert.Equal("it has made its attempt", ScenarioA1MotionAttempts.BarShort("r1", "mph", true, Mobile with { Attempted = true }));
-        Assert.Equal("Shocked", ScenarioA1MotionAttempts.BarShort("r1", "mph", true, Mobile with { Shocked = true }));
-        Assert.Contains("it is Shocked", MotionBar(Mobile with { Shocked = true }), StringComparison.Ordinal);
+        Assert.Equal("under a First Fire counter", ScenarioA1MotionAttempts.BarShort("r1", "mph", true, Mobile with
+        {
+            FireCounter = "First Fire"
+        }));
+        Assert.Equal("it has made its attempt", ScenarioA1MotionAttempts.BarShort("r1", "mph", true, Mobile with
+        {
+            Attempted = true
+        }));
+        Assert.Equal("Shocked", ScenarioA1MotionAttempts.BarShort("r1", "mph", true, Mobile with
+        {
+            Shocked = true
+        }));
+        Assert.Contains("it is Shocked", MotionBar(Mobile with
+        {
+            Shocked = true
+        }), StringComparison.Ordinal);
         Assert.Null(ScenarioA1MotionAttempts.BarShort("r1", "mph", true, Mobile));
         Assert.NotNull(ScenarioA1MotionAttempts.BarShort("r1", "dfph", true, Mobile));
     }
@@ -1662,7 +1906,11 @@ public sealed class ScenarioA1Pass55RulesTests
         Assert.Contains("immobilized", Record(ScenarioA1MotionAttempts.Failed, dr: 4, immobilized: true)!.Text, StringComparison.Ordinal);
         Assert.Contains("bogged", Record(ScenarioA1MotionAttempts.Failed, dr: 4, bogged: true)!.Text, StringComparison.Ordinal);
         Assert.Contains("bogged", Record(ScenarioA1MotionAttempts.Immobilized, immobilized: true, bogged: true)!.Text, StringComparison.Ordinal);
-        Assert.Null(Record(ScenarioA1MotionAttempts.Failed, dr: 4, vehicle: Mobile with { Recalled = true, StunRecovery = true }));
+        Assert.Null(Record(ScenarioA1MotionAttempts.Failed, dr: 4, vehicle: Mobile with
+        {
+            Recalled = true,
+            StunRecovery = true
+        }));
 
         // The checks a DEFENDER's vehicle makes in the enemy MPh: the Mechanical Reliability DR and a Bog Check, before its attempt is marked.
         Assert.True(ScenarioA1MotionAttempts.CheckInEnemyMph(ScenarioA1ResultTables.MechanicalCheck, true, false));
@@ -1683,7 +1931,11 @@ public sealed class ScenarioA1Pass55RulesTests
             FiringSide = "non-phasing",
             Range = range,
             Acquisition = acquisition,
-            Hit = shot.Hit! with { Phase = phase, FiringSide = "non-phasing" },
+            Hit = shot.Hit! with
+            {
+                Phase = phase,
+                FiringSide = "non-phasing"
+            },
             Vehicle = new OrdnanceVehicleFirer(true, inMotion, false, false, false),
             FireKind = phase == "MPh" ? "first-fire" : null,
             Movement = phase == "MPh" ? new OrdnanceMovement(5, null, null, 1, 0) : null,
@@ -1722,15 +1974,28 @@ public sealed class ScenarioA1Pass55RulesTests
         }
 
         // D2.4: a vehicle in Motion still fires nothing in its own PFPh.
-        Assert.Contains("asl.a1.ordnance.vehicle-fire-outside", Resolve(TankShot() with { Vehicle = new OrdnanceVehicleFirer(true, true, false, false, false) }).Reasons);
+        Assert.Contains("asl.a1.ordnance.vehicle-fire-outside", Resolve(TankShot() with
+        {
+            Vehicle = new OrdnanceVehicleFirer(true, true, false, false, false)
+        }).Reasons);
     }
 
     [Fact]
     public void ADefendersVehicleInMotionFiresItsMgsHalved()
     {
         // D2.42: "All other types of FP from such a vehicle ... are halved as Motion Fire". The PzKpfw IIIH's CMG (5 FP) in the DFPh.
-        var attack = Cmg(2, null) with { Phase = "DFPh", FiringSide = "non-phasing" };
-        var moving = attack with { VehicleFire = attack.VehicleFire! with { InMotion = true } };
+        var attack = Cmg(2, null) with
+        {
+            Phase = "DFPh",
+            FiringSide = "non-phasing"
+        };
+        var moving = attack with
+        {
+            VehicleFire = attack.VehicleFire! with
+            {
+                InMotion = true
+            }
+        };
         Assert.Equal(5m, Shoot(attack).Arithmetic!.TotalFirepower);
         var halved = Shoot(moving);
         Assert.Equal(FireResolution.Resolved, halved.Disposition);
@@ -1799,10 +2064,10 @@ public sealed class ScenarioA1Pass55RulesTests
 
         // A name a calculator gains later fails here until it is classified above (or named as no To Hit DRM).
         var listed = ToHitDrmNames.Select(item => item.Name).ToHashSet(StringComparer.Ordinal);
-        var given = new[] { "ScenarioA1OrdnanceCalculator.cs", "ScenarioA1ArmorCalculator.cs", "ScenarioA1AreaCalculator.cs" }.SelectMany(ModifierNames)
+        var given = DrmCalculatorFiles.SelectMany(ModifierNames)
             .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
         Assert.True(given.Length >= 30, string.Join(", ", given));
-        Assert.Empty(given.Where(name => !listed.Contains(name) && !NotToHitDrm.Contains(name)));
+        Assert.DoesNotContain(given, name => !listed.Contains(name) && !NotToHitDrm.Contains(name));
         Assert.All(given.Except(NotToHitDrm), name => Assert.NotNull(ScenarioA1GunDuels.Classify(name)));
     }
 
@@ -1845,7 +2110,10 @@ public sealed class ScenarioA1Pass55RulesTests
         // The declared shot is accepted and resolves with Case A +6 and Case J +2: the firer's line alone is its Gun Duel DRM.
         var declared = DeclaredShot();
         Assert.Equal(["asl.a1.ordnance.roll-missing:toHit"], Resolve(declared).Reasons);
-        var rolled = Resolve(declared with { Rolls = new OrdnanceRolls([6, 6], null, null, null, null) }).ToHit!;
+        var rolled = Resolve(declared with
+        {
+            Rolls = new OrdnanceRolls([6, 6], null, null, null, null)
+        }).ToHit!;
         Assert.Equal(["case-a:1", "case-j"], rolled.Drm.Select(item => item.Name));
         var gun = ScenarioA1GunDuels.Drm(declared, Ordnance)!;
         Assert.Equal((6, "case-a:1"), (gun.Total, Assert.Single(gun.Lines).Name));
@@ -1859,7 +2127,10 @@ public sealed class ScenarioA1Pass55RulesTests
         // Gun Duel DRM is Case C and Case I alone.
         var answer = AnswerShot();
         Assert.Equal(["asl.a1.ordnance.roll-missing:toHit"], Resolve(answer).Reasons);
-        Assert.Contains(Resolve(answer with { Rolls = new OrdnanceRolls([6, 6], null, null, null, null) }).ToHit!.Drm, item => item.Name == "case-c4:lower-dr" && item.Value == 6);
+        Assert.Contains(Resolve(answer with
+        {
+            Rolls = new OrdnanceRolls([6, 6], null, null, null, null)
+        }).ToHit!.Drm, item => item.Name == "case-c4:lower-dr" && item.Value == 6);
         var tank = ScenarioA1GunDuels.Drm(answer, Ordnance)!;
         Assert.Equal(5, tank.Total);
         Assert.Equal(["case-c", "case-i"], tank.Lines.Select(item => item.Name));
@@ -1900,26 +2171,66 @@ public sealed class ScenarioA1Pass55RulesTests
         Assert.Equal((null, 5, 6), (offered.Bar, offered.Attacker!.Total, offered.Defender!.Total));
 
         // "Vs a non-concealed ... DEFENDER's declared Defensive First Fire attack on it": the Gun, its crew, or the shot's kind and target.
-        Assert.Equal(ScenarioA1GunDuels.Concealed, Duel(Duelable with { FirerConcealed = true }).Bar);
+        Assert.Equal(ScenarioA1GunDuels.Concealed, Duel(Duelable with
+        {
+            FirerConcealed = true
+        }).Bar);
         Assert.Equal(ScenarioA1GunDuels.Concealed, Duel(declared: DeclaredShot(concealed: true)).Bar);
-        Assert.Equal(ScenarioA1GunDuels.NotDefensiveFirstFire, Duel(Duelable with { AtTheMovingVehicle = false }).Bar);
-        Assert.Equal(ScenarioA1GunDuels.NotDefensiveFirstFire, Duel(declared: DeclaredShot() with { FireKind = null, Phase = "DFPh" }).Bar);
-        Assert.Equal(ScenarioA1GunDuels.NotDefensiveFirstFire, Duel(declared: DeclaredShot() with { VehicleTarget = null }).Bar);
+        Assert.Equal(ScenarioA1GunDuels.NotDefensiveFirstFire, Duel(Duelable with
+        {
+            AtTheMovingVehicle = false
+        }).Bar);
+        Assert.Equal(ScenarioA1GunDuels.NotDefensiveFirstFire, Duel(declared: DeclaredShot() with
+        {
+            FireKind = null,
+            Phase = "DFPh"
+        }).Bar);
+        Assert.Equal(ScenarioA1GunDuels.NotDefensiveFirstFire, Duel(declared: DeclaredShot() with
+        {
+            VehicleTarget = null
+        }).Bar);
 
         // "is not conducting an OVR (D7.1) ... and the DEFENDER's attack is not Reaction Fire (D7.2)".
-        Assert.Equal(ScenarioA1GunDuels.Overrunning, Duel(Duelable with { Overrun = true }).Bar);
-        Assert.Equal(ScenarioA1GunDuels.Reaction, Duel(Duelable with { ReactionFire = true }).Bar);
+        Assert.Equal(ScenarioA1GunDuels.Overrunning, Duel(Duelable with
+        {
+            Overrun = true
+        }).Bar);
+        Assert.Equal(ScenarioA1GunDuels.Reaction, Duel(Duelable with
+        {
+            ReactionFire = true
+        }).Bar);
 
         // Ruling R55.20: ordnance that is a Gun's or a vehicle's MA; no second duel at an MP expenditure (C5.3).
-        Assert.Equal(ScenarioA1GunDuels.NotOrdnance, Duel(declared: DeclaredShot() with { Gun = DeclaredShot().Gun! with { DefinitionId = "british-atr" } }).Bar);
-        Assert.Equal(ScenarioA1GunDuels.NotOrdnance, Duel(declared: DeclaredShot() with { Gun = DeclaredShot().Gun! with { DefinitionId = OrdnanceTargetTypes.Panzerfaust } }).Bar);
-        Assert.Equal(ScenarioA1GunDuels.AlreadyFired, Duel(Duelable with { Dueled = true }).Bar);
+        Assert.Equal(ScenarioA1GunDuels.NotOrdnance, Duel(declared: DeclaredShot() with
+        {
+            Gun = DeclaredShot().Gun! with
+            {
+                DefinitionId = "british-atr"
+            }
+        }).Bar);
+        Assert.Equal(ScenarioA1GunDuels.NotOrdnance, Duel(declared: DeclaredShot() with
+        {
+            Gun = DeclaredShot().Gun! with
+            {
+                DefinitionId = OrdnanceTargetTypes.Panzerfaust
+            }
+        }).Bar);
+        Assert.Equal(ScenarioA1GunDuels.AlreadyFired, Duel(Duelable with
+        {
+            Dueled = true
+        }).Bar);
 
         // "may attempt to Bounding First Fire (D3.3) its MA ... provided the vehicle need not change CA": a MA that cannot fire, a shot that is
         // no Bounding First Fire, a turret to turn, and (ruling R55.20) an ammunition other than the default.
         Assert.Equal(ScenarioA1GunDuels.NoShot, Duel(noAnswer: true).Bar);
-        Assert.Equal(ScenarioA1GunDuels.NoShot, Duel(answer: AnswerShot() with { FireKind = null }).Bar);
-        Assert.Equal(ScenarioA1GunDuels.NoShot, Duel(answer: AnswerShot() with { Vehicle = null }).Bar);
+        Assert.Equal(ScenarioA1GunDuels.NoShot, Duel(answer: AnswerShot() with
+        {
+            FireKind = null
+        }).Bar);
+        Assert.Equal(ScenarioA1GunDuels.NoShot, Duel(answer: AnswerShot() with
+        {
+            Vehicle = null
+        }).Bar);
         Assert.Equal(ScenarioA1GunDuels.CaChange, Duel(answer: AnswerShot(turn: 1)).Bar);
         Assert.Equal(ScenarioA1GunDuels.SpecialAmmunition, Duel(answer: AnswerShot(ammunition: "he")).Bar);
 
@@ -1929,17 +2240,26 @@ public sealed class ScenarioA1Pass55RulesTests
         var revealed = Duel(answer: led);
         Assert.Equal((null, 4, 6), (revealed.Bar, revealed.Attacker!.Total, revealed.Defender!.Total));
         Assert.Contains(revealed.Attacker.Lines, line => line.Name == ScenarioA1ArmorLeaders.LeaderModifier);
-        var hidden = Duel(Duelable with { UnrevealedArmorLeader = true }, answer: led);
+        var hidden = Duel(Duelable with
+        {
+            UnrevealedArmorLeader = true
+        }, answer: led);
         Assert.Equal((ScenarioA1GunDuels.NotLower, 6, 6), (hidden.Bar, hidden.Attacker!.Total, hidden.Defender!.Total));
         Assert.DoesNotContain(hidden.Attacker.Lines, line => ScenarioA1ArmorLeaders.IsModifier(line.Name));
         Assert.DoesNotContain("Armor Leader", ScenarioA1GunDuels.DrmText(hidden.Attacker), StringComparison.Ordinal);
-        var inexperienced = Duel(Duelable with { UnrevealedArmorLeader = true }, declared: DeclaredShot(turn: 3), answer: AnswerShot(leadership: 1));
+        var inexperienced = Duel(Duelable with
+        {
+            UnrevealedArmorLeader = true
+        }, declared: DeclaredShot(turn: 3), answer: AnswerShot(leadership: 1));
         Assert.Equal((null, 6, 10), (inexperienced.Bar, inexperienced.Attacker!.Total, inexperienced.Defender!.Total));
         Assert.Contains(inexperienced.Attacker.Lines, line => line.Name == ScenarioA1ArmorLeaders.InexperiencedModifier);
 
         // The vehicle's potential shot is read only for a shot that can be dueled.
         var asked = 0;
-        Assert.Equal(ScenarioA1GunDuels.Concealed, ScenarioA1GunDuels.Verdict(Duelable with { FirerConcealed = true }, DeclaredShot(), () =>
+        Assert.Equal(ScenarioA1GunDuels.Concealed, ScenarioA1GunDuels.Verdict(Duelable with
+        {
+            FirerConcealed = true
+        }, DeclaredShot(), () =>
         {
             asked++;
             return AnswerShot();
@@ -1969,10 +2289,23 @@ public sealed class ScenarioA1Pass55RulesTests
         // The boundary review: Rules says whether the declared shot is void; a firer none of the causes touched still fires.
         var able = new GunDuelReturnFirer(false, false, false, false, false);
         Assert.Equal(ScenarioA1GunDuels.Eliminated, ScenarioA1GunDuels.ReturnShotVoid(new GunDuelReturnFirer(true, true, false, false, true)));
-        Assert.Equal(ScenarioA1GunDuels.Broken, ScenarioA1GunDuels.ReturnShotVoid(able with { Broken = true }));
-        Assert.Equal(ScenarioA1GunDuels.Stunned, ScenarioA1GunDuels.ReturnShotVoid(able with { Stunned = true, Shocked = true }));
-        Assert.Equal(ScenarioA1GunDuels.Shocked, ScenarioA1GunDuels.ReturnShotVoid(able with { Shocked = true }));
-        Assert.Equal(ScenarioA1GunDuels.GunOut, ScenarioA1GunDuels.ReturnShotVoid(able with { GunOut = true }));
+        Assert.Equal(ScenarioA1GunDuels.Broken, ScenarioA1GunDuels.ReturnShotVoid(able with
+        {
+            Broken = true
+        }));
+        Assert.Equal(ScenarioA1GunDuels.Stunned, ScenarioA1GunDuels.ReturnShotVoid(able with
+        {
+            Stunned = true,
+            Shocked = true
+        }));
+        Assert.Equal(ScenarioA1GunDuels.Shocked, ScenarioA1GunDuels.ReturnShotVoid(able with
+        {
+            Shocked = true
+        }));
+        Assert.Equal(ScenarioA1GunDuels.GunOut, ScenarioA1GunDuels.ReturnShotVoid(able with
+        {
+            GunOut = true
+        }));
         Assert.Null(ScenarioA1GunDuels.ReturnShotVoid(able));
         Assert.Equal("the return shot of r1 is void: its crew is broken (C2.2401)", ScenarioA1GunDuels.VoidText("r1", ScenarioA1GunDuels.Broken));
         Assert.Equal("the return shot of r1 is void: it is Shocked (C2.2401)", ScenarioA1GunDuels.VoidText("r1", ScenarioA1GunDuels.Shocked));
@@ -1987,23 +2320,49 @@ public sealed class ScenarioA1Pass55RulesTests
         Assert.Null(ScenarioA1GunDuels.ShotRecordRefusal(false, true));
         Assert.Null(ScenarioA1GunDuels.ShotRecordRefusal(true, true));
         Assert.Equal("UNIT-STATE-049", ScenarioA1GunDuels.ShotRecordRefusal(true, false)!.Code);
-        Assert.Null(ScenarioA1GunDuels.VoidRecordRefusal(true, true, ScenarioA1GunDuels.Broken, able with { Broken = true }));
-        Assert.NotNull(ScenarioA1GunDuels.VoidRecordRefusal(false, true, ScenarioA1GunDuels.Broken, able with { Broken = true }));
-        Assert.NotNull(ScenarioA1GunDuels.VoidRecordRefusal(true, false, ScenarioA1GunDuels.Broken, able with { Broken = true }));
+        Assert.Null(ScenarioA1GunDuels.VoidRecordRefusal(true, true, ScenarioA1GunDuels.Broken, able with
+        {
+            Broken = true
+        }));
+        Assert.NotNull(ScenarioA1GunDuels.VoidRecordRefusal(false, true, ScenarioA1GunDuels.Broken, able with
+        {
+            Broken = true
+        }));
+        Assert.NotNull(ScenarioA1GunDuels.VoidRecordRefusal(true, false, ScenarioA1GunDuels.Broken, able with
+        {
+            Broken = true
+        }));
 
         // A void recorded for a firer still able to fire is refused, and so is a cause the firer's state does not give; "other" stands for a
         // shot the planner's checks refused, which replay cannot make again.
         Assert.Equal("UNIT-STATE-049", ScenarioA1GunDuels.VoidRecordRefusal(true, true, ScenarioA1GunDuels.Broken, able)!.Code);
-        Assert.NotNull(ScenarioA1GunDuels.VoidRecordRefusal(true, true, ScenarioA1GunDuels.Shocked, able with { Broken = true }));
-        Assert.NotNull(ScenarioA1GunDuels.VoidRecordRefusal(true, true, ScenarioA1GunDuels.Other, able with { Broken = true }));
+        Assert.NotNull(ScenarioA1GunDuels.VoidRecordRefusal(true, true, ScenarioA1GunDuels.Shocked, able with
+        {
+            Broken = true
+        }));
+        Assert.NotNull(ScenarioA1GunDuels.VoidRecordRefusal(true, true, ScenarioA1GunDuels.Other, able with
+        {
+            Broken = true
+        }));
         Assert.Null(ScenarioA1GunDuels.VoidRecordRefusal(true, true, ScenarioA1GunDuels.Other, able));
 
         // D3.3, C2.2401: the duel's shot alone is made while the DEFENDER's window is open.
         var open = new BoundingFireFacts("mph", true, true, true, true, true, false);
         Assert.False(ScenarioA1FireEligibility.MayBoundingFire(open));
-        Assert.True(ScenarioA1FireEligibility.MayBoundingFire(open with { GunDuel = true }));
-        Assert.False(ScenarioA1FireEligibility.MayBoundingFire(open with { GunDuel = true, AmongMovers = false }));
-        Assert.False(ScenarioA1FireEligibility.MayBoundingFire(open with { GunDuel = true, Phase = "afph" }));
+        Assert.True(ScenarioA1FireEligibility.MayBoundingFire(open with
+        {
+            GunDuel = true
+        }));
+        Assert.False(ScenarioA1FireEligibility.MayBoundingFire(open with
+        {
+            GunDuel = true,
+            AmongMovers = false
+        }));
+        Assert.False(ScenarioA1FireEligibility.MayBoundingFire(open with
+        {
+            GunDuel = true,
+            Phase = "afph"
+        }));
     }
 
     // The fixes of the pass's five reviews.
@@ -2025,13 +2384,19 @@ public sealed class ScenarioA1Pass55RulesTests
         var known = Duel(declared: Led(-1));
         Assert.Equal(plain - 1, known.Defender!.Total);
         Assert.Contains(known.Defender.Lines, line => line.Name == ScenarioA1ArmorLeaders.LeaderModifier);
-        var unrevealed = Duel(Duelable with { FirerUnrevealedArmorLeader = true }, declared: Led(-1));
+        var unrevealed = Duel(Duelable with
+        {
+            FirerUnrevealedArmorLeader = true
+        }, declared: Led(-1));
         Assert.Equal(plain, unrevealed.Defender!.Total);
         Assert.DoesNotContain(unrevealed.Defender.Lines, line => ScenarioA1ArmorLeaders.IsModifier(line.Name));
         Assert.DoesNotContain("Armor Leader", ScenarioA1GunDuels.DrmText(unrevealed.Defender), StringComparison.Ordinal);
 
         // An Inexperienced Crew's +1 is public and stays.
-        var green = Duel(Duelable with { FirerUnrevealedArmorLeader = true }, declared: Led(1));
+        var green = Duel(Duelable with
+        {
+            FirerUnrevealedArmorLeader = true
+        }, declared: Led(1));
         Assert.Equal(plain + 1, green.Defender!.Total);
 
         // What the other side reads of a shot before it is fired (a proposal, a summary) leaves his line out; a revealed leader's stays.
@@ -2047,7 +2412,10 @@ public sealed class ScenarioA1Pass55RulesTests
         // B10.31, D5.31 (pp. 125, 203): "The CE DRM is not cumulative with any positive TEM". The tank's CMG fires up a hill at a Location
         // holding a CE T-34: the Personnel take Height Advantage, the crew its +2 alone.
         FireVehicle[] halftrack = [new FireVehicle("ht", "attacker-halftrack", At, true, false, false, false)];
-        var uphill = Shoot(Cmg(2, 1, heightAdvantage: true) with { Vehicles = [new FireVehicle("ru-tank", "defender-tank", At, true, false, false, false)] });
+        var uphill = Shoot(Cmg(2, 1, heightAdvantage: true) with
+        {
+            Vehicles = [new FireVehicle("ru-tank", "defender-tank", At, true, false, false, false)]
+        });
         Assert.True(uphill.Disposition == FireResolution.Resolved, string.Join("; ", uphill.Reasons));
         Assert.Contains(uphill.Arithmetic!.Drm, item => item.Name == "height-advantage");
         var crew = Assert.Single(uphill.VehicleEffects!);
@@ -2055,7 +2423,10 @@ public sealed class ScenarioA1Pass55RulesTests
         Assert.Equal(uphill.Arithmetic.OriginalDr + 2, crew.FinalDr);
 
         // A Canister attack across a wall: the wall's TEM is the Personnel's, the crew's DRM its +2 alone.
-        var walled = Shoot(CanisterAttack(new FireCanister("gun", 12), [5, 6], vehicles: halftrack) with { HexsideTem = new FireHexsideTem("wall", 2) });
+        var walled = Shoot(CanisterAttack(new FireCanister("gun", 12), [5, 6], vehicles: halftrack) with
+        {
+            HexsideTem = new FireHexsideTem("wall", 2)
+        });
         Assert.True(walled.Disposition == FireResolution.Resolved, string.Join("; ", walled.Reasons));
         Assert.Contains(walled.Arithmetic!.Drm, item => item.Name == "wall");
         Assert.Equal(["crew-exposed"], Assert.Single(walled.VehicleEffects!).Drm.Select(item => item.Name));
@@ -2117,7 +2488,7 @@ public sealed class ScenarioA1Pass55RulesTests
         const string equivalency = "asl.a1.ordnance.he-equivalency-not-built";
         Assert.Contains(HeNotNamed, Resolve(He([3, 3], ammunition: null)).Reasons);
         Assert.DoesNotContain(equivalency, Resolve(He([3, 3], ammunition: null)).Reasons);
-        Assert.All(new[] { "ap", "apds" }, named =>
+        Assert.All(ArmorPiercingKinds, named =>
         {
             var reasons = Resolve(He([3, 3], ammunition: named)).Reasons;
             Assert.Contains(equivalency, reasons);
@@ -2172,7 +2543,7 @@ public sealed class ScenarioA1Pass55RulesTests
     {
         // C13.8 (p. 185): "These weapons also may not fire at a target two or more levels higher in an adjacent hex, or directly above them in
         // the same hex." C2.6 frees a LATW of its own limit, so the bar is the weapon's; an ATR is not one of them.
-        Assert.All(new[] { "pf", "psk" }, weapon =>
+        Assert.All(BackblastWeapons, weapon =>
         {
             Assert.Contains("C13.8", ScenarioA1OrdnanceMapRules.BackblastElevationRefusal("g1", weapon, 1, false, 2), StringComparison.Ordinal);
             Assert.Contains("C13.8", ScenarioA1OrdnanceMapRules.BackblastElevationRefusal("g1", weapon, 1, false, 3), StringComparison.Ordinal);

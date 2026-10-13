@@ -123,7 +123,13 @@ public sealed class PlayPageOrdnanceTests : IDisposable
         var page = context.Render<PlayPage>();
         MinimalCards.Choose(page, new Dictionary<string, string>
         {
-            ["board"] = Board, ["first"] = "british", ["second"] = "german", ["first-elr"] = "3", ["second-elr"] = "3", ["year"] = "1944", ["month"] = "6",
+            ["board"] = Board,
+            ["first"] = "british",
+            ["second"] = "german",
+            ["first-elr"] = "3",
+            ["second-elr"] = "3",
+            ["year"] = "1944",
+            ["month"] = "6",
         });
         Place(page, "uk-crew", "british-crew", hexes.One);
         page.Find("#place-definition").Change("british-at-gun");
@@ -260,7 +266,13 @@ public sealed class PlayPageOrdnanceTests : IDisposable
         var page = context.Render<PlayPage>();
         MinimalCards.Choose(page, new Dictionary<string, string>
         {
-            ["board"] = Board, ["first"] = "american", ["second"] = "german", ["first-elr"] = "3", ["second-elr"] = "3", ["year"] = "1943", ["month"] = "7",
+            ["board"] = Board,
+            ["first"] = "american",
+            ["second"] = "german",
+            ["first-elr"] = "3",
+            ["second-elr"] = "3",
+            ["year"] = "1943",
+            ["month"] = "7",
         });
         Place(page, "us-crew", "american-crew", spot.Gun);
         page.Find("#place-definition").Change("american-at-gun");

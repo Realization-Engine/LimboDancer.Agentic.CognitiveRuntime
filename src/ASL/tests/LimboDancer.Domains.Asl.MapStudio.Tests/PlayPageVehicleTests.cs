@@ -240,7 +240,7 @@ public sealed class PlayPageVehicleTests : IDisposable
 
         // The table player's review: the option names its vehicle once and says the bar in a few words; the whole sentence is its title.
         Assert.EndsWith(": it has made its attempt", made.TextContent.Trim(), StringComparison.Ordinal);
-        Assert.Equal(1, System.Text.RegularExpressions.Regex.Matches(made.TextContent, "R1").Count);
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(made.TextContent, "R1"));
         Assert.Contains("only once", made.GetAttribute("title"), StringComparison.Ordinal);
         Assert.DoesNotContain("Vehicle vehicle", page.Find("#motion-attempt").TextContent, StringComparison.Ordinal);
         Assert.Empty(page.FindAll("#propose-motion-attempt"));

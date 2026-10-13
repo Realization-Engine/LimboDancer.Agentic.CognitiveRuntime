@@ -23,6 +23,7 @@ namespace LimboDancer.Domains.Asl.Play.Tests;
 public sealed class BacklogPass55Tests : IDisposable
 {
     private static readonly Guid Tenant = Guid.Parse("7b1d2c3e-0000-4000-8000-00000000f555");
+    private static readonly string[] VoidCauses = ["shocked", "eliminated", "other"];
     private static readonly GameScope Scope = new(Tenant, "pass55");
     private static readonly UnitVocabulary Vocabulary = UnitVocabulary.Asl();
     private static readonly UnitCatalog Catalog = UnitCatalogs.Read(UnitCatalogs.ScenarioA1, Vocabulary)!.Catalog!;
@@ -871,7 +872,11 @@ public sealed class BacklogPass55Tests : IDisposable
     {
         // Ruling R55.8: an aim of 1 to 5; U.S. Ordnance Note C: Canister from August 1942; and no Location of an aim off the map.
         await SetupAmerican(1942, 7, [.. AmericanGun(), .. Squads()]);
-        Refused(await Do(GameActions.FireOrdnance, NoRoll(), new { gunId = "us-gun", ammunition = "canister" }), "play.canister-aim");
+        Refused(await Do(GameActions.FireOrdnance, NoRoll(), new
+        {
+            gunId = "us-gun",
+            ammunition = "canister"
+        }), "play.canister-aim");
         Refused(await FireCanister(4, null, 1, 1), "asl.a1.ordnance.ammunition-unavailable");
     }
 
@@ -898,7 +903,11 @@ public sealed class BacklogPass55Tests : IDisposable
         if (leader is not null)
         {
             var dash = leader.LastIndexOf('-');
-            vehicle["armorLeader"] = new { morale = int.Parse(leader[..dash], System.Globalization.CultureInfo.InvariantCulture), leadership = int.Parse(leader[dash..], System.Globalization.CultureInfo.InvariantCulture) };
+            vehicle["armorLeader"] = new
+            {
+                morale = int.Parse(leader[..dash], System.Globalization.CultureInfo.InvariantCulture),
+                leadership = int.Parse(leader[dash..], System.Globalization.CultureInfo.InvariantCulture)
+            };
         }
 
         return vehicle;
@@ -1029,7 +1038,11 @@ public sealed class BacklogPass55Tests : IDisposable
         Refused(await Start(Afv("de-truck", "attacker-truck", Firer, "german", "north-east", null, Conditions.InexperiencedCrew), Squad(Target)), "play.setup-inexperienced-crew");
         Refused(await Start(LedTank("9-1", Conditions.InexperiencedCrew), Squad(Target)), "D3.45");
         var squad = Squad(Target);
-        squad["armorLeader"] = new { morale = 9, leadership = -1 };
+        squad["armorLeader"] = new
+        {
+            morale = 9,
+            leadership = -1
+        };
         Refused(await Start(LedTank(null), squad), "not a vehicle");
         Committed(await Start(Afv("de-ht", "attacker-halftrack", Firer, "german", "north-east", "8-1"), Squad(Target)));
     }
@@ -1040,7 +1053,11 @@ public sealed class BacklogPass55Tests : IDisposable
         // D3.44: "IFT otherwise": the SPW 251/1's MA is its AAMG; "an Armor Leader cannot modify non-OVR MG/FT (unless MA) attacks".
         await Setup(Afv("de-ht", "attacker-halftrack", Firer, "german", "north-east", "8-1"), Afv("de-tank", "attacker-tank", "bd01:C10:0", "german", "north-east", "9-2"), Squad(Target));
         var before = Revision;
-        Committed(await Do(GameActions.Fire, Once(5, 6), new { firers = Halftrack, target = Target }));
+        Committed(await Do(GameActions.Fire, Once(5, 6), new
+        {
+            firers = Halftrack,
+            target = Target
+        }));
         var fire = LastFire(before);
         Assert.Equal(-1m, DrmOf(IftDrm(fire), "armor-leader"));
         Assert.Equal(-1, fire.Facts.GetProperty("vehicleFire").GetProperty("armorLeadership").GetInt32());
@@ -1062,9 +1079,19 @@ public sealed class BacklogPass55Tests : IDisposable
         var entered = Beside("E5", 'F');
         await Setup(Afv("de-tank", "attacker-tank", "bd01:E5:0", "german", "east", "9-2"), Squad(entered), Unit("r2", "asl:squad", "defender-squad", "bd01:J9:0", "russian"));
         await Advance();
-        Committed(await Do(GameActions.MoveVehicle, NoRoll(), new { vehicleId = "de-tank", kind = "start" }));
+        Committed(await Do(GameActions.MoveVehicle, NoRoll(), new
+        {
+            vehicleId = "de-tank",
+            kind = "start"
+        }));
         await PassFire();
-        Committed(await Do(GameActions.MoveVehicle, NoRoll(), new { vehicleId = "de-tank", kind = "enter", to = entered, overrun = true }));
+        Committed(await Do(GameActions.MoveVehicle, NoRoll(), new
+        {
+            vehicleId = "de-tank",
+            kind = "enter",
+            to = entered,
+            overrun = true
+        }));
         await PassFire();
         Assert.False(LeaderOf("de-tank")!.Revealed);
         var before = Revision;
@@ -1087,17 +1114,31 @@ public sealed class BacklogPass55Tests : IDisposable
         await Setup(Afv("de-tank", "attacker-tank", "bd01:E5:0", "german", "east", "9-1"), Squad(beside), Unit("g1", "asl:squad", "attacker-squad", "bd01:J9:0", "german"));
         await Advance(13);
         Assert.Equal(("aph", "russian"), (Current.Phase, Current.PhasingSide));
-        Committed(await Do(GameActions.Advance, Once(3, 4), new { unitIds = R1, to = "bd01:E5:0" }));
+        Committed(await Do(GameActions.Advance, Once(3, 4), new
+        {
+            unitIds = R1,
+            to = "bd01:E5:0"
+        }));
         await Advance();
         Assert.Equal("ccph", Current.Phase);
         var before = Revision;
-        Committed(await Do(GameActions.VehicleCloseCombat, Once(6, 5), new { location = "bd01:E5:0", vehicleId = "de-tank", attackers = R1 }));
+        Committed(await Do(GameActions.VehicleCloseCombat, Once(6, 5), new
+        {
+            location = "bd01:E5:0",
+            vehicleId = "de-tank",
+            attackers = R1
+        }));
         var against = Since(before).Select(item => item.Payload).OfType<VehicleCloseCombatResolved>().Single();
         Assert.False(against.Facts.GetProperty("vehicle").TryGetProperty("armorLeadership", out _));
         Assert.False(LeaderOf("de-tank")!.Revealed);
 
         before = Revision;
-        Committed(await Do(GameActions.VehicleCloseCombat, Once(6, 5, 1, 1), new { location = "bd01:E5:0", vehicleId = "de-tank", defenders = R1 }));
+        Committed(await Do(GameActions.VehicleCloseCombat, Once(6, 5, 1, 1), new
+        {
+            location = "bd01:E5:0",
+            vehicleId = "de-tank",
+            defenders = R1
+        }));
         var own = Since(before).Select(item => item.Payload).OfType<VehicleCloseCombatResolved>().Single();
         Assert.Equal(-1, own.Facts.GetProperty("vehicle").GetProperty("armorLeadership").GetInt32());
         Assert.Equal(-1m, DrmOf(own.Resolution.GetProperty("defending")[0].GetProperty("drm"), "armor-leader"));
@@ -1113,7 +1154,11 @@ public sealed class BacklogPass55Tests : IDisposable
         await Setup(LedTank("9-1", Conditions.Bogged), Squad("bd01:J9:0"));
         await Advance();
         var before = Revision;
-        Committed(await Do(GameActions.MoveVehicle, Once(5, 2), new { vehicleId = "de-tank", kind = "start" }));
+        Committed(await Do(GameActions.MoveVehicle, Once(5, 2), new
+        {
+            vehicleId = "de-tank",
+            kind = "start"
+        }));
         var check = Since(before).Select(item => item.Payload).OfType<VehicleCheckRolled>().Single();
         Assert.Equal((VehicleCheckRolled.BogRemoval, -1, (int?)-1, VehicleCheckRolled.Freed), (check.Check, check.Drm, check.ArmorLeadership, check.Result));
         Assert.Equal(20, Since(before).Select(item => item.Payload).OfType<VehicleStepped>().Single().HalfMp);
@@ -1151,7 +1196,7 @@ public sealed class BacklogPass55Tests : IDisposable
     }
 
     /// <summary>The Final TK# a T-34's AP turret hit on the German tank meets, read from a game played aside to a dud (an Original TK DR of 12).</summary>
-    private async Task<JsonElement> Probe(string tank)
+    private static async Task<JsonElement> Probe(string tank)
     {
         var aside = new BacklogPass55Tests();
         try
@@ -1406,11 +1451,19 @@ public sealed class BacklogPass55Tests : IDisposable
         var second = Beside(first.Split(':')[1], 'G');
         await Setup(Unit("g1", "asl:squad", "attacker-squad", Start, "german"), Afv("ru-tank", "defender-tank", Watcher, "russian", "north-east"));
         await Advance();
-        Committed(await Do(GameActions.Move, NoRoll(), new { unitIds = G1, to = first }));
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G1,
+            to = first
+        }));
         var early = Assert.Single(Planner().MotionAttemptOptions(Current, store.Read(Scope)!.Events, "russian"));
         Assert.Equal((null, 2, false), (early.Bar, early.HalfPoints, early.VehicleMover));
         await PassFire();
-        Committed(await Do(GameActions.Move, NoRoll(), new { unitIds = G1, to = second }));
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = G1,
+            to = second
+        }));
         var before = Revision;
         Committed(await AttemptMotion(Once(2, 3, 4), turret: "south-west"));
         var attempt = LastAttempt(before);
@@ -1529,7 +1582,9 @@ public sealed class BacklogPass55Tests : IDisposable
         Assert.Contains("de-tank +5 (Case C +4, Case I +1); ru-gun +6 (Case A +6)", asked, StringComparison.Ordinal);
 
         // Nothing else happens until the ATTACKER answers; the Gun has not fired and has not turned.
-        Refused(await Do(GameActions.PassFire, NoRoll(), new { }), "play.choice-pending");
+        Refused(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }), "play.choice-pending");
         Assert.Empty(Current.OrdnanceShots);
         Assert.Equal(UnitFacing.SouthWest, ((MapPosition)Current.Find("ru-gun")!.Position).Facing);
         Assert.Null(Current.GunDuel);
@@ -1979,7 +2034,11 @@ public sealed class BacklogPass55Tests : IDisposable
         tank["conditions"] = new Dictionary<string, bool> { [Conditions.ButtonedUp] = false };
         await Setup(Unit("g1", "asl:squad", "attacker-squad", "bd01:B9:0", "german"), Unit("g2", "asl:squad", "attacker-squad", "bd01:B9:0", "german"), Squad(Target), tank);
         var before = Revision;
-        Committed(await Do(GameActions.Fire, Then(2, 3, 1, 1), new { firers, target = Target }));
+        Committed(await Do(GameActions.Fire, Then(2, 3, 1, 1), new
+        {
+            firers,
+            target = Target
+        }));
         Assert.True(Current.Choice is not null, Rolled(before));
         var waiting = Current.Choice!;
         Assert.Equal("russian", waiting.Side);
@@ -2022,7 +2081,11 @@ public sealed class BacklogPass55Tests : IDisposable
         Assert.Equal(("mph", "russian"), (Current.Phase, Current.PhasingSide));
         Assert.Contains(Current.Acquisitions, item => item.Gun == "de-tank");
         string[] mover = ["r1"];
-        Committed(await Do(GameActions.Move, NoRoll(), new { unitIds = mover, to = entered }));
+        Committed(await Do(GameActions.Move, NoRoll(), new
+        {
+            unitIds = mover,
+            to = entered
+        }));
         var before = Revision;
         Committed(await AttemptMotion(Then(1), facing: "south-west", turret: "west", vehicle: "de-tank"));
         var attempt = LastAttempt(before);
@@ -2085,7 +2148,7 @@ public sealed class BacklogPass55Tests : IDisposable
         NoReplayErrors();
         var events = store.Read(Scope)!.Events;
         GameEvent[] Caused(string cause) => [.. events.Select(item => item.Payload is GunDuelVoided record ? item with { Payload = record with { Cause = cause } } : item)];
-        Assert.All(new[] { "shocked", "eliminated", "other" }, cause =>
+        Assert.All(VoidCauses, cause =>
         {
             var replayed = Planner().Replay(Caused(cause));
             Assert.True(replayed.HasErrors);
