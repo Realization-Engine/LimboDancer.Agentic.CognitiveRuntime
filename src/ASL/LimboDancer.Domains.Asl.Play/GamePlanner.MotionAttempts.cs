@@ -20,7 +20,14 @@ public sealed partial class GamePlanner
     /// A vehicle's Motion attempt as the Play page offers it: why it may not be made now, or the moving unit it answers with the half MF or MP that
     /// unit has spent in the vehicle's LOS; whether the mover is a vehicle (MP) or Infantry (MF); and whether the vehicle may name a TCA or any CA.
     /// </summary>
-    public sealed record MotionAttemptOption(string Vehicle, string? Bar, string? Mover, int HalfPoints, bool VehicleMover, bool Turreted, bool Bypass);
+    public sealed record MotionAttemptOption(string Vehicle, string? Bar, string? Mover, int HalfPoints, bool VehicleMover, bool Turreted, bool Bypass)
+    {
+        /// <summary>The bar in the few words of the list's option, without the vehicle's name; null when the attempt may be made.</summary>
+        public string? BarShort
+        {
+            get; init;
+        }
+    }
 
     /// <summary>The Motion attempts open to a side's vehicles now (D2.401), for the Play page: each vehicle on the map, with its bar or its chance; none outside the enemy MPh's window.</summary>
     public IReadOnlyList<MotionAttemptOption> MotionAttemptOptions(GameState state, IReadOnlyList<GameEvent> existing, string? side = null)
@@ -38,7 +45,10 @@ public sealed partial class GamePlanner
             .Select(unit =>
             {
                 var read = MotionAttemptRead(state, existing, unit, unit.Id);
-                return new MotionAttemptOption(unit.Id, read.Refusal, read.Mover?.Id, read.HalfPoints, movement.Vehicle, Turreted(unit), unit.Straddling is not null);
+                return new MotionAttemptOption(unit.Id, read.Refusal, read.Mover?.Id, read.HalfPoints, movement.Vehicle, Turreted(unit), unit.Straddling is not null)
+                {
+                    BarShort = read.Short,
+                };
             })];
     }
 
@@ -59,30 +69,40 @@ public sealed partial class GamePlanner
             Abandoned = Is(vehicle, Conditions.Abandoned),
             FireCounter = Is(vehicle, Conditions.FirstFire) ? "First Fire" : Is(vehicle, Conditions.FinalFire) ? "Final Fire" : Is(vehicle, Conditions.IntensiveFire) ? "Intensive Fire" : null,
             Attempted = state.MotionAttempts.Contains(vehicle.Id, StringComparer.Ordinal),
+            Hidden = Is(vehicle, Conditions.Hidden),
         };
 
     /// <summary>
     /// What the vehicle sees of the moving units (D2.401; rulings R55.11, R55.12): for each, the LOS from the vehicle's Location to the Location
     /// it began its move in, which the game's history holds as its Location before its first expenditure of this MPh (a unit entering from off
-    /// board had none), and each expenditure with the LOS to the Location it was made in. Rules picks the unit and counts.
+    /// board had none), and each expenditure with the LOS to the Location it was made in. Rules picks the unit and counts. A LOS that is not
+    /// decided is handed over as such for the starting Location; an expenditure in a Location with such a LOS is not counted.
     /// </summary>
-    private (MotionAttemptMover? Mover, int HalfPoints, string? Refusal) MotionAttemptRead(GameState state, IReadOnlyList<GameEvent> existing, UnitInstance? vehicle, string id)
+    private (MotionAttemptMover? Mover, int HalfPoints, string? Refusal, string? Short) MotionAttemptRead(GameState state, IReadOnlyList<GameEvent> existing, UnitInstance? vehicle,
+        string id)
     {
-        if (ScenarioA1MotionAttempts.Bar(id, state.Phase, state.Movement is { WindowOpen: true }, vehicle is null ? null : MotionAttemptFacts(state, vehicle)) is { } bar)
+        var windowOpen = state.Movement is { WindowOpen: true };
+        var facts = vehicle is null ? null : MotionAttemptFacts(state, vehicle);
+        if (ScenarioA1MotionAttempts.Bar(id, state.Phase, windowOpen, facts) is { } bar)
         {
-            return (null, 0, bar);
+            return (null, 0, bar, ScenarioA1MotionAttempts.BarShort(id, state.Phase, windowOpen, facts));
         }
 
         var movement = state.Movement!;
         var at = state.Location(vehicle!.Id)!.Location;
         var history = Replay(existing);
         GameEvent[] phase = [.. ThisPhase(existing)];
-        var seen = new Dictionary<BoardLocation, bool>();
-        bool Seen(BoardLocation where)
+        var seen = new Dictionary<BoardLocation, bool?>();
+        bool? Seen(BoardLocation where)
         {
             if (!seen.TryGetValue(where, out var clear))
             {
-                seen[where] = clear = where == at || Los(state, at, where) is { Status: LosStatus.Clear };
+                seen[where] = clear = where == at ? true : Los(state, at, where) switch
+                {
+                    { Status: LosStatus.Clear } => true,
+                    { Status: LosStatus.Blocked } => false,
+                    _ => null,
+                };
             }
 
             return clear;
@@ -98,10 +118,10 @@ public sealed partial class GamePlanner
                     _ => false,
                 })];
                 var origin = steps.Length > 0 ? history.At(steps[0].Revision - 1)?.Location(mover)?.Location : state.Location(mover)?.Location;
-                return new MotionAttemptMover(mover, origin is not null && Seen(origin), [.. steps.Select(item => item.Payload switch
+                return new MotionAttemptMover(mover, origin is null ? false : Seen(origin), [.. steps.Select(item => item.Payload switch
                 {
-                    MovementStepped stepped => (Seen(stepped.To), stepped.HalfMf),
-                    VehicleStepped drove => (Seen(drove.At), drove.HalfMp),
+                    MovementStepped stepped => (Seen(stepped.To) == true, stepped.HalfMf),
+                    VehicleStepped drove => (Seen(drove.At) == true, drove.HalfMp),
                     _ => (false, 0),
                 })]);
             })];
@@ -181,6 +201,15 @@ public sealed partial class GamePlanner
                 Facing = passed ? facing : null,
                 Turret = passed ? turret : null,
             }, null, null, [EventId(attemptId, 1)]));
+
+            // A12.141 (p. 78): "Any other activity which a concealed unit engages in ... causes loss of concealment if that unit is currently in
+            // the LOS and within 16 hexes of a Good Order enemy ground unit", a change of CA among its examples; gaining Motion status is no
+            // exception of its list. D2.401 spares the "?" only for a failed dr ("no penalty (including "?" loss) for failing").
+            if (passed && Replay([.. existing, .. events]).Current is { } moved)
+            {
+                events.AddRange(RevealEvents(scope, attemptId, expected, events.Count + 1, VehicleConcealmentLost(moved, id, true)));
+            }
+
             return events;
         }
 

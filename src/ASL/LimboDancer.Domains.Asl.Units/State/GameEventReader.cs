@@ -789,7 +789,10 @@ public static class GameEventReader
                 var voidedCause = fields.RequiredString(payload, "cause", path);
                 return voidedFirer is null || voidedBy is null || voidedCause is null
                     ? Missing(diagnostics, "A void return shot names its firer, the vehicle that fired first, and the cause.", path)
-                    : new GunDuelVoided(voidedFirer, voidedBy, voidedCause);
+                    : new GunDuelVoided(voidedFirer, voidedBy, voidedCause)
+                    {
+                        Reason = fields.OptionalString(payload, "reason", path),
+                    };
             case "vehicle-wrecked":
                 return fields.RequiredString(payload, "id", path) is { } wreck ? new VehicleWrecked(wreck, fields.OptionalBoolean(payload, "burning", path)) : null;
             case "surrender-rejected":

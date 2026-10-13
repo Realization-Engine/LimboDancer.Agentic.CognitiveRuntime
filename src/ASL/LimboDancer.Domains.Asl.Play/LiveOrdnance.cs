@@ -739,7 +739,15 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
             return "The ordnance record's facts and rolls do not resolve: " + string.Join("; ", resolution.Reasons);
         }
 
-        if (!JsonElement.DeepEquals(JsonSerializer.SerializeToElement(resolution, LiveFire.Json), fired.Resolution))
+        // C8.9 (the UI review of pass 55): a resolution names the Depletion Number its ammunition's use was decided under. A record made before
+        // that names none and is compared without it; one that names it is held to it.
+        var compared = resolution.DepletionNumber is not null && !fired.Resolution.TryGetProperty("depletionNumber", out _)
+            ? resolution with
+            {
+                DepletionNumber = null
+            }
+            : resolution;
+        if (!JsonElement.DeepEquals(JsonSerializer.SerializeToElement(compared, LiveFire.Json), fired.Resolution))
         {
             return "The ordnance record's resolution differs from what its facts and rolls give.";
         }

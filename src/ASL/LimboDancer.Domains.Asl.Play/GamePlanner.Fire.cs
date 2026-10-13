@@ -300,7 +300,7 @@ public sealed partial class GamePlanner
         var fromLocations = attack.Firers!.Select(item => item.LocationId!).Distinct(StringComparer.Ordinal).ToArray();
         // C8.4, A7.51 (pass 55): a Canister shot's attack is ordnance, in no fire group; its record binds no other attack.
         if (ScenarioA1FireEligibility.FireGroupBar(alone.Length > 0,
-            state.FiresThisPhase.Where(record => !record.Ordnance).Select(record => new PhaseFireFacts(record.FirerLocation, record.TargetLocation, record.Step, record.Vehicle)), attack, fromLocations, step) is { } group)
+            state.FiresThisPhase.Select(PhaseFire), attack, fromLocations, step) is { } group)
         {
             return Refused(scope, label, expected, group) with
             {
@@ -434,7 +434,7 @@ public sealed partial class GamePlanner
                 return Refused(scope, label, expected, sprayMapReason!);
             }
 
-            if (ScenarioA1FireEligibility.SprayGroupBar(state.FiresThisPhase.Where(record => !record.Ordnance).Select(record => new PhaseFireFacts(record.FirerLocation, record.TargetLocation, record.Step, record.Vehicle)),
+            if (ScenarioA1FireEligibility.SprayGroupBar(state.FiresThisPhase.Select(PhaseFire),
                 fromLocations, second!.ToString()) is { } sprayGroup)
             {
                 return Refused(scope, label, expected, sprayGroup);
@@ -638,6 +638,12 @@ public sealed partial class GamePlanner
             ? list.EnumerateArray().Where(item => item.ValueKind == JsonValueKind.String).Select(item => item.GetString()!)
             : [];
 
+    /// <summary>A fire record of the phase as the A7.55 checks read it: every record, with whether it is ordnance's (C8.4, A7.51), which Rules passes over.</summary>
+    private static PhaseFireFacts PhaseFire(FireRecord record) => new(record.FirerLocation, record.TargetLocation, record.Step, record.Vehicle)
+    {
+        Ordnance = record.Ordnance,
+    };
+
     /// <summary>The usable MGs and ATR a unit possesses, in id order (table player, pass 9b: a mortar or PSK takes no part in its fire groups).</summary>
     private static string[] Possessed(GameState state, string unitId) =>
         ScenarioA1FireEligibility.UsableMgs(state.Equipment.Where(equipment => equipment.Status == InstanceStatus.Active
@@ -836,10 +842,13 @@ public sealed partial class GamePlanner
             // An option the attack reaches stops it until its owner answers (ruling R5.8).
             if (next.ChoiceKey is { } choiceKey)
             {
+                // D3.41 (pass 55, the referee's review): the resume data is read by both sides, so it leaves out the Morale Level of a crew whose
+                // Armor Leader no record has revealed; the answer reads it from the state again.
+                var unrevealed = UnrevealedLeaders(state);
                 var resume = new JsonObject
                 {
                     ["record"] = "fire",
-                    ["facts"] = JsonNode.Parse(JsonSerializer.Serialize(facts, LiveFire.Json)),
+                    ["facts"] = JsonNode.Parse(JsonSerializer.Serialize(ScenarioA1ArmorLeaders.Pending(facts, unrevealed), LiveFire.Json)),
                     ["rolls"] = RollNode(rollIds),
                     ["targetSide"] = targetSide,
                 };
@@ -851,7 +860,7 @@ public sealed partial class GamePlanner
                 // Ruling R27.4: what follows the attack (Spraying Fire's second Location, Encirclement, a Fire Lane, a DC's thrower and removal) resumes too.
                 if (followUps is not null)
                 {
-                    resume["followUps"] = JsonNode.Parse(JsonSerializer.Serialize(followUps, LiveFire.Json));
+                    resume["followUps"] = JsonNode.Parse(JsonSerializer.Serialize(PendingFollowUps(followUps, unrevealed), LiveFire.Json));
                 }
 
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, "choice-pending", Pending(state, choiceKey, resume), package, null));

@@ -736,12 +736,14 @@ else if (state is not null)
                         <ActionSection Title="Motion attempt (D2.401)" Key="motion-attempt">
                         <div class="toolbar" id="motion-attempt">
                             <span class="toolbar-note" id="motion-note">A vehicle gains Motion on a dr at or below the MF or MP the moving unit has spent in its LOS in this MPh, if that unit began its move out of that LOS; once in an enemy MPh, and it may still fire or pass afterwards (D2.401).</span>
+                            @* The table player's review: an option names its vehicle once and says a bar in a few words; the whole sentence is its title.
+                               The UI review: another vehicle is another attempt, so the VCA and TCA named for the last one are not kept for it. *@
                             <label>
-                                Vehicle
-                                <select id="motion-vehicle" value="@(motionChosen?.Vehicle ?? string.Empty)" @onchange="@(args => motionVehicle = args.Value as string ?? string.Empty)">
+                                Attempt by
+                                <select id="motion-vehicle" value="@(motionChosen?.Vehicle ?? string.Empty)" @onchange="@(args => (motionVehicle, motionFacing, motionTurret) = (args.Value as string ?? string.Empty, string.Empty, string.Empty))">
                                     @foreach (var option in motionOptions)
                                     {
-                                        <option value="@option.Vehicle" disabled="@(option.Bar is not null)">@Words(option.Vehicle): @(option.Bar is null ? ScenarioA1MotionAttempts.Chance(option.HalfPoints, option.VehicleMover) : Said(option.Bar))</option>
+                                        <option value="@option.Vehicle" disabled="@(option.Bar is not null)" title="@(option.Bar is null ? null : Said(option.Bar))">@Words(option.Vehicle): @(option.Bar is null ? ScenarioA1MotionAttempts.Chance(option.HalfPoints, option.VehicleMover) : option.BarShort is { } brief ? Words(brief) : Said(option.Bar))</option>
                                     }
                                 </select>
                             </label>
@@ -855,18 +857,23 @@ else if (state is not null)
                     }
                     @if ((state.Phase is "pfph" or "afph" or "dfph" || (state.Phase == "mph" && state.Movement is { WindowOpen: true })) && (OrdnanceGuns(firing).Any() || OrdnanceTanks(firing).Any() || PanzerfaustFirers(firing).Any()))
                     {
+                        // The UI review of pass 55: the panel's reads are made once for a render. The ammunition list is the one the shot will
+                        // name: a vehicle's when a vehicle is chosen, and otherwise Infantry's, though the Location holds a vehicle in view.
+                        var shotAtVehicle = ordnanceVehicle.Length > 0;
+                        var canisterShot = OrdnanceCanister();
+                        var canisterAims = canisterShot ? OrdnanceCanisterAims(firing) : null;
                         <OrdnanceFirePanel Guns="@OrdnanceChoices(firing)" Gun="@ordnanceGun" Spotters="@OrdnanceSpotters(firing)" Spotter="@ordnanceSpotter"
                             Directors="@OrdnanceDirectors(firing)" Director="@ordnanceDirector" IntensiveAllowed="@OrdnanceIntensiveAllowed" Intensive="@ordnanceIntensive"
                             PanzerfaustUsage="@(PanzerfaustFirers(firing).Any() ? $"PF shots taken {state.PanzerfaustShots.GetValueOrDefault(firing)} of {LiveOrdnance.PanzerfaustAllowance(state, firing)} (C13.31)" : null)"
-                            Ready="@(ordnanceGun.Length > 0 && (OrdnanceCanister(firing) ? ordnanceCanisterAim.Length > 0 : ordnanceTarget.Length > 0))" OnGun="@ChooseOrdnanceGun" OnSpotter="@(id => ordnanceSpotter = id)"
+                            Ready="@(ordnanceGun.Length > 0 && (canisterAims is not null ? canisterAims.Any(aim => aim.Id == ordnanceCanisterAim) : ordnanceTarget.Length > 0))" OnGun="@ChooseOrdnanceGun" OnSpotter="@(id => ordnanceSpotter = id)"
                             OnDirector="@(id => ordnanceDirector = id)" OnIntensive="@(on => ordnanceIntensive = on)" OnPropose="@ProposeOrdnance">
                             <Target>
                                 <OrdnanceTargetFields Targets="@([.. FireTargets(firing)])" Vehicles="@OrdnanceVehicleChoices(firing)" Ammunition="@OrdnanceAmmunitionKind"
-                                    Fixed="@OrdnanceFixedAmmunition" Ammunitions="@OrdnanceAmmunitionChoices(OrdnanceVehicleChoices(firing).Count > 0)" Target="@ordnanceTarget" Vehicle="@ordnanceVehicle"
-                                    Chosen="@(OrdnanceAmmunitionFor(OrdnanceVehicleChoices(firing).Count > 0) ?? ordnanceAmmunition)"
+                                    Fixed="@OrdnanceFixedAmmunition" Ammunitions="@OrdnanceAmmunitionChoices(shotAtVehicle)" Target="@ordnanceTarget" Vehicle="@ordnanceVehicle"
+                                    Chosen="@(OrdnanceAmmunitionFor(shotAtVehicle) ?? ordnanceAmmunition)"
                                     OnTarget="@(at => { ordnanceTarget = at; ordnanceVehicle = string.Empty; })" OnVehicle="@(id => ordnanceVehicle = id)"
                                     OnAmmunition="@(ammunition => ordnanceAmmunition = ammunition)"
-                                    CanisterAims="@(OrdnanceCanister(firing) ? OrdnanceCanisterAims(firing) : null)" CanisterAim="@ordnanceCanisterAim"
+                                    CanisterAims="@canisterAims" CanisterAim="@ordnanceCanisterAim"
                                     CanisterFacings="@OrdnanceCanisterFacings" CanisterFacing="@OrdnanceCanisterFacing"
                                     OnCanisterAim="@(aim => ordnanceCanisterAim = aim)" OnCanisterFacing="@(facing => { ordnanceCanisterFacing = facing; ordnanceCanisterAim = string.Empty; })" />
                             </Target>
@@ -4249,6 +4256,9 @@ else if (state is not null)
         placeHidden = false;
         placeConcealed = false;
         placeBroken = placeOffBoard = false;
+
+        // D3.41, D3.45 (the UI review of pass 55): an Armor Leader or an Inexperienced Crew chosen for a placement is the last view's own.
+        (placeArmorLeader, placeInexperiencedCrew) = (string.Empty, false);
         placeHolder = string.Empty;
         placeEntry = string.Empty;
         nonObChosen.Clear();
@@ -4374,10 +4384,11 @@ else if (state is not null)
     private string ordnanceCanisterFacing = string.Empty;
 
     /// <summary>
-    /// Whether the shot being set up is Canister (C8.4; pass 55): the Gun may fire it now, no vehicle is the target, and it is the ammunition
-    /// chosen. The target then gives way to an aim.
+    /// Whether the shot being set up is Canister (C8.4; pass 55): the Gun may fire it now, no vehicle is chosen as the target, and it is the
+    /// ammunition chosen. The target then gives way to an aim. A vehicle in view in the Location last chosen does not take Canister away (the
+    /// UI review): the shot is at a vehicle only when one is chosen.
     /// </summary>
-    private bool OrdnanceCanister(string firing) => OrdnanceAmmunitionKind == OrdnanceTargetFields.AmmunitionKind.Selectable && OrdnanceVehicleChoices(firing).Count == 0
+    private bool OrdnanceCanister() => OrdnanceAmmunitionKind == OrdnanceTargetFields.AmmunitionKind.Selectable && ordnanceVehicle.Length == 0
         && OrdnanceAmmunitionFor(false) == ScenarioA1CanisterCalculator.Ammunition;
 
     /// <summary>The chosen Gun's Covered Arc now, by its facing's name; null when it has none.</summary>
@@ -4397,8 +4408,9 @@ else if (state is not null)
             .. Enum.GetValues<UnitFacing>().Select(UnitFacings.Name).Where(name => name != own).Select(name => new PlayChoice(name, $"{name} (turn first: Case A on the IFT DR)"))];
 
     /// <summary>
-    /// The five aims of the chosen Covered Arc (C8.4, C8.41; ruling R55.8), each with the hexes it attacks and the enemy units the view sees in
-    /// them: the hexes are the map's, and a unit the view does not see is not counted.
+    /// The five aims of the chosen Covered Arc (C8.4, C8.41; ruling R55.8), each with the hexes it attacks and what the view sees of the enemy
+    /// in them: the units in view that Canister can harm (an AFV is not one: "ineffective vs armored targets"), and the "?" stacks the map
+    /// shows there. The hexes are the map's; nothing the view does not see is counted.
     /// </summary>
     private IReadOnlyList<PlayChoice> OrdnanceCanisterAims(string firing)
     {
@@ -4410,12 +4422,25 @@ else if (state is not null)
         return [.. Live.Planner.CanisterAims(game, ordnanceGun, facing).Select(aim =>
         {
             var hexes = aim.Cluster.Concat(aim.Adjacent).ToHashSet();
-            var seen = VisibleUnits.Count(unit => unit.Status == InstanceStatus.Active && unit.Side != firing && game.Location(unit.Id)?.Location is { } at && hexes.Contains(at));
+            var seen = VisibleUnits.Count(unit => unit.Status == InstanceStatus.Active && unit.Side != firing && !LiveFire.IsVehicle(unit)
+                && game.Location(unit.Id)?.Location is { } at && hexes.Contains(at));
+            var stacks = SealedPresences.Count(presence => presence.Side != firing && hexes.Contains(presence.Location));
             var adjacent = aim.Adjacent.Count == 0 ? string.Empty
-                : $"{(aim.Cluster.Count > 0 ? ", and " : "no hex of its cluster on the map, and ")}{string.Join(" ", aim.Adjacent.Select(at => at.ToString()))} at {(aim.Quartered ? "a quarter of the" : "half")} FP";
+                : $", and {string.Join(" ", aim.Adjacent.Select(at => at.ToString()))} at {(aim.Quartered ? "a quarter of the" : "half")} FP";
             return new PlayChoice(aim.Aim.ToString(CultureInfo.InvariantCulture),
-                $"aim {aim.Aim.ToString(CultureInfo.InvariantCulture)}: {string.Join(" ", aim.Cluster.Select(at => at.ToString()))}{adjacent}: {seen.ToString(CultureInfo.InvariantCulture)} unit{(seen == 1 ? string.Empty : "s")}");
+                $"aim {aim.Aim.ToString(CultureInfo.InvariantCulture)}: {string.Join(" ", aim.Cluster.Select(at => at.ToString()))}{adjacent}: {CanisterAimSeen(seen, stacks)}");
         })];
+    }
+
+    /// <summary>What the view sees in an aim's hexes, in words: "2 units in view, 1 concealed stack"; a part that is zero is left out, and "no unit in view" stands for neither.</summary>
+    internal static string CanisterAimSeen(int units, int stacks)
+    {
+        string[] parts =
+        [
+            .. units > 0 ? new[] { $"{units.ToString(CultureInfo.InvariantCulture)} unit{(units == 1 ? string.Empty : "s")} in view" } : [],
+            .. stacks > 0 ? new[] { $"{stacks.ToString(CultureInfo.InvariantCulture)} concealed stack{(stacks == 1 ? string.Empty : "s")}" } : [],
+        ];
+        return parts.Length == 0 ? "no unit in view" : string.Join(", ", parts);
     }
 
     /// <summary>The Shocked AFVs and Unconfirmed Kills that owe their RPh dr (C7.42).</summary>
@@ -4536,8 +4561,15 @@ else if (state is not null)
     private Task ProposeOrdnance()
     {
         // C8.4 (pass 55, ruling R55.9): a Canister shot names its aim, and a facing only when the Gun turns first; it names no target.
-        if (FiringSide is { } firing && OrdnanceCanister(firing) && int.TryParse(ordnanceCanisterAim, NumberStyles.None, CultureInfo.InvariantCulture, out var aim))
+        if (FiringSide is { } firing && OrdnanceCanister())
         {
+            // The UI review: the aim sent is one of the aims shown now. A Gun that turned since the aim was chosen has other hexes under that number.
+            if (!OrdnanceCanisterAims(firing).Any(shown => shown.Id == ordnanceCanisterAim) || !int.TryParse(ordnanceCanisterAim, NumberStyles.None, CultureInfo.InvariantCulture, out var aim))
+            {
+                ordnanceCanisterAim = string.Empty;
+                return Task.CompletedTask;
+            }
+
             var canister = new Dictionary<string, object>
             {
                 ["gameId"] = gameId, ["attemptId"] = Attempt("gun"), ["expectedRevision"] = (long)history!.Events.Count, ["gunId"] = ordnanceGun,
@@ -5368,7 +5400,7 @@ else if (state is not null)
         }
     }
 
-    private (long Revision, string View, IReadOnlyList<GamePlanner.MotionAttemptOption> Options)? motionCache;
+    private (string Game, long Revision, string View, IReadOnlyList<GamePlanner.MotionAttemptOption> Options)? motionCache;
 
     /// <summary>
     /// The Motion attempts the viewing side's vehicles may make now (D2.401; pass 55), read once for a revision and a view: a side's view lists
@@ -5383,9 +5415,10 @@ else if (state is not null)
                 return [];
             }
 
-            if (motionCache is not { } kept || kept.Revision != history.Events.Count || kept.View != viewAs)
+            // The UI review of pass 55: another game at the same event count is not this one, so the game is part of the key.
+            if (motionCache is not { } kept || kept.Game != gameId || kept.Revision != history.Events.Count || kept.View != viewAs)
             {
-                motionCache = (history.Events.Count, viewAs, Live.Planner.MotionAttemptOptions(state, history.Events, Viewer.IsAdjudicator ? null : viewAs));
+                motionCache = (gameId, history.Events.Count, viewAs, Live.Planner.MotionAttemptOptions(state, history.Events, Viewer.IsAdjudicator ? null : viewAs));
             }
 
             return motionCache.Value.Options;
@@ -5603,6 +5636,7 @@ else if (state is not null)
         placeNote = null;
         placeLocation = placeId = placeBore = placeGroup = string.Empty;
         placeHidden = placeConcealed = placeBroken = placeOffBoard = false;
+        (placeArmorLeader, placeInexperiencedCrew) = (string.Empty, false);
         ClearFire();
         moveUnits.Clear();
         moveTo = string.Empty;
@@ -5754,12 +5788,15 @@ else if (state is not null)
         ordnanceSpotter = ordnanceDirector = string.Empty;
         ordnanceIntensive = false;
         ordnanceAmmunition = "ap";
+
+        // D2.401 (the UI review of pass 55): the Motion attempt's vehicle and the VCA and TCA named for it.
+        motionVehicle = motionFacing = motionTurret = string.Empty;
         ClearVehicleCc();
     }
 
     private void Refresh()
     {
-        (planCache, offeredCache, maySetUpCache) = (default, default, default);
+        (planCache, offeredCache, maySetUpCache, motionCache) = (default, default, default, null);
         history = gameId.Length > 0 ? Live.History(gameId) : null;
         state = history?.Current ?? (history is { States.Count: > 0 } ? history.States[^1] : null);
         var phase = state is null ? null : $"{state.Turn}/{state.Phase}/{state.PhasingSide}";
@@ -6563,6 +6600,12 @@ else if (state is not null)
             if (proposal.Action == GameActions.MoveVehicle)
             {
                 vehicleTurret = string.Empty;
+            }
+
+            // D2.401 (the UI review of pass 55): the VCA and TCA named for an attempt are spent with it.
+            if (proposal.Action == GameActions.MotionAttempt)
+            {
+                (motionFacing, motionTurret) = (string.Empty, string.Empty);
             }
 
             if (proposal.Action == GameActions.Setup)

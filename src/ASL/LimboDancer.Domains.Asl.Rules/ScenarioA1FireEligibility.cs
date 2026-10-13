@@ -904,7 +904,7 @@ public static class ScenarioA1FireEligibility
         ArgumentNullException.ThrowIfNull(fires);
         ArgumentNullException.ThrowIfNull(attack);
         ArgumentNullException.ThrowIfNull(fromLocations);
-        return !firesAlone && fires.Any(record => !(attack.VehicleFire is not null && record.Vehicle)
+        return !firesAlone && fires.Any(record => !record.Ordnance && !(attack.VehicleFire is not null && record.Vehicle)
             && (fromLocations.Contains(record.FirerLocation) || record.FirerLocation == attack.FirerLocationId)
             && record.TargetLocation == attack.TargetLocationId && record.Step == step)
             ? $"play.fire-group: a Location of the group has already fired at {attack.TargetLocationId}{(step is null ? " this phase" : " at this MF expenditure")}, and its units fire as one fire group (A7.55, p. 57)"
@@ -989,7 +989,7 @@ public static class ScenarioA1FireEligibility
     {
         ArgumentNullException.ThrowIfNull(fires);
         ArgumentNullException.ThrowIfNull(fromLocations);
-        return fires.Any(record => fromLocations.Contains(record.FirerLocation) && record.TargetLocation == second && record.Step is null)
+        return fires.Any(record => !record.Ordnance && fromLocations.Contains(record.FirerLocation) && record.TargetLocation == second && record.Step is null)
             ? $"play.fire-group: a Location of the group has already fired at {second} this phase (A7.55, A9.52)"
             : null;
     }

@@ -37,7 +37,23 @@ public sealed record GunDuelFacts(bool AtTheMovingVehicle, bool FirerConcealed, 
     {
         get; init;
     }
+
+    /// <summary>
+    /// Whether the declaring firer is a vehicle with an Armor Leader no record has yet revealed (D3.41; ruling R55.29, extended): the
+    /// declaration rolls nothing and so uses nothing of his, and its texts are public, so his modifier is not counted in the DEFENDER's Gun Duel
+    /// DRM either. The shot he then fires takes it, and its record reveals him.
+    /// </summary>
+    public bool FirerUnrevealedArmorLeader
+    {
+        get; init;
+    }
 }
+
+/// <summary>
+/// The firer of a declared shot as the first shot of a Gun Duel left it (C2.2401, p. 168): whether its crew, or the firing vehicle, is
+/// eliminated, broken, Stunned, or Shocked (an Unconfirmed Kill with it, C7.42), and whether its Gun is destroyed or malfunctioned.
+/// </summary>
+public sealed record GunDuelReturnFirer(bool Eliminated, bool Broken, bool Stunned, bool Shocked, bool GunOut);
 
 /// <summary>Whether a Gun Duel may be declared against a declared shot: no bar, and each side's Gun Duel DRM once both shots were read.</summary>
 public sealed record GunDuelVerdict(string? Bar, GunDuelDrm? Attacker, GunDuelDrm? Defender)
@@ -227,8 +243,18 @@ public static class ScenarioA1GunDuels
             };
         }
 
+        // The same for the declaring vehicle's leader: both totals are summed without any Armor Leader not yet revealed.
+        var compared = facts.FirerUnrevealedArmorLeader && declared.Vehicle is { ArmorLeadership: < 0 } leading
+            ? declared with
+            {
+                Vehicle = leading with
+                {
+                    ArmorLeadership = null
+                }
+            }
+            : declared;
         var attacker = Drm(potential, reference);
-        var defender = Drm(declared, reference);
+        var defender = Drm(compared, reference);
         if (attacker is null || defender is null)
         {
             return No(DrmUnread, attacker, defender);
@@ -281,8 +307,9 @@ public static class ScenarioA1GunDuels
     {
         ArgumentNullException.ThrowIfNull(attacker);
         ArgumentNullException.ThrowIfNull(defender);
-        return $"{firer} in {firerAt} has declared a shot at {vehicle}. Gun Duel DRM: {vehicle} {DrmText(attacker)}; {firer} {DrmText(defender)}. "
-            + $"{vehicle} may fire its MA first (C2.2401)";
+        // One sentence, with its rule once (the table player's review): the page ends it with the ruling every pending choice is under.
+        return $"{firer} in {firerAt} has declared a shot at {vehicle}, which may fire its MA first in a Gun Duel (C2.2401); "
+            + $"Gun Duel DRM: {vehicle} {DrmText(attacker)}; {firer} {DrmText(defender)}";
     }
 
     /// <summary>The declaration in words, for the record; <paramref name="where"/> is " in" and the firer's Location, or empty.</summary>
@@ -299,21 +326,30 @@ public static class ScenarioA1GunDuels
         $"play.gun-duel: {vehicle} cannot fire its MA first now ({reason}); decline the Gun Duel, and the declared shot resolves (C2.2401)";
 
     /// <summary>
-    /// Why a declared shot is not made after the vehicle's (C2.2401): the first shot "voids the opponent's return shot by eliminating, breaking,
-    /// stunning or shocking it"; a Gun the first shot destroyed or malfunctioned (C11.4, C11.6) fires no more either.
+    /// Whether a declared shot is void after the vehicle's first shot (C2.2401, p. 168), and why: the first shot "voids the opponent's return
+    /// shot by eliminating, breaking, stunning or shocking it"; a Gun the first shot destroyed or malfunctioned (C11.4, C11.6) fires no more
+    /// either. Null when the firer still fires its declared shot. The planner asks before it writes the shot or the void's record, and the
+    /// projector asks again with the same facts from its own state.
     /// </summary>
-    public static string VoidCause(bool eliminated, bool broken, bool stunned, bool shocked, bool gunOut) =>
-        eliminated ? Eliminated : broken ? Broken : stunned ? Stunned : shocked ? Shocked : gunOut ? GunOut : Other;
-
-    /// <summary>A void return shot in words, for the record.</summary>
-    public static string VoidText(string firer, string cause) => $"the return shot of {firer} is void: " + cause switch
+    public static string? ReturnShotVoid(GunDuelReturnFirer firer)
     {
-        Eliminated => "the first shot eliminated it",
-        Broken => "its crew is broken",
-        Stunned => "it is Stunned",
-        Shocked => "it is shocked",
-        GunOut => "its Gun is destroyed or malfunctioned",
-        _ => "it can no longer fire",
+        ArgumentNullException.ThrowIfNull(firer);
+        return firer.Eliminated ? Eliminated : firer.Broken ? Broken : firer.Stunned ? Stunned : firer.Shocked ? Shocked : firer.GunOut ? GunOut : null;
+    }
+
+    /// <summary>
+    /// A return shot that is not made, in words, for the record: void for its cause; or, for <see cref="Other"/>, not fired for the reason the
+    /// checks of every shot gave when they refused it, which is none of the rule's causes.
+    /// </summary>
+    public static string VoidText(string firer, string cause, string? reason = null) => cause switch
+    {
+        Eliminated => $"the return shot of {firer} is void: the first shot eliminated it",
+        Broken => $"the return shot of {firer} is void: its crew is broken",
+        Stunned => $"the return shot of {firer} is void: it is Stunned",
+        Shocked => $"the return shot of {firer} is void: it is Shocked",
+        GunOut => $"the return shot of {firer} is void: its Gun is destroyed or malfunctioned",
+        _ when reason is { Length: > 0 } => $"the return shot of {firer} is not fired: {reason}",
+        _ => $"the return shot of {firer} is not fired: it can no longer fire",
     } + " (C2.2401)";
 
     /// <summary>
@@ -324,7 +360,14 @@ public static class ScenarioA1GunDuels
         ? new RecordRefusal("UNIT-STATE-049", "An ordnance record names itself a Gun Duel's first shot, and no Gun Duel was declared for its vehicle at this MP expenditure (C2.2401).")
         : null;
 
-    /// <summary>Why a void return shot's record is refused (C2.2401), or null: it follows the first shot of a Gun Duel against the Gun it names.</summary>
-    public static RecordRefusal? VoidRecordRefusal(bool firstShotMade, bool sameFirer) => firstShotMade && sameFirer ? null
-        : new RecordRefusal("UNIT-STATE-049", "A void return shot follows the first shot of a Gun Duel against the firer it names (C2.2401).");
+    /// <summary>
+    /// Why a void return shot's record is refused (C2.2401), or null: it follows the first shot of a Gun Duel against the Gun it names, and its
+    /// cause is the one the firer's state gives: a firer the first shot left able to fire has no void shot, but for the cause <see cref="Other"/>,
+    /// a shot the checks of every shot refused, which replay cannot make again.
+    /// </summary>
+    public static RecordRefusal? VoidRecordRefusal(bool firstShotMade, bool sameFirer, string cause, GunDuelReturnFirer firer) =>
+        !firstShotMade || !sameFirer ? new RecordRefusal("UNIT-STATE-049", "A void return shot follows the first shot of a Gun Duel against the firer it names (C2.2401).")
+        : cause != (ReturnShotVoid(firer) ?? Other)
+            ? new RecordRefusal("UNIT-STATE-049", "A void return shot names the cause the first shot gave its firer: eliminated, broken, Stunned, Shocked, or its Gun out of action (C2.2401).")
+        : null;
 }

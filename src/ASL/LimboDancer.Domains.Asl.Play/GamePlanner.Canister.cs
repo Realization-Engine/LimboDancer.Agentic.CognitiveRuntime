@@ -37,7 +37,8 @@ public sealed partial class GamePlanner
 
     /// <summary>
     /// The five aims of a Gun's Covered Arc as hexes of the map (C8.4 and its EX; ruling R55.8), for its own facing or the one it would turn to;
-    /// empty when the Gun or the map cannot be read. A hex off the map is left out, and an aim with no hex on it is left out too.
+    /// empty when the Gun or the map cannot be read. A hex off the map is left out, and an aim with no hex of its cluster on it is left out too
+    /// (C8.41: the adjacent hex is attacked in addition to a cluster; Rules says so).
     /// </summary>
     public IReadOnlyList<CanisterAimRead> CanisterAims(GameState state, string gunId, UnitFacing? facing = null)
     {
@@ -72,7 +73,7 @@ public sealed partial class GamePlanner
             [.. aim.Adjacent.Select(At).OfType<BoardLocation>()])
         {
             Quartered = aim.Adjacent.Count > 1,
-        }).Where(read => read.Cluster.Count + read.Adjacent.Count > 0)];
+        }).Where(read => ScenarioA1CanisterCalculator.Attacked(read.Cluster, read.Adjacent).Count > 0)];
     }
 
     /// <summary>Every order of so many steps to the left hex and so many to the right (true is a step to the left), the left steps first.</summary>
@@ -157,7 +158,8 @@ public sealed partial class GamePlanner
         // or anywhere else, leaves its Location out; LOS to the vertex itself is not required.
         var elevation = gunRead.Hex.BaseLevel + gunRead.Level.Level;
         var hexes = CanisterAims(state, gunId, facing).FirstOrDefault(read => read.Aim == aimed.Aim);
-        var attacked = new List<(OrdnanceCanisterLocation Location, FireAttack Read)>();
+        var inCluster = new List<(OrdnanceCanisterLocation Location, FireAttack Read)>();
+        var beside = new List<(OrdnanceCanisterLocation Location, FireAttack Read)>();
         foreach (var (at, adjacent) in (hexes?.Cluster ?? []).Select(at => (at, (int?)null)).Concat((hexes?.Adjacent ?? []).Select(at => (at, (int?)aimed.Adjacent.Count))))
         {
             if (ReadLocation(state, at) is not { } read || !ScenarioA1OrdnanceEligibility.CanisterElevation(elevation, read.Hex.BaseLevel))
@@ -191,9 +193,11 @@ public sealed partial class GamePlanner
                 return Refused(scope, label, expected, "play.fire-melee: fire at a Location holding units in Melee or prisoners is not reviewed (A11.15, A20.54)");
             }
 
-            attacked.Add((new OrdnanceCanisterLocation(at.ToString()) { AdjacentHexes = adjacent }, HeatOfBattleFacts(state, mapped)));
+            (adjacent is null ? inCluster : beside).Add((new OrdnanceCanisterLocation(at.ToString()) { AdjacentHexes = adjacent }, HeatOfBattleFacts(state, mapped)));
         }
 
+        // C8.41 (the referee's review): the adjacent hex is attacked in addition to a cluster that is; Rules says what the shot attacks.
+        var attacked = ScenarioA1CanisterCalculator.Attacked(inCluster, beside);
         if (attacked.Count == 0)
         {
             return Refused(scope, label, expected, ScenarioA1OrdnanceEligibility.CanisterEmptyRefusal(aimed.Aim, facing.Name()));

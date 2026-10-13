@@ -282,7 +282,17 @@ public sealed record MolEventFacts(bool RallyPhase, bool MolCheckByUnit);
 public sealed record LeaderMgFacts(string Id, bool Leader, Func<bool> DirectedThisPhase, Func<bool> DirectedSupportWeapon, Func<bool> FiredAnotherMg);
 
 /// <summary>A fire record of the phase as the state keeps it (A7.55): the firing Location, the target Location, the step it answered, and whether a vehicle fired.</summary>
-public sealed record PhaseFireFacts(string FirerLocation, string TargetLocation, int? Step, bool Vehicle);
+public sealed record PhaseFireFacts(string FirerLocation, string TargetLocation, int? Step, bool Vehicle)
+{
+    /// <summary>
+    /// Whether the record is an ordnance shot's attack, a Canister shot's on one of its Locations (C8.4, A7.51, p. 57; pass 55): ordnance forms
+    /// no fire group and binds none, so the A7.55 checks pass it over.
+    /// </summary>
+    public bool Ordnance
+    {
+        get; init;
+    }
+}
 
 /// <summary>A target unit of the Encirclement marking as the state has it (A7.7): whether it is found, its kind and side, and whether it is held in Melee.</summary>
 public sealed record EncircledUnitFacts(bool Found, string? Kind, string? Side, bool Melee);

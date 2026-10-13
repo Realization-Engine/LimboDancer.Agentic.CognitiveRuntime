@@ -84,6 +84,18 @@ public static class ScenarioA1ArmorLeaders
     public static int BogRemovalDrm(bool mired, int? leadership) => (mired ? 1 : 0) + (leadership ?? 0);
 
     /// <summary>
+    /// The end of a Bog Removal's proposal (D8.3, D8.31, D3.44, D3.45; the table player's review of pass 55): the rules alone, or the Armor
+    /// Leader's or the Inexperienced Crew's modifier named as what it is, a modifier of the colored dr, so that "freed on 1 to 4, Mired on 5" is
+    /// not read as the Original dr's.
+    /// </summary>
+    public static string BogRemovalText(int? leadership) => leadership switch
+    {
+        null or 0 => " (D8.3, D8.31)",
+        > 0 and var plus => $"; Inexperienced Crew +{plus} on the colored dr (D3.45, D8.3, D8.31)",
+        var minus => $"; Armor Leader {minus} on the colored dr (D3.44, D8.3, D8.31)",
+    };
+
+    /// <summary>
     /// Why a vehicle check's record is refused for its Armor Leader (D8.3, D3.44), or null: a Bog Removal names the modifier the state gives
     /// the vehicle, and no other check names one.
     /// </summary>
@@ -183,6 +195,77 @@ public static class ScenarioA1ArmorLeaders
         {
             VehicleTarget = target,
             Hit = hit,
+        };
+    }
+
+    /// <summary>
+    /// The vehicles of an attack as a pending choice's resume data keeps them (D3.41; the referee's review of pass 55): the resume is read by
+    /// both sides before the attack has made any crew check, so the Morale Level of a crew whose Armor Leader no record has revealed stays out
+    /// of it. <paramref name="morale"/> gives those vehicles' Morale Levels when the resolution resumes and null when it stops.
+    /// </summary>
+    public static IReadOnlyList<FireVehicle>? Pending(IReadOnlyList<FireVehicle>? vehicles, IReadOnlyCollection<string> unrevealed, Func<string, int?>? morale = null)
+    {
+        ArgumentNullException.ThrowIfNull(unrevealed);
+        return vehicles is null || !vehicles.Any(item => unrevealed.Contains(item.VehicleId ?? string.Empty)) ? vehicles
+            : [.. vehicles.Select(item => unrevealed.Contains(item.VehicleId ?? string.Empty) ? item with { CrewMorale = morale?.Invoke(item.VehicleId!) } : item)];
+    }
+
+    /// <summary>An IFT attack's facts as a pending choice's resume data keeps them, or as the resumed resolution reads them again (D3.41).</summary>
+    public static FireAttack Pending(FireAttack attack, IReadOnlyCollection<string> unrevealed, Func<string, int?>? morale = null)
+    {
+        ArgumentNullException.ThrowIfNull(attack);
+        var vehicles = Pending(attack.Vehicles, unrevealed, morale);
+        return ReferenceEquals(vehicles, attack.Vehicles) ? attack : attack with
+        {
+            Vehicles = vehicles
+        };
+    }
+
+    /// <summary>The same for an ordnance shot: its target's crew and the crews of the vehicles in the Location its hit attacks.</summary>
+    public static OrdnanceShot Pending(OrdnanceShot shot, IReadOnlyCollection<string> unrevealed, Func<string, int?>? morale = null)
+    {
+        ArgumentNullException.ThrowIfNull(shot);
+        ArgumentNullException.ThrowIfNull(unrevealed);
+        var target = shot.VehicleTarget;
+        if (target is { VehicleId: { } id } && unrevealed.Contains(id))
+        {
+            target = target with
+            {
+                CrewMorale = morale?.Invoke(id)
+            };
+        }
+
+        var vehicles = Pending(shot.Hit?.Vehicles, unrevealed, morale);
+        if (ReferenceEquals(target, shot.VehicleTarget) && ReferenceEquals(vehicles, shot.Hit?.Vehicles))
+        {
+            return shot;
+        }
+
+        var hit = shot.Hit is null ? null : shot.Hit with
+        {
+            Vehicles = vehicles
+        };
+        return shot with
+        {
+            VehicleTarget = target,
+            Hit = hit,
+        };
+    }
+
+    /// <summary>
+    /// A shot as the other side may read of it before it is fired (D3.41; rulings R55.15, R55.29): a proposal, a choice's text, or a summary
+    /// worded for the side that does not own the firing vehicle leaves out the line of an Armor Leader no record has revealed. The shot itself
+    /// is fired with his modifier, and its record reveals him. An Inexperienced Crew's +1 is public and stays.
+    /// </summary>
+    public static OrdnanceShot ToldToTheEnemy(OrdnanceShot shot, bool leaderRevealed)
+    {
+        ArgumentNullException.ThrowIfNull(shot);
+        return leaderRevealed || shot.Vehicle is not { ArmorLeadership: < 0 } led ? shot : shot with
+        {
+            Vehicle = led with
+            {
+                ArmorLeadership = null
+            }
         };
     }
 

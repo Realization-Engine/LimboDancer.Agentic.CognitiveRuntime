@@ -123,6 +123,38 @@ internal static class ScenarioA1ArmorCalculator
         return held.Length > 0 ? Elite(held[^1].Number) : null;
     }
 
+    /// <summary>
+    /// The month an ammunition starts in, when that alone keeps it from a game that gives a year and no month (ruling R55.31): the counter, or
+    /// C8.3 for undated HEAT, starts it in a month of that very year, and with no month the game cannot say that month has come, so it has
+    /// none. Null in every other case, also when the Gun has the ammunition.
+    /// </summary>
+    public static int? StartMonthUnknown(GunDefinition gun, string ammunition, int? year, int? month)
+    {
+        ArgumentNullException.ThrowIfNull(gun);
+        if (month is not null || year is null || Depletion(gun, ammunition, year, null) is not null)
+        {
+            return null;
+        }
+
+        var type = TypeOf(ammunition);
+        var entries = gun.SpecialAmmo.Select(ParseAmmunition).OfType<SpecialAmmunition>().Where(entry => entry.Type == type).ToArray();
+        if (type == "H" && entries.Length > 0 && entries.All(entry => entry.Year is null))
+        {
+            var from = gun.Nationality == "german" ? (Year: 1942, Month: 5) : (Year: 1943, Month: 1);
+            return year == from.Year ? from.Month : null;
+        }
+
+        return entries.Where(entry => entry.Year == year && entry.Month is not null).Select(entry => entry.Month).Min();
+    }
+
+    /// <summary>The detail a refusal's code carries when <see cref="StartMonthUnknown"/> is its cause: <c>:from-month-5</c>; empty otherwise.</summary>
+    internal static string StartMonthDetail(OrdnanceShot shot, GunDefinition gun) =>
+        shot.Ammunition is { } ammunition && StartMonthUnknown(gun, ammunition, shot.ScenarioYear, shot.Hit?.ScenarioMonth) is { } from
+            ? ":" + StartMonthMark + from.ToString(CultureInfo.InvariantCulture) : string.Empty;
+
+    /// <summary>The start of that detail.</summary>
+    public const string StartMonthMark = "from-month-";
+
     private static string? TypeOf(string ammunition) => ammunition switch
     {
         "apcr" => "A",
@@ -238,7 +270,7 @@ internal static class ScenarioA1ArmorCalculator
         // none at the scenario's date is no such ammunition.
         if (!latw && (ammunition is "apcr" or "apds" or "heat" || Lists(gun, ammunition)) && ShotDepletion(shot, gun) is null)
         {
-            outside.Add(Prefix + "ammunition-unavailable");
+            outside.Add(Prefix + "ammunition-unavailable" + StartMonthDetail(shot, gun));
         }
 
         if (shot.Gun!.Depleted?.Contains(ammunition, StringComparer.Ordinal) == true)

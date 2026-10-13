@@ -19,7 +19,7 @@ public static class RefusalReasons
         ["fire.weather-outside"] = "the Low Visibility DRM must be 0 to 5 and the Extreme Winter B# reduction 0 to 2 (E1.7, E3.32, E3.741)",
         ["fire.residual-outside"] = "Residual FP attacks alone, at a printed counter value (A8.2, A8.22)",
         ["fire.target-outside"] = "the target Location holds no enemy unit the package reviews, is the firers' own Location, or has terrain it does not review",
-        ["fire.canister-outside"] = "a Canister attack has no firers or leader, the FP of its Gun Size, and a Location at the Gun's elevation and in its LOS (C8.4, A7.51)",
+        ["fire.canister-outside"] = "Canister is fired by its Gun alone, with no other firer or leader, at Locations at the Gun's elevation and in its LOS: propose it as the Gun's shot, with Canister as the ammunition and one of the five aims (C8.4, A7.51)",
         ["fire.ordnance-hit-outside"] = "an ordnance hit attacks on its Gun's HE FP column, with no firers of its own (C.6, C3.32)",
         ["fire.crew-target-unreviewed"] = "crews and the Guns they man as targets are not reviewed (C11; ruling R24.3)",
         ["fire.unit-listed-twice"] = "a unit or weapon is named twice in the attack",
@@ -87,6 +87,7 @@ public static class RefusalReasons
         ["ordnance.gun-outside"] = "the Gun is not one the package reviews",
         ["ordnance.gun-malfunctioned"] = "the Gun is malfunctioned (C2.28)",
         ["ordnance.he-not-named"] = "this Gun's HE is Special Ammunition with a Depletion Number, which is never fired undeclared: name HE for the shot (C2.21, C8.8); its AP against Infantry is not built (C8.31, HE Equivalency)",
+        ["ordnance.he-equivalency-not-built"] = "AP, APCR, or APDS fired at Infantry attacks by its HE Equivalency, which is not built (C8.31); name HE for a shot at Infantry",
         ["ordnance.he-unavailable"] = "this Gun's HE is Special Ammunition (C8.8) and it has none now: none at the scenario's date, or it has run out (C8.9); its AP against Infantry is not built (C8.31, HE Equivalency)",
         ["ordnance.ammunition-outside"] = "the Gun does not fire this ammunition at this target (C8.1)",
         ["ordnance.ammunition-unavailable"] = "the Gun has no such ammunition at the scenario's date (C8.11, C8.3, C8.8)",
@@ -96,7 +97,8 @@ public static class RefusalReasons
         ["ordnance.canister-movement-phase"] = "Canister as Defensive First Fire in the MPh is not built; fire it in the PFPh, AFPh, or DFPh (C8.4)",
         ["ordnance.crew-outside"] = "the Gun is not manned by a crew of its side able to fire it (A21.13)",
         ["ordnance.gun-already-fired"] = "the Gun has fired and did not keep its Multiple ROF (C2.24)",
-        ["ordnance.out-of-range"] = "the target is beyond the Gun's range, in its own hex, or at another level at a range less than the elevation difference: a Gun fires at another level only at a range of at least that difference (C2.25, C5.5, C2.6)",
+        ["ordnance.out-of-range"] = "the target is beyond the Gun's range, nearer than its minimum range, or in its own hex (C2.25, C5.5)",
+        ["ordnance.elevation-outside"] = "the target is at another level at a range less than the elevation difference between them: a Gun fires at another level only at a range of at least that difference (C2.6)",
         ["ordnance.fact-outside"] = "a fact of the shot is outside the reviewed cases",
         ["ordnance.covered-arc-fixed"] = "the Gun may not turn to bring the target into its Covered Arc (C5.11)",
         ["ordnance.los-blocked"] = "the Gun has no LOS to the target (A6)",
@@ -147,6 +149,16 @@ public static class RefusalReasons
     {
         ArgumentNullException.ThrowIfNull(code);
         var name = Name(code);
+
+        // Ruling R55.31: an ammunition that starts in a month of the game's year, in a game that gives a year and no month. Rules tells the
+        // case apart and names the month in the code's detail.
+        var detail = code.Split(':', 2) is [_, var rest] ? rest : string.Empty;
+        if (detail.StartsWith(Rules.ScenarioA1Definitions.StartMonthMark, StringComparison.Ordinal)
+            && int.TryParse(detail[Rules.ScenarioA1Definitions.StartMonthMark.Length..], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var month))
+        {
+            return $"{code}: the Gun has {Rules.ScenarioA1Definitions.NoneAtTheDate(name.EndsWith("he-unavailable", StringComparison.Ordinal) ? "he" : null, month)}";
+        }
+
         if (Sentences.TryGetValue(name, out var sentence))
         {
             return $"{code}: {sentence}";

@@ -893,6 +893,11 @@ public static class GameEventWriter
                 writer.WriteString("firer", voided.Firer);
                 writer.WriteString("vehicle", voided.Vehicle);
                 writer.WriteString("cause", voided.Cause);
+                if (voided.Reason is { } notFired)
+                {
+                    writer.WriteString("reason", notFired);
+                }
+
                 break;
             case VehicleWrecked wreck:
                 writer.WriteString("id", wreck.Id);

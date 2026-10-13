@@ -237,9 +237,17 @@ public sealed class PlayPageVehicleTests : IDisposable
         // Its one attempt of this enemy MPh is made: it is listed with the reason, and the record says what happened. The DEFENDER may still pass.
         var made = Assert.Single(page.FindAll("#motion-vehicle option"));
         Assert.True(made.HasAttribute("disabled"));
-        Assert.Contains("only once", made.TextContent, StringComparison.Ordinal);
+
+        // The table player's review: the option names its vehicle once and says the bar in a few words; the whole sentence is its title.
+        Assert.EndsWith(": it has made its attempt", made.TextContent.Trim(), StringComparison.Ordinal);
+        Assert.Equal(1, System.Text.RegularExpressions.Regex.Matches(made.TextContent, "R1").Count);
+        Assert.Contains("only once", made.GetAttribute("title"), StringComparison.Ordinal);
+        Assert.DoesNotContain("Vehicle vehicle", page.Find("#motion-attempt").TextContent, StringComparison.Ordinal);
         Assert.Empty(page.FindAll("#propose-motion-attempt"));
-        Assert.Contains($"attempts Motion: {mf} MF spent in its LOS, dr 1: it gains Motion and turns its VCA to north-east and its TCA to east (D2.401)", page.Markup, StringComparison.Ordinal);
+
+        // The record says who spent the MF.
+        Assert.Contains(" attempts Motion as ", page.Markup, StringComparison.Ordinal);
+        Assert.Contains($" has spent {mf} MF in its LOS, dr 1: it gains Motion and turns its VCA to north-east and its TCA to east (D2.401)", page.Markup, StringComparison.Ordinal);
         Assert.Single(page.FindAll("#propose-pass"));
     }
 
@@ -283,6 +291,18 @@ public sealed class PlayPageVehicleTests : IDisposable
         MinimalCards.Choose(page, new Dictionary<string, string> { ["board"] = Board, ["first"] = "german", ["second"] = "russian", ["first-elr"] = "3", ["second-elr"] = "3", ["year"] = "1942" });
         page.Find("#place-definition").Change("attacker-tank");
         page.Find("#place-armor-leader").Change("9-2");
+
+        // The UI review of pass 55 (D3.45): an Armor Leader and an Inexperienced Crew exclude each other where they are chosen, with the reason.
+        var inexperienced = page.Find("#place-inexperienced-crew");
+        Assert.True(inexperienced.HasAttribute("disabled"));
+        Assert.Equal("an Inexperienced Crew is its own 6+1 Armor Leader (D3.45)", inexperienced.GetAttribute("title"));
+        page.Find("#place-armor-leader").Change(string.Empty);
+        Assert.False(page.Find("#place-inexperienced-crew").HasAttribute("disabled"));
+        page.Find("#place-inexperienced-crew").Change(true);
+        Assert.True(page.Find("#place-armor-leader").HasAttribute("disabled"));
+        Assert.Equal("an Inexperienced Crew is its own 6+1 Armor Leader (D3.45)", page.Find("#place-armor-leader").GetAttribute("title"));
+        page.Find("#place-inexperienced-crew").Change(false);
+        page.Find("#place-armor-leader").Change("9-2");
         Place(page, "de-tank", "attacker-tank", west, facing);
         page.Find("#place-definition").Change("defender-squad");
         page.Find("#place-id").Change("ru-crew");
@@ -324,7 +344,10 @@ public sealed class PlayPageVehicleTests : IDisposable
         Assert.Contains("+5 (Case C +4, Case I +1)", waiting.TextContent, StringComparison.Ordinal);
         Assert.Contains("+6 (Case A +4, Case H +2)", waiting.TextContent, StringComparison.Ordinal);
         Assert.DoesNotContain("Armor Leader", waiting.TextContent, StringComparison.Ordinal);
-        Assert.Contains("may fire its MA first (C2.2401)", waiting.TextContent, StringComparison.Ordinal);
+
+        // The table player's review: one sentence with its rule once, ended by the ruling every pending choice is under.
+        Assert.Contains("which may fire its MA first in a Gun Duel (C2.2401); Gun Duel DRM: ", waiting.TextContent, StringComparison.Ordinal);
+        Assert.DoesNotContain("(C2.2401) (ruling R5.8)", waiting.TextContent, StringComparison.Ordinal);
         Assert.Empty(page.FindAll("#play-choice .choose"));
         Assert.Contains("Waiting for the German side", waiting.TextContent, StringComparison.Ordinal);
 
@@ -393,6 +416,11 @@ public sealed class PlayPageVehicleTests : IDisposable
         page.Find("#ordnance-gun").Change("de-tank");
         page.Find("#ordnance-target").Change(two);
         Assert.Contains("ru-tank", page.FindAll("#ordnance-vehicle option").Select(item => item.GetAttribute("value")));
+
+        // The UI review of pass 55: the list is the one the shot will name. With no vehicle chosen the shot is at the Location's Infantry,
+        // for which this MA has nothing to choose; with the T-34 chosen it is the vehicle's list.
+        Assert.Empty(page.FindAll("#ordnance-ammunition"));
+        page.Find("#ordnance-vehicle").Change("ru-tank");
 
         // C8.1: the PzKpfw IIIH lists APCR and no HEAT.
         Assert.Equal(["ap", "apcr", "he"], page.FindAll("#ordnance-ammunition option").Select(item => item.GetAttribute("value")));

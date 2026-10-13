@@ -37,6 +37,15 @@ public sealed record FireView(string EventId, string Group, string Target, strin
         get; init;
     }
 
+    /// <summary>
+    /// Whether the attack is a Canister shot's on a Location where the view knows of no unit (C8.4; the table player's review of pass 55): the
+    /// record then says so, and neither shows a result on nobody nor says whether the FP was halved, which would tell of units out of view.
+    /// </summary>
+    public bool NoKnownTarget
+    {
+        get; init;
+    }
+
     /// <summary>What the attack did to each MG used in it (pass 31c, play test P-17): a kept rate of fire, a malfunction. Null when none was used or the record is withheld.</summary>
     public IReadOnlyList<FireWeaponEffect>? Weapons
     {
@@ -145,6 +154,9 @@ public static class FireText
         return item.Name == "assault-fire" ? $" + {Number(item.Value)} ({DisplayText.Modifier(item.Name)}, {item.Rule})" : $" × {Number(item.Value)} ({DisplayText.Modifier(item.Name)}, {item.Rule})";
     }
 
+    /// <summary>A Canister attack on a Location where the view knows of no unit, in words: "no Known unit in [C9]: no effect to show".</summary>
+    public static string NoKnownTargetText(string target) => $"no Known unit in {target}: no effect to show";
+
     /// <summary>An IFT result as a player says it: the record's "none" reads "no effect".</summary>
     public static string ResultText(string result) => result == "none" ? "no effect" : result;
 
@@ -188,8 +200,18 @@ public static class FireText
         ArgumentNullException.ThrowIfNull(check);
         return $"{check.Kind} {string.Join(", ", check.Dice)}{string.Concat(check.Drm.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({DisplayText.Modifier(item.Name)})"))}"
             // D3.42, D3.45 (pass 55): a vehicle crew's check at its Armor Leader's Morale Level, or an Inexperienced Crew's, says whose it is.
-            + $" = {check.FinalDr} against {check.MoraleLevel}{(ScenarioA1ArmorLeaders.MoraleText(check.MoraleSource, check.MoraleLevel) is { Length: > 0 } source ? $" ({source})" : "")}"
+            + $" = {check.FinalDr} against {MoraleWords(check)}"
             + $": {(check.Passed ? "passed" : "failed")}";
+    }
+
+    /// <summary>
+    /// What a check is made against: the Morale Level, or "crew morale 10, its Armor Leader's (D3.42)" when it is a vehicle crew's by its Armor
+    /// Leader or as an Inexperienced Crew (the table player's review of pass 55: one parenthesis, not one inside another).
+    /// </summary>
+    public static string MoraleWords(FireCheck check)
+    {
+        ArgumentNullException.ThrowIfNull(check);
+        return ScenarioA1ArmorLeaders.MoraleText(check.MoraleSource, check.MoraleLevel) is { Length: > 0 } source ? source : check.MoraleLevel.ToString(CultureInfo.InvariantCulture);
     }
 
     /// <summary>A vehicle's Vehicle line result (A7.308, A7.309): the Kill Number, its Final DR, and any Unlikely Kill dr.</summary>

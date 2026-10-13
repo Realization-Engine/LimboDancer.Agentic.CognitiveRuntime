@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace LimboDancer.Domains.Asl.Rules;
 
 /// <summary>
@@ -49,6 +51,18 @@ public static class ScenarioA1OrdnanceMapRules
         targetAbove == 0 || gunType == "latw" || (gunType == "mortar" && targetAbove > 0) || range >= Math.Abs(targetAbove);
 
     /// <summary>
+    /// The refusal of a shot <see cref="ElevationAllowed"/> does not allow (C2.6), with the levels and the range the map gave, or null: "3 levels
+    /// apart at range 2".
+    /// </summary>
+    public static string? ElevationRefusal(string firer, int targetAbove, int? range, string? gunType = null)
+    {
+        var levels = Math.Abs(targetAbove);
+        return ElevationAllowed(targetAbove, range, gunType) ? null
+            : $"play.ordnance-elevation: {firer} and its target are {levels.ToString(CultureInfo.InvariantCulture)} level{(levels == 1 ? string.Empty : "s")} apart at range "
+                + $"{(range ?? 0).ToString(CultureInfo.InvariantCulture)}, and a Gun fires at another level only at a range of at least the elevation difference between them (C2.6)";
+    }
+
+    /// <summary>
     /// C2.6 (p. 168; pass 55): "A Gun in a building hex may not fire at a lower-level target in its own hex, and may fire at an higher-level target
     /// in its hex only if it is an AA Gun of &lt;= 40mm. These restrictions also apply to non-AA vehicular MG". At range 0 the general limit refuses
     /// every other hex with levels too, so a Gun and a vehicle's weapons fire at no other level of their own hex.
@@ -87,6 +101,19 @@ public static class ScenarioA1OrdnanceMapRules
     /// The Area Target Type takes no Case Q (C6.8), and a mortar's fire is Indirect Fire (C.1). Null when there is none.
     /// </summary>
     public static bool? HeightAdvantage(bool? read, int? hexsideTem, bool areaTargetType = false) => read == true && hexsideTem is not > 0 && !areaTargetType ? true : null;
+
+    /// <summary>
+    /// C13.8 (p. 185), its last sentence: "These weapons [PF/PFk, BAZ, PSK, RCL] also may not fire at a target two or more levels higher in an
+    /// adjacent hex, or directly above them in the same hex." C2.6 frees a LATW of its own limit, so this one is the weapon's. An ATR is not
+    /// one of "these weapons". <paramref name="targetAbove"/> is the target's elevation less the firer's.
+    /// </summary>
+    public static string? BackblastElevationRefusal(string firer, string? latwType, int? range, bool sameHex, int targetAbove) =>
+        latwType is not ("pf" or "psk" or "baz") || targetAbove <= 0 ? null
+        : sameHex ? $"play.latw-elevation: {firer} does not fire a PF, PSK, or BAZ at a target directly above it in its own hex (C13.8)"
+        : range == 1 && targetAbove >= 2
+            ? $"play.latw-elevation: {firer} does not fire a PF, PSK, or BAZ at a target {targetAbove.ToString(CultureInfo.InvariantCulture)} levels higher in an adjacent hex: "
+                + "two or more levels is too steep (C13.8)"
+        : null;
 
     /// <summary>B23.423, C13.8, C13.81 (rulings R9.8, R9.11): a mortar fires from no building, a PF or PSK from no building's upper level.</summary>
     public static string? SupportWeaponLocationRefusal(string? latwType, bool building, int level)

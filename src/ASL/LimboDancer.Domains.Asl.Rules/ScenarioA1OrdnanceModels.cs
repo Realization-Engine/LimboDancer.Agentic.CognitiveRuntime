@@ -481,6 +481,17 @@ public sealed record OrdnanceResolution(
     }
 
     /// <summary>
+    /// The Depletion Number <see cref="AmmunitionUse"/> was decided under (C8.9, C8.2), an Elite force's one more included; null when the shot
+    /// had none, in a Canister resolution, whose own block names it, and in a record made before the reviews of pass 55, which is compared
+    /// without it.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? DepletionNumber
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// What a hit did to the Gun in the target Location (C11.4, C11.6; ruling R8.3): <c>destroyed</c> by a KIA before its gunshield or a
     /// Critical Hit, <c>malfunctioned</c> by a K; null when it was untouched or there is none.
     /// </summary>

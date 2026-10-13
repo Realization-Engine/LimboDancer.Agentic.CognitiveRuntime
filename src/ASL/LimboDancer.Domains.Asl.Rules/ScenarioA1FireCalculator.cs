@@ -1696,7 +1696,15 @@ public static class ScenarioA1FireCalculator
                     continue;
                 }
 
-                List<FireModifier> crewDrm = [.. drm, new FireModifier("crew-exposed", 2m, "D5.31")];
+                // B10.31, D5.31 (pp. 125, 203; referee's review of pass 55): "The CE DRM is not cumulative with any positive TEM". A vehicle's MG
+                // firing from below leaves the crew its +2 without Height Advantage, and a Canister attack leaves it without a wall's or a
+                // hedge's TEM too. Infantry fire keeps the line it had before the pass (ruling R10.4), so that its records resolve as they did.
+                List<FireModifier> crewDrm =
+                [
+                    .. drm.Where(item => !((attack.VehicleFire is not null || attack.Canister is not null) && item.Name == "height-advantage")
+                        && !(attack.Canister is not null && item.Name is "wall" or "hedge")),
+                    new FireModifier("crew-exposed", 2m, "D5.31"),
+                ];
                 var crewFinal = arithmetic.OriginalDr + (int)crewDrm.Sum(item => item.Value);
                 var outcome = column < 0 ? "none" : reference.Result(crewFinal, column);
                 // D3.42, D3.45 (p. 200; pass 55, rulings R55.17, R55.18): the crew checks at its Armor Leader's Morale Level, or an Inexperienced

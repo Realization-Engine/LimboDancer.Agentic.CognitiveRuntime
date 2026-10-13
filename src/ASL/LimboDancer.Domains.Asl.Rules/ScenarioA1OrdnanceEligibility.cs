@@ -240,7 +240,8 @@ public static class ScenarioA1OrdnanceEligibility
 
     /// <summary>The refusal of a Canister shot none of whose Locations can be attacked (C8.4, C8.41).</summary>
     public static string CanisterEmptyRefusal(int aim, string facing) =>
-        $"play.canister-aim: no Location of {ScenarioA1CanisterCalculator.AimWords(aim, facing)} is on the map, at the Gun's elevation, and in its LOS, so Canister attacks nothing there (C8.4)";
+        $"play.canister-aim: no Location of the three-hex cluster of {ScenarioA1CanisterCalculator.AimWords(aim, facing)} is on the map, at the Gun's elevation, and in its LOS, "
+            + "so Canister attacks nothing there, the adjacent hex on its LOS included (C8.4, C8.41)";
 
     /// <summary>
     /// Whether a ground-level Location of a hex is at the elevation a Canister shot is fired at (C8.4: "a common vertex and elevation shared by

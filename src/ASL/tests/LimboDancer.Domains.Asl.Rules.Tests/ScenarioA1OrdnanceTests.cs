@@ -326,7 +326,7 @@ public sealed class ScenarioA1OrdnanceTests
     [InlineData("no-rof", "asl.a1.ordnance.gun-already-fired")]
     [InlineData("afph-again", "asl.a1.ordnance.gun-already-fired")]
     [InlineData("own-hex", "asl.a1.ordnance.out-of-range")]
-    [InlineData("elevation", "asl.a1.ordnance.out-of-range")]
+    [InlineData("elevation", "asl.a1.ordnance.elevation-outside")]
     [InlineData("los", "asl.a1.ordnance.los-blocked")]
     [InlineData("empty", "asl.a1.ordnance.target-outside")]
     public void ShotsOutsideTheReviewAreAbstained(string name, string reason)

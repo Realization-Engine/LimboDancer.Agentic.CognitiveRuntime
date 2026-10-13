@@ -339,6 +339,12 @@ public sealed partial class GamePlanner
             return (null, cliff);
         }
 
+        // C2.6 (the table player's review of pass 55): the refusal says the levels and the range, which the map alone knows.
+        if (ScenarioA1OrdnanceMapRules.ElevationRefusal(shot.Gun.GunId ?? "the Gun", targetAbove, read.Range, definition?.GunType) is { } elevationBar)
+        {
+            return (null, elevationBar);
+        }
+
         // A12.14, A15.44: a concealed crew
         var revealing = HeatOfBattleFacts(state, read);
         var hit = shot.Hit! with
@@ -450,6 +456,18 @@ public sealed partial class GamePlanner
             definition?.RangeMinimum) is { } cliff)
         {
             return (null, cliff);
+        }
+
+        // C13.8 (p. 185): a PF or PSK fires at no target two or more levels higher in an adjacent hex, nor directly above it in its own hex.
+        if (ScenarioA1OrdnanceMapRules.BackblastElevationRefusal(shot.Crew?.UnitId ?? shot.Gun.GunId ?? "the firer", latwType, ranged.Range,
+            target.Board == from.Board && target.Hex == from.Hex, targetAbove) is { } backblast)
+        {
+            return (null, backblast);
+        }
+
+        if (ScenarioA1OrdnanceMapRules.ElevationRefusal(shot.Gun.GunId ?? "the weapon", targetAbove, ranged.Range, definition?.GunType) is { } elevationBar)
+        {
+            return (null, elevationBar);
         }
 
         var revealing = HeatOfBattleFacts(state, read);
@@ -699,7 +717,8 @@ public sealed partial class GamePlanner
                 var resume = new JsonObject
                 {
                     ["record"] = "ordnance",
-                    ["facts"] = JsonNode.Parse(JsonSerializer.Serialize(facts, LiveFire.Json)),
+                    // D3.41 (pass 55, the referee's review): no Morale Level of a crew whose Armor Leader is not yet revealed; the answer reads it again.
+                    ["facts"] = JsonNode.Parse(JsonSerializer.Serialize(ScenarioA1ArmorLeaders.Pending(facts, UnrevealedLeaders(state)), LiveFire.Json)),
                     ["rolls"] = RollNode(rollIds),
                 };
                 if (facing is { } turned)

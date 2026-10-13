@@ -727,7 +727,7 @@ public sealed partial class GamePlanner
             }
 
             return VehicleStepPlan(scope, label, attemptId, expected, actor, existing, Removal, true, at, step,
-                $"play.move-vehicle-bog: {id} attempts Bog Removal as its Start MP: it spends its colored dr times its white dr in MP{(truck ? ", doubled for a truck," : string.Empty)} and is freed on a colored dr of 1 to 4{(Is(vehicle, Conditions.Mired) ? " (+1 Mired)" : string.Empty)}{(leadership is null ? string.Empty : $" ({ScenarioA1ArmorLeaders.ModifierText(leadership)})")}, Mired on 5, immobilized on 6 or more (D8.3, D8.31)");
+                $"play.move-vehicle-bog: {id} attempts Bog Removal as its Start MP: it spends its colored dr times its white dr in MP{(truck ? ", doubled for a truck," : string.Empty)} and is freed on a {(leadership is null ? string.Empty : "Final ")}colored dr of 1 to 4{(Is(vehicle, Conditions.Mired) ? " (+1 Mired)" : string.Empty)}, Mired on 5, immobilized on 6 or more{ScenarioA1ArmorLeaders.BogRemovalText(leadership)}");
         }
 
         var unreliable = IsAfv(vehicle) && VehicleDefinition(vehicle)?.MechanicallyUnreliable == true;

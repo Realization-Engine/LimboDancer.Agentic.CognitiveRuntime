@@ -1445,7 +1445,19 @@ public static class GameProjector
         /// </summary>
         private GameState? VoidReturnShot(GameState state, GunDuelVoided voided)
         {
-            if (Rules.ScenarioA1GunDuels.VoidRecordRefusal(state.GunDuel is { Fired: true }, state.GunDuel?.Firer == voided.Firer) is { } refusal)
+            // The firer as the first shot left it: a Gun's crew is the unit that holds it, a vehicle is its own. Rules decides the cause.
+            var gun = state.Find(voided.Firer);
+            var crew = gun switch
+            {
+                UnitInstance tank => tank,
+                EquipmentInstance { Holding: { } holding } => state.Unit(holding.Holder),
+                _ => null,
+            };
+            bool Crew(string condition) => crew is not null && GameState.Condition(crew, condition) == ConditionState.True;
+            var firer = new Rules.GunDuelReturnFirer(crew is not { Status: InstanceStatus.Active }, Crew(Conditions.Broken), Crew(Conditions.Stunned),
+                Crew(Conditions.Shocked) || Crew(Conditions.UnconfirmedKill),
+                gun is not { Status: InstanceStatus.Active } || GameState.Condition(gun, Conditions.Malfunctioned) == ConditionState.True);
+            if (Rules.ScenarioA1GunDuels.VoidRecordRefusal(state.GunDuel is { Fired: true }, state.GunDuel?.Firer == voided.Firer, voided.Cause, firer) is { } refusal)
             {
                 return Fail<GameState>(refusal.Code, refusal.Text);
             }
@@ -1640,11 +1652,16 @@ public static class GameProjector
                 // vehicle's VCA change turns its MA with it unless its TCA is kept apart (the referee's review).
                 if (Rules.ScenarioA1FireFollowUps.AcquisitionLostByMoveOrTurn(FirerAt(previous, acquisition.Gun), FirerAt(next, acquisition.Gun),
                     // D2.401 (pass 55): the free change of VCA or TCA a passed Motion attempt brings turns the MA as an MP expenditure does.
+                    // Rules compares the MA's CA before and after it: a turret named where it already points has not turned (C6.5: "the Gun
+                    // changes its CA"), and one kept in place through a change of VCA has not either.
                     Rules.ScenarioA1FireFollowUps.AcquiringCaChanged((payload is GunTurned turned && turned.Gun == acquisition.Gun)
                             || (payload is VehicleStepped { Turret: not null } turretStep && turretStep.Vehicle == acquisition.Gun)
-                            || (payload is MotionAttempted { Result: MotionAttempted.Passed, Turret: not null } turretMotion && turretMotion.Vehicle == acquisition.Gun),
-                        (payload is VehicleStepped { Kind: VehicleStepped.Turn } hull && hull.Vehicle == acquisition.Gun)
-                            || (payload is MotionAttempted { Result: MotionAttempted.Passed, Facing: not null } hullMotion && hullMotion.Vehicle == acquisition.Gun),
+                            || (payload is MotionAttempted { Result: MotionAttempted.Passed } motion && motion.Vehicle == acquisition.Gun
+                                && previous?.Find(motion.Vehicle) is UnitInstance { Position: MapPosition { Facing: { } vca } }
+                                && Rules.ScenarioA1MotionAttempts.TurnsMainArmament((int)vca,
+                                    previous.TurretFacings.FirstOrDefault(item => item.Vehicle == motion.Vehicle) is { } apart ? (int)apart.Facing : null,
+                                    motion.Facing is { } hullTo ? (int)hullTo : null, motion.Turret is { } turretTo ? (int)turretTo : null)),
+                        payload is VehicleStepped { Kind: VehicleStepped.Turn } hull && hull.Vehicle == acquisition.Gun,
                         previous?.TurretFacings.Any(item => item.Vehicle == acquisition.Gun) == true),
                     previous?.OrdnanceShots.FirstOrDefault(item => item.Gun == acquisition.Gun)?.Shots ?? 0))
                 {
@@ -1732,7 +1749,8 @@ public static class GameProjector
             // C8.4, A7.51 (pass 55): a Canister shot's attack is ordnance, which forms no fire group and binds none.
             var byCanister = fire.Facts.TryGetProperty("canister", out var canisterFact) && canisterFact.ValueKind == JsonValueKind.Object;
             if (Rules.ScenarioA1FireFollowUps.VerifyFireRecord(fire.MovementStep, state.Movement is { WindowOpen: true }, state.Movement?.Step, fire.Firers.Count, byVehicle,
-                state.FiresThisPhase.Where(item => !item.Ordnance).Select(item => new Rules.PhaseFireFacts(item.FirerLocation, item.TargetLocation, item.Step, item.Vehicle)), fire.FirerLocation, fire.TargetLocation,
+                state.FiresThisPhase.Select(item => new Rules.PhaseFireFacts(item.FirerLocation, item.TargetLocation, item.Step, item.Vehicle) { Ordnance = item.Ordnance }),
+                fire.FirerLocation, fire.TargetLocation,
                 fire.Facts.TryGetProperty("firers", out var firingUnits) && firingUnits.ValueKind == JsonValueKind.Array && firingUnits.GetArrayLength() > 0
                     && firingUnits.EnumerateArray().All(item => item.TryGetProperty("usesInherentFp", out var own) && own.ValueKind == JsonValueKind.False
                         && item.TryGetProperty("weapons", out var used) && used.ValueKind == JsonValueKind.Array && used.GetArrayLength() > 0
@@ -2603,12 +2621,29 @@ public static class GameProjector
         private GameState? AttemptMotion(GameState state, MotionAttempted motion)
         {
             var vehicle = Active(state, motion.Vehicle) as UnitInstance;
-            var defending = vehicle is { Position: MapPosition } && vocabulary.IsA(vehicle.Kind, "asl:vehicle") && vehicle.Side != state.PhasingSide;
-            if (Rules.ScenarioA1MotionAttempts.RecordRefusal(state.Phase, state.Movement is { WindowOpen: true }, defending,
-                state.MotionAttempts.Contains(motion.Vehicle, StringComparer.Ordinal),
+            static bool Is(UnitInstance unit, string condition) => GameState.Condition(unit, condition) == ConditionState.True;
+
+            // The vehicle's counters as the attempt's bar reads them (D2.401, A12.32; rulings R55.13, R55.32): Rules applies to the record the
+            // clauses it applies to the attempt.
+            var facts = vehicle is null ? null
+                : new Rules.MotionAttemptVehicle(vehicle.Id, vehicle.Position is MapPosition && vocabulary.IsA(vehicle.Kind, "asl:vehicle"), vehicle.Side != state.PhasingSide)
+                {
+                    Immobilized = Is(vehicle, Conditions.Immobilized),
+                    Bogged = Is(vehicle, Conditions.Bogged),
+                    Mired = Is(vehicle, Conditions.Mired),
+                    Stunned = Is(vehicle, Conditions.Stunned),
+                    StunRecovery = Is(vehicle, Conditions.StunRecovery),
+                    Recalled = Is(vehicle, Conditions.Recalled),
+                    Shocked = Is(vehicle, Conditions.Shocked),
+                    UnconfirmedKill = Is(vehicle, Conditions.UnconfirmedKill),
+                    Abandoned = Is(vehicle, Conditions.Abandoned),
+                    FireCounter = Is(vehicle, Conditions.FirstFire) ? "First Fire" : Is(vehicle, Conditions.FinalFire) ? "Final Fire"
+                        : Is(vehicle, Conditions.IntensiveFire) ? "Intensive Fire" : null,
+                    Attempted = state.MotionAttempts.Contains(vehicle.Id, StringComparer.Ordinal),
+                    Hidden = Is(vehicle, Conditions.Hidden),
+                };
+            if (Rules.ScenarioA1MotionAttempts.RecordRefusal(state.Phase, state.Movement is { WindowOpen: true }, facts,
                 rolls.TryGetValue(motion.Roll, out var roll) && roll is { Count: 1, Sides: 6 } ? roll.Values[0] : null, motion.HalfPoints, motion.Result,
-                vehicle is not null && GameState.Condition(vehicle, Conditions.Immobilized) == ConditionState.True,
-                vehicle is not null && GameState.Condition(vehicle, Conditions.Bogged) == ConditionState.True,
                 motion.Facing is not null || motion.Turret is not null) is { } refusal)
             {
                 return Fail<GameState>(refusal.Code, refusal.Text);

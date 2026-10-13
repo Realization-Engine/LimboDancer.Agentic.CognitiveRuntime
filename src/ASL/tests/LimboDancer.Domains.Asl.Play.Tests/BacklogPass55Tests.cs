@@ -170,7 +170,10 @@ public sealed class BacklogPass55Tests : IDisposable
     }
 
     /// <summary>Sets the game up and goes on to the German PFPh.</summary>
-    private async Task Setup(params Dictionary<string, object>[] placements)
+    private Task Setup(params Dictionary<string, object>[] placements) => SetupFirst("german", placements);
+
+    /// <summary>Sets the game up with the side that moves first and goes on to its PFPh.</summary>
+    private async Task SetupFirst(string firstSide, params Dictionary<string, object>[] placements)
     {
         Committed(await Commit(Play(), GameActions.Setup, JsonSerializer.SerializeToElement(new
         {
@@ -182,7 +185,7 @@ public sealed class BacklogPass55Tests : IDisposable
                 ["label"] = "Pass 55",
                 ["catalog"] = "asl-scenario-a1@1.13.0",
                 ["boards"] = Bd01,
-                ["firstSide"] = "german",
+                ["firstSide"] = firstSide,
                 ["scenarioMonth"] = 7,
                 ["scenarioYear"] = 1942,
                 ["sides"] = new object[]
@@ -300,7 +303,10 @@ public sealed class BacklogPass55Tests : IDisposable
         // C2.6: "only if the range is >= the elevation difference between them": three levels up at two hexes, and three levels down.
         board.Base["B8"] = 3;
         await Setup([.. Gun(), Squad(Target)]);
-        Refused(await FireGun(), "asl.a1.ordnance.out-of-range", "C2.6");
+        // The table player's review: the refusal is the elevation's own, with the levels and the range, and not the Gun's range.
+        var refused = await FireGun();
+        Refused(refused, "play.ordnance-elevation", "de-gun and its target are 3 levels apart at range 2", "C2.6");
+        Assert.DoesNotContain(refused.Reasons, reason => reason.Contains("out-of-range", StringComparison.Ordinal));
         Assert.Contains("C2.6", Planner().GunTargetStatus(Planner().Replay(store.Read(Scope)!.Events).Current!, "de-gun", BoardLocation.Parse(Target)), StringComparison.Ordinal);
     }
 
@@ -559,7 +565,11 @@ public sealed class BacklogPass55Tests : IDisposable
         // C2.21: HE is assumed against an unarmored target only when it "is not Special Ammunition (i.e., has no Depletion #; 8.8)".
         await SetupBritish(1944, 6, [], [.. SixPounder(), GermanSquad()]);
         Refused(await FireAtSquad(null, 3, 3), "asl.a1.ordnance.he-not-named", "name HE for the shot (C2.21, C8.8)", "C8.31");
-        Refused(await FireAtSquad("ap", 3, 3), "asl.a1.ordnance.he-not-named");
+
+        // The referee's review: AP named at Infantry is refused for what it is, HE Equivalency, and not as an HE that was not named.
+        var named = await FireAtSquad("ap", 3, 3);
+        Refused(named, "asl.a1.ordnance.he-equivalency-not-built", "HE Equivalency, which is not built (C8.31)");
+        Assert.DoesNotContain(named.Reasons, reason => reason.Contains("he-not-named", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -1796,5 +1806,394 @@ public sealed class BacklogPass55Tests : IDisposable
         Assert.Equal("ap", shots[0].Facts.GetProperty("ammunition").GetString());
         Assert.True(IsDuelShot(shots[0]));
         NoReplayErrors();
+    }
+
+    // The fixes of the pass's five reviews.
+
+    /// <summary>Dice in their order, and a 3 for every die after them.</summary>
+    private static DiceRoller Then(params int[] values)
+    {
+        var queue = new Queue<int>(values);
+        return new(_ => queue.Count > 0 ? queue.Dequeue() - 1 : 2);
+    }
+
+    /// <summary>A game's events read again with a unit set up under one more condition.</summary>
+    private static GameEvent[] SetUpWith(IReadOnlyList<GameEvent> events, string unit, string condition) => [.. events.Select(item =>
+        item.Payload is InstanceCreated created && created.Instance.Id == unit
+            ? item with
+            {
+                Payload = created with
+                {
+                    Instance = created.Instance with
+                    {
+                        Conditions = new Dictionary<string, ConditionState>(created.Instance.Conditions, StringComparer.Ordinal) { [condition] = ConditionState.True }
+                    }
+                }
+            }
+            : item)];
+
+    private string Rolled(long before) => string.Join(" | ", Since(before).Select(item => item.Payload is DiceRolled dice ? $"{dice.Purpose} {string.Join(",", dice.Values)}" : item.Type));
+
+    [Fact]
+    public async Task AHiddenVehicleAttemptsNoMotionAndARecordOfOneIsRefused()
+    {
+        // A12.32 (p. 80; ruling R55.32): "Hidden units may not move (even within their hex or to change a CA)". The game is played with the
+        // T-34 in view, and then read again with the T-34 set up hidden: the planner bars the attempt, and the projector refuses its record.
+        await TankEntersTheLos();
+        var before = (int)Revision;
+        Committed(await AttemptMotion(Once(2)));
+        var events = store.Read(Scope)!.Events;
+        var hidden = SetUpWith(events, "ru-tank", Conditions.Hidden);
+        var until = Planner().Replay(hidden[..before]);
+        Assert.False(until.HasErrors);
+        var option = Assert.Single(Planner().MotionAttemptOptions(until.Current!, hidden[..before], "russian"));
+        Assert.Contains("A12.32", option.Bar, StringComparison.Ordinal);
+        Assert.Equal("hidden", option.BarShort);
+
+        // The ATTACKER's list holds none of the DEFENDER's vehicles, so the bar tells him nothing of the hidden one.
+        Assert.Empty(Planner().MotionAttemptOptions(until.Current!, hidden[..before], "german"));
+        var replayed = Planner().Replay(hidden);
+        Assert.True(replayed.HasErrors);
+        Assert.Contains(replayed.Diagnostics, diagnostic => diagnostic.Code == "UNIT-STATE-048");
+    }
+
+    [Fact]
+    public async Task ARecordedMotionAttemptByAStunnedVehicleIsRefused()
+    {
+        // The boundary review: the projector holds the record to the bars of the attempt (D2.401, D5.34). The T-34 fails its attempt; read
+        // again with its crew Stunned from its setup, the record is refused.
+        await TankEntersTheLos();
+        Committed(await AttemptMotion(Once(2)));
+        var events = store.Read(Scope)!.Events;
+        Assert.False(Planner().Replay(events).HasErrors);
+        var replayed = Planner().Replay(SetUpWith(events, "ru-tank", Conditions.Stunned));
+        Assert.True(replayed.HasErrors);
+        Assert.Contains(replayed.Diagnostics, diagnostic => diagnostic.Code == "UNIT-STATE-048");
+    }
+
+    /// <summary>The T-34 under a "?" in the grain of J5 (July: in season), and the PzKpfw IIIH come from E5 into its LOS in a hex of column F.</summary>
+    private async Task ConcealedWatcher()
+    {
+        board.Terrain["J5"] = "Grain";
+        los.Blind.Add("E5");
+        await Setup(Afv("de-tank", "attacker-tank", Start, "german", "east"), Afv("ru-tank", "defender-tank", Watcher, "russian", "north-east", null, Conditions.Concealed));
+        await Advance();
+        Committed(await Drive("start"));
+        await PassFire();
+        Committed(await Drive("enter", Beside("E5", 'F')));
+        Assert.True(Has("ru-tank", Conditions.Concealed));
+    }
+
+    [Fact]
+    public async Task AConcealedVehicleLosesItsConcealmentWhenItsMotionAttemptPasses()
+    {
+        // A12.141 (p. 78): "Any other activity which a concealed unit engages in ... causes loss of concealment if that unit is currently in
+        // the LOS and within 16 hexes of a Good Order enemy ground unit". The passed attempt gains Motion with no change of CA, and the "?" goes.
+        await ConcealedWatcher();
+        var before = Revision;
+        Committed(await AttemptMotion(Once(1, 3, 4)));
+        Assert.Equal(MotionAttempted.Passed, LastAttempt(before).Result);
+        Assert.Equal("concealment-lost", Since(before)[^1].Type);
+        Assert.Equal("ru-tank", Assert.Single(Since(before).Where(item => item.Type == "concealment-lost").Select(item => item.Payload).OfType<ConditionsChanged>()).Id);
+        Assert.False(Has("ru-tank", Conditions.Concealed));
+        Assert.True(Has("ru-tank", Conditions.Motion));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AConcealedVehicleKeepsItsConcealmentWhenItsMotionAttemptFails()
+    {
+        // D2.401: "There is no penalty (including "?" loss) for failing a Motion attempt dr".
+        await ConcealedWatcher();
+        var before = Revision;
+        Committed(await AttemptMotion(Once(2), facing: "west"));
+        Assert.Equal(MotionAttempted.Failed, LastAttempt(before).Result);
+        Assert.DoesNotContain(Since(before), item => item.Type == "concealment-lost");
+        Assert.True(Has("ru-tank", Conditions.Concealed));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ADeclaringVehiclesUnrevealedArmorLeaderIsNotCountedOrToldAtItsDeclaration()
+    {
+        // D3.41, ruling R55.29 extended (the referee's review): the T-34 in woods turns its turret two hexspines, +6, and Case I +1: +7. Its
+        // 9-1 would make that +6, but the declaration rolls nothing and uses nothing of him: the choice both sides read says +7 and no word of
+        // him. The declared shot then takes his modifier, and its record reveals him.
+        board.Terrain["J5"] = "Woods";
+        var entered = Beside("E5", 'F');
+        await Setup(Afv("de-tank", "attacker-tank", Start, "german", "east"), Afv("ru-tank", "defender-tank", DuelHex, "russian", "south-east", "9-1"));
+        await Advance();
+        Committed(await Drive("start"));
+        await PassFire();
+        Committed(await Drive("enter", entered));
+        var declared = await Do(GameActions.FireOrdnance, NoRoll(), new Dictionary<string, object> { ["gunId"] = "ru-tank", ["target"] = entered, ["targetVehicle"] = "de-tank", ["ammunition"] = "ap" });
+        Committed(declared);
+        var choice = Current.Choice!;
+        Assert.Equal(ChoicePending.GunDuel, choice.Kind);
+        Assert.Equal(7, choice.Resume.GetProperty("defender").GetProperty("total").GetInt32());
+        Assert.DoesNotContain("armor", choice.Resume.GetRawText(), StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Armor Leader", GamePlanner.DescribeChoice(choice), StringComparison.Ordinal);
+        Assert.DoesNotContain("Armor Leader", Assert.Single(declared.Reasons, reason => reason.StartsWith("play.gun-duel:", StringComparison.Ordinal)), StringComparison.Ordinal);
+        Assert.False(LeaderOf("ru-tank")!.Revealed);
+        Assert.Null(Assert.Single(ViewAs(German).Units, unit => unit.Id == "ru-tank").ArmorLeader);
+
+        // The ATTACKER's proposals of both answers word the declared shot before it is fired: neither names the leader (D3.41).
+        static void NamesNoLeader(PlayResult result)
+        {
+            Assert.Contains(result.Reasons, reason => reason.StartsWith("play.ordnance: ru-tank fires", StringComparison.Ordinal));
+            Assert.All(result.Reasons, reason => Assert.DoesNotContain("Armor Leader", reason, StringComparison.OrdinalIgnoreCase));
+            Assert.All(result.Reasons, reason => Assert.DoesNotContain("D3.44", reason, StringComparison.Ordinal));
+        }
+
+        async Task<PlayResult> ProposeAnswer(string option) => await Play().ProposeAsync(GameActions.Choose, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+        {
+            ["gameId"] = Scope.Game,
+            ["attemptId"] = $"answer-{option}",
+            ["expectedRevision"] = Revision,
+            ["key"] = Current.Choice!.Key,
+            ["option"] = option,
+        }), Player);
+        var duel = await ProposeAnswer(ChoicePending.Duel);
+        Assert.Equal(PlayOutcome.NeedsConfirmation, duel.Outcome);
+        NamesNoLeader(duel);
+        var decline = await ProposeAnswer(ChoicePending.Decline);
+        Assert.Equal(PlayOutcome.NeedsConfirmation, decline.Outcome);
+        NamesNoLeader(decline);
+        Assert.False(LeaderOf("ru-tank")!.Revealed);
+
+        var before = Revision;
+        Committed(await Answer(ChoicePending.Decline, Once(5, 6)));
+        Assert.Equal(-1m, ExactDrm(ToHitDrm(Assert.Single(Shots(before))), "armor-leader"));
+        Assert.True(LeaderOf("ru-tank")!.Revealed);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task APendingChoiceHoldsNoMoraleOfAnUnrevealedArmorLeadersCrew()
+    {
+        // D3.41 (the referee's review): two German squads in B9 fire at B8, which holds a Russian squad and a CE T-34 with a 10-2 no record
+        // has revealed. The squad passes its MC on an Original 2, and Heat of Battle gives its owner an option: the attack waits. The
+        // choice's resume data, which both sides read, holds no Morale Level of the crew; after the answer the crew's check is made at 10.
+        string[] firers = ["g1", "g2"];
+        var tank = Afv("ru-tank", "defender-tank", Target, "russian", "south-west", "10-2");
+        tank["conditions"] = new Dictionary<string, bool> { [Conditions.ButtonedUp] = false };
+        await Setup(Unit("g1", "asl:squad", "attacker-squad", "bd01:B9:0", "german"), Unit("g2", "asl:squad", "attacker-squad", "bd01:B9:0", "german"), Squad(Target), tank);
+        var before = Revision;
+        Committed(await Do(GameActions.Fire, Then(2, 3, 1, 1), new { firers, target = Target }));
+        Assert.True(Current.Choice is not null, Rolled(before));
+        var waiting = Current.Choice!;
+        Assert.Equal("russian", waiting.Side);
+        Assert.Contains("ru-tank", waiting.Resume.GetRawText(), StringComparison.Ordinal);
+        Assert.DoesNotContain("crewMorale", waiting.Resume.GetRawText(), StringComparison.Ordinal);
+        Assert.All(Since(before), item => Assert.DoesNotContain("crewMorale", JsonSerializer.Serialize(item.Payload, item.Payload.GetType()), StringComparison.Ordinal));
+        Assert.False(LeaderOf("ru-tank")!.Revealed);
+
+        Committed(await Do(GameActions.Choose, Then(), new Dictionary<string, object> { ["key"] = waiting.Key, ["option"] = waiting.Options[^1] }));
+        Assert.True(Current.Choice is null, Rolled(before));
+        var fire = LastFire(before);
+        var crew = fire.Resolution.GetProperty("vehicleEffects").EnumerateArray().Single().GetProperty("crewCheck");
+        Assert.Equal((10, "armor-leader"), (crew.GetProperty("moraleLevel").GetInt32(), crew.GetProperty("moraleSource").GetString()));
+        Assert.Equal(10, fire.Facts.GetProperty("vehicles").EnumerateArray().Single().GetProperty("crewMorale").GetInt32());
+        Assert.True(LeaderOf("ru-tank")!.Revealed);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task APassedMotionAttemptThatKeepsTheTurretInPlaceKeepsTheAcquisition()
+    {
+        // C6.5 (p. 174): the Acquisition is lost when "the Gun changes its CA without firing". In its PFPh the PzKpfw IIIH in J5 fires at
+        // the T-34 in column F, misses, and acquires it. In the Russian MPh that follows it has fired at nothing; a squad comes out of E5,
+        // out of LOS, beside the T-34, and the tank passes a Motion attempt that turns its VCA and names the TCA its turret already has. The
+        // turret has not turned, and the Acquisition stays; turning the turret loses it.
+        los.Blind.Add("E5");
+        var entered = Beside("E5", 'F');
+        await Setup(Afv("de-tank", "attacker-tank", Watcher, "german", "west"), Afv("ru-tank", "defender-tank", entered, "russian", "east"),
+            Unit("r1", "asl:squad", "defender-squad", Start, "russian"));
+        var fired = Revision;
+        Committed(await Do(GameActions.FireOrdnance, Then(5, 6, 6, 6), new Dictionary<string, object>
+        {
+            ["gunId"] = "de-tank",
+            ["target"] = entered,
+            ["targetVehicle"] = "ru-tank",
+            ["ammunition"] = "ap",
+        }));
+        Assert.True(Current.Acquisitions.Any(item => item.Gun == "de-tank"), Rolled(fired));
+        await Advance(9);
+        Assert.Equal(("mph", "russian"), (Current.Phase, Current.PhasingSide));
+        Assert.Contains(Current.Acquisitions, item => item.Gun == "de-tank");
+        string[] mover = ["r1"];
+        Committed(await Do(GameActions.Move, NoRoll(), new { unitIds = mover, to = entered }));
+        var before = Revision;
+        Committed(await AttemptMotion(Then(1), facing: "south-west", turret: "west", vehicle: "de-tank"));
+        var attempt = LastAttempt(before);
+        Assert.Equal((MotionAttempted.Passed, (UnitFacing?)UnitFacing.SouthWest, (UnitFacing?)UnitFacing.West), (attempt.Result, attempt.Facing, attempt.Turret));
+        Assert.Equal(UnitFacing.SouthWest, FacingOf("de-tank"));
+        Assert.Contains(Current.Acquisitions, item => item.Gun == "de-tank");
+        NoReplayErrors();
+
+        // The same record with another TCA: the MA has turned without firing, and the Acquisition is gone.
+        GameEvent[] turned = [.. store.Read(Scope)!.Events.Select(item => item.Payload is MotionAttempted motion ? item with { Payload = motion with { Turret = UnitFacing.NorthWest } } : item)];
+        Assert.DoesNotContain(Planner().Replay(turned).Current!.Acquisitions, item => item.Gun == "de-tank");
+    }
+
+    /// <summary>A game's events with each ordnance record's resolution changed.</summary>
+    private static GameEvent[] WithResolution(IReadOnlyList<GameEvent> events, Action<System.Text.Json.Nodes.JsonObject> change) => [.. events.Select(item =>
+    {
+        if (item.Payload is not OrdnanceFired fired)
+        {
+            return item;
+        }
+
+        var resolution = System.Text.Json.Nodes.JsonNode.Parse(fired.Resolution.GetRawText())!.AsObject();
+        change(resolution);
+        return item with
+        {
+            Payload = fired with
+            {
+                Resolution = JsonSerializer.SerializeToElement(resolution)
+            }
+        };
+    })];
+
+    [Fact]
+    public async Task AResolutionNamesItsDepletionNumberAndARecordWithoutItStillReplays()
+    {
+        // C8.9 (the UI review): the resolution names the number its ammunition's use was decided under, so its record is worded from itself.
+        // A record made before that names none: it replays, compared without it; a record that names another number does not.
+        await SetupBritish(1944, 6, [], [.. SixPounder(), GermanTank()]);
+        var before = Revision;
+        Committed(await FireAtTank("apds", 2, 1, 6, 6));
+        Assert.Equal(6, LastShot(before).Resolution.GetProperty("depletionNumber").GetInt32());
+        NoReplayErrors();
+        var events = store.Read(Scope)!.Events;
+        Assert.False(Planner().Replay(WithResolution(events, resolution => resolution.Remove("depletionNumber"))).HasErrors);
+        Assert.True(Planner().Replay(WithResolution(events, resolution => resolution["depletionNumber"] = 7)).HasErrors);
+    }
+
+    [Fact]
+    public async Task AVoidReturnShotIsHeldToTheCauseItsFirersStateGives()
+    {
+        // C2.2401 (the boundary review): Rules decides whether the declared shot is void, for the planner and again for the projector. The
+        // crew the first shot broke has a void shot for that cause; the same record under another cause, or for a firer the game shows able
+        // to fire, is refused.
+        var entered = await TankComesOn(guns: RussianGun());
+        Committed(await DeclareShot(entered, NoRoll()));
+        var before = Revision;
+        Committed(await Answer(ChoicePending.Duel, Once(1, 1, 2, 3, 3, 5, 5)));
+        var voided = Assert.Single(Since(before).Select(item => item.Payload).OfType<GunDuelVoided>());
+        Assert.Equal(("broken", null), (voided.Cause, voided.Reason));
+        NoReplayErrors();
+        var events = store.Read(Scope)!.Events;
+        GameEvent[] Caused(string cause) => [.. events.Select(item => item.Payload is GunDuelVoided record ? item with { Payload = record with { Cause = cause } } : item)];
+        Assert.All(new[] { "shocked", "eliminated", "other" }, cause =>
+        {
+            var replayed = Planner().Replay(Caused(cause));
+            Assert.True(replayed.HasErrors);
+            Assert.Contains(replayed.Diagnostics, diagnostic => diagnostic.Code == "UNIT-STATE-049");
+        });
+
+        // The record's reason, which an "other" cause carries, is written and read back.
+        GameEvent[] reasoned = [.. events.Select(item => item.Payload is GunDuelVoided record
+            ? item with { Payload = record with { Cause = "other", Reason = "the Gun has no LOS to the target (A6)" } } : item)];
+        var read = GameEventReader.Read(System.Text.Encoding.UTF8.GetBytes(GameEventWriter.Write(Scope, new GameRecord("Pass 55", false, reasoned))));
+        Assert.False(read.HasErrors);
+        Assert.Equal("the Gun has no LOS to the target (A6)", Assert.Single(read.Record!.Events.Select(item => item.Payload).OfType<GunDuelVoided>()).Reason);
+        var plain = GameEventReader.Read(System.Text.Encoding.UTF8.GetBytes(GameEventWriter.Write(Scope, new GameRecord("Pass 55", false, events))));
+        Assert.Null(Assert.Single(plain.Record!.Events.Select(item => item.Payload).OfType<GunDuelVoided>()).Reason);
+        Assert.DoesNotContain("\"reason\"", GameEventWriter.Write(Scope, new GameRecord("Pass 55", false, events)), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task APanzerfaustIsNotFiredAtATargetTwoLevelsUpInAnAdjacentHex()
+    {
+        // C13.8 (p. 185): "These weapons also may not fire at a target two or more levels higher in an adjacent hex". The T-34 stands on a
+        // level 2 hill beside the German squad; C2.6 frees a LATW of its own limit, so C13.8's refusal is the one given. One level up it is
+        // not given (the game's date, 1942, then refuses the PF for another reason).
+        const string hill = "bd01:B9:0";
+        Task<PlayResult> FirePf() => Do(GameActions.FireOrdnance, NoRoll(), new Dictionary<string, object> { ["gunId"] = "g1:pf", ["target"] = hill, ["targetVehicle"] = "ru-tank" });
+        board.Base["B9"] = 2;
+        await Setup(Unit("g1", "asl:squad", "attacker-squad", Firer, "german"), Afv("ru-tank", "defender-tank", hill, "russian", "south-west"));
+        var before = Revision;
+        Refused(await FirePf(), "play.latw-elevation", "2 levels higher in an adjacent hex", "C13.8");
+        Assert.Equal(before, Revision);
+
+        board.Base["B9"] = 1;
+        var lower = await FirePf();
+        Assert.DoesNotContain(lower.Reasons, reason => reason.Contains("play.latw-elevation", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ACanisterShotResumedAfterAnOwnersChoiceCallsNoSniper()
+    {
+        // Ruling R55.30 (the referee's review): a Canister shot follows ordnance, which calls no Sniper. The German SAN is 6 and the shot's
+        // IFT DR is a 6. The first squad passes its MC on an Original 2, and Heat of Battle gives its owner an option, so the shot stops; the
+        // answer resolves that Location and the rest, and no Sniper is called on that path either.
+        Dictionary<string, object>[] placements =
+        [
+            .. AmericanGun(), .. Squads(),
+            new()
+            {
+                ["id"] = "de-sniper",
+                ["kind"] = "asl:sniper",
+                ["side"] = "german",
+                ["position"] = new Dictionary<string, string> { ["at"] = "bd01:H5:0" },
+                ["conditions"] = new Dictionary<string, bool>(),
+            },
+        ];
+        Committed(await Commit(Play(), GameActions.Setup, JsonSerializer.SerializeToElement(new
+        {
+            gameId = Scope.Game,
+            attemptId = "setup-1",
+            expectedRevision = 0,
+            start = new Dictionary<string, object>
+            {
+                ["label"] = "Pass 55",
+                ["catalog"] = "asl-scenario-a1@1.13.0",
+                ["boards"] = Bd01,
+                ["firstSide"] = "american",
+                ["scenarioMonth"] = 7,
+                ["scenarioYear"] = 1943,
+                ["sides"] = new object[]
+                {
+                    new { id = "american", nationality = "american", elr = 3, friendlyEdge = "left" },
+                    new { id = "german", nationality = "german", elr = 3, friendlyEdge = "right", san = 6 },
+                },
+            },
+            placements,
+        })));
+        await Advance();
+        var before = Revision;
+        Committed(await Do(GameActions.FireOrdnance, Then(2, 4, 1, 1), new Dictionary<string, object> { ["gunId"] = "us-gun", ["ammunition"] = "canister", ["aim"] = 4 }));
+        Assert.True(Current.Choice is not null, Rolled(before));
+        Assert.Empty(Fires(before));
+        while (Current.Choice is { } waiting)
+        {
+            Committed(await Do(GameActions.Choose, Then(), new Dictionary<string, object> { ["key"] = waiting.Key, ["option"] = waiting.Options[^1] }));
+        }
+
+        Assert.Equal(Aim4, Fires(before).Select(fire => fire.TargetLocation));
+        Assert.DoesNotContain(Since(before), item => item.Type.StartsWith("sniper", StringComparison.Ordinal));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AnAimWithNoLocationOfItsClusterToAttackIsRefusedThoughItsAdjacentHexIsThere()
+    {
+        // C8.41 (the referee's review): the adjacent hex is attacked in addition to the cluster. The three hexes of aim 4's cluster are on a
+        // hill, at another level than the Gun: no Location of the cluster is attacked, so the squad in the adjacent hex is not either, and
+        // no round is spent.
+        foreach (var hex in new[] { Aim4[0], Aim4[1], Aim4[2] })
+        {
+            board.Base[hex.Split(':')[1]] = 1;
+        }
+
+        await SetupAmerican(1943, 7, [.. AmericanGun(), .. Squads()]);
+        var before = Revision;
+        Refused(await FireCanister(4, null, 2, 4), "play.canister-aim", "the adjacent hex on its LOS included (C8.4, C8.41)");
+        Assert.Equal(before, Revision);
+
+        // The page offers the aim still: its cluster is on the map. An aim whose cluster is off the map is not offered.
+        Assert.Contains(Planner().CanisterAims(Current, "us-gun"), aim => aim.Aim == 4);
+        Assert.Empty(Current.DepletedAmmunition);
     }
 }

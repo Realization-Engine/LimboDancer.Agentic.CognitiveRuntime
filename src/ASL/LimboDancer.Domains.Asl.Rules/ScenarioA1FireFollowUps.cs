@@ -640,7 +640,7 @@ public static class ScenarioA1FireFollowUps
         // A7.55 (p. 57; pass 45): "they may not attack separately except with ... the subsequent shots of multiple ROF weapons (9.2)". A record in
         // which every firer fires its MG without its own FP is such a shot, as the planner's check has it; the projector had refused it at the commit.
         return firers > 0 && !firesAloneOnRof
-            && fires.Any(item => !(byVehicle && item.Vehicle) && item.FirerLocation == firerLocation && item.TargetLocation == targetLocation && item.Step == movementStep)
+            && fires.Any(item => !item.Ordnance && !(byVehicle && item.Vehicle) && item.FirerLocation == firerLocation && item.TargetLocation == targetLocation && item.Step == movementStep)
             ? new RecordRefusal("UNIT-STATE-024", $"{firerLocation} has already fired at {targetLocation} this phase (A7.55).")
             : null;
     }

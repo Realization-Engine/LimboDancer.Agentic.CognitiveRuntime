@@ -53,6 +53,20 @@ public static class ScenarioA1CanisterCalculator
     /// </summary>
     public static (int Left, int Right) ArcSides(int facing) => ((((1 - facing) % 6) + 6) % 6, (((2 - facing) % 6) + 6) % 6);
 
+    /// <summary>
+    /// What a Canister shot attacks, of the Locations of its cluster and of the adjacent hex or hexes that it can reach (C8.4, C8.41, p. 178;
+    /// the referee's review of pass 55): "Canister attacks all units in the three target hexes ... In addition, if firing at a same-level
+    /// target, it attacks units in the hex adjacent to the firer along the LOS". The adjacent hex is attacked in addition to a cluster that is
+    /// fired at: with no Location of the cluster to attack there is no shot, and the result is empty. The same holds for the hexes of an aim
+    /// that the map has: an aim with no hex of its cluster on the map is not offered.
+    /// </summary>
+    public static IReadOnlyList<T> Attacked<T>(IReadOnlyList<T> cluster, IReadOnlyList<T> adjacent)
+    {
+        ArgumentNullException.ThrowIfNull(cluster);
+        ArgumentNullException.ThrowIfNull(adjacent);
+        return cluster.Count == 0 ? [] : [.. cluster, .. adjacent];
+    }
+
     /// <summary>The Canister FP IFT Equivalency Table (C8.4, p. 178): 12 for a 37mm Gun, 20 for a 75mm, 24 for a 105mm; null for any other Gun Size.</summary>
     public static int? Firepower(int caliber) => caliber switch
     {
@@ -186,7 +200,7 @@ public static class ScenarioA1CanisterCalculator
 
         if (ScenarioA1ArmorCalculator.ShotDepletion(shot, gun) is null)
         {
-            outside.Add(Prefix + "ammunition-unavailable");
+            outside.Add(Prefix + "ammunition-unavailable" + ScenarioA1ArmorCalculator.StartMonthDetail(shot, gun));
         }
 
         if (shot.Gun!.Depleted?.Contains(Ammunition, StringComparer.Ordinal) == true)

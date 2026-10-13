@@ -77,7 +77,7 @@ else
     }
     @if (Ammunitions.Any(item => item.Unavailable is not null))
     {
-        <span class="muted" id="ordnance-ammunition-note">@string.Join("; ", Ammunitions.Where(item => item.Unavailable is not null).Select(item => $"{item.Ammunition.ToUpperInvariant()}: {item.Unavailable}"))</span>
+        <span class="muted" id="ordnance-ammunition-note">@string.Join("; ", Ammunitions.Where(item => item.Unavailable is not null).Select(item => $"{LimboDancer.Domains.Asl.Rules.ScenarioA1Definitions.AmmunitionName(item.Ammunition)}: {item.Unavailable}"))</span>
     }
 }
 

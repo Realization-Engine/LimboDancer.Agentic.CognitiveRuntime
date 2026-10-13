@@ -65,6 +65,7 @@ public sealed partial class GamePlanner
         {
             // D3.41 (ruling R55.29): an Armor Leader no record has revealed is not counted at the DEFENDER's declaration.
             UnrevealedArmorLeader = state.Unit(vehicleId)?.ArmorLeader is { Revealed: false },
+            FirerUnrevealedArmorLeader = state.Unit(firerId)?.ArmorLeader is { Revealed: false },
         };
         var verdict = ScenarioA1GunDuels.Verdict(facts, declared,
             () => GunDuelAnswerArguments(state, vehicleId, firerId) is { } answer ? OrdnanceShotFacts(state, answer, gunDuel: true).Shot?.Facts : null, OrdnanceReference.Value);
@@ -129,6 +130,11 @@ public sealed partial class GamePlanner
 
         var answer = "play.gun-duel: " + ScenarioA1GunDuels.AnswerText(option, vehicle, firer);
         var (returned, returnRefusal) = OrdnanceShotFacts(answered, declared);
+
+        // D3.41 (rulings R55.15, R55.29): the answer is the ATTACKER's proposal, read before either shot is fired, so the DEFENDER's declared
+        // shot is worded in it without the line of an Armor Leader no record has revealed. The shot is fired with his modifier.
+        string Declared((OrdnanceShot Facts, UnitFacing? Facing) shot) =>
+            OrdnanceSummary(ScenarioA1ArmorLeaders.ToldToTheEnemy(shot.Facts, answered.Unit(firer)?.ArmorLeader is not { Revealed: false }), shot.Facing);
         if (option != ChoicePending.Duel)
         {
             // Nothing happens between the declaration and its answer, so the declared shot is accepted now as it was then; should it not be, the
@@ -146,7 +152,7 @@ public sealed partial class GamePlanner
                 return events;
             }
 
-            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [summary, answer, OrdnanceSummary(shot.Facts, shot.Facing)])
+            return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [], [summary, answer, Declared(shot)])
             {
                 Roll = new PlannedRoll("choice", Resolve),
                 FirstEventId = EventId(attemptId, 1),
@@ -174,7 +180,7 @@ public sealed partial class GamePlanner
         }
 
         return new GamePlan(GamePlanStatus.Ready, scope, label, expected, [],
-            [summary, answer, OrdnanceSummary(attack.Facts, attack.Facing), .. returned is { } after ? new[] { OrdnanceSummary(after.Facts, after.Facing) } : Array.Empty<string>()])
+            [summary, answer, OrdnanceSummary(attack.Facts, attack.Facing), .. returned is { } after ? new[] { Declared(after) } : Array.Empty<string>()])
         {
             Roll = new PlannedRoll("choice", Build),
             FirstEventId = EventId(attemptId, 1),
@@ -195,12 +201,7 @@ public sealed partial class GamePlanner
             return;
         }
 
-        if (OrdnanceShotFacts(after, declared).Shot is { } shot)
-        {
-            AddOrdnanceEvents(scope, attemptId, expected, actor, after, shot.Facts, shot.Facing, events, draw);
-            return;
-        }
-
+        // The firer as the first shot left it: a Gun's crew is the unit that holds it, a vehicle is its own. Rules says whether its shot is void.
         var gun = after.Find(firer);
         var crew = gun switch
         {
@@ -208,10 +209,35 @@ public sealed partial class GamePlanner
             EquipmentInstance { Holding: { } holding } => after.Unit(holding.Holder),
             _ => null,
         };
-        var cause = ScenarioA1GunDuels.VoidCause(crew is not { Status: InstanceStatus.Active }, crew is not null && Is(crew, Conditions.Broken),
+        var cause = ScenarioA1GunDuels.ReturnShotVoid(new GunDuelReturnFirer(crew is not { Status: InstanceStatus.Active }, crew is not null && Is(crew, Conditions.Broken),
             crew is not null && Is(crew, Conditions.Stunned), crew is not null && (Is(crew, Conditions.Shocked) || Is(crew, Conditions.UnconfirmedKill)),
-            gun is not { Status: InstanceStatus.Active } || Is(gun, Conditions.Malfunctioned));
+            gun is not { Status: InstanceStatus.Active } || Is(gun, Conditions.Malfunctioned)));
+        string? reason = null;
+        if (cause is null)
+        {
+            var (returned, refusal) = OrdnanceShotFacts(after, declared);
+            if (returned is { } shot)
+            {
+                AddOrdnanceEvents(scope, attemptId, expected, actor, after, shot.Facts, shot.Facing, events, draw);
+                return;
+            }
+
+            // None of the rule's causes, and yet the checks of every shot refuse it now: the shot is not fired, and its record says why.
+            cause = ScenarioA1GunDuels.Other;
+            reason = string.Join("; ", (refusal ?? []).Select(RefusalWords));
+        }
+
         IReadOnlyList<string>? causes = events.LastOrDefault(item => item.Payload is OrdnanceFired) is { } firstShot ? [firstShot.EventId] : null;
-        events.Add(Event(scope, attemptId, events.Count + 1, expected, "gun-duel-voided", new GunDuelVoided(firer, vehicle, cause), null, null, causes));
+        events.Add(Event(scope, attemptId, events.Count + 1, expected, "gun-duel-voided", new GunDuelVoided(firer, vehicle, cause)
+        {
+            Reason = reason is { Length: > 0 } ? reason : null,
+        }, null, null, causes));
+    }
+
+    /// <summary>A refusal without the code it begins with ("play.ordnance-los: ..."), for a record's line.</summary>
+    private static string RefusalWords(string refusal)
+    {
+        var colon = refusal.IndexOf(": ", StringComparison.Ordinal);
+        return colon > 0 && !refusal[..colon].Contains(' ', StringComparison.Ordinal) ? refusal[(colon + 2)..] : refusal;
     }
 }

@@ -51,9 +51,17 @@ public sealed record GunDuelState(string Vehicle, string Firer, int Step, bool F
 /// <c>gun-duel-voided</c>: the declared shot of <paramref name="Firer"/> is not made after the first shot of a Gun Duel by
 /// <paramref name="Vehicle"/> (C2.2401; pass 55, ruling R55.19): that shot "voids the opponent's return shot by eliminating, breaking, stunning
 /// or shocking it". <paramref name="Cause"/> names which (<c>eliminated</c>, <c>broken</c>, <c>stunned</c>, <c>shocked</c>, <c>gun</c> for a Gun
-/// destroyed or malfunctioned, or <c>other</c>).
+/// destroyed or malfunctioned, or <c>other</c>: a shot the first shot left none of those causes for, which the checks of every shot refused;
+/// <see cref="Reason"/> then says why).
 /// </summary>
-public sealed record GunDuelVoided(string Firer, string Vehicle, string Cause) : EventPayload;
+public sealed record GunDuelVoided(string Firer, string Vehicle, string Cause) : EventPayload
+{
+    /// <summary>Why the declared shot is not fired when its cause is <c>other</c>, in the refusal's words; null otherwise, and in a record made before the review of pass 55.</summary>
+    public string? Reason
+    {
+        get; init;
+    }
+}
 
 /// <summary>A Special Ammunition a Gun or an AFV has run out of for the rest of the scenario (C8.9; ruling R7.6).</summary>
 public sealed record DepletedAmmunition(string Gun, string Ammunition);

@@ -207,6 +207,9 @@ public static class ScenarioA1Definitions
         "Depletion Number " + number.ToString(System.Globalization.CultureInfo.InvariantCulture)
             + (elite ? open + (number - 1).ToString(System.Globalization.CultureInfo.InvariantCulture) + ", and 1 for Elite, C8.2" + close : string.Empty);
 
+    /// <summary>A recorded Depletion Number in a record's words, with the one an Elite force added (C8.2): what a record says of the number it names.</summary>
+    public static string DepletionNumberWords(int number, bool elite) => DepletionWords(number, elite);
+
     /// <summary>
     /// The Depletion Number a shot's declared ammunition is fired under, in words (C8.9; pass 55, ruling R55.7), or null when it has none: what
     /// the proposal and the record of the shot say.
@@ -241,11 +244,44 @@ public static class ScenarioA1Definitions
         {
             var special = ammunition is "apcr" or "apds" or "heat" || ScenarioA1ArmorCalculator.Lists(gun, ammunition);
             var number = special ? ScenarioA1ArmorCalculator.Depletion(gun, ammunition, year, month, elite) : null;
-            var name = ammunition == ScenarioA1CanisterCalculator.Ammunition ? "Canister" : ammunition.ToUpperInvariant();
+            var name = AmmunitionName(ammunition);
             return new AmmunitionChoice(ammunition, number is { } held ? $"{name} ({DepletionWords(held, elite, ": ", string.Empty)})" : name, number,
                 depleted.Contains(ammunition, StringComparer.Ordinal) ? "it has run out (C8.9)"
-                    : special && number is null ? "none at the scenario's date (C8.9)" : null);
+                    : special && number is null ? NoneAtTheDate(ammunition, ScenarioA1ArmorCalculator.StartMonthUnknown(gun, ammunition, year, month)) : null);
         })];
+    }
+
+    /// <summary>
+    /// The start of the detail a refusal's code carries when the ammunition starts in a month of the game's year and the game gives no month
+    /// (ruling R55.31): <c>asl.a1.ordnance.ammunition-unavailable:from-month-5</c>.
+    /// </summary>
+    public const string StartMonthMark = ScenarioA1ArmorCalculator.StartMonthMark;
+
+    /// <summary>An ammunition as a choice names it: "Canister", "APDS", "HE".</summary>
+    public static string AmmunitionName(string ammunition)
+    {
+        ArgumentNullException.ThrowIfNull(ammunition);
+        return ammunition == ScenarioA1CanisterCalculator.Ammunition ? "Canister" : ammunition.ToUpperInvariant();
+    }
+
+    /// <summary>
+    /// Why a Gun has no such ammunition at the game's date, with the rule that dates it: C8.3 for HEAT, C8.8 for HE or AP by number, C8.11 for
+    /// the others, and all three when the ammunition is not named. <paramref name="startMonth"/> is the month it starts in when a game with a
+    /// year and no month is the cause (ruling R55.31).
+    /// </summary>
+    public static string NoneAtTheDate(string? ammunition, int? startMonth)
+    {
+        var rule = ammunition switch
+        {
+            null => "C8.11, C8.3, C8.8",
+            "heat" => "C8.3",
+            "he" or "ap" => "C8.8",
+            _ => "C8.11",
+        };
+        return startMonth is { } first and >= 1 and <= 12
+            ? "none known at the scenario's date: the game gives a year and no month, and this ammunition starts in "
+                + $"{System.Globalization.CultureInfo.InvariantCulture.DateTimeFormat.GetMonthName(first)} of that year ({rule})"
+            : $"none at the scenario's date ({rule})";
     }
 
     /// <summary>

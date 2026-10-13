@@ -181,7 +181,7 @@ public static class ReplaySteps
                 kind == "fire" && readable.Length != all.Length ? ReplayRead.Part : ReplayRead.Full)
             {
                 Fires = [.. FiresOf(readable)],
-                Locations = [.. LocationsOf(readable, at).Distinct()],
+                Locations = [.. LocationsOf(readable, at, view.Perspective).Distinct()],
                 EndsGame = readable.Any(item => item.Payload is GameEnded),
             });
         }
@@ -261,14 +261,30 @@ public static class ReplaySteps
 
         if (First<OrdnanceFired>(payloads) is { } ordnance)
         {
-            var hit = ordnance.Resolution.Deserialize<OrdnanceResolution>(LiveFire.Json)?.ToHit;
-            var outcome = hit is null ? string.Empty : hit.CriticalHit ? ": Critical Hit" : hit.Hit ? ": hit" : ": miss";
+            // C8.9 (the table player's review of pass 55): a round that was not there is no miss. An APCR or HEAT record made before the pass
+            // keeps the word it had.
+            static string Outcome(OrdnanceFired shot)
+            {
+                var resolution = shot.Resolution.Deserialize<OrdnanceResolution>(LiveFire.Json);
+                var ammunition = shot.Facts.ValueKind == JsonValueKind.Object && shot.Facts.TryGetProperty("ammunition", out var named) ? named.GetString() : null;
+                var hit = resolution?.ToHit;
+                return hit is null ? string.Empty
+                    : resolution is { AmmunitionUse: "none" } && (resolution.DepletionNumber is not null || ammunition is "apds" or "he" or "ap")
+                        ? resolution.Gun is { Malfunctioned: true } ? "it had none, and the Gun malfunctions (C8.9)" : "it had none (C8.9)"
+                    : hit.CriticalHit ? "Critical Hit" : hit.Hit ? "hit" : "miss";
+            }
+
+            var first = Outcome(ordnance);
+            var outcome = first.Length == 0 ? string.Empty : $": {first}";
             var owner = SideOf(ordnance.Crew);
 
-            // C2.2401 (pass 55): a Gun Duel's first shot, and whether it voided the declared shot it answered.
+            // C2.2401 (pass 55): a Gun Duel's first shot, and the declared shot it answered: its result when it was made in the same commit
+            // (the UI review), or that the first shot voided it.
             var duel = ordnance.Facts.ValueKind == JsonValueKind.Object && ordnance.Facts.TryGetProperty("gunDuel", out var duelFact) && duelFact.ValueKind == JsonValueKind.True;
-            var voided = First<GunDuelVoided>(payloads) is not null ? "; the return shot is void" : string.Empty;
-            return ("fire", owner, $"{(owner is null ? "Ordnance" : $"{DisplayText.Side(owner)} ordnance")} fires{(duel ? " first in a Gun Duel" : string.Empty)} at {Place(before, ordnance.Target)}{outcome}{voided}{end}", false);
+            var returned = duel && payloads.OfType<OrdnanceFired>().Skip(1).FirstOrDefault() is { } second && Outcome(second) is { Length: > 0 } result
+                ? $"; the return shot: {result}" : string.Empty;
+            var voided = First<GunDuelVoided>(payloads) is { } none ? none.Cause == ScenarioA1GunDuels.Other ? "; the return shot is not fired" : "; the return shot is void" : string.Empty;
+            return ("fire", owner, $"{(owner is null ? "Ordnance" : $"{DisplayText.Side(owner)} ordnance")} fires{(duel ? " first in a Gun Duel" : string.Empty)} at {Place(before, ordnance.Target)}{outcome}{returned}{voided}{end}", false);
         }
 
         if (First<CloseCombatResolved>(payloads) is { } combat)
@@ -579,7 +595,14 @@ public static class ReplaySteps
         }
     }
 
-    private static IEnumerable<BoardLocation> LocationsOf(GameEvent[] readable, GameState before)
+    /// <summary>
+    /// Whether a step may give a unit's hex to the view (the UI review of pass 55), as a record may name it: the adjudicator, the unit's own
+    /// side, or a unit then neither concealed nor hidden.
+    /// </summary>
+    private static bool Open(GameState before, string id, Perspective viewer) => viewer.IsAdjudicator || (before.Unit(id) is { } unit && (unit.Side == viewer.Name
+        || (GameState.Condition(unit, Conditions.Concealed) != ConditionState.True && GameState.Condition(unit, Conditions.Hidden) != ConditionState.True)));
+
+    private static IEnumerable<BoardLocation> LocationsOf(GameEvent[] readable, GameState before, Perspective viewer)
     {
         foreach (var fire in FiresOf(readable))
         {
@@ -593,7 +616,7 @@ public static class ReplaySteps
             {
                 MovementStepped moved => moved.To,
                 VehicleStepped drove => drove.At,
-                MotionAttempted motion => before.Location(motion.Vehicle)?.Location,
+                MotionAttempted motion => Open(before, motion.Vehicle, viewer) ? before.Location(motion.Vehicle)?.Location : null,
                 AdvanceMoved advanced => advanced.To,
                 RoutStepped routed => routed.To,
                 CloseCombatResolved combat => combat.Location,

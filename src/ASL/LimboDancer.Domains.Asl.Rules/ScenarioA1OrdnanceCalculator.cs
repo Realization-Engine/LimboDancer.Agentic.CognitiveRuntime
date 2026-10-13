@@ -67,8 +67,15 @@ public static class ScenarioA1OrdnanceCalculator
             return ScenarioA1CanisterCalculator.Run(shot, gun, reference);
         }
 
-        return shot.TargetType == OrdnanceTargetTypes.Area ? ScenarioA1AreaCalculator.Run(shot, gun, reference)
+        var resolution = shot.TargetType == OrdnanceTargetTypes.Area ? ScenarioA1AreaCalculator.Run(shot, gun, reference)
             : shot.VehicleTarget is not null ? ScenarioA1ArmorCalculator.Run(shot, gun, reference) : Run(shot, reference);
+
+        // C8.9 (the UI review of pass 55): a resolution that says how its ammunition was used says under which Depletion Number, so that its
+        // record is worded from itself and not from the catalog of a later day.
+        return resolution.AmmunitionUse is null ? resolution : resolution with
+        {
+            DepletionNumber = ScenarioA1ArmorCalculator.ShotDepletion(shot, gun)
+        };
     }
 
     /// <summary>
@@ -347,13 +354,18 @@ public static class ScenarioA1OrdnanceCalculator
         // Equivalency, which is not built.
         if (shot.VehicleTarget is null && !canister && ScenarioA1ArmorCalculator.Lists(gun, "he"))
         {
-            if (shot.Ammunition != "he")
+            if (shot.Ammunition is null)
             {
                 outside.Add(Prefix + "he-not-named");
             }
+            else if (shot.Ammunition != "he")
+            {
+                // C8.31: another ammunition named at Infantry is HE Equivalency, which is not built; the reason says so, not that HE was not named.
+                outside.Add(Prefix + "he-equivalency-not-built");
+            }
             else if (ScenarioA1ArmorCalculator.ShotDepletion(shot, gun) is null || gunShot.Depleted?.Contains("he", StringComparer.Ordinal) == true)
             {
-                outside.Add(Prefix + "he-unavailable");
+                outside.Add(Prefix + "he-unavailable" + (gunShot.Depleted?.Contains("he", StringComparer.Ordinal) == true ? string.Empty : ScenarioA1ArmorCalculator.StartMonthDetail(shot, gun)));
             }
         }
 
@@ -443,12 +455,19 @@ public static class ScenarioA1OrdnanceCalculator
         // D3.2, C5.5 (pass 50): a vehicle in the firer's own Location is fired on with Case E, its Target Facing by the colored dr.
         if ((sameHex ? shot.Range != 0 || shot.HexspinesToTurn != 0 || shot.FireKind is not null || mortar || latw || (shot.Vehicle is not null && shot.VehicleTarget is null)
                 : shot.Range < 1)
-            || (gun.RangeMaximum is { } maximum && shot.Range > maximum) || shot.ElevationAllowed != true
+            || (gun.RangeMaximum is { } maximum && shot.Range > maximum)
             // C9.4: never nearer than a mortar's minimum range; C13.32: a PF's range by the scenario date.
             || (gun.RangeMinimum is { } minimum && shot.Range < minimum) || (pf && shot.Range > PanzerfaustRange(shot.ScenarioYear, shot.Hit!.ScenarioMonth))
             || (gun.ToHitTable.Count > 0 && shot.Range > gun.ToHitTable.Count))
         {
             outside.Add(Prefix + "out-of-range");
+        }
+
+        // C2.6 (p. 168): a target at another level at a range less than the elevation difference; a reason of its own (the table player's
+        // review of pass 55), so that it is not read as a matter of the Gun's range.
+        if (shot.ElevationAllowed != true)
+        {
+            outside.Add(Prefix + "elevation-outside");
         }
 
         if (shot.FirerOverstack is < 0 || shot.TargetOverstack is < 0)
