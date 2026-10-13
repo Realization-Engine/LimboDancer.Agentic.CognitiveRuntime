@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 50 Design
 
-**Status:** Built to the merge gate on 2026-10-12 under the user's word of that day for this pass ("work independently as much as possible up to merge gate and then pause"): the frame, tasks 50.1, 50.2, 50.3, and 50.6, the five reviews and their fixes, the Studio check, and the documents. Tasks 50.4 (Gun Duels) and 50.5 (MG fire against armor) are not built. Sections 10 and 11 say how it ended; section 10.1 lists what departs from the plan's entry and the frame. Every answer and ruling is open to a veto. **The gate is not run:** it is the user's to start.
+**Status:** Built to the merge gate on 2026-10-12 under the user's word of that day for this pass ("work independently as much as possible up to merge gate and then pause"): the frame, tasks 50.1, 50.2, 50.3, and 50.6, the five reviews and their fixes, the Studio check, and the documents. Tasks 50.4 (Gun Duels) and 50.5 (MG fire against armor) are not built. Sections 10 and 11 say how it ended; section 10.1 lists what departs from the plan's entry and the frame. Every answer and ruling is open to a veto. **The gate was run on 2026-10-12 at the user's word and passed (section 12); nothing is merged.**
 
 **Date:** 2026-10-12
 
@@ -396,4 +396,40 @@ Six tasks planned; four built, in three commits, then the reviews' fixes in one.
 
 **Tests after the reviews' fixes:** the pass's own, 18 Rules tests in `ScenarioA1Pass50RulesTests` and 6 Play tests in `BacklogPass50Tests`; the classes the pass touches, Rules 308, Play 174; Units 409 and MapStudio 390, each project whole. The Rules and Play projects were not run whole: that is the gate's. The two test projects build with warnings as errors.
 
-**The gate is not run.** It is the user's to start.
+**The gate** is section 12.
+
+## 12. The gate
+
+Run on 2026-10-12 at the user's word ("Proceed with the gate"), which is the word for the gate and for nothing after it. The baseline is main at b4ce31ef, which had not moved, built from its own sources; the proof store holds 473 games, 12 of them the pass's own recorded games. **The gate passed. Nothing is merged or pushed.**
+
+| Step | Result |
+|---|---|
+| The solution build with warnings as errors | 0 warnings, 0 errors, at the first try (702024df). |
+| The whole local suite, from `bin/gate` | Dice 24, Rules 836, Units 409, Maps 244, Maps.Vasl 121 (30 skipped), Maps.Rendering 34 (2 skipped), Units.Rendering 352, CounterSheets 19, Play 748, Authoring 167: none failed. MapStudio 389 of 390 in the first run and in one of two more: the race of backlog 57.2, see below. After the fix (85685aac), 390 of 390 in four whole runs. Rules and Play ran whole for the first time on this branch. |
+| CI's Node viewport test | 5 of 5. |
+| The chart supplement | Equal. |
+| The text list | 1,312 texts on main, 1,336 on the branch; 34 lines differ, each a sentence the pass added or reworded (the refusals of a vehicle's MGs, the Delay MP, the turret's turn, Bounding First Fire, the same-hex shot, the repair by weapon). |
+| The replay digest | 93,169 lines on main, 93,266 on the branch. No line of a game made before the pass differs. 155 lines differ, all in eleven of the pass's twelve games, which main refuses at their first record of the pass (`weapons` or `mpInLos` on a vehicle firer, UNIT-STATE-024 and 033; `p50-repair2` at its repair by weapon, UNIT-STATE-028) and the branch replays to their end. `p50-repair-ctl2` holds nothing main cannot read and replays alike on both sides. The baseline's digest equals pass 45's last one line for line. |
+| The planner sweep, 16 games, 515,356 lines on main and 515,769 on the branch | 8 lines differ in the games made before the pass, and 416 are new: the three games of the pass in the sweep (`p50-repair2`, `p50-bff-move2`, `p50-mg-turn2`), which main cannot bring to their last state. The 8 are read below. |
+| Docker, Linux | Passed on 85685aac at the first run: eleven projects, 3,344 tests, the two source regenerations equal. |
+
+**The 8 differing lines of the sweep,** each a refusal that gave way to a later one, in `p35-bog`, `p35-bog-recall`, and `p35-mud`:
+
+- A tank named as a firer on the IFT was refused for the hexside terrain at the target (ruling R10.5); it is now asked for the BMG or the CMG that fires (3 lines), or refused as Abandoned (1 line; D5.41).
+- A vehicle's MA in its own MPh was refused by the DEFENDER's window; that refusal is gone, and the shot now meets the next check: the halftrack's MA is not in a turret (2 lines), the tank's target is outside its TCA for Bounding First Fire (1 line), the tank has no LOS (1 line).
+
+**What the sweep does not show.** The sweep asks one request of each kind for each unit and names no weapon, so a tank's MGs on the IFT, the MA's Bounding First Fire with its cases, the Delay MP, the repair by weapon, and the same-hex shot are reached only in the pass's own games, where main has no answer to compare with. For those the proof is the pass's tests and Studio games, not the sweep. What the sweep and the digest do show is that nothing outside the pass's ground moved.
+
+**What the gate found, and the fix (85685aac).** One MapStudio page test of `PlayPagePass31dTests` failed in two whole runs of three, a different test each time (`AFtIsSaidToFireAloneAndHoldsProposeWhenTickedWithAnotherUnit`, then `AWeaponThatHasMalfunctionedIsListedAndCannotBeTicked`), each naming a weapon by another game's names. It is the race pass 45's gate met in Docker (backlog 57.2), now met on Windows while the baseline's sweep ran beside the suite: `UnitNames.For` keeps a view's names by the game's id and first event id, and `PlayPagePass35Tests`, which runs beside that class, starts games named "wide" with the same event ids. The pass did not touch that code, and its change to the Fire panel's row leaves a FT's and a MG's words as they were. The class's games are now named "wide-31d": a test-only change, no product code. The cache itself is unchanged and keeps its backlog row.
+
+**What went wrong in the gate itself.**
+
+- **The first sweep on the branch's side was misread by its own skip list.** The prompt asked for pass 45's `PROOF_SKIP` list beside pass 50's on the gate's side. That list was right while the comparison was with pass 45's last digest, made with the same list; against a baseline built from main, which holds pass 45, it left pass 45's properties out on one side only, and all 6,783 fire lines of the sweep differed in their hash. A full dump of one game's fire plans from each side named the three properties in a minute. The second run, with pass 50's twelve properties alone, is the one reported above. The first run's replay digest gave the same result as the second.
+- **`PROOF_SKIP_JSON` was cut short by the shell** in the first run: a default written as `${NAME-...{}...}` ends at the first closing brace. The script now assigns the value in single quotes and prints it.
+- **The proof tool was changed in the gate:** `key{}` and `key[{}]` in `PROOF_SKIP_JSON` leave out only a flat object or an array of flat objects, so that the older `weapons` of a fire request, an array of strings, stays in the text; and `PROOF_DUMP_FIRE` writes each fire plan in full. My first edit did not compile; an early build of the tool, before the baseline had ended, showed it.
+- **The suite ran beside the baseline,** against the prompt's "first and alone", to learn of a failure early. It slowed the baseline's replay from about 750 s to 961 s and brought the race to light. Docker ran beside the first replay and passed.
+- **The first session's `PROOF_SKIP` list of twelve is complete.** `new_properties50.py` over `b4ce31ef..HEAD` lists 47 names: the twelve, the members of the pass's five new records (reached only through the twelve), and eight older members of two records the pass reformatted, which must not be skipped.
+
+**The store** now holds the twelve recorded games of the pass. Those labelled SUPERSEDED were not taken.
+
+**Still open to a veto,** as before the gate: tasks 50.4 and 50.5 not built; what section 10.1 lists; rulings R50.1 to R50.14.

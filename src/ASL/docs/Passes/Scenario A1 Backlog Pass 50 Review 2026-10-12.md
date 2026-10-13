@@ -4,7 +4,7 @@ The review of pass 50, written on 2026-10-12 after the five reviews, their fixes
 
 ## Status
 
-Built to the merge gate on branch `feature/asl-backlog-pass-50`, cut from main at b4ce31ef: the frame, four tasks of six in three commits, then the five reviews, their fixes, the Studio check, and these documents. Everything was done under the user's word of 2026-10-12 for this pass, "work independently as much as possible up to merge gate and then pause", and is open to a veto. **The gate is not run, and nothing is merged.**
+Built to the merge gate on branch `feature/asl-backlog-pass-50`, cut from main at b4ce31ef: the frame, four tasks of six in three commits, then the five reviews, their fixes, the Studio check, and these documents. Everything was done under the user's word of 2026-10-12 for this pass, "work independently as much as possible up to merge gate and then pause", and is open to a veto. **The gate was run on 2026-10-12 at the user's word ("Proceed with the gate") and passed; nothing is merged.** The design's section 12 has its table. It found one thing, outside the pass: the race between two page test classes over unit names (backlog 57.2), met locally for the first time and removed on the tests' side in 85685aac. No product code changed in the gate.
 
 ## What departs from the plan's entry and the frame
 

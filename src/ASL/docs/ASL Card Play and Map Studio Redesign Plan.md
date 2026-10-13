@@ -1772,7 +1772,7 @@ Passes 90, 125, 140, and 165 lose part of their titles: 90 is night alone, 125 i
 | Overhead | | 1:15 |
 | **Pass 45 total** (build 5:40) | | **6:55** |
 
-**Pass 50: Armored combat I** (planned at 5:40 of build; 33 rows of the inventory). Counters: none new (the PzKpfw IIIH and T-34 M41 suffice); a Gun Duel needs no counter. Needs first: 35 (vehicle states, Acquisition). **Status, 2026-10-12: built to the merge gate on `feature/asl-backlog-pass-50`, not merged.** Tasks 50.1, 50.2, 50.3, and 50.6 are built; 50.4 (Gun Duels) goes to pass 55 and 50.5 (MG fire against armor) to pass 60, each with its reason in the [design](<Passes/ASL Unit Backlog Pass 50 Design.md>), section 10.1, and the backlog's section 58.
+**Pass 50: Armored combat I** (planned at 5:40 of build; 33 rows of the inventory). Counters: none new (the PzKpfw IIIH and T-34 M41 suffice); a Gun Duel needs no counter. Needs first: 35 (vehicle states, Acquisition). **Status, 2026-10-12: built on `feature/asl-backlog-pass-50`, the merge gate passed, not merged.** Tasks 50.1, 50.2, 50.3, and 50.6 are built; 50.4 (Gun Duels) goes to pass 55 and 50.5 (MG fire against armor) to pass 60, each with its reason in the [design](<Passes/ASL Unit Backlog Pass 50 Design.md>), section 10.1, and the backlog's section 58.
 
 | Task | Rules | Estimate |
 |---|---|---|
