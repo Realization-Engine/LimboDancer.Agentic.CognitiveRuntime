@@ -1,13 +1,9 @@
 """Pass 45's test games: one file a game, on board 3, written under its own id into the live folder."""
-import os as _os
-import sys as _sys
-_sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), ".."))
-from paths import REPO, WORK  # noqa: E402
 import hashlib
 import json
 import zipfile
 
-LIVE = REPO + "/src/ASL/boards/units/live/5a7d1f000000400080000000000057d0/"
+LIVE = "E:/Archive/GitHub/dlandi/LimboDancer.MCP/src/ASL/boards/units/live/5a7d1f000000400080000000000057d0/"
 VASL = "E:/Archive/GitHub/dlandi/vasl/boards/bdFiles/bd"
 TENANT_SOURCE = "p35-rst-cc.game.json"
 CLEAR = {"asl:broken": False, "asl:berserk": False, "asl:captured": False, "asl:melee": False, "asl:ti": False,

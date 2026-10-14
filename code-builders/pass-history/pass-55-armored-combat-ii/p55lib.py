@@ -1,11 +1,7 @@
 """Pass 55's test games: pass 50's library with a second nationality, a date, a Gun with its crew, and catalog 1.14.0."""
-import os as _os
-import sys as _sys
-_sys.path.insert(0, _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), ".."))
-from paths import REPO, WORK  # noqa: E402
 import sys
 
-sys.path.insert(0, WORK + "/pass50")
+sys.path.insert(0, "E:/Archive/GitHub/dlandi/pass32-tools/pass50")
 from p50lib import Game as Base  # noqa: E402
 
 CREWS = {"german": "attacker-crew", "russian": "defender-crew", "british": "british-crew", "american": "american-crew"}

@@ -10,9 +10,9 @@ Until 2026-10-13 these lived outside the repository, by an early rule not to com
 |---|---|
 | `merge-gate/` | The merge gate of a rule pass: `gate.sh`, its helpers, the text list, the test suite and chart supplement runners. `pass-configs/` has one `.conf` a pass. |
 | `proof-tool/` | The C# tool behind the gate's replay digest and planner sweep, and its self-test. |
-| `diagnostics/` | What names a difference once the gate has found one: dumps of planned events, comparers of digests and sweeps, the reader of a failed test run. |
+| `diagnostics/` | What names a difference once the gate has found one: `dump_both_sides.sh` writes a game's planned events, fire plans, or one state in full from each side; comparers of digests and sweeps; the reader of a failed test run. |
 | `build-and-test/` | The Studio build, a filtered test run, the whitespace formatter, the commit helpers. |
-| `test-games/` | The library that writes a small Studio test game as a file, and the readers of recorded games. |
+| `test-games/` | `game_file.py`, the library that writes a small Studio test game as a file (it replaces the libraries of passes 45, 50, and 55), and the readers of recorded games. |
 | `rulebook/` | Page dumps, term and counter scans, and page renders of the rulebook PDF. |
 | `documents/` | The multi-file edit helper, and the checkers of the rule inventory and the rule coverage. |
 | `boards/` | Hex facts, building and woods-road listings, the scenario cards' survey. |

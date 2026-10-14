@@ -10,6 +10,8 @@ import os
 TOOLS = os.path.dirname(os.path.abspath(__file__)).replace("\\", "/")
 REPO = os.path.dirname(TOOLS)
 WORK = os.environ.get("ASL_GATE_WORK", "E:/Archive/GitHub/dlandi/asl-gate-work").replace("\\", "/").rstrip("/")
+# The VASL checkout, whose board archives the proof tool and the test games read.
+VASL_ROOT = os.environ.get("ASL_VASL_ROOT", "E:/Archive/GitHub/dlandi/vasl").replace("\\", "/").rstrip("/")
 # The registered rulebook PDF is not in the repository. Set ASL_RULEBOOK_PDF where it is kept elsewhere.
 RULEBOOK_PDF = os.environ.get(
     "ASL_RULEBOOK_PDF",
