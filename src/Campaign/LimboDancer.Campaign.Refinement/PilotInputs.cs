@@ -27,6 +27,7 @@ public sealed class PilotInputs
     public IReadOnlyList<SourceRegion> Regions { get; }
     public IReadOnlyList<SourceRoute> Routes { get; }
     public IReadOnlyList<SourceBridge> Bridges { get; }
+    public IReadOnlyDictionary<string, string> RifleSides { get; }
     public const string MapSpace = "panzer-leader-05-joined-b-a-c";
     public const string GeneratorVersion = "goodwood-pilot-1";
 
@@ -45,7 +46,11 @@ public sealed class PilotInputs
         // ASL authored-board loading uses the Git blob identity of SharedBoardMetadata.xml.
         CatalogBlob = GitBlob.Sha(CatalogBytes);
         using var doc = JsonDocument.Parse(sourceJson);
-        var root = doc.RootElement; var illustration = root.GetProperty("illustration");
+        var root = doc.RootElement;
+        RifleSides = root.GetProperty("instances").EnumerateArray()
+            .Where(i => i.GetProperty("counterTypeId").GetString() is "uk-rifle" or "de-rifle")
+            .ToDictionary(i => i.GetProperty("id").GetString()!, i => i.GetProperty("counterTypeId").GetString() == "uk-rifle" ? "Allied" : "German", StringComparer.Ordinal);
+        var illustration = root.GetProperty("illustration");
         var layouts = new Dictionary<string, (int Turn, double X, double Y)>(StringComparer.Ordinal);
         double ox = 0, oy = 0;
         foreach (var item in illustration.GetProperty("joinedLayout").EnumerateArray())

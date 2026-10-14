@@ -241,3 +241,14 @@ Milestone 4 remains open because the end-to-end cold browser result exceeds the 
 A bounded follow-up now passes the proposed 2-second saved-map open target in three fresh-host in-app browser checks: 1.63, 1.87 and 1.68 seconds; warm repeats take 1.04 to 1.31 seconds. This supersedes the earlier outstanding cold-open result. Terrain derivation now rejects bridge/tunnel-free bounding rectangles before exact polygon scanning; positive rectangles retain the original semantics. All map response content matches the original lookup.
 
 Campaign tests: 29 passed. Shared ASL map tests: 245 passed. Browser persistence and campaign-file regressions pass. Default runtime tiering is unchanged. See the Pilot release review for raw evidence, method and limits. Stop performance work here for the bounded pilot; wider browser/accessibility acceptance, full formation conversion and other deferred scope remain separate work.
+## Selected-formation implementation checkpoint, 14 October 2026
+
+The completed bounded-pilot performance work is committed as 033e4636. The next slice now opens a local map for a selected deployed Goodwood British/German rifle counter. It derives the parent identity and anchor from that selection and uses the existing provisional four-squad composition. This is not full formation-order-of-battle conversion.
+
+A 17-by-14 crop snaps to four-column/two-row world offsets. This preserves the shared grid's parity and integer pixel phase, avoiding independent crop origins. Source-preserved features and generated detail continue to use campaign seed and world feature identity. Placement is limited to the selected formation's parent hex, admitted ground and current campaign permissions.
+
+Legacy eight-squad saves remain separate. New formation slots retain accepted terrain and setup through file export/import and host restart. Changes to the selected anchor, permissions or the existing whole-Situation placement/supply signature reject resume and preserve the saved map. Automatic rebasing/replacement and more selective invalidation are explicitly deferred.
+
+Evidence and instructions: Campaign README, Selected rifle formation slice. 34 Campaign tests pass, with new selected-roster/crop/context/import and neighboring-interior checks. Browser acceptance passed for de-rifle-03 at C/Y-4, including completion, restart/resume, keyboard boundary rejection and preservation of the legacy eight-squad map. Some default British placements are still rejected because nearby source elevation is not admitted.
+
+Next implementation choices: support a deliberate replacement/rebase workflow, broaden flat-crop capacity and edge/overlap fixtures, then decide elevation admission and additional counter profiles. Do not infer broad crop equivalence, historical four-squad strength or combat support from this slice.

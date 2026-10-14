@@ -5,7 +5,7 @@ using LimboDancer.Domains.Asl.Maps.Rendering;
 
 namespace LimboDancer.Campaign.PilotHost;
 
-public sealed record GenerateRequest(string Seed);
+public sealed record GenerateRequest(string Seed, FormationSelection? Formation = null);
 public sealed record OpenRequest(string Seed, PilotBundle? Bundle, DeploymentContext Context, PilotSetup? Setup);
 public sealed record EditRequest(string Session, PilotSetup Setup, string Action, string? UnitId, string? Hex);
 public sealed record PilotSession(PilotDeployment Deployment, DeploymentContext Context);
@@ -23,27 +23,29 @@ public sealed class PilotSessions(PilotInputs inputs, string packagesRoot) : IDi
     private readonly ConcurrentDictionary<string, PilotSession> sessions = new(StringComparer.Ordinal);
     private readonly SemaphoreSlim generation = new(1);
     private readonly object jobLock = new();
-    public object Start(string seed)
+    public object Start(string seed, FormationSelection? selection = null)
     {
         SeedRandom.ValidateSeed(seed);
+        var crop = selection is null ? inputs.DefaultCrop : FormationDeployment.CropFor(inputs, selection);
+        var key = FormationDeployment.JobKey(seed, selection);
         lock (jobLock)
         {
-            if (jobs.TryGetValue(seed, out var old) && old.Work is { IsCanceled: false, IsFaulted: false }) return Status(seed);
-            if (jobs.Count >= 8 && !jobs.ContainsKey(seed)) throw new InvalidDataException("Pilot host is full. Restart it to release cached maps; campaign saves are retained.");
-            var job = new PilotJob(); jobs[seed] = job;
+            if (jobs.TryGetValue(key, out var old) && old.Work is { IsCanceled: false, IsFaulted: false }) return Status(key);
+            if (jobs.Count >= 8 && !jobs.ContainsKey(key)) throw new InvalidDataException("Pilot host is full. Restart it to release cached maps; campaign saves are retained.");
+            var job = new PilotJob(); jobs[key] = job;
             job.Work = Task.Run(async () =>
             {
                 await generation.WaitAsync(job.Cancellation.Token).ConfigureAwait(false);
                 try
                 {
-                    var result = new PilotGenerator(inputs).Generate(seed, cancellationToken: job.Cancellation.Token);
+                    var result = new PilotGenerator(inputs).Generate(seed, crop, cancellationToken: job.Cancellation.Token);
                     PackagePublisher.Publish(result, inputs, packagesRoot, job.Cancellation.Token);
-                    return new PilotDeployment(inputs, result, seed);
+                    return new PilotDeployment(inputs, result, seed, selection);
                 }
                 finally { generation.Release(); }
             }, job.Cancellation.Token);
             old?.Dispose();
-            return Status(seed);
+            return Status(key);
         }
     }
     public object Status(string seed)
@@ -62,6 +64,7 @@ public sealed class PilotSessions(PilotInputs inputs, string packagesRoot) : IDi
     public async Task<object> Open(OpenRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(request.Context);
         SeedRandom.ValidateSeed(request.Seed);
         var timings = new Dictionary<string, double>(StringComparer.Ordinal);
         var watch = Stopwatch.StartNew();
@@ -69,9 +72,9 @@ public sealed class PilotSessions(PilotInputs inputs, string packagesRoot) : IDi
         if (request.Bundle is { } bundle)
         {
             if (bundle.Seed != request.Seed) throw new InvalidDataException("Saved campaign seed differs from its accepted map.");
-            deployment = new PilotDeployment(inputs, bundle, timings);
+            deployment = new PilotDeployment(inputs, bundle, timings, request.Context.Formation);
         }
-        else if (jobs.TryGetValue(request.Seed, out var job) && job.Work!.IsCompletedSuccessfully)
+        else if (jobs.TryGetValue(FormationDeployment.JobKey(request.Seed, request.Context.Formation), out var job) && job.Work!.IsCompletedSuccessfully)
             deployment = await job.Work.ConfigureAwait(false);
         else throw new InvalidDataException("Generate the pilot map before opening deployment.");
         timings["loadTotal"] = watch.Elapsed.TotalMilliseconds; watch.Restart();
@@ -85,7 +88,7 @@ public sealed class PilotSessions(PilotInputs inputs, string packagesRoot) : IDi
             new StyledSource(deployment.Package.Model, deployment.Grid, deployment.Facts));
         var svg = BoardRenderer.Document(render, BoardView.Exact);
         timings["render"] = watch.Elapsed.TotalMilliseconds;
-        return new { session = id, setup = state, bundle = deployment.Bundle, cells = deployment.Cells, roster = PilotDeployment.Roster,
+        return new { session = id, setup = state, bundle = deployment.Bundle, cells = deployment.Cells, roster = deployment.Units,
             width = deployment.Grid.Geometry.GridWidth, height = deployment.Grid.Geometry.GridHeight,
             svg, timingsMs = timings };
     }

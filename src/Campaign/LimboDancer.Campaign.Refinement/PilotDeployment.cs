@@ -11,7 +11,7 @@ namespace LimboDancer.Campaign.Refinement;
 
 // Campaign owns formation legality, including its supply exception. The adapter snapshots it;
 // this module separately admits tactical locations and validates every placement.
-public sealed record DeploymentContext(string CampaignId, string FormationSignature, string[] AlliedParents, string[] GermanParents);
+public sealed record DeploymentContext(string CampaignId, string FormationSignature, string[] AlliedParents, string[] GermanParents, FormationSelection? Formation = null);
 public sealed record PilotUnit(string Id, string ParentId, string Side, string Label);
 public sealed record PilotPlacement(string UnitId, string Hex);
 public sealed record PilotSetup(string Policy, string ContextHash, string PackageVersion, int Revision, bool Complete, PilotPlacement[] Placements);
@@ -26,16 +26,23 @@ public sealed class PilotDeployment
         Enumerable.Range(1, 4).Select(i => new PilotUnit("uk-rifle-01/squad-" + i, "uk-rifle-01", "Allied", "British rifle squad " + i))
         .Concat(Enumerable.Range(1, 4).Select(i => new PilotUnit("de-rifle-01/squad-" + i, "de-rifle-01", "German", "German rifle squad " + i))).ToArray());
     private readonly PilotInputs inputs;
+    private readonly FormationSelection? formation;
+    public Crop Crop { get; }
+    public IReadOnlyList<PilotUnit> Units { get; }
+    public string ActivePolicy => formation is null ? Policy : FormationDeployment.Policy;
     public BoardPackage Package { get; }
     public TerrainGrid Grid { get; }
     public HexFactSet Facts { get; }
     public PilotBundle Bundle { get; }
     public IReadOnlyList<PilotCell> Cells { get; }
 
-    public PilotDeployment(PilotInputs inputs, PilotResult result, string seed)
+    public PilotDeployment(PilotInputs inputs, PilotResult result, string seed, FormationSelection? selection = null)
     {
         ArgumentNullException.ThrowIfNull(inputs); ArgumentNullException.ThrowIfNull(result);
         this.inputs = inputs;
+        formation = selection;
+        Crop = selection is null ? inputs.DefaultCrop : FormationDeployment.CropFor(inputs, selection);
+        Units = selection is null ? Roster : FormationDeployment.Units(inputs, selection);
         Package = result.Package; Grid = result.Grid; Facts = result.Facts;
         Bundle = new(seed, Package.Version, Package.Board.Value, Package.Name, Encoding.UTF8.GetString(Package.FeaturesBytes()),
             Encoding.UTF8.GetString(result.Manifest), inputs.Profile.CatalogSha256, PilotGenerator.GridHash(Grid));
@@ -43,22 +50,25 @@ public sealed class PilotDeployment
     }
 
     // Load accepted features, never regenerate terrain when opening a campaign save.
-    public PilotDeployment(PilotInputs inputs, PilotBundle bundle, IDictionary<string, double>? timings = null)
+    public PilotDeployment(PilotInputs inputs, PilotBundle bundle, IDictionary<string, double>? timings = null, FormationSelection? selection = null)
     {
         ArgumentNullException.ThrowIfNull(inputs); ArgumentNullException.ThrowIfNull(bundle);
-        this.inputs = inputs; Bundle = bundle;
+        this.inputs = inputs;
+        formation = selection;
+        Crop = selection is null ? inputs.DefaultCrop : FormationDeployment.CropFor(inputs, selection);
+        Units = selection is null ? Roster : FormationDeployment.Units(inputs, selection); Bundle = bundle;
         var watch = Stopwatch.StartNew();
         void Stage(string name) { if (timings is not null) timings[name] = watch.Elapsed.TotalMilliseconds; watch.Restart(); }
         SeedRandom.ValidateSeed(bundle.Seed);
         if (bundle.Features is null || bundle.Manifest is null || bundle.Features.Length > 1_000_000 || bundle.Manifest.Length > 2_000_000)
             throw new InvalidDataException("Invalid pilot package size.");
         var model = FeatureModelJson.Deserialize(Encoding.UTF8.GetBytes(bundle.Features));
-        var expected = inputs.DefaultCrop.Geometry(); var g = model.Geometry;
+        var expected = Crop.Geometry(); var g = model.Geometry;
         if (model.Features.Count > 500 || g.WidthInHexes != expected.WidthInHexes || g.HeightInHexes != expected.HeightInHexes ||
             g.GridWidth != expected.GridWidth || g.GridHeight != expected.GridHeight || g.HexWidth != expected.HexWidth ||
             g.HexHeight != expected.HexHeight || g.A1CenterX != expected.A1CenterX || g.A1CenterY != expected.A1CenterY ||
             g.ColumnLetterOffset != 0 || g.RowNumberOffset != 0 || model.CatalogHash != inputs.CatalogBlob)
-            throw new InvalidDataException("Only the pinned Goodwood crop and catalog are admitted.");
+            throw new InvalidDataException("Only the selected Goodwood crop dimensions and pinned catalog are admitted.");
         Package = new(BoardRef.Parse(bundle.Board), bundle.Name, model);
         CheckIdentity();
         Stage("decodeAndIdentity");
@@ -77,7 +87,7 @@ public sealed class PilotDeployment
     private void CheckIdentity()
     {
         using var doc = JsonDocument.Parse(Bundle.Manifest); var m = doc.RootElement;
-        if (Package.Board.Value != PilotIdentity.Reference(inputs, Bundle.Seed, inputs.DefaultCrop) ||
+        if (Package.Board.Value != PilotIdentity.Reference(inputs, Bundle.Seed, Crop) ||
             m.GetProperty("WorldIdentity").GetString() != PilotIdentity.World(inputs, Bundle.Seed) ||
             m.GetProperty("SpatialSha256").GetString() != PilotIdentity.SpatialDigest ||
             Package.Version != Bundle.PackageVersion || Bundle.CatalogSha256 != inputs.Profile.CatalogSha256 ||
@@ -95,7 +105,7 @@ public sealed class PilotDeployment
             m.GetProperty("SpatialVersion").GetString() != SpatialFrame.Version ||
             m.GetProperty("CompilerVersion").GetString() != FeatureCompiler.Version ||
             m.GetProperty("DerivationVersion").GetString() != VaslCompatibleHexFactDerivation.Version ||
-            m.GetProperty("Crop").Deserialize<Crop>() != inputs.DefaultCrop)
+            m.GetProperty(nameof(Crop)).Deserialize<Crop>() != Crop)
             throw new InvalidDataException("Pilot package identity or supported version does not match the save.");
     }
 
@@ -108,7 +118,7 @@ public sealed class PilotDeployment
             MinY: r.Polygon.Min(p => p.Y), MaxY: r.Polygon.Max(p => p.Y))).ToArray();
         return Facts.Hexes.Select(f =>
     {
-        var h = f.Index; var g = Facts.Geometry; var crop = inputs.DefaultCrop;
+        var h = f.Index; var g = Facts.Geometry; var crop = Crop;
         var world = SpatialFrame.Center(crop.Column + h.Column, crop.Row + h.Row);
         var parent = regions.FirstOrDefault(r => world.X >= r.MinX && world.X <= r.MaxX &&
             world.Y >= r.MinY && world.Y <= r.MaxY && MetricGeometry.Contains(r.Region.Polygon, world)).Region?.Key;
@@ -132,18 +142,26 @@ public sealed class PilotDeployment
             string.IsNullOrWhiteSpace(context.FormationSignature) || context.FormationSignature.Length > 200000 ||
             context.AlliedParents is null || context.GermanParents is null)
             throw new InvalidDataException("Campaign setup context is missing.");
+        if (context.Formation != formation) throw new InvalidDataException("Selected formation or anchor differs from the accepted map.");
+        if (formation is not null)
+        {
+            var allowed = Units[0].Side == "Allied" ? context.AlliedParents : context.GermanParents;
+            if (!allowed.Contains(formation.Anchor, StringComparer.Ordinal))
+                throw new InvalidDataException("Selected formation anchor is outside its setup permissions.");
+        }
         var known = inputs.Regions.Select(r => r.Key).ToHashSet(StringComparer.Ordinal);
         if (context.AlliedParents.Length > known.Count || context.GermanParents.Length > known.Count ||
             context.AlliedParents.Concat(context.GermanParents).Any(p => !known.Contains(p)))
             throw new InvalidDataException("Campaign setup references an unknown formation hex.");
-        return BoardPackage.Hash(CanonicalJson.Serialize(new object[] { Policy, context.CampaignId, context.FormationSignature,
+        var binding = new object[] { ActivePolicy, context.CampaignId, context.FormationSignature,
             context.AlliedParents.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray(),
-            context.GermanParents.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray() }));
+            context.GermanParents.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray() };
+        return BoardPackage.Hash(CanonicalJson.Serialize(formation is null ? binding : binding.Concat(new object[] { formation.UnitId, formation.Anchor }).ToArray()));
     }
 
     public PilotSetup Create(DeploymentContext context)
     {
-        var state = new PilotSetup(Policy, ContextHash(context), Package.Version, 0, false, []);
+        var state = new PilotSetup(ActivePolicy, ContextHash(context), Package.Version, 0, false, []);
         // Capacity is checked against this seed and campaign policy before admitting the workflow.
         _ = AutoDeploy(context, state); return state;
     }
@@ -151,9 +169,9 @@ public sealed class PilotDeployment
     public void Validate(DeploymentContext context, PilotSetup state)
     {
         ArgumentNullException.ThrowIfNull(state);
-        if (state.Policy != Policy || state.PackageVersion != Package.Version || state.ContextHash != ContextHash(context))
+        if (state.Policy != ActivePolicy || state.PackageVersion != Package.Version || state.ContextHash != ContextHash(context))
             throw new InvalidDataException("Formation setup or supply rules changed. Keep the saved pilot; restore its formation context before reopening it.");
-        if (state.Revision < 0 || state.Placements is null || state.Placements.Length > Roster.Count || state.Placements.Any(p => p is null) ||
+        if (state.Revision < 0 || state.Placements is null || state.Placements.Length > Units.Count || state.Placements.Any(p => p is null) ||
             state.Placements.Select(p => p.UnitId).Distinct(StringComparer.Ordinal).Count() != state.Placements.Length)
             throw new InvalidDataException("Invalid pilot roster or duplicate placement.");
         foreach (var p in state.Placements)
@@ -161,20 +179,21 @@ public sealed class PilotDeployment
             var reason = Rejection(context, state, p.UnitId, p.Hex);
             if (reason is not null) throw new InvalidDataException(reason);
         }
-        if (state.Complete && state.Placements.Length != Roster.Count) throw new InvalidDataException("Deploy all eight pilot squads before completing setup.");
+        if (state.Complete && state.Placements.Length != Units.Count) throw new InvalidDataException("Deploy all squads before completing setup.");
     }
 
     public string? Rejection(DeploymentContext context, PilotSetup state, string unitId, string hex)
     {
         ArgumentNullException.ThrowIfNull(context); ArgumentNullException.ThrowIfNull(state);
-        var unit = Roster.FirstOrDefault(u => u.Id == unitId); var cell = Cells.FirstOrDefault(c => c.Hex == hex);
+        var unit = Units.FirstOrDefault(u => u.Id == unitId); var cell = Cells.FirstOrDefault(c => c.Hex == hex);
         if (unit is null) return "Unknown pilot squad.";
         if (cell is null) return "Choose a hex in the pilot map.";
         if (!cell.Admitted) return cell.Reason;
+        if (formation is not null && cell.Parent != formation.Anchor) return "Deploy within the selected formation hex " + formation.Anchor + ".";
         var allowed = unit.Side == "Allied" ? context.AlliedParents : context.GermanParents;
         if (!allowed.Contains(cell.Parent, StringComparer.Ordinal)) return unit.Side + " setup is not allowed in formation hex " + cell.Parent + ".";
         var occupants = state.Placements.Where(p => p.UnitId != unitId && p.Hex == hex).ToArray();
-        if (occupants.Any(p => Roster.FirstOrDefault(u => u.Id == p.UnitId)?.Side != unit.Side)) return "Opposing squads cannot share a setup hex.";
+        if (occupants.Any(p => Units.FirstOrDefault(u => u.Id == p.UnitId)?.Side != unit.Side)) return "Opposing squads cannot share a setup hex.";
         return occupants.Length >= 2 ? "Stacking limit: two pilot squads per hex." : null;
     }
 
@@ -190,7 +209,7 @@ public sealed class PilotDeployment
     public PilotSetup AutoDeploy(DeploymentContext context, PilotSetup state)
     {
         Validate(context, state); var next = state;
-        foreach (var unit in Roster.Where(u => !state.Placements.Any(p => p.UnitId == u.Id)))
+        foreach (var unit in Units.Where(u => !state.Placements.Any(p => p.UnitId == u.Id)))
         {
             var cell = Cells.FirstOrDefault(c => !next.Placements.Any(p => p.Hex == c.Hex) && Rejection(context, next, unit.Id, c.Hex) is null)
                 ?? Cells.FirstOrDefault(c => Rejection(context, next, unit.Id, c.Hex) is null);

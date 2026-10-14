@@ -50,7 +50,7 @@ app.Use(async (context, next) =>
     }
 });
 app.MapGet("/api/asl-pilot", () => new { version = PilotDeployment.Policy, source = "panzer-leader-05", admission = "bounded infantry setup only" });
-app.MapPost("/api/asl-pilot/generate", (GenerateRequest request, PilotSessions service) => service.Start(request.Seed));
+app.MapPost("/api/asl-pilot/generate", (GenerateRequest request, PilotSessions service) => service.Start(request.Seed, request.Formation));
 app.MapGet("/api/asl-pilot/generate/{seed}", (string seed, PilotSessions service) => service.Status(seed));
 app.MapDelete("/api/asl-pilot/generate/{seed}", (string seed, PilotSessions service) => { service.Cancel(seed); return Results.NoContent(); });
 app.MapPost("/api/asl-pilot/open", (OpenRequest request, PilotSessions service) => service.Open(request))

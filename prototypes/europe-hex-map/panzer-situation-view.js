@@ -137,6 +137,16 @@
    toggle.className="panzer-roster-toggle";toggle.setAttribute("aria-controls",tray.id);toggle.setAttribute("aria-expanded",String(!rosterCollapsed));toggle.title=rosterCollapsed?"Show counter roster":"Hide counter roster";toggle.setAttribute("aria-label",toggle.title);top.prepend(toggle);layout.append(tray);
   }layout.append(viewport);dialog.append(layout);
   if(d.situation.number===5&&embedded?.aslStorage&&window.AslPilot){const pilot=button("Open ASL deployment pilot",()=>AslPilot.open(d,s,embedded.aslStorage));pilot.disabled=s.stage!=="ready";pilot.title=pilot.disabled?"Complete formation setup first":"Bounded eight-squad Goodwood pilot";top.append(pilot);}
+  if(d.situation.number===5&&embedded?.aslStorage&&window.AslPilot){
+   const chosen=d.instances.find(i=>i.id===selected),kind=d.counters.find(c=>c.id===chosen?.counterTypeId),placement=s.placements[selected];
+   const selectedPilot=button("Open selected formation ASL map",()=>{
+    const key='formation:'+selected,storage=embedded.aslStorage;
+    AslPilot.open(d,s,{...storage,load:()=>storage.load(key),save:pilot=>storage.save(pilot,key)},{unitId:selected,anchor:placement.board+'/'+placement.hexId});
+   });
+   selectedPilot.disabled=s.stage!=="ready"||!placement||!["uk-rifle","de-rifle"].includes(kind?.id);
+   selectedPilot.title=selectedPilot.disabled?"Complete setup and select a deployed rifle counter":"Open four squads at "+selected;
+   top.append(selectedPilot);
+  }
   window.CampaignMapToolbar?.mount(top);
   if(game){dialog.scrollTop=oldY;viewport.scrollLeft=resetView?0:oldX;viewport.scrollTop=resetView?0:oldMapY;return;}
   dialog.append(el("p","Board layout follows this Situation Card. Use the wheel to zoom; Space plus left drag or middle drag to pan. Scroll out to restore the overview. Highlighted hexes show the selected unit's permitted setup zone. Terrain and cross-board movement require review before combat admission."));

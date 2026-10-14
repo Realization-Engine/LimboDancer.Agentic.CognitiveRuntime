@@ -9,7 +9,7 @@ window.AslPilot = (() => {
   if(r.status===404)throw Error('The ASL pilot requires the campaign pilot host. Open this campaign on http://127.0.0.1:8093 and load your campaign file.');
   const headersAt=performance.now(),text=r.status===204?null:await r.text(),bodyAt=performance.now(),value=text===null?null:JSON.parse(text);if(timings)Object.assign(timings,{serverTiming:r.headers?.get?.("Server-Timing")||null,requestToHeadersMs:headersAt-started,responseBodyMs:bodyAt-headersAt,jsonParseMs:performance.now()-bodyAt});if(!r.ok)throw Error(value?.error||'Pilot request failed.');return value;
  }
- async function open(d,plan,storage){
+ async function open(d,plan,storage,formation=null){
   // Opt-in local diagnostics only. Timings never enter campaign saves or terrain identities.
   const measuring=new URLSearchParams(location.search).get('pilotMetrics')==='1',started=performance.now(),metrics={},longTasks=[];
   let observer;
@@ -19,11 +19,11 @@ window.AslPilot = (() => {
   const priorFocus=document.activeElement,dialog=el('dialog');dialog.className='asl-pilot';dialog.setAttribute('aria-label','Goodwood ASL deployment pilot');
   const header=el('header'),title=el('strong','Goodwood | ASL deployment pilot'),tools=el('div'),notice=el('p','Opening saved terrain...'),canvas=el('div'),inspector=el('div');
   notice.className='asl-pilot-notice';notice.setAttribute('role','status');canvas.className='asl-pilot-map';inspector.className='asl-pilot-inspector';
-  let alive=true,busy=false,view=null,saved=null,selected='',destination='',svg,overlay,timer,box,drag;
+  let generationId=null,alive=true,busy=false,view=null,saved=null,selected='',destination='',svg,overlay,timer,box,drag;
   const button=(label,fn)=>{const b=el('button',label);b.type='button';b.onclick=fn;return b;};
   const close=()=>{if(busy){tell('Wait for the current placement to finish.');return;}try{if(view&&saved?.setup&&box)persist({...saved,viewport:box,selected,destination});dialog.close();}catch(e){tell('Unable to save: '+e.message,true);}};dialog.oncancel=e=>{e.preventDefault();close();};const back=button('Return to formation map',close);
   header.append(title,tools,back);dialog.append(header,notice,canvas,inspector);document.body.append(dialog);dialog.showModal();
-  dialog.onclose=()=>{alive=false;stopMetrics();clearTimeout(timer);if(!view&&saved?.seed)api('/generate/'+saved.seed,null,'DELETE').catch(()=>{});dialog.remove();priorFocus?.focus();};
+  dialog.onclose=()=>{alive=false;stopMetrics();clearTimeout(timer);if(!view&&generationId)api('/generate/'+generationId,null,'DELETE').catch(()=>{});dialog.remove();priorFocus?.focus();};
   const tell=(text,warning=false)=>{clearTimeout(timer);notice.textContent=text;notice.dataset.warning=String(warning);notice.hidden=!text;if(warning)timer=setTimeout(()=>{notice.hidden=true;},5000);};
   const persist=next=>{storage.save(next);saved=next;};
   const contextAt=performance.now();const context={campaignId:storage.campaignId,formationSignature:JSON.stringify({placements:Object.entries(plan.placements).sort(([a],[b])=>a.localeCompare(b)),supply:plan.supplyAdjustments||null}),
@@ -31,13 +31,22 @@ window.AslPilot = (() => {
    germanParents:CampaignSupplyDeployment.refs(d,'de-rifle-01').map(r=>r.boardId+'/'+r.hexId).sort()};
   try{
    metrics.contextMs=performance.now()-contextAt;
+   if(formation){
+    context.formation=formation;
+    const unit=d.instances.find(i=>i.id===formation.unitId),type=d.counters.find(c=>c.id===unit?.counterTypeId);
+    if(!unit||!['uk-rifle','de-rifle'].includes(type?.id))throw Error('Select a deployed rifle formation.');
+    const refs=CampaignSupplyDeployment.refs(d,unit.id).map(r=>r.boardId+'/'+r.hexId).sort();
+    context.alliedParents=type.side==='Allied'?refs:[];
+    context.germanParents=type.side==='German'?refs:[];
+    title.textContent='Goodwood | '+formation.unitId+' | '+formation.anchor;
+   }
    saved=storage.load();
    if(!saved){saved={version:1,seed:storage.seed,context};persist(saved);}
    if(saved.version!==1||saved.seed!==storage.seed)throw Error('Unsupported pilot save or campaign seed mismatch. The saved deployment has been retained.');
    if(JSON.stringify(saved.context)!==JSON.stringify(context))throw Error('Formation placements or supply setup changed since this pilot was saved. Restore that formation setup to resume; the pilot has been retained.');
    if(!saved.bundle){
-    await api('/generate',{seed:saved.seed});if(!alive){await api('/generate/'+saved.seed,null,'DELETE');return;}tell('Generating and validating ASL terrain. You can return to the formation map to cancel.');
-    while(alive){const job=await api('/generate/'+saved.seed);if(job.status==='ready')break;if(job.status==='failed'||job.status==='cancelled')throw Error(job.error||'Generation cancelled. Reopen to retry with the same seed.');await new Promise(resolve=>setTimeout(resolve,500));}
+    const jobStart=await api('/generate',{seed:saved.seed,formation});generationId=jobStart.id;if(!alive){await api('/generate/'+generationId,null,'DELETE');return;}tell('Generating and validating ASL terrain. You can return to the formation map to cancel.');
+    while(alive){const job=await api('/generate/'+generationId);if(job.status==='ready')break;if(job.status==='failed'||job.status==='cancelled')throw Error(job.error||'Generation cancelled. Reopen to retry with the same seed.');await new Promise(resolve=>setTimeout(resolve,500));}
    }
    if(!alive)return;
    metrics.mode=saved.bundle?'resume':'generate';metrics.beforeOpenMs=performance.now()-started;const openAt=performance.now();
@@ -53,7 +62,7 @@ window.AslPilot = (() => {
    const fit=button('Fit map',()=>{box=[0,0,view.width,view.height];applyBox();});
    const parent=el('input');parent.type='checkbox';const parentLabel=el('label');parentLabel.append(parent,document.createTextNode('Formation parents'));parent.onchange=draw;
    const details=el('details'),summary=el('summary','Details'),card=el('div');details.append(summary,card);details.className='asl-pilot-details';
-   for(const [heading,text] of [['Scope','Eight infantry squads representing uk-rifle-01 and de-rifle-01. This crop is not the full Goodwood Situation.'],
+   for(const [heading,text] of [['Scope',formation?'Four squads from '+formation.unitId+' at '+formation.anchor+'. Provisional rifle composition, not a verified historical personnel count. Setup stays within this formation hex.':'Eight infantry squads representing uk-rifle-01 and de-rifle-01. This crop is not the full Goodwood Situation.'],
     ['Setup','Campaign formation permissions include the current supply-margin exception. Two friendly squads per hex. Ground locations only; bridge decks, streams and the two-hex crop boundary are inspection-only.'],
     ['Terrain','40 m ASL spacing. Generated stone buildings are plausible detail, not historical footprints. ASL map facts drive the display and setup checks.'],
     ['Availability','Deployment and inspection only. Movement, LOS, combat and campaign outcome reconciliation are not implemented.'],
@@ -75,10 +84,10 @@ window.AslPilot = (() => {
    destination=view.cells.some(c=>c.hex===saved.destination)?saved.destination:'';hex.value=destination;describe();draw();tell('Select a squad and a destination hex, then Place selected squad. Drag to pan; wheel to zoom. On the focused map, use arrow keys, +/- and Home.');metrics.buildAndPersistMs=performance.now()-buildAt;reportReady();
    function contains(poly,p){let inside=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if((a.y>p.y)!==(b.y>p.y)&&p.x<(b.x-a.x)*(p.y-a.y)/(b.y-a.y)+a.x)inside=!inside;}return inside;}
    function applyBox(){svg.setAttribute('viewBox',box.join(' '));}
-   function describe(){const c=view.cells.find(c=>c.hex===destination),u=view.roster.find(u=>u.id===selected),allowed=u.side==='Allied'?context.alliedParents:context.germanParents;inspector.lastChild.textContent=c?c.hex+' | '+c.terrain+' | Formation '+(c.parent||'none')+' | '+(c.admitted&&!allowed.includes(c.parent)?u.side+' setup is not allowed in this formation hex.':c.reason):'';draw();}
+   function describe(){const c=view.cells.find(c=>c.hex===destination),u=view.roster.find(u=>u.id===selected),allowed=u.side==='Allied'?context.alliedParents:context.germanParents;inspector.lastChild.textContent=c?c.hex+' | '+c.terrain+' | Formation '+(c.parent||'none')+' | '+(c.admitted&&(!allowed.includes(c.parent)||(formation&&c.parent!==formation.anchor))?u.side+' setup is not allowed in this formation hex.':c.reason):'';draw();}
    function draw(){
     overlay.replaceChildren();const unit=view.roster.find(u=>u.id===selected),allowed=unit.side==='Allied'?context.alliedParents:context.germanParents;
-    for(const c of view.cells){const poly=document.createElementNS(ns,'polygon');poly.setAttribute('points',c.polygon.map(p=>p.x+','+p.y).join(' '));const legal=c.admitted&&allowed.includes(c.parent);poly.setAttribute('fill',legal&&!saved.setup.complete?'#8d9e49':'none');poly.setAttribute('fill-opacity','.16');poly.setAttribute('stroke',c.hex===destination?'#b97c20':'none');poly.setAttribute('stroke-width',c.hex===destination?'3':'.8');overlay.append(poly);
+    for(const c of view.cells){const poly=document.createElementNS(ns,'polygon');poly.setAttribute('points',c.polygon.map(p=>p.x+','+p.y).join(' '));const legal=c.admitted&&allowed.includes(c.parent)&&(!formation||c.parent===formation.anchor);poly.setAttribute('fill',legal&&!saved.setup.complete?'#8d9e49':'none');poly.setAttribute('fill-opacity','.16');poly.setAttribute('stroke',c.hex===destination?'#b97c20':'none');poly.setAttribute('stroke-width',c.hex===destination?'3':'.8');overlay.append(poly);
     }
     if(parent.checked){
      // Shared tactical edges disappear within one formation parent. The remaining edges show ownership boundaries.
@@ -89,10 +98,10 @@ window.AslPilot = (() => {
      for(const [name,cells] of groups){const x=cells.reduce((n,c)=>n+c.x,0)/cells.length,y=cells.reduce((n,c)=>n+c.y,0)/cells.length,t=document.createElementNS(ns,'text');t.setAttribute('x',x);t.setAttribute('y',y);t.setAttribute('text-anchor','middle');t.setAttribute('font-size','16');t.setAttribute('fill','#20281a');t.setAttribute('stroke','#fffdf6');t.setAttribute('stroke-width','3');t.setAttribute('paint-order','stroke');t.textContent=name;overlay.append(t);}
     }
     for(const p of saved.setup.placements){const c=view.cells.find(c=>c.hex===p.hex),u=view.roster.find(u=>u.id===p.unitId),stack=saved.setup.placements.filter(q=>q.hex===p.hex),offset=stack.indexOf(p)*13-6;const g=document.createElementNS(ns,'g'),r=document.createElementNS(ns,'rect'),t=document.createElementNS(ns,'text');r.setAttribute('x',c.x-13+offset);r.setAttribute('y',c.y-13+offset);r.setAttribute('width','26');r.setAttribute('height','26');r.setAttribute('fill',u.side==='Allied'?'#dfc38c':'#30372b');r.setAttribute('stroke',u.id===selected?'#b97c20':'#fffdf6');r.setAttribute('stroke-width','2');t.setAttribute('x',c.x+offset);t.setAttribute('y',c.y+4+offset);t.setAttribute('text-anchor','middle');t.setAttribute('font-size','11');t.setAttribute('fill',u.side==='Allied'?'#20281a':'white');t.textContent=(u.side==='Allied'?'B':'G')+u.id.slice(-1);g.append(r,t);overlay.append(g);}
-    count.textContent=saved.setup.placements.length+'/8 deployed';for(const o of select.options){const unit=view.roster.find(u=>u.id===o.value),placement=saved.setup.placements.find(p=>p.unitId===o.value);o.textContent=unit.label+(placement?' | '+placement.hex:' | not placed');}complete.textContent=saved.setup.complete?'Review setup':'Complete setup';deploy.disabled=saved.setup.complete;select.disabled=false;
+    count.textContent=saved.setup.placements.length+'/'+view.roster.length+' deployed';for(const o of select.options){const unit=view.roster.find(u=>u.id===o.value),placement=saved.setup.placements.find(p=>p.unitId===o.value);o.textContent=unit.label+(placement?' | '+placement.hex:' | not placed');}complete.textContent=saved.setup.complete?'Review setup':'Complete setup';deploy.disabled=saved.setup.complete;select.disabled=false;
    }
    async function edit(action){if(busy||!alive)return;busy=true;try{const setup=await api('/edit',{session:view.session,setup:saved.setup,action,unitId:selected,hex:destination});if(!alive)return;persist({...saved,setup,viewport:box});draw();tell(setup.complete?'Pilot setup complete. Saved to the campaign.':'Pilot deployment saved.');}catch(e){tell(e.message,true);}finally{busy=false;}}
-  }catch(e){stopMetrics();tell(e.message);notice.dataset.warning='true';}
+  }catch(e){stopMetrics();tell(formation&&/Unsupported source terrain|outside covered/.test(e.message)?'This location is not supported by the flat-ground pilot yet. Choose another rifle formation. '+e.message:e.message);notice.dataset.warning='true';}
  }
  async function validateCampaign(file){
   if(!file.world?.aslPilots)return;
