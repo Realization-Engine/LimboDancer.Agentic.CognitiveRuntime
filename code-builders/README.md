@@ -33,7 +33,7 @@ Three more settings have defaults for the machine the code is built on: `ASL_REP
 bash code-builders/merge-gate/gate.sh <pass> <base commit> <stage>
 ```
 
-The script's header lists the stages and their order. In short: `base` when the pass's branch is cut, `strict` before the documents commit, and at the gate `baseline`, `build`, `trial`, `proofs` beside `docker`, then `suite`. A pass supplies `merge-gate/pass-configs/pass<pass>.conf`. The procedure a pass follows is in `src/ASL/docs/Prompts/Pass Standing Rules and Harness Lessons.md`.
+The script's header lists the stages and their order. In short: `base` when the pass's branch is cut, `strict` before the documents commit, and at the gate `baseline`, `build`, `trial`, and `proofs` on this machine, about a quarter of an hour. Then the branch is pushed and its pull request opened, and CI runs the whole test suite on Linux; `ci` says whether that run has passed. The `suite` and `docker` stages run the same tests on this machine and in a Linux container, on demand. A pass supplies `merge-gate/pass-configs/pass<pass>.conf`. The procedure a pass follows is in `src/ASL/docs/Prompts/Pass Standing Rules and Harness Lessons.md`.
 
 After a change to the proof tool, run `proof-tool/selftest.sh` before anything long.
 

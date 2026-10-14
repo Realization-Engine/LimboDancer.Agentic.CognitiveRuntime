@@ -12,14 +12,18 @@
 #             the pass's test script builds with warnings not as errors, and nothing else compiles a test file strictly before the gate.
 #   strict-check   says whether the strict build passed for the tree as it stands. A review or a prompt says so only when this does.
 #
-# The gate's stages, in the order they are started (pass 55 ran them side by side and each took two to three times as long):
-#   baseline  the pass's own games copied into the store and replayed and swept on the baseline's side; the rest reused from base
-#   build     the solution with warnings as errors into bin/gate; the proof tool compiled against it          (about 6 min)
-#   trial     the trial games, the pass's own games, and its extra sweep games on both sides; must pass       (about 3 min)
-#   proofs    text list, replay digest, sweep on the gate's side, each compared with the baseline            (about 25 min; refuses without a
+# The gate's stages, in order. The whole test suite and the Linux check are CI's, on the pass's pull request (the user, 2026-10-13):
+#   baseline  the pass's own games copied into the store and replayed and swept on the baseline's side; the rest reused from base  (under 1 min)
+#   build     the solution with warnings as errors into bin/gate; the proof tool compiled against it          (about 4 min)
+#   trial     the trial games, the pass's own games, and its extra sweep games on both sides; must pass       (about 2 min)
+#   proofs    text list, replay digest, sweep on the gate's side, each compared with the baseline            (about 7 min; refuses without a
 #             passed trial of this very build and these very skip lists)
-#   docker    the Docker Linux check on the committed branch, started beside proofs                           (about 25 min)
-#   suite     every test project from bin/gate, CI's Node viewport test, the chart supplement                 (about 35 min; after proofs)
+#   ci        once the branch is pushed and its pull request opened, at the user's word: says whether the CI run of the branch's head has
+#             passed. CI runs the locked restore, the strict build, the Node viewport test, every test project, and the source checks on
+#             Linux, on the branch merged with main (about 14 min). The merge waits for it.
+# On demand, no longer stages of the gate:
+#   suite     every test project from bin/gate on this machine, the Node viewport test, the chart supplement   (about 35 min)
+#   docker    CI's steps in a Linux container on the committed branch                                          (about 25 min)
 #
 # What a pass supplies is gate/pass<pass>.conf (see pass55.conf): its recorded games, extra sweep and trial games, the JSON keys it added,
 # BOTH_SKIP (what changed in every record for a reason that is no rule: the catalog's identity, GameEvent.RulePackage after the packages
@@ -34,7 +38,7 @@ SWEEP_SMALL="pass16-demo2,p26-demo,p25-visual,p35-interdict-trap,p35-rally-enemy
 TRIAL_BASE="pass16-demo2,p26-demo,p25-visual,p31c-tw-r459,p31c-tw-r471"
 GATE="$R/src/ASL/LimboDancer.Domains.Asl.MapStudio/bin/gate/Debug/net10.0"
 MAINTOOL="$S/proof-main/bin/Debug/net10.0"
-if [ -z "$PASS" ] || [ -z "$BASE" ] || [ -z "$STAGE" ]; then sed -n 2,26p "$0"; exit 2; fi
+if [ -z "$PASS" ] || [ -z "$BASE" ] || [ -z "$STAGE" ]; then sed -n 2,30p "$0"; exit 2; fi
 if [ ! -f "$G/pass-configs/pass$PASS.conf" ]; then echo "STOP: write $G/pass-configs/pass$PASS.conf first (pass55.conf is the form)"; exit 2; fi
 OWN=""; SWEEP_EXTRA=""; TRIAL_EXTRA=""; SKIP_JSON=""; SKIP_ADD=""; BOTH_SKIP=""; PRESENT=""; ABSENT=""; CODE_MOVE=""
 source "$G/pass-configs/pass$PASS.conf"
@@ -198,6 +202,16 @@ trial)
   run gate_side sweep "$TRIALDIR/sweep-gate.txt" "$TRIAL_SWEEP"
   if python "$G/trial_check.py" "$TRIALDIR" "$OWN_COMMA" < /dev/null; then echo "$SIGNATURE" > "$TRIALDIR/OK"; else exit 1; fi
   ;;
+ci)
+  BRANCH=$(git -C "$R" branch --show-current); HEAD_SHA=$(git -C "$R" rev-parse HEAD)
+  [ "$(git -C "$R" rev-parse -q --verify "origin/$BRANCH")" = "$HEAD_SHA" ] || stop "the head ${HEAD_SHA:0:8} of $BRANCH is not what origin has (push the branch, at the user's word, and fetch)"
+  RUNS=$(cd "$R" && gh run list --workflow asl-authoring-ci.yml --commit "$HEAD_SHA" --json status,conclusion,event,url --jq '.[] | "\(.status) \(.conclusion) \(.event) \(.url)"') || stop "gh could not list the CI runs"
+  [ -n "$RUNS" ] || stop "no CI run for ${HEAD_SHA:0:8}: open the branch's pull request (the workflow runs on pull requests that touch src/ASL)"
+  echo "$RUNS"
+  if echo "$RUNS" | grep -q "^completed success "; then echo "CI passed for ${HEAD_SHA:0:8}"
+  elif echo "$RUNS" | grep -qv "^completed "; then echo "CI is still running for ${HEAD_SHA:0:8}; ask again"; exit 3
+  else stop "CI did not pass for ${HEAD_SHA:0:8}"; fi
+  ;;
 suite)
   rm -rf "$S/suite"
   bash "$G/run_test_suite.sh"
@@ -234,7 +248,7 @@ docker)
   grep -E "^(Passed!|Failed!)|^== " "$S/docker-$PASS.log" | cut -c1-140
   ;;
 *)
-  echo "STOP: no stage '$STAGE'"; sed -n 2,26p "$0"; exit 2
+  echo "STOP: no stage '$STAGE'"; sed -n 2,30p "$0"; exit 2
   ;;
 esac
 echo "[$(now)] DONE $STAGE"
