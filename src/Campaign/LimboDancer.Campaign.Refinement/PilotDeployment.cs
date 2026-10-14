@@ -14,7 +14,7 @@ namespace LimboDancer.Campaign.Refinement;
 // Campaign owns formation legality, including its supply exception. The adapter snapshots it;
 // this module separately admits tactical locations and validates every placement.
 public sealed record DeploymentContext(string CampaignId, string FormationSignature, string[] AlliedParents, string[] GermanParents, FormationSelection? Formation = null);
-public sealed record PilotUnit(string Id, string ParentId, string Side, string Label, string Kind = "rifle", string Symbol = "R", DefinitionReference? Definition = null, string? CatalogStatus = null, Holding? Holding = null);
+public sealed record PilotUnit(string Id, string ParentId, string Side, string Label, string Kind = "rifle", string Symbol = "R", DefinitionReference? Definition = null, string? CatalogStatus = null, Holding? Holding = null, string? AllotmentStatus = null);
 public sealed record PilotEquipmentLink(string EquipmentId, Holding Holding);
 public sealed record PilotPlacement(string UnitId, string Hex);
 public sealed record PilotSetup(string Policy, string ContextHash, string PackageVersion, int Revision, bool Complete, PilotPlacement[] Placements, PilotEquipmentLink[]? Equipment = null, string? UnitCatalog = null);
@@ -26,8 +26,8 @@ public sealed class PilotDeployment
 {
     public const string Policy = "goodwood-infantry-setup-1";
     public static IReadOnlyList<PilotUnit> Roster { get; } = Array.AsReadOnly(
-        Enumerable.Range(1, 4).Select(i => new PilotUnit("uk-rifle-01/squad-" + i, "uk-rifle-01", "Allied", "British rifle squad " + i))
-        .Concat(Enumerable.Range(1, 4).Select(i => new PilotUnit("de-rifle-01/squad-" + i, "de-rifle-01", "German", "German rifle squad " + i))).ToArray());
+        Enumerable.Range(1, 4).Select(i => PilotCatalog.Infantry("uk-rifle-01/squad-" + i, "uk-rifle-01", "Allied", "British rifle squad " + i))
+        .Concat(Enumerable.Range(1, 4).Select(i => PilotCatalog.Infantry("de-rifle-01/squad-" + i, "de-rifle-01", "German", "German rifle squad " + i))).ToArray());
     private readonly PilotInputs inputs;
     private readonly FormationSelection? formation;
     public Crop Crop { get; }
@@ -185,6 +185,7 @@ public sealed class PilotDeployment
         Validate(previous, state);
         if (previous.CampaignId != current.CampaignId || previous.Formation != current.Formation)
             throw new InvalidDataException("Selected formation moved. Rebuild its local map to use the new anchor.");
+        if (state.UnitCatalog is null) state = state with { UnitCatalog = PilotCatalog.Identity };
         if (formation is null) { Validate(current, state); return state; }
         var next = state with { ContextHash = ContextHash(current) };
         Validate(current, next);
@@ -193,7 +194,7 @@ public sealed class PilotDeployment
 
     public PilotSetup Create(DeploymentContext context)
     {
-        var state = new PilotSetup(ActivePolicy, ContextHash(context), Package.Version, 0, false, [], Equipment.Length == 0 ? null : Equipment, Equipment.Length == 0 ? null : PilotCatalog.Identity);
+        var state = new PilotSetup(ActivePolicy, ContextHash(context), Package.Version, 0, false, [], Equipment.Length == 0 ? null : Equipment, PilotCatalog.Identity);
         // Capacity is checked against this seed and campaign policy before admitting the workflow.
         _ = AutoDeploy(context, state); return state;
     }
@@ -206,8 +207,8 @@ public sealed class PilotDeployment
         if (state.Revision < 0 || state.Placements is null || state.Placements.Length > Units.Count || state.Placements.Any(p => p is null) ||
             state.Placements.Select(p => p.UnitId).Distinct(StringComparer.Ordinal).Count() != state.Placements.Length)
             throw new InvalidDataException("Invalid pilot roster or duplicate placement.");
-        if (Equipment.Length > 0 && !PilotCatalog.Recognizes(state.UnitCatalog))
-            throw new InvalidDataException("Equipment setup requires a recognized ASL catalog identity.");
+        if ((Equipment.Length > 0 || state.UnitCatalog is not null) && !PilotCatalog.Recognizes(state.UnitCatalog))
+            throw new InvalidDataException("Setup requires a recognized ASL catalog identity.");
         var links = state.Equipment ?? [];
         if (links.Length != Equipment.Length || links.Any(l => l is null) ||
             !links.OrderBy(l => l.EquipmentId, StringComparer.Ordinal).SequenceEqual(Equipment.OrderBy(l => l.EquipmentId, StringComparer.Ordinal)))

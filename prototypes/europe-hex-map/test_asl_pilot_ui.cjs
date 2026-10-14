@@ -16,7 +16,7 @@ class Element {
 const context={campaignId:'fixture',formationSignature:JSON.stringify({placements:[],supply:null}),alliedParents:['A/X-6'],germanParents:['A/V-7']};
 const setup={complete:false,placements:[],revision:0};
 const bundle={packageVersion:'accepted'};
-function harness(initial,{failSave=false,formation=null,failGeneration=false,cancelGeneration=false,counterType='uk-rifle',kind='rifle'}={}){
+function harness(initial,{failSave=false,formation=null,failGeneration=false,cancelGeneration=false,counterType='uk-rifle',kind='rifle',unitCatalog=undefined}={}){
  const body=new Element('body'),writes=[],requests=[];let saved=structuredClone(initial);
  const document={body,activeElement:null,createElement:t=>new Element(t),createElementNS:(_,t)=>new Element(t),createTextNode:t=>new Element('text',t)};
  const sandbox={window:{},document,URLSearchParams,location:{search:''},performance,console,setTimeout,clearTimeout,
@@ -25,7 +25,7 @@ function harness(initial,{failSave=false,formation=null,failGeneration=false,can
  fetch:async(url,options)=>{requests.push({url,options});let value={};
   if(url.endsWith('/generate')){value={id:'b'.repeat(32)};if(cancelGeneration)await find('button','Return to formation map').onclick();}
   if(url.endsWith('/generate/'+'b'.repeat(32)))value=failGeneration?{status:'failed',error:'Unsupported source terrain'}:{status:'ready'};
-  if(url.endsWith('/open'))value={session:'session',bundle,setup,roster:[{id:'british-1',side:'Allied',label:'British squad',kind,symbol:kind==='mortar'?'M':'E'}],cells:[{hex:'C3',terrain:'Open Ground',parent:'A/X-6',admitted:true,reason:'Admitted',polygon:[],x:10,y:10}],width:1800,height:1290,svg:'<svg/>'};
+  if(url.endsWith('/open'))value={session:'session',bundle,setup:{...setup,...(unitCatalog?{unitCatalog}:{})},roster:[{id:'british-1',side:'Allied',label:'British squad',kind,symbol:kind==='mortar'?'M':'E'}],cells:[{hex:'C3',terrain:'Open Ground',parent:'A/X-6',admitted:true,reason:'Admitted',polygon:[],x:10,y:10}],width:1800,height:1290,svg:'<svg/>'};
   if(url.endsWith('/edit'))value={...setup,revision:1,placements:[{unitId:'british-1',hex:'C3'}]};
   return {ok:true,status:200,text:async()=>JSON.stringify(value)};
  }};
@@ -43,6 +43,13 @@ function harness(initial,{failSave=false,formation=null,failGeneration=false,can
  await resume.find('button','Deploy pilot roster').onclick();
  assert.equal(resume.writes.length,1,'A deployment edit must still be saved');
  assert.equal(resume.writes[0].setup.placements.length,1);
+ const catalogUpgrade=harness(accepted,{unitCatalog:'asl-scenario-a1@1.14.0'});await catalogUpgrade.open();
+ assert.equal(catalogUpgrade.writes.length,1,'Catalog provenance upgrade must be saved even with unchanged context');
+ assert.equal(catalogUpgrade.writes[0].setup.unitCatalog,'asl-scenario-a1@1.14.0');
+ const catalogResume=harness(catalogUpgrade.writes[0],{unitCatalog:'asl-scenario-a1@1.14.0'});await catalogResume.open();
+ assert.equal(catalogResume.writes.length,0,'Unchanged catalog provenance must not rewrite saves');
+ const failedCatalog=harness(accepted,{unitCatalog:'asl-scenario-a1@1.14.0',failSave:true});await failedCatalog.open();
+ assert.equal(failedCatalog.writes.length,0,'Failed provenance write must preserve the original save');
  const firstSetup=harness({...accepted,setup:undefined});await firstSetup.open();
  assert.equal(firstSetup.writes.length,1,'Creating setup for accepted terrain must be saved');
  const blocked=harness(accepted,{failSave:true});await blocked.open();

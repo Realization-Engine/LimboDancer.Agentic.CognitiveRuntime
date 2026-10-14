@@ -51,4 +51,45 @@ public sealed class CompositionDeploymentTests
         Assert.All(units, u => Assert.Equal("rifle", u.Kind));
         Assert.Throws<InvalidDataException>(() => FormationDeployment.Units(Inputs, new("de-75mm-01", "C/Y-4")));
     }
+    [Theory]
+    [InlineData("uk-rifle-01", "B/M-6", "Allied", "british-squad")]
+    [InlineData("de-rifle-01", "C/Y-4", "German", "attacker-squad")]
+    [InlineData("uk-engineer-01", "B/M-6", "Allied", "british-elite-squad")]
+    public void InfantryCatalogMetadataPreservesExistingSetup(string id, string anchor, string side, string definition)
+    {
+        var selection = new FormationSelection(id, anchor);
+        var deployment = new PilotDeployment(Inputs,
+            new PilotGenerator(Inputs).Generate(Seed, FormationDeployment.CropFor(Inputs, selection)), Seed, selection);
+        var context = new DeploymentContext("infantry-catalog", "snapshot", side == "Allied" ? [anchor] : [],
+            side == "German" ? [anchor] : [], selection);
+        Assert.All(deployment.Units, u =>
+        {
+            Assert.Equal(definition, u.Definition!.Definition);
+            Assert.Contains("provisional", u.CatalogStatus);
+            Assert.Contains("0 separate equipment", u.AllotmentStatus);
+            Assert.Contains("unresolved", u.AllotmentStatus);
+            Assert.Null(u.Holding);
+        });
+        Assert.Empty(deployment.Equipment);
+        var complete = deployment.SetComplete(context, deployment.AutoDeploy(context, deployment.Create(context)), true);
+        var legacy = complete with { UnitCatalog = null, Equipment = null };
+        var reloaded = new PilotDeployment(Inputs, deployment.Bundle, selection: selection);
+        var upgraded = reloaded.Rebind(context, context, legacy);
+        Assert.Equal(legacy.Policy, upgraded.Policy);
+        Assert.Equal(legacy.Revision, upgraded.Revision);
+        Assert.Equal(legacy.ContextHash, upgraded.ContextHash);
+        Assert.Equal(legacy.Placements, upgraded.Placements);
+        Assert.True(upgraded.Complete);
+        Assert.Equal(PilotCatalog.Identity, upgraded.UnitCatalog);
+        Assert.Equal(deployment.Bundle, reloaded.Bundle);
+        Assert.Equal(upgraded, reloaded.Rebind(context, context, upgraded));
+        Assert.Throws<InvalidDataException>(() => reloaded.Validate(context, upgraded with { UnitCatalog = "unknown@1" }));
+    }
+
+    [Fact]
+    public void LegacyPilotUsesSameReviewedRifleMappings()
+    {
+        Assert.All(PilotDeployment.Roster, u => Assert.Equal(u.Side == "Allied" ? "british-squad" : "attacker-squad", u.Definition!.Definition));
+        Assert.Throws<InvalidDataException>(() => PilotCatalog.Infantry("x", "x", "German", "x", "engineer"));
+    }
 }

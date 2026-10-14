@@ -47,7 +47,7 @@ public static class FormationDeployment
                     "mortar", "M", null, PilotCatalog.MortarStatus, new Holding(selection.UnitId + "/crew-" + i, HoldingRole.Manned))
             }).ToArray();
         var suffix = "/squad-";
-        return Enumerable.Range(1, count).Select(i => new PilotUnit(selection.UnitId + suffix + i,
+        return Enumerable.Range(1, count).Select(i => PilotCatalog.Infantry(selection.UnitId + suffix + i,
             selection.UnitId, side, label + i, kind, symbol)).ToArray();
     }
 
