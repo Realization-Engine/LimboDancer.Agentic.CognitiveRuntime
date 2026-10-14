@@ -3806,6 +3806,168 @@
         { "face": "broken", "attribute": "bpv", "value": 3, "row": 2452 },
         { "face": "broken", "trait": "asl:self-rally", "present": true, "row": 2453 }
       ]
+    },
+{
+  "id": "campaign-german-81mm-mortar",
+  "kind": "asl:gun",
+  "kindRow": 2454,
+  "nationality": "german",
+  "nationalityRow": 2455,
+  "counter": {
+    "source": "synthetic",
+    "sheet": "synthetic",
+    "counter": "campaign-german-81mm-mortar"
+  },
+  "applicability": {
+    "status": "unreviewed"
+  },
+  "slots": [],
+  "values": [
+    {
+      "face": "front",
+      "attribute": "identity",
+      "value": "S",
+      "row": 2456
+    },
+    {
+      "face": "front",
+      "attribute": "designation",
+      "value": "Synthetic AT gun",
+      "row": 2457
+    },
+    {
+      "face": "front",
+      "attribute": "gun-type",
+      "value": "at",
+      "row": 2458
+    },
+    {
+      "face": "front",
+      "attribute": "caliber",
+      "value": 47,
+      "row": 2459
+    },
+    {
+      "face": "front",
+      "attribute": "caliber-suffix",
+      "value": "l",
+      "row": 2460
+    },
+    {
+      "face": "front",
+      "attribute": "rate-of-fire",
+      "value": 2,
+      "row": 2461
+    },
+    {
+      "face": "front",
+      "attribute": "ife",
+      "printed": false,
+      "row": 2462
+    },
+    {
+      "face": "front",
+      "attribute": "breakdown",
+      "value": 11,
+      "row": 2463
+    },
+    {
+      "face": "front",
+      "attribute": "range-minimum",
+      "printed": false,
+      "row": 2464
+    },
+    {
+      "face": "front",
+      "attribute": "range-maximum",
+      "value": 50,
+      "row": 2465
+    },
+    {
+      "face": "front",
+      "attribute": "special-ammo",
+      "printed": false,
+      "row": 2466
+    },
+    {
+      "face": "front",
+      "attribute": "manhandling",
+      "value": 9,
+      "row": 2467
+    },
+    {
+      "face": "front",
+      "attribute": "target-size",
+      "value": "small",
+      "row": 2468
+    },
+    {
+      "face": "front",
+      "trait": "asl:no-ap",
+      "present": false,
+      "row": 2469
+    },
+    {
+      "face": "front",
+      "trait": "asl:no-he",
+      "present": false,
+      "row": 2470
+    },
+    {
+      "face": "front",
+      "trait": "asl:mount-360",
+      "present": false,
+      "row": 2471
+    },
+    {
+      "face": "front",
+      "trait": "asl:qsu",
+      "present": true,
+      "row": 2472
+    },
+    {
+      "face": "front",
+      "trait": "asl:nm",
+      "present": false,
+      "row": 2473
+    },
+    {
+      "face": "front",
+      "trait": "asl:rfnm",
+      "present": false,
+      "row": 2474
+    },
+    {
+      "face": "front",
+      "attribute": "bpv",
+      "value": 20,
+      "row": 2475
+    },
+    {
+      "face": "front",
+      "attribute": "dates",
+      "value": "40-45",
+      "row": 2476
+    },
+    {
+      "face": "front",
+      "trait": "asl:animal-pack",
+      "present": false,
+      "row": 2477
+    },
+    {
+      "face": "malfunctioned",
+      "attribute": "repair",
+      "value": 2,
+      "row": 2478
+    },
+    {
+      "face": "malfunctioned",
+      "attribute": "removal",
+      "value": 6,
+      "row": 2479
     }
   ]
+}
+]
 }

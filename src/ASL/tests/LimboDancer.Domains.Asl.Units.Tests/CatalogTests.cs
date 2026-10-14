@@ -150,7 +150,7 @@ public sealed class CatalogTests
                 "axis-minor-square-squad", "axis-minor-square-half-squad", "axis-minor-squad", "axis-minor-half-squad", "axis-minor-conscript-squad",
                 "axis-minor-conscript-half-squad", "axis-minor-leader-6-plus-1", "axis-minor-leader-7-0", "axis-minor-leader-8-0", "axis-minor-leader-8-1",
                 "axis-minor-leader-9-1", "axis-minor-leader-9-2", "axis-minor-leader-10-2", "axis-minor-leader-10-3", "axis-minor-hero",
-                "british-at-gun", "american-at-gun", "british-crew", "american-crew",
+                "british-at-gun", "american-at-gun", "british-crew", "american-crew", "campaign-german-81mm-mortar",
             ],
             catalog.Definitions.Select(definition => definition.Id));
         Assert.All(catalog.Slots, slot => Assert.NotEmpty(catalog.Filling(slot.Id)));

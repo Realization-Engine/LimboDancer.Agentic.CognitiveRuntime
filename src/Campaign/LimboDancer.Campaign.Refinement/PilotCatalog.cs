@@ -3,7 +3,7 @@ using LimboDancer.Domains.Asl.Units.Vocabulary;
 
 namespace LimboDancer.Campaign.Refinement;
 
-// Read the existing ASL catalog. Campaign setup does not publish or manufacture definitions.
+// Read the existing ASL catalog. Manufactured profiles are explicitly identified by sheet MFG.
 public static class PilotCatalog
 {
     private static readonly Lazy<UnitCatalog> Current = new(() =>
@@ -12,7 +12,9 @@ public static class PilotCatalog
 
     public static DefinitionReference GermanCrew() => Reviewed("attacker-crew", "asl:crew", "german");
 
-    private static DefinitionReference Reviewed(string id, string kind, string nationality)
+    public static DefinitionReference GermanMortar() => Reviewed("campaign-german-81mm-mortar", "asl:gun", "german", manufactured: true);
+
+    private static DefinitionReference Reviewed(string id, string kind, string nationality, bool manufactured = false)
     {
         var catalog = Current.Value;
         var definition = catalog.Definition(id)
@@ -20,6 +22,8 @@ public static class PilotCatalog
         if (catalog.Publication != CatalogPublication.Published || definition.Kind != kind ||
             definition.Nationality != nationality || catalog.Source(definition.Counter.Source)?.Status != CatalogSourceStatus.Reviewed)
             throw new InvalidDataException("The ASL definition requires reviewed printed catalog data: " + id);
+        if ((definition.Counter.Sheet == "MFG") != manufactured)
+            throw new InvalidDataException("ASL profile provenance does not match its campaign label: " + id);
         return catalog.Reference(definition);
     }
 
@@ -44,5 +48,5 @@ public static class PilotCatalog
     public static bool Recognizes(string? recorded) => UnitCatalogs.For([Current.Value], recorded) is not null;
 
     public static string CrewStatus => "Reviewed printed German crew data; Goodwood applicability and one-crew-per-mortar allotment are provisional.";
-    public const string MortarStatus = "Unresolved: no reviewed German 81 mm mortar definition in the ASL catalog. No weapon factors or play admission.";
+    public const string MortarStatus = "Game default (MFG), not historical data: 81 mm mortar, range 3-60 hexes, ROF 2, B12/R2/X6, M11, BPV 30. One German 2-2-8 crew per weapon. Medium-mortar combat actions remain subject to ASL engine support.";
 }

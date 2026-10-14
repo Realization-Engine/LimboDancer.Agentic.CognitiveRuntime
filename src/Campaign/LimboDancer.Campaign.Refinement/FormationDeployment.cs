@@ -44,7 +44,7 @@ public static class FormationDeployment
                 new(selection.UnitId + "/crew-" + i, selection.UnitId, side, "German mortar crew " + i,
                     "crew", "C", PilotCatalog.GermanCrew(), PilotCatalog.CrewStatus),
                 new(selection.UnitId + "/mortar-" + i, selection.UnitId, side, "German 81 mm mortar " + i,
-                    "mortar", "M", null, PilotCatalog.MortarStatus, new Holding(selection.UnitId + "/crew-" + i, HoldingRole.Manned))
+                    "mortar", "M", PilotCatalog.GermanMortar(), PilotCatalog.MortarStatus, new Holding(selection.UnitId + "/crew-" + i, HoldingRole.Manned))
             }).ToArray();
         var suffix = "/squad-";
         return Enumerable.Range(1, count).Select(i => PilotCatalog.Infantry(selection.UnitId + suffix + i,

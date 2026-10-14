@@ -16,7 +16,7 @@ public sealed record PilotHandoff(string Version, string SourceHash, string Cata
 // A prepared setup artifact, not a write to Map Studio's live game store or an advance into combat.
 public static class PilotHandoffs
 {
-    public const string Version = "campaign-asl-handoff-1";
+    public const string Version = "campaign-asl-handoff-2";
     private static readonly Guid Tenant = Guid.Parse("bb17e94d-c54b-4260-a193-26ad215eebc9");
     public static async Task<PilotHandoff> Prepare(PilotDeployment d, DeploymentContext context, PilotSetup setup)
     {
@@ -31,11 +31,12 @@ public static class PilotHandoffs
         var planner = new GamePlanner(new PreparationStore(), boards, vocabulary, [catalog], new PreparationClock());
         var rows = d.Units.Select(u => new HandoffUnit(u.Id, u.Label, u.Definition is null ? null : AslId(u.Id), u.Definition is null ? "Needs data" : "Ready",
             u.Definition is null ? "Weapon definition unresolved; retained in campaign setup, omitted from ASL setup."
-                : "Campaign default accepted for setup. Historical applicability is advisory." )).ToArray();
+                : u.CatalogStatus + (u.Holding is { } link ? " Operated by " + link.Holder + "." : "") )).ToArray();
         var placements = d.Units.Where(u => u.Definition is not null).Select(u => new
         {
-            id = AslId(u.Id), kind = u.Kind == "crew" ? "asl:crew" : "asl:squad", definition = u.Definition!.Definition,
+            id = AslId(u.Id), kind = u.Kind == "mortar" ? "asl:gun" : u.Kind == "crew" ? "asl:crew" : "asl:squad", definition = u.Definition!.Definition,
             side = u.Side.ToLowerInvariant(), position = new { at = d.Package.Board.Value + ":" + setup.Placements.Single(p => p.UnitId == u.Id).Hex + ":0" },
+            holding = u.Holding is { } link ? new { holder = AslId(link.Holder), role = "manned" } : null,
             conditions = new Dictionary<string, bool> { [Conditions.Broken] = false, [Conditions.Berserk] = false,
                 [Conditions.Captured] = false, [Conditions.Melee] = false, ["asl:ti"] = false,
                 [Conditions.Disrupted] = false, [Conditions.Concealed] = false, [Conditions.Hidden] = false }
@@ -50,7 +51,7 @@ public static class PilotHandoffs
         var plan = await planner.PlanAsync(GameActions.Setup, arguments, Tenant, "campaign-defaults");
         if (!plan.CanCommit) throw new InvalidDataException("ASL setup validation: " + string.Join("; ", plan.Reasons));
         var history = planner.Replay(plan.Events);
-        if (history.Current is not { } state || state.Units.Count != placements.Length)
+        if (history.Current is not { } state || state.Units.Count + state.Equipment.Count != placements.Length)
             throw new InvalidDataException("ASL setup replay failed: " + string.Join("; ", history.Diagnostics.Select(x => x.Message)));
         var record = GameEventWriter.Write(plan.Scope, new GameRecord(plan.Label, false, plan.Events));
         return new(Version, hash, catalog.Identity.ToString(), record, rows);

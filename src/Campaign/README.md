@@ -209,3 +209,14 @@ The existing Campaign host still runs on port 8093. If Studio is stopped, the ha
 Verification: 82 Campaign Release tests and 51 targeted ASL Studio authoring, rendering and play-page tests passed. The two import integration cases also passed after adding catalog-mismatch rejection. Coverage includes exact identities/positions/catalog references, unchanged campaign setup and terrain, malformed records, mismatched package/catalog versions, interrupted publication recovery, duplicate prevention, and reopening after a phase advance and service reconstruction. Live browser acceptance imported four British engineer squads at D5, D6, D7 and E4; ASL Studio displayed the generated terrain and counters after restart, and the campaign action then returned the same game link. The live check also confirmed that a different local VASL catalog is refused until the pinned authored catalog is configured.
 
 Next increment: decide and implement explicit game-default mortar profiles, then validate weapon/crew links through this same ASL handoff. Returning ASL outcomes to the campaign remains a separate integration boundary.
+
+
+### Explicit mortar defaults and weapon/crew handoff, 14 October 2026
+
+The next increment is implemented: catalog 1.15.0 includes the manufactured MFG German 81 mm mortar, while retaining the existing 2-2-8 crew. All six weapons and six crews enter ASL setup with separate identities and manned links. Inspection states the operator and game-default provenance. Campaign terrain and deployment are unchanged; prepared artifacts from the previous catalog must be prepared again. Existing Studio game progress is retained separately.
+
+See `src/Campaign/docs/Campaign Mortar Game Default.md` for values, cross-nationality comparisons, compatibility behavior and remaining engine boundaries. Medium-mortar combat support is separate from valid setup data; the profile is not substituted with a different weapon class.
+
+Verification: 82 Campaign Release tests passed, followed by seven focused compatibility/import tests after adding the older-catalog save case and explicit Studio weapon-link assertions. The 20 catalog provenance tests, 147 targeted unit/catalog tests, 21 Studio catalog/play-page tests, four package checksum tests and browser UI harness passed. A broader historical-source audit was stopped after narrowing verification to the four changed checksum tests; no historical source review is claimed. Builds retain warnings-as-errors. The authoring-test root helper now recognizes Git worktrees.
+
+Live acceptance loaded the existing six-pair deployment at E6, E7, E8, F4, F5 and F6, re-prepared its stale handoff, showed all 12 identities as Ready, and opened the imported German setup in ASL Studio. The unit inspector shows the manufactured values and assigned crew. This generated a new Studio game without overwriting the earlier engineer game.

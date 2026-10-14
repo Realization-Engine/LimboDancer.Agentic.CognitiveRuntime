@@ -17,7 +17,7 @@ public sealed class HandoffTests
     [InlineData("uk-rifle-01", "B/M-6", "Allied", 4, 0)]
     [InlineData("de-rifle-01", "C/Y-4", "German", 4, 0)]
     [InlineData("uk-engineer-01", "B/M-6", "Allied", 4, 0)]
-    [InlineData("de-81mm-01", "C/Y-4", "German", 6, 6)]
+    [InlineData("de-81mm-01", "C/Y-4", "German", 12, 0)]
     public async Task ExistingAslSetupPreservesDeployedIdentitiesAndRoundTrips(string id, string anchor, string side, int ready, int needsData)
     {
         const string seed = "00112233445566778899aabbccddeeff";
@@ -36,7 +36,15 @@ public sealed class HandoffTests
             new HexFactLocationChains([(d.Package.Board, d.Package.Version, d.Facts)]), LiveGames.Sources);
         Assert.False(history.HasErrors, string.Join("; ", history.Diagnostics.Select(x => x.Message)));
         var instances = history.Current!.Units.ToArray();
-        Assert.Equal(ready, instances.Length);
+        Assert.Equal(ready, instances.Length + history.Current.Equipment.Count);
+        foreach (var item in history.Current.Equipment)
+        {
+            var source = d.Units.Single(u => PilotHandoffs.AslId(u.Id) == item.Id);
+            Assert.Equal(source.Definition, item.Definition);
+            Assert.Equal(PilotHandoffs.AslId(source.Holding!.Holder), item.Holding!.Holder);
+            Assert.Equal(HoldingRole.Manned, item.Holding.Role);
+            Assert.Equal(history.Current.Units.Single(u => u.Id == item.Holding.Holder).Position, item.Position);
+        }
         foreach (var instance in instances)
         {
             var unit = d.Units.Single(u => PilotHandoffs.AslId(u.Id) == instance.Id);

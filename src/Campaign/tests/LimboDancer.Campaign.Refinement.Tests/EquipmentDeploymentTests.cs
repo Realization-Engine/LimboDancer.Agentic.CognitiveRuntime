@@ -18,7 +18,7 @@ public sealed class EquipmentDeploymentTests
     }
 
     [Fact]
-    public void ExplicitAllotmentUsesAslHoldingAndDoesNotInventMortarDefinition()
+    public void ExplicitAllotmentUsesAslHoldingAndLabeledGameDefault()
     {
         Assert.Equal(6, Deployment.Equipment.Length);
         Assert.All(Deployment.Equipment, link =>
@@ -28,9 +28,19 @@ public sealed class EquipmentDeploymentTests
             var mortar = Deployment.Units.Single(u => u.Id == link.EquipmentId);
             Assert.Equal("attacker-crew", crew.Definition!.Definition);
             Assert.Contains("provisional", crew.CatalogStatus);
-            Assert.Null(mortar.Definition);
-            Assert.Contains("Unresolved", mortar.CatalogStatus);
+            Assert.Equal("campaign-german-81mm-mortar", mortar.Definition!.Definition);
+            Assert.Contains("Game default (MFG)", mortar.CatalogStatus);
         });
+    }
+
+    [Fact]
+    public void OlderCatalogSetupKeepsItsPositionsAndLinks()
+    {
+        var current = Deployment.AutoDeploy(Context, Deployment.Create(Context)) with { UnitCatalog = "asl-scenario-a1@1.14.0" };
+        var saved = JsonSerializer.Serialize(current);
+        var restored = JsonSerializer.Deserialize<PilotSetup>(saved)!;
+        Deployment.Validate(Context, restored);
+        Assert.Equal(saved, JsonSerializer.Serialize(Deployment.Rebind(Context, Context, restored)));
     }
 
     [Fact]

@@ -53,6 +53,12 @@ public sealed class StudioHandoffTests
                 Assert.Equal(source.Definition, unit.Definition);
                 Assert.Equal(setup.Placements.Single(p => p.UnitId == source.Id).Hex, Assert.IsType<MapPosition>(unit.Position).Location.Hex.ToString());
             }
+            Assert.Equal(id == "de-81mm-01" ? 6 : 0, history.Current.Equipment.Count);
+            foreach (var weapon in history.Current.Equipment)
+            {
+                Assert.Equal(HoldingRole.Manned, weapon.Holding!.Role);
+                Assert.Equal(history.Current.Units.Single(u => u.Id == weapon.Holding.Holder).Position, weapon.Position);
+            }
             var next = await live.Planner.PlanAsync(GameActions.AdvancePhase, JsonSerializer.SerializeToElement(new
             { gameId = imported.Game, attemptId = "advance-imported", expectedRevision = history.Current.Revision }), LivePlay.Tenant, "studio-user");
             Assert.True(next.CanCommit, string.Join("; ", next.Reasons));

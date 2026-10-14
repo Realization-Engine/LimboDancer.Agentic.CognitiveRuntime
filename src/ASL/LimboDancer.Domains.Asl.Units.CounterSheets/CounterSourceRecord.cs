@@ -22,6 +22,10 @@ public sealed record CounterSourceRecord(
     string? Reviewer,
     string? ReviewedOn)
 {
+    public IReadOnlyList<string> AdditionalTranscribers { get; init; } = [];
+
+    public bool NamesTranscriber(string transcriber) => transcriber == Transcriber || AdditionalTranscribers.Contains(transcriber, StringComparer.Ordinal);
+
     public IReadOnlyList<string> AdditionalReviewers { get; init; } = [];
 
     /// <summary>Whether a row's reviewer is one the record names.</summary>
@@ -105,7 +109,10 @@ public static class CounterSourceRecordReader
                 fields.String(transcription, "transcribedOn", "$.transcription"), fields.String(review, "reviewer", "$.review"),
                 fields.String(review, "reviewedOn", "$.review"))
             {
-                AdditionalReviewers = additional
+                AdditionalReviewers = additional,
+                AdditionalTranscribers = transcription.TryGetProperty("additionalTranscribers", out _)
+                    ? fields.Strings(transcription, "additionalTranscribers", "$.transcription").ToArray()
+                    : []
             }, diagnostics);
         }
     }
