@@ -1,5 +1,8 @@
 using System.Text.Json;
 using LimboDancer.Campaign.Refinement;
+using LimboDancer.Domains.Asl.Maps.Coordinates;
+using LimboDancer.Domains.Asl.Maps.Features;
+using LimboDancer.Domains.Asl.Maps.Geometry;
 
 namespace LimboDancer.Campaign.Refinement.Tests;
 
@@ -27,6 +30,31 @@ public sealed class SituationDeploymentTests
             var addresses = new SituationAddresses(inputs, seed);
             Assert.All(draft.Positions, p => Assert.Equal(formations.Single(f => f.UnitId ==
                 roster.Ground.Single(f => f.Units.Any(u => u.Id == p.UnitId)).Id).Anchor, addresses.At(p.Column, p.Row).Parent));
+            // One ASL board removes internal loading margins without changing accepted center terrain/elevation.
+            var fullBoard = SituationAslBoard.Assemble(inputs, map);
+            var fullGrid = FeatureCompiler.Compile(fullBoard.Model, inputs.Catalog).Grid;
+            foreach (var tile in addresses.Tiles)
+            {
+                var accepted = map.Tile(tile.Key);
+                var dx = (tile.Crop.Column - SituationAslBoard.OriginColumn) * 225 / 4;
+                var dy = (tile.Crop.Row - SituationAslBoard.OriginRow) * 129 / 2;
+                for (var x = 225; x < 2025 && x + dx < fullGrid.Geometry.GridWidth; x++)
+                for (var y = 129; y < 1161 && y + dy < fullGrid.Geometry.GridHeight; y++)
+                {
+                    if (accepted.Grid.CodeAt(x, y) != fullGrid.CodeAt(x + dx, y + dy) ||
+                        accepted.Grid.ElevationAt(x, y) != fullGrid.ElevationAt(x + dx, y + dy))
+                        Assert.Fail($"Accepted raster differs at {tile.Key} pixel {x},{y}.");
+                }
+                foreach (var cell in tile.Cells)
+                {
+                    var original = accepted.Grid.Geometry.CenterPoint(new HexIndex(cell.Column - tile.Crop.Column, cell.Row - tile.Crop.Row));
+                    var translated = fullGrid.Geometry.CenterPoint(new HexIndex(cell.Column - SituationAslBoard.OriginColumn,
+                        cell.Row - SituationAslBoard.OriginRow));
+                    Assert.Equal(accepted.Grid.CodeAt(original.X, original.Y), fullGrid.CodeAt(translated.X, translated.Y));
+                    Assert.Equal(accepted.Grid.ElevationAt(original.X, original.Y), fullGrid.ElevationAt(translated.X, translated.Y));
+                }
+            }
+            Assert.Equal(fullBoard.Version, SituationAslBoard.Assemble(inputs, map).Version);
             var json = JsonSerializer.Serialize(draft);
             var reloaded = JsonSerializer.Deserialize<SituationDeploymentDraft>(json)!;
             Assert.Equal(json, JsonSerializer.Serialize(service.Review(reloaded)));
