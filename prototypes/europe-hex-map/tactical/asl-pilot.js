@@ -9,7 +9,7 @@ window.AslPilot = (() => {
   if(r.status===404)throw Error('The ASL pilot requires the campaign pilot host. Open this campaign on http://127.0.0.1:8093 and load your campaign file.');
   const headersAt=performance.now(),text=r.status===204?null:await r.text(),bodyAt=performance.now(),value=text===null?null:JSON.parse(text);if(timings)Object.assign(timings,{serverTiming:r.headers?.get?.("Server-Timing")||null,requestToHeadersMs:headersAt-started,responseBodyMs:bodyAt-headersAt,jsonParseMs:performance.now()-bodyAt});if(!r.ok)throw Error(value?.error||'Pilot request failed.');return value;
  }
- async function open(d,plan,storage,formation=null){
+ async function open(d,plan,storage,formation=null,rebuild=false){
   // Opt-in local diagnostics only. Timings never enter campaign saves or terrain identities.
   const measuring=new URLSearchParams(location.search).get('pilotMetrics')==='1',started=performance.now(),metrics={},longTasks=[];
   let observer;
@@ -41,18 +41,21 @@ window.AslPilot = (() => {
     title.textContent='Goodwood | '+formation.unitId+' | '+formation.anchor;
    }
    saved=storage.load();
-   if(!saved){saved={version:1,seed:storage.seed,context};persist(saved);}
+   if(!saved){saved={version:1,seed:storage.seed,context};if(!rebuild)persist(saved);}
    if(saved.version!==1||saved.seed!==storage.seed)throw Error('Unsupported pilot save or campaign seed mismatch. The saved deployment has been retained.');
-   if(JSON.stringify(saved.context)!==JSON.stringify(context))throw Error('Formation placements or supply setup changed since this pilot was saved. Restore that formation setup to resume; the pilot has been retained.');
+   if(rebuild)saved={version:1,seed:storage.seed,context};
+   if(formation && JSON.stringify(saved.context?.formation)!==JSON.stringify(formation))
+    throw Error('This formation has moved from '+(saved.context?.formation?.anchor||'its saved anchor')+' to '+formation.anchor+'. Rebuild its local map to continue.');
+   if(!formation && JSON.stringify(saved.context)!==JSON.stringify(context))throw Error('Formation placements or supply setup changed since this pilot was saved. Restore that formation setup to resume; the pilot has been retained.');
    if(!saved.bundle){
     const jobStart=await api('/generate',{seed:saved.seed,formation});generationId=jobStart.id;if(!alive){await api('/generate/'+generationId,null,'DELETE');return;}tell('Generating and validating ASL terrain. You can return to the formation map to cancel.');
     while(alive){const job=await api('/generate/'+generationId);if(job.status==='ready')break;if(job.status==='failed'||job.status==='cancelled')throw Error(job.error||'Generation cancelled. Reopen to retry with the same seed.');await new Promise(resolve=>setTimeout(resolve,500));}
    }
    if(!alive)return;
    metrics.mode=saved.bundle?'resume':'generate';metrics.beforeOpenMs=performance.now()-started;const openAt=performance.now();
-   view=await api('/open',{seed:saved.seed,bundle:saved.bundle||null,context,setup:saved.setup||null},'POST',measuring?metrics:undefined);metrics.openRequestMs=performance.now()-openAt;metrics.serverStagesMs=view.timingsMs;const buildAt=performance.now();
+   view=await api('/open',{seed:saved.seed,bundle:saved.bundle||null,context,setup:saved.setup||null,savedContext:saved.context},'POST',measuring?metrics:undefined);metrics.openRequestMs=performance.now()-openAt;metrics.serverStagesMs=view.timingsMs;const buildAt=performance.now();
    if(!alive)return;
-   const saveAt=performance.now();if(!saved.bundle||!saved.setup)persist({...saved,bundle:view.bundle,setup:view.setup});metrics.persistMs=performance.now()-saveAt;
+   const saveAt=performance.now();if(!saved.bundle||!saved.setup||JSON.stringify(saved.context)!==JSON.stringify(context)||saved.setup.contextHash!==view.setup.contextHash)persist({...saved,context,bundle:view.bundle,setup:view.setup});metrics.persistMs=performance.now()-saveAt;
    const select=el('select');select.setAttribute('aria-label','Pilot squad');
    for(const side of ['Allied','German']){const group=el('optgroup');group.label=side;for(const u of view.roster.filter(u=>u.side===side)){const o=el('option',u.label);o.value=u.id;group.append(o);}select.append(group);}
    selected=view.roster.some(u=>u.id===saved.selected)?saved.selected:view.roster[0].id;select.value=selected;select.onchange=()=>{selected=select.value;describe();};
@@ -101,7 +104,12 @@ window.AslPilot = (() => {
     count.textContent=saved.setup.placements.length+'/'+view.roster.length+' deployed';for(const o of select.options){const unit=view.roster.find(u=>u.id===o.value),placement=saved.setup.placements.find(p=>p.unitId===o.value);o.textContent=unit.label+(placement?' | '+placement.hex:' | not placed');}complete.textContent=saved.setup.complete?'Review setup':'Complete setup';deploy.disabled=saved.setup.complete;select.disabled=false;
    }
    async function edit(action){if(busy||!alive)return;busy=true;try{const setup=await api('/edit',{session:view.session,setup:saved.setup,action,unitId:selected,hex:destination});if(!alive)return;persist({...saved,setup,viewport:box});draw();tell(setup.complete?'Pilot setup complete. Saved to the campaign.':'Pilot deployment saved.');}catch(e){tell(e.message,true);}finally{busy=false;}}
-  }catch(e){stopMetrics();tell(formation&&/Unsupported source terrain|outside covered/.test(e.message)?'This location is not supported by the flat-ground pilot yet. Choose another rifle formation. '+e.message:e.message);notice.dataset.warning='true';}
+  }catch(e){stopMetrics();tell(formation&&/Unsupported source terrain|outside covered/.test(e.message)?'This location is not supported by the flat-ground pilot yet. Choose another rifle formation. '+e.message:e.message);notice.dataset.warning='true';
+   if(formation && saved?.version===1 && saved.seed===storage.seed){
+    inspector.replaceChildren(el('p','Rebuild uses the current formation location and resets its squad placements. The existing saved map stays intact if generation, validation or saving fails, or if you cancel.'));
+    inspector.append(button('Rebuild local map',()=>{dialog.close();return open(d,plan,storage,formation,true);}));
+   }
+  }
  }
  async function validateCampaign(file){
   if(!file.world?.aslPilots)return;

@@ -252,3 +252,30 @@ Legacy eight-squad saves remain separate. New formation slots retain accepted te
 Evidence and instructions: Campaign README, Selected rifle formation slice. 34 Campaign tests pass, with new selected-roster/crop/context/import and neighboring-interior checks. Browser acceptance passed for de-rifle-03 at C/Y-4, including completion, restart/resume, keyboard boundary rejection and preservation of the legacy eight-squad map. Some default British placements are still rejected because nearby source elevation is not admitted.
 
 Next implementation choices: support a deliberate replacement/rebase workflow, broaden flat-crop capacity and edge/overlap fixtures, then decide elevation admission and additional counter profiles. Do not infer broad crop equivalence, historical four-squad strength or combat support from this slice.
+### Selected-formation save recovery, 14 October 2026
+
+The selected-formation save now binds to campaign identity, policy, selected rifle unit, side and anchor. The current campaign permissions must still admit that anchor. Other formation placements and changes to permissions elsewhere do not invalidate this local deployment. Legacy eight-squad pilot binding is unchanged.
+
+Opening an older selected-formation save validates its original context and placements before upgrading the context hash. It then validates against current permissions. Terrain, placements, completion, revision and viewport are retained. Changed campaign identity, selected unit or anchor cannot be silently rebound.
+
+When the anchor changes, the dialog offers **Rebuild local map**, with an explanation that squad placements reset. The existing campaign save is replaced only after terrain generation, package validation, setup-capacity checks and persistence succeed. Cancellation, unsupported terrain, validation errors and failed writes leave the old save intact. The campaign seed remains unchanged. This is an explicit replacement, not relocation of existing squads or a retained map-history feature.
+
+Verification: 34 Campaign Release tests pass, including both sides' scoped binding, old-binding upgrades, altered campaign rejection and revoked-anchor permissions. Browser-code tests cover successful replacement, cancellation, generation failure and storage failure. Campaign file round-trip tests pass. The live browser reopened the pre-change de-rifle-03 C/Y-4 save with 4/4 deployed. Live changed-anchor/rebuild acceptance remains to be exercised; automated tests cover its save-preservation paths.
+
+Next: broaden edge and neighboring-crop fixtures across seeds, then decide elevation admission and additional counter profiles. Elevation remains unsupported. Replacement does not carry squad positions between different crops.
+
+
+### Expanded crop verification, 14 October 2026
+
+Four supported neighboring-crop pairs were exercised with three seeds (12 cases): A/X-6 with A/W-6; A/X-6 with A/X-7; A/V-7 with A/W-7; and A/W-6 with A/W-7. Every case compares exact shared interior facts (including locations, hexsides, stairways and bridge data), matching world-feature geometry, byte-identical replay manifests, package versions and compiled-grid hashes. Each also verifies four-squad capacity at the selected anchor and rejection of placement in the two-hex inspection boundary.
+
+Two uncovered-edge fixtures, A/A-1 and C/GG-10, are explicitly rejected. Neighboring C/X-4 and C/Y-5 crops are separately tested as rejected because they include source elevation at C/V-3 and C/Z-7 respectively. These are supported failure cases, not evidence of flat-map inconsistency. C/Y-4 also has a cross-seed check proving that generated building detail changes while authored feature geometry remains unchanged.
+
+Validation: the full Campaign Release suite passed 49 tests; the subsequently added seed-variation test passed separately (50 current test cases in total). No production generator changes were needed. These fixtures broaden bounded flat-crop confidence; they do not certify every anchor, board seam, seed or terrain class.
+
+Next elevation increment:
+- Define and version the source-level to ASL-level mapping explicitly. Do not silently equate historical heights with source illustration levels.
+- Emit source-preserved ASL ElevationRegion features, with deterministic ordering and overlap semantics. Keep road, stream, bridge and building interactions explicit.
+- Verify derived base levels and hexside slopes, rendering, supported ground-level setup, adjacent-crop equivalence and saved-package reload before allowing elevated deployments.
+- Use a new generation/profile identity and preserve existing accepted flat packages. Migration must not silently regenerate saved terrain.
+- Admit bounded setup and inspection only. Movement, LOS and combat require their own evidence and remain unavailable.

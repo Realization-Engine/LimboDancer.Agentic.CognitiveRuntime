@@ -74,6 +74,8 @@ public sealed class PilotHostTests
             var resumed = JsonSerializer.SerializeToElement(await fresh.Open(new(seed, bundle, context, setup)));
             Assert.Equal(opened.GetProperty("svg").GetString(), resumed.GetProperty("svg").GetString());
             Assert.Equal(JsonSerializer.Serialize(setup), JsonSerializer.Serialize(resumed.GetProperty("setup").Deserialize<PilotSetup>()));
+            await Assert.ThrowsAsync<InvalidDataException>(() => fresh.Open(new(seed, bundle,
+                context with { FormationSignature = "changed" }, setup, context)));
             Assert.Throws<InvalidDataException>(() => fresh.Status(seed)); // No generation job was created by import.
             await Assert.ThrowsAsync<InvalidDataException>(() => fresh.Open(new(seed, bundle, context with { CampaignId = "different" }, setup)));
         }

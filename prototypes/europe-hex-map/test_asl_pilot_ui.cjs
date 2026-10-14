@@ -16,22 +16,22 @@ class Element {
 const context={campaignId:'fixture',formationSignature:JSON.stringify({placements:[],supply:null}),alliedParents:['A/X-6'],germanParents:['A/V-7']};
 const setup={complete:false,placements:[],revision:0};
 const bundle={packageVersion:'accepted'};
-function harness(initial,{failSave=false,formation=null}={}){
+function harness(initial,{failSave=false,formation=null,failGeneration=false,cancelGeneration=false}={}){
  const body=new Element('body'),writes=[],requests=[];let saved=structuredClone(initial);
  const document={body,activeElement:null,createElement:t=>new Element(t),createElementNS:(_,t)=>new Element(t),createTextNode:t=>new Element('text',t)};
  const sandbox={window:{},document,URLSearchParams,location:{search:''},performance,console,setTimeout,clearTimeout,
  CampaignSupplyDeployment:{refs:(_,id)=>[{boardId:'A',hexId:id.startsWith('uk-rifle')?'X-6':'V-7'}]},
  DOMParser:class {parseFromString(){return {documentElement:new Element('svg')};}},
  fetch:async(url,options)=>{requests.push({url,options});let value={};
-  if(url.endsWith('/generate'))value={id:'b'.repeat(32)};
-  if(url.endsWith('/generate/'+'b'.repeat(32)))value={status:'ready'};
+  if(url.endsWith('/generate')){value={id:'b'.repeat(32)};if(cancelGeneration)await find('button','Return to formation map').onclick();}
+  if(url.endsWith('/generate/'+'b'.repeat(32)))value=failGeneration?{status:'failed',error:'Unsupported source terrain'}:{status:'ready'};
   if(url.endsWith('/open'))value={session:'session',bundle,setup,roster:[{id:'british-1',side:'Allied',label:'British squad'}],cells:[{hex:'C3',terrain:'Open Ground',parent:'A/X-6',admitted:true,reason:'Admitted',polygon:[],x:10,y:10}],width:1800,height:1290,svg:'<svg/>'};
   if(url.endsWith('/edit'))value={...setup,revision:1,placements:[{unitId:'british-1',hex:'C3'}]};
   return {ok:true,status:200,text:async()=>JSON.stringify(value)};
  }};
  vm.runInNewContext(source,sandbox);
  const storage={campaignId:'fixture',seed:'0'.repeat(32),load:()=>saved,save:next=>{if(failSave)throw Error('disk full');writes.push(structuredClone(next));saved=next;}};
- const find=(tag,text)=>{const walk=n=>n.tag===tag&&(!text||n.textContent===text)?n:n.children.map(walk).find(Boolean);return walk(body);};
+ const find=(tag,text)=>{const walk=n=>n.tag===tag&&(!text||n.textContent===text)?n:[...n.children].reverse().map(walk).find(Boolean);return walk(body);};
  return {open:()=>sandbox.window.AslPilot.open({instances:[{id:'uk-rifle-02',counterTypeId:'uk-rifle'}],counters:[{id:'uk-rifle',side:'Allied'}]}, {placements:{}},storage,formation),writes,requests,find};
 }
 (async()=>{
@@ -58,5 +58,22 @@ function harness(initial,{failSave=false,formation=null}={}){
  assert.equal(openRequest.context.formation.anchor,'A/X-6');
  assert.deepEqual(openRequest.context.germanParents,[]);
  assert.equal(selected.writes.at(-1).context.formation.unitId,'uk-rifle-02');
- console.log('PASS read-only pilot resume, first setup persistence, deployment save and failed-write preservation');
+ const changedContext={...context,formationSignature:'unrelated change',formation,germanParents:[]};
+ const scoped=harness({...accepted,context:changedContext},{formation});await scoped.open();
+ assert(scoped.find('select'),'Unrelated context changes reach server validation');
+ assert.deepEqual(JSON.parse(scoped.requests[0].options.body).savedContext,changedContext);
+ const moved={...accepted,context:{...changedContext,formation:{...formation,anchor:'A/W-6'}}};
+ const replacement=harness(moved,{formation});await replacement.open();
+ assert.equal(replacement.writes.length,0,'Opening moved formation retains accepted save');
+ assert(replacement.find('button','Rebuild local map'));
+ await replacement.find('button','Rebuild local map').onclick();
+ assert.equal(replacement.writes.length,1,'Replacement is published only after generation and open validation');
+ assert.equal(replacement.writes[0].context.formation.anchor,'A/X-6');
+ assert.equal(replacement.writes[0].setup.placements.length,0,'Replacement starts fresh setup');
+ for(const options of [{failGeneration:true},{failSave:true},{cancelGeneration:true}]){
+  const failed=harness(moved,{formation,...options});await failed.open();
+  await failed.find('button','Rebuild local map').onclick();
+  assert.equal(failed.writes.length,0,'Failed or cancelled replacement retains accepted save');
+ }
+ console.log('PASS scoped resume, rebuild success/failure/cancellation, read-only pilot resume, first setup persistence, deployment save and failed-write preservation');
 })().catch(e=>{console.error(e);process.exitCode=1;});

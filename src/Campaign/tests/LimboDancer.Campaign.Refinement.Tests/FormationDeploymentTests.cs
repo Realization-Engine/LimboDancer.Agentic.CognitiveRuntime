@@ -1,3 +1,4 @@
+using LimboDancer.Domains.Asl.Maps.Features;
 using System.Text.Json;
 using LimboDancer.Campaign.Refinement;
 
@@ -31,7 +32,17 @@ public sealed class FormationDeploymentTests
         reload.Validate(context, setup);
         Assert.Equal(JsonSerializer.Serialize(p.Cells), JsonSerializer.Serialize(reload.Cells));
         Assert.Throws<InvalidDataException>(() => new PilotDeployment(Inputs, p.Bundle));
-        Assert.Throws<InvalidDataException>(() => reload.Validate(context with { FormationSignature = "moved" }, setup));
+        reload.Validate(context with { FormationSignature = "unrelated formation moved" }, setup);
+        var changed = context with { FormationSignature = "unrelated formation moved", AlliedParents = ["A/X-6", "A/V-7"], GermanParents = ["A/X-6", "A/V-7"] };
+        var rebound = reload.Rebind(context, changed, setup);
+        Assert.Equal(setup, rebound);
+        Assert.Throws<InvalidDataException>(() => reload.Rebind(context, context with { CampaignId = "other" }, setup));
+        Assert.Throws<InvalidDataException>(() => reload.Rebind(context, context with { AlliedParents = [], GermanParents = [] }, setup));
+        var legacyBinding = new object[] { p.ActivePolicy, context.CampaignId, context.FormationSignature,
+            context.AlliedParents, context.GermanParents, selection.UnitId, selection.Anchor };
+        var legacy = setup with { ContextHash = LimboDancer.Domains.Asl.Maps.Features.BoardPackage.Hash(CanonicalJson.Serialize(legacyBinding)) };
+        Assert.Equal(setup, reload.Rebind(context, changed, legacy));
+        Assert.Throws<InvalidDataException>(() => reload.Rebind(context, changed, legacy with { ContextHash = "invalid" }));
         Assert.Throws<InvalidDataException>(() => reload.Validate(context with { Formation = selection with { UnitId = "uk-rifle-01" } }, setup));
         Assert.Throws<InvalidDataException>(() => reload.Create(context with { AlliedParents = [], GermanParents = [] }));
     }
@@ -46,13 +57,59 @@ public sealed class FormationDeploymentTests
         Assert.Equal(Seed, FormationDeployment.JobKey(Seed, null));
     }
 
-    [Fact]
-    public void NeighboringFormationCropsShareExactInteriorFacts()
+    [Theory]
+    [InlineData("A/A-1")]
+    [InlineData("C/GG-10")]
+    public void UncoveredMapEdgesAreRejected(string anchor)
     {
-        var aCrop = FormationDeployment.CropFor(Inputs, new("uk-rifle-01", "A/X-6"));
-        var bCrop = FormationDeployment.CropFor(Inputs, new("uk-rifle-02", "A/W-6"));
-        var a = new PilotGenerator(Inputs).Generate(Seed, aCrop);
-        var b = new PilotGenerator(Inputs).Generate(Seed, bCrop);
+        var crop = FormationDeployment.CropFor(Inputs, new("de-rifle-03", anchor));
+        var error = Assert.Throws<InvalidDataException>(() => new PilotGenerator(Inputs).Generate(Seed, crop));
+        Assert.Contains("outside covered source polygons", error.Message);
+    }
+
+    [Theory]
+    [InlineData("C/X-4", "C/V-3")]
+    [InlineData("C/Y-5", "C/Z-7")]
+    public void ElevatedNeighborsFailExplicitly(string anchor, string offendingParent)
+    {
+        var crop = FormationDeployment.CropFor(Inputs, new("de-rifle-03", anchor));
+        var error = Assert.Throws<InvalidDataException>(() => new PilotGenerator(Inputs).Generate(Seed, crop));
+        Assert.Contains("Unsupported source terrain/elevation", error.Message);
+        Assert.Contains(offendingParent, error.Message);
+    }
+
+    [Fact]
+    public void NewSeedChangesBuildingDetailButPreservesSourceGeometry()
+    {
+        var crop = FormationDeployment.CropFor(Inputs, new("de-rifle-03", "C/Y-4"));
+        var a = new PilotGenerator(Inputs).Generate(Seed, crop);
+        var b = new PilotGenerator(Inputs).Generate("11111111111111111111111111111111", crop);
+        // Feature IDs include world identity, so compare physical facts rather than IDs across seeds.
+        static string Geometry(PilotResult result, bool generated) => JsonSerializer.Serialize(
+            result.MetricFeatures.Where(f => (f.Provenance == "generated") == generated)
+                .OrderBy(f => f.SourceKey, StringComparer.Ordinal)
+                .Select(f => new { f.SourceKey, f.Kind, f.Code, f.WidthMm, f.Points }));
+        Assert.Equal(Geometry(a, false), Geometry(b, false));
+        Assert.NotEqual(Geometry(a, true), Geometry(b, true));
+        Assert.Contains(a.MetricFeatures, f => f.Provenance == "generated");
+        Assert.Contains(b.MetricFeatures, f => f.Provenance == "generated");
+    }
+
+    public static IEnumerable<object[]> NeighborCases()
+    {
+        foreach (var seed in new[] { Seed, "11111111111111111111111111111111", "ffffffffffffffffffffffffffffffff" })
+            foreach (var pair in new[] { ("A/X-6", "A/W-6"), ("A/X-6", "A/X-7"), ("A/V-7", "A/W-7"), ("A/W-6", "A/W-7") })
+                yield return new object[] { seed, pair.Item1, pair.Item2 };
+    }
+
+    [Theory]
+    [MemberData(nameof(NeighborCases))]
+    public void NeighboringFormationCropsShareExactInteriorFacts(string seed, string first, string second)
+    {
+        var aCrop = FormationDeployment.CropFor(Inputs, new("uk-rifle-01", first));
+        var bCrop = FormationDeployment.CropFor(Inputs, new("uk-rifle-02", second));
+        var a = new PilotGenerator(Inputs).Generate(seed, aCrop);
+        var b = new PilotGenerator(Inputs).Generate(seed, bCrop);
         var count = 0;
         foreach (var f in a.Facts.Hexes)
         {
@@ -65,6 +122,25 @@ public sealed class FormationDeploymentTests
                 JsonSerializer.Serialize(new { other.BaseLevel, other.Stairway, other.Center, other.Locations, other.Hexsides, other.Bridge }));
             count++;
         }
-        Assert.True(count > 25);
+        Assert.True(count > 25, $"Too few shared interior cells: {first} / {second}: {count}");
+        var shared = a.MetricFeatures.Join(b.MetricFeatures, f => f.Id, f => f.Id, (left, right) => (left, right)).ToArray();
+        Assert.NotEmpty(shared);
+        foreach (var (left, right) in shared)
+            Assert.Equal(JsonSerializer.Serialize(left), JsonSerializer.Serialize(right));
+        var replay = new PilotGenerator(Inputs).Generate(seed, aCrop);
+        Assert.Equal(a.Package.Version, replay.Package.Version);
+        Assert.Equal(a.Manifest, replay.Manifest);
+        Assert.Equal(PilotGenerator.GridHash(a.Grid), PilotGenerator.GridHash(replay.Grid));
+
+        var selection = new FormationSelection("de-rifle-03", first);
+        var deployment = new PilotDeployment(Inputs, a, seed, selection);
+        var context = new DeploymentContext("boundary-test", "snapshot", [], [first], selection);
+        var setup = deployment.AutoDeploy(context, deployment.Create(context));
+        foreach (var cell in deployment.Cells.Where(c => c.Reason.StartsWith("Crop boundary", StringComparison.Ordinal)))
+        {
+            Assert.False(cell.Admitted);
+            Assert.NotNull(deployment.Rejection(context, setup, deployment.Units[0].Id, cell.Hex));
+        }
+        Assert.All(setup.Placements, p => Assert.Equal(first, deployment.Cells.Single(c => c.Hex == p.Hex).Parent));
     }
 }

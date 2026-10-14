@@ -6,7 +6,7 @@ using LimboDancer.Domains.Asl.Maps.Rendering;
 namespace LimboDancer.Campaign.PilotHost;
 
 public sealed record GenerateRequest(string Seed, FormationSelection? Formation = null);
-public sealed record OpenRequest(string Seed, PilotBundle? Bundle, DeploymentContext Context, PilotSetup? Setup);
+public sealed record OpenRequest(string Seed, PilotBundle? Bundle, DeploymentContext Context, PilotSetup? Setup, DeploymentContext? SavedContext = null);
 public sealed record EditRequest(string Session, PilotSetup Setup, string Action, string? UnitId, string? Hex);
 public sealed record PilotSession(PilotDeployment Deployment, DeploymentContext Context);
 
@@ -78,7 +78,9 @@ public sealed class PilotSessions(PilotInputs inputs, string packagesRoot) : IDi
             deployment = await job.Work.ConfigureAwait(false);
         else throw new InvalidDataException("Generate the pilot map before opening deployment.");
         timings["loadTotal"] = watch.Elapsed.TotalMilliseconds; watch.Restart();
-        var state = request.Setup ?? deployment.Create(request.Context);
+        var state = request.Setup is { } savedSetup
+            ? deployment.Rebind(request.SavedContext ?? request.Context, request.Context, savedSetup)
+            : deployment.Create(request.Context);
         deployment.Validate(request.Context, state);
         var id = deployment.Package.Version + "-" + deployment.ContextHash(request.Context);
         if (sessions.Count >= 16 && !sessions.ContainsKey(id)) throw new InvalidDataException("Too many pilot sessions. Restart the host to release cached sessions.");

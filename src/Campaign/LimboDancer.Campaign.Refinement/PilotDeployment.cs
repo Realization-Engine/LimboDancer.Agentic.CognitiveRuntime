@@ -153,10 +153,33 @@ public sealed class PilotDeployment
         if (context.AlliedParents.Length > known.Count || context.GermanParents.Length > known.Count ||
             context.AlliedParents.Concat(context.GermanParents).Any(p => !known.Contains(p)))
             throw new InvalidDataException("Campaign setup references an unknown formation hex.");
+        if (formation is not null)
+            return BoardPackage.Hash(CanonicalJson.Serialize(new object[] {
+                ActivePolicy, "selected-anchor-binding-2", context.CampaignId, formation.UnitId, formation.Anchor, Units[0].Side }));
+        return LegacyContextHash(context);
+    }
+
+    private string LegacyContextHash(DeploymentContext context)
+    {
         var binding = new object[] { ActivePolicy, context.CampaignId, context.FormationSignature,
             context.AlliedParents.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray(),
             context.GermanParents.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray() };
         return BoardPackage.Hash(CanonicalJson.Serialize(formation is null ? binding : binding.Concat(new object[] { formation.UnitId, formation.Anchor }).ToArray()));
+    }
+
+    // Validate old snapshots before upgrading their binding. Terrain and placements are retained.
+    public PilotSetup Rebind(DeploymentContext previous, DeploymentContext current, PilotSetup state)
+    {
+        var previousHash = ContextHash(previous);
+        if (formation is not null && state.ContextHash == LegacyContextHash(previous))
+            state = state with { ContextHash = previousHash };
+        Validate(previous, state);
+        if (previous.CampaignId != current.CampaignId || previous.Formation != current.Formation)
+            throw new InvalidDataException("Selected formation moved. Rebuild its local map to use the new anchor.");
+        if (formation is null) { Validate(current, state); return state; }
+        var next = state with { ContextHash = ContextHash(current) };
+        Validate(current, next);
+        return next;
     }
 
     public PilotSetup Create(DeploymentContext context)

@@ -137,3 +137,11 @@ Each formation uses its own campaign slot, M04:formation:<unit ID>, alongside th
 Verification: 34 Campaign Release tests pass. New coverage includes British and German four-squad deployment, parent-boundary rejection, accepted package resume, changed anchor/context rejection, unsupported counter rejection, separate generation job keys, idempotent generation and import into a fresh host without generation. One neighboring A/X-6 and A/W-6 crop pair has matching common interior facts; arbitrary crop-pair equivalence is not claimed. Existing browser persistence/campaign-file tests and syntax checks pass.
 
 Browser acceptance: de-rifle-03 at C/Y-4 generated, deployed 4/4, completed, and resumed after host restart. Keyboard placement outside the parent was rejected without moving a squad. The legacy pilot still opens with 8/8. B/N-8 and B/H-8 examples were rejected because their surrounding crops include source elevation. The selected map was left complete. Broader selected-crop seed, edge and accessibility coverage remains follow-up scope.
+### Selected-formation save recovery
+
+Selected rifle maps now tolerate unrelated formation movements and permission changes elsewhere. Current permission for the selected anchor is still required. Older selected-formation saves are validated and upgraded on open without regenerating terrain or resetting squads.
+
+A moved formation offers **Rebuild local map**. This explicitly resets squad placements at the new anchor using the same campaign seed. The old save is retained until generation, validation and storage succeed; cancelling or failing the rebuild preserves it. This does not transfer existing squad positions or retain a history after successful replacement. The original eight-squad pilot keeps its existing context rules.
+
+
+Crop verification now covers four neighboring pairs across three seeds, deterministic replay, shared interior facts, edge placement rejection, uncovered map edges and explicit elevated-neighbor rejection. A separate cross-seed check verifies building variation with unchanged source geometry. See the implementation plan checkpoint for fixtures and elevation follow-up.
