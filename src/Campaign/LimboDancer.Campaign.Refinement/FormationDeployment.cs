@@ -1,4 +1,5 @@
 using LimboDancer.Domains.Asl.Maps.Features;
+using LimboDancer.Domains.Asl.Units.State;
 
 namespace LimboDancer.Campaign.Refinement;
 
@@ -37,7 +38,15 @@ public static class FormationDeployment
             "de-81mm" => (6, "German", "German 81 mm mortar and crew ", "mortar", "M"),
             _ => throw new InvalidDataException("Select a deployed rifle, British engineer or German 81 mm mortar formation.")
         };
-        var suffix = kind == "mortar" ? "/detachment-" : "/squad-";
+        if (kind == "mortar")
+            return Enumerable.Range(1, 6).SelectMany(i => new PilotUnit[]
+            {
+                new(selection.UnitId + "/crew-" + i, selection.UnitId, side, "German mortar crew " + i,
+                    "crew", "C", PilotCatalog.GermanCrew(), PilotCatalog.CrewStatus),
+                new(selection.UnitId + "/mortar-" + i, selection.UnitId, side, "German 81 mm mortar " + i,
+                    "mortar", "M", null, PilotCatalog.MortarStatus, new Holding(selection.UnitId + "/crew-" + i, HoldingRole.Manned))
+            }).ToArray();
+        var suffix = "/squad-";
         return Enumerable.Range(1, count).Select(i => new PilotUnit(selection.UnitId + suffix + i,
             selection.UnitId, side, label + i, kind, symbol)).ToArray();
     }
@@ -45,7 +54,7 @@ public static class FormationDeployment
     public static string PolicyFor(IReadOnlyList<PilotUnit> units) => units[0].Kind switch
     {
         "engineer" => "goodwood-selected-engineer-1",
-        "mortar" => "goodwood-selected-mortar-1",
+        "crew" => "goodwood-selected-mortar-2",
         _ => Policy
     };
 

@@ -9,7 +9,7 @@ public sealed class CompositionDeploymentTests
 
     [Theory]
     [InlineData("uk-engineer-01", "B/M-6", "Allied", "engineer", 4)]
-    [InlineData("de-81mm-01", "C/Y-4", "German", "mortar", 6)]
+    [InlineData("de-81mm-01", "C/Y-4", "German", "mortar", 12)]
     public void TypedRosterDeploysCompletesAndReloads(string id, string anchor, string side, string kind, int count)
     {
         var selection = new FormationSelection(id, anchor);
@@ -19,7 +19,7 @@ public sealed class CompositionDeploymentTests
         var context = new DeploymentContext("composition-test", "snapshot", side == "Allied" ? [anchor] : [],
             side == "German" ? [anchor] : [], selection);
         Assert.Equal(count, deployment.Units.Count);
-        Assert.All(deployment.Units, unit => { Assert.Equal(kind, unit.Kind); Assert.Equal(id, unit.ParentId); });
+        Assert.All(deployment.Units, unit => { Assert.True(unit.Kind == kind || kind == "mortar" && unit.Kind == "crew"); Assert.Equal(id, unit.ParentId); });
         Assert.NotEqual(FormationDeployment.Policy, deployment.ActivePolicy);
         var initial = deployment.Create(context);
         Assert.Throws<InvalidDataException>(() => deployment.SetComplete(context, initial, true));

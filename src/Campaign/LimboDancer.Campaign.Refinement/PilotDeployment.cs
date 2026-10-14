@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using LimboDancer.Domains.Asl.Units.Catalog;
+using LimboDancer.Domains.Asl.Units.State;
 using System.Text;
 using System.Text.Json;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
@@ -12,9 +14,10 @@ namespace LimboDancer.Campaign.Refinement;
 // Campaign owns formation legality, including its supply exception. The adapter snapshots it;
 // this module separately admits tactical locations and validates every placement.
 public sealed record DeploymentContext(string CampaignId, string FormationSignature, string[] AlliedParents, string[] GermanParents, FormationSelection? Formation = null);
-public sealed record PilotUnit(string Id, string ParentId, string Side, string Label, string Kind = "rifle", string Symbol = "R");
+public sealed record PilotUnit(string Id, string ParentId, string Side, string Label, string Kind = "rifle", string Symbol = "R", DefinitionReference? Definition = null, string? CatalogStatus = null, Holding? Holding = null);
+public sealed record PilotEquipmentLink(string EquipmentId, Holding Holding);
 public sealed record PilotPlacement(string UnitId, string Hex);
-public sealed record PilotSetup(string Policy, string ContextHash, string PackageVersion, int Revision, bool Complete, PilotPlacement[] Placements);
+public sealed record PilotSetup(string Policy, string ContextHash, string PackageVersion, int Revision, bool Complete, PilotPlacement[] Placements, PilotEquipmentLink[]? Equipment = null, string? UnitCatalog = null);
 public sealed record PilotBundle(string Seed, string PackageVersion, string Board, string Name, string Features, string Manifest, string CatalogSha256, string GridSha256);
 public sealed record PilotCell(string Hex, string GlobalKey, string? Parent, double X, double Y, PixelPoint[] Polygon, string Terrain, bool Admitted, string Reason, int BaseLevel);
 
@@ -29,6 +32,7 @@ public sealed class PilotDeployment
     private readonly FormationSelection? formation;
     public Crop Crop { get; }
     public IReadOnlyList<PilotUnit> Units { get; }
+    public PilotEquipmentLink[] Equipment => Units.Where(u => u.Holding is not null).Select(u => new PilotEquipmentLink(u.Id, u.Holding!)).ToArray();
     public string ActivePolicy => formation is null ? Policy : FormationDeployment.PolicyFor(Units);
     public BoardPackage Package { get; }
     public TerrainGrid Grid { get; }
@@ -137,7 +141,9 @@ public sealed class PilotDeployment
     }).ToArray();
     }
 
-    public string ContextHash(DeploymentContext context)
+    public string ContextHash(DeploymentContext context) => ContextHashFor(context, ActivePolicy);
+
+    private string ContextHashFor(DeploymentContext context, string policy)
     {
         ArgumentNullException.ThrowIfNull(context);
         if (string.IsNullOrWhiteSpace(context.CampaignId) || context.CampaignId.Length > 100 ||
@@ -157,7 +163,7 @@ public sealed class PilotDeployment
             throw new InvalidDataException("Campaign setup references an unknown formation hex.");
         if (formation is not null)
             return BoardPackage.Hash(CanonicalJson.Serialize(new object[] {
-                ActivePolicy, "selected-anchor-binding-2", context.CampaignId, formation.UnitId, formation.Anchor, Units[0].Side }));
+                policy, "selected-anchor-binding-2", context.CampaignId, formation.UnitId, formation.Anchor, Units[0].Side }));
         return LegacyContextHash(context);
     }
 
@@ -172,6 +178,7 @@ public sealed class PilotDeployment
     // Validate old snapshots before upgrading their binding. Terrain and placements are retained.
     public PilotSetup Rebind(DeploymentContext previous, DeploymentContext current, PilotSetup state)
     {
+        state = UpgradeMortar(previous, state);
         var previousHash = ContextHash(previous);
         if (formation is not null && state.ContextHash == LegacyContextHash(previous))
             state = state with { ContextHash = previousHash };
@@ -186,7 +193,7 @@ public sealed class PilotDeployment
 
     public PilotSetup Create(DeploymentContext context)
     {
-        var state = new PilotSetup(ActivePolicy, ContextHash(context), Package.Version, 0, false, []);
+        var state = new PilotSetup(ActivePolicy, ContextHash(context), Package.Version, 0, false, [], Equipment.Length == 0 ? null : Equipment, Equipment.Length == 0 ? null : PilotCatalog.Identity);
         // Capacity is checked against this seed and campaign policy before admitting the workflow.
         _ = AutoDeploy(context, state); return state;
     }
@@ -199,6 +206,19 @@ public sealed class PilotDeployment
         if (state.Revision < 0 || state.Placements is null || state.Placements.Length > Units.Count || state.Placements.Any(p => p is null) ||
             state.Placements.Select(p => p.UnitId).Distinct(StringComparer.Ordinal).Count() != state.Placements.Length)
             throw new InvalidDataException("Invalid pilot roster or duplicate placement.");
+        if (Equipment.Length > 0 && !PilotCatalog.Recognizes(state.UnitCatalog))
+            throw new InvalidDataException("Equipment setup requires a recognized ASL catalog identity.");
+        var links = state.Equipment ?? [];
+        if (links.Length != Equipment.Length || links.Any(l => l is null) ||
+            !links.OrderBy(l => l.EquipmentId, StringComparer.Ordinal).SequenceEqual(Equipment.OrderBy(l => l.EquipmentId, StringComparer.Ordinal)))
+            throw new InvalidDataException("Equipment operators differ from the accepted composition.");
+        foreach (var link in links)
+        {
+            var weapon = state.Placements.SingleOrDefault(p => p.UnitId == link.EquipmentId);
+            var crew = state.Placements.SingleOrDefault(p => p.UnitId == link.Holding.Holder);
+            if ((weapon is null) != (crew is null) || weapon?.Hex != crew?.Hex)
+                throw new InvalidDataException("A mortar and its assigned crew must set up together.");
+        }
         foreach (var p in state.Placements)
         {
             var reason = Rejection(context, state, p.UnitId, p.Hex);
@@ -215,12 +235,13 @@ public sealed class PilotDeployment
         if (cell is null) return "Choose a hex in the pilot map.";
         if (!cell.Admitted) return cell.Reason;
         // Bounded setup admission, not a complete ASL Gun emplacement rule.
-        if (unit.Kind == "mortar" && cell.Terrain is not ("Open Ground" or "Paved Road"))
+        if ((unit.Kind is "mortar" or "crew") && cell.Terrain is not ("Open Ground" or "Paved Road"))
             return "Mortar detachments currently require open ground or paved road; other terrain is inspection-only.";
         if (formation is not null && cell.Parent != formation.Anchor) return "Deploy within the selected formation hex " + formation.Anchor + ".";
         var allowed = unit.Side == "Allied" ? context.AlliedParents : context.GermanParents;
         if (!allowed.Contains(cell.Parent, StringComparer.Ordinal)) return unit.Side + " setup is not allowed in formation hex " + cell.Parent + ".";
-        var occupants = state.Placements.Where(p => p.UnitId != unitId && p.Hex == hex).ToArray();
+        var group = LinkedUnits(unitId);
+        var occupants = state.Placements.Where(p => !group.Contains(p.UnitId) && p.Hex == hex && Units.Any(u => u.Id == p.UnitId && u.Holding is null)).ToArray();
         if (occupants.Any(p => Units.FirstOrDefault(u => u.Id == p.UnitId)?.Side != unit.Side)) return "Opposing units cannot share a setup hex.";
         return occupants.Length >= 2 ? "Stacking limit: two pilot units per hex." : null;
     }
@@ -231,7 +252,7 @@ public sealed class PilotDeployment
         if (state.Complete) throw new InvalidDataException("Setup is complete. Select Review setup before repositioning units.");
         var reason = Rejection(context, state, unitId, hex);
         if (reason is not null) throw new InvalidDataException(reason);
-        return state with { Revision = checked(state.Revision + 1), Placements = [.. state.Placements.Where(p => p.UnitId != unitId), new(unitId, hex)] };
+        return state with { Revision = checked(state.Revision + 1), Placements = [.. state.Placements.Where(p => !LinkedUnits(unitId).Contains(p.UnitId)), .. LinkedUnits(unitId).Select(id => new PilotPlacement(id, hex))] };
     }
 
     public PilotSetup AutoDeploy(DeploymentContext context, PilotSetup state)
@@ -239,12 +260,43 @@ public sealed class PilotDeployment
         Validate(context, state); var next = state;
         foreach (var unit in Units.Where(u => !state.Placements.Any(p => p.UnitId == u.Id)))
         {
+            if (next.Placements.Any(p => p.UnitId == unit.Id)) continue;
             var cell = Cells.FirstOrDefault(c => !next.Placements.Any(p => p.Hex == c.Hex) && Rejection(context, next, unit.Id, c.Hex) is null)
                 ?? Cells.FirstOrDefault(c => Rejection(context, next, unit.Id, c.Hex) is null);
             if (cell is null) throw new InvalidDataException("Insufficient legal setup capacity for " + unit.Side + ". No deployment was changed.");
             next = Move(context, next, unit.Id, cell.Hex);
         }
         return next;
+    }
+
+    private string[] LinkedUnits(string id)
+    {
+        var link = Equipment.FirstOrDefault(l => l.EquipmentId == id || l.Holding.Holder == id);
+        return link is null ? [id] : [link.Holding.Holder, link.EquipmentId];
+    }
+
+    // Expand only the exact old six-detachment policy after checking its original binding.
+    // No terrain regeneration, no best-effort repair of malformed saves.
+    private PilotSetup UpgradeMortar(DeploymentContext context, PilotSetup state)
+    {
+        const string oldPolicy = "goodwood-selected-mortar-1";
+        if (state.Policy != oldPolicy || ActivePolicy != "goodwood-selected-mortar-2") return state;
+        if (state.PackageVersion != Package.Version || state.ContextHash != ContextHashFor(context, oldPolicy) ||
+            state.Revision < 0 || state.Placements is null || state.Placements.Length > 6 ||
+            state.Equipment is { Length: > 0 } || (state.Complete && state.Placements.Length != 6))
+            throw new InvalidDataException("Invalid legacy mortar setup; saved data retained.");
+        var placements = new List<PilotPlacement>();
+        foreach (var p in state.Placements)
+        {
+            var index = Enumerable.Range(1, 6).SingleOrDefault(i => p?.UnitId == formation!.UnitId + "/detachment-" + i);
+            if (index == 0) throw new InvalidDataException("Unknown legacy mortar detachment.");
+            placements.Add(new(formation!.UnitId + "/crew-" + index, p!.Hex));
+            placements.Add(new(formation.UnitId + "/mortar-" + index, p.Hex));
+        }
+        var upgraded = state with { Policy = ActivePolicy, ContextHash = ContextHash(context),
+            Revision = checked(state.Revision + 1), Placements = placements.ToArray(), Equipment = Equipment, UnitCatalog = PilotCatalog.Identity };
+        Validate(context, upgraded);
+        return upgraded;
     }
 
     public PilotSetup SetComplete(DeploymentContext context, PilotSetup state, bool complete)

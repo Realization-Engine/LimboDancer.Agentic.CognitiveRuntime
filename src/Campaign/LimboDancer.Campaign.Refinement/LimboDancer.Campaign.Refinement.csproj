@@ -3,6 +3,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../../ASL/LimboDancer.Domains.Asl.Units/LimboDancer.Domains.Asl.Units.csproj" />
     <ProjectReference Include="../../ASL/LimboDancer.Domains.Asl.Maps/LimboDancer.Domains.Asl.Maps.csproj" />
     <ProjectReference Include="../../ASL/LimboDancer.Domains.Asl.Maps.Vasl/LimboDancer.Domains.Asl.Maps.Vasl.csproj" />
   </ItemGroup>
