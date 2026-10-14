@@ -192,7 +192,8 @@ build)
 ci)
   BRANCH=$(git -C "$R" branch --show-current); HEAD_SHA=$(git -C "$R" rev-parse HEAD)
   [ "$(git -C "$R" rev-parse -q --verify "origin/$BRANCH")" = "$HEAD_SHA" ] || stop "the head ${HEAD_SHA:0:8} of $BRANCH is not what origin has (push the branch, at the user's word, and fetch)"
-  RUNS=$(cd "$R" && gh run list --workflow asl-authoring-ci.yml --commit "$HEAD_SHA" --json status,conclusion,event,url --jq '.[] | "\(.status) \(.conclusion) \(.event) \(.url)"') || stop "gh could not list the CI runs"
+  # The runs of the branch, cut down to the head's by its sha: the gh on this machine (2.15) has no --commit filter.
+  RUNS=$(cd "$R" && gh run list --workflow asl-authoring-ci.yml --branch "$BRANCH" --limit 20 --json status,conclusion,event,url,headSha --jq '.[] | select(.headSha == "'"$HEAD_SHA"'") | "\(.status) \(.conclusion) \(.event) \(.url)"') || stop "gh could not list the CI runs"
   [ -n "$RUNS" ] || stop "no CI run for ${HEAD_SHA:0:8}: open the branch's pull request (the workflow runs on pull requests that touch src/ASL)"
   echo "$RUNS"
   if echo "$RUNS" | grep -q "^completed success "; then echo "CI passed for ${HEAD_SHA:0:8}"
