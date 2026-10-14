@@ -1,4 +1,5 @@
 using System.Text;
+using LimboDancer.Domains.Asl.Units.Documents;
 using System.Text.Json;
 using LimboDancer.Campaign.PilotHost;
 using LimboDancer.Campaign.Refinement;
@@ -17,6 +18,7 @@ public sealed class HandoffTests
     [InlineData("uk-rifle-01", "B/M-6", "Allied", 4, 0)]
     [InlineData("de-rifle-01", "C/Y-4", "German", 4, 0)]
     [InlineData("uk-engineer-01", "B/M-6", "Allied", 4, 0)]
+    [InlineData("de-halftrack-01", "C/Y-4", "German", 5, 0)]
     [InlineData("de-81mm-01", "C/Y-4", "German", 12, 0)]
     public async Task ExistingAslSetupPreservesDeployedIdentitiesAndRoundTrips(string id, string anchor, string side, int ready, int needsData)
     {
@@ -49,6 +51,7 @@ public sealed class HandoffTests
         {
             var unit = d.Units.Single(u => PilotHandoffs.AslId(u.Id) == instance.Id);
             Assert.Equal(unit.Definition, instance.Definition);
+            if (unit.Kind == "vehicle") Assert.Equal(UnitFacing.West, Assert.IsType<MapPosition>(instance.Position).Facing);
             Assert.Equal(unit.Side.ToLowerInvariant(), instance.Side);
             Assert.Equal(unit.Id, handoff.Units.Single(r => r.AslId == instance.Id).Id);
             var at = Assert.IsType<MapPosition>(instance.Position).Location;

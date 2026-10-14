@@ -10,6 +10,8 @@ public static class PilotCatalog
         UnitCatalogs.Read(UnitCatalogs.ScenarioA1, UnitVocabulary.Asl())?.Catalog
         ?? throw new InvalidDataException("The ASL unit catalog could not be loaded."));
 
+    public static DefinitionReference GermanHalftrack() => Reviewed("attacker-halftrack", "asl:vehicle", "german");
+
     public static DefinitionReference GermanCrew() => Reviewed("attacker-crew", "asl:crew", "german");
 
     public static DefinitionReference GermanMortar() => Reviewed("campaign-german-81mm-mortar", "asl:gun", "german", manufactured: true);

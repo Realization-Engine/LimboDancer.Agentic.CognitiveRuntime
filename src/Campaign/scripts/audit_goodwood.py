@@ -10,7 +10,7 @@ SOURCE = ROOT / "prototypes/europe-hex-map/sources/situations/panzer-leader-05.j
 COMPOSITION = ROOT / "prototypes/europe-hex-map/tactical/source-composition.js"
 OUTPUT = ROOT / "src/Campaign/docs/Goodwood Coverage Inventory.json"
 # Verified mappings in FormationDeployment.Units. This is a baseline audit, not runtime admission.
-READY = {"uk-rifle": "british-squad", "de-rifle": "attacker-squad",
+READY = {"de-halftrack": "attacker-halftrack", "uk-rifle": "british-squad", "de-rifle": "attacker-squad",
          "uk-engineer": "british-elite-squad", "de-81mm": "campaign-german-81mm-mortar + attacker-crew"}
 
 def inventory():

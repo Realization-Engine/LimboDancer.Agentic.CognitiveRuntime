@@ -4,7 +4,7 @@ Baseline: 14 October 2026, following fe470551. This audit separates setup repres
 
 ## Source accounting
 
-The source has 122 counters in 25 types: 68 Allied and 54 German. Eight Allied Typhoons remain off-map support, leaving 114 ground formations. Four types covering 31 source counters have selected-formation ASL conversion. Another 83 ground counters require conversion. This is potential conversion coverage, not a claim that all 31 have been deployed or transferred.
+The source has 122 counters in 25 types: 68 Allied and 54 German. Eight Allied Typhoons remain off-map support, leaving 114 ground formations. Five types covering 35 source counters have selected-formation ASL conversion. Another 79 ground counters require conversion. This is potential conversion coverage, not a claim that all 35 have been deployed or transferred.
 
 The adjacent JSON inventory enumerates every source instance and pins the source and composition files. Regenerate with `python src/Campaign/scripts/audit_goodwood.py`; verify with `--check`.
 
@@ -34,7 +34,7 @@ The adjacent JSON inventory enumerates every source instance and pins the source
 | de-panther-w | 3 | 4 | conversion required |
 | de-panther | 4 | 5 | conversion required |
 | de-tiger | 3 | 5 | conversion required |
-| de-halftrack | 4 | 5 | conversion required |
+| de-halftrack | 4 | 5 | attacker-halftrack |
 
 Principal object counts are existing composition evidence, not ASL catalog approval. Crew-served weapons require separate crew identities in addition to these counts. Integrated vehicle crews and machine guns must not become free extra infantry or equipment. The Sherman formation explicitly contains three 75 mm Shermans and one Firefly. Existing generic tank, halftrack and gun definitions are candidates only until their designation and properties match. Missing variants need labeled manufactured profiles in existing ASL kinds.
 
@@ -110,3 +110,9 @@ Remaining G2 acceptance: raster seam comparison, viewport-driven package inspect
 A complete-map Release test generates all 84 packages and compares terrain and elevation pixel spans across every horizontally and vertically adjacent package. It includes ownership boundaries while excluding one compiler-border hex. The test passes in 20 seconds. Source ownership, shared metric geometry and compiled raster seams are now verified independently. UI integration, demand loading and final save/navigation acceptance remain outstanding.
 
 Next counter increment: German SdKfz 251 halftracks. The existing `attacker-halftrack` definition is SPW 251/1 and can be reused after setup validation. Existing `attacker-tank` is PzKpfw IIIH, so it must not substitute for Goodwood Panzer IV, Panther or Tiger formations. Those require distinct manufactured profiles.
+
+## G3 increment: German halftracks
+
+All four German halftrack source formations now convert to five distinct SPW 251/1 vehicles each, reusing the reviewed `attacker-halftrack` catalog definition. The integrated crew and AAMG remain vehicle capabilities; no free passengers, separate crews or equipment are created. IDs retain their source parent and vehicle ordinal. The bounded setup policy admits an unoccupied open-ground or paved-road hex. Initial facing is explicitly west as a game default for review in ASL setup.
+
+Five handoff/reload cases pass through the existing ASL planner and replay, including the new halftrack case and unchanged infantry, engineer and mortar cases. A separate accounting test verifies all twenty halftrack identities. The browser-controller regression includes opening a halftrack formation and saving its context. This adds no vehicle movement or combat rules. Complete Situation assembly, remaining vehicle/gun profiles and final browser acceptance remain pending.

@@ -238,6 +238,12 @@ public sealed class PilotDeployment
         // Bounded setup admission, not a complete ASL Gun emplacement rule.
         if ((unit.Kind is "mortar" or "crew") && cell.Terrain is not ("Open Ground" or "Paved Road"))
             return "Mortar detachments currently require open ground or paved road; other terrain is inspection-only.";
+        if (unit.Kind == "vehicle" && cell.Terrain is not ("Open Ground" or "Paved Road"))
+            return "Vehicle setup currently requires open ground or paved road; no building or woods entry is inferred.";
+        if (unit.Kind == "vehicle" && state.Placements.Any(p => p.UnitId != unitId && p.Hex == hex))
+            return "Vehicle setup requires an unoccupied hex.";
+        if (state.Placements.Any(p => p.UnitId != unitId && p.Hex == hex && Units.Any(u => u.Id == p.UnitId && u.Kind == "vehicle")))
+            return "This hex already contains a vehicle.";
         if (formation is not null && cell.Parent != formation.Anchor) return "Deploy within the selected formation hex " + formation.Anchor + ".";
         var allowed = unit.Side == "Allied" ? context.AlliedParents : context.GermanParents;
         if (!allowed.Contains(cell.Parent, StringComparer.Ordinal)) return unit.Side + " setup is not allowed in formation hex " + cell.Parent + ".";

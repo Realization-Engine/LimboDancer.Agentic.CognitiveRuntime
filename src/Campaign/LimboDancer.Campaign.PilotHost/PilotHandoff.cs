@@ -32,10 +32,15 @@ public static class PilotHandoffs
         var rows = d.Units.Select(u => new HandoffUnit(u.Id, u.Label, u.Definition is null ? null : AslId(u.Id), u.Definition is null ? "Needs data" : "Ready",
             u.Definition is null ? "Weapon definition unresolved; retained in campaign setup, omitted from ASL setup."
                 : u.CatalogStatus + (u.Holding is { } link ? " Operated by " + link.Holder + "." : "") )).ToArray();
+        object Position(PilotUnit unit)
+        {
+            var at = d.Package.Board.Value + ":" + setup.Placements.Single(p => p.UnitId == unit.Id).Hex + ":0";
+            return unit.Kind == "vehicle" ? new { at, facing = "west" } : (object)new { at };
+        }
         var placements = d.Units.Where(u => u.Definition is not null).Select(u => new
         {
-            id = AslId(u.Id), kind = u.Kind == "mortar" ? "asl:gun" : u.Kind == "crew" ? "asl:crew" : "asl:squad", definition = u.Definition!.Definition,
-            side = u.Side.ToLowerInvariant(), position = new { at = d.Package.Board.Value + ":" + setup.Placements.Single(p => p.UnitId == u.Id).Hex + ":0" },
+            id = AslId(u.Id), kind = catalog.Definition(u.Definition!.Definition)!.Kind, definition = u.Definition!.Definition,
+            side = u.Side.ToLowerInvariant(), position = Position(u),
             holding = u.Holding is { } link ? new { holder = AslId(link.Holder), role = "manned" } : null,
             conditions = new Dictionary<string, bool> { [Conditions.Broken] = false, [Conditions.Berserk] = false,
                 [Conditions.Captured] = false, [Conditions.Melee] = false, ["asl:ti"] = false,

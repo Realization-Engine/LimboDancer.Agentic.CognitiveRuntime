@@ -35,9 +35,15 @@ public static class FormationDeployment
             "uk-rifle" => (4, "Allied", "British rifle squad ", "rifle", "R"),
             "de-rifle" => (4, "German", "German rifle squad ", "rifle", "R"),
             "uk-engineer" => (4, "Allied", "British engineer squad ", "engineer", "E"),
+            "de-halftrack" => (5, "German", "German SPW 251/1 ", "vehicle", "HT"),
             "de-81mm" => (6, "German", "German 81 mm mortar and crew ", "mortar", "M"),
-            _ => throw new InvalidDataException("Select a deployed rifle, British engineer or German 81 mm mortar formation.")
+            _ => throw new InvalidDataException("Select a deployed rifle, British engineer German 81 mm mortar or German halftrack formation.")
         };
+        if (kind == "vehicle")
+            return Enumerable.Range(1, count).Select(i => new PilotUnit(selection.UnitId + "/vehicle-" + i,
+                selection.UnitId, side, label + i, kind, symbol, PilotCatalog.GermanHalftrack(),
+                "Reviewed SPW 251/1 profile; five vehicles per formation from the source composition table. Initial ASL facing is west, a game default. Review facing in ASL setup.",
+                AllotmentStatus: "Integrated vehicle crew and AAMG remain vehicle capabilities. No extra crew, passenger or equipment counters are issued by this formation.")).ToArray();
         if (kind == "mortar")
             return Enumerable.Range(1, 6).SelectMany(i => new PilotUnit[]
             {
@@ -53,6 +59,7 @@ public static class FormationDeployment
 
     public static string PolicyFor(IReadOnlyList<PilotUnit> units) => units[0].Kind switch
     {
+        "vehicle" => "goodwood-selected-halftrack-1",
         "engineer" => "goodwood-selected-engineer-1",
         "crew" => "goodwood-selected-mortar-2",
         _ => Policy

@@ -3,8 +3,8 @@
   "compositionSha256Lf": "e9d250c82bbb681f0852de7d50a03a54b3201367b109e53d8da730551202f701",
   "sourceCounters": 122,
   "counterTypes": 25,
-  "selectedPilotSourceCounters": 31,
-  "unconvertedGroundSourceCounters": 83,
+  "selectedPilotSourceCounters": 35,
+  "unconvertedGroundSourceCounters": 79,
   "offMapAircraft": 8,
   "sourceHexFragments": 1038,
   "terrain": {
@@ -409,8 +409,8 @@
       ],
       "principalObjectsPerFormation": 5,
       "compositionEvidence": "5 SdKfz 251 halftracks, 5 machine guns; 10 personnel.",
-      "pilotDefinition": null,
-      "status": "conversion required"
+      "pilotDefinition": "attacker-halftrack",
+      "status": "selected-formation implemented"
     }
   ]
 }
