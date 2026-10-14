@@ -4,6 +4,8 @@ Status: analysis and proposed design, not an implementation specification.
 Date: 13 October 2026.
 Code baseline: c1b7c4b7.
 
+Implementation follow-up: [Formation to ASL Map Alignment Design and Implementation Plan](Formation%20to%20ASL%20Map%20Alignment%20Design%20and%20Implementation%20Plan.md).
+
 ## Purpose and recommendation
 
 Align Campaign Atlas squad maps with the existing ASL map and terrain contracts so a formation engagement can produce a coherent, executable tactical map. The ASL libraries should own tactical geometry, terrain compilation and rules semantics. Campaign code should own source interpretation, refinement, geographic placement and engagement selection.
@@ -38,7 +40,7 @@ Evaluate generated maps across a representative seed set. Check required access,
 
 Playability does not require symmetric terrain or equal chances for both sides. Preserve the intended Situation asymmetry. Do not adapt generation to the player's current force placement or desired outcome.
 
-A rejected candidate must not trigger an unrecorded random reroll. Use a specified deterministic repair or bounded candidate-selection procedure whose inputs and selected result are recorded in the refinement manifest. If no valid result is available, report the generation failure before admitting the engagement.
+A rejected candidate must not trigger an unrecorded random reroll. The first version reports generation failure without rerolling. A later version may use a specified deterministic repair or bounded candidate-selection procedure whose inputs and selected result are recorded in the refinement manifest. If no valid result is available, report the generation failure before admitting the engagement.
 
 ### Replayability acceptance checks
 
@@ -209,13 +211,13 @@ Use stable spatial seeds and feature identities. Generating a neighboring format
 
 A persistent seed is required for tactical terrain refinement. Generate one 128-bit root terrain seed when a campaign's terrain world is created, or accept an explicitly supplied seed when reproducing a world. Save it before generating terrain. A new engagement, crop, browser session or save load must reuse it.
 
-The root seed alone is insufficient to reproduce a map. Pin the source content revision, spatial frame and scale, profile version and parameters, generator version, and adopted evidence and overrides. These inputs, together with the root seed, define the refinement identity.
+The root seed alone is insufficient to reproduce a map. Pin the source content revision, spatial frame and scale, profile version and parameters, generator version, and adopted evidence and overrides. These inputs, together with the root seed, define the world refinement identity. Reproducing compiled terrain also requires pinned catalog content, compiler, fact-derivation and serialization versions. Crop/package identity is separate from world feature identity.
 
 Derive independent local seeds through a specified cryptographic hash, such as SHA-256, over canonically serialized inputs:
 
 `root seed + stable map-space identity + source revision + spatial revision + profile digest + generator version + feature domain + stable spatial key`
 
-The implementation specification must fix field encoding, order, digest byte order and the conversion of the digest into PRNG state. It must also select and version an explicit PRNG algorithm with cross-runtime test vectors. Do not use JavaScript Math.random, an unspecified System.Random implementation, runtime string hashes, current time or browser state inside refinement.
+The implementation specification must fix field encoding, order, digest byte order and the conversion of the digest into PRNG state. It must also select and version an explicit random-stream algorithm with portable test vectors. The implementation plan proposes sha256-counter-v1 with C# as the sole first-version generation authority. Do not use JavaScript Math.random, an unspecified System.Random implementation, runtime string hashes, current time or browser state inside refinement.
 
 Use separate feature domains for parcels, buildings, woodland detail and other independent generation stages. This avoids one added random draw for a building unexpectedly changing all later woodland. Within each domain, derive randomness from stable feature or region identities instead of consuming one global sequence in traversal order.
 
@@ -391,7 +393,7 @@ Use bounded engagements initially. A whole formation board contains many more ta
 - Map-to-metric and metric-to-map conversions satisfy a documented tolerance at all supported rotations.
 - Source-board joins do not introduce grid gaps, duplicate cells or broken road and stream connections.
 - Parent assignments are deterministic at formation boundaries.
-- Repeated and overlapping refinement produces the same shared features and terrain facts.
+- Repeated and overlapping refinement produces the same shared world features and admitted interior terrain facts. The implementation plan requires raster-alignment and boundary verification before crop-edge locations become playable.
 - Buildings, crossings and elevations agree between rendering and admitted ASL rules.
 - Supply points remain tied to physical positions through refinement and supported save migration.
 - Existing prototype saves are preserved or explicitly migrated, with no silent scale change.
