@@ -1,0 +1,34 @@
+# Common brief for a pass 55 building agent
+
+You build one increment of "pass 55, Armored combat II" of an Advanced Squad Leader rules engine, in the main checkout, on the branch `feature/asl-backlog-pass-55`. I (the session that briefs you) review your diff, check the work in the Studio, and commit. You do NOT commit, stage, switch branches, push, or touch `main` or any other worktree. Your closing message is your report (see the end).
+
+## Read first
+- E:/Archive/GitHub/dlandi/pass32-tools/pass55/codemap.md (where things are; verify a line before relying on it).
+- The design: E:\Archive\GitHub\dlandi\LimboDancer.MCP\src\ASL\docs\Passes\ASL Unit Backlog Pass 55 Design.md (sections 2 to 6: the rulings R55.n bind you; do not re-decide them. If one cannot be built as written, stop that part, say so in the report, and build the rest).
+- The rule on its page before any code that states it, with its examples: page texts, one file a physical page, pages 43 to 253, at E:/Archive/GitHub/dlandi/pass32-tools/pass35/session3/pages/pNNN.txt; any other page with `python E:/Archive/GitHub/dlandi/pass32-tools/pass55/dump_pages.py <page>` (written to pass55/pages/pNNN.txt). Cite rule and page in code comments the way the surrounding code does.
+
+## Hard rules
+- Rules live in `LimboDancer.Domains.Asl.Rules` alone: every ASL rule is a calculator there that takes facts and returns a verdict. Play reads the state and the map, hands the facts over, and writes the events; it decides no rule. LOS and range stay in Maps. The Rules project references only Abstractions. Tests of Rules reach its public members only.
+- Absent-safety: every fact you add to a record (an event payload, a facts record kept as JSON) is nullable or defaulted and `JsonIgnore` when null/default, so a game recorded before the pass reads and replays exactly as it did. A positional record gains a fact as an `init` property, not a new positional parameter, unless every caller is updated and the JSON shape of old records is unchanged. For each new fact, ask what the projector's record check does with an old record that lacks it. A rule that would change the result of an attack that could be made before the pass must be gated by a recorded fact.
+- A side's view never shows what that side may not know.
+- Do not over-engineer. Match the surrounding code's naming, comment density, and idiom. No em-dashes anywhere (code comments, texts shown to players, docs). A hex in a player-facing text is written in brackets like [G4].
+- Shell: never a heredoc, never `sed -i`, never a multi-line `python -c`, never a bare `python -`, never `cd` into a folder of the repository (a hook refuses these; a refusal is a rule broken, do not route around it), never `git add`, never `grep -r` over src/ASL in Bash (use the Grep tool). A script is a file written with the Write tool under E:/Archive/GitHub/dlandi/pass32-tools/pass55/ and run as `python <file> < /dev/null` (PYTHONIOENCODING=utf-8). Files are LF, UTF-8 without BOM.
+- Never send an edit and the build or test that depends on it in the same response. Never run two builds or tests at once (they share obj/). Do not edit a project's files while a build of it runs.
+- Never touch `src/ASL/boards/`, `.claude/`, or anything outside `src/ASL` and `docs/ASL` and the tools folder. Never start the Studio (I do). Never stop Visual Studio or any process you did not start.
+- After every Edit, the diff you made must be exactly what you meant: the editor has dropped clauses before. Before reporting, read `git -C E:/Archive/GitHub/dlandi/LimboDancer.MCP diff --stat` and skim the full diff of each changed file once.
+
+## Building and testing
+- Build: `bash E:/Archive/GitHub/dlandi/pass32-tools/pass55/build_studio.sh` (MapStudio and everything under it into bin/p31b, warnings as errors; about 2 minutes; prints the errors and "exit N"). It must end with exit 0.
+- Tests: `bash E:/Archive/GitHub/dlandi/pass32-tools/pass55/test.sh <Rules|Play|Units|MapStudio> "<filter>"`, for example `test.sh Rules "FullyQualifiedName~ScenarioA1Pass55RulesTests"`. Run only the classes you add or touch and the classes of the code you changed (seconds to two minutes each). Never run a whole Rules or Play project (ten to fifteen minutes): that is the gate's. Exception: when you change a state record or an event's shape, run the Units project whole (`test.sh Units "FullyQualifiedName~LimboDancer"`), and when you change the catalog, the classes that list its ids.
+- Code analysis under warnings-as-errors: CA1716 rejects parameters named `to`/`from` and members named `Step`; IDE0040 wants `public` on interface members; IDE0055 formatting is fixed with `dotnet format whitespace <csproj> --include <files>` (never without --include); IDE0011 braces. A `BoardLocation` is a class (use `!`, not `.Value`). `Assert.Equal` on a tuple holding a list compares the list by reference: compare the parts.
+- New tests for this pass go in `tests/LimboDancer.Domains.Asl.Rules.Tests/ScenarioA1Pass55RulesTests.cs` and `tests/LimboDancer.Domains.Asl.Play.Tests/BacklogPass55Tests.cs` (create them if absent, modelled on the Pass50 files beside them; add to them if present). A Play test replays its game through the projector as the Pass50 ones do. A new page test class must call `context.UseViewport()` and name its game after itself.
+- A new action goes into `GameActions.All` and `PlayTests.TheActionsAreRegisteredWritesThatNeedConfirmation`. A new event type goes through `GameEventReader`/`GameEventWriter`, the projector, and the Studio's `Services/PlayRecords.cs` and `ReplaySteps.cs`. A new condition a verdict carries needs its case in the projector's `ConditionName` switch.
+- The texts a player reads (proposal lines, refusals, record lines) are plain sentences that cite the rule, as the surrounding ones do; a refusal says what the player can do instead where that is short.
+
+## Report (your closing message, under 900 words)
+1. What departs from the brief or a ruling, first: anything you left out, simplified, or decided yourself, each with its reason.
+2. What you built: files and members, new facts in records (with their JSON names), new texts.
+3. The build's result and each test run's counts (exact lines).
+4. For each new fact: what an old record does.
+5. How to see it in the Studio: for each thing built, a tiny game (which counters where on board 3, which phase, which dice) and the element ids or button texts of anything you added to the Play page, and the JSON names to read back in the game file.
+6. Anything you saw that looks wrong but is outside the task.
