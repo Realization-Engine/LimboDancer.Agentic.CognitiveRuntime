@@ -131,6 +131,19 @@ public sealed class HexFactDerivationTests
     }
 
     [Fact]
+    public void BridgeInBoundingBoxCornerOutsideHexDoesNotCreateBridgeLocation()
+    {
+        var name = HexName.Parse("E4");
+        var border = Geometry.Border(Geometry.IndexOf(name));
+        var x = border.Min(p => p.X);
+        var y = border.Min(p => p.Y);
+        // The top-left rectangle corner is outside this hex's six-sided border.
+        var e4 = Derive(Paint((E4Center, "Shallow Stream"), ((x, y, x + 1, y + 1), "Stone Bridge")))[name];
+        Assert.Null(e4.Bridge);
+        Assert.Equal([(0, "Shallow Stream")], Levels(e4));
+    }
+
+    [Fact]
     public void BaseLevelComesFromTheNearCenterElevation()
     {
         var e4 = Derive(Paint(), elevation: (x, y) => (x, y) == (226, 224) ? (sbyte)2 : (sbyte)0)[HexName.Parse("E4")];

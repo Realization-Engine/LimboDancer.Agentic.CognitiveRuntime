@@ -229,3 +229,15 @@ Full record: [Pilot release review](../../Campaign/docs/Pilot-Release-Review.md)
 - Failure injection covers incomplete staging and rename failure, not power-loss durability. Orphan stages stay ignored; automatic cleanup remains deferred.
 
 Milestone 4 is reviewed but not signed off. Next work is cold-reload profiling and browser open-to-ready/long-task measurement. Keep the fixed Goodwood crop and eight-squad scope until the remaining performance gate is closed or its budget is explicitly revised. Broader formation conversion remains a subsequent phase.
+### Profiling follow-up, 14 October 2026
+
+The release-review work was committed as b5f1d064. Its profiling action is complete. Exact parent lookup now takes 25 to 32 ms instead of 709 ms, with a regression against the exhaustive lookup. Browser resume skips a redundant health request and an unchanged-save rewrite. All identity, terrain and setup validation remains in place.
+
+Three fresh-process API reloads now take 1.74 to 1.85 seconds. First browser open against a restarted host takes 3.14 seconds; warm repeats take 1.20 to 1.93 seconds. The Release suite passes 28 tests, with browser-module persistence and campaign-file regressions also passing. The Pilot release review records raw evidence and measurement boundaries.
+
+Milestone 4 remains open because the end-to-end cold browser result exceeds the proposed 2-second budget. Next: isolate and reduce first-request handling and rendering costs, repeat cold/warm browser timing, and retain the bounded scope until the gate closes or the budget is explicitly revised.
+### First-open gate result, 14 October 2026
+
+A bounded follow-up now passes the proposed 2-second saved-map open target in three fresh-host in-app browser checks: 1.63, 1.87 and 1.68 seconds; warm repeats take 1.04 to 1.31 seconds. This supersedes the earlier outstanding cold-open result. Terrain derivation now rejects bridge/tunnel-free bounding rectangles before exact polygon scanning; positive rectangles retain the original semantics. All map response content matches the original lookup.
+
+Campaign tests: 29 passed. Shared ASL map tests: 245 passed. Browser persistence and campaign-file regressions pass. Default runtime tiering is unchanged. See the Pilot release review for raw evidence, method and limits. Stop performance work here for the bounded pilot; wider browser/accessibility acceptance, full formation conversion and other deferred scope remain separate work.

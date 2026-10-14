@@ -110,3 +110,15 @@ Browser acceptance also passed: fresh Goodwood preparation and formation setup, 
 See [Pilot release review](docs/Pilot-Release-Review.md) for all measurements and acceptance results. The Release suite passes 27 tests, including cancellation retry, interrupted publication fault injection and preservation of an existing session after rejected imports. The UI adds keyboard pan/zoom/fit and clearer formation-parent boundaries.
 
 Three fresh-process runs generated and opened terrain in 2.44 to 3.28 seconds, excluding host startup (1.13 to 1.34 seconds). Saved-map reload was 1.81 to 2.08 seconds, so the proposed 2-second gate is not fully passed. Browser paint is excluded. Next: profile cold reload and measure browser open-to-ready latency before expanding the pilot. Reproduce with `scripts/Measure-Pilot.ps1` after a Release build. Raw measurements and limitations are linked from the review.
+### Profiling follow-up, 14 October 2026
+
+The release-review work was committed as b5f1d064. Its profiling action is complete. Exact parent lookup now takes 25 to 32 ms instead of 709 ms, with a regression against the exhaustive lookup. Browser resume skips a redundant health request and an unchanged-save rewrite. All identity, terrain and setup validation remains in place.
+
+Three fresh-process API reloads now take 1.74 to 1.85 seconds. First browser open against a restarted host takes 3.14 seconds; warm repeats take 1.20 to 1.93 seconds. The Release suite passes 28 tests, with browser-module persistence and campaign-file regressions also passing. The Pilot release review records raw evidence and measurement boundaries.
+
+Milestone 4 remains open because the end-to-end cold browser result exceeds the proposed 2-second budget. Next: isolate and reduce first-request handling and rendering costs, repeat cold/warm browser timing, and retain the bounded scope until the gate closes or the budget is explicitly revised.
+### First-open gate result, 14 October 2026
+
+A bounded follow-up now passes the proposed 2-second saved-map open target in three fresh-host in-app browser checks: 1.63, 1.87 and 1.68 seconds; warm repeats take 1.04 to 1.31 seconds. This supersedes the earlier outstanding cold-open result. Terrain derivation now rejects bridge/tunnel-free bounding rectangles before exact polygon scanning; positive rectangles retain the original semantics. All map response content matches the original lookup.
+
+Campaign tests: 29 passed. Shared ASL map tests: 245 passed. Browser persistence and campaign-file regressions pass. Default runtime tiering is unchanged. See the Pilot release review for raw evidence, method and limits. Stop performance work here for the bounded pilot; wider browser/accessibility acceptance, full formation conversion and other deferred scope remain separate work.

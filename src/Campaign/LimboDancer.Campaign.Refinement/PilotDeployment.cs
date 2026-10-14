@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
@@ -42,10 +43,12 @@ public sealed class PilotDeployment
     }
 
     // Load accepted features, never regenerate terrain when opening a campaign save.
-    public PilotDeployment(PilotInputs inputs, PilotBundle bundle)
+    public PilotDeployment(PilotInputs inputs, PilotBundle bundle, IDictionary<string, double>? timings = null)
     {
         ArgumentNullException.ThrowIfNull(inputs); ArgumentNullException.ThrowIfNull(bundle);
         this.inputs = inputs; Bundle = bundle;
+        var watch = Stopwatch.StartNew();
+        void Stage(string name) { if (timings is not null) timings[name] = watch.Elapsed.TotalMilliseconds; watch.Restart(); }
         SeedRandom.ValidateSeed(bundle.Seed);
         if (bundle.Features is null || bundle.Manifest is null || bundle.Features.Length > 1_000_000 || bundle.Manifest.Length > 2_000_000)
             throw new InvalidDataException("Invalid pilot package size.");
@@ -58,11 +61,17 @@ public sealed class PilotDeployment
             throw new InvalidDataException("Only the pinned Goodwood crop and catalog are admitted.");
         Package = new(BoardRef.Parse(bundle.Board), bundle.Name, model);
         CheckIdentity();
+        Stage("decodeAndIdentity");
         Grid = FeatureCompiler.Compile(model, inputs.Catalog).Grid;
+        Stage("compile");
         if (PilotGenerator.GridHash(Grid) != bundle.GridSha256) throw new InvalidDataException("Compiled terrain hash differs from the accepted save.");
+        Stage("gridHash");
         Facts = VaslCompatibleHexFactDerivation.Derive(Grid, inputs.Catalog, HexsideAnnotations.None);
+        Stage("deriveFacts");
         if (BoardValidator.Validate(model, Facts, inputs.Catalog).HasErrors) throw new InvalidDataException("Saved terrain failed validation.");
+        Stage("validateBoard");
         Cells = Describe();
+        Stage("describeCells");
     }
 
     private void CheckIdentity()
@@ -90,11 +99,19 @@ public sealed class PilotDeployment
             throw new InvalidDataException("Pilot package identity or supported version does not match the save.");
     }
 
-    private PilotCell[] Describe() => Facts.Hexes.Select(f =>
+    private PilotCell[] Describe()
+    {
+        // Preserve ordinal source order and exact boundary tests. Most source polygons cannot
+        // contain a given center, so reject those using precomputed inclusive bounds first.
+        var regions = inputs.Regions.Select(r => (Region: r,
+            MinX: r.Polygon.Min(p => p.X), MaxX: r.Polygon.Max(p => p.X),
+            MinY: r.Polygon.Min(p => p.Y), MaxY: r.Polygon.Max(p => p.Y))).ToArray();
+        return Facts.Hexes.Select(f =>
     {
         var h = f.Index; var g = Facts.Geometry; var crop = inputs.DefaultCrop;
         var world = SpatialFrame.Center(crop.Column + h.Column, crop.Row + h.Row);
-        var parent = inputs.Regions.FirstOrDefault(r => MetricGeometry.Contains(r.Polygon, world))?.Key;
+        var parent = regions.FirstOrDefault(r => world.X >= r.MinX && world.X <= r.MaxX &&
+            world.Y >= r.MinY && world.Y <= r.MaxY && MetricGeometry.Contains(r.Region.Polygon, world)).Region?.Key;
         // A two-hex guard avoids clamped edge facts. Overlapping playable crops are not admitted.
         var interior = h.Column >= 2 && h.Column < crop.Width - 2 && h.Row >= 2 && h.Row < crop.Height - 2;
         var code = f.Center.Terrain?.Code;
@@ -106,6 +123,7 @@ public sealed class PilotDeployment
         return new PilotCell(f.Hex.ToString(), (crop.Column + h.Column) + "/" + (crop.Row + h.Row), parent,
             p.X, p.Y, g.Vertices(h).ToArray(), f.Center.Terrain?.Name ?? "Unknown", interior && parent is not null && ground && f.Bridge is null, reason);
     }).ToArray();
+    }
 
     public string ContextHash(DeploymentContext context)
     {

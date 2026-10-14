@@ -1,0 +1,32 @@
+[
+  {
+    "level": "info",
+    "message": "ASL_PILOT_PERFORMANCE {\"mode\":\"resume\",\"beforeOpenMs\":1776.6000000238419,\"requestToHeadersMs\":1254.7999999523163,\"responseBodyMs\":43.200000047683716,\"jsonParseMs\":2.899999976158142,\"openRequestMs\":1301,\"serverStagesMs\":{\"decodeAndIdentity\":69.5857,\"compile\":76.7584,\"gridHash\":53.5317,\"deriveFacts\":554.3336,\"validateBoard\":76.7816,\"describeCells\":19.5424,\"loadTotal\":851.3744,\"validateSetup\":15.7466,\"render\":342.5371},\"persistMs\":436.7999999523163,\"buildAndPersistMs\":468.2999999523163,\"openToReadyMs\":3752.100000023842,\"longTaskCount\":2,\"longTaskMaxMs\":489,\"longTaskTotalMs\":637,\"longTaskSupported\":true}",
+    "timestamp": "2026-10-14T12:54:21.650Z",
+    "url": "http://127.0.0.1:8093/tactical/asl-pilot.js"
+  },
+  {
+    "level": "info",
+    "message": "ASL_PILOT_PERFORMANCE {\"contextMs\":0.7000000476837158,\"healthMs\":1825.2000000476837,\"mode\":\"resume\",\"beforeOpenMs\":1947.8999999761581,\"requestToHeadersMs\":852.7000000476837,\"responseBodyMs\":8.5,\"jsonParseMs\":2.600000023841858,\"openRequestMs\":863.9000000953674,\"serverStagesMs\":{\"decodeAndIdentity\":10.109,\"compile\":59.3945,\"gridHash\":47.4125,\"deriveFacts\":423.4777,\"validateBoard\":22.8152,\"describeCells\":14.3352,\"loadTotal\":577.5845,\"validateSetup\":3.019,\"render\":257.3921},\"persistMs\":0,\"buildAndPersistMs\":22.299999952316284,\"openToReadyMs\":2984.8000000715256,\"longTaskCount\":1,\"longTaskMaxMs\":129,\"longTaskTotalMs\":129,\"longTaskSupported\":true}",
+    "timestamp": "2026-10-14T12:57:08.844Z",
+    "url": "http://127.0.0.1:8093/tactical/asl-pilot.js"
+  },
+  {
+    "level": "info",
+    "message": "ASL_PILOT_PERFORMANCE {\"contextMs\":0.6000000238418579,\"mode\":\"resume\",\"beforeOpenMs\":150.79999995231628,\"requestToHeadersMs\":2593.600000023842,\"responseBodyMs\":7.5,\"jsonParseMs\":5,\"openRequestMs\":2606.3000000715256,\"serverStagesMs\":{\"decodeAndIdentity\":126.4694,\"compile\":128.2097,\"gridHash\":67.1013,\"deriveFacts\":857.9976,\"validateBoard\":101.7436,\"describeCells\":29.1479,\"loadTotal\":1312.3174,\"validateSetup\":27.8769,\"render\":593.1437},\"persistMs\":0,\"buildAndPersistMs\":45.299999952316284,\"openToReadyMs\":3141.100000023842,\"longTaskCount\":3,\"longTaskMaxMs\":233,\"longTaskTotalMs\":379,\"longTaskSupported\":true}",
+    "timestamp": "2026-10-14T13:00:08.580Z",
+    "url": "http://127.0.0.1:8093/tactical/asl-pilot.js"
+  },
+  {
+    "level": "info",
+    "message": "ASL_PILOT_PERFORMANCE {\"contextMs\":0.5,\"mode\":\"resume\",\"beforeOpenMs\":153,\"requestToHeadersMs\":1494,\"responseBodyMs\":42.59999990463257,\"jsonParseMs\":3.700000047683716,\"openRequestMs\":1540.2999999523163,\"serverStagesMs\":{\"decodeAndIdentity\":44.7837,\"compile\":102.944,\"gridHash\":64.5611,\"deriveFacts\":633.2296,\"validateBoard\":43.839,\"describeCells\":25.2783,\"loadTotal\":914.6977,\"validateSetup\":8.1061,\"render\":543.8574},\"persistMs\":0,\"buildAndPersistMs\":26.399999976158142,\"openToReadyMs\":1928.5999999046326,\"longTaskCount\":2,\"longTaskMaxMs\":184,\"longTaskTotalMs\":234,\"longTaskSupported\":true}",
+    "timestamp": "2026-10-14T13:01:08.561Z",
+    "url": "http://127.0.0.1:8093/tactical/asl-pilot.js"
+  },
+  {
+    "level": "info",
+    "message": "ASL_PILOT_PERFORMANCE {\"contextMs\":0.5,\"mode\":\"resume\",\"beforeOpenMs\":100.29999995231628,\"requestToHeadersMs\":722.8999999761581,\"responseBodyMs\":58.200000047683716,\"jsonParseMs\":3.5,\"openRequestMs\":784.7000000476837,\"serverStagesMs\":{\"decodeAndIdentity\":7.5643,\"compile\":41.4067,\"gridHash\":47.5527,\"deriveFacts\":114.6138,\"validateBoard\":34.4781,\"describeCells\":18.1774,\"loadTotal\":263.8318,\"validateSetup\":7.6696,\"render\":434.6339},\"persistMs\":0,\"buildAndPersistMs\":39.5,\"openToReadyMs\":1197.3999999761581,\"longTaskCount\":2,\"longTaskMaxMs\":231,\"longTaskTotalMs\":303,\"longTaskSupported\":true}",
+    "timestamp": "2026-10-14T13:02:56.995Z",
+    "url": "http://127.0.0.1:8093/tactical/asl-pilot.js"
+  }
+]

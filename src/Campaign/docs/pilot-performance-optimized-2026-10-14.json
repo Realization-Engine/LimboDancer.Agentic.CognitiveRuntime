@@ -1,0 +1,84 @@
+{
+  "os": {
+    "Caption": "Microsoft Windows 10 Pro for Workstations",
+    "TotalVisibleMemorySize": 133840972
+  },
+  "runs": [
+    {
+      "seed": "00000000000000000000000000000000",
+      "startupSeconds": 1.3063593,
+      "generationSeconds": 2.0027138,
+      "generationAndOpenSeconds": 2.9190583,
+      "reloadSeconds": 1.7449916,
+      "reloadStagesMs": {
+        "decodeAndIdentity": 63.6776,
+        "compile": 88.5782,
+        "gridHash": 71.4297,
+        "deriveFacts": 733.3473,
+        "validateBoard": 89.9952,
+        "describeCells": 25.1865,
+        "loadTotal": 1073.4197,
+        "validateSetup": 23.5976,
+        "render": 489.5158
+      },
+      "generationPeakWorkingSetBytes": 228294656,
+      "reloadPeakWorkingSetBytes": 230711296,
+      "packageBytes": 693014.0,
+      "savedRequestBytes": 488512,
+      "svgBytes": 227684
+    },
+    {
+      "seed": "00000000000000000000000000000001",
+      "startupSeconds": 1.1944852,
+      "generationSeconds": 2.4357594,
+      "generationAndOpenSeconds": 3.1796928,
+      "reloadSeconds": 1.8485021,
+      "reloadStagesMs": {
+        "decodeAndIdentity": 80.5689,
+        "compile": 93.8865,
+        "gridHash": 84.3893,
+        "deriveFacts": 795.035,
+        "validateBoard": 93.9892,
+        "describeCells": 31.9868,
+        "loadTotal": 1181.3169,
+        "validateSetup": 26.1391,
+        "render": 445.3118
+      },
+      "generationPeakWorkingSetBytes": 233287680,
+      "reloadPeakWorkingSetBytes": 234598400,
+      "packageBytes": 695368.0,
+      "savedRequestBytes": 491194,
+      "svgBytes": 227878
+    },
+    {
+      "seed": "00000000000000000000000000000002",
+      "startupSeconds": 1.1769388,
+      "generationSeconds": 1.7510232,
+      "generationAndOpenSeconds": 2.4900583,
+      "reloadSeconds": 1.7980105,
+      "reloadStagesMs": {
+        "decodeAndIdentity": 68.3569,
+        "compile": 89.2161,
+        "gridHash": 72.0656,
+        "deriveFacts": 705.3282,
+        "validateBoard": 92.8225,
+        "describeCells": 30.4033,
+        "loadTotal": 1059.253,
+        "validateSetup": 34.3465,
+        "render": 568.1916
+      },
+      "generationPeakWorkingSetBytes": 240922624,
+      "reloadPeakWorkingSetBytes": 233807872,
+      "packageBytes": 684746.0,
+      "savedRequestBytes": 479212,
+      "svgBytes": 227405
+    }
+  ],
+  "notes": "Release; fresh process per generation and reload; unique package roots; OS disk cache not flushed; HTTP serialization included; browser paint excluded; process peak working set, not managed heap.",
+  "cpu": {
+    "Name": "Intel(R) Xeon(R) W-10885M CPU @ 2.40GHz",
+    "NumberOfLogicalProcessors": 16
+  },
+  "date": "2026-10-14T12:52:14.7464429Z",
+  "runtime": "10.0.402"
+}

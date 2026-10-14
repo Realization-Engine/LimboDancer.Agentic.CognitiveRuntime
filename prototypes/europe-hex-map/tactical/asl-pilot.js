@@ -3,12 +3,19 @@
 window.AslPilot = (() => {
  const ns='http://www.w3.org/2000/svg';
  const el=(tag,text)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;return n;};
- async function api(path,body,method=body?'POST':'GET'){
+ async function api(path,body,method=body?'POST':'GET',timings){
+  const started=performance.now();
   const r=await fetch('/api/asl-pilot'+path,{method,headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});
   if(r.status===404)throw Error('The ASL pilot requires the campaign pilot host. Open this campaign on http://127.0.0.1:8093 and load your campaign file.');
-  const value=r.status===204?null:await r.json();if(!r.ok)throw Error(value?.error||'Pilot request failed.');return value;
+  const headersAt=performance.now(),text=r.status===204?null:await r.text(),bodyAt=performance.now(),value=text===null?null:JSON.parse(text);if(timings)Object.assign(timings,{serverTiming:r.headers?.get?.("Server-Timing")||null,requestToHeadersMs:headersAt-started,responseBodyMs:bodyAt-headersAt,jsonParseMs:performance.now()-bodyAt});if(!r.ok)throw Error(value?.error||'Pilot request failed.');return value;
  }
  async function open(d,plan,storage){
+  // Opt-in local diagnostics only. Timings never enter campaign saves or terrain identities.
+  const measuring=new URLSearchParams(location.search).get('pilotMetrics')==='1',started=performance.now(),metrics={},longTasks=[];
+  let observer;
+  if(measuring&&typeof PerformanceObserver!=='undefined'&&PerformanceObserver.supportedEntryTypes?.includes('longtask')){observer=new PerformanceObserver(list=>longTasks.push(...list.getEntries()));observer.observe({type:'longtask'});}
+  const stopMetrics=()=>observer?.disconnect();
+  const reportReady=()=>{if(!measuring)return;requestAnimationFrame(()=>requestAnimationFrame(()=>{const ready=performance.now();setTimeout(()=>{longTasks.push(...(observer?.takeRecords()||[]));stopMetrics();console.info('ASL_PILOT_PERFORMANCE '+JSON.stringify({...metrics,openToReadyMs:ready-started,longTaskCount:longTasks.filter(t=>t.startTime>=started&&t.startTime<ready).length,longTaskMaxMs:Math.max(0,...longTasks.filter(t=>t.startTime>=started&&t.startTime<ready).map(t=>t.duration)),longTaskTotalMs:longTasks.filter(t=>t.startTime>=started&&t.startTime<ready).reduce((n,t)=>n+t.duration,0),longTaskSupported:!!observer}));},0);}));};
   const priorFocus=document.activeElement,dialog=el('dialog');dialog.className='asl-pilot';dialog.setAttribute('aria-label','Goodwood ASL deployment pilot');
   const header=el('header'),title=el('strong','Goodwood | ASL deployment pilot'),tools=el('div'),notice=el('p','Opening saved terrain...'),canvas=el('div'),inspector=el('div');
   notice.className='asl-pilot-notice';notice.setAttribute('role','status');canvas.className='asl-pilot-map';inspector.className='asl-pilot-inspector';
@@ -16,14 +23,14 @@ window.AslPilot = (() => {
   const button=(label,fn)=>{const b=el('button',label);b.type='button';b.onclick=fn;return b;};
   const close=()=>{if(busy){tell('Wait for the current placement to finish.');return;}try{if(view&&saved?.setup&&box)persist({...saved,viewport:box,selected,destination});dialog.close();}catch(e){tell('Unable to save: '+e.message,true);}};dialog.oncancel=e=>{e.preventDefault();close();};const back=button('Return to formation map',close);
   header.append(title,tools,back);dialog.append(header,notice,canvas,inspector);document.body.append(dialog);dialog.showModal();
-  dialog.onclose=()=>{alive=false;clearTimeout(timer);if(!view&&saved?.seed)api('/generate/'+saved.seed,null,'DELETE').catch(()=>{});dialog.remove();priorFocus?.focus();};
+  dialog.onclose=()=>{alive=false;stopMetrics();clearTimeout(timer);if(!view&&saved?.seed)api('/generate/'+saved.seed,null,'DELETE').catch(()=>{});dialog.remove();priorFocus?.focus();};
   const tell=(text,warning=false)=>{clearTimeout(timer);notice.textContent=text;notice.dataset.warning=String(warning);notice.hidden=!text;if(warning)timer=setTimeout(()=>{notice.hidden=true;},5000);};
   const persist=next=>{storage.save(next);saved=next;};
-  const context={campaignId:storage.campaignId,formationSignature:JSON.stringify({placements:Object.entries(plan.placements).sort(([a],[b])=>a.localeCompare(b)),supply:plan.supplyAdjustments||null}),
+  const contextAt=performance.now();const context={campaignId:storage.campaignId,formationSignature:JSON.stringify({placements:Object.entries(plan.placements).sort(([a],[b])=>a.localeCompare(b)),supply:plan.supplyAdjustments||null}),
    alliedParents:CampaignSupplyDeployment.refs(d,'uk-rifle-01').map(r=>r.boardId+'/'+r.hexId).sort(),
    germanParents:CampaignSupplyDeployment.refs(d,'de-rifle-01').map(r=>r.boardId+'/'+r.hexId).sort()};
   try{
-   await api('');
+   metrics.contextMs=performance.now()-contextAt;
    saved=storage.load();
    if(!saved){saved={version:1,seed:storage.seed,context};persist(saved);}
    if(saved.version!==1||saved.seed!==storage.seed)throw Error('Unsupported pilot save or campaign seed mismatch. The saved deployment has been retained.');
@@ -33,9 +40,10 @@ window.AslPilot = (() => {
     while(alive){const job=await api('/generate/'+saved.seed);if(job.status==='ready')break;if(job.status==='failed'||job.status==='cancelled')throw Error(job.error||'Generation cancelled. Reopen to retry with the same seed.');await new Promise(resolve=>setTimeout(resolve,500));}
    }
    if(!alive)return;
-   view=await api('/open',{seed:saved.seed,bundle:saved.bundle||null,context,setup:saved.setup||null});
+   metrics.mode=saved.bundle?'resume':'generate';metrics.beforeOpenMs=performance.now()-started;const openAt=performance.now();
+   view=await api('/open',{seed:saved.seed,bundle:saved.bundle||null,context,setup:saved.setup||null},'POST',measuring?metrics:undefined);metrics.openRequestMs=performance.now()-openAt;metrics.serverStagesMs=view.timingsMs;const buildAt=performance.now();
    if(!alive)return;
-   persist({...saved,bundle:view.bundle,setup:view.setup});
+   const saveAt=performance.now();if(!saved.bundle||!saved.setup)persist({...saved,bundle:view.bundle,setup:view.setup});metrics.persistMs=performance.now()-saveAt;
    const select=el('select');select.setAttribute('aria-label','Pilot squad');
    for(const side of ['Allied','German']){const group=el('optgroup');group.label=side;for(const u of view.roster.filter(u=>u.side===side)){const o=el('option',u.label);o.value=u.id;group.append(o);}select.append(group);}
    selected=view.roster.some(u=>u.id===saved.selected)?saved.selected:view.roster[0].id;select.value=selected;select.onchange=()=>{selected=select.value;describe();};
@@ -64,7 +72,7 @@ window.AslPilot = (() => {
    svg.onpointermove=e=>{if(!drag)return;const dx=e.clientX-drag.x,dy=e.clientY-drag.y;drag.moved ||= Math.hypot(dx,dy)>4;if(drag.moved){const scale=svg.getScreenCTM().a;box=[drag.box[0]-dx/scale,drag.box[1]-dy/scale,drag.box[2],drag.box[3]];applyBox();}};
    svg.onpointerup=e=>{const moved=drag?.moved;drag=null;if(moved)return;const p=point(e),c=view.cells.find(c=>contains(c.polygon,p));if(c){destination=c.hex;hex.value=c.hex;describe();}};
    svg.onpointercancel=()=>drag=null;
-   destination=view.cells.some(c=>c.hex===saved.destination)?saved.destination:'';hex.value=destination;describe();draw();tell('Select a squad and a destination hex, then Place selected squad. Drag to pan; wheel to zoom. On the focused map, use arrow keys, +/- and Home.');
+   destination=view.cells.some(c=>c.hex===saved.destination)?saved.destination:'';hex.value=destination;describe();draw();tell('Select a squad and a destination hex, then Place selected squad. Drag to pan; wheel to zoom. On the focused map, use arrow keys, +/- and Home.');metrics.buildAndPersistMs=performance.now()-buildAt;reportReady();
    function contains(poly,p){let inside=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if((a.y>p.y)!==(b.y>p.y)&&p.x<(b.x-a.x)*(p.y-a.y)/(b.y-a.y)+a.x)inside=!inside;}return inside;}
    function applyBox(){svg.setAttribute('viewBox',box.join(' '));}
    function describe(){const c=view.cells.find(c=>c.hex===destination),u=view.roster.find(u=>u.id===selected),allowed=u.side==='Allied'?context.alliedParents:context.germanParents;inspector.lastChild.textContent=c?c.hex+' | '+c.terrain+' | Formation '+(c.parent||'none')+' | '+(c.admitted&&!allowed.includes(c.parent)?u.side+' setup is not allowed in this formation hex.':c.reason):'';draw();}
@@ -84,7 +92,7 @@ window.AslPilot = (() => {
     count.textContent=saved.setup.placements.length+'/8 deployed';for(const o of select.options){const unit=view.roster.find(u=>u.id===o.value),placement=saved.setup.placements.find(p=>p.unitId===o.value);o.textContent=unit.label+(placement?' | '+placement.hex:' | not placed');}complete.textContent=saved.setup.complete?'Review setup':'Complete setup';deploy.disabled=saved.setup.complete;select.disabled=false;
    }
    async function edit(action){if(busy||!alive)return;busy=true;try{const setup=await api('/edit',{session:view.session,setup:saved.setup,action,unitId:selected,hex:destination});if(!alive)return;persist({...saved,setup,viewport:box});draw();tell(setup.complete?'Pilot setup complete. Saved to the campaign.':'Pilot deployment saved.');}catch(e){tell(e.message,true);}finally{busy=false;}}
-  }catch(e){tell(e.message);notice.dataset.warning='true';}
+  }catch(e){stopMetrics();tell(e.message);notice.dataset.warning='true';}
  }
  async function validateCampaign(file){
   if(!file.world?.aslPilots)return;

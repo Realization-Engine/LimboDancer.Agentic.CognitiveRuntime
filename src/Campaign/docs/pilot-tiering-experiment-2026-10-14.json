@@ -1,0 +1,68 @@
+{
+  "disableTiering": true,
+  "date": "2026-10-14T13:21:51.2802010Z",
+  "notes": "Release, fresh host per run, three consecutive opens of identical accepted request; HTTP elapsed excludes PowerShell JSON parse; health probe before open; OS caches not flushed. Server-Timing ends when response headers start, not at completion of transfer.",
+  "requestFile": "accepted-0.json",
+  "runs": [
+    {
+      "run": 0,
+      "open": 0,
+      "startupMs": 1250.772,
+      "requestMs": 926.0796,
+      "serverTiming": "binding;dur=23.67,service;dur=800.42,responseHeaders;dur=14.46,requestHeaders;dur=838.55",
+      "stagesMs": {
+        "decodeAndIdentity": 98.8311,
+        "compile": 57.8483,
+        "gridHash": 50.4678,
+        "deriveFacts": 78.3124,
+        "validateBoard": 69.2483,
+        "describeCells": 16.8314,
+        "loadTotal": 375.4724,
+        "validateSetup": 14.2599,
+        "render": 402.7745
+      },
+      "contentSha256": "DFFE203D11DFBE5C4A44E578DD6A09A5D21C435D3E4471389C53D58499404190",
+      "peakWorkingSetBytes": 177295360
+    },
+    {
+      "run": 0,
+      "open": 1,
+      "startupMs": 1250.772,
+      "requestMs": 467.1987,
+      "serverTiming": "binding;dur=3.09,service;dur=394.09,responseHeaders;dur=0.23,requestHeaders;dur=397.42",
+      "stagesMs": {
+        "decodeAndIdentity": 12.4112,
+        "compile": 14.1655,
+        "gridHash": 44.1789,
+        "deriveFacts": 22.3421,
+        "validateBoard": 9.2973,
+        "describeCells": 3.3321,
+        "loadTotal": 105.7593,
+        "validateSetup": 4.4975,
+        "render": 283.8062
+      },
+      "contentSha256": "DFFE203D11DFBE5C4A44E578DD6A09A5D21C435D3E4471389C53D58499404190",
+      "peakWorkingSetBytes": 225140736
+    },
+    {
+      "run": 0,
+      "open": 2,
+      "startupMs": 1250.772,
+      "requestMs": 404.802,
+      "serverTiming": "binding;dur=3.08,service;dur=355.06,responseHeaders;dur=0.25,requestHeaders;dur=358.39",
+      "stagesMs": {
+        "decodeAndIdentity": 9.0568,
+        "compile": 15.7791,
+        "gridHash": 40.0914,
+        "deriveFacts": 26.0456,
+        "validateBoard": 9.6817,
+        "describeCells": 3.4252,
+        "loadTotal": 104.0943,
+        "validateSetup": 3.7716,
+        "render": 247.1756
+      },
+      "contentSha256": "DFFE203D11DFBE5C4A44E578DD6A09A5D21C435D3E4471389C53D58499404190",
+      "peakWorkingSetBytes": 237109248
+    }
+  ]
+}

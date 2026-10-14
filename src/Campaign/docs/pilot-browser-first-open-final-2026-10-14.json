@@ -1,0 +1,38 @@
+[
+  {
+    "level": "info",
+    "message": "ASL_PILOT_PERFORMANCE {\"contextMs\":1.399999976158142,\"mode\":\"resume\",\"beforeOpenMs\":138.60000002384186,\"serverTiming\":\"binding;dur=34.09,service;dur=1193.49,responseHeaders;dur=16.42,requestHeaders;dur=1244.00\",\"requestToHeadersMs\":1277.2999999523163,\"responseBodyMs\":24.100000023841858,\"jsonParseMs\":3.899999976158142,\"openRequestMs\":1305.5,\"serverStagesMs\":{\"decodeAndIdentity\":112.5754,\"compile\":95.6165,\"gridHash\":84.5825,\"deriveFacts\":150.2689,\"validateBoard\":127.3819,\"describeCells\":26.5146,\"loadTotal\":599.4016,\"validateSetup\":29.7247,\"render\":556.0934},\"persistMs\":0,\"buildAndPersistMs\":25.299999952316284,\"openToReadyMs\":1631.8999999761581,\"longTaskCount\":1,\"longTaskMaxMs\":126,\"longTaskTotalMs\":126,\"longTaskSupported\":true}",
+    "timestamp": "2026-10-14T13:25:19.097Z",
+    "url": "http://127.0.0.1:8093/tactical/asl-pilot.js"
+  },
+  {
+    "level": "info",
+    "message": "ASL_PILOT_PERFORMANCE {\"contextMs\":0.3999999761581421,\"mode\":\"resume\",\"beforeOpenMs\":108.39999997615814,\"serverTiming\":\"binding;dur=6.79,service;dur=653.32,responseHeaders;dur=0.40,requestHeaders;dur=660.51\",\"requestToHeadersMs\":672.1999999284744,\"responseBodyMs\":57.89999997615814,\"jsonParseMs\":3.5,\"openRequestMs\":733.7999999523163,\"serverStagesMs\":{\"decodeAndIdentity\":35.6953,\"compile\":57.1344,\"gridHash\":49.2262,\"deriveFacts\":106.6749,\"validateBoard\":46.6513,\"describeCells\":16.2193,\"loadTotal\":311.6528,\"validateSetup\":9.5912,\"render\":332.0194},\"persistMs\":0,\"buildAndPersistMs\":23,\"openToReadyMs\":1073.7999999523163,\"longTaskCount\":1,\"longTaskMaxMs\":165,\"longTaskTotalMs\":165,\"longTaskSupported\":true}",
+    "timestamp": "2026-10-14T13:26:00.473Z",
+    "url": "http://127.0.0.1:8093/tactical/asl-pilot.js"
+  },
+  {
+    "level": "info",
+    "message": "ASL_PILOT_PERFORMANCE {\"contextMs\":0.19999992847442627,\"mode\":\"resume\",\"beforeOpenMs\":95.10000002384186,\"serverTiming\":\"binding;dur=19.98,service;dur=1286.13,responseHeaders;dur=13.20,requestHeaders;dur=1319.31\",\"requestToHeadersMs\":1523.5,\"responseBodyMs\":43.39999997615814,\"jsonParseMs\":3,\"openRequestMs\":1569.8999999761581,\"serverStagesMs\":{\"decodeAndIdentity\":88.0442,\"compile\":108.354,\"gridHash\":66.2329,\"deriveFacts\":226.1385,\"validateBoard\":180.4325,\"describeCells\":36.5987,\"loadTotal\":706.9559,\"validateSetup\":26.1282,\"render\":548.9027},\"persistMs\":0,\"buildAndPersistMs\":22.899999976158142,\"openToReadyMs\":1866.5,\"longTaskCount\":1,\"longTaskMaxMs\":138,\"longTaskTotalMs\":138,\"longTaskSupported\":true}",
+    "timestamp": "2026-10-14T13:26:55.756Z",
+    "url": "http://127.0.0.1:8093/tactical/asl-pilot.js"
+  },
+  {
+    "level": "info",
+    "message": "ASL_PILOT_PERFORMANCE {\"contextMs\":0.3999999761581421,\"mode\":\"resume\",\"beforeOpenMs\":102.5,\"serverTiming\":\"binding;dur=7.85,service;dur=647.66,responseHeaders;dur=0.39,requestHeaders;dur=655.91\",\"requestToHeadersMs\":667.5,\"responseBodyMs\":40.200000047683716,\"jsonParseMs\":4.399999976158142,\"openRequestMs\":712.1000000238419,\"serverStagesMs\":{\"decodeAndIdentity\":29.3046,\"compile\":54.8737,\"gridHash\":43.6162,\"deriveFacts\":90.515,\"validateBoard\":35.575,\"describeCells\":16.8101,\"loadTotal\":270.7387,\"validateSetup\":8.9175,\"render\":367.9173},\"persistMs\":0,\"buildAndPersistMs\":23.399999976158142,\"openToReadyMs\":1041.5,\"longTaskCount\":1,\"longTaskMaxMs\":154,\"longTaskTotalMs\":154,\"longTaskSupported\":true}",
+    "timestamp": "2026-10-14T13:27:08.932Z",
+    "url": "http://127.0.0.1:8093/tactical/asl-pilot.js"
+  },
+  {
+    "level": "info",
+    "message": "ASL_PILOT_PERFORMANCE {\"contextMs\":0.19999992847442627,\"mode\":\"resume\",\"beforeOpenMs\":86.79999995231628,\"serverTiming\":\"binding;dur=17.62,service;dur=1126.95,responseHeaders;dur=15.15,requestHeaders;dur=1159.71\",\"requestToHeadersMs\":1329.6000000238419,\"responseBodyMs\":62.39999997615814,\"jsonParseMs\":3,\"openRequestMs\":1395,\"serverStagesMs\":{\"decodeAndIdentity\":75.3991,\"compile\":109.3575,\"gridHash\":80.465,\"deriveFacts\":222.8042,\"validateBoard\":110.3917,\"describeCells\":28.4963,\"loadTotal\":628.1315,\"validateSetup\":19.4638,\"render\":474.2273},\"persistMs\":0,\"buildAndPersistMs\":19.899999976158142,\"openToReadyMs\":1679.8999999761581,\"longTaskCount\":1,\"longTaskMaxMs\":138,\"longTaskTotalMs\":138,\"longTaskSupported\":true}",
+    "timestamp": "2026-10-14T13:28:06.305Z",
+    "url": "http://127.0.0.1:8093/tactical/asl-pilot.js"
+  },
+  {
+    "level": "info",
+    "message": "ASL_PILOT_PERFORMANCE {\"contextMs\":0.40000009536743164,\"mode\":\"resume\",\"beforeOpenMs\":107.29999995231628,\"serverTiming\":\"binding;dur=8.02,service;dur=809.41,responseHeaders;dur=0.82,requestHeaders;dur=818.25\",\"requestToHeadersMs\":830.2000000476837,\"responseBodyMs\":51.299999952316284,\"jsonParseMs\":3.8000000715255737,\"openRequestMs\":885.3000000715256,\"serverStagesMs\":{\"decodeAndIdentity\":35.7857,\"compile\":66.7633,\"gridHash\":40.8011,\"deriveFacts\":101.584,\"validateBoard\":46.7033,\"describeCells\":19.4064,\"loadTotal\":311.1043,\"validateSetup\":15.2109,\"render\":482.9466},\"persistMs\":0,\"buildAndPersistMs\":28.699999928474426,\"openToReadyMs\":1309.2000000476837,\"longTaskCount\":2,\"longTaskMaxMs\":226,\"longTaskTotalMs\":289,\"longTaskSupported\":true}",
+    "timestamp": "2026-10-14T13:28:19.021Z",
+    "url": "http://127.0.0.1:8093/tactical/asl-pilot.js"
+  }
+]

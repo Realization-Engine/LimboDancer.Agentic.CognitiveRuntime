@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Globalization;
 using System.Text.Json;
 using LimboDancer.Campaign.PilotHost;
 using LimboDancer.Campaign.Refinement;
@@ -25,6 +27,20 @@ app.Use(async (context, next) =>
             context.Request.Method == "POST" && !context.Request.HasJsonContentType())
         { context.Response.StatusCode = 403; return; }
         context.Response.Headers.CacheControl = "no-store";
+        if (context.Request.Path == "/api/asl-pilot/open")
+        {
+            var watch = Stopwatch.StartNew();
+            context.Items["pilotRequestWatch"] = watch;
+            context.Response.OnStarting(() =>
+            {
+                var total = watch.Elapsed.TotalMilliseconds;
+                var bound = (double)(context.Items["pilotBoundMs"] ?? 0d);
+                var handled = (double)(context.Items["pilotHandledMs"] ?? bound);
+                context.Response.Headers["Server-Timing"] = string.Create(CultureInfo.InvariantCulture,
+                    $"binding;dur={bound:F2},service;dur={handled - bound:F2},responseHeaders;dur={total - handled:F2},requestHeaders;dur={total:F2}");
+                return Task.CompletedTask;
+            });
+        }
     }
     try { await next(context); }
     catch (Exception e) when (e is InvalidDataException or ArgumentException or JsonException or KeyNotFoundException or FormatException or InvalidOperationException)
@@ -37,7 +53,15 @@ app.MapGet("/api/asl-pilot", () => new { version = PilotDeployment.Policy, sourc
 app.MapPost("/api/asl-pilot/generate", (GenerateRequest request, PilotSessions service) => service.Start(request.Seed));
 app.MapGet("/api/asl-pilot/generate/{seed}", (string seed, PilotSessions service) => service.Status(seed));
 app.MapDelete("/api/asl-pilot/generate/{seed}", (string seed, PilotSessions service) => { service.Cancel(seed); return Results.NoContent(); });
-app.MapPost("/api/asl-pilot/open", (OpenRequest request, PilotSessions service) => service.Open(request));
+app.MapPost("/api/asl-pilot/open", (OpenRequest request, PilotSessions service) => service.Open(request))
+    .AddEndpointFilter(async (context, next) =>
+    {
+        var watch = (Stopwatch)context.HttpContext.Items["pilotRequestWatch"]!;
+        context.HttpContext.Items["pilotBoundMs"] = watch.Elapsed.TotalMilliseconds;
+        var response = await next(context);
+        context.HttpContext.Items["pilotHandledMs"] = watch.Elapsed.TotalMilliseconds;
+        return response;
+    });
 app.MapPost("/api/asl-pilot/edit", (EditRequest request, PilotSessions service) => service.Edit(request));
 using var files = new PhysicalFileProvider(prototype);
 app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = files });

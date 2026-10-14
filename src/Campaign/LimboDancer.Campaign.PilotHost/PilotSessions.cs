@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Collections.Concurrent;
 using LimboDancer.Campaign.Refinement;
 using LimboDancer.Domains.Asl.Maps.Rendering;
@@ -62,25 +63,31 @@ public sealed class PilotSessions(PilotInputs inputs, string packagesRoot) : IDi
     {
         ArgumentNullException.ThrowIfNull(request);
         SeedRandom.ValidateSeed(request.Seed);
+        var timings = new Dictionary<string, double>(StringComparer.Ordinal);
+        var watch = Stopwatch.StartNew();
         PilotDeployment deployment;
         if (request.Bundle is { } bundle)
         {
             if (bundle.Seed != request.Seed) throw new InvalidDataException("Saved campaign seed differs from its accepted map.");
-            deployment = new PilotDeployment(inputs, bundle);
+            deployment = new PilotDeployment(inputs, bundle, timings);
         }
         else if (jobs.TryGetValue(request.Seed, out var job) && job.Work!.IsCompletedSuccessfully)
             deployment = await job.Work.ConfigureAwait(false);
         else throw new InvalidDataException("Generate the pilot map before opening deployment.");
+        timings["loadTotal"] = watch.Elapsed.TotalMilliseconds; watch.Restart();
         var state = request.Setup ?? deployment.Create(request.Context);
         deployment.Validate(request.Context, state);
         var id = deployment.Package.Version + "-" + deployment.ContextHash(request.Context);
         if (sessions.Count >= 16 && !sessions.ContainsKey(id)) throw new InvalidDataException("Too many pilot sessions. Restart the host to release cached sessions.");
         sessions[id] = new(deployment, request.Context);
+        timings["validateSetup"] = watch.Elapsed.TotalMilliseconds; watch.Restart();
         var render = BoardRenderInput.Create(deployment.Package.Board, deployment.Package.Name, deployment.Grid, inputs.Catalog, deployment.Facts,
             new StyledSource(deployment.Package.Model, deployment.Grid, deployment.Facts));
+        var svg = BoardRenderer.Document(render, BoardView.Exact);
+        timings["render"] = watch.Elapsed.TotalMilliseconds;
         return new { session = id, setup = state, bundle = deployment.Bundle, cells = deployment.Cells, roster = PilotDeployment.Roster,
             width = deployment.Grid.Geometry.GridWidth, height = deployment.Grid.Geometry.GridHeight,
-            svg = BoardRenderer.Document(render, BoardView.Exact) };
+            svg, timingsMs = timings };
     }
     public PilotSetup Edit(EditRequest request)
     {

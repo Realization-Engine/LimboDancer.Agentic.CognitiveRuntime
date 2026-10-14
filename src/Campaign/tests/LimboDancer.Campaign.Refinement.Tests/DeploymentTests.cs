@@ -18,6 +18,14 @@ public sealed class DeploymentTests
         return new("campaign-test", "formation-fixture", Refs("uk-rifle-01"), Refs("de-rifle-01"));
     }
     [Fact]
+    public void PilotDerivedFactsRetainPreOptimizationIdentity()
+    {
+        var bytes = JsonSerializer.SerializeToUtf8Bytes(Pilot.Value.Facts.Hexes);
+        var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes));
+        // Captured before the bridge/tunnel bounding-box rejection optimization.
+        Assert.Equal("FF79F7F19DCD2E558C64218A09EC0536E93EC9E3881DA2EE57665CE5B45EE8E7", hash);
+    }
+    [Fact]
     public void SourceRulesHaveCapacityAndCompletionLocksPlacement()
     {
         var p = Pilot.Value; var context = SourceContext();
@@ -85,4 +93,22 @@ public sealed class DeploymentTests
         Assert.Throws<InvalidDataException>(() => p.Create(c with { AlliedParents = ["A/nonexistent"] }));
         Assert.Equal(8, state.Placements.Length);
     }
-}
+    [Fact]
+    public void ParentLookupMatchesOriginalExactOrdinalSearchForEveryPilotCell()
+    {
+        var pilot = Pilot.Value;
+        foreach (var cell in pilot.Cells)
+        {
+            var key = cell.GlobalKey.Split('/');
+            var world = SpatialFrame.Center(int.Parse(key[0], System.Globalization.CultureInfo.InvariantCulture),
+                int.Parse(key[1], System.Globalization.CultureInfo.InvariantCulture));
+            var original = Inputs.Regions.FirstOrDefault(r => MetricGeometry.Contains(r.Polygon, world))?.Key;
+            Assert.Equal(original, cell.Parent);
+        }
+        var timings = new Dictionary<string, double>(StringComparer.Ordinal);
+        var loaded = new PilotDeployment(Inputs, pilot.Bundle, timings);
+        Assert.Equal(pilot.Bundle, loaded.Bundle);
+        Assert.Equal(JsonSerializer.Serialize(pilot.Cells), JsonSerializer.Serialize(loaded.Cells));
+        Assert.Equal(6, timings.Count);
+        Assert.All(timings.Values, value => Assert.True(value >= 0));
+    }}
