@@ -3,6 +3,32 @@ using System.Text.Json;
 using LimboDancer.Campaign.Refinement;
 using LimboDancer.Domains.Asl.Maps.Rendering;
 
+// Diagnose full-board transition stages without regenerating or changing accepted terrain.
+if (args.Length == 3 && args[0] == "--profile-asl-board")
+{
+    T Measure<T>(string stage, Func<T> work)
+    {
+        Console.WriteLine(JsonSerializer.Serialize(new { Stage = stage, Status = "started" }));
+        var timer = Stopwatch.StartNew();
+        var allocated = GC.GetTotalAllocatedBytes();
+        var result = work();
+        using var process = Process.GetCurrentProcess();
+        Console.WriteLine(JsonSerializer.Serialize(new { Stage = stage, Seconds = timer.Elapsed.TotalSeconds,
+            AllocatedBytes = GC.GetTotalAllocatedBytes() - allocated, PeakWorkingSetBytes = process.PeakWorkingSet64 }));
+        return result;
+    }
+    var source = new PilotInputs(File.ReadAllText(args[1]));
+    var map = new SituationMap(source, args[2]);
+    var board = Measure("assemble", () => SituationAslBoard.Assemble(source, map));
+    var grid = Measure("compile", () => LimboDancer.Domains.Asl.Maps.Features.FeatureCompiler.Compile(board.Model, source.Catalog).Grid);
+    var facts = Measure("derive", () => LimboDancer.Domains.Asl.Maps.Derivation.VaslCompatibleHexFactDerivation.Derive(
+        grid, source.Catalog, LimboDancer.Domains.Asl.Maps.Derivation.HexsideAnnotations.None));
+    var report = Measure("validate", () => LimboDancer.Domains.Asl.Maps.Features.BoardValidator.Validate(board.Model, facts, source.Catalog));
+    Console.WriteLine(JsonSerializer.Serialize(new { BoardVersion = board.Version, GridSha256 = PilotGenerator.GridHash(grid),
+        Hexes = facts.Hexes.Count, report.Summary }));
+    return report.HasErrors ? 1 : 0;
+}
+
 var wholeSituation = args.LastOrDefault() == "--situation";
 if (wholeSituation) args = args[..^1];
 if (args.Length is < 2 or > 3)

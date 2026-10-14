@@ -186,3 +186,9 @@ Performance limitation: the combined full test took 15 minutes 21 seconds, inclu
 SituationBundles exports all 84 accepted packages, their refinement records and the pinned terrain catalog. Restore verifies manifest coverage, package/refinement/catalog identities and every compiled grid before publishing the complete directory atomically. It never calls the generator. Identical restores reuse a verified published copy; unsupported versions, missing/duplicate entries, altered terrain and cancellation fail without publishing a partial map.
 
 The full portable-terrain test passed in 114 seconds, including fresh generation, JSON round trip, exact re-export equality, repeat restore and rejection checks. The serialized terrain bundle fits below 50 MB. This is the terrain component of a campaign save; browser campaign-file wiring, deployment/context persistence and storage-quota handling remain to be integrated.
+
+## Full ASL board performance baseline
+
+The CLI `--profile-asl-board <source-json> <accepted-manifest>` measures accepted-map assembly, compilation, derivation and validation without regeneration. On the saved coverage artifact with manifest hash b6ec6fbf0b964264f3c15e0999c223a61458b63d27a4957f3f79e4ccd128d020: assembly 11.91 s, compilation 1.07 s, derivation 2.16 s, validation 17.97 s. Validation allocated 26.69 GB cumulatively; process peak working set reached 6.36 GB. These are command-line stage timings, not browser load measurements.
+
+Baseline board version f8674fed1f3b2e0cbaff7b739ab8da2646fff6afff33fd77aadc594249712f14; compiled grid SHA-256 c9173537e2c67e1d087b034178920f6e8a769e9bd7323c753dbf78304c6580bb. The board has 40,441 cells including exterior guards, with 0 validation errors and 4,824 warnings. Inspection found full-grid coverage allocation for each building in BoardValidator; bounded temporary coverage is the next optimization candidate.
