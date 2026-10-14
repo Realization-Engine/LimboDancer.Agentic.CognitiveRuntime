@@ -104,3 +104,9 @@ The accepted set is `b6ec6fbf0b964264f3c15e0999c223a61458b63d27a4957f3f79e4ccd12
 All 89 Campaign Release tests pass, including cancellation after the first package and rejection of incomplete, incompatible and tampered set manifests. These are batch timings, not browser first-open timings. They exceed the original pilot targets when the entire Situation is processed synchronously. Load packages on demand in the remaining UI integration; do not advertise pilot timings for this full set.
 
 Remaining G2 acceptance: raster seam comparison, viewport-driven package inspection and retained outer-boundary presentation. G3 still requires the 83 remaining ground source counters and explicit off-map support records. No complete-transition claim is made yet.
+
+## G2 increment: raster seams
+
+A complete-map Release test generates all 84 packages and compares terrain and elevation pixel spans across every horizontally and vertically adjacent package. It includes ownership boundaries while excluding one compiler-border hex. The test passes in 20 seconds. Source ownership, shared metric geometry and compiled raster seams are now verified independently. UI integration, demand loading and final save/navigation acceptance remain outstanding.
+
+Next counter increment: German SdKfz 251 halftracks. The existing `attacker-halftrack` definition is SPW 251/1 and can be reused after setup validation. Existing `attacker-tank` is PzKpfw IIIH, so it must not substitute for Goodwood Panzer IV, Panther or Tiger formations. Those require distinct manufactured profiles.
