@@ -12,16 +12,19 @@
 #             the pass's test script builds with warnings not as errors, and nothing else compiles a test file strictly before the gate.
 #   strict-check   says whether the strict build passed for the tree as it stands. A review or a prompt says so only when this does.
 #
-# The gate's stages, in the order they are started (pass 55 ran them side by side and each took two to three times as long):
-#   baseline  the pass's own games copied into the store and replayed and swept on the baseline's side; the rest reused from base
-#   build     the solution with warnings as errors into bin/gate; the proof tool compiled against it          (about 6 min)
-#   trial     the trial games, the pass's own games, and its extra sweep games on both sides; must pass       (about 3 min)
-#   proofs    text list, replay digest, sweep on the gate's side, each compared with the baseline            (about 25 min; refuses without a
-#             passed trial of this very build and these very skip lists)
-#   docker    the Docker Linux check on the committed branch, started beside proofs                           (about 25 min)
-#   suite     every test project from bin/gate, CI's Node viewport test, the chart supplement                 (about 35 min; after proofs)
+# The gate's stages, in order. The whole test suite and the Linux check are CI's, on the pass's pull request (the user, 2026-10-13):
+#   baseline  the pass's own games copied into the store and replayed and swept on the baseline's side; the rest reused from base  (under 1 min)
+#   build     the solution with warnings as errors into bin/gate; the proof tool compiled against it          (about 4 min)
+#   proofs    text list, replay digest, sweep on the gate's side, each compared with the baseline            (about 7 min; it first sweeps
+#             a few older games and stops if a plan's hash alone differs, which is a fault of the skip lists)
+#   ci        once the branch is pushed and its pull request opened, at the user's word: says whether the CI run of the branch's head has
+#             passed. CI runs the locked restore, the strict build, the Node viewport test, every test project, and the source checks on
+#             Linux, on the branch merged with main (about 14 min). The merge waits for it.
+# On demand, no longer stages of the gate:
+#   suite     every test project from bin/gate on this machine, the Node viewport test, the chart supplement   (about 35 min)
+#   docker    CI's steps in a Linux container on the committed branch                                          (about 25 min)
 #
-# What a pass supplies is gate/pass<pass>.conf (see pass55.conf): its recorded games, extra sweep and trial games, the JSON keys it added,
+# What a pass supplies is gate/pass<pass>.conf (see pass55.conf): its recorded games, extra sweep games, the JSON keys it added,
 # BOTH_SKIP (what changed in every record for a reason that is no rule: the catalog's identity, GameEvent.RulePackage after the packages
 # are pinned again), and CODE_MOVE=1 for a pass that moves code without changing rules, which sweeps every cut of p31c-tw.
 # PROOF_SKIP is computed from the diff base..HEAD (new_properties.py); it is never carried over from another pass.
@@ -31,10 +34,11 @@ G="$TOOLS/merge-gate"
 T="5a7d1f000000400080000000000057d0"
 PASS="$1"; BASE="$2"; STAGE="$3"
 SWEEP_SMALL="pass16-demo2,p26-demo,p25-visual,p35-interdict-trap,p35-rally-enemy-turn,p35-smoke-hill,p35-tow2,p35-bog,p35-mud,p40-tpbf-mixed,p30-armor,p40c-ovr"
-TRIAL_BASE="pass16-demo2,p26-demo,p25-visual,p31c-tw-r459,p31c-tw-r471"
+# The few games of the proofs' early check: three small games and two cuts of p31c-tw that plan moves and fire.
+EARLY="=pass16-demo2,=p26-demo,=p25-visual,p31c-tw-r459,p31c-tw-r471"
 GATE="$R/src/ASL/LimboDancer.Domains.Asl.MapStudio/bin/gate/Debug/net10.0"
 MAINTOOL="$S/proof-main/bin/Debug/net10.0"
-if [ -z "$PASS" ] || [ -z "$BASE" ] || [ -z "$STAGE" ]; then sed -n 2,26p "$0"; exit 2; fi
+if [ -z "$PASS" ] || [ -z "$BASE" ] || [ -z "$STAGE" ]; then sed -n 2,29p "$0"; exit 2; fi
 if [ ! -f "$G/pass-configs/pass$PASS.conf" ]; then echo "STOP: write $G/pass-configs/pass$PASS.conf first (pass55.conf is the form)"; exit 2; fi
 OWN=""; SWEEP_EXTRA=""; TRIAL_EXTRA=""; SKIP_JSON=""; SKIP_ADD=""; BOTH_SKIP=""; PRESENT=""; ABSENT=""; CODE_MOVE=""
 source "$G/pass-configs/pass$PASS.conf"
@@ -45,8 +49,7 @@ exact() { echo "$1" | tr ' ' ',' | tr -s ',' | sed -e 's/^,//' -e 's/,$//' -e 's
 OWN_COMMA=$(echo "$OWN" | tr ' ' ',' | tr -s ',' | sed -e 's/^,//' -e 's/,$//')
 OWN_EXACT=$(exact "$OWN"); EXTRA_EXACT=$(exact "$SWEEP_EXTRA")
 SWEEP="$SWEEP_OLD${EXTRA_EXACT:+,$EXTRA_EXACT}"
-TRIAL="$TRIAL_BASE${TRIAL_EXTRA:+,$TRIAL_EXTRA}"
-BEFORE="$S/before-$PASS"; AFTER="$S/after-$PASS"; TRIALDIR="$S/trial-$PASS"
+BEFORE="$S/before-$PASS"; AFTER="$S/after-$PASS"
 export DOTNET_CLI_USE_MSBUILD_SERVER=0 MSBUILDDISABLENODEREUSE=1
 unset PROOF_SKIP PROOF_SKIP_JSON PROOF_DUMP_FIRE PROOF_DUMP_EVENTS PROOF_DUMP_STATE PROOF_EXCLUDE PROOF_REPLAY_CUTS
 BASEFULL=$(git -C "$R" rev-parse --verify -q "$BASE^{commit}") || { echo "STOP: no commit $BASE"; exit 2; }
@@ -98,7 +101,7 @@ main_tool() {
   cmp -s "$MAINTOOL/LimboDancer.Domains.Asl.Play.dll" "$S/main-bin/LimboDancer.Domains.Asl.Play.dll" || stop "the tool's copy is not the baseline's build"
 }
 
-# The skip lists of the gate's side, and the signature a passed trial is bound to: the build and both lists.
+# The skip lists of the gate's side, and the signature a finished proofs stage is marked with: the build and both lists.
 skips() {
   GATE_SKIP=$(python "$G/new_properties.py" "$BASEFULL" < /dev/null)${SKIP_ADD:+,$SKIP_ADD}${BOTH_SKIP:+,$BOTH_SKIP}
   GATE_SKIP_JSON="$SKIP_JSON"
@@ -186,17 +189,15 @@ build)
   tool
   echo "the proof tool compiles against this build"
   ;;
-trial)
-  [ "$(cat "$BEFORE/TOOL" 2>/dev/null)" = "$BASEFULL" ] || stop "no baseline of ${BASEFULL:0:8} in $BEFORE; run the baseline stage first"
-  tool; skips
-  rm -rf "$TRIALDIR"; mkdir -p "$TRIALDIR"
-  TRIAL_REPLAY="$TRIAL${OWN_EXACT:+,$OWN_EXACT}"; TRIAL_SWEEP="$TRIAL${EXTRA_EXACT:+,$EXTRA_EXACT}"
-  echo "[$(now)] trial games: $TRIAL; and the pass's own: $OWN_COMMA; swept beside them: $SWEEP_EXTRA"
-  run main_side replay "$TRIALDIR/replay-main.txt" "$TRIAL_REPLAY"
-  run gate_side replay "$TRIALDIR/replay-gate.txt" "$TRIAL_REPLAY"
-  run main_side sweep "$TRIALDIR/sweep-main.txt" "$TRIAL_SWEEP"
-  run gate_side sweep "$TRIALDIR/sweep-gate.txt" "$TRIAL_SWEEP"
-  if python "$G/trial_check.py" "$TRIALDIR" "$OWN_COMMA" < /dev/null; then echo "$SIGNATURE" > "$TRIALDIR/OK"; else exit 1; fi
+ci)
+  BRANCH=$(git -C "$R" branch --show-current); HEAD_SHA=$(git -C "$R" rev-parse HEAD)
+  [ "$(git -C "$R" rev-parse -q --verify "origin/$BRANCH")" = "$HEAD_SHA" ] || stop "the head ${HEAD_SHA:0:8} of $BRANCH is not what origin has (push the branch, at the user's word, and fetch)"
+  RUNS=$(cd "$R" && gh run list --workflow asl-authoring-ci.yml --commit "$HEAD_SHA" --json status,conclusion,event,url --jq '.[] | "\(.status) \(.conclusion) \(.event) \(.url)"') || stop "gh could not list the CI runs"
+  [ -n "$RUNS" ] || stop "no CI run for ${HEAD_SHA:0:8}: open the branch's pull request (the workflow runs on pull requests that touch src/ASL)"
+  echo "$RUNS"
+  if echo "$RUNS" | grep -q "^completed success "; then echo "CI passed for ${HEAD_SHA:0:8}"
+  elif echo "$RUNS" | grep -qv "^completed "; then echo "CI is still running for ${HEAD_SHA:0:8}; ask again"; exit 3
+  else stop "CI did not pass for ${HEAD_SHA:0:8}"; fi
   ;;
 suite)
   rm -rf "$S/suite"
@@ -209,10 +210,11 @@ suite)
   ;;
 proofs)
   tool; skips
-  if [ ! -f "$TRIALDIR/OK" ] || [ "$(cat "$TRIALDIR/OK")" != "$SIGNATURE" ]; then stop "no passed trial of this build and these skip lists. Run the trial stage first."; fi
   [ "$(cat "$BEFORE/DONE" 2>/dev/null)" = "$BASEFULL" ] || stop "no finished baseline of ${BASEFULL:0:8} in $BEFORE"
   [ -s "$BEFORE/replay.txt" ] && [ -s "$BEFORE/sweep.txt" ] && [ -s "$BEFORE/textlist.txt" ] || stop "the baseline in $BEFORE lacks a file"
   rm -rf "$AFTER"; mkdir -p "$AFTER"
+  run gate_side sweep "$AFTER/sweep-early.txt" "$EARLY"
+  python "$G/early_sweep_check.py" "$BEFORE/sweep.txt" "$AFTER/sweep-early.txt" < /dev/null || exit 1
   python "$G/text_list.py" "$AFTER/textlist.txt" < /dev/null
   echo "text list lines that differ: $(diff "$BEFORE/textlist.txt" "$AFTER/textlist.txt" | grep -c '^[<>]')"
   run gate_side replay "$AFTER/replay.txt"
@@ -234,7 +236,7 @@ docker)
   grep -E "^(Passed!|Failed!)|^== " "$S/docker-$PASS.log" | cut -c1-140
   ;;
 *)
-  echo "STOP: no stage '$STAGE'"; sed -n 2,26p "$0"; exit 2
+  echo "STOP: no stage '$STAGE'"; sed -n 2,29p "$0"; exit 2
   ;;
 esac
 echo "[$(now)] DONE $STAGE"
