@@ -1,0 +1,23 @@
+# Fixes from review 5 (UI and Blazor). Paths under src/ASL/LimboDancer.Domains.Asl.MapStudio/. Verify each line number before editing.
+
+U1 (FIX). The placement form's Armor Leader and Inexperienced Crew survive a hand-over and a game change. Play.razor fields about :1279-1280; `ResetForView` about :4234-4258 and `ChangeGame` about :5580-5626 clear placeHidden, placeConcealed, placeBroken but not `placeArmorLeader`, `placeInexperiencedCrew`. Add `(placeArmorLeader, placeInexperiencedCrew) = (string.Empty, false);` to both resets.
+
+U2 (FIX). The Motion attempt's three choices (`motionVehicle`, `motionFacing`, `motionTurret`, Play.razor about :3248-3250) are never cleared: absent from `ResetDrafts`, `ResetPanelChoices`, `ResetForView`, `ChangeGame`. Also after vehicle B attempts and is barred, `motionChosen` (about :735) falls to the first unbarred vehicle and B's facing and turret are sent for it by `ProposeMotionAttempt` (about :5395-5408). Clear the three in the resets; clear facing and turret in the `#motion-vehicle` change handler and after a proposal commits.
+
+U3 (FIX). `motionCache` (Play.razor about :5371-5391) is keyed by revision and view only; another game at the same event count gets the previous game's options. Add it to the reset in `Refresh` (about :5762) and put the game id in the key.
+
+U4 (FIX). The ammunition list follows "the Location holds a vehicle the view sees" (`OrdnanceVehicleChoices(firing).Count > 0`, Play.razor about :864-866) but the shot follows "a vehicle is chosen" (`ProposeOrdnance` about :4576-4588, `ordnanceVehicle.Length > 0`; `OrdnanceCanister` about :4380). So with Vehicle left at "choose" the list shows the vehicle list while HE is sent; the Infantry list's `#ordnance-ammunition-note` is hidden; and a 37mm AT Gun is offered no Canister, with no reason, while the chosen target Location holds a seen vehicle. Use `ordnanceVehicle.Length > 0` for `Ammunitions`, `Chosen`, and `OrdnanceCanister`.
+
+U5 (FIX). A Canister aim is sent without checking it is among the aims shown (`Ready` about :861, `ProposeOrdnance` about :4539): if the Gun turns without firing while the facing is left on the Gun's own, the aims are recomputed and the kept number means other hexes. In both places require `OrdnanceCanisterAims(firing).Any(aim => aim.Id == ordnanceCanisterAim)`.
+
+U6 (FIX, small). Canister lookups run uncached on every render (Play.razor about :861-869, :4364-4417): `OrdnanceCanister(firing)` twice, `OrdnanceVehicleChoices(firing)` four times, `OrdnanceCanisterAims` walks the map for each of five aims. Read once into locals at the top of the block (or a cache keyed by revision, view, Gun, facing, vehicle chosen, as `MotionOptions` does).
+
+U7 (FIX). An aim's "N units" (Play.razor about :4407) counts an enemy AFV, which Canister cannot harm, and leaves out the "?" stacks the map shows (`SealedPresences`). Exclude vehicles, count the sealed presences in those hexes, and word it "2 units in view, 1 concealed stack" (omit a zero part).
+
+U8 (FIX). The Motion record (Services/PlayRecords.cs about :808-816) and replay step (Services/ReplaySteps.cs about :302-314, :596) have no view check: the neighbouring records are guarded by `Open(before, id)`. Guard the hex with `Open(before, motion.Vehicle)` in both places so a hidden vehicle's hex is not given.
+
+U9 (FIX). The Depletion line of a record is worded from today's catalog (`ScenarioA1Definitions.DepletionWords(shot)`, Services/PlayRecords.cs about :455-469 and :765): every older APCR or HEAT record with `AmmunitionUse == "used"` gains a new line, and a later catalog correction would restate a number the shot was not fired under. Carry the Depletion Number in the resolution (a new absent-safe int on `OrdnanceResolution`, as the Canister resolution already has `depletionNumber`) and word the line from the record; when the record has none (an older record) keep exactly the words that record showed before the pass (read `git show 846eb5a3:<path>` for them).
+
+U10 (FIX). The placement form lets an Armor Leader and an Inexperienced Crew be set together (Components/Play/SetupPlacementEditor.razor about :54-69); the gate refuses the pair only at the whole setup. Disable `#place-inexperienced-crew` while a leader is chosen and the reverse, each with the reason in its `title` ("an Inexperienced Crew is its own 6+1 Armor Leader (D3.45)").
+
+U11 (FIX). The replay title of a fought Gun Duel names only the first shot (Services/ReplaySteps.cs about :262-272, `First<OrdnanceFired>`). When a second `OrdnanceFired` is among the payloads, append "; the return shot: hit" or "miss" (or "void" from `gun-duel-voided`).
