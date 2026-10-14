@@ -130,6 +130,16 @@
           "LimboDancer.Domains.Asl.Maps": "[1.0.0, )"
         }
       },
+      "limbodancer.domains.asl.mapstudio": {
+        "type": "Project",
+        "dependencies": {
+          "LimboDancer.Domains.Asl.Maps": "[1.0.0, )",
+          "LimboDancer.Domains.Asl.Maps.Rendering": "[1.0.0, )",
+          "LimboDancer.Domains.Asl.Maps.Vasl": "[1.0.0, )",
+          "LimboDancer.Domains.Asl.Play": "[1.0.0, )",
+          "LimboDancer.Domains.Asl.Units.Rendering": "[1.0.0, )"
+        }
+      },
       "limbodancer.domains.asl.play": {
         "type": "Project",
         "dependencies": {
@@ -150,6 +160,13 @@
         "dependencies": {
           "LimboDancer.Domains.Asl.Maps": "[1.0.0, )",
           "LimboDancer.Domains.Asl.Rules": "[1.0.0, )"
+        }
+      },
+      "limbodancer.domains.asl.units.rendering": {
+        "type": "Project",
+        "dependencies": {
+          "LimboDancer.Domains.Asl.Maps.Rendering": "[1.0.0, )",
+          "LimboDancer.Domains.Asl.Units": "[1.0.0, )"
         }
       },
       "limbodancer.runtime": {

@@ -367,4 +367,25 @@ The **ASL handoff** toolbar card offers **Prepare ASL setup** after campaign set
 
 Verification: 80 Campaign Release tests pass with warnings treated as errors. New coverage includes British/German rifles, engineers and mortar crews through actual ASL setup planning and projection; exact positions and definition references; elevated anchors; preserved identity mappings; JSON round-trip; incomplete setup, corrupt records, incompatible versions and stale deployment rejection. Browser tests cover handoff persistence, failed writes and edit invalidation. Live browser acceptance prepared four engineers, reloaded and revalidated their Ready report, then prepared six mortar crews with six clearly omitted weapons. Before/after campaign exports had identical terrain bundles, complete setup records and formation plans.
 
-Next boundary: make this prepared artifact consumable by the ASL play UI together with its generated board package, then expose only actions supported by the existing rules. Define explicit game-default weapon profiles separately when enabling mortar actions; provenance should remain distinct from historical sources.
+Next boundary at the end of the preparation increment: publish the prepared artifact and generated board into ASL Studio, implemented below. Explicit game-default weapon profiles remain a separate increment.
+
+### Open campaign setup in ASL Studio, 14 October 2026
+
+The prepared handoff now has an **Open in ASL** action. It revalidates the current deployment, imports the exact generated authored board and initial setup through ASL Studio, then offers an **Enter ASL setup** link in a new tab. Reopening the same handoff offers **Continue in ASL** and retains the existing game's progress. The campaign map stays open.
+
+The Studio validates the package hash, pinned terrain catalog, authored-board status and setup events before publication. A completed package directory is published by rename, followed by the existing `FileGameStore.Append` replay-and-save workflow. An interruption between those writes leaves a reusable board; retry finishes the game import. Existing boards with different versions and games with different initial event prefixes are refused. The same setup identity remains stable across browser and host restarts; an edited campaign setup produces a new game identity. Later ASL turns are never overwritten by reopening the campaign handoff.
+
+The live Studio uses its local tenant, while original unit IDs, catalog references, relative levels and hex positions are preserved. Unresolved mortar weapons remain in campaign setup and are omitted from ASL, as the readiness report states. Historical applicability remains advisory. This opens the existing ASL play workspace without advancing a phase or adding rules. It does not transfer subsequent ASL gameplay back into the campaign. Campaign export contains the initial prepared handoff, not the later Studio event history; keep the Studio boards/game storage to preserve that history.
+
+Configuration: the Campaign host uses `Campaign:AslStudioUrl` (default `http://127.0.0.1:5178`). The import endpoint accepts local server-to-server JSON only. ASL Studio supports `AslMaps:AuthoredCatalogPath` for an exact pinned SharedBoardMetadata catalog, independently of VASL ingestion. A different VASL catalog is not silently substituted. For this pilot, start Studio from the repository root with:
+
+```powershell
+$campaignRoot = (Get-Location).Path
+dotnet run --project src/ASL/LimboDancer.Domains.Asl.MapStudio --no-launch-profile -- --environment Development --Kestrel:Endpoints:Http:Url http://127.0.0.1:5178 --AslMaps:AuthoredCatalogPath "$campaignRoot/src/Campaign/LimboDancer.Campaign.Refinement/Fixtures/SharedBoardMetadata.xml" --AslMaps:BoardsRoot "$campaignRoot/artifacts/campaign-asl-studio/boards" --AslMaps:CacheRoot "$campaignRoot/artifacts/campaign-asl-studio/cache"
+```
+
+The existing Campaign host still runs on port 8093. If Studio is stopped, the handoff reports that it is unavailable and leaves campaign setup unchanged. Both storage roots should be retained between runs.
+
+Verification: 82 Campaign Release tests and 51 targeted ASL Studio authoring, rendering and play-page tests passed. The two import integration cases also passed after adding catalog-mismatch rejection. Coverage includes exact identities/positions/catalog references, unchanged campaign setup and terrain, malformed records, mismatched package/catalog versions, interrupted publication recovery, duplicate prevention, and reopening after a phase advance and service reconstruction. Live browser acceptance imported four British engineer squads at D5, D6, D7 and E4; ASL Studio displayed the generated terrain and counters after restart, and the campaign action then returned the same game link. The live check also confirmed that a different local VASL catalog is refused until the pinned authored catalog is configured.
+
+Next increment: decide and implement explicit game-default mortar profiles, then validate weapon/crew links through this same ASL handoff. Returning ASL outcomes to the campaign remains a separate integration boundary.

@@ -3,6 +3,12 @@ namespace LimboDancer.Domains.Asl.MapStudio.Services;
 /// <summary>Studio configuration under <c>AslMaps</c> (Architecture and Rendering Design, section 4.2).</summary>
 public sealed class StudioOptions
 {
+    /// <summary>Optional exact SharedBoardMetadata.xml for authored boards, independent of the VASL checkout.</summary>
+    public string? AuthoredCatalogPath
+    {
+        get; set;
+    }
+
     public string? VaslRoot
     {
         get; set;

@@ -4,6 +4,7 @@
   </PropertyGroup>
   <PropertyGroup><IsTestProject>true</IsTestProject></PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="../../../ASL/LimboDancer.Domains.Asl.MapStudio/LimboDancer.Domains.Asl.MapStudio.csproj" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio"><PrivateAssets>all</PrivateAssets></PackageReference>

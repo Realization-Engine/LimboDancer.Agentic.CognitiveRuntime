@@ -15,6 +15,9 @@ var prototype = Path.GetFullPath(builder.Configuration["Campaign:PrototypeRoot"]
 var inputs = new PilotInputs(File.ReadAllText(Path.Combine(prototype, "sources", "situations", "panzer-leader-05.json")));
 var packages = Path.GetFullPath(builder.Configuration["Campaign:PackagesRoot"] ?? Path.Combine(directory?.FullName ?? Path.GetDirectoryName(prototype)!, "artifacts", "campaign-pilot"));
 builder.Services.AddSingleton(new PilotSessions(inputs, packages));
+var studio = new Uri(builder.Configuration["Campaign:AslStudioUrl"] ?? "http://127.0.0.1:5178");
+if (!studio.IsLoopback || studio.Scheme != "http") throw new InvalidOperationException("ASL Studio must use a local HTTP address.");
+builder.Services.AddHttpClient("asl-studio", client => { client.BaseAddress = studio; client.Timeout = TimeSpan.FromSeconds(60); });
 var app = builder.Build();
 app.Use(async (context, next) =>
 {
@@ -64,6 +67,21 @@ app.MapPost("/api/asl-pilot/open", (OpenRequest request, PilotSessions service) 
     });
 app.MapPost("/api/asl-pilot/edit", (EditRequest request, PilotSessions service) => service.Edit(request));
 app.MapPost("/api/asl-pilot/handoff", (EditRequest request, PilotSessions service) => service.Handoff(request));
+app.MapPost("/api/asl-pilot/launch", async (EditRequest request, PilotSessions service, IHttpClientFactory clients) =>
+{
+    var packet = await service.ExportHandoff(request);
+    try
+    {
+        using var response = await clients.CreateClient("asl-studio").PostAsJsonAsync("/api/campaign/import", packet);
+        var result = await response.Content.ReadFromJsonAsync<JsonElement>();
+        if (!response.IsSuccessStatusCode) throw new InvalidDataException(result.TryGetProperty("error", out var error) ? error.GetString() : "ASL import failed.");
+        var path = result.GetProperty("path").GetString()!;
+        if (!path.StartsWith("/games/play?game=campaign-", StringComparison.Ordinal)) throw new InvalidDataException("Unexpected ASL game address.");
+        return Results.Ok(new { url = new Uri(studio, path).AbsoluteUri, existing = result.GetProperty("existing").GetBoolean() });
+    }
+    catch (Exception e) when (e is HttpRequestException or TaskCanceledException)
+    { throw new InvalidDataException("ASL Studio is unavailable. Start it at " + studio + " and try again. Your campaign setup is unchanged.", e); }
+});
 using var files = new PhysicalFileProvider(prototype);
 app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = files });
 app.UseStaticFiles(new StaticFileOptions { FileProvider = files });

@@ -106,6 +106,14 @@ public sealed class PilotSessions(PilotInputs inputs, string packagesRoot) : IDi
         if (!sessions.TryGetValue(request.Session, out var session)) throw new InvalidDataException("Pilot session expired. Reopen the pilot.");
         return PilotHandoffs.Prepare(session.Deployment, session.Context, request.Setup);
     }
+    public async Task<object> ExportHandoff(EditRequest request)
+    {
+        if (!sessions.TryGetValue(request.Session, out var session)) throw new InvalidDataException("Pilot session expired. Reopen the pilot.");
+        var handoff = await PilotHandoffs.Prepare(session.Deployment, session.Context, request.Setup);
+        var package = session.Deployment.Package;
+        return new { board = package.Board.Value, name = package.Name, version = package.Version,
+            features = System.Text.Encoding.UTF8.GetString(package.FeaturesBytes()), gameRecord = handoff.GameRecord };
+    }
     public PilotSetup Edit(EditRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);

@@ -12,7 +12,7 @@ public static class Program
         var options = builder.Configuration.GetSection("AslMaps").Get<StudioOptions>() ?? new StudioOptions();
         builder.Services.AddSingleton(options);
         builder.Services.AddSingleton<VaslBoardProvider>();
-        builder.Services.AddSingleton<ICatalogSource>(services => services.GetRequiredService<VaslBoardProvider>());
+        builder.Services.AddSingleton<ICatalogSource, AuthoredCatalogSource>();
         builder.Services.AddSingleton<IVaslMapSource>(services => services.GetRequiredService<VaslBoardProvider>());
         builder.Services.AddSingleton<AuthoredBoardService>();
         builder.Services.AddSingleton<MapService>();
@@ -34,6 +34,7 @@ public static class Program
             builder.Services.AddSingleton<LivePlay>();
         }
 
+        builder.Services.AddSingleton<CampaignImport>();
         builder.Services.AddSingleton<GameLibrary>();
         builder.Services.AddSingleton<GameMaps>();
         builder.Services.AddSingleton<StudioLos>();
@@ -43,6 +44,27 @@ public static class Program
         app.UseAntiforgery();
         app.MapStaticAssets();
         app.MapRenderEndpoints();
+        app.MapPost("/api/campaign/import", (HttpContext context, CampaignImportRequest request, CampaignImport service) =>
+        {
+            // Local server-to-server import only; browser-origin writes are refused.
+            if (context.Connection.RemoteIpAddress is not { } ip || !System.Net.IPAddress.IsLoopback(ip) ||
+                context.Request.Headers.Origin.Count > 0 || !context.Request.HasJsonContentType())
+            {
+                return Results.StatusCode(403);
+            }
+
+            try
+            {
+                return Results.Ok(service.Import(request));
+            }
+            catch (Exception e) when (e is InvalidDataException or ArgumentException or System.Text.Json.JsonException or InvalidOperationException)
+            {
+                return Results.BadRequest(new
+                {
+                    error = e.Message
+                });
+            }
+        });
         app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
         app.Run();
     }
