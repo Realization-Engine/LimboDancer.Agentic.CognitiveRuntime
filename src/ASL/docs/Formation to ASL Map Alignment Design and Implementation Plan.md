@@ -1,7 +1,7 @@
 # Formation to ASL Map Alignment Design and Implementation Plan
 
 Date: 13 October 2026.
-Status: first-version implementation design. Proposed contracts and project names below are new work, not existing APIs.
+Status: package pilot implemented on 13 October 2026; full first-version workflow remains pending. The progress record below distinguishes delivered code from proposed later contracts.
 Branch: codex/formation-asl-map-alignment.
 Baseline analysis: [Formation to ASL Map Alignment Analysis](Formation%20to%20ASL%20Map%20Alignment%20Analysis.md), committed at 452dad19.
 
@@ -163,7 +163,7 @@ The first release supports inspection and setup of a bounded pilot roster. Freez
 | 3 Usable pilot workflow | Service/host checkpoint, bounded roster, map navigation, inspection and setup | End-to-end open, inspect, deploy, return, save and resume verified in UI |
 | 4 Seed and performance review | Representative seeds, boundary cases, performance measurements and failure recovery | First-version release criteria satisfied before expanding profile or Situation coverage |
 
-Do not parallelize milestone dependencies by building UI against speculative geometry. The next implementation step is milestone 0, followed immediately by the milestone 1 generator once its fixtures pass review in code.
+Do not parallelize milestone dependencies by building UI against speculative geometry. The package pilot implements the bounded milestone 0/1 work listed in the progress record below. The next phase must close the recorded terrain and boundary gaps before the usable-workflow milestone.
 
 ## Validation plan
 
@@ -183,8 +183,23 @@ Additional regional profiles, 240 m rollout, reconnaissance gameplay, complex bu
 
 ## Implementation readiness
 
-The proposed package contracts and first delivery boundary are specified, but implementation readiness remains conditional on milestone 0. No generated package or end-to-end workflow has yet been validated by this document. Milestone 0 resolves bounded fixture and capability details by inspecting and testing the existing code; it does not reopen broad architecture analysis. If that audit finds an unsupported required crossing or location, record the exact gap and revise the pilot explicitly before building dependent generation or UI behavior.
+The package pilot has been generated, compiled, reloaded and inspected through ASL tooling. An end-to-end campaign deployment workflow has not yet been implemented or validated. Milestone 0 resolves bounded fixture and capability details by inspecting and testing the existing code; it does not reopen broad architecture analysis. If that audit finds an unsupported required crossing or location, record the exact gap and revise the pilot explicitly before building dependent generation or UI behavior.
 
 ## Review record
 
 Reviewed against the repository on 13 October 2026. Corrected crop parity, negative-coordinate parity, fixed-point rounding, feature-ID requirements, package identity and compilation-version pinning. Distinguished map validation from rule admission and roster-dependent setup capacity. Overlapping-crop raster/fact equivalence remains an explicit implementation gate. The companion analysis now permits the first-version rejection policy without requiring automatic repair.
+
+## Package pilot progress, 13 October 2026
+
+Implementation and run instructions: [Campaign pilot README](../../Campaign/README.md). New projects live under `src/Campaign`; ASL domain projects have no reverse dependency on Campaign.
+
+- Delivered: pinned Goodwood source/catalog/profile, seed stream, metric projection, fixed crop (52,90,33,20), source-preserving routes/crossings, generated town buildings, native ASL compilation/facts/validation, exact preview, reproducibility manifest and immutable publication.
+- Source identity uses UTF-8 after CRLF-to-LF normalization for portable checkouts. The embedded catalog/profile are pinned with LF fixture attributes. This explicitly refines the earlier source-byte pinning description.
+- The initial crop contains settlement, roads, streams and bridges, but no woods. Woods can be compiled from preserved source polygons; generated connected clearings remain deferred. Profile numbers and source-artwork classifications are in the checked-in fixtures and their notice.
+- Primary-parent references use tactical centers; geometric overlap references are also emitted. Edge half hexes remain inspection-only, as does the whole pilot until setup admission is implemented.
+- Overlapping crops reproduce shared world features. Interior/edge fact equivalence is still a milestone 2 gate. The A/C seam transform is verified, but the candidate seam crop includes nonzero source elevations and is rejected until an elevation profile is admitted.
+- Fourteen automated tests passed, including 32 seeds and primary-crossing connectivity. A final generation/publication/reload/render run took 2.18 seconds on the development machine. The default seed produced 65 features, 676 hexes, zero validator errors and 175 sampling-boundary warnings. This is not a cold-start benchmark.
+- Package validation and native Map Studio inspection are exercised. Scenario A1 building bindings do not establish generated-map gameplay support; the manifest explicitly records no setup, movement, LOS or combat admission.
+- The CLI persists the seed before generation and verifies package/catalog/manifest content before publication. Campaign file-import integration and a bounded roster remain later work.
+
+The package pilot intentionally narrows the earlier intended terrain-generation set. This is a delivered inspection/compilation milestone, not completion of milestones 2 through 4 or the first usable campaign workflow.

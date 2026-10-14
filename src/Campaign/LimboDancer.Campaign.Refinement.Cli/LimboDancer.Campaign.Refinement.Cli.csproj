@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../LimboDancer.Campaign.Refinement/LimboDancer.Campaign.Refinement.csproj" />
+    <ProjectReference Include="../../ASL/LimboDancer.Domains.Asl.Maps.Rendering/LimboDancer.Domains.Asl.Maps.Rendering.csproj" />
+  </ItemGroup>
+</Project>
