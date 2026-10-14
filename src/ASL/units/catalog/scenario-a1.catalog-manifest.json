@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "catalog": "asl-scenario-a1",
-  "version": "1.15.0",
+  "version": "1.16.0",
   "label": "Scenario A1 catalog: Infantry Personnel, heroes, leaders, crews, MGs, light mortars, LATW, FT, DC, Guns, vehicles, and tanks, with Commissars and six more nationalities, for the reviewed Scenario A1 cases and the scenario cards",
   "vocabulary": ["asl@1.3.0"],
   "source": {
@@ -199,6 +199,12 @@
     { "id": "american-at-gun", "counter": "american-at-gun", "slots": [] },
     { "id": "british-crew", "counter": "british-crew", "slots": [] },
     { "id": "american-crew", "counter": "american-crew", "slots": [] },
-    { "id": "campaign-german-81mm-mortar", "counter": "campaign-german-81mm-mortar", "slots": [] }
-  ]
+    { "id": "campaign-german-81mm-mortar", "counter": "campaign-german-81mm-mortar", "slots": [] },
+    {"id": "campaign-british-25pdr", "counter": "campaign-british-25pdr", "slots": []},
+    {"id": "campaign-german-75mm-at", "counter": "campaign-german-75mm-at", "slots": []},
+    {"id": "campaign-german-88mm-at", "counter": "campaign-german-88mm-at", "slots": []},
+    {"id": "campaign-german-20mm-aa", "counter": "campaign-german-20mm-aa", "slots": []},
+    {"id": "campaign-german-quad20-aa", "counter": "campaign-german-quad20-aa", "slots": []},
+    {"id": "campaign-german-nebelwerfer", "counter": "campaign-german-nebelwerfer", "slots": []}
+]
 }

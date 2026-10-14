@@ -4,9 +4,9 @@
   "domainId": "asl",
   "packageId": "scenario-a1-rally",
   "declaredUse": "Read-only conclusions for a declared Rally attempt by a broken unit of the reviewed Scenario A1 catalog: the DRM, the Final DR against the broken Morale Level, and the effect, including Fate, under the user's rulings of 2026-09-26 (ASL Unit Rally and Fire Extensions Plan, R19.1 to R19.10 and R0.2); with Heat of Battle and Leader Creation after an Original 2 (Deviations, Ordnance, and Vehicles Plan, R27.1 to R28.8 and R30.1 to R30.7); with the DM sources, terrain, and Self-Rally of Backlog Passes Plan R13.1, R13.2, and R13.8; and Commissars, NKVD Field Promotion, and Allied Troops (Backlog Passes Plan, R15.6 to R15.8); and Extreme Winter Fate (Backlog Passes Plan, pass 16).",
-  "caseMatrixSha256": "a619066d840e519618943b850fd39e1a4ca95e6bdd35aedf73168f2590b65c17",
+  "caseMatrixSha256": "d2977071c69713b7722f419102b60a68990d42a408edb795a0c6f0117ec91dcb",
   "sourcePdfSha256": "957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247",
-  "catalogSha256": "2d2f8870cd411cd2e035c1c02742501588cb3dc4ee3377751b568ab96c1f93b5",
+  "catalogSha256": "596893a46e1f2287f31ea0633d572e117b25dae864c8e56a99c36f4d56c25514",
   "sourceFragments": [
     {
       "ruleId": "A3.1",

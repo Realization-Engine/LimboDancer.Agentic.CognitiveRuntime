@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "catalog": "asl-scenario-a1",
-  "version": "1.15.0",
+  "version": "1.16.0",
   "label": "Scenario A1 catalog: Infantry Personnel, heroes, leaders, crews, MGs, light mortars, LATW, FT, DC, Guns, vehicles, and tanks, with Commissars and six more nationalities, for the reviewed Scenario A1 cases and the scenario cards",
   "publication": "published",
   "vocabulary": [
@@ -12,9 +12,9 @@
       "id": "asl-counter-sheets:scenario-a1",
       "status": "reviewed",
       "record": "docs/ASL/SourceRegistry/CounterSheets/asl-counter-sheets.scenario-a1.source-record.json",
-      "recordSha256": "61c38cac05b8ffc27d2620c15401fd1eaef86b3eeb308dc9e6bb95fbb2aaea49",
+      "recordSha256": "52118e286a38d50e9754c4a996c0711b2632581cdc478323f3ad29e631d6ce0f",
       "transcription": "docs/ASL/SourceRegistry/CounterSheets/scenario-a1.counter-transcription.csv",
-      "transcriptionSha256": "824e1440eda9484fcd7a84f43292fef4109f5133092985dac4b1eeabf8bf05ca",
+      "transcriptionSha256": "1682b8cd09e599e03f0a59167e8d852b6635184dbcb9579ee564e56ba33a7ef2",
       "transcriber": "Claude (claude-opus-5-5)",
       "reviewer": "Dennis Landi"
     }
@@ -16463,6 +16463,990 @@
           "attribute": "removal",
           "value": 6,
           "row": 2479
+        }
+      ]
+    },
+    {
+      "id": "campaign-british-25pdr",
+      "kind": "asl:gun",
+      "kindRow": 2480,
+      "nationality": "british",
+      "nationalityRow": 2481,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "campaign-british-25pdr"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2482
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "25-pounder gun-howitzer (game default)",
+          "row": 2483
+        },
+        {
+          "face": "front",
+          "attribute": "gun-type",
+          "value": "art",
+          "row": 2484
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 88,
+          "row": 2485
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "printed": false,
+          "row": 2486
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 2,
+          "row": 2487
+        },
+        {
+          "face": "front",
+          "attribute": "ife",
+          "printed": false,
+          "row": 2488
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 2489
+        },
+        {
+          "face": "front",
+          "attribute": "range-minimum",
+          "printed": false,
+          "row": 2490
+        },
+        {
+          "face": "front",
+          "attribute": "range-maximum",
+          "value": 300,
+          "row": 2491
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 2492
+        },
+        {
+          "face": "front",
+          "attribute": "manhandling",
+          "value": 10,
+          "row": 2493
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "value": "small",
+          "row": 2494
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": false,
+          "row": 2495
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 2496
+        },
+        {
+          "face": "front",
+          "trait": "asl:mount-360",
+          "present": true,
+          "row": 2497
+        },
+        {
+          "face": "front",
+          "trait": "asl:qsu",
+          "present": true,
+          "row": 2498
+        },
+        {
+          "face": "front",
+          "trait": "asl:nm",
+          "present": false,
+          "row": 2499
+        },
+        {
+          "face": "front",
+          "trait": "asl:rfnm",
+          "present": false,
+          "row": 2500
+        },
+        {
+          "face": "front",
+          "attribute": "bpv",
+          "value": 40,
+          "row": 2501
+        },
+        {
+          "face": "front",
+          "attribute": "dates",
+          "value": "44-45",
+          "row": 2502
+        },
+        {
+          "face": "front",
+          "trait": "asl:animal-pack",
+          "present": false,
+          "row": 2503
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "value": 2,
+          "row": 2504
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "removal",
+          "value": 6,
+          "row": 2505
+        }
+      ]
+    },
+    {
+      "id": "campaign-german-75mm-at",
+      "kind": "asl:gun",
+      "kindRow": 2506,
+      "nationality": "german",
+      "nationalityRow": 2507,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "campaign-german-75mm-at"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2508
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "75 mm anti-tank gun (game default)",
+          "row": 2509
+        },
+        {
+          "face": "front",
+          "attribute": "gun-type",
+          "value": "at",
+          "row": 2510
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 75,
+          "row": 2511
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "value": "l",
+          "row": 2512
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 2,
+          "row": 2513
+        },
+        {
+          "face": "front",
+          "attribute": "ife",
+          "printed": false,
+          "row": 2514
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 2515
+        },
+        {
+          "face": "front",
+          "attribute": "range-minimum",
+          "printed": false,
+          "row": 2516
+        },
+        {
+          "face": "front",
+          "attribute": "range-maximum",
+          "value": 160,
+          "row": 2517
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 2518
+        },
+        {
+          "face": "front",
+          "attribute": "manhandling",
+          "value": 10,
+          "row": 2519
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "value": "small",
+          "row": 2520
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": false,
+          "row": 2521
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 2522
+        },
+        {
+          "face": "front",
+          "trait": "asl:mount-360",
+          "present": false,
+          "row": 2523
+        },
+        {
+          "face": "front",
+          "trait": "asl:qsu",
+          "present": true,
+          "row": 2524
+        },
+        {
+          "face": "front",
+          "trait": "asl:nm",
+          "present": false,
+          "row": 2525
+        },
+        {
+          "face": "front",
+          "trait": "asl:rfnm",
+          "present": false,
+          "row": 2526
+        },
+        {
+          "face": "front",
+          "attribute": "bpv",
+          "value": 50,
+          "row": 2527
+        },
+        {
+          "face": "front",
+          "attribute": "dates",
+          "value": "44-45",
+          "row": 2528
+        },
+        {
+          "face": "front",
+          "trait": "asl:animal-pack",
+          "present": false,
+          "row": 2529
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "value": 2,
+          "row": 2530
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "removal",
+          "value": 6,
+          "row": 2531
+        }
+      ]
+    },
+    {
+      "id": "campaign-german-88mm-at",
+      "kind": "asl:gun",
+      "kindRow": 2532,
+      "nationality": "german",
+      "nationalityRow": 2533,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "campaign-german-88mm-at"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2534
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "88 mm anti-tank gun (game default)",
+          "row": 2535
+        },
+        {
+          "face": "front",
+          "attribute": "gun-type",
+          "value": "at",
+          "row": 2536
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 88,
+          "row": 2537
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "value": "l",
+          "row": 2538
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 2,
+          "row": 2539
+        },
+        {
+          "face": "front",
+          "attribute": "ife",
+          "printed": false,
+          "row": 2540
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 2541
+        },
+        {
+          "face": "front",
+          "attribute": "range-minimum",
+          "printed": false,
+          "row": 2542
+        },
+        {
+          "face": "front",
+          "attribute": "range-maximum",
+          "value": 200,
+          "row": 2543
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 2544
+        },
+        {
+          "face": "front",
+          "attribute": "manhandling",
+          "value": 8,
+          "row": 2545
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "value": "large",
+          "row": 2546
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": false,
+          "row": 2547
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 2548
+        },
+        {
+          "face": "front",
+          "trait": "asl:mount-360",
+          "present": true,
+          "row": 2549
+        },
+        {
+          "face": "front",
+          "trait": "asl:qsu",
+          "present": false,
+          "row": 2550
+        },
+        {
+          "face": "front",
+          "trait": "asl:nm",
+          "present": false,
+          "row": 2551
+        },
+        {
+          "face": "front",
+          "trait": "asl:rfnm",
+          "present": false,
+          "row": 2552
+        },
+        {
+          "face": "front",
+          "attribute": "bpv",
+          "value": 65,
+          "row": 2553
+        },
+        {
+          "face": "front",
+          "attribute": "dates",
+          "value": "44-45",
+          "row": 2554
+        },
+        {
+          "face": "front",
+          "trait": "asl:animal-pack",
+          "present": false,
+          "row": 2555
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "value": 2,
+          "row": 2556
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "removal",
+          "value": 6,
+          "row": 2557
+        }
+      ]
+    },
+    {
+      "id": "campaign-german-20mm-aa",
+      "kind": "asl:gun",
+      "kindRow": 2558,
+      "nationality": "german",
+      "nationalityRow": 2559,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "campaign-german-20mm-aa"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2560
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "20 mm anti-aircraft gun (game default)",
+          "row": 2561
+        },
+        {
+          "face": "front",
+          "attribute": "gun-type",
+          "value": "aa",
+          "row": 2562
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 20,
+          "row": 2563
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "value": "l",
+          "row": 2564
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 3,
+          "row": 2565
+        },
+        {
+          "face": "front",
+          "attribute": "ife",
+          "value": 4,
+          "row": 2566
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 2567
+        },
+        {
+          "face": "front",
+          "attribute": "range-minimum",
+          "printed": false,
+          "row": 2568
+        },
+        {
+          "face": "front",
+          "attribute": "range-maximum",
+          "value": 100,
+          "row": 2569
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 2570
+        },
+        {
+          "face": "front",
+          "attribute": "manhandling",
+          "value": 12,
+          "row": 2571
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "value": "small",
+          "row": 2572
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": false,
+          "row": 2573
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 2574
+        },
+        {
+          "face": "front",
+          "trait": "asl:mount-360",
+          "present": true,
+          "row": 2575
+        },
+        {
+          "face": "front",
+          "trait": "asl:qsu",
+          "present": true,
+          "row": 2576
+        },
+        {
+          "face": "front",
+          "trait": "asl:nm",
+          "present": false,
+          "row": 2577
+        },
+        {
+          "face": "front",
+          "trait": "asl:rfnm",
+          "present": false,
+          "row": 2578
+        },
+        {
+          "face": "front",
+          "attribute": "bpv",
+          "value": 25,
+          "row": 2579
+        },
+        {
+          "face": "front",
+          "attribute": "dates",
+          "value": "44-45",
+          "row": 2580
+        },
+        {
+          "face": "front",
+          "trait": "asl:animal-pack",
+          "present": false,
+          "row": 2581
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "value": 2,
+          "row": 2582
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "removal",
+          "value": 6,
+          "row": 2583
+        }
+      ]
+    },
+    {
+      "id": "campaign-german-quad20-aa",
+      "kind": "asl:gun",
+      "kindRow": 2584,
+      "nationality": "german",
+      "nationalityRow": 2585,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "campaign-german-quad20-aa"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2586
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "Quadruple 20 mm anti-aircraft mount (game default)",
+          "row": 2587
+        },
+        {
+          "face": "front",
+          "attribute": "gun-type",
+          "value": "aa",
+          "row": 2588
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 20,
+          "row": 2589
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "value": "l",
+          "row": 2590
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 3,
+          "row": 2591
+        },
+        {
+          "face": "front",
+          "attribute": "ife",
+          "value": 8,
+          "row": 2592
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 2593
+        },
+        {
+          "face": "front",
+          "attribute": "range-minimum",
+          "printed": false,
+          "row": 2594
+        },
+        {
+          "face": "front",
+          "attribute": "range-maximum",
+          "value": 100,
+          "row": 2595
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 2596
+        },
+        {
+          "face": "front",
+          "attribute": "manhandling",
+          "value": 9,
+          "row": 2597
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "printed": false,
+          "row": 2598
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": false,
+          "row": 2599
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 2600
+        },
+        {
+          "face": "front",
+          "trait": "asl:mount-360",
+          "present": true,
+          "row": 2601
+        },
+        {
+          "face": "front",
+          "trait": "asl:qsu",
+          "present": false,
+          "row": 2602
+        },
+        {
+          "face": "front",
+          "trait": "asl:nm",
+          "present": false,
+          "row": 2603
+        },
+        {
+          "face": "front",
+          "trait": "asl:rfnm",
+          "present": false,
+          "row": 2604
+        },
+        {
+          "face": "front",
+          "attribute": "bpv",
+          "value": 40,
+          "row": 2605
+        },
+        {
+          "face": "front",
+          "attribute": "dates",
+          "value": "44-45",
+          "row": 2606
+        },
+        {
+          "face": "front",
+          "trait": "asl:animal-pack",
+          "present": false,
+          "row": 2607
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "value": 2,
+          "row": 2608
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "removal",
+          "value": 6,
+          "row": 2609
+        }
+      ]
+    },
+    {
+      "id": "campaign-german-nebelwerfer",
+      "kind": "asl:gun",
+      "kindRow": 2610,
+      "nationality": "german",
+      "nationalityRow": 2611,
+      "counter": {
+        "source": "asl-counter-sheets:scenario-a1",
+        "sheet": "MFG",
+        "counter": "campaign-german-nebelwerfer"
+      },
+      "applicability": {
+        "status": "unreviewed",
+        "modules": [],
+        "conditions": []
+      },
+      "slots": [],
+      "values": [
+        {
+          "face": "front",
+          "attribute": "identity",
+          "recorded": false,
+          "row": 2612
+        },
+        {
+          "face": "front",
+          "attribute": "designation",
+          "value": "150 mm Nebelwerfer rocket launcher (game default)",
+          "row": 2613
+        },
+        {
+          "face": "front",
+          "attribute": "gun-type",
+          "value": "art",
+          "row": 2614
+        },
+        {
+          "face": "front",
+          "attribute": "caliber",
+          "value": 150,
+          "row": 2615
+        },
+        {
+          "face": "front",
+          "attribute": "caliber-suffix",
+          "value": "star",
+          "row": 2616
+        },
+        {
+          "face": "front",
+          "attribute": "rate-of-fire",
+          "value": 1,
+          "row": 2617
+        },
+        {
+          "face": "front",
+          "attribute": "ife",
+          "printed": false,
+          "row": 2618
+        },
+        {
+          "face": "front",
+          "attribute": "breakdown",
+          "value": 12,
+          "row": 2619
+        },
+        {
+          "face": "front",
+          "attribute": "range-minimum",
+          "printed": false,
+          "row": 2620
+        },
+        {
+          "face": "front",
+          "attribute": "range-maximum",
+          "value": 175,
+          "row": 2621
+        },
+        {
+          "face": "front",
+          "attribute": "special-ammo",
+          "printed": false,
+          "row": 2622
+        },
+        {
+          "face": "front",
+          "attribute": "manhandling",
+          "value": 8,
+          "row": 2623
+        },
+        {
+          "face": "front",
+          "attribute": "target-size",
+          "value": "large",
+          "row": 2624
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-ap",
+          "present": true,
+          "row": 2625
+        },
+        {
+          "face": "front",
+          "trait": "asl:no-he",
+          "present": false,
+          "row": 2626
+        },
+        {
+          "face": "front",
+          "trait": "asl:mount-360",
+          "present": false,
+          "row": 2627
+        },
+        {
+          "face": "front",
+          "trait": "asl:qsu",
+          "present": false,
+          "row": 2628
+        },
+        {
+          "face": "front",
+          "trait": "asl:nm",
+          "present": false,
+          "row": 2629
+        },
+        {
+          "face": "front",
+          "trait": "asl:rfnm",
+          "present": false,
+          "row": 2630
+        },
+        {
+          "face": "front",
+          "attribute": "bpv",
+          "value": 45,
+          "row": 2631
+        },
+        {
+          "face": "front",
+          "attribute": "dates",
+          "value": "44-45",
+          "row": 2632
+        },
+        {
+          "face": "front",
+          "trait": "asl:animal-pack",
+          "present": false,
+          "row": 2633
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "repair",
+          "value": 2,
+          "row": 2634
+        },
+        {
+          "face": "malfunctioned",
+          "attribute": "removal",
+          "value": 6,
+          "row": 2635
         }
       ]
     }
