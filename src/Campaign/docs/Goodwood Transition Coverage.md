@@ -148,3 +148,9 @@ Verification: all 115 Campaign regression tests passed, including full source ac
 SituationAddresses provides one ASL board/hex address for each of the 37,788 owned cells. Tile compilation margins do not provide additional playable addresses. Existing accepted pilot placements can be translated through their original crop geometry into stable world column/row coordinates without auto-deployment or modification of the saved setup. Seed mismatches are rejected.
 
 Two acceptance tests cover round trips across every owned cell, margin rejection, and mortar/crew coordinate preservation through JSON reload. This establishes coordinate continuity only: destination terrain, complete roster setup legality and existing terrain-version compatibility still require validation before whole-Situation admission.
+
+## G4 increment: demand-loaded terrain
+
+SituationMap opens the complete coverage manifest without compiling all 84 packages. Requested tiles load their saved features, verify package/refinement/catalog/grid identities, then derive ASL hex facts. A bounded LRU cache defaults to four tiles. Evicted tiles are revalidated on reload; cached objects represent accepted in-memory terrain. No procedural regeneration occurs.
+
+Manifest acceptance alone does not prove all package files exist or are intact. Full release validation still uses SituationPublisher.Verify to inspect every package. Interactive tile access reports missing or corrupt packages when requested. Three tests pass for publication recovery and demand loading, including canceled access, cache eviction, missing packages, altered refinement data and protection against mutation of exported manifest arrays. Browser integration and full deployment admission remain outstanding.

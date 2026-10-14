@@ -50,8 +50,17 @@ public static class SituationPublisher
         finally { if (File.Exists(stage)) File.Delete(stage); }
     }
 
-    // Reopen accepted packages without rerunning procedural generation. Recompile to verify their terrain.
+    // The full audit checks every package. Interactive callers use SituationMap for demand loading.
     public static SituationManifest Verify(PilotInputs source, string manifestPath, CancellationToken cancellationToken = default)
+    {
+        var manifest = ReadManifest(source, manifestPath, cancellationToken);
+        foreach (var package in manifest.Packages)
+            _ = SituationMap.Load(source.ForVersion(manifest.GeneratorVersion), manifestPath, package, cancellationToken);
+        return manifest;
+    }
+
+    // Coverage and identities only. Package bytes are checked when a tile is loaded.
+    public static SituationManifest ReadManifest(PilotInputs source, string manifestPath, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(source);
         if (new FileInfo(manifestPath).Length > 1_000_000) throw new InvalidDataException("Oversized Situation manifest.");
@@ -68,7 +77,6 @@ public static class SituationPublisher
         var tiles = SituationCoverage.Plan(inputs, cancellationToken);
         if (manifest.Packages is null || tiles.Count != manifest.Packages.Length)
             throw new InvalidDataException("Incomplete Situation package coverage.");
-        var root = Path.GetDirectoryName(Path.GetFullPath(manifestPath))!;
         for (var i = 0; i < tiles.Count; i++)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -77,15 +85,7 @@ public static class SituationPublisher
                 package.Board != PilotIdentity.Reference(inputs, manifest.Seed, tile.Crop) ||
                 !IsHash(package.PackageVersion) || !IsHash(package.GridSha256) || !IsHash(package.RefinementSha256))
                 throw new InvalidDataException("Invalid Situation tile identity or ownership.");
-            var directory = Path.Combine(root, "packages", package.PackageVersion);
-            var loaded = new BoardPackageStore(Path.Combine(directory, "boards")).Load(BoardRef.Parse(package.Board));
-            if (loaded.Package?.Version != package.PackageVersion ||
-                BoardPackage.Hash(File.ReadAllBytes(Path.Combine(directory, "refinement.json"))) != package.RefinementSha256 ||
-                !File.ReadAllBytes(Path.Combine(directory, "SharedBoardMetadata.xml")).AsSpan().SequenceEqual(inputs.CatalogBytes))
-                throw new InvalidDataException("Stored Situation terrain is corrupt or missing.");
-            var grid = FeatureCompiler.Compile(loaded.Package.Model, inputs.Catalog).Grid;
-            if (PilotGenerator.GridHash(grid) != package.GridSha256)
-                throw new InvalidDataException("Stored Situation grid differs from the accepted map.");
+
         }
         return manifest;
     }
