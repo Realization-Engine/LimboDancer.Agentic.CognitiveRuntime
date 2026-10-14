@@ -14,7 +14,7 @@ namespace LimboDancer.Campaign.PilotHost;
 
 public sealed record SituationHandoff(string Version, string SourceHash, string CampaignId, string WorldIdentity,
     string Catalog, string Board, string Name, string BoardVersion, string Features, string GameRecord,
-    SituationRosterSnapshot Roster, SituationDeploymentDraft Setup);
+    SituationRosterSnapshot Roster, SituationDeploymentDraft Setup, string? CampaignContext = null);
 
 /// <summary>Full Goodwood initial setup, validated by the existing ASL planner. Does not publish or advance play.</summary>
 public static class SituationHandoffs
@@ -23,13 +23,13 @@ public static class SituationHandoffs
     public static string ContextJson(SituationHandoff handoff) => JsonSerializer.Serialize(new
     {
         handoff.Version, handoff.SourceHash, handoff.CampaignId, handoff.WorldIdentity,
-        handoff.Catalog, handoff.Roster, handoff.Setup
+        handoff.Catalog, handoff.Roster, handoff.Setup, handoff.CampaignContext
     });
 
     private static readonly Guid Tenant = Guid.Parse("bb17e94d-c54b-4260-a193-26ad215eebc9");
 
     public static async Task<SituationHandoff> Prepare(PilotInputs inputs, SituationMap map,
-        SituationDeploymentDraft draft, string campaignId, CancellationToken cancellationToken = default)
+        SituationDeploymentDraft draft, string campaignId, string? campaignContext = null, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(campaignId) || campaignId.Length > 100)
             throw new InvalidDataException("A campaign identity is required for the complete Situation handoff.");
@@ -46,7 +46,7 @@ public static class SituationHandoffs
         var catalog = UnitCatalogs.Read(UnitCatalogs.ScenarioA1, vocabulary)?.Catalog
             ?? throw new InvalidDataException("ASL catalog is unavailable.");
         var hash = BoardPackage.Hash(CanonicalJson.Serialize(new[] { Version, campaignId, accepted.WorldIdentity,
-            JsonSerializer.Serialize(accepted), board.Version, catalog.Identity.ToString(), JsonSerializer.Serialize(roster) }));
+            JsonSerializer.Serialize(accepted), board.Version, catalog.Identity.ToString(), JsonSerializer.Serialize(roster), campaignContext ?? string.Empty }));
         var planner = new GamePlanner(new PilotHandoffs.PreparationStore(), new InMemoryBoardCatalog([
             new BoardHandle(board.Board, board.Version, BoardReadStatus.AuthoredValid, "Complete Goodwood terrain", facts)]),
             vocabulary, [catalog], new PilotHandoffs.PreparationClock());
@@ -84,6 +84,6 @@ public static class SituationHandoffs
         cancellationToken.ThrowIfCancellationRequested();
         return new(Version, hash, campaignId, accepted.WorldIdentity, catalog.Identity.ToString(), board.Board.Value,
             board.Name, board.Version, Encoding.UTF8.GetString(board.FeaturesBytes()),
-            GameEventWriter.Write(plan.Scope, new GameRecord(plan.Label, false, plan.Events)), roster, accepted);
+            GameEventWriter.Write(plan.Scope, new GameRecord(plan.Label, false, plan.Events)), roster, accepted, campaignContext);
     }
 }
