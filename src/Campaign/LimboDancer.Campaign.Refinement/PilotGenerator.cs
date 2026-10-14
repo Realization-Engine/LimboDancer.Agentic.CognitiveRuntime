@@ -36,8 +36,10 @@ public sealed class PilotGenerator(PilotInputs inputs)
         foreach (var region in regions)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (region.Elevation != 0 || region.Kind is not ("open" or "town" or "woods" or "water"))
+            if ((inputs.SupportsElevation ? region.Elevation is < 0 or > 2 : region.Elevation != 0) || region.Kind is not ("open" or "town" or "woods" or "water"))
                 throw new InvalidDataException($"Unsupported source terrain/elevation in {region.Key}: {region.Kind}/{region.Elevation}.");
+            if (inputs.SupportsElevation && region.Elevation > 0)
+                Add(region.Key + "/elevation", "elevation", "source-level-mapped", (byte)region.Elevation, region.Polygon);
             if (region.Kind is "woods" or "water")
                 Add(region.Key, "area", "source-preserved", profile.TerrainCodes[region.Kind], region.Polygon);
             if (region.Kind != "town") continue;
@@ -82,7 +84,8 @@ public sealed class PilotGenerator(PilotInputs inputs)
         FeatureShape Shape(MetricFeature f) => new([f.Points.Select(p => SpatialFrame.Pixel(p, crop)).ToArray()]);
         Feature Convert(MetricFeature f) => (f.Kind switch
         {
-            "area" => (Feature)new AreaTerrainFeature(f.Id, 0, Shape(f), f.Code),
+            "elevation" => (Feature)new ElevationRegion(f.Id, 0, Shape(f), f.Code),
+            "area" => new AreaTerrainFeature(f.Id, 0, Shape(f), f.Code),
             "building" => new BuildingFeature(f.Id, 0, [Shape(f)], f.Code, f.Id),
             "bridge" => new BridgeFeature(f.Id, 0, Shape(f), f.Code),
             _ => new LinearTerrainFeature(f.Id, f.Kind == "stream" ? 10 : 0, f.Code,
@@ -119,7 +122,7 @@ public sealed class PilotGenerator(PilotInputs inputs)
             ProfileSha256 = inputs.ProfileDigest,
             SpatialVersion = SpatialFrame.Version,
             SpatialSha256 = spatialDigest,
-            GeneratorVersion = PilotInputs.GeneratorVersion,
+            GeneratorVersion = inputs.Version,
             RandomStream = SeedRandom.Version,
             CatalogSha256 = profile.CatalogSha256,
             CatalogBlob = inputs.CatalogBlob,
@@ -135,7 +138,7 @@ public sealed class PilotGenerator(PilotInputs inputs)
             Hexes = parents,
             Findings = validation.Findings,
             Admission = "inspection-only; setup, movement, LOS and combat not admitted",
-            Assumptions = PilotAssumptions
+            Assumptions = inputs.SupportsElevation ? PilotAssumptions.Append("Source levels 0-2 map one-to-one to ASL base levels, a scenario assumption not measured height; B10.1 center-dot elevation; no inferred cliffs or slope SSR.").ToArray() : PilotAssumptions
         }, JsonOptions);
         cancellationToken.ThrowIfCancellationRequested();
         return new(package, grid, facts, validation, manifest, features);

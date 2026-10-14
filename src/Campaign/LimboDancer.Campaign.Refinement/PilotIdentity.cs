@@ -12,7 +12,7 @@ public static class PilotIdentity
     {
         ArgumentNullException.ThrowIfNull(inputs); SeedRandom.ValidateSeed(seed);
         return [SeedRandom.Version, seed, PilotInputs.MapSpace, inputs.Profile.SourceSha256,
-            SpatialDigest, inputs.ProfileDigest, PilotInputs.GeneratorVersion];
+            SpatialDigest, inputs.ProfileDigest, inputs.Version];
     }
     public static string World(PilotInputs inputs, string seed) => BoardPackage.Hash(CanonicalJson.Serialize(Defining(inputs, seed)));
     public static string Reference(PilotInputs inputs, string seed, Crop crop)

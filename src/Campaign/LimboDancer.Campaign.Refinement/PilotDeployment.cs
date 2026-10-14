@@ -16,7 +16,7 @@ public sealed record PilotUnit(string Id, string ParentId, string Side, string L
 public sealed record PilotPlacement(string UnitId, string Hex);
 public sealed record PilotSetup(string Policy, string ContextHash, string PackageVersion, int Revision, bool Complete, PilotPlacement[] Placements);
 public sealed record PilotBundle(string Seed, string PackageVersion, string Board, string Name, string Features, string Manifest, string CatalogSha256, string GridSha256);
-public sealed record PilotCell(string Hex, string GlobalKey, string? Parent, double X, double Y, PixelPoint[] Polygon, string Terrain, bool Admitted, string Reason);
+public sealed record PilotCell(string Hex, string GlobalKey, string? Parent, double X, double Y, PixelPoint[] Polygon, string Terrain, bool Admitted, string Reason, int BaseLevel);
 
 /// <summary>Fixed-crop infantry setup policy. This is not an ASL movement or combat implementation.</summary>
 public sealed class PilotDeployment
@@ -53,6 +53,8 @@ public sealed class PilotDeployment
     public PilotDeployment(PilotInputs inputs, PilotBundle bundle, IDictionary<string, double>? timings = null, FormationSelection? selection = null)
     {
         ArgumentNullException.ThrowIfNull(inputs); ArgumentNullException.ThrowIfNull(bundle);
+        using var versionDocument = JsonDocument.Parse(bundle.Manifest);
+        inputs = inputs.ForVersion(versionDocument.RootElement.GetProperty("GeneratorVersion").GetString());
         this.inputs = inputs;
         formation = selection;
         Crop = selection is null ? inputs.DefaultCrop : FormationDeployment.CropFor(inputs, selection);
@@ -101,7 +103,7 @@ public sealed class PilotDeployment
             m.GetProperty("CatalogSha256").GetString() != inputs.Profile.CatalogSha256 ||
             m.GetProperty("CatalogBlob").GetString() != inputs.CatalogBlob ||
             m.GetProperty("SerializationVersion").GetString() != "feature-model-1" ||
-            m.GetProperty("GeneratorVersion").GetString() != PilotInputs.GeneratorVersion ||
+            m.GetProperty("GeneratorVersion").GetString() != inputs.Version ||
             m.GetProperty("SpatialVersion").GetString() != SpatialFrame.Version ||
             m.GetProperty("CompilerVersion").GetString() != FeatureCompiler.Version ||
             m.GetProperty("DerivationVersion").GetString() != VaslCompatibleHexFactDerivation.Version ||
@@ -125,13 +127,13 @@ public sealed class PilotDeployment
         // A two-hex guard avoids clamped edge facts. Overlapping playable crops are not admitted.
         var interior = h.Column >= 2 && h.Column < crop.Width - 2 && h.Row >= 2 && h.Row < crop.Height - 2;
         var code = f.Center.Terrain?.Code;
-        var ground = f.BaseLevel == 0 && code is 0 or 40 or 60 or 66;
+        var ground = (inputs.SupportsElevation ? f.BaseLevel is >= 0 and <= 2 : f.BaseLevel == 0) && code is 0 or 40 or 60 or 66;
         // A bridge deck is a distinct location. Version 1 does not place infantry on decks/streams.
         var reason = !interior ? "Crop boundary: inspection only." : parent is null ? "No source formation parent." :
             !ground || f.Bridge is not null ? "This terrain or bridge location is not admitted for pilot setup." : "Infantry ground-level setup admitted.";
         var p = g.CenterDot(h);
         return new PilotCell(f.Hex.ToString(), (crop.Column + h.Column) + "/" + (crop.Row + h.Row), parent,
-            p.X, p.Y, g.Vertices(h).ToArray(), f.Center.Terrain?.Name ?? "Unknown", interior && parent is not null && ground && f.Bridge is null, reason);
+            p.X, p.Y, g.Vertices(h).ToArray(), f.Center.Terrain?.Name ?? "Unknown", interior && parent is not null && ground && f.Bridge is null, reason, f.BaseLevel);
     }).ToArray();
     }
 

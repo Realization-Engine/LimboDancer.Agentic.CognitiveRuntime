@@ -70,10 +70,10 @@ public sealed class FormationDeploymentTests
     [Theory]
     [InlineData("C/X-4", "C/V-3")]
     [InlineData("C/Y-5", "C/Z-7")]
-    public void ElevatedNeighborsFailExplicitly(string anchor, string offendingParent)
+    public void LegacyElevatedNeighborsFailExplicitly(string anchor, string offendingParent)
     {
         var crop = FormationDeployment.CropFor(Inputs, new("de-rifle-03", anchor));
-        var error = Assert.Throws<InvalidDataException>(() => new PilotGenerator(Inputs).Generate(Seed, crop));
+        var error = Assert.Throws<InvalidDataException>(() => new PilotGenerator(Inputs.ForVersion(PilotInputs.LegacyGeneratorVersion)).Generate(Seed, crop));
         Assert.Contains("Unsupported source terrain/elevation", error.Message);
         Assert.Contains(offendingParent, error.Message);
     }
@@ -98,7 +98,7 @@ public sealed class FormationDeploymentTests
     public static IEnumerable<object[]> NeighborCases()
     {
         foreach (var seed in new[] { Seed, "11111111111111111111111111111111", "ffffffffffffffffffffffffffffffff" })
-            foreach (var pair in new[] { ("A/X-6", "A/W-6"), ("A/X-6", "A/X-7"), ("A/V-7", "A/W-7"), ("A/W-6", "A/W-7") })
+            foreach (var pair in new[] { ("A/X-6", "A/W-6"), ("A/X-6", "A/X-7"), ("A/V-7", "A/W-7"), ("A/W-6", "A/W-7"), ("C/Y-4", "C/X-4"), ("C/Y-4", "C/Y-5") })
                 yield return new object[] { seed, pair.Item1, pair.Item2 };
     }
 

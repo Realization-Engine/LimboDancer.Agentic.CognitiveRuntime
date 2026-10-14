@@ -54,7 +54,7 @@ public sealed class PilotTests
     public void JoinedBoardsShareMetricSeamAndUnsupportedHillsFailClosed()
     {
         Assert.Equal(SpatialFrame.Project(1, 0.25, 90, 0, 1130), SpatialFrame.Project(0, 0.25, 90, 0, 2260));
-        var error = Assert.Throws<InvalidDataException>(() => new PilotGenerator(Inputs).Generate(Seed, new Crop(52, 116)));
+        var error = Assert.Throws<InvalidDataException>(() => new PilotGenerator(Inputs.ForVersion(PilotInputs.LegacyGeneratorVersion)).Generate(Seed, new Crop(52, 116)));
         Assert.Contains("Unsupported source terrain/elevation", error.Message, StringComparison.Ordinal);
     }
 

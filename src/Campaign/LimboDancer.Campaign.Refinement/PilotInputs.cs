@@ -29,7 +29,18 @@ public sealed class PilotInputs
     public IReadOnlyList<SourceBridge> Bridges { get; }
     public IReadOnlyDictionary<string, string> RifleSides { get; }
     public const string MapSpace = "panzer-leader-05-joined-b-a-c";
-    public const string GeneratorVersion = "goodwood-pilot-1";
+    public const string GeneratorVersion = "goodwood-pilot-2";
+    public const string LegacyGeneratorVersion = "goodwood-pilot-1";
+    public string Version { get; private set; } = GeneratorVersion;
+    public bool SupportsElevation => Version == GeneratorVersion;
+    public PilotInputs ForVersion(string? version)
+    {
+        if (version is not (GeneratorVersion or LegacyGeneratorVersion))
+            throw new InvalidDataException("Unsupported pilot generator version.");
+        var copy = (PilotInputs)MemberwiseClone();
+        copy.Version = version;
+        return copy;
+    }
 
     public PilotInputs(string sourceJson)
     {

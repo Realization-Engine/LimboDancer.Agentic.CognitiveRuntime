@@ -20,7 +20,8 @@ public sealed class DeploymentTests
     [Fact]
     public void PilotDerivedFactsRetainPreOptimizationIdentity()
     {
-        var bytes = JsonSerializer.SerializeToUtf8Bytes(Pilot.Value.Facts.Hexes);
+        var legacy = Inputs.ForVersion(PilotInputs.LegacyGeneratorVersion);
+        var bytes = JsonSerializer.SerializeToUtf8Bytes(new PilotGenerator(legacy).Generate(Seed).Facts.Hexes);
         var hash = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes));
         // Captured before the bridge/tunnel bounding-box rejection optimization.
         Assert.Equal("FF79F7F19DCD2E558C64218A09EC0536E93EC9E3881DA2EE57665CE5B45EE8E7", hash);

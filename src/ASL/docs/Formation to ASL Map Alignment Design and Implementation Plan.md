@@ -279,3 +279,34 @@ Next elevation increment:
 - Verify derived base levels and hexside slopes, rendering, supported ground-level setup, adjacent-crop equivalence and saved-package reload before allowing elevated deployments.
 - Use a new generation/profile identity and preserve existing accepted flat packages. Migration must not silently regenerate saved terrain.
 - Admit bounded setup and inspection only. Movement, LOS and combat require their own evidence and remain unavailable.
+
+
+### Bounded elevation support, 14 October 2026
+
+Source consulted directly: eASLRB_v3_01.pdf, 716 pages, SHA-256 957de75be52c34a7de4c20e875d33145e6b7d4ff8f19384c68818e385d41a247, at E:/RPG/Dennis-Landi-Games/Squad Leader Apocalypse/References/AdvancedSquadLeader/wgv-2025-08-07_06-00am/eASLRB_v3_01.pdf. Physical pages 124-127 and 131 were read; page 125 was also rendered and inspected.
+
+Rule basis and boundaries:
+- B10.1 (physical 124-125): ground level at the hex centre determines the unit's elevation; terrain height is relative to the hill. The ASL compiler/derivation remains authoritative for map facts.
+- B10.11 (125): full-level boundaries define crest lines. Source polygons provide those boundaries; no random hill geometry is added.
+- B10.2-10.31 (125), B10.4-10.52 (126): LOS, height advantage, uphill movement and abrupt changes have additional rules. This increment does not enable those actions.
+- B11.1 (126) distinguishes marked cliffs from ordinary elevation changes. No cliff or special Slope hexside is inferred from a height difference. B11 climbing (127) remains unavailable.
+- B19.2 and B20.1 (131): depressions and streams are distinct from surrounding ground. Existing ASL depression derivation is retained, including negative levels; stream/deck setup remains excluded.
+
+Generator goodwood-pilot-2 maps source levels 0, 1 and 2 one-to-one to ASL base elevations as an explicit scenario assumption, not a claim of equal measured heights between game systems. Nonzero source polygons produce ElevationRegion features. Compiled raster elevation and existing ASL derivation/rendering drive the map and inspector. Terrain types outside the existing profile, and source levels outside 0-2, remain rejected. Friendly infantry setup is admitted on supported ground terrain at these levels, subject to formation permission, parent boundary, stacking and crop guards. No upper-building location is selectable.
+
+Accepted goodwood-pilot-1 bundles are read with their original identity and features, without regeneration. Both versions remain recognized; unknown versions fail closed. New generation uses v2, so world and package identities differ. Existing flat saves are not automatically upgraded to new terrain.
+
+Verification includes formerly rejected British anchors B/N-8 and B/H-8, German C/X-4 and C/Y-5, and actual hill anchors B/M-6, B/F-7, C/V-3 and C/Z-7. Tests check elevated setup, rendering bands, no invented cliff/Slope annotations, accepted reload, and legacy identity preservation. Neighboring C/Y-4 to C/X-4 and C/Y-5 comparisons now run across three seeds alongside the flat cases. Live browser verification generated B/N-8, deployed four squads and completed setup. Broad movement/LOS conformance, measured-height calibration, unsupported terrain and all-scenario coverage remain outside this result.
+
+Final validation: 65 Campaign Release tests pass with warnings treated as errors. Browser-code recovery and campaign-file round-trip tests also pass.
+
+### Elevation UI acceptance, 14 October 2026
+
+Used an exported campaign backup and a temporary import fixture changing only uk-rifle-02 from B/N-8 to B/M-6. The ready formation screen locks placement edits, so this exercises recovery from a changed saved formation, not an interactive formation move.
+
+- The moved-anchor warning correctly identified both anchors and offered Rebuild local map. Successful rebuilding reset the selected local setup to 0/4.
+- At hill-centred B/M-6, Deploy pilot roster placed 4/4 squads. Selecting G6 showed Open Ground, Level 1, Formation B/M-6 and admitted setup. Formation-parent labels displayed, setup completed, and a browser reload reopened the same anchor with 4/4 deployed and Review setup.
+- Reloaded the temporary fixture, started rebuilding and pressed Escape before acceptance. Reopening still reported the original B/N-8 saved anchor. A campaign export compared exactly equal to the backup for the entire aslPilots object, including every accepted bundle and setup.
+- Restored the original campaign through Load campaign from file. B/N-8 reopened with 4/4 deployed and Review setup. The temporary hill placement is not left in the active campaign.
+
+The first cancellation attempt completed generation before cancellation could be confirmed; it was not counted as cancellation evidence. The subsequent Escape check above provided the verified result. Automated failure-injection tests remain the evidence for publication and storage failures. No production code changed during this acceptance pass; the previously passing 65 Campaign Release tests and browser-code checks remain applicable.

@@ -145,3 +145,8 @@ A moved formation offers **Rebuild local map**. This explicitly resets squad pla
 
 
 Crop verification now covers four neighboring pairs across three seeds, deterministic replay, shared interior facts, edge placement rejection, uncovered map edges and explicit elevated-neighbor rejection. A separate cross-seed check verifies building variation with unchanged source geometry. See the implementation plan checkpoint for fixtures and elevation follow-up.
+
+
+### Elevation-enabled generation
+
+New goodwood-pilot-2 maps preserve source levels 0-2 as ASL base elevation regions, an explicit scenario mapping. The hex inspector shows derived levels. Supported infantry ground setup now admits these elevations. Cliffs and special Slope hexsides are not inferred; stream/deck setup, movement, LOS and combat remain unavailable. Accepted v1 maps load unchanged using their original version. See the implementation plan for PDF rule citations, assumptions and acceptance fixtures.
