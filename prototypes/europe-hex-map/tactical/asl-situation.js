@@ -91,6 +91,14 @@ window.AslSituation = (() => {
    }search.oninput=list;list();
    const notes=el('details');notes.append(el('summary','Map and conversion details'),el('p','Complete joined boards B, A and C. Seed: '+save.seed),el('p','Manufactured game-default profiles are identified in the ASL catalog. Aircraft and campaign supply information remain reference records; no new combat rules are added.'),el('p','Existing pilot and earlier squad-map saves are retained separately. Their terrain and manual placements are not replaced by this complete-Situation setup.'));
    notes.append(el('p','The ASL board currently includes an exterior compilation guard. Boundary enforcement and full-scale UI acceptance are still in progress.'));content.append(notes);
+   if(units.some(unit=>!positions.has(unit.id))){
+    const fill=el('button','Place remaining counters');fill.type='button';actions.prepend(fill);
+    fill.onclick=async()=>{if(busy)return;fill.disabled=true;try{
+     const id=await run('/saves/'+ref.save+'/place-remaining',{});if(!hash(id))throw Error('Invalid Situation save identity.');
+     const updated=await api('/saves/'+id);if(!alive)return;
+     ref={version:1,seed:storage.seed,save:id};storage.save(ref);render(updated);
+    }catch(e){if(alive){busy=false;job=null;progress.hidden=true;fill.disabled=false;tell(e.message);}}};
+   }
    const prepare=el('button',ref?.url?'Recheck ASL handoff':'Prepare and open ASL setup');prepare.type='button';prepare.disabled=!save.setup.ready;
    prepare.onclick=async()=>{if(busy)return;prepare.disabled=true;try{
     const prepared=ref.prepared||await run('/saves/'+ref.save+'/prepare',{});ref={...ref,prepared};storage.save(ref);

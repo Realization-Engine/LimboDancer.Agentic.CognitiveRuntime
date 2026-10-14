@@ -64,7 +64,21 @@ public sealed class SituationDeployment
         {
             cancellationToken.ThrowIfCancellationRequested();
             var group = formation.Units.Where(u => u.Id == unit.Id || u.Holding?.Holder == unit.Id).ToArray();
-            if (!fill || group.Any(u => positions.ContainsKey(u.Id)) || !anchors.TryGetValue(unit.ParentId, out var anchor)) continue;
+            if (!fill || !anchors.TryGetValue(unit.ParentId, out var anchor)) continue;
+            var retained = group.Where(u => positions.ContainsKey(u.Id)).Select(u => positions[u.Id]).ToArray();
+            if (retained.Length == group.Length) continue;
+            if (retained.Length > 0)
+            {
+                // A partial crew/weapon group can only be completed at its accepted position.
+                // Conflicting or invalid accepted positions remain review findings, never relocation.
+                var at = addresses.At(retained[0].Column, retained[0].Row);
+                if (retained.All(p => p.Column == at.Column && p.Row == at.Row) &&
+                    group.All(u => Rejection(u, at, anchors, positions, cancellationToken) is null))
+                    foreach (var member in group.Where(u => !positions.ContainsKey(u.Id)))
+                        positions.Add(member.Id, new(member.Id, at.Column, at.Row));
+                continue;
+            }
+
             var candidates = parents[anchor];
             var target = candidates.FirstOrDefault(c => !positions.Values.Any(p => p.Column == c.Column && p.Row == c.Row) &&
                     group.All(u => Rejection(u, c, anchors, positions, cancellationToken) is null))
@@ -116,8 +130,8 @@ public sealed class SituationDeployment
     {
         if (facts.BaseLevel is < 0 or > 2 || facts.Bridge is not null || facts.Center.Terrain?.Code is not (0 or 40 or 60 or 66))
             return "This terrain or bridge location needs setup review.";
-        if (unit.Kind is "vehicle" or "gun" or "crew" or "mortar" && facts.Center.Terrain?.Name is not ("Open Ground" or "Paved Road"))
-            return "Vehicle and weapon detachments currently require open ground or paved road for campaign setup.";
+        if (unit.Kind is "vehicle" or "gun" or "crew" or "mortar" && facts.Center.Terrain?.Name is not ("Open Ground" or "Paved Road" or "Woods"))
+            return "Vehicle and weapon detachments currently require open ground, paved road or woods for campaign setup.";
         return null;
     }
 }

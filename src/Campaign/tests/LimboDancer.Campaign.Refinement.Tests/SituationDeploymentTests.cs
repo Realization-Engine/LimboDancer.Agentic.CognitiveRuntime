@@ -24,6 +24,10 @@ public sealed class SituationDeploymentTests
             // A full, dispersed formation deployment, with unique open parent hexes for both sides.
             var open = inputs.Regions.Where(r => r.Kind == "open").OrderBy(r => r.Key, StringComparer.Ordinal).ToArray();
             var formations = roster.Ground.Select((f, i) => new FormationSelection(f.Id, open[i].Key)).ToArray();
+            // Woods are legal ASL setup terrain for vehicles and manned guns. Exercise the
+            // real transition, including GamePlanner and Studio, instead of only open fields.
+            formations[Array.FindIndex(formations, f => f.UnitId == "de-88mm-04")] = new("de-88mm-04", "A/D-4");
+            formations[Array.FindIndex(formations, f => f.UnitId == "de-panther-w-01")] = new("de-panther-w-01", "A/F-6");
             var draft = service.Assemble(formations);
             Assert.True(draft.Ready, string.Join("; ", draft.Review.Select(r => r.UnitId + ": " + r.Reason)));
             Assert.Equal(624, draft.Positions.Length);

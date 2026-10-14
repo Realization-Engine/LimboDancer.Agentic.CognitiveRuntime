@@ -93,6 +93,7 @@ app.MapDelete("/api/asl-situation/jobs/{id}", (string id, SituationSessions serv
 app.MapGet("/api/asl-situation/saves/{id}", (string id, SituationSessions service) => service.Read(id));
 app.MapGet("/api/asl-situation/saves/{id}/export", (string id, SituationSessions service, HttpContext context) => service.Export(id, context.RequestAborted));
 app.MapPost("/api/asl-situation/import", (SituationPortableSave request, SituationSessions service) => new { job = service.Import(request) });
+app.MapPost("/api/asl-situation/saves/{id}/place-remaining", (string id, SituationSessions service) => new { job = service.PlaceRemaining(id) });
 app.MapPost("/api/asl-situation/saves/{id}/prepare", (string id, SituationSessions service) => new { job = service.Prepare(id) });
 app.MapGet("/api/asl-situation/handoffs/{id}", (string id, SituationSessions service) => service.ReadHandoff(id));
 app.MapPost("/api/asl-situation/handoffs/{id}/launch", (string id, SituationSessions service, IHttpClientFactory clients) =>

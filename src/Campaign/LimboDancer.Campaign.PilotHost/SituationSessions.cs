@@ -130,6 +130,23 @@ public sealed class SituationSessions(PilotInputs inputs, string storageRoot) : 
         });
     }
 
+    // Explicit recovery only. Ordinary reopen and import never fill accepted gaps.
+    public string PlaceRemaining(string id)
+    {
+        var save = Read(id);
+        return Run(async job =>
+        {
+            job.Stage = "place remaining counters";
+            var token = job.Cancel.Token;
+            var deployment = new SituationDeployment(inputs, new SituationMap(inputs, TerrainPath(save.TerrainManifest)));
+            _ = deployment.Review(save.Setup, token); // Reject incompatible policies before assigning anything.
+            var setup = deployment.Assemble(save.Setup.Formations, save.Setup.Positions, token);
+            token.ThrowIfCancellationRequested();
+            await Task.CompletedTask;
+            return Write(save with { Setup = setup });
+        });
+    }
+
     public string Prepare(string id)
     {
         var save = Read(id);
