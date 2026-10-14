@@ -6,7 +6,7 @@ using LimboDancer.Domains.Asl.Maps.Rendering;
 namespace LimboDancer.Campaign.PilotHost;
 
 public sealed record GenerateRequest(string Seed, FormationSelection? Formation = null);
-public sealed record OpenRequest(string Seed, PilotBundle? Bundle, DeploymentContext Context, PilotSetup? Setup, DeploymentContext? SavedContext = null);
+public sealed record OpenRequest(string Seed, PilotBundle? Bundle, DeploymentContext Context, PilotSetup? Setup, DeploymentContext? SavedContext = null, PilotHandoff? Handoff = null);
 public sealed record EditRequest(string Session, PilotSetup Setup, string Action, string? UnitId, string? Hex);
 public sealed record PilotSession(PilotDeployment Deployment, DeploymentContext Context);
 
@@ -82,6 +82,13 @@ public sealed class PilotSessions(PilotInputs inputs, string packagesRoot) : IDi
             ? deployment.Rebind(request.SavedContext ?? request.Context, request.Context, savedSetup)
             : deployment.Create(request.Context);
         deployment.Validate(request.Context, state);
+        PilotHandoff? handoff = null;
+        string? handoffError = null;
+        if (request.Handoff is { } savedHandoff)
+        {
+            try { await PilotHandoffs.Validate(deployment, request.Context, state, savedHandoff); handoff = savedHandoff; }
+            catch (InvalidDataException e) { handoffError = e.Message; }
+        }
         var id = deployment.Package.Version + "-" + deployment.ContextHash(request.Context);
         if (sessions.Count >= 16 && !sessions.ContainsKey(id)) throw new InvalidDataException("Too many pilot sessions. Restart the host to release cached sessions.");
         sessions[id] = new(deployment, request.Context);
@@ -92,7 +99,12 @@ public sealed class PilotSessions(PilotInputs inputs, string packagesRoot) : IDi
         timings["render"] = watch.Elapsed.TotalMilliseconds;
         return new { session = id, setup = state, bundle = deployment.Bundle, cells = deployment.Cells, roster = deployment.Units,
             width = deployment.Grid.Geometry.GridWidth, height = deployment.Grid.Geometry.GridHeight,
-            svg, timingsMs = timings };
+            svg, handoff, handoffError, timingsMs = timings };
+    }
+    public Task<PilotHandoff> Handoff(EditRequest request)
+    {
+        if (!sessions.TryGetValue(request.Session, out var session)) throw new InvalidDataException("Pilot session expired. Reopen the pilot.");
+        return PilotHandoffs.Prepare(session.Deployment, session.Context, request.Setup);
     }
     public PilotSetup Edit(EditRequest request)
     {

@@ -16,7 +16,7 @@ class Element {
 const context={campaignId:'fixture',formationSignature:JSON.stringify({placements:[],supply:null}),alliedParents:['A/X-6'],germanParents:['A/V-7']};
 const setup={complete:false,placements:[],revision:0};
 const bundle={packageVersion:'accepted'};
-function harness(initial,{failSave=false,formation=null,failGeneration=false,cancelGeneration=false,counterType='uk-rifle',kind='rifle',unitCatalog=undefined}={}){
+function harness(initial,{failSave=false,formation=null,failGeneration=false,cancelGeneration=false,counterType='uk-rifle',kind='rifle',unitCatalog=undefined,handoff=undefined}={}){
  const body=new Element('body'),writes=[],requests=[];let saved=structuredClone(initial);
  const document={body,activeElement:null,createElement:t=>new Element(t),createElementNS:(_,t)=>new Element(t),createTextNode:t=>new Element('text',t)};
  const sandbox={window:{},document,URLSearchParams,location:{search:''},performance,console,setTimeout,clearTimeout,
@@ -25,7 +25,8 @@ function harness(initial,{failSave=false,formation=null,failGeneration=false,can
  fetch:async(url,options)=>{requests.push({url,options});let value={};
   if(url.endsWith('/generate')){value={id:'b'.repeat(32)};if(cancelGeneration)await find('button','Return to formation map').onclick();}
   if(url.endsWith('/generate/'+'b'.repeat(32)))value=failGeneration?{status:'failed',error:'Unsupported source terrain'}:{status:'ready'};
-  if(url.endsWith('/open'))value={session:'session',bundle,setup:{...setup,...(unitCatalog?{unitCatalog}:{})},roster:[{id:'british-1',side:'Allied',label:'British squad',kind,symbol:kind==='mortar'?'M':'E'}],cells:[{hex:'C3',terrain:'Open Ground',parent:'A/X-6',admitted:true,reason:'Admitted',polygon:[],x:10,y:10}],width:1800,height:1290,svg:'<svg/>'};
+  if(url.endsWith('/open'))value={session:'session',bundle,handoff,setup:{...setup,...(unitCatalog?{unitCatalog}:{})},roster:[{id:'british-1',side:'Allied',label:'British squad',kind,symbol:kind==='mortar'?'M':'E'}],cells:[{hex:'C3',terrain:'Open Ground',parent:'A/X-6',admitted:true,reason:'Admitted',polygon:[],x:10,y:10}],width:1800,height:1290,svg:'<svg/>'};
+  if(url.endsWith('/handoff'))value=handoff;
   if(url.endsWith('/edit'))value={...setup,revision:1,placements:[{unitId:'british-1',hex:'C3'}]};
   return {ok:true,status:200,text:async()=>JSON.stringify(value)};
  }};
@@ -50,6 +51,15 @@ function harness(initial,{failSave=false,formation=null,failGeneration=false,can
  assert.equal(catalogResume.writes.length,0,'Unchanged catalog provenance must not rewrite saves');
  const failedCatalog=harness(accepted,{unitCatalog:'asl-scenario-a1@1.14.0',failSave:true});await failedCatalog.open();
  assert.equal(failedCatalog.writes.length,0,'Failed provenance write must preserve the original save');
+ const prepared={version:'campaign-asl-handoff-1',sourceHash:'fixture',gameRecord:'record',units:[{id:'british-1',label:'British squad',status:'Ready',reason:'Campaign default'}]};
+ const handoffUi=harness(accepted,{handoff:prepared});await handoffUi.open();
+ await handoffUi.find('button','Prepare ASL setup').onclick();
+ assert.deepEqual(handoffUi.writes.at(-1).handoff,prepared,'Prepared handoff is included in campaign persistence');
+ await handoffUi.find('button','Deploy pilot roster').onclick();
+ assert.equal(handoffUi.writes.at(-1).handoff,null,'Deployment edit invalidates prepared handoff');
+ const failedHandoff=harness(accepted,{handoff:prepared,failSave:true});await failedHandoff.open();
+ await failedHandoff.find('button','Prepare ASL setup').onclick();
+ assert.equal(failedHandoff.writes.length,0,'Failed handoff save preserves campaign');
  const firstSetup=harness({...accepted,setup:undefined});await firstSetup.open();
  assert.equal(firstSetup.writes.length,1,'Creating setup for accepted terrain must be saved');
  const blocked=harness(accepted,{failSave:true});await blocked.open();

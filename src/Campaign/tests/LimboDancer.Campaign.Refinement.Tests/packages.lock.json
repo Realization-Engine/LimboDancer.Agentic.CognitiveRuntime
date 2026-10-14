@@ -100,7 +100,8 @@
         "type": "Project",
         "dependencies": {
           "LimboDancer.Campaign.Refinement": "[1.0.0, )",
-          "LimboDancer.Domains.Asl.Maps.Rendering": "[1.0.0, )"
+          "LimboDancer.Domains.Asl.Maps.Rendering": "[1.0.0, )",
+          "LimboDancer.Domains.Asl.Play": "[1.0.0, )"
         }
       },
       "limbodancer.campaign.refinement": {
@@ -110,6 +111,9 @@
           "LimboDancer.Domains.Asl.Maps.Vasl": "[1.0.0, )",
           "LimboDancer.Domains.Asl.Units": "[1.0.0, )"
         }
+      },
+      "limbodancer.dice": {
+        "type": "Project"
       },
       "limbodancer.domains.asl.maps": {
         "type": "Project"
@@ -126,6 +130,15 @@
           "LimboDancer.Domains.Asl.Maps": "[1.0.0, )"
         }
       },
+      "limbodancer.domains.asl.play": {
+        "type": "Project",
+        "dependencies": {
+          "LimboDancer.Dice": "[1.0.0, )",
+          "LimboDancer.Domains.Asl.Rules": "[1.0.0, )",
+          "LimboDancer.Domains.Asl.Units": "[1.0.0, )",
+          "LimboDancer.Runtime": "[1.0.0, )"
+        }
+      },
       "limbodancer.domains.asl.rules": {
         "type": "Project",
         "dependencies": {
@@ -137,6 +150,12 @@
         "dependencies": {
           "LimboDancer.Domains.Asl.Maps": "[1.0.0, )",
           "LimboDancer.Domains.Asl.Rules": "[1.0.0, )"
+        }
+      },
+      "limbodancer.runtime": {
+        "type": "Project",
+        "dependencies": {
+          "LimboDancer.Abstractions": "[1.0.0, )"
         }
       }
     }

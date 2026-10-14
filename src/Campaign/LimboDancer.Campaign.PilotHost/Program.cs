@@ -63,6 +63,7 @@ app.MapPost("/api/asl-pilot/open", (OpenRequest request, PilotSessions service) 
         return response;
     });
 app.MapPost("/api/asl-pilot/edit", (EditRequest request, PilotSessions service) => service.Edit(request));
+app.MapPost("/api/asl-pilot/handoff", (EditRequest request, PilotSessions service) => service.Handoff(request));
 using var files = new PhysicalFileProvider(prototype);
 app.UseDefaultFiles(new DefaultFilesOptions { FileProvider = files });
 app.UseStaticFiles(new StaticFileOptions { FileProvider = files });
