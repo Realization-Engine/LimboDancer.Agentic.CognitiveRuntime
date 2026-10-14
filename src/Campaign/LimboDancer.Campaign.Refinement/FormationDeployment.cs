@@ -4,7 +4,7 @@ namespace LimboDancer.Campaign.Refinement;
 
 public sealed record FormationSelection(string UnitId, string Anchor);
 
-/// <summary>One source rifle counter, using the provisional four-squad composition. Not historical personnel inference.</summary>
+/// <summary>One source counter with a bounded, versioned setup composition. Not a playable ASL order of battle.</summary>
 public static class FormationDeployment
 {
     public const string Policy = "goodwood-selected-rifle-1";
@@ -27,11 +27,27 @@ public static class FormationDeployment
     public static IReadOnlyList<PilotUnit> Units(PilotInputs inputs, FormationSelection selection)
     {
         if (selection is null || selection.UnitId is null ||
-            !inputs.RifleSides.TryGetValue(selection.UnitId, out var side))
-            throw new InvalidDataException("Select a deployed British or German rifle formation. Other types are not admitted.");
-        var label = side == "Allied" ? "British rifle squad " : "German rifle squad ";
-        return Enumerable.Range(1, 4).Select(i => new PilotUnit(selection.UnitId + "/squad-" + i, selection.UnitId, side, label + i)).ToArray();
+            !inputs.FormationTypes.TryGetValue(selection.UnitId, out var type))
+            throw new InvalidDataException("Unknown Goodwood formation.");
+        var (count, side, label, kind, symbol) = type switch
+        {
+            "uk-rifle" => (4, "Allied", "British rifle squad ", "rifle", "R"),
+            "de-rifle" => (4, "German", "German rifle squad ", "rifle", "R"),
+            "uk-engineer" => (4, "Allied", "British engineer squad ", "engineer", "E"),
+            "de-81mm" => (6, "German", "German 81 mm mortar and crew ", "mortar", "M"),
+            _ => throw new InvalidDataException("Select a deployed rifle, British engineer or German 81 mm mortar formation.")
+        };
+        var suffix = kind == "mortar" ? "/detachment-" : "/squad-";
+        return Enumerable.Range(1, count).Select(i => new PilotUnit(selection.UnitId + suffix + i,
+            selection.UnitId, side, label + i, kind, symbol)).ToArray();
     }
+
+    public static string PolicyFor(IReadOnlyList<PilotUnit> units) => units[0].Kind switch
+    {
+        "engineer" => "goodwood-selected-engineer-1",
+        "mortar" => "goodwood-selected-mortar-1",
+        _ => Policy
+    };
 
     public static string JobKey(string seed, FormationSelection? selection) => selection is null ? seed :
         BoardPackage.Hash(CanonicalJson.Serialize(new[] { seed, Policy, selection.UnitId, selection.Anchor }))[..32];

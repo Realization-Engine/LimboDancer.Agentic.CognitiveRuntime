@@ -16,7 +16,7 @@ class Element {
 const context={campaignId:'fixture',formationSignature:JSON.stringify({placements:[],supply:null}),alliedParents:['A/X-6'],germanParents:['A/V-7']};
 const setup={complete:false,placements:[],revision:0};
 const bundle={packageVersion:'accepted'};
-function harness(initial,{failSave=false,formation=null,failGeneration=false,cancelGeneration=false}={}){
+function harness(initial,{failSave=false,formation=null,failGeneration=false,cancelGeneration=false,counterType='uk-rifle',kind='rifle'}={}){
  const body=new Element('body'),writes=[],requests=[];let saved=structuredClone(initial);
  const document={body,activeElement:null,createElement:t=>new Element(t),createElementNS:(_,t)=>new Element(t),createTextNode:t=>new Element('text',t)};
  const sandbox={window:{},document,URLSearchParams,location:{search:''},performance,console,setTimeout,clearTimeout,
@@ -25,14 +25,14 @@ function harness(initial,{failSave=false,formation=null,failGeneration=false,can
  fetch:async(url,options)=>{requests.push({url,options});let value={};
   if(url.endsWith('/generate')){value={id:'b'.repeat(32)};if(cancelGeneration)await find('button','Return to formation map').onclick();}
   if(url.endsWith('/generate/'+'b'.repeat(32)))value=failGeneration?{status:'failed',error:'Unsupported source terrain'}:{status:'ready'};
-  if(url.endsWith('/open'))value={session:'session',bundle,setup,roster:[{id:'british-1',side:'Allied',label:'British squad'}],cells:[{hex:'C3',terrain:'Open Ground',parent:'A/X-6',admitted:true,reason:'Admitted',polygon:[],x:10,y:10}],width:1800,height:1290,svg:'<svg/>'};
+  if(url.endsWith('/open'))value={session:'session',bundle,setup,roster:[{id:'british-1',side:'Allied',label:'British squad',kind,symbol:kind==='mortar'?'M':'E'}],cells:[{hex:'C3',terrain:'Open Ground',parent:'A/X-6',admitted:true,reason:'Admitted',polygon:[],x:10,y:10}],width:1800,height:1290,svg:'<svg/>'};
   if(url.endsWith('/edit'))value={...setup,revision:1,placements:[{unitId:'british-1',hex:'C3'}]};
   return {ok:true,status:200,text:async()=>JSON.stringify(value)};
  }};
  vm.runInNewContext(source,sandbox);
  const storage={campaignId:'fixture',seed:'0'.repeat(32),load:()=>saved,save:next=>{if(failSave)throw Error('disk full');writes.push(structuredClone(next));saved=next;}};
  const find=(tag,text)=>{const walk=n=>n.tag===tag&&(!text||n.textContent===text)?n:[...n.children].reverse().map(walk).find(Boolean);return walk(body);};
- return {open:()=>sandbox.window.AslPilot.open({instances:[{id:'uk-rifle-02',counterTypeId:'uk-rifle'}],counters:[{id:'uk-rifle',side:'Allied'}]}, {placements:{}},storage,formation),writes,requests,find};
+ return {open:()=>sandbox.window.AslPilot.open({instances:[{id:formation?.unitId||'uk-rifle-02',counterTypeId:counterType}],counters:[{id:counterType,side:counterType.startsWith('de-')?'German':'Allied'}]}, {placements:{}},storage,formation),writes,requests,find};
 }
 (async()=>{
  const accepted={version:1,seed:'0'.repeat(32),context,bundle,setup};
@@ -74,6 +74,12 @@ function harness(initial,{failSave=false,formation=null,failGeneration=false,can
   const failed=harness(moved,{formation,...options});await failed.open();
   await failed.find('button','Rebuild local map').onclick();
   assert.equal(failed.writes.length,0,'Failed or cancelled replacement retains accepted save');
+ }
+ for(const [counterType,kind] of [['uk-engineer','engineer'],['de-81mm','mortar']]){
+  const typed=harness(undefined,{formation:{unitId:counterType+'-01',anchor:'A/X-6'},counterType,kind});await typed.open();
+  assert(typed.find('select'),'Supported composition must reach the setup UI');
+  assert(typed.find('button','Place selected unit'));
+  assert.equal(typed.writes.at(-1).context.formation.unitId,counterType+'-01');
  }
  console.log('PASS scoped resume, rebuild success/failure/cancellation, read-only pilot resume, first setup persistence, deployment save and failed-write preservation');
 })().catch(e=>{console.error(e);process.exitCode=1;});

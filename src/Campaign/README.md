@@ -150,3 +150,5 @@ Crop verification now covers four neighboring pairs across three seeds, determin
 ### Elevation-enabled generation
 
 New goodwood-pilot-2 maps preserve source levels 0-2 as ASL base elevation regions, an explicit scenario mapping. The hex inspector shows derived levels. Supported infantry ground setup now admits these elevations. Cliffs and special Slope hexsides are not inferred; stream/deck setup, movement, LOS and combat remain unavailable. Accepted v1 maps load unchanged using their original version. See the implementation plan for PDF rule citations, assumptions and acceptance fixtures.
+
+Selected Goodwood formations also support four provisional British engineer squads and six German 81 mm mortar-and-crew setup pieces. Mortars use open ground or paved road only. Separate setup policies preserve existing rifle saves. These are setup representations, not catalog-backed ASL equipment or combat rules; see the composition increment in the alignment plan.

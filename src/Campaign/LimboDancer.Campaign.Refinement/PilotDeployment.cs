@@ -12,7 +12,7 @@ namespace LimboDancer.Campaign.Refinement;
 // Campaign owns formation legality, including its supply exception. The adapter snapshots it;
 // this module separately admits tactical locations and validates every placement.
 public sealed record DeploymentContext(string CampaignId, string FormationSignature, string[] AlliedParents, string[] GermanParents, FormationSelection? Formation = null);
-public sealed record PilotUnit(string Id, string ParentId, string Side, string Label);
+public sealed record PilotUnit(string Id, string ParentId, string Side, string Label, string Kind = "rifle", string Symbol = "R");
 public sealed record PilotPlacement(string UnitId, string Hex);
 public sealed record PilotSetup(string Policy, string ContextHash, string PackageVersion, int Revision, bool Complete, PilotPlacement[] Placements);
 public sealed record PilotBundle(string Seed, string PackageVersion, string Board, string Name, string Features, string Manifest, string CatalogSha256, string GridSha256);
@@ -29,7 +29,7 @@ public sealed class PilotDeployment
     private readonly FormationSelection? formation;
     public Crop Crop { get; }
     public IReadOnlyList<PilotUnit> Units { get; }
-    public string ActivePolicy => formation is null ? Policy : FormationDeployment.Policy;
+    public string ActivePolicy => formation is null ? Policy : FormationDeployment.PolicyFor(Units);
     public BoardPackage Package { get; }
     public TerrainGrid Grid { get; }
     public HexFactSet Facts { get; }
@@ -204,28 +204,31 @@ public sealed class PilotDeployment
             var reason = Rejection(context, state, p.UnitId, p.Hex);
             if (reason is not null) throw new InvalidDataException(reason);
         }
-        if (state.Complete && state.Placements.Length != Units.Count) throw new InvalidDataException("Deploy all squads before completing setup.");
+        if (state.Complete && state.Placements.Length != Units.Count) throw new InvalidDataException("Deploy all units before completing setup.");
     }
 
     public string? Rejection(DeploymentContext context, PilotSetup state, string unitId, string hex)
     {
         ArgumentNullException.ThrowIfNull(context); ArgumentNullException.ThrowIfNull(state);
         var unit = Units.FirstOrDefault(u => u.Id == unitId); var cell = Cells.FirstOrDefault(c => c.Hex == hex);
-        if (unit is null) return "Unknown pilot squad.";
+        if (unit is null) return "Unknown pilot unit.";
         if (cell is null) return "Choose a hex in the pilot map.";
         if (!cell.Admitted) return cell.Reason;
+        // Bounded setup admission, not a complete ASL Gun emplacement rule.
+        if (unit.Kind == "mortar" && cell.Terrain is not ("Open Ground" or "Paved Road"))
+            return "Mortar detachments currently require open ground or paved road; other terrain is inspection-only.";
         if (formation is not null && cell.Parent != formation.Anchor) return "Deploy within the selected formation hex " + formation.Anchor + ".";
         var allowed = unit.Side == "Allied" ? context.AlliedParents : context.GermanParents;
         if (!allowed.Contains(cell.Parent, StringComparer.Ordinal)) return unit.Side + " setup is not allowed in formation hex " + cell.Parent + ".";
         var occupants = state.Placements.Where(p => p.UnitId != unitId && p.Hex == hex).ToArray();
-        if (occupants.Any(p => Units.FirstOrDefault(u => u.Id == p.UnitId)?.Side != unit.Side)) return "Opposing squads cannot share a setup hex.";
-        return occupants.Length >= 2 ? "Stacking limit: two pilot squads per hex." : null;
+        if (occupants.Any(p => Units.FirstOrDefault(u => u.Id == p.UnitId)?.Side != unit.Side)) return "Opposing units cannot share a setup hex.";
+        return occupants.Length >= 2 ? "Stacking limit: two pilot units per hex." : null;
     }
 
     public PilotSetup Move(DeploymentContext context, PilotSetup state, string unitId, string hex)
     {
         Validate(context, state);
-        if (state.Complete) throw new InvalidDataException("Setup is complete. Select Review setup before repositioning squads.");
+        if (state.Complete) throw new InvalidDataException("Setup is complete. Select Review setup before repositioning units.");
         var reason = Rejection(context, state, unitId, hex);
         if (reason is not null) throw new InvalidDataException(reason);
         return state with { Revision = checked(state.Revision + 1), Placements = [.. state.Placements.Where(p => p.UnitId != unitId), new(unitId, hex)] };

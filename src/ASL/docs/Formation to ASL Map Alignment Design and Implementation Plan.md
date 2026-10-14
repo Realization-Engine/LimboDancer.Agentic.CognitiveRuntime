@@ -310,3 +310,17 @@ Used an exported campaign backup and a temporary import fixture changing only uk
 - Restored the original campaign through Load campaign from file. B/N-8 reopened with 4/4 deployed and Review setup. The temporary hill placement is not left in the active campaign.
 
 The first cancellation attempt completed generation before cancellation could be confirmed; it was not counted as cancellation evidence. The subsequent Escape check above provided the verified result. Automated failure-injection tests remain the evidence for publication and storage failures. No production code changed during this acceptance pass; the previously passing 65 Campaign Release tests and browser-code checks remain applicable.
+
+### Engineer and mortar composition increment, 14 October 2026
+
+The selected-formation pilot now admits British engineer formations and German 81 mm mortar formations in Goodwood, alongside the unchanged rifle roster. It uses distinct setup policy identities for engineers and mortars; rifle identifiers and policy remain unchanged. Terrain identity and accepted terrain packages are independent of this roster extension.
+
+- British engineers: four provisional squads, not a conversion of the source table's 65 personnel into verified ASL squads. No assault-engineer/sapper trait, demolition charges, flamethrowers or Bren allotment is inferred.
+- German 81 mm mortars: six inseparable mortar-and-crew setup pieces. The count follows the existing source-composition.js entry (page 21 attribution: six mortars and 66 personnel); that underlying source was not independently rechecked in this increment. This is not six infantry squads or six light-mortar support weapons.
+- ASL vocabulary inspection distinguishes asl:crew, asl:gun and asl:light-mortar (a subtype of asl:sw). This adapter does not yet instantiate catalog-backed ASL entities. Separate gun/crew identity, equipment ownership, facing, portage, manhandling, firing and engineer actions remain follow-up work. No combat factors are invented.
+- Mortar setup is conservatively limited to open ground and paved road at admitted levels. This is a pilot admission policy, not a claim to implement full ASL Gun emplacement rules. Both compositions retain the two-piece-per-hex pilot stacking limit, formation permissions and two-hex crop guard.
+- The selector uses unit terminology, with E and M marker labels and descriptive titles. Details states the composition assumptions. Mortar highlighting and inspection apply the same terrain restriction as server placement validation.
+
+Validation: 68 Campaign Release tests pass with TreatWarningsAsErrors enabled, including typed roster persistence, completion, unsupported types, policy mismatch, unknown unit rejection, mortar terrain restriction and rifle compatibility. Browser-code recovery/composition checks and campaign-file tests pass. Live Goodwood UI deployed four engineers at B/I-3 and six mortar detachments at A/E-1. Both saved rosters reopened; mortar completion also survived a full browser reload. Existing formation positions were not changed.
+
+Next: define catalog-backed crew/equipment relationships and explicit support-weapon allotments before enabling genuine ASL support-weapon interaction. The six mortar-and-crew pieces are an interim setup representation.

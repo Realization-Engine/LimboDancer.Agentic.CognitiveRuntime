@@ -28,6 +28,7 @@ public sealed class PilotInputs
     public IReadOnlyList<SourceRoute> Routes { get; }
     public IReadOnlyList<SourceBridge> Bridges { get; }
     public IReadOnlyDictionary<string, string> RifleSides { get; }
+    public IReadOnlyDictionary<string, string> FormationTypes { get; }
     public const string MapSpace = "panzer-leader-05-joined-b-a-c";
     public const string GeneratorVersion = "goodwood-pilot-2";
     public const string LegacyGeneratorVersion = "goodwood-pilot-1";
@@ -61,6 +62,8 @@ public sealed class PilotInputs
         RifleSides = root.GetProperty("instances").EnumerateArray()
             .Where(i => i.GetProperty("counterTypeId").GetString() is "uk-rifle" or "de-rifle")
             .ToDictionary(i => i.GetProperty("id").GetString()!, i => i.GetProperty("counterTypeId").GetString() == "uk-rifle" ? "Allied" : "German", StringComparer.Ordinal);
+        FormationTypes = root.GetProperty("instances").EnumerateArray()
+            .ToDictionary(i => i.GetProperty("id").GetString()!, i => i.GetProperty("counterTypeId").GetString()!, StringComparer.Ordinal);
         var illustration = root.GetProperty("illustration");
         var layouts = new Dictionary<string, (int Turn, double X, double Y)>(StringComparer.Ordinal);
         double ox = 0, oy = 0;
