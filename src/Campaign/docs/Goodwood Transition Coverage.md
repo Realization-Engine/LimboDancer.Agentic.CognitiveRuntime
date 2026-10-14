@@ -4,7 +4,7 @@ Baseline: 14 October 2026, following fe470551. This audit separates setup repres
 
 ## Source accounting
 
-The source has 122 counters in 25 types: 68 Allied and 54 German. Eight Allied Typhoons remain off-map support, leaving 114 ground formations. Five types covering 35 source counters have selected-formation ASL conversion. Another 79 ground counters require conversion. This is potential conversion coverage, not a claim that all 35 have been deployed or transferred.
+The source has 122 counters in 25 types: 68 Allied and 54 German. Eight Allied Typhoons remain off-map support, leaving 114 ground formations. Eleven types covering 52 source counters have selected-formation ASL conversion. Another 62 ground counters require conversion. This is potential conversion coverage, not a claim that all 52 have been deployed or transferred.
 
 The adjacent JSON inventory enumerates every source instance and pins the source and composition files. Regenerate with `python src/Campaign/scripts/audit_goodwood.py`; verify with `--check`.
 
@@ -12,7 +12,7 @@ The adjacent JSON inventory enumerates every source instance and pins the source
 | --- | ---: | ---: | --- |
 | uk-rifle | 12 | 4 squads (game default) | british-squad |
 | uk-engineer | 2 | 4 squads (game default) | british-elite-squad |
-| uk-25pdr | 3 | 6 | conversion required |
+| uk-25pdr | 3 | 6 | campaign-british-25pdr + british-crew |
 | uk-sexton | 3 | 6 | conversion required |
 | uk-achilles | 2 | 4 | conversion required |
 | uk-cromwell-goodwood | 4 | 4 | conversion required |
@@ -20,12 +20,12 @@ The adjacent JSON inventory enumerates every source instance and pins the source
 | uk-typhoon-rockets | 8 | off-map | retain off-map air support |
 | uk-bren | 14 | 6 | conversion required |
 | de-rifle | 15 | 4 squads (game default) | attacker-squad |
-| de-75mm | 3 | 4 | conversion required |
-| de-88mm | 4 | 4 | conversion required |
-| de-20mm | 3 | 6 | conversion required |
-| de-quad20 | 2 | 3 | conversion required |
+| de-75mm | 3 | 4 | campaign-german-75mm-at + attacker-crew |
+| de-88mm | 4 | 4 | campaign-german-88mm-at + attacker-crew |
+| de-20mm | 3 | 6 | campaign-german-20mm-aa + attacker-crew |
+| de-quad20 | 2 | 3 | campaign-german-quad20-aa + attacker-crew |
 | de-81mm | 2 | 6 | campaign-german-81mm-mortar + attacker-crew |
-| de-nebel | 2 | 6 | conversion required |
+| de-nebel | 2 | 6 | campaign-german-nebelwerfer + attacker-crew |
 | de-wespe | 2 | 6 | conversion required |
 | de-maultier-goodwood | 1 | 6 | conversion required |
 | de-hummel | 1 | 6 | conversion required |
@@ -116,3 +116,13 @@ Next counter increment: German SdKfz 251 halftracks. The existing `attacker-half
 All four German halftrack source formations now convert to five distinct SPW 251/1 vehicles each, reusing the reviewed `attacker-halftrack` catalog definition. The integrated crew and AAMG remain vehicle capabilities; no free passengers, separate crews or equipment are created. IDs retain their source parent and vehicle ordinal. The bounded setup policy admits an unoccupied open-ground or paved-road hex. Initial facing is explicitly west as a game default for review in ASL setup.
 
 Five handoff/reload cases pass through the existing ASL planner and replay, including the new halftrack case and unchanged infantry, engineer and mortar cases. A separate accounting test verifies all twenty halftrack identities. The browser-controller regression includes opening a halftrack formation and saving its context. This adds no vehicle movement or combat rules. Complete Situation assembly, remaining vehicle/gun profiles and final browser acceptance remain pending.
+
+## G3 increment: crew-served guns
+
+All 17 source formations across the six newly cataloged gun types now convert to 82 weapons and 82 distinct assigned crews. IDs preserve the source parent and ordinal; each weapon has exactly one same-side Manned relationship. British guns use the existing British 2-2-8 crew and German guns the existing German 2-2-8 crew. Counts follow the composition table; the one-crew-per-weapon allocation is an explicit game default, not a personnel census.
+
+Gun/crew pairs move together during campaign setup and retain co-location through ASL setup and reload. Guns receive an explicit initial facing, east for Allied and west for German, for review in ASL setup. The bounded setup policy currently permits open ground and paved road. Eleven handoff/reload cases cover every implemented family, plus a separate test reconciles all 164 new identities. Browser-controller tests cover access and saved context for the new gun families.
+
+The remaining 62 ground source counters are vehicles: British Sexton, Achilles, Cromwell, Sherman/Firefly and Bren carrier; German Wespe, Maultier, Hummel, Panzer IV, Panther and Tiger. These need twelve distinct game-default vehicle profiles, preserving the source's differing Wehrmacht/SS quantities without inventing a different vehicle model for those quantity variants. Eight Typhoons still need explicit retained off-map records in the complete handoff.
+
+Verification for the gun increment: 98 Campaign tests passed in the full run; the sole failure was the old assertion that the now-supported 75 mm formation must be rejected. That assertion was changed to an unknown source ID and its targeted rerun passed. The catalog/source, integrity-pin and Studio checks for catalog 1.16.0 also passed.

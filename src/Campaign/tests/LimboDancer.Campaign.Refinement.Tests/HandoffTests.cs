@@ -18,6 +18,12 @@ public sealed class HandoffTests
     [InlineData("uk-rifle-01", "B/M-6", "Allied", 4, 0)]
     [InlineData("de-rifle-01", "C/Y-4", "German", 4, 0)]
     [InlineData("uk-engineer-01", "B/M-6", "Allied", 4, 0)]
+    [InlineData("uk-25pdr-01", "B/M-6", "Allied", 12, 0)]
+    [InlineData("de-75mm-01", "C/Y-4", "German", 8, 0)]
+    [InlineData("de-88mm-01", "C/Y-4", "German", 8, 0)]
+    [InlineData("de-20mm-01", "C/Y-4", "German", 12, 0)]
+    [InlineData("de-quad20-01", "C/Y-4", "German", 6, 0)]
+    [InlineData("de-nebel-01", "C/Y-4", "German", 12, 0)]
     [InlineData("de-halftrack-01", "C/Y-4", "German", 5, 0)]
     [InlineData("de-81mm-01", "C/Y-4", "German", 12, 0)]
     public async Task ExistingAslSetupPreservesDeployedIdentitiesAndRoundTrips(string id, string anchor, string side, int ready, int needsData)
@@ -43,9 +49,11 @@ public sealed class HandoffTests
         {
             var source = d.Units.Single(u => PilotHandoffs.AslId(u.Id) == item.Id);
             Assert.Equal(source.Definition, item.Definition);
+            if (source.Kind == "gun") Assert.Equal(source.Side == "Allied" ? UnitFacing.East : UnitFacing.West, Assert.IsType<MapPosition>(item.Position).Facing);
             Assert.Equal(PilotHandoffs.AslId(source.Holding!.Holder), item.Holding!.Holder);
             Assert.Equal(HoldingRole.Manned, item.Holding.Role);
-            Assert.Equal(history.Current.Units.Single(u => u.Id == item.Holding.Holder).Position, item.Position);
+            Assert.Equal(Assert.IsType<MapPosition>(history.Current.Units.Single(u => u.Id == item.Holding.Holder).Position).Location,
+                Assert.IsType<MapPosition>(item.Position).Location);
         }
         foreach (var instance in instances)
         {

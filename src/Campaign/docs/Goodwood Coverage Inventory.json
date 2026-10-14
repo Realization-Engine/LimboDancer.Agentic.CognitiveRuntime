@@ -3,8 +3,8 @@
   "compositionSha256Lf": "e9d250c82bbb681f0852de7d50a03a54b3201367b109e53d8da730551202f701",
   "sourceCounters": 122,
   "counterTypes": 25,
-  "selectedPilotSourceCounters": 35,
-  "unconvertedGroundSourceCounters": 79,
+  "selectedPilotSourceCounters": 52,
+  "unconvertedGroundSourceCounters": 62,
   "offMapAircraft": 8,
   "sourceHexFragments": 1038,
   "terrain": {
@@ -62,8 +62,8 @@
       ],
       "principalObjectsPerFormation": 6,
       "compositionEvidence": "6 x 25-pounder gun-howitzers; 39 personnel. Table prints 86.4 mm; tactical estimate uses 87.6 mm.",
-      "pilotDefinition": null,
-      "status": "conversion required"
+      "pilotDefinition": "campaign-british-25pdr + british-crew",
+      "status": "selected-formation implemented"
     },
     {
       "type": "uk-sexton",
@@ -219,8 +219,8 @@
       ],
       "principalObjectsPerFormation": 4,
       "compositionEvidence": "4 x 75 mm anti-tank guns; 45 personnel.",
-      "pilotDefinition": null,
-      "status": "conversion required"
+      "pilotDefinition": "campaign-german-75mm-at + attacker-crew",
+      "status": "selected-formation implemented"
     },
     {
       "type": "de-88mm",
@@ -234,8 +234,8 @@
       ],
       "principalObjectsPerFormation": 4,
       "compositionEvidence": "4 x 88 mm anti-tank guns; 111 personnel.",
-      "pilotDefinition": null,
-      "status": "conversion required"
+      "pilotDefinition": "campaign-german-88mm-at + attacker-crew",
+      "status": "selected-formation implemented"
     },
     {
       "type": "de-20mm",
@@ -248,8 +248,8 @@
       ],
       "principalObjectsPerFormation": 6,
       "compositionEvidence": "6 x 20 mm anti-aircraft guns; 40 personnel.",
-      "pilotDefinition": null,
-      "status": "conversion required"
+      "pilotDefinition": "campaign-german-20mm-aa + attacker-crew",
+      "status": "selected-formation implemented"
     },
     {
       "type": "de-quad20",
@@ -261,8 +261,8 @@
       ],
       "principalObjectsPerFormation": 3,
       "compositionEvidence": "3 quadruple 20 mm anti-aircraft mounts; 45 personnel.",
-      "pilotDefinition": null,
-      "status": "conversion required"
+      "pilotDefinition": "campaign-german-quad20-aa + attacker-crew",
+      "status": "selected-formation implemented"
     },
     {
       "type": "de-81mm",
@@ -287,8 +287,8 @@
       ],
       "principalObjectsPerFormation": 6,
       "compositionEvidence": "6 x 150 mm Nebelwerfer rocket launchers; 86 personnel.",
-      "pilotDefinition": null,
-      "status": "conversion required"
+      "pilotDefinition": "campaign-german-nebelwerfer + attacker-crew",
+      "status": "selected-formation implemented"
     },
     {
       "type": "de-wespe",

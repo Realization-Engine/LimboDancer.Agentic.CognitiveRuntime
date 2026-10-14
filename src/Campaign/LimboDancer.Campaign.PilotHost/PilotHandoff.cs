@@ -35,7 +35,7 @@ public static class PilotHandoffs
         object Position(PilotUnit unit)
         {
             var at = d.Package.Board.Value + ":" + setup.Placements.Single(p => p.UnitId == unit.Id).Hex + ":0";
-            return unit.Kind == "vehicle" ? new { at, facing = "west" } : (object)new { at };
+            return unit.Kind is "vehicle" or "gun" ? new { at, facing = unit.Side == "Allied" ? "east" : "west" } : (object)new { at };
         }
         var placements = d.Units.Where(u => u.Definition is not null).Select(u => new
         {

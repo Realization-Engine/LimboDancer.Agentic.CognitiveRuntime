@@ -218,7 +218,7 @@ public sealed class PilotDeployment
             var weapon = state.Placements.SingleOrDefault(p => p.UnitId == link.EquipmentId);
             var crew = state.Placements.SingleOrDefault(p => p.UnitId == link.Holding.Holder);
             if ((weapon is null) != (crew is null) || weapon?.Hex != crew?.Hex)
-                throw new InvalidDataException("A mortar and its assigned crew must set up together.");
+                throw new InvalidDataException("A weapon and its assigned crew must set up together.");
         }
         foreach (var p in state.Placements)
         {
@@ -235,6 +235,9 @@ public sealed class PilotDeployment
         if (unit is null) return "Unknown pilot unit.";
         if (cell is null) return "Choose a hex in the pilot map.";
         if (!cell.Admitted) return cell.Reason;
+        if ((unit.Kind == "gun" || Units.Any(u => u.Kind == "gun" && u.Holding?.Holder == unit.Id)) &&
+            cell.Terrain is not ("Open Ground" or "Paved Road"))
+            return "Gun detachments currently require open ground or paved road; other terrain is inspection-only.";
         // Bounded setup admission, not a complete ASL Gun emplacement rule.
         if ((unit.Kind is "mortar" or "crew") && cell.Terrain is not ("Open Ground" or "Paved Road"))
             return "Mortar detachments currently require open ground or paved road; other terrain is inspection-only.";

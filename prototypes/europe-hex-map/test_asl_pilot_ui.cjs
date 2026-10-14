@@ -92,7 +92,7 @@ function harness(initial,{failSave=false,formation=null,failGeneration=false,can
   await failed.find('button','Rebuild local map').onclick();
   assert.equal(failed.writes.length,0,'Failed or cancelled replacement retains accepted save');
  }
- for(const [counterType,kind] of [['uk-engineer','engineer'],['de-81mm','mortar'],['de-halftrack','vehicle']]){
+ for(const [counterType,kind] of [['uk-engineer','engineer'],['de-81mm','mortar'],['de-halftrack','vehicle'],['uk-25pdr','gun'],['de-nebel','gun']]){
   const typed=harness(undefined,{formation:{unitId:counterType+'-01',anchor:'A/X-6'},counterType,kind});await typed.open();
   assert(typed.find('select'),'Supported composition must reach the setup UI');
   assert(typed.find('button','Place selected unit'));

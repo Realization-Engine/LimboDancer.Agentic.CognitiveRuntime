@@ -49,7 +49,7 @@ public sealed class CompositionDeploymentTests
         Assert.Equal(FormationDeployment.Policy, FormationDeployment.PolicyFor(units));
         Assert.Equal("uk-rifle-02/squad-1", units[0].Id);
         Assert.All(units, u => Assert.Equal("rifle", u.Kind));
-        Assert.Throws<InvalidDataException>(() => FormationDeployment.Units(Inputs, new("de-75mm-01", "C/Y-4")));
+        Assert.Throws<InvalidDataException>(() => FormationDeployment.Units(Inputs, new("not-a-source-counter", "C/Y-4")));
     }
     [Theory]
     [InlineData("uk-rifle-01", "B/M-6", "Allied", "british-squad")]

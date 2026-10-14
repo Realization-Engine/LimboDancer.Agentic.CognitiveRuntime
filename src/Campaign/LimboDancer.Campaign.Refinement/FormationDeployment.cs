@@ -8,6 +8,17 @@ public sealed record FormationSelection(string UnitId, string Anchor);
 /// <summary>One source counter with a bounded, versioned setup composition. Not a playable ASL order of battle.</summary>
 public static class FormationDeployment
 {
+    private static readonly Dictionary<string, (int Count, string Side, string Label, string Definition)> Guns =
+        new Dictionary<string, (int, string, string, string)>(StringComparer.Ordinal)
+        {
+            ["uk-25pdr"] = (6, "Allied", "British 25-pounder", "campaign-british-25pdr"),
+            ["de-75mm"] = (4, "German", "German 75 mm AT", "campaign-german-75mm-at"),
+            ["de-88mm"] = (4, "German", "German 88 mm AT", "campaign-german-88mm-at"),
+            ["de-20mm"] = (6, "German", "German 20 mm AA", "campaign-german-20mm-aa"),
+            ["de-quad20"] = (3, "German", "German quadruple 20 mm AA", "campaign-german-quad20-aa"),
+            ["de-nebel"] = (6, "German", "German Nebelwerfer", "campaign-german-nebelwerfer")
+        };
+
     public const string Policy = "goodwood-selected-rifle-1";
 
     public static Crop CropFor(PilotInputs inputs, FormationSelection selection)
@@ -30,6 +41,18 @@ public static class FormationDeployment
         if (selection is null || selection.UnitId is null ||
             !inputs.FormationTypes.TryGetValue(selection.UnitId, out var type))
             throw new InvalidDataException("Unknown Goodwood formation.");
+        if (Guns.TryGetValue(type, out var gun))
+            return Enumerable.Range(1, gun.Count).SelectMany(i => new PilotUnit[]
+            {
+                new(selection.UnitId + "/crew-" + i, selection.UnitId, gun.Side, gun.Label + " crew " + i,
+                    "crew", "C", PilotCatalog.Crew(gun.Side),
+                    "Reviewed crew profile; one crew per weapon is an explicit campaign game-default allotment."),
+                new(selection.UnitId + "/gun-" + i, selection.UnitId, gun.Side, gun.Label + " " + i,
+                    "gun", "G", PilotCatalog.GameDefaultGun(gun.Definition, gun.Side),
+                    "Manufactured MFG profile, not historical data. Weapon count follows the source composition table. Initial facing " +
+                    (gun.Side == "Allied" ? "east" : "west") + " is a game default for review in ASL setup. Combat remains limited to existing engine support.",
+                    new Holding(selection.UnitId + "/crew-" + i, HoldingRole.Manned))
+            }).ToArray();
         var (count, side, label, kind, symbol) = type switch
         {
             "uk-rifle" => (4, "Allied", "British rifle squad ", "rifle", "R"),
@@ -61,6 +84,7 @@ public static class FormationDeployment
     {
         "vehicle" => "goodwood-selected-halftrack-1",
         "engineer" => "goodwood-selected-engineer-1",
+        "crew" when units.Any(u => u.Kind == "gun") => "goodwood-selected-gun-1",
         "crew" => "goodwood-selected-mortar-2",
         _ => Policy
     };
