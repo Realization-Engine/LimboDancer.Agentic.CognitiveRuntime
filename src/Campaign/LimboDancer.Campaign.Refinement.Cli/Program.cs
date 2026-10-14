@@ -3,6 +3,36 @@ using System.Text.Json;
 using LimboDancer.Campaign.Refinement;
 using LimboDancer.Domains.Asl.Maps.Rendering;
 
+// Diagnose an accepted deployment without modifying its terrain or saved positions.
+if (args.Length == 4 && args[0] == "--profile-deployment")
+{
+    var inputs = new PilotInputs(File.ReadAllText(args[1]));
+    using var saved = JsonDocument.Parse(File.ReadAllText(args[3]));
+    var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+    var setup = saved.RootElement.GetProperty("Setup").Deserialize<SituationDeploymentDraft>(options)!;
+    var map = new SituationMap(inputs, args[2]);
+    var addresses = new SituationAddresses(inputs, map.Manifest.Seed);
+    var service = new SituationDeployment(inputs, map);
+    var watch = Stopwatch.StartNew();
+    var filled = service.Assemble(setup.Formations, setup.Positions);
+    Console.WriteLine(JsonSerializer.Serialize(new { Seconds = watch.Elapsed.TotalSeconds,
+        Preserved = setup.Positions.Length, Placed = filled.Positions.Length, Review = filled.Review.Length,
+        Unchanged = setup.Positions.All(p => filled.Positions.Contains(p)) }));
+    var roster = SituationRoster.Create(inputs);
+    foreach (var formation in roster.Ground.Where(f => f.Units.Any(u => filled.Review.Any(r => r.UnitId == u.Id))))
+    {
+        var anchor = setup.Formations.Single(f => f.UnitId == formation.Id).Anchor;
+        var terrain = addresses.Cells.Where(c => c.Parent == anchor).Select(c =>
+        {
+            var facts = map.Tile(c.Tile).Facts[LimboDancer.Domains.Asl.Maps.Coordinates.HexName.Parse(c.Hex)];
+            return facts.Center.Terrain?.Name ?? "unknown";
+        }).GroupBy(name => name).ToDictionary(g => g.Key, g => g.Count());
+        Console.WriteLine(JsonSerializer.Serialize(new { formation.Id, Anchor = anchor, Terrain = terrain,
+            Issues = filled.Review.Where(r => formation.Units.Any(u => u.Id == r.UnitId)).ToArray() }));
+    }
+    return 0;
+}
+
 // Diagnose full-board transition stages without regenerating or changing accepted terrain.
 if (args.Length == 3 && args[0] == "--profile-asl-board")
 {

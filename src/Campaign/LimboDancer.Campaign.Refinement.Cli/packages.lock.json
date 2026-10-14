@@ -2,11 +2,15 @@
   "version": 2,
   "dependencies": {
     "net10.0": {
+      "limbodancer.abstractions": {
+        "type": "Project"
+      },
       "limbodancer.campaign.refinement": {
         "type": "Project",
         "dependencies": {
           "LimboDancer.Domains.Asl.Maps": "[1.0.0, )",
-          "LimboDancer.Domains.Asl.Maps.Vasl": "[1.0.0, )"
+          "LimboDancer.Domains.Asl.Maps.Vasl": "[1.0.0, )",
+          "LimboDancer.Domains.Asl.Units": "[1.0.0, )"
         }
       },
       "limbodancer.domains.asl.maps": {
@@ -22,6 +26,19 @@
         "type": "Project",
         "dependencies": {
           "LimboDancer.Domains.Asl.Maps": "[1.0.0, )"
+        }
+      },
+      "limbodancer.domains.asl.rules": {
+        "type": "Project",
+        "dependencies": {
+          "LimboDancer.Abstractions": "[1.0.0, )"
+        }
+      },
+      "limbodancer.domains.asl.units": {
+        "type": "Project",
+        "dependencies": {
+          "LimboDancer.Domains.Asl.Maps": "[1.0.0, )",
+          "LimboDancer.Domains.Asl.Rules": "[1.0.0, )"
         }
       }
     }
