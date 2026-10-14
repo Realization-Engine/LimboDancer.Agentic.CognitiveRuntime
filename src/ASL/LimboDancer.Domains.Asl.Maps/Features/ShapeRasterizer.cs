@@ -64,6 +64,33 @@ public static class ShapeRasterizer
         return covered;
     }
 
+    /// <summary>Exact raster coverage stored only within the rings' clipped pixel bounds.</summary>
+    public static ShapeCoverage BoundedCoverage(IEnumerable<IReadOnlyList<FixedVector>> rings, int width, int height)
+    {
+        ArgumentNullException.ThrowIfNull(rings);
+        ArgumentOutOfRangeException.ThrowIfNegative(width);
+        ArgumentOutOfRangeException.ThrowIfNegative(height);
+        var polygons = rings.Select(ring => ring.ToArray()).ToArray();
+        var points = polygons.SelectMany(ring => ring).ToArray();
+        if (points.Length == 0)
+        {
+            return new ShapeCoverage(0, 0, 0, 0, []);
+        }
+
+        var left = Math.Clamp(points.Min(point => point.X) / Unit, 0, width);
+        var top = Math.Clamp(points.Min(point => point.Y) / Unit, 0, height);
+        var right = Math.Clamp(CeilDiv(points.Max(point => point.X), Unit), 0, width);
+        var bottom = Math.Clamp(CeilDiv(points.Max(point => point.Y), Unit), 0, height);
+        if (right <= left || bottom <= top)
+        {
+            return new ShapeCoverage(0, 0, 0, 0, []);
+        }
+
+        var local = polygons.Select(ring => (IReadOnlyList<FixedVector>)ring.Select(point =>
+            new FixedVector(point.X - (left * Unit), point.Y - (top * Unit))).ToArray());
+        return new ShapeCoverage(left, top, right - left, bottom - top, Coverage(local, right - left, bottom - top));
+    }
+
     private static void AddEdge(FixedVector a, FixedVector b, int height, List<(int Row, int Cell, int Direction)> crossings)
     {
         if (a.Y == b.Y)
@@ -94,6 +121,30 @@ public static class ShapeRasterizer
 
     internal static long CeilDiv(long numerator, long denominator) =>
         numerator >= 0 ? (numerator + denominator - 1) / denominator : -(-numerator / denominator);
+}
+
+/// <summary>Coverage in global pixel coordinates, false outside its bounded storage.</summary>
+public sealed class ShapeCoverage
+{
+    private readonly int left;
+    private readonly int top;
+    private readonly int width;
+    private readonly int height;
+    private readonly bool[] cells;
+
+    internal ShapeCoverage(int left, int top, int width, int height, bool[] cells)
+    {
+        this.left = left;
+        this.top = top;
+        this.width = width;
+        this.height = height;
+        this.cells = cells;
+    }
+
+    public int CellCount => cells.Length;
+
+    public bool Contains(int x, int y) => x >= left && x - left < width && y >= top && y - top < height
+        && cells[((x - left) * height) + y - top];
 }
 
 /// <summary>Deterministic integer geometry for flattening curves and building stroke polygons.</summary>

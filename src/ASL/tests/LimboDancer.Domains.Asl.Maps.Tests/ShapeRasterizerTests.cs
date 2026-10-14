@@ -7,6 +7,41 @@ namespace LimboDancer.Domains.Asl.Maps.Tests;
 public sealed class ShapeRasterizerTests
 {
     [Fact]
+    public void BoundedCoverageMatchesFullRasterIncludingHolesClippingAndFractionalEdges()
+    {
+        var random = new Random(1927);
+        for (var sample = 0; sample < 80; sample++)
+        {
+            var left = random.Next(-1000, 12000);
+            var top = random.Next(-1000, 12000);
+            var right = left + random.Next(1, 5000);
+            var bottom = top + random.Next(1, 5000);
+            var outer = FeatureShape.Rectangle(new FixedVector(left, top), new FixedVector(right, bottom)).Rings;
+            var hole = FeatureShape.Rectangle(new FixedVector(left + 100, top + 100),
+                new FixedVector(right - 100, bottom - 100)).Rings.Select(ring => (IReadOnlyList<FixedVector>)ring.Reverse().ToArray());
+            var rings = outer.Concat(hole).ToArray();
+            var full = ShapeRasterizer.Coverage(rings, 200, 190);
+            var bounded = ShapeRasterizer.BoundedCoverage(rings, 200, 190);
+            for (var x = 0; x < 200; x++)
+            {
+                for (var y = 0; y < 190; y++)
+                {
+                    Assert.Equal(full[(x * 190) + y], bounded.Contains(x, y));
+                }
+            }
+
+            Assert.False(bounded.Contains(-1, 10));
+            Assert.False(bounded.Contains(200, 10));
+        }
+
+        Assert.Equal(0, ShapeRasterizer.BoundedCoverage([], 200, 190).CellCount);
+        var small = ShapeRasterizer.BoundedCoverage(FeatureTestCatalog.Box(4000, 4000, 4010, 4010).Rings, 12000, 12000);
+        Assert.Equal(100, small.CellCount);
+        Assert.True(small.Contains(4005, 4005));
+        Assert.False(small.Contains(3999, 4005));
+    }
+
+    [Fact]
     public void WholePixelRectanglesCoverExactlyTheirCells()
     {
         var covered = Cells(FeatureTestCatalog.Box(10, 10, 20, 15).Rings, 40, 30);

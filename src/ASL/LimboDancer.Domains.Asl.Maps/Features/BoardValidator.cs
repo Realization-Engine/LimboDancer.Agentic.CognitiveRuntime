@@ -60,9 +60,9 @@ public static class BoardValidator
         foreach (var region in regions.Where(region => region.Level > model.BaseElevation + 1).OrderBy(region => region.Id, StringComparer.Ordinal))
         {
             var below = regions.Where(other => other.Level == region.Level - 1).SelectMany(other => other.Shape.Rings).ToArray();
-            var support = ShapeRasterizer.Coverage(below, geometry.GridWidth, geometry.GridHeight);
+            var support = ShapeRasterizer.BoundedCoverage(below, geometry.GridWidth, geometry.GridHeight);
             var outside = 0;
-            ShapeRasterizer.Fill(region.Shape.Rings, geometry.GridWidth, geometry.GridHeight, (x, y) => outside += support[(x * geometry.GridHeight) + y] ? 0 : 1);
+            ShapeRasterizer.Fill(region.Shape.Rings, geometry.GridWidth, geometry.GridHeight, (x, y) => outside += support.Contains(x, y) ? 0 : 1);
             if (outside > 0)
             {
                 findings.Add(new ValidationFinding("MAP-VAL-011", MapDiagnosticSeverity.Warning,
@@ -78,8 +78,8 @@ public static class BoardValidator
         var geometry = model.Geometry;
         foreach (var group in model.Features.OfType<BuildingFeature>().GroupBy(building => building.BuildingId).OrderBy(group => group.Key, StringComparer.Ordinal))
         {
-            var covered = ShapeRasterizer.Coverage(group.SelectMany(building => building.Footprints).SelectMany(footprint => footprint.Rings), geometry.GridWidth, geometry.GridHeight);
-            bool Covered(GridPoint point) => geometry.ContainsCell(point.X, point.Y) && covered[(point.X * geometry.GridHeight) + point.Y];
+            var covered = ShapeRasterizer.BoundedCoverage(group.SelectMany(building => building.Footprints).SelectMany(footprint => footprint.Rings), geometry.GridWidth, geometry.GridHeight);
+            bool Covered(GridPoint point) => geometry.ContainsCell(point.X, point.Y) && covered.Contains(point.X, point.Y);
             var hexes = geometry.Hexes().Where(hex => Covered(geometry.CenterPoint(hex))).ToArray();
             if (hexes.Length == 0)
             {
