@@ -1,7 +1,7 @@
 # Formation to ASL Map Alignment Design and Implementation Plan
 
 Date: 13 October 2026.
-Status: package pilot and fixed-crop campaign deployment integration implemented on 13 October 2026; broader formation conversion remains pending. The progress record below distinguishes delivered code from proposed later contracts.
+Status: package pilot and fixed-crop campaign deployment integration implemented on 13 October 2026; release review recorded on 14 October 2026. Cold saved-map reload narrowly misses its proposed budget; milestone 4 remains open. Broader formation conversion remains pending. The progress record below distinguishes delivered code from proposed later contracts.
 Branch: codex/formation-asl-map-alignment.
 Baseline analysis: [Formation to ASL Map Alignment Analysis](Formation%20to%20ASL%20Map%20Alignment%20Analysis.md), committed at 452dad19.
 
@@ -163,7 +163,7 @@ The first release supports inspection and setup of a bounded pilot roster. Freez
 | 3 Usable pilot workflow | Service/host checkpoint, bounded roster, map navigation, inspection and setup | End-to-end open, inspect, deploy, return, save and resume verified in UI |
 | 4 Seed and performance review | Representative seeds, boundary cases, performance measurements and failure recovery | First-version release criteria satisfied before expanding profile or Situation coverage |
 
-Do not parallelize milestone dependencies by building UI against speculative geometry. The package pilot implements the bounded milestone 0/1 work listed in the progress record below. The next phase must close the recorded terrain and boundary gaps before the usable-workflow milestone.
+Do not parallelize milestone dependencies by building UI against speculative geometry. The package pilot implements the bounded milestone 0/1 work listed in the progress record below. The deployment checkpoint below closes the fixed-crop interior-boundary and bounded-setup gates. Arbitrary crops and elevation remain excluded; the release-review checkpoint records the remaining milestone 4 work.
 
 ## Validation plan
 
@@ -216,3 +216,16 @@ Generation is queued, idempotent by persisted campaign seed and cancellable. Cam
 The primary and (60,92) overlap fixtures now also compare derived facts in their common two-hex interior. Their translation is exactly 450 by 129 pixels; this does not establish arbitrary-crop equivalence or elevation support. Only the fixed primary crop is offered for deployment. The 32-seed suite now checks setup capacity under source rules for the frozen roster.
 
 UI acceptance includes opening from completed formation setup, placement and rejection feedback, full pilot deployment, completion/review, return to the retained formation map, and restoration of saved terrain and squads. Pilot setup does not yet derive a footprint from the selected formation's anchor, migrate the old squad grid, or support automatic rebasing when campaign setup changes. These are explicit follow-ups, alongside multi-crop/elevation admission and broader scenario support.
+
+## First-version release review checkpoint, 14 October 2026
+
+Full record: [Pilot release review](../../Campaign/docs/Pilot-Release-Review.md). Baseline integration commit: `7a63f7aa`.
+
+- Release test suite: 27 passed, including 32 seeds, cancellation/retry, staging/rename failure recovery, invalid saves and four incompatible version cases. Invalid imports leave an existing session usable.
+- Three fresh-process generation-through-open requests: 2.44 to 3.28 seconds; host startup adds 1.13 to 1.34 seconds. This passes the proposed 10-second budget on the recorded development machine.
+- Fresh-process accepted-map reload: 1.81 to 2.08 seconds. One run exceeds 2 seconds, so the reload gate is not passed. HTTP timing excludes browser parsing, persistence and paint; instrumented browser timing remains outstanding.
+- Peak server working set: approximately 221 to 239 MiB. Published packages: 669 to 679 KiB; accepted pilot save requests: 468 to 480 KiB. No browser memory or continent-scale claim.
+- UI checked: keyboard placement/completion/return, new keyboard pan/zoom/fit, terrain inspection, clearer parent-ownership boundaries, marker scale, five-second rejection warnings and exact viewport restoration.
+- Failure injection covers incomplete staging and rename failure, not power-loss durability. Orphan stages stay ignored; automatic cleanup remains deferred.
+
+Milestone 4 is reviewed but not signed off. Next work is cold-reload profiling and browser open-to-ready/long-task measurement. Keep the fixed Goodwood crop and eight-squad scope until the remaining performance gate is closed or its budget is explicitly revised. Broader formation conversion remains a subsequent phase.

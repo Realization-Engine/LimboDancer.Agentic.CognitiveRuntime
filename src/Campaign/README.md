@@ -21,7 +21,7 @@ Each accepted package is published beneath its full package hash:
 - `preview.svg` and `exact.svg`: the ASL renderer's compiled-terrain view.
 - `facts.json`: ASL-derived hex facts for inspection.
 
-The package, manifest and catalog are staged and atomically published together. The CLI adds derived previews afterwards. Repeated publication verifies existing content instead of overwriting it. Copy the complete hash directory to transfer an accepted package; the campaign file-import UI is not integrated yet.
+The package, manifest and catalog are staged and atomically published together. The CLI adds derived previews afterwards. Repeated publication verifies existing content instead of overwriting it. Copy the complete hash directory to transfer an accepted package; the campaign host also embeds the accepted package in campaign save files, as described below.
 
 ## Inspect in existing Map Studio
 
@@ -47,15 +47,15 @@ The profile generates seeded, nonoverlapping single-level building footprints in
 
 These codes are supported by compilation and fact derivation. That is separate from executable rule coverage: the existing Scenario A1 building-evidence path is pinned to VASL board 01. The generator manifest alone does not mark any hex deployment-admitted; the separate campaign setup policy described below supplies bounded admission. Nonzero source elevations and unsupported terrain in the requested crop/guard region fail closed. The primary crop contains no woodland; generated connected clearings are deferred, not silently claimed as implemented.
 
-The overlap test verifies shared world-feature IDs and geometry, not crop-edge fact equivalence. A/C join projection is covered; the proposed seam crop at (52,116) is deliberately rejected because it includes unsupported hills. Further join admission requires an elevation profile. Parent ownership is center-based with ordinal source-key ties; overlap references use the tactical hex polygon.
+The overlap test verifies shared world-feature IDs and geometry plus derived facts in the admitted two-hex interior for the fixed (60,92) fixture, not arbitrary crop-edge equivalence. A/C join projection is covered; the proposed seam crop at (52,116) is deliberately rejected because it includes unsupported hills. Further join admission requires an elevation profile. Parent ownership is center-based with ordinal source-key ties; overlap references use the tactical hex polygon.
 
 ## Validation and limits
 
 Tests cover independent SHA-256 stream vectors, rotations, negative parity, quantization, source/seed rejection, repeated output, 32 seeds, bridge-to-road connectivity, shared features in overlapping crops, source joins, unsupported hills, corruption and cancellation. Shared ASL build settings are imported and every pilot project explicitly sets `TreatWarningsAsErrors` to `true`.
 
-The first tested seed produced only MAP-VAL-007 warnings: feature boundaries close to ASL sampling points. These are exported, not discarded. A zero-error authored package is sufficient for inspection; playable setup and movement require separate admission work.
+The first tested seed produced only MAP-VAL-007 warnings: feature boundaries close to ASL sampling points. These are exported, not discarded. A zero-error authored package is sufficient for inspection. The separate bounded setup policy below admits the pilot roster; movement remains unavailable.
 
-Next phase: validate crop-interior fact continuity and canonical raster alignment, define the bounded roster/setup rules, add the campaign service and navigation workflow, and verify save/resume through the user interface. This pilot does not resize existing maps or migrate saved deployments.
+The bounded campaign integration below implements the next workflow slice. The release review records its performance and remaining gates. This pilot does not resize existing maps or migrate saved deployments.
 
 ## Recorded pilot verification
 
@@ -104,3 +104,9 @@ The overlap fixture at (60,92) has an exact 450-by-129-pixel translation. More t
 Verification on 13 October 2026: 21 .NET tests passed, including the 32-seed capacity suite and fresh-host import. The solution builds with zero warnings and errors. Existing campaign-file round-trip and Panzer Situation UI/model tests passed. The unrelated `test_command_card_transition.cjs` still fails while looking up an old Ardennes button title; none of its loaded implementation files changed in this integration.
 
 Browser acceptance also passed: fresh Goodwood preparation and formation setup, opening the generated pilot, automatic eight-squad deployment, a manual move from C3 to C7, crop-boundary rejection, completion/review, return with retained formation DOM, page reload, campaign file export/import, and reopening accepted terrain after a host restart. The exported campaign contained the same package identity and all eight placements.
+
+## First-version release review, 14 October 2026
+
+See [Pilot release review](docs/Pilot-Release-Review.md) for all measurements and acceptance results. The Release suite passes 27 tests, including cancellation retry, interrupted publication fault injection and preservation of an existing session after rejected imports. The UI adds keyboard pan/zoom/fit and clearer formation-parent boundaries.
+
+Three fresh-process runs generated and opened terrain in 2.44 to 3.28 seconds, excluding host startup (1.13 to 1.34 seconds). Saved-map reload was 1.81 to 2.08 seconds, so the proposed 2-second gate is not fully passed. Browser paint is excluded. Next: profile cold reload and measure browser open-to-ready latency before expanding the pilot. Reproduce with `scripts/Measure-Pilot.ps1` after a Release build. Raw measurements and limitations are linked from the review.
