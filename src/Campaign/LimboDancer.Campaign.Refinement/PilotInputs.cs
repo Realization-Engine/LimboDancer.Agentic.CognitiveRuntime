@@ -18,8 +18,8 @@ public sealed record SourceBridge(string Key, MetricPoint[] Polygon);
 public sealed class PilotInputs
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
-    public PilotProfile Profile { get; }
-    public string ProfileDigest { get; }
+    public PilotProfile Profile { get; private set; }
+    public string ProfileDigest { get; private set; }
     public TerrainCatalog Catalog { get; }
     public byte[] CatalogBytes { get; }
     public string CatalogBlob { get; }
@@ -31,15 +31,22 @@ public sealed class PilotInputs
     public IReadOnlyDictionary<string, string> FormationTypes { get; }
     public const string MapSpace = "panzer-leader-05-joined-b-a-c";
     public const string GeneratorVersion = "goodwood-pilot-2";
+    public const string SituationGeneratorVersion = "goodwood-situation-1";
     public const string LegacyGeneratorVersion = "goodwood-pilot-1";
     public string Version { get; private set; } = GeneratorVersion;
-    public bool SupportsElevation => Version == GeneratorVersion;
+    public bool SupportsElevation => Version != LegacyGeneratorVersion;
+    public bool SupportsSituation => Version == SituationGeneratorVersion;
     public PilotInputs ForVersion(string? version)
     {
-        if (version is not (GeneratorVersion or LegacyGeneratorVersion))
+        if (version is not (GeneratorVersion or LegacyGeneratorVersion or SituationGeneratorVersion))
             throw new InvalidDataException("Unsupported pilot generator version.");
         var copy = (PilotInputs)MemberwiseClone();
         copy.Version = version;
+        var profile = Resource(copy.SupportsSituation ? "goodwood-situation.json" : "goodwood.json");
+        copy.Profile = JsonSerializer.Deserialize<PilotProfile>(profile, JsonOptions)!;
+        copy.ProfileDigest = BoardPackage.Hash(profile);
+        if (copy.Profile.SourceSha256 != Profile.SourceSha256 || copy.Profile.CatalogSha256 != Profile.CatalogSha256)
+            throw new InvalidDataException("Situation profile must use the pinned source and terrain catalog.");
         return copy;
     }
 

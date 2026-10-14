@@ -36,11 +36,11 @@ public sealed class PilotGenerator(PilotInputs inputs)
         foreach (var region in regions)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if ((inputs.SupportsElevation ? region.Elevation is < 0 or > 2 : region.Elevation != 0) || region.Kind is not ("open" or "town" or "woods" or "water"))
+            if ((inputs.SupportsElevation ? region.Elevation is < 0 or > 2 : region.Elevation != 0) || (region.Kind is not ("open" or "town" or "woods" or "water") && !(inputs.SupportsSituation && region.Kind == "marsh")))
                 throw new InvalidDataException($"Unsupported source terrain/elevation in {region.Key}: {region.Kind}/{region.Elevation}.");
             if (inputs.SupportsElevation && region.Elevation > 0)
                 Add(region.Key + "/elevation", "elevation", "source-level-mapped", (byte)region.Elevation, region.Polygon);
-            if (region.Kind is "woods" or "water")
+            if (region.Kind is "woods" or "water" or "marsh")
                 Add(region.Key, "area", "source-preserved", profile.TerrainCodes[region.Kind], region.Polygon);
             if (region.Kind != "town") continue;
             // A region's complete parcel lattice is evaluated before crop filtering. Neighboring requests share keys.
@@ -103,7 +103,7 @@ public sealed class PilotGenerator(PilotInputs inputs)
         if (validation.HasErrors) throw new InvalidDataException(string.Join("\n", validation.Findings.Where(f => f.Severity == LimboDancer.Domains.Asl.Maps.MapDiagnosticSeverity.Error).Select(f => f.Code + ": " + f.Message)));
         if (crop == inputs.DefaultCrop && (!features.Any(f => f.SourceKey == profile.Anchor) || !features.Any(f => f.Kind == "building") || !features.Any(f => f.Kind == "road") || !features.Any(f => f.Kind == "stream")))
             throw new InvalidDataException("Primary pilot must contain the crossing, a settlement, road and stream.");
-        var package = new BoardPackage(BoardRef.Parse(PilotIdentity.Reference(inputs, seed, crop)), "Goodwood crossing inspection pilot", model, validation.Summary);
+        var package = new BoardPackage(BoardRef.Parse(PilotIdentity.Reference(inputs, seed, crop)), inputs.SupportsSituation ? "Operation Goodwood tactical map" : "Goodwood crossing inspection pilot", model, validation.Summary);
         var parents = geometry.Hexes().Select(h =>
         {
             var center = SpatialFrame.Center(crop.Column + h.Column, crop.Row + h.Row);
@@ -111,7 +111,7 @@ public sealed class PilotGenerator(PilotInputs inputs)
             var overlaps = regions.Where(r => MetricGeometry.Overlaps(r.Polygon, MetricGeometry.Hex(center))).Select(r => r.Key).ToArray();
             return new { Hex = geometry.NameOf(h).ToString(), Column = crop.Column + h.Column, Row = crop.Row + h.Row, Parent = hits.FirstOrDefault(), CenterMatches = hits, Overlaps = overlaps, DeploymentAdmitted = false };
         }).ToArray();
-        if (parents.Any(p => p.Parent is null)) throw new InvalidDataException("Crop extends outside covered source polygons.");
+        if (!inputs.SupportsSituation && parents.Any(p => p.Parent is null)) throw new InvalidDataException("Crop extends outside covered source polygons.");
         var manifest = JsonSerializer.SerializeToUtf8Bytes(new
         {
             FormatVersion = 1,
