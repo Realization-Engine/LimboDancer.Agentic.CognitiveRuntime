@@ -93,6 +93,13 @@
           "xunit.extensibility.core": "[2.9.2]"
         }
       },
+      "limbodancer.campaign.pilothost": {
+        "type": "Project",
+        "dependencies": {
+          "LimboDancer.Campaign.Refinement": "[1.0.0, )",
+          "LimboDancer.Domains.Asl.Maps.Rendering": "[1.0.0, )"
+        }
+      },
       "limbodancer.campaign.refinement": {
         "type": "Project",
         "dependencies": {
@@ -102,6 +109,12 @@
       },
       "limbodancer.domains.asl.maps": {
         "type": "Project"
+      },
+      "limbodancer.domains.asl.maps.rendering": {
+        "type": "Project",
+        "dependencies": {
+          "LimboDancer.Domains.Asl.Maps": "[1.0.0, )"
+        }
       },
       "limbodancer.domains.asl.maps.vasl": {
         "type": "Project",

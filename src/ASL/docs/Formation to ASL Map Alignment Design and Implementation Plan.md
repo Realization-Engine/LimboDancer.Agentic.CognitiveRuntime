@@ -1,7 +1,7 @@
 # Formation to ASL Map Alignment Design and Implementation Plan
 
 Date: 13 October 2026.
-Status: package pilot implemented on 13 October 2026; full first-version workflow remains pending. The progress record below distinguishes delivered code from proposed later contracts.
+Status: package pilot and fixed-crop campaign deployment integration implemented on 13 October 2026; broader formation conversion remains pending. The progress record below distinguishes delivered code from proposed later contracts.
 Branch: codex/formation-asl-map-alignment.
 Baseline analysis: [Formation to ASL Map Alignment Analysis](Formation%20to%20ASL%20Map%20Alignment%20Analysis.md), committed at 452dad19.
 
@@ -183,7 +183,7 @@ Additional regional profiles, 240 m rollout, reconnaissance gameplay, complex bu
 
 ## Implementation readiness
 
-The package pilot has been generated, compiled, reloaded and inspected through ASL tooling. An end-to-end campaign deployment workflow has not yet been implemented or validated. Milestone 0 resolves bounded fixture and capability details by inspecting and testing the existing code; it does not reopen broad architecture analysis. If that audit finds an unsupported required crossing or location, record the exact gap and revise the pilot explicitly before building dependent generation or UI behavior.
+The package pilot has been generated, compiled, reloaded and inspected through ASL tooling. The fixed-crop campaign deployment workflow is implemented and verified as recorded in the checkpoint below. Milestone 0 resolves bounded fixture and capability details by inspecting and testing the existing code; it does not reopen broad architecture analysis. If that audit finds an unsupported required crossing or location, record the exact gap and revise the pilot explicitly before building dependent generation or UI behavior.
 
 ## Review record
 
@@ -203,3 +203,16 @@ Implementation and run instructions: [Campaign pilot README](../../Campaign/READ
 - The CLI persists the seed before generation and verifies package/catalog/manifest content before publication. Campaign file-import integration and a bounded roster remain later work.
 
 The package pilot intentionally narrows the earlier intended terrain-generation set. This is a delivered inspection/compilation milestone, not completion of milestones 2 through 4 or the first usable campaign workflow.
+
+
+## Campaign deployment integration checkpoint, 13 October 2026
+
+The package pilot was committed as `3d41f327`. The next implementation adds `LimboDancer.Campaign.PilotHost`, a same-origin local host for the existing prototype and bounded pilot API, plus the Goodwood formation-toolbar entry. See the Campaign README for launch instructions, the frozen roster/policy and exact scope.
+
+The first deployment slice deliberately admits only the fixed primary crop and eight infantry squads. The original package manifest stays inspection-only; a separate versioned setup record binds the accepted package and campaign context to the audited deployment policy. It permits admitted ground locations, applies campaign-owned source/supply permission snapshots, excludes a two-hex guard and bridge/stream locations, and enforces two friendly squads per hex. It does not claim Scenario A1 rule bindings, complete Goodwood forces or combat admission.
+
+Generation is queued, idempotent by persisted campaign seed and cancellable. Campaign saves embed accepted features and the refinement manifest with deployment state. Import and resume verify package/catalog/source/profile/compiler identities and the compiled grid hash without generating replacement terrain. Changing formation placements or supply permissions invalidates the context binding and preserves the previous pilot for recovery rather than silently moving counters.
+
+The primary and (60,92) overlap fixtures now also compare derived facts in their common two-hex interior. Their translation is exactly 450 by 129 pixels; this does not establish arbitrary-crop equivalence or elevation support. Only the fixed primary crop is offered for deployment. The 32-seed suite now checks setup capacity under source rules for the frozen roster.
+
+UI acceptance includes opening from completed formation setup, placement and rejection feedback, full pilot deployment, completion/review, return to the retained formation map, and restoration of saved terrain and squads. Pilot setup does not yet derive a footprint from the selected formation's anchor, migrate the old squad grid, or support automatic rebasing when campaign setup changes. These are explicit follow-ups, alongside multi-crop/elevation admission and broader scenario support.

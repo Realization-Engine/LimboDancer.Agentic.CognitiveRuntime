@@ -136,6 +136,7 @@
    const toggle=button("\u2630",()=>{rosterCollapsed=!rosterCollapsed;tray.hidden=rosterCollapsed;layout.setAttribute("data-roster-collapsed",String(rosterCollapsed));toggle.setAttribute("aria-expanded",String(!rosterCollapsed));toggle.title=rosterCollapsed?"Show counter roster":"Hide counter roster";toggle.setAttribute("aria-label",toggle.title);});
    toggle.className="panzer-roster-toggle";toggle.setAttribute("aria-controls",tray.id);toggle.setAttribute("aria-expanded",String(!rosterCollapsed));toggle.title=rosterCollapsed?"Show counter roster":"Hide counter roster";toggle.setAttribute("aria-label",toggle.title);top.prepend(toggle);layout.append(tray);
   }layout.append(viewport);dialog.append(layout);
+  if(d.situation.number===5&&embedded?.aslStorage&&window.AslPilot){const pilot=button("Open ASL deployment pilot",()=>AslPilot.open(d,s,embedded.aslStorage));pilot.disabled=s.stage!=="ready";pilot.title=pilot.disabled?"Complete formation setup first":"Bounded eight-squad Goodwood pilot";top.append(pilot);}
   window.CampaignMapToolbar?.mount(top);
   if(game){dialog.scrollTop=oldY;viewport.scrollLeft=resetView?0:oldX;viewport.scrollTop=resetView?0:oldMapY;return;}
   dialog.append(el("p","Board layout follows this Situation Card. Use the wheel to zoom; Space plus left drag or middle drag to pan. Scroll out to restore the overview. Highlighted hexes show the selected unit's permitted setup zone. Terrain and cross-board movement require review before combat admission."));

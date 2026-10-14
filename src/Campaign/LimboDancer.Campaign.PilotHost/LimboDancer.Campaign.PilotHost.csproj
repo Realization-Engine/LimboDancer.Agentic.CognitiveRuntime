@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup><TreatWarningsAsErrors>true</TreatWarningsAsErrors></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../LimboDancer.Campaign.Refinement/LimboDancer.Campaign.Refinement.csproj" />
+    <ProjectReference Include="../../ASL/LimboDancer.Domains.Asl.Maps.Rendering/LimboDancer.Domains.Asl.Maps.Rendering.csproj" />
+  </ItemGroup>
+</Project>

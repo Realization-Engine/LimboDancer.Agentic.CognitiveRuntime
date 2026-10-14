@@ -9,6 +9,7 @@
     <PackageReference Include="xunit.runner.visualstudio"><PrivateAssets>all</PrivateAssets></PackageReference>
     <Using Include="Xunit" />
     <ProjectReference Include="../../LimboDancer.Campaign.Refinement/LimboDancer.Campaign.Refinement.csproj" />
+    <ProjectReference Include="../../LimboDancer.Campaign.PilotHost/LimboDancer.Campaign.PilotHost.csproj" />
     <Content Include="../../../../prototypes/europe-hex-map/sources/situations/panzer-leader-05.json" Link="goodwood.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

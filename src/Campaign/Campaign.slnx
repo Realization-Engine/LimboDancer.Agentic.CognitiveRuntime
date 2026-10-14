@@ -7,4 +7,5 @@
   <Project Path="../ASL/LimboDancer.Domains.Asl.Maps/LimboDancer.Domains.Asl.Maps.csproj" />
   <Project Path="LimboDancer.Campaign.Refinement.Cli/LimboDancer.Campaign.Refinement.Cli.csproj" />
   <Project Path="LimboDancer.Campaign.Refinement/LimboDancer.Campaign.Refinement.csproj" />
+  <Project Path="LimboDancer.Campaign.PilotHost/LimboDancer.Campaign.PilotHost.csproj" />
 </Solution>

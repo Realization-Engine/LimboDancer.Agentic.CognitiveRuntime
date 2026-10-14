@@ -21,10 +21,9 @@ public sealed class PilotGenerator(PilotInputs inputs)
     {
         SeedRandom.ValidateSeed(seed); crop ??= inputs.DefaultCrop;
         var geometry = crop.Geometry(); var profile = inputs.Profile;
-        var spatialDigest = BoardPackage.Hash(CanonicalJson.Serialize(new[] { SpatialFrame.Version, "250000", "40000", "34641.016151377546", "0", "0" }));
-        var defining = new[] { SeedRandom.Version, seed, PilotInputs.MapSpace, profile.SourceSha256,
-            spatialDigest, inputs.ProfileDigest, PilotInputs.GeneratorVersion };
-        var world = BoardPackage.Hash(CanonicalJson.Serialize(defining));
+        var spatialDigest = PilotIdentity.SpatialDigest;
+        var defining = PilotIdentity.Defining(inputs, seed);
+        var world = PilotIdentity.World(inputs, seed);
         var metric = new List<MetricFeature>();
         string Id(string key) => BoardPackage.Hash(CanonicalJson.Serialize(new[] { world, key }));
         SeedRandom Stream(string domain, string key) => new([.. defining, domain, key]);
@@ -101,9 +100,7 @@ public sealed class PilotGenerator(PilotInputs inputs)
         if (validation.HasErrors) throw new InvalidDataException(string.Join("\n", validation.Findings.Where(f => f.Severity == LimboDancer.Domains.Asl.Maps.MapDiagnosticSeverity.Error).Select(f => f.Code + ": " + f.Message)));
         if (crop == inputs.DefaultCrop && (!features.Any(f => f.SourceKey == profile.Anchor) || !features.Any(f => f.Kind == "building") || !features.Any(f => f.Kind == "road") || !features.Any(f => f.Kind == "stream")))
             throw new InvalidDataException("Primary pilot must contain the crossing, a settlement, road and stream.");
-        var cropKey = string.Create(CultureInfo.InvariantCulture, $"{crop.Column}/{crop.Row}/{crop.Width}/{crop.Height}");
-        var identity = BoardPackage.Hash(CanonicalJson.Serialize(new[] { world, cropKey, inputs.CatalogBlob, FeatureCompiler.Version, VaslCompatibleHexFactDerivation.Version, "feature-model-1" }));
-        var package = new BoardPackage(BoardRef.Parse("ab-goodwood-" + identity), "Goodwood crossing inspection pilot", model, validation.Summary);
+        var package = new BoardPackage(BoardRef.Parse(PilotIdentity.Reference(inputs, seed, crop)), "Goodwood crossing inspection pilot", model, validation.Summary);
         var parents = geometry.Hexes().Select(h =>
         {
             var center = SpatialFrame.Center(crop.Column + h.Column, crop.Row + h.Row);

@@ -1,6 +1,6 @@
 # Formation-to-ASL pilot
 
-This implements the bounded package pilot from the Formation to ASL Map Alignment Design and Implementation Plan: pinned inputs, deterministic metric features, an ASL authored-board package, compiled terrain, derived hex facts and inspection output. It does not enable the campaign deployment/gameplay workflow.
+This implements the bounded package pilot from the Formation to ASL Map Alignment Design and Implementation Plan: pinned inputs, deterministic metric features, an ASL authored-board package, compiled terrain, derived hex facts and inspection output. The campaign host now adds a bounded eight-squad deployment workflow. Movement, LOS, combat and full-Situation conversion remain unavailable.
 
 ## Run from the repository root
 
@@ -45,7 +45,7 @@ The profile generates seeded, nonoverlapping single-level building footprints in
 | 66 | Paved Road | Traced roads, assumed 10 m width |
 | 84 | Stone Bridge | Preserved crossing footprint, assumed material |
 
-These codes are supported by compilation and fact derivation. That is separate from executable rule coverage: the existing Scenario A1 building-evidence path is pinned to VASL board 01. No pilot hex is marked deployment-admitted. Nonzero source elevations and unsupported terrain in the requested crop/guard region fail closed. The primary crop contains no woodland; generated connected clearings are deferred, not silently claimed as implemented.
+These codes are supported by compilation and fact derivation. That is separate from executable rule coverage: the existing Scenario A1 building-evidence path is pinned to VASL board 01. The generator manifest alone does not mark any hex deployment-admitted; the separate campaign setup policy described below supplies bounded admission. Nonzero source elevations and unsupported terrain in the requested crop/guard region fail closed. The primary crop contains no woodland; generated connected clearings are deferred, not silently claimed as implemented.
 
 The overlap test verifies shared world-feature IDs and geometry, not crop-edge fact equivalence. A/C join projection is covered; the proposed seam crop at (52,116) is deliberately rejected because it includes unsupported hills. Further join admission requires an elevation profile. Parent ownership is center-based with ordinal source-key ties; overlap references use the tactical hex polygon.
 
@@ -62,3 +62,45 @@ Next phase: validate crop-interior fact continuity and canonical raster alignmen
 On 13 October 2026, .NET SDK 10.0.402 on Windows: 14 tests passed, including the 32-seed acceptance test. The final CLI run with seed `00112233445566778899aabbccddeeff` generated 65 features and 676 hexes, published/reloaded/recompiled the package and rendered the preview in 2.18 seconds. This is one measured development-machine run, not a cold-start or broad hardware benchmark. Package version: `6907b65ed7ab86be88d3add25d78639eecdeef86ad7304abfdb9ec81e7d4677b`.
 
 The package has zero validator errors and 175 MAP-VAL-007 sampling-boundary warnings, retained in the manifest. In native Map Studio it loaded as Authored, valid; selecting R10 displayed Stone Bridge, Shallow Stream locations and road/bridge hexside facts. These observations verify compilation and inspection, not combat admission. No existing campaign save or application UI was modified by the pilot.
+
+
+## Campaign deployment integration
+
+Run the local campaign host from the repository root:
+
+```powershell
+dotnet run --project src/Campaign/LimboDancer.Campaign.PilotHost
+```
+
+Open `http://127.0.0.1:8093/index.html?exercise=source&source=5`. The host serves the existing prototype and `/api/asl-pilot` on the same origin. Existing saves on port 8080 belong to a different browser origin: use **Save campaign to file** there, then **Load campaign from file** on port 8093. The static-only server cannot compile ASL terrain. Optional host settings are `Campaign:PrototypeRoot` and `Campaign:PackagesRoot`; API requests cannot choose filesystem paths or source packages.
+
+1. Commit the Goodwood mission and complete both sides' formation setup.
+2. Select **Open ASL deployment pilot** in the formation toolbar.
+3. Choose a squad and destination on the map or in the keyboard-accessible hex selector, then **Place selected squad**. **Deploy pilot roster** fills only missing placements.
+4. **Complete setup** locks placement; **Review setup** unlocks it.
+5. **Return to formation map** retains the underlying formation viewport and selection. The pilot's own viewport is saved on return or deployment edits.
+6. Campaign save/load files include `world.aslPilots.M04`: campaign seed, setup-context snapshot, accepted feature package and refinement manifest, placements, completion state and viewport. File import validates accepted terrain through the host before installing the campaign. Resume compiles the saved features and verifies package/grid hashes; it does not run the generator.
+
+### Frozen setup policy
+
+`goodwood-infantry-setup-1` contains four British and four German infantry squads, associated with `uk-rifle-01` and `de-rifle-01`. This is a bounded test detachment and does not transfer the full formation roster, enforce a radius around its current formation position, or reconcile casualties. The crop stays fixed at (52,90,33,20).
+
+The prototype campaign remains the authority for formation setup permissions, including its supply-margin and retained supply-area exceptions. It supplies `CampaignSupplyDeployment.refs` for the two roster parents. C# verifies references exist in the pinned source, derives each tactical hex's primary formation parent from its metric center, and enforces those permissions separately from terrain and stacking checks. The context hash binds the campaign identity, formation-placement/supply snapshot and sorted allowed-parent sets. It is an integrity binding, not a signature or multiplayer authorization system. If formation setup changes, reopening fails with an explanation and retains the old pilot. Automatic rebasing remains follow-up work.
+
+Admitted setup locations are ground level, with center terrain code 0, 40, 60 or 66. Bridge locations, streams, water, unknown terrain, missing source parents and the outer two-hex guard are excluded. Friendly stacking is limited to two squads; opposing squads cannot share a hex. This is an explicit campaign pilot policy, not an assertion that ASL movement, LOS or combat rules have been implemented. The package's original inspection-only manifest remains unchanged; the separate setup record names the policy that admits the bounded deployment.
+
+### Service and persistence behavior
+
+Generation requests are idempotent by campaign seed, cancellable and polled. A single generation queue limits compilation concurrency. Packages publish through the existing staging/verification path. Each host instance retains at most eight generation jobs and sixteen deployment contexts; restarting releases caches without deleting browser campaign saves or accepted package directories. The API is loopback-only with same-origin, JSON-only mutations. Stop the host before rebuilding on Windows to release loaded assemblies.
+
+Placement endpoints return a validated replacement setup. The browser installs it only after campaign persistence succeeds; failed validation cannot partially place the roster. Existing campaign revision checks protect against concurrent-tab writes. There is no migration of legacy squad q/r placements into ASL indices.
+
+### Verification and remaining gates
+
+The deployment tests cover source-rule capacity across 32 seeds, legal placement, completion/review, side restrictions, crop boundaries, unsupported locations, stacking, duplicate roster entries, insufficient capacity, context changes and package corruption. Host tests cover idempotent generation, open/deploy/complete and importing accepted terrain into a fresh host without generation.
+
+The overlap fixture at (60,92) has an exact 450-by-129-pixel translation. More than 250 common interior hexes match derived location, terrain, elevation, hexside and bridge facts after excluding the two-hex guard. This is evidence for that fixture, not general admission of arbitrary overlapping crops. The elevation-bearing A/C seam crop remains rejected. Other Situation adapters, full rosters, woodland variation, automatic context rebasing, source-to-pilot focus matching and combat remain follow-up work.
+
+Verification on 13 October 2026: 21 .NET tests passed, including the 32-seed capacity suite and fresh-host import. The solution builds with zero warnings and errors. Existing campaign-file round-trip and Panzer Situation UI/model tests passed. The unrelated `test_command_card_transition.cjs` still fails while looking up an old Ardennes button title; none of its loaded implementation files changed in this integration.
+
+Browser acceptance also passed: fresh Goodwood preparation and formation setup, opening the generated pilot, automatic eight-squad deployment, a manual move from C3 to C7, crop-boundary rejection, completion/review, return with retained formation DOM, page reload, campaign file export/import, and reopening accepted terrain after a host restart. The exported campaign contained the same package identity and all eight placements.

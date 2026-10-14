@@ -122,6 +122,11 @@ public sealed class PilotTests
                 .OrderBy(f => f.SourceKey, StringComparer.Ordinal).Select(f => new { f.SourceKey, f.Kind, f.Code, f.WidthMm, f.Points }));
             locked ??= fixedFeatures; Assert.Equal(locked, fixedFeatures);
             hashes.Add(PilotGenerator.GridHash(result.Grid));
+            var pilot = new PilotDeployment(Inputs, result, i.ToString("x32", CultureInfo.InvariantCulture));
+            var context = DeploymentTests.SourceContext();
+            var setup = pilot.AutoDeploy(context, pilot.Create(context));
+            Assert.Equal(8, setup.Placements.Length);
+            pilot.Validate(context, setup);
         }
         Assert.Equal(32, hashes.Count);
     }
@@ -137,6 +142,17 @@ public sealed class PilotTests
         Assert.NotEmpty(common);
         Assert.All(common, pair => Assert.Equal(JsonSerializer.Serialize(pair.a), JsonSerializer.Serialize(pair.b)));
         Assert.Equal(second.Manifest, generator.Generate(Seed, shifted).Manifest);
+        // This fixture's translation is exactly 450 x 129 raster pixels. Only compare
+        // the common two-hex interior; edge half-hex sampling is intentionally excluded.
+        var compared = 0;
+        foreach (var a in first.Facts.Hexes.Where(f => f.Index.Column >= 10 && f.Index.Column < 31 && f.Index.Row >= 4 && f.Index.Row < 18))
+        {
+            var b = second.Facts[new LimboDancer.Domains.Asl.Maps.Geometry.HexIndex(a.Index.Column - 8, a.Index.Row - 2)];
+            Assert.Equal(JsonSerializer.Serialize(new { a.BaseLevel, a.Stairway, a.Center, a.Locations, a.Hexsides, a.Bridge }),
+                JsonSerializer.Serialize(new { b.BaseLevel, b.Stairway, b.Center, b.Locations, b.Hexsides, b.Bridge }));
+            compared++;
+        }
+        Assert.True(compared > 250);
     }
 
     [Fact]
