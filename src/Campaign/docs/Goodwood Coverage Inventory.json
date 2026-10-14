@@ -1,0 +1,416 @@
+{
+  "sourceSha256Lf": "deb63321535843c26146b374bf0f41f930eaad828d946707a3f9a42b82f6aca8",
+  "compositionSha256Lf": "e9d250c82bbb681f0852de7d50a03a54b3201367b109e53d8da730551202f701",
+  "sourceCounters": 122,
+  "counterTypes": 25,
+  "selectedPilotSourceCounters": 31,
+  "unconvertedGroundSourceCounters": 83,
+  "offMapAircraft": 8,
+  "sourceHexFragments": 1038,
+  "terrain": {
+    "marsh": 5,
+    "open": 707,
+    "town": 34,
+    "water": 52,
+    "woods": 240
+  },
+  "roster": [
+    {
+      "type": "uk-rifle",
+      "side": "Allied",
+      "sourceCount": 12,
+      "sourceIds": [
+        "uk-rifle-01",
+        "uk-rifle-02",
+        "uk-rifle-03",
+        "uk-rifle-04",
+        "uk-rifle-05",
+        "uk-rifle-06",
+        "uk-rifle-07",
+        "uk-rifle-08",
+        "uk-rifle-09",
+        "uk-rifle-10",
+        "uk-rifle-11",
+        "uk-rifle-12"
+      ],
+      "principalObjectsPerFormation": null,
+      "compositionEvidence": "36 personnel; 6 automatic rifles, 4 machine guns, one 60 mm mortar.",
+      "pilotDefinition": "british-squad",
+      "status": "selected-formation implemented"
+    },
+    {
+      "type": "uk-engineer",
+      "side": "Allied",
+      "sourceCount": 2,
+      "sourceIds": [
+        "uk-engineer-01",
+        "uk-engineer-02"
+      ],
+      "principalObjectsPerFormation": null,
+      "compositionEvidence": "65 personnel; 3 Bren guns; mine-clearing, demolition and construction equipment.",
+      "pilotDefinition": "british-elite-squad",
+      "status": "selected-formation implemented"
+    },
+    {
+      "type": "uk-25pdr",
+      "side": "Allied",
+      "sourceCount": 3,
+      "sourceIds": [
+        "uk-25pdr-01",
+        "uk-25pdr-02",
+        "uk-25pdr-03"
+      ],
+      "principalObjectsPerFormation": 6,
+      "compositionEvidence": "6 x 25-pounder gun-howitzers; 39 personnel. Table prints 86.4 mm; tactical estimate uses 87.6 mm.",
+      "pilotDefinition": null,
+      "status": "conversion required"
+    },
+    {
+      "type": "uk-sexton",
+      "side": "Allied",
+      "sourceCount": 3,
+      "sourceIds": [
+        "uk-sexton-01",
+        "uk-sexton-02",
+        "uk-sexton-03"
+      ],
+      "principalObjectsPerFormation": 6,
+      "compositionEvidence": "6 Sexton 25-pounder self-propelled howitzers, 6 machine guns; 51 personnel.",
+      "pilotDefinition": null,
+      "status": "conversion required"
+    },
+    {
+      "type": "uk-achilles",
+      "side": "Allied",
+      "sourceCount": 2,
+      "sourceIds": [
+        "uk-achilles-01",
+        "uk-achilles-02"
+      ],
+      "principalObjectsPerFormation": 4,
+      "compositionEvidence": "4 Achilles tank destroyers; table prints 76 mm; 4 machine guns, 20 personnel.",
+      "pilotDefinition": null,
+      "status": "conversion required"
+    },
+    {
+      "type": "uk-cromwell-goodwood",
+      "side": "Allied",
+      "sourceCount": 4,
+      "sourceIds": [
+        "uk-cromwell-goodwood-01",
+        "uk-cromwell-goodwood-02",
+        "uk-cromwell-goodwood-03",
+        "uk-cromwell-goodwood-04"
+      ],
+      "principalObjectsPerFormation": 4,
+      "compositionEvidence": "4 Cromwell tanks; 75 mm guns, 8 machine guns; 20 personnel.",
+      "pilotDefinition": null,
+      "status": "conversion required"
+    },
+    {
+      "type": "uk-sherman",
+      "side": "Allied",
+      "sourceCount": 20,
+      "sourceIds": [
+        "uk-sherman-01",
+        "uk-sherman-02",
+        "uk-sherman-03",
+        "uk-sherman-04",
+        "uk-sherman-05",
+        "uk-sherman-06",
+        "uk-sherman-07",
+        "uk-sherman-08",
+        "uk-sherman-09",
+        "uk-sherman-10",
+        "uk-sherman-11",
+        "uk-sherman-12",
+        "uk-sherman-13",
+        "uk-sherman-14",
+        "uk-sherman-15",
+        "uk-sherman-16",
+        "uk-sherman-17",
+        "uk-sherman-18",
+        "uk-sherman-19",
+        "uk-sherman-20"
+      ],
+      "principalObjectsPerFormation": 4,
+      "compositionEvidence": "3 M4/75 Shermans and one M4A4 Sherman Firefly (76.2 mm); 8 machine guns; 20 personnel.",
+      "pilotDefinition": null,
+      "status": "conversion required"
+    },
+    {
+      "type": "uk-typhoon-rockets",
+      "side": "Allied",
+      "sourceCount": 8,
+      "sourceIds": [
+        "uk-typhoon-rockets-01",
+        "uk-typhoon-rockets-02",
+        "uk-typhoon-rockets-03",
+        "uk-typhoon-rockets-04",
+        "uk-typhoon-rockets-05",
+        "uk-typhoon-rockets-06",
+        "uk-typhoon-rockets-07",
+        "uk-typhoon-rockets-08"
+      ],
+      "principalObjectsPerFormation": null,
+      "compositionEvidence": null,
+      "pilotDefinition": null,
+      "status": "retain off-map air support"
+    },
+    {
+      "type": "uk-bren",
+      "side": "Allied",
+      "sourceCount": 14,
+      "sourceIds": [
+        "uk-bren-01",
+        "uk-bren-02",
+        "uk-bren-03",
+        "uk-bren-04",
+        "uk-bren-05",
+        "uk-bren-06",
+        "uk-bren-07",
+        "uk-bren-08",
+        "uk-bren-09",
+        "uk-bren-10",
+        "uk-bren-11",
+        "uk-bren-12",
+        "uk-bren-13",
+        "uk-bren-14"
+      ],
+      "principalObjectsPerFormation": 6,
+      "compositionEvidence": "6 Bren carriers, 6 Bren guns; 12 personnel. MG-carrier label uses this carrier row.",
+      "pilotDefinition": null,
+      "status": "conversion required"
+    },
+    {
+      "type": "de-rifle",
+      "side": "German",
+      "sourceCount": 15,
+      "sourceIds": [
+        "de-rifle-01",
+        "de-rifle-02",
+        "de-rifle-03",
+        "de-rifle-04",
+        "de-rifle-05",
+        "de-rifle-06",
+        "de-rifle-07",
+        "de-rifle-08",
+        "de-rifle-09",
+        "de-rifle-10",
+        "de-rifle-11",
+        "de-rifle-12",
+        "de-rifle-13",
+        "de-rifle-14",
+        "de-rifle-15"
+      ],
+      "principalObjectsPerFormation": null,
+      "compositionEvidence": "59 personnel; 11 SMGs, 6 machine guns.",
+      "pilotDefinition": "attacker-squad",
+      "status": "selected-formation implemented"
+    },
+    {
+      "type": "de-75mm",
+      "side": "German",
+      "sourceCount": 3,
+      "sourceIds": [
+        "de-75mm-01",
+        "de-75mm-02",
+        "de-75mm-03"
+      ],
+      "principalObjectsPerFormation": 4,
+      "compositionEvidence": "4 x 75 mm anti-tank guns; 45 personnel.",
+      "pilotDefinition": null,
+      "status": "conversion required"
+    },
+    {
+      "type": "de-88mm",
+      "side": "German",
+      "sourceCount": 4,
+      "sourceIds": [
+        "de-88mm-01",
+        "de-88mm-02",
+        "de-88mm-03",
+        "de-88mm-04"
+      ],
+      "principalObjectsPerFormation": 4,
+      "compositionEvidence": "4 x 88 mm anti-tank guns; 111 personnel.",
+      "pilotDefinition": null,
+      "status": "conversion required"
+    },
+    {
+      "type": "de-20mm",
+      "side": "German",
+      "sourceCount": 3,
+      "sourceIds": [
+        "de-20mm-01",
+        "de-20mm-02",
+        "de-20mm-03"
+      ],
+      "principalObjectsPerFormation": 6,
+      "compositionEvidence": "6 x 20 mm anti-aircraft guns; 40 personnel.",
+      "pilotDefinition": null,
+      "status": "conversion required"
+    },
+    {
+      "type": "de-quad20",
+      "side": "German",
+      "sourceCount": 2,
+      "sourceIds": [
+        "de-quad20-01",
+        "de-quad20-02"
+      ],
+      "principalObjectsPerFormation": 3,
+      "compositionEvidence": "3 quadruple 20 mm anti-aircraft mounts; 45 personnel.",
+      "pilotDefinition": null,
+      "status": "conversion required"
+    },
+    {
+      "type": "de-81mm",
+      "side": "German",
+      "sourceCount": 2,
+      "sourceIds": [
+        "de-81mm-01",
+        "de-81mm-02"
+      ],
+      "principalObjectsPerFormation": 6,
+      "compositionEvidence": "6 x 81 mm mortars; 66 personnel.",
+      "pilotDefinition": "campaign-german-81mm-mortar + attacker-crew",
+      "status": "selected-formation implemented"
+    },
+    {
+      "type": "de-nebel",
+      "side": "German",
+      "sourceCount": 2,
+      "sourceIds": [
+        "de-nebel-01",
+        "de-nebel-02"
+      ],
+      "principalObjectsPerFormation": 6,
+      "compositionEvidence": "6 x 150 mm Nebelwerfer rocket launchers; 86 personnel.",
+      "pilotDefinition": null,
+      "status": "conversion required"
+    },
+    {
+      "type": "de-wespe",
+      "side": "German",
+      "sourceCount": 2,
+      "sourceIds": [
+        "de-wespe-01",
+        "de-wespe-02"
+      ],
+      "principalObjectsPerFormation": 6,
+      "compositionEvidence": "6 Wespe 105 mm self-propelled howitzers; 125 personnel.",
+      "pilotDefinition": null,
+      "status": "conversion required"
+    },
+    {
+      "type": "de-maultier-goodwood",
+      "side": "German",
+      "sourceCount": 1,
+      "sourceIds": [
+        "de-maultier-goodwood-01"
+      ],
+      "principalObjectsPerFormation": 6,
+      "compositionEvidence": "6 Maultier 150 mm self-propelled rocket launchers; 126 personnel.",
+      "pilotDefinition": null,
+      "status": "conversion required"
+    },
+    {
+      "type": "de-hummel",
+      "side": "German",
+      "sourceCount": 1,
+      "sourceIds": [
+        "de-hummel-01"
+      ],
+      "principalObjectsPerFormation": 6,
+      "compositionEvidence": "6 Hummel 150 mm self-propelled howitzers; 131 personnel.",
+      "pilotDefinition": null,
+      "status": "conversion required"
+    },
+    {
+      "type": "de-pziv-w",
+      "side": "German",
+      "sourceCount": 2,
+      "sourceIds": [
+        "de-pziv-w-01",
+        "de-pziv-w-02"
+      ],
+      "principalObjectsPerFormation": 4,
+      "compositionEvidence": "4 PzKw IV H tanks with 75 mm guns; 20 personnel. Original counter designation: PzKw IV (W).",
+      "pilotDefinition": null,
+      "status": "conversion required"
+    },
+    {
+      "type": "de-pziv",
+      "side": "German",
+      "sourceCount": 3,
+      "sourceIds": [
+        "de-pziv-01",
+        "de-pziv-02",
+        "de-pziv-03"
+      ],
+      "principalObjectsPerFormation": 5,
+      "compositionEvidence": "5 PzKw IV H tanks with 75 mm guns; 25 personnel. Original counter designation: PzKw IV (SS).",
+      "pilotDefinition": null,
+      "status": "conversion required"
+    },
+    {
+      "type": "de-panther-w",
+      "side": "German",
+      "sourceCount": 3,
+      "sourceIds": [
+        "de-panther-w-01",
+        "de-panther-w-02",
+        "de-panther-w-03"
+      ],
+      "principalObjectsPerFormation": 4,
+      "compositionEvidence": "4 Panthers with 75 mm guns; 20 personnel. Original counter designation: PzKw V (W).",
+      "pilotDefinition": null,
+      "status": "conversion required"
+    },
+    {
+      "type": "de-panther",
+      "side": "German",
+      "sourceCount": 4,
+      "sourceIds": [
+        "de-panther-01",
+        "de-panther-02",
+        "de-panther-03",
+        "de-panther-04"
+      ],
+      "principalObjectsPerFormation": 5,
+      "compositionEvidence": "5 Panthers with 75 mm guns; 25 personnel. Original counter designation: PzKw V (SS).",
+      "pilotDefinition": null,
+      "status": "conversion required"
+    },
+    {
+      "type": "de-tiger",
+      "side": "German",
+      "sourceCount": 3,
+      "sourceIds": [
+        "de-tiger-01",
+        "de-tiger-02",
+        "de-tiger-03"
+      ],
+      "principalObjectsPerFormation": 5,
+      "compositionEvidence": "5 Tiger tanks of the designated model with 88 mm guns; 25 personnel.",
+      "pilotDefinition": null,
+      "status": "conversion required"
+    },
+    {
+      "type": "de-halftrack",
+      "side": "German",
+      "sourceCount": 4,
+      "sourceIds": [
+        "de-halftrack-01",
+        "de-halftrack-02",
+        "de-halftrack-03",
+        "de-halftrack-04"
+      ],
+      "principalObjectsPerFormation": 5,
+      "compositionEvidence": "5 SdKfz 251 halftracks, 5 machine guns; 10 personnel.",
+      "pilotDefinition": null,
+      "status": "conversion required"
+    }
+  ]
+}

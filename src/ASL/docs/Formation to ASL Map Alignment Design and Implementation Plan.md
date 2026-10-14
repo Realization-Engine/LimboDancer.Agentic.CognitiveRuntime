@@ -1,17 +1,48 @@
 # Formation to ASL Map Alignment Design and Implementation Plan
 
 Date: 13 October 2026.
-Status: package pilot and fixed-crop campaign deployment integration implemented on 13 October 2026; release review recorded on 14 October 2026. Cold saved-map reload narrowly misses its proposed budget; milestone 4 remains open. Broader formation conversion remains pending. The progress record below distinguishes delivered code from proposed later contracts.
+Status: active goal expanded on 14 October 2026 to the complete Operation Goodwood Formation Map and counter transition into existing ASL setup. Bounded terrain generation, selected infantry/engineer/mortar conversion and Studio handoff are implemented. Full Situation coverage is not yet complete. Dated checkpoints below describe their respective increments; the current scope and completion gates immediately below take precedence over earlier pilot-only restrictions and superseded next-step notes.
 Branch: codex/formation-asl-map-alignment.
 Baseline analysis: [Formation to ASL Map Alignment Analysis](Formation%20to%20ASL%20Map%20Alignment%20Analysis.md), committed at 452dad19.
 
 ## Outcome and scope
 
-Deliver one deterministic, bounded Goodwood terrain refinement that loads through the ASL map pipeline, followed by a complete inspect, deploy, return and resume workflow. A new terrain seed can change permitted tactical detail; the same seed and pinned inputs reproduce the same accepted landscape.
+Deliver a complete transition of Operation Goodwood (Panzer Leader Situation 5), including its joined Formation Map and both sides' formation counters, into the existing ASL map and setup system. Deterministic terrain, stable counter identities and relationships, reliable navigation, and save/reload are the deliverable. A successful bounded crop is an intermediate result, not completion of this goal.
 
-Do not resize existing campaigns, replace ASL rules, or generate the entire continent in this version. Retain nominal 250 m formation spacing and 40 m tactical spacing. Keep a 240 m comparison as an offline fixture, not a player setting or an automatic save migration.
+Reuse the current ASL rules implementation. Do not implement new combat, mortar firing, movement, transport, LOS or victory rules to complete this transition. An ASL combat capability that is absent remains a documented engine limitation, not an automatic reason to omit its map feature or counter from setup. Where the current setup model cannot represent an item, define an explicit retained campaign record or supported representation and expose that limitation; never silently discard it or mislabel it as another weapon. Such exceptions must be visible in the coverage audit and final acceptance report.
 
-The first milestone is a command-line generator producing a validated ASL authored-board package and refinement manifest. Its success criterion is reproducible compilation and loading, not a screenshot of a fine grid.
+Retain nominal 250 m formation spacing and 40 m tactical spacing, subject to the existing coherence fixtures. Do not resize saved campaigns, generate the entire continent, or expand to other Situations in this goal. The 240 m comparison remains an offline fixture. The same seed and pinned inputs reproduce the accepted map; new campaigns may receive different seeds and permitted tactical detail.
+
+## Current delivery plan: complete Goodwood transition
+
+### Completion criteria
+
+- **Whole Situation geography:** cover joined boards B, A and C in their authored orientations. Preserve roads, crossings, water, settlements, elevation and parent-hex correspondence. Use a common tactical lattice and stable global feature/hex identities across bounded packages. Shared boundaries must not create gaps, duplicate playable locations or disconnected routes. A full-size monolithic package is not required, but coverage must no longer stop at selected pilot crops.
+- **Both complete rosters:** account for every Goodwood formation counter and its explicit ASL decomposition or retained off-map/support representation. Include personnel, crew-served weapons, artillery, vehicles, transports and aircraft where present. Reconcile source-to-ASL counts and parent links. Do not force off-map aircraft or campaign supply/HQ markers into inappropriate ground-unit definitions.
+- **Explicit default data:** reuse existing catalog definitions where suitable. When missing, manufacture plausible, versioned game-default profiles and equipment allotments consistent with existing ASL nationalities and counter kinds. Label their provenance. Historical research is not a completion prerequisite. Preserve separate crew and weapon identities and supported operator/transport relationships.
+- **Validated setup handoff:** preserve side, identity, catalog reference, global position and supported facing/location information through the ASL setup planner and replay. Report valid setup separately from supported combat actions. No unresolved omissions may be hidden behind an overall Ready label.
+- **Continuity:** return to Formation view and reopen ASL without regenerating accepted terrain, duplicating units or losing placements. Campaign export/import and host/browser restart retain the seed, packages, conversion policy, roster, links and setup. Keep existing Studio progress when reopening the same handoff; do not overwrite it with a new setup.
+- **Usable release:** clear loading/progress and cancellation, keyboard inspection/navigation, readable counters and operator details, preserved viewport, and measured full-Situation generation/reload, memory and package size. Earlier pilot timings do not establish whole-Situation performance.
+
+### Ordered work
+
+| Step | Deliverable | Acceptance gate |
+| --- | --- | --- |
+| G1 Coverage audit | Enumerate Goodwood source terrain, board joins, deployed/off-map counters, current catalog mappings, decomposition/allotments and existing setup capabilities | A checked-in coverage table identifies every gap, default and exception; no new ASL rules work is scheduled |
+| G2 Situation map coverage | Extend the deterministic common lattice and package coverage beyond the pilot crops, including board joins and preserved feature connections | All Goodwood geography has an inspectable supported representation; overlap, boundary and seed fixtures pass |
+| G3 Complete counter conversion | Implement remaining Goodwood counter families and explicit allotments using existing ASL setup kinds and labeled manufactured defaults | Every source counter is traceable to its child identities or an explicit off-map/support record; no silent loss or duplication |
+| G4 Situation handoff and resume | Assemble the map coverage and both rosters into the existing ASL setup workflow, including supported equipment relationships and compatibility handling | End-to-end Formation to ASL to Formation to ASL navigation, export/import and restart preserve the accepted map and deployment |
+| G5 Whole-Situation acceptance | Run coverage, deterministic generation, setup validation, failure recovery, UI and performance acceptance; document limitations | Full Goodwood accounting and reproducible save/reload demonstrated; remaining ASL combat limitations clearly distinguished from transition defects |
+
+G2 and G3 may be delivered in small tested increments, but G1 determines the concrete next counter family and terrain gaps. G1 is recorded in [Goodwood Transition Coverage](../../Campaign/docs/Goodwood%20Transition%20Coverage.md), with a reproducible source inventory. The next increment is the G2 package coverage/ownership planner, not medium-mortar combat implementation or advancement of the separate ASL rules roadmap. Reuse existing ASL work as it becomes available without making this goal depend on implementing its future passes.
+
+### Current baseline and exclusions
+
+The bounded pilot already generates authored terrain and preserves selected formation deployments. British/German rifles, British engineers, and six German 81 mm mortar/crew pairs have catalog-backed setup handoffs into ASL Studio. Catalog 1.15.0 supplies the explicitly manufactured mortar profile. These delivered slices do not establish coverage of the remaining Goodwood roster or the entire map.
+
+Campaign combat adjudication, victory evaluation, return of ASL battle outcomes to the campaign, new ASL rules and other Situations remain outside this goal. Later Studio gameplay is stored by Studio; campaign export currently contains the initial handoff rather than subsequent game history. Keep that distinction explicit when verifying persistence.
+
+The sections below retain the original spatial, deterministic generation and storage contracts, initial milestone design, and dated implementation evidence. Original first-version scope statements describe the pilot baseline; the Goodwood completion criteria above govern the remaining work.
 
 ## Confirmed integration points
 
