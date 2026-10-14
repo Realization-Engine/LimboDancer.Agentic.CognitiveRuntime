@@ -82,3 +82,25 @@ Two Release tests pass with warnings treated as errors: a separate whole-map sca
 The opt-in `goodwood-situation-1` generator uses a separate pinned profile with ASL marsh code 14. All five source marsh regions retain their polygons. Exterior compilation-margin centers may have no source parent; they remain unowned, not playable source locations. Existing pilot versions 1 and 2 retain their original profile bytes, identities and rejection behavior. The campaign pilot default remains version 2 until the whole-Situation workflow is integrated.
 
 Three targeted Release tests pass: marsh features and tile-owned parent correspondence, version/profile isolation, and legacy deployment reload. No ASL movement or combat rules changed. Next: generate and publish every indexed package and record complete-map validation and performance.
+
+## G2 increment: complete package publication
+
+The CLI accepts `--situation` after the optional seed. It generates the coverage index, publishes each immutable package, then atomically publishes a content-addressed complete-set manifest. Cancellation can leave verified reusable packages, but cannot publish a partial set as complete. Reopening verifies the manifest identity, versions, coverage, ownership counts, feature packages, refinement metadata, catalog and compiled terrain hashes without procedural regeneration.
+
+Full run with seed `00112233445566778899aabbccddeeff` on 14 October 2026:
+
+| Measure | Result |
+| --- | ---: |
+| Packages | 84 |
+| Owned tactical centers | 37,788 |
+| Source parents represented | 1,038 |
+| Generation, publication and per-package verification | 29.87 seconds |
+| Complete-set reload and grid verification | 5.99 seconds |
+| Peak process working set | 439,574,528 bytes |
+| Stored output, including metadata | 47,040,289 bytes |
+
+The accepted set is `b6ec6fbf0b964264f3c15e0999c223a61458b63d27a4957f3f79e4ccd128d020`. All 1,094 repeated metric-feature occurrences across packages match exactly. The 1,128 unique features include 204 elevation polygons, 297 terrain areas, 374 road segments, 127 stream segments, 123 generated buildings and all three bridges. These checks establish shared source geometry, not yet raster seam or browser acceptance.
+
+All 89 Campaign Release tests pass, including cancellation after the first package and rejection of incomplete, incompatible and tampered set manifests. These are batch timings, not browser first-open timings. They exceed the original pilot targets when the entire Situation is processed synchronously. Load packages on demand in the remaining UI integration; do not advertise pilot timings for this full set.
+
+Remaining G2 acceptance: raster seam comparison, viewport-driven package inspection and retained outer-boundary presentation. G3 still requires the 83 remaining ground source counters and explicit off-map support records. No complete-transition claim is made yet.

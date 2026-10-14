@@ -3,9 +3,11 @@ using System.Text.Json;
 using LimboDancer.Campaign.Refinement;
 using LimboDancer.Domains.Asl.Maps.Rendering;
 
+var wholeSituation = args.LastOrDefault() == "--situation";
+if (wholeSituation) args = args[..^1];
 if (args.Length is < 2 or > 3)
 {
-    Console.Error.WriteLine("Usage: pilot <panzer-leader-05.json> <output-directory> [32-character-seed]");
+    Console.Error.WriteLine("Usage: pilot <panzer-leader-05.json> <output-directory> [32-character-seed] [--situation]");
     return 2;
 }
 try
@@ -23,6 +25,21 @@ try
         using var writer = new StreamWriter(file); writer.WriteLine(seed);
     }
     var watch = Stopwatch.StartNew();
+    if (wholeSituation)
+    {
+        var manifest = SituationPublisher.Publish(inputs, seed, output,
+            (done, total) => Console.WriteLine($"Published {done}/{total} packages."));
+        var generationSeconds = watch.Elapsed.TotalSeconds;
+        watch.Restart();
+        var accepted = SituationPublisher.Verify(inputs, manifest);
+        var reloadSeconds = watch.Elapsed.TotalSeconds;
+        using var process = Process.GetCurrentProcess();
+        Console.WriteLine(JsonSerializer.Serialize(new { Manifest = manifest, Packages = accepted.Packages.Length,
+            OwnedCells = accepted.Packages.Sum(p => p.OwnedCells), GenerationSeconds = generationSeconds,
+            ReloadVerificationSeconds = reloadSeconds, PeakWorkingSetBytes = process.PeakWorkingSet64,
+            StoredBytes = Directory.EnumerateFiles(output, "*", SearchOption.AllDirectories).Sum(f => new FileInfo(f).Length) }));
+        return 0;
+    }
     var result = new PilotGenerator(inputs).Generate(seed);
     var directory = PackagePublisher.Publish(result, inputs, output);
     var render = BoardRenderInput.Create(result.Package.Board, result.Package.Name, result.Grid, inputs.Catalog, result.Facts,
