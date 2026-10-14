@@ -134,3 +134,11 @@ Catalog 1.17.0 supplies twelve labeled MFG vehicle profiles. Every ground source
 All 24 source ground-type handoff/reload cases pass the existing ASL setup validator and event replay. Roster accounting verifies unique IDs, no missing definitions, exact crew/weapon counts and Sherman/Firefly quantities. Vehicles keep integrated crews and weapons without extra passenger or equipment counters. The selected-map UI uses one supported-type list for all ground formations. Older halftrack setup policy and identities are retained.
 
 This is complete ground conversion coverage, not full Situation completion. Off-map aircraft records, whole-Situation assembly, demand-loaded map UI, deployment preservation across packages and final browser/save acceptance still remain. The selected crop's bounded setup restrictions are not a substitute for validating a complete imported deployment.
+
+## G3 increment: complete source roster snapshot
+
+The versioned Situation roster accounts for all 122 source identities: 114 ground formations containing 624 ASL counters, plus eight individually identified off-map Typhoons. Aircraft availability (turn 1), the shared maximum of five concurrent aircraft, group and reference-only instructions come from the pinned source. These records do not invent ASL aircraft ground counters or air-combat rules.
+
+Roster reload validates source identity, composition policies, catalog references, complete aircraft membership and limits. Missing or altered records and future roster versions are rejected rather than silently reconstructed. Equipment operators remain linked within their source formation. This snapshot is a building block for whole-Situation deployment integration, not yet a browser save or full ASL handoff.
+
+Verification: all 115 Campaign regression tests passed, including full source accounting and roster serialization/rejection checks.

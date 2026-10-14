@@ -29,6 +29,7 @@ public sealed class PilotInputs
     public IReadOnlyList<SourceBridge> Bridges { get; }
     public IReadOnlyDictionary<string, string> RifleSides { get; }
     public IReadOnlyDictionary<string, string> FormationTypes { get; }
+    public SituationAirSupport AirSupport { get; }
     public const string MapSpace = "panzer-leader-05-joined-b-a-c";
     public const string GeneratorVersion = "goodwood-pilot-2";
     public const string SituationGeneratorVersion = "goodwood-situation-1";
@@ -71,6 +72,14 @@ public sealed class PilotInputs
             .ToDictionary(i => i.GetProperty("id").GetString()!, i => i.GetProperty("counterTypeId").GetString() == "uk-rifle" ? "Allied" : "German", StringComparer.Ordinal);
         FormationTypes = root.GetProperty("instances").EnumerateArray()
             .ToDictionary(i => i.GetProperty("id").GetString()!, i => i.GetProperty("counterTypeId").GetString()!, StringComparer.Ordinal);
+        var air = root.GetProperty("airSupport");
+        AirSupport = new(air.GetProperty("status").GetString()!, air.GetProperty("instructions").GetString()!,
+            air.GetProperty("maxConcurrentAircraft").GetInt32(),
+            air.GetProperty("groups").EnumerateArray().SelectMany(group =>
+                group.GetProperty("instanceIds").EnumerateArray().Select(id => new SituationAircraft(
+                    id.GetString()!, FormationTypes[id.GetString()!], "Allied",
+                    group.GetProperty("id").GetString()!, group.GetProperty("role").GetString()!,
+                    group.GetProperty("availableFromTurn").GetInt32()))).OrderBy(a => a.Id, StringComparer.Ordinal).ToArray());
         var illustration = root.GetProperty("illustration");
         var layouts = new Dictionary<string, (int Turn, double X, double Y)>(StringComparer.Ordinal);
         double ox = 0, oy = 0;
