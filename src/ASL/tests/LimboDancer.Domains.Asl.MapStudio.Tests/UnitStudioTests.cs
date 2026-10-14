@@ -183,7 +183,7 @@ public sealed class UnitStudioTests : IDisposable
                 "axis-minor-square-squad", "axis-minor-square-half-squad", "axis-minor-squad", "axis-minor-half-squad", "axis-minor-conscript-squad",
                 "axis-minor-conscript-half-squad", "axis-minor-leader-6-plus-1", "axis-minor-leader-7-0", "axis-minor-leader-8-0", "axis-minor-leader-8-1",
                 "axis-minor-leader-9-1", "axis-minor-leader-9-2", "axis-minor-leader-10-2", "axis-minor-leader-10-3", "axis-minor-hero",
-                "british-at-gun", "american-at-gun", "british-crew", "american-crew", "campaign-german-81mm-mortar", "campaign-british-25pdr", "campaign-german-75mm-at", "campaign-german-88mm-at", "campaign-german-20mm-aa", "campaign-german-quad20-aa", "campaign-german-nebelwerfer",
+                "british-at-gun", "american-at-gun", "british-crew", "american-crew", "campaign-german-81mm-mortar", "campaign-british-25pdr", "campaign-german-75mm-at", "campaign-german-88mm-at", "campaign-german-20mm-aa", "campaign-german-quad20-aa", "campaign-german-nebelwerfer", "campaign-british-sexton", "campaign-british-achilles", "campaign-british-cromwell", "campaign-british-sherman75", "campaign-british-firefly", "campaign-british-bren-carrier", "campaign-german-wespe", "campaign-german-maultier", "campaign-german-hummel", "campaign-german-pziv", "campaign-german-panther", "campaign-german-tiger",
             ],
             choices.Select(choice => choice.Definition.Definition));
         Assert.All(choices, choice =>
@@ -206,8 +206,8 @@ public sealed class UnitStudioTests : IDisposable
         Assert.Contains("Russian", lab.Find("#lab-name").TextContent, StringComparison.Ordinal);
         Assert.Contains("4-4-7", lab.Find("#lab-name").TextContent, StringComparison.Ordinal);
         var source = lab.Find("#lab-catalog-source");
-        Assert.Contains("asl-scenario-a1@1.16.0, definition defender-squad", source.TextContent, StringComparison.Ordinal);
-        Assert.StartsWith("asl-scenario-a1@1.16.0+sha256:", source.GetAttribute("title"), StringComparison.Ordinal);
+        Assert.Contains("asl-scenario-a1@1.17.0, definition defender-squad", source.TextContent, StringComparison.Ordinal);
+        Assert.StartsWith("asl-scenario-a1@1.17.0+sha256:", source.GetAttribute("title"), StringComparison.Ordinal);
         Assert.EndsWith("#defender-squad", source.GetAttribute("title"), StringComparison.Ordinal);
         Assert.DoesNotContain("The document is refused", lab.Markup, StringComparison.Ordinal);
         Assert.DoesNotContain("class=\"fail\"", lab.Find("#lab-findings").OuterHtml, StringComparison.Ordinal);

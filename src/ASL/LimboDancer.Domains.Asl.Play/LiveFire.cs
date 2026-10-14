@@ -47,7 +47,7 @@ public static class LiveFire
     }
 
     public const string Catalog = "asl-scenario-a1";
-    public const string CatalogVersion = "1.16.0";
+    public const string CatalogVersion = "1.17.0";
 
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);
 

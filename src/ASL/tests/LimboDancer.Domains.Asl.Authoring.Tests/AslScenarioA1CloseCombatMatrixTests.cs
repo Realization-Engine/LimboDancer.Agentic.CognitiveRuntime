@@ -10,7 +10,7 @@ namespace LimboDancer.Domains.Asl.Authoring.Tests;
 public sealed class AslScenarioA1CloseCombatMatrixTests
 {
     private const string SourceCommit = "a3254ff1d492dbdd28483d86f5b42437b48e80d4";
-    private const string MatrixSha256 = "609abe128b744aa6e45cc42d2bca1b3fe77cfe8254e47732e02d504a06926959";
+    private const string MatrixSha256 = "7dd98e2890df7e33fbdb47224bdf7c8ec2238cd5159e48d876666bef54c72054";
     private static readonly JsonSerializerOptions JsonOptions = new() { PropertyNameCaseInsensitive = true };
 
     private static string Registry(string name) => Path.Combine(RepositoryPaths.Root, "docs", "ASL", "SourceRegistry", name);

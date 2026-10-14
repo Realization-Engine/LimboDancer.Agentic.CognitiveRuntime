@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "catalog": "asl-scenario-a1",
-  "version": "1.16.0",
+  "version": "1.17.0",
   "label": "Scenario A1 catalog: Infantry Personnel, heroes, leaders, crews, MGs, light mortars, LATW, FT, DC, Guns, vehicles, and tanks, with Commissars and six more nationalities, for the reviewed Scenario A1 cases and the scenario cards",
   "vocabulary": ["asl@1.3.0"],
   "source": {
@@ -205,6 +205,18 @@
     {"id": "campaign-german-88mm-at", "counter": "campaign-german-88mm-at", "slots": []},
     {"id": "campaign-german-20mm-aa", "counter": "campaign-german-20mm-aa", "slots": []},
     {"id": "campaign-german-quad20-aa", "counter": "campaign-german-quad20-aa", "slots": []},
-    {"id": "campaign-german-nebelwerfer", "counter": "campaign-german-nebelwerfer", "slots": []}
+    {"id": "campaign-german-nebelwerfer", "counter": "campaign-german-nebelwerfer", "slots": []},
+    {"id": "campaign-british-sexton", "counter": "campaign-british-sexton", "slots": []},
+    {"id": "campaign-british-achilles", "counter": "campaign-british-achilles", "slots": []},
+    {"id": "campaign-british-cromwell", "counter": "campaign-british-cromwell", "slots": []},
+    {"id": "campaign-british-sherman75", "counter": "campaign-british-sherman75", "slots": []},
+    {"id": "campaign-british-firefly", "counter": "campaign-british-firefly", "slots": []},
+    {"id": "campaign-british-bren-carrier", "counter": "campaign-british-bren-carrier", "slots": []},
+    {"id": "campaign-german-wespe", "counter": "campaign-german-wespe", "slots": []},
+    {"id": "campaign-german-maultier", "counter": "campaign-german-maultier", "slots": []},
+    {"id": "campaign-german-hummel", "counter": "campaign-german-hummel", "slots": []},
+    {"id": "campaign-german-pziv", "counter": "campaign-german-pziv", "slots": []},
+    {"id": "campaign-german-panther", "counter": "campaign-german-panther", "slots": []},
+    {"id": "campaign-german-tiger", "counter": "campaign-german-tiger", "slots": []}
 ]
 }
