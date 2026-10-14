@@ -143,8 +143,8 @@
     const key='formation:'+selected,storage=embedded.aslStorage;
     AslPilot.open(d,s,{...storage,load:()=>storage.load(key),save:pilot=>storage.save(pilot,key)},{unitId:selected,anchor:placement.board+'/'+placement.hexId});
    });
-   selectedPilot.disabled=s.stage!=="ready"||!placement||!["uk-rifle","de-rifle","uk-engineer","de-81mm","de-halftrack","uk-25pdr","de-75mm","de-88mm","de-20mm","de-quad20","de-nebel"].includes(kind?.id);
-   selectedPilot.title=selectedPilot.disabled?"Complete setup and select a supported infantry, gun, mortar or halftrack counter":"Open ASL units at "+selected;
+   selectedPilot.disabled=s.stage!=="ready"||!placement||!AslPilot.supports(kind?.id);
+   selectedPilot.title=selectedPilot.disabled?"Complete setup and select a Goodwood ground counter":"Open ASL units at "+selected;
    top.append(selectedPilot);
   }
   window.CampaignMapToolbar?.mount(top);

@@ -19,6 +19,8 @@ READY = {"uk-25pdr": "campaign-british-25pdr + british-crew",
          "de-halftrack": "attacker-halftrack", "uk-rifle": "british-squad", "de-rifle": "attacker-squad",
          "uk-engineer": "british-elite-squad", "de-81mm": "campaign-german-81mm-mortar + attacker-crew"}
 
+READY.update({'uk-sexton': 'campaign-british-sexton', 'uk-achilles': 'campaign-british-achilles', 'uk-cromwell-goodwood': 'campaign-british-cromwell', 'uk-sherman': '3 campaign-british-sherman75 + 1 campaign-british-firefly', 'uk-bren': 'campaign-british-bren-carrier', 'de-wespe': 'campaign-german-wespe', 'de-maultier-goodwood': 'campaign-german-maultier', 'de-hummel': 'campaign-german-hummel', 'de-pziv-w': 'campaign-german-pziv', 'de-pziv': 'campaign-german-pziv', 'de-panther-w': 'campaign-german-panther', 'de-panther': 'campaign-german-panther', 'de-tiger': 'campaign-german-tiger'})
+
 def inventory():
     source = json.loads(SOURCE.read_text(encoding="utf-8"))
     composition = COMPOSITION.read_text(encoding="utf-8")

@@ -3,8 +3,8 @@
   "compositionSha256Lf": "e9d250c82bbb681f0852de7d50a03a54b3201367b109e53d8da730551202f701",
   "sourceCounters": 122,
   "counterTypes": 25,
-  "selectedPilotSourceCounters": 52,
-  "unconvertedGroundSourceCounters": 62,
+  "selectedPilotSourceCounters": 114,
+  "unconvertedGroundSourceCounters": 0,
   "offMapAircraft": 8,
   "sourceHexFragments": 1038,
   "terrain": {
@@ -76,8 +76,8 @@
       ],
       "principalObjectsPerFormation": 6,
       "compositionEvidence": "6 Sexton 25-pounder self-propelled howitzers, 6 machine guns; 51 personnel.",
-      "pilotDefinition": null,
-      "status": "conversion required"
+      "pilotDefinition": "campaign-british-sexton",
+      "status": "selected-formation implemented"
     },
     {
       "type": "uk-achilles",
@@ -89,8 +89,8 @@
       ],
       "principalObjectsPerFormation": 4,
       "compositionEvidence": "4 Achilles tank destroyers; table prints 76 mm; 4 machine guns, 20 personnel.",
-      "pilotDefinition": null,
-      "status": "conversion required"
+      "pilotDefinition": "campaign-british-achilles",
+      "status": "selected-formation implemented"
     },
     {
       "type": "uk-cromwell-goodwood",
@@ -104,8 +104,8 @@
       ],
       "principalObjectsPerFormation": 4,
       "compositionEvidence": "4 Cromwell tanks; 75 mm guns, 8 machine guns; 20 personnel.",
-      "pilotDefinition": null,
-      "status": "conversion required"
+      "pilotDefinition": "campaign-british-cromwell",
+      "status": "selected-formation implemented"
     },
     {
       "type": "uk-sherman",
@@ -135,8 +135,8 @@
       ],
       "principalObjectsPerFormation": 4,
       "compositionEvidence": "3 M4/75 Shermans and one M4A4 Sherman Firefly (76.2 mm); 8 machine guns; 20 personnel.",
-      "pilotDefinition": null,
-      "status": "conversion required"
+      "pilotDefinition": "3 campaign-british-sherman75 + 1 campaign-british-firefly",
+      "status": "selected-formation implemented"
     },
     {
       "type": "uk-typhoon-rockets",
@@ -179,8 +179,8 @@
       ],
       "principalObjectsPerFormation": 6,
       "compositionEvidence": "6 Bren carriers, 6 Bren guns; 12 personnel. MG-carrier label uses this carrier row.",
-      "pilotDefinition": null,
-      "status": "conversion required"
+      "pilotDefinition": "campaign-british-bren-carrier",
+      "status": "selected-formation implemented"
     },
     {
       "type": "de-rifle",
@@ -300,8 +300,8 @@
       ],
       "principalObjectsPerFormation": 6,
       "compositionEvidence": "6 Wespe 105 mm self-propelled howitzers; 125 personnel.",
-      "pilotDefinition": null,
-      "status": "conversion required"
+      "pilotDefinition": "campaign-german-wespe",
+      "status": "selected-formation implemented"
     },
     {
       "type": "de-maultier-goodwood",
@@ -312,8 +312,8 @@
       ],
       "principalObjectsPerFormation": 6,
       "compositionEvidence": "6 Maultier 150 mm self-propelled rocket launchers; 126 personnel.",
-      "pilotDefinition": null,
-      "status": "conversion required"
+      "pilotDefinition": "campaign-german-maultier",
+      "status": "selected-formation implemented"
     },
     {
       "type": "de-hummel",
@@ -324,8 +324,8 @@
       ],
       "principalObjectsPerFormation": 6,
       "compositionEvidence": "6 Hummel 150 mm self-propelled howitzers; 131 personnel.",
-      "pilotDefinition": null,
-      "status": "conversion required"
+      "pilotDefinition": "campaign-german-hummel",
+      "status": "selected-formation implemented"
     },
     {
       "type": "de-pziv-w",
@@ -337,8 +337,8 @@
       ],
       "principalObjectsPerFormation": 4,
       "compositionEvidence": "4 PzKw IV H tanks with 75 mm guns; 20 personnel. Original counter designation: PzKw IV (W).",
-      "pilotDefinition": null,
-      "status": "conversion required"
+      "pilotDefinition": "campaign-german-pziv",
+      "status": "selected-formation implemented"
     },
     {
       "type": "de-pziv",
@@ -351,8 +351,8 @@
       ],
       "principalObjectsPerFormation": 5,
       "compositionEvidence": "5 PzKw IV H tanks with 75 mm guns; 25 personnel. Original counter designation: PzKw IV (SS).",
-      "pilotDefinition": null,
-      "status": "conversion required"
+      "pilotDefinition": "campaign-german-pziv",
+      "status": "selected-formation implemented"
     },
     {
       "type": "de-panther-w",
@@ -365,8 +365,8 @@
       ],
       "principalObjectsPerFormation": 4,
       "compositionEvidence": "4 Panthers with 75 mm guns; 20 personnel. Original counter designation: PzKw V (W).",
-      "pilotDefinition": null,
-      "status": "conversion required"
+      "pilotDefinition": "campaign-german-panther",
+      "status": "selected-formation implemented"
     },
     {
       "type": "de-panther",
@@ -380,8 +380,8 @@
       ],
       "principalObjectsPerFormation": 5,
       "compositionEvidence": "5 Panthers with 75 mm guns; 25 personnel. Original counter designation: PzKw V (SS).",
-      "pilotDefinition": null,
-      "status": "conversion required"
+      "pilotDefinition": "campaign-german-panther",
+      "status": "selected-formation implemented"
     },
     {
       "type": "de-tiger",
@@ -394,8 +394,8 @@
       ],
       "principalObjectsPerFormation": 5,
       "compositionEvidence": "5 Tiger tanks of the designated model with 88 mm guns; 25 personnel.",
-      "pilotDefinition": null,
-      "status": "conversion required"
+      "pilotDefinition": "campaign-german-tiger",
+      "status": "selected-formation implemented"
     },
     {
       "type": "de-halftrack",

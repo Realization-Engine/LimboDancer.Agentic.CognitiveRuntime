@@ -16,6 +16,9 @@ public static class PilotCatalog
     public static DefinitionReference GameDefaultGun(string id, string side) =>
         Reviewed(id, "asl:gun", side == "Allied" ? "british" : "german", manufactured: true);
 
+    public static DefinitionReference GameDefaultVehicle(string id, string side) =>
+        Reviewed(id, "asl:vehicle", side == "Allied" ? "british" : "german", manufactured: true);
+
     public static DefinitionReference GermanHalftrack() => Reviewed("attacker-halftrack", "asl:vehicle", "german");
 
     public static DefinitionReference GermanCrew() => Reviewed("attacker-crew", "asl:crew", "german");

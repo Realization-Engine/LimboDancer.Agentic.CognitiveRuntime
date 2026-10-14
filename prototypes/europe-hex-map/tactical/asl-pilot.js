@@ -1,6 +1,8 @@
 "use strict";
 // The campaign supplies setup permissions. C# owns terrain, hit geometry and setup validation.
 window.AslPilot = (() => {
+ const supportedTypes=new Set(['uk-rifle', 'de-rifle', 'uk-engineer', 'de-81mm', 'de-halftrack', 'uk-25pdr', 'de-75mm', 'de-88mm', 'de-20mm', 'de-quad20', 'de-nebel', 'uk-sexton', 'uk-achilles', 'uk-cromwell-goodwood', 'uk-sherman', 'uk-bren', 'de-wespe', 'de-maultier-goodwood', 'de-hummel', 'de-pziv-w', 'de-pziv', 'de-panther-w', 'de-panther', 'de-tiger']);
+ const supports=type=>supportedTypes.has(type);
  const ns='http://www.w3.org/2000/svg';
  const el=(tag,text)=>{const n=document.createElement(tag);if(text!==undefined)n.textContent=text;return n;};
  async function api(path,body,method=body?'POST':'GET',timings){
@@ -34,7 +36,7 @@ window.AslPilot = (() => {
    if(formation){
     context.formation=formation;
     const unit=d.instances.find(i=>i.id===formation.unitId),type=d.counters.find(c=>c.id===unit?.counterTypeId);
-    if(!unit||!['uk-rifle','de-rifle','uk-engineer','de-81mm','de-halftrack','uk-25pdr','de-75mm','de-88mm','de-20mm','de-quad20','de-nebel'].includes(type?.id))throw Error('Select a deployed rifle, British engineer German 81 mm mortar or German halftrack formation.');
+    if(!unit||!supports(type?.id))throw Error('Select a deployed Goodwood ground formation; aircraft remain off-map support.');
     const refs=CampaignSupplyDeployment.refs(d,unit.id).map(r=>r.boardId+'/'+r.hexId).sort();
     context.alliedParents=type.side==='Allied'?refs:[];
     context.germanParents=type.side==='German'?refs:[];
@@ -65,7 +67,7 @@ window.AslPilot = (() => {
    const fit=button('Fit map',()=>{box=[0,0,view.width,view.height];applyBox();});
    const parent=el('input');parent.type='checkbox';const parentLabel=el('label');parentLabel.append(parent,document.createTextNode('Formation parents'));parent.onchange=draw;
    const details=el('details'),summary=el('summary','Details'),card=el('div');details.append(summary,card);details.className='asl-pilot-details';
-   for(const [heading,text] of [['Scope',formation?view.roster.length+' units from '+formation.unitId+' at '+formation.anchor+'. '+(view.roster.some(u=>u.kind==='gun')?'Each gun has a separate assigned crew. Profiles are labeled game defaults. Weapon quantities follow the source composition table; one crew per weapon is an explicit allotment. Initial facing is east for Allied guns and west for German guns, for review in ASL setup.':(['mortar','crew'].includes(view.roster[0].kind)?'Six mortars and six assigned crews have separate identities. Each pair moves together during setup. Mortars use explicitly manufactured game-default profiles. Their assigned crews and weapons are both included in ASL setup. Medium-mortar firing is not yet supported by the ASL engine.':view.roster[0].kind==='vehicle'?'Five SPW 251/1 halftracks retain their integrated crews and AAMGs. No extra passenger counters are issued. Initial facing is west, a game default to review in ASL setup.':view.roster[0].kind==='engineer'?'Four engineer squads are provisional. No assault-engineer traits or equipment allotment are inferred.':'Four rifle squads are provisional, not a verified historical personnel count.'))+' Setup stays within this formation hex.':'Eight infantry squads representing uk-rifle-01 and de-rifle-01. This crop is not the full Goodwood Situation.'],
+   for(const [heading,text] of [['Scope',formation?view.roster.length+' units from '+formation.unitId+' at '+formation.anchor+'. '+(view.roster.some(u=>u.kind==='gun')?'Each gun has a separate assigned crew. Profiles are labeled game defaults. Weapon quantities follow the source composition table; one crew per weapon is an explicit allotment. Initial facing is east for Allied guns and west for German guns, for review in ASL setup.':(['mortar','crew'].includes(view.roster[0].kind)?'Six mortars and six assigned crews have separate identities. Each pair moves together during setup. Mortars use explicitly manufactured game-default profiles. Their assigned crews and weapons are both included in ASL setup. Medium-mortar firing is not yet supported by the ASL engine.':view.roster[0].kind==='vehicle'?'Vehicle quantities and variants follow the source composition table, including three Sherman 75s and one Firefly per Sherman formation. Integrated crews and weapons do not create extra counters. Initial facing is east for Allied vehicles and west for German vehicles, for review in ASL setup.':view.roster[0].kind==='engineer'?'Four engineer squads are provisional. No assault-engineer traits or equipment allotment are inferred.':'Four rifle squads are provisional, not a verified historical personnel count.'))+' Setup stays within this formation hex.':'Eight infantry squads representing uk-rifle-01 and de-rifle-01. This crop is not the full Goodwood Situation.'],
     ['Setup','Campaign formation permissions include the current supply-margin exception. Two friendly personnel units per hex (pilot limit, not general ASL stacking). A manned gun or mortar shares its crew location and does not count as another personnel unit. Gun and mortar detachments require open ground or paved road. Vehicles require an unoccupied open-ground or paved-road hex. Ground locations at admitted base levels only; bridge decks, streams and the two-hex crop boundary are inspection-only.'],
     ['Terrain','ASL B10.1: ground level is read at the hex centre. Source levels 0-2 map to ASL levels as a scenario assumption, not measured heights. No cliffs are inferred. 40 m ASL spacing. Generated stone buildings are plausible detail, not historical footprints. ASL map facts drive the display and setup checks.'],
     ['Availability','Deployment and inspection only. Movement, LOS, combat and campaign outcome reconciliation are not implemented.'],
@@ -127,5 +129,5 @@ window.AslPilot = (() => {
    else if(pilot.setup)throw Error('ASL deployment is missing its accepted terrain package.');
   }
  }
- return {open,validateCampaign};
+ return {open,validateCampaign,supports};
 })();

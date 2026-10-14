@@ -19,6 +19,24 @@ public static class FormationDeployment
             ["de-nebel"] = (6, "German", "German Nebelwerfer", "campaign-german-nebelwerfer")
         };
 
+    private static readonly Dictionary<string, (int Count, string Side, string Label, string Definition)> Vehicles =
+        new(StringComparer.Ordinal)
+        {
+            ["uk-sexton"] = (6, "Allied", "Sexton", "campaign-british-sexton"),
+            ["uk-achilles"] = (4, "Allied", "Achilles", "campaign-british-achilles"),
+            ["uk-cromwell-goodwood"] = (4, "Allied", "Cromwell", "campaign-british-cromwell"),
+            ["uk-sherman"] = (4, "Allied", "Sherman 75", "campaign-british-sherman75"),
+            ["uk-bren"] = (6, "Allied", "Bren carrier", "campaign-british-bren-carrier"),
+            ["de-wespe"] = (6, "German", "Wespe", "campaign-german-wespe"),
+            ["de-maultier-goodwood"] = (6, "German", "Maultier", "campaign-german-maultier"),
+            ["de-hummel"] = (6, "German", "Hummel", "campaign-german-hummel"),
+            ["de-pziv-w"] = (4, "German", "Panzer IV H", "campaign-german-pziv"),
+            ["de-pziv"] = (5, "German", "Panzer IV H", "campaign-german-pziv"),
+            ["de-panther-w"] = (4, "German", "Panther", "campaign-german-panther"),
+            ["de-panther"] = (5, "German", "Panther", "campaign-german-panther"),
+            ["de-tiger"] = (5, "German", "Tiger", "campaign-german-tiger")
+        };
+
     public const string Policy = "goodwood-selected-rifle-1";
 
     public static Crop CropFor(PilotInputs inputs, FormationSelection selection)
@@ -41,6 +59,17 @@ public static class FormationDeployment
         if (selection is null || selection.UnitId is null ||
             !inputs.FormationTypes.TryGetValue(selection.UnitId, out var type))
             throw new InvalidDataException("Unknown Goodwood formation.");
+        if (Vehicles.TryGetValue(type, out var vehicle))
+            return Enumerable.Range(1, vehicle.Count).Select(i =>
+            {
+                var firefly = type == "uk-sherman" && i == 4;
+                return new PilotUnit(selection.UnitId + "/vehicle-" + i, selection.UnitId, vehicle.Side,
+                    (firefly ? "Sherman Firefly" : vehicle.Label) + " " + i, "vehicle", "V",
+                    PilotCatalog.GameDefaultVehicle(firefly ? "campaign-british-firefly" : vehicle.Definition, vehicle.Side),
+                    "Manufactured MFG vehicle profile, not historical data. Quantity follows the source composition table. Initial facing " +
+                    (vehicle.Side == "Allied" ? "east" : "west") + " is a game default for review in ASL setup.",
+                    AllotmentStatus: "Integrated crew and vehicle weapons remain vehicle capabilities. No extra crew, passenger or equipment counters are issued.");
+            }).ToArray();
         if (Guns.TryGetValue(type, out var gun))
             return Enumerable.Range(1, gun.Count).SelectMany(i => new PilotUnit[]
             {
@@ -60,7 +89,7 @@ public static class FormationDeployment
             "uk-engineer" => (4, "Allied", "British engineer squad ", "engineer", "E"),
             "de-halftrack" => (5, "German", "German SPW 251/1 ", "vehicle", "HT"),
             "de-81mm" => (6, "German", "German 81 mm mortar and crew ", "mortar", "M"),
-            _ => throw new InvalidDataException("Select a deployed rifle, British engineer German 81 mm mortar or German halftrack formation.")
+            _ => throw new InvalidDataException("Select a deployed Goodwood ground formation; aircraft remain off-map support.")
         };
         if (kind == "vehicle")
             return Enumerable.Range(1, count).Select(i => new PilotUnit(selection.UnitId + "/vehicle-" + i,
@@ -82,7 +111,8 @@ public static class FormationDeployment
 
     public static string PolicyFor(IReadOnlyList<PilotUnit> units) => units[0].Kind switch
     {
-        "vehicle" => "goodwood-selected-halftrack-1",
+        "vehicle" when units[0].Definition?.Definition == "attacker-halftrack" => "goodwood-selected-halftrack-1",
+        "vehicle" => "goodwood-selected-vehicle-1",
         "engineer" => "goodwood-selected-engineer-1",
         "crew" when units.Any(u => u.Kind == "gun") => "goodwood-selected-gun-1",
         "crew" => "goodwood-selected-mortar-2",

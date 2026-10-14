@@ -4,7 +4,7 @@ Baseline: 14 October 2026, following fe470551. This audit separates setup repres
 
 ## Source accounting
 
-The source has 122 counters in 25 types: 68 Allied and 54 German. Eight Allied Typhoons remain off-map support, leaving 114 ground formations. Eleven types covering 52 source counters have selected-formation ASL conversion. Another 62 ground counters require conversion. This is potential conversion coverage, not a claim that all 52 have been deployed or transferred.
+The source has 122 counters in 25 types: 68 Allied and 54 German. Eight Allied Typhoons remain off-map support, leaving 114 ground formations. All 24 ground types covering 114 source counters have selected-formation ASL conversion. No ground type lacks a selected-formation conversion. This is potential conversion coverage, not a claim that all 114 have been deployed or transferred.
 
 The adjacent JSON inventory enumerates every source instance and pins the source and composition files. Regenerate with `python src/Campaign/scripts/audit_goodwood.py`; verify with `--check`.
 
@@ -13,12 +13,12 @@ The adjacent JSON inventory enumerates every source instance and pins the source
 | uk-rifle | 12 | 4 squads (game default) | british-squad |
 | uk-engineer | 2 | 4 squads (game default) | british-elite-squad |
 | uk-25pdr | 3 | 6 | campaign-british-25pdr + british-crew |
-| uk-sexton | 3 | 6 | conversion required |
-| uk-achilles | 2 | 4 | conversion required |
-| uk-cromwell-goodwood | 4 | 4 | conversion required |
-| uk-sherman | 20 | 4 | conversion required |
+| uk-sexton | 3 | 6 | campaign-british-sexton |
+| uk-achilles | 2 | 4 | campaign-british-achilles |
+| uk-cromwell-goodwood | 4 | 4 | campaign-british-cromwell |
+| uk-sherman | 20 | 4 | 3 campaign-british-sherman75 + 1 campaign-british-firefly |
 | uk-typhoon-rockets | 8 | off-map | retain off-map air support |
-| uk-bren | 14 | 6 | conversion required |
+| uk-bren | 14 | 6 | campaign-british-bren-carrier |
 | de-rifle | 15 | 4 squads (game default) | attacker-squad |
 | de-75mm | 3 | 4 | campaign-german-75mm-at + attacker-crew |
 | de-88mm | 4 | 4 | campaign-german-88mm-at + attacker-crew |
@@ -26,14 +26,14 @@ The adjacent JSON inventory enumerates every source instance and pins the source
 | de-quad20 | 2 | 3 | campaign-german-quad20-aa + attacker-crew |
 | de-81mm | 2 | 6 | campaign-german-81mm-mortar + attacker-crew |
 | de-nebel | 2 | 6 | campaign-german-nebelwerfer + attacker-crew |
-| de-wespe | 2 | 6 | conversion required |
-| de-maultier-goodwood | 1 | 6 | conversion required |
-| de-hummel | 1 | 6 | conversion required |
-| de-pziv-w | 2 | 4 | conversion required |
-| de-pziv | 3 | 5 | conversion required |
-| de-panther-w | 3 | 4 | conversion required |
-| de-panther | 4 | 5 | conversion required |
-| de-tiger | 3 | 5 | conversion required |
+| de-wespe | 2 | 6 | campaign-german-wespe |
+| de-maultier-goodwood | 1 | 6 | campaign-german-maultier |
+| de-hummel | 1 | 6 | campaign-german-hummel |
+| de-pziv-w | 2 | 4 | campaign-german-pziv |
+| de-pziv | 3 | 5 | campaign-german-pziv |
+| de-panther-w | 3 | 4 | campaign-german-panther |
+| de-panther | 4 | 5 | campaign-german-panther |
+| de-tiger | 3 | 5 | campaign-german-tiger |
 | de-halftrack | 4 | 5 | attacker-halftrack |
 
 Principal object counts are existing composition evidence, not ASL catalog approval. Crew-served weapons require separate crew identities in addition to these counts. Integrated vehicle crews and machine guns must not become free extra infantry or equipment. The Sherman formation explicitly contains three 75 mm Shermans and one Firefly. Existing generic tank, halftrack and gun definitions are candidates only until their designation and properties match. Missing variants need labeled manufactured profiles in existing ASL kinds.
@@ -126,3 +126,11 @@ Gun/crew pairs move together during campaign setup and retain co-location throug
 The remaining 62 ground source counters are vehicles: British Sexton, Achilles, Cromwell, Sherman/Firefly and Bren carrier; German Wespe, Maultier, Hummel, Panzer IV, Panther and Tiger. These need twelve distinct game-default vehicle profiles, preserving the source's differing Wehrmacht/SS quantities without inventing a different vehicle model for those quantity variants. Eight Typhoons still need explicit retained off-map records in the complete handoff.
 
 Verification for the gun increment: 98 Campaign tests passed in the full run; the sole failure was the old assertion that the now-supported 75 mm formation must be rejected. That assertion was changed to an unknown source ID and its targeted rerun passed. The catalog/source, integrity-pin and Studio checks for catalog 1.16.0 also passed.
+
+## G3 increment: remaining vehicles
+
+Catalog 1.17.0 supplies twelve labeled MFG vehicle profiles. Every ground source type now has a selected-formation conversion. The 114 source ground counters produce 624 distinct child identities: 116 infantry squads, 94 crews, 94 manned weapons and 320 vehicles. Each of the twenty Sherman formations produces three Sherman 75s and one Firefly. German W variants retain four vehicles per formation and their SS counterparts five; parent identities retain the source affiliation.
+
+All 24 source ground-type handoff/reload cases pass the existing ASL setup validator and event replay. Roster accounting verifies unique IDs, no missing definitions, exact crew/weapon counts and Sherman/Firefly quantities. Vehicles keep integrated crews and weapons without extra passenger or equipment counters. The selected-map UI uses one supported-type list for all ground formations. Older halftrack setup policy and identities are retained.
+
+This is complete ground conversion coverage, not full Situation completion. Off-map aircraft records, whole-Situation assembly, demand-loaded map UI, deployment preservation across packages and final browser/save acceptance still remain. The selected crop's bounded setup restrictions are not a substitute for validating a complete imported deployment.

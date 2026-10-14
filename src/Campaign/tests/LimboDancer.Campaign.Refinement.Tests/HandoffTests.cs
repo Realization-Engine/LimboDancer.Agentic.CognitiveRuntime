@@ -24,6 +24,19 @@ public sealed class HandoffTests
     [InlineData("de-20mm-01", "C/Y-4", "German", 12, 0)]
     [InlineData("de-quad20-01", "C/Y-4", "German", 6, 0)]
     [InlineData("de-nebel-01", "C/Y-4", "German", 12, 0)]
+    [InlineData("uk-sexton-01", "B/M-6", "Allied", 6, 0)]
+    [InlineData("uk-achilles-01", "B/M-6", "Allied", 4, 0)]
+    [InlineData("uk-cromwell-goodwood-01", "B/M-6", "Allied", 4, 0)]
+    [InlineData("uk-sherman-01", "B/M-6", "Allied", 4, 0)]
+    [InlineData("uk-bren-01", "B/M-6", "Allied", 6, 0)]
+    [InlineData("de-wespe-01", "C/Y-4", "German", 6, 0)]
+    [InlineData("de-maultier-goodwood-01", "C/Y-4", "German", 6, 0)]
+    [InlineData("de-hummel-01", "C/Y-4", "German", 6, 0)]
+    [InlineData("de-pziv-w-01", "C/Y-4", "German", 4, 0)]
+    [InlineData("de-pziv-01", "C/Y-4", "German", 5, 0)]
+    [InlineData("de-panther-w-01", "C/Y-4", "German", 4, 0)]
+    [InlineData("de-panther-01", "C/Y-4", "German", 5, 0)]
+    [InlineData("de-tiger-01", "C/Y-4", "German", 5, 0)]
     [InlineData("de-halftrack-01", "C/Y-4", "German", 5, 0)]
     [InlineData("de-81mm-01", "C/Y-4", "German", 12, 0)]
     public async Task ExistingAslSetupPreservesDeployedIdentitiesAndRoundTrips(string id, string anchor, string side, int ready, int needsData)
@@ -59,7 +72,7 @@ public sealed class HandoffTests
         {
             var unit = d.Units.Single(u => PilotHandoffs.AslId(u.Id) == instance.Id);
             Assert.Equal(unit.Definition, instance.Definition);
-            if (unit.Kind == "vehicle") Assert.Equal(UnitFacing.West, Assert.IsType<MapPosition>(instance.Position).Facing);
+            if (unit.Kind == "vehicle") Assert.Equal(unit.Side == "Allied" ? UnitFacing.East : UnitFacing.West, Assert.IsType<MapPosition>(instance.Position).Facing);
             Assert.Equal(unit.Side.ToLowerInvariant(), instance.Side);
             Assert.Equal(unit.Id, handoff.Units.Single(r => r.AslId == instance.Id).Id);
             var at = Assert.IsType<MapPosition>(instance.Position).Location;

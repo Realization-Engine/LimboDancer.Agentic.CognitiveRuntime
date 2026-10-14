@@ -50,7 +50,7 @@ public sealed class FormationDeploymentTests
     [Fact]
     public void UnsupportedSelectionFailsBeforeGeneration()
     {
-        Assert.Throws<InvalidDataException>(() => FormationDeployment.CropFor(Inputs, new("uk-sherman-01", "A/X-6")));
+        Assert.Throws<InvalidDataException>(() => FormationDeployment.CropFor(Inputs, new("uk-typhoon-rockets-01", "A/X-6")));
         Assert.Throws<InvalidDataException>(() => FormationDeployment.CropFor(Inputs, new("uk-rifle-01", "A/unknown")));
         Assert.NotEqual(FormationDeployment.JobKey(Seed, new("uk-rifle-01", "A/X-6")),
             FormationDeployment.JobKey(Seed, new("uk-rifle-01", "A/W-6")));
