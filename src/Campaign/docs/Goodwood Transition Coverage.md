@@ -142,3 +142,9 @@ The versioned Situation roster accounts for all 122 source identities: 114 groun
 Roster reload validates source identity, composition policies, catalog references, complete aircraft membership and limits. Missing or altered records and future roster versions are rejected rather than silently reconstructed. Equipment operators remain linked within their source formation. This snapshot is a building block for whole-Situation deployment integration, not yet a browser save or full ASL handoff.
 
 Verification: all 115 Campaign regression tests passed, including full source accounting and roster serialization/rejection checks.
+
+## G4 increment: world placement addressing
+
+SituationAddresses provides one ASL board/hex address for each of the 37,788 owned cells. Tile compilation margins do not provide additional playable addresses. Existing accepted pilot placements can be translated through their original crop geometry into stable world column/row coordinates without auto-deployment or modification of the saved setup. Seed mismatches are rejected.
+
+Two acceptance tests cover round trips across every owned cell, margin rejection, and mortar/crew coordinate preservation through JSON reload. This establishes coordinate continuity only: destination terrain, complete roster setup legality and existing terrain-version compatibility still require validation before whole-Situation admission.
