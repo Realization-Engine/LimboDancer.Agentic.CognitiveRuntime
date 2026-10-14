@@ -1,5 +1,6 @@
 using System.Text.Json;
 using LimboDancer.Campaign.Refinement;
+using LimboDancer.Campaign.PilotHost;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Features;
 using LimboDancer.Domains.Asl.Maps.Geometry;
@@ -9,7 +10,7 @@ namespace LimboDancer.Campaign.Refinement.Tests;
 public sealed class SituationDeploymentTests
 {
     [Fact]
-    public void CompleteGroundRosterAssemblesDeterministicallyAndRetainsPositionsOnReview()
+    public async Task CompleteGroundRosterAssemblesDeterministicallyAndRetainsPositionsOnReview()
     {
         var inputs = new PilotInputs(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "goodwood.json")));
         const string seed = "00112233445566778899aabbccddeeff";
@@ -66,6 +67,12 @@ public sealed class SituationDeploymentTests
                 var crew = draft.Positions.Single(p => p.UnitId == weapon.Holding!.Holder);
                 Assert.Equal((crew.Column, crew.Row), (p.Column, p.Row));
             }
+            var handoff = await SituationHandoffs.Prepare(inputs, map, draft, "whole-goodwood-test");
+            Assert.Equal(fullBoard.Version, handoff.BoardVersion);
+            Assert.Equal(json, JsonSerializer.Serialize(handoff.Setup));
+            Assert.Equal(8, handoff.Roster.AirSupport.Aircraft.Length);
+            var restoredHandoff = JsonSerializer.Deserialize<SituationHandoff>(JsonSerializer.Serialize(handoff))!;
+            await StudioHandoffTests.AssertFullImport(restoredHandoff, Path.Combine(root, "studio"));
             // An anchor change produces review, never an automatic move of existing squads.
             var changed = formations.ToArray();
             changed[0] = changed[0] with { Anchor = open[200].Key };

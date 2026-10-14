@@ -72,11 +72,11 @@ public static class PilotHandoffs
             throw new InvalidDataException("Saved ASL handoff differs from this deployment or catalog. Prepare it again; campaign terrain and deployment are retained.");
     }
 
-    private sealed class PreparationClock : TimeProvider
+    internal sealed class PreparationClock : TimeProvider
     {
         public override DateTimeOffset GetUtcNow() => DateTimeOffset.UnixEpoch;
     }
-    private sealed class PreparationStore : IGameStore
+    internal sealed class PreparationStore : IGameStore
     {
         public GameRecord? Read(GameScope scope) => null;
         public IReadOnlyList<GameScope> List(Guid tenant) => [];

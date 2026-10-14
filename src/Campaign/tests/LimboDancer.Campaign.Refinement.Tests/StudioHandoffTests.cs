@@ -1,4 +1,5 @@
 using System.Text;
+using LimboDancer.Domains.Asl.Units.Catalog;
 using System.Text.Json;
 using LimboDancer.Campaign.PilotHost;
 using LimboDancer.Domains.Asl.Play;
@@ -81,6 +82,57 @@ public sealed class StudioHandoffTests
             Assert.Single(recoveryLive.Games());
         }
         finally { if (Directory.Exists(root)) Directory.Delete(root, true); }
+    }
+
+    internal static async Task AssertFullImport(SituationHandoff handoff, string root)
+    {
+        var context = SituationHandoffs.ContextJson(handoff);
+        var packet = new CampaignImportRequest(handoff.Board, handoff.Name, handoff.BoardVersion,
+            handoff.Features, handoff.GameRecord, context);
+        var options = new StudioOptions { BoardsRoot = Path.Combine(root, "boards"), CacheRoot = Path.Combine(root, "cache") };
+        var (importer, boards, live) = Services(options);
+        var imported = importer.Import(packet);
+        Assert.False(imported.Existing);
+        Assert.Equal(context, importer.ReadContext(imported.Game));
+        var history = live.History(imported.Game)!;
+        Assert.False(history.HasErrors, string.Join("; ", history.Diagnostics.Select(d => d.Message)));
+        var state = history.Current!;
+        Assert.Equal(530, state.Units.Count);
+        Assert.Equal(94, state.Equipment.Count);
+        var sourceUnits = handoff.Roster.Ground.SelectMany(f => f.Units).ToDictionary(u => PilotHandoffs.AslId(u.Id));
+        var sourcePositions = handoff.Setup.Positions.ToDictionary(p => p.UnitId);
+        var geometry = boards.LoadPackage(BoardRef.Parse(handoff.Board)).Package!.Model.Geometry;
+        void Position(string id, Position position, DefinitionReference? definition)
+        {
+            var source = sourceUnits[id];
+            Assert.Equal(source.Definition, definition);
+            var at = Assert.IsType<MapPosition>(position).Location;
+            var index = geometry.IndexOf(at.Hex);
+            var expected = sourcePositions[source.Id];
+            Assert.Equal((expected.Column, expected.Row),
+                (index.Column + SituationAslBoard.OriginColumn, index.Row + SituationAslBoard.OriginRow));
+        }
+        foreach (var unit in state.Units) Position(unit.Id, unit.Position, unit.Definition);
+        foreach (var weapon in state.Equipment)
+        {
+            Position(weapon.Id, weapon.Position, weapon.Definition);
+            Assert.Equal(PilotHandoffs.AslId(sourceUnits[weapon.Id].Holding!.Holder), weapon.Holding!.Holder);
+            Assert.Equal(Assert.IsType<MapPosition>(state.Units.Single(u => u.Id == weapon.Holding.Holder).Position).Location,
+                Assert.IsType<MapPosition>(weapon.Position).Location);
+        }
+        var scope = Assert.Single(live.Games());
+        var next = await live.Planner.PlanAsync(GameActions.AdvancePhase, JsonSerializer.SerializeToElement(new
+        { gameId = imported.Game, attemptId = "advance-full-import", expectedRevision = state.Revision }), LivePlay.Tenant, "studio-user");
+        Assert.True(next.CanCommit, string.Join("; ", next.Reasons));
+        Assert.Equal(AppendStatus.Committed, live.Store.Append(scope, "Operation Goodwood campaign setup", state.Revision, next.Events, live.Planner.Replay).Status);
+        var recorded = GameEventWriter.Write(scope, live.Store.Read(scope)!);
+        var (restarted, reloadedBoards, reloadedLive) = Services(options);
+        Assert.True(restarted.Import(packet).Existing);
+        Assert.Equal(recorded, GameEventWriter.Write(scope, reloadedLive.Store.Read(scope)!));
+        Assert.Equal(context, restarted.ReadContext(imported.Game));
+        Assert.Equal(handoff.BoardVersion, reloadedBoards.LoadPackage(BoardRef.Parse(handoff.Board)).Package!.Version);
+        Assert.Throws<InvalidDataException>(() => restarted.Import(packet with { CampaignContext = "{}" }));
+        Assert.Equal(context, restarted.ReadContext(imported.Game));
     }
 
     private static (CampaignImport Import, AuthoredBoardService Boards, LivePlay Live) Services(StudioOptions options)

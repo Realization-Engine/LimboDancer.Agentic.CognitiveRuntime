@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Features;
 using LimboDancer.Domains.Asl.Maps.Read;
@@ -7,7 +8,7 @@ using LimboDancer.Domains.Asl.Units.State;
 
 namespace LimboDancer.Domains.Asl.MapStudio.Services;
 
-public sealed record CampaignImportRequest(string Board, string Name, string Version, string Features, string GameRecord);
+public sealed record CampaignImportRequest(string Board, string Name, string Version, string Features, string GameRecord, string? CampaignContext = null);
 public sealed record CampaignImportResult(string Game, string Path, bool Existing);
 
 /// <summary>Imports a bounded setup without replacing a board or an existing game's progress.</summary>
@@ -19,6 +20,20 @@ public sealed class CampaignImport(AuthoredBoardService boards, LivePlay live, U
     {
         lock (gate)
         {
+            byte[]? contextBytes = null;
+            if (request.CampaignContext is { } context)
+            {
+                contextBytes = Encoding.UTF8.GetBytes(context);
+                if (contextBytes.Length > 2_000_000)
+                {
+                    throw new InvalidDataException("Campaign context is too large.");
+                }
+                using var document = JsonDocument.Parse(contextBytes);
+                if (document.RootElement.ValueKind != JsonValueKind.Object)
+                {
+                    throw new InvalidDataException("Campaign context must be a JSON object.");
+                }
+            }
             var board = BoardRef.Parse(request.Board);
             if (board.Kind != BoardRefKind.Authored)
             {
@@ -82,6 +97,11 @@ public sealed class CampaignImport(AuthoredBoardService boards, LivePlay live, U
                     throw new InvalidDataException("The ASL game identity already belongs to a different setup.");
                 }
             }
+            var contextPath = ContextPath(scope.Game);
+            if (File.Exists(contextPath) && (contextBytes is null || !File.ReadAllBytes(contextPath).AsSpan().SequenceEqual(contextBytes)))
+            {
+                throw new InvalidDataException("The ASL game already has different campaign context. It will not be replaced.");
+            }
             // Publish the complete package directory in one rename. A retry after game publication fails can reuse it.
             if (!boards.Exists(board))
             {
@@ -100,6 +120,34 @@ public sealed class CampaignImport(AuthoredBoardService boards, LivePlay live, U
                     }
                 }
             }
+            // Context is immutable, and may be reused after an interrupted game publication.
+            if (contextBytes is not null && !File.Exists(contextPath))
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(contextPath)!);
+                var stage = contextPath + ".stage-" + Guid.NewGuid().ToString("N");
+                try
+                {
+                    File.WriteAllBytes(stage, contextBytes);
+                    try
+                    {
+                        File.Move(stage, contextPath);
+                    }
+                    catch (IOException) when (File.Exists(contextPath))
+                    {
+                        if (!File.ReadAllBytes(contextPath).AsSpan().SequenceEqual(contextBytes))
+                        {
+                            throw;
+                        }
+                    }
+                }
+                finally
+                {
+                    if (File.Exists(stage))
+                    {
+                        File.Delete(stage);
+                    }
+                }
+            }
             if (existing is null)
             {
                 var result = live.Store.Append(scope, record.Label, 0, events, live.Planner.Replay);
@@ -111,4 +159,21 @@ public sealed class CampaignImport(AuthoredBoardService boards, LivePlay live, U
             return new(scope.Game, "/games/play?game=" + Uri.EscapeDataString(scope.Game), existing is not null);
         }
     }
+
+    public string? ReadContext(string game)
+    {
+        var path = ContextPath(game);
+        return File.Exists(path) ? File.ReadAllText(path, Encoding.UTF8) : null;
+    }
+
+    private string ContextPath(string game)
+    {
+        if (!game.StartsWith("campaign-", StringComparison.Ordinal) || game.Length > 100 ||
+            game.Any(c => !char.IsAsciiLetterOrDigit(c) && c != '-'))
+        {
+            throw new InvalidDataException("Invalid campaign game identity.");
+        }
+        return Path.Combine(boards.Boards.Root, ".campaign-contexts", game + ".json");
+    }
+
 }
