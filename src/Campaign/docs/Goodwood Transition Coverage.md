@@ -412,3 +412,12 @@ The restored complete-ASL dialog reported 114 formations, 624 counters, zero rev
 Independent file comparison found byte-identical board.json, features.json, campaign context, parent ownership metadata, playable footprint and 626-event game history between original and reconstructed stores. The history SHA-256 remains `155cd7bc7870ca1d2582534edf567dca4ea3df49e59e28fdfb9bee00e7d485aa`. This closes the full-map portable later-phase transfer check against empty service storage.
 
 Diagnostic new-service timings were compilation 1.632 seconds, derivation 1.897 seconds, validation 10.571 seconds, and subsequent warm-board history replay 0.587 seconds. Terrain/elevation layer requests took 7.716 / 7.560 seconds with shared work. These are stage diagnostics, not an end-to-end timing benchmark. Actual perimeter interaction, final deployment compatibility review and controlled performance/resource acceptance remain open.
+
+
+### Full-map typed-location compatibility
+
+Review during perimeter acceptance found that DisplayText.ReadPlace limited short input to two column letters and two row digits. Goodwood's assembled ASL map uses longer repeated-letter columns and three-digit rows. The parser now accepts the coordinate range supported by HexName, validates it through BoardLocation, normalizes lowercase published/authored identifiers, and reads the authored-board wording emitted by DisplayText.Place. Invalid names and ambiguous boardless input on several boards remain unaccepted.
+
+All 40 focused LocationWords tests passed with warnings treated as errors. The new full-map case round-trips every one of the 40,441 Goodwood geometry addresses in both single-board and multiple-board display forms; it also checks lowercase input, levels, authored-board words, malformed names and ambiguous board selection. The Goodwood inventory audit and diff whitespace checks passed.
+
+The live isolated game reopened after the service restart in Allied Movement Phase, retaining the previously accepted history. Browser automation entered a long destination, but the movement form did not enable reliably after field entry; live typed-input acceptance remains unresolved. No movement was confirmed. The earlier exterior A1 proposal was refused as a non-adjacent/unreadable Location, which alone does not isolate playable-footprint enforcement. No accepted counter is adjacent to the outer guard; an initial-setup copy is the next suitable actual-interface perimeter test.

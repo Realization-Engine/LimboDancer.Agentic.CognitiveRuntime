@@ -105,6 +105,27 @@ public sealed class LocationWordsTests : IDisposable
         Assert.All(locations, location => Assert.Equal(location, DisplayText.ReadPlace(DisplayText.Place(2, location), TwoBoards)));
     }
 
+    [Fact]
+    public void FullCampaignLatticeWordsRoundTripAndTypedAuthoredAddressesNormalize()
+    {
+        const string board = "ab-goodwood-full-test";
+        var geometry = LimboDancer.Domains.Asl.Maps.Geometry.BoardGeometry.Standard(209, 193);
+        foreach (var hex in geometry.Hexes())
+        {
+            var at = new BoardLocation(BoardRef.Parse(board), geometry.NameOf(hex), 0);
+            Assert.Equal(at.ToString(), DisplayText.ReadPlace(DisplayText.Place(1, at), [board]));
+            Assert.Equal(at.ToString(), DisplayText.ReadPlace(DisplayText.Place(2, at), [board, "bd01"]));
+        }
+
+        Assert.Equal($"{board}:CCCCCCC123:1", DisplayText.ReadPlace("[ccccccc123], level 1", [board]));
+        Assert.Equal($"{board}:CCCCCCC123:-1", DisplayText.ReadPlace("[CCCCCCC123] on ab-goodwood-full-test, cellar", [board, "bd01"]));
+        Assert.Equal($"{board}:CCCCCCC123:0", DisplayText.ReadPlace("AB-GOODWOOD-FULL-TEST:ccccccc123:0", [board]));
+        Assert.Equal("AB123", DisplayText.ReadPlace("AB123", [board]));
+        Assert.Equal("A0123", DisplayText.ReadPlace("A0123", [board]));
+        Assert.Equal("A10000", DisplayText.ReadPlace("A10000", [board]));
+        Assert.Equal("CCCCCCC123", DisplayText.ReadPlace("CCCCCCC123", [board, "bd01"]));
+    }
+
     private static LocationPicking Picking(string[] boards, params int[] levels)
     {
         var picking = new LocationPicking { Boards = () => boards, Levels = _ => levels };

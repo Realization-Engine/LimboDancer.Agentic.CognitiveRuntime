@@ -439,8 +439,8 @@ public static class DisplayText
             return typed;
         }
 
-        // The identifier typed in lower case ("bd01:g4:1").
-        var whole = System.Text.RegularExpressions.Regex.Match(typed, @"^(bd\w+):([A-Za-z]{1,2}\d{1,2}):(-?\d)$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+        // Identifiers may name published or authored boards and the larger campaign lattice.
+        var whole = System.Text.RegularExpressions.Regex.Match(typed, @"^([A-Za-z0-9-]+):([A-Za-z]+\d{1,4}):(-?\d{1,2}(?:/[0-5])?)$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         if (whole.Success && $"{whole.Groups[1].Value.ToLowerInvariant()}:{whole.Groups[2].Value.ToUpperInvariant()}:{whole.Groups[3].Value}" is var canonical && BoardLocation.TryParse(canonical, out _))
         {
             return canonical;
@@ -448,7 +448,7 @@ public static class DisplayText
 
         // "G4", "G4:1", "G4 1", "G4 level 1", "G4, level 1", "G4 cellar", each with "on board 01" after the hex.
         var match = System.Text.RegularExpressions.Regex.Match(typed,
-            @"^([A-Za-z]{1,2}\d{1,2})(?:\s+on\s+board\s+(\w+))?(?:\s*(?::|,?\s*level\s|\s)\s*(-?\d)|\s*,?\s*(cellar))?$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+            @"^([A-Za-z]+\d{1,4})(?:\s+on\s+(?:board\s+)?([A-Za-z0-9-]+))?(?:\s*(?::|,?\s*level\s|\s)\s*(-?\d{1,2})|\s*,?\s*(cellar))?$", System.Text.RegularExpressions.RegexOptions.IgnoreCase);
         if (!match.Success)
         {
             return typed;
