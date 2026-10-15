@@ -52,7 +52,7 @@ function viewportFixture(factory = create, viewKey) {
     // Pass 31c (design D16): the viewport reads the host's data-view-key for the view it keeps; a host with none keeps no view.
     const host = { replaceChildren() {}, addEventListener() {}, focus() {}, removeEventListener() {}, classList: { toggle() {} }, dataset: { viewKey } };
     const viewport = factory(host, { invokeMethodAsync(...args) { calls.push(args); } });
-    return { viewport, svg, handlers, calls };
+    return { viewport, svg, handlers, calls, host };
 }
 
 const unitHit = { closest() { return { getAttribute() { return "demo-a"; } }; } };
@@ -152,4 +152,40 @@ test("damaged saved views are ignored and blocked storage keeps map controls wor
     await another.viewport.load("render/board/v1/exact", "", "0 0 100 100", [], []);
     assert.equal(another.svg.attributes.viewBox, zoomed);
     delete globalThis.localStorage;
+});
+
+
+test("optional scene timing waits for counters and paint opportunities and ignores superseded loads", async () => {
+    const previousLocation = globalThis.location;
+    const previousFrame = globalThis.requestAnimationFrame;
+    const frames = [];
+    globalThis.location = { search: "?mapMetrics=1" };
+    globalThis.requestAnimationFrame = callback => frames.push(callback);
+    try {
+        const { viewport, host } = viewportFixture();
+        await viewport.load("render/board/v1/exact", "", "0 0 100 100", ["grid"], ["grid"]);
+        assert.equal(host.dataset.mapMetricStatus, "loading");
+        viewport.setUnits('<g id="layer-units" data-face-size="35"/>');
+        assert.equal(host.dataset.mapMetricStatus, "loading");
+        frames.shift()();
+        assert.equal(host.dataset.mapMetricStatus, "loading");
+        frames.shift()();
+        assert.equal(host.dataset.mapMetricStatus, "ready");
+        assert.ok(Number(host.dataset.mapSceneLoadMs) >= 0);
+        assert.ok(Number(host.dataset.mapNavigationToSceneMs) >= Number(host.dataset.mapSceneLoadMs));
+        await viewport.load("render/board/v2/exact", "", "0 0 100 100", [], []);
+        viewport.setUnits('<g id="layer-units" data-face-size="35"/>');
+        await viewport.load("render/board/v3/exact", "", "0 0 100 100", [], []);
+        frames.shift()();
+        frames.shift()();
+        assert.equal(host.dataset.mapMetricStatus, "loading");
+        globalThis.location = { search: "" };
+        const ordinary = viewportFixture();
+        await ordinary.viewport.load("render/board/v1/exact", "", "0 0 100 100", [], []);
+        ordinary.viewport.setUnits('<g id="layer-units" data-face-size="35"/>');
+        assert.equal(ordinary.host.dataset.mapMetricStatus, undefined);
+    } finally {
+        globalThis.location = previousLocation;
+        globalThis.requestAnimationFrame = previousFrame;
+    }
 });

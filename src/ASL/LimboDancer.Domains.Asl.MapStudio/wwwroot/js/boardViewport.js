@@ -243,6 +243,9 @@ async function fetchGroups(baseUrl, query, layers) {
 
 async function load(state, baseUrl, query, viewBox, layers, visible) {
     const generation = ++state.generation;
+    state.loadMetrics = new URLSearchParams(globalThis.location?.search ?? "").get("mapMetrics") === "1"
+        ? { generation, started: performance.now(), reported: false } : null;
+    if (state.loadMetrics) state.host.dataset.mapMetricStatus = "loading";
     const groups = await fetchGroups(baseUrl, query, layers);
     if (generation !== state.generation) {
         return;
@@ -576,6 +579,22 @@ function setUnits(state, markup) {
     }
 
     updateUnitTier(state);
+    reportMeasuredScene(state);
+}
+
+// Optional development diagnostics. The scene includes terrain and counters; two animation frames
+// allow a paint opportunity. This is not a GPU completion or continuous-interactivity measurement.
+function reportMeasuredScene(state) {
+    const metric = state.loadMetrics;
+    if (!metric || metric.reported) return;
+    metric.reported = true;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (metric.generation !== state.generation) return;
+        const now = performance.now();
+        state.host.dataset.mapSceneLoadMs = (now - metric.started).toFixed(2);
+        state.host.dataset.mapNavigationToSceneMs = now.toFixed(2);
+        state.host.dataset.mapMetricStatus = "ready";
+    }));
 }
 
 // Unit detail tiers (Unit Display Design, section 7.1): the overlay carries every tier, and zoom picks one from the

@@ -452,3 +452,28 @@ The complete terrain/deployment/handoff/Studio integration test now swaps eight 
 The adjusted full 624-counter deployment is then prepared through the existing ASL planner and passed to the real Studio import/restart/repeated-import acceptance helper, preserving identities, catalog references, positions, all weapon/crew links, campaign context, ownership and the playable footprint. The full test passed in 3 minutes 10 seconds. This is combined integration duration, not generation or browser-opening latency.
 
 Together with the nine selected earlier-save/catalog/equipment compatibility cases and the actual original-save gap recovery/portable transfer evidence, this closes the identified manual-deployment compatibility gap for the Goodwood transition. Arbitrary invalid retained edits still produce review without relocation. Final controlled performance/resource measurements and the consolidated release audit remain open.
+
+
+### Controlled full-Situation generation and browser scene measurements
+
+Release build, Windows 10 Pro for Workstations, Xeon W-10885M (16 logical processors), 133,840,972 KiB visible memory; SDK 11.0.100-rc.2.26504.105 targeting net10.0. No integration test ran during these measurements; OS and browser caches were not flushed. One fresh CLI process generated the accepted seed `dccee2730588257b5ba1eb135b1824fd` into a previously nonexistent output directory.
+
+| Measure | Result | Boundary |
+| --- | ---: | --- |
+| Generate and publish all 84 packages | 29.2902 s | Includes per-package verification, excludes process startup |
+| Complete-set reload verification | 7.3543 s | Same process after generation; verifies package/grid content |
+| Generation process peak working set | 489,521,152 bytes | OS process peak, not cumulative allocation |
+| Stored terrain output | 47,062,261 bytes | Includes manifest and metadata; excludes Studio caches |
+| Fresh-service navigation to handover scene | 21.3671 s | Existing browser cache, accepted full map, terrain and counters attached plus two animation frames |
+| Warm navigation to handover scene, three runs | 4.4303 / 4.2103 / 3.9663 s | Same service and browser cache; full page reloads |
+| Warm scene-load stage, same runs | 2.7142 / 2.7894 / 2.6611 s | Viewport layer request through counter attachment and two animation frames |
+| Allied scene after side confirmation | 4.5150 s | Viewport stage only; human/tool delay excluded |
+| Studio peak working set after first scene | 1,806,462,976 bytes | Fresh process; browser/GPU memory excluded |
+| Complete portable campaign export | 32,770,026 bytes | Campaign plus terrain, deployment and 626 ASL events |
+| Assembled ASL board package | 646,559 bytes | board.json plus features.json |
+
+Fresh package versions, grid/refinement hashes, ownership counts and world identity exactly match the accepted terrain set. Fresh-service logs separately measured compilation 1.4355 s, derivation 2.0634 s, validation 9.3214 s and history replay including board load 14.3163 s. Do not add overlapping stages or compare a warm client cache with a fully cold browser.
+
+Opt-in `mapMetrics=1` records scene-load and navigation-relative durations on the board host's data attributes. It reports only after counters are attached and two animation frames have occurred, and ignores superseded loads. Eight viewport JavaScript tests passed. Two frames allow a paint opportunity, not proof of GPU completion or continuous responsiveness. Browser observation calls sometimes timed out while drawing; values were recovered from the same completed tab, without restarting the measured service. Allied navigation-relative timing includes the side-choice pause and was deliberately omitted. Raw browser results: goodwood-browser-metrics.json.
+
+These complete-map timings exceed the earlier bounded-pilot 10-second generation and 2-second reload proposals. No full-map performance pass is claimed. Separate current handoff timing, remaining practical rendering improvements and the final release audit remain open.
