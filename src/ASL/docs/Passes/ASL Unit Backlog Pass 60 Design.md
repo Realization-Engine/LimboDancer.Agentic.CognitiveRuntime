@@ -267,3 +267,36 @@ Board 3, the attacker in [F9], the AFV in [F10] facing south-east, scripted dice
 | `p60-dc-afv` | A German DC thrown at a BU T-34: Position 4, +2 thrown, -1 hull rear, Final 5, the Aerial AF 3; TK# 16 +1 rear -3 = 14; DR 5 burns it; the thrower's own Location at +3 on its own DR, a 1MC and a pin. Recorded. |
 
 Run by the agent: Rules, the pass 60 class 40 passed and the fire and ordnance classes 202; Play, 190; MapStudio, 45; after the last edit, Play 101 and Rules 55, all passed.
+
+## 11. Guns as targets, and Random SW and Gun Destruction: 60.5 (increment 2e)
+
+Built on 2026-10-15 in one commit (24620722) by a building agent to a brief (`brief_2e.md`), its diff read and its games played in the Studio by the session. AP, HEAT, and an ATR at a Gun (C11.52, C13.23) were built in 2a, and a mortar's hit on a Gun with the gunshield's +1 in 2c.
+
+### 11.1 Departures from the frame, first
+
+Each decided under the user's word of 2026-10-15; each gets a backlog row.
+
+- **No Gun is Emplaced on a paved road or a bridge: not built.** The map marks both, but the ordnance record's check recomputes Emplacement from the state, which has no map; the bar needs a recorded map fact.
+- **An unattended Gun on the Area Target Type: not built.** The Area calculator judges unit by unit and has no place for a Gun with no crew; a mortar's shot at one stays `target-outside`. The Infantry Target Type is built.
+- **An OVR's KIA makes no A9.74 dr at all.** The frame put only the OVR's -1 and its end-of-MPh check in the backlog; A9.74 without the -1 would be wrong for a fully-tracked AFV, so the fact is left off OVR attacks.
+- **A DC at a manned Gun** reads the Gun's fate from the result its manning unit's group took; C11.4's Random Selection with the Gun counted among the targets is not modelled.
+- **A Critical Hit on an unattended Gun destroys it with no IFT DR.**
+- **The test of a non-crew manning ending Emplacement is a Play test,** since the rule lives in the projector's state and in `LiveOrdnance.Emplaced`.
+- **For the reviews (hidden information):** the weapons a target holds ride in the fire facts. They are withheld with the record where it hides identity, but a pending choice's resume, which both sides read, and an ordnance shot's `hit.targets` can name a concealed unit's SW; those records already named the unit.
+
+**What a DC did to a Gun before the pass:** it attacked the crew on the IFT and never the Gun; a crew eliminated left the Gun intact.
+
+### 11.2 What is built
+
+`ScenarioA1GunDestruction` holds C11.6 by column (ordnance, small arms, DC) and A9.74's dr. The fire calculator keeps each target's result and column and, for each unit `eliminated-kia`, rolls each held SW's and Gun's dr (`weaponDestruction:<id>`); the Gun an ordnance hit targets is left to C11.4. The planner writes the weapon's `instance-eliminated` or malfunction before the unit's own events, so it is gone before the projector drops what the unit held. `GamePlanner.UnattendedGunAt` gives the Infantry Target Type an unmanned Gun; `GameState.NonCrewMannedGuns` ends a Gun's Emplacement once a non-crew unit mans it. The record lists each dr (`ul.fire-weapon-destruction`) and a Gun's fate ("a Direct Hit, destroyed (C11.4)"), which older games now show too.
+
+**New in a record:** `randomDestruction` on a fire attack and an ordnance shot, taken from the record (absent: no dr, as before); `heldWeapons` on a target and the rolls `weaponDestruction:<id>`, read only with the fact; `weaponDestruction` in the resolution. `AnOlderRecordOfAKiaOnASquadHoldingALmgReplaysAsItWas` strips the fact from a recorded KIA and replays it with the LMG dropped intact.
+
+### 11.3 The games and the tests
+
+| Game | What it shows |
+|---|---|
+| `p60-random-sw` | Two Russian squads in [D9] at a German squad holding a LMG in [D10]: 16 FP, DR 3, a 1KIA; the LMG's dr 3 on the 16 column is a KIA, and the LMG is destroyed before the squad is eliminated. Recorded. |
+| `p60-unattended` | A German INF Gun at an unattended Russian 45L in [D10]: the target list offers the Location; Case P on the To Hit DR; the 12 FP column on 1,2 is a K/3: the Gun malfunctions. Recorded. |
+
+Run by the agent: Rules, the pass 60 class 46 passed and the fire, ordnance, and older classes 334 of 335 (the one its own new test, corrected and run again); Play, 307; Units whole, 416; MapStudio, 33.

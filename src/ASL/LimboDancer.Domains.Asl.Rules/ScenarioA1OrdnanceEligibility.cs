@@ -174,6 +174,25 @@ public static class ScenarioA1OrdnanceEligibility
         abandoned ? $"play.ordnance-abandoned: {tank} is Abandoned, and its MA has no crew to fire it (D5.41)" : null;
 
     /// <summary>
+    /// Why a MG is not fired as ordnance (A9.61, p. 64; pass 60, ruling R60.19): only predesignated at a named AFV, and not by a squad barred from a SW
+    /// (<paramref name="squadRefusal"/>, A7.351), so that it fires alone. Null when it may.
+    /// </summary>
+    public static string? MachineGunRefusal(string mg, bool vehicleNamed, Func<string?> squadRefusal)
+    {
+        ArgumentNullException.ThrowIfNull(squadRefusal);
+        return !vehicleNamed
+            ? $"play.mg-to-kill: {mg} fires as ordnance only in a To Kill attack predesignated at a named AFV; at Infantry it fires on the IFT from the fire panel (A9.61)"
+            : squadRefusal();
+    }
+
+    /// <summary>
+    /// D7.21 (p. 207; pass 60, ruling R60.20): a unit that made CC Reaction Fire, and every SW and Gun it possesses, are marked with a CC counter "to
+    /// prohibit non-CC Reaction Fire attacks": no shot by a marked weapon or firer at the vehicle in its own Location. Null when none is marked.
+    /// </summary>
+    public static string? CcCounterRefusal(string firer, bool marked, bool atOwnLocation) =>
+        marked && atOwnLocation ? $"play.ordnance-cc-counter: {firer} is under a CC counter after CC Reaction Fire and makes no Non-CC Reaction Fire at the vehicle (D7.21)" : null;
+
+    /// <summary>
     /// Why a light mortar's possessor does not fire it (C9.2, A4.41; rulings R9.2): not in the AFPh after it moved, nor by a squad barred from a
     /// SW (<paramref name="squadRefusal"/>, read only when the mortar did not move). Null when it may.
     /// </summary>

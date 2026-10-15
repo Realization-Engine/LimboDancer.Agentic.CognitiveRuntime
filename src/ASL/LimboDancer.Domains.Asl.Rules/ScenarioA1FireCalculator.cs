@@ -987,9 +987,11 @@ public static class ScenarioA1FireCalculator
         // D1.81, D1.82, D3.5 (pp. 195, 200; pass 50): the BMG and CMG it names, each printed on the counter, working, and named once. A BMG fires
         // only inside the VCA; a CMG's turret turns for the shot (D3.52), but never in Bounding First Fire (C5.13: "must always fire within its
         // current CA"); the CMG of a CE tank with a RST or 1MT turret does not fire (D1.321, D1.322). Neither needs a CE crew (D1.83).
+        // D1.3, D1.83 (pass 60): the MA that is a MG: the AAMG, fired CE, or a plain MG (the Bren Carrier's, with its nationality's LMG FP).
         var named = vehicle.Weapons is { Count: > 0 } list ? list : null;
         var weaponsOutside = named is null
-            ? definition is not { IsVehicle: true, MainArmament: "aamg", AntiAircraftMg: not null } || vehicle.CrewExposed != true || vehicle.Malfunctioned == true
+            ? definition is not { IsVehicle: true } || ScenarioA1MachineGunKill.MainArmamentFirepower(reference, definition) is null
+                || (definition.MainArmament == "aamg" && vehicle.CrewExposed != true) || vehicle.Malfunctioned == true
             : definition is not { IsVehicle: true } || named.Select(item => item.Weapon).Distinct(StringComparer.Ordinal).Count() != named.Count
                 || named.Any(item => VehicleWeaponFp(definition, item.Weapon) is null || item.Malfunctioned == true
                     || (item.Weapon == FireVehicleWeapon.CoaxialMg && definition.TurretBarredWhileCe(vehicle.CrewExposed))
@@ -3243,7 +3245,7 @@ public static class ScenarioA1FireCalculator
             }
 
             // D1.8 (pass 50): the BMG's or the CMG's own FP when the attack names it, under the vehicle's id and the weapon's name ("de-tank BMG").
-            var printed = mg is null ? definition.AntiAircraftMg!.Value : VehicleWeaponFp(definition, mg)!.Value;
+            var printed = mg is null ? ScenarioA1MachineGunKill.MainArmamentFirepower(reference, definition)!.Value : VehicleWeaponFp(definition, mg)!.Value;
             return new FirerFirepower(mg is null ? vehicle.VehicleId! : vehicle.VehicleId + " " + mg.ToUpperInvariant(), printed, multipliers,
                 multipliers.Aggregate((decimal)printed, (value, item) => value * item.Value));
         }

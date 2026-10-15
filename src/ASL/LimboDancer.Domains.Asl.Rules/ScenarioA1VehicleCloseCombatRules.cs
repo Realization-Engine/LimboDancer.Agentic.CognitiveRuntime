@@ -262,6 +262,12 @@ public static class ScenarioA1VehicleCloseCombatRules
         return conditions;
     }
 
+    /// <summary>
+    /// D7.21 (p. 207; pass 60, ruling R60.20): "that DEFENDER and all of its possessed SW ... and Guns are marked with a CC counter, if the vehicle has
+    /// survived, to prohibit non-CC Reaction Fire attacks": the conditions of each SW and Gun of a marked attacker.
+    /// </summary>
+    public static IReadOnlyList<(UnitCondition Condition, bool Value)> ReactionWeaponConditions(bool destroyed) => destroyed ? [] : [(UnitCondition.CcReaction, true)];
+
     /// <summary>A11.6: the PAATC sentence of the attack's words.</summary>
     public static string PaatcText(IReadOnlyList<string> testing)
     {

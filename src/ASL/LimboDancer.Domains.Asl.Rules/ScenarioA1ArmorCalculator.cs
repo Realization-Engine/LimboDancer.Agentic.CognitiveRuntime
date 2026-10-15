@@ -244,6 +244,18 @@ internal static class ScenarioA1ArmorCalculator
         var armored = !armor.Unarmored && armor.FrontAf is not null;
         var latw = gun.GunType == "latw";
 
+        // A9.6, A9.61 (p. 64; pass 60, ruling R60.19): a MG's To Kill attack is made at an AFV; an unarmored vehicle is attacked on the IFT's
+        // Vehicle line, by fire, not as ordnance.
+        if (gun.GunType == ScenarioA1MachineGunKill.GunType)
+        {
+            if (!armored)
+            {
+                outside.Add(Prefix + "mg-unarmored-target");
+            }
+
+            return;
+        }
+
         // C13.3, C13.34, C8.31 (ruling R9.8): a PF fires HEAT only at an AFV; its other targets need HE Equivalency, not built. Pass 9b: a PSK fires
         // HEAT and an ATR AP at any vehicle (C13.43, C13.2).
         if (latw && (gun.LatwType switch
@@ -302,13 +314,16 @@ internal static class ScenarioA1ArmorCalculator
         var pf = gun.LatwType == "pf";
 
         // Pass 9b: a PSK reads its own To Hit Table (C13.48); an ATR the black Vehicle row whatever its nationality (C13.2).
-        if (gun.LatwType == "atr")
+        // A9.6 (p. 64; pass 60): "A non-captured MG To Hit DR always uses the black To Hit numbers regardless of nationality when firing as
+        // ordnance"; a MG is no Gun of a size, so the C4 modifications are not read for it.
+        var machineGun = gun.GunType == ScenarioA1MachineGunKill.GunType;
+        if (gun.LatwType == "atr" || machineGun)
         {
             color = "black";
         }
 
         var basic = pf ? 10 : gun.ToHitTable.Count > 0 ? gun.ToHitTable[range - 1] : reference.Armor.BasicToHit(color, column);
-        var modifications = pf ? [new FireModifier("pf-range", -2 * range, "C13.33")] : gun.ToHitTable.Count > 0 ? [] : reference.Modifications(gun, range).ToList();
+        var modifications = pf ? [new FireModifier("pf-range", -2 * range, "C13.33")] : gun.ToHitTable.Count > 0 || machineGun ? [] : reference.Modifications(gun, range).ToList();
         // C4.3 (p. 171): "the Basic TH# of any shot using APCR/APDS is lessened by one for every 12 hexes (or fraction thereof) beyond 12 hex range".
         if (ammunition is "apcr" or "apds" && reference.Armor.ApcrToHit(column) is var apcr && apcr != 0)
         {
@@ -491,8 +506,9 @@ internal static class ScenarioA1ArmorCalculator
                 subsequent = dr;
             }
 
+            // A9.61, C3.8 (pass 60): a MG scores no Critical Hit.
             isHit = subsequent is >= 1 and <= 3;
-            critical = subsequent == 1;
+            critical = subsequent == 1 && !machineGun;
         }
         else
         {
@@ -500,7 +516,7 @@ internal static class ScenarioA1ArmorCalculator
             // subsequent dr of 1 (a 2 to 6 is a normal hull hit).
             isHit = final <= modified;
             critical = false;
-            if (isHit && original == 2)
+            if (isHit && original == 2 && !machineGun)
             {
                 if (lowest == modified)
                 {
@@ -600,8 +616,8 @@ internal static class ScenarioA1ArmorCalculator
 
         // C6.5: the shot acquires the target's Location, one step more if already acquired, unless the Gun malfunctions; a concealed vehicle
         // is acquired only when the shot costs it its "?" (the game decides that, R6.7).
-        // C6.5 (the chart's G): a non-mortar SW acquires nothing.
-        var acquires = !malfunctioned && target.Concealed != true && !latw;
+        // C6.5 (the chart's G): a non-mortar SW acquires nothing; nor does a MG fired as ordnance, a vehicle's MA MG included (pass 60).
+        var acquires = !malfunctioned && target.Concealed != true && !latw && !machineGun;
         var acquisition = !acquires ? 0 : Math.Max((ScenarioA1OrdnanceCalculator.AcquisitionDenied(shot) ? 0 : shot.Acquisition!.Value) - 1, -2);
         var gunEffect = new OrdnanceGunEffect(ScenarioA1OrdnanceCalculator.Breakdown(shot, gun, reference), malfunctioned, Math.Max(rof, 0), kept, counter, acquisition,
             acquires ? shot.TargetLocationId : null);
@@ -625,10 +641,16 @@ internal static class ScenarioA1ArmorCalculator
         OrdnanceKill kill, ScenarioA1OrdnanceReference reference)
     {
         var target = shot.VehicleTarget!;
-        var standing = kill.Result is not (OrdnanceKill.Dud or OrdnanceKill.Burn or OrdnanceKill.Eliminated or OrdnanceKill.Shock) && kill.Shocked != true && kill.Abandoned != true;
-        var firepower = kill.Ammunition == "he" ? reference.HeFirepower(gun.Caliber)
+        // A9.611, D5.34 (pass 60): a MG's attack is at its IFT FP (the D1.22 example), and none follows its Stun, which leaves the crew BU at once.
+        var standing = kill.Result is not (OrdnanceKill.Dud or OrdnanceKill.Burn or OrdnanceKill.Eliminated or OrdnanceKill.Shock or OrdnanceKill.Stun) && kill.Shocked != true
+            && kill.Abandoned != true;
+        var firepower = gun.GunType == ScenarioA1MachineGunKill.GunType ? gun.Firepower
+            : kill.Ammunition == "he" ? reference.HeFirepower(gun.Caliber)
             : ScenarioA1HeEquivalency.Firepower(kill.Ammunition, ScenarioA1HeEquivalency.Weapon(gun), gun.Caliber, ScenarioA1OrdnanceCalculator.HeFirepowerOf(gun, reference));
-        var column = firepower is { } fp ? Array.IndexOf(ScenarioA1FireReference.ColumnFp, fp) : -1;
+        // A7.3 (p. 55): "the rightmost column of the IFT whose listed FP ... does not exceed the total adjusted FP": a 3 FP LMG attacks on the 2 column.
+        var column = firepower is not { } fp ? -1
+            : gun.GunType == ScenarioA1MachineGunKill.GunType ? Array.FindLastIndex(ScenarioA1FireReference.ColumnFp, item => item <= fp)
+            : Array.IndexOf(ScenarioA1FireReference.ColumnFp, fp);
         if (armor.Unarmored || armor.FrontAf is null || !standing || target.CrewExposed != true || target.CrewImpaired == true || target.Abandoned == true || column < 0)
         {
             return (null, null);
@@ -667,13 +689,15 @@ internal static class ScenarioA1ArmorCalculator
         // determines the Target Facing: 1-2 Rear, 3-4 Side, 5-6 Front", for the hull and the turret alike.
         var facing = shot.SameHex == true ? SameHexFacing(dice[0]) : location == "turret" ? target.TurretFacing ?? target.HullFacing! : target.HullFacing!;
         var armored = !armor.Unarmored && armor.FrontAf is not null;
+        var machineGun = gun.GunType == ScenarioA1MachineGunKill.GunType;
         int finalTk;
         int? basicTk = null, modifiedTk = null, af = null;
         var modifiers = new List<FireModifier>();
         if (armored)
         {
             // C7.11, C7.2: the Basic TK#, doubled by a Critical Hit (Case C), +1 against the rear (Case A), the range change (Case D), less the AF.
-            basicTk = reference.Armor.BasicTk(ammunition, gun)!.Value;
+            // A9.61 (pass 60): a MG's is the @MG entry, 4, and its Case D the row of 25mm and below (its caliber is read as 0).
+            basicTk = machineGun ? ScenarioA1MachineGunKill.BasicTk : reference.Armor.BasicTk(ammunition, gun)!.Value;
             var value = basicTk.Value;
             if (critical)
             {
@@ -721,7 +745,9 @@ internal static class ScenarioA1ArmorCalculator
 
         // C7.7, C7.6: at most half the Final TK# burns, less eliminates, equal immobilizes (hull) or Shocks (turret); one more Shocks or
         // immobilizes an HE hit and gives any other ammunition a possible Shock. The unarmored table has no Shock.
-        var result = dr * 2 <= finalTk ? OrdnanceKill.Burn
+        // A9.61, D5.34 (pass 60): a MG's To Kill DR burns, eliminates, or Stuns; it neither Shocks nor immobilizes.
+        var result = machineGun ? ScenarioA1MachineGunKill.Result(dr, finalTk)
+            : dr * 2 <= finalTk ? OrdnanceKill.Burn
             : dr < finalTk ? OrdnanceKill.Eliminated
             : dr == finalTk ? (armored && location == "turret" ? OrdnanceKill.Shock : OrdnanceKill.Immobilized)
             : armored && dr == finalTk + 1 ? (ammunition == "he" ? (location == "turret" ? OrdnanceKill.Shock : OrdnanceKill.Immobilized) : OrdnanceKill.PossibleShock)

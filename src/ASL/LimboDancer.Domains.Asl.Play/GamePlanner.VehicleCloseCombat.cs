@@ -396,6 +396,14 @@ public sealed partial class GamePlanner
                 {
                     var conditions = ConditionChanges(ScenarioA1VehicleCloseCombatRules.ReactionFireConditions(Is(unit, Conditions.FirstFire), destroyed));
                     events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(unit.Id, conditions), package, null, [recordId]));
+
+                    // D7.21 (pass 60, ruling R60.20): its SW and Guns carry the CC counter too.
+                    var weaponConditions = ConditionChanges(ScenarioA1VehicleCloseCombatRules.ReactionWeaponConditions(destroyed));
+                    foreach (var weapon in state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed or HoldingRole.Manned } holding
+                        && holding.Holder == unit.Id && weaponConditions.Count > 0).OrderBy(item => item.Id, StringComparer.Ordinal))
+                    {
+                        events.Add(Event(scope, attemptId, events.Count + 1, expected, "conditions-changed", new ConditionsChanged(weapon.Id, weaponConditions), package, null, [recordId]));
+                    }
                 }
             }
 

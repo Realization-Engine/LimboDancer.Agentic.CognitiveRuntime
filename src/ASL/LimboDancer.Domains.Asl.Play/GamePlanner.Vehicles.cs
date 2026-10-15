@@ -129,6 +129,13 @@ public sealed partial class GamePlanner
     public static bool HasVehicleMg(UnitInstance unit) =>
         ScenarioA1VehicleMovementCalculator.HasVehicleMg(LiveFire.IsVehicle(unit), VehicleDefinition(unit)?.MainArmament, VehicleDefinition(unit)?.AntiAircraftMg is not null);
 
+    /// <summary>
+    /// Whether a vehicle's MA is a MG that fires on the IFT with no weapon named (D1.3; pass 60): the SPW 251/1's AAMG, which needs a CE crew (D1.83),
+    /// or the Bren Carrier's plain MG.
+    /// </summary>
+    public static bool HasMainArmamentMg(UnitInstance unit) =>
+        LiveFire.IsVehicle(unit) && VehicleDefinition(unit) is { } definition && ScenarioA1MachineGunKill.MainArmamentFirepower(FireReference.Value, definition) is not null;
+
     /// <summary>The half MP a vehicle has spent this MPh and its allotment in half MP (D1.1, D2.5), for the Play page.</summary>
     public static (int Spent, int Allotment) VehicleHalfMp(UnitInstance vehicle) => HalfMp(vehicle);
 

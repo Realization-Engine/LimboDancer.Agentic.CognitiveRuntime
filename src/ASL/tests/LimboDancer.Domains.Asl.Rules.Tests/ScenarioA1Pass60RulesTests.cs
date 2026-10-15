@@ -1099,4 +1099,154 @@ public sealed class ScenarioA1Pass60RulesTests
         Assert.Equal(("K/4", "malfunctioned"), (struck.Arithmetic!.Result, struck.WeaponDestruction!.Single().Fate));
         Assert.Null(Ift(charge, [3, 4]).WeaponDestruction);
     }
+
+    // Increment 2f: a MG's To Kill attack on an AFV (A9.6, A9.61, A9.611, D3.54, pp. 64, 65, 201; ruling R60.19), and CC Reaction Fire's Fire Lane and
+    // CC counter (A9.223, D7.21; ruling R60.20).
+
+    /// <summary>
+    /// A Russian squad's HMG (6 FP, Normal Range 12, ROF 3, B12) at the German SPW 251/1 (AF 1/1, OT, small, CS# 5) in the DFPh: the facing named, a hull
+    /// hit (the colored dr above the white) unless told, its crew CE.
+    /// </summary>
+    private static OrdnanceShot HmgAtHalftrack(int range, int[] toKill, string facing = "front", string phase = "DFPh", int[]? toHit = null, int[]? collateral = null,
+        string target = "attacker-halftrack", string? turretFacing = null)
+    {
+        return new OrdnanceShot(phase, phase == "DFPh" ? "non-phasing" : "phasing", "russian", new OrdnanceGun("ru-hmg", "defender-hmg", false, 0, false, false),
+            new OrdnanceCrew("ru-s", "defender-squad", false, false, false, false, false), At, range, 0, false, true, 0,
+            new FireAttack(phase, phase == "DFPh" ? "non-phasing" : "phasing", null, null, At, [], null, null, true, new FireLos(false, 0, true, false), 7, "open-ground", [], 2, null),
+            new OrdnanceRolls(toHit ?? [4, 2], null, null, null, null) { ToKill = toKill, CollateralCheck = collateral, CrewSurvival = [6, 6] })
+        {
+            VehicleTarget = new OrdnanceVehicleTarget("de-ht", target, facing, turretFacing, false, false, false, false, false) { CrewExposed = true },
+            Ammunition = ScenarioA1MachineGunKill.Ammunition,
+            ScenarioYear = 1942,
+            SpecificCollateral = true,
+        };
+    }
+
+    [Fact]
+    public void AMgsToKillNumberIsFourWithCaseDsRowOfTwentyFiveMmLessTheAf()
+    {
+        // The D1.22 example: "Base 4 + 1 Case D - 1 AF" at range 3 to 6; Case D is +2 at 0 to 1, +1 at 2, none at 7 to 12; the black Vehicle row.
+        var three = ScenarioA1OrdnanceCalculator.Resolve(HmgAtHalftrack(3, [3, 4], collateral: [2, 2]), Reference);
+        Resolved(three);
+        Assert.Equal(("black", 10, 4, 1, 4), (three.ToHit!.Color, three.ToHit.BasicToHit, three.Kill!.BasicTk!.Value, three.Kill.ArmorFactor!.Value, three.Kill.FinalTk));
+        Assert.Empty(three.ToHit.Modifications);
+        Assert.Equal(["case-d"], three.Kill.Modifications.Select(item => item.Name));
+        Assert.Equal(5, ScenarioA1OrdnanceCalculator.Resolve(HmgAtHalftrack(1, [3, 4], collateral: [2, 2]), Reference).Kill!.FinalTk);
+        Assert.Equal(4, ScenarioA1OrdnanceCalculator.Resolve(HmgAtHalftrack(2, [3, 4], collateral: [2, 2]), Reference).Kill!.FinalTk);
+        Assert.Equal(3, ScenarioA1OrdnanceCalculator.Resolve(HmgAtHalftrack(8, [3, 4], collateral: [2, 2]), Reference).Kill!.FinalTk);
+
+        // C7.21, Case A: +1 through the rear.
+        var rear = ScenarioA1OrdnanceCalculator.Resolve(HmgAtHalftrack(3, [3, 4], "rear", collateral: [2, 2]), Reference);
+        Assert.Equal(5, rear.Kill!.FinalTk);
+        Assert.Equal(["case-a", "case-d"], rear.Kill.Modifications.Select(item => item.Name));
+    }
+
+    [Fact]
+    public void AMgsToKillDrBurnsEliminatesStunsOrDoesNothingAndATwelveIsADud()
+    {
+        // A9.61: at most half the Final TK# of 4 burns, below it eliminates, equal Stuns (D5.34), above it nothing; C7.35: an Original 12 is a Dud.
+        OrdnanceKill Kill(int[] dice) => ScenarioA1OrdnanceCalculator.Resolve(HmgAtHalftrack(3, dice, collateral: [2, 2]), Reference).Kill!;
+        Assert.Equal(OrdnanceKill.Burn, Kill([1, 1]).Result);
+        var eliminated = Kill([1, 2]);
+        Assert.Equal((OrdnanceKill.Eliminated, 12, 5, false), (eliminated.Result, eliminated.CrewSurvival!.FinalDr, eliminated.CrewSurvival.CrewSurvival, eliminated.CrewSurvival.Survived));
+        Assert.Equal(OrdnanceKill.Stun, Kill([2, 2]).Result);
+        Assert.Equal(OrdnanceKill.None, Kill([2, 3]).Result);
+        Assert.Equal(OrdnanceKill.Dud, Kill([6, 6]).Result);
+
+        // D5.34: the Stun leaves the AFV Stunned, BU, and stopped.
+        Assert.Equal([(UnitCondition.Stunned, true), (UnitCondition.ButtonedUp, true), (UnitCondition.Motion, false)],
+            ScenarioA1OrdnanceEventRules.KillConditions(Kill([2, 2]), false));
+    }
+
+    [Fact]
+    public void ACeCrewTakesTheMgsFpOnTheSameDrUnlessTheAttackStuns()
+    {
+        // A9.611 and the D1.22 example: the HMG's 6 IFT FP on the Original TK DR, +2 for CE; a 5 becomes a 7 on the 6 FP column. None after the Stun,
+        // which buttons the crew up at once (D5.34).
+        var missed = ScenarioA1OrdnanceCalculator.Resolve(HmgAtHalftrack(3, [2, 3], collateral: [2, 2]), Reference);
+        Resolved(missed);
+        Assert.Equal((6, 7), (missed.SpecificCollateral!.Firepower, missed.SpecificCollateral.Effect.FinalDr));
+        Assert.Equal(Reference.Fire.Result(7, Array.IndexOf(ScenarioA1FireReference.ColumnFp, 6)), missed.SpecificCollateral.Result);
+        Assert.Null(ScenarioA1OrdnanceCalculator.Resolve(HmgAtHalftrack(3, [2, 2], collateral: [2, 2]), Reference).SpecificCollateral);
+    }
+
+    [Fact]
+    public void AMgScoresNoCriticalHitAndATurretHitMeetsTheTurretsAf()
+    {
+        // A9.61, C3.8: an Original 2 is a hit, never a Critical Hit, with no subsequent dr. C3.9: the colored dr below the white strikes the T-34's
+        // turret, its front AF of 11 inferior (8); the HMG at range 1, front: 4 + 2 - 8.
+        var two = ScenarioA1OrdnanceCalculator.Resolve(HmgAtHalftrack(3, [3, 4], toHit: [1, 1], collateral: [2, 2]), Reference);
+        Resolved(two);
+        Assert.Equal((true, false, (int?)null), (two.ToHit!.Hit, two.ToHit.CriticalHit, two.ToHit.SubsequentDr));
+        var turret = ScenarioA1OrdnanceCalculator.Resolve(HmgAtHalftrack(1, [3, 4], phase: "PFPh", toHit: [1, 3], collateral: [2, 2], target: "defender-tank", turretFacing: "front") with
+        {
+            FiringNationality = "german",
+            Gun = new OrdnanceGun("de-hmg", "attacker-hmg", false, 0, false, false),
+            Crew = new OrdnanceCrew("de-s", "attacker-squad", false, false, false, false, false),
+        }, Reference);
+        Resolved(turret);
+        Assert.Equal(("turret", 8, -2), (turret.Kill!.HitLocation, turret.Kill.ArmorFactor!.Value, turret.Kill.FinalTk));
+    }
+
+    [Fact]
+    public void AVehiclesMaMgMakesTheAttackAndItsBmgMayNot()
+    {
+        // D3.54: the SPW 251/1's MA AAMG (3 FP) at the T-34 M41's side, CE; the Bren Carrier's MA, a plain MG, fires its nationality's LMG FP (2).
+        var halftrack = Reference.Weapon("attacker-halftrack")!;
+        Assert.Equal((ScenarioA1MachineGunKill.GunType, 3, 8, 1, 12), (halftrack.GunType, halftrack.Firepower!.Value, halftrack.RangeMaximum!.Value, halftrack.RateOfFire!.Value, halftrack.Breakdown));
+        Assert.Equal((2, 8), (Reference.Weapon("campaign-british-bren-carrier")!.Firepower!.Value, Reference.Weapon("campaign-british-bren-carrier")!.RangeMaximum!.Value));
+        var shot = new OrdnanceShot("PFPh", "phasing", "german", new OrdnanceGun("de-ht", "attacker-halftrack", false, 0, false, false),
+            new OrdnanceCrew("de-ht", "attacker-halftrack", false, false, false, false, false), At, 2, 0, false, true, 0,
+            new FireAttack("PFPh", "phasing", null, null, At, [], null, null, true, new FireLos(false, 0, true, false), 7, "open-ground", [], 2, null),
+            new OrdnanceRolls([4, 2], null, null, null, null) { ToKill = [3, 4], CollateralCheck = [2, 2] })
+        {
+            Vehicle = new OrdnanceVehicleFirer(false, false, false, false, false),
+            VehicleTarget = new OrdnanceVehicleTarget("ru-t", "defender-tank", "side", "side", false, false, false, false, false) { CrewExposed = true },
+            Ammunition = ScenarioA1MachineGunKill.Ammunition,
+            ScenarioYear = 1942,
+            SpecificCollateral = true,
+        };
+        var result = ScenarioA1OrdnanceCalculator.Resolve(shot, Reference);
+        Resolved(result);
+        Assert.Equal((OrdnanceKill.None, -1, 3, 9), (result.Kill!.Result, result.Kill.FinalTk, result.SpecificCollateral!.Firepower, result.SpecificCollateral.Effect.FinalDr));
+
+        // A BU AFV's AAMG does not fire (D1.83); a tank's BMG or CMG makes no To Kill attack (D3.54), and a tank's MA is a Gun.
+        Assert.Contains("asl.a1.ordnance.mg-to-kill-outside", ScenarioA1OrdnanceCalculator.Resolve(shot with
+        {
+            Vehicle = new OrdnanceVehicleFirer(true, false, false, false, false)
+        }, Reference).Reasons);
+        Assert.NotNull(ScenarioA1MachineGunKill.VehicleWeaponRefusal("de-tank", "bmg"));
+        Assert.Null(ScenarioA1MachineGunKill.VehicleWeaponRefusal("de-tank", "ma"));
+        Assert.NotEqual(ScenarioA1MachineGunKill.GunType, Reference.Weapon("attacker-tank")!.GunType);
+    }
+
+    [Fact]
+    public void AMgsToKillAttackIsRefusedInTheAfphAtAnUnarmoredVehicleAndBeyondNormalRange()
+    {
+        Assert.Contains("asl.a1.ordnance.mg-to-kill-outside", ScenarioA1OrdnanceCalculator.Resolve(HmgAtHalftrack(3, [3, 4], phase: "AFPh"), Reference).Reasons);
+        Assert.Contains("asl.a1.ordnance.mg-unarmored-target", ScenarioA1OrdnanceCalculator.Resolve(HmgAtHalftrack(3, [3, 4], target: "attacker-truck"), Reference).Reasons);
+        Assert.Contains("asl.a1.ordnance.out-of-range", ScenarioA1OrdnanceCalculator.Resolve(HmgAtHalftrack(13, [3, 4]), Reference).Reasons);
+        var pinned = HmgAtHalftrack(3, [3, 4]);
+        Assert.Contains("asl.a1.ordnance.mg-to-kill-outside", ScenarioA1OrdnanceCalculator.Resolve(pinned with
+        {
+            Crew = pinned.Crew! with
+            {
+                Pinned = true
+            }
+        }, Reference).Reasons);
+    }
+
+    [Fact]
+    public void CcReactionFireCancelsItsMgsFireLaneAndMarksItsWeapons()
+    {
+        // A9.223 (the narrow reading, R60.20): the lane goes when its manning Infantry makes CC Reaction Fire, not when another unit does. D7.21: the SW
+        // and Guns of an attacker the vehicle survived carry the CC counter.
+        Assert.True(ScenarioA1FireEligibility.FireLaneCancelledByCcReaction(true, true));
+        Assert.False(ScenarioA1FireEligibility.FireLaneCancelledByCcReaction(true, false));
+        Assert.False(ScenarioA1FireEligibility.FireLaneCancelledByCcReaction(false, true));
+        Assert.Equal([(UnitCondition.CcReaction, true)], ScenarioA1VehicleCloseCombatRules.ReactionWeaponConditions(false));
+        Assert.Empty(ScenarioA1VehicleCloseCombatRules.ReactionWeaponConditions(true));
+        Assert.NotNull(ScenarioA1OrdnanceEligibility.CcCounterRefusal("ru-hmg", true, true));
+        Assert.Null(ScenarioA1OrdnanceEligibility.CcCounterRefusal("ru-hmg", true, false));
+    }
 }

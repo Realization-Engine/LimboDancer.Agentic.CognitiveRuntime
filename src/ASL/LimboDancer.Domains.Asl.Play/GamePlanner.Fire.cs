@@ -1510,7 +1510,9 @@ public sealed partial class GamePlanner
                         && FireReference.Value.Definitions.GetValueOrDefault(vehicleDefinition.Definition)?.Unarmored == true)),
                 () => state.Movement is { Vehicle: true, Reaction: false } moving && moving.Movers.Any(id => state.Location(id)?.Location == from),
                 () => state.Movement is { Vehicle: true } reactedTo && reactedTo.Movers.Any(id => state.Location(id)?.Location == from)
-                    && (attack.Firers ?? []).Any(item => item.LocationId == location && state.Unit(item.UnitId!) is { } firer && Is(firer, Conditions.CcReaction)),
+                    && (attack.Firers ?? []).Any(item => item.LocationId == location && state.Unit(item.UnitId!) is { } firer && (Is(firer, Conditions.CcReaction)
+                        // D7.21 (pass 60, ruling R60.20): a SW under the CC counter of its possessor's CC Reaction Fire is barred as well.
+                        || (item.Weapons ?? []).Any(weapon => state.Find(weapon.EquipmentId ?? string.Empty) is { } carried && Is(carried, Conditions.CcReaction)))),
                 attack.OrdnanceHit is not null));
             if (verdict.Refusal is { } locationBar)
             {

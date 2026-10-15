@@ -75,6 +75,14 @@ public static class ScenarioA1OrdnanceEventRules
             changed.Add((UnitCondition.Motion, false));
         }
 
+        // D5.34 (p. 203; pass 60): a MG's Stun; the AFV becomes BU and Stops.
+        if (result == OrdnanceKill.Stun)
+        {
+            changed.Add((UnitCondition.Stunned, true));
+            changed.Add((UnitCondition.ButtonedUp, true));
+            changed.Add((UnitCondition.Motion, false));
+        }
+
         if (shocked)
         {
             changed.Add((UnitCondition.Shocked, true));

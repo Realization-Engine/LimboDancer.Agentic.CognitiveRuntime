@@ -752,4 +752,10 @@ public sealed record GunDefinition(
     {
         get; init;
     }
+
+    /// <summary>A MG's IFT FP, which its Specific Collateral Attack uses (A9.611; pass 60); null for any other weapon.</summary>
+    public int? Firepower
+    {
+        get; init;
+    }
 }

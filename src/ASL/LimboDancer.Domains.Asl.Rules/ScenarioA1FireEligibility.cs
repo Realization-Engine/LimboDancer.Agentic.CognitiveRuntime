@@ -787,6 +787,12 @@ public static class ScenarioA1FireEligibility
     public static bool FireLaneCancelledBy(bool atOwnLocation, bool laneWeaponOrOperatorFired) => atOwnLocation && laneWeaponOrOperatorFired;
 
     /// <summary>
+    /// A9.223, D7.21 (p. 63; pass 60, ruling R60.20): whether CC Reaction Fire cancels a Fire Lane: its MG's manning Infantry makes it. The narrow
+    /// reading: an enemy's entry into the MG's Location alone cancels nothing. No game recorded before the pass holds a Fire Lane and CC Reaction Fire.
+    /// </summary>
+    public static bool FireLaneCancelledByCcReaction(bool reaction, bool operatorAttacked) => reaction && operatorAttacked;
+
+    /// <summary>
     /// The Field of Fire (A9.21, p. 62; pass 45): "if a SW MMG/HMG in a woods/rubble/building hex fires and is entitled to another shot, it may
     /// continue to fire during that phase only inside the CA of the prior shot (which ... includes the MG's own Location ...)". A CA is the
     /// 60-degree wedge on a hexspine (C3.2), so the shots of a phase must lie in one such wedge. <paramref name="earlierBearings"/> are the MG's

@@ -750,4 +750,77 @@ public sealed class BacklogPass60Tests : IDisposable
         var manned = (EquipmentInstance)crewed.Find("ru-gun")!;
         Assert.Equal((false, true), (LiveOrdnance.Emplaced(crewed, manned), LiveOrdnance.Emplaced(crewed, manned, nonCrewManning: false)));
     }
+
+    // Increment 2f: a MG's To Kill attack on an AFV (A9.6, A9.61, A9.611, D3.54; ruling R60.19). The firer in B10, the AFV in B8 two hexes off.
+
+    /// <summary>A MG's To Kill attack, as ordnance, at the named vehicle in the target Location; the dice are every roll it asks for, in order.</summary>
+    private Task<PlayResult> MgAt(string gun, string vehicle, params int[] dice) => Do(GameActions.FireOrdnance, Once(dice), new
+    {
+        gunId = gun,
+        target = Target,
+        targetVehicle = vehicle,
+        ammunition = "ap"
+    });
+
+    [Fact]
+    public async Task ARussianHmgStunsTheGermanHalftrack()
+    {
+        // A9.61: the HMG on the black Vehicle row (10), Case L -1 at two hexes and +1 for the small target; a To Hit DR of 6 hits the hull. Basic TK# 4,
+        // Case D +1 at two hexes, AF 1: Final TK# 4, and a TK DR of 4 Stuns the SPW 251/1, which goes BU (D5.34); no Collateral Attack follows.
+        await Setup("russian", "german", 1942, 7, Unit("r1", "asl:squad", "defender-squad", Firer, "russian"), Held("ru-hmg", "asl:mg", "defender-hmg", "r1", "russian"),
+            Vehicle("de-ht", "attacker-halftrack", Target, "german", "south-west", crewExposed: true));
+        var before = Revision;
+        var result = await MgAt("ru-hmg", "de-ht", 4, 2, 2, 2);
+        Committed(result);
+        Assert.Contains(result.Plan!.Reasons, reason => reason.Contains("a MG To Kill attack as ordnance (A9.61", StringComparison.Ordinal));
+        var shot = LastShot(before);
+        var kill = shot.Resolution.GetProperty("kill");
+        Assert.Equal((4, 4, "stun"), (kill.GetProperty("basicTk").GetInt32(), kill.GetProperty("finalTk").GetInt32(), kill.GetProperty("result").GetString()));
+        Assert.Equal(("black", false), (shot.Resolution.GetProperty("toHit").GetProperty("color").GetString(), shot.Resolution.TryGetProperty("specificCollateral", out _)));
+        var halftrack = Current.Unit("de-ht")!;
+        Assert.Equal((ConditionState.True, ConditionState.True), (GameState.Condition(halftrack, Conditions.Stunned), GameState.Condition(halftrack, Conditions.ButtonedUp)));
+        Assert.Equal(ConditionState.True, GameState.Condition(Current.Find("ru-hmg")!, Conditions.PrepFire));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AGermanLmgAtACeT34LeavesItStandingAndAttacksItsCrew()
+    {
+        // A9.611, the D1.22 example: the LMG's TK# (4, +1 Case D, less the T-34's AF) cannot reach it; its CE crew takes the LMG's 3 FP, on the 2 column,
+        // on the Original TK DR of 7 with +2 for CE.
+        await Setup("german", "russian", 1942, 7, Unit("g1", "asl:squad", "attacker-squad", Firer, "german"), Held("de-lmg", "asl:mg", "attacker-lmg", "g1", "german"),
+            Vehicle("ru-tank", "defender-tank", Target, "russian", "south-west", crewExposed: true));
+        var before = Revision;
+        Committed(await MgAt("de-lmg", "ru-tank", 4, 2, 3, 4, 2, 2));
+        var shot = LastShot(before);
+        Assert.Equal("none", shot.Resolution.GetProperty("kill").GetProperty("result").GetString());
+        var collateral = shot.Resolution.GetProperty("specificCollateral");
+        Assert.Equal((3, 9), (collateral.GetProperty("firepower").GetInt32(), collateral.GetProperty("effect").GetProperty("finalDr").GetInt32()));
+        Assert.Contains("g1", Current.SupportWeaponUses.Select(item => item.Unit));
+        NoReplayErrors();
+
+        // A9.61: at Infantry, or with no AFV named, a MG fires on the IFT, not as ordnance.
+        var refused = await Do(GameActions.FireOrdnance, Once(4, 2), new
+        {
+            gunId = "de-lmg",
+            target = Target
+        });
+        Assert.NotEqual(PlayOutcome.Committed, refused.Outcome);
+    }
+
+    [Fact]
+    public async Task AHalftracksAamgFiresAtTheT34AsOrdnance()
+    {
+        // D3.54: the SPW 251/1's MA AAMG (3 FP), CE, at the CE T-34: Final TK# below 1, a TK DR of 7 does nothing, and the T-34's crew takes the 3 FP.
+        await Setup("german", "russian", 1942, 7, Vehicle("de-ht", "attacker-halftrack", Firer, "german", "north-east", crewExposed: true),
+            Vehicle("ru-tank", "defender-tank", Target, "russian", "north-west", crewExposed: true));
+        var before = Revision;
+        Committed(await MgAt("de-ht", "ru-tank", 4, 2, 3, 4, 2, 2));
+        var shot = LastShot(before);
+        Assert.Equal(("attacker-halftrack", "none"), (shot.Facts.GetProperty("gun").GetProperty("definitionId").GetString(),
+            shot.Resolution.GetProperty("kill").GetProperty("result").GetString()));
+        Assert.Equal(3, shot.Resolution.GetProperty("specificCollateral").GetProperty("firepower").GetInt32());
+        Assert.Contains(Current.VehicleWeaponShots, item => item.Vehicle == "de-ht" && item.Weapon == "ma");
+        NoReplayErrors();
+    }
 }

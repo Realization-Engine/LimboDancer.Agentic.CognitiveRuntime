@@ -178,6 +178,9 @@ public sealed record OrdnanceKill(
     public const string Shock = "shock";
     public const string PossibleShock = "possible-shock";
 
+    /// <summary>A MG's To Kill DR equal to the Final TK#: the AFV is Stunned, even if BU (A9.61, D5.34; pass 60).</summary>
+    public const string Stun = "stun";
+
     /// <summary>The crew's NTC of a possible Shock (C7.41); null when none was taken.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public FireCheck? ShockCheck

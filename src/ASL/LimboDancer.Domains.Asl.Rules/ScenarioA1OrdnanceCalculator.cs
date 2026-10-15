@@ -36,7 +36,8 @@ public static class ScenarioA1OrdnanceCalculator
             return Refused(OrdnanceResolution.Indeterminate, undecided);
         }
 
-        var gun = reference.Guns[shot.Gun!.DefinitionId!];
+        // A9.61, D3.54 (pass 60): a MG fired as ordnance is read beside the Guns.
+        var gun = reference.Weapon(shot.Gun!.DefinitionId)!;
         if (gun.LatwType == "pf")
         {
             // C13.31 (ruling R9.7): the PF Check dr comes first; only a final 1 to 3 gives a shot.
@@ -353,12 +354,20 @@ public static class ScenarioA1OrdnanceCalculator
         // C8.31 (p. 178; pass 60, ruling R60.4): AP, APCR, APDS, and HEAT named at a target with no vehicle attack by their HE Equivalency, so a
         // Gun with no HE may fire them there.
         var equivalency = Equivalency(shot);
-        if (!reference.Guns.TryGetValue(gunShot.DefinitionId!, out var gun) || gun.Nationality != shot.FiringNationality || gun.Mount360
-            || !(shot.Vehicle is null ? AdmittedGunTypes.Contains(gun.GunType) : gun.GunType == "vehicle")
+
+        // A9.61, D3.54 (pass 60, ruling R60.19): a SW MG, or a vehicle's MA that is a MG, fires as ordnance only at an AFV it names.
+        if (reference.Weapon(gunShot.DefinitionId) is not { } gun || gun.Nationality != shot.FiringNationality || gun.Mount360
+            || !(gun.GunType == ScenarioA1MachineGunKill.GunType || (shot.Vehicle is null ? AdmittedGunTypes.Contains(gun.GunType) : gun.GunType == "vehicle"))
             || (shot.VehicleTarget is null && !canister && !equivalency && !ScenarioA1ArmorCalculator.Lists(gun, "he") && (gun.NoHe || shot.Ammunition is not (null or "he"))))
         {
             outside.Add(Prefix + "gun-outside");
             return outside;
+        }
+
+        var machineGun = gun.GunType == ScenarioA1MachineGunKill.GunType;
+        if (machineGun)
+        {
+            ScenarioA1MachineGunKill.Outside(shot, reference, outside);
         }
 
         // C8.4 (pass 55): the Canister facts belong to a Canister shot alone.
@@ -398,7 +407,7 @@ public static class ScenarioA1OrdnanceCalculator
 
         if ((shot.TargetType == OrdnanceTargetTypes.Area) != mortar
             || (latw && shot.VehicleTarget is null && gun.LatwType == "atr" && gun.Caliber != 20 && !AtrAtGun(shot, gun))
-            || ((mortar || latw) && (shot.HexspinesToTurn != 0 || shot.IntensiveFire == true || shot.BoreSighted == true || shot.NonQualified == true))
+            || ((mortar || latw || machineGun) && (shot.HexspinesToTurn != 0 || shot.IntensiveFire == true || shot.BoreSighted == true || shot.NonQualified == true))
             // C9.3 (referee, pass 9): a Spotter is designated in the PFPh or DFPh; Opportunity Fire, which would let it spot in the AFPh, is not built.
             || (shot.Spotter is not null && (!mortar || shot.Phase is not ("PFPh" or "DFPh"))) || (shot.Director is not null && !mortar && !latw))
         {
@@ -429,7 +438,7 @@ public static class ScenarioA1OrdnanceCalculator
         // Chart (pass 9b): a lone SMC does not fire a PSK at full effect.
         if ((shot.Vehicle is null ? reference.Fire.Definitions.GetValueOrDefault(crew.DefinitionId!) is not { } crewDefinition
                 || crewDefinition.Nationality != gun.Nationality
-                || (mortar || latw ? !Personnel.Contains(crewDefinition.Kind) : shot.NonQualified == true ? !crewDefinition.IsMmc : crewDefinition.Kind != "asl:crew")
+                || (mortar || latw || machineGun ? !Personnel.Contains(crewDefinition.Kind) : shot.NonQualified == true ? !crewDefinition.IsMmc : crewDefinition.Kind != "asl:crew")
                 || (gun.LatwType == "psk" && crewDefinition.Kind is "asl:leader" or "asl:hero")
                 : crew.DefinitionId != gun.Id || shot.NonQualified == true)
             || crew.Broken == true || (crew.Berserk == true && !pf))
@@ -1384,7 +1393,7 @@ public static class ScenarioA1OrdnanceCalculator
         gun.Breakdown - (shot.IntensiveFire == true ? 2 : 0) - (shot.BreakdownReduction ?? 0)
 
         // A19.32 (referee, pass 9b): the B# or X# of a SW Inexperienced Personnel use is one lower.
-        - (gun.GunType is "mortar" or "latw" && gun.LatwType != "pf"
+        - (gun.GunType is "mortar" or "latw" or ScenarioA1MachineGunKill.GunType && gun.LatwType != "pf"
             && reference.Fire.Definitions.GetValueOrDefault(shot.Crew?.DefinitionId ?? string.Empty)?.Class is "green" or "conscript" ? 1 : 0);
 
     /// <summary>

@@ -1018,7 +1018,12 @@ public static class GameProjector
 
             if (Rules.ScenarioA1CloseCombatProjection.ReactionLeavesState(combat.Reaction))
             {
-                return state;
+                // A9.223, D7.21 (pass 60, ruling R60.20): a MG's Fire Lane is cancelled when its manning Infantry makes CC Reaction Fire.
+                return state.FireLanes.Count == 0 ? state : state with
+                {
+                    FireLanes = [.. state.FireLanes.Where(lane => !Rules.ScenarioA1FireEligibility.FireLaneCancelledByCcReaction(combat.Reaction,
+                        combat.Attackers.Contains(lane.Operator, StringComparer.Ordinal)))],
+                };
             }
 
             var current = state.CloseCombats.FirstOrDefault(item => item.Location == combat.Location);
@@ -1138,9 +1143,10 @@ public static class GameProjector
             var tank = firer is UnitInstance { Status: InstanceStatus.Active } vehicle && vocabulary.IsA(vehicle.Kind, "asl:vehicle") && fired.Crew == vehicle.Id;
 
             // C9.2, C13.3 (rulings R9.2, R9.7): a light mortar is fired by the unit possessing it; a PF, named "<unit>:pf", by the unit making the check.
-            // Rulings R9.10, R9.11: an ATR or PSK is fired by its possessor too.
+            // Rulings R9.10, R9.11: an ATR or PSK is fired by its possessor too. A9.61 (pass 60, ruling R60.19): so is a MG fired as ordnance.
             var mortar = firer is EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Possessed } possession } weapon
-                && (vocabulary.IsA(weapon.Kind, "asl:light-mortar") || vocabulary.IsA(weapon.Kind, "asl:latw")) && possession.Holder == fired.Crew;
+                && (vocabulary.IsA(weapon.Kind, "asl:light-mortar") || vocabulary.IsA(weapon.Kind, "asl:latw") || vocabulary.IsA(weapon.Kind, "asl:mg"))
+                && possession.Holder == fired.Crew;
             var panzerfaust = Rules.ScenarioA1OrdnanceProjection.IsPanzerfaust(fired.Gun, fired.Crew);
             if (!Rules.ScenarioA1OrdnanceProjection.FirePhase(state.Phase)
                 || !(tank || mortar || panzerfaust || (firer is EquipmentInstance { Status: InstanceStatus.Active, Holding: { Role: HoldingRole.Manned } manning } && manning.Holder == fired.Crew))

@@ -44,6 +44,12 @@ public static class LiveOrdnance
     /// <summary>A Gun's or MA's caliber in millimeters, its Gun Size (C2.2); null for a definition that is no ordnance.</summary>
     public static int? CaliberOf(string definition) => Reference.Value.Guns.GetValueOrDefault(definition)?.Caliber;
 
+    /// <summary>
+    /// Whether a definition fires as ordnance as a MG (A9.61, D3.54; pass 60, ruling R60.19): a SW MG, or a vehicle whose MA is a MG (the halftrack's
+    /// AAMG, the Bren Carrier's MG).
+    /// </summary>
+    public static bool IsMachineGun(string? definition) => Reference.Value.Weapon(definition)?.GunType == ScenarioA1MachineGunKill.GunType;
+
     /// <summary>A LATW definition's type (C13.1): <c>pf</c>, <c>psk</c>, or <c>atr</c>; null for any other.</summary>
     public static string? LatwType(string definition) => Reference.Value.Guns.GetValueOrDefault(definition)?.LatwType;
 
@@ -138,6 +144,18 @@ public static class LiveOrdnance
             gun = counterLatw;
             crew = carrier;
         }
+        else if (state.Find(gunId) is EquipmentInstance { Status: InstanceStatus.Active, Kind: "asl:mg", Definition: not null } machineGun
+            && machineGun.Holding is { Role: HoldingRole.Possessed } held && state.Unit(held.Holder) is { Status: InstanceStatus.Active, Definition: not null } possessorOfMg)
+        {
+            // A9.61 (pass 60, ruling R60.19): a SW MG fires as ordnance alone, at a named AFV, by the unit possessing it.
+            if (ScenarioA1OrdnanceEligibility.MachineGunRefusal(machineGun.Id, targetVehicle is not null, () => SquadSupportRefusal(state, possessorOfMg, phase, false)) is { } refusal)
+            {
+                return (null, refusal);
+            }
+
+            gun = machineGun;
+            crew = possessorOfMg;
+        }
         else
         {
             return (null, ScenarioA1OrdnanceEligibility.GunRefusal(gunId));
@@ -200,7 +218,15 @@ public static class LiveOrdnance
         // C3.31: a Vehicle Target Type shot attacks only the named vehicle. C3.33 (ruling R9.3): a mortar's Area Target Type shot attacks every unit
         // there, friendly ones too; C3.4: in the MPh only the moving units.
         var mortar = gun.Kind == "asl:light-mortar";
-        var sw = mortar || gun.Kind == "asl:latw";
+        var sw = mortar || gun.Kind is "asl:latw" or "asl:mg";
+
+        // D7.21 (pass 60, ruling R60.20): a SW or Gun under a CC counter makes no Non-CC Reaction Fire at the vehicle in its Location. Only weapons
+        // marked since the pass carry the counter, so no shot recorded before it is refused here.
+        if (vehicleTarget is not null && ScenarioA1OrdnanceEligibility.CcCounterRefusal(gun.Id, gun is EquipmentInstance && Is(gun, Conditions.CcReaction),
+            state.Location(crew.Id)?.Location == target) is { } ccCounter)
+        {
+            return (null, ccCounter);
+        }
 
         // B23.32 (pass 60, ruling R60.11): a mortar's hit attacks every Location of its target hex. A record made before the pass had its hex's units
         // in one Location (ruling R9.3 refused any other), so it reads the same.

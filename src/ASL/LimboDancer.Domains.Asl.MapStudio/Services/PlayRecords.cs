@@ -434,7 +434,8 @@ public sealed class PlayRecords
                 var noRound = worded && resolution.AmmunitionUse == "none";
                 var outcome = noRound ? $"no shot: it had no {roundName}" : hit.CriticalHit ? "Critical Hit" : hit.Hit ? "hit" : "miss";
                 // D3.2 (pass 50): from inside the target's hex the colored dr gives the Target Facing.
-                var aim = shot?.VehicleTarget is { } aimed ? $"{(shot.Ammunition ?? "ap").ToUpperInvariant()} at {aimed.VehicleId} in {fired.Target} ("
+                // A9.61 (pass 60): a MG's To Kill attack, fired as ordnance.
+                var aim = shot?.VehicleTarget is { } aimed ? $"{(LiveOrdnance.IsMachineGun(shot.Gun?.DefinitionId) ? "a MG To Kill attack (A9.61)" : (shot.Ammunition ?? "ap").ToUpperInvariant())} at {aimed.VehicleId} in {fired.Target} ("
                     + (shot.SameHex == true ? "in its own hex: the Target Facing by the colored dr, D3.2)"
                         : $"hull {aimed.HullFacing}" + (aimed.TurretFacing is { } turretFacing ? $", turret {turretFacing}" : "") + " toward the firer)")
                     : shot?.TargetType == OrdnanceTargetTypes.Area ? $"HE at {fired.Target} on the Area Target Type" + (shot.Spotter is { } spotter ? $", spotted by {spotter.UnitId}" : "")
@@ -523,6 +524,9 @@ public sealed class PlayRecords
                         OrdnanceKill.Shock => "Shocked",
                         OrdnanceKill.PossibleShock => "possible Shock",
                         OrdnanceKill.Dud => "a dud (Original 12)",
+
+                        // A9.61, D5.34 (pass 60): a MG's To Kill DR equal to the Final TK#.
+                        OrdnanceKill.Stun => "Stunned, BU (D5.34)",
                         _ => "no effect",
                     };
                     // D3.42, D3.45 (pass 55): a check at an Armor Leader's Morale Level, or an Inexperienced Crew's, says whose it is.

@@ -208,7 +208,10 @@ public sealed partial class GamePlanner
             : facts.TargetType == OrdnanceTargetTypes.Area
             ? $"HE at {facts.TargetLocationId} (Area Target Type" + (facts.Spotter is { } spotted ? $", spotted by {spotted.UnitId}" : string.Empty) + ")"
             : facts.VehicleTarget is { } aimed
-            ? $"{(facts.Ammunition ?? "ap").ToUpperInvariant()} at {aimed.VehicleId} in {facts.TargetLocationId} (Vehicle Target Type; "
+            // A9.61 (pass 60): a MG's To Kill attack, on the black To Hit numbers and the @MG Basic TK# of 4.
+            ? (OrdnanceReference.Value.Weapon(facts.Gun.DefinitionId)?.GunType == ScenarioA1MachineGunKill.GunType
+                ? "a MG To Kill attack as ordnance (A9.61: black To Hit numbers, Basic TK# 4, no Critical Hit)" : (facts.Ammunition ?? "ap").ToUpperInvariant())
+                + $" at {aimed.VehicleId} in {facts.TargetLocationId} (Vehicle Target Type; "
                 + (facts.SameHex == true ? "in its own hex, so the colored dr gives the Target Facing: 1-2 rear, 3-4 side, 5-6 front, D3.2)"
                     : $"hull {aimed.HullFacing}" + (aimed.TurretFacing is { } turretFacing ? $", turret {turretFacing}" : string.Empty) + " facing the firer)")
             // C8.31 (pass 60): AP, APCR, APDS, HEAT, and a LATW's round at Infantry or a Gun, by their HE Equivalency.
@@ -234,8 +237,11 @@ public sealed partial class GamePlanner
     private ((OrdnanceShot Shot, UnitFacing? Facing)? Facts, string? Reason) OrdnanceMapFacts(GameState state, OrdnanceShot shot, BoardLocation target)
     {
         var from = FirerLocation(state, shot.Gun!.GunId!);
+
+        // A9.61, D3.54 (pass 60): a MG fired as ordnance has no CA; at a vehicle in its own Location it is read as a Gun's shot there (D3.2).
+        var machineGun = OrdnanceReference.Value.Weapon(shot.Gun.DefinitionId)?.GunType == ScenarioA1MachineGunKill.GunType;
         if (shot.TargetType == OrdnanceTargetTypes.Area || shot.Gun.DefinitionId == OrdnanceTargetTypes.Panzerfaust
-            || OrdnanceReference.Value.Guns.GetValueOrDefault(shot.Gun.DefinitionId ?? string.Empty)?.GunType == "latw")
+            || OrdnanceReference.Value.Guns.GetValueOrDefault(shot.Gun.DefinitionId ?? string.Empty)?.GunType == "latw" || (machineGun && target != from))
         {
             return SupportWeaponMapFacts(state, shot, from, target);
         }
@@ -450,7 +456,8 @@ public sealed partial class GamePlanner
         var building = ScenarioA1OrdnanceMapRules.IsBuilding(firerTerrain);
 
         // B23.423 (referee, pass 9): no mortar fires from a non-rooftop building Location.
-        if (ScenarioA1OrdnanceMapRules.SupportWeaponLocationRefusal(latwType, building, firerRead.Level.Level) is { } placed)
+        if (ScenarioA1OrdnanceMapRules.SupportWeaponLocationRefusal(latwType, building, firerRead.Level.Level,
+            OrdnanceReference.Value.Weapon(shot.Gun.DefinitionId)?.GunType == ScenarioA1MachineGunKill.GunType) is { } placed)
         {
             return (null, placed);
         }

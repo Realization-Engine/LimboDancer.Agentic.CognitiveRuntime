@@ -122,10 +122,13 @@ public static class ScenarioA1OrdnanceMapRules
                 + "two or more levels is too steep (C13.8)"
         : null;
 
-    /// <summary>B23.423, C13.8, C13.81 (rulings R9.8, R9.11): a mortar fires from no building, a PF or PSK from no building's upper level.</summary>
-    public static string? SupportWeaponLocationRefusal(string? latwType, bool building, int level)
+    /// <summary>
+    /// B23.423, C13.8, C13.81 (rulings R9.8, R9.11): a mortar fires from no building, a PF or PSK from no building's upper level. A MG fired as ordnance
+    /// (<paramref name="machineGun"/>; pass 60) is held to neither.
+    /// </summary>
+    public static string? SupportWeaponLocationRefusal(string? latwType, bool building, int level, bool machineGun = false)
     {
-        if (latwType is null && building)
+        if (latwType is null && building && !machineGun)
         {
             return "play.ordnance-mortar-building: a mortar does not fire from a building Location (B23.423)";
         }
