@@ -1,7 +1,7 @@
 # Formation to ASL Map Alignment Design and Implementation Plan
 
 Date: 13 October 2026.
-Status: active goal expanded on 14 October 2026 to the complete Operation Goodwood Formation Map and counter transition into existing ASL setup. Bounded terrain generation, selected infantry/engineer/mortar conversion and Studio handoff are implemented. Full Situation coverage is not yet complete. Dated checkpoints below describe their respective increments; the current scope and completion gates immediately below take precedence over earlier pilot-only restrictions and superseded next-step notes.
+Status: active goal expanded on 14 October 2026 to the complete Operation Goodwood Formation Map and counter transition into existing ASL setup. Full Goodwood terrain coverage, all 624 ground counters, equipment relationships, immutable saves and Studio import are implemented. Live return navigation is verified. Whole-Situation usability, performance, compatibility and portable ASL-progress acceptance remain incomplete. Dated checkpoints below describe their respective increments; the current scope and completion gates immediately below take precedence over earlier pilot-only restrictions and superseded next-step notes.
 Branch: codex/formation-asl-map-alignment.
 Baseline analysis: [Formation to ASL Map Alignment Analysis](Formation%20to%20ASL%20Map%20Alignment%20Analysis.md), committed at 452dad19.
 
@@ -34,7 +34,7 @@ Retain nominal 250 m formation spacing and 40 m tactical spacing, subject to the
 | G4 Situation handoff and resume | Assemble the map coverage and both rosters into the existing ASL setup workflow, including supported equipment relationships and compatibility handling | End-to-end Formation to ASL to Formation to ASL navigation, export/import and restart preserve the accepted map and deployment |
 | G5 Whole-Situation acceptance | Run coverage, deterministic generation, setup validation, failure recovery, UI and performance acceptance; document limitations | Full Goodwood accounting and reproducible save/reload demonstrated; remaining ASL combat limitations clearly distinguished from transition defects |
 
-G2 and G3 may be delivered in small tested increments, but G1 determines the concrete next counter family and terrain gaps. G1 is recorded in [Goodwood Transition Coverage](../../Campaign/docs/Goodwood%20Transition%20Coverage.md), with a reproducible source inventory. The next increment is the G2 package coverage/ownership planner, not medium-mortar combat implementation or advancement of the separate ASL rules roadmap. Reuse existing ASL work as it becomes available without making this goal depend on implementing its future passes.
+G2 and G3 may be delivered in small tested increments, but G1 determines the concrete next counter family and terrain gaps. G1 is recorded in [Goodwood Transition Coverage](../../Campaign/docs/Goodwood%20Transition%20Coverage.md), with a reproducible source inventory. G2 package coverage and G3 roster conversion are implemented and have full-size integration evidence. Current work is G4/G5: full-map performance, interface acceptance, boundary handling, existing-deployment compatibility and portable preservation of subsequent ASL progress. Reuse existing ASL work as it becomes available without making this goal depend on implementing its future passes.
 
 ### Current baseline and exclusions
 

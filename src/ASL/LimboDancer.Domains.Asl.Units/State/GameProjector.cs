@@ -792,7 +792,10 @@ public static class GameProjector
         /// <summary>A11.15: a unit is no longer held in Melee once no enemy unit that is not a prisoner shares its Location.</summary>
         private static GameState KeepMelee(GameState next)
         {
-            var freed = next.Units.Where(unit => unit.Status == InstanceStatus.Active && next.Location(unit.Id) is { } at && Rules.ScenarioA1CloseCombatProjection.LeavesMelee(GameState.Condition(unit, Conditions.Melee) == ConditionState.True,
+            // Counters not in Melee cannot leave it. Avoid scanning all enemies for every ordinary setup placement.
+            var freed = next.Units.Where(unit => unit.Status == InstanceStatus.Active
+                && GameState.Condition(unit, Conditions.Melee) == ConditionState.True
+                && next.Location(unit.Id) is { } at && Rules.ScenarioA1CloseCombatProjection.LeavesMelee(true,
                 next.Units.Any(other => other.Status == InstanceStatus.Active && other.Side != unit.Side
                     && GameState.Condition(other, Conditions.Captured) != ConditionState.True && next.Location(other.Id)?.Location == at.Location))).ToArray();
             foreach (var unit in freed)

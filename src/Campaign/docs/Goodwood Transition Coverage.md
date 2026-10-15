@@ -256,3 +256,11 @@ Live inspection confirmed the campaign provenance totals and return link. Its st
 After rebuilding and restarting Studio, the existing campaign-d52f7b3704cf7cd4d56818f1 game reopened at Turn 1 Allied Rally Phase with setup open. The new disclosure reports 624 ground counters, 114 formations and eight off-map aircraft. Its Return to campaign map link opened the retained Goodwood campaign at port 8093 with Committed / Supplies issued and CMD, DEP, SUP, HQ and TRK markers visible. No game or campaign state was rewritten by navigation.
 
 The restarted hand-over screen was observed after approximately 173 seconds elapsed, including polling and inspection gaps. This is not an instrumented time-to-interactive measurement and does not establish a performance improvement. Opening the Allied full-map view remains under acceptance; stage-level profiling is needed before the performance gate can pass.
+
+### Full-map replay profiling and optimization
+
+Optional information-level stage logs now separate stored-game read, terrain compile/derive/validate, replay including board load, and SVG rendering. On the live saved Goodwood game before the replay correction: read 58.7 ms; compile 2.176 s; derive 2.485 s; validate 13.499 s; replay including board load 103.582 s.
+
+GameProjector was scanning opposing units for every active counter after every setup event, even when the counter was not in Melee. The existing LeavesMelee rule is false for those counters; checking that condition first avoids the unnecessary scan without changing rule results. After the correction on a fresh Studio process and the same save: read 50.1 ms; compile 1.817 s; derive 2.244 s; validate 12.421 s; replay including board load 18.289 s (about 82 percent lower). A repeated replay against the retained events took 0.342 ms. These are service-stage timings, not end-to-end browser timings.
+
+All 416 unit-state tests and 37 Studio play/render tests passed. An existing fixture assertion hardcoded catalog 1.15 while using the current catalog hash; it now verifies the actual pinned catalog identity. Full-map rendering has been visually confirmed; interaction, portable later-game progress and remaining release gates are still outstanding.
