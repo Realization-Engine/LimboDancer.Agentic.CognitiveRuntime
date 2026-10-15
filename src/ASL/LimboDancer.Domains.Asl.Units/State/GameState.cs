@@ -527,7 +527,14 @@ public sealed record GameState(
 /// A DC Placed (A23.3; ruling R15.2): the DC, its placer and the Location it Placed it from, its target Location, whether the placer was CX, whether
 /// every unit there was concealed at the Placement, and whether it is operably Placed yet.
 /// </summary>
-public sealed record PlacedCharge(string Charge, string Unit, BoardLocation From, BoardLocation Target, bool Cx, bool TargetsConcealed, bool Operable);
+public sealed record PlacedCharge(string Charge, string Unit, BoardLocation From, BoardLocation Target, bool Cx, bool TargetsConcealed, bool Operable)
+{
+    /// <summary>The Target Facings of each enemy AFV there as the DC was Placed (A23.5; pass 60); null from a record made before the pass.</summary>
+    public IReadOnlyList<DcTargetFacing>? Facings
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// A game's events and its state after each one. <see cref="States"/>[n] is the state at revision n + 1. When the

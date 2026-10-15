@@ -119,8 +119,10 @@ public static class ScenarioA1FireFollowUps
     /// <summary>
     /// What the Fire package asks for next (ruling R5.8): the attack resolved; an option its owner answers; a roll, named by its key, with its dice count and
     /// purpose (a Random Selection names the units it selects among, one die each, A.9, A8.31, A9.71); or an attack the package accepted and left undecided.
+    /// A DC at a named AFV (<paramref name="dcAtAfv"/>; pass 60, the table player) names its second DR as its own, the To Kill DR or the crew's or
+    /// Location's IFT DR as its Position DR decides (C7.346), rather than an IFT DR.
     /// </summary>
-    public static FireNextStep NextFireStep(FireResolution resolution)
+    public static FireNextStep NextFireStep(FireResolution resolution, bool dcAtAfv = false)
     {
         ArgumentNullException.ThrowIfNull(resolution);
         if (resolution.Disposition == FireResolution.Resolved)
@@ -146,7 +148,7 @@ public static class ScenarioA1FireFollowUps
         var selected = kind is "randomSelection" or "weaponSelection" or "firerSelection" or "cowerSelection" ? unit.Split(',') : [];
         var (count, purpose) = kind switch
         {
-            "attack" => (2, "fire-ift"),
+            "attack" => (2, dcAtAfv ? "fire-dc-second" : "fire-ift"),
             "randomSelection" => (selected.Length, "fire-random-selection"),
             "weaponSelection" => (selected.Length, "fire-weapon-selection"),
             "firerSelection" => (selected.Length, "fire-firer-selection"),

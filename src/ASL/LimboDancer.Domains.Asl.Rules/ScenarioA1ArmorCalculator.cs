@@ -315,7 +315,8 @@ internal static class ScenarioA1ArmorCalculator
 
         // Pass 9b: a PSK reads its own To Hit Table (C13.48); an ATR the black Vehicle row whatever its nationality (C13.2).
         // A9.6 (p. 64; pass 60): "A non-captured MG To Hit DR always uses the black To Hit numbers regardless of nationality when firing as
-        // ordnance"; a MG is no Gun of a size, so the C4 modifications are not read for it.
+        // ordnance". C4.2 (p. 171; the second referee): "any weapon (including MG)" of 57mm or less takes -1 for every 12 hexes beyond 12, and another
+        // for 40mm or less; a MG is read as caliber 0 with no barrel length, so only those rows apply to it.
         var machineGun = gun.GunType == ScenarioA1MachineGunKill.GunType;
         if (gun.LatwType == "atr" || machineGun)
         {
@@ -323,7 +324,7 @@ internal static class ScenarioA1ArmorCalculator
         }
 
         var basic = pf ? 10 : gun.ToHitTable.Count > 0 ? gun.ToHitTable[range - 1] : reference.Armor.BasicToHit(color, column);
-        var modifications = pf ? [new FireModifier("pf-range", -2 * range, "C13.33")] : gun.ToHitTable.Count > 0 || machineGun ? [] : reference.Modifications(gun, range).ToList();
+        var modifications = pf ? [new FireModifier("pf-range", -2 * range, "C13.33")] : gun.ToHitTable.Count > 0 ? [] : reference.Modifications(gun, range).ToList();
         // C4.3 (p. 171): "the Basic TH# of any shot using APCR/APDS is lessened by one for every 12 hexes (or fraction thereof) beyond 12 hex range".
         if (ammunition is "apcr" or "apds" && reference.Armor.ApcrToHit(column) is var apcr && apcr != 0)
         {
@@ -412,8 +413,9 @@ internal static class ScenarioA1ArmorCalculator
 
         // C5.5 (p. 172; pass 50): "any Gun firing at a target within its own hex must add the +2 DRM of Case E", doubled in woods, a building, or
         // rubble; "Cases J3, J4, L, and M are not applicable".
+        // A SW MG is no Gun: the chart marks Case E "S", not with a SW (the second referee); D3.2's Target Facing and C6.3's own-hex bar of Case L stay.
         var sameHex = shot.SameHex == true;
-        if (sameHex)
+        if (sameHex && !(machineGun && shot.Vehicle is null))
         {
             drm.Add(new FireModifier("case-e", woods ? 4 : 2, "C5.5"));
         }
@@ -646,6 +648,8 @@ internal static class ScenarioA1ArmorCalculator
             && kill.Abandoned != true;
         var firepower = gun.GunType == ScenarioA1MachineGunKill.GunType ? gun.Firepower
             : kill.Ammunition == "he" ? reference.HeFirepower(gun.Caliber)
+            // C8.31 note 1, C13.24: an ATR that is not 20mm has no HE Equivalency, so its hit makes no Collateral Attack.
+            : gun.LatwType == "atr" && !ScenarioA1HeEquivalency.AtrHasEquivalency(gun.Caliber) ? null
             : ScenarioA1HeEquivalency.Firepower(kill.Ammunition, ScenarioA1HeEquivalency.Weapon(gun), gun.Caliber, ScenarioA1OrdnanceCalculator.HeFirepowerOf(gun, reference));
         // A7.3 (p. 55): "the rightmost column of the IFT whose listed FP ... does not exceed the total adjusted FP": a 3 FP LMG attacks on the 2 column.
         var column = firepower is not { } fp ? -1

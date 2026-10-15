@@ -576,7 +576,9 @@ public static class ScenarioA1FireCalculator
                 outside.Add("asl.a1.fire.target-vehicle-outside");
             }
 
-            if (targets.Any(item => item.Concealed == true || item.Hidden == true || item.Dummy == true))
+            // A12.3, ruling R21.1 (pass 60, the table player): only the "?" the firer sees bars the naming; a hidden unit is attacked silently and
+            // gives itself away by no refusal.
+            if (targets.Any(item => (item.Concealed == true || item.Dummy == true) && item.Hidden != true))
             {
                 outside.Add("asl.a1.fire.target-vehicle-concealed");
             }
@@ -1665,7 +1667,7 @@ public static class ScenarioA1FireCalculator
                     {
                         if (ScenarioA1GunDestruction.Fate(ScenarioA1GunDestruction.DemolitionCharge, own.Result, false) is { } dcFate)
                         {
-                            fates.Add(new FireWeaponDestruction(id, unit.Id, null, own.Result, dcFate, "C11.6"));
+                            fates.Add(new FireWeaponDestruction(id, unit.Id, own.Result, dcFate, "C11.6"));
                         }
 
                         continue;
@@ -1687,7 +1689,10 @@ public static class ScenarioA1FireCalculator
                     var result = reference.Result(dr, own.Column);
                     var fate = ScenarioA1GunDestruction.Random(result, weapon.Malfunctioned == true,
                         reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty)?.BreakdownRemoves == true);
-                    fates.Add(new FireWeaponDestruction(id, unit.Id, dr, result, fate ?? "none", "A9.74"));
+                    fates.Add(new FireWeaponDestruction(id, unit.Id, result, fate ?? "none", "A9.74")
+                    {
+                        Dr = dr
+                    });
                 }
             }
 
@@ -2184,7 +2189,11 @@ public static class ScenarioA1FireCalculator
                 return null;
             }
 
-            var drm = arithmetic.Drm.Where(item => !TargetOwn(item)).ToList();
+            // C11.2, C11.5 (p. 182; pass 60, the first referee): a Gun's gunshield and Emplacement protect "the Good Order manning crew (only)", never a
+            // vehicle of its Location. Applied by an attack that carries the pass's fact (ruling R60.3), as every attack planned since does.
+            bool Own(FireModifier modifier) => TargetOwn(modifier) || (attack.RandomDestruction == true
+                && (modifier.Name.StartsWith("gunshield:", StringComparison.Ordinal) || modifier.Name.StartsWith("emplacement:", StringComparison.Ordinal)));
+            var drm = arithmetic.Drm.Where(item => !Own(item)).ToList();
             var final = arithmetic.OriginalDr + (int)drm.Sum(item => item.Value);
             var effects = new List<FireVehicleEffect>();
             foreach (var vehicle in attack.Vehicles!)
@@ -2198,9 +2207,14 @@ public static class ScenarioA1FireCalculator
                 {
                     // C3.331, C3.332 and its EX, C3.71, D5.311 (pp. 170, 203; pass 60, rulings R60.10, R60.12): on the Area Target Type the vehicle takes
                     // the TEM that gives it no HD, reversed by a Critical Hit, and the Air Bursts in woods; an OT AFV hit by Air Bursts takes none of them.
-                    var line = attack.OrdnanceHit is not { Area: true } ? drm
+                    // C3.71 (p. 170; pass 60, the first referee): a Critical Hit on the Infantry Target Type reverses the vehicle's own positive Case Q,
+                    // Height Advantage included, as it does its Location's Infantry's.
+                    var line = attack.OrdnanceHit is { Area: not true, CriticalHit: true }
+                        ? [.. drm, .. arithmetic.Drm.Where(item => item.Name.StartsWith("critical-hit-tem:", StringComparison.Ordinal)
+                            && !item.Name.StartsWith("critical-hit-tem:afv-cover:", StringComparison.Ordinal))]
+                        : attack.OrdnanceHit is not { Area: true } ? drm
                         : AirBurstUnarmored(attack.OrdnanceHit is { Area: true }, attack.TargetTerrain, definition) ? [.. drm.Where(item => item.Name != "air-burst")]
-                        : [.. arithmetic.Drm.Where(item => !TargetOwn(item) || item.Name.StartsWith("tem:", StringComparison.Ordinal)
+                        : [.. arithmetic.Drm.Where(item => !Own(item) || item.Name.StartsWith("tem:", StringComparison.Ordinal)
                             || (item.Name.StartsWith("critical-hit-tem:", StringComparison.Ordinal) && item.Name != "critical-hit-tem:height-advantage"))];
                     var lineFinal = arithmetic.OriginalDr + (int)line.Sum(item => item.Value);
                     var kill = column < 0 ? (int?)null : reference.KillNumber(column);

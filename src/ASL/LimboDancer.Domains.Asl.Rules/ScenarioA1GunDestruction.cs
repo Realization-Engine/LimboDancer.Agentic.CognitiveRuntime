@@ -44,6 +44,13 @@ public static class ScenarioA1GunDestruction
     };
 
     /// <summary>
+    /// The scope of A9.74 (p. 65; pass 60, ruling R60.17; the second referee): an attack other than an OVR (whose A9.74 is backlog) checks each SW its
+    /// target possesses and each Gun it mans; a Gun in tow is left out, as it dies only with its vehicle (C11.6 note 1). <paramref name="role"/> is the
+    /// holding's role as the state names it ("possessed", "manned", "towed"), or null for whether the attack carries the rule at all.
+    /// </summary>
+    public static bool Checks(string? role, bool overrun) => !overrun && role is null or "possessed" or "manned";
+
+    /// <summary>
     /// A9.74 (p. 65): the dr of a SW or Gun that a unit eliminated by a Final KIA possessed, read as an IFT DR on the attack's column with no DRM: a KIA
     /// eliminates it; a K malfunctions it, or eliminates it if it was already malfunctioned or has an X#; null for none. A dm SW counts as a SW (A9.8).
     /// </summary>

@@ -692,6 +692,9 @@ public sealed class BacklogPass11Tests : IDisposable
         Assert.Single(Since(before).Select(item => item.Payload).OfType<PaatcTaken>());
         Assert.Equal(InstanceStatus.Wrecked, Current.Unit("de-tk")!.Status);
 
+        // A9.223 (pass 60, rulings R60.3, R60.20): the reaction's record carries the Fire Lane's cancellation; one made before the pass does not.
+        Assert.True(Since(before).Select(item => item.Payload).OfType<VehicleCloseCombatResolved>().Single().CancelsFireLanes);
+
         NoReplayErrors();
     }
 

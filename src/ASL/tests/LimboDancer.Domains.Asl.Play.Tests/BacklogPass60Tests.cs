@@ -298,7 +298,8 @@ public sealed class BacklogPass60Tests : IDisposable
             Unit("r1", "asl:squad", "defender-squad", Target, "russian"));
         var result = await Shoot("de-psk", null, 2, 2);
         Assert.NotEqual(PlayOutcome.Committed, result.Outcome);
-        Assert.Contains(result.Reasons, reason => reason.Contains("asl.a1.ordnance.heat-target-outside", StringComparison.Ordinal) && reason.Contains("C8.31", StringComparison.Ordinal));
+        Assert.Contains(result.Reasons, reason => reason.Contains("asl.a1.ordnance.heat-target-outside", StringComparison.Ordinal) && reason.Contains("C8.31", StringComparison.Ordinal)
+            && reason.Contains("a PF or PSK fires only at a vehicle, a Gun, or Infantry in a building", StringComparison.Ordinal));
     }
 
     [Fact]
@@ -451,11 +452,32 @@ public sealed class BacklogPass60Tests : IDisposable
         await Setup("russian", "german", 1943, 7, [.. Gun("ru-gun", "defender-at-gun", "ru-crew", "defender-crew", Firer, "russian", "north-east"),
             Unit("de-s", "asl:squad", "attacker-squad", Target, "german"), Concealed(Unit("de-c", "asl:squad", "attacker-squad", Target, "german"))]);
         var before = Revision;
-        Committed(await Shoot("ru-gun", null, 4, 4, 3, 4, 3, 4, 3, 4));
+        var result = await Shoot("ru-gun", null, 4, 4, 3, 4, 3, 4, 3, 4);
+        Committed(result);
         var shot = LastShot(before);
         Assert.Equal([("de-c", false), ("de-s", true)], TargetHits(shot));
         Assert.Equal(["de-s"], Ids(shot.Resolution, "hit", "effects", "unitId"));
         Assert.Equal(ConditionState.True, GameState.Condition(Planner().Replay(store.Read(Scope)!.Events).Current!.Unit("de-c")!, Conditions.Concealed));
+
+        // The proposal gives the Original DR each needs as Rules computes it, and the concealed units one entry, never by name (the first referee).
+        Assert.Contains(result.Plan!.Reasons, reason => reason.Contains("de-s on an Original DR of 9 or less, its concealed units on an Original DR of 7 or less", StringComparison.Ordinal)
+            && !reason.Contains("de-c", StringComparison.Ordinal));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AHiddenUnitBesideAKnownSquadIsNeverNamedNorCountedInTheProposal()
+    {
+        // A12.3, ruling R21.1 (the first referee, the table player): a HIP squad beside a Known one is attacked, but the firer's proposal reads a
+        // Location of one Known squad, with no target-by-target line that would betray it.
+        var hidden = Unit("de-h", "asl:squad", "attacker-squad", Target, "german");
+        hidden["conditions"] = new Dictionary<string, bool> { ["asl:broken"] = false, ["asl:concealed"] = false, ["asl:hidden"] = true };
+        await Setup("russian", "german", 1943, 7, [.. Gun("ru-gun", "defender-at-gun", "ru-crew", "defender-crew", Firer, "russian", "north-east"),
+            Unit("de-s", "asl:squad", "attacker-squad", Target, "german"), hidden]);
+        var result = await Shoot("ru-gun", null, 4, 4, 3, 4, 3, 4, 3, 4);
+        Committed(result);
+        Assert.DoesNotContain(result.Plan!.Reasons, reason => reason.Contains("target by target", StringComparison.Ordinal) || reason.Contains("de-h", StringComparison.Ordinal)
+            || reason.Contains("concealed", StringComparison.Ordinal));
         NoReplayErrors();
     }
 
@@ -600,18 +622,11 @@ public sealed class BacklogPass60Tests : IDisposable
             placeDcAt = Target,
         }));
         Assert.Contains(Since(placing), item => item.Payload is PaatcTaken { Passed: true });
-        Committed(await Do(GameActions.PassFire, NoRoll(), new
-        {
-        }));
-        Committed(await Do(GameActions.EndMove, NoRoll(), new
-        {
-        }));
-        for (var step = 0; step < 2; step++)
-        {
-            Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
-            {
-            }));
-        }
+
+        // A23.5 (the second referee): the Placement records the T-34's Target Facing through the hexside it was Placed across.
+        var facing = Since(placing).Select(item => item.Payload).OfType<MovementStepped>().Single(item => item.DcPlacement is not null).DcPlacement!.Facings!.Single();
+        Assert.Equal(("ru-tank", "rear"), (facing.Vehicle, facing.Hull));
+        await DetonateAfterPlacing();
 
         var before = Revision;
         var result = await Do(GameActions.DetonateDc, Once(3, 4, 3, 2), new
@@ -628,6 +643,79 @@ public sealed class BacklogPass60Tests : IDisposable
         Assert.Equal(("dc", 3, 14, "burn"), (kill.GetProperty("ammunition").GetString(), kill.GetProperty("armorFactor").GetInt32(), kill.GetProperty("finalTk").GetInt32(),
             kill.GetProperty("result").GetString()));
         Assert.Equal(InstanceStatus.Wrecked, Current.Unit("ru-tank")!.Status);
+        NoReplayErrors();
+    }
+
+    /// <summary>The German squad's MPh after its Placement, and on to its AFPh.</summary>
+    private async Task DetonateAfterPlacing()
+    {
+        Committed(await Do(GameActions.PassFire, NoRoll(), new
+        {
+        }));
+        Committed(await Do(GameActions.EndMove, NoRoll(), new
+        {
+        }));
+        for (var step = 0; step < 2; step++)
+        {
+            Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
+            {
+            }));
+        }
+    }
+
+    [Fact]
+    public async Task APlacedDcReadsTheTargetFacingItWasPlacedThrough()
+    {
+        // A23.5: the facing stands "even if the AFV changes its CA": a Placement that recorded the T-34's hull side toward it detonates against the
+        // side, whatever the tank's facing now. A Placement recorded before the pass, with none, reads the facing at the detonation.
+        await Setup("german", "russian", 1943, 7, Unit("g1", "asl:squad", "attacker-squad", Beside, "german"), Held("dc", "asl:dc", "attacker-dc", "g1", "german"),
+            Vehicle("ru-tank", "defender-tank", Target, "russian", "north-east"));
+        Committed(await Do(GameActions.AdvancePhase, NoRoll(), new
+        {
+        }));
+        Committed(await Do(GameActions.Move, Once(2, 2), new
+        {
+            unitIds = new[] { "g1" },
+            to = Beside,
+            placeDc = "dc",
+            placeDcAt = Target,
+        }));
+        await DetonateAfterPlacing();
+
+        var file = Directory.GetFiles(root, "*.game.json", SearchOption.AllDirectories).Single();
+        var game = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(file))!;
+        static void Turned(System.Text.Json.Nodes.JsonNode? node)
+        {
+            if (node is System.Text.Json.Nodes.JsonObject item)
+            {
+                if (item["dcFacings"] is System.Text.Json.Nodes.JsonArray facings)
+                {
+                    facings[0]!["hull"] = "side";
+                }
+
+                foreach (var (_, value) in item.ToList())
+                {
+                    Turned(value);
+                }
+            }
+            else if (node is System.Text.Json.Nodes.JsonArray items)
+            {
+                foreach (var value in items)
+                {
+                    Turned(value);
+                }
+            }
+        }
+
+        Turned(game);
+        File.WriteAllText(file, game.ToJsonString());
+        var before = Revision;
+        Committed(await Do(GameActions.DetonateDc, Once(3, 4, 3, 2, 2, 2, 2, 2), new
+        {
+            equipmentId = "dc",
+            vehicle = "ru-tank",
+        }));
+        Assert.Equal("side", LastFire(before).Facts.GetProperty("targetVehicle").GetProperty("hullFacing").GetString());
         NoReplayErrors();
     }
 
@@ -649,12 +737,13 @@ public sealed class BacklogPass60Tests : IDisposable
     public async Task AKiaOnASquadHoldingALmgDestroysTheLmgOnItsDr()
     {
         // A9.74: IFT DR 3 on the 16 FP column is a 1KIA; the LMG's dr of 3 on the same column is a 1KIA too: it is eliminated before its squad, so it is
-        // not dropped. The record carries the rule and the weapons the target held (ruling R60.3).
+        // not dropped. The record carries the rule (ruling R60.3), never the weapons the target held, which both sides would read (boundary review):
+        // replay reads them from the state.
         var before = Revision;
         await FireAtLmgSquad(1, 2, 3, 3);
         var fire = LastFire(before);
         Assert.True(fire.Facts.GetProperty("randomDestruction").GetBoolean());
-        Assert.Equal("de-lmg", fire.Facts.GetProperty("targets")[0].GetProperty("heldWeapons")[0].GetProperty("equipmentId").GetString());
+        Assert.False(fire.Facts.GetProperty("targets")[0].TryGetProperty("heldWeapons", out _));
         var fate = fire.Resolution.GetProperty("weaponDestruction")[0];
         Assert.Equal((3, "1KIA", "destroyed"), (fate.GetProperty("dr").GetInt32(), fate.GetProperty("result").GetString(), fate.GetProperty("fate").GetString()));
         var eliminated = Since(before).Select(item => item.Payload).OfType<InstanceEliminated>().Select(item => item.Id).ToArray();
@@ -734,21 +823,39 @@ public sealed class BacklogPass60Tests : IDisposable
         NoReplayErrors();
     }
 
-    [Fact]
-    public async Task AGunMannedByASquadLosesItsEmplacementForTheGame()
+    /// <summary>The state with the Gun manned by the given unit, as a manning changed in play would leave it.</summary>
+    private GameState MannedBy(string gunId, string unitId)
     {
-        // C11.3 (ruling R60.18): a Gun that starts manned by a non-crew unit loses Emplacement; a crew that mans it later does not regain it. A shot
-        // recorded before the pass reads the Emplacement as it was read then.
+        var gun = (EquipmentInstance)Current.Find(gunId)!;
+        return Current with
+        {
+            Equipment = [.. Current.Equipment.Select(item => item.Id == gun.Id ? gun with { Holding = new Holding(unitId, HoldingRole.Manned) } : item)],
+        };
+    }
+
+    [Fact]
+    public async Task AGunSetUpMannedByASquadLosesItsEmplacementForTheGame()
+    {
+        // C11.3 (p. 182; rulings R60.18, R60.26): a Gun that "starts a scenario ... manned by a non-crew unit" loses Emplacement; a crew that mans it
+        // later does not regain it. A shot recorded before the pass reads the Emplacement as it was read then.
         await Setup("russian", "german", 1943, 7, Unit("r1", "asl:squad", "defender-squad", Target, "russian"),
             Gun("ru-gun", "defender-at-gun", "r1", "defender-squad", Target, "russian", "south-west")[1], Unit("ru-crew", "asl:crew", "defender-crew", Target, "russian"));
         Assert.Contains("ru-gun", Current.NonCrewMannedGuns);
-        var gun = (EquipmentInstance)Current.Find("ru-gun")!;
-        var crewed = Current with
-        {
-            Equipment = [.. Current.Equipment.Select(item => item.Id == gun.Id ? gun with { Holding = new Holding("ru-crew", HoldingRole.Manned) } : item)],
-        };
+        var crewed = MannedBy("ru-gun", "ru-crew");
         var manned = (EquipmentInstance)crewed.Find("ru-gun")!;
-        Assert.Equal((false, true), (LiveOrdnance.Emplaced(crewed, manned), LiveOrdnance.Emplaced(crewed, manned, nonCrewManning: false)));
+        Assert.Equal((false, true), (LiveOrdnance.Emplaced(crewed, manned, nonCrewManning: true), LiveOrdnance.Emplaced(crewed, manned, nonCrewManning: false)));
+    }
+
+    [Fact]
+    public async Task AGunASquadMansInPlayKeepsItsEmplacementOnceACrewMansItAgain()
+    {
+        // R60.26: a Gun set up with its crew is not marked when a squad mans it in play; C11.2 withholds the +2 only while the squad mans it.
+        await Setup("russian", "german", 1943, 7, [.. Gun("ru-gun", "defender-at-gun", "ru-crew", "defender-crew", Target, "russian", "south-west"),
+            Unit("r1", "asl:squad", "defender-squad", Target, "russian")]);
+        Assert.Empty(Current.NonCrewMannedGuns);
+        var bySquad = MannedBy("ru-gun", "r1");
+        Assert.False(LiveOrdnance.Emplaced(bySquad, (EquipmentInstance)bySquad.Find("ru-gun")!, nonCrewManning: true));
+        Assert.True(LiveOrdnance.Emplaced(Current, (EquipmentInstance)Current.Find("ru-gun")!, nonCrewManning: true));
     }
 
     // Increment 2f: a MG's To Kill attack on an AFV (A9.6, A9.61, A9.611, D3.54; ruling R60.19). The firer in B10, the AFV in B8 two hexes off.

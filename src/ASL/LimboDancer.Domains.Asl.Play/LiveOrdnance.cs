@@ -263,9 +263,9 @@ public static class LiveOrdnance
                 .OrderBy(unit => unit.Id, StringComparer.Ordinal).Select(unit => LiveFire.Vehicle(unit, state.Location(unit.Id)!.Location))];
         }
 
-        // C6.521 (pass 60, ruling R60.13): a mortar's Area Acquisition covers every Location of its hex.
-        int? areaAcquisition = mortar && acquisition == 0 && state.Acquisitions.FirstOrDefault(item => item.Gun == gun.Id && item.Location is { } acquired
-            && acquired.Board == target.Board && acquired.Hex == target.Hex) is { Level: < 0 } hexAcquired ? hexAcquired.Level : null;
+        // C6.521 (pass 60, ruling R60.13): a mortar's Area Acquisition covers every Location of its hex; Rules decides it from the Gun's Acquisitions there.
+        var areaAcquisition = ScenarioA1OrdnanceEligibility.AreaAcquisition(mortar, acquisition, state.Acquisitions
+            .Where(item => item.Gun == gun.Id && item.Location is { } acquired && acquired.Board == target.Board && acquired.Hex == target.Hex).Select(item => item.Level));
         var hit = new FireAttack(phase, firingSide, null, null, target.ToString(), [], null, null, null, null, state.ScenarioMonth, null,
             [.. targets.Select(unit => LiveFire.Target(state, unit, mortar ? state.Location(unit.Id)!.Location : target))], targetSide is null ? null : state.Side(targetSide)?.Elr, null)
         {
@@ -604,9 +604,10 @@ public static class LiveOrdnance
 
     /// <summary>
     /// Whether a Gun is Emplaced: manned by a crew, never moved or hooked up (C11.2, C11.3), and, from pass 60 on (<paramref name="nonCrewManning"/>;
-    /// ruling R60.18), never manned by a non-crew unit.
+    /// rulings R60.18, R60.26), not one that started the scenario manned by a non-crew unit. The argument is required, so that no caller applies the
+    /// rule to a record made before the pass by default.
     /// </summary>
-    public static bool Emplaced(GameState state, EquipmentInstance gun, bool nonCrewManning = true)
+    public static bool Emplaced(GameState state, EquipmentInstance gun, bool nonCrewManning)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(gun);
@@ -844,9 +845,11 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
             return "The ordnance record names a roll of the wrong shape.";
         }
 
+        // A9.74 (pass 60; boundary review): the record never names the weapons its targets hold; the shot resolves with the state's.
         var resolution = ScenarioA1OrdnanceCalculator.Resolve(recorded with
         {
-            Rolls = dice
+            Rolls = dice,
+            Hit = passSixty ? LiveFire.WithRandomDestruction(state, recorded.Hit) : recorded.Hit,
         }, reference);
         if (resolution.Disposition != OrdnanceResolution.Resolved)
         {

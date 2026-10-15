@@ -109,9 +109,11 @@ public sealed partial class GamePlanner
 
         // C3.32, C3.41 (pass 60, ruling R60.8): an Infantry Target Type shot at a Location holding a vehicle attacks its Infantry and unarmored vehicles
         // and a Vulnerable AFV crew; Rules says where it is still refused. C3.31 (ruling R7.2): name a vehicle to fire at it on the Vehicle Target Type.
+        // The table player (pass 60): the advice names an enemy vehicle where there is one.
+        var firingSide = state.Unit(shot.Crew?.UnitId ?? string.Empty)?.Side;
         if (targetVehicle is null && shot.TargetType is null
-            && state.At(target).OfType<UnitInstance>().FirstOrDefault(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)
-                && (state.Phase != "mph" || state.Movement?.Movers.Contains(unit.Id) == true)) is { } vehicle
+            && state.At(target).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)
+                && (state.Phase != "mph" || state.Movement?.Movers.Contains(unit.Id) == true)).OrderBy(unit => unit.Side == firingSide).FirstOrDefault() is { } vehicle
             && ScenarioA1OrdnanceEligibility.LocationVehicleRefusal(vehicle.Id, target.ToString(), state.Phase == "mph",
                 shot.Gun!.DefinitionId == OrdnanceTargetTypes.Panzerfaust || LiveOrdnance.LatwType(shot.Gun.DefinitionId ?? string.Empty) == "atr",
                 shot.Hit!.Targets is { Count: > 0 }, shot.Hit.Vehicles?.Any(item => FireReference.Value.Definitions.GetValueOrDefault(item.DefinitionId ?? string.Empty)?.Unarmored == true) == true) is { } vehicleRefusal)
@@ -174,28 +176,47 @@ public sealed partial class GamePlanner
     /// <summary>A shot's proposal in words: what fires at what, the range and terrain, any turn, and the To Hit number and DRM before any roll.</summary>
     private static string OrdnanceSummary(OrdnanceShot facts, UnitFacing? facing)
     {
-        // The To Hit number and DRM before any roll, read from the package with dice that decide nothing else (a miss).
+        // The To Hit number and DRM before any roll, read from the package with dice that decide nothing else (a miss). A hidden unit is left out
+        // of what the firer reads (A12.3; ruling R21.1; pass 60, first referee and table player): it is attacked, but never named or counted.
+        var hit = facts.Hit!;
+        FireTarget[] seen = [.. hit.Targets!.Where(target => target.Hidden != true)];
         var previewed = ScenarioA1OrdnanceCalculator.Resolve(facts with
         {
+            Hit = hit with
+            {
+                Targets = seen
+            },
             Rolls = new OrdnanceRolls([6, 6], null, null, null, null) { PanzerfaustCheck = 1 }
         }, OrdnanceReference.Value);
         var preview = previewed.ToHit;
 
-        // C3.32, C3.4 (pass 60, rulings R60.8, R60.9): a Location hit target by target says which units and vehicles each Original DR hits; a
-        // concealed one is named only as such, and an AFV for its CE crew.
-        var each = previewed.TargetHits is { } judged && preview is not null
-            ? "; hit target by target (C3.32, C3.4): " + string.Join(", ", judged.Select(item =>
+        // C3.32, C3.4 (pass 60, rulings R60.8, R60.9): a Location hit target by target says which units and vehicles each Original DR hits, as Rules
+        // gives it; the concealed units of the Location are one entry, without their number or size, and an AFV is named for its CE crew.
+        static string Need(int need) => need >= 2 ? $"on an Original DR of {need} or less" : "only on an Original 2 (C3.6)";
+        var each = string.Empty;
+        if (previewed.TargetHits is { } judged && preview is not null)
+        {
+            bool IsConcealed(string id) => seen.FirstOrDefault(target => target.UnitId == id) is { } unit
+                ? unit.Concealed == true || unit.Dummy == true
+                : hit.Vehicles?.FirstOrDefault(target => target.VehicleId == id)?.Concealed == true;
+            var entries = judged.Where(item => !IsConcealed(item.UnitId)).Select(item =>
             {
-                var need = preview.ModifiedToHit - (item.FinalDr - 12 - (int)preview.Drm.Where(drm => drm.Name == "case-c4:lower-dr").Sum(drm => drm.Value));
-                var unit = facts.Hit!.Targets!.FirstOrDefault(target => target.UnitId == item.UnitId);
-                var vehicle = facts.Hit.Vehicles?.FirstOrDefault(target => target.VehicleId == item.UnitId);
-                var name = unit is not null ? (unit.Concealed == true || unit.Hidden == true || unit.Dummy == true ? "a concealed unit" : item.UnitId)
-                    : vehicle?.Concealed == true ? "a concealed vehicle"
-                    : FireReference.Value.Definitions.GetValueOrDefault(vehicle?.DefinitionId ?? string.Empty)?.Unarmored == true ? item.UnitId
+                var vehicle = hit.Vehicles?.FirstOrDefault(target => target.VehicleId == item.UnitId);
+                var name = vehicle is null || FireReference.Value.Definitions.GetValueOrDefault(vehicle.DefinitionId ?? string.Empty)?.Unarmored == true ? item.UnitId
                     : $"the CE crew of {item.UnitId} (D.8B)";
-                return need >= 2 ? $"{name} on an Original DR of {need} or less" : $"{name} only on an Original 2 (C3.6)";
-            }))
-            : string.Empty;
+                return $"{name} {Need(item.NeededOriginal ?? 0)}";
+            }).ToList();
+            var concealed = judged.Where(item => IsConcealed(item.UnitId)).ToArray();
+            if (concealed.Length > 0)
+            {
+                // Case K alone is a concealed unit's own DRM; a concealed vehicle's size is not the firer's to know.
+                entries.Add(concealed.FirstOrDefault(item => seen.Any(target => target.UnitId == item.UnitId)) is { } one
+                    ? $"its concealed units {Need(one.NeededOriginal ?? 0)}" : "its concealed units, each on its own Final DR with Case K (C6.2)");
+            }
+
+            each = "; hit target by target (C3.32, C3.4): " + string.Join(", ", entries);
+        }
+
         var toHit = preview is null ? string.Empty
             : $"; Modified TH# {preview.ModifiedToHit} ({preview.Color}), DRM {(preview.Drm.Count == 0 ? "none" : string.Join(", ", preview.Drm.Select(item =>
                 // C5.35 (pass 50): the lower dr is not known before the roll.
@@ -584,7 +605,12 @@ public sealed partial class GamePlanner
             }
 
             var above = LevelsAbove(place.Level);
-            locations.Add(new OrdnanceAreaLocation(place.ToString(), placeRead.TargetTerrain, placeRead.Los, above > 0 ? above : null));
+            locations.Add(new OrdnanceAreaLocation(place.ToString())
+            {
+                TargetTerrain = placeRead.TargetTerrain,
+                Los = placeRead.Los,
+                LevelsAbove = above > 0 ? above : null,
+            });
         }
 
         return (locations, null);
@@ -713,18 +739,15 @@ public sealed partial class GamePlanner
             && ScenarioA1OrdnanceMapRules.WithinArc(bearing, (int)barrel));
         // C11.5 (referee, pass 8): the gunshield protects only a Good Order crew, never one moving or pushing the Gun under Defensive First Fire.
         var crewKind = crew.Kind == "asl:crew";
-        var emplaced = LiveOrdnance.Emplaced(state, gun);
+        var emplaced = LiveOrdnance.Emplaced(state, gun, nonCrewManning: true);
         var moving = state.Phase == "mph" && state.Movement?.Movers.Contains(crew.Id) == true;
         return new FireGunTarget(gun.Id, gun.Definition?.Definition, crew.Id, emplaced, ScenarioA1OrdnanceMapRules.Gunshield(definition?.GunType, withinCa, crewKind, moving));
     }
 
-    /// <summary>
-    /// The unattended Gun in a target Location (C3.41, C11.4; pass 60, ruling R60.18): one no unit mans and no vehicle tows, with no gunshield and no
-    /// Emplacement; null when there is none.
-    /// </summary>
+    /// <summary>The unattended Gun in a target Location (C3.41, C11.4; pass 60, ruling R60.18), as Rules finds it among the equipment there; null when there is none.</summary>
     internal static FireGunTarget? UnattendedGunAt(GameState state, BoardLocation target) =>
-        state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Holding is null && item.Position is MapPosition at && at.Location == target)
-            .OrderBy(item => item.Id, StringComparer.Ordinal).Select(item => new FireGunTarget(item.Id, item.Definition?.Definition, null, false, false)).FirstOrDefault();
+        ScenarioA1OrdnanceEligibility.UnattendedGun(state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Position is MapPosition at && at.Location == target)
+            .Select(item => (item.Id, item.Kind, item.Definition?.Definition, item.Holding is not null)));
 
     /// <summary>
     /// A target Location as a Gun's crew reads it (C3.2, C2.25; ruling R8.9): its own Location (Case E), no LOS, beyond the Gun's range, within its
@@ -1036,7 +1059,7 @@ public sealed partial class GamePlanner
         // more and the nearest Good Order enemy ground unit with a LOS to it is within 16 hexes, or the dr is a 6 and that unit 17 hexes or more away;
         // otherwise both are placed (or stay) beneath "?"; they keep HIP when no such unit has a LOS to the Gun.
         Dictionary<string, ConditionState>? emplacedReveal = null;
-        if (facts.Vehicle is null && state.Find(facts.Gun.GunId!) is EquipmentInstance firingGun && LiveOrdnance.Emplaced(state, firingGun) && state.Unit(facts.Crew.UnitId!) is { } gunCrew
+        if (facts.Vehicle is null && state.Find(facts.Gun.GunId!) is EquipmentInstance firingGun && LiveOrdnance.Emplaced(state, firingGun, nonCrewManning: true) && state.Unit(facts.Crew.UnitId!) is { } gunCrew
             && new[] { (IGameObject)firingGun, gunCrew }.Any(item => GameState.Condition(item, Conditions.Concealed) == ConditionState.True || GameState.Condition(item, Conditions.Hidden) == ConditionState.True)
             // C8.4 (pass 55): a Canister shot's IFT DR stands in for the To Hit DR it does not make.
             && (rolls.ToHit ?? rolls.Canister) is [var colored, ..] && state.Location(firingGun.Id) is { } firingAt)

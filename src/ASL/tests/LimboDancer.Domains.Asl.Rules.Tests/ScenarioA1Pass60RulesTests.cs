@@ -1,3 +1,4 @@
+using System.Text.Json;
 using LimboDancer.Domains.Asl.Rules;
 using Xunit;
 
@@ -256,15 +257,15 @@ public sealed class ScenarioA1Pass60RulesTests
             Rolls = new OrdnanceRolls([2, 2], null, null, null, null) { PanzerfaustCheck = 2 }
         }, Reference).Reasons);
 
-        // In the open the PF's HEAT is refused at Infantry.
-        Assert.Contains(HeatTargetOutside, Resolve(Latw("de-s:pf", OrdnanceTargetTypes.Panzerfaust, 1, "open-ground", Target("ru-s", "defender-squad")), [2, 2], pfCheck: 2).Reasons);
+        // In the open the PF's HEAT is refused at Infantry, its detail telling a weapon with no HE or AP.
+        Assert.Contains(HeatTargetOutside + ":latw", Resolve(Latw("de-s:pf", OrdnanceTargetTypes.Panzerfaust, 1, "open-ground", Target("ru-s", "defender-squad")), [2, 2], pfCheck: 2).Reasons);
     }
 
     [Fact]
     public void APskAtInfantryInTheOpenIsRefusedAndInABuildingHitsEveryUnit()
     {
         // C13.48, C8.31: a PSK's IFT effect is 12, and HEAT goes only at Infantry behind a wall or in a building or rubble.
-        Assert.Equal([HeatTargetOutside], Resolve(Latw("de-psk", "attacker-psk", 2, "open-ground", Target("ru-s", "defender-squad")), [2, 3]).Reasons);
+        Assert.Equal([HeatTargetOutside + ":latw"], Resolve(Latw("de-psk", "attacker-psk", 2, "open-ground", Target("ru-s", "defender-squad")), [2, 3]).Reasons);
         var result = Resolve(Latw("de-psk", "attacker-psk", 2, "wooden-building", Target("ru-s", "defender-squad"), Target("ru-s2", "defender-squad")), [2, 3], ift: [6, 6]);
         Resolved(result);
         Assert.Equal(12, result.HeEquivalency);
@@ -468,6 +469,9 @@ public sealed class ScenarioA1Pass60RulesTests
         }, Reference);
         var known = preview.TargetHits!.Single(item => item.UnitId == "de-s");
         var need = preview.ToHit!.ModifiedToHit - (known.FinalDr - 12);
+
+        // C3.6 (the boundary review): Rules gives each target's needed Original DR for the proposal, Case K's +2 two lower.
+        Assert.Equal((need, need - 2), (known.NeededOriginal, preview.TargetHits!.Single(item => item.UnitId == "de-c").NeededOriginal));
         var result = Resolve(shot, DiceOf(need), ift: [3, 4]);
         Resolved(result);
         Assert.Equal([("de-s", true), ("de-c", false)], result.TargetHits!.Select(item => (item.UnitId, item.Hit)));
@@ -626,8 +630,8 @@ public sealed class ScenarioA1Pass60RulesTests
         // Multi-Story Building), Level 1 with the building's +3.
         var shot = Mortar("stone-building", [Target("de-a", "attacker-squad"), Target("de-b", "attacker-squad") with { LocationId = Upstairs }]) with
         {
-            AreaLocations = [new OrdnanceAreaLocation(At, "stone-building", new FireLos(false, 0, true, false), 1),
-                new OrdnanceAreaLocation(Upstairs, "stone-building", new FireLos(false, 0, true, false), null)],
+            AreaLocations = [new OrdnanceAreaLocation(At) { TargetTerrain = "stone-building", Los = new FireLos(false, 0, true, false), LevelsAbove = 1 },
+                new OrdnanceAreaLocation(Upstairs) { TargetTerrain = "stone-building", Los = new FireLos(false, 0, true, false) }],
         };
         var result = Resolve(shot, [2, 3], ift: [3, 4]);
         Resolved(result);
@@ -639,13 +643,22 @@ public sealed class ScenarioA1Pass60RulesTests
         Assert.Equal(["de-b"], upper.Effects.Select(item => item.UnitId));
         Assert.Equal(10, upper.Arithmetic!.FinalDr);
 
-        // C3.4: a Location out of the firer's LOS is not attacked; one in it with a Hindrance has its own Case R.
+        // C3.33 (ruling R60.24): a Location out of the firer's LOS is hit when the hardest target in LOS is, on the same Effects DR with its own TEM;
+        // C3.4: one in LOS with a Hindrance has its own Case R.
         var blocked = Resolve(shot with
         {
             AreaLocations = [shot.AreaLocations![0], shot.AreaLocations[1] with { Los = new FireLos(true, 0, true, false) }],
         }, [2, 3], ift: [3, 4]);
-        Assert.Equal(["de-a"], blocked.AreaTargets!.Select(item => item.UnitId));
-        Assert.Null(blocked.LevelHits);
+        Assert.Equal([("de-a", true), ("de-b", true)], blocked.AreaTargets!.Select(item => (item.UnitId, item.Hit)));
+        Assert.Equal(["de-b"], blocked.LevelHits!.Single().Effects.Select(item => item.UnitId));
+        Assert.Equal(10, blocked.LevelHits!.Single().Arithmetic!.FinalDr);
+
+        // A miss on the hardest target in LOS leaves the Location out of LOS unharmed.
+        var missed = Resolve(shot with
+        {
+            AreaLocations = [shot.AreaLocations![0], shot.AreaLocations[1] with { Los = new FireLos(true, 0, true, false) }],
+        }, [6, 6], ift: [3, 4]);
+        Assert.Equal([("de-a", false), ("de-b", false)], missed.AreaTargets!.Select(item => (item.UnitId, item.Hit)));
         var hindered = Resolve(shot with
         {
             AreaLocations = [shot.AreaLocations![0], shot.AreaLocations[1] with { Los = new FireLos(false, 3, true, false) }],
@@ -955,7 +968,10 @@ public sealed class ScenarioA1Pass60RulesTests
     // C11.4; ruling R60.18), and a DC at a manned Gun (C11.6). Two Russian squads ADJACENT fire 16 FP (PBF) at a German squad in the open.
 
     private static FireHeldWeapon Held(string id, string definition, string kind = "asl:mg", bool malfunctioned = false) =>
-        new(id, kind, definition, malfunctioned ? true : null);
+        new(id, kind, definition)
+        {
+            Malfunctioned = malfunctioned ? true : null
+        };
 
     private static FireAttack Volley(bool fact, params FireHeldWeapon[] held) =>
         new FireAttack("PFPh", "phasing", true, FiredFrom, At, [Squad(), Squad("ru-2")], null, 1, true, new FireLos(false, 0, true, false), 7, "open-ground",
@@ -1248,5 +1264,188 @@ public sealed class ScenarioA1Pass60RulesTests
         Assert.Empty(ScenarioA1VehicleCloseCombatRules.ReactionWeaponConditions(true));
         Assert.NotNull(ScenarioA1OrdnanceEligibility.CcCounterRefusal("ru-hmg", true, true));
         Assert.Null(ScenarioA1OrdnanceEligibility.CcCounterRefusal("ru-hmg", true, false));
+    }
+
+    // The fixes of the pass's reviews (the boundary review, the two referees, the table player).
+
+    private static readonly JsonSerializerOptions Web = new(JsonSerializerDefaults.Web);
+
+    [Fact]
+    public void ARecordNamesNoWeaponItsTargetsHoldAndWritesNoNullMembers()
+    {
+        // The boundary review: both sides read a record, so a concealed unit's SW are never written; the verifier reads them from the state.
+        var target = Target("de-s", "attacker-squad") with { HeldWeapons = [Held("de-lmg", "attacker-lmg")] };
+        Assert.DoesNotContain("heldWeapons", JsonSerializer.Serialize(target, Web), StringComparison.Ordinal);
+        Assert.DoesNotContain("malfunctioned", JsonSerializer.Serialize(Held("de-lmg", "attacker-lmg"), Web), StringComparison.Ordinal);
+        Assert.DoesNotContain("\"dr\"", JsonSerializer.Serialize(new FireWeaponDestruction("ru-gun", "ru-crew", "3KIA", "destroyed", "C11.6"), Web), StringComparison.Ordinal);
+        Assert.Equal("{\"locationId\":\"bd01:G5:1\"}", JsonSerializer.Serialize(new OrdnanceAreaLocation(Upstairs), Web));
+    }
+
+    [Fact]
+    public void TheBoundaryPredicatesAreRules()
+    {
+        // C11.3 (R60.26): a Gun manned by a non-crew unit as setup ends loses its Emplacement; a crew's manning keeps it.
+        Assert.Equal((true, false, false), (ScenarioA1OrdnanceProjection.LosesEmplacement("asl:gun", "asl:squad"),
+            ScenarioA1OrdnanceProjection.LosesEmplacement("asl:gun", "asl:crew"), ScenarioA1OrdnanceProjection.LosesEmplacement("asl:mg", "asl:squad")));
+
+        // C6.521 (R60.13): with no Acquisition of the Location itself, a mortar's Acquisition of another Location of its hex.
+        Assert.Equal(((int?)-1, (int?)null, (int?)null), (ScenarioA1OrdnanceEligibility.AreaAcquisition(true, 0, [-1]),
+            ScenarioA1OrdnanceEligibility.AreaAcquisition(true, -1, [-2]), ScenarioA1OrdnanceEligibility.AreaAcquisition(false, 0, [-1])));
+
+        // C3.41, C11.4 (R60.18): the unattended Gun is one no one holds.
+        var lone = ScenarioA1OrdnanceEligibility.UnattendedGun([("b-gun", "asl:gun", "defender-at-gun", false), ("a-gun", "asl:gun", "defender-at-gun", true), ("mg", "asl:mg", "defender-lmg", false)]);
+        Assert.Equal(("b-gun", (string?)null, false, false), (lone!.GunId, lone.CrewUnitId, lone.Emplaced!.Value, lone.Gunshield!.Value));
+
+        // A23.3, A23.5 (R60.16): no DC Placement where an unarmored or a friendly vehicle is.
+        Assert.Equal(("asl.a1.fire.dc-placement-vehicle", "asl.a1.fire.dc-placement-vehicle", (string?)null), (ScenarioA1FireEligibility.DcPlacementVehicleRefusal([(false, false)]),
+            ScenarioA1FireEligibility.DcPlacementVehicleRefusal([(true, true)]), ScenarioA1FireEligibility.DcPlacementVehicleRefusal([(true, false)])));
+
+        // A9.74 (R60.17): a SW possessed or a Gun manned; never a towed Gun, nor anything in an OVR.
+        Assert.Equal((true, true, false, false), (ScenarioA1GunDestruction.Checks("possessed", false), ScenarioA1GunDestruction.Checks("manned", false),
+            ScenarioA1GunDestruction.Checks("towed", false), ScenarioA1GunDestruction.Checks(null, true)));
+    }
+
+    [Fact]
+    public void TheAreaAcquisitionIsHeldToTheStateForARecordThatCarriesIt()
+    {
+        // The boundary review: the recorded Area Acquisition is a state read; a record that carries one is compared with the state's, and an older
+        // record with none keeps none.
+        var state = Mortar("open-ground", [Target("de-s", "attacker-squad")]) with
+        {
+            AreaAcquisition = -1
+        };
+        int? Merged(int? recorded) => ScenarioA1OrdnanceEligibility.WithRecomputedStateFacts(state, state with { AreaAcquisition = recorded }, false, 0, () => 0, _ => null).AreaAcquisition;
+        Assert.Equal(((int?)-1, (int?)null), (Merged(-2), Merged(null)));
+    }
+
+    [Fact]
+    public void AGunsGunshieldProtectsItsCrewAloneNotAVehicleBesideIt()
+    {
+        // C11.5 (p. 182): "the Good Order manning crew (only)": the leIG 18's crew takes the gunshield's +1 against the mortar; the truck beside it,
+        // hit on the same DR, takes none of it on the Vehicle line.
+        var shot = AtGun(Mortar("open-ground", [], Vehicle("de-truck", "attacker-truck")), "de-gun", "attacker-inf-gun", "de-crew", "attacker-crew");
+        shot = shot with
+        {
+            Hit = shot.Hit! with
+            {
+                GunTarget = new FireGunTarget("de-gun", "attacker-inf-gun", "de-crew", false, true),
+                RandomDestruction = true,
+            }
+        };
+        var result = Resolve(shot, [1, 2], ift: [3, 4]);
+        Resolved(result);
+        Assert.Contains(result.Hit!.Arithmetic!.Drm, item => item.Name == "gunshield:de-gun");
+        Assert.DoesNotContain(result.Hit.VehicleEffects!.Single().Drm, item => item.Name.StartsWith("gunshield:", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void ACriticalHitOnTheTruckBesideAGunLeavesTheGunToItsCrewsHit()
+    {
+        // C3.74 (the first referee): Random Selection puts the Critical Hit on the truck; the Gun's fate is its crew's normal hit, 12 on the IFT: none.
+        // Put on the crew, it destroys the Gun (C11.4).
+        var shot = AtGun(AtLocation([], Vehicle("de-truck", "attacker-truck")), "de-gun", "attacker-inf-gun", "de-crew", "attacker-crew") with
+        {
+            Rolls = new OrdnanceRolls(null, 1, null, null, null)
+        };
+        var onTruck = Resolve(shot, [1, 1], ift: [6, 6], selection: new Dictionary<string, int> { ["de-crew"] = 2, ["de-truck"] = 5 });
+        Resolved(onTruck);
+        Assert.Equal(("de-truck", (string?)null), (onTruck.CriticalTarget, onTruck.GunTargetFate));
+        var onCrew = Resolve(shot, [1, 1], ift: [6, 6], selection: new Dictionary<string, int> { ["de-crew"] = 5, ["de-truck"] = 2 });
+        Assert.Equal(("de-crew", "destroyed"), (onCrew.CriticalTarget, onCrew.GunTargetFate));
+    }
+
+    [Fact]
+    public void ACriticalHitReversesAnUnarmoredVehiclesOwnTem()
+    {
+        // C3.71 (p. 170): the truck in the woods, picked by the Critical Hit's Random Selection, takes -1 for the woods on its Vehicle line.
+        var shot = Russian(null, "woods", [Target("de-s", "attacker-squad")]) with
+        {
+            Rolls = new OrdnanceRolls(null, 1, null, null, null)
+        };
+        shot = shot with
+        {
+            Hit = shot.Hit! with
+            {
+                Vehicles = [Vehicle("de-truck", "attacker-truck")]
+            }
+        };
+        var result = Resolve(shot, [1, 1], ift: [3, 4], selection: new Dictionary<string, int> { ["de-s"] = 1, ["de-truck"] = 6 });
+        Resolved(result);
+        Assert.Contains(result.CriticalHit!.VehicleEffects!.Single().Drm, item => item.Name == "critical-hit-tem:woods" && item.Value == -1);
+    }
+
+    [Fact]
+    public void AnOriginalTwoOnAPsksOwnTableIsACriticalHit()
+    {
+        // C3.7 (p. 170): "on an Original TH DR of 2 ... on a LATW TH Table": the PSK at two hexes (9) at a squad in a stone building (+3): Final DR 5,
+        // not below half of 9, and still a Critical Hit with no subsequent dr.
+        var result = Resolve(Latw("de-psk", "attacker-psk", 2, "stone-building", Target("ru-s", "defender-squad")), [1, 1], ift: [3, 4]);
+        Resolved(result);
+        Assert.Equal((true, (int?)null), (result.ToHit!.CriticalHit, result.ToHit.SubsequentDr));
+    }
+
+    [Fact]
+    public void ANonTwentyMmAtrMakesNoCollateralAttack()
+    {
+        // C8.31 note 1, C13.24: the Russian 14.5mm ATR has no HE Equivalency, so its hit on the CE halftrack that leaves it standing attacks no crew.
+        var shot = HmgAtHalftrack(2, [6, 5], collateral: [2, 2]) with
+        {
+            Gun = new OrdnanceGun("ru-atr", "defender-atr", false, 0, false, false),
+        };
+        var result = ScenarioA1OrdnanceCalculator.Resolve(shot, Reference);
+        Resolved(result);
+        Assert.Equal(OrdnanceKill.None, result.Kill!.Result);
+        Assert.Null(result.SpecificCollateral);
+    }
+
+    [Fact]
+    public void AMgBeyondTwelveHexesTakesTheSmallCaliberModifications()
+    {
+        // C4.2 (p. 171): "Any weapon (including MG) <= 57mm" takes -1 beyond 12 hexes, and another for <= 40mm: the German HMG (Normal Range 16) at 14.
+        var shot = HmgAtHalftrack(14, [3, 4], phase: "PFPh", collateral: [2, 2], target: "defender-tank", turretFacing: "front") with
+        {
+            FiringNationality = "german",
+            Gun = new OrdnanceGun("de-hmg", "attacker-hmg", false, 0, false, false),
+            Crew = new OrdnanceCrew("de-s", "attacker-squad", false, false, false, false, false),
+        };
+        var result = ScenarioA1OrdnanceCalculator.Resolve(shot, Reference);
+        Resolved(result);
+        Assert.Equal(["caliber-57mm", "caliber-40mm"], result.ToHit!.Modifications.Select(item => item.Name));
+        Assert.Equal(result.ToHit.BasicToHit - 2, result.ToHit.ModifiedToHit);
+    }
+
+    [Fact]
+    public void ASwMgInItsTargetsHexTakesNoCaseE()
+    {
+        // The chart marks Case E "S", not with a SW (the second referee): the HMG at the halftrack in its own hex takes neither Case E nor Case L.
+        // D3.2: in its own hex the colored dr gives the Target Facing, so the shot names none.
+        var shot = HmgAtHalftrack(0, [3, 4], collateral: [2, 2]);
+        var result = ScenarioA1OrdnanceCalculator.Resolve(shot with
+        {
+            SameHex = true,
+            VehicleTarget = shot.VehicleTarget! with
+            {
+                HullFacing = null
+            }
+        }, Reference);
+        Resolved(result);
+        Assert.DoesNotContain(result.ToHit!.Drm, item => item.Name is "case-e" or "case-l");
+    }
+
+    [Fact]
+    public void AMgsToKillAttackAtAConcealedAfvIsRefused()
+    {
+        // R60.27: the IFT would halve the MG's FP at a concealed target (A7.23), which A9.61 does not allow.
+        var shot = HmgAtHalftrack(3, [3, 4]);
+        Assert.Contains("asl.a1.ordnance.mg-to-kill-concealed", ScenarioA1OrdnanceCalculator.Resolve(shot with
+        {
+            VehicleTarget = shot.VehicleTarget! with
+            {
+                Concealed = true
+            }
+        }, Reference).Reasons);
+        Assert.Equal(("no To Kill attack in the AFPh (A9.61)", "its possessor is pinned (A9.61)", (string?)null),
+            (ScenarioA1MachineGunKill.Bar("afph", false, false, false, false, false), ScenarioA1MachineGunKill.Bar("PFPh", false, true, false, false, false),
+                ScenarioA1MachineGunKill.Bar("dfph", false, false, false, false, false)));
     }
 }

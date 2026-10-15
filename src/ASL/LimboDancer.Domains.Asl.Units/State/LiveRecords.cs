@@ -191,7 +191,20 @@ public sealed record MovementStepped(IReadOnlyList<string> Movers, BoardLocation
 /// the squad's MPh.
 /// </summary>
 /// <summary>A DC Placement (A23.3; ruling R15.2).</summary>
-public sealed record DcPlacement(string Unit, string Charge, BoardLocation Target, bool Cx, bool TargetsConcealed);
+public sealed record DcPlacement(string Unit, string Charge, BoardLocation Target, bool Cx, bool TargetsConcealed)
+{
+    /// <summary>
+    /// The Target Facings of each enemy AFV in the target Location through the hexside the DC was Placed across (A23.5; pass 60, the second referee):
+    /// they stand "even if the AFV changes its CA" before the detonation. Null in a record made before the pass, whose detonation reads them then.
+    /// </summary>
+    public IReadOnlyList<DcTargetFacing>? Facings
+    {
+        get; init;
+    }
+}
+
+/// <summary>An AFV's hull and turret Target Facings toward a Placed DC (A23.5; pass 60); the turret's null for a vehicle with none.</summary>
+public sealed record DcTargetFacing(string Vehicle, string Hull, string? Turret);
 
 public sealed record SmokeAttempt(string Unit, BoardLocation Target, string Roll, int Dr, int Exponent)
 {

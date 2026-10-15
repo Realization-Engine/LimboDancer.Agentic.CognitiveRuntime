@@ -79,11 +79,13 @@ internal static class ScenarioA1AreaCalculator
 
         // C3.331 (ruling R9.3): each unit's own DRM: Case K for a concealed enemy unit, the Area Target Acquisition for every unit, concealed or
         // not (C6.521, C6.57; referee, pass 9), and the -1 per squad equivalent its side overstacks the Location (A5.131).
-        // B23.32, C3.4 (pass 60, ruling R60.11): a Location of the hex out of the firer's LOS is not attacked, and each in it adds its own Case R.
+        // B23.32, C3.4 (pass 60, ruling R60.11): each Location of the hex in the firer's LOS adds its own Case R. C3.33 (p. 169; ruling R60.24): one out
+        // of it is not judged; its units and vehicles are hit when the shot hits the hardest non-hidden enemy target in LOS (below).
         // C3.332, C6.7 (pass 60, ruling R60.10): each vehicle of the hex is judged on its own as well, with its size (Case P); C11.2 (ruling R60.14):
         // a Gun's crew alone with the Gun's.
-        var targets = hit.Targets!.Where(item => Location(shot, item.LocationId)?.Los is not { Blocked: true }).ToArray();
-        var vehicles = (hit.Vehicles ?? []).Where(item => Location(shot, item.LocationId)?.Los is not { Blocked: true }).ToArray();
+        bool OutOfLos(string? locationId) => Location(shot, locationId)?.Los is { Blocked: true };
+        var targets = hit.Targets!.Where(item => !OutOfLos(item.LocationId)).ToArray();
+        var vehicles = (hit.Vehicles ?? []).Where(item => !OutOfLos(item.LocationId)).ToArray();
         void Own(List<FireModifier> list, string? locationId, bool concealed)
         {
             if (concealed)
@@ -187,8 +189,19 @@ internal static class ScenarioA1AreaCalculator
             var isHit = Lowest(item) <= modified ? final <= modified : original == 2 && subsequent is >= 1 and <= 3;
             return (Item: item, Final: final, Hit: isHit);
         }).ToArray();
-        var hitIds = judged.Where(item => item.Hit).Select(item => item.Item.Id).ToArray();
         var eligible = judged.Where(item => item.Hit && original == 2 && (Lowest(item.Item) < modified || subsequent == 1)).Select(item => item.Item).ToArray();
+
+        // C3.33 (p. 169; pass 60, ruling R60.24): "a mortar also hits all target-hex units that are out of its firer's (Spotter's ...) LOS if that
+        // shot hit the non-hidden enemy target that currently was the hardest for it to hit (i.e., that received the highest net TH DRM)": they are
+        // hit, on no To Hit DR of their own, and never by the Critical Hit, which falls among the targets it was obtained against (C3.74).
+        var hardest = judged.Where(item => item.Item.Vehicle is not null || item.Item.Target is { Hidden: not true }).ToArray();
+        var beyondHit = hardest.Length > 0 && hardest.Where(item => item.Item.Drm.Sum(modifier => modifier.Value) == hardest.Max(other => other.Item.Drm.Sum(modifier => modifier.Value)))
+            .Any(item => item.Hit);
+        var beyondFinal = hardest.Length > 0 ? hardest.Max(item => item.Final) : original + common;
+        Judged[] beyond = [.. hit.Targets!.Where(item => OutOfLos(item.LocationId)).Select(item => new Judged(item.UnitId!, item.LocationId, [], item, null)),
+            .. (hit.Vehicles ?? []).Where(item => OutOfLos(item.LocationId)).Select(item => new Judged(item.VehicleId!, item.LocationId, [], null, item))];
+        judged = [.. judged, .. beyond.Select(item => (Item: item, Final: beyondFinal, Hit: beyondHit))];
+        var hitIds = judged.Where(item => item.Hit).Select(item => item.Item.Id).ToArray();
         var critical = eligible.Length > 0;
         var improbable = judging.All(item => Lowest(item) > modified);
         var toHit = new OrdnanceToHit("red", basic, modifications, modified, [.. dice], original, drm, original + common, improbable, subsequent,
@@ -373,13 +386,13 @@ internal static class ScenarioA1AreaCalculator
     }
 
     /// <summary>
-    /// The IFT attacks a mortar's hit would make (pass 60, rulings R60.10, R60.11), for the precheck: one on each Location of its hex in the firer's
-    /// LOS, with its units and vehicles.
+    /// The IFT attacks a mortar's hit would make (pass 60, rulings R60.10, R60.11, R60.24), for the precheck: one on each Location of its hex, in the
+    /// firer's LOS or not, with its units and vehicles.
     /// </summary>
     internal static IEnumerable<FireAttack> PrecheckAttacks(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference, bool critical)
     {
         var order = shot.AreaLocations?.Select(item => item.LocationId).ToArray() ?? [shot.TargetLocationId!];
-        foreach (var place in order.Where(item => Location(shot, item)?.Los is not { Blocked: true }))
+        foreach (var place in order)
         {
             var targets = shot.Hit!.Targets!.Where(item => shot.AreaLocations is null || item.LocationId == place).ToArray();
             var vehicles = (shot.Hit.Vehicles ?? []).Where(item => shot.AreaLocations is null || item.LocationId == place).ToArray();
@@ -422,7 +435,15 @@ internal static class ScenarioA1AreaCalculator
         {
             TargetLocationId = locationId,
             TargetTerrain = level.TargetTerrain,
-            Los = level.Los,
+
+            // C3.33 (ruling R60.24): a Location out of the firer's LOS is attacked by the hit on the same Effects DR, with no LOS of its own to read.
+            Los = level.Los is { Blocked: true } blocked
+                ? blocked with
+                {
+                    Blocked = false,
+                    HindranceDrm = 0,
+                }
+                : level.Los,
             LevelsAbove = level.LevelsAbove is > 0 ? level.LevelsAbove : null,
             Companions = others.Length > 0 ? [.. others, .. shot.Hit.Companions ?? []] : shot.Hit.Companions,
             AfvCover = locationId == shot.TargetLocationId ? attack.AfvCover : null,

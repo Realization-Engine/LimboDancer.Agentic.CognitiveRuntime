@@ -39,6 +39,28 @@ public static class ScenarioA1OrdnanceEligibility
         return mannedByKind == "asl:crew" && !unemplaced();
     }
 
+    /// <summary>
+    /// The unattended Gun of a target Location (C3.41, C11.4; pass 60, ruling R60.18), from the equipment there (its id, kind, definition, and whether a
+    /// unit mans it or a vehicle tows it): a Gun no one holds, with no gunshield and no Emplacement, the lowest id first; null when there is none.
+    /// </summary>
+    public static FireGunTarget? UnattendedGun(IEnumerable<(string Id, string Kind, string? DefinitionId, bool Held)> equipment)
+    {
+        ArgumentNullException.ThrowIfNull(equipment);
+        return equipment.Where(item => item.Kind == "asl:gun" && !item.Held).OrderBy(item => item.Id, StringComparer.Ordinal)
+            .Select(item => new FireGunTarget(item.Id, item.DefinitionId, null, false, false)).FirstOrDefault();
+    }
+
+    /// <summary>
+    /// A mortar's Area Acquisition of its target hex (C6.521, p. 176; pass 60, ruling R60.13): with no Acquisition of the target Location itself, the
+    /// level of the Gun's Acquisition of another Location of the same hex, which covers every Location of the hex; null when there is none or the
+    /// Gun is not a mortar. <paramref name="hexAcquisitions"/> are the levels of the Gun's Acquisitions in the target hex.
+    /// </summary>
+    public static int? AreaAcquisition(bool mortar, int locationAcquisition, IEnumerable<int> hexAcquisitions)
+    {
+        ArgumentNullException.ThrowIfNull(hexAcquisitions);
+        return mortar && locationAcquisition == 0 && hexAcquisitions.FirstOrDefault() is < 0 and var level ? level : null;
+    }
+
     /// <summary>A turreted AFV's TCA (D3.12; ruling R7.10): its recorded turret facing, or its VCA; facings as ints.</summary>
     public static int? TurretFacing(int? recorded, int? hull) => recorded ?? hull;
 
@@ -517,11 +539,11 @@ public static class ScenarioA1OrdnanceEligibility
                 AfvCover = recorded.Hit.AfvCover,
             },
 
-            // The facts of pass 60 that gate its rules for older records (ruling R60.3): C3.71's reversal of Height Advantage, a mortar's building
-            // Locations (B23.32), and its Area Acquisition of the hex (C6.521); a record made before the pass has none and resolves as it did.
+            // The facts of pass 60 that gate its rules for older records (ruling R60.3): C3.71's reversal of Height Advantage and a mortar's building
+            // Locations (B23.32); a record made before the pass has none and resolves as it did. Its Area Acquisition of the hex (C6.521) is a state read,
+            // held to the state in WithRecomputedStateFacts.
             ReversesHeightAdvantage = recorded.ReversesHeightAdvantage,
             AreaLocations = recorded.AreaLocations,
-            AreaAcquisition = recorded.AreaAcquisition,
 
             // Backlog pass 16 (rulings R16.12 to R16.14): the weather cushion and the Extreme Winter B#, from the SSRs.
             CushionedOpenGround = recorded.CushionedOpenGround,
@@ -587,6 +609,10 @@ public static class ScenarioA1OrdnanceEligibility
             BoreSighted = boreSighted ? true : null,
             FirerOverstack = firerExcess is var over and > 0 ? over : null,
             TargetOverstack = merged.VehicleTarget is null && targetExcess() is var crowded and > 0 ? crowded : null,
+
+            // C6.521 (pass 60, rulings R60.3, R60.13; boundary review): a mortar's Area Acquisition of the hex, held to the state's for a record that
+            // carries it; a record made before the pass carries none and keeps none.
+            AreaAcquisition = recorded.AreaAcquisition is null ? null : merged.AreaAcquisition,
             Hit = merged.Hit! with
             {
                 GunTarget = recorded.Hit!.GunTarget is { } gunTarget && gunTargetEmplaced(gunTarget.GunId) is { } emplaced

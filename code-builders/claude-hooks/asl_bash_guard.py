@@ -16,9 +16,10 @@ def check(command):
         reasons.append("a heredoc: write the script with the Write tool and run the file")
     if re.search(r"\bsed\s+(-\w+\s+)*-i\b", command):
         reasons.append("sed -i: use the Edit tool")
-    if re.search(r"\bpython3?\s+(-\w+\s+)*-c\b", command) and "\n" in command:
+    # Pass 60: py and python.exe too; a building agent's multi-line -c went through under one of them.
+    if re.search(r"\b(python3?|py)(\.exe)?\"?\s+(-\w+\s+)*-c\b", command) and "\n" in command:
         reasons.append("a multi-line python -c: write the script with the Write tool and run the file")
-    if re.search(r"\bpython3?\s+-(\s|$)", command):
+    if re.search(r"\b(python3?|py)(\.exe)?\"?\s+-(\s|$)", command):
         reasons.append("a bare 'python -': write the script with the Write tool and run the file")
     for target in re.findall(r"(?:^|&&|;|\|\||\n)\s*cd\s+\"?([^\s\"&;|)]+)", command):
         path = target.replace("\\", "/").rstrip("/").lower()

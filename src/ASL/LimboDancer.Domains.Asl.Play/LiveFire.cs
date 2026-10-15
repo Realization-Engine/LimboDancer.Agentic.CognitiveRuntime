@@ -711,15 +711,15 @@ public static class LiveFire
     }
 
     /// <summary>
-    /// An attack that carries A9.74 (pass 60, rulings R60.3, R60.17), with the SW and Guns each target unit holds read from the state: what it possesses,
-    /// and a Gun it mans. The planner gives it to every attack but an OVR's (whose A9.74 is backlog); replay reads the weapons again only for a record
-    /// that carries the rule.
+    /// An attack that carries A9.74 (pass 60, rulings R60.3, R60.17), with the SW and Guns each target unit holds read from the state, as far as Rules
+    /// gives the rule's scope. The planner gives it to every attack but an OVR's (whose A9.74 is backlog); replay reads the weapons again only for a
+    /// record that carries the rule.
     /// </summary>
     public static FireAttack WithRandomDestruction(GameState state, FireAttack attack)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(attack);
-        if (attack.Overrun is not null)
+        if (!ScenarioA1GunDestruction.Checks(null, attack.Overrun is not null))
         {
             return attack;
         }
@@ -729,10 +729,13 @@ public static class LiveFire
             RandomDestruction = true,
             Targets = attack.Targets is null ? null : [.. attack.Targets.Select(target => target with
             {
-                HeldWeapons = state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed or HoldingRole.Manned } holding
-                        && holding.Holder == target.UnitId)
+                HeldWeapons = state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { } holding && holding.Holder == target.UnitId
+                        && ScenarioA1GunDestruction.Checks(holding.Role switch { HoldingRole.Possessed => "possessed", HoldingRole.Manned => "manned", _ => "towed" }, false))
                     .OrderBy(item => item.Id, StringComparer.Ordinal)
-                    .Select(item => new FireHeldWeapon(item.Id, item.Kind, item.Definition?.Definition, Is(item, Conditions.Malfunctioned) ? true : null))
+                    .Select(item => new FireHeldWeapon(item.Id, item.Kind, item.Definition?.Definition)
+                    {
+                        Malfunctioned = Is(item, Conditions.Malfunctioned) ? true : null
+                    })
                     .ToArray() is { Length: > 0 } held ? held : null,
             })],
         };
@@ -1016,11 +1019,12 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
                     SeenByGoodOrderEnemy = record.SeenByGoodOrderEnemy
                 })],
         };
-        // A9.74 (pass 60, rulings R60.3, R60.17): a record that carries the rule names the weapons its targets hold, held to the state's; an older
-        // record carries neither, and its KIA destroys nothing.
+        // A9.74 (pass 60, rulings R60.3, R60.17): a record that carries the rule resolves with the weapons its targets hold read from the state (the
+        // record never names them; boundary review, pass 60); an older record carries neither, and its KIA destroys nothing.
         if (recorded.RandomDestruction == true)
         {
             merged = LiveFire.WithRandomDestruction(state, merged);
+            recorded = LiveFire.WithRandomDestruction(state, recorded);
         }
 
         // D3.41, D3.42 (pass 55, rulings R55.15, R55.17): a record keeps a crew's Morale Level only when the attack made that crew check, so one

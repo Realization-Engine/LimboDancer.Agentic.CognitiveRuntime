@@ -84,13 +84,33 @@ public static class ScenarioA1MachineGunKill
     internal static void Outside(OrdnanceShot shot, ScenarioA1OrdnanceReference reference, List<string> outside)
     {
         var crewKind = reference.Fire.Definitions.GetValueOrDefault(shot.Crew?.DefinitionId ?? string.Empty)?.Kind;
-        if (shot.VehicleTarget is null || shot.Ammunition != Ammunition || shot.Phase == "AFPh" || shot.FireKind == ScenarioA1FireCalculator.BoundingFirstFire
-            || shot.Crew?.Pinned == true || crewKind is "asl:leader" or "asl:hero" || shot.Vehicle?.InMotion == true || shot.Vehicle?.ButtonedUp == true
-            || shot.IntensiveFire == true)
+        if (shot.VehicleTarget is null || shot.Ammunition != Ammunition || shot.IntensiveFire == true
+            || Bar(shot.Phase, shot.FireKind == ScenarioA1FireCalculator.BoundingFirstFire, shot.Crew?.Pinned == true, crewKind is "asl:leader" or "asl:hero",
+                shot.Vehicle?.InMotion == true, shot.Vehicle?.ButtonedUp == true) is not null)
         {
             outside.Add(Prefix + "mg-to-kill-outside");
         }
+
+        // A9.61, A7.23 (pass 60, ruling R60.27): at a concealed AFV the IFT would halve the MG's FP, which A9.61 does not allow.
+        if (shot.VehicleTarget?.Concealed == true)
+        {
+            outside.Add(Prefix + "mg-to-kill-concealed");
+        }
     }
+
+    /// <summary>
+    /// Why a MG may not make a To Kill attack now (A9.61, D2.42, D3.53, D1.83; pass 60), in a few words for the Gun panel, or null when it may: in the
+    /// AFPh (backlog), as Bounding First Fire, by a pinned possessor, by a lone SMC (A9.12), or as the MA of a vehicle in Motion or BU. Phases as the
+    /// shot names them ("AFPh") or as the state does ("afph").
+    /// </summary>
+    public static string? Bar(string? phase, bool boundingFirstFire, bool pinned, bool smcAlone, bool vehicleInMotion, bool vehicleButtonedUp) =>
+        string.Equals(phase, "AFPh", StringComparison.OrdinalIgnoreCase) ? "no To Kill attack in the AFPh (A9.61)"
+        : boundingFirstFire ? "no To Kill attack as Bounding First Fire (A9.61)"
+        : pinned ? "its possessor is pinned (A9.61)"
+        : smcAlone ? "a SMC alone halves its FP (A9.12, A9.61)"
+        : vehicleInMotion ? "its vehicle is in Motion (D2.42)"
+        : vehicleButtonedUp ? "its vehicle is BU: an AAMG fires only CE (D1.83)"
+        : null;
 
     /// <summary>The C7.7 result of a MG's To Kill DR (A9.61, D5.34): a Dud on an Original 12, a burn at most half the Final TK#, an elimination below it, a Stun on it.</summary>
     public static string Result(int dr, int finalTk) =>

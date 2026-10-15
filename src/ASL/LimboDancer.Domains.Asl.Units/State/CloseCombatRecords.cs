@@ -58,6 +58,15 @@ public sealed record VehicleCloseCombatResolved(BoardLocation Location, string V
     {
         get; init;
     }
+
+    /// <summary>
+    /// Whether the record carries A9.223's cancellation of a Fire Lane by CC Reaction Fire (pass 60, rulings R60.3, R60.20): every reaction planned
+    /// from the pass on; a record made before it (false, not written) cancels no lane.
+    /// </summary>
+    public bool CancelsFireLanes
+    {
+        get; init;
+    }
 }
 
 /// <summary>

@@ -24,7 +24,7 @@
                 <option value="">none: the Location</option>
                 @foreach (var vehicle in Vehicles)
                 {
-                    <option value="@vehicle.Id">@vehicle.Label</option>
+                    <option value="@vehicle.Id">@Say(vehicle.Label)</option>
                 }
             </select>
         </label>
@@ -34,6 +34,12 @@
 </ActionSection>
 
 @code {
+    /// <summary>The page's words for the view (pass 31c, design D11): a unit's name for its id (pass 60, the UI review: the AFV's label too).</summary>
+    [CascadingParameter(Name = "Say")]
+    public Func<string, string>? Words { get; set; }
+
+    private string Say(string? text) => text is null ? string.Empty : Words?.Invoke(text) ?? text;
+
     /// <summary>A DC and the unit that possesses it.</summary>
     public sealed record HeldCharge(string Holder, string Charge)
     {

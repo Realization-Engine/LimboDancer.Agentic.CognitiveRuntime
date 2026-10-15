@@ -49,6 +49,12 @@ public static class ScenarioA1OrdnanceProjection
         return (halves / 2, halves % 2 == 1);
     }
 
+    /// <summary>
+    /// C11.3 (p. 182; pass 60, rulings R60.18, R60.26): a Gun that "starts a scenario ... manned by a non-crew unit" loses its Emplacement for the
+    /// scenario. Read once, as setup ends; a non-crew unit that mans it later does not end it (C11.2 only withholds the +2 while a squad mans it).
+    /// </summary>
+    public static bool LosesEmplacement(string gunKind, string? holderKind) => gunKind == "asl:gun" && holderKind is not null && holderKind != "asl:crew";
+
     /// <summary>A1.31 (ruling R13.4): a Deployment NTC passes when its Final DR does not exceed the Morale.</summary>
     public static bool DeploymentPassed(int first, int second, int drm, int morale) => first + second + drm <= morale;
 

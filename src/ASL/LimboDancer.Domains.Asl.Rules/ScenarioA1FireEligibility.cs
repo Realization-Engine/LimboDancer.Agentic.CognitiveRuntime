@@ -510,6 +510,17 @@ public static class ScenarioA1FireEligibility
             && firer.Weapons.All(weapon => weapon.Sighted && weapon.ByItsPossessor && weapon.AtItsSetupLocation && weapon.OnTheTarget && !weapon.Dismantled));
     }
 
+    /// <summary>
+    /// A23.3, A23.5 (pass 60, ruling R60.16): a DC is Placed where an enemy AFV is (once its placer passes a PAATC), but not where an unarmored or a
+    /// friendly vehicle is, whose attack by a DC is not built. Each vehicle of the target Location as (armored, of the placer's side); the refusal
+    /// code, or null.
+    /// </summary>
+    public static string? DcPlacementVehicleRefusal(IEnumerable<(bool Armored, bool Friendly)> vehicles)
+    {
+        ArgumentNullException.ThrowIfNull(vehicles);
+        return vehicles.Any(item => !item.Armored || item.Friendly) ? "asl.a1.fire.dc-placement-vehicle" : null;
+    }
+
     /// <summary>A9.8 (p. 65; pass 45): "A dm SW may not be fired until reassembled": the refusal of a dismantled mortar's shot, or null.</summary>
     public static string? DismantledShotBar(bool dismantled, string weapon) =>
         dismantled ? $"play.ordnance-dismantled: {weapon} is dismantled and is not fired until it is assembled (A9.8)" : null;

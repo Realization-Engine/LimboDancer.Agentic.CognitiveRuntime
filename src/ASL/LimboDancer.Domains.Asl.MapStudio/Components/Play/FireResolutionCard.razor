@@ -12,7 +12,12 @@
     }
     else
     {
-        <FireArithmeticBreakdown Arithmetic="@Record.Arithmetic" Say="@Record.Say" />
+        @* Pass 60 (the table player): an attack that named an AFV and attacked no unit or other vehicle shows no IFT line, whose result fell on no one. *@
+        var attackedNone = Record.NamedVehicle is { Count: > 0 } && Record.Effects is { Count: 0 } && Record.Vehicles is not { Count: > 0 };
+        @if (!attackedNone)
+        {
+            <FireArithmeticBreakdown Arithmetic="@Record.Arithmetic" Say="@Record.Say" />
+        }
         @if (Record.Weapons?.Select(FireText.WeaponText).OfType<string>().ToArray() is { Length: > 0 } weapons)
         {
             <ul class="fire-weapons">
@@ -32,7 +37,7 @@
                 }
             </ul>
         }
-        @if (Record.Effects is { } effects && (effects.Count > 0 || Record.Vehicles is not { Count: > 0 }))
+        @if (!attackedNone && Record.Effects is { } effects && (effects.Count > 0 || Record.Vehicles is not { Count: > 0 }))
         {
             <InfantryFireEffectsTable Effects="@effects" BrokenBefore="@Record.BrokenBefore" PinnedBefore="@Record.PinnedBefore" Say="@Record.Say" />
         }

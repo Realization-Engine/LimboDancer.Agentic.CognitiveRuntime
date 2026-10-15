@@ -1008,6 +1008,10 @@ public static class ScenarioA1OrdnanceCalculator
         var final = original + total + motion;
         var lowest = 2 + total + (motion > 0 ? 1 : 0);
 
+        // C3.7 (p. 170; pass 60, the first referee): on a LATW's own To Hit Table (a PF's, a PSK's) an Original 2 is a Critical Hit outright, unless only
+        // the lowest Final DR possible hits, when it takes a subsequent dr of 1.
+        var latwTable = gun.LatwType == "pf" || gun.ToHitTable.Count > 0;
+
         // C3.6: when no Final DR can hit, an Original 2 still may, on a subsequent dr of 1 (a Critical Hit) to 3.
         var improbable = lowest > modified;
         bool isHit, critical;
@@ -1017,7 +1021,8 @@ public static class ScenarioA1OrdnanceCalculator
         {
             // C3.6, C3.7 as below, target by target; one subsequent dr serves them all.
             var sums = own.Select(item => (int)item.Drm.Sum(modifier => modifier.Value)).ToArray();
-            if (original == 2 && sums.Any(sum => lowest + sum > modified || (final + sum <= modified && (final + sum) * 2 >= modified)))
+            if (original == 2 && sums.Any(sum => lowest + sum > modified
+                || (final + sum <= modified && (latwTable ? lowest + sum == modified : (final + sum) * 2 >= modified))))
             {
                 if (rolls.Subsequent is not { } dr)
                 {
@@ -1032,7 +1037,8 @@ public static class ScenarioA1OrdnanceCalculator
                 var targetFinal = final + sum;
                 var hitOne = lowest + sum > modified ? subsequent is >= 1 and <= 3 : targetFinal <= modified;
                 var criticalOne = lowest + sum > modified ? subsequent == 1
-                    : hitOne && (targetFinal * 2 < modified || (original == 2 && (subsequent == 1 || subsequent * 2 <= modified)));
+                    : hitOne && (targetFinal * 2 < modified || (original == 2 && (latwTable ? lowest + sum < modified || subsequent == 1
+                        : subsequent == 1 || subsequent * 2 <= modified)));
                 judged.Add((id, ownDrm, targetFinal, hitOne, criticalOne, pool));
             }
 
@@ -1063,7 +1069,11 @@ public static class ScenarioA1OrdnanceCalculator
             // followed by a subsequent dr of 1 or at most half the Modified TH# (the bracketed exception for the lowest Final DR belongs to
             // the Area and Vehicle Target Types; ruling R24.7).
             critical = isHit && final * 2 < modified;
-            if (isHit && !critical && original == 2)
+            if (isHit && !critical && original == 2 && latwTable && lowest < modified)
+            {
+                critical = true;
+            }
+            else if (isHit && !critical && original == 2)
             {
                 if (rolls.Subsequent is not { } dr)
                 {
@@ -1071,7 +1081,7 @@ public static class ScenarioA1OrdnanceCalculator
                 }
 
                 subsequent = dr;
-                critical = dr == 1 || dr * 2 <= modified;
+                critical = latwTable ? dr == 1 : dr == 1 || dr * 2 <= modified;
             }
         }
 
@@ -1135,6 +1145,7 @@ public static class ScenarioA1OrdnanceCalculator
 
         FireResolution? normal = null, criticalHit = null;
         string? criticalTarget = null;
+        var criticalOnCrew = false;
         if (isHit)
         {
             // C3.32 (pass 60, ruling R60.8): a Location hit target by target attacks the units and vehicles the shot hit.
@@ -1175,6 +1186,7 @@ public static class ScenarioA1OrdnanceCalculator
             }
 
             FireTarget[] criticalTargets = [.. targets.Where(item => picked.Contains(item.UnitId!))];
+            criticalOnCrew = gunTarget?.CrewUnitId is { } manning && picked.Contains(manning);
             FireVehicle[] criticalVehicles = [.. struck.Where(item => picked.Contains(item.VehicleId!))];
             if (picked.Count > 0)
             {
@@ -1216,13 +1228,16 @@ public static class ScenarioA1OrdnanceCalculator
         // C11.4, C11.6 (ruling R8.3): a Critical Hit destroys the Gun; a KIA before the gunshield destroys it, a K malfunctions it. C11.52, C13.23,
         // the table's note 5 (p. 182; pass 60, ruling R60.6): "The Gun and any manning Infantry are destroyed by a CH/any K/KIA result" of AP,
         // APCR, APDS, or an ATR; HEAT destroys it "using the same mechanics as an HE hit" (C11.51).
+        // C3.74 (pass 60, the first referee): a Critical Hit destroys the Gun only when its Random Selection fell on the manning crew; one that fell on
+        // a vehicle of the Location leaves the Gun to the crew's normal hit.
         string? fate = null;
         if (gunTarget is not null && isHit)
         {
             var result = (normal ?? criticalHit)?.Arithmetic?.Result ?? string.Empty;
             var armorPiercing = shot.VehicleTarget is null && (shot.Ammunition is "ap" or "apcr" or "apds" || gun.LatwType == "atr");
-            fate = (normal?.Arithmetic?.Drm.Any(item => item.Name.StartsWith("gunshield:", StringComparison.Ordinal)) ?? false) && criticalHit is null ? null
-                : ScenarioA1GunDestruction.Fate(ScenarioA1GunDestruction.Ordnance, result, criticalHit is not null || (unattended && critical), armorPiercing);
+            var criticalOnGun = criticalHit is not null && (gunTarget.CrewUnitId is null || criticalOnCrew);
+            fate = (normal?.Arithmetic?.Drm.Any(item => item.Name.StartsWith("gunshield:", StringComparison.Ordinal)) ?? false) && !criticalOnGun ? null
+                : ScenarioA1GunDestruction.Fate(ScenarioA1GunDestruction.Ordnance, result, criticalOnGun || (unattended && critical), armorPiercing);
         }
 
         return new OrdnanceResolution(OrdnanceResolution.Resolved, [], toHit, gunEffect)
@@ -1235,7 +1250,11 @@ public static class ScenarioA1OrdnanceCalculator
             GunTargetFate = fate,
             AmmunitionUse = use,
             HeEquivalency = HeEquivalency(shot, reference),
-            TargetHits = mixed ? [.. judged.Select(item => new OrdnanceAreaTarget(item.Id, item.Drm, item.Final, item.Hit && isHit))] : null,
+            // C3.6 (pass 60, boundary review): the Original DR each target needs, for the proposal (a Motion firer's lower dr unknown before the roll).
+            TargetHits = mixed ? [.. judged.Select(item => new OrdnanceAreaTarget(item.Id, item.Drm, item.Final, item.Hit && isHit)
+            {
+                NeededOriginal = modified - total - (item.Final - final),
+            })] : null,
             FirerEffect = casualty ? OrdnancePanzerfaustCheck.CasualtyReduction : null,
         };
     }
@@ -1384,9 +1403,13 @@ public static class ScenarioA1OrdnanceCalculator
         if (ammunition == "heat" && hit.GunTarget is null && !ScenarioA1Definitions.IsBuildingTerrain(hit.TargetTerrain)
             && !ScenarioA1Definitions.IsRubbleTerrain(hit.TargetTerrain) && shot.WallTem != true)
         {
-            outside.Add(Prefix + "heat-target-outside");
+            // The table player (pass 60): a PF or PSK, which fires no HE or AP, is told so in the refusal's detail.
+            outside.Add(Prefix + "heat-target-outside" + (gun.LatwType is "pf" or "psk" ? ":" + LatwHeat : string.Empty));
         }
     }
+
+    /// <summary>The detail of a HEAT refusal at Infantry in the open whose weapon is a PF or a PSK, which has no HE or AP to fire instead.</summary>
+    public const string LatwHeat = "latw";
 
     /// <summary>The Gun's B#, two lower while Intensive Firing (C5.62), and lower in Extreme Winter (E3.741; ruling R16.14).</summary>
     internal static int Breakdown(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference) =>

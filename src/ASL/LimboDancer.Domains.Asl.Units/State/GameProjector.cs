@@ -255,7 +255,7 @@ public static class GameProjector
             next = KeepAcquisitions(previous, next, gameEvent.Payload);
             next = KeepPassengers(next);
             next = KeepArmorLeaders(next, gameEvent.Payload);
-            next = KeepNonCrewManning(next);
+            next = KeepNonCrewManning(previous, next);
             next = next with
             {
                 Revision = gameEvent.Revision,
@@ -1018,8 +1018,9 @@ public static class GameProjector
 
             if (Rules.ScenarioA1CloseCombatProjection.ReactionLeavesState(combat.Reaction))
             {
-                // A9.223, D7.21 (pass 60, ruling R60.20): a MG's Fire Lane is cancelled when its manning Infantry makes CC Reaction Fire.
-                return state.FireLanes.Count == 0 ? state : state with
+                // A9.223, D7.21 (pass 60, rulings R60.3, R60.20): a MG's Fire Lane is cancelled when its manning Infantry makes CC Reaction Fire, by a
+                // record that carries the rule; an older one cancels none.
+                return state.FireLanes.Count == 0 || !combat.CancelsFireLanes ? state : state with
                 {
                     FireLanes = [.. state.FireLanes.Where(lane => !Rules.ScenarioA1FireEligibility.FireLaneCancelledByCcReaction(combat.Reaction,
                         combat.Attackers.Contains(lane.Operator, StringComparer.Ordinal)))],
@@ -4065,7 +4066,11 @@ public static class GameProjector
             var charges = next.PlacedCharges;
             if (payload is MovementStepped { DcPlacement: { } placed } step)
             {
-                charges = [.. charges, new PlacedCharge(placed.Charge, placed.Unit, step.To, placed.Target, placed.Cx, placed.TargetsConcealed, false)];
+                charges = [.. charges, new PlacedCharge(placed.Charge, placed.Unit, step.To, placed.Target, placed.Cx, placed.TargetsConcealed, false)
+                {
+                    // A23.5 (pass 60): the AFVs' Target Facings as Placed; none from a record made before the pass.
+                    Facings = placed.Facings,
+                }];
             }
 
             if (charges.Count == 0)
@@ -4216,17 +4221,24 @@ public static class GameProjector
         }
 
         /// <summary>
-        /// C11.3 (p. 182; pass 60, ruling R60.18): a Gun manned by a non-crew unit loses its Emplacement for the rest of the game; the state keeps every
-        /// Gun so manned since the game began, from setup on.
+        /// C11.3 (p. 182; pass 60, rulings R60.18, R60.26): a Gun that starts the scenario manned by a non-crew unit loses its Emplacement for the rest of
+        /// the game. The state keeps the Guns so manned while setup is open, and, as it closes, only those still so manned; a later manning keeps nothing.
+        /// Rules decides which holder ends it.
         /// </summary>
-        private static GameState KeepNonCrewManning(GameState state)
+        private static GameState KeepNonCrewManning(GameState? previous, GameState state)
         {
-            var manned = state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Holding is { Role: HoldingRole.Manned } holding
-                    && state.Unit(holding.Holder) is { Kind: not "asl:crew" } && !state.NonCrewMannedGuns.Contains(item.Id, StringComparer.Ordinal))
-                .Select(item => item.Id).ToArray();
-            return manned.Length == 0 ? state : state with
+            if (previous is not null && previous.SetupClosed)
             {
-                NonCrewMannedGuns = [.. state.NonCrewMannedGuns, .. manned]
+                return state;
+            }
+
+            var setup = state.SetupClosed && previous is not null ? previous : state;
+            string[] manned = [.. setup.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Manned } holding
+                    && Rules.ScenarioA1OrdnanceProjection.LosesEmplacement(item.Kind, setup.Unit(holding.Holder)?.Kind))
+                .Select(item => item.Id)];
+            return manned.SequenceEqual(state.NonCrewMannedGuns, StringComparer.Ordinal) ? state : state with
+            {
+                NonCrewMannedGuns = manned
             };
         }
 

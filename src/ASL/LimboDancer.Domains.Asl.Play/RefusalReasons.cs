@@ -32,7 +32,8 @@ public static class RefusalReasons
         ["fire.flamethrower-outside"] = "a FT attacks alone, with no other firer, weapon, inherent FP, or leader, from an unpinned unit; at Long Range only through a LOS with no Hindrance, and never at a target more than two levels away (A22.31 to A22.33; ruling R15.1)",
         ["fire.mol-outside"] = "one unpinned MMC or hero per attack makes a MOL Check, in a PBF or TPBF attack that is not Subsequent First Fire or FPF, with no vehicle in the target Location unless it names that AFV; a squad adds its inherent FP and fires no SW (A22.611, A22.612; ruling R15.4)",
         ["fire.target-vehicle-outside"] = "only a FT, a MOL, or a Placed or Thrown DC names a vehicle, and only an enemy AFV in the target Location: fire at an unarmored vehicle without naming it (A22.34, A22.612, A23.5; ruling R60.15)",
-        ["fire.target-vehicle-concealed"] = "a FT, MOL, or DC names no AFV in a Location that also holds concealed or hidden units or Dummies; fire at the Location without naming it (ruling R60.15)",
+        ["fire.target-vehicle-concealed"] = "a FT, MOL, or DC names no AFV in a Location that also holds concealed units or Dummies; fire at the Location without naming it (ruling R60.15)",
+        ["fire.dc-placement-vehicle"] = "a DC is not Placed where an unarmored or friendly vehicle is: its attack on such a vehicle is not built (A23.3, A23.5); Place it where only enemy Infantry or an enemy AFV is",
         ["fire.demolition-charge-outside"] = "a DC is Placed and detonated in its side's AFPh, or Thrown into an ADJACENT Location in a friendly fire phase or as Defensive First Fire, by its Personnel user alone (A23.3, A23.6; rulings R15.2, R15.3)",
         ["fire.firer-already-fired"] = "a firer has already fired this phase or Player Turn (A7.1, A8.1, A8.4)",
         ["fire.fpf-outside"] = "Final Protective Fire is reviewed only undirected, at an ADJACENT or same-hex moving unit (A8.31)",
@@ -90,7 +91,7 @@ public static class RefusalReasons
         ["ordnance.gun-malfunctioned"] = "the Gun is malfunctioned (C2.28)",
         ["ordnance.he-not-named"] = "this Gun's HE is Special Ammunition with a Depletion Number, which is never fired undeclared: name HE for the shot (C2.21, C8.8), or AP to attack by its HE Equivalency (C8.31)",
         ["ordnance.he-unavailable"] = "this Gun's HE is Special Ammunition (C8.8) and it has none now: none at the scenario's date, or it has run out (C8.9); name AP to attack by its HE Equivalency instead (C8.31)",
-        ["ordnance.heat-target-outside"] = "HEAT is fired only at a vehicle or Gun, or at Infantry that receives a wall, building, rubble, or pillbox TEM (C8.31); fire HE or AP at Infantry in the open",
+        ["ordnance.heat-target-outside"] = "a Gun's HEAT is fired only at a vehicle or Gun, or at Infantry that receives a wall, building, rubble, or pillbox TEM (C8.31); fire HE or AP at Infantry in the open",
         ["ordnance.heat-no-he"] = "a Gun's HEAT attacks Infantry one IFT column left of its normal HE FP, and this Gun has no HE (C8.31)",
         ["ordnance.ammunition-outside"] = "the Gun does not fire this ammunition at this target (C8.1)",
         ["ordnance.ammunition-unavailable"] = "the Gun has no such ammunition at the scenario's date (C8.11, C8.3, C8.8)",
@@ -107,8 +108,11 @@ public static class RefusalReasons
         ["ordnance.los-blocked"] = "the Gun has no LOS to the target (A6)",
         ["ordnance.target-outside"] = "the target Location holds no in-LOS enemy unit on the Infantry Target Type (C3.32)",
         ["ordnance.hindrance-unattributed"] = "the LOS Hindrance is not attributed to terrain the package reviews",
-        ["ordnance.vehicles-beyond-kia"] = "the target holds more vehicles than the column's highest KIA#, the most one DR may affect, and their Random Selection is not built (A7.308, C1.55); a Gun may name one to fire at it on the Vehicle Target Type",
+        ["ordnance.vehicles-beyond-kia"] = "the target holds more vehicles than the column's highest KIA#, the most one DR may affect, and their Random Selection is not built (A7.308, C1.55); a Gun (never a mortar) may name one to fire at it on the Vehicle Target Type",
         ["ordnance.area-friendly-units"] = "the target hex holds units or vehicles of the mortar's own side, which its hit would attack too on their own side's ELR, and that is not built (C3.33; ruling R9.3); fire at a hex with no friendly unit",
+        ["ordnance.mg-to-kill-outside"] = "a MG makes a To Kill attack at a named AFV with AP, alone and unhalved: not in the AFPh, not as Bounding First Fire, not by a pinned possessor or a SMC alone, not as the MA of a vehicle BU or in Motion, and not by Intensive Fire (A9.61, A9.12, D1.83, D2.42, D3.54)",
+        ["ordnance.mg-unarmored-target"] = "a MG makes its To Kill attack only at an AFV; fire at an unarmored vehicle on the IFT, by the fire action (A9.61, A7.308)",
+        ["ordnance.mg-to-kill-concealed"] = "a MG makes no To Kill attack at a concealed AFV, since the IFT would halve its FP; fire at the Location on the IFT instead (A9.61, A7.23; ruling R60.27)",
         ["ordnance.concealment-unreviewed"] = "fire by or at concealed units is decided only when a Good Order unit of the firing side is in range",
 
         // Rally (A10).
@@ -161,6 +165,12 @@ public static class RefusalReasons
             && int.TryParse(detail[Rules.ScenarioA1Definitions.StartMonthMark.Length..], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var month))
         {
             return $"{code}: the Gun has {Rules.ScenarioA1Definitions.NoneAtTheDate(name.EndsWith("he-unavailable", StringComparison.Ordinal) ? "he" : null, month)}";
+        }
+
+        // The table player (pass 60): a PF or PSK has no HE or AP to fire at Infantry in the open instead.
+        if (name == "ordnance.heat-target-outside" && detail == Rules.ScenarioA1OrdnanceCalculator.LatwHeat)
+        {
+            return $"{code}: a PF or PSK fires only at a vehicle, a Gun, or Infantry in a building or rubble or behind a wall (C8.31)";
         }
 
         if (Sentences.TryGetValue(name, out var sentence))

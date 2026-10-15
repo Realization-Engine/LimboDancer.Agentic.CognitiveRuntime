@@ -417,9 +417,12 @@ public sealed class PlayPageVehicleTests : IDisposable
         page.Find("#ordnance-target").Change(two);
         Assert.Contains("ru-tank", page.FindAll("#ordnance-vehicle option").Select(item => item.GetAttribute("value")));
 
-        // The UI review of pass 55: the list is the one the shot will name. With no vehicle chosen the shot is at the Location's Infantry,
-        // for which this MA has nothing to choose; with the T-34 chosen it is the vehicle's list.
-        Assert.Empty(page.FindAll("#ordnance-ammunition"));
+        // The UI review of pass 55: the list is the one the shot will name. With no vehicle chosen the shot is at the Location's Infantry: HE first,
+        // then AP and APCR by their HE Equivalency (C8.31, pass 60), the note giving each one's FP; with the T-34 chosen it is the vehicle's list.
+        var infantry = page.FindAll("#ordnance-ammunition option").Select(item => item.GetAttribute("value")).ToArray();
+        Assert.Equal("he", infantry[0]);
+        Assert.Contains("ap", infantry);
+        Assert.Contains("AP: 2 FP by HE Equivalency, C8.31", page.Find("#ordnance-ammunition-note").TextContent, StringComparison.Ordinal);
         page.Find("#ordnance-vehicle").Change("ru-tank");
 
         // C8.1: the PzKpfw IIIH lists APCR and no HEAT.

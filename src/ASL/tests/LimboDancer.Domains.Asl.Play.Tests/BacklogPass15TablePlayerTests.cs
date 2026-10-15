@@ -1085,7 +1085,7 @@ public sealed class BacklogPass15TablePlayerTests : IDisposable
             to = L("E3"),
             placeDc = "dc",
             placeDcAt = L("E4"),
-        }), "play.dc-vehicle");
+        }), "asl.a1.fire.dc-placement-vehicle");
         Assert.Empty(Current.PlacedCharges);
     }
 

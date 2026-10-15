@@ -440,6 +440,20 @@ public static class GameEventReader
                     bypass = [.. bypassSides.EnumerateArray().Select(item => (Maps.Geometry.HexsideDirection)item.GetInt32())];
                 }
 
+                // A23.5 (pass 60): the AFVs' Target Facings at a DC's Placement.
+                List<DcTargetFacing>? dcFacings = null;
+                if (payload.TryGetProperty("dcFacings", out var facingList))
+                {
+                    if (facingList.ValueKind != JsonValueKind.Array || facingList.EnumerateArray().Any(item => item.ValueKind != JsonValueKind.Object
+                        || fields.OptionalString(item, "vehicle", path) is null || fields.OptionalString(item, "hull", path) is null))
+                    {
+                        return Missing(diagnostics, "A DC Placement's Target Facings name each vehicle and its hull facing.", path);
+                    }
+
+                    dcFacings = [.. facingList.EnumerateArray().Select(item => new DcTargetFacing(fields.OptionalString(item, "vehicle", path)!,
+                        fields.OptionalString(item, "hull", path)!, fields.OptionalString(item, "turret", path)))];
+                }
+
                 return stepTo is null || halfMf is null || step is null
                     ? Missing(diagnostics, "A movement step names its movers, destination, half MF, and step.", path)
                     : new MovementStepped(fields.StringList(payload, "movers", path), stepTo, halfMf.Value, fields.OptionalBoolean(payload, "assault", path), step.Value)
@@ -461,7 +475,10 @@ public static class GameEventReader
                             Cx = fields.OptionalBoolean(payload, "smokeCx", path),
                         },
                         DcPlacement = dcBy is null ? null : new DcPlacement(dcBy, dcCharge!, dcAt!, fields.OptionalBoolean(payload, "dcCx", path),
-                            fields.OptionalBoolean(payload, "dcConcealed", path)),
+                            fields.OptionalBoolean(payload, "dcConcealed", path))
+                        {
+                            Facings = dcFacings,
+                        },
                     };
             case "bore-sighted":
                 var sighter = fields.RequiredString(payload, "gun", path);
@@ -720,6 +737,7 @@ public static class GameEventReader
                     {
                         Next = fields.OptionalString(payload, "next", path),
                         Closed = fields.OptionalBoolean(payload, "closed", path),
+                        CancelsFireLanes = fields.OptionalBoolean(payload, "cancelsFireLanes", path),
                     };
             case "vehicle-close-combat-passed":
                 var passedAt = ReadLocation(payload, "location", path, fields, diagnostics);

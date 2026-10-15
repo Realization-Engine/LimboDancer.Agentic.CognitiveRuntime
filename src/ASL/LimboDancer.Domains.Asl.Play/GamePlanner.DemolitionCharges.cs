@@ -54,12 +54,11 @@ public sealed partial class GamePlanner
             return Refused(scope, label, expected, $"play.dc-target: a DC is Placed in an ADJACENT Location in the placer's LOS, not {target} (A23.3, A23.61)");
         }
 
-        // A23.3, A23.5 (pass 60, ruling R60.16): a DC is Placed where an enemy AFV is once its placer passes a PAATC; one at an unarmored vehicle, or where a
-        // friendly vehicle is, is not built.
+        // A23.3, A23.5 (pass 60, ruling R60.16): a DC is Placed where an enemy AFV is once its placer passes a PAATC; Rules says where it is not.
         UnitInstance[] vehicles = [.. state.At(target).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit))];
-        if (vehicles.Any(unit => !IsAfv(unit) || unit.Side == placer.Side))
+        if (ScenarioA1FireEligibility.DcPlacementVehicleRefusal(vehicles.Select(unit => (IsAfv(unit), unit.Side == placer.Side))) is { } vehicleBar)
         {
-            return Refused(scope, label, expected, "play.dc-vehicle: a DC is not Placed where an unarmored or friendly vehicle is: its attack on such a vehicle is not built (A23.3, A23.5)");
+            return Refused(scope, label, expected, RefusalReasons.Explain(vehicleBar));
         }
 
         var afv = vehicles.FirstOrDefault(unit => NeedsPaatc(state, placer, unit));
@@ -94,7 +93,13 @@ public sealed partial class GamePlanner
         var concealed = ScenarioA1DemolitionChargeRules.AllConcealed([.. there.Select(unit => Is(unit, Conditions.Concealed) || Is(unit, Conditions.Hidden) || unit.Kind == UnitKinds.Dummy)]);
         var step = (current?.Step ?? 0) + 1;
         var package = ScenarioA1FirePackage.Identity.ToString();
-        var placement = new DcPlacement(placer.Id, charge.Id, target, doubleTime || Is(placer, Conditions.Cx), concealed);
+        // A23.5 (pass 60, the second referee): each enemy AFV's Target Facings through the hexside the DC is Placed across, which its detonation reads.
+        DcTargetFacing[] facings = [.. vehicles.Where(unit => IsAfv(unit) && unit.Side != placer.Side)
+            .Select(unit => TargetFacingsFrom(state, unit, from, target) is { } read ? new DcTargetFacing(unit.Id, read.Hull, read.Turret) : null).OfType<DcTargetFacing>()];
+        var placement = new DcPlacement(placer.Id, charge.Id, target, doubleTime || Is(placer, Conditions.Cx), concealed)
+        {
+            Facings = facings.Length > 0 ? facings : null,
+        };
         var placing = Event(scope, attemptId, 1, expected, "movement-step", new MovementStepped(ids, from, halfMf, current?.Assault ?? assault, step)
         {
             DoubleTime = doubleTime,
@@ -158,10 +163,11 @@ public sealed partial class GamePlanner
             TargetTerrain = ReadLocation(state, placed.Target) is { } read ? TerrainKey(read) : null,
         };
 
-        // A23.5 (pass 60, ruling R60.16): a Placed DC may name the AFV in its target Location, its Target Facing that of the hexside it was Placed through.
+        // A23.5 (pass 60, ruling R60.16): a Placed DC may name the AFV in its target Location, its Target Facing that of the hexside it was Placed through
+        // as its Placement recorded it, "even if the AFV changes its CA"; a Placement recorded before the pass reads it now.
         if (Text(arguments, "vehicle", out var vehicleId))
         {
-            var (named, namedWhy) = WithNamedVehicle(state, facts, vehicleId, placed.From, placed.Target);
+            var (named, namedWhy) = WithNamedVehicle(state, facts, vehicleId, placed.From, placed.Target, placed.Facings);
             if (named is null)
             {
                 return Refused(scope, label, expected, namedWhy!);

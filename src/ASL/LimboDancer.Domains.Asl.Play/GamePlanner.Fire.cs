@@ -594,7 +594,10 @@ public sealed partial class GamePlanner
                 + (lane is { } declared ? $"; a Fire Lane of {declared.Weapon} to {declared.Entries[^1].Location} (A9.22)" : string.Empty)
                 + (blockedFirst is not null ? "; the firers whose LOS is blocked fire first and drop out (A6.11, A7.52)" : string.Empty)
                 + (encircles is not null ? $"; this attack Encircles the {encircles} units at {facts.TargetLocationId} (A7.7)" : string.Empty)
-                + (mol is not null ? $"; {mol} makes a MOL Check first: a dr of 3 or less after its drm adds four FP (A22.611)" : string.Empty)
+                + (mol is null ? string.Empty
+                    // A22.612 (pass 60, the table player): at a named AFV the four FP go to the Specific Collateral Attack on its CE crew alone.
+                    : facts.TargetVehicle is { } molAfv ? $"; {mol} makes a MOL Check first: on a dr of 3 or less after its drm the four FP go to the Specific Collateral Attack on {molAfv.VehicleId}'s CE crew alone, and the Location's other units take the Small Arms FP (A22.611, A22.612)"
+                    : $"; {mol} makes a MOL Check first: a dr of 3 or less after its drm adds four FP (A22.611)")
                 + (ScenarioA1FireCalculator.NamedVehicleTerms(facts, FireReference.Value) is { } terms ? "; " + terms : string.Empty),
 
                 // Pass 31 (play test P-12, P-13): a shot with no LOS, or one that also hits the firing side's own units, is said before it is confirmed.
@@ -656,9 +659,11 @@ public sealed partial class GamePlanner
     /// <summary>
     /// The AFV a FT, MOL, or DC attack names (A22.34, A22.612, A23.5, D3.2; pass 60, ruling R60.15): a vehicle in the target Location, its state facts,
     /// and the Target Facings of the target hexside the attack crosses from <paramref name="from"/>, read as an ordnance shot's are; none from within its
-    /// Location. Rules decides whether it may be named.
+    /// Location. Rules decides whether it may be named. A Placed DC's facings recorded at its Placement (<paramref name="placed"/>; A23.5) stand
+    /// "even if the AFV changes its CA".
     /// </summary>
-    private (FireAttack? Attack, string? Reason) WithNamedVehicle(GameState state, FireAttack attack, string vehicleId, BoardLocation from, BoardLocation target)
+    private (FireAttack? Attack, string? Reason) WithNamedVehicle(GameState state, FireAttack attack, string vehicleId, BoardLocation from, BoardLocation target,
+        IReadOnlyList<DcTargetFacing>? placed = null)
     {
         if (state.Unit(vehicleId) is not { Status: InstanceStatus.Active } vehicle || !LiveFire.IsVehicle(vehicle) || state.Location(vehicle.Id)?.Location != target)
         {
@@ -666,20 +671,25 @@ public sealed partial class GamePlanner
         }
 
         var named = LiveFire.NamedVehicle(state, vehicle);
-        if (from != target)
+        if (placed?.FirstOrDefault(item => item.Vehicle == vehicle.Id) is { } asPlaced)
         {
-            if (Bearing(state, target, from) is not { } back || (vehicle.Position as MapPosition)?.Facing is not { } hull)
+            named = named with
+            {
+                HullFacing = asPlaced.Hull,
+                TurretFacing = asPlaced.Turret,
+            };
+        }
+        else if (from != target)
+        {
+            if (TargetFacingsFrom(state, vehicle, from, target) is not { } facings)
             {
                 return (null, $"play.ordnance-facing: {vehicle.Id}'s Target Facing is read only on one board not reversed, from a vehicle with a VCA (D3.2)");
             }
 
-            var turreted = FireReference.Value.Armor.GetValueOrDefault(vehicle.Definition?.Definition ?? string.Empty)?.Turreted == true;
-            var (hullFacing, turretFacing) = ScenarioA1OrdnanceMapRules.VehicleTargetFacings(back, (int)hull, turreted, BypassTargetFacing(state, vehicle, from),
-                () => (int?)LiveOrdnance.TurretFacing(state, vehicle));
             named = named with
             {
-                HullFacing = hullFacing,
-                TurretFacing = turretFacing,
+                HullFacing = facings.Hull,
+                TurretFacing = facings.Turret,
             };
         }
 
@@ -687,6 +697,19 @@ public sealed partial class GamePlanner
         {
             TargetVehicle = named
         }, null);
+    }
+
+    /// <summary>The hull and turret Target Facings of a vehicle toward an attack across the hexside from <paramref name="from"/> (D3.2), or null when they cannot be read.</summary>
+    private (string Hull, string? Turret)? TargetFacingsFrom(GameState state, UnitInstance vehicle, BoardLocation from, BoardLocation target)
+    {
+        if (Bearing(state, target, from) is not { } back || (vehicle.Position as MapPosition)?.Facing is not { } hull)
+        {
+            return null;
+        }
+
+        var turreted = FireReference.Value.Armor.GetValueOrDefault(vehicle.Definition?.Definition ?? string.Empty)?.Turreted == true;
+        return ScenarioA1OrdnanceMapRules.VehicleTargetFacings(back, (int)hull, turreted, BypassTargetFacing(state, vehicle, from),
+            () => (int?)LiveOrdnance.TurretFacing(state, vehicle));
     }
 
     private static IEnumerable<string> Strings(JsonElement arguments, string name) =>
@@ -892,7 +915,7 @@ public sealed partial class GamePlanner
             {
                 Rolls = rolls
             }, reference);
-            var next = ScenarioA1FireFollowUps.NextFireStep(resolution);
+            var next = ScenarioA1FireFollowUps.NextFireStep(resolution, facts is { DemolitionCharge: not null, TargetVehicle: not null });
             if (next.Resolved)
             {
                 break;

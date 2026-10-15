@@ -46,6 +46,12 @@ public static class ScenarioA1HeEquivalency
         _ => null,
     };
 
+    /// <summary>
+    /// C8.31 note 1, C13.24 (pp. 178, 183; pass 60, the first referee): "ATR can use AP HE Equivalency only if it is 20mm", for a Collateral Attack as
+    /// for a shot at Personnel; any other ATR's 1 FP is only its attack on a Gun (C13.23).
+    /// </summary>
+    public static bool AtrHasEquivalency(int caliber) => caliber == 20;
+
     /// <summary>The weapon kind a Gun definition fires as (C8.31): a LATW by its type, any other Gun or MA as a Gun.</summary>
     public static string Weapon(GunDefinition gun)
     {

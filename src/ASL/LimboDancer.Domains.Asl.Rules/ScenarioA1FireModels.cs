@@ -712,14 +712,30 @@ public sealed record FireGunTarget(string? GunId, string? DefinitionId, string? 
 /// <summary>
 /// A SW or Gun a target unit holds (A9.74, A9.8; pass 60, ruling R60.17): possessed, or a Gun it mans; whether it is malfunctioned. A dm SW is a SW.
 /// </summary>
-public sealed record FireHeldWeapon(string? EquipmentId, string? Kind, string? DefinitionId, bool? Malfunctioned);
+public sealed record FireHeldWeapon(string? EquipmentId, string? Kind, string? DefinitionId)
+{
+    /// <summary>Whether the weapon is malfunctioned; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Malfunctioned
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// What a KIA did to a weapon its victim held (A9.74; pass 60, ruling R60.17), or a DC to the Gun of its target Location (C11.6): the dr read on the
 /// attack's column (null for a DC's Gun, read by the attack's own result), the IFT result, and the fate: <c>destroyed</c>, <c>malfunctioned</c>, or
 /// <c>none</c>.
 /// </summary>
-public sealed record FireWeaponDestruction(string EquipmentId, string HolderId, int? Dr, string Result, string Fate, string Rule);
+public sealed record FireWeaponDestruction(string EquipmentId, string HolderId, string Result, string Fate, string Rule)
+{
+    /// <summary>The dr read on the attack's column; null for a DC's Gun.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? Dr
+    {
+        get; init;
+    }
+}
 
 public sealed record FireFirer(
     string? UnitId,
@@ -1036,9 +1052,10 @@ public sealed record FireTarget(
 
     /// <summary>
     /// The SW and Guns the unit holds (A9.74; pass 60, ruling R60.17), read from the state only when the attack carries
-    /// <see cref="FireAttack.RandomDestruction"/>; null is none.
+    /// <see cref="FireAttack.RandomDestruction"/>; null is none. Never written to a record (boundary review, pass 60): both sides read the record,
+    /// and a concealed or hidden unit's weapons are not theirs to know; the planner and the verifier read them from the state again.
     /// </summary>
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    [JsonIgnore]
     public IReadOnlyList<FireHeldWeapon>? HeldWeapons
     {
         get; init;

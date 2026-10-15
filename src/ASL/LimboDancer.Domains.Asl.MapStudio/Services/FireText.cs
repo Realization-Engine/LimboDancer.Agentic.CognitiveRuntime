@@ -228,9 +228,10 @@ public static class FireText
 
     /// <summary>
     /// What a FT, MOL, or DC did to the AFV it named, in lines (pass 60, rulings R60.15, R60.16): the DC's Position DR, the To Kill DR with its Final TK#
-    /// and the crew's checks, and the Specific Collateral Attack on its CE crew. Empty when the attack named none.
+    /// and the crew's checks, and the Specific Collateral Attack on its CE crew. Empty when the attack named none. A DC poorly positioned at an AFV
+    /// whose crew is not CE (<paramref name="crewExposed"/> false) has no effect at all (the table player, pass 60).
     /// </summary>
-    public static IReadOnlyList<string> NamedVehicleLines(string vehicleId, FireResolution resolution)
+    public static IReadOnlyList<string> NamedVehicleLines(string vehicleId, FireResolution resolution, bool crewExposed = true)
     {
         ArgumentNullException.ThrowIfNull(resolution);
         var lines = new List<string>();
@@ -241,7 +242,8 @@ public static class FireText
                 {
                     FirePosition.Optimal => $"optimally positioned, a {position.HitLocation} hit against the Aerial AF (C7.346)",
                     FirePosition.Positioned => $"positioned, a {position.HitLocation} hit against its AF (C7.346)",
-                    FirePosition.Poor => "poorly positioned: no effect on the AFV, and its CE crew alone is attacked on the second DR (C7.346)",
+                    FirePosition.Poor => crewExposed ? "poorly positioned: no effect on the AFV, and its CE crew alone is attacked on the second DR (C7.346)"
+                        : "poorly positioned: no effect, as its crew is BU (C7.346)",
                     _ => "no effect on the AFV or its crew; the Location's other units are attacked as Area Fire on the second DR (C7.346)",
                 }));
         }
@@ -267,7 +269,7 @@ public static class FireText
         if (resolution.SpecificCollateral is { } collateral)
         {
             var crew = collateral.Effect;
-            lines.Add($"its CE crew takes a Specific Collateral Attack of {collateral.Firepower} FP, +2 for CE (D.8A): Final DR {crew.FinalDr}, {ResultText(collateral.Result)}"
+            lines.Add($"its CE crew takes a Specific Collateral Attack of {collateral.Firepower} FP{ScenarioA1FlameKill.ModifierText(crew.Drm)} (D.8A): Final DR {crew.FinalDr}, {ResultText(collateral.Result)}"
                 + (crew.CrewCheck is { } made ? $"; {CheckText(made)}" : "")
                 + (crew.CrewResult == FireVehicleEffect.None ? "" : $": {crew.CrewResult}"));
         }

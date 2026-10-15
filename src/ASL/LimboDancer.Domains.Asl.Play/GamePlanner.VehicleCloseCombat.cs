@@ -362,6 +362,9 @@ public sealed partial class GamePlanner
                 {
                     Next = following,
                     Closed = closed,
+
+                    // A9.223 (pass 60, rulings R60.3, R60.20): a reaction planned from the pass on carries the Fire Lane's cancellation.
+                    CancelsFireLanes = reaction,
                 }, package, null));
             if (destroyed)
             {
