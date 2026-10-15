@@ -25,7 +25,7 @@ Each selected German 81 mm formation retains six weapons and six crews, one crew
 
 `campaign-asl-handoff-2` includes every weapon as an equipment instance with an ASL `manned` holding link to its crew. Identity mappings, sides, catalog references and ground positions are preserved. Weapons and crews remain separate counters at the same location. Setup validation and import use the existing ASL engine.
 
-Existing paired campaign deployments load without changing their terrain, placements, completion state or revision, including those recording catalog 1.14.0. Older single-detachment deployments retain the previously implemented migration. Old prepared handoffs are invalidated and can be prepared again; existing Studio games are not overwritten. Regenerating a handoff for the new catalog creates a new game identity. Campaign saves still do not include later Studio game history.
+Existing paired campaign deployments load without changing their terrain, placements, completion state or revision, including those recording catalog 1.14.0. Older single-detachment deployments retain the previously implemented migration. Old prepared handoffs are invalidated and can be prepared again; existing Studio games are not overwritten. Regenerating a handoff for the new catalog creates a new game identity. Full-Situation campaign exports now include later Studio game history; the bounded selected-formation pilot keeps its existing save contract. See the Goodwood transition release report for full-map transfer acceptance.
 
 ## Remaining boundary
 

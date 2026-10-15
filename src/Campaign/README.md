@@ -1,222 +1,72 @@
-# Formation-to-ASL pilot
+# Operation Goodwood: Formation Map to ASL
 
-This implements the bounded package pilot from the Formation to ASL Map Alignment Design and Implementation Plan: pinned inputs, deterministic metric features, an ASL authored-board package, compiled terrain, derived hex facts and inspection output. The campaign host now adds a bounded eight-squad deployment workflow. Movement, LOS, combat and full-Situation conversion remain unavailable.
+The complete Goodwood transition covers joined boards B/A/C and all 114 ground formations, producing 624 ASL unit/equipment instances with stable identities, positions, catalog references and 94 weapon/operator links. Eight aircraft remain explicit off-map support; supply and command markers remain in campaign context.
 
-## Run from the repository root
+The existing ASL implementation owns setup and play validation. Manufactured game-default profiles are identified explicitly. Available combat actions follow that implementation's current capabilities.
 
-Requires .NET 10. No external VASL checkout is required to generate or test the package: the catalog fixture is included with provenance and its LGPL notice.
+Current acceptance and limitations: [Goodwood release report](docs/Goodwood%20Transition%20Release%20Report.md). Detailed chronological evidence: [transition coverage](docs/Goodwood%20Transition%20Coverage.md). Design: [Formation to ASL implementation plan](../ASL/docs/Formation%20to%20ASL%20Map%20Alignment%20Design%20and%20Implementation%20Plan.md).
 
-```powershell
-dotnet run --project src/Campaign/LimboDancer.Campaign.Refinement.Cli -- prototypes/europe-hex-map/sources/situations/panzer-leader-05.json artifacts/goodwood-pilot 00112233445566778899aabbccddeeff
-dotnet test src/Campaign/Campaign.slnx
-```
+## Build and run
 
-Omit the seed argument to create a new random 128-bit seed. The CLI writes `seed.txt` before generation and reuses it on subsequent runs. Use a different output directory for a different world. Reusing a directory with a conflicting seed fails. Generation failures do not reroll the seed.
+Requires .NET 10. The included terrain catalog fixture allows this workflow without an external VASL checkout. Campaign projects and shared ASL settings treat warnings as errors.
 
-Each accepted package is published beneath its full package hash:
-
-- `boards/goodwood-<identity>/board.json` and `features.json`: native ASL authored-board package.
-- `refinement.json`: seed, pinned identities, metric features, parent/overlap references, warnings and inspection-only admission status.
-- `SharedBoardMetadata.xml`: exact catalog required by the package.
-- `preview.svg` and `exact.svg`: the ASL renderer's compiled-terrain view.
-- `facts.json`: ASL-derived hex facts for inspection.
-
-The package, manifest and catalog are staged and atomically published together. The CLI adds derived previews afterwards. Repeated publication verifies existing content instead of overwriting it. Copy the complete hash directory to transfer an accepted package; the campaign host also embeds the accepted package in campaign save files, as described below.
-
-## Inspect in existing Map Studio
-
-Use the existing host with a VASL checkout containing the pinned catalog and `AslMaps:BoardsRoot` set to the generated hash directory's `boards` folder. For a local development run, pass `--environment Development` so static assets load. The host's configured Kestrel endpoint overrides `--urls`; use `--Kestrel:Endpoints:Http:Url http://127.0.0.1:8092` to select an isolated port. The board URL is `/boards/<PackageReference>` from `refinement.json`.
-
-Map Studio's `Authored, valid` status means its map validator found no errors. It does not certify combat, movement or scenario admission. Use Exact view for the crop: Styled view currently draws retained world-feature paths past board edges.
-
-## Frozen spatial and terrain contract
-
-The primary crop starts at global column 52, row 90, with 33 columns and 20 nominal rows (676 addressable ASL hexes including staggered edge fragments). The joined B/A/C source is rotated as authored. Formation scale stays nominally 250 m; tactical spacing is 40 m. The crossing is near the crop center. The crop is about 1.1 km by 0.8 km.
-
-The profile generates seeded, nonoverlapping single-level building footprints inside town polygons. It preserves traced road and stream centerlines and bridge polygons. Roads and crossing geometry do not vary by seed. Footprint clearance protects those routes. Source roofs are decorative and are not copied into the authoritative building model.
-
-| ASL code | Terrain | Pilot treatment |
-|---|---|---|
-| 0 | Open Ground | Base terrain; also the unbuilt parts of town regions |
-| 8 | Water | Preserved source water polygons |
-| 32 | Shallow Stream | Traced channels, assumed 8 m width |
-| 40 | Stone Building | Generated ground-level footprints, assumed material |
-| 60 | Woods | Preserved formation woods polygons |
-| 66 | Paved Road | Traced roads, assumed 10 m width |
-| 84 | Stone Bridge | Preserved crossing footprint, assumed material |
-
-These codes are supported by compilation and fact derivation. That is separate from executable rule coverage: the existing Scenario A1 building-evidence path is pinned to VASL board 01. The generator manifest alone does not mark any hex deployment-admitted; the separate campaign setup policy described below supplies bounded admission. Nonzero source elevations and unsupported terrain in the requested crop/guard region fail closed. The primary crop contains no woodland; generated connected clearings are deferred, not silently claimed as implemented.
-
-The overlap test verifies shared world-feature IDs and geometry plus derived facts in the admitted two-hex interior for the fixed (60,92) fixture, not arbitrary crop-edge equivalence. A/C join projection is covered; the proposed seam crop at (52,116) is deliberately rejected because it includes unsupported hills. Further join admission requires an elevation profile. Parent ownership is center-based with ordinal source-key ties; overlap references use the tactical hex polygon.
-
-## Validation and limits
-
-Tests cover independent SHA-256 stream vectors, rotations, negative parity, quantization, source/seed rejection, repeated output, 32 seeds, bridge-to-road connectivity, shared features in overlapping crops, source joins, unsupported hills, corruption and cancellation. Shared ASL build settings are imported and every pilot project explicitly sets `TreatWarningsAsErrors` to `true`.
-
-The first tested seed produced only MAP-VAL-007 warnings: feature boundaries close to ASL sampling points. These are exported, not discarded. A zero-error authored package is sufficient for inspection. The separate bounded setup policy below admits the pilot roster; movement remains unavailable.
-
-The bounded campaign integration below implements the next workflow slice. The release review records its performance and remaining gates. This pilot does not resize existing maps or migrate saved deployments.
-
-## Recorded pilot verification
-
-On 13 October 2026, .NET SDK 10.0.402 on Windows: 14 tests passed, including the 32-seed acceptance test. The final CLI run with seed `00112233445566778899aabbccddeeff` generated 65 features and 676 hexes, published/reloaded/recompiled the package and rendered the preview in 2.18 seconds. This is one measured development-machine run, not a cold-start or broad hardware benchmark. Package version: `6907b65ed7ab86be88d3add25d78639eecdeef86ad7304abfdb9ec81e7d4677b`.
-
-The package has zero validator errors and 175 MAP-VAL-007 sampling-boundary warnings, retained in the manifest. In native Map Studio it loaded as Authored, valid; selecting R10 displayed Stone Bridge, Shallow Stream locations and road/bridge hexside facts. These observations verify compilation and inspection, not combat admission. No existing campaign save or application UI was modified by the pilot.
-
-
-## Campaign deployment integration
-
-Run the local campaign host from the repository root:
+From the repository root, build before starting the services:
 
 ```powershell
-dotnet run --project src/Campaign/LimboDancer.Campaign.PilotHost
+dotnet build src/Campaign/Campaign.slnx -c Release
 ```
 
-Open `http://127.0.0.1:8093/index.html?exercise=source&source=5`. The host serves the existing prototype and `/api/asl-pilot` on the same origin. Existing saves on port 8080 belong to a different browser origin: use **Save campaign to file** there, then **Load campaign from file** on port 8093. The static-only server cannot compile ASL terrain. Optional host settings are `Campaign:PrototypeRoot` and `Campaign:PackagesRoot`; API requests cannot choose filesystem paths or source packages.
-
-1. Commit the Goodwood mission and complete both sides' formation setup.
-2. Select **Open ASL deployment pilot** in the formation toolbar.
-3. Choose a squad and destination on the map or in the keyboard-accessible hex selector, then **Place selected squad**. **Deploy pilot roster** fills only missing placements.
-4. **Complete setup** locks placement; **Review setup** unlocks it.
-5. **Return to formation map** retains the underlying formation viewport and selection. The pilot's own viewport is saved on return or deployment edits.
-6. Campaign save/load files include `world.aslPilots.M04`: campaign seed, setup-context snapshot, accepted feature package and refinement manifest, placements, completion state and viewport. File import validates accepted terrain through the host before installing the campaign. Resume compiles the saved features and verifies package/grid hashes; it does not run the generator.
-
-### Frozen setup policy
-
-`goodwood-infantry-setup-1` contains four British and four German infantry squads, associated with `uk-rifle-01` and `de-rifle-01`. This is a bounded test detachment and does not transfer the full formation roster, enforce a radius around its current formation position, or reconcile casualties. The crop stays fixed at (52,90,33,20).
-
-The prototype campaign remains the authority for formation setup permissions, including its supply-margin and retained supply-area exceptions. It supplies `CampaignSupplyDeployment.refs` for the two roster parents. C# verifies references exist in the pinned source, derives each tactical hex's primary formation parent from its metric center, and enforces those permissions separately from terrain and stacking checks. The context hash binds the campaign identity, formation-placement/supply snapshot and sorted allowed-parent sets. It is an integrity binding, not a signature or multiplayer authorization system. If formation setup changes, reopening fails with an explanation and retains the old pilot. Automatic rebasing remains follow-up work.
-
-Admitted setup locations are ground level, with center terrain code 0, 40, 60 or 66. Bridge locations, streams, water, unknown terrain, missing source parents and the outer two-hex guard are excluded. Friendly stacking is limited to two squads; opposing squads cannot share a hex. This is an explicit campaign pilot policy, not an assertion that ASL movement, LOS or combat rules have been implemented. The package's original inspection-only manifest remains unchanged; the separate setup record names the policy that admits the bounded deployment.
-
-### Service and persistence behavior
-
-Generation requests are idempotent by campaign seed, cancellable and polled. A single generation queue limits compilation concurrency. Packages publish through the existing staging/verification path. Each host instance retains at most eight generation jobs and sixteen deployment contexts; restarting releases caches without deleting browser campaign saves or accepted package directories. The API is loopback-only with same-origin, JSON-only mutations. Stop the host before rebuilding on Windows to release loaded assemblies.
-
-Placement endpoints return a validated replacement setup. The browser installs it only after campaign persistence succeeds; failed validation cannot partially place the roster. Existing campaign revision checks protect against concurrent-tab writes. There is no migration of legacy squad q/r placements into ASL indices.
-
-### Verification and remaining gates
-
-The deployment tests cover source-rule capacity across 32 seeds, legal placement, completion/review, side restrictions, crop boundaries, unsupported locations, stacking, duplicate roster entries, insufficient capacity, context changes and package corruption. Host tests cover idempotent generation, open/deploy/complete and importing accepted terrain into a fresh host without generation.
-
-The overlap fixture at (60,92) has an exact 450-by-129-pixel translation. More than 250 common interior hexes match derived location, terrain, elevation, hexside and bridge facts after excluding the two-hex guard. This is evidence for that fixture, not general admission of arbitrary overlapping crops. The elevation-bearing A/C seam crop remains rejected. Other Situation adapters, full rosters, woodland variation, automatic context rebasing, source-to-pilot focus matching and combat remain follow-up work.
-
-Verification on 13 October 2026: 21 .NET tests passed, including the 32-seed capacity suite and fresh-host import. The solution builds with zero warnings and errors. Existing campaign-file round-trip and Panzer Situation UI/model tests passed. The unrelated `test_command_card_transition.cjs` still fails while looking up an old Ardennes button title; none of its loaded implementation files changed in this integration.
-
-Browser acceptance also passed: fresh Goodwood preparation and formation setup, opening the generated pilot, automatic eight-squad deployment, a manual move from C3 to C7, crop-boundary rejection, completion/review, return with retained formation DOM, page reload, campaign file export/import, and reopening accepted terrain after a host restart. The exported campaign contained the same package identity and all eight placements.
-
-## First-version release review, 14 October 2026
-
-See [Pilot release review](docs/Pilot-Release-Review.md) for all measurements and acceptance results. The Release suite passes 27 tests, including cancellation retry, interrupted publication fault injection and preservation of an existing session after rejected imports. The UI adds keyboard pan/zoom/fit and clearer formation-parent boundaries.
-
-Three fresh-process runs generated and opened terrain in 2.44 to 3.28 seconds, excluding host startup (1.13 to 1.34 seconds). Saved-map reload was 1.81 to 2.08 seconds, so the proposed 2-second gate is not fully passed. Browser paint is excluded. Next: profile cold reload and measure browser open-to-ready latency before expanding the pilot. Reproduce with `scripts/Measure-Pilot.ps1` after a Release build. Raw measurements and limitations are linked from the review.
-### Profiling follow-up, 14 October 2026
-
-The release-review work was committed as b5f1d064. Its profiling action is complete. Exact parent lookup now takes 25 to 32 ms instead of 709 ms, with a regression against the exhaustive lookup. Browser resume skips a redundant health request and an unchanged-save rewrite. All identity, terrain and setup validation remains in place.
-
-Three fresh-process API reloads now take 1.74 to 1.85 seconds. First browser open against a restarted host takes 3.14 seconds; warm repeats take 1.20 to 1.93 seconds. The Release suite passes 28 tests, with browser-module persistence and campaign-file regressions also passing. The Pilot release review records raw evidence and measurement boundaries.
-
-Milestone 4 remains open because the end-to-end cold browser result exceeds the proposed 2-second budget. Next: isolate and reduce first-request handling and rendering costs, repeat cold/warm browser timing, and retain the bounded scope until the gate closes or the budget is explicitly revised.
-### First-open gate result, 14 October 2026
-
-A bounded follow-up now passes the proposed 2-second saved-map open target in three fresh-host in-app browser checks: 1.63, 1.87 and 1.68 seconds; warm repeats take 1.04 to 1.31 seconds. This supersedes the earlier outstanding cold-open result. Terrain derivation now rejects bridge/tunnel-free bounding rectangles before exact polygon scanning; positive rectangles retain the original semantics. All map response content matches the original lookup.
-
-Campaign tests: 29 passed. Shared ASL map tests: 245 passed. Browser persistence and campaign-file regressions pass. Default runtime tiering is unchanged. See the Pilot release review for raw evidence, method and limits. Stop performance work here for the bounded pilot; wider browser/accessibility acceptance, full formation conversion and other deferred scope remain separate work.
-## Selected rifle formation slice, 14 October 2026
-
-Performance and release evidence for the original bounded pilot is committed as 033e4636. That pilot remains available through Open ASL deployment pilot, with its existing eight squads and saves.
-
-Complete Goodwood formation setup, select a deployed British or German rifle counter on the formation map, then choose **Open selected formation ASL map**. The toolbar action is disabled for unsupported counter types or incomplete setup. The map opens four squads belonging only to that selected counter. This follows the existing provisional four-squad rifle profiles, not historical personnel inference; vehicles, engineers and other types are not admitted.
-
-The selected source hex determines a 17-column by 14-row crop. Its origin snaps to four world columns and two world rows, preserving column parity and integer raster translation between neighboring crops. The shared campaign seed, source geometry and feature identities still determine detail. The crop does not create an independent random map or alter formation hex size.
-
-Placement is restricted to admitted ground cells whose primary formation parent is the selected anchor. The two-hex crop guard, terrain exclusions and two-friendly-squad stacking limit still apply. The side's current campaign permissions must include the anchor. Elevation, uncovered map edges or inadequate legal capacity can reject a location. The UI explains the rejection and retains existing accepted maps. Unsupported drafts may remain in the campaign until retried; no partial deployment is installed.
-
-Each formation uses its own campaign slot, M04:formation:<unit ID>, alongside the untouched M04 legacy pilot. Export/import includes all slots. Saves bind the selected unit, anchor, policy, campaign placement/supply snapshot and allowed-parent sets. A changed context is rejected without replacing the saved map. This slice deliberately retains the existing conservative whole-Situation context binding: moving an unrelated formation can also require restoring the original context. Automatic rebasing, reset/replacement UI and migrating squads to another anchor remain follow-up work.
-
-Verification: 34 Campaign Release tests pass. New coverage includes British and German four-squad deployment, parent-boundary rejection, accepted package resume, changed anchor/context rejection, unsupported counter rejection, separate generation job keys, idempotent generation and import into a fresh host without generation. One neighboring A/X-6 and A/W-6 crop pair has matching common interior facts; arbitrary crop-pair equivalence is not claimed. Existing browser persistence/campaign-file tests and syntax checks pass.
-
-Browser acceptance: de-rifle-03 at C/Y-4 generated, deployed 4/4, completed, and resumed after host restart. Keyboard placement outside the parent was rejected without moving a squad. The legacy pilot still opens with 8/8. B/N-8 and B/H-8 examples were rejected because their surrounding crops include source elevation. The selected map was left complete. Broader selected-crop seed, edge and accessibility coverage remains follow-up scope.
-### Selected-formation save recovery
-
-Selected rifle maps now tolerate unrelated formation movements and permission changes elsewhere. Current permission for the selected anchor is still required. Older selected-formation saves are validated and upgraded on open without regenerating terrain or resetting squads.
-
-A moved formation offers **Rebuild local map**. This explicitly resets squad placements at the new anchor using the same campaign seed. The old save is retained until generation, validation and storage succeed; cancelling or failing the rebuild preserves it. This does not transfer existing squad positions or retain a history after successful replacement. The original eight-squad pilot keeps its existing context rules.
-
-
-Crop verification now covers four neighboring pairs across three seeds, deterministic replay, shared interior facts, edge placement rejection, uncovered map edges and explicit elevated-neighbor rejection. A separate cross-seed check verifies building variation with unchanged source geometry. See the implementation plan checkpoint for fixtures and elevation follow-up.
-
-
-### Elevation-enabled generation
-
-New goodwood-pilot-2 maps preserve source levels 0-2 as ASL base elevation regions, an explicit scenario mapping. The hex inspector shows derived levels. Supported infantry ground setup now admits these elevations. Cliffs and special Slope hexsides are not inferred; stream/deck setup, movement, LOS and combat remain unavailable. Accepted v1 maps load unchanged using their original version. See the implementation plan for PDF rule citations, assumptions and acceptance fixtures.
-
-Selected Goodwood formations also support four provisional British engineer squads and six German 81 mm mortar/crew pairs. Mortars use open ground or paved road only. Separate setup policies preserve existing rifle saves. These remain bounded setup representations; see the equipment increment below and the alignment plan.
-
-### Separate mortar equipment and operators, 14 October 2026
-
-Each selected German 81 mm mortar formation has six crew identities and six weapon identities. Each weapon records the existing ASL `Holding` with role `Manned` and its assigned crew. Moving either member during setup moves the pair atomically. The two-personnel-per-hex pilot limit counts the crew, not its weapon. Operators are fixed in this increment.
-
-Crew references use the published ASL catalog's reviewed printed German crew definition (`asl-scenario-a1`, currently 1.14.0, `attacker-crew`). Goodwood applicability and the one-crew-per-weapon allotment remain provisional. By user decision, the German 81 mm mortar has an explicitly unresolved equipment record, with no invented factors, substitute light mortar, or play admission. The six-weapon count retains the existing source-composition assumption. **Unit details** shows both identities, operator links, catalog provenance and review limits.
-
-Setup policy `goodwood-selected-mortar-2` saves the six links and the initial unit-catalog identity. The existing ASL catalog resolver resolves recorded catalog names to current versions; the recorded version/hash provides provenance, not a frozen rules implementation. Legacy `goodwood-selected-mortar-1` saves are validated before expansion: each placed detachment becomes a co-located crew and weapon. Partial placement and completion state survive, with unchanged accepted terrain. Invalid bindings, unknown detachments and broken operator links fail without replacing the saved setup. Rifle and engineer policies are unchanged.
-
-Validation: 72 Campaign Release tests pass with warnings treated as errors. Browser recovery/composition and campaign-file checks pass. Live UI verified crew and weapon inspection, paired movement in both directions, completion and reload with 12/12 identities. Before/after campaign exports preserved the terrain bundle, every original detachment location and formation plans. This reuses the ASL catalog and holding model reviewed against the ongoing implementation through Pass 55; it does not duplicate or enable Gun firing, manhandling, operator reassignment or combat rules.
-
-### Rifle and engineer catalog integration, 14 October 2026
-
-Selected rifle and British engineer squads now reference the published ASL unit catalog, using the existing prototype defaults: British rifle `british-squad`, German rifle `attacker-squad`, British engineer `british-elite-squad`. The original eight-squad pilot uses the same rifle mappings. Resolution requires a published catalog, matching squad kind/nationality and reviewed printed source. Printed review does not approve Goodwood applicability, the four-squad conversion, or engineer capabilities. No traits are added to the elite-squad definition.
-
-Unit details distinguishes catalog provenance from provisional scenario use. Rifle and engineer equipment allotments are explicitly unresolved, with zero separate equipment counters issued in this pilot. This is not a historical assertion that the formations had no weapons. No source-table inventory automatically creates a Bren, machine gun, light mortar, demolition charge, flamethrower or mine-clearing capability. Existing mortar links and unresolved mortar data remain unchanged.
-
-New setups record the catalog identity. Validated older infantry saves gain this provenance when opened, without changing their policy, context hash, revision, completion state, unit IDs, positions or accepted terrain. The browser persists the metadata upgrade once; unchanged resumes avoid rewriting the save. An unrecognized non-null catalog identity is rejected. As in the ASL core, recorded catalog names resolve to the current catalog version.
-
-Validation: 76 Campaign Release tests passed with warnings treated as errors. Browser recovery tests cover successful, unchanged and failed provenance writes. Live browser checks reopened completed engineer, British rifle and German rifle deployments and verified their details cards. A before/after campaign export comparison confirmed all existing terrain bundles, placements, completion states, policies, revisions, operator links, context hashes and formation plans remained identical. No combat or equipment actions were added.
-
-### Bounded handoff into ASL setup, 14 October 2026
-
-User decision: historical applicability is advisory. Campaign defaults may be manufactured when needed, provided they are identified as game assumptions rather than sourced historical facts. This increment retains the existing reviewed printed squad/crew definitions and accepts their campaign mappings for setup. It does not require new historical research or alter the ASL catalog's review flags.
-
-The **ASL handoff** toolbar card offers **Prepare ASL setup** after campaign setup is complete. The host uses the existing `GamePlanner.PlanAsync(GameActions.Setup, ...)` and event replay, with the exact validated authored board version and its derived location chains. The resulting `GameState` contains actual ASL `UnitInstance` objects for supported personnel. This is a prepared setup artifact saved with the campaign, not a write to Map Studio's live game store, phase advancement or combat UI.
-
-- Identity: ASL requires slug identifiers, whereas campaign IDs contain `/`. The handoff stores each original campaign ID alongside its stable ASL ID (the `/` separator becomes `--`). Side identifiers similarly become lowercase ASL slugs. No campaign identity is changed. Catalog references and hex positions remain intact; ground location uses relative level 0, including elevated source hexes.
-- Readiness: rifles, engineers and mortar crews are Ready under campaign defaults. Unresolved mortar weapons are listed as Needs data and omitted from the prepared ASL record. Their campaign positions and crew links remain intact. Missing weapon data does not prevent personnel handoff. No new mortar profile was manufactured in this increment.
-- Persistence: each pilot slot can store a `campaign-asl-handoff-1` artifact, containing the ASL event record, catalog provenance, identity/readiness rows and a digest binding the campaign identity, complete setup and accepted board version. A fixed epoch timestamp makes this preparation record reproducible; it is not a historical event time or live-play audit entry.
-- Validation: reopen reconstructs the setup through the ASL planner and compares the saved artifact. Corrupt, stale or incompatible handoffs are not marked Ready; the campaign map still opens and offers preparation again. Deployment edits clear the derived handoff. Storage failure retains the prior save. Campaign file exports include the artifact.
-- Defaults and limits: Allied first, British/German sides, no scenario-card OB restrictions, no extra equipment or specialist engineer traits. Campaign setup permissions remain enforced before handoff. This is setup validation, not general ASL movement, firing, LOS or historical scenario certification. The existing ASL rules implementation remains authoritative.
-
-Verification: 80 Campaign Release tests pass with warnings treated as errors. New coverage includes British/German rifles, engineers and mortar crews through actual ASL setup planning and projection; exact positions and definition references; elevated anchors; preserved identity mappings; JSON round-trip; incomplete setup, corrupt records, incompatible versions and stale deployment rejection. Browser tests cover handoff persistence, failed writes and edit invalidation. Live browser acceptance prepared four engineers, reloaded and revalidated their Ready report, then prepared six mortar crews with six clearly omitted weapons. Before/after campaign exports had identical terrain bundles, complete setup records and formation plans.
-
-Next boundary at the end of the preparation increment: publish the prepared artifact and generated board into ASL Studio, implemented below. Explicit game-default weapon profiles remain a separate increment.
-
-### Open campaign setup in ASL Studio, 14 October 2026
-
-The prepared handoff now has an **Open in ASL** action. It revalidates the current deployment, imports the exact generated authored board and initial setup through ASL Studio, then offers an **Enter ASL setup** link in a new tab. Reopening the same handoff offers **Continue in ASL** and retains the existing game's progress. The campaign map stays open.
-
-The Studio validates the package hash, pinned terrain catalog, authored-board status and setup events before publication. A completed package directory is published by rename, followed by the existing `FileGameStore.Append` replay-and-save workflow. An interruption between those writes leaves a reusable board; retry finishes the game import. Existing boards with different versions and games with different initial event prefixes are refused. The same setup identity remains stable across browser and host restarts; an edited campaign setup produces a new game identity. Later ASL turns are never overwritten by reopening the campaign handoff.
-
-The live Studio uses its local tenant, while original unit IDs, catalog references, relative levels and hex positions are preserved. Unresolved mortar weapons remain in campaign setup and are omitted from ASL, as the readiness report states. Historical applicability remains advisory. This opens the existing ASL play workspace without advancing a phase or adding rules. It does not transfer subsequent ASL gameplay back into the campaign. Campaign export contains the initial prepared handoff, not the later Studio event history; keep the Studio boards/game storage to preserve that history.
-
-Configuration: the Campaign host uses `Campaign:AslStudioUrl` (default `http://127.0.0.1:5178`). The import endpoint accepts local server-to-server JSON only. ASL Studio supports `AslMaps:AuthoredCatalogPath` for an exact pinned SharedBoardMetadata catalog, independently of VASL ingestion. A different VASL catalog is not silently substituted. For this pilot, start Studio from the repository root with:
+Start Studio in one terminal:
 
 ```powershell
 $campaignRoot = (Get-Location).Path
-dotnet run --project src/ASL/LimboDancer.Domains.Asl.MapStudio --no-launch-profile -- --environment Development --Kestrel:Endpoints:Http:Url http://127.0.0.1:5178 --AslMaps:AuthoredCatalogPath "$campaignRoot/src/Campaign/LimboDancer.Campaign.Refinement/Fixtures/SharedBoardMetadata.xml" --AslMaps:BoardsRoot "$campaignRoot/artifacts/campaign-asl-studio/boards" --AslMaps:CacheRoot "$campaignRoot/artifacts/campaign-asl-studio/cache"
+dotnet run --project src/ASL/LimboDancer.Domains.Asl.MapStudio -c Release --no-build --no-launch-profile -- --environment Development --Kestrel:Endpoints:Http:Url http://127.0.0.1:5178 --AslMaps:AuthoredCatalogPath "$campaignRoot/src/Campaign/LimboDancer.Campaign.Refinement/Fixtures/SharedBoardMetadata.xml" --AslMaps:BoardsRoot "$campaignRoot/artifacts/campaign-asl-studio/boards" --AslMaps:CacheRoot "$campaignRoot/artifacts/campaign-asl-studio/cache"
 ```
 
-The existing Campaign host still runs on port 8093. If Studio is stopped, the handoff reports that it is unavailable and leaves campaign setup unchanged. Both storage roots should be retained between runs.
+Start Campaign Atlas in another terminal:
 
-Verification: 82 Campaign Release tests and 51 targeted ASL Studio authoring, rendering and play-page tests passed. The two import integration cases also passed after adding catalog-mismatch rejection. Coverage includes exact identities/positions/catalog references, unchanged campaign setup and terrain, malformed records, mismatched package/catalog versions, interrupted publication recovery, duplicate prevention, and reopening after a phase advance and service reconstruction. Live browser acceptance imported four British engineer squads at D5, D6, D7 and E4; ASL Studio displayed the generated terrain and counters after restart, and the campaign action then returned the same game link. The live check also confirmed that a different local VASL catalog is refused until the pinned authored catalog is configured.
+```powershell
+dotnet run --project src/Campaign/LimboDancer.Campaign.PilotHost -c Release --no-build --no-launch-profile
+```
 
-Next increment: decide and implement explicit game-default mortar profiles, then validate weapon/crew links through this same ASL handoff. Returning ASL outcomes to the campaign remains a separate integration boundary.
+Open `http://127.0.0.1:8093/index.html?exercise=source&source=5`. The campaign host's `Campaign:AslStudioUrl` defaults to `http://127.0.0.1:5178`. Studio's `Campaign:AtlasOrigin` defaults to `http://127.0.0.1:8093`. Keep the configured storage folders between runs. Other ports and storage roots can be supplied explicitly for isolated acceptance tests.
 
+## Use the complete transition
 
-### Explicit mortar defaults and weapon/crew handoff, 14 October 2026
+1. Finish the Goodwood formation deployment and open its Situation map.
+2. Choose **Open complete ASL setup**. Review the formation/counter counts and individual issues. Existing incomplete saves offer **Place remaining counters**, which preserves accepted coordinates.
+3. Prepare and open the ASL setup. After validation, follow **Open ASL map** and confirm the side you are viewing.
+4. Inspect terrain, parent ownership, counter origin and operator links. Use zoom, Fit and optional Formation boundaries. Hex labels appear at readable zoom and remain upright when rotated. A typed location applies with Enter; the manual setup editor accepts a full board-qualified address.
+5. Use the existing proposal/confirmation play workflow. The campaign context panel provides return navigation. Reopening the same handoff preserves subsequent ASL progress.
 
-The next increment is implemented: catalog 1.15.0 includes the manufactured MFG German 81 mm mortar, while retaining the existing 2-2-8 crew. All six weapons and six crews enter ASL setup with separate identities and manned links. Inspection states the operator and game-default provenance. Campaign terrain and deployment are unchanged; prepared artifacts from the previous catalog must be prepared again. Existing Studio game progress is retained separately.
+Generation and preparation run as jobs with progress and cancellation. A failure retains accepted data and reports the problem. Existing invalid positions require review, and are not silently moved.
 
-See `src/Campaign/docs/Campaign Mortar Game Default.md` for values, cross-nationality comparisons, compatibility behavior and remaining engine boundaries. Medium-mortar combat support is separate from valid setup data; the profile is not substituted with a different weapon class.
+## Save and transfer
 
-Verification: 82 Campaign Release tests passed, followed by seven focused compatibility/import tests after adding the older-catalog save case and explicit Studio weapon-link assertions. The 20 catalog provenance tests, 147 targeted unit/catalog tests, 21 Studio catalog/play-page tests, four package checksum tests and browser UI harness passed. A broader historical-source audit was stopped after narrowing verification to the four changed checksum tests; no historical source review is claimed. Builds retain warnings-as-errors. The authoring-test root helper now recognizes Git worktrees.
+Use **Campaign > Save campaign to file** and **Load campaign from file**. Full-Situation files include formation and squad deployment, supply adjustments, accepted terrain/seed, counter relationships, campaign context and subsequent ASL history. Keep both services running when capturing or restoring ASL progress.
 
-Live acceptance loaded the existing six-pair deployment at E6, E7, E8, F4, F5 and F6, re-prepared its stale handoff, showed all 12 identities as Ready, and opened the imported German setup in ASL Studio. The unit inspector shows the manufactured values and assigned crew. This generated a new Studio game without overwriting the earlier engineer game.
+Actual-interface acceptance restored the full game into empty service storage and resumed Turn 1 Allied Prep Fire. Terrain, metadata, footprint and history matched the original files exactly. Repeated handoff cannot roll back later matching progress; divergent records are rejected. Returning ASL battle outcomes to campaign adjudication remains outside this transition.
+
+## Generate and verify terrain independently
+
+```powershell
+dotnet run --project src/Campaign/LimboDancer.Campaign.Refinement.Cli -c Release --no-build -- prototypes/europe-hex-map/sources/situations/panzer-leader-05.json artifacts/goodwood-full 00112233445566778899aabbccddeeff --situation
+```
+
+Omit the seed to create and persist a new 128-bit seed. Use another output directory for another world. Generation does not reroll a failed seed. The accepted profile retains nominal 250 m formation and 40 m tactical spacing. The common lattice has unique parent ownership and protected compilation margins. Roads, streams, crossings and elevation remain tied to source geography; permitted building detail varies deterministically.
+
+The original bounded package remains available by omitting `--situation`. Selected-formation and eight-squad pilot saves retain their compatibility paths. Their historical budgets and results are in [Pilot release review](docs/Pilot-Release-Review.md).
+
+## Verification and diagnostics
+
+```powershell
+dotnet test src/Campaign/Campaign.slnx -c Release
+python src/Campaign/scripts/audit_goodwood.py --check
+node --test src/ASL/tests/LimboDancer.Domains.Asl.MapStudio.Tests/boardViewport.pointer.test.mjs
+```
+
+Run `test_campaign_file.cjs` and `test_asl_situation.cjs` with Node from `prototypes/europe-hex-map` for portable-save/controller checks.
+
+`src/Campaign/scripts/Measure-GoodwoodHandoff.ps1` measures preparation and repeated launch on an explicitly chosen local acceptance host/save. Add `mapMetrics=1` to an ASL play URL for opt-in scene timing attributes. Measurement boundaries and raw figures are in [release metrics](docs/goodwood-release-metrics-2026-10-15.json).
+
+Full-map cold opening and preparation remain slower than the bounded pilot. The release report records latency, process memory, package size and current rules/storage limitations.

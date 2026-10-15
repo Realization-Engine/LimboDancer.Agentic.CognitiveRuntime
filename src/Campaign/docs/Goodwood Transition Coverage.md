@@ -2,6 +2,8 @@
 
 Baseline: 14 October 2026, following fe470551. This audit separates setup representation from combat support. It does not schedule new ASL rules.
 
+This is a chronological evidence log. Baseline gaps and intermediate next-step notes below are historical. Use the [current release report](Goodwood%20Transition%20Release%20Report.md) and the implementation plan status for the accepted behavior and remaining audit gates.
+
 ## Source accounting
 
 The source has 122 counters in 25 types: 68 Allied and 54 German. Eight Allied Typhoons remain off-map support, leaving 114 ground formations. All 24 ground types covering 114 source counters have selected-formation ASL conversion. No ground type lacks a selected-formation conversion. This is potential conversion coverage, not a claim that all 114 have been deployed or transferred.
@@ -493,3 +495,8 @@ The viewport suppresses the label layer before insertion at overview scale, then
 Nine viewport JavaScript tests passed, covering zoom transitions and explicit hidden-layer preservation alongside existing controls and timing. The Release build had zero warnings/errors. Actual Goodwood overview inspection reported `data-detail-visible=false` and computed display none. Zooming the retained rotated Allied view enabled the layer; text had the inverse quarter-turn transform and appeared upright. Screenshot: goodwood-upright-zoom-labels.png.
 
 Three comparable warm reloads measured navigation-to-handover scene 3.9108 / 4.1228 / 4.3528 seconds, with browser scene stages 2.3966 / 2.4394 / 2.6384 seconds. Earlier scene-stage median was 2.7142 seconds; the updated median is 2.4394 seconds. This small three-run comparison indicates a modest scene-stage improvement and clearer overview, not a statistically established speedup or a full-map latency-budget pass. Raw results: goodwood-optimized-browser-metrics.json. Original 626-event Prep Fire history SHA-256 remains `155cd7bc7870ca1d2582534edf567dca4ea3df49e59e28fdfb9bee00e7d485aa`.
+
+
+### Final complete-Goodwood sign-off, 15 October 2026
+
+The complete Campaign suite passed 124 tests with zero failures/skips in 9 minutes 28 seconds. Current ASL campaign/context/ownership/footprint/operator/keyboard checks passed 79 cases. Nine viewport tests and both campaign-file/full-Situation controller scripts passed. The inventory audit, current release/README links and metrics JSON are valid. Original and independent receiver board/features bytes remain identical; the original accepted game retains 626 events and its recorded Prep Fire SHA-256. The current requirement audit, reproducible workflow, checked-in screenshots, measured performance/resource costs and retained engine/storage limitations are consolidated in [Goodwood Transition Release Report](Goodwood%20Transition%20Release%20Report.md). This closes the complete transition goal; historical gaps and next-step notes above are superseded where the release report records verification.

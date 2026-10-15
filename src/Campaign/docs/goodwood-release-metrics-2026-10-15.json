@@ -1,0 +1,128 @@
+{
+  "date": "2026-10-15",
+  "measurementCodeBaseline": "7f4b9397",
+  "hardware": {
+    "cpu": "Intel Xeon W-10885M @ 2.40GHz",
+    "logicalProcessors": 16,
+    "visibleMemoryKiB": 133840972,
+    "os": "Windows 10 Pro for Workstations",
+    "sdk": "11.0.100-rc.2.26504.105",
+    "target": "net10.0"
+  },
+  "seed": "dccee2730588257b5ba1eb135b1824fd",
+  "generation": {
+    "packages": 84,
+    "ownedHexes": 37788,
+    "seconds": 29.2902029,
+    "sameProcessCompleteSetVerificationSeconds": 7.354263,
+    "peakWorkingSetBytes": 489521152,
+    "storedBytes": 47062261,
+    "freshOutputDirectory": true
+  },
+  "handoff": {
+    "prepareSeconds": 27.9797321,
+    "repeatedLaunchSeconds": 1.619117,
+    "campaignProcessLifetimePeakAfterPrepareBytes": 1995714560,
+    "acceptedSaveUnchanged": true,
+    "prepared": "bd6932874e5285982bb0d26274f83baa5fea64cd24656af15e00d0c1abaf1cb0"
+  },
+  "browserBeforeOverviewDetail": {
+    "coldServiceWarmBrowserCache": {
+      "navigationToHandoverSceneMs": 21367.1,
+      "sceneLoadMs": 2843.2
+    },
+    "alliedSceneAfterConfirmationMs": 4515,
+    "warmReloads": [
+      {
+        "run": 1,
+        "stage": "warm handover reload",
+        "values": [
+          {
+            "navigationMs": "4430.30",
+            "sceneMs": "2714.20",
+            "status": "ready"
+          }
+        ]
+      },
+      {
+        "run": 2,
+        "stage": "warm handover reload",
+        "values": [
+          {
+            "navigationMs": "4210.30",
+            "sceneMs": "2789.40",
+            "status": "ready"
+          }
+        ]
+      },
+      {
+        "run": 3,
+        "stage": "warm handover reload",
+        "values": [
+          {
+            "navigationMs": "3966.30",
+            "sceneMs": "2661.10",
+            "status": "ready"
+          }
+        ]
+      }
+    ],
+    "notes": "Two animation frames after terrain and counters; excludes GPU completion. Allied navigation time includes human/tool delay and is omitted."
+  },
+  "browserAfterOverviewDetail": {
+    "runs": [
+      {
+        "run": 1,
+        "values": [
+          {
+            "navigationMs": "3910.80",
+            "sceneMs": "2396.60",
+            "status": "ready"
+          }
+        ]
+      },
+      {
+        "run": 2,
+        "values": [
+          {
+            "navigationMs": "4122.80",
+            "sceneMs": "2439.40",
+            "status": "ready"
+          }
+        ]
+      },
+      {
+        "run": 3,
+        "values": [
+          {
+            "navigationMs": "4352.80",
+            "sceneMs": "2638.40",
+            "status": "ready"
+          }
+        ]
+      }
+    ],
+    "notes": "Warm service and browser cache, full page reload to handover scene. Same scene metric boundary as earlier comparison."
+  },
+  "studioProcessPeakAfterFirstSceneBytes": 1806462976,
+  "portableCampaignBytes": 32770026,
+  "assembledBoardPackageBytes": 646559,
+  "notes": [
+    "Release runs; OS/browser caches not flushed. Fresh service first-open measurement used an existing browser cache.",
+    "Scene timing ends after terrain/counters and two animation frames. GPU completion and continuous-interactivity latency are not measured.",
+    "Preparation includes full validation; launch reuses an existing Studio game. Polling adds up to 250 ms.",
+    "Peak working set is per server process, excluding browser/GPU. Generation verification is in the same process after publication."
+  ],
+  "finalVerification": {
+    "campaignPassed": 124,
+    "campaignFailed": 0,
+    "campaignSkipped": 0,
+    "campaignDuration": "9m28s",
+    "focusedAslCampaignUiPassed": 79,
+    "viewportJavaScriptPassed": 9,
+    "campaignFileAndSituationControllerScripts": "both passed",
+    "inventoryAudit": "passed",
+    "retainedHistoryEvents": 626,
+    "retainedHistorySha256": "155cd7bc7870ca1d2582534edf567dca4ea3df49e59e28fdfb9bee00e7d485aa"
+  }
+}
