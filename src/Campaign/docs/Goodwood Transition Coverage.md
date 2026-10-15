@@ -250,3 +250,9 @@ Sixteen targeted context and card-editor tests passed with warnings treated as e
 StudioBoardCatalog now resolves a requested terrain version through the existing LoadVersion API. Previously every rules lookup loaded and hashed the current authored package before checking its version, even when the accepted version was already compiled in memory. Unversioned lookups still read the latest board; an unavailable pinned version remains an error. A regression test verifies accepted-version reuse, changed-current isolation and refusal of an unavailable version. Thirty-eight targeted catalog, render-endpoint and play-page tests passed. Full Goodwood browser timing after this change is still pending.
 
 Live inspection confirmed the campaign provenance totals and return link. Its styles were moved into the existing site stylesheet because this application does not include a component-scoped stylesheet bundle.
+
+### Live return navigation and restart observation
+
+After rebuilding and restarting Studio, the existing campaign-d52f7b3704cf7cd4d56818f1 game reopened at Turn 1 Allied Rally Phase with setup open. The new disclosure reports 624 ground counters, 114 formations and eight off-map aircraft. Its Return to campaign map link opened the retained Goodwood campaign at port 8093 with Committed / Supplies issued and CMD, DEP, SUP, HQ and TRK markers visible. No game or campaign state was rewritten by navigation.
+
+The restarted hand-over screen was observed after approximately 173 seconds elapsed, including polling and inspection gaps. This is not an instrumented time-to-interactive measurement and does not establish a performance improvement. Opening the Allied full-map view remains under acceptance; stage-level profiling is needed before the performance gate can pass.
