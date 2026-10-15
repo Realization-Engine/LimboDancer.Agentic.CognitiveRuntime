@@ -98,30 +98,27 @@ public sealed partial class GamePlanner
             return (null, [$"play.fire-barred: {shooter.Id} {GamePlanner.FireBar(state, shooter)}"]);
         }
 
-        // C3.33, C3.332 (ruling R9.3): a mortar's Area Target Type shot at a hex holding a vehicle, or units in another Location of the hex, is not built.
-        if (shot.TargetType == OrdnanceTargetTypes.Area)
+        // C3.332, C1.55, B23.32 (pass 60, rulings R60.10, R60.11): a mortar's Area Target Type shot attacks the vehicles and the Locations of its hex;
+        // Rules says where a vehicle there is still refused.
+        if (shot.TargetType == OrdnanceTargetTypes.Area && state.Units.Where(unit => unit.Status is InstanceStatus.Active && LiveFire.IsVehicle(unit)
+                && state.Location(unit.Id)?.Location is { } at && at.Board == target.Board && at.Hex == target.Hex)
+            .Select(unit => ScenarioA1OrdnanceEligibility.AreaVehicleRefusal(unit.Id, unit.Straddling is not null, state.Phase == "mph")).FirstOrDefault(item => item is not null) is { } areaVehicle)
         {
-            if (state.Units.FirstOrDefault(unit => unit.Status is InstanceStatus.Active && LiveFire.IsVehicle(unit) && state.Location(unit.Id)?.Location is { } at
-                && at.Board == target.Board && at.Hex == target.Hex) is { } inHex)
-            {
-                return (null, [$"play.ordnance-area-vehicle: {inHex.Id} is in the target hex; a mortar's hit on a vehicle is not built (C3.332, C1.55; ruling R9.3)"]);
-            }
-
-            if (state.Units.Any(unit => unit.Status == InstanceStatus.Active && state.Location(unit.Id)?.Location is { } other && other.Board == target.Board
-                && other.Hex == target.Hex && other != target))
-            {
-                return (null, ["play.ordnance-area-levels: the target hex holds units in more than one Location, which the Area Target Type is not built for (C3.33; ruling R9.3)"]);
-            }
+            return (null, [areaVehicle]);
         }
 
-        // Ruling R25.10: the hit's IFT attack on a vehicle in the target Location is not reviewed; C3.31 (ruling R7.2): name the vehicle to
-        // fire at it on the Vehicle Target Type.
+        // C3.32, C3.41 (pass 60, ruling R60.8): an Infantry Target Type shot at a Location holding a vehicle attacks its Infantry and unarmored vehicles
+        // and a Vulnerable AFV crew; Rules says where it is still refused. C3.31 (ruling R7.2): name a vehicle to fire at it on the Vehicle Target Type.
+        // The table player (pass 60): the advice names an enemy vehicle where there is one.
+        var firingSide = state.Unit(shot.Crew?.UnitId ?? string.Empty)?.Side;
         if (targetVehicle is null && shot.TargetType is null
-            && state.At(target).OfType<UnitInstance>().FirstOrDefault(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)
-                && (state.Phase != "mph" || state.Movement?.Movers.Contains(unit.Id) == true)) is { } vehicle)
+            && state.At(target).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)
+                && (state.Phase != "mph" || state.Movement?.Movers.Contains(unit.Id) == true)).OrderBy(unit => unit.Side == firingSide).FirstOrDefault() is { } vehicle
+            && ScenarioA1OrdnanceEligibility.LocationVehicleRefusal(vehicle.Id, target.ToString(), state.Phase == "mph",
+                shot.Gun!.DefinitionId == OrdnanceTargetTypes.Panzerfaust || LiveOrdnance.LatwType(shot.Gun.DefinitionId ?? string.Empty) == "atr",
+                shot.Hit!.Targets is { Count: > 0 }, shot.Hit.Vehicles?.Any(item => FireReference.Value.Definitions.GetValueOrDefault(item.DefinitionId ?? string.Empty)?.Unarmored == true) == true) is { } vehicleRefusal)
         {
-            return (null, [$"play.ordnance-vehicle: {vehicle.Id} is in {target}; fire at it on the Vehicle Target Type by naming it, "
-                + "since a hit's attack on the Location's Infantry and vehicles together is not reviewed (C3.31; rulings R25.10, R7.2)"]);
+            return (null, [vehicleRefusal]);
         }
 
         if (state.At(target).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && (Is(unit, Conditions.Melee) || Is(unit, Conditions.Captured))))
@@ -160,6 +157,12 @@ public sealed partial class GamePlanner
         }
 
         shot = PassEightFacts(state, map.Value.Shot, target);
+
+        // A9.74, C8.42 (pass 60, rulings R60.3, R60.17): the hit's KIA checks the weapons its victims hold.
+        shot = shot with
+        {
+            Hit = LiveFire.WithRandomDestruction(state, shot.Hit!)
+        };
         var reference = OrdnanceReference.Value;
         var precheck = ScenarioA1OrdnanceCalculator.Precheck(shot, reference);
         if (precheck.Count != 0)
@@ -173,11 +176,47 @@ public sealed partial class GamePlanner
     /// <summary>A shot's proposal in words: what fires at what, the range and terrain, any turn, and the To Hit number and DRM before any roll.</summary>
     private static string OrdnanceSummary(OrdnanceShot facts, UnitFacing? facing)
     {
-        // The To Hit number and DRM before any roll, read from the package with dice that decide nothing else (a miss).
-        var preview = ScenarioA1OrdnanceCalculator.Resolve(facts with
+        // The To Hit number and DRM before any roll, read from the package with dice that decide nothing else (a miss). A hidden unit is left out
+        // of what the firer reads (A12.3; ruling R21.1; pass 60, first referee and table player): it is attacked, but never named or counted.
+        var hit = facts.Hit!;
+        FireTarget[] seen = [.. hit.Targets!.Where(target => target.Hidden != true)];
+        var previewed = ScenarioA1OrdnanceCalculator.Resolve(facts with
         {
+            Hit = hit with
+            {
+                Targets = seen
+            },
             Rolls = new OrdnanceRolls([6, 6], null, null, null, null) { PanzerfaustCheck = 1 }
-        }, OrdnanceReference.Value).ToHit;
+        }, OrdnanceReference.Value);
+        var preview = previewed.ToHit;
+
+        // C3.32, C3.4 (pass 60, rulings R60.8, R60.9): a Location hit target by target says which units and vehicles each Original DR hits, as Rules
+        // gives it; the concealed units of the Location are one entry, without their number or size, and an AFV is named for its CE crew.
+        static string Need(int need) => need >= 2 ? $"on an Original DR of {need} or less" : "only on an Original 2 (C3.6)";
+        var each = string.Empty;
+        if (previewed.TargetHits is { } judged && preview is not null)
+        {
+            bool IsConcealed(string id) => seen.FirstOrDefault(target => target.UnitId == id) is { } unit
+                ? unit.Concealed == true || unit.Dummy == true
+                : hit.Vehicles?.FirstOrDefault(target => target.VehicleId == id)?.Concealed == true;
+            var entries = judged.Where(item => !IsConcealed(item.UnitId)).Select(item =>
+            {
+                var vehicle = hit.Vehicles?.FirstOrDefault(target => target.VehicleId == item.UnitId);
+                var name = vehicle is null || FireReference.Value.Definitions.GetValueOrDefault(vehicle.DefinitionId ?? string.Empty)?.Unarmored == true ? item.UnitId
+                    : $"the CE crew of {item.UnitId} (D.8B)";
+                return $"{name} {Need(item.NeededOriginal ?? 0)}";
+            }).ToList();
+            var concealed = judged.Where(item => IsConcealed(item.UnitId)).ToArray();
+            if (concealed.Length > 0)
+            {
+                // Case K alone is a concealed unit's own DRM; a concealed vehicle's size is not the firer's to know.
+                entries.Add(concealed.FirstOrDefault(item => seen.Any(target => target.UnitId == item.UnitId)) is { } one
+                    ? $"its concealed units {Need(one.NeededOriginal ?? 0)}" : "its concealed units, each on its own Final DR with Case K (C6.2)");
+            }
+
+            each = "; hit target by target (C3.32, C3.4): " + string.Join(", ", entries);
+        }
+
         var toHit = preview is null ? string.Empty
             : $"; Modified TH# {preview.ModifiedToHit} ({preview.Color}), DRM {(preview.Drm.Count == 0 ? "none" : string.Join(", ", preview.Drm.Select(item =>
                 // C5.35 (pass 50): the lower dr is not known before the roll.
@@ -190,9 +229,16 @@ public sealed partial class GamePlanner
             : facts.TargetType == OrdnanceTargetTypes.Area
             ? $"HE at {facts.TargetLocationId} (Area Target Type" + (facts.Spotter is { } spotted ? $", spotted by {spotted.UnitId}" : string.Empty) + ")"
             : facts.VehicleTarget is { } aimed
-            ? $"{(facts.Ammunition ?? "ap").ToUpperInvariant()} at {aimed.VehicleId} in {facts.TargetLocationId} (Vehicle Target Type; "
+            // A9.61 (pass 60): a MG's To Kill attack, on the black To Hit numbers and the @MG Basic TK# of 4.
+            ? (OrdnanceReference.Value.Weapon(facts.Gun.DefinitionId)?.GunType == ScenarioA1MachineGunKill.GunType
+                ? "a MG To Kill attack as ordnance (A9.61: black To Hit numbers, Basic TK# 4, no Critical Hit)" : (facts.Ammunition ?? "ap").ToUpperInvariant())
+                + $" at {aimed.VehicleId} in {facts.TargetLocationId} (Vehicle Target Type; "
                 + (facts.SameHex == true ? "in its own hex, so the colored dr gives the Target Facing: 1-2 rear, 3-4 side, 5-6 front, D3.2)"
                     : $"hull {aimed.HullFacing}" + (aimed.TurretFacing is { } turretFacing ? $", turret {turretFacing}" : string.Empty) + " facing the firer)")
+            // C8.31 (pass 60): AP, APCR, APDS, HEAT, and a LATW's round at Infantry or a Gun, by their HE Equivalency.
+            : ScenarioA1OrdnanceCalculator.HeEquivalency(facts, OrdnanceReference.Value) is { } equivalency
+            ? (facts.Gun!.DefinitionId == OrdnanceTargetTypes.Panzerfaust ? "a PF (after a PF Check)" : ScenarioA1Definitions.AmmunitionName(facts.Ammunition!))
+                + $" at {facts.TargetLocationId} ({equivalency} FP by HE Equivalency, C8.31)"
             : $"HE at {facts.TargetLocationId}";
 
         // C8.9 (pass 55, ruling R55.7): the Depletion Number the declared ammunition is fired under, and what an Original DR above it means.
@@ -201,7 +247,7 @@ public sealed partial class GamePlanner
             : string.Empty;
         return $"play.ordnance: {facts.Gun!.GunId} fires {aim} in the {facts.Phase}; range {facts.Range}, {facts.Hit!.TargetTerrain}"
             + (facts.HexspinesToTurn > 0 ? $", turning {(facts.Vehicle is null ? string.Empty : "its turret ")}{facts.HexspinesToTurn} hexspine(s) to {facing!.Value.Name()}" : string.Empty)
-            + toHit + depletion;
+            + toHit + each + depletion;
     }
 
     /// <summary>
@@ -212,8 +258,11 @@ public sealed partial class GamePlanner
     private ((OrdnanceShot Shot, UnitFacing? Facing)? Facts, string? Reason) OrdnanceMapFacts(GameState state, OrdnanceShot shot, BoardLocation target)
     {
         var from = FirerLocation(state, shot.Gun!.GunId!);
+
+        // A9.61, D3.54 (pass 60): a MG fired as ordnance has no CA; at a vehicle in its own Location it is read as a Gun's shot there (D3.2).
+        var machineGun = OrdnanceReference.Value.Weapon(shot.Gun.DefinitionId)?.GunType == ScenarioA1MachineGunKill.GunType;
         if (shot.TargetType == OrdnanceTargetTypes.Area || shot.Gun.DefinitionId == OrdnanceTargetTypes.Panzerfaust
-            || OrdnanceReference.Value.Guns.GetValueOrDefault(shot.Gun.DefinitionId ?? string.Empty)?.GunType == "latw")
+            || OrdnanceReference.Value.Guns.GetValueOrDefault(shot.Gun.DefinitionId ?? string.Empty)?.GunType == "latw" || (machineGun && target != from))
         {
             return SupportWeaponMapFacts(state, shot, from, target);
         }
@@ -365,8 +414,13 @@ public sealed partial class GamePlanner
             // C2.6 (ruling R8.7; pass 55): a Gun fires at another level, up or down, only if the range is at least the elevation difference.
             ElevationAllowed = ScenarioA1OrdnanceMapRules.ElevationAllowed(targetAbove, read.Range, definition?.GunType),
 
-            // B10.31 (pass 55): the Height Advantage the probe read, for Case Q.
+            // B10.31 (pass 55): the Height Advantage the probe read, for Case Q. C3.71 (pass 60, ruling R60.14): a Critical Hit reverses it, for a shot
+            // made since the pass.
             HeightAdvantage = ScenarioA1OrdnanceMapRules.HeightAdvantage(read.HeightAdvantage, read.HexsideTem?.Tem),
+            ReversesHeightAdvantage = ScenarioA1OrdnanceMapRules.HeightAdvantage(read.HeightAdvantage, read.HexsideTem?.Tem) == true ? true : null,
+
+            // C8.31 (pass 60, ruling R60.4): a wall's TEM lets HEAT be fired at Infantry; read for a HEAT shot with no vehicle named.
+            WallTem = ScenarioA1OrdnanceMapRules.HeatWallTem(shot.VehicleTarget is not null, shot.Ammunition, read.HexsideTem?.Terrain),
             Hit = hit,
             VehicleTarget = aimed ?? shot.VehicleTarget,
         };
@@ -423,7 +477,8 @@ public sealed partial class GamePlanner
         var building = ScenarioA1OrdnanceMapRules.IsBuilding(firerTerrain);
 
         // B23.423 (referee, pass 9): no mortar fires from a non-rooftop building Location.
-        if (ScenarioA1OrdnanceMapRules.SupportWeaponLocationRefusal(latwType, building, firerRead.Level.Level) is { } placed)
+        if (ScenarioA1OrdnanceMapRules.SupportWeaponLocationRefusal(latwType, building, firerRead.Level.Level,
+            OrdnanceReference.Value.Weapon(shot.Gun.DefinitionId)?.GunType == ScenarioA1MachineGunKill.GunType) is { } placed)
         {
             return (null, placed);
         }
@@ -471,6 +526,14 @@ public sealed partial class GamePlanner
         }
 
         var revealing = HeatOfBattleFacts(state, read);
+        var area = shot.TargetType == OrdnanceTargetTypes.Area;
+        var (levels, levelsReason) = area ? AreaLocations(state, shot, target, probe, read) : (null, null);
+        if (levelsReason is not null)
+        {
+            return (null, levelsReason);
+        }
+
+        var heightAdvantage = ScenarioA1OrdnanceMapRules.HeightAdvantage(read.HeightAdvantage, read.HexsideTem?.Tem, area);
         return ((shot with
         {
             Range = ranged.Range,
@@ -478,8 +541,16 @@ public sealed partial class GamePlanner
             FirerInWoodsOrBuilding = WoodsOrBuilding.Contains(firerTerrain),
             ElevationAllowed = ScenarioA1OrdnanceMapRules.ElevationAllowed(targetAbove, ranged.Range, definition?.GunType),
 
-            // B10.31, C6.8 (pass 55): Height Advantage is Case Q on a LATW's To Hit DR; the Area Target Type takes no Case Q.
-            HeightAdvantage = ScenarioA1OrdnanceMapRules.HeightAdvantage(read.HeightAdvantage, read.HexsideTem?.Tem, shot.TargetType == OrdnanceTargetTypes.Area),
+            // B10.31, C6.8 (pass 55): Height Advantage is Case Q on a LATW's To Hit DR; the Area Target Type takes no Case Q. C3.71 (pass 60, ruling
+            // R60.14): a Critical Hit reverses it, for a shot made since the pass.
+            HeightAdvantage = heightAdvantage,
+            ReversesHeightAdvantage = heightAdvantage == true ? true : null,
+
+            // B23.32 (pass 60, ruling R60.11): the Locations of a mortar's building hex.
+            AreaLocations = levels,
+
+            // C8.31 (pass 60, ruling R60.5): a wall's TEM lets a PF's or PSK's HEAT be fired at Infantry.
+            WallTem = ScenarioA1OrdnanceMapRules.HeatWallTem(shot.VehicleTarget is not null, shot.Ammunition, read.HexsideTem?.Terrain),
             Hit = shot.Hit! with
             {
                 Range = null,
@@ -489,6 +560,9 @@ public sealed partial class GamePlanner
                 BeyondNvr = read.BeyondNvr,
                 TargetTerrain = read.TargetTerrain,
                 Targets = revealing.Targets,
+
+                // D9.3, C9.5 EX (pass 60, ruling R60.10): a mortar's target Infantry keep the +1 of a friendly AFV or wreck beside them.
+                AfvCover = area ? read.AfvCover : null,
             },
             VehicleTarget = aimed ?? shot.VehicleTarget,
             Panzerfaust = shot.Panzerfaust is null ? null : shot.Panzerfaust with
@@ -496,6 +570,50 @@ public sealed partial class GamePlanner
                 FromBuilding = ScenarioA1OrdnanceMapRules.IsBackblastLocation(firerTerrain)
             },
         }, null), null);
+    }
+
+    /// <summary>
+    /// The Locations of a mortar's target hex in a building of more than one level (B23.32, C3.4; pass 60, ruling R60.11): the named one and each
+    /// other that holds a unit or vehicle, lowest first, with its terrain and LOS read from the firer or Spotter and the building levels above it.
+    /// Null for any other hex. The board data does not tell an Interior Building Hex, and has no rooftop: every building hex is taken as not Interior.
+    /// </summary>
+    private (IReadOnlyList<OrdnanceAreaLocation>? Locations, string? Reason) AreaLocations(GameState state, OrdnanceShot shot, BoardLocation target, FireAttack probe,
+        FireAttack read)
+    {
+        if (!ScenarioA1Definitions.IsBuildingTerrain(read.TargetTerrain) || ReadLocation(state, target) is not { Hex.Locations.Count: > 1 } targetRead)
+        {
+            return (null, null);
+        }
+
+        int LevelsAbove(int level) => targetRead.Hex.Locations.Count(item => item.Level > level
+            && ReadLocation(state, target with { Level = item.Level }) is { } above && IsBuildingTerrain(TerrainKey(above)));
+        BoardLocation[] places = [.. shot.Hit!.Targets!.Select(item => item.LocationId).Concat((shot.Hit.Vehicles ?? []).Select(item => item.LocationId))
+            .OfType<string>().Select(BoardLocation.Parse).Append(target).Distinct().OrderBy(item => item.Level)];
+        var locations = new List<OrdnanceAreaLocation>();
+        foreach (var place in places)
+        {
+            var placeRead = read;
+            if (place != target)
+            {
+                var (other, reason) = FireMapFacts(state, probe, place);
+                if (other is null)
+                {
+                    return (null, reason);
+                }
+
+                placeRead = other;
+            }
+
+            var above = LevelsAbove(place.Level);
+            locations.Add(new OrdnanceAreaLocation(place.ToString())
+            {
+                TargetTerrain = placeRead.TargetTerrain,
+                Los = placeRead.Los,
+                LevelsAbove = above > 0 ? above : null,
+            });
+        }
+
+        return (locations, null);
     }
 
     /// <summary>
@@ -539,13 +657,26 @@ public sealed partial class GamePlanner
             };
         }
 
-        if (shot.VehicleTarget is null && shot.TargetType is null && GunAt(state, target, side, [from]) is { } gunTarget)
+        // C11.4, C11.5 (pass 60, ruling R60.14): a mortar's hit on a Gun's crew alone, its gunshield facing the mortar's own Location.
+        if (shot.VehicleTarget is null && GunAt(state, target, side, [from]) is { } gunTarget)
         {
             shot = shot with
             {
                 Hit = shot.Hit! with
                 {
                     GunTarget = gunTarget
+                }
+            };
+        }
+        else if (shot.VehicleTarget is null && shot.TargetType is null && shot.Hit is { Targets.Count: 0 } && shot.Hit.Vehicles is not { Count: > 0 }
+            && UnattendedGunAt(state, target) is { } lone)
+        {
+            // C3.41, C11.4 (pass 60, ruling R60.18): a Location whose only target is an unattended Gun.
+            shot = shot with
+            {
+                Hit = shot.Hit with
+                {
+                    GunTarget = lone
                 }
             };
         }
@@ -608,10 +739,15 @@ public sealed partial class GamePlanner
             && ScenarioA1OrdnanceMapRules.WithinArc(bearing, (int)barrel));
         // C11.5 (referee, pass 8): the gunshield protects only a Good Order crew, never one moving or pushing the Gun under Defensive First Fire.
         var crewKind = crew.Kind == "asl:crew";
-        var emplaced = LiveOrdnance.Emplaced(state, gun);
+        var emplaced = LiveOrdnance.Emplaced(state, gun, nonCrewManning: true);
         var moving = state.Phase == "mph" && state.Movement?.Movers.Contains(crew.Id) == true;
         return new FireGunTarget(gun.Id, gun.Definition?.Definition, crew.Id, emplaced, ScenarioA1OrdnanceMapRules.Gunshield(definition?.GunType, withinCa, crewKind, moving));
     }
+
+    /// <summary>The unattended Gun in a target Location (C3.41, C11.4; pass 60, ruling R60.18), as Rules finds it among the equipment there; null when there is none.</summary>
+    internal static FireGunTarget? UnattendedGunAt(GameState state, BoardLocation target) =>
+        ScenarioA1OrdnanceEligibility.UnattendedGun(state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Position is MapPosition at && at.Location == target)
+            .Select(item => (item.Id, item.Kind, item.Definition?.Definition, item.Holding is not null)));
 
     /// <summary>
     /// A target Location as a Gun's crew reads it (C3.2, C2.25; ruling R8.9): its own Location (Case E), no LOS, beyond the Gun's range, within its
@@ -755,8 +891,14 @@ public sealed partial class GamePlanner
                 "crewCheck" => (2, "ordnance-crew-check"),
                 "crewSurvival" => (2, "ordnance-crew-survival"),
 
+                // D.8A (pass 60): the check a Specific Collateral Attack calls on the crew to take.
+                "collateralCheck" => (2, "ordnance-collateral-check"),
+
                 // C8.4 (pass 55): a Canister shot's one DR, on the IFT.
                 "canister" => (2, "ordnance-canister"),
+
+                // C1.55, D5.6 (pass 60): the Crew Survival DR of an AFV a mortar's hit destroyed.
+                _ when key.StartsWith("areaSurvival:", StringComparison.Ordinal) => (2, "ordnance-crew-survival"),
                 _ when selected.Length > 0 => (selected.Length, "ordnance-random-selection"),
                 _ => FireRollShape(inner!),
             };
@@ -824,8 +966,21 @@ public sealed partial class GamePlanner
         }
 
         // The hit's effects: the Critical Hit's and the normal hit's units, with DM for a broken unit an attack could have given a NMC (A10.62).
+        // C1.55, C9.1 (pass 60, ruling R60.10): what a mortar's hit did to each AFV it hit, as a To Kill result is written, its Shock automatic.
+        foreach (var afv in resolution.AreaVehicles ?? [])
+        {
+            if (state.Unit(afv.VehicleId) is { } armored)
+            {
+                foreach (var (type, payload) in AreaVehicleEvents(state, armored, afv, attemptId))
+                {
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, type, payload, package, null, [recordId]));
+                }
+            }
+        }
+
+        // B23.32 (pass 60, ruling R60.11): the attacks on the other Locations of a mortar's building hex.
         var effects = new List<FireUnitEffect>();
-        foreach (var attack in new[] { resolution.CriticalHit, resolution.Hit }.OfType<FireResolution>())
+        foreach (var attack in new[] { resolution.CriticalHit, resolution.Hit }.OfType<FireResolution>().Concat(resolution.LevelHits ?? []))
         {
             var nestedFacts = facts.Hit! with
             {
@@ -837,6 +992,13 @@ public sealed partial class GamePlanner
             {
                 var target = facts.Hit.Targets!.First(item => item.UnitId == effect.UnitId);
                 var attackedBroken = target.Broken == true && desperate(target.Concealed == true || target.Hidden == true || target.Dummy == true);
+
+                // A9.74, C8.42 (pass 60, ruling R60.17): the unit's weapons are destroyed or malfunctioned before it drops them.
+                foreach (var payload in WeaponDestructionEvents(attack.WeaponDestruction, effect.UnitId))
+                {
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, payload.Type, payload.Payload, package, null, [recordId]));
+                }
+
                 foreach (var payload in EffectEvents(state, effect, attemptId, attackedBroken))
                 {
                     events.Add(Event(scope, attemptId, events.Count + 1, expected, payload.Type, payload.Payload, package, null, [recordId]));
@@ -851,7 +1013,20 @@ public sealed partial class GamePlanner
                 }
             }
 
+            // C3.32, A7.308, D.8B (pass 60, ruling R60.8): the unarmored vehicles the hit struck, on the Vehicle line, and the Vulnerable crews of the
+            // AFVs whose TH# it reached, as an IFT attack's are.
+            foreach (var vehicle in attack.VehicleEffects ?? [])
+            {
+                VehicleEffectsAfterHit(state, vehicle, nestedFacts, scope, attemptId, expected, package, recordId, events);
+            }
+
             effects.AddRange(attack.Effects);
+        }
+
+        // D.8A (pass 60, ruling R60.7): the Specific Collateral Attack on the crew of the AFV the hit left standing.
+        if (resolution.SpecificCollateral is { } collateral)
+        {
+            VehicleEffectsAfterHit(state, collateral.Effect, facts.Hit!, scope, attemptId, expected, package, recordId, events);
         }
 
         // C2.28: the malfunction; A7.1, C2.24: the Gun and its crew carry the fire phase's marker from their first shot; A8.1, C2.241 (ruling R8.1):
@@ -884,7 +1059,7 @@ public sealed partial class GamePlanner
         // more and the nearest Good Order enemy ground unit with a LOS to it is within 16 hexes, or the dr is a 6 and that unit 17 hexes or more away;
         // otherwise both are placed (or stay) beneath "?"; they keep HIP when no such unit has a LOS to the Gun.
         Dictionary<string, ConditionState>? emplacedReveal = null;
-        if (facts.Vehicle is null && state.Find(facts.Gun.GunId!) is EquipmentInstance firingGun && LiveOrdnance.Emplaced(state, firingGun) && state.Unit(facts.Crew.UnitId!) is { } gunCrew
+        if (facts.Vehicle is null && state.Find(facts.Gun.GunId!) is EquipmentInstance firingGun && LiveOrdnance.Emplaced(state, firingGun, nonCrewManning: true) && state.Unit(facts.Crew.UnitId!) is { } gunCrew
             && new[] { (IGameObject)firingGun, gunCrew }.Any(item => GameState.Condition(item, Conditions.Concealed) == ConditionState.True || GameState.Condition(item, Conditions.Hidden) == ConditionState.True)
             // C8.4 (pass 55): a Canister shot's IFT DR stands in for the To Hit DR it does not make.
             && (rolls.ToHit ?? rolls.Canister) is [var colored, ..] && state.Location(firingGun.Id) is { } firingAt)
@@ -1023,6 +1198,39 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
+    /// The events of a mortar's hit on an AFV (C1.55; pass 60, ruling R60.10), written as a To Kill result's are: a burning wreck, a wreck its crew may
+    /// survive, an Immobilization, or a Shock, which is never a possible one. A result of none writes nothing, and the AFV keeps any "?".
+    /// </summary>
+    private static IEnumerable<(string Type, EventPayload Payload)> AreaVehicleEvents(GameState state, UnitInstance vehicle, OrdnanceAreaVehicle hit, string attemptId) =>
+        hit.Result == OrdnanceKill.None ? []
+            : KillEvents(state, vehicle, new OrdnanceKill("he", hit.HitLocation, "none", null, hit.Drm, null, null, hit.KillDr, hit.Dice, hit.FinalDr, hit.Result)
+            {
+                Shocked = hit.Result == OrdnanceKill.Shock ? true : null,
+                CrewSurvival = hit.CrewSurvival,
+            }, attemptId);
+
+    /// <summary>
+    /// The events of what an ordnance hit did to a vehicle or its crew (pass 60, rulings R60.7, R60.8), as an IFT attack's are written: the Vehicle
+    /// line's result or the crew's, and a Recalled AFV on its way off the map that is immobilized Abandoned by its crew (D5.341, D5.41).
+    /// </summary>
+    private void VehicleEffectsAfterHit(GameState state, FireVehicleEffect vehicle, FireAttack facts, GameScope scope, string attemptId, long expected, string package,
+        string recordId, List<GameEvent> events)
+    {
+        foreach (var payload in VehicleEffectEvents(state, vehicle, facts))
+        {
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, payload.Type, payload.Payload, package, null, [recordId]));
+        }
+
+        if (state.Unit(vehicle.VehicleId) is { } stuck && ScenarioA1FireFollowUps.AbandonsWhenImmobilized(vehicle, MustLeave(stuck)))
+        {
+            foreach (var (type, abandon) in AbandonEvents(stuck, attemptId))
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, type, abandon, package, null, [recordId]));
+            }
+        }
+    }
+
+    /// <summary>
     /// What a PF does to its own firer (C13.31, C13.36; ruling R9.7): pinned; broken; or Casualty Reduction: a squad becomes its HS, a HS or crew
     /// is eliminated, a SMC is wounded, or eliminated if already wounded (A7.302, A17.2).
     /// </summary>
@@ -1099,10 +1307,21 @@ public sealed partial class GamePlanner
             "shockCheck" => rolls with { ShockCheck = values },
             "crewCheck" => rolls with { CrewCheck = values },
             "crewSurvival" => rolls with { CrewSurvival = values },
+            "collateralCheck" => rolls with { CollateralCheck = values },
             "canister" => rolls with { Canister = values },
+
+            // C3.74 (pass 60): a mortar's Critical Hit picks a Location of its building hex, then a unit there; C1.55, D5.6: an AFV's Crew Survival DR.
             _ when selected.Length > 0 => rolls with
             {
-                CriticalSelection = selected.Select((id, index) => (id, index)).ToDictionary(item => item.id, item => values[item.index], StringComparer.Ordinal)
+                CriticalSelection = new Dictionary<string, int>(selected.Select((id, index) => KeyValuePair.Create(id, values[index]))
+                    .Concat((rolls.CriticalSelection ?? new Dictionary<string, int>()).Where(item => !selected.Contains(item.Key))), StringComparer.Ordinal)
+            },
+            _ when key.StartsWith("areaSurvival:", StringComparison.Ordinal) => rolls with
+            {
+                AreaSurvival = new Dictionary<string, IReadOnlyList<int>>(rolls.AreaSurvival ?? new Dictionary<string, IReadOnlyList<int>>(), StringComparer.Ordinal)
+                {
+                    [key["areaSurvival:".Length..]] = values
+                }
             },
             _ when key.StartsWith("hit:", StringComparison.Ordinal) => rolls with { Hit = ApplyFireRoll(rolls.Hit ?? new FireRolls(null, null, null, null), key["hit:".Length..], values) },
             _ => rolls with { CriticalHit = ApplyFireRoll(rolls.CriticalHit ?? new FireRolls(null, null, null, null), key["critical-hit:".Length..], values) },
@@ -1125,6 +1344,13 @@ public sealed partial class GamePlanner
             "leaderLoss" => (2, "fire-leader-loss"),
             "heatOfBattle" => (2, "fire-heat-of-battle"),
             "berserkCheck" => (2, "fire-check"),
+
+            // Pass 60 (ruling R60.8): a vehicle crew's check and the Unlikely Kill dr of a hit on a Location holding vehicles.
+            "crewCheck" => (2, "fire-crew-check"),
+            "unlikelyKill" => (1, "fire-unlikely-kill"),
+
+            // A9.74 (pass 60, ruling R60.17): a weapon's Random SW/Gun Destruction dr.
+            "weaponDestruction" => (1, "fire-weapon-destruction"),
             _ => (1, "fire-wound-severity"),
         };
     }
@@ -1159,6 +1385,15 @@ public sealed partial class GamePlanner
             "crewCheck" => rolls with { CrewChecks = Add(rolls.CrewChecks, unit, values) },
             "unlikelyKill" => rolls with { UnlikelyKill = Add(rolls.UnlikelyKill, unit, values[0]) },
             "molCheck" => rolls with { MolCheck = values[0] },
+
+            // Pass 60 (rulings R60.15, R60.16): a DC's Position DR and the checks of a named AFV's crew.
+            "position" => rolls with { Position = values },
+            "crewSurvival" => rolls with { CrewSurvival = values },
+            "taskCheck" => rolls with { TaskCheck = values },
+            "collateralCheck" => rolls with { CollateralCheck = values },
+
+            // A9.74 (pass 60, ruling R60.17): a weapon's Random SW/Gun Destruction dr.
+            "weaponDestruction" => rolls with { WeaponDestruction = Add(rolls.WeaponDestruction, unit, values[0]) },
             _ => rolls with { WoundSeverity = Add(rolls.WoundSeverity, unit, values[0]) },
         };
     }

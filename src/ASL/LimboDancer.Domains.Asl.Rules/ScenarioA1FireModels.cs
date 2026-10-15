@@ -147,11 +147,32 @@ public sealed record FireAttack(
     }
 
     /// <summary>
+    /// The non-rooftop building levels above the target Location, each +1 to an Area Target Type hit's IFT DR, never reversed by a Critical Hit
+    /// (B23.32, C3.71, p. 136; pass 60, ruling R60.11). Null is none.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? LevelsAbove
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// The manned Gun whose crew is the attack's target (C11; backlog pass 8, ruling R8.3): whether it is Emplaced, and whether its gunshield
     /// faces the attack. Null when the target Location holds no Gun.
     /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public FireGunTarget? GunTarget
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether a Final KIA makes the weapons its victims held check for Random SW/Gun Destruction (A9.74, C8.42, C11.6, pp. 65, 178, 182; pass 60,
+    /// rulings R60.3, R60.17), and a DC destroys the Gun its target Location's units man. Set on every attack planned from the pass on and taken from
+    /// the record at replay; null on every older record, whose KIA destroys nothing.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? RandomDestruction
     {
         get; init;
     }
@@ -385,6 +406,17 @@ public sealed record FireAttack(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The AFV in the target Location a FT, MOL, or DC attack is predesignated against (A22.34, A22.612, A23.5, p. 89 to 91; pass 60, ruling R60.15): its
+    /// state facts and the Target Facing of the hexside the attack crosses (none from within its Location, which is the rear). Null for every other
+    /// attack, and in every record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrdnanceVehicleTarget? TargetVehicle
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -589,6 +621,16 @@ public sealed record FireOrdnanceHit(string? GunId, int? Firepower, bool? Critic
     {
         get; init;
     }
+
+    /// <summary>
+    /// Whether the target claimed Height Advantage on the To Hit DR of a Direct Fire Critical Hit that reverses it to -1 on the IFT DR (C3.71, B10.31;
+    /// pass 60, ruling R60.14); null is not.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? HeightAdvantage
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -666,6 +708,34 @@ public sealed record FireWeapon(string? EquipmentId, string? DefinitionId, bool?
 /// whether its gunshield protects the crew from this attack (an AT or INF Gun, the attack from within its CA and not from its own hex).
 /// </summary>
 public sealed record FireGunTarget(string? GunId, string? DefinitionId, string? CrewUnitId, bool? Emplaced, bool? Gunshield);
+
+/// <summary>
+/// A SW or Gun a target unit holds (A9.74, A9.8; pass 60, ruling R60.17): possessed, or a Gun it mans; whether it is malfunctioned. A dm SW is a SW.
+/// </summary>
+public sealed record FireHeldWeapon(string? EquipmentId, string? Kind, string? DefinitionId)
+{
+    /// <summary>Whether the weapon is malfunctioned; null is false.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Malfunctioned
+    {
+        get; init;
+    }
+}
+
+/// <summary>
+/// What a KIA did to a weapon its victim held (A9.74; pass 60, ruling R60.17), or a DC to the Gun of its target Location (C11.6): the dr read on the
+/// attack's column (null for a DC's Gun, read by the attack's own result), the IFT result, and the fate: <c>destroyed</c>, <c>malfunctioned</c>, or
+/// <c>none</c>.
+/// </summary>
+public sealed record FireWeaponDestruction(string EquipmentId, string HolderId, string Result, string Fate, string Rule)
+{
+    /// <summary>The dr read on the attack's column; null for a DC's Gun.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public int? Dr
+    {
+        get; init;
+    }
+}
 
 public sealed record FireFirer(
     string? UnitId,
@@ -979,6 +1049,17 @@ public sealed record FireTarget(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The SW and Guns the unit holds (A9.74; pass 60, ruling R60.17), read from the state only when the attack carries
+    /// <see cref="FireAttack.RandomDestruction"/>; null is none. Never written to a record (boundary review, pass 60): both sides read the record,
+    /// and a concealed or hidden unit's weapons are not theirs to know; the planner and the verifier read them from the state again.
+    /// </summary>
+    [JsonIgnore]
+    public IReadOnlyList<FireHeldWeapon>? HeldWeapons
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -1045,6 +1126,41 @@ public sealed record FireRolls(
     /// <summary>The MOL Check dr (A22.611; ruling R15.4), made before the IFT DR.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public int? MolCheck
+    {
+        get; init;
+    }
+
+    /// <summary>The Position DR of a DC at an AFV (C7.346; pass 60, ruling R60.16).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<int>? Position
+    {
+        get; init;
+    }
+
+    /// <summary>The Crew Survival DR of an AFV a FT, MOL, or DC eliminated (D5.6; pass 60).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<int>? CrewSurvival
+    {
+        get; init;
+    }
+
+    /// <summary>The Immobilization TC of the crew of an AFV a DC immobilized (D5.5; pass 60).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<int>? TaskCheck
+    {
+        get; init;
+    }
+
+    /// <summary>The MC or NTC DR of the crew of an AFV a FT, MOL, or DC attack names, in its Specific Collateral Attack (D.8A; pass 60).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<int>? CollateralCheck
+    {
+        get; init;
+    }
+
+    /// <summary>The Random SW/Gun Destruction dr of each weapon a unit eliminated by a Final KIA held (A9.74; pass 60, ruling R60.17).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<string, int>? WeaponDestruction
     {
         get; init;
     }
@@ -1252,6 +1368,19 @@ public sealed record FireUnitEffect(
 /// </summary>
 public sealed record MgSightingFacts(bool Sighted, bool ByItsPossessor, bool AtItsSetupLocation, bool OnTheTarget, bool Dismantled);
 
+/// <summary>
+/// A DC's Position DR at an AFV (C7.346, p. 177; pass 60, ruling R60.16): the dice, the DRM, the Final DR, the hit's Location (C3.9: a colored dr below
+/// the white strikes a turret), and the result: <c>optimal</c> (5 or less, the Aerial AF), <c>positioned</c> (6 to 8, the AF), <c>poor</c> (9 to 11, the
+/// crew alone), or <c>none</c> (12 or more, the other units alone).
+/// </summary>
+public sealed record FirePosition(IReadOnlyList<int> Dice, int OriginalDr, IReadOnlyList<FireModifier> Drm, int FinalDr, string HitLocation, string Result)
+{
+    public const string Optimal = "optimal";
+    public const string Positioned = "positioned";
+    public const string Poor = "poor";
+    public const string None = "none";
+}
+
 /// <summary>The MOL Check of an attack (A22.611, A22.6111; ruling R15.4): its dr, drm, and pass, and whether the MOL user broke on a colored dr of 6.</summary>
 public sealed record FireMolCheck(string UnitId, int Dr, IReadOnlyList<FireModifier> Drm, int Final, bool Passed, bool UserBroken);
 
@@ -1344,6 +1473,40 @@ public sealed record FireResolution(
     /// <summary>The FT whose Original DR ran it out of fuel (A22.5; ruling R15.1): removed after the attack; null when none.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? FlamethrowerRemoved
+    {
+        get; init;
+    }
+
+    /// <summary>The Position DR of a DC at the AFV it names (C7.346; pass 60, ruling R60.16); null for any other attack.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public FirePosition? Position
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The To Kill DR of a FT, MOL, or DC at the AFV it names, on the C7.34 HE and Flame To Kill Table (A22.34, A22.612, C7.344, C7.346; pass 60,
+    /// rulings R60.15, R60.16); null when none was made.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrdnanceKill? VehicleKill
+    {
+        get; init;
+    }
+
+    /// <summary>The Specific Collateral Attack on the CE crew of the AFV a FT, MOL, or DC names (D.8A; pass 60); null when there was none.</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrdnanceCollateral? SpecificCollateral
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// What the attack's KIA did to the weapons its victims held (A9.74), and a DC to the Gun of its target Location (C11.6; pass 60, ruling R60.17), in
+    /// the order the units were attacked; null when there was none, and on every record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<FireWeaponDestruction>? WeaponDestruction
     {
         get; init;
     }

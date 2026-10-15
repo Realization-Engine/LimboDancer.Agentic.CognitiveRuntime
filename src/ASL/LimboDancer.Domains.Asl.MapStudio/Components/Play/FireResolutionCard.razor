@@ -12,7 +12,12 @@
     }
     else
     {
-        <FireArithmeticBreakdown Arithmetic="@Record.Arithmetic" Say="@Record.Say" />
+        @* Pass 60 (the table player): an attack that named an AFV and attacked no unit or other vehicle shows no IFT line, whose result fell on no one. *@
+        var attackedNone = Record.NamedVehicle is { Count: > 0 } && Record.Effects is { Count: 0 } && Record.Vehicles is not { Count: > 0 };
+        @if (!attackedNone)
+        {
+            <FireArithmeticBreakdown Arithmetic="@Record.Arithmetic" Say="@Record.Say" />
+        }
         @if (Record.Weapons?.Select(FireText.WeaponText).OfType<string>().ToArray() is { Length: > 0 } weapons)
         {
             <ul class="fire-weapons">
@@ -22,9 +27,29 @@
                 }
             </ul>
         }
-        @if (Record.Effects is { } effects && (effects.Count > 0 || Record.Vehicles is not { Count: > 0 }))
+        @* Pass 60 (rulings R60.15, R60.16): a FT's, MOL's, or DC's attack on the AFV it named. *@
+        @if (Record.NamedVehicle is { Count: > 0 } named)
+        {
+            <ul class="fire-named-vehicle">
+                @foreach (var line in named)
+                {
+                    <li>@DisplayText.Sentence(Record.Say(line)).</li>
+                }
+            </ul>
+        }
+        @if (!attackedNone && Record.Effects is { } effects && (effects.Count > 0 || Record.Vehicles is not { Count: > 0 }))
         {
             <InfantryFireEffectsTable Effects="@effects" BrokenBefore="@Record.BrokenBefore" PinnedBefore="@Record.PinnedBefore" Say="@Record.Say" />
+        }
+        @* Pass 60 (ruling R60.17): Random SW/Gun Destruction after a KIA, and a DC's Gun. *@
+        @if (Record.WeaponDestruction is { Count: > 0 } destroyed)
+        {
+            <ul class="fire-weapon-destruction">
+                @foreach (var line in destroyed)
+                {
+                    <li>@DisplayText.Sentence(Record.Say(line)).</li>
+                }
+            </ul>
         }
         @if (Record.Vehicles is { Count: > 0 } vehicles)
         {

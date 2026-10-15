@@ -834,6 +834,8 @@ else if (state is not null)
                         Firers="@FirerChoices(firing)" SelectedFirers="@fireFirers" Weapons="@([.. FireWeapons.Select(weapon => new SmallArmsFirePanel.Weapon(weapon.Id, weapon.Holding!.Holder, LiveFire.WeaponBar(weapon), weapon.Kind == "asl:ft")), .. FireVehicleMgs])"
                         SelectedWeapons="@fireWeapons" Alone="@fireAlone" Leaders="@([.. FireLeaders(firing).Select(leader => leader.Id)])" Director="@fireDirector"
                         MolAllowed='@state.SpecialRules.Contains("mol:" + firing, StringComparer.Ordinal)' Mol="@fireMol" Targets="@byRange.Targets" Target="@fireTarget"
+                        VehicleChoices="@(fireMol.Length > 0 || FireWeapons.Any(weapon => weapon.Kind == "asl:ft" && fireWeapons.Contains(weapon.Id)) ? NamedVehicleChoices(firing, FireTarget) : [])"
+                        Vehicle="@fireVehicle" OnVehicle="@(id => fireVehicle = id)"
                         FreeTarget="@fireFreeTarget" SnapShot="@fireSnapShot" Spray="@fireSpray" LaneWeapon="@fireLaneWeapon" LaneTo="@fireLaneTo" Partners="@FirePartners(firing)"
                         Partner="@firePartner" OnFrom="@(at => { fireFrom = at; fireAlso.Clear(); PruneFire(); })" OnFirer="@(pick => Toggle(fireFirers, pick.Id, pick.On))"
                         OnWeapon="@(pick => Toggle(fireWeapons, pick.Id, pick.On))" OnAlone="@(pick => Toggle(fireAlone, pick.Id, pick.On))" OnDirector="@(id => fireDirector = id)"
@@ -847,7 +849,8 @@ else if (state is not null)
                     @if (DcHolders(firing).Any())
                     {
                         <ThrowDemolitionChargeAction Charges="@([.. DcHolders(firing).Select(item => new ThrowDemolitionChargeAction.HeldCharge(item.Unit, item.Charge))])" Charge="@throwDc"
-                            At="@throwDcAt" OnCharge="@(value => throwDc = value)" OnAt="@(at => throwDcAt = at)" OnPropose="@ProposeThrowDc" />
+                            At="@throwDcAt" OnCharge="@(value => throwDc = value)" OnAt="@(at => { throwDcAt = at; throwDcVehicle = string.Empty; })" OnPropose="@ProposeThrowDc"
+                            Vehicles="@NamedVehicleChoices(firing, throwDcAt)" Vehicle="@throwDcVehicle" OnVehicle="@(id => throwDcVehicle = id)" />
                     }
                     @if (state.Night && StarshellFirers(firing).Any())
                     {
@@ -856,8 +859,11 @@ else if (state is not null)
                     }
                     @if (state.Phase == "afph" && state.PlacedCharges.Any(item => item.Operable))
                     {
-                        <PlacedChargeDetonationActions Charges="@([.. state.PlacedCharges.Where(item => item.Operable).Select(item => new PlacedChargeDetonationActions.Placed(item.Charge, item.Target.ToString(), item.TargetsConcealed, item.Cx))])"
-                            OnDetonate="@ProposeDetonateDc" />
+                        <PlacedChargeDetonationActions Charges="@([.. state.PlacedCharges.Where(item => item.Operable).Select(item => new PlacedChargeDetonationActions.Placed(item.Charge, item.Target.ToString(), item.TargetsConcealed, item.Cx)
+                            {
+                                Vehicles = NamedVehicleChoices(firing, item.Target.ToString()),
+                            })])"
+                            OnDetonate="@ProposeDetonateDc" OnDetonateAt="@(pick => ProposeDetonateDc(pick.Charge, pick.Vehicle))" />
                     }
                     @if ((state.Phase is "pfph" or "afph" or "dfph" || (state.Phase == "mph" && state.Movement is { WindowOpen: true })) && (OrdnanceGuns(firing).Any() || OrdnanceTanks(firing).Any() || PanzerfaustFirers(firing).Any()))
                     {
@@ -866,17 +872,26 @@ else if (state is not null)
                         var shotAtVehicle = ordnanceVehicle.Length > 0;
                         var canisterShot = OrdnanceCanister();
                         var canisterAims = canisterShot ? OrdnanceCanisterAims(firing) : null;
+
+                        // A9.61 (pass 60, the UI review): a MG fires as ordnance only at the AFV it names.
+                        var mgAwaitsAfv = !shotAtVehicle && state.Find(ordnanceGun) switch
+                        {
+                            EquipmentInstance { Definition: { } mgWeapon } => LiveOrdnance.IsMachineGun(mgWeapon.Definition),
+                            UnitInstance { Definition: { } mgVehicle } => LiveOrdnance.IsMachineGun(mgVehicle.Definition),
+                            _ => false,
+                        };
                         <OrdnanceFirePanel Guns="@OrdnanceChoices(firing)" Gun="@ordnanceGun" Spotters="@OrdnanceSpotters(firing)" Spotter="@ordnanceSpotter"
                             Directors="@OrdnanceDirectors(firing)" Director="@ordnanceDirector" IntensiveAllowed="@OrdnanceIntensiveAllowed" Intensive="@ordnanceIntensive"
                             PanzerfaustUsage="@(PanzerfaustFirers(firing).Any() ? $"PF shots taken {state.PanzerfaustShots.GetValueOrDefault(firing)} of {LiveOrdnance.PanzerfaustAllowance(state, firing)} (C13.31)" : null)"
-                            Ready="@(ordnanceGun.Length > 0 && (canisterAims is not null ? canisterAims.Any(aim => aim.Id == ordnanceCanisterAim) : ordnanceTarget.Length > 0))" OnGun="@ChooseOrdnanceGun" OnSpotter="@(id => ordnanceSpotter = id)"
+                            Ready="@(ordnanceGun.Length > 0 && !mgAwaitsAfv && (canisterAims is not null ? canisterAims.Any(aim => aim.Id == ordnanceCanisterAim) : ordnanceTarget.Length > 0))"
+                            ReadyNote="@(ordnanceGun.Length > 0 && ordnanceTarget.Length > 0 && mgAwaitsAfv ? "Name the AFV (A9.61)." : null)" OnGun="@ChooseOrdnanceGun" OnSpotter="@(id => ordnanceSpotter = id)"
                             OnDirector="@(id => ordnanceDirector = id)" OnIntensive="@(on => ordnanceIntensive = on)" OnPropose="@ProposeOrdnance">
                             <Target>
-                                <OrdnanceTargetFields Targets="@([.. FireTargets(firing)])" Vehicles="@OrdnanceVehicleChoices(firing)" Ammunition="@OrdnanceAmmunitionKind"
+                                <OrdnanceTargetFields Targets="@([.. OrdnanceTargets(firing)])" Vehicles="@OrdnanceVehicleChoices(firing)" Ammunition="@OrdnanceAmmunitionKind"
                                     Fixed="@OrdnanceFixedAmmunition" Ammunitions="@OrdnanceAmmunitionChoices(shotAtVehicle)" Target="@ordnanceTarget" Vehicle="@ordnanceVehicle"
-                                    Chosen="@(OrdnanceAmmunitionFor(shotAtVehicle) ?? ordnanceAmmunition)"
+                                    Chosen="@(OrdnanceAmmunitionFor(shotAtVehicle) ?? (shotAtVehicle ? ordnanceAmmunition : ordnanceInfantryAmmunition))"
                                     OnTarget="@(at => { ordnanceTarget = at; ordnanceVehicle = string.Empty; })" OnVehicle="@(id => ordnanceVehicle = id)"
-                                    OnAmmunition="@(ammunition => ordnanceAmmunition = ammunition)"
+                                    OnAmmunition="@(ammunition => { if (shotAtVehicle) { ordnanceAmmunition = ammunition; } else { ordnanceInfantryAmmunition = ammunition; } })"
                                     CanisterAims="@canisterAims" CanisterAim="@ordnanceCanisterAim"
                                     CanisterFacings="@OrdnanceCanisterFacings" CanisterFacing="@OrdnanceCanisterFacing"
                                     OnCanisterAim="@(aim => ordnanceCanisterAim = aim)" OnCanisterFacing="@(facing => { ordnanceCanisterFacing = facing; ordnanceCanisterAim = string.Empty; })" />
@@ -4431,11 +4446,44 @@ else if (state is not null)
     private string ordnanceTarget = string.Empty;
     private string ordnanceVehicle = string.Empty;
     private string ordnanceAmmunition = "ap";
+
+    // C8.31 (pass 60): the ammunition chosen at Infantry, HE until another is chosen, apart from the one chosen at a vehicle.
+    private string ordnanceInfantryAmmunition = "he";
     private string shockVehicle = string.Empty;
 
     /// <summary>The firing side's tanks, whose MA fires as a Gun (D1.3; ruling R7.10).</summary>
-    private IEnumerable<UnitInstance> OrdnanceTanks(string side) => state is null ? []
-        : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && LiveOrdnance.IsTank(unit)).OrderBy(unit => unit.Id, StringComparer.Ordinal);
+    private IEnumerable<UnitInstance> OrdnanceTanks(string side)
+    {
+        if (state is null)
+        {
+            return [];
+        }
+
+        var afvSeen = new Lazy<bool>(() => EnemyAfvSeen(side));
+        return state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side
+                && (LiveOrdnance.IsTank(unit) || (LiveFire.IsVehicle(unit) && LiveOrdnance.IsMachineGun(unit.Definition?.Definition) && afvSeen.Value)))
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal);
+    }
+
+    /// <summary>
+    /// Whether the firing side sees an enemy AFV on the map, for the MG that fire as ordnance only at an AFV (A9.61, D3.54; pass 60): read from that
+    /// side's view (the UI review), so a vehicle it does not see, or a truck, offers no MG.
+    /// </summary>
+    private bool EnemyAfvSeen(string side) => SideView(side) is { } view
+        && view.Units.Any(unit => unit.Status == InstanceStatus.Active && unit.Side != side && GamePlanner.IsArmoredVehicle(unit) && view.Locations.ContainsKey(unit.Id));
+
+    /// <summary>
+    /// Why a MG may make no To Kill attack now (A9.61; pass 60, the UI review), as Rules gives it, or null: a SW MG by its possessor's state, a vehicle's
+    /// MA MG by the vehicle's.
+    /// </summary>
+    private string? MgToKillBar(IGameObject weapon) => state is null ? null : weapon switch
+    {
+        EquipmentInstance { Holding: { } holding } when state.Unit(holding.Holder) is { } possessor => ScenarioA1MachineGunKill.Bar(state.Phase, false,
+            GameState.Condition(possessor, Conditions.Pinned) == ConditionState.True, possessor.Kind is "asl:leader" or "asl:hero", false, false),
+        UnitInstance vehicle => ScenarioA1MachineGunKill.Bar(state.Phase, state.Phase == "mph" && vehicle.Side == state.PhasingSide, false, false,
+            GameState.Condition(vehicle, Conditions.Motion) == ConditionState.True, !LiveFire.CrewExposed(vehicle)),
+        _ => null,
+    };
 
     /// <summary>The enemy vehicles in the chosen target Location, each a Vehicle Target Type target (C3.31).</summary>
     private IEnumerable<UnitInstance> OrdnanceVehicleTargets(string side) => state is null || !BoardLocation.TryParse(ordnanceTarget, out var at) ? []
@@ -4450,6 +4498,14 @@ else if (state is not null)
         _ => ["ap", "apcr", "heat", "he"],
     };
 
+    /// <summary>The chosen Gun's or tank's catalog definition; null for any other weapon.</summary>
+    private string? OrdnanceGunDefinition => state?.Find(ordnanceGun) switch
+    {
+        UnitInstance { Definition: { } tank } => tank.Definition,
+        EquipmentInstance { Definition: { } gun } => gun.Definition,
+        _ => null,
+    };
+
     /// <summary>
     /// What the chosen Gun or tank may fire at a vehicle or at Infantry now (C8.1, C2.21; pass 55), as Rules lists it: each Special Ammunition with
     /// its Depletion Number at the game's date, and why one is not offered. The panel is its owner's, so the numbers are its own Gun's.
@@ -4460,7 +4516,8 @@ else if (state is not null)
     private string? OrdnanceAmmunitionFor(bool vehicleTarget)
     {
         var offered = OrdnanceAmmunitionChoices(vehicleTarget).Where(item => item.Unavailable is null).Select(item => item.Ammunition).ToArray();
-        return offered.Contains(ordnanceAmmunition) ? ordnanceAmmunition : offered.FirstOrDefault();
+        var chosen = vehicleTarget ? ordnanceAmmunition : ordnanceInfantryAmmunition;
+        return offered.Contains(chosen) ? chosen : offered.FirstOrDefault();
     }
 
     private string ordnanceCanisterAim = string.Empty;
@@ -4555,7 +4612,9 @@ else if (state is not null)
                     : ""
                 : shots.RateOfFireKept ? $", {shots.Shots} shot(s), may fire again" : ", fired")
             + (acquired is null ? "" : $", Acquisition {acquired.Level} on {acquired.Location}")
-            + (depleted.Length == 0 ? "" : $", out of {string.Join(", ", depleted)}") + flags + ")";
+            + (depleted.Length == 0 ? "" : $", out of {string.Join(", ", depleted)}") + flags
+            // A9.61 (pass 60, the UI review): a MA that is a MG says why it makes no To Kill attack now, as Rules gives it.
+            + (LiveOrdnance.IsMachineGun(tank.Definition?.Definition) && MgToKillBar(tank) is { } mgBar ? ", no To Kill attack now: " + mgBar : "") + ")";
     }
 
     private Task ProposeShockRecovery() => Propose(GameActions.RecoverShock, JsonSerializer.SerializeToElement(new
@@ -4563,12 +4622,24 @@ else if (state is not null)
         gameId, attemptId = Attempt("shock"), expectedRevision = (long)history!.Events.Count, vehicleId = shockVehicle,
     }));
 
-    /// <summary>The firing side's Guns that its crews man (A21.13), a malfunctioned one shown as such (C2.28; Gun repair is not built).</summary>
-    private IEnumerable<EquipmentInstance> OrdnanceGuns(string side) => state is null ? []
-        : state.Equipment.Where(item => item.Status == InstanceStatus.Active
-                && ((item.Kind == "asl:gun" && item.Holding is { Role: HoldingRole.Manned }) || (item.Kind is "asl:light-mortar" or "asl:latw" && item.Holding is { Role: HoldingRole.Possessed }))
+    /// <summary>
+    /// The firing side's Guns that its crews man (A21.13), a malfunctioned one shown as such (C2.28; Gun repair is not built), its light mortars and
+    /// LATW, and, while an enemy vehicle is on the map, its MG, which fire as ordnance only at an AFV (A9.61; pass 60).
+    /// </summary>
+    private IEnumerable<EquipmentInstance> OrdnanceGuns(string side)
+    {
+        if (state is null)
+        {
+            return [];
+        }
+
+        var afvSeen = new Lazy<bool>(() => EnemyAfvSeen(side));
+        return state.Equipment.Where(item => item.Status == InstanceStatus.Active
+                && ((item.Kind == "asl:gun" && item.Holding is { Role: HoldingRole.Manned }) || (item.Kind is "asl:light-mortar" or "asl:latw" && item.Holding is { Role: HoldingRole.Possessed })
+                    || (item.Kind == "asl:mg" && item.Holding is { Role: HoldingRole.Possessed } && afvSeen.Value))
                 && state.Unit(item.Holding!.Holder)?.Side == side)
             .OrderBy(item => item.Id, StringComparer.Ordinal);
+    }
 
     private string ordnanceSpotter = string.Empty;
     private string ordnanceDirector = string.Empty;
@@ -4591,8 +4662,9 @@ else if (state is not null)
         var crewState = crew is null ? "" : string.Concat(new[] { Conditions.Pinned, Conditions.Concealed, Conditions.Melee, Conditions.Broken }
             .Where(name => Marked(crew, name)).Select(name => ", crew " + DisplayText.Kind(name)));
         var spotter = state?.MortarSpotters.FirstOrDefault(item => item.Gun == gun.Id)?.Spotter;
-        return $"{gun.Id} ({gun.Definition?.Definition}" + (gun.Kind is "asl:light-mortar" or "asl:latw" ? $", with {crew?.Id}" + (spotter is null ? "" : $", Spotter {spotter}") : $", facing {facing}")
-            + (Marked(gun, Conditions.Malfunctioned) ? gun.Kind == "asl:latw" ? ", malfunctioned: repair it in the RPh (A9.72)" : ", malfunctioned: Gun repair is not built" : "")
+        return $"{gun.Id} ({gun.Definition?.Definition}" + (gun.Kind is "asl:light-mortar" or "asl:latw" or "asl:mg" ? $", with {crew?.Id}" + (spotter is null ? "" : $", Spotter {spotter}") : $", facing {facing}")
+            + (gun.Kind == "asl:mg" ? ", at an AFV only (A9.61)" + (MgToKillBar(gun) is { } mgBar ? ", none now: " + mgBar : "") : "")
+            + (Marked(gun, Conditions.Malfunctioned) ? gun.Kind is "asl:latw" or "asl:mg" ? ", malfunctioned: repair it in the RPh (A9.72)" : ", malfunctioned: Gun repair is not built" : "")
             + (shots is null ? Marked(gun, Conditions.PrepFire) || Marked(gun, Conditions.FinalFire) ? ", fired this Player Turn" : ""
                 : shots.RateOfFireKept ? $", {shots.Shots} shot(s), may fire again" : ", fired")
             + (acquired is null ? "" : $", Acquisition {acquired.Level} on {acquired.Location}") + crewState + ")";
@@ -4692,13 +4764,18 @@ else if (state is not null)
         {
             arguments["targetVehicle"] = ordnanceVehicle;
             arguments["ammunition"] = ordnanceGun.EndsWith(":pf", StringComparison.Ordinal) ? "heat"
+                : OrdnanceMachineGun ? ScenarioA1MachineGunKill.Ammunition
                 : OrdnanceAmmunitionKind == OrdnanceTargetFields.AmmunitionKind.Selectable ? OrdnanceAmmunitionFor(true) ?? ordnanceAmmunition : ordnanceAmmunition;
         }
         else if (OrdnanceAmmunitionKind == OrdnanceTargetFields.AmmunitionKind.Selectable
-            && (OrdnanceAmmunitionFor(false) ?? OrdnanceAmmunitionChoices(false).FirstOrDefault()?.Ammunition) is { } named)
+            && (OrdnanceAmmunitionFor(false) ?? OrdnanceAmmunitionChoices(false).FirstOrDefault()?.Ammunition) is { } named
+            && !(named == "he" && OrdnanceGunDefinition is { } definition && ScenarioA1Definitions.HeAssumed(definition)
+                && !OrdnanceAmmunitionChoices(false).Any(item => item.Ammunition == ScenarioA1CanisterCalculator.Ammunition)))
         {
             // C2.21, C8.8 (pass 55): a Gun whose HE has a Depletion Number fires it at Infantry only when the shot names it. It is named also when
-            // the Gun has none now, so that the refusal says that and not that the HE was left unnamed.
+            // the Gun has none now, so that the refusal says that and not that the HE was left unnamed. C8.31 (pass 60): AP, APCR, APDS, or HEAT
+            // named at Infantry attacks by its HE Equivalency; an HE that is assumed stays unnamed, as before the pass (a Canister Gun's named, as
+            // in pass 55).
             arguments["ammunition"] = named;
         }
 
@@ -4794,13 +4871,13 @@ else if (state is not null)
                     : null;
                 rows.Add(new RangeRow(unit.Id, Words(unit.Id), at.ToString(), own.NormalRange, own.Limit, kind ?? FireRange.Words(own), own.Band, kind is not null || own.Band is FireRangeBand.Out or FireRangeBand.SameHexFartherLevel));
             }
-            else if (definition is { IsVehicle: true, AntiAircraftMg: not null })
+            else if (definition is { IsVehicle: true, AntiAircraftMg: not null } || definition is { IsVehicle: true, MainArmament: "mg" })
             {
-                // D1.83: a MA AAMG's Normal Range is eight hexes.
+                // D1.83: a MA AAMG's Normal Range is eight hexes; pass 60: a MA that is a plain MG reads it too.
                 // C2.6 (pass 55): at another level a vehicle's MG fires only at a range of at least the elevation difference.
                 var mg = FireRange.Band(range, same, 8, level);
                 var elevation = same ? null : FireRange.VehicleElevationWords(range, level);
-                rows.Add(new RangeRow(unit.Id, $"the AAMG of {Words(unit.Id)}", at.ToString(), mg.NormalRange, mg.Limit,
+                rows.Add(new RangeRow(unit.Id, $"the {(definition.MainArmament == "mg" ? "MA MG" : "AAMG")} of {Words(unit.Id)}", at.ToString(), mg.NormalRange, mg.Limit,
                     elevation ?? (mg.Band == FireRangeBand.SameHexOtherLevel ? "no attack at another level of its hex" : FireRange.Words(mg)), mg.Band,
                     elevation is not null || mg.Band is FireRangeBand.Out or FireRangeBand.SameHexOtherLevel or FireRangeBand.SameHexFartherLevel));
             }
@@ -4943,11 +5020,15 @@ else if (state is not null)
         fireLaneTo = string.Empty;
         firePartner = string.Empty;
         fireMol = string.Empty;
+        fireVehicle = string.Empty;
+        throwDcVehicle = string.Empty;
     }
 
     private string fireMol = string.Empty;
+    private string fireVehicle = string.Empty;
     private string throwDc = string.Empty;
     private string throwDcAt = string.Empty;
+    private string throwDcVehicle = string.Empty;
     private string placeDc = string.Empty;
     private string placeDcAt = string.Empty;
     private string moveKeep = string.Empty;
@@ -4967,11 +5048,20 @@ else if (state is not null)
     private Task ProposeThrowDc()
     {
         var parts = throwDc.Split('|');
-        return Propose(GameActions.ThrowDc, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+        var arguments = new Dictionary<string, object>
         {
             ["gameId"] = gameId, ["attemptId"] = Attempt("throw-dc"), ["expectedRevision"] = (long)history!.Events.Count, ["unitId"] = parts[0],
             ["equipmentId"] = parts.Length > 1 ? parts[1] : string.Empty, ["target"] = throwDcAt.Trim(),
-        }));
+        };
+
+        // A23.5 (pass 60, ruling R60.16): the AFV the DC names, while it is still one the side sees there.
+        if (state is not null && throwDcVehicle.Length > 0 && NamedVehicleChoices(state.Units.FirstOrDefault(unit => unit.Id == parts[0])?.Side ?? string.Empty, throwDcAt)
+            .Any(choice => choice.Id == throwDcVehicle))
+        {
+            arguments["vehicle"] = throwDcVehicle;
+        }
+
+        return Propose(GameActions.ThrowDc, JsonSerializer.SerializeToElement(arguments));
     }
 
     private string starshellUnit = string.Empty;
@@ -5087,10 +5177,28 @@ else if (state is not null)
         ["gameId"] = gameId, ["attemptId"] = Attempt("place-hidden"), ["expectedRevision"] = (long)history!.Events.Count, ["unitIds"] = new[] { unit },
     }));
 
-    private Task ProposeDetonateDc(string charge) => Propose(GameActions.DetonateDc, JsonSerializer.SerializeToElement(new Dictionary<string, object>
+    private Task ProposeDetonateDc(string charge) => ProposeDetonateDc(charge, null);
+
+    /// <summary>A Placed DC's detonation, at the AFV it names when one is given (A23.5; pass 60, ruling R60.16).</summary>
+    private Task ProposeDetonateDc(string charge, string? vehicle)
     {
-        ["gameId"] = gameId, ["attemptId"] = Attempt("detonate-dc"), ["expectedRevision"] = (long)history!.Events.Count, ["equipmentId"] = charge,
-    }));
+        var arguments = new Dictionary<string, object>
+        {
+            ["gameId"] = gameId, ["attemptId"] = Attempt("detonate-dc"), ["expectedRevision"] = (long)history!.Events.Count, ["equipmentId"] = charge,
+        };
+        if (vehicle is { Length: > 0 })
+        {
+            arguments["vehicle"] = vehicle;
+        }
+
+        return Propose(GameActions.DetonateDc, JsonSerializer.SerializeToElement(arguments));
+    }
+
+    /// <summary>The enemy AFVs the view sees in a Location, which a FT, MOL, or DC may name as its target (A22.34, A22.612, A23.5; pass 60, ruling R60.15).</summary>
+    private IReadOnlyList<PlayChoice> NamedVehicleChoices(string side, string location) =>
+        state is null || !BoardLocation.TryParse(location.Trim(), out var at) ? []
+            : [.. SeenOnly(state.At(at).OfType<UnitInstance>().Where(unit => unit.Status == InstanceStatus.Active && unit.Side != side && GamePlanner.IsArmoredVehicle(unit))
+                .OrderBy(unit => unit.Id, StringComparer.Ordinal)).Select(vehicle => new PlayChoice(vehicle.Id, $"{vehicle.Id} ({vehicle.Definition?.Definition})"))];
 
     private Task ProposePlaceDc()
     {
@@ -5546,7 +5654,7 @@ else if (state is not null)
     /// <summary>The Locations that hold active units of the firing side that may fire now.</summary>
     private IEnumerable<string> FireLocations(string side) => state is null ? []
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side
-            && (Library.Vocabulary.IsA(unit.Kind, "asl:mmc") || unit.Kind == "asl:hero" || GamePlanner.HasVehicleMg(unit) || VehicleMgChoices(unit).Count > 0) && MayFire(unit))
+            && (Library.Vocabulary.IsA(unit.Kind, "asl:mmc") || unit.Kind == "asl:hero" || GamePlanner.HasMainArmamentMg(unit) || VehicleMgChoices(unit).Count > 0) && MayFire(unit))
             .Select(unit => state.Location(unit.Id)?.Location.ToString())
             .OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
 
@@ -5558,8 +5666,10 @@ else if (state is not null)
     // Pass 31c (the third play test): a broken unit is not offered as a firer; the Fire package refuses a group that holds one.
     private bool MayFire(UnitInstance unit) => state is not null && unit.Kind != "asl:crew" && GameState.Condition(unit, Conditions.Broken) != ConditionState.True
         && GamePlanner.FireBar(state, unit) is null && !LiveFire.FireSpent(state, unit)
-        // D3.5 (pass 50): a tank is a firer while its BMG or CMG may fire; neither needs a CE crew (D1.83).
-        && (!LiveFire.IsVehicle(unit) || (GamePlanner.HasVehicleMg(unit) ? LiveFire.CrewExposed(unit) : VehicleMgChoices(unit).Any(weapon => weapon.Bar is null)));
+        // D3.5 (pass 50): a tank is a firer while its BMG or CMG may fire; neither needs a CE crew (D1.83). D1.3 (pass 60): so is a vehicle whose MA is a
+        // MG, an AAMG only CE.
+        && (!LiveFire.IsVehicle(unit) || (GamePlanner.HasMainArmamentMg(unit) && (!GamePlanner.HasVehicleMg(unit) || LiveFire.CrewExposed(unit)))
+            || VehicleMgChoices(unit).Any(weapon => weapon.Bar is null));
 
     private IEnumerable<UnitInstance> FireGroupAt(string side) => state is null || fireFrom.Length == 0 ? []
         : state.Units.Where(unit => unit.Status == InstanceStatus.Active && unit.Side == side && state.Location(unit.Id)?.Location.ToString() is { } at
@@ -5570,18 +5680,44 @@ else if (state is not null)
     /// The Locations the firing side may target: those holding an enemy unit it can see or a concealed one it knows is there
     /// (A12.11). A hidden unit is not offered, since the firing side does not know of it.
     /// </summary>
-    private IEnumerable<string> FireTargets(string side)
+    private IEnumerable<string> FireTargets(string side) => SideView(side) is { } view ? FireTargets(side, view) : [];
+
+    private static IEnumerable<string> FireTargets(string side, GameView view) =>
+        // The third play test: a prisoner is no target, so its Guard's own Location is not offered for holding it (A20.54).
+        view.Units.Where(unit => unit.Side != side && GameState.Condition(unit, Conditions.Captured) != ConditionState.True).Select(unit => view.Locations.TryGetValue(unit.Id, out var at) ? at.Location.ToString() : null)
+            .Concat(view.Sealed.Where(item => item.Side != side).Select(item => item.Location.ToString()))
+            .OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
+
+    // A firing side's own view, read once per history, revision, and side (the UI review of pass 60): the targets and the MG's AFV read it.
+    private (GameHistory? History, long Revision, string Side, GameView? View) sideViewCache;
+
+    /// <summary>What a side sees (A12.11), whoever views the page; null with no replayed state.</summary>
+    private GameView? SideView(string side)
     {
         if (state is null || history?.Current is null || state.Perspectives.FirstOrDefault(item => item.Name == side) is not { } perspective)
+        {
+            return null;
+        }
+
+        if (sideViewCache.View is null || !ReferenceEquals(sideViewCache.History, history) || sideViewCache.Revision != state.Revision || sideViewCache.Side != side)
+        {
+            sideViewCache = (history, state.Revision, side, GameView.Of(history, state.Revision, perspective, Live.Planner.OutOfSight(state, perspective)));
+        }
+
+        return sideViewCache.View;
+    }
+
+    /// <summary>A Gun's targets: the fire targets, and each Location the view shows an unattended Gun in (C3.41, C11.4; pass 60, ruling R60.18).</summary>
+    private IEnumerable<string> OrdnanceTargets(string side)
+    {
+        if (SideView(side) is not { } view)
         {
             return [];
         }
 
-        var view = GameView.Of(history, state.Revision, perspective, Live.Planner.OutOfSight(state, perspective));
-        // The third play test: a prisoner is no target, so its Guard's own Location is not offered for holding it (A20.54).
-        return view.Units.Where(unit => unit.Side != side && GameState.Condition(unit, Conditions.Captured) != ConditionState.True).Select(unit => view.Locations.TryGetValue(unit.Id, out var at) ? at.Location.ToString() : null)
-            .Concat(view.Sealed.Where(item => item.Side != side).Select(item => item.Location.ToString()))
-            .OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
+        return FireTargets(side, view).Concat(view.Equipment.Where(item => item.Kind == "asl:gun" && item.Holding is null && item.Status == InstanceStatus.Active)
+                .Select(item => view.Locations.TryGetValue(item.Id, out var at) ? at.Location.ToString() : null).OfType<string>())
+            .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
     }
 
     private Task ProposeFire()
@@ -5645,6 +5781,14 @@ else if (state is not null)
         if (fireMol.Length > 0 && fireFirers.Contains(fireMol))
         {
             arguments["mol"] = fireMol;
+        }
+
+        // A22.34, A22.612 (pass 60, ruling R60.15): the AFV a FT or MOL names, while the panel still offers it.
+        if (fireVehicle.Length > 0 && state is not null && FiringSide is { } side
+            && (fireMol.Length > 0 || FireWeapons.Any(weapon => weapon.Kind == "asl:ft" && fireWeapons.Contains(weapon.Id)))
+            && NamedVehicleChoices(side, FireTarget).Any(choice => choice.Id == fireVehicle))
+        {
+            arguments["vehicle"] = fireVehicle;
         }
 
         return Propose(GameActions.Fire, JsonSerializer.SerializeToElement(arguments));
@@ -5793,6 +5937,13 @@ else if (state is not null)
         {
             fireDirector = string.Empty;
         }
+
+        // Pass 60 (the UI review): the AFV named for a FT or MOL goes when it is no longer offered, or no FT or MOL is in the attack.
+        var namesAfv = fireMol.Length > 0 || FireWeapons.Any(weapon => weapon.Kind == "asl:ft" && fireWeapons.Contains(weapon.Id));
+        if (fireVehicle.Length > 0 && (!namesAfv || !NamedVehicleChoices(side, FireTarget).Any(choice => choice.Id == fireVehicle)))
+        {
+            fireVehicle = string.Empty;
+        }
     }
 
     // The turn, phase, and phasing side the page's choices were made in.
@@ -5871,6 +6022,7 @@ else if (state is not null)
         ordnanceSpotter = ordnanceDirector = string.Empty;
         ordnanceIntensive = false;
         ordnanceAmmunition = "ap";
+        ordnanceInfantryAmmunition = "he";
 
         // D2.401 (the UI review of pass 55): the Motion attempt's vehicle and the VCA and TCA named for it.
         motionVehicle = motionFacing = motionTurret = string.Empty;
@@ -6396,6 +6548,7 @@ else if (state is not null)
     {
         ordnanceGun = id;
         ordnanceAmmunition = OrdnanceAmmunitions.FirstOrDefault() ?? "ap";
+        ordnanceInfantryAmmunition = "he";
         ordnanceSpotter = string.Empty;
         ordnanceDirector = string.Empty;
         ordnanceVehicle = string.Empty;
@@ -6426,14 +6579,19 @@ else if (state is not null)
             .Select(leader => new PlayChoice(leader.Id, $"{leader.Id} ({state.Location(leader.Id)?.Location})"))]
         : null;
 
-    private bool OrdnanceIntensiveAllowed => state?.Find(ordnanceGun) is not EquipmentInstance { Kind: "asl:light-mortar" or "asl:latw" } && !OrdnancePanzerfaust;
+    private bool OrdnanceIntensiveAllowed => state?.Find(ordnanceGun) is not EquipmentInstance { Kind: "asl:light-mortar" or "asl:latw" } && !OrdnancePanzerfaust && !OrdnanceMachineGun;
+
+    /// <summary>Whether the chosen weapon is a MG, a SW one or a vehicle's MA, which makes a To Kill attack at an AFV (A9.61, D3.54; pass 60).</summary>
+    private bool OrdnanceMachineGun => state?.Find(ordnanceGun) is EquipmentInstance { Kind: "asl:mg" } || (state?.Find(ordnanceGun) is UnitInstance { Definition: { } vehicle }
+        && LiveOrdnance.IsMachineGun(vehicle.Definition));
 
     private OrdnanceTargetFields.AmmunitionKind OrdnanceAmmunitionKind =>
-        OrdnancePanzerfaust || state?.Find(ordnanceGun) is EquipmentInstance { Kind: "asl:latw" } ? OrdnanceTargetFields.AmmunitionKind.Fixed
+        OrdnancePanzerfaust || OrdnanceMachineGun || state?.Find(ordnanceGun) is EquipmentInstance { Kind: "asl:latw" } ? OrdnanceTargetFields.AmmunitionKind.Fixed
         : state?.Find(ordnanceGun) is EquipmentInstance { Kind: "asl:light-mortar" } ? OrdnanceTargetFields.AmmunitionKind.None
         : OrdnanceTargetFields.AmmunitionKind.Selectable;
 
-    private string OrdnanceFixedAmmunition => state?.Find(ordnanceGun) is EquipmentInstance { Definition: { } latw } && LiveOrdnance.LatwType(latw.Definition) == "atr"
+    private string OrdnanceFixedAmmunition => OrdnanceMachineGun ? "a MG To Kill attack at the AFV named, on the AP To Kill Table (A9.61)"
+        : state?.Find(ordnanceGun) is EquipmentInstance { Definition: { } latw } && LiveOrdnance.LatwType(latw.Definition) == "atr"
         ? "AP (C13.2)" : "HEAT (C13.34, C13.43)";
 
     /// <summary>The enemy vehicles in the target Location that the view sees (pass 28b, section 15.4).</summary>
@@ -6705,8 +6863,8 @@ else if (state is not null)
             }
             else if (proposal.Action == GameActions.ThrowDc)
             {
-                // The UI review, pass 35: the DC is spent, so its draft goes with it.
-                throwDc = throwDcAt = string.Empty;
+                // The UI review, pass 35: the DC is spent, so its draft goes with it, and the AFV it named (pass 60).
+                throwDc = throwDcAt = throwDcVehicle = string.Empty;
             }
             else if (proposal.Action == GameActions.FireOrdnance)
             {

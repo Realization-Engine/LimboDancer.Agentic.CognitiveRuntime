@@ -139,6 +139,12 @@ public sealed record GameState(
     /// <summary>The Guns whose Emplacement is lost: they moved, were hooked up, or set up otherwise (C11.3; ruling R8.3).</summary>
     public IReadOnlyList<string> UnemplacedGuns { get; init; } = [];
 
+    /// <summary>
+    /// The Guns ever manned by a non-crew unit (C11.3; pass 60, ruling R60.18), which never regain Emplacement. Kept apart from
+    /// <see cref="UnemplacedGuns"/> so that a shot recorded before the pass reads the Emplacement it was resolved with.
+    /// </summary>
+    public IReadOnlyList<string> NonCrewMannedGuns { get; init; } = [];
+
     /// <summary>The id suffix of a SMOKE grenade counter, which leaves at the end of its MPh (A24.11; ruling R9.5).</summary>
     public const string SmokeGrenadeSuffix = "-smoke-grenade";
 
@@ -521,7 +527,14 @@ public sealed record GameState(
 /// A DC Placed (A23.3; ruling R15.2): the DC, its placer and the Location it Placed it from, its target Location, whether the placer was CX, whether
 /// every unit there was concealed at the Placement, and whether it is operably Placed yet.
 /// </summary>
-public sealed record PlacedCharge(string Charge, string Unit, BoardLocation From, BoardLocation Target, bool Cx, bool TargetsConcealed, bool Operable);
+public sealed record PlacedCharge(string Charge, string Unit, BoardLocation From, BoardLocation Target, bool Cx, bool TargetsConcealed, bool Operable)
+{
+    /// <summary>The Target Facings of each enemy AFV there as the DC was Placed (A23.5; pass 60); null from a record made before the pass.</summary>
+    public IReadOnlyList<DcTargetFacing>? Facings
+    {
+        get; init;
+    }
+}
 
 /// <summary>
 /// A game's events and its state after each one. <see cref="States"/>[n] is the state at revision n + 1. When the

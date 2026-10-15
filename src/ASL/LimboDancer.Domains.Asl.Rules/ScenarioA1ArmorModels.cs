@@ -130,6 +130,26 @@ public sealed record OrdnanceVehicleTarget(
     {
         get; init;
     }
+
+    /// <summary>
+    /// Whether the target's crew is CE and so Vulnerable to a Specific Collateral Attack (D5.3, D.8A; pass 60, ruling R60.7): a state fact, kept only
+    /// on a shot that carries <see cref="OrdnanceShot.SpecificCollateral"/>. Null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? CrewExposed
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// Whether the target is Immobile, immobilized or bogged (C7.346, p. 177; pass 60, ruling R60.16): -2 to a DC's Position DR. A state fact, given only
+    /// on the AFV a FT, MOL, or DC attack names; null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? Immobile
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -157,6 +177,9 @@ public sealed record OrdnanceKill(
     public const string Immobilized = "immobilized";
     public const string Shock = "shock";
     public const string PossibleShock = "possible-shock";
+
+    /// <summary>A MG's To Kill DR equal to the Final TK#: the AFV is Stunned, even if BU (A9.61, D5.34; pass 60).</summary>
+    public const string Stun = "stun";
 
     /// <summary>The crew's NTC of a possible Shock (C7.41); null when none was taken.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]

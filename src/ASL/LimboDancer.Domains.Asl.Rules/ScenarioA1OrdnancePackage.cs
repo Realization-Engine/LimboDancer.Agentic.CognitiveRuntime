@@ -62,6 +62,13 @@ public sealed class ScenarioA1OrdnanceReference
         return new ScenarioA1OrdnanceReference(ranges, infantry, modifications, heColumns, area, guns, Fire, Armor);
     }
 
+    /// <summary>
+    /// A reviewed Gun, or a MG fired as ordnance at an AFV (A9.61, D3.54; pass 60, ruling R60.19): a SW MG, or a vehicle whose MA is a MG, read from
+    /// the Fire package's definitions. Null for anything else.
+    /// </summary>
+    public GunDefinition? Weapon(string? definitionId) =>
+        definitionId is null ? null : Guns.GetValueOrDefault(definitionId) ?? ScenarioA1MachineGunKill.Gun(Fire, definitionId);
+
     /// <summary>The Fire package's reference, which resolves a hit on the IFT and holds the crews' and targets' definitions.</summary>
     public ScenarioA1FireReference Fire
     {

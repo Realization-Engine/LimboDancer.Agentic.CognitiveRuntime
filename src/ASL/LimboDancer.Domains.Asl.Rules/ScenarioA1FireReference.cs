@@ -478,15 +478,38 @@ public sealed class ScenarioA1FireReference
 
     private readonly int[] killNumbers;
 
-    private ScenarioA1FireReference(string[][] results, int[] killNumbers, IReadOnlyDictionary<string, FireDefinition> definitions)
+    private ScenarioA1FireReference(string[][] results, int[] killNumbers, IReadOnlyDictionary<string, FireDefinition> definitions,
+        IReadOnlyDictionary<string, ArmorDefinition> armor)
     {
         this.results = results;
         this.killNumbers = killNumbers;
         Definitions = definitions;
+        Armor = armor;
+    }
+
+    /// <summary>The armor of the catalog's vehicles (D1.6, D1.7, D5.6; pass 60): what a FT, MOL, or DC at an AFV reads.</summary>
+    public IReadOnlyDictionary<string, ArmorDefinition> Armor
+    {
+        get;
     }
 
     /// <summary>The Vehicle line's Kill Number for a column index (A7.308).</summary>
     public int KillNumber(int column) => killNumbers[column];
+
+    /// <summary>
+    /// The highest KIA# of a column index, read from its results (A7.308, p. 56; pass 60): the most vehicles one DR on the Vehicle line may affect, "a 6, 8
+    /// or 12 FP attack ... no more than three vehicles".
+    /// </summary>
+    public int HighestKia(int column) =>
+        results.Select(row => System.Text.RegularExpressions.Regex.Match(row[column], "^([1-9])?KIA$")).Where(match => match.Success)
+            .Select(match => match.Groups[1].Success ? int.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture) : 1).DefaultIfEmpty(0).Max();
+
+    /// <summary>
+    /// The Final DR of a column index's K/# result (C1.55, p. 165; pass 60): an Indirect Fire attack on an AFV burns it at most half this DR, and
+    /// Shocks or immobilizes it on this DR and the one above it.
+    /// </summary>
+    public int KillDr(int column) =>
+        Enumerable.Range(0, results.Length).Where(dr => System.Text.RegularExpressions.Regex.IsMatch(results[dr][column], "^K/([1-9])$")).DefaultIfEmpty(0).Max();
 
     /// <summary>
     /// The Morale Level of an AFV's Inherent crew (D5.1): that of its nationality's best unbroken elite Infantry MMC, read from the
@@ -594,7 +617,7 @@ public sealed class ScenarioA1FireReference
             throw new InvalidOperationException("The IFT Vehicle line transcription changed.");
         }
 
-        return new ScenarioA1FireReference(table, kills, ReadDefinitions(catalog.RootElement));
+        return new ScenarioA1FireReference(table, kills, ReadDefinitions(catalog.RootElement), ScenarioA1ArmorReference.ReadVehicles(catalog.RootElement));
     }
 
     /// <summary>Every definition of a reviewed catalog, by id.</summary>

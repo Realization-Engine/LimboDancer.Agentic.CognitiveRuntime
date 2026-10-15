@@ -25,6 +25,18 @@ public sealed record FireView(string EventId, string Group, string Target, strin
         get; init;
     }
 
+    /// <summary>What a FT, MOL, or DC did to the AFV it named and to its crew, in lines (pass 60); null when it named none.</summary>
+    public IReadOnlyList<string>? NamedVehicle
+    {
+        get; init;
+    }
+
+    /// <summary>What the attack's KIA did to the weapons its victims held, and a DC to a manned Gun, in lines (pass 60, ruling R60.17); null when nothing.</summary>
+    public IReadOnlyList<string>? WeaponDestruction
+    {
+        get; init;
+    }
+
     /// <summary>Whether several units fire, so the record's verb agrees: "fire", not "fires".</summary>
     public bool Several
     {
@@ -213,6 +225,75 @@ public static class FireText
         ArgumentNullException.ThrowIfNull(check);
         return ScenarioA1ArmorLeaders.MoraleText(check.MoraleSource, check.MoraleLevel) is { Length: > 0 } source ? source : check.MoraleLevel.ToString(CultureInfo.InvariantCulture);
     }
+
+    /// <summary>
+    /// What a FT, MOL, or DC did to the AFV it named, in lines (pass 60, rulings R60.15, R60.16): the DC's Position DR, the To Kill DR with its Final TK#
+    /// and the crew's checks, and the Specific Collateral Attack on its CE crew. Empty when the attack named none. A DC poorly positioned at an AFV
+    /// whose crew is not CE (<paramref name="crewExposed"/> false) has no effect at all (the table player, pass 60).
+    /// </summary>
+    public static IReadOnlyList<string> NamedVehicleLines(string vehicleId, FireResolution resolution, bool crewExposed = true)
+    {
+        ArgumentNullException.ThrowIfNull(resolution);
+        var lines = new List<string>();
+        if (resolution.Position is { } position)
+        {
+            lines.Add($"Position DR at {vehicleId} {string.Join(", ", position.Dice)} = {position.OriginalDr}{ScenarioA1FlameKill.ModifierText(position.Drm)}: Final DR {position.FinalDr}, "
+                + (resolution.DemolitionChargeMalfunctioned == true ? "the DC malfunctions and does not detonate (A23.4)" : position.Result switch
+                {
+                    FirePosition.Optimal => $"optimally positioned, a {position.HitLocation} hit against the Aerial AF (C7.346)",
+                    FirePosition.Positioned => $"positioned, a {position.HitLocation} hit against its AF (C7.346)",
+                    FirePosition.Poor => crewExposed ? "poorly positioned: no effect on the AFV, and its CE crew alone is attacked on the second DR (C7.346)"
+                        : "poorly positioned: no effect, as its crew is BU (C7.346)",
+                    _ => "no effect on the AFV or its crew; the Location's other units are attacked as Area Fire on the second DR (C7.346)",
+                }));
+        }
+
+        if (resolution.VehicleKill is { } kill)
+        {
+            var fate = kill.Result switch
+            {
+                OrdnanceKill.Burn => "burns (a burning wreck)",
+                OrdnanceKill.Eliminated => "eliminated (a wreck)",
+                OrdnanceKill.Immobilized => "immobilized",
+                OrdnanceKill.Shock => "Shocked",
+                OrdnanceKill.Dud => "no effect (an Original 12, C7.35)",
+                _ => "no effect",
+            };
+            var checks = (kill.CrewCheck is { } tc ? $"; crew TC DR {tc.FinalDr} against {MoraleWords(tc)}: {(tc.Passed ? "passed" : "Abandoned")}" : "")
+                + (kill.CrewSurvival is { } cs ? $"; Crew Survival DR {cs.FinalDr} against CS# {cs.CrewSurvival}: {(cs.Survived ? "the crew survives" : "no survivors")}" : "");
+            lines.Add($"To Kill DR at {vehicleId} on the {kill.Ammunition.ToUpperInvariant()} column (C7.34), {kill.TargetFacing} Target Facing: Basic TK# {kill.BasicTk}"
+                + $"{ScenarioA1FlameKill.ModifierText(kill.Modifications)}{(kill.ArmorFactor is { } af ? $", less AF {af}" : ", no AF")} = Final TK# {kill.FinalTk}; "
+                + $"TK DR {string.Join(", ", kill.Dice)} = {kill.OriginalDr}: {fate}{checks}");
+        }
+
+        if (resolution.SpecificCollateral is { } collateral)
+        {
+            var crew = collateral.Effect;
+            lines.Add($"its CE crew takes a Specific Collateral Attack of {collateral.Firepower} FP{ScenarioA1FlameKill.ModifierText(crew.Drm)} (D.8A): Final DR {crew.FinalDr}, {ResultText(collateral.Result)}"
+                + (crew.CrewCheck is { } made ? $"; {CheckText(made)}" : "")
+                + (crew.CrewResult == FireVehicleEffect.None ? "" : $": {crew.CrewResult}"));
+        }
+
+        return lines;
+    }
+
+    /// <summary>
+    /// What a KIA did to each weapon its victims held (A9.74), and a DC to the Gun its target units manned (C11.6), in lines (pass 60, ruling R60.17):
+    /// the dr on the attack's column, its result, and the weapon's fate. Empty when nothing was checked.
+    /// </summary>
+    public static IReadOnlyList<string> WeaponDestructionLines(IReadOnlyList<FireWeaponDestruction>? fates) =>
+        [.. (fates ?? []).Select(fate =>
+        {
+            var outcome = fate.Fate switch
+            {
+                ScenarioA1GunDestruction.Destroyed => "destroyed",
+                ScenarioA1GunDestruction.Malfunctioned => "malfunctioned",
+                _ => "unharmed",
+            };
+            return fate.Dr is { } dr
+                ? $"{fate.EquipmentId}, held by {fate.HolderId}: Random SW/Gun Destruction dr {dr} on the same column, {ResultText(fate.Result)}: {outcome} (A9.74)"
+                : $"{fate.EquipmentId}, the Gun {fate.HolderId} manned: the DC's {ResultText(fate.Result)} leaves it {outcome} (C11.6)";
+        })];
 
     /// <summary>A vehicle's Vehicle line result (A7.308, A7.309): the Kill Number, its Final DR, and any Unlikely Kill dr.</summary>
     public static string VehicleLineText(FireVehicleEffect hit)

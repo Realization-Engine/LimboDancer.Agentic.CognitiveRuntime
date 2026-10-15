@@ -424,6 +424,7 @@ public sealed class PlayRecords
                 var dice = string.Join(", ", hit.Dice.Select((die, index) => index == 0 ? $"{die} (colored)" : $"{die}"));
                 var modifications = string.Concat(hit.Modifications.Select(item => $" {(item.Value < 0 ? "-" : "+")} {Number(Math.Abs(item.Value))} ({DisplayText.Modifier(item.Name)}, {item.Rule})"));
                 var shot = fired.Facts.Deserialize<OrdnanceShot>(LiveFire.Json);
+                var machineGun = LiveOrdnance.IsMachineGun(shot?.Gun?.DefinitionId);
 
                 // C8.9 (the table player's and the UI review of pass 55): a record whose resolution names its Depletion Number, or whose
                 // ammunition has had one only since the pass (APDS, HE or AP by number), is worded as the rule has it: a round that was not
@@ -434,10 +435,14 @@ public sealed class PlayRecords
                 var noRound = worded && resolution.AmmunitionUse == "none";
                 var outcome = noRound ? $"no shot: it had no {roundName}" : hit.CriticalHit ? "Critical Hit" : hit.Hit ? "hit" : "miss";
                 // D3.2 (pass 50): from inside the target's hex the colored dr gives the Target Facing.
-                var aim = shot?.VehicleTarget is { } aimed ? $"{(shot.Ammunition ?? "ap").ToUpperInvariant()} at {aimed.VehicleId} in {fired.Target} ("
+                // A9.61 (pass 60): a MG's To Kill attack, fired as ordnance.
+                var aim = shot?.VehicleTarget is { } aimed ? $"{(machineGun ? "a MG To Kill attack (A9.61)" : (shot.Ammunition ?? "ap").ToUpperInvariant())} at {aimed.VehicleId} in {fired.Target} ("
                     + (shot.SameHex == true ? "in its own hex: the Target Facing by the colored dr, D3.2)"
                         : $"hull {aimed.HullFacing}" + (aimed.TurretFacing is { } turretFacing ? $", turret {turretFacing}" : "") + " toward the firer)")
                     : shot?.TargetType == OrdnanceTargetTypes.Area ? $"HE at {fired.Target} on the Area Target Type" + (shot.Spotter is { } spotter ? $", spotted by {spotter.UnitId}" : "")
+                    // C8.31 (pass 60): the round and the FP its HE Equivalency attacks with, as the record names it.
+                    : resolution.HeEquivalency is { } equivalency
+                    ? $"{(shot?.Gun?.DefinitionId == OrdnanceTargetTypes.Panzerfaust ? "a PF" : ScenarioA1Definitions.AmmunitionName(shot?.Ammunition ?? string.Empty))} at {fired.Target} ({equivalency} FP by HE Equivalency, C8.31)"
                     : $"HE at {fired.Target}";
                 var check = resolution.PanzerfaustCheck is { } pf ? $"PF Check dr {pf.Dr}{ModifierText(pf.Drm)} = {pf.FinalDr}: a shot; " : "";
                 var parts = new List<string>
@@ -448,9 +453,37 @@ public sealed class PlayRecords
                         + $": Basic TH# {hit.BasicToHit} ({hit.Color}){modifications} = {hit.ModifiedToHit}; DR {dice} = {hit.OriginalDr}{ModifierText(hit.Drm)} = Final DR {hit.FinalDr}"
                         + (hit.SubsequentDr is { } dr ? $", subsequent dr {dr}" : "") + (hit.Improbable ? " (Improbable Hit, C3.6)" : "") + $": {outcome}",
                 };
+                // A12.3, ruling R21.1 (pass 60, the table player): a hidden unit the shot attacked is never named nor counted to a view that may not
+                // know it; its own side and the adjudicator read it.
+                var before = history.At(item.Revision - 1);
+                bool Shown(string id) => viewer.IsAdjudicator || shot?.Hit?.Targets?.FirstOrDefault(target => target.UnitId == id) is not { Hidden: true }
+                    || before?.Unit(id)?.Side == viewer.Name;
+
+                // A concealed vehicle's line gives no DRM or Final DR to such a view: its Case P would tell its size. A concealed unit's tells only its "?".
+                bool Masked(string id) => !viewer.IsAdjudicator && before?.Unit(id)?.Side != viewer.Name
+                    && shot?.Hit?.Vehicles?.FirstOrDefault(vehicle => vehicle.VehicleId == id)?.Concealed == true;
+                string Judged(OrdnanceAreaTarget unit) => Masked(unit.UnitId) ? $"{unit.UnitId} {(unit.Hit ? "hit" : "missed")}"
+                    : $"{unit.UnitId} Final DR {unit.FinalDr}{ModifierText(unit.Drm)} {(unit.Hit ? "hit" : "missed")}";
                 if (resolution.AreaTargets is { } judged)
                 {
-                    parts.Add("each unit: " + string.Join(", ", judged.Select(unit => $"{unit.UnitId} Final DR {unit.FinalDr}{ModifierText(unit.Drm)} {(unit.Hit ? "hit" : "missed")}")));
+                    parts.Add("each unit: " + string.Join(", ", judged.Where(unit => Shown(unit.UnitId)).Select(Judged)));
+                }
+
+                // C3.32, C3.4 (pass 60): a Location hit target by target, each unit and vehicle on its own Final DR.
+                if (resolution.TargetHits is { } each)
+                {
+                    parts.Add("each target (C3.32, C3.4): " + string.Join(", ", each.Where(unit => Shown(unit.UnitId)).Select(Judged)));
+                }
+
+                // C13.31 (p. 183; pass 60, the table player): a PF's hit affects the unit the Random Selection dr picks, the highest and every one tied.
+                if (shot?.Gun?.DefinitionId == OrdnanceTargetTypes.Panzerfaust && resolution.CriticalHit is null
+                    && fired.Rolls.FirstOrDefault(pair => pair.Key.StartsWith("criticalSelection:", StringComparison.Ordinal)) is { Key: { } selectionKey } selection
+                    && events.Select(other => other.Payload).OfType<DiceRolled>().FirstOrDefault(roll => roll.Roll == selection.Value) is { } selectionRoll)
+                {
+                    var drawn = selectionKey["criticalSelection:".Length..].Split(',').Zip(selectionRoll.Values, (id, dr) => (Id: id, Dr: dr)).Where(pair => Shown(pair.Id)).ToArray();
+                    var top = drawn.Length == 0 ? 0 : drawn.Max(pair => pair.Dr);
+                    var picked = drawn.Where(pair => pair.Dr == top).Select(pair => pair.Id).ToArray();
+                    parts.Add($"Random Selection dr: {string.Join(", ", drawn.Select(pair => $"{pair.Id} {pair.Dr}"))}; {string.Join(", ", picked)} {(picked.Length == 1 ? "is" : "are")} hit (C13.31)");
                 }
 
                 if (resolution.FirerEffect is { } firerEffect)
@@ -458,13 +491,35 @@ public sealed class PlayRecords
                     parts.Add($"{fired.Crew}: {firerEffect} (C13.36)");
                 }
 
-                foreach (var (label, attack) in new[] { ("Critical Hit", resolution.CriticalHit), ("hit", resolution.Hit) })
+                // B23.32 (pass 60): a mortar's hit on each other Location of a building hex, on the same DR.
+                foreach (var (label, attack) in new[] { ("Critical Hit", resolution.CriticalHit), ("hit", resolution.Hit) }
+                    .Concat((resolution.LevelHits ?? []).Select(level => ("hit", (FireResolution?)level))))
                 {
                     if (attack?.Arithmetic is { } arithmetic)
                     {
-                        parts.Add($"{label} on {string.Join(", ", attack.Effects.Select(effect => effect.UnitId))}: {arithmetic.ColumnFp} FP, IFT DR {string.Join(", ", arithmetic.Dice)} = {arithmetic.OriginalDr}"
+                        // C3.32, A7.308, D.8B (pass 60): the vehicles it struck, on the Vehicle line, and the CE crews of the AFVs beside them.
+                        var struck = (attack.VehicleEffects ?? []).Select(vehicle => vehicle.VehicleId);
+                        string[] hitOn = [.. attack.Effects.Select(effect => effect.UnitId).Where(Shown).Concat(struck)];
+
+                        // C3.41, C11.4 (pass 60, the table player): a hit on a Location whose only target is an unattended Gun names the Gun.
+                        var onWhat = hitOn.Length > 0 ? string.Join(", ", hitOn)
+                            : shot?.Hit?.GunTarget is { CrewUnitId: null, GunId: { } loneGun } ? $"the unattended Gun {loneGun}" : "the Location";
+                        parts.Add($"{label} on {onWhat}: {arithmetic.ColumnFp} FP, IFT DR {string.Join(", ", arithmetic.Dice)} = {arithmetic.OriginalDr}"
                             + $"{ModifierText(arithmetic.Drm)} = {arithmetic.FinalDr}: {arithmetic.Result}");
+                        foreach (var vehicle in attack.VehicleEffects ?? [])
+                        {
+                            parts.Add($"{vehicle.VehicleId}: " + (vehicle.KillNumber is not null ? FireText.VehicleLineText(vehicle) : FireText.CrewText(vehicle)));
+                        }
+
+                        // A9.74, C8.42 (pass 60, ruling R60.17): what the hit's KIA did to its victims' weapons.
+                        parts.AddRange(FireText.WeaponDestructionLines(attack.WeaponDestruction?.Where(fate => Shown(fate.HolderId)).ToArray()));
                     }
+                }
+
+                // C11.4, C11.6 (pass 60, ruling R60.18): the fate of the Gun the shot was at, a crewed or an unattended one.
+                if (resolution.GunTargetFate is { } gunFate && shot?.Hit?.GunTarget?.GunId is { } struckGun)
+                {
+                    parts.Add($"{struckGun}: a Direct Hit, {(gunFate == ScenarioA1GunDestruction.Destroyed ? "destroyed" : "malfunctioned")} (C11.4)");
                 }
 
                 // C8.9, C8.2 (pass 55): the number the shot was fired under, with the one an Elite force adds, as the record itself names it.
@@ -497,6 +552,9 @@ public sealed class PlayRecords
                         OrdnanceKill.Shock => "Shocked",
                         OrdnanceKill.PossibleShock => "possible Shock",
                         OrdnanceKill.Dud => "a dud (Original 12)",
+
+                        // A9.61, D5.34 (pass 60): a MG's To Kill DR equal to the Final TK#.
+                        OrdnanceKill.Stun => "Stunned, BU (D5.34)",
                         _ => "no effect",
                     };
                     // D3.42, D3.45 (pass 55): a check at an Armor Leader's Morale Level, or an Inexperienced Crew's, says whose it is.
@@ -505,11 +563,45 @@ public sealed class PlayRecords
                     var checks = (kill.ShockCheck is { } ntc ? $"; NTC DR {ntc.FinalDr} against {Against(ntc)}: {(ntc.Passed ? "passed" : "Shocked")}" : "")
                         + (kill.CrewCheck is { } tc ? $"; crew TC DR {tc.FinalDr} against {Against(tc)}: {(tc.Passed ? "passed" : "Abandoned")}" : "")
                         + (kill.CrewSurvival is { } cs ? $"; Crew Survival DR {cs.FinalDr} against CS# {cs.CrewSurvival}: {(cs.Survived ? "the crew survives" : "no survivors")}" : "");
-                    parts.Add($"{kill.HitLocation} hit, {kill.TargetFacing} Target Facing, {kill.Ammunition.ToUpperInvariant()}: {tk}; TK DR {string.Join(", ", kill.Dice)} = {kill.OriginalDr}: {fate}{checks}");
+                    // A9.61 (pass 60, the table player): a MG's To Kill attack is the MG's, on the AP To Kill Table, not a Gun's AP round.
+                    var round = machineGun ? "the MG, on the AP To Kill Table" : kill.Ammunition.ToUpperInvariant();
+                    parts.Add($"{kill.HitLocation} hit, {kill.TargetFacing} Target Facing, {round}: {tk}; TK DR {string.Join(", ", kill.Dice)} = {kill.OriginalDr}: {fate}{checks}");
+
+                    // D5.34 (pass 60, ruling R60.25): a Stun buttons the crew up at once, so no Specific Collateral Attack follows it.
+                    if (kill.Result == OrdnanceKill.Stun && shot?.SpecificCollateral == true && shot.VehicleTarget?.CrewExposed == true)
+                    {
+                        parts.Add("no Collateral Attack: the Stun buttons it up (D5.34)");
+                    }
+                }
+
+                // C1.55, C9.1 (pass 60): a mortar's hit on each AFV, on the IFT.
+                foreach (var afv in resolution.AreaVehicles ?? [])
+                {
+                    var fate = afv.Result switch
+                    {
+                        OrdnanceKill.Burn => "burns (a burning wreck)",
+                        OrdnanceKill.Eliminated => "eliminated (a wreck)",
+                        OrdnanceKill.Immobilized => "immobilized",
+                        OrdnanceKill.Shock => "Shocked",
+                        _ => "no effect",
+                    };
+                    parts.Add($"{afv.VehicleId}: {(afv.Critical == true ? "a Critical Hit, " : "")}{afv.HitLocation} hit on the IFT (C1.55): {afv.Firepower} FP, DR "
+                        + $"{string.Join(", ", afv.Dice)}{ModifierText(afv.Drm)} = {afv.FinalDr} against the K/# DR {afv.KillDr}: {fate}"
+                        + (afv.CrewSurvival is { } survival ? $"; Crew Survival DR {survival.FinalDr} against CS# {survival.CrewSurvival}: {(survival.Survived ? "the crew survives" : "no survivors")}" : ""));
+                }
+
+                // D.8A (pass 60): the Specific Collateral Attack on the CE crew of the AFV the hit left standing.
+                if (resolution.SpecificCollateral is { } collateral)
+                {
+                    var crew = collateral.Effect;
+                    parts.Add($"its CE crew takes a Specific Collateral Attack of {collateral.Firepower} FP on the same DR{ModifierText(crew.Drm)} (D.8A): Final DR {crew.FinalDr}, "
+                        + (collateral.Result == "none" ? "no effect" : collateral.Result)
+                        + (crew.CrewCheck is { } made ? $"; {FireText.CheckText(made)}" : "")
+                        + (crew.CrewResult == FireVehicleEffect.None ? "" : $": {crew.CrewResult}"));
                 }
 
                 var boundingShot = shot?.FireKind == ScenarioA1FireCalculator.BoundingFirstFire;
-                parts.Add((gun.Malfunctioned ? "the Gun malfunctions (C2.28)"
+                parts.Add((gun.Malfunctioned ? machineGun ? "the MG malfunctions (A9.7)" : "the Gun malfunctions (C2.28)"
                     : noRound ? "it has not fired and may fire other ammunition (C8.9)"
                     : gun.RateOfFireKept ? boundingShot ? "it may fire again after another MP, and a Delay MP will do (C2.24, C5.3)" : "it may fire again this phase (C2.24)"
                     : boundingShot ? "a Bounding Fire counter: no more fire this Player Turn (D3.3)" : "no more fire this phase")
@@ -557,6 +649,12 @@ public sealed class PlayRecords
                         LosBlocked = resolution.LosBlocked == true,
                         Weapons = resolution.WeaponEffects,
                         Vehicles = resolution.VehicleEffects,
+
+                        // Pass 60 (rulings R60.15, R60.16): the AFV a FT, MOL, or DC named.
+                        NamedVehicle = facts?.TargetVehicle?.VehicleId is { } namedId ? FireText.NamedVehicleLines(namedId, resolution, facts.TargetVehicle.CrewExposed != false) : null,
+
+                        // Pass 60 (ruling R60.17): what the KIA did to its victims' weapons.
+                        WeaponDestruction = resolution.WeaponDestruction is { Count: > 0 } ? FireText.WeaponDestructionLines(resolution.WeaponDestruction) : null,
                         BrokenBefore = before.Where(target => target.Broken == true && target.UnitId is not null).Select(target => target.UnitId!).ToHashSet(StringComparer.Ordinal),
                         PinnedBefore = before.Where(target => target.Pinned == true && target.UnitId is not null).Select(target => target.UnitId!).ToHashSet(StringComparer.Ordinal),
                     });

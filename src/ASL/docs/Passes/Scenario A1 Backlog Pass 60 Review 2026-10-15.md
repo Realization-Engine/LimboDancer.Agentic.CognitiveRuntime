@@ -1,0 +1,111 @@
+# Scenario A1 Backlog Pass 60: Armored combat III
+
+The review of pass 60, written on 2026-10-15 after the five reviews and their fixes. The Studio check of the whole pass is in its own section below. The design is [ASL Unit Backlog Pass 60 Design](<ASL Unit Backlog Pass 60 Design.md>); its sections 7 to 12 say what each task built, and its section 13 holds the reviews, their fixes, and the Studio check.
+
+## Status
+
+Built to the merge gate on branch `feature/asl-backlog-pass-60`, cut from main at 380b4a7b (after the Goodwood merge): the frame, six increments in six commits (afdcb2b5, 4a628394, 3ac44bea, 5913d7bb, 24620722, 6bfead84), then the five reviews and their fixes in one commit (3bf7ec8e), and these documents. Everything was done under the user's word of 2026-10-15, "this is my word to start pass 60, run without my intervention up to the gate", and is open to a veto. **The gate has not been run.** Its strict build stage (`gate.sh 60 380b4a7b strict`) was run while these documents were written: it failed first on six CA1861 errors in the pass's test files, fixed in 7c2be79f (test files only), and its second run passed with 0 warnings and 0 errors (the commit's message).
+
+## What departs from the plan's entry and the frame
+
+- **The pass is larger than the plan's entry** (design section 2; ruling R60.1). The plan names 37 rows and 4:40 of building; the inventory named 49 rows for pass 60, and task 50.5 (MG fire against armor) was carried in from pass 50 with no row in the plan's table. The frame's estimate was 6:40 of building, 7:55 in all.
+- **The tables are Rules code, not transcriptions** (ruling R60.2): C8.31's HE Equivalency, C7.34's Basic TK# for DC, FT, and MOL, the DC and FT/MOL columns of C7.7, C7.11's Aerial AF row, and the C11.6 Gun Destruction Table. No transcription, case matrix, or package was changed, and the four packages were not pinned again.
+- **Two rulings of the frame were wrong on the page and are amended by the reviews:** R60.24 amends R60.11 (C3.33, p. 169: a mortar's hit also attacks the hex's units out of its LOS when it hit the hardest-to-hit target in its LOS); R60.26 amends R60.18 (C11.3, p. 182: only a Gun that starts the scenario manned by a non-crew unit loses its Emplacement). **One was corrected at its task:** R60.23 corrects R60.10 (a mortar's hit on an AFV takes its hit Location from the Original IFT DR, by C7.7 note E and the C9.5 example; the agent built the frame's reading and was sent back).
+- **Moved on:** A5.132 (a hit on another vehicle of an overstacked hex) to pass 110, beside OVR Prevention (ruling R60.21); the upper superstructure of a non-turreted AFV (C3.9, the end of ruling R7.4) to pass 105, since 2f had no time for it (ruling R60.22).
+- **Left out, with a backlog row each (section 60 of the backlog):**
+  - HE Equivalency (design 7.1): note A of the To Kill table (a red CS#); the PF Check's +1 of August and September 1943, which no date reaches; HEAT's bar at Infantry reads a building, rubble, or a wall, with no pillbox, and the wall's TEM is still not applied to the To Hit DR; the H#[9] HEAT of the German 37mm Guns maps to no catalog Gun; a non-20L ATR attacks only a Gun's crew; the firer's choice of a Known unit manning a Gun or SW after a PF hit.
+  - Mixed Locations and the Specific Collateral Attack (design 8.1): more unarmored vehicles than the column's highest KIA# refuses the shot; a PF's or ATR's shot at a Location with a vehicle stays refused unless the vehicle is named; Defensive First Fire at a Location where a vehicle moves with Infantry stays refused; no attack after an Abandonment on a failed Immobilization Task Check or for a Gun's HEAT with no HE FP; an unarmored vehicle's Vulnerable PRC is pass 65's; a CE AFV in positive TEM is admitted for an ordnance hit only; a vehicle's own To Hit DRM has no Bypass distinction and gives the shellhole's TEM to the vehicle; units out of LOS or too close on the Infantry Target Type.
+  - Indirect Fire (design 9.1): no Immobilization Task Check after a mortar immobilizes an AFV; an OT AFV hit by Air Bursts is on the Vehicle line but its crew is not attacked; Crew Survival's +1 reads no Shocked or Abandoned; a tie between Locations in a Critical Hit goes to the lowest; a vehicle in Bypass and a mortar's Defensive First Fire with a vehicle in the hex stay refused; no entrenchment exists, and the board data has no Interior Building Hex and no rooftop; friendly units in a mortar's target hex stay refused.
+  - FT, MOL, and DC (design 10.1): where C7.11's Aerial AF row is blank the lowest printed hull AF stands; a turret turned between a DC's Placement and the AFPh is not tracked (the facings are recorded at Placement since the fixes); the Bypass -2 is never reached; C7.346's IFT attack through an unarmored Target Facing has no AFV to reach it; a DC Placed where an unarmored or friendly vehicle is stays refused; naming an AFV beside concealed or hidden units or a Dummy is refused; a MOL at an unarmored vehicle, a MOL's Flame, ATMM, a vehicle as the thrower, and a throw down a level.
+  - Guns as targets (design 11.1): a Gun on a paved road or a bridge is not barred from Emplacement; an unattended Gun on the Area Target Type; an OVR's KIA makes no A9.74 dr; a DC at a manned Gun reads the Gun's fate from its crew's result, with no Random Selection among the targets; a Critical Hit on an unattended Gun destroys it with no IFT DR; unpossessed weapons under Indirect Fire and the OVR's end-of-MPh check.
+  - The MG's To Kill attack (design 12.1): no Collateral Attack after its Stun (ruling R60.25, from D5.34); the Bren Carrier's MA prints no FP and fires at the British LMG's 2 FP; a MG fired as ordnance takes no C4 Gun-size modification beyond C4.2, acquires nothing, and is read as 25mm or less for Case D; refused in the AFPh, as Bounding First Fire, by a pinned possessor, a lone leader or hero, a vehicle in Motion or BU firing its MA MG, as Intensive Fire, with a directing leader, at an unarmored vehicle, and at a concealed AFV (ruling R60.27); a 1MT AFV's Recall on a Stun; the AAMG's arc; the MG's Residual FP; no catalog MG is 12.7mm or 15mm; a Fire Lane's cancellation is the narrow reading (ruling R60.20).
+- **The Studio check of the whole pass was narrower than the standing rules' step 4,** at the user's word of 2026-10-15 ("Run the narrower check for this Pass. From now on, let's reassess the need ... on a case-by-case basis"): the section below.
+
+**Departures of sections 7.1 to 12.1 that the reviews closed,** and so have no row: the thrown DC's vehicle list named the tank by its id and definition (design 10.1), now in the side's labels; the DC's record kept an IFT line that attacked no one (design 10.1), now hidden; the hidden-information note of design 11.1 (`heldWeapons` in the records), now never recorded; `PlayPageVehicleTests.ATankIsOfferedInTheGunPanelWithTheEnemyVehicleAndItsAmmunition` (design 12.1), brought to 2a's ammunition list; a Placed DC's Target Facing read at detonation (design 10.1), now the facings recorded at Placement (A23.5).
+
+## What was built, by task
+
+- **60.4, and C11.52 and C13.23 of 60.5: HE Equivalency** (design section 7; C8.31, p. 178). AP, APCR, APDS, and HEAT fire at an unarmored target on the Infantry Target Type at their equivalency FP, by the HE path; HEAT only at a target in a building, rubble, or behind a wall, and never from a Gun with no HE. A PF and a PSK fire at Personnel at 16 and 12 FP; a PF's hit affects one unit by Random Selection, and its Check takes +1 at a target that is not an AFV. AP, APCR, APDS, HEAT, and an ATR fire at a Gun: a K destroys it under AP, APCR, APDS, or an ATR, and malfunctions it under HEAT. None leaves Residual FP.
+- **60.1: the Specific Collateral Attack and mixed Locations** (design section 8; D.8A, p. 192; C3.32, C3.4, C3.41, C3.74, pp. 169 to 171). A hit on an AFV that does not destroy it attacks its CE crew at the round's IFT FP on the Original TK DR with the CE DRM alone. An Infantry Target Type shot at a Location with an unarmored vehicle judges each unit and vehicle on its own TH#, and one Effects DR attacks them all, the vehicles on the Vehicle line; a CE AFV there is immune and its crew is attacked. Known and concealed units together are judged unit by unit.
+- **60.2: Indirect Fire** (design section 9; C1.55, C3.332, C3.72, C7.345, C9.1, B23.32, B13.3, C6.521, C3.71). A mortar's hit on an AFV is an IFT attack at half the HE FP with the AF and OT modifiers, and on an unarmored vehicle the Vehicle line. A mortar fires at a hex whose units are on several levels of a building: each Location is judged on its own To Hit, and one Effects DR attacks each Location hit with its TEM and +1 for each level above it; the Locations out of its LOS are attacked when it hit the hardest target in its LOS (ruling R60.24). Air Bursts in full; Area Acquisition by hex; the gunshield's +1 against Indirect Fire; a Direct Fire Critical Hit reverses Height Advantage.
+- **60.3: FT, MOL, and DC at an AFV** (design section 10; A22.34, A22.612, A23.5, C7.344, C7.346, C7.21, C7.7, D2.41). A fire request, a throw, or a detonation names an AFV in the target Location. A FT's Basic TK# is 8, a MOL's 6, a DC's 16 less the AF after its Position DR; the FT/MOL and DC columns of C7.7; the Specific Collateral Attack after each. A Placed DC needs a PAATC.
+- **60.5: Guns as targets, and Random SW and Gun Destruction** (design section 11; A9.74, C8.42, C11.2 to C11.6). Every Final KIA of an IFT attack makes each SW and Gun its victims held roll on the same column: a KIA destroys it, a K malfunctions it, or eliminates it if it was malfunctioned or has an X#. An unattended Gun is a target of the Infantry Target Type. A DC destroys or malfunctions the Gun its target units man. A Gun set up manned by a non-crew unit loses its Emplacement for the game (ruling R60.26).
+- **60.6, with 50.5: a MG's To Kill attack on an AFV** (design section 12; A9.6, A9.61, A9.611, D3.54, A9.223, D7.21). A possessed MG, or a vehicle's MA that is a MG, names an AFV within Normal Range in the PFPh or DFPh: a To Hit DR on the Vehicle Target Type, then a To Kill DR with Basic TK# 4, Case A, and Case D's 25mm row, less the AF. At most half burns, below eliminates, equal Stuns. CC Reaction Fire cancels the Fire Lane of the MG its attackers man, and marks their SW and Guns with the CC counter.
+
+## The reviews
+
+Five read-only agents in one message on 6bfead84: two referees (60.1, 60.2, 60.4; and 60.3, 60.5, 60.6 with 50.5), a table player, a UI and Blazor review, and a Rules boundary review. Their briefs are `brief_reviews.md` in `code-builders/pass-history/pass-60-armored-combat-iii`; each finding was judged by the session against its page and the code, and the fix lists are `fixes_boundary.md`, `fixes_referee1.md`, `fixes_referee2.md`, `fixes_table.md`, and `fixes_ui.md` in the same folder. One agent applied them in one commit (3bf7ec8e). The fix lists mark the MAJOR findings; the rest are listed there without their grade, and are given here as the lists give them.
+
+**No BLOCKER.** **Eight MAJOR findings, all fixed** (three of them named by two reviews):
+
+- **Hidden information, three leaks.** The Gun panel offered a side's MGs once any enemy vehicle existed, seen or not (UI 1; boundary 2): it now reads the side's own view and an armored vehicle. The weapons a target holds, A9.74's facts, were written into fire records, ordnance records, and resumes both sides read, a concealed unit's included (boundary 1; second referee 4): `heldWeapons` is never recorded and is read again from the state at replay and on a resume. The proposal, the record, and the `target-vehicle-concealed` refusal of 2b named hidden units and counted the units under a "?" (first referee 4; table player 1): hidden units are attacked silently and named nowhere, a Location's concealed units are one entry, and a concealed vehicle's DRM and Final DR are not shown.
+- **A mortar's hit and the Locations out of its LOS** (first referee 1): ruling R60.24, built.
+- **A Gun crew's gunshield and Emplacement reached the vehicles of its Location** (first referee 2): they are the crew's alone (C11.5).
+- **A Critical Hit that Random Selection put on a truck destroyed the Gun beside it** (first referee 3): the Gun is destroyed only when the selection picks its crew, or the Gun when it is unattended (C3.74).
+- **A MG's To Hit skipped C4.2's modifications beyond 12 hexes** (second referee 1): taken, as for "any weapon (including MG)".
+- **A SW MG at an AFV in its own hex took Case E,** which C5.5 gives a Gun (second referee 2): left out.
+
+**Fixed, the other findings:**
+
+- **Rules:** a Critical Hit on an unarmored vehicle reverses its positive TEM (first referee 5; C3.71); a PF's or PSK's Original 2 is a Critical Hit outright on its own table (first referee 6; C3.7); a non-20mm ATR gives no Specific Collateral Attack (first referee 7; C8.31 note 1); a Placed DC keeps the facings it was Placed through (second referee 3; A23.5); a MG's To Kill attack at a concealed AFV is refused (second referee 6; ruling R60.27); a Stun buttons the crew up, so no Collateral Attack follows it (table player 11; ruling R60.25); C11.3 as ruling R60.26 (second referee 5).
+- **Records (ruling R60.3):** the Fire Lane's cancellation by CC Reaction Fire is gated by `cancelsFireLanes` on the reaction's record (boundary 4); `areaAcquisition` is held to the state, not copied from the record (boundary 6; first referee 8); `LiveOrdnance.Emplaced` takes its argument by name (boundary 10); new nested members are left out when null (boundary 11).
+- **Into Rules** (boundary 3, 5, 6, 7, 8; second referee 7): C11.3's predicate (`ScenarioA1OrdnanceProjection.LosesEmplacement`), a target's needed Original DR, Area Acquisition's hex (`ScenarioA1OrdnanceEligibility.AreaAcquisition`), the unattended Gun (`ScenarioA1OrdnanceEligibility.UnattendedGun`), the DC Placement bar (`ScenarioA1FireEligibility.DcPlacementVehicleRefusal`), A9.74's scope (`ScenarioA1GunDestruction.Checks`); the Collateral DRM printed from the record (boundary 9).
+- **The page and the texts** (UI 2 to 10; table player 2 to 10): the DC lists use the side's labels; stale AFV choices are cleared; the MG waits for a named AFV ("Name the AFV (A9.61)") and carries Rules' reason when it cannot fire; refusal advice by weapon; sentences for the MG's two refusal codes; an IFT line that attacked no one is hidden; the PF's Random Selection, the unattended Gun, the MG's kill and malfunction, the Stun's missing Collateral Attack, the MOL's 4 FP, and the DC's second DR are worded; `@key` on the detonation buttons; `PlayPagePass60Tests` (six page tests, two text tests); `PlayPageVehicleTests` brought to 2a's ammunition list.
+- **The fixing agent's own departures:** the Fire Lane gate is a flag on the reaction's record, not the weapon's CC counter, which a reaction that destroys the vehicle never places; the gunshield fix is gated by `randomDestruction`, since an IFT attack on a crew beside a vehicle could be made before the pass; a PF's or PSK's Critical Hit on a Final DR below half the Modified TH# still stands; a concealed unit's record line keeps its Case K (pass 9's form), and only a concealed vehicle's DRM and Final DR are hidden; the MG stays in the Gun list with its reason.
+
+**Not fixed: nine rows, each in the backlog's section 60.2:**
+
+| Review | What |
+|---|---|
+| UI | The pass 55 page test of HE refused after it ran out was replaced (the Gun now offers AP), so that refusal has no page test |
+| UI; Rules boundary | Three rule conditions decided in the page: an AAMG MA fires only CE, a plain MA MG's 8-hex Normal Range, and when HE is left unnamed; extensions of passes 50 and 55 |
+| UI | `#propose-throw-dc` is disabled with no title; older than the pass |
+| Rules boundary | C11.3 is gated in the verifier by the presence of `randomDestruction`, a proxy |
+| First referee | `vehicles-beyond-kia` refuses a mortar's shot that C1.55 only limits |
+| First referee | A tie between Locations in a Critical Hit's selection goes to the lowest (A.9 settles ties among units) |
+| Second referee | An OVR's KIA makes no A9.74 dr, where a vehicle not fully-tracked rolls a plain one and a fully-tracked one rolls with -1 |
+| Second referee | D3.53: a vehicle's MA MG's To Kill attack in the AFPh, unhalved, is refused |
+| Table player | A Manned Gun counted as possessed for A9.74; the PAATC of a DC's Placement decided in Play |
+
+## The games
+
+In the session's Studio on port 6671, board 3, scripted dice; each game's file read back. "Recorded" is the design's word for a game whose file was kept.
+
+- **60.4** (design 7.3): `p60-ap`, `p60-psk`, `p60-pf`, `p60-atr-gun`; the control `p60-psk-open` (refused with C8.31's bar).
+- **60.1** (design 8.3): `p60-coll`, `p60-mixed`, `p60-mixed-ce`, `p60-conc`.
+- **60.2** (design 9.3): `p60-mtr-afv`, `p60-mtr-truck`, `p60-mtr-levels`, `p60-mtr-gun`.
+- **60.3** (design 10.3): `p60-ft-afv`, `p60-mol-afv`, `p60-dc-afv`.
+- **60.5** (design 11.3): `p60-random-sw` (SUPERSEDED after the fixes, since it recorded `heldWeapons`; played again as `p60-random-sw2`), `p60-unattended`.
+- **60.6 and 50.5** (design 12.3): `p60-mg-stun`, `p60-mg-coll`.
+- **The Studio check** (design 13.4): `p60-unseen-afv`, `p60-hidden`, `p60-check-controls`.
+
+## The tests and the build
+
+As the design's section 13.2 states them, from the fixing agent's run on 3bf7ec8e: the build exit 0; Rules, fifteen classes, 375 passed; Play 340 passed; MapStudio 48; Units whole 416. The pass's own classes are `ScenarioA1Pass60RulesTests`, `BacklogPass60Tests`, and `PlayPagePass60Tests`. The Rules and Play projects were not run whole: that is the gate's. The runs of each increment are in the design's sections 7.3 to 12.3.
+
+## The replay digest
+
+After the fixes' commit (design 13.2): over the proof store, in 41 seconds, no line of 20,557 differs, and the pass's own games replay to their end. Every attack the pass admits was refused before it (design 4), and each rule that changes an attack that could be made before the pass (A9.74, C3.71's reversal, D.8A after a Vehicle Target Type hit, the gunshield's reach, C11.3) is gated by a fact on the record (ruling R60.3). Two Play tests strip the pass's facts from a recorded attack and replay it as it was: `AnOlderRecordOfAHitOnACeTankReplaysAsItWas` and `AnOlderRecordOfAKiaOnASquadHoldingALmgReplaysAsItWas`.
+
+## What is open to a veto
+
+- **The rulings R60.1 to R60.27,** in the [Passes Plan](<../ASL Unit Backlog Passes Plan.md>), section 5. All were decided without the user, each by the proposal that would have been put, under the user's word of 2026-10-15. R60.10 is corrected by R60.23, R60.11 by R60.24, and R60.18 by R60.26. Those most likely to be read again: R60.7 (when the Specific Collateral Attack is made), R60.17 (A9.74's scope), R60.20 (the narrow reading of A9.223), R60.24, R60.25, R60.26, and R60.27.
+- **The departures** listed above, and the passes this document gives the rows the pass did not finish (the inventory has each row's own pass).
+- **Pass 50's task 50.5** is built here.
+
+## What the gate will meet
+
+- **No package is pinned again and the catalog is unchanged** (ruling R60.2): `asl-scenario-a1@1.17.0`. `BOTH_SKIP` keeps `GameEvent.RulePackage`.
+- **New facts in a record** (design sections 7.2 to 12.2): on an ordnance shot `wallTem`, `specificCollateral`, `hit.vehicles`, `reversesHeightAdvantage`, `areaLocations`, `areaAcquisition`, `afvCover`, `randomDestruction`; on its resolution `heEquivalency`, `targetHits`, `specificCollateral`, `levelHits`, `areaVehicles`, `weaponDestruction`, and the result `stun`; on a fire attack `targetVehicle`, `randomDestruction`; on its resolution `position`, `vehicleKill`, `specificCollateral`, `weaponDestruction`; on a reaction `cancelsFireLanes`; a DC Placement's recorded facings; the rolls `collateralCheck`, `areaSurvival`, `position`, `crewSurvival`, `taskCheck`, and `weaponDestruction:<id>`; the condition `asl:cc-reaction`. Each is absent from every older record.
+- **The sweep proves little of what the pass built.** It asks one request of each kind for each unit and names no new argument, so a named AFV, a mortar at a vehicle or at two levels, an unattended Gun, and a MG's To Kill attack are reached only in the pass's own games and tests.
+- **The store** holds none of the pass's games. `p60-random-sw` is labelled SUPERSEDED and is not to be taken.
+- **The strict build of the test projects** passed at its second run, after 7c2be79f (above). `code-builders/merge-gate/pass-configs/pass60.conf` names the pass's 23 recorded games and its ABSENT name.
+
+## The Studio check
+
+The narrower check the user approved, in my Studio on port 6671, on the build of 3bf7ec8e (design 13.4):
+
+- **The unseen vehicle** (`p60-unseen-afv`, a German LMG and a hidden T-34 far off): the German view offers no Gun panel and names no vehicle.
+- **Hidden and concealed units** (`p60-hidden`, a Russian 45L at a Known squad beside a hidden squad and a concealed one holding a LMG): the Russian proposal names the Known squad and "its concealed units" with no count; the committed record names the Known squad and "a concealed unit", neither the hidden squad nor any weapon; the game's file holds no `heldWeapons`.
+- **The new controls** (`p60-check-controls`, a German squad with a DC and a LMG beside a CE T-34): at 1920 the throw panel's list reads "vehicle R1" and the MG's propose button waits with "Name the AFV (A9.61)."; at 1024 and at 320 the throw list, the vehicle list, and the propose button sit inside the width in the Actions tab, with no horizontal overflow; at 320 the MG's To Kill attack was proposed and committed by real Enter keys on the focused buttons, and the focus moved to the Actions panel after the commit.
+- **Not done,** as the narrower check allowed: the five widths in each side's view for every new control; a full Player Turn at 320; the Replay page.

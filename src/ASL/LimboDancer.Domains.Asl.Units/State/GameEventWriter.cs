@@ -424,6 +424,11 @@ public static class GameEventWriter
                 }
 
                 writer.WriteBoolean("closed", vehicleCombat.Closed);
+                if (vehicleCombat.CancelsFireLanes)
+                {
+                    writer.WriteBoolean("cancelsFireLanes", true);
+                }
+
                 break;
             case VehicleCloseCombatPassed passed:
                 writer.WriteString("location", passed.Location.ToString());
@@ -491,6 +496,26 @@ public static class GameEventWriter
                     if (placement.TargetsConcealed)
                     {
                         writer.WriteBoolean("dcConcealed", true);
+                    }
+
+                    // A23.5 (pass 60): the AFVs' Target Facings at the Placement; none in a record made before the pass.
+                    if (placement.Facings is { Count: > 0 } facings)
+                    {
+                        writer.WriteStartArray("dcFacings");
+                        foreach (var dcFacing in facings)
+                        {
+                            writer.WriteStartObject();
+                            writer.WriteString("vehicle", dcFacing.Vehicle);
+                            writer.WriteString("hull", dcFacing.Hull);
+                            if (dcFacing.Turret is { } turret)
+                            {
+                                writer.WriteString("turret", turret);
+                            }
+
+                            writer.WriteEndObject();
+                        }
+
+                        writer.WriteEndArray();
                     }
                 }
 

@@ -119,8 +119,10 @@ public static class ScenarioA1FireFollowUps
     /// <summary>
     /// What the Fire package asks for next (ruling R5.8): the attack resolved; an option its owner answers; a roll, named by its key, with its dice count and
     /// purpose (a Random Selection names the units it selects among, one die each, A.9, A8.31, A9.71); or an attack the package accepted and left undecided.
+    /// A DC at a named AFV (<paramref name="dcAtAfv"/>; pass 60, the table player) names its second DR as its own, the To Kill DR or the crew's or
+    /// Location's IFT DR as its Position DR decides (C7.346), rather than an IFT DR.
     /// </summary>
-    public static FireNextStep NextFireStep(FireResolution resolution)
+    public static FireNextStep NextFireStep(FireResolution resolution, bool dcAtAfv = false)
     {
         ArgumentNullException.ThrowIfNull(resolution);
         if (resolution.Disposition == FireResolution.Resolved)
@@ -146,7 +148,7 @@ public static class ScenarioA1FireFollowUps
         var selected = kind is "randomSelection" or "weaponSelection" or "firerSelection" or "cowerSelection" ? unit.Split(',') : [];
         var (count, purpose) = kind switch
         {
-            "attack" => (2, "fire-ift"),
+            "attack" => (2, dcAtAfv ? "fire-dc-second" : "fire-ift"),
             "randomSelection" => (selected.Length, "fire-random-selection"),
             "weaponSelection" => (selected.Length, "fire-weapon-selection"),
             "firerSelection" => (selected.Length, "fire-firer-selection"),
@@ -158,6 +160,15 @@ public static class ScenarioA1FireFollowUps
             "crewCheck" => (2, "fire-crew-check"),
             "unlikelyKill" => (1, "fire-unlikely-kill"),
             "molCheck" => (1, "fire-mol-check"),
+
+            // Pass 60 (rulings R60.15, R60.16): a DC's Position DR, and the crew's checks of a FT, MOL, or DC at a named AFV.
+            "position" => (2, "fire-dc-position"),
+            "crewSurvival" => (2, "fire-crew-survival"),
+            "taskCheck" => (2, "fire-task-check"),
+            "collateralCheck" => (2, "fire-collateral-check"),
+
+            // A9.74 (pass 60, ruling R60.17): a weapon's Random SW/Gun Destruction dr.
+            "weaponDestruction" => (1, "fire-weapon-destruction"),
             _ => (1, "fire-wound-severity"),
         };
         return new FireNextStep(false, null, key, count, purpose, null);
@@ -170,6 +181,13 @@ public static class ScenarioA1FireFollowUps
         ArgumentNullException.ThrowIfNull(targets);
         var hiddenResult = arithmetic.Concealed?.Result ?? arithmetic.Result;
         return hiddenResult == "none" && (targets.Count == 0 || targets.Any(item => item.Concealed == true || item.Hidden == true || item.Dummy == true));
+    }
+
+    /// <summary>The same for an attack that may name an AFV (pass 60, ruling R60.15): an attack on a named AFV is always told to its firing side, which sees the AFV.</summary>
+    public static bool HidesIdentity(FireAttack attack, FireArithmetic arithmetic)
+    {
+        ArgumentNullException.ThrowIfNull(attack);
+        return attack.TargetVehicle is null && HidesIdentity(arithmetic, attack.Targets!);
     }
 
     /// <summary>A10.62: a broken target attacked by FP that could inflict at least a NMC, allowing for Cowering, is under DM; <paramref name="couldCauseNmc"/> is the attack's read, by column (concealed or known).</summary>

@@ -198,7 +198,7 @@ public static class GameActions
         }));
 
     public static readonly ActionDescriptor Fire = Descriptor("asl.game.fire", "Fire",
-        "Fire a fire group of Good Order squads and half-squads, with the MGs they possess, in one Location or across ADJACENT Locations, optionally directed by leaders there, at another Location: in the PFPh or AFPh (phasing side), the DFPh (the other side), or the MPh at the moving stack (Defensive First Fire, Subsequent First Fire, or FPF, by the firers' markers). The attack is resolved by the reviewed Fire package, and only when every outcome the dice can reach is decided; its rolls are drawn as the package asks for them.",
+        "Fire a fire group of Good Order squads and half-squads, with the MGs they possess, in one Location or across ADJACENT Locations, optionally directed by leaders there, at another Location: in the PFPh or AFPh (phasing side), the DFPh (the other side), or the MPh at the moving stack (Defensive First Fire, Subsequent First Fire, or FPF, by the firers' markers). The attack is resolved by the reviewed Fire package, and only when every outcome the dice can reach is decided; its rolls are drawn as the package asks for them. A FT or MOL attack may name an AFV in the target Location as its target (vehicle): a To Kill DR on the C7.34 FT or MOL column, then a Specific Collateral Attack on its CE crew (A22.34, A22.612).",
         PlayPermission, "asl.game.reviewed-fire-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -212,7 +212,7 @@ public static class GameActions
             "weapons": { "type": "object", "additionalProperties": { "type": "array", "items": { "type": "string" } } },
             "withoutInherent": { "type": "array", "items": { "type": "string" } },
             "partners": { "type": "object", "additionalProperties": { "type": "string" } },
-            "target": { "type": "string" }, "snapShot": { "type": "boolean" }, "sprayTarget": { "type": "string" }, "mol": { "type": "string" },
+            "target": { "type": "string" }, "snapShot": { "type": "boolean" }, "sprayTarget": { "type": "string" }, "mol": { "type": "string" }, "vehicle": { "type": "string" },
             "fireLane": {
               "type": "object", "additionalProperties": false, "required": ["weapon", "to"],
               "properties": { "weapon": { "type": "string" }, "to": { "type": "string" } }
@@ -647,7 +647,7 @@ public static class GameActions
         """);
 
     public static readonly ActionDescriptor ThrowDc = Descriptor("asl.game.throw-dc", "Throw a DC",
-        "A Good Order (or berserk) unpinned unit Throws the DC it possesses into an ADJACENT Location in its LOS at its level, in a friendly fire phase or as Defensive First Fire at the moving stack: 30 FP there with +2, then its own Location with +3, each on its own DR (+1 more in the AFPh unless an Opportunity Firer); a unit marked First Fire throws none. The DC is removed (A23.6 to A23.63; ruling R15.3).",
+        "A Good Order (or berserk) unpinned unit Throws the DC it possesses into an ADJACENT Location in its LOS at its level, in a friendly fire phase or as Defensive First Fire at the moving stack: 30 FP there with +2, then its own Location with +3, each on its own DR (+1 more in the AFPh unless an Opportunity Firer); a unit marked First Fire throws none. The DC is removed (A23.6 to A23.63; ruling R15.3). It may name an enemy AFV in the target Location (vehicle): a Position DR, then a To Kill DR on the C7.34 DC column (A23.5, C7.346).",
         PlayPermission, "asl.game.reviewed-fire-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -655,7 +655,7 @@ public static class GameActions
           "properties": {
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 },
-            "unitId": { "type": "string" }, "equipmentId": { "type": "string" }, "target": { "type": "string" }
+            "unitId": { "type": "string" }, "equipmentId": { "type": "string" }, "target": { "type": "string" }, "vehicle": { "type": "string" }
           }
         }
         """, JsonSerializer.SerializeToElement(new
@@ -664,7 +664,7 @@ public static class GameActions
         }));
 
     public static readonly ActionDescriptor DetonateDc = Descriptor("asl.game.detonate-dc", "Detonate a Placed DC",
-        "In its side's AFPh, a DC operably Placed this MPh detonates on its target Location with 30 FP, halved when every unit there was concealed at its Placement, with the Location's TEM and +1 when its placer was CX; an Original DR of 12 (10 for a non-elite owner, 8 for a captured DC) removes it with no effect. The AFPh does not end before every Placed DC detonates (A23.1, A23.3, A23.4; ruling R15.2).",
+        "In its side's AFPh, a DC operably Placed this MPh detonates on its target Location with 30 FP, halved when every unit there was concealed at its Placement, with the Location's TEM and +1 when its placer was CX; an Original DR of 12 (10 for a non-elite owner, 8 for a captured DC) removes it with no effect. The AFPh does not end before every Placed DC detonates (A23.1, A23.3, A23.4; ruling R15.2). It may name the enemy AFV in its Location (vehicle): a Position DR, then a To Kill DR on the C7.34 DC column (A23.5, C7.346).",
         PlayPermission, "asl.game.reviewed-fire-v1", """
         {
           "type": "object", "additionalProperties": false,
@@ -672,7 +672,7 @@ public static class GameActions
           "properties": {
             "gameId": { "type": "string" }, "attemptId": { "type": "string" },
             "expectedRevision": { "type": "integer", "minimum": 0 },
-            "equipmentId": { "type": "string" }
+            "equipmentId": { "type": "string" }, "vehicle": { "type": "string" }
           }
         }
         """, JsonSerializer.SerializeToElement(new

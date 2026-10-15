@@ -352,11 +352,13 @@ public sealed class ScenarioA1OrdnanceTests
     }
 
     [Fact]
-    public void AGunMayFireAgainOnAKeptRofAndMixedConcealmentIsUndecided()
+    public void AGunMayFireAgainOnAKeptRofAndMixedConcealmentIsJudgedUnitByUnit()
     {
         Assert.Equal(OrdnanceResolution.Resolved, Complete(With(German(shots: 1, kept: true), [3, 4])).Disposition);
+
+        // C3.4 (pass 60, ruling R60.9): concealed and Known units together are no longer refused; each is judged on its own To Hit DR.
         var mixed = German(targets: [Target("ru-s"), Target("ru-h", "defender-half-squad", concealed: true)]);
-        Assert.Contains("asl.a1.ordnance.concealment-mixed", ScenarioA1OrdnanceCalculator.Precheck(mixed, Reference));
+        Assert.DoesNotContain("asl.a1.ordnance.concealment-mixed", ScenarioA1OrdnanceCalculator.Precheck(mixed, Reference));
     }
 
     [Fact]

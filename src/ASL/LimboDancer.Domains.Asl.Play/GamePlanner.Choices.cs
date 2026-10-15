@@ -187,6 +187,7 @@ public sealed partial class GamePlanner
                 case "fire":
                     // D3.41 (pass 55): the resume data left out the Morale Level of a crew whose Armor Leader is not revealed; the state gives it again.
                     var unrevealed = UnrevealedLeaders(answered);
+                    // A9.74 (pass 60; boundary review): nor does it name the weapons the targets hold; AddFireEvents reads them from the state.
                     var fire = ScenarioA1ArmorLeaders.Pending(resume.GetProperty("facts").Deserialize<FireAttack>(LiveFire.Json)!, unrevealed, CrewMoraleIn(answered));
                     int? step = resume.TryGetProperty("step", out var stepValue) ? stepValue.GetInt32() : null;
                     var followUps = resume.TryGetProperty("followUps", out var followNode) && followNode.Deserialize<FireFollowUps>(LiveFire.Json) is { } follow
@@ -229,11 +230,13 @@ public sealed partial class GamePlanner
 
                     // C2.2401 (pass 55): a Gun Duel's first shot that stopped here still owes the DEFENDER its declared shot.
                     JsonElement? owed = resume.TryGetProperty(GunDuelOwed, out var owedShot) && owedShot.ValueKind == JsonValueKind.Object ? owedShot : null;
+                    // A9.74 (pass 60; boundary review): the resume data names no weapon the targets hold; the state gives them again.
+                    var resumedHit = shot.Hit!.RandomDestruction == true ? LiveFire.WithRandomDestruction(answered, shot.Hit) : shot.Hit;
                     AddOrdnanceEvents(scope, attemptId, expected, actor, answered, shot with
                     {
-                        Hit = shot.Hit! with
+                        Hit = resumedHit with
                         {
-                            Choices = With(shot.Hit.Choices)
+                            Choices = With(resumedHit.Choices)
                         }
                     }, facing, events, draw,
                         resumed, owed);

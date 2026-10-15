@@ -510,6 +510,17 @@ public static class ScenarioA1FireEligibility
             && firer.Weapons.All(weapon => weapon.Sighted && weapon.ByItsPossessor && weapon.AtItsSetupLocation && weapon.OnTheTarget && !weapon.Dismantled));
     }
 
+    /// <summary>
+    /// A23.3, A23.5 (pass 60, ruling R60.16): a DC is Placed where an enemy AFV is (once its placer passes a PAATC), but not where an unarmored or a
+    /// friendly vehicle is, whose attack by a DC is not built. Each vehicle of the target Location as (armored, of the placer's side); the refusal
+    /// code, or null.
+    /// </summary>
+    public static string? DcPlacementVehicleRefusal(IEnumerable<(bool Armored, bool Friendly)> vehicles)
+    {
+        ArgumentNullException.ThrowIfNull(vehicles);
+        return vehicles.Any(item => !item.Armored || item.Friendly) ? "asl.a1.fire.dc-placement-vehicle" : null;
+    }
+
     /// <summary>A9.8 (p. 65; pass 45): "A dm SW may not be fired until reassembled": the refusal of a dismantled mortar's shot, or null.</summary>
     public static string? DismantledShotBar(bool dismantled, string weapon) =>
         dismantled ? $"play.ordnance-dismantled: {weapon} is dismantled and is not fired until it is assembled (A9.8)" : null;
@@ -785,6 +796,12 @@ public static class ScenarioA1FireEligibility
     /// A9.223 (pass 45): whether a fire record cancels a Fire Lane: an attack at its firers' own Location by the lane's MG or its manning Infantry.
     /// </summary>
     public static bool FireLaneCancelledBy(bool atOwnLocation, bool laneWeaponOrOperatorFired) => atOwnLocation && laneWeaponOrOperatorFired;
+
+    /// <summary>
+    /// A9.223, D7.21 (p. 63; pass 60, ruling R60.20): whether CC Reaction Fire cancels a Fire Lane: its MG's manning Infantry makes it. The narrow
+    /// reading: an enemy's entry into the MG's Location alone cancels nothing. No game recorded before the pass holds a Fire Lane and CC Reaction Fire.
+    /// </summary>
+    public static bool FireLaneCancelledByCcReaction(bool reaction, bool operatorAttacked) => reaction && operatorAttacked;
 
     /// <summary>
     /// The Field of Fire (A9.21, p. 62; pass 45): "if a SW MMG/HMG in a woods/rubble/building hex fires and is entitled to another shot, it may

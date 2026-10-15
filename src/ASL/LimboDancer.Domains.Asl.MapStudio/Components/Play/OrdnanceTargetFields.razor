@@ -59,8 +59,8 @@ else
     }
 }
 @* Pass 55 (C8.1, C8.9, C2.21): what the Gun may fire at the chosen target, each Special Ammunition with its Depletion Number at the game's date;
-   one it has none of now is not offered, and the note says why. At Infantry the list is empty unless the Gun's HE must be named or the Gun
-   lists Canister, which is then chosen here, before any target. *@
+   one it has none of now is not offered, and the note says why. At Infantry the list is empty unless the Gun's HE must be named, the Gun
+   lists Canister, which is then chosen here, before any target, or it fires a round by its HE Equivalency (pass 60, C8.31). *@
 @if (Ammunition == AmmunitionKind.Selectable && Ammunitions.Count > 0)
 {
     @if (Ammunitions.Any(item => item.Unavailable is null))
@@ -75,9 +75,10 @@ else
             </select>
         </label>
     }
-    @if (Ammunitions.Any(item => item.Unavailable is not null))
+    @* Pass 60 (C8.31): at Infantry each round that attacks by its HE Equivalency says its FP, beside why a round is not offered. *@
+    @if (Ammunitions.Any(item => item.Unavailable is not null || item.Equivalency is not null))
     {
-        <span class="muted" id="ordnance-ammunition-note">@string.Join("; ", Ammunitions.Where(item => item.Unavailable is not null).Select(item => $"{LimboDancer.Domains.Asl.Rules.ScenarioA1Definitions.AmmunitionName(item.Ammunition)}: {item.Unavailable}"))</span>
+        <span class="muted" id="ordnance-ammunition-note">@string.Join("; ", Ammunitions.Where(item => item.Unavailable is not null || item.Equivalency is not null).Select(item => $"{LimboDancer.Domains.Asl.Rules.ScenarioA1Definitions.AmmunitionName(item.Ammunition)}: {item.Unavailable ?? item.Equivalency}"))</span>
     }
 }
 

@@ -165,23 +165,29 @@ public static class ScenarioA1ArmorLeaders
     public static FireAttack Recorded(FireAttack attack, FireResolution resolution)
     {
         ArgumentNullException.ThrowIfNull(attack);
+        ArgumentNullException.ThrowIfNull(resolution);
         var vehicles = Recorded(attack.Vehicles, Checked(resolution));
-        return ReferenceEquals(vehicles, attack.Vehicles) ? attack : attack with
+
+        // Pass 60: the AFV a FT, MOL, or DC names keeps its crew's Morale Level only when its TC or Specific Collateral Attack made the crew check.
+        var named = resolution.VehicleKill is { CrewCheck: not null } || resolution.SpecificCollateral is { Effect.CrewCheck: not null } ? attack.TargetVehicle
+            : WithoutMorale(attack.TargetVehicle);
+        return ReferenceEquals(vehicles, attack.Vehicles) && ReferenceEquals(named, attack.TargetVehicle) ? attack : attack with
         {
-            Vehicles = vehicles
+            Vehicles = vehicles,
+            TargetVehicle = named,
         };
     }
 
     /// <summary>
-    /// An ordnance shot's facts as its record keeps them (D3.41): the target crew's Morale Level only when the hit made it take its Shock NTC or
-    /// its Immobilization TC (C7.41, D5.5), and that of a vehicle in the hit Location only when the hit's IFT attack made its crew check.
+    /// An ordnance shot's facts as its record keeps them (D3.41): the target crew's Morale Level only when the hit made it take its Shock NTC, its
+    /// Immobilization TC, or the check of a Specific Collateral Attack (C7.41, D5.5, D.8A), and that of a vehicle in the hit Location only when the hit's IFT attack made its crew check.
     /// </summary>
     public static OrdnanceShot Recorded(OrdnanceShot shot, OrdnanceResolution resolution)
     {
         ArgumentNullException.ThrowIfNull(shot);
         ArgumentNullException.ThrowIfNull(resolution);
         var target = KillChecked(resolution) ? shot.VehicleTarget : WithoutMorale(shot.VehicleTarget);
-        var vehicles = Recorded(shot.Hit?.Vehicles, [.. Checked(resolution.Hit), .. Checked(resolution.CriticalHit)]);
+        var vehicles = Recorded(shot.Hit?.Vehicles, [.. Checked(resolution.Hit), .. Checked(resolution.CriticalHit), .. (resolution.LevelHits ?? []).SelectMany(Checked)]);
         if (ReferenceEquals(target, shot.VehicleTarget) && ReferenceEquals(vehicles, shot.Hit?.Vehicles))
         {
             return shot;
@@ -214,10 +220,16 @@ public static class ScenarioA1ArmorLeaders
     public static FireAttack Pending(FireAttack attack, IReadOnlyCollection<string> unrevealed, Func<string, int?>? morale = null)
     {
         ArgumentNullException.ThrowIfNull(attack);
+        ArgumentNullException.ThrowIfNull(unrevealed);
         var vehicles = Pending(attack.Vehicles, unrevealed, morale);
-        return ReferenceEquals(vehicles, attack.Vehicles) ? attack : attack with
+        var named = attack.TargetVehicle is { VehicleId: { } id } target && unrevealed.Contains(id) ? target with
         {
-            Vehicles = vehicles
+            CrewMorale = morale?.Invoke(id)
+        } : attack.TargetVehicle;
+        return ReferenceEquals(vehicles, attack.Vehicles) && ReferenceEquals(named, attack.TargetVehicle) ? attack : attack with
+        {
+            Vehicles = vehicles,
+            TargetVehicle = named,
         };
     }
 
@@ -274,7 +286,9 @@ public static class ScenarioA1ArmorLeaders
         CrewMorale = null
     };
 
-    private static bool KillChecked(OrdnanceResolution resolution) => resolution.Kill is { ShockCheck: not null } or { CrewCheck: not null };
+    // D.8A (pass 60): the crew's check in a Specific Collateral Attack is a check of the target's crew too.
+    private static bool KillChecked(OrdnanceResolution resolution) =>
+        resolution.Kill is { ShockCheck: not null } or { CrewCheck: not null } || resolution.SpecificCollateral is { Effect.CrewCheck: not null };
 
     /// <summary>
     /// The state's vehicles compared with a record's (D3.41): a crew's Morale Level the record left out is left out of the comparison; one the
@@ -307,6 +321,14 @@ public static class ScenarioA1ArmorLeaders
         ArgumentNullException.ThrowIfNull(resolution);
         return KillChecked(resolution) && state.VehicleTarget is { CrewMorale: not null } && recorded.VehicleTarget is not { CrewMorale: not null } ? UnrecordedMorale
             : RecordRefusal(state.Hit?.Vehicles, recorded.Hit?.Vehicles, [.. Checked(resolution.Hit), .. Checked(resolution.CriticalHit)]);
+    }
+
+    /// <summary>The same for the AFV a FT, MOL, or DC named (pass 60): its crew's TC or Specific Collateral Attack check.</summary>
+    public static string? RecordRefusal(OrdnanceVehicleTarget? state, OrdnanceVehicleTarget? recorded, FireResolution resolution)
+    {
+        ArgumentNullException.ThrowIfNull(resolution);
+        return (resolution.VehicleKill is { CrewCheck: not null } || resolution.SpecificCollateral is { Effect.CrewCheck: not null })
+            && state is { CrewMorale: not null } && recorded is not { CrewMorale: not null } ? UnrecordedMorale : null;
     }
 
     private const string UnrecordedMorale = "The record's crew check is not made at the Morale Level of the vehicle's Armor Leader or Inexperienced Crew (D3.42, D3.45).";

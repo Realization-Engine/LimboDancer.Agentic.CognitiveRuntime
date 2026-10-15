@@ -27,6 +27,12 @@ public sealed record OrdnanceVehicleTargetStateFacts(
     {
         get; init;
     }
+
+    /// <summary>Whether its crew is CE (D5.3; pass 60): Vulnerable to a Specific Collateral Attack (D.8A).</summary>
+    public bool CrewExposed
+    {
+        get; init;
+    }
 }
 
 /// <summary>

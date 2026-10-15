@@ -103,6 +103,13 @@ public static class ScenarioA1OrdnanceMapRules
     public static bool? HeightAdvantage(bool? read, int? hexsideTem, bool areaTargetType = false) => read == true && hexsideTem is not > 0 && !areaTargetType ? true : null;
 
     /// <summary>
+    /// C8.31 (p. 178; pass 60, ruling R60.4): whether a HEAT shot with no vehicle named is at Infantry "receiving a wall ... TEM" from the firer, as the
+    /// fire probe's read of the hexside found it (B9.3). Null for every other shot, so that no record gains the fact but a HEAT shot at Infantry.
+    /// </summary>
+    public static bool? HeatWallTem(bool vehicleTarget, string? ammunition, string? hexsideTerrain) =>
+        !vehicleTarget && ammunition == "heat" && hexsideTerrain == "wall" ? true : null;
+
+    /// <summary>
     /// C13.8 (p. 185), its last sentence: "These weapons [PF/PFk, BAZ, PSK, RCL] also may not fire at a target two or more levels higher in an
     /// adjacent hex, or directly above them in the same hex." C2.6 frees a LATW of its own limit, so this one is the weapon's. An ATR is not
     /// one of "these weapons". <paramref name="targetAbove"/> is the target's elevation less the firer's.
@@ -115,10 +122,13 @@ public static class ScenarioA1OrdnanceMapRules
                 + "two or more levels is too steep (C13.8)"
         : null;
 
-    /// <summary>B23.423, C13.8, C13.81 (rulings R9.8, R9.11): a mortar fires from no building, a PF or PSK from no building's upper level.</summary>
-    public static string? SupportWeaponLocationRefusal(string? latwType, bool building, int level)
+    /// <summary>
+    /// B23.423, C13.8, C13.81 (rulings R9.8, R9.11): a mortar fires from no building, a PF or PSK from no building's upper level. A MG fired as ordnance
+    /// (<paramref name="machineGun"/>; pass 60) is held to neither.
+    /// </summary>
+    public static string? SupportWeaponLocationRefusal(string? latwType, bool building, int level, bool machineGun = false)
     {
-        if (latwType is null && building)
+        if (latwType is null && building && !machineGun)
         {
             return "play.ordnance-mortar-building: a mortar does not fire from a building Location (B23.423)";
         }

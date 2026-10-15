@@ -39,6 +39,28 @@ public static class ScenarioA1OrdnanceEligibility
         return mannedByKind == "asl:crew" && !unemplaced();
     }
 
+    /// <summary>
+    /// The unattended Gun of a target Location (C3.41, C11.4; pass 60, ruling R60.18), from the equipment there (its id, kind, definition, and whether a
+    /// unit mans it or a vehicle tows it): a Gun no one holds, with no gunshield and no Emplacement, the lowest id first; null when there is none.
+    /// </summary>
+    public static FireGunTarget? UnattendedGun(IEnumerable<(string Id, string Kind, string? DefinitionId, bool Held)> equipment)
+    {
+        ArgumentNullException.ThrowIfNull(equipment);
+        return equipment.Where(item => item.Kind == "asl:gun" && !item.Held).OrderBy(item => item.Id, StringComparer.Ordinal)
+            .Select(item => new FireGunTarget(item.Id, item.DefinitionId, null, false, false)).FirstOrDefault();
+    }
+
+    /// <summary>
+    /// A mortar's Area Acquisition of its target hex (C6.521, p. 176; pass 60, ruling R60.13): with no Acquisition of the target Location itself, the
+    /// level of the Gun's Acquisition of another Location of the same hex, which covers every Location of the hex; null when there is none or the
+    /// Gun is not a mortar. <paramref name="hexAcquisitions"/> are the levels of the Gun's Acquisitions in the target hex.
+    /// </summary>
+    public static int? AreaAcquisition(bool mortar, int locationAcquisition, IEnumerable<int> hexAcquisitions)
+    {
+        ArgumentNullException.ThrowIfNull(hexAcquisitions);
+        return mortar && locationAcquisition == 0 && hexAcquisitions.FirstOrDefault() is < 0 and var level ? level : null;
+    }
+
     /// <summary>A turreted AFV's TCA (D3.12; ruling R7.10): its recorded turret facing, or its VCA; facings as ints.</summary>
     public static int? TurretFacing(int? recorded, int? hull) => recorded ?? hull;
 
@@ -62,6 +84,7 @@ public static class ScenarioA1OrdnanceEligibility
             StunRecovery = facts.StunRecovery ? true : null,
             Bypass = facts.Bypass ? true : null,
             CrewMorale = facts.CrewMorale,
+            CrewExposed = facts.CrewExposed ? true : null,
         };
     }
 
@@ -173,6 +196,25 @@ public static class ScenarioA1OrdnanceEligibility
         abandoned ? $"play.ordnance-abandoned: {tank} is Abandoned, and its MA has no crew to fire it (D5.41)" : null;
 
     /// <summary>
+    /// Why a MG is not fired as ordnance (A9.61, p. 64; pass 60, ruling R60.19): only predesignated at a named AFV, and not by a squad barred from a SW
+    /// (<paramref name="squadRefusal"/>, A7.351), so that it fires alone. Null when it may.
+    /// </summary>
+    public static string? MachineGunRefusal(string mg, bool vehicleNamed, Func<string?> squadRefusal)
+    {
+        ArgumentNullException.ThrowIfNull(squadRefusal);
+        return !vehicleNamed
+            ? $"play.mg-to-kill: {mg} fires as ordnance only in a To Kill attack predesignated at a named AFV; at Infantry it fires on the IFT from the fire panel (A9.61)"
+            : squadRefusal();
+    }
+
+    /// <summary>
+    /// D7.21 (p. 207; pass 60, ruling R60.20): a unit that made CC Reaction Fire, and every SW and Gun it possesses, are marked with a CC counter "to
+    /// prohibit non-CC Reaction Fire attacks": no shot by a marked weapon or firer at the vehicle in its own Location. Null when none is marked.
+    /// </summary>
+    public static string? CcCounterRefusal(string firer, bool marked, bool atOwnLocation) =>
+        marked && atOwnLocation ? $"play.ordnance-cc-counter: {firer} is under a CC counter after CC Reaction Fire and makes no Non-CC Reaction Fire at the vehicle (D7.21)" : null;
+
+    /// <summary>
     /// Why a light mortar's possessor does not fire it (C9.2, A4.41; rulings R9.2): not in the AFPh after it moved, nor by a squad barred from a
     /// SW (<paramref name="squadRefusal"/>, read only when the mortar did not move). Null when it may.
     /// </summary>
@@ -277,6 +319,50 @@ public static class ScenarioA1OrdnanceEligibility
         ArgumentNullException.ThrowIfNull(captured);
         return active && (enemy || mortar) && !vehicle() && !captured() && (mover is null || mover());
     }
+
+    /// <summary>
+    /// Whether a vehicle in the target Location is attacked by an Infantry Target Type shot's hit (C3.32, C3.41, p. 169; pass 60, ruling R60.8): an
+    /// active enemy vehicle, outside the MPh. In the MPh only the moving units are a shot's targets (C3.4), and a moving vehicle beside them is
+    /// refused. The vehicle fact is read only when asked.
+    /// </summary>
+    public static bool LocationVehicle(bool infantryTargetType, bool active, bool enemy, bool mph, Func<bool> vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(vehicle);
+        return infantryTargetType && active && enemy && !mph && vehicle();
+    }
+
+    /// <summary>
+    /// Why a shot that names no vehicle is refused at a Location holding one (C3.31, C3.41, D.6; pass 60, ruling R60.8), or null: in the MPh a moving
+    /// vehicle beside the moving Infantry is not built; a PF's or an ATR's hit there is not built; and a Location of AFVs alone, with no Infantry
+    /// and no unarmored vehicle, is the Vehicle Target Type's, since the Infantry Target Type "cannot be used to attack an AFV".
+    /// </summary>
+    public static string? LocationVehicleRefusal(string vehicle, string target, bool mph, bool panzerfaustOrAtr, bool personnel, bool unarmoredVehicle) =>
+        mph ? $"play.ordnance-vehicle: {vehicle} moves in {target}; fire at it on the Vehicle Target Type by naming it, since a Defensive First Fire hit's "
+                + "attack on a moving vehicle beside the moving Infantry is not built (C3.31; rulings R25.10, R60.8)"
+            : panzerfaustOrAtr ? $"play.ordnance-vehicle: {vehicle} is in {target}; a PF's or an ATR's hit on a Location that holds a vehicle is not built, "
+                + "so fire at the vehicle by naming it (C13.31, C13.23; ruling R60.8)"
+            : !personnel && !unarmoredVehicle ? $"play.ordnance-vehicle: {target} holds only AFVs, which the Infantry Target Type cannot attack; fire at one on "
+                + "the Vehicle Target Type by naming it (C3.41, D.6)"
+            : null;
+
+    /// <summary>
+    /// Whether a vehicle of the target hex is attacked by a mortar's Area Target Type hit (C3.332, C1.55, p. 170; pass 60, ruling R60.10): an active
+    /// vehicle of either side, the firer's own refused. The vehicle fact is read only when asked.
+    /// </summary>
+    public static bool AreaVehicle(bool mortar, bool active, Func<bool> vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(vehicle);
+        return mortar && active && vehicle();
+    }
+
+    /// <summary>
+    /// Why a mortar's shot is refused at a hex holding a vehicle (C3.332; pass 60, ruling R60.10), or null: a vehicle in Bypass, whose terrain is not the
+    /// hex's, and Defensive First Fire at a moving vehicle are not built.
+    /// </summary>
+    public static string? AreaVehicleRefusal(string vehicle, bool bypass, bool mph) =>
+        bypass ? $"play.ordnance-area-vehicle: {vehicle} is in Bypass in the target hex; a mortar's hit on a vehicle in Bypass is not built (B13.3, D2.3; ruling R60.12)"
+            : mph ? $"play.ordnance-area-vehicle: {vehicle} is in the target hex; a mortar's Defensive First Fire hit beside a moving vehicle is not built (C3.332; ruling R60.10)"
+            : null;
 
     /// <summary>The refusal of a target Location holding a unit outside the catalog.</summary>
     public const string TargetOutsideCatalogRefusal = "play.ordnance-target: the target Location holds a unit outside the catalog";
@@ -433,14 +519,31 @@ public static class ScenarioA1OrdnanceEligibility
                 Los = recorded.Hit.Los,
                 TargetTerrain = recorded.Hit.TargetTerrain,
                 Targets = recorded.Hit.Targets is null ? expected.Hit.Targets
-                    : [.. expected.Hit.Targets!.Zip(recorded.Hit.Targets, (fact, record) => fact with { KnownEnemyInLos = record.KnownEnemyInLos, Captors = record.Captors })],
+                    : [.. expected.Hit.Targets!.Zip(recorded.Hit.Targets, (fact, record) => fact with
+                    {
+                        KnownEnemyInLos = record.KnownEnemyInLos,
+                        Captors = record.Captors,
+
+                        // A7.72 (pass 60): an upper-level target's Encirclement is the planner's read of the map, recorded with the shot, as an IFT
+                        // attack's is (LiveFire); a mortar's hit on a building's upper level reads it.
+                        Encircled = fact.Encircled ?? record.Encircled,
+                    })],
 
                 // The owners' answers are declared, and the projector checks them against the choices made (ruling R5.8).
                 Choices = recorded.Hit.Choices,
 
                 // Backlog pass 16 (rulings R16.12, R16.13): the weather cushion of the hit's attack, from the SSRs.
                 CushionedOpenGround = recorded.Hit.CushionedOpenGround,
+
+                // D9.3 (pass 60, ruling R60.10): the AFV or wreck a mortar's target Infantry shelter beside, a map read; none in a record made before it.
+                AfvCover = recorded.Hit.AfvCover,
             },
+
+            // The facts of pass 60 that gate its rules for older records (ruling R60.3): C3.71's reversal of Height Advantage and a mortar's building
+            // Locations (B23.32); a record made before the pass has none and resolves as it did. Its Area Acquisition of the hex (C6.521) is a state read,
+            // held to the state in WithRecomputedStateFacts.
+            ReversesHeightAdvantage = recorded.ReversesHeightAdvantage,
+            AreaLocations = recorded.AreaLocations,
 
             // Backlog pass 16 (rulings R16.12 to R16.14): the weather cushion and the Extreme Winter B#, from the SSRs.
             CushionedOpenGround = recorded.CushionedOpenGround,
@@ -450,7 +553,13 @@ public static class ScenarioA1OrdnanceEligibility
             {
                 HullFacing = recorded.VehicleTarget?.HullFacing,
                 TurretFacing = recorded.VehicleTarget?.TurretFacing,
+
+                // D.8A (pass 60, ruling R60.3): the crew's exposure is read from the state only for a shot whose record carries the rule's fact.
+                CrewExposed = recorded.SpecificCollateral == true ? expected.VehicleTarget.CrewExposed : null,
             },
+
+            // The fact of pass 60 that gates the Specific Collateral Attack (D.8A); a record made before it has none and attacks no crew.
+            SpecificCollateral = recorded.SpecificCollateral,
 
             // The map reads of pass 8: the MP in the firer's LOS and Open Ground (C6.11, C6.14), the own-hex shot (C5.5), Bore Sighting (C6.4),
             // overstacking (A5.12, A5.131), and the Gun in the target Location with its Emplacement and gunshield (C11).
@@ -471,6 +580,9 @@ public static class ScenarioA1OrdnanceEligibility
 
             // The map read of pass 55: Height Advantage (B10.31); a record made before it has none.
             HeightAdvantage = recorded.HeightAdvantage,
+
+            // The map read of pass 60: a wall's TEM for HEAT at Infantry (C8.31); a record made before it has none, and was no such shot.
+            WallTem = recorded.WallTem,
 
             // The map read of pass 9: a PF fired from a ground-level building (C13.8).
             Panzerfaust = expected.Panzerfaust is null ? null : expected.Panzerfaust with
@@ -497,6 +609,10 @@ public static class ScenarioA1OrdnanceEligibility
             BoreSighted = boreSighted ? true : null,
             FirerOverstack = firerExcess is var over and > 0 ? over : null,
             TargetOverstack = merged.VehicleTarget is null && targetExcess() is var crowded and > 0 ? crowded : null,
+
+            // C6.521 (pass 60, rulings R60.3, R60.13; boundary review): a mortar's Area Acquisition of the hex, held to the state's for a record that
+            // carries it; a record made before the pass carries none and keeps none.
+            AreaAcquisition = recorded.AreaAcquisition is null ? null : merged.AreaAcquisition,
             Hit = merged.Hit! with
             {
                 GunTarget = recorded.Hit!.GunTarget is { } gunTarget && gunTargetEmplaced(gunTarget.GunId) is { } emplaced
