@@ -875,6 +875,9 @@ public sealed partial class GamePlanner
         {
             Choices = facts.Choices ?? new Dictionary<string, string>(StringComparer.Ordinal)
         };
+
+        // A9.74 (pass 60, rulings R60.3, R60.17): every attack planned from the pass on carries Random SW/Gun Destruction, with its targets' weapons.
+        facts = LiveFire.WithRandomDestruction(state, facts);
         var rollIds = new Dictionary<string, string>(resumed?.RollIds ?? new Dictionary<string, string>(), StringComparer.Ordinal);
         var rolls = new FireRolls(null, null, null, null, null);
         foreach (var (key, values) in resumed?.Values ?? [])
@@ -966,6 +969,13 @@ public sealed partial class GamePlanner
         {
             var target = facts.Targets!.First(item => item.UnitId == effect.UnitId);
             var attackedBroken = ScenarioA1FireFollowUps.AttackedWhileBroken(target, desperate);
+
+            // A9.74, C11.6 (pass 60, ruling R60.17): the unit's weapons are destroyed or malfunctioned before it drops them.
+            foreach (var payload in WeaponDestructionEvents(resolution.WeaponDestruction, effect.UnitId))
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, payload.Type, payload.Payload, package, null, [fireId]));
+            }
+
             foreach (var payload in EffectEvents(state, effect, attemptId, attackedBroken))
             {
                 events.Add(Event(scope, attemptId, events.Count + 1, expected, payload.Type, payload.Payload, package, null, [fireId]));
@@ -1110,6 +1120,26 @@ public sealed partial class GamePlanner
         foreach (var (id, captors) in ScenarioA1FireFollowUps.SurrenderPendings(resolution, attemptId))
         {
             events.Add(Event(scope, attemptId, events.Count + 1, expected, "surrender-pending", new SurrenderPending(id, captors), package, null, [fireId]));
+        }
+    }
+
+    /// <summary>
+    /// The events of what a KIA did to the weapons a unit held (A9.74), or a DC to the Gun it manned (C11.6; pass 60, ruling R60.17), as Rules decides
+    /// them: a weapon destroyed is eliminated, one malfunctioned is marked.
+    /// </summary>
+    internal static IEnumerable<(string Type, EventPayload Payload)> WeaponDestructionEvents(IReadOnlyList<FireWeaponDestruction>? fates, string holderId)
+    {
+        foreach (var fate in (fates ?? []).Where(item => item.HolderId == holderId))
+        {
+            if (fate.Fate == ScenarioA1GunDestruction.Destroyed)
+            {
+                yield return ("instance-eliminated", new InstanceEliminated(fate.EquipmentId));
+            }
+            else if (fate.Fate == ScenarioA1GunDestruction.Malfunctioned)
+            {
+                yield return ("conditions-changed", new ConditionsChanged(fate.EquipmentId,
+                    new Dictionary<string, ConditionState>(StringComparer.Ordinal) { [Conditions.Malfunctioned] = ConditionState.True }));
+            }
         }
     }
 

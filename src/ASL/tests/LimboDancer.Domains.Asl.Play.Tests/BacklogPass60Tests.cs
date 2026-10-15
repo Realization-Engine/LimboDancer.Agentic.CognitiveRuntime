@@ -630,4 +630,124 @@ public sealed class BacklogPass60Tests : IDisposable
         Assert.Equal(InstanceStatus.Wrecked, Current.Unit("ru-tank")!.Status);
         NoReplayErrors();
     }
+
+    // Increment 2e: Random SW and Gun Destruction (A9.74; ruling R60.17), an unattended Gun as a target (C3.41, C11.4; ruling R60.18), and the
+    // Emplacement a non-crew manning ends (C11.3). Two Russian squads in B9 fire 16 FP (PBF) at a German squad in B8 holding a LMG.
+
+    private async Task FireAtLmgSquad(params int[] dice)
+    {
+        await Setup("russian", "german", 1943, 7, Unit("r1", "asl:squad", "defender-squad", Beside, "russian"), Unit("r2", "asl:squad", "defender-squad", Beside, "russian"),
+            Unit("g1", "asl:squad", "attacker-squad", Target, "german"), Held("de-lmg", "asl:mg", "attacker-lmg", "g1", "german"));
+        Committed(await Do(GameActions.Fire, Once(dice), new
+        {
+            firers = new[] { "r1", "r2" },
+            target = Target,
+        }));
+    }
+
+    [Fact]
+    public async Task AKiaOnASquadHoldingALmgDestroysTheLmgOnItsDr()
+    {
+        // A9.74: IFT DR 3 on the 16 FP column is a 1KIA; the LMG's dr of 3 on the same column is a 1KIA too: it is eliminated before its squad, so it is
+        // not dropped. The record carries the rule and the weapons the target held (ruling R60.3).
+        var before = Revision;
+        await FireAtLmgSquad(1, 2, 3, 3);
+        var fire = LastFire(before);
+        Assert.True(fire.Facts.GetProperty("randomDestruction").GetBoolean());
+        Assert.Equal("de-lmg", fire.Facts.GetProperty("targets")[0].GetProperty("heldWeapons")[0].GetProperty("equipmentId").GetString());
+        var fate = fire.Resolution.GetProperty("weaponDestruction")[0];
+        Assert.Equal((3, "1KIA", "destroyed"), (fate.GetProperty("dr").GetInt32(), fate.GetProperty("result").GetString(), fate.GetProperty("fate").GetString()));
+        var eliminated = Since(before).Select(item => item.Payload).OfType<InstanceEliminated>().Select(item => item.Id).ToArray();
+        Assert.Equal(["de-lmg", "g1"], eliminated);
+        Assert.Equal(InstanceStatus.Eliminated, Current.Find("de-lmg")!.Status);
+        Assert.Contains(Since(before).Select(item => item.Payload).OfType<DiceRolled>(), roll => roll.Purpose == "fire-weapon-destruction");
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AnOlderRecordOfAKiaOnASquadHoldingALmgReplaysAsItWas()
+    {
+        // Ruling R60.3: the LMG's dr of 5 is a 3MC: unharmed, dropped in B8. The same record with the pass's facts taken out, as one made before the
+        // pass, replays with no dr read and the LMG dropped as before.
+        var before = Revision;
+        await FireAtLmgSquad(1, 2, 3, 5);
+        Assert.Equal("none", LastFire(before).Resolution.GetProperty("weaponDestruction")[0].GetProperty("fate").GetString());
+
+        var file = Directory.GetFiles(root, "*.game.json", SearchOption.AllDirectories).Single();
+        var game = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(file))!;
+        static void Older(System.Text.Json.Nodes.JsonNode? node)
+        {
+            if (node is System.Text.Json.Nodes.JsonObject item)
+            {
+                foreach (var name in item.Select(pair => pair.Key).Where(name => name is "randomDestruction" or "heldWeapons" || name.StartsWith("weaponDestruction", StringComparison.Ordinal)).ToArray())
+                {
+                    item.Remove(name);
+                }
+
+                foreach (var (_, value) in item.ToList())
+                {
+                    Older(value);
+                }
+            }
+            else if (node is System.Text.Json.Nodes.JsonArray items)
+            {
+                foreach (var value in items)
+                {
+                    Older(value);
+                }
+            }
+        }
+
+        Older(game);
+        File.WriteAllText(file, game.ToJsonString());
+        var older = LastFire(before);
+        Assert.False(older.Facts.TryGetProperty("randomDestruction", out _) || older.Resolution.TryGetProperty("weaponDestruction", out _));
+        NoReplayErrors();
+        Assert.Equal((InstanceStatus.Active, (Holding?)null), (Current.Find("de-lmg")!.Status, ((EquipmentInstance)Current.Find("de-lmg")!).Holding));
+        Assert.Equal(InstanceStatus.Eliminated, Current.Find("g1")!.Status);
+    }
+
+    [Fact]
+    public async Task AShotAtAnUnattendedGunDestroysItOnAKia()
+    {
+        // C3.41, C11.4 (ruling R60.18): the leIG 18 fires HE at the Russian 45mm alone in B8, no unit manning it: Case P +1 for its size, no gunshield
+        // or Emplacement; To Hit DR 7 hits, and the IFT DR 2 on the 12 FP column is a 1KIA: destroyed.
+        await Setup("german", "russian", 1943, 7, [.. Gun("de-gun", "attacker-inf-gun", "de-crew", "attacker-crew", Firer, "german", "north-east"),
+            new Dictionary<string, object>
+            {
+                ["id"] = "ru-gun",
+                ["kind"] = "asl:gun",
+                ["definition"] = "defender-at-gun",
+                ["side"] = "russian",
+                ["position"] = new Dictionary<string, string> { ["at"] = Target, ["facing"] = "south-west" },
+                ["conditions"] = new Dictionary<string, bool> { ["asl:malfunctioned"] = false },
+            }]);
+        var before = Revision;
+        Committed(await Shoot("de-gun", null, 3, 4, 1, 1));
+        var shot = LastShot(before);
+        var gunTarget = shot.Facts.GetProperty("hit").GetProperty("gunTarget");
+        Assert.Equal(("ru-gun", false), (gunTarget.GetProperty("gunId").GetString(), gunTarget.TryGetProperty("crewUnitId", out var crew) && crew.ValueKind == JsonValueKind.String));
+        Assert.Contains(shot.Resolution.GetProperty("toHit").GetProperty("drm").EnumerateArray(), item => item.GetProperty("name").GetString()!.StartsWith("case-p:", StringComparison.Ordinal));
+        Assert.Equal(("1KIA", "destroyed"), (shot.Resolution.GetProperty("hit").GetProperty("arithmetic").GetProperty("result").GetString(),
+            shot.Resolution.GetProperty("gunTargetFate").GetString()));
+        Assert.Equal(InstanceStatus.Eliminated, Current.Find("ru-gun")!.Status);
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AGunMannedByASquadLosesItsEmplacementForTheGame()
+    {
+        // C11.3 (ruling R60.18): a Gun that starts manned by a non-crew unit loses Emplacement; a crew that mans it later does not regain it. A shot
+        // recorded before the pass reads the Emplacement as it was read then.
+        await Setup("russian", "german", 1943, 7, Unit("r1", "asl:squad", "defender-squad", Target, "russian"),
+            Gun("ru-gun", "defender-at-gun", "r1", "defender-squad", Target, "russian", "south-west")[1], Unit("ru-crew", "asl:crew", "defender-crew", Target, "russian"));
+        Assert.Contains("ru-gun", Current.NonCrewMannedGuns);
+        var gun = (EquipmentInstance)Current.Find("ru-gun")!;
+        var crewed = Current with
+        {
+            Equipment = [.. Current.Equipment.Select(item => item.Id == gun.Id ? gun with { Holding = new Holding("ru-crew", HoldingRole.Manned) } : item)],
+        };
+        var manned = (EquipmentInstance)crewed.Find("ru-gun")!;
+        Assert.Equal((false, true), (LiveOrdnance.Emplaced(crewed, manned), LiveOrdnance.Emplaced(crewed, manned, nonCrewManning: false)));
+    }
 }

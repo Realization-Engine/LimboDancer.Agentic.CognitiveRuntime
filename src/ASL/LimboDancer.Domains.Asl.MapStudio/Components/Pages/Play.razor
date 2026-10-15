@@ -878,7 +878,7 @@ else if (state is not null)
                             Ready="@(ordnanceGun.Length > 0 && (canisterAims is not null ? canisterAims.Any(aim => aim.Id == ordnanceCanisterAim) : ordnanceTarget.Length > 0))" OnGun="@ChooseOrdnanceGun" OnSpotter="@(id => ordnanceSpotter = id)"
                             OnDirector="@(id => ordnanceDirector = id)" OnIntensive="@(on => ordnanceIntensive = on)" OnPropose="@ProposeOrdnance">
                             <Target>
-                                <OrdnanceTargetFields Targets="@([.. FireTargets(firing)])" Vehicles="@OrdnanceVehicleChoices(firing)" Ammunition="@OrdnanceAmmunitionKind"
+                                <OrdnanceTargetFields Targets="@([.. OrdnanceTargets(firing)])" Vehicles="@OrdnanceVehicleChoices(firing)" Ammunition="@OrdnanceAmmunitionKind"
                                     Fixed="@OrdnanceFixedAmmunition" Ammunitions="@OrdnanceAmmunitionChoices(shotAtVehicle)" Target="@ordnanceTarget" Vehicle="@ordnanceVehicle"
                                     Chosen="@(OrdnanceAmmunitionFor(shotAtVehicle) ?? (shotAtVehicle ? ordnanceAmmunition : ordnanceInfantryAmmunition))"
                                     OnTarget="@(at => { ordnanceTarget = at; ordnanceVehicle = string.Empty; })" OnVehicle="@(id => ordnanceVehicle = id)"
@@ -5634,6 +5634,20 @@ else if (state is not null)
         return view.Units.Where(unit => unit.Side != side && GameState.Condition(unit, Conditions.Captured) != ConditionState.True).Select(unit => view.Locations.TryGetValue(unit.Id, out var at) ? at.Location.ToString() : null)
             .Concat(view.Sealed.Where(item => item.Side != side).Select(item => item.Location.ToString()))
             .OfType<string>().Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
+    }
+
+    /// <summary>A Gun's targets: the fire targets, and each Location the view shows an unattended Gun in (C3.41, C11.4; pass 60, ruling R60.18).</summary>
+    private IEnumerable<string> OrdnanceTargets(string side)
+    {
+        if (state is null || history?.Current is null || state.Perspectives.FirstOrDefault(item => item.Name == side) is not { } perspective)
+        {
+            return [];
+        }
+
+        var view = GameView.Of(history, state.Revision, perspective, Live.Planner.OutOfSight(state, perspective));
+        return FireTargets(side).Concat(view.Equipment.Where(item => item.Kind == "asl:gun" && item.Holding is null && item.Status == InstanceStatus.Active)
+                .Select(item => view.Locations.TryGetValue(item.Id, out var at) ? at.Location.ToString() : null).OfType<string>())
+            .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal);
     }
 
     private Task ProposeFire()

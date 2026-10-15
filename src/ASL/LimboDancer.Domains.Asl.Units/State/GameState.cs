@@ -139,6 +139,12 @@ public sealed record GameState(
     /// <summary>The Guns whose Emplacement is lost: they moved, were hooked up, or set up otherwise (C11.3; ruling R8.3).</summary>
     public IReadOnlyList<string> UnemplacedGuns { get; init; } = [];
 
+    /// <summary>
+    /// The Guns ever manned by a non-crew unit (C11.3; pass 60, ruling R60.18), which never regain Emplacement. Kept apart from
+    /// <see cref="UnemplacedGuns"/> so that a shot recorded before the pass reads the Emplacement it was resolved with.
+    /// </summary>
+    public IReadOnlyList<string> NonCrewMannedGuns { get; init; } = [];
+
     /// <summary>The id suffix of a SMOKE grenade counter, which leaves at the end of its MPh (A24.11; ruling R9.5).</summary>
     public const string SmokeGrenadeSuffix = "-smoke-grenade";
 

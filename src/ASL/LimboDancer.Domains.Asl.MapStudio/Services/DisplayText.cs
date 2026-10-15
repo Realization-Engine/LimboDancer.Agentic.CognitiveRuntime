@@ -326,6 +326,7 @@ public static class DisplayText
         ["fire-heat-of-battle"] = "Heat of Battle DR",
         ["fire-leader-loss"] = "Leader Loss DR",
         ["fire-random-selection"] = "Random Selection dr",
+        ["fire-weapon-destruction"] = "Random SW/Gun Destruction dr",
         ["random-selection"] = "Random Selection dr",
         ["deployment"] = "Deployment NTC DR",
         ["shock-recovery"] = "Shock recovery dr",

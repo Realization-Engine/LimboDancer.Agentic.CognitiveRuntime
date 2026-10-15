@@ -31,6 +31,12 @@ public sealed record FireView(string EventId, string Group, string Target, strin
         get; init;
     }
 
+    /// <summary>What the attack's KIA did to the weapons its victims held, and a DC to a manned Gun, in lines (pass 60, ruling R60.17); null when nothing.</summary>
+    public IReadOnlyList<string>? WeaponDestruction
+    {
+        get; init;
+    }
+
     /// <summary>Whether several units fire, so the record's verb agrees: "fire", not "fires".</summary>
     public bool Several
     {
@@ -268,6 +274,24 @@ public static class FireText
 
         return lines;
     }
+
+    /// <summary>
+    /// What a KIA did to each weapon its victims held (A9.74), and a DC to the Gun its target units manned (C11.6), in lines (pass 60, ruling R60.17):
+    /// the dr on the attack's column, its result, and the weapon's fate. Empty when nothing was checked.
+    /// </summary>
+    public static IReadOnlyList<string> WeaponDestructionLines(IReadOnlyList<FireWeaponDestruction>? fates) =>
+        [.. (fates ?? []).Select(fate =>
+        {
+            var outcome = fate.Fate switch
+            {
+                ScenarioA1GunDestruction.Destroyed => "destroyed",
+                ScenarioA1GunDestruction.Malfunctioned => "malfunctioned",
+                _ => "unharmed",
+            };
+            return fate.Dr is { } dr
+                ? $"{fate.EquipmentId}, held by {fate.HolderId}: Random SW/Gun Destruction dr {dr} on the same column, {ResultText(fate.Result)}: {outcome} (A9.74)"
+                : $"{fate.EquipmentId}, the Gun {fate.HolderId} manned: the DC's {ResultText(fate.Result)} leaves it {outcome} (C11.6)";
+        })];
 
     /// <summary>A vehicle's Vehicle line result (A7.308, A7.309): the Kill Number, its Final DR, and any Unlikely Kill dr.</summary>
     public static string VehicleLineText(FireVehicleEffect hit)

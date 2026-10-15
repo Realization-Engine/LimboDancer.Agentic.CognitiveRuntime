@@ -166,6 +166,17 @@ public sealed record FireAttack(
         get; init;
     }
 
+    /// <summary>
+    /// Whether a Final KIA makes the weapons its victims held check for Random SW/Gun Destruction (A9.74, C8.42, C11.6, pp. 65, 178, 182; pass 60,
+    /// rulings R60.3, R60.17), and a DC destroys the Gun its target Location's units man. Set on every attack planned from the pass on and taken from
+    /// the record at replay; null on every older record, whose KIA destroys nothing.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? RandomDestruction
+    {
+        get; init;
+    }
+
     /// <summary>Whether the firing side is faced with No Quarter, for the Heat of Battle of an FPF NMC (A8.31, A20.3); null is false.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public bool? FiringSideNoQuarter
@@ -698,6 +709,18 @@ public sealed record FireWeapon(string? EquipmentId, string? DefinitionId, bool?
 /// </summary>
 public sealed record FireGunTarget(string? GunId, string? DefinitionId, string? CrewUnitId, bool? Emplaced, bool? Gunshield);
 
+/// <summary>
+/// A SW or Gun a target unit holds (A9.74, A9.8; pass 60, ruling R60.17): possessed, or a Gun it mans; whether it is malfunctioned. A dm SW is a SW.
+/// </summary>
+public sealed record FireHeldWeapon(string? EquipmentId, string? Kind, string? DefinitionId, bool? Malfunctioned);
+
+/// <summary>
+/// What a KIA did to a weapon its victim held (A9.74; pass 60, ruling R60.17), or a DC to the Gun of its target Location (C11.6): the dr read on the
+/// attack's column (null for a DC's Gun, read by the attack's own result), the IFT result, and the fate: <c>destroyed</c>, <c>malfunctioned</c>, or
+/// <c>none</c>.
+/// </summary>
+public sealed record FireWeaponDestruction(string EquipmentId, string HolderId, int? Dr, string Result, string Fate, string Rule);
+
 public sealed record FireFirer(
     string? UnitId,
     string? DefinitionId,
@@ -1010,6 +1033,16 @@ public sealed record FireTarget(
     {
         get; init;
     }
+
+    /// <summary>
+    /// The SW and Guns the unit holds (A9.74; pass 60, ruling R60.17), read from the state only when the attack carries
+    /// <see cref="FireAttack.RandomDestruction"/>; null is none.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<FireHeldWeapon>? HeldWeapons
+    {
+        get; init;
+    }
 }
 
 /// <summary>
@@ -1104,6 +1137,13 @@ public sealed record FireRolls(
     /// <summary>The MC or NTC DR of the crew of an AFV a FT, MOL, or DC attack names, in its Specific Collateral Attack (D.8A; pass 60).</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public IReadOnlyList<int>? CollateralCheck
+    {
+        get; init;
+    }
+
+    /// <summary>The Random SW/Gun Destruction dr of each weapon a unit eliminated by a Final KIA held (A9.74; pass 60, ruling R60.17).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyDictionary<string, int>? WeaponDestruction
     {
         get; init;
     }
@@ -1440,6 +1480,16 @@ public sealed record FireResolution(
     /// <summary>The Specific Collateral Attack on the CE crew of the AFV a FT, MOL, or DC names (D.8A; pass 60); null when there was none.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public OrdnanceCollateral? SpecificCollateral
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// What the attack's KIA did to the weapons its victims held (A9.74), and a DC to the Gun of its target Location (C11.6; pass 60, ruling R60.17), in
+    /// the order the units were attacked; null when there was none, and on every record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<FireWeaponDestruction>? WeaponDestruction
     {
         get; init;
     }

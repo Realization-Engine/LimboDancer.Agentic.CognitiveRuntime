@@ -164,6 +164,9 @@ public static class ScenarioA1FireFollowUps
             "crewSurvival" => (2, "fire-crew-survival"),
             "taskCheck" => (2, "fire-task-check"),
             "collateralCheck" => (2, "fire-collateral-check"),
+
+            // A9.74 (pass 60, ruling R60.17): a weapon's Random SW/Gun Destruction dr.
+            "weaponDestruction" => (1, "fire-weapon-destruction"),
             _ => (1, "fire-wound-severity"),
         };
         return new FireNextStep(false, null, key, count, purpose, null);

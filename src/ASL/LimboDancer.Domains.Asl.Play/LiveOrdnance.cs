@@ -576,13 +576,16 @@ public static class LiveOrdnance
         return ScenarioA1OrdnanceEligibility.BoreSighted(state.BoreSights.Select(item => (item.Gun, item.Location, item.Crew, item.SetupLocation)), gun, crew, from, target);
     }
 
-    /// <summary>Whether a Gun is Emplaced: manned by a crew, never moved or hooked up (C11.2, C11.3).</summary>
-    public static bool Emplaced(GameState state, EquipmentInstance gun)
+    /// <summary>
+    /// Whether a Gun is Emplaced: manned by a crew, never moved or hooked up (C11.2, C11.3), and, from pass 60 on (<paramref name="nonCrewManning"/>;
+    /// ruling R60.18), never manned by a non-crew unit.
+    /// </summary>
+    public static bool Emplaced(GameState state, EquipmentInstance gun, bool nonCrewManning = true)
     {
         ArgumentNullException.ThrowIfNull(state);
         ArgumentNullException.ThrowIfNull(gun);
         return ScenarioA1OrdnanceEligibility.Emplaced(gun.Holding is { Role: HoldingRole.Manned } manning ? state.Unit(manning.Holder)?.Kind : null,
-            () => state.UnemplacedGuns.Contains(gun.Id, StringComparer.Ordinal));
+            () => state.UnemplacedGuns.Contains(gun.Id, StringComparer.Ordinal) || (nonCrewManning && state.NonCrewMannedGuns.Contains(gun.Id, StringComparer.Ordinal)));
     }
 
     /// <summary>A turreted AFV's TCA: its recorded turret facing, or its VCA (D3.12; ruling R7.10).</summary>
@@ -757,9 +760,21 @@ public sealed class OrdnanceRecordVerifier(ScenarioA1OrdnanceReference reference
         var gunAt = state.Location(fired.Gun)?.Location ?? state.Location(fired.Crew)?.Location ?? fired.Target;
         var firingSide = state.Unit(fired.Crew)?.Side ?? string.Empty;
         var enemy = state.Sides.FirstOrDefault(item => item.Id != firingSide)?.Id ?? string.Empty;
+        // C11.3 (pass 60, rulings R60.3, R60.18): a shot that carries the pass's rule reads the Emplacement a non-crew manning ended; an older one reads
+        // the state as it was read before the pass.
+        var passSixty = recorded.Hit.RandomDestruction == true;
         merged = ScenarioA1OrdnanceEligibility.WithRecomputedStateFacts(merged, recorded, LiveOrdnance.BoreSighted(state, fired.Gun, fired.Crew, gunAt, fired.Target),
             LiveStacking.Of(state, gunAt, firingSide).AttackPenalty, () => LiveStacking.Of(state, fired.Target, enemy).DefensePenalty,
-            gunId => state.Find(gunId ?? string.Empty) is EquipmentInstance targetGun ? LiveOrdnance.Emplaced(state, targetGun) : null);
+            gunId => state.Find(gunId ?? string.Empty) is EquipmentInstance targetGun ? LiveOrdnance.Emplaced(state, targetGun, passSixty) : null);
+
+        // A9.74, C8.42 (pass 60, rulings R60.3, R60.17): a shot that carries the rule names the weapons its targets hold, held to the state's.
+        if (passSixty)
+        {
+            merged = merged with
+            {
+                Hit = LiveFire.WithRandomDestruction(state, merged.Hit!)
+            };
+        }
 
         // D3.41, D3.42 (pass 55, rulings R55.15, R55.17): a record keeps a target crew's Morale Level only when the shot made that crew check, so
         // one it leaves out is left out of the comparison; the checks it holds are held to the state's below.

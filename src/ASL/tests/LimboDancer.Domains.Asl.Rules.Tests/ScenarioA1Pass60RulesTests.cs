@@ -950,4 +950,153 @@ public sealed class ScenarioA1Pass60RulesTests
         // The proposal states the Final TK# and its modifiers.
         Assert.Contains("Final TK# 10", ScenarioA1FireCalculator.NamedVehicleTerms(AtAfv(FtSquad(), Named()), Reference.Fire), StringComparison.Ordinal);
     }
+
+    // Increment 2e: Random SW and Gun Destruction (A9.74, C8.42, C11.6, pp. 65, 178, 182; rulings R60.3, R60.17), an unattended Gun as a target (C3.41,
+    // C11.4; ruling R60.18), and a DC at a manned Gun (C11.6). Two Russian squads ADJACENT fire 16 FP (PBF) at a German squad in the open.
+
+    private static FireHeldWeapon Held(string id, string definition, string kind = "asl:mg", bool malfunctioned = false) =>
+        new(id, kind, definition, malfunctioned ? true : null);
+
+    private static FireAttack Volley(bool fact, params FireHeldWeapon[] held) =>
+        new FireAttack("PFPh", "phasing", true, FiredFrom, At, [Squad(), Squad("ru-2")], null, 1, true, new FireLos(false, 0, true, false), 7, "open-ground",
+            [Target("de-s", "attacker-squad") with { HeldWeapons = held.Length > 0 ? held : null }], 3, new FireRolls(null, null, null, null))
+        {
+            RandomDestruction = fact ? true : null,
+        };
+
+    /// <summary>Resolves a fire attack on the given IFT DR, each weapon's Random SW/Gun Destruction dr as given, every other dr 3 and DR 3, 4.</summary>
+    private static FireResolution Ift(FireAttack attack, int[] dice, int weaponDr = 3)
+    {
+        var rolls = new FireRolls(dice, null, null, null);
+        for (var step = 0; step < 20; step++)
+        {
+            var result = ScenarioA1FireCalculator.Resolve(attack with
+            {
+                Rolls = rolls
+            }, Reference.Fire);
+            if (result.Reasons is not [{ } reason] || !reason.StartsWith("asl.a1.fire.roll-missing:", StringComparison.Ordinal))
+            {
+                Assert.True(result.Disposition == FireResolution.Resolved, string.Join("; ", result.Reasons));
+                return result;
+            }
+
+            var key = reason["asl.a1.fire.roll-missing:".Length..];
+            var unit = key[(key.IndexOf(':', StringComparison.Ordinal) + 1)..];
+            rolls = key.Split(':')[0] switch
+            {
+                "randomSelection" => rolls with { RandomSelection = unit.Split(',').ToDictionary(id => id, _ => 3) },
+                "weaponDestruction" => rolls with { WeaponDestruction = new Dictionary<string, int>(rolls.WeaponDestruction ?? new Dictionary<string, int>()) { [unit] = weaponDr } },
+                "checks" => rolls with { Checks = new Dictionary<string, IReadOnlyList<int>>(rolls.Checks ?? new Dictionary<string, IReadOnlyList<int>>()) { [unit] = [3, 4] } },
+                "leaderLoss" => rolls with { LeaderLoss = new Dictionary<string, IReadOnlyList<int>>(rolls.LeaderLoss ?? new Dictionary<string, IReadOnlyList<int>>()) { [unit] = [3, 4] } },
+                _ => rolls with { WoundSeverity = new Dictionary<string, int>(rolls.WoundSeverity ?? new Dictionary<string, int>()) { [unit] = 3 } },
+            };
+        }
+
+        throw new InvalidOperationException("The attack asked for too many rolls.");
+    }
+
+    [Fact]
+    public void TheGunDestructionTableReadsEachColumn()
+    {
+        // C11.6 (p. 182): ordnance: a KIA or a CH eliminates, a K malfunctions (eliminates when AP was fired, note 5); small arms: a KIA is A9.74's,
+        // a K and a CH NA; a DC: a KIA eliminates, a K malfunctions.
+        Assert.Equal(("destroyed", "malfunctioned", "destroyed", "destroyed"), (ScenarioA1GunDestruction.Fate(ScenarioA1GunDestruction.Ordnance, "1KIA", false),
+            ScenarioA1GunDestruction.Fate(ScenarioA1GunDestruction.Ordnance, "K/2", false), ScenarioA1GunDestruction.Fate(ScenarioA1GunDestruction.Ordnance, "K/2", false, true),
+            ScenarioA1GunDestruction.Fate(ScenarioA1GunDestruction.Ordnance, "2MC", true)));
+        Assert.Equal(("random-destruction", (string?)null), (ScenarioA1GunDestruction.Fate(ScenarioA1GunDestruction.SmallArms, "2KIA", false),
+            ScenarioA1GunDestruction.Fate(ScenarioA1GunDestruction.SmallArms, "K/3", true)));
+        Assert.Equal(("destroyed", "malfunctioned", (string?)null), (ScenarioA1GunDestruction.Fate(ScenarioA1GunDestruction.DemolitionCharge, "3KIA", false),
+            ScenarioA1GunDestruction.Fate(ScenarioA1GunDestruction.DemolitionCharge, "K/4", false), ScenarioA1GunDestruction.Fate(ScenarioA1GunDestruction.DemolitionCharge, "1MC", false)));
+    }
+
+    [Fact]
+    public void AKiaMakesTheVictimsWeaponsRollOnTheSameColumn()
+    {
+        // A9.74 (p. 65): 16 FP, IFT DR 3: 1KIA eliminates the squad; its LMG's dr is read on the 16 FP column with no DRM: 3 is a 1KIA (destroyed),
+        // 4 a K/3 (malfunctioned), 5 a 3MC (unharmed).
+        var lmg = Held("de-lmg", "attacker-lmg");
+        var destroyed = Ift(Volley(true, lmg), [1, 2], weaponDr: 3);
+        Assert.True(destroyed.Effects.Single().Eliminated);
+        var fate = destroyed.WeaponDestruction!.Single();
+        Assert.Equal(("de-lmg", "de-s", 3, "1KIA", "destroyed", "A9.74"), (fate.EquipmentId, fate.HolderId, fate.Dr!.Value, fate.Result, fate.Fate, fate.Rule));
+        Assert.Equal(("K/3", "malfunctioned"), (Ift(Volley(true, lmg), [1, 2], weaponDr: 4).WeaponDestruction!.Single().Result,
+            Ift(Volley(true, lmg), [1, 2], weaponDr: 4).WeaponDestruction!.Single().Fate));
+        Assert.Equal("none", Ift(Volley(true, lmg), [1, 2], weaponDr: 5).WeaponDestruction!.Single().Fate);
+
+        // A K on a malfunctioned MG, or on a SW with an X# (the PSK), eliminates it.
+        Assert.Equal("destroyed", Ift(Volley(true, Held("de-lmg", "attacker-lmg", malfunctioned: true)), [1, 2], weaponDr: 4).WeaponDestruction!.Single().Fate);
+        Assert.Equal("destroyed", Ift(Volley(true, Held("de-psk", "attacker-psk", "asl:latw")), [1, 2], weaponDr: 4).WeaponDestruction!.Single().Fate);
+    }
+
+    [Fact]
+    public void NoDrOnAKOrCasualtyReductionNorWithoutThePassesFact()
+    {
+        // IFT DR 4: K/3 Casualty Reduces the squad, which is no KIA; and a record without the pass's fact destroys nothing on its KIA.
+        var lmg = Held("de-lmg", "attacker-lmg");
+        var reduced = Ift(Volley(true, lmg), [1, 3]);
+        Assert.Equal("K/3", reduced.Arithmetic!.Result);
+        Assert.Null(reduced.WeaponDestruction);
+        var older = Ift(Volley(false, lmg), [1, 2]);
+        Assert.True(older.Effects.Single().Eliminated);
+        Assert.Null(older.WeaponDestruction);
+    }
+
+    [Fact]
+    public void ACanisterKiaDestroysASwAsAnHeKiaDoes()
+    {
+        // C8.42 (p. 178): "A Canister KIA result has the same chance of destroying a SW in the hex as an HE KIA result". The 37LL's 20 FP of Canister
+        // at the adjacent hex, as Area Fire with no doubling (C8.41): 10 FP, the 8 FP column; IFT DR 2: 1KIA; the LMG's dr 2: 1KIA, destroyed.
+        var canister = new FireAttack("PFPh", "phasing", null, FiredFrom, At, null, null, 1, true, new FireLos(false, 0, true, false), 7, "open-ground",
+            [Target("de-s", "attacker-squad") with { HeldWeapons = [Held("de-lmg", "attacker-lmg")] }], 3, new FireRolls(null, null, null, null))
+        {
+            Canister = new FireCanister("ru-gun", 20) { AdjacentHexes = 1 },
+            RandomDestruction = true,
+        };
+        var result = Ift(canister, [1, 1], weaponDr: 2);
+        Assert.True(result.Effects.Single().Eliminated);
+        Assert.Equal(("1KIA", "destroyed"), (result.WeaponDestruction!.Single().Result, result.WeaponDestruction!.Single().Fate));
+    }
+
+    [Fact]
+    public void AnUnattendedGunIsATargetItsKiaDestroysItAndItsKMalfunctionsIt()
+    {
+        // C3.41, C11.4 (ruling R60.18): the leIG 18's HE at the Russian 45mm no unit mans: Case P for its small size, no Emplacement or gunshield; the IFT
+        // DR on its 12 FP column (C.6) decides: 2 is a 1KIA, destroyed; 3 a K/3, malfunctioned. Without a Gun the empty Location stays refused.
+        var lone = German(null, targets: []) with
+        {
+            Hit = German(null, targets: []).Hit! with
+            {
+                GunTarget = new FireGunTarget("ru-gun", "defender-at-gun", null, false, false)
+            }
+        };
+        var destroyed = Resolve(lone, [2, 3], ift: [1, 1]);
+        Resolved(destroyed);
+        Assert.Contains(destroyed.ToHit!.Drm, item => item.Name.StartsWith("case-p:", StringComparison.Ordinal));
+        Assert.DoesNotContain(destroyed.ToHit.Drm, item => item.Name == "case-q:emplacement");
+        Assert.Equal(("1KIA", "destroyed"), (destroyed.Hit!.Arithmetic!.Result, destroyed.GunTargetFate));
+        var malfunctioned = Resolve(lone, [2, 3], ift: [1, 2]);
+        Assert.Equal(("K/3", "malfunctioned"), (malfunctioned.Hit!.Arithmetic!.Result, malfunctioned.GunTargetFate));
+        Assert.Contains("asl.a1.ordnance.target-outside", Resolve(German(null, targets: []), [2, 3]).Reasons);
+    }
+
+    [Fact]
+    public void ADcDestroysTheGunItsTargetsManOnAKiaAndMalfunctionsItOnAK()
+    {
+        // C11.6's DC column: a Placed DC at the Russian 45mm's crew. 30 FP: a Final DR of 3 is a 3KIA, the crew and the Gun eliminated, no A9.74 dr
+        // for the Gun; 6 a K/4, the Gun malfunctioned; 7 a 4MC, the Gun untouched.
+        var charge = new FireAttack("AFPh", "phasing", null, FiredFrom, At, null, null, 1, true, null, 7, "open-ground",
+            [Target("ru-crew", "defender-crew") with { HeldWeapons = [Held("ru-gun", "defender-at-gun", "asl:gun")] }], 3, new FireRolls(null, null, null, null))
+        {
+            DemolitionCharge = new FireDemolitionCharge("de-dc", "attacker-dc", FireDemolitionCharge.Placed, "de-1", "attacker-squad", false, false, false, null),
+            RandomDestruction = true,
+        };
+        var killed = Ift(charge, [1, 2]);
+        Assert.Equal((3, "3KIA"), (killed.Arithmetic!.FinalDr, killed.Arithmetic.Result));
+        Assert.True(killed.Effects.Single().Eliminated);
+        Assert.Equal(("ru-gun", (int?)null, "destroyed", "C11.6"), (killed.WeaponDestruction!.Single().EquipmentId, killed.WeaponDestruction!.Single().Dr,
+            killed.WeaponDestruction!.Single().Fate, killed.WeaponDestruction!.Single().Rule));
+        var struck = Ift(charge, [2, 4]);
+        Assert.Equal(("K/4", "malfunctioned"), (struck.Arithmetic!.Result, struck.WeaponDestruction!.Single().Fate));
+        Assert.Null(Ift(charge, [3, 4]).WeaponDestruction);
+    }
 }

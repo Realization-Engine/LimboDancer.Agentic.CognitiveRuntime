@@ -575,7 +575,7 @@ public static class ScenarioA1OrdnanceCalculator
             outside.Add(Prefix + "target-outside");
         }
 
-        if ((hit.Targets!.Count == 0 && unarmored == 0 && !(mortar && inLocation.Count > 0)) || hit.TargetLocationId != shot.TargetLocationId || hit.Phase != shot.Phase || hit.FiringSide != shot.FiringSide
+        if ((hit.Targets!.Count == 0 && unarmored == 0 && !(mortar && inLocation.Count > 0) && !Unattended(shot)) || hit.TargetLocationId != shot.TargetLocationId || hit.Phase != shot.Phase || hit.FiringSide != shot.FiringSide
             || hit.Firers is { Count: > 0 } || hit.Director is not null || hit.FireKind is not null || hit.OrdnanceHit is not null)
         {
             outside.Add(Prefix + "target-outside");
@@ -888,7 +888,8 @@ public static class ScenarioA1OrdnanceCalculator
         // Known units together, is hit target by target, each on its own Final DR: Cases K, N, P, and Q are each target's own.
         var vehicles = HitVehicles(shot, reference);
         var mixed = vehicles.Count > 0 || (targetsHit.Any(Concealed) && !targetsHit.All(Concealed));
-        var concealedTarget = targetsHit.All(Concealed) && vehicles.All(item => item.Concealed == true);
+        // C11.4 (pass 60, ruling R60.18): an unattended Gun is a Known target.
+        var concealedTarget = targetsHit.All(Concealed) && vehicles.All(item => item.Concealed == true) && !Unattended(shot);
         if (concealedTarget && !mixed)
         {
             drm.Add(new FireModifier("case-k", 2, "C6.2"));
@@ -913,7 +914,8 @@ public static class ScenarioA1OrdnanceCalculator
         }
 
         var tem = ScenarioA1FireReference.Tem.GetValueOrDefault(hit.TargetTerrain!);
-        var gunTarget = ScenarioA1FireCalculator.GunCrewAlone(hit with
+        var unattended = Unattended(shot);
+        var gunTarget = unattended || ScenarioA1FireCalculator.GunCrewAlone(hit with
         {
             Targets = targetsHit
         }) ? hit.GunTarget : null;
@@ -1177,7 +1179,9 @@ public static class ScenarioA1OrdnanceCalculator
             // C3.32: every unit hit is attacked with a single Effects DR, so the normal hit reuses the Critical Hit's (C3.74).
             var others = targets.Where(item => !criticalTargets.Contains(item)).ToArray();
             var otherVehicles = struck.Where(item => !criticalVehicles.Contains(item)).ToArray();
-            if (others.Length > 0 || otherVehicles.Length > 0)
+
+            // C3.41, C11.4 (p. 182; pass 60, ruling R60.18): an unattended Gun alone takes the IFT DR for its own fate; a Critical Hit destroys it.
+            if (others.Length > 0 || otherVehicles.Length > 0 || (unattended && !critical))
             {
                 var hitRolls = criticalHit?.Arithmetic?.Dice is { } shared ? (rolls.Hit ?? new FireRolls(null, null, null, null)) with
                 {
@@ -1208,11 +1212,8 @@ public static class ScenarioA1OrdnanceCalculator
         {
             var result = (normal ?? criticalHit)?.Arithmetic?.Result ?? string.Empty;
             var armorPiercing = shot.VehicleTarget is null && (shot.Ammunition is "ap" or "apcr" or "apds" || gun.LatwType == "atr");
-            fate = criticalHit is not null ? "destroyed"
-                : (normal?.Arithmetic?.Drm.Any(item => item.Name.StartsWith("gunshield:", StringComparison.Ordinal)) ?? false) ? null
-                : System.Text.RegularExpressions.Regex.IsMatch(result, "^([1-7])?KIA$") ? "destroyed"
-                : System.Text.RegularExpressions.Regex.IsMatch(result, "^K/([1-4])$") ? armorPiercing ? "destroyed" : "malfunctioned"
-                : null;
+            fate = (normal?.Arithmetic?.Drm.Any(item => item.Name.StartsWith("gunshield:", StringComparison.Ordinal)) ?? false) && criticalHit is null ? null
+                : ScenarioA1GunDestruction.Fate(ScenarioA1GunDestruction.Ordnance, result, criticalHit is not null || (unattended && critical), armorPiercing);
         }
 
         return new OrdnanceResolution(OrdnanceResolution.Resolved, [], toHit, gunEffect)
@@ -1264,6 +1265,13 @@ public static class ScenarioA1OrdnanceCalculator
     /// <summary>Whether a Location is one a mortar's shot attacks (B23.32; pass 60, ruling R60.11): the named one, or another of its building hex.</summary>
     internal static bool InTargetHex(OrdnanceShot shot, string? locationId) =>
         locationId == shot.TargetLocationId || shot.AreaLocations?.Any(item => item.LocationId == locationId) == true;
+
+    /// <summary>
+    /// Whether an Infantry Target Type shot is at an unattended Gun (C3.41, C11.4, pp. 170, 182; pass 60, ruling R60.18): a Location whose only target
+    /// is a Gun no unit mans and no vehicle tows, with no gunshield and no Emplacement. The Area Target Type's is not built.
+    /// </summary>
+    internal static bool Unattended(OrdnanceShot shot) =>
+        shot.TargetType is null && shot.VehicleTarget is null && shot.Hit is { GunTarget: { CrewUnitId: null, GunId: not null }, Targets: { Count: 0 } } hit && hit.Vehicles is not { Count: > 0 };
 
     /// <summary>
     /// The units an Infantry Target Type hit attacks (C3.32): every in-LOS enemy unit of the Location, but only the Gun's manning crew for an ATR that

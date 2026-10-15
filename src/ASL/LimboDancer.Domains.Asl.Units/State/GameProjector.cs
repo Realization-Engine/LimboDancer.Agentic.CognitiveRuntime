@@ -255,6 +255,7 @@ public static class GameProjector
             next = KeepAcquisitions(previous, next, gameEvent.Payload);
             next = KeepPassengers(next);
             next = KeepArmorLeaders(next, gameEvent.Payload);
+            next = KeepNonCrewManning(next);
             next = next with
             {
                 Revision = gameEvent.Revision,
@@ -4206,6 +4207,21 @@ public static class GameProjector
             }
 
             return next;
+        }
+
+        /// <summary>
+        /// C11.3 (p. 182; pass 60, ruling R60.18): a Gun manned by a non-crew unit loses its Emplacement for the rest of the game; the state keeps every
+        /// Gun so manned since the game began, from setup on.
+        /// </summary>
+        private static GameState KeepNonCrewManning(GameState state)
+        {
+            var manned = state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Holding is { Role: HoldingRole.Manned } holding
+                    && state.Unit(holding.Holder) is { Kind: not "asl:crew" } && !state.NonCrewMannedGuns.Contains(item.Id, StringComparer.Ordinal))
+                .Select(item => item.Id).ToArray();
+            return manned.Length == 0 ? state : state with
+            {
+                NonCrewMannedGuns = [.. state.NonCrewMannedGuns, .. manned]
+            };
         }
 
         /// <summary>Equipment held by instances that leave play is left at their last location with no holder.</summary>

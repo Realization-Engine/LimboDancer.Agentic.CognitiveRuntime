@@ -586,6 +586,7 @@ public static class LiveFire
         Dictionary<string, IReadOnlyList<int>>? crewChecks = null;
         Dictionary<string, int>? unlikelyKill = null;
         int? molCheck = null;
+        Dictionary<string, int>? weaponDestruction = null;
         var named = new Dictionary<string, IReadOnlyList<int>>(StringComparer.Ordinal);
 
         // A selection roll names the units it selects among, one die each, in order.
@@ -681,6 +682,11 @@ public static class LiveFire
                 case "position" or "crewSurvival" or "taskCheck" or "collateralCheck" when roll.Count == 2 && unit.Length == 0:
                     named[kind] = roll.Values;
                     break;
+
+                // A9.74 (pass 60, ruling R60.17): a weapon's Random SW/Gun Destruction dr.
+                case "weaponDestruction" when roll.Count == 1 && unit.Length > 0:
+                    (weaponDestruction ??= new(StringComparer.Ordinal))[unit] = roll.Values[0];
+                    break;
                 default:
                     return null;
             }
@@ -700,6 +706,35 @@ public static class LiveFire
             CrewSurvival = named.GetValueOrDefault("crewSurvival"),
             TaskCheck = named.GetValueOrDefault("taskCheck"),
             CollateralCheck = named.GetValueOrDefault("collateralCheck"),
+            WeaponDestruction = weaponDestruction,
+        };
+    }
+
+    /// <summary>
+    /// An attack that carries A9.74 (pass 60, rulings R60.3, R60.17), with the SW and Guns each target unit holds read from the state: what it possesses,
+    /// and a Gun it mans. The planner gives it to every attack but an OVR's (whose A9.74 is backlog); replay reads the weapons again only for a record
+    /// that carries the rule.
+    /// </summary>
+    public static FireAttack WithRandomDestruction(GameState state, FireAttack attack)
+    {
+        ArgumentNullException.ThrowIfNull(state);
+        ArgumentNullException.ThrowIfNull(attack);
+        if (attack.Overrun is not null)
+        {
+            return attack;
+        }
+
+        return attack with
+        {
+            RandomDestruction = true,
+            Targets = attack.Targets is null ? null : [.. attack.Targets.Select(target => target with
+            {
+                HeldWeapons = state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Holding is { Role: HoldingRole.Possessed or HoldingRole.Manned } holding
+                        && holding.Holder == target.UnitId)
+                    .OrderBy(item => item.Id, StringComparer.Ordinal)
+                    .Select(item => new FireHeldWeapon(item.Id, item.Kind, item.Definition?.Definition, Is(item, Conditions.Malfunctioned) ? true : null))
+                    .ToArray() is { Length: > 0 } held ? held : null,
+            })],
         };
     }
 
@@ -981,6 +1016,13 @@ public sealed class FireRecordVerifier(ScenarioA1FireReference reference) : IFir
                     SeenByGoodOrderEnemy = record.SeenByGoodOrderEnemy
                 })],
         };
+        // A9.74 (pass 60, rulings R60.3, R60.17): a record that carries the rule names the weapons its targets hold, held to the state's; an older
+        // record carries neither, and its KIA destroys nothing.
+        if (recorded.RandomDestruction == true)
+        {
+            merged = LiveFire.WithRandomDestruction(state, merged);
+        }
+
         // D3.41, D3.42 (pass 55, rulings R55.15, R55.17): a record keeps a crew's Morale Level only when the attack made that crew check, so one
         // it leaves out is left out of the comparison; the checks it holds are held to the state's below.
         var stateVehicles = merged.Vehicles;

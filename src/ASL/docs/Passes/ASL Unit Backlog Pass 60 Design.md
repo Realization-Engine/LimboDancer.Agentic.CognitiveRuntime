@@ -232,3 +232,38 @@ Board 3, scripted dice; each game's file read back. The LOS from [K3] to both le
 | `p60-mtr-gun` | A Russian mortar at an Emplaced German INF Gun: Case P on the To Hit; the Emplacement's +2 taken over the gunshield's +1 (not cumulative, C11.2). Recorded. |
 
 Run by the agent: Rules, ten classes, 246 passed; Play, 147 passed; MapStudio 13; Units 50. After the change sent back: the pass 60 and pass 9 classes, Rules 49 and Play 29 passed.
+
+## 10. FT, MOL, and DC at an AFV: 60.3 (increment 2d)
+
+Built on 2026-10-15 in one commit (5913d7bb) by a building agent to a brief (`brief_2d.md`), its diff read and its games played in the Studio by the session.
+
+### 10.1 Departures from the frame, first
+
+Each decided under the user's word of 2026-10-15; each gets a backlog row.
+
+- **The Aerial AF is read from C7.11's row on p. 190** (a render): AF 0 and 1 give 0, 2 gives 1, 3 gives 2, 4 and 6 give 3, 8 and 11 give 4, over the worst AF of hull and turret, front and side (C7.12). Where the row leaves an AF blank (14, 18, 26), the lowest printed hull AF stands, as the brief said.
+- **A DC's malfunction on its Position DR** is the existing A23.4 number (12 for an elite owner, lower for a non-elite or captured DC, A23.2), not a flat 12.
+- **The DC's second DR** is drawn before the Position DR: it is the To Kill DR on a Final Position DR of 8 or less, the crew's new DR on 9 to 11, and the attack on the other units on 12 or more.
+- **Naming an AFV in a Location that also holds concealed or hidden units or a Dummy is refused** (`target-vehicle-concealed`): the attack's record would name them to the firing side.
+- **A Placed DC names its AFV when it is detonated,** and the facing is read then from the placement hex: a turret turned between the placement and the AFPh is not tracked. **A failed PAATC** pins the placer and writes no step.
+- **Not reached or not built:** the Bypass -2 (a DC is never Placed or Thrown into its own Location); Case B only when the attack carries the target's level above; C7.346's IFT attack through an unarmored Target Facing (no AFV of the catalog has one); a DC Placed where an unarmored or friendly vehicle is stays refused.
+- **R25.6's refusal of an AFV in positive TEM** is lifted only when the attack names the AFV; its crew then takes the CE DRM alone.
+- **Found in the Studio, for the reviews:** the thrown DC's vehicle list names the tank by its id and definition ("rt (defender-tank)") where the other panels use the side's label; and the DC's record keeps an IFT arithmetic line (15 FP, "2MC") that attacks no one, since the Area Fire on the other units applies only on a Position DR of 12 or more.
+
+### 10.2 What is built
+
+`ScenarioA1FlameKill` holds C7.34's Basic TK# (DC 16, FT 8, MOL 6), the FT/MOL and DC columns of C7.7, the Position bands, and the Aerial AF. `ScenarioA1FireCalculator` gains the named vehicle's attack: `NamedVehicleAttack`, `Position`, `ChargeKill`, `FlameKill`, and the Specific Collateral Attack after each through 2b's member. The fire request, the throw, and the detonation take an optional `vehicle`; the page's fire panel (`#fire-vehicle`), the throw panel (`#throw-dc-vehicle`), and the detonation (`button.detonate-dc-vehicle`) offer an AFV the side sees in the target Location; the proposal states the TK# and its modifiers, and the record lists the Position DR and the To Kill DR (`ul.fire-named-vehicle`).
+
+**New in a record:** `targetVehicle` (with `immobile`) on the fire attack's facts, absent from every older record, and every new branch is gated on it; the rolls `position`, `crewSurvival`, `taskCheck`, `collateralCheck`; `position`, `vehicleKill`, and `specificCollateral` in the resolution.
+
+### 10.3 The games and the tests
+
+Board 3, the attacker in [F9], the AFV in [F10] facing south-east, scripted dice; each game's file read back.
+
+| Game | What it shows |
+|---|---|
+| `p60-ft-afv` | A Russian FT names a CE PzKpfw IIIH: TK# 8, +1 CE, +1 through the rear, no AF, Final 10; DR 5 burns it. Recorded. |
+| `p60-mol-afv` | A Russian MOL at a CE PzKpfw IIIH beside a German squad: the Check passes on 1; DR 7 under Final TK# 8 (6, +1 CE, +1 rear) burns it; the squad takes the 8 FP of Point Blank Fire alone, D9.3's +1, an NMC passed. Recorded. |
+| `p60-dc-afv` | A German DC thrown at a BU T-34: Position 4, +2 thrown, -1 hull rear, Final 5, the Aerial AF 3; TK# 16 +1 rear -3 = 14; DR 5 burns it; the thrower's own Location at +3 on its own DR, a 1MC and a pin. Recorded. |
+
+Run by the agent: Rules, the pass 60 class 40 passed and the fire and ordnance classes 202; Play, 190; MapStudio, 45; after the last edit, Play 101 and Rules 55, all passed.

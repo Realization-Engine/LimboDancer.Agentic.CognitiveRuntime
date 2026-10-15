@@ -481,7 +481,16 @@ public sealed class PlayRecords
                         {
                             parts.Add($"{vehicle.VehicleId}: " + (vehicle.KillNumber is not null ? FireText.VehicleLineText(vehicle) : FireText.CrewText(vehicle)));
                         }
+
+                        // A9.74, C8.42 (pass 60, ruling R60.17): what the hit's KIA did to its victims' weapons.
+                        parts.AddRange(FireText.WeaponDestructionLines(attack.WeaponDestruction));
                     }
+                }
+
+                // C11.4, C11.6 (pass 60, ruling R60.18): the fate of the Gun the shot was at, a crewed or an unattended one.
+                if (resolution.GunTargetFate is { } gunFate && shot?.Hit?.GunTarget?.GunId is { } struckGun)
+                {
+                    parts.Add($"{struckGun}: a Direct Hit, {(gunFate == ScenarioA1GunDestruction.Destroyed ? "destroyed" : "malfunctioned")} (C11.4)");
                 }
 
                 // C8.9, C8.2 (pass 55): the number the shot was fired under, with the one an Elite force adds, as the record itself names it.
@@ -603,6 +612,9 @@ public sealed class PlayRecords
 
                         // Pass 60 (rulings R60.15, R60.16): the AFV a FT, MOL, or DC named.
                         NamedVehicle = facts?.TargetVehicle?.VehicleId is { } namedId ? FireText.NamedVehicleLines(namedId, resolution) : null,
+
+                        // Pass 60 (ruling R60.17): what the KIA did to its victims' weapons.
+                        WeaponDestruction = resolution.WeaponDestruction is { Count: > 0 } ? FireText.WeaponDestructionLines(resolution.WeaponDestruction) : null,
                         BrokenBefore = before.Where(target => target.Broken == true && target.UnitId is not null).Select(target => target.UnitId!).ToHashSet(StringComparer.Ordinal),
                         PinnedBefore = before.Where(target => target.Pinned == true && target.UnitId is not null).Select(target => target.UnitId!).ToHashSet(StringComparer.Ordinal),
                     });

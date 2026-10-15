@@ -155,6 +155,12 @@ public sealed partial class GamePlanner
         }
 
         shot = PassEightFacts(state, map.Value.Shot, target);
+
+        // A9.74, C8.42 (pass 60, rulings R60.3, R60.17): the hit's KIA checks the weapons its victims hold.
+        shot = shot with
+        {
+            Hit = LiveFire.WithRandomDestruction(state, shot.Hit!)
+        };
         var reference = OrdnanceReference.Value;
         var precheck = ScenarioA1OrdnanceCalculator.Precheck(shot, reference);
         if (precheck.Count != 0)
@@ -629,6 +635,18 @@ public sealed partial class GamePlanner
                 }
             };
         }
+        else if (shot.VehicleTarget is null && shot.TargetType is null && shot.Hit is { Targets.Count: 0 } && shot.Hit.Vehicles is not { Count: > 0 }
+            && UnattendedGunAt(state, target) is { } lone)
+        {
+            // C3.41, C11.4 (pass 60, ruling R60.18): a Location whose only target is an unattended Gun.
+            shot = shot with
+            {
+                Hit = shot.Hit with
+                {
+                    GunTarget = lone
+                }
+            };
+        }
 
         // C5.31 to C5.33 (pass 50): the MP a Bounding First Firer has spent in a continuous LOS to its target; a LOS is the same both ways.
         if (shot.FireKind == ScenarioA1FireCalculator.BoundingFirstFire && shot.Vehicle is { } boundingFirer)
@@ -692,6 +710,14 @@ public sealed partial class GamePlanner
         var moving = state.Phase == "mph" && state.Movement?.Movers.Contains(crew.Id) == true;
         return new FireGunTarget(gun.Id, gun.Definition?.Definition, crew.Id, emplaced, ScenarioA1OrdnanceMapRules.Gunshield(definition?.GunType, withinCa, crewKind, moving));
     }
+
+    /// <summary>
+    /// The unattended Gun in a target Location (C3.41, C11.4; pass 60, ruling R60.18): one no unit mans and no vehicle tows, with no gunshield and no
+    /// Emplacement; null when there is none.
+    /// </summary>
+    internal static FireGunTarget? UnattendedGunAt(GameState state, BoardLocation target) =>
+        state.Equipment.Where(item => item.Status == InstanceStatus.Active && item.Kind == "asl:gun" && item.Holding is null && item.Position is MapPosition at && at.Location == target)
+            .OrderBy(item => item.Id, StringComparer.Ordinal).Select(item => new FireGunTarget(item.Id, item.Definition?.Definition, null, false, false)).FirstOrDefault();
 
     /// <summary>
     /// A target Location as a Gun's crew reads it (C3.2, C2.25; ruling R8.9): its own Location (Case E), no LOS, beyond the Gun's range, within its
@@ -936,6 +962,13 @@ public sealed partial class GamePlanner
             {
                 var target = facts.Hit.Targets!.First(item => item.UnitId == effect.UnitId);
                 var attackedBroken = target.Broken == true && desperate(target.Concealed == true || target.Hidden == true || target.Dummy == true);
+
+                // A9.74, C8.42 (pass 60, ruling R60.17): the unit's weapons are destroyed or malfunctioned before it drops them.
+                foreach (var payload in WeaponDestructionEvents(attack.WeaponDestruction, effect.UnitId))
+                {
+                    events.Add(Event(scope, attemptId, events.Count + 1, expected, payload.Type, payload.Payload, package, null, [recordId]));
+                }
+
                 foreach (var payload in EffectEvents(state, effect, attemptId, attackedBroken))
                 {
                     events.Add(Event(scope, attemptId, events.Count + 1, expected, payload.Type, payload.Payload, package, null, [recordId]));
@@ -1285,6 +1318,9 @@ public sealed partial class GamePlanner
             // Pass 60 (ruling R60.8): a vehicle crew's check and the Unlikely Kill dr of a hit on a Location holding vehicles.
             "crewCheck" => (2, "fire-crew-check"),
             "unlikelyKill" => (1, "fire-unlikely-kill"),
+
+            // A9.74 (pass 60, ruling R60.17): a weapon's Random SW/Gun Destruction dr.
+            "weaponDestruction" => (1, "fire-weapon-destruction"),
             _ => (1, "fire-wound-severity"),
         };
     }
@@ -1325,6 +1361,9 @@ public sealed partial class GamePlanner
             "crewSurvival" => rolls with { CrewSurvival = values },
             "taskCheck" => rolls with { TaskCheck = values },
             "collateralCheck" => rolls with { CollateralCheck = values },
+
+            // A9.74 (pass 60, ruling R60.17): a weapon's Random SW/Gun Destruction dr.
+            "weaponDestruction" => rolls with { WeaponDestruction = Add(rolls.WeaponDestruction, unit, values[0]) },
             _ => rolls with { WoundSeverity = Add(rolls.WoundSeverity, unit, values[0]) },
         };
     }

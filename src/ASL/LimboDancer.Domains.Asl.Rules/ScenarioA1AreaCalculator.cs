@@ -312,7 +312,9 @@ internal static class ScenarioA1AreaCalculator
                 }
 
                 // Pass 60: the Fire package's rolls of one Location's attack, when several are attacked.
-                var hitRolls = levels is null ? rolls.Hit : Filtered(rolls.Hit, [.. units.Select(item => item.UnitId!), .. struck.Select(item => item.VehicleId!)]);
+                // A9.74 (ruling R60.17): with the dr of each weapon those units hold.
+                var hitRolls = levels is null ? rolls.Hit : Filtered(rolls.Hit, [.. units.Select(item => item.UnitId!), .. struck.Select(item => item.VehicleId!),
+                    .. units.SelectMany(item => item.HeldWeapons ?? []).Select(item => item.EquipmentId).OfType<string>()]);
                 if (shared is not null)
                 {
                     hitRolls = (hitRolls ?? new FireRolls(null, null, null, null)) with
@@ -444,6 +446,7 @@ internal static class ScenarioA1AreaCalculator
             BerserkChecks = Keep(rolls.BerserkChecks),
             CrewChecks = Keep(rolls.CrewChecks),
             UnlikelyKill = Keep(rolls.UnlikelyKill),
+            WeaponDestruction = Keep(rolls.WeaponDestruction),
         };
     }
 

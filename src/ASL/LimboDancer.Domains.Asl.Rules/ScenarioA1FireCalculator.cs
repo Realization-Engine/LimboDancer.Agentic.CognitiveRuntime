@@ -1167,7 +1167,8 @@ public static class ScenarioA1FireCalculator
         || rolls.UnlikelyKill?.Values.Any(dr => dr is < 1 or > 6) == true
         || rolls.MolCheck is < 1 or > 6
         || !Dice(rolls.Position, allowEmpty: true) || !Dice(rolls.CrewSurvival, allowEmpty: true) || !Dice(rolls.TaskCheck, allowEmpty: true)
-        || !Dice(rolls.CollateralCheck, allowEmpty: true);
+        || !Dice(rolls.CollateralCheck, allowEmpty: true)
+        || rolls.WeaponDestruction?.Values.Any(dr => dr is < 1 or > 6) == true;
 
     /// <summary>Whether a unit may fire in this attack under the fire-phase and First Fire rules (A7.1, A8.1, A8.3, A8.31, A8.4, A9.2).</summary>
     /// <summary>A leader firing one MG, alone or with a stacked SMC as his partner (A9.12; ruling R12.4); he has no inherent FP.</summary>
@@ -1420,6 +1421,9 @@ public static class ScenarioA1FireCalculator
         private bool targetsSpared;
         private bool vehicleSpared;
 
+        // A9.74, C11.6 (pass 60, ruling R60.17): the result and IFT column index each target unit took.
+        private readonly Dictionary<string, (string Result, int Column)> taken = new(StringComparer.Ordinal);
+
         /// <summary>A FT attack (A22; ruling R15.1): its one firer's one weapon is a FT.</summary>
         private bool Flamethrower => (attack.Firers ?? []).SelectMany(item => item.Weapons ?? [])
             .Any(weapon => reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty)?.IsFt == true);
@@ -1579,6 +1583,7 @@ public static class ScenarioA1FireCalculator
             var overrunEffect = attack.Overrun is { } overrunning ? OverrunEffect(overrunning, arithmetic) : null;
             var firerEffects = attack.FireKind == FinalProtectiveFire ? FinalProtectiveFireChecks(arithmetic) : null;
             var vehicleEffects = vehicles.Count == 0 || vehicleSpared ? null : VehicleEffects(arithmetic);
+            var destruction = WeaponDestruction();
             if (undecided.Count != 0)
             {
                 return Refused(FireResolution.Indeterminate, undecided.Distinct().ToArray());
@@ -1619,7 +1624,72 @@ public static class ScenarioA1FireCalculator
                 Position = position,
                 VehicleKill = vehicleKill,
                 SpecificCollateral = specificCollateral,
+                WeaponDestruction = destruction,
             };
+        }
+
+        /// <summary>
+        /// A9.74, C8.42, C11.6 (pp. 65, 178, 182; pass 60, rulings R60.3, R60.17), when the attack carries the rule: each SW and Gun held by a unit a Final
+        /// KIA eliminated rolls a dr, read as an IFT DR on that unit's column with no DRM; a KIA destroys it, a K malfunctions it, or destroys it if it was
+        /// malfunctioned or has an X#. A unit eliminated by a K or by Casualty Reduction is no KIA's. The Gun an ordnance hit or a DC attacks follows the
+        /// table's own column instead (C11.4): a DC destroys a Gun its target units man on their KIA and malfunctions it on their K. Null when a roll is
+        /// missing or nothing was checked.
+        /// </summary>
+        private List<FireWeaponDestruction>? WeaponDestruction()
+        {
+            if (attack.RandomDestruction != true || undecided.Count != 0)
+            {
+                return null;
+            }
+
+            var ordnanceGun = attack.OrdnanceHit is not null ? attack.GunTarget?.GunId : null;
+            var fates = new List<FireWeaponDestruction>();
+            foreach (var target in attack.Targets ?? [])
+            {
+                if (!taken.TryGetValue(target.UnitId!, out var own))
+                {
+                    continue;
+                }
+
+                var unit = state[target.UnitId!];
+                foreach (var weapon in target.HeldWeapons ?? [])
+                {
+                    if (weapon.EquipmentId is not { } id)
+                    {
+                        continue;
+                    }
+
+                    if (attack.DemolitionCharge is not null && weapon.Kind == "asl:gun")
+                    {
+                        if (ScenarioA1GunDestruction.Fate(ScenarioA1GunDestruction.DemolitionCharge, own.Result, false) is { } dcFate)
+                        {
+                            fates.Add(new FireWeaponDestruction(id, unit.Id, null, own.Result, dcFate, "C11.6"));
+                        }
+
+                        continue;
+                    }
+
+                    if (id == ordnanceGun || !unit.KilledByKia || own.Column < 0)
+                    {
+                        continue;
+                    }
+
+                    var key = "weaponDestruction:" + id;
+                    if (attack.Rolls!.WeaponDestruction?.TryGetValue(id, out var dr) != true)
+                    {
+                        undecided.Add("asl.a1.fire.roll-missing:" + key);
+                        return null;
+                    }
+
+                    usedRolls.Add(key);
+                    var result = reference.Result(dr, own.Column);
+                    var fate = ScenarioA1GunDestruction.Random(result, weapon.Malfunctioned == true,
+                        reference.Definitions.GetValueOrDefault(weapon.DefinitionId ?? string.Empty)?.BreakdownRemoves == true);
+                    fates.Add(new FireWeaponDestruction(id, unit.Id, dr, result, fate ?? "none", "A9.74"));
+                }
+            }
+
+            return fates.Count == 0 ? null : fates;
         }
 
         /// <summary>
@@ -1988,6 +2058,12 @@ public static class ScenarioA1FireCalculator
                     {
                         unit.Note($"flamethrower-possessed:{-byFt.Key}");
                     }
+                }
+
+                var columnFp = concealedGroup && arithmetic.Concealed is { } concealedColumn ? concealedColumn.ColumnFp : arithmetic.ColumnFp;
+                foreach (var unit in byFt)
+                {
+                    taken[unit.Id] = (own, columnFp is { } fpColumn ? Array.IndexOf(ScenarioA1FireReference.ColumnFp, fpColumn) : -1);
                 }
 
                 Apply(own, [.. byFt]);
@@ -4129,6 +4205,7 @@ public static class ScenarioA1FireCalculator
                 .Concat(rolls.CrewChecks?.Keys.Select(id => "crewCheck:" + id) ?? [])
                 .Concat(rolls.UnlikelyKill?.Keys.Select(id => "unlikelyKill:" + id) ?? [])
                 .Concat(rolls.MolCheck is null ? [] : ["molCheck"])
+                .Concat(rolls.WeaponDestruction?.Keys.Select(id => "weaponDestruction:" + id) ?? [])
                 .Concat(new[] { ("position", rolls.Position), ("crewSurvival", rolls.CrewSurvival), ("taskCheck", rolls.TaskCheck), ("collateralCheck", rolls.CollateralCheck) }
                     .Where(item => item.Item2 is not null).Select(item => item.Item1));
             return supplied.Where(key => !usedRolls.Contains(key)).Select(key => "asl.a1.fire.extra-roll:" + key).ToList();
@@ -4193,6 +4270,9 @@ public static class ScenarioA1FireCalculator
         {
             get; private set;
         }
+
+        /// <summary>Whether a Final KIA eliminated the unit (A7.301, A9.74), not a K's or a check's Casualty Reduction.</summary>
+        public bool KilledByKia => events.Contains("eliminated-kia");
 
         public int? MoraleAtLoss
         {
