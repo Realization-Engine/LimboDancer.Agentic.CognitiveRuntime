@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using LimboDancer.Abstractions.Audit;
@@ -21,9 +22,12 @@ public sealed class LivePlay
     /// <summary>The tenant of the Studio's local user.</summary>
     public static readonly Guid Tenant = Guid.Parse("5a7d1f00-0000-4000-8000-0000000057d0");
 
-    public LivePlay(UnitLibrary units, IBoardProvider boards, DiceRoller? roller = null)
+    private readonly ILogger<LivePlay>? logger;
+
+    public LivePlay(UnitLibrary units, IBoardProvider boards, DiceRoller? roller = null, ILogger<LivePlay>? logger = null)
     {
         ArgumentNullException.ThrowIfNull(units);
+        this.logger = logger;
         Root = Path.Combine(units.UnitsRoot, "live");
         Store = new FileGameStore(Root);
         Catalogs = [.. UnitCatalogs.Names.Select(name => UnitCatalogs.Read(name, units.Vocabulary)?.Catalog).OfType<UnitCatalog>()];
@@ -126,7 +130,13 @@ public sealed class LivePlay
     public GameHistory? History(string game)
     {
         ArgumentNullException.ThrowIfNull(game);
-        return Store.Read(new GameScope(Tenant, game)) is { } record ? Planner.Replay(record.Events) : null;
+        var timer = Stopwatch.StartNew();
+        var record = Store.Read(new GameScope(Tenant, game));
+        LoadMeasurements.Record(logger, game, "read", timer.Elapsed.TotalMilliseconds);
+        timer.Restart();
+        var history = record is not null ? Planner.Replay(record.Events) : null;
+        LoadMeasurements.Record(logger, game, "replay including board load", timer.Elapsed.TotalMilliseconds);
+        return history;
     }
 }
 

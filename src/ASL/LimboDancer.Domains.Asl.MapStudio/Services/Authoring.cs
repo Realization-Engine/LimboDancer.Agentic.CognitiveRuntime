@@ -22,13 +22,15 @@ public sealed class AuthoredBoardService
 {
     private const int MaxCachedVersions = 64;
     private readonly ICatalogSource catalogSource;
+    private readonly ILogger<AuthoredBoardService>? logger;
     private readonly ConcurrentDictionary<(string Board, string Version), StudioBoard> versions = new();
     private readonly ConcurrentQueue<(string Board, string Version)> order = new();
 
-    public AuthoredBoardService(StudioOptions options, ICatalogSource catalogSource)
+    public AuthoredBoardService(StudioOptions options, ICatalogSource catalogSource, ILogger<AuthoredBoardService>? logger = null)
     {
         ArgumentNullException.ThrowIfNull(options);
         this.catalogSource = catalogSource;
+        this.logger = logger;
         Boards = new BoardPackageStore(options.ResolveBoardsRoot());
         Drafts = new BoardPackageStore(Path.Combine(options.ResolveCacheRoot(), "drafts"));
     }
@@ -94,9 +96,15 @@ public sealed class AuthoredBoardService
             return existing;
         }
 
+        var timer = Stopwatch.StartNew();
         var compiled = FeatureCompiler.Compile(package.Model, catalog).Grid;
+        LoadMeasurements.Record(logger, package.Board.Value, "compile", timer.Elapsed.TotalMilliseconds);
+        timer.Restart();
         var facts = VaslCompatibleHexFactDerivation.Derive(compiled, catalog, package.Model.Annotations.Hexsides);
+        LoadMeasurements.Record(logger, package.Board.Value, "derive", timer.Elapsed.TotalMilliseconds);
+        timer.Restart();
         var validation = BoardValidator.Validate(package.Model, facts, catalog);
+        LoadMeasurements.Record(logger, package.Board.Value, "validate", timer.Elapsed.TotalMilliseconds);
 
         var render = BoardRenderInput.Create(package.Board, package.Name, compiled, catalog, facts, new StyledSource(package.Model, compiled, facts));
         var board = new StudioBoard(package.Board, version, package.Name, validation.HasErrors ? BoardStatus.Authored : BoardStatus.AuthoredValid,

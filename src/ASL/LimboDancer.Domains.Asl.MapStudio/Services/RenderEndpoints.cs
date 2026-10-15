@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
@@ -11,7 +12,7 @@ namespace LimboDancer.Domains.Asl.MapStudio.Services;
 public sealed record RenderedSvg(string Svg, string ETag);
 
 /// <summary>Content-addressed cache of rendered documents and layer fragments.</summary>
-public sealed class RenderCache
+public sealed class RenderCache(ILogger<RenderCache>? logger = null)
 {
     private readonly ConcurrentDictionary<(string Board, string Version, BoardView View, string Layer, bool Trace), RenderedSvg> cache = new();
 
@@ -26,9 +27,11 @@ public sealed class RenderCache
 
         return cache.GetOrAdd((board.Ref.Value, board.Version, view, layer, trace), key =>
         {
+            var timer = Stopwatch.StartNew();
             var svg = key.Layer == "document"
                 ? BoardRenderer.Document(input, view, trace)
                 : BoardRenderer.Fragment(input, view, key.Layer, trace);
+            LoadMeasurements.Record(logger, board.Ref.Value, layer, timer.Elapsed.TotalMilliseconds);
             var hash = Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(svg)));
             return new RenderedSvg(svg, "\"" + hash + "\"");
         });
