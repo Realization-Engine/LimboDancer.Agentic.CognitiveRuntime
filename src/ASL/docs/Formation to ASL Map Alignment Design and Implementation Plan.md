@@ -436,3 +436,6 @@ Viewport checkpoint: per-game/per-viewer/per-board-version pan and zoom persiste
 
 
 Counter provenance checkpoint: visible ASL counters expose immutable parent formation, formation hex at handoff, catalog reference and reviewed/manufactured status. All 624 Goodwood IDs are covered by the roster check. This is counter provenance only; map-wide parent ownership inspection and boundary overlays remain required.
+
+
+Map ownership checkpoint: the full-board ownership metadata producer is implemented and verified across every Goodwood hex address. Keep this optional metadata separate from immutable campaign context and game history so existing accepted games retain their identities. Complete import validation/storage and the inspector/boundary interface next. Guard exclusion in metadata alone does not enforce a playable boundary.

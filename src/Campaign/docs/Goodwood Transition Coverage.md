@@ -322,3 +322,12 @@ Seven viewport JavaScript tests and 37 targeted Studio play/render tests passed.
 The ASL selected-counter inspector now shows parent formation, original formation hex and catalog reference from the immutable campaign handoff, plus the reviewed/manufactured profile status. The original hex is labelled "Formation hex at handoff" rather than presented as a current ASL location. Provenance is resolved only for a unit or equipment instance visible in the selected perspective. Missing, unsupported or inconsistent context produces no invented origin and does not block ordinary inspection. This uses existing saved context and changes neither terrain nor ASL events.
 
 Forty-nine targeted Studio provenance, inspector and play/render cases passed. An additional full Goodwood roster test verified all 624 stable ASL IDs against their formation parents, catalog definitions and profile statuses. The coverage inventory audit passed. Live full-map inspector acceptance is still pending while the same browser tab finishes rendering. Per-hex ownership and parent-boundary overlays are separate remaining work; counter origin does not claim to provide them.
+
+
+### Full-board ownership metadata foundation
+
+SituationMapOwnership now projects the stable formation ownership lattice into the assembled ASL board's hex addresses. The optional metadata records the exact board identity/version and groups tactical hexes by parent. It does not change terrain, accepted setup, campaign context or game events. Exterior compilation guards are intentionally absent from the ownership map; absence does not itself enforce a play restriction.
+
+Two Release tests passed with warnings treated as errors. They inspect every hex in the full board geometry, verify 37,788 unique owned centers across 1,038 parents, prove guard exclusion and unchanged feature bytes, check deterministic JSON/save reload, reject tile-sized geometry and honor cancellation. The test board uses the real Goodwood ownership geometry with an empty feature model, so this is ownership/address validation, not a new terrain-render acceptance claim.
+
+Next: transmit and validate this separate metadata alongside the existing immutable handoff, retain it safely on repeated import, expose parent ownership in terrain inspection, and render optional parent boundaries. Actual exterior play restriction remains a separate acceptance item.
