@@ -432,3 +432,14 @@ At exterior guard A1, Propose setup was refused with `UNIT-STATE-010 revision 62
 The interior proposal was cancelled. No setup placement or movement was confirmed. The accepted history still contains 625 events and retains SHA-256 `b106c5ad14cee682b679e86e752f980f46cd40456a89a84913c4d3da58b6af93`. This closes actual-interface exterior setup admission acceptance, supported by the existing engine/import/replay footprint checks. It does not claim a live adjacent movement crossing was exercised.
 
 Browser typed-input automation remains unresolved: selecting definitions and map locations worked, but entered text did not reliably reach the staged form state. The perimeter result uses map selection and a generated temporary counter ID. The full-map typed-coordinate parser itself passed all 40 focused tests in the prior checkpoint. Final compatibility, performance/resource and release-audit work remains open.
+
+
+### Keyboard location submission and compatibility recheck
+
+LocationField now applies typed input explicitly on Enter as well as on its existing change event. In-progress typing stays local, without normalizing every keystroke. A pending edit is not applied if an intervening external value change has superseded it. All 41 focused LocationWords tests passed, including full-map parsing, keyboard submission and stale-input rejection.
+
+Actual-interface acceptance on the complete Goodwood initial-setup copy entered the fully qualified address ending `:ccccccc123:0` and pressed Enter. The field displayed normalized `[CCCCCCC123] on` the accepted board, and Add staged its canonical address. Propose setup passed every check and offered confirmation. The proposal was cancelled and the draft cleared. No placement was committed; history remains 625 events with SHA-256 `b106c5ad14cee682b679e86e752f980f46cd40456a89a84913c4d3da58b6af93`. Screenshot: goodwood-typed-location-accepted.png.
+
+The setup editor intentionally has no active map-picking board context, so its short address alone is not resolved. The full board-qualified form succeeds. Earlier short-form browser observations therefore do not prove an input failure. Movement fields with one known board and the parser regression retain short-address support; the setup row's map picker is also available.
+
+Nine selected Campaign compatibility tests passed without rebuilding the running services: older catalog positions/operator links, complete and incomplete legacy mortar migration, pair movement/stacking, infantry catalog metadata preservation and accepted legacy terrain identity. The coverage inventory audit and whitespace checks passed. This supplies focused compatibility evidence; the final full-map/manual-deployment evidence audit remains required.

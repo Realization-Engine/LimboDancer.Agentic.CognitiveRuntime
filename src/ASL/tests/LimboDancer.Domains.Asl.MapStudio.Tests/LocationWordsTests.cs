@@ -158,6 +158,26 @@ public sealed class LocationWordsTests : IDisposable
         Assert.Empty(several.FindAll("#advance-to-level"));
     }
 
+    [Fact]
+    public void EnterAppliesFullCampaignAddressWithoutApplyingPartialTyping()
+    {
+        const string board = "ab-goodwood-full-test";
+        var taken = string.Empty;
+        var field = context.Render<LocationField>(parameters => parameters.AddCascadingValue("Picking", Picking([board], 0))
+            .Add(item => item.Id, "move-to").Add(item => item.Label, "To")
+            .Add(item => item.OnChange, at => taken = at));
+        field.Find("#move-to").Input("ccccccc12");
+        Assert.Empty(taken);
+        field.Find("#move-to").Input("ccccccc123");
+        field.Find("#move-to").KeyDown("Enter");
+        Assert.Equal($"{board}:CCCCCCC123:0", taken);
+        taken = string.Empty;
+        field.Find("#move-to").Input("A1");
+        field.Render(parameters => parameters.Add(item => item.Value, $"{board}:CCCCCCC13:0"));
+        field.Find("#move-to").KeyDown("Enter");
+        Assert.Empty(taken);
+    }
+
     // Design D13: a field is armed, the next hex picked fills it and disarms it; the pick that was already there when it was armed does not.
     [Fact]
     public void AnArmedFieldTakesTheNextPickAndDisarms()

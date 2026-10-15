@@ -463,3 +463,6 @@ Independent-transfer checkpoint: normal campaign-file loading into a new browser
 
 
 Live perimeter checkpoint: on an isolated full Goodwood initial-setup copy, map-picked exterior A1 was refused by existing setup admission, while the same staged squad at owned interior CCCCCCC13 passed every check. The proposal was cancelled and the accepted 625-event history remained byte-identical. Continue deployment compatibility, typed-input interaction investigation, controlled performance/resource measurements and final release audit.
+
+
+Keyboard checkpoint: typed full-board Goodwood coordinates can be applied with Enter and were accepted by the actual setup proposal gate without committing a placement. All 41 location checks and nine selected save/equipment compatibility tests passed. Continue the full-map compatibility evidence audit, controlled performance/resource measurements and final release checklist.
