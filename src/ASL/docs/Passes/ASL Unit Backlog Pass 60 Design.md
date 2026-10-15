@@ -1,6 +1,6 @@
 # ASL Unit Backlog Pass 60 Design
 
-**Status:** The frame, written on 2026-10-15 under the user's word of that day ("this is my word to start pass 60, run without my intervention up to the gate"), given on 2026-10-13 as a mode and on 2026-10-15 as the start. The frame's questions were put to five read-only agents, as that word asks; their answers were judged against the pages and the code, and each decision below is a ruling decided under that word and open to a veto. The word ends at the gate.
+**Status:** Built to the merge gate on 2026-10-15 under the user's word of that day ("this is my word to start pass 60, run without my intervention up to the gate"), given on 2026-10-13 as a mode and on 2026-10-15 as the start: the frame, six tasks in six commits (the plan's 60.1 to 60.6, with 50.5 carried in from pass 50 and built with 60.6), the five reviews and their fixes, a narrower Studio check at the user's word, and the documents. Sections 13 to 15 say how it ended; section 13.1 lists what departs from the plan's entry and the frame. **The gate is not run:** it is the user's to start (section 15). The frame's questions were put to five read-only agents, as that word asks; their answers were judged against the pages and the code, and each decision below is a ruling decided under that word and open to a veto. The word ends at the gate.
 
 **Date:** 2026-10-15
 
@@ -19,7 +19,7 @@
 5. What the frame found outside the rows.
 6. The frame's questions, each with its analysis and its ruling.
 
-Then, as each is built: 7 to 12, the increments 2a to 2f; 13, the reviews and the Studio check; 14, as built.
+Then: 7, HE Equivalency (60.4); 8, the Specific Collateral Attack and mixed Locations (60.1); 9, Indirect Fire (60.2); 10, FT, MOL, and DC at an AFV (60.3); 11, Guns as targets (60.5); 12, a MG's To Kill attack (60.6, with 50.5); 13, the reviews, their fixes, and the Studio check; 14, as built; 15, the gate.
 
 ## 2. What the pass is
 
@@ -300,3 +300,90 @@ Each decided under the user's word of 2026-10-15; each gets a backlog row.
 | `p60-unattended` | A German INF Gun at an unattended Russian 45L in [D10]: the target list offers the Location; Case P on the To Hit DR; the 12 FP column on 1,2 is a K/3: the Gun malfunctions. Recorded. |
 
 Run by the agent: Rules, the pass 60 class 46 passed and the fire, ordnance, and older classes 334 of 335 (the one its own new test, corrected and run again); Play, 307; Units whole, 416; MapStudio, 33.
+
+## 12. A MG's To Kill attack on an AFV: 60.6, with 50.5 (increment 2f)
+
+Built on 2026-10-15 in one commit (6bfead84) by a building agent to a brief (`brief_2f.md`), its diff read and its games played in the Studio by the session.
+
+### 12.1 Departures from the frame, first
+
+Each decided under the user's word of 2026-10-15; each gets a backlog row.
+
+- **The upper superstructure of a non-turreted AFV (C3.9, ruling R60.22) is not built:** it moves to pass 105, as the ruling allowed.
+- **No Collateral Attack after a MG's Stun:** D5.34 buttons the crew up at once, which leaves no Vulnerable crew, as R60.7 has it for a Shock; the D1.22 example reads the same way ("fails to destroy or Stun").
+- **The Bren Carrier's MA prints no FP:** it fires at the British LMG's 2 FP with a Normal Range of 8, like the other vehicle MGs; the catalog is unchanged. A manufactured value under R0.3 would change the catalog; backlog.
+- **A MG fired as ordnance is no Gun of a size:** it takes no C4 To Hit modification, fires on the plain black Vehicle row, and is read as 25mm or less for Case D. It acquires nothing. Inexperienced Personnel lower its B# by one (A19.32).
+- **Refused:** the AFPh (backlog), Bounding First Fire, a pinned possessor, a lone leader or hero (A9.12), a vehicle in Motion or BU firing its MA MG, Intensive Fire, a directing leader, and an unarmored vehicle (it stays on the IFT's Vehicle line).
+- **Not built:** a 1MT AFV's Recall on a Stun; the AAMG's all-round arc against a bow MG's VCA (no Case A charged, no arc enforced); the MG's Residual FP. No catalog MG is 12.7mm or 15mm, so the Basic TK# is always 4.
+- **The CE crew's Collateral Attack at a FP between columns** is read on the column at or below it (A7.3): a 3 FP LMG on the 2 column.
+- **A9.223 is the narrow reading (R60.20):** a reaction CC attack cancels the Fire Lanes its attackers man; D7.21's CC counter marks the attacker's SW and Guns (`asl:cc-reaction`) and the fire path bars a marked SW. The cancellation is not gated: none of the three live games with a Fire Lane holds a vehicle Close Combat.
+- **Found at the end of the build, for the fixes:** `PlayPageVehicleTests.ATankIsOfferedInTheGunPanelWithTheEnemyVehicleAndItsAmmunition` fails: it expects no ammunition list at Infantry, which 2a changed (a tank's AP by HE Equivalency), and 2a's own page run did not include the class. **A rule slip:** the agent ran one multi-line `python -c`, which the hook let through.
+
+### 12.2 What is built
+
+`ScenarioA1MachineGunKill` holds the MG's attack: who may make it (`Outside`, `VehicleWeaponRefusal` for D3.54), Basic TK# 4, and its results. A possessed `asl:mg` and a vehicle's MA MG ride `asl.game.fire-ordnance` with a named AFV and the ammunition `ap`; the To Kill DR adds Case A and Case D's 25mm row, less the AF; at most half burns, below eliminates, equal Stuns (`stun`: Stunned, BU, out of Motion). The vehicle fire path reads the MA `mg`. The page's `#ordnance-gun` offers a possessed MG and a MG-armed vehicle while an enemy vehicle is on the map ("at an AFV only (A9.61)"), with a fixed ammunition text; the record reads "a MG To Kill attack (A9.61)" and "Stunned, BU (D5.34)".
+
+**New in a record:** none; a MG's shot is an ordinary `ordnance-fired` with the result `stun`, and a weapon may carry `asl:cc-reaction`. Every new path was refused before the pass.
+
+### 12.3 The games and the tests
+
+| Game | What it shows |
+|---|---|
+| `p60-mg-stun` | A Russian HMG in [F10] at a CE SPW 251/1 in [D10] facing it: a hull hit on 4,2; TK# 4, +1 Case D at range 2, less AF 1, Final 4; DR 4 Stuns it and buttons it up. Recorded. |
+| `p60-mg-coll` | A German LMG at a CE T-34: Final TK# -6, DR 7, nothing; the crew takes the LMG's 3 FP on the same DR, +2 CE, Final 9, nothing. Recorded. |
+
+Run by the agent: Rules, the pass 60 class 53 passed and the related classes 203; Play, the pass 60 class 22 and related 215; MapStudio 33 passed and the one failure above.
+
+## 13. The five reviews, their fixes, and the Studio check
+
+Five read-only reviews ran in parallel on 6bfead84 (briefs in `brief_reviews.md`): two referees (60.1, 60.2, 60.4; and 60.3, 60.5, 60.6 with 50.5), a table player, a UI and Blazor review, and a Rules boundary review. Each finding was judged against its page and the code; the fix lists are `fixes_boundary.md`, `fixes_referee1.md`, `fixes_referee2.md`, `fixes_table.md`, and `fixes_ui.md` in the pass's folder, and one agent applied them in one commit (3bf7ec8e).
+
+### 13.1 What departs from the plan's entry and the frame, first
+
+- **Three hidden-information leaks, graded MAJOR, all fixed.** The Gun panel offered a side's MGs once any enemy vehicle existed, seen or not, so their appearance told the side of an unseen vehicle; the weapons a target holds (A9.74's facts) were serialized into records and resumes both sides read, a concealed unit's included; and the proposal, the record, and a refusal of 2b named hidden (HIP) units and counted the units under a "?".
+- **Two rulings of the frame were wrong on the page and are amended:** R60.24 amends R60.11 (C3.33, p. 169: a mortar's hit also attacks the hex's units out of its LOS when it hit the hardest-to-hit target in its LOS); R60.26 amends R60.18 (C11.3, p. 182: only a Gun that starts the scenario manned by a non-crew unit loses its Emplacement; a later non-crew manning only withholds the +2, C11.2). Two more rulings were made from the findings: R60.25 (a Stun the hit causes buttons the crew up, D5.34, so no Collateral Attack follows) and R60.27 (a MG's To Kill attack at a concealed AFV is refused).
+- **The Studio check of the whole pass was narrower than the standing rules' step 4,** at the user's word of 2026-10-15 ("Run the narrower check for this Pass. From now on, let's reassess the need ... on a case-by-case basis"); section 13.4.
+
+### 13.2 Fixed
+
+- **Rules:** a MG's To Hit takes C4.2's modifications beyond 12 hexes and no Case E in its own hex (C5.5 is a Gun's); a Critical Hit that Random Selection puts on a truck no longer destroys the Gun beside it (C3.74); a Gun crew's gunshield and Emplacement DRM no longer reach the vehicles of its Location (C11.5); a Critical Hit on an unarmored vehicle reverses its positive TEM (C3.71); a PF's or PSK's Original 2 is a Critical Hit outright on its own table (C3.7); a non-20mm ATR gives no Specific Collateral Attack (C8.31 note 1); a Placed DC keeps the facings it was Placed through (A23.5); R60.24, R60.26, R60.27.
+- **Records (R60.3):** `heldWeapons` is never recorded (re-read from the state at replay and on a resume); the Fire Lane's cancellation by CC Reaction Fire is gated by `cancelsFireLanes` on the reaction's record; `areaAcquisition` is held to the state, not copied from the record; new nested members are left out when null.
+- **Into Rules:** C11.3's predicate, a target's needed Original DR, Area Acquisition's hex, the unattended Gun, the DC Placement bar, A9.74's scope.
+- **The page and the texts:** the Gun panel reads the side's own view; the DC lists use the side's labels; stale AFV choices are cleared; the MG waits for a named AFV ("Name the AFV (A9.61)") and carries Rules' reason when it cannot fire; refusal advice by weapon; sentences for the MG's refusals; an IFT line that attacked no one is hidden; the PF's Random Selection, the unattended Gun, the MG's kill and malfunction, the Stun's missing Collateral Attack, and the DC's second DR are worded; `PlayPagePass60Tests` (six page tests, two text tests); `PlayPageVehicleTests` brought to 2a's ammunition list.
+- **The fixing agent's own departures:** the Fire Lane gate is a flag on the reaction's record, not the weapon's CC counter, which a reaction that destroys the vehicle never places; the gunshield fix is gated by `randomDestruction`, since an IFT attack on a crew beside a vehicle could be made before the pass; a PF's or PSK's Critical Hit on a Final DR below half the Modified TH# still stands; a concealed unit's record line keeps its Case K (pass 9's form), only a concealed vehicle's DRM and Final DR are hidden; the MG stays in the Gun list with its reason rather than leaving it.
+
+The agent's run: the build exit 0; Rules, fifteen classes, 375 passed; Play 340 passed; MapStudio 48; Units whole 416. The replay digest after the commit (41 s): no line of 20,557 differs; the pass's 22 own games replay to their end (`p60-random-sw`, which recorded `heldWeapons`, was labelled SUPERSEDED and played again as `p60-random-sw2`).
+
+### 13.3 Not fixed: a row each in the backlog
+
+The pass 55 page test of HE refused after it ran out (the Gun now offers AP instead); three rule conditions decided in the page (an AAMG MA fires only CE, a plain MA MG's 8-hex Normal Range, when HE is left unnamed), extensions of passes 50 and 55; `#propose-throw-dc` disabled with no title; C11.3 gated in the verifier by `randomDestruction`'s presence; `vehicles-beyond-kia` refusing a mortar's shot that C1.55 only limits; a tie between Locations in a Critical Hit's selection; an OVR's KIA with no A9.74 dr, where a vehicle not fully-tracked rolls a plain one; D3.53's unhalved AFPh To Kill attack by a vehicle's MA MG.
+
+### 13.4 The Studio check
+
+The narrower check the user approved, in my Studio on port 6671, on the build of 3bf7ec8e:
+
+- **The unseen vehicle** (`p60-unseen-afv`, a German LMG and a hidden T-34 far off): the German view offers no Gun panel and names no vehicle.
+- **Hidden and concealed units** (`p60-hidden`, a Russian 45L at a Known squad beside a hidden squad and a concealed one holding a LMG): the Russian proposal names the Known squad and "its concealed units" with no count; the committed record names the Known squad and "a concealed unit", neither the hidden squad nor any weapon; the game's file holds no `heldWeapons`.
+- **The new controls** (`p60-check-controls`, a German squad with a DC and a LMG beside a CE T-34): at 1920 the throw panel's list reads "vehicle R1" and the MG's propose button waits with "Name the AFV (A9.61)."; at 1024 and at 320 the throw list, the vehicle list, and the propose button sit inside the width in the Actions tab, with no horizontal overflow; at 320 the MG's To Kill attack was proposed and committed by real Enter keys on the focused buttons, and the focus moved to the Actions panel after the commit, as under 1024 it should.
+
+## 14. As built
+
+**The pass in commits,** on `feature/asl-backlog-pass-60`, cut from 380b4a7b: the frame (38bd4133); 60.4 (afdcb2b5); 60.1 (4a628394); 60.2 (3ac44bea); 60.3 (5913d7bb); 60.5 (24620722); 60.6 with 50.5 (6bfead84); the reviews' fixes (3bf7ec8e); the strict build's two style fixes and the documents (the branch's head). Each task was built by an agent to a brief, its diff read, its games played in the Studio by the session, and the replay digest of the older games run after its commit with the gate's own skip list: no line of 20,557 differed after any of the six, nor after the fixes, and the pass's own games replayed to their end each time.
+
+**What the plan's entry asked, and where it went.** Of the 49 inventory rows: 60.1 to 60.5 are built as sections 7 to 11 say, each with its departures; 60.6 is built for the MG's To Kill attack (with 50.5) and Case A and the MG column of C7.7; the upper superstructure (C3.9) moved to pass 105 and A5.132 to pass 110; C7.7's note A waits for a catalog that colors the Crew Survival number. The backlog's section 60 has a row for every departure and every finding not fixed.
+
+**The rulings:** R60.1 to R60.27, decided under the user's word of 2026-10-15 and open to a veto, with three of the frame's corrected on the page: R60.10 by R60.23, R60.11 by R60.24, R60.18 by R60.26. They are in the Passes Plan's section 5.
+
+**The tables** (ruling R60.2) are Rules code, each with its page: `ScenarioA1HeEquivalency` (C8.31), `ScenarioA1FlameKill` (C7.34, the C7.7 DC and FT/MOL columns, C7.11's Aerial AF, C7.346's bands), `ScenarioA1GunDestruction` (C11.6, A9.74), `ScenarioA1MachineGunKill` (A9.61, D3.54). No transcription, case matrix, package, or catalog changed; the packages were not pinned again.
+
+**What a record gained** (each absent from every older record or taken from the record at replay, ruling R60.3): on an ordnance shot `wallTem`, `specificCollateral`, `reversesHeightAdvantage`, `areaLocations`, `areaAcquisition` (held to the state), `afvCover`, `randomDestruction`, `hit.vehicles`; on a fire attack `targetVehicle`, `randomDestruction`; on a DC's placement `dcFacings`; on a vehicle Close Combat `cancelsFireLanes`; in resolutions `heEquivalency`, `specificCollateral`, `targetHits`, `levelHits`, `areaVehicles`, `position`, `vehicleKill`, `weaponDestruction`; new rolls `collateralCheck`, `areaSurvival`, `weaponDestruction:<id>`, `position`, `taskCheck`; a new result `stun`; a weapon's `asl:cc-reaction`. No new event type, action, or choice kind.
+
+**The time:** the frame 0:13, the build 3:50 (10:33 to 14:23) against 6:40 estimated and the plan's 4:40, the reviews and their fixes 0:51, the Studio check and the documents after them; the time log has each row.
+
+**The strict build** (`gate.sh 60 380b4a7b strict`): the first run failed on six CA1861 errors in two of the pass's test files (constant arrays passed inline), fixed by static fields (`fix_ca1861.py`); the second run's result is in the working folder's `strict-60b.log`, and `strict-check` says whether it holds for the tree as committed.
+
+## 15. The gate
+
+Not run: it is the user's to start by name (`baseline`, `build`, `proofs`, then the push and the pull request, and CI's run of it). `pass60.conf` names the pass's 23 recorded games (`p60-random-sw` left out, SUPERSEDED). The baseline's cache key holds the list of the pass's own games, which was empty at the cut, so the `baseline` stage makes the baseline of the older games again once (about eight minutes) before its own part.
+
+What the gate should show, from the build: the text list differs in the pass's new texts and the changed refusal sentences; the replay digest of the older games differs in nothing (as after each task), and the pass's own games are new lines; the sweep may show refusals turning into plans in older games where a pass 60 refusal stood (a Location with a vehicle on the Infantry Target Type, a mortar's hex with a vehicle or several levels, AP or HEAT at Infantry, an unattended Gun): each such line is read as 60.1, 60.2, 60.4, or 60.5's intended change.

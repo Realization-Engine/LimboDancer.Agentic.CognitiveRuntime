@@ -1772,7 +1772,7 @@ Passes 90, 125, 140, and 165 lose part of their titles: 90 is night alone, 125 i
 | Overhead | | 1:15 |
 | **Pass 45 total** (build 5:40) | | **6:55** |
 
-**Pass 50: Armored combat I** (planned at 5:40 of build; 33 rows of the inventory). Counters: none new (the PzKpfw IIIH and T-34 M41 suffice); a Gun Duel needs no counter. Needs first: 35 (vehicle states, Acquisition). **Status, 2026-10-12: merged into main as 85d628bd and pushed, with the gate passed; the CI run of the merge was left for the user to read.** It was built on `feature/asl-backlog-pass-50`. Tasks 50.1, 50.2, 50.3, and 50.6 are built; 50.4 (Gun Duels) goes to pass 55 and 50.5 (MG fire against armor) to pass 60, each with its reason in the [design](<Passes/ASL Unit Backlog Pass 50 Design.md>), section 10.1, and the backlog's section 58.
+**Pass 50: Armored combat I** (planned at 5:40 of build; 33 rows of the inventory). Counters: none new (the PzKpfw IIIH and T-34 M41 suffice); a Gun Duel needs no counter. Needs first: 35 (vehicle states, Acquisition). **Status, 2026-10-12: merged into main as 85d628bd and pushed, with the gate passed; the CI run of the merge was left for the user to read.** It was built on `feature/asl-backlog-pass-50`. Tasks 50.1, 50.2, 50.3, and 50.6 are built; 50.4 (Gun Duels) goes to pass 55 and 50.5 (MG fire against armor) to pass 60, each with its reason in the [design](<Passes/ASL Unit Backlog Pass 50 Design.md>), section 10.1, and the backlog's section 58. **Task 50.5 was built in pass 60 (2026-10-15), with task 60.6.**
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -1799,7 +1799,7 @@ Passes 90, 125, 140, and 165 lose part of their titles: 90 is night alone, 125 i
 | Overhead | | 1:15 |
 | **Pass 55 total** (build 3:40 as planned, without 55.7; 9:50 by the frame's estimates, with it) | | **4:55** as planned; **11:05** by the frame's estimates |
 
-**Pass 60: Armored combat III: other attacks on vehicles and Guns** (new; 37 rows of the inventory). Counters: none. Needs first: 50; 45 (Residual FP from ordnance).
+**Pass 60: Armored combat III: other attacks on vehicles and Guns** (new; 37 rows of the inventory). Counters: none. Needs first: 50; 45 (Residual FP from ordnance). **Status, 2026-10-15: built to the merge gate on `feature/asl-backlog-pass-60` (cut from main at 380b4a7b); the gate not run.** The six tasks are built, and task 50.5 (MG fire against armor) was carried in from pass 50 and built with 60.6, in six commits and one of the reviews' fixes (3bf7ec8e). The inventory named 49 rows, not 37: 14 are built and 35 moved to the pass that takes what is left. The frame's estimates, made from the code, with the plan's in brackets: 60.4 with C11.52 and C13.23, 0:50 (1:20); 60.1, 1:00 (0:40); 60.2, 1:10 (0:40); 60.3, 1:20 (0:40); 60.5, 1:00 (1:00); 60.6 with 50.5, 1:20 (0:20, and 0:40 for 50.5 in pass 50). That is 6:40 of building against 4:40, and 7:55 in all against 5:55. Rulings R60.1 to R60.27 are open to a veto. What the pass left out went to pass 65 (Passengers and Riders under the Specific Collateral Attack, more vehicles in a Location than the column's KIA#, the Immobilization Task Check after a mortar's hit), pass 100 (a Critical Hit's HD clauses and hexside TEM, Bypass), pass 105 (the upper superstructure of a non-turreted AFV, an OVR's A9.74 dr, an unarmored Target Facing), pass 110 (A5.132, a MG's To Kill attack in the AFPh and its Residual FP, the rest of the PF, an unattended Gun on the Area Target Type, friendly units in a mortar's hex), pass 140 (Interior Building Hexes and rooftops), pass 150 (the OBA share of the rules built for mortars), and passes 75, 120, and 160, each with its reason in the [design](<Passes/ASL Unit Backlog Pass 60 Design.md>), sections 2, 7.1 to 12.1, and 13, the [review](<Passes/Scenario A1 Backlog Pass 60 Review 2026-10-15.md>), and the backlog's section 60.
 
 | Task | Rules | Estimate |
 |---|---|---|
@@ -1832,6 +1832,8 @@ Moved here by pass 55 (2026-10-13), with no task renumbered: a hit on another ve
 
 Moved here by pass 55 (2026-10-13), with no task renumbered: the FG of a CE halftrack with its Passengers under an Armor or a Passenger leader (D3.4, D6.64, D6.65, with 65.2); a Passenger leader in an OVR (D7.16); an Armor Leader's return when his crew re-crews (D3.43, with 65.6); the CE DRM beside Height Advantage under Infantry fire (D5.31, with 65.1).
 
+Moved here by pass 60 (2026-10-15), with no task renumbered: more unarmored vehicles in a Location than the column's highest KIA#, on the Infantry and Area Target Types (A7.308, C1.55, C3.32, with 65.1); the Specific Collateral Attack on Passengers, Riders, and an unarmored vehicle's Vulnerable PRC, and after an Abandonment (D.8A, with 65.1); an AFV in positive TEM under other IFT attacks (A7.307, D5.31); an OT AFV's crew under Air Bursts (D5.311); the Immobilization Task Check after a mortar's hit, and Crew Survival's +1 for a Shocked or Abandoned vehicle (D5.5, D5.6, with 65.7).
+
 **Pass 70: Infantry III: morale, Close Combat, and concealment** (new; 35 rows of the inventory). Counters: none. Needs first: 40 (Infantry OVR, ADJACENT).
 
 | Task | Rules | Estimate |
@@ -1863,6 +1865,8 @@ Moved here by pass 55 (2026-10-13), with no task renumbered: the FG of a CE half
 | 75.8 Interrogation, and civilians by SSR | E2.1 (p. 228), E2.2 (p. 228), E2.3 (p. 228), E2.4 (p. 228) | 0:40 |
 | Overhead | | 1:15 |
 | **Pass 75 total** (build 6:20) | | **7:35** |
+
+Moved here by pass 60 (2026-10-15), with no task renumbered: a MOL at an unarmored vehicle, a leader's MOL, and a MOL in a FG (A22.612, C11.51, with 75.6).
 
 **Pass 80: Nationalities I: the catalog's counters** (new; 14 rows of the inventory). Counters: none. Needs first: 35.
 
@@ -1927,6 +1931,8 @@ Moved here by pass 55 (2026-10-13), with no task renumbered: the FG of a CE half
 | Overhead | | 1:15 |
 | **Pass 100 total** (build 6:00) | | **7:15** |
 
+Moved here by pass 60 (2026-10-15), with no task renumbered: a Critical Hit's HD clauses and the reversal of a hexside TEM (C3.7, C3.71); Emplacement ended by a forfeit of Wall Advantage (C11.3, with 100.4); a vehicle in Bypass in a mortar's target hex, and the DC's Bypass -2 (C1.55, C7.346, with 100.2).
+
 **Pass 105: Armored combat IV: equipment and formations** (new; 68 rows of the inventory). Counters: an armored car; a non-turreted AFV; an AFV with Secondary Armament; a partially armored AFV; a vehicle FT; an AA Gun with IFE of 40mm or less; an AFV with a G and one with Sz; a radioless trait on the T-34 M41. Needs first: 50, 55, 65, 100 (Armored Assault for D14.33).
 
 | Task | Rules | Estimate |
@@ -1943,6 +1949,8 @@ Moved here by pass 55 (2026-10-13), with no task renumbered: the FG of a CE half
 | **Pass 105 total** (build 7:00) | | **8:15** |
 
 Moved here by pass 55 (2026-10-13), with no task renumbered. Whole rows: a tank's turret or VCA changed without fire (C3.22); Case J against a vehicle that has paid only its Start MP, and VBM as a cause (C6.1); a BMG fired by a pivot of the hull (D1.81); a declared higher MP expenditure (D2.18); the TCA in Bypass (D2.35); the VCA changed for a shot (D3.11); the Known-target condition and the BMG's NT penalty (D3.51, D3.52). Remainders: the AA weapons' leave to fire up (C2.6); a Gyrostabilizer for a Motion firer (C5.35); a stall and the platoon's drm in a Motion attempt (D2.401); the other changes of VCA and TCA (D2.11, D3.12); an AFV with Canister (D3.31); the HD Maneuver dr and an assisting AFV for an Armor Leader (D3.44).
+
+Moved here by pass 60 (2026-10-15), with no task renumbered: the upper superstructure of a non-turreted AFV (C3.9; ruling R60.22); an OVR's Random SW and Gun Destruction dr (A9.74, with 105.4); a DC's IFT attack through an unarmored Target Facing (C7.346, with 105.1); Defensive First Fire at a vehicle entering the firer's hex (D3.2, C5.51); the Unarmed bar of CC Reaction Fire (D7.21, with 105.4); a 1MT AFV's Recall on a MG's Stun.
 
 **Pass 110: Guns and anti-tank weapons II** (new; 77 rows of the inventory). Counters: R# and X# on the Guns; a Gun that is not QSU, with LF or RFNM; a medium mortar with its dm side; a bazooka; a PIAT; a MOL-Projector; an RCL; a Gun of 100mm or more (many values manufactured, R0.3). Needs first: 35; 60 (HE Equivalency for C13.4x).
 
@@ -1962,6 +1970,8 @@ Moved here by pass 55 (2026-10-13), with no task renumbered. Whole rows: a tank'
 | **Pass 110 total** (build 7:20) | | **8:35** |
 
 Moved here by pass 55 (2026-10-13), with no task renumbered: the Gun Duel's equal case, fire that is not ordnance, the second duel, and a duel declared by the DEFENDER (C2.2401, C5.33); the 28LL and 40LL (C4.3, C7.32); Canister as Defensive First Fire and its other clauses (C8.4). Of 110.1's To Hit colors (C3.3), pass 55 built a Gun's and a vehicle's MA's; a light mortar's and a LATW's are left.
+
+Moved here by pass 60 (2026-10-15), with no task renumbered: a hit on another vehicle of an overstacked hex (A5.132; ruling R60.21); a MG's To Kill attack in the AFPh, and its Residual FP (A9.6, A9.61, D3.53); a dm SW's capture (A9.8, with 110.6); units out of LOS or too close on the Infantry Target Type (C3.4); a transfer of Acquisition between Target Types, and its loss when a mortar is carried away (C6.52, C6.521); friendly units in a mortar's target hex (C9.1, with 110.5); no Emplacement on a paved road or a bridge, and the owner's choice between gunshield, Emplacement, and TEM (C11.2, C11.5); a DC at a manned Gun among several targets, and an unattended Gun on the Area Target Type (C11.4, C3.41); the PF's +1 of August and September 1943 and the firer's choice of a unit manning a Gun or SW (C13.31, with 110.7); Canister at a mixed Location the IFT refuses, and a Gun Duel for a Gun stacked with other Infantry (C8.4, C2.2401).
 
 **Pass 115: Fortifications I** (planned at 3:35 of build; 74 rows of the inventory). Counters: foxholes 1S, 2S, 3S; trenches; roadblocks; pillboxes by strength (the vocabulary has the kinds, the catalog no definitions). Needs first: 35.
 
@@ -1990,6 +2000,8 @@ Moved here by pass 55 (2026-10-13), with no task renumbered: the Gun Duel's equa
 | 120.6 The counters |  | 0:20 |
 | Overhead | | 1:15 |
 | **Pass 120 total** (build 4:00) | | **5:15** |
+
+Moved here by pass 60 (2026-10-15), with no task renumbered: the mine column of the AFV Destruction Table (C7.7).
 
 **Pass 125: Terrain I: Depressions and water** (planned at 5:30 of build; 57 rows of the inventory). Counters: Crest, ford, and Current markers as states; a depth setting on a card. Needs first: 35, 40.
 
@@ -2040,6 +2052,8 @@ Moved here by pass 55 (2026-10-13), with no task renumbered: the Gun Duel's equa
 | Overhead | | 1:15 |
 | **Pass 140 total** (build 5:40) | | **6:55** |
 
+Moved here by pass 60 (2026-10-15), with no task renumbered: Interior Building Hexes and rooftops under a mortar's hit (B23.32); a building, a bridge, and an empty hex as targets of the Infantry and Area Target Types (C3.41).
+
 **Pass 145: Terrain V: bocage, sewers, and the village** (new; 100 rows of the inventory). Counters: a "Sewer" marker; Rail Cars; PFZ and Debris counters; map data for Narrow Streets, Steeples, railroads, and Towers (no in-scope board prints them, by the audit's reading). Needs first: 100 (Wall Advantage, vertex LOS); 115, 140.
 
 | Task | Rules | Estimate |
@@ -2064,6 +2078,8 @@ Moved here by pass 55 (2026-10-13), with no task renumbered: the Gun Duel's equa
 | Overhead | | 1:15 |
 | **Pass 150 total** (build 3:25) | | **4:40** |
 
+Moved here by pass 60 (2026-10-15), with no task renumbered: the OBA share of rules pass 60 built for mortars: Air Bursts (B13.3), the FFE Critical Hit (C3.72), Random Selection among Locations (C3.74), OBA at a Gun (C11.4, C11.6).
+
 **Pass 155: Offboard artillery II: missions, Bombardment, and Barrage** (new; 44 rows of the inventory). Counters: a field phone; an IR-capable mortar; Barrage and mission markers. Needs first: 150; 85 (SMOKE).
 
 | Task | Rules | Estimate |
@@ -2087,6 +2103,8 @@ Moved here by pass 55 (2026-10-13), with no task renumbered: the Gun Duel's equa
 | 160.6 The counters |  | 0:40 |
 | Overhead | | 1:15 |
 | **Pass 160 total** (build 4:40) | | **5:55** |
+
+Moved here by pass 60 (2026-10-15), with no task renumbered: Case A for an aircraft's attack (C7.21).
 
 **Pass 165: Special units: Cavalry and skis** (planned at 3:40 of build; 36 rows of the inventory). Counters: Horse counters in three sizes; Ski counters; an Ahkio. Needs first: 40 (Infantry OVR), 65 (Bailing Out), 95 (snow).
 
