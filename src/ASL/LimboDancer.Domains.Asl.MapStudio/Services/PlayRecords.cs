@@ -456,6 +456,12 @@ public sealed class PlayRecords
                     parts.Add("each unit: " + string.Join(", ", judged.Select(unit => $"{unit.UnitId} Final DR {unit.FinalDr}{ModifierText(unit.Drm)} {(unit.Hit ? "hit" : "missed")}")));
                 }
 
+                // C3.32, C3.4 (pass 60): a Location hit target by target, each unit and vehicle on its own Final DR.
+                if (resolution.TargetHits is { } each)
+                {
+                    parts.Add("each target (C3.32, C3.4): " + string.Join(", ", each.Select(unit => $"{unit.UnitId} Final DR {unit.FinalDr}{ModifierText(unit.Drm)} {(unit.Hit ? "hit" : "missed")}")));
+                }
+
                 if (resolution.FirerEffect is { } firerEffect)
                 {
                     parts.Add($"{fired.Crew}: {firerEffect} (C13.36)");
@@ -465,8 +471,14 @@ public sealed class PlayRecords
                 {
                     if (attack?.Arithmetic is { } arithmetic)
                     {
-                        parts.Add($"{label} on {string.Join(", ", attack.Effects.Select(effect => effect.UnitId))}: {arithmetic.ColumnFp} FP, IFT DR {string.Join(", ", arithmetic.Dice)} = {arithmetic.OriginalDr}"
+                        // C3.32, A7.308, D.8B (pass 60): the vehicles it struck, on the Vehicle line, and the CE crews of the AFVs beside them.
+                        var struck = (attack.VehicleEffects ?? []).Select(vehicle => vehicle.VehicleId);
+                        parts.Add($"{label} on {string.Join(", ", attack.Effects.Select(effect => effect.UnitId).Concat(struck))}: {arithmetic.ColumnFp} FP, IFT DR {string.Join(", ", arithmetic.Dice)} = {arithmetic.OriginalDr}"
                             + $"{ModifierText(arithmetic.Drm)} = {arithmetic.FinalDr}: {arithmetic.Result}");
+                        foreach (var vehicle in attack.VehicleEffects ?? [])
+                        {
+                            parts.Add($"{vehicle.VehicleId}: " + (vehicle.KillNumber is not null ? FireText.VehicleLineText(vehicle) : FireText.CrewText(vehicle)));
+                        }
                     }
                 }
 
@@ -509,6 +521,16 @@ public sealed class PlayRecords
                         + (kill.CrewCheck is { } tc ? $"; crew TC DR {tc.FinalDr} against {Against(tc)}: {(tc.Passed ? "passed" : "Abandoned")}" : "")
                         + (kill.CrewSurvival is { } cs ? $"; Crew Survival DR {cs.FinalDr} against CS# {cs.CrewSurvival}: {(cs.Survived ? "the crew survives" : "no survivors")}" : "");
                     parts.Add($"{kill.HitLocation} hit, {kill.TargetFacing} Target Facing, {kill.Ammunition.ToUpperInvariant()}: {tk}; TK DR {string.Join(", ", kill.Dice)} = {kill.OriginalDr}: {fate}{checks}");
+                }
+
+                // D.8A (pass 60): the Specific Collateral Attack on the CE crew of the AFV the hit left standing.
+                if (resolution.SpecificCollateral is { } collateral)
+                {
+                    var crew = collateral.Effect;
+                    parts.Add($"its CE crew takes a Specific Collateral Attack of {collateral.Firepower} FP on the same DR, +2 for CE (D.8A): Final DR {crew.FinalDr}, "
+                        + (collateral.Result == "none" ? "no effect" : collateral.Result)
+                        + (crew.CrewCheck is { } made ? $"; {FireText.CheckText(made)}" : "")
+                        + (crew.CrewResult == FireVehicleEffect.None ? "" : $": {crew.CrewResult}"));
                 }
 
                 var boundingShot = shot?.FireKind == ScenarioA1FireCalculator.BoundingFirstFire;

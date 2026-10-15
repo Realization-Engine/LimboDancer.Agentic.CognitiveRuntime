@@ -525,12 +525,16 @@ public static class ScenarioA1FireCalculator
 
         // A7.307, A7.308, D.8B: the vehicles in the target Location are attacked with the attack's IFT DR (unit step 25): one at a time
         // (ruling R25.3 keeps a Location to one vehicle, so the A7.308 limit on vehicles affected never binds), by Residual FP too (A8.2,
-        // A8.222; ruling R6.6), never by an ordnance hit here (the Vehicle Target Type is its own shot, R7.2): an unarmored vehicle, or an
+        // A8.222; ruling R6.6), by an ordnance hit only as below (the Vehicle Target Type is its own shot, R7.2): an unarmored vehicle, or an
         // AFV open-topped or closed-topped, whose CE crew alone is Vulnerable (R25.1, R7.11). An AFV in terrain with a positive TEM (not
         // cumulative with its crew's CE DRM, D5.31) is not reviewed (ruling R25.6).
+        // C3.32, A7.308 (pp. 169, 56; pass 60, ruling R60.8): an Infantry Target Type hit attacks every unarmored vehicle it hit on the Vehicle line,
+        // and the Vulnerable crew of each AFV whose own TH# it reached with the CE DRM alone (D5.31: not cumulative with a positive TEM). The Area
+        // Target Type's hit on a vehicle is not built.
         var vehicles = attack.Vehicles ?? [];
-        if (vehicles.Count > 1 || (vehicles.Count > 0 && attack.OrdnanceHit is not null)
-            || ((attack.TargetTerrain is { } vehicleTerrain && ScenarioA1FireReference.Tem.TryGetValue(vehicleTerrain, out var vehicleTem) && vehicleTem > 0)
+        var ordnanceHit = attack.OrdnanceHit is { Area: not true };
+        if ((vehicles.Count > 1 && !ordnanceHit) || (vehicles.Count > 0 && attack.OrdnanceHit is { Area: true })
+            || (!ordnanceHit && (attack.TargetTerrain is { } vehicleTerrain && ScenarioA1FireReference.Tem.TryGetValue(vehicleTerrain, out var vehicleTem) && vehicleTem > 0)
                 && vehicles.Any(item => reference.Definitions.GetValueOrDefault(item.DefinitionId!) is { IsVehicle: true, Unarmored: not true }))
             || vehicles.Any(item => item.LocationId != attack.TargetLocationId
                 || reference.Definitions.GetValueOrDefault(item.DefinitionId!) is not { IsVehicle: true }))
@@ -1179,6 +1183,55 @@ public static class ScenarioA1FireCalculator
     /// <summary>Whether a Good Order crew's gunshield faces the attack (C11.5).</summary>
     private static bool GunshieldFaces(FireAttack attack, FireGunTarget gun) => gun.Gunshield == true && attack.Targets is [{ Broken: not true }];
 
+    /// <summary>Whether a Vulnerable crew's IFT result calls on it to check (D.8, A7.303 to A7.305): a MC, a NMC, or a PTC.</summary>
+    internal static bool CrewChecks(string outcome) => Regex.IsMatch(outcome, "^([1-4])MC$") || outcome is "NMC" or "PTC";
+
+    /// <summary>
+    /// What a Collateral Attack's IFT result does to a Vulnerable crew (D.8, D5.34, D5.341, A7.82; rulings R25.5, R25.6; pass 60, ruling R60.7): a KIA
+    /// or K Recalls it; a failed MC Stuns it, or Recalls a crew already under Stun +1 (D5.342); a failed PTC pins it; an Original 12 on a MC Recalls it
+    /// (A10.31). <paramref name="dice"/> is the check's DR, needed when <see cref="CrewChecks"/> says so.
+    /// </summary>
+    internal static (FireCheck? Check, string Result) CrewOutcome(string outcome, IReadOnlyList<int>? dice, bool stunRecovery, int morale, int? crewMorale)
+    {
+        if (Regex.IsMatch(outcome, "^([1-7])KIA$") || Regex.IsMatch(outcome, "^K/([1-4])$"))
+        {
+            return (null, FireVehicleEffect.Recalled);
+        }
+
+        if (!CrewChecks(outcome) || dice is null)
+        {
+            return (null, FireVehicleEffect.None);
+        }
+
+        var mc = Regex.Match(outcome, "^([1-4])MC$");
+        var pin = outcome == "PTC";
+        var modifier = mc.Success ? int.Parse(mc.Groups[1].Value, CultureInfo.InvariantCulture) : 0;
+        var checkDrm = new List<FireModifier>();
+        if (modifier > 0)
+        {
+            checkDrm.Add(new FireModifier("ift-mc", modifier, "A7.304"));
+        }
+
+        if (stunRecovery)
+        {
+            checkDrm.Add(new FireModifier("stun-recovery", 1m, "D5.34"));
+        }
+
+        var original = dice[0] + dice[1];
+        var checkFinal = original + (int)checkDrm.Sum(item => item.Value);
+        var passed = checkFinal <= morale;
+        // A10.31, D5.341: an Original 12 on a MC is a Casualty MC, which Recalls an Inherent crew.
+        var result = !pin && original == 12 ? FireVehicleEffect.Recalled
+            : passed ? FireVehicleEffect.None
+            : pin ? FireVehicleEffect.Pinned
+            : stunRecovery ? FireVehicleEffect.Recalled
+            : FireVehicleEffect.Stunned;
+        return (new FireCheck(pin ? "NTC" : mc.Success ? outcome : "NMC", [.. dice], original, checkDrm, checkFinal, morale, passed, result)
+        {
+            MoraleSource = ScenarioA1ArmorLeaders.MoraleSource(crewMorale),
+        }, result);
+    }
+
     private static bool Dice(IReadOnlyList<int>? dice, bool allowEmpty) =>
         dice is null ? allowEmpty : dice.Count == 2 && dice.All(die => die is >= 1 and <= 6);
 
@@ -1710,51 +1763,19 @@ public static class ScenarioA1FireCalculator
                 // D3.42, D3.45 (p. 200; pass 55, rulings R55.17, R55.18): the crew checks at its Armor Leader's Morale Level, or an Inexperienced
                 // Crew's 6; his leadership modifier is not added, since he takes the check himself.
                 var morale = vehicle.CrewMorale ?? reference.AfvCrewMorale(definition.Nationality)!.Value;
-                var kia = Regex.IsMatch(outcome, "^([1-7])KIA$") || Regex.IsMatch(outcome, "^K/([1-4])$");
-                var mc = Regex.Match(outcome, "^([1-4])MC$");
-                FireCheck? check = null;
-                var crewResult = FireVehicleEffect.None;
-                if (kia)
+                IReadOnlyList<int>? dice = null;
+                if (CrewChecks(outcome))
                 {
-                    crewResult = FireVehicleEffect.Recalled;
-                }
-                else if (mc.Success || outcome == "NMC" || outcome == "PTC")
-                {
-                    if (attack.Rolls!.CrewChecks?.TryGetValue(id, out var dice) != true)
+                    if (attack.Rolls!.CrewChecks?.TryGetValue(id, out dice) != true)
                     {
                         undecided.Add("asl.a1.fire.roll-missing:crewCheck:" + id);
                         return null;
                     }
 
                     usedRolls.Add("crewCheck:" + id);
-                    var pin = outcome == "PTC";
-                    var modifier = mc.Success ? int.Parse(mc.Groups[1].Value, CultureInfo.InvariantCulture) : 0;
-                    var checkDrm = new List<FireModifier>();
-                    if (modifier > 0)
-                    {
-                        checkDrm.Add(new FireModifier("ift-mc", modifier, "A7.304"));
-                    }
-
-                    if (vehicle.StunRecovery == true)
-                    {
-                        checkDrm.Add(new FireModifier("stun-recovery", 1m, "D5.34"));
-                    }
-
-                    var original = dice![0] + dice[1];
-                    var checkFinal = original + (int)checkDrm.Sum(item => item.Value);
-                    var passed = checkFinal <= morale;
-                    // A10.31, D5.341: an Original 12 on a MC is a Casualty MC, which Recalls an Inherent crew.
-                    crewResult = !pin && original == 12 ? FireVehicleEffect.Recalled
-                        : passed ? FireVehicleEffect.None
-                        : pin ? FireVehicleEffect.Pinned
-                        : vehicle.StunRecovery == true ? FireVehicleEffect.Recalled
-                        : FireVehicleEffect.Stunned;
-                    check = new FireCheck(pin ? "NTC" : mc.Success ? outcome : "NMC", dice.ToArray(), original, checkDrm, checkFinal, morale, passed, crewResult)
-                    {
-                        MoraleSource = ScenarioA1ArmorLeaders.MoraleSource(vehicle.CrewMorale),
-                    };
                 }
 
+                var (check, crewResult) = CrewOutcome(outcome, dice, vehicle.StunRecovery == true, morale, vehicle.CrewMorale);
                 effects.Add(new FireVehicleEffect(id, definition.Id, FireVehicleEffect.None, null, crewDrm, crewFinal, null, check, crewResult));
             }
 

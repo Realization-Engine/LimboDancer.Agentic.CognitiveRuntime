@@ -105,7 +105,7 @@ public static class RefusalReasons
         ["ordnance.los-blocked"] = "the Gun has no LOS to the target (A6)",
         ["ordnance.target-outside"] = "the target Location holds no in-LOS enemy unit on the Infantry Target Type (C3.32)",
         ["ordnance.hindrance-unattributed"] = "the LOS Hindrance is not attributed to terrain the package reviews",
-        ["ordnance.concealment-mixed"] = "concealed and unconcealed targets together are not reviewed",
+        ["ordnance.vehicles-beyond-kia"] = "the Location holds more unarmored vehicles than the column's highest KIA#, the most one DR may affect, and their Random Selection is not built (A7.308); name one to fire at it on the Vehicle Target Type",
         ["ordnance.concealment-unreviewed"] = "fire by or at concealed units is decided only when a Good Order unit of the firing side is in range",
 
         // Rally (A10).

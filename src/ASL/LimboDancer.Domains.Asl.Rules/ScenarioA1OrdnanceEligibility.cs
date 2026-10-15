@@ -62,6 +62,7 @@ public static class ScenarioA1OrdnanceEligibility
             StunRecovery = facts.StunRecovery ? true : null,
             Bypass = facts.Bypass ? true : null,
             CrewMorale = facts.CrewMorale,
+            CrewExposed = facts.CrewExposed ? true : null,
         };
     }
 
@@ -278,6 +279,31 @@ public static class ScenarioA1OrdnanceEligibility
         return active && (enemy || mortar) && !vehicle() && !captured() && (mover is null || mover());
     }
 
+    /// <summary>
+    /// Whether a vehicle in the target Location is attacked by an Infantry Target Type shot's hit (C3.32, C3.41, p. 169; pass 60, ruling R60.8): an
+    /// active enemy vehicle, outside the MPh. In the MPh only the moving units are a shot's targets (C3.4), and a moving vehicle beside them is
+    /// refused. The vehicle fact is read only when asked.
+    /// </summary>
+    public static bool LocationVehicle(bool infantryTargetType, bool active, bool enemy, bool mph, Func<bool> vehicle)
+    {
+        ArgumentNullException.ThrowIfNull(vehicle);
+        return infantryTargetType && active && enemy && !mph && vehicle();
+    }
+
+    /// <summary>
+    /// Why a shot that names no vehicle is refused at a Location holding one (C3.31, C3.41, D.6; pass 60, ruling R60.8), or null: in the MPh a moving
+    /// vehicle beside the moving Infantry is not built; a PF's or an ATR's hit there is not built; and a Location of AFVs alone, with no Infantry
+    /// and no unarmored vehicle, is the Vehicle Target Type's, since the Infantry Target Type "cannot be used to attack an AFV".
+    /// </summary>
+    public static string? LocationVehicleRefusal(string vehicle, string target, bool mph, bool panzerfaustOrAtr, bool personnel, bool unarmoredVehicle) =>
+        mph ? $"play.ordnance-vehicle: {vehicle} moves in {target}; fire at it on the Vehicle Target Type by naming it, since a Defensive First Fire hit's "
+                + "attack on a moving vehicle beside the moving Infantry is not built (C3.31; rulings R25.10, R60.8)"
+            : panzerfaustOrAtr ? $"play.ordnance-vehicle: {vehicle} is in {target}; a PF's or an ATR's hit on a Location that holds a vehicle is not built, "
+                + "so fire at the vehicle by naming it (C13.31, C13.23; ruling R60.8)"
+            : !personnel && !unarmoredVehicle ? $"play.ordnance-vehicle: {target} holds only AFVs, which the Infantry Target Type cannot attack; fire at one on "
+                + "the Vehicle Target Type by naming it (C3.41, D.6)"
+            : null;
+
     /// <summary>The refusal of a target Location holding a unit outside the catalog.</summary>
     public const string TargetOutsideCatalogRefusal = "play.ordnance-target: the target Location holds a unit outside the catalog";
 
@@ -450,7 +476,13 @@ public static class ScenarioA1OrdnanceEligibility
             {
                 HullFacing = recorded.VehicleTarget?.HullFacing,
                 TurretFacing = recorded.VehicleTarget?.TurretFacing,
+
+                // D.8A (pass 60, ruling R60.3): the crew's exposure is read from the state only for a shot whose record carries the rule's fact.
+                CrewExposed = recorded.SpecificCollateral == true ? expected.VehicleTarget.CrewExposed : null,
             },
+
+            // The fact of pass 60 that gates the Specific Collateral Attack (D.8A); a record made before it has none and attacks no crew.
+            SpecificCollateral = recorded.SpecificCollateral,
 
             // The map reads of pass 8: the MP in the firer's LOS and Open Ground (C6.11, C6.14), the own-hex shot (C5.5), Bore Sighting (C6.4),
             // overstacking (A5.12, A5.131), and the Gun in the target Location with its Emplacement and gunshield (C11).

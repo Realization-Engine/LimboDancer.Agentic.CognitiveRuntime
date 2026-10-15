@@ -489,6 +489,14 @@ public sealed class ScenarioA1FireReference
     public int KillNumber(int column) => killNumbers[column];
 
     /// <summary>
+    /// The highest KIA# of a column index, read from its results (A7.308, p. 56; pass 60): the most vehicles one DR on the Vehicle line may affect, "a 6, 8
+    /// or 12 FP attack ... no more than three vehicles".
+    /// </summary>
+    public int HighestKia(int column) =>
+        results.Select(row => System.Text.RegularExpressions.Regex.Match(row[column], "^([1-9])?KIA$")).Where(match => match.Success)
+            .Select(match => match.Groups[1].Success ? int.Parse(match.Groups[1].Value, System.Globalization.CultureInfo.InvariantCulture) : 1).DefaultIfEmpty(0).Max();
+
+    /// <summary>
     /// The Morale Level of an AFV's Inherent crew (D5.1): that of its nationality's best unbroken elite Infantry MMC, read from the
     /// reviewed catalog's elite squads and half-squads; null when the catalog has none.
     /// </summary>

@@ -179,7 +179,7 @@ public static class ScenarioA1OrdnanceCalculator
         var reasons = new List<string>();
         foreach (var critical in new[] { false, true })
         {
-            reasons.AddRange(ScenarioA1FireCalculator.Precheck(HitAttack(shot, gun, reference, critical, HitTargets(shot, gun), null), reference.Fire)
+            reasons.AddRange(ScenarioA1FireCalculator.Precheck(HitAttack(shot, gun, reference, critical, HitTargets(shot, gun), null, HitVehicles(shot, reference)), reference.Fire)
                 .Select(reason => Prefix + (critical ? "critical-hit:" : "hit:") + reason));
         }
 
@@ -551,7 +551,23 @@ public static class ScenarioA1OrdnanceCalculator
             outside.Add(Prefix + "target-outside");
         }
 
-        if (hit.Targets!.Count == 0 || hit.TargetLocationId != shot.TargetLocationId || hit.Phase != shot.Phase || hit.FiringSide != shot.FiringSide
+        // C3.32, C3.41, A7.308 (pp. 169, 170, 56; pass 60, ruling R60.8): the vehicles of the Location, in a fire phase; an AFV is immune, so a
+        // Location of AFVs alone is the Vehicle Target Type's. No more unarmored vehicles than the column's highest KIA# may be affected by one DR,
+        // and their Random Selection is not built.
+        var inLocation = hit.Vehicles ?? [];
+        var unarmored = inLocation.Count(item => Unarmored(item, reference));
+        if (inLocation.Count > 0 && (shot.FireKind is not null || mortar
+            || inLocation.Any(item => item.LocationId != shot.TargetLocationId || reference.Fire.Definitions.GetValueOrDefault(item.DefinitionId ?? string.Empty) is not { IsVehicle: true })))
+        {
+            outside.Add(Prefix + "target-outside");
+        }
+        else if (unarmored > 0 && Array.IndexOf(ScenarioA1FireReference.ColumnFp, HeEquivalency(shot, reference) ?? reference.HeFirepower(gun.Caliber)) is var column and >= 0
+            && unarmored > reference.Fire.HighestKia(column))
+        {
+            outside.Add(Prefix + "vehicles-beyond-kia");
+        }
+
+        if ((hit.Targets!.Count == 0 && unarmored == 0) || hit.TargetLocationId != shot.TargetLocationId || hit.Phase != shot.Phase || hit.FiringSide != shot.FiringSide
             || hit.Firers is { Count: > 0 } || hit.Director is not null || hit.FireKind is not null || hit.OrdnanceHit is not null)
         {
             outside.Add(Prefix + "target-outside");
@@ -670,7 +686,7 @@ public static class ScenarioA1OrdnanceCalculator
     {
         static bool Dice(IReadOnlyList<int>? dice) => dice is not null && (dice.Count != 2 || dice.Any(die => die is < 1 or > 6));
         return Dice(rolls.ToHit) || rolls.Subsequent is < 1 or > 6 || rolls.CriticalSelection?.Values.Any(dr => dr is < 1 or > 6) == true
-            || Dice(rolls.ToKill) || Dice(rolls.ShockCheck) || Dice(rolls.CrewCheck) || Dice(rolls.CrewSurvival) || rolls.PanzerfaustCheck is < 1 or > 6;
+            || Dice(rolls.ToKill) || Dice(rolls.ShockCheck) || Dice(rolls.CrewCheck) || Dice(rolls.CrewSurvival) || Dice(rolls.CollateralCheck) || rolls.PanzerfaustCheck is < 1 or > 6;
     }
 
     private static List<string> Undecided(OrdnanceShot shot)
@@ -698,13 +714,8 @@ public static class ScenarioA1OrdnanceCalculator
             undecided.Add(Prefix + "hindrance-unattributed");
         }
 
-        // C6.2: Case K applies to each concealed target alone, so a Location mixing concealed and Known units would need two To
-        // Hit results; the review leaves that out.
-        var concealed = hit.Targets!.Select(Concealed).Distinct().ToArray();
-        if (shot.VehicleTarget is null && shot.TargetType is null && concealed.Length > 1)
-        {
-            undecided.Add(Prefix + "concealment-mixed");
-        }
+        // C6.2, C3.4 (pass 60, ruling R60.9): Case K applies to each concealed target alone, so a Location mixing concealed and Known units is
+        // judged unit by unit (Run).
 
         // A12.14: a concealed crew that fires its Gun loses "?" in the LOS of a Good Order enemy ground unit within 16 hexes; the package
         // sees only the target Location, so it decides only when one of its units is Good Order within that range, as for Infantry fire.
@@ -723,9 +734,10 @@ public static class ScenarioA1OrdnanceCalculator
     /// <summary>
     /// The IFT attack of a hit: the Gun's HE FP column (C.6) or its round's HE Equivalency (C8.31), doubled by a Critical Hit (C3.71), on the given
     /// targets; the Location's other units, which the other attack of a split hit attacks, are its companions for a berserk leader's NTC (A15.41).
+    /// The vehicles it hit are attacked on the same DR (C3.32, A7.308; pass 60, ruling R60.8).
     /// </summary>
     internal static FireAttack HitAttack(OrdnanceShot shot, GunDefinition gun, ScenarioA1OrdnanceReference reference, bool critical,
-        IReadOnlyList<FireTarget> targets, FireRolls? rolls)
+        IReadOnlyList<FireTarget> targets, FireRolls? rolls, IReadOnlyList<FireVehicle>? vehicles = null)
     {
         // C3.33, C9.5 (ruling R9.3): an Area Target Type hit attacks at half the HE FP (the IFT column at or below it), a Critical Hit at the
         // full HE FP doubled.
@@ -739,14 +751,15 @@ public static class ScenarioA1OrdnanceCalculator
 
         var others = shot.Hit!.Targets!.Where(item => !targets.Contains(item)).ToArray();
 
-        // Ruling R5.8: each attack of a split hit answers the options of its own targets.
-        var ids = targets.Select(item => item.UnitId).ToHashSet(StringComparer.Ordinal);
+        // Ruling R5.8: each attack of a split hit answers the options of its own targets, a vehicle's Unlikely Kill among them.
+        var ids = targets.Select(item => item.UnitId).Concat((vehicles ?? []).Select(item => item.VehicleId)).ToHashSet(StringComparer.Ordinal);
         return shot.Hit with
         {
             Choices = shot.Hit.Choices is { } choices
                 ? choices.Where(item => item.Key.Split(':') is [_, var unit, ..] && ids.Contains(unit)).ToDictionary(item => item.Key, item => item.Value, StringComparer.Ordinal)
                 : null,
             Targets = targets,
+            Vehicles = vehicles is { Count: > 0 } ? vehicles : null,
             Firers = [],
             Director = null,
             Companions = others.Length > 0 ? [.. others, .. shot.Hit.Companions ?? []] : shot.Hit.Companions,
@@ -863,8 +876,13 @@ public static class ScenarioA1OrdnanceCalculator
 
         // C13.23 (pass 60, ruling R60.6): an ATR that is not 20L attacks only the Gun and its manning crew.
         var targetsHit = HitTargets(shot, gun);
-        var concealedTarget = targetsHit.All(Concealed);
-        if (concealedTarget)
+
+        // C3.32, C3.4, A12.13 (pp. 169, 170, 77; pass 60, rulings R60.8, R60.9): a Location holding a vehicle the hit can affect, or concealed and
+        // Known units together, is hit target by target, each on its own Final DR: Cases K, N, P, and Q are each target's own.
+        var vehicles = HitVehicles(shot, reference);
+        var mixed = vehicles.Count > 0 || (targetsHit.Any(Concealed) && !targetsHit.All(Concealed));
+        var concealedTarget = targetsHit.All(Concealed) && vehicles.All(item => item.Concealed == true);
+        if (concealedTarget && !mixed)
         {
             drm.Add(new FireModifier("case-k", 2, "C6.2"));
         }
@@ -939,6 +957,19 @@ public static class ScenarioA1OrdnanceCalculator
             drm.Add(new FireModifier("case-r", hindrance, "C6.9"));
         }
 
+        // Each target's own DRM of a Location hit target by target: a unit's Case K, or its Case N, with the Location's Case P and Q; a vehicle's
+        // its own (OwnVehicleDrm). The shot's DRM are the rest.
+        var own = new List<(string Id, IReadOnlyList<FireModifier> Drm, bool Pool)>();
+        if (mixed)
+        {
+            var caseN = drm.Where(item => item.Name == "case-n").ToArray();
+            var location = drm.Where(item => item.Name.StartsWith("case-p:", StringComparison.Ordinal) || item.Name.StartsWith("case-q:", StringComparison.Ordinal)).ToArray();
+            drm.RemoveAll(item => item.Name == "case-n" || item.Name.StartsWith("case-p:", StringComparison.Ordinal) || item.Name.StartsWith("case-q:", StringComparison.Ordinal));
+            FireModifier[] caseK = [new FireModifier("case-k", 2, "C6.2")];
+            own.AddRange(targetsHit.Select(unit => (unit.UnitId!, (IReadOnlyList<FireModifier>)[.. Concealed(unit) ? caseK : caseN, .. location], true)));
+            own.AddRange(vehicles.Select(vehicle => (vehicle.VehicleId!, (IReadOnlyList<FireModifier>)OwnVehicleDrm(shot, vehicle, caseN, reference), Unarmored(vehicle, reference))));
+        }
+
         if (rolls.ToHit is not { } dice)
         {
             return Refused(OrdnanceResolution.Indeterminate, [Prefix + "roll-missing:toHit"]);
@@ -960,7 +991,35 @@ public static class ScenarioA1OrdnanceCalculator
         var improbable = lowest > modified;
         bool isHit, critical;
         int? subsequent = null;
-        if (improbable)
+        var judged = new List<(string Id, IReadOnlyList<FireModifier> Drm, int Final, bool Hit, bool Critical, bool Pool)>();
+        if (mixed)
+        {
+            // C3.6, C3.7 as below, target by target; one subsequent dr serves them all.
+            var sums = own.Select(item => (int)item.Drm.Sum(modifier => modifier.Value)).ToArray();
+            if (original == 2 && sums.Any(sum => lowest + sum > modified || (final + sum <= modified && (final + sum) * 2 >= modified)))
+            {
+                if (rolls.Subsequent is not { } dr)
+                {
+                    return Refused(OrdnanceResolution.Indeterminate, [Prefix + "roll-missing:subsequent"]);
+                }
+
+                subsequent = dr;
+            }
+
+            foreach (var ((id, ownDrm, pool), sum) in own.Zip(sums))
+            {
+                var targetFinal = final + sum;
+                var hitOne = lowest + sum > modified ? subsequent is >= 1 and <= 3 : targetFinal <= modified;
+                var criticalOne = lowest + sum > modified ? subsequent == 1
+                    : hitOne && (targetFinal * 2 < modified || (original == 2 && (subsequent == 1 || subsequent * 2 <= modified)));
+                judged.Add((id, ownDrm, targetFinal, hitOne, criticalOne, pool));
+            }
+
+            improbable = sums.All(sum => lowest + sum > modified);
+            isHit = judged.Any(item => item.Hit);
+            critical = judged.Any(item => item.Critical && item.Pool);
+        }
+        else if (improbable)
         {
             if (original == 2)
             {
@@ -1057,7 +1116,9 @@ public static class ScenarioA1OrdnanceCalculator
         string? criticalTarget = null;
         if (isHit)
         {
-            var targets = targetsHit;
+            // C3.32 (pass 60, ruling R60.8): a Location hit target by target attacks the units and vehicles the shot hit.
+            var targets = mixed ? [.. targetsHit.Where(item => judged.Any(one => one.Id == item.UnitId && one.Hit))] : targetsHit;
+            FireVehicle[] struck = [.. vehicles.Where(item => judged.Any(one => one.Id == item.VehicleId && one.Hit))];
             if (gun.LatwType == "pf" && targets.Count > 1)
             {
                 // C13.31 (p. 183; pass 60, ruling R60.5): a PF "may not directly affect more than one unit ... unless the Random Selection DR
@@ -1073,28 +1134,30 @@ public static class ScenarioA1OrdnanceCalculator
                 targets = [.. targets.Where(item => picks[item.UnitId!] == top)];
             }
 
-            IReadOnlyList<FireTarget> criticalTargets = [];
-            if (critical)
+            // C3.74 (p. 171; pass 60, ruling R60.8): the Critical Hit falls among the units and unarmored vehicles it was obtained against; an AFV is
+            // immune to it, and its crew is attacked normally.
+            IReadOnlyList<string> pool = !critical ? [] : mixed ? [.. judged.Where(item => item.Critical && item.Pool).Select(item => item.Id)]
+                : [.. targets.Select(item => item.UnitId!)];
+            IReadOnlyList<string> picked = pool;
+            if (pool.Count > 1)
             {
-                if (targets.Count == 1)
+                // C3.74: a Critical Hit applies to the target Random Selection picks (the highest dr, every tied unit alike; A.9).
+                var key = "criticalSelection:" + string.Join(",", pool);
+                if (rolls.CriticalSelection is not { } drs || pool.Any(item => !drs.ContainsKey(item)))
                 {
-                    criticalTargets = targets;
-                }
-                else
-                {
-                    // C3.74: a Critical Hit applies to the target Random Selection picks (the highest dr, every tied unit alike; A.9).
-                    var key = "criticalSelection:" + string.Join(",", targets.Select(item => item.UnitId));
-                    if (rolls.CriticalSelection is not { } drs || targets.Any(item => !drs.ContainsKey(item.UnitId!)))
-                    {
-                        return Refused(OrdnanceResolution.Indeterminate, [Prefix + "roll-missing:" + key]);
-                    }
-
-                    var highest = targets.Max(item => drs[item.UnitId!]);
-                    criticalTargets = [.. targets.Where(item => drs[item.UnitId!] == highest)];
-                    criticalTarget = string.Join(",", criticalTargets.Select(item => item.UnitId));
+                    return Refused(OrdnanceResolution.Indeterminate, [Prefix + "roll-missing:" + key]);
                 }
 
-                criticalHit = ScenarioA1FireCalculator.Resolve(HitAttack(shot, gun, reference, true, criticalTargets, rolls.CriticalHit), reference.Fire);
+                var highest = pool.Max(item => drs[item]);
+                picked = [.. pool.Where(item => drs[item] == highest)];
+                criticalTarget = string.Join(",", picked);
+            }
+
+            FireTarget[] criticalTargets = [.. targets.Where(item => picked.Contains(item.UnitId!))];
+            FireVehicle[] criticalVehicles = [.. struck.Where(item => picked.Contains(item.VehicleId!))];
+            if (picked.Count > 0)
+            {
+                criticalHit = ScenarioA1FireCalculator.Resolve(HitAttack(shot, gun, reference, true, criticalTargets, rolls.CriticalHit, criticalVehicles), reference.Fire);
                 if (Pending(criticalHit, "critical-hit:") is { } pending)
                 {
                     return pending;
@@ -1103,13 +1166,14 @@ public static class ScenarioA1OrdnanceCalculator
 
             // C3.32: every unit hit is attacked with a single Effects DR, so the normal hit reuses the Critical Hit's (C3.74).
             var others = targets.Where(item => !criticalTargets.Contains(item)).ToArray();
-            if (others.Length > 0)
+            var otherVehicles = struck.Where(item => !criticalVehicles.Contains(item)).ToArray();
+            if (others.Length > 0 || otherVehicles.Length > 0)
             {
                 var hitRolls = criticalHit?.Arithmetic?.Dice is { } shared ? (rolls.Hit ?? new FireRolls(null, null, null, null)) with
                 {
                     Attack = shared
                 } : rolls.Hit;
-                normal = ScenarioA1FireCalculator.Resolve(HitAttack(shot, gun, reference, false, others, hitRolls), reference.Fire);
+                normal = ScenarioA1FireCalculator.Resolve(HitAttack(shot, gun, reference, false, others, hitRolls, otherVehicles), reference.Fire);
                 if (Pending(normal, "hit:") is { } pending)
                 {
                     return pending;
@@ -1151,6 +1215,7 @@ public static class ScenarioA1OrdnanceCalculator
             GunTargetFate = fate,
             AmmunitionUse = use,
             HeEquivalency = HeEquivalency(shot, reference),
+            TargetHits = mixed ? [.. judged.Select(item => new OrdnanceAreaTarget(item.Id, item.Drm, item.Final, item.Hit && isHit))] : null,
             FirerEffect = casualty ? OrdnancePanzerfaustCheck.CasualtyReduction : null,
         };
     }
@@ -1176,7 +1241,7 @@ public static class ScenarioA1OrdnanceCalculator
     }
 
     /// <summary>A Gun's normal HE FP (C.6), or null when it has no HE: its listing denies it and gives no HE Depletion Number (C2.21, C8.8).</summary>
-    private static int? HeFirepowerOf(GunDefinition gun, ScenarioA1OrdnanceReference reference) =>
+    internal static int? HeFirepowerOf(GunDefinition gun, ScenarioA1OrdnanceReference reference) =>
         gun.NoHe && !ScenarioA1ArmorCalculator.Lists(gun, "he") ? null : reference.HeFirepower(gun.Caliber) is var fp and > 0 ? fp : null;
 
     /// <summary>
@@ -1187,6 +1252,54 @@ public static class ScenarioA1OrdnanceCalculator
         gun.LatwType == "atr" && gun.Caliber != 20 && shot.Hit!.GunTarget is { CrewUnitId: { } crew }
             ? [.. shot.Hit.Targets!.Where(item => item.UnitId == crew)]
             : shot.Hit!.Targets!;
+
+    /// <summary>
+    /// The vehicles of the target Location an Infantry Target Type hit can affect (C3.32, A7.308, D.8B, p. 169; pass 60, ruling R60.8): each
+    /// unarmored vehicle, and each AFV whose crew is Vulnerable (CE, not Stunned or Recalled; D5.3, D5.34), which a General Collateral Attack
+    /// attacks; an AFV whose crew is not Vulnerable is immune and is not fired at. None for a Vehicle or Area Target Type shot.
+    /// </summary>
+    private static IReadOnlyList<FireVehicle> HitVehicles(OrdnanceShot shot, ScenarioA1OrdnanceReference reference) =>
+        shot.VehicleTarget is not null || shot.TargetType is not null || shot.Hit?.Vehicles is not { Count: > 0 } inLocation ? []
+            : [.. inLocation.Where(item => Unarmored(item, reference) || (item.CrewExposed == true && item.Stunned != true))];
+
+    /// <summary>Whether a vehicle of the Location is unarmored (D1.21).</summary>
+    private static bool Unarmored(FireVehicle vehicle, ScenarioA1OrdnanceReference reference) =>
+        reference.Fire.Definitions.GetValueOrDefault(vehicle.DefinitionId ?? string.Empty)?.Unarmored == true;
+
+    /// <summary>
+    /// A vehicle's own To Hit DRM on the Infantry Target Type (C3.32 and its EX, p. 169; pass 60, ruling R60.8): Case K when it is concealed, else the
+    /// shot's Case N; its size (Case P, C6.7); the TEM of its Location (Case Q, C6.8), as on the Vehicle Target Type; and Height Advantage when it has
+    /// no other positive TEM (D4.22, B10.31).
+    /// </summary>
+    private static List<FireModifier> OwnVehicleDrm(OrdnanceShot shot, FireVehicle vehicle, IReadOnlyList<FireModifier> caseN, ScenarioA1OrdnanceReference reference)
+    {
+        var drm = new List<FireModifier>(vehicle.Concealed == true ? [new FireModifier("case-k", 2, "C6.2")] : caseN);
+        var targetSize = reference.Armor.Vehicles.GetValueOrDefault(vehicle.DefinitionId ?? string.Empty)?.TargetSize;
+        var size = targetSize switch
+        {
+            "very-small" => 2,
+            "small" => 1,
+            "large" => -1,
+            "very-large" => -2,
+            _ => 0,
+        };
+        if (size != 0)
+        {
+            drm.Add(new FireModifier("case-p:" + targetSize, size, "C6.7"));
+        }
+
+        if (ScenarioA1FireReference.Tem.GetValueOrDefault(shot.Hit!.TargetTerrain!) is var tem and not 0)
+        {
+            drm.Add(new FireModifier("case-q:" + shot.Hit.TargetTerrain, tem, "C6.8"));
+        }
+
+        if (HeightAdvantageApplies(shot, drm))
+        {
+            drm.Add(new FireModifier("case-q:height-advantage", 1, "B10.31"));
+        }
+
+        return drm;
+    }
 
     /// <summary>Whether an ATR that is not 20L fires at a Gun's manning crew (C11.52, C13.23; pass 60, ruling R60.6), its only target on the Infantry Target Type.</summary>
     private static bool AtrAtGun(OrdnanceShot shot, GunDefinition gun) =>

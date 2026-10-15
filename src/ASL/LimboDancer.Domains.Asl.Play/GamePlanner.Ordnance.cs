@@ -114,14 +114,16 @@ public sealed partial class GamePlanner
             }
         }
 
-        // Ruling R25.10: the hit's IFT attack on a vehicle in the target Location is not reviewed; C3.31 (ruling R7.2): name the vehicle to
-        // fire at it on the Vehicle Target Type.
+        // C3.32, C3.41 (pass 60, ruling R60.8): an Infantry Target Type shot at a Location holding a vehicle attacks its Infantry and unarmored vehicles
+        // and a Vulnerable AFV crew; Rules says where it is still refused. C3.31 (ruling R7.2): name a vehicle to fire at it on the Vehicle Target Type.
         if (targetVehicle is null && shot.TargetType is null
             && state.At(target).OfType<UnitInstance>().FirstOrDefault(unit => unit.Status == InstanceStatus.Active && LiveFire.IsVehicle(unit)
-                && (state.Phase != "mph" || state.Movement?.Movers.Contains(unit.Id) == true)) is { } vehicle)
+                && (state.Phase != "mph" || state.Movement?.Movers.Contains(unit.Id) == true)) is { } vehicle
+            && ScenarioA1OrdnanceEligibility.LocationVehicleRefusal(vehicle.Id, target.ToString(), state.Phase == "mph",
+                shot.Gun!.DefinitionId == OrdnanceTargetTypes.Panzerfaust || LiveOrdnance.LatwType(shot.Gun.DefinitionId ?? string.Empty) == "atr",
+                shot.Hit!.Targets is { Count: > 0 }, shot.Hit.Vehicles?.Any(item => FireReference.Value.Definitions.GetValueOrDefault(item.DefinitionId ?? string.Empty)?.Unarmored == true) == true) is { } vehicleRefusal)
         {
-            return (null, [$"play.ordnance-vehicle: {vehicle.Id} is in {target}; fire at it on the Vehicle Target Type by naming it, "
-                + "since a hit's attack on the Location's Infantry and vehicles together is not reviewed (C3.31; rulings R25.10, R7.2)"]);
+            return (null, [vehicleRefusal]);
         }
 
         if (state.At(target).OfType<UnitInstance>().Any(unit => unit.Status == InstanceStatus.Active && (Is(unit, Conditions.Melee) || Is(unit, Conditions.Captured))))
@@ -174,10 +176,27 @@ public sealed partial class GamePlanner
     private static string OrdnanceSummary(OrdnanceShot facts, UnitFacing? facing)
     {
         // The To Hit number and DRM before any roll, read from the package with dice that decide nothing else (a miss).
-        var preview = ScenarioA1OrdnanceCalculator.Resolve(facts with
+        var previewed = ScenarioA1OrdnanceCalculator.Resolve(facts with
         {
             Rolls = new OrdnanceRolls([6, 6], null, null, null, null) { PanzerfaustCheck = 1 }
-        }, OrdnanceReference.Value).ToHit;
+        }, OrdnanceReference.Value);
+        var preview = previewed.ToHit;
+
+        // C3.32, C3.4 (pass 60, rulings R60.8, R60.9): a Location hit target by target says which units and vehicles each Original DR hits; a
+        // concealed one is named only as such, and an AFV for its CE crew.
+        var each = previewed.TargetHits is { } judged && preview is not null
+            ? "; hit target by target (C3.32, C3.4): " + string.Join(", ", judged.Select(item =>
+            {
+                var need = preview.ModifiedToHit - (item.FinalDr - 12 - (int)preview.Drm.Where(drm => drm.Name == "case-c4:lower-dr").Sum(drm => drm.Value));
+                var unit = facts.Hit!.Targets!.FirstOrDefault(target => target.UnitId == item.UnitId);
+                var vehicle = facts.Hit.Vehicles?.FirstOrDefault(target => target.VehicleId == item.UnitId);
+                var name = unit is not null ? (unit.Concealed == true || unit.Hidden == true || unit.Dummy == true ? "a concealed unit" : item.UnitId)
+                    : vehicle?.Concealed == true ? "a concealed vehicle"
+                    : FireReference.Value.Definitions.GetValueOrDefault(vehicle?.DefinitionId ?? string.Empty)?.Unarmored == true ? item.UnitId
+                    : $"the CE crew of {item.UnitId} (D.8B)";
+                return need >= 2 ? $"{name} on an Original DR of {need} or less" : $"{name} only on an Original 2 (C3.6)";
+            }))
+            : string.Empty;
         var toHit = preview is null ? string.Empty
             : $"; Modified TH# {preview.ModifiedToHit} ({preview.Color}), DRM {(preview.Drm.Count == 0 ? "none" : string.Join(", ", preview.Drm.Select(item =>
                 // C5.35 (pass 50): the lower dr is not known before the roll.
@@ -205,7 +224,7 @@ public sealed partial class GamePlanner
             : string.Empty;
         return $"play.ordnance: {facts.Gun!.GunId} fires {aim} in the {facts.Phase}; range {facts.Range}, {facts.Hit!.TargetTerrain}"
             + (facts.HexspinesToTurn > 0 ? $", turning {(facts.Vehicle is null ? string.Empty : "its turret ")}{facts.HexspinesToTurn} hexspine(s) to {facing!.Value.Name()}" : string.Empty)
-            + toHit + depletion;
+            + toHit + each + depletion;
     }
 
     /// <summary>
@@ -765,6 +784,9 @@ public sealed partial class GamePlanner
                 "crewCheck" => (2, "ordnance-crew-check"),
                 "crewSurvival" => (2, "ordnance-crew-survival"),
 
+                // D.8A (pass 60): the check a Specific Collateral Attack calls on the crew to take.
+                "collateralCheck" => (2, "ordnance-collateral-check"),
+
                 // C8.4 (pass 55): a Canister shot's one DR, on the IFT.
                 "canister" => (2, "ordnance-canister"),
                 _ when selected.Length > 0 => (selected.Length, "ordnance-random-selection"),
@@ -861,7 +883,20 @@ public sealed partial class GamePlanner
                 }
             }
 
+            // C3.32, A7.308, D.8B (pass 60, ruling R60.8): the unarmored vehicles the hit struck, on the Vehicle line, and the Vulnerable crews of the
+            // AFVs whose TH# it reached, as an IFT attack's are.
+            foreach (var vehicle in attack.VehicleEffects ?? [])
+            {
+                VehicleEffectsAfterHit(state, vehicle, nestedFacts, scope, attemptId, expected, package, recordId, events);
+            }
+
             effects.AddRange(attack.Effects);
+        }
+
+        // D.8A (pass 60, ruling R60.7): the Specific Collateral Attack on the crew of the AFV the hit left standing.
+        if (resolution.SpecificCollateral is { } collateral)
+        {
+            VehicleEffectsAfterHit(state, collateral.Effect, facts.Hit!, scope, attemptId, expected, package, recordId, events);
         }
 
         // C2.28: the malfunction; A7.1, C2.24: the Gun and its crew carry the fire phase's marker from their first shot; A8.1, C2.241 (ruling R8.1):
@@ -1033,6 +1068,27 @@ public sealed partial class GamePlanner
     }
 
     /// <summary>
+    /// The events of what an ordnance hit did to a vehicle or its crew (pass 60, rulings R60.7, R60.8), as an IFT attack's are written: the Vehicle
+    /// line's result or the crew's, and a Recalled AFV on its way off the map that is immobilized Abandoned by its crew (D5.341, D5.41).
+    /// </summary>
+    private void VehicleEffectsAfterHit(GameState state, FireVehicleEffect vehicle, FireAttack facts, GameScope scope, string attemptId, long expected, string package,
+        string recordId, List<GameEvent> events)
+    {
+        foreach (var payload in VehicleEffectEvents(state, vehicle, facts))
+        {
+            events.Add(Event(scope, attemptId, events.Count + 1, expected, payload.Type, payload.Payload, package, null, [recordId]));
+        }
+
+        if (state.Unit(vehicle.VehicleId) is { } stuck && ScenarioA1FireFollowUps.AbandonsWhenImmobilized(vehicle, MustLeave(stuck)))
+        {
+            foreach (var (type, abandon) in AbandonEvents(stuck, attemptId))
+            {
+                events.Add(Event(scope, attemptId, events.Count + 1, expected, type, abandon, package, null, [recordId]));
+            }
+        }
+    }
+
+    /// <summary>
     /// What a PF does to its own firer (C13.31, C13.36; ruling R9.7): pinned; broken; or Casualty Reduction: a squad becomes its HS, a HS or crew
     /// is eliminated, a SMC is wounded, or eliminated if already wounded (A7.302, A17.2).
     /// </summary>
@@ -1109,6 +1165,7 @@ public sealed partial class GamePlanner
             "shockCheck" => rolls with { ShockCheck = values },
             "crewCheck" => rolls with { CrewCheck = values },
             "crewSurvival" => rolls with { CrewSurvival = values },
+            "collateralCheck" => rolls with { CollateralCheck = values },
             "canister" => rolls with { Canister = values },
             _ when selected.Length > 0 => rolls with
             {
@@ -1135,6 +1192,10 @@ public sealed partial class GamePlanner
             "leaderLoss" => (2, "fire-leader-loss"),
             "heatOfBattle" => (2, "fire-heat-of-battle"),
             "berserkCheck" => (2, "fire-check"),
+
+            // Pass 60 (ruling R60.8): a vehicle crew's check and the Unlikely Kill dr of a hit on a Location holding vehicles.
+            "crewCheck" => (2, "fire-crew-check"),
+            "unlikelyKill" => (1, "fire-unlikely-kill"),
             _ => (1, "fire-wound-severity"),
         };
     }

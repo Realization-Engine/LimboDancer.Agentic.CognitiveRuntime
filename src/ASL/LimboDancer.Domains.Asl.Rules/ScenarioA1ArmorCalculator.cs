@@ -585,6 +585,19 @@ internal static class ScenarioA1ArmorCalculator
             kill = resolved;
         }
 
+        // D.8A (p. 192; pass 60, rulings R60.3, R60.7): a hit that leaves the AFV standing attacks its Vulnerable crew, when the record carries the rule.
+        OrdnanceCollateral? collateral = null;
+        if (kill is not null && shot.SpecificCollateral == true)
+        {
+            var (made, pending) = SpecificCollateral(shot, gun, armor, kill, reference);
+            if (pending is not null)
+            {
+                return pending;
+            }
+
+            collateral = made;
+        }
+
         // C6.5: the shot acquires the target's Location, one step more if already acquired, unless the Gun malfunctions; a concealed vehicle
         // is acquired only when the shot costs it its "?" (the game decides that, R6.7).
         // C6.5 (the chart's G): a non-mortar SW acquires nothing.
@@ -596,9 +609,47 @@ internal static class ScenarioA1ArmorCalculator
         {
             CrewConcealmentLost = shot.Crew.Concealed == true && shot.CrewSeen != false ? true : null,
             Kill = kill,
+            SpecificCollateral = collateral,
             AmmunitionUse = use,
             FirerEffect = casualty ? OrdnancePanzerfaustCheck.CasualtyReduction : null,
         };
+    }
+
+    /// <summary>
+    /// The Specific Collateral Attack (D.8, D.8A, p. 192; pass 60, ruling R60.7): when a hit on an AFV does not destroy it, its CE crew takes the
+    /// round's IFT FP (its HE FP, or its HE Equivalency, C8.31) on the Original TK DR, with the CE DRM alone, "the only DRM which applies" (D5.31). None
+    /// after a Dud (C7.35, the table's note 4), a Shock (C7.42), or an Abandonment, nor at a crew stunned, shocked, Recalled, or BU. One attack for the
+    /// hit, never doubled, and no Residual FP. Passengers and Riders are pass 65's. Null when there is none.
+    /// </summary>
+    private static (OrdnanceCollateral? Collateral, OrdnanceResolution? Pending) SpecificCollateral(OrdnanceShot shot, GunDefinition gun, ArmorDefinition armor,
+        OrdnanceKill kill, ScenarioA1OrdnanceReference reference)
+    {
+        var target = shot.VehicleTarget!;
+        var standing = kill.Result is not (OrdnanceKill.Dud or OrdnanceKill.Burn or OrdnanceKill.Eliminated or OrdnanceKill.Shock) && kill.Shocked != true && kill.Abandoned != true;
+        var firepower = kill.Ammunition == "he" ? reference.HeFirepower(gun.Caliber)
+            : ScenarioA1HeEquivalency.Firepower(kill.Ammunition, ScenarioA1HeEquivalency.Weapon(gun), gun.Caliber, ScenarioA1OrdnanceCalculator.HeFirepowerOf(gun, reference));
+        var column = firepower is { } fp ? Array.IndexOf(ScenarioA1FireReference.ColumnFp, fp) : -1;
+        if (armor.Unarmored || armor.FrontAf is null || !standing || target.CrewExposed != true || target.CrewImpaired == true || target.Abandoned == true || column < 0)
+        {
+            return (null, null);
+        }
+
+        if ((target.CrewMorale ?? reference.Fire.AfvCrewMorale(armor.Nationality)) is not { } morale)
+        {
+            return (null, Refused(OrdnanceResolution.Indeterminate, [Prefix + "definition-incomplete:crew-morale:" + armor.Nationality]));
+        }
+
+        IReadOnlyList<FireModifier> drm = [new FireModifier("crew-exposed", 2m, "D5.31")];
+        var final = kill.OriginalDr + 2;
+        var result = reference.Fire.Result(final, column);
+        if (ScenarioA1FireCalculator.CrewChecks(result) && shot.Rolls!.CollateralCheck is null)
+        {
+            return (null, Refused(OrdnanceResolution.Indeterminate, [Prefix + "roll-missing:collateralCheck"]));
+        }
+
+        var (check, crew) = ScenarioA1FireCalculator.CrewOutcome(result, shot.Rolls!.CollateralCheck, target.StunRecovery == true, morale, target.CrewMorale);
+        return (new OrdnanceCollateral(firepower!.Value, result,
+            new FireVehicleEffect(target.VehicleId!, armor.Id, FireVehicleEffect.None, null, drm, final, null, check, crew)), null);
     }
 
     private static (OrdnanceKill? Kill, OrdnanceResolution? Pending) Kill(OrdnanceShot shot, GunDefinition gun, ArmorDefinition armor, ScenarioA1OrdnanceReference reference,

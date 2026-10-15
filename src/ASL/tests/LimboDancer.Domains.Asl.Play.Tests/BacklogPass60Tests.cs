@@ -220,6 +220,30 @@ public sealed class BacklogPass60Tests : IDisposable
         ? hit.GetProperty("arithmetic").GetProperty("columnFp").GetInt32()
         : shot.Resolution.GetProperty("criticalHit").GetProperty("arithmetic").GetProperty("columnFp").GetInt32() / 2;
 
+    /// <summary>A vehicle facing the given way; a closed-topped AFV's crew is CE only when its BU counter is removed (D5.2).</summary>
+    private static Dictionary<string, object> Vehicle(string id, string definition, string at, string side, string facing, bool crewExposed = false) => new()
+    {
+        ["id"] = id,
+        ["kind"] = "asl:vehicle",
+        ["definition"] = definition,
+        ["side"] = side,
+        ["position"] = new Dictionary<string, string> { ["at"] = at, ["facing"] = facing },
+        ["conditions"] = crewExposed ? new Dictionary<string, bool> { ["asl:bu"] = false } : new Dictionary<string, bool>(),
+    };
+
+    private static Dictionary<string, object> Concealed(Dictionary<string, object> unit)
+    {
+        unit["conditions"] = new Dictionary<string, bool> { ["asl:broken"] = false, ["asl:concealed"] = true, ["asl:hidden"] = false };
+        return unit;
+    }
+
+    private static string[] Ids(JsonElement resolution, string attack, string list, string id) =>
+        resolution.TryGetProperty(attack, out var made) && made.TryGetProperty(list, out var items)
+            ? [.. items.EnumerateArray().Select(item => item.GetProperty(id).GetString()!)] : [];
+
+    private static (string Id, bool Hit)[] TargetHits(OrdnanceFired shot) =>
+        [.. shot.Resolution.GetProperty("targetHits").EnumerateArray().Select(item => (item.GetProperty("unitId").GetString()!, item.GetProperty("hit").GetBoolean()))];
+
     private sealed class NullAudit : IAuditSink
     {
         public ValueTask WriteAsync(RuntimeAuditEvent auditEvent, CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
@@ -297,6 +321,121 @@ public sealed class BacklogPass60Tests : IDisposable
         Assert.Equal((1, 1), (Equivalency(shot), HitColumn(shot)));
         Assert.Equal(["de-crew"], shot.Resolution.GetProperty("hit").GetProperty("effects").EnumerateArray().Select(item => item.GetProperty("unitId").GetString()));
         Assert.Equal("de-gun", shot.Facts.GetProperty("hit").GetProperty("gunTarget").GetProperty("gunId").GetString());
+        NoReplayErrors();
+    }
+
+    // Increment 2b: the Specific Collateral Attack (D.8A; ruling R60.7), the Infantry Target Type at a Location holding a vehicle (C3.32; ruling
+    // R60.8), and Known and concealed units together (C3.4; ruling R60.9).
+
+    [Fact]
+    public async Task AHitThatLeavesACeTankStandingAttacksItsCrew()
+    {
+        // D.8A: the PzKpfw IIIH's 50mm HE at the CE T-34 two hexes off, a hull hit (colored 4, white 2); a TK DR of 3 leaves it standing, and its
+        // crew takes the HE FP on the same DR with +2 for CE. The record carries the fact that gates it (ruling R60.3).
+        await Setup("german", "russian", 1942, 7, Vehicle("de-tank", "attacker-tank", Firer, "german", "north-east"),
+            Vehicle("ru-tank", "defender-tank", Target, "russian", "south-west", crewExposed: true));
+        var before = Revision;
+        var result = await Do(GameActions.FireOrdnance, Once(4, 2, 1, 2, 2, 2, 2, 2), new { gunId = "de-tank", target = Target, targetVehicle = "ru-tank", ammunition = "he" });
+        Committed(result);
+        var shot = LastShot(before);
+        Assert.True(shot.Facts.GetProperty("specificCollateral").GetBoolean());
+        Assert.True(shot.Facts.GetProperty("vehicleTarget").GetProperty("crewExposed").GetBoolean());
+        Assert.Equal(3, shot.Resolution.GetProperty("kill").GetProperty("originalDr").GetInt32());
+        var collateral = shot.Resolution.GetProperty("specificCollateral");
+        Assert.Equal(5, collateral.GetProperty("effect").GetProperty("finalDr").GetInt32());
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AnOlderRecordOfAHitOnACeTankReplaysAsItWas()
+    {
+        // Ruling R60.3: the 50mm's AP at the CE T-34's front, a TK DR of 7: its crew's attack (2 FP, Final DR 9) does nothing. The same record with the
+        // pass's facts taken out, as one made before the pass, replays with no attack and no error.
+        await Setup("german", "russian", 1942, 7, Vehicle("de-tank", "attacker-tank", Firer, "german", "north-east"),
+            Vehicle("ru-tank", "defender-tank", Target, "russian", "south-west", crewExposed: true));
+        var before = Revision;
+        Committed(await Do(GameActions.FireOrdnance, Once(4, 2, 3, 4), new { gunId = "de-tank", target = Target, targetVehicle = "ru-tank", ammunition = "ap" }));
+        var collateral = LastShot(before).Resolution.GetProperty("specificCollateral");
+        Assert.Equal((2, "none", 9), (collateral.GetProperty("firepower").GetInt32(), collateral.GetProperty("result").GetString(),
+            collateral.GetProperty("effect").GetProperty("finalDr").GetInt32()));
+
+        var file = Directory.GetFiles(root, "*.game.json", SearchOption.AllDirectories).Single();
+        var game = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(file))!;
+        static void Older(System.Text.Json.Nodes.JsonNode? node)
+        {
+            if (node is System.Text.Json.Nodes.JsonObject item)
+            {
+                item.Remove("specificCollateral");
+                item.Remove("crewExposed");
+                foreach (var (_, value) in item.ToList())
+                {
+                    Older(value);
+                }
+            }
+            else if (node is System.Text.Json.Nodes.JsonArray items)
+            {
+                foreach (var value in items)
+                {
+                    Older(value);
+                }
+            }
+        }
+
+        Older(game);
+        File.WriteAllText(file, game.ToJsonString());
+        var older = LastShot(before);
+        Assert.False(older.Facts.TryGetProperty("specificCollateral", out _) || older.Resolution.TryGetProperty("specificCollateral", out _));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task AnHeHitAtASquadAndATruckAttacksBothOnOneDr()
+    {
+        // C3.32: the 45mm's HE at B8, its squad and its truck each hit on its own Final DR (an Original 6, Case L -1 at two hexes), then one IFT DR
+        // of 7 attacks the squad and, on the Vehicle line, the truck (A7.308).
+        await Setup("russian", "german", 1943, 7, [.. Gun("ru-gun", "defender-at-gun", "ru-crew", "defender-crew", Firer, "russian", "north-east"),
+            Unit("de-s", "asl:squad", "attacker-squad", Target, "german"), Vehicle("de-truck", "attacker-truck", Target, "german", "north-east")]);
+        var before = Revision;
+        var result = await Shoot("ru-gun", null, 3, 3, 3, 4, 3, 4, 3, 4);
+        Committed(result);
+        Assert.Contains(result.Plan!.Reasons, reason => reason.Contains("hit target by target (C3.32, C3.4): de-s on an Original DR of", StringComparison.Ordinal)
+            && reason.Contains("de-truck on an Original DR of", StringComparison.Ordinal));
+        var shot = LastShot(before);
+        Assert.Equal([("de-s", true), ("de-truck", true)], TargetHits(shot));
+        Assert.Equal(["de-s"], Ids(shot.Resolution, "hit", "effects", "unitId"));
+        Assert.Equal(["de-truck"], Ids(shot.Resolution, "hit", "vehicleEffects", "vehicleId"));
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ACeAfvBesideASquadIsImmuneAndItsCrewIsAttacked()
+    {
+        // C3.32: the AFV is immune to the hit; D.8B: its CE crew takes the same IFT DR with +2 for CE, when the AFV's own TH# is reached.
+        await Setup("russian", "german", 1943, 7, [.. Gun("ru-gun", "defender-at-gun", "ru-crew", "defender-crew", Firer, "russian", "north-east"),
+            Unit("de-s", "asl:squad", "attacker-squad", Target, "german"), Vehicle("de-tank", "attacker-tank", Target, "german", "north-east", crewExposed: true)]);
+        var before = Revision;
+        Committed(await Shoot("ru-gun", null, 3, 3, 3, 4, 3, 4, 3, 4));
+        var shot = LastShot(before);
+        Assert.Equal([("de-s", true), ("de-tank", true)], TargetHits(shot));
+        var crew = shot.Resolution.GetProperty("hit").GetProperty("vehicleEffects").EnumerateArray().Single();
+        Assert.Equal(("de-tank", "none"), (crew.GetProperty("vehicleId").GetString(), crew.GetProperty("result").GetString()));
+        Assert.Contains(crew.GetProperty("drm").EnumerateArray(), item => item.GetProperty("name").GetString() == "crew-exposed");
+        NoReplayErrors();
+    }
+
+    [Fact]
+    public async Task ADrThatHitsOnlyTheKnownSquadLeavesTheConcealedOneConcealed()
+    {
+        // C3.4, A12.13: an Original 8 is a Final 7 against the Known squad (Case L -1), a hit at the 45mm's 8, and 9 against the concealed one
+        // (Case K +2), a miss: only the Known squad is attacked, and the concealed one keeps its "?" (A12.14).
+        await Setup("russian", "german", 1943, 7, [.. Gun("ru-gun", "defender-at-gun", "ru-crew", "defender-crew", Firer, "russian", "north-east"),
+            Unit("de-s", "asl:squad", "attacker-squad", Target, "german"), Concealed(Unit("de-c", "asl:squad", "attacker-squad", Target, "german"))]);
+        var before = Revision;
+        Committed(await Shoot("ru-gun", null, 4, 4, 3, 4, 3, 4, 3, 4));
+        var shot = LastShot(before);
+        Assert.Equal([("de-c", false), ("de-s", true)], TargetHits(shot));
+        Assert.Equal(["de-s"], Ids(shot.Resolution, "hit", "effects", "unitId"));
+        Assert.Equal(ConditionState.True, GameState.Condition(Planner().Replay(store.Read(Scope)!.Events).Current!.Unit("de-c")!, Conditions.Concealed));
         NoReplayErrors();
     }
 }

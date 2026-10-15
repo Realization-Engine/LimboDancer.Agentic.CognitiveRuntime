@@ -217,10 +217,16 @@ public static class LiveOrdnance
         // C6.5 (pass 55): Canister claims no Acquisition; the Gun loses the one it has by firing it.
         var acquisition = canister ? 0 : state.Acquisitions.FirstOrDefault(item => item.Gun == gun.Id
             && (item.Location == target || item.Units.Any(id => state.Location(id)?.Location == target)))?.Level ?? 0;
+        // C3.32 (pass 60, ruling R60.8): outside the MPh an Infantry Target Type hit attacks the enemy vehicles of the Location too.
+        FireVehicle[] vehicles = [.. state.At(target).OfType<UnitInstance>()
+            .Where(unit => ScenarioA1OrdnanceEligibility.LocationVehicle(vehicleTarget is null && !canister && !mortar, unit.Status == InstanceStatus.Active, unit.Side != side,
+                phase == "MPh", () => LiveFire.IsVehicle(unit)))
+            .OrderBy(unit => unit.Id, StringComparer.Ordinal).Select(unit => LiveFire.Vehicle(unit, target))];
         var hit = new FireAttack(phase, firingSide, null, null, target.ToString(), [], null, null, null, null, state.ScenarioMonth, null,
             [.. targets.Select(unit => LiveFire.Target(state, unit, target))], targetSide is null ? null : state.Side(targetSide)?.Elr, null)
         {
             TargetSideNoQuarter = targetSide is not null && state.NoQuarter.Contains(targetSide, StringComparer.Ordinal) ? true : null,
+            Vehicles = vehicles.Length > 0 ? vehicles : null,
         };
         var definition = gun is UnitInstance vehicleGun ? vehicleGun.Definition!.Definition : ((EquipmentInstance)gun).Definition!.Definition;
         var fired = gun is UnitInstance firingVehicle ? LiveFire.Fired(firingVehicle) : LiveFire.Fired((EquipmentInstance)gun);
@@ -345,7 +351,10 @@ public static class LiveOrdnance
         {
             shot = shot with
             {
-                VehicleTarget = VehicleTargetFacts(state, vehicleTarget)
+                VehicleTarget = VehicleTargetFacts(state, vehicleTarget),
+
+                // D.8A (pass 60, ruling R60.7): every shot at a vehicle since the pass carries the Specific Collateral Attack's fact.
+                SpecificCollateral = true,
             };
         }
 
@@ -368,6 +377,9 @@ public static class LiveOrdnance
         {
             // D3.42, D3.45 (pass 55, rulings R55.17, R55.18): the Morale Level its crew checks at, when it is not its nationality's.
             CrewMorale = LiveFire.CrewMorale(vehicleTarget),
+
+            // D5.3, D.8A (pass 60): whether its crew is CE.
+            CrewExposed = LiveFire.CrewExposed(vehicleTarget),
         });
     }
 
@@ -501,6 +513,9 @@ public static class LiveOrdnance
             Ammunition = "heat",
             ScenarioYear = state.ScenarioYear,
             VehicleTarget = vehicle is null ? null : VehicleTargetFacts(state, vehicle),
+
+            // D.8A (pass 60, ruling R60.7): a PF's hit on an AFV attacks its Vulnerable crew Collaterally.
+            SpecificCollateral = vehicle is null ? null : true,
             Panzerfaust = new OrdnancePanzerfaust(state.PanzerfaustShots.GetValueOrDefault(unit.Side!), PanzerfaustAllowance(state, unit.Side!), null, Is(unit, Conditions.Heroic)),
         };
         if (director is not null)
@@ -595,7 +610,7 @@ public static class LiveOrdnance
             {
                 selection = ids.Select((id, index) => (id, index)).ToDictionary(item => item.id, item => roll.Values[item.index], StringComparer.Ordinal);
             }
-            else if (key is "toKill" or "shockCheck" or "crewCheck" or "crewSurvival" or "canister" && roll.Count == 2)
+            else if (key is "toKill" or "shockCheck" or "crewCheck" or "crewSurvival" or "canister" or "collateralCheck" && roll.Count == 2)
             {
                 extra[key] = roll.Values;
             }
@@ -629,6 +644,9 @@ public static class LiveOrdnance
 
                 // C8.4 (pass 55): a Canister shot's IFT DR.
                 Canister = extra.GetValueOrDefault("canister"),
+
+                // D.8A (pass 60): the check of a Specific Collateral Attack.
+                CollateralCheck = extra.GetValueOrDefault("collateralCheck"),
             };
     }
 

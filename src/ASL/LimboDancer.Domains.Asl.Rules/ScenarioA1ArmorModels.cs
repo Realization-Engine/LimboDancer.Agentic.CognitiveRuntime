@@ -130,6 +130,16 @@ public sealed record OrdnanceVehicleTarget(
     {
         get; init;
     }
+
+    /// <summary>
+    /// Whether the target's crew is CE and so Vulnerable to a Specific Collateral Attack (D5.3, D.8A; pass 60, ruling R60.7): a state fact, kept only
+    /// on a shot that carries <see cref="OrdnanceShot.SpecificCollateral"/>. Null is false.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? CrewExposed
+    {
+        get; init;
+    }
 }
 
 /// <summary>

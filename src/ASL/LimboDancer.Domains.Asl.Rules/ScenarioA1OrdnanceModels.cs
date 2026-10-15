@@ -121,6 +121,17 @@ public sealed record OrdnanceShot(
     }
 
     /// <summary>
+    /// Whether a Vehicle Target Type hit that does not destroy an AFV attacks its Vulnerable crew Collaterally (D.8A, p. 192; pass 60, rulings R60.3,
+    /// R60.7): set by the planner on every shot at a vehicle made since the pass, and taken from the record at replay. Null is false: a hit recorded
+    /// before the pass resolves as it did, with no such attack.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public bool? SpecificCollateral
+    {
+        get; init;
+    }
+
+    /// <summary>
     /// The Low Visibility DRM of night and weather on the TH DR (E1.7, E3.1; referee, pass 16): a Case R Hindrance of its own, which cancels neither FFMO
     /// nor the Open Ground cases. Null is 0.
     /// </summary>
@@ -425,6 +436,13 @@ public sealed record OrdnanceRolls(IReadOnlyList<int>? ToHit, int? Subsequent, I
     {
         get; init;
     }
+
+    /// <summary>The MC or NTC DR of the crew a Specific Collateral Attack calls on to check (D.8A, D5.34; pass 60).</summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<int>? CollateralCheck
+    {
+        get; init;
+    }
 }
 
 /// <summary>The To Hit arithmetic (C3.3, C4, C5, C6): Basic and Modified TH#, the DRM, the Final DR, and what it achieved.</summary>
@@ -536,6 +554,27 @@ public sealed record OrdnanceResolution(
         get; init;
     }
 
+    /// <summary>
+    /// The To Hit DR as judged for each unit and vehicle of an Infantry Target Type shot at a Location holding a vehicle, or concealed and Known units
+    /// together (C3.32, C3.4, p. 169; pass 60, rulings R60.8, R60.9): its own DRM, its Final DR, and whether the shot hit it. Null for every other
+    /// shot, as in every record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public IReadOnlyList<OrdnanceAreaTarget>? TargetHits
+    {
+        get; init;
+    }
+
+    /// <summary>
+    /// The Specific Collateral Attack on the Vulnerable crew of an AFV a Vehicle Target Type hit did not destroy (D.8A, p. 192; pass 60, ruling
+    /// R60.7); null when there was none, as in every record made before the pass.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public OrdnanceCollateral? SpecificCollateral
+    {
+        get; init;
+    }
+
     /// <summary>The PF Check of a Panzerfaust shot (C13.31; ruling R9.7); null otherwise.</summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public OrdnancePanzerfaustCheck? PanzerfaustCheck
@@ -564,6 +603,12 @@ public sealed record OrdnanceResolution(
     public const string Abstained = "abstained";
     public const string Indeterminate = "indeterminate";
 }
+
+/// <summary>
+/// A Specific Collateral Attack (D.8, D.8A, p. 192; pass 60, ruling R60.7): the round's IFT FP (its HE FP, or its HE Equivalency, C8.31), the IFT
+/// result of the Original TK DR with the CE DRM alone, and what it did to the crew, as an IFT attack's General Collateral Attack is recorded.
+/// </summary>
+public sealed record OrdnanceCollateral(int Firepower, string Result, FireVehicleEffect Effect);
 
 /// <summary>
 /// One ammunition a Gun may be asked to fire at a kind of target (C8.1; pass 55), for the list a player chooses from: its words with the

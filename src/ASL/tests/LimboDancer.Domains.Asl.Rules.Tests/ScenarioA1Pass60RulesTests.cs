@@ -104,6 +104,10 @@ public sealed class ScenarioA1Pass60RulesTests
                 {
                     Checks = new Dictionary<string, IReadOnlyList<int>>(fire.Checks ?? new Dictionary<string, IReadOnlyList<int>>()) { [unit] = [3, 4] }
                 }
+                : inner.StartsWith("crewCheck:", StringComparison.Ordinal) ? fire with
+                {
+                    CrewChecks = new Dictionary<string, IReadOnlyList<int>>(fire.CrewChecks ?? new Dictionary<string, IReadOnlyList<int>>()) { [unit] = [2, 2] }
+                }
                 : fire with
                 {
                     WoundSeverity = new Dictionary<string, int> { [unit] = 2 }
@@ -297,5 +301,167 @@ public sealed class ScenarioA1Pass60RulesTests
 
         // At Personnel with no Gun it is Small Arms, not ordnance (C13.24).
         Assert.Contains("asl.a1.ordnance.target-type-outside", Resolve(atr, [3, 3]).Reasons);
+    }
+
+    // Increment 2b: the Specific Collateral Attack (D.8A, p. 192; ruling R60.7), the Infantry Target Type at a Location holding a vehicle (C3.32, C3.41;
+    // ruling R60.8), and Known and concealed units together (C3.4, A12.13; ruling R60.9).
+
+    /// <summary>
+    /// A tank's MA at an enemy tank's front three hexes away, a hull hit (the colored dr above the white), in 1942: the German PzKpfw IIIH at the
+    /// Russian T-34 M41, or the T-34 at the PzKpfw IIIH. The target's crew is CE unless told otherwise, and the shot carries pass 60's fact unless told.
+    /// </summary>
+    private static OrdnanceShot TankAtTank(bool german, string ammunition, int[] toKill, bool crewExposed = true, bool fact = true, int[]? shock = null,
+        int[]? collateral = null)
+    {
+        var (gun, nationality, target) = german ? ("attacker-tank", "german", "defender-tank") : ("defender-tank", "russian", "attacker-tank");
+        return new OrdnanceShot("PFPh", "phasing", nationality, new OrdnanceGun("firer", gun, false, 0, false, false),
+            new OrdnanceCrew("firer", gun, false, false, false, false, false), At, 3, 0, false, true, 0,
+            new FireAttack("PFPh", "phasing", null, null, At, [], null, null, true, new FireLos(false, 0, true, false), 7, "open-ground", [], 2, null),
+            new OrdnanceRolls([4, 2], null, null, null, null) { ToKill = toKill, ShockCheck = shock, CollateralCheck = collateral })
+        {
+            Vehicle = new OrdnanceVehicleFirer(true, false, false, false, false),
+            VehicleTarget = new OrdnanceVehicleTarget("struck", target, "front", "front", false, false, false, false, false) { CrewExposed = crewExposed ? true : null },
+            Ammunition = ammunition,
+            ScenarioYear = 1942,
+            SpecificCollateral = fact ? true : null,
+        };
+    }
+
+    private static int[] DiceOf(int sum) => [sum / 2, sum - (sum / 2)];
+
+    private static FireVehicle Vehicle(string id, string definition, bool crewExposed = false, bool concealed = false) =>
+        new(id, definition, At, crewExposed, false, false, false)
+        {
+            Concealed = concealed ? true : null
+        };
+
+    /// <summary>The Russian 45mm's HE at the target Location, holding the given units and vehicles.</summary>
+    private static OrdnanceShot AtLocation(FireTarget[] targets, params FireVehicle[] vehicles)
+    {
+        var shot = Russian(null, targets: targets);
+        return shot with
+        {
+            Hit = shot.Hit! with
+            {
+                Vehicles = vehicles.Length > 0 ? vehicles : null
+            }
+        };
+    }
+
+    [Fact]
+    public void ASpecificCollateralAttackFollowsAMissedTkDrAtACeTank()
+    {
+        // D.8A: the PzKpfw IIIH's 50mm HE does not penetrate the T-34's front on a TK DR of 3; its CE crew takes the 50mm's HE FP on the same DR,
+        // "the only DRM which applies is that for any applicable CE status" (+2, D5.31).
+        var result = ScenarioA1OrdnanceCalculator.Resolve(TankAtTank(true, "he", [1, 2], collateral: [2, 2]), Reference);
+        Resolved(result);
+        Assert.Equal(OrdnanceKill.None, result.Kill!.Result);
+        var collateral = result.SpecificCollateral!;
+        var fp = Reference.HeFirepower(50);
+        Assert.Equal((fp, 5), (collateral.Firepower, collateral.Effect.FinalDr));
+        Assert.Equal(["crew-exposed"], collateral.Effect.Drm.Select(item => item.Name));
+        Assert.Equal(Reference.Fire.Result(5, Array.IndexOf(ScenarioA1FireReference.ColumnFp, fp)), collateral.Result);
+        Assert.Equal("struck", collateral.Effect.VehicleId);
+    }
+
+    [Fact]
+    public void ASpecificCollateralAttackByApTakesItsHeEquivalency()
+    {
+        // D.8: "the attacking weapon's/ammo type's IFT FP (which includes HE Equivalency; C8.31)": the 50mm's AP is 2 FP.
+        var result = ScenarioA1OrdnanceCalculator.Resolve(TankAtTank(true, "ap", [3, 4], collateral: [2, 2]), Reference);
+        Resolved(result);
+        Assert.Equal(OrdnanceKill.None, result.Kill!.Result);
+        Assert.Equal((2, 9), (result.SpecificCollateral!.Firepower, result.SpecificCollateral.Effect.FinalDr));
+    }
+
+    [Fact]
+    public void NoSpecificCollateralAttackAtABuTankOrInAnOlderRecord()
+    {
+        // D5.3: a BU crew is not Vulnerable. R60.3: a shot without pass 60's fact, as every one recorded before it, resolves as it did.
+        Assert.Null(ScenarioA1OrdnanceCalculator.Resolve(TankAtTank(true, "he", [1, 2], crewExposed: false, collateral: [2, 2]), Reference).SpecificCollateral);
+        var older = ScenarioA1OrdnanceCalculator.Resolve(TankAtTank(true, "he", [1, 2], fact: false, collateral: [2, 2]), Reference);
+        Resolved(older);
+        Assert.Null(older.SpecificCollateral);
+        Assert.Equal(OrdnanceKill.None, older.Kill!.Result);
+    }
+
+    [Fact]
+    public void NoSpecificCollateralAttackOnADudOrAKill()
+    {
+        // C7.35 and the Collateral Attack Table's note 4: none on a Dud; D.8: none "if the vehicle is destroyed outright". The T-34's AP at the
+        // PzKpfw IIIH's front: a TK DR of 2 is at most half its Final TK#.
+        var dud = ScenarioA1OrdnanceCalculator.Resolve(TankAtTank(false, "ap", [6, 6], collateral: [2, 2]), Reference);
+        Assert.Equal((OrdnanceKill.Dud, (OrdnanceCollateral?)null), (dud.Kill!.Result, dud.SpecificCollateral));
+        var burnt = ScenarioA1OrdnanceCalculator.Resolve(TankAtTank(false, "ap", [1, 1], collateral: [2, 2]), Reference);
+        Assert.Equal((OrdnanceKill.Burn, (OrdnanceCollateral?)null), (burnt.Kill!.Result, burnt.SpecificCollateral));
+    }
+
+    [Fact]
+    public void NoSpecificCollateralAttackAfterAShock()
+    {
+        // C7.42: the crew of a shocked AFV "are not subject to any Collateral Attack". A TK DR one above the Final TK# is a possible Shock: a failed
+        // NTC Shocks it; a passed one leaves the crew to the attack.
+        var finalTk = ScenarioA1OrdnanceCalculator.Resolve(TankAtTank(false, "ap", [6, 6]), Reference).Kill!.FinalTk;
+        var shocked = ScenarioA1OrdnanceCalculator.Resolve(TankAtTank(false, "ap", DiceOf(finalTk + 1), shock: [6, 6], collateral: [2, 2]), Reference);
+        Resolved(shocked);
+        Assert.Equal((OrdnanceKill.PossibleShock, true), (shocked.Kill!.Result, shocked.Kill.Shocked));
+        Assert.Null(shocked.SpecificCollateral);
+        var passed = ScenarioA1OrdnanceCalculator.Resolve(TankAtTank(false, "ap", DiceOf(finalTk + 1), shock: [1, 1], collateral: [2, 2]), Reference);
+        Resolved(passed);
+        Assert.Equal(finalTk + 3, passed.SpecificCollateral!.Effect.FinalDr);
+    }
+
+    [Fact]
+    public void AnHeHitAtASquadAndATruckAttacksBothOnOneDr()
+    {
+        // C3.32 and its EX: each target is hit on its own Final TH#, and "all that are hit are then attacked on the IFT with a single Effects DR",
+        // the truck on the Vehicle line (A7.308).
+        var shot = AtLocation([Target("de-s", "attacker-squad")], Vehicle("de-truck", "attacker-truck"));
+        var result = Resolve(shot, [2, 3], ift: [3, 4], selection: new Dictionary<string, int> { ["de-s"] = 5, ["de-truck"] = 2 });
+        Resolved(result);
+        Assert.Equal([("de-s", true), ("de-truck", true)], result.TargetHits!.Select(item => (item.UnitId, item.Hit)));
+        var attacks = new[] { result.Hit, result.CriticalHit }.OfType<FireResolution>().ToArray();
+        Assert.Contains(attacks, attack => attack.Effects.Any(effect => effect.UnitId == "de-s"));
+        var truck = attacks.SelectMany(attack => attack.VehicleEffects ?? []).Single();
+        Assert.Equal("de-truck", truck.VehicleId);
+        Assert.NotNull(truck.KillNumber);
+        Assert.Equal(7, attacks.Select(attack => attack.Arithmetic!.OriginalDr).Distinct().Single());
+    }
+
+    [Fact]
+    public void ACeAfvBesideASquadIsImmuneAndItsCrewIsAttacked()
+    {
+        // C3.32: "All AFV (but not their Vulnerable PRC) in the target Location are immune"; D.8B: its CE crew takes the hit's DR with +2 for CE.
+        var shot = AtLocation([Target("de-s", "attacker-squad")], Vehicle("de-tank", "attacker-tank", crewExposed: true));
+        var result = Resolve(shot, [2, 3], ift: [3, 4], selection: new Dictionary<string, int> { ["de-s"] = 5 });
+        Resolved(result);
+        var crew = new[] { result.Hit, result.CriticalHit }.OfType<FireResolution>().SelectMany(attack => attack.VehicleEffects ?? []).Single();
+        Assert.Equal(("de-tank", (int?)null, FireVehicleEffect.None), (crew.VehicleId, crew.KillNumber, crew.Result));
+        Assert.Contains(crew.Drm, item => item.Name == "crew-exposed");
+
+        // A BU AFV is not fired at at all; a Location of AFVs alone is the Vehicle Target Type's (C3.41).
+        Assert.Null(Resolve(AtLocation([Target("de-s", "attacker-squad")], Vehicle("de-tank", "attacker-tank")), [2, 3], ift: [3, 4]).TargetHits);
+        Assert.Contains("asl.a1.ordnance.target-outside", Resolve(AtLocation([], Vehicle("de-tank", "attacker-tank", crewExposed: true)), [2, 3]).Reasons);
+    }
+
+    [Fact]
+    public void ADrThatHitsOnlyTheKnownSquadLeavesTheConcealedOneAlone()
+    {
+        // C3.4, the A12.13 EX: the Known squad is hit on a Final DR the concealed one, with Case K's +2, is not: it is not attacked and keeps "?".
+        var shot = Russian(null, targets: [Target("de-s", "attacker-squad"), Target("de-c", "attacker-squad") with { Concealed = true }]);
+        var preview = ScenarioA1OrdnanceCalculator.Resolve(shot with
+        {
+            Rolls = shot.Rolls! with
+            {
+                ToHit = [6, 6]
+            }
+        }, Reference);
+        var known = preview.TargetHits!.Single(item => item.UnitId == "de-s");
+        var need = preview.ToHit!.ModifiedToHit - (known.FinalDr - 12);
+        var result = Resolve(shot, DiceOf(need), ift: [3, 4]);
+        Resolved(result);
+        Assert.Equal([("de-s", true), ("de-c", false)], result.TargetHits!.Select(item => (item.UnitId, item.Hit)));
+        Assert.Contains(result.TargetHits!.Single(item => item.UnitId == "de-c").Drm, item => item.Name == "case-k");
+        Assert.Equal(["de-s"], new[] { result.Hit, result.CriticalHit }.OfType<FireResolution>().SelectMany(attack => attack.Effects).Select(effect => effect.UnitId));
     }
 }

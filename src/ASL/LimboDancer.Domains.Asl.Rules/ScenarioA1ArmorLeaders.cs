@@ -173,8 +173,8 @@ public static class ScenarioA1ArmorLeaders
     }
 
     /// <summary>
-    /// An ordnance shot's facts as its record keeps them (D3.41): the target crew's Morale Level only when the hit made it take its Shock NTC or
-    /// its Immobilization TC (C7.41, D5.5), and that of a vehicle in the hit Location only when the hit's IFT attack made its crew check.
+    /// An ordnance shot's facts as its record keeps them (D3.41): the target crew's Morale Level only when the hit made it take its Shock NTC, its
+    /// Immobilization TC, or the check of a Specific Collateral Attack (C7.41, D5.5, D.8A), and that of a vehicle in the hit Location only when the hit's IFT attack made its crew check.
     /// </summary>
     public static OrdnanceShot Recorded(OrdnanceShot shot, OrdnanceResolution resolution)
     {
@@ -274,7 +274,9 @@ public static class ScenarioA1ArmorLeaders
         CrewMorale = null
     };
 
-    private static bool KillChecked(OrdnanceResolution resolution) => resolution.Kill is { ShockCheck: not null } or { CrewCheck: not null };
+    // D.8A (pass 60): the crew's check in a Specific Collateral Attack is a check of the target's crew too.
+    private static bool KillChecked(OrdnanceResolution resolution) =>
+        resolution.Kill is { ShockCheck: not null } or { CrewCheck: not null } || resolution.SpecificCollateral is { Effect.CrewCheck: not null };
 
     /// <summary>
     /// The state's vehicles compared with a record's (D3.41): a crew's Morale Level the record left out is left out of the comparison; one the
