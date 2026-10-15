@@ -2982,3 +2982,14 @@ button[data-working]::after {
 .campaign-origin summary { cursor: pointer; font-weight: 600; }
 .campaign-origin p { margin: .5rem 0; line-height: 1.45; }
 .campaign-origin a { display: inline-block; padding: .4rem 0; }
+
+/* Overview detail follows zoom, independently of the user's layer visibility choice. */
+.board-svg > #layer-labels[data-detail-visible="false"] {
+    display: none;
+}
+
+.board-host.rotated #layer-labels text {
+    transform-box: fill-box;
+    transform-origin: center;
+    transform: rotate(-90deg);
+}

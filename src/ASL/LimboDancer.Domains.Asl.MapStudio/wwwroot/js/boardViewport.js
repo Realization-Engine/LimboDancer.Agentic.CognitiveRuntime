@@ -45,6 +45,9 @@ export function create(host, dotnet) {
         applyShape(state);
         if (state.fitted) {
             reset(state);
+        } else {
+            updateUnitTier(state);
+            updateLabelDetail(state);
         }
     });
     shapeWatcher?.observe(host);
@@ -258,6 +261,10 @@ async function load(state, baseUrl, query, viewBox, layers, visible) {
     state.baseUrl = baseUrl;
     state.viewKey = viewKey;
     state.home = home;
+    // Suppress unreadable text before insertion, avoiding overview layout of every label.
+    for (const group of groups) {
+        if (group.id === "layer-labels") group.setAttribute("data-detail-visible", "false");
+    }
     state.svg.replaceChildren(...groups);
     state.highlight = null;
     state.overlay = null;
@@ -289,6 +296,7 @@ async function reloadLayers(state, baseUrl, query, layers) {
     }
 
     applyComparison(state);
+    updateLabelDetail(state);
 }
 
 // Applies a render patch (section 5.4): per-feature upserts in paint order and removals, by element id.
@@ -616,6 +624,16 @@ function updateUnitTier(state) {
     }
 }
 
+// Labels below six screen pixels cannot be read. Keep the explicit layer choice separate
+// from this zoom-dependent detail, so zooming never re-enables a layer the user hid.
+function updateLabelDetail(state) {
+    const labels = state.svg.querySelector("#layer-labels");
+    if (!labels || !state.box) return;
+    const fontSize = Number(labels.firstElementChild?.getAttribute("font-size")) || 9;
+    const readable = fontSize * state.svg.clientWidth / state.box.width >= 6;
+    labels.setAttribute("data-detail-visible", String(readable));
+}
+
 function highlight(state, points) {
     if (!state.highlight) {
         state.highlight = document.createElementNS(svgNamespace, "polygon");
@@ -639,6 +657,7 @@ function setBox(state, box, fitted = false) {
     state.side?.setAttribute("viewBox", value);
     rememberView(state);
     updateUnitTier(state);
+    updateLabelDetail(state);
 }
 
 function toBoard(state, clientX, clientY) {

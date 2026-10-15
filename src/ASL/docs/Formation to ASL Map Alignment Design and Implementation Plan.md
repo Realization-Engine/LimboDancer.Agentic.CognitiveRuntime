@@ -1,7 +1,7 @@
 # Formation to ASL Map Alignment Design and Implementation Plan
 
 Date: 13 October 2026.
-Status: active goal expanded on 14 October 2026 to the complete Operation Goodwood Formation Map and counter transition into existing ASL setup. Full Goodwood terrain coverage, all 624 ground counters, equipment relationships, immutable saves and Studio import are implemented. Live return navigation is verified. Whole-Situation usability, performance, compatibility and portable ASL-progress acceptance remain incomplete. Dated checkpoints below describe their respective increments; the current scope and completion gates immediately below take precedence over earlier pilot-only restrictions and superseded next-step notes.
+Status: active goal expanded on 14 October 2026 to the complete Operation Goodwood Formation Map and counter transition into existing ASL setup. Full terrain coverage, all 624 ground counters, equipment relationships, immutable saves, Studio import, return navigation, parent inspection, playable perimeter, keyboard setup, manual-deployment compatibility and portable later-phase restoration have verification evidence. Full-Situation generation, handoff, browser opening/reload, memory and package size are measured; startup latency remains a documented limitation. The final requirement-by-requirement release audit and consolidated limitations record remain open. Dated checkpoints below describe their respective increments; the current scope and completion gates immediately below take precedence over earlier pilot-only restrictions and superseded next-step notes.
 Branch: codex/formation-asl-map-alignment.
 Baseline analysis: [Formation to ASL Map Alignment Analysis](Formation%20to%20ASL%20Map%20Alignment%20Analysis.md), committed at 452dad19.
 
@@ -469,3 +469,6 @@ Keyboard checkpoint: typed full-board Goodwood coordinates can be applied with E
 
 
 Full-map compatibility checkpoint: the complete integration now preserves eight manual changes across rifle squads, same-model vehicles and linked mortar detachments through JSON reload, preserved-position assembly, existing ASL planning, Studio import/restart and repeated handoff. All 624 counters and the accepted board identity remain intact. Passed in 3 minutes 10 seconds. Remaining work is controlled whole-map timing/resource evidence and the final requirement-by-requirement release audit.
+
+
+Overview detail checkpoint: full-map labels appear only at readable zoom, respect explicit layer visibility and remain upright after map rotation. Nine viewport tests and actual Goodwood inspection passed. Browser scene-stage median improved modestly from 2.7142 to 2.4394 seconds in three warm runs; full opening latency remains a limitation. Generation and handoff are separately measured. Finish the consolidated acceptance audit and release limitations record before declaring the goal complete.

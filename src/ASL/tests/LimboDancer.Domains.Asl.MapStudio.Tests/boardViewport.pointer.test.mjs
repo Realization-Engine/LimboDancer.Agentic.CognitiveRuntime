@@ -31,7 +31,7 @@ function viewportFixture(factory = create, viewKey) {
         setPointerCapture() {},
         replaceChildren(...groups) { this.children = groups; },
         appendChild(group) { this.children.push(group); },
-        querySelector(selector) { return selector === "#layer-units" ? this.children.find(group => group.id === "layer-units") : null; },
+        querySelector(selector) { return this.children.find(group => "#" + group.id === selector); },
         createSVGPoint() { return { matrixTransform() { return { x: 10, y: 20 }; } }; },
         getScreenCTM() { return { inverse() { return {}; } }; },
     };
@@ -188,4 +188,23 @@ test("optional scene timing waits for counters and paint opportunities and ignor
         globalThis.location = previousLocation;
         globalThis.requestAnimationFrame = previousFrame;
     }
+});
+
+
+test("hex label detail follows zoom without changing the user's hidden-layer choice", async () => {
+    const { viewport, svg } = viewportFixture();
+    await viewport.load("render/board/v1/exact", "", "0 0 1000 1000", [], []);
+    const labels = element("layer-labels");
+    svg.children.push(labels);
+    viewport.zoom(1);
+    assert.equal(labels.getAttribute("data-detail-visible"), "false");
+    viewport.zoom(0.1);
+    assert.equal(labels.getAttribute("data-detail-visible"), "true");
+    viewport.setVisible([]);
+    viewport.zoom(1);
+    assert.equal(labels.getAttribute("data-detail-visible"), "true");
+    assert.equal(labels.getAttribute("data-layer-hidden"), "true");
+    viewport.zoom(10);
+    assert.equal(labels.getAttribute("data-detail-visible"), "false");
+    assert.equal(labels.getAttribute("data-layer-hidden"), "true");
 });
