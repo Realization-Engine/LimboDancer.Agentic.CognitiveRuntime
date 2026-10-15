@@ -1,4 +1,5 @@
 using Bunit;
+using LimboDancer.Domains.Asl.MapStudio.Services;
 using LimboDancer.Domains.Asl.MapStudio.Components.Board;
 using LimboDancer.Domains.Asl.Maps.Coordinates;
 using LimboDancer.Domains.Asl.Maps.Geometry;
@@ -55,6 +56,19 @@ public sealed class SelectedUnitInspectorTests
         }
     }
 
+    [Fact]
+    public void CampaignOriginIsOnlyResolvedForAVisibleCounter()
+    {
+        using var context = new BunitContext();
+        var visible = Render(context, "crew-1", "crew", View([Crew], []));
+        Assert.Contains("de-mortar-01", visible.Find("#unit-campaign-origin").TextContent, StringComparison.Ordinal);
+        Assert.Contains("A/D-5", visible.Find("#unit-campaign-origin").TextContent, StringComparison.Ordinal);
+        Assert.Contains("Manufactured profile", visible.Markup, StringComparison.Ordinal);
+        var hidden = Render(context, "crew-1", "crew", View([], []));
+        Assert.Empty(hidden.FindAll("#unit-campaign-origin"));
+        Assert.DoesNotContain("de-mortar-01", hidden.Markup, StringComparison.Ordinal);
+    }
+
     private static EquipmentInstance Equipment(HoldingRole role) => new("gun-1", "asl:gun", "allied",
         new MapPosition(Location), new Holding("crew-1", role), new Dictionary<string, ConditionState>(), InstanceStatus.Active);
 
@@ -74,6 +88,7 @@ public sealed class SelectedUnitInspectorTests
             .Add(component => component.Unit, placed)
             .Add(component => component.Vocabulary, Vocabulary)
             .Add(component => component.View, view)
-            .Add(component => component.NameOf, id => id == "crew-1" ? "Test crew" : "Test gun"));
+            .Add(component => component.NameOf, id => id == "crew-1" ? "Test crew" : "Test gun")
+            .Add(component => component.OriginOf, _ => new CampaignCounterOrigin("de-mortar-01", "A/D-5", "catalog@1 / mortar", "Manufactured profile")));
     }
 }

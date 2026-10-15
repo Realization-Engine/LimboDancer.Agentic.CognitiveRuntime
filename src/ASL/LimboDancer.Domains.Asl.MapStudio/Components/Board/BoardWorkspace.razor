@@ -111,6 +111,9 @@
     [Parameter]
     public string? UnitNote { get; set; }
 
+    [Parameter]
+    public Func<string, CampaignCounterOrigin?>? OriginOf { get; set; }
+
     /// <summary>The <c>layer-marks</c> group (Play's Covered Arc and Residual FP); null draws none.</summary>
     [Parameter]
     public string? Marks { get; set; }
@@ -198,7 +201,7 @@
 
     private RenderFragment InspectorPane => @<BoardInspector @ref="inspectorPane" Board="@Board" Panel="@Panel" PanelChanged="@PanelChanged" Label="@InspectorLabel" IdPrefix="@IdPrefix"
         Extras="@Extras" Selected="@Selected" Units="@Units" SelectedUnit="@selectedUnit" SelectedUnitChanged="@PickUnit"
-        Vocabulary="@Vocabulary" View="@UnitView" UnitNote="@UnitNote" HexNotes="@HexNotes" Sample="@sample" StyledModel="@StyledModel" LosDraft="@losDraft"
+        Vocabulary="@Vocabulary" View="@UnitView" UnitNote="@UnitNote" OriginOf="@OriginOf" HexNotes="@HexNotes" Sample="@sample" StyledModel="@StyledModel" LosDraft="@losDraft"
         LosDraftChanged="@(draft => losDraft = draft)" LosResult="@losCheck" OnCheckLos="@CheckLos" OnClearLos="@ClearLos" OnCopy="@Copy"
         RangeResult="@rangeCheck" RangeRows="@rangeRows" RangeChosen="@rangeChosen" OnChooseRange="@(key => rangeChosen = key)" OnCheckRange="@CheckRange" OnClearRange="@ClearRange" />;
 

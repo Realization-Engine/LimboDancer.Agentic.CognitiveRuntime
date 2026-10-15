@@ -899,7 +899,7 @@ else if (state is not null)
         }
         @if (MapLayers is { Board: { } mapBoard } layers)
         {
-            <BoardWorkspace @key="@($"{gameId}/{Viewer.Name}")" ViewKey="@($"{gameId}/{Viewer.Name}")" HexNotes="@HexNotes" RangeSubjects="@RangeSubjects" @ref="workspace" Board="@mapBoard" Units="@MapUnits(layers)" UnitView="@layers.View" Marks="@SetupMarks(mapBoard, layers.Marks)" Vocabulary="@Library.Vocabulary" OnLoaded="@InitialMapView"
+            <BoardWorkspace @key="@($"{gameId}/{Viewer.Name}")" ViewKey="@($"{gameId}/{Viewer.Name}")" HexNotes="@HexNotes" OriginOf="@CounterOrigin" RangeSubjects="@RangeSubjects" @ref="workspace" Board="@mapBoard" Units="@MapUnits(layers)" UnitView="@layers.View" Marks="@SetupMarks(mapBoard, layers.Marks)" Vocabulary="@Library.Vocabulary" OnLoaded="@InitialMapView"
                             Selected="@(highlight is { } picked ? GameMaps.FactsAt(mapBoard, picked) : null)"
                             SelectedChanged="@(facts => PickHex(mapBoard, facts))"
                             @bind-Panel="inspectorTab" Extras="@([new BoardInspector.ExtraTab(new("proposal", "Proposal", AwaitingConfirm ? 1 : null), proposalBlock)])"
@@ -3228,6 +3228,30 @@ else if (state is not null)
     private sealed record Proposal(ActionDescriptor Action, JsonElement Arguments, PlayResult Result, long? Revision = null);
 
     private string gameId = string.Empty;
+    private string? originGame;
+    private IReadOnlyDictionary<string, CampaignCounterOrigin> counterOrigins = new Dictionary<string, CampaignCounterOrigin>();
+
+    private CampaignCounterOrigin? CounterOrigin(string id)
+    {
+        if (originGame != gameId)
+        {
+            originGame = gameId;
+            counterOrigins = new Dictionary<string, CampaignCounterOrigin>();
+            if (gameId.StartsWith("campaign-", StringComparison.Ordinal) && Services.GetService<CampaignImport>() is { } imports)
+            {
+                try
+                {
+                    counterOrigins = CampaignCounterOrigin.Read(imports.ReadContext(gameId));
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidDataException)
+                {
+                    // Missing provenance must not prevent inspection of the live game.
+                }
+            }
+        }
+        return counterOrigins.GetValueOrDefault(id);
+    }
+
     private GameHistory? history;
     private GameState? state;
     private string newId = "village";

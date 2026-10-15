@@ -7,6 +7,25 @@ namespace LimboDancer.Campaign.Refinement.Tests;
 public sealed class SituationSessionTests
 {
     [Fact]
+    public void AllGoodwoodCounterOriginsRemainInspectableInAsl()
+    {
+        var inputs = new PilotInputs(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "goodwood.json")));
+        var roster = SituationRoster.Create(inputs);
+        var formations = roster.Ground.Select(f => new FormationSelection(f.Id, "B/A-2")).ToArray();
+        var context = JsonSerializer.Serialize(new { Version = SituationHandoffs.Version, Setup = new { Formations = formations }, Roster = roster });
+        var origins = LimboDancer.Domains.Asl.MapStudio.Services.CampaignCounterOrigin.Read(context);
+        Assert.Equal(624, origins.Count);
+        foreach (var unit in roster.Ground.SelectMany(f => f.Units))
+        {
+            var origin = origins[PilotHandoffs.AslId(unit.Id)];
+            Assert.Equal(unit.ParentId, origin.Formation);
+            Assert.Equal("B/A-2", origin.FormationHex);
+            Assert.Equal(unit.CatalogStatus, origin.CatalogStatus);
+            Assert.Contains(unit.Definition!.Definition, origin.Definition, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
     public async Task WholeSituationJobsPersistReopenAndTransferWithoutRelocatingCounters()
     {
         var inputs = new PilotInputs(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "goodwood.json")));

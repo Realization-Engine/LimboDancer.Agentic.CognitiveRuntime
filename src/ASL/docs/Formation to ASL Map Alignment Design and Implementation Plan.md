@@ -433,3 +433,6 @@ Campaign-file progress checkpoint: full Situation capture/restore is now connect
 
 
 Viewport checkpoint: per-game/per-viewer/per-board-version pan and zoom persistence is implemented and verified by a full Goodwood page reload. Automatic initial setup framing respects restored views. Continue with parent-hex ownership/boundary inspection and remaining full-map release gates.
+
+
+Counter provenance checkpoint: visible ASL counters expose immutable parent formation, formation hex at handoff, catalog reference and reviewed/manufactured status. All 624 Goodwood IDs are covered by the roster check. This is counter provenance only; map-wide parent ownership inspection and boundary overlays remain required.

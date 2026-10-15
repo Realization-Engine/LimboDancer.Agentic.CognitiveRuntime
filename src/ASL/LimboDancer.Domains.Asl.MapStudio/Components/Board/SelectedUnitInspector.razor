@@ -49,6 +49,17 @@
         </dl>
     }
 }
+@if (View is { } visible && visible.Units.Cast<IGameObject>().Concat(visible.Equipment).Any(item => item.Id == Unit.Document.Id)
+    && OriginOf?.Invoke(Unit.Document.Id) is { } origin)
+{
+    <h3>Campaign origin</h3>
+    <dl class="unit-details" id="unit-campaign-origin">
+        <dt>Parent formation</dt><dd>@origin.Formation</dd>
+        <dt>Formation hex at handoff</dt><dd>@origin.FormationHex</dd>
+        <dt>Catalog at handoff</dt><dd>@origin.Definition</dd>
+    </dl>
+    <p class="muted">@origin.CatalogStatus</p>
+}
 @if (Note is { Length: > 0 } note)
 {
     <p class="muted">@note</p>
@@ -75,6 +86,9 @@
     /// <summary>Where the unit comes from, in words.</summary>
     [Parameter]
     public string? Note { get; set; }
+
+    [Parameter]
+    public Func<string, CampaignCounterOrigin?>? OriginOf { get; set; }
 
     // Good Order is unknown while broken, berserk, captured, or Melee is not recorded (ASL-UNIT-023); the inspector says which (pass 29).
     private string GoodOrderText(UnitInstance instance) => GameState.GoodOrder(instance, Vocabulary) switch

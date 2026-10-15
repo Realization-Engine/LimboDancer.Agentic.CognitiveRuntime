@@ -38,7 +38,7 @@
             default:
                 @if (SelectedUnit is { } unit)
                 {
-                    <SelectedUnitInspector Unit="@unit" Vocabulary="@Vocabulary" View="@View" Note="@UnitNote"
+                    <SelectedUnitInspector Unit="@unit" Vocabulary="@Vocabulary" View="@View" Note="@UnitNote" OriginOf="@OriginOf"
                                            NameOf="@(id => Units?.Units.FirstOrDefault(placed => placed.Document.Id == id)?.Name)" />
                 }
                 @if (Units is { } units)
@@ -132,6 +132,9 @@
 
     [Parameter]
     public string? UnitNote { get; set; }
+
+    [Parameter]
+    public Func<string, CampaignCounterOrigin?>? OriginOf { get; set; }
 
     /// <summary>What else the host knows of the hex kept: Residual FP, a Melee (pass 31c).</summary>
     [Parameter]
