@@ -451,3 +451,6 @@ Playable-footprint foundation: board handles can retain an immutable location ar
 
 
 Explicit footprint integration checkpoint: full Goodwood import and live board catalogs now share a persisted, explicitly requested playable area. Thirteen Studio checks and three Campaign integration cases passed, including all 624 counters, rejected exterior setup before publication, phase advancement and restart/repeated-import progress preservation. Complete actual-interface acceptance on the existing Goodwood game next; final progress-transfer, compatibility and performance/resource gates remain open.
+
+
+Rendering checkpoint: eliminated redundant full-grid elevation tracing and unused document generation during game opening. Full Goodwood elevation raster equivalence passed for every pixel at each nonzero level. Controlled standalone rendering fell from 32.961 seconds to 10.626 / 10.631 seconds, with about 46% fewer cumulative managed allocations. These are server rendering measurements, not browser-open timings. Finish actual-interface performance and perimeter acceptance, later-phase campaign-file transfer, legacy compatibility, and the final resource audit before closing the goal. See Goodwood Transition Coverage.md for evidence and measurement scope.

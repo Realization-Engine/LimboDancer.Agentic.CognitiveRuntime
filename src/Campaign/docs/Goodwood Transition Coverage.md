@@ -376,3 +376,14 @@ All 13 targeted ownership, storage and board-cache tests passed, including immed
 Live migration checkpoint: after restarting Studio and Campaign, the normal complete-ASL dialog showed 114 formations, 624 counters, zero review findings and 8 off-map aircraft. Recheck ASL handoff published the 387,498-byte explicit footprint containing all 1,038 parents and 37,788 owned hexes. The accepted game history SHA256 remained `b106c5ad14cee682b679e86e752f980f46cd40456a89a84913c4d3da58b6af93` before and after migration. Open ASL map reopened the same game and displayed Allied side selection.
 
 Visual play acceptance remains incomplete: after selecting the Allied view, browser observations timed out during full rendering. Studio reported 40.971 seconds for document generation in this run, versus 1.007 seconds for the first warm-board history replay. This is a diagnostic observation, not a controlled performance benchmark, and is a practical release issue to investigate. Do not treat the reopened link or successful migration as proof of responsive play. The services remain running for continued investigation.
+
+
+### Full-map rendering optimization
+
+The renderer reuses terrain regions, which already partition pixels by terrain and elevation, instead of tracing the entire elevation grid a second time. Game opening no longer generates an unused standalone SVG document before the viewport requests its layers. Renderer version 1.0.1 is included in layer requests to invalidate immutable browser responses while retaining the board/view key used for saved pan and zoom.
+
+A controlled Release comparison on the accepted full Goodwood board measured standalone SVG generation at 32.961 seconds before the change and 10.626 / 10.631 seconds after it. Cumulative managed allocations fell from 3,124,497,504 bytes to 1,687,116,504 / 1,687,117,000 bytes. These figures exclude compilation, derivation and browser display, and are not peak resident memory or a browser-opening acceptance result. The final reverse-order baseline output was not recovered and is not included.
+
+Terrain, grid, labels and legend layer hashes matched. Updated elevation SVG paths were rasterized independently: levels -1, 1 and 2 each matched all 145,653,300 source pixel cells. A synthetic regression also covers adjacent terrain regions, negative levels and holes. Rendering tests: 35 passed, two external-VASL-dependent tests skipped. Focused Studio viewport/play/replay/render checks: 37 passed. Golden SVG metadata and the equivalent elevation path representation were updated.
+
+Browser responsiveness, actual perimeter interaction and later-phase campaign-file transfer remain open acceptance gates. The previous services were stopped for rebuilding; the earlier running-services note is historical.
